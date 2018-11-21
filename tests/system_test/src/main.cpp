@@ -20,13 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/system.h>
+//#include <flame/system.h>
 
-#include <string>
+#include <flame/memory.h>
 
 using namespace flame;
 
 int main(int argc, char **args)
 {
+	malloc(1);
+
 	return 0;
 }

@@ -22,7 +22,6 @@
 
 #include <flame/string.h>
 #include <flame/file.h>
-#include <flame/system.h>
 
 #include <vector>
 #include <regex>

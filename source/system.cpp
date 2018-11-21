@@ -20,9 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "file.h"
-#include "bitmap.h"
-#include "system.h"
+#include <flame/bitmap.h>
+#include <flame/system.h>
 
 #define NOMINMAX
 #include <Windows.h>
@@ -34,7 +33,10 @@
 
 #include <vector>
 #include <map>
+#include <experimental/filesystem>
 #include <assert.h>
+
+namespace filesystem = std::experimental::filesystem;
 
 namespace flame
 {
@@ -62,7 +64,7 @@ namespace flame
 	{
 		static wchar_t buf[260];
 		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		auto path = std::filesystem::path(buf).parent_path().generic_wstring();
+		auto path = filesystem::path(buf).parent_path().generic_wstring();
 		wcscpy(buf, path.data());
 		return buf;
 	}
@@ -364,7 +366,7 @@ namespace flame
 
 	void get_thumbnai(int width, const wchar_t *_filename, int *out_width, int *out_height, char **out_data)
 	{
-		std::filesystem::path path(_filename);
+		filesystem::path path(_filename);
 		path.make_preferred();
 		auto filename = path.wstring();
 

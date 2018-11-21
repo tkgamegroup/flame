@@ -1,5 +1,5 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_lib(flame_3d "${SOURCE_LIST}" "" "flame")
+add_lib(flame_3d "${SOURCE_LIST}" "flame")
 target_compile_definitions(flame_3d PRIVATE FLAME_3D_MODULE)
 target_include_directories(flame_3d PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_include_directories(flame_3d PUBLIC "${CMAKE_SOURCE_DIR}/ext/assimp/include")

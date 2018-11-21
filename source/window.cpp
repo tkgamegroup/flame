@@ -20,13 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "math.h"
-#include "time.h"
-#include "window.h"
+#include <flame/time.h>
+#include <flame/window.h>
 
 #ifdef FLAME_WINDOWS
-#include "bitmap.h"
-#include "system.h"
+#include <flame/bitmap.h>
+#include <flame/system.h>
 
 #define NOMINMAX
 #include <Windows.h>

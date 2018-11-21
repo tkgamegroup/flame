@@ -32,7 +32,7 @@
 #define FLAME_FONT_EXPORTS
 #endif
 
-#include "math.h"
+#include <flame/math.h>
 
 #include <vector>
 

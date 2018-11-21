@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "file.h"
-#include "bitmap.h"
-#include "font.h"
+#include <flame/file.h>
+#include <flame/bitmap.h>
+#include <flame/font.h>
 
 #include <ft2build.h>
 #include <freetype/freetype.h>

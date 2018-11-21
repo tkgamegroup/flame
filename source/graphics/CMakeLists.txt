@@ -1,5 +1,5 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_lib(flame_graphics "${SOURCE_LIST}" "" "flame")
+add_lib(flame_graphics "${SOURCE_LIST}" "flame")
 target_compile_definitions(flame_graphics PRIVATE FLAME_GRAPHICS_MODULE)
 target_compile_definitions(flame_graphics PRIVATE VK_USE_PLATFORM_WIN32_KHR)
 target_include_directories(flame_graphics PRIVATE $ENV{VK_SDK_PATH}/Include)

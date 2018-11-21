@@ -1,5 +1,5 @@
 file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
-add_exe(shooting "${SOURCE_LIST}" "/src" "games")
+add_exe(shooting "${SOURCE_LIST}" "games")
 target_link_libraries(shooting flame_ui)
 target_link_libraries(shooting flame_model)
 target_link_libraries(shooting flame_physics)

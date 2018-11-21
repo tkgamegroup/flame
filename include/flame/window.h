@@ -32,9 +32,9 @@
 #define FLAME_WINDOW_EXPORTS
 #endif
 
-#include "math.h"
-#include "string.h"
-#include "function.h"
+#include <flame/math.h>
+#include <flame/string.h>
+#include <flame/function.h>
 
 namespace flame
 {

@@ -32,7 +32,7 @@
 #define FLAME_TYPEINFO_EXPORTS
 #endif
 
-#include "string.h"
+#include <flame/string.h>
 
 namespace flame
 {

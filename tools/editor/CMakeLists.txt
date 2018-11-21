@@ -2,8 +2,6 @@ project(editor)
 
 file(GLOB_RECURSE EDITOR_SOURCE_LIST "src/*.c*")
 
-group_source("${EDITOR_SOURCE_LIST}" "/src" "Source")
-
 add_executable(editor ${EDITOR_SOURCE_LIST})
 
 target_link_libraries(editor flame_engine)

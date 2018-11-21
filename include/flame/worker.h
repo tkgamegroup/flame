@@ -28,7 +28,7 @@
 #define FLAME_WORKER_EXPORTS __declspec(dllimport)
 #endif
 
-#include "type.h"
+#include <flame/type.h>
 
 namespace flame
 {
