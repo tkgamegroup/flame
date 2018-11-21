@@ -32,7 +32,7 @@
 #define FLAME_FUNCTION_EXPORTS
 #endif
 
-#include "type.h"
+#include <flame/type.h>
 
 #include <stdarg.h>
 

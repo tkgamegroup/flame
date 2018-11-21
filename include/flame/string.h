@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "type.h"
-#include "memory.h"
+#include <flame/type.h>
+#include <flame/memory.h>
 
 #include <string>
 #include <vector>

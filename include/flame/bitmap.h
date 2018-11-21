@@ -32,7 +32,7 @@
 #define FLAME_BITMAP_EXPORTS
 #endif
 
-#include "math.h"
+#include <flame/math.h>
 
 namespace flame
 {

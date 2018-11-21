@@ -20,9 +20,9 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
-#include "math.h"
-#include "string.h"
-#include "function.h"
+#include <flame/math.h>
+#include <flame/string.h>
+#include <flame/function.h>
 
 #include <process.h>
 #include <assert.h>

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "type.h"
+#include <flame/type.h>
 
 #include <math.h>
 #include <string>
