@@ -20,15 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "device.h"
-#include "buffer.h"
-#include "image.h"
-#include "renderpass.h"
-#include "framebuffer.h"
-#include "shader.h"
-#include "pipeline.h"
-#include "descriptor.h"
-#include "renderpath.h"
+#include <flame/graphics/device.h>
+#include <flame/graphics/buffer.h>
+#include <flame/graphics/image.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/framebuffer.h>
+#include <flame/graphics/shader.h>
+#include <flame/graphics/pipeline.h>
+#include <flame/graphics/descriptor.h>
+#include <flame/graphics/renderpath.h>
 
 #include <flame/file.h>
 #include <flame/blueprint.h>

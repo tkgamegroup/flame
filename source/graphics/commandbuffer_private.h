@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "commandbuffer.h"
+#include <flame/graphics/commandbuffer.h>
 #include "graphics_private.h"
 
 namespace flame

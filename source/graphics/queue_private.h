@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "queue.h"
+#include <flame/graphics/queue.h>
 #include "graphics_private.h"
 
 namespace flame

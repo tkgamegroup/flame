@@ -20,10 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "blueprint.h"
-#include "typeinfo.h"
-#include "file.h"
-#include "serialize.h"
+#include <flame/blueprint.h>
+#include <flame/typeinfo.h>
+#include <flame/file.h>
+#include <flame/serialize.h>
 
 #include <vector>
 #include <string>

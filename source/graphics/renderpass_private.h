@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include <flame/graphics/renderpass.h>
 #include "graphics_private.h"
-#include "renderpass.h"
 
 namespace flame
 {

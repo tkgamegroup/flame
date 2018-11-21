@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "pipeline.h"
+#include <flame/graphics/pipeline.h>
 #include "graphics_private.h"
 
 #include <vector>

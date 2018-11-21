@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "buffer.h"
+#include <flame/graphics/buffer.h>
 
 #include <flame/type.h>
 #include <flame/model/model.h>

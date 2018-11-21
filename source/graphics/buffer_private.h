@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/graphics/buffer.h>
 #include "graphics_private.h"
-#include "buffer.h"
 
 namespace flame
 {

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "swapchain.h"
+#include <flame/graphics/swapchain.h>
 #include "graphics_private.h"
 
 #include <flame/window.h>

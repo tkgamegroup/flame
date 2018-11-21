@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "scene.h"
+#include <flame/3d/scene.h>
 
 namespace flame
 {

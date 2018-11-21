@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "graphics.h"
+#include <flame/graphics/graphics.h>
 
 namespace flame
 {

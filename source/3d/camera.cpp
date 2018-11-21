@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "camera.h"
+#include <flame/3d/camera.h>
 
 #include <flame/window.h>
 

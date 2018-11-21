@@ -22,7 +22,7 @@
 
 #include "model_private.h"
 #include "scene_private.h"
-#include "camera.h"
+#include <flame/3d/camera.h>
 
 #include <flame/bitmap.h>
 #include <flame/graphics/device.h>

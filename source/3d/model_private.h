@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "model.h"
+#include <flame/3d/model.h>
 
 #include <vector>
 

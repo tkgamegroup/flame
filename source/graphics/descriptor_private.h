@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "descriptor.h"
+#include <flame/graphics/descriptor.h>
 #include "graphics_private.h"
 
 #include <vector>

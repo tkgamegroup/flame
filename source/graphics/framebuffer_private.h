@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "framebuffer.h"
+#include <flame/graphics/framebuffer.h>
 #include "graphics_private.h"
 
 namespace flame

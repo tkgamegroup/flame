@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "3d.h"
+#include <flame/3d/3d.h>
 
 #include <flame/math.h>
 

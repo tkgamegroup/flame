@@ -22,9 +22,9 @@
 
 #include "device_private.h"
 #include "semaphore_private.h"
-#include "renderpass.h"
-#include "image.h"
-#include "framebuffer.h"
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/image.h>
+#include <flame/graphics/framebuffer.h>
 #include "swapchain_private.h"
 
 #include <flame/type.h>

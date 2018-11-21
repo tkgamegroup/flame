@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "device.h"
+#include <flame/graphics/device.h>
 #include "graphics_private.h"
 
 #include <flame/type.h>

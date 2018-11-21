@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "shader.h"
+#include <flame/graphics/shader.h>
 #include "graphics_private.h"
 
 #include <list>
