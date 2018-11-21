@@ -1,0 +1,21 @@
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(binding = 0, r16) uniform image2D height_img;
+
+layout(push_constant) uniform pc_t
+{
+	vec2 center;
+	float size;
+	float press;
+}pc;
+
+void main()
+{
+	float d = distance(pc.center, gl_GlobalInvocationID.xy);
+	if (d < pc.size)
+	{
+		vec4 v = imageLoad(height_img, ivec2(gl_GlobalInvocationID.xy));
+		v.r += (1.0 - d / pc.size) * 0.4;
+		imageStore(height_img, ivec2(gl_GlobalInvocationID.xy), v);
+	}
+}

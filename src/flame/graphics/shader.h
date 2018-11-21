@@ -1,0 +1,70 @@
+// MIT License
+// 
+// Copyright (c) 2018 wjs
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#pragma once
+
+#include "graphics.h"
+
+#include <flame/string.h>
+
+#include <vector>
+
+namespace flame
+{
+	namespace graphics
+	{
+		struct Device;
+
+		struct ShaderVariableType
+		{
+			String name;
+			int offset;
+			int size;
+			int count;
+			int array_stride;
+
+			struct Private;
+			Private *_priv;
+			
+			FLAME_GRAPHICS_EXPORTS ShaderVariableType();
+			FLAME_GRAPHICS_EXPORTS ~ShaderVariableType();
+		};
+
+		struct ShaderResource
+		{
+			ShaderResourceType type;
+			int set;
+			int binding;
+			ShaderVariableType var_type;
+		};
+
+		struct Shader
+		{
+			ShaderType type;
+
+			FLAME_GRAPHICS_EXPORTS ShaderResource *get_resource(const char *name);
+
+			FLAME_GRAPHICS_EXPORTS static Shader *get(Device *d, const std::wstring &filename, const std::string &prefix);
+			FLAME_GRAPHICS_EXPORTS static void release(Shader *s);
+		};
+	}
+}

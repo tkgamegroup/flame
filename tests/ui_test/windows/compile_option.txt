@@ -1,0 +1,7 @@
+include:
+../../../src
+link:
+../../../bin/flame_graphics.lib
+../../../bin/flame_UI.lib
+output:
+../../../bin/UI/functions

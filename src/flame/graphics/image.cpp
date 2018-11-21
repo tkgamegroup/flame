@@ -1,0 +1,659 @@
+// MIT License
+// 
+// Copyright (c) 2018 wjs
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "device_private.h"
+#include "buffer_private.h"
+#include "framebuffer_private.h"
+#include "pipeline_private.h"
+#include "descriptor_private.h"
+#include "commandbuffer_private.h"
+#include "queue_private.h"
+#include "image_private.h"
+
+#include <flame/string.h>
+#include <flame/file.h>
+#include <flame/bitmap.h>
+
+#include <algorithm>
+
+namespace flame
+{
+	namespace graphics
+	{
+		Format Image::find_format(int channel, int bpp)
+		{
+			switch (channel)
+			{
+			case 0:
+				switch (bpp)
+				{
+				case 8:
+					return Format_R8_UNORM;
+				default:
+					return Format_Undefined;
+
+				}
+				break;
+			case 1:
+				switch (bpp)
+				{
+				case 8:
+					return Format_R8_UNORM;
+				case 16:
+					return Format_R16_UNORM;
+				default:
+					return Format_Undefined;
+				}
+				break;
+			case 4:
+				switch (bpp)
+				{
+				case 32:
+					return Format_R8G8B8A8_UNORM;
+				default:
+					return Format_Undefined;
+				}
+				break;
+			default:
+				return Format_Undefined;
+			}
+		}
+
+		inline ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, SampleCount _sample_count, int _usage, int _mem_prop)
+		{
+			format = _format;
+			size = _size;
+			level = _level;
+			layer = _layer;
+			sample_count = _sample_count;
+
+			set_props();
+
+			usage = _usage;
+			mem_prop = _mem_prop;
+			d = (DevicePrivate*)_d;
+
+			VkImageCreateInfo imageInfo;
+			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+			imageInfo.flags = 0;
+			imageInfo.pNext = nullptr;
+			imageInfo.imageType = VK_IMAGE_TYPE_2D;
+			imageInfo.format = Z(format);
+			imageInfo.extent.width = size.x;
+			imageInfo.extent.height = size.y;
+			imageInfo.extent.depth = 1;
+			imageInfo.mipLevels = level;
+			imageInfo.arrayLayers = layer;
+			imageInfo.samples = Z(sample_count);
+			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+			imageInfo.usage = Z((ImageUsage)usage, format, sample_count);
+			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			imageInfo.queueFamilyIndexCount = 0;
+			imageInfo.pQueueFamilyIndices = nullptr;
+			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+			vk_chk_res(vkCreateImage(d->v, &imageInfo, nullptr, &v));
+
+			VkMemoryRequirements memRequirements;
+			vkGetImageMemoryRequirements(d->v, v, &memRequirements);
+
+			VkMemoryAllocateInfo allocInfo;
+			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+			allocInfo.pNext = nullptr;
+			allocInfo.allocationSize = memRequirements.size;
+			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, Z((MemProp)mem_prop));
+
+			vk_chk_res(vkAllocateMemory(d->v, &allocInfo, nullptr, &m));
+
+			vk_chk_res(vkBindImageMemory(d->v, v, m, 0));
+		}
+
+		inline ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, void *native)
+		{
+			format = _format;
+			size = _size;
+			level = _level;
+			layer = _layer;
+			sample_count = SampleCount_1;
+
+			set_props();
+
+			usage = 0;
+			mem_prop = 0;
+			d = (DevicePrivate*)_d;
+
+			v = (VkImage)native;
+			m = 0;
+		}
+
+		inline ImagePrivate::~ImagePrivate()
+		{
+			if (m != 0)
+			{
+				vkFreeMemory(d->v, m, nullptr);
+				vkDestroyImage(d->v, v, nullptr);
+			}
+		}
+
+		inline void ImagePrivate::set_props()
+		{
+			switch (format)
+			{
+			case Format_R8_UNORM:
+				channel_ = 1;
+				bpp_ = 8;
+				break;
+			case Format_R16_UNORM:
+				channel_ = 1;
+				bpp_ = 16;
+				break;
+			case Format_R32_SFLOAT:
+				channel_ = 1;
+				bpp_ = 32;
+				break;
+			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
+				channel_ = 4;
+				bpp_ = 32;
+				break;
+			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
+				channel_ = 4;
+				bpp_ = 64;
+				break;
+			case Format_R32G32B32A32_SFLOAT:
+				channel_ = 4;
+				bpp_ = 128;
+				break;
+			case Format_Depth16:
+				channel_ = 1;
+				bpp_ = 16;
+				break;
+			default:
+				channel_ = 0;
+				bpp_ = 0;
+				assert(0);
+			}
+			pitch_ = Bitmap::get_pitch(size.x, bpp_);
+			data_size_ = pitch_ * size.y;
+		}
+
+		inline void ImagePrivate::init(const Bvec4 &col)
+		{
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->clear_image(this, col);
+			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+		}
+
+		inline Bvec4 ImagePrivate::get_pixel(int x, int y)
+		{
+			auto stag_buf = Buffer::create(d, sizeof(Bvec4), BufferUsageTransferDst, MemPropHost);
+
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(1, 1, 0, 0, x, y));
+			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+
+			Bvec4 ret;
+			stag_buf->map();
+			memcpy(&ret, stag_buf->mapped, stag_buf->size);
+			stag_buf->flush();
+
+			Buffer::destroy(stag_buf);
+
+			return ret;
+		}
+
+		inline void ImagePrivate::set_pixel(int x, int y, const Bvec4 &col)
+		{
+			auto stag_buf = Buffer::create(d, sizeof(Bvec4), BufferUsageTransferSrc, MemPropHost);
+			stag_buf->map();
+			memcpy(stag_buf->mapped, &col, stag_buf->size);
+			stag_buf->flush();
+
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(1, 1, 0, 0, x, y));
+			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+
+			Buffer::destroy(stag_buf);
+		}
+
+		inline void ImagePrivate::set_pixel(int x, int y, const Hvec4 &col)
+		{
+			auto stag_buf = Buffer::create(d, sizeof(Hvec4), BufferUsageTransferSrc, MemPropHost);
+			stag_buf->map();
+			memcpy(stag_buf->mapped, &col, stag_buf->size);
+			stag_buf->flush();
+
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(1, 1, 0, 0, x, y));
+			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+
+			Buffer::destroy(stag_buf);
+		}
+
+		inline void ImagePrivate::get_pixels(void *dst)
+		{
+			auto stag_buf = Buffer::create(d, data_size_, BufferUsageTransferDst, MemPropHost);
+
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(size.x, size.y));
+			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+
+			stag_buf->map();
+			memcpy(dst, stag_buf->mapped, stag_buf->size);
+			stag_buf->flush();
+
+			Buffer::destroy(stag_buf);
+		}
+
+		inline void ImagePrivate::set_pixels(void *src)
+		{
+			auto stag_buf = Buffer::create(d, data_size_, BufferUsageTransferSrc, MemPropHost);
+			stag_buf->map();
+			memcpy(stag_buf->mapped, src, stag_buf->size);
+			stag_buf->flush();
+
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(size.x, size.y));
+			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+
+			Buffer::destroy(stag_buf);
+		}
+
+		inline void ImagePrivate::save_png(const wchar_t *filename)
+		{
+			if (bpp_ / channel_ > 8)
+			{
+				auto img = Image::create(d, Format_R8G8B8A8_UNORM, size, 1, 1, SampleCount_1, ImageUsageAttachment | ImageUsageTransferSrc, MemPropDevice);
+
+				FramebufferInfo fb_info;
+				fb_info.rp = d->rp_one_rgba32;
+				fb_info.views.push_back(Imageview::get(img));
+				auto fb = Framebuffer::get(d, fb_info);
+				auto ds = Descriptorset::create(d->dp, d->pl_trans->layout()->dsl(0));
+				auto cb = Commandbuffer::create(d->gcp);
+
+				ds->set_imageview(0, 0, Imageview::get(this), d->sp_bi_linear);
+
+				cb->begin(true);
+				cb->begin_renderpass(d->rp_one_rgba32, fb, nullptr);
+
+				auto vp = Rect(Vec2(0.f), Vec2(size));
+				cb->set_viewport(vp);
+				cb->set_scissor(vp);
+
+				cb->bind_pipeline(d->pl_trans);
+				cb->bind_descriptorset(ds, 0);
+				cb->draw(3, 1, 0, 0);
+
+				cb->end_renderpass();
+				cb->end();
+				d->gq->submit(cb, nullptr, nullptr);
+				d->gq->wait_idle();
+
+				Framebuffer::release(fb);
+				Commandbuffer::destroy(cb);
+
+				img->save_png(filename);
+
+				Image::destroy(img);
+			}
+			else
+			{
+				auto bmp = Bitmap::create(size, channel_, bpp_);
+				get_pixels(bmp->data);
+				bmp->save(filename);
+			}
+		}
+
+		void Image::init(const Bvec4 &col)
+		{
+			((ImagePrivate*)this)->init(col);
+		}
+
+		Bvec4 Image::get_pixel(int x, int y)
+		{
+			return ((ImagePrivate*)this)->get_pixel(x, y);
+		}
+
+		void Image::set_pixel(int x, int y, const Bvec4 &col)
+		{
+			((ImagePrivate*)this)->set_pixel(x, y, col);
+		}
+
+		void Image::set_pixel(int x, int y, const Hvec4 &col) 
+		{
+			((ImagePrivate*)this)->set_pixel(x, y, col);
+		}
+
+		void Image::get_pixels(void *dst)
+		{
+			((ImagePrivate*)this)->get_pixels(dst);
+		}
+
+		void Image::set_pixels(void *src)
+		{
+			((ImagePrivate*)this)->set_pixels(src);
+		}
+
+		void Image::save_png(const wchar_t *filename)
+		{
+			((ImagePrivate*)this)->save_png(filename);
+		}
+
+		Image *Image::create(Device *d, Format format, const Ivec2 &size, int level, int layer, SampleCount sample_count, int usage, int mem_prop, void *data)
+		{
+			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage, mem_prop);
+
+			if (data)
+			{
+				auto staging_buffer = Buffer::create(d, i->data_size_, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				staging_buffer->map();
+				memcpy(staging_buffer->mapped, data, staging_buffer->size);
+				staging_buffer->unmap();
+
+				auto cb = Commandbuffer::create(d->gcp);
+				cb->begin(true);
+				cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
+				BufferImageCopy copy(i->size.x, i->size.y);
+				cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
+				cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->end();
+				d->gq->submit(cb, nullptr, nullptr);
+				d->gq->wait_idle();
+				Commandbuffer::destroy(cb);
+				Buffer::destroy(staging_buffer);
+			}
+
+			return i;
+		}
+
+		Image *Image::create_from_bitmap(Device *d, Bitmap *bmp, int extra_usage)
+		{
+			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage, MemPropDevice);
+
+			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+			staging_buffer->map();
+			memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
+			staging_buffer->unmap();
+
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
+			BufferImageCopy copy(bmp->size.x, bmp->size.y);
+			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
+			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+			Buffer::destroy(staging_buffer);
+
+			return i;
+
+		}
+
+		Image *Image::create_from_file(Device *d, const wchar_t *filename, int extra_usage)
+		{
+			std::filesystem::path path(filename);
+			if (!std::filesystem::exists(path))
+				return nullptr;
+
+			int width, height, level, layer;
+			auto fmt = Format_Undefined;
+
+			Buffer *staging_buffer;
+			std::vector<BufferImageCopy> buffer_copy_regions;
+
+			auto ext = path.extension().string();
+			if (ext == ".ktx" || ext == ".dds")
+			{
+				//gli::gl GL(gli::gl::PROFILE_GL33);
+
+				//auto gli_texture = gli::load(filename);
+				//if (gli_texture.empty())
+				//	assert(0);
+
+				//assert(gli_texture.target() == gli::TARGET_2D);
+				//auto const gli_format = GL.translate(gli_texture.format(), gli_texture.swizzles());
+
+				//width = gli_texture.extent().x;
+				//height = gli_texture.extent().y;
+				//level = gli_texture.levels();
+				//layer = gli_texture.layers();
+
+				//switch (gli_format.Internal)
+				//{
+				//case gli::gl::INTERNAL_RGBA_DXT5:
+				//	fmt = Format_RGBA_BC3;
+				//	break;
+				//case gli::gl::INTERNAL_RGBA_ETC2:
+				//	fmt = Format_RGBA_ETC2;
+				//	break;
+				//}
+
+				//staging_buffer = create_buffer(d, gli_texture.size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				//staging_buffer->map();
+				//memcpy(staging_buffer->mapped, gli_texture.data(), staging_buffer->size);
+				//staging_buffer->unmap();
+
+				//auto offset = 0;
+				//for (auto i = 0; i < level; i++)
+				//{
+				//	BufferTextureCopy c;
+				//	c.buffer_offset = offset;
+				//	c.image_x = 0;
+				//	c.image_y = 0;
+				//	c.image_width = gli_texture.extent(i).x;
+				//	c.image_height = gli_texture.extent(i).y;
+				//	c.image_level = i;
+				//	buffer_copy_regions.push_back(c);
+				//	offset += gli_texture.size(i);
+				//}
+			}
+			else
+			{
+				auto bmp = Bitmap::create_from_file(filename);
+				if (bmp->channel == 3)
+					bmp->add_alpha_channel();
+
+				width = bmp->size.x;
+				height = bmp->size.y;
+				level = layer = 1;
+
+				fmt = find_format(bmp->channel, bmp->bpp);
+
+				staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				staging_buffer->map();
+				memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
+				staging_buffer->unmap();
+
+				Bitmap::destroy(bmp);
+
+				buffer_copy_regions.push_back(BufferImageCopy(width, height));
+			}
+
+			auto i = Image::create(d, fmt, Ivec2(width, height), level, layer, SampleCount_1,
+				ImageUsageSampled | ImageUsageTransferDst | extra_usage, MemPropDevice);
+
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(staging_buffer, i, buffer_copy_regions.size(), buffer_copy_regions.data());
+			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+
+			Buffer::destroy(staging_buffer);
+
+			return i;
+		}
+
+		Image *Image::create_from_native(Device *d, Format format, const Ivec2 &size, int level, int layer, void *native)
+		{
+			return new ImagePrivate(d, format, size, level, layer, native);
+		}
+
+		void Image::destroy(Image *i)
+		{
+			delete (ImagePrivate*)i;
+		}
+
+		inline ImageviewPrivate::ImageviewPrivate(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
+		{
+			i = (ImagePrivate*)_i;
+			type = _type;
+			base_level = _base_level;
+			level_count = _level_count;
+			base_layer = _base_layer;
+			layer_count = _layer_count;
+
+			if (_mapping)
+				mapping = *_mapping;
+			else
+				mapping.r = mapping.g = mapping.b = mapping.a = SwizzleIdentity;
+
+			VkImageViewCreateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			info.flags = 0;
+			info.pNext = nullptr;
+			info.components.r = Z(mapping.r);
+			info.components.g = Z(mapping.g);
+			info.components.b = Z(mapping.b);
+			info.components.a = Z(mapping.a);
+			info.image = i->v;
+			info.viewType = Z(type);
+			info.format = Z(i->format);
+			info.subresourceRange.aspectMask = Z(aspect_from_format(i->format));
+			info.subresourceRange.baseMipLevel = base_level;
+			info.subresourceRange.levelCount = level_count;
+			info.subresourceRange.baseArrayLayer = base_layer;
+			info.subresourceRange.layerCount = layer_count;
+
+			vk_chk_res(vkCreateImageView(i->d->v, &info, nullptr, &v));
+		}
+
+		inline ImageviewPrivate::~ImageviewPrivate()
+		{
+			vkDestroyImageView(i->d->v, v, nullptr);
+		}
+
+		inline bool ImageviewPrivate::same(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
+		{
+			if (type != _type ||
+				base_level != _base_level || level_count != _level_count ||
+				base_layer != _base_layer || layer_count != _layer_count ||
+				!(
+					!_mapping ?
+					(!(mapping.r != SwizzleIdentity || mapping.r != SwizzleR ||
+						mapping.g != SwizzleIdentity || mapping.g != SwizzleG ||
+						mapping.b != SwizzleIdentity || mapping.b != SwizzleB ||
+						mapping.a != SwizzleIdentity || mapping.a != SwizzleA))
+					:
+					(!(mapping.r != _mapping->r ||
+						mapping.g != _mapping->g ||
+						mapping.b != _mapping->b ||
+						mapping.a != _mapping->a))
+					)
+				)
+				return false;
+			return true;
+		}
+
+		Image *Imageview::image() const
+		{
+			return ((ImageviewPrivate*)this)->i;
+		}
+
+		Imageview *Imageview::get(Image *_i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping)
+		{
+			for (auto v : ((ImagePrivate*)_i)->views)
+			{
+				if (!v->same(_i, type, base_level, level_count, base_layer, layer_count, mapping))
+					continue;
+				v->ref_count++;
+				return v;
+			}
+
+			auto v = new ImageviewPrivate(_i, type, base_level, level_count, base_layer, layer_count, mapping);
+			v->ref_count = 1;
+			((ImagePrivate*)_i)->views.push_back(v);
+			return v;
+		}
+
+		void Imageview::release(Imageview *v)
+		{
+			if (((ImageviewPrivate*)v)->ref_count == 1)
+			{
+				auto &views = ((ImageviewPrivate*)v)->i->views;
+				for (auto it = views.begin(); it != views.end(); it++)
+				{
+					if ((*it) == v)
+					{
+						views.erase(it);
+						break;
+					}
+				}
+				delete (ImageviewPrivate*)v;
+			}
+			else
+				((ImageviewPrivate*)v)->ref_count--;
+		}
+	}
+}
+

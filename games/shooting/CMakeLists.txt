@@ -1,0 +1,8 @@
+file(GLOB_RECURSE HEADER_LIST "src/*.h*")
+file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
+add_exe(shooting "${HEADER_LIST}" "${SOURCE_LIST}" "/src" "games")
+target_link_libraries(shooting flame_surface)
+target_link_libraries(shooting flame_graphics)
+target_link_libraries(shooting flame_UI)
+target_link_libraries(shooting flame_model)
+target_link_libraries(shooting flame_physics)

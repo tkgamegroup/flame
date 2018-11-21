@@ -1,0 +1,6 @@
+file(GLOB_RECURSE HEADER_LIST "src/*.h*")
+file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
+add_exe(terrain_test "${HEADER_LIST}" "${SOURCE_LIST}" "/src" "tests")
+target_link_libraries(terrain_test flame_surface)
+target_link_libraries(terrain_test flame_graphics)
+target_link_libraries(terrain_test flame_model)
