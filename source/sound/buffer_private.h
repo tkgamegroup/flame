@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include <flame/sound/buffer.h>
 #include "sound_private.h"
-#include "buffer.h"
 
 #include <fstream>
 

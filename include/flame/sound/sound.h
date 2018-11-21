@@ -27,10 +27,3 @@
 #else
 #define FLAME_SOUND_EXPORTS __declspec(dllimport)
 #endif
-
-namespace flame
-{
-	namespace sound
-	{
-	}
-}

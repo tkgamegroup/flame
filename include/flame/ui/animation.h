@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "UI.h"
+#include <flame/ui/ui.h>
 
 #include <flame/math.h>
 

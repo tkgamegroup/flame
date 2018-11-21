@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "instance.h"
+#include <flame/ui/instance.h>
 #include "widget_private.h"
 
 #include <flame/window.h>

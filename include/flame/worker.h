@@ -29,6 +29,7 @@
 #endif
 
 #include <flame/type.h>
+#include <flame/function.h>
 
 namespace flame
 {

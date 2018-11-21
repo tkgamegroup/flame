@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/ui/canvas.h>
 #include "instance_private.h"
-#include "canvas.h"
 
 #include <flame/font.h>
 #include <flame/graphics/device.h>

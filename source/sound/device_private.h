@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include <flame/sound/device.h>
 #include "sound_private.h"
-#include "device.h"
 
 namespace flame
 {

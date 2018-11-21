@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "instance.h"
-#include "widget.h"
-#include "style.h"
-#include "animation.h"
+#include <flame/ui/instance.h>
+#include <flame/ui/widget.h>
+#include <flame/ui/style.h>
+#include <flame/ui/animation.h>
 
 #include <tuple>
 #include <list>

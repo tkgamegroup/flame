@@ -24,11 +24,11 @@
 #include <flame/file.h>
 #include <flame/system.h>
 
+#include <flame/ui/canvas.h>
+#include <flame/ui/style.h>
+#include <flame/ui/icon.h>
 #include "instance_private.h"
 #include "widget_private.h"
-#include "canvas.h"
-#include "style.h"
-#include "icon.h"
 
 #include <Windows.h>
 #include <stdarg.h>

@@ -20,13 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/ui/widget.h>
+#include <flame/ui/canvas.h>
+#include <flame/ui/widget.h>
+#include <flame/ui/style.h>
+#include <flame/ui/icon.h>
+#include <flame/ui/blueprint_drawing.h>
 #include "instance_private.h"
-#include "widget.h"
-#include "canvas.h"
-#include "widget.h"
-#include "style.h"
-#include "icon.h"
-#include "blueprint_drawing.h"
 
 #include <flame/serialize.h>
 #include <flame/file.h>

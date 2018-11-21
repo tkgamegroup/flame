@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/sound/context.h>
 #include "device_private.h"
-#include "context.h"
 
 namespace flame
 {

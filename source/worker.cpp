@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #include <flame/worker.h>
-#include <flame/function.h>
 
 #include <mutex>
 #include <vector>
@@ -34,6 +33,8 @@ namespace flame
 	static auto workers = all_workers;
 
 	static std::vector<Function*> works;
+
+	void try_distribute();
 
 	static void do_work(CommonData *d)
 	{

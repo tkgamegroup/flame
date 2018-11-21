@@ -20,9 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "instance.h"
-#include "widget.h"
-#include "style.h"
+#include <flame/ui/widget.h>
+#include <flame/ui/style.h>
 
 namespace flame
 {
