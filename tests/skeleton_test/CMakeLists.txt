@@ -1,6 +1,5 @@
-file(GLOB_RECURSE HEADER_LIST "src/*.h*")
 file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
-add_exe(skeleton_test "${HEADER_LIST}" "${SOURCE_LIST}" "/src" "tests")
+add_exe(skeleton_test "${SOURCE_LIST}" "/src" "tests")
 target_link_libraries(skeleton_test flame_surface)
 target_link_libraries(skeleton_test flame_graphics)
 target_link_libraries(skeleton_test flame_model)

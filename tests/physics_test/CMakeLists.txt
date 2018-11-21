@@ -1,6 +1,5 @@
-file(GLOB_RECURSE HEADER_LIST "src/*.h*")
 file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
-add_exe(physics_test "${HEADER_LIST}" "${SOURCE_LIST}" "/src" "tests")
+add_exe(physics_test "${SOURCE_LIST}" "/src" "tests")
 target_link_libraries(physics_test flame_surface)
 target_link_libraries(physics_test flame_graphics)
 target_link_libraries(physics_test flame_model)

@@ -33,7 +33,7 @@ set(OPENAL_PATH "" CACHE PATH "OpenAL Path")
 
 #configure_file(src/flame/config.in ${CMAKE_SOURCE_DIR}/src/flame/config.h)
 
-add_subdirectory(src/flame)
+add_subdirectory(source)
 add_subdirectory(tests)
 add_subdirectory(games)
 add_subdirectory(tools)

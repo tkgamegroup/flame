@@ -1,5 +1,4 @@
-file(GLOB_RECURSE HEADER_LIST "src/*.h*")
 file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
-add_exe(tetris "${HEADER_LIST}" "${SOURCE_LIST}" "/src" "games")
-target_link_libraries(tetris flame_UI)
+add_exe(tetris "${SOURCE_LIST}" "/src" "games")
+target_link_libraries(tetris flame_ui)
 target_link_libraries(tetris flame_sound)

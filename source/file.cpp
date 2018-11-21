@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "file.h"
-#include "typeinfo.h"
+#include <flame/file.h>
+#include <flame/typeinfo.h>
 
 #include <vector>
 #include <memory>
