@@ -38,7 +38,23 @@ namespace flame
 		{
 			Instance *instance;
 
-			std::vector<Function*> draw_list;
+			WidgetPrivate *parent;
+			int layer;
+			std::vector<std::unique_ptr<WidgetPrivate>> children_[2];
+
+			std::vector<std::tuple<WidgetPrivate*, int, int, Function*>> delay_adds;
+			std::vector<std::pair<int, int>> delay_removes_by_idx;
+			std::vector<WidgetPrivate*> delay_removes_by_ptr;
+			std::vector<std::pair<int, int>> delay_takes_by_idx;
+			std::vector<WidgetPrivate*> delay_takes_by_ptr;
+			std::vector<std::tuple<int, int, int>> delay_takes;
+			std::vector<std::tuple<int, int, int>> delay_clears;
+
+			typedef std::vector<Function*> closet;
+			std::vector<closet> closets;
+			closet *curr_closet;
+
+			std::vector<std::tuple<float, float, bool, Function*>> animations;
 
 			std::vector<Function*> mouseenter_listeners;
 			std::vector<Function*> mouseleave_listeners;
@@ -57,24 +73,6 @@ namespace flame
 			std::vector<Function*> addchild_listeners;
 
 			std::vector<std::pair<unsigned int, Function*>> delay_listener_remove;
-
-			WidgetPrivate *parent;
-			int layer;
-			std::vector<std::unique_ptr<WidgetPrivate>> children_[2];
-
-			std::vector<std::tuple<WidgetPrivate*, int, int, Function*>> delay_adds;
-			std::vector<std::pair<int, int>> delay_removes_by_idx;
-			std::vector<WidgetPrivate*> delay_removes_by_ptr;
-			std::vector<std::pair<int, int>> delay_takes_by_idx;
-			std::vector<WidgetPrivate*> delay_takes_by_ptr;
-			std::vector<std::tuple<int, int, int>> delay_takes;
-			std::vector<std::tuple<int, int, int>> delay_clears;
-
-			typedef std::vector<Function*> closet;
-			std::vector<closet> closets;
-			closet *curr_closet;
-
-			std::vector<std::tuple<float, float, bool, Function*>> animations;
 
 			std::vector<CommonData> data_storage_;
 			std::vector<std::wstring> string_storage_;

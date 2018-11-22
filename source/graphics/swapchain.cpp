@@ -59,7 +59,7 @@ namespace flame
 
 			create();
 
-			w->add_listener(cH("resize"), Swapchain_resize, "this:swapchain", this);
+			w->add_listener(cH("resize"), Swapchain_resize, "p", this);
 		}
 
 		inline SwapchainPrivate::~SwapchainPrivate()

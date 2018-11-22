@@ -70,5 +70,23 @@ namespace flame
 		{
 			return v[idx];
 		}
+
+		inline const T &operator[](int idx) const
+		{
+			return v[idx];
+		}
+
+		inline void push_back(const T &_v)
+		{
+			resize(size + 1);
+			v[size - 1] = _v;
+		}
+
+		inline void remove(int idx)
+		{
+			for (auto i = idx; i < size - 1; i++)
+				v[i] = v[i + 1];
+			resize(size - 1);
+		}
 	};
 }

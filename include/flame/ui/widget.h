@@ -25,6 +25,7 @@
 #include <flame/ui/ui.h>
 
 #include <flame/math.h>
+#include <flame/array.h>
 #include <flame/string.h>
 #include <flame/function.h>
 
@@ -153,6 +154,8 @@ namespace flame
 			int content_size; // valid after arranging
 			bool showed; // vaild after instance processing
 			State state; // vaild after instance processing
+
+			Array<Function*> draw_commands$;
 
 			FLAME_UI_EXPORTS void set_width(float x, Widget *sender = nullptr);
 			FLAME_UI_EXPORTS void set_height(float y, Widget *sender = nullptr);

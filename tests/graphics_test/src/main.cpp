@@ -24,33 +24,31 @@
 #include <flame/system.h>
 #include <flame/math.h>
 #include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/descriptor.h>
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/image.h>
-#include <flame/graphics/sampler.h>
+#include <flame/graphics/renderpass.h>
 #include <flame/graphics/framebuffer.h>
+#include <flame/graphics/pipeline.h>
+#include <flame/graphics/descriptor.h>
+#include <flame/graphics/sampler.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/semaphore.h>
 #include <flame/graphics/queue.h>
+#include <flame/graphics/swapchain.h>
 
 #include <algorithm>
 
 using namespace flame;
 using namespace graphics;
 
-int main(int argc, char **args)
+extern "C" __declspec(dllexport) int main()
 {
-
+	Ivec2 res(1280, 720);
 
 
 	//auto near_plane = 0.1f;
 	//auto far_plane = 1000.f;
 	//auto fovy = 60.f;
-
-	//vec2 res(1280, 720);
 
 	//auto aspect = (float)res.x / res.y;
 

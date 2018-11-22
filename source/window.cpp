@@ -437,35 +437,35 @@ namespace flame
 			switch (type)
 			{
 			case cH("key down"):
-				parm_fmt = "i:key";
+				parm_fmt = "i";
 				list = &keydown_listeners;
 				break;
 			case cH("key up"):
-				parm_fmt = "i:key";
+				parm_fmt = "i";
 				list = &keyup_listeners;
 				break;
 			case cH("char"):
-				parm_fmt = "i:ansich";
+				parm_fmt = "i";
 				list = &char_listeners;
 				break;
 			case cH("mouse down"):
-				parm_fmt = "i:mouse i2:pos";
+				parm_fmt = "i i2";
 				list = &mousedown_listeners;
 				break;
 			case cH("mouse up"):
-				parm_fmt = "i:mouse i2:pos";
+				parm_fmt = "i i2";
 				list = &mouseup_listeners;
 				break;
 			case cH("mouse move"):
-				parm_fmt = "i2:pos";
+				parm_fmt = "i2";
 				list = &mousemove_listeners;
 				break;
 			case cH("mouse scroll"):
-				parm_fmt = "i:scroll";
+				parm_fmt = "i";
 				list = &mousescroll_listeners;
 				break;
 			case cH("resize"):
-				parm_fmt = "i2:size";
+				parm_fmt = "i2";
 				list = &resize_listeners;
 				break;
 			case cH("destroy"):

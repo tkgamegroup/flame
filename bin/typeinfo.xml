@@ -488,6 +488,7 @@
 				<item tag="enum_single" type="ui::EventAttitude" name="event_attitude" offset="140"/>
 				<item tag="varible" type="bool" name="want_key_focus" offset="144"/>
 				<item tag="varible" type="bool" name="visible" offset="145"/>
+				<item tag="array_of_pointer" type="Function" name="draw_commands" offset="176"/>
 			</udt>
 		</udts>
 	</cpp>

@@ -53,9 +53,8 @@ namespace flame
 			b3   - Bvec3
 			b4   - Bvec4
 			p    - void*
-			str  - char*
-			wstr - wchar_t*
-			this - this pointer
+			s    - char*
+			sw   - wchar_t*
 
 		usage:
 			[fmt]:[name]
@@ -63,9 +62,9 @@ namespace flame
 
 	typedef void(*PF)(CommonData*);
 
-	FLAME_FUNCTION_EXPORTS PF get_PF(unsigned int id, const char **out_filename = nullptr, int *out_line_beg = nullptr, int *out_line_end = nullptr);
-	FLAME_FUNCTION_EXPORTS unsigned int get_PF_props(PF pf, const char **out_filename = nullptr, int *out_line_beg = nullptr, int *out_line_end = nullptr);
-	FLAME_FUNCTION_EXPORTS void register_PF(PF pf, unsigned int id, const char *filename, int line_beg, int line_end);
+	FLAME_FUNCTION_EXPORTS void register_PF(PF pf, unsigned int id, const char *parm_fmt, const char *filename, int line_beg, int line_end);
+	FLAME_FUNCTION_EXPORTS PF find_registered_PF(uint id, const char **out_parm_fmt = nullptr, const char **out_filename = nullptr, int *out_line_beg = nullptr, int *out_line_end = nullptr);
+	FLAME_FUNCTION_EXPORTS uint find_registered_PF(PF pf, const char **out_parm_fmt = nullptr, const char **out_filename = nullptr, int *out_line_beg = nullptr, int *out_line_end = nullptr);
 
 	struct Function
 	{
@@ -80,10 +79,11 @@ namespace flame
 		FLAME_FUNCTION_EXPORTS void exec();
 		FLAME_FUNCTION_EXPORTS void exec_in_new_thread();
 
+		FLAME_FUNCTION_EXPORTS static Function *create(uint id, const char *capt_fmt, va_list ap);
 		FLAME_FUNCTION_EXPORTS static Function *create(PF pf, const char *parm_fmt, const char *capt_fmt, va_list ap);
 		FLAME_FUNCTION_EXPORTS static void destroy(Function *f);
 	};
 }
 
-#define FLAME_REGISTER_FUNCTION_BEG(name, id) struct name{name(){register_PF(v, id, __FILE__, line_beg, line_end);}static const int line_beg = __LINE__;static void v(CommonData *d){
+#define FLAME_REGISTER_FUNCTION_BEG(name, id, parm_fmt) struct name{name(){register_PF(v, id, parm_fmt, __FILE__, line_beg, line_end);}static const int line_beg = __LINE__;static void v(CommonData *d){
 #define FLAME_REGISTER_FUNCTION_END(name) }static const int line_end = __LINE__;};static name name##_;

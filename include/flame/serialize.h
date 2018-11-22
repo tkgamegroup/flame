@@ -41,6 +41,14 @@ namespace flame
 {
 	struct XmlNode;
 
+	namespace typeinfo
+	{
+		namespace cpp
+		{
+			struct UDT;
+		}
+	}
+
 	inline String to_string(float v, int precision = 6)
 	{
 		char buf[20];

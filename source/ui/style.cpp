@@ -27,7 +27,7 @@ namespace flame
 {
 	namespace ui
 	{
-		FLAME_REGISTER_FUNCTION_BEG(Style_size, FLAME_GID(24726))
+		FLAME_REGISTER_FUNCTION_BEG(Style_size, FLAME_GID(24726), "p")
 			auto w = (Widget*)d[0].p;
 
 			switch (w->state)
@@ -46,10 +46,10 @@ namespace flame
 			auto normal_offset = w->background_offset$;
 			auto active_offset = normal_offset - Vec4(minus.x, minus.y, minus.x, minus.y);
 			
-			w->add_style(closet_idx, Style_size::v, "f4:normal_offset f4:active_offset", normal_offset, active_offset);
+			w->add_style(closet_idx, Style_size::v, "f4 f4", normal_offset, active_offset);
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Style_color, FLAME_GID(13741))
+		FLAME_REGISTER_FUNCTION_BEG(Style_color, FLAME_GID(13741), "p")
 			auto w = (Widget*)d[0].p;
 
 			switch (w->state)
@@ -80,10 +80,10 @@ namespace flame
 			auto bg_hovering_col = HSV(bg_hsv.x, bg_hsv.y, bg_hsv.z, 1.f);
 			auto bg_active_col = HSV(bg_hsv.x, bg_hsv.y, bg_hsv.z * 0.95f, 1.f);
 
-			w->add_style(closet_idx, Style_color::v, "b4:normal_col b4:hovering_col b4:active_col", bg_normal_col, bg_hovering_col, bg_active_col);
+			w->add_style(closet_idx, Style_color::v, "b4 b4 b4", bg_normal_col, bg_hovering_col, bg_active_col);
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Style_textcolor, FLAME_GID(785))
+		FLAME_REGISTER_FUNCTION_BEG(Style_textcolor, FLAME_GID(785), "p")
 			auto w = (wText*)d[0].p;
 
 			switch (w->state)
@@ -102,7 +102,7 @@ namespace flame
 			auto bg_normal_col = normal_col;
 			auto bg_hovering_or_active_col = else_col;
 
-			w->add_style(closet_idx, Style_textcolor::v, "b4:normal_col b4:hovering_or_active_col", bg_normal_col, bg_hovering_or_active_col);
+			w->add_style(closet_idx, Style_textcolor::v, "b4 b4", bg_normal_col, bg_hovering_or_active_col);
 		}
 	}
 }

@@ -270,7 +270,7 @@ void refresh_inspector()
 		}
 
 		//auto n_drawlist = ui::wTreeNode::create(app.ui, L"draw list");
-		//for (auto c : p->draw_list)
+		//for (auto c : p->draw_commands)
 		//{
 		//	const char *filename;
 		//	int line_beg;

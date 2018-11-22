@@ -32,20 +32,41 @@ namespace flame
 	struct RegisteredPF
 	{
 		PF pf;
-		unsigned int id;
-		char *filename;
+		uint id;
+		const char *parm_fmt;
+		const char *filename;
 		int line_beg;
 		int line_end;
 	};
 
 	static std::vector<RegisteredPF> pfs;
 
-	PF get_PF(unsigned int id, const char **out_filename, int *out_line_beg, int *out_line_end)
+	void register_PF(PF pf, uint id, const char *parm_fmt, const char *filename, int line_beg, int line_end)
+	{
+		assert(id);
+		for (auto &r : pfs)
+		{
+			if (r.id == id)
+				assert(0);
+		}
+		RegisteredPF r;
+		r.pf = pf;
+		r.id = id;
+		r.parm_fmt = parm_fmt;
+		r.filename = filename;
+		r.line_beg = line_beg;
+		r.line_end = line_end;
+		pfs.push_back(r);
+	}
+
+	PF find_registered_PF(uint id, const char **out_parm_fmt, const char **out_filename, int *out_line_beg, int *out_line_end)
 	{
 		for (auto &r : pfs)
 		{
 			if (r.id == id)
 			{
+				if (out_parm_fmt)
+					*out_parm_fmt = r.parm_fmt;
 				if (out_filename)
 					*out_filename = r.filename;
 				if (out_line_beg)
@@ -58,12 +79,14 @@ namespace flame
 		return nullptr;
 	}
 
-	unsigned int get_PF_props(PF pf, const char **out_filename, int *out_line_beg, int *out_line_end)
+	uint find_registered_PF(PF pf, const char **out_parm_fmt, const char **out_filename, int *out_line_beg, int *out_line_end)
 	{
 		for (auto &r : pfs)
 		{
 			if (r.pf == pf)
 			{
+				if (out_parm_fmt)
+					*out_parm_fmt = r.parm_fmt;
 				if (out_filename)
 					*out_filename = r.filename;
 				if (out_line_beg)
@@ -74,23 +97,6 @@ namespace flame
 			}
 		}
 		return 0;
-	}
-
-	void register_PF(PF pf, unsigned int id, const char *filename, int line_beg, int line_end)
-	{
-		assert(id);
-		for (auto &r : pfs)
-		{
-			if (r.id == id)
-				assert(0);
-		}
-		RegisteredPF r;
-		r.pf = pf;
-		r.id = id;
-		r.filename = (char*)filename;
-		r.line_beg = line_beg;
-		r.line_end = line_end;
-		pfs.push_back(r);
 	}
 
 	void Function::exec()
@@ -109,6 +115,13 @@ namespace flame
 		_beginthread(thread, 0, this);
 	}
 
+	Function *Function::create(uint id, const char *capt_fmt, va_list ap)
+	{
+		const char *parm_fmt;
+		auto pf = find_registered_PF(id, &parm_fmt);
+		return create(pf, parm_fmt, capt_fmt, ap);
+	}
+
 	Function *Function::create(PF pf, const char *parm_fmt, const char *capt_fmt, va_list ap)
 	{
 		auto parm_sp = string_split(std::string(parm_fmt));
@@ -123,13 +136,8 @@ namespace flame
 		f->pf = pf;
 
 		auto d = f->datas + parm_sp.size();
-		for (auto &i : capt_sp)
+		for (auto &t : capt_sp)
 		{
-			auto sp = string_split(i, ':');
-			assert(sp.size() == 2);
-
-			auto t = sp[0];
-
 			if (t == "i")
 				d->i[0] = va_arg(ap, int);
 			else if (t == "i2")
@@ -199,8 +207,10 @@ namespace flame
 				d->b[2] = v.z;
 				d->b[3] = v.w;
 			}
-			else if (t == "p" || t == "str" || t == "wstr" || t == "this")
+			else if (t == "p" || t == "s" || t == "sw")
 				d->p = va_arg(ap, void*);
+			else
+				assert(0);
 
 			d++;
 		}

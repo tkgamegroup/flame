@@ -189,7 +189,7 @@ namespace flame
 			share_data.destroy();
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(SwapchainData_resize, FLAME_GID(24526))
+		FLAME_REGISTER_FUNCTION_BEG(SwapchainData_resize, FLAME_GID(24526), "i2")
 			auto size = Ivec2::from(d[0].i);
 			auto sd = (SwapchainDataPrivate*)d[1].p;
 
@@ -226,7 +226,7 @@ namespace flame
 			sc = _sc;
 			w = sc->window();
 
-			w->add_listener(cH("resize"), SwapchainData_resize::v, "this:swapchaindata", this);
+			w->add_listener(cH("resize"), SwapchainData_resize::v, "p", this);
 
 			auto surface_size = w->size;
 			auto swapchain_format = graphics::get_swapchain_format();
@@ -300,35 +300,35 @@ namespace flame
 			total_time_ = 0.f;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_keydown, FLAME_GID(28755))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_keydown, FLAME_GID(28755), "i")
 			((InstancePrivate*)d[1].p)->on_keydown(d[0].i[0]);
 		FLAME_REGISTER_FUNCTION_END(Instance_keydown)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_keyup, FLAME_GID(4617))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_keyup, FLAME_GID(4617), "i")
 			((InstancePrivate*)d[1].p)->on_keyup(d[0].i[0]);
 		FLAME_REGISTER_FUNCTION_END(Instance_keyup)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_char, FLAME_GID(31685))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_char, FLAME_GID(31685), "i")
 			((InstancePrivate*)d[1].p)->on_char(d[0].i[0]);
 		FLAME_REGISTER_FUNCTION_END(Instance_char)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mousedown, FLAME_GID(19621))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_mousedown, FLAME_GID(19621), "i i2")
 			((InstancePrivate*)d[2].p)->on_mousedown(d[0].i[0], Ivec2::from(d[1].i));
 		FLAME_REGISTER_FUNCTION_END(Instance_mousedown)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mouseup, FLAME_GID(32698))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_mouseup, FLAME_GID(32698), "i i2")
 			((InstancePrivate*)d[2].p)->on_mouseup(d[0].i[0], Ivec2::from(d[1].i));
 		FLAME_REGISTER_FUNCTION_END(Instance_mouseup)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mousemove, FLAME_GID(17801))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_mousemove, FLAME_GID(17801), "i2")
 			((InstancePrivate*)d[1].p)->on_mousemove(Ivec2::from(d[0].i));
 		FLAME_REGISTER_FUNCTION_END(Instance_mousemove)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mousescroll, FLAME_GID(9829))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_mousescroll, FLAME_GID(9829), "i")
 			((InstancePrivate*)d[1].p)->on_mousescroll(d[0].i[0]);
 		FLAME_REGISTER_FUNCTION_END(Instance_mousescroll)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_resize, FLAME_GID(16038))
+		FLAME_REGISTER_FUNCTION_BEG(Instance_resize, FLAME_GID(16038), "i2")
 			((InstancePrivate*)d[1].p)->on_resize(Ivec2::from(d[0].i));
 		FLAME_REGISTER_FUNCTION_END(Instance_resize)
 
@@ -337,14 +337,14 @@ namespace flame
 		{
 			root_->size$ = w->size;
 
-			w->add_listener(cH("key down"), Instance_keydown::v, "this:instance", this);
-			w->add_listener(cH("key up"), Instance_keyup::v, "this:instance", this);
-			w->add_listener(cH("char"), Instance_char::v, "this:instance", this);
-			w->add_listener(cH("mouse down"), Instance_mousedown::v, "this:instance", this);
-			w->add_listener(cH("mouse up"), Instance_mouseup::v, "this:instance", this);
-			w->add_listener(cH("mouse move"), Instance_mousemove::v, "this:instance", this);
-			w->add_listener(cH("mouse scroll"), Instance_mousescroll::v, "this:instance", this);
-			w->add_listener(cH("resize"), Instance_resize::v, "this:instance", this);
+			w->add_listener(cH("key down"), Instance_keydown::v, "p", this);
+			w->add_listener(cH("key up"), Instance_keyup::v, "p", this);
+			w->add_listener(cH("char"), Instance_char::v, "p", this);
+			w->add_listener(cH("mouse down"), Instance_mousedown::v, "p", this);
+			w->add_listener(cH("mouse up"), Instance_mouseup::v, "p", this);
+			w->add_listener(cH("mouse move"), Instance_mousemove::v, "p", this);
+			w->add_listener(cH("mouse scroll"), Instance_mousescroll::v, "p", this);
+			w->add_listener(cH("resize"), Instance_resize::v, "p", this);
 		}
 
 		inline void InstancePrivate::on_keydown(int code)
