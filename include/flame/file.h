@@ -38,16 +38,21 @@
 #include <experimental/filesystem>
 #include <stdarg.h>
 
-namespace std
-{
-	namespace filesystem = experimental::filesystem;
-}
+namespace filesystem = std::experimental::filesystem;
 
 namespace flame
 {
+	namespace typeinfo
+	{
+		namespace cpp
+		{
+			struct UDT;
+		}
+	}
+
 	inline std::wstring ext_replace(const std::wstring &str, const std::wstring &ext)
 	{
-		std::filesystem::path path(str);
+		filesystem::path path(str);
 		if (path.extension().wstring() != ext)
 		{
 			auto pp = path.parent_path().wstring();

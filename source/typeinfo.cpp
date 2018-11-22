@@ -152,6 +152,8 @@ namespace flame
 							return to_string(*(Vec3*)src, precision);
 						case cH("Bvec4"):
 							return to_string(*(Bvec4*)src);
+						case cH("String"):
+							return *(String*)src;
 						}
 						break;
 					}
@@ -411,9 +413,9 @@ namespace flame
 			std::string prefix("flame::");
 			std::wstring wprefix(s2w(prefix));
 
-			for (std::filesystem::directory_iterator end, it(pdb_dir); it != end; it++)
+			for (filesystem::directory_iterator end, it(pdb_dir); it != end; it++)
 			{
-				if (!std::filesystem::is_directory(it->status()) && it->path().extension() == L".pdb")
+				if (!filesystem::is_directory(it->status()) && it->path().extension() == L".pdb")
 				{
 					auto fn = it->path().filename().wstring();
 
@@ -449,6 +451,7 @@ namespace flame
 						IDiaSymbol *symbol;
 						DWORD dw;
 						wchar_t *pwname;
+						std::regex reg_str(prefix + R"(BasicString<(char|wchar_t)>)");
 						std::regex reg_arr(prefix + R"(Array<([\w:]+)\s*(\*?)>)");
 
 						global->findChildren(SymTagEnum, NULL, nsNone, &symbols);
@@ -588,7 +591,15 @@ namespace flame
 														type->get_name(&pwname);
 														auto type_name = w2s(pwname);
 														std::smatch match;
-														if (std::regex_search(type_name, match, reg_arr))
+														if (std::regex_search(type_name, match, reg_str))
+														{
+															i->tag = cpp::VariableTagVariable;
+															if (match[1].str() == "char")
+																type_name = "String";
+															else
+																type_name = "StringW";
+														}
+														else if (std::regex_search(type_name, match, reg_arr))
 														{
 															if (match[2].matched)
 																i->tag = cpp::VariableTagArrayOfPointer;
@@ -628,7 +639,8 @@ namespace flame
 		}
 
 		static const char *tag_name[] = {
-			"enum",
+			"enum_single",
+			"enum_multi",
 			"varible",
 			"pointer",
 			"array_of_varible",

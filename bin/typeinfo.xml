@@ -1,6 +1,10 @@
 <typeinfo>
 	<cpp>
 		<enums>
+			<enum name="_3d::PrimitiveTopology">
+				<item name="PrimitiveTopologyPlane" value="0"/>
+				<item name="PrimitiveTopologyTriangle" value="1"/>
+			</enum>
 			<enum name="typeinfo::cpp::VariableTag">
 				<item name="VariableTagEnum" value="0"/>
 				<item name="VariableTagVariable" value="1"/>
@@ -69,6 +73,14 @@
 				<item name="ImageView2DArray" value="5"/>
 				<item name="ImageViewCubeArray" value="6"/>
 			</enum>
+			<enum name="Axis">
+				<item name="AxisPositiveX" value="1"/>
+				<item name="AxisNegativeX" value="2"/>
+				<item name="AxisPositiveY" value="4"/>
+				<item name="AxisNegativeY" value="8"/>
+				<item name="AxisPositiveZ" value="16"/>
+				<item name="AxisNegativeZ" value="32"/>
+			</enum>
 			<enum name="CursorType">
 				<item name="CursorNone" value="255"/>
 				<item name="CursorAppStarting" value="0"/>
@@ -87,6 +99,17 @@
 				<item name="CursorWait" value="13"/>
 				<item name="CursorCount" value="14"/>
 			</enum>
+			<enum name="ui::State">
+				<item name="StateNormal" value="0"/>
+				<item name="StateHovering" value="1"/>
+				<item name="StateActive" value="2"/>
+			</enum>
+			<enum name="ui::DrawCmdType">
+				<item name="DrawCmd2d" value="0"/>
+				<item name="DrawCmdText" value="1"/>
+				<item name="DrawCmdTextSdf" value="2"/>
+				<item name="DrawCmdScissor" value="3"/>
+			</enum>
 			<enum name="graphics::ShaderType">
 				<item name="ShaderNone" value="0"/>
 				<item name="ShaderVert" value="1"/>
@@ -100,6 +123,10 @@
 			<enum name="graphics::IndiceType">
 				<item name="IndiceTypeUint" value="0"/>
 				<item name="IndiceTypeUshort" value="1"/>
+			</enum>
+			<enum name="_3d::ShowMode">
+				<item name="ShowModeLightmap" value="0"/>
+				<item name="ShowModeCameraLight" value="1"/>
 			</enum>
 			<enum name="graphics::ImageLayout">
 				<item name="ImageLayoutUndefined" value="0"/>
@@ -117,6 +144,38 @@
 				<item name="SwizzleG" value="4"/>
 				<item name="SwizzleB" value="5"/>
 				<item name="SwizzleA" value="6"/>
+			</enum>
+			<enum name="ui::Align">
+				<item name="AlignFree" value="0"/>
+				<item name="AlignLittleEnd" value="1"/>
+				<item name="AlignLargeEnd" value="2"/>
+				<item name="AlignMiddle" value="3"/>
+				<item name="AlignLeft" value="4"/>
+				<item name="AlignRight" value="5"/>
+				<item name="AlignTop" value="6"/>
+				<item name="AlignBottom" value="7"/>
+				<item name="AlignLeftTop" value="8"/>
+				<item name="AlignLeftBottom" value="9"/>
+				<item name="AlignRightTop" value="10"/>
+				<item name="AlignRightBottom" value="11"/>
+				<item name="AlignLeftNoPadding" value="12"/>
+				<item name="AlignRightNoPadding" value="13"/>
+				<item name="AlignTopNoPadding" value="14"/>
+				<item name="AlignBottomNoPadding" value="15"/>
+				<item name="AlignLeftTopNoPadding" value="16"/>
+				<item name="AlignLeftBottomNoPadding" value="17"/>
+				<item name="AlignRightTopNoPadding" value="18"/>
+				<item name="AlignRightBottomNoPadding" value="19"/>
+				<item name="AlignCenter" value="20"/>
+				<item name="AlignLeftOutside" value="21"/>
+				<item name="AlignRightOutside" value="22"/>
+				<item name="AlignTopOutside" value="23"/>
+				<item name="AlignBottomOutside" value="24"/>
+			</enum>
+			<enum name="KeyState">
+				<item name="KeyStateUp" value="1"/>
+				<item name="KeyStateDown" value="2"/>
+				<item name="KeyStateJust" value="4"/>
 			</enum>
 			<enum name="graphics::CullMode">
 				<item name="CullModeNone" value="0"/>
@@ -171,6 +230,11 @@
 				<item name="DynamicStateStencilWriteMask" value="7"/>
 				<item name="DynamicStateStencilReference" value="8"/>
 			</enum>
+			<enum name="ui::EventAttitude">
+				<item name="EventAccept" value="0"/>
+				<item name="EventIgnore" value="1"/>
+				<item name="EventBlackHole" value="2"/>
+			</enum>
 			<enum name="graphics::PrimitiveTopology">
 				<item name="PrimitiveTopologyPointList" value="0"/>
 				<item name="PrimitiveTopologyLineList" value="1"/>
@@ -204,6 +268,12 @@
 			<enum name="blueprint::Node::Type">
 				<item name="TypeInputEnumSingle" value="0"/>
 				<item name="TypeUDT" value="1"/>
+			</enum>
+			<enum name="ui::LayoutType">
+				<item name="LayoutFree" value="0"/>
+				<item name="LayoutVertical" value="1"/>
+				<item name="LayoutHorizontal" value="2"/>
+				<item name="LayoutGrid" value="3"/>
 			</enum>
 			<enum name="FileType">
 				<item name="FileTypeUnknown" value="0"/>
@@ -253,35 +323,41 @@
 				<item name="SampleCount_16" value="4"/>
 				<item name="SampleCount_32" value="5"/>
 			</enum>
+			<enum name="ui::SizePolicy">
+				<item name="SizeFixed" value="0"/>
+				<item name="SizeFitChildren" value="1"/>
+				<item name="SizeFitLayout" value="2"/>
+				<item name="SizeGreedy" value="3"/>
+			</enum>
 			<enum name="graphics::Format">
-				<item name="Format_Undefined" value="255"/>
-				<item name="Format_R8_UNORM" value="0"/>
-				<item name="Format_R16_UNORM" value="1"/>
-				<item name="Format_R32_SFLOAT" value="2"/>
-				<item name="Format_R32G32_SFLOAT" value="3"/>
-				<item name="Format_R32G32B32_SFLOAT" value="4"/>
-				<item name="Format_R8G8B8A8_UNORM" value="5"/>
-				<item name="Format_R8G8B8A8_SRGB" value="6"/>
-				<item name="Format_B8G8R8A8_UNORM" value="7"/>
-				<item name="Format_B8G8R8A8_SRGB" value="8"/>
-				<item name="Format_Swapchain_B8G8R8A8_UNORM" value="9"/>
-				<item name="Format_Swapchain_B8G8R8A8_SRGB" value="10"/>
-				<item name="Format_Swapchain_Begin" value="9"/>
-				<item name="Format_Swapchain_End" value="10"/>
-				<item name="Format_R16G16B16A16_UNORM" value="11"/>
-				<item name="Format_R16G16B16A16_SFLOAT" value="12"/>
-				<item name="Format_R32G32B32A32_SFLOAT" value="13"/>
-				<item name="Format_RGBA_BC3" value="14"/>
-				<item name="Format_RGBA_ETC2" value="15"/>
-				<item name="Format_Color_Begin" value="0"/>
-				<item name="Format_Color_End" value="15"/>
-				<item name="Format_Depth16" value="16"/>
-				<item name="Format_Depth32" value="17"/>
-				<item name="Format_Depth24Stencil8" value="18"/>
-				<item name="Format_DepthStencil_Begin" value="18"/>
-				<item name="Format_DepthStencil_End" value="18"/>
-				<item name="Format_Depth_Begin" value="16"/>
-				<item name="Format_Depth_End" value="18"/>
+				<item name="Format_Undefined" value="0"/>
+				<item name="Format_R8_UNORM" value="1"/>
+				<item name="Format_R16_UNORM" value="2"/>
+				<item name="Format_R32_SFLOAT" value="3"/>
+				<item name="Format_R32G32_SFLOAT" value="4"/>
+				<item name="Format_R32G32B32_SFLOAT" value="5"/>
+				<item name="Format_R8G8B8A8_UNORM" value="6"/>
+				<item name="Format_R8G8B8A8_SRGB" value="7"/>
+				<item name="Format_B8G8R8A8_UNORM" value="8"/>
+				<item name="Format_B8G8R8A8_SRGB" value="9"/>
+				<item name="Format_Swapchain_B8G8R8A8_UNORM" value="10"/>
+				<item name="Format_Swapchain_B8G8R8A8_SRGB" value="11"/>
+				<item name="Format_Swapchain_Begin" value="10"/>
+				<item name="Format_Swapchain_End" value="11"/>
+				<item name="Format_R16G16B16A16_UNORM" value="12"/>
+				<item name="Format_R16G16B16A16_SFLOAT" value="13"/>
+				<item name="Format_R32G32B32A32_SFLOAT" value="14"/>
+				<item name="Format_RGBA_BC3" value="15"/>
+				<item name="Format_RGBA_ETC2" value="16"/>
+				<item name="Format_Color_Begin" value="1"/>
+				<item name="Format_Color_End" value="16"/>
+				<item name="Format_Depth16" value="17"/>
+				<item name="Format_Depth32" value="18"/>
+				<item name="Format_Depth24Stencil8" value="19"/>
+				<item name="Format_DepthStencil_Begin" value="19"/>
+				<item name="Format_DepthStencil_End" value="19"/>
+				<item name="Format_Depth_Begin" value="17"/>
+				<item name="Format_Depth_End" value="19"/>
 			</enum>
 			<enum name="Key">
 				<item name="Key_Unknown" value="0"/>
@@ -381,9 +457,37 @@
 		</enums>
 		<udts>
 			<udt name="graphics::AttachmentInfo">
-				<item tag="enum" type="graphics::Format" name="format" offset="0"/>
-				<item tag="pointer" type="bool" name="clear" offset="4"/>
-				<item tag="enum" type="graphics::SampleCount" name="sample_count" offset="8"/>
+				<item tag="enum_single" type="graphics::Format" name="format" offset="0"/>
+				<item tag="varible" type="bool" name="clear" offset="4"/>
+				<item tag="enum_single" type="graphics::SampleCount" name="sample_count" offset="8"/>
+			</udt>
+			<udt name="ui::Widget">
+				<item tag="varible" type="uint" name="class_hash" offset="0"/>
+				<item tag="varible" type="String" name="name" offset="8"/>
+				<item tag="varible" type="Vec2" name="pos" offset="24"/>
+				<item tag="varible" type="Vec2" name="size" offset="32"/>
+				<item tag="varible" type="float" name="alpha" offset="40"/>
+				<item tag="varible" type="float" name="scale" offset="44"/>
+				<item tag="varible" type="Vec4" name="inner_padding" offset="48"/>
+				<item tag="varible" type="float" name="layout_padding" offset="64"/>
+				<item tag="varible" type="Vec4" name="background_offset" offset="68"/>
+				<item tag="varible" type="float" name="background_round_radius" offset="84"/>
+				<item tag="varible" type="int" name="background_round_flags" offset="88"/>
+				<item tag="varible" type="float" name="background_frame_thickness" offset="92"/>
+				<item tag="varible" type="Bvec4" name="background_col" offset="96"/>
+				<item tag="varible" type="Bvec4" name="background_frame_col" offset="100"/>
+				<item tag="varible" type="float" name="background_shaow_thickness" offset="104"/>
+				<item tag="enum_single" type="ui::SizePolicy" name="size_policy_hori" offset="108"/>
+				<item tag="enum_single" type="ui::SizePolicy" name="size_policy_vert" offset="112"/>
+				<item tag="enum_single" type="ui::Align" name="align" offset="116"/>
+				<item tag="enum_single" type="ui::LayoutType" name="layout_type" offset="120"/>
+				<item tag="varible" type="float" name="item_padding" offset="124"/>
+				<item tag="varible" type="int" name="grid_hori_count" offset="128"/>
+				<item tag="varible" type="bool" name="clip" offset="132"/>
+				<item tag="varible" type="float" name="scroll_offset" offset="136"/>
+				<item tag="enum_single" type="ui::EventAttitude" name="event_attitude" offset="140"/>
+				<item tag="varible" type="bool" name="want_key_focus" offset="144"/>
+				<item tag="varible" type="bool" name="visible" offset="145"/>
 			</udt>
 		</udts>
 	</cpp>

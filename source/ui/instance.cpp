@@ -271,7 +271,7 @@ namespace flame
 		InstancePrivate::InstancePrivate()
 		{
 			root_ = std::unique_ptr<WidgetPrivate>((WidgetPrivate*)Widget::create(this));
-			root_->set_name("root");
+			root_->name$ = "root";
 			root_->size_policy_hori$ = SizeFitLayout;
 			root_->size_policy_vert$ = SizeFitLayout;
 			root_->event_attitude$ = EventAccept;

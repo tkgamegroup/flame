@@ -23,6 +23,7 @@
 #include <flame/font.h>
 #include <flame/file.h>
 #include <flame/system.h>
+#include <flame/typeinfo.h>
 
 #include <flame/ui/canvas.h>
 #include <flame/ui/style.h>
@@ -41,9 +42,6 @@ namespace flame
 		inline WidgetPrivate::WidgetPrivate(Instance *ui_)
 		{
 			class_hash$ = cH("widget");
-
-			name$ = (char*)name.c_str();
-			name_hash = 0;
 
 			pos$ = Vec2(0.f);
 			size$ = Vec2(0.f);
@@ -111,13 +109,6 @@ namespace flame
 				instance->set_focus_widget(nullptr);
 			if (this == instance->hovering_widget())
 				instance->set_hovering_widget(nullptr);
-		}
-
-		inline void WidgetPrivate::set_name(const char *_name)
-		{
-			name = _name;
-			name$ = (char*)name.c_str();
-			name_hash = H(_name);
 		}
 
 		inline void WidgetPrivate::set_width(float x, Widget *sender)
@@ -1012,17 +1003,6 @@ namespace flame
 			string_storage_[idx] = str;
 		}
 
-		inline void WidgetPrivate::save(XmlNode *dst)
-		{
-			auto n = dst->new_node("widget");
-			n->new_attr("", "");
-		}
-
-		void Widget::set_name(const char *_name)
-		{
-			((WidgetPrivate*)this)->set_name(_name);
-		}
-
 		void Widget::set_width(float x, Widget *sender)
 		{
 			((WidgetPrivate*)this)->set_width(x, sender);
@@ -1314,11 +1294,6 @@ namespace flame
 		void Widget::set_string_storage(int idx, const wchar_t *str)
 		{
 			((WidgetPrivate*)this)->set_string_storage(idx, str);
-		}
-
-		void Widget::save(XmlNode *dst)
-		{
-			((WidgetPrivate*)this)->save(dst);
 		}
 
 		Widget *Widget::create(Instance *ui)

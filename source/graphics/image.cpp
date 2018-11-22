@@ -448,8 +448,8 @@ namespace flame
 
 		Image *Image::create_from_file(Device *d, const wchar_t *filename, int extra_usage)
 		{
-			std::filesystem::path path(filename);
-			if (!std::filesystem::exists(path))
+			filesystem::path path(filename);
+			if (!filesystem::exists(path))
 				return nullptr;
 
 			int width, height, level, layer;

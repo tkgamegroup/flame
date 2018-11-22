@@ -36,8 +36,6 @@ namespace flame
 	{
 		struct WidgetPrivate : Widget
 		{
-			std::string name;
-
 			Instance *instance;
 
 			std::vector<Function*> draw_list;
@@ -82,10 +80,7 @@ namespace flame
 			std::vector<std::wstring> string_storage_;
 
 			WidgetPrivate(Instance *ui);
-			WidgetPrivate(Instance *ui, XmlNode *src);
 			~WidgetPrivate();
-
-			void set_name(const char *_name);
 
 			void set_width(float x, Widget *sender = nullptr);
 			void set_height(float y, Widget *sender = nullptr);
@@ -140,8 +135,6 @@ namespace flame
 
 			void resize_string_storage(int count);
 			void set_string_storage(int idx, const wchar_t *str);
-
-			void save(XmlNode *dst);
 		};
 	}
 }

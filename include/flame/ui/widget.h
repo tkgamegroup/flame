@@ -25,12 +25,11 @@
 #include <flame/ui/ui.h>
 
 #include <flame/math.h>
+#include <flame/string.h>
 #include <flame/function.h>
 
 namespace flame
 {
-	struct XmlNode;
-
 	namespace ui
 	{
 		struct Instance;
@@ -111,8 +110,7 @@ namespace flame
 		{
 			uint class_hash$;
 
-			char *name$;
-			uint name_hash;
+			String name$;
 
 			Vec2 pos$;
 			Vec2 size$;
@@ -155,8 +153,6 @@ namespace flame
 			int content_size; // valid after arranging
 			bool showed; // vaild after instance processing
 			State state; // vaild after instance processing
-
-			FLAME_UI_EXPORTS void set_name(const char *_name);
 
 			FLAME_UI_EXPORTS void set_width(float x, Widget *sender = nullptr);
 			FLAME_UI_EXPORTS void set_height(float y, Widget *sender = nullptr);
@@ -241,10 +237,7 @@ namespace flame
 			FLAME_UI_EXPORTS int string_storage_len(int idx);
 			FLAME_UI_EXPORTS void set_string_storage(int idx, const wchar_t *str);
 
-			FLAME_UI_EXPORTS void save(XmlNode *dst);
-
 			FLAME_UI_EXPORTS static Widget *create(Instance *ui);
-			FLAME_UI_EXPORTS static Widget *create_from_file(Instance *ui, XmlNode *src);
 			FLAME_UI_EXPORTS static void destroy(Widget *w);
 		};
 

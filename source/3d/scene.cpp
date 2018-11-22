@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/3d/camera.h>
 #include "model_private.h"
 #include "scene_private.h"
-#include <flame/3d/camera.h>
 
 #include <flame/bitmap.h>
 #include <flame/graphics/device.h>

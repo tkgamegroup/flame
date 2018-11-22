@@ -2406,7 +2406,7 @@ namespace flame
 
 		inline void save(const wchar_t *filename) const
 		{
-			auto parent_path = std::filesystem::path(filename).parent_path().generic_wstring();
+			auto parent_path = filesystem::path(filename).parent_path().generic_wstring();
 
 			auto xml = XmlFile::create("FontAtlas");
 			auto rn = xml->root_node;

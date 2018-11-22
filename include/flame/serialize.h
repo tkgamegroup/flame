@@ -22,6 +22,16 @@
 
 #pragma once
 
+#ifdef FLAME_WINDOWS
+#ifdef FLAME_SERIALIZE_MODULE
+#define FLAME_SERIALIZE_EXPORTS __declspec(dllexport)
+#else
+#define FLAME_SERIALIZE_EXPORTS __declspec(dllimport)
+#endif
+#else
+#define FLAME_SERIALIZE_EXPORTS
+#endif
+
 #include "math.h"
 #include "string.h"
 
@@ -29,6 +39,8 @@
 
 namespace flame
 {
+	struct XmlNode;
+
 	inline String to_string(float v, int precision = 6)
 	{
 		char buf[20];
@@ -447,5 +459,7 @@ namespace flame
 		sscanf(s.c_str(), "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
 		return ret;
 	}
+
+	FLAME_SERIALIZE_EXPORTS void serialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision = 6);
 }
 

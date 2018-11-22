@@ -20,8 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/serialize.h>
+#include <flame/file.h>
 #include <flame/window.h>
+#include <flame/typeinfo.h>
+#include <flame/serialize.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/swapchain.h>
@@ -65,6 +67,8 @@ static void do_run(CommonData *)
 
 extern "C" __declspec(dllexport) int main()
 {
+	typeinfo::load(L"typeinfo.xml");
+
 	auto res = Ivec2(1280, 720);
 	const auto img_id = 99;
 
@@ -214,6 +218,23 @@ extern "C" __declspec(dllexport) int main()
 	ui_ins->root()->add_child(t_fps, 1);
 
 	t_fps->text_col() = Bvec4(255);
+
+	{
+		auto new_widget = ui::Widget::create(ui_ins);
+
+		auto xml = XmlFile::create("ui");
+
+		auto n = xml->root_node->new_node("widget");
+		auto u = typeinfo::cpp::find_udt(cH("ui::Widget"));
+
+		new_widget->name$ = "emm";
+		serialize(n, u, new_widget, 1);
+
+		xml->save(L"d:/ui.xml");
+		XmlFile::destroy(xml);
+
+		ui::Widget::destroy(new_widget);
+	}
 
 	app->run(do_run, "");
 

@@ -65,6 +65,12 @@ target_include_directories(flame_blueprint PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(flame_blueprint flame_file)
 target_link_libraries(flame_blueprint flame_typeinfo)
 
+add_lib(flame_serialize "serialize.cpp" "flame")
+target_compile_definitions(flame_serialize PRIVATE FLAME_SERIALIZE_MODULE)
+target_include_directories(flame_serialize PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries(flame_serialize flame_file)
+target_link_libraries(flame_serialize flame_typeinfo)
+
 add_subdirectory(graphics)
 add_subdirectory(ui)
 add_subdirectory(3d)
