@@ -72,7 +72,7 @@ namespace flame
 			std::vector<Function*> changed_listeners;
 			std::vector<Function*> addchild_listeners;
 
-			std::vector<std::pair<unsigned int, Function*>> delay_listener_remove;
+			std::vector<std::pair<uint, Function*>> delay_listener_remove;
 
 			std::vector<CommonData> data_storage_;
 			std::vector<std::wstring> string_storage_;

@@ -461,13 +461,35 @@ namespace flame
 		return ret;
 	}
 
-	inline Bvec4 stob4(const std::string &s)
+	inline uchar stob1(const std::string &s)
 	{
-		Bvec4 ret;
-		sscanf(s.c_str(), "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
+		int ret;
+		sscanf(s.c_str(), "%d", &ret);
+		return (uchar)ret;
 	}
 
-	FLAME_SERIALIZE_EXPORTS void serialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision = 6);
+	inline Bvec2 stob2(const std::string &s)
+	{
+		Ivec2 ret;
+		sscanf(s.c_str(), "%d;%d;", &ret.x, &ret.y);
+		return Bvec2(ret.x, ret.y);
+	}
+
+	inline Bvec3 stob3(const std::string &s)
+	{
+		Ivec3 ret;
+		sscanf(s.c_str(), "%d;%d;%d", &ret.x, &ret.y, &ret.z);
+		return Bvec3(ret.x, ret.y, ret.z);
+	}
+
+	inline Bvec4 stob4(const std::string &s)
+	{
+		Ivec4 ret;
+		sscanf(s.c_str(), "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
+		return Bvec4(ret.x, ret.y, ret.z, ret.w);
+	}
+
+	FLAME_SERIALIZE_EXPORTS void serialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision = 6, void *default_obj = nullptr);
+	FLAME_SERIALIZE_EXPORTS void unserialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj);
 }
 

@@ -635,7 +635,7 @@ namespace flame
 				for (auto &f : w->mousedown_listeners)
 				{
 					f->datas[0].i[0] = 0;
-					v.to(f->datas[1].i);
+					*(Ivec2*)f->datas[1].i = v;
 					f->exec();
 				}
 			}
@@ -646,7 +646,7 @@ namespace flame
 				for (auto &f : w->mouseup_listeners)
 				{
 					f->datas[0].i[0] = 0;
-					v.to(f->datas[1].i);
+					*(Ivec2*)f->datas[1].i = v;
 					f->exec();
 				}
 			}
@@ -657,7 +657,7 @@ namespace flame
 				for (auto &f : w->mousedown_listeners)
 				{
 					f->datas[0].i[0] = 2;
-					v.to(f->datas[1].i);
+					*(Ivec2*)f->datas[1].i = v;
 					f->exec();
 				}
 			}
@@ -668,7 +668,7 @@ namespace flame
 				for (auto &f : w->mouseup_listeners)
 				{
 					f->datas[0].i[0] = 2;
-					v.to(f->datas[1].i);
+					*(Ivec2*)f->datas[1].i = v;
 					f->exec();
 				}
 			}
@@ -679,7 +679,7 @@ namespace flame
 				for (auto &f : w->mousedown_listeners)
 				{
 					f->datas[0].i[0] = 1;
-					v.to(f->datas[1].i);
+					*(Ivec2*)f->datas[1].i = v;
 					f->exec();
 				}
 			}
@@ -690,7 +690,7 @@ namespace flame
 				for (auto &f : w->mouseup_listeners)
 				{
 					f->datas[0].i[0] = 1;
-					v.to(f->datas[1].i);
+					*(Ivec2*)f->datas[1].i = v;
 					f->exec();
 				}
 			}
@@ -700,7 +700,7 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mousemove_listeners)
 				{
-					v.to(f->datas[0].i);
+					*(Ivec2*)f->datas[0].i = v;
 					f->exec();
 				}
 			}
@@ -726,7 +726,7 @@ namespace flame
 					w->size = size;
 					for (auto &f : w->resize_listeners)
 					{
-						size.to(f->datas[0].i);
+						*(Ivec2*)f->datas[0].i = size;
 						f->exec();
 					}
 				}

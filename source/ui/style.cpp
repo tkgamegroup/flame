@@ -33,10 +33,10 @@ namespace flame
 			switch (w->state)
 			{
 			case StateNormal: case StateHovering:
-				w->background_offset$ = Vec4::from(d[1].f);
+				w->background_offset$ = Vec4(d[1].f);
 				break;
 			case StateActive:
-				w->background_offset$ = Vec4::from(d[2].f);
+				w->background_offset$ = Vec4(d[2].f);
 				break;
 			}
 		FLAME_REGISTER_FUNCTION_END(Style_size)
@@ -55,13 +55,13 @@ namespace flame
 			switch (w->state)
 			{
 			case StateNormal:
-				w->background_col$ = Bvec4::from(d[1].b);
+				w->background_col$ = Bvec4(d[1].b);
 				break;
 			case StateHovering:
-				w->background_col$ = Bvec4::from(d[2].b);
+				w->background_col$ = Bvec4(d[2].b);
 				break;
 			case StateActive:
-				w->background_col$ = Bvec4::from(d[3].b);
+				w->background_col$ = Bvec4(d[3].b);
 				break;
 			}
 		FLAME_REGISTER_FUNCTION_END(Style_color)
@@ -89,10 +89,10 @@ namespace flame
 			switch (w->state)
 			{
 			case StateNormal:
-				w->text_col() = Bvec4::from(d[1].b);
+				w->text_col() = Bvec4(d[1].b);
 				break;
 			case StateHovering: case StateActive:
-				w->text_col() = Bvec4::from(d[2].b);
+				w->text_col() = Bvec4(d[2].b);
 				break;
 			}
 		FLAME_REGISTER_FUNCTION_END(Style_textcolor)

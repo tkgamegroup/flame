@@ -53,11 +53,6 @@ namespace flame
 			b3   - Bvec3
 			b4   - Bvec4
 			p    - void*
-			s    - char*
-			sw   - wchar_t*
-
-		usage:
-			[fmt]:[name]
 	*/
 
 	typedef void(*PF)(CommonData*);
@@ -79,7 +74,7 @@ namespace flame
 		FLAME_FUNCTION_EXPORTS void exec();
 		FLAME_FUNCTION_EXPORTS void exec_in_new_thread();
 
-		FLAME_FUNCTION_EXPORTS static Function *create(uint id, const char *capt_fmt, va_list ap);
+		FLAME_FUNCTION_EXPORTS static Function *create(uint id, int capt_cnt);
 		FLAME_FUNCTION_EXPORTS static Function *create(PF pf, const char *parm_fmt, const char *capt_fmt, va_list ap);
 		FLAME_FUNCTION_EXPORTS static void destroy(Function *f);
 	};

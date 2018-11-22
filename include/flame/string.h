@@ -158,6 +158,18 @@ namespace flame
 		return !(lhs == rhs);
 	}
 
+	template<typename CH>
+	inline bool operator==(const BasicString<CH> &lhs, const BasicString<CH> &rhs)
+	{
+		return lhs.size == rhs.size && std::char_traits<CH>::compare(lhs.v, rhs.v, lhs.size) == 0;
+	}
+
+	template<typename CH>
+	inline bool operator!=(const BasicString<CH> &lhs, const BasicString<CH> &rhs)
+	{
+		return !(lhs == rhs);
+	}
+
 	using String = BasicString<char>;
 	using StringW = BasicString<wchar_t>;
 

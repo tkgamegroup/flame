@@ -76,7 +76,9 @@ namespace flame
 				FLAME_TYPEINFO_EXPORTS const char *name() const;
 				FLAME_TYPEINFO_EXPORTS int offset() const;
 
+				FLAME_TYPEINFO_EXPORTS bool equal(void *src, void *dst) const;
 				FLAME_TYPEINFO_EXPORTS String serialize_value(void *src, bool is_obj, int precision = 6) const;
+				FLAME_TYPEINFO_EXPORTS void unserialize_value(const std::string &str, void *dst, bool is_obj) const;
 			};
 
 			struct UDT

@@ -115,11 +115,20 @@ namespace flame
 		_beginthread(thread, 0, this);
 	}
 
-	Function *Function::create(uint id, const char *capt_fmt, va_list ap)
+	Function *Function::create(uint id, int capt_cnt)
 	{
 		const char *parm_fmt;
 		auto pf = find_registered_PF(id, &parm_fmt);
-		return create(pf, parm_fmt, capt_fmt, ap);
+		auto parm_sp = string_split(std::string(parm_fmt));
+
+		auto f = (Function*)::malloc(sizeof(Function) + sizeof(CommonData) * (parm_sp.size() + capt_cnt - 1));
+		f->para_fmt = parm_fmt;
+		f->para_cnt = parm_sp.size();
+		f->capt_fmt = "";
+		f->capt_cnt = capt_cnt;
+		f->pf = pf;
+
+		return f;
 	}
 
 	Function *Function::create(PF pf, const char *parm_fmt, const char *capt_fmt, va_list ap)
@@ -132,10 +141,10 @@ namespace flame
 		f->para_fmt = parm_fmt;
 		f->para_cnt = parm_sp.size();
 		f->capt_fmt = capt_fmt;
-		f->capt_cnt;
+		f->capt_cnt = capt_sp.size();
 		f->pf = pf;
 
-		auto d = f->datas + parm_sp.size();
+		auto d = f->datas + f->para_cnt;
 		for (auto &t : capt_sp)
 		{
 			if (t == "i")

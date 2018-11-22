@@ -26,6 +26,8 @@
 #include <flame/typeinfo.h>
 #include <flame/serialize.h>
 
+#include <assert.h>
+
 namespace flame
 {
 	static int find_obj(const std::vector<void*> &table, void *obj)
@@ -33,12 +35,12 @@ namespace flame
 		for (auto i = 0; i < table.size(); i++)
 		{
 			if (table[i] == obj)
-				i;
+				return i;
 		}
 		return -1;
 	}
 
-	void serialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision)
+	void serialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision, void *default_obj)
 	{
 		std::vector<void*> obj_table;
 		obj_table.push_back(obj);
@@ -47,13 +49,13 @@ namespace flame
 		{
 			auto item = u->item(i);
 
-			auto n_item = n->new_node("attribute");
-			n_item->new_attr("name", item->name());
-
 			switch (item->tag())
 			{
 			case typeinfo::cpp::VariableTagArrayOfPointer:
 			{
+				auto n_item = n->new_node("attribute");
+				n_item->new_attr("name", item->name());
+
 				if (item->type_hash() == cH("Function"))
 				{
 					const auto &arr = *(Array<Function*>*)((char*)obj + item->offset());
@@ -66,16 +68,133 @@ namespace flame
 						n_fn->new_attr("id", to_stdstring(id));
 
 						auto sp = string_split(std::string(f->capt_fmt));
+						auto d = f->datas + f->para_cnt;
 						for (auto &t : sp)
 						{
+							auto n_cpt = n_fn->new_node("capture");
+							n_cpt->new_attr("type", t);
+							auto a_vl = n_cpt->new_attr("value", "");
+							std::string str;
+
+							if (t == "i")
+								str = to_stdstring(d->i[0]);
+							else if (t == "i2")
+								str = to_stdstring(Ivec2(d->i));
+							else if (t == "i3")
+								str = to_stdstring(Ivec3(d->i));
+							else if (t == "i4")
+								str = to_stdstring(Ivec4(d->i));
+							else if (t == "f")
+								str = to_stdstring(d->f[0]);
+							else if (t == "f2")
+								str = to_stdstring(Vec2(d->f));
+							else if (t == "f3")
+								str = to_stdstring(Vec3(d->f));
+							else if (t == "f4")
+								str = to_stdstring(Vec4(d->f));
+							else if (t == "b")
+								str = to_stdstring((int)d->b[0]);
+							else if (t == "b2")
+								str = to_stdstring(Bvec2(d->b));
+							else if (t == "b3")
+								str = to_stdstring(Bvec3(d->b));
+							else if (t == "b4")
+								str = to_stdstring(Bvec4(d->b));
+							else if (t == "p")
+								str = to_stdstring(find_obj(obj_table, d->p));
+							else
+								assert(0);
+
+							a_vl->set_value(str);
+							d++;
 						}
 					}
 				}
 			}
 				break;
 			default:
-				n_item->new_attr("value", item->serialize_value(obj, true, precision).v);
+				if (!default_obj || !item->equal(obj, default_obj))
+				{
+					auto n_item = n->new_node("attribute");
+					n_item->new_attr("name", item->name());
+
+					n_item->new_attr("value", item->serialize_value(obj, true, precision).v);
+				}
 			}
 		}
+	}
+
+	void unserialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj)
+	{
+		std::vector<void*> obj_table;
+		obj_table.push_back(obj);
+
+		for (auto i = 0; i < n->node_count(); i++)
+		{
+			auto n_item = n->node(i);
+
+			auto item = u->item(u->find_item_i(n_item->find_attr("name")->value().c_str()));
+
+			switch (item->tag())
+			{
+			case typeinfo::cpp::VariableTagArrayOfPointer:
+			{
+				for (auto i_i = 0; i_i < n_item->node_count(); i_i++)
+				{
+					auto n_i = n_item->node(i_i);
+
+					auto i_name = n_i->name();
+					if (i_name == "function")
+					{
+						auto cpt_cnt = n_i->node_count();
+						auto id = stoi(n_i->find_attr("id")->value());
+						auto f = Function::create(id, cpt_cnt);
+
+						auto d = f->datas + f->para_cnt;
+						for (auto i_c = 0; i_c < cpt_cnt; i_c++)
+						{
+							auto n_c = n_i->node(i_c);
+							auto t = n_c->find_attr("type")->value();
+							auto str = n_c->find_attr("value")->value();
+
+							if (t == "i")
+								d->i[0] = stoi1(str);
+							else if (t == "i2")
+								*(Ivec2*)d->i = stoi2(str);
+							else if (t == "i3")
+								*(Ivec3*)d->i = stoi3(str);
+							else if (t == "i4")
+								*(Ivec4*)d->i = stoi4(str);
+							else if (t == "f")
+								d->f[0] = stof1(str);
+							else if (t == "f2")
+								*(Vec2*)d->f = stof2(str);
+							else if (t == "f3")
+								*(Vec3*)d->f = stof3(str);
+							else if (t == "f4")
+								*(Vec4*)d->f = stof4(str);
+							else if (t == "b")
+								d->b[0] = stob1(str);
+							else if (t == "b2")
+								*(Bvec2*)d->b = stob2(str);
+							else if (t == "b3")
+								*(Bvec3*)d->b = stob3(str);
+							else if (t == "b4")
+								*(Bvec4*)d->b = stob4(str);
+							else if (t == "p")
+								d->p = obj_table[stoi(str)];
+							else
+								assert(0);
+							d++;
+						}
+					}
+				}
+			}
+				break;
+			default:
+				item->unserialize_value(n_item->find_attr("value")->value(), obj, true);
+			}
+		}
+
 	}
 }

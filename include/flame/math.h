@@ -355,6 +355,7 @@ namespace flame
 		Vec2();
 
 		explicit Vec2(float v);
+		explicit Vec2(float *v);
 		Vec2(float _x, float _y);
 		Vec2(const Vec2 &v);
 		explicit Vec2(const Vec3 &v);
@@ -385,9 +386,6 @@ namespace flame
 		float length() const;
 		void normalize();
 		Vec2 get_normalized() const;
-
-		static Vec2 from(float *src);
-		void to(float *dst) const;
 	};
 
 	bool operator==(const Vec2 &lhs, const Vec2 &rhs);
@@ -423,6 +421,7 @@ namespace flame
 
 		Vec3();
 		explicit Vec3(float v);
+		explicit Vec3(float *v);
 		Vec3(float _x, float _y, float _z);
 		Vec3(const Vec2 &v, float _z);
 		Vec3(const Vec3 &v);
@@ -451,9 +450,6 @@ namespace flame
 		float length() const;
 		void normalize();
 		Vec3 get_normalized() const;
-
-		static Vec3 from(float *src);
-		void to(float *dst) const;
 	};
 
 	bool operator==(const Vec3 &lhs, const Vec3 &rhs);
@@ -485,6 +481,7 @@ namespace flame
 
 		Vec4();
 		explicit Vec4(float v);
+		explicit Vec4(float *v);
 		Vec4(float _x, float _y, float _z, float _w);
 		Vec4(const Vec2 &v, float _z, float _w);
 		Vec4(const Vec2 &v1, const Vec2 &v2);
@@ -512,9 +509,6 @@ namespace flame
 		float length() const;
 		void normalize();
 		Vec4 get_normalized() const;
-
-		static Vec4 from(float *src);
-		void to(float *dst) const;
 	};
 
 	bool operator==(const Vec4 &lhs, const Vec4 &rhs);
@@ -556,6 +550,7 @@ namespace flame
 
 		Ivec2();
 		explicit Ivec2(int v);
+		explicit Ivec2(int *v);
 		Ivec2(int _x, int _y);
 		explicit Ivec2(const Vec2 &v);
 		explicit Ivec2(const Vec3 &v);
@@ -584,9 +579,6 @@ namespace flame
 		Ivec2 &operator*=(int v);
 		Ivec2 &operator/=(int v);
 		float length() const;
-
-		static Ivec2 from(int *src);
-		void to(int *dst) const;
 	};
 
 	bool operator==(const Ivec2 &lhs, int rhs);
@@ -619,6 +611,7 @@ namespace flame
 
 		Ivec3();
 		explicit Ivec3(int v);
+		explicit Ivec3(int *v);
 		Ivec3(int _x, int _y, int _z);
 		Ivec3(const Vec2 &v, int _z);
 		explicit Ivec3(const Vec3 &v);
@@ -645,9 +638,6 @@ namespace flame
 		Ivec3 &operator*=(int v);
 		Ivec3 &operator/=(int v);
 		float length() const;
-
-		static Ivec3 from(int *src);
-		void to(int *dst) const;
 	};
 
 	bool operator==(const Ivec3 &lhs, int v);
@@ -683,6 +673,7 @@ namespace flame
 
 		Ivec4();
 		explicit Ivec4(int v);
+		explicit Ivec4(int *v);
 		Ivec4(int _x, int _y, int _z, int _w);
 		Ivec4(const Vec2 &v, int _z, int _w);
 		Ivec4(const Vec2 &v0, const Vec2 &v1);
@@ -709,9 +700,6 @@ namespace flame
 		Ivec4 &operator*=(int v);
 		Ivec4 &operator/=(int v);
 		float length() const;
-
-		static Ivec4 from(int *src);
-		void to(int *dst) const;
 	};
 
 	bool operator==(const Ivec4 &lhs, const Ivec4 &rhs);
@@ -741,13 +729,14 @@ namespace flame
 
 		Bvec2();
 		explicit Bvec2(uchar v);
+		explicit Bvec2(uchar *v);
 		Bvec2(uchar _x, uchar _y);
 		uchar &operator[](int i);
 		uchar const &operator[](int i) const;
-
-		static Bvec2 from(uchar *src);
-		void to(uchar *dst) const;
 	};
+
+	bool operator==(const Bvec2 &lhs, const Bvec2 &rhs);
+	bool operator!=(const Bvec2 &lhs, const Bvec2 &rhs);
 
 	struct Bvec3
 	{
@@ -757,14 +746,15 @@ namespace flame
 
 		Bvec3();
 		explicit Bvec3(uchar v);
+		explicit Bvec3(uchar *v);
 		Bvec3(uchar _x, uchar _y, uchar _z);
 		Bvec3(const Bvec2 &v, uchar _z);
 		uchar &operator[](int i);
 		uchar const &operator[](int i) const;
-
-		static Bvec3 from(uchar *src);
-		void to(uchar *dst) const;
 	};
+
+	bool operator==(const Bvec3 &lhs, const Bvec3 &rhs);
+	bool operator!=(const Bvec3 &lhs, const Bvec3 &rhs);
 
 	struct Bvec4
 	{
@@ -774,7 +764,8 @@ namespace flame
 		uchar w;
 
 		Bvec4();
-		explicit Bvec4(uchar v);
+		explicit Bvec4(int v);
+		explicit Bvec4(uchar *v);
 		Bvec4(uchar _x, uchar _y, uchar _z, uchar _w);
 		Bvec4(const Bvec2 &v, uchar _z, uchar _w);
 		Bvec4(const Bvec3 &v, uchar _w);
@@ -784,10 +775,10 @@ namespace flame
 		uchar const &operator[](int i) const;
 		Bvec4 &operator+=(const Bvec4 &v);
 		Bvec4 &operator*=(float v);
-
-		static Bvec4 from(uchar *src);
-		void to(uchar *dst) const;
 	};
+
+	bool operator==(const Bvec4 &lhs, const Bvec4 &rhs);
+	bool operator!=(const Bvec4 &lhs, const Bvec4 &rhs);
 
 	Bvec4 operator+(const Bvec4 &lhs, const Bvec4 &rhs);
 	Bvec4 operator*(const Bvec4 &lhs, float rhs);
@@ -1217,6 +1208,12 @@ namespace flame
 	{
 	}
 
+	inline Vec2::Vec2(float *v) :
+		x(v[0]),
+		y(v[1])
+	{
+	}
+
 	inline Vec2::Vec2(float _x, float _y) :
 		x(_x),
 		y(_y)
@@ -1414,20 +1411,6 @@ namespace flame
 		return ret;
 	}
 
-	inline Vec2 Vec2::from(float *src)
-	{
-		Vec2 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		return ret;
-	}
-
-	inline void Vec2::to(float *dst) const
-	{
-		dst[0] = x;
-		dst[1] = y;
-	}
-
 	inline bool operator==(const Vec2 &lhs, const Vec2 &rhs)
 	{
 		return equals(lhs.x, rhs.x) && equals(lhs.y, rhs.y);
@@ -1596,6 +1579,13 @@ namespace flame
 		x(v),
 		y(v),
 		z(v)
+	{
+	}
+
+	inline Vec3::Vec3(float *v) :
+		x(v[0]),
+		y(v[1]),
+		z(v[2])
 	{
 	}
 
@@ -1806,22 +1796,6 @@ namespace flame
 		return ret;
 	}
 
-	inline Vec3 Vec3::from(float *src)
-	{
-		Vec3 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		ret.z = src[2];
-		return ret;
-	}
-
-	inline void Vec3::to(float *dst) const
-	{
-		dst[0] = x;
-		dst[1] = y;
-		dst[2] = z;
-	}
-
 	inline bool operator==(const Vec3 &lhs, const Vec3 &rhs)
 	{
 		return equals(lhs.x, rhs.x) && equals(lhs.y, rhs.y) && equals(lhs.z, rhs.z);
@@ -1974,6 +1948,14 @@ namespace flame
 		y(v),
 		z(v),
 		w(v)
+	{
+	}
+
+	inline Vec4::Vec4(float *v) :
+		x(v[0]),
+		y(v[1]),
+		z(v[2]),
+		w(v[3])
 	{
 	}
 
@@ -2198,24 +2180,6 @@ namespace flame
 		return ret;
 	}
 
-	inline Vec4 Vec4::from(float *src)
-	{
-		Vec4 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		ret.z = src[2];
-		ret.w = src[3];
-		return ret;
-	}
-
-	inline void Vec4::to(float *dst) const
-	{
-		dst[0] = x;
-		dst[1] = y;
-		dst[2] = z;
-		dst[3] = w;
-	}
-
 	inline bool operator==(const Vec4 &lhs, const Vec4 &rhs)
 	{
 		return equals(lhs.x, rhs.x) && equals(lhs.y, rhs.y) && equals(lhs.z, rhs.z) && equals(lhs.w, rhs.w);
@@ -2394,6 +2358,12 @@ namespace flame
 	inline Ivec2::Ivec2(int v) :
 		x(v),
 		y(v)
+	{
+	}
+
+	inline Ivec2::Ivec2(int *v) :
+		x(v[0]),
+		y(v[1])
 	{
 	}
 
@@ -2580,20 +2550,6 @@ namespace flame
 		return sqrt(x * x + y * y);
 	}
 
-	inline Ivec2 Ivec2::from(int *src)
-	{
-		Ivec2 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		return ret;
-	}
-
-	inline void Ivec2::to(int *dst) const
-	{
-		dst[0] = x;
-		dst[1] = y;
-	}
-
 	inline bool operator==(const Ivec2 &lhs, int rhs)
 	{
 		return lhs.x == rhs && lhs.y == rhs;
@@ -2747,6 +2703,13 @@ namespace flame
 		x(v),
 		y(v),
 		z(v)
+	{
+	}
+
+	inline Ivec3::Ivec3(int *v) :
+		x(v[0]),
+		y(v[1]),
+		z(v[2])
 	{
 	}
 
@@ -2942,22 +2905,6 @@ namespace flame
 		return sqrt(x * x + y * y + z * z);
 	}
 
-	inline Ivec3 Ivec3::from(int *src)
-	{
-		Ivec3 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		ret.z = src[2];
-		return ret;
-	}
-
-	inline void Ivec3::to(int *dst) const
-	{
-		dst[0] = x;
-		dst[1] = y;
-		dst[2] = z;
-	}
-
 	inline bool operator==(const Ivec3 &lhs, int v)
 	{
 		return lhs.x == v && lhs.y == v && lhs.z == v;
@@ -3130,6 +3077,14 @@ namespace flame
 		y(v),
 		z(v),
 		w(v)
+	{
+	}
+
+	inline Ivec4::Ivec4(int *v) :
+		x(v[0]),
+		y(v[1]),
+		z(v[2]),
+		w(v[3])
 	{
 	}
 
@@ -3346,24 +3301,6 @@ namespace flame
 		return sqrt(x * x + y * y + z * z + w * w);
 	}
 
-	inline Ivec4 Ivec4::from(int *src)
-	{
-		Ivec4 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		ret.z = src[2];
-		ret.w = src[3];
-		return ret;
-	}
-
-	inline void Ivec4::to(int *dst) const
-	{
-		dst[0] = x;
-		dst[1] = y;
-		dst[2] = z;
-		dst[3] = w;
-	}
-
 	inline bool operator==(const Ivec4 &lhs, const Ivec4 &rhs)
 	{
 		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
@@ -3525,6 +3462,12 @@ namespace flame
 	{
 	}
 
+	inline Bvec2::Bvec2(uchar *v) :
+		x(v[0]),
+		y(v[1])
+	{
+	}
+
 	inline Bvec2::Bvec2(uchar _x, uchar _y) :
 		x(_x),
 		y(_y)
@@ -3541,18 +3484,14 @@ namespace flame
 		return *(&x + i);
 	}
 
-	inline Bvec2 Bvec2::from(uchar *src)
+	inline bool operator==(const Bvec2 &lhs, const Bvec2 &rhs)
 	{
-		Bvec2 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		return ret;
+		return lhs.x == rhs.x && lhs.y == rhs.y;
 	}
 
-	inline void Bvec2::to(uchar *dst) const
+	inline bool operator!=(const Bvec2 &lhs, const Bvec2 &rhs)
 	{
-		dst[0] = x;
-		dst[1] = y;
+		return !(lhs == rhs);
 	}
 
 	inline Bvec3::Bvec3()
@@ -3563,6 +3502,13 @@ namespace flame
 		x(v),
 		y(v),
 		z(v)
+	{
+	}
+
+	inline Bvec3::Bvec3(uchar *v) :
+		x(v[0]),
+		y(v[1]),
+		z(v[2])
 	{
 	}
 
@@ -3583,31 +3529,33 @@ namespace flame
 		return *(&x + i);
 	}
 
-	inline Bvec3 Bvec3::from(uchar *src)
+	inline bool operator==(const Bvec3 &lhs, const Bvec3 &rhs)
 	{
-		Bvec3 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		ret.z = src[2];
-		return ret;
+		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
 	}
 
-	inline void Bvec3::to(uchar *dst) const
+	inline bool operator!=(const Bvec3 &lhs, const Bvec3 &rhs)
 	{
-		dst[0] = x;
-		dst[1] = y;
-		dst[2] = z;
+		return !(lhs == rhs);
 	}
 
 	inline Bvec4::Bvec4()
 	{
 	}
 
-	inline Bvec4::Bvec4(uchar v) :
+	inline Bvec4::Bvec4(int v) :
 		x(v),
 		y(v),
 		z(v),
 		w(v)
+	{
+	}
+
+	inline Bvec4::Bvec4(uchar *v) :
+		x(v[0]),
+		y(v[1]),
+		z(v[2]),
+		w(v[3])
 	{
 	}
 
@@ -3679,22 +3627,14 @@ namespace flame
 		return *this;
 	}
 
-	inline Bvec4 Bvec4::from(uchar *src)
+	inline bool operator==(const Bvec4 &lhs, const Bvec4 &rhs)
 	{
-		Bvec4 ret;
-		ret.x = src[0];
-		ret.y = src[1];
-		ret.z = src[2];
-		ret.w = src[3];
-		return ret;
+		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
 	}
 
-	inline void Bvec4::to(uchar *dst) const
+	inline bool operator!=(const Bvec4 &lhs, const Bvec4 &rhs) 
 	{
-		dst[0] = x;
-		dst[1] = y;
-		dst[2] = z;
-		dst[3] = w;
+		return !(lhs == rhs);
 	}
 
 	inline Bvec4 operator+(const Bvec4 &lhs, const Bvec4 &rhs)

@@ -118,6 +118,55 @@ namespace flame
 				std::string name;
 				int offset;
 
+				inline bool equal(void *src, void *dst) const
+				{
+					src = (char*)src + offset;
+					dst = (char*)dst + offset;
+
+					switch (tag)
+					{
+					case VariableTagEnumSingle: case VariableTagEnumMulti:
+						return *(int*)src == *(int*)dst;
+					case VariableTagVariable:
+						switch (type_hash)
+						{
+						case cH("bool"):
+							return *(bool*)src == *(bool*)dst;
+						case cH("uint"):
+							return *(uint*)src == *(uint*)dst;
+						case cH("int"):
+							return *(int*)src == *(int*)dst;
+						case cH("Ivec2"):
+							return *(Ivec2*)src == *(Ivec2*)dst;
+						case cH("Ivec3"):
+							return *(Ivec3*)src == *(Ivec3*)dst;
+						case cH("Ivec4"):
+							return *(Ivec4*)src == *(Ivec4*)dst;
+						case cH("float"):
+							return *(float*)src == *(float*)dst;
+						case cH("Vec2"):
+							return *(Vec2*)src == *(Vec2*)dst;
+						case cH("Vec3"):
+							return *(Vec3*)src == *(Vec3*)dst;
+						case cH("Vec4"):
+							return *(Vec4*)src == *(Vec4*)dst;
+						case cH("uchar"):
+							return *(uchar*)src == *(uchar*)dst;
+						case cH("Bvec2"):
+							return *(Bvec2*)src == *(Bvec2*)dst;
+						case cH("Bvec3"):
+							return *(Bvec3*)src == *(Bvec3*)dst;
+						case cH("Bvec4"):
+							return *(Bvec4*)src == *(Bvec4*)dst;
+						case cH("String"):
+							return *(String*)src == *(String*)dst;
+						}
+						break;
+					}
+
+					return false;
+				}
+
 				inline String serialize_value(void *src, bool is_obj, int precision) const
 				{
 					if (is_obj)
@@ -142,6 +191,12 @@ namespace flame
 							return to_string(*(uint*)src);
 						case cH("int"):
 							return to_string(*(int*)src);
+						case cH("Ivec2"):
+							return to_string(*(Ivec2*)src);
+						case cH("Ivec3"):
+							return to_string(*(Ivec3*)src);
+						case cH("Ivec4"):
+							return to_string(*(Ivec4*)src);
 						case cH("float"):
 							return to_string(*(float*)src, precision);
 						case cH("Vec2"):
@@ -149,7 +204,13 @@ namespace flame
 						case cH("Vec3"):
 							return to_string(*(Vec3*)src, precision);
 						case cH("Vec4"):
-							return to_string(*(Vec3*)src, precision);
+							return to_string(*(Vec4*)src, precision);
+						case cH("uchar"):
+							return to_string(*(uchar*)src);
+						case cH("Bvec2"):
+							return to_string(*(Bvec2*)src);
+						case cH("Bvec3"):
+							return to_string(*(Bvec3*)src);
 						case cH("Bvec4"):
 							return to_string(*(Bvec4*)src);
 						case cH("String"):
@@ -161,12 +222,10 @@ namespace flame
 					return "";
 				}
 
-				inline void unserialize_value(void *dst, bool is_obj, const char *_str) const
+				inline void unserialize_value(const std::string &str, void *dst, bool is_obj) const
 				{
 					if (is_obj)
 						dst = (char*)dst + offset;
-
-					std::string str(_str);
 
 					switch (tag)
 					{
@@ -181,20 +240,46 @@ namespace flame
 						{
 						case cH("bool"):
 							*(bool*)dst = str == "true" ? true : false;
+							break;
 						case cH("uint"):
 							*(uint*)dst = stoi1(str);
+							break;
 						case cH("int"):
 							*(int*)dst = stoi1(str);
+							break;
+						case cH("Ivec2"):
+							*(Ivec2*)dst = stoi2(str);
+							break;
+						case cH("Ivec3"):
+							*(Ivec3*)dst = stoi3(str);
+							break;
+						case cH("Ivec4"):
+							*(Ivec4*)dst = stoi4(str);
+							break;
 						case cH("float"):
 							*(float*)dst = stof1(str);
+							break;
 						case cH("Vec2"):
 							*(Vec2*)dst = stof2(str);
+							break;
 						case cH("Vec3"):
 							*(Vec3*)dst = stof3(str);
+							break;
+						case cH("uchar"):
+							*(uchar*)dst = stob1(str);
+							break;
+						case cH("Bvec2"):
+							*(Bvec2*)dst = stob2(str);
+							break;
+						case cH("Bvec3"):
+							*(Bvec3*)dst = stob3(str);
+							break;
 						case cH("Vec4"):
 							*(Vec4*)dst = stof4(str);
+							break;
 						case cH("Bvec4"):
 							*(Bvec4*)dst = stob4(str);
+							break;
 						}
 						break;
 					}
@@ -226,9 +311,19 @@ namespace flame
 				return ((VaribleInfoPrivate*)this)->offset;
 			}
 
+			bool VaribleInfo::equal(void *src, void *dst) const
+			{
+				return ((VaribleInfoPrivate*)this)->equal(src, dst);
+			}
+
 			String VaribleInfo::serialize_value(void *src, bool is_obj, int precision) const
 			{
 				return ((VaribleInfoPrivate*)this)->serialize_value(src, is_obj, precision);
+			}
+
+			void VaribleInfo::unserialize_value(const std::string &str, void *dst, bool is_obj) const
+			{
+				return ((VaribleInfoPrivate*)this)->unserialize_value(str, dst, is_obj);
 			}
 
 			struct UDTPrivate : UDT
@@ -251,12 +346,13 @@ namespace flame
 					auto p = find_pos;
 					while (true)
 					{
-						if (items[p]->name == name)
+						if (items[find_pos]->name == name)
 						{
+							auto t = find_pos;
 							find_pos++;
 							if (find_pos >= items.size())
 								find_pos = 0;
-							return p;
+							return t;
 						}
 						find_pos++;
 						if (find_pos == p)

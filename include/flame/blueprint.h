@@ -56,7 +56,7 @@ namespace flame
 
 			inline InSlotItem()
 			{
-				Ivec4(0).to(d.i);
+				*(Ivec4*)d.i = Ivec4(0);
 				n = nullptr;
 			}
 		};
@@ -73,7 +73,7 @@ namespace flame
 
 			inline OutSlot()
 			{
-				Ivec4(0).to(d.i);
+				*(Ivec4*)d.i = Ivec4(0);
 			}
 		};
 

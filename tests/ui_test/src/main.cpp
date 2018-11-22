@@ -219,21 +219,30 @@ extern "C" __declspec(dllexport) int main()
 
 	t_fps->text_col() = Bvec4(255);
 
+	//{
+	//	auto new_widget = ui::Widget::create(ui_ins);
+
+	//	auto xml = XmlFile::create("ui");
+
+	//	auto n = xml->root_node->new_node("widget");
+	//	auto u = typeinfo::cpp::find_udt(cH("ui::Widget"));
+
+	//	serialize(n, u, t_fps, 1, new_widget);
+
+	//	xml->save(L"d:/ui.xml");
+	//	XmlFile::destroy(xml);
+
+	//	ui::Widget::destroy(new_widget);
+	//}
+
 	{
-		auto new_widget = ui::Widget::create(ui_ins);
+		auto xml = XmlFile::create_from_file(L"d:/ui.xml");
 
-		auto xml = XmlFile::create("ui");
-
-		auto n = xml->root_node->new_node("widget");
 		auto u = typeinfo::cpp::find_udt(cH("ui::Widget"));
 
-		new_widget->name$ = "emm";
-		serialize(n, u, new_widget, 1);
+		unserialize(xml->root_node->node(0), u, t_fps);
 
-		xml->save(L"d:/ui.xml");
 		XmlFile::destroy(xml);
-
-		ui::Widget::destroy(new_widget);
 	}
 
 	app->run(do_run, "");

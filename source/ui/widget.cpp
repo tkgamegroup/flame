@@ -693,12 +693,12 @@ namespace flame
 
 		inline void WidgetPrivate::add_style(int closet_idx, PF pf, char *capture_fmt, va_list ap)
 		{
-			closets[closet_idx].emplace_back(Function::create(pf, "p:widget", capture_fmt, ap));
+			closets[closet_idx].emplace_back(Function::create(pf, "p", capture_fmt, ap));
 		}
 
 		inline void WidgetPrivate::add_animation(float total_time, bool looping, PF pf, char *capture_fmt, va_list ap)
 		{
-			animations.emplace_back(0.f, total_time, looping, Function::create(pf, "p:widget f:time", capture_fmt, ap));
+			animations.emplace_back(0.f, total_time, looping, Function::create(pf, "p f", capture_fmt, ap));
 		}
 
 		inline void WidgetPrivate::on_draw(Canvas *c, const Vec2 &off, float scl)
@@ -707,7 +707,7 @@ namespace flame
 			{
 				auto f = draw_commands$[i];
 				f->datas[0].p = c;
-				off.to(f->datas[1].f);
+				*(Vec2*)f->datas[1].f = off;
 				f->datas[2].f[0] = scl;
 				f->exec();
 			}
@@ -729,7 +729,7 @@ namespace flame
 		{
 			for (auto f : lmousedown_listeners)
 			{
-				mpos.to(f->datas[0].f);
+				*(Vec2*)f->datas[0].f = mpos;
 				f->exec();
 			}
 		}
@@ -738,7 +738,7 @@ namespace flame
 		{
 			for (auto f : rmousedown_listeners)
 			{
-				mpos.to(f->datas[0].f);
+				*(Vec2*)f->datas[0].f = mpos;
 				f->exec();
 			}
 		}
@@ -747,7 +747,7 @@ namespace flame
 		{
 			for (auto f : mousemove_listeners)
 			{
-				disp.to(f->datas[0].f);
+				*(Vec2*)f->datas[0].f = disp;
 				f->exec();
 			}
 		}
@@ -1221,7 +1221,7 @@ namespace flame
 
 		FLAME_REGISTER_FUNCTION_BEG(Widget_defaultdraw, FLAME_GID(8350), "p f2 f")
 			auto c = (Canvas*)d[0].p;
-			auto off = Vec2::from(d[1].f);
+			auto off = Vec2(d[1].f);
 			auto scl = d[2].f[0];
 			auto thiz = (Widget*)d[3].p;
 
@@ -1334,7 +1334,7 @@ namespace flame
 
 		FLAME_REGISTER_FUNCTION_BEG(Checkbox_draw, FLAME_GID(8818), "p f2 f")
 			auto c = (Canvas*)d[0].p;
-			auto off = Vec2::from(d[1].f);
+			auto off = Vec2(d[1].f);
 			auto scl = d[2].f[0];
 			auto thiz = (wCheckbox*)d[3].p;
 
@@ -1374,7 +1374,7 @@ namespace flame
 
 		FLAME_REGISTER_FUNCTION_BEG(Text_draw, FLAME_GID(9510), "p f2 f")
 			auto c = (Canvas*)d[0].p;
-			auto off = Vec2::from(d[1].f);
+			auto off = Vec2(d[1].f);
 			auto scl = d[2].f[0];
 			auto thiz = (wText*)d[3].p;
 
@@ -1925,7 +1925,7 @@ namespace flame
 
 		FLAME_REGISTER_FUNCTION_BEG(Combo_draw, FLAME_GID(9908), "p f2 f")
 			auto c = (Canvas*)d[0].p;
-			auto off = Vec2::from(d[1].f);
+			auto off = Vec2(d[1].f);
 			auto scl = d[2].f[0];
 			auto thiz = (wEdit*)d[3].p;
 
@@ -2020,7 +2020,7 @@ namespace flame
 
 		FLAME_REGISTER_FUNCTION_BEG(Image_draw, FLAME_GID(30624), "p f2 f")
 			auto c = (Canvas*)d[0].p;
-			auto off = Vec2::from(d[1].f);
+			auto off = Vec2(d[1].f);
 			auto scl = d[2].f[0];
 			auto thiz = (wImage*)d[3].p;
 
@@ -2080,7 +2080,7 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(SizeDrag_mousemove, FLAME_GID(2863), "f2")
-			auto disp = Vec2::from(d[0].f);
+			auto disp = Vec2(d[0].f);
 			auto thiz = (wSizeDrag*)d[1].p;
 			auto target = (Widget*)d[2].p;
 
@@ -2108,7 +2108,7 @@ namespace flame
 
 		FLAME_REGISTER_FUNCTION_BEG(SizeDrag_draw, FLAME_GID(4242), "p f2 f")
 			auto c = (Canvas*)d[0].p;
-			auto off = Vec2::from(d[1].f);
+			auto off = Vec2(d[1].f);
 			auto scl = d[2].f[0];
 			auto thiz = (wSizeDrag*)d[3].p;
 
@@ -2151,7 +2151,7 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Scrollbar_mousemove, FLAME_GID(1385), "f2")
-			auto disp = Vec2::from(d[0].f);
+			auto disp = Vec2(d[0].f);
 			auto thiz = (wScrollbar*)d[1].p;
 
 			if (thiz->w_btn() == thiz->instance()->dragging_widget())

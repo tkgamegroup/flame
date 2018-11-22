@@ -121,12 +121,13 @@ namespace flame
 			auto p = attr_find_pos;
 			while (true)
 			{
-				if (attrs[p]->name == name)
+				if (attrs[attr_find_pos]->name == name)
 				{
+					auto t = attr_find_pos;
 					attr_find_pos++;
 					if (attr_find_pos >= attrs.size())
 						attr_find_pos = 0;
-					return attrs[p].get();
+					return attrs[t].get();
 				}
 				attr_find_pos++;
 				if (attr_find_pos >= attrs.size())
@@ -182,12 +183,13 @@ namespace flame
 			auto p = node_find_pos;
 			while (true)
 			{
-				if (nodes[p]->name == name)
+				if (nodes[node_find_pos]->name == name)
 				{
+					auto t = node_find_pos;
 					node_find_pos++;
 					if (node_find_pos >= nodes.size())
 						node_find_pos = 0;
-					return nodes[p].get();
+					return nodes[t].get();
 				}
 				node_find_pos++;
 				if (node_find_pos == p)

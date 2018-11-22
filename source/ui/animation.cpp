@@ -31,8 +31,8 @@ namespace flame
 			auto w = (Widget*)d[0].p;
 			auto t = d[1].f[0];
 			auto duration = d[2].f[0];
-			auto pos_a = Vec2::from(d[3].f);
-			auto pos_b = Vec2::from(d[4].f);
+			auto pos_a = Vec2(d[3].f);
+			auto pos_b = Vec2(d[4].f);
 
 			if (t < 0.f)
 			{
