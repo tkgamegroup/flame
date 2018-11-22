@@ -50,9 +50,7 @@ namespace flame
 			std::vector<std::tuple<int, int, int>> delay_takes;
 			std::vector<std::tuple<int, int, int>> delay_clears;
 
-			typedef std::vector<Function*> closet;
-			std::vector<closet> closets;
-			closet *curr_closet;
+			std::vector<Function*> styles;
 
 			std::vector<std::tuple<float, float, bool, Function*>> animations;
 
@@ -99,12 +97,9 @@ namespace flame
 			void take_from_parent(bool delay = false);
 			int find_child(WidgetPrivate *w);
 
-			void resize_closet(int count);
-			void set_curr_closet(int idx);
-
 			void arrange();
 
-			void add_style(int closet_idx, PF pf, char *capture_fmt, va_list ap);
+			void add_style(PF pf, char *capture_fmt, va_list ap);
 			void add_animation(float total_time, bool looping, PF pf, char *capture_fmt, va_list ap);
 
 			void on_draw(Canvas *c, const Vec2 &off, float scl);

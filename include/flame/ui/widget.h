@@ -157,6 +157,8 @@ namespace flame
 
 			Array<Function*> draw_commands$;
 
+			int closet_id;
+
 			FLAME_UI_EXPORTS void set_width(float x, Widget *sender = nullptr);
 			FLAME_UI_EXPORTS void set_height(float y, Widget *sender = nullptr);
 			FLAME_UI_EXPORTS void set_size(const Vec2 &v, Widget *sender = nullptr);
@@ -184,11 +186,8 @@ namespace flame
 
 			FLAME_UI_EXPORTS void arrange();
 
-			FLAME_UI_EXPORTS void resize_closet(int count);
-			FLAME_UI_EXPORTS void set_curr_closet(int idx);
-
 			// (Widget *w)
-			FLAME_UI_EXPORTS void add_style(int closet_idx, PF pf, char *capture_fmt, ...);
+			FLAME_UI_EXPORTS void add_style(PF pf, char *capture_fmt, ...);
 
 			// (Widget *w, float curr_time)
 			FLAME_UI_EXPORTS void add_animation(float total_time, bool looping, PF pf, char *capture_fmt, ...);

@@ -596,7 +596,7 @@ namespace flame
 		{
 			auto &p = *(_Package*)__p;
 
-			for (auto s : *w->curr_closet)
+			for (auto s : w->styles)
 			{
 				s->datas[0].p = w;
 				s->exec();

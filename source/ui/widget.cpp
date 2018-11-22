@@ -87,19 +87,16 @@ namespace flame
 
 			instance = ui_;
 			parent = nullptr;
-			closets.resize(1);
-			curr_closet = &closets.front();
+
+			closet_id = 0;
 			
 			add_default_draw_command();
 		}
 
 		inline WidgetPrivate::~WidgetPrivate()
 		{
-			for (auto &c : closets)
-			{
-				for (auto s : c)
-					Function::destroy(s);
-			}
+			for (auto &s : styles)
+				Function::destroy(s);
 			for (auto &a : animations)
 				Function::destroy(std::get<3>(a));
 
@@ -680,20 +677,9 @@ namespace flame
 			}
 		}
 
-		inline void WidgetPrivate::resize_closet(int count)
+		inline void WidgetPrivate::add_style(PF pf, char *capture_fmt, va_list ap)
 		{
-			closets.resize(count);
-			curr_closet = &closets.front();
-		}
-
-		inline void WidgetPrivate::set_curr_closet(int idx)
-		{
-			curr_closet = &closets[idx];
-		}
-
-		inline void WidgetPrivate::add_style(int closet_idx, PF pf, char *capture_fmt, va_list ap)
-		{
-			closets[closet_idx].emplace_back(Function::create(pf, "p", capture_fmt, ap));
+			styles.emplace_back(Function::create(pf, "p", capture_fmt, ap));
 		}
 
 		inline void WidgetPrivate::add_animation(float total_time, bool looping, PF pf, char *capture_fmt, va_list ap)
@@ -1115,21 +1101,11 @@ namespace flame
 			((WidgetPrivate*)this)->arrange();
 		}
 
-		void Widget::resize_closet(int count)
-		{
-			((WidgetPrivate*)this)->resize_closet(count);
-		}
-
-		void Widget::set_curr_closet(int idx)
-		{
-			((WidgetPrivate*)this)->set_curr_closet(idx);
-		}
-
-		void Widget::add_style(int closet_idx, PF pf, char *capture_fmt, ...)
+		void Widget::add_style(PF pf, char *capture_fmt, ...)
 		{
 			va_list ap;
 			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_style(closet_idx, pf, capture_fmt, ap);
+			((WidgetPrivate*)this)->add_style(pf, capture_fmt, ap);
 			va_end(ap);
 		}
 
@@ -1495,7 +1471,6 @@ namespace flame
 			((wText*)this)->init();
 
 			class_hash$ = cH("toggle");
-			resize_closet(2);
 			resize_data_storage(3);
 
 			background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
@@ -1519,9 +1494,9 @@ namespace flame
 		{
 			toggled() = v;
 			if (!v)
-				set_curr_closet(0);
+				closet_id = 0;
 			else
-				set_curr_closet(1);
+				closet_id = 1;
 
 			report_changed();
 		}
@@ -2208,7 +2183,7 @@ namespace flame
 
 			add_listener(cH("mouse scroll"), Scrollbar_mousescroll::v, "p", this);
 
-			add_style(0, Scrollbar_style::v, "");
+			add_style(Scrollbar_style::v, "");
 		}
 
 		wButtonPtr &wScrollbar::w_btn()
@@ -2316,7 +2291,7 @@ namespace flame
 				auto i = (wListItem*)w;
 
 				add_style_color(i->w_btn(), 0, Vec3(260.f, 0.8f, 1.f));
-				i->w_btn()->add_style(0, ListItem_btn_style::v, "p", thiz);
+				i->w_btn()->add_style(ListItem_btn_style::v, "p", thiz);
 
 				i->w_btn()->add_listener(cH("left mouse down"), ListItem_btn_leftmousedown::v, "p p", thiz, i);
 			}
