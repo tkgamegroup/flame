@@ -52,7 +52,7 @@ namespace flame
 
 			std::vector<Function*> styles;
 
-			std::vector<std::tuple<float, float, bool, Function*>> animations;
+			std::vector<Function*> animations;
 
 			std::vector<Function*> mouseenter_listeners;
 			std::vector<Function*> mouseleave_listeners;

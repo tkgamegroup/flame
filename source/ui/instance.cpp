@@ -607,12 +607,14 @@ namespace flame
 
 			for (auto it = w->animations.begin(); it != w->animations.end(); )
 			{
-				std::get<0>(*it) += elp_time_;
-				if (std::get<0>(*it) >= std::get<1>(*it))
+				auto f = *it;
+				auto d = f->datas;
+				d[0].p = w;
+
+				d[1].f[0] += elp_time_;
+				if (d[1].f[0] >= d[2].f[0])
 				{
-					auto f = std::get<3>(*it);
-					f->datas[0].p = w;
-					f->datas[1].f[0] = -1.f;
+					d[1].f[0] = -1.f;
 					f->exec();
 					Function::destroy(f);
 					it = w->animations.erase(it);
@@ -620,9 +622,6 @@ namespace flame
 				}
 				else
 				{
-					auto f = std::get<3>(*it);
-					f->datas[0].p = w;
-					f->datas[1].f[0] = std::get<0>(*it);
 					f->exec();
 					it++;
 				}

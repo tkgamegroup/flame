@@ -98,7 +98,7 @@ namespace flame
 			for (auto &s : styles)
 				Function::destroy(s);
 			for (auto &a : animations)
-				Function::destroy(std::get<3>(a));
+				Function::destroy(a);
 
 			if (this == instance->dragging_widget())
 				instance->set_dragging_widget(nullptr);
@@ -170,7 +170,7 @@ namespace flame
 		void WidgetPrivate::remove_animations()
 		{
 			for (auto &a : animations)
-				Function::destroy(std::get<3>(a));
+				Function::destroy(a);
 			animations.clear();
 			for (auto i = 0; i < 2; i++)
 			{
@@ -684,7 +684,11 @@ namespace flame
 
 		inline void WidgetPrivate::add_animation(float total_time, bool looping, PF pf, char *capture_fmt, va_list ap)
 		{
-			animations.emplace_back(0.f, total_time, looping, Function::create(pf, "p f", capture_fmt, ap));
+			auto f = Function::create(pf, "p f f i", capture_fmt, ap);
+			f->datas[1].f[0] = 0.f;
+			f->datas[2].f[0] = total_time;
+			f->datas[3].i[0] = looping;
+			animations.emplace_back(f);
 		}
 
 		inline void WidgetPrivate::on_draw(Canvas *c, const Vec2 &off, float scl)

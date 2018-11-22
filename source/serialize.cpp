@@ -40,11 +40,8 @@ namespace flame
 		return -1;
 	}
 
-	void serialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision, void *default_obj)
+	void _serialize(const std::vector<void*> &obj_table, XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision, void *default_obj)
 	{
-		std::vector<void*> obj_table;
-		obj_table.push_back(obj);
-
 		for (auto i = 0; i < u->item_count(); i++)
 		{
 			auto item = u->item(i);
@@ -53,15 +50,19 @@ namespace flame
 			{
 			case typeinfo::cpp::VariableTagArrayOfPointer:
 			{
+				const auto &arr = *(Array<void*>*)((char*)obj + item->offset());
+
+				if (arr.size == 0)
+					break;
+
 				auto n_item = n->new_node("attribute");
 				n_item->new_attr("name", item->name());
 
 				if (item->type_hash() == cH("Function"))
 				{
-					const auto &arr = *(Array<Function*>*)((char*)obj + item->offset());
 					for (auto i_i = 0; i_i < arr.size; i_i++)
 					{
-						auto f = arr[i_i];
+						auto f = (Function*)arr[i_i];
 						auto id = find_registered_PF(f->pf);
 
 						auto n_fn = n_item->new_node("function");
@@ -110,6 +111,19 @@ namespace flame
 						}
 					}
 				}
+				else
+				{
+					auto u_sub = typeinfo::cpp::find_udt(item->type_hash());
+
+					if (u_sub)
+					{
+						for (auto i_i = 0; i_i < arr.size; i_i++)
+						{
+							auto n_sub = n_item->new_node(u_sub->name());
+							_serialize(obj_table, n_sub, u_sub, arr[i_i], precision, default_obj);
+						}
+					}
+				}
 			}
 				break;
 			default:
@@ -122,6 +136,14 @@ namespace flame
 				}
 			}
 		}
+	}
+
+	void serialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj, int precision, void *default_obj)
+	{
+		std::vector<void*> obj_table;
+		obj_table.push_back(obj);
+
+		_serialize(obj_table, n, u, obj, precision, default_obj);
 	}
 
 	void unserialize(XmlNode *n, typeinfo::cpp::UDT *u, void *obj)
