@@ -157,7 +157,13 @@ namespace flame
 
 			Array<Function*> draw_commands$;
 
-			int closet_id;
+			int closet_id$;
+			Array<Function*> styles$;
+
+			Array<Function*> animations$;
+
+			Array<Widget*> children_1;
+			Array<Widget*> children_2;
 
 			FLAME_UI_EXPORTS void set_width(float x, Widget *sender = nullptr);
 			FLAME_UI_EXPORTS void set_height(float y, Widget *sender = nullptr);
@@ -169,28 +175,16 @@ namespace flame
 			FLAME_UI_EXPORTS Widget *parent() const;
 			FLAME_UI_EXPORTS int layer() const;
 
-			FLAME_UI_EXPORTS void add_child(Widget *w, int layer = 0, int pos = -1, bool delay = false, void(*func)(CommonData*) = nullptr, char *capture_fmt = nullptr, ...);
-			FLAME_UI_EXPORTS void remove_child(int layer, int idx, bool delay = false);
-			FLAME_UI_EXPORTS void remove_child(Widget *w, bool delay = false);
-			FLAME_UI_EXPORTS void take_child(int layer, int idx, bool delay = false);
-			FLAME_UI_EXPORTS void take_child(Widget *w, bool delay = false);
-			FLAME_UI_EXPORTS void clear_children(int layer, int begin, int end, bool delay = false);
-			FLAME_UI_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
-			FLAME_UI_EXPORTS void remove_from_parent(bool delay = false);
-			FLAME_UI_EXPORTS void take_from_parent(bool delay = false);
-			FLAME_UI_EXPORTS int children_count(int layer) const;
-			FLAME_UI_EXPORTS Widget *child(int layer, int idx);
-			FLAME_UI_EXPORTS int find_child(Widget *w);
+			FLAME_UI_EXPORTS void add_draw_command(PF pf, char *capture_fmt, ...);
+			FLAME_UI_EXPORTS void add_default_draw_command();
+			FLAME_UI_EXPORTS void remove_draw_command(int idx);
 
-			FLAME_UI_EXPORTS float get_content_size() const;
-
-			FLAME_UI_EXPORTS void arrange();
-
-			// (Widget *w)
+			// parm (Widget *w)
 			FLAME_UI_EXPORTS void add_style(PF pf, char *capture_fmt, ...);
 
-			// (Widget *w, float curr_time)
-			FLAME_UI_EXPORTS void add_animation(float total_time, bool looping, PF pf, char *capture_fmt, ...);
+			// parm (Widget *w, float curr_time) 
+			// the first two of captures must be "f i" (duration looping)
+			FLAME_UI_EXPORTS void add_animation(PF pf, char *capture_fmt, ...);
 
 			FLAME_UI_EXPORTS void on_draw(Canvas *c, const Vec2 &off, float scl);
 			FLAME_UI_EXPORTS void on_mouseenter();
@@ -207,10 +201,6 @@ namespace flame
 			FLAME_UI_EXPORTS void on_drop(Widget *src);
 
 			FLAME_UI_EXPORTS void report_changed() const;
-
-			FLAME_UI_EXPORTS void add_draw_command(PF pf, char *capture_fmt, ...);
-			FLAME_UI_EXPORTS void add_default_draw_command();
-			FLAME_UI_EXPORTS void remove_draw_command(int idx);
 
 			// "mouse enter":      ()
 			// "mouse leave":      ()
@@ -230,6 +220,21 @@ namespace flame
 
 			FLAME_UI_EXPORTS Function *add_listener(unsigned int type, PF pf, char *capture_fmt, ...);
 			FLAME_UI_EXPORTS void remove_listener(unsigned int type, Function *f, bool delay = false);
+
+			FLAME_UI_EXPORTS void add_child(Widget *w, int layer = 0, int pos = -1, bool delay = false, void(*func)(CommonData*) = nullptr, char *capture_fmt = nullptr, ...);
+			FLAME_UI_EXPORTS void remove_child(int layer, int idx, bool delay = false);
+			FLAME_UI_EXPORTS void remove_child(Widget *w, bool delay = false);
+			FLAME_UI_EXPORTS void take_child(int layer, int idx, bool delay = false);
+			FLAME_UI_EXPORTS void take_child(Widget *w, bool delay = false);
+			FLAME_UI_EXPORTS void clear_children(int layer, int begin, int end, bool delay = false);
+			FLAME_UI_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
+			FLAME_UI_EXPORTS void remove_from_parent(bool delay = false);
+			FLAME_UI_EXPORTS void take_from_parent(bool delay = false);
+			FLAME_UI_EXPORTS int find_child(Widget *w);
+
+			FLAME_UI_EXPORTS float get_content_size() const;
+
+			FLAME_UI_EXPORTS void arrange();
 
 			FLAME_UI_EXPORTS void resize_data_storage(int count);
 			FLAME_UI_EXPORTS CommonData &data_storage(int idx);

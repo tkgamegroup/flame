@@ -45,7 +45,7 @@ namespace flame
 
 		void add_animation_moveto(Widget *w, float duration, const Vec2 &pos_a, const Vec2 &pos_b)
 		{
-			w->add_animation(duration, false, Animation_moveto::v, "f2 f2", pos_a, pos_b);
+			w->add_animation(Animation_moveto::v, "f i f2 f2", duration, 0, pos_a, pos_b);
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Animation_fade, FLAME_GID(9864), "p f")
@@ -66,7 +66,7 @@ namespace flame
 
 		void add_animation_fade(Widget *w, float duration, float alpha_a, float alpha_b)
 		{
-			w->add_animation(duration, false, Animation_fade::v, "f f", alpha_a, alpha_b);
+			w->add_animation(Animation_fade::v, "f i f f", duration, 0, alpha_a, alpha_b);
 		}
 	}
 }

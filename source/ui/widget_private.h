@@ -37,22 +37,8 @@ namespace flame
 		struct WidgetPrivate : Widget
 		{
 			Instance *instance;
-
 			WidgetPrivate *parent;
 			int layer;
-			std::vector<std::unique_ptr<WidgetPrivate>> children_[2];
-
-			std::vector<std::tuple<WidgetPrivate*, int, int, Function*>> delay_adds;
-			std::vector<std::pair<int, int>> delay_removes_by_idx;
-			std::vector<WidgetPrivate*> delay_removes_by_ptr;
-			std::vector<std::pair<int, int>> delay_takes_by_idx;
-			std::vector<WidgetPrivate*> delay_takes_by_ptr;
-			std::vector<std::tuple<int, int, int>> delay_takes;
-			std::vector<std::tuple<int, int, int>> delay_clears;
-
-			std::vector<Function*> styles;
-
-			std::vector<Function*> animations;
 
 			std::vector<Function*> mouseenter_listeners;
 			std::vector<Function*> mouseleave_listeners;
@@ -72,6 +58,14 @@ namespace flame
 
 			std::vector<std::pair<uint, Function*>> delay_listener_remove;
 
+			std::vector<std::tuple<WidgetPrivate*, int, int, Function*>> delay_adds;
+			std::vector<std::pair<int, int>> delay_removes_by_idx;
+			std::vector<WidgetPrivate*> delay_removes_by_ptr;
+			std::vector<std::pair<int, int>> delay_takes_by_idx;
+			std::vector<WidgetPrivate*> delay_takes_by_ptr;
+			std::vector<std::tuple<int, int, int>> delay_takes;
+			std::vector<std::tuple<int, int, int>> delay_clears;
+
 			std::vector<CommonData> data_storage_;
 			std::vector<std::wstring> string_storage_;
 
@@ -84,23 +78,12 @@ namespace flame
 
 			void set_visibility(bool v);
 
-			void remove_animations();
-
-			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, void(*func)(CommonData*) = nullptr, char *capture_fmt = nullptr, va_list = 0);
-			void remove_child(int layer, int idx, bool delay = false);
-			void remove_child(WidgetPrivate *w, bool delay = false);
-			void take_child(int layer, int idx, bool delay = false);
-			void take_child(WidgetPrivate *w, bool delay = false);
-			void clear_children(int layer, int begin, int end, bool delay = false);
-			void take_children(int layer, int begin, int end, bool delay = false);
-			void remove_from_parent(bool delay = false);
-			void take_from_parent(bool delay = false);
-			int find_child(WidgetPrivate *w);
-
-			void arrange();
+			void add_draw_command(PF pf, char *capture_fmt, va_list ap);
+			void remove_draw_command(int idx);
 
 			void add_style(PF pf, char *capture_fmt, va_list ap);
-			void add_animation(float total_time, bool looping, PF pf, char *capture_fmt, va_list ap);
+
+			void add_animation(PF pf, char *capture_fmt, va_list ap);
 
 			void on_draw(Canvas *c, const Vec2 &off, float scl);
 			void on_mouseenter();
@@ -118,11 +101,23 @@ namespace flame
 
 			void report_changed() const;
 
-			void add_draw_command(PF pf, char *capture_fmt, va_list ap);
-			void remove_draw_command(int idx);
-
 			Function *add_listener(unsigned int type, PF pf, char *capture_fmt, va_list ap);
 			void remove_listener(unsigned int type, Function *f, bool delay = false);
+
+			void remove_animations();
+
+			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, void(*func)(CommonData*) = nullptr, char *capture_fmt = nullptr, va_list = 0);
+			void remove_child(int layer, int idx, bool delay = false);
+			void remove_child(WidgetPrivate *w, bool delay = false);
+			void take_child(int layer, int idx, bool delay = false);
+			void take_child(WidgetPrivate *w, bool delay = false);
+			void clear_children(int layer, int begin, int end, bool delay = false);
+			void take_children(int layer, int begin, int end, bool delay = false);
+			void remove_from_parent(bool delay = false);
+			void take_from_parent(bool delay = false);
+			int find_child(WidgetPrivate *w);
+
+			void arrange();
 
 			void resize_data_storage(int count);
 

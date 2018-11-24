@@ -137,8 +137,11 @@ namespace flame
 			void close_popup();
 
 			void begin(float elp_time);
+			void preprocessing_children(void *__p, WidgetPrivate *w, const Array<Widget*> &children, const Vec2 &off, float scl);
 			void preprocessing(void *__p, WidgetPrivate *w, bool visible, const Vec2 &off, float scl);
+			void show_children(void *__p, WidgetPrivate *w, const Array<Widget*> &children, bool visible, const Vec2 &off, float scl);
 			void show(void *__p, WidgetPrivate *w, bool visible, const Vec2 &off, float scl);
+			void postprocessing_children(const Array<Widget*> &children);
 			void postprocessing(WidgetPrivate *w);
 			void end(Canvas *canvas, const Vec2 &show_off = Vec2(0.f));
 		};

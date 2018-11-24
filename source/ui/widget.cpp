@@ -88,17 +88,17 @@ namespace flame
 			instance = ui_;
 			parent = nullptr;
 
-			closet_id = 0;
+			closet_id$ = 0;
 			
 			add_default_draw_command();
 		}
 
 		inline WidgetPrivate::~WidgetPrivate()
 		{
-			for (auto &s : styles)
-				Function::destroy(s);
-			for (auto &a : animations)
-				Function::destroy(a);
+			for (auto i = 0; i < styles$.size; i++)
+				Function::destroy(styles$[i]);
+			for (auto i = 0; i < animations$.size; i++)
+				Function::destroy(animations$[i]);
 
 			if (this == instance->dragging_widget())
 				instance->set_dragging_widget(nullptr);
@@ -167,528 +167,40 @@ namespace flame
 				parent->arrange();
 		}
 
+		inline void WidgetPrivate::add_draw_command(PF pf, char *capture_fmt, va_list ap)
+		{
+			auto f = Function::create(pf, "p f2 f", capture_fmt, ap);
+			draw_commands$.push_back(f);
+		}
+
+		inline void WidgetPrivate::remove_draw_command(int idx)
+		{
+			Function::destroy(draw_commands$[idx]);
+			draw_commands$.remove(idx);
+		}
+
 		void WidgetPrivate::remove_animations()
 		{
-			for (auto &a : animations)
-				Function::destroy(a);
-			animations.clear();
-			for (auto i = 0; i < 2; i++)
-			{
-				for (auto &c : children_[i])
-					c->remove_animations();
-			}
-		}
-
-		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, void(*func)(CommonData*), char *capture_fmt, va_list ap)
-		{
-			if (delay)
-			{
-				delay_adds.emplace_back(w, layer, pos, func ? Function::create(func, "", capture_fmt, ap) : nullptr);
-				return;
-			}
-
-			if (pos < 0)
-				pos = children_[layer].size() + pos + 1;
-			children_[layer].emplace(children_[layer].begin() + pos, w);
-
-			w->parent = this;
-			w->layer = layer;
-
-			arrange();
-
-			for (auto f : addchild_listeners)
-			{
-				f->datas[0].p = w;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::remove_child(int layer, int idx, bool delay)
-		{
-			if (delay)
-			{
-				delay_removes_by_idx.emplace_back(layer, idx);
-				return;
-			}
-
-			children_[layer].erase(children_[layer].begin() + idx);
-
-			arrange();
-		}
-
-		inline void WidgetPrivate::remove_child(WidgetPrivate *w, bool delay)
-		{
-			if (delay)
-			{
-				delay_removes_by_ptr.push_back(w);
-				return;
-			}
-
-			for (auto it = children_[w->layer].begin(); it != children_[w->layer].end(); it++)
-			{
-				if (it->get() == w)
-				{
-					children_[w->layer].erase(it);
-
-					arrange();
-					return;
-				}
-			}
-		}
-
-		inline void WidgetPrivate::take_child(int layer, int idx, bool delay)
-		{
-			if (delay)
-			{
-				delay_takes_by_idx.emplace_back(layer, idx);
-				return;
-			}
-
-			children_[layer][idx].release();
-			children_[layer].erase(children_[layer].begin() + idx);
-
-			remove_animations();
-
-			arrange();
-		}
-
-		inline void WidgetPrivate::take_child(WidgetPrivate *w, bool delay)
-		{
-			if (delay)
-			{
-				delay_takes_by_ptr.push_back(w);
-				return;
-			}
-
-			for (auto it = children_[w->layer].begin(); it != children_[w->layer].end(); it++)
-			{
-				if (it->get() == w)
-				{
-					it->release();
-					children_[w->layer].erase(it);
-					w->remove_animations();
-
-					arrange();
-					return;
-				}
-			}
-		}
-
-		inline void WidgetPrivate::clear_children(int layer, int begin, int end, bool delay)
-		{
-			if (delay)
-			{
-				delay_clears.emplace_back(layer, begin, end);
-				return;
-			}
-
-			if (end < 0)
-				end = children_[layer].size() + end + 1;
-			children_[layer].erase(children_[layer].begin() + begin, children_[layer].begin() + end);
-
-			arrange();
-		}
-
-		inline void WidgetPrivate::take_children(int layer, int begin, int end, bool delay)
-		{
-			if (delay)
-			{
-				delay_takes.emplace_back(layer, begin, end);
-				return;
-			}
-
-			if (end == -1)
-				end = children_[layer].size();
-			for (auto i = begin; i < end; i++)
-				children_[layer][i].release()->remove_animations();
-			children_[layer].erase(children_[layer].begin() + begin, children_[layer].begin() + end);
-
-			arrange();
-		}
-
-		inline void WidgetPrivate::remove_from_parent(bool delay)
-		{
-			if (delay)
-			{
-				if (parent)
-					parent->remove_child(this, true);
-				return;
-			}
-
-			if (parent)
-				parent->remove_child(this);
-		}
-
-		inline void WidgetPrivate::take_from_parent(bool delay)
-		{
-			if (delay)
-			{
-				if (parent)
-					parent->take_child(this, true);
-				return;
-			}
-
-			if (parent)
-				parent->take_child(this);
-		}
-
-		inline int WidgetPrivate::find_child(WidgetPrivate *w)
-		{
-			for (auto i = 0; i < children_[w->layer].size(); i++)
-			{
-				if (children_[layer][i].get() == w)
-					return i;
-			}
-			return -1;
-		}
-
-		inline void WidgetPrivate::arrange()
-		{
-			switch (layout_type$)
-			{
-			case LayoutVertical:
-			{
-				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
-				{
-					auto width = 0;
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						width = max(width, c->size$.x);
-					}
-
-					width += inner_padding$[0] + inner_padding$[1];
-					if (size_policy_hori$ == SizeFitChildren)
-						set_width(width, this);
-					else if (size_policy_hori$ == SizeGreedy)
-					{
-						if (width > size$.x)
-							set_width(width, this);
-					}
-				}
-				if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
-				{
-					auto height = 0;
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						height += c->size$.y + item_padding$;
-					}
-					height -= item_padding$;
-					content_size = height;
-
-					height += inner_padding$[2] + inner_padding$[3];
-					if (size_policy_vert$ == SizeFitChildren)
-						set_height(height, this);
-					else if (size_policy_vert$ == SizeGreedy)
-					{
-						if (height > size$.y)
-							set_height(height, this);
-					}
-				}
-				else if (size_policy_vert$ == SizeFitLayout)
-				{
-					auto cnt = 0;
-					auto height = 0;
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						if (c->size_policy_vert$ == SizeFitLayout)
-							cnt++;
-						else
-							height += c->size$.y;
-						height += item_padding$;
-					}
-					height -= item_padding$;
-					content_size = height;
-
-					height = max(0, (size$.y - inner_padding$[2] - inner_padding$[3] - height) / cnt);
-
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						if (c->size_policy_vert$ == SizeFitLayout)
-							c->set_height(height, this);
-					}
-				}
-
-				auto width = size$.x - inner_padding$[0] - inner_padding$[1];
-				auto height = size$.y - inner_padding$[2] - inner_padding$[3];
-
-				auto content_size = get_content_size();
-				scroll_offset$ = content_size > height ? clamp((float)scroll_offset$, height - content_size, 0.f) : 0.f;
-
-				auto y = inner_padding$[2] + scroll_offset$;
-
-				for (auto &c : children_[0])
-				{
-					if (!c->visible$)
-						continue;
-
-					if (c->size_policy_hori$ == SizeFitLayout)
-						c->set_width(width, this);
-					else if (c->size_policy_hori$ == SizeGreedy)
-					{
-						if (width > c->size$.x)
-							c->set_width(width, this);
-					}
-
-					switch (c->align$)
-					{
-					case AlignLittleEnd:
-						c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$, y);
-						break;
-					case AlignLargeEnd:
-						c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$, y);
-						break;
-					case AlignMiddle:
-						c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0], y);
-						break;
-					}
-
-					y += c->size$.y + item_padding$;
-				}
-			}
-				break;
-			case LayoutHorizontal:
-			{
-				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
-				{
-					auto width = 0;
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						width += c->size$.x + item_padding$;
-					}
-					width -= item_padding$;
-					content_size = width;
-
-					width += inner_padding$[0] + inner_padding$[1];
-					if (size_policy_hori$ == SizeFitChildren)
-						set_width(width, this);
-					else if (size_policy_hori$ == SizeGreedy)
-					{
-						if (width > size$.x)
-							set_width(width, this);
-					}
-				}
-				else if (size_policy_hori$ == SizeFitLayout)
-				{
-					auto cnt = 0;
-					auto width = 0;
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						if (c->size_policy_hori$ == SizeFitLayout)
-							cnt++;
-						else
-							width += c->size$.x;
-						width += item_padding$;
-					}
-					width -= item_padding$;
-					content_size = width;
-
-					width = max(0, (size$.x - inner_padding$[0] - inner_padding$[1] - width) / cnt);
-
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						if (c->size_policy_hori$ == SizeFitLayout)
-							c->set_width(width, this);
-					}
-				}
-				if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
-				{
-					auto height = 0;
-					for (auto &c : children_[0])
-					{
-						if (!c->visible$)
-							continue;
-
-						height = max(height, c->size$.y);
-					}
-
-					height += inner_padding$[2] + inner_padding$[3];
-					if (size_policy_vert$ == SizeFitChildren)
-						set_height(height, this);
-					else if (size_policy_vert$ == SizeGreedy)
-					{
-						if (height > size$.y)
-							set_height(height, this);
-					}
-				}
-
-				auto height = size$.y - inner_padding$[2] - inner_padding$[3];
-				auto x = inner_padding$[0];
-				for (auto &c : children_[0])
-				{
-					if (!c->visible$)
-						continue;
-
-					if (c->size_policy_vert$ == SizeFitLayout)
-						c->set_height(height, this);
-					else if (c->size_policy_vert$ == SizeGreedy)
-					{
-						if (height > c->size$.y)
-							c->set_height(height, this);
-					}
-
-					switch (c->align$)
-					{
-					case AlignLittleEnd:
-						c->pos$ = Vec2(x, inner_padding$[2] + c->layout_padding$);
-						break;
-					case AlignLargeEnd:
-						c->pos$ = Vec2(x, size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-						break;
-					case AlignMiddle:
-						c->pos$ = Vec2(x, (size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
-						break;
-					}
-
-					x += c->size$.x + item_padding$;
-				}
-			}
-				break;
-			case LayoutGrid:
-			{
-				auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
-
-				auto cnt = 0;
-				auto line_height = 0.f;
-				auto max_width = 0.f;
-				for (auto &c : children_[0])
-				{
-					c->pos$ = pos;
-					line_height = max(line_height, c->size$.y);
-
-					pos.x += c->size$.x + item_padding$;
-					max_width = max(max_width, pos.x);
-					cnt++;
-					if (cnt >= grid_hori_count$)
-					{
-						pos.x = inner_padding$[0];
-						pos.y += line_height + item_padding$;
-						cnt = 0;
-						line_height = 0.f;
-					}
-				}
-
-				if (size_policy_hori$ == SizeFitChildren)
-					set_width(max(max_width - item_padding$, 0.f), this);
-				if (size_policy_vert$ == SizeFitChildren)
-					set_height(max(pos.y - item_padding$, 0.f), this);
-			}
-				break;
-			}
-
-			for (auto &c : children_[1])
-			{
-				switch (c->align$)
-				{
-				case AlignLeft:
-					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-						(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
-					break;
-				case AlignRight:
-					if (c->size_policy_vert$ == SizeFitLayout)
-						c->size$.y = size$.y - inner_padding$[2] - inner_padding$[3];
-					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-						(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
-					break;
-				case AlignTop:
-					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
-						inner_padding$[2] + c->layout_padding$);
-					break;
-				case AlignBottom:
-					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
-						size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-					break;
-				case AlignLeftTop:
-					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-						inner_padding$[2] + c->layout_padding$);
-					break;
-				case AlignLeftBottom:
-					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-						size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-					break;
-				case AlignRightTop:
-					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-						inner_padding$[2] + c->layout_padding$);
-					break;
-				case AlignRightBottom:
-					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-						size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-					break;
-				case AlignLeftNoPadding:
-					c->pos$ = Vec2(c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
-					break;
-				case AlignRightNoPadding:
-					c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
-					break;
-				case AlignTopNoPadding:
-					c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, c->layout_padding$);
-					break;
-				case AlignBottomNoPadding:
-					c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, size$.y - c->size$.y - c->layout_padding$);
-					break;
-				case AlignLeftTopNoPadding:
-					c->pos$ = Vec2(c->layout_padding$, c->layout_padding$);
-					break;
-				case AlignLeftBottomNoPadding:
-					c->pos$ = Vec2(c->layout_padding$, size$.y - c->size$.y - c->layout_padding$);
-					break;
-				case AlignRightTopNoPadding:
-					c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, c->layout_padding$);
-					break;
-				case AlignRightBottomNoPadding:
-					c->pos$ = size$ - c->size$ - Vec2(c->layout_padding$);
-					break;
-				case AlignCenter:
-					c->pos$ = (size$ - c->size$) * 0.5f;
-					break;
-				case AlignLeftOutside:
-					c->pos$ = Vec2(-c->size$.x, 0.f);
-					break;
-				case AlignRightOutside:
-					c->pos$ = Vec2(size$.x, 0.f);
-					break;
-				case AlignTopOutside:
-					c->pos$ = Vec2(0.f, -c->size$.y);
-					break;
-				case AlignBottomOutside:
-					c->pos$ = Vec2(0.f, size$.y);
-					break;
-				}
-			}
+			for (auto i = 0; i < animations$.size; i++)
+				Function::destroy(animations$[i]);
+			animations$.resize(0);
+			for (auto i = 0; i < children_1.size; i++)
+				((WidgetPrivate*)children_1[i])->remove_animations();
+			for (auto i = 0; i < children_2.size; i++)
+				((WidgetPrivate*)children_2[i])->remove_animations();
 		}
 
 		inline void WidgetPrivate::add_style(PF pf, char *capture_fmt, va_list ap)
 		{
-			styles.emplace_back(Function::create(pf, "p", capture_fmt, ap));
+			auto f = Function::create(pf, "p", capture_fmt, ap);
+			styles$.push_back(f);
 		}
 
-		inline void WidgetPrivate::add_animation(float total_time, bool looping, PF pf, char *capture_fmt, va_list ap)
+		inline void WidgetPrivate::add_animation(PF pf, char *capture_fmt, va_list ap)
 		{
-			auto f = Function::create(pf, "p f f i", capture_fmt, ap);
+			auto f = Function::create(pf, "p f", capture_fmt, ap);
 			f->datas[1].f[0] = 0.f;
-			f->datas[2].f[0] = total_time;
-			f->datas[3].i[0] = looping;
-			animations.emplace_back(f);
+			animations$.push_back(f);
 		}
 
 		inline void WidgetPrivate::on_draw(Canvas *c, const Vec2 &off, float scl)
@@ -814,12 +326,6 @@ namespace flame
 		{
 			for (auto f : changed_listeners)
 				f->exec();
-		}
-
-		inline void WidgetPrivate::add_draw_command(PF pf, char *capture_fmt, va_list ap)
-		{
-			auto f = Function::create(pf, "p f2 f", capture_fmt, ap);
-			draw_commands$.push_back(f);
 		}
 
 		inline Function *WidgetPrivate::add_listener(unsigned int type, PF pf, char *capture_fmt, va_list ap)
@@ -972,10 +478,524 @@ namespace flame
 			}
 		}
 
-		inline void WidgetPrivate::remove_draw_command(int idx)
+		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, void(*func)(CommonData*), char *capture_fmt, va_list ap)
 		{
-			Function::destroy(draw_commands$[idx]);
-			draw_commands$.remove(idx);
+			if (delay)
+			{
+				delay_adds.emplace_back(w, layer, pos, func ? Function::create(func, "", capture_fmt, ap) : nullptr);
+				return;
+			}
+
+			auto &children = layer == 0 ? children_1 : children_2;
+			if (pos < 0)
+				pos = children.size + pos + 1;
+			children.insert(pos, w);
+
+			w->parent = this;
+			w->layer = layer;
+
+			arrange();
+
+			for (auto f : addchild_listeners)
+			{
+				f->datas[0].p = w;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::remove_child(int layer, int idx, bool delay)
+		{
+			if (delay)
+			{
+				delay_removes_by_idx.emplace_back(layer, idx);
+				return;
+			}
+
+			auto &children = layer == 0 ? children_1 : children_2;
+			Widget::destroy(children[idx]);
+			children.remove(idx);
+
+			arrange();
+		}
+
+		inline void WidgetPrivate::remove_child(WidgetPrivate *w, bool delay)
+		{
+			if (delay)
+			{
+				delay_removes_by_ptr.push_back(w);
+				return;
+			}
+
+			auto &children = layer == 0 ? children_1 : children_2;
+			auto idx = children.find(w);
+			if (idx != -1)
+			{
+				Widget::destroy(children[idx]);
+				children.remove(idx);
+
+				arrange();
+			}
+		}
+
+		inline void WidgetPrivate::take_child(int layer, int idx, bool delay)
+		{
+			if (delay)
+			{
+				delay_takes_by_idx.emplace_back(layer, idx);
+				return;
+			}
+
+			auto &children = layer == 0 ? children_1 : children_2;
+			children.remove(idx);
+
+			remove_animations();
+
+			arrange();
+		}
+
+		inline void WidgetPrivate::take_child(WidgetPrivate *w, bool delay)
+		{
+			if (delay)
+			{
+				delay_takes_by_ptr.push_back(w);
+				return;
+			}
+
+			auto &children = layer == 0 ? children_1 : children_2;
+			auto idx = children.find(w);
+			if (idx != -1)
+			{
+				children.remove(idx);
+
+				arrange();
+			}
+		}
+
+		inline void WidgetPrivate::clear_children(int layer, int begin, int end, bool delay)
+		{
+			if (delay)
+			{
+				delay_clears.emplace_back(layer, begin, end);
+				return;
+			}
+
+			auto &children = layer == 0 ? children_1 : children_2;
+			if (end < 0)
+				end = children.size + end + 1;
+			for (auto i = begin; i < end; i++)
+				Widget::destroy(children[i]);
+			children.remove(begin, end - begin);
+
+			arrange();
+		}
+
+		inline void WidgetPrivate::take_children(int layer, int begin, int end, bool delay)
+		{
+			if (delay)
+			{
+				delay_takes.emplace_back(layer, begin, end);
+				return;
+			}
+
+			auto &children = layer == 0 ? children_1 : children_2;
+			if (end == -1)
+				end = children.size;
+			for (auto i = begin; i < end; i++)
+				((WidgetPrivate*)children[i])->remove_animations();
+			children.remove(begin, end - begin);
+
+			arrange();
+		}
+
+		inline void WidgetPrivate::remove_from_parent(bool delay)
+		{
+			if (delay)
+			{
+				if (parent)
+					parent->remove_child(this, true);
+				return;
+			}
+
+			if (parent)
+				parent->remove_child(this);
+		}
+
+		inline void WidgetPrivate::take_from_parent(bool delay)
+		{
+			if (delay)
+			{
+				if (parent)
+					parent->take_child(this, true);
+				return;
+			}
+
+			if (parent)
+				parent->take_child(this);
+		}
+
+		inline int WidgetPrivate::find_child(WidgetPrivate *w)
+		{
+			auto &children = layer == 0 ? children_1 : children_2;
+			return children.find(w);
+		}
+
+		inline void WidgetPrivate::arrange()
+		{
+			switch (layout_type$)
+			{
+			case LayoutVertical:
+			{
+				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
+				{
+					auto width = 0;
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						width = max(width, c->size$.x);
+					}
+
+					width += inner_padding$[0] + inner_padding$[1];
+					if (size_policy_hori$ == SizeFitChildren)
+						set_width(width, this);
+					else if (size_policy_hori$ == SizeGreedy)
+					{
+						if (width > size$.x)
+							set_width(width, this);
+					}
+				}
+				if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
+				{
+					auto height = 0;
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						height += c->size$.y + item_padding$;
+					}
+					height -= item_padding$;
+					content_size = height;
+
+					height += inner_padding$[2] + inner_padding$[3];
+					if (size_policy_vert$ == SizeFitChildren)
+						set_height(height, this);
+					else if (size_policy_vert$ == SizeGreedy)
+					{
+						if (height > size$.y)
+							set_height(height, this);
+					}
+				}
+				else if (size_policy_vert$ == SizeFitLayout)
+				{
+					auto cnt = 0;
+					auto height = 0;
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						if (c->size_policy_vert$ == SizeFitLayout)
+							cnt++;
+						else
+							height += c->size$.y;
+						height += item_padding$;
+					}
+					height -= item_padding$;
+					content_size = height;
+
+					height = max(0, (size$.y - inner_padding$[2] - inner_padding$[3] - height) / cnt);
+
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						if (c->size_policy_vert$ == SizeFitLayout)
+							c->set_height(height, this);
+					}
+				}
+
+				auto width = size$.x - inner_padding$[0] - inner_padding$[1];
+				auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+
+				auto content_size = get_content_size();
+				scroll_offset$ = content_size > height ? clamp((float)scroll_offset$, height - content_size, 0.f) : 0.f;
+
+				auto y = inner_padding$[2] + scroll_offset$;
+
+				for (auto i_c = 0; i_c < children_1.size; i_c++)
+				{
+					auto c = children_1[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_hori$ == SizeFitLayout)
+						c->set_width(width, this);
+					else if (c->size_policy_hori$ == SizeGreedy)
+					{
+						if (width > c->size$.x)
+							c->set_width(width, this);
+					}
+
+					switch (c->align$)
+					{
+					case AlignLittleEnd:
+						c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$, y);
+						break;
+					case AlignLargeEnd:
+						c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$, y);
+						break;
+					case AlignMiddle:
+						c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0], y);
+						break;
+					}
+
+					y += c->size$.y + item_padding$;
+				}
+			}
+				break;
+			case LayoutHorizontal:
+			{
+				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
+				{
+					auto width = 0;
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						width += c->size$.x + item_padding$;
+					}
+					width -= item_padding$;
+					content_size = width;
+
+					width += inner_padding$[0] + inner_padding$[1];
+					if (size_policy_hori$ == SizeFitChildren)
+						set_width(width, this);
+					else if (size_policy_hori$ == SizeGreedy)
+					{
+						if (width > size$.x)
+							set_width(width, this);
+					}
+				}
+				else if (size_policy_hori$ == SizeFitLayout)
+				{
+					auto cnt = 0;
+					auto width = 0;
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						if (c->size_policy_hori$ == SizeFitLayout)
+							cnt++;
+						else
+							width += c->size$.x;
+						width += item_padding$;
+					}
+					width -= item_padding$;
+					content_size = width;
+
+					width = max(0, (size$.x - inner_padding$[0] - inner_padding$[1] - width) / cnt);
+
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						if (c->size_policy_hori$ == SizeFitLayout)
+							c->set_width(width, this);
+					}
+				}
+				if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
+				{
+					auto height = 0;
+					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					{
+						auto c = children_1[i_c];
+
+						if (!c->visible$)
+							continue;
+
+						height = max(height, c->size$.y);
+					}
+
+					height += inner_padding$[2] + inner_padding$[3];
+					if (size_policy_vert$ == SizeFitChildren)
+						set_height(height, this);
+					else if (size_policy_vert$ == SizeGreedy)
+					{
+						if (height > size$.y)
+							set_height(height, this);
+					}
+				}
+
+				auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+				auto x = inner_padding$[0];
+				for (auto i_c = 0; i_c < children_1.size; i_c++)
+				{
+					auto c = children_1[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_vert$ == SizeFitLayout)
+						c->set_height(height, this);
+					else if (c->size_policy_vert$ == SizeGreedy)
+					{
+						if (height > c->size$.y)
+							c->set_height(height, this);
+					}
+
+					switch (c->align$)
+					{
+					case AlignLittleEnd:
+						c->pos$ = Vec2(x, inner_padding$[2] + c->layout_padding$);
+						break;
+					case AlignLargeEnd:
+						c->pos$ = Vec2(x, size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+						break;
+					case AlignMiddle:
+						c->pos$ = Vec2(x, (size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+						break;
+					}
+
+					x += c->size$.x + item_padding$;
+				}
+			}
+				break;
+			case LayoutGrid:
+			{
+				auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
+
+				auto cnt = 0;
+				auto line_height = 0.f;
+				auto max_width = 0.f;
+				for (auto i_c = 0; i_c < children_1.size; i_c++)
+				{
+					auto c = children_1[i_c];
+
+					c->pos$ = pos;
+					line_height = max(line_height, c->size$.y);
+
+					pos.x += c->size$.x + item_padding$;
+					max_width = max(max_width, pos.x);
+					cnt++;
+					if (cnt >= grid_hori_count$)
+					{
+						pos.x = inner_padding$[0];
+						pos.y += line_height + item_padding$;
+						cnt = 0;
+						line_height = 0.f;
+					}
+				}
+
+				if (size_policy_hori$ == SizeFitChildren)
+					set_width(max(max_width - item_padding$, 0.f), this);
+				if (size_policy_vert$ == SizeFitChildren)
+					set_height(max(pos.y - item_padding$, 0.f), this);
+			}
+				break;
+			}
+
+			for (auto i_c = 0; i_c < children_2.size; i_c++)
+			{
+				auto c = children_2[i_c];
+
+				switch (c->align$)
+				{
+				case AlignLeft:
+					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+						(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+					break;
+				case AlignRight:
+					if (c->size_policy_vert$ == SizeFitLayout)
+						c->size$.y = size$.y - inner_padding$[2] - inner_padding$[3];
+					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+						(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+					break;
+				case AlignTop:
+					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
+						inner_padding$[2] + c->layout_padding$);
+					break;
+				case AlignBottom:
+					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
+						size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+					break;
+				case AlignLeftTop:
+					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+						inner_padding$[2] + c->layout_padding$);
+					break;
+				case AlignLeftBottom:
+					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+						size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+					break;
+				case AlignRightTop:
+					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+						inner_padding$[2] + c->layout_padding$);
+					break;
+				case AlignRightBottom:
+					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+						size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+					break;
+				case AlignLeftNoPadding:
+					c->pos$ = Vec2(c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
+					break;
+				case AlignRightNoPadding:
+					c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
+					break;
+				case AlignTopNoPadding:
+					c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, c->layout_padding$);
+					break;
+				case AlignBottomNoPadding:
+					c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, size$.y - c->size$.y - c->layout_padding$);
+					break;
+				case AlignLeftTopNoPadding:
+					c->pos$ = Vec2(c->layout_padding$, c->layout_padding$);
+					break;
+				case AlignLeftBottomNoPadding:
+					c->pos$ = Vec2(c->layout_padding$, size$.y - c->size$.y - c->layout_padding$);
+					break;
+				case AlignRightTopNoPadding:
+					c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, c->layout_padding$);
+					break;
+				case AlignRightBottomNoPadding:
+					c->pos$ = size$ - c->size$ - Vec2(c->layout_padding$);
+					break;
+				case AlignCenter:
+					c->pos$ = (size$ - c->size$) * 0.5f;
+					break;
+				case AlignLeftOutside:
+					c->pos$ = Vec2(-c->size$.x, 0.f);
+					break;
+				case AlignRightOutside:
+					c->pos$ = Vec2(size$.x, 0.f);
+					break;
+				case AlignTopOutside:
+					c->pos$ = Vec2(0.f, -c->size$.y);
+					break;
+				case AlignBottomOutside:
+					c->pos$ = Vec2(0.f, size$.y);
+					break;
+				}
+			}
 		}
 
 		inline void WidgetPrivate::resize_data_storage(int count)
@@ -1015,6 +1035,49 @@ namespace flame
 			((WidgetPrivate*)this)->set_visibility(v);
 		}
 
+		void Widget::add_draw_command(PF pf, char *capture_fmt, ...)
+		{
+			va_list ap;
+			va_start(ap, capture_fmt);
+			((WidgetPrivate*)this)->add_draw_command(pf, capture_fmt, ap);
+			va_end(ap);
+		}
+
+		FLAME_REGISTER_FUNCTION_BEG(Widget_defaultdraw, FLAME_GID(8350), "p f2 f")
+			auto c = (Canvas*)d[0].p;
+		auto off = Vec2(d[1].f);
+		auto scl = d[2].f[0];
+		auto thiz = (Widget*)d[3].p;
+
+		auto p = (thiz->pos$ - Vec2(thiz->background_offset$[0], thiz->background_offset$[1])) * scl + off;
+		auto ss = scl * thiz->scale$;
+		auto s = (thiz->size$ + Vec2(thiz->background_offset$[0] + thiz->background_offset$[2], thiz->background_offset$[1] + thiz->background_offset$[3])) * ss;
+		auto rr = thiz->background_round_radius$ * ss;
+
+		if (thiz->background_shaow_thickness$ > 0.f)
+		{
+			c->add_rect_col2(p - Vec2(thiz->background_shaow_thickness$ * 0.5f), s + Vec2(thiz->background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
+				thiz->background_shaow_thickness$, rr, thiz->background_round_flags$);
+		}
+		if (thiz->alpha$ > 0.f)
+		{
+			if (thiz->background_col$.w > 0)
+				c->add_rect_filled(p, s, Bvec4(thiz->background_col$, thiz->alpha$), rr, thiz->background_round_flags$);
+			if (thiz->background_frame_thickness$ > 0.f && thiz->background_frame_col$.w > 0)
+				c->add_rect(p, s, Bvec4(thiz->background_frame_col$, thiz->alpha$), thiz->background_frame_thickness$, rr, thiz->background_round_flags$);
+		}
+		FLAME_REGISTER_FUNCTION_END(Widget_defaultdraw)
+
+			void Widget::add_default_draw_command()
+		{
+			add_draw_command(Widget_defaultdraw::v, "p", this);
+		}
+
+		void Widget::remove_draw_command(int idx)
+		{
+			((WidgetPrivate*)this)->remove_draw_command(idx);
+		}
+
 		Instance *Widget::instance() const
 		{
 			return ((WidgetPrivate*)this)->instance;
@@ -1030,81 +1093,6 @@ namespace flame
 			return ((WidgetPrivate*)this)->layer;
 		}
 
-		void Widget::add_child(Widget *w, int layer, int pos, bool delay, void(*func)(CommonData*), char *capture_fmt, ...)
-		{
-			va_list ap;
-			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, func, capture_fmt, ap);
-			va_end(ap);
-		}
-
-		void Widget::remove_child(int layer, int idx, bool delay)
-		{
-			((WidgetPrivate*)this)->remove_child(idx, delay);
-		}
-
-		void Widget::remove_child(Widget *w, bool delay)
-		{
-			((WidgetPrivate*)this)->remove_child((WidgetPrivate*)w, delay);
-		}
-
-		void Widget::take_child(int layer, int idx, bool delay)
-		{
-			((WidgetPrivate*)this)->take_child(layer, idx, delay);
-		}
-
-		void Widget::take_child(Widget *w, bool delay)
-		{
-			((WidgetPrivate*)this)->take_child((WidgetPrivate*)w, delay);
-		}
-
-		void Widget::clear_children(int layer, int begin, int end, bool delay)
-		{
-			((WidgetPrivate*)this)->clear_children(layer, begin, end, delay);
-		}
-
-		void Widget::take_children(int layer, int begin, int end, bool delay)
-		{
-			((WidgetPrivate*)this)->take_children(layer, begin, end, delay);
-		}
-
-		void Widget::remove_from_parent(bool delay)
-		{
-			((WidgetPrivate*)this)->remove_from_parent(delay);
-		}
-
-		void Widget::take_from_parent(bool delay)
-		{
-			((WidgetPrivate*)this)->take_from_parent(delay);
-		}
-
-		int Widget::children_count(int layer) const
-		{
-			return ((WidgetPrivate*)this)->children_[layer].size();
-		}
-
-		Widget *Widget::child(int layer, int idx)
-		{
-			return ((WidgetPrivate*)this)->children_[layer][idx].get();
-		}
-
-		int Widget::find_child(Widget *w)
-		{
-			return ((WidgetPrivate*)this)->find_child((WidgetPrivate*)w);
-		}
-
-		const auto scroll_spare_spacing = 20.f;
-
-		float Widget::get_content_size() const
-		{
-			return content_size + scroll_spare_spacing;
-		}
-
-		void Widget::arrange()
-		{
-			((WidgetPrivate*)this)->arrange();
-		}
-
 		void Widget::add_style(PF pf, char *capture_fmt, ...)
 		{
 			va_list ap;
@@ -1113,11 +1101,11 @@ namespace flame
 			va_end(ap);
 		}
 
-		void Widget::add_animation(float total_time, bool looping, PF pf, char *capture_fmt, ...)
+		void Widget::add_animation(PF pf, char *capture_fmt, ...)
 		{
 			va_list ap;
 			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_animation(total_time, looping, pf, capture_fmt, ap);
+			((WidgetPrivate*)this)->add_animation(pf, capture_fmt, ap);
 			va_end(ap);
 		}
 
@@ -1191,49 +1179,6 @@ namespace flame
 			((WidgetPrivate*)this)->report_changed();
 		}
 
-		void Widget::add_draw_command(PF pf, char *capture_fmt, ...)
-		{
-			va_list ap;
-			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_draw_command(pf, capture_fmt, ap);
-			va_end(ap);
-		}
-
-		FLAME_REGISTER_FUNCTION_BEG(Widget_defaultdraw, FLAME_GID(8350), "p f2 f")
-			auto c = (Canvas*)d[0].p;
-			auto off = Vec2(d[1].f);
-			auto scl = d[2].f[0];
-			auto thiz = (Widget*)d[3].p;
-
-			auto p = (thiz->pos$ - Vec2(thiz->background_offset$[0], thiz->background_offset$[1])) * scl + off;
-			auto ss = scl * thiz->scale$;
-			auto s = (thiz->size$ + Vec2(thiz->background_offset$[0] + thiz->background_offset$[2], thiz->background_offset$[1] + thiz->background_offset$[3])) * ss;
-			auto rr = thiz->background_round_radius$ * ss;
-
-			if (thiz->background_shaow_thickness$ > 0.f)
-			{
-				c->add_rect_col2(p - Vec2(thiz->background_shaow_thickness$ * 0.5f), s + Vec2(thiz->background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
-					thiz->background_shaow_thickness$, rr, thiz->background_round_flags$);
-			}
-			if (thiz->alpha$ > 0.f)
-			{
-				if (thiz->background_col$.w > 0)
-					c->add_rect_filled(p, s, Bvec4(thiz->background_col$, thiz->alpha$), rr, thiz->background_round_flags$);
-				if (thiz->background_frame_thickness$ > 0.f && thiz->background_frame_col$.w > 0)
-					c->add_rect(p, s, Bvec4(thiz->background_frame_col$, thiz->alpha$), thiz->background_frame_thickness$, rr, thiz->background_round_flags$);
-			}
-		FLAME_REGISTER_FUNCTION_END(Widget_defaultdraw)
-
-		void Widget::add_default_draw_command()
-		{
-			add_draw_command(Widget_defaultdraw::v, "p", this);
-		}
-
-		void Widget::remove_draw_command(int idx)
-		{
-			((WidgetPrivate*)this)->remove_draw_command(idx);
-		}
-
 		Function *Widget::add_listener(unsigned int type, PF pf, char *capture_fmt, ...)
 		{
 			va_list ap;
@@ -1246,6 +1191,71 @@ namespace flame
 		void Widget::remove_listener(unsigned int type, Function *f, bool delay)
 		{
 			((WidgetPrivate*)this)->remove_listener(type, f, delay);
+		}
+
+		void Widget::add_child(Widget *w, int layer, int pos, bool delay, void(*func)(CommonData*), char *capture_fmt, ...)
+		{
+			va_list ap;
+			va_start(ap, capture_fmt);
+			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, func, capture_fmt, ap);
+			va_end(ap);
+		}
+
+		void Widget::remove_child(int layer, int idx, bool delay)
+		{
+			((WidgetPrivate*)this)->remove_child(idx, delay);
+		}
+
+		void Widget::remove_child(Widget *w, bool delay)
+		{
+			((WidgetPrivate*)this)->remove_child((WidgetPrivate*)w, delay);
+		}
+
+		void Widget::take_child(int layer, int idx, bool delay)
+		{
+			((WidgetPrivate*)this)->take_child(layer, idx, delay);
+		}
+
+		void Widget::take_child(Widget *w, bool delay)
+		{
+			((WidgetPrivate*)this)->take_child((WidgetPrivate*)w, delay);
+		}
+
+		void Widget::clear_children(int layer, int begin, int end, bool delay)
+		{
+			((WidgetPrivate*)this)->clear_children(layer, begin, end, delay);
+		}
+
+		void Widget::take_children(int layer, int begin, int end, bool delay)
+		{
+			((WidgetPrivate*)this)->take_children(layer, begin, end, delay);
+		}
+
+		void Widget::remove_from_parent(bool delay)
+		{
+			((WidgetPrivate*)this)->remove_from_parent(delay);
+		}
+
+		void Widget::take_from_parent(bool delay)
+		{
+			((WidgetPrivate*)this)->take_from_parent(delay);
+		}
+
+		int Widget::find_child(Widget *w)
+		{
+			return ((WidgetPrivate*)this)->find_child((WidgetPrivate*)w);
+		}
+
+		const auto scroll_spare_spacing = 20.f;
+
+		float Widget::get_content_size() const
+		{
+			return content_size + scroll_spare_spacing;
+		}
+
+		void Widget::arrange()
+		{
+			((WidgetPrivate*)this)->arrange();
 		}
 
 		void Widget::resize_data_storage(int count)
@@ -1498,9 +1508,9 @@ namespace flame
 		{
 			toggled() = v;
 			if (!v)
-				closet_id = 0;
+				closet_id$ = 0;
 			else
-				closet_id = 1;
+				closet_id$ = 1;
 
 			report_changed();
 		}
@@ -1655,18 +1665,18 @@ namespace flame
 
 			if (parent() && (parent()->class_hash$ == cH("menubar") || parent()->class_hash$ == cH("menu items")))
 			{
-				for (auto i = 0; i < parent()->children_count(0); i++)
+				for (auto i = 0; i < parent()->children_1.size; i++)
 				{
-					auto c = parent()->child(0, i);
+					auto c = parent()->children_1[i];
 					if (c->class_hash$ == cH("menu"))
 						((wMenu*)c)->close();
 				}
 			}
 
 			w_items()->set_visibility(true);
-			for (auto i = 0; i < w_items()->children_count(0); i++)
+			for (auto i = 0; i < w_items()->children_1.size; i++)
 			{
-				auto w = w_items()->child(0, i);
+				auto w = w_items()->children_1[i];
 				add_animation_fade(w, 0.2f, 0.f, w->alpha$);
 			}
 
@@ -1689,9 +1699,9 @@ namespace flame
 			if (!opened())
 				return;
 
-			for (auto i = 0; i < w_items()->children_count(0); i++)
+			for (auto i = 0; i < w_items()->children_1.size; i++)
 			{
-				auto c = w_items()->child(0, i);
+				auto c = w_items()->children_1[i];
 				if (c->class_hash$ == cH("menu"))
 					((wMenu*)c)->close();
 			}
@@ -1789,7 +1799,7 @@ namespace flame
 				auto i = (wMenuItem*)w;
 
 				thiz->set_width(thiz->inner_padding$[0] + thiz->inner_padding$[1] + thiz->w_btn()->inner_padding$[0] + thiz->w_btn()->inner_padding$[1] + thiz->w_items()->size$.x);
-				auto idx = thiz->w_items()->children_count(0) - 1;
+				auto idx = thiz->w_items()->children_1.size - 1;
 
 				i->add_listener(cH("clicked"), ComboItem_clicked::v, "p i", thiz, idx);
 			}
@@ -1822,7 +1832,7 @@ namespace flame
 		void wCombo::set_sel(int idx)
 		{
 			sel() = idx;
-			auto i = (wMenuItem*)w_items()->child(0, idx);
+			auto i = (wMenuItem*)w_items()->children_1[idx];
 			w_btn()->set_text(i->text());
 
 			report_changed();

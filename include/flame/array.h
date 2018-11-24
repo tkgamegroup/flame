@@ -76,17 +76,33 @@ namespace flame
 			return v[idx];
 		}
 
-		inline void push_back(const T &_v)
+		inline void insert(int pos, const T &_v)
 		{
 			resize(size + 1);
-			v[size - 1] = _v;
+			v[pos] = _v;
 		}
 
-		inline void remove(int idx)
+		inline void push_back(const T &_v)
 		{
-			for (auto i = idx; i < size - 1; i++)
-				v[i] = v[i + 1];
-			resize(size - 1);
+			insert(size, _v);
+		}
+
+		inline void remove(int idx, int count = 1)
+		{
+			auto new_size = size - count;
+			for (auto i = idx; i < new_size; i++)
+				v[i] = v[i + count];
+			resize(new_size);
+		}
+
+		inline int find(const T &_v)
+		{
+			for (auto i = 0; i < size; i++)
+			{
+				if (v[i] == _v)
+					return i;
+			}
+			return -1;
 		}
 	};
 }

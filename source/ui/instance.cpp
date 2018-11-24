@@ -454,10 +454,12 @@ namespace flame
 				switch (popup_widget_->class_hash$)
 				{
 				case cH("menubar"):
-					for (auto &c : popup_widget_->children_[0])
+					for (auto i_c = 0; i_c < popup_widget_->children_1.size; i_c++)
 					{
+						auto c = popup_widget_->children_1[i_c];
+
 						if (c->class_hash$ == cH("menu"))
-							((wMenu*)c.get())->close();
+							((wMenu*)c)->close();
 					}
 					break;
 				case cH("menu items"):
@@ -501,6 +503,26 @@ namespace flame
 			Vec2 show_off;
 		};
 
+		void InstancePrivate::preprocessing_children(void *__p, WidgetPrivate *w, const Array<Widget*> &children, const Vec2 &off, float scl)
+		{
+			auto &p = *(_Package*)__p;
+
+			if (children.size == 0)
+				return;
+
+			if (w->clip$)
+				p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
+
+			auto _off = w->pos$ * scl + off;
+			auto _scl = w->scale$ * scl;
+
+			for (auto i_c = children.size - 1; i_c >= 0; i_c--)
+				preprocessing(&p, (WidgetPrivate*)children[i_c], w->showed, _off, _scl);
+
+			if (w->clip$)
+				p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+		}
+
 		void InstancePrivate::preprocessing(void *__p, WidgetPrivate *w, bool visible, const Vec2 &off, float scl)
 		{
 			auto &p = *(_Package*)__p;
@@ -517,23 +539,8 @@ namespace flame
 			w->global_scale = w->scale$ * scl;
 			w->showed = w->visible$ && visible;
 
-			for (auto i = 1; i >= 0; i--)
-			{
-				if (!w->children_[i].empty())
-				{
-					if (w->clip$)
-						p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
-
-					auto _off = w->pos$ * scl + off;
-					auto _scl = w->scale$ * scl;
-
-					for (auto it = w->children_[i].rbegin(); it != w->children_[i].rend(); it++)
-						preprocessing(&p, it->get(), w->showed, _off, _scl);
-
-					if (w->clip$)
-						p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-				}
-			}
+			preprocessing_children(__p, w, w->children_2, off, scl);
+			preprocessing_children(__p, w, w->children_1, off, scl);
 
 			if (!p.ban_event && visible && w->event_attitude$ != EventIgnore)
 			{
@@ -592,22 +599,48 @@ namespace flame
 			}
 		}
 
+		void InstancePrivate::show_children(void *__p, WidgetPrivate *w, const Array<Widget*> &children, bool visible, const Vec2 &off, float scl)
+		{
+			auto &p = *(_Package*)__p;
+
+			if (children.size == 0)
+				return;
+
+			if (w->clip$)
+			{
+				p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
+				p.canvas->set_scissor(p.curr_scissor);
+			}
+
+			auto _v = w->visible$ && visible;
+			auto _off = w->pos$ * scl + off;
+			auto _scl = w->scale$ * scl;
+
+			for (auto i_c = 0; i_c < children.size; i_c++)
+				show(&p, (WidgetPrivate*)children[i_c], _v, _off, _scl);
+
+			if (w->clip$)
+			{
+				p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+				p.canvas->set_scissor(p.curr_scissor);
+			}
+		}
+
 		void InstancePrivate::show(void *__p, WidgetPrivate *w, bool visible, const Vec2 &off, float scl)
 		{
 			auto &p = *(_Package*)__p;
 
-			for (auto s : w->styles)
+			for (auto i_s = 0; i_s < w->styles$.size; i_s++)
 			{
+				auto s = w->styles$[i_s];
+
 				s->datas[0].p = w;
 				s->exec();
 			}
 
-			if (w->class_hash$ == cH("treenode"))
-				int cut = 1;
-
-			for (auto it = w->animations.begin(); it != w->animations.end(); )
+			for (auto i_a = 0; i_a < w->animations$.size; )
 			{
-				auto f = *it;
+				auto f = w->animations$[i_a];
 				auto d = f->datas;
 				d[0].p = w;
 
@@ -617,13 +650,12 @@ namespace flame
 					d[1].f[0] = -1.f;
 					f->exec();
 					Function::destroy(f);
-					it = w->animations.erase(it);
-					continue;
+					w->animations$.remove(i_a);
 				}
 				else
 				{
 					f->exec();
-					it++;
+					i_a++;
 				}
 			}
 
@@ -640,46 +672,27 @@ namespace flame
 					w->on_draw(p.canvas, off + p.show_off, scl);
 			}
 
-			for (auto i = 0; i < 2; i++)
+			show_children(__p, w, w->children_1, visible, off, scl);
+			show_children(__p, w, w->children_2, visible, off, scl);
+		}
+
+		void InstancePrivate::postprocessing_children(const Array<Widget*> &children)
+		{
+			if (children.size == 0)
+				return;
+
+			for (auto i_c = children.size - 1; i_c >= 0; i_c--)
 			{
-				if (!w->children_[i].empty())
-				{
-					if (w->clip$)
-					{
-						p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
-						p.canvas->set_scissor(p.curr_scissor);
-					}
-
-					auto _v = w->visible$ && visible;
-					auto _off = w->pos$ * scl + off;
-					auto _scl = w->scale$ * scl;
-
-					for (auto &c : w->children_[i])
-						show(&p, c.get(), _v, _off, _scl);
-
-					if (w->clip$)
-					{
-						p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-						p.canvas->set_scissor(p.curr_scissor);
-					}
-				}
+				auto c = (WidgetPrivate*)children[i_c];
+				if (c->visible$)
+					postprocessing(c);
 			}
 		}
 
 		void InstancePrivate::postprocessing(WidgetPrivate *w)
 		{
-			for (auto i = 1; i >= 0; i--)
-			{
-				if (!w->children_[i].empty())
-				{
-					for (auto it = w->children_[i].rbegin(); it != w->children_[i].rend(); it++)
-					{
-						auto c = it->get();
-						if (c->visible$)
-							postprocessing(c);
-					}
-				}
-			}
+			postprocessing_children(w->children_2);
+			postprocessing_children(w->children_1);
 
 			w->state = StateNormal;
 			if (dragging_widget_)

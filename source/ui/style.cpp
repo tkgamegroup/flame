@@ -30,7 +30,7 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_BEG(Style_size, FLAME_GID(24726), "p")
 			auto w = (Widget*)d[0].p;
 
-			if (w->closet_id != d[1].i[0])
+			if (w->closet_id$ != d[1].i[0])
 				return;
 
 			switch (w->state)
@@ -55,7 +55,7 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_BEG(Style_color, FLAME_GID(13741), "p")
 			auto w = (Widget*)d[0].p;
 
-			if (w->closet_id != d[1].i[0])
+			if (w->closet_id$ != d[1].i[0])
 				return;
 
 			switch (w->state)
@@ -92,7 +92,7 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_BEG(Style_textcolor, FLAME_GID(785), "p")
 			auto w = (wText*)d[0].p;
 
-			if (w->closet_id != d[1].i[0])
+			if (w->closet_id$ != d[1].i[0])
 				return;
 
 			switch (w->state)
