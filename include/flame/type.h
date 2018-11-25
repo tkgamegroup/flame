@@ -46,14 +46,6 @@ namespace flame
 		}
 	};
 
-	union CommonData
-	{
-		int i[4];
-		float f[4];
-		uchar b[4];
-		void *p;
-	};
-
 	struct R // class that inherit this indicates it will be collected by typeinfogen
 	{
 		// if an UDT's member's name followed by '$', indicates it will be collected by typeinfogen

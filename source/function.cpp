@@ -124,102 +124,32 @@ namespace flame
 		auto f = (Function*)::malloc(sizeof(Function) + sizeof(CommonData) * (parm_sp.size() + capt_cnt - 1));
 		f->para_fmt = parm_fmt;
 		f->para_cnt = parm_sp.size();
-		f->capt_fmt = "";
 		f->capt_cnt = capt_cnt;
 		f->pf = pf;
 
 		return f;
 	}
 
-	Function *Function::create(PF pf, const char *parm_fmt, const char *capt_fmt, va_list ap)
+	Function *Function::create(PF pf, const char *parm_fmt, const std::vector<CommonData> &capt)
 	{
 		auto parm_sp = string_split(std::string(parm_fmt));
 
-		auto capt_sp = string_split(std::string(capt_fmt));
-
-		auto f = (Function*)::malloc(sizeof(Function) + sizeof(CommonData) * (parm_sp.size() + capt_sp.size() - 1));
+		auto f = (Function*)::malloc(sizeof(Function) + sizeof(CommonData) * (parm_sp.size() + capt.size() - 1));
 		f->para_fmt = parm_fmt;
 		f->para_cnt = parm_sp.size();
-		f->capt_fmt = capt_fmt;
-		f->capt_cnt = capt_sp.size();
+		f->capt_cnt = capt.size();
 		f->pf = pf;
 
-		auto d = f->datas + f->para_cnt;
-		for (auto &t : capt_sp)
+		auto d = f->datas;
+		for (auto &t : parm_sp)
 		{
-			if (t == "i")
-				d->i[0] = va_arg(ap, int);
-			else if (t == "i2")
-			{
-				auto v = va_arg(ap, Ivec2);
-				d->i[0] = v.x;
-				d->i[1] = v.y;
-			}
-			else if (t == "i3")
-			{
-				auto v = va_arg(ap, Ivec3);
-				d->i[0] = v.x;
-				d->i[1] = v.y;
-				d->i[2] = v.z;
-			}
-			else if (t == "i4")
-			{
-				auto v = va_arg(ap, Ivec4);
-				d->i[0] = v.x;
-				d->i[1] = v.y;
-				d->i[2] = v.z;
-				d->i[3] = v.w;
-			}
-			else if (t == "f")
-				d->f[0] = va_arg(ap, double);
-			else if (t == "f2")
-			{
-				auto v = va_arg(ap, Vec2);
-				d->f[0] = v.x;
-				d->f[1] = v.y;
-			}
-			else if (t == "f3")
-			{
-				auto v = va_arg(ap, Vec3);
-				d->f[0] = v.x;
-				d->f[1] = v.y;
-				d->f[2] = v.z;
-			}
-			else if (t == "f4")
-			{
-				auto v = va_arg(ap, Vec4);
-				d->f[0] = v.x;
-				d->f[1] = v.y;
-				d->f[2] = v.z;
-				d->f[3] = v.w;
-			}
-			else if (t == "b")
-				d->b[0] = va_arg(ap, uchar);
-			else if (t == "b2")
-			{
-				auto v = va_arg(ap, Bvec2);
-				d->b[0] = v.x;
-				d->b[1] = v.y;
-			}
-			else if (t == "b3")
-			{
-				auto v = va_arg(ap, Bvec3);
-				d->b[0] = v.x;
-				d->b[1] = v.y;
-				d->b[2] = v.z;
-			}
-			else if (t == "b4")
-			{
-				auto v = va_arg(ap, Bvec4);
-				d->b[0] = v.x;
-				d->b[1] = v.y;
-				d->b[2] = v.z;
-				d->b[3] = v.w;
-			}
-			else if (t == "p" || t == "s" || t == "sw")
-				d->p = va_arg(ap, void*);
-			else
-				assert(0);
+			d->set_fmt(t.c_str());
+
+			d++;
+		}
+		for (auto i = 0; i < capt.size(); i++)
+		{
+			*d = capt[i];
 
 			d++;
 		}

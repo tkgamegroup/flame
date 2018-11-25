@@ -36,6 +36,8 @@
 #include <flame/string.h>
 #include <flame/function.h>
 
+#include <vector>
+
 namespace flame
 {
 	struct Application;
@@ -195,7 +197,7 @@ namespace flame
 		// "resize":  (Ivec2 size)
 		// "destroy": ()
 
-		FLAME_WINDOW_EXPORTS Function *add_listener(unsigned int type, PF pf, char *capture_fmt, ...);
+		FLAME_WINDOW_EXPORTS Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt);
 		FLAME_WINDOW_EXPORTS void remove_listener(unsigned int type, Function *f);
 
 #ifdef FLAME_WINDOWS
@@ -218,10 +220,10 @@ namespace flame
 		long long fps;
 		float elapsed_time; // second
 
-		FLAME_WINDOW_EXPORTS int run(PF pf, char *capture_fmt, ...);
+		FLAME_WINDOW_EXPORTS int run(PF pf, const std::vector<CommonData> &capt);
 
 		FLAME_WINDOW_EXPORTS void clear_delay_events();
-		FLAME_WINDOW_EXPORTS void add_delay_event(PF pf, char *capture_fmt, ...);
+		FLAME_WINDOW_EXPORTS void add_delay_event(PF pf, const std::vector<CommonData> &capt);
 
 		FLAME_WINDOW_EXPORTS static Application *create();
 		FLAME_WINDOW_EXPORTS static void destroy(Application *m);

@@ -489,6 +489,11 @@
 				<item tag="varible" type="bool" name="want_key_focus" offset="144"/>
 				<item tag="varible" type="bool" name="visible" offset="145"/>
 				<item tag="array_of_pointer" type="Function" name="draw_commands" offset="176"/>
+				<item tag="varible" type="int" name="closet_id" offset="192"/>
+				<item tag="array_of_pointer" type="Function" name="styles" offset="200"/>
+				<item tag="array_of_pointer" type="Function" name="animations" offset="216"/>
+				<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="232"/>
+				<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="248"/>
 			</udt>
 		</udts>
 	</cpp>

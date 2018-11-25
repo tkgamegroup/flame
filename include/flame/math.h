@@ -479,7 +479,7 @@ namespace flame
 		float z;
 		float w;
 
-		Vec4();
+		Vec4() = default;
 		explicit Vec4(float v);
 		explicit Vec4(float *v);
 		Vec4(float _x, float _y, float _z, float _w);
@@ -492,6 +492,9 @@ namespace flame
 		explicit Vec4(const Ivec4 &v);
 		float &operator[](int i);
 		float const&operator[](int i) const;
+		Vec4 &operator=(float v);
+		Vec4 &operator=(const Vec2 &v);
+		Vec4 &operator=(const Vec3 &v);
 		Vec4 &operator=(const Vec4 &v);
 		Vec4 &operator=(const Ivec4 &v);
 		Vec4 &operator+=(const Vec4 &v);
@@ -671,7 +674,7 @@ namespace flame
 		int z;
 		int w;
 
-		Ivec4();
+		Ivec4() = default;
 		explicit Ivec4(int v);
 		explicit Ivec4(int *v);
 		Ivec4(int _x, int _y, int _z, int _w);
@@ -686,6 +689,9 @@ namespace flame
 		int &operator[](int i);
 		int const&operator[](int i) const;
 		Ivec4 &operator=(const Vec4 &v);
+		Ivec4 &operator=(int v);
+		Ivec4 &operator=(const Ivec2 &v);
+		Ivec4 &operator=(const Ivec3 &v);
 		Ivec4 &operator=(const Ivec4 &v);
 		Ivec4 &operator+=(const Vec4 &v);
 		Ivec4 &operator-=(const Vec4 &v);
@@ -763,7 +769,7 @@ namespace flame
 		uchar z;
 		uchar w;
 
-		Bvec4();
+		Bvec4() = default;
 		explicit Bvec4(int v);
 		explicit Bvec4(uchar *v);
 		Bvec4(uchar _x, uchar _y, uchar _z, uchar _w);
@@ -773,6 +779,10 @@ namespace flame
 		Bvec4(const Bvec4 &v, float a);
 		uchar &operator[](int i);
 		uchar const &operator[](int i) const;
+		Bvec4 &operator=(float v);
+		Bvec4 &operator=(const Bvec2 &v);
+		Bvec4 &operator=(const Bvec3 &v);
+		Bvec4 &operator=(const Bvec4 &v);
 		Bvec4 &operator+=(const Bvec4 &v);
 		Bvec4 &operator*=(float v);
 	};
@@ -1939,10 +1949,6 @@ namespace flame
 		return ret;
 	}
 
-	inline Vec4::Vec4()
-	{
-	}
-
 	inline Vec4::Vec4(float v) :
 		x(v),
 		y(v),
@@ -2031,6 +2037,27 @@ namespace flame
 	inline float const&Vec4::operator[](int i) const
 	{
 		return *(&x + i);
+	}
+
+	inline Vec4 &Vec4::operator=(float v)
+	{
+		x = v;
+		return *this;
+	}
+
+	inline Vec4 &Vec4::operator=(const Vec2 &v)
+	{
+		x = v.x;
+		y = v.y;
+		return *this;
+	}
+
+	inline Vec4 &Vec4::operator=(const Vec3 &v)
+	{
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		return *this;
 	}
 
 	inline Vec4 &Vec4::operator=(const Vec4 &v)
@@ -3068,10 +3095,6 @@ namespace flame
 		return ret;
 	}
 
-	inline Ivec4::Ivec4()
-	{
-	}
-
 	inline Ivec4::Ivec4(int v) :
 		x(v),
 		y(v),
@@ -3176,6 +3199,27 @@ namespace flame
 		y = v.y;
 		z = v.z;
 		w = v.w;
+		return *this;
+	}
+
+	inline Ivec4 &Ivec4::operator=(int v)
+	{
+		x = v;
+		return *this;
+	}
+
+	inline Ivec4 &Ivec4::operator=(const Ivec2 &v)
+	{
+		x = v.x;
+		y = v.y;
+		return *this;
+	}
+
+	inline Ivec4 &Ivec4::operator=(const Ivec3 &v)
+	{
+		x = v.x;
+		y = v.y;
+		z = v.z;
 		return *this;
 	}
 
@@ -3539,10 +3583,6 @@ namespace flame
 		return !(lhs == rhs);
 	}
 
-	inline Bvec4::Bvec4()
-	{
-	}
-
 	inline Bvec4::Bvec4(int v) :
 		x(v),
 		y(v),
@@ -3607,6 +3647,36 @@ namespace flame
 	inline uchar const &Bvec4::operator[](int i) const
 	{
 		return *(&x + i);
+	}
+
+	inline Bvec4 &Bvec4::operator=(float v)
+	{
+		x = v;
+		return *this;
+	}
+
+	inline Bvec4 &Bvec4::operator=(const Bvec2 &v)
+	{
+		x = v.x;
+		y = v.y;
+		return *this;
+	}
+
+	inline Bvec4 &Bvec4::operator=(const Bvec3 &v)
+	{
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		return *this;
+	}
+
+	inline Bvec4 &Bvec4::operator=(const Bvec4 &v)
+	{
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		w = v.w;
+		return *this;
 	}
 
 	inline Bvec4 &Bvec4::operator+=(const Bvec4 &v)
@@ -5281,5 +5351,271 @@ namespace flame
 			m[2][2] = 1.f - (xx + yy);
 		}
 	}
+
+	/* fmt:
+		i    - int
+		i2   - Ivec2
+		i3   - Ivec3
+		i4   - Ivec4
+		f    - float
+		f2   - Vec2
+		f3   - Vec3
+		f4   - Vec4
+		b    - uchar
+		b2   - Bvec2
+		b3   - Bvec3
+		b4   - Bvec4
+		p    - void*
+	*/
+
+	struct CommonData
+	{
+		char fmt[4];
+
+		union
+		{
+			Vec4 f;
+			Ivec4 i;
+			Bvec4 b;
+			void *p;
+		}v;
+
+		inline float &f1()
+		{
+			return v.f[0];
+		}
+
+		inline Vec2 &f2()
+		{
+			return *(Vec2*)&v.f;
+		}
+
+		inline Vec3 &f3()
+		{
+			return *(Vec3*)&v.f;
+		}
+
+		inline Vec4 &f4()
+		{
+			return v.f;
+		}
+
+		inline int &i1()
+		{
+			return v.i[0];
+		}
+
+		inline Ivec2 &i2()
+		{
+			return *(Ivec2*)&v.i;
+		}
+
+		inline Ivec3 &i3()
+		{
+			return *(Ivec3*)&v.i;
+		}
+
+		inline Ivec4 &i4()
+		{
+			return v.i;
+		}
+
+		inline uchar &b1()
+		{
+			return v.b[0];
+		}
+
+		inline Bvec2 &b2()
+		{
+			return *(Bvec2*)&v.b;
+		}
+
+		inline Bvec3 &b3()
+		{
+			return *(Bvec3*)&v.b;
+		}
+
+		inline Bvec4 &b4()
+		{
+			return v.b;
+		}
+
+		inline void *&p()
+		{
+			return v.p;
+		}
+
+		inline void set_fmt(const char *_fmt)
+		{
+			auto i = 0;
+			for (;; i++)
+			{
+				fmt[i] = _fmt[i];
+				if (fmt[i] == 0)
+					break;
+			}
+			for (; i < 4; i++)
+				fmt[i] = 0;
+		}
+
+		inline bool cmp_fmt(const char *_fmt)
+		{
+			for (auto i = 0;; i++)
+			{
+				if (fmt[i] != _fmt[i])
+					return false;
+				if (fmt[i] == 0)
+					break;
+			}
+			return true;
+		}
+
+		CommonData() = default;
+
+		inline CommonData(const CommonData &rhs)
+		{
+			for (auto i = 0; i < 4; i++)
+				fmt[i] = rhs.fmt[i];
+			memcpy(&v, &rhs.v, sizeof(v));
+		}
+
+		inline CommonData(float f)
+		{
+			fmt[0] = 'f';
+			fmt[1] = 0;
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.f = f;
+		}
+
+		inline CommonData(const Vec2 &f)
+		{
+			fmt[0] = 'f';
+			fmt[1] = '2';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.f = f;
+		}
+
+		inline CommonData(const Vec3 &f)
+		{
+			fmt[0] = 'f';
+			fmt[1] = '3';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.f = f;
+		}
+
+		inline CommonData(const Vec4 &f)
+		{
+			fmt[0] = 'f';
+			fmt[1] = '4';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.f = f;
+		}
+
+		inline CommonData(int i)
+		{
+			fmt[0] = 'i';
+			fmt[1] = 0;
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.i = i;
+		}
+
+		inline CommonData(const Ivec2 &i)
+		{
+			fmt[0] = 'i';
+			fmt[1] = '2';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.i = i;
+		}
+
+		inline CommonData(const Ivec3 &i)
+		{
+			fmt[0] = 'i';
+			fmt[1] = '3';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.i = i;
+		}
+
+		inline CommonData(const Ivec4 &i)
+		{
+			fmt[0] = 'i';
+			fmt[1] = '4';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.i = i;
+		}
+
+		inline CommonData(uchar b)
+		{
+			fmt[0] = 'b';
+			fmt[1] = 0;
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.b = b;
+		}
+
+		inline CommonData(const Bvec2 &b)
+		{
+			fmt[0] = 'b';
+			fmt[1] = '2';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.b = b;
+		}
+
+		inline CommonData(const Bvec3 &b)
+		{
+			fmt[0] = 'b';
+			fmt[1] = '3';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.b = b;
+		}
+
+		inline CommonData(const Bvec4 &b)
+		{
+			fmt[0] = 'b';
+			fmt[1] = '4';
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.b = b;
+		}
+
+		inline CommonData(void *p)
+		{
+			fmt[0] = 'p';
+			fmt[1] = 0;
+			fmt[2] = 0;
+			fmt[3] = 0;
+
+			v.p = p;
+		}
+
+		inline CommonData &operator=(const CommonData &rhs)
+		{
+			for (auto i = 0; i < 4; i++)
+				fmt[i] = rhs.fmt[i];
+			memcpy(&v, &rhs.v, sizeof(v));
+			return *this;
+		}
+	};
 }
 

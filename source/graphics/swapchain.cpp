@@ -46,7 +46,7 @@ namespace flame
 
 		static void Swapchain_resize(CommonData *d)
 		{
-			auto thiz = (SwapchainPrivate*)d[1].p;
+			auto thiz = (SwapchainPrivate*)d[1].p();
 
 			thiz->destroy();
 			thiz->create();
@@ -59,7 +59,7 @@ namespace flame
 
 			create();
 
-			w->add_listener(cH("resize"), Swapchain_resize, "p", this);
+			w->add_listener(cH("resize"), Swapchain_resize, { this });
 		}
 
 		inline SwapchainPrivate::~SwapchainPrivate()

@@ -36,6 +36,8 @@
 #include <flame/string.h>
 #include <flame/function.h>
 
+#include <vector>
+
 namespace flame
 {
 	struct Function;
@@ -69,12 +71,12 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_SYSTEM_EXPORTS FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, char *capture_fmt, ...); // (FileChangeType type, const wchar_t *filename)
+	FLAME_SYSTEM_EXPORTS FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt); // (FileChangeType type, const wchar_t *filename)
 	FLAME_SYSTEM_EXPORTS void remove_file_watcher(FileWatcher *w);
 
 	FLAME_SYSTEM_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
 
-	FLAME_SYSTEM_EXPORTS Function *add_global_key_listener(int key, PF pf, char *capture_fmt, ...); // 0 parms
+	FLAME_SYSTEM_EXPORTS Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt); // 0 parms
 	FLAME_SYSTEM_EXPORTS void remove_global_key_listener(int key, Function *f);
 
 	FLAME_SYSTEM_EXPORTS void get_thumbnai(int width, const wchar_t *filename, int *out_width, int *out_height, char **out_data);

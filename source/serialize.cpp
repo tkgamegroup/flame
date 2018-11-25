@@ -68,45 +68,83 @@ namespace flame
 						auto n_fn = n_item->new_node("function");
 						n_fn->new_attr("id", to_stdstring(id));
 
-						auto sp = string_split(std::string(f->capt_fmt));
 						auto d = f->datas + f->para_cnt;
-						for (auto &t : sp)
+						for (auto i = 0; i < f->capt_cnt; i++)
 						{
 							auto n_cpt = n_fn->new_node("capture");
-							n_cpt->new_attr("type", t);
+							auto a_ty = n_cpt->new_attr("type", "");
 							auto a_vl = n_cpt->new_attr("value", "");
-							std::string str;
+							std::string ty_str, vl_str;
 
-							if (t == "i")
-								str = to_stdstring(d->i[0]);
-							else if (t == "i2")
-								str = to_stdstring(Ivec2(d->i));
-							else if (t == "i3")
-								str = to_stdstring(Ivec3(d->i));
-							else if (t == "i4")
-								str = to_stdstring(Ivec4(d->i));
-							else if (t == "f")
-								str = to_stdstring(d->f[0]);
-							else if (t == "f2")
-								str = to_stdstring(Vec2(d->f));
-							else if (t == "f3")
-								str = to_stdstring(Vec3(d->f));
-							else if (t == "f4")
-								str = to_stdstring(Vec4(d->f));
-							else if (t == "b")
-								str = to_stdstring((int)d->b[0]);
-							else if (t == "b2")
-								str = to_stdstring(Bvec2(d->b));
-							else if (t == "b3")
-								str = to_stdstring(Bvec3(d->b));
-							else if (t == "b4")
-								str = to_stdstring(Bvec4(d->b));
-							else if (t == "p")
-								str = to_stdstring(find_obj(obj_table, d->p));
+							if (d->cmp_fmt("f"))
+							{
+								ty_str = "f";
+								vl_str = to_stdstring(d->f1());
+							}
+							else if (d->cmp_fmt("f2"))
+							{
+								ty_str = "f2";
+								vl_str = to_stdstring(d->f2());
+							}
+							else if (d->cmp_fmt("f3"))
+							{
+								ty_str = "f3";
+								vl_str = to_stdstring(d->f3());
+							}
+							else if (d->cmp_fmt("f4"))
+							{
+								ty_str = "f4";
+								vl_str = to_stdstring(d->f4());
+							}
+							else if (d->cmp_fmt("i"))
+							{
+								ty_str = "i";
+								vl_str = to_stdstring(d->i1());
+							}
+							else if (d->cmp_fmt("i2"))
+							{
+								ty_str = "i2";
+								vl_str = to_stdstring(d->i2());
+							}
+							else if (d->cmp_fmt("i3"))
+							{
+								ty_str = "i3";
+								vl_str = to_stdstring(d->i3());
+							}
+							else if (d->cmp_fmt("i4"))
+							{
+								ty_str = "i4";
+								vl_str = to_stdstring(d->i4());
+							}
+							else if (d->cmp_fmt("b"))
+							{
+								ty_str = "b";
+								vl_str = to_stdstring((int)d->b1());
+							}
+							else if (d->cmp_fmt("b2"))
+							{
+								ty_str = "b2";
+								vl_str = to_stdstring(d->b2());
+							}
+							else if (d->cmp_fmt("b3"))
+							{
+								ty_str = "b3";
+								vl_str = to_stdstring(d->b3());
+							}
+							else if (d->cmp_fmt("b4"))
+							{
+								ty_str = "b4";
+								vl_str = to_stdstring(d->b4());
+							}
+							else if (d->cmp_fmt("p"))
+							{
+								ty_str = "p";
+								vl_str = to_stdstring(find_obj(obj_table, d->p()));
+							}
 							else
 								assert(0);
 
-							a_vl->set_value(str);
+							a_vl->set_value(vl_str);
 							d++;
 						}
 					}
@@ -179,32 +217,71 @@ namespace flame
 							auto t = n_c->find_attr("type")->value();
 							auto str = n_c->find_attr("value")->value();
 
-							if (t == "i")
-								d->i[0] = stoi1(str);
-							else if (t == "i2")
-								*(Ivec2*)d->i = stoi2(str);
-							else if (t == "i3")
-								*(Ivec3*)d->i = stoi3(str);
-							else if (t == "i4")
-								*(Ivec4*)d->i = stoi4(str);
-							else if (t == "f")
-								d->f[0] = stof1(str);
+							if (t == "f")
+							{
+								d->set_fmt("f");
+								d->f1() = stof1(str);
+							}
 							else if (t == "f2")
-								*(Vec2*)d->f = stof2(str);
+							{
+								d->set_fmt("f2");
+								d->f2() = stof2(str);
+							}
 							else if (t == "f3")
-								*(Vec3*)d->f = stof3(str);
+							{
+								d->set_fmt("f3");
+								d->f3() = stof3(str);
+							}
 							else if (t == "f4")
-								*(Vec4*)d->f = stof4(str);
+							{
+								d->set_fmt("f4");
+								d->f4() = stof4(str);
+							}
+							else if (t == "i")
+							{
+								d->set_fmt("i");
+								d->i1() = stoi1(str);
+							}
+							else if (t == "i2")
+							{
+								d->set_fmt("i2");
+								d->i2() = stoi2(str);
+							}
+							else if (t == "i3")
+							{
+								d->set_fmt("i3");
+								d->i3() = stoi3(str);
+							}
+							else if (t == "i4")
+							{
+								d->set_fmt("i4");
+								d->i4() = stoi4(str);
+							}
 							else if (t == "b")
-								d->b[0] = stob1(str);
+							{
+								d->set_fmt("b");
+								d->b1() = stob1(str);
+							}
 							else if (t == "b2")
-								*(Bvec2*)d->b = stob2(str);
+							{
+								d->set_fmt("b2");
+								d->b2() = stob2(str);
+							}
 							else if (t == "b3")
-								*(Bvec3*)d->b = stob3(str);
+							{
+								d->set_fmt("b3");
+								d->b3() = stob3(str);
+							}
 							else if (t == "b4")
-								*(Bvec4*)d->b = stob4(str);
+							{
+								d->set_fmt("b4");
+								d->b4() = stob4(str);
+							}
 							else if (t == "p")
-								d->p = obj_table[stoi(str)];
+							{
+								d->set_fmt("p");
+								d->p() = obj_table[stoi(str)];
+							}
 							else
 								assert(0);
 							d++;

@@ -33,8 +33,6 @@
 #include <android_native_app_glue.h>
 #endif
 
-#include <vector>
-#include <stdarg.h>
 #include <assert.h>
 
 namespace flame
@@ -246,8 +244,8 @@ namespace flame
 		ApplicationPrivate();
 		~ApplicationPrivate();
 
-		int run(PF pf, char *capture_fmt, va_list ap);
-		void add_delay_event(PF pf, char *capture_fmt, va_list ap);
+		int run(PF pf, const std::vector<CommonData> &capt);
+		void add_delay_event(PF pf, const std::vector<CommonData> &capt);
 		void clear_delay_events();
 	};
 
@@ -429,7 +427,7 @@ namespace flame
 		}
 #endif
 
-		inline Function *add_listener(unsigned int type, PF pf, char *capture_fmt, va_list ap)
+		inline Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
 		{
 			const char *parm_fmt;
 			std::vector<Function*> *list;
@@ -477,7 +475,7 @@ namespace flame
 				return nullptr;
 			}
 
-			auto f = Function::create(pf, parm_fmt, capture_fmt, ap);
+			auto f = Function::create(pf, parm_fmt, capt);
 			list->emplace_back(f);
 			return f;
 		}
@@ -558,14 +556,9 @@ namespace flame
 	}
 #endif
 
-	Function *Window::add_listener(unsigned int type, PF pf, char *capture_fmt, ...)
+	Function *Window::add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
 	{
-		va_list ap;
-		va_start(ap, capture_fmt);
-		auto f = reinterpret_cast<WindowPrivate*>(this)->add_listener(type, pf, capture_fmt, ap);
-		va_end(ap);
-
-		return f;
+		return ((WindowPrivate*)this)->add_listener(type, pf, capt);
 	}
 
 	void Window::remove_listener(unsigned int type, Function *f)
@@ -607,7 +600,7 @@ namespace flame
 				auto v = Z(wParam);
 				for (auto &f : w->keydown_listeners)
 				{
-					f->datas[0].i[0] = v;
+					f->datas[0].i1() = v;
 					f->exec();
 				}
 			}
@@ -617,7 +610,7 @@ namespace flame
 				auto v = Z(wParam);
 				for (auto &f : w->keyup_listeners)
 				{
-					f->datas[0].i[0] = v;
+					f->datas[0].i1() = v;
 					f->exec();
 				}
 				break;
@@ -625,7 +618,7 @@ namespace flame
 			case WM_CHAR:
 				for (auto &f : w->char_listeners)
 				{
-					f->datas[0].i[0] = wParam;
+					f->datas[0].i1() = wParam;
 					f->exec();
 				}
 				break;
@@ -634,8 +627,8 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mousedown_listeners)
 				{
-					f->datas[0].i[0] = 0;
-					*(Ivec2*)f->datas[1].i = v;
+					f->datas[0].i1() = 0;
+					f->datas[1].i2() = v;
 					f->exec();
 				}
 			}
@@ -645,8 +638,8 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mouseup_listeners)
 				{
-					f->datas[0].i[0] = 0;
-					*(Ivec2*)f->datas[1].i = v;
+					f->datas[0].i1() = 0;
+					f->datas[1].i2() = v;
 					f->exec();
 				}
 			}
@@ -656,8 +649,8 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mousedown_listeners)
 				{
-					f->datas[0].i[0] = 2;
-					*(Ivec2*)f->datas[1].i = v;
+					f->datas[0].i1() = 2;
+					f->datas[1].i2() = v;
 					f->exec();
 				}
 			}
@@ -667,8 +660,8 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mouseup_listeners)
 				{
-					f->datas[0].i[0] = 2;
-					*(Ivec2*)f->datas[1].i = v;
+					f->datas[0].i1() = 2;
+					f->datas[1].i2() = v;
 					f->exec();
 				}
 			}
@@ -678,8 +671,8 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mousedown_listeners)
 				{
-					f->datas[0].i[0] = 1;
-					*(Ivec2*)f->datas[1].i = v;
+					f->datas[0].i1() = 1;
+					f->datas[1].i2() = v;
 					f->exec();
 				}
 			}
@@ -689,8 +682,8 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mouseup_listeners)
 				{
-					f->datas[0].i[0] = 1;
-					*(Ivec2*)f->datas[1].i = v;
+					f->datas[0].i1() = 1;
+					f->datas[1].i2() = v;
 					f->exec();
 				}
 			}
@@ -700,7 +693,7 @@ namespace flame
 				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mousemove_listeners)
 				{
-					*(Ivec2*)f->datas[0].i = v;
+					f->datas[0].i2() = v;
 					f->exec();
 				}
 			}
@@ -710,7 +703,7 @@ namespace flame
 				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
 				for (auto &f : w->mousescroll_listeners)
 				{
-					f->datas[0].i[0] = v;
+					f->datas[0].i1() = v;
 					f->exec();
 				}
 			}
@@ -726,7 +719,7 @@ namespace flame
 					w->size = size;
 					for (auto &f : w->resize_listeners)
 					{
-						*(Ivec2*)f->datas[0].i = size;
+						f->datas[0].i2() = size;
 						f->exec();
 					}
 				}
@@ -861,7 +854,7 @@ namespace flame
 		}
 	}
 
-	inline int ApplicationPrivate::run(PF pf, char *capture_fmt, va_list ap)
+	inline int ApplicationPrivate::run(PF pf, const std::vector<CommonData> &capt)
 	{
 		if (windows.size() == 0)
 			return 1;
@@ -871,7 +864,7 @@ namespace flame
 		counting_frame = 0;
 		total_frame = 0;
 
-		auto idle_func = Function::create(pf, "", capture_fmt, ap);
+		auto idle_func = Function::create(pf, "", capt);
 
 		for (;;)
 		{
@@ -940,10 +933,9 @@ namespace flame
 		}
 	}
 
-	inline void ApplicationPrivate::add_delay_event(PF pf, char *capture_fmt, va_list ap)
+	inline void ApplicationPrivate::add_delay_event(PF pf, const std::vector<CommonData> &capt)
 	{
-		auto f = Function::create(pf, "", capture_fmt, ap);
-		delay_events.emplace_back(f);
+		delay_events.emplace_back(Function::create(pf, "", capt));
 	}
 
 	inline void ApplicationPrivate::clear_delay_events()
@@ -953,26 +945,20 @@ namespace flame
 		delay_events.clear();
 	}
 
-	int Application::run(PF pf, char *capture_fmt, ...)
+	int Application::run(PF pf, const std::vector<CommonData> &capt)
 	{
-		va_list ap;
-		va_start(ap, capture_fmt);
-		auto ret = reinterpret_cast<ApplicationPrivate*>(this)->run(pf, capture_fmt, ap);
-		va_end(ap);
+		auto ret = ((ApplicationPrivate*)this)->run(pf, capt);
 		return ret;
 	}
 
 	void Application::clear_delay_events()
 	{
-		reinterpret_cast<ApplicationPrivate*>(this)->clear_delay_events();
+		((ApplicationPrivate*)this)->clear_delay_events();
 	}
 
-	void Application::add_delay_event(PF pf, char *capture_fmt, ...)
+	void Application::add_delay_event(PF pf, const std::vector<CommonData> &capt)
 	{
-		va_list ap;
-		va_start(ap, capture_fmt);
-		reinterpret_cast<ApplicationPrivate*>(this)->add_delay_event(pf, capture_fmt, ap);
-		va_end(ap);
+		((ApplicationPrivate*)this)->add_delay_event(pf, capt);
 	}
 
 	Application *Application::create()
@@ -982,6 +968,6 @@ namespace flame
 
 	void Application::destroy(Application *app)
 	{
-		delete reinterpret_cast<ApplicationPrivate*>(app);
+		delete (ApplicationPrivate*)app;
 	}
 }

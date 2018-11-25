@@ -115,9 +115,9 @@ namespace flame
 
 		void Camera::pf_keydown(CommonData *d)
 		{
-			auto thiz = (CameraPrivate*)d[1].p;
+			auto thiz = (CameraPrivate*)d[1].p();
 
-			switch (d[0].i[0])
+			switch (d[0].i1())
 			{
 			case Key_W:
 				thiz->W = true;
@@ -154,9 +154,9 @@ namespace flame
 
 		void Camera::pf_keyup(CommonData *d)
 		{
-			auto thiz = (CameraPrivate*)d[1].p;
+			auto thiz = (CameraPrivate*)d[1].p();
 
-			switch (d[0].i[0])
+			switch (d[0].i1())
 			{
 			case Key_W:
 				thiz->W = false;

@@ -190,8 +190,8 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(SwapchainData_resize, FLAME_GID(24526), "i2")
-			auto size = Ivec2(d[0].i);
-			auto sd = (SwapchainDataPrivate*)d[1].p;
+			auto &size = d[0].i2();
+			auto &sd = *(SwapchainDataPrivate**)&d[1].p();
 
 			if (size.x == 0)
 				size.x = 1;
@@ -226,7 +226,7 @@ namespace flame
 			sc = _sc;
 			w = sc->window();
 
-			w->add_listener(cH("resize"), SwapchainData_resize::v, "p", this);
+			w->add_listener(cH("resize"), SwapchainData_resize::v, { this });
 
 			auto surface_size = w->size;
 			auto swapchain_format = graphics::get_swapchain_format();
@@ -301,35 +301,35 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_keydown, FLAME_GID(28755), "i")
-			((InstancePrivate*)d[1].p)->on_keydown(d[0].i[0]);
+			((InstancePrivate*)d[1].p())->on_keydown(d[0].i1());
 		FLAME_REGISTER_FUNCTION_END(Instance_keydown)
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_keyup, FLAME_GID(4617), "i")
-			((InstancePrivate*)d[1].p)->on_keyup(d[0].i[0]);
+			((InstancePrivate*)d[1].p())->on_keyup(d[0].i1());
 		FLAME_REGISTER_FUNCTION_END(Instance_keyup)
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_char, FLAME_GID(31685), "i")
-			((InstancePrivate*)d[1].p)->on_char(d[0].i[0]);
+			((InstancePrivate*)d[1].p())->on_char(d[0].i1());
 		FLAME_REGISTER_FUNCTION_END(Instance_char)
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_mousedown, FLAME_GID(19621), "i i2")
-			((InstancePrivate*)d[2].p)->on_mousedown(d[0].i[0], Ivec2(d[1].i));
+			((InstancePrivate*)d[2].p())->on_mousedown(d[0].i1(), d[1].i2());
 		FLAME_REGISTER_FUNCTION_END(Instance_mousedown)
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_mouseup, FLAME_GID(32698), "i i2")
-			((InstancePrivate*)d[2].p)->on_mouseup(d[0].i[0], Ivec2(d[1].i));
+			((InstancePrivate*)d[2].p())->on_mouseup(d[0].i1(), d[1].i2());
 		FLAME_REGISTER_FUNCTION_END(Instance_mouseup)
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_mousemove, FLAME_GID(17801), "i2")
-			((InstancePrivate*)d[1].p)->on_mousemove(Ivec2(d[0].i));
+			((InstancePrivate*)d[1].p())->on_mousemove(d[0].i2());
 		FLAME_REGISTER_FUNCTION_END(Instance_mousemove)
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_mousescroll, FLAME_GID(9829), "i")
-			((InstancePrivate*)d[1].p)->on_mousescroll(d[0].i[0]);
+			((InstancePrivate*)d[1].p())->on_mousescroll(d[0].i1());
 		FLAME_REGISTER_FUNCTION_END(Instance_mousescroll)
 
 		FLAME_REGISTER_FUNCTION_BEG(Instance_resize, FLAME_GID(16038), "i2")
-			((InstancePrivate*)d[1].p)->on_resize(Ivec2(d[0].i));
+			((InstancePrivate*)d[1].p())->on_resize(d[0].i2());
 		FLAME_REGISTER_FUNCTION_END(Instance_resize)
 
 		InstancePrivate::InstancePrivate(Window *w) :
@@ -337,14 +337,14 @@ namespace flame
 		{
 			root_->size$ = w->size;
 
-			w->add_listener(cH("key down"), Instance_keydown::v, "p", this);
-			w->add_listener(cH("key up"), Instance_keyup::v, "p", this);
-			w->add_listener(cH("char"), Instance_char::v, "p", this);
-			w->add_listener(cH("mouse down"), Instance_mousedown::v, "p", this);
-			w->add_listener(cH("mouse up"), Instance_mouseup::v, "p", this);
-			w->add_listener(cH("mouse move"), Instance_mousemove::v, "p", this);
-			w->add_listener(cH("mouse scroll"), Instance_mousescroll::v, "p", this);
-			w->add_listener(cH("resize"), Instance_resize::v, "p", this);
+			w->add_listener(cH("key down"), Instance_keydown::v, { this });
+			w->add_listener(cH("key up"), Instance_keyup::v, { this });
+			w->add_listener(cH("char"), Instance_char::v, { this });
+			w->add_listener(cH("mouse down"), Instance_mousedown::v, { this });
+			w->add_listener(cH("mouse up"), Instance_mouseup::v, { this });
+			w->add_listener(cH("mouse move"), Instance_mousemove::v, { this });
+			w->add_listener(cH("mouse scroll"), Instance_mousescroll::v, { this });
+			w->add_listener(cH("resize"), Instance_resize::v, { this });
 		}
 
 		inline void InstancePrivate::on_keydown(int code)
@@ -454,9 +454,9 @@ namespace flame
 				switch (popup_widget_->class_hash$)
 				{
 				case cH("menubar"):
-					for (auto i_c = 0; i_c < popup_widget_->children_1.size; i_c++)
+					for (auto i_c = 0; i_c < popup_widget_->children_1$.size; i_c++)
 					{
-						auto c = popup_widget_->children_1[i_c];
+						auto c = popup_widget_->children_1$[i_c];
 
 						if (c->class_hash$ == cH("menu"))
 							((wMenu*)c)->close();
@@ -539,8 +539,8 @@ namespace flame
 			w->global_scale = w->scale$ * scl;
 			w->showed = w->visible$ && visible;
 
-			preprocessing_children(__p, w, w->children_2, off, scl);
-			preprocessing_children(__p, w, w->children_1, off, scl);
+			preprocessing_children(__p, w, w->children_2$, off, scl);
+			preprocessing_children(__p, w, w->children_1$, off, scl);
 
 			if (!p.ban_event && visible && w->event_attitude$ != EventIgnore)
 			{
@@ -634,7 +634,7 @@ namespace flame
 			{
 				auto s = w->styles$[i_s];
 
-				s->datas[0].p = w;
+				s->datas[0].v.p = w;
 				s->exec();
 			}
 
@@ -642,12 +642,12 @@ namespace flame
 			{
 				auto f = w->animations$[i_a];
 				auto d = f->datas;
-				d[0].p = w;
+				d[0].p() = w;
 
-				d[1].f[0] += elp_time_;
-				if (d[1].f[0] >= d[2].f[0])
+				d[1].f1() += elp_time_;
+				if (d[1].f1() >= d[2].f1())
 				{
-					d[1].f[0] = -1.f;
+					d[1].f1() = -1.f;
 					f->exec();
 					Function::destroy(f);
 					w->animations$.remove(i_a);
@@ -672,8 +672,8 @@ namespace flame
 					w->on_draw(p.canvas, off + p.show_off, scl);
 			}
 
-			show_children(__p, w, w->children_1, visible, off, scl);
-			show_children(__p, w, w->children_2, visible, off, scl);
+			show_children(__p, w, w->children_1$, visible, off, scl);
+			show_children(__p, w, w->children_2$, visible, off, scl);
 		}
 
 		void InstancePrivate::postprocessing_children(const Array<Widget*> &children)
@@ -691,8 +691,8 @@ namespace flame
 
 		void InstancePrivate::postprocessing(WidgetPrivate *w)
 		{
-			postprocessing_children(w->children_2);
-			postprocessing_children(w->children_1);
+			postprocessing_children(w->children_2$);
+			postprocessing_children(w->children_1$);
 
 			w->state = StateNormal;
 			if (dragging_widget_)

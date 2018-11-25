@@ -31,7 +31,6 @@
 #include <CommCtrl.h>
 #include <thumbcache.h>
 
-#include <vector>
 #include <map>
 #include <experimental/filesystem>
 #include <assert.h>
@@ -188,9 +187,9 @@ namespace flame
 
 	static void do_file_watcher(CommonData *d)
 	{
-		auto filepath = (const wchar_t *)d[0].p;
-		auto w = (FileWatcher*)d[1].p;
-		auto f = (Function*)d[2].p;
+		auto &filepath = *(const wchar_t **)&d[0].p();
+		auto &w = *(FileWatcher**)&d[1].p();
+		auto &f = *(Function**)&d[2].p();
 
 		auto dir_handle = CreateFileW(filepath, GENERIC_READ | GENERIC_WRITE |
 			FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
@@ -256,8 +255,8 @@ namespace flame
 					type = FileRenamed;
 					break;
 				}
-				f->datas[0].i[0] = type;
-				f->datas[1].p = p->FileName;
+				f->datas[0].i1() = type;
+				f->datas[1].p() = p->FileName;
 				f->exec();
 
 				if (p->NextEntryOffset <= 0)
@@ -268,21 +267,18 @@ namespace flame
 		}
 	}
 
-	FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, char *capture_fmt, ...)
+	FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt)
 	{
 		auto w = new FileWatcher;
 		w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
-		va_list ap;
-		va_start(ap, capture_fmt);
-		auto f = Function::create(pf, "i:type wstr:filename", capture_fmt, ap);
-		va_end(ap);
+		auto f = Function::create(pf, "i p", capt);
 
-		auto f_thread = Function::create(do_file_watcher, "wstr:filepath p:filewatcher p:function", "", 0);
+		auto f_thread = Function::create(do_file_watcher, "p p p", {});
 
-		f_thread->datas[0].p = (wchar_t*)filepath;
-		f_thread->datas[1].p = w;
-		f_thread->datas[2].p = f;
+		f_thread->datas[0].p() = (wchar_t*)filepath;
+		f_thread->datas[1].p() = w;
+		f_thread->datas[2].p() = f;
 
 		f_thread->exec_in_new_thread();
 
@@ -317,12 +313,9 @@ namespace flame
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	Function *add_global_key_listener(int key, PF pf, char *capture_fmt, ...)
+	Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt)
 	{
-		va_list ap;
-		va_start(ap, capture_fmt);
-		auto f = Function::create(pf, "", capture_fmt, ap);
-		va_end(ap);
+		auto f = Function::create(pf, "", capt);
 
 		auto it = global_key_listeners.find(key);
 		if (it == global_key_listeners.end())

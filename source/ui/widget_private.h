@@ -78,12 +78,12 @@ namespace flame
 
 			void set_visibility(bool v);
 
-			void add_draw_command(PF pf, char *capture_fmt, va_list ap);
+			void add_draw_command(PF pf, const std::vector<CommonData> &capt);
 			void remove_draw_command(int idx);
 
-			void add_style(PF pf, char *capture_fmt, va_list ap);
+			void add_style(PF pf, const std::vector<CommonData> &capt);
 
-			void add_animation(PF pf, char *capture_fmt, va_list ap);
+			void add_animation(PF pf, const std::vector<CommonData> &capt);
 
 			void on_draw(Canvas *c, const Vec2 &off, float scl);
 			void on_mouseenter();
@@ -101,12 +101,12 @@ namespace flame
 
 			void report_changed() const;
 
-			Function *add_listener(unsigned int type, PF pf, char *capture_fmt, va_list ap);
+			Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt);
 			void remove_listener(unsigned int type, Function *f, bool delay = false);
 
 			void remove_animations();
 
-			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, void(*func)(CommonData*) = nullptr, char *capture_fmt = nullptr, va_list = 0);
+			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
 			void remove_child(int layer, int idx, bool delay = false);
 			void remove_child(WidgetPrivate *w, bool delay = false);
 			void take_child(int layer, int idx, bool delay = false);

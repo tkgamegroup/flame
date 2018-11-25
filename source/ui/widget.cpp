@@ -32,7 +32,6 @@
 #include "widget_private.h"
 
 #include <Windows.h>
-#include <stdarg.h>
 #include <assert.h>
 
 namespace flame
@@ -167,10 +166,9 @@ namespace flame
 				parent->arrange();
 		}
 
-		inline void WidgetPrivate::add_draw_command(PF pf, char *capture_fmt, va_list ap)
+		inline void WidgetPrivate::add_draw_command(PF pf, const std::vector<CommonData> &capt)
 		{
-			auto f = Function::create(pf, "p f2 f", capture_fmt, ap);
-			draw_commands$.push_back(f);
+			draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
 		}
 
 		inline void WidgetPrivate::remove_draw_command(int idx)
@@ -184,22 +182,21 @@ namespace flame
 			for (auto i = 0; i < animations$.size; i++)
 				Function::destroy(animations$[i]);
 			animations$.resize(0);
-			for (auto i = 0; i < children_1.size; i++)
-				((WidgetPrivate*)children_1[i])->remove_animations();
-			for (auto i = 0; i < children_2.size; i++)
-				((WidgetPrivate*)children_2[i])->remove_animations();
+			for (auto i = 0; i < children_1$.size; i++)
+				((WidgetPrivate*)children_1$[i])->remove_animations();
+			for (auto i = 0; i < children_2$.size; i++)
+				((WidgetPrivate*)children_2$[i])->remove_animations();
 		}
 
-		inline void WidgetPrivate::add_style(PF pf, char *capture_fmt, va_list ap)
+		inline void WidgetPrivate::add_style(PF pf, const std::vector<CommonData> &capt)
 		{
-			auto f = Function::create(pf, "p", capture_fmt, ap);
-			styles$.push_back(f);
+			styles$.push_back(Function::create(pf, "p", capt));
 		}
 
-		inline void WidgetPrivate::add_animation(PF pf, char *capture_fmt, va_list ap)
+		inline void WidgetPrivate::add_animation(PF pf, const std::vector<CommonData> &capt)
 		{
-			auto f = Function::create(pf, "p f", capture_fmt, ap);
-			f->datas[1].f[0] = 0.f;
+			auto f = Function::create(pf, "p f", capt);
+			f->datas[1].v.f = 0.f;
 			animations$.push_back(f);
 		}
 
@@ -208,9 +205,9 @@ namespace flame
 			for (auto i = 0; i < draw_commands$.size; i++)
 			{
 				auto f = draw_commands$[i];
-				f->datas[0].p = c;
-				*(Vec2*)f->datas[1].f = off;
-				f->datas[2].f[0] = scl;
+				f->datas[0].v.p = c;
+				f->datas[1].v.f = off;
+				f->datas[2].v.f = scl;
 				f->exec();
 			}
 		}
@@ -231,7 +228,7 @@ namespace flame
 		{
 			for (auto f : lmousedown_listeners)
 			{
-				*(Vec2*)f->datas[0].f = mpos;
+				f->datas[0].v.f = mpos;
 				f->exec();
 			}
 		}
@@ -240,7 +237,7 @@ namespace flame
 		{
 			for (auto f : rmousedown_listeners)
 			{
-				*(Vec2*)f->datas[0].f = mpos;
+				f->datas[0].v.f = mpos;
 				f->exec();
 			}
 		}
@@ -249,7 +246,7 @@ namespace flame
 		{
 			for (auto f : mousemove_listeners)
 			{
-				*(Vec2*)f->datas[0].f = disp;
+				f->datas[0].v.f = disp;
 				f->exec();
 			}
 		}
@@ -270,7 +267,7 @@ namespace flame
 		{
 			for (auto f : mousescroll_listeners)
 			{
-				f->datas[0].i[0] = scroll;
+				f->datas[0].v.i = scroll;
 				f->exec();
 			}
 		}
@@ -279,7 +276,7 @@ namespace flame
 		{
 			for (auto f : keydown_listeners)
 			{
-				f->datas[0].i[0] = code;
+				f->datas[0].v.i = code;
 				f->exec();
 			}
 		}
@@ -288,7 +285,7 @@ namespace flame
 		{
 			for (auto f : keyup_listeners)
 			{
-				f->datas[0].i[0] = code;
+				f->datas[0].v.i = code;
 				f->exec();
 			}
 		}
@@ -299,16 +296,16 @@ namespace flame
 			{
 				for (auto f : char_filters)
 				{
-					f->datas[0].i[0] = ch;
+					f->datas[0].v.i = ch;
 					f->exec();
-					if (!f->datas[1].i[0])
+					if (!f->datas[1].i1())
 						return;
 				}
 			}
 
 			for (auto f : char_listeners)
 			{
-				f->datas[0].i[0] = ch;
+				f->datas[0].v.i = ch;
 				f->exec();
 			}
 		}
@@ -317,7 +314,7 @@ namespace flame
 		{
 			for (auto f : drop_listeners)
 			{
-				f->datas[0].p = src;
+				f->datas[0].v.p = src;
 				f->exec();
 			}
 		}
@@ -328,7 +325,7 @@ namespace flame
 				f->exec();
 		}
 
-		inline Function *WidgetPrivate::add_listener(unsigned int type, PF pf, char *capture_fmt, va_list ap)
+		inline Function *WidgetPrivate::add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
 		{
 			const char *parm_fmt;
 			std::vector<Function*> *list;
@@ -400,7 +397,7 @@ namespace flame
 				return nullptr;
 			}
 
-			auto f = Function::create(pf, parm_fmt, capture_fmt, ap);
+			auto f = Function::create(pf, parm_fmt, capt);
 			list->emplace_back(f);
 			return f;
 		}
@@ -478,15 +475,15 @@ namespace flame
 			}
 		}
 
-		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, void(*func)(CommonData*), char *capture_fmt, va_list ap)
+		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
 		{
 			if (delay)
 			{
-				delay_adds.emplace_back(w, layer, pos, func ? Function::create(func, "", capture_fmt, ap) : nullptr);
+				delay_adds.emplace_back(w, layer, pos, pf ? Function::create(pf, "", capt) : nullptr);
 				return;
 			}
 
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			if (pos < 0)
 				pos = children.size + pos + 1;
 			children.insert(pos, w);
@@ -498,7 +495,7 @@ namespace flame
 
 			for (auto f : addchild_listeners)
 			{
-				f->datas[0].p = w;
+				f->datas[0].v.p = w;
 				f->exec();
 			}
 		}
@@ -511,7 +508,7 @@ namespace flame
 				return;
 			}
 
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			Widget::destroy(children[idx]);
 			children.remove(idx);
 
@@ -526,7 +523,7 @@ namespace flame
 				return;
 			}
 
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			auto idx = children.find(w);
 			if (idx != -1)
 			{
@@ -545,7 +542,7 @@ namespace flame
 				return;
 			}
 
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			children.remove(idx);
 
 			remove_animations();
@@ -561,7 +558,7 @@ namespace flame
 				return;
 			}
 
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			auto idx = children.find(w);
 			if (idx != -1)
 			{
@@ -579,7 +576,7 @@ namespace flame
 				return;
 			}
 
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			if (end < 0)
 				end = children.size + end + 1;
 			for (auto i = begin; i < end; i++)
@@ -597,7 +594,7 @@ namespace flame
 				return;
 			}
 
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			if (end == -1)
 				end = children.size;
 			for (auto i = begin; i < end; i++)
@@ -635,7 +632,7 @@ namespace flame
 
 		inline int WidgetPrivate::find_child(WidgetPrivate *w)
 		{
-			auto &children = layer == 0 ? children_1 : children_2;
+			auto &children = layer == 0 ? children_1$ : children_2$;
 			return children.find(w);
 		}
 
@@ -648,9 +645,9 @@ namespace flame
 				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
 				{
 					auto width = 0;
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -670,9 +667,9 @@ namespace flame
 				if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
 				{
 					auto height = 0;
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -695,9 +692,9 @@ namespace flame
 				{
 					auto cnt = 0;
 					auto height = 0;
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -713,9 +710,9 @@ namespace flame
 
 					height = max(0, (size$.y - inner_padding$[2] - inner_padding$[3] - height) / cnt);
 
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -733,9 +730,9 @@ namespace flame
 
 				auto y = inner_padding$[2] + scroll_offset$;
 
-				for (auto i_c = 0; i_c < children_1.size; i_c++)
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
 				{
-					auto c = children_1[i_c];
+					auto c = children_1$[i_c];
 
 					if (!c->visible$)
 						continue;
@@ -770,9 +767,9 @@ namespace flame
 				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
 				{
 					auto width = 0;
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -795,9 +792,9 @@ namespace flame
 				{
 					auto cnt = 0;
 					auto width = 0;
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -813,9 +810,9 @@ namespace flame
 
 					width = max(0, (size$.x - inner_padding$[0] - inner_padding$[1] - width) / cnt);
 
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -827,9 +824,9 @@ namespace flame
 				if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
 				{
 					auto height = 0;
-					for (auto i_c = 0; i_c < children_1.size; i_c++)
+					for (auto i_c = 0; i_c < children_1$.size; i_c++)
 					{
-						auto c = children_1[i_c];
+						auto c = children_1$[i_c];
 
 						if (!c->visible$)
 							continue;
@@ -849,9 +846,9 @@ namespace flame
 
 				auto height = size$.y - inner_padding$[2] - inner_padding$[3];
 				auto x = inner_padding$[0];
-				for (auto i_c = 0; i_c < children_1.size; i_c++)
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
 				{
-					auto c = children_1[i_c];
+					auto c = children_1$[i_c];
 
 					if (!c->visible$)
 						continue;
@@ -888,9 +885,9 @@ namespace flame
 				auto cnt = 0;
 				auto line_height = 0.f;
 				auto max_width = 0.f;
-				for (auto i_c = 0; i_c < children_1.size; i_c++)
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
 				{
-					auto c = children_1[i_c];
+					auto c = children_1$[i_c];
 
 					c->pos$ = pos;
 					line_height = max(line_height, c->size$.y);
@@ -915,9 +912,9 @@ namespace flame
 				break;
 			}
 
-			for (auto i_c = 0; i_c < children_2.size; i_c++)
+			for (auto i_c = 0; i_c < children_2$.size; i_c++)
 			{
-				auto c = children_2[i_c];
+				auto c = children_2$[i_c];
 
 				switch (c->align$)
 				{
@@ -1035,42 +1032,39 @@ namespace flame
 			((WidgetPrivate*)this)->set_visibility(v);
 		}
 
-		void Widget::add_draw_command(PF pf, char *capture_fmt, ...)
+		void Widget::add_draw_command(PF pf, const std::vector<CommonData> &capt)
 		{
-			va_list ap;
-			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_draw_command(pf, capture_fmt, ap);
-			va_end(ap);
+			((WidgetPrivate*)this)->add_draw_command(pf, capt);
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Widget_defaultdraw, FLAME_GID(8350), "p f2 f")
-			auto c = (Canvas*)d[0].p;
-		auto off = Vec2(d[1].f);
-		auto scl = d[2].f[0];
-		auto thiz = (Widget*)d[3].p;
+			auto c = *(Canvas**)&d[0].p();
+			auto off = d[1].f2();
+			auto scl = d[2].f1();
+			auto thiz = *(Widget**)&d[3].p();
 
-		auto p = (thiz->pos$ - Vec2(thiz->background_offset$[0], thiz->background_offset$[1])) * scl + off;
-		auto ss = scl * thiz->scale$;
-		auto s = (thiz->size$ + Vec2(thiz->background_offset$[0] + thiz->background_offset$[2], thiz->background_offset$[1] + thiz->background_offset$[3])) * ss;
-		auto rr = thiz->background_round_radius$ * ss;
+			auto p = (thiz->pos$ - Vec2(thiz->background_offset$[0], thiz->background_offset$[1])) * scl + off;
+			auto ss = scl * thiz->scale$;
+			auto s = (thiz->size$ + Vec2(thiz->background_offset$[0] + thiz->background_offset$[2], thiz->background_offset$[1] + thiz->background_offset$[3])) * ss;
+			auto rr = thiz->background_round_radius$ * ss;
 
-		if (thiz->background_shaow_thickness$ > 0.f)
-		{
-			c->add_rect_col2(p - Vec2(thiz->background_shaow_thickness$ * 0.5f), s + Vec2(thiz->background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
-				thiz->background_shaow_thickness$, rr, thiz->background_round_flags$);
-		}
-		if (thiz->alpha$ > 0.f)
-		{
-			if (thiz->background_col$.w > 0)
-				c->add_rect_filled(p, s, Bvec4(thiz->background_col$, thiz->alpha$), rr, thiz->background_round_flags$);
-			if (thiz->background_frame_thickness$ > 0.f && thiz->background_frame_col$.w > 0)
-				c->add_rect(p, s, Bvec4(thiz->background_frame_col$, thiz->alpha$), thiz->background_frame_thickness$, rr, thiz->background_round_flags$);
-		}
+			if (thiz->background_shaow_thickness$ > 0.f)
+			{
+				c->add_rect_col2(p - Vec2(thiz->background_shaow_thickness$ * 0.5f), s + Vec2(thiz->background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
+					thiz->background_shaow_thickness$, rr, thiz->background_round_flags$);
+			}
+			if (thiz->alpha$ > 0.f)
+			{
+				if (thiz->background_col$.w > 0)
+					c->add_rect_filled(p, s, Bvec4(thiz->background_col$, thiz->alpha$), rr, thiz->background_round_flags$);
+				if (thiz->background_frame_thickness$ > 0.f && thiz->background_frame_col$.w > 0)
+					c->add_rect(p, s, Bvec4(thiz->background_frame_col$, thiz->alpha$), thiz->background_frame_thickness$, rr, thiz->background_round_flags$);
+			}
 		FLAME_REGISTER_FUNCTION_END(Widget_defaultdraw)
 
-			void Widget::add_default_draw_command()
+		void Widget::add_default_draw_command()
 		{
-			add_draw_command(Widget_defaultdraw::v, "p", this);
+			add_draw_command(Widget_defaultdraw::v, { this });
 		}
 
 		void Widget::remove_draw_command(int idx)
@@ -1093,20 +1087,14 @@ namespace flame
 			return ((WidgetPrivate*)this)->layer;
 		}
 
-		void Widget::add_style(PF pf, char *capture_fmt, ...)
+		void Widget::add_style(PF pf, const std::vector<CommonData> &capt)
 		{
-			va_list ap;
-			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_style(pf, capture_fmt, ap);
-			va_end(ap);
+			((WidgetPrivate*)this)->add_style(pf, capt);
 		}
 
-		void Widget::add_animation(PF pf, char *capture_fmt, ...)
+		void Widget::add_animation(PF pf, const std::vector<CommonData> &capt)
 		{
-			va_list ap;
-			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_animation(pf, capture_fmt, ap);
-			va_end(ap);
+			((WidgetPrivate*)this)->add_animation(pf, capt);
 		}
 
 		void Widget::on_draw(Canvas *c, const Vec2 &off, float scl)
@@ -1179,13 +1167,9 @@ namespace flame
 			((WidgetPrivate*)this)->report_changed();
 		}
 
-		Function *Widget::add_listener(unsigned int type, PF pf, char *capture_fmt, ...)
+		Function *Widget::add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
 		{
-			va_list ap;
-			va_start(ap, capture_fmt);
-			auto f = ((WidgetPrivate*)this)->add_listener(type, pf, capture_fmt, ap);
-			va_end(ap);
-			return f;
+			return ((WidgetPrivate*)this)->add_listener(type, pf, capt);
 		}
 
 		void Widget::remove_listener(unsigned int type, Function *f, bool delay)
@@ -1193,12 +1177,9 @@ namespace flame
 			((WidgetPrivate*)this)->remove_listener(type, f, delay);
 		}
 
-		void Widget::add_child(Widget *w, int layer, int pos, bool delay, void(*func)(CommonData*), char *capture_fmt, ...)
+		void Widget::add_child(Widget *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
 		{
-			va_list ap;
-			va_start(ap, capture_fmt);
-			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, func, capture_fmt, ap);
-			va_end(ap);
+			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, pf, capt);
 		}
 
 		void Widget::remove_child(int layer, int idx, bool delay)
@@ -1316,17 +1297,17 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Checkbox_clicked, FLAME_GID(15432), "")
-			auto thiz = (wCheckbox*)d[0].p;
+			auto &thiz = *(wCheckbox**)&d[0].p();
 
 			thiz->checked() = !thiz->checked();
 			thiz->report_changed();
 		FLAME_REGISTER_FUNCTION_END(Checkbox_clicked)
 
 		FLAME_REGISTER_FUNCTION_BEG(Checkbox_draw, FLAME_GID(8818), "p f2 f")
-			auto c = (Canvas*)d[0].p;
-			auto off = Vec2(d[1].f);
-			auto scl = d[2].f[0];
-			auto thiz = (wCheckbox*)d[3].p;
+			auto &c = *(Canvas**)&d[0].p();
+			auto &off = d[1].f2();
+			auto &scl = d[2].f1();
+			auto &thiz = *(wCheckbox**)&d[3].p();
 
 			c->add_rect(thiz->pos$ * scl + off, thiz->size$ * scl, thiz->background_col$, 2.f * scl);
 			if (thiz->checked())
@@ -1343,15 +1324,15 @@ namespace flame
 
 			checked() = 0;
 
-			add_listener(cH("clicked"), Checkbox_clicked::v, "p", this);
+			add_listener(cH("clicked"), Checkbox_clicked::v, { this });
 
 			remove_draw_command(0);
-			add_draw_command(Checkbox_draw::v, "p", this);
+			add_draw_command(Checkbox_draw::v, { this });
 		}
 
 		int &wCheckbox::checked()
 		{
-			return data_storage(0).i[0];
+			return data_storage(0).i1();
 		}
 
 		wCheckbox *wCheckbox::create(Instance *ui)
@@ -1363,10 +1344,10 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Text_draw, FLAME_GID(9510), "p f2 f")
-			auto c = (Canvas*)d[0].p;
-			auto off = Vec2(d[1].f);
-			auto scl = d[2].f[0];
-			auto thiz = (wText*)d[3].p;
+			auto &c = *(Canvas**)&d[0].p();
+			auto &off = d[1].f2();
+			auto &scl = d[2].f1();
+			auto &thiz = *(wText**)&d[3].p();
 
 			if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
 			{
@@ -1390,17 +1371,17 @@ namespace flame
 			sdf_scale() = -1.f;
 			set_text(L"");
 
-			add_draw_command(Text_draw::v, "p", this);
+			add_draw_command(Text_draw::v, { this });
 		}
 
 		Bvec4 &wText::text_col()
 		{
-			return *((Bvec4*)data_storage(0).b);
+			return data_storage(0).b4();
 		}
 
 		float &wText::sdf_scale()
 		{
-			return data_storage(1).f[0];
+			return data_storage(1).f1();
 		}
 
 		const wchar_t *wText::text()
@@ -1475,7 +1456,7 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Toggle_clicked, FLAME_GID(23140), "")
-			auto thiz = (wToggle*)d[0].p;
+			auto &thiz = *(wToggle**)&d[0].p();
 
 			thiz->set_toggle(!thiz->toggled());
 		FLAME_REGISTER_FUNCTION_END(Toggle_clicked)
@@ -1496,12 +1477,12 @@ namespace flame
 
 			toggled() = 0;
 
-			add_listener(cH("clicked"), Toggle_clicked::v, "p", this);
+			add_listener(cH("clicked"), Toggle_clicked::v, { this });
 		}
 
 		int &wToggle::toggled()
 		{
-			return data_storage(2).i[0];
+			return data_storage(2).i1();
 		}
 
 		void wToggle::set_toggle(bool v)
@@ -1544,7 +1525,7 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(MenuItem_clicked, FLAME_GID(11216), "")
-			auto thiz = (wToggle*)d[0].p;
+			auto &thiz = *(wToggle**)&d[0].p();
 
 			thiz->instance()->close_popup();
 		FLAME_REGISTER_FUNCTION_END(MenuItem_clicked)
@@ -1559,7 +1540,7 @@ namespace flame
 			size_policy_hori$ = SizeFitLayout;
 			align$ = AlignLittleEnd;
 
-			add_listener(cH("clicked"), MenuItem_clicked::v, "p", this);
+			add_listener(cH("clicked"), MenuItem_clicked::v, { this });
 		}
 
 		wMenuItem *wMenuItem::create(Instance *ui, const wchar_t *title)
@@ -1571,15 +1552,15 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Menu_btn_mousemove, FLAME_GID(10376), "f2")
-			auto thiz = (wMenu*)d[1].p;
+			auto &thiz = *(wMenu**)&d[1].p();
 
 			if (thiz->instance()->popup_widget())
 				thiz->open();
 		FLAME_REGISTER_FUNCTION_END(Menu_btn_mousemove)
 
 		FLAME_REGISTER_FUNCTION_BEG(Menu_items_addchild, FLAME_GID(21018), "p")
-			auto w = (Widget*)d[0].p;
-			auto thiz = (wMenu*)d[1].p;
+			auto &w = *(Widget**)&d[0].p();
+			auto &thiz = *(wMenu**)&d[1].p();
 
 			switch (w->class_hash$)
 			{
@@ -1619,7 +1600,7 @@ namespace flame
 			w_btn()->align$ = AlignLittleEnd;
 			add_child(w_btn());
 
-			w_btn()->add_listener(cH("mouse move"), Menu_btn_mousemove::v, "p", this);
+			w_btn()->add_listener(cH("mouse move"), Menu_btn_mousemove::v, { this });
 
 			w_rarrow() = nullptr;
 
@@ -1630,32 +1611,32 @@ namespace flame
 			w_items()->visible$ = false;
 			add_child(w_items(), 1);
 
-			w_items()->add_listener(cH("add child"), Menu_items_addchild::v, "p", this);
+			w_items()->add_listener(cH("add child"), Menu_items_addchild::v, { this });
 		}
 
 		int &wMenu::sub()
 		{
-			return data_storage(0).i[0];
+			return data_storage(0).i1();
 		}
 
 		int &wMenu::opened()
 		{
-			return data_storage(1).i[0];
+			return data_storage(1).i1();
 		}
 
 		wButtonPtr &wMenu::w_btn()
 		{
-			return (*(wButtonPtr*)&data_storage(2).p);
+			return *(wButtonPtr*)&data_storage(2).p();
 		}
 
 		wTextPtr &wMenu::w_rarrow()
 		{
-			return (*(wTextPtr*)&data_storage(3).p);
+			return *(wTextPtr*)&data_storage(3).p();
 		}
 
 		wLayoutPtr &wMenu::w_items()
 		{
-			return (*(wLayoutPtr*)&data_storage(4).p);
+			return *(wLayoutPtr*)&data_storage(4).p();
 		}
 
 		void wMenu::open()
@@ -1665,18 +1646,18 @@ namespace flame
 
 			if (parent() && (parent()->class_hash$ == cH("menubar") || parent()->class_hash$ == cH("menu items")))
 			{
-				for (auto i = 0; i < parent()->children_1.size; i++)
+				for (auto i = 0; i < parent()->children_1$.size; i++)
 				{
-					auto c = parent()->children_1[i];
+					auto c = parent()->children_1$[i];
 					if (c->class_hash$ == cH("menu"))
 						((wMenu*)c)->close();
 				}
 			}
 
 			w_items()->set_visibility(true);
-			for (auto i = 0; i < w_items()->children_1.size; i++)
+			for (auto i = 0; i < w_items()->children_1$.size; i++)
 			{
-				auto w = w_items()->children_1[i];
+				auto w = w_items()->children_1$[i];
 				add_animation_fade(w, 0.2f, 0.f, w->alpha$);
 			}
 
@@ -1699,9 +1680,9 @@ namespace flame
 			if (!opened())
 				return;
 
-			for (auto i = 0; i < w_items()->children_1.size; i++)
+			for (auto i = 0; i < w_items()->children_1$.size; i++)
 			{
-				auto c = w_items()->children_1[i];
+				auto c = w_items()->children_1$[i];
 				if (c->class_hash$ == cH("menu"))
 					((wMenu*)c)->close();
 			}
@@ -1720,8 +1701,8 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Menu_btn_clicked, FLAME_GID(24104), "")
-			auto thiz = (wMenu*)d[0].p;
-			auto menu = (wMenu*)d[1].p;
+			auto &thiz = *(wMenu**)&d[0].p();
+			auto &menu = *(wMenu**)&d[1].p();
 
 			if (!menu->opened())
 			{
@@ -1737,14 +1718,14 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_END(Menu_btn_clicked)
 
 		FLAME_REGISTER_FUNCTION_BEG(MenuBar_addchild, FLAME_GID(10208), "p")
-			auto w = (Widget*)d[0].p;
-			auto thiz = (wMenuBar*)d[1].p;
+			auto w = (Widget*)d[0].p();
+			auto thiz = (wMenuBar*)d[1].p();
 
 			if (w->class_hash$ == cH("menu"))
 			{
 				auto menu = (wMenu*)w;
 
-				menu->w_btn()->add_listener(cH("clicked"), Menu_btn_clicked::v, "p p", thiz, menu);
+				menu->w_btn()->add_listener(cH("clicked"), Menu_btn_clicked::v, { thiz, menu });
 			}
 		FLAME_REGISTER_FUNCTION_END(MenuBar_addchild)
 
@@ -1756,7 +1737,7 @@ namespace flame
 
 			layout_type$ = LayoutHorizontal;
 
-			add_listener(cH("add child"), MenuBar_addchild::v, "p", this);
+			add_listener(cH("add child"), MenuBar_addchild::v, { this });
 		}
 
 		wMenuBar *wMenuBar::create(Instance *ui)
@@ -1768,7 +1749,7 @@ namespace flame
 		}
 		
 		FLAME_REGISTER_FUNCTION_BEG(Combo_btn_clicked, FLAME_GID(10368), "")
-			auto thiz = (wMenu*)d[0].p;
+			auto &thiz = *(wMenu**)&d[0].p();
 
 			if (!thiz->opened())
 			{
@@ -1784,24 +1765,24 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_END(Combo_btn_clicked)
 
 		FLAME_REGISTER_FUNCTION_BEG(ComboItem_clicked, FLAME_GID(22268), "")
-			auto thiz = (wCombo*)d[0].p;
-			auto idx = d[1].i[0];
+			auto &thiz = *(wCombo**)&d[0].p();
+			auto &idx = d[1].i1();
 
 			thiz->set_sel(idx);
 		FLAME_REGISTER_FUNCTION_END(ComboItem_clicked)
 
 		FLAME_REGISTER_FUNCTION_BEG(Combo_items_addchild, FLAME_GID(7524), "p")
-			auto w = (Widget*)d[0].p;
-			auto thiz = (wMenu*)d[1].p;
+			auto &w = *(Widget**)&d[0].p();
+			auto &thiz = *(wMenu**)&d[1].p();
 
 			if (w->class_hash$ == cH("menuitem"))
 			{
 				auto i = (wMenuItem*)w;
 
 				thiz->set_width(thiz->inner_padding$[0] + thiz->inner_padding$[1] + thiz->w_btn()->inner_padding$[0] + thiz->w_btn()->inner_padding$[1] + thiz->w_items()->size$.x);
-				auto idx = thiz->w_items()->children_1.size - 1;
+				auto idx = thiz->w_items()->children_1$.size - 1;
 
-				i->add_listener(cH("clicked"), ComboItem_clicked::v, "p i", thiz, idx);
+				i->add_listener(cH("clicked"), ComboItem_clicked::v, { thiz, idx });
 			}
 		FLAME_REGISTER_FUNCTION_END(Combo_items_addchild)
 
@@ -1819,20 +1800,20 @@ namespace flame
 
 			sel() = -1;
 
-			w_btn()->add_listener(cH("clicked"), Combo_btn_clicked::v, "p", this);
+			w_btn()->add_listener(cH("clicked"), Combo_btn_clicked::v, { this });
 
-			w_items()->add_listener(cH("add child"), Combo_items_addchild::v, "p", this);
+			w_items()->add_listener(cH("add child"), Combo_items_addchild::v, { this });
 		}
 
 		int &wCombo::sel()
 		{
-			return data_storage(5).i[0];
+			return data_storage(5).i1();
 		}
 
 		void wCombo::set_sel(int idx)
 		{
 			sel() = idx;
-			auto i = (wMenuItem*)w_items()->children_1[idx];
+			auto i = (wMenuItem*)w_items()->children_1$[idx];
 			w_btn()->set_text(i->text());
 
 			report_changed();
@@ -1847,8 +1828,8 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Edit_keydown, FLAME_GID(27590), "i")
-			auto code = d[0].i[0];
-			auto thiz = (wEdit*)d[1].p;
+			auto &code = d[0].i1();
+			auto &thiz = *(wEdit**)&d[1].p();
 
 			auto &text = ((WidgetPrivate*)thiz)->string_storage_[0]; // since we need the full control of string
 
@@ -1879,8 +1860,8 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_END(Edit_keydown)
 
 		FLAME_REGISTER_FUNCTION_BEG(Combo_char, FLAME_GID(5693), "i")
-			auto ch = d[0].i[0];
-			auto thiz = (wEdit*)d[1].p;
+			auto &ch = d[0].i1();
+			auto &thiz = *(wEdit**)&d[1].p();
 
 			auto &text = ((WidgetPrivate*)thiz)->string_storage_[0]; // since we need the full control of string
 
@@ -1913,10 +1894,10 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_END(Combo_char)
 
 		FLAME_REGISTER_FUNCTION_BEG(Combo_draw, FLAME_GID(9908), "p f2 f")
-			auto c = (Canvas*)d[0].p;
-			auto off = Vec2(d[1].f);
-			auto scl = d[2].f[0];
-			auto thiz = (wEdit*)d[3].p;
+			auto &c = *(Canvas**)&d[0].p();
+			auto &off = d[1].f2();
+			auto &scl = d[2].f1();
+			auto &thiz = *(wEdit**)&d[3].p();
 
 			if (thiz->instance()->key_focus_widget() == thiz && int(thiz->instance()->total_time() * 2) % 2 == 0)
 			{
@@ -1948,16 +1929,16 @@ namespace flame
 
 			cursor() = 0;
 
-			add_listener(cH("key down"), Edit_keydown::v, "p", this);
+			add_listener(cH("key down"), Edit_keydown::v, { this });
 
-			add_listener(cH("char"), Combo_char::v, "p", this);
+			add_listener(cH("char"), Combo_char::v, { this });
 
-			add_draw_command(Combo_draw::v, "p", this);
+			add_draw_command(Combo_draw::v, { this });
 		}
 
 		int &wEdit::cursor()
 		{
-			return data_storage(2).i[0];
+			return data_storage(2).i1();
 		}
 
 		void wEdit::set_size_by_width(float width)
@@ -1968,35 +1949,35 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Edit_charfilter_int, FLAME_GID(5037), "i i")
-			auto ch = d[0].i[0];
+			auto &ch = d[0].i1();
 
-			d[1].i[0] = ch >= L'0' && ch <= L'9';
+			d[1].i1() = ch >= L'0' && ch <= L'9';
 		FLAME_REGISTER_FUNCTION_END(Edit_charfilter_int)
 
 		FLAME_REGISTER_FUNCTION_BEG(Edit_charfilter_float, FLAME_GID(18387), "i i")
-			auto ch = d[0].i[0];
-			auto thiz = (WidgetPrivate*)d[1].p;
+			auto &ch = d[0].i1();
+			auto &thiz = *(WidgetPrivate**)&d[1].p();
 
 			if (ch == L'.')
 			{
 				auto it = thiz->string_storage_[0].find(L'.');
 				if (it != std::string::npos)
 				{
-					d[1].i[0] = 0;
+					d[1].i1() = 0;
 					return;
 				}
 			}
-			d[1].i[0] = ch >= '0' && ch <= '9';
+			d[1].i1() = ch >= '0' && ch <= '9';
 		FLAME_REGISTER_FUNCTION_END(Edit_charfilter_float)
 
 		void wEdit::add_char_filter_int()
 		{
-			add_listener(cH("char filter"), Edit_charfilter_int::v, "");
+			add_listener(cH("char filter"), Edit_charfilter_int::v, {});
 		}
 
 		void wEdit::add_char_filter_float()
 		{
-			add_listener(cH("char filter"), Edit_charfilter_float::v, "p", this);
+			add_listener(cH("char filter"), Edit_charfilter_float::v, { this });
 		}
 
 		wEdit *wEdit::create(Instance *ui)
@@ -2008,10 +1989,10 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Image_draw, FLAME_GID(30624), "p f2 f")
-			auto c = (Canvas*)d[0].p;
-			auto off = Vec2(d[1].f);
-			auto scl = d[2].f[0];
-			auto thiz = (wImage*)d[3].p;
+			auto &c = *(Canvas**)&d[0].p();
+			auto &off = d[1].f2();
+			auto &scl = d[2].f1();
+			auto &thiz = *(wImage**)&d[3].p();
 
 			auto p = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * scl + off;
 			auto s = (thiz->size$ - Vec2(thiz->inner_padding$[0] + thiz->inner_padding$[1], thiz->inner_padding$[2] + thiz->inner_padding$[3])) * scl * thiz->scale$;
@@ -2032,32 +2013,32 @@ namespace flame
 			stretch() = 0;
 			border() = Vec4(0.f);
 
-			add_draw_command(Image_draw::v, "p", this);
+			add_draw_command(Image_draw::v, { this });
 		}
 
 		int &wImage::id()
 		{
-			return data_storage(0).i[0];
+			return data_storage(0).i1();
 		}
 
 		Vec2 &wImage::uv0()
 		{
-			return *((Vec2*)data_storage(1).f);
+			return data_storage(1).f2();
 		}
 
 		Vec2 &wImage::uv1()
 		{
-			return *((Vec2*)data_storage(2).f);
+			return data_storage(2).f2();
 		}
 
 		int &wImage::stretch()
 		{
-			return data_storage(3).i[0];
+			return data_storage(3).i1();
 		}
 
 		Vec4 &wImage::border()
 		{
-			return *((Vec4*)data_storage(4).f);
+			return data_storage(4).f4();
 		}
 
 		wImage *wImage::create(Instance *ui)
@@ -2069,9 +2050,9 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(SizeDrag_mousemove, FLAME_GID(2863), "f2")
-			auto disp = Vec2(d[0].f);
-			auto thiz = (wSizeDrag*)d[1].p;
-			auto target = (Widget*)d[2].p;
+			auto &disp = d[0].f2();
+			auto &thiz = *(wSizeDrag**)&d[1].p();
+			auto &target = *(Widget**)&d[2].p();
 
 			if (thiz == thiz->instance()->dragging_widget())
 			{
@@ -2096,10 +2077,10 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_END(SizeDrag_mousemove)
 
 		FLAME_REGISTER_FUNCTION_BEG(SizeDrag_draw, FLAME_GID(4242), "p f2 f")
-			auto c = (Canvas*)d[0].p;
-			auto off = Vec2(d[1].f);
-			auto scl = d[2].f[0];
-			auto thiz = (wSizeDrag*)d[3].p;
+			auto &c = *(Canvas**)&d[0].p();
+			auto &off = d[1].f2();
+			auto &scl = d[2].f1();
+			auto &thiz = *(wSizeDrag**)&d[3].p();
 
 			c->add_triangle_filled(
 				(thiz->pos$ + Vec2(thiz->size$.x, 0.f)) * scl + off,
@@ -2120,15 +2101,15 @@ namespace flame
 
 			min_size() = Vec2(0.f);
 
-			add_listener(cH("mouse move"), SizeDrag_mousemove::v, "p p", this, target);
+			add_listener(cH("mouse move"), SizeDrag_mousemove::v, { this, target });
 
 			remove_draw_command(0);
-			add_draw_command(SizeDrag_draw::v, "p", this);
+			add_draw_command(SizeDrag_draw::v, { this });
 		}
 
 		Vec2 &wSizeDrag::min_size()
 		{
-			return *((Vec2*)data_storage(0).f);
+			return data_storage(0).f2();
 		}
 
 		wSizeDrag *wSizeDrag::create(Instance *ui, Widget *target)
@@ -2140,8 +2121,8 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Scrollbar_mousemove, FLAME_GID(1385), "f2")
-			auto disp = Vec2(d[0].f);
-			auto thiz = (wScrollbar*)d[1].p;
+			auto &disp = d[0].f2();
+			auto &thiz = *(wScrollbar**)&d[1].p();
 
 			if (thiz->w_btn() == thiz->instance()->dragging_widget())
 			{
@@ -2151,14 +2132,14 @@ namespace flame
 		FLAME_REGISTER_FUNCTION_END(Scrollbar_mousemove)
 
 		FLAME_REGISTER_FUNCTION_BEG(Scrollbar_mousescroll, FLAME_GID(2126), "i")
-			auto scroll = d[0].i[0];
-			auto thiz = (wScrollbar*)d[1].p;
+			auto &scroll = d[0].i1();
+			auto &thiz = *(wScrollbar**)&d[1].p();
 
 			thiz->scroll(scroll);
 		FLAME_REGISTER_FUNCTION_END(Scrollbar_mousescroll)
 
 		FLAME_REGISTER_FUNCTION_BEG(Scrollbar_style, FLAME_GID(18956), "p")
-			auto thiz = (wScrollbar*)d[0].p;
+			auto &thiz = *(wScrollbar**)&d[0].p();
 
 			auto s = thiz->w_target()->size$.y - thiz->w_target()->inner_padding$[2] - thiz->w_target()->inner_padding$[3];
 			auto content_size = thiz->w_target()->get_content_size();
@@ -2193,21 +2174,21 @@ namespace flame
 
 			w_target() = target;
 
-			w_btn()->add_listener(cH("mouse move"), Scrollbar_mousemove::v, "p", this);
+			w_btn()->add_listener(cH("mouse move"), Scrollbar_mousemove::v, { this });
 
-			add_listener(cH("mouse scroll"), Scrollbar_mousescroll::v, "p", this);
+			add_listener(cH("mouse scroll"), Scrollbar_mousescroll::v, { this });
 
-			add_style(Scrollbar_style::v, "");
+			add_style(Scrollbar_style::v, {});
 		}
 
 		wButtonPtr &wScrollbar::w_btn()
 		{
-			return (*(wButtonPtr*)&data_storage(0).p);
+			return *(wButtonPtr*)&data_storage(0).p();
 		}
 
 		WidgetPtr &wScrollbar::w_target()
 		{
-			return (*(WidgetPtr*)&data_storage(1).p);
+			return *(WidgetPtr*)&data_storage(1).p();
 		}
 
 		void wScrollbar::scroll(int v)
@@ -2225,8 +2206,8 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(ListItem_btn_mousescroll, FLAME_GID(6526), "i")
-			auto scroll = d[0].i[0];
-			auto thiz = (wList*)d[1].p;
+			auto &scroll = d[0].i1();
+			auto &thiz = *(wList**)&d[1].p();
 
 			if (thiz->parent())
 				thiz->parent()->on_mousescroll(scroll);
@@ -2250,12 +2231,12 @@ namespace flame
 			w_btn()->align$ = AlignLittleEnd;
 			add_child(w_btn());
 
-			w_btn()->add_listener(cH("mouse scroll"), ListItem_btn_mousescroll::v, "p", this);
+			w_btn()->add_listener(cH("mouse scroll"), ListItem_btn_mousescroll::v, { this });
 		}
 
 		wButtonPtr &wListItem::w_btn()
 		{
-			return *((wButtonPtr*)&data_storage(0).p);
+			return *(wButtonPtr*)&data_storage(0).p();
 		}
 
 		wListItem *wListItem::create(Instance *ui)
@@ -2267,47 +2248,47 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(List_mousescroll, FLAME_GID(20822), "i")
-			auto scroll = d[0].i[0];
-			auto thiz = (wList*)d[1].p;
+			auto &scroll = d[0].i1();
+			auto &thiz = *(wList**)&d[1].p();
 
 			thiz->w_scrollbar()->scroll(scroll);
 		FLAME_REGISTER_FUNCTION_END(List_mousescroll)
 
 		FLAME_REGISTER_FUNCTION_BEG(List_leftmousedown, FLAME_GID(19124), "f2")
-			auto thiz = (wList*)d[1].p;
+			auto &thiz = *(wList**)&d[1].p();
 
 			thiz->w_sel() = nullptr;
 			thiz->report_changed();
 		FLAME_REGISTER_FUNCTION_END(List_leftmousedown)
 
 		FLAME_REGISTER_FUNCTION_BEG(ListItem_btn_style, FLAME_GID(408), "p")
-			auto w = (Widget*)d[0].p;
-			auto thiz = (wList*)d[1].p;
+			auto &w = *(Widget**)&d[0].p();
+			auto &thiz = *(wList**)&d[1].p();
 
 			if (thiz->w_sel() && thiz->w_sel()->w_btn() == w && w->state == StateNormal)
 				w->background_col$ = Bvec4(120, 120, 20, 255);
 		FLAME_REGISTER_FUNCTION_END(ListItem_btn_style)
 
 		FLAME_REGISTER_FUNCTION_BEG(ListItem_btn_leftmousedown, FLAME_GID(8928), "f2")
-			auto thiz = (wList*)d[1].p;
-			auto i = (wListItem*)d[2].p;
+			auto &thiz = *(wList**)&d[1].p();
+			auto &i = *(wListItem**)&d[2].p();
 
 			thiz->w_sel() = i;
 			thiz->report_changed();
 		FLAME_REGISTER_FUNCTION_END(ListItem_btn_leftmousedown)
 
 		FLAME_REGISTER_FUNCTION_BEG(List_addchild, FLAME_GID(8288), "p")
-			auto w = (Widget*)d[0].p;
-			auto thiz = (wList*)d[1].p;
+			auto &w = *(Widget**)&d[0].p();
+			auto &thiz = *(wList**)&d[1].p();
 
 			if (w->class_hash$ == cH("listitem"))
 			{
 				auto i = (wListItem*)w;
 
 				add_style_color(i->w_btn(), 0, Vec3(260.f, 0.8f, 1.f));
-				i->w_btn()->add_style(ListItem_btn_style::v, "p", thiz);
+				i->w_btn()->add_style(ListItem_btn_style::v, { thiz });
 
-				i->w_btn()->add_listener(cH("left mouse down"), ListItem_btn_leftmousedown::v, "p p", thiz, i);
+				i->w_btn()->add_listener(cH("left mouse down"), ListItem_btn_leftmousedown::v, { thiz, i });
 			}
 		FLAME_REGISTER_FUNCTION_END(List_addchild)
 
@@ -2327,26 +2308,26 @@ namespace flame
 			layout_type$ = LayoutVertical;
 			clip$ = true;
 
-			add_listener(cH("mouse scroll"), List_mousescroll::v, "p", this);
+			add_listener(cH("mouse scroll"), List_mousescroll::v, { this });
 
-			add_listener(cH("left mouse down"), List_leftmousedown::v, "p", this);
+			add_listener(cH("left mouse down"), List_leftmousedown::v, { this });
 
 			w_scrollbar() = wScrollbar::create(instance(), this);
 			w_scrollbar()->background_col$ = Bvec4(255, 255, 255, 40);
 
 			add_child(w_scrollbar(), 1);
 
-			add_listener(cH("add child"), List_addchild::v, "p", this);
+			add_listener(cH("add child"), List_addchild::v, { this });
 		}
 
 		wListItemPtr &wList::w_sel()
 		{
-			return *((wListItemPtr*)&data_storage(0).p);
+			return *(wListItemPtr*)&data_storage(0).p();
 		}
 
 		wScrollbarPtr &wList::w_scrollbar()
 		{
-			return *((wScrollbarPtr*)&data_storage(1).p);
+			return *(wScrollbarPtr*)&data_storage(1).p();
 		}
 
 		wList *wList::create(Instance *ui)
@@ -2358,13 +2339,13 @@ namespace flame
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(TreeNode_doubleclicked, FLAME_GID(10825), "")
-			auto thiz = (wTreeNode*)d[0].p;
+			auto &thiz = *(wTreeNode**)&d[0].p();
 
 			thiz->w_larrow()->on_clicked();
 		FLAME_REGISTER_FUNCTION_END(TreeNode_doubleclicked)
 
 		FLAME_REGISTER_FUNCTION_BEG(TreeNode_larrow_clicked, FLAME_GID(20989), "")
-			auto thiz = (wTreeNode*)d[0].p;
+			auto &thiz = *(wTreeNode**)&d[0].p();
 
 			auto v = !thiz->w_items()->visible$;
 			thiz->w_items()->set_visibility(v);
@@ -2391,7 +2372,7 @@ namespace flame
 			w_btn()->align$ = AlignLittleEnd;
 			add_child(w_btn());
 
-			w_btn()->add_listener(cH("double clicked"), TreeNode_doubleclicked::v, "p", this);
+			w_btn()->add_listener(cH("double clicked"), TreeNode_doubleclicked::v, { this });
 
 			w_items() = wLayout::create(instance());
 			w_items()->layout_padding$ = w_btn()->inner_padding$[0];
@@ -2409,24 +2390,24 @@ namespace flame
 			w_larrow()->set_text(Icon_CARET_RIGHT);
 			add_style_textcolor(w_larrow(), 0, normal_col, else_col);
 
-			w_larrow()->add_listener(cH("clicked"), TreeNode_larrow_clicked::v, "p", this);
+			w_larrow()->add_listener(cH("clicked"), TreeNode_larrow_clicked::v, { this });
 
 			add_child(w_larrow(), 1);
 		}
 
 		wButtonPtr &wTreeNode::w_btn()
 		{
-			return *((wButtonPtr*)&data_storage(0).p);
+			return *(wButtonPtr*)&data_storage(0).p();
 		}
 
 		wLayoutPtr &wTreeNode::w_items()
 		{
-			return *((wLayoutPtr*)&data_storage(1).p);
+			return *(wLayoutPtr*)&data_storage(1).p();
 		}
 
 		wTextPtr &wTreeNode::w_larrow()
 		{
-			return *((wTextPtr*)&data_storage(2).p);
+			return *(wTextPtr*)&data_storage(2).p();
 		}
 
 		wTreeNode *wTreeNode::create(Instance *ui, const wchar_t *title, const Bvec4 &normal_col, const Bvec4 &else_col)

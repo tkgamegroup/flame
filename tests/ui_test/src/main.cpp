@@ -235,17 +235,17 @@ extern "C" __declspec(dllexport) int main()
 	//	ui::Widget::destroy(new_widget);
 	//}
 
-	{
-		auto xml = XmlFile::create_from_file(L"d:/ui.xml");
+	//{
+	//	auto xml = XmlFile::create_from_file(L"d:/ui.xml");
 
-		auto u = typeinfo::cpp::find_udt(cH("ui::Widget"));
+	//	auto u = typeinfo::cpp::find_udt(cH("ui::Widget"));
 
-		unserialize(xml->root_node->node(0), u, t_fps);
+	//	unserialize(xml->root_node->node(0), u, t_fps);
 
-		XmlFile::destroy(xml);
-	}
+	//	XmlFile::destroy(xml);
+	//}
 
-	app->run(do_run, "");
+	app->run(do_run, {});
 
 	return 0;
 }

@@ -32,29 +32,12 @@
 #define FLAME_FUNCTION_EXPORTS
 #endif
 
-#include <flame/type.h>
+#include <flame/math.h>
 
-#include <stdarg.h>
+#include <vector>
 
 namespace flame
 {
-	/*
-		fmt:
-			i    - int
-			i2   - Ivec2
-			i3   - Ivec3
-			i4   - Ivec4
-			f    - float
-			f2   - Vec2
-			f3   - Vec3
-			f4   - Vec4
-			b    - uchar
-			b2   - Bvec2
-			b3   - Bvec3
-			b4   - Bvec4
-			p    - void*
-	*/
-
 	typedef void(*PF)(CommonData*);
 
 	FLAME_FUNCTION_EXPORTS void register_PF(PF pf, unsigned int id, const char *parm_fmt, const char *filename, int line_beg, int line_end);
@@ -65,7 +48,6 @@ namespace flame
 	{
 		const char *para_fmt;
 		int para_cnt;
-		const char *capt_fmt;
 		int capt_cnt;
 
 		PF pf;
@@ -75,7 +57,7 @@ namespace flame
 		FLAME_FUNCTION_EXPORTS void exec_in_new_thread();
 
 		FLAME_FUNCTION_EXPORTS static Function *create(uint id, int capt_cnt);
-		FLAME_FUNCTION_EXPORTS static Function *create(PF pf, const char *parm_fmt, const char *capt_fmt, va_list ap);
+		FLAME_FUNCTION_EXPORTS static Function *create(PF pf, const char *parm_fmt, const std::vector<CommonData> &capt);
 		FLAME_FUNCTION_EXPORTS static void destroy(Function *f);
 	};
 }

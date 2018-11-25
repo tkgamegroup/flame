@@ -28,11 +28,11 @@ namespace flame
 	namespace ui
 	{
 		FLAME_REGISTER_FUNCTION_BEG(Animation_moveto, FLAME_GID(21191), "p f")
-			auto w = (Widget*)d[0].p;
-			auto t = d[1].f[0];
-			auto duration = d[2].f[0];
-			auto pos_a = Vec2(d[4].f);
-			auto pos_b = Vec2(d[5].f);
+			auto &w = *(Widget**)&d[0].p();
+			auto &t = d[1].f1();
+			auto &duration = d[2].f1();
+			auto &pos_a = d[4].f2();
+			auto &pos_b = d[5].f2();
 
 			if (t < 0.f)
 			{
@@ -45,15 +45,15 @@ namespace flame
 
 		void add_animation_moveto(Widget *w, float duration, const Vec2 &pos_a, const Vec2 &pos_b)
 		{
-			w->add_animation(Animation_moveto::v, "f i f2 f2", duration, 0, pos_a, pos_b);
+			w->add_animation(Animation_moveto::v, { duration, 0, pos_a, pos_b });
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Animation_fade, FLAME_GID(9864), "p f")
-			auto w = (Widget*)d[0].p;
-			auto t = d[1].f[0];
-			auto duration = d[2].f[0];
-			auto alpha_a = d[4].f[0];
-			auto alpha_b = d[5].f[0];
+			auto &w = *(Widget**)&d[0].p();
+			auto &t = d[1].f1();
+			auto &duration = d[2].f1();
+			auto &alpha_a = d[4].f1();
+			auto &alpha_b = d[5].f1();
 
 			if (t < 0.f)
 			{
@@ -66,7 +66,7 @@ namespace flame
 
 		void add_animation_fade(Widget *w, float duration, float alpha_a, float alpha_b)
 		{
-			w->add_animation(Animation_fade::v, "f i f f", duration, 0, alpha_a, alpha_b);
+			w->add_animation(Animation_fade::v, { duration, 0, alpha_a, alpha_b });
 		}
 	}
 }
