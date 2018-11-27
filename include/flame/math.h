@@ -299,6 +299,9 @@ namespace flame
 	struct Ivec2;
 	struct Ivec3;
 	struct Ivec4;
+	struct Bvec2;
+	struct Bvec3;
+	struct Bvec4;
 	struct Mat2;
 	struct Mat3;
 	struct Mat4;
@@ -737,6 +740,7 @@ namespace flame
 		explicit Bvec2(uchar v);
 		explicit Bvec2(uchar *v);
 		Bvec2(uchar _x, uchar _y);
+		explicit Bvec2(const Bvec4 &v);
 		uchar &operator[](int i);
 		uchar const &operator[](int i) const;
 	};
@@ -755,6 +759,7 @@ namespace flame
 		explicit Bvec3(uchar *v);
 		Bvec3(uchar _x, uchar _y, uchar _z);
 		Bvec3(const Bvec2 &v, uchar _z);
+		explicit Bvec3(const Bvec4 &v);
 		uchar &operator[](int i);
 		uchar const &operator[](int i) const;
 	};
@@ -3518,6 +3523,12 @@ namespace flame
 	{
 	}
 
+	inline Bvec2::Bvec2(const Bvec4 &v) :
+		x(v.x),
+		y(v.y)
+	{
+	}
+
 	inline uchar &Bvec2::operator[](int i)
 	{
 		return *(&x + i);
@@ -3560,6 +3571,13 @@ namespace flame
 		x(_x),
 		y(_y),
 		z(_z)
+	{
+	}
+
+	inline Bvec3::Bvec3(const Bvec4 &v) :
+		x(v.x),
+		y(v.y),
+		z(v.z)
 	{
 	}
 
@@ -5458,7 +5476,7 @@ namespace flame
 				fmt[i] = 0;
 		}
 
-		inline bool cmp_fmt(const char *_fmt)
+		inline bool cmp_fmt(const char *_fmt) const
 		{
 			for (auto i = 0;; i++)
 			{

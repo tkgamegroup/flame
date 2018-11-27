@@ -43,11 +43,11 @@ bool has_gid(unsigned int gid)
 	return false;
 }
 
-unsigned int get_gid() 
+uint get_gid() 
 {
 	while (true)
 	{
-		unsigned int gid = rand();
+		uint gid = rand() % 1000000;
 		if (!has_gid(gid))
 		{
 			gids.push_back(gid);
@@ -86,9 +86,9 @@ int main(int argc, char **args)
 
 	for (auto &d : src_dirs)
 	{
-		for (std::filesystem::recursive_directory_iterator end, it(root_dir + L"/" + d); it != end; it++)
+		for (filesystem::recursive_directory_iterator end, it(root_dir + L"/" + d); it != end; it++)
 		{
-			if (!std::filesystem::is_directory(it->status()) && it->path().extension() == L".cpp")
+			if (!filesystem::is_directory(it->status()) && it->path().extension() == L".cpp")
 			{
 				auto ffn = it->path().wstring();
 

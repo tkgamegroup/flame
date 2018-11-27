@@ -132,6 +132,30 @@ namespace flame
 		{
 			free(v);
 		}
+
+		inline void insert(int pos, CH _v)
+		{
+			resize(size + 1);
+			v[pos] = _v;
+		}
+
+		inline void remove(int idx, int count = 1)
+		{
+			auto new_size = size - count;
+			for (auto i = idx; i < new_size; i++)
+				v[i] = v[i + count];
+			resize(new_size);
+		}
+
+		inline int find(CH _v)
+		{
+			for (auto i = 0; i < size; i++)
+			{
+				if (v[i] == _v)
+					return i;
+			}
+			return -1;
+		}
 	};
 
 	template<typename CH>

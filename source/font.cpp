@@ -2391,19 +2391,6 @@ namespace flame
 			return w;
 		}
 
-		inline int get_text_width(const wchar_t *text_begin, const wchar_t *text_end)
-		{
-			auto w = 0;
-			auto s = text_begin;
-			while (s != text_end)
-			{
-				auto g = get_glyph(*s);
-				w += g.advance;
-				s++;
-			}
-			return w;
-		}
-
 		inline void save(const wchar_t *filename) const
 		{
 			auto parent_path = filesystem::path(filename).parent_path().generic_wstring();
@@ -2458,11 +2445,6 @@ namespace flame
 	int FontAtlas::get_text_width(const wchar_t *text)
 	{
 		return ((FontAtlasPrivate*)this)->get_text_width(text);
-	}
-
-	int FontAtlas::get_text_width(const wchar_t *text_begin, const wchar_t *text_end)
-	{
-		return ((FontAtlasPrivate*)this)->get_text_width(text_begin, text_end);
 	}
 
 	Bitmap *FontAtlas::get_stroke_image() const

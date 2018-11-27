@@ -157,7 +157,8 @@ namespace flame
 			bool showed; // vaild after instance processing
 			State state; // vaild after instance processing
 
-			Array<Function*> draw_commands$;
+			bool draw_default$;
+			Array<Function*> extra_draw_commands$;
 
 			int closet_id$;
 			Array<Function*> styles$;
@@ -166,6 +167,60 @@ namespace flame
 
 			Array<Widget*> children_1$;
 			Array<Widget*> children_2$;
+
+			Array<CommonData> data_storages$;
+			Array<StringW> string_storages$;
+
+			inline Widget()
+			{
+				class_hash$ = 0;
+
+				pos$ = Vec2(0.f);
+				size$ = Vec2(0.f);
+
+				alpha$ = 1.f;
+				scale$ = 1.f;
+
+				inner_padding$ = Vec4(0.f);
+				layout_padding$ = 0.f;
+
+				background_offset$ = Vec4(0.f);
+				background_round_radius$ = 0.f;
+				background_round_flags$ = 0;
+				background_frame_thickness$ = 0.f;
+				background_col$ = Bvec4(0);
+				background_frame_col$ = Bvec4(255);
+				background_shaow_thickness$ = 0.f;
+
+				size_policy_hori$ = SizeFixed;
+				size_policy_vert$ = SizeFixed;
+
+				align$ = AlignFree;
+
+				layout_type$ = LayoutFree;
+				item_padding$ = 0.f;
+				grid_hori_count$ = 1;
+				clip$ = false;
+
+				scroll_offset$ = 0.f;
+
+				event_attitude$ = EventAccept;
+				want_key_focus$ = false;
+
+				visible$ = true;
+
+				global_pos = Vec2(0.f);
+				global_scale = 1.f;
+
+				cliped = false;
+				content_size = 0.f;
+				showed = false;
+				state = StateNormal;
+
+				closet_id$ = 0;
+
+				draw_default$ = true;
+			}
 
 			FLAME_UI_EXPORTS void set_width(float x, Widget *sender = nullptr);
 			FLAME_UI_EXPORTS void set_height(float y, Widget *sender = nullptr);
@@ -178,8 +233,6 @@ namespace flame
 			FLAME_UI_EXPORTS int layer() const;
 
 			FLAME_UI_EXPORTS void add_draw_command(PF pf, const std::vector<CommonData> &capt);
-			FLAME_UI_EXPORTS void add_default_draw_command();
-			FLAME_UI_EXPORTS void remove_draw_command(int idx);
 
 			// parm (Widget *w)
 			FLAME_UI_EXPORTS void add_style(PF pf, const std::vector<CommonData> &capt);
@@ -238,13 +291,8 @@ namespace flame
 
 			FLAME_UI_EXPORTS void arrange();
 
-			FLAME_UI_EXPORTS void resize_data_storage(int count);
-			FLAME_UI_EXPORTS CommonData &data_storage(int idx);
-
-			FLAME_UI_EXPORTS void resize_string_storage(int count);
-			FLAME_UI_EXPORTS const wchar_t *string_storage(int idx);
-			FLAME_UI_EXPORTS int string_storage_len(int idx);
-			FLAME_UI_EXPORTS void set_string_storage(int idx, const wchar_t *str);
+			FLAME_UI_EXPORTS void add_data_storages(const char *fmt);
+			FLAME_UI_EXPORTS void add_string_storages(int count);
 
 			FLAME_UI_EXPORTS static Widget *create(Instance *ui);
 			FLAME_UI_EXPORTS static void destroy(Widget *w);
@@ -278,14 +326,9 @@ namespace flame
 
 			FLAME_UI_EXPORTS Bvec4 &text_col();
 			FLAME_UI_EXPORTS float &sdf_scale();
+			FLAME_UI_EXPORTS StringW &text();
 
-			FLAME_UI_EXPORTS const wchar_t *text();
-			FLAME_UI_EXPORTS int text_len();
-			FLAME_UI_EXPORTS void set_text(const wchar_t *str);
-
-			FLAME_UI_EXPORTS void set_size_auto(const wchar_t *str);
 			FLAME_UI_EXPORTS void set_size_auto();
-			FLAME_UI_EXPORTS void set_text_and_size(const wchar_t *str);
 
 			FLAME_UI_EXPORTS static wText *create(Instance *ui);
 		};

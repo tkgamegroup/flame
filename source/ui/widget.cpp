@@ -40,56 +40,8 @@ namespace flame
 	{
 		inline WidgetPrivate::WidgetPrivate(Instance *ui_)
 		{
-			class_hash$ = cH("widget");
-
-			pos$ = Vec2(0.f);
-			size$ = Vec2(0.f);
-
-			alpha$ = 1.f;
-			scale$ = 1.f;
-
-			inner_padding$ = Vec4(0.f);
-			layout_padding$ = 0.f;
-
-			background_offset$ = Vec4(0.f);
-			background_round_radius$ = 0.f;
-			background_round_flags$ = 0;
-			background_frame_thickness$ = 0.f;
-			background_col$ = Bvec4(0);
-			background_frame_col$ = Bvec4(255);
-			background_shaow_thickness$ = 0.f;
-
-			size_policy_hori$ = SizeFixed;
-			size_policy_vert$ = SizeFixed;
-
-			align$ = AlignFree;
-
-			layout_type$ = LayoutFree;
-			item_padding$ = 0.f;
-			grid_hori_count$ = 1;
-			clip$ = false;
-
-			scroll_offset$ = 0.f;
-
-			event_attitude$ = EventAccept;
-			want_key_focus$ = false;
-
-			visible$ = true;
-
-			global_pos = Vec2(0.f);
-			global_scale = 1.f;
-
-			cliped = false;
-			content_size = 0.f;
-			showed = false;
-			state = StateNormal;
-
 			instance = ui_;
 			parent = nullptr;
-
-			closet_id$ = 0;
-			
-			add_default_draw_command();
 		}
 
 		inline WidgetPrivate::~WidgetPrivate()
@@ -168,13 +120,7 @@ namespace flame
 
 		inline void WidgetPrivate::add_draw_command(PF pf, const std::vector<CommonData> &capt)
 		{
-			draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
-		}
-
-		inline void WidgetPrivate::remove_draw_command(int idx)
-		{
-			Function::destroy(draw_commands$[idx]);
-			draw_commands$.remove(idx);
+			extra_draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
 		}
 
 		void WidgetPrivate::remove_animations()
@@ -202,9 +148,29 @@ namespace flame
 
 		inline void WidgetPrivate::on_draw(Canvas *c, const Vec2 &off, float scl)
 		{
-			for (auto i = 0; i < draw_commands$.size; i++)
+			if (draw_default$)
 			{
-				auto f = draw_commands$[i];
+				auto p = (pos$ - Vec2(background_offset$[0], background_offset$[1])) * scl + off;
+				auto ss = scl * scale$;
+				auto s = (size$ + Vec2(background_offset$[0] + background_offset$[2], background_offset$[1] + background_offset$[3])) * ss;
+				auto rr = background_round_radius$ * ss;
+
+				if (background_shaow_thickness$ > 0.f)
+				{
+					c->add_rect_col2(p - Vec2(background_shaow_thickness$ * 0.5f), s + Vec2(background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
+						background_shaow_thickness$, rr, background_round_flags$);
+				}
+				if (alpha$ > 0.f)
+				{
+					if (background_col$.w > 0)
+						c->add_rect_filled(p, s, Bvec4(background_col$, alpha$), rr, background_round_flags$);
+					if (background_frame_thickness$ > 0.f && background_frame_col$.w > 0)
+						c->add_rect(p, s, Bvec4(background_frame_col$, alpha$), background_frame_thickness$, rr, background_round_flags$);
+				}
+			}
+			for (auto i = 0; i < extra_draw_commands$.size; i++)
+			{
+				auto f = extra_draw_commands$[i];
 				f->datas[0].v.p = c;
 				f->datas[1].v.f = off;
 				f->datas[2].v.f = scl;
@@ -995,21 +961,23 @@ namespace flame
 			}
 		}
 
-		inline void WidgetPrivate::resize_data_storage(int count)
+		inline void WidgetPrivate::add_data_storages(const char *fmt)
 		{
-			data_storage_.resize(count);
+			auto sp = string_split(std::string(fmt));
+			auto original_size = data_storages$.size;
+			data_storages$.resize(original_size + sp.size());
+			auto d = &data_storages$[original_size];
+			for (auto &s : sp)
+			{
+				d->set_fmt(s.c_str());
+
+				d++;
+			}
 		}
 
-		inline void WidgetPrivate::resize_string_storage(int count)
+		inline void WidgetPrivate::add_string_storages(int count)
 		{
-			string_storage_.resize(count);
-		}
-
-		inline void WidgetPrivate::set_string_storage(int idx, const wchar_t *str)
-		{
-			if (idx >= string_storage_.size())
-				string_storage_.resize(idx + 1);
-			string_storage_[idx] = str;
+			string_storages$.resize(string_storages$.size +  count);
 		}
 
 		void Widget::set_width(float x, Widget *sender)
@@ -1035,41 +1003,6 @@ namespace flame
 		void Widget::add_draw_command(PF pf, const std::vector<CommonData> &capt)
 		{
 			((WidgetPrivate*)this)->add_draw_command(pf, capt);
-		}
-
-		FLAME_REGISTER_FUNCTION_BEG(Widget_defaultdraw, FLAME_GID(8350), "p f2 f")
-			auto c = *(Canvas**)&d[0].p();
-			auto off = d[1].f2();
-			auto scl = d[2].f1();
-			auto thiz = *(Widget**)&d[3].p();
-
-			auto p = (thiz->pos$ - Vec2(thiz->background_offset$[0], thiz->background_offset$[1])) * scl + off;
-			auto ss = scl * thiz->scale$;
-			auto s = (thiz->size$ + Vec2(thiz->background_offset$[0] + thiz->background_offset$[2], thiz->background_offset$[1] + thiz->background_offset$[3])) * ss;
-			auto rr = thiz->background_round_radius$ * ss;
-
-			if (thiz->background_shaow_thickness$ > 0.f)
-			{
-				c->add_rect_col2(p - Vec2(thiz->background_shaow_thickness$ * 0.5f), s + Vec2(thiz->background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
-					thiz->background_shaow_thickness$, rr, thiz->background_round_flags$);
-			}
-			if (thiz->alpha$ > 0.f)
-			{
-				if (thiz->background_col$.w > 0)
-					c->add_rect_filled(p, s, Bvec4(thiz->background_col$, thiz->alpha$), rr, thiz->background_round_flags$);
-				if (thiz->background_frame_thickness$ > 0.f && thiz->background_frame_col$.w > 0)
-					c->add_rect(p, s, Bvec4(thiz->background_frame_col$, thiz->alpha$), thiz->background_frame_thickness$, rr, thiz->background_round_flags$);
-			}
-		FLAME_REGISTER_FUNCTION_END(Widget_defaultdraw)
-
-		void Widget::add_default_draw_command()
-		{
-			add_draw_command(Widget_defaultdraw::v, { this });
-		}
-
-		void Widget::remove_draw_command(int idx)
-		{
-			((WidgetPrivate*)this)->remove_draw_command(idx);
 		}
 
 		Instance *Widget::instance() const
@@ -1239,34 +1172,14 @@ namespace flame
 			((WidgetPrivate*)this)->arrange();
 		}
 
-		void Widget::resize_data_storage(int count)
+		void Widget::add_data_storages(const char *fmt)
 		{
-			((WidgetPrivate*)this)->resize_data_storage(count);
+			((WidgetPrivate*)this)->add_data_storages(fmt);
 		}
 
-		CommonData &Widget::data_storage(int idx)
+		void Widget::add_string_storages(int count)
 		{
-			return ((WidgetPrivate*)this)->data_storage_[idx];
-		}
-
-		void Widget::resize_string_storage(int count)
-		{
-			((WidgetPrivate*)this)->resize_string_storage(count);
-		}
-
-		const wchar_t *Widget::string_storage(int idx)
-		{
-			return ((WidgetPrivate*)this)->string_storage_[idx].c_str();
-		}
-
-		int Widget::string_storage_len(int idx)
-		{
-			return ((WidgetPrivate*)this)->string_storage_[idx].size();
-		}
-
-		void Widget::set_string_storage(int idx, const wchar_t *str)
-		{
-			((WidgetPrivate*)this)->set_string_storage(idx, str);
+			((WidgetPrivate*)this)->add_string_storages(count);
 		}
 
 		Widget *Widget::create(Instance *ui)
@@ -1317,7 +1230,7 @@ namespace flame
 		void wCheckbox::init()
 		{
 			class_hash$ = cH("checkbox");
-			resize_data_storage(1);
+			add_data_storages("i");
 
 			size$ = Vec2(share_data.font_atlas->pixel_height);
 			background_col$ = Bvec4(255);
@@ -1326,13 +1239,13 @@ namespace flame
 
 			add_listener(cH("clicked"), Checkbox_clicked::v, { this });
 
-			remove_draw_command(0);
+			draw_default$ = false;
 			add_draw_command(Checkbox_draw::v, { this });
 		}
 
 		int &wCheckbox::checked()
 		{
-			return data_storage(0).i1();
+			return data_storages$[0].i1();
 		}
 
 		wCheckbox *wCheckbox::create(Instance *ui)
@@ -1353,71 +1266,50 @@ namespace flame
 			{
 				auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * scl + off;
 				if (thiz->sdf_scale() < 0.f)
-					c->add_text_stroke(_pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->string_storage(0));
+					c->add_text_stroke(_pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text().v);
 				else
-					c->add_text_sdf(_pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->string_storage(0), thiz->sdf_scale() * scl);
+					c->add_text_sdf(_pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text().v, thiz->sdf_scale() * scl);
 			}
 		FLAME_REGISTER_FUNCTION_END(Text_draw)
 
 		void wText::init()
 		{
 			class_hash$ = cH("text");
-			resize_data_storage(2);
-			resize_string_storage(1);
+			add_data_storages("b4 f");
+			add_string_storages(1);
 
 			event_attitude$ = EventIgnore;
 
 			text_col() = Bvec4(0, 0, 0, 255);
 			sdf_scale() = -1.f;
-			set_text(L"");
+			text() = L"";
 
 			add_draw_command(Text_draw::v, { this });
 		}
 
 		Bvec4 &wText::text_col()
 		{
-			return data_storage(0).b4();
+			return data_storages$[0].b4();
 		}
 
 		float &wText::sdf_scale()
 		{
-			return data_storage(1).f1();
+			return data_storages$[1].f1();
 		}
 
-		const wchar_t *wText::text()
+		StringW &wText::text()
 		{
-			return string_storage(0);
+			return string_storages$[0];
 		}
 
-		int wText::text_len()
+		void wText::set_size_auto()
 		{
-			return string_storage_len(0);
-		}
-
-		void wText::set_text(const wchar_t *str)
-		{
-			set_string_storage(0, str);
-		}
-
-		void wText::set_size_auto(const wchar_t *str)
-		{
-			auto v = Vec2(share_data.font_atlas->get_text_width(str), share_data.font_atlas->pixel_height);
+			auto v = Vec2(share_data.font_atlas->get_text_width(text().v), share_data.font_atlas->pixel_height);
 			if (sdf_scale() > 0.f)
 				v *= sdf_scale();
 			v.x += inner_padding$[0] + inner_padding$[1];
 			v.y += inner_padding$[2] + inner_padding$[3];
 			set_size(v);
-		}
-
-		void wText::set_size_auto()
-		{
-			set_size_auto(string_storage(0));
-		}
-
-		void wText::set_text_and_size(const wchar_t *str)
-		{
-			set_text(str);
-			set_size_auto();
 		}
 
 		wText *wText::create(Instance *ui)
@@ -1438,11 +1330,12 @@ namespace flame
 			event_attitude$ = EventAccept;
 		}
 
-		void wButton::set_classic(const wchar_t *text, float _sdf_scale, float alpha)
+		void wButton::set_classic(const wchar_t *_text, float _sdf_scale, float alpha)
 		{
 			inner_padding$ += Vec4(4.f, 4.f, 2.f, 2.f);
 			sdf_scale() = _sdf_scale;
-			set_text_and_size(text);
+			text() = _text;
+			set_size_auto();
 			background_col$.w *= alpha;
 			add_style_color(this, 0, Vec3(0.f, 0.f, 1.f));
 		}
@@ -1466,7 +1359,7 @@ namespace flame
 			((wText*)this)->init();
 
 			class_hash$ = cH("toggle");
-			resize_data_storage(3);
+			add_data_storages("i");
 
 			background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
 			background_round_radius$ = share_data.font_atlas->pixel_height * 0.5f;
@@ -1482,7 +1375,7 @@ namespace flame
 
 		int &wToggle::toggled()
 		{
-			return data_storage(2).i1();
+			return data_storages$[2].i1();
 		}
 
 		void wToggle::set_toggle(bool v)
@@ -1520,7 +1413,8 @@ namespace flame
 			w->w_rarrow() = wText::create(w->instance());
 			w->w_rarrow()->align$ = AlignRightNoPadding;
 			w->w_rarrow()->sdf_scale() = w->w_btn()->sdf_scale();
-			w->w_rarrow()->set_text_and_size(w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN);
+			w->w_rarrow()->text() = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
+			w->w_rarrow()->set_size_auto();
 			w->add_child(w->w_rarrow(), 1);
 		}
 
@@ -1586,7 +1480,7 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("menu");
-			resize_data_storage(5);
+			add_data_storages("i i p p p");
 
 			sub() = 0;
 			opened() = 0;
@@ -1616,27 +1510,27 @@ namespace flame
 
 		int &wMenu::sub()
 		{
-			return data_storage(0).i1();
+			return data_storages$[0].i1();
 		}
 
 		int &wMenu::opened()
 		{
-			return data_storage(1).i1();
+			return data_storages$[1].i1();
 		}
 
 		wButtonPtr &wMenu::w_btn()
 		{
-			return *(wButtonPtr*)&data_storage(2).p();
+			return *(wButtonPtr*)&data_storages$[2].p();
 		}
 
 		wTextPtr &wMenu::w_rarrow()
 		{
-			return *(wTextPtr*)&data_storage(3).p();
+			return *(wTextPtr*)&data_storages$[3].p();
 		}
 
 		wLayoutPtr &wMenu::w_items()
 		{
-			return *(wLayoutPtr*)&data_storage(4).p();
+			return *(wLayoutPtr*)&data_storages$[4].p();
 		}
 
 		void wMenu::open()
@@ -1791,7 +1685,7 @@ namespace flame
 			((wMenu*)this)->init(L"");
 
 			class_hash$ = cH("combo");
-			resize_data_storage(6);
+			add_data_storages("i");
 
 			background_frame_thickness$ = 1.f;
 			size_policy_hori$ = SizeGreedy;
@@ -1807,14 +1701,14 @@ namespace flame
 
 		int &wCombo::sel()
 		{
-			return data_storage(5).i1();
+			return data_storages$[5].i1();
 		}
 
 		void wCombo::set_sel(int idx)
 		{
 			sel() = idx;
 			auto i = (wMenuItem*)w_items()->children_1$[idx];
-			w_btn()->set_text(i->text());
+			w_btn()->text() = i->text();
 
 			report_changed();
 		}
@@ -1831,8 +1725,6 @@ namespace flame
 			auto &code = d[0].i1();
 			auto &thiz = *(wEdit**)&d[1].p();
 
-			auto &text = ((WidgetPrivate*)thiz)->string_storage_[0]; // since we need the full control of string
-
 			switch (code)
 			{
 			case Key_Left:
@@ -1840,19 +1732,19 @@ namespace flame
 					thiz->cursor()--;
 				break;
 			case Key_Right:
-				if (thiz->cursor() < text.size())
+				if (thiz->cursor() < thiz->text().size)
 					thiz->cursor()++;
 				break;
 			case Key_Home:
 				thiz->cursor() = 0;
 				break;
 			case Key_End:
-				thiz->cursor() = text.size();
+				thiz->cursor() = thiz->text().size;
 				break;
 			case Key_Del:
-				if (thiz->cursor() < text.size())
+				if (thiz->cursor() < thiz->text().size)
 				{
-					text.erase(text.begin() + thiz->cursor());
+					thiz->text().remove(thiz->cursor());
 					thiz->report_changed();
 				}
 				break;
@@ -1863,15 +1755,13 @@ namespace flame
 			auto &ch = d[0].i1();
 			auto &thiz = *(wEdit**)&d[1].p();
 
-			auto &text = ((WidgetPrivate*)thiz)->string_storage_[0]; // since we need the full control of string
-
 			switch (ch)
 			{
 			case L'\b':
 				if (thiz->cursor() > 0)
 				{
 					thiz->cursor()--;
-					text.erase(text.begin() + thiz->cursor());
+					thiz->text().remove(thiz->cursor());
 					thiz->report_changed();
 				}
 				break;
@@ -1880,14 +1770,14 @@ namespace flame
 				auto str = get_clipboard();
 
 				thiz->cursor() = 0;
-				text = str.v;
+				thiz->text() = str.v;
 				thiz->report_changed();
 			}
 				break;
 			case 27:
 				break;
 			default:
-				text.insert(text.begin() + thiz->cursor(), ch);
+				thiz->text().insert(thiz->cursor(), ch);
 				thiz->cursor()++;
 				thiz->report_changed();
 			}
@@ -1901,7 +1791,7 @@ namespace flame
 
 			if (thiz->instance()->key_focus_widget() == thiz && int(thiz->instance()->total_time() * 2) % 2 == 0)
 			{
-				auto len = share_data.font_atlas->get_text_width(thiz->text(), thiz->text() + thiz->cursor());
+				auto len = share_data.font_atlas->get_text_width(thiz->text().v);
 				if (thiz->sdf_scale() < 0.f)
 				{
 					c->add_char_stroke((thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])
@@ -1920,7 +1810,7 @@ namespace flame
 			((wText*)this)->init();
 
 			class_hash$ = cH("edit");
-			resize_data_storage(3);
+			add_data_storages("i");
 
 			inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 			background_col$ = Colorf(0.3f, 0.3f, 0.3f, 1.f);
@@ -1938,7 +1828,7 @@ namespace flame
 
 		int &wEdit::cursor()
 		{
-			return data_storage(2).i1();
+			return data_storages$[2].i1();
 		}
 
 		void wEdit::set_size_by_width(float width)
@@ -1956,12 +1846,11 @@ namespace flame
 
 		FLAME_REGISTER_FUNCTION_BEG(Edit_charfilter_float, FLAME_GID(18387), "i i")
 			auto &ch = d[0].i1();
-			auto &thiz = *(WidgetPrivate**)&d[1].p();
+			auto &thiz = *(wEdit**)&d[1].p();
 
 			if (ch == L'.')
 			{
-				auto it = thiz->string_storage_[0].find(L'.');
-				if (it != std::string::npos)
+				if (thiz->text().find(L'.') != -1)
 				{
 					d[1].i1() = 0;
 					return;
@@ -2005,7 +1894,7 @@ namespace flame
 		void wImage::init()
 		{
 			class_hash$ = cH("image");
-			resize_data_storage(5);
+			add_data_storages("i f2 f2 i f4");
 
 			id() = 0;
 			uv0() = Vec2(0.f);
@@ -2018,27 +1907,27 @@ namespace flame
 
 		int &wImage::id()
 		{
-			return data_storage(0).i1();
+			return data_storages$[0].i1();
 		}
 
 		Vec2 &wImage::uv0()
 		{
-			return data_storage(1).f2();
+			return data_storages$[1].f2();
 		}
 
 		Vec2 &wImage::uv1()
 		{
-			return data_storage(2).f2();
+			return data_storages$[2].f2();
 		}
 
 		int &wImage::stretch()
 		{
-			return data_storage(3).i1();
+			return data_storages$[3].i1();
 		}
 
 		Vec4 &wImage::border()
 		{
-			return data_storage(4).f4();
+			return data_storages$[4].f4();
 		}
 
 		wImage *wImage::create(Instance *ui)
@@ -2092,7 +1981,7 @@ namespace flame
 		void wSizeDrag::init(Widget *target)
 		{
 			class_hash$ = cH("sizedrag");
-			resize_data_storage(1);
+			add_data_storages("f2");
 
 			size$ = Vec2(10.f);
 			background_col$ = Bvec4(140, 225, 15, 255 * 0.5f);
@@ -2103,13 +1992,13 @@ namespace flame
 
 			add_listener(cH("mouse move"), SizeDrag_mousemove::v, { this, target });
 
-			remove_draw_command(0);
+			draw_default$ = false;
 			add_draw_command(SizeDrag_draw::v, { this });
 		}
 
 		Vec2 &wSizeDrag::min_size()
 		{
-			return data_storage(0).f2();
+			return data_storages$[0].f2();
 		}
 
 		wSizeDrag *wSizeDrag::create(Instance *ui, Widget *target)
@@ -2160,7 +2049,7 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("scrollbar");
-			resize_data_storage(2);
+			add_data_storages("p p");
 
 			size$ = Vec2(10.f);
 			size_policy_vert$ = SizeFitLayout;
@@ -2183,12 +2072,12 @@ namespace flame
 
 		wButtonPtr &wScrollbar::w_btn()
 		{
-			return *(wButtonPtr*)&data_storage(0).p();
+			return *(wButtonPtr*)&data_storages$[0].p();
 		}
 
 		WidgetPtr &wScrollbar::w_target()
 		{
-			return *(WidgetPtr*)&data_storage(1).p();
+			return *(WidgetPtr*)&data_storages$[1].p();
 		}
 
 		void wScrollbar::scroll(int v)
@@ -2218,7 +2107,7 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("listitem");
-			resize_data_storage(1);
+			add_data_storages("p");
 
 			size_policy_hori$ = SizeFitLayout;
 			align$ = AlignLittleEnd;
@@ -2236,7 +2125,7 @@ namespace flame
 
 		wButtonPtr &wListItem::w_btn()
 		{
-			return *(wButtonPtr*)&data_storage(0).p();
+			return *(wButtonPtr*)&data_storages$[0].p();
 		}
 
 		wListItem *wListItem::create(Instance *ui)
@@ -2297,7 +2186,7 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("list");
-			resize_data_storage(2);
+			add_data_storages("i p");
 
 			inner_padding$ = Vec4(4.f);
 			background_offset$ = Vec4(0.f, 1.f, 0.f, 1.f);
@@ -2322,12 +2211,12 @@ namespace flame
 
 		wListItemPtr &wList::w_sel()
 		{
-			return *(wListItemPtr*)&data_storage(0).p();
+			return *(wListItemPtr*)&data_storages$[0].p();
 		}
 
 		wScrollbarPtr &wList::w_scrollbar()
 		{
-			return *(wScrollbarPtr*)&data_storage(1).p();
+			return *(wScrollbarPtr*)&data_storages$[1].p();
 		}
 
 		wList *wList::create(Instance *ui)
@@ -2350,7 +2239,7 @@ namespace flame
 			auto v = !thiz->w_items()->visible$;
 			thiz->w_items()->set_visibility(v);
 
-			thiz->w_larrow()->set_text(v ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
+			thiz->w_larrow()->text() = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
 		FLAME_REGISTER_FUNCTION_END(TreeNode_larrow_clicked)
 
 		void wTreeNode::init(const wchar_t *title, const Bvec4 &normal_col, const Bvec4 &else_col)
@@ -2358,7 +2247,7 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("treenode");
-			resize_data_storage(3);
+			add_data_storages("p p p");
 
 			layout_type$ = LayoutVertical;
 			align$ = AlignLittleEnd;
@@ -2367,7 +2256,8 @@ namespace flame
 			w_btn()->inner_padding$[0] = share_data.font_atlas->pixel_height * 0.8f;
 			w_btn()->inner_padding$ += Vec4(4.f, 4.f, 2.f, 2.f);
 			w_btn()->background_col$.w = 0;
-			w_btn()->set_text_and_size(title);
+			w_btn()->text() = title;
+			w_btn()->set_size_auto();
 			add_style_textcolor(w_btn(), 0, normal_col, else_col);
 			w_btn()->align$ = AlignLittleEnd;
 			add_child(w_btn());
@@ -2387,7 +2277,7 @@ namespace flame
 			w_larrow()->align$ = AlignLeftTopNoPadding;
 			w_larrow()->event_attitude$ = EventAccept;
 			w_larrow()->set_size(Vec2(w_btn()->inner_padding$[0], w_btn()->size$.y));
-			w_larrow()->set_text(Icon_CARET_RIGHT);
+			w_larrow()->text() = Icon_CARET_RIGHT;
 			add_style_textcolor(w_larrow(), 0, normal_col, else_col);
 
 			w_larrow()->add_listener(cH("clicked"), TreeNode_larrow_clicked::v, { this });
@@ -2397,17 +2287,17 @@ namespace flame
 
 		wButtonPtr &wTreeNode::w_btn()
 		{
-			return *(wButtonPtr*)&data_storage(0).p();
+			return *(wButtonPtr*)&data_storages$[0].p();
 		}
 
 		wLayoutPtr &wTreeNode::w_items()
 		{
-			return *(wLayoutPtr*)&data_storage(1).p();
+			return *(wLayoutPtr*)&data_storages$[1].p();
 		}
 
 		wTextPtr &wTreeNode::w_larrow()
 		{
-			return *(wTextPtr*)&data_storage(2).p();
+			return *(wTextPtr*)&data_storages$[2].p();
 		}
 
 		wTreeNode *wTreeNode::create(Instance *ui, const wchar_t *title, const Bvec4 &normal_col, const Bvec4 &else_col)

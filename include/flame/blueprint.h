@@ -36,14 +36,8 @@
 
 namespace flame
 {
-	namespace typeinfo
-	{
-		namespace cpp
-		{
-			struct EnumType;
-			struct UDT;
-		}
-	}
+	struct EnumInfo;
+	struct UDT;
 
 	namespace blueprint
 	{

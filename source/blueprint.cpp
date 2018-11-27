@@ -20,10 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/blueprint.h>
-#include <flame/typeinfo.h>
 #include <flame/file.h>
 #include <flame/serialize.h>
+#include <flame/blueprint.h>
 
 #include <vector>
 #include <string>

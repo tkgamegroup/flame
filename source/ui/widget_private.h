@@ -66,9 +66,6 @@ namespace flame
 			std::vector<std::tuple<int, int, int>> delay_takes;
 			std::vector<std::tuple<int, int, int>> delay_clears;
 
-			std::vector<CommonData> data_storage_;
-			std::vector<std::wstring> string_storage_;
-
 			WidgetPrivate(Instance *ui);
 			~WidgetPrivate();
 
@@ -79,7 +76,6 @@ namespace flame
 			void set_visibility(bool v);
 
 			void add_draw_command(PF pf, const std::vector<CommonData> &capt);
-			void remove_draw_command(int idx);
 
 			void add_style(PF pf, const std::vector<CommonData> &capt);
 
@@ -119,10 +115,8 @@ namespace flame
 
 			void arrange();
 
-			void resize_data_storage(int count);
-
-			void resize_string_storage(int count);
-			void set_string_storage(int idx, const wchar_t *str);
+			void add_data_storages(const char *fmt);
+			void add_string_storages(int count);
 		};
 	}
 }

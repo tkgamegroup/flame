@@ -127,6 +127,15 @@ namespace flame
 		f->capt_cnt = capt_cnt;
 		f->pf = pf;
 
+		auto d = f->datas;
+		for (auto &t : parm_sp)
+		{
+			d->set_fmt(t.c_str());
+			d->i4() = Ivec4(0);
+
+			d++;
+		}
+
 		return f;
 	}
 
@@ -144,6 +153,7 @@ namespace flame
 		for (auto &t : parm_sp)
 		{
 			d->set_fmt(t.c_str());
+			d->i4() = Ivec4(0);
 
 			d++;
 		}

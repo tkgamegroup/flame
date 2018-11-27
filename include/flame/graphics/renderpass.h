@@ -42,6 +42,9 @@ namespace flame
 
 			inline AttachmentInfo()
 			{
+				format$ = Format_R8G8B8A8_UNORM;
+				clear$ = true;
+				sample_count$ = SampleCount_1;
 			}
 
 			inline AttachmentInfo(Format format, bool clear = true, SampleCount sample_count = SampleCount_1) :

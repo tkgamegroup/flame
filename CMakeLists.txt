@@ -31,8 +31,6 @@ set(ASSIMP_PATH "" CACHE PATH "Assimp Path")
 endif()
 set(OPENAL_PATH "" CACHE PATH "OpenAL Path")
 
-#configure_file(src/flame/config.in ${CMAKE_SOURCE_DIR}/src/flame/config.h)
-
 add_subdirectory(source)
 add_subdirectory(tests)
 add_subdirectory(games)

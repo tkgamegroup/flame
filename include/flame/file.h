@@ -22,16 +22,6 @@
 
 #pragma once
 
-#ifdef FLAME_WINDOWS
-#ifdef FLAME_FILE_MODULE
-#define FLAME_FILE_EXPORTS __declspec(dllexport)
-#else
-#define FLAME_FILE_EXPORTS __declspec(dllimport)
-#endif
-#else
-#define FLAME_FILE_EXPORTS
-#endif
-
 #include <flame/string.h>
 
 #include <fstream>
@@ -42,14 +32,6 @@ namespace filesystem = std::experimental::filesystem;
 
 namespace flame
 {
-	namespace typeinfo
-	{
-		namespace cpp
-		{
-			struct UDT;
-		}
-	}
-
 	inline std::wstring ext_replace(const std::wstring &str, const std::wstring &ext)
 	{
 		filesystem::path path(str);
@@ -211,53 +193,4 @@ namespace flame
 		auto content = get_file_content(filename);
 		return std::string(content.first.get(), content.first.get() + content.second);
 	}
-
-	struct XmlAttribute
-	{
-		FLAME_FILE_EXPORTS const std::string &name() const;
-		FLAME_FILE_EXPORTS const std::string &value() const;
-
-		FLAME_FILE_EXPORTS void set_name(const std::string &name);
-		FLAME_FILE_EXPORTS void set_value(const std::string &value);
-	};
-
-	struct XmlNode
-	{
-		bool CDATA;
-
-		FLAME_FILE_EXPORTS const std::string &name() const;
-		FLAME_FILE_EXPORTS const std::string &value() const;
-
-		FLAME_FILE_EXPORTS void set_name(const std::string &name);
-		FLAME_FILE_EXPORTS void set_value(const std::string &value);
-
-		FLAME_FILE_EXPORTS XmlAttribute *new_attr(const std::string &name, const std::string &value);
-		FLAME_FILE_EXPORTS XmlAttribute *insert_attr(int idx, const std::string &name, const std::string &value);
-		FLAME_FILE_EXPORTS void remove_attr(int idx);
-		FLAME_FILE_EXPORTS void remove_attr(XmlAttribute *a);
-		FLAME_FILE_EXPORTS void clear_attrs();
-		FLAME_FILE_EXPORTS int attr_count() const;
-		FLAME_FILE_EXPORTS XmlAttribute *attr(int idx) const;
-		FLAME_FILE_EXPORTS XmlAttribute *find_attr(const std::string &name);
-
-		FLAME_FILE_EXPORTS XmlNode *new_node(const std::string &name);
-		FLAME_FILE_EXPORTS XmlNode *insert_node(int idx, const std::string &name);
-		FLAME_FILE_EXPORTS void remove_node(int idx);
-		FLAME_FILE_EXPORTS void remove_node(XmlNode *n);
-		FLAME_FILE_EXPORTS void clear_nodes();
-		FLAME_FILE_EXPORTS int node_count() const;
-		FLAME_FILE_EXPORTS XmlNode *node(int idx) const;
-		FLAME_FILE_EXPORTS XmlNode *find_node(const std::string &name);
-	};
-
-	struct XmlFile
-	{
-		XmlNode *root_node;
-
-		FLAME_FILE_EXPORTS void save(const std::wstring &filename) const;
-
-		FLAME_FILE_EXPORTS static XmlFile *create(const std::string &root_name);
-		FLAME_FILE_EXPORTS static XmlFile *create_from_file(const std::wstring &filename);
-		FLAME_FILE_EXPORTS static void destroy(XmlFile *x);
-	};
 }

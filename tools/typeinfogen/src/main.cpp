@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include <flame/file.h>
-#include <flame/typeinfo.h>
+#include <flame/serialize.h>
 
 using namespace flame;
 
@@ -54,10 +54,10 @@ int main(int argc, char **args)
 		}
 	}
 
-	typeinfo::initialize_collecting();
-	typeinfo::collect((root_dir + L"/" + bin_dir).c_str(), L"flame_");
-	typeinfo::save((root_dir + L"/" + bin_dir + L"/typeinfo.xml").c_str());
-	typeinfo::clear();
+	typeinfo_collect_init();
+	typeinfo_collect(root_dir + L"/" + bin_dir, L"flame_");
+	typeinfo_save(root_dir + L"/" + bin_dir + L"/typeinfo.xml");
+	typeinfo_clear();
 
 	return 0;
 }
