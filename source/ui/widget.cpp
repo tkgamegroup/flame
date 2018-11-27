@@ -23,7 +23,6 @@
 #include <flame/font.h>
 #include <flame/file.h>
 #include <flame/system.h>
-#include <flame/typeinfo.h>
 
 #include <flame/ui/canvas.h>
 #include <flame/ui/style.h>

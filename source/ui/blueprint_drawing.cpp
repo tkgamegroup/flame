@@ -31,7 +31,6 @@
 #include <flame/serialize.h>
 #include <flame/file.h>
 #include <flame/font.h>
-#include <flame/typeinfo.h>
 
 #include <vector>
 

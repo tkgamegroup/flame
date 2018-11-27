@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include <flame/file.h>
+#include <flame/serialize.h>
 #include <flame/bitmap.h>
 #include <flame/font.h>
 
@@ -2202,7 +2203,7 @@ namespace flame
 			FT_Done_FreeType(ft_library);
 		}
 
-		inline FontAtlasPrivate(XmlFile *xml)
+		inline FontAtlasPrivate(SerializableNode *file)
 		{
 			for (auto i = 0; i < FLAME_ARRAYSIZE(map); i++)
 				map[i] = -1;
@@ -2210,10 +2211,9 @@ namespace flame
 			FT_Init_FreeType(&ft_library);
 			FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
 
-			auto rn = xml->root_node;
-			pixel_height = std::stoi(rn->find_attr("pixel_height")->value());
+			pixel_height = std::stoi(file->find_attr("pixel_height")->value());
 
-			auto n_fonts = rn->find_node("fonts");
+			auto n_fonts = file->find_node("fonts");
 			if (n_fonts)
 			{
 				for (auto i = 0; i < n_fonts->node_count(); i++)
@@ -2252,7 +2252,7 @@ namespace flame
 				}
 			}
 
-			auto stroke_image_n = rn->find_node("stroke_image");
+			auto stroke_image_n = file->find_node("stroke_image");
 			if (stroke_image_n)
 			{
 				auto img_filename = stroke_image_n->find_attr("filename")->value();
@@ -2282,7 +2282,7 @@ namespace flame
 			}
 			else
 				stroke_image = nullptr;
-			auto sdf_image_n = rn->find_node("sdf_image");
+			auto sdf_image_n = file->find_node("sdf_image");
 			if (sdf_image_n)
 			{
 				auto scale = std::stof(sdf_image_n->find_attr("scale")->value());
@@ -2391,15 +2391,14 @@ namespace flame
 			return w;
 		}
 
-		inline void save(const wchar_t *filename) const
+		inline void save(const std::wstring &filename) const
 		{
 			auto parent_path = filesystem::path(filename).parent_path().generic_wstring();
 
-			auto xml = XmlFile::create("FontAtlas");
-			auto rn = xml->root_node;
-			rn->new_attr("pixel_height", std::to_string(pixel_height));
+			auto file = SerializableNode::create("FontAtlas");
+			file->new_attr("pixel_height", std::to_string(pixel_height));
 
-			auto n_fonts = rn->new_node("fonts");
+			auto n_fonts = file->new_node("fonts");
 			for (auto &f : fonts)
 			{
 				auto n = n_fonts->new_node("font");
@@ -2417,7 +2416,7 @@ namespace flame
 			{
 				auto img_filename = parent_path + L"/font_stroke.bmp";
 
-				auto n = rn->new_node("stroke_image");
+				auto n = file->new_node("stroke_image");
 				n->new_attr("filename", w2s(img_filename));
 
 				stroke_image->save(img_filename.c_str());
@@ -2426,14 +2425,15 @@ namespace flame
 			{
 				auto img_filename = parent_path + L"/font_sdf.bmp";
 
-				auto n = rn->new_node("sdf_image");
+				auto n = file->new_node("sdf_image");
 				n->new_attr("scale", std::to_string(sdf_scale));
 				n->new_attr("filename", w2s(img_filename));
 
 				sdf_image->save(img_filename.c_str());
 			}
-			xml->save(filename);
-			XmlFile::destroy(xml);
+
+			file->save_xml(filename);
+			SerializableNode::destroy(file);
 		}
 	};
 
@@ -2467,15 +2467,15 @@ namespace flame
 		return new FontAtlasPrivate(descs, pixel_height, sdf_scale);
 	}
 
-	FontAtlas *FontAtlas::create_from_file(const wchar_t *filename)
+	FontAtlas *FontAtlas::create_from_file(const std::wstring &filename)
 	{
-		auto xml = XmlFile::create_from_file(filename);
-		if (!xml)
+		auto file = SerializableNode::create_from_xml(filename);
+		if (!file)
 			return nullptr;
 
-		auto f = new FontAtlasPrivate(xml);
+		auto f = new FontAtlasPrivate(file);
 
-		XmlFile::destroy(xml);
+		SerializableNode::destroy(file);
 
 		return f;
 	}

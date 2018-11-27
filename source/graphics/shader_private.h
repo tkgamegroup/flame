@@ -25,15 +25,18 @@
 #include <flame/graphics/shader.h>
 #include "graphics_private.h"
 
-#include <list>
-
 namespace flame
 {
-	struct XmlNode;
+	struct SerializableNode;
 
 	namespace graphics
 	{
 		struct DevicePrivate;
+
+		struct ShaderVariableTypePrivate : ShaderVariableType
+		{
+			std::vector<std::unique_ptr<ShaderVariableType>> members;
+		};
 
 		struct ShaderPrivate : Shader
 		{
@@ -50,8 +53,8 @@ namespace flame
 			~ShaderPrivate();
 
 			bool same(const std::wstring &filename, const std::string &prefix);
-			ShaderResource *get_resource(const char *name);
-			void load_members(XmlNode*, ShaderVariableType*);
+			ShaderResource *get_resource(const std::string &name);
+			void load_members(SerializableNode*, ShaderVariableTypePrivate*);
 		};
 	}
 }

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <flame/typeinfo.h>
+#include <flame/serialize.h>
 #include <flame/window.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
@@ -58,7 +58,7 @@ namespace flame
 
 		inline void create(const char *title, const Ivec2 &res, int style)
 		{
-			typeinfo::load(L"typeinfo.xml");
+			typeinfo_load(L"typeinfo.xml");
 			app = Application::create();
 			w = Window::create(app, title, res, style);
 			d = graphics::Device::get_shared();

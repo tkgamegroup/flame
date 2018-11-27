@@ -26,8 +26,6 @@
 
 #include <flame/string.h>
 
-#include <vector>
-
 namespace flame
 {
 	namespace graphics
@@ -41,12 +39,6 @@ namespace flame
 			int size;
 			int count;
 			int array_stride;
-
-			struct Private;
-			Private *_priv;
-			
-			FLAME_GRAPHICS_EXPORTS ShaderVariableType();
-			FLAME_GRAPHICS_EXPORTS ~ShaderVariableType();
 		};
 
 		struct ShaderResource
@@ -61,7 +53,7 @@ namespace flame
 		{
 			ShaderType type;
 
-			FLAME_GRAPHICS_EXPORTS ShaderResource *get_resource(const char *name);
+			FLAME_GRAPHICS_EXPORTS ShaderResource *get_resource(const std::string &name);
 
 			FLAME_GRAPHICS_EXPORTS static Shader *get(Device *d, const std::wstring &filename, const std::string &prefix);
 			FLAME_GRAPHICS_EXPORTS static void release(Shader *s);

@@ -887,6 +887,11 @@ namespace flame
 			return nullptr;
 		}
 
+		inline void add_node(SerializableNode *n)
+		{
+			nodes.emplace_back((SerializableNodePrivate*)n);
+		}
+
 		inline SerializableNode *new_node(const std::string &name)
 		{
 			return insert_node(-1, name);

@@ -32,7 +32,6 @@
 
 #include <flame/file.h>
 #include <flame/blueprint.h>
-#include <flame/typeinfo.h>
 
 #include <tuple>
 

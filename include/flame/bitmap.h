@@ -34,6 +34,8 @@
 
 #include <flame/math.h>
 
+#include <string>
+
 namespace flame
 {
 	struct Bitmap
@@ -68,11 +70,11 @@ namespace flame
 		FLAME_BITMAP_EXPORTS void swap_channel(int ch1, int ch2);
 		FLAME_BITMAP_EXPORTS void copy_to(Bitmap *dst, const Ivec2 &src_off, const Ivec2 &cpy_size, const Ivec2 &dst_off);
 
-		FLAME_BITMAP_EXPORTS void save(const wchar_t *filename);
+		FLAME_BITMAP_EXPORTS void save(const std::wstring &filename);
 
 		FLAME_BITMAP_EXPORTS static Bitmap *create(const Ivec2 &size, int channel, int bpp, unsigned char *data = nullptr, bool data_owner = false);
-		FLAME_BITMAP_EXPORTS static Bitmap *create_from_file(const wchar_t *filename);
-		FLAME_BITMAP_EXPORTS static Bitmap *create_from_gif(const wchar_t *filename);
+		FLAME_BITMAP_EXPORTS static Bitmap *create_from_file(const std::wstring &filename);
+		FLAME_BITMAP_EXPORTS static Bitmap *create_from_gif(const std::wstring &filename);
 		FLAME_BITMAP_EXPORTS static void destroy(Bitmap *b);
 	};
 }

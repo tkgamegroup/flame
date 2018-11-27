@@ -25,6 +25,7 @@
 
 #include <flame/file.h>
 #include <flame/string.h>
+#include <flame/serialize.h>
 #include <flame/system.h>
 
 #include <spirv_glsl.hpp>
@@ -33,25 +34,10 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct ShaderVariableType::Private
-		{
-			std::vector<std::unique_ptr<ShaderVariableType>> members;
-		};
-
-		ShaderVariableType::ShaderVariableType()
-		{
-			_priv = new Private;
-		}
-
-		ShaderVariableType::~ShaderVariableType()
-		{
-			delete _priv;
-		}
-
 		static std::wstring shader_path(L"shaders/");
 		static std::wstring conf_path(shader_path + L"src/config.conf");
 
-		static void serialize_members(spirv_cross::CompilerGLSL &glsl, uint32_t tid, XmlNode *dst)
+		static void serialize_members(spirv_cross::CompilerGLSL &glsl, uint32_t tid, SerializableNode *dst)
 		{
 			auto t = glsl.get_type(tid);
 			auto cnt = t.member_types.size();
@@ -74,7 +60,7 @@ namespace flame
 			}
 		}
 
-		static void produce_shader_resource_file(const wchar_t *spv_file_in, const wchar_t *res_file_out)
+		static void produce_shader_resource_file(const std::wstring &spv_file_in, const std::wstring &res_file_out)
 		{
 			auto spv_file = get_file_content(spv_file_in);
 
@@ -85,7 +71,7 @@ namespace flame
 
 			spirv_cross::ShaderResources resources = glsl.get_shader_resources();
 
-			auto file = XmlFile::create("res");
+			auto file = SerializableNode::create("res");
 
 			for (auto &r : resources.uniform_buffers)
 			{
@@ -95,7 +81,7 @@ namespace flame
 				auto type = glsl.get_type(r.type_id);
 				auto size = glsl.get_declared_struct_size(type);
 
-				auto n = file->root_node->new_node("uniform_buffer");
+				auto n = file->new_node("uniform_buffer");
 				n->new_attr("set", std::to_string(set));
 				n->new_attr("binding", std::to_string(binding));
 				n->new_attr("size", std::to_string(size));
@@ -113,7 +99,7 @@ namespace flame
 				auto type = glsl.get_type(r.type_id);
 				auto size = glsl.get_declared_struct_size(type);
 
-				auto n = file->root_node->new_node("storage_buffer");
+				auto n = file->new_node("storage_buffer");
 				n->new_attr("set", std::to_string(set));
 				n->new_attr("binding", std::to_string(binding));
 				n->new_attr("size", std::to_string(size));
@@ -130,7 +116,7 @@ namespace flame
 				auto type = glsl.get_type(r.type_id);
 				int count = type.array.size() > 0 ? type.array[0] : 1;
 
-				auto n = file->root_node->new_node("sampled_image");
+				auto n = file->new_node("sampled_image");
 				n->new_attr("set", std::to_string(set));
 				n->new_attr("binding", std::to_string(binding));
 				n->new_attr("count", std::to_string(count));
@@ -144,7 +130,7 @@ namespace flame
 				auto type = glsl.get_type(r.type_id);
 				int count = type.array.size() > 0 ? type.array[0] : 1;
 
-				auto n = file->root_node->new_node("storage_image");
+				auto n = file->new_node("storage_image");
 				n->new_attr("set", std::to_string(set));
 				n->new_attr("binding", std::to_string(binding));
 				n->new_attr("count", std::to_string(count));
@@ -157,7 +143,7 @@ namespace flame
 				auto type = glsl.get_type(r.type_id);
 				auto size = glsl.get_declared_struct_size(type);
 
-				auto n = file->root_node->new_node("push_constant");
+				auto n = file->new_node("push_constant");
 				n->new_attr("offset", std::to_string(offset));
 				n->new_attr("size", std::to_string(size));
 				n->new_attr("name", r.name);
@@ -166,8 +152,8 @@ namespace flame
 				serialize_members(glsl, r.type_id, mn);
 			}
 
-			file->save(res_file_out);
-			XmlFile::destroy(file);
+			file->save_xml(res_file_out);
+			SerializableNode::destroy(file);
 		}
 
 		inline ShaderPrivate::ShaderPrivate(Device *_d, const std::wstring &filename, const std::string &prefix)
@@ -295,14 +281,12 @@ namespace flame
 				filesystem::last_write_time(res_filename) <= filesystem::last_write_time(spv_filename))
 				produce_shader_resource_file(spv_filename.c_str(), res_filename.c_str());
 
-			auto res_file = XmlFile::create_from_file(res_filename.c_str());
+			auto res_file = SerializableNode::create_from_xml(res_filename);
 			if (res_file)
 			{
-				auto rn = res_file->root_node;
-
-				for (auto i = 0; i < rn->node_count(); i++)
+				for (auto i = 0; i < res_file->node_count(); i++)
 				{
-					auto n = rn->node(i);
+					auto n = res_file->node(i);
 
 					if (n->name() == "uniform_buffer")
 					{
@@ -326,7 +310,7 @@ namespace flame
 						r->var_type.array_stride = 0;
 
 						auto mn = n->find_node("members");
-						load_members(mn, &r->var_type);
+						load_members(mn, (ShaderVariableTypePrivate*)&r->var_type);
 
 						resources.emplace_back(r);
 					}
@@ -352,7 +336,7 @@ namespace flame
 						r->var_type.array_stride = 0;
 
 						auto mn = n->find_node("members");
-						load_members(mn, &r->var_type);
+						load_members(mn, (ShaderVariableTypePrivate*)&r->var_type);
 
 						resources.emplace_back(r);
 					}
@@ -423,20 +407,21 @@ namespace flame
 						r->var_type.array_stride = 0;
 
 						auto mn = n->find_node("members");
-						load_members(mn, &r->var_type);
+						load_members(mn, (ShaderVariableTypePrivate*)&r->var_type);
 
 						resources.emplace_back(r);
 					}
 				}
-				XmlFile::destroy(res_file);
+
+				SerializableNode::destroy(res_file);
 			}
 		}
 
-		inline void ShaderPrivate::load_members(XmlNode *src, ShaderVariableType *dst)
+		inline void ShaderPrivate::load_members(SerializableNode *src, ShaderVariableTypePrivate *dst)
 		{
 			for (auto i = 0; i < src->node_count(); i++)
 			{
-				auto vt = new ShaderVariableType;
+				auto vt = new ShaderVariableTypePrivate;
 
 				auto n = src->node(i);
 				vt->name = n->name().c_str();
@@ -455,7 +440,7 @@ namespace flame
 
 				load_members(n, vt);
 
-				dst->_priv->members.emplace_back(vt);
+				dst->members.emplace_back(vt);
 			}
 		}
 
@@ -465,11 +450,11 @@ namespace flame
 				vkDestroyShaderModule(d->v, v, nullptr);
 		}
 
-		inline ShaderResource *ShaderPrivate::get_resource(const char *name)
+		inline ShaderResource *ShaderPrivate::get_resource(const std::string &name)
 		{
 			for (auto &r : resources)
 			{
-				if (r->var_type.name == name)
+				if (r->var_type.name == name.c_str())
 					return r.get();
 			}
 			return nullptr;
@@ -480,7 +465,7 @@ namespace flame
 			return filename_ == filename && prefix_ == prefix;
 		}
 
-		ShaderResource *Shader::get_resource(const char *name)
+		ShaderResource *Shader::get_resource(const std::string &name)
 		{
 			return ((ShaderPrivate*)this)->get_resource(name);
 		}

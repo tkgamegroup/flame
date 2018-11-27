@@ -22,8 +22,7 @@
 
 #pragma once
 
-#include <flame/string.h>
-
+#include <string>
 #include <fstream>
 #include <experimental/filesystem>
 #include <stdarg.h>

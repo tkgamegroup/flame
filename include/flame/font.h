@@ -34,6 +34,7 @@
 
 #include <flame/math.h>
 
+#include <string>
 #include <vector>
 
 namespace flame
@@ -112,7 +113,7 @@ namespace flame
 		FLAME_FONT_EXPORTS void save(const wchar_t *filename) const;
 
 		FLAME_FONT_EXPORTS static FontAtlas *create(const std::vector<FontDescription> &descs, int pixel_height, float sdf_scale = -1.f);
-		FLAME_FONT_EXPORTS static FontAtlas *create_from_file(const wchar_t *filename);
+		FLAME_FONT_EXPORTS static FontAtlas *create_from_file(const std::wstring &filename);
 		FLAME_FONT_EXPORTS static void destroy(FontAtlas *f);
 	};
 }

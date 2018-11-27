@@ -174,19 +174,13 @@ extern "C" __declspec(dllexport) int main()
 	app.t_fps->text_col() = Bvec4(255);
 
 	{
-		auto new_widget = ui::Widget::create(app.ui_ins);
+		auto file = SerializableNode::create("ui");
 
-		auto xml = XmlFile::create("ui");
+		auto n = SerializableNode::serialize(find_udt(cH("ui::Widget")), w_treenode1, 1);
+		file->add_node(n);
 
-		auto n = xml->root_node->new_node("Widget");
-		auto u = typeinfo::cpp::find_udt(cH("ui::Widget"));
-
-		serialize(n, u, w_treenode1, 1, new_widget);
-
-		xml->save(L"d:/ui.xml");
-		XmlFile::destroy(xml);
-
-		ui::Widget::destroy(new_widget);
+		file->save_xml(L"d:/ui.xml");
+		SerializableNode::destroy(file);
 	}
 
 	//{

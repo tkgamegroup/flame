@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include <flame/file.h>
+#include <flame/string.h>
 #include <flame/bitmap.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -71,7 +72,7 @@ namespace flame
 		}
 	}
 
-	void Bitmap::save(const wchar_t *wfilename)
+	void Bitmap::save(const std::wstring &wfilename)
 	{
 		auto filename = w2s(wfilename);
 		auto ext = filesystem::path(filename).extension();
@@ -109,9 +110,9 @@ namespace flame
 		return b;
 	}
 
-	Bitmap *Bitmap::create_from_file(const wchar_t *filename)
+	Bitmap *Bitmap::create_from_file(const std::wstring &filename)
 	{
-		auto file = _wfopen(filename, L"rb");
+		auto file = _wfopen(filename.c_str(), L"rb");
 		if (!file)
 			return nullptr;
 
@@ -134,7 +135,7 @@ namespace flame
 		return b;
 	}
 
-	Bitmap *Bitmap::create_from_gif(const wchar_t *filename)
+	Bitmap *Bitmap::create_from_gif(const std::wstring &filename)
 	{
 		auto file = get_file_content(filename);
 

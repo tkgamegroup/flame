@@ -59,7 +59,6 @@ add_lib(flame_blueprint "blueprint.cpp" "flame")
 target_compile_definitions(flame_blueprint PRIVATE FLAME_BLUEPRINT_MODULE)
 target_include_directories(flame_blueprint PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(flame_blueprint flame_serialize)
-target_link_libraries(flame_blueprint flame_typeinfo)
 
 add_subdirectory(graphics)
 add_subdirectory(ui)

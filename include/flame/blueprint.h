@@ -85,13 +85,13 @@ namespace flame
 
 		struct NodeInputEnumSingle : Node
 		{
-			FLAME_BLUEPRINT_EXPORTS typeinfo::cpp::EnumType *enumeration() const;
+			FLAME_BLUEPRINT_EXPORTS EnumInfo *get_enum() const;
 			FLAME_BLUEPRINT_EXPORTS int idx() const;
 		};
 
 		struct NodeUDT : Node
 		{
-			FLAME_BLUEPRINT_EXPORTS typeinfo::cpp::UDT *udt() const;
+			FLAME_BLUEPRINT_EXPORTS UDT *get_udt() const;
 			FLAME_BLUEPRINT_EXPORTS int insl_count() const;
 			FLAME_BLUEPRINT_EXPORTS InSlot *insl(int idx) const;
 			FLAME_BLUEPRINT_EXPORTS int outsl_count() const;

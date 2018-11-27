@@ -71,13 +71,13 @@ namespace flame
 
 		struct NodeInputEnumSinglePrivate : NodePrivate
 		{
-			typeinfo::cpp::EnumType *enumeration;
+			EnumInfo *e;
 			int idx;
 
-			inline NodeInputEnumSinglePrivate(typeinfo::cpp::EnumType *e)
+			inline NodeInputEnumSinglePrivate(EnumInfo *_e)
 			{
 				type = TypeInputEnumSingle;
-				enumeration = e;
+				e = _e;
 			}
 
 			inline void set_idx(int _idx)
@@ -87,13 +87,13 @@ namespace flame
 
 			inline void set_value(int value)
 			{
-				idx = enumeration->find_item(value);
+				idx = e->find_item(value);
 			}
 		};
 
-		typeinfo::cpp::EnumType *NodeInputEnumSingle::enumeration() const
+		EnumInfo *NodeInputEnumSingle::get_enum() const
 		{
-			return ((NodeInputEnumSinglePrivate*)this)->enumeration;
+			return ((NodeInputEnumSinglePrivate*)this)->e;
 		}
 
 		int NodeInputEnumSingle::idx() const
@@ -103,15 +103,15 @@ namespace flame
 
 		struct NodeUDTPrivate : NodePrivate
 		{
-			typeinfo::cpp::UDT *udt;
+			UDT *u;
 			std::vector< std::unique_ptr<InSlotPrivate>> insls;
 			std::vector< std::unique_ptr<OutSlot>> outsls;
 
-			inline NodeUDTPrivate(typeinfo::cpp::UDT *u)
+			inline NodeUDTPrivate(UDT *_u)
 			{
 				type = TypeUDT;
-				udt = u;
-				insls.resize(udt->item_count());
+				u = _u;
+				insls.resize(u->item_count());
 				for (auto i = 0; i < insls.size(); i++)
 					insls[i].reset(new InSlotPrivate);
 				outsls.resize(1);
@@ -119,9 +119,9 @@ namespace flame
 			}
 		};
 
-		typeinfo::cpp::UDT *NodeUDT::udt() const
+		UDT *NodeUDT::get_udt() const
 		{
-			return ((NodeUDTPrivate*)this)->udt;
+			return ((NodeUDTPrivate*)this)->u;
 		}
 
 		int NodeUDT::insl_count() const
@@ -156,17 +156,16 @@ namespace flame
 			{
 				std::vector<std::pair<InSlotItem*, std::string>> defer_links;
 
-				auto xml = XmlFile::create_from_file(filename);
-				auto rn = xml->root_node;
+				auto file = SerializableNode::create_from_xml(filename);
 
-				for (auto i_n = 0; i_n < rn->node_count(); i_n++)
+				for (auto i_n = 0; i_n < file->node_count(); i_n++)
 				{
-					auto n_nd = rn->node(i_n);
+					auto n_nd = file->node(i_n);
 					if (n_nd->name() == "node_input_enum_single")
 					{
 						auto id = n_nd->find_attr("id")->value();
 						auto type = n_nd->find_attr("type")->value();
-						auto n = new NodeInputEnumSinglePrivate(typeinfo::cpp::find_enumeration(H(type.c_str())));
+						auto n = new NodeInputEnumSinglePrivate(find_enum(H(type.c_str())));
 						n->id = id;
 
 						auto n_it = n_nd->node(0);
@@ -174,14 +173,14 @@ namespace flame
 						{
 							auto a_vl = n_it->find_attr("value");
 							if (a_vl)
-								n->set_idx(n->enumeration->find_item(a_vl->value().c_str()));
+								n->set_idx(n->e->find_item(a_vl->value().c_str()));
 						}
 					}
 					else if (n_nd->name() == "node_udt")
 					{
 						auto id = n_nd->find_attr("id")->value();
 						auto type = n_nd->find_attr("type")->value();
-						auto n = new NodeUDTPrivate(typeinfo::cpp::find_udt(H(type.c_str())));
+						auto n = new NodeUDTPrivate(find_udt(H(type.c_str())));
 						n->id = id;
 
 						for (auto i_s = 0; i_s < n_nd->node_count(); i_s++)
@@ -190,7 +189,7 @@ namespace flame
 							if (n_sl->name() == "slot")
 							{
 								auto name = n_sl->find_attr("name")->value();
-								auto pos = n->udt->find_item_i(name.c_str());
+								auto pos = n->u->find_item_i(name.c_str());
 
 								for (auto i_i = 0; i_i < n_sl->node_count(); i_i++)
 								{
@@ -227,12 +226,12 @@ namespace flame
 					l.first->n = node;
 				}
 
-				XmlFile::destroy(xml);
+				SerializableNode::destroy(file);
 			}
 
 			inline Node *add_node_input_enum_single(uint enum_hash, int value)
 			{
-				auto n = new NodeInputEnumSinglePrivate(typeinfo::cpp::find_enumeration(enum_hash));
+				auto n = new NodeInputEnumSinglePrivate(find_enum(enum_hash));
 				n->id = "Node " + to_stdstring((int)nodes.size());
 
 				n->set_value(value);
@@ -244,7 +243,7 @@ namespace flame
 
 			inline Node *add_node_udt(uint hash)
 			{
-				auto n = new NodeUDTPrivate(typeinfo::cpp::find_udt(hash));
+				auto n = new NodeUDTPrivate(find_udt(hash));
 				n->id = "Node " + to_stdstring((int)nodes.size());
 
 				nodes.emplace_back(n);
@@ -254,8 +253,7 @@ namespace flame
 
 			inline void save(const wchar_t *filename)
 			{
-				auto xml = XmlFile::create("BP");
-				auto rn = xml->root_node;
+				auto file = SerializableNode::create("BP");
 
 				for (auto &_n : nodes)
 				{
@@ -264,9 +262,9 @@ namespace flame
 					case Node::TypeInputEnumSingle:
 					{
 						auto n = (NodeInputEnumSinglePrivate*)_n.get();
-						auto e = n->enumeration;
+						auto e = n->e;
 
-						auto n_nd = rn->new_node("node_input_enum_single");
+						auto n_nd = file->new_node("node_input_enum_single");
 						n_nd->new_attr("id", n->id);
 						n_nd->new_attr("type", e->name());
 
@@ -277,9 +275,9 @@ namespace flame
 					case Node::TypeUDT:
 					{
 						auto n = (NodeUDTPrivate*)_n.get();
-						auto u = n->udt;
+						auto u = n->u;
 
-						auto n_nd = rn->new_node("node_udt");
+						auto n_nd = file->new_node("node_udt");
 						n_nd->new_attr("id", n->id);
 						n_nd->new_attr("type", u->name());
 						for (auto i_s = 0; i_s < u->item_count(); i_s++)
@@ -303,8 +301,8 @@ namespace flame
 					}
 				}
 
-				xml->save(filename);
-				XmlFile::destroy(xml);
+				file->save_xml(filename);
+				SerializableNode::destroy(file);
 			}
 		};
 
