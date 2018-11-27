@@ -1,3 +1,4 @@
+add_subdirectory(serialize_converter)
 add_subdirectory(SLOC)
 add_subdirectory(GID_provider)
 add_subdirectory(typeinfogen)

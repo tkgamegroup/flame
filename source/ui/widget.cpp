@@ -122,17 +122,6 @@ namespace flame
 			extra_draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
 		}
 
-		void WidgetPrivate::remove_animations()
-		{
-			for (auto i = 0; i < animations$.size; i++)
-				Function::destroy(animations$[i]);
-			animations$.resize(0);
-			for (auto i = 0; i < children_1$.size; i++)
-				((WidgetPrivate*)children_1$[i])->remove_animations();
-			for (auto i = 0; i < children_2$.size; i++)
-				((WidgetPrivate*)children_2$[i])->remove_animations();
-		}
-
 		inline void WidgetPrivate::add_style(PF pf, const std::vector<CommonData> &capt)
 		{
 			styles$.push_back(Function::create(pf, "p", capt));
@@ -143,6 +132,17 @@ namespace flame
 			auto f = Function::create(pf, "p f", capt);
 			f->datas[1].v.f = 0.f;
 			animations$.push_back(f);
+		}
+
+		void WidgetPrivate::remove_animations()
+		{
+			for (auto i = 0; i < animations$.size; i++)
+				Function::destroy(animations$[i]);
+			animations$.resize(0);
+			for (auto i = 0; i < children_1$.size; i++)
+				((WidgetPrivate*)children_1$[i])->remove_animations();
+			for (auto i = 0; i < children_2$.size; i++)
+				((WidgetPrivate*)children_2$[i])->remove_animations();
 		}
 
 		inline void WidgetPrivate::on_draw(Canvas *c, const Vec2 &off, float scl)
@@ -438,6 +438,25 @@ namespace flame
 					return;
 				}
 			}
+		}
+
+		inline void WidgetPrivate::add_data_storages(const char *fmt)
+		{
+			auto sp = string_split(std::string(fmt));
+			auto original_size = data_storages$.size;
+			data_storages$.resize(original_size + sp.size());
+			auto d = &data_storages$[original_size];
+			for (auto &s : sp)
+			{
+				d->set_fmt(s.c_str());
+
+				d++;
+			}
+		}
+
+		inline void WidgetPrivate::add_string_storages(int count)
+		{
+			string_storages$.resize(string_storages$.size + count);
 		}
 
 		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
@@ -960,25 +979,6 @@ namespace flame
 			}
 		}
 
-		inline void WidgetPrivate::add_data_storages(const char *fmt)
-		{
-			auto sp = string_split(std::string(fmt));
-			auto original_size = data_storages$.size;
-			data_storages$.resize(original_size + sp.size());
-			auto d = &data_storages$[original_size];
-			for (auto &s : sp)
-			{
-				d->set_fmt(s.c_str());
-
-				d++;
-			}
-		}
-
-		inline void WidgetPrivate::add_string_storages(int count)
-		{
-			string_storages$.resize(string_storages$.size +  count);
-		}
-
 		void Widget::set_width(float x, Widget *sender)
 		{
 			((WidgetPrivate*)this)->set_width(x, sender);
@@ -1109,6 +1109,16 @@ namespace flame
 			((WidgetPrivate*)this)->remove_listener(type, f, delay);
 		}
 
+		void Widget::add_data_storages(const char *fmt)
+		{
+			((WidgetPrivate*)this)->add_data_storages(fmt);
+		}
+
+		void Widget::add_string_storages(int count)
+		{
+			((WidgetPrivate*)this)->add_string_storages(count);
+		}
+
 		void Widget::add_child(Widget *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
 		{
 			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, pf, capt);
@@ -1169,16 +1179,6 @@ namespace flame
 		void Widget::arrange()
 		{
 			((WidgetPrivate*)this)->arrange();
-		}
-
-		void Widget::add_data_storages(const char *fmt)
-		{
-			((WidgetPrivate*)this)->add_data_storages(fmt);
-		}
-
-		void Widget::add_string_storages(int count)
-		{
-			((WidgetPrivate*)this)->add_string_storages(count);
 		}
 
 		Widget *Widget::create(Instance *ui)

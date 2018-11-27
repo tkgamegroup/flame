@@ -81,6 +81,8 @@ namespace flame
 
 			void add_animation(PF pf, const std::vector<CommonData> &capt);
 
+			void remove_animations();
+
 			void on_draw(Canvas *c, const Vec2 &off, float scl);
 			void on_mouseenter();
 			void on_mouseleave();
@@ -100,7 +102,8 @@ namespace flame
 			Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt);
 			void remove_listener(unsigned int type, Function *f, bool delay = false);
 
-			void remove_animations();
+			void add_data_storages(const char *fmt);
+			void add_string_storages(int count);
 
 			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
 			void remove_child(int layer, int idx, bool delay = false);
@@ -114,9 +117,6 @@ namespace flame
 			int find_child(WidgetPrivate *w);
 
 			void arrange();
-
-			void add_data_storages(const char *fmt);
-			void add_string_storages(int count);
 		};
 	}
 }

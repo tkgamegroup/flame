@@ -20,24 +20,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include <flame/file.h>
+#include <flame/serialize.h>
 
-#include <flame/graphics/graphics.h>
+#include <stdio.h>
 
-#include <flame/string.h>
+using namespace flame;
 
-namespace flame
+int main(int argc, char **args)
 {
-	namespace graphics
+	char _filename[260];
+	scanf("%s", _filename);
+
+	auto filename = s2w(_filename);
+
+	filesystem::path path(filename);
+	auto dir = path.parent_path().string();
+	if (path.extension() == ".xml")
 	{
-		struct Device;
-
-		struct Shader
-		{
-			ShaderType type;
-
-			FLAME_GRAPHICS_EXPORTS static Shader *get(Device *d, const std::wstring &filename, const std::string &prefix);
-			FLAME_GRAPHICS_EXPORTS static void release(Shader *s);
-		};
+		auto file = SerializableNode::create_from_xml(filename);
+		file->save_bin(ext_replace(filename, L"bin"));
+		SerializableNode::destroy(file);
 	}
+	else /* if (path.extension() == ".bin") */
+	{
+		auto file = SerializableNode::create_from_bin(filename);
+		file->save_xml(ext_replace(filename, L"xml"));
+		SerializableNode::destroy(file);
+	}
+
+	return 0;
 }

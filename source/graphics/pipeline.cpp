@@ -437,7 +437,7 @@ namespace flame
 					auto same = false;
 					for (auto &p : pcs)
 					{
-						if (p.offset == r->var_type.offset && p.size == r->var_type.size)
+						if (p.offset == r->var.offset && p.size == r->var.size)
 						{
 							same = true;
 							break;
@@ -446,8 +446,8 @@ namespace flame
 					if (!same)
 					{
 						PushconstantInfo pc;
-						pc.offset = r->var_type.offset;
-						pc.size = r->var_type.size;
+						pc.offset = r->var.offset;
+						pc.size = r->var.size;
 						pcs.push_back(pc);
 					}
 				}
@@ -458,7 +458,7 @@ namespace flame
 					Descriptorsetlayout::Binding b;
 					b.binding = r->binding;
 					b.type = r->type;
-					b.count = r->var_type.count;
+					b.count = r->var.count;
 					sets[r->set].push_back(b);
 				}
 			}

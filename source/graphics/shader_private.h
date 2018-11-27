@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include <flame/graphics/shader.h>
 #include "graphics_private.h"
+
+#include <flame/graphics/shader.h>
 
 namespace flame
 {
@@ -33,9 +34,23 @@ namespace flame
 	{
 		struct DevicePrivate;
 
-		struct ShaderVariableTypePrivate : ShaderVariableType
+		struct ShaderVariableInfo
 		{
-			std::vector<std::unique_ptr<ShaderVariableType>> members;
+			String name;
+			int offset;
+			int size;
+			int count;
+			int array_stride;
+
+			std::vector<std::unique_ptr<ShaderVariableInfo>> members;
+		};
+
+		struct ShaderResource
+		{
+			ShaderResourceType type;
+			int set;
+			int binding;
+			ShaderVariableInfo var;
 		};
 
 		struct ShaderPrivate : Shader
@@ -53,8 +68,7 @@ namespace flame
 			~ShaderPrivate();
 
 			bool same(const std::wstring &filename, const std::string &prefix);
-			ShaderResource *get_resource(const std::string &name);
-			void load_members(SerializableNode*, ShaderVariableTypePrivate*);
+			void load_members(SerializableNode*, ShaderVariableInfo*);
 		};
 	}
 }

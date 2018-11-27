@@ -1053,9 +1053,8 @@ namespace flame
 								obj_table.emplace_back(obj_sub, id);
 
 								auto n_sub = create_obj_node(u_sub, obj_table, obj_sub);
-								n_sub->new_attr("type", u_sub->name());
-								n_sub->new_attr("id", to_stdstring(id));
 								n_sub->serialize(u_sub, obj_table, obj_sub, precision);
+								add_node(n_sub);
 							}
 						}
 					}
@@ -1203,6 +1202,49 @@ namespace flame
 	}
 
 	void SerializableNode::save_xml(const std::wstring &filename) const
+	{
+		rapidxml::xml_document<> xml_doc;
+		auto rn = xml_doc.allocate_node(rapidxml::node_element, name().c_str());
+		xml_doc.append_node(rn);
+
+		xml_save(xml_doc, rn, (SerializableNodePrivate*)this);
+
+		std::string str;
+		rapidxml::print(std::back_inserter(str), xml_doc);
+
+		std::ofstream file(filename);
+		file.write(str.data(), str.size());
+	}
+
+	static void save_file_string(std::ofstream &dst, const std::string &src)
+	{
+		int len = src.size();
+		dst.write((char*)&len, sizeof(int));
+		dst.write((char*)src.c_str(), len);
+	}
+
+	void bin_save(std::ofstream &dst, SerializableNodePrivate *src)
+	{
+		int att_cnt = src->attrs.size();
+		dst.write((char*)&att_cnt, sizeof(int));
+		for (auto &a : src->attrs)
+		{
+			save_file_string(dst, a->name);
+			save_file_string(dst, a->value);
+		}
+
+		save_file_string(dst, src->value);
+
+		int node_cnt = src->nodes.size();
+		dst.write((char*)&node_cnt, sizeof(int));
+		for (auto &n : src->nodes)
+		{
+			save_file_string(dst, n->name);
+			bin_save(dst, n.get());
+		}
+	}
+
+	void SerializableNode::save_bin(const std::wstring &filename) const
 	{
 		rapidxml::xml_document<> xml_doc;
 		auto rn = xml_doc.allocate_node(rapidxml::node_element, name().c_str());
@@ -1366,6 +1408,39 @@ namespace flame
 		}
 	}
 
+	static std::string load_file_string(std::ifstream &src)
+	{
+		int len;
+		src.read((char*)&len, sizeof(int));
+		std::string ret;
+		ret.resize(len);
+		src.read((char*)ret.c_str(), len);
+		return ret;
+	}
+
+	void bin_load(std::ifstream &src, SerializableNode *dst)
+	{
+		int att_cnt;
+		src.read((char*)&att_cnt, sizeof(int));
+		for (auto i = 0; i < att_cnt; i++)
+		{
+			auto name = load_file_string(src);
+			auto value = load_file_string(src);
+			dst->new_attr(name, value);
+		}
+
+		dst->set_value(load_file_string(src));
+
+		int node_cnt;
+		src.read((char*)&node_cnt, sizeof(int));
+		for (auto i = 0; i < node_cnt; i++)
+		{
+			auto name = load_file_string(src);
+			auto node = dst->new_node(name);
+			bin_load(src, node);
+		}
+	}
+
 	SerializableNode *SerializableNode::create_from_xml(const std::wstring &filename)
 	{
 		auto content = get_file_content(filename);
@@ -1380,6 +1455,21 @@ namespace flame
 		auto rn = xml_doc.first_node();
 		n->name = rn->name();
 		xml_load(rn, n);
+
+		return n;
+	}
+
+	SerializableNode *SerializableNode::create_from_bin(const std::wstring &filename)
+	{
+		std::ifstream file(filename);
+		if (!file.good())
+			return nullptr;
+
+		auto n = new SerializableNodePrivate;
+
+		n->name = load_file_string(file);
+
+		bin_load(file, n);
 
 		return n;
 	}

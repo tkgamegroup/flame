@@ -301,16 +301,16 @@ namespace flame
 							else if (a->name() == "binding")
 								r->binding = std::stoi(a->value());
 							else if (a->name() == "size")
-								r->var_type.size = std::stoi(a->value());
+								r->var.size = std::stoi(a->value());
 							else if (a->name() == "name")
-								r->var_type.name = a->value().c_str();
+								r->var.name = a->value().c_str();
 						}
-						r->var_type.offset = 0;
-						r->var_type.count = 1;
-						r->var_type.array_stride = 0;
+						r->var.offset = 0;
+						r->var.count = 1;
+						r->var.array_stride = 0;
 
 						auto mn = n->find_node("members");
-						load_members(mn, (ShaderVariableTypePrivate*)&r->var_type);
+						load_members(mn, &r->var);
 
 						resources.emplace_back(r);
 					}
@@ -327,16 +327,16 @@ namespace flame
 							else if (a->name() == "binding")
 								r->binding = std::stoi(a->value());
 							else if (a->name() == "size")
-								r->var_type.size = std::stoi(a->value());
+								r->var.size = std::stoi(a->value());
 							else if (a->name() == "name")
-								r->var_type.name = a->value().c_str();
+								r->var.name = a->value().c_str();
 						}
-						r->var_type.offset = 0;
-						r->var_type.count = 1;
-						r->var_type.array_stride = 0;
+						r->var.offset = 0;
+						r->var.count = 1;
+						r->var.array_stride = 0;
 
 						auto mn = n->find_node("members");
-						load_members(mn, (ShaderVariableTypePrivate*)&r->var_type);
+						load_members(mn, &r->var);
 
 						resources.emplace_back(r);
 					}
@@ -353,13 +353,13 @@ namespace flame
 							else if (a->name() == "binding")
 								r->binding = std::stoi(a->value());
 							else if (a->name() == "count")
-								r->var_type.count = std::stoi(a->value());
+								r->var.count = std::stoi(a->value());
 							else if (a->name() == "name")
-								r->var_type.name = a->value().c_str();
+								r->var.name = a->value().c_str();
 						}
-						r->var_type.offset = 0;
-						r->var_type.size = 0;
-						r->var_type.array_stride = 0;
+						r->var.offset = 0;
+						r->var.size = 0;
+						r->var.array_stride = 0;
 
 						resources.emplace_back(r);
 					}
@@ -376,13 +376,13 @@ namespace flame
 							else if (a->name() == "binding")
 								r->binding = std::stoi(a->value());
 							else if (a->name() == "count")
-								r->var_type.count = std::stoi(a->value());
+								r->var.count = std::stoi(a->value());
 							else if (a->name() == "name")
-								r->var_type.name = a->value().c_str();
+								r->var.name = a->value().c_str();
 						}
-						r->var_type.offset = 0;
-						r->var_type.size = 0;
-						r->var_type.array_stride = 0;
+						r->var.offset = 0;
+						r->var.size = 0;
+						r->var.array_stride = 0;
 
 						resources.emplace_back(r);
 					}
@@ -397,17 +397,17 @@ namespace flame
 						{
 							auto a = n->attr(j);
 							if (a->name() == "offset")
-								r->var_type.offset = std::stoi(a->value());
+								r->var.offset = std::stoi(a->value());
 							else if (a->name() == "size")
-								r->var_type.size = std::stoi(a->value());
+								r->var.size = std::stoi(a->value());
 							else if (a->name() == "name")
-								r->var_type.name = a->value().c_str();
+								r->var.name = a->value().c_str();
 						}
-						r->var_type.count = 0;
-						r->var_type.array_stride = 0;
+						r->var.count = 0;
+						r->var.array_stride = 0;
 
 						auto mn = n->find_node("members");
-						load_members(mn, (ShaderVariableTypePrivate*)&r->var_type);
+						load_members(mn, &r->var);
 
 						resources.emplace_back(r);
 					}
@@ -417,11 +417,11 @@ namespace flame
 			}
 		}
 
-		inline void ShaderPrivate::load_members(SerializableNode *src, ShaderVariableTypePrivate *dst)
+		inline void ShaderPrivate::load_members(SerializableNode *src, ShaderVariableInfo *dst)
 		{
 			for (auto i = 0; i < src->node_count(); i++)
 			{
-				auto vt = new ShaderVariableTypePrivate;
+				auto vt = new ShaderVariableInfo;
 
 				auto n = src->node(i);
 				vt->name = n->name().c_str();
@@ -450,24 +450,9 @@ namespace flame
 				vkDestroyShaderModule(d->v, v, nullptr);
 		}
 
-		inline ShaderResource *ShaderPrivate::get_resource(const std::string &name)
-		{
-			for (auto &r : resources)
-			{
-				if (r->var_type.name == name.c_str())
-					return r.get();
-			}
-			return nullptr;
-		}
-
 		inline bool ShaderPrivate::same(const std::wstring &filename, const std::string &prefix)
 		{
 			return filename_ == filename && prefix_ == prefix;
-		}
-
-		ShaderResource *Shader::get_resource(const std::string &name)
-		{
-			return ((ShaderPrivate*)this)->get_resource(name);
 		}
 
 		std::vector<ShaderPrivate*> loaded_shaders;

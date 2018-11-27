@@ -165,11 +165,11 @@ namespace flame
 
 			Array<Function*> animations$;
 
-			Array<Widget*> children_1$;
-			Array<Widget*> children_2$;
-
 			Array<CommonData> data_storages$;
 			Array<StringW> string_storages$;
+
+			Array<Widget*> children_1$;
+			Array<Widget*> children_2$;
 
 			inline Widget()
 			{
@@ -276,6 +276,9 @@ namespace flame
 			FLAME_UI_EXPORTS Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt);
 			FLAME_UI_EXPORTS void remove_listener(unsigned int type, Function *f, bool delay = false);
 
+			FLAME_UI_EXPORTS void add_data_storages(const char *fmt);
+			FLAME_UI_EXPORTS void add_string_storages(int count);
+
 			FLAME_UI_EXPORTS void add_child(Widget *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
 			FLAME_UI_EXPORTS void remove_child(int layer, int idx, bool delay = false);
 			FLAME_UI_EXPORTS void remove_child(Widget *w, bool delay = false);
@@ -290,9 +293,6 @@ namespace flame
 			FLAME_UI_EXPORTS float get_content_size() const;
 
 			FLAME_UI_EXPORTS void arrange();
-
-			FLAME_UI_EXPORTS void add_data_storages(const char *fmt);
-			FLAME_UI_EXPORTS void add_string_storages(int count);
 
 			FLAME_UI_EXPORTS static Widget *create(Instance *ui);
 			FLAME_UI_EXPORTS static void destroy(Widget *w);

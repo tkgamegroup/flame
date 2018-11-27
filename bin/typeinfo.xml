@@ -28,12 +28,6 @@
 			<item name="CompareOpNotEqual" value="5"/>
 			<item name="CompareOpAlways" value="6"/>
 		</enum>
-		<enum name="typeinfo::cpp::VariableType">
-			<item name="VariableTypeVariable" value="0"/>
-			<item name="VariableTypePointer" value="1"/>
-			<item name="VariableTypeArrayOfVariable" value="2"/>
-			<item name="VariableTypeArrayOfPointer" value="3"/>
-		</enum>
 		<enum name="graphics::BlendFactor">
 			<item name="BlendFactorZero" value="0"/>
 			<item name="BlendFactorOne" value="1"/>
@@ -500,10 +494,10 @@
 			<item tag="varible" type="int" name="closet_id" offset="200" default_value="0"/>
 			<item tag="array_of_pointer" type="Function" name="styles" offset="208"/>
 			<item tag="array_of_pointer" type="Function" name="animations" offset="224"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="240"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="256"/>
-			<item tag="array_of_varible" type="CommonData" name="data_storages" offset="272"/>
-			<item tag="array_of_varible" type="StringW" name="string_storages" offset="288"/>
+			<item tag="array_of_varible" type="CommonData" name="data_storages" offset="240"/>
+			<item tag="array_of_varible" type="StringW" name="string_storages" offset="256"/>
+			<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="272"/>
+			<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="288"/>
 		</udt>
 	</udts>
 </typeinfo>
