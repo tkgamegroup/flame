@@ -616,6 +616,7 @@ namespace flame
 			if (table[i].first == obj)
 				return table[i].second;
 		}
+		assert(0);
 		return -1;
 	}
 
@@ -697,6 +698,7 @@ namespace flame
 			if (table[i].second == id)
 				return table[i].first;
 		}
+		assert(0);
 		return nullptr;
 	}
 
@@ -794,14 +796,24 @@ namespace flame
 
 	struct SerializableNodePrivate;
 
-	static SerializableNodePrivate *create_obj_node(UDT *u, std::vector<std::pair<void*, uint>> &table, void *obj)
+	static SerializableNodePrivate *create_obj_node(std::vector<std::pair<void*, uint>> &table, void *obj)
 	{
 		auto n = SerializableNode::create("obj");
-		n->new_attr("type", u->name());
 		auto id = generate_id(table);
 		table.emplace_back(obj, id);
 		n->new_attr("id", to_stdstring(id));
 		return (SerializableNodePrivate*)n;
+	}
+
+	static void *create_obj(UDT *u, Function *obj_generator, void *parent, uint att_hash)
+	{
+		obj_generator->datas[0].p() = u;
+		obj_generator->datas[1].p() = parent;
+		obj_generator->datas[2].u() = att_hash;
+		obj_generator->exec();
+		auto obj = obj_generator->datas[3].p();
+		assert(obj);
+		return obj;
 	}
 
 	struct SerializableNodePrivate : SerializableNode
@@ -954,7 +966,7 @@ namespace flame
 			return nullptr;
 		}
 
-		void serialize(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *src, int precision)
+		void serialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *src, int precision)
 		{
 			for (auto i = 0; i < u->item_count(); i++)
 			{
@@ -1042,19 +1054,15 @@ namespace flame
 					else
 					{
 						auto u_sub = find_udt(item->type_hash());
-
 						if (u_sub)
 						{
 							for (auto i_i = 0; i_i < arr.size; i_i++)
 							{
 								auto obj_sub = arr[i_i];
 
-								auto id = generate_id(obj_table);
-								obj_table.emplace_back(obj_sub, id);
-
-								auto n_sub = create_obj_node(u_sub, obj_table, obj_sub);
-								n_sub->serialize(u_sub, obj_table, obj_sub, precision);
-								add_node(n_sub);
+								auto n_sub = create_obj_node(obj_table, obj_sub);
+								n_sub->serialize_RE(u_sub, obj_table, obj_sub, precision);
+								n_item->add_node(n_sub);
 							}
 						}
 					}
@@ -1068,6 +1076,132 @@ namespace flame
 
 						n_item->new_attr("value", item->serialize_value(src, true, precision).v);
 					}
+				}
+			}
+		}
+
+		void unserialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function *obj_generator)
+		{
+			for (auto i = 0; i < node_count(); i++)
+			{
+				auto n_item = node(i);
+
+				auto item = u->item(u->find_item_i(n_item->find_attr("name")->value().c_str()));
+
+				switch (item->tag())
+				{
+				case VariableTagArrayOfVariable:
+				{
+					if (item->type_hash() == cH("CommonData"))
+					{
+						auto &arr = *(Array<CommonData>*)((char*)obj + item->offset());
+						auto cnt = n_item->node_count();
+						arr.resize(cnt);
+
+						for (auto i_i = 0; i_i < cnt; i_i++)
+						{
+							auto n_i = n_item->node(i_i);
+							if (n_i->name() == "item")
+								unserialize_commondata(obj_table, n_i->find_attr("type")->value(), n_i->find_attr("value")->value(), &arr[i_i]);
+							else
+								assert(0);
+						}
+					}
+					else if (item->type_hash() == cH("String"))
+					{
+						auto &arr = *(Array<String>*)((char*)obj + item->offset());
+						auto cnt = n_item->node_count();
+						arr.resize(cnt);
+
+						for (auto i_i = 0; i_i < cnt; i_i++)
+						{
+							auto n_i = n_item->node(i_i);
+							if (n_i->name() == "item")
+								arr[i_i] = n_i->find_attr("value")->value();
+							else
+								assert(0);
+						}
+					}
+					else if (item->type_hash() == cH("StringW"))
+					{
+						auto &arr = *(Array<StringW>*)((char*)obj + item->offset());
+						auto cnt = n_item->node_count();
+						arr.resize(cnt);
+
+						for (auto i_i = 0; i_i < cnt; i_i++)
+						{
+							auto n_i = n_item->node(i_i);
+							if (n_i->name() == "item")
+								arr[i_i] = s2w(n_i->find_attr("value")->value());
+							else
+								assert(0);
+						}
+					}
+				}
+					break;
+				case VariableTagArrayOfPointer:
+				{
+					auto &arr = *(Array<void*>*)((char*)obj + item->offset());
+					auto cnt = n_item->node_count();
+					arr.resize(cnt);
+
+					if (item->type_hash() == cH("Function"))
+					{
+						for (auto i_i = 0; i_i < cnt; i_i++)
+						{
+							auto n_i = n_item->node(i_i);
+
+							if (n_i->name() == "function")
+							{
+								auto cpt_cnt = n_i->node_count();
+								auto id = stoi(n_i->find_attr("id")->value());
+								auto f = Function::create(id, cpt_cnt);
+
+								auto d = f->datas + f->para_cnt;
+								for (auto i_c = 0; i_c < cpt_cnt; i_c++)
+								{
+									auto n_c = n_i->node(i_c);
+									if (n_c->name() == "capture")
+									{
+										unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), d);
+										d++;
+									}
+									else
+										assert(0);
+								}
+
+								arr[i_i] = f;
+							}
+							else
+								assert(0);
+						}
+					}
+					else
+					{
+						auto u_sub = find_udt(item->type_hash());
+						if (u_sub)
+						{
+							auto name_hash = H(item->name());
+							for (auto i_i = 0; i_i < cnt; i_i++)
+							{
+								auto n_i = n_item->node(i_i);
+								assert(n_i->name() == "obj");
+
+								auto obj_sub = create_obj(u_sub, obj_generator, obj, name_hash);
+								if (obj_sub)
+								{
+									obj_table.emplace_back(obj_sub, stoi1(n_i->find_attr("id")->value()));
+									((SerializableNodePrivate*)n_i)->unserialize_RE(u_sub, obj_table, obj_sub, obj_generator);
+								}
+
+								arr[i_i] = obj_sub;
+							}
+						}
+					}
+				}
+					break;
+				default:
+					item->unserialize_value(n_item->find_attr("value")->value(), obj, true);
 				}
 			}
 		}
@@ -1246,138 +1380,25 @@ namespace flame
 
 	void SerializableNode::save_bin(const std::wstring &filename) const
 	{
-		rapidxml::xml_document<> xml_doc;
-		auto rn = xml_doc.allocate_node(rapidxml::node_element, name().c_str());
-		xml_doc.append_node(rn);
-
-		xml_save(xml_doc, rn, (SerializableNodePrivate*)this);
-
-		std::string str;
-		rapidxml::print(std::back_inserter(str), xml_doc);
-
 		std::ofstream file(filename);
-		file.write(str.data(), str.size());
+
+		save_file_string(file, name());
+
+		bin_save(file, (SerializableNodePrivate*)this);
 	}
 
-	void *SerializableNode::unserialize(PF pf, const std::vector<CommonData> &capt)
+	void *SerializableNode::unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt)
 	{
 		assert(name() == "obj");
 
-		auto hash = H(find_attr("type")->value().c_str());
-		auto u = find_udt(hash);
-		assert(u);
+		auto obj_generator = Function::create(pf, "p p i p", capt);
 
-		auto obj_generator = Function::create(pf, "i p", capt);
-		obj_generator->datas[0].i1() = hash;
-		obj_generator->datas[1].p() = nullptr;
-		obj_generator->exec();
-
-		auto obj = obj_generator->datas[2].p();
-		assert(obj);
+		auto obj = create_obj(u, obj_generator, nullptr, 0);
 
 		std::vector<std::pair<void*, uint>> obj_table;
 		obj_table.emplace_back(obj, stoi1(find_attr("id")->value()));
 
-		for (auto i = 0; i < node_count(); i++)
-		{
-			auto n_item = node(i);
-
-			auto item = u->item(u->find_item_i(n_item->find_attr("name")->value().c_str()));
-
-			switch (item->tag())
-			{
-			case VariableTagArrayOfVariable:
-			{
-				if (item->type_hash() == cH("CommonData"))
-				{
-					auto &arr = *(Array<CommonData>*)((char*)obj + item->offset());
-					auto cnt = n_item->node_count();
-					arr.resize(cnt);
-
-					for (auto i_i = 0; i_i < cnt; i_i++)
-					{
-						auto n_i = n_item->node(i_i);
-						if (n_i->name() == "item")
-							unserialize_commondata(obj_table, n_i->find_attr("type")->value(), n_i->find_attr("value")->value(), &arr[i_i]);
-						else
-							assert(0);
-					}
-				}
-				else if (item->type_hash() == cH("String"))
-				{
-					auto &arr = *(Array<String>*)((char*)obj + item->offset());
-					auto cnt = n_item->node_count();
-					arr.resize(cnt);
-
-					for (auto i_i = 0; i_i < cnt; i_i++)
-					{
-						auto n_i = n_item->node(i_i);
-						if (n_i->name() == "item")
-							arr[i_i] = n_i->find_attr("value")->value();
-						else
-							assert(0);
-					}
-				}
-				else if (item->type_hash() == cH("StringW"))
-				{
-					auto &arr = *(Array<StringW>*)((char*)obj + item->offset());
-					auto cnt = n_item->node_count();
-					arr.resize(cnt);
-
-					for (auto i_i = 0; i_i < cnt; i_i++)
-					{
-						auto n_i = n_item->node(i_i);
-						if (n_i->name() == "item")
-							arr[i_i] = s2w(n_i->find_attr("value")->value());
-						else
-							assert(0);
-					}
-				}
-			}
-				break;
-			case VariableTagArrayOfPointer:
-			{
-				auto &arr = *(Array<void*>*)((char*)obj + item->offset());
-				auto cnt = n_item->node_count();
-				arr.resize(cnt);
-
-				if (item->type_hash() == cH("Function"))
-				{
-					for (auto i_i = 0; i_i < cnt; i_i++)
-					{
-						auto n_i = n_item->node(i_i);
-
-						if (n_i->name() == "function")
-						{
-							auto cpt_cnt = n_i->node_count();
-							auto id = stoi(n_i->find_attr("id")->value());
-							auto f = Function::create(id, cpt_cnt);
-
-							auto d = f->datas + f->para_cnt;
-							for (auto i_c = 0; i_c < cpt_cnt; i_c++)
-							{
-								auto n_c = n_i->node(i_c);
-								if (n_c->name() == "capture")
-								{
-									unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), d);
-									d++;
-								}
-								else
-									assert(0);
-							}
-
-							arr[i_i] = f;
-						}
-						else
-							assert(0);
-					}
-				}
-			}
-				break;
-			default:
-				item->unserialize_value(n_item->find_attr("value")->value(), obj, true);
-			}
-		}
+		((SerializableNodePrivate*)this)->unserialize_RE(u, obj_table, obj, obj_generator);
 
 		Function::destroy(obj_generator);
 
@@ -1485,8 +1506,8 @@ namespace flame
 
 		std::vector<std::pair<void*, uint>> obj_table;
 
-		auto n = create_obj_node(u, obj_table, src);
-		n->serialize(u, obj_table, src, precision);
+		auto n = create_obj_node(obj_table, src);
+		n->serialize_RE(u, obj_table, src, precision);
 		return n;
 	}
 

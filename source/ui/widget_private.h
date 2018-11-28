@@ -22,13 +22,13 @@
 
 #pragma once
 
-#include <flame/ui/instance.h>
 #include <flame/ui/widget.h>
 #include <flame/ui/style.h>
 #include <flame/ui/animation.h>
+#include <flame/ui/instance.h>
 
 #include <tuple>
-#include <list>
+#include <vector>
 
 namespace flame
 {
@@ -39,22 +39,6 @@ namespace flame
 			Instance *instance;
 			WidgetPrivate *parent;
 			int layer;
-
-			std::vector<Function*> mouseenter_listeners;
-			std::vector<Function*> mouseleave_listeners;
-			std::vector<Function*> lmousedown_listeners;
-			std::vector<Function*> rmousedown_listeners;
-			std::vector<Function*> mousemove_listeners;
-			std::vector<Function*> mousescroll_listeners;
-			std::vector<Function*> clicked_listeners;
-			std::vector<Function*> doubleclicked_listeners;
-			std::vector<Function*> keydown_listeners;
-			std::vector<Function*> keyup_listeners;
-			std::vector<Function*> char_listeners;
-			std::vector<Function*> char_filters;
-			std::vector<Function*> drop_listeners;
-			std::vector<Function*> changed_listeners;
-			std::vector<Function*> addchild_listeners;
 
 			std::vector<std::pair<uint, Function*>> delay_listener_remove;
 
@@ -74,6 +58,19 @@ namespace flame
 			void set_size(const Vec2 &v, Widget *sender = nullptr);
 
 			void set_visibility(bool v);
+
+			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
+			void remove_child(int layer, int idx, bool delay = false);
+			void remove_child(WidgetPrivate *w, bool delay = false);
+			void take_child(int layer, int idx, bool delay = false);
+			void take_child(WidgetPrivate *w, bool delay = false);
+			void clear_children(int layer, int begin, int end, bool delay = false);
+			void take_children(int layer, int begin, int end, bool delay = false);
+			void remove_from_parent(bool delay = false);
+			void take_from_parent(bool delay = false);
+			int find_child(WidgetPrivate *w);
+
+			void arrange();
 
 			void add_draw_command(PF pf, const std::vector<CommonData> &capt);
 
@@ -99,24 +96,11 @@ namespace flame
 
 			void report_changed() const;
 
-			Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt);
-			void remove_listener(unsigned int type, Function *f, bool delay = false);
+			Function *add_listener(uint type, PF pf, const std::vector<CommonData> &capt);
+			void remove_listener(uint type, Function *f, bool delay = false);
 
 			void add_data_storages(const char *fmt);
 			void add_string_storages(int count);
-
-			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
-			void remove_child(int layer, int idx, bool delay = false);
-			void remove_child(WidgetPrivate *w, bool delay = false);
-			void take_child(int layer, int idx, bool delay = false);
-			void take_child(WidgetPrivate *w, bool delay = false);
-			void clear_children(int layer, int begin, int end, bool delay = false);
-			void take_children(int layer, int begin, int end, bool delay = false);
-			void remove_from_parent(bool delay = false);
-			void take_from_parent(bool delay = false);
-			int find_child(WidgetPrivate *w);
-
-			void arrange();
 		};
 	}
 }

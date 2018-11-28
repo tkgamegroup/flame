@@ -5392,11 +5392,17 @@ namespace flame
 
 		union
 		{
+			uint u;
 			Vec4 f;
 			Ivec4 i;
 			Bvec4 b;
 			void *p;
 		}v;
+
+		inline uint &u()
+		{
+			return v.u;
+		}
 
 		inline float &f1()
 		{

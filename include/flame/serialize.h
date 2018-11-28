@@ -586,7 +586,8 @@ namespace flame
 
 		FLAME_SERIALIZE_EXPORTS void save_xml(const std::wstring &filename) const;
 		FLAME_SERIALIZE_EXPORTS void save_bin(const std::wstring &filename) const;
-		FLAME_SERIALIZE_EXPORTS void *unserialize(PF pf, const std::vector<CommonData> &capt); // (uint type_hash, void *parent, out void *obj)
+		// (UDT *u, void *parent, uint att_hash, out void *obj)
+		FLAME_SERIALIZE_EXPORTS void *unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt);
 
 		FLAME_SERIALIZE_EXPORTS static SerializableNode *create(const std::string &name);
 		FLAME_SERIALIZE_EXPORTS static SerializableNode *create_from_xml(const std::wstring &filename);

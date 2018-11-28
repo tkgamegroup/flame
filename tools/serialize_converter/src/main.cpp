@@ -39,13 +39,13 @@ int main(int argc, char **args)
 	if (path.extension() == ".xml")
 	{
 		auto file = SerializableNode::create_from_xml(filename);
-		file->save_bin(ext_replace(filename, L"bin"));
+		file->save_bin(ext_replace(filename, L".bin"));
 		SerializableNode::destroy(file);
 	}
 	else /* if (path.extension() == ".bin") */
 	{
 		auto file = SerializableNode::create_from_bin(filename);
-		file->save_xml(ext_replace(filename, L"xml"));
+		file->save_xml(ext_replace(filename, L".xml"));
 		SerializableNode::destroy(file);
 	}
 

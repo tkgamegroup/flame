@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include <flame/file.h>
+#include <flame/array.h>
 #include <flame/system.h>
 #include <flame/graphics/device.h>
 #include <flame/UI/instance.h>

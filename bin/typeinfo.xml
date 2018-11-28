@@ -282,8 +282,6 @@
 			<item name="FileTypeText" value="2"/>
 			<item name="FileTypeImage" value="3"/>
 			<item name="FileTypeModel" value="4"/>
-			<item name="FileTypeTerrain" value="5"/>
-			<item name="FileTypeScene" value="6"/>
 		</enum>
 		<enum name="graphics::ImageAspect">
 			<item name="ImageAspectColor" value="1"/>
@@ -489,15 +487,30 @@
 			<item tag="enum_single" type="ui::EventAttitude" name="event_attitude" offset="140" default_value="EventAccept"/>
 			<item tag="varible" type="bool" name="want_key_focus" offset="144" default_value="false"/>
 			<item tag="varible" type="bool" name="visible" offset="145" default_value="true"/>
-			<item tag="varible" type="bool" name="draw_default" offset="176" default_value="true"/>
-			<item tag="array_of_pointer" type="Function" name="extra_draw_commands" offset="184"/>
-			<item tag="varible" type="int" name="closet_id" offset="200" default_value="0"/>
-			<item tag="array_of_pointer" type="Function" name="styles" offset="208"/>
-			<item tag="array_of_pointer" type="Function" name="animations" offset="224"/>
-			<item tag="array_of_varible" type="CommonData" name="data_storages" offset="240"/>
-			<item tag="array_of_varible" type="StringW" name="string_storages" offset="256"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="272"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="288"/>
+			<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="176"/>
+			<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="192"/>
+			<item tag="varible" type="bool" name="draw_default" offset="208" default_value="true"/>
+			<item tag="array_of_pointer" type="Function" name="extra_draw_commands" offset="216"/>
+			<item tag="varible" type="int" name="closet_id" offset="232" default_value="0"/>
+			<item tag="array_of_pointer" type="Function" name="styles" offset="240"/>
+			<item tag="array_of_pointer" type="Function" name="animations" offset="256"/>
+			<item tag="array_of_pointer" type="Function" name="mouseenter_listeners" offset="272"/>
+			<item tag="array_of_pointer" type="Function" name="mouseleave_listeners" offset="288"/>
+			<item tag="array_of_pointer" type="Function" name="lmousedown_listeners" offset="304"/>
+			<item tag="array_of_pointer" type="Function" name="rmousedown_listeners" offset="320"/>
+			<item tag="array_of_pointer" type="Function" name="mousemove_listeners" offset="336"/>
+			<item tag="array_of_pointer" type="Function" name="mousescroll_listeners" offset="352"/>
+			<item tag="array_of_pointer" type="Function" name="clicked_listeners" offset="368"/>
+			<item tag="array_of_pointer" type="Function" name="doubleclicked_listeners" offset="384"/>
+			<item tag="array_of_pointer" type="Function" name="keydown_listeners" offset="400"/>
+			<item tag="array_of_pointer" type="Function" name="keyup_listeners" offset="416"/>
+			<item tag="array_of_pointer" type="Function" name="char_listeners" offset="432"/>
+			<item tag="array_of_pointer" type="Function" name="char_filters" offset="448"/>
+			<item tag="array_of_pointer" type="Function" name="drop_listeners" offset="464"/>
+			<item tag="array_of_pointer" type="Function" name="changed_listeners" offset="480"/>
+			<item tag="array_of_pointer" type="Function" name="addchild_listeners" offset="496"/>
+			<item tag="array_of_varible" type="CommonData" name="data_storages" offset="512"/>
+			<item tag="array_of_varible" type="StringW" name="string_storages" offset="528"/>
 		</udt>
 	</udts>
 </typeinfo>

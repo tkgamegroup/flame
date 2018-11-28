@@ -22,17 +22,18 @@
 
 #pragma once
 
-#include <flame/ui/ui.h>
-
 #include <flame/math.h>
 #include <flame/array.h>
 #include <flame/string.h>
 #include <flame/function.h>
+#include <flame/ui/ui.h>
 
 #include <vector>
 
 namespace flame
 {
+	struct SerializableNode;
+
 	namespace ui
 	{
 		struct Instance;
@@ -157,19 +158,53 @@ namespace flame
 			bool showed; // vaild after instance processing
 			State state; // vaild after instance processing
 
+			Array<Widget*> children_1$;
+			Array<Widget*> children_2$;
+
 			bool draw_default$;
 			Array<Function*> extra_draw_commands$;
 
 			int closet_id$;
+			// (Widget *w)
 			Array<Function*> styles$;
 
+			// (Widget *w, float curr_time) 
+			// the first two of captures must be "f i" (duration looping)
 			Array<Function*> animations$;
+
+			// "mouse enter":      ()
+			// "mouse leave":      ()
+			// "left mouse down":  (Vec2 pos)
+			// "right mouse down": (Vec2 pos)
+			// "mouse move":       (Vec2 pos)
+			// "mouse scroll":     (int scroll)
+			// "clicked":          ()
+			// "double clicked":   ()
+			// "key down":         (int key)
+			// "char":             (int ch)
+			// "char filter":      (int ch, out int pass)
+			// "drop":             (Widget *w)
+			// "changed":          ()
+			// "add child":        (Widget *w)
+			// "remove child":     (Widget *w)
+			Array<Function*> mouseenter_listeners$;
+			Array<Function*> mouseleave_listeners$;
+			Array<Function*> lmousedown_listeners$;
+			Array<Function*> rmousedown_listeners$;
+			Array<Function*> mousemove_listeners$;
+			Array<Function*> mousescroll_listeners$;
+			Array<Function*> clicked_listeners$;
+			Array<Function*> doubleclicked_listeners$;
+			Array<Function*> keydown_listeners$;
+			Array<Function*> keyup_listeners$;
+			Array<Function*> char_listeners$;
+			Array<Function*> char_filters$;
+			Array<Function*> drop_listeners$;
+			Array<Function*> changed_listeners$;
+			Array<Function*> addchild_listeners$;
 
 			Array<CommonData> data_storages$;
 			Array<StringW> string_storages$;
-
-			Array<Widget*> children_1$;
-			Array<Widget*> children_2$;
 
 			inline Widget()
 			{
@@ -232,13 +267,25 @@ namespace flame
 			FLAME_UI_EXPORTS Widget *parent() const;
 			FLAME_UI_EXPORTS int layer() const;
 
+			FLAME_UI_EXPORTS void add_child(Widget *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
+			FLAME_UI_EXPORTS void remove_child(int layer, int idx, bool delay = false);
+			FLAME_UI_EXPORTS void remove_child(Widget *w, bool delay = false);
+			FLAME_UI_EXPORTS void take_child(int layer, int idx, bool delay = false);
+			FLAME_UI_EXPORTS void take_child(Widget *w, bool delay = false);
+			FLAME_UI_EXPORTS void clear_children(int layer, int begin, int end, bool delay = false);
+			FLAME_UI_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
+			FLAME_UI_EXPORTS void remove_from_parent(bool delay = false);
+			FLAME_UI_EXPORTS void take_from_parent(bool delay = false);
+			FLAME_UI_EXPORTS int find_child(Widget *w);
+
+			FLAME_UI_EXPORTS float get_content_size() const;
+
+			FLAME_UI_EXPORTS void arrange();
+
 			FLAME_UI_EXPORTS void add_draw_command(PF pf, const std::vector<CommonData> &capt);
 
-			// parm (Widget *w)
 			FLAME_UI_EXPORTS void add_style(PF pf, const std::vector<CommonData> &capt);
 
-			// parm (Widget *w, float curr_time) 
-			// the first two of captures must be "f i" (duration looping)
 			FLAME_UI_EXPORTS void add_animation(PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void on_draw(Canvas *c, const Vec2 &off, float scl);
@@ -257,44 +304,16 @@ namespace flame
 
 			FLAME_UI_EXPORTS void report_changed() const;
 
-			// "mouse enter":      ()
-			// "mouse leave":      ()
-			// "left mouse down":  (Vec2 pos)
-			// "right mouse down": (Vec2 pos)
-			// "mouse move":       (Vec2 pos)
-			// "mouse scroll":     (int scroll)
-			// "clicked":          ()
-			// "double clicked":   ()
-			// "key down":         (int key)
-			// "char":             (int ch)
-			// "char filter":      (int ch, out int pass)
-			// "drop":             (Widget *w)
-			// "changed":          ()
-			// "add child":        (Widget *w)
-			// "remove child":     (Widget *w)
-
-			FLAME_UI_EXPORTS Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt);
-			FLAME_UI_EXPORTS void remove_listener(unsigned int type, Function *f, bool delay = false);
+			FLAME_UI_EXPORTS Function *add_listener(uint type, PF pf, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void remove_listener(uint type, Function *f, bool delay = false);
 
 			FLAME_UI_EXPORTS void add_data_storages(const char *fmt);
 			FLAME_UI_EXPORTS void add_string_storages(int count);
 
-			FLAME_UI_EXPORTS void add_child(Widget *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
-			FLAME_UI_EXPORTS void remove_child(int layer, int idx, bool delay = false);
-			FLAME_UI_EXPORTS void remove_child(Widget *w, bool delay = false);
-			FLAME_UI_EXPORTS void take_child(int layer, int idx, bool delay = false);
-			FLAME_UI_EXPORTS void take_child(Widget *w, bool delay = false);
-			FLAME_UI_EXPORTS void clear_children(int layer, int begin, int end, bool delay = false);
-			FLAME_UI_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
-			FLAME_UI_EXPORTS void remove_from_parent(bool delay = false);
-			FLAME_UI_EXPORTS void take_from_parent(bool delay = false);
-			FLAME_UI_EXPORTS int find_child(Widget *w);
-
-			FLAME_UI_EXPORTS float get_content_size() const;
-
-			FLAME_UI_EXPORTS void arrange();
+			FLAME_UI_EXPORTS SerializableNode *save();
 
 			FLAME_UI_EXPORTS static Widget *create(Instance *ui);
+			FLAME_UI_EXPORTS static Widget *create_from_serialize(Instance *ui, SerializableNode *src);
 			FLAME_UI_EXPORTS static void destroy(Widget *w);
 		};
 

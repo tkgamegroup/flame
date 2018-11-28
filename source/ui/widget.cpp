@@ -20,15 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/font.h>
 #include <flame/file.h>
+#include <flame/serialize.h>
 #include <flame/system.h>
+#include <flame/font.h>
 
-#include <flame/ui/canvas.h>
-#include <flame/ui/style.h>
 #include <flame/ui/icon.h>
-#include "instance_private.h"
+#include <flame/ui/style.h>
+#include <flame/ui/canvas.h>
 #include "widget_private.h"
+#include "instance_private.h"
 
 #include <Windows.h>
 #include <assert.h>
@@ -41,6 +42,7 @@ namespace flame
 		{
 			instance = ui_;
 			parent = nullptr;
+			layer = 0;
 		}
 
 		inline WidgetPrivate::~WidgetPrivate()
@@ -117,348 +119,6 @@ namespace flame
 				parent->arrange();
 		}
 
-		inline void WidgetPrivate::add_draw_command(PF pf, const std::vector<CommonData> &capt)
-		{
-			extra_draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
-		}
-
-		inline void WidgetPrivate::add_style(PF pf, const std::vector<CommonData> &capt)
-		{
-			styles$.push_back(Function::create(pf, "p", capt));
-		}
-
-		inline void WidgetPrivate::add_animation(PF pf, const std::vector<CommonData> &capt)
-		{
-			auto f = Function::create(pf, "p f", capt);
-			f->datas[1].v.f = 0.f;
-			animations$.push_back(f);
-		}
-
-		void WidgetPrivate::remove_animations()
-		{
-			for (auto i = 0; i < animations$.size; i++)
-				Function::destroy(animations$[i]);
-			animations$.resize(0);
-			for (auto i = 0; i < children_1$.size; i++)
-				((WidgetPrivate*)children_1$[i])->remove_animations();
-			for (auto i = 0; i < children_2$.size; i++)
-				((WidgetPrivate*)children_2$[i])->remove_animations();
-		}
-
-		inline void WidgetPrivate::on_draw(Canvas *c, const Vec2 &off, float scl)
-		{
-			if (draw_default$)
-			{
-				auto p = (pos$ - Vec2(background_offset$[0], background_offset$[1])) * scl + off;
-				auto ss = scl * scale$;
-				auto s = (size$ + Vec2(background_offset$[0] + background_offset$[2], background_offset$[1] + background_offset$[3])) * ss;
-				auto rr = background_round_radius$ * ss;
-
-				if (background_shaow_thickness$ > 0.f)
-				{
-					c->add_rect_col2(p - Vec2(background_shaow_thickness$ * 0.5f), s + Vec2(background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
-						background_shaow_thickness$, rr, background_round_flags$);
-				}
-				if (alpha$ > 0.f)
-				{
-					if (background_col$.w > 0)
-						c->add_rect_filled(p, s, Bvec4(background_col$, alpha$), rr, background_round_flags$);
-					if (background_frame_thickness$ > 0.f && background_frame_col$.w > 0)
-						c->add_rect(p, s, Bvec4(background_frame_col$, alpha$), background_frame_thickness$, rr, background_round_flags$);
-				}
-			}
-			for (auto i = 0; i < extra_draw_commands$.size; i++)
-			{
-				auto f = extra_draw_commands$[i];
-				f->datas[0].v.p = c;
-				f->datas[1].v.f = off;
-				f->datas[2].v.f = scl;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_mouseenter()
-		{
-			for (auto f : mouseenter_listeners)
-				f->exec();
-		}
-
-		inline void WidgetPrivate::on_mouseleave()
-		{
-			for (auto f : mouseleave_listeners)
-				f->exec();
-		}
-
-		inline void WidgetPrivate::on_lmousedown(const Vec2 &mpos)
-		{
-			for (auto f : lmousedown_listeners)
-			{
-				f->datas[0].v.f = mpos;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_rmousedown(const Vec2 &mpos)
-		{
-			for (auto f : rmousedown_listeners)
-			{
-				f->datas[0].v.f = mpos;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_mousemove(const Vec2 &disp)
-		{
-			for (auto f : mousemove_listeners)
-			{
-				f->datas[0].v.f = disp;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_clicked()
-		{
-			for (auto f : clicked_listeners)
-				f->exec();
-		}
-
-		inline void WidgetPrivate::on_doubleclicked()
-		{
-			for (auto f : doubleclicked_listeners)
-				f->exec();
-		}
-
-		inline void WidgetPrivate::on_mousescroll(int scroll)
-		{
-			for (auto f : mousescroll_listeners)
-			{
-				f->datas[0].v.i = scroll;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_keydown(int code)
-		{
-			for (auto f : keydown_listeners)
-			{
-				f->datas[0].v.i = code;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_keyup(int code)
-		{
-			for (auto f : keyup_listeners)
-			{
-				f->datas[0].v.i = code;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_char(wchar_t ch)
-		{
-			if (ch != '\b' && ch != 22 && ch != 27)
-			{
-				for (auto f : char_filters)
-				{
-					f->datas[0].v.i = ch;
-					f->exec();
-					if (!f->datas[1].i1())
-						return;
-				}
-			}
-
-			for (auto f : char_listeners)
-			{
-				f->datas[0].v.i = ch;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_drop(Widget *src)
-		{
-			for (auto f : drop_listeners)
-			{
-				f->datas[0].v.p = src;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::report_changed() const
-		{
-			for (auto f : changed_listeners)
-				f->exec();
-		}
-
-		inline Function *WidgetPrivate::add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
-		{
-			const char *parm_fmt;
-			std::vector<Function*> *list;
-
-			switch (type)
-			{
-			case cH("mouse enter"):
-				parm_fmt = "";
-				list = &mouseenter_listeners;
-				break;
-			case cH("mouse leave"):
-				parm_fmt = "";
-				list = &mouseleave_listeners;
-				break;
-			case cH("left mouse down"):
-				parm_fmt = "f2";
-				list = &lmousedown_listeners;
-				break;
-			case cH("right mouse down"):
-				parm_fmt = "f2";
-				list = &rmousedown_listeners;
-				break;
-			case cH("mouse move"):
-				parm_fmt = "f2";
-				list = &mousemove_listeners;
-				break;
-			case cH("mouse scroll"):
-				parm_fmt = "i";
-				list = &mousescroll_listeners;
-				break;
-			case cH("clicked"):
-				parm_fmt = "";
-				list = &clicked_listeners;
-				break;
-			case cH("double clicked"):
-				parm_fmt = "";
-				list = &doubleclicked_listeners;
-				break;
-			case cH("key down"):
-				parm_fmt = "i";
-				list = &keydown_listeners;
-				break;
-			case cH("key up"):
-				parm_fmt = "i";
-				list = &keyup_listeners;
-				break;
-			case cH("char"):
-				parm_fmt = "i";
-				list = &char_listeners;
-				break;
-			case cH("char filter"):
-				parm_fmt = "i i";
-				list = &char_filters;
-				break;
-			case cH("drop"):
-				parm_fmt = "p";
-				list = &drop_listeners;
-				break;
-			case cH("changed"):
-				parm_fmt = "";
-				list = &changed_listeners;
-				break;
-			case cH("add child"):
-				parm_fmt = "p";
-				list = &addchild_listeners;
-				break;
-			default:
-				assert(0);
-				return nullptr;
-			}
-
-			auto f = Function::create(pf, parm_fmt, capt);
-			list->emplace_back(f);
-			return f;
-		}
-
-		inline void WidgetPrivate::remove_listener(unsigned int type, Function *f, bool delay)
-		{
-			if (delay)
-			{
-				delay_listener_remove.emplace_back(type, f);
-				return;
-			}
-
-			std::vector<Function*> *list;
-
-			switch (type)
-			{
-			case cH("mouse enter"):
-				list = &mouseenter_listeners;
-				break;
-			case cH("mouse leave"):
-				list = &mouseleave_listeners;
-				break;
-			case cH("left mouse down"):
-				list = &lmousedown_listeners;
-				break;
-			case cH("right mouse down"):
-				list = &rmousedown_listeners;
-				break;
-			case cH("mouse move"):
-				list = &mousemove_listeners;
-				break;
-			case cH("mouse scroll"):
-				list = &mousescroll_listeners;
-				break;
-			case cH("clicked"):
-				list = &clicked_listeners;
-				break;
-			case cH("double clicked"):
-				list = &doubleclicked_listeners;
-				break;
-			case cH("key down"):
-				list = &keydown_listeners;
-				break;
-			case cH("key up"):
-				list = &keyup_listeners;
-				break;
-			case cH("char"):
-				list = &char_listeners;
-				break;
-			case cH("char filter"):
-				list = &char_filters;
-				break;
-			case cH("drop"):
-				list = &drop_listeners;
-				break;
-			case cH("changed"):
-				list = &changed_listeners;
-				break;
-			case cH("add child"):
-				list = &addchild_listeners;
-				break;
-			default:
-				assert(0);
-				return;
-			}
-
-			for (auto it = list->begin(); it != list->end(); it++)
-			{
-				if (*it == f)
-				{
-					Function::destroy(f);
-					list->erase(it);
-					return;
-				}
-			}
-		}
-
-		inline void WidgetPrivate::add_data_storages(const char *fmt)
-		{
-			auto sp = string_split(std::string(fmt));
-			auto original_size = data_storages$.size;
-			data_storages$.resize(original_size + sp.size());
-			auto d = &data_storages$[original_size];
-			for (auto &s : sp)
-			{
-				d->set_fmt(s.c_str());
-
-				d++;
-			}
-		}
-
-		inline void WidgetPrivate::add_string_storages(int count)
-		{
-			string_storages$.resize(string_storages$.size + count);
-		}
-
 		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
 		{
 			if (delay)
@@ -477,9 +137,11 @@ namespace flame
 
 			arrange();
 
-			for (auto f : addchild_listeners)
+			for (auto i = 0; i < addchild_listeners$.size; i++)
 			{
-				f->datas[0].v.p = w;
+				auto f = addchild_listeners$[i];
+
+				f->datas[0].p() = w;
 				f->exec();
 			}
 		}
@@ -745,7 +407,7 @@ namespace flame
 					y += c->size$.y + item_padding$;
 				}
 			}
-				break;
+			break;
 			case LayoutHorizontal:
 			{
 				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
@@ -861,7 +523,7 @@ namespace flame
 					x += c->size$.x + item_padding$;
 				}
 			}
-				break;
+			break;
 			case LayoutGrid:
 			{
 				auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
@@ -893,7 +555,7 @@ namespace flame
 				if (size_policy_vert$ == SizeFitChildren)
 					set_height(max(pos.y - item_padding$, 0.f), this);
 			}
-				break;
+			break;
 			}
 
 			for (auto i_c = 0; i_c < children_2$.size; i_c++)
@@ -979,6 +641,359 @@ namespace flame
 			}
 		}
 
+		inline void WidgetPrivate::add_draw_command(PF pf, const std::vector<CommonData> &capt)
+		{
+			extra_draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
+		}
+
+		inline void WidgetPrivate::add_style(PF pf, const std::vector<CommonData> &capt)
+		{
+			styles$.push_back(Function::create(pf, "p", capt));
+		}
+
+		inline void WidgetPrivate::add_animation(PF pf, const std::vector<CommonData> &capt)
+		{
+			auto f = Function::create(pf, "p f", capt);
+			f->datas[1].v.f = 0.f;
+			animations$.push_back(f);
+		}
+
+		void WidgetPrivate::remove_animations()
+		{
+			for (auto i = 0; i < animations$.size; i++)
+				Function::destroy(animations$[i]);
+			animations$.resize(0);
+			for (auto i = 0; i < children_1$.size; i++)
+				((WidgetPrivate*)children_1$[i])->remove_animations();
+			for (auto i = 0; i < children_2$.size; i++)
+				((WidgetPrivate*)children_2$[i])->remove_animations();
+		}
+
+		inline void WidgetPrivate::on_draw(Canvas *c, const Vec2 &off, float scl)
+		{
+			if (draw_default$)
+			{
+				auto p = (pos$ - Vec2(background_offset$[0], background_offset$[1])) * scl + off;
+				auto ss = scl * scale$;
+				auto s = (size$ + Vec2(background_offset$[0] + background_offset$[2], background_offset$[1] + background_offset$[3])) * ss;
+				auto rr = background_round_radius$ * ss;
+
+				if (background_shaow_thickness$ > 0.f)
+				{
+					c->add_rect_col2(p - Vec2(background_shaow_thickness$ * 0.5f), s + Vec2(background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
+						background_shaow_thickness$, rr, background_round_flags$);
+				}
+				if (alpha$ > 0.f)
+				{
+					if (background_col$.w > 0)
+						c->add_rect_filled(p, s, Bvec4(background_col$, alpha$), rr, background_round_flags$);
+					if (background_frame_thickness$ > 0.f && background_frame_col$.w > 0)
+						c->add_rect(p, s, Bvec4(background_frame_col$, alpha$), background_frame_thickness$, rr, background_round_flags$);
+				}
+			}
+			for (auto i = 0; i < extra_draw_commands$.size; i++)
+			{
+				auto f = extra_draw_commands$[i];
+				f->datas[0].v.p = c;
+				f->datas[1].v.f = off;
+				f->datas[2].v.f = scl;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_mouseenter()
+		{
+			for (auto i = 0; i < mouseenter_listeners$.size; i++)
+				mouseenter_listeners$[i]->exec();
+		}
+
+		inline void WidgetPrivate::on_mouseleave()
+		{
+			for (auto i = 0; i < mouseleave_listeners$.size; i++)
+				mouseleave_listeners$[i]->exec();
+		}
+
+		inline void WidgetPrivate::on_lmousedown(const Vec2 &mpos)
+		{
+			for (auto i = 0; i < lmousedown_listeners$.size; i++)
+			{
+				auto f = lmousedown_listeners$[i];
+
+				f->datas[0].f2() = mpos;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_rmousedown(const Vec2 &mpos)
+		{
+			for (auto i = 0; i < rmousedown_listeners$.size; i++)
+			{
+				auto f = rmousedown_listeners$[i];
+
+				f->datas[0].f2() = mpos;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_mousemove(const Vec2 &disp)
+		{
+			for (auto i = 0; i < mousemove_listeners$.size; i++)
+			{
+				auto f = mousemove_listeners$[i];
+
+				f->datas[0].f2() = disp;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_clicked()
+		{
+			for (auto i = 0; i < clicked_listeners$.size; i++)
+				clicked_listeners$[i]->exec();
+		}
+
+		inline void WidgetPrivate::on_doubleclicked()
+		{
+			for (auto i = 0; i < doubleclicked_listeners$.size; i++)
+				doubleclicked_listeners$[i]->exec();
+		}
+
+		inline void WidgetPrivate::on_mousescroll(int scroll)
+		{
+			for (auto i = 0; i < mousescroll_listeners$.size; i++)
+			{
+				auto f = mousescroll_listeners$[i];
+
+				f->datas[0].i1() = scroll;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_keydown(int code)
+		{
+			for (auto i = 0; i < keydown_listeners$.size; i++)
+			{
+				auto f = keydown_listeners$[i];
+
+				f->datas[0].i1() = code;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_keyup(int code)
+		{
+			for (auto i = 0; i < keyup_listeners$.size; i++)
+			{
+				auto f = keyup_listeners$[i];
+
+				f->datas[0].i1() = code;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_char(wchar_t ch)
+		{
+			if (ch != '\b' && ch != 22 && ch != 27)
+			{
+				for (auto i = 0; i < char_filters$.size; i++)
+				{
+					auto f = char_filters$[i];
+
+					f->datas[0].i1() = ch;
+					f->exec();
+					if (!f->datas[1].i1())
+						return;
+				}
+			}
+
+			for (auto i = 0; i < char_listeners$.size; i++)
+			{
+				auto f = char_listeners$[i];
+
+				f->datas[0].i1() = ch;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::on_drop(Widget *src)
+		{
+			for (auto i = 0; i < drop_listeners$.size; i++)
+			{
+				auto f = drop_listeners$[i];
+
+				f->datas[0].p() = src;
+				f->exec();
+			}
+		}
+
+		inline void WidgetPrivate::report_changed() const
+		{
+			for (auto i = 0; i < changed_listeners$.size; i++)
+				changed_listeners$[i]->exec();
+		}
+
+		inline Function *WidgetPrivate::add_listener(uint type, PF pf, const std::vector<CommonData> &capt)
+		{
+			const char *parm_fmt;
+			Array<Function*> *list;
+
+			switch (type)
+			{
+			case cH("mouse enter"):
+				parm_fmt = "";
+				list = &mouseenter_listeners$;
+				break;
+			case cH("mouse leave"):
+				parm_fmt = "";
+				list = &mouseleave_listeners$;
+				break;
+			case cH("left mouse down"):
+				parm_fmt = "f2";
+				list = &lmousedown_listeners$;
+				break;
+			case cH("right mouse down"):
+				parm_fmt = "f2";
+				list = &rmousedown_listeners$;
+				break;
+			case cH("mouse move"):
+				parm_fmt = "f2";
+				list = &mousemove_listeners$;
+				break;
+			case cH("mouse scroll"):
+				parm_fmt = "i";
+				list = &mousescroll_listeners$;
+				break;
+			case cH("clicked"):
+				parm_fmt = "";
+				list = &clicked_listeners$;
+				break;
+			case cH("double clicked"):
+				parm_fmt = "";
+				list = &doubleclicked_listeners$;
+				break;
+			case cH("key down"):
+				parm_fmt = "i";
+				list = &keydown_listeners$;
+				break;
+			case cH("key up"):
+				parm_fmt = "i";
+				list = &keyup_listeners$;
+				break;
+			case cH("char"):
+				parm_fmt = "i";
+				list = &char_listeners$;
+				break;
+			case cH("char filter"):
+				parm_fmt = "i i";
+				list = &char_filters$;
+				break;
+			case cH("drop"):
+				parm_fmt = "p";
+				list = &drop_listeners$;
+				break;
+			case cH("changed"):
+				parm_fmt = "";
+				list = &changed_listeners$;
+				break;
+			case cH("add child"):
+				parm_fmt = "p";
+				list = &addchild_listeners$;
+				break;
+			default:
+				assert(0);
+				return nullptr;
+			}
+
+			auto f = Function::create(pf, parm_fmt, capt);
+			list->push_back(f);
+			return f;
+		}
+
+		inline void WidgetPrivate::remove_listener(uint type, Function *f, bool delay)
+		{
+			if (delay)
+			{
+				delay_listener_remove.emplace_back(type, f);
+				return;
+			}
+
+			Array<Function*> *list;
+
+			switch (type)
+			{
+			case cH("mouse enter"):
+				list = &mouseenter_listeners$;
+				break;
+			case cH("mouse leave"):
+				list = &mouseleave_listeners$;
+				break;
+			case cH("left mouse down"):
+				list = &lmousedown_listeners$;
+				break;
+			case cH("right mouse down"):
+				list = &rmousedown_listeners$;
+				break;
+			case cH("mouse move"):
+				list = &mousemove_listeners$;
+				break;
+			case cH("mouse scroll"):
+				list = &mousescroll_listeners$;
+				break;
+			case cH("clicked"):
+				list = &clicked_listeners$;
+				break;
+			case cH("double clicked"):
+				list = &doubleclicked_listeners$;
+				break;
+			case cH("key down"):
+				list = &keydown_listeners$;
+				break;
+			case cH("key up"):
+				list = &keyup_listeners$;
+				break;
+			case cH("char"):
+				list = &char_listeners$;
+				break;
+			case cH("char filter"):
+				list = &char_filters$;
+				break;
+			case cH("drop"):
+				list = &drop_listeners$;
+				break;
+			case cH("changed"):
+				list = &changed_listeners$;
+				break;
+			case cH("add child"):
+				list = &addchild_listeners$;
+				break;
+			default:
+				assert(0);
+				return;
+			}
+
+			list->remove(list->find(f));
+			Function::destroy(f);
+		}
+
+		inline void WidgetPrivate::add_data_storages(const char *fmt)
+		{
+			auto sp = string_split(std::string(fmt));
+			auto original_size = data_storages$.size;
+			data_storages$.resize(original_size + sp.size());
+			auto d = &data_storages$[original_size];
+			for (auto &s : sp)
+			{
+				d->set_fmt(s.c_str());
+
+				d++;
+			}
+		}
+
+		inline void WidgetPrivate::add_string_storages(int count)
+		{
+			string_storages$.resize(string_storages$.size + count);
+		}
+
 		void Widget::set_width(float x, Widget *sender)
 		{
 			((WidgetPrivate*)this)->set_width(x, sender);
@@ -999,11 +1014,6 @@ namespace flame
 			((WidgetPrivate*)this)->set_visibility(v);
 		}
 
-		void Widget::add_draw_command(PF pf, const std::vector<CommonData> &capt)
-		{
-			((WidgetPrivate*)this)->add_draw_command(pf, capt);
-		}
-
 		Instance *Widget::instance() const
 		{
 			return ((WidgetPrivate*)this)->instance;
@@ -1017,6 +1027,73 @@ namespace flame
 		int Widget::layer() const
 		{
 			return ((WidgetPrivate*)this)->layer;
+		}
+
+		void Widget::add_child(Widget *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
+		{
+			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, pf, capt);
+		}
+
+		void Widget::remove_child(int layer, int idx, bool delay)
+		{
+			((WidgetPrivate*)this)->remove_child(idx, delay);
+		}
+
+		void Widget::remove_child(Widget *w, bool delay)
+		{
+			((WidgetPrivate*)this)->remove_child((WidgetPrivate*)w, delay);
+		}
+
+		void Widget::take_child(int layer, int idx, bool delay)
+		{
+			((WidgetPrivate*)this)->take_child(layer, idx, delay);
+		}
+
+		void Widget::take_child(Widget *w, bool delay)
+		{
+			((WidgetPrivate*)this)->take_child((WidgetPrivate*)w, delay);
+		}
+
+		void Widget::clear_children(int layer, int begin, int end, bool delay)
+		{
+			((WidgetPrivate*)this)->clear_children(layer, begin, end, delay);
+		}
+
+		void Widget::take_children(int layer, int begin, int end, bool delay)
+		{
+			((WidgetPrivate*)this)->take_children(layer, begin, end, delay);
+		}
+
+		void Widget::remove_from_parent(bool delay)
+		{
+			((WidgetPrivate*)this)->remove_from_parent(delay);
+		}
+
+		void Widget::take_from_parent(bool delay)
+		{
+			((WidgetPrivate*)this)->take_from_parent(delay);
+		}
+
+		int Widget::find_child(Widget *w)
+		{
+			return ((WidgetPrivate*)this)->find_child((WidgetPrivate*)w);
+		}
+
+		const auto scroll_spare_spacing = 20.f;
+
+		float Widget::get_content_size() const
+		{
+			return content_size + scroll_spare_spacing;
+		}
+
+		void Widget::arrange()
+		{
+			((WidgetPrivate*)this)->arrange();
+		}
+
+		void Widget::add_draw_command(PF pf, const std::vector<CommonData> &capt)
+		{
+			((WidgetPrivate*)this)->add_draw_command(pf, capt);
 		}
 
 		void Widget::add_style(PF pf, const std::vector<CommonData> &capt)
@@ -1119,71 +1196,35 @@ namespace flame
 			((WidgetPrivate*)this)->add_string_storages(count);
 		}
 
-		void Widget::add_child(Widget *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
+		SerializableNode *Widget::save()
 		{
-			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, pf, capt);
-		}
-
-		void Widget::remove_child(int layer, int idx, bool delay)
-		{
-			((WidgetPrivate*)this)->remove_child(idx, delay);
-		}
-
-		void Widget::remove_child(Widget *w, bool delay)
-		{
-			((WidgetPrivate*)this)->remove_child((WidgetPrivate*)w, delay);
-		}
-
-		void Widget::take_child(int layer, int idx, bool delay)
-		{
-			((WidgetPrivate*)this)->take_child(layer, idx, delay);
-		}
-
-		void Widget::take_child(Widget *w, bool delay)
-		{
-			((WidgetPrivate*)this)->take_child((WidgetPrivate*)w, delay);
-		}
-
-		void Widget::clear_children(int layer, int begin, int end, bool delay)
-		{
-			((WidgetPrivate*)this)->clear_children(layer, begin, end, delay);
-		}
-
-		void Widget::take_children(int layer, int begin, int end, bool delay)
-		{
-			((WidgetPrivate*)this)->take_children(layer, begin, end, delay);
-		}
-
-		void Widget::remove_from_parent(bool delay)
-		{
-			((WidgetPrivate*)this)->remove_from_parent(delay);
-		}
-
-		void Widget::take_from_parent(bool delay)
-		{
-			((WidgetPrivate*)this)->take_from_parent(delay);
-		}
-
-		int Widget::find_child(Widget *w)
-		{
-			return ((WidgetPrivate*)this)->find_child((WidgetPrivate*)w);
-		}
-
-		const auto scroll_spare_spacing = 20.f;
-
-		float Widget::get_content_size() const
-		{
-			return content_size + scroll_spare_spacing;
-		}
-
-		void Widget::arrange()
-		{
-			((WidgetPrivate*)this)->arrange();
+			return SerializableNode::serialize(find_udt(cH("ui::Widget")), this, 1);
 		}
 
 		Widget *Widget::create(Instance *ui)
 		{
 			return new WidgetPrivate(ui);
+		}
+
+		Widget *Widget::create_from_serialize(Instance *ui, SerializableNode *src)
+		{
+			return (Widget*)src->unserialize(find_udt(cH("ui::Widget")), [](CommonData *d) {
+				auto parent = (WidgetPrivate*)d[1].p();
+				auto att_hash = d[2].u();
+				auto ins = (Instance*)d[4].p();
+
+				auto w = (WidgetPrivate*)Widget::create(ins);
+				d[3].p() = w;
+
+				if (parent)
+				{
+					w->parent = parent;
+					if (att_hash == cH("children_1"))
+						w->layer = 0;
+					else /* if (att_hash == cH("children_2")) */
+						w->layer = 1;
+				}
+			}, { ui });
 		}
 
 		void Widget::destroy(Widget *w)

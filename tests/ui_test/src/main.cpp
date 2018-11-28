@@ -107,19 +107,28 @@ extern "C" __declspec(dllexport) int main()
 
 	layout1->add_child(w_menubar);
 
-	auto w_combo = ui::wCombo::create(app.ui_ins);
-	w_combo->align$ = ui::AlignLittleEnd;
-	ui::add_style_color(w_combo, 0, Vec3(0.f, 0.f, 0.7f));
+	{
+		auto file = SerializableNode::create_from_xml(L"d:/ui.xml");
 
-	auto w_comboitem1 = ui::wMenuItem::create(app.ui_ins, L"item 1");
-	auto w_comboitem2 = ui::wMenuItem::create(app.ui_ins, L"item 2");
-	auto w_comboitem3 = ui::wMenuItem::create(app.ui_ins, L"item 3");
+		auto w = ui::Widget::create_from_serialize(app.ui_ins, file->node(0));
 
-	w_combo->w_items()->add_child(w_comboitem1);
-	w_combo->w_items()->add_child(w_comboitem2);
-	w_combo->w_items()->add_child(w_comboitem3);
+		SerializableNode::destroy(file);
 
-	layout1->add_child(w_combo);
+		layout1->add_child(w);
+	}
+	//auto w_combo = ui::wCombo::create(app.ui_ins);
+	//w_combo->align$ = ui::AlignLittleEnd;
+	//ui::add_style_color(w_combo, 0, Vec3(0.f, 0.f, 0.7f));
+
+	//auto w_comboitem1 = ui::wMenuItem::create(app.ui_ins, L"item 1");
+	//auto w_comboitem2 = ui::wMenuItem::create(app.ui_ins, L"item 2");
+	//auto w_comboitem3 = ui::wMenuItem::create(app.ui_ins, L"item 3");
+
+	//w_combo->w_items()->add_child(w_comboitem1);
+	//w_combo->w_items()->add_child(w_comboitem2);
+	//w_combo->w_items()->add_child(w_comboitem3);
+
+	//layout1->add_child(w_combo);
 
 	auto w_edit = ui::wEdit::create(app.ui_ins);
 	w_edit->align$ = ui::AlignLittleEnd;
@@ -173,24 +182,14 @@ extern "C" __declspec(dllexport) int main()
 
 	app.t_fps->text_col() = Bvec4(255);
 
-	{
-		auto file = SerializableNode::create("ui");
-
-		auto n = SerializableNode::serialize(find_udt(cH("ui::Widget")), w_treenode1, 1);
-		file->add_node(n);
-
-		file->save_xml(L"d:/ui.xml");
-		SerializableNode::destroy(file);
-	}
-
 	//{
-	//	auto xml = XmlFile::create_from_file(L"d:/ui.xml");
+	//	auto file = SerializableNode::create("ui");
 
-	//	auto u = typeinfo::cpp::find_udt(cH("ui::Widget"));
+	//	auto n = w_combo->save();
+	//	file->add_node(n);
 
-	//	unserialize(xml->root_node->node(0), u, app.t_fps);
-
-	//	XmlFile::destroy(xml);
+	//	file->save_xml(L"d:/ui.xml");
+	//	SerializableNode::destroy(file);
 	//}
 
 	app.run();
