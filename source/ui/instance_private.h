@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include <flame/ui/instance.h>
-#include "widget_private.h"
-
 #include <flame/window.h>
+
+#include "widget_private.h"
+#include <flame/ui/instance.h>
 
 #include <vector>
 

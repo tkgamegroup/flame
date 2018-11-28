@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/ui/canvas.h>
-#include <flame/ui/style.h>
 #include <flame/ui/icon.h>
+#include <flame/ui/style.h>
+#include <flame/ui/canvas.h>
 #include "instance_private.h"
 
 #include <flame/file.h>
@@ -612,12 +612,14 @@ namespace flame
 				p.canvas->set_scissor(p.curr_scissor);
 			}
 
-			auto _v = w->visible$ && visible;
 			auto _off = w->pos$ * scl + off;
 			auto _scl = w->scale$ * scl;
 
 			for (auto i_c = 0; i_c < children.size; i_c++)
-				show(&p, (WidgetPrivate*)children[i_c], _v, _off, _scl);
+			{
+				auto c = (WidgetPrivate*)children[i_c];
+				show(&p, c, c->visible$ && visible, _off, _scl);
+			}
 
 			if (w->clip$)
 			{

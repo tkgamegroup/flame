@@ -282,6 +282,14 @@ namespace flame
 			return children.find(w);
 		}
 
+		inline void WidgetPrivate::set_to_foreground()
+		{
+			auto &list = layer == 0 ? parent->children_1$ : parent->children_2$;
+			for (auto i = list.find(this); i < list.size - 1; i++)
+				list[i] = list[i + 1];
+			list[list.size - 1] = this;
+		}
+
 		inline void WidgetPrivate::arrange()
 		{
 			switch (layout_type$)
@@ -641,7 +649,7 @@ namespace flame
 			}
 		}
 
-		inline void WidgetPrivate::add_draw_command(PF pf, const std::vector<CommonData> &capt)
+		inline void WidgetPrivate::add_extra_draw_command(PF pf, const std::vector<CommonData> &capt)
 		{
 			extra_draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
 		}
@@ -1079,6 +1087,11 @@ namespace flame
 			return ((WidgetPrivate*)this)->find_child((WidgetPrivate*)w);
 		}
 
+		void Widget::set_to_foreground()
+		{
+			((WidgetPrivate*)this)->set_to_foreground();
+		}
+
 		const auto scroll_spare_spacing = 20.f;
 
 		float Widget::get_content_size() const
@@ -1091,9 +1104,9 @@ namespace flame
 			((WidgetPrivate*)this)->arrange();
 		}
 
-		void Widget::add_draw_command(PF pf, const std::vector<CommonData> &capt)
+		void Widget::add_extra_draw_command(PF pf, const std::vector<CommonData> &capt)
 		{
-			((WidgetPrivate*)this)->add_draw_command(pf, capt);
+			((WidgetPrivate*)this)->add_extra_draw_command(pf, capt);
 		}
 
 		void Widget::add_style(PF pf, const std::vector<CommonData> &capt)
@@ -1280,7 +1293,7 @@ namespace flame
 			add_listener(cH("clicked"), Checkbox_clicked::v, { this });
 
 			draw_default$ = false;
-			add_draw_command(Checkbox_draw::v, { this });
+			add_extra_draw_command(Checkbox_draw::v, { this });
 		}
 
 		int &wCheckbox::checked()
@@ -1324,7 +1337,7 @@ namespace flame
 			sdf_scale() = -1.f;
 			text() = L"";
 
-			add_draw_command(Text_draw::v, { this });
+			add_extra_draw_command(Text_draw::v, { this });
 		}
 
 		Bvec4 &wText::text_col()
@@ -1863,7 +1876,7 @@ namespace flame
 
 			add_listener(cH("char"), Combo_char::v, { this });
 
-			add_draw_command(Combo_draw::v, { this });
+			add_extra_draw_command(Combo_draw::v, { this });
 		}
 
 		int &wEdit::cursor()
@@ -1942,7 +1955,7 @@ namespace flame
 			stretch() = 0;
 			border() = Vec4(0.f);
 
-			add_draw_command(Image_draw::v, { this });
+			add_extra_draw_command(Image_draw::v, { this });
 		}
 
 		int &wImage::id()
@@ -2033,7 +2046,7 @@ namespace flame
 			add_listener(cH("mouse move"), SizeDrag_mousemove::v, { this, target });
 
 			draw_default$ = false;
-			add_draw_command(SizeDrag_draw::v, { this });
+			add_extra_draw_command(SizeDrag_draw::v, { this });
 		}
 
 		Vec2 &wSizeDrag::min_size()
@@ -2074,14 +2087,12 @@ namespace flame
 			auto content_size = thiz->w_target()->get_content_size();
 			if (content_size > s)
 			{
+				thiz->w_btn()->set_visibility(true);
 				thiz->w_btn()->pos$.y = thiz->size$.y * (-thiz->w_target()->scroll_offset$ / content_size);
 				thiz->w_btn()->size$.y = thiz->size$.y * (s / content_size);
 			}
 			else
-			{
-				thiz->w_btn()->pos$.y = 0.f;
-				thiz->w_btn()->size$.y = thiz->size$.y;
-			}
+				thiz->w_btn()->set_visibility(false);
 		FLAME_REGISTER_FUNCTION_END(Scrollbar_style)
 
 		void wScrollbar::init(Widget *target)
@@ -2098,6 +2109,8 @@ namespace flame
 
 			w_btn() = wButton::create(instance());
 			w_btn()->size$ = size$;
+			w_btn()->background_round_radius$ = 4.f;
+			w_btn()->background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
 			add_style_color(w_btn(), 0, Vec3(0.f, 1.f, 1.f));
 			add_child(w_btn());
 
@@ -2106,6 +2119,7 @@ namespace flame
 			w_btn()->add_listener(cH("mouse move"), Scrollbar_mousemove::v, { this });
 
 			add_listener(cH("mouse scroll"), Scrollbar_mousescroll::v, { this });
+			target->add_listener(cH("mouse scroll"), Scrollbar_mousescroll::v, { this });
 
 			add_style(Scrollbar_style::v, {});
 		}
@@ -2176,13 +2190,6 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(List_mousescroll, FLAME_GID(20822), "i")
-			auto &scroll = d[0].i1();
-			auto &thiz = *(wList**)&d[1].p();
-
-			thiz->w_scrollbar()->scroll(scroll);
-		FLAME_REGISTER_FUNCTION_END(List_mousescroll)
-
 		FLAME_REGISTER_FUNCTION_BEG(List_leftmousedown, FLAME_GID(19124), "f2")
 			auto &thiz = *(wList**)&d[1].p();
 
@@ -2237,12 +2244,9 @@ namespace flame
 			layout_type$ = LayoutVertical;
 			clip$ = true;
 
-			add_listener(cH("mouse scroll"), List_mousescroll::v, { this });
-
 			add_listener(cH("left mouse down"), List_leftmousedown::v, { this });
 
 			w_scrollbar() = wScrollbar::create(instance(), this);
-			w_scrollbar()->background_col$ = Bvec4(255, 255, 255, 40);
 
 			add_child(w_scrollbar(), 1);
 
@@ -2348,163 +2352,141 @@ namespace flame
 			return w;
 		}
 
-		//void wDialog::init(const wchar_t *title, float sdf_scale, bool resize)
-		//{
-		//	((wLayout*)this)->init();
+		FLAME_REGISTER_FUNCTION_BEG(Dialog_leftmousedown, FLAME_GID(9227), "")
+			auto &thiz = *(wDialog**)&d[1].p();
 
-		//	resize_data_storage(3);
+			thiz->set_to_foreground();
+		FLAME_REGISTER_FUNCTION_END(Dialog_leftmousedown)
 
-		//	auto radius = 8.f;
-		//	if (sdf_scale > 0.f)
-		//		radius *= sdf_scale;
+		FLAME_REGISTER_FUNCTION_BEG(Dialog_mousemove, FLAME_GID(22841), "")
+			auto &disp = d[0].f2();
+			auto &thiz = *(wDialog**)&d[1].p();
 
-		//	inner_padding = Vec4(radius);
-		//	background_col = Colorf(0.5f, 0.5f, 0.5f, 0.9f);
-		//	event_attitude = EventAccept;
-		//	if (resize)
-		//	{
-		//		size_policy_hori = SizeFitLayout;
-		//		size_policy_vert = SizeFitLayout;
-		//	}
-		//	layout_type = LayoutVertical;
-		//	item_padding = radius;
+			if (thiz == thiz->instance()->dragging_widget())
+				thiz->pos$ += disp / thiz->parent()->scale$;
+		FLAME_REGISTER_FUNCTION_END(Dialog_mousemove)
 
-		//	add_listener(ListenerMouseMove, [this](const Vec2 &disp) {
-		//		if (this == instance()->dragging_widget())
-		//			pos += disp / parent()->scale;
-		//	});
+		void wDialog::init(bool resize)
+		{
+			((wLayout*)this)->init();
 
-		//	if (title[0])
-		//	{
-		//		w_title() = wText::create(instance());
-		//		w_title()->inner_padding = Vec4(0.f, 0.f, 0.f, radius * 0.5f);
-		//		if (sdf_scale > 0.f)
-		//			w_title()->sdf_scale() = sdf_scale;
-		//		w_title()->background_offset = Vec4(radius, radius, radius, 0.f);
-		//		w_title()->background_round_radius = radius;
-		//		w_title()->background_round_flags = Rect::SideNW | Rect::SideNE;
-		//		w_title()->set_text_and_size(title);
-		//		w_title()->size_policy_hori = SizeFitLayout;
-		//		w_title()->align = AlignLittleEnd;
-		//		add_child(w_title());
+			class_hash$ = cH("dialog");
+			add_data_storages("p p");
 
-		//		background_offset[1] = -w_title()->size.y - inner_padding[2];
-		//	}
-		//	else
-		//	{
-		//		background_offset[1] = 0.f;
-		//		background_round_radius = radius;
-		//		background_round_flags = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
-		//		background_shaow_thickness = 8.f;
+			auto radius = 8.f;
 
-		//		w_title() = nullptr;
-		//	}
+			inner_padding$ = Vec4(radius);
+			background_col$ = Colorf(0.5f, 0.5f, 0.5f, 0.9f);
+			event_attitude$ = EventAccept;
+			layout_type$ = LayoutVertical;
+			item_padding$ = radius;
+			if (resize)
+			{
+				size_policy_hori$ = SizeFitLayout;
+				size_policy_vert$ = SizeFitLayout;
+				clip$ = true;
+			}
 
-		//	w_content() = wLayout::create(instance());
-		//	w_content()->align = AlignLittleEnd;
-		//	if (resize)
-		//	{
-		//		w_content()->size_policy_hori = SizeFitLayout;
-		//		w_content()->size_policy_vert = SizeFitLayout;
-		//	}
-		//	add_child(w_content());
+			add_listener(cH("left mouse down"), Dialog_leftmousedown::v, { this });
+			add_listener(cH("mouse move"), Dialog_mousemove::v, { this });
 
-		//	if (resize)
-		//	{
-		//		w_sizedrag() = wSizeDrag::create(instance(), this);
-		//		add_child(w_sizedrag(), 1);
-		//	}
-		//	else
-		//		w_sizedrag() = nullptr;
-		//}
+			background_offset$[1] = 0.f;
+			background_round_radius$ = radius;
+			background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
+			background_shaow_thickness$ = 8.f;
 
-		//wTextPtr &wDialog::w_title()
-		//{
-		//	return *((wTextPtr*)&data_storage(0).p);
-		//}
+			if (resize)
+			{
+				w_scrollbar() = wScrollbar::create(instance(), this);
+				add_child(w_scrollbar(), 1);
 
-		//wLayoutPtr &wDialog::w_content()
-		//{
-		//	return *((wLayoutPtr*)&data_storage(1).p);
-		//}
+				w_sizedrag() = wSizeDrag::create(instance(), this);
+				w_sizedrag()->min_size() = Vec2(300.f, 400.f);
+				set_size(w_sizedrag()->min_size());
+				add_child(w_sizedrag(), 1);
+			}
+			else
+				w_sizedrag() = nullptr;
+		}
 
-		//wSizeDragPtr &wDialog::w_sizedrag()
-		//{
-		//	return *((wSizeDragPtr*)&data_storage(2).p);
-		//}
+		wScrollbarPtr &wDialog::w_scrollbar()
+		{
+			return *((wScrollbarPtr*)&data_storages$[0].p());
+		}
 
-		//wDialog *wDialog::create(Instance *ui, const wchar_t *title, float sdf_scale, bool resize)
-		//{
-		//	auto w = (wDialog*)Widget::create(ui);
-		//	w->init(title, sdf_scale, resize);
+		wSizeDragPtr &wDialog::w_sizedrag()
+		{
+			return *((wSizeDragPtr*)&data_storages$[1].p());
+		}
 
-		//	return w;
-		//}
+		wDialog *wDialog::create(Instance *ui, bool resize)
+		{
+			auto w = (wDialog*)Widget::create(ui);
+			w->init(resize);
 
-		//void wMessageDialog::init(const wchar_t *title, float sdf_scale, const wchar_t *text)
-		//{
-		//	((wDialog*)this)->init(title, sdf_scale, false);
+			return w;
+		}
 
-		//	resize_data_storage(5);
+		FLAME_REGISTER_FUNCTION_BEG(MessageDialog_ok, FLAME_GID(8291), "")
+			auto &thiz = *(wDialog**)&d[0].p();
 
-		//	event_attitude = EventBlackHole;
-		//	want_key_focus = true;
+			thiz->remove_from_parent(true);
+		FLAME_REGISTER_FUNCTION_END(MessageDialog_ok)
 
-		//	if (w_title())
-		//		w_title()->background_col = Bvec4(200, 40, 20, 255);
+		FLAME_REGISTER_FUNCTION_BEG(Dialog_modual, FLAME_GID(6243), "")
+			auto &thiz = *(wDialog**)&d[0].p();
 
-		//	w_content()->layout_type = LayoutVertical;
-		//	w_content()->item_padding = 8.f;
-		//	if (sdf_scale > 0.f)
-		//		w_content()->item_padding *= sdf_scale;
+			thiz->instance()->set_focus_widget(thiz);
+			thiz->instance()->set_dragging_widget(nullptr);
+		FLAME_REGISTER_FUNCTION_END(Dialog_modual)
 
-		//	if (text[0])
-		//	{
-		//		w_text() = wText::create(instance());
-		//		w_text()->align = AlignLittleEnd;
-		//		w_text()->sdf_scale() = sdf_scale;
-		//		w_text()->set_text_and_size(text);
-		//		w_content()->add_child(w_text());
-		//	}
-		//	else
-		//		w_text() = nullptr;
+		void wMessageDialog::init(const wchar_t *text)
+		{
+			((wDialog*)this)->init(false);
 
-		//	w_ok() = wButton::create(instance());
-		//	w_ok()->set_classic(L"OK", sdf_scale);
-		//	w_ok()->align = AlignMiddle;
-		//	w_content()->add_child(w_ok());
+			add_data_storages("p p");
 
-		//	w_ok()->add_listener(ListenerClicked, [this]() {
-		//		remove_from_parent(true);
-		//	});
+			event_attitude$ = EventBlackHole;
+			want_key_focus$ = true;
 
-		//	pos = (Vec2(instance()->root()->size) - size) * 0.5f;
+			layout_type$ = LayoutVertical;
+			item_padding$ = 8.f;
 
-		//	instance()->root()->add_child(this, 0, -1, true, [](CommonData *d) {
-		//		auto thiz = (Widget*)d[0].p;
+			w_text() = wText::create(instance());
+			w_text()->align$ = AlignLittleEnd;
+			w_text()->text() = text;
+			w_text()->set_size_auto();
+			add_child(w_text());
 
-		//		thiz->instance()->set_focus_widget(thiz);
-		//		thiz->instance()->set_dragging_widget(nullptr);
-		//	}, "p", this);
-		//}
+			w_ok() = wButton::create(instance());
+			w_ok()->set_classic(L"Ok");
+			w_ok()->align$ = AlignMiddle;
+			add_child(w_ok());
 
-		//wTextPtr &wMessageDialog::w_text()
-		//{
-		//	return *((wTextPtr*)&data_storage(3).p);
-		//}
+			w_ok()->add_listener(cH("clicked"), MessageDialog_ok::v, { this });
 
-		//wButtonPtr &wMessageDialog::w_ok()
-		//{
-		//	return *((wButtonPtr*)&data_storage(4).p);
-		//}
+			pos$ = (Vec2(instance()->root()->size$) - size$) * 0.5f;
 
-		//wMessageDialog *wMessageDialog::create(Instance *ui, const wchar_t *title, float sdf_scale, const wchar_t *text)
-		//{
-		//	auto w = (wMessageDialog*)Widget::create(ui);
-		//	w->init(title, sdf_scale, text);
+			instance()->root()->add_child(this, 0, -1, true, Dialog_modual::v, { this });
+		}
 
-		//	return w;
-		//}
+		wTextPtr &wMessageDialog::w_text()
+		{
+			return *(wTextPtr*)&data_storages$[2].p();
+		}
+
+		wButtonPtr &wMessageDialog::w_ok()
+		{
+			return *(wButtonPtr*)&data_storages$[3].p();
+		}
+
+		wMessageDialog *wMessageDialog::create(Instance *ui, const wchar_t *text)
+		{
+			auto w = (wMessageDialog*)Widget::create(ui);
+			w->init(text);
+
+			return w;
+		}
 
 		//void wYesNoDialog::init(const wchar_t *title, float sdf_scale, const wchar_t *text, const wchar_t *yes_text, const wchar_t *no_text, const std::function<void(bool)> &callback)
 		//{

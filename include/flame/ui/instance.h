@@ -22,10 +22,9 @@
 
 #pragma once
 
-#include <flame/ui/ui.h>
-
 #include <flame/window.h>
 #include <flame/graphics/graphics.h>
+#include <flame/ui/ui.h>
 
 namespace flame
 {

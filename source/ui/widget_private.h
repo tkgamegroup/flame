@@ -69,10 +69,11 @@ namespace flame
 			void remove_from_parent(bool delay = false);
 			void take_from_parent(bool delay = false);
 			int find_child(WidgetPrivate *w);
+			void set_to_foreground();
 
 			void arrange();
 
-			void add_draw_command(PF pf, const std::vector<CommonData> &capt);
+			void add_extra_draw_command(PF pf, const std::vector<CommonData> &capt);
 
 			void add_style(PF pf, const std::vector<CommonData> &capt);
 

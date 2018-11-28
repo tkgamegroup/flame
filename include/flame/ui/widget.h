@@ -187,6 +187,7 @@ namespace flame
 			// "changed":          ()
 			// "add child":        (Widget *w)
 			// "remove child":     (Widget *w)
+
 			Array<Function*> mouseenter_listeners$;
 			Array<Function*> mouseleave_listeners$;
 			Array<Function*> lmousedown_listeners$;
@@ -277,12 +278,13 @@ namespace flame
 			FLAME_UI_EXPORTS void remove_from_parent(bool delay = false);
 			FLAME_UI_EXPORTS void take_from_parent(bool delay = false);
 			FLAME_UI_EXPORTS int find_child(Widget *w);
+			FLAME_UI_EXPORTS void set_to_foreground();
 
 			FLAME_UI_EXPORTS float get_content_size() const;
 
 			FLAME_UI_EXPORTS void arrange();
 
-			FLAME_UI_EXPORTS void add_draw_command(PF pf, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void add_extra_draw_command(PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void add_style(PF pf, const std::vector<CommonData> &capt);
 
@@ -519,37 +521,36 @@ namespace flame
 
 		typedef wTreeNode* wTreeNodePtr;
 
-		//struct wDialog : wLayout
-		//{
-		//	FLAME_UI_EXPORTS void init(const wchar_t *title, float sdf_scale = -1.f, bool resize = false);
+		struct wDialog : wLayout
+		{
+			FLAME_UI_EXPORTS void init(bool resize = false);
 
-		//	FLAME_UI_EXPORTS wTextPtr &w_title();
-		//	FLAME_UI_EXPORTS wLayoutPtr &w_content();
-		//	FLAME_UI_EXPORTS wSizeDragPtr &w_sizedrag();
+			FLAME_UI_EXPORTS wScrollbarPtr &w_scrollbar();
+			FLAME_UI_EXPORTS wSizeDragPtr &w_sizedrag();
 
-		//	FLAME_UI_EXPORTS static wDialog *create(Instance *ui, const wchar_t *title, float sdf_scale = -1.f, bool resize = false);
-		//};
+			FLAME_UI_EXPORTS static wDialog *create(Instance *ui, bool resize = false);
+		};
 
-		//struct wMessageDialog : wDialog 
-		//{
-		//	FLAME_UI_EXPORTS void init(const wchar_t *title, float sdf_scale, const wchar_t *text);
+		struct wMessageDialog : wDialog 
+		{
+			FLAME_UI_EXPORTS void init(const wchar_t *text);
 
-		//	FLAME_UI_EXPORTS wTextPtr &w_text();
-		//	FLAME_UI_EXPORTS wButtonPtr &w_ok();
+			FLAME_UI_EXPORTS wTextPtr &w_text();
+			FLAME_UI_EXPORTS wButtonPtr &w_ok();
 
-		//	FLAME_UI_EXPORTS static wMessageDialog *create(Instance *ui, const wchar_t *title, float sdf_scale, const wchar_t *text);
-		//};
+			FLAME_UI_EXPORTS static wMessageDialog *create(Instance *ui, const wchar_t *text);
+		};
 
 		//struct wYesNoDialog : wDialog
 		//{
-		//	FLAME_UI_EXPORTS void init(const wchar_t *title, float sdf_scale, const wchar_t *text, const wchar_t *yes_text, const wchar_t *no_text, const std::function<void(bool)> &callback);
+		//	FLAME_UI_EXPORTS void init(const wchar_t *text, const wchar_t *prompt, cconst std::function<void(bool)> &callback);
 
 		//	FLAME_UI_EXPORTS wTextPtr &w_text();
 		//	FLAME_UI_EXPORTS wLayoutPtr &w_buttons();
 		//	FLAME_UI_EXPORTS wButtonPtr &w_yes();
 		//	FLAME_UI_EXPORTS wButtonPtr &w_no();
 
-		//	FLAME_UI_EXPORTS static wYesNoDialog *create(Instance *ui, const wchar_t *title, float sdf_scale, const wchar_t *text, const wchar_t *yes_text, const wchar_t *no_text, const std::function<void(bool)> &callback);
+		//	FLAME_UI_EXPORTS static wYesNoDialog *create(Instance *ui, const wchar_t *text, const wchar_t *prompt, const std::function<void(bool)> &callback);
 		//};
 
 		//struct wInputDialog : wDialog
