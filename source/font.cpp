@@ -2378,15 +2378,27 @@ namespace flame
 			return glyphs[idx];
 		}
 
-		inline int get_text_width(const wchar_t *text)
+		inline int get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
 		{
 			auto w = 0;
-			auto s = text;
-			while (*s != 0)
+			auto s = text_beg;
+			if (text_end == nullptr)
 			{
-				auto g = get_glyph(*s);
-				w += g.advance;
-				s++;
+				while (*s)
+				{
+					auto g = get_glyph(*s);
+					w += g.advance;
+					s++;
+				}
+			}
+			else
+			{
+				while (s != text_end)
+				{
+					auto g = get_glyph(*s);
+					w += g.advance;
+					s++;
+				}
 			}
 			return w;
 		}
@@ -2442,9 +2454,9 @@ namespace flame
 		return ((FontAtlasPrivate*)this)->get_glyph(unicode);
 	}
 
-	int FontAtlas::get_text_width(const wchar_t *text)
+	int FontAtlas::get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
 	{
-		return ((FontAtlasPrivate*)this)->get_text_width(text);
+		return ((FontAtlasPrivate*)this)->get_text_width(text_beg, text_end);
 	}
 
 	Bitmap *FontAtlas::get_stroke_image() const

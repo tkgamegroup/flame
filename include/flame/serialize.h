@@ -396,94 +396,185 @@ namespace flame
 		return buf;
 	}
 
-	inline float stof1(const std::string &s)
+	inline float stof1(const char *s)
 	{
 		float ret;
-		sscanf(s.c_str(), "%f", &ret);
+		sscanf(s, "%f", &ret);
 		return ret;
 	}
 
-	inline Vec2 stof2(const std::string &s)
+	inline Vec2 stof2(const char *s)
 	{
 		Vec2 ret;
-		sscanf(s.c_str(), "%f;%f", &ret.x, &ret.y);
+		sscanf(s, "%f;%f", &ret.x, &ret.y);
 		return ret;
 	}
 
-	inline Vec3 stof3(const std::string &s)
+	inline Vec3 stof3(const char *s)
 	{
 		Vec3 ret;
-		sscanf(s.c_str(), "%f;%f;%f", &ret.x, &ret.y, &ret.z);
+		sscanf(s, "%f;%f;%f", &ret.x, &ret.y, &ret.z);
 		return ret;
 	}
 
-	inline Vec4 stof4(const std::string &s)
+	inline Vec4 stof4(const char *s)
 	{
 		Vec4 ret;
-		sscanf(s.c_str(), "%f;%f;%f;%f", &ret.x, &ret.y, &ret.z, &ret.w);
+		sscanf(s, "%f;%f;%f;%f", &ret.x, &ret.y, &ret.z, &ret.w);
 		return ret;
 	}
 
-	inline int stou1(const std::string &s)
+	inline int stou1(const char *s)
 	{
 		int ret;
-		sscanf(s.c_str(), "%u", &ret);
+		sscanf(s, "%u", &ret);
 		return ret;
 	}
 
-	inline int stoi1(const std::string &s)
+	inline int stoi1(const char *s)
 	{
 		int ret;
-		sscanf(s.c_str(), "%d", &ret);
+		sscanf(s, "%d", &ret);
 		return ret;
 	}
 
-	inline Ivec2 stoi2(const std::string &s)
+	inline Ivec2 stoi2(const char *s)
 	{
 		Ivec2 ret;
-		sscanf(s.c_str(), "%d;%d", &ret.x, &ret.y);
+		sscanf(s, "%d;%d", &ret.x, &ret.y);
 		return ret;
 	}
 
-	inline Ivec3 stoi3(const std::string &s)
+	inline Ivec3 stoi3(const char *s)
 	{
 		Ivec3 ret;
-		sscanf(s.c_str(), "%d;%d;%d", &ret.x, &ret.y, &ret.z);
+		sscanf(s, "%d;%d;%d", &ret.x, &ret.y, &ret.z);
 		return ret;
 	}
 
-	inline Ivec4 stoi4(const std::string &s)
+	inline Ivec4 stoi4(const char *s)
 	{
 		Ivec4 ret;
-		sscanf(s.c_str(), "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
+		sscanf(s, "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
 		return ret;
 	}
 
-	inline uchar stob1(const std::string &s)
+	inline uchar stob1(const char *s)
 	{
 		int ret;
-		sscanf(s.c_str(), "%d", &ret);
+		sscanf(s, "%d", &ret);
 		return (uchar)ret;
 	}
 
-	inline Bvec2 stob2(const std::string &s)
+	inline Bvec2 stob2(const char *s)
 	{
 		Ivec2 ret;
-		sscanf(s.c_str(), "%d;%d;", &ret.x, &ret.y);
+		sscanf(s, "%d;%d;", &ret.x, &ret.y);
 		return Bvec2(ret.x, ret.y);
 	}
 
-	inline Bvec3 stob3(const std::string &s)
+	inline Bvec3 stob3(const char *s)
 	{
 		Ivec3 ret;
-		sscanf(s.c_str(), "%d;%d;%d", &ret.x, &ret.y, &ret.z);
+		sscanf(s, "%d;%d;%d", &ret.x, &ret.y, &ret.z);
 		return Bvec3(ret.x, ret.y, ret.z);
 	}
 
-	inline Bvec4 stob4(const std::string &s)
+	inline Bvec4 stob4(const char *s)
 	{
 		Ivec4 ret;
-		sscanf(s.c_str(), "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
+		sscanf(s, "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
+		return Bvec4(ret.x, ret.y, ret.z, ret.w);
+	}
+
+	inline float stof1(const wchar_t *s)
+	{
+		float ret;
+		swscanf(s, L"%f", &ret);
+		return ret;
+	}
+
+	inline Vec2 stof2(const wchar_t *s)
+	{
+		Vec2 ret;
+		swscanf(s, L"%f;%f", &ret.x, &ret.y);
+		return ret;
+	}
+
+	inline Vec3 stof3(const wchar_t *s)
+	{
+		Vec3 ret;
+		swscanf(s, L"%f;%f;%f", &ret.x, &ret.y, &ret.z);
+		return ret;
+	}
+
+	inline Vec4 stof4(const wchar_t *s)
+	{
+		Vec4 ret;
+		swscanf(s, L"%f;%f;%f;%f", &ret.x, &ret.y, &ret.z, &ret.w);
+		return ret;
+	}
+
+	inline uint stou1(const wchar_t *s)
+	{
+		int ret;
+		swscanf(s, L"%u", &ret);
+		return ret;
+	}
+
+	inline int stoi1(const wchar_t *s)
+	{
+		int ret;
+		swscanf(s, L"%d", &ret);
+		return ret;
+	}
+
+	inline Ivec2 stoi2(const wchar_t *s)
+	{
+		Ivec2 ret;
+		swscanf(s, L"%d;%d", &ret.x, &ret.y);
+		return ret;
+	}
+
+	inline Ivec3 stoi3(const wchar_t *s)
+	{
+		Ivec3 ret;
+		swscanf(s, L"%d;%d;%d", &ret.x, &ret.y, &ret.z);
+		return ret;
+	}
+
+	inline Ivec4 stoi4(const wchar_t *s)
+	{
+		Ivec4 ret;
+		swscanf(s, L"%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
+		return ret;
+	}
+
+	inline uchar stob1(const wchar_t *s)
+	{
+		int ret;
+		swscanf(s, L"%d", &ret);
+		return (uchar)ret;
+	}
+
+	inline Bvec2 stob2(const wchar_t *s)
+	{
+		Ivec2 ret;
+		swscanf(s, L"%d;%d;", &ret.x, &ret.y);
+		return Bvec2(ret.x, ret.y);
+	}
+
+	inline Bvec3 stob3(const wchar_t *s)
+	{
+		Ivec3 ret;
+		swscanf(s, L"%d;%d;%d", &ret.x, &ret.y, &ret.z);
+		return Bvec3(ret.x, ret.y, ret.z);
+	}
+
+	inline Bvec4 stob4(const wchar_t *s)
+	{
+		Ivec4 ret;
+		swscanf(s, L"%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
 		return Bvec4(ret.x, ret.y, ret.z, ret.w);
 	}
 

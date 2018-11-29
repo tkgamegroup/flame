@@ -39,6 +39,8 @@ namespace flame
 	typedef unsigned long		ulong;
 	typedef unsigned long long  ulonglong;
 
+	typedef void* voidptr;
+
 	struct Dtor
 	{
 		virtual ~Dtor()

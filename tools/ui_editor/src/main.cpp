@@ -41,6 +41,8 @@ struct wHierachy : ui::wDialog
 	void init()
 	{
 		pos$ = Vec2(10.f);
+		set_size(Vec2(100.f, 200.f));
+		layout_type$ = ui::LayoutVertical;
 
 		add_data_storages("p p p p p p");
 
@@ -134,6 +136,7 @@ struct wSandBox : ui::wDialog
 	void init()
 	{
 		pos$ = Vec2(500.f, 10.f);
+		set_size(Vec2(300.f, 300.f));
 		inner_padding$ = Vec4(8.f);
 		size_policy_hori$ = ui::SizeFitLayout;
 		size_policy_vert$ = ui::SizeFitLayout;
@@ -165,6 +168,8 @@ struct wInspector : ui::wDialog
 	void init()
 	{
 		pos$ = Vec2(10.f, 500.f);
+		set_size(Vec2(600.f, 400.f));
+		layout_type$ = ui::LayoutVertical;
 	}
 
 	static wInspector *create(ui::Instance *ui)
@@ -179,59 +184,10 @@ wInspector *w_inspector;
 
 static UDT *widget_info;
 
-void refresh_inspector()
+ui::wTreeNode *create_treenode(const wchar_t *name)
 {
-	w_inspector->clear_children(0, 0, -1, true);
+	auto n = ui::wTreeNode::create(app.ui_ins, name, Bvec4(0, 0, 0, 255), Bvec4(255, 255, 255, 255));
 
-	if (w_sel && w_sel->name$ == "w")
-	{
-		auto p = w_sel->data_storages$[3].p();
-
-		for (auto i = 0; i < widget_info->item_count(); i++)
-		{
-			auto t = ui::wText::create(app.ui_ins);
-			t->align$ = ui::AlignLittleEnd;
-			t->event_attitude$ = ui::EventAccept;
-			t->text_col() = Bvec4(0, 0, 0, 255);
-
-			auto item = widget_info->item(i);
-			auto text = s2w(item->name()) + L": ";
-			switch (item->tag())
-			{
-			case VariableTagEnumSingle: case VariableTagEnumMulti:case VariableTagVariable:
-				text += s2w(item->serialize_value(p, true, 1).v);
-				break;
-			case VariableTagArrayOfVariable: case VariableTagArrayOfPointer:
-				text += to_stdwstring(((Array<int>*)((char*)p + item->offset()))->size);
-				break;
-			}
-
-			t->text() = text;
-			t->set_size_auto();
-			w_inspector->add_child(t, 0, -1, true);
-
-			ui::add_style_textcolor(t, 0, Bvec4(0, 0, 0, 255), Bvec4(255, 255, 255, 255));
-
-			t->add_listener(cH("clicked"), [](CommonData *d) {
-				ui::wMessageDialog::create(app.ui_ins, L"Hello");
-			}, {});
-		}
-	}
-}
-
-void set_widget_tree_node(ui::wTreeNode *n, ui::Widget *p)
-{
-	n->name$ = "w";
-	n->add_data_storages("p");
-	n->data_storages$[3].p() = p;
-
-	n->w_btn()->add_listener(cH("clicked"), [](CommonData *d) {
-		auto &n = *(ui::wTreeNode**)&d[0].p();
-
-		w_sel = n;
-		refresh_inspector();
-	}, { n });
-	
 	n->w_btn()->add_style([](CommonData *d) {
 		auto &w = *(ui::wText**)&d[0].p();
 
@@ -240,25 +196,125 @@ void set_widget_tree_node(ui::wTreeNode *n, ui::Widget *p)
 		else
 			w->background_col$ = Bvec4(0);
 	}, {});
+
+	return n;
+}
+
+void refresh_inspector()
+{
+	w_inspector->clear_children(0, 0, -1, true);
+
+	if (w_sel && w_sel->name$ == "w")
+	{
+		auto p = w_sel->data_storages$[3].p();
+
+		std::vector<ui::Widget*> widgets_need_align;
+		auto max_width = 0.f;
+		const auto bullet_width = 16.f;
+
+		for (auto i = 0; i < widget_info->item_count(); i++)
+		{
+			auto item = widget_info->item(i);
+
+			auto w_item = ui::wLayout::create(app.ui_ins);
+			w_item->inner_padding$.y = 20.f;
+			w_item->size_policy_hori$ = ui::SizeFitLayout;
+			w_item->align$ = ui::AlignLittleEnd;
+			w_item->layout_type$ = ui::LayoutHorizontal;
+			w_item->item_padding$ = 8.f;
+
+			auto push_name_text = [&]() {
+				auto t_name = ui::wText::create(app.ui_ins);
+				t_name->inner_padding$.x = bullet_width;
+				t_name->align$ = ui::AlignLittleEnd;
+				t_name->text_col() = Bvec4(0, 0, 0, 255);
+				t_name->text() = s2w(item->name());
+				t_name->set_size_auto();
+				max_width = max(t_name->size$.x, max_width);
+				w_item->add_child(t_name, 0, -1, true);
+
+				widgets_need_align.push_back(t_name);
+
+				return t_name;
+			};
+			auto push_name_node = [&]() {
+				auto n_name = create_treenode(s2w(item->name()).c_str());
+				n_name->align$ = ui::AlignLittleEnd;
+				max_width = max(n_name->size$.x, max_width);
+				w_item->add_child(n_name, 0, -1, true);
+
+				widgets_need_align.push_back(n_name);
+
+				return n_name;
+			};
+
+			switch (item->tag())
+			{
+			case VariableTagEnumSingle: case VariableTagEnumMulti: case VariableTagVariable:
+				push_name_text();
+				ui::Widget::create_from_typeinfo(app.ui_ins, item, p, w_item);
+				break;
+			case VariableTagArrayOfVariable:
+			{
+				auto n = push_name_node();
+			}
+				break;
+			case VariableTagArrayOfPointer:
+			{
+				auto n = push_name_node();
+
+				switch (item->type_hash())
+				{
+				case cH("Function"):
+					break;
+				}
+			}
+				break;
+			}
+
+			w_inspector->add_child(w_item, 0, -1, true);
+		}
+
+		for (auto w : widgets_need_align)
+			w->set_width(max_width);
+	}
+}
+
+ui::wTreeNode *create_hierachy_treenode(const wchar_t *name)
+{
+	auto n = create_treenode(name);
+
+	n->w_btn()->add_listener(cH("clicked"), [](CommonData *d) {
+		auto &n = *(ui::wTreeNode**)&d[0].p();
+
+		w_sel = n;
+		refresh_inspector();
+	}, { n });
+
+	return n;
+}
+
+void set_widget_tree_node(ui::wTreeNode *n, ui::Widget *p)
+{
+	n->name$ = "w";
+	n->add_data_storages("p");
+	n->data_storages$[3].p() = p;
 }
 
 void refresh_hierachy_node(ui::wTreeNode *dst, ui::Widget *src)
 {
 	for (auto i = 0; i < 2; i++)
 	{
-		auto label = ui::wText::create(app.ui_ins);
-		label->align$ = ui::AlignLittleEnd;
-		label->text() = (L"layer " + to_stdwstring(i)).c_str();
-		label->set_size_auto();
-		dst->w_items()->add_child(label, 0, -1, true);
+		auto n_layer = create_hierachy_treenode((L"layer " + to_stdwstring(i)).c_str());
+		dst->w_items()->add_child(n_layer, 0, -1, true);
 
 		auto &children = i == 0 ? src->children_1$ : src->children_2$;
 		for (auto j = 0; j < children.size; j++)
 		{
 			auto c = children[j];
-			auto n = ui::wTreeNode::create(app.ui_ins, s2w(c->name$.v).c_str(), Bvec4(0, 0, 0, 255), Bvec4(255, 255, 255, 255));
+			auto n = create_hierachy_treenode(s2w(c->name$.v).c_str());
 			set_widget_tree_node(n, c);
-			dst->w_items()->add_child(n, 0, -1, true);
+			n_layer->w_items()->add_child(n, 0, -1, true);
 			refresh_hierachy_node(n, c);
 		}
 	}
@@ -273,7 +329,7 @@ void refresh_hierachy()
 
 extern "C" __declspec(dllexport) int main()
 {
-	app.create("Ui Editor", Ivec2(1280, 720), WindowFrame | WindowResizable);
+	app.create("UI Editor", Ivec2(1280, 720), WindowFrame | WindowResizable);
 
 	app.canvas->clear_values->set(0, Bvec4(200, 200, 200, 0));
 
@@ -281,7 +337,7 @@ extern "C" __declspec(dllexport) int main()
 	ui_ins_sandbox->root()->background_col$ = Bvec4(0, 0, 0, 255);
 	ui_ins_sandbox->on_resize(Ivec2(200));
 
-	w_root = ui::wTreeNode::create(app.ui_ins, L"root", Bvec4(0, 0, 0, 255), Bvec4(255, 255, 255, 255));
+	w_root = create_hierachy_treenode(L"root");
 	set_widget_tree_node(w_root, ui_ins_sandbox->root());
 
 	w_hierachy = wHierachy::create(app.ui_ins);

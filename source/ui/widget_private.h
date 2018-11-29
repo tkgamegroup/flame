@@ -40,15 +40,15 @@ namespace flame
 			WidgetPrivate *parent;
 			int layer;
 
-			std::vector<std::pair<uint, Function*>> delay_listener_remove;
-
-			std::vector<std::tuple<WidgetPrivate*, int, int, Function*>> delay_adds;
+			std::vector<std::tuple<WidgetPrivate*, int, int, bool>> delay_adds;
 			std::vector<std::pair<int, int>> delay_removes_by_idx;
 			std::vector<WidgetPrivate*> delay_removes_by_ptr;
 			std::vector<std::pair<int, int>> delay_takes_by_idx;
 			std::vector<WidgetPrivate*> delay_takes_by_ptr;
 			std::vector<std::tuple<int, int, int>> delay_takes;
 			std::vector<std::tuple<int, int, int>> delay_clears;
+
+			std::vector<std::pair<uint, Function*>> delay_listener_remove;
 
 			WidgetPrivate(Instance *ui);
 			~WidgetPrivate();
@@ -59,7 +59,7 @@ namespace flame
 
 			void set_visibility(bool v);
 
-			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
+			void add_child(WidgetPrivate *w, int layer = 0, int pos = -1, bool delay = false, bool modual = false);
 			void remove_child(int layer, int idx, bool delay = false);
 			void remove_child(WidgetPrivate *w, bool delay = false);
 			void take_child(int layer, int idx, bool delay = false);
@@ -82,6 +82,8 @@ namespace flame
 			void remove_animations();
 
 			void on_draw(Canvas *c, const Vec2 &off, float scl);
+			void on_gainfocus(int type);
+			void on_lostfocus(int type);
 			void on_mouseenter();
 			void on_mouseleave();
 			void on_lmousedown(const Vec2 &mpos);

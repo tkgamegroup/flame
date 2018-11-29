@@ -107,6 +107,7 @@ namespace flame
 			WidgetPrivate *key_focus_widget_;
 			WidgetPrivate *dragging_widget_;
 			WidgetPrivate *popup_widget_;
+			bool popup_widget_modual_;
 			WidgetPrivate *potential_doubleclick_widget_;
 			float doubleclick_timer_;
 			std::vector<int> keydown_inputs_;
@@ -133,7 +134,7 @@ namespace flame
 			void set_key_focus_widget(WidgetPrivate *w);
 			void set_focus_widget(WidgetPrivate *w);
 			void set_dragging_widget(WidgetPrivate *w);
-			void set_popup_widget(WidgetPrivate *w);
+			void set_popup_widget(WidgetPrivate *w, bool modual = false);
 			void close_popup();
 
 			void begin(float elp_time);

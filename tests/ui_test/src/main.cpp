@@ -110,7 +110,7 @@ extern "C" __declspec(dllexport) int main()
 	{
 		auto file = SerializableNode::create_from_xml(L"d:/ui.xml");
 
-		auto w = ui::Widget::create_from_serialize(app.ui_ins, file->node(0));
+		auto w = ui::Widget::create_from_file(app.ui_ins, file->node(0));
 
 		SerializableNode::destroy(file);
 

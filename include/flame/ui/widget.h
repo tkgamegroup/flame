@@ -32,6 +32,7 @@
 
 namespace flame
 {
+	struct VaribleInfo;
 	struct SerializableNode;
 
 	namespace ui
@@ -172,6 +173,8 @@ namespace flame
 			// the first two of captures must be "f i" (duration looping)
 			Array<Function*> animations$;
 
+			// "gain focus":       (int focus_or_key_focus (0 or 1))
+			// "lost focus":       (int focus_or_key_focus (0 or 1))
 			// "mouse enter":      ()
 			// "mouse leave":      ()
 			// "left mouse down":  (Vec2 pos)
@@ -182,12 +185,13 @@ namespace flame
 			// "double clicked":   ()
 			// "key down":         (int key)
 			// "char":             (int ch)
-			// "char filter":      (int ch, out int pass)
 			// "drop":             (Widget *w)
 			// "changed":          ()
 			// "add child":        (Widget *w)
 			// "remove child":     (Widget *w)
 
+			Array<Function*> gainfocus_listeners$;
+			Array<Function*> lostfocus_listeners$;
 			Array<Function*> mouseenter_listeners$;
 			Array<Function*> mouseleave_listeners$;
 			Array<Function*> lmousedown_listeners$;
@@ -199,7 +203,6 @@ namespace flame
 			Array<Function*> keydown_listeners$;
 			Array<Function*> keyup_listeners$;
 			Array<Function*> char_listeners$;
-			Array<Function*> char_filters$;
 			Array<Function*> drop_listeners$;
 			Array<Function*> changed_listeners$;
 			Array<Function*> addchild_listeners$;
@@ -268,7 +271,7 @@ namespace flame
 			FLAME_UI_EXPORTS Widget *parent() const;
 			FLAME_UI_EXPORTS int layer() const;
 
-			FLAME_UI_EXPORTS void add_child(Widget *w, int layer = 0, int pos = -1, bool delay = false, PF pf = nullptr, const std::vector<CommonData> &capt = {});
+			FLAME_UI_EXPORTS void add_child(Widget *w, int layer = 0, int pos = -1, bool delay = false, bool modual = false);
 			FLAME_UI_EXPORTS void remove_child(int layer, int idx, bool delay = false);
 			FLAME_UI_EXPORTS void remove_child(Widget *w, bool delay = false);
 			FLAME_UI_EXPORTS void take_child(int layer, int idx, bool delay = false);
@@ -291,6 +294,8 @@ namespace flame
 			FLAME_UI_EXPORTS void add_animation(PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void on_draw(Canvas *c, const Vec2 &off, float scl);
+			FLAME_UI_EXPORTS void on_gainfocus(int type);
+			FLAME_UI_EXPORTS void on_lostfocus(int type);
 			FLAME_UI_EXPORTS void on_mouseenter();
 			FLAME_UI_EXPORTS void on_mouseleave();
 			FLAME_UI_EXPORTS void on_lmousedown(const Vec2 &mpos);
@@ -315,7 +320,8 @@ namespace flame
 			FLAME_UI_EXPORTS SerializableNode *save();
 
 			FLAME_UI_EXPORTS static Widget *create(Instance *ui);
-			FLAME_UI_EXPORTS static Widget *create_from_serialize(Instance *ui, SerializableNode *src);
+			FLAME_UI_EXPORTS static void create_from_typeinfo(Instance *ui, VaribleInfo *info, void *p, Widget *dst);
+			FLAME_UI_EXPORTS static Widget *create_from_file(Instance *ui, SerializableNode *src);
 			FLAME_UI_EXPORTS static void destroy(Widget *w);
 		};
 
@@ -332,11 +338,12 @@ namespace flame
 
 		struct wCheckbox : Widget
 		{
-			FLAME_UI_EXPORTS void init();
+			FLAME_UI_EXPORTS void init(void *target = nullptr);
 
 			FLAME_UI_EXPORTS int &checked();
+			FLAME_UI_EXPORTS voidptr &target();
 
-			FLAME_UI_EXPORTS static wCheckbox *create(Instance *ui);
+			FLAME_UI_EXPORTS static wCheckbox *create(Instance *ui, void *target = nullptr);
 		};
 
 		typedef wCheckbox* wCheckboxPtr;
@@ -419,28 +426,41 @@ namespace flame
 
 		struct wCombo : wMenu
 		{
-			FLAME_UI_EXPORTS void init();
+			FLAME_UI_EXPORTS void init(void *enum_info = nullptr, void *target = nullptr);
 
 			FLAME_UI_EXPORTS int &sel();
+			FLAME_UI_EXPORTS voidptr &enum_info();
+			FLAME_UI_EXPORTS voidptr &target();
 			
-			FLAME_UI_EXPORTS void set_sel(int idx);
+			FLAME_UI_EXPORTS void set_sel(int idx, bool from_inner = false);
 
-			FLAME_UI_EXPORTS static wCombo *create(Instance *ui);
+			FLAME_UI_EXPORTS static wCombo *create(Instance *ui, void *enum_info = nullptr, void *target = nullptr);
 		};
 
 		typedef wCombo* wComboPtr;
 
 		struct wEdit : wText
 		{
-			FLAME_UI_EXPORTS void init();
+			enum Type
+			{
+				TypeNull,
+				TypeString,
+				TypeStringW,
+				TypeInt,
+				TypeUint,
+				TypeFloat,
+				TypeUchar
+			};
+
+			FLAME_UI_EXPORTS void init(Type type = TypeNull, void *target = nullptr);
 
 			FLAME_UI_EXPORTS int &cursor();
+			FLAME_UI_EXPORTS int &type();
+			FLAME_UI_EXPORTS voidptr &target();
 
 			FLAME_UI_EXPORTS void set_size_by_width(float width);
-			FLAME_UI_EXPORTS void add_char_filter_int();
-			FLAME_UI_EXPORTS void add_char_filter_float();
 
-			FLAME_UI_EXPORTS static wEdit *create(Instance *ui);
+			FLAME_UI_EXPORTS static wEdit *create(Instance *ui, Type type = TypeNull, void *target = nullptr);
 		};
 
 		typedef wEdit* wEditPtr;
@@ -523,12 +543,12 @@ namespace flame
 
 		struct wDialog : wLayout
 		{
-			FLAME_UI_EXPORTS void init(bool resize = false);
+			FLAME_UI_EXPORTS void init(bool resize = false, bool modual = false);
 
 			FLAME_UI_EXPORTS wScrollbarPtr &w_scrollbar();
 			FLAME_UI_EXPORTS wSizeDragPtr &w_sizedrag();
 
-			FLAME_UI_EXPORTS static wDialog *create(Instance *ui, bool resize = false);
+			FLAME_UI_EXPORTS static wDialog *create(Instance *ui, bool resize = false, bool modual = false);
 		};
 
 		struct wMessageDialog : wDialog 

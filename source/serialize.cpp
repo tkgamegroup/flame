@@ -179,7 +179,7 @@ namespace flame
 				auto e = find_enum(type_hash);
 				default_value.i1() = e->find_item(str.c_str());
 			}
-			break;
+				break;
 			case VariableTagVariable:
 				switch (type_hash)
 				{
@@ -187,43 +187,43 @@ namespace flame
 					default_value.i1() = str == "true" ? true : false;
 					break;
 				case cH("uint"):
-					default_value.i1() = stou1(str);
+					default_value.i1() = stou1(str.c_str());
 					break;
 				case cH("int"):
-					default_value.i1() = stoi1(str);
+					default_value.i1() = stoi1(str.c_str());
 					break;
 				case cH("Ivec2"):
-					default_value.i2() = stoi2(str);
+					default_value.i2() = stoi2(str.c_str());
 					break;
 				case cH("Ivec3"):
-					default_value.i3() = stoi3(str);
+					default_value.i3() = stoi3(str.c_str());
 					break;
 				case cH("Ivec4"):
-					default_value.i4() = stoi4(str);
+					default_value.i4() = stoi4(str.c_str());
 					break;
 				case cH("float"):
-					default_value.f1() = stof1(str);
+					default_value.f1() = stof1(str.c_str());
 					break;
 				case cH("Vec2"):
-					default_value.f2() = stof2(str);
+					default_value.f2() = stof2(str.c_str());
 					break;
 				case cH("Vec3"):
-					default_value.f3() = stof3(str);
+					default_value.f3() = stof3(str.c_str());
 					break;
 				case cH("Vec4"):
-					default_value.f4() = stof4(str);
+					default_value.f4() = stof4(str.c_str());
 					break;
 				case cH("uchar"):
-					default_value.b1() = stob1(str);
+					default_value.b1() = stob1(str.c_str());
 					break;
 				case cH("Bvec2"):
-					default_value.b2() = stob2(str);
+					default_value.b2() = stob2(str.c_str());
 					break;
 				case cH("Bvec3"):
-					default_value.b3() = stob3(str);
+					default_value.b3() = stob3(str.c_str());
 					break;
 				case cH("Bvec4"):
-					default_value.b4() = stob4(str);
+					default_value.b4() = stob4(str.c_str());
 					break;
 				}
 				break;
@@ -401,43 +401,43 @@ namespace flame
 					*(bool*)dst = str == "true" ? true : false;
 					break;
 				case cH("uint"):
-					*(uint*)dst = stou1(str);
+					*(uint*)dst = stou1(str.c_str());
 					break;
 				case cH("int"):
-					*(int*)dst = stoi1(str);
+					*(int*)dst = stoi1(str.c_str());
 					break;
 				case cH("Ivec2"):
-					*(Ivec2*)dst = stoi2(str);
+					*(Ivec2*)dst = stoi2(str.c_str());
 					break;
 				case cH("Ivec3"):
-					*(Ivec3*)dst = stoi3(str);
+					*(Ivec3*)dst = stoi3(str.c_str());
 					break;
 				case cH("Ivec4"):
-					*(Ivec4*)dst = stoi4(str);
+					*(Ivec4*)dst = stoi4(str.c_str());
 					break;
 				case cH("float"):
-					*(float*)dst = stof1(str);
+					*(float*)dst = stof1(str.c_str());
 					break;
 				case cH("Vec2"):
-					*(Vec2*)dst = stof2(str);
+					*(Vec2*)dst = stof2(str.c_str());
 					break;
 				case cH("Vec3"):
-					*(Vec3*)dst = stof3(str);
+					*(Vec3*)dst = stof3(str.c_str());
 					break;
 				case cH("Vec4"):
-					*(Vec4*)dst = stof4(str);
+					*(Vec4*)dst = stof4(str.c_str());
 					break;
 				case cH("uchar"):
-					*(uchar*)dst = stob1(str);
+					*(uchar*)dst = stob1(str.c_str());
 					break;
 				case cH("Bvec2"):
-					*(Bvec2*)dst = stob2(str);
+					*(Bvec2*)dst = stob2(str.c_str());
 					break;
 				case cH("Bvec3"):
-					*(Bvec3*)dst = stob3(str);
+					*(Bvec3*)dst = stob3(str.c_str());
 					break;
 				case cH("Bvec4"):
-					*(Bvec4*)dst = stob4(str);
+					*(Bvec4*)dst = stob4(str.c_str());
 					break;
 				}
 				break;
@@ -707,67 +707,67 @@ namespace flame
 		if (ty_str == "f")
 		{
 			d->set_fmt("f");
-			d->f1() = stof1(vl_str);
+			d->f1() = stof1(vl_str.c_str());
 		}
 		else if (ty_str == "f2")
 		{
 			d->set_fmt("f2");
-			d->f2() = stof2(vl_str);
+			d->f2() = stof2(vl_str.c_str());
 		}
 		else if (ty_str == "f3")
 		{
 			d->set_fmt("f3");
-			d->f3() = stof3(vl_str);
+			d->f3() = stof3(vl_str.c_str());
 		}
 		else if (ty_str == "f4")
 		{
 			d->set_fmt("f4");
-			d->f4() = stof4(vl_str);
+			d->f4() = stof4(vl_str.c_str());
 		}
 		else if (ty_str == "i")
 		{
 			d->set_fmt("i");
-			d->i1() = stoi1(vl_str);
+			d->i1() = stoi1(vl_str.c_str());
 		}
 		else if (ty_str == "i2")
 		{
 			d->set_fmt("i2");
-			d->i2() = stoi2(vl_str);
+			d->i2() = stoi2(vl_str.c_str());
 		}
 		else if (ty_str == "i3")
 		{
 			d->set_fmt("i3");
-			d->i3() = stoi3(vl_str);
+			d->i3() = stoi3(vl_str.c_str());
 		}
 		else if (ty_str == "i4")
 		{
 			d->set_fmt("i4");
-			d->i4() = stoi4(vl_str);
+			d->i4() = stoi4(vl_str.c_str());
 		}
 		else if (ty_str == "b")
 		{
 			d->set_fmt("b");
-			d->b1() = stob1(vl_str);
+			d->b1() = stob1(vl_str.c_str());
 		}
 		else if (ty_str == "b2")
 		{
 			d->set_fmt("b2");
-			d->b2() = stob2(vl_str);
+			d->b2() = stob2(vl_str.c_str());
 		}
 		else if (ty_str == "b3")
 		{
 			d->set_fmt("b3");
-			d->b3() = stob3(vl_str);
+			d->b3() = stob3(vl_str.c_str());
 		}
 		else if (ty_str == "b4")
 		{
 			d->set_fmt("b4");
-			d->b4() = stob4(vl_str);
+			d->b4() = stob4(vl_str.c_str());
 		}
 		else if (ty_str == "p")
 		{
 			d->set_fmt("p");
-			d->p() = find_obj(table, stoi(vl_str));
+			d->p() = find_obj(table, stoi1(vl_str.c_str()));
 		}
 		else
 			assert(0);
@@ -1190,7 +1190,7 @@ namespace flame
 								auto obj_sub = create_obj(u_sub, obj_generator, obj, name_hash);
 								if (obj_sub)
 								{
-									obj_table.emplace_back(obj_sub, stoi1(n_i->find_attr("id")->value()));
+									obj_table.emplace_back(obj_sub, stoi1(n_i->find_attr("id")->value().c_str()));
 									((SerializableNodePrivate*)n_i)->unserialize_RE(u_sub, obj_table, obj_sub, obj_generator);
 								}
 
@@ -1396,7 +1396,7 @@ namespace flame
 		auto obj = create_obj(u, obj_generator, nullptr, 0);
 
 		std::vector<std::pair<void*, uint>> obj_table;
-		obj_table.emplace_back(obj, stoi1(find_attr("id")->value()));
+		obj_table.emplace_back(obj, stoi1(find_attr("id")->value().c_str()));
 
 		((SerializableNodePrivate*)this)->unserialize_RE(u, obj_table, obj, obj_generator);
 

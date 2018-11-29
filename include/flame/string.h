@@ -136,6 +136,8 @@ namespace flame
 		inline void insert(int pos, CH _v)
 		{
 			resize(size + 1);
+			for (auto i = size - 1; i > pos; i--)
+				v[i] = v[i - 1];
 			v[pos] = _v;
 		}
 
@@ -161,13 +163,15 @@ namespace flame
 	template<typename CH>
 	inline bool operator==(const BasicString<CH> &lhs, const char *rhs)
 	{
-		return std::char_traits<CH>::compare(lhs.v, rhs, lhs.size) == 0;
+		auto len = std::char_traits<CH>::length(rhs);
+		return len == lhs.size && std::char_traits<CH>::compare(lhs.v, rhs, len) == 0;
 	}
 
 	template<typename CH>
 	inline bool operator==(const char *lhs, const BasicString<CH> &rhs)
 	{
-		return std::char_traits<CH>::compare(lhs, rhs.v, rhs.size) == 0;
+		auto len = std::char_traits<CH>::length(lhs);
+		return len == rhs.size && std::char_traits<CH>::compare(lhs, rhs.v, len) == 0;
 	}
 
 	template<typename CH>
@@ -302,20 +306,6 @@ namespace flame
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.to_bytes(wstr);
-	}
-
-	inline int stoi(const std::wstring &str)
-	{
-		if (str.size() == 0)
-			return 0;
-		return std::stoi(str);
-	}
-
-	inline float stof(const std::wstring &str)
-	{
-		if (str.size() == 0)
-			return 0.f;
-		return std::stof(str);
 	}
 
 #ifdef FLAME_WINDOWS

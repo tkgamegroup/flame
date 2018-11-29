@@ -79,6 +79,8 @@ namespace flame
 		inline void insert(int pos, const T &_v)
 		{
 			resize(size + 1);
+			for (auto i = size - 1; i > pos; i--)
+				v[i] = v[i - 1];
 			v[pos] = _v;
 		}
 

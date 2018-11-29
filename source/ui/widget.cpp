@@ -52,12 +52,16 @@ namespace flame
 			for (auto i = 0; i < animations$.size; i++)
 				Function::destroy(animations$[i]);
 
-			if (this == instance->dragging_widget())
-				instance->set_dragging_widget(nullptr);
-			if (this == instance->focus_widget())
-				instance->set_focus_widget(nullptr);
 			if (this == instance->hovering_widget())
 				instance->set_hovering_widget(nullptr);
+			if (this == instance->focus_widget())
+				instance->set_focus_widget(nullptr);
+			if (this == instance->key_focus_widget())
+				instance->set_key_focus_widget(nullptr);
+			if (this == instance->dragging_widget())
+				instance->set_dragging_widget(nullptr);
+			if (this == instance->popup_widget())
+				instance->set_popup_widget(nullptr);
 		}
 
 		inline void WidgetPrivate::set_width(float x, Widget *sender)
@@ -119,11 +123,11 @@ namespace flame
 				parent->arrange();
 		}
 
-		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
+		inline void WidgetPrivate::add_child(WidgetPrivate *w, int layer, int pos, bool delay, bool modual)
 		{
 			if (delay)
 			{
-				delay_adds.emplace_back(w, layer, pos, pf ? Function::create(pf, "", capt) : nullptr);
+				delay_adds.emplace_back(w, layer, pos, modual);
 				return;
 			}
 
@@ -415,7 +419,7 @@ namespace flame
 					y += c->size$.y + item_padding$;
 				}
 			}
-			break;
+				break;
 			case LayoutHorizontal:
 			{
 				if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
@@ -531,7 +535,7 @@ namespace flame
 					x += c->size$.x + item_padding$;
 				}
 			}
-			break;
+				break;
 			case LayoutGrid:
 			{
 				auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
@@ -563,7 +567,7 @@ namespace flame
 				if (size_policy_vert$ == SizeFitChildren)
 					set_height(max(pos.y - item_padding$, 0.f), this);
 			}
-			break;
+				break;
 			}
 
 			for (auto i_c = 0; i_c < children_2$.size; i_c++)
@@ -709,6 +713,28 @@ namespace flame
 			}
 		}
 
+		void WidgetPrivate::on_gainfocus(int type)
+		{
+			for (auto i = 0; i < gainfocus_listeners$.size; i++)
+			{
+				auto f = gainfocus_listeners$[i];
+
+				f->datas[0].i1() = type;
+				f->exec();
+			}
+		}
+
+		void WidgetPrivate::on_lostfocus(int type)
+		{
+			for (auto i = 0; i < lostfocus_listeners$.size; i++)
+			{
+				auto f = lostfocus_listeners$[i];
+
+				f->datas[0].i1() = type;
+				f->exec();
+			}
+		}
+
 		inline void WidgetPrivate::on_mouseenter()
 		{
 			for (auto i = 0; i < mouseenter_listeners$.size; i++)
@@ -801,19 +827,6 @@ namespace flame
 
 		inline void WidgetPrivate::on_char(wchar_t ch)
 		{
-			if (ch != '\b' && ch != 22 && ch != 27)
-			{
-				for (auto i = 0; i < char_filters$.size; i++)
-				{
-					auto f = char_filters$[i];
-
-					f->datas[0].i1() = ch;
-					f->exec();
-					if (!f->datas[1].i1())
-						return;
-				}
-			}
-
 			for (auto i = 0; i < char_listeners$.size; i++)
 			{
 				auto f = char_listeners$[i];
@@ -847,6 +860,14 @@ namespace flame
 
 			switch (type)
 			{
+			case cH("gain focus"):
+				parm_fmt = "i";
+				list = &gainfocus_listeners$;
+				break;
+			case cH("lost focus"):
+				parm_fmt = "i";
+				list = &lostfocus_listeners$;
+				break;
 			case cH("mouse enter"):
 				parm_fmt = "";
 				list = &mouseenter_listeners$;
@@ -890,10 +911,6 @@ namespace flame
 			case cH("char"):
 				parm_fmt = "i";
 				list = &char_listeners$;
-				break;
-			case cH("char filter"):
-				parm_fmt = "i i";
-				list = &char_filters$;
 				break;
 			case cH("drop"):
 				parm_fmt = "p";
@@ -929,6 +946,12 @@ namespace flame
 
 			switch (type)
 			{
+			case cH("gain focus"):
+				list = &gainfocus_listeners$;
+				break;
+			case cH("lost focus"):
+				list = &lostfocus_listeners$;
+				break;
 			case cH("mouse enter"):
 				list = &mouseenter_listeners$;
 				break;
@@ -961,9 +984,6 @@ namespace flame
 				break;
 			case cH("char"):
 				list = &char_listeners$;
-				break;
-			case cH("char filter"):
-				list = &char_filters$;
 				break;
 			case cH("drop"):
 				list = &drop_listeners$;
@@ -1037,9 +1057,9 @@ namespace flame
 			return ((WidgetPrivate*)this)->layer;
 		}
 
-		void Widget::add_child(Widget *w, int layer, int pos, bool delay, PF pf, const std::vector<CommonData> &capt)
+		void Widget::add_child(Widget *w, int layer, int pos, bool delay, bool modual)
 		{
-			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, pf, capt);
+			((WidgetPrivate*)this)->add_child((WidgetPrivate*)w, layer, pos, delay, modual);
 		}
 
 		void Widget::remove_child(int layer, int idx, bool delay)
@@ -1122,6 +1142,16 @@ namespace flame
 		void Widget::on_draw(Canvas *c, const Vec2 &off, float scl)
 		{
 			((WidgetPrivate*)this)->on_draw(c, off, scl);
+		}
+
+		void Widget::on_gainfocus(int type)
+		{
+			((WidgetPrivate*)this)->on_gainfocus(type);
+		}
+
+		void Widget::on_lostfocus(int type)
+		{
+			((WidgetPrivate*)this)->on_lostfocus(type);
 		}
 
 		void Widget::on_mouseenter()
@@ -1219,7 +1249,221 @@ namespace flame
 			return new WidgetPrivate(ui);
 		}
 
-		Widget *Widget::create_from_serialize(Instance *ui, SerializableNode *src)
+		void Widget::create_from_typeinfo(Instance *ui, VaribleInfo *info, void *p, Widget *dst)
+		{
+			switch (info->tag())
+			{
+			case VariableTagEnumSingle:
+			{
+				auto c = wCombo::create(ui, find_enum(info->type_hash()), (char*)p + info->offset());
+				c->align$ = AlignLittleEnd;
+				dst->add_child(c, 0, -1, true);
+			}
+				break;
+			case VariableTagEnumMulti:
+				break;
+			case VariableTagVariable:
+			{
+				switch (info->type_hash())
+				{
+				case cH("bool"):
+				{
+					auto c = wCheckbox::create(ui, (char*)p + info->offset());
+					c->align$ = AlignLittleEnd;
+					add_style_color(c, 0, Vec3(0.f, 0.f, 0.7f));
+					dst->add_child(c, 0, -1, true);
+				}
+					break;
+				case cH("uint"):
+				{
+					auto e = wEdit::create(ui, wEdit::TypeUint, (char*)p + info->offset());
+					e->size_policy_hori$ = SizeFitLayout;
+					e->align$ = AlignLittleEnd;
+					e->set_size_by_width(10.f);
+					dst->add_child(e, 0, -1, true);
+				}
+					break;
+				case cH("int"):
+				{
+					auto e = wEdit::create(ui, wEdit::TypeInt, (char*)p + info->offset());
+					e->size_policy_hori$ = SizeFitLayout;
+					e->align$ = AlignLittleEnd;
+					e->set_size_by_width(10.f);
+					dst->add_child(e, 0, -1, true);
+				}
+					break;
+				case cH("Ivec2"):
+				{
+					auto pp = (Ivec2*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 2; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeInt, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("Ivec3"):
+				{
+					auto pp = (Ivec3*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 3; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeInt, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("Ivec4"):
+				{
+					auto pp = (Ivec4*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 4; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeInt, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("float"):
+				{
+					auto e = wEdit::create(ui, wEdit::TypeFloat, (char*)p + info->offset());
+					e->size_policy_hori$ = SizeFitLayout;
+					e->align$ = AlignLittleEnd;
+					e->set_size_by_width(10.f);
+					dst->add_child(e, 0, -1, true);
+				}
+					break;
+				case cH("Vec2"):
+				{
+					auto pp = (Vec2*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 2; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("Vec3"):
+				{
+					auto pp = (Vec3*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 3; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("Vec4"):
+				{
+					auto pp = (Vec4*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 4; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("uchar"):
+				{
+					auto e = wEdit::create(ui, wEdit::TypeUchar, (char*)p + info->offset());
+					e->size_policy_hori$ = SizeFitLayout;
+					e->align$ = AlignLittleEnd;
+					e->set_size_by_width(10.f);
+					dst->add_child(e, 0, -1, true);
+				}
+					break;
+				case cH("Bvec2"):
+				{
+					auto pp = (Bvec2*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 2; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("Bvec3"):
+				{
+					auto pp = (Bvec3*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 3; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				case cH("Bvec4"):
+				{
+					auto pp = (Bvec4*)((char*)p + info->offset());
+
+					for (auto i_v = 0; i_v < 4; i_v++)
+					{
+						auto e = wEdit::create(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+						e->size_policy_hori$ = SizeFitLayout;
+						e->align$ = AlignLittleEnd;
+						e->set_size_by_width(10.f);
+						dst->add_child(e, 0, -1, true);
+					}
+				}
+					break;
+				}
+			}
+				break;
+			case VariableTagArrayOfVariable:
+			{
+			}
+				break;
+			case VariableTagArrayOfPointer:
+			{
+				auto &arr = *(Array<void*>*)((char*)p + info->offset());
+
+				switch (info->type_hash())
+				{
+				case cH("Function"):
+					for (auto i_i = 0; i_i < arr.size; i_i++)
+					{
+						auto f = (Function*)arr[i_i];
+						auto id = find_registered_PF(f->pf);
+
+					}
+					break;
+				}
+			}
+				break;
+			}
+		}
+
+		Widget *Widget::create_from_file(Instance *ui, SerializableNode *src)
 		{
 			return (Widget*)src->unserialize(find_udt(cH("ui::Widget")), [](CommonData *d) {
 				auto parent = (WidgetPrivate*)d[1].p();
@@ -1266,6 +1510,10 @@ namespace flame
 			auto &thiz = *(wCheckbox**)&d[0].p();
 
 			thiz->checked() = !thiz->checked();
+
+			if (thiz->target())
+				*(bool*)thiz->target() = thiz->checked();
+
 			thiz->report_changed();
 		FLAME_REGISTER_FUNCTION_END(Checkbox_clicked)
 
@@ -1280,7 +1528,7 @@ namespace flame
 				c->add_rect_filled((thiz->pos$ + 3.f) * scl + off, (thiz->size$ - 6.f) * scl, thiz->background_col$);
 		FLAME_REGISTER_FUNCTION_END(Checkbox_draw)
 
-		void wCheckbox::init()
+		void wCheckbox::init(void *_target)
 		{
 			class_hash$ = cH("checkbox");
 			add_data_storages("i");
@@ -1289,11 +1537,15 @@ namespace flame
 			background_col$ = Bvec4(255);
 
 			checked() = 0;
+			target() = _target;
 
 			add_listener(cH("clicked"), Checkbox_clicked::v, { this });
 
 			draw_default$ = false;
 			add_extra_draw_command(Checkbox_draw::v, { this });
+
+			if (target())
+				checked() = *(bool*)target();
 		}
 
 		int &wCheckbox::checked()
@@ -1301,10 +1553,15 @@ namespace flame
 			return data_storages$[0].i1();
 		}
 
-		wCheckbox *wCheckbox::create(Instance *ui)
+		voidptr &wCheckbox::target()
+		{
+			return data_storages$[1].p();
+		}
+
+		wCheckbox *wCheckbox::create(Instance *ui, void *target)
 		{
 			auto w = (wCheckbox*)Widget::create(ui);
-			w->init();
+			w->init(target);
 
 			return w;
 		}
@@ -1379,7 +1636,7 @@ namespace flame
 
 			class_hash$ = cH("button");
 
-			background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
+			background_col$ = Bvec4(255, 255, 255, 230);
 			event_attitude$ = EventAccept;
 		}
 
@@ -1733,12 +1990,12 @@ namespace flame
 			}
 		FLAME_REGISTER_FUNCTION_END(Combo_items_addchild)
 
-		void wCombo::init()
+		void wCombo::init(void *_enum_info, void *_target)
 		{
 			((wMenu*)this)->init(L"");
 
 			class_hash$ = cH("combo");
-			add_data_storages("i");
+			add_data_storages("i p i");
 
 			background_frame_thickness$ = 1.f;
 			size_policy_hori$ = SizeGreedy;
@@ -1746,10 +2003,36 @@ namespace flame
 			w_btn()->size_policy_hori$ = SizeFitLayout;
 
 			sel() = -1;
+			enum_info() = _enum_info;
+			target() = _target;
 
 			w_btn()->add_listener(cH("clicked"), Combo_btn_clicked::v, { this });
 
 			w_items()->add_listener(cH("add child"), Combo_items_addchild::v, { this });
+
+			if (enum_info())
+			{
+				auto e = (EnumInfo*)enum_info();
+
+				for (auto i = 0; i < e->item_count(); i++)
+				{
+					auto w_i = wMenuItem::create(instance(), s2w(e->item(i)->name()).c_str());
+					w_items()->add_child(w_i);
+					add_style_color(w_i, 0, Vec3(0.f, 0.f, 0.7f));
+				}
+			}
+
+			if (target())
+			{
+				auto p = (int*)target();
+				if (enum_info())
+				{
+					auto e = (EnumInfo*)enum_info();
+					set_sel(e->find_item(*p), true);
+				}
+				else
+					set_sel(*p, true);
+			}
 		}
 
 		int &wCombo::sel()
@@ -1757,22 +2040,69 @@ namespace flame
 			return data_storages$[5].i1();
 		}
 
-		void wCombo::set_sel(int idx)
+		voidptr &wCombo::enum_info()
+		{
+			return data_storages$[6].p();
+		}
+
+		voidptr &wCombo::target()
+		{
+			return data_storages$[7].p();
+		}
+
+		void wCombo::set_sel(int idx, bool from_inner)
 		{
 			sel() = idx;
 			auto i = (wMenuItem*)w_items()->children_1$[idx];
 			w_btn()->text() = i->text();
 
+			if (from_inner)
+				return;
+
+			if (target())
+			{
+				auto p = (int*)target();
+				if (enum_info())
+				{
+					auto e = (EnumInfo*)enum_info();
+					*p = e->item(sel())->value();
+				}
+				else
+					*p = sel();
+			}
+
 			report_changed();
 		}
 
-		wCombo *wCombo::create(Instance *ui)
+		wCombo *wCombo::create(Instance *ui, void *enum_info, void *target)
 		{
 			auto w = (wCombo*)Widget::create(ui);
-			w->init();
+			w->init(enum_info, target);
 
 			return w;
 		}
+
+		FLAME_REGISTER_FUNCTION_BEG(Combo_draw, FLAME_GID(9908), "p f2 f")
+			auto &c = *(Canvas**)&d[0].p();
+		auto &off = d[1].f2();
+		auto &scl = d[2].f1();
+		auto &thiz = *(wEdit**)&d[3].p();
+
+		if (thiz->instance()->key_focus_widget() == thiz && int(thiz->instance()->total_time() * 2) % 2 == 0)
+		{
+			auto len = share_data.font_atlas->get_text_width(thiz->text().v, thiz->text().v + thiz->cursor());
+			if (thiz->sdf_scale() < 0.f)
+			{
+				c->add_char_stroke((thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])
+					+ Vec2(len - 1.f, 0.f)) * scl + off, thiz->text_col(), '|');
+			}
+			else
+			{
+				c->add_char_sdf((thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])
+					+ Vec2(len - 1.f, 0.f)) * scl + off, thiz->text_col(), '|', thiz->sdf_scale() * scl);
+			}
+		}
+		FLAME_REGISTER_FUNCTION_END(Combo_draw)
 
 		FLAME_REGISTER_FUNCTION_BEG(Edit_keydown, FLAME_GID(27590), "i")
 			auto &code = d[0].i1();
@@ -1808,6 +2138,35 @@ namespace flame
 			auto &ch = d[0].i1();
 			auto &thiz = *(wEdit**)&d[1].p();
 
+			if (thiz->type() != wEdit::TypeNull && ch != '\b' && ch != 22 && ch != 27)
+			{
+				switch (thiz->type())
+				{
+				case wEdit::TypeInt:
+					if (ch == L'-')
+					{
+						if (thiz->cursor() != 0 || thiz->text().v[0] == L'-')
+							return;
+					}
+					if (ch < '0' || ch > '9')
+						return;
+					break;
+				case wEdit::TypeUint: case wEdit::TypeUchar:
+					if (ch < '0' || ch > '9')
+						return;
+					break;
+				case wEdit::TypeFloat:
+					if (ch == L'.')
+					{
+						if (thiz->text().find(L'.') != -1)
+							return;
+					}
+					if (ch < '0' || ch > '9')
+						return;
+					break;
+				}
+			}
+
 			switch (ch)
 			{
 			case L'\b':
@@ -1836,52 +2195,127 @@ namespace flame
 			}
 		FLAME_REGISTER_FUNCTION_END(Combo_char)
 
-		FLAME_REGISTER_FUNCTION_BEG(Combo_draw, FLAME_GID(9908), "p f2 f")
-			auto &c = *(Canvas**)&d[0].p();
-			auto &off = d[1].f2();
-			auto &scl = d[2].f1();
-			auto &thiz = *(wEdit**)&d[3].p();
+			FLAME_REGISTER_FUNCTION_BEG(Combo_gainfocus, FLAME_GID(12998), "i")
+			auto &type = d[0].i1();
+			auto &thiz = *(wEdit**)&d[1].p();
 
-			if (thiz->instance()->key_focus_widget() == thiz && int(thiz->instance()->total_time() * 2) % 2 == 0)
+			if (type == 1 && thiz->target())
+				thiz->cursor() = thiz->text().size;
+		FLAME_REGISTER_FUNCTION_END(Combo_gainfocus)
+
+		FLAME_REGISTER_FUNCTION_BEG(Combo_lostfocus, FLAME_GID(14583), "i")
+			auto &type = d[0].i1();
+			auto &thiz = *(wEdit**)&d[1].p();
+
+			if (type == 1 && thiz->target())
 			{
-				auto len = share_data.font_atlas->get_text_width(thiz->text().v);
-				if (thiz->sdf_scale() < 0.f)
+				switch (thiz->type())
 				{
-					c->add_char_stroke((thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])
-						+ Vec2(len - 1.f, 0.f)) * scl + off, thiz->text_col(), '|');
+				case wEdit::TypeInt:
+				{
+					auto p = (int*)thiz->target();
+					*p = stoi1(thiz->text().v);
+					thiz->text() = to_wstring(*p);
+					thiz->cursor() = 0;
 				}
-				else
+					break;
+				case wEdit::TypeUint:
 				{
-					c->add_char_sdf((thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])
-						+ Vec2(len - 1.f, 0.f)) * scl + off, thiz->text_col(), '|', thiz->sdf_scale() * scl);
+					auto p = (uint*)thiz->target();
+					*p = stou1(thiz->text().v);
+					thiz->text() = to_wstring(*p);
+					thiz->cursor() = 0;
+				}
+					break;
+				case wEdit::TypeFloat:
+				{
+					auto p = (float*)thiz->target();
+					*p = stof1(thiz->text().v);
+					thiz->text() = to_wstring(*p);
+					thiz->cursor() = 0;
+				}
+					break;
+				case wEdit::TypeUchar:
+				{
+					auto p = (uchar*)thiz->target();
+					*p = stob1(thiz->text().v);
+					thiz->text() = to_wstring(*p);
+					thiz->cursor() = 0;
+				}
+					break;
 				}
 			}
-		FLAME_REGISTER_FUNCTION_END(Combo_draw)
+		FLAME_REGISTER_FUNCTION_END(Combo_lostfocus)
 
-		void wEdit::init()
+		void wEdit::init(Type _type, void *_target)
 		{
 			((wText*)this)->init();
 
 			class_hash$ = cH("edit");
-			add_data_storages("i");
+			add_data_storages("i i p");
 
 			inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
-			background_col$ = Colorf(0.3f, 0.3f, 0.3f, 1.f);
+			background_col$ = Bvec4(220, 220, 220, 255);
 			event_attitude$ = EventAccept;
 			want_key_focus$ = true;
 
 			cursor() = 0;
-
-			add_listener(cH("key down"), Edit_keydown::v, { this });
-
-			add_listener(cH("char"), Combo_char::v, { this });
+			type() = _type;
+			target() = _target;
 
 			add_extra_draw_command(Combo_draw::v, { this });
+
+			add_listener(cH("key down"), Edit_keydown::v, { this });
+			add_listener(cH("char"), Combo_char::v, { this });
+			add_listener(cH("gain focus"), Combo_gainfocus::v, { this });
+			if (target())
+				add_listener(cH("lost focus"), Combo_lostfocus::v, { this });
+
+			if (type() != TypeNull && target())
+			{
+				switch (type())
+				{
+				case wEdit::TypeInt:
+				{
+					auto p = (int*)target();
+					text() = to_wstring(*p);
+				}
+					break;
+				case wEdit::TypeUint:
+				{
+					auto p = (uint*)target();
+					text() = to_wstring(*p);
+				}
+					break;
+				case wEdit::TypeFloat:
+				{
+					auto p = (float*)target();
+					text() = to_wstring(*p);
+				}
+					break;
+				case wEdit::TypeUchar:
+				{
+					auto p = (uchar*)target();
+					text() = to_wstring(*p);
+				}
+					break;
+				}
+			}
 		}
 
 		int &wEdit::cursor()
 		{
 			return data_storages$[2].i1();
+		}
+
+		int &wEdit::type()
+		{
+			return data_storages$[3].i1();
+		}
+
+		voidptr &wEdit::target()
+		{
+			return data_storages$[4].p();
 		}
 
 		void wEdit::set_size_by_width(float width)
@@ -1891,41 +2325,10 @@ namespace flame
 				inner_padding$[2] + inner_padding$[3]));
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Edit_charfilter_int, FLAME_GID(5037), "i i")
-			auto &ch = d[0].i1();
-
-			d[1].i1() = ch >= L'0' && ch <= L'9';
-		FLAME_REGISTER_FUNCTION_END(Edit_charfilter_int)
-
-		FLAME_REGISTER_FUNCTION_BEG(Edit_charfilter_float, FLAME_GID(18387), "i i")
-			auto &ch = d[0].i1();
-			auto &thiz = *(wEdit**)&d[1].p();
-
-			if (ch == L'.')
-			{
-				if (thiz->text().find(L'.') != -1)
-				{
-					d[1].i1() = 0;
-					return;
-				}
-			}
-			d[1].i1() = ch >= '0' && ch <= '9';
-		FLAME_REGISTER_FUNCTION_END(Edit_charfilter_float)
-
-		void wEdit::add_char_filter_int()
-		{
-			add_listener(cH("char filter"), Edit_charfilter_int::v, {});
-		}
-
-		void wEdit::add_char_filter_float()
-		{
-			add_listener(cH("char filter"), Edit_charfilter_float::v, { this });
-		}
-
-		wEdit *wEdit::create(Instance *ui)
+		wEdit *wEdit::create(Instance *ui, Type type, void *target)
 		{
 			auto w = (wEdit*)Widget::create(ui);
-			w->init();
+			w->init(type, target);
 
 			return w;
 		}
@@ -2109,7 +2512,7 @@ namespace flame
 
 			w_btn() = wButton::create(instance());
 			w_btn()->size$ = size$;
-			w_btn()->background_round_radius$ = 4.f;
+			w_btn()->background_round_radius$ = 5.f;
 			w_btn()->background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
 			add_style_color(w_btn(), 0, Vec3(0.f, 1.f, 1.f));
 			add_child(w_btn());
@@ -2366,7 +2769,7 @@ namespace flame
 				thiz->pos$ += disp / thiz->parent()->scale$;
 		FLAME_REGISTER_FUNCTION_END(Dialog_mousemove)
 
-		void wDialog::init(bool resize)
+		void wDialog::init(bool resize, bool modual)
 		{
 			((wLayout*)this)->init();
 
@@ -2378,7 +2781,6 @@ namespace flame
 			inner_padding$ = Vec4(radius);
 			background_col$ = Colorf(0.5f, 0.5f, 0.5f, 0.9f);
 			event_attitude$ = EventAccept;
-			layout_type$ = LayoutVertical;
 			item_padding$ = radius;
 			if (resize)
 			{
@@ -2401,12 +2803,19 @@ namespace flame
 				add_child(w_scrollbar(), 1);
 
 				w_sizedrag() = wSizeDrag::create(instance(), this);
-				w_sizedrag()->min_size() = Vec2(300.f, 400.f);
-				set_size(w_sizedrag()->min_size());
+				w_sizedrag()->min_size() = Vec2(10.f);
+				set_size(Vec2(100.f));
 				add_child(w_sizedrag(), 1);
 			}
 			else
 				w_sizedrag() = nullptr;
+
+			if (modual)
+			{
+				pos$ = (Vec2(instance()->root()->size$) - size$) * 0.5f;
+
+				instance()->root()->add_child(this, 0, -1, true, true);
+			}
 		}
 
 		wScrollbarPtr &wDialog::w_scrollbar()
@@ -2419,10 +2828,10 @@ namespace flame
 			return *((wSizeDragPtr*)&data_storages$[1].p());
 		}
 
-		wDialog *wDialog::create(Instance *ui, bool resize)
+		wDialog *wDialog::create(Instance *ui, bool resize, bool modual)
 		{
 			auto w = (wDialog*)Widget::create(ui);
-			w->init(resize);
+			w->init(resize, modual);
 
 			return w;
 		}
@@ -2433,20 +2842,12 @@ namespace flame
 			thiz->remove_from_parent(true);
 		FLAME_REGISTER_FUNCTION_END(MessageDialog_ok)
 
-		FLAME_REGISTER_FUNCTION_BEG(Dialog_modual, FLAME_GID(6243), "")
-			auto &thiz = *(wDialog**)&d[0].p();
-
-			thiz->instance()->set_focus_widget(thiz);
-			thiz->instance()->set_dragging_widget(nullptr);
-		FLAME_REGISTER_FUNCTION_END(Dialog_modual)
-
 		void wMessageDialog::init(const wchar_t *text)
 		{
-			((wDialog*)this)->init(false);
+			((wDialog*)this)->init(false, true);
 
 			add_data_storages("p p");
 
-			event_attitude$ = EventBlackHole;
 			want_key_focus$ = true;
 
 			layout_type$ = LayoutVertical;
@@ -2464,10 +2865,6 @@ namespace flame
 			add_child(w_ok());
 
 			w_ok()->add_listener(cH("clicked"), MessageDialog_ok::v, { this });
-
-			pos$ = (Vec2(instance()->root()->size$) - size$) * 0.5f;
-
-			instance()->root()->add_child(this, 0, -1, true, Dialog_modual::v, { this });
 		}
 
 		wTextPtr &wMessageDialog::w_text()

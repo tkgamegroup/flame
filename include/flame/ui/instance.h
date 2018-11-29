@@ -127,7 +127,7 @@ namespace flame
 			FLAME_UI_EXPORTS void set_focus_widget(Widget *w);
 			FLAME_UI_EXPORTS void set_key_focus_widget(Widget *w);
 			FLAME_UI_EXPORTS void set_dragging_widget(Widget *w);
-			FLAME_UI_EXPORTS void set_popup_widget(Widget *w);
+			FLAME_UI_EXPORTS void set_popup_widget(Widget *w, bool modual = false);
 			FLAME_UI_EXPORTS void close_popup();
 
 			FLAME_UI_EXPORTS void begin(float elp_time);

@@ -281,6 +281,7 @@ namespace flame
 			key_focus_widget_ = root_.get();
 			dragging_widget_ = nullptr;
 			popup_widget_ = nullptr;
+			popup_widget_modual_ = false;
 			potential_doubleclick_widget_ = nullptr;
 			doubleclick_timer_ = 0.f;
 			char_input_compelete_ = true;
@@ -419,13 +420,15 @@ namespace flame
 		void InstancePrivate::set_key_focus_widget(WidgetPrivate *w)
 		{
 			if (w == nullptr)
-			{
-				key_focus_widget_ = root_.get();
-				return;
-			}
+				w = root_.get();
 			if (w->want_key_focus$)
 			{
+				auto old = key_focus_widget_;
 				key_focus_widget_ = w;
+				if (old)
+					old->on_lostfocus(1);
+				if (key_focus_widget_)
+					key_focus_widget_->on_gainfocus(1);
 				return;
 			}
 			set_key_focus_widget(w->parent);
@@ -433,7 +436,12 @@ namespace flame
 
 		inline void InstancePrivate::set_focus_widget(WidgetPrivate *w)
 		{
+			auto old = focus_widget_;
 			focus_widget_ = w;
+			if (old)
+				old->on_lostfocus(0);
+			if (focus_widget_)
+				focus_widget_->on_gainfocus(0);
 			set_key_focus_widget(w);
 		}
 
@@ -442,14 +450,15 @@ namespace flame
 			dragging_widget_ = w;
 		}
 
-		inline void InstancePrivate::set_popup_widget(WidgetPrivate *w)
+		inline void InstancePrivate::set_popup_widget(WidgetPrivate *w, bool modual)
 		{
 			popup_widget_ = w;
+			popup_widget_modual_ = modual;
 		}
 
 		inline void InstancePrivate::close_popup()
 		{
-			if (popup_widget_)
+			if (popup_widget_ && !popup_widget_modual_)
 			{
 				switch (popup_widget_->class_hash$)
 				{
@@ -757,10 +766,7 @@ namespace flame
 				{
 					w->add_child(std::get<0>(a), std::get<1>(a), std::get<2>(a));
 					if (std::get<3>(a))
-					{
-						std::get<3>(a)->exec();
-						Function::destroy(std::get<3>(a));
-					}
+						set_popup_widget(std::get<0>(a), true);
 				}
 				w->delay_adds.clear();
 			}
@@ -815,8 +821,8 @@ namespace flame
 
 			if (p.mljustdown)
 			{
-				focus_widget_ = nullptr;
-				key_focus_widget_ = nullptr;
+				set_key_focus_widget(nullptr);
+				set_focus_widget(nullptr);
 			}
 
 			p.surface_size = root_->size$;
@@ -858,7 +864,11 @@ namespace flame
 			p.meet_popup_first = true;
 			show(&p, root_.get(), true, Vec2(0.f), 1.f);
 			if (popup_widget_)
+			{
+				if (popup_widget_modual_)
+					p.canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
 				show(&p, popup_widget_, true, p.popup_off, p.popup_scl);
+			}
 
 			postprocessing(root_.get());
 
@@ -1001,9 +1011,9 @@ namespace flame
 			((InstancePrivate*)this)->set_dragging_widget((WidgetPrivate*)w);
 		}
 
-		void Instance::set_popup_widget(Widget *w)
+		void Instance::set_popup_widget(Widget *w, bool modual)
 		{
-			((InstancePrivate*)this)->set_popup_widget((WidgetPrivate*)w);
+			((InstancePrivate*)this)->set_popup_widget((WidgetPrivate*)w, modual);
 		}
 
 		void Instance::close_popup()

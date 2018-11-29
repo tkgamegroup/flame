@@ -217,7 +217,6 @@ namespace flame
 		//			{
 		//				auto e = wEdit::create(ui);
 		//				e->align = AlignLittleEnd;
-		//				e->text_col() = Bvec4(255);
 		//				e->sdf_scale() = 1.f;
 		//				e->set_size_by_width(100.f);
 		//				lv->add_child(e);

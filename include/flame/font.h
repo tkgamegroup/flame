@@ -105,7 +105,7 @@ namespace flame
 
 		FLAME_FONT_EXPORTS const Glyph &get_glyph(wchar_t unicode);
 
-		FLAME_FONT_EXPORTS int get_text_width(const wchar_t *text);
+		FLAME_FONT_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);
 
 		FLAME_FONT_EXPORTS Bitmap *get_stroke_image() const;
 		FLAME_FONT_EXPORTS Bitmap *get_sdf_image() const;
