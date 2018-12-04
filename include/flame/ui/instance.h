@@ -54,8 +54,17 @@ namespace flame
 			FLAME_UI_EXPORTS static void destroy(SwapchainData *s);
 		};
 
+		enum DefaultStyle
+		{
+			DefaultStyleDark,
+			DefaultStyleLight
+		};
+
 		struct Instance
 		{
+			DefaultStyle default_style;
+			float default_sdf_scale;
+
 			int key_states[128];
 
 			Ivec2 mouse_pos;

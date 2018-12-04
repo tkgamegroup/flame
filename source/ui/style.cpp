@@ -27,6 +27,11 @@ namespace flame
 {
 	namespace ui
 	{
+		Function *create_style(const std::vector<CommonData> &capt)
+		{
+
+		}
+
 		FLAME_REGISTER_FUNCTION_BEG(Style_size, FLAME_GID(24726), "p")
 			auto &w = *(Widget**)&d[0].p();
 
@@ -44,11 +49,12 @@ namespace flame
 			}
 		FLAME_REGISTER_FUNCTION_END(Style_size)
 
-		void add_style_size(Widget *w, int closet_idx, const Vec2 &minus)
+		Function *background_offset(const Vec4 &active_offset, const Vec4 &else_offset)
 		{
 			auto normal_offset = w->background_offset$;
 			auto active_offset = normal_offset - Vec4(minus.x, minus.y, minus.x, minus.y);
-			
+
+			Function::create(Style_size::v, "p", capt);
 			w->add_style(Style_size::v, { closet_idx, normal_offset, active_offset });
 		}
 
@@ -82,11 +88,8 @@ namespace flame
 			bg_col.y *= tint.y;
 			bg_col.z *= tint.z;
 			auto bg_hsv = to_HSV(bg_col);
-			auto bg_normal_col = HSV(bg_hsv.x, bg_hsv.y, bg_hsv.z * 0.9f, bg_col.w / 255.f);
-			auto bg_hovering_col = HSV(bg_hsv.x, bg_hsv.y, bg_hsv.z, 1.f);
-			auto bg_active_col = HSV(bg_hsv.x, bg_hsv.y, bg_hsv.z * 0.95f, 1.f);
 
-			w->add_style(Style_color::v, { closet_idx, bg_normal_col, bg_hovering_col, bg_active_col });
+			w->add_style(Style_color::v, { closet_idx,  });
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(Style_textcolor, FLAME_GID(785), "p")
@@ -108,10 +111,7 @@ namespace flame
 
 		void add_style_textcolor(Widget *w, int closet_idx, const Bvec4 &normal_col, const Bvec4 &else_col)
 		{
-			auto bg_normal_col = normal_col;
-			auto bg_hovering_or_active_col = else_col;
-
-			w->add_style(Style_textcolor::v, { closet_idx, bg_normal_col, bg_hovering_or_active_col });
+			w->add_style(Style_textcolor::v, { closet_idx, normal_col, else_col });
 		}
 	}
 }

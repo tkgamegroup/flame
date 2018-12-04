@@ -29,109 +29,112 @@
 
 namespace flame
 {
-	struct RegisteredPF
+	struct RegisteredFunctionPrivate : RegisteredFunction
 	{
-		PF pf;
 		uint id;
-		const char *parm_fmt;
+		PF pf;
+		int parm_count;
 		const char *filename;
 		int line_beg;
 		int line_end;
 	};
 
-	static std::vector<RegisteredPF> pfs;
+	uint RegisteredFunction::id() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->id;
+	}
 
-	void register_PF(PF pf, uint id, const char *parm_fmt, const char *filename, int line_beg, int line_end)
+	PF RegisteredFunction::pf() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->pf;
+	}
+
+	int RegisteredFunction::parm_count() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->parm_count;
+	}
+
+	const char *RegisteredFunction::filename() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->filename;
+	}
+
+	int RegisteredFunction::line_beg() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->line_beg;
+	}
+
+	int RegisteredFunction::line_end() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->line_end;
+	}
+
+	static std::vector<RegisteredFunctionPrivate*> pfs;
+
+	void register_function(PF pf, uint id, int parm_count, const char *filename, int line_beg, int line_end)
 	{
 		assert(id);
 		for (auto &r : pfs)
 		{
-			if (r.id == id)
+			if (r->id == id)
 				assert(0);
 		}
-		RegisteredPF r;
-		r.pf = pf;
-		r.id = id;
-		r.parm_fmt = parm_fmt;
-		r.filename = filename;
-		r.line_beg = line_beg;
-		r.line_end = line_end;
+
+		auto r = new RegisteredFunctionPrivate;
+		r->id = id;
+		r->pf = pf;
+		r->parm_count = parm_count;
+		r->filename = filename;
+		r->line_beg = line_beg;
+		r->line_end = line_end;
 		pfs.push_back(r);
 	}
 
-	PF find_registered_PF(uint id, const char **out_parm_fmt, const char **out_filename, int *out_line_beg, int *out_line_end)
+	RegisteredFunction *find_registered_function(uint id)
 	{
 		for (auto &r : pfs)
 		{
-			if (r.id == id)
-			{
-				if (out_parm_fmt)
-					*out_parm_fmt = r.parm_fmt;
-				if (out_filename)
-					*out_filename = r.filename;
-				if (out_line_beg)
-					*out_line_beg = r.line_beg;
-				if (out_line_end)
-					*out_line_end = r.line_end;
-				return r.pf;
-			}
+			if (r->id == id)
+				return r;
 		}
 		return nullptr;
 	}
 
-	uint find_registered_PF(PF pf, const char **out_parm_fmt, const char **out_filename, int *out_line_beg, int *out_line_end)
+	RegisteredFunction *find_registered_function(PF pf)
 	{
 		for (auto &r : pfs)
 		{
-			if (r.pf == pf)
-			{
-				if (out_parm_fmt)
-					*out_parm_fmt = r.parm_fmt;
-				if (out_filename)
-					*out_filename = r.filename;
-				if (out_line_beg)
-					*out_line_beg = r.line_beg;
-				if (out_line_end)
-					*out_line_end = r.line_end;
-				return r.id;
-			}
+			if (r->pf == pf)
+				return r;
 		}
 		return 0;
 	}
 
-	void Function::exec()
-	{
-		pf(datas);
-	}
-
 	static void thread(void *p)
 	{
-		auto thiz = (Function*)p;
-		thiz->pf(thiz->datas);
+		auto f = (Function*)p;
+		f->exec();
+		Function::destroy(f);
 	}
 
-	void Function::exec_in_new_thread()
+	void Function::thread_exec()
 	{
 		_beginthread(thread, 0, this);
 	}
 
-	Function *Function::create(uint id, int capt_cnt)
+	Function *Function::create(uint id, const std::vector<CommonData> &capt)
 	{
-		const char *parm_fmt;
-		auto pf = find_registered_PF(id, &parm_fmt);
-		auto parm_sp = string_split(std::string(parm_fmt));
+		auto r = (RegisteredFunctionPrivate*)find_registered_function(id);
 
-		auto f = (Function*)::malloc(sizeof(Function) + sizeof(CommonData) * (parm_sp.size() + capt_cnt - 1));
-		f->para_fmt = parm_fmt;
-		f->para_cnt = parm_sp.size();
-		f->capt_cnt = capt_cnt;
-		f->pf = pf;
+		auto f = new Function;
+		f->capt_cnt = capt.size();
+		f->pf = r->pf;
+		f->p.d = new CommonData[r->parm_count + capt.size()];
 
-		auto d = f->datas;
-		for (auto &t : parm_sp)
+		auto d = f->p.d + r->parm_count;
+		for (auto i = 0; i < capt.size(); i++)
 		{
-			d->set_fmt(t.c_str());
-			d->i4() = Ivec4(0);
+			*d = capt[i];
 
 			d++;
 		}
@@ -139,24 +142,14 @@ namespace flame
 		return f;
 	}
 
-	Function *Function::create(PF pf, const char *parm_fmt, const std::vector<CommonData> &capt)
+	Function *Function::create(PF pf, int parm_count, const std::vector<CommonData> &capt)
 	{
-		auto parm_sp = string_split(std::string(parm_fmt));
-
-		auto f = (Function*)::malloc(sizeof(Function) + sizeof(CommonData) * (parm_sp.size() + capt.size() - 1));
-		f->para_fmt = parm_fmt;
-		f->para_cnt = parm_sp.size();
+		auto f = new Function;
 		f->capt_cnt = capt.size();
 		f->pf = pf;
+		f->p.d = new CommonData[parm_count + capt.size()];
 
-		auto d = f->datas;
-		for (auto &t : parm_sp)
-		{
-			d->set_fmt(t.c_str());
-			d->i4() = Ivec4(0);
-
-			d++;
-		}
+		auto d = f->p.d + parm_count;
 		for (auto i = 0; i < capt.size(); i++)
 		{
 			*d = capt[i];
@@ -169,6 +162,7 @@ namespace flame
 
 	void Function::destroy(Function *f)
 	{
-		::free(f);
+		delete f->p.d;
+		delete f;
 	}
 }

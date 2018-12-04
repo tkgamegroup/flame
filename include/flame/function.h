@@ -38,29 +38,45 @@
 
 namespace flame
 {
-	typedef void(*PF)(CommonData*);
+	struct ParmPackage
+	{
+		CommonData *d;
+	};
 
-	FLAME_FUNCTION_EXPORTS void register_PF(PF pf, unsigned int id, const char *parm_fmt, const char *filename, int line_beg, int line_end);
-	FLAME_FUNCTION_EXPORTS PF find_registered_PF(uint id, const char **out_parm_fmt = nullptr, const char **out_filename = nullptr, int *out_line_beg = nullptr, int *out_line_end = nullptr);
-	FLAME_FUNCTION_EXPORTS uint find_registered_PF(PF pf, const char **out_parm_fmt = nullptr, const char **out_filename = nullptr, int *out_line_beg = nullptr, int *out_line_end = nullptr);
+	typedef void(*PF)(const ParmPackage &p);
+
+	struct RegisteredFunction
+	{
+		FLAME_FUNCTION_EXPORTS uint id() const;
+		FLAME_FUNCTION_EXPORTS PF pf() const;
+		FLAME_FUNCTION_EXPORTS int parm_count() const;
+		FLAME_FUNCTION_EXPORTS const char *filename() const;
+		FLAME_FUNCTION_EXPORTS int line_beg() const;
+		FLAME_FUNCTION_EXPORTS int line_end() const;
+	};
+
+	FLAME_FUNCTION_EXPORTS void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end);
+	FLAME_FUNCTION_EXPORTS RegisteredFunction *find_registered_function(uint id);
+	FLAME_FUNCTION_EXPORTS RegisteredFunction *find_registered_function(PF pf);
 
 	struct Function
 	{
-		const char *para_fmt;
-		int para_cnt;
 		int capt_cnt;
 
 		PF pf;
-		CommonData datas[1];
+		ParmPackage p;
 
-		FLAME_FUNCTION_EXPORTS void exec();
-		FLAME_FUNCTION_EXPORTS void exec_in_new_thread();
+		inline void exec() 
+		{
+			pf(p);
+		}
+		FLAME_FUNCTION_EXPORTS void thread_exec(); // function will be destroyed after thread
 
-		FLAME_FUNCTION_EXPORTS static Function *create(uint id, int capt_cnt);
-		FLAME_FUNCTION_EXPORTS static Function *create(PF pf, const char *parm_fmt, const std::vector<CommonData> &capt);
+		FLAME_FUNCTION_EXPORTS static Function *create(uint id, const std::vector<CommonData> &capt);
+		FLAME_FUNCTION_EXPORTS static Function *create(PF pf, int parm_count, const std::vector<CommonData> &capt);
 		FLAME_FUNCTION_EXPORTS static void destroy(Function *f);
 	};
 }
 
-#define FLAME_REGISTER_FUNCTION_BEG(name, id, parm_fmt) struct name{name(){register_PF(v, id, parm_fmt, __FILE__, line_beg, line_end);}static const int line_beg = __LINE__;static void v(CommonData *d){
+#define FLAME_REGISTER_FUNCTION_BEG(name, id, parm_count) struct name{name(){register_function(v, id, parm_count, __FILE__, line_beg, line_end);}static const int line_beg = __LINE__;static void v(CommonData *d){
 #define FLAME_REGISTER_FUNCTION_END(name) }static const int line_end = __LINE__;};static name name##_;

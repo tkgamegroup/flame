@@ -61,7 +61,7 @@ namespace flame
 				return;
 
 			size = new_size;
-			v = (CH*)realloc(v, sizeof(CH) * (size + 1));
+			v = (CH*)flame_realloc(v, sizeof(CH) * (size + 1));
 			v[size] = (CH)0;
 		}
 
@@ -130,7 +130,7 @@ namespace flame
 
 		inline ~BasicString()
 		{
-			free(v);
+			flame_free(v);
 		}
 
 		inline void insert(int pos, CH _v)

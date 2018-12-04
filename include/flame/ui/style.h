@@ -22,19 +22,30 @@
 
 #pragma once
 
-#include <flame/ui/ui.h>
-
 #include <flame/math.h>
+#include <flame/ui/ui.h>
 
 namespace flame
 {
+	struct Function;
+
 	namespace ui
 	{
-		struct Widget;
+		FLAME_UI_EXPORTS Function *create_style(const std::vector<CommonData> &capt);
 
-		FLAME_UI_EXPORTS void add_style_size(Widget *w, int closet_idx, const Vec2 &minus);
-		FLAME_UI_EXPORTS void add_style_color(Widget *w, int closet_idx, const Vec3 &tint_hsv);
-		FLAME_UI_EXPORTS void add_style_textcolor(Widget *w, int closet_idx, const Bvec4 &normal_col, const Bvec4 &else_col);
+		namespace style
+		{
+			FLAME_UI_EXPORTS Function *background_offset(const Vec4 &active_offset, const Vec4 &else_offset);
+			inline Function *background_offset(const Vec4 &base_offset, const Vec2 &minus)
+			{
+				return background_offset(base_offset - Vec4(minus.x, minus.y, minus.x, minus.y), base_offset);
+			}
+			FLAME_UI_EXPORTS Function *background_color(const Bvec4 &normal_col, const Bvec4 &hovering_col, const Bvec4 &active_col);
+			inline Function *background_color(const Vec3 &hsv)
+			{
+				return background_color(HSV(hsv.x, hsv.y, hsv.z * 0.9f, 0.9f), HSV(hsv.x, hsv.y, hsv.z, 1.f), HSV(hsv.x, hsv.y, hsv.z * 0.95f, 1.f));
+			}
+			FLAME_UI_EXPORTS Function *text_color(const Bvec4 &normal_col, const Bvec4 &else_col);
+		}
 	}
 }
-

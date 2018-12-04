@@ -180,182 +180,182 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
-	struct FileWatcher
-	{
-		void *hEventExpired;
-	};
+	//struct FileWatcher
+	//{
+	//	void *hEventExpired;
+	//};
 
-	static void do_file_watcher(CommonData *d)
-	{
-		auto &filepath = *(const wchar_t **)&d[0].p();
-		auto &w = *(FileWatcher**)&d[1].p();
-		auto &f = *(Function**)&d[2].p();
+	//static void do_file_watcher(CommonData *d)
+	//{
+	//	auto &filepath = *(const wchar_t **)&d[0].p();
+	//	auto &w = *(FileWatcher**)&d[1].p();
+	//	auto &f = *(Function**)&d[2].p();
 
-		auto dir_handle = CreateFileW(filepath, GENERIC_READ | GENERIC_WRITE |
-			FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-			OPEN_EXISTING,
-			FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS,
-			NULL);
-		assert(dir_handle != INVALID_HANDLE_VALUE);
+	//	auto dir_handle = CreateFileW(filepath, GENERIC_READ | GENERIC_WRITE |
+	//		FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+	//		OPEN_EXISTING,
+	//		FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS,
+	//		NULL);
+	//	assert(dir_handle != INVALID_HANDLE_VALUE);
 
-		BYTE notify_buf[1024];
+	//	BYTE notify_buf[1024];
 
-		OVERLAPPED overlapped = {};
-		auto hEvent = CreateEvent(NULL, false, false, NULL);
+	//	OVERLAPPED overlapped = {};
+	//	auto hEvent = CreateEvent(NULL, false, false, NULL);
 
-		auto flags = FILE_NOTIFY_CHANGE_FILE_NAME |
-			FILE_NOTIFY_CHANGE_DIR_NAME |
-			FILE_NOTIFY_CHANGE_CREATION |
-			FILE_NOTIFY_CHANGE_LAST_WRITE;
+	//	auto flags = FILE_NOTIFY_CHANGE_FILE_NAME |
+	//		FILE_NOTIFY_CHANGE_DIR_NAME |
+	//		FILE_NOTIFY_CHANGE_CREATION |
+	//		FILE_NOTIFY_CHANGE_LAST_WRITE;
 
-		while (true)
-		{
-			ZeroMemory(&overlapped, sizeof(OVERLAPPED));
-			overlapped.hEvent = hEvent;
+	//	while (true)
+	//	{
+	//		ZeroMemory(&overlapped, sizeof(OVERLAPPED));
+	//		overlapped.hEvent = hEvent;
 
-			assert(ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags,
-				NULL, &overlapped, NULL));
+	//		assert(ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags,
+	//			NULL, &overlapped, NULL));
 
-			HANDLE events[] = {
-				overlapped.hEvent,
-				w->hEventExpired
-			};
+	//		HANDLE events[] = {
+	//			overlapped.hEvent,
+	//			w->hEventExpired
+	//		};
 
-			if (WaitForMultipleObjects(2, events, false, INFINITE) - WAIT_OBJECT_0 == 1)
-			{
-				CloseHandle(dir_handle);
-				delete w;
-				Function::destroy(f);
-				break;
-			}
+	//		if (WaitForMultipleObjects(2, events, false, INFINITE) - WAIT_OBJECT_0 == 1)
+	//		{
+	//			CloseHandle(dir_handle);
+	//			delete w;
+	//			Function::destroy(f);
+	//			break;
+	//		}
 
-			DWORD ret_bytes;
-			assert(GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false) == 1);
+	//		DWORD ret_bytes;
+	//		assert(GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false) == 1);
 
-			auto base = 0;
-			auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;
-			while (true)
-			{
-				FileChangeType type;
-				switch (p->Action)
-				{
-				case 0x1:
-					type = FileAdded;
-					break;
-				case 0x2:
-					type = FileRemoved;
-					break;
-				case 0x3:
-					type = FileModified;
-					break;
-				case 0x4:
-					type = FileRenamed;
-					break;
-				case 0x5:
-					type = FileRenamed;
-					break;
-				}
-				f->datas[0].i1() = type;
-				f->datas[1].p() = p->FileName;
-				f->exec();
+	//		auto base = 0;
+	//		auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;
+	//		while (true)
+	//		{
+	//			FileChangeType type;
+	//			switch (p->Action)
+	//			{
+	//			case 0x1:
+	//				type = FileAdded;
+	//				break;
+	//			case 0x2:
+	//				type = FileRemoved;
+	//				break;
+	//			case 0x3:
+	//				type = FileModified;
+	//				break;
+	//			case 0x4:
+	//				type = FileRenamed;
+	//				break;
+	//			case 0x5:
+	//				type = FileRenamed;
+	//				break;
+	//			}
+	//			f->datas[0].i1() = type;
+	//			f->datas[1].p() = p->FileName;
+	//			f->exec();
 
-				if (p->NextEntryOffset <= 0)
-					break;
-				base += p->NextEntryOffset;
-				p = (FILE_NOTIFY_INFORMATION*)(notify_buf + base);
-			}
-		}
-	}
+	//			if (p->NextEntryOffset <= 0)
+	//				break;
+	//			base += p->NextEntryOffset;
+	//			p = (FILE_NOTIFY_INFORMATION*)(notify_buf + base);
+	//		}
+	//	}
+	//}
 
-	FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt)
-	{
-		auto w = new FileWatcher;
-		w->hEventExpired = CreateEvent(NULL, false, false, NULL);
+	//FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt)
+	//{
+	//	auto w = new FileWatcher;
+	//	w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
-		auto f = Function::create(pf, "i p", capt);
+	//	auto callback = Function::create(pf, "i p", capt);
 
-		auto f_thread = Function::create(do_file_watcher, "p p p", {});
+	//	auto f_thread = Function::create(do_file_watcher, "p p p", {});
 
-		f_thread->datas[0].p() = (wchar_t*)filepath;
-		f_thread->datas[1].p() = w;
-		f_thread->datas[2].p() = f;
+	//	f_thread->datas[0].p() = (wchar_t*)filepath;
+	//	f_thread->datas[1].p() = w;
+	//	f_thread->datas[2].p() = callback;
 
-		f_thread->exec_in_new_thread();
+	//	f_thread->exec_in_new_thread();
 
-		return w;
-	}
+	//	return w;
+	//}
 
-	void remove_file_watcher(FileWatcher *w)
-	{
-		SetEvent(w->hEventExpired);
-	}
+	//void remove_file_watcher(FileWatcher *w)
+	//{
+	//	SetEvent(w->hEventExpired);
+	//}
 
-	void read_process_memory(void *process, void *address, int size, void *dst)
-	{
-		SIZE_T ret_byte;
-		assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
-	}
+	//void read_process_memory(void *process, void *address, int size, void *dst)
+	//{
+	//	SIZE_T ret_byte;
+	//	assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
+	//}
 
-	static HHOOK global_key_hook = 0;
-	static std::map<int, std::vector<Function*>> global_key_listeners;
+	//static HHOOK global_key_hook = 0;
+	//static std::map<int, std::vector<Function*>> global_key_listeners;
 
-	LRESULT CALLBACK global_key_callback(int nCode, WPARAM wParam, LPARAM lParam)
-	{
-		auto kbhook = (KBDLLHOOKSTRUCT*)lParam;
+	//LRESULT CALLBACK global_key_callback(int nCode, WPARAM wParam, LPARAM lParam)
+	//{
+	//	auto kbhook = (KBDLLHOOKSTRUCT*)lParam;
 
-		auto it = global_key_listeners.find(kbhook->vkCode);
-		if (it != global_key_listeners.end())
-		{
-			for (auto &f : it->second)
-				f->exec();
-		}
+	//	auto it = global_key_listeners.find(kbhook->vkCode);
+	//	if (it != global_key_listeners.end())
+	//	{
+	//		for (auto &f : it->second)
+	//			f->exec();
+	//	}
 
-		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
-	}
+	//	return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
+	//}
 
-	Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt)
-	{
-		auto f = Function::create(pf, "", capt);
+	//Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt)
+	//{
+	//	auto f = Function::create(pf, "", capt);
 
-		auto it = global_key_listeners.find(key);
-		if (it == global_key_listeners.end())
-			it = global_key_listeners.emplace(key, std::vector<Function*>()).first;
-		it->second.push_back(f);
+	//	auto it = global_key_listeners.find(key);
+	//	if (it == global_key_listeners.end())
+	//		it = global_key_listeners.emplace(key, std::vector<Function*>()).first;
+	//	it->second.push_back(f);
 
-		if (global_key_hook == 0)
-			global_key_hook = SetWindowsHookEx(WH_KEYBOARD_LL, global_key_callback, (HINSTANCE)get_hinst(), 0);
+	//	if (global_key_hook == 0)
+	//		global_key_hook = SetWindowsHookEx(WH_KEYBOARD_LL, global_key_callback, (HINSTANCE)get_hinst(), 0);
 
-		return f;
-	}
+	//	return f;
+	//}
 
-	void remove_global_key_listener(int key, Function *f)
-	{
-		auto it = global_key_listeners.find(key);
-		if (it == global_key_listeners.end())
-			return;
+	//void remove_global_key_listener(int key, Function *f)
+	//{
+	//	auto it = global_key_listeners.find(key);
+	//	if (it == global_key_listeners.end())
+	//		return;
 
-		for (auto _it = it->second.begin(); _it != it->second.end(); _it++)
-		{
-			if ((*_it) == f)
-			{
-				Function::destroy(f);
-				it->second.erase(_it);
-				break;
-			}
-		}
+	//	for (auto _it = it->second.begin(); _it != it->second.end(); _it++)
+	//	{
+	//		if ((*_it) == f)
+	//		{
+	//			Function::destroy(f);
+	//			it->second.erase(_it);
+	//			break;
+	//		}
+	//	}
 
-		if (it->second.empty())
-			global_key_listeners.erase(it);
+	//	if (it->second.empty())
+	//		global_key_listeners.erase(it);
 
-		if (global_key_listeners.empty())
-		{
-			if (global_key_hook)
-			{
-				UnhookWindowsHookEx(global_key_hook);
-				global_key_hook = 0;
-			}
-		}
-	}
+	//	if (global_key_listeners.empty())
+	//	{
+	//		if (global_key_hook)
+	//		{
+	//			UnhookWindowsHookEx(global_key_hook);
+	//			global_key_hook = 0;
+	//		}
+	//	}
+	//}
 
 	void get_thumbnai(int width, const wchar_t *_filename, int *out_width, int *out_height, char **out_data)
 	{

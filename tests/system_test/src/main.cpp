@@ -22,13 +22,11 @@
 
 //#include <flame/system.h>
 
-#include <flame/memory.h>
-
-using namespace flame;
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 int main(int argc, char **args)
 {
-	malloc(1);
-
 	return 0;
 }

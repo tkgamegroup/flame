@@ -217,7 +217,7 @@ namespace flame
 		case VK_SCROLL:
 			return Key_ScrollLock;
 		default:
-			return Key_Unknown;
+			return Key_Null;
 		}
 	}
 #endif
@@ -262,13 +262,9 @@ namespace flame
 		android_app *android_state_;
 #endif
 
-		std::vector<Function*> keydown_listeners;
-		std::vector<Function*> keyup_listeners;
+		std::vector<Function*> key_listeners;
 		std::vector<Function*> char_listeners;
-		std::vector<Function*> mousedown_listeners;
-		std::vector<Function*> mouseup_listeners;
-		std::vector<Function*> mousemove_listeners;
-		std::vector<Function*> mousescroll_listeners;
+		std::vector<Function*> mouse_listeners;
 		std::vector<Function*> resize_listeners;
 		std::vector<Function*> destroy_listeners;
 
@@ -427,103 +423,101 @@ namespace flame
 		}
 #endif
 
-		inline Function *add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
+		inline Function *add_key_listener(PF pf, const std::vector<CommonData> &capt)
 		{
-			const char *parm_fmt;
-			std::vector<Function*> *list;
-
-			switch (type)
-			{
-			case cH("key down"):
-				parm_fmt = "i";
-				list = &keydown_listeners;
-				break;
-			case cH("key up"):
-				parm_fmt = "i";
-				list = &keyup_listeners;
-				break;
-			case cH("char"):
-				parm_fmt = "i";
-				list = &char_listeners;
-				break;
-			case cH("mouse down"):
-				parm_fmt = "i i2";
-				list = &mousedown_listeners;
-				break;
-			case cH("mouse up"):
-				parm_fmt = "i i2";
-				list = &mouseup_listeners;
-				break;
-			case cH("mouse move"):
-				parm_fmt = "i2";
-				list = &mousemove_listeners;
-				break;
-			case cH("mouse scroll"):
-				parm_fmt = "i";
-				list = &mousescroll_listeners;
-				break;
-			case cH("resize"):
-				parm_fmt = "i2";
-				list = &resize_listeners;
-				break;
-			case cH("destroy"):
-				parm_fmt = "";
-				list = &destroy_listeners;
-				break;
-			default:
-				assert(0);
-				return nullptr;
-			}
-
-			auto f = Function::create(pf, parm_fmt, capt);
-			list->emplace_back(f);
+			auto f = Function::create(pf, KeyListenerParm::SIZE, capt);
+			key_listeners.push_back(f);
 			return f;
 		}
 
-		inline void remove_listener(unsigned int type, Function *f)
+		inline void remove_key_listener(Function *f)
 		{
-			std::vector<Function*> *list;
-
-			switch (type)
-			{
-			case cH("key down"):
-				list = &keydown_listeners;
-				break;
-			case cH("key up"):
-				list = &keyup_listeners;
-				break;
-			case cH("char"):
-				list = &char_listeners;
-				break;
-			case cH("mouse down"):
-				list = &mousedown_listeners;
-				break;
-			case cH("mouse up"):
-				list = &mouseup_listeners;
-				break;
-			case cH("mouse move"):
-				list = &mousemove_listeners;
-				break;
-			case cH("mouse scroll"):
-				list = &mousescroll_listeners;
-				break;
-			case cH("resize"):
-				list = &resize_listeners;
-				break;
-			case cH("destroy"):
-				list = &destroy_listeners;
-				break;
-			default:
-				assert(0);
-				return;
-			}
-			
-			for (auto it = list->begin(); it != list->end(); it++)
+			for (auto it = key_listeners.begin(); it != key_listeners.end(); it++)
 			{
 				if (*it == f)
 				{
 					Function::destroy(f);
-					list->erase(it);
+					key_listeners.erase(it);
+					return;
+				}
+			}
+		}
+
+		inline Function *add_char_listener(PF pf, const std::vector<CommonData> &capt)
+		{
+			auto f = Function::create(pf, CharListenerParm::SIZE, capt);
+			char_listeners.push_back(f);
+			return f;
+		}
+
+		inline void remove_char_listener(Function *f)
+		{
+			for (auto it = char_listeners.begin(); it != char_listeners.end(); it++)
+			{
+				if (*it == f)
+				{
+					Function::destroy(f);
+					char_listeners.erase(it);
+					return;
+				}
+			}
+		}
+
+		inline Function *add_mouse_listener(PF pf, const std::vector<CommonData> &capt)
+		{
+			auto f = Function::create(pf, MouseListenerParm::SIZE, capt);
+			mouse_listeners.push_back(f);
+			return f;
+		}
+
+		inline void remove_mouse_listener(Function *f)
+		{
+			for (auto it = mouse_listeners.begin(); it != mouse_listeners.end(); it++)
+			{
+				if (*it == f)
+				{
+					Function::destroy(f);
+					mouse_listeners.erase(it);
+					return;
+				}
+			}
+		}
+
+		inline Function *add_resize_listener(PF pf, const std::vector<CommonData> &capt)
+		{
+			auto f = Function::create(pf, ResizeListenerParm::SIZE, capt);
+			resize_listeners.push_back(f);
+			return f;
+		}
+
+		inline void remove_resize_listener(Function *f)
+		{
+			for (auto it = resize_listeners.begin(); it != resize_listeners.end(); it++)
+			{
+				if (*it == f)
+				{
+					Function::destroy(f);
+					resize_listeners.erase(it);
+					return;
+				}
+			}
+		}
+
+		inline Function *add_destroy_listener(PF pf, const std::vector<CommonData> &capt)
+		{
+			auto f = Function::create(pf, DestroyListenerParm::SIZE, capt);
+			destroy_listeners.push_back(f);
+			return f;
+		}
+
+		inline void remove_destroy_listener(Function *f)
+		{
+			for (auto it = destroy_listeners.begin(); it != destroy_listeners.end(); it++)
+			{
+				if (*it == f)
+				{
+					Function::destroy(f);
+					destroy_listeners.erase(it);
 					return;
 				}
 			}
@@ -556,14 +550,54 @@ namespace flame
 	}
 #endif
 
-	Function *Window::add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
+	Function *Window::add_key_listener(PF pf, const std::vector<CommonData> &capt)
 	{
-		return ((WindowPrivate*)this)->add_listener(type, pf, capt);
+		return ((WindowPrivate*)this)->add_key_listener(pf, capt);
 	}
 
-	void Window::remove_listener(unsigned int type, Function *f)
+	void Window::remove_key_listener(Function *f)
 	{
-		reinterpret_cast<WindowPrivate*>(this)->remove_listener(type, f);
+		((WindowPrivate*)this)->remove_key_listener(f);
+	}
+
+	Function *Window::add_char_listener(PF pf, const std::vector<CommonData> &capt)
+	{
+		return ((WindowPrivate*)this)->add_char_listener(pf, capt);
+	}
+
+	void Window::remove_char_listener(Function *f)
+	{
+		((WindowPrivate*)this)->remove_char_listener(f);
+	}
+
+	Function *Window::add_mouse_listener(PF pf, const std::vector<CommonData> &capt)
+	{
+		return ((WindowPrivate*)this)->add_mouse_listener(pf, capt);
+	}
+
+	void Window::remove_mouse_listener(Function *f)
+	{
+		((WindowPrivate*)this)->remove_mouse_listener(f);
+	}
+
+	Function *Window::add_resize_listener(PF pf, const std::vector<CommonData> &capt)
+	{
+		return ((WindowPrivate*)this)->add_resize_listener(pf, capt);
+	}
+
+	void Window::remove_resize_listener(Function *f)
+	{
+		((WindowPrivate*)this)->remove_resize_listener(f);
+	}
+
+	Function *Window::add_destroy_listener(PF pf, const std::vector<CommonData> &capt)
+	{
+		return ((WindowPrivate*)this)->add_destroy_listener(pf, capt);
+	}
+
+	void Window::remove_destroy_listener(Function *f)
+	{
+		((WindowPrivate*)this)->remove_destroy_listener(f);
 	}
 
 #ifdef FLAME_WINDOWS
@@ -598,9 +632,11 @@ namespace flame
 			case WM_KEYDOWN:
 			{
 				auto v = Z(wParam);
-				for (auto &f : w->keydown_listeners)
+				for (auto f : w->key_listeners)
 				{
-					f->datas[0].i1() = v;
+					auto p = (Window::KeyListenerParm&)f->p;
+					p.action() = KeyStateDown;
+					p.key() = v;
 					f->exec();
 				}
 			}
@@ -608,92 +644,110 @@ namespace flame
 			case WM_KEYUP:
 			{
 				auto v = Z(wParam);
-				for (auto &f : w->keyup_listeners)
+				for (auto f : w->key_listeners)
 				{
-					f->datas[0].i1() = v;
+					auto p = (Window::KeyListenerParm&)f->p;
+					p.action() = KeyStateUp;
+					p.key() = v;
 					f->exec();
 				}
 				break;
 			}
 			case WM_CHAR:
-				for (auto &f : w->char_listeners)
+				for (auto f : w->char_listeners)
 				{
-					f->datas[0].i1() = wParam;
+					auto p = (Window::CharListenerParm&)f->p;
+					p.ch() = wParam;
 					f->exec();
 				}
 				break;
 			case WM_LBUTTONDOWN:
 			{
-				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mousedown_listeners)
+				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i1() = 0;
-					f->datas[1].i2() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateDown;
+					p.key() = Mouse_Left;
+					p.pos() = pos;
 					f->exec();
 				}
 			}
 				break;
 			case WM_LBUTTONUP:
 			{
-				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouseup_listeners)
+				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i1() = 0;
-					f->datas[1].i2() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateUp;
+					p.key() = Mouse_Left;
+					p.pos() = pos;
 					f->exec();
 				}
 			}
 				break;
 			case WM_MBUTTONDOWN:
 			{
-				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mousedown_listeners)
+				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i1() = 2;
-					f->datas[1].i2() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateDown;
+					p.key() = Mouse_Middle;
+					p.pos() = pos;
 					f->exec();
 				}
 			}
 				break;
 			case WM_MBUTTONUP:
 			{
-				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouseup_listeners)
+				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i1() = 2;
-					f->datas[1].i2() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateUp;
+					p.key() = Mouse_Middle;
+					p.pos() = pos;
 					f->exec();
 				}
 			}
 				break;
 			case WM_RBUTTONDOWN:
 			{
-				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mousedown_listeners)
+				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i1() = 1;
-					f->datas[1].i2() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateDown;
+					p.key() = Mouse_Right;
+					p.pos() = pos;
 					f->exec();
 				}
 			}
 				break;
 			case WM_RBUTTONUP:
 			{
-				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouseup_listeners)
+				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i1() = 1;
-					f->datas[1].i2() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateUp;
+					p.key() = Mouse_Right;
+					p.pos() = pos;
 					f->exec();
 				}
 			}
 				break;
 			case WM_MOUSEMOVE:
 			{
-				auto v = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mousemove_listeners)
+				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i2() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateNull;
+					p.key() = Mouse_Null;
+					p.pos() = pos;
 					f->exec();
 				}
 			}
@@ -701,9 +755,12 @@ namespace flame
 			case WM_MOUSEWHEEL:
 			{
 				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
-				for (auto &f : w->mousescroll_listeners)
+				for (auto f : w->mouse_listeners)
 				{
-					f->datas[0].i1() = v;
+					auto p = (Window::MouseListenerParm&)f->p;
+					p.action() = KeyStateNull;
+					p.key() = Mouse_Middle;
+					p.pos().x = v;
 					f->exec();
 				}
 			}
@@ -717,9 +774,10 @@ namespace flame
 				if (size != w->size)
 				{
 					w->size = size;
-					for (auto &f : w->resize_listeners)
+					for (auto f : w->resize_listeners)
 					{
-						f->datas[0].i2() = size;
+						auto p = (Window::ResizeListenerParm&)f->p;
+						p.size() = size;
 						f->exec();
 					}
 				}
@@ -864,7 +922,7 @@ namespace flame
 		counting_frame = 0;
 		total_frame = 0;
 
-		auto idle_func = Function::create(pf, "", capt);
+		auto idle_func = Function::create(pf, 0, capt);
 
 		for (;;)
 		{
@@ -935,7 +993,7 @@ namespace flame
 
 	inline void ApplicationPrivate::add_delay_event(PF pf, const std::vector<CommonData> &capt)
 	{
-		delay_events.emplace_back(Function::create(pf, "", capt));
+		delay_events.emplace_back(Function::create(pf, 0, capt));
 	}
 
 	inline void ApplicationPrivate::clear_delay_events()

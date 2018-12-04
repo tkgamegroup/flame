@@ -290,8 +290,9 @@ namespace flame
 			FLAME_UI_EXPORTS void add_extra_draw_command(PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void add_style(PF pf, const std::vector<CommonData> &capt);
-
+			FLAME_UI_EXPORTS void add_style(Function *f);
 			FLAME_UI_EXPORTS void add_animation(PF pf, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void add_animation(Function *f);
 
 			FLAME_UI_EXPORTS void on_draw(Canvas *c, const Vec2 &off, float scl);
 			FLAME_UI_EXPORTS void on_gainfocus(int type);

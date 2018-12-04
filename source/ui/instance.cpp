@@ -270,6 +270,8 @@ namespace flame
 
 		InstancePrivate::InstancePrivate()
 		{
+			default_style = DefaultStyleDark;
+
 			root_ = std::unique_ptr<WidgetPrivate>((WidgetPrivate*)Widget::create(this));
 			root_->name$ = "root";
 			root_->size_policy_hori$ = SizeFitLayout;

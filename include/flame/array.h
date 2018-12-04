@@ -44,7 +44,7 @@ namespace flame
 					v[i].~T();
 			}
 
-			v = new_size == 0 ? nullptr : (T*)realloc(v, sizeof(T) * new_size);
+			v = new_size == 0 ? nullptr : (T*)flame_realloc(v, sizeof(T) * new_size);
 
 			if (new_size > size)
 			{
@@ -63,7 +63,13 @@ namespace flame
 
 		inline ~Array()
 		{
-			free(v);
+			flame_free(v);
+		}
+
+		inline void operator=(const Array<T> &rhs)
+		{
+			resize(rhs.size);
+			memcpy(v, rhs.v, sizeof(T) * size);
 		}
 
 		inline T &operator[](int idx)

@@ -29,8 +29,8 @@ int main(int argc, char **args)
 	auto app = Application::create();
 	auto w = Window::create(app, "Hello",  Ivec2(1280, 720), WindowFrame);
 
-	app->run([](CommonData *){
-	}, "");
+	app->run([](const ParmPackage &p){
+	}, {});
 
 	return 0;
 }

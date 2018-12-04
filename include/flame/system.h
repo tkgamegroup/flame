@@ -55,29 +55,29 @@ namespace flame
 	FLAME_SYSTEM_EXPORTS void open_explorer_and_select(const wchar_t *filename);
 	FLAME_SYSTEM_EXPORTS void move_to_trashbin(const wchar_t *filename);
 
-	struct FileWatcher;
+	//struct FileWatcher;
 
-	enum FileWatcherMode
-	{
-		FileWatcherModeAll,
-		FileWatcherModeContent
-	};
+	//enum FileWatcherMode
+	//{
+	//	FileWatcherModeAll,
+	//	FileWatcherModeContent
+	//};
 
-	enum FileChangeType
-	{
-		FileAdded,
-		FileRemoved,
-		FileModified,
-		FileRenamed
-	};
+	//enum FileChangeType
+	//{
+	//	FileAdded,
+	//	FileRemoved,
+	//	FileModified,
+	//	FileRenamed
+	//};
 
-	FLAME_SYSTEM_EXPORTS FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt); // (FileChangeType type, const wchar_t *filename)
-	FLAME_SYSTEM_EXPORTS void remove_file_watcher(FileWatcher *w);
+	//FLAME_SYSTEM_EXPORTS FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt); // (FileChangeType type, const wchar_t *filename)
+	//FLAME_SYSTEM_EXPORTS void remove_file_watcher(FileWatcher *w);
 
-	FLAME_SYSTEM_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
+	//FLAME_SYSTEM_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
 
-	FLAME_SYSTEM_EXPORTS Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt); // 0 parms
-	FLAME_SYSTEM_EXPORTS void remove_global_key_listener(int key, Function *f);
+	//FLAME_SYSTEM_EXPORTS Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt); // 0 parms
+	//FLAME_SYSTEM_EXPORTS void remove_global_key_listener(int key, Function *f);
 
 	FLAME_SYSTEM_EXPORTS void get_thumbnai(int width, const wchar_t *filename, int *out_width, int *out_height, char **out_data);
 }

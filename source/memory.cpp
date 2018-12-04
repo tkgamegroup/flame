@@ -24,20 +24,17 @@
 
 #include <stdlib.h>
 
-namespace flame
+void *flame_malloc(int size)
 {
-	void *malloc(int size)
-	{
-		return ::malloc(size);
-	}
+	return malloc(size);
+}
 
-	void *realloc(void *p, int size)
-	{
-		return ::realloc(p, size);
-	}
+void *flame_realloc(void *p, int size)
+{
+	return realloc(p, size);
+}
 
-	void free(void *p)
-	{
-		::free(p);
-	}
+void flame_free(void *p)
+{
+	free(p);
 }

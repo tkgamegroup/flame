@@ -629,6 +629,8 @@ namespace flame
 		FLAME_SERIALIZE_EXPORTS int find_item_i(const char *name) const;
 	};
 
+	typedef UDT* UDTPtr;
+
 	FLAME_SERIALIZE_EXPORTS int enum_count();
 	FLAME_SERIALIZE_EXPORTS EnumInfo *get_enum(int idx);
 	FLAME_SERIALIZE_EXPORTS EnumInfo *find_enum(unsigned int name_hash);
@@ -677,7 +679,30 @@ namespace flame
 
 		FLAME_SERIALIZE_EXPORTS void save_xml(const std::wstring &filename) const;
 		FLAME_SERIALIZE_EXPORTS void save_bin(const std::wstring &filename) const;
-		// (UDT *u, void *parent, uint att_hash, out void *obj)
+
+		struct ObjGeneratorParm : ParmPackage
+		{
+			enum { BASE = __COUNTER__ + 1 };
+
+			inline UDTPtr &udt()
+			{
+				return (UDTPtr&)d[__COUNTER__ - BASE].p();
+			}
+			inline voidptr &parent()
+			{
+				return d[__COUNTER__ - BASE].p();
+			}
+			inline uint &att_hash()
+			{
+				return d[__COUNTER__ - BASE].u();
+			}
+			inline voidptr &out_obj()
+			{
+				return d[__COUNTER__ - BASE].p();
+			}
+
+			enum { SIZE = __COUNTER__ - BASE };
+		};
 		FLAME_SERIALIZE_EXPORTS void *unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt);
 
 		FLAME_SERIALIZE_EXPORTS static SerializableNode *create(const std::string &name);

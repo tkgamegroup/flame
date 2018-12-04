@@ -622,67 +622,67 @@ namespace flame
 
 	static void serialize_commondata(const std::vector<std::pair<void*, uint>> &table, int precision, std::string &ty_str, std::string &vl_str, CommonData *d)
 	{
-		if (d->cmp_fmt("f"))
+		if (typefmt_compare(d->fmt, "f"))
 		{
 			ty_str = "f";
 			vl_str = to_stdstring(d->f1(), precision);
 		}
-		else if (d->cmp_fmt("f2"))
+		else if (typefmt_compare(d->fmt, "f2"))
 		{
 			ty_str = "f2";
 			vl_str = to_stdstring(d->f2(), precision);
 		}
-		else if (d->cmp_fmt("f3"))
+		else if (typefmt_compare(d->fmt, "f3"))
 		{
 			ty_str = "f3";
 			vl_str = to_stdstring(d->f3(), precision);
 		}
-		else if (d->cmp_fmt("f4"))
+		else if (typefmt_compare(d->fmt, "f4"))
 		{
 			ty_str = "f4";
 			vl_str = to_stdstring(d->f4(), precision);
 		}
-		else if (d->cmp_fmt("i"))
+		else if (typefmt_compare(d->fmt, "i"))
 		{
 			ty_str = "i";
 			vl_str = to_stdstring(d->i1());
 		}
-		else if (d->cmp_fmt("i2"))
+		else if (typefmt_compare(d->fmt, "i2"))
 		{
 			ty_str = "i2";
 			vl_str = to_stdstring(d->i2());
 		}
-		else if (d->cmp_fmt("i3"))
+		else if (typefmt_compare(d->fmt, "i3"))
 		{
 			ty_str = "i3";
 			vl_str = to_stdstring(d->i3());
 		}
-		else if (d->cmp_fmt("i4"))
+		else if (typefmt_compare(d->fmt, "i4"))
 		{
 			ty_str = "i4";
 			vl_str = to_stdstring(d->i4());
 		}
-		else if (d->cmp_fmt("b"))
+		else if (typefmt_compare(d->fmt, "b"))
 		{
 			ty_str = "b";
 			vl_str = to_stdstring((int)d->b1());
 		}
-		else if (d->cmp_fmt("b2"))
+		else if (typefmt_compare(d->fmt, "b2"))
 		{
 			ty_str = "b2";
 			vl_str = to_stdstring(d->b2());
 		}
-		else if (d->cmp_fmt("b3"))
+		else if (typefmt_compare(d->fmt, "b3"))
 		{
 			ty_str = "b3";
 			vl_str = to_stdstring(d->b3());
 		}
-		else if (d->cmp_fmt("b4"))
+		else if (typefmt_compare(d->fmt, "b4"))
 		{
 			ty_str = "b4";
 			vl_str = to_stdstring(d->b4());
 		}
-		else if (d->cmp_fmt("p"))
+		else if (typefmt_compare(d->fmt, "p"))
 		{
 			ty_str = "p";
 			vl_str = to_stdstring(find_obj_pos(table, d->p()));
@@ -706,67 +706,67 @@ namespace flame
 	{
 		if (ty_str == "f")
 		{
-			d->set_fmt("f");
+			typefmt_assign(d->fmt, "f");
 			d->f1() = stof1(vl_str.c_str());
 		}
 		else if (ty_str == "f2")
 		{
-			d->set_fmt("f2");
+			typefmt_assign(d->fmt, "f2");
 			d->f2() = stof2(vl_str.c_str());
 		}
 		else if (ty_str == "f3")
 		{
-			d->set_fmt("f3");
+			typefmt_assign(d->fmt, "f3");
 			d->f3() = stof3(vl_str.c_str());
 		}
 		else if (ty_str == "f4")
 		{
-			d->set_fmt("f4");
+			typefmt_assign(d->fmt, "f4");
 			d->f4() = stof4(vl_str.c_str());
 		}
 		else if (ty_str == "i")
 		{
-			d->set_fmt("i");
+			typefmt_assign(d->fmt, "i");
 			d->i1() = stoi1(vl_str.c_str());
 		}
 		else if (ty_str == "i2")
 		{
-			d->set_fmt("i2");
+			typefmt_assign(d->fmt, "i2");
 			d->i2() = stoi2(vl_str.c_str());
 		}
 		else if (ty_str == "i3")
 		{
-			d->set_fmt("i3");
+			typefmt_assign(d->fmt, "i3");
 			d->i3() = stoi3(vl_str.c_str());
 		}
 		else if (ty_str == "i4")
 		{
-			d->set_fmt("i4");
+			typefmt_assign(d->fmt, "i4");
 			d->i4() = stoi4(vl_str.c_str());
 		}
 		else if (ty_str == "b")
 		{
-			d->set_fmt("b");
+			typefmt_assign(d->fmt, "b");
 			d->b1() = stob1(vl_str.c_str());
 		}
 		else if (ty_str == "b2")
 		{
-			d->set_fmt("b2");
+			typefmt_assign(d->fmt, "b2");
 			d->b2() = stob2(vl_str.c_str());
 		}
 		else if (ty_str == "b3")
 		{
-			d->set_fmt("b3");
+			typefmt_assign(d->fmt, "b3");
 			d->b3() = stob3(vl_str.c_str());
 		}
 		else if (ty_str == "b4")
 		{
-			d->set_fmt("b4");
+			typefmt_assign(d->fmt, "b4");
 			d->b4() = stob4(vl_str.c_str());
 		}
 		else if (ty_str == "p")
 		{
-			d->set_fmt("p");
+			typefmt_assign(d->fmt, "p");
 			d->p() = find_obj(table, stoi1(vl_str.c_str()));
 		}
 		else
@@ -807,11 +807,12 @@ namespace flame
 
 	static void *create_obj(UDT *u, Function *obj_generator, void *parent, uint att_hash)
 	{
-		obj_generator->datas[0].p() = u;
-		obj_generator->datas[1].p() = parent;
-		obj_generator->datas[2].u() = att_hash;
+		auto p = (SerializableNode::ObjGeneratorParm&)obj_generator->p;
+		p.udt() = u;
+		p.parent() = parent;
+		p.att_hash() = att_hash;
 		obj_generator->exec();
-		auto obj = obj_generator->datas[3].p();
+		auto obj = p.out_obj();
 		assert(obj);
 		return obj;
 	}
@@ -1034,12 +1035,12 @@ namespace flame
 						for (auto i_i = 0; i_i < arr.size; i_i++)
 						{
 							auto f = (Function*)arr[i_i];
-							auto id = find_registered_PF(f->pf);
+							auto r = find_registered_function(f->pf);
 
 							auto n_fn = n_item->new_node("function");
-							n_fn->new_attr("id", to_stdstring(id));
+							n_fn->new_attr("id", to_stdstring(r->id()));
 
-							auto d = f->datas + f->para_cnt;
+							auto d = f->p.d + r->parm_count();
 							for (auto i = 0; i < f->capt_cnt; i++)
 							{
 								auto n_cpt = n_fn->new_node("capture");
@@ -1155,22 +1156,19 @@ namespace flame
 							{
 								auto cpt_cnt = n_i->node_count();
 								auto id = stoi(n_i->find_attr("id")->value());
-								auto f = Function::create(id, cpt_cnt);
+								std::vector<CommonData> capts;
+								capts.resize(cpt_cnt);
 
-								auto d = f->datas + f->para_cnt;
 								for (auto i_c = 0; i_c < cpt_cnt; i_c++)
 								{
 									auto n_c = n_i->node(i_c);
 									if (n_c->name() == "capture")
-									{
-										unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), d);
-										d++;
-									}
+										unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), &capts[i_c]);
 									else
 										assert(0);
 								}
 
-								arr[i_i] = f;
+								arr[i_i] = Function::create(id, capts);
 							}
 							else
 								assert(0);
@@ -1391,7 +1389,7 @@ namespace flame
 	{
 		assert(name() == "obj");
 
-		auto obj_generator = Function::create(pf, "p p i p", capt);
+		auto obj_generator = Function::create(pf, ObjGeneratorParm::SIZE, capt);
 
 		auto obj = create_obj(u, obj_generator, nullptr, 0);
 

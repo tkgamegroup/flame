@@ -5370,6 +5370,39 @@ namespace flame
 		}
 	}
 
+	typedef char TypeFmt[4];
+
+	inline void str_to_typefmt(TypeFmt &lhs, const char *rhs)
+	{
+		auto i = 0;
+		for (;; i++)
+		{
+			lhs[i] = rhs[i];
+			if (lhs[i] == 0)
+				break;
+		}
+		for (; i < 4; i++)
+			lhs[i] = 0;
+	}
+
+	inline void typefmt_assign(TypeFmt &lhs, const char *rhs)
+	{
+		for (auto i = 0; i < 4; i++)
+			lhs[i] = rhs[i];
+	}
+
+	inline bool typefmt_compare(TypeFmt &lhs, const char *rhs)
+	{
+		for (auto i = 0;; i++)
+		{
+			if (lhs[i] != rhs[i])
+				return false;
+			if (lhs[i] == 0)
+				break;
+		}
+		return true;
+	}
+
 	/* fmt:
 		i    - int
 		i2   - Ivec2
@@ -5388,7 +5421,7 @@ namespace flame
 
 	struct CommonData
 	{
-		char fmt[4];
+		TypeFmt fmt;
 
 		union
 		{
@@ -5467,31 +5500,6 @@ namespace flame
 		inline void *&p()
 		{
 			return v.p;
-		}
-
-		inline void set_fmt(const char *_fmt)
-		{
-			auto i = 0;
-			for (;; i++)
-			{
-				fmt[i] = _fmt[i];
-				if (fmt[i] == 0)
-					break;
-			}
-			for (; i < 4; i++)
-				fmt[i] = 0;
-		}
-
-		inline bool cmp_fmt(const char *_fmt) const
-		{
-			for (auto i = 0;; i++)
-			{
-				if (fmt[i] != _fmt[i])
-					return false;
-				if (fmt[i] == 0)
-					break;
-			}
-			return true;
 		}
 
 		CommonData() = default;
@@ -5635,8 +5643,7 @@ namespace flame
 
 		inline CommonData &operator=(const CommonData &rhs)
 		{
-			for (auto i = 0; i < 4; i++)
-				fmt[i] = rhs.fmt[i];
+			typefmt_assign(fmt, rhs.fmt);
 			memcpy(&v, &rhs.v, sizeof(v));
 			return *this;
 		}

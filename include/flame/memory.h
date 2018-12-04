@@ -32,9 +32,6 @@
 #define FLAME_MEMORY_EXPORTS
 #endif
 
-namespace flame
-{
-	FLAME_MEMORY_EXPORTS void *malloc(int size);
-	FLAME_MEMORY_EXPORTS void *realloc(void *p, int size);
-	FLAME_MEMORY_EXPORTS void free(void *p);
-}
+FLAME_MEMORY_EXPORTS void *flame_malloc(int size);
+FLAME_MEMORY_EXPORTS void *flame_realloc(void *p, int size);
+FLAME_MEMORY_EXPORTS void flame_free(void *p);
