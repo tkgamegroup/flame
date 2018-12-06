@@ -189,44 +189,41 @@ namespace flame
 			share_data.destroy();
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(SwapchainData_resize, FLAME_GID(24526), "i2")
-			auto &size = d[0].i2();
-			auto &sd = *(SwapchainDataPrivate**)&d[1].p();
-
-			if (size.x == 0)
-				size.x = 1;
-			if (size.y == 0)
-				size.y = 1;
+		FLAME_REGISTER_FUNCTION_BEG(SwapchainDataResize, FLAME_GID(24526), Window::ResizeListenerParm)
+			if (p.size().x == 0)
+				p.size().x = 1;
+			if (p.size().y == 0)
+				p.size().y = 1;
 
 			for (auto i = 0; i < 2; i++)
 			{
-				if (sd->framebuffers[i])
-					graphics::Framebuffer::release(sd->framebuffers[i]);
+				if (((SwapchainDataPrivate*)p.thiz())->framebuffers[i])
+					graphics::Framebuffer::release(((SwapchainDataPrivate*)p.thiz())->framebuffers[i]);
 
 				graphics::FramebufferInfo fb_info;
 				fb_info.rp = share_data.renderpass;
 				if (share_data.sample_count != graphics::SampleCount_1)
 				{
-					if (!sd->image_ms || sd->image_ms->size != size)
+					if (!((SwapchainDataPrivate*)p.thiz())->image_ms || ((SwapchainDataPrivate*)p.thiz())->image_ms->size != p.size())
 					{
-						if (sd->image_ms)
-							graphics::Image::destroy(sd->image_ms);
-						sd->image_ms = graphics::Image::create(share_data.d, graphics::get_swapchain_format(), size, 1, 1, share_data.sample_count,
+						if (((SwapchainDataPrivate*)p.thiz())->image_ms)
+							graphics::Image::destroy(((SwapchainDataPrivate*)p.thiz())->image_ms);
+						((SwapchainDataPrivate*)p.thiz())->image_ms = graphics::Image::create(share_data.d, graphics::get_swapchain_format(), p.size(), 1, 1, share_data.sample_count,
 							graphics::ImageUsageAttachment, graphics::MemPropDevice);
 					}
-					fb_info.views.push_back(graphics::Imageview::get(sd->image_ms));
+					fb_info.views.push_back(graphics::Imageview::get(((SwapchainDataPrivate*)p.thiz())->image_ms));
 				}
-				fb_info.views.push_back(graphics::Imageview::get(sd->sc->get_image(i)));
-				sd->framebuffers[i] = graphics::Framebuffer::get(share_data.d, fb_info);
+				fb_info.views.push_back(graphics::Imageview::get(((SwapchainDataPrivate*)p.thiz())->sc->get_image(i)));
+				((SwapchainDataPrivate*)p.thiz())->framebuffers[i] = graphics::Framebuffer::get(share_data.d, fb_info);
 			}
-		FLAME_REGISTER_FUNCTION_END(SwapchainData_resize)
+		FLAME_REGISTER_FUNCTION_END(SwapchainDataResize)
 
 		SwapchainDataPrivate::SwapchainDataPrivate(graphics::Swapchain *_sc)
 		{
 			sc = _sc;
 			w = sc->window();
 
-			w->add_listener(cH("resize"), SwapchainData_resize::v, { this });
+			w->add_listener(Window::ListenerResize, SwapchainDataResize::v, this, {});
 
 			auto surface_size = w->size;
 			auto swapchain_format = graphics::get_swapchain_format();
@@ -303,104 +300,69 @@ namespace flame
 			total_time_ = 0.f;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_keydown, FLAME_GID(28755), "i")
-			((InstancePrivate*)d[1].p())->on_keydown(d[0].i1());
-		FLAME_REGISTER_FUNCTION_END(Instance_keydown)
+		FLAME_REGISTER_FUNCTION_BEG(InstanceKey, FLAME_GID(28755), Window::KeyListenerParm)
+			((InstancePrivate*)p.thiz())->on_key(p.action(), p.value());
+		FLAME_REGISTER_FUNCTION_END(InstanceKey)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_keyup, FLAME_GID(4617), "i")
-			((InstancePrivate*)d[1].p())->on_keyup(d[0].i1());
-		FLAME_REGISTER_FUNCTION_END(Instance_keyup)
+		FLAME_REGISTER_FUNCTION_BEG(InstanceMouse, FLAME_GID(19621), Window::MouseListenerParm)
+			((InstancePrivate*)p.thiz())->on_mouse(p.action(), p.key(), p.pos());
+		FLAME_REGISTER_FUNCTION_END(InstanceMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(Instance_char, FLAME_GID(31685), "i")
-			((InstancePrivate*)d[1].p())->on_char(d[0].i1());
-		FLAME_REGISTER_FUNCTION_END(Instance_char)
-
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mousedown, FLAME_GID(19621), "i i2")
-			((InstancePrivate*)d[2].p())->on_mousedown(d[0].i1(), d[1].i2());
-		FLAME_REGISTER_FUNCTION_END(Instance_mousedown)
-
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mouseup, FLAME_GID(32698), "i i2")
-			((InstancePrivate*)d[2].p())->on_mouseup(d[0].i1(), d[1].i2());
-		FLAME_REGISTER_FUNCTION_END(Instance_mouseup)
-
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mousemove, FLAME_GID(17801), "i2")
-			((InstancePrivate*)d[1].p())->on_mousemove(d[0].i2());
-		FLAME_REGISTER_FUNCTION_END(Instance_mousemove)
-
-		FLAME_REGISTER_FUNCTION_BEG(Instance_mousescroll, FLAME_GID(9829), "i")
-			((InstancePrivate*)d[1].p())->on_mousescroll(d[0].i1());
-		FLAME_REGISTER_FUNCTION_END(Instance_mousescroll)
-
-		FLAME_REGISTER_FUNCTION_BEG(Instance_resize, FLAME_GID(16038), "i2")
-			((InstancePrivate*)d[1].p())->on_resize(d[0].i2());
-		FLAME_REGISTER_FUNCTION_END(Instance_resize)
+		FLAME_REGISTER_FUNCTION_BEG(InstanceResize, FLAME_GID(16038), Window::ResizeListenerParm)
+			((InstancePrivate*)p.thiz())->on_resize(p.size());
+		FLAME_REGISTER_FUNCTION_END(InstanceResize)
 
 		InstancePrivate::InstancePrivate(Window *w) :
 			InstancePrivate()
 		{
 			root_->size$ = w->size;
 
-			w->add_listener(cH("key down"), Instance_keydown::v, { this });
-			w->add_listener(cH("key up"), Instance_keyup::v, { this });
-			w->add_listener(cH("char"), Instance_char::v, { this });
-			w->add_listener(cH("mouse down"), Instance_mousedown::v, { this });
-			w->add_listener(cH("mouse up"), Instance_mouseup::v, { this });
-			w->add_listener(cH("mouse move"), Instance_mousemove::v, { this });
-			w->add_listener(cH("mouse scroll"), Instance_mousescroll::v, { this });
-			w->add_listener(cH("resize"), Instance_resize::v, { this });
+			w->add_listener(Window::ListenerKey, InstanceKey::v, this, {});
+			w->add_listener(Window::ListenerMouse, InstanceMouse::v, this, {});
+			w->add_listener(Window::ListenerResize, InstanceResize::v, this, {});
 		}
 
-		inline void InstancePrivate::on_keydown(int code)
+		inline void InstancePrivate::on_key(KeyState action, int value)
 		{
-			key_states[code] = KeyStateDown | KeyStateJust;
-			keydown_inputs_.push_back(code);
-		}
-
-		inline void InstancePrivate::on_keyup(int code)
-		{
-			key_states[code] = KeyStateUp | KeyStateJust;
-			keyup_inputs_.push_back(code);
-		}
-
-		inline void InstancePrivate::on_char(int ch) 
-		{
-			if (!char_input_compelete_ && !char_inputs_.empty())
+			if (action == KeyStateNull)
 			{
-				std::string ansi;
-				ansi += char_inputs_.back();
-				ansi += ch;
-				auto wstr = a2w(ansi);
-				char_inputs_.back() = wstr[0];
-				char_input_compelete_ = true;
+				if (!char_input_compelete_ && !char_inputs_.empty())
+				{
+					std::string ansi;
+					ansi += char_inputs_.back();
+					ansi += value;
+					auto wstr = a2w(ansi);
+					char_inputs_.back() = wstr[0];
+					char_input_compelete_ = true;
+				}
+				else
+				{
+					char_inputs_.push_back(value);
+					if (value >= 0x80)
+						char_input_compelete_ = false;
+				}
 			}
 			else
 			{
-				char_inputs_.push_back(ch);
-				if (ch >= 0x80)
-					char_input_compelete_ = false;
+				key_states[value] = action | KeyStateJust;
+				keydown_inputs_.push_back(value);
 			}
 		}
 
-		inline void InstancePrivate::on_mousedown(int mouse, const Ivec2 &pos)
+		inline void InstancePrivate::on_mouse(KeyState action, MouseKey key, const Ivec2 &pos)
 		{
-			mouse_buttons[mouse] = KeyStateDown | KeyStateJust;
-			mouse_pos = pos;
-		}
-
-		inline void InstancePrivate::on_mouseup(int mouse, const Ivec2 &pos)
-		{
-			mouse_buttons[mouse] = KeyStateUp | KeyStateJust;
-			mouse_pos = pos;
-		}
-
-		inline void InstancePrivate::on_mousemove(const Ivec2 &pos)
-		{
-			mouse_pos = pos;
-		}
-
-		inline void InstancePrivate::on_mousescroll(int scroll)
-		{
-			mouse_scroll = scroll;
+			if (action == KeyStateNull)
+			{
+				if (key == Mouse_Middle)
+					mouse_scroll = pos.x;
+				else if (key == Mouse_Null)
+					mouse_pos = pos;
+			}
+			else
+			{
+				mouse_buttons[key] = action | KeyStateJust;
+				mouse_pos = pos;
+			}
 		}
 
 		inline void InstancePrivate::on_resize(const Ivec2 &size)
@@ -413,10 +375,10 @@ namespace flame
 			if (w == hovering_widget_)
 				return;
 			if (hovering_widget_)
-				hovering_widget_->on_mouseleave();
+				hovering_widget_->on_mouse(KeyStateUp, Mouse_Null, Vec2(0.f));
 			hovering_widget_ = w;
 			if (hovering_widget_)
-				hovering_widget_->on_mouseenter();
+				hovering_widget_->on_mouse(KeyStateDown, Mouse_Null, Vec2(0.f));
 		}
 
 		void InstancePrivate::set_key_focus_widget(WidgetPrivate *w)
@@ -428,9 +390,9 @@ namespace flame
 				auto old = key_focus_widget_;
 				key_focus_widget_ = w;
 				if (old)
-					old->on_lostfocus(1);
+					old->on_focus(Focus_Lost, 1);
 				if (key_focus_widget_)
-					key_focus_widget_->on_gainfocus(1);
+					key_focus_widget_->on_focus(Focus_Gain, 1);
 				return;
 			}
 			set_key_focus_widget(w->parent);
@@ -441,9 +403,9 @@ namespace flame
 			auto old = focus_widget_;
 			focus_widget_ = w;
 			if (old)
-				old->on_lostfocus(0);
+				old->on_focus(Focus_Lost, 0);
 			if (focus_widget_)
-				focus_widget_->on_gainfocus(0);
+				focus_widget_->on_focus(Focus_Gain, 0);
 			set_key_focus_widget(w);
 		}
 
@@ -566,7 +528,7 @@ namespace flame
 					}
 					if (p.mdisp.x != 0 || p.mdisp.y != 0)
 					{
-						w->on_mousemove(Vec2(p.mdisp));
+						w->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
 						p.mdisp = Ivec2(0);
 					}
 					if (p.mljustdown)
@@ -575,22 +537,22 @@ namespace flame
 						set_focus_widget(w);
 						if (mhover)
 							dragging_widget_ = w;
-						w->on_lmousedown(p.mpos);
+						w->on_mouse(KeyStateDown, Mouse_Left, p.mpos);
 						p.mljustdown = false;
 					}
 					if (p.mrjustdown)
 					{
-						w->on_rmousedown(p.mpos);
+						w->on_mouse(KeyStateDown, Mouse_Right, p.mpos);
 						p.mrjustdown = false;
 					}
 					if (p.mljustup)
 					{
 						if (focus_widget_ == w)
 						{
-							w->on_clicked();
+							w->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
 							if (potential_doubleclick_widget_ == w)
 							{
-								w->on_doubleclicked();
+								w->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2(0.f));
 								potential_doubleclick_widget_ = nullptr;
 								doubleclick_timer_ = 0.f;
 							}
@@ -603,7 +565,7 @@ namespace flame
 					}
 					if (p.mscroll)
 					{
-						w->on_mousescroll(p.mscroll);
+						w->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.mscroll, 0.f));
 						p.mscroll = 0;
 					}
 				}
@@ -644,23 +606,17 @@ namespace flame
 			auto &p = *(_Package*)__p;
 
 			for (auto i_s = 0; i_s < w->styles$.size; i_s++)
-			{
-				auto s = w->styles$[i_s];
-
-				s->datas[0].v.p = w;
-				s->exec();
-			}
+				w->styles$[i_s]->exec();
 
 			for (auto i_a = 0; i_a < w->animations$.size; )
 			{
 				auto f = w->animations$[i_a];
-				auto d = f->datas;
-				d[0].p() = w;
+				auto &p = (Widget::AnimationParm&)f->p;
 
-				d[1].f1() += elp_time_;
-				if (d[1].f1() >= d[2].f1())
+				p.time() += elp_time_;
+				if (p.time() >= p.duration())
 				{
-					d[1].f1() = -1.f;
+					p.time() = -1.f;
 					f->exec();
 					Function::destroy(f);
 					w->animations$.remove(i_a);
@@ -793,7 +749,7 @@ namespace flame
 					dragging_widget_ = nullptr;
 				else if (dragging_widget_->event_attitude$ != EventIgnore)
 				{
-					dragging_widget_->on_mousemove(Vec2(p.mdisp));
+					dragging_widget_->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
 					p.mdisp = Ivec2(0);
 				}
 			}
@@ -810,11 +766,11 @@ namespace flame
 				else if (key_focus_widget_->event_attitude$ != EventIgnore)
 				{
 					for (auto &code : keydown_inputs_)
-						key_focus_widget_->on_keydown(code);
+						key_focus_widget_->on_key(KeyStateDown, code);
 					for (auto &code : keyup_inputs_)
-						key_focus_widget_->on_keyup(code);
+						key_focus_widget_->on_key(KeyStateUp, code);
 					for (auto &ch : char_inputs_)
-						key_focus_widget_->on_char(ch);
+						key_focus_widget_->on_key(KeyStateNull, ch);
 				}
 			}
 			keydown_inputs_.clear();
@@ -907,39 +863,14 @@ namespace flame
 			return Ivec2(((InstancePrivate*)this)->root_->size$);
 		}
 
-		void Instance::on_keydown(int code)
+		void Instance::on_key(KeyState action, int value)
 		{
-			((InstancePrivate*)this)->on_keydown(code);
+			((InstancePrivate*)this)->on_key(action, value);
 		}
 
-		void Instance::on_keyup(int code)
+		void Instance::on_mouse(KeyState action, MouseKey key, const Ivec2 &pos)
 		{
-			((InstancePrivate*)this)->on_keyup(code);
-		}
-
-		void Instance::on_char(int ch)
-		{
-			((InstancePrivate*)this)->on_char(ch);
-		}
-
-		void Instance::on_mousedown(int mouse, const Ivec2 &pos)
-		{
-			((InstancePrivate*)this)->on_mousedown(mouse, pos);
-		}
-
-		void Instance::on_mouseup(int mouse, const Ivec2 &pos)
-		{
-			((InstancePrivate*)this)->on_mouseup(mouse, pos);
-		}
-
-		void Instance::on_mousemove(const Ivec2 &pos)
-		{
-			((InstancePrivate*)this)->on_mousemove(pos);
-		}
-
-		void Instance::on_mousescroll(int scroll)
-		{
-			((InstancePrivate*)this)->on_mousescroll(scroll);
+			((InstancePrivate*)this)->on_mouse(action, key, pos);
 		}
 
 		void Instance::on_resize(const Ivec2 &size)

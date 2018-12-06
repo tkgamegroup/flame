@@ -680,29 +680,15 @@ namespace flame
 		FLAME_SERIALIZE_EXPORTS void save_xml(const std::wstring &filename) const;
 		FLAME_SERIALIZE_EXPORTS void save_bin(const std::wstring &filename) const;
 
-		struct ObjGeneratorParm : ParmPackage
-		{
-			enum { BASE = __COUNTER__ + 1 };
+		FLAME_PARM_PACKAGE_BEGIN(ObjGeneratorParm)
+			FLAME_PARM_PACKAGE_PARM(UDTPtr, udt, p)
+			FLAME_PARM_PACKAGE_PARM(voidptr, parent, p)
+			FLAME_PARM_PACKAGE_PARM(uint, att_hash, u)
+			FLAME_PARM_PACKAGE_PARM(voidptr, out_obj, p)
 
-			inline UDTPtr &udt()
-			{
-				return (UDTPtr&)d[__COUNTER__ - BASE].p();
-			}
-			inline voidptr &parent()
-			{
-				return d[__COUNTER__ - BASE].p();
-			}
-			inline uint &att_hash()
-			{
-				return d[__COUNTER__ - BASE].u();
-			}
-			inline voidptr &out_obj()
-			{
-				return d[__COUNTER__ - BASE].p();
-			}
+			FLAME_PARM_PACKAGE_PARM_SIZE
+		FLAME_PARM_PACKAGE_END
 
-			enum { SIZE = __COUNTER__ - BASE };
-		};
 		FLAME_SERIALIZE_EXPORTS void *unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt);
 
 		FLAME_SERIALIZE_EXPORTS static SerializableNode *create(const std::string &name);

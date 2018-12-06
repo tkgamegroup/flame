@@ -26,7 +26,9 @@
 #include <flame/array.h>
 #include <flame/string.h>
 #include <flame/function.h>
+#include <flame/input.h>
 #include <flame/ui/ui.h>
+#include <flame/ui/canvas.h>
 
 #include <vector>
 
@@ -38,7 +40,6 @@ namespace flame
 	namespace ui
 	{
 		struct Instance;
-		struct Canvas;
 
 		/*
 		           pos                        size.x
@@ -111,6 +112,9 @@ namespace flame
 			StateActive
 		};
 
+		struct Widget;
+		typedef Widget* WidgetPtr;
+
 		struct Widget : R
 		{
 			uint class_hash$;
@@ -163,49 +167,120 @@ namespace flame
 			Array<Widget*> children_2$;
 
 			bool draw_default$;
-			Array<Function*> extra_draw_commands$;
+			FLAME_PARM_PACKAGE_BEGIN(ExtraDrawParm)
+				FLAME_PARM_PACKAGE_PARM(CanvasPtr, canvas, p)
+				FLAME_PARM_PACKAGE_PARM(Vec2, off, f2)
+				FLAME_PARM_PACKAGE_PARM(float, scl, f1)
+
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+			FLAME_PARM_PACKAGE_END
+			Array<Function*> extra_draws$;
 
 			int closet_id$;
-			// (Widget *w)
+			FLAME_PARM_PACKAGE_BEGIN(StyleParm)
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(int, closet_id, i1)
+			FLAME_PARM_PACKAGE_END
 			Array<Function*> styles$;
 
-			// (Widget *w, float curr_time) 
-			// the first two of captures must be "f i" (duration looping)
+			FLAME_PARM_PACKAGE_BEGIN(AnimationParm)
+				FLAME_PARM_PACKAGE_PARM(float, time, f1)
+
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(float, duration, f1)
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(int, looping, i1)
+			FLAME_PARM_PACKAGE_END
 			Array<Function*> animations$;
 
-			// "gain focus":       (int focus_or_key_focus (0 or 1))
-			// "lost focus":       (int focus_or_key_focus (0 or 1))
-			// "mouse enter":      ()
-			// "mouse leave":      ()
-			// "left mouse down":  (Vec2 pos)
-			// "right mouse down": (Vec2 pos)
-			// "mouse move":       (Vec2 pos)
-			// "mouse scroll":     (int scroll)
-			// "clicked":          ()
-			// "double clicked":   ()
-			// "key down":         (int key)
-			// "char":             (int ch)
-			// "drop":             (Widget *w)
-			// "changed":          ()
-			// "add child":        (Widget *w)
-			// "remove child":     (Widget *w)
+			enum Listener
+			{
+				ListenerFocus,
+				ListenerKey,
+				ListenerMouse,
+				ListenerDrop,
+				ListenerChanged,
+				ListenerChild
+			};
 
-			Array<Function*> gainfocus_listeners$;
-			Array<Function*> lostfocus_listeners$;
-			Array<Function*> mouseenter_listeners$;
-			Array<Function*> mouseleave_listeners$;
-			Array<Function*> lmousedown_listeners$;
-			Array<Function*> rmousedown_listeners$;
-			Array<Function*> mousemove_listeners$;
-			Array<Function*> mousescroll_listeners$;
-			Array<Function*> clicked_listeners$;
-			Array<Function*> doubleclicked_listeners$;
-			Array<Function*> keydown_listeners$;
-			Array<Function*> keyup_listeners$;
-			Array<Function*> char_listeners$;
+			FLAME_PARM_PACKAGE_BEGIN(FoucusListenerParm)
+				FLAME_PARM_PACKAGE_PARM(FocusType, type, i1)
+				FLAME_PARM_PACKAGE_PARM(int, focus_or_keyfocus, i1)
+
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+			FLAME_PARM_PACKAGE_END
+
+			FLAME_PARM_PACKAGE_BEGIN(KeyListenerParm)
+				/*
+					- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
+					- when char, action is KeyStateNull, value is ch
+				*/
+				FLAME_PARM_PACKAGE_PARM(KeyState, action, i1)
+				FLAME_PARM_PACKAGE_PARM(int, value, i1)
+
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+			FLAME_PARM_PACKAGE_END
+
+			FLAME_PARM_PACKAGE_BEGIN(MouseListenerParm)
+				/*
+					- when enter/leave, action is KeyStateDown or KeyStateUp, key is Mouse_Null
+					- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey, value is pos
+					- when move, action is KeyStateNull, key is Mouse_Null, value is disp
+					- when scroll, action is KeyStateNull, key is Mouse_Middle, value.x is scroll value
+					- when clicked, action is KeyStateDown | KeyStateUp | (KeyStateDouble ? for double clicked), key is Mouse_Null
+				*/
+				FLAME_PARM_PACKAGE_PARM(KeyState, action, i1)
+				FLAME_PARM_PACKAGE_PARM(MouseKey, key, i1)
+				FLAME_PARM_PACKAGE_PARM(Vec2, value, f2)
+
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+			FLAME_PARM_PACKAGE_END
+
+			FLAME_PARM_PACKAGE_BEGIN(DropListenerParm)
+				FLAME_PARM_PACKAGE_PARM(WidgetPtr, src, p)
+
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+			FLAME_PARM_PACKAGE_END
+
+			FLAME_PARM_PACKAGE_BEGIN(ChangedListenerParm)
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+			FLAME_PARM_PACKAGE_END
+
+			enum ChildOp
+			{
+				ChildAdd,
+				ChildRemove
+			};
+			FLAME_PARM_PACKAGE_BEGIN(ChildListenerParm)
+				FLAME_PARM_PACKAGE_PARM(ChildOp, op, i1)
+				FLAME_PARM_PACKAGE_PARM(WidgetPtr, src, p)
+
+				FLAME_PARM_PACKAGE_PARM_SIZE
+
+				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
+			FLAME_PARM_PACKAGE_END
+
+			Array<Function*> focus_listeners$;
+			Array<Function*> key_listeners$;
+			Array<Function*> mouse_listeners$;
 			Array<Function*> drop_listeners$;
 			Array<Function*> changed_listeners$;
-			Array<Function*> addchild_listeners$;
+			Array<Function*> child_listeners$;
 
 			Array<CommonData> data_storages$;
 			Array<StringW> string_storages$;
@@ -287,33 +362,20 @@ namespace flame
 
 			FLAME_UI_EXPORTS void arrange();
 
-			FLAME_UI_EXPORTS void add_extra_draw_command(PF pf, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void add_extra_draw(PF pf, const std::vector<CommonData> &capt);
 
-			FLAME_UI_EXPORTS void add_style(PF pf, const std::vector<CommonData> &capt);
-			FLAME_UI_EXPORTS void add_style(Function *f);
-			FLAME_UI_EXPORTS void add_animation(PF pf, const std::vector<CommonData> &capt);
-			FLAME_UI_EXPORTS void add_animation(Function *f);
+			FLAME_UI_EXPORTS void add_style(int closet_id, PF pf, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void add_animation(float duration, int looping, PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void on_draw(Canvas *c, const Vec2 &off, float scl);
-			FLAME_UI_EXPORTS void on_gainfocus(int type);
-			FLAME_UI_EXPORTS void on_lostfocus(int type);
-			FLAME_UI_EXPORTS void on_mouseenter();
-			FLAME_UI_EXPORTS void on_mouseleave();
-			FLAME_UI_EXPORTS void on_lmousedown(const Vec2 &mpos);
-			FLAME_UI_EXPORTS void on_rmousedown(const Vec2 &mpos);
-			FLAME_UI_EXPORTS void on_mousemove(const Vec2 &disp);
-			FLAME_UI_EXPORTS void on_clicked();
-			FLAME_UI_EXPORTS void on_doubleclicked();
-			FLAME_UI_EXPORTS void on_mousescroll(int scroll);
-			FLAME_UI_EXPORTS void on_keydown(int code);
-			FLAME_UI_EXPORTS void on_keyup(int code);
-			FLAME_UI_EXPORTS void on_char(wchar_t ch);
+			FLAME_UI_EXPORTS void on_focus(FocusType type, int focus_or_keyfocus);
+			FLAME_UI_EXPORTS void on_key(KeyState action, int value);
+			FLAME_UI_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2 &value);
 			FLAME_UI_EXPORTS void on_drop(Widget *src);
+			FLAME_UI_EXPORTS void on_changed();
 
-			FLAME_UI_EXPORTS void report_changed() const;
-
-			FLAME_UI_EXPORTS Function *add_listener(uint type, PF pf, const std::vector<CommonData> &capt);
-			FLAME_UI_EXPORTS void remove_listener(uint type, Function *f, bool delay = false);
+			FLAME_UI_EXPORTS Function *add_listener(Listener l , PF pf, void *thiz, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void remove_listener(Listener l, Function *f, bool delay = false);
 
 			FLAME_UI_EXPORTS void add_data_storages(const char *fmt);
 			FLAME_UI_EXPORTS void add_string_storages(int count);
@@ -325,8 +387,6 @@ namespace flame
 			FLAME_UI_EXPORTS static Widget *create_from_file(Instance *ui, SerializableNode *src);
 			FLAME_UI_EXPORTS static void destroy(Widget *w);
 		};
-
-		typedef Widget* WidgetPtr;
 
 		struct wLayout : Widget
 		{

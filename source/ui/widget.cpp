@@ -141,11 +141,13 @@ namespace flame
 
 			arrange();
 
-			for (auto i = 0; i < addchild_listeners$.size; i++)
+			for (auto i = 0; i < child_listeners$.size; i++)
 			{
-				auto f = addchild_listeners$[i];
+				auto f = child_listeners$[i];
 
-				f->datas[0].p() = w;
+				auto p = (ChildListenerParm&)f->p;
+				p.op() = ChildAdd;
+				p.src() = w;
 				f->exec();
 			}
 		}
@@ -653,20 +655,30 @@ namespace flame
 			}
 		}
 
-		inline void WidgetPrivate::add_extra_draw_command(PF pf, const std::vector<CommonData> &capt)
+		inline void WidgetPrivate::add_extra_draw(PF pf, const std::vector<CommonData> &_capt)
 		{
-			extra_draw_commands$.push_back(Function::create(pf, "p f2 f", capt));
+			auto capt = _capt;
+			capt.emplace(capt.begin(), this);
+			extra_draws$.push_back(Function::create(pf, ExtraDrawParm::PARM_SIZE, capt));
 		}
 
-		inline void WidgetPrivate::add_style(PF pf, const std::vector<CommonData> &capt)
+		inline void WidgetPrivate::add_style(int closet_id, PF pf, const std::vector<CommonData> &_capt)
 		{
-			styles$.push_back(Function::create(pf, "p", capt));
+			auto capt = _capt;
+			capt.emplace(capt.begin(), closet_id);
+			capt.emplace(capt.begin(), this);
+			styles$.push_back(Function::create(pf, StyleParm::PARM_SIZE, capt));
 		}
 
-		inline void WidgetPrivate::add_animation(PF pf, const std::vector<CommonData> &capt)
+		inline void WidgetPrivate::add_animation(float duration, int looping, PF pf, const std::vector<CommonData> &_capt)
 		{
-			auto f = Function::create(pf, "p f", capt);
-			f->datas[1].v.f = 0.f;
+			auto capt = _capt;
+			capt.emplace(capt.begin(), looping);
+			capt.emplace(capt.begin(), duration);
+			capt.emplace(capt.begin(), this);
+			auto f = Function::create(pf, AnimationParm::PARM_SIZE, capt);
+			auto &p = (AnimationParm&)f->p;
+			p.time() = 0.f;
 			animations$.push_back(f);
 		}
 
@@ -703,135 +715,50 @@ namespace flame
 						c->add_rect(p, s, Bvec4(background_frame_col$, alpha$), background_frame_thickness$, rr, background_round_flags$);
 				}
 			}
-			for (auto i = 0; i < extra_draw_commands$.size; i++)
+			for (auto i = 0; i < extra_draws$.size; i++)
 			{
-				auto f = extra_draw_commands$[i];
-				f->datas[0].v.p = c;
-				f->datas[1].v.f = off;
-				f->datas[2].v.f = scl;
+				auto f = extra_draws$[i];
+				auto &p = (ExtraDrawParm&)f->p;
+				p.canvas() = c;
+				p.off() = off;
+				p.scl() = scl;
 				f->exec();
 			}
 		}
 
-		void WidgetPrivate::on_gainfocus(int type)
+		void WidgetPrivate::on_focus(FocusType type, int focus_or_keyfocus)
 		{
-			for (auto i = 0; i < gainfocus_listeners$.size; i++)
+			for (auto i = 0; i < focus_listeners$.size; i++)
 			{
-				auto f = gainfocus_listeners$[i];
-
-				f->datas[0].i1() = type;
+				auto f = focus_listeners$[i];
+				auto &p = (FoucusListenerParm&)f->p;
+				p.type() = type;
+				p.focus_or_keyfocus() = focus_or_keyfocus;
 				f->exec();
 			}
 		}
 
-		void WidgetPrivate::on_lostfocus(int type)
+		inline void WidgetPrivate::on_key(KeyState action, int value)
 		{
-			for (auto i = 0; i < lostfocus_listeners$.size; i++)
+			for (auto i = 0; i < key_listeners$.size; i++)
 			{
-				auto f = lostfocus_listeners$[i];
-
-				f->datas[0].i1() = type;
+				auto f = key_listeners$[i];
+				auto &p = (KeyListenerParm&)f->p;
+				p.action() = action;
+				p.value() = value;
 				f->exec();
 			}
 		}
 
-		inline void WidgetPrivate::on_mouseenter()
+		inline void WidgetPrivate::on_mouse(KeyState action, MouseKey key, const Vec2 &value)
 		{
-			for (auto i = 0; i < mouseenter_listeners$.size; i++)
-				mouseenter_listeners$[i]->exec();
-		}
-
-		inline void WidgetPrivate::on_mouseleave()
-		{
-			for (auto i = 0; i < mouseleave_listeners$.size; i++)
-				mouseleave_listeners$[i]->exec();
-		}
-
-		inline void WidgetPrivate::on_lmousedown(const Vec2 &mpos)
-		{
-			for (auto i = 0; i < lmousedown_listeners$.size; i++)
+			for (auto i = 0; i < mouse_listeners$.size; i++)
 			{
-				auto f = lmousedown_listeners$[i];
-
-				f->datas[0].f2() = mpos;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_rmousedown(const Vec2 &mpos)
-		{
-			for (auto i = 0; i < rmousedown_listeners$.size; i++)
-			{
-				auto f = rmousedown_listeners$[i];
-
-				f->datas[0].f2() = mpos;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_mousemove(const Vec2 &disp)
-		{
-			for (auto i = 0; i < mousemove_listeners$.size; i++)
-			{
-				auto f = mousemove_listeners$[i];
-
-				f->datas[0].f2() = disp;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_clicked()
-		{
-			for (auto i = 0; i < clicked_listeners$.size; i++)
-				clicked_listeners$[i]->exec();
-		}
-
-		inline void WidgetPrivate::on_doubleclicked()
-		{
-			for (auto i = 0; i < doubleclicked_listeners$.size; i++)
-				doubleclicked_listeners$[i]->exec();
-		}
-
-		inline void WidgetPrivate::on_mousescroll(int scroll)
-		{
-			for (auto i = 0; i < mousescroll_listeners$.size; i++)
-			{
-				auto f = mousescroll_listeners$[i];
-
-				f->datas[0].i1() = scroll;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_keydown(int code)
-		{
-			for (auto i = 0; i < keydown_listeners$.size; i++)
-			{
-				auto f = keydown_listeners$[i];
-
-				f->datas[0].i1() = code;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_keyup(int code)
-		{
-			for (auto i = 0; i < keyup_listeners$.size; i++)
-			{
-				auto f = keyup_listeners$[i];
-
-				f->datas[0].i1() = code;
-				f->exec();
-			}
-		}
-
-		inline void WidgetPrivate::on_char(wchar_t ch)
-		{
-			for (auto i = 0; i < char_listeners$.size; i++)
-			{
-				auto f = char_listeners$[i];
-
-				f->datas[0].i1() = ch;
+				auto f = mouse_listeners$[i];
+				auto &p = (MouseListenerParm&)f->p;
+				p.action() = action;
+				p.key() = key;
+				p.value() = value;
 				f->exec();
 			}
 		}
@@ -841,158 +768,94 @@ namespace flame
 			for (auto i = 0; i < drop_listeners$.size; i++)
 			{
 				auto f = drop_listeners$[i];
-
-				f->datas[0].p() = src;
+				auto &p = (DropListenerParm&)f->p;
+				p.src() = src;
 				f->exec();
 			}
 		}
 
-		inline void WidgetPrivate::report_changed() const
+		inline void WidgetPrivate::on_changed()
 		{
 			for (auto i = 0; i < changed_listeners$.size; i++)
-				changed_listeners$[i]->exec();
+			{
+				auto f = changed_listeners$[i];
+				auto &p = (ChangedListenerParm&)f->p;
+				f->exec();
+			}
 		}
 
-		inline Function *WidgetPrivate::add_listener(uint type, PF pf, const std::vector<CommonData> &capt)
+		inline Function *WidgetPrivate::add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &_capt)
 		{
-			const char *parm_fmt;
+			auto parm_cnt = 0;
 			Array<Function*> *list;
 
-			switch (type)
+			switch (l)
 			{
-			case cH("gain focus"):
-				parm_fmt = "i";
-				list = &gainfocus_listeners$;
+			case ListenerFocus:
+				parm_cnt = FoucusListenerParm::PARM_SIZE;
+				list = &focus_listeners$;
 				break;
-			case cH("lost focus"):
-				parm_fmt = "i";
-				list = &lostfocus_listeners$;
+			case ListenerKey:
+				parm_cnt = KeyListenerParm::PARM_SIZE;
+				list = &key_listeners$;
 				break;
-			case cH("mouse enter"):
-				parm_fmt = "";
-				list = &mouseenter_listeners$;
+			case ListenerMouse:
+				parm_cnt = MouseListenerParm::PARM_SIZE;
+				list = &mouse_listeners$;
 				break;
-			case cH("mouse leave"):
-				parm_fmt = "";
-				list = &mouseleave_listeners$;
-				break;
-			case cH("left mouse down"):
-				parm_fmt = "f2";
-				list = &lmousedown_listeners$;
-				break;
-			case cH("right mouse down"):
-				parm_fmt = "f2";
-				list = &rmousedown_listeners$;
-				break;
-			case cH("mouse move"):
-				parm_fmt = "f2";
-				list = &mousemove_listeners$;
-				break;
-			case cH("mouse scroll"):
-				parm_fmt = "i";
-				list = &mousescroll_listeners$;
-				break;
-			case cH("clicked"):
-				parm_fmt = "";
-				list = &clicked_listeners$;
-				break;
-			case cH("double clicked"):
-				parm_fmt = "";
-				list = &doubleclicked_listeners$;
-				break;
-			case cH("key down"):
-				parm_fmt = "i";
-				list = &keydown_listeners$;
-				break;
-			case cH("key up"):
-				parm_fmt = "i";
-				list = &keyup_listeners$;
-				break;
-			case cH("char"):
-				parm_fmt = "i";
-				list = &char_listeners$;
-				break;
-			case cH("drop"):
-				parm_fmt = "p";
+			case ListenerDrop:
+				parm_cnt = DropListenerParm::PARM_SIZE;
 				list = &drop_listeners$;
 				break;
-			case cH("changed"):
-				parm_fmt = "";
+			case ListenerChanged:
+				parm_cnt = ChangedListenerParm::PARM_SIZE;
 				list = &changed_listeners$;
 				break;
-			case cH("add child"):
-				parm_fmt = "p";
-				list = &addchild_listeners$;
+			case ListenerChild:
+				parm_cnt = ChildListenerParm::PARM_SIZE;
+				list = &child_listeners$;
 				break;
 			default:
 				assert(0);
 				return nullptr;
 			}
 
-			auto f = Function::create(pf, parm_fmt, capt);
+			auto capt = _capt;
+			capt.emplace(capt.begin(), thiz);
+			auto f = Function::create(pf, parm_cnt, capt);
 			list->push_back(f);
 			return f;
 		}
 
-		inline void WidgetPrivate::remove_listener(uint type, Function *f, bool delay)
+		inline void WidgetPrivate::remove_listener(Listener l, Function *f, bool delay)
 		{
 			if (delay)
 			{
-				delay_listener_remove.emplace_back(type, f);
+				delay_listener_remove.emplace_back(l, f);
 				return;
 			}
 
 			Array<Function*> *list;
 
-			switch (type)
+			switch (l)
 			{
-			case cH("gain focus"):
-				list = &gainfocus_listeners$;
+			case ListenerFocus:
+				list = &focus_listeners$;
 				break;
-			case cH("lost focus"):
-				list = &lostfocus_listeners$;
+			case ListenerKey:
+				list = &key_listeners$;
 				break;
-			case cH("mouse enter"):
-				list = &mouseenter_listeners$;
+			case ListenerMouse:
+				list = &mouse_listeners$;
 				break;
-			case cH("mouse leave"):
-				list = &mouseleave_listeners$;
-				break;
-			case cH("left mouse down"):
-				list = &lmousedown_listeners$;
-				break;
-			case cH("right mouse down"):
-				list = &rmousedown_listeners$;
-				break;
-			case cH("mouse move"):
-				list = &mousemove_listeners$;
-				break;
-			case cH("mouse scroll"):
-				list = &mousescroll_listeners$;
-				break;
-			case cH("clicked"):
-				list = &clicked_listeners$;
-				break;
-			case cH("double clicked"):
-				list = &doubleclicked_listeners$;
-				break;
-			case cH("key down"):
-				list = &keydown_listeners$;
-				break;
-			case cH("key up"):
-				list = &keyup_listeners$;
-				break;
-			case cH("char"):
-				list = &char_listeners$;
-				break;
-			case cH("drop"):
+			case ListenerDrop:
 				list = &drop_listeners$;
 				break;
-			case cH("changed"):
+			case ListenerChanged:
 				list = &changed_listeners$;
 				break;
-			case cH("add child"):
-				list = &addchild_listeners$;
+			case ListenerChild:
+				list = &child_listeners$;
 				break;
 			default:
 				assert(0);
@@ -1011,7 +874,7 @@ namespace flame
 			auto d = &data_storages$[original_size];
 			for (auto &s : sp)
 			{
-				d->set_fmt(s.c_str());
+				typefmt_assign(d->fmt, s.c_str());
 
 				d++;
 			}
@@ -1124,19 +987,19 @@ namespace flame
 			((WidgetPrivate*)this)->arrange();
 		}
 
-		void Widget::add_extra_draw_command(PF pf, const std::vector<CommonData> &capt)
+		void Widget::add_extra_draw(PF pf, const std::vector<CommonData> &capt)
 		{
-			((WidgetPrivate*)this)->add_extra_draw_command(pf, capt);
+			((WidgetPrivate*)this)->add_extra_draw(pf, capt);
 		}
 
-		void Widget::add_style(PF pf, const std::vector<CommonData> &capt)
+		void Widget::add_style(int closet_id, PF pf, const std::vector<CommonData> &capt)
 		{
-			((WidgetPrivate*)this)->add_style(pf, capt);
+			((WidgetPrivate*)this)->add_style(closet_id, pf, capt);
 		}
 
-		void Widget::add_animation(PF pf, const std::vector<CommonData> &capt)
+		void Widget::add_animation(float duration, int looping, PF pf, const std::vector<CommonData> &capt)
 		{
-			((WidgetPrivate*)this)->add_animation(pf, capt);
+			((WidgetPrivate*)this)->add_animation(duration, looping, pf, capt);
 		}
 
 		void Widget::on_draw(Canvas *c, const Vec2 &off, float scl)
@@ -1144,69 +1007,19 @@ namespace flame
 			((WidgetPrivate*)this)->on_draw(c, off, scl);
 		}
 
-		void Widget::on_gainfocus(int type)
+		void Widget::on_focus(FocusType type, int focus_or_keyfocus)
 		{
-			((WidgetPrivate*)this)->on_gainfocus(type);
+			((WidgetPrivate*)this)->on_focus(type, focus_or_keyfocus);
 		}
 
-		void Widget::on_lostfocus(int type)
+		void Widget::on_key(KeyState action, int value)
 		{
-			((WidgetPrivate*)this)->on_lostfocus(type);
+			((WidgetPrivate*)this)->on_key(action, value);
 		}
 
-		void Widget::on_mouseenter()
+		void Widget::on_mouse(KeyState action, MouseKey key, const Vec2 &pos)
 		{
-			((WidgetPrivate*)this)->on_mouseenter();
-		}
-
-		void Widget::on_mouseleave()
-		{
-			((WidgetPrivate*)this)->on_mouseleave();
-		}
-
-		void Widget::on_lmousedown(const Vec2 &mpos)
-		{
-			((WidgetPrivate*)this)->on_lmousedown(mpos);
-		}
-
-		void Widget::on_rmousedown(const Vec2 &mpos)
-		{
-			((WidgetPrivate*)this)->on_rmousedown(mpos);
-		}
-
-		void Widget::on_mousemove(const Vec2 &disp)
-		{
-			((WidgetPrivate*)this)->on_mousemove(disp);
-		}
-
-		void Widget::on_clicked()
-		{
-			((WidgetPrivate*)this)->on_clicked();
-		}
-
-		void Widget::on_doubleclicked()
-		{
-			((WidgetPrivate*)this)->on_doubleclicked();
-		}
-
-		void Widget::on_mousescroll(int scroll)
-		{
-			((WidgetPrivate*)this)->on_mousescroll(scroll);
-		}
-
-		void Widget::on_keydown(int code)
-		{
-			((WidgetPrivate*)this)->on_keydown(code);
-		}
-
-		void Widget::on_keyup(int code)
-		{
-			((WidgetPrivate*)this)->on_keyup(code);
-		}
-
-		void Widget::on_char(wchar_t ch)
-		{
-			((WidgetPrivate*)this)->on_char(ch);
+			((WidgetPrivate*)this)->on_mouse(action, key, pos);
 		}
 
 		void Widget::on_drop(Widget *src)
@@ -1214,19 +1027,19 @@ namespace flame
 			((WidgetPrivate*)this)->on_drop(src);
 		}
 
-		void Widget::report_changed() const
+		void Widget::on_changed()
 		{
-			((WidgetPrivate*)this)->report_changed();
+			((WidgetPrivate*)this)->on_changed();
 		}
 
-		Function *Widget::add_listener(unsigned int type, PF pf, const std::vector<CommonData> &capt)
+		Function *Widget::add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt)
 		{
-			return ((WidgetPrivate*)this)->add_listener(type, pf, capt);
+			return ((WidgetPrivate*)this)->add_listener(l, pf, thiz, capt);
 		}
 
-		void Widget::remove_listener(unsigned int type, Function *f, bool delay)
+		void Widget::remove_listener(Listener l, Function *f, bool delay)
 		{
-			((WidgetPrivate*)this)->remove_listener(type, f, delay);
+			((WidgetPrivate*)this)->remove_listener(l, f, delay);
 		}
 
 		void Widget::add_data_storages(const char *fmt)
@@ -1270,7 +1083,7 @@ namespace flame
 				{
 					auto c = wCheckbox::create(ui, (char*)p + info->offset());
 					c->align$ = AlignLittleEnd;
-					add_style_color(c, 0, Vec3(0.f, 0.f, 0.7f));
+					add_style_background_color(c, 0, Vec3(0.f, 0.f, 0.7f));
 					dst->add_child(c, 0, -1, true);
 				}
 					break;
@@ -1453,7 +1266,7 @@ namespace flame
 					for (auto i_i = 0; i_i < arr.size; i_i++)
 					{
 						auto f = (Function*)arr[i_i];
-						auto id = find_registered_PF(f->pf);
+						auto r = find_registered_function(f->pf);
 
 					}
 					break;
@@ -1465,18 +1278,20 @@ namespace flame
 
 		Widget *Widget::create_from_file(Instance *ui, SerializableNode *src)
 		{
-			return (Widget*)src->unserialize(find_udt(cH("ui::Widget")), [](CommonData *d) {
-				auto parent = (WidgetPrivate*)d[1].p();
-				auto att_hash = d[2].u();
-				auto ins = (Instance*)d[4].p();
+			FLAME_DATA_PACKAGE_BEGIN(ObjGeneratorData, SerializableNode::ObjGeneratorParm)
+				FLAME_DATA_PACKAGE_CAPT(InstancePtr, ins, p)
+			FLAME_DATA_PACKAGE_END
 
-				auto w = (WidgetPrivate*)Widget::create(ins);
-				d[3].p() = w;
+			return (Widget*)src->unserialize(find_udt(cH("ui::Widget")), [](const ParmPackage &_p) {
+				auto &p = (ObjGeneratorData&)_p;
 
-				if (parent)
+				auto w = (WidgetPrivate*)Widget::create(p.ins());
+				p.out_obj() = w;
+
+				if (p.parent())
 				{
-					w->parent = parent;
-					if (att_hash == cH("children_1"))
+					w->parent = (WidgetPrivate*)p.parent();
+					if (p.att_hash() == cH("children_1"))
 						w->layer = 0;
 					else /* if (att_hash == cH("children_2")) */
 						w->layer = 1;
@@ -1506,27 +1321,23 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Checkbox_clicked, FLAME_GID(15432), "")
-			auto &thiz = *(wCheckbox**)&d[0].p();
+		FLAME_REGISTER_FUNCTION_BEG(CheckboxMouse, FLAME_GID(15432), Widget::MouseListenerParm)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
 
-			thiz->checked() = !thiz->checked();
+			((wCheckbox*)p.thiz())->checked() = !((wCheckbox*)p.thiz())->checked();
 
-			if (thiz->target())
-				*(bool*)thiz->target() = thiz->checked();
+			if (((wCheckbox*)p.thiz())->target())
+				*(bool*)((wCheckbox*)p.thiz())->target() = ((wCheckbox*)p.thiz())->checked();
 
-			thiz->report_changed();
-		FLAME_REGISTER_FUNCTION_END(Checkbox_clicked)
+			p.thiz()->on_changed();
+		FLAME_REGISTER_FUNCTION_END(CheckboxMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(Checkbox_draw, FLAME_GID(8818), "p f2 f")
-			auto &c = *(Canvas**)&d[0].p();
-			auto &off = d[1].f2();
-			auto &scl = d[2].f1();
-			auto &thiz = *(wCheckbox**)&d[3].p();
-
-			c->add_rect(thiz->pos$ * scl + off, thiz->size$ * scl, thiz->background_col$, 2.f * scl);
-			if (thiz->checked())
-				c->add_rect_filled((thiz->pos$ + 3.f) * scl + off, (thiz->size$ - 6.f) * scl, thiz->background_col$);
-		FLAME_REGISTER_FUNCTION_END(Checkbox_draw)
+		FLAME_REGISTER_FUNCTION_BEG(CheckboxExtraDraw, FLAME_GID(8818), Widget::ExtraDrawParm)
+			p.canvas()->add_rect(p.thiz()->pos$ * p.scl() + p.off(), p.thiz()->size$ * p.scl(), p.thiz()->background_col$, 2.f * p.scl());
+			if (((wCheckbox*)p.thiz())->checked())
+				p.canvas()->add_rect_filled((p.thiz()->pos$ + 3.f) * p.scl() + p.off(), (p.thiz()->size$ - 6.f) * p.scl(), p.thiz()->background_col$);
+		FLAME_REGISTER_FUNCTION_END(CheckboxExtraDraw)
 
 		void wCheckbox::init(void *_target)
 		{
@@ -1539,10 +1350,10 @@ namespace flame
 			checked() = 0;
 			target() = _target;
 
-			add_listener(cH("clicked"), Checkbox_clicked::v, { this });
+			add_listener(ListenerMouse, CheckboxMouse::v, this, {});
 
 			draw_default$ = false;
-			add_extra_draw_command(Checkbox_draw::v, { this });
+			add_extra_draw(CheckboxExtraDraw::v, {});
 
 			if (target())
 				checked() = *(bool*)target();
@@ -1566,21 +1377,16 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Text_draw, FLAME_GID(9510), "p f2 f")
-			auto &c = *(Canvas**)&d[0].p();
-			auto &off = d[1].f2();
-			auto &scl = d[2].f1();
-			auto &thiz = *(wText**)&d[3].p();
-
-			if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
+		FLAME_REGISTER_FUNCTION_BEG(TextExtraDraw, FLAME_GID(9510), Widget::ExtraDrawParm)
+			if (p.thiz()->alpha$ > 0.f && ((wText*)p.thiz())->text_col().w > 0.f)
 			{
-				auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * scl + off;
-				if (thiz->sdf_scale() < 0.f)
-					c->add_text_stroke(_pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text().v);
+				auto _pos = (p.thiz()->pos$ + Vec2(p.thiz()->inner_padding$[0], p.thiz()->inner_padding$[2])) * p.scl() + p.off();
+				if (((wText*)p.thiz())->sdf_scale() < 0.f)
+					p.canvas()->add_text_stroke(_pos, Bvec4(((wText*)p.thiz())->text_col(), p.thiz()->alpha$), ((wText*)p.thiz())->text().v);
 				else
-					c->add_text_sdf(_pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text().v, thiz->sdf_scale() * scl);
+					p.canvas()->add_text_sdf(_pos, Bvec4(((wText*)p.thiz())->text_col(), p.thiz()->alpha$), ((wText*)p.thiz())->text().v, ((wText*)p.thiz())->sdf_scale() * p.scl());
 			}
-		FLAME_REGISTER_FUNCTION_END(Text_draw)
+		FLAME_REGISTER_FUNCTION_END(TextExtraDraw)
 
 		void wText::init()
 		{
@@ -1594,7 +1400,7 @@ namespace flame
 			sdf_scale() = -1.f;
 			text() = L"";
 
-			add_extra_draw_command(Text_draw::v, { this });
+			add_extra_draw(TextExtraDraw::v, {});
 		}
 
 		Bvec4 &wText::text_col()
@@ -1647,7 +1453,7 @@ namespace flame
 			text() = _text;
 			set_size_auto();
 			background_col$.w *= alpha;
-			add_style_color(this, 0, Vec3(0.f, 0.f, 1.f));
+			add_style_background_color(this, 0, Vec3(0.f, 0.f, 1.f));
 		}
 
 		wButton *wButton::create(Instance *ui)
@@ -1658,11 +1464,12 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Toggle_clicked, FLAME_GID(23140), "")
-			auto &thiz = *(wToggle**)&d[0].p();
+		FLAME_REGISTER_FUNCTION_BEG(ToggleMouse, FLAME_GID(23140), Widget::MouseListenerParm)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
 
-			thiz->set_toggle(!thiz->toggled());
-		FLAME_REGISTER_FUNCTION_END(Toggle_clicked)
+			((wToggle*)p.thiz())->set_toggle(!((wToggle*)p.thiz())->toggled());
+		FLAME_REGISTER_FUNCTION_END(ToggleMouse)
 
 		void wToggle::init()
 		{
@@ -1680,7 +1487,7 @@ namespace flame
 
 			toggled() = 0;
 
-			add_listener(cH("clicked"), Toggle_clicked::v, { this });
+			add_listener(ListenerMouse, ToggleMouse::v, this, {});
 		}
 
 		int &wToggle::toggled()
@@ -1696,7 +1503,7 @@ namespace flame
 			else
 				closet_id$ = 1;
 
-			report_changed();
+			on_changed();
 		}
 
 		wToggle *wToggle::create(Instance *ui)
@@ -1728,11 +1535,12 @@ namespace flame
 			w->add_child(w->w_rarrow(), 1);
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(MenuItem_clicked, FLAME_GID(11216), "")
-			auto &thiz = *(wToggle**)&d[0].p();
+		FLAME_REGISTER_FUNCTION_BEG(MenuItemMouse, FLAME_GID(11216), Widget::MouseListenerParm)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
 
-			thiz->instance()->close_popup();
-		FLAME_REGISTER_FUNCTION_END(MenuItem_clicked)
+			p.thiz()->instance()->close_popup();
+		FLAME_REGISTER_FUNCTION_END(MenuItemMouse)
 
 		void wMenuItem::init(const wchar_t *title)
 		{
@@ -1744,7 +1552,7 @@ namespace flame
 			size_policy_hori$ = SizeFitLayout;
 			align$ = AlignLittleEnd;
 
-			add_listener(cH("clicked"), MenuItem_clicked::v, { this });
+			add_listener(ListenerMouse, MenuItemMouse::v, this, {});
 		}
 
 		wMenuItem *wMenuItem::create(Instance *ui, const wchar_t *title)
@@ -1755,35 +1563,32 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Menu_btn_mousemove, FLAME_GID(10376), "f2")
-			auto &thiz = *(wMenu**)&d[1].p();
+		FLAME_REGISTER_FUNCTION_BEG(MenuBtnMouse, FLAME_GID(10376), Widget::MouseListenerParm)
+			if (!(p.action() == KeyStateNull && p.key() == Mouse_Null))
+				return;
 
-			if (thiz->instance()->popup_widget())
-				thiz->open();
-		FLAME_REGISTER_FUNCTION_END(Menu_btn_mousemove)
+			if (p.thiz()->instance()->popup_widget())
+				((wMenu*)p.thiz())->open();
+		FLAME_REGISTER_FUNCTION_END(MenuBtnMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(Menu_items_addchild, FLAME_GID(21018), "p")
-			auto &w = *(Widget**)&d[0].p();
-			auto &thiz = *(wMenu**)&d[1].p();
+		FLAME_REGISTER_FUNCTION_BEG(MenuItemsChild, FLAME_GID(21018), Widget::ChildListenerParm)
+			if (p.op() != Widget::ChildAdd)
+				return;
 
-			switch (w->class_hash$)
+			switch (p.src()->class_hash$)
 			{
 			case cH("menuitem"):
-				menu_add_rarrow(thiz);
+				menu_add_rarrow((wMenu*)p.thiz());
 				break;
 			case cH("menu"):
-			{
-				auto menu = (wMenu*)w;
+				((wMenu*)p.src())->sub() = 1;
+				((wMenu*)p.src())->size_policy_hori$ = SizeGreedy;
+				((wMenu*)p.src())->w_items()->align$ = AlignRightOutside;
 
-				menu->sub() = 1;
-				menu->size_policy_hori$ = SizeGreedy;
-				menu->w_items()->align$ = AlignRightOutside;
-
-				menu_add_rarrow(thiz);
-			}
+				menu_add_rarrow((wMenu*)p.thiz());
 				break;
 			}
-		FLAME_REGISTER_FUNCTION_END(Menu_items_addchild)
+		FLAME_REGISTER_FUNCTION_END(MenuItemsChild)
 
 		void wMenu::init(const wchar_t *title, float alpha)
 		{
@@ -1804,7 +1609,7 @@ namespace flame
 			w_btn()->align$ = AlignLittleEnd;
 			add_child(w_btn());
 
-			w_btn()->add_listener(cH("mouse move"), Menu_btn_mousemove::v, { this });
+			w_btn()->add_listener(ListenerMouse, MenuBtnMouse::v, this, {});
 
 			w_rarrow() = nullptr;
 
@@ -1815,7 +1620,7 @@ namespace flame
 			w_items()->visible$ = false;
 			add_child(w_items(), 1);
 
-			w_items()->add_listener(cH("add child"), Menu_items_addchild::v, { this });
+			w_items()->add_listener(ListenerChild, MenuItemsChild::v, this, {});
 		}
 
 		int &wMenu::sub()
@@ -1904,34 +1709,34 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Menu_btn_clicked, FLAME_GID(24104), "")
-			auto &thiz = *(wMenu**)&d[0].p();
-			auto &menu = *(wMenu**)&d[1].p();
+		FLAME_DATA_PACKAGE_BEGIN(MenuBarMenuBtnMouseData, Widget::MouseListenerParm)
+			FLAME_DATA_PACKAGE_CAPT(wMenuPtr, menu, p)
+		FLAME_DATA_PACKAGE_END
 
-			if (!menu->opened())
+		FLAME_REGISTER_FUNCTION_BEG(MenuBarMenuBtnMouse, FLAME_GID(24104), MenuBarMenuBtnMouseData)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
+
+			if (!p.menu()->opened())
 			{
-				if (!thiz->instance()->popup_widget())
+				if (!p.thiz()->instance()->popup_widget())
 				{
-					menu->open();
+					p.menu()->open();
 
-					thiz->instance()->set_popup_widget(thiz);
+					p.thiz()->instance()->set_popup_widget(p.thiz());
 				}
 			}
 			else
-				thiz->instance()->close_popup();
-		FLAME_REGISTER_FUNCTION_END(Menu_btn_clicked)
+				p.thiz()->instance()->close_popup();
+		FLAME_REGISTER_FUNCTION_END(MenuBarMenuBtnMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(MenuBar_addchild, FLAME_GID(10208), "p")
-			auto w = (Widget*)d[0].p();
-			auto thiz = (wMenuBar*)d[1].p();
+		FLAME_REGISTER_FUNCTION_BEG(MenuBarChild, FLAME_GID(10208), Widget::ChildListenerParm)
+			if (p.op() != Widget::ChildAdd)
+				return;
 
-			if (w->class_hash$ == cH("menu"))
-			{
-				auto menu = (wMenu*)w;
-
-				menu->w_btn()->add_listener(cH("clicked"), Menu_btn_clicked::v, { thiz, menu });
-			}
-		FLAME_REGISTER_FUNCTION_END(MenuBar_addchild)
+			if (p.src()->class_hash$ == cH("menu"))
+				((wMenu*)p.src())->w_btn()->add_listener(Widget::ListenerMouse, MenuBarMenuBtnMouse::v, p.thiz(), { p.src() });
+		FLAME_REGISTER_FUNCTION_END(MenuBarChild)
 
 		void wMenuBar::init()
 		{
@@ -1941,7 +1746,7 @@ namespace flame
 
 			layout_type$ = LayoutHorizontal;
 
-			add_listener(cH("add child"), MenuBar_addchild::v, { this });
+			add_listener(ListenerChild, MenuBarChild::v, this, {});
 		}
 
 		wMenuBar *wMenuBar::create(Instance *ui)
@@ -1952,43 +1757,43 @@ namespace flame
 			return w;
 		}
 		
-		FLAME_REGISTER_FUNCTION_BEG(Combo_btn_clicked, FLAME_GID(10368), "")
-			auto &thiz = *(wMenu**)&d[0].p();
+		FLAME_REGISTER_FUNCTION_BEG(ComboBtnMouse, FLAME_GID(10368), Widget::MouseListenerParm)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
 
-			if (!thiz->opened())
+			if (!((wMenu*)p.thiz())->opened())
 			{
-				if (!thiz->instance()->popup_widget())
+				if (!p.thiz()->instance()->popup_widget())
 				{
-					thiz->open();
+					((wMenu*)p.thiz())->open();
 
-					thiz->instance()->set_popup_widget(thiz);
+					p.thiz()->instance()->set_popup_widget(p.thiz());
 				}
 			}
 			else
-				thiz->instance()->close_popup();
-		FLAME_REGISTER_FUNCTION_END(Combo_btn_clicked)
+				p.thiz()->instance()->close_popup();
+		FLAME_REGISTER_FUNCTION_END(ComboBtnMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(ComboItem_clicked, FLAME_GID(22268), "")
-			auto &thiz = *(wCombo**)&d[0].p();
-			auto &idx = d[1].i1();
+		FLAME_DATA_PACKAGE_BEGIN(ComboItemMouseData, Widget::MouseListenerParm)
+			FLAME_DATA_PACKAGE_CAPT(int, idx, i1)
+		FLAME_DATA_PACKAGE_END
 
-			thiz->set_sel(idx);
-		FLAME_REGISTER_FUNCTION_END(ComboItem_clicked)
+		FLAME_REGISTER_FUNCTION_BEG(ComboItemMouse, FLAME_GID(22268), ComboItemMouseData)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
 
-		FLAME_REGISTER_FUNCTION_BEG(Combo_items_addchild, FLAME_GID(7524), "p")
-			auto &w = *(Widget**)&d[0].p();
-			auto &thiz = *(wMenu**)&d[1].p();
+			((wCombo*)p.thiz())->set_sel(p.idx());
+		FLAME_REGISTER_FUNCTION_END(ComboItemMouse)
 
-			if (w->class_hash$ == cH("menuitem"))
+		FLAME_REGISTER_FUNCTION_BEG(ComboItemsChild, FLAME_GID(7524), Widget::ChildListenerParm)
+			if (p.src()->class_hash$ == cH("menuitem"))
 			{
-				auto i = (wMenuItem*)w;
+				p.thiz()->set_width(p.thiz()->inner_padding$[0] + p.thiz()->inner_padding$[1] + ((wCombo*)p.thiz())->w_btn()->inner_padding$[0] + ((wCombo*)p.thiz())->w_btn()->inner_padding$[1] + ((wCombo*)p.thiz())->w_items()->size$.x);
+				auto idx = ((wCombo*)p.thiz())->w_items()->children_1$.size - 1;
 
-				thiz->set_width(thiz->inner_padding$[0] + thiz->inner_padding$[1] + thiz->w_btn()->inner_padding$[0] + thiz->w_btn()->inner_padding$[1] + thiz->w_items()->size$.x);
-				auto idx = thiz->w_items()->children_1$.size - 1;
-
-				i->add_listener(cH("clicked"), ComboItem_clicked::v, { thiz, idx });
+				((wMenuItem*)p.src())->add_listener(Widget::ListenerMouse, ComboItemMouse::v, p.thiz(), { idx });
 			}
-		FLAME_REGISTER_FUNCTION_END(Combo_items_addchild)
+		FLAME_REGISTER_FUNCTION_END(ComboItemsChild)
 
 		void wCombo::init(void *_enum_info, void *_target)
 		{
@@ -2006,9 +1811,9 @@ namespace flame
 			enum_info() = _enum_info;
 			target() = _target;
 
-			w_btn()->add_listener(cH("clicked"), Combo_btn_clicked::v, { this });
+			w_btn()->add_listener(ListenerMouse, ComboBtnMouse::v, this, {});
 
-			w_items()->add_listener(cH("add child"), Combo_items_addchild::v, { this });
+			w_items()->add_listener(ListenerChild, ComboItemsChild::v, this, {});
 
 			if (enum_info())
 			{
@@ -2018,7 +1823,7 @@ namespace flame
 				{
 					auto w_i = wMenuItem::create(instance(), s2w(e->item(i)->name()).c_str());
 					w_items()->add_child(w_i);
-					add_style_color(w_i, 0, Vec3(0.f, 0.f, 0.7f));
+					add_style_background_color(w_i, 0, Vec3(0.f, 0.f, 0.7f));
 				}
 			}
 
@@ -2071,7 +1876,7 @@ namespace flame
 					*p = sel();
 			}
 
-			report_changed();
+			on_changed();
 		}
 
 		wCombo *wCombo::create(Instance *ui, void *enum_info, void *target)
@@ -2082,170 +1887,161 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Combo_draw, FLAME_GID(9908), "p f2 f")
-			auto &c = *(Canvas**)&d[0].p();
-		auto &off = d[1].f2();
-		auto &scl = d[2].f1();
-		auto &thiz = *(wEdit**)&d[3].p();
-
-		if (thiz->instance()->key_focus_widget() == thiz && int(thiz->instance()->total_time() * 2) % 2 == 0)
-		{
-			auto len = share_data.font_atlas->get_text_width(thiz->text().v, thiz->text().v + thiz->cursor());
-			if (thiz->sdf_scale() < 0.f)
+		FLAME_REGISTER_FUNCTION_BEG(EditExtraDraw, FLAME_GID(9908), Widget::ExtraDrawParm)
+			if (p.thiz()->instance()->key_focus_widget() == p.thiz() && int(p.thiz()->instance()->total_time() * 2) % 2 == 0)
 			{
-				c->add_char_stroke((thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])
-					+ Vec2(len - 1.f, 0.f)) * scl + off, thiz->text_col(), '|');
+				auto len = share_data.font_atlas->get_text_width(((wEdit*)p.thiz())->text().v, ((wEdit*)p.thiz())->text().v + ((wEdit*)p.thiz())->cursor());
+				auto pos = (p.thiz()->pos$ + Vec2(p.thiz()->inner_padding$[0], p.thiz()->inner_padding$[2])) * p.scl() + p.off();
+				if (((wEdit*)p.thiz())->sdf_scale() < 0.f)
+					p.canvas()->add_char_stroke(pos + Vec2(len - 1.f, 0.f) * p.scl(), ((wEdit*)p.thiz())->text_col(), '|');
+				else
+				{
+					auto sdf_scale = ((wEdit*)p.thiz())->sdf_scale() * p.scl();
+					p.canvas()->add_char_sdf(pos + Vec2(len - 1.f, 0.f) * sdf_scale, ((wEdit*)p.thiz())->text_col(), '|', sdf_scale);
+				}
+			}
+		FLAME_REGISTER_FUNCTION_END(EditExtraDraw)
+
+		FLAME_REGISTER_FUNCTION_BEG(EditKey, FLAME_GID(27590), Widget::KeyListenerParm)
+			if (p.action() == KeyStateNull)
+			{
+				if (((wEdit*)p.thiz())->type() != wEdit::TypeNull && p.value() != '\b' && p.value() != 22 && p.value() != 27)
+				{
+					switch (((wEdit*)p.thiz())->type())
+					{
+					case wEdit::TypeInt:
+						if (p.value() == L'-')
+						{
+							if (((wEdit*)p.thiz())->cursor() != 0 || ((wEdit*)p.thiz())->text().v[0] == L'-')
+								return;
+						}
+						if (p.value() < '0' || p.value() > '9')
+							return;
+						break;
+					case wEdit::TypeUint: case wEdit::TypeUchar:
+						if (p.value() < '0' || p.value() > '9')
+							return;
+						break;
+					case wEdit::TypeFloat:
+						if (p.value() == L'.')
+						{
+							if (((wEdit*)p.thiz())->text().find(L'.') != -1)
+								return;
+						}
+						if (p.value() < '0' || p.value() > '9')
+							return;
+						break;
+					}
+				}
+
+				switch (p.value())
+				{
+				case L'\b':
+					if (((wEdit*)p.thiz())->cursor() > 0)
+					{
+						((wEdit*)p.thiz())->cursor()--;
+						((wEdit*)p.thiz())->text().remove(((wEdit*)p.thiz())->cursor());
+						p.thiz()->on_changed();
+					}
+					break;
+				case 22:
+				{
+					auto str = get_clipboard();
+
+					((wEdit*)p.thiz())->cursor() = 0;
+					((wEdit*)p.thiz())->text() = str.v;
+					p.thiz()->on_changed();
+				}
+					break;
+				case 27:
+					break;
+				default:
+					((wEdit*)p.thiz())->text().insert(((wEdit*)p.thiz())->cursor(), p.value());
+					((wEdit*)p.thiz())->cursor()++;
+					p.thiz()->on_changed();
+				}
 			}
 			else
 			{
-				c->add_char_sdf((thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])
-					+ Vec2(len - 1.f, 0.f)) * scl + off, thiz->text_col(), '|', thiz->sdf_scale() * scl);
-			}
-		}
-		FLAME_REGISTER_FUNCTION_END(Combo_draw)
-
-		FLAME_REGISTER_FUNCTION_BEG(Edit_keydown, FLAME_GID(27590), "i")
-			auto &code = d[0].i1();
-			auto &thiz = *(wEdit**)&d[1].p();
-
-			switch (code)
-			{
-			case Key_Left:
-				if (thiz->cursor() > 0)
-					thiz->cursor()--;
-				break;
-			case Key_Right:
-				if (thiz->cursor() < thiz->text().size)
-					thiz->cursor()++;
-				break;
-			case Key_Home:
-				thiz->cursor() = 0;
-				break;
-			case Key_End:
-				thiz->cursor() = thiz->text().size;
-				break;
-			case Key_Del:
-				if (thiz->cursor() < thiz->text().size)
+				switch (p.value())
 				{
-					thiz->text().remove(thiz->cursor());
-					thiz->report_changed();
-				}
-				break;
-			}
-		FLAME_REGISTER_FUNCTION_END(Edit_keydown)
-
-		FLAME_REGISTER_FUNCTION_BEG(Combo_char, FLAME_GID(5693), "i")
-			auto &ch = d[0].i1();
-			auto &thiz = *(wEdit**)&d[1].p();
-
-			if (thiz->type() != wEdit::TypeNull && ch != '\b' && ch != 22 && ch != 27)
-			{
-				switch (thiz->type())
-				{
-				case wEdit::TypeInt:
-					if (ch == L'-')
+				case Key_Left:
+					if (((wEdit*)p.thiz())->cursor() > 0)
+						((wEdit*)p.thiz())->cursor()--;
+					break;
+				case Key_Right:
+					if (((wEdit*)p.thiz())->cursor() < ((wEdit*)p.thiz())->text().size)
+						((wEdit*)p.thiz())->cursor()++;
+					break;
+				case Key_Home:
+					((wEdit*)p.thiz())->cursor() = 0;
+					break;
+				case Key_End:
+					((wEdit*)p.thiz())->cursor() = ((wEdit*)p.thiz())->text().size;
+					break;
+				case Key_Del:
+					if (((wEdit*)p.thiz())->cursor() < ((wEdit*)p.thiz())->text().size)
 					{
-						if (thiz->cursor() != 0 || thiz->text().v[0] == L'-')
-							return;
+						((wEdit*)p.thiz())->text().remove(((wEdit*)p.thiz())->cursor());
+						p.thiz()->on_changed();
 					}
-					if (ch < '0' || ch > '9')
-						return;
 					break;
-				case wEdit::TypeUint: case wEdit::TypeUchar:
-					if (ch < '0' || ch > '9')
-						return;
-					break;
-				case wEdit::TypeFloat:
-					if (ch == L'.')
+				}
+			}
+		FLAME_REGISTER_FUNCTION_END(EditKey)
+
+		FLAME_REGISTER_FUNCTION_BEG(ComboFocus, FLAME_GID(12998), Widget::FoucusListenerParm)
+			if (p.focus_or_keyfocus() != 1)
+				return;
+		
+			switch (p.type())
+			{
+			case Focus_Gain:
+				if (((wEdit*)p.thiz())->target())
+					((wEdit*)p.thiz())->cursor() = ((wEdit*)p.thiz())->text().size;
+				break;
+			case Focus_Lost:
+				if (((wEdit*)p.thiz())->target())
+				{
+					switch (((wEdit*)p.thiz())->type())
 					{
-						if (thiz->text().find(L'.') != -1)
-							return;
+					case wEdit::TypeInt:
+					{
+						auto v = (int*)(((wEdit*)p.thiz())->target());
+						*v = stoi1(((wEdit*)p.thiz())->text().v);
+						((wEdit*)p.thiz())->text() = to_wstring(*v);
+						((wEdit*)p.thiz())->cursor() = 0;
 					}
-					if (ch < '0' || ch > '9')
-						return;
-					break;
-				}
-			}
-
-			switch (ch)
-			{
-			case L'\b':
-				if (thiz->cursor() > 0)
-				{
-					thiz->cursor()--;
-					thiz->text().remove(thiz->cursor());
-					thiz->report_changed();
+						break;
+					case wEdit::TypeUint:
+					{
+						auto v = (uint*)(((wEdit*)p.thiz())->target());
+						*v = stou1(((wEdit*)p.thiz())->text().v);
+						((wEdit*)p.thiz())->text() = to_wstring(*v);
+						((wEdit*)p.thiz())->cursor() = 0;
+					}
+						break;
+					case wEdit::TypeFloat:
+					{
+						auto v = (float*)(((wEdit*)p.thiz())->target());
+						*v = stof1(((wEdit*)p.thiz())->text().v);
+						((wEdit*)p.thiz())->text() = to_wstring(*v);
+						((wEdit*)p.thiz())->cursor() = 0;
+					}
+						break;
+					case wEdit::TypeUchar:
+					{
+						auto v = (uchar*)(((wEdit*)p.thiz())->target());
+						*v = stob1(((wEdit*)p.thiz())->text().v);
+						((wEdit*)p.thiz())->text() = to_wstring(*v);
+						((wEdit*)p.thiz())->cursor() = 0;
+					}
+						break;
+					}
 				}
 				break;
-			case 22:
-			{
-				auto str = get_clipboard();
-
-				thiz->cursor() = 0;
-				thiz->text() = str.v;
-				thiz->report_changed();
 			}
-				break;
-			case 27:
-				break;
-			default:
-				thiz->text().insert(thiz->cursor(), ch);
-				thiz->cursor()++;
-				thiz->report_changed();
-			}
-		FLAME_REGISTER_FUNCTION_END(Combo_char)
-
-			FLAME_REGISTER_FUNCTION_BEG(Combo_gainfocus, FLAME_GID(12998), "i")
-			auto &type = d[0].i1();
-			auto &thiz = *(wEdit**)&d[1].p();
-
-			if (type == 1 && thiz->target())
-				thiz->cursor() = thiz->text().size;
-		FLAME_REGISTER_FUNCTION_END(Combo_gainfocus)
-
-		FLAME_REGISTER_FUNCTION_BEG(Combo_lostfocus, FLAME_GID(14583), "i")
-			auto &type = d[0].i1();
-			auto &thiz = *(wEdit**)&d[1].p();
-
-			if (type == 1 && thiz->target())
-			{
-				switch (thiz->type())
-				{
-				case wEdit::TypeInt:
-				{
-					auto p = (int*)thiz->target();
-					*p = stoi1(thiz->text().v);
-					thiz->text() = to_wstring(*p);
-					thiz->cursor() = 0;
-				}
-					break;
-				case wEdit::TypeUint:
-				{
-					auto p = (uint*)thiz->target();
-					*p = stou1(thiz->text().v);
-					thiz->text() = to_wstring(*p);
-					thiz->cursor() = 0;
-				}
-					break;
-				case wEdit::TypeFloat:
-				{
-					auto p = (float*)thiz->target();
-					*p = stof1(thiz->text().v);
-					thiz->text() = to_wstring(*p);
-					thiz->cursor() = 0;
-				}
-					break;
-				case wEdit::TypeUchar:
-				{
-					auto p = (uchar*)thiz->target();
-					*p = stob1(thiz->text().v);
-					thiz->text() = to_wstring(*p);
-					thiz->cursor() = 0;
-				}
-					break;
-				}
-			}
-		FLAME_REGISTER_FUNCTION_END(Combo_lostfocus)
+		FLAME_REGISTER_FUNCTION_END(ComboFocus)
 
 		void wEdit::init(Type _type, void *_target)
 		{
@@ -2263,13 +2059,10 @@ namespace flame
 			type() = _type;
 			target() = _target;
 
-			add_extra_draw_command(Combo_draw::v, { this });
+			add_extra_draw(EditExtraDraw::v, {});
 
-			add_listener(cH("key down"), Edit_keydown::v, { this });
-			add_listener(cH("char"), Combo_char::v, { this });
-			add_listener(cH("gain focus"), Combo_gainfocus::v, { this });
-			if (target())
-				add_listener(cH("lost focus"), Combo_lostfocus::v, { this });
+			add_listener(ListenerKey, EditKey::v, this, {});
+			add_listener(ListenerFocus, ComboFocus::v, this, {});
 
 			if (type() != TypeNull && target())
 			{
@@ -2333,19 +2126,14 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Image_draw, FLAME_GID(30624), "p f2 f")
-			auto &c = *(Canvas**)&d[0].p();
-			auto &off = d[1].f2();
-			auto &scl = d[2].f1();
-			auto &thiz = *(wImage**)&d[3].p();
-
-			auto p = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * scl + off;
-			auto s = (thiz->size$ - Vec2(thiz->inner_padding$[0] + thiz->inner_padding$[1], thiz->inner_padding$[2] + thiz->inner_padding$[3])) * scl * thiz->scale$;
-			if (!thiz->stretch())
-				c->add_image(p, s, thiz->id(), thiz->uv0(), thiz->uv1());
+		FLAME_REGISTER_FUNCTION_BEG(ImageExtraDraw, FLAME_GID(30624), Widget::ExtraDrawParm)
+			auto pos = (p.thiz()->pos$ + Vec2(p.thiz()->inner_padding$[0], p.thiz()->inner_padding$[2])) * p.scl() + p.off();
+			auto size = (p.thiz()->size$ - Vec2(p.thiz()->inner_padding$[0] + p.thiz()->inner_padding$[1], p.thiz()->inner_padding$[2] + p.thiz()->inner_padding$[3])) * p.scl() * p.thiz()->scale$;
+			if (!((wImage*)p.thiz())->stretch())
+				p.canvas()->add_image(pos, size, ((wImage*)p.thiz())->id(), ((wImage*)p.thiz())->uv0(), ((wImage*)p.thiz())->uv1());
 			else
-				c->add_image_stretch(p, s, thiz->id(), thiz->border());
-		FLAME_REGISTER_FUNCTION_END(Image_draw)
+				p.canvas()->add_image_stretch(pos, size, ((wImage*)p.thiz())->id(), ((wImage*)p.thiz())->border());
+		FLAME_REGISTER_FUNCTION_END(ImageExtraDraw)
 
 		void wImage::init()
 		{
@@ -2358,7 +2146,7 @@ namespace flame
 			stretch() = 0;
 			border() = Vec4(0.f);
 
-			add_extra_draw_command(Image_draw::v, { this });
+			add_extra_draw(ImageExtraDraw::v, {});
 		}
 
 		int &wImage::id()
@@ -2394,45 +2182,43 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(SizeDrag_mousemove, FLAME_GID(2863), "f2")
-			auto &disp = d[0].f2();
-			auto &thiz = *(wSizeDrag**)&d[1].p();
-			auto &target = *(Widget**)&d[2].p();
+		FLAME_DATA_PACKAGE_BEGIN(SizeDragMouseData, Widget::MouseListenerParm)
+			FLAME_DATA_PACKAGE_CAPT(WidgetPtr, target, p)
+		FLAME_DATA_PACKAGE_END
 
-			if (thiz == thiz->instance()->dragging_widget())
+		FLAME_REGISTER_FUNCTION_BEG(SizeDragMouse, FLAME_GID(2863), SizeDragMouseData)
+			if (!(p.action() == KeyStateNull && p.key() == Mouse_Null))
+				return;
+
+			if (p.thiz() == p.thiz()->instance()->dragging_widget())
 			{
 				auto changed = false;
-				auto d = disp / thiz->parent()->scale$;
-				auto new_size = target->size$;
+				auto d = p.value() / p.thiz()->parent()->scale$;
+				auto new_size = p.target()->size$;
 
-				if (new_size.x + d.x > thiz->min_size().x)
+				if (new_size.x + d.x > ((wSizeDrag*)p.thiz())->min_size().x)
 				{
 					new_size.x += d.x;
 					changed = true;
 				}
-				if (new_size.y + d.y > thiz->min_size().y)
+				if (new_size.y + d.y > ((wSizeDrag*)p.thiz())->min_size().y)
 				{
 					new_size.y += d.y;
 					changed = true;
 				}
 
 				if (changed)
-					target->set_size(new_size);
+					p.target()->set_size(new_size);
 			}
-		FLAME_REGISTER_FUNCTION_END(SizeDrag_mousemove)
+		FLAME_REGISTER_FUNCTION_END(SizeDragMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(SizeDrag_draw, FLAME_GID(4242), "p f2 f")
-			auto &c = *(Canvas**)&d[0].p();
-			auto &off = d[1].f2();
-			auto &scl = d[2].f1();
-			auto &thiz = *(wSizeDrag**)&d[3].p();
-
-			c->add_triangle_filled(
-				(thiz->pos$ + Vec2(thiz->size$.x, 0.f)) * scl + off,
-				(thiz->pos$ + Vec2(0.f, thiz->size$.y)) * scl + off,
-				(thiz->pos$ + Vec2(thiz->size$)) * scl + off,
-				thiz->background_col$);
-		FLAME_REGISTER_FUNCTION_END(SizeDrag_draw)
+		FLAME_REGISTER_FUNCTION_BEG(SizeDragExtraDraw, FLAME_GID(4242), Widget::ExtraDrawParm)
+			p.canvas()->add_triangle_filled(
+				(p.thiz()->pos$ + Vec2(p.thiz()->size$.x, 0.f)) * p.scl() + p.off(),
+				(p.thiz()->pos$ + Vec2(0.f, p.thiz()->size$.y)) * p.scl() + p.off(),
+				(p.thiz()->pos$ + Vec2(p.thiz()->size$)) * p.scl() + p.off(),
+				p.thiz()->background_col$);
+		FLAME_REGISTER_FUNCTION_END(SizeDragExtraDraw)
 
 		void wSizeDrag::init(Widget *target)
 		{
@@ -2442,14 +2228,14 @@ namespace flame
 			size$ = Vec2(10.f);
 			background_col$ = Bvec4(140, 225, 15, 255 * 0.5f);
 			align$ = AlignRightBottomNoPadding;
-			add_style_color(this, 0, Vec3(0.f, 0.f, 0.7f));
+			add_style_background_color(this, 0, Vec3(0.f, 0.f, 0.7f));
 
 			min_size() = Vec2(0.f);
 
-			add_listener(cH("mouse move"), SizeDrag_mousemove::v, { this, target });
+			add_listener(ListenerMouse, SizeDragMouse::v, this, { target });
 
 			draw_default$ = false;
-			add_extra_draw_command(SizeDrag_draw::v, { this });
+			add_extra_draw(SizeDragExtraDraw::v, {});
 		}
 
 		Vec2 &wSizeDrag::min_size()
@@ -2465,38 +2251,41 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Scrollbar_mousemove, FLAME_GID(1385), "f2")
-			auto &disp = d[0].f2();
-			auto &thiz = *(wScrollbar**)&d[1].p();
+		FLAME_REGISTER_FUNCTION_BEG(ScrollbarBtnMouse, FLAME_GID(1385), Widget::MouseListenerParm)
+			if (p.action() != KeyStateNull)
+				return;
 
-			if (thiz->w_btn() == thiz->instance()->dragging_widget())
+			if (p.key() == Mouse_Middle)
+				p.thiz()->parent()->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
+			else
 			{
-				thiz->w_target()->scroll_offset$ -= (disp.y / thiz->size$.y) * thiz->w_target()->get_content_size();
-				thiz->w_target()->arrange();
+				if (((wScrollbar*)p.thiz())->w_btn() == p.thiz()->instance()->dragging_widget())
+				{
+					((wScrollbar*)p.thiz())->w_target()->scroll_offset$ -= (p.value().y / p.thiz()->size$.y) * ((wScrollbar*)p.thiz())->w_target()->get_content_size();
+					((wScrollbar*)p.thiz())->w_target()->arrange();
+				}
 			}
-		FLAME_REGISTER_FUNCTION_END(Scrollbar_mousemove)
+		FLAME_REGISTER_FUNCTION_END(ScrollbarBtnMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(Scrollbar_mousescroll, FLAME_GID(2126), "i")
-			auto &scroll = d[0].i1();
-			auto &thiz = *(wScrollbar**)&d[1].p();
+		FLAME_REGISTER_FUNCTION_BEG(ScrollbarMouse, FLAME_GID(2126), Widget::MouseListenerParm)
+			if (!(p.action() == KeyStateNull && p.key() == Mouse_Middle))
+				return;
 
-			thiz->scroll(scroll);
-		FLAME_REGISTER_FUNCTION_END(Scrollbar_mousescroll)
+			((wScrollbar*)p.thiz())->scroll(p.value().x);
+		FLAME_REGISTER_FUNCTION_END(ScrollbarMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(Scrollbar_style, FLAME_GID(18956), "p")
-			auto &thiz = *(wScrollbar**)&d[0].p();
-
-			auto s = thiz->w_target()->size$.y - thiz->w_target()->inner_padding$[2] - thiz->w_target()->inner_padding$[3];
-			auto content_size = thiz->w_target()->get_content_size();
+		FLAME_REGISTER_FUNCTION_BEG(ScrollbarStyle, FLAME_GID(18956), Widget::StyleParm)
+			auto s = ((wScrollbar*)p.thiz())->w_target()->size$.y - ((wScrollbar*)p.thiz())->w_target()->inner_padding$[2] - ((wScrollbar*)p.thiz())->w_target()->inner_padding$[3];
+			auto content_size = ((wScrollbar*)p.thiz())->w_target()->get_content_size();
 			if (content_size > s)
 			{
-				thiz->w_btn()->set_visibility(true);
-				thiz->w_btn()->pos$.y = thiz->size$.y * (-thiz->w_target()->scroll_offset$ / content_size);
-				thiz->w_btn()->size$.y = thiz->size$.y * (s / content_size);
+				((wScrollbar*)p.thiz())->w_btn()->set_visibility(true);
+				((wScrollbar*)p.thiz())->w_btn()->pos$.y = p.thiz()->size$.y * (-((wScrollbar*)p.thiz())->w_target()->scroll_offset$ / content_size);
+				((wScrollbar*)p.thiz())->w_btn()->size$.y = p.thiz()->size$.y * (s / content_size);
 			}
 			else
-				thiz->w_btn()->set_visibility(false);
-		FLAME_REGISTER_FUNCTION_END(Scrollbar_style)
+				((wScrollbar*)p.thiz())->w_btn()->set_visibility(false);
+		FLAME_REGISTER_FUNCTION_END(ScrollbarStyle)
 
 		void wScrollbar::init(Widget *target)
 		{
@@ -2514,17 +2303,17 @@ namespace flame
 			w_btn()->size$ = size$;
 			w_btn()->background_round_radius$ = 5.f;
 			w_btn()->background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
-			add_style_color(w_btn(), 0, Vec3(0.f, 1.f, 1.f));
+			add_style_background_color(w_btn(), 0, Vec3(0.f, 1.f, 1.f));
 			add_child(w_btn());
 
 			w_target() = target;
+			w_target()->add_listener(ListenerMouse, ScrollbarMouse::v, this, {});
 
-			w_btn()->add_listener(cH("mouse move"), Scrollbar_mousemove::v, { this });
+			w_btn()->add_listener(ListenerMouse, ScrollbarBtnMouse::v, this, {});
 
-			add_listener(cH("mouse scroll"), Scrollbar_mousescroll::v, { this });
-			target->add_listener(cH("mouse scroll"), Scrollbar_mousescroll::v, { this });
+			add_listener(ListenerMouse, ScrollbarMouse::v, this, {});
 
-			add_style(Scrollbar_style::v, {});
+			add_style(0, ScrollbarStyle::v, {});
 		}
 
 		wButtonPtr &wScrollbar::w_btn()
@@ -2551,13 +2340,13 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(ListItem_btn_mousescroll, FLAME_GID(6526), "i")
-			auto &scroll = d[0].i1();
-			auto &thiz = *(wList**)&d[1].p();
+		FLAME_REGISTER_FUNCTION_BEG(ListItemBtnMouse, FLAME_GID(6526), Widget::MouseListenerParm)
+			if (!(p.action() == KeyStateNull && p.key() == Mouse_Middle))
+				return;
 
-			if (thiz->parent())
-				thiz->parent()->on_mousescroll(scroll);
-		FLAME_REGISTER_FUNCTION_END(ListItem_btn_mousescroll)
+			if (p.thiz()->parent())
+				p.thiz()->parent()->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
+		FLAME_REGISTER_FUNCTION_END(ListItemBtnMouse)
 
 		void wListItem::init()
 		{
@@ -2577,7 +2366,7 @@ namespace flame
 			w_btn()->align$ = AlignLittleEnd;
 			add_child(w_btn());
 
-			w_btn()->add_listener(cH("mouse scroll"), ListItem_btn_mousescroll::v, { this });
+			w_btn()->add_listener(ListenerMouse, ListItemBtnMouse::v, this, {});
 		}
 
 		wButtonPtr &wListItem::w_btn()
@@ -2593,43 +2382,46 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(List_leftmousedown, FLAME_GID(19124), "f2")
-			auto &thiz = *(wList**)&d[1].p();
+		FLAME_DATA_PACKAGE_BEGIN(ListItemBtnMouseData, Widget::MouseListenerParm)
+			FLAME_DATA_PACKAGE_CAPT(wListItemPtr, item, p)
+		FLAME_DATA_PACKAGE_END
 
-			thiz->w_sel() = nullptr;
-			thiz->report_changed();
-		FLAME_REGISTER_FUNCTION_END(List_leftmousedown)
+		FLAME_REGISTER_FUNCTION_BEG(ListListItemBtnMouse, FLAME_GID(8928), ListItemBtnMouseData)
+			if (!(p.action() == KeyStateDown && p.key() == Mouse_Left))
+				return;
 
-		FLAME_REGISTER_FUNCTION_BEG(ListItem_btn_style, FLAME_GID(408), "p")
-			auto &w = *(Widget**)&d[0].p();
-			auto &thiz = *(wList**)&d[1].p();
+			((wList*)p.thiz())->w_sel() = p.item();
+			p.thiz()->on_changed();
+		FLAME_REGISTER_FUNCTION_END(ListListItemBtnMouse)
 
-			if (thiz->w_sel() && thiz->w_sel()->w_btn() == w && w->state == StateNormal)
-				w->background_col$ = Bvec4(120, 120, 20, 255);
-		FLAME_REGISTER_FUNCTION_END(ListItem_btn_style)
+		FLAME_DATA_PACKAGE_BEGIN(ListItemBtnStyleData, Widget::StyleParm)
+			FLAME_DATA_PACKAGE_CAPT(wListPtr, list, p)
+		FLAME_DATA_PACKAGE_END
+		FLAME_REGISTER_FUNCTION_BEG(ListItemBtnStyle, FLAME_GID(408), ListItemBtnStyleData)
+			if (p.list()->w_sel() && p.list()->w_sel()->w_btn() == p.thiz() && p.thiz()->state == StateNormal)
+				p.thiz()->background_col$ = Bvec4(120, 120, 20, 255);
+		FLAME_REGISTER_FUNCTION_END(ListItemBtnStyle)
 
-		FLAME_REGISTER_FUNCTION_BEG(ListItem_btn_leftmousedown, FLAME_GID(8928), "f2")
-			auto &thiz = *(wList**)&d[1].p();
-			auto &i = *(wListItem**)&d[2].p();
+		FLAME_REGISTER_FUNCTION_BEG(ListMouse, FLAME_GID(19124), Widget::MouseListenerParm)
+			if (!(p.action() == KeyStateDown && p.key() == Mouse_Left))
+				return;
 
-			thiz->w_sel() = i;
-			thiz->report_changed();
-		FLAME_REGISTER_FUNCTION_END(ListItem_btn_leftmousedown)
+			((wList*)p.thiz())->w_sel() = nullptr;
+			p.thiz()->on_changed();
+		FLAME_REGISTER_FUNCTION_END(ListMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(List_addchild, FLAME_GID(8288), "p")
-			auto &w = *(Widget**)&d[0].p();
-			auto &thiz = *(wList**)&d[1].p();
+		FLAME_REGISTER_FUNCTION_BEG(ListChild, FLAME_GID(8288), Widget::ChildListenerParm)
+			if (p.op() != Widget::ChildAdd)
+				return;
 
-			if (w->class_hash$ == cH("listitem"))
+			if (p.src()->class_hash$ == cH("listitem"))
 			{
-				auto i = (wListItem*)w;
+				((wListItem*)p.src())->w_btn()->add_listener(Widget::ListenerMouse, ListListItemBtnMouse::v, p.thiz(), { p.src() });
 
-				add_style_color(i->w_btn(), 0, Vec3(260.f, 0.8f, 1.f));
-				i->w_btn()->add_style(ListItem_btn_style::v, { thiz });
-
-				i->w_btn()->add_listener(cH("left mouse down"), ListItem_btn_leftmousedown::v, { thiz, i });
+				add_style_background_color(((wListItem*)p.src())->w_btn(), 0, Vec3(260.f, 0.8f, 1.f));
+				((wListItem*)p.src())->w_btn()->add_style(0, ListItemBtnStyle::v, { p.thiz() });
 			}
-		FLAME_REGISTER_FUNCTION_END(List_addchild)
+		FLAME_REGISTER_FUNCTION_END(ListChild)
 
 		void wList::init()
 		{
@@ -2647,13 +2439,12 @@ namespace flame
 			layout_type$ = LayoutVertical;
 			clip$ = true;
 
-			add_listener(cH("left mouse down"), List_leftmousedown::v, { this });
+			add_listener(ListenerMouse, ListMouse::v, this, {});
 
 			w_scrollbar() = wScrollbar::create(instance(), this);
-
 			add_child(w_scrollbar(), 1);
 
-			add_listener(cH("add child"), List_addchild::v, { this });
+			add_listener(ListenerChild, ListChild::v, this, {});
 		}
 
 		wListItemPtr &wList::w_sel()
@@ -2674,20 +2465,22 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(TreeNode_doubleclicked, FLAME_GID(10825), "")
-			auto &thiz = *(wTreeNode**)&d[0].p();
+		FLAME_REGISTER_FUNCTION_BEG(TreeNodeMouse, FLAME_GID(10825), Widget::MouseListenerParm)
+			if (!(p.action() == (KeyStateDown | KeyStateUp | KeyStateDouble) && p.key() == Mouse_Null))
+				return;
 
-			thiz->w_larrow()->on_clicked();
-		FLAME_REGISTER_FUNCTION_END(TreeNode_doubleclicked)
+			((wTreeNode*)p.thiz())->w_larrow()->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
+		FLAME_REGISTER_FUNCTION_END(TreeNodeMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(TreeNode_larrow_clicked, FLAME_GID(20989), "")
-			auto &thiz = *(wTreeNode**)&d[0].p();
+		FLAME_REGISTER_FUNCTION_BEG(TreeNodeLarrowMouse, FLAME_GID(20989), Widget::MouseListenerParm)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
 
-			auto v = !thiz->w_items()->visible$;
-			thiz->w_items()->set_visibility(v);
+			auto v = !((wTreeNode*)p.thiz())->w_items()->visible$;
+			((wTreeNode*)p.thiz())->w_items()->set_visibility(v);
 
-			thiz->w_larrow()->text() = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
-		FLAME_REGISTER_FUNCTION_END(TreeNode_larrow_clicked)
+			((wTreeNode*)p.thiz())->w_larrow()->text() = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
+		FLAME_REGISTER_FUNCTION_END(TreeNodeLarrowMouse)
 
 		void wTreeNode::init(const wchar_t *title, const Bvec4 &normal_col, const Bvec4 &else_col)
 		{
@@ -2705,11 +2498,11 @@ namespace flame
 			w_btn()->background_col$.w = 0;
 			w_btn()->text() = title;
 			w_btn()->set_size_auto();
-			add_style_textcolor(w_btn(), 0, normal_col, else_col);
+			add_style_text_color(w_btn(), 0, normal_col, else_col);
 			w_btn()->align$ = AlignLittleEnd;
 			add_child(w_btn());
 
-			w_btn()->add_listener(cH("double clicked"), TreeNode_doubleclicked::v, { this });
+			w_btn()->add_listener(ListenerMouse, TreeNodeMouse::v, this, {});
 
 			w_items() = wLayout::create(instance());
 			w_items()->layout_padding$ = w_btn()->inner_padding$[0];
@@ -2725,9 +2518,9 @@ namespace flame
 			w_larrow()->event_attitude$ = EventAccept;
 			w_larrow()->set_size(Vec2(w_btn()->inner_padding$[0], w_btn()->size$.y));
 			w_larrow()->text() = Icon_CARET_RIGHT;
-			add_style_textcolor(w_larrow(), 0, normal_col, else_col);
+			add_style_text_color(w_larrow(), 0, normal_col, else_col);
 
-			w_larrow()->add_listener(cH("clicked"), TreeNode_larrow_clicked::v, { this });
+			w_larrow()->add_listener(ListenerMouse, TreeNodeLarrowMouse::v, this, {});
 
 			add_child(w_larrow(), 1);
 		}
@@ -2755,19 +2548,15 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Dialog_leftmousedown, FLAME_GID(9227), "")
-			auto &thiz = *(wDialog**)&d[1].p();
-
-			thiz->set_to_foreground();
-		FLAME_REGISTER_FUNCTION_END(Dialog_leftmousedown)
-
-		FLAME_REGISTER_FUNCTION_BEG(Dialog_mousemove, FLAME_GID(22841), "")
-			auto &disp = d[0].f2();
-			auto &thiz = *(wDialog**)&d[1].p();
-
-			if (thiz == thiz->instance()->dragging_widget())
-				thiz->pos$ += disp / thiz->parent()->scale$;
-		FLAME_REGISTER_FUNCTION_END(Dialog_mousemove)
+		FLAME_REGISTER_FUNCTION_BEG(DialogMouse, FLAME_GID(9227), Widget::MouseListenerParm)
+			if (p.action() == KeyStateDown && p.key() == Mouse_Left)
+				p.thiz()->set_to_foreground();
+			else if (p.action() == KeyStateNull && p.key() == Mouse_Null)
+			{
+				if (p.thiz() == p.thiz()->instance()->dragging_widget())
+					p.thiz()->pos$ += p.value() / p.thiz()->parent()->scale$;
+			}
+		FLAME_REGISTER_FUNCTION_END(DialogMouse)
 
 		void wDialog::init(bool resize, bool modual)
 		{
@@ -2789,8 +2578,7 @@ namespace flame
 				clip$ = true;
 			}
 
-			add_listener(cH("left mouse down"), Dialog_leftmousedown::v, { this });
-			add_listener(cH("mouse move"), Dialog_mousemove::v, { this });
+			add_listener(ListenerMouse, DialogMouse::v, this, {});
 
 			background_offset$[1] = 0.f;
 			background_round_radius$ = radius;
@@ -2836,11 +2624,12 @@ namespace flame
 			return w;
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(MessageDialog_ok, FLAME_GID(8291), "")
-			auto &thiz = *(wDialog**)&d[0].p();
+		FLAME_REGISTER_FUNCTION_BEG(MessageDialogOkMouse, FLAME_GID(8291), Widget::MouseListenerParm)
+			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+				return;
 
-			thiz->remove_from_parent(true);
-		FLAME_REGISTER_FUNCTION_END(MessageDialog_ok)
+			p.thiz()->remove_from_parent(true);
+		FLAME_REGISTER_FUNCTION_END(MessageDialogOkMouse)
 
 		void wMessageDialog::init(const wchar_t *text)
 		{
@@ -2864,7 +2653,7 @@ namespace flame
 			w_ok()->align$ = AlignMiddle;
 			add_child(w_ok());
 
-			w_ok()->add_listener(cH("clicked"), MessageDialog_ok::v, { this });
+			w_ok()->add_listener(ListenerMouse, MessageDialogOkMouse::v, this, {});
 		}
 
 		wTextPtr &wMessageDialog::w_text()

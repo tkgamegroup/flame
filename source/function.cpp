@@ -71,7 +71,7 @@ namespace flame
 
 	static std::vector<RegisteredFunctionPrivate*> pfs;
 
-	void register_function(PF pf, uint id, int parm_count, const char *filename, int line_beg, int line_end)
+	void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end)
 	{
 		assert(id);
 		for (auto &r : pfs)

@@ -65,13 +65,13 @@ namespace flame
 			DefaultStyle default_style;
 			float default_sdf_scale;
 
-			int key_states[128];
+			int key_states[Key_count];
 
 			Ivec2 mouse_pos;
 			Ivec2 mouse_disp;
 			int mouse_scroll;
 
-			int mouse_buttons[3]; // left, right, middle of KeyState
+			int mouse_buttons[MouseKey_count];
 
 			bool processed_mouse_input;
 			bool processed_keyboard_input;
@@ -114,13 +114,8 @@ namespace flame
 
 			FLAME_UI_EXPORTS Ivec2 size() const;
 
-			FLAME_UI_EXPORTS void on_keydown(int code);
-			FLAME_UI_EXPORTS void on_keyup(int code);
-			FLAME_UI_EXPORTS void on_char(int ch);
-			FLAME_UI_EXPORTS void on_mousedown(int mouse, const Ivec2 &pos);
-			FLAME_UI_EXPORTS void on_mouseup(int mouse, const Ivec2 &pos);
-			FLAME_UI_EXPORTS void on_mousemove(const Ivec2 &pos);
-			FLAME_UI_EXPORTS void on_mousescroll(int scroll);
+			FLAME_UI_EXPORTS void on_key(KeyState action, int value);
+			FLAME_UI_EXPORTS void on_mouse(KeyState action, MouseKey key, const Ivec2 &pos);
 			FLAME_UI_EXPORTS void on_resize(const Ivec2 &size);
 
 			FLAME_UI_EXPORTS graphics::Imageview *imageview(int index);
@@ -148,5 +143,7 @@ namespace flame
 			FLAME_UI_EXPORTS static Instance *create(Window *w);
 			FLAME_UI_EXPORTS static void destroy(Instance *i);
 		};
+
+		typedef Instance* InstancePtr;
 	}
 }

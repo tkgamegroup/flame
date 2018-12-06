@@ -44,12 +44,12 @@ namespace flame
 			return swapchain_format;
 		}
 
-		static void Swapchain_resize(CommonData *d)
+		void Swapchain_resize(const ParmPackage &_p)
 		{
-			auto thiz = (SwapchainPrivate*)d[1].p();
+			auto &p = (Window::ResizeListenerParm&)_p;
 
-			thiz->destroy();
-			thiz->create();
+			((SwapchainPrivate*)p.thiz())->destroy();
+			((SwapchainPrivate*)p.thiz())->create();
 		}
 
 		inline SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w)
@@ -59,7 +59,7 @@ namespace flame
 
 			create();
 
-			w->add_listener(cH("resize"), Swapchain_resize, { this });
+			w->add_listener(Window::ListenerResize, Swapchain_resize, this, {});
 		}
 
 		inline SwapchainPrivate::~SwapchainPrivate()

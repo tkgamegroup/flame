@@ -94,5 +94,7 @@ namespace flame
 			FLAME_UI_EXPORTS static Canvas *create(SwapchainData *s);
 			FLAME_UI_EXPORTS static void destroy(Canvas *c);
 		};
+
+		typedef Canvas* CanvasPtr;
 	}
 }

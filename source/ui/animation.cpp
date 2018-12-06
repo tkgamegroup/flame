@@ -27,46 +27,44 @@ namespace flame
 {
 	namespace ui
 	{
-		FLAME_REGISTER_FUNCTION_BEG(Animation_moveto, FLAME_GID(21191), "p f")
-			auto &w = *(Widget**)&d[0].p();
-			auto &t = d[1].f1();
-			auto &duration = d[2].f1();
-			auto &pos_a = d[4].f2();
-			auto &pos_b = d[5].f2();
+		FLAME_DATA_PACKAGE_BEGIN(AnimationMovetoData, Widget::AnimationParm)
+			FLAME_DATA_PACKAGE_CAPT(Vec2, pos_a, f2)
+			FLAME_DATA_PACKAGE_CAPT(Vec2, pos_b, f2)
+		FLAME_DATA_PACKAGE_END
 
-			if (t < 0.f)
+		FLAME_REGISTER_FUNCTION_BEG(AnimationMoveto, FLAME_GID(21191), AnimationMovetoData)
+			if (p.time() < 0.f)
 			{
-				w->pos$ = pos_b;
+				p.thiz()->pos$ = p.pos_b();
 				return;
 			}
 
-			w->pos$ = pos_a + (pos_b - pos_a) * (t / duration);
-		FLAME_REGISTER_FUNCTION_END(Animation_moveto)
+			p.thiz()->pos$ = p.pos_a() + (p.pos_b() - p.pos_a()) * (p.time() / p.duration());
+		FLAME_REGISTER_FUNCTION_END(AnimationMoveto)
 
 		void add_animation_moveto(Widget *w, float duration, const Vec2 &pos_a, const Vec2 &pos_b)
 		{
-			w->add_animation(Animation_moveto::v, { duration, 0, pos_a, pos_b });
+			w->add_animation(duration, false, AnimationMoveto::v, { pos_a, pos_b });
 		}
 
-		FLAME_REGISTER_FUNCTION_BEG(Animation_fade, FLAME_GID(9864), "p f")
-			auto &w = *(Widget**)&d[0].p();
-			auto &t = d[1].f1();
-			auto &duration = d[2].f1();
-			auto &alpha_a = d[4].f1();
-			auto &alpha_b = d[5].f1();
+		FLAME_DATA_PACKAGE_BEGIN(AnimationFadeData, Widget::AnimationParm)
+			FLAME_DATA_PACKAGE_CAPT(float, alpha_a, f1)
+			FLAME_DATA_PACKAGE_CAPT(float, alpha_b, f1)
+		FLAME_DATA_PACKAGE_END
 
-			if (t < 0.f)
+		FLAME_REGISTER_FUNCTION_BEG(AnimationFade, FLAME_GID(9864), AnimationFadeData)
+			if (p.time() < 0.f)
 			{
-				w->alpha$ = alpha_b;
+				p.thiz()->alpha$ = p.alpha_b();
 				return;
 			}
 
-			w->alpha$ = alpha_a + (alpha_b - alpha_a) * (t / duration);
-		FLAME_REGISTER_FUNCTION_END(Animation_fade)
+			p.thiz()->alpha$ = p.alpha_a() + (p.alpha_b() - p.alpha_a()) * (p.time() / p.duration());
+		FLAME_REGISTER_FUNCTION_END(AnimationFade)
 
 		void add_animation_fade(Widget *w, float duration, float alpha_a, float alpha_b)
 		{
-			w->add_animation(Animation_fade::v, { duration, 0, alpha_a, alpha_b });
+			w->add_animation(duration, false, AnimationFade::v, { alpha_a, alpha_b });
 		}
 	}
 }

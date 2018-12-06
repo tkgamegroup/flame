@@ -76,8 +76,8 @@ extern "C" __declspec(dllexport) int main()
 	w_toggle1->text() = L"toggled";
 	w_toggle1->set_size_auto();
 	w_toggle1->set_toggle(true);
-	ui::add_style_color(w_toggle1, 0, Vec3(0.f, 0.f, 0.7f));
-	ui::add_style_color(w_toggle1, 1, Vec3(150.f, 1.f, 0.8f));
+	ui::add_style_background_color(w_toggle1, 0, Vec3(0.f, 0.f, 0.7f));
+	ui::add_style_background_color(w_toggle1, 1, Vec3(150.f, 1.f, 0.8f));
 	layout1->add_child(w_toggle1);
 
 	auto w_toggle2 = ui::wToggle::create(app.ui_ins);
@@ -86,8 +86,8 @@ extern "C" __declspec(dllexport) int main()
 	w_toggle2->text() = L"untoggled";
 	w_toggle2->set_size_auto();
 	w_toggle2->set_toggle(false);
-	ui::add_style_color(w_toggle2, 0, Vec3(0.f, 0.f, 0.7f));
-	ui::add_style_color(w_toggle2, 1, Vec3(150.f, 1.f, 0.8f));
+	ui::add_style_background_color(w_toggle2, 0, Vec3(0.f, 0.f, 0.7f));
+	ui::add_style_background_color(w_toggle2, 1, Vec3(150.f, 1.f, 0.8f));
 	layout1->add_child(w_toggle2);
 
 	auto w_menubar = ui::wMenuBar::create(app.ui_ins);
@@ -107,28 +107,30 @@ extern "C" __declspec(dllexport) int main()
 
 	layout1->add_child(w_menubar);
 
-	{
-		auto file = SerializableNode::create_from_xml(L"d:/ui.xml");
+	//{
+	//	auto file = SerializableNode::create_from_xml(L"d:/ui.xml");
+	//	if (file)
+	//	{
+	//		auto w = ui::Widget::create_from_file(app.ui_ins, file->node(0));
 
-		auto w = ui::Widget::create_from_file(app.ui_ins, file->node(0));
+	//		SerializableNode::destroy(file);
 
-		SerializableNode::destroy(file);
+	//		layout1->add_child(w);
+	//	}
+	//}
+	auto w_combo = ui::wCombo::create(app.ui_ins);
+	w_combo->align$ = ui::AlignLittleEnd;
+	ui::add_style_background_color(w_combo, 0, Vec3(0.f, 0.f, 0.7f));
 
-		layout1->add_child(w);
-	}
-	//auto w_combo = ui::wCombo::create(app.ui_ins);
-	//w_combo->align$ = ui::AlignLittleEnd;
-	//ui::add_style_color(w_combo, 0, Vec3(0.f, 0.f, 0.7f));
+	auto w_comboitem1 = ui::wMenuItem::create(app.ui_ins, L"item 1");
+	auto w_comboitem2 = ui::wMenuItem::create(app.ui_ins, L"item 2");
+	auto w_comboitem3 = ui::wMenuItem::create(app.ui_ins, L"item 3");
 
-	//auto w_comboitem1 = ui::wMenuItem::create(app.ui_ins, L"item 1");
-	//auto w_comboitem2 = ui::wMenuItem::create(app.ui_ins, L"item 2");
-	//auto w_comboitem3 = ui::wMenuItem::create(app.ui_ins, L"item 3");
+	w_combo->w_items()->add_child(w_comboitem1);
+	w_combo->w_items()->add_child(w_comboitem2);
+	w_combo->w_items()->add_child(w_comboitem3);
 
-	//w_combo->w_items()->add_child(w_comboitem1);
-	//w_combo->w_items()->add_child(w_comboitem2);
-	//w_combo->w_items()->add_child(w_comboitem3);
-
-	//layout1->add_child(w_combo);
+	layout1->add_child(w_combo);
 
 	auto w_edit = ui::wEdit::create(app.ui_ins);
 	w_edit->align$ = ui::AlignLittleEnd;

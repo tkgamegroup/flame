@@ -97,6 +97,8 @@ namespace flame
 			~SwapchainDataPrivate();
 		};
 
+		typedef SwapchainDataPrivate* SwapchainDataPrivatePtr;
+
 		struct InstancePrivate : Instance
 		{
 			Ivec2 mouse_prev_pos;
@@ -121,13 +123,8 @@ namespace flame
 			InstancePrivate();
 			InstancePrivate(Window *w);
 
-			void on_keydown(int code);
-			void on_keyup(int code);
-			void on_char(int ch);
-			void on_mousedown(int mouse, const Ivec2 &pos);
-			void on_mouseup(int mouse, const Ivec2 &pos);
-			void on_mousemove(const Ivec2 &pos);
-			void on_mousescroll(int scroll);
+			void on_key(KeyState action, int value);
+			void on_mouse(KeyState action, MouseKey key, const Ivec2 &pos);
 			void on_resize(const Ivec2 &size);
 
 			void set_hovering_widget(WidgetPrivate *w);

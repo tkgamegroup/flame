@@ -78,5 +78,52 @@ namespace flame
 	};
 }
 
-#define FLAME_REGISTER_FUNCTION_BEG(name, id, parm_count) struct name{name(){register_function(v, id, parm_count, __FILE__, line_beg, line_end);}static const int line_beg = __LINE__;static void v(CommonData *d){
-#define FLAME_REGISTER_FUNCTION_END(name) }static const int line_end = __LINE__;};static name name##_;
+#define FLAME_PARM_PACKAGE_BEGIN(name) \
+	struct name : ParmPackage\
+	{\
+		enum { BASE = __COUNTER__ + 1 };
+#define FLAME_PARM_PACKAGE_PARM(t, n, tf) \
+		inline t &n()\
+		{\
+			return (t&)d[__COUNTER__ - BASE].tf();\
+		}
+#define FLAME_PARM_PACKAGE_PARM_SIZE \
+		enum { PARM_SIZE = __COUNTER__ - BASE };
+#define FLAME_PARM_PACKAGE_DEFAULT_CAPT(t, n, tf) \
+		inline t &n()\
+		{\
+			return (t&)d[__COUNTER__ - BASE - 1].tf();\
+		}
+#define FLAME_PARM_PACKAGE_END \
+		enum { SIZE = __COUNTER__ - BASE - 1 };\
+	};
+
+#define FLAME_DATA_PACKAGE_BEGIN(name, package) \
+	struct name : package\
+	{\
+		enum { BASE = __COUNTER__ + 1 };\
+		enum { P_SIZE = package::SIZE };
+#define FLAME_DATA_PACKAGE_CAPT(t, n, tf) \
+		inline t &n()\
+		{\
+			return (t&)d[__COUNTER__ - BASE + P_SIZE].tf();\
+		}
+#define FLAME_DATA_PACKAGE_END \
+	};
+
+#define FLAME_REGISTER_FUNCTION_BEG(name, id, package) \
+	struct name\
+	{\
+		name()\
+		{\
+			register_function(id, v, package::PARM_SIZE, __FILE__, line_beg, line_end);\
+		}\
+		static const int line_beg = __LINE__;\
+		static void v(const ParmPackage &_p)\
+		{\
+			auto &p = (package&)_p;
+#define FLAME_REGISTER_FUNCTION_END(name) \
+		}\
+		static const int line_end = __LINE__;\
+	};\
+	static name name##_;

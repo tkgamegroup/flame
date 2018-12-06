@@ -37,6 +37,9 @@
 
 namespace flame
 {
+	struct BasicApp;
+	typedef BasicApp* BasicAppPtr;
+
 	struct BasicApp
 	{
 		Application *app;
@@ -82,9 +85,9 @@ namespace flame
 #endif
 		}
 
-		static void do_run(CommonData *d)
+		static void do_run(const ParmPackage &p)
 		{
-			auto &thiz = *(BasicApp**)&d[0].p();
+			auto &thiz = (BasicAppPtr&)p.d[0].p();
 
 			auto index = thiz->sc->acquire_image(thiz->image_avalible);
 

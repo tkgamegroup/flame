@@ -30,11 +30,12 @@ namespace flame
 		KeyStateUp = 1 << 0,
 		KeyStateDown = 1 << 1,
 		KeyStateJust = 1 << 2,
+		KeyStateDouble = 1 << 2,
 	};
 
 	enum Key
 	{
-		Key_Null,
+		Key_Null = -1,
 		Key_Backspace,
 		Key_Tab,
 		Key_Enter,
@@ -121,14 +122,24 @@ namespace flame
 		Key_F11,
 		Key_F12,
 		Key_NumLock,
-		Key_ScrollLock
+		Key_ScrollLock,
+
+		Key_count
 	};
 
 	enum MouseKey
 	{
-		Mouse_Null,
+		Mouse_Null = -1,
 		Mouse_Left,
 		Mouse_Right,
-		Mouse_Middle
+		Mouse_Middle,
+
+		MouseKey_count
+	};
+
+	enum FocusType 
+	{
+		Focus_Gain,
+		Focus_Lost
 	};
 }

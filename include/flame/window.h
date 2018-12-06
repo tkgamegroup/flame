@@ -89,85 +89,58 @@ namespace flame
 		FLAME_WINDOW_EXPORTS void set_maximized(bool v);
 #endif
 
-		struct KeyListenerParm : ParmPackage
+		enum Listener
 		{
-			enum { BASE = __COUNTER__ + 1 };
-
-			inline KeyState &action()
-			{
-				return (KeyState&)d[__COUNTER__ - BASE].i1();
-			}
-			inline Key &key()
-			{
-				return (Key&)d[__COUNTER__ - BASE].i1();
-			}
-
-			enum { SIZE = __COUNTER__ - BASE };
+			ListenerKey,
+			ListenerMouse,
+			ListenerResize,
+			ListenerDestroy
 		};
-		struct CharListenerParm : ParmPackage
-		{
-			enum { BASE = __COUNTER__ + 1 };
 
-			inline int &ch()
-			{
-				return d[__COUNTER__ - BASE].i1();
-			}
-
-			enum { SIZE = __COUNTER__ - BASE };
-		};
-		struct MouseListenerParm : ParmPackage
-		{
+		FLAME_PARM_PACKAGE_BEGIN(KeyListenerParm)
 			/*
-				- when down/up, action is KeyStateUp or KeyStateDown, key is one of MouseKey
+				- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
+				- when char, action is KeyStateNull, value is ch
+			*/
+			FLAME_PARM_PACKAGE_PARM(KeyState, action, i1)
+			FLAME_PARM_PACKAGE_PARM(int, value, i1)
+
+			FLAME_PARM_PACKAGE_PARM_SIZE
+
+			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
+		FLAME_PARM_PACKAGE_END
+
+		FLAME_PARM_PACKAGE_BEGIN(MouseListenerParm)
+			/*
+				- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey
 				- when move, action is KeyStateNull, key is Mouse_Null
 				- when scroll, action is KeyStateNull, key is Mouse_Middle, pos.x is scroll value
 			*/
+			FLAME_PARM_PACKAGE_PARM(KeyState, action, i1)
+			FLAME_PARM_PACKAGE_PARM(MouseKey, key, i1)
+			FLAME_PARM_PACKAGE_PARM(Ivec2, pos, i2)
 
-			enum { BASE = __COUNTER__ + 1 };
+			FLAME_PARM_PACKAGE_PARM_SIZE
 
-			inline KeyState &action()
-			{
-				return (KeyState&)d[__COUNTER__ - BASE].i1();
-			}
-			inline MouseKey &key()
-			{
-				return (MouseKey&)d[__COUNTER__ - BASE].i1();
-			}
-			inline Ivec2 &pos()
-			{
-				return d[__COUNTER__ - BASE].i2();
-			}
+			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
+		FLAME_PARM_PACKAGE_END
 
-			enum { SIZE = __COUNTER__ - BASE };
-		};
-		struct ResizeListenerParm : ParmPackage
-		{
-			enum { BASE = __COUNTER__ + 1 };
+		FLAME_PARM_PACKAGE_BEGIN(ResizeListenerParm)
+			FLAME_PARM_PACKAGE_PARM(Ivec2, size, i2)
 
-			inline Ivec2 &size()
-			{
-				return d[__COUNTER__ - BASE].i2();
-			}
+			FLAME_PARM_PACKAGE_PARM_SIZE
 
-			enum { SIZE = __COUNTER__ - BASE };
-		};
-		struct DestroyListenerParm : ParmPackage
-		{
-			enum { BASE = __COUNTER__ + 1 };
+			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
+		FLAME_PARM_PACKAGE_END
 
-			enum { SIZE = __COUNTER__ - BASE };
-		};
+		FLAME_PARM_PACKAGE_BEGIN(DestroyListenerParm)
+			FLAME_PARM_PACKAGE_PARM_SIZE
 
-		FLAME_WINDOW_EXPORTS Function *add_key_listener(PF pf, const std::vector<CommonData> &capt);
-		FLAME_WINDOW_EXPORTS void remove_key_listener(Function *f);
-		FLAME_WINDOW_EXPORTS Function *add_char_listener(PF pf, const std::vector<CommonData> &capt);
-		FLAME_WINDOW_EXPORTS void remove_char_listener(Function *f);
-		FLAME_WINDOW_EXPORTS Function *add_mouse_listener(PF pf, const std::vector<CommonData> &capt);
-		FLAME_WINDOW_EXPORTS void remove_mouse_listener(Function *f);
-		FLAME_WINDOW_EXPORTS Function *add_resize_listener(PF pf, const std::vector<CommonData> &capt);
-		FLAME_WINDOW_EXPORTS void remove_resize_listener(Function *f);
-		FLAME_WINDOW_EXPORTS Function *add_destroy_listener(PF pf, const std::vector<CommonData> &capt);
-		FLAME_WINDOW_EXPORTS void remove_destroy_listener(Function *f);
+			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
+		FLAME_PARM_PACKAGE_END
+
+		FLAME_WINDOW_EXPORTS Function *add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
+		FLAME_WINDOW_EXPORTS void remove_listener(Listener l, Function *f);
 
 #ifdef FLAME_WINDOWS
 		FLAME_WINDOW_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);

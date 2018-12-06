@@ -48,7 +48,7 @@ namespace flame
 			std::vector<std::tuple<int, int, int>> delay_takes;
 			std::vector<std::tuple<int, int, int>> delay_clears;
 
-			std::vector<std::pair<uint, Function*>> delay_listener_remove;
+			std::vector<std::pair<Listener, Function*>> delay_listener_remove;
 
 			WidgetPrivate(Instance *ui);
 			~WidgetPrivate();
@@ -73,34 +73,23 @@ namespace flame
 
 			void arrange();
 
-			void add_extra_draw_command(PF pf, const std::vector<CommonData> &capt);
+			void add_extra_draw(PF pf, const std::vector<CommonData> &capt);
 
-			void add_style(PF pf, const std::vector<CommonData> &capt);
+			void add_style(int closet_id, PF pf, const std::vector<CommonData> &capt);
 
-			void add_animation(PF pf, const std::vector<CommonData> &capt);
+			void add_animation(float duration, int looping, PF pf, const std::vector<CommonData> &capt);
 
 			void remove_animations();
-
+			
 			void on_draw(Canvas *c, const Vec2 &off, float scl);
-			void on_gainfocus(int type);
-			void on_lostfocus(int type);
-			void on_mouseenter();
-			void on_mouseleave();
-			void on_lmousedown(const Vec2 &mpos);
-			void on_rmousedown(const Vec2 &mpos);
-			void on_mousemove(const Vec2 &disp);
-			void on_clicked();
-			void on_doubleclicked();
-			void on_mousescroll(int scroll);
-			void on_keydown(int code);
-			void on_keyup(int code);
-			void on_char(wchar_t ch);
+			void on_focus(FocusType type, int focus_or_keyfocus);
+			void on_key(KeyState action, int value);
+			void on_mouse(KeyState action, MouseKey key, const Vec2 &value);
 			void on_drop(Widget *src);
+			void on_changed();
 
-			void report_changed() const;
-
-			Function *add_listener(uint type, PF pf, const std::vector<CommonData> &capt);
-			void remove_listener(uint type, Function *f, bool delay = false);
+			Function *add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
+			void remove_listener(Listener l, Function *f, bool delay = false);
 
 			void add_data_storages(const char *fmt);
 			void add_string_storages(int count);
