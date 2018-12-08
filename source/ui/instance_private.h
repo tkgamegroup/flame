@@ -58,6 +58,7 @@ namespace flame
 			graphics::SampleCount sample_count;
 
 			graphics::Renderpass *renderpass;
+			graphics::Renderpass *renderpass_noclear;
 
 			graphics::Image *white_image;
 			graphics::Image *font_stroke_image;
@@ -101,6 +102,19 @@ namespace flame
 
 		struct InstancePrivate : Instance
 		{
+			Bvec4 default_text_col;
+			Bvec4 default_text_col_hovering_or_active;
+			Bvec4 default_frame_col;
+			Bvec4 default_frame_col_hovering;
+			Bvec4 default_frame_col_active;
+			Bvec4 default_button_col;
+			Bvec4 default_button_col_hovering;
+			Bvec4 default_button_col_active;
+			Bvec4 default_header_col;
+			Bvec4 default_header_col_hovering;
+			Bvec4 default_header_col_active;
+			float default_sdf_scale;
+
 			Ivec2 mouse_prev_pos;
 
 			std::unique_ptr<WidgetPrivate> root_;
@@ -122,6 +136,8 @@ namespace flame
 
 			InstancePrivate();
 			InstancePrivate(Window *w);
+
+			void set_default_style(DefaultStyle s);
 
 			void on_key(KeyState action, int value);
 			void on_mouse(KeyState action, MouseKey key, const Ivec2 &pos);

@@ -161,7 +161,6 @@ namespace flame
 
 		//		w_dialog = wDialog::create(ui, s2w(n->type_name.data).c_str(), 1.f);
 		//		w_dialog->w_title()->background_col = n->col;
-		//		w_dialog->w_title()->text_col() = Bvec4(255);
 
 		//		w_dialog->add_listener(ListenerLeftMouseDown, [this](const Vec2 &) {
 		//			scene_priv->sel = n;
@@ -188,7 +187,6 @@ namespace flame
 		//			lh->add_child(w_s);
 		//			auto t = wText::create(ui);
 		//			t->align = AlignLittleEnd;
-		//			t->text_col() = Bvec4(255);
 		//			t->sdf_scale() = 1.f;
 		//			t->set_text_and_size(s2w(slot->name.data).c_str());
 		//			lh->add_child(t);
@@ -232,7 +230,6 @@ namespace flame
 		//			{
 		//				auto e = wEdit::create(ui);
 		//				e->align = AlignLittleEnd;
-		//				e->text_col() = Bvec4(255);
 		//				e->sdf_scale() = 1.f;
 		//				e->set_size_by_width(100.f);
 		//				e->add_char_filter_int();
@@ -249,7 +246,6 @@ namespace flame
 		//			{
 		//				auto e0 = wEdit::create(ui);
 		//				e0->align = AlignLittleEnd;
-		//				e0->text_col() = Bvec4(255);
 		//				e0->sdf_scale() = 1.f;
 		//				e0->set_size_by_width(100.f);
 		//				e0->add_char_filter_int();
@@ -257,7 +253,6 @@ namespace flame
 		//				lv->add_child(e0);
 		//				auto e1 = wEdit::create(ui);
 		//				e1->align = AlignLittleEnd;
-		//				e1->text_col() = Bvec4(255);
 		//				e1->sdf_scale() = 1.f;
 		//				e1->set_size_by_width(100.f);
 		//				e1->add_char_filter_int();
@@ -380,7 +375,6 @@ namespace flame
 		//			l->item_padding = 4.f;
 		//			auto t = wText::create(ui);
 		//			t->align = AlignLittleEnd;
-		//			t->text_col() = Bvec4(255);
 		//			t->sdf_scale() = 1.f;
 		//			t->set_text_and_size(s2w(slot->name.data).c_str());
 		//			l->add_child(t);
@@ -410,7 +404,6 @@ namespace flame
 		//		w_collapse->inner_padding = Vec4(8.f, 8.f, 1.f, 3.f);
 		//		w_collapse->background_col.w = 0.f;
 		//		w_collapse->align = AlignMiddle;
-		//		w_collapse->text_col() = Bvec4(255);
 		//		w_collapse->sdf_scale() = 1.f;
 		//		w_collapse->set_text_and_size(Icon_ANGLE_UP);
 		//		add_style_buttoncolor(w_collapse, 0.f, Vec3(0.f, 0.f, 0.7f));

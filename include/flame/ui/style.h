@@ -32,15 +32,7 @@ namespace flame
 		struct Widget;
 
 		FLAME_UI_EXPORTS void add_style_background_offset(Widget *w, int closet_id, const Vec4 &active_offset, const Vec4 &else_offset);
-		inline void add_style_background_offset(Widget *w, int closet_id, const Vec4 &base_offset, const Vec2 &minus)
-		{
-			add_style_background_offset(w, closet_id, base_offset - Vec4(minus.x, minus.y, minus.x, minus.y), base_offset);
-		}
 		FLAME_UI_EXPORTS void add_style_background_color(Widget *w, int closet_id, const Bvec4 &normal_col, const Bvec4 &hovering_col, const Bvec4 &active_col);
-		inline void add_style_background_color(Widget *w, int closet_id, const Vec3 &hsv)
-		{
-			add_style_background_color(w, closet_id, HSV(hsv.x, hsv.y, hsv.z * 0.9f, 0.9f), HSV(hsv.x, hsv.y, hsv.z, 1.f), HSV(hsv.x, hsv.y, hsv.z * 0.95f, 1.f));
-		}
 		FLAME_UI_EXPORTS void add_style_text_color(Widget *w, int closet_id, const Bvec4 &normal_col, const Bvec4 &else_col);
 	}
 }

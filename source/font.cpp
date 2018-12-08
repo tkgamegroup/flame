@@ -2349,6 +2349,13 @@ namespace flame
 
 				for (auto code = r.code_begin; code <= r.code_end; code++)
 				{
+					if (code == L'j')
+						int cut = 1;
+					if (code == L't')
+						int cut = 1;
+					if (code == L'x')
+						int cut = 1;
+
 					if (map[code] == -1)
 					{
 						Glyph g(code);
@@ -2357,8 +2364,7 @@ namespace flame
 
 						FT_Load_Char(ft_face, g.unicode, FT_LOAD_TARGET_LCD);
 						g.size = Vec2(ft_g->bitmap.width / 3, ft_g->bitmap.rows);
-						g.off = Vec2(ft_g->metrics.horiBearingX / 64.f + ft_g->bitmap_left,
-							ascent + g.size.y - ft_g->metrics.horiBearingY / 64.f);
+						g.off = Vec2(ft_g->bitmap_left, ascent + g.size.y - ft_g->metrics.horiBearingY / 64.f);
 						g.advance = ft_g->advance.x / 64;
 						g.ascent = ascent;
 

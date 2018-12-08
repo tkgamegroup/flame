@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #include <flame/serialize.h>
-#include <flame/graphics/renderpass.h>
 #include <flame/ui/icon.h>
 #include <flame/ui/style.h>
 
@@ -227,7 +226,6 @@ void refresh_inspector()
 				auto t_name = ui::wText::create(app.ui_ins);
 				t_name->inner_padding$.x = bullet_width;
 				t_name->align$ = ui::AlignLittleEnd;
-				t_name->text_col() = Bvec4(0, 0, 0, 255);
 				t_name->text() = s2w(item->name());
 				t_name->set_size_auto();
 				max_width = max(t_name->size$.x, max_width);
@@ -355,7 +353,6 @@ extern "C" __declspec(dllexport) int main()
 	auto t_text = ui::wText::create(ui_ins_sandbox);
 	t_text->align$ = ui::AlignTopNoPadding;
 	t_text->name$ = "Hello World";
-	t_text->text_col() = Bvec4(255, 255, 255, 255);
 	t_text->text() = L"Hello World";
 	t_text->set_size_auto();
 	ui_ins_sandbox->root()->add_child(t_text, 1);

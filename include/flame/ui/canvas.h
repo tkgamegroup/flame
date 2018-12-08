@@ -34,7 +34,6 @@ namespace flame
 	{
 		struct Device;
 		struct Commandbuffer;
-		struct ClearValues;
 	}
 
 	namespace ui
@@ -51,7 +50,7 @@ namespace flame
 
 		struct Canvas
 		{
-			graphics::ClearValues *clear_values;
+			FLAME_UI_EXPORTS void set_clear_color(const Bvec4 &col);
 
 			FLAME_UI_EXPORTS void start_cmd(DrawCmdType type, int id);
 			FLAME_UI_EXPORTS void path_line_to(const Vec2 &p);

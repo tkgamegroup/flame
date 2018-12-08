@@ -76,6 +76,7 @@ namespace flame
 			void add_extra_draw(PF pf, const std::vector<CommonData> &capt);
 
 			void add_style(int closet_id, PF pf, const std::vector<CommonData> &capt);
+			void remove_style(int idx);
 
 			void add_animation(float duration, int looping, PF pf, const std::vector<CommonData> &capt);
 

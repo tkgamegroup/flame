@@ -83,6 +83,8 @@ namespace flame
 				if (sample_count != graphics::SampleCount_1)
 					info.subpasses[0].resolve_attachments.push_back(1);
 				renderpass = graphics::Renderpass::get(d, info);
+				info.attachments[0].clear$ = false;
+				renderpass_noclear = graphics::Renderpass::get(d, info);
 			}
 
 			white_image = graphics::Image::create_from_file(d, L"UI/imgs/white.bmp");
@@ -160,6 +162,7 @@ namespace flame
 			FontAtlas::destroy(font_atlas);
 
 			graphics::Renderpass::release(renderpass);
+			graphics::Renderpass::release(renderpass_noclear);
 
 			graphics::Image::destroy(white_image);
 			graphics::Image::destroy(font_stroke_image);
@@ -267,7 +270,7 @@ namespace flame
 
 		InstancePrivate::InstancePrivate()
 		{
-			default_style = DefaultStyleDark;
+			set_default_style(DefaultStyleDark);
 
 			root_ = std::unique_ptr<WidgetPrivate>((WidgetPrivate*)Widget::create(this));
 			root_->name$ = "root";
@@ -322,6 +325,40 @@ namespace flame
 			w->add_listener(Window::ListenerResize, InstanceResize::v, this, {});
 		}
 
+		inline void InstancePrivate::set_default_style(DefaultStyle s)
+		{
+			switch (s)
+			{
+			case DefaultStyleDark:
+				default_text_col = Bvec4(255, 255, 255, 255);
+				default_text_col_hovering_or_active = Bvec4(180, 180, 180, 255);
+				default_frame_col = Colorf(0.16f, 0.29f, 0.48f, 0.54f);
+				default_frame_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
+				default_frame_col_active = Colorf(0.26f, 0.59f, 0.98f, 0.67f);
+				default_button_col = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
+				default_button_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
+				default_button_col_active = Colorf(0.06f, 0.53f, 0.98f, 1.00f);
+				default_header_col = Colorf(0.26f, 0.59f, 0.98f, 0.31f);
+				default_header_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.80f);
+				default_header_col_active = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
+				break;
+			case DefaultStyleLight:
+				default_text_col = Bvec4(0, 0, 0, 255);
+				default_text_col_hovering_or_active = Bvec4(255, 255, 255, 255);
+				default_frame_col = Colorf(1.00f, 1.00f, 1.00f, 1.00f);
+				default_frame_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
+				default_frame_col_active = Colorf(0.26f, 0.59f, 0.98f, 0.67f);
+				default_button_col = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
+				default_button_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
+				default_button_col_active = Colorf(0.06f, 0.53f, 0.98f, 1.00f);
+				default_header_col = Colorf(0.26f, 0.59f, 0.98f, 0.31f);
+				default_header_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.80f);
+				default_header_col_active = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
+				break;
+			}
+			default_sdf_scale = -1.f;
+		}
+
 		inline void InstancePrivate::on_key(KeyState action, int value)
 		{
 			if (action == KeyStateNull)
@@ -345,7 +382,10 @@ namespace flame
 			else
 			{
 				key_states[value] = action | KeyStateJust;
-				keydown_inputs_.push_back(value);
+				if (action == KeyStateDown)
+					keydown_inputs_.push_back(value);
+				else if (action == KeyStateUp)
+					keyup_inputs_.push_back(value);
 			}
 		}
 
@@ -857,6 +897,11 @@ namespace flame
 		//		add_text_stroke(Vec2(4.f, i.y) + wnd_off, Vec4(1.f), "%d", i.x * -100);
 		//	}
 		//}
+
+		void Instance::set_default_style(DefaultStyle s)
+		{
+			((InstancePrivate*)this)->set_default_style(s);
+		}
 
 		Ivec2 Instance::size() const
 		{

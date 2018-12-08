@@ -62,9 +62,6 @@ namespace flame
 
 		struct Instance
 		{
-			DefaultStyle default_style;
-			float default_sdf_scale;
-
 			int key_states[Key_count];
 
 			Ivec2 mouse_pos;
@@ -111,6 +108,8 @@ namespace flame
 			{
 				return (key_states[k] & KeyStateDown) != 0;
 			}
+
+			FLAME_UI_EXPORTS void set_default_style(DefaultStyle s);
 
 			FLAME_UI_EXPORTS Ivec2 size() const;
 

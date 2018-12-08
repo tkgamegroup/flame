@@ -72,6 +72,9 @@ namespace flame
 
 		struct CanvasPrivate : Canvas
 		{
+			Bvec4 clear_col;
+			graphics::ClearValues *clear_values;
+
 			SwapchainDataPrivate *s;
 
 			std::vector<Vec2> points;
@@ -98,6 +101,7 @@ namespace flame
 					circle_subdiv_ready = true;
 				}
 
+				clear_col = Bvec4(0, 0, 0, 255);
 				clear_values = graphics::ClearValues::create(share_data.renderpass);
 
 				vtx_buffer = graphics::Buffer::create(share_data.d, sizeof(Vertex) * 43690,
@@ -117,6 +121,12 @@ namespace flame
 				graphics::Buffer::destroy(vtx_buffer);
 				graphics::Buffer::destroy(idx_buffer);
 				graphics::Commandbuffer::destroy(cb);
+			}
+
+			inline void set_clear_color(const Bvec4 &col)
+			{
+				clear_col = col;
+				clear_values->set(0, clear_col);
 			}
 
 			inline void start_cmd(DrawCmdType type, int id)
@@ -596,7 +606,7 @@ namespace flame
 			inline void record_cb(int swacpchain_image_index)
 			{
 				cb->begin();
-				cb->begin_renderpass(share_data.renderpass, s->framebuffers[swacpchain_image_index], clear_values);
+				cb->begin_renderpass(clear_col.w > 0 ? share_data.renderpass : share_data.renderpass_noclear, s->framebuffers[swacpchain_image_index], clear_col.w > 0 ? clear_values : nullptr);
 				if (idx_end != idx_buffer->mapped)
 				{
 					auto surface_size = Vec2(s->w->size);
@@ -657,6 +667,11 @@ namespace flame
 				draw_cmds.clear();
 			}
 		};
+
+		void Canvas::set_clear_color(const Bvec4 &col)
+		{
+			((CanvasPrivate*)this)->set_clear_color(col);
+		}
 
 		void Canvas::start_cmd(DrawCmdType type, int id)
 		{

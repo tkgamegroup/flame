@@ -59,7 +59,6 @@ extern "C" __declspec(dllexport) int main()
 	const auto image_id = 99;
 
 	app.create("Scene Test", res, WindowFrame, true);
-	app.t_fps->text_col() = Bvec4(255);
 	app.ui->set_imageview(image_id, graphics::Imageview::get(app.scene_3d->get_col_image()));
 
 	auto w_image = ui::wImage::create(app.ui);
@@ -122,7 +121,6 @@ extern "C" __declspec(dllexport) int main()
 	auto t_showframe = ui::wText::create(app.ui);
 	t_showframe->pos$ = Vec2(20.f, 40.f);
 	t_showframe->set_text(L"show frame");
-	t_showframe->text_col() = Bvec4(255);
 	app.ui->root()->add_child(t_showframe, 1);
 
 	w_showframe->add_listener(cH("clicked"), [](CommonData *d) {

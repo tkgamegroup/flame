@@ -365,6 +365,7 @@ namespace flame
 			FLAME_UI_EXPORTS void add_extra_draw(PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void add_style(int closet_id, PF pf, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void remove_style(int idx);
 			FLAME_UI_EXPORTS void add_animation(float duration, int looping, PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void on_draw(Canvas *c, const Vec2 &off, float scl);
@@ -428,8 +429,6 @@ namespace flame
 		{
 			FLAME_UI_EXPORTS void init();
 
-			FLAME_UI_EXPORTS void set_classic(const wchar_t *text, float sdf_scale = -1.f, float alpha = 1.f);
-
 			FLAME_UI_EXPORTS static wButton *create(Instance *ui);
 		};
 
@@ -448,7 +447,7 @@ namespace flame
 
 		typedef wToggle* wTogglePtr;
 
-		struct wMenuItem : wButton
+		struct wMenuItem : wText
 		{
 			FLAME_UI_EXPORTS void init(const wchar_t *title);
 
@@ -459,11 +458,11 @@ namespace flame
 
 		struct wMenu : wLayout
 		{
-			FLAME_UI_EXPORTS void init(const wchar_t *title, float alpha = 1.f);
+			FLAME_UI_EXPORTS void init(const wchar_t *title);
 
 			FLAME_UI_EXPORTS int &sub();
 			FLAME_UI_EXPORTS int &opened();
-			FLAME_UI_EXPORTS wButtonPtr &w_btn();
+			FLAME_UI_EXPORTS wTextPtr &w_title();
 			FLAME_UI_EXPORTS wTextPtr &w_rarrow();
 			FLAME_UI_EXPORTS wLayoutPtr &w_items();
 
@@ -471,7 +470,7 @@ namespace flame
 			FLAME_UI_EXPORTS void popup(const Vec2 &pos);
 			FLAME_UI_EXPORTS void close();
 
-			FLAME_UI_EXPORTS static wMenu *create(Instance *ui, const wchar_t *title, float alpha = 1.f);
+			FLAME_UI_EXPORTS static wMenu *create(Instance *ui, const wchar_t *title);
 		};
 
 		typedef wMenu* wMenuPtr;
@@ -568,11 +567,11 @@ namespace flame
 
 		struct wListItem : wLayout
 		{
-			FLAME_UI_EXPORTS void init();
+			FLAME_UI_EXPORTS void init(const wchar_t *title);
 
-			FLAME_UI_EXPORTS wButtonPtr &w_btn();
+			FLAME_UI_EXPORTS wTextPtr &w_title();
 
-			FLAME_UI_EXPORTS static wListItem *create(Instance *ui);
+			FLAME_UI_EXPORTS static wListItem *create(Instance *ui, const wchar_t *title);
 		};
 
 		typedef wListItem* wListItemPtr;
@@ -591,13 +590,13 @@ namespace flame
 
 		struct wTreeNode : wLayout
 		{
-			FLAME_UI_EXPORTS void init(const wchar_t *title, const Bvec4 &normal_col, const Bvec4 &else_col);
+			FLAME_UI_EXPORTS void init(const wchar_t *title);
 
-			FLAME_UI_EXPORTS wButtonPtr &w_btn();
+			FLAME_UI_EXPORTS wTextPtr &w_title();
 			FLAME_UI_EXPORTS wLayoutPtr &w_items();
 			FLAME_UI_EXPORTS wTextPtr &w_larrow();
 
-			FLAME_UI_EXPORTS static wTreeNode *create(Instance *ui, const wchar_t *title, const Bvec4 &normal_col, const Bvec4 &else_col);
+			FLAME_UI_EXPORTS static wTreeNode *create(Instance *ui, const wchar_t *title);
 		};
 
 		typedef wTreeNode* wTreeNodePtr;
