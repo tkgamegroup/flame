@@ -30,7 +30,5 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	auto m = get_view_mat(Vec3(0, 742, 1330), Vec3(0, 742, 0), Vec3(0, -1, 0));
-	//get_proj_mat(60.f * ANG_RAD, );
 	return 0;
 }

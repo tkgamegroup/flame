@@ -330,32 +330,32 @@ namespace flame
 			switch (s)
 			{
 			case DefaultStyleDark:
-				default_text_col = Bvec4(255, 255, 255, 255);
+				default_text_col                    = Bvec4(255, 255, 255, 255);
 				default_text_col_hovering_or_active = Bvec4(180, 180, 180, 255);
-				default_window_col = Colorf(0.06f, 0.06f, 0.06f, 0.94f);
-				default_frame_col = Colorf(0.16f, 0.29f, 0.48f, 0.54f);
-				default_frame_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
-				default_frame_col_active = Colorf(0.26f, 0.59f, 0.98f, 0.67f);
-				default_button_col = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
-				default_button_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
-				default_button_col_active = Colorf(0.06f, 0.53f, 0.98f, 1.00f);
-				default_header_col = Colorf(0.26f, 0.59f, 0.98f, 0.31f);
-				default_header_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.80f);
-				default_header_col_active = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
+				default_window_col                  = Colorf(0.06f, 0.06f, 0.06f, 0.94f);
+				default_frame_col                   = HSV(115.f, 0.67f, 0.47f, 0.54f);
+				default_frame_col_hovering          = HSV(112.f, 0.73f, 0.97f, 0.40f);
+				default_frame_col_active            = HSV(112.f, 0.73f, 0.97f, 0.67f);
+				default_button_col                  = HSV(112.f, 0.73f, 0.97f, 0.40f);
+				default_button_col_hovering         = HSV(112.f, 0.73f, 0.97f, 1.00f);
+				default_button_col_active           = HSV(109.f, 0.93f, 0.97f, 1.00f);
+				default_header_col                  = HSV(112.f, 0.73f, 0.97f, 0.31f);
+				default_header_col_hovering         = HSV(112.f, 0.73f, 0.97f, 0.80f);
+				default_header_col_active           = HSV(112.f, 0.73f, 0.97f, 1.00f);
 				break;
 			case DefaultStyleLight:
-				default_text_col = Bvec4(0, 0, 0, 255);
+				default_text_col                    = Bvec4(0, 0, 0, 255);
 				default_text_col_hovering_or_active = Bvec4(255, 255, 255, 255);
-				default_window_col = Colorf(0.94f, 0.94f, 0.94f, 1.00f);
-				default_frame_col = Colorf(1.00f, 1.00f, 1.00f, 1.00f);
-				default_frame_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
-				default_frame_col_active = Colorf(0.26f, 0.59f, 0.98f, 0.67f);
-				default_button_col = Colorf(0.26f, 0.59f, 0.98f, 0.40f);
-				default_button_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
-				default_button_col_active = Colorf(0.06f, 0.53f, 0.98f, 1.00f);
-				default_header_col = Colorf(0.26f, 0.59f, 0.98f, 0.31f);
-				default_header_col_hovering = Colorf(0.26f, 0.59f, 0.98f, 0.80f);
-				default_header_col_active = Colorf(0.26f, 0.59f, 0.98f, 1.00f);
+				default_window_col                  = Colorf(0.94f, 0.94f, 0.94f, 1.00f);
+				default_frame_col                   = Colorf(1.00f, 1.00f, 1.00f, 1.00f);
+				default_frame_col_hovering          = HSV(112.f, 0.73f, 0.97f, 0.40f);
+				default_frame_col_active            = HSV(112.f, 0.73f, 0.97f, 0.67f);
+				default_button_col                  = HSV(112.f, 0.73f, 0.97f, 0.40f);
+				default_button_col_hovering         = HSV(112.f, 0.73f, 0.97f, 1.00f);
+				default_button_col_active           = HSV(105.f, 0.73f, 0.97f, 1.00f);
+				default_header_col                  = HSV(112.f, 0.73f, 0.97f, 0.31f);
+				default_header_col_hovering         = HSV(112.f, 0.73f, 0.97f, 0.80f);
+				default_header_col_active           = HSV(112.f, 0.73f, 0.97f, 1.00f);
 				break;
 			}
 			default_sdf_scale = -1.f;
