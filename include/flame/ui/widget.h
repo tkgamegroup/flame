@@ -428,7 +428,7 @@ namespace flame
 	};
 		
 		FLAME_WIDGET_BEGIN(wLayout, Widget)
-			FLAME_UI_EXPORTS void init();
+			FLAME_UI_EXPORTS void init(LayoutType type = LayoutFree, float item_padding = 0.f);
 			FLAME_WIDGET_SEPARATOR
 		FLAME_WIDGET_END
 
@@ -449,7 +449,7 @@ namespace flame
 		FLAME_WIDGET_END
 
 		FLAME_WIDGET_BEGIN(wButton, wText)
-			FLAME_UI_EXPORTS void init();
+			FLAME_UI_EXPORTS void init(const wchar_t *title);
 			FLAME_WIDGET_SEPARATOR
 		FLAME_WIDGET_END
 
@@ -527,7 +527,7 @@ namespace flame
 			FLAME_WIDGET_SEPARATOR
 		FLAME_WIDGET_END
 
-		FLAME_WIDGET_BEGIN(wScrollbar, Widget)
+		FLAME_WIDGET_BEGIN(wScrollbar, wLayout)
 			FLAME_UI_EXPORTS void init(Widget *target);
 			FLAME_WIDGET_DATA(wButtonPtr, w_btn, p)
 			FLAME_WIDGET_DATA(WidgetPtr, w_target, p)
@@ -548,8 +548,9 @@ namespace flame
 			FLAME_WIDGET_SEPARATOR
 		FLAME_WIDGET_END
 
+		struct wTree;
 		FLAME_WIDGET_BEGIN(wTreeNode, wLayout)
-			FLAME_UI_EXPORTS void init(const wchar_t *title);
+			FLAME_UI_EXPORTS void init(const wchar_t *title, wTree *tree = nullptr);
 			FLAME_WIDGET_DATA(wTextPtr, w_title, p)
 			FLAME_WIDGET_DATA(wLayoutPtr, w_items, p)
 			FLAME_WIDGET_DATA(wTextPtr, w_larrow, p)

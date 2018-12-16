@@ -44,10 +44,9 @@ void create_widgets(ui::DefaultStyle style)
 	else
 		app.canvas->set_clear_color(Bvec4(200, 200, 200, 255));
 
-	auto layout1 = Widget::createT<wLayout>(app.ui_ins);
+	auto layout1 = Widget::createT<wLayout>(app.ui_ins, LayoutVertical);
 	layout1->pos$ = Vec2(16.f, 8.f);
 	layout1->item_padding$ = 8.f;
-	layout1->layout_type$ = LayoutVertical;
 
 	auto w_checkbox = Widget::createT<wCheckbox>(app.ui_ins);
 	w_checkbox->align$ = AlignLittleEnd;
@@ -66,10 +65,8 @@ void create_widgets(ui::DefaultStyle style)
 	w_text_sdf->set_size_auto();
 	layout1->add_child(w_text_sdf);
 
-	auto w_button = Widget::createT<wButton>(app.ui_ins);
+	auto w_button = Widget::createT<wButton>(app.ui_ins, L"button");
 	w_button->align$ = AlignLittleEnd;
-	w_button->text() = L"button";
-	w_button->set_size_auto();
 	layout1->add_child(w_button);
 
 	auto w_toggle1 = Widget::createT<wToggle>(app.ui_ins);
@@ -77,8 +74,6 @@ void create_widgets(ui::DefaultStyle style)
 	w_toggle1->text() = L"toggled";
 	w_toggle1->set_size_auto();
 	w_toggle1->set_toggle(true);
-	//add_style_background_color(w_toggle1, 0, Vec3(0.f, 0.f, 0.7f));
-	//add_style_background_color(w_toggle1, 1, Vec3(150.f, 1.f, 0.7f));
 	layout1->add_child(w_toggle1);
 
 	auto w_toggle2 = Widget::createT<wToggle>(app.ui_ins);
@@ -86,8 +81,6 @@ void create_widgets(ui::DefaultStyle style)
 	w_toggle2->text() = L"untoggled";
 	w_toggle2->set_size_auto();
 	w_toggle2->set_toggle(false);
-	//add_style_background_color(w_toggle2, 0, Vec3(0.f, 0.f, 0.7f));
-	//add_style_background_color(w_toggle2, 1, Vec3(150.f, 1.f, 0.7f));
 	layout1->add_child(w_toggle2);
 
 	auto w_menubar = Widget::createT<wMenuBar>(app.ui_ins);
@@ -190,15 +183,12 @@ extern "C" __declspec(dllexport) int main()
 	auto img = graphics::Image::create_from_file(app.d, L"ui/imgs/9.png");
 	app.ui_ins->set_imageview(img_id, graphics::Imageview::get(img));
 
-	auto layout_top = Widget::createT<wLayout>(app.ui_ins);
+	auto layout_top = Widget::createT<wLayout>(app.ui_ins, LayoutHorizontal);
 	layout_top->align$ = AlignTop;
-	layout_top->layout_type$ = LayoutHorizontal;
 
-	auto w_btn_dark = Widget::createT<wButton>(app.ui_ins);
+	auto w_btn_dark = Widget::createT<wButton>(app.ui_ins, L"dark");
 	w_btn_dark->align$ = AlignLittleEnd;
 	w_btn_dark->text_col() = Bvec4(255);
-	w_btn_dark->text() = L"dark";
-	w_btn_dark->set_size_auto();
 	w_btn_dark->add_listener(Widget::ListenerMouse, [](const ParmPackage &_p) {
 		auto &p = (Widget::MouseListenerParm&)_p;
 		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
@@ -208,11 +198,9 @@ extern "C" __declspec(dllexport) int main()
 		create_widgets(DefaultStyleDark);
 	}, nullptr, {});
 	layout_top->add_child(w_btn_dark);
-	auto w_btn_light = Widget::createT<wButton>(app.ui_ins);
+	auto w_btn_light = Widget::createT<wButton>(app.ui_ins, L"light");
 	w_btn_light->align$ = AlignLittleEnd;
 	w_btn_light->text_col() = Bvec4(255);
-	w_btn_light->text() = L"light";
-	w_btn_light->set_size_auto();
 	w_btn_light->add_listener(Widget::ListenerMouse, [](const ParmPackage &_p) {
 		auto &p = (Widget::MouseListenerParm&)_p;
 		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
