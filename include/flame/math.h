@@ -4788,9 +4788,9 @@ namespace flame
 			lhs.x * rhs.y - rhs.x * lhs.y);
 	}
 
-	inline Mat4 get_view_mat(const Vec3 &eye, const Vec3 &center, const Vec3 &up)
+	inline Mat4 get_view_mat(const Vec3 &eye, const Vec3 &target, const Vec3 &up)
 	{
-		auto f = center - eye;
+		auto f = target - eye;
 		f.normalize();
 		auto s = cross(f, up);
 		s.normalize();

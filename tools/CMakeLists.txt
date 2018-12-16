@@ -1,6 +1,7 @@
 add_subdirectory(serialize_converter)
 add_subdirectory(SLOC)
 add_subdirectory(GID_provider)
+add_subdirectory(code_generator)
 add_subdirectory(typeinfogen)
 add_subdirectory(host)
 add_subdirectory(auto_compiler)

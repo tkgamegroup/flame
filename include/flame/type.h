@@ -31,6 +31,8 @@
 #define FLAME_GID(x) (x)
 #define FLAME_GID_UNDEFINED 0
 
+#define FLAME_DEFINE_ITEM(t, n, tf)
+
 namespace flame
 {
 	typedef unsigned char		uchar;

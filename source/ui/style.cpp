@@ -39,10 +39,18 @@ namespace flame
 			switch (p.thiz()->state)
 			{
 			case StateNormal: case StateHovering:
-				p.thiz()->background_offset$ = p.else_offset();
+				if (p.thiz()->style_level <= 0)
+				{
+					p.thiz()->background_offset$ = p.else_offset();
+					p.thiz()->style_level = 0;
+				}
 				break;
 			case StateActive:
-				p.thiz()->background_offset$ = p.active_offset();
+				if (p.thiz()->style_level <= 0)
+				{
+					p.thiz()->background_offset$ = p.active_offset();
+					p.thiz()->style_level = 0;
+				}
 				break;
 			}
 		FLAME_REGISTER_FUNCTION_END(StyleBackgroundOffse)
@@ -65,13 +73,25 @@ namespace flame
 			switch (p.thiz()->state)
 			{
 			case StateNormal:
-				p.thiz()->background_col$ = p.normal_color();
+				if (p.thiz()->style_level <= 0)
+				{
+					p.thiz()->background_col$ = p.normal_color();
+					p.thiz()->style_level = 0;
+				}
 				break;
 			case StateHovering:
-				p.thiz()->background_col$ = p.hovering_color();
+				if (p.thiz()->style_level <= 0)
+				{
+					p.thiz()->background_col$ = p.hovering_color();
+					p.thiz()->style_level = 0;
+				}
 				break;
 			case StateActive:
-				p.thiz()->background_col$ = p.active_color();
+				if (p.thiz()->style_level <= 0)
+				{
+					p.thiz()->background_col$ = p.active_color();
+					p.thiz()->style_level = 0;
+				}
 				break;
 			}
 		FLAME_REGISTER_FUNCTION_END(StyleBackgroundColor)

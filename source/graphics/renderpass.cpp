@@ -24,6 +24,7 @@
 #include "device_private.h"
 #include "renderpass_private.h"
 
+#include <memory>
 #include <algorithm>
 
 namespace flame

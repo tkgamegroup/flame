@@ -686,7 +686,7 @@ namespace flame
 			FLAME_PARM_PACKAGE_PARM(uint, att_hash, u)
 			FLAME_PARM_PACKAGE_PARM(voidptr, out_obj, p)
 
-			FLAME_PARM_PACKAGE_PARM_SIZE
+			FLAME_PARM_PACKAGE_SEPARATOR
 		FLAME_PARM_PACKAGE_END
 
 		FLAME_SERIALIZE_EXPORTS void *unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt);

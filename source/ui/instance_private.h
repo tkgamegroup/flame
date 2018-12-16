@@ -104,6 +104,7 @@ namespace flame
 		{
 			Bvec4 default_text_col;
 			Bvec4 default_text_col_hovering_or_active;
+			Bvec4 default_window_col;
 			Bvec4 default_frame_col;
 			Bvec4 default_frame_col_hovering;
 			Bvec4 default_frame_col_active;

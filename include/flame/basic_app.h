@@ -75,7 +75,7 @@ namespace flame
 			ui_ins = ui::Instance::create(w);
 			canvas = ui::Canvas::create(sd);
 
-			t_fps = ui::wText::create(ui_ins);
+			t_fps = ui::Widget::createT<ui::wText>(ui_ins);
 			t_fps->align$ = ui::AlignRightBottomNoPadding;
 			t_fps->text_col() = Bvec4(0, 0, 0, 255);
 			ui_ins->root()->add_child(t_fps, 1);

@@ -87,7 +87,7 @@ namespace flame
 		{\
 			return (t&)d[__COUNTER__ - BASE].tf();\
 		}
-#define FLAME_PARM_PACKAGE_PARM_SIZE \
+#define FLAME_PARM_PACKAGE_SEPARATOR \
 		enum { PARM_SIZE = __COUNTER__ - BASE };
 #define FLAME_PARM_PACKAGE_DEFAULT_CAPT(t, n, tf) \
 		inline t &n()\

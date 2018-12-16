@@ -282,12 +282,12 @@ ui::wTreeNode *create_hierachy_treenode(const wchar_t *name)
 {
 	auto n = create_treenode(name);
 
-	n->w_btn()->add_listener(cH("clicked"), [](CommonData *d) {
+	n->w_btn()->add_listener(ui::Widget::ListenerMouse, [](CommonData *d) {
 		auto &n = *(ui::wTreeNode**)&d[0].p();
 
 		w_sel = n;
 		refresh_inspector();
-	}, { n });
+	}, n, {});
 
 	return n;
 }
@@ -329,7 +329,7 @@ extern "C" __declspec(dllexport) int main()
 {
 	app.create("UI Editor", Ivec2(1280, 720), WindowFrame | WindowResizable);
 
-	app.canvas->clear_values->set(0, Bvec4(200, 200, 200, 0));
+	app.canvas->set_clear_color(Bvec4(200, 200, 200, 0));
 
 	ui_ins_sandbox = ui::Instance::create();
 	ui_ins_sandbox->root()->background_col$ = Bvec4(0, 0, 0, 255);

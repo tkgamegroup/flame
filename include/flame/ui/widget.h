@@ -172,7 +172,7 @@ namespace flame
 				FLAME_PARM_PACKAGE_PARM(Vec2, off, f2)
 				FLAME_PARM_PACKAGE_PARM(float, scl, f1)
 
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 			FLAME_PARM_PACKAGE_END
@@ -180,17 +180,18 @@ namespace flame
 
 			int closet_id$;
 			FLAME_PARM_PACKAGE_BEGIN(StyleParm)
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(int, closet_id, i1)
 			FLAME_PARM_PACKAGE_END
+			int style_level;
 			Array<Function*> styles$;
 
 			FLAME_PARM_PACKAGE_BEGIN(AnimationParm)
 				FLAME_PARM_PACKAGE_PARM(float, time, f1)
 
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(float, duration, f1)
@@ -212,7 +213,7 @@ namespace flame
 				FLAME_PARM_PACKAGE_PARM(FocusType, type, i1)
 				FLAME_PARM_PACKAGE_PARM(int, focus_or_keyfocus, i1)
 
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 			FLAME_PARM_PACKAGE_END
@@ -225,7 +226,7 @@ namespace flame
 				FLAME_PARM_PACKAGE_PARM(KeyState, action, i1)
 				FLAME_PARM_PACKAGE_PARM(int, value, i1)
 
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 			FLAME_PARM_PACKAGE_END
@@ -242,7 +243,7 @@ namespace flame
 				FLAME_PARM_PACKAGE_PARM(MouseKey, key, i1)
 				FLAME_PARM_PACKAGE_PARM(Vec2, value, f2)
 
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 			FLAME_PARM_PACKAGE_END
@@ -250,13 +251,13 @@ namespace flame
 			FLAME_PARM_PACKAGE_BEGIN(DropListenerParm)
 				FLAME_PARM_PACKAGE_PARM(WidgetPtr, src, p)
 
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 			FLAME_PARM_PACKAGE_END
 
 			FLAME_PARM_PACKAGE_BEGIN(ChangedListenerParm)
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 			FLAME_PARM_PACKAGE_END
@@ -270,7 +271,7 @@ namespace flame
 				FLAME_PARM_PACKAGE_PARM(ChildOp, op, i1)
 				FLAME_PARM_PACKAGE_PARM(WidgetPtr, src, p)
 
-				FLAME_PARM_PACKAGE_PARM_SIZE
+				FLAME_PARM_PACKAGE_SEPARATOR
 
 				FLAME_PARM_PACKAGE_DEFAULT_CAPT(WidgetPtr, thiz, p)
 			FLAME_PARM_PACKAGE_END
@@ -288,6 +289,7 @@ namespace flame
 			inline Widget()
 			{
 				class_hash$ = 0;
+
 
 				pos$ = Vec2(0.f);
 				size$ = Vec2(0.f);
@@ -364,8 +366,9 @@ namespace flame
 
 			FLAME_UI_EXPORTS void add_extra_draw(PF pf, const std::vector<CommonData> &capt);
 
-			FLAME_UI_EXPORTS void add_style(int closet_id, PF pf, const std::vector<CommonData> &capt);
+			FLAME_UI_EXPORTS void add_style(int closet_id, PF pf, const std::vector<CommonData> &capt, int pos = -1);
 			FLAME_UI_EXPORTS void remove_style(int idx);
+
 			FLAME_UI_EXPORTS void add_animation(float duration, int looping, PF pf, const std::vector<CommonData> &capt);
 
 			FLAME_UI_EXPORTS void on_draw(Canvas *c, const Vec2 &off, float scl);
@@ -378,129 +381,118 @@ namespace flame
 			FLAME_UI_EXPORTS Function *add_listener(Listener l , PF pf, void *thiz, const std::vector<CommonData> &capt);
 			FLAME_UI_EXPORTS void remove_listener(Listener l, Function *f, bool delay = false);
 
-			FLAME_UI_EXPORTS void add_data_storages(const char *fmt);
+			FLAME_UI_EXPORTS void add_data_storages(const std::vector<CommonData> &datas);
 			FLAME_UI_EXPORTS void add_string_storages(int count);
 
 			FLAME_UI_EXPORTS SerializableNode *save();
 
-			FLAME_UI_EXPORTS static Widget *create(Instance *ui);
-			FLAME_UI_EXPORTS static void create_from_typeinfo(Instance *ui, VaribleInfo *info, void *p, Widget *dst);
-			FLAME_UI_EXPORTS static Widget *create_from_file(Instance *ui, SerializableNode *src);
+			enum { DATA_SIZE = 0 };
+			enum { STRING_SIZE = 0 };
+
+			FLAME_UI_EXPORTS static Widget *create(Instance *ins);
+			template<typename T, typename ... Args>
+			inline static T *createT(Instance *ins, Args ... args)
+			{
+				auto w = (T*)create(ins);
+				w->init(args...);
+				return w;
+			}
+			FLAME_UI_EXPORTS static void create_from_typeinfo(Instance *ins, VaribleInfo *info, void *p, Widget *dst);
+			FLAME_UI_EXPORTS static Widget *create_from_file(Instance *ins, SerializableNode *src);
 			FLAME_UI_EXPORTS static void destroy(Widget *w);
 		};
 
-		struct wLayout : Widget
-		{
+#define FLAME_WIDGET_BEGIN(name, base) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { D_BASE = __COUNTER__ + 1 };\
+		enum { B_D_SIZE = base::DATA_SIZE };\
+		enum { B_S_SIZE = base::STRING_SIZE };
+#define FLAME_WIDGET_DATA(t, n, tf) \
+		inline t &n()\
+		{\
+			return (t&)data_storages$[__COUNTER__ - D_BASE + B_D_SIZE].tf();\
+		}
+#define FLAME_WIDGET_SEPARATOR \
+		enum { DATA_SIZE = __COUNTER__ - D_BASE + B_D_SIZE };\
+		enum { S_BASE = __COUNTER__ + 1 };
+#define FLAME_WIDGET_STRING(n) \
+		inline StringW &n()\
+		{\
+			return string_storages$[__COUNTER__ - S_BASE + B_S_SIZE];\
+		}
+#define FLAME_WIDGET_END \
+		enum { STRING_SIZE = __COUNTER__ - S_BASE + B_S_SIZE };\
+	};
+		
+		FLAME_WIDGET_BEGIN(wLayout, Widget)
 			FLAME_UI_EXPORTS void init();
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wLayout *create(Instance *ui);
-		};
-
-		typedef wLayout* wLayoutPtr;
-
-		struct wCheckbox : Widget
-		{
+		FLAME_WIDGET_BEGIN(wCheckbox, Widget)
 			FLAME_UI_EXPORTS void init(void *target = nullptr);
+			FLAME_WIDGET_DATA(int, checked, i1)
+			FLAME_WIDGET_DATA(voidptr, target, p)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS int &checked();
-			FLAME_UI_EXPORTS voidptr &target();
-
-			FLAME_UI_EXPORTS static wCheckbox *create(Instance *ui, void *target = nullptr);
-		};
-
-		typedef wCheckbox* wCheckboxPtr;
-
-		struct wText : Widget
-		{
+		FLAME_WIDGET_BEGIN(wText, Widget)
 			FLAME_UI_EXPORTS void init();
-
-			FLAME_UI_EXPORTS Bvec4 &text_col();
-			FLAME_UI_EXPORTS float &sdf_scale();
-			FLAME_UI_EXPORTS StringW &text();
-
+			FLAME_WIDGET_DATA(Bvec4, text_col, b4)
+			FLAME_WIDGET_DATA(float, sdf_scale, f1)
+			FLAME_WIDGET_SEPARATOR
+			FLAME_WIDGET_STRING(text)
 			FLAME_UI_EXPORTS void set_size_auto();
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wText *create(Instance *ui);
-		};
-
-		typedef wText* wTextPtr;
-
-		struct wButton : wText
-		{
+		FLAME_WIDGET_BEGIN(wButton, wText)
 			FLAME_UI_EXPORTS void init();
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wButton *create(Instance *ui);
-		};
-
-		typedef wButton* wButtonPtr;
-
-		struct wToggle : wText
-		{
+		FLAME_WIDGET_BEGIN(wToggle, wText)
 			FLAME_UI_EXPORTS void init();
-
-			FLAME_UI_EXPORTS int &toggled();
-
+			FLAME_WIDGET_DATA(int, toggled, i1)
+			FLAME_WIDGET_SEPARATOR
 			FLAME_UI_EXPORTS void set_toggle(bool v);
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wToggle *create(Instance *ui);
-		};
-
-		typedef wToggle* wTogglePtr;
-
-		struct wMenuItem : wText
-		{
+		FLAME_WIDGET_BEGIN(wMenuItem, wText)
 			FLAME_UI_EXPORTS void init(const wchar_t *title);
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wMenuItem *create(Instance *ui, const wchar_t *title);
-		};
-
-		typedef wMenuItem* wMenuItemPtr;
-
-		struct wMenu : wLayout
-		{
+		FLAME_WIDGET_BEGIN(wMenu, wLayout)
 			FLAME_UI_EXPORTS void init(const wchar_t *title);
-
-			FLAME_UI_EXPORTS int &sub();
-			FLAME_UI_EXPORTS int &opened();
-			FLAME_UI_EXPORTS wTextPtr &w_title();
-			FLAME_UI_EXPORTS wTextPtr &w_rarrow();
-			FLAME_UI_EXPORTS wLayoutPtr &w_items();
-
+			FLAME_WIDGET_DATA(int, sub, i1)
+			FLAME_WIDGET_DATA(int, opened, i1)
+			FLAME_WIDGET_DATA(wTextPtr, w_title, p)
+			FLAME_WIDGET_DATA(wTextPtr, w_rarrow, p)
+			FLAME_WIDGET_DATA(wLayoutPtr, w_items, p)
+			FLAME_WIDGET_SEPARATOR
 			FLAME_UI_EXPORTS void open();
 			FLAME_UI_EXPORTS void popup(const Vec2 &pos);
 			FLAME_UI_EXPORTS void close();
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wMenu *create(Instance *ui, const wchar_t *title);
-		};
-
-		typedef wMenu* wMenuPtr;
-
-		struct wMenuBar : wLayout
-		{
+		FLAME_WIDGET_BEGIN(wMenuBar, wLayout)
 			FLAME_UI_EXPORTS void init();
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wMenuBar *create(Instance *ui);
-		};
-
-		typedef wMenuBar* wMenuBarPtr;
-
-		struct wCombo : wMenu
-		{
+		FLAME_WIDGET_BEGIN(wCombo, wMenu)
 			FLAME_UI_EXPORTS void init(void *enum_info = nullptr, void *target = nullptr);
-
-			FLAME_UI_EXPORTS int &sel();
-			FLAME_UI_EXPORTS voidptr &enum_info();
-			FLAME_UI_EXPORTS voidptr &target();
-			
+			FLAME_WIDGET_DATA(int, sel, i1)
+			FLAME_WIDGET_DATA(voidptr, enum_info, p)
+			FLAME_WIDGET_DATA(voidptr, target, p)
+			FLAME_WIDGET_SEPARATOR
 			FLAME_UI_EXPORTS void set_sel(int idx, bool from_inner = false);
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wCombo *create(Instance *ui, void *enum_info = nullptr, void *target = nullptr);
-		};
-
-		typedef wCombo* wComboPtr;
-
-		struct wEdit : wText
-		{
+		FLAME_WIDGET_BEGIN(wEdit, wText)
 			enum Type
 			{
 				TypeNull,
@@ -511,115 +503,78 @@ namespace flame
 				TypeFloat,
 				TypeUchar
 			};
-
 			FLAME_UI_EXPORTS void init(Type type = TypeNull, void *target = nullptr);
-
-			FLAME_UI_EXPORTS int &cursor();
-			FLAME_UI_EXPORTS int &type();
-			FLAME_UI_EXPORTS voidptr &target();
-
+			FLAME_WIDGET_DATA(int, cursor, i1)
+			FLAME_WIDGET_DATA(int, type, i1)
+			FLAME_WIDGET_DATA(voidptr, target, p)
+			FLAME_WIDGET_SEPARATOR
 			FLAME_UI_EXPORTS void set_size_by_width(float width);
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wEdit *create(Instance *ui, Type type = TypeNull, void *target = nullptr);
-		};
-
-		typedef wEdit* wEditPtr;
-
-		struct wImage : Widget
-		{
+		FLAME_WIDGET_BEGIN(wImage, Widget)
 			FLAME_UI_EXPORTS void init();
+			FLAME_WIDGET_DATA(int, id, i1)
+			FLAME_WIDGET_DATA(Vec2, uv0, f2)
+			FLAME_WIDGET_DATA(Vec2, uv1, f2)
+			FLAME_WIDGET_DATA(int, stretch, i1)
+			FLAME_WIDGET_DATA(Vec4, border, f4) // L R T B
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS int &id();
-			FLAME_UI_EXPORTS Vec2 &uv0();
-			FLAME_UI_EXPORTS Vec2 &uv1();
-			FLAME_UI_EXPORTS int &stretch();
-			FLAME_UI_EXPORTS Vec4 &border(); // L R T B
-
-			FLAME_UI_EXPORTS static wImage *create(Instance *ui);
-		};
-
-		typedef wImage* wImagePtr;
-
-		struct wSizeDrag : Widget
-		{
+		FLAME_WIDGET_BEGIN(wSizeDrag, Widget)
 			FLAME_UI_EXPORTS void init(Widget *target);
+			FLAME_WIDGET_DATA(Vec2, min_size, f2)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS Vec2 &min_size();
-
-			FLAME_UI_EXPORTS static wSizeDrag *create(Instance *ui, Widget *target);
-		};
-
-		typedef wSizeDrag* wSizeDragPtr;
-
-		struct wScrollbar : Widget
-		{
+		FLAME_WIDGET_BEGIN(wScrollbar, Widget)
 			FLAME_UI_EXPORTS void init(Widget *target);
-
-			FLAME_UI_EXPORTS wButtonPtr &w_btn();
-			FLAME_UI_EXPORTS WidgetPtr &w_target();
-
+			FLAME_WIDGET_DATA(wButtonPtr, w_btn, p)
+			FLAME_WIDGET_DATA(WidgetPtr, w_target, p)
+			FLAME_WIDGET_SEPARATOR
 			FLAME_UI_EXPORTS void scroll(int v);
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wScrollbar *create(Instance *ui, Widget *target);
-		};
-
-		typedef wScrollbar* wScrollbarPtr;
-
-		struct wListItem : wLayout
-		{
+		FLAME_WIDGET_BEGIN(wListItem, wLayout)
 			FLAME_UI_EXPORTS void init(const wchar_t *title);
+			FLAME_WIDGET_DATA(wTextPtr, w_title, p)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS wTextPtr &w_title();
-
-			FLAME_UI_EXPORTS static wListItem *create(Instance *ui, const wchar_t *title);
-		};
-
-		typedef wListItem* wListItemPtr;
-
-		struct wList : wLayout
-		{
+		FLAME_WIDGET_BEGIN(wList, wLayout)
 			FLAME_UI_EXPORTS void init();
-			
-			FLAME_UI_EXPORTS wListItemPtr &w_sel();
-			FLAME_UI_EXPORTS wScrollbarPtr &w_scrollbar();
+			FLAME_WIDGET_DATA(wListItemPtr, w_sel, p)
+			FLAME_WIDGET_DATA(wScrollbarPtr, w_scrollbar, p)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wList *create(Instance *ui);
-		};
-
-		typedef wList* wListPtr;
-
-		struct wTreeNode : wLayout
-		{
+		FLAME_WIDGET_BEGIN(wTreeNode, wLayout)
 			FLAME_UI_EXPORTS void init(const wchar_t *title);
+			FLAME_WIDGET_DATA(wTextPtr, w_title, p)
+			FLAME_WIDGET_DATA(wLayoutPtr, w_items, p)
+			FLAME_WIDGET_DATA(wTextPtr, w_larrow, p)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS wTextPtr &w_title();
-			FLAME_UI_EXPORTS wLayoutPtr &w_items();
-			FLAME_UI_EXPORTS wTextPtr &w_larrow();
+		FLAME_WIDGET_BEGIN(wTree, wLayout)
+			FLAME_UI_EXPORTS void init();
+			FLAME_WIDGET_DATA(wTreeNodePtr, w_sel, p)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS static wTreeNode *create(Instance *ui, const wchar_t *title);
-		};
-
-		typedef wTreeNode* wTreeNodePtr;
-
-		struct wDialog : wLayout
-		{
+		FLAME_WIDGET_BEGIN(wDialog, wLayout)
 			FLAME_UI_EXPORTS void init(bool resize = false, bool modual = false);
+			FLAME_WIDGET_DATA(wScrollbarPtr, w_scrollbar, p)
+			FLAME_WIDGET_DATA(wSizeDragPtr, w_sizedrag, p)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
-			FLAME_UI_EXPORTS wScrollbarPtr &w_scrollbar();
-			FLAME_UI_EXPORTS wSizeDragPtr &w_sizedrag();
-
-			FLAME_UI_EXPORTS static wDialog *create(Instance *ui, bool resize = false, bool modual = false);
-		};
-
-		struct wMessageDialog : wDialog 
-		{
+		FLAME_WIDGET_BEGIN(wMessageDialog, wDialog)
 			FLAME_UI_EXPORTS void init(const wchar_t *text);
-
-			FLAME_UI_EXPORTS wTextPtr &w_text();
-			FLAME_UI_EXPORTS wButtonPtr &w_ok();
-
-			FLAME_UI_EXPORTS static wMessageDialog *create(Instance *ui, const wchar_t *text);
-		};
+			FLAME_WIDGET_DATA(wTextPtr, w_text, p)
+			FLAME_WIDGET_DATA(wButtonPtr, w_ok, p)
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
 
 		//struct wYesNoDialog : wDialog
 		//{
@@ -629,8 +584,6 @@ namespace flame
 		//	FLAME_UI_EXPORTS wLayoutPtr &w_buttons();
 		//	FLAME_UI_EXPORTS wButtonPtr &w_yes();
 		//	FLAME_UI_EXPORTS wButtonPtr &w_no();
-
-		//	FLAME_UI_EXPORTS static wYesNoDialog *create(Instance *ui, const wchar_t *text, const wchar_t *prompt, const std::function<void(bool)> &callback);
 		//};
 
 		//struct wInputDialog : wDialog
@@ -641,8 +594,6 @@ namespace flame
 		//	FLAME_UI_EXPORTS wLayoutPtr &w_buttons();
 		//	FLAME_UI_EXPORTS wButtonPtr &w_ok();
 		//	FLAME_UI_EXPORTS wButtonPtr &w_cancel();
-
-		//	FLAME_UI_EXPORTS static wInputDialog *create(Instance *ui, const wchar_t *title, float sdf_scale, const std::function<void(bool ok, const wchar_t *input)> &callback);
 		//};
 
 		//struct wFileDialog : wDialog
@@ -665,8 +616,6 @@ namespace flame
 		//	FLAME_UI_EXPORTS void set_curr_exts(const wchar_t *exts);
 
 		//	FLAME_UI_EXPORTS void set_path(const wchar_t *path);
-
-		//	FLAME_UI_EXPORTS static wFileDialog *create(Instance *ui, const wchar_t *title, int io, const std::function<void(bool ok, const wchar_t *filename)> &callback, const wchar_t *exts = nullptr);
 		//};
 	}
 }

@@ -662,12 +662,14 @@ namespace flame
 			extra_draws$.push_back(Function::create(pf, ExtraDrawParm::PARM_SIZE, capt));
 		}
 
-		inline void WidgetPrivate::add_style(int closet_id, PF pf, const std::vector<CommonData> &_capt)
+		inline void WidgetPrivate::add_style(int closet_id, PF pf, const std::vector<CommonData> &_capt, int pos)
 		{
 			auto capt = _capt;
 			capt.emplace(capt.begin(), closet_id);
 			capt.emplace(capt.begin(), this);
-			styles$.push_back(Function::create(pf, StyleParm::PARM_SIZE, capt));
+			if (pos == -1)
+				pos = styles$.size;
+			styles$.insert(pos, Function::create(pf, StyleParm::PARM_SIZE, capt));
 		}
 
 		inline void WidgetPrivate::remove_style(int idx)
@@ -879,15 +881,17 @@ namespace flame
 			Function::destroy(f);
 		}
 
-		inline void WidgetPrivate::add_data_storages(const char *fmt)
+		inline void WidgetPrivate::add_data_storages(const std::vector<CommonData> &datas)
 		{
-			auto sp = string_split(std::string(fmt));
+			if (datas.empty())
+				return;
+
 			auto original_size = data_storages$.size;
-			data_storages$.resize(original_size + sp.size());
+			data_storages$.resize(original_size + datas.size());
 			auto d = &data_storages$[original_size];
-			for (auto &s : sp)
+			for (auto &t : datas)
 			{
-				typefmt_assign(d->fmt, s.c_str());
+				*d = t;
 
 				d++;
 			}
@@ -895,6 +899,8 @@ namespace flame
 
 		inline void WidgetPrivate::add_string_storages(int count)
 		{
+			if (count == 0)
+				return;
 			string_storages$.resize(string_storages$.size + count);
 		}
 
@@ -1005,9 +1011,9 @@ namespace flame
 			((WidgetPrivate*)this)->add_extra_draw(pf, capt);
 		}
 
-		void Widget::add_style(int closet_id, PF pf, const std::vector<CommonData> &capt)
+		void Widget::add_style(int closet_id, PF pf, const std::vector<CommonData> &capt, int pos)
 		{
-			((WidgetPrivate*)this)->add_style(closet_id, pf, capt);
+			((WidgetPrivate*)this)->add_style(closet_id, pf, capt, pos);
 		}
 
 		void Widget::remove_style(int idx)
@@ -1060,9 +1066,9 @@ namespace flame
 			((WidgetPrivate*)this)->remove_listener(l, f, delay);
 		}
 
-		void Widget::add_data_storages(const char *fmt)
+		void Widget::add_data_storages(const std::vector<CommonData> &datas)
 		{
-			((WidgetPrivate*)this)->add_data_storages(fmt);
+			((WidgetPrivate*)this)->add_data_storages(datas);
 		}
 
 		void Widget::add_string_storages(int count)
@@ -1075,18 +1081,18 @@ namespace flame
 			return SerializableNode::serialize(find_udt(cH("ui::Widget")), this, 1);
 		}
 
-		Widget *Widget::create(Instance *ui)
+		Widget *Widget::create(Instance *ins)
 		{
-			return new WidgetPrivate(ui);
+			return new WidgetPrivate(ins);
 		}
 
-		void Widget::create_from_typeinfo(Instance *ui, VaribleInfo *info, void *p, Widget *dst)
+		void Widget::create_from_typeinfo(Instance *ins, VaribleInfo *info, void *p, Widget *dst)
 		{
 			switch (info->tag())
 			{
 			case VariableTagEnumSingle:
 			{
-				auto c = wCombo::create(ui, find_enum(info->type_hash()), (char*)p + info->offset());
+				auto c = createT<wCombo>(ins, find_enum(info->type_hash()), (char*)p + info->offset());
 				c->align$ = AlignLittleEnd;
 				dst->add_child(c, 0, -1, true);
 			}
@@ -1099,14 +1105,14 @@ namespace flame
 				{
 				case cH("bool"):
 				{
-					auto c = wCheckbox::create(ui, (char*)p + info->offset());
+					auto c = createT<wCheckbox>(ins, (char*)p + info->offset());
 					c->align$ = AlignLittleEnd;
 					dst->add_child(c, 0, -1, true);
 				}
 					break;
 				case cH("uint"):
 				{
-					auto e = wEdit::create(ui, wEdit::TypeUint, (char*)p + info->offset());
+					auto e = createT<wEdit>(ins, wEdit::TypeUint, (char*)p + info->offset());
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -1115,7 +1121,7 @@ namespace flame
 					break;
 				case cH("int"):
 				{
-					auto e = wEdit::create(ui, wEdit::TypeInt, (char*)p + info->offset());
+					auto e = createT<wEdit>(ins, wEdit::TypeInt, (char*)p + info->offset());
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -1128,7 +1134,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 2; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeInt, &((*pp)[i_v]));
+						auto e  = createT<wEdit>(ins, wEdit::TypeInt, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1142,7 +1148,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 3; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeInt, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeInt, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1156,7 +1162,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 4; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeInt, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeInt, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1166,7 +1172,7 @@ namespace flame
 					break;
 				case cH("float"):
 				{
-					auto e = wEdit::create(ui, wEdit::TypeFloat, (char*)p + info->offset());
+					auto e = createT<wEdit>(ins, wEdit::TypeFloat, (char*)p + info->offset());
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -1179,7 +1185,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 2; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeFloat, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1193,7 +1199,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 3; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeFloat, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1207,7 +1213,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 4; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeFloat, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1217,7 +1223,7 @@ namespace flame
 					break;
 				case cH("uchar"):
 				{
-					auto e = wEdit::create(ui, wEdit::TypeUchar, (char*)p + info->offset());
+					auto e = createT<wEdit>(ins, wEdit::TypeUchar, (char*)p + info->offset());
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -1230,7 +1236,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 2; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeUchar, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1244,7 +1250,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 3; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeUchar, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1258,7 +1264,7 @@ namespace flame
 
 					for (auto i_v = 0; i_v < 4; i_v++)
 					{
-						auto e = wEdit::create(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+						auto e = createT<wEdit>(ins, wEdit::TypeUchar, &((*pp)[i_v]));
 						e->size_policy_hori$ = SizeFitLayout;
 						e->align$ = AlignLittleEnd;
 						e->set_size_by_width(10.f);
@@ -1293,7 +1299,7 @@ namespace flame
 			}
 		}
 
-		Widget *Widget::create_from_file(Instance *ui, SerializableNode *src)
+		Widget *Widget::create_from_file(Instance *ins, SerializableNode *src)
 		{
 			FLAME_DATA_PACKAGE_BEGIN(ObjGeneratorData, SerializableNode::ObjGeneratorParm)
 				FLAME_DATA_PACKAGE_CAPT(InstancePtr, ins, p)
@@ -1313,7 +1319,7 @@ namespace flame
 					else /* if (att_hash == cH("children_2")) */
 						w->layer = 1;
 				}
-			}, { ui });
+			}, { ins });
 		}
 
 		void Widget::destroy(Widget *w)
@@ -1324,18 +1330,12 @@ namespace flame
 		void wLayout::init()
 		{
 			class_hash$ = cH("layout");
+			add_data_storages({ });
+			add_string_storages(STRING_SIZE);
 
 			event_attitude$ = EventIgnore;
 			size_policy_hori$ = SizeFitChildren;
 			size_policy_vert$ = SizeFitChildren;
-		}
-
-		wLayout *wLayout::create(Instance *ui)
-		{
-			auto w = (wLayout*)Widget::create(ui);
-			w->init();
-
-			return w;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(CheckboxMouse, FLAME_GID(15432), Widget::MouseListenerParm)
@@ -1359,13 +1359,11 @@ namespace flame
 		void wCheckbox::init(void *_target)
 		{
 			class_hash$ = cH("checkbox");
-			add_data_storages("i");
-
+			add_data_storages({ 0, _target });
+			add_string_storages(STRING_SIZE);
+			
 			size$ = Vec2(share_data.font_atlas->pixel_height);
 			background_col$ = Bvec4(255);
-
-			checked() = 0;
-			target() = _target;
 
 			if (target())
 				checked() = *(bool*)target();
@@ -1377,24 +1375,6 @@ namespace flame
 
 			auto i = (InstancePrivate*)instance();
 			add_style_background_color(this, 0, i->default_frame_col, i->default_frame_col_hovering, i->default_frame_col_active);
-		}
-
-		int &wCheckbox::checked()
-		{
-			return data_storages$[0].i1();
-		}
-
-		voidptr &wCheckbox::target()
-		{
-			return data_storages$[1].p();
-		}
-
-		wCheckbox *wCheckbox::create(Instance *ui, void *target)
-		{
-			auto w = (wCheckbox*)Widget::create(ui);
-			w->init(target);
-
-			return w;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(TextExtraDraw, FLAME_GID(9510), Widget::ExtraDrawParm)
@@ -1410,33 +1390,17 @@ namespace flame
 
 		void wText::init()
 		{
+			auto i = (InstancePrivate*)instance();
+
 			class_hash$ = cH("text");
-			add_data_storages("b4 f");
-			add_string_storages(1);
+			add_data_storages( { i->default_text_col, i->default_sdf_scale } );
+			add_string_storages(STRING_SIZE);
 
 			event_attitude$ = EventIgnore;
 
-			auto i = (InstancePrivate*)instance();
-			text_col() = i->default_text_col;
-			sdf_scale() = i->default_sdf_scale;
 			text() = L"";
 
 			add_extra_draw(TextExtraDraw::v, {});
-		}
-
-		Bvec4 &wText::text_col()
-		{
-			return data_storages$[0].b4();
-		}
-
-		float &wText::sdf_scale()
-		{
-			return data_storages$[1].f1();
-		}
-
-		StringW &wText::text()
-		{
-			return string_storages$[0];
 		}
 
 		void wText::set_size_auto()
@@ -1449,39 +1413,19 @@ namespace flame
 			set_size(v);
 		}
 
-		wText *wText::create(Instance *ui)
-		{
-			auto w = (wText*)Widget::create(ui);
-			w->init();
-
-			return w;
-		}
-
 		void wButton::init()
 		{
 			((wText*)this)->init();
 
 			class_hash$ = cH("button");
+			add_data_storages({ });
+			add_string_storages(STRING_SIZE);
 
 			inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 			event_attitude$ = EventAccept;
 
 			auto i = (InstancePrivate*)instance();
 			add_style_background_color(this, 0, i->default_button_col, i->default_button_col_hovering, i->default_button_col_active);
-		}
-
-		//void wButton::set_classic(const wchar_t *_text)
-		//{
-		//	text() = _text;
-		//	set_size_auto();
-		//}
-
-		wButton *wButton::create(Instance *ui)
-		{
-			auto w = (wButton*)Widget::create(ui);
-			w->init();
-
-			return w;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(ToggleMouse, FLAME_GID(23140), Widget::MouseListenerParm)
@@ -1496,7 +1440,8 @@ namespace flame
 			((wText*)this)->init();
 
 			class_hash$ = cH("toggle");
-			add_data_storages("i");
+			add_data_storages({ 0 });
+			add_string_storages(STRING_SIZE);
 
 			background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
 			background_round_radius$ = share_data.font_atlas->pixel_height * 0.5f;
@@ -1505,14 +1450,7 @@ namespace flame
 
 			event_attitude$ = EventAccept;
 
-			toggled() = 0;
-
 			add_listener(ListenerMouse, ToggleMouse::v, this, {});
-		}
-
-		int &wToggle::toggled()
-		{
-			return data_storages$[2].i1();
 		}
 
 		void wToggle::set_toggle(bool v)
@@ -1524,14 +1462,6 @@ namespace flame
 				closet_id$ = 1;
 
 			on_changed();
-		}
-
-		wToggle *wToggle::create(Instance *ui)
-		{
-			auto w = (wToggle*)Widget::create(ui);
-			w->init();
-
-			return w;
 		}
 
 		static void menu_add_rarrow(wMenu *w)
@@ -1547,7 +1477,7 @@ namespace flame
 			w->w_title()->inner_padding$[1] += w->w_title()->size$.y * 0.6f;
 			w->w_title()->set_size_auto();
 
-			w->w_rarrow() = wText::create(w->instance());
+			w->w_rarrow() = Widget::createT<wText>(w->instance());
 			w->w_rarrow()->align$ = AlignRightNoPadding;
 			w->w_rarrow()->sdf_scale() = w->w_title()->sdf_scale();
 			w->w_rarrow()->text() = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
@@ -1567,6 +1497,8 @@ namespace flame
 			((wText*)this)->init();
 
 			class_hash$ = cH("menuitem");
+			add_data_storages({ });
+			add_string_storages(STRING_SIZE);
 
 			inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 			size_policy_hori$ = SizeFitLayout;
@@ -1579,24 +1511,16 @@ namespace flame
 			add_listener(ListenerMouse, MenuItemMouse::v, this, {});
 
 			auto i = (InstancePrivate*)instance();
-			add_style_background_color(this, 0, i->default_header_col, i->default_header_col_hovering, i->default_header_col_active);
+			add_style_background_color(this, 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
 		}
 
-		wMenuItem *wMenuItem::create(Instance *ui, const wchar_t *title)
-		{
-			auto w = (wMenuItem*)Widget::create(ui);
-			w->init(title);
-
-			return w;
-		}
-
-		FLAME_REGISTER_FUNCTION_BEG(MenuBtnMouse, FLAME_GID(10376), Widget::MouseListenerParm)
+		FLAME_REGISTER_FUNCTION_BEG(MenuTitleMouse, FLAME_GID(10376), Widget::MouseListenerParm)
 			if (!(p.action() == KeyStateNull && p.key() == Mouse_Null))
 				return;
 
 			if (p.thiz()->instance()->popup_widget())
 				((wMenu*)p.thiz())->open();
-		FLAME_REGISTER_FUNCTION_END(MenuBtnMouse)
+		FLAME_REGISTER_FUNCTION_END(MenuTitleMouse)
 
 		FLAME_REGISTER_FUNCTION_BEG(MenuItemsChild, FLAME_GID(21018), Widget::ChildListenerParm)
 			if (p.op() != Widget::ChildAdd)
@@ -1622,15 +1546,13 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("menu");
-			add_data_storages("i i p p p");
-
-			sub() = 0;
-			opened() = 0;
+			add_data_storages({ 0, 0, nullptr, nullptr, nullptr });
+			add_string_storages(STRING_SIZE);
 
 			align$ = AlignLittleEnd;
 			layout_type$ = LayoutVertical;
 
-			w_title() = wText::create(instance());
+			w_title() = createT<wText>(instance());
 			w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 			w_title()->size_policy_hori$ = SizeGreedy;
 			w_title()->align$ = AlignLittleEnd;
@@ -1639,46 +1561,22 @@ namespace flame
 			w_title()->set_size_auto();
 			add_child(w_title());
 
-			w_title()->add_listener(ListenerMouse, MenuBtnMouse::v, this, {});
+			w_title()->add_listener(ListenerMouse, MenuTitleMouse::v, this, {});
 
 			auto i = (InstancePrivate*)instance();
 			add_style_background_color(w_title(), 0, i->default_frame_col, i->default_frame_col_hovering, i->default_frame_col_active);
 
 			w_rarrow() = nullptr;
 
-			w_items() = wLayout::create(instance());
+			w_items() = createT<wLayout>(instance());
 			w_items()->class_hash$ = cH("menu items");
+			w_items()->background_col$ = i->default_window_col;
 			w_items()->layout_type$ = LayoutVertical;
 			w_items()->align$ = AlignBottomOutside;
 			w_items()->visible$ = false;
 			add_child(w_items(), 1);
 
 			w_items()->add_listener(ListenerChild, MenuItemsChild::v, this, {});
-		}
-
-		int &wMenu::sub()
-		{
-			return data_storages$[0].i1();
-		}
-
-		int &wMenu::opened()
-		{
-			return data_storages$[1].i1();
-		}
-
-		wTextPtr &wMenu::w_title()
-		{
-			return *(wTextPtr*)&data_storages$[2].p();
-		}
-
-		wTextPtr &wMenu::w_rarrow()
-		{
-			return *(wTextPtr*)&data_storages$[3].p();
-		}
-
-		wLayoutPtr &wMenu::w_items()
-		{
-			return *(wLayoutPtr*)&data_storages$[4].p();
 		}
 
 		void wMenu::open()
@@ -1734,19 +1632,11 @@ namespace flame
 			opened() = 0;
 		}
 
-		wMenu *wMenu::create(Instance *ui, const wchar_t *title)
-		{
-			auto w = (wMenu*)Widget::create(ui);
-			w->init(title);
-
-			return w;
-		}
-
-		FLAME_DATA_PACKAGE_BEGIN(MenuBarMenuBtnMouseData, Widget::MouseListenerParm)
+		FLAME_DATA_PACKAGE_BEGIN(MenuBarMenuTextMouseData, Widget::MouseListenerParm)
 			FLAME_DATA_PACKAGE_CAPT(wMenuPtr, menu, p)
 		FLAME_DATA_PACKAGE_END
 
-		FLAME_REGISTER_FUNCTION_BEG(MenuBarMenuBtnMouse, FLAME_GID(24104), MenuBarMenuBtnMouseData)
+		FLAME_REGISTER_FUNCTION_BEG(MenuBarMenuTextMouse, FLAME_GID(24104), MenuBarMenuTextMouseData)
 			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
 				return;
 
@@ -1761,14 +1651,14 @@ namespace flame
 			}
 			else
 				p.thiz()->instance()->close_popup();
-		FLAME_REGISTER_FUNCTION_END(MenuBarMenuBtnMouse)
+		FLAME_REGISTER_FUNCTION_END(MenuBarMenuTextMouse)
 
 		FLAME_REGISTER_FUNCTION_BEG(MenuBarChild, FLAME_GID(10208), Widget::ChildListenerParm)
 			if (p.op() != Widget::ChildAdd)
 				return;
 
 			if (p.src()->class_hash$ == cH("menu"))
-				((wMenu*)p.src())->w_title()->add_listener(Widget::ListenerMouse, MenuBarMenuBtnMouse::v, p.thiz(), { p.src() });
+				((wMenu*)p.src())->w_title()->add_listener(Widget::ListenerMouse, MenuBarMenuTextMouse::v, p.thiz(), { p.src() });
 		FLAME_REGISTER_FUNCTION_END(MenuBarChild)
 
 		void wMenuBar::init()
@@ -1776,21 +1666,15 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("menubar");
+			add_data_storages({ });
+			add_string_storages(STRING_SIZE);
 
 			layout_type$ = LayoutHorizontal;
 
 			add_listener(ListenerChild, MenuBarChild::v, this, {});
 		}
-
-		wMenuBar *wMenuBar::create(Instance *ui)
-		{
-			auto w = (wMenuBar*)Widget::create(ui);
-			w->init();
-
-			return w;
-		}
 		
-		FLAME_REGISTER_FUNCTION_BEG(ComboBtnMouse, FLAME_GID(10368), Widget::MouseListenerParm)
+		FLAME_REGISTER_FUNCTION_BEG(ComboTextMouse, FLAME_GID(10368), Widget::MouseListenerParm)
 			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
 				return;
 
@@ -1805,7 +1689,7 @@ namespace flame
 			}
 			else
 				p.thiz()->instance()->close_popup();
-		FLAME_REGISTER_FUNCTION_END(ComboBtnMouse)
+		FLAME_REGISTER_FUNCTION_END(ComboTextMouse)
 
 		FLAME_DATA_PACKAGE_BEGIN(ComboItemMouseData, Widget::MouseListenerParm)
 			FLAME_DATA_PACKAGE_CAPT(int, idx, i1)
@@ -1816,7 +1700,28 @@ namespace flame
 				return;
 
 			((wCombo*)p.thiz())->set_sel(p.idx());
-			FLAME_REGISTER_FUNCTION_END(ComboItemMouse)
+		FLAME_REGISTER_FUNCTION_END(ComboItemMouse)
+
+			FLAME_DATA_PACKAGE_BEGIN(ComboItemStyleData, Widget::StyleParm)
+			FLAME_DATA_PACKAGE_CAPT(wComboPtr, list, p)
+		FLAME_DATA_PACKAGE_END
+
+		FLAME_REGISTER_FUNCTION_BEG(ComboItemStyle, FLAME_GID(3278), ComboItemStyleData)
+			auto sel = p.list()->sel();
+			if (sel != -1 && p.list()->w_items()->children_1$[sel] == p.thiz())
+			{
+				if (p.thiz()->state == StateNormal)
+				{
+					if (p.thiz()->style_level <= 1)
+					{
+						auto i = (InstancePrivate*)p.thiz()->instance();
+
+						p.thiz()->background_col$ = i->default_header_col;
+						p.thiz()->style_level = 1;
+					}
+				}
+			}
+		FLAME_REGISTER_FUNCTION_END(ComboItemStyle)
 
 		FLAME_REGISTER_FUNCTION_BEG(ComboItemsChild, FLAME_GID(7524), Widget::ChildListenerParm)
 			if (p.op() != Widget::ChildAdd)
@@ -1828,6 +1733,8 @@ namespace flame
 				auto idx = ((wCombo*)p.thiz())->w_items()->children_1$.size - 1;
 
 				((wMenuItem*)p.src())->add_listener(Widget::ListenerMouse, ComboItemMouse::v, p.thiz(), { idx });
+
+				((wMenuItem*)p.src())->add_style(0, ComboItemStyle::v, { p.thiz() });
 			}
 		FLAME_REGISTER_FUNCTION_END(ComboItemsChild)
 
@@ -1836,27 +1743,24 @@ namespace flame
 			((wMenu*)this)->init(L"");
 
 			class_hash$ = cH("combo");
-			add_data_storages("i p i");
+			add_data_storages({ -1, _enum_info, _target });
+			add_string_storages(STRING_SIZE);
 
 			background_frame_thickness$ = 1.f;
 
 			size_policy_hori$ = SizeFixed;
 
 			w_title()->size_policy_hori$ = SizeFitLayout;
-			w_title()->add_listener(ListenerMouse, ComboBtnMouse::v, this, {});
+			w_title()->add_listener(ListenerMouse, ComboTextMouse::v, this, {});
 
 			w_items()->add_listener(ListenerChild, ComboItemsChild::v, this, {});
-
-			sel() = -1;
-			enum_info() = _enum_info;
-			target() = _target;
 
 			if (enum_info())
 			{
 				auto e = (EnumInfo*)enum_info();
 
 				for (auto i = 0; i < e->item_count(); i++)
-					w_items()->add_child(wMenuItem::create(instance(), s2w(e->item(i)->name()).c_str()));
+					w_items()->add_child(createT<wMenuItem>(instance(), s2w(e->item(i)->name()).c_str()));
 			}
 
 			if (target())
@@ -1870,21 +1774,6 @@ namespace flame
 				else
 					set_sel(*p, true);
 			}
-		}
-
-		int &wCombo::sel()
-		{
-			return data_storages$[5].i1();
-		}
-
-		voidptr &wCombo::enum_info()
-		{
-			return data_storages$[6].p();
-		}
-
-		voidptr &wCombo::target()
-		{
-			return data_storages$[7].p();
 		}
 
 		void wCombo::set_sel(int idx, bool from_inner)
@@ -1909,14 +1798,6 @@ namespace flame
 			}
 
 			on_changed();
-		}
-
-		wCombo *wCombo::create(Instance *ui, void *enum_info, void *target)
-		{
-			auto w = (wCombo*)Widget::create(ui);
-			w->init(enum_info, target);
-
-			return w;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(EditExtraDraw, FLAME_GID(9908), Widget::ExtraDrawParm)
@@ -2080,17 +1961,14 @@ namespace flame
 			((wText*)this)->init();
 
 			class_hash$ = cH("edit");
-			add_data_storages("i i p");
+			add_data_storages({ 0, (int)_type, _target });
+			add_string_storages(STRING_SIZE);
 
 			inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 			auto i = (InstancePrivate*)instance();
 			background_col$ = i->default_frame_col;
 			event_attitude$ = EventAccept;
 			want_key_focus$ = true;
-
-			cursor() = 0;
-			type() = _type;
-			target() = _target;
 
 			add_extra_draw(EditExtraDraw::v, {});
 
@@ -2129,34 +2007,11 @@ namespace flame
 			}
 		}
 
-		int &wEdit::cursor()
-		{
-			return data_storages$[2].i1();
-		}
-
-		int &wEdit::type()
-		{
-			return data_storages$[3].i1();
-		}
-
-		voidptr &wEdit::target()
-		{
-			return data_storages$[4].p();
-		}
-
 		void wEdit::set_size_by_width(float width)
 		{
 			set_size(Vec2(width + inner_padding$[0] + inner_padding$[1],
 				share_data.font_atlas->pixel_height * (sdf_scale() > 0.f ? sdf_scale() : 1.f) +
 				inner_padding$[2] + inner_padding$[3]));
-		}
-
-		wEdit *wEdit::create(Instance *ui, Type type, void *target)
-		{
-			auto w = (wEdit*)Widget::create(ui);
-			w->init(type, target);
-
-			return w;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(ImageExtraDraw, FLAME_GID(30624), Widget::ExtraDrawParm)
@@ -2171,48 +2026,10 @@ namespace flame
 		void wImage::init()
 		{
 			class_hash$ = cH("image");
-			add_data_storages("i f2 f2 i f4");
-
-			id() = 0;
-			uv0() = Vec2(0.f);
-			uv1() = Vec2(1.f);
-			stretch() = 0;
-			border() = Vec4(0.f);
+			add_data_storages({ 0, Vec2(0.f), Vec2(1.f), 0, Vec4(0.f) });
+			add_string_storages(STRING_SIZE);
 
 			add_extra_draw(ImageExtraDraw::v, {});
-		}
-
-		int &wImage::id()
-		{
-			return data_storages$[0].i1();
-		}
-
-		Vec2 &wImage::uv0()
-		{
-			return data_storages$[1].f2();
-		}
-
-		Vec2 &wImage::uv1()
-		{
-			return data_storages$[2].f2();
-		}
-
-		int &wImage::stretch()
-		{
-			return data_storages$[3].i1();
-		}
-
-		Vec4 &wImage::border()
-		{
-			return data_storages$[4].f4();
-		}
-
-		wImage *wImage::create(Instance *ui)
-		{
-			auto w = (wImage*)Widget::create(ui);
-			w->init();
-
-			return w;
 		}
 
 		FLAME_DATA_PACKAGE_BEGIN(SizeDragMouseData, Widget::MouseListenerParm)
@@ -2256,13 +2073,12 @@ namespace flame
 		void wSizeDrag::init(Widget *target)
 		{
 			class_hash$ = cH("sizedrag");
-			add_data_storages("f2");
+			add_data_storages({ Vec2(0.f) });
+			add_string_storages(STRING_SIZE);
 
 			size$ = Vec2(10.f);
 			background_col$ = Bvec4(140, 225, 15, 255 * 0.5f);
 			align$ = AlignRightBottomNoPadding;
-
-			min_size() = Vec2(0.f);
 
 			draw_default$ = false;
 			add_extra_draw(SizeDragExtraDraw::v, {});
@@ -2271,19 +2087,6 @@ namespace flame
 
 			auto i = (InstancePrivate*)instance();
 			add_style_background_color(this, 0, i->default_button_col, i->default_button_col_hovering, i->default_button_col_active);
-		}
-
-		Vec2 &wSizeDrag::min_size()
-		{
-			return data_storages$[0].f2();
-		}
-
-		wSizeDrag *wSizeDrag::create(Instance *ui, Widget *target)
-		{
-			auto w = (wSizeDrag*)Widget::create(ui);
-			w->init(target);
-
-			return w;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(ScrollbarBtnMouse, FLAME_GID(1385), Widget::MouseListenerParm)
@@ -2327,14 +2130,15 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("scrollbar");
-			add_data_storages("p p");
+			add_data_storages({ nullptr, nullptr });
+			add_string_storages(STRING_SIZE);
 
 			size$ = Vec2(10.f);
 			size_policy_vert$ = SizeFitLayout;
 			align$ = AlignRight;
 			event_attitude$ = EventAccept;
 
-			w_btn() = wButton::create(instance());
+			w_btn() = createT<wButton>(instance());
 			w_btn()->size$ = size$;
 			w_btn()->background_round_radius$ = 5.f;
 			w_btn()->background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
@@ -2351,50 +2155,33 @@ namespace flame
 			add_style(0, ScrollbarStyle::v, {});
 		}
 
-		wButtonPtr &wScrollbar::w_btn()
-		{
-			return *(wButtonPtr*)&data_storages$[0].p();
-		}
-
-		WidgetPtr &wScrollbar::w_target()
-		{
-			return *(WidgetPtr*)&data_storages$[1].p();
-		}
-
 		void wScrollbar::scroll(int v)
 		{
 			w_target()->scroll_offset$ += v * 20.f;
 			w_target()->arrange();
 		}
 
-		wScrollbar *wScrollbar::create(Instance *ui, Widget *target)
-		{
-			auto w = (wScrollbar*)Widget::create(ui);
-			w->init(target);
-
-			return w;
-		}
-
-		FLAME_REGISTER_FUNCTION_BEG(ListItemBtnMouse, FLAME_GID(6526), Widget::MouseListenerParm)
+		FLAME_REGISTER_FUNCTION_BEG(ListItemTextMouse, FLAME_GID(6526), Widget::MouseListenerParm)
 			if (!(p.action() == KeyStateNull && p.key() == Mouse_Middle))
 				return;
 
 			if (p.thiz()->parent())
 				p.thiz()->parent()->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
-		FLAME_REGISTER_FUNCTION_END(ListItemBtnMouse)
+		FLAME_REGISTER_FUNCTION_END(ListItemTextMouse)
 
 		void wListItem::init(const wchar_t *title)
 		{
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("listitem");
-			add_data_storages("p");
+			add_data_storages({ nullptr });
+			add_string_storages(STRING_SIZE);
 
 			size_policy_hori$ = SizeFitLayout;
 			align$ = AlignLittleEnd;
 			layout_type$ = LayoutHorizontal;
 
-			w_title() = wText::create(instance());
+			w_title() = createT<wText>(instance());
 			w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 			w_title()->size_policy_hori$ = SizeFitLayout;
 			w_title()->align$ = AlignLittleEnd;
@@ -2403,44 +2190,42 @@ namespace flame
 			w_title()->set_size_auto();
 			add_child(w_title());
 
-			w_title()->add_listener(ListenerMouse, ListItemBtnMouse::v, this, {});
+			w_title()->add_listener(ListenerMouse, ListItemTextMouse::v, this, {});
 
 			auto i = (InstancePrivate*)instance();
-			add_style_background_color(w_title(), 0, i->default_header_col, i->default_header_col_hovering, i->default_header_col_active);
+			add_style_background_color(w_title(), 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
 		}
 
-		wTextPtr &wListItem::w_title()
-		{
-			return *(wTextPtr*)&data_storages$[0].p();
-		}
-
-		wListItem *wListItem::create(Instance *ui, const wchar_t *title)
-		{
-			auto w = (wListItem*)Widget::create(ui);
-			w->init(title);
-
-			return w;
-		}
-
-		FLAME_DATA_PACKAGE_BEGIN(ListItemBtnMouseData, Widget::MouseListenerParm)
+		FLAME_DATA_PACKAGE_BEGIN(ListItemTextMouseData, Widget::MouseListenerParm)
 			FLAME_DATA_PACKAGE_CAPT(wListItemPtr, item, p)
 		FLAME_DATA_PACKAGE_END
 
-		FLAME_REGISTER_FUNCTION_BEG(ListListItemBtnMouse, FLAME_GID(8928), ListItemBtnMouseData)
+		FLAME_REGISTER_FUNCTION_BEG(ListListItemTextMouse, FLAME_GID(8928), ListItemTextMouseData)
 			if (!(p.action() == KeyStateDown && p.key() == Mouse_Left))
 				return;
 
 			((wList*)p.thiz())->w_sel() = p.item();
 			p.thiz()->on_changed();
-		FLAME_REGISTER_FUNCTION_END(ListListItemBtnMouse)
+		FLAME_REGISTER_FUNCTION_END(ListListItemTextMouse)
 
-		FLAME_DATA_PACKAGE_BEGIN(ListItemBtnStyleData, Widget::StyleParm)
+		FLAME_DATA_PACKAGE_BEGIN(ListItemTextStyleData, Widget::StyleParm)
 			FLAME_DATA_PACKAGE_CAPT(wListPtr, list, p)
 		FLAME_DATA_PACKAGE_END
-		FLAME_REGISTER_FUNCTION_BEG(ListItemBtnStyle, FLAME_GID(408), ListItemBtnStyleData)
-			if (p.list()->w_sel() && p.list()->w_sel()->w_title() == p.thiz() && p.thiz()->state == StateNormal)
-				p.thiz()->background_col$ = Bvec4(120, 120, 20, 255);
-		FLAME_REGISTER_FUNCTION_END(ListItemBtnStyle)
+		FLAME_REGISTER_FUNCTION_BEG(ListItemTextStyle, FLAME_GID(408), ListItemTextStyleData)
+			if (p.list()->w_sel() && p.list()->w_sel()->w_title() == p.thiz())
+			{
+				if (p.thiz()->state == StateNormal)
+				{
+					if (p.thiz()->style_level <= 1)
+					{
+						auto i = (InstancePrivate*)p.thiz()->instance();
+
+						p.thiz()->background_col$ = i->default_header_col;
+						p.thiz()->style_level = 1;
+					}
+				}
+			}
+		FLAME_REGISTER_FUNCTION_END(ListItemTextStyle)
 
 		FLAME_REGISTER_FUNCTION_BEG(ListMouse, FLAME_GID(19124), Widget::MouseListenerParm)
 			if (!(p.action() == KeyStateDown && p.key() == Mouse_Left))
@@ -2456,10 +2241,9 @@ namespace flame
 
 			if (p.src()->class_hash$ == cH("listitem"))
 			{
-				((wListItem*)p.src())->w_title()->add_listener(Widget::ListenerMouse, ListListItemBtnMouse::v, p.thiz(), { p.src() });
+				((wListItem*)p.src())->w_title()->add_listener(Widget::ListenerMouse, ListListItemTextMouse::v, p.thiz(), { p.src() });
 
-				//add_style_background_color(((wListItem*)p.src())->w_btn(), 0, Vec3(260.f, 0.8f, 1.f));
-				((wListItem*)p.src())->w_title()->add_style(0, ListItemBtnStyle::v, { p.thiz() });
+				((wListItem*)p.src())->w_title()->add_style(0, ListItemTextStyle::v, { p.thiz() });
 			}
 		FLAME_REGISTER_FUNCTION_END(ListChild)
 
@@ -2468,13 +2252,12 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("list");
-			add_data_storages("i p");
+			add_data_storages({ nullptr, nullptr });
+			add_string_storages(STRING_SIZE);
 
 			inner_padding$ = Vec4(4.f);
-			background_offset$ = Vec4(0.f, 1.f, 0.f, 1.f);
-			background_frame_thickness$ = 1.f;
 			auto i = (InstancePrivate*)instance();
-			background_frame_col$ = i->default_frame_col;
+			background_col$ = i->default_frame_col;
 			size_policy_hori$ = SizeFitLayout;
 			size_policy_vert$ = SizeFitLayout;
 			event_attitude$ = EventAccept;
@@ -2483,28 +2266,10 @@ namespace flame
 
 			add_listener(ListenerMouse, ListMouse::v, this, {});
 
-			w_scrollbar() = wScrollbar::create(instance(), this);
+			w_scrollbar() = createT<wScrollbar>(instance(), this);
 			add_child(w_scrollbar(), 1);
 
 			add_listener(ListenerChild, ListChild::v, this, {});
-		}
-
-		wListItemPtr &wList::w_sel()
-		{
-			return *(wListItemPtr*)&data_storages$[0].p();
-		}
-
-		wScrollbarPtr &wList::w_scrollbar()
-		{
-			return *(wScrollbarPtr*)&data_storages$[1].p();
-		}
-
-		wList *wList::create(Instance *ui)
-		{
-			auto w = (wList*)Widget::create(ui);
-			w->init();
-
-			return w;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(TreeNodeMouse, FLAME_GID(10825), Widget::MouseListenerParm)
@@ -2529,12 +2294,13 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("treenode");
-			add_data_storages("p p p");
+			add_data_storages({ nullptr, nullptr, nullptr });
+			add_string_storages(STRING_SIZE);
 
 			layout_type$ = LayoutVertical;
 			align$ = AlignLittleEnd;
 
-			w_title() = wText::create(instance());
+			w_title() = createT<wText>(instance());
 			w_title()->inner_padding$[0] = share_data.font_atlas->pixel_height * 0.8f;
 			w_title()->inner_padding$ += Vec4(4.f, 4.f, 2.f, 2.f);
 			w_title()->align$ = AlignLittleEnd;
@@ -2545,14 +2311,14 @@ namespace flame
 
 			w_title()->add_listener(ListenerMouse, TreeNodeMouse::v, this, {});
 
-			w_items() = wLayout::create(instance());
+			w_items() = createT<wLayout>(instance());
 			w_items()->layout_padding$ = w_title()->inner_padding$[0];
 			w_items()->align$ = AlignLittleEnd;
 			w_items()->visible$ = false;
 			w_items()->layout_type$ = LayoutVertical;
 			add_child(w_items());
 
-			w_larrow() = wText::create(instance());
+			w_larrow() = createT<wText>(instance());
 			w_larrow()->inner_padding$ = Vec4(4.f, 0.f, 4.f, 0.f);
 			w_larrow()->background_col$ = Bvec4(255, 255, 255, 0);
 			w_larrow()->align$ = AlignLeftTopNoPadding;
@@ -2569,27 +2335,15 @@ namespace flame
 			add_child(w_larrow(), 1);
 		}
 
-		wTextPtr &wTreeNode::w_title()
+		void wTree::init()
 		{
-			return *(wTextPtr*)&data_storages$[0].p();
-		}
+			((wLayout*)this)->init();
 
-		wLayoutPtr &wTreeNode::w_items()
-		{
-			return *(wLayoutPtr*)&data_storages$[1].p();
-		}
+			class_hash$ = cH("tree");
+			add_data_storages({ nullptr });
+			add_string_storages(STRING_SIZE);
 
-		wTextPtr &wTreeNode::w_larrow()
-		{
-			return *(wTextPtr*)&data_storages$[2].p();
-		}
-
-		wTreeNode *wTreeNode::create(Instance *ui, const wchar_t *title)
-		{
-			auto w = (wTreeNode*)Widget::create(ui);
-			w->init(title);
-
-			return w;
+			layout_type$ = LayoutVertical;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(DialogMouse, FLAME_GID(9227), Widget::MouseListenerParm)
@@ -2607,7 +2361,8 @@ namespace flame
 			((wLayout*)this)->init();
 
 			class_hash$ = cH("dialog");
-			add_data_storages("p p");
+			add_data_storages({ nullptr, nullptr });
+			add_string_storages(STRING_SIZE);
 
 			auto radius = 8.f;
 
@@ -2631,10 +2386,10 @@ namespace flame
 
 			if (resize)
 			{
-				w_scrollbar() = wScrollbar::create(instance(), this);
+				w_scrollbar() = createT<wScrollbar>(instance(), this);
 				add_child(w_scrollbar(), 1);
 
-				w_sizedrag() = wSizeDrag::create(instance(), this);
+				w_sizedrag() = createT<wSizeDrag>(instance(), this);
 				w_sizedrag()->min_size() = Vec2(10.f);
 				set_size(Vec2(100.f));
 				add_child(w_sizedrag(), 1);
@@ -2650,24 +2405,6 @@ namespace flame
 			}
 		}
 
-		wScrollbarPtr &wDialog::w_scrollbar()
-		{
-			return *((wScrollbarPtr*)&data_storages$[0].p());
-		}
-
-		wSizeDragPtr &wDialog::w_sizedrag()
-		{
-			return *((wSizeDragPtr*)&data_storages$[1].p());
-		}
-
-		wDialog *wDialog::create(Instance *ui, bool resize, bool modual)
-		{
-			auto w = (wDialog*)Widget::create(ui);
-			w->init(resize, modual);
-
-			return w;
-		}
-
 		FLAME_REGISTER_FUNCTION_BEG(MessageDialogOkMouse, FLAME_GID(8291), Widget::MouseListenerParm)
 			if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
 				return;
@@ -2679,44 +2416,28 @@ namespace flame
 		{
 			((wDialog*)this)->init(false, true);
 
-			add_data_storages("p p");
+			class_hash$ = cH("message dialog");
+			add_data_storages({ nullptr, nullptr });
+			add_string_storages(STRING_SIZE);
 
 			want_key_focus$ = true;
 
 			layout_type$ = LayoutVertical;
 			item_padding$ = 8.f;
 
-			w_text() = wText::create(instance());
+			w_text() = createT<wText>(instance());
 			w_text()->align$ = AlignLittleEnd;
 			w_text()->text() = text;
 			w_text()->set_size_auto();
 			add_child(w_text());
 
-			w_ok() = wButton::create(instance());
+			w_ok() = createT<wButton>(instance());
 			w_ok()->text() = L"OK";
 			w_ok()->set_size_auto();
 			w_ok()->align$ = AlignMiddle;
 			add_child(w_ok());
 
 			w_ok()->add_listener(ListenerMouse, MessageDialogOkMouse::v, this, {});
-		}
-
-		wTextPtr &wMessageDialog::w_text()
-		{
-			return *(wTextPtr*)&data_storages$[2].p();
-		}
-
-		wButtonPtr &wMessageDialog::w_ok()
-		{
-			return *(wButtonPtr*)&data_storages$[3].p();
-		}
-
-		wMessageDialog *wMessageDialog::create(Instance *ui, const wchar_t *text)
-		{
-			auto w = (wMessageDialog*)Widget::create(ui);
-			w->init(text);
-
-			return w;
 		}
 
 		//void wYesNoDialog::init(const wchar_t *title, float sdf_scale, const wchar_t *text, const wchar_t *yes_text, const wchar_t *no_text, const std::function<void(bool)> &callback)
@@ -2818,14 +2539,6 @@ namespace flame
 		//	return *((wButtonPtr*)&data_storage(6).p);
 		//}
 
-		//wYesNoDialog *wYesNoDialog::create(Instance *ui, const wchar_t *title, float sdf_scale, const wchar_t *text, const wchar_t *yes_text, const wchar_t *no_text, const std::function<void(bool)> &callback)
-		//{
-		//	auto w = (wYesNoDialog*)Widget::create(ui);
-		//	w->init(title, sdf_scale, text, yes_text, no_text, callback);
-
-		//	return w;
-		//}
-
 		//void wInputDialog::init(const wchar_t *title, float sdf_scale, const std::function<void(bool ok, const wchar_t *input)> &callback)
 		//{
 		//	((wDialog*)this)->init(title, sdf_scale, false);
@@ -2906,14 +2619,6 @@ namespace flame
 		//wButtonPtr &wInputDialog::w_cancel()
 		//{
 		//	return *((wButtonPtr*)&data_storage(6).p);
-		//}
-
-		//wInputDialog *wInputDialog::create(Instance *ui, const wchar_t *title, float sdf_scale, const std::function<void(bool ok, const wchar_t *input)> &callback)
-		//{
-		//	auto w = (wInputDialog*)Widget::create(ui);
-		//	w->init(title, sdf_scale, callback);
-
-		//	return w;
 		//}
 
 		//void wFileDialog::init(const wchar_t *title, int io, const std::function<void(bool ok, const wchar_t *filename)> &callback, const wchar_t *exts)
@@ -3258,14 +2963,6 @@ namespace flame
 		//		w_list()->add_child(i, 0, -1, true);
 		//	for (auto &i : file_list)
 		//		w_list()->add_child(i, 0, -1, true);
-		//}
-
-		//wFileDialog *wFileDialog::create(Instance *ui, const wchar_t *title, int io, const std::function<void(bool ok, const wchar_t *filename)> &callback, const wchar_t *exts)
-		//{
-		//	auto w = (wFileDialog*)Widget::create(ui);
-		//	w->init(title, io, callback, exts);
-
-		//	return w;
 		//}
 	}
 }

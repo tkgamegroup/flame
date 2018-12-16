@@ -20,17 +20,51 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/math.h>
+#include <flame/string.h>
+#include <flame/file.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <vector>
+#include <regex>
 
 using namespace flame;
 
+std::regex reg_policy(R"(FLAME_CODE_GEN_POLICY\(\s*\"(.*)\"\s*,\s*\"(.*)\"\s*\))");
+std::regex reg_policy_file(R"(FLAME_CODE_GEN_POLICY_FILE\(([\"\w_\/\\\.]+)\))");
+std::regex reg_beg(R"(FLAME_CODE_GEN_BEGIN)");
+std::regex reg_end(R"(FLAME_CODE_GEN_END)");
+
+void do_gen(std::vector<std::string> &lines, int beg_line, int &end_line)
+{
+
+}
+
 int main(int argc, char **args)
 {
-	auto m = get_view_mat(Vec3(0, 742, 1330), Vec3(0, 742, 0), Vec3(0, -1, 0));
-	//get_proj_mat(60.f * ANG_RAD, );
+	if (argc != 2)
+		return 0;
+
+	auto src = get_file_string(s2w(args[1]));
+	auto lines = string_split(src, '\n');
+	for (auto i = 0; i < lines.size(); i++)
+	{
+		if (std::regex_search(lines[i], reg_policy))
+		{
+
+		}
+		else if (std::regex_search(lines[i], reg_beg))
+		{
+			auto j = i + 1;
+			for (; j < lines.size(); j++)
+			{
+				if (std::regex_search(lines[j], reg_end))
+				{
+
+					break;
+				}
+			}
+			i = j;
+		}
+	}
+
 	return 0;
 }

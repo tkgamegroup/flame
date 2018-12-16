@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/file.h>
 #include <flame/array.h>
+#include <flame/file.h>
 #include <flame/serialize.h>
 
 #include <rapidxml.hpp>
