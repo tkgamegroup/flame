@@ -30,110 +30,50 @@ using namespace flame;
 using namespace ui;
 
 BasicApp app;
-
+UDT *widget_info;
 Instance *ui_ins_sandbox;
 
-struct wHierachy : wDialog
-{
-	void init()
-	{
-		wDialog::init(true);
-
-		add_data_storages({ });
-
-		pos$ = Vec2(10.f);
-		set_size(Vec2(100.f, 200.f));
-		layout_type$ = LayoutVertical;
-
-		//w_bottom() = wLayout::create(app.ui_ins);
-		//w_bottom()->align$ = AlignBottomNoPadding;
-		//w_bottom()->layout_type$ = LayoutHorizontal;
-		//w_bottom()->item_padding$ = 4.f;
-		//add_child(w_bottom(), 1);
-
-		//w_widgets_list() = wCombo::create(app.ui_ins);
-		//w_widgets_list()->align$ = AlignLittleEnd;
-
-		//auto i_widget = wMenuItem::create(app.ui_ins, L"Widget");
-		//w_widgets_list()->w_items()->add_child(i_widget);
-
-		//w_bottom()->add_child(w_widgets_list());
-
-		//w_add() = wButton::create(app.ui_ins);
-		//w_add()->background_col$.w = 0;
-		//w_add()->align$ = AlignLittleEnd;
-		//w_add()->set_classic(Icon_PLUS_CIRCLE);
-		//w_bottom()->add_child(w_add());
-
-		//w_remove() = wButton::create(app.ui_ins);
-		//w_remove()->background_col$.w = 0;
-		//w_remove()->align$ = AlignLittleEnd;
-		//w_remove()->set_classic(Icon_MINUS_CIRCLE);
-		//w_bottom()->add_child(w_remove());
-
-		//w_up() = wButton::create(app.ui_ins);
-		//w_up()->background_col$.w = 0;
-		//w_up()->align$ = AlignLittleEnd;
-		//w_up()->set_classic(Icon_CHEVRON_CIRCLE_UP);
-		//w_bottom()->add_child(w_up());
-
-		//w_down() = wButton::create(app.ui_ins);
-		//w_down()->background_col$.w = 0;
-		//w_down()->align$ = AlignLittleEnd;
-		//w_down()->set_classic(Icon_CHEVRON_CIRCLE_DOWN);
-		//w_bottom()->add_child(w_down());
-	}
-};
-
-wTree *w_hierachy_tree;
-wTreeNode *w_hierachy_root;
-wHierachy *w_hierachy;
-
-struct wSandBox : wDialog
-{
-	void init()
-	{
-		wDialog::init(true);
-
-		pos$ = Vec2(500.f, 10.f);
-		set_size(Vec2(300.f, 300.f));
-		inner_padding$ = Vec4(8.f);
-		size_policy_hori$ = SizeFitLayout;
-		size_policy_vert$ = SizeFitLayout;
-		align$ = AlignLargeEnd;
-
-		add_extra_draw([](const ParmPackage &_p) {
-			auto &p = (Widget::ExtraDrawParm&)_p;
-
-			ui_ins_sandbox->begin(1.f / 60.f);
-			ui_ins_sandbox->end(p.canvas(), p.thiz()->pos$ * p.scl() + p.off() + Vec2(8.f));
-		}, {});
-	}
-};
-
-wSandBox *w_sandbox;
-
-struct wInspector : wDialog
-{
-	void init()
-	{
-		wDialog::init(true);
-
-		pos$ = Vec2(10.f, 500.f);
-		set_size(Vec2(600.f, 400.f));
-		layout_type$ = LayoutVertical;
-	}
-};
-
+FLAME_WIDGET_BEGIN(wInspector, wDialog)
+	void init();
+	void refresh();
+FLAME_WIDGET_END
 wInspector *w_inspector;
 
-static UDT *widget_info;
+FLAME_WIDGET_BEGIN(wContextMenu, wMenu)
+	void init();
+FLAME_WIDGET_END
+wContextMenu *context_menu;
 
-void refresh_inspector()
+FLAME_WIDGET_BEGIN(wHierachy, wDialog)
+	FLAME_WIDGET_DATA(wTreePtr, w_tree, p)
+	FLAME_WIDGET_DATA(wTreeNodePtr, w_root, p)
+	FLAME_WIDGET_SEPARATOR
+	void init();
+	wTreeNode *create_node(const wchar_t *name, Widget *p);
+	void refresh_node(wTreeNode *dst, Widget *src);
+	void refresh();
+FLAME_WIDGET_END
+wHierachy *w_hierachy;
+
+FLAME_WIDGET_BEGIN(wSandBox, wDialog)
+	void init();
+FLAME_WIDGET_END
+wSandBox *w_sandbox;
+
+void wInspector::init()
 {
-	w_inspector->clear_children(0, 0, -1, true);
+	wDialog::init(true);
 
-	auto sel = w_hierachy_tree->w_sel();
+	pos$ = Vec2(10.f, 500.f);
+	set_size(Vec2(600.f, 400.f));
+	layout_type$ = LayoutVertical;
+}
+
+void wInspector::refresh()
+{
+	clear_children(0, 0, -1, true);
+
+	auto sel = w_hierachy->w_tree()->w_sel();
 	if (sel && sel->name$ == "w")
 	{
 		auto p = sel->data_storages$[3].p();
@@ -199,7 +139,7 @@ void refresh_inspector()
 				break;
 			}
 
-			w_inspector->add_child(w_item, 0, -1, true);
+			add_child(w_item, 0, -1, true);
 		}
 
 		for (auto w : widgets_need_align)
@@ -207,38 +147,115 @@ void refresh_inspector()
 	}
 }
 
-wTreeNode *create_hierachy_treenode(const wchar_t *name, Widget *p)
+void wContextMenu::init()
 {
-	auto n = Widget::createT<wTreeNode>(app.ui_ins, name, w_hierachy_tree);
-	n->add_data_storages({ p });
-	n->name$ = "w";
+	wMenu::init(L"", true);
+
+	auto w_menu_add = Widget::createT<wMenu>(app.ui_ins, L"Add");
+
+	auto w_add_widget = Widget::createT<wMenuItem>(app.ui_ins, L"Widget");
+	w_menu_add->w_items()->add_child(w_add_widget);
+
+	auto w_add_layout = Widget::createT<wMenuItem>(app.ui_ins, L"Layout");
+	w_menu_add->w_items()->add_child(w_add_layout);
+
+	w_items()->add_child(w_menu_add);
+
+	auto w_remove = Widget::createT<wMenuItem>(app.ui_ins, L"Remove");
+	w_items()->add_child(w_remove);
+
+	auto w_up = Widget::createT<wMenuItem>(app.ui_ins, L"Up");
+	w_items()->add_child(w_up);
+
+	auto w_down = Widget::createT<wMenuItem>(app.ui_ins, L"Down");
+	w_items()->add_child(w_down);
+
+	auto w_unparent = Widget::createT<wMenuItem>(app.ui_ins, L"Unparent");
+	w_items()->add_child(w_unparent);
+}
+
+void wHierachy::init()
+{
+	wDialog::init(true);
+
+	add_data_storages({ nullptr, nullptr, nullptr });
+
+	pos$ = Vec2(10.f);
+	set_size(Vec2(100.f, 200.f));
+	layout_type$ = LayoutVertical;
+
+	w_tree() = Widget::createT<wTree>(app.ui_ins);
+	w_tree()->add_listener(Widget::ListenerChanged, [](const ParmPackage &_p) {
+		w_inspector->refresh();
+	}, w_tree(), {});
+
+	w_root() = create_node(L"root", ui_ins_sandbox->root());
+
+	w_tree()->add_child(w_root());
+
+	add_child(w_tree());
+}
+
+wTreeNode *wHierachy::create_node(const wchar_t *name, Widget *p)
+{
+	auto n = Widget::createT<wTreeNode>(app.ui_ins, name, w_tree());
+	if (p)
+	{
+		n->add_data_storages({ p });
+		n->name$ = "w";
+	}
+	n->w_title()->add_listener(Widget::ListenerMouse, [](const ParmPackage &_p) {
+		auto &p = (Widget::MouseListenerParm&)_p;
+		if (!(p.action() == KeyStateDown && p.key() == Mouse_Right))
+			return;
+
+		context_menu->popup(p.value());
+	}, n, {});
 
 	return n;
 }
 
-void refresh_hierachy_node(wTreeNode *dst, Widget *src)
+void wHierachy::refresh_node(wTreeNode *dst, Widget *src)
 {
 	for (auto i = 0; i < 2; i++)
 	{
-		auto n_layer = Widget::createT<wTreeNode>(app.ui_ins, (L"layer " + to_stdwstring(i)).c_str(), w_hierachy_tree);
+		auto n_layer = create_node((L"layer " + to_stdwstring(i)).c_str(), nullptr);
 		dst->w_items()->add_child(n_layer, 0, -1, true);
 
 		auto &children = i == 0 ? src->children_1$ : src->children_2$;
 		for (auto j = 0; j < children.size; j++)
 		{
 			auto c = children[j];
-			auto n = create_hierachy_treenode(s2w(c->name$.v).c_str(), c);
+			auto n = create_node(s2w(c->name$.v).c_str(), c);
 			n_layer->w_items()->add_child(n, 0, -1, true);
-			refresh_hierachy_node(n, c);
+			refresh_node(n, c);
 		}
 	}
 }
 
-void refresh_hierachy()
+void wHierachy::refresh()
 {
-	w_hierachy_root->w_items()->clear_children(0, 0, -1, true);
-	
-	refresh_hierachy_node(w_hierachy_root, ui_ins_sandbox->root());
+	w_root()->w_items()->clear_children(0, 0, -1, true);
+	refresh_node(w_root(), ui_ins_sandbox->root());
+}
+
+void wSandBox::init()
+{
+	wDialog::init(true);
+
+	pos$ = Vec2(500.f, 10.f);
+	set_size(Vec2(300.f, 300.f));
+	inner_padding$ = Vec4(8.f);
+	size_policy_hori$ = SizeFitLayout;
+	size_policy_vert$ = SizeFitLayout;
+	align$ = AlignLargeEnd;
+
+	add_extra_draw([](const ParmPackage &_p) {
+		auto &p = (Widget::ExtraDrawParm&)_p;
+
+		ui_ins_sandbox->begin(1.f / 60.f);
+		ui_ins_sandbox->end(p.canvas(), p.thiz()->pos$ * p.scl() + p.off() + Vec2(8.f));
+	}, {});
 }
 
 extern "C" __declspec(dllexport) int main()
@@ -251,15 +268,9 @@ extern "C" __declspec(dllexport) int main()
 	ui_ins_sandbox->root()->background_col$ = Bvec4(0, 0, 0, 255);
 	ui_ins_sandbox->on_resize(Ivec2(200));
 
-	w_hierachy_tree = Widget::createT<wTree>(app.ui_ins);
-	w_hierachy_tree->add_listener(Widget::ListenerChanged, [](const ParmPackage &_p) {
-		refresh_inspector();
-	}, w_hierachy_tree, {});
-	w_hierachy_root = create_hierachy_treenode(L"root", ui_ins_sandbox->root());
-	w_hierachy_tree->add_child(w_hierachy_root);
+	context_menu = Widget::createT< wContextMenu>(app.ui_ins);
 
 	w_hierachy = Widget::createT<wHierachy>(app.ui_ins);
-	w_hierachy->add_child(w_hierachy_tree);
 	app.ui_ins->root()->add_child(w_hierachy);
 
 	w_sandbox = Widget::createT<wSandBox>(app.ui_ins);
@@ -277,7 +288,7 @@ extern "C" __declspec(dllexport) int main()
 	t_text->set_size_auto();
 	ui_ins_sandbox->root()->add_child(t_text, 1);
 
-	refresh_hierachy();
+	w_hierachy->refresh();
 
 	app.run();
 

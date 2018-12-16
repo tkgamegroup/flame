@@ -830,6 +830,8 @@ namespace flame
 			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
 			p.hovering_any_widget = false;
 			p.clicking_nothing = p.mljustdown;
+			p.popup_off = popup_widget_ ? popup_widget_->pos$ : Vec2(0.f);
+			p.popup_scl = 1.f;
 			p.meet_popup_first = true;
 			p.ban_event = popup_widget_;
 			p.canvas = canvas;

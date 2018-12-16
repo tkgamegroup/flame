@@ -466,7 +466,7 @@ namespace flame
 		FLAME_WIDGET_END
 
 		FLAME_WIDGET_BEGIN(wMenu, wLayout)
-			FLAME_UI_EXPORTS void init(const wchar_t *title);
+			FLAME_UI_EXPORTS void init(const wchar_t *title, bool only_for_context_menu = false);
 			FLAME_WIDGET_DATA(int, sub, i1)
 			FLAME_WIDGET_DATA(int, opened, i1)
 			FLAME_WIDGET_DATA(wTextPtr, w_title, p)

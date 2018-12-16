@@ -38,6 +38,8 @@ namespace flame
 {
 	namespace ui
 	{
+		const Vec2 hidden_pos(9999.f);
+
 		inline WidgetPrivate::WidgetPrivate(Instance *ui_)
 		{
 			instance = ui_;
@@ -1549,7 +1551,7 @@ namespace flame
 			}
 		FLAME_REGISTER_FUNCTION_END(MenuItemsChild)
 
-		void wMenu::init(const wchar_t *title)
+		void wMenu::init(const wchar_t *title, bool only_for_context_menu)
 		{
 			wLayout::init();
 
@@ -1584,6 +1586,13 @@ namespace flame
 			add_child(w_items(), 1);
 
 			w_items()->add_listener(ListenerChild, MenuItemsChild::v, this, {});
+
+			if (only_for_context_menu)
+			{
+				pos$ = hidden_pos;
+				w_items()->align$ = AlignFree;
+				instance()->root()->add_child(this, 1);
+			}
 		}
 
 		void wMenu::open()
@@ -1619,7 +1628,7 @@ namespace flame
 			open();
 
 			instance()->set_popup_widget(w_items());
-			w_items()->pos$ += pos - w_items()->global_pos;
+			w_items()->pos$ = pos - hidden_pos;
 		}
 
 		void wMenu::close()
@@ -2306,8 +2315,7 @@ namespace flame
 		FLAME_DATA_PACKAGE_END
 
 		FLAME_REGISTER_FUNCTION_BEG(TreeNodeTitleStyle, FLAME_GID(1879), TreeNodeTitleStyleData)
-			if (p.tree()->w_sel() && p.tree()->w_sel()->w_title() == p.thiz() &&
-				p.thiz()->state == StateNormal && p.thiz()->style_level <= 1)
+			if (p.tree()->w_sel() && p.tree()->w_sel()->w_title() == p.thiz())
 			{
 				auto i = (InstancePrivate*)p.thiz()->instance();
 
