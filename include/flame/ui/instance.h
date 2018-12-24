@@ -138,8 +138,7 @@ namespace flame
 
 			FLAME_UI_EXPORTS float total_time() const;
 
-			FLAME_UI_EXPORTS static Instance *create();
-			FLAME_UI_EXPORTS static Instance *create(Window *w);
+			FLAME_UI_EXPORTS static Instance *create(Window *w = nullptr);
 			FLAME_UI_EXPORTS static void destroy(Instance *i);
 		};
 

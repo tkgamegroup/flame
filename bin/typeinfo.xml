@@ -19,6 +19,12 @@
 			<item name="VariableTagArrayOfVariable" value="3"/>
 			<item name="VariableTagArrayOfPointer" value="4"/>
 		</enum>
+		<enum name="ui::wEdit::Type">
+			<item name="TypeNull" value="0"/>
+			<item name="TypeInt" value="1"/>
+			<item name="TypeUint" value="2"/>
+			<item name="TypeFloat" value="3"/>
+		</enum>
 		<enum name="graphics::CompareOp">
 			<item name="CompareOpLess" value="0"/>
 			<item name="CompareOpLessOrEqual" value="1"/>
@@ -48,6 +54,10 @@
 			<item name="BlendFactorOneMinusSrc1Color" value="16"/>
 			<item name="BlendFactorSrc1Alpha" value="17"/>
 			<item name="BlendFactorOneMinusSrc1Alpha" value="18"/>
+		</enum>
+		<enum name="FocusType">
+			<item name="Focus_Gain" value="0"/>
+			<item name="Focus_Lost" value="1"/>
 		</enum>
 		<enum name="FileWatcherMode">
 			<item name="FileWatcherModeAll" value="0"/>
@@ -81,6 +91,18 @@
 			<item name="AxisNegativeY" value="8"/>
 			<item name="AxisPositiveZ" value="16"/>
 			<item name="AxisNegativeZ" value="32"/>
+		</enum>
+		<enum name="ui::Widget::Listener">
+			<item name="ListenerFocus" value="0"/>
+			<item name="ListenerKey" value="1"/>
+			<item name="ListenerMouse" value="2"/>
+			<item name="ListenerDrop" value="3"/>
+			<item name="ListenerChanged" value="4"/>
+			<item name="ListenerChild" value="5"/>
+		</enum>
+		<enum name="ui::DefaultStyle">
+			<item name="DefaultStyleDark" value="0"/>
+			<item name="DefaultStyleLight" value="1"/>
 		</enum>
 		<enum name="CursorType">
 			<item name="CursorNone" value="255"/>
@@ -174,9 +196,11 @@
 			<item name="AlignBottomOutside" value="24"/>
 		</enum>
 		<enum name="KeyState">
+			<item name="KeyStateNull" value="0"/>
 			<item name="KeyStateUp" value="1"/>
 			<item name="KeyStateDown" value="2"/>
 			<item name="KeyStateJust" value="4"/>
+			<item name="KeyStateDouble" value="4"/>
 		</enum>
 		<enum name="graphics::CullMode">
 			<item name="CullModeNone" value="0"/>
@@ -190,9 +214,22 @@
 			<item name="FileModified" value="2"/>
 			<item name="FileRenamed" value="3"/>
 		</enum>
+		<enum name="MouseKey">
+			<item name="Mouse_Null" value="255"/>
+			<item name="Mouse_Left" value="0"/>
+			<item name="Mouse_Right" value="1"/>
+			<item name="Mouse_Middle" value="2"/>
+			<item name="MouseKey_count" value="3"/>
+		</enum>
 		<enum name="blueprint::SlotLinkType">
 			<item name="SlotLinkSingle" value="0"/>
 			<item name="SlotLinkMulti" value="1"/>
+		</enum>
+		<enum name="Window::Listener">
+			<item name="ListenerKey" value="0"/>
+			<item name="ListenerMouse" value="1"/>
+			<item name="ListenerResize" value="2"/>
+			<item name="ListenerDestroy" value="3"/>
 		</enum>
 		<enum name="graphics::Filter">
 			<item name="FilterNearest" value="0"/>
@@ -204,6 +241,10 @@
 			<item name="ImageUsageSampled" value="4"/>
 			<item name="ImageUsageStorage" value="8"/>
 			<item name="ImageUsageAttachment" value="16"/>
+		</enum>
+		<enum name="ui::Widget::ChildOp">
+			<item name="ChildAdd" value="0"/>
+			<item name="ChildRemove" value="1"/>
 		</enum>
 		<enum name="graphics::PipelineType">
 			<item name="PipelineNone" value="0"/>
@@ -461,56 +502,47 @@
 			<item tag="enum_single" type="graphics::SampleCount" name="sample_count" offset="8" default_value="SampleCount_1"/>
 		</udt>
 		<udt name="ui::Widget">
-			<item tag="varible" type="uint" name="class_hash" offset="0" default_value="0"/>
-			<item tag="varible" type="String" name="name" offset="8"/>
-			<item tag="varible" type="Vec2" name="pos" offset="24" default_value="0.0;0.0"/>
-			<item tag="varible" type="Vec2" name="size" offset="32" default_value="0.0;0.0"/>
-			<item tag="varible" type="float" name="alpha" offset="40" default_value="1.0"/>
-			<item tag="varible" type="float" name="scale" offset="44" default_value="1.0"/>
-			<item tag="varible" type="Vec4" name="inner_padding" offset="48" default_value="0.0;0.0;0.0;0.0"/>
-			<item tag="varible" type="float" name="layout_padding" offset="64" default_value="0.0"/>
-			<item tag="varible" type="Vec4" name="background_offset" offset="68" default_value="0.0;0.0;0.0;0.0"/>
-			<item tag="varible" type="float" name="background_round_radius" offset="84" default_value="0.0"/>
-			<item tag="varible" type="int" name="background_round_flags" offset="88" default_value="0"/>
-			<item tag="varible" type="float" name="background_frame_thickness" offset="92" default_value="0.0"/>
-			<item tag="varible" type="Bvec4" name="background_col" offset="96" default_value="0;0;0;0"/>
-			<item tag="varible" type="Bvec4" name="background_frame_col" offset="100" default_value="255;255;255;255"/>
-			<item tag="varible" type="float" name="background_shaow_thickness" offset="104" default_value="0.0"/>
-			<item tag="enum_single" type="ui::SizePolicy" name="size_policy_hori" offset="108" default_value="SizeFixed"/>
-			<item tag="enum_single" type="ui::SizePolicy" name="size_policy_vert" offset="112" default_value="SizeFixed"/>
-			<item tag="enum_single" type="ui::Align" name="align" offset="116" default_value="AlignFree"/>
-			<item tag="enum_single" type="ui::LayoutType" name="layout_type" offset="120" default_value="LayoutFree"/>
-			<item tag="varible" type="float" name="item_padding" offset="124" default_value="0.0"/>
-			<item tag="varible" type="int" name="grid_hori_count" offset="128" default_value="1"/>
-			<item tag="varible" type="bool" name="clip" offset="132" default_value="false"/>
-			<item tag="varible" type="float" name="scroll_offset" offset="136" default_value="0.0"/>
-			<item tag="enum_single" type="ui::EventAttitude" name="event_attitude" offset="140" default_value="EventAccept"/>
-			<item tag="varible" type="bool" name="want_key_focus" offset="144" default_value="false"/>
-			<item tag="varible" type="bool" name="visible" offset="145" default_value="true"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="176"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="192"/>
-			<item tag="varible" type="bool" name="draw_default" offset="208" default_value="true"/>
-			<item tag="array_of_pointer" type="Function" name="extra_draw_commands" offset="216"/>
-			<item tag="varible" type="int" name="closet_id" offset="232" default_value="0"/>
-			<item tag="array_of_pointer" type="Function" name="styles" offset="240"/>
-			<item tag="array_of_pointer" type="Function" name="animations" offset="256"/>
-			<item tag="array_of_pointer" type="Function" name="mouseenter_listeners" offset="272"/>
-			<item tag="array_of_pointer" type="Function" name="mouseleave_listeners" offset="288"/>
-			<item tag="array_of_pointer" type="Function" name="lmousedown_listeners" offset="304"/>
-			<item tag="array_of_pointer" type="Function" name="rmousedown_listeners" offset="320"/>
-			<item tag="array_of_pointer" type="Function" name="mousemove_listeners" offset="336"/>
-			<item tag="array_of_pointer" type="Function" name="mousescroll_listeners" offset="352"/>
-			<item tag="array_of_pointer" type="Function" name="clicked_listeners" offset="368"/>
-			<item tag="array_of_pointer" type="Function" name="doubleclicked_listeners" offset="384"/>
-			<item tag="array_of_pointer" type="Function" name="keydown_listeners" offset="400"/>
-			<item tag="array_of_pointer" type="Function" name="keyup_listeners" offset="416"/>
-			<item tag="array_of_pointer" type="Function" name="char_listeners" offset="432"/>
-			<item tag="array_of_pointer" type="Function" name="char_filters" offset="448"/>
-			<item tag="array_of_pointer" type="Function" name="drop_listeners" offset="464"/>
-			<item tag="array_of_pointer" type="Function" name="changed_listeners" offset="480"/>
-			<item tag="array_of_pointer" type="Function" name="addchild_listeners" offset="496"/>
-			<item tag="array_of_varible" type="CommonData" name="data_storages" offset="512"/>
-			<item tag="array_of_varible" type="StringW" name="string_storages" offset="528"/>
+			<item tag="varible" type="StringAndHash" name="class" offset="0"/>
+			<item tag="varible" type="String" name="name" offset="24"/>
+			<item tag="varible" type="Vec2" name="pos" offset="40" default_value="0.0;0.0"/>
+			<item tag="varible" type="Vec2" name="size" offset="48" default_value="0.0;0.0"/>
+			<item tag="varible" type="float" name="alpha" offset="56" default_value="1.0"/>
+			<item tag="varible" type="float" name="scale" offset="60" default_value="1.0"/>
+			<item tag="varible" type="Vec4" name="inner_padding" offset="64" default_value="0.0;0.0;0.0;0.0"/>
+			<item tag="varible" type="float" name="layout_padding" offset="80" default_value="0.0"/>
+			<item tag="varible" type="Vec4" name="background_offset" offset="84" default_value="0.0;0.0;0.0;0.0"/>
+			<item tag="varible" type="float" name="background_round_radius" offset="100" default_value="0.0"/>
+			<item tag="varible" type="int" name="background_round_flags" offset="104" default_value="0"/>
+			<item tag="varible" type="float" name="background_frame_thickness" offset="108" default_value="0.0"/>
+			<item tag="varible" type="Bvec4" name="background_col" offset="112" default_value="0;0;0;0"/>
+			<item tag="varible" type="Bvec4" name="background_frame_col" offset="116" default_value="255;255;255;255"/>
+			<item tag="varible" type="float" name="background_shaow_thickness" offset="120" default_value="0.0"/>
+			<item tag="enum_single" type="ui::SizePolicy" name="size_policy_hori" offset="124" default_value="SizeFixed"/>
+			<item tag="enum_single" type="ui::SizePolicy" name="size_policy_vert" offset="128" default_value="SizeFixed"/>
+			<item tag="enum_single" type="ui::Align" name="align" offset="132" default_value="AlignFree"/>
+			<item tag="enum_single" type="ui::LayoutType" name="layout_type" offset="136" default_value="LayoutFree"/>
+			<item tag="varible" type="float" name="item_padding" offset="140" default_value="0.0"/>
+			<item tag="varible" type="int" name="grid_hori_count" offset="144" default_value="1"/>
+			<item tag="varible" type="bool" name="clip" offset="148" default_value="false"/>
+			<item tag="varible" type="float" name="scroll_offset" offset="152" default_value="0.0"/>
+			<item tag="enum_single" type="ui::EventAttitude" name="event_attitude" offset="156" default_value="EventAccept"/>
+			<item tag="varible" type="bool" name="want_key_focus" offset="160" default_value="false"/>
+			<item tag="varible" type="bool" name="visible" offset="161" default_value="true"/>
+			<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="192"/>
+			<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="208"/>
+			<item tag="varible" type="bool" name="draw_default" offset="224" default_value="true"/>
+			<item tag="array_of_pointer" type="Function" name="extra_draws" offset="232"/>
+			<item tag="varible" type="int" name="closet_id" offset="248" default_value="0"/>
+			<item tag="array_of_pointer" type="Function" name="styles" offset="256"/>
+			<item tag="array_of_pointer" type="Function" name="animations" offset="272"/>
+			<item tag="array_of_pointer" type="Function" name="focus_listeners" offset="288"/>
+			<item tag="array_of_pointer" type="Function" name="key_listeners" offset="304"/>
+			<item tag="array_of_pointer" type="Function" name="mouse_listeners" offset="320"/>
+			<item tag="array_of_pointer" type="Function" name="drop_listeners" offset="336"/>
+			<item tag="array_of_pointer" type="Function" name="changed_listeners" offset="352"/>
+			<item tag="array_of_pointer" type="Function" name="child_listeners" offset="368"/>
+			<item tag="array_of_varible" type="CommonData" name="data_storages" offset="384"/>
+			<item tag="array_of_varible" type="StringW" name="string_storages" offset="400"/>
 		</udt>
 	</udts>
 </typeinfo>

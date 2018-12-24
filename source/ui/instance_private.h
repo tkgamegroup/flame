@@ -116,8 +116,6 @@ namespace flame
 			Bvec4 default_header_col_active;
 			float default_sdf_scale;
 
-			Ivec2 mouse_prev_pos;
-
 			std::unique_ptr<WidgetPrivate> root_;
 			WidgetPrivate *hovering_widget_;
 			WidgetPrivate *focus_widget_;
@@ -125,6 +123,7 @@ namespace flame
 			WidgetPrivate *dragging_widget_;
 			WidgetPrivate *popup_widget_;
 			bool popup_widget_modual_;
+			Ivec2 mouse_prev_pos_;
 			WidgetPrivate *potential_doubleclick_widget_;
 			float doubleclick_timer_;
 			std::vector<int> keydown_inputs_;
@@ -135,7 +134,6 @@ namespace flame
 			float elp_time_; // second
 			float total_time_;
 
-			InstancePrivate();
 			InstancePrivate(Window *w);
 
 			void set_default_style(DefaultStyle s);

@@ -268,7 +268,32 @@ namespace flame
 			delete (SwapchainDataPrivate*)s;
 		}
 
-		InstancePrivate::InstancePrivate()
+		FLAME_REGISTER_FUNCTION_BEG(InstanceKey, FLAME_GID(28755), Window::KeyListenerParm)
+			((InstancePrivate*)p.thiz())->on_key(p.action(), p.value());
+		FLAME_REGISTER_FUNCTION_END(InstanceKey)
+
+		FLAME_REGISTER_FUNCTION_BEG(InstanceMouse, FLAME_GID(19621), Window::MouseListenerParm)
+			((InstancePrivate*)p.thiz())->on_mouse(p.action(), p.key(), p.pos());
+		FLAME_REGISTER_FUNCTION_END(InstanceMouse)
+
+		FLAME_REGISTER_FUNCTION_BEG(InstanceResize, FLAME_GID(16038), Window::ResizeListenerParm)
+			((InstancePrivate*)p.thiz())->on_resize(p.size());
+		FLAME_REGISTER_FUNCTION_END(InstanceResize)
+
+		FLAME_WIDGET_BEGIN(wDebug, wDialog)
+			FLAME_UI_EXPORTS void init();
+			FLAME_WIDGET_SEPARATOR
+		FLAME_WIDGET_END
+
+		void wDebug::init()
+		{
+			class$ = "debug";
+
+			align$ = AlignRightTop;
+			visible$ = false;
+		}
+
+		InstancePrivate::InstancePrivate(Window *w)
 		{
 			set_default_style(DefaultStyleDark);
 
@@ -278,6 +303,7 @@ namespace flame
 			root_->size_policy_vert$ = SizeFitLayout;
 			root_->event_attitude$ = EventAccept;
 			root_->want_key_focus$ = true;
+
 			hovering_widget_ = nullptr;
 			focus_widget_ = nullptr;
 			key_focus_widget_ = root_.get();
@@ -292,7 +318,7 @@ namespace flame
 				key_states[i] = KeyStateUp;
 
 			mouse_pos = Ivec2(0);
-			mouse_prev_pos = Ivec2(0);
+			mouse_prev_pos_ = Ivec2(0);
 			mouse_disp = Ivec2(0);
 			mouse_scroll = 0;
 
@@ -301,28 +327,18 @@ namespace flame
 
 			elp_time_ = 0.f;
 			total_time_ = 0.f;
-		}
 
-		FLAME_REGISTER_FUNCTION_BEG(InstanceKey, FLAME_GID(28755), Window::KeyListenerParm)
-			((InstancePrivate*)p.thiz())->on_key(p.action(), p.value());
-		FLAME_REGISTER_FUNCTION_END(InstanceKey)
+			if (w)
+			{
+				root_->size$ = w->size;
 
-		FLAME_REGISTER_FUNCTION_BEG(InstanceMouse, FLAME_GID(19621), Window::MouseListenerParm)
-			((InstancePrivate*)p.thiz())->on_mouse(p.action(), p.key(), p.pos());
-		FLAME_REGISTER_FUNCTION_END(InstanceMouse)
+				w->add_listener(Window::ListenerKey, InstanceKey::v, this, {});
+				w->add_listener(Window::ListenerMouse, InstanceMouse::v, this, {});
+				w->add_listener(Window::ListenerResize, InstanceResize::v, this, {});
+			}
 
-		FLAME_REGISTER_FUNCTION_BEG(InstanceResize, FLAME_GID(16038), Window::ResizeListenerParm)
-			((InstancePrivate*)p.thiz())->on_resize(p.size());
-		FLAME_REGISTER_FUNCTION_END(InstanceResize)
-
-		InstancePrivate::InstancePrivate(Window *w) :
-			InstancePrivate()
-		{
-			root_->size$ = w->size;
-
-			w->add_listener(Window::ListenerKey, InstanceKey::v, this, {});
-			w->add_listener(Window::ListenerMouse, InstanceMouse::v, this, {});
-			w->add_listener(Window::ListenerResize, InstanceResize::v, this, {});
+			auto w_debug = Widget::createT<wDebug>(this);
+			root_->add_child((WidgetPrivate*)w_debug, 1);
 		}
 
 		inline void InstancePrivate::set_default_style(DefaultStyle s)
@@ -466,14 +482,14 @@ namespace flame
 		{
 			if (popup_widget_ && !popup_widget_modual_)
 			{
-				switch (popup_widget_->class_hash$)
+				switch (popup_widget_->class$.hash)
 				{
 				case cH("menubar"):
 					for (auto i_c = 0; i_c < popup_widget_->children_1$.size; i_c++)
 					{
 						auto c = popup_widget_->children_1$[i_c];
 
-						if (c->class_hash$ == cH("menu"))
+						if (c->class$.hash == cH("menu"))
 							((wMenu*)c)->close();
 					}
 					break;
@@ -775,7 +791,7 @@ namespace flame
 
 		inline void InstancePrivate::end(Canvas *canvas, const Vec2 &show_off)
 		{
-			mouse_disp = mouse_pos - mouse_prev_pos;
+			mouse_disp = mouse_pos - mouse_prev_pos_;
 
 			_Package p;
 			p.mpos = Vec2(mouse_pos);
@@ -881,7 +897,7 @@ namespace flame
 			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
 				mouse_buttons[i] &= ~KeyStateJust;
 
-			mouse_prev_pos = mouse_pos;
+			mouse_prev_pos_ = mouse_pos;
 			mouse_scroll = 0;
 		}
 
@@ -1017,11 +1033,6 @@ namespace flame
 		float Instance::total_time() const
 		{
 			return ((InstancePrivate*)this)->total_time_;
-		}
-
-		Instance *Instance::create()
-		{
-			return new InstancePrivate;
 		}
 
 		Instance *Instance::create(Window *w)

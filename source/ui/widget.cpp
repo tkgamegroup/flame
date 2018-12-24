@@ -40,9 +40,9 @@ namespace flame
 	{
 		const Vec2 hidden_pos(9999.f);
 
-		inline WidgetPrivate::WidgetPrivate(Instance *ui_)
+		inline WidgetPrivate::WidgetPrivate(Instance *ins)
 		{
-			instance = ui_;
+			instance = ins;
 			parent = nullptr;
 			layer = 0;
 		}
@@ -1331,7 +1331,7 @@ namespace flame
 
 		void wLayout::init(LayoutType type, float item_padding)
 		{
-			class_hash$ = cH("layout");
+			class$ = "layout";
 			add_data_storages({ });
 			add_string_storages(STRING_SIZE);
 
@@ -1362,7 +1362,7 @@ namespace flame
 
 		void wCheckbox::init(void *_target)
 		{
-			class_hash$ = cH("checkbox");
+			class$ = "checkbox";
 			add_data_storages({ 0, _target });
 			add_string_storages(STRING_SIZE);
 			
@@ -1396,7 +1396,7 @@ namespace flame
 		{
 			auto i = (InstancePrivate*)instance();
 
-			class_hash$ = cH("text");
+			class$ = "text";
 			add_data_storages( { i->default_text_col, i->default_sdf_scale } );
 			add_string_storages(STRING_SIZE);
 
@@ -1421,7 +1421,7 @@ namespace flame
 		{
 			wText::init();
 
-			class_hash$ = cH("button");
+			class$ = "button";
 			add_data_storages({ });
 			add_string_storages(STRING_SIZE);
 
@@ -1449,7 +1449,7 @@ namespace flame
 		{
 			wText::init();
 
-			class_hash$ = cH("toggle");
+			class$ = "toggle";
 			add_data_storages({ 0 });
 			add_string_storages(STRING_SIZE);
 
@@ -1479,9 +1479,9 @@ namespace flame
 			if (w->w_rarrow())
 				return;
 
-			if (w->parent() && w->parent()->class_hash$ == cH("menubar"))
+			if (w->parent() && w->parent()->class$.hash == cH("menubar"))
 				return;
-			if (!w->sub() && w->class_hash$ != cH("combo"))
+			if (!w->sub() && w->class$.hash != cH("combo"))
 				return;
 
 			w->w_title()->inner_padding$[1] += w->w_title()->size$.y * 0.6f;
@@ -1506,7 +1506,7 @@ namespace flame
 		{
 			wText::init();
 
-			class_hash$ = cH("menuitem");
+			class$ = "menuitem";
 			add_data_storages({ });
 			add_string_storages(STRING_SIZE);
 
@@ -1536,7 +1536,7 @@ namespace flame
 			if (p.op() != Widget::ChildAdd)
 				return;
 
-			switch (p.src()->class_hash$)
+			switch (p.src()->class$.hash)
 			{
 			case cH("menuitem"):
 				menu_add_rarrow((wMenu*)p.thiz());
@@ -1555,7 +1555,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("menu");
+			class$ = "menu";
 			add_data_storages({ 0, 0, nullptr, nullptr, nullptr });
 			add_string_storages(STRING_SIZE);
 
@@ -1574,12 +1574,12 @@ namespace flame
 			w_title()->add_listener(ListenerMouse, MenuTitleMouse::v, this, {});
 
 			auto i = (InstancePrivate*)instance();
-			add_style_background_color(w_title(), 0, i->default_frame_col, i->default_frame_col_hovering, i->default_frame_col_active);
+			add_style_background_color(w_title(), 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
 
 			w_rarrow() = nullptr;
 
 			w_items() = createT<wLayout>(instance(), LayoutVertical);
-			w_items()->class_hash$ = cH("menu items");
+			w_items()->class$ = "menu items";
 			w_items()->background_col$ = i->default_window_col;
 			w_items()->align$ = AlignBottomOutside;
 			w_items()->visible$ = false;
@@ -1590,6 +1590,7 @@ namespace flame
 			if (only_for_context_menu)
 			{
 				pos$ = hidden_pos;
+				sub() = 1;
 				w_items()->align$ = AlignFree;
 				instance()->root()->add_child(this, 1);
 			}
@@ -1600,12 +1601,12 @@ namespace flame
 			if (opened())
 				return;
 
-			if (parent() && (parent()->class_hash$ == cH("menubar") || parent()->class_hash$ == cH("menu items")))
+			if (parent() && (parent()->class$.hash == cH("menubar") || parent()->class$.hash == cH("menu items")))
 			{
 				for (auto i = 0; i < parent()->children_1$.size; i++)
 				{
 					auto c = parent()->children_1$[i];
-					if (c->class_hash$ == cH("menu"))
+					if (c->class$.hash == cH("menu"))
 						((wMenu*)c)->close();
 				}
 			}
@@ -1639,7 +1640,7 @@ namespace flame
 			for (auto i = 0; i < w_items()->children_1$.size; i++)
 			{
 				auto c = w_items()->children_1$[i];
-				if (c->class_hash$ == cH("menu"))
+				if (c->class$.hash == cH("menu"))
 					((wMenu*)c)->close();
 			}
 
@@ -1673,7 +1674,7 @@ namespace flame
 			if (p.op() != Widget::ChildAdd)
 				return;
 
-			if (p.src()->class_hash$ == cH("menu"))
+			if (p.src()->class$.hash == cH("menu"))
 				((wMenu*)p.src())->w_title()->add_listener(Widget::ListenerMouse, MenuBarMenuTextMouse::v, p.thiz(), { p.src() });
 		FLAME_REGISTER_FUNCTION_END(MenuBarChild)
 
@@ -1681,7 +1682,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("menubar");
+			class$ = "menubar";
 			add_data_storages({ });
 			add_string_storages(STRING_SIZE);
 
@@ -1743,7 +1744,7 @@ namespace flame
 			if (p.op() != Widget::ChildAdd)
 				return;
 
-			if (p.src()->class_hash$ == cH("menuitem"))
+			if (p.src()->class$.hash == cH("menuitem"))
 			{
 				p.thiz()->set_width(p.thiz()->inner_padding$[0] + p.thiz()->inner_padding$[1] + ((wCombo*)p.thiz())->w_title()->inner_padding$[0] + ((wCombo*)p.thiz())->w_title()->inner_padding$[1] + ((wCombo*)p.thiz())->w_items()->size$.x);
 				auto idx = ((wCombo*)p.thiz())->w_items()->children_1$.size - 1;
@@ -1758,7 +1759,7 @@ namespace flame
 		{
 			((wMenu*)this)->init(L"");
 
-			class_hash$ = cH("combo");
+			class$ = "combo";
 			add_data_storages({ -1, _enum_info, _target });
 			add_string_storages(STRING_SIZE);
 
@@ -1976,7 +1977,7 @@ namespace flame
 		{
 			wText::init();
 
-			class_hash$ = cH("edit");
+			class$ = "edit";
 			add_data_storages({ 0, (int)_type, _target });
 			add_string_storages(STRING_SIZE);
 
@@ -2041,7 +2042,7 @@ namespace flame
 
 		void wImage::init()
 		{
-			class_hash$ = cH("image");
+			class$ = "image";
 			add_data_storages({ 0, Vec2(0.f), Vec2(1.f), 0, Vec4(0.f) });
 			add_string_storages(STRING_SIZE);
 
@@ -2088,7 +2089,7 @@ namespace flame
 
 		void wSizeDrag::init(Widget *target)
 		{
-			class_hash$ = cH("sizedrag");
+			class$ = "sizedrag";
 			add_data_storages({ Vec2(0.f) });
 			add_string_storages(STRING_SIZE);
 
@@ -2145,7 +2146,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("scrollbar");
+			class$ = "scrollbar";
 			add_data_storages({ nullptr, nullptr });
 			add_string_storages(STRING_SIZE);
 
@@ -2188,7 +2189,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("listitem");
+			class$ = "listitem";
 			add_data_storages({ nullptr });
 			add_string_storages(STRING_SIZE);
 
@@ -2250,7 +2251,7 @@ namespace flame
 			if (p.op() != Widget::ChildAdd)
 				return;
 
-			if (p.src()->class_hash$ == cH("listitem"))
+			if (p.src()->class$.hash == cH("listitem"))
 			{
 				((wListItem*)p.src())->w_title()->add_listener(Widget::ListenerMouse, ListListItemTitleMouse::v, p.thiz(), { p.src() });
 
@@ -2262,7 +2263,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("list");
+			class$ = "list";
 			add_data_storages({ nullptr, nullptr });
 			add_string_storages(STRING_SIZE);
 
@@ -2330,7 +2331,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("treenode");
+			class$ = "treenode";
 			add_data_storages({ nullptr, nullptr, nullptr });
 			add_string_storages(STRING_SIZE);
 
@@ -2378,7 +2379,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("tree");
+			class$ = "tree";
 			add_data_storages({ nullptr });
 			add_string_storages(STRING_SIZE);
 
@@ -2399,7 +2400,7 @@ namespace flame
 		{
 			wLayout::init();
 
-			class_hash$ = cH("dialog");
+			class$ = "dialog";
 			add_data_storages({ nullptr, nullptr });
 			add_string_storages(STRING_SIZE);
 
@@ -2455,7 +2456,7 @@ namespace flame
 		{
 			((wDialog*)this)->init(false, true);
 
-			class_hash$ = cH("message dialog");
+			class$ = "message dialog";
 			add_data_storages({ nullptr, nullptr });
 			add_string_storages(STRING_SIZE);
 

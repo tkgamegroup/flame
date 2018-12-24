@@ -65,7 +65,7 @@ namespace flame
 			v[size] = (CH)0;
 		}
 
-		inline void set(const CH *s, int len = 0)
+		inline void _assign(const CH *s, int len = 0)
 		{
 			if (len == 0)
 				len = std::char_traits<CH>::length(s);
@@ -83,7 +83,7 @@ namespace flame
 		inline BasicString(const BasicString &rhs) :
 			BasicString()
 		{
-			set(rhs.v, rhs.size);
+			_assign(rhs.v, rhs.size);
 		}
 
 		inline BasicString(BasicString &&rhs) :
@@ -96,12 +96,12 @@ namespace flame
 		inline BasicString(const std::basic_string<CH> &rhs) :
 			BasicString()
 		{
-			set(rhs.c_str(), rhs.size());
+			_assign(rhs.c_str(), rhs.size());
 		}
 
 		inline BasicString &operator=(const BasicString &rhs)
 		{
-			set(rhs.v, rhs.size);
+			_assign(rhs.v, rhs.size);
 
 			return *this;
 		}
@@ -116,14 +116,14 @@ namespace flame
 
 		inline BasicString &operator=(const CH *str)
 		{
-			set(str);
+			_assign(str);
 
 			return *this;
 		}
 
 		inline BasicString &operator=(const std::basic_string<CH> &rhs)
 		{
-			set(rhs.c_str(), rhs.size());
+			_assign(rhs.c_str(), rhs.size());
 
 			return *this;
 		}
@@ -200,6 +200,72 @@ namespace flame
 
 	using String = BasicString<char>;
 	using StringW = BasicString<wchar_t>;
+
+	struct StringAndHash : String
+	{
+		uint hash;
+
+		inline void _assign(const char *s, int len = 0)
+		{
+			String::_assign(s, len);
+			hash = v ? H(v) : 0;
+		}
+
+		inline StringAndHash()
+		{
+			hash = 0;
+		}
+
+		inline StringAndHash(const StringAndHash &rhs) :
+			StringAndHash()
+		{
+			_assign(rhs.v, rhs.size);
+		}
+
+		inline StringAndHash(StringAndHash &&rhs) :
+			StringAndHash()
+		{
+			std::swap(size, rhs.size);
+			std::swap(v, rhs.v);
+			std::swap(hash, rhs.hash);
+		}
+
+		inline StringAndHash(const std::string &rhs) :
+			StringAndHash()
+		{
+			_assign(rhs.c_str(), rhs.size());
+		}
+
+		inline StringAndHash &operator=(const StringAndHash &rhs)
+		{
+			_assign(rhs.v, rhs.size);
+
+			return *this;
+		}
+
+		inline StringAndHash &operator=(StringAndHash &&rhs)
+		{
+			std::swap(size, rhs.size);
+			std::swap(v, rhs.v);
+			std::swap(hash, rhs.hash);
+
+			return *this;
+		}
+
+		inline StringAndHash &operator=(const char *str)
+		{
+			_assign(str);
+
+			return *this;
+		}
+
+		inline StringAndHash &operator=(const std::string &rhs)
+		{
+			_assign(rhs.c_str(), rhs.size());
+
+			return *this;
+		}
+	};
 
 	inline bool is_space_chr(int ch)
 	{

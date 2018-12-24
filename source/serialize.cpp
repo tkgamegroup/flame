@@ -272,6 +272,8 @@ namespace flame
 					return *(Bvec4*)src == *(Bvec4*)dst;
 				case cH("String"):
 					return *(String*)src == *(String*)dst;
+				case cH("StringAndHash"):
+					return *(StringAndHash*)src == *(StringAndHash*)dst;
 				}
 				break;
 			}
@@ -338,7 +340,7 @@ namespace flame
 				auto e = find_enum(type_hash);
 				return e->serialize_value(true, *(int*)src);
 			}
-			break;
+				break;
 			case VariableTagEnumMulti:
 				break;
 			case VariableTagVariable:
@@ -374,6 +376,8 @@ namespace flame
 					return to_string(*(Bvec4*)src);
 				case cH("String"):
 					return *(String*)src;
+				case cH("StringAndHash"):
+					return *(StringAndHash*)src;
 				}
 				break;
 			}
@@ -393,7 +397,7 @@ namespace flame
 				auto e = find_enum(type_hash);
 				*(int*)dst = e->find_item(str.c_str());
 			}
-			break;
+				break;
 			case VariableTagVariable:
 				switch (type_hash)
 				{
@@ -1018,6 +1022,16 @@ namespace flame
 							n_it->new_attr("value", w2s(arr[i_i].v));
 						}
 					}
+					else if (item->type_hash() == cH("StringAndHash"))
+					{
+						auto &arr = *(Array<StringAndHash>*)((char*)src + item->offset());
+
+						for (auto i_i = 0; i_i < cnt; i_i++)
+						{
+							auto n_it = n_item->new_node("item");
+							n_it->new_attr("value", arr[i_i].v);
+						}
+					}
 				}
 					break;
 				case VariableTagArrayOfPointer:
@@ -1134,6 +1148,21 @@ namespace flame
 							auto n_i = n_item->node(i_i);
 							if (n_i->name() == "item")
 								arr[i_i] = s2w(n_i->find_attr("value")->value());
+							else
+								assert(0);
+						}
+					}
+					else if (item->type_hash() == cH("StringAndHash"))
+					{
+						auto &arr = *(Array<StringAndHash>*)((char*)obj + item->offset());
+						auto cnt = n_item->node_count();
+						arr.resize(cnt);
+
+						for (auto i_i = 0; i_i < cnt; i_i++)
+						{
+							auto n_i = n_item->node(i_i);
+							if (n_i->name() == "item")
+								arr[i_i] = n_i->find_attr("value")->value();
 							else
 								assert(0);
 						}
@@ -1651,6 +1680,8 @@ namespace flame
 						if (wname.compare(0, wprefix.size(), wprefix) == 0)
 						{
 							auto name = w2s(wname.c_str() + wprefix.size());
+							if (name.find("unnamed", 0) != std::string::npos)
+								continue;
 							auto hash = H(name.c_str());
 							if (enums.find(hash) == enums.end())
 							{
@@ -1749,13 +1780,13 @@ namespace flame
 														type_name = type_name.c_str() + prefix.size();
 													i->type_name = type_name;
 												}
-												break;
+													break;
 												case SymTagBaseType:
 												{
 													i->tag = VariableTagVariable;
 													i->type_name = get_base_type_name(type);
 												}
-												break;
+													break;
 												case SymTagPointerType:
 												{
 													i->tag = VariableTagPointer;
@@ -1780,7 +1811,7 @@ namespace flame
 													}
 													point_type->Release();
 												}
-												break;
+													break;
 												case SymTagUDT:
 												{
 													type->get_name(&pwname);
@@ -1815,7 +1846,7 @@ namespace flame
 														type_name = type_name.c_str() + prefix.size();
 													i->type_name = type_name;
 												}
-												break;
+													break;
 												}
 												type->Release();
 

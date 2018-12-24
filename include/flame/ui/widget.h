@@ -117,7 +117,7 @@ namespace flame
 
 		struct Widget : R
 		{
-			uint class_hash$;
+			StringAndHash class$;
 
 			String name$;
 
@@ -288,8 +288,7 @@ namespace flame
 
 			inline Widget()
 			{
-				class_hash$ = 0;
-
+				class$ = "";
 
 				pos$ = Vec2(0.f);
 				size$ = Vec2(0.f);
