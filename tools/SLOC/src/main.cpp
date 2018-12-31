@@ -23,9 +23,7 @@
 #include <vector>
 #include <iterator>
 
-#include <flame/string.h>
-#include <flame/file.h>
-#include <flame/system.h>
+#include <flame/foundation/foundation.h>
 
 using namespace flame;
 

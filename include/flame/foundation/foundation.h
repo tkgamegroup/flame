@@ -78,7 +78,10 @@ struct EnsureConst
 
 #define cH(x) (EnsureConst<_HASH(x, 0)>::value)
 
-namespace filesystem = std::experimental::filesystem;
+namespace std
+{
+	namespace filesystem = std::experimental::filesystem;
+}
 
 namespace flame
 {
@@ -762,7 +765,7 @@ namespace flame
 
 	inline std::wstring ext_replace(const std::wstring &str, const std::wstring &ext)
 	{
-		filesystem::path path(str);
+		std::filesystem::path path(str);
 		if (path.extension().wstring() != ext)
 		{
 			auto pp = path.parent_path().wstring();

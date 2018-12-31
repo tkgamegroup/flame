@@ -209,7 +209,7 @@ namespace flame
 	{
 		static wchar_t buf[260];
 		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		auto path = filesystem::path(buf).parent_path().generic_wstring();
+		auto path = std::filesystem::path(buf).parent_path().generic_wstring();
 		wcscpy(buf, path.data());
 		return buf;
 	}
@@ -505,7 +505,7 @@ namespace flame
 
 	void get_thumbnai(int width, const wchar_t *_filename, int *out_width, int *out_height, char **out_data)
 	{
-		filesystem::path path(_filename);
+		std::filesystem::path path(_filename);
 		path.make_preferred();
 		auto filename = path.wstring();
 

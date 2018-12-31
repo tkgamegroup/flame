@@ -73,7 +73,7 @@ namespace flame
 	void Bitmap::save(const std::wstring &wfilename)
 	{
 		auto filename = w2s(wfilename);
-		auto ext = filesystem::path(filename).extension();
+		auto ext = std::filesystem::path(filename).extension();
 
 		if (ext == ".png")
 			stbi_write_png(filename.c_str(), size.x, size.y, channel, data, pitch);

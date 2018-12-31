@@ -1621,9 +1621,9 @@ namespace flame
 		std::string prefix("flame::");
 		std::wstring wprefix(s2w(prefix));
 
-		for (filesystem::directory_iterator end, it(pdb_dir); it != end; it++)
+		for (std::filesystem::directory_iterator end, it(pdb_dir); it != end; it++)
 		{
-			if (!filesystem::is_directory(it->status()) && it->path().extension() == L".pdb")
+			if (!std::filesystem::is_directory(it->status()) && it->path().extension() == L".pdb")
 			{
 				auto fn = it->path().filename().wstring();
 
