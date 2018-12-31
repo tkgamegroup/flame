@@ -20,9 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/file.h>
-#include <flame/string.h>
-#include <flame/bitmap.h>
+#include <flame/foundation/bitmap.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

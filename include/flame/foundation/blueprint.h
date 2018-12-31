@@ -22,24 +22,14 @@
 
 #pragma once
 
-#ifdef FLAME_WINDOWS
-#ifdef FLAME_BLUEPRINT_MODULE
-#define FLAME_BLUEPRINT_EXPORTS __declspec(dllexport)
-#else
-#define FLAME_BLUEPRINT_EXPORTS __declspec(dllimport)
-#endif
-#else
-#define FLAME_BLUEPRINT_EXPORTS
-#endif
-
-#include <flame/math.h>
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
 	struct EnumInfo;
 	struct UDT;
 
-	namespace blueprint
+	struct BP
 	{
 		struct Node;
 
@@ -57,8 +47,8 @@ namespace flame
 
 		struct InSlot
 		{
-			FLAME_BLUEPRINT_EXPORTS int item_count() const;
-			FLAME_BLUEPRINT_EXPORTS InSlotItem *item(int idx) const;
+			FLAME_FOUNDATION_EXPORTS int item_count() const;
+			FLAME_FOUNDATION_EXPORTS InSlotItem *item(int idx) const;
 		};
 
 		struct OutSlot
@@ -79,41 +69,38 @@ namespace flame
 				TypeUDT
 			};
 
-			FLAME_BLUEPRINT_EXPORTS Type type() const;
-			FLAME_BLUEPRINT_EXPORTS const char *id() const;
+			FLAME_FOUNDATION_EXPORTS Type type() const;
+			FLAME_FOUNDATION_EXPORTS const char *id() const;
 		};
 
 		struct NodeInputEnumSingle : Node
 		{
-			FLAME_BLUEPRINT_EXPORTS EnumInfo *get_enum() const;
-			FLAME_BLUEPRINT_EXPORTS int idx() const;
+			FLAME_FOUNDATION_EXPORTS EnumInfo *get_enum() const;
+			FLAME_FOUNDATION_EXPORTS int idx() const;
 		};
 
 		struct NodeUDT : Node
 		{
-			FLAME_BLUEPRINT_EXPORTS UDT *get_udt() const;
-			FLAME_BLUEPRINT_EXPORTS int insl_count() const;
-			FLAME_BLUEPRINT_EXPORTS InSlot *insl(int idx) const;
-			FLAME_BLUEPRINT_EXPORTS int outsl_count() const;
-			FLAME_BLUEPRINT_EXPORTS OutSlot *outsl(int idx) const;
+			FLAME_FOUNDATION_EXPORTS UDT *get_udt() const;
+			FLAME_FOUNDATION_EXPORTS int insl_count() const;
+			FLAME_FOUNDATION_EXPORTS InSlot *insl(int idx) const;
+			FLAME_FOUNDATION_EXPORTS int outsl_count() const;
+			FLAME_FOUNDATION_EXPORTS OutSlot *outsl(int idx) const;
 		};
 
-		struct Scene
-		{
-			FLAME_BLUEPRINT_EXPORTS int node_count() const;
-			FLAME_BLUEPRINT_EXPORTS Node *node(int idx) const;
+		FLAME_FOUNDATION_EXPORTS int node_count() const;
+		FLAME_FOUNDATION_EXPORTS Node *node(int idx) const;
 
-			FLAME_BLUEPRINT_EXPORTS Node *add_node_input_enum_single(uint enum_hash, int value);
-			FLAME_BLUEPRINT_EXPORTS Node *add_node_udt(uint hash);
-			FLAME_BLUEPRINT_EXPORTS void remove_node(Node *n);
+		FLAME_FOUNDATION_EXPORTS Node *add_node_input_enum_single(uint enum_hash, int value);
+		FLAME_FOUNDATION_EXPORTS Node *add_node_udt(uint hash);
+		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
 
-			FLAME_BLUEPRINT_EXPORTS void clear();
-			FLAME_BLUEPRINT_EXPORTS void save(const wchar_t *filename);
+		FLAME_FOUNDATION_EXPORTS void clear();
+		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
 
-			FLAME_BLUEPRINT_EXPORTS static Scene *create();
-			FLAME_BLUEPRINT_EXPORTS static Scene *create_from_file(const wchar_t *filename);
-			FLAME_BLUEPRINT_EXPORTS static void destroy(Scene *s);
-		};
-	}
+		FLAME_FOUNDATION_EXPORTS static BP *create();
+		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const wchar_t *filename);
+		FLAME_FOUNDATION_EXPORTS static void destroy(BP *s);
+	};
 }
 

@@ -22,21 +22,7 @@
 
 #pragma once
 
-#ifdef FLAME_WINDOWS
-#ifdef FLAME_SERIALIZE_MODULE
-#define FLAME_SERIALIZE_EXPORTS __declspec(dllexport)
-#else
-#define FLAME_SERIALIZE_EXPORTS __declspec(dllimport)
-#endif
-#else
-#define FLAME_SERIALIZE_EXPORTS
-#endif
-
-#include <flame/math.h>
-#include <flame/string.h>
-#include <flame/function.h>
-
-#include <stdio.h>
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
@@ -580,20 +566,20 @@ namespace flame
 
 	struct EnumItem
 	{
-		FLAME_SERIALIZE_EXPORTS const char *name() const;
-		FLAME_SERIALIZE_EXPORTS int value() const;
+		FLAME_FOUNDATION_EXPORTS const char *name() const;
+		FLAME_FOUNDATION_EXPORTS int value() const;
 	};
 
 	struct EnumInfo
 	{
-		FLAME_SERIALIZE_EXPORTS const char *name() const;
+		FLAME_FOUNDATION_EXPORTS const char *name() const;
 
-		FLAME_SERIALIZE_EXPORTS int item_count() const;
-		FLAME_SERIALIZE_EXPORTS EnumItem *item(int idx) const;
-		FLAME_SERIALIZE_EXPORTS int find_item(const char *name) const;
-		FLAME_SERIALIZE_EXPORTS int find_item(int value) const;
+		FLAME_FOUNDATION_EXPORTS int item_count() const;
+		FLAME_FOUNDATION_EXPORTS EnumItem *item(int idx) const;
+		FLAME_FOUNDATION_EXPORTS int find_item(const char *name) const;
+		FLAME_FOUNDATION_EXPORTS int find_item(int value) const;
 
-		FLAME_SERIALIZE_EXPORTS String serialize_value(bool single, int v) const;
+		FLAME_FOUNDATION_EXPORTS String serialize_value(bool single, int v) const;
 	};
 
 	enum VariableTag
@@ -608,77 +594,77 @@ namespace flame
 
 	struct VaribleInfo
 	{
-		FLAME_SERIALIZE_EXPORTS VariableTag tag() const;
-		FLAME_SERIALIZE_EXPORTS const char *type_name() const;
-		FLAME_SERIALIZE_EXPORTS uint type_hash() const;
-		FLAME_SERIALIZE_EXPORTS const char *name() const;
-		FLAME_SERIALIZE_EXPORTS int offset() const;
+		FLAME_FOUNDATION_EXPORTS VariableTag tag() const;
+		FLAME_FOUNDATION_EXPORTS const char *type_name() const;
+		FLAME_FOUNDATION_EXPORTS uint type_hash() const;
+		FLAME_FOUNDATION_EXPORTS const char *name() const;
+		FLAME_FOUNDATION_EXPORTS int offset() const;
 
-		FLAME_SERIALIZE_EXPORTS bool compare(void *src, void *dst) const;
-		FLAME_SERIALIZE_EXPORTS bool compare_to_default(void *src, bool is_obj) const;
-		FLAME_SERIALIZE_EXPORTS String serialize_value(void *src, bool is_obj, int precision = 6) const;
-		FLAME_SERIALIZE_EXPORTS void unserialize_value(const std::string &str, void *dst, bool is_obj) const;
+		FLAME_FOUNDATION_EXPORTS bool compare(void *src, void *dst) const;
+		FLAME_FOUNDATION_EXPORTS bool compare_to_default(void *src, bool is_obj) const;
+		FLAME_FOUNDATION_EXPORTS String serialize_value(void *src, bool is_obj, int precision = 6) const;
+		FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::string &str, void *dst, bool is_obj) const;
 	};
 
 	struct UDT
 	{
-		FLAME_SERIALIZE_EXPORTS const char *name() const;
+		FLAME_FOUNDATION_EXPORTS const char *name() const;
 
-		FLAME_SERIALIZE_EXPORTS int item_count() const;
-		FLAME_SERIALIZE_EXPORTS VaribleInfo *item(int idx) const;
-		FLAME_SERIALIZE_EXPORTS int find_item_i(const char *name) const;
+		FLAME_FOUNDATION_EXPORTS int item_count() const;
+		FLAME_FOUNDATION_EXPORTS VaribleInfo *item(int idx) const;
+		FLAME_FOUNDATION_EXPORTS int find_item_i(const char *name) const;
 	};
 
 	typedef UDT* UDTPtr;
 
-	FLAME_SERIALIZE_EXPORTS int enum_count();
-	FLAME_SERIALIZE_EXPORTS EnumInfo *get_enum(int idx);
-	FLAME_SERIALIZE_EXPORTS EnumInfo *find_enum(unsigned int name_hash);
+	FLAME_FOUNDATION_EXPORTS int enum_count();
+	FLAME_FOUNDATION_EXPORTS EnumInfo *get_enum(int idx);
+	FLAME_FOUNDATION_EXPORTS EnumInfo *find_enum(unsigned int name_hash);
 
-	FLAME_SERIALIZE_EXPORTS int udt_count();
-	FLAME_SERIALIZE_EXPORTS UDT *get_udt(int idx);
-	FLAME_SERIALIZE_EXPORTS UDT *find_udt(unsigned int name_hash);
+	FLAME_FOUNDATION_EXPORTS int udt_count();
+	FLAME_FOUNDATION_EXPORTS UDT *get_udt(int idx);
+	FLAME_FOUNDATION_EXPORTS UDT *find_udt(unsigned int name_hash);
 
 	struct SerializableAttribute
 	{
-		FLAME_SERIALIZE_EXPORTS const std::string &name() const;
-		FLAME_SERIALIZE_EXPORTS const std::string &value() const;
+		FLAME_FOUNDATION_EXPORTS const std::string &name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string &value() const;
 
-		FLAME_SERIALIZE_EXPORTS void set_name(const std::string &name);
-		FLAME_SERIALIZE_EXPORTS void set_value(const std::string &value);
+		FLAME_FOUNDATION_EXPORTS void set_name(const std::string &name);
+		FLAME_FOUNDATION_EXPORTS void set_value(const std::string &value);
 	};
 
 	struct SerializableNode
 	{
-		FLAME_SERIALIZE_EXPORTS const std::string &name() const;
-		FLAME_SERIALIZE_EXPORTS const std::string &value() const;
-		FLAME_SERIALIZE_EXPORTS bool is_xml_CDATA() const;
+		FLAME_FOUNDATION_EXPORTS const std::string &name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string &value() const;
+		FLAME_FOUNDATION_EXPORTS bool is_xml_CDATA() const;
 
-		FLAME_SERIALIZE_EXPORTS void set_name(const std::string &name);
-		FLAME_SERIALIZE_EXPORTS void set_value(const std::string &value);
-		FLAME_SERIALIZE_EXPORTS void set_xml_CDATA(bool v);
+		FLAME_FOUNDATION_EXPORTS void set_name(const std::string &name);
+		FLAME_FOUNDATION_EXPORTS void set_value(const std::string &value);
+		FLAME_FOUNDATION_EXPORTS void set_xml_CDATA(bool v);
 
-		FLAME_SERIALIZE_EXPORTS SerializableAttribute *new_attr(const std::string &name, const std::string &value);
-		FLAME_SERIALIZE_EXPORTS SerializableAttribute *insert_attr(int idx, const std::string &name, const std::string &value);
-		FLAME_SERIALIZE_EXPORTS void remove_attr(int idx);
-		FLAME_SERIALIZE_EXPORTS void remove_attr(SerializableAttribute *a);
-		FLAME_SERIALIZE_EXPORTS void clear_attrs();
-		FLAME_SERIALIZE_EXPORTS int attr_count() const;
-		FLAME_SERIALIZE_EXPORTS SerializableAttribute *attr(int idx) const;
-		FLAME_SERIALIZE_EXPORTS SerializableAttribute *find_attr(const std::string &name);
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute *new_attr(const std::string &name, const std::string &value);
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute *insert_attr(int idx, const std::string &name, const std::string &value);
+		FLAME_FOUNDATION_EXPORTS void remove_attr(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_attr(SerializableAttribute *a);
+		FLAME_FOUNDATION_EXPORTS void clear_attrs();
+		FLAME_FOUNDATION_EXPORTS int attr_count() const;
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute *attr(int idx) const;
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute *find_attr(const std::string &name);
 
-		FLAME_SERIALIZE_EXPORTS void add_node(SerializableNode *n);
-		FLAME_SERIALIZE_EXPORTS SerializableNode *new_node(const std::string &name);
-		FLAME_SERIALIZE_EXPORTS SerializableNode *insert_node(int idx, const std::string &name);
-		FLAME_SERIALIZE_EXPORTS void remove_node(int idx);
-		FLAME_SERIALIZE_EXPORTS void remove_node(SerializableNode *n);
-		FLAME_SERIALIZE_EXPORTS void clear_nodes();
-		FLAME_SERIALIZE_EXPORTS int node_count() const;
-		FLAME_SERIALIZE_EXPORTS SerializableNode *node(int idx) const;
-		FLAME_SERIALIZE_EXPORTS SerializableNode *find_node(const std::string &name);
+		FLAME_FOUNDATION_EXPORTS void add_node(SerializableNode *n);
+		FLAME_FOUNDATION_EXPORTS SerializableNode *new_node(const std::string &name);
+		FLAME_FOUNDATION_EXPORTS SerializableNode *insert_node(int idx, const std::string &name);
+		FLAME_FOUNDATION_EXPORTS void remove_node(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_node(SerializableNode *n);
+		FLAME_FOUNDATION_EXPORTS void clear_nodes();
+		FLAME_FOUNDATION_EXPORTS int node_count() const;
+		FLAME_FOUNDATION_EXPORTS SerializableNode *node(int idx) const;
+		FLAME_FOUNDATION_EXPORTS SerializableNode *find_node(const std::string &name);
 
-		FLAME_SERIALIZE_EXPORTS void save_xml(const std::wstring &filename) const;
-		FLAME_SERIALIZE_EXPORTS void save_bin(const std::wstring &filename) const;
+		FLAME_FOUNDATION_EXPORTS void save_xml(const std::wstring &filename) const;
+		FLAME_FOUNDATION_EXPORTS void save_bin(const std::wstring &filename) const;
 
 		FLAME_PARM_PACKAGE_BEGIN(ObjGeneratorParm)
 			FLAME_PARM_PACKAGE_PARM(UDTPtr, udt, p)
@@ -689,19 +675,19 @@ namespace flame
 			FLAME_PARM_PACKAGE_SEPARATOR
 		FLAME_PARM_PACKAGE_END
 
-		FLAME_SERIALIZE_EXPORTS void *unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt);
+		FLAME_FOUNDATION_EXPORTS void *unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt);
 
-		FLAME_SERIALIZE_EXPORTS static SerializableNode *create(const std::string &name);
-		FLAME_SERIALIZE_EXPORTS static SerializableNode *create_from_xml(const std::wstring &filename);
-		FLAME_SERIALIZE_EXPORTS static SerializableNode *create_from_bin(const std::wstring &filename);
-		FLAME_SERIALIZE_EXPORTS static SerializableNode *serialize(UDT *u, void *src, int precision = 6);
-		FLAME_SERIALIZE_EXPORTS static void destroy(SerializableNode *n);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode *create(const std::string &name);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode *create_from_xml(const std::wstring &filename);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode *create_from_bin(const std::wstring &filename);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode *serialize(UDT *u, void *src, int precision = 6);
+		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode *n);
 	};
 
-	FLAME_SERIALIZE_EXPORTS int typeinfo_collect_init();
-	FLAME_SERIALIZE_EXPORTS void typeinfo_collect(const std::wstring &pdb_dir, const std::wstring &pdb_prefix);
-	FLAME_SERIALIZE_EXPORTS void typeinfo_load(const std::wstring &filename);
-	FLAME_SERIALIZE_EXPORTS void typeinfo_save(const std::wstring &filename);
-	FLAME_SERIALIZE_EXPORTS void typeinfo_clear();
+	FLAME_FOUNDATION_EXPORTS int typeinfo_collect_init();
+	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring &pdb_dir, const std::wstring &pdb_prefix);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring &filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring &filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_clear();
 }
 

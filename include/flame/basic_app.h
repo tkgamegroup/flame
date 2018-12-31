@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <flame/serialize.h>
-#include <flame/window.h>
+#include <flame/foundation/serialize.h>
+#include <flame/foundation/window.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/semaphore.h>

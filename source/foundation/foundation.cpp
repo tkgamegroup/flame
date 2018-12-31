@@ -20,25 +20,171 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/bitmap.h>
-#include <flame/system.h>
+#include <flame/foundation/foundation.h>
 
 #define NOMINMAX
 #include <Windows.h>
+#include <process.h>
 #include <shellapi.h>
 #include <ShlObj.h>
 #include <Shlwapi.h>
 #include <CommCtrl.h>
 #include <thumbcache.h>
 
-#include <map>
-#include <experimental/filesystem>
-#include <assert.h>
+void *flame_malloc(int size)
+{
+	return malloc(size);
+}
 
-namespace filesystem = std::experimental::filesystem;
+void *flame_realloc(void *p, int size)
+{
+	return realloc(p, size);
+}
+
+void flame_free(void *p)
+{
+	free(p);
+}
 
 namespace flame
 {
+	struct RegisteredFunctionPrivate : RegisteredFunction
+	{
+		uint id;
+		PF pf;
+		int parm_count;
+		const char *filename;
+		int line_beg;
+		int line_end;
+	};
+
+	uint RegisteredFunction::id() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->id;
+	}
+
+	PF RegisteredFunction::pf() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->pf;
+	}
+
+	int RegisteredFunction::parm_count() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->parm_count;
+	}
+
+	const char *RegisteredFunction::filename() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->filename;
+	}
+
+	int RegisteredFunction::line_beg() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->line_beg;
+	}
+
+	int RegisteredFunction::line_end() const
+	{
+		return ((RegisteredFunctionPrivate*)this)->line_end;
+	}
+
+	static std::vector<RegisteredFunctionPrivate*> pfs;
+
+	void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end)
+	{
+		assert(id);
+		for (auto &r : pfs)
+		{
+			if (r->id == id)
+				assert(0);
+		}
+
+		auto r = new RegisteredFunctionPrivate;
+		r->id = id;
+		r->pf = pf;
+		r->parm_count = parm_count;
+		r->filename = filename;
+		r->line_beg = line_beg;
+		r->line_end = line_end;
+		pfs.push_back(r);
+	}
+
+	RegisteredFunction *find_registered_function(uint id)
+	{
+		for (auto &r : pfs)
+		{
+			if (r->id == id)
+				return r;
+		}
+		return nullptr;
+	}
+
+	RegisteredFunction *find_registered_function(PF pf)
+	{
+		for (auto &r : pfs)
+		{
+			if (r->pf == pf)
+				return r;
+		}
+		return 0;
+	}
+
+	static void thread(void *p)
+	{
+		auto f = (Function*)p;
+		f->exec();
+		Function::destroy(f);
+	}
+
+	void Function::thread_exec()
+	{
+		_beginthread(thread, 0, this);
+	}
+
+	Function *Function::create(uint id, const std::vector<CommonData> &capt)
+	{
+		auto r = (RegisteredFunctionPrivate*)find_registered_function(id);
+
+		auto f = new Function;
+		f->capt_cnt = capt.size();
+		f->pf = r->pf;
+		f->p.d = new CommonData[r->parm_count + capt.size()];
+
+		auto d = f->p.d + r->parm_count;
+		for (auto i = 0; i < capt.size(); i++)
+		{
+			*d = capt[i];
+
+			d++;
+		}
+
+		return f;
+	}
+
+	Function *Function::create(PF pf, int parm_count, const std::vector<CommonData> &capt)
+	{
+		auto f = new Function;
+		f->capt_cnt = capt.size();
+		f->pf = pf;
+		f->p.d = new CommonData[parm_count + capt.size()];
+
+		auto d = f->p.d + parm_count;
+		for (auto i = 0; i < capt.size(); i++)
+		{
+			*d = capt[i];
+
+			d++;
+		}
+
+		return f;
+	}
+
+	void Function::destroy(Function *f)
+	{
+		delete f->p.d;
+		delete f;
+	}
+
 	void *get_hinst()
 	{
 		return GetModuleHandle(nullptr);
@@ -391,4 +537,70 @@ namespace flame
 		desktop_folder->Release();
 		shell_folder->Release();
 	}
+
+	/*
+	const auto all_workers = 3;
+	static std::mutex mtx;
+	static std::condition_variable cv;
+	static auto workers = all_workers;
+
+	static std::vector<Function*> works;
+
+	void try_distribute();
+
+	static void do_work(CommonData *d)
+	{
+		((Function*)d[0].p)->exec();
+
+		Function::destroy((Function*)d[0].p);
+		Function::destroy((Function*)d[1].p);
+
+		mtx.lock();
+		workers++;
+		cv.notify_one();
+		mtx.unlock();
+
+		try_distribute();
+	}
+
+	void try_distribute()
+	{
+		mtx.lock();
+		if (!works.empty() && workers > 0)
+		{
+			workers--;
+			auto w = works.front();
+			works.erase(works.begin());
+
+			auto f_thread = Function::create(do_work, "p:work p:thread", "", 0);
+			f_thread->datas[0].p = w;
+			f_thread->datas[1].p = f_thread;
+			f_thread->exec_in_new_thread();
+		}
+		mtx.unlock();
+	}
+
+	void add_work(PF pf, char *capture_fmt, ...)
+	{
+		va_list ap;
+		va_start(ap, capture_fmt);
+		auto f = Function::create(pf, "", capture_fmt, ap);
+		va_end(ap);
+
+		mtx.lock();
+		works.push_back(f);
+		mtx.unlock();
+
+		try_distribute();
+	}
+
+	void clear_works()
+	{
+		std::unique_lock<std::mutex> lk(mtx);
+
+		works.clear();
+		while (workers != all_workers)
+			cv.wait(lk);
+	}
+	*/
 }

@@ -22,22 +22,7 @@
 
 #pragma once
 
-#ifdef FLAME_WINDOWS
-#ifdef FLAME_WINDOW_MODULE
-#define FLAME_WINDOW_EXPORTS __declspec(dllexport)
-#else
-#define FLAME_WINDOW_EXPORTS __declspec(dllimport)
-#endif
-#else
-#define FLAME_WINDOW_EXPORTS
-#endif
-
-#include <flame/math.h>
-#include <flame/string.h>
-#include <flame/function.h>
-#include <flame/input.h>
-
-#include <vector>
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
@@ -80,13 +65,13 @@ namespace flame
 
 		bool minimized;
 
-		FLAME_WINDOW_EXPORTS void *get_native();
+		FLAME_FOUNDATION_EXPORTS void *get_native();
 
 #ifdef FLAME_WINDOWS
-		FLAME_WINDOW_EXPORTS void set_cursor(CursorType type);
+		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
 
-		FLAME_WINDOW_EXPORTS void set_size(const Ivec2 &_pos, const Ivec2 &_size, int _style);
-		FLAME_WINDOW_EXPORTS void set_maximized(bool v);
+		FLAME_FOUNDATION_EXPORTS void set_size(const Ivec2 &_pos, const Ivec2 &_size, int _style);
+		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
 		enum Listener
@@ -139,19 +124,19 @@ namespace flame
 			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
 		FLAME_PARM_PACKAGE_END
 
-		FLAME_WINDOW_EXPORTS Function *add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
-		FLAME_WINDOW_EXPORTS void remove_listener(Listener l, Function *f);
+		FLAME_FOUNDATION_EXPORTS Function *add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
+		FLAME_FOUNDATION_EXPORTS void remove_listener(Listener l, Function *f);
 
 #ifdef FLAME_WINDOWS
-		FLAME_WINDOW_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
+		FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-		FLAME_WINDOW_EXPORTS static Window *create(Application *app, const char *_title, const Ivec2 &_size, int _style);
+		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Ivec2 &_size, int _style);
 #endif
 
 #ifdef FLAME_ANDROID
-		FLAME_WINDOW_EXPORTS static Window *create(Application *app, void *android_state, void(*callback)());
+		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, void *android_state, void(*callback)());
 #endif
-		FLAME_WINDOW_EXPORTS static void destroy(Window *s);
+		FLAME_FOUNDATION_EXPORTS static void destroy(Window *s);
 	};
 
 	struct Application
@@ -160,12 +145,12 @@ namespace flame
 		long long fps;
 		float elapsed_time; // second
 
-		FLAME_WINDOW_EXPORTS int run(PF pf, const std::vector<CommonData> &capt);
+		FLAME_FOUNDATION_EXPORTS int run(PF pf, const std::vector<CommonData> &capt);
 
-		FLAME_WINDOW_EXPORTS void clear_delay_events();
-		FLAME_WINDOW_EXPORTS void add_delay_event(PF pf, const std::vector<CommonData> &capt);
+		FLAME_FOUNDATION_EXPORTS void clear_delay_events();
+		FLAME_FOUNDATION_EXPORTS void add_delay_event(PF pf, const std::vector<CommonData> &capt);
 
-		FLAME_WINDOW_EXPORTS static Application *create();
-		FLAME_WINDOW_EXPORTS static void destroy(Application *m);
+		FLAME_FOUNDATION_EXPORTS static Application *create();
+		FLAME_FOUNDATION_EXPORTS static void destroy(Application *m);
 	};
 }

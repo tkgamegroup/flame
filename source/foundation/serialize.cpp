@@ -20,21 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/array.h>
-#include <flame/file.h>
-#include <flame/serialize.h>
+#include <flame/foundation/serialize.h>
 
 #include <rapidxml.hpp>
 #include <rapidxml_utils.hpp>
 #include <rapidxml_print.hpp>
-#include <memory>
-#include <vector>
-#include <map>
-#include <regex>
+
 #include <Windows.h>
 #include <dia2.h>
 #include <atlbase.h>
-#include <assert.h>
 
 namespace flame
 {
