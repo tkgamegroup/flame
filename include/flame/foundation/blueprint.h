@@ -33,65 +33,26 @@ namespace flame
 	{
 		struct Node;
 
-		struct InSlotItem
+		struct Slot
 		{
 			CommonData d;
-			Node *n;
-
-			inline InSlotItem()
-			{
-				d.v.i = Ivec4(0);
-				n = nullptr;
-			}
+			Node *link;
 		};
 
-		struct InSlot
+		struct Item
 		{
-			FLAME_FOUNDATION_EXPORTS int item_count() const;
-			FLAME_FOUNDATION_EXPORTS InSlotItem *item(int idx) const;
-		};
-
-		struct OutSlot
-		{
-			CommonData d;
-
-			inline OutSlot()
-			{
-				d.v.i = Ivec4(0);
-			}
+			Array<Slot*> slots;
 		};
 
 		struct Node
 		{
-			enum Type
-			{
-				TypeInputEnumSingle,
-				TypeUDT
-			};
-
-			FLAME_FOUNDATION_EXPORTS Type type() const;
-			FLAME_FOUNDATION_EXPORTS const char *id() const;
+			StringAndHash id;
+			UDT *udt;
+			Array<Item*> items;
 		};
 
-		struct NodeInputEnumSingle : Node
-		{
-			FLAME_FOUNDATION_EXPORTS EnumInfo *get_enum() const;
-			FLAME_FOUNDATION_EXPORTS int idx() const;
-		};
+		Array<Node*> nodes;
 
-		struct NodeUDT : Node
-		{
-			FLAME_FOUNDATION_EXPORTS UDT *get_udt() const;
-			FLAME_FOUNDATION_EXPORTS int insl_count() const;
-			FLAME_FOUNDATION_EXPORTS InSlot *insl(int idx) const;
-			FLAME_FOUNDATION_EXPORTS int outsl_count() const;
-			FLAME_FOUNDATION_EXPORTS OutSlot *outsl(int idx) const;
-		};
-
-		FLAME_FOUNDATION_EXPORTS int node_count() const;
-		FLAME_FOUNDATION_EXPORTS Node *node(int idx) const;
-
-		FLAME_FOUNDATION_EXPORTS Node *add_node_input_enum_single(uint enum_hash, int value);
 		FLAME_FOUNDATION_EXPORTS Node *add_node_udt(uint hash);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
 
