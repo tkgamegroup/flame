@@ -1,6 +1,5 @@
 add_subdirectory(foundation)
 add_subdirectory(graphics)
-add_subdirectory(ui)
 add_subdirectory(universe)
 if (FLAME_ENABLE_PHYSICS)
 add_subdirectory(physics)
