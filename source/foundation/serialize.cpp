@@ -123,7 +123,7 @@ namespace flame
 				auto e = find_enum(type_hash);
 				return e->serialize_value(true, default_value.v.i[0]).v;
 			}
-			break;
+				break;
 			case VariableTagEnumMulti:
 				break;
 			case VariableTagVariable:
@@ -466,6 +466,11 @@ namespace flame
 	int VaribleInfo::offset() const
 	{
 		return ((VaribleInfoPrivate*)this)->offset;
+	}
+
+	const CommonData &VaribleInfo::default_value() const
+	{
+		return ((VaribleInfoPrivate*)this)->default_value;
 	}
 
 	bool VaribleInfo::compare(void *src, void *dst) const

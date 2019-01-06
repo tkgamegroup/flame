@@ -27,33 +27,54 @@
 namespace flame
 {
 	struct EnumInfo;
+	struct VaribleInfo;
 	struct UDT;
 
 	struct BP
 	{
 		struct Node;
 
-		struct Slot
+		enum ItemType
 		{
-			CommonData d;
-			Node *link;
+			ItemTypeEnum,
+			ItemTypeVariable,
+			ItemTypeArrayOfPointer
 		};
 
 		struct Item
 		{
-			Array<Slot*> slots;
+			ItemType type;
+			String name;
+		};
+
+		struct ItemEnum : Item
+		{
+			EnumInfo *e;
+			int v;
+		};
+
+		struct ItemVarible : Item
+		{
+			VaribleInfo *v;
+			CommonData d;
+		};
+
+		struct ItemArrayOfPointer : Item
+		{
+			Array<Node*> v;
 		};
 
 		struct Node
 		{
-			StringAndHash id;
+			String id;
 			UDT *udt;
 			Array<Item*> items;
+			bool enable;
 		};
 
 		Array<Node*> nodes;
 
-		FLAME_FOUNDATION_EXPORTS Node *add_node_udt(uint hash);
+		FLAME_FOUNDATION_EXPORTS Node *add_node(uint hash);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
 
 		FLAME_FOUNDATION_EXPORTS void clear();
