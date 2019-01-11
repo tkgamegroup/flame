@@ -48,47 +48,7 @@ void flame_free(void *p)
 
 namespace flame
 {
-	struct RegisteredFunctionPrivate : RegisteredFunction
-	{
-		uint id;
-		PF pf;
-		int parm_count;
-		const char *filename;
-		int line_beg;
-		int line_end;
-	};
-
-	uint RegisteredFunction::id() const
-	{
-		return ((RegisteredFunctionPrivate*)this)->id;
-	}
-
-	PF RegisteredFunction::pf() const
-	{
-		return ((RegisteredFunctionPrivate*)this)->pf;
-	}
-
-	int RegisteredFunction::parm_count() const
-	{
-		return ((RegisteredFunctionPrivate*)this)->parm_count;
-	}
-
-	const char *RegisteredFunction::filename() const
-	{
-		return ((RegisteredFunctionPrivate*)this)->filename;
-	}
-
-	int RegisteredFunction::line_beg() const
-	{
-		return ((RegisteredFunctionPrivate*)this)->line_beg;
-	}
-
-	int RegisteredFunction::line_end() const
-	{
-		return ((RegisteredFunctionPrivate*)this)->line_end;
-	}
-
-	static std::vector<RegisteredFunctionPrivate*> pfs;
+	static std::vector<RegisteredFunction*> pfs;
 
 	void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end)
 	{
@@ -99,7 +59,7 @@ namespace flame
 				assert(0);
 		}
 
-		auto r = new RegisteredFunctionPrivate;
+		auto r = new RegisteredFunction;
 		r->id = id;
 		r->pf = pf;
 		r->parm_count = parm_count;
@@ -109,80 +69,40 @@ namespace flame
 		pfs.push_back(r);
 	}
 
-	RegisteredFunction *find_registered_function(uint id)
+	RegisteredFunction *find_registered_function(uint id, PF pf)
 	{
-		for (auto &r : pfs)
+		if (id)
 		{
-			if (r->id == id)
-				return r;
+			for (auto &r : pfs)
+			{
+				if (r->id == id)
+					return r;
+			}
+			return nullptr;
+		}
+		else
+		{
+			for (auto &r : pfs)
+			{
+				if (r->pf == pf)
+					return r;
+			}
+			return nullptr;
 		}
 		return nullptr;
 	}
 
-	RegisteredFunction *find_registered_function(PF pf)
-	{
-		for (auto &r : pfs)
-		{
-			if (r->pf == pf)
-				return r;
-		}
-		return 0;
-	}
-
-	static void thread(void *p)
+	static void do_thread(void *p)
 	{
 		auto f = (Function*)p;
 		f->exec();
-		Function::destroy(f);
-	}
-
-	void Function::thread_exec()
-	{
-		_beginthread(thread, 0, this);
-	}
-
-	Function *Function::create(uint id, const std::vector<CommonData> &capt)
-	{
-		auto r = (RegisteredFunctionPrivate*)find_registered_function(id);
-
-		auto f = new Function;
-		f->capt_cnt = capt.size();
-		f->pf = r->pf;
-		f->p.d = new CommonData[r->parm_count + capt.size()];
-
-		auto d = f->p.d + r->parm_count;
-		for (auto i = 0; i < capt.size(); i++)
-		{
-			*d = capt[i];
-
-			d++;
-		}
-
-		return f;
-	}
-
-	Function *Function::create(PF pf, int parm_count, const std::vector<CommonData> &capt)
-	{
-		auto f = new Function;
-		f->capt_cnt = capt.size();
-		f->pf = pf;
-		f->p.d = new CommonData[parm_count + capt.size()];
-
-		auto d = f->p.d + parm_count;
-		for (auto i = 0; i < capt.size(); i++)
-		{
-			*d = capt[i];
-
-			d++;
-		}
-
-		return f;
-	}
-
-	void Function::destroy(Function *f)
-	{
-		delete f->p.d;
 		delete f;
+	}
+
+	void thread(Function &_f)
+	{
+		auto f = new Function(_f);
+		_beginthread(do_thread, 0, f);
 	}
 
 	void *get_hinst()

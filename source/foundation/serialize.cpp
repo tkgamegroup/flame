@@ -808,13 +808,13 @@ namespace flame
 		return (SerializableNodePrivate*)n;
 	}
 
-	static void *create_obj(UDT *u, Function *obj_generator, void *parent, uint att_hash)
+	static void *create_obj(UDT *u, Function &obj_generator, void *parent, uint att_hash)
 	{
-		auto p = (SerializableNode::ObjGeneratorParm&)obj_generator->p;
+		auto p = (SerializableNode::ObjGeneratorParm&)obj_generator.p;
 		p.udt() = u;
 		p.parent() = parent;
 		p.att_hash() = att_hash;
-		obj_generator->exec();
+		obj_generator.exec();
 		auto obj = p.out_obj();
 		assert(obj);
 		return obj;
@@ -1031,6 +1031,30 @@ namespace flame
 							n_it->new_attr("value", arr[i_i].v);
 						}
 					}
+					else if (item->type_hash() == cH("Function"))
+					{
+						auto &arr = *(Array<Function>*)((char*)src + item->offset());
+
+						for (auto i_i = 0; i_i < arr.size; i_i++)
+						{
+							const auto &f = arr[i_i];
+							auto r = find_registered_function(0, f.pf);
+
+							auto n_fn = n_item->new_node("function");
+							n_fn->new_attr("id", to_stdstring(r->id));
+
+							auto d = f.p.d + r->parm_count;
+							for (auto i = 0; i < f.capt_cnt; i++)
+							{
+								auto n_cpt = n_fn->new_node("capture");
+								std::string ty_str, vl_str;
+								serialize_commondata(obj_table, precision, ty_str, vl_str, (CommonData*)d);
+								n_cpt->new_attr("type", ty_str);
+								n_cpt->new_attr("value", vl_str);
+								d++;
+							}
+						}
+					}
 				}
 					break;
 				case VariableTagArrayOfPointer:
@@ -1043,41 +1067,16 @@ namespace flame
 					auto n_item = new_node("attribute");
 					n_item->new_attr("name", item->name());
 
-					if (item->type_hash() == cH("Function"))
+					auto u_sub = find_udt(item->type_hash());
+					if (u_sub)
 					{
 						for (auto i_i = 0; i_i < arr.size; i_i++)
 						{
-							auto f = (Function*)arr[i_i];
-							auto r = find_registered_function(f->pf);
+							auto obj_sub = arr[i_i];
 
-							auto n_fn = n_item->new_node("function");
-							n_fn->new_attr("id", to_stdstring(r->id()));
-
-							auto d = f->p.d + r->parm_count();
-							for (auto i = 0; i < f->capt_cnt; i++)
-							{
-								auto n_cpt = n_fn->new_node("capture");
-								std::string ty_str, vl_str;
-								serialize_commondata(obj_table, precision, ty_str, vl_str, d);
-								n_cpt->new_attr("type", ty_str);
-								n_cpt->new_attr("value", vl_str);
-								d++;
-							}
-						}
-					}
-					else
-					{
-						auto u_sub = find_udt(item->type_hash());
-						if (u_sub)
-						{
-							for (auto i_i = 0; i_i < arr.size; i_i++)
-							{
-								auto obj_sub = arr[i_i];
-
-								auto n_sub = create_obj_node(obj_table, obj_sub);
-								n_sub->serialize_RE(u_sub, obj_table, obj_sub, precision);
-								n_item->add_node(n_sub);
-							}
+							auto n_sub = create_obj_node(obj_table, obj_sub);
+							n_sub->serialize_RE(u_sub, obj_table, obj_sub, precision);
+							n_item->add_node(n_sub);
 						}
 					}
 				}
@@ -1094,7 +1093,7 @@ namespace flame
 			}
 		}
 
-		void unserialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function *obj_generator)
+		void unserialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function &obj_generator)
 		{
 			for (auto i = 0; i < node_count(); i++)
 			{
@@ -1166,16 +1165,12 @@ namespace flame
 								assert(0);
 						}
 					}
-				}
-					break;
-				case VariableTagArrayOfPointer:
-				{
-					auto &arr = *(Array<void*>*)((char*)obj + item->offset());
-					auto cnt = n_item->node_count();
-					arr.resize(cnt);
-
-					if (item->type_hash() == cH("Function"))
+					else if (item->type_hash() == cH("Function"))
 					{
+						auto &arr = *(Array<Function>*)((char*)obj + item->offset());
+						auto cnt = n_item->node_count();
+						arr.resize(cnt);
+
 						for (auto i_i = 0; i_i < cnt; i_i++)
 						{
 							auto n_i = n_item->node(i_i);
@@ -1196,32 +1191,41 @@ namespace flame
 										assert(0);
 								}
 
-								arr[i_i] = Function::create(id, capts);
+								auto r = find_registered_function(id, nullptr);
+								if (!r)
+									assert(0);
+
+								arr[i_i] = Function(r->pf, r->parm_count, capts);
 							}
 							else
 								assert(0);
 						}
 					}
-					else
+				}
+					break;
+				case VariableTagArrayOfPointer:
+				{
+					auto &arr = *(Array<void*>*)((char*)obj + item->offset());
+					auto cnt = n_item->node_count();
+					arr.resize(cnt);
+
+					auto u_sub = find_udt(item->type_hash());
+					if (u_sub)
 					{
-						auto u_sub = find_udt(item->type_hash());
-						if (u_sub)
+						auto name_hash = H(item->name());
+						for (auto i_i = 0; i_i < cnt; i_i++)
 						{
-							auto name_hash = H(item->name());
-							for (auto i_i = 0; i_i < cnt; i_i++)
+							auto n_i = n_item->node(i_i);
+							assert(n_i->name() == "obj");
+
+							auto obj_sub = create_obj(u_sub, obj_generator, obj, name_hash);
+							if (obj_sub)
 							{
-								auto n_i = n_item->node(i_i);
-								assert(n_i->name() == "obj");
-
-								auto obj_sub = create_obj(u_sub, obj_generator, obj, name_hash);
-								if (obj_sub)
-								{
-									obj_table.emplace_back(obj_sub, stoi1(n_i->find_attr("id")->value().c_str()));
-									((SerializableNodePrivate*)n_i)->unserialize_RE(u_sub, obj_table, obj_sub, obj_generator);
-								}
-
-								arr[i_i] = obj_sub;
+								obj_table.emplace_back(obj_sub, stoi1(n_i->find_attr("id")->value().c_str()));
+								((SerializableNodePrivate*)n_i)->unserialize_RE(u_sub, obj_table, obj_sub, obj_generator);
 							}
+
+							arr[i_i] = obj_sub;
 						}
 					}
 				}
@@ -1417,7 +1421,7 @@ namespace flame
 	{
 		assert(name() == "obj");
 
-		auto obj_generator = Function::create(pf, ObjGeneratorParm::SIZE, capt);
+		auto obj_generator = Function(pf, ObjGeneratorParm::SIZE, capt);
 
 		auto obj = create_obj(u, obj_generator, nullptr, 0);
 
@@ -1425,8 +1429,6 @@ namespace flame
 		obj_table.emplace_back(obj, stoi1(find_attr("id")->value().c_str()));
 
 		((SerializableNodePrivate*)this)->unserialize_RE(u, obj_table, obj, obj_generator);
-
-		Function::destroy(obj_generator);
 
 		return obj;
 	}

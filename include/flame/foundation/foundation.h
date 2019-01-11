@@ -245,45 +245,6 @@ namespace flame
 			).time_since_epoch().count();
 	}
 
-	struct ParmPackage
-	{
-		CommonData *d;
-	};
-
-	typedef void(*PF)(const ParmPackage &p);
-
-	struct RegisteredFunction
-	{
-		FLAME_FOUNDATION_EXPORTS uint id() const;
-		FLAME_FOUNDATION_EXPORTS PF pf() const;
-		FLAME_FOUNDATION_EXPORTS int parm_count() const;
-		FLAME_FOUNDATION_EXPORTS const char *filename() const;
-		FLAME_FOUNDATION_EXPORTS int line_beg() const;
-		FLAME_FOUNDATION_EXPORTS int line_end() const;
-	};
-
-	FLAME_FOUNDATION_EXPORTS void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end);
-	FLAME_FOUNDATION_EXPORTS RegisteredFunction *find_registered_function(uint id);
-	FLAME_FOUNDATION_EXPORTS RegisteredFunction *find_registered_function(PF pf);
-
-	struct Function
-	{
-		int capt_cnt;
-
-		PF pf;
-		ParmPackage p;
-
-		inline void exec()
-		{
-			pf(p);
-		}
-		FLAME_FOUNDATION_EXPORTS void thread_exec(); // function will be destroyed after thread
-
-		FLAME_FOUNDATION_EXPORTS static Function *create(uint id, const std::vector<CommonData> &capt);
-		FLAME_FOUNDATION_EXPORTS static Function *create(PF pf, int parm_count, const std::vector<CommonData> &capt);
-		FLAME_FOUNDATION_EXPORTS static void destroy(Function *f);
-	};
-
 	template<typename T>
 	struct Array
 	{
@@ -762,6 +723,62 @@ namespace flame
 			dst_off += 4;
 		}
 	}
+
+
+	const uint FunctionMaxDataCount = 8;
+
+	struct ParmPackage
+	{
+		CommonData d[FunctionMaxDataCount];
+	};
+
+	typedef void(*PF)(const ParmPackage &p);
+
+	struct RegisteredFunction
+	{
+		uint id;
+		PF pf;
+		int parm_count;
+		String filename;
+		int line_beg;
+		int line_end;
+	};
+
+	FLAME_FOUNDATION_EXPORTS void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end);
+	FLAME_FOUNDATION_EXPORTS RegisteredFunction *find_registered_function(uint id, PF pf); // if !id, then use pf
+
+	struct Function
+	{
+		PF pf;
+		ParmPackage p;
+		int capt_cnt;
+
+		inline Function()
+		{
+			pf = nullptr;
+			capt_cnt = 0;
+		}
+
+		inline Function(PF _pf, int parm_count, const std::vector<CommonData> &capt = {})
+		{
+			pf = _pf;
+			auto d = p.d + parm_count;
+			for (auto i = 0; i < capt.size(); i++)
+			{
+				*d = capt[i];
+
+				d++;
+			}
+			capt_cnt = capt.size();
+		}
+
+		inline void exec()
+		{
+			pf(p);
+		}
+	};
+
+	FLAME_FOUNDATION_EXPORTS void thread(Function &f);
 
 	inline std::wstring ext_replace(const std::wstring &str, const std::wstring &ext)
 	{
