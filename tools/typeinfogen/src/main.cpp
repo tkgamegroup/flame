@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/file.h>
-#include <flame/serialize.h>
+#include <flame/foundation/foundation.h>
+#include <flame/foundation/serialize.h>
 
 using namespace flame;
 
@@ -32,23 +32,21 @@ int main(int argc, char **args)
 {
 	root_dir = s2w(getenv("flame_path"));
 
+	std::ifstream file(root_dir + L"/dir.txt");
+	if (file.good())
 	{
-		std::ifstream file(root_dir + L"/dir.txt");
-		if (file.good())
+		while (!file.eof())
 		{
-			while (!file.eof())
-			{
-				std::string line;
-				std::getline(file, line);
+			std::string line;
+			std::getline(file, line);
 
-				auto sp = string_split(line);
-				if (sp.size() > 0)
+			auto sp = string_split(line);
+			if (sp.size() > 0)
+			{
+				if (sp[0] == "bin:")
 				{
-					if (sp[0] == "bin:")
-					{
-						if (sp.size() == 2)
-							bin_dir = s2w(sp[1]);
-					}
+					if (sp.size() == 2)
+						bin_dir = s2w(sp[1]);
 				}
 			}
 		}

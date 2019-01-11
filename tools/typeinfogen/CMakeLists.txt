@@ -1,5 +1,5 @@
 file(GLOB SOURCE_LIST "src/*.c*")
 add_exe(typeinfogen "${SOURCE_LIST}" "tools")
 target_include_directories(typeinfogen PUBLIC "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(typeinfogen flame_serialize)
+target_link_libraries(typeinfogen flame_foundation)
 

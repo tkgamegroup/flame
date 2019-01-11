@@ -1,1 +1,1 @@
-"D:\Program Files\CMake\bin\cmake.exe" -S D:/flame -B D:/flame/build -DRAPIDXML_PATH=D:/rapidxml-1.13 -DSTB_PATH=D:/stb
+"D:\Program Files\CMake\bin\cmake.exe" -S D:/flame -B D:/flame/build -DVS_PATH="C:/Program Files (x86)/Microsoft Visual Studio/2019/Preview" -DRAPIDXML_PATH=D:/rapidxml-1.13 -DSTB_PATH=D:/stb

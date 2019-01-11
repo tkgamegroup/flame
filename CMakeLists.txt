@@ -22,6 +22,7 @@ else()
 	set(FLAME_SYS_BIT "32")
 endif()
 
+set(VS_PATH "" CACHE PATH "VisualStudio Path")
 set(RAPIDXML_PATH "" CACHE PATH "RapidXML Path")
 set(STB_PATH "" CACHE PATH "STB Path")
 set(FREETYPE_PATH "" CACHE PATH "FreeType Path")
