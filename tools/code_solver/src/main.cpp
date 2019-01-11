@@ -20,11 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/string.h>
-#include <flame/file.h>
-
-#include <vector>
-#include <regex>
+#include <flame/foundation/foundation.h>
 
 using namespace flame;
 

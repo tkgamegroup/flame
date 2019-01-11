@@ -31,6 +31,9 @@
 #define FLAME_GID(x) (x)
 #define FLAME_GID_UNDEFINED 0
 
+#define FLAME_UNRESOLVED(x)
+#define FLAME_RESOLVED(x) x
+
 #define FLAME_DEFINE_ITEM(t, n, tf)
 
 namespace flame
