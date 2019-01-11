@@ -20,19 +20,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/*
+	The Code Solver
+
+	To - 
+		Generate code that cannot be easily done by macro, and more clearer than macro
+	How - 
+		Once you write FLAME_UNRESOLVED(), the content in round brackets will be processed. 
+	Then the result will generate, and wrap in FLAME_RESOLVED(), and then place right after
+	the 'FLAME_UNRESOLVED' (they link by a semicolon)
+	For example:
+
+		FLAME_UNRESOLVED(
+			struct House
+				Orange Cat
+				Black Cat
+		);
+		FLAME_RESOLVED(
+			struct House
+			{
+				Cat orange_cat;
+				Cat black_cat;
+
+				enum { CAT_COUNT = 2 };
+			};
+		)
+
+		*NOTE: no other characters but a semicolon can appear between 
+		FLAME_UNRESOLVED and FLAME_RESOLVED (blank characters are OK)
+*/
+
 #include <flame/foundation/foundation.h>
 
 using namespace flame;
-
-std::regex reg_policy(R"(FLAME_CODE_GEN_POLICY\(\s*\"(.*)\"\s*,\s*\"(.*)\"\s*\))");
-std::regex reg_policy_file(R"(FLAME_CODE_GEN_POLICY_FILE\(([\"\w_\/\\\.]+)\))");
-std::regex reg_beg(R"(FLAME_CODE_GEN_BEGIN)");
-std::regex reg_end(R"(FLAME_CODE_GEN_END)");
-
-void do_gen(std::vector<std::string> &lines, int beg_line, int &end_line)
-{
-
-}
 
 int main(int argc, char **args)
 {
@@ -40,26 +60,14 @@ int main(int argc, char **args)
 		return 0;
 
 	auto src = get_file_string(s2w(args[1]));
-	auto lines = string_split(src, '\n');
-	for (auto i = 0; i < lines.size(); i++)
+	enum
 	{
-		if (std::regex_search(lines[i], reg_policy))
-		{
+		InNothing,
 
-		}
-		else if (std::regex_search(lines[i], reg_beg))
-		{
-			auto j = i + 1;
-			for (; j < lines.size(); j++)
-			{
-				if (std::regex_search(lines[j], reg_end))
-				{
+	};
+	while (true)
+	{
 
-					break;
-				}
-			}
-			i = j;
-		}
 	}
 
 	return 0;

@@ -678,41 +678,39 @@ namespace flame
 		return ((plain_length + 3) / 4) * 5;
 	}
 
-	inline uchar encode_base85_char(uint v)
-	{
-		v = (v % 85) + 35;
-		return (v >= ']') ? v + 1 : v;
-	}
-
 	inline void encode_base85(const uchar *src, int src_length, uchar *dst)
 	{
+		auto encode_char = [](uint v) {
+			v = (v % 85) + 35;
+			return (v >= ']') ? v + 1 : v;
+		};
+
 		for (auto i = 0; i < src_length; i += 4)
 		{
 			unsigned int d = *(uint*)(src + i);
 			for (auto j = 0; j < 5; j++)
 			{
-				*dst = encode_base85_char(d);
+				*dst = encode_char(d);
 				dst++;
 				d /= 85;
 			}
 		}
 	}
 
-	inline uchar decode_base85_char(uchar c)
-	{
-		return c >= ']' ? c - 36 : c - 35;
-	}
-
 	inline void decode_base85(const uchar *src, uchar *dst, int dst_length)
 	{
+		auto decode_char = [](uchar c) {
+			return c >= ']' ? c - 36 : c - 35;
+		};
+
 		auto dst_off = 0;
 		while (*src)
 		{
-			uint v = decode_base85_char(src[0]) +
-				85 * (decode_base85_char(src[1]) +
-					85 * (decode_base85_char(src[2]) +
-						85 * (decode_base85_char(src[3]) +
-							85 * decode_base85_char(src[4]))));
+			uint v = decode_char(src[0]) +
+				85 * (decode_char(src[1]) +
+					85 * (decode_char(src[2]) +
+						85 * (decode_char(src[3]) +
+							85 * decode_char(src[4]))));
 			for (auto i = 0; i < 4; i++)
 			{
 				if (dst_off + i < dst_length)
