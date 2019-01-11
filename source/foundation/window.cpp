@@ -237,7 +237,7 @@ namespace flame
 		long long last_frame_time;
 		long long counting_frame;
 
-		std::vector<Function*> delay_events;
+		std::vector<Function> delay_events;
 
 		ApplicationPrivate();
 		~ApplicationPrivate();
@@ -260,10 +260,10 @@ namespace flame
 		android_app *android_state_;
 #endif
 
-		std::vector<Function*> key_listeners;
-		std::vector<Function*> mouse_listeners;
-		std::vector<Function*> resize_listeners;
-		std::vector<Function*> destroy_listeners;
+		std::vector<Function> key_listeners;
+		std::vector<Function> mouse_listeners;
+		std::vector<Function> resize_listeners;
+		std::vector<Function> destroy_listeners;
 
 		bool dead;
 
@@ -342,7 +342,7 @@ namespace flame
 		inline ~WindowPrivate()
 		{
 			for (auto &f : destroy_listeners)
-				f->exec();
+				f.exec();
 		}
 
 #ifdef FLAME_WINDOWS
@@ -420,10 +420,10 @@ namespace flame
 		}
 #endif
 
-		inline Function *add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &_capt)
+		inline int add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &_capt)
 		{
 			auto parm_cnt = 0;
-			std::vector<Function*> *list;
+			std::vector<Function> *list;
 
 			switch (l)
 			{
@@ -445,19 +445,19 @@ namespace flame
 				break;
 			default:
 				assert(0);
-				return nullptr;
+				return -1;
 			}
 
 			auto capt = _capt;
 			capt.emplace(capt.begin(), thiz);
-			auto f = Function::create(pf, parm_cnt, capt);
-			list->push_back(f);
-			return f;
+			auto idx = list->size();
+			list->push_back(Function(pf, parm_cnt, capt));
+			return idx;
 		}
 
-		inline void remove_listener(Listener l, Function *f)
+		inline void remove_listener(Listener l, int idx)
 		{
-			std::vector<Function*> *list;
+			std::vector<Function> *list;
 
 			switch (l)
 			{
@@ -478,15 +478,7 @@ namespace flame
 				return;
 			}
 
-			for (auto it = list->begin(); it != list->end(); it++)
-			{
-				if (*it == f)
-				{
-					Function::destroy(f);
-					list->erase(it);
-					return;
-				}
-			}
+			list->erase(list->begin() + idx);
 		}
 	};
 
@@ -516,14 +508,14 @@ namespace flame
 	}
 #endif
 
-	Function *Window::add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt)
+	int Window::add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt)
 	{
 		return ((WindowPrivate*)this)->add_listener(l, pf, thiz, capt);
 	}
 
-	void Window::remove_listener(Listener l, Function *f)
+	void Window::remove_listener(Listener l, int idx)
 	{
-		((WindowPrivate*)this)->remove_listener(l, f);
+		((WindowPrivate*)this)->remove_listener(l, idx);
 	}
 
 #ifdef FLAME_WINDOWS
@@ -558,137 +550,137 @@ namespace flame
 			case WM_KEYDOWN:
 			{
 				auto v = Z(wParam);
-				for (auto f : w->key_listeners)
+				for (auto &f : w->key_listeners)
 				{
-					auto &p = (Window::KeyListenerParm&)f->p;
+					auto &p = (Window::KeyListenerParm&)f.p;
 					p.action() = KeyStateDown;
 					p.value() = v;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_KEYUP:
 			{
 				auto v = Z(wParam);
-				for (auto f : w->key_listeners)
+				for (auto &f : w->key_listeners)
 				{
-					auto &p = (Window::KeyListenerParm&)f->p;
+					auto &p = (Window::KeyListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.value() = v;
-					f->exec();
+					f.exec();
 				}
 				break;
 			}
 			case WM_CHAR:
-				for (auto f : w->key_listeners)
+				for (auto &f : w->key_listeners)
 				{
-					auto &p = (Window::KeyListenerParm&)f->p;
+					auto &p = (Window::KeyListenerParm&)f.p;
 					p.action() = KeyStateNull;
 					p.value() = wParam;
-					f->exec();
+					f.exec();
 				}
 				break;
 			case WM_LBUTTONDOWN:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateDown;
 					p.key() = Mouse_Left;
 					p.pos() = pos;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_LBUTTONUP:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Left;
 					p.pos() = pos;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_MBUTTONDOWN:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateDown;
 					p.key() = Mouse_Middle;
 					p.pos() = pos;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_MBUTTONUP:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Middle;
 					p.pos() = pos;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_RBUTTONDOWN:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateDown;
 					p.key() = Mouse_Right;
 					p.pos() = pos;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_RBUTTONUP:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Right;
 					p.pos() = pos;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_MOUSEMOVE:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateNull;
 					p.key() = Mouse_Null;
 					p.pos() = pos;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
 			case WM_MOUSEWHEEL:
 			{
 				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
-				for (auto f : w->mouse_listeners)
+				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f->p;
+					auto &p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateNull;
 					p.key() = Mouse_Middle;
 					p.pos().x = v;
-					f->exec();
+					f.exec();
 				}
 			}
 				break;
@@ -701,11 +693,11 @@ namespace flame
 				if (size != w->size)
 				{
 					w->size = size;
-					for (auto f : w->resize_listeners)
+					for (auto &f : w->resize_listeners)
 					{
-						auto &p = (Window::ResizeListenerParm&)f->p;
+						auto &p = (Window::ResizeListenerParm&)f.p;
 						p.size() = size;
-						f->exec();
+						f.exec();
 					}
 				}
 			}
@@ -849,7 +841,7 @@ namespace flame
 		counting_frame = 0;
 		total_frame = 0;
 
-		auto idle_func = Function::create(pf, 0, capt);
+		auto idle_func = Function(pf, 0, capt);
 
 		for (;;)
 		{
@@ -900,12 +892,12 @@ namespace flame
                 last_frame_time = last_time;
             }
 
-			idle_func->exec();
+			idle_func.exec();
 
             if (!delay_events.empty())
             {
-				for (auto f : delay_events)
-					f->exec();
+				for (auto &f : delay_events)
+					f.exec();
                 delay_events.clear();
             }
 
@@ -920,13 +912,11 @@ namespace flame
 
 	inline void ApplicationPrivate::add_delay_event(PF pf, const std::vector<CommonData> &capt)
 	{
-		delay_events.emplace_back(Function::create(pf, 0, capt));
+		delay_events.emplace_back(Function(pf, 0, capt));
 	}
 
 	inline void ApplicationPrivate::clear_delay_events()
 	{
-		for (auto f : delay_events)
-			Function::destroy(f);
 		delay_events.clear();
 	}
 

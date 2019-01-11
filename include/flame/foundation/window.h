@@ -124,8 +124,8 @@ namespace flame
 			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
 		FLAME_PARM_PACKAGE_END
 
-		FLAME_FOUNDATION_EXPORTS Function *add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
-		FLAME_FOUNDATION_EXPORTS void remove_listener(Listener l, Function *f);
+		FLAME_FOUNDATION_EXPORTS int add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
+		FLAME_FOUNDATION_EXPORTS void remove_listener(Listener l, int idx);
 
 #ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
