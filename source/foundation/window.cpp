@@ -534,9 +534,9 @@ namespace flame
 		((WindowPrivate*)this)->remove_destroy_listener(idx);
 	}
 
-#ifdef FLAME_WINDOWS
 	bool Window::is_modifier_pressing(Key k, int left_or_right)
 	{
+#ifdef FLAME_WINDOWS
 		int kc;
 		switch (k)
 		{
@@ -553,8 +553,17 @@ namespace flame
 			return false;
 		}
 		return GetKeyState(kc) < 0;
+#else
+		return false;
+#endif
 	}
 
+	void Window::close()
+	{
+		((WindowPrivate*)this)->dead = true;
+	}
+
+#ifdef FLAME_WINDOWS
 	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto w = reinterpret_cast<WindowPrivate*>(GetWindowLongPtr(hWnd, 0));
@@ -590,9 +599,8 @@ namespace flame
 			case WM_CHAR:
 				for (auto &f : w->key_listeners)
 				{
-					auto &p = (Window::KeyListenerParm&)f.p;
-					p.action() = KeyStateNull;
-					p.value() = wParam;
+					f.p.action() = KeyStateNull;
+					f.p.value() = wParam;
 					f.exec();
 				}
 				break;
@@ -601,10 +609,9 @@ namespace flame
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto &f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
-					p.action() = KeyStateDown;
-					p.key() = Mouse_Left;
-					p.pos() = pos;
+					f.p.action() = KeyStateDown;
+					f.p.key() = Mouse_Left;
+					f.p.pos() = pos;
 					f.exec();
 				}
 			}
@@ -723,6 +730,7 @@ namespace flame
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
+#endif
 
 	Window *Window::create(Application *app, const char *_title, const Ivec2 &_size, int _style)
 	{
@@ -761,7 +769,6 @@ namespace flame
 		(reinterpret_cast<ApplicationPrivate*>(app))->windows.push_back(w);
 		return w;
 	}
-#endif
 
 #ifdef FLAME_ANDROID
 	static int32_t android_handle_input(android_app *state, AInputEvent* event)

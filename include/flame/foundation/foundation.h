@@ -729,7 +729,7 @@ namespace flame
 		enum { SIZE = 0 };
 	};
 
-	typedef void(*PF)(const Package &p/*parameter package*/, const Package &c/*capture package*/);
+	typedef void(*PF)(Package &p/*parameter package*/, Package &c/*capture package*/);
 
 	struct RegisteredFunction
 	{
@@ -779,7 +779,7 @@ namespace flame
 	{
 		enum { MaxDataCount = 8 };
 
-		typedef void(*TypedPF)(const PP &p, const CP &c);
+		typedef void(*TypedPF)(PP &p, CP &c);
 		TypedPF pf;
 		CommonData d[MaxDataCount];
 		PP p;
@@ -811,13 +811,9 @@ namespace flame
 
 		inline Function<PP, Package> original()
 		{
-			union
-			{
-				Function<PP, CP> in;
-				Function<PP, Package> out;
-			}turnner;
-			turnner.in = *this;
-			return turnner.out;
+			Function<PP, Package> out;
+			memcpy(&out, this, sizeof(void*));
+			return out;
 		}
 
 		inline void exec()

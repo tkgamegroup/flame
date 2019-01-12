@@ -28,10 +28,18 @@ int main(int argc, char **args)
 {
 	auto app = Application::create();
 	auto w = Window::create(app, "Hello",  Ivec2(1280, 720), WindowFrame);
-	w->add_mouse_listener(Function<>([](const Package &p, const Package &c) {
-	}));
 
-	app->run(Function<>([](const Package &p, const Package &c){
+	FLAME_PACKAGE_BEGIN(WindowClickC)
+		FLAME_PACKAGE_ITEM(WindowPtr, w, p)
+	FLAME_PACKAGE_END
+
+	w->add_mouse_listener(Function<Window::MouseListenerParm, WindowClickC>([](Window::MouseListenerParm &p, WindowClickC &c) {
+		if (p.is_down())
+			c.w()->close();
+
+	}, { w }).original());
+
+	app->run(Function<>([](Package &p, Package &c){
 	}));
 
 	return 0;

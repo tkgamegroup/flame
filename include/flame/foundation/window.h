@@ -81,6 +81,10 @@ namespace flame
 			*/
 			FLAME_PACKAGE_ITEM(KeyState, action, i1)
 			FLAME_PACKAGE_ITEM(int, value, i1)
+
+			inline bool is_down() { return action() == KeyStateDown; }
+			inline bool is_up()   { return action() == KeyStateUp;   }
+			inline bool is_char() { return action() == KeyStateNull; }
 		FLAME_PACKAGE_END
 
 		FLAME_PACKAGE_BEGIN(MouseListenerParm)
@@ -92,33 +96,36 @@ namespace flame
 			FLAME_PACKAGE_ITEM(KeyState, action, i1)
 			FLAME_PACKAGE_ITEM(MouseKey, key, i1)
 			FLAME_PACKAGE_ITEM(Ivec2, pos, i2)
+
+			inline bool is_down()   { return action() == KeyStateDown;                          }
+			inline bool is_up()     { return action() == KeyStateUp;                            }
+			inline bool is_move()   { return action() == KeyStateNull && key() == Mouse_Null;   }
+			inline bool is_scroll() { return action() == KeyStateNull && key() == Mouse_Middle; }
 		FLAME_PACKAGE_END
 
 		FLAME_PACKAGE_BEGIN(ResizeListenerParm)
 			FLAME_PACKAGE_ITEM(Ivec2, size, i2)
 		FLAME_PACKAGE_END
 
-		FLAME_FOUNDATION_EXPORTS int add_key_listener(Function<KeyListenerParm> &listener);
-		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<MouseListenerParm> &listener);
-		FLAME_FOUNDATION_EXPORTS int add_resize_listener(Function<ResizeListenerParm> &listener);
-		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<> &listener);
+		FLAME_FOUNDATION_EXPORTS int add_key_listener    (Function<KeyListenerParm>    &listener);
+		FLAME_FOUNDATION_EXPORTS int add_mouse_listener  (Function<MouseListenerParm>  &listener);
+		FLAME_FOUNDATION_EXPORTS int add_resize_listener (Function<ResizeListenerParm> &listener);
+		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<>                   &listener);
 
-		FLAME_FOUNDATION_EXPORTS void remove_key_listener(int idx);
-		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(int idx);
-		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_key_listener    (int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener  (int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_resize_listener (int idx);
 		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(int idx);
 
-#ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Ivec2 &_size, int _style);
-#endif
+		FLAME_FOUNDATION_EXPORTS void close();
 
-#ifdef FLAME_ANDROID
-		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, void *android_state, void(*callback)());
-#endif
+		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Ivec2 &_size, int _style);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Window *s);
 	};
+
+	typedef Window* WindowPtr;
 
 	struct Application
 	{
