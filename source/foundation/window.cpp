@@ -263,7 +263,7 @@ namespace flame
 		std::vector<Function<KeyListenerParm>> key_listeners;
 		std::vector<Function<MouseListenerParm>> mouse_listeners;
 		std::vector<Function<ResizeListenerParm>> resize_listeners;
-		std::vector<Function<DestroyListenerParm>> destroy_listeners;
+		std::vector<Function<>> destroy_listeners;
 
 		bool dead;
 
@@ -419,66 +419,52 @@ namespace flame
 			ShowWindow(hWnd, v ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
 		}
 #endif
-
-		inline int add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &_capt)
+		inline int add_key_listener(Function<KeyListenerParm> &listener)
 		{
-			auto parm_cnt = 0;
-			std::vector<Function> *list;
-
-			switch (l)
-			{
-			case ListenerKey:
-				parm_cnt = KeyListenerParm::PARM_SIZE;
-				list = &key_listeners;
-				break;
-			case ListenerMouse:
-				parm_cnt = MouseListenerParm::PARM_SIZE;
-				list = &mouse_listeners;
-				break;
-			case ListenerResize:
-				parm_cnt = ResizeListenerParm::PARM_SIZE;
-				list = &resize_listeners;
-				break;
-			case ListenerDestroy:
-				parm_cnt = DestroyListenerParm::PARM_SIZE;
-				list = &destroy_listeners;
-				break;
-			default:
-				assert(0);
-				return -1;
-			}
-
-			auto capt = _capt;
-			capt.emplace(capt.begin(), thiz);
-			auto idx = list->size();
-			list->push_back(Function(pf, parm_cnt, capt));
+			auto idx = key_listeners.size();
+			key_listeners.push_back(listener);
 			return idx;
 		}
 
-		inline void remove_listener(Listener l, int idx)
+		inline int add_mouse_listener(Function<MouseListenerParm> &listener)
 		{
-			std::vector<Function> *list;
+			auto idx = mouse_listeners.size();
+			mouse_listeners.push_back(listener);
+			return idx;
+		}
 
-			switch (l)
-			{
-			case ListenerKey:
-				list = &key_listeners;
-				break;
-			case ListenerMouse:
-				list = &mouse_listeners;
-				break;
-			case ListenerResize:
-				list = &resize_listeners;
-				break;
-			case ListenerDestroy:
-				list = &destroy_listeners;
-				break;
-			default:
-				assert(0);
-				return;
-			}
+		inline int add_resize_listener(Function<ResizeListenerParm> &listener)
+		{
+			auto idx = resize_listeners.size();
+			resize_listeners.push_back(listener);
+			return idx;
+		}
 
-			list->erase(list->begin() + idx);
+		inline int add_destroy_listener(Function<> &listener)
+		{
+			auto idx = destroy_listeners.size();
+			destroy_listeners.push_back(listener);
+			return idx;
+		}
+
+		inline void remove_key_listener(int idx)
+		{
+			key_listeners.erase(key_listeners.begin() + idx);
+		}
+
+		inline void remove_mouse_listener(int idx)
+		{
+			mouse_listeners.erase(mouse_listeners.begin() + idx);
+		}
+
+		inline void remove_resize_listener(int idx)
+		{
+			resize_listeners.erase(resize_listeners.begin() + idx);
+		}
+
+		inline void remove_destroy_listener(int idx)
+		{
+			destroy_listeners.erase(destroy_listeners.begin() + idx);
 		}
 	};
 
@@ -508,14 +494,44 @@ namespace flame
 	}
 #endif
 
-	int Window::add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt)
+	int Window::add_key_listener(Function<KeyListenerParm> &listener)
 	{
-		return ((WindowPrivate*)this)->add_listener(l, pf, thiz, capt);
+		return ((WindowPrivate*)this)->add_key_listener(listener);
 	}
 
-	void Window::remove_listener(Listener l, int idx)
+	int Window::add_mouse_listener(Function<MouseListenerParm> &listener)
 	{
-		((WindowPrivate*)this)->remove_listener(l, idx);
+		return ((WindowPrivate*)this)->add_mouse_listener(listener);
+	}
+
+	int Window::add_resize_listener(Function<ResizeListenerParm> &listener)
+	{
+		return ((WindowPrivate*)this)->add_resize_listener(listener);
+	}
+
+	int Window::add_destroy_listener(Function<> &listener)
+	{
+		return ((WindowPrivate*)this)->add_destroy_listener(listener);
+	}
+
+	void Window::remove_key_listener(int idx)
+	{
+		((WindowPrivate*)this)->remove_key_listener(idx);
+	}
+
+	void Window::remove_mouse_listener(int idx)
+	{
+		((WindowPrivate*)this)->remove_mouse_listener(idx);
+	}
+
+	void Window::remove_resize_listener(int idx)
+	{
+		((WindowPrivate*)this)->remove_resize_listener(idx);
+	}
+
+	void Window::remove_destroy_listener(int idx)
+	{
+		((WindowPrivate*)this)->remove_destroy_listener(idx);
 	}
 
 #ifdef FLAME_WINDOWS

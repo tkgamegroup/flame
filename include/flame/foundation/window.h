@@ -98,8 +98,15 @@ namespace flame
 			FLAME_PACKAGE_ITEM(Ivec2, size, i2)
 		FLAME_PACKAGE_END
 
-		FLAME_FOUNDATION_EXPORTS int add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
-		FLAME_FOUNDATION_EXPORTS void remove_listener(Listener l, int idx);
+		FLAME_FOUNDATION_EXPORTS int add_key_listener(Function<KeyListenerParm> &listener);
+		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<MouseListenerParm> &listener);
+		FLAME_FOUNDATION_EXPORTS int add_resize_listener(Function<ResizeListenerParm> &listener);
+		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<> &listener);
+
+		FLAME_FOUNDATION_EXPORTS void remove_key_listener(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(int idx);
 
 #ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);

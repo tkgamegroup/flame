@@ -779,7 +779,8 @@ namespace flame
 	{
 		enum { MaxDataCount = 8 };
 
-		PF pf;
+		typedef void(*TypedPF)(const PP &p, const CP &c);
+		TypedPF pf;
 		CommonData d[MaxDataCount];
 		PP p;
 		CP c;
@@ -793,14 +794,25 @@ namespace flame
 			capt_cnt = 0;
 		}
 
-		inline Function(PF _pf, int parm_count, const std::vector<CommonData> &capt = {})
+		inline Function(TypedPF _pf, int parm_count, const std::vector<CommonData> &capt = {})
 		{
 			pf = _pf;
 			p.d = d;
-			c.d = d + parm_count < 0 ? Package::SIZE : parm_count;
+			c.d = d + (parm_count < 0 ? PP::SIZE : parm_count);
 			for (auto i = 0; i < capt.size(); i++)
 				c.d[i] = capt[i];
 			capt_cnt = capt.size();
+		}
+
+		inline Function<PP, Package> original()
+		{
+			union
+			{
+				Function<PP, CP> in;
+				Function<PP, Package> out;
+			}turnner;
+			turnner.in = *this;
+			return turnner.out;
 		}
 
 		inline void exec()
