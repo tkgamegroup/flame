@@ -1044,7 +1044,7 @@ namespace flame
 							n_fn->new_attr("id", to_stdstring(r->id));
 
 							auto d = f.p.d + r->parm_count;
-							for (auto i = 0; i < f.capt_cnt; i++)
+							for (auto i = 0; i < f.capture_count; i++)
 							{
 								auto n_cpt = n_fn->new_node("capture");
 								std::string ty_str, vl_str;

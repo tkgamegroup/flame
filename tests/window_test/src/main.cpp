@@ -33,13 +33,14 @@ int main(int argc, char **args)
 		FLAME_PACKAGE_ITEM(WindowPtr, w, p)
 	FLAME_PACKAGE_END
 
-	w->add_mouse_listener(Function<Window::MouseListenerParm, WindowClickC>([](Window::MouseListenerParm &p, WindowClickC &c) {
-		if (p.is_down())
+	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Function<Window::MouseListenerParm> &f) {
+		auto c = f.get_capture<WindowClickC>();
+		if (f.p.is_down())
 			c.w()->close();
 
-	}, { w }).original());
+	}, { w }));
 
-	app->run(Function<>([](Package &p, Package &c){
+	app->run(Function<>([](Function<> &f){
 	}));
 
 	return 0;

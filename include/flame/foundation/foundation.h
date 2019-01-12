@@ -722,14 +722,19 @@ namespace flame
 		}
 	}
 
+	enum { MaxFunctionDataCount = 8 };
+
 	struct Package
 	{
-		CommonData *d;
+		CommonData d[MaxFunctionDataCount];
 
 		enum { SIZE = 0 };
 	};
 
-	typedef void(*PF)(Package &p/*parameter package*/, Package &c/*capture package*/);
+	template<class T>
+	struct Function;
+
+	typedef void(*PF)(Function<Package> &f);
 
 	struct RegisteredFunction
 	{
@@ -774,34 +779,33 @@ namespace flame
 	};\
 	static name name##_;
 
-	template<class PP = Package, class CP = Package>
+	template<class PP = Package/*parameter package*/>
 	struct Function
 	{
-		enum { MaxDataCount = 8 };
-
-		typedef void(*TypedPF)(PP &p, CP &c);
+		typedef void(*TypedPF)(Function<PP> &p);
 		TypedPF pf;
-		CommonData d[MaxDataCount];
 		PP p;
-		CP c;
-		int capt_cnt;
+		int parameter_count;
+		int capture_count;
 
 		inline Function()
 		{
 			pf = nullptr;
-			p.d = d;
-			c.d = d;
-			capt_cnt = 0;
+			parameter_count = 0;
+			capture_count = 0;
 		}
 
-		inline void set(TypedPF _pf, int parm_count, const std::vector<CommonData> &capt)
+		inline void set(TypedPF _pf, int _parameter_count, const std::vector<CommonData> &capt)
 		{
 			pf = _pf;
-			p.d = d;
-			c.d = d + (parm_count < 0 ? PP::SIZE : parm_count);
+			parameter_count = _parameter_count;
+			auto d = p.d + parameter_count;
 			for (auto i = 0; i < capt.size(); i++)
-				c.d[i] = capt[i];
-			capt_cnt = capt.size();
+			{
+				*d = capt[i];
+				d++;
+			}
+			capture_count = capt.size();
 		}
 
 		inline Function(TypedPF _pf, const std::vector<CommonData> &capt = {})
@@ -809,16 +813,15 @@ namespace flame
 			set(_pf, PP::SIZE, capt);
 		}
 
-		inline Function<PP, Package> original()
+		template<class CP/*capture package*/>
+		inline CP &get_capture()
 		{
-			Function<PP, Package> out;
-			memcpy(&out, this, sizeof(void*));
-			return out;
+			return *(CP*)(p.d + parameter_count);
 		}
 
 		inline void exec()
 		{
-			pf(p, c);
+			pf(*this);
 		}
 	};
 
