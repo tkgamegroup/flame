@@ -794,7 +794,7 @@ namespace flame
 			capt_cnt = 0;
 		}
 
-		inline Function(TypedPF _pf, int parm_count, const std::vector<CommonData> &capt = {})
+		inline void set(TypedPF _pf, int parm_count, const std::vector<CommonData> &capt)
 		{
 			pf = _pf;
 			p.d = d;
@@ -802,6 +802,11 @@ namespace flame
 			for (auto i = 0; i < capt.size(); i++)
 				c.d[i] = capt[i];
 			capt_cnt = capt.size();
+		}
+
+		inline Function(TypedPF _pf, const std::vector<CommonData> &capt = {})
+		{
+			set(_pf, PP::SIZE, capt);
 		}
 
 		inline Function<PP, Package> original()

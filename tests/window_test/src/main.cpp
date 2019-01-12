@@ -28,9 +28,11 @@ int main(int argc, char **args)
 {
 	auto app = Application::create();
 	auto w = Window::create(app, "Hello",  Ivec2(1280, 720), WindowFrame);
+	w->add_mouse_listener(Function<>([](const Package &p, const Package &c) {
+	}));
 
 	app->run(Function<>([](const Package &p, const Package &c){
-	}, -1));
+	}));
 
 	return 0;
 }

@@ -1195,7 +1195,8 @@ namespace flame
 								if (!r)
 									assert(0);
 
-								arr[i_i] = Function<>(r->pf, r->parm_count, capts);
+								arr[i_i] = Function<>();
+								arr[i_i].set(r->pf, r->parm_count, capts);
 							}
 							else
 								assert(0);
