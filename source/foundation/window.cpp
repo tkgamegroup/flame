@@ -237,13 +237,13 @@ namespace flame
 		long long last_frame_time;
 		long long counting_frame;
 
-		std::vector<Function> delay_events;
+		std::vector<Function<>> delay_events;
 
 		ApplicationPrivate();
 		~ApplicationPrivate();
 
-		int run(PF pf, const std::vector<CommonData> &capt);
-		void add_delay_event(PF pf, const std::vector<CommonData> &capt);
+		int run(Function<> &idle_func);
+		void add_delay_event(Function<> &event);
 		void clear_delay_events();
 	};
 
@@ -260,10 +260,10 @@ namespace flame
 		android_app *android_state_;
 #endif
 
-		std::vector<Function> key_listeners;
-		std::vector<Function> mouse_listeners;
-		std::vector<Function> resize_listeners;
-		std::vector<Function> destroy_listeners;
+		std::vector<Function<KeyListenerParm>> key_listeners;
+		std::vector<Function<MouseListenerParm>> mouse_listeners;
+		std::vector<Function<ResizeListenerParm>> resize_listeners;
+		std::vector<Function<DestroyListenerParm>> destroy_listeners;
 
 		bool dead;
 
@@ -831,7 +831,7 @@ namespace flame
 		}
 	}
 
-	inline int ApplicationPrivate::run(PF pf, const std::vector<CommonData> &capt)
+	inline int ApplicationPrivate::run(Function<> &idle_func)
 	{
 		if (windows.size() == 0)
 			return 1;
@@ -840,8 +840,6 @@ namespace flame
 		last_frame_time = last_time;
 		counting_frame = 0;
 		total_frame = 0;
-
-		auto idle_func = Function(pf, 0, capt);
 
 		for (;;)
 		{
@@ -910,9 +908,9 @@ namespace flame
 		}
 	}
 
-	inline void ApplicationPrivate::add_delay_event(PF pf, const std::vector<CommonData> &capt)
+	inline void ApplicationPrivate::add_delay_event(Function<> &event)
 	{
-		delay_events.emplace_back(Function(pf, 0, capt));
+		delay_events.emplace_back(event);
 	}
 
 	inline void ApplicationPrivate::clear_delay_events()
@@ -920,9 +918,9 @@ namespace flame
 		delay_events.clear();
 	}
 
-	int Application::run(PF pf, const std::vector<CommonData> &capt)
+	int Application::run(Function<> &idle_func)
 	{
-		auto ret = ((ApplicationPrivate*)this)->run(pf, capt);
+		auto ret = ((ApplicationPrivate*)this)->run(idle_func);
 		return ret;
 	}
 
@@ -931,9 +929,9 @@ namespace flame
 		((ApplicationPrivate*)this)->clear_delay_events();
 	}
 
-	void Application::add_delay_event(PF pf, const std::vector<CommonData> &capt)
+	void Application::add_delay_event(Function<> &event)
 	{
-		((ApplicationPrivate*)this)->add_delay_event(pf, capt);
+		((ApplicationPrivate*)this)->add_delay_event(event);
 	}
 
 	Application *Application::create()

@@ -808,14 +808,14 @@ namespace flame
 		return (SerializableNodePrivate*)n;
 	}
 
-	static void *create_obj(UDT *u, Function &obj_generator, void *parent, uint att_hash)
+	static void *create_obj(UDT *u, Function<SerializableNode::ObjGeneratorParm> &obj_generator, void *parent, uint att_hash)
 	{
-		auto p = (SerializableNode::ObjGeneratorParm&)obj_generator.p;
-		p.udt() = u;
-		p.parent() = parent;
-		p.att_hash() = att_hash;
+		obj_generator.p.udt() = u;
+		obj_generator.p.udt() = u;
+		obj_generator.p.parent() = parent;
+		obj_generator.p.att_hash() = att_hash;
 		obj_generator.exec();
-		auto obj = p.out_obj();
+		auto obj = obj_generator.p.out_obj();
 		assert(obj);
 		return obj;
 	}
@@ -1033,7 +1033,7 @@ namespace flame
 					}
 					else if (item->type_hash() == cH("Function"))
 					{
-						auto &arr = *(Array<Function>*)((char*)src + item->offset());
+						auto &arr = *(Array<Function<>>*)((char*)src + item->offset());
 
 						for (auto i_i = 0; i_i < arr.size; i_i++)
 						{
@@ -1093,7 +1093,7 @@ namespace flame
 			}
 		}
 
-		void unserialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function &obj_generator)
+		void unserialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function<SerializableNode::ObjGeneratorParm> &obj_generator)
 		{
 			for (auto i = 0; i < node_count(); i++)
 			{
@@ -1167,7 +1167,7 @@ namespace flame
 					}
 					else if (item->type_hash() == cH("Function"))
 					{
-						auto &arr = *(Array<Function>*)((char*)obj + item->offset());
+						auto &arr = *(Array<Function<>>*)((char*)obj + item->offset());
 						auto cnt = n_item->node_count();
 						arr.resize(cnt);
 
@@ -1195,7 +1195,7 @@ namespace flame
 								if (!r)
 									assert(0);
 
-								arr[i_i] = Function(r->pf, r->parm_count, capts);
+								arr[i_i] = Function<>(r->pf, r->parm_count, capts);
 							}
 							else
 								assert(0);
@@ -1417,11 +1417,9 @@ namespace flame
 		bin_save(file, (SerializableNodePrivate*)this);
 	}
 
-	void *SerializableNode::unserialize(UDT *u, PF pf, const std::vector<CommonData> &capt)
+	void *SerializableNode::unserialize(UDT *u, Function<ObjGeneratorParm> &obj_generator)
 	{
 		assert(name() == "obj");
-
-		auto obj_generator = Function(pf, ObjGeneratorParm::SIZE, capt);
 
 		auto obj = create_obj(u, obj_generator, nullptr, 0);
 

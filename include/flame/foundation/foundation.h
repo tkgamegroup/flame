@@ -722,15 +722,14 @@ namespace flame
 		}
 	}
 
-
-	const uint FunctionMaxDataCount = 8;
-
-	struct ParmPackage
+	struct Package
 	{
-		CommonData d[FunctionMaxDataCount];
+		CommonData *d;
+
+		enum { SIZE = 0 };
 	};
 
-	typedef void(*PF)(const ParmPackage &p);
+	typedef void(*PF)(const Package &p/*parameter package*/, const Package &c/*capture package*/);
 
 	struct RegisteredFunction
 	{
@@ -745,38 +744,72 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end);
 	FLAME_FOUNDATION_EXPORTS RegisteredFunction *find_registered_function(uint id, PF pf); // if !id, then use pf
 
+#define FLAME_PACKAGE_BEGIN(name) \
+	struct name : Package\
+	{\
+		enum { BASE = __COUNTER__ + 1 };
+#define FLAME_PACKAGE_ITEM(t, n, tf) \
+		inline t &n()\
+		{\
+			return (t&)d[__COUNTER__ - BASE].tf();\
+		}
+#define FLAME_PACKAGE_END \
+		enum { SIZE = __COUNTER__ - BASE };\
+	};
+
+#define FLAME_REGISTER_FUNCTION_BEG(name, id, package) \
+	struct name\
+	{\
+		name()\
+		{\
+			register_function(id, v, package::PARM_SIZE, __FILE__, line_beg, line_end);\
+		}\
+		static const int line_beg = __LINE__;\
+		static void v(const ParmPackage &_p)\
+		{\
+			auto &p = (package&)_p;
+#define FLAME_REGISTER_FUNCTION_END(name) \
+		}\
+		static const int line_end = __LINE__;\
+	};\
+	static name name##_;
+
+	template<class PP = Package, class CP = Package>
 	struct Function
 	{
+		enum { MaxDataCount = 8 };
+
 		PF pf;
-		ParmPackage p;
+		CommonData d[MaxDataCount];
+		PP p;
+		CP c;
 		int capt_cnt;
 
 		inline Function()
 		{
 			pf = nullptr;
+			p.d = d;
+			c.d = d;
 			capt_cnt = 0;
 		}
 
 		inline Function(PF _pf, int parm_count, const std::vector<CommonData> &capt = {})
 		{
 			pf = _pf;
-			auto d = p.d + parm_count;
+			p.d = d;
+			c.d = d + parm_count < 0 ? Package::SIZE : parm_count;
 			for (auto i = 0; i < capt.size(); i++)
-			{
-				*d = capt[i];
-
-				d++;
-			}
+				c.d[i] = capt[i];
 			capt_cnt = capt.size();
 		}
 
 		inline void exec()
 		{
-			pf(p);
+			pf(p, c);
 		}
 	};
 
-	FLAME_FOUNDATION_EXPORTS void thread(Function &f);
+	FLAME_FOUNDATION_EXPORTS void thread(Function<> &f);
 
 	inline std::wstring ext_replace(const std::wstring &str, const std::wstring &ext)
 	{
@@ -982,53 +1015,3 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void add_work(PF pf, char *capture_fmt, ...);
 	FLAME_FOUNDATION_EXPORTS void clear_works();
 }
-
-#define FLAME_PARM_PACKAGE_BEGIN(name) \
-	struct name : ParmPackage\
-	{\
-		enum { BASE = __COUNTER__ + 1 };
-#define FLAME_PARM_PACKAGE_PARM(t, n, tf) \
-		inline t &n()\
-		{\
-			return (t&)d[__COUNTER__ - BASE].tf();\
-		}
-#define FLAME_PARM_PACKAGE_SEPARATOR \
-		enum { PARM_SIZE = __COUNTER__ - BASE };
-#define FLAME_PARM_PACKAGE_DEFAULT_CAPT(t, n, tf) \
-		inline t &n()\
-		{\
-			return (t&)d[__COUNTER__ - BASE - 1].tf();\
-		}
-#define FLAME_PARM_PACKAGE_END \
-		enum { SIZE = __COUNTER__ - BASE - 1 };\
-	};
-
-#define FLAME_DATA_PACKAGE_BEGIN(name, package) \
-	struct name : package\
-	{\
-		enum { BASE = __COUNTER__ + 1 };\
-		enum { P_SIZE = package::SIZE };
-#define FLAME_DATA_PACKAGE_CAPT(t, n, tf) \
-		inline t &n()\
-		{\
-			return (t&)d[__COUNTER__ - BASE + P_SIZE].tf();\
-		}
-#define FLAME_DATA_PACKAGE_END \
-	};
-
-#define FLAME_REGISTER_FUNCTION_BEG(name, id, package) \
-	struct name\
-	{\
-		name()\
-		{\
-			register_function(id, v, package::PARM_SIZE, __FILE__, line_beg, line_end);\
-		}\
-		static const int line_beg = __LINE__;\
-		static void v(const ParmPackage &_p)\
-		{\
-			auto &p = (package&)_p;
-#define FLAME_REGISTER_FUNCTION_END(name) \
-		}\
-		static const int line_end = __LINE__;\
-	};\
-	static name name##_;

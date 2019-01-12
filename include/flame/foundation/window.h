@@ -74,55 +74,29 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		enum Listener
-		{
-			ListenerKey,
-			ListenerMouse,
-			ListenerResize,
-			ListenerDestroy
-		};
-
-		FLAME_PARM_PACKAGE_BEGIN(KeyListenerParm)
+		FLAME_PACKAGE_BEGIN(KeyListenerParm)
 			/*
 				- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
 				- when char, action is KeyStateNull, value is ch
 			*/
-			FLAME_PARM_PACKAGE_PARM(KeyState, action, i1)
-			FLAME_PARM_PACKAGE_PARM(int, value, i1)
+			FLAME_PACKAGE_ITEM(KeyState, action, i1)
+			FLAME_PACKAGE_ITEM(int, value, i1)
+		FLAME_PACKAGE_END
 
-			FLAME_PARM_PACKAGE_SEPARATOR
-
-			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
-		FLAME_PARM_PACKAGE_END
-
-		FLAME_PARM_PACKAGE_BEGIN(MouseListenerParm)
+		FLAME_PACKAGE_BEGIN(MouseListenerParm)
 			/*
 				- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey
 				- when move, action is KeyStateNull, key is Mouse_Null
 				- when scroll, action is KeyStateNull, key is Mouse_Middle, pos.x is scroll value
 			*/
-			FLAME_PARM_PACKAGE_PARM(KeyState, action, i1)
-			FLAME_PARM_PACKAGE_PARM(MouseKey, key, i1)
-			FLAME_PARM_PACKAGE_PARM(Ivec2, pos, i2)
+			FLAME_PACKAGE_ITEM(KeyState, action, i1)
+			FLAME_PACKAGE_ITEM(MouseKey, key, i1)
+			FLAME_PACKAGE_ITEM(Ivec2, pos, i2)
+		FLAME_PACKAGE_END
 
-			FLAME_PARM_PACKAGE_SEPARATOR
-
-			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
-		FLAME_PARM_PACKAGE_END
-
-		FLAME_PARM_PACKAGE_BEGIN(ResizeListenerParm)
-			FLAME_PARM_PACKAGE_PARM(Ivec2, size, i2)
-
-			FLAME_PARM_PACKAGE_SEPARATOR
-
-			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
-		FLAME_PARM_PACKAGE_END
-
-		FLAME_PARM_PACKAGE_BEGIN(DestroyListenerParm)
-			FLAME_PARM_PACKAGE_SEPARATOR
-
-			FLAME_PARM_PACKAGE_DEFAULT_CAPT(voidptr, thiz, p)
-		FLAME_PARM_PACKAGE_END
+		FLAME_PACKAGE_BEGIN(ResizeListenerParm)
+			FLAME_PACKAGE_ITEM(Ivec2, size, i2)
+		FLAME_PACKAGE_END
 
 		FLAME_FOUNDATION_EXPORTS int add_listener(Listener l, PF pf, void *thiz, const std::vector<CommonData> &capt);
 		FLAME_FOUNDATION_EXPORTS void remove_listener(Listener l, int idx);
@@ -145,10 +119,10 @@ namespace flame
 		long long fps;
 		float elapsed_time; // second
 
-		FLAME_FOUNDATION_EXPORTS int run(PF pf, const std::vector<CommonData> &capt);
+		FLAME_FOUNDATION_EXPORTS int run(Function<> &idle_func);
 
 		FLAME_FOUNDATION_EXPORTS void clear_delay_events();
-		FLAME_FOUNDATION_EXPORTS void add_delay_event(PF pf, const std::vector<CommonData> &capt);
+		FLAME_FOUNDATION_EXPORTS void add_delay_event(Function<> &event);
 
 		FLAME_FOUNDATION_EXPORTS static Application *create();
 		FLAME_FOUNDATION_EXPORTS static void destroy(Application *m);

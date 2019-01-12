@@ -94,14 +94,14 @@ namespace flame
 
 	static void do_thread(void *p)
 	{
-		auto f = (Function*)p;
+		auto f = (Function<>*)p;
 		f->exec();
 		delete f;
 	}
 
-	void thread(Function &_f)
+	void thread(Function<> &_f)
 	{
-		auto f = new Function(_f);
+		auto f = new Function<>(_f);
 		_beginthread(do_thread, 0, f);
 	}
 
