@@ -731,16 +731,13 @@ namespace flame
 		enum { SIZE = 0 };
 	};
 
-	template<class T>
-	struct Function;
-
-	typedef void(*PF)(Function<Package> &f);
+	typedef void(*PF)(Package &p);
 
 	struct RegisteredFunction
 	{
 		uint id;
 		PF pf;
-		int parm_count;
+		int parameter_count;
 		String filename;
 		int line_beg;
 		int line_end;
@@ -760,6 +757,11 @@ namespace flame
 		}
 #define FLAME_PACKAGE_END \
 		enum { SIZE = __COUNTER__ - BASE };\
+		template<class CP/*capture package*/>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + SIZE);\
+		}\
 	};
 
 #define FLAME_REGISTER_FUNCTION_BEG(name, id, package) \
@@ -782,23 +784,20 @@ namespace flame
 	template<class PP = Package/*parameter package*/>
 	struct Function
 	{
-		typedef void(*TypedPF)(Function<PP> &p);
+		typedef void(*TypedPF)(PP &p);
 		TypedPF pf;
 		PP p;
-		int parameter_count;
 		int capture_count;
 
 		inline Function()
 		{
 			pf = nullptr;
-			parameter_count = 0;
 			capture_count = 0;
 		}
 
-		inline void set(TypedPF _pf, int _parameter_count, const std::vector<CommonData> &capt)
+		inline void set(TypedPF _pf, int parameter_count, const std::vector<CommonData> &capt)
 		{
 			pf = _pf;
-			parameter_count = _parameter_count;
 			auto d = p.d + parameter_count;
 			for (auto i = 0; i < capt.size(); i++)
 			{
@@ -813,15 +812,9 @@ namespace flame
 			set(_pf, PP::SIZE, capt);
 		}
 
-		template<class CP/*capture package*/>
-		inline CP &get_capture()
-		{
-			return *(CP*)(p.d + parameter_count);
-		}
-
 		inline void exec()
 		{
-			pf(*this);
+			pf(p);
 		}
 	};
 

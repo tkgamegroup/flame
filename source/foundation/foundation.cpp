@@ -62,7 +62,7 @@ namespace flame
 		auto r = new RegisteredFunction;
 		r->id = id;
 		r->pf = pf;
-		r->parm_count = parm_count;
+		r->parameter_count = parm_count;
 		r->filename = filename;
 		r->line_beg = line_beg;
 		r->line_end = line_end;

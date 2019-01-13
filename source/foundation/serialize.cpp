@@ -1043,7 +1043,7 @@ namespace flame
 							auto n_fn = n_item->new_node("function");
 							n_fn->new_attr("id", to_stdstring(r->id));
 
-							auto d = f.p.d + r->parm_count;
+							auto d = f.p.d + r->parameter_count;
 							for (auto i = 0; i < f.capture_count; i++)
 							{
 								auto n_cpt = n_fn->new_node("capture");
@@ -1196,7 +1196,7 @@ namespace flame
 									assert(0);
 
 								arr[i_i] = Function<>();
-								arr[i_i].set(r->pf, r->parm_count, capts);
+								arr[i_i].set(r->pf, r->parameter_count, capts);
 							}
 							else
 								assert(0);

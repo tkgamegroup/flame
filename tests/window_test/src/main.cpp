@@ -24,23 +24,23 @@
 
 using namespace flame;
 
+FLAME_PACKAGE_BEGIN(WindowClickC)
+	FLAME_PACKAGE_ITEM(WindowPtr, w, p)
+FLAME_PACKAGE_END
+
 int main(int argc, char **args)
 {
 	auto app = Application::create();
 	auto w = Window::create(app, "Hello",  Ivec2(1280, 720), WindowFrame);
 
-	FLAME_PACKAGE_BEGIN(WindowClickC)
-		FLAME_PACKAGE_ITEM(WindowPtr, w, p)
-	FLAME_PACKAGE_END
-
-	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Function<Window::MouseListenerParm> &f) {
-		auto c = f.get_capture<WindowClickC>();
-		if (f.p.is_down())
+	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Window::MouseListenerParm &p) {
+		auto c = p.get_capture<WindowClickC>();
+		if (p.is_down())
 			c.w()->close();
 
 	}, { w }));
 
-	app->run(Function<>([](Function<> &f){
+	app->run(Function<>([](Package &p){
 	}));
 
 	return 0;
