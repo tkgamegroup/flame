@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/foundation/foundation.h>
+#include <flame/foundation/bitmap.h>
 #include "device_private.h"
 #include "buffer_private.h"
 #include "framebuffer_private.h"
@@ -28,10 +30,6 @@
 #include "commandbuffer_private.h"
 #include "queue_private.h"
 #include "image_private.h"
-
-#include <flame/string.h>
-#include <flame/file.h>
-#include <flame/bitmap.h>
 
 #include <algorithm>
 
@@ -448,8 +446,8 @@ namespace flame
 
 		Image *Image::create_from_file(Device *d, const wchar_t *filename, int extra_usage)
 		{
-			filesystem::path path(filename);
-			if (!filesystem::exists(path))
+			std::filesystem::path path(filename);
+			if (!std::filesystem::exists(path))
 				return nullptr;
 
 			int width, height, level, layer;

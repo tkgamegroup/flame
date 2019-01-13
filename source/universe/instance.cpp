@@ -71,22 +71,6 @@ namespace flame
 				font_atlas->save(L"UI/font.xml");
 			}
 
-			sample_count = _sample_count;
-			auto swapchain_format = graphics::get_swapchain_format();
-
-			{
-				graphics::RenderpassInfo info;
-				if (sample_count != graphics::SampleCount_1)
-					info.attachments.emplace_back(swapchain_format, true, sample_count);
-				info.attachments.emplace_back(swapchain_format, false, graphics::SampleCount_1);
-				info.subpasses[0].color_attachments.push_back(0);
-				if (sample_count != graphics::SampleCount_1)
-					info.subpasses[0].resolve_attachments.push_back(1);
-				renderpass = graphics::Renderpass::get(d, info);
-				info.attachments[0].clear$ = false;
-				renderpass_noclear = graphics::Renderpass::get(d, info);
-			}
-
 			white_image = graphics::Image::create_from_file(d, L"UI/imgs/white.bmp");
 			font_stroke_image = graphics::Image::create_from_bitmap(d, font_atlas->get_stroke_image());
 			font_sdf_image = graphics::Image::create_from_bitmap(d, font_atlas->get_sdf_image());
@@ -190,82 +174,6 @@ namespace flame
 		void deinit()
 		{
 			share_data.destroy();
-		}
-
-		FLAME_REGISTER_FUNCTION_BEG(SwapchainDataResize, FLAME_GID(24526), Window::ResizeListenerParm)
-			if (p.size().x == 0)
-				p.size().x = 1;
-			if (p.size().y == 0)
-				p.size().y = 1;
-
-			for (auto i = 0; i < 2; i++)
-			{
-				if (((SwapchainDataPrivate*)p.thiz())->framebuffers[i])
-					graphics::Framebuffer::release(((SwapchainDataPrivate*)p.thiz())->framebuffers[i]);
-
-				graphics::FramebufferInfo fb_info;
-				fb_info.rp = share_data.renderpass;
-				if (share_data.sample_count != graphics::SampleCount_1)
-				{
-					if (!((SwapchainDataPrivate*)p.thiz())->image_ms || ((SwapchainDataPrivate*)p.thiz())->image_ms->size != p.size())
-					{
-						if (((SwapchainDataPrivate*)p.thiz())->image_ms)
-							graphics::Image::destroy(((SwapchainDataPrivate*)p.thiz())->image_ms);
-						((SwapchainDataPrivate*)p.thiz())->image_ms = graphics::Image::create(share_data.d, graphics::get_swapchain_format(), p.size(), 1, 1, share_data.sample_count,
-							graphics::ImageUsageAttachment, graphics::MemPropDevice);
-					}
-					fb_info.views.push_back(graphics::Imageview::get(((SwapchainDataPrivate*)p.thiz())->image_ms));
-				}
-				fb_info.views.push_back(graphics::Imageview::get(((SwapchainDataPrivate*)p.thiz())->sc->get_image(i)));
-				((SwapchainDataPrivate*)p.thiz())->framebuffers[i] = graphics::Framebuffer::get(share_data.d, fb_info);
-			}
-		FLAME_REGISTER_FUNCTION_END(SwapchainDataResize)
-
-		SwapchainDataPrivate::SwapchainDataPrivate(graphics::Swapchain *_sc)
-		{
-			sc = _sc;
-			w = sc->window();
-
-			w->add_listener(Window::ListenerResize, SwapchainDataResize::v, this, {});
-
-			auto surface_size = w->size;
-			auto swapchain_format = graphics::get_swapchain_format();
-
-			if (share_data.sample_count != graphics::SampleCount_1)
-			{
-				image_ms = graphics::Image::create(share_data.d, swapchain_format, surface_size, 1, 1, share_data.sample_count,
-					graphics::ImageUsageAttachment, graphics::MemPropDevice);
-			}
-			else
-				image_ms = nullptr;
-
-			for (int i = 0; i < 2; i++)
-			{
-				graphics::FramebufferInfo fb_info;
-				fb_info.rp = share_data.renderpass;
-				if (share_data.sample_count != graphics::SampleCount_1)
-					fb_info.views.push_back(graphics::Imageview::get(image_ms));
-				fb_info.views.push_back(graphics::Imageview::get(sc->get_image(i)));
-				framebuffers[i] = graphics::Framebuffer::get(share_data.d, fb_info);
-			}
-		}
-
-		SwapchainDataPrivate::~SwapchainDataPrivate()
-		{
-			for (auto i = 0; i < 2; i++)
-				graphics::Framebuffer::release(framebuffers[i]);
-			if (image_ms)
-				graphics::Image::destroy(image_ms);
-		}
-
-		SwapchainData *SwapchainData::create(graphics::Swapchain *sc)
-		{
-			return new SwapchainDataPrivate(sc);
-		}
-
-		void SwapchainData::destroy(SwapchainData *s)
-		{
-			delete (SwapchainDataPrivate*)s;
 		}
 
 		FLAME_REGISTER_FUNCTION_BEG(InstanceKey, FLAME_GID(28755), Window::KeyListenerParm)

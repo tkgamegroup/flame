@@ -48,12 +48,6 @@ namespace flame
 		FLAME_UI_EXPORTS void init(graphics::Device *d, graphics::SampleCount sample_count = graphics::SampleCount_1);
 		FLAME_UI_EXPORTS void deinit();
 
-		struct SwapchainData
-		{
-			FLAME_UI_EXPORTS static SwapchainData *create(graphics::Swapchain *sc);
-			FLAME_UI_EXPORTS static void destroy(SwapchainData *s);
-		};
-
 		enum DefaultStyle
 		{
 			DefaultStyleDark,

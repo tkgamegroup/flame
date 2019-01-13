@@ -32,7 +32,6 @@
 #define FLAME_GRAPHICS_EXPORTS
 #endif
 
-#include <flame/config.h>
 #include <flame/math.h>
 
 namespace flame

@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/foundation/foundation.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "pipeline_private.h"
@@ -27,8 +28,6 @@
 #include "sampler_private.h"
 #include "commandbuffer_private.h"
 #include "queue_private.h"
-
-#include <flame/log.h>
 
 #include <vector>
 #ifdef FLAME_ANDROID

@@ -24,8 +24,6 @@
 
 #include <flame/graphics/graphics.h>
 
-#include <flame/array.h>
-
 #include <vector>
 
 namespace flame

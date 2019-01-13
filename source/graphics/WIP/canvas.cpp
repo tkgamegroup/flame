@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/graphics/device.h>
+#include "device_private.h"
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
@@ -33,7 +33,7 @@
 
 namespace flame
 {
-	namespace ui
+	namespace graphics
 	{
 		static Vec2 circle_subdiv[36];
 		static auto circle_subdiv_ready = false;
@@ -70,23 +70,20 @@ namespace flame
 
 		struct CanvasPrivate : Canvas
 		{
-			Bvec4 clear_col;
-			graphics::ClearValues *clear_values;
-
-			SwapchainDataPrivate *s;
+			DevicePrivate *d;
 
 			std::vector<Vec2> points;
 			std::vector<DrawCmd> draw_cmds;
 
-			graphics::Buffer *vtx_buffer;
-			graphics::Buffer *idx_buffer;
+			Buffer *vtx_buffer;
+			Buffer *idx_buffer;
 			Vertex *vtx_end;
 			int *idx_end;
-			graphics::Commandbuffer *cb;
+			Commandbuffer *cb;
 
-			inline CanvasPrivate(SwapchainData *_s)
+			inline CanvasPrivate(Device *_d)
 			{
-				s = (SwapchainDataPrivate*)_s;
+				d = (DevicePrivate*)_d;
 
 				if (!circle_subdiv_ready)
 				{
@@ -99,32 +96,22 @@ namespace flame
 					circle_subdiv_ready = true;
 				}
 
-				clear_col = Bvec4(0, 0, 0, 255);
-				clear_values = graphics::ClearValues::create(share_data.renderpass);
-
-				vtx_buffer = graphics::Buffer::create(share_data.d, sizeof(Vertex) * 43690,
-					graphics::BufferUsageVertex, graphics::MemPropHost | graphics::MemPropHostCoherent);
-				idx_buffer = graphics::Buffer::create(share_data.d, sizeof(int) * 65535,
-					graphics::BufferUsageIndex, graphics::MemPropHost | graphics::MemPropHostCoherent);
+				vtx_buffer = Buffer::create(d, sizeof(Vertex) * 43690,
+					BufferUsageVertex, MemPropHost | MemPropHostCoherent);
+				idx_buffer = Buffer::create(d, sizeof(int) * 65535,
+					BufferUsageIndex, MemPropHost | MemPropHostCoherent);
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (int*)idx_buffer->mapped;
-				cb = graphics::Commandbuffer::create(share_data.d->gcp);
+				cb = Commandbuffer::create(d->gcp);
 			}
 
 			inline ~CanvasPrivate()
 			{
-				graphics::ClearValues::destroy(clear_values);
-				graphics::Buffer::destroy(vtx_buffer);
-				graphics::Buffer::destroy(idx_buffer);
-				graphics::Commandbuffer::destroy(cb);
-			}
-
-			inline void set_clear_color(const Bvec4 &col)
-			{
-				clear_col = col;
-				clear_values->set(0, clear_col);
+				Buffer::destroy(vtx_buffer);
+				Buffer::destroy(idx_buffer);
+				Commandbuffer::destroy(cb);
 			}
 
 			inline void start_cmd(DrawCmdType type, int id)
@@ -612,7 +599,7 @@ namespace flame
 					cb->set_viewport(Rect(Vec2(0.f), surface_size));
 					cb->set_scissor(Rect(Vec2(0.f), surface_size));
 					cb->bind_vertexbuffer(vtx_buffer, 0);
-					cb->bind_indexbuffer(idx_buffer, graphics::IndiceTypeUint);
+					cb->bind_indexbuffer(idx_buffer, IndiceTypeUint);
 
 					auto scale = Vec2(2.f / surface_size.x, 2.f / surface_size.y);
 
@@ -665,11 +652,6 @@ namespace flame
 				draw_cmds.clear();
 			}
 		};
-
-		void Canvas::set_clear_color(const Bvec4 &col)
-		{
-			((CanvasPrivate*)this)->set_clear_color(col);
-		}
 
 		void Canvas::start_cmd(DrawCmdType type, int id)
 		{
@@ -796,7 +778,7 @@ namespace flame
 			((CanvasPrivate*)this)->set_scissor(scissor);
 		}
 
-		graphics::Commandbuffer *Canvas::get_cb() const
+		Commandbuffer *Canvas::get_cb() const
 		{
 			return ((CanvasPrivate*)this)->cb;
 		}

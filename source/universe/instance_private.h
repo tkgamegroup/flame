@@ -25,7 +25,7 @@
 #include <flame/window.h>
 
 #include "widget_private.h"
-#include <flame/ui/instance.h>
+#include <flame/universe/instance.h>
 
 #include <vector>
 
@@ -84,21 +84,6 @@ namespace flame
 		};
 
 		extern ShareData share_data;
-
-		struct SwapchainDataPrivate : SwapchainData
-		{
-			Window *w;
-			graphics::Swapchain *sc;
-
-			graphics::Image *image_ms;
-
-			graphics::Framebuffer *framebuffers[2];
-
-			SwapchainDataPrivate(graphics::Swapchain *_sc);
-			~SwapchainDataPrivate();
-		};
-
-		typedef SwapchainDataPrivate* SwapchainDataPrivatePtr;
 
 		struct InstancePrivate : Instance
 		{

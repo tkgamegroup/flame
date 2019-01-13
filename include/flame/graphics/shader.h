@@ -24,8 +24,6 @@
 
 #include <flame/graphics/graphics.h>
 
-#include <flame/string.h>
-
 namespace flame
 {
 	namespace graphics

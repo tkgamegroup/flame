@@ -21,14 +21,13 @@
 // SOFTWARE.
 
 #include "device_private.h"
-#include "semaphore_private.h"
-#include <flame/graphics/renderpass.h>
 #include <flame/graphics/image.h>
+#include <flame/graphics/renderpass.h>
 #include <flame/graphics/framebuffer.h>
 #include "swapchain_private.h"
+#include "semaphore_private.h"
 
 #include <flame/type.h>
-#include <flame/system.h>
 #ifdef FLAME_ANDROID
 #include <android_native_app_glue.h>
 #endif
@@ -37,6 +36,10 @@ namespace flame
 {
 	namespace graphics
 	{
+		FLAME_PACKAGE_BEGIN(ResizeC)
+			FLAME_PACKAGE_ITEM(SwapchainPrivatePtr, s, p)
+		FLAME_PACKAGE_END
+
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
 		Format get_swapchain_format()
@@ -44,22 +47,38 @@ namespace flame
 			return swapchain_format;
 		}
 
-		void Swapchain_resize(const ParmPackage &_p)
+		inline SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w, SampleCount _sc)
 		{
-			auto &p = (Window::ResizeListenerParm&)_p;
-
-			((SwapchainPrivate*)p.thiz())->destroy();
-			((SwapchainPrivate*)p.thiz())->create();
-		}
-
-		inline SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w)
-		{
-			w = _w;
 			d = (DevicePrivate*)_d;
+			w = _w;
+			sc = _sc;
+
+			image_ms = nullptr;
+
+			{
+				RenderpassInfo info;
+				if (sc != SampleCount_1)
+					info.attachments.emplace_back(swapchain_format, true, sc);
+				info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
+				info.subpasses[0].color_attachments.push_back(0);
+				if (sc != SampleCount_1)
+					info.subpasses[0].resolve_attachments.push_back(1);
+				rp = Renderpass::get(d, info);
+				info.attachments[0].clear$ = false;
+				rp_dc = Renderpass::get(d, info);
+			}
+
+			fbs[0] = nullptr;
+			fbs[1] = nullptr;
 
 			create();
 
-			w->add_listener(Window::ListenerResize, Swapchain_resize, this, {});
+			w->add_resize_listener(Function<Window::ResizeListenerParm>([](Window::ResizeListenerParm &p) {
+				auto c = p.get_capture<ResizeC>();
+
+				c.s()->destroy();
+				c.s()->create();
+			}, { this }));
 		}
 
 		inline SwapchainPrivate::~SwapchainPrivate()
@@ -141,14 +160,37 @@ namespace flame
 			uint image_count = 0;
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, nullptr);
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, vk_images);
+
 			for (int i = 0; i < 2; i++)
+			{
 				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, (void*)vk_images[i]);
+
+				FramebufferInfo fb_info;
+				fb_info.rp = rp;
+				if (sc != SampleCount_1)
+				{
+					if (!image_ms || image_ms->size != size)
+					{
+						if (image_ms)
+							Image::destroy(image_ms);
+						image_ms = Image::create(d, get_swapchain_format(), size, 1, 1, sc, ImageUsageAttachment, MemPropDevice);
+					}
+					fb_info.views.push_back(Imageview::get(image_ms));
+				}
+				fb_info.views.push_back(Imageview::get(images[i]));
+				fbs[i] = Framebuffer::get(d, fb_info);
+			}
 		}
 
 		void SwapchainPrivate::destroy()
 		{
 			for (auto i = 0; i < 2; i++)
+			{
 				Image::destroy(images[i]);
+				Framebuffer::release(fbs[i]);
+			}
+			if (image_ms)
+				Image::destroy(image_ms);
 
 			vkDestroySwapchainKHR(d->v, v, nullptr);
 			vkDestroySurfaceKHR(d->ins, s, nullptr);
@@ -176,9 +218,9 @@ namespace flame
 			return ((SwapchainPrivate*)this)->acquire_image(signal_semaphore);
 		}
 
-		Swapchain *Swapchain::create(Device *d, Window *w)
+		Swapchain *Swapchain::create(Device *d, Window *w, SampleCount sc)
 		{
-			return new SwapchainPrivate(d, w);
+			return new SwapchainPrivate(d, w, sc);
 		}
 
 		void Swapchain::destroy(Swapchain *s)

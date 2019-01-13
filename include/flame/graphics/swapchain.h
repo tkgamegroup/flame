@@ -31,8 +31,8 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
-		struct Renderpass;
 		struct Image;
+		struct Renderpass;
 		struct Framebuffer;
 		struct Semaphore;
 
@@ -44,7 +44,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Image *get_image(int idx) const;
 			FLAME_GRAPHICS_EXPORTS int acquire_image(Semaphore *signal_semaphore);
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w);
+			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w, SampleCount sc = SampleCount_1);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
 	}

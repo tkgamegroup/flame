@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include "graphics_private.h"
-
 #include <flame/graphics/shader.h>
 
 namespace flame

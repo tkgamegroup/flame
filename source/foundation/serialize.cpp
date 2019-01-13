@@ -1671,6 +1671,7 @@ namespace flame
 					wchar_t *pwname;
 					std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
 					std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
+					std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
 					global->findChildren(SymTagEnum, NULL, nsNone, &symbols);
 					while (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))

@@ -22,35 +22,39 @@
 
 #pragma once
 
-#include <flame/graphics/swapchain.h>
+#include <flame/foundation/window.h>
 #include "graphics_private.h"
-
-#include <flame/window.h>
+#include <flame/graphics/swapchain.h>
 
 namespace flame
 {
 	namespace graphics
 	{
 		struct DevicePrivate;
-		struct Renderpass;
-		struct Image;
 
 		struct SwapchainPrivate : Swapchain
 		{
 			Window *w;
+			SampleCount sc;
 
 			DevicePrivate *d;
 			VkSurfaceKHR s;
 			VkSwapchainKHR v;
 
 			Image *images[2];
+			Image *image_ms;
 
-			SwapchainPrivate(Device *d, Window *w);
+			Renderpass *rp, *rp_dc/*dont clear*/;
+			Framebuffer *fbs[2];
+
+			SwapchainPrivate(Device *d, Window *w, SampleCount sc);
 			~SwapchainPrivate();
 
 			void create();
 			void destroy();
 			int acquire_image(Semaphore *signal_semaphore);
 		};
+
+		typedef SwapchainPrivate* SwapchainPrivatePtr;
 	}
 }

@@ -23,10 +23,8 @@
 #include "shader_private.h"
 #include "device_private.h"
 
-#include <flame/file.h>
-#include <flame/string.h>
-#include <flame/serialize.h>
-#include <flame/system.h>
+#include <flame/foundation/foundation.h>
+#include <flame/foundation/serialize.h>
 
 #include <spirv_glsl.hpp>
 
@@ -160,7 +158,7 @@ namespace flame
 		{
 			filename_ = filename;
 			prefix_ = prefix;
-			auto ext = filesystem::path(filename).extension();
+			auto ext = std::filesystem::path(filename).extension();
 			if (ext == L".vert")
 				type = ShaderVert;
 			else if (ext == L".tesc")
@@ -176,7 +174,7 @@ namespace flame
 
 			d = (DevicePrivate*)_d;
 
-			filesystem::remove(L"temp.spv"); // glslc cannot write to an existed file. well we did delete it when we finish compiling, but there can be one somehow
+			std::filesystem::remove(L"temp.spv"); // glslc cannot write to an existed file. well we did delete it when we finish compiling, but there can be one somehow
 
 			auto root_dir = s2w(getenv("flame_path"));
 			auto shader_path_abs = root_dir + L"/" + shader_path;
@@ -191,13 +189,13 @@ namespace flame
 			spv_filename += L".spv";
 			spv_filename = shader_path_abs + L"bin/" + spv_filename;
 
-			if (!filesystem::exists(spv_filename) ||
-				filesystem::last_write_time(spv_filename) <= filesystem::last_write_time(glsl_filename))
+			if (!std::filesystem::exists(spv_filename) ||
+				std::filesystem::last_write_time(spv_filename) <= std::filesystem::last_write_time(glsl_filename))
 			{
 				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
 				assert(vk_sdk_path != L"");
 
-				filesystem::path glsl_path(glsl_filename);
+				std::filesystem::path glsl_path(glsl_filename);
 
 				std::string pfx;
 				if (glsl_path.extension().string() == ".comp")
@@ -225,8 +223,8 @@ namespace flame
 				command_line += conf_path_abs;
 				command_line += L" -o temp.spv";
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), command_line.c_str());
-				filesystem::remove(temp_filename);
-				if (!filesystem::exists("temp.spv"))
+				std::filesystem::remove(temp_filename);
+				if (!std::filesystem::exists("temp.spv"))
 				{
 					auto prefix_lines_count = std::count(pfx.begin(), pfx.end(), '\n');
 					printf("\n=====Shader Compile Error=====\n");
@@ -255,12 +253,12 @@ namespace flame
 				}
 				else
 				{
-					filesystem::path spv_path(spv_filename);
-					filesystem::path spv_dir = spv_path.parent_path();
-					if (!filesystem::exists(spv_dir))
-						filesystem::create_directories(spv_dir);
-					filesystem::copy_file("temp.spv", spv_path, filesystem::copy_options::overwrite_existing);
-					filesystem::remove("temp.spv");
+					std::filesystem::path spv_path(spv_filename);
+					std::filesystem::path spv_dir = spv_path.parent_path();
+					if (!std::filesystem::exists(spv_dir))
+						std::filesystem::create_directories(spv_dir);
+					std::filesystem::copy_file("temp.spv", spv_path, std::filesystem::copy_options::overwrite_existing);
+					std::filesystem::remove("temp.spv");
 				}
 			}
 
@@ -277,8 +275,8 @@ namespace flame
 			vk_chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &v));
 
 			auto res_filename = spv_filename + L".xml";
-			if (!filesystem::exists(res_filename) ||
-				filesystem::last_write_time(res_filename) <= filesystem::last_write_time(spv_filename))
+			if (!std::filesystem::exists(res_filename) ||
+				std::filesystem::last_write_time(res_filename) <= std::filesystem::last_write_time(spv_filename))
 				produce_shader_resource_file(spv_filename.c_str(), res_filename.c_str());
 
 			auto res_file = SerializableNode::create_from_xml(res_filename);
