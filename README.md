@@ -20,6 +20,8 @@ A lightweight and powerful 3D Game Engine.
 
 # build:
 
+- if you are using VS2019, you need to regsvr32 your msdia**.dll
+
 - download rapidxml
 
 - download STB

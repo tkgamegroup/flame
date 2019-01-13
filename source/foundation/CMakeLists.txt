@@ -7,5 +7,3 @@ target_include_directories(flame_foundation PRIVATE "${VS_PATH}/VC/Tools/MSVC/14
 target_include_directories(flame_foundation PRIVATE ${STB_PATH})
 target_include_directories(flame_foundation PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(flame_foundation "${VS_PATH}/DIA SDK/lib/amd64/diaguids.lib")
-add_custom_target(copy_dia_dlls COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VS_PATH}/DIA SDK/bin/amd64/msdia140.dll" ${CMAKE_SOURCE_DIR}/bin)
-add_dependencies(flame_foundation copy_dia_dlls)

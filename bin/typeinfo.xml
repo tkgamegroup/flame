@@ -8,61 +8,6 @@
 			<item name="VariableTagArrayOfVariable" value="4"/>
 			<item name="VariableTagArrayOfPointer" value="5"/>
 		</enum>
-		<enum name="_3d::PrimitiveTopology">
-			<item name="PrimitiveTopologyPlane" value="0"/>
-			<item name="PrimitiveTopologyTriangle" value="1"/>
-		</enum>
-		<enum name="typeinfo::cpp::VariableTag">
-			<item name="VariableTagEnum" value="0"/>
-			<item name="VariableTagVariable" value="1"/>
-			<item name="VariableTagPointer" value="2"/>
-			<item name="VariableTagArrayOfVariable" value="3"/>
-			<item name="VariableTagArrayOfPointer" value="4"/>
-		</enum>
-		<enum name="ui::wEdit::Type">
-			<item name="TypeNull" value="0"/>
-			<item name="TypeInt" value="1"/>
-			<item name="TypeUint" value="2"/>
-			<item name="TypeFloat" value="3"/>
-		</enum>
-		<enum name="graphics::CompareOp">
-			<item name="CompareOpLess" value="0"/>
-			<item name="CompareOpLessOrEqual" value="1"/>
-			<item name="CompareOpGreater" value="2"/>
-			<item name="CompareOpGreaterOrEqual" value="3"/>
-			<item name="CompareOpEqual" value="4"/>
-			<item name="CompareOpNotEqual" value="5"/>
-			<item name="CompareOpAlways" value="6"/>
-		</enum>
-		<enum name="graphics::BlendFactor">
-			<item name="BlendFactorZero" value="0"/>
-			<item name="BlendFactorOne" value="1"/>
-			<item name="BlendFactorSrcColor" value="2"/>
-			<item name="BlendFactorOneMinusSrcColor" value="3"/>
-			<item name="BlendFactorDstColor" value="4"/>
-			<item name="BlendFactorOneMinusDstColor" value="5"/>
-			<item name="BlendFactorSrcAlpha" value="6"/>
-			<item name="BlendFactorOneMinusSrcAlpha" value="7"/>
-			<item name="BlendFactorDstAlpha" value="8"/>
-			<item name="BlendFactorOneMinusDstAlpha" value="9"/>
-			<item name="BlendFactorConstantColor" value="10"/>
-			<item name="BlendFactorOneMinusConstantColor" value="11"/>
-			<item name="BlendFactorConstantAlpha" value="12"/>
-			<item name="BlendFactorOneMinusConstantAlpha" value="13"/>
-			<item name="BlendFactorSrcAlphaSaturate" value="14"/>
-			<item name="BlendFactorSrc1Color" value="15"/>
-			<item name="BlendFactorOneMinusSrc1Color" value="16"/>
-			<item name="BlendFactorSrc1Alpha" value="17"/>
-			<item name="BlendFactorOneMinusSrc1Alpha" value="18"/>
-		</enum>
-		<enum name="FocusType">
-			<item name="Focus_Gain" value="0"/>
-			<item name="Focus_Lost" value="1"/>
-		</enum>
-		<enum name="FileWatcherMode">
-			<item name="FileWatcherModeAll" value="0"/>
-			<item name="FileWatcherModeContent" value="1"/>
-		</enum>
 		<enum name="Rect::Side">
 			<item name="Outside" value="0"/>
 			<item name="SideN" value="1"/>
@@ -74,35 +19,6 @@
 			<item name="SideSW" value="64"/>
 			<item name="SideSE" value="128"/>
 			<item name="Inside" value="129"/>
-		</enum>
-		<enum name="graphics::ImageviewType">
-			<item name="Imageview1D" value="0"/>
-			<item name="Imageview2D" value="1"/>
-			<item name="Imageview3D" value="2"/>
-			<item name="ImageviewCube" value="3"/>
-			<item name="Imageview1DArray" value="4"/>
-			<item name="ImageView2DArray" value="5"/>
-			<item name="ImageViewCubeArray" value="6"/>
-		</enum>
-		<enum name="Axis">
-			<item name="AxisPositiveX" value="1"/>
-			<item name="AxisNegativeX" value="2"/>
-			<item name="AxisPositiveY" value="4"/>
-			<item name="AxisNegativeY" value="8"/>
-			<item name="AxisPositiveZ" value="16"/>
-			<item name="AxisNegativeZ" value="32"/>
-		</enum>
-		<enum name="ui::Widget::Listener">
-			<item name="ListenerFocus" value="0"/>
-			<item name="ListenerKey" value="1"/>
-			<item name="ListenerMouse" value="2"/>
-			<item name="ListenerDrop" value="3"/>
-			<item name="ListenerChanged" value="4"/>
-			<item name="ListenerChild" value="5"/>
-		</enum>
-		<enum name="ui::DefaultStyle">
-			<item name="DefaultStyleDark" value="0"/>
-			<item name="DefaultStyleLight" value="1"/>
 		</enum>
 		<enum name="CursorType">
 			<item name="CursorNone" value="255"/>
@@ -122,78 +38,10 @@
 			<item name="CursorWait" value="13"/>
 			<item name="CursorCount" value="14"/>
 		</enum>
-		<enum name="ui::State">
-			<item name="StateNormal" value="0"/>
-			<item name="StateHovering" value="1"/>
-			<item name="StateActive" value="2"/>
-		</enum>
-		<enum name="ui::DrawCmdType">
-			<item name="DrawCmd2d" value="0"/>
-			<item name="DrawCmdText" value="1"/>
-			<item name="DrawCmdTextSdf" value="2"/>
-			<item name="DrawCmdScissor" value="3"/>
-		</enum>
-		<enum name="graphics::ShaderType">
-			<item name="ShaderNone" value="0"/>
-			<item name="ShaderVert" value="1"/>
-			<item name="ShaderTesc" value="2"/>
-			<item name="ShaderTese" value="4"/>
-			<item name="ShaderGeom" value="8"/>
-			<item name="ShaderFrag" value="16"/>
-			<item name="ShaderComp" value="32"/>
-			<item name="ShaderAll" value="31"/>
-		</enum>
-		<enum name="graphics::IndiceType">
-			<item name="IndiceTypeUint" value="0"/>
-			<item name="IndiceTypeUshort" value="1"/>
-		</enum>
-		<enum name="_3d::ShowMode">
-			<item name="ShowModeLightmap" value="0"/>
-			<item name="ShowModeCameraLight" value="1"/>
-		</enum>
-		<enum name="graphics::ImageLayout">
-			<item name="ImageLayoutUndefined" value="0"/>
-			<item name="ImageLayoutAttachment" value="1"/>
-			<item name="ImageLayoutShaderReadOnly" value="2"/>
-			<item name="ImageLayoutShaderStorage" value="3"/>
-			<item name="ImageLayoutTransferSrc" value="4"/>
-			<item name="ImageLayoutTransferDst" value="5"/>
-		</enum>
-		<enum name="graphics::Swizzle">
-			<item name="SwizzleIdentity" value="0"/>
-			<item name="SwizzleZero" value="1"/>
-			<item name="SwizzleOne" value="2"/>
-			<item name="SwizzleR" value="3"/>
-			<item name="SwizzleG" value="4"/>
-			<item name="SwizzleB" value="5"/>
-			<item name="SwizzleA" value="6"/>
-		</enum>
-		<enum name="ui::Align">
-			<item name="AlignFree" value="0"/>
-			<item name="AlignLittleEnd" value="1"/>
-			<item name="AlignLargeEnd" value="2"/>
-			<item name="AlignMiddle" value="3"/>
-			<item name="AlignLeft" value="4"/>
-			<item name="AlignRight" value="5"/>
-			<item name="AlignTop" value="6"/>
-			<item name="AlignBottom" value="7"/>
-			<item name="AlignLeftTop" value="8"/>
-			<item name="AlignLeftBottom" value="9"/>
-			<item name="AlignRightTop" value="10"/>
-			<item name="AlignRightBottom" value="11"/>
-			<item name="AlignLeftNoPadding" value="12"/>
-			<item name="AlignRightNoPadding" value="13"/>
-			<item name="AlignTopNoPadding" value="14"/>
-			<item name="AlignBottomNoPadding" value="15"/>
-			<item name="AlignLeftTopNoPadding" value="16"/>
-			<item name="AlignLeftBottomNoPadding" value="17"/>
-			<item name="AlignRightTopNoPadding" value="18"/>
-			<item name="AlignRightBottomNoPadding" value="19"/>
-			<item name="AlignCenter" value="20"/>
-			<item name="AlignLeftOutside" value="21"/>
-			<item name="AlignRightOutside" value="22"/>
-			<item name="AlignTopOutside" value="23"/>
-			<item name="AlignBottomOutside" value="24"/>
+		<enum name="BP::ItemType">
+			<item name="ItemTypeEnum" value="0"/>
+			<item name="ItemTypeVariable" value="1"/>
+			<item name="ItemTypeArrayOfPointer" value="2"/>
 		</enum>
 		<enum name="KeyState">
 			<item name="KeyStateNull" value="0"/>
@@ -202,18 +50,6 @@
 			<item name="KeyStateJust" value="4"/>
 			<item name="KeyStateDouble" value="4"/>
 		</enum>
-		<enum name="graphics::CullMode">
-			<item name="CullModeNone" value="0"/>
-			<item name="CullModeFront" value="1"/>
-			<item name="CullModeBack" value="2"/>
-			<item name="CullModeFrontAndback" value="3"/>
-		</enum>
-		<enum name="FileChangeType">
-			<item name="FileAdded" value="0"/>
-			<item name="FileRemoved" value="1"/>
-			<item name="FileModified" value="2"/>
-			<item name="FileRenamed" value="3"/>
-		</enum>
 		<enum name="MouseKey">
 			<item name="Mouse_Null" value="255"/>
 			<item name="Mouse_Left" value="0"/>
@@ -221,101 +57,10 @@
 			<item name="Mouse_Middle" value="2"/>
 			<item name="MouseKey_count" value="3"/>
 		</enum>
-		<enum name="blueprint::SlotLinkType">
-			<item name="SlotLinkSingle" value="0"/>
-			<item name="SlotLinkMulti" value="1"/>
-		</enum>
-		<enum name="Window::Listener">
-			<item name="ListenerKey" value="0"/>
-			<item name="ListenerMouse" value="1"/>
-			<item name="ListenerResize" value="2"/>
-			<item name="ListenerDestroy" value="3"/>
-		</enum>
-		<enum name="graphics::Filter">
-			<item name="FilterNearest" value="0"/>
-			<item name="FilterLinear" value="1"/>
-		</enum>
-		<enum name="graphics::ImageUsage">
-			<item name="ImageUsageTransferSrc" value="1"/>
-			<item name="ImageUsageTransferDst" value="2"/>
-			<item name="ImageUsageSampled" value="4"/>
-			<item name="ImageUsageStorage" value="8"/>
-			<item name="ImageUsageAttachment" value="16"/>
-		</enum>
-		<enum name="ui::Widget::ChildOp">
-			<item name="ChildAdd" value="0"/>
-			<item name="ChildRemove" value="1"/>
-		</enum>
-		<enum name="graphics::PipelineType">
-			<item name="PipelineNone" value="0"/>
-			<item name="PipelineGraphics" value="1"/>
-			<item name="PipelineCompute" value="2"/>
-		</enum>
 		<enum name="WindowStyle">
 			<item name="WindowFrame" value="1"/>
 			<item name="WindowResizable" value="2"/>
 			<item name="WindowFullscreen" value="4"/>
-		</enum>
-		<enum name="graphics::PolygonMode">
-			<item name="PolygonModeFill" value="0"/>
-			<item name="PolygonModeLine" value="1"/>
-			<item name="PolygonModePoint" value="2"/>
-		</enum>
-		<enum name="graphics::DynamicState">
-			<item name="DynamicStateViewport" value="0"/>
-			<item name="DynamicStateScissor" value="1"/>
-			<item name="DynamicStateLineWidth" value="2"/>
-			<item name="DynamicStateDepthBias" value="3"/>
-			<item name="DynamicStateBlendConstants" value="4"/>
-			<item name="DynamicStateDepthBounds" value="5"/>
-			<item name="DynamicStateStencilCompareMask" value="6"/>
-			<item name="DynamicStateStencilWriteMask" value="7"/>
-			<item name="DynamicStateStencilReference" value="8"/>
-		</enum>
-		<enum name="ui::EventAttitude">
-			<item name="EventAccept" value="0"/>
-			<item name="EventIgnore" value="1"/>
-			<item name="EventBlackHole" value="2"/>
-		</enum>
-		<enum name="graphics::PrimitiveTopology">
-			<item name="PrimitiveTopologyPointList" value="0"/>
-			<item name="PrimitiveTopologyLineList" value="1"/>
-			<item name="PrimitiveTopologyLineStrip" value="2"/>
-			<item name="PrimitiveTopologyTriangleList" value="3"/>
-			<item name="PrimitiveTopologyTriangleStrip" value="4"/>
-			<item name="PrimitiveTopologyTriangleFan" value="5"/>
-			<item name="PrimitiveTopologyLineListWithAdjacency" value="6"/>
-			<item name="PrimitiveTopologyLineStripWithAdjacency" value="7"/>
-			<item name="PrimitiveTopologyTriangleListWithAdjacency" value="8"/>
-			<item name="PrimitiveTopologyTriangleStripWithAdjacency" value="9"/>
-			<item name="PrimitiveTopologyPatchList" value="10"/>
-		</enum>
-		<enum name="blueprint::SlotType">
-			<item name="SlotTypeNull" value="0"/>
-			<item name="SlotTypeInt" value="1"/>
-			<item name="SlotTypeInt2" value="2"/>
-			<item name="SlotTypeInt3" value="3"/>
-			<item name="SlotTypeInt4" value="4"/>
-			<item name="SlotTypeFloat" value="5"/>
-			<item name="SlotTypeFloat2" value="6"/>
-			<item name="SlotTypeFloat3" value="7"/>
-			<item name="SlotTypeFloat4" value="8"/>
-			<item name="SlotTypeBool" value="9"/>
-			<item name="SlotTypePtr" value="10"/>
-			<item name="SlotTypeStr" value="11"/>
-			<item name="SlotTypeFile" value="12"/>
-			<item name="SlotTypeSingle" value="13"/>
-			<item name="SlotTypeMulti" value="14"/>
-		</enum>
-		<enum name="blueprint::Node::Type">
-			<item name="TypeInputEnumSingle" value="0"/>
-			<item name="TypeUDT" value="1"/>
-		</enum>
-		<enum name="ui::LayoutType">
-			<item name="LayoutFree" value="0"/>
-			<item name="LayoutVertical" value="1"/>
-			<item name="LayoutHorizontal" value="2"/>
-			<item name="LayoutGrid" value="3"/>
 		</enum>
 		<enum name="FileType">
 			<item name="FileTypeUnknown" value="0"/>
@@ -324,226 +69,107 @@
 			<item name="FileTypeImage" value="3"/>
 			<item name="FileTypeModel" value="4"/>
 		</enum>
-		<enum name="graphics::ImageAspect">
-			<item name="ImageAspectColor" value="1"/>
-			<item name="ImageAspectDepth" value="2"/>
-			<item name="ImageAspectStencil" value="4"/>
-		</enum>
-		<enum name="graphics::ShaderResourceType">
-			<item name="ShaderResourceUniformBuffer" value="0"/>
-			<item name="ShaderResourceStorageBuffer" value="1"/>
-			<item name="ShaderResourceSampledImage" value="2"/>
-			<item name="ShaderResourceStorageImage" value="3"/>
-			<item name="ShaderResourcePushConstant" value="4"/>
-		</enum>
-		<enum name="graphics::VertexInputRate">
-			<item name="VertexInputRateVertex" value="0"/>
-			<item name="VertexInputRateInstance" value="1"/>
-		</enum>
-		<enum name="graphics::Feature">
-			<item name="FeatureTextureCompressionBC" value="0"/>
-			<item name="FeatureTextureCompressionASTC_LDR" value="1"/>
-			<item name="FeatureTextureCompressionETC2" value="2"/>
-			<item name="FeatureCount" value="3"/>
-		</enum>
-		<enum name="graphics::BufferUsage">
-			<item name="BufferUsageTransferSrc" value="1"/>
-			<item name="BufferUsageTransferDst" value="2"/>
-			<item name="BufferUsageUniform" value="4"/>
-			<item name="BufferUsageStorage" value="8"/>
-			<item name="BufferUsageIndex" value="16"/>
-			<item name="BufferUsageVertex" value="32"/>
-			<item name="BufferUsageIndirect" value="64"/>
-		</enum>
-		<enum name="graphics::SampleCount">
-			<item name="SampleCount_1" value="0"/>
-			<item name="SampleCount_2" value="1"/>
-			<item name="SampleCount_4" value="2"/>
-			<item name="SampleCount_8" value="3"/>
-			<item name="SampleCount_16" value="4"/>
-			<item name="SampleCount_32" value="5"/>
-		</enum>
-		<enum name="ui::SizePolicy">
-			<item name="SizeFixed" value="0"/>
-			<item name="SizeFitChildren" value="1"/>
-			<item name="SizeFitLayout" value="2"/>
-			<item name="SizeGreedy" value="3"/>
-		</enum>
-		<enum name="graphics::Format">
-			<item name="Format_Undefined" value="0"/>
-			<item name="Format_R8_UNORM" value="1"/>
-			<item name="Format_R16_UNORM" value="2"/>
-			<item name="Format_R32_SFLOAT" value="3"/>
-			<item name="Format_R32G32_SFLOAT" value="4"/>
-			<item name="Format_R32G32B32_SFLOAT" value="5"/>
-			<item name="Format_R8G8B8A8_UNORM" value="6"/>
-			<item name="Format_R8G8B8A8_SRGB" value="7"/>
-			<item name="Format_B8G8R8A8_UNORM" value="8"/>
-			<item name="Format_B8G8R8A8_SRGB" value="9"/>
-			<item name="Format_Swapchain_B8G8R8A8_UNORM" value="10"/>
-			<item name="Format_Swapchain_B8G8R8A8_SRGB" value="11"/>
-			<item name="Format_Swapchain_Begin" value="10"/>
-			<item name="Format_Swapchain_End" value="11"/>
-			<item name="Format_R16G16B16A16_UNORM" value="12"/>
-			<item name="Format_R16G16B16A16_SFLOAT" value="13"/>
-			<item name="Format_R32G32B32A32_SFLOAT" value="14"/>
-			<item name="Format_RGBA_BC3" value="15"/>
-			<item name="Format_RGBA_ETC2" value="16"/>
-			<item name="Format_Color_Begin" value="1"/>
-			<item name="Format_Color_End" value="16"/>
-			<item name="Format_Depth16" value="17"/>
-			<item name="Format_Depth32" value="18"/>
-			<item name="Format_Depth24Stencil8" value="19"/>
-			<item name="Format_DepthStencil_Begin" value="19"/>
-			<item name="Format_DepthStencil_End" value="19"/>
-			<item name="Format_Depth_Begin" value="17"/>
-			<item name="Format_Depth_End" value="19"/>
-		</enum>
 		<enum name="Key">
-			<item name="Key_Unknown" value="0"/>
-			<item name="Key_Backspace" value="1"/>
-			<item name="Key_Tab" value="2"/>
-			<item name="Key_Enter" value="3"/>
-			<item name="Key_Shift" value="4"/>
-			<item name="Key_Ctrl" value="5"/>
-			<item name="Key_Alt" value="6"/>
-			<item name="Key_Pause" value="7"/>
-			<item name="Key_CapsLock" value="8"/>
-			<item name="Key_Esc" value="9"/>
-			<item name="Key_Space" value="10"/>
-			<item name="Key_PgUp" value="11"/>
-			<item name="Key_PgDn" value="12"/>
-			<item name="Key_End" value="13"/>
-			<item name="Key_Home" value="14"/>
-			<item name="Key_Left" value="15"/>
-			<item name="Key_Up" value="16"/>
-			<item name="Key_Right" value="17"/>
-			<item name="Key_Down" value="18"/>
-			<item name="Key_PrtSc" value="19"/>
-			<item name="Key_Ins" value="20"/>
-			<item name="Key_Del" value="21"/>
-			<item name="Key_0" value="22"/>
-			<item name="Key_1" value="23"/>
-			<item name="Key_2" value="24"/>
-			<item name="Key_3" value="25"/>
-			<item name="Key_4" value="26"/>
-			<item name="Key_5" value="27"/>
-			<item name="Key_6" value="28"/>
-			<item name="Key_7" value="29"/>
-			<item name="Key_8" value="30"/>
-			<item name="Key_9" value="31"/>
-			<item name="Key_A" value="32"/>
-			<item name="Key_B" value="33"/>
-			<item name="Key_C" value="34"/>
-			<item name="Key_D" value="35"/>
-			<item name="Key_E" value="36"/>
-			<item name="Key_F" value="37"/>
-			<item name="Key_G" value="38"/>
-			<item name="Key_H" value="39"/>
-			<item name="Key_I" value="40"/>
-			<item name="Key_J" value="41"/>
-			<item name="Key_K" value="42"/>
-			<item name="Key_L" value="43"/>
-			<item name="Key_M" value="44"/>
-			<item name="Key_N" value="45"/>
-			<item name="Key_O" value="46"/>
-			<item name="Key_P" value="47"/>
-			<item name="Key_Q" value="48"/>
-			<item name="Key_R" value="49"/>
-			<item name="Key_S" value="50"/>
-			<item name="Key_T" value="51"/>
-			<item name="Key_U" value="52"/>
-			<item name="Key_V" value="53"/>
-			<item name="Key_W" value="54"/>
-			<item name="Key_X" value="55"/>
-			<item name="Key_Y" value="56"/>
-			<item name="Key_Z" value="57"/>
-			<item name="Key_Numpad0" value="58"/>
-			<item name="Key_Numpad1" value="59"/>
-			<item name="Key_Numpad2" value="60"/>
-			<item name="Key_Numpad3" value="61"/>
-			<item name="Key_Numpad4" value="62"/>
-			<item name="Key_Numpad5" value="63"/>
-			<item name="Key_Numpad6" value="64"/>
-			<item name="Key_Numpad7" value="65"/>
-			<item name="Key_Numpad8" value="66"/>
-			<item name="Key_Numpad9" value="67"/>
-			<item name="Key_Add" value="68"/>
-			<item name="Key_Subtract" value="69"/>
-			<item name="Key_Multiply" value="70"/>
-			<item name="Key_Divide" value="71"/>
-			<item name="Key_Separator" value="72"/>
-			<item name="Key_Decimal" value="73"/>
-			<item name="Key_F1" value="74"/>
-			<item name="Key_F2" value="75"/>
-			<item name="Key_F3" value="76"/>
-			<item name="Key_F4" value="77"/>
-			<item name="Key_F5" value="78"/>
-			<item name="Key_F6" value="79"/>
-			<item name="Key_F7" value="80"/>
-			<item name="Key_F8" value="81"/>
-			<item name="Key_F9" value="82"/>
-			<item name="Key_F10" value="83"/>
-			<item name="Key_F11" value="84"/>
-			<item name="Key_F12" value="85"/>
-			<item name="Key_NumLock" value="86"/>
-			<item name="Key_ScrollLock" value="87"/>
+			<item name="Key_Null" value="255"/>
+			<item name="Key_Backspace" value="0"/>
+			<item name="Key_Tab" value="1"/>
+			<item name="Key_Enter" value="2"/>
+			<item name="Key_Shift" value="3"/>
+			<item name="Key_Ctrl" value="4"/>
+			<item name="Key_Alt" value="5"/>
+			<item name="Key_Pause" value="6"/>
+			<item name="Key_CapsLock" value="7"/>
+			<item name="Key_Esc" value="8"/>
+			<item name="Key_Space" value="9"/>
+			<item name="Key_PgUp" value="10"/>
+			<item name="Key_PgDn" value="11"/>
+			<item name="Key_End" value="12"/>
+			<item name="Key_Home" value="13"/>
+			<item name="Key_Left" value="14"/>
+			<item name="Key_Up" value="15"/>
+			<item name="Key_Right" value="16"/>
+			<item name="Key_Down" value="17"/>
+			<item name="Key_PrtSc" value="18"/>
+			<item name="Key_Ins" value="19"/>
+			<item name="Key_Del" value="20"/>
+			<item name="Key_0" value="21"/>
+			<item name="Key_1" value="22"/>
+			<item name="Key_2" value="23"/>
+			<item name="Key_3" value="24"/>
+			<item name="Key_4" value="25"/>
+			<item name="Key_5" value="26"/>
+			<item name="Key_6" value="27"/>
+			<item name="Key_7" value="28"/>
+			<item name="Key_8" value="29"/>
+			<item name="Key_9" value="30"/>
+			<item name="Key_A" value="31"/>
+			<item name="Key_B" value="32"/>
+			<item name="Key_C" value="33"/>
+			<item name="Key_D" value="34"/>
+			<item name="Key_E" value="35"/>
+			<item name="Key_F" value="36"/>
+			<item name="Key_G" value="37"/>
+			<item name="Key_H" value="38"/>
+			<item name="Key_I" value="39"/>
+			<item name="Key_J" value="40"/>
+			<item name="Key_K" value="41"/>
+			<item name="Key_L" value="42"/>
+			<item name="Key_M" value="43"/>
+			<item name="Key_N" value="44"/>
+			<item name="Key_O" value="45"/>
+			<item name="Key_P" value="46"/>
+			<item name="Key_Q" value="47"/>
+			<item name="Key_R" value="48"/>
+			<item name="Key_S" value="49"/>
+			<item name="Key_T" value="50"/>
+			<item name="Key_U" value="51"/>
+			<item name="Key_V" value="52"/>
+			<item name="Key_W" value="53"/>
+			<item name="Key_X" value="54"/>
+			<item name="Key_Y" value="55"/>
+			<item name="Key_Z" value="56"/>
+			<item name="Key_Numpad0" value="57"/>
+			<item name="Key_Numpad1" value="58"/>
+			<item name="Key_Numpad2" value="59"/>
+			<item name="Key_Numpad3" value="60"/>
+			<item name="Key_Numpad4" value="61"/>
+			<item name="Key_Numpad5" value="62"/>
+			<item name="Key_Numpad6" value="63"/>
+			<item name="Key_Numpad7" value="64"/>
+			<item name="Key_Numpad8" value="65"/>
+			<item name="Key_Numpad9" value="66"/>
+			<item name="Key_Add" value="67"/>
+			<item name="Key_Subtract" value="68"/>
+			<item name="Key_Multiply" value="69"/>
+			<item name="Key_Divide" value="70"/>
+			<item name="Key_Separator" value="71"/>
+			<item name="Key_Decimal" value="72"/>
+			<item name="Key_F1" value="73"/>
+			<item name="Key_F2" value="74"/>
+			<item name="Key_F3" value="75"/>
+			<item name="Key_F4" value="76"/>
+			<item name="Key_F5" value="77"/>
+			<item name="Key_F6" value="78"/>
+			<item name="Key_F7" value="79"/>
+			<item name="Key_F8" value="80"/>
+			<item name="Key_F9" value="81"/>
+			<item name="Key_F10" value="82"/>
+			<item name="Key_F11" value="83"/>
+			<item name="Key_F12" value="84"/>
+			<item name="Key_NumLock" value="85"/>
+			<item name="Key_ScrollLock" value="86"/>
+			<item name="Key_count" value="87"/>
 		</enum>
-		<enum name="graphics::MemProp">
-			<item name="MemPropDevice" value="1"/>
-			<item name="MemPropHost" value="2"/>
-			<item name="MemPropHostCoherent" value="4"/>
+		<enum name="Err">
+			<item name="NoErr" value="0"/>
+			<item name="ErrInvalidEnum" value="1"/>
+			<item name="ErrInvalidValue" value="2"/>
+			<item name="ErrInvalidOperation" value="3"/>
+			<item name="ErrOutOfMemory" value="4"/>
+			<item name="ErrContextLost" value="5"/>
+			<item name="ErrResourceLost" value="6"/>
 		</enum>
 	</enums>
-	<udts>
-		<udt name="graphics::AttachmentInfo">
-			<item tag="enum_single" type="graphics::Format" name="format" offset="0" default_value="Format_R8G8B8A8_UNORM"/>
-			<item tag="varible" type="bool" name="clear" offset="4" default_value="true"/>
-			<item tag="enum_single" type="graphics::SampleCount" name="sample_count" offset="8" default_value="SampleCount_1"/>
-		</udt>
-		<udt name="ui::Widget">
-			<item tag="varible" type="StringAndHash" name="class" offset="0"/>
-			<item tag="varible" type="String" name="name" offset="24"/>
-			<item tag="varible" type="Vec2" name="pos" offset="40" default_value="0.0;0.0"/>
-			<item tag="varible" type="Vec2" name="size" offset="48" default_value="0.0;0.0"/>
-			<item tag="varible" type="float" name="alpha" offset="56" default_value="1.0"/>
-			<item tag="varible" type="float" name="scale" offset="60" default_value="1.0"/>
-			<item tag="varible" type="Vec4" name="inner_padding" offset="64" default_value="0.0;0.0;0.0;0.0"/>
-			<item tag="varible" type="float" name="layout_padding" offset="80" default_value="0.0"/>
-			<item tag="varible" type="Vec4" name="background_offset" offset="84" default_value="0.0;0.0;0.0;0.0"/>
-			<item tag="varible" type="float" name="background_round_radius" offset="100" default_value="0.0"/>
-			<item tag="varible" type="int" name="background_round_flags" offset="104" default_value="0"/>
-			<item tag="varible" type="float" name="background_frame_thickness" offset="108" default_value="0.0"/>
-			<item tag="varible" type="Bvec4" name="background_col" offset="112" default_value="0;0;0;0"/>
-			<item tag="varible" type="Bvec4" name="background_frame_col" offset="116" default_value="255;255;255;255"/>
-			<item tag="varible" type="float" name="background_shaow_thickness" offset="120" default_value="0.0"/>
-			<item tag="enum_single" type="ui::SizePolicy" name="size_policy_hori" offset="124" default_value="SizeFixed"/>
-			<item tag="enum_single" type="ui::SizePolicy" name="size_policy_vert" offset="128" default_value="SizeFixed"/>
-			<item tag="enum_single" type="ui::Align" name="align" offset="132" default_value="AlignFree"/>
-			<item tag="enum_single" type="ui::LayoutType" name="layout_type" offset="136" default_value="LayoutFree"/>
-			<item tag="varible" type="float" name="item_padding" offset="140" default_value="0.0"/>
-			<item tag="varible" type="int" name="grid_hori_count" offset="144" default_value="1"/>
-			<item tag="varible" type="bool" name="clip" offset="148" default_value="false"/>
-			<item tag="varible" type="float" name="scroll_offset" offset="152" default_value="0.0"/>
-			<item tag="enum_single" type="ui::EventAttitude" name="event_attitude" offset="156" default_value="EventAccept"/>
-			<item tag="varible" type="bool" name="want_key_focus" offset="160" default_value="false"/>
-			<item tag="varible" type="bool" name="visible" offset="161" default_value="true"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_1" offset="192"/>
-			<item tag="array_of_pointer" type="ui::Widget" name="children_2" offset="208"/>
-			<item tag="varible" type="bool" name="draw_default" offset="224" default_value="true"/>
-			<item tag="array_of_pointer" type="Function" name="extra_draws" offset="232"/>
-			<item tag="varible" type="int" name="closet_id" offset="248" default_value="0"/>
-			<item tag="array_of_pointer" type="Function" name="styles" offset="256"/>
-			<item tag="array_of_pointer" type="Function" name="animations" offset="272"/>
-			<item tag="array_of_pointer" type="Function" name="focus_listeners" offset="288"/>
-			<item tag="array_of_pointer" type="Function" name="key_listeners" offset="304"/>
-			<item tag="array_of_pointer" type="Function" name="mouse_listeners" offset="320"/>
-			<item tag="array_of_pointer" type="Function" name="drop_listeners" offset="336"/>
-			<item tag="array_of_pointer" type="Function" name="changed_listeners" offset="352"/>
-			<item tag="array_of_pointer" type="Function" name="child_listeners" offset="368"/>
-			<item tag="array_of_varible" type="CommonData" name="data_storages" offset="384"/>
-			<item tag="array_of_varible" type="StringW" name="string_storages" offset="400"/>
-		</udt>
-	</udts>
+	<udts/>
 </typeinfo>
 
