@@ -598,7 +598,9 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char *type_name() const;
 		FLAME_FOUNDATION_EXPORTS uint type_hash() const;
 		FLAME_FOUNDATION_EXPORTS const char *name() const;
+		FLAME_FOUNDATION_EXPORTS const char *attribute() const;
 		FLAME_FOUNDATION_EXPORTS int offset() const;
+		FLAME_FOUNDATION_EXPORTS int size() const;
 		FLAME_FOUNDATION_EXPORTS const CommonData &default_value() const;
 
 		FLAME_FOUNDATION_EXPORTS bool compare(void *src, void *dst) const;

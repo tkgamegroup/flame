@@ -110,6 +110,7 @@ namespace flame
 		std::string type_name;
 		uint type_hash;
 		std::string name;
+		std::string attribute;
 		int offset;
 		int size;
 		CommonData default_value;
@@ -466,6 +467,16 @@ namespace flame
 	int VaribleInfo::offset() const
 	{
 		return ((VaribleInfoPrivate*)this)->offset;
+	}
+
+	int VaribleInfo::size() const
+	{
+		return ((VaribleInfoPrivate*)this)->size;
+	}
+
+	const char *VaribleInfo::attribute() const
+	{
+		return ((VaribleInfoPrivate*)this)->attribute.c_str();
 	}
 
 	const CommonData &VaribleInfo::default_value() const
@@ -1751,9 +1762,11 @@ namespace flame
 										{
 											member->get_name(&pwname);
 											std::wstring wname(pwname);
-											if (wname.size() > 1 && wname.back() == L'$')
+											auto pos_$ = wname.find(L'$');
+											if (pos_$ != std::wstring::npos)
 											{
-												auto double_$ = wname.size() > 2 && wname[wname.size() - 2] == L'$';
+												auto attribute = w2s(wname.c_str() + pos_$ + 1);
+												wname[pos_$] = 0;
 
 												IDiaSymbol *type;
 												member->get_type(&type);
@@ -1763,7 +1776,7 @@ namespace flame
 
 												auto i = new VaribleInfoPrivate;
 												i->name = w2s(wname);
-												i->name.resize(i->name.size() - (double_$ ? 2 : 1));
+												i->attribute = attribute;
 												i->offset = l;
 												i->size = (int)ull;
 												memset(&i->default_value.fmt, 0, sizeof(CommonData::fmt));
@@ -1774,7 +1787,7 @@ namespace flame
 												{
 												case SymTagEnum:
 												{
-													i->tag = double_$ ? VariableTagEnumMulti : VariableTagEnumSingle;
+													i->tag = attribute.find('m') != std::string::npos ? VariableTagEnumMulti : VariableTagEnumSingle;
 													type->get_name(&pwname);
 													auto type_name = w2s(pwname);
 													if (type_name.compare(0, prefix.size(), prefix) == 0)

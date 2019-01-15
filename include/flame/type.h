@@ -55,7 +55,7 @@ namespace flame
 
 	struct R // class that inherit this indicates it will be collected by typeinfogen
 	{
-		// if an UDT's member's name followed by '$', indicates it will be collected by typeinfogen
-		// if the member is an enum and followed by '$$', it is 'multi' as well
+		// if an UDT's member's name contain a '$', indicates it will be collected by typeinfogen
+		//		and, the content after '$', will consider as attribute, can be combination of "i"(in), "o"(out) and "m"(multi).
 	};
 }
