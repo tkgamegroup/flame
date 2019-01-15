@@ -1,5 +1,6 @@
-add_subdirectory(serialize_converter)
 add_subdirectory(SLOC)
+add_subdirectory(serialize_converter)
+add_subdirectory(blueprint_editor)
 add_subdirectory(GID_provider)
 add_subdirectory(code_solver)
 add_subdirectory(typeinfogen)

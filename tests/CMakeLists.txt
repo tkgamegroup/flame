@@ -1,5 +1,4 @@
 add_subdirectory(system_test)
-add_subdirectory(blueprint_test)
 add_subdirectory(window_test)
 add_subdirectory(graphics_test)
 add_subdirectory(ui_test)
