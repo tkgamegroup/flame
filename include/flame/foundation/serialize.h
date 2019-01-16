@@ -620,13 +620,11 @@ namespace flame
 
 	typedef UDT* UDTPtr;
 
-	FLAME_FOUNDATION_EXPORTS int enum_count();
-	FLAME_FOUNDATION_EXPORTS EnumInfo *get_enum(int idx);
-	FLAME_FOUNDATION_EXPORTS EnumInfo *find_enum(unsigned int name_hash);
+	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
+	FLAME_FOUNDATION_EXPORTS EnumInfo *find_enum(uint name_hash);
 
-	FLAME_FOUNDATION_EXPORTS int udt_count();
-	FLAME_FOUNDATION_EXPORTS UDT *get_udt(int idx);
-	FLAME_FOUNDATION_EXPORTS UDT *find_udt(unsigned int name_hash);
+	FLAME_FOUNDATION_EXPORTS Array<UDT*> get_udts();
+	FLAME_FOUNDATION_EXPORTS UDT *find_udt(uint name_hash);
 
 	struct SerializableAttribute
 	{

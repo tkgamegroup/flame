@@ -29,6 +29,8 @@ int main(int argc, char **args)
 {
 	std::wstring filename;
 
+	typeinfo_load(L"typeinfo.xml");
+
 	BP *bp = nullptr;
 	if (argc > 1)
 	{
@@ -71,10 +73,23 @@ int main(int argc, char **args)
 			auto s_what = std::string(command_line);
 			if (s_what == "udts")
 			{
-				for (auto i = 0; i < udt_count(); i++)
+				auto udts = get_udts();
+				for (auto i_u = 0; i_u < udts.size; i_u++)
 				{
-					auto udt = get_udt(i);
-
+					auto udt = udts[i_u];
+					auto input_count = 0;
+					auto output_count = 0;
+					for (auto i_i = 0; i_i < udt->item_count(); i_i++)
+					{
+						auto item = udt->item(i_i);
+						auto attribute = std::string(item->attribute());
+						if (attribute.find('i') != std::string::npos)
+							input_count++;
+						if (attribute.find('o') != std::string::npos)
+							output_count++;
+					}
+					if (input_count > 0 && output_count > 0)
+						printf("%s\n", udt->name());
 				}
 			}
 			else if (s_what == "udt")

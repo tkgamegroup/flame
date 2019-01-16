@@ -565,14 +565,17 @@ namespace flame
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
 	static std::map<unsigned int, std::unique_ptr<UDTPrivate>> udts;
 
-	int enum_count()
+	Array<EnumInfo*> get_enums()
 	{
-		return enums.size();
-	}
-
-	EnumInfo *get_enum(int idx)
-	{
-		return enums[idx].get();
+		Array<EnumInfo*> ret;
+		ret.resize(enums.size());
+		auto i = 0;
+		for (auto it = enums.begin(); it != enums.end(); it++)
+		{
+			ret[i] = (*it).second.get();
+			i++;
+		}
+		return ret;
 	}
 
 	EnumInfo *find_enum(unsigned int name_hash)
@@ -581,14 +584,17 @@ namespace flame
 		return it == enums.end() ? nullptr : it->second.get();
 	}
 
-	int udt_count()
+	Array<UDT*> get_udts()
 	{
-		return udts.size();
-	}
-
-	UDT *get_udt(int idx)
-	{
-		return udts[idx].get();
+		Array<UDT*> ret;
+		ret.resize(udts.size());
+		auto i = 0;
+		for (auto it = udts.begin(); it != udts.end(); it++)
+		{
+			ret[i] = (*it).second.get();
+			i++;
+		}
+		return ret;
 	}
 
 	UDT *find_udt(unsigned int name_hash)
@@ -2014,6 +2020,7 @@ namespace flame
 						i->type_name = n_item->find_attr("type")->value();
 						i->type_hash = H(i->type_name.c_str());
 						i->name = n_item->find_attr("name")->value();
+						i->attribute = n_item->find_attr("attribute")->value();
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
 						auto a_default_value = n_item->find_attr("default_value");
 						if (a_default_value)
@@ -2059,6 +2066,7 @@ namespace flame
 				n_item->new_attr("tag", tag_name[i->tag]);
 				n_item->new_attr("type", i->type_name);
 				n_item->new_attr("name", i->name);
+				n_item->new_attr("attribute", i->attribute);
 				n_item->new_attr("offset", std::to_string(i->offset));
 				auto default_value_str = i->serialize_default_value(1);
 				if (default_value_str.size() > 0)

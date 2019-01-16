@@ -562,5 +562,7 @@ namespace flame
 	{
 		delete(BPPrivate*)bp;
 	}
+
+	BP_Vec2 bp_vec2_unused;
 }
 

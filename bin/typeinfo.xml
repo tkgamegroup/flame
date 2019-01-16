@@ -165,6 +165,12 @@
 			<item name="ErrResourceLost" value="6"/>
 		</enum>
 	</enums>
-	<udts/>
+	<udts>
+		<udt name="BP_Vec2">
+			<item tag="varible" type="float" name="x" attribute="i" offset="0" default_value="0.0"/>
+			<item tag="varible" type="float" name="y" attribute="i" offset="4" default_value="0.0"/>
+			<item tag="varible" type="Vec2" name="out" attribute="o" offset="8" default_value="0.0;0.0"/>
+		</udt>
+	</udts>
 </typeinfo>
 

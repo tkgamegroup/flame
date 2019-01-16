@@ -93,5 +93,20 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const wchar_t *filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
 	};
+
+	struct BP_Vec2 : R
+	{
+		float x$i;
+		float y$i;
+
+		Vec2 out$o;
+
+		inline BP_Vec2() :
+			x$i(0.f),
+			y$i(0.f),
+			out$o(0.f, 0.f)
+		{
+		}
+	};
 }
 

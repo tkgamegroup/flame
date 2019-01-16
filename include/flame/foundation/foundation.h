@@ -262,7 +262,13 @@ namespace flame
 					v[i].~T();
 			}
 
-			v = new_size == 0 ? nullptr : (T*)flame_realloc(v, sizeof(T) * new_size);
+			if (new_size == 0)
+			{
+				flame_free(v);
+				v = nullptr;
+			}
+			else
+				v = (T*)flame_realloc(v, sizeof(T) * new_size);
 
 			if (new_size > size)
 			{
@@ -277,6 +283,14 @@ namespace flame
 		{
 			size = 0;
 			v = nullptr;
+		}
+
+		inline Array(const Array<T> &rhs)
+		{
+			size = 0;
+			v = nullptr;
+			resize(rhs.size);
+			memcpy(v, rhs.v, sizeof(T) * size);
 		}
 
 		inline ~Array()
@@ -304,7 +318,7 @@ namespace flame
 		{
 			resize(size + 1);
 			for (auto i = size - 1; i > pos; i--)
-				v[i] = v[i - 1];
+				memcpy(&v[i], &v[i - 1], sizeof(T));
 			v[pos] = _v;
 		}
 
@@ -317,7 +331,7 @@ namespace flame
 		{
 			auto new_size = size - count;
 			for (auto i = idx; i < new_size; i++)
-				v[i] = v[i + count];
+				memcpy(&v[i], &v[i + count], sizeof(T));
 			resize(new_size);
 		}
 
