@@ -115,6 +115,14 @@ namespace flame
 		int size;
 		CommonData default_value;
 
+		inline VaribleInfoPrivate()
+		{
+			default_value.fmt[0] = 0;
+			default_value.fmt[1] = 0;
+			default_value.fmt[2] = 0;
+			default_value.fmt[3] = 0;
+		}
+
 		inline std::string serialize_default_value(int precision = 6) const
 		{
 			switch (tag)
@@ -443,6 +451,20 @@ namespace flame
 			}
 		}
 	};
+
+	static const char *tag_names[] = {
+		"enum_single",
+		"enum_multi",
+		"varible",
+		"pointer",
+		"array_of_varible",
+		"array_of_pointer"
+	};
+
+	const char *get_variable_tag_name(VariableTag tag)
+	{
+		return tag_names[tag];
+	}
 
 	VariableTag VaribleInfo::tag() const
 	{
@@ -1952,15 +1974,6 @@ namespace flame
 		}
 	}
 
-	static const char *tag_name[] = {
-		"enum_single",
-		"enum_multi",
-		"varible",
-		"pointer",
-		"array_of_varible",
-		"array_of_pointer"
-	};
-
 	void typeinfo_load(const std::wstring &filename)
 	{
 		auto file = SerializableNode::create_from_xml(filename);
@@ -2008,7 +2021,7 @@ namespace flame
 					{
 						auto tag = n_item->find_attr("tag")->value();
 						auto e_tag = 0;
-						for (auto s : tag_name)
+						for (auto s : tag_names)
 						{
 							if (tag == s)
 								break;
@@ -2063,7 +2076,7 @@ namespace flame
 			for (auto &i : u.second->items)
 			{
 				auto n_item = n_udt->new_node("item");
-				n_item->new_attr("tag", tag_name[i->tag]);
+				n_item->new_attr("tag", get_variable_tag_name(i->tag));
 				n_item->new_attr("type", i->type_name);
 				n_item->new_attr("name", i->name);
 				n_item->new_attr("attribute", i->attribute);

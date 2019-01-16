@@ -44,6 +44,8 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS Item *link() const;
 			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // well, it is vaild for input's item only
+
+			FLAME_FOUNDATION_EXPORTS String get_address() const;
 		};
 
 		struct Input
@@ -62,7 +64,7 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS Node *node() const;
 			FLAME_FOUNDATION_EXPORTS VaribleInfo *varible_info() const;
-			FLAME_FOUNDATION_EXPORTS Item *item() const;
+			FLAME_FOUNDATION_EXPORTS Item *item() const; /* output has only one item */
 		};
 
 		struct Node

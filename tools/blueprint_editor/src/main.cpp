@@ -71,6 +71,7 @@ int main(int argc, char **args)
 		{
 			scanf("%s", command_line);
 			auto s_what = std::string(command_line);
+
 			if (s_what == "udts")
 			{
 				auto udts = get_udts();
@@ -93,15 +94,105 @@ int main(int argc, char **args)
 				}
 			}
 			else if (s_what == "udt")
-				;
+			{
+				scanf("%s", command_line);
+				auto s_name = std::string(command_line);
+
+				auto udt = find_udt(H(s_name.c_str()));
+				if (udt)
+				{
+					printf("%s:\n", udt->name());
+					std::vector<VaribleInfo*> inputs;
+					std::vector<VaribleInfo*> outputs;
+					for (auto i_i = 0; i_i < udt->item_count(); i_i++)
+					{
+						auto item = udt->item(i_i);
+						auto attribute = std::string(item->attribute());
+						if (attribute.find('i') != std::string::npos)
+							inputs.push_back(item);
+						if (attribute.find('o') != std::string::npos)
+							outputs.push_back(item);
+					}
+					printf("[In]\n");
+					for (auto &i : inputs)
+						printf("name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
+					printf("[Out]\n");
+					for (auto &i : outputs)
+						printf("name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
+				}
+			}
 			else if (s_what == "nodes")
-				;
+			{
+				for (auto i = 0; i < bp->node_count(); i++)
+				{
+					auto n = bp->node(i);
+					printf("id:%s type:%s\n", n->id(), n->udt()->name());
+				}
+			}
 			else if (s_what == "node")
-				;
+			{
+				scanf("%s", command_line);
+				auto s_id = std::string(command_line);
+
+				auto n = bp->find_node(s_id.c_str());
+				if (n)
+				{
+					printf("[In]\n");
+					for (auto i = 0; i < n->input_count(); i++)
+					{
+						auto input = n->input(i);
+						printf("%s\n", input->varible_info()->name());
+						for (auto i_v = 0; i_v < input->array_item_count(); i_v++)
+						{
+							auto v = input->array_item(i_v);
+							std::string link_address("[Null]");
+							if (v->link())
+								link_address = v->get_address().v;
+							printf("  value:%s link:%s\n", input->varible_info()->serialize_value(&v->data(), false, 2).v, link_address.c_str());
+						}
+					}
+					printf("[Out]\n");
+					for (auto i = 0; i < n->output_count(); i++)
+					{
+						auto output = n->output(i);
+						printf("%s\n", output->varible_info()->name());
+						/* output has only one item */
+						{
+							auto v = output->item();
+							std::string link_address("[Null]");
+							if (v->link())
+								link_address = v->get_address().v;
+							printf("  value:%s link:%s\n", output->varible_info()->serialize_value(&v->data(), false, 2).v, link_address.c_str());
+						}
+					}
+				}
+				else
+					printf("node not found\n");
+			}
 		}
 		else if (s_command_line == "add")
 		{
+			scanf("%s", command_line);
+			auto s_what = std::string(command_line);
 
+			if (s_what == "node")
+			{
+				scanf("%s", command_line);
+				auto s_id = std::string(command_line);
+
+				scanf("%s", command_line);
+				auto s_udt = std::string(command_line);
+
+				auto n = bp->add_node(H(s_udt.c_str()));
+				if (!n)
+					printf("bad udt name\n");
+				else
+				{
+					if (s_id != "-")
+						;
+					printf("node added: %s\n", n->id());
+				}
+			}
 		}
 		else if (s_command_line == "remove")
 		{

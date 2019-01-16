@@ -40,6 +40,8 @@ namespace flame
 
 		inline ItemPrivate(InputPrivate *_parent_i, OutputPrivate *_parent_o);
 		inline bool set_link(ItemPrivate *target);
+
+		inline String get_address() const;
 	};
 
 	struct InputPrivate : BP::Input
@@ -53,6 +55,16 @@ namespace flame
 		inline ItemPrivate *array_insert_item(int idx);
 		inline void array_remove_item(int idx);
 		inline void array_clear();
+
+		inline int find_item(const ItemPrivate *item)
+		{
+			for (auto i = 0; i < items.size(); i++)
+			{
+				if (items[i].get() == item)
+					return i;
+			}
+			return -1;
+		}
 	};
 
 	struct OutputPrivate : BP::Output
@@ -111,6 +123,15 @@ namespace flame
 		if (link)
 			link->link = this;
 		return true;
+	}
+
+	String ItemPrivate::get_address() const
+	{
+		if (parent_i)
+			parent_i->node->id + "." + parent_i->varible_info->name() + std::to_string(parent_i->find_item(this));
+		else if (parent_o)
+			parent_o->node->id + "." + parent_o->varible_info->name();
+		return "";
 	}
 
 	InputPrivate::InputPrivate(NodePrivate *_node, VaribleInfo *_varible_info) :
@@ -179,6 +200,7 @@ namespace flame
 			if (find_node(try_id))
 				continue;
 			auto n = new NodePrivate(this, try_id, udt);
+			nodes.emplace_back(n);
 			return n;
 		}
 		return nullptr;
@@ -295,7 +317,7 @@ namespace flame
 											if (n_value->name() == "value")
 											{
 												auto v = new ItemPrivate(i.get(), nullptr);
-												i->varible_info->unserialize_value(n_value->value(), &v->data, false);
+												i->varible_info->unserialize_value(n_value->value(), &v->data.v, false);
 												i->items.emplace_back(v);
 											}
 										}
@@ -313,7 +335,7 @@ namespace flame
 										{
 											auto n_value = n_item->node(0);
 											if (n_value->name() == "value")
-												o->varible_info->unserialize_value(n_value->value(), &o->item->data, false);
+												o->varible_info->unserialize_value(n_value->value(), &o->item->data.v, false);
 										}
 										break;
 									}
@@ -351,13 +373,13 @@ namespace flame
 				auto n_item = n_node->new_node("item");
 				n_item->new_attr("name", i->varible_info->name());
 				for (auto &ii : i->items)
-					n_item->new_attr("value", i->varible_info->serialize_value(&ii->data, false, 2).v);
+					n_item->new_attr("value", i->varible_info->serialize_value(&ii->data.v, false, 2).v);
 			}
 			for (auto &o : n->outputs)
 			{
 				auto n_item = n_node->new_node("item");
 				n_item->new_attr("name", o->varible_info->name());
-				n_item->new_attr("value", o->varible_info->serialize_value(&o->item->data, false, 2).v);
+				n_item->new_attr("value", o->varible_info->serialize_value(&o->item->data.v, false, 2).v);
 			}
 		}
 		for (auto &n : nodes)
@@ -371,9 +393,8 @@ namespace flame
 					if (o)
 					{
 						auto n_link = file->new_node("link");
-						auto o_i = o->parent_o;
-						n_link->new_attr("from", o_i->node->id + "." + o_i->varible_info->name());
-						n_link->new_attr("to", n->id + "." + i->varible_info->name() + "." + std::to_string(idx));
+						n_link->new_attr("from", o->get_address().v);
+						n_link->new_attr("to", ii->get_address().v);
 					}
 					idx++;
 				}
@@ -407,6 +428,11 @@ namespace flame
 	bool BP::Item::set_link(BP::Item *target)
 	{
 		return ((ItemPrivate*)this)->set_link((ItemPrivate*)target);
+	}
+
+	String BP::Item::get_address() const
+	{
+		return ((ItemPrivate*)this)->get_address();
 	}
 
 	BP::Node *BP::Input::node() const

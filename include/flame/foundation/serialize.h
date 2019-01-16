@@ -592,6 +592,8 @@ namespace flame
 		VariableTagArrayOfPointer
 	};
 
+	FLAME_FOUNDATION_EXPORTS const char *get_variable_tag_name(VariableTag tag);
+
 	struct VaribleInfo
 	{
 		FLAME_FOUNDATION_EXPORTS VariableTag tag() const;
