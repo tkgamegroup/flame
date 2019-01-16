@@ -148,7 +148,7 @@ int main(int argc, char **args)
 							std::string link_address("[Null]");
 							if (v->link())
 								link_address = v->get_address().v;
-							printf("  value:%s link:%s\n", input->varible_info()->serialize_value(&v->data(), false, 2).v, link_address.c_str());
+							printf("  value:%s link:%s\n", input->varible_info()->serialize_value(&v->data().v, false, 2).v, link_address.c_str());
 						}
 					}
 					printf("[Out]\n");
@@ -162,7 +162,7 @@ int main(int argc, char **args)
 							std::string link_address("[Null]");
 							if (v->link())
 								link_address = v->get_address().v;
-							printf("  value:%s link:%s\n", output->varible_info()->serialize_value(&v->data(), false, 2).v, link_address.c_str());
+							printf("  value:%s link:%s\n", output->varible_info()->serialize_value(&v->data().v, false, 2).v, link_address.c_str());
 						}
 					}
 				}
