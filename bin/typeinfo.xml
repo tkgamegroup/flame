@@ -38,11 +38,6 @@
 			<item name="CursorWait" value="13"/>
 			<item name="CursorCount" value="14"/>
 		</enum>
-		<enum name="BP::ItemType">
-			<item name="ItemTypeEnum" value="0"/>
-			<item name="ItemTypeVariable" value="1"/>
-			<item name="ItemTypeArrayOfPointer" value="2"/>
-		</enum>
 		<enum name="KeyState">
 			<item name="KeyStateNull" value="0"/>
 			<item name="KeyStateUp" value="1"/>

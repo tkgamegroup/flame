@@ -39,7 +39,7 @@ namespace flame
 		ItemPrivate *link;
 
 		inline ItemPrivate(InputPrivate *_parent_i, OutputPrivate *_parent_o);
-		inline void set_link(ItemPrivate *target);
+		inline bool set_link(ItemPrivate *target);
 	};
 
 	struct InputPrivate : BP::Input
@@ -99,13 +99,18 @@ namespace flame
 		data = (parent_i ? parent_i->varible_info : parent_o->varible_info)->default_value();
 	}
 
-	void ItemPrivate::set_link(ItemPrivate *target)
+	bool ItemPrivate::set_link(ItemPrivate *target)
 	{
+		if (!parent_i)
+			return false;
+		if (!typefmt_compare(data.fmt, target->data.fmt))
+			return false;
 		if (link)
 			link->link = nullptr;
 		link = target;
 		if (link)
 			link->link = this;
+		return true;
 	}
 
 	InputPrivate::InputPrivate(NodePrivate *_node, VaribleInfo *_varible_info) :
@@ -399,9 +404,9 @@ namespace flame
 		return ((ItemPrivate*)this)->link;
 	}
 
-	void BP::Item::set_link(BP::Item *target)
+	bool BP::Item::set_link(BP::Item *target)
 	{
-		((ItemPrivate*)this)->set_link((ItemPrivate*)target);
+		return ((ItemPrivate*)this)->set_link((ItemPrivate*)target);
 	}
 
 	BP::Node *BP::Input::node() const
@@ -546,6 +551,8 @@ namespace flame
 
 	BP *BP::create_from_file(const wchar_t *filename)
 	{
+		if (!std::filesystem::exists(filename))
+			return nullptr;
 		auto bp = new BPPrivate();
 		bp->load(filename);
 		return bp;

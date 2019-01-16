@@ -20,11 +20,85 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
 
 using namespace flame;
 
 int main(int argc, char **args)
 {
+	std::wstring filename;
+
+	BP *bp = nullptr;
+	if (argc > 1)
+	{
+		filename = s2w(args[1]);
+		bp = BP::create_from_file(filename.c_str());
+		if (!bp)
+			filename = L"";
+	}
+
+	if (!bp)
+		bp = BP::create();
+	if (filename != L"")
+		printf("\"%s\":\n", w2s(filename).c_str());
+	else
+		printf("\"unnamed\":\n");
+
+	while (true)
+	{
+		char command_line[260];
+		scanf("%s", command_line);
+		auto s_command_line = std::string(command_line);
+		if (s_command_line == "help")
+		{
+			printf(
+				"	help - show this help\n"
+				"	show udts - show all available udts (has at least one item has 'i' attribute and one item has 'o' attribute)\n"
+				"	show udt [udt_name] - show an udt\n"
+				"	show nodes - show all nodes\n"
+				"	show node [id] - show a node\n"
+				"	add node [id] [udt_name] - add a node (id of '-' means don't care)\n"
+				"	remove node [id] - remove a node\n"
+				"	add link [out_adress] [in_adress] - add a link (e.g. add link a.b c.d.0)\n"
+				"	remove link [in_adress] - remove a link (e.g. remove link c.d.0)\n"
+				"	save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
+			);
+		}
+		else if (s_command_line == "show")
+		{
+			scanf("%s", command_line);
+			auto s_what = std::string(command_line);
+			if (s_what == "udts")
+			{
+				for (auto i = 0; i < udt_count(); i++)
+				{
+					auto udt = get_udt(i);
+
+				}
+			}
+			else if (s_what == "udt")
+				;
+			else if (s_what == "nodes")
+				;
+			else if (s_what == "node")
+				;
+		}
+		else if (s_command_line == "add")
+		{
+
+		}
+		else if (s_command_line == "remove")
+		{
+
+		}
+		else if (s_command_line == "save")
+		{
+			
+		}
+		else
+			printf("unknow command\n");
+	}
+
 	return 0;
 }

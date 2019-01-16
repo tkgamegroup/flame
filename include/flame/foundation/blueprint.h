@@ -43,7 +43,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS CommonData &data();
 
 			FLAME_FOUNDATION_EXPORTS Item *link() const;
-			FLAME_FOUNDATION_EXPORTS void set_link(Item *target); // well, it is vaild for input's item only
+			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // well, it is vaild for input's item only
 		};
 
 		struct Input
