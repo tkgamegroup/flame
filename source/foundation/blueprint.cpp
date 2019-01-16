@@ -25,75 +25,352 @@
 
 namespace flame
 {
-	BP::Node *BP::add_node(uint hash)
-	{
-		auto n = new Node;
-		auto u = find_udt(hash);
-		n->udt = u;
+	struct BPPrivate;
+	struct NodePrivate;
+	struct InputPrivate;
+	struct OutputPrivate;
 
-		for (auto i = 0; i < u->item_count(); i++)
+	struct ItemPrivate : BP::Item
+	{
+		InputPrivate *parent_i;
+		OutputPrivate *parent_o;
+		CommonData data;
+
+		ItemPrivate *link;
+
+		inline ItemPrivate(InputPrivate *_parent_i, OutputPrivate *_parent_o);
+		inline void set_link(ItemPrivate *target);
+	};
+
+	struct InputPrivate : BP::Input
+	{
+		NodePrivate *node;
+		VaribleInfo *varible_info;
+		std::vector<std::unique_ptr<ItemPrivate>> items;
+
+		inline bool is_array() { auto tag = varible_info->tag(); return tag == VariableTagArrayOfVariable || tag == VariableTagArrayOfPointer; }
+		inline InputPrivate(NodePrivate *_node, VaribleInfo *_varible_info);
+		inline ItemPrivate *array_insert_item(int idx);
+		inline void array_remove_item(int idx);
+		inline void array_clear();
+	};
+
+	struct OutputPrivate : BP::Output
+	{
+		NodePrivate *node;
+		VaribleInfo *varible_info;
+		std::unique_ptr<ItemPrivate> item;
+
+		inline OutputPrivate(NodePrivate *_node, VaribleInfo *_varible_info);
+	};
+
+	struct NodePrivate : BP::Node
+	{
+		BPPrivate *bp;
+		std::string id;
+		UDT *udt;
+		std::vector<std::unique_ptr<InputPrivate>> inputs;
+		std::vector<std::unique_ptr<OutputPrivate>> outputs;
+		bool enable;
+
+		inline NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt);
+	};
+
+	struct BPPrivate : BP
+	{
+		std::vector<std::unique_ptr<NodePrivate>> nodes;
+
+		inline NodePrivate *add_node(uint hash);
+		inline void remove_node(NodePrivate *n);
+		inline NodePrivate *find_node(const std::string &id);
+
+		inline ItemPrivate *find_item(const std::string &address);
+
+		inline void clear();
+		inline void load(const wchar_t *filename);
+		inline void save(const wchar_t *filename);
+	};
+
+	ItemPrivate::ItemPrivate(InputPrivate *_parent_i, OutputPrivate *_parent_o) :
+		parent_i(_parent_i),
+		parent_o(_parent_o),
+		link(nullptr)
+	{
+		data = (parent_i ? parent_i->varible_info : parent_o->varible_info)->default_value();
+	}
+
+	void ItemPrivate::set_link(ItemPrivate *target)
+	{
+		if (link)
+			link->link = nullptr;
+		link = target;
+		if (link)
+			link->link = this;
+	}
+
+	InputPrivate::InputPrivate(NodePrivate *_node, VaribleInfo *_varible_info) :
+		node(_node),
+		varible_info(_varible_info)
+	{
+		if (!is_array())
+			/* so we need an element stands for the content */
+			items.emplace_back(new ItemPrivate(this, nullptr));
+	}
+
+	ItemPrivate *InputPrivate::array_insert_item(int idx)
+	{
+		if (!is_array())
+			return nullptr;
+		auto item = new ItemPrivate(this, nullptr);
+		items.emplace(items.begin() + idx, item);
+		return item;
+	}
+
+	void InputPrivate::array_remove_item(int idx)
+	{
+		if (!is_array())
+			return;
+		items.erase(items.begin() + idx);
+	}
+
+	void InputPrivate::array_clear()
+	{
+		if (!is_array())
+			return;
+		items.clear();
+	}
+
+	OutputPrivate::OutputPrivate(NodePrivate *_node, VaribleInfo *_varible_info) :
+		node(_node),
+		varible_info(_varible_info),
+		item(new ItemPrivate(nullptr, this))
+	{
+	}
+
+	NodePrivate::NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt) :
+		bp(_bp),
+		id(_id),
+		udt(_udt)
+	{
+		for (auto i = 0; i < udt->item_count(); i++)
 		{
-			auto item = u->item(i);
-			switch (item->tag())
+			auto v = udt->item(i);
+			auto attr = std::string(v->attribute());
+			if (attr.find('i') != std::string::npos)
+				inputs.emplace_back(new InputPrivate(this, v));
+			if (attr.find('o') != std::string::npos)
+				outputs.emplace_back(new OutputPrivate(this, v));
+		}
+	}
+
+	NodePrivate *BPPrivate::add_node(uint hash)
+	{
+		auto udt = find_udt(hash);
+		if (!udt)
+			return nullptr;
+		for (auto i = 0; i < nodes.size() + 1; i++)
+		{
+			auto try_id = "node_" + std::to_string(i);
+			if (find_node(try_id))
+				continue;
+			auto n = new NodePrivate(this, try_id, udt);
+			return n;
+		}
+		return nullptr;
+	}
+
+	void BPPrivate::remove_node(NodePrivate *n)
+	{
+		for (auto it = nodes.begin(); it != nodes.end(); it++)
+		{
+			if ((*it).get() == n)
 			{
-			case VariableTagEnumSingle:
-			{
-				auto ie = new ItemEnum;
-				ie->name = item->name();
-				ie->type = ItemTypeEnum;
-				ie->e = find_enum(item->type_hash());
-				ie->v = item->default_value().v.i[0];
-				n->items.push_back(ie);
+				nodes.erase(it);
+				return;
 			}
-				break;
-			case VariableTagEnumMulti:
-				break;
-			case VariableTagVariable:
+		}
+	}
+
+	NodePrivate *BPPrivate::find_node(const std::string &id)
+	{
+		for (auto &n : nodes)
+		{
+			if (n->id == id)
+				return n.get();
+		}
+		return nullptr;
+	}
+
+	ItemPrivate *BPPrivate::find_item(const std::string &adress)
+	{
+		auto sp = string_split(adress, '.');
+		if (sp.size() < 2 || sp.size() > 3)
+			return nullptr;
+		auto n = find_node(sp[0]);
+		if (!n)
+			return nullptr;
+		auto udt = n->udt;
+		auto v_name = sp[1];
+		auto udt_item_idx = udt->find_item_i(v_name.c_str());
+		if (udt_item_idx < 0)
+			return nullptr;
+		auto udt_item = udt->item(udt_item_idx);
+		auto udt_item_attribute = std::string(udt_item->attribute());
+		if (udt_item_attribute.find('i') != std::string::npos)
+		{
+			for (auto &i : n->inputs)
 			{
-				auto iv = new ItemVarible;
-				iv->name = item->name();
-				iv->type = ItemTypeVariable;
-				iv->v = item;
-				iv->d = item->default_value();
-				n->items.push_back(iv);
+				if (v_name == i->varible_info->name())
+				{
+					if (sp.size() != 3)
+						return nullptr;
+					auto idx = std::stoi(sp[2]);
+					if (idx < 0 || idx >= i->items.size())
+						return nullptr;
+					return i->items[idx].get();
+				}
 			}
-				break;
-			case VariableTagArrayOfPointer:
-				break;
+		}
+		else if (udt_item_attribute.find('o') != std::string::npos)
+		{
+			for (auto &o : n->outputs)
+			{
+				if (v_name == o->varible_info->name())
+					return o->item.get();
 			}
 		}
 
-		nodes.push_back(n);
-
-		return n;
+		return nullptr;
 	}
 
-	void BP::save(const wchar_t *filename)
+	void BPPrivate::clear()
+	{
+		nodes.clear();
+	}
+
+	void BPPrivate::load(const wchar_t *filename)
+	{
+		auto file = SerializableNode::create_from_xml(filename);
+		if (!file)
+			return;
+
+		for (auto i_n = 0; i_n < file->node_count(); i_n++)
+		{
+			auto n_node = file->node(i_n);
+			if (n_node->name() == "node")
+			{
+				auto id = n_node->find_attr("id")->value();
+				auto type = n_node->find_attr("type")->value();
+
+				auto udt = find_udt(H(type.c_str()));
+				if (!udt)
+					continue;
+				auto n = new NodePrivate(this, id, udt);
+
+				for (auto i_i = 0; i_i < n_node->node_count(); i_i++)
+				{
+					auto n_item = n_node->node(i_i);
+					if (n_item->name() == "item")
+					{
+						auto name = n_item->find_attr("name")->value();
+						auto udt_item_idx = udt->find_item_i(name.c_str());
+						if (udt_item_idx > 0)
+						{
+							auto udt_item = udt->item(udt_item_idx);
+							auto udt_item_attribute = std::string(udt_item->attribute());
+							if (udt_item_attribute.find('i') != std::string::npos)
+							{
+								for (auto &i : n->inputs)
+								{
+									if (name == i->varible_info->name())
+									{
+										for (auto i_v = 0; i_v < n_item->node_count(); i_v++)
+										{
+											auto n_value = n_item->node(i_v);
+											if (n_value->name() == "value")
+											{
+												auto v = new ItemPrivate(i.get(), nullptr);
+												i->varible_info->unserialize_value(n_value->value(), &v->data, false);
+												i->items.emplace_back(v);
+											}
+										}
+										break;
+									}
+								}
+							}
+							else if (udt_item_attribute.find('o') != std::string::npos)
+							{
+								for (auto &o : n->outputs)
+								{
+									if (name == o->varible_info->name())
+									{
+										if (n_item->node_count() == 1)
+										{
+											auto n_value = n_item->node(0);
+											if (n_value->name() == "value")
+												o->varible_info->unserialize_value(n_value->value(), &o->item->data, false);
+										}
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+
+				nodes.emplace_back(n);
+			}
+			else if (n_node->name() == "link")
+			{
+				auto o = find_item(n_node->find_attr("from")->value());
+				auto i = find_item( n_node->find_attr("to")->value());
+				if (o && i)
+					i->set_link(o);
+			}
+		}
+
+		SerializableNode::destroy(file);
+	}
+
+	void BPPrivate::save(const wchar_t *filename)
 	{
 		auto file = SerializableNode::create("BP");
 
-		for (auto i = 0; i < nodes.size; i++)
+		for (auto &n : nodes)
 		{
-			auto n = nodes[i];
-			auto u = n->udt;
-
-			auto n_nd = file->new_node("node");
-			n_nd->new_attr("id", n->id.v);
-			n_nd->new_attr("type", u->name());
-			for (auto i_i = 0; i_i < n->items.size; i_i++)
+			auto n_node = file->new_node("node");
+			n_node->new_attr("id", n->id);
+			n_node->new_attr("type", n->udt->name());
+			for (auto &i : n->inputs)
 			{
-				auto item = n->items[i_i];
-				auto n_it = n_nd->new_node("item");
-				n_it->new_attr("name", item->name.v);
-
-				switch (item->type)
+				auto n_item = n_node->new_node("item");
+				n_item->new_attr("name", i->varible_info->name());
+				for (auto &ii : i->items)
+					n_item->new_attr("value", i->varible_info->serialize_value(&ii->data, false, 2).v);
+			}
+			for (auto &o : n->outputs)
+			{
+				auto n_item = n_node->new_node("item");
+				n_item->new_attr("name", o->varible_info->name());
+				n_item->new_attr("value", o->varible_info->serialize_value(&o->item->data, false, 2).v);
+			}
+		}
+		for (auto &n : nodes)
+		{
+			for (auto &i : n->inputs)
+			{
+				auto idx = 0;
+				for (auto &ii : i->items)
 				{
-				case ItemTypeEnum:
-					break;
-				case ItemTypeVariable:
-					break;
-				case ItemTypeArrayOfPointer:
-					break;
+					auto o = ii->link;
+					if (o)
+					{
+						auto n_link = file->new_node("link");
+						auto o_i = o->parent_o;
+						n_link->new_attr("from", o_i->node->id + "." + o_i->varible_info->name());
+						n_link->new_attr("to", n->id + "." + i->varible_info->name() + "." + std::to_string(idx));
+					}
+					idx++;
 				}
 			}
 		}
@@ -102,80 +379,181 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
+	BP::Input *BP::Item::parent_i() const
+	{
+		return ((ItemPrivate*)this)->parent_i;
+	}
+
+	BP::Output *BP::Item::parent_o() const
+	{
+		return ((ItemPrivate*)this)->parent_o;
+	}
+
+	CommonData &BP::Item::data()
+	{
+		return ((ItemPrivate*)this)->data;
+	}
+
+	BP::Item *BP::Item::link() const
+	{
+		return ((ItemPrivate*)this)->link;
+	}
+
+	void BP::Item::set_link(BP::Item *target)
+	{
+		((ItemPrivate*)this)->set_link((ItemPrivate*)target);
+	}
+
+	BP::Node *BP::Input::node() const
+	{
+		return ((InputPrivate*)this)->node;
+	}
+
+	VaribleInfo *BP::Input::varible_info() const
+	{
+		return ((InputPrivate*)this)->varible_info;
+	}
+
+	int BP::Input::array_item_count() const
+	{
+		return ((InputPrivate*)this)->items.size();
+	}
+
+	BP::Item *BP::Input::array_item(int idx) const
+	{
+		return ((InputPrivate*)this)->items[idx].get();
+	}
+
+	BP::Item *BP::Input::array_insert_item(int idx)
+	{
+		return ((InputPrivate*)this)->array_insert_item(idx);
+	}
+
+	void BP::Input::array_remove_item(int idx)
+	{
+		((InputPrivate*)this)->array_remove_item(idx);
+	}
+
+	void BP::Input::array_clear() const
+	{
+		((InputPrivate*)this)->array_clear();
+	}
+
+	BP::Node *BP::Output::node() const
+	{
+		return ((OutputPrivate*)this)->node;
+	}
+
+	VaribleInfo *BP::Output::varible_info() const
+	{
+		return ((OutputPrivate*)this)->varible_info;
+	}
+
+	BP::Item *BP::Output::item() const
+	{
+		return ((OutputPrivate*)this)->item.get();
+	}
+
+	BP *BP::Node::bp() const
+	{
+		return ((NodePrivate*)this)->bp;
+	}
+
+	const char *BP::Node::id() const
+	{
+		return ((NodePrivate*)this)->id.c_str();
+	}
+
+	UDT *BP::Node::udt() const
+	{
+		return ((NodePrivate*)this)->udt;
+	}
+
+	int BP::Node::input_count() const
+	{
+		return ((NodePrivate*)this)->inputs.size();
+	}
+
+	BP::Input *BP::Node::input(int idx) const
+	{
+		return ((NodePrivate*)this)->inputs[idx].get();
+	}
+
+	int BP::Node::output_count() const
+	{
+		return ((NodePrivate*)this)->outputs.size();
+	}
+
+	BP::Output *BP::Node::output(int idx) const
+	{
+		return ((NodePrivate*)this)->outputs[idx].get();
+	}
+
+	bool BP::Node::enable() const
+	{
+		return ((NodePrivate*)this)->enable;
+	}
+
+	void BP::Node::set_enable(bool enable) const
+	{
+		((NodePrivate*)this)->enable = enable;
+	}
+
+	int BP::node_count() const
+	{
+		return ((BPPrivate*)this)->nodes.size();
+	}
+
+	BP::Node *BP::node(int idx) const
+	{
+		return ((BPPrivate*)this)->nodes[idx].get();
+	}
+
+	BP::Node *BP::add_node(uint hash)
+	{
+		return ((BPPrivate*)this)->add_node(hash);
+	}
+
+	void BP::remove_node(BP::Node *n)
+	{
+		((BPPrivate*)this)->remove_node((NodePrivate*)n);
+	}
+
+	BP::Node *BP::find_node(const char *id) const
+	{
+		return ((BPPrivate*)this)->find_node(id);
+	}
+
+	BP::Item *BP::find_item(const char *adress)
+	{
+		return ((BPPrivate*)this)->find_item(adress);
+	}
+
+	void BP::clear()
+	{
+		((BPPrivate*)this)->clear();
+	}
+
+	void BP::save(const wchar_t *filename)
+	{
+		((BPPrivate*)this)->save(filename);
+	}
+
 	BP *BP::create()
 	{
-		return new BP;
+		return new BPPrivate();
 	}
 
 	BP *BP::create_from_file(const wchar_t *filename)
 	{
-		std::vector<std::pair<Node**, std::string>> defer_links;
-
-		auto file = SerializableNode::create_from_xml(filename);
-
-		for (auto i_n = 0; i_n < file->node_count(); i_n++)
-		{
-			auto n_nd = file->node(i_n);
-			if (n_nd->name() == "node")
-			{
-				auto id = n_nd->find_attr("id")->value();
-				auto type = n_nd->find_attr("type")->value();
-				auto n = new Node;
-				auto u = find_udt(H(type.c_str()));
-				n->udt = u;
-				n->id = id;
-
-				//for (auto i_s = 0; i_s < n_nd->node_count(); i_s++)
-				//{
-				//	auto n_sl = n_nd->node(i_s);
-				//	if (n_sl->name() == "slot")
-				//	{
-				//		auto name = n_sl->find_attr("name")->value();
-				//		auto pos = n->u->find_item_i(name.c_str());
-
-				//		for (auto i_i = 0; i_i < n_sl->node_count(); i_i++)
-				//		{
-				//			auto n_it = n_sl->node(i_i);
-				//			if (n_it->name() == "item")
-				//			{
-				//				auto a_ln = n_it->find_attr("link");
-				//				auto a_vl = n_it->find_attr("value");
-
-				//				if (a_ln)
-				//					defer_links.emplace_back(n->insls[pos]->items[i_i].get(), a_ln->value());
-				//				else if (a_vl)
-				//					n->insls[pos]->items[i_i]->d;
-				//			}
-				//		}
-				//	}
-				//}
-
-				//nodes.emplace_back(n);
-			}
-		}
-
-		//for (auto &l : defer_links)
-		//{
-		//	Node *node = nullptr;
-		//	for (auto &n : nodes)
-		//	{
-		//		if (n->id == l.second)
-		//		{
-		//			node = n.get();
-		//			break;
-		//		}
-		//	}
-		//	l.first->n = node;
-		//}
-
-		SerializableNode::destroy(file);
-
-		return nullptr;
+		auto bp = new BPPrivate();
+		bp->load(filename);
+		return bp;
 	}
 
-	void BP::destroy(BP *s)
+	void BP::destroy(BP *bp)
 	{
-		delete s;
+		delete(BPPrivate*)bp;
 	}
 }
 

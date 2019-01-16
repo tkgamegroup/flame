@@ -33,56 +33,65 @@ namespace flame
 	struct BP
 	{
 		struct Node;
-
-		enum ItemType
-		{
-			ItemTypeEnum,
-			ItemTypeVariable,
-			ItemTypeArrayOfPointer
-		};
+		struct Input;
+		struct Output;
 
 		struct Item
 		{
-			ItemType type;
-			String name;
+			FLAME_FOUNDATION_EXPORTS Input *parent_i() const; // null or its parent is input
+			FLAME_FOUNDATION_EXPORTS Output *parent_o() const; // null or its parent is output
+			FLAME_FOUNDATION_EXPORTS CommonData &data();
+
+			FLAME_FOUNDATION_EXPORTS Item *link() const;
+			FLAME_FOUNDATION_EXPORTS void set_link(Item *target); // well, it is vaild for input's item only
 		};
 
-		struct ItemEnum : Item
+		struct Input
 		{
-			EnumInfo *e;
-			int v;
+			FLAME_FOUNDATION_EXPORTS Node *node() const;
+			FLAME_FOUNDATION_EXPORTS VaribleInfo *varible_info() const;
+
+			FLAME_FOUNDATION_EXPORTS int array_item_count() const;
+			FLAME_FOUNDATION_EXPORTS Item *array_item(int idx) const;
+			FLAME_FOUNDATION_EXPORTS Item *array_insert_item(int idx);
+			FLAME_FOUNDATION_EXPORTS void array_remove_item(int idx);
+			FLAME_FOUNDATION_EXPORTS void array_clear() const;
 		};
 
-		struct ItemVarible : Item
+		struct Output
 		{
-			VaribleInfo *v;
-			CommonData d;
-		};
-
-		struct ItemArrayOfPointer : Item
-		{
-			Array<Node*> v;
+			FLAME_FOUNDATION_EXPORTS Node *node() const;
+			FLAME_FOUNDATION_EXPORTS VaribleInfo *varible_info() const;
+			FLAME_FOUNDATION_EXPORTS Item *item() const;
 		};
 
 		struct Node
 		{
-			String id;
-			UDT *udt;
-			Array<Item*> items;
-			bool enable;
+			FLAME_FOUNDATION_EXPORTS BP *bp() const;
+			FLAME_FOUNDATION_EXPORTS const char *id() const;
+			FLAME_FOUNDATION_EXPORTS UDT *udt() const;
+			FLAME_FOUNDATION_EXPORTS int input_count() const;
+			FLAME_FOUNDATION_EXPORTS Input *input(int idx) const;
+			FLAME_FOUNDATION_EXPORTS int output_count() const;
+			FLAME_FOUNDATION_EXPORTS Output *output(int idx) const;
+			FLAME_FOUNDATION_EXPORTS bool enable() const;
+			FLAME_FOUNDATION_EXPORTS void set_enable(bool enable) const;
 		};
 
-		Array<Node*> nodes;
-
+		FLAME_FOUNDATION_EXPORTS int node_count() const;
+		FLAME_FOUNDATION_EXPORTS Node *node(int idx) const;
 		FLAME_FOUNDATION_EXPORTS Node *add_node(uint hash);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
+		FLAME_FOUNDATION_EXPORTS Node *find_node(const char *id) const;
+
+		FLAME_FOUNDATION_EXPORTS Item *find_item(const char *address);
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
 
 		FLAME_FOUNDATION_EXPORTS static BP *create();
 		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const wchar_t *filename);
-		FLAME_FOUNDATION_EXPORTS static void destroy(BP *s);
+		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
 	};
 }
 

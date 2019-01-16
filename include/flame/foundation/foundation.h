@@ -722,12 +722,6 @@ namespace flame
 		}
 	}
 
-	template<typename T>
-	struct UniquePtr
-	{
-		T *p;
-	};
-
 	enum { MaxFunctionDataCount = 8 };
 
 	struct Package
