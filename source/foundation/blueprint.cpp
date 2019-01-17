@@ -92,7 +92,7 @@ namespace flame
 	{
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
-		inline NodePrivate *add_node(uint hash);
+		inline NodePrivate *add_node(const char *id, uint hash);
 		inline void remove_node(NodePrivate *n);
 		inline NodePrivate *find_node(const std::string &id);
 
@@ -128,9 +128,9 @@ namespace flame
 	String ItemPrivate::get_address() const
 	{
 		if (parent_i)
-			parent_i->node->id + "." + parent_i->varible_info->name() + std::to_string(parent_i->find_item(this));
+			return parent_i->node->id + "." + parent_i->varible_info->name() + "." + std::to_string(parent_i->find_item(this));
 		else if (parent_o)
-			parent_o->node->id + "." + parent_o->varible_info->name();
+			return parent_o->node->id + "." + parent_o->varible_info->name();
 		return "";
 	}
 
@@ -189,21 +189,30 @@ namespace flame
 		}
 	}
 
-	NodePrivate *BPPrivate::add_node(uint hash)
+	NodePrivate *BPPrivate::add_node(const char *id, uint hash)
 	{
 		auto udt = find_udt(hash);
 		if (!udt)
 			return nullptr;
-		for (auto i = 0; i < nodes.size() + 1; i++)
+		std::string s_id;
+		if (id)
 		{
-			auto try_id = "node_" + std::to_string(i);
-			if (find_node(try_id))
-				continue;
-			auto n = new NodePrivate(this, try_id, udt);
-			nodes.emplace_back(n);
-			return n;
+			s_id = id;
+			if (find_node(s_id))
+				return nullptr;
 		}
-		return nullptr;
+		else
+		{
+			for (auto i = 0; i < nodes.size() + 1; i++)
+			{
+				s_id = "node_" + std::to_string(i);
+				if (find_node(s_id))
+					continue;
+			}
+		}
+		auto n = new NodePrivate(this, s_id, udt);
+		nodes.emplace_back(n);
+		return n;
 	}
 
 	void BPPrivate::remove_node(NodePrivate *n)
@@ -540,9 +549,9 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(uint hash)
+	BP::Node *BP::add_node(const char *id, uint hash)
 	{
-		return ((BPPrivate*)this)->add_node(hash);
+		return ((BPPrivate*)this)->add_node(id, hash);
 	}
 
 	void BP::remove_node(BP::Node *n)

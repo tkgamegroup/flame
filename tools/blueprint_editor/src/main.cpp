@@ -56,7 +56,7 @@ int main(int argc, char **args)
 		{
 			printf(
 				"	help - show this help\n"
-				"	show udts - show all available udts (has at least one item has 'i' attribute and one item has 'o' attribute)\n"
+				"	show udts - show all available udts (name started with 'BP_', has at least one item has 'i' attribute and one item has 'o' attribute)\n"
 				"	show udt [udt_name] - show an udt\n"
 				"	show nodes - show all nodes\n"
 				"	show node [id] - show a node\n"
@@ -145,10 +145,11 @@ int main(int argc, char **args)
 						for (auto i_v = 0; i_v < input->array_item_count(); i_v++)
 						{
 							auto v = input->array_item(i_v);
-							std::string link_address("[Null]");
+							std::string link_address;
 							if (v->link())
 								link_address = v->get_address().v;
-							printf("  value:%s link:%s\n", input->varible_info()->serialize_value(&v->data().v, false, 2).v, link_address.c_str());
+							printf("  [%s]->\n", link_address.c_str());
+							printf("  %s\n", input->varible_info()->serialize_value(&v->data().v, false, 2).v);
 						}
 					}
 					printf("[Out]\n");
@@ -159,16 +160,19 @@ int main(int argc, char **args)
 						/* output has only one item */
 						{
 							auto v = output->item();
-							std::string link_address("[Null]");
+							std::string link_address;
 							if (v->link())
 								link_address = v->get_address().v;
-							printf("  value:%s link:%s\n", output->varible_info()->serialize_value(&v->data().v, false, 2).v, link_address.c_str());
+							printf("  %s\n", output->varible_info()->serialize_value(&v->data().v, false, 2).v);
+							printf("  ->[%s]\n", link_address.c_str());
 						}
 					}
 				}
 				else
 					printf("node not found\n");
 			}
+			else
+				printf("unknow object to show\n");
 		}
 		else if (s_command_line == "add")
 		{
@@ -183,20 +187,37 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_udt = std::string(command_line);
 
-				auto n = bp->add_node(H(s_udt.c_str()));
+				auto n = bp->add_node(s_id == "-" ? nullptr : s_id.c_str(), H(s_udt.c_str()));
 				if (!n)
-					printf("bad udt name\n");
+					printf("id already exist or bad udt name\n");
 				else
-				{
-					if (s_id != "-")
-						;
 					printf("node added: %s\n", n->id());
-				}
 			}
+			else if (s_what == "link")
+			{
+				scanf("%s", command_line);
+				auto s_out_address = std::string(command_line);
+
+				scanf("%s", command_line);
+				auto s_in_address = std::string(command_line);
+
+				auto out_item = bp->find_item(s_out_address.c_str());
+				auto in_item = bp->find_item(s_in_address.c_str());
+				if (out_item && in_item)
+				{
+					in_item->set_link(out_item);
+					printf("link added: %s - %s\n", in_item->link()->get_address().v, in_item->get_address().v);
+				}
+				else
+					printf("address wrong\n");
+			}
+			else
+				printf("unknow object to add\n");
 		}
 		else if (s_command_line == "remove")
 		{
-
+			scanf("%s", command_line);
+			auto s_what = std::string(command_line);
 		}
 		else if (s_command_line == "save")
 		{
