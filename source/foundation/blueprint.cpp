@@ -86,6 +86,7 @@ namespace flame
 		bool enable;
 
 		inline NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt);
+		inline ~NodePrivate();
 	};
 
 	struct BPPrivate : BP
@@ -189,9 +190,17 @@ namespace flame
 		}
 	}
 
-	NodePrivate *BPPrivate::add_node(const char *id, uint hash)
+	NodePrivate::~NodePrivate()
 	{
-		auto udt = find_udt(hash);
+		for (auto &i : inputs)
+		{
+			;
+		}
+	}
+
+	NodePrivate *BPPrivate::add_node(const char *id, uint udt_hash)
+	{
+		auto udt = find_udt(udt_hash);
 		if (!udt)
 			return nullptr;
 		std::string s_id;

@@ -185,7 +185,7 @@ int main(int argc, char **args)
 				auto s_id = std::string(command_line);
 
 				scanf("%s", command_line);
-				auto s_udt = std::string(command_line);
+				auto s_udt = "BP_" + std::string(command_line);
 
 				auto n = bp->add_node(s_id == "-" ? nullptr : s_id.c_str(), H(s_udt.c_str()));
 				if (!n)
@@ -218,6 +218,15 @@ int main(int argc, char **args)
 		{
 			scanf("%s", command_line);
 			auto s_what = std::string(command_line);
+
+			if (s_what == "node")
+			{
+			}
+			else if (s_what == "link")
+			{
+			}
+			else
+				printf("unknow object to remove\n");
 		}
 		else if (s_command_line == "save")
 		{

@@ -82,7 +82,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node *node(int idx) const;
-		FLAME_FOUNDATION_EXPORTS Node *add_node(const char *id, uint hash);
+		FLAME_FOUNDATION_EXPORTS Node *add_node(const char *id, uint udt_hash);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
 		FLAME_FOUNDATION_EXPORTS Node *find_node(const char *id) const;
 
