@@ -147,7 +147,7 @@ int main(int argc, char **args)
 							auto v = input->array_item(i_v);
 							std::string link_address;
 							if (v->link())
-								link_address = v->get_address().v;
+								link_address = v->link()->get_address().v;
 							printf("  [%s]->\n", link_address.c_str());
 							printf("  %s\n", input->varible_info()->serialize_value(&v->data().v, false, 2).v);
 						}
@@ -162,7 +162,7 @@ int main(int argc, char **args)
 							auto v = output->item();
 							std::string link_address;
 							if (v->link())
-								link_address = v->get_address().v;
+								link_address = v->link()->get_address().v;
 							printf("  %s\n", output->varible_info()->serialize_value(&v->data().v, false, 2).v);
 							printf("  ->[%s]\n", link_address.c_str());
 						}
@@ -221,16 +221,44 @@ int main(int argc, char **args)
 
 			if (s_what == "node")
 			{
+				scanf("%s", command_line);
+				auto s_id = std::string(command_line);
+
+				auto n = bp->find_node(s_id.c_str());
+				if (n)
+				{
+					bp->remove_node(n);
+					printf("node removed: %s\n", s_id.c_str());
+				}
+				else
+					printf("node not found\n");
 			}
 			else if (s_what == "link")
 			{
+				scanf("%s", command_line);
+				auto s_in_address = std::string(command_line);
+
+				auto i = bp->find_item(s_in_address.c_str());
+				if (i)
+				{
+					i->set_link(nullptr);
+					printf("link removed: %s\n", s_in_address.c_str());
+				}
+				else
+					printf("item not found\n");
 			}
 			else
 				printf("unknow object to remove\n");
 		}
 		else if (s_command_line == "save")
 		{
-			
+			if (filename != L"")
+				;
+			else
+			{
+				scanf("%s", command_line);
+				auto s_filename = std::string(command_line);
+			}
 		}
 		else
 			printf("unknow command\n");

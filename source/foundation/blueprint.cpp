@@ -116,7 +116,7 @@ namespace flame
 	{
 		if (!parent_i)
 			return false;
-		if (!typefmt_compare(data.fmt, target->data.fmt))
+		if (target && !typefmt_compare(data.fmt, target->data.fmt))
 			return false;
 		if (link)
 			link->link = nullptr;
@@ -192,9 +192,20 @@ namespace flame
 
 	NodePrivate::~NodePrivate()
 	{
-		for (auto &i : inputs)
+		for (auto &input : inputs)
 		{
-			;
+			for (auto &i : input->items)
+			{
+				auto link = i->link;
+				if (link)
+					link->link = nullptr;
+			}
+		}
+		for (auto &output : outputs)
+		{
+			auto link = output->item->link;
+			if (link)
+				link->link = nullptr;
 		}
 	}
 
@@ -263,25 +274,25 @@ namespace flame
 		auto udt_item_attribute = std::string(udt_item->attribute());
 		if (udt_item_attribute.find('i') != std::string::npos)
 		{
-			for (auto &i : n->inputs)
+			for (auto &input : n->inputs)
 			{
-				if (v_name == i->varible_info->name())
+				if (v_name == input->varible_info->name())
 				{
 					if (sp.size() != 3)
 						return nullptr;
 					auto idx = std::stoi(sp[2]);
-					if (idx < 0 || idx >= i->items.size())
+					if (idx < 0 || idx >= input->items.size())
 						return nullptr;
-					return i->items[idx].get();
+					return input->items[idx].get();
 				}
 			}
 		}
 		else if (udt_item_attribute.find('o') != std::string::npos)
 		{
-			for (auto &o : n->outputs)
+			for (auto &output : n->outputs)
 			{
-				if (v_name == o->varible_info->name())
-					return o->item.get();
+				if (v_name == output->varible_info->name())
+					return output->item.get();
 			}
 		}
 
@@ -325,18 +336,18 @@ namespace flame
 							auto udt_item_attribute = std::string(udt_item->attribute());
 							if (udt_item_attribute.find('i') != std::string::npos)
 							{
-								for (auto &i : n->inputs)
+								for (auto &input : n->inputs)
 								{
-									if (name == i->varible_info->name())
+									if (name == input->varible_info->name())
 									{
 										for (auto i_v = 0; i_v < n_item->node_count(); i_v++)
 										{
 											auto n_value = n_item->node(i_v);
 											if (n_value->name() == "value")
 											{
-												auto v = new ItemPrivate(i.get(), nullptr);
-												i->varible_info->unserialize_value(n_value->value(), &v->data.v, false);
-												i->items.emplace_back(v);
+												auto v = new ItemPrivate(input.get(), nullptr);
+												input->varible_info->unserialize_value(n_value->value(), &v->data.v, false);
+												input->items.emplace_back(v);
 											}
 										}
 										break;
@@ -345,15 +356,15 @@ namespace flame
 							}
 							else if (udt_item_attribute.find('o') != std::string::npos)
 							{
-								for (auto &o : n->outputs)
+								for (auto &ouput : n->outputs)
 								{
-									if (name == o->varible_info->name())
+									if (name == ouput->varible_info->name())
 									{
 										if (n_item->node_count() == 1)
 										{
 											auto n_value = n_item->node(0);
 											if (n_value->name() == "value")
-												o->varible_info->unserialize_value(n_value->value(), &o->item->data.v, false);
+												ouput->varible_info->unserialize_value(n_value->value(), &ouput->item->data.v, false);
 										}
 										break;
 									}
@@ -386,33 +397,33 @@ namespace flame
 			auto n_node = file->new_node("node");
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("type", n->udt->name());
-			for (auto &i : n->inputs)
+			for (auto &input : n->inputs)
 			{
 				auto n_item = n_node->new_node("item");
-				n_item->new_attr("name", i->varible_info->name());
-				for (auto &ii : i->items)
-					n_item->new_attr("value", i->varible_info->serialize_value(&ii->data.v, false, 2).v);
+				n_item->new_attr("name", input->varible_info->name());
+				for (auto &i : input->items)
+					n_item->new_attr("value", input->varible_info->serialize_value(&i->data.v, false, 2).v);
 			}
-			for (auto &o : n->outputs)
+			for (auto &output : n->outputs)
 			{
 				auto n_item = n_node->new_node("item");
-				n_item->new_attr("name", o->varible_info->name());
-				n_item->new_attr("value", o->varible_info->serialize_value(&o->item->data.v, false, 2).v);
+				n_item->new_attr("name", output->varible_info->name());
+				n_item->new_attr("value", output->varible_info->serialize_value(&output->item->data.v, false, 2).v);
 			}
 		}
 		for (auto &n : nodes)
 		{
-			for (auto &i : n->inputs)
+			for (auto &input : n->inputs)
 			{
 				auto idx = 0;
-				for (auto &ii : i->items)
+				for (auto &i : input->items)
 				{
-					auto o = ii->link;
+					auto o = i->link;
 					if (o)
 					{
 						auto n_link = file->new_node("link");
 						n_link->new_attr("from", o->get_address().v);
-						n_link->new_attr("to", ii->get_address().v);
+						n_link->new_attr("to", i->get_address().v);
 					}
 					idx++;
 				}
