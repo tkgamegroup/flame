@@ -253,11 +253,24 @@ int main(int argc, char **args)
 		else if (s_command_line == "save")
 		{
 			if (filename != L"")
-				;
+			{
+				bp->save(filename.c_str());
+				printf("file saved\n");
+			}
 			else
 			{
 				scanf("%s", command_line);
 				auto s_filename = std::string(command_line);
+
+				if (!std::filesystem::exists(s_filename))
+				{
+					bp->save(filename.c_str());
+					filename = s2w(s_filename);
+					printf("file saved\n");
+					printf("%s:\n", s_filename.c_str());
+				}
+				else
+					printf("filename taken\n");
 			}
 		}
 		else
