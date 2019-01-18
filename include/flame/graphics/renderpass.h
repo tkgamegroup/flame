@@ -32,23 +32,23 @@ namespace flame
 	{
 		struct Device;
 
-		struct AttachmentInfo : R
+		struct AttachmentInfo
 		{
-			Format format$;
-			bool clear$;
-			SampleCount sample_count$;
+			Format format;
+			bool clear;
+			SampleCount sample_count;
 
 			inline AttachmentInfo()
 			{
-				format$ = Format_R8G8B8A8_UNORM;
-				clear$ = true;
-				sample_count$ = SampleCount_1;
+				format = Format_R8G8B8A8_UNORM;
+				clear = true;
+				sample_count = SampleCount_1;
 			}
 
-			inline AttachmentInfo(Format format, bool clear = true, SampleCount sample_count = SampleCount_1) :
-				format$(format),
-				clear$(clear),
-				sample_count$(sample_count)
+			inline AttachmentInfo(Format _format, bool _clear = true, SampleCount _sample_count = SampleCount_1) :
+				format(_format),
+				clear(_clear),
+				sample_count(_sample_count)
 			{
 			}
 		};

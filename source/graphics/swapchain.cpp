@@ -64,7 +64,7 @@ namespace flame
 				if (sc != SampleCount_1)
 					info.subpasses[0].resolve_attachments.push_back(1);
 				rp = Renderpass::get(d, info);
-				info.attachments[0].clear$ = false;
+				info.attachments[0].clear = false;
 				rp_dc = Renderpass::get(d, info);
 			}
 

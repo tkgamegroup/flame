@@ -20,20 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/time.h>
-#include <flame/system.h>
-#include <flame/math.h>
+#include <flame/foundation/foundation.h>
+#include <flame/foundation/window.h>
 #include <flame/graphics/device.h>
-#include <flame/graphics/buffer.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/framebuffer.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/descriptor.h>
-#include <flame/graphics/sampler.h>
 #include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/semaphore.h>
-#include <flame/graphics/queue.h>
 #include <flame/graphics/swapchain.h>
 
 #include <algorithm>
@@ -45,20 +35,17 @@ extern "C" __declspec(dllexport) int main()
 {
 	Ivec2 res(1280, 720);
 
+	auto app = Application::create();
+	auto w = Window::create(app, "Graphics Test", res, WindowFrame);
+
+	auto d = Device::create(true);
+	auto sc = Swapchain::create(d, w);
 
 	//auto near_plane = 0.1f;
 	//auto far_plane = 1000.f;
 	//auto fovy = 60.f;
 
 	//auto aspect = (float)res.x / res.y;
-
-	//auto sm = create_surface_manager();
-	//auto s = sm->create_surface(res.x, res.y, SurfaceStyleFrame,
-	//	"Hello");
-
-	//auto d = create_device(true);
-
-	//auto sc = create_swapchain(d, s->get_win32_handle(), s->cx, s->cy);
 
 	//auto q = create_queue(d);
 	//auto cp = create_commandpool(d);

@@ -33,7 +33,7 @@ namespace flame
 	{
 		inline bool operator==(const AttachmentInfo &lhs, const AttachmentInfo &rhs)
 		{
-			return lhs.format$ == rhs.format$ && lhs.sample_count$ == rhs.sample_count$ && lhs.clear$ == rhs.clear$;
+			return lhs.format == rhs.format && lhs.sample_count == rhs.sample_count && lhs.clear == rhs.clear;
 		}
 
 		inline bool operator==(const SubpassInfo &lhs, const SubpassInfo &rhs)
@@ -56,15 +56,15 @@ namespace flame
 			for (auto i = 0; i < vk_attachments.size(); i++)
 			{
 				vk_attachments[i].flags = 0;
-				vk_attachments[i].format = Z(info.attachments[i].format$);
-				vk_attachments[i].samples = Z(info.attachments[i].sample_count$);
-				vk_attachments[i].loadOp = info.attachments[i].clear$ ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				vk_attachments[i].format = Z(info.attachments[i].format);
+				vk_attachments[i].samples = Z(info.attachments[i].sample_count);
+				vk_attachments[i].loadOp = info.attachments[i].clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				vk_attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				vk_attachments[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				vk_attachments[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 				vk_attachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-				auto fmt = info.attachments[i].format$;
+				auto fmt = info.attachments[i].format;
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				{
 					if (fmt >= Format_Swapchain_Begin && fmt <= Format_Swapchain_End)
@@ -194,7 +194,7 @@ namespace flame
 		{
 			for (auto i = 0; i < ((RenderpassPrivate*)r)->info.attachments.size(); i++)
 			{
-				auto fmt = ((RenderpassPrivate*)r)->info.attachments[i].format$;
+				auto fmt = ((RenderpassPrivate*)r)->info.attachments[i].format;
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 					v.push_back({});
 				else

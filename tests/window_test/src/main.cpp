@@ -31,7 +31,7 @@ FLAME_PACKAGE_END
 int main(int argc, char **args)
 {
 	auto app = Application::create();
-	auto w = Window::create(app, "Hello",  Ivec2(1280, 720), WindowFrame);
+	auto w = Window::create(app, "Window Test",  Ivec2(1280, 720), WindowFrame);
 
 	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Window::MouseListenerParm &p) {
 		auto c = p.get_capture<WindowClickC>();

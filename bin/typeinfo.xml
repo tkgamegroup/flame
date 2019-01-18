@@ -8,6 +8,36 @@
 			<item name="VariableTagArrayOfVariable" value="4"/>
 			<item name="VariableTagArrayOfPointer" value="5"/>
 		</enum>
+		<enum name="graphics::CompareOp">
+			<item name="CompareOpLess" value="0"/>
+			<item name="CompareOpLessOrEqual" value="1"/>
+			<item name="CompareOpGreater" value="2"/>
+			<item name="CompareOpGreaterOrEqual" value="3"/>
+			<item name="CompareOpEqual" value="4"/>
+			<item name="CompareOpNotEqual" value="5"/>
+			<item name="CompareOpAlways" value="6"/>
+		</enum>
+		<enum name="graphics::BlendFactor">
+			<item name="BlendFactorZero" value="0"/>
+			<item name="BlendFactorOne" value="1"/>
+			<item name="BlendFactorSrcColor" value="2"/>
+			<item name="BlendFactorOneMinusSrcColor" value="3"/>
+			<item name="BlendFactorDstColor" value="4"/>
+			<item name="BlendFactorOneMinusDstColor" value="5"/>
+			<item name="BlendFactorSrcAlpha" value="6"/>
+			<item name="BlendFactorOneMinusSrcAlpha" value="7"/>
+			<item name="BlendFactorDstAlpha" value="8"/>
+			<item name="BlendFactorOneMinusDstAlpha" value="9"/>
+			<item name="BlendFactorConstantColor" value="10"/>
+			<item name="BlendFactorOneMinusConstantColor" value="11"/>
+			<item name="BlendFactorConstantAlpha" value="12"/>
+			<item name="BlendFactorOneMinusConstantAlpha" value="13"/>
+			<item name="BlendFactorSrcAlphaSaturate" value="14"/>
+			<item name="BlendFactorSrc1Color" value="15"/>
+			<item name="BlendFactorOneMinusSrc1Color" value="16"/>
+			<item name="BlendFactorSrc1Alpha" value="17"/>
+			<item name="BlendFactorOneMinusSrc1Alpha" value="18"/>
+		</enum>
 		<enum name="Rect::Side">
 			<item name="Outside" value="0"/>
 			<item name="SideN" value="1"/>
@@ -19,6 +49,15 @@
 			<item name="SideSW" value="64"/>
 			<item name="SideSE" value="128"/>
 			<item name="Inside" value="129"/>
+		</enum>
+		<enum name="graphics::ImageviewType">
+			<item name="Imageview1D" value="0"/>
+			<item name="Imageview2D" value="1"/>
+			<item name="Imageview3D" value="2"/>
+			<item name="ImageviewCube" value="3"/>
+			<item name="Imageview1DArray" value="4"/>
+			<item name="ImageView2DArray" value="5"/>
+			<item name="ImageViewCubeArray" value="6"/>
 		</enum>
 		<enum name="CursorType">
 			<item name="CursorNone" value="255"/>
@@ -38,12 +77,49 @@
 			<item name="CursorWait" value="13"/>
 			<item name="CursorCount" value="14"/>
 		</enum>
+		<enum name="graphics::ShaderType">
+			<item name="ShaderNone" value="0"/>
+			<item name="ShaderVert" value="1"/>
+			<item name="ShaderTesc" value="2"/>
+			<item name="ShaderTese" value="4"/>
+			<item name="ShaderGeom" value="8"/>
+			<item name="ShaderFrag" value="16"/>
+			<item name="ShaderComp" value="32"/>
+			<item name="ShaderAll" value="31"/>
+		</enum>
+		<enum name="graphics::IndiceType">
+			<item name="IndiceTypeUint" value="0"/>
+			<item name="IndiceTypeUshort" value="1"/>
+		</enum>
+		<enum name="graphics::ImageLayout">
+			<item name="ImageLayoutUndefined" value="0"/>
+			<item name="ImageLayoutAttachment" value="1"/>
+			<item name="ImageLayoutShaderReadOnly" value="2"/>
+			<item name="ImageLayoutShaderStorage" value="3"/>
+			<item name="ImageLayoutTransferSrc" value="4"/>
+			<item name="ImageLayoutTransferDst" value="5"/>
+		</enum>
+		<enum name="graphics::Swizzle">
+			<item name="SwizzleIdentity" value="0"/>
+			<item name="SwizzleZero" value="1"/>
+			<item name="SwizzleOne" value="2"/>
+			<item name="SwizzleR" value="3"/>
+			<item name="SwizzleG" value="4"/>
+			<item name="SwizzleB" value="5"/>
+			<item name="SwizzleA" value="6"/>
+		</enum>
 		<enum name="KeyState">
 			<item name="KeyStateNull" value="0"/>
 			<item name="KeyStateUp" value="1"/>
 			<item name="KeyStateDown" value="2"/>
 			<item name="KeyStateJust" value="4"/>
 			<item name="KeyStateDouble" value="4"/>
+		</enum>
+		<enum name="graphics::CullMode">
+			<item name="CullModeNone" value="0"/>
+			<item name="CullModeFront" value="1"/>
+			<item name="CullModeBack" value="2"/>
+			<item name="CullModeFrontAndback" value="3"/>
 		</enum>
 		<enum name="MouseKey">
 			<item name="Mouse_Null" value="255"/>
@@ -52,10 +128,55 @@
 			<item name="Mouse_Middle" value="2"/>
 			<item name="MouseKey_count" value="3"/>
 		</enum>
+		<enum name="graphics::Filter">
+			<item name="FilterNearest" value="0"/>
+			<item name="FilterLinear" value="1"/>
+		</enum>
+		<enum name="graphics::ImageUsage">
+			<item name="ImageUsageTransferSrc" value="1"/>
+			<item name="ImageUsageTransferDst" value="2"/>
+			<item name="ImageUsageSampled" value="4"/>
+			<item name="ImageUsageStorage" value="8"/>
+			<item name="ImageUsageAttachment" value="16"/>
+		</enum>
+		<enum name="graphics::PipelineType">
+			<item name="PipelineNone" value="0"/>
+			<item name="PipelineGraphics" value="1"/>
+			<item name="PipelineCompute" value="2"/>
+		</enum>
 		<enum name="WindowStyle">
 			<item name="WindowFrame" value="1"/>
 			<item name="WindowResizable" value="2"/>
 			<item name="WindowFullscreen" value="4"/>
+		</enum>
+		<enum name="graphics::PolygonMode">
+			<item name="PolygonModeFill" value="0"/>
+			<item name="PolygonModeLine" value="1"/>
+			<item name="PolygonModePoint" value="2"/>
+		</enum>
+		<enum name="graphics::DynamicState">
+			<item name="DynamicStateViewport" value="0"/>
+			<item name="DynamicStateScissor" value="1"/>
+			<item name="DynamicStateLineWidth" value="2"/>
+			<item name="DynamicStateDepthBias" value="3"/>
+			<item name="DynamicStateBlendConstants" value="4"/>
+			<item name="DynamicStateDepthBounds" value="5"/>
+			<item name="DynamicStateStencilCompareMask" value="6"/>
+			<item name="DynamicStateStencilWriteMask" value="7"/>
+			<item name="DynamicStateStencilReference" value="8"/>
+		</enum>
+		<enum name="graphics::PrimitiveTopology">
+			<item name="PrimitiveTopologyPointList" value="0"/>
+			<item name="PrimitiveTopologyLineList" value="1"/>
+			<item name="PrimitiveTopologyLineStrip" value="2"/>
+			<item name="PrimitiveTopologyTriangleList" value="3"/>
+			<item name="PrimitiveTopologyTriangleStrip" value="4"/>
+			<item name="PrimitiveTopologyTriangleFan" value="5"/>
+			<item name="PrimitiveTopologyLineListWithAdjacency" value="6"/>
+			<item name="PrimitiveTopologyLineStripWithAdjacency" value="7"/>
+			<item name="PrimitiveTopologyTriangleListWithAdjacency" value="8"/>
+			<item name="PrimitiveTopologyTriangleStripWithAdjacency" value="9"/>
+			<item name="PrimitiveTopologyPatchList" value="10"/>
 		</enum>
 		<enum name="FileType">
 			<item name="FileTypeUnknown" value="0"/>
@@ -63,6 +184,75 @@
 			<item name="FileTypeText" value="2"/>
 			<item name="FileTypeImage" value="3"/>
 			<item name="FileTypeModel" value="4"/>
+		</enum>
+		<enum name="graphics::ImageAspect">
+			<item name="ImageAspectColor" value="1"/>
+			<item name="ImageAspectDepth" value="2"/>
+			<item name="ImageAspectStencil" value="4"/>
+		</enum>
+		<enum name="graphics::ShaderResourceType">
+			<item name="ShaderResourceUniformBuffer" value="0"/>
+			<item name="ShaderResourceStorageBuffer" value="1"/>
+			<item name="ShaderResourceSampledImage" value="2"/>
+			<item name="ShaderResourceStorageImage" value="3"/>
+			<item name="ShaderResourcePushConstant" value="4"/>
+		</enum>
+		<enum name="graphics::VertexInputRate">
+			<item name="VertexInputRateVertex" value="0"/>
+			<item name="VertexInputRateInstance" value="1"/>
+		</enum>
+		<enum name="graphics::Feature">
+			<item name="FeatureTextureCompressionBC" value="0"/>
+			<item name="FeatureTextureCompressionASTC_LDR" value="1"/>
+			<item name="FeatureTextureCompressionETC2" value="2"/>
+			<item name="FeatureCount" value="3"/>
+		</enum>
+		<enum name="graphics::BufferUsage">
+			<item name="BufferUsageTransferSrc" value="1"/>
+			<item name="BufferUsageTransferDst" value="2"/>
+			<item name="BufferUsageUniform" value="4"/>
+			<item name="BufferUsageStorage" value="8"/>
+			<item name="BufferUsageIndex" value="16"/>
+			<item name="BufferUsageVertex" value="32"/>
+			<item name="BufferUsageIndirect" value="64"/>
+		</enum>
+		<enum name="graphics::SampleCount">
+			<item name="SampleCount_1" value="0"/>
+			<item name="SampleCount_2" value="1"/>
+			<item name="SampleCount_4" value="2"/>
+			<item name="SampleCount_8" value="3"/>
+			<item name="SampleCount_16" value="4"/>
+			<item name="SampleCount_32" value="5"/>
+		</enum>
+		<enum name="graphics::Format">
+			<item name="Format_Undefined" value="0"/>
+			<item name="Format_R8_UNORM" value="1"/>
+			<item name="Format_R16_UNORM" value="2"/>
+			<item name="Format_R32_SFLOAT" value="3"/>
+			<item name="Format_R32G32_SFLOAT" value="4"/>
+			<item name="Format_R32G32B32_SFLOAT" value="5"/>
+			<item name="Format_R8G8B8A8_UNORM" value="6"/>
+			<item name="Format_R8G8B8A8_SRGB" value="7"/>
+			<item name="Format_B8G8R8A8_UNORM" value="8"/>
+			<item name="Format_B8G8R8A8_SRGB" value="9"/>
+			<item name="Format_Swapchain_B8G8R8A8_UNORM" value="10"/>
+			<item name="Format_Swapchain_B8G8R8A8_SRGB" value="11"/>
+			<item name="Format_Swapchain_Begin" value="10"/>
+			<item name="Format_Swapchain_End" value="11"/>
+			<item name="Format_R16G16B16A16_UNORM" value="12"/>
+			<item name="Format_R16G16B16A16_SFLOAT" value="13"/>
+			<item name="Format_R32G32B32A32_SFLOAT" value="14"/>
+			<item name="Format_RGBA_BC3" value="15"/>
+			<item name="Format_RGBA_ETC2" value="16"/>
+			<item name="Format_Color_Begin" value="1"/>
+			<item name="Format_Color_End" value="16"/>
+			<item name="Format_Depth16" value="17"/>
+			<item name="Format_Depth32" value="18"/>
+			<item name="Format_Depth24Stencil8" value="19"/>
+			<item name="Format_DepthStencil_Begin" value="19"/>
+			<item name="Format_DepthStencil_End" value="19"/>
+			<item name="Format_Depth_Begin" value="17"/>
+			<item name="Format_Depth_End" value="19"/>
 		</enum>
 		<enum name="Key">
 			<item name="Key_Null" value="255"/>
@@ -163,6 +353,11 @@
 			<item name="ErrOutOfMemory" value="4"/>
 			<item name="ErrContextLost" value="5"/>
 			<item name="ErrResourceLost" value="6"/>
+		</enum>
+		<enum name="graphics::MemProp">
+			<item name="MemPropDevice" value="1"/>
+			<item name="MemPropHost" value="2"/>
+			<item name="MemPropHostCoherent" value="4"/>
 		</enum>
 	</enums>
 	<udts>
