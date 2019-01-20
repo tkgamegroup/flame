@@ -28,18 +28,10 @@
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/semaphore.h>
 #include <flame/graphics/queue.h>
-#include <flame/ui/instance.h>
-#include <flame/ui/canvas.h>
-#include <flame/ui/widget.h>
-#ifdef HAS_3D
-#include <flame/3d/scene.h>
-#endif
+#include <flame/graphics/commandbuffer.h>
 
 namespace flame
 {
-	struct BasicApp;
-	typedef BasicApp* BasicAppPtr;
-
 	struct BasicApp
 	{
 		Application *app;
@@ -47,82 +39,31 @@ namespace flame
 		graphics::Device *d;
 		graphics::Swapchain *sc;
 		graphics::Semaphore *image_avalible;
-#ifdef HAS_3D
-		graphics::Semaphore *scene_finished;
-#endif
-		graphics::Semaphore *ui_finished;
-		ui::SwapchainData *sd;
-		ui::Instance *ui_ins;
-		ui::Canvas *canvas;
-		ui::wText *t_fps;
-#ifdef HAS_3D
-		_3d::Scene *scene_3d;
-#endif
+		graphics::Semaphore *render_finished;
+
+		virtual void on_create() = 0;
 
 		inline void create(const char *title, const Ivec2 &res, int style)
 		{
 			typeinfo_load(L"typeinfo.xml");
 			app = Application::create();
 			w = Window::create(app, title, res, style);
-			d = graphics::Device::get_shared();
+			d = graphics::Device::/*get_shared*/create(true);
 			sc = graphics::Swapchain::create(d, w);
 			image_avalible = graphics::Semaphore::create(d);
-#ifdef HAS_3D
-				scene_finished = graphics::Semaphore::create(d);
-#endif
-			ui_finished = graphics::Semaphore::create(d);
-			sd = ui::SwapchainData::create(sc);
-			ui_ins = ui::Instance::create(w);
-			canvas = ui::Canvas::create(sd);
+			render_finished = graphics::Semaphore::create(d);
 
-			t_fps = ui::Widget::createT<ui::wText>(ui_ins);
-			t_fps->align$ = ui::AlignRightBottomNoPadding;
-			t_fps->text_col() = Bvec4(0, 0, 0, 255);
-			ui_ins->root()->add_child(t_fps, 1);
-
-#ifdef HAS_3D
-			scene_3d = _3d::Scene::create(res);
-#endif
+			on_create();
 		}
 
-		static void do_run(const ParmPackage &p)
-		{
-			auto &thiz = (BasicAppPtr&)p.d[0].p();
-
-			auto index = thiz->sc->acquire_image(thiz->image_avalible);
-
-#ifdef HAS_3D
-			thiz->scene_3d->begin(thiz->app->elapsed_time);
-#endif
-
-			thiz->ui_ins->begin(thiz->app->elapsed_time);
-			thiz->ui_ins->end(thiz->canvas);
-
-#ifdef HAS_3D
-			thiz->scene_3d->end();
-
-			thiz->scene_3d->record_cb();
-#endif
-			thiz->canvas->record_cb(index);
-
-#ifdef HAS_3D
-			thiz->d->gq->submit(thiz->scene_3d->get_cb(), thiz->image_avalible, thiz->scene_finished);
-			thiz->d->gq->submit(thiz->canvas->get_cb(), thiz->scene_finished, thiz->ui_finished);
-#else
-			thiz->d->gq->submit(thiz->canvas->get_cb(), thiz->image_avalible, thiz->ui_finished);
-#endif
-			thiz->d->gq->wait_idle();
-			thiz->d->gq->present(index, thiz->sc, thiz->ui_finished);
-
-			static wchar_t buf[16];
-			swprintf(buf, L"FPS:%lld", thiz->app->fps);
-			thiz->t_fps->text() = buf;
-			thiz->t_fps->set_size_auto();
-		}
+		virtual void do_run() = 0;
 
 		inline void run()
 		{
-			app->run(do_run, { this });
+			app->run(Function<>([](Package &p) {
+				auto thiz = (BasicApp*)p.d[0].p();
+				thiz->do_run();
+			}, { this }));
 		}
 	};
 }

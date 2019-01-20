@@ -41,7 +41,7 @@ namespace flame
 
 			void wait_idle();
 			void submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore);
-			void present(uint index, Swapchain *s, Semaphore *wait_semaphore);
+			void present(Swapchain *s, Semaphore *wait_semaphore);
 		};
 	}
 }

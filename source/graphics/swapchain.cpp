@@ -71,6 +71,8 @@ namespace flame
 			fbs[0] = nullptr;
 			fbs[1] = nullptr;
 
+			avalible_image_index = -1;
+
 			create();
 
 			w->add_resize_listener(Function<Window::ResizeListenerParm>([](Window::ResizeListenerParm &p) {
@@ -196,11 +198,9 @@ namespace flame
 			vkDestroySurfaceKHR(d->ins, s, nullptr);
 		}
 
-		inline int SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
+		inline void SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
 		{
-			uint index;
-			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, ((SemaphorePrivate*)signal_semaphore)->v, VK_NULL_HANDLE, &index));
-			return index;
+			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, ((SemaphorePrivate*)signal_semaphore)->v, VK_NULL_HANDLE, &avalible_image_index));
 		}
 
 		Window *Swapchain::window() const
@@ -213,9 +213,29 @@ namespace flame
 			return ((SwapchainPrivate*)this)->images[idx];
 		}
 
-		int Swapchain::acquire_image(Semaphore *signal_semaphore)
+		uint Swapchain::get_avalible_image_index() const
 		{
-			return ((SwapchainPrivate*)this)->acquire_image(signal_semaphore);
+			return ((SwapchainPrivate*)this)->avalible_image_index;
+		}
+
+		Renderpass *Swapchain::get_renderpass_clear() const
+		{
+			return ((SwapchainPrivate*)this)->rp;
+		}
+
+		Renderpass *Swapchain::get_renderpass_dont_clear() const
+		{
+			return ((SwapchainPrivate*)this)->rp_dc;
+		}
+
+		Framebuffer *Swapchain::get_framebuffer(uint index) const
+		{
+			return ((SwapchainPrivate*)this)->fbs[index];
+		}
+
+		void Swapchain::acquire_image(Semaphore *signal_semaphore)
+		{
+			((SwapchainPrivate*)this)->acquire_image(signal_semaphore);
 		}
 
 		Swapchain *Swapchain::create(Device *d, Window *w, SampleCount sc)

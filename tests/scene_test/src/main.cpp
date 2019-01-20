@@ -26,8 +26,6 @@
 #include <flame/3d/model.h>
 #include <flame/3d/camera.h>
 
-#include <flame/basic_app.h>
-
 using namespace flame;
 
 BasicApp app;

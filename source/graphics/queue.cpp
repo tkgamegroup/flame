@@ -62,7 +62,7 @@ namespace flame
 			vk_chk_res(vkQueueSubmit(v, 1, &info, VK_NULL_HANDLE));
 		}
 
-		void QueuePrivate::present(uint index, Swapchain *s, Semaphore *wait_semaphore)
+		void QueuePrivate::present(Swapchain *s, Semaphore *wait_semaphore)
 		{
 			VkPresentInfoKHR present_info;
 			present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -72,6 +72,7 @@ namespace flame
 			present_info.pWaitSemaphores = &((SemaphorePrivate*)wait_semaphore)->v;
 			present_info.swapchainCount = 1;
 			present_info.pSwapchains = &((SwapchainPrivate*)s)->v;
+			auto index = s->get_avalible_image_index();
 			present_info.pImageIndices = &index;
 			vk_chk_res(vkQueuePresentKHR(v, &present_info));
 		}
@@ -86,9 +87,9 @@ namespace flame
 			((QueuePrivate*)this)->submit(c, wait_semaphore, signal_semaphore);
 		}
 
-		void Queue::present(uint index, Swapchain *s, Semaphore *wait_semaphore)
+		void Queue::present(Swapchain *s, Semaphore *wait_semaphore)
 		{
-			((QueuePrivate*)this)->present(index, s, wait_semaphore);
+			((QueuePrivate*)this)->present(s, wait_semaphore);
 		}
 
 		Queue *Queue::create(Device *d, int queue_family_idx)

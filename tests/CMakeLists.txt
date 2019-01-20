@@ -1,8 +1,2 @@
-add_subdirectory(system_test)
 add_subdirectory(window_test)
 add_subdirectory(graphics_test)
-add_subdirectory(ui_test)
-add_subdirectory(scene_test)
-add_subdirectory(terrain_test)
-add_subdirectory(skeleton_test)
-add_subdirectory(physics_test)

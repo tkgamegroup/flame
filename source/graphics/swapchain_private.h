@@ -47,12 +47,14 @@ namespace flame
 			Renderpass *rp, *rp_dc/*dont clear*/;
 			Framebuffer *fbs[2];
 
+			uint avalible_image_index;
+
 			SwapchainPrivate(Device *d, Window *w, SampleCount sc);
 			~SwapchainPrivate();
 
 			void create();
 			void destroy();
-			int acquire_image(Semaphore *signal_semaphore);
+			void acquire_image(Semaphore *signal_semaphore);
 		};
 
 		typedef SwapchainPrivate* SwapchainPrivatePtr;

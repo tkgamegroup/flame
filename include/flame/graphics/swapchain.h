@@ -42,7 +42,11 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS Window *window() const;
 			FLAME_GRAPHICS_EXPORTS Image *get_image(int idx) const;
-			FLAME_GRAPHICS_EXPORTS int acquire_image(Semaphore *signal_semaphore);
+			FLAME_GRAPHICS_EXPORTS uint get_avalible_image_index() const;
+			FLAME_GRAPHICS_EXPORTS Renderpass *get_renderpass_clear() const;
+			FLAME_GRAPHICS_EXPORTS Renderpass *get_renderpass_dont_clear() const;
+			FLAME_GRAPHICS_EXPORTS Framebuffer *get_framebuffer(uint index) const;
+			FLAME_GRAPHICS_EXPORTS void acquire_image(Semaphore *signal_semaphore);
 
 			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w, SampleCount sc = SampleCount_1);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);

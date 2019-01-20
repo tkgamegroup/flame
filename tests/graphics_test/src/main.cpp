@@ -20,35 +20,48 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/foundation/foundation.h>
-#include <flame/foundation/window.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/swapchain.h>
-
-#include <algorithm>
+#include <flame/basic_app.h>
 
 using namespace flame;
 using namespace graphics;
+
+struct MyApp : BasicApp
+{
+	Commandbuffer *cb;
+
+	inline virtual void on_create() override
+	{
+		cb = Commandbuffer::create(d->gcp);
+	}
+
+	inline virtual void do_run() override
+	{
+		sc->acquire_image(image_avalible);
+
+		cb->begin();
+		cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), nullptr);
+		cb->end_renderpass();
+		cb->end();
+
+		d->gq->submit(cb, image_avalible, render_finished);
+		d->gq->wait_idle();
+
+		d->gq->present(sc, render_finished);
+	}
+}app;
 
 extern "C" __declspec(dllexport) int main()
 {
 	Ivec2 res(1280, 720);
 
-	auto app = Application::create();
-	auto w = Window::create(app, "Graphics Test", res, WindowFrame);
-
-	auto d = Device::create(true);
-	auto sc = Swapchain::create(d, w);
+	app.create("Graphics Test", res, WindowFrame);
+	app.run();
 
 	//auto near_plane = 0.1f;
 	//auto far_plane = 1000.f;
 	//auto fovy = 60.f;
 
 	//auto aspect = (float)res.x / res.y;
-
-	//auto q = create_queue(d);
-	//auto cp = create_commandpool(d);
 
 	//struct UBO_matrix
 	//{
