@@ -28,10 +28,13 @@ using namespace graphics;
 struct MyApp : BasicApp
 {
 	Commandbuffer *cb;
+	ClearValues *cv;
 
 	inline virtual void on_create() override
 	{
 		cb = Commandbuffer::create(d->gcp);
+		cv = ClearValues::create(sc->get_renderpass_clear());
+		cv->set(0, Bvec4(255, 128, 0, 255));
 	}
 
 	inline virtual void do_run() override
@@ -39,7 +42,7 @@ struct MyApp : BasicApp
 		sc->acquire_image(image_avalible);
 
 		cb->begin();
-		cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), nullptr);
+		cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), cv);
 		cb->end_renderpass();
 		cb->end();
 

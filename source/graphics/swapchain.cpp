@@ -58,8 +58,12 @@ namespace flame
 			{
 				RenderpassInfo info;
 				if (sc != SampleCount_1)
+				{
 					info.attachments.emplace_back(swapchain_format, true, sc);
-				info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
+					info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
+				}
+				else
+					info.attachments.emplace_back(swapchain_format, true, SampleCount_1);
 				info.subpasses[0].color_attachments.push_back(0);
 				if (sc != SampleCount_1)
 					info.subpasses[0].resolve_attachments.push_back(1);
