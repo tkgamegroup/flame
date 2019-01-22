@@ -2474,27 +2474,9 @@ namespace flame
 		return ((FontAtlasPrivate*)this)->sdf_image;
 	}
 
-	void FontAtlas::save(const wchar_t *filename) const
-	{
-		((FontAtlasPrivate*)this)->save(filename);
-	}
-
 	FontAtlas *FontAtlas::create(const std::vector<FontDescription> &descs, int pixel_height, float sdf_scale)
 	{
 		return new FontAtlasPrivate(descs, pixel_height, sdf_scale);
-	}
-
-	FontAtlas *FontAtlas::create_from_file(const std::wstring &filename)
-	{
-		auto file = SerializableNode::create_from_xml(filename);
-		if (!file)
-			return nullptr;
-
-		auto f = new FontAtlasPrivate(file);
-
-		SerializableNode::destroy(file);
-
-		return f;
 	}
 
 	void FontAtlas::destroy(FontAtlas *f)

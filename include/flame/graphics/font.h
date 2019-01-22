@@ -24,9 +24,6 @@
 
 #include <flame/graphics/graphics.h>
 
-#include <string>
-#include <vector>
-
 namespace flame
 {
 	struct Bitmap;
@@ -100,10 +97,7 @@ namespace flame
 		FLAME_GRAPHICS_EXPORTS Bitmap *get_stroke_image() const;
 		FLAME_GRAPHICS_EXPORTS Bitmap *get_sdf_image() const;
 
-		FLAME_GRAPHICS_EXPORTS void save(const wchar_t *filename) const;
-
-		FLAME_GRAPHICS_EXPORTS static FontAtlas *create(const std::vector<FontDescription> &descs, int pixel_height, float sdf_scale = -1.f);
-		FLAME_GRAPHICS_EXPORTS static FontAtlas *create_from_file(const std::wstring &filename);
+		FLAME_GRAPHICS_EXPORTS static FontAtlas *create(const wchar_t *filename, int pixel_height, float sdf_scale = -1.f);
 		FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas *f);
 	};
 }
