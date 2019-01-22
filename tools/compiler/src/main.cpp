@@ -20,12 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/file.h>
-#include <flame/system.h>
+#include <flame/foundation/foundation.h>
 
 using namespace flame;
 
-std::string arch;
 std::vector<std::string> include_dirs;
 std::vector<std::string> link_libraries;
 std::string output_dir;
@@ -39,8 +37,7 @@ void compile(const std::string &cpp_filename)
 
 	if (!recompile)
 	{
-		if (std::filesystem::exists(dll_filename) && std::filesystem::last_write_time(cpp_path) <
-			std::filesystem::last_write_time(dll_filename))
+		if (std::filesystem::exists(dll_filename) && std::filesystem::last_write_time(cpp_path) < std::filesystem::last_write_time(dll_filename))
 		{
 			printf("%s (up to date)\n\n\n", cpp_filename.c_str());
 			return;
@@ -49,11 +46,7 @@ void compile(const std::string &cpp_filename)
 
 	printf("compiling: %s\n", cpp_filename.c_str());
 
-	std::string cl;
-	if (arch == "x86")
-		cl = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\"";
-	else if (arch == "x64")
-		cl = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\"";
+	std::string cl = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\"";
 
 	cl += " & cl ";
 	cl += cpp_filename;
@@ -75,96 +68,60 @@ void compile(const std::string &cpp_filename)
 
 	cl += " -out:" + dll_filename;
 
-	LongString output;
-	exec("", cl.c_str(), &output);
+	auto output = exec_and_get_output(L"", cl.c_str());
 
-	printf("%s\n\n\n", output.data);
-
-	return;
+	printf("%s\n\n\n", output.v);
 }
 
 int main(int argc, char **args)
 {
-	printf("config:");
-	char config[100];
-	scanf("%s", config);
-	if (std::string(config) == "[recompile]")
-		recompile = true;
+	if (argc <= 1)
+		return;
 
-	std::ifstream option_file("compile_option.txt");
-	if (option_file.good())
-	{
-		enum State
-		{
-			StateNone,
-			StateArch,
-			StateInclude,
-			StateLink,
-			StateOutput
-		}state = StateNone;
+	//if (option_file.good())
+	//{
+	//	while (!option_file.eof())
+	//	{
+	//		std::string line;
+	//		std::getline(option_file, line);
 
-		while (!option_file.eof())
-		{
-			std::string line;
-			std::getline(option_file, line);
+	//			switch (state)
+	//			{
+	//			case StateInclude:
+	//				include_dirs.push_back(line);
+	//				break;
+	//			case StateLink:
+	//				link_libraries.push_back(line);
+	//				break;
+	//			case StateOutput:
+	//				output_dir = line;
+	//				break;
+	//			}
+	//	}
 
-			if (line == "arch:")
-				state = StateArch;
-			else if (line == "include:")
-				state = StateInclude;
-			else if (line == "link:")
-				state = StateLink;
-			else if (line == "output:")
-				state = StateOutput;
-			else
-			{
-				switch (state)
-				{
-				case StateArch:
-					arch = line;
-					break;
-				case StateInclude:
-					include_dirs.push_back(line);
-					break;
-				case StateLink:
-					link_libraries.push_back(line);
-					break;
-				case StateOutput:
-					output_dir = line;
-					if (output_dir.size() > 0 && 
-						!is_slash_chr(output_dir[output_dir.size() - 1]))
-						output_dir += "/";
-					break;
-				}
-			}
-		}
+	//	option_file.close();
+	//}
 
-		option_file.close();
-	}
+	//MediumString curr_path;
+	//get_curr_path(&curr_path);
 
-	if (arch == "")
-		arch = "x64";
+	//for (std::filesystem::directory_iterator end, it(curr_path.data); it != end; it++)
+	//{
+	//	if (!std::filesystem::is_directory(it->status()))
+	//	{
+	//		if (it->path().extension() == ".cpp")
+	//			compile(it->path().string());
+	//	}
+	//}
 
-	MediumString curr_path;
-	get_curr_path(&curr_path);
-
-	for (std::filesystem::directory_iterator end, it(curr_path.data); it != end; it++)
-	{
-		if (!std::filesystem::is_directory(it->status()))
-		{
-			if (it->path().extension() == ".cpp")
-				compile(it->path().string());
-		}
-	}
-
-	add_file_watcher(FileWatcherModeContent, curr_path.data, [&](FileChangeType type, const char *filename) {
-		if (type == FileModified)
-		{
-			std::filesystem::path path(filename);
-			if (path.extension() == ".cpp")
-				compile(filename);
-		}
-	});
+	//add_file_watcher(FileWatcherModeContent, curr_path.data, [&](FileChangeType type, const char *filename) {
+	//	if (type == FileModified)
+	//	{
+	//		std::filesystem::path path(filename);
+	//		if (path.extension() == ".cpp")
+	//			compile(filename);
+	//	}
+	//});
 
 	system("pause");
 

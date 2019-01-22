@@ -1000,8 +1000,8 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Ivec2 get_screen_size();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_curr_path();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_app_path();
-	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const wchar_t *parameters, bool wait);
-	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const wchar_t *parameters);
+	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const char *parameters, bool wait);
+	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
 
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const StringW &s);

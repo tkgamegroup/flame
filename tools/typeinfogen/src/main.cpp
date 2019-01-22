@@ -26,35 +26,14 @@
 using namespace flame;
 
 std::wstring root_dir;
-std::wstring bin_dir;
 
 int main(int argc, char **args)
 {
 	root_dir = s2w(getenv("flame_path"));
 
-	std::ifstream file(root_dir + L"/dir.txt");
-	if (file.good())
-	{
-		while (!file.eof())
-		{
-			std::string line;
-			std::getline(file, line);
-
-			auto sp = string_split(line);
-			if (sp.size() > 0)
-			{
-				if (sp[0] == "bin:")
-				{
-					if (sp.size() == 2)
-						bin_dir = s2w(sp[1]);
-				}
-			}
-		}
-	}
-
 	typeinfo_collect_init();
-	typeinfo_collect(root_dir + L"/" + bin_dir, L"flame_");
-	typeinfo_save(root_dir + L"/" + bin_dir + L"/typeinfo.xml");
+	typeinfo_collect(root_dir + L"/bin", L"flame_");
+	typeinfo_save(root_dir + L"/bin/typeinfo.xml");
 	typeinfo_clear();
 
 	return 0;

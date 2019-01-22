@@ -1,4 +1,4 @@
 file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
-add_exe(auto_compiler "${SOURCE_LIST}" "tools")
-target_link_libraries(auto_compiler flame_file)
-target_link_libraries(auto_compiler flame_system)
+add_exe(compiler "${SOURCE_LIST}" "tools")
+target_compile_definitions(compiler PRIVATE VS_LOCATION="${VS_PATH}")
+target_link_libraries(compiler flame_foundation)

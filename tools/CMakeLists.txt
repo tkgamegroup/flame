@@ -1,4 +1,5 @@
 add_subdirectory(SLOC)
 add_subdirectory(blueprint_editor)
+add_subdirectory(compiler)
 add_subdirectory(GID_provider)
 add_subdirectory(typeinfogen)

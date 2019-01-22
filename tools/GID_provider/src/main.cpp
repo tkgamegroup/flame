@@ -20,16 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/string.h>
-#include <flame/file.h>
-
-#include <vector>
-#include <regex>
+#include <flame/foundation/foundation.h>
 
 using namespace flame;
 
 std::wstring root_dir;
-std::vector<std::wstring> src_dirs;
 
 std::vector<unsigned int> gids;
 
@@ -59,36 +54,22 @@ uint get_gid()
 
 int main(int argc, char **args)
 {
+	if (argc <= 1)
+		return 0;
+
 	srand(time(0));
 
 	root_dir = s2w(getenv("flame_path"));
 
-	std::ifstream dir_file(root_dir + L"/dir.txt");
-	if (dir_file.good())
-	{
-		while (!dir_file.eof())
-		{
-			std::string line;
-			std::getline(dir_file, line);
-
-			auto sp = string_split(line);
-			if (sp.size() > 0)
-			{
-				if (sp[0] == "src:")
-				{
-					for (auto i = 1; i < sp.size(); i++)
-						src_dirs.push_back(s2w(sp[i]));
-				}
-			}
-		}
-		dir_file.close();
-	}
+	std::vector<std::wstring> src_dirs;
+	for (auto i = 1; i < argc; i++)
+		src_dirs.push_back(s2w(args[i]));
 
 	for (auto &d : src_dirs)
 	{
-		for (filesystem::recursive_directory_iterator end, it(root_dir + L"/" + d); it != end; it++)
+		for (std::filesystem::recursive_directory_iterator end, it(root_dir + L"/" + d); it != end; it++)
 		{
-			if (!filesystem::is_directory(it->status()) && it->path().extension() == L".cpp")
+			if (!std::filesystem::is_directory(it->status()) && it->path().extension() == L".cpp")
 			{
 				auto ffn = it->path().wstring();
 

@@ -134,21 +134,21 @@ namespace flame
 		return buf;
 	}
 
-	void exec(const wchar_t *filename, const wchar_t *parameters, bool wait)
+	void exec(const wchar_t *filename, const char *parameters, bool wait)
 	{
 		SHELLEXECUTEINFOW info = {};
 		info.cbSize = sizeof(SHELLEXECUTEINFOW);
 		info.fMask = SEE_MASK_NOCLOSEPROCESS;
 		info.lpVerb = L"open";
 		info.lpFile = filename;
-		info.lpParameters = parameters;
+		info.lpParameters = s2w(parameters).c_str();
 		ShellExecuteExW(&info);
 		if (wait)
 			WaitForSingleObject(info.hProcess, INFINITE);
 
 	}
 
-	String exec_and_get_output(const wchar_t *filename, const wchar_t *parameters)
+	String exec_and_get_output(const wchar_t *filename, const char *parameters)
 	{
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
@@ -167,7 +167,7 @@ namespace flame
 			auto tail = cl_buf;
 			if (filename[0] == 0)
 				tail = wcscpy(cl_buf, filename);
-			wcscpy(tail, parameters);
+			wcscpy(tail, s2w(parameters).c_str());
 		}
 		cl_buf[FLAME_ARRAYSIZE(cl_buf) - 1] = 0;
 
