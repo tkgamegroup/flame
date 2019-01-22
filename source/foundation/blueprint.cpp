@@ -93,7 +93,7 @@ namespace flame
 	{
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
-		inline NodePrivate *add_node(const char *id, uint hash);
+		inline NodePrivate *add_node(const char *id, UDT *udt);
 		inline void remove_node(NodePrivate *n);
 		inline NodePrivate *find_node(const std::string &id);
 
@@ -209,11 +209,8 @@ namespace flame
 		}
 	}
 
-	NodePrivate *BPPrivate::add_node(const char *id, uint udt_hash)
+	NodePrivate *BPPrivate::add_node(const char *id, UDT *udt)
 	{
-		auto udt = find_udt(udt_hash);
-		if (!udt)
-			return nullptr;
 		std::string s_id;
 		if (id)
 		{
@@ -262,6 +259,11 @@ namespace flame
 		auto sp = string_split(adress, '.');
 		if (sp.size() < 2 || sp.size() > 3)
 			return nullptr;
+		uint index = 0;
+		if (sp.size() == 3)
+			index = std::stoi(sp[2]);
+		if (index < 0)
+			return nullptr;
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
@@ -278,12 +280,9 @@ namespace flame
 			{
 				if (v_name == input->varible_info->name())
 				{
-					if (sp.size() != 3)
+					if (index >= input->items.size())
 						return nullptr;
-					auto idx = std::stoi(sp[2]);
-					if (idx < 0 || idx >= input->items.size())
-						return nullptr;
-					return input->items[idx].get();
+					return input->items[index].get();
 				}
 			}
 		}
@@ -569,9 +568,9 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(const char *id, uint hash)
+	BP::Node *BP::add_node(const char *id, UDT *udt)
 	{
-		return ((BPPrivate*)this)->add_node(id, hash);
+		return ((BPPrivate*)this)->add_node(id, udt);
 	}
 
 	void BP::remove_node(BP::Node *n)

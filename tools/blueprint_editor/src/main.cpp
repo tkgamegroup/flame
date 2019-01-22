@@ -60,7 +60,7 @@ int main(int argc, char **args)
 				"	show udt [udt_name] - show an udt\n"
 				"	show nodes - show all nodes\n"
 				"	show node [id] - show a node\n"
-				"	add node [id] [udt_name] - add a node (id of '-' means don't care)\n"
+				"	add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
 				"	remove node [id] - remove a node\n"
 				"	add link [out_adress] [in_adress] - add a link (e.g. add link a.b c.d.0)\n"
 				"	remove link [in_adress] - remove a link (e.g. remove link c.d.0)\n"
@@ -182,16 +182,26 @@ int main(int argc, char **args)
 			if (s_what == "node")
 			{
 				scanf("%s", command_line);
-				auto s_id = std::string(command_line);
+				auto s_ids = std::string(command_line);
 
 				scanf("%s", command_line);
 				auto s_udt = "BP_" + std::string(command_line);
 
-				auto n = bp->add_node(s_id == "-" ? nullptr : s_id.c_str(), H(s_udt.c_str()));
-				if (!n)
-					printf("id already exist or bad udt name\n");
+				auto udt = find_udt(H(s_udt.c_str()));
+				if (udt)
+				{
+					auto ids = string_split(s_ids, ',');
+					for (auto &id : ids)
+					{
+						auto n = bp->add_node(id == "-" ? nullptr : id.c_str(), udt);
+						if (!n)
+							printf("%s already exist\n", id.c_str());
+						else
+							printf("node added: %s\n", n->id());
+					}
+				}
 				else
-					printf("node added: %s\n", n->id());
+					printf("bad udt name\n");
 			}
 			else if (s_what == "link")
 			{

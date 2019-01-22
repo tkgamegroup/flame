@@ -45,7 +45,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Item *link() const;
 			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // well, it is vaild for input's item only
 
-			FLAME_FOUNDATION_EXPORTS String get_address() const;
+			FLAME_FOUNDATION_EXPORTS String get_address() const; // node_id.varible_name.item_index (item_index is default for 0)
 		};
 
 		struct Input
@@ -82,7 +82,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node *node(int idx) const;
-		FLAME_FOUNDATION_EXPORTS Node *add_node(const char *id, uint udt_hash);
+		FLAME_FOUNDATION_EXPORTS Node *add_node(const char *id, UDT *udt);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
 		FLAME_FOUNDATION_EXPORTS Node *find_node(const char *id) const;
 
