@@ -20,10 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/file.h>
-#include <flame/serialize.h>
-#include <flame/bitmap.h>
-#include <flame/font.h>
+#include <flame/foundation/serialize.h>
+#include <flame/foundation/bitmap.h>
+#include <flame/graphics/font.h>
 
 #include <ft2build.h>
 #include <freetype/freetype.h>
@@ -2411,7 +2410,7 @@ namespace flame
 
 		inline void save(const std::wstring &filename) const
 		{
-			auto parent_path = filesystem::path(filename).parent_path().generic_wstring();
+			auto parent_path = std::filesystem::path(filename).parent_path().generic_wstring();
 
 			auto file = SerializableNode::create("FontAtlas");
 			file->new_attr("pixel_height", std::to_string(pixel_height));

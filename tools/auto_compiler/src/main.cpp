@@ -60,11 +60,10 @@ void compile(const std::string &cpp_filename)
 	cl += " -LD -MD -EHsc -Zi";
 	for (auto &d : include_dirs)
 		cl += " -I " + d;
+	cl += " -link -DEBUG ";
 	std::string libraries(" ");
 	for (auto &l : link_libraries)
-		libraries += l + " ";
-	cl += " -link -DEBUG"
-		+ libraries;
+		cl += l + " ";
 
 	std::string out_parent_path;
 	if (!output_dir.empty())

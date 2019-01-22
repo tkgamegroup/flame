@@ -22,17 +22,7 @@
 
 #pragma once
 
-#ifdef FLAME_WINDOWS
-#ifdef FLAME_FONT_MODULE
-#define FLAME_FONT_EXPORTS __declspec(dllexport)
-#else
-#define FLAME_FONT_EXPORTS __declspec(dllimport)
-#endif
-#else
-#define FLAME_FONT_EXPORTS
-#endif
-
-#include <flame/math.h>
+#include <flame/graphics/graphics.h>
 
 #include <string>
 #include <vector>
@@ -62,7 +52,7 @@ namespace flame
 		}
 	};
 
-	FLAME_FONT_EXPORTS void get_default_char_range(wchar_t &out_code_begin, wchar_t &out_code_end);
+	FLAME_GRAPHICS_EXPORTS void get_default_char_range(wchar_t &out_code_begin, wchar_t &out_code_end);
 
 	struct Glyph
 	{
@@ -103,17 +93,17 @@ namespace flame
 	{
 		int pixel_height;
 
-		FLAME_FONT_EXPORTS const Glyph &get_glyph(wchar_t unicode);
+		FLAME_GRAPHICS_EXPORTS const Glyph &get_glyph(wchar_t unicode);
 
-		FLAME_FONT_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);
+		FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);
 
-		FLAME_FONT_EXPORTS Bitmap *get_stroke_image() const;
-		FLAME_FONT_EXPORTS Bitmap *get_sdf_image() const;
+		FLAME_GRAPHICS_EXPORTS Bitmap *get_stroke_image() const;
+		FLAME_GRAPHICS_EXPORTS Bitmap *get_sdf_image() const;
 
-		FLAME_FONT_EXPORTS void save(const wchar_t *filename) const;
+		FLAME_GRAPHICS_EXPORTS void save(const wchar_t *filename) const;
 
-		FLAME_FONT_EXPORTS static FontAtlas *create(const std::vector<FontDescription> &descs, int pixel_height, float sdf_scale = -1.f);
-		FLAME_FONT_EXPORTS static FontAtlas *create_from_file(const std::wstring &filename);
-		FLAME_FONT_EXPORTS static void destroy(FontAtlas *f);
+		FLAME_GRAPHICS_EXPORTS static FontAtlas *create(const std::vector<FontDescription> &descs, int pixel_height, float sdf_scale = -1.f);
+		FLAME_GRAPHICS_EXPORTS static FontAtlas *create_from_file(const std::wstring &filename);
+		FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas *f);
 	};
 }
