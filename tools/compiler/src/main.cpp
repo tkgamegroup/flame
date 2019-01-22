@@ -28,25 +28,24 @@ std::vector<std::string> include_dirs;
 std::vector<std::string> link_libraries;
 std::string output_dir;
 
-bool recompile = false;
+bool force = false;
 
 void compile(const std::string &cpp_filename)
 {
 	std::filesystem::path cpp_path(cpp_filename);
 	auto dll_filename = output_dir + cpp_path.stem().string() + ".dll";
 
-	if (!recompile)
+	if (!force && std::filesystem::exists(dll_filename) && std::filesystem::last_write_time(cpp_path) < std::filesystem::last_write_time(dll_filename))
 	{
-		if (std::filesystem::exists(dll_filename) && std::filesystem::last_write_time(cpp_path) < std::filesystem::last_write_time(dll_filename))
-		{
-			printf("%s (up to date)\n\n\n", cpp_filename.c_str());
-			return;
-		}
+		printf("%s (up to date)\n\n\n", cpp_filename.c_str());
+		return;
 	}
 
 	printf("compiling: %s\n", cpp_filename.c_str());
 
-	std::string cl = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\"";
+	std::string cl("\"");
+	cl += VS_LOCATION;
+	cl += "/VC/Auxiliary/Build/vcvars64.bat\"";
 
 	cl += " & cl ";
 	cl += cpp_filename;
@@ -54,7 +53,6 @@ void compile(const std::string &cpp_filename)
 	for (auto &d : include_dirs)
 		cl += " -I " + d;
 	cl += " -link -DEBUG ";
-	std::string libraries(" ");
 	for (auto &l : link_libraries)
 		cl += l + " ";
 
@@ -76,52 +74,36 @@ void compile(const std::string &cpp_filename)
 int main(int argc, char **args)
 {
 	if (argc <= 1)
-		return;
+		return 0;
 
-	//if (option_file.good())
-	//{
-	//	while (!option_file.eof())
-	//	{
-	//		std::string line;
-	//		std::getline(option_file, line);
-
-	//			switch (state)
-	//			{
-	//			case StateInclude:
-	//				include_dirs.push_back(line);
-	//				break;
-	//			case StateLink:
-	//				link_libraries.push_back(line);
-	//				break;
-	//			case StateOutput:
-	//				output_dir = line;
-	//				break;
-	//			}
-	//	}
-
-	//	option_file.close();
-	//}
-
-	//MediumString curr_path;
-	//get_curr_path(&curr_path);
-
-	//for (std::filesystem::directory_iterator end, it(curr_path.data); it != end; it++)
-	//{
-	//	if (!std::filesystem::is_directory(it->status()))
-	//	{
-	//		if (it->path().extension() == ".cpp")
-	//			compile(it->path().string());
-	//	}
-	//}
-
-	//add_file_watcher(FileWatcherModeContent, curr_path.data, [&](FileChangeType type, const char *filename) {
-	//	if (type == FileModified)
-	//	{
-	//		std::filesystem::path path(filename);
-	//		if (path.extension() == ".cpp")
-	//			compile(filename);
-	//	}
-	//});
+	auto input = std::string(args[1]);
+	for (auto i = 2; i < argc; i++)
+	{
+		auto param = std::string(args[i]);
+		if (param[0] == '-' && param.size() > 1)
+		{
+			auto what = param[1];
+			switch (what)
+			{
+			case 'i':
+				if (param.size() > 2)
+					include_dirs.push_back(param.c_str() + 2);
+				break;
+			case 'l':
+				if (param.size() > 2)
+					link_libraries.push_back(param.c_str() + 2);
+				break;
+			case 'o':
+				if (param.size() > 2)
+					output_dir = param.c_str() + 2;
+				break;
+			case 'f':
+				force = true;
+				break;
+			}
+		}
+	}
+	compile(input);
 
 	system("pause");
 
