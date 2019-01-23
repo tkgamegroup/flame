@@ -58,7 +58,10 @@ int main(int argc, char **args)
 			auto s_target_file = w2s(target_file);
 			auto s_cmd = "\"" + w2s(scriptfilename) + "\"";
 			if (c.params())
+			{
+				s_cmd += " ";
 				s_cmd += c.params();
+			}
 
 			printf("file changed: %s\n", s_target_file.c_str());
 			printf("run: %s\n", s_cmd.c_str());
