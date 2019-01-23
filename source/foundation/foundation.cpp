@@ -246,72 +246,73 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
-	//void read_process_memory(void *process, void *address, int size, void *dst)
-	//{
-	//	SIZE_T ret_byte;
-	//	assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
-	//}
+	void read_process_memory(void *process, void *address, int size, void *dst)
+	{
+		SIZE_T ret_byte;
+		assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
+	}
 
-	//static HHOOK global_key_hook = 0;
-	//static std::map<int, std::vector<Function*>> global_key_listeners;
+	static HHOOK global_key_hook = 0;
+	static std::map<int, std::vector<Function<>*>> global_key_listeners;
 
-	//LRESULT CALLBACK global_key_callback(int nCode, WPARAM wParam, LPARAM lParam)
-	//{
-	//	auto kbhook = (KBDLLHOOKSTRUCT*)lParam;
+	LRESULT CALLBACK global_key_callback(int nCode, WPARAM wParam, LPARAM lParam)
+	{
+		auto kbhook = (KBDLLHOOKSTRUCT*)lParam;
 
-	//	auto it = global_key_listeners.find(kbhook->vkCode);
-	//	if (it != global_key_listeners.end())
-	//	{
-	//		for (auto &f : it->second)
-	//			f->exec();
-	//	}
+		auto it = global_key_listeners.find(kbhook->vkCode);
+		if (it != global_key_listeners.end())
+		{
+			for (auto &f : it->second)
+				f->exec();
+		}
 
-	//	return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
-	//}
+		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
+	}
 
-	//Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt)
-	//{
-	//	auto f = Function::create(pf, "", capt);
+	void *add_global_key_listener(int key, Function<> &callback)
+	{
+		auto f = new Function<>;
+		*f = callback;
 
-	//	auto it = global_key_listeners.find(key);
-	//	if (it == global_key_listeners.end())
-	//		it = global_key_listeners.emplace(key, std::vector<Function*>()).first;
-	//	it->second.push_back(f);
+		auto it = global_key_listeners.find(key);
+		if (it == global_key_listeners.end())
+			it = global_key_listeners.emplace(key, std::vector<Function<>*>()).first;
+		it->second.push_back(f);
 
-	//	if (global_key_hook == 0)
-	//		global_key_hook = SetWindowsHookEx(WH_KEYBOARD_LL, global_key_callback, (HINSTANCE)get_hinst(), 0);
+		if (global_key_hook == 0)
+			global_key_hook = SetWindowsHookEx(WH_KEYBOARD_LL, global_key_callback, (HINSTANCE)get_hinst(), 0);
 
-	//	return f;
-	//}
+		return f;
+	}
 
-	//void remove_global_key_listener(int key, Function *f)
-	//{
-	//	auto it = global_key_listeners.find(key);
-	//	if (it == global_key_listeners.end())
-	//		return;
+	void remove_global_key_listener(int key, void *handle)
+	{
+		auto it = global_key_listeners.find(key);
+		if (it == global_key_listeners.end())
+			return;
 
-	//	for (auto _it = it->second.begin(); _it != it->second.end(); _it++)
-	//	{
-	//		if ((*_it) == f)
-	//		{
-	//			Function::destroy(f);
-	//			it->second.erase(_it);
-	//			break;
-	//		}
-	//	}
+		for (auto _it = it->second.begin(); _it != it->second.end(); _it++)
+		{
+			if ((*_it) == handle)
+			{
+				delete (Function<>*)handle;
+				it->second.erase(_it);
+				break;
+			}
+		}
 
-	//	if (it->second.empty())
-	//		global_key_listeners.erase(it);
+		if (it->second.empty())
+			global_key_listeners.erase(it);
 
-	//	if (global_key_listeners.empty())
-	//	{
-	//		if (global_key_hook)
-	//		{
-	//			UnhookWindowsHookEx(global_key_hook);
-	//			global_key_hook = 0;
-	//		}
-	//	}
-	//}
+		if (global_key_listeners.empty())
+		{
+			if (global_key_hook)
+			{
+				UnhookWindowsHookEx(global_key_hook);
+				global_key_hook = 0;
+			}
+		}
+	}
 
 	struct FileWatcher
 	{

@@ -24,58 +24,20 @@
 
 using namespace flame;
 
-FLAME_PACKAGE_BEGIN(FileWatcherC)
-	FLAME_PACKAGE_ITEM(wcharptr, filename, p)
-	FLAME_PACKAGE_ITEM(wcharptr, scriptfilename, p)
-	FLAME_PACKAGE_ITEM(charptr, params, p)
-FLAME_PACKAGE_END
-
-static ulonglong last_change_time = 0;
-
 int main(int argc, char **args)
 {
 	if (argc < 3)
 	{
 		printf(
 			   "usage:\n"
-			   "  filename exe(or bat) [\"params\"]\n"
+			   "  key exe(or bat) [\"params\"]\n"
 			   "note:\n"
+			   "  key can be combine with modifier i.e. Ctrl+Shift+C\n"
+			   "  modifiers are: Ctrl, Alt, Shift\n"
+			   "  both keys and modifiers aren't case sensitive\n"
 			   "  params must be wraped in \"\"\n"
 		);
 		system("pause");
 		return 0;
 	}
-
-	auto filename = s2w(args[1]);
-	auto scriptfilename = s2w(args[2]);
-	auto path = std::filesystem::path(filename).parent_path().wstring();
-
-	printf("watching file: %s\n", args[1]);
-
-	add_file_watcher(path.c_str(), Function<FileWatcherParm>([](FileWatcherParm &p) {
-		auto c = p.get_capture<FileWatcherC>();
-
-		auto target_file = std::wstring(c.filename());
-		auto now_time = get_now_ns();
-		if (target_file == c.filename() && now_time - last_change_time > 1'000'000'000)
-		{
-			auto scriptfilename = std::wstring(c.scriptfilename());
-			auto s_target_file = w2s(target_file);
-			auto s_cmd = "\"" + w2s(scriptfilename) + "\"";
-			if (c.params())
-			{
-				s_cmd += " ";
-				s_cmd += c.params();
-			}
-
-			printf("file changed: %s\n", s_target_file.c_str());
-			printf("run: %s\n", s_cmd.c_str());
-
-			system(s_cmd.c_str());
-
-			printf("watching file: %s\n", s_target_file.c_str());
-		}
-		last_change_time = now_time;
-
-	}, { (voidptr)filename.c_str(), (voidptr)scriptfilename.c_str(), (voidptr)(argc == 4 ? args[3] : nullptr) }), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
 }

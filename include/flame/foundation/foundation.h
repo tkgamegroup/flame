@@ -1016,8 +1016,8 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
 
-	//FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(int key, Function<> &f);
-	//FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(int key, void *f);
+	FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(int key, Function<> &callback);
+	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void *handle/* return by add_global_key_listener */);
 
 	struct FileWatcher;
 	typedef FileWatcher* FileWatcherPtr;

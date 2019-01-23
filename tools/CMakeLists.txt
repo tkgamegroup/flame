@@ -1,4 +1,5 @@
 add_subdirectory(SLOC)
+add_subdirectory(when-key)
 add_subdirectory(when-changed)
 add_subdirectory(blueprint_editor)
 add_subdirectory(compiler)
