@@ -38,6 +38,8 @@
 
 namespace flame
 {
+	typedef char*				charptr;
+	typedef wchar_t*			wcharptr;
 	typedef unsigned char		uchar;
 	typedef unsigned short		ushort;
 	typedef unsigned int		uint;

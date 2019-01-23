@@ -743,6 +743,11 @@ namespace flame
 		CommonData d[MaxFunctionDataCount];
 
 		enum { SIZE = 0 };
+		template<class CP/* capture package */>
+		inline CP &get_capture()
+		{
+			return *(CP*)d; 
+		}
 	};
 
 	typedef void(*PF)(Package &p);
@@ -771,7 +776,7 @@ namespace flame
 		}
 #define FLAME_PACKAGE_END \
 		enum { SIZE = __COUNTER__ - BASE };\
-		template<class CP/*capture package*/>\
+		template<class CP/* capture package */>\
 		inline CP &get_capture()\
 		{\
 			return *(CP*)(d + SIZE);\
@@ -795,7 +800,7 @@ namespace flame
 	};\
 	static name name##_;
 
-	template<class PP = Package/*parameter package*/>
+	template<class PP = Package/* parameter package */>
 	struct Function
 	{
 		typedef void(*TypedPF)(PP &p);
@@ -1009,29 +1014,37 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const wchar_t *filename);
 	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const wchar_t *filename);
 
-	//struct FileWatcher;
+	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
 
-	//enum FileWatcherMode
-	//{
-	//	FileWatcherModeAll,
-	//	FileWatcherModeContent
-	//};
+	//FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(int key, Function<> &f);
+	//FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(int key, void *f);
 
-	//enum FileChangeType
-	//{
-	//	FileAdded,
-	//	FileRemoved,
-	//	FileModified,
-	//	FileRenamed
-	//};
+	struct FileWatcher;
+	typedef FileWatcher* FileWatcherPtr;
 
-	//FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt); // (FileChangeType type, const wchar_t *filename)
-	//FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher *w);
+	enum FileWatcherOption
+	{
+		FileWatcherMonitorAllChanges = 1 << 0,
+		FileWatcherMonitorOnlyContentChanged = 1 << 1,
+		FileWatcherSynchronous = 1 << 2,
+		FileWatcherAsynchronous = 1 << 3
+	};
 
-	//FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
+	enum FileChangeType
+	{
+		FileAdded,
+		FileRemoved,
+		FileModified,
+		FileRenamed
+	};
 
-	//FLAME_FOUNDATION_EXPORTS Function *add_global_key_listener(int key, PF pf, const std::vector<CommonData> &capt); // 0 parms
-	//FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(int key, Function *f);
+	FLAME_PACKAGE_BEGIN(FileWatcherParm)
+		FLAME_PACKAGE_ITEM(FileChangeType, type, i1)
+		FLAME_PACKAGE_ITEM(wcharptr, filename, p)
+	FLAME_PACKAGE_END
+
+	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(int options, const wchar_t *path, Function<FileWatcherParm> &f); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher *w);
 
 	FLAME_FOUNDATION_EXPORTS void get_thumbnai(int width, const wchar_t *filename, int *out_width, int *out_height, char **out_data);
 

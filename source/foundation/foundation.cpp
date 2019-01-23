@@ -246,116 +246,6 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
-	//struct FileWatcher
-	//{
-	//	void *hEventExpired;
-	//};
-
-	//static void do_file_watcher(CommonData *d)
-	//{
-	//	auto &filepath = *(const wchar_t **)&d[0].p();
-	//	auto &w = *(FileWatcher**)&d[1].p();
-	//	auto &f = *(Function**)&d[2].p();
-
-	//	auto dir_handle = CreateFileW(filepath, GENERIC_READ | GENERIC_WRITE |
-	//		FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-	//		OPEN_EXISTING,
-	//		FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS,
-	//		NULL);
-	//	assert(dir_handle != INVALID_HANDLE_VALUE);
-
-	//	BYTE notify_buf[1024];
-
-	//	OVERLAPPED overlapped = {};
-	//	auto hEvent = CreateEvent(NULL, false, false, NULL);
-
-	//	auto flags = FILE_NOTIFY_CHANGE_FILE_NAME |
-	//		FILE_NOTIFY_CHANGE_DIR_NAME |
-	//		FILE_NOTIFY_CHANGE_CREATION |
-	//		FILE_NOTIFY_CHANGE_LAST_WRITE;
-
-	//	while (true)
-	//	{
-	//		ZeroMemory(&overlapped, sizeof(OVERLAPPED));
-	//		overlapped.hEvent = hEvent;
-
-	//		assert(ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags,
-	//			NULL, &overlapped, NULL));
-
-	//		HANDLE events[] = {
-	//			overlapped.hEvent,
-	//			w->hEventExpired
-	//		};
-
-	//		if (WaitForMultipleObjects(2, events, false, INFINITE) - WAIT_OBJECT_0 == 1)
-	//		{
-	//			CloseHandle(dir_handle);
-	//			delete w;
-	//			Function::destroy(f);
-	//			break;
-	//		}
-
-	//		DWORD ret_bytes;
-	//		assert(GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false) == 1);
-
-	//		auto base = 0;
-	//		auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;
-	//		while (true)
-	//		{
-	//			FileChangeType type;
-	//			switch (p->Action)
-	//			{
-	//			case 0x1:
-	//				type = FileAdded;
-	//				break;
-	//			case 0x2:
-	//				type = FileRemoved;
-	//				break;
-	//			case 0x3:
-	//				type = FileModified;
-	//				break;
-	//			case 0x4:
-	//				type = FileRenamed;
-	//				break;
-	//			case 0x5:
-	//				type = FileRenamed;
-	//				break;
-	//			}
-	//			f->datas[0].i1() = type;
-	//			f->datas[1].p() = p->FileName;
-	//			f->exec();
-
-	//			if (p->NextEntryOffset <= 0)
-	//				break;
-	//			base += p->NextEntryOffset;
-	//			p = (FILE_NOTIFY_INFORMATION*)(notify_buf + base);
-	//		}
-	//	}
-	//}
-
-	//FileWatcher *add_file_watcher(FileWatcherMode mode, const wchar_t *filepath, PF pf, const std::vector<CommonData> &capt)
-	//{
-	//	auto w = new FileWatcher;
-	//	w->hEventExpired = CreateEvent(NULL, false, false, NULL);
-
-	//	auto callback = Function::create(pf, "i p", capt);
-
-	//	auto f_thread = Function::create(do_file_watcher, "p p p", {});
-
-	//	f_thread->datas[0].p() = (wchar_t*)filepath;
-	//	f_thread->datas[1].p() = w;
-	//	f_thread->datas[2].p() = callback;
-
-	//	f_thread->exec_in_new_thread();
-
-	//	return w;
-	//}
-
-	//void remove_file_watcher(FileWatcher *w)
-	//{
-	//	SetEvent(w->hEventExpired);
-	//}
-
 	//void read_process_memory(void *process, void *address, int size, void *dst)
 	//{
 	//	SIZE_T ret_byte;
@@ -422,6 +312,114 @@ namespace flame
 	//		}
 	//	}
 	//}
+
+	struct FileWatcher
+	{
+		int options;
+		void *hEventExpired;
+	};
+
+	void do_file_watch(const wchar_t *path)
+	{
+		auto dir_handle = CreateFileW(path, GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+		assert(dir_handle != INVALID_HANDLE_VALUE);
+
+		BYTE notify_buf[1024];
+
+		OVERLAPPED overlapped = {};
+		auto hEvent = CreateEvent(NULL, false, false, NULL);
+
+		auto flags = FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_LAST_WRITE;
+
+		while (true)
+		{
+			ZeroMemory(&overlapped, sizeof(OVERLAPPED));
+			overlapped.hEvent = hEvent;
+
+			assert(ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags, NULL, &overlapped, NULL));
+
+			HANDLE events[] = {
+				overlapped.hEvent,
+				c.filewatcher()->hEventExpired
+			};
+
+			if (WaitForMultipleObjects(2, events, false, INFINITE) - WAIT_OBJECT_0 == 1)
+			{
+				CloseHandle(dir_handle);
+				delete c.filewatcher();
+				delete c.pcallback();
+				break;
+			}
+
+			DWORD ret_bytes;
+			assert(GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false) == 1);
+
+			auto base = 0;
+			auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;
+			while (true)
+			{
+				FileChangeType type;
+				switch (p->Action)
+				{
+				case 0x1:
+					type = FileAdded;
+					break;
+				case 0x2:
+					type = FileRemoved;
+					break;
+				case 0x3:
+					type = FileModified;
+					break;
+				case 0x4:
+					type = FileRenamed;
+					break;
+				case 0x5:
+					type = FileRenamed;
+					break;
+				}
+
+				if (!((c.filewatcher()->options & FileWatcherMonitorOnlyContentChanged) && (type != FileModified)))
+				{
+					auto f = (Function<FileWatcherParm>*)c.pcallback();
+					f->p.type() = type;
+					f->p.filename() = p->FileName;
+					f->exec();
+				}
+
+				if (p->NextEntryOffset <= 0)
+					break;
+				base += p->NextEntryOffset;
+				p = (FILE_NOTIFY_INFORMATION*)(notify_buf + base);
+			}
+		}
+	}
+
+	FLAME_PACKAGE_BEGIN(FileWatcherThreadC)
+		FLAME_PACKAGE_ITEM(wcharptr, filepath, p)
+		FLAME_PACKAGE_ITEM(FileWatcherPtr, filewatcher, p)
+		FLAME_PACKAGE_ITEM(voidptr, pcallback, p) /* do convert yourself */
+	FLAME_PACKAGE_END
+
+	FileWatcher *add_file_watcher(int options, const wchar_t *path, Function<FileWatcherParm> &f)
+	{
+		auto w = new FileWatcher;
+		w->options = options;
+		w->hEventExpired = CreateEvent(NULL, false, false, NULL);
+
+		auto pcallback = new Function<FileWatcherParm>;
+		*pcallback = f;
+
+		thread(Function<>([](Package &p) {
+			auto c = p.get_capture<FileWatcherThreadC>();
+		}, { (wcharptr)path, w, pcallback }));
+
+		return w;
+	}
+
+	void remove_file_watcher(FileWatcher *w)
+	{
+		SetEvent(w->hEventExpired);
+	}
 
 	void get_thumbnai(int width, const wchar_t *_filename, int *out_width, int *out_height, char **out_data)
 	{

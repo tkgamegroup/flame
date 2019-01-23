@@ -34,10 +34,11 @@ int main(int argc, char **args)
 	auto w = Window::create(app, "Window Test",  Ivec2(1280, 720), WindowFrame);
 
 	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Window::MouseListenerParm &p) {
-		auto c = p.get_capture<WindowClickC>();
 		if (p.is_down())
+		{
+			auto c = p.get_capture<WindowClickC>();
 			c.w()->close();
-
+		}
 	}, { w }));
 
 	app->run(Function<>([](Package &p){
