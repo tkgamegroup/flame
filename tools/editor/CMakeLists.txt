@@ -1,6 +1,6 @@
 project(editor)
 
-file(GLOB_RECURSE EDITOR_SOURCE_LIST "src/*.c*")
+file(GLOB_RECURSE EDITOR_SOURCE_LIST "*.c*")
 
 add_executable(editor ${EDITOR_SOURCE_LIST})
 

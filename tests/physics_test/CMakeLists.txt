@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SOURCE_LIST "src/*.c*")
+file(GLOB_RECURSE SOURCE_LIST "*.c*")
 add_exe(physics_test "${SOURCE_LIST}" "tests")
 target_link_libraries(physics_test flame_surface)
 target_link_libraries(physics_test flame_graphics)
