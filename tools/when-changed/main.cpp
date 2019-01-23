@@ -27,6 +27,7 @@ using namespace flame;
 FLAME_PACKAGE_BEGIN(FileWatcherC)
 	FLAME_PACKAGE_ITEM(wcharptr, filename, p)
 	FLAME_PACKAGE_ITEM(wcharptr, scriptfilename, p)
+	FLAME_PACKAGE_ITEM(charptr, params, p)
 FLAME_PACKAGE_END
 
 static ulonglong last_change_time = 0;
@@ -35,7 +36,7 @@ int main(int argc, char **args)
 {
 	if (argc < 3)
 	{
-		printf("usage: watch_file exe(or bat) [param]\n");
+		printf("usage: filename exe(or bat) [\"params\"]\nnote: must be wraped in \"\", %%s can be use in param, means the filename\n");
 		system("pause");
 		return 0;
 	}
@@ -55,16 +56,18 @@ int main(int argc, char **args)
 		{
 			auto scriptfilename = std::wstring(c.scriptfilename());
 			auto s_target_file = w2s(target_file);
-			auto s_scriptfilename = "\"" + w2s(scriptfilename) + "\"";
+			auto s_cmd = "\"" + w2s(scriptfilename) + "\"";
+			if (c.params())
+				s_cmd += c.params();
 
 			printf("file changed: %s\n", s_target_file.c_str());
-			printf("run: %s\n", s_scriptfilename.c_str());
+			printf("run: %s\n", s_cmd.c_str());
 
-			system(s_scriptfilename.c_str());
+			system(s_cmd.c_str());
 
 			printf("watching file: %s\n", s_target_file.c_str());
 		}
 		last_change_time = now_time;
 
-	}, { (voidptr)filename.c_str(), (voidptr)scriptfilename.c_str() }), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
+	}, { (voidptr)filename.c_str(), (voidptr)scriptfilename.c_str(), (voidptr)(argc == 4 ? args[3] : nullptr) }), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
 }
