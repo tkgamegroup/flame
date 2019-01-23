@@ -317,19 +317,24 @@ namespace flame
 	{
 		int options;
 		void *hEventExpired;
+
+		~FileWatcher()
+		{
+			CloseHandle(hEventExpired);
+		}
 	};
 
-	void do_file_watch(const wchar_t *path)
+	void do_file_watch(FileWatcher *filewatcher, bool only_content, const wchar_t *path, Function<FileWatcherParm> &callback)
 	{
 		auto dir_handle = CreateFileW(path, GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];
 
-		OVERLAPPED overlapped = {};
+		OVERLAPPED overlapped;
 		auto hEvent = CreateEvent(NULL, false, false, NULL);
 
-		auto flags = FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_LAST_WRITE;
+		auto flags = (only_content ? 0 : FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_CREATION) | FILE_NOTIFY_CHANGE_LAST_WRITE;
 
 		while (true)
 		{
@@ -338,18 +343,18 @@ namespace flame
 
 			assert(ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags, NULL, &overlapped, NULL));
 
-			HANDLE events[] = {
-				overlapped.hEvent,
-				c.filewatcher()->hEventExpired
-			};
-
-			if (WaitForMultipleObjects(2, events, false, INFINITE) - WAIT_OBJECT_0 == 1)
+			if (filewatcher)
 			{
-				CloseHandle(dir_handle);
-				delete c.filewatcher();
-				delete c.pcallback();
-				break;
+				HANDLE events[] = {
+					overlapped.hEvent,
+					filewatcher->hEventExpired
+				};
+
+				if (WaitForMultipleObjects(2, events, false, INFINITE) - WAIT_OBJECT_0 == 1)
+					break;
 			}
+			else
+				WaitForSingleObject(overlapped.hEvent, INFINITE);
 
 			DWORD ret_bytes;
 			assert(GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false) == 1);
@@ -378,12 +383,11 @@ namespace flame
 					break;
 				}
 
-				if (!((c.filewatcher()->options & FileWatcherMonitorOnlyContentChanged) && (type != FileModified)))
+				if (!(only_content && (type != FileModified)))
 				{
-					auto f = (Function<FileWatcherParm>*)c.pcallback();
-					f->p.type() = type;
-					f->p.filename() = p->FileName;
-					f->exec();
+					callback.p.type() = type;
+					callback.p.filename() = p->FileName;
+					callback.exec();
 				}
 
 				if (p->NextEntryOffset <= 0)
@@ -392,6 +396,9 @@ namespace flame
 				p = (FILE_NOTIFY_INFORMATION*)(notify_buf + base);
 			}
 		}
+
+		CloseHandle(hEvent);
+		CloseHandle(dir_handle);
 	}
 
 	FLAME_PACKAGE_BEGIN(FileWatcherThreadC)
@@ -400,20 +407,34 @@ namespace flame
 		FLAME_PACKAGE_ITEM(voidptr, pcallback, p) /* do convert yourself */
 	FLAME_PACKAGE_END
 
-	FileWatcher *add_file_watcher(int options, const wchar_t *path, Function<FileWatcherParm> &f)
+	FileWatcher *add_file_watcher(const wchar_t *path, Function<FileWatcherParm> &callback, int options)
 	{
-		auto w = new FileWatcher;
-		w->options = options;
-		w->hEventExpired = CreateEvent(NULL, false, false, NULL);
+		if (options & FileWatcherAsynchronous)
+		{
+			auto w = new FileWatcher;
+			w->options = options;
+			w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
-		auto pcallback = new Function<FileWatcherParm>;
-		*pcallback = f;
+			auto pcallback = new Function<FileWatcherParm>;
+			*pcallback = callback;
 
-		thread(Function<>([](Package &p) {
-			auto c = p.get_capture<FileWatcherThreadC>();
-		}, { (wcharptr)path, w, pcallback }));
+			thread(Function<>([](Package &p) {
+				auto c = p.get_capture<FileWatcherThreadC>();
+				do_file_watch(c.filewatcher(), c.filewatcher()->options & FileWatcherMonitorOnlyContentChanged, c.filepath(), (*(Function<FileWatcherParm>*)c.pcallback()));
+				delete c.filewatcher();
+				delete c.pcallback();
+			}, { (wcharptr)path, w, pcallback }));
 
-		return w;
+			return w;
+		}
+		else
+		{
+			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback);
+
+			return nullptr;
+		}
+
+		return nullptr;
 	}
 
 	void remove_file_watcher(FileWatcher *w)

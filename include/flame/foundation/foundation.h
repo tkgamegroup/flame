@@ -238,7 +238,7 @@ namespace flame
 		}
 	}
 
-	inline long long get_now_ns()
+	inline ulonglong get_now_ns()
 	{
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(
 			std::chrono::system_clock::now()
@@ -1043,7 +1043,7 @@ namespace flame
 		FLAME_PACKAGE_ITEM(wcharptr, filename, p)
 	FLAME_PACKAGE_END
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(int options, const wchar_t *path, Function<FileWatcherParm> &f); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t *path, Function<FileWatcherParm> &callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher *w);
 
 	FLAME_FOUNDATION_EXPORTS void get_thumbnai(int width, const wchar_t *filename, int *out_width, int *out_height, char **out_data);
