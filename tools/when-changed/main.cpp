@@ -24,26 +24,47 @@
 
 using namespace flame;
 
+FLAME_PACKAGE_BEGIN(FileWatcherC)
+	FLAME_PACKAGE_ITEM(wcharptr, filename, p)
+	FLAME_PACKAGE_ITEM(wcharptr, scriptfilename, p)
+FLAME_PACKAGE_END
+
+static ulonglong last_change_time = 0;
+
 int main(int argc, char **args)
 {
 	if (argc < 3)
 	{
-		printf("usage: watch_file run_script_file(bat)\n");
+		printf("usage: watch_file exe(or bat) [param]\n");
 		system("pause");
 		return 0;
 	}
 
-	std::filesystem::path filename(args[1]);
-	auto path = filename.parent_path();
+	auto filename = s2w(args[1]);
+	auto scriptfilename = s2w(args[2]);
+	auto path = std::filesystem::path(filename).parent_path().wstring();
 
-	add_file_watcher(FileWatcherModeContent, path.wstring().c_str(), Function<>());
+	printf("watching file: %s\n", args[1]);
+
+	add_file_watcher(path.c_str(), Function<FileWatcherParm>([](FileWatcherParm &p) {
+		auto c = p.get_capture<FileWatcherC>();
+
+		auto target_file = std::wstring(c.filename());
+		auto now_time = get_now_ns();
+		if (target_file == c.filename() && now_time - last_change_time > 1'000'000'000)
+		{
+			auto scriptfilename = std::wstring(c.scriptfilename());
+			auto s_target_file = w2s(target_file);
+			auto s_scriptfilename = "\"" + w2s(scriptfilename) + "\"";
+
+			printf("file changed: %s\n", s_target_file.c_str());
+			printf("run: %s\n", s_scriptfilename.c_str());
+
+			system(s_scriptfilename.c_str());
+
+			printf("watching file: %s\n", s_target_file.c_str());
+		}
+		last_change_time = now_time;
+
+	}, { (voidptr)filename.c_str(), (voidptr)scriptfilename.c_str() }), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
 }
-
-//add_file_watcher(FileWatcherModeContent, curr_path.data, [&](FileChangeType type, const char *filename) {
-//	if (type == FileModified)
-//	{
-//		std::filesystem::path path(filename);
-//		if (path.extension() == ".cpp")
-//			compile(filename);
-//	}
-//});
