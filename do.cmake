@@ -1,14 +1,5 @@
 project(flame)
 
-macro(set_output_dir dir)
-	foreach(c ${CMAKE_CONFIGURATION_TYPES})
-		string(TOUPPER ${c} c )
-		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${c} ${dir})
-		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${c} ${dir})
-		set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${c} ${dir})
-	endforeach()
-endmacro()
-
 function(add_static_lib name source_list folder)
 	add_library(${name} STATIC ${source_list})
 	set_target_properties(${name} PROPERTIES FOLDER ${folder})
@@ -26,8 +17,6 @@ function(add_exe name source_list folder)
 endfunction()
 
 option(FLAME_ENABLE_PHYSICS "FLAME_ENABLE_PHYSICS" OFF)
-
-set_output_dir("${CMAKE_SOURCE_DIR}/bin")
 
 set(VS_PATH "" CACHE PATH "VisualStudio Path")
 set(RAPIDXML_PATH "" CACHE PATH "RapidXML Path")

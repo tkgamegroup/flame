@@ -500,11 +500,11 @@ namespace flame
 		{
 			for (auto &l : it->second)
 			{
-				if (l->use_modifier_shift && !(GetKeyState(VK_LSHIFT) || GetKeyState(VK_RSHIFT)))
+				if (l->use_modifier_shift && !(GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)))
 					continue;
-				if (l->use_modifier_ctrl && !(GetKeyState(VK_LCONTROL) || GetKeyState(VK_RCONTROL)))
+				if (l->use_modifier_ctrl && !(GetAsyncKeyState(VK_LCONTROL) || GetAsyncKeyState(VK_RCONTROL)))
 					continue;
-				if (l->use_modifier_alt && !(GetKeyState(VK_LMENU) || GetKeyState(VK_RMENU)))
+				if (l->use_modifier_alt && !(GetAsyncKeyState(VK_LMENU) || GetAsyncKeyState(VK_RMENU)))
 					continue;
 				auto action = KeyStateNull;
 				if (wParam == WM_KEYDOWN)
