@@ -46,7 +46,7 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	printf("run [ %s ] when [ %s ] pressed\n", args[2], args[1]);
+	printf("key=[ %s ] cmd=[ %s ]\n", args[1], args[2]);
 
 	auto keys = string_split(std::string(args[1]), '+');
 	auto key = Key_Null;
@@ -79,7 +79,7 @@ int main(int argc, char **args)
 
 			system(c.command());
 
-			printf("run [ %s ] when [ %s ] pressed\n", c.command(), c.key());
+			printf("key=[ %s ] cmd=[ %s ]\n", c.key(), c.command());
 		}
 	}, { args[1], args[2] }));
 

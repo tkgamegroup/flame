@@ -45,7 +45,7 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	printf("run [ %s ] when [ %s ] changed\n", args[2], args[1]);
+	printf("watch=[ %s ] cmd=[ %s ]\n", args[1], args[2]);
 
 	add_file_watcher(std::filesystem::path(args[1]).parent_path().wstring().c_str(), Function<FileWatcherParm>([](FileWatcherParm &p) {
 		auto c = p.get_capture<FileWatcherC>();
@@ -58,7 +58,7 @@ int main(int argc, char **args)
 
 			system(c.command());
 
-			printf("run [ %s ] when [ %s ] changed\n", c.command(), c.filename());
+			printf("watch=[ %s ] cmd=[ %s ]\n", c.filename(), c.command());
 		}
 		last_change_time = now_time;
 
