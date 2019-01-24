@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/foundation/serialize.h>
-#include <flame/foundation/bitmap.h>
+#include <flame/foundation/foundation.h>
+#include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 
 #include <ft2build.h>
@@ -1972,516 +1972,253 @@ namespace msdfgen
 
 namespace flame
 {
-	FT_Library ft_library;
-
-	void get_default_char_range(wchar_t &out_code_begin, wchar_t &out_code_end)
+	namespace graphics
 	{
-		out_code_begin = 0x20;
-		out_code_end = 0xff;
-	}
+		FT_Library ft_library = 0;
 
-	struct FontAtlasPrivate : FontAtlas
-	{
-		std::vector<std::pair<std::wstring, std::vector<CharRange>>> fonts;
-
-		int map[65536];
-		std::vector<Glyph> glyphs;
-
-		Bitmap *stroke_image;
-		float sdf_scale;
-		Bitmap *sdf_image;
-
-		inline FontAtlasPrivate(const std::vector<FontDescription> &descs, int _pixel_height, float _sdf_scale = -1.f)
+		void get_latin_code_range(wchar_t &out_begin, wchar_t &out_end)
 		{
-			for (auto i = 0; i < FLAME_ARRAYSIZE(map); i++)
-				map[i] = -1;
+			out_begin = 0x20;
+			out_end = 0xff;
+		}
 
-			pixel_height = _pixel_height;
-			sdf_scale = _sdf_scale;
+		struct FontPrivate : Font
+		{
+			Device *d;
+			int pixel_height;
+			bool sdf;
 
-			printf("creating font atlas\n");
+			std::pair<std::unique_ptr<char[]>, int> font_file;
+			FT_Face ft_face;
 
-			FT_Init_FreeType(&ft_library);
-			FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
+			int map[65536];
+			std::vector<Glyph> glyphs;
 
-			struct LoadedFtFace
+			Image *atlas;
+
+			inline FontPrivate(Device *_d, const wchar_t *filename, int _pixel_height, bool _sdf) :
+				d(_d),
+				pixel_height(_pixel_height),
+				sdf(_sdf)
 			{
-				char *file;
-				FT_Face face;
-				int glyph_count;
-			};
-			std::vector<LoadedFtFace> ft_faces;
+				for (auto i = 0; i < FLAME_ARRAYSIZE(map); i++)
+					map[i] = -1;
 
-			for (auto &d : descs)
-			{
-				auto file = get_file_content(d.filename);
-				FT_Face ft_face;
-				FT_New_Memory_Face(ft_library, (unsigned char*)file.first.get(), file.second, 0, &ft_face);
+				if (!ft_library)
+				{
+					FT_Init_FreeType(&ft_library);
+					FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
+				}
+
+				font_file = get_file_content(filename);
+				FT_New_Memory_Face(ft_library, (unsigned char*)font_file.first.get(), font_file.second, 0, &ft_face);
 				FT_Size_RequestRec ft_req = {};
 				ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
 				ft_req.height = pixel_height * 64;
 				FT_Request_Size(ft_face, &ft_req);
 
-				add_font(ft_face, d.filename, d.ranges);
-
-				LoadedFtFace lf;
-				lf.file = file.first.release();
-				lf.face = ft_face;
-				lf.glyph_count = glyphs.size();
-				ft_faces.emplace_back(lf);
+				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(512), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+				atlas->set_pixel(511, 511, Bvec4(255));
 			}
 
-			const uint img_width = 2048;
-			uint img_height = 0;
-
-			auto pos = Ivec2(0);
-			auto line_height = 0;
-
-			for (auto &g : glyphs)
+			inline ~FontPrivate()
 			{
-				line_height = max(line_height, g.size.y);
-				if (pos.x + g.size.x > img_width)
-				{
-					pos.x = 0;
-					pos.y += line_height;
-					line_height = 0;
-				}
-				img_height = max(img_height, pos.y + g.size.y);
-
-				g.img_off = pos;
-
-				pos.x += g.size.x;
+				FT_Done_Face(ft_face);
+				Image::destroy(atlas);
 			}
 
-			auto image = Bitmap::create(Ivec2(img_width, img_height), 4, 32);
-			image->data[image->pitch * (img_height - 1) + (img_width - 1) * 4 + 0] = 255;
-			image->data[image->pitch * (img_height - 1) + (img_width - 1) * 4 + 1] = 255;
-			image->data[image->pitch * (img_height - 1) + (img_width - 1) * 4 + 2] = 255;
-			image->data[image->pitch * (img_height - 1) + (img_width - 1) * 4 + 3] = 255;
-			stroke_image = image;
-
-			auto curr_ft_face_idx = 0;
-			auto glyph_cnt = 0;
-			auto total_cnt = glyphs.size();
-			for (auto &g : glyphs)
+			inline const Glyph &get_glyph(wchar_t unicode)
 			{
-				if (glyph_cnt >= ft_faces[curr_ft_face_idx].glyph_count)
-					curr_ft_face_idx++;
-				auto ft_face = ft_faces[curr_ft_face_idx].face;
 				auto ft_g = ft_face->glyph;
 
-				FT_Load_Char(ft_face, g.unicode, FT_LOAD_TARGET_LCD);
-				FT_Render_Glyph(ft_g, FT_RENDER_MODE_LCD);
+				auto ascent = ft_face->size->metrics.ascender / 64;
 
-				auto pitch1 = ft_g->bitmap.pitch;
-				auto pitch2 = image->pitch;
-				auto width = ft_g->bitmap.width / 3;
-				for (auto y = 0; y < ft_g->bitmap.rows; y++)
+				if (map[code] == -1)
 				{
-					for (auto x = 0; x < width; x++)
-					{
-						Bvec4 col;
-						col.x = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 0];
-						col.y = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 1];
-						col.z = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 2];
-						col.w = 255;
+					Glyph g(code);
+					if (!r.sdf)
+						g.sdf_img_off.x = -1;
 
-						image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 0)] =
-							col.x;
-						image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 1)] =
-							col.y;
-						image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 2)] =
-							col.z;
-						image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 3)] =
-							col.w;
-					}
-				}
+					FT_Load_Char(ft_face, g.unicode, FT_LOAD_TARGET_LCD);
+					g.size = Vec2(ft_g->bitmap.width / 3, ft_g->bitmap.rows);
+					g.off = Vec2(ft_g->bitmap_left, ascent + g.size.y - ft_g->metrics.horiBearingY / 64.f);
+					g.advance = ft_g->advance.x / 64;
+					g.ascent = ascent;
 
-				g.uv0 = Vec2(g.img_off.x, g.img_off.y + g.size.y) / image->size;
-				g.uv1 = Vec2(g.img_off.x + g.size.x, g.img_off.y) / image->size;
+					auto idx = glyphs.size();
+					map[code] = idx;
+					glyphs.emplace_back(g);
 
-				glyph_cnt++;
 
-				printf("glyph: %d/%d\r", glyph_cnt, (int)total_cnt);
-			}
-			printf("\n");
 
-			if (sdf_scale > 0.f)
-			{
-				const float range = 4.f;
-				auto img_height = 0;
-				auto pos = Ivec2(0);
-				auto line_height = 0;
-
-				auto total_cnt = 0;
-				for (auto &g : glyphs)
-				{
-					if (g.sdf_img_off.x == -1)
-						continue;
-					total_cnt++;
-
-					auto size = g.size * sdf_scale;
-					size += range * 2.f;
-
-					line_height = max(line_height, size.y);
-					if (pos.x + size.x > img_width)
-					{
-						pos.x = 0;
-						pos.y += line_height;
-						line_height = 0;
-					}
-					img_height = max(img_height, pos.y + size.y);
-
-					g.sdf_img_off = pos;
-
-					pos.x += size.x;
-				}
-
-				auto image = Bitmap::create(Ivec2(img_width, img_height), 4, 32);
-				sdf_image = image;
-
-				auto curr_ft_face_idx = 0;
-				auto glyph_cnt = 0, cnt = 0;
-				for (auto &g : glyphs)
-				{
-					if (glyph_cnt >= ft_faces[curr_ft_face_idx].glyph_count)
-						curr_ft_face_idx++;
-
-					if (g.sdf_img_off.x != -1)
+					auto curr_ft_face_idx = 0;
+					for (auto &g : glyphs)
 					{
 						auto ft_face = ft_faces[curr_ft_face_idx].face;
 						auto ft_g = ft_face->glyph;
-						void *ptr = ft_face;
-
-						msdfgen::Shape shape;
-						msdfgen::loadGlyph(shape, (msdfgen::FontHandle*)&ptr, g.unicode);
-
-						auto size = g.size * sdf_scale;
-						size += range * 2.f;
-
-						shape.normalize();
-						msdfgen::edgeColoringSimple(shape, 3.f);
-						msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
-						msdfgen::generateMSDF(bmp, shape, range, sdf_scale, msdfgen::Vector2(-g.off.x, g.off.y - g.ascent) + range / sdf_scale);
-
-						auto pitch = image->pitch;
-						for (auto y = 0; y < size.y; y++)
-						{
-							for (auto x = 0; x < size.x; x++)
-							{
-								image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 0] =
-									clamp(bmp(x, y).r * 255.f, 0.f, 255.f);
-								image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 1] =
-									clamp(bmp(x, y).g * 255.f, 0.f, 255.f);
-								image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 2] =
-									clamp(bmp(x, y).b * 255.f, 0.f, 255.f);
-								image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 3] =
-									255.f;
-							}
-						}
-
-						g.uv0_sdf = (Vec2(g.sdf_img_off) + range) / image->size;
-						g.uv1_sdf = (Vec2(g.sdf_img_off + size) - range) / image->size;
-
-						cnt++;
-						printf("sdf: %d/%d\r", cnt, total_cnt);
-					}
-
-					glyph_cnt++;
-				}
-				printf("\n");
-			}
-			else
-				sdf_image = nullptr;
-
-			for (auto &f : ft_faces)
-			{
-				FT_Done_Face(f.face);
-				delete[]f.file;
-			}
-			FT_Done_FreeType(ft_library);
-		}
-
-		inline FontAtlasPrivate(SerializableNode *file)
-		{
-			for (auto i = 0; i < FLAME_ARRAYSIZE(map); i++)
-				map[i] = -1;
-
-			FT_Init_FreeType(&ft_library);
-			FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
-
-			pixel_height = std::stoi(file->find_attr("pixel_height")->value());
-
-			auto n_fonts = file->find_node("fonts");
-			if (n_fonts)
-			{
-				for (auto i = 0; i < n_fonts->node_count(); i++)
-				{
-					auto n = n_fonts->node(i);
-					if (n->name() == "font")
-					{
-						auto filename = s2w(n->find_attr("filename")->value());
-						std::vector<CharRange> ranges;
-						auto n_ranges = n->find_node("ranges");
-						if (n_ranges)
-						{
-							for (auto j = 0; j < n_ranges->node_count(); j++)
-							{
-								auto n = n_ranges->node(j);
-								if (n->name() == "range")
-								{
-									CharRange r;
-									r.code_begin = std::stoi(n->find_attr("code_begin")->value());
-									r.code_end = std::stoi(n->find_attr("code_end")->value());
-									r.sdf = std::stoi(n->find_attr("sdf")->value());
-									ranges.push_back(r);
-								}
-							}
-						}
-						auto file = get_file_content(filename);
-						FT_Face ft_face;
-						FT_New_Memory_Face(ft_library, (unsigned char*)file.first.get(), file.second, 0, &ft_face);
-						FT_Size_RequestRec ft_req = {};
-						ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
-						ft_req.height = pixel_height * 64;
-						FT_Request_Size(ft_face, &ft_req);
-						add_font(ft_face, filename.c_str(), ranges);
-						FT_Done_Face(ft_face);
-					}
-				}
-			}
-
-			auto stroke_image_n = file->find_node("stroke_image");
-			if (stroke_image_n)
-			{
-				auto img_filename = stroke_image_n->find_attr("filename")->value();
-
-				auto img = Bitmap::create_from_file(s2w(img_filename).c_str());
-				stroke_image = img;
-
-				auto pos = Ivec2(0);
-				auto line_height = 0;
-
-				for (auto &g : glyphs)
-				{
-					line_height = max(line_height, g.size.y);
-					if (pos.x + g.size.x > img->size.x)
-					{
-						pos.x = 0;
-						pos.y += line_height;
-						line_height = 0;
-					}
-
-					g.img_off = pos;
-					g.uv0 = Vec2(g.img_off.x, g.img_off.y + g.size.y) / img->size;
-					g.uv1 = Vec2(g.img_off.x + g.size.x, g.img_off.y) / img->size;
-
-					pos.x += g.size.x;
-				}
-			}
-			else
-				stroke_image = nullptr;
-			auto sdf_image_n = file->find_node("sdf_image");
-			if (sdf_image_n)
-			{
-				auto scale = std::stof(sdf_image_n->find_attr("scale")->value());
-				auto img_filename = sdf_image_n->find_attr("filename")->value();
-
-				auto img = Bitmap::create_from_file(s2w(img_filename).c_str());
-				sdf_image = img;
-
-				const float range = 4.f;
-				auto pos = Ivec2(0);
-				auto line_height = 0;
-
-				for (auto &g : glyphs)
-				{
-					if (g.sdf_img_off.x == -1)
-						continue;
-
-					auto size = g.size * scale;
-					size += range * 2.f;
-
-					line_height = max(line_height, size.y);
-					if (pos.x + size.x > img->size.x)
-					{
-						pos.x = 0;
-						pos.y += line_height;
-						line_height = 0;
-					}
-
-					g.sdf_img_off = pos;
-					g.uv0_sdf = (Vec2(g.sdf_img_off) + range) / img->size;
-					g.uv1_sdf = (Vec2(g.sdf_img_off + size) - range) / img->size;
-
-					pos.x += size.x;
-				}
-			}
-			else
-			{
-				sdf_scale = -1.f;
-				sdf_image = nullptr;
-			}
-
-			FT_Done_FreeType(ft_library);
-		}
-
-		inline ~FontAtlasPrivate()
-		{
-			if (stroke_image)
-				Bitmap::destroy(stroke_image);
-			if (sdf_image)
-				Bitmap::destroy(sdf_image);
-		}
-
-		inline void add_font(FT_Face ft_face, const wchar_t *filename, const std::vector<CharRange> &ranges)
-		{
-			fonts.emplace_back(filename, std::vector<CharRange>());
-
-			auto ft_g = ft_face->glyph;
-
-			auto ascent = ft_face->size->metrics.ascender / 64;
-
-			for (auto &r : ranges)
-			{
-				fonts.back().second.push_back(r);
-
-				for (auto code = r.code_begin; code <= r.code_end; code++)
-				{
-					if (code == L'j')
-						int cut = 1;
-					if (code == L't')
-						int cut = 1;
-					if (code == L'x')
-						int cut = 1;
-
-					if (map[code] == -1)
-					{
-						Glyph g(code);
-						if (!r.sdf)
-							g.sdf_img_off.x = -1;
 
 						FT_Load_Char(ft_face, g.unicode, FT_LOAD_TARGET_LCD);
-						g.size = Vec2(ft_g->bitmap.width / 3, ft_g->bitmap.rows);
-						g.off = Vec2(ft_g->bitmap_left, ascent + g.size.y - ft_g->metrics.horiBearingY / 64.f);
-						g.advance = ft_g->advance.x / 64;
-						g.ascent = ascent;
+						FT_Render_Glyph(ft_g, FT_RENDER_MODE_LCD);
 
-						auto idx = glyphs.size();
-						map[code] = idx;
-						glyphs.emplace_back(g);
+						auto pitch1 = ft_g->bitmap.pitch;
+						auto pitch2 = image->pitch;
+						auto width = ft_g->bitmap.width / 3;
+						for (auto y = 0; y < ft_g->bitmap.rows; y++)
+						{
+							for (auto x = 0; x < width; x++)
+							{
+								Bvec4 col;
+								col.x = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 0];
+								col.y = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 1];
+								col.z = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 2];
+								col.w = 255;
+
+								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 0)] =
+									col.x;
+								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 1)] =
+									col.y;
+								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 2)] =
+									col.z;
+								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 3)] =
+									col.w;
+							}
+						}
+
+						g.uv0 = Vec2(g.img_off.x, g.img_off.y + g.size.y) / image->size;
+						g.uv1 = Vec2(g.img_off.x + g.size.x, g.img_off.y) / image->size;
+					}
+
+					if (sdf_scale > 0.f)
+					{
+						const float range = 4.f;
+						auto img_height = 0;
+						auto pos = Ivec2(0);
+						auto line_height = 0;
+
+						for (auto &g : glyphs)
+						{
+							if (g.sdf_img_off.x == -1)
+								continue;
+
+							auto size = g.size * sdf_scale;
+							size += range * 2.f;
+
+							line_height = max(line_height, size.y);
+							if (pos.x + size.x > img_width)
+							{
+								pos.x = 0;
+								pos.y += line_height;
+								line_height = 0;
+							}
+							img_height = max(img_height, pos.y + size.y);
+
+							g.sdf_img_off = pos;
+
+							pos.x += size.x;
+						}
+
+						auto image = Bitmap::create(Ivec2(img_width, img_height), 4, 32);
+						sdf_image = image;
+
+						for (auto &g : glyphs)
+						{
+							if (g.sdf_img_off.x != -1)
+							{
+								auto ft_face = ft_faces[curr_ft_face_idx].face;
+								auto ft_g = ft_face->glyph;
+								void *ptr = ft_face;
+
+								msdfgen::Shape shape;
+								msdfgen::loadGlyph(shape, (msdfgen::FontHandle*)&ptr, g.unicode);
+
+								auto size = g.size * sdf_scale;
+								size += range * 2.f;
+
+								shape.normalize();
+								msdfgen::edgeColoringSimple(shape, 3.f);
+								msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
+								msdfgen::generateMSDF(bmp, shape, range, sdf_scale, msdfgen::Vector2(-g.off.x, g.off.y - g.ascent) + range / sdf_scale);
+
+								auto pitch = image->pitch;
+								for (auto y = 0; y < size.y; y++)
+								{
+									for (auto x = 0; x < size.x; x++)
+									{
+										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 0] =
+											clamp(bmp(x, y).r * 255.f, 0.f, 255.f);
+										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 1] =
+											clamp(bmp(x, y).g * 255.f, 0.f, 255.f);
+										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 2] =
+											clamp(bmp(x, y).b * 255.f, 0.f, 255.f);
+										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 3] =
+											255.f;
+									}
+								}
+
+								g.uv0_sdf = (Vec2(g.sdf_img_off) + range) / image->size;
+								g.uv1_sdf = (Vec2(g.sdf_img_off + size) - range) / image->size;
+							}
+						}
 					}
 				}
+
+				auto idx = map[unicode];
+				if (idx == -1)
+					idx = 0;
+				return glyphs[idx];
 			}
-		}
 
-		inline const Glyph &get_glyph(wchar_t unicode)
-		{
-			auto idx = map[unicode];
-			if (idx == -1)
-				idx = 0;
-			return glyphs[idx];
-		}
-
-		inline int get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
-		{
-			auto w = 0;
-			auto s = text_beg;
-			if (text_end == nullptr)
+			inline int get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
 			{
-				while (*s)
+				auto w = 0;
+				auto s = text_beg;
+				if (text_end == nullptr)
 				{
-					auto g = get_glyph(*s);
-					w += g.advance;
-					s++;
+					while (*s)
+					{
+						auto g = get_glyph(*s);
+						w += g.advance;
+						s++;
+					}
 				}
-			}
-			else
-			{
-				while (s != text_end)
+				else
 				{
-					auto g = get_glyph(*s);
-					w += g.advance;
-					s++;
+					while (s != text_end)
+					{
+						auto g = get_glyph(*s);
+						w += g.advance;
+						s++;
+					}
 				}
+				return w;
 			}
-			return w;
-		}
+		};
 
-		inline void save(const std::wstring &filename) const
+		const Glyph &Font::get_glyph(wchar_t unicode)
 		{
-			auto parent_path = std::filesystem::path(filename).parent_path().generic_wstring();
-
-			auto file = SerializableNode::create("FontAtlas");
-			file->new_attr("pixel_height", std::to_string(pixel_height));
-
-			auto n_fonts = file->new_node("fonts");
-			for (auto &f : fonts)
-			{
-				auto n = n_fonts->new_node("font");
-				n->new_attr("filename", w2s(f.first));
-				auto ranges_n = n->new_node("ranges");
-				for (auto &r : f.second)
-				{
-					auto n = ranges_n->new_node("range");
-					n->new_attr("code_begin", std::to_string(r.code_begin));
-					n->new_attr("code_end", std::to_string(r.code_end));
-					n->new_attr("sdf", std::to_string((int)r.sdf));
-				}
-			}
-			if (stroke_image)
-			{
-				auto img_filename = parent_path + L"/font_stroke.bmp";
-
-				auto n = file->new_node("stroke_image");
-				n->new_attr("filename", w2s(img_filename));
-
-				stroke_image->save(img_filename.c_str());
-			}
-			if (sdf_image)
-			{
-				auto img_filename = parent_path + L"/font_sdf.bmp";
-
-				auto n = file->new_node("sdf_image");
-				n->new_attr("scale", std::to_string(sdf_scale));
-				n->new_attr("filename", w2s(img_filename));
-
-				sdf_image->save(img_filename.c_str());
-			}
-
-			file->save_xml(filename);
-			SerializableNode::destroy(file);
+			return ((FontPrivate*)this)->get_glyph(unicode);
 		}
-	};
 
-	const Glyph &FontAtlas::get_glyph(wchar_t unicode)
-	{
-		return ((FontAtlasPrivate*)this)->get_glyph(unicode);
-	}
+		int Font::get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
+		{
+			return ((FontPrivate*)this)->get_text_width(text_beg, text_end);
+		}
 
-	int FontAtlas::get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
-	{
-		return ((FontAtlasPrivate*)this)->get_text_width(text_beg, text_end);
-	}
+		Image *Font::get_atlas() const
+		{
+			return ((FontPrivate*)this)->atlas;
+		}
 
-	Bitmap *FontAtlas::get_stroke_image() const
-	{
-		return ((FontAtlasPrivate*)this)->stroke_image;
-	}
+		Font *Font::create(const wchar_t *filename, int pixel_height, bool sdf)
+		{
+			return new FontPrivate(filename, pixel_height, sdf);
+		}
 
-	Bitmap *FontAtlas::get_sdf_image() const
-	{
-		return ((FontAtlasPrivate*)this)->sdf_image;
-	}
+		void Font::destroy(Font *f)
+		{
+			delete (FontPrivate*)f;
+		}
 
-	FontAtlas *FontAtlas::create(const std::vector<FontDescription> &descs, int pixel_height, float sdf_scale)
-	{
-		return new FontAtlasPrivate(descs, pixel_height, sdf_scale);
-	}
-
-	void FontAtlas::destroy(FontAtlas *f)
-	{
-		delete (FontAtlasPrivate*)f;
 	}
 }
 
