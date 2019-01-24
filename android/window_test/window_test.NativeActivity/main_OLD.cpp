@@ -1,3 +1,4 @@
+/*
 #include <initializer_list>
 #include <memory>
 #include <cstdlib>
@@ -117,8 +118,6 @@ static void engine_draw_frame() {
     eglSwapBuffers(display_, surface_);
 }
 
-template<class T> void ignore( const T& ) { }
-
 using namespace flame;
 
 void android_main(struct android_app* state) {
@@ -131,4 +130,4 @@ void android_main(struct android_app* state) {
         engine_draw_frame();
     });
 }
-
+*/
