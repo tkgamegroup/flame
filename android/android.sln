@@ -1,0 +1,75 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.271
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "window_test", "window_test", "{A32E9AF4-EC17-4342-9C95-5319D6F66A72}"
+EndProject
+Project("{39E2626F-3545-4960-A6E8-258AD8476CE5}") = "window_test.Packaging", "window_test\window_test.Packaging\window_test.Packaging.androidproj", "{C3A8E322-182D-4BB7-8278-ADE4B1317F80}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "window_test.NativeActivity", "window_test\window_test.NativeActivity\window_test.NativeActivity.vcxproj", "{E9F914FC-B120-4D55-BB4B-A4D70D59E489}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|ARM = Release|ARM
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|ARM.ActiveCfg = Debug|ARM
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|ARM.Build.0 = Debug|ARM
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|ARM.Deploy.0 = Debug|ARM
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|ARM64.Build.0 = Debug|ARM64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|x64.ActiveCfg = Debug|x64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|x64.Build.0 = Debug|x64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|x64.Deploy.0 = Debug|x64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|x86.ActiveCfg = Debug|x86
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|x86.Build.0 = Debug|x86
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Debug|x86.Deploy.0 = Debug|x86
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|ARM.ActiveCfg = Release|ARM
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|ARM.Build.0 = Release|ARM
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|ARM.Deploy.0 = Release|ARM
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|ARM64.ActiveCfg = Release|ARM64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|ARM64.Build.0 = Release|ARM64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|ARM64.Deploy.0 = Release|ARM64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|x64.ActiveCfg = Release|x64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|x64.Build.0 = Release|x64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|x64.Deploy.0 = Release|x64
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|x86.ActiveCfg = Release|x86
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|x86.Build.0 = Release|x86
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80}.Release|x86.Deploy.0 = Release|x86
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|ARM.ActiveCfg = Debug|ARM
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|ARM.Build.0 = Debug|ARM
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|ARM64.Build.0 = Debug|ARM64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|x64.ActiveCfg = Debug|x64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|x64.Build.0 = Debug|x64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|x86.ActiveCfg = Debug|x86
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Debug|x86.Build.0 = Debug|x86
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|ARM.ActiveCfg = Release|ARM
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|ARM.Build.0 = Release|ARM
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|ARM64.ActiveCfg = Release|ARM64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|ARM64.Build.0 = Release|ARM64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|x64.ActiveCfg = Release|x64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|x64.Build.0 = Release|x64
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|x86.ActiveCfg = Release|x86
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C3A8E322-182D-4BB7-8278-ADE4B1317F80} = {A32E9AF4-EC17-4342-9C95-5319D6F66A72}
+		{E9F914FC-B120-4D55-BB4B-A4D70D59E489} = {A32E9AF4-EC17-4342-9C95-5319D6F66A72}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {955E3811-5CB7-41D1-8452-EB587CA592AF}
+	EndGlobalSection
+EndGlobal
