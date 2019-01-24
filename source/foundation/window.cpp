@@ -35,191 +35,6 @@
 
 namespace flame
 {
-#ifdef FLAME_WINDOWS
-	inline Key Z(int code)
-	{
-		switch (code)
-		{
-		case VK_BACK:
-			return Key_Backspace;
-		case VK_TAB:
-			return Key_Tab;
-		case VK_RETURN:
-			return Key_Enter;
-		case VK_SHIFT:
-			return Key_Shift;
-		case VK_CONTROL:
-			return Key_Ctrl;
-		case VK_MENU:
-			return Key_Alt;
-		case VK_PAUSE:
-			return Key_Pause;
-		case VK_CAPITAL:
-			return Key_CapsLock;
-		case VK_ESCAPE:
-			return Key_Esc;
-		case VK_SPACE:
-			return Key_Space;
-		case VK_PRIOR:
-			return Key_PgUp;
-		case VK_NEXT:
-			return Key_PgDn;
-		case VK_END:
-			return Key_End;
-		case VK_HOME:
-			return Key_Home;
-		case VK_LEFT:
-			return Key_Left;
-		case VK_UP:
-			return Key_Up;
-		case VK_RIGHT:
-			return Key_Right;
-		case VK_DOWN:
-			return Key_Down;
-		case VK_SNAPSHOT:
-			return Key_PrtSc;
-		case VK_INSERT:
-			return Key_Ins;
-		case VK_DELETE:
-			return Key_Del;
-		case '0':
-			return Key_0;
-		case '1':
-			return Key_1;
-		case '2':
-			return Key_2;
-		case '3':
-			return Key_3;
-		case '4':
-			return Key_4;
-		case '5':
-			return Key_5;
-		case '6':
-			return Key_6;
-		case '7':
-			return Key_7;
-		case '8':
-			return Key_8;
-		case '9':
-			return Key_9;
-		case 'A':
-			return Key_A;
-		case 'B':
-			return Key_B;
-		case 'C':
-			return Key_C;
-		case 'D':
-			return Key_D;
-		case 'E':
-			return Key_E;
-		case 'F':
-			return Key_F;
-		case 'G':
-			return Key_G;
-		case 'H':
-			return Key_H;
-		case 'I':
-			return Key_I;
-		case 'J':
-			return Key_J;
-		case 'K':
-			return Key_K;
-		case 'L':
-			return Key_L;
-		case 'M':
-			return Key_M;
-		case 'N':
-			return Key_N;
-		case 'O':
-			return Key_O;
-		case 'P':
-			return Key_P;
-		case 'Q':
-			return Key_Q;
-		case 'R':
-			return Key_R;
-		case 'S':
-			return Key_S;
-		case 'T':
-			return Key_T;
-		case 'U':
-			return Key_U;
-		case 'V':
-			return Key_V;
-		case 'W':
-			return Key_W;
-		case 'X':
-			return Key_X;
-		case 'Y':
-			return Key_Y;
-		case 'Z':
-			return Key_Z;
-		case VK_NUMPAD0:
-			return Key_Numpad0;
-		case VK_NUMPAD1:
-			return Key_Numpad1;
-		case VK_NUMPAD2:
-			return Key_Numpad2;
-		case VK_NUMPAD3:
-			return Key_Numpad3;
-		case VK_NUMPAD4:
-			return Key_Numpad4;
-		case VK_NUMPAD5:
-			return Key_Numpad5;
-		case VK_NUMPAD6:
-			return Key_Numpad6;
-		case VK_NUMPAD7:
-			return Key_Numpad7;
-		case VK_NUMPAD8:
-			return Key_Numpad8;
-		case VK_NUMPAD9:
-			return Key_Numpad9;
-		case VK_ADD:
-			return Key_Add;
-		case VK_SUBTRACT:
-			return Key_Subtract;
-		case VK_MULTIPLY:
-			return Key_Multiply;
-		case VK_DIVIDE:
-			return Key_Divide;
-		case VK_SEPARATOR:
-			return Key_Separator;
-		case VK_DECIMAL:
-			return Key_Decimal;
-		case VK_F1:
-			return Key_F1;
-		case VK_F2:
-			return Key_F2;
-		case VK_F3:
-			return Key_F3;
-		case VK_F4:
-			return Key_F4;
-		case VK_F5:
-			return Key_F5;
-		case VK_F6:
-			return Key_F6;
-		case VK_F7:
-			return Key_F7;
-		case VK_F8:
-			return Key_F8;
-		case VK_F9:
-			return Key_F9;
-		case VK_F10:
-			return Key_F10;
-		case VK_F11:
-			return Key_F11;
-		case VK_F12:
-			return Key_F12;
-		case VK_NUMLOCK:
-			return Key_NumLock;
-		case VK_SCROLL:
-			return Key_ScrollLock;
-		default:
-			return Key_Null;
-		}
-	}
-#endif
-
 	enum KeyEventType
 	{
 		KeyEventNull,
@@ -534,30 +349,6 @@ namespace flame
 		((WindowPrivate*)this)->remove_destroy_listener(idx);
 	}
 
-	bool Window::is_modifier_pressing(Key k, int left_or_right)
-	{
-#ifdef FLAME_WINDOWS
-		int kc;
-		switch (k)
-		{
-		case Key_Shift:
-			kc = left_or_right == 0 ? VK_LSHIFT : VK_RSHIFT;
-			break;
-		case Key_Ctrl:
-			kc = left_or_right == 0 ? VK_LCONTROL : VK_RCONTROL;
-			break;
-		case Key_Alt:
-			kc = left_or_right == 0 ? VK_LMENU : VK_RMENU;
-			break;
-		default:
-			return false;
-		}
-		return GetKeyState(kc) < 0;
-#else
-		return false;
-#endif
-	}
-
 	void Window::close()
 	{
 		((WindowPrivate*)this)->dead = true;
@@ -574,7 +365,7 @@ namespace flame
 			{
 			case WM_KEYDOWN:
 			{
-				auto v = Z(wParam);
+				auto v = vk_code_to_key(wParam);
 				for (auto &f : w->key_listeners)
 				{
 					auto &p = (Window::KeyListenerParm&)f.p;
@@ -586,7 +377,7 @@ namespace flame
 				break;
 			case WM_KEYUP:
 			{
-				auto v = Z(wParam);
+				auto v = vk_code_to_key(wParam);
 				for (auto &f : w->key_listeners)
 				{
 					auto &p = (Window::KeyListenerParm&)f.p;
@@ -943,8 +734,7 @@ namespace flame
 
 	int Application::run(Function<> &idle_func)
 	{
-		auto ret = ((ApplicationPrivate*)this)->run(idle_func);
-		return ret;
+		return ((ApplicationPrivate*)this)->run(idle_func);
 	}
 
 	void Application::clear_delay_events()

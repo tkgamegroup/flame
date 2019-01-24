@@ -595,6 +595,18 @@ namespace flame
 	}
 
 	template<typename CH>
+	inline void string_to_lower$(std::basic_string<CH> &str)
+	{
+		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+	}
+
+	template<typename CH>
+	inline void string_to_upper$(std::basic_string<CH> &str)
+	{
+		std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+	}
+
+	template<typename CH>
 	inline std::vector<std::basic_string<CH>> string_split(const std::basic_string<CH> &str, CH delimiter = ' ')
 	{
 		std::basic_istringstream<CH> iss(str);
@@ -1005,6 +1017,9 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Ivec2 get_screen_size();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_curr_path();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_app_path();
+	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
+	FLAME_FOUNDATION_EXPORTS void sleep(uint time); // a time less than 0 means forever
+	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const char *parameters, bool wait);
 	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
 
@@ -1013,10 +1028,16 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const wchar_t *filename);
 	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const wchar_t *filename);
+	FLAME_FOUNDATION_EXPORTS void get_thumbnai(int width, const wchar_t *filename, int *out_width, int *out_height, char **out_data);
 
-	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
+	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
+	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-	FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(int key, Function<> &callback);
+	FLAME_PACKAGE_BEGIN(GlobalKeyParm)
+		FLAME_PACKAGE_ITEM(KeyState, action, i1)
+	FLAME_PACKAGE_END
+
+	FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<GlobalKeyParm> &callback);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void *handle/* return by add_global_key_listener */);
 
 	struct FileWatcher;
@@ -1045,8 +1066,6 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t *path, Function<FileWatcherParm> &callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher *w);
-
-	FLAME_FOUNDATION_EXPORTS void get_thumbnai(int width, const wchar_t *filename, int *out_width, int *out_height, char **out_data);
 
 	FLAME_FOUNDATION_EXPORTS void add_work(PF pf, char *capture_fmt, ...);
 	FLAME_FOUNDATION_EXPORTS void clear_works();

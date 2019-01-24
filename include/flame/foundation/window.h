@@ -117,8 +117,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void remove_resize_listener (int idx);
 		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(int idx);
 
-		FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
-
 		FLAME_FOUNDATION_EXPORTS void close();
 
 		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Ivec2 &_size, int _style);

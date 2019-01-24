@@ -25,57 +25,42 @@
 using namespace flame;
 
 FLAME_PACKAGE_BEGIN(FileWatcherC)
-	FLAME_PACKAGE_ITEM(wcharptr, filename, p)
-	FLAME_PACKAGE_ITEM(wcharptr, scriptfilename, p)
-	FLAME_PACKAGE_ITEM(charptr, params, p)
+	FLAME_PACKAGE_ITEM(charptr, filename, p)
+	FLAME_PACKAGE_ITEM(charptr, command, p)
 FLAME_PACKAGE_END
 
 static ulonglong last_change_time = 0;
 
 int main(int argc, char **args)
 {
-	if (argc < 3)
+	if (argc != 3)
 	{
 		printf(
 			   "usage:\n"
-			   "  filename exe(or bat) [\"params\"]\n"
+			   "  filename \"command\"\n"
 			   "note:\n"
-			   "  params must be wraped in \"\"\n"
+			   "  command must be wraped in \"\"\n"
 		);
 		system("pause");
 		return 0;
 	}
 
-	auto filename = s2w(args[1]);
-	auto scriptfilename = s2w(args[2]);
-	auto path = std::filesystem::path(filename).parent_path().wstring();
+	printf("run [ %s ] when [ %s ] changed\n", args[2], args[1]);
 
-	printf("watching file: %s\n", args[1]);
-
-	add_file_watcher(path.c_str(), Function<FileWatcherParm>([](FileWatcherParm &p) {
+	add_file_watcher(std::filesystem::path(args[1]).parent_path().wstring().c_str(), Function<FileWatcherParm>([](FileWatcherParm &p) {
 		auto c = p.get_capture<FileWatcherC>();
 
-		auto target_file = std::wstring(c.filename());
 		auto now_time = get_now_ns();
-		if (target_file == c.filename() && now_time - last_change_time > 1'000'000'000)
+		if (s2w(c.filename()) == p.filename() && now_time - last_change_time > 1'000'000'000)
 		{
-			auto scriptfilename = std::wstring(c.scriptfilename());
-			auto s_target_file = w2s(target_file);
-			auto s_cmd = "\"" + w2s(scriptfilename) + "\"";
-			if (c.params())
-			{
-				s_cmd += " ";
-				s_cmd += c.params();
-			}
+			printf("file changed: %s\n", c.filename());
+			printf("run: %s\n", c.command());
 
-			printf("file changed: %s\n", s_target_file.c_str());
-			printf("run: %s\n", s_cmd.c_str());
+			system(c.command());
 
-			system(s_cmd.c_str());
-
-			printf("watching file: %s\n", s_target_file.c_str());
+			printf("run [ %s ] when [ %s ] changed\n", c.command(), c.filename());
 		}
 		last_change_time = now_time;
 
-	}, { (voidptr)filename.c_str(), (voidptr)scriptfilename.c_str(), (voidptr)(argc == 4 ? args[3] : nullptr) }), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
+	}, { (voidptr)args[1], (voidptr)args[2] }), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
 }
