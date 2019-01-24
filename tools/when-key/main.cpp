@@ -25,6 +25,7 @@
 using namespace flame;
 
 FLAME_PACKAGE_BEGIN(GlobalKeyC)
+	FLAME_PACKAGE_ITEM(charptr, key, p)
 	FLAME_PACKAGE_ITEM(charptr, command, p)
 FLAME_PACKAGE_END
 
@@ -70,8 +71,17 @@ int main(int argc, char **args)
 	}
 	add_global_key_listener(key, shift, ctrl, alt, Function<GlobalKeyParm>([](GlobalKeyParm &p){
 		if (p.action() == KeyStateDown)
-			printf("1\n");
-	}, {}));
+		{
+			auto c = p.get_capture<GlobalKeyC>();
+
+			printf("key down: %s\n", c.key());
+			printf("run: %s\n", c.command());
+
+			system(c.command());
+
+			printf("run [ %s ] when [ %s ] pressed\n", c.command(), c.key());
+		}
+	}, { args[1], args[2] }));
 
 	do_simple_dispatch_loop();
 
