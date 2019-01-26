@@ -1985,14 +1985,16 @@ namespace flame
 		struct FontPrivate : Font
 		{
 			Device *d;
-			int pixel_height;
 			bool sdf;
 
 			std::pair<std::unique_ptr<char[]>, int> font_file;
 			FT_Face ft_face;
+			int pixel_height;
+			int ascender;
+			int max_width;
 
-			int map[65536];
-			std::vector<Glyph> glyphs;
+			Glyph *map[65536];
+			Glyph *glyph_head;
 
 			Image *atlas;
 
@@ -2001,8 +2003,7 @@ namespace flame
 				pixel_height(_pixel_height),
 				sdf(_sdf)
 			{
-				for (auto i = 0; i < FLAME_ARRAYSIZE(map); i++)
-					map[i] = -1;
+				memset(map, 0, sizeof(map));
 
 				if (!ft_library)
 				{
@@ -2016,6 +2017,8 @@ namespace flame
 				ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
 				ft_req.height = pixel_height * 64;
 				FT_Request_Size(ft_face, &ft_req);
+				ascender = ft_face->size->metrics.ascender / 64;
+				max_width = ft_face->size->metrics.max_advance;
 
 				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(512), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 				atlas->set_pixel(511, 511, Bvec4(255));
@@ -2029,27 +2032,19 @@ namespace flame
 
 			inline const Glyph &get_glyph(wchar_t unicode)
 			{
-				auto ft_g = ft_face->glyph;
-
-				auto ascent = ft_face->size->metrics.ascender / 64;
-
-				if (map[code] == -1)
+				if (!map[unicode])
 				{
-					Glyph g(code);
-					if (!r.sdf)
-						g.sdf_img_off.x = -1;
+					auto g = new Glyph(unicode);
 
-					FT_Load_Char(ft_face, g.unicode, FT_LOAD_TARGET_LCD);
-					g.size = Vec2(ft_g->bitmap.width / 3, ft_g->bitmap.rows);
-					g.off = Vec2(ft_g->bitmap_left, ascent + g.size.y - ft_g->metrics.horiBearingY / 64.f);
-					g.advance = ft_g->advance.x / 64;
-					g.ascent = ascent;
+					FT_Load_Char(ft_face, unicode, FT_LOAD_TARGET_LCD);
+					auto ft_glyph = ft_face->glyph;
+					g->size = Vec2(ft_glyph->bitmap.width / 3, ft_glyph->bitmap.rows);
+					g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y - ft_glyph->metrics.horiBearingY / 64.f);
+					g->advance = ft_glyph->advance.x / 64;
+					g->ascent = ascender;
 
-					auto idx = glyphs.size();
-					map[code] = idx;
+					map[unicode] = g;
 					glyphs.emplace_back(g);
-
-
 
 					auto curr_ft_face_idx = 0;
 					for (auto &g : glyphs)
@@ -2117,9 +2112,6 @@ namespace flame
 							pos.x += size.x;
 						}
 
-						auto image = Bitmap::create(Ivec2(img_width, img_height), 4, 32);
-						sdf_image = image;
-
 						for (auto &g : glyphs)
 						{
 							if (g.sdf_img_off.x != -1)
@@ -2162,10 +2154,7 @@ namespace flame
 					}
 				}
 
-				auto idx = map[unicode];
-				if (idx == -1)
-					idx = 0;
-				return glyphs[idx];
+				return *map[unicode];
 			}
 
 			inline int get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
@@ -2209,9 +2198,9 @@ namespace flame
 			return ((FontPrivate*)this)->atlas;
 		}
 
-		Font *Font::create(const wchar_t *filename, int pixel_height, bool sdf)
+		Font *Font::create(Device *d, const wchar_t *filename, int pixel_height, bool sdf)
 		{
-			return new FontPrivate(filename, pixel_height, sdf);
+			return new FontPrivate(d, filename, pixel_height, sdf);
 		}
 
 		void Font::destroy(Font *f)

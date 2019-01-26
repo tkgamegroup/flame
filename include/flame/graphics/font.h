@@ -44,17 +44,17 @@ namespace flame
 			int advance;
 			int ascent;
 
-			Glyph(wchar_t uc) :
-				unicode(uc),
-				off(0),
-				size(0),
-				img_off(0),
-				uv0(0.f),
-				uv1(0.f),
-				advance(0),
-				ascent(0)
-			{
-			}
+			//Glyph(wchar_t uc) :
+			//	unicode(uc),
+			//	off(0),
+			//	size(0),
+			//	img_off(0),
+			//	uv0(0.f),
+			//	uv1(0.f),
+			//	advance(0),
+			//	ascent(0)
+			//{
+			//}
 		};
 
 		struct Font
