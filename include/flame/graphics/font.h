@@ -26,78 +26,48 @@
 
 namespace flame
 {
-	struct Bitmap;
-
-	struct CharRange
+	namespace graphics
 	{
-		wchar_t code_begin;
-		wchar_t code_end;
-		bool sdf;
+		struct Device;
+		struct Image;
 
-		CharRange() :
-			code_begin(0),
-			code_end(0),
-			sdf(false)
+		FLAME_GRAPHICS_EXPORTS void get_latin_code_range(wchar_t &out_begin, wchar_t &out_end);
+
+		struct Glyph
 		{
-		}
+			wchar_t unicode;
 
-		CharRange(wchar_t _code_begin, int _code_end, bool _sdf) :
-			code_begin(_code_begin),
-			code_end(_code_end),
-			sdf(_sdf)
+			Ivec2 off;
+			Ivec2 size;
+			Ivec2 img_off;
+			Vec2 uv0, uv1;
+			int advance;
+			int ascent;
+
+			Glyph(wchar_t uc) :
+				unicode(uc),
+				off(0),
+				size(0),
+				img_off(0),
+				uv0(0.f),
+				uv1(0.f),
+				advance(0),
+				ascent(0)
+			{
+			}
+		};
+
+		struct Font
 		{
-		}
-	};
+			FLAME_GRAPHICS_EXPORTS int pixel_height(); const
 
-	FLAME_GRAPHICS_EXPORTS void get_default_char_range(wchar_t &out_code_begin, wchar_t &out_code_end);
+			FLAME_GRAPHICS_EXPORTS const Glyph &get_glyph(wchar_t unicode);
+			FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);
 
-	struct Glyph
-	{
-		wchar_t unicode;
+			FLAME_GRAPHICS_EXPORTS Image *get_atlas() const;
 
-		Ivec2 off;
-		Ivec2 size;
-		Ivec2 img_off;
-		Ivec2 sdf_img_off;
-		Vec2 uv0, uv1;
-		Vec2 uv0_sdf, uv1_sdf;
-		int advance;
-		int ascent;
-
-		Glyph(wchar_t uc) :
-			unicode(uc),
-			off(0),
-			size(0),
-			img_off(0),
-			sdf_img_off(0),
-			uv0(0.f),
-			uv1(0.f),
-			uv0_sdf(0.f),
-			uv1_sdf(0.f),
-			advance(0),
-			ascent(0)
-		{
-		}
-	};
-
-	struct FontDescription
-	{
-		const wchar_t *filename;
-		std::vector<CharRange> ranges;
-	};
-
-	struct FontAtlas
-	{
-		int pixel_height;
-
-		FLAME_GRAPHICS_EXPORTS const Glyph &get_glyph(wchar_t unicode);
-
-		FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);
-
-		FLAME_GRAPHICS_EXPORTS Bitmap *get_stroke_image() const;
-		FLAME_GRAPHICS_EXPORTS Bitmap *get_sdf_image() const;
-
-		FLAME_GRAPHICS_EXPORTS static FontAtlas *create(const wchar_t *filename, int pixel_height, float sdf_scale = -1.f);
-		FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas *f);
-	};
+			FLAME_GRAPHICS_EXPORTS static Font *create(Device *d, const wchar_t *filename, int pixel_height, bool sdf = false);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Font *f);
+		};
+	}
 }
