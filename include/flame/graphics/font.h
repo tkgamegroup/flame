@@ -39,22 +39,9 @@ namespace flame
 
 			Ivec2 off;
 			Ivec2 size;
-			Ivec2 img_off;
 			Vec2 uv0, uv1;
 			int advance;
 			int ascent;
-
-			//Glyph(wchar_t uc) :
-			//	unicode(uc),
-			//	off(0),
-			//	size(0),
-			//	img_off(0),
-			//	uv0(0.f),
-			//	uv1(0.f),
-			//	advance(0),
-			//	ascent(0)
-			//{
-			//}
 		};
 
 		struct Font

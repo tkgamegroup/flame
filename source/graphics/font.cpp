@@ -28,7 +28,6 @@
 #include <freetype/freetype.h>
 #include <freetype/ftlcdfil.h>
 #include FT_OUTLINE_H
-#include <assert.h>
 
 // https://github.com/Chlumsky/msdfgen
 namespace msdfgen
@@ -1982,19 +1981,31 @@ namespace flame
 			out_end = 0xff;
 		}
 
+		const int atlas_width = 512;
+		const int atlas_height = 512;
+
 		struct FontPrivate : Font
 		{
-			Device *d;
+			struct FreePos
+			{
+				int x, y;
+				FreePos* next;
+			};
+
+			Device* d;
 			bool sdf;
 
 			std::pair<std::unique_ptr<char[]>, int> font_file;
 			FT_Face ft_face;
 			int pixel_height;
-			int ascender;
 			int max_width;
+			int ascender;
 
-			Glyph *map[65536];
-			Glyph *glyph_head;
+			Glyph* map[65536];
+			Glyph* glyph_head;
+			Glyph* glyph_tail;
+			FreePos* free_pos_head;
+			FreePos* free_pos_tail;
 
 			Image *atlas;
 
@@ -2011,17 +2022,52 @@ namespace flame
 					FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
 				}
 
+				//Glyph(wchar_t uc) :
+				//	unicode(uc),
+				//	off(0),
+				//	size(0),
+				//	img_off(0),
+				//	uv0(0.f),
+				//	uv1(0.f),
+				//	advance(0),
+				//	ascent(0)
+				//{
+				//}
+
 				font_file = get_file_content(filename);
 				FT_New_Memory_Face(ft_library, (unsigned char*)font_file.first.get(), font_file.second, 0, &ft_face);
 				FT_Size_RequestRec ft_req = {};
 				ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
 				ft_req.height = pixel_height * 64;
 				FT_Request_Size(ft_face, &ft_req);
-				ascender = ft_face->size->metrics.ascender / 64;
 				max_width = ft_face->size->metrics.max_advance;
+				ascender = ft_face->size->metrics.ascender / 64;
 
-				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(512), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
-				atlas->set_pixel(511, 511, Bvec4(255));
+				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+				atlas->set_pixel(atlas_width - 1, atlas_height - 1, Bvec4(255));
+
+				glyph_head = glyph_tail = nullptr;
+
+				free_pos_head = free_pos_tail = nullptr;
+				auto off = Ivec2(0);
+				for (auto y = 0; ; y++)
+				{
+					for (auto x = 0; ; x++)
+					{
+						auto free_pos = new std::pair<int, int>;
+						free_pos->first = x;
+						free_pos->second = y;
+						off.x += max_width;
+						if (off.x >= atlas_width)
+						{
+							off.x = 0;
+							break;
+						}
+					}
+					off.y += pixel_height;
+					if (off.y >= atlas_height)
+						break;
+				}
 			}
 
 			inline ~FontPrivate()
@@ -2046,10 +2092,8 @@ namespace flame
 					map[unicode] = g;
 					glyphs.emplace_back(g);
 
-					auto curr_ft_face_idx = 0;
 					for (auto &g : glyphs)
 					{
-						auto ft_face = ft_faces[curr_ft_face_idx].face;
 						auto ft_g = ft_face->glyph;
 
 						FT_Load_Char(ft_face, g.unicode, FT_LOAD_TARGET_LCD);
