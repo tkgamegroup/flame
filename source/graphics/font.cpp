@@ -1981,6 +1981,13 @@ namespace flame
 			out_end = 0xff;
 		}
 
+		struct GlyphPrivate : Glyph
+		{
+			ushort unicode;
+			int x, y;
+			GlyphPrivate* next;
+		};
+
 		const int atlas_width = 512;
 		const int atlas_height = 512;
 
@@ -2002,8 +2009,8 @@ namespace flame
 			int ascender;
 
 			Glyph* map[65536];
-			Glyph* glyph_head;
-			Glyph* glyph_tail;
+			GlyphPrivate* glyph_head;
+			GlyphPrivate* glyph_tail;
 			FreePos* free_pos_head;
 			FreePos* free_pos_tail;
 
@@ -2021,18 +2028,6 @@ namespace flame
 					FT_Init_FreeType(&ft_library);
 					FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
 				}
-
-				//Glyph(wchar_t uc) :
-				//	unicode(uc),
-				//	off(0),
-				//	size(0),
-				//	img_off(0),
-				//	uv0(0.f),
-				//	uv1(0.f),
-				//	advance(0),
-				//	ascent(0)
-				//{
-				//}
 
 				font_file = get_file_content(filename);
 				FT_New_Memory_Face(ft_library, (unsigned char*)font_file.first.get(), font_file.second, 0, &ft_face);
@@ -2054,9 +2049,17 @@ namespace flame
 				{
 					for (auto x = 0; ; x++)
 					{
-						auto free_pos = new std::pair<int, int>;
-						free_pos->first = x;
-						free_pos->second = y;
+						auto free_pos = new FreePos;
+						free_pos->x = x;
+						free_pos->y = y;
+						free_pos->next = nullptr;
+						if (free_pos_tail)
+						{
+							free_pos_tail->next = free_pos;
+							free_pos_tail = free_pos;
+						}
+						else
+							free_pos_head = free_pos_tail = free_pos;
 						off.x += max_width;
 						if (off.x >= atlas_width)
 						{
@@ -2076,18 +2079,37 @@ namespace flame
 				Image::destroy(atlas);
 			}
 
-			inline const Glyph &get_glyph(wchar_t unicode)
+			inline const Glyph* get_glyph(wchar_t unicode)
 			{
 				if (!map[unicode])
 				{
-					auto g = new Glyph(unicode);
+					int free_pos_x;
+					int free_pos_y;
+					if (!free_pos_head)
+					{
+						free_pos_x = glyph_head->x;
+						free_pos_y = glyph_head->y;
+					}
+					else
+					{
+						free_pos_x = free_pos_head->x;
+						free_pos_y = free_pos_head->y;
+						auto temp = free_pos_head;
+						free_pos_head = free_pos_head->next;
+						delete temp;
+						if (!free_pos_head)
+							free_pos_tail = nullptr;
+					}
+
+					auto g = new GlyphPrivate;
+					g->unicode = unicode;
+					g->next = nullptr;
 
 					FT_Load_Char(ft_face, unicode, FT_LOAD_TARGET_LCD);
 					auto ft_glyph = ft_face->glyph;
 					g->size = Vec2(ft_glyph->bitmap.width / 3, ft_glyph->bitmap.rows);
 					g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y - ft_glyph->metrics.horiBearingY / 64.f);
 					g->advance = ft_glyph->advance.x / 64;
-					g->ascent = ascender;
 
 					map[unicode] = g;
 					glyphs.emplace_back(g);
@@ -2227,9 +2249,24 @@ namespace flame
 			}
 		};
 
-		const Glyph &Font::get_glyph(wchar_t unicode)
+		const Glyph* Font::get_glyph(wchar_t unicode)
 		{
 			return ((FontPrivate*)this)->get_glyph(unicode);
+		}
+
+		int Font::pixel_height() const
+		{
+			return ((FontPrivate*)this)->pixel_height;
+		}
+
+		int Font::max_width() const
+		{
+			return ((FontPrivate*)this)->max_width;
+		}
+
+		int Font::ascender() const
+		{
+			return ((FontPrivate*)this)->ascender;
 		}
 
 		int Font::get_text_width(const wchar_t *text_beg, const wchar_t *text_end)

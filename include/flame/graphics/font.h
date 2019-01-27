@@ -35,20 +35,19 @@ namespace flame
 
 		struct Glyph
 		{
-			wchar_t unicode;
-
 			Ivec2 off;
 			Ivec2 size;
 			Vec2 uv0, uv1;
 			int advance;
-			int ascent;
 		};
 
 		struct Font
 		{
-			FLAME_GRAPHICS_EXPORTS int pixel_height(); const
-
-			FLAME_GRAPHICS_EXPORTS const Glyph &get_glyph(wchar_t unicode);
+			FLAME_GRAPHICS_EXPORTS int pixel_height() const;
+			FLAME_GRAPHICS_EXPORTS int max_width() const;
+			FLAME_GRAPHICS_EXPORTS int ascender() const;
+				
+			FLAME_GRAPHICS_EXPORTS const Glyph *get_glyph(wchar_t unicode);
 			FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);
 
 			FLAME_GRAPHICS_EXPORTS Image *get_atlas() const;
