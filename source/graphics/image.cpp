@@ -206,78 +206,22 @@ namespace flame
 			Commandbuffer::destroy(cb);
 		}
 
-		inline Bvec4 ImagePrivate::get_pixel(int x, int y)
+		inline void ImagePrivate::get_pixels(int x, int y, int cx, int cy, void *dst)
 		{
-			auto stag_buf = Buffer::create(d, sizeof(Bvec4), BufferUsageTransferDst, MemPropHost);
+			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
+			if (cx == -1)
+				cx = size.x;
+			if (cy == -1)
+				cy = size.y;
+
+			auto data_size = (bpp_ / 8) * cx * cy;
+
+			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferDst, MemPropHost);
 
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(1, 1, 0, 0, x, y));
-			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
-			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
-			d->gq->wait_idle();
-			Commandbuffer::destroy(cb);
-
-			Bvec4 ret;
-			stag_buf->map();
-			memcpy(&ret, stag_buf->mapped, stag_buf->size);
-			stag_buf->flush();
-
-			Buffer::destroy(stag_buf);
-
-			return ret;
-		}
-
-		inline void ImagePrivate::set_pixel(int x, int y, const Bvec4 &col)
-		{
-			auto stag_buf = Buffer::create(d, sizeof(Bvec4), BufferUsageTransferSrc, MemPropHost);
-			stag_buf->map();
-			memcpy(stag_buf->mapped, &col, stag_buf->size);
-			stag_buf->flush();
-
-			auto cb = Commandbuffer::create(d->gcp);
-			cb->begin(true);
-			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(1, 1, 0, 0, x, y));
-			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
-			d->gq->wait_idle();
-			Commandbuffer::destroy(cb);
-
-			Buffer::destroy(stag_buf);
-		}
-
-		inline void ImagePrivate::set_pixel(int x, int y, const Hvec4 &col)
-		{
-			auto stag_buf = Buffer::create(d, sizeof(Hvec4), BufferUsageTransferSrc, MemPropHost);
-			stag_buf->map();
-			memcpy(stag_buf->mapped, &col, stag_buf->size);
-			stag_buf->flush();
-
-			auto cb = Commandbuffer::create(d->gcp);
-			cb->begin(true);
-			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(1, 1, 0, 0, x, y));
-			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
-			d->gq->wait_idle();
-			Commandbuffer::destroy(cb);
-
-			Buffer::destroy(stag_buf);
-		}
-
-		inline void ImagePrivate::get_pixels(void *dst)
-		{
-			auto stag_buf = Buffer::create(d, data_size_, BufferUsageTransferDst, MemPropHost);
-
-			auto cb = Commandbuffer::create(d->gcp);
-			cb->begin(true);
-			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(size.x, size.y));
+			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(cx, cy, 0, 0, x, y));
 			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
 			d->gq->submit(cb, nullptr, nullptr);
@@ -291,9 +235,17 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		inline void ImagePrivate::set_pixels(void *src)
+		inline void ImagePrivate::set_pixels(int x, int y, int cx, int cy, const void *src)
 		{
-			auto stag_buf = Buffer::create(d, data_size_, BufferUsageTransferSrc, MemPropHost);
+			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
+			if (cx == -1)
+				cx = size.x;
+			if (cy == -1)
+				cy = size.y;
+
+			auto data_size = (bpp_ / 8) * cx * cy;
+
+			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferSrc, MemPropHost);
 			stag_buf->map();
 			memcpy(stag_buf->mapped, src, stag_buf->size);
 			stag_buf->flush();
@@ -301,7 +253,7 @@ namespace flame
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(size.x, size.y));
+			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(cx, cy, 0, 0, x, y));
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			d->gq->submit(cb, nullptr, nullptr);
@@ -352,7 +304,7 @@ namespace flame
 			else
 			{
 				auto bmp = Bitmap::create(size, channel_, bpp_);
-				get_pixels(bmp->data);
+				get_pixels(0, 0, -1, -1, bmp->data);
 				bmp->save(filename);
 			}
 		}
@@ -362,29 +314,14 @@ namespace flame
 			((ImagePrivate*)this)->init(col);
 		}
 
-		Bvec4 Image::get_pixel(int x, int y)
+		void Image::get_pixels(int x, int y, int cx, int cy, void *dst)
 		{
-			return ((ImagePrivate*)this)->get_pixel(x, y);
+			((ImagePrivate*)this)->get_pixels(x, y, cx, cy, dst);
 		}
 
-		void Image::set_pixel(int x, int y, const Bvec4 &col)
+		void Image::set_pixels(int x, int y, int cx, int cy, const void *src)
 		{
-			((ImagePrivate*)this)->set_pixel(x, y, col);
-		}
-
-		void Image::set_pixel(int x, int y, const Hvec4 &col) 
-		{
-			((ImagePrivate*)this)->set_pixel(x, y, col);
-		}
-
-		void Image::get_pixels(void *dst)
-		{
-			((ImagePrivate*)this)->get_pixels(dst);
-		}
-
-		void Image::set_pixels(void *src)
-		{
-			((ImagePrivate*)this)->set_pixels(src);
+			((ImagePrivate*)this)->set_pixels(x, y, cx, cy, src);
 		}
 
 		void Image::save_png(const wchar_t *filename)

@@ -1984,21 +1984,16 @@ namespace flame
 		struct GlyphPrivate : Glyph
 		{
 			ushort unicode;
-			int x, y;
+			int grid_x, grid_y;
 			GlyphPrivate* next;
 		};
 
 		const int atlas_width = 512;
 		const int atlas_height = 512;
+		const int sdf_range = 4;
 
 		struct FontPrivate : Font
 		{
-			struct FreePos
-			{
-				int x, y;
-				FreePos* next;
-			};
-
 			Device* d;
 			bool sdf;
 
@@ -2011,8 +2006,10 @@ namespace flame
 			Glyph* map[65536];
 			GlyphPrivate* glyph_head;
 			GlyphPrivate* glyph_tail;
-			FreePos* free_pos_head;
-			FreePos* free_pos_tail;
+			int grid_cx;
+			int grid_cy;
+			int grid_curr_x;
+			int grid_curr_y;
 
 			Image *atlas;
 
@@ -2039,38 +2036,13 @@ namespace flame
 				ascender = ft_face->size->metrics.ascender / 64;
 
 				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
-				atlas->set_pixel(atlas_width - 1, atlas_height - 1, Bvec4(255));
+				atlas->set_pixels(atlas_width - 1, atlas_height - 1, 1, 1, &Bvec4(255));
 
 				glyph_head = glyph_tail = nullptr;
 
-				free_pos_head = free_pos_tail = nullptr;
-				auto off = Ivec2(0);
-				for (auto y = 0; ; y++)
-				{
-					for (auto x = 0; ; x++)
-					{
-						auto free_pos = new FreePos;
-						free_pos->x = x;
-						free_pos->y = y;
-						free_pos->next = nullptr;
-						if (free_pos_tail)
-						{
-							free_pos_tail->next = free_pos;
-							free_pos_tail = free_pos;
-						}
-						else
-							free_pos_head = free_pos_tail = free_pos;
-						off.x += max_width;
-						if (off.x >= atlas_width)
-						{
-							off.x = 0;
-							break;
-						}
-					}
-					off.y += pixel_height;
-					if (off.y >= atlas_height)
-						break;
-				}
+				grid_cx = atlas_width / (max_width + (sdf ? sdf_range : 0));
+				grid_cy = atlas_height / (pixel_height + (sdf ? sdf_range : 0));
+				grid_curr_x = grid_curr_y = 0;
 			}
 
 			inline ~FontPrivate()
@@ -2083,27 +2055,43 @@ namespace flame
 			{
 				if (!map[unicode])
 				{
-					int free_pos_x;
-					int free_pos_y;
-					if (!free_pos_head)
+					GlyphPrivate* g;
+					if (grid_curr_y == grid_cy)
 					{
-						free_pos_x = glyph_head->x;
-						free_pos_y = glyph_head->y;
+						g = glyph_head;
+						glyph_head = g->next;
+
+						map[g->unicode] = nullptr;
+
+						glyph_tail->next = g;
+						glyph_tail = g;
 					}
 					else
 					{
-						free_pos_x = free_pos_head->x;
-						free_pos_y = free_pos_head->y;
-						auto temp = free_pos_head;
-						free_pos_head = free_pos_head->next;
-						delete temp;
-						if (!free_pos_head)
-							free_pos_tail = nullptr;
+						g = new GlyphPrivate;
+						g->grid_x = grid_curr_x;
+						g->grid_y = grid_curr_y;
+
+						grid_curr_x++;
+						if (grid_curr_x == grid_cx)
+						{
+							grid_curr_x = 0;
+							grid_curr_y++;
+						}
+
+						if (glyph_tail)
+						{
+							glyph_tail->next = g;
+							glyph_tail = g;
+						}
+						else
+							glyph_head = glyph_tail = g;
 					}
 
-					auto g = new GlyphPrivate;
 					g->unicode = unicode;
 					g->next = nullptr;
+
+					map[unicode] = g;
 
 					FT_Load_Char(ft_face, unicode, FT_LOAD_TARGET_LCD);
 					auto ft_glyph = ft_face->glyph;
@@ -2111,116 +2099,78 @@ namespace flame
 					g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y - ft_glyph->metrics.horiBearingY / 64.f);
 					g->advance = ft_glyph->advance.x / 64;
 
-					map[unicode] = g;
-					glyphs.emplace_back(g);
-
-					for (auto &g : glyphs)
+					if (!sdf)
 					{
-						auto ft_g = ft_face->glyph;
+						FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
 
-						FT_Load_Char(ft_face, g.unicode, FT_LOAD_TARGET_LCD);
-						FT_Render_Glyph(ft_g, FT_RENDER_MODE_LCD);
-
-						auto pitch1 = ft_g->bitmap.pitch;
-						auto pitch2 = image->pitch;
-						auto width = ft_g->bitmap.width / 3;
-						for (auto y = 0; y < ft_g->bitmap.rows; y++)
+						auto width = ft_glyph->bitmap.width / 3;
+						auto height = ft_glyph->bitmap.rows;
+						auto pitch_ft = ft_glyph->bitmap.pitch;
+						auto pitch_temp = width * 4;
+						auto temp = new uchar[pitch_ft * height];
+						for (auto y = 0; y < height; y++)
 						{
 							for (auto x = 0; x < width; x++)
 							{
-								Bvec4 col;
-								col.x = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 0];
-								col.y = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 1];
-								col.z = ft_g->bitmap.buffer[y * pitch1 + x * 3 + 2];
-								col.w = 255;
-
-								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 0)] =
-									col.x;
-								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 1)] =
-									col.y;
-								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 2)] =
-									col.z;
-								image->data[(g.img_off.y + y) * pitch2 + ((g.img_off.x + x) * 4 + 3)] =
-									col.w;
+								temp[y * pitch_temp + x * 4 + 0] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 0];
+								temp[y * pitch_temp + x * 4 + 1] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 1];
+								temp[y * pitch_temp + x * 4 + 2] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 2];
+								temp[y * pitch_temp + x * 4 + 3] = 255;
 							}
 						}
 
-						g.uv0 = Vec2(g.img_off.x, g.img_off.y + g.size.y) / image->size;
-						g.uv1 = Vec2(g.img_off.x + g.size.x, g.img_off.y) / image->size;
+						auto x = g->grid_x * max_width;
+						auto y = g->grid_y * pixel_height;
+
+						atlas->set_pixels(x, y, width, height, temp);
+
+						delete temp;
+
+						g->uv0 = Vec2(x, y + pixel_height) / atlas->size;
+						g->uv1 = Vec2(x + max_width, y) / atlas->size;
 					}
-
-					if (sdf_scale > 0.f)
+					else
 					{
-						const float range = 4.f;
-						auto img_height = 0;
-						auto pos = Ivec2(0);
-						auto line_height = 0;
+						void *ptr = ft_face;
 
-						for (auto &g : glyphs)
+						msdfgen::Shape shape;
+						msdfgen::loadGlyph(shape, (msdfgen::FontHandle*)&ptr, unicode);
+
+						auto size = g->size;
+						size += sdf_range * 2.f;
+
+						shape.normalize();
+						msdfgen::edgeColoringSimple(shape, 3.f);
+						msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
+						msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x, g->off.y - ascender) + sdf_range);
+
+						auto pitch = atlas->pitch_;
+						auto temp = new uchar[pitch * size.y];
+						for (auto y = 0; y < size.y; y++)
 						{
-							if (g.sdf_img_off.x == -1)
-								continue;
-
-							auto size = g.size * sdf_scale;
-							size += range * 2.f;
-
-							line_height = max(line_height, size.y);
-							if (pos.x + size.x > img_width)
+							for (auto x = 0; x < size.x; x++)
 							{
-								pos.x = 0;
-								pos.y += line_height;
-								line_height = 0;
-							}
-							img_height = max(img_height, pos.y + size.y);
-
-							g.sdf_img_off = pos;
-
-							pos.x += size.x;
-						}
-
-						for (auto &g : glyphs)
-						{
-							if (g.sdf_img_off.x != -1)
-							{
-								auto ft_face = ft_faces[curr_ft_face_idx].face;
-								auto ft_g = ft_face->glyph;
-								void *ptr = ft_face;
-
-								msdfgen::Shape shape;
-								msdfgen::loadGlyph(shape, (msdfgen::FontHandle*)&ptr, g.unicode);
-
-								auto size = g.size * sdf_scale;
-								size += range * 2.f;
-
-								shape.normalize();
-								msdfgen::edgeColoringSimple(shape, 3.f);
-								msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
-								msdfgen::generateMSDF(bmp, shape, range, sdf_scale, msdfgen::Vector2(-g.off.x, g.off.y - g.ascent) + range / sdf_scale);
-
-								auto pitch = image->pitch;
-								for (auto y = 0; y < size.y; y++)
-								{
-									for (auto x = 0; x < size.x; x++)
-									{
-										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 0] =
-											clamp(bmp(x, y).r * 255.f, 0.f, 255.f);
-										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 1] =
-											clamp(bmp(x, y).g * 255.f, 0.f, 255.f);
-										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 2] =
-											clamp(bmp(x, y).b * 255.f, 0.f, 255.f);
-										image->data[(g.sdf_img_off.y + y) * pitch + (g.sdf_img_off.x + x) * 4 + 3] =
-											255.f;
-									}
-								}
-
-								g.uv0_sdf = (Vec2(g.sdf_img_off) + range) / image->size;
-								g.uv1_sdf = (Vec2(g.sdf_img_off + size) - range) / image->size;
+								auto &src = bmp(x, y);
+								temp[y * pitch + x * 4 + 0] = clamp(src.r * 255.f, 0.f, 255.f);
+								temp[y * pitch + x * 4 + 1] = clamp(src.g * 255.f, 0.f, 255.f);
+								temp[y * pitch + x * 4 + 2] = clamp(src.b * 255.f, 0.f, 255.f);
+								temp[y * pitch + x * 4 + 3] = 255.f;
 							}
 						}
+
+						auto x = g->grid_x * (max_width + sdf_range);
+						auto y = g->grid_y * (pixel_height + sdf_range);
+
+						atlas->set_pixels(x, y, size.x, size.y, temp);
+
+						delete temp;
+
+						g->uv0 = Vec2(x + sdf_range, y + sdf_range) / atlas->size;
+						g->uv1 = Vec2(x + size.x - sdf_range, y + size.y - sdf_range) / atlas->size;
 					}
 				}
 
-				return *map[unicode];
+				return map[unicode];
 			}
 
 			inline int get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
@@ -2232,7 +2182,7 @@ namespace flame
 					while (*s)
 					{
 						auto g = get_glyph(*s);
-						w += g.advance;
+						w += g->advance;
 						s++;
 					}
 				}
@@ -2241,7 +2191,7 @@ namespace flame
 					while (s != text_end)
 					{
 						auto g = get_glyph(*s);
-						w += g.advance;
+						w += g->advance;
 						s++;
 					}
 				}

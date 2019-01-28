@@ -49,11 +49,8 @@ namespace flame
 			void set_props();
 
 			void init(const Bvec4 &col);
-			Bvec4 get_pixel(int x, int y);
-			void set_pixel(int x, int y, const Bvec4 &col);
-			void set_pixel(int x, int y, const Hvec4 &col);
-			void get_pixels(void *dst);
-			void set_pixels(void *src);
+			void get_pixels(int x, int y, int cx, int cy, void *dst);
+			void set_pixels(int x, int y, int cx, int cy, const void *src);
 
 			void save_png(const wchar_t *filename);
 		};

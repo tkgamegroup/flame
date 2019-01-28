@@ -222,7 +222,7 @@ namespace flame
 				command_line += L" -flimit-file ";
 				command_line += conf_path_abs;
 				command_line += L" -o temp.spv";
-				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), command_line.c_str());
+				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), w2s(command_line).c_str());
 				std::filesystem::remove(temp_filename);
 				if (!std::filesystem::exists("temp.spv"))
 				{
