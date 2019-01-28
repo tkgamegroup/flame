@@ -20,8 +20,23 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
-#include <flame/graphics/bp_nodes.h>
+#include <flame/graphics/graphics.h>
 
 namespace flame
 {
+	struct BP_GraphicsSwapchain : R
+	{
+		void* swapchain_in$i;
+
+		void* swapchain_out$o;
+		void* window$o;
+		void* image0$o;
+		void* image1$o;
+
+		inline BP_GraphicsSwapchain() :
+			swapchain_in$i(nullptr),
+			swapchain_out$o(nullptr)
+		{
+		}
+	};
 }

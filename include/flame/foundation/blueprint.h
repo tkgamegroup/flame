@@ -96,6 +96,15 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
 	};
 
+	// here, we define some blueprint nodes
+	// you can define your own, here are the rules:
+	// 1. name must starts with BP_
+	// 2. it must and only inherits from R
+	// 3. it must have a ctor that has no parameters
+	// 4. it must have a function call update that has no parameters and has no return value
+
+	// ** the ctor, update function will be collectd by typeinfogen
+
 	struct BP_Vec2 : R
 	{
 		float x$i;
@@ -103,12 +112,8 @@ namespace flame
 
 		Vec2 out$o;
 
-		inline BP_Vec2() :
-			x$i(0.f),
-			y$i(0.f),
-			out$o(0.f, 0.f)
-		{
-		}
+		FLAME_FOUNDATION_EXPORTS BP_Vec2();
+		FLAME_FOUNDATION_EXPORTS void update();
 	};
 }
 

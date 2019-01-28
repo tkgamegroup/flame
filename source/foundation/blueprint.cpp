@@ -617,6 +617,13 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
+	BP_Vec2::BP_Vec2() :
+		x$i(0.f),
+		y$i(0.f),
+		out$o(0.f, 0.f)
+	{
+	}
+
 	BP_Vec2 bp_vec2_unused;
 }
 

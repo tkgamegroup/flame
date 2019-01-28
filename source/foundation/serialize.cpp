@@ -1899,13 +1899,12 @@ namespace flame
 										}
 										members->Release();
 
-										std::wstring udt_name_no_ns;
+										std::wstring udt_name_no_ns; // no namespace
 										{
 											auto sp = string_split(udt_name, ':');
 											udt_name_no_ns = s2w(sp.back());
 										}
 
-										auto found_ctor = false;
 										IDiaEnumSymbols *functions;
 										symbol->findChildren(SymTagFunction, NULL, nsNone, &functions);
 										IDiaSymbol *function;
@@ -1919,6 +1918,9 @@ namespace flame
 												function->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
 												if (SUCCEEDED(parameters->get_Count(&l)) && l == 0)
 												{
+													// a ctor func is a func that its name equals its class's name and its count of parameters is 0
+													// we get the ctor func and try to run it at a dummy memory to get the default value of the class
+
 													function->get_relativeVirtualAddress(&dw);
 													if (dw)
 													{
@@ -1943,17 +1945,12 @@ namespace flame
 																memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
 														}
 														free(new_obj);
-
-														found_ctor = true;
 													}
 												}
 												parameters->Release();
 											}
 
 											function->Release();
-
-											if (found_ctor)
-												break;
 										}
 										functions->Release();
 
