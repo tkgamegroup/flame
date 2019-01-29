@@ -32,11 +32,12 @@ namespace flame
 		void* window$o;
 		void* image0$o;
 		void* image1$o;
+		void* renderpass_clear$o;
+		void* renderpass_dont_clear$o;
+		void* framebuffer0$o;
+		void* framebuffer1$o;
 
-		inline BP_GraphicsSwapchain() :
-			swapchain_in$i(nullptr),
-			swapchain_out$o(nullptr)
-		{
-		}
+		FLAME_GRAPHICS_EXPORTS BP_GraphicsSwapchain();
+		FLAME_GRAPHICS_EXPORTS void update();
 	};
 }

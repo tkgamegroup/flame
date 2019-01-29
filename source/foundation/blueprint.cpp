@@ -85,8 +85,12 @@ namespace flame
 		std::vector<std::unique_ptr<OutputPrivate>> outputs;
 		bool enable;
 
+		bool updated;
+
 		inline NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt);
 		inline ~NodePrivate();
+
+		inline void update();
 	};
 
 	struct BPPrivate : BP
@@ -622,6 +626,12 @@ namespace flame
 		y$i(0.f),
 		out$o(0.f, 0.f)
 	{
+	}
+
+	void BP_Vec2::update()
+	{
+		out$o.x = x$i;
+		out$o.y = y$i;
 	}
 
 	BP_Vec2 bp_vec2_unused;

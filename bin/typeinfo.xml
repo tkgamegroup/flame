@@ -121,6 +121,12 @@
 			<item name="CullModeBack" value="2"/>
 			<item name="CullModeFrontAndback" value="3"/>
 		</enum>
+		<enum name="FileChangeType">
+			<item name="FileAdded" value="0"/>
+			<item name="FileRemoved" value="1"/>
+			<item name="FileModified" value="2"/>
+			<item name="FileRenamed" value="3"/>
+		</enum>
 		<enum name="MouseKey">
 			<item name="Mouse_Null" value="255"/>
 			<item name="Mouse_Left" value="0"/>
@@ -216,6 +222,12 @@
 			<item name="BufferUsageVertex" value="32"/>
 			<item name="BufferUsageIndirect" value="64"/>
 		</enum>
+		<enum name="FileWatcherOption">
+			<item name="FileWatcherMonitorAllChanges" value="1"/>
+			<item name="FileWatcherMonitorOnlyContentChanged" value="2"/>
+			<item name="FileWatcherSynchronous" value="4"/>
+			<item name="FileWatcherAsynchronous" value="8"/>
+		</enum>
 		<enum name="graphics::SampleCount">
 			<item name="SampleCount_1" value="0"/>
 			<item name="SampleCount_2" value="1"/>
@@ -223,6 +235,12 @@
 			<item name="SampleCount_8" value="3"/>
 			<item name="SampleCount_16" value="4"/>
 			<item name="SampleCount_32" value="5"/>
+		</enum>
+		<enum name="graphics::DrawCmdType">
+			<item name="DrawCmd2d" value="0"/>
+			<item name="DrawCmdText" value="1"/>
+			<item name="DrawCmdTextSdf" value="2"/>
+			<item name="DrawCmdScissor" value="3"/>
 		</enum>
 		<enum name="graphics::Format">
 			<item name="Format_Undefined" value="0"/>
@@ -365,6 +383,19 @@
 			<item tag="varible" type="float" name="x" attribute="i" offset="0" default_value="0.0"/>
 			<item tag="varible" type="float" name="y" attribute="i" offset="4" default_value="0.0"/>
 			<item tag="varible" type="Vec2" name="out" attribute="o" offset="8" default_value="0.0;0.0"/>
+			<update_function module="flame_foundation.dll" rva="328128"/>
+		</udt>
+		<udt name="BP_GraphicsSwapchain">
+			<item tag="pointer" type="void" name="swapchain_in" attribute="i" offset="0"/>
+			<item tag="pointer" type="void" name="swapchain_out" attribute="o" offset="8"/>
+			<item tag="pointer" type="void" name="window" attribute="o" offset="16"/>
+			<item tag="pointer" type="void" name="image0" attribute="o" offset="24"/>
+			<item tag="pointer" type="void" name="image1" attribute="o" offset="32"/>
+			<item tag="pointer" type="void" name="renderpass_clear" attribute="o" offset="40"/>
+			<item tag="pointer" type="void" name="renderpass_dont_clear" attribute="o" offset="48"/>
+			<item tag="pointer" type="void" name="framebuffer0" attribute="o" offset="56"/>
+			<item tag="pointer" type="void" name="framebuffer1" attribute="o" offset="64"/>
+			<update_function module="flame_graphics.dll" rva="171088"/>
 		</udt>
 	</udts>
 </typeinfo>

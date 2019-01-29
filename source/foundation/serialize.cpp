@@ -530,11 +530,15 @@ namespace flame
 	{
 		std::string name;
 		std::vector<std::unique_ptr<VaribleInfoPrivate>> items;
+		void* update_function_rva;
+		std::wstring update_function_module_name;
 
 		int find_pos;
 
 		inline UDTPrivate()
 		{
+			update_function_rva = nullptr;
+
 			find_pos = 0;
 		}
 
@@ -582,6 +586,16 @@ namespace flame
 	int UDT::find_item_i(const char *name) const
 	{
 		return ((UDTPrivate*)this)->find_item_i(name);
+	}
+
+	const void* UDT::update_function_rva() const
+	{
+		return ((UDTPrivate*)this)->update_function_rva;
+	}
+
+	const wchar_t* UDT::update_function_module_name() const
+	{
+		return ((UDTPrivate*)this)->update_function_module_name.c_str();
 	}
 
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
@@ -1699,7 +1713,7 @@ namespace flame
 					}
 
 					auto dll_path = ext_replace(fn, L".dll");
-					HMODULE dll_module = 0;
+					HMODULE module = 0;
 
 					LONG l;
 					ULONG ul;
@@ -1912,11 +1926,16 @@ namespace flame
 										{
 											function->get_name(&pwname);
 											std::wstring wname(pwname);
-											if (wname == udt_name_no_ns)
+											IDiaSymbol* function_type;
+											function->get_type(&function_type);
+											IDiaSymbol* return_type;
+											function_type->get_type(&return_type);
+											IDiaEnumSymbols *parameters;
+											function->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+											if (SUCCEEDED(parameters->get_Count(&l)))
 											{
-												IDiaEnumSymbols *parameters;
-												function->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-												if (SUCCEEDED(parameters->get_Count(&l)) && l == 0)
+												auto parameters_count = l;
+												if (wname == udt_name_no_ns && parameters_count == 0)
 												{
 													// a ctor func is a func that its name equals its class's name and its count of parameters is 0
 													// we get the ctor func and try to run it at a dummy memory to get the default value of the class
@@ -1924,8 +1943,8 @@ namespace flame
 													function->get_relativeVirtualAddress(&dw);
 													if (dw)
 													{
-														if (!dll_module)
-															dll_module = LoadLibraryW(dll_path.c_str());
+														if (!module)
+															module = LoadLibraryW(dll_path.c_str());
 														struct Dummy
 														{
 														};
@@ -1935,7 +1954,7 @@ namespace flame
 															void *p;
 															F f;
 														}ctor;
-														ctor.p = (char*)dll_module + dw;
+														ctor.p = (char*)module + dw;
 
 														auto new_obj = (Dummy*)malloc(udt_size);
 														(*new_obj.*ctor.f)();
@@ -1947,8 +1966,24 @@ namespace flame
 														free(new_obj);
 													}
 												}
-												parameters->Release();
+												else if (wname == L"update")
+												{
+													DWORD baseType;
+													return_type->get_baseType(&baseType);
+													if (baseType == btVoid)
+													{
+														function->get_relativeVirtualAddress(&dw);
+														if (dw)
+														{
+															udt->update_function_rva = (void*)dw;
+															udt->update_function_module_name = dll_path;
+														}
+													}
+												}
 											}
+											function_type->Release();
+											return_type->Release();
+											parameters->Release();
 
 											function->Release();
 										}
@@ -1964,8 +1999,8 @@ namespace flame
 					}
 					symbols->Release();
 
-					if (dll_module)
-						FreeLibrary(dll_module);
+					if (module)
+						FreeLibrary(module);
 				}
 			}
 		}
@@ -2081,6 +2116,13 @@ namespace flame
 				auto default_value_str = i->serialize_default_value(1);
 				if (default_value_str.size() > 0)
 					n_item->new_attr("default_value", default_value_str);
+			}
+
+			if (u.second->update_function_rva)
+			{
+				auto n_update_function = n_udt->new_node("update_function");
+				n_update_function->new_attr("module", w2s(u.second->update_function_module_name));
+				n_update_function->new_attr("rva", to_string((uint)u.second->update_function_rva).v);
 			}
 		}
 

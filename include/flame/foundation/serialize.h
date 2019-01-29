@@ -618,6 +618,9 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS int item_count() const;
 		FLAME_FOUNDATION_EXPORTS VaribleInfo *item(int idx) const;
 		FLAME_FOUNDATION_EXPORTS int find_item_i(const char *name) const;
+
+		FLAME_FOUNDATION_EXPORTS const void* update_function_rva() const;
+		FLAME_FOUNDATION_EXPORTS const wchar_t* update_function_module_name() const;
 	};
 
 	typedef UDT* UDTPtr;

@@ -24,4 +24,22 @@
 
 namespace flame
 {
+	BP_GraphicsSwapchain::BP_GraphicsSwapchain() :
+		swapchain_in$i(nullptr),
+		swapchain_out$o(nullptr),
+		window$o(nullptr),
+		image0$o(nullptr),
+		image1$o(nullptr),
+		renderpass_clear$o(nullptr),
+		renderpass_dont_clear$o(nullptr),
+		framebuffer0$o(nullptr),
+		framebuffer1$o(nullptr)
+	{
+	}
+
+	void BP_GraphicsSwapchain::update()
+	{
+		if (swapchain_in$i)
+			swapchain_out$o = swapchain_in$i;
+	}
 }
