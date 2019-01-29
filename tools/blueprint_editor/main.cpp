@@ -56,14 +56,15 @@ int main(int argc, char **args)
 		{
 			printf(
 				"	help - show this help\n"
-				"	show udts - show all available udts (name started with 'BP_', has at least one item has 'i' attribute and one item has 'o' attribute)\n"
+				"	show udts - show all available udts (see blueprint.h for more details)\n"
 				"	show udt [udt_name] - show an udt\n"
 				"	show nodes - show all nodes\n"
 				"	show node [id] - show a node\n"
 				"	add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
-				"	remove node [id] - remove a node\n"
 				"	add link [out_adress] [in_adress] - add a link (e.g. add link a.b c.d.0)\n"
+				"	remove node [id] - remove a node\n"
 				"	remove link [in_adress] - remove a link (e.g. remove link c.d.0)\n"
+				"	set [in_adress] [value] - set value for item (e.g. set a.b.0 46)\n"
 				"	save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
 			);
 		}
@@ -259,6 +260,37 @@ int main(int argc, char **args)
 			}
 			else
 				printf("unknow object to remove\n");
+		}
+		else if (s_command_line == "set")
+		{
+			scanf("%s", command_line);
+			auto s_address = std::string(command_line);
+
+			scanf("%s", command_line);
+			auto s_value = std::string(command_line);
+
+			auto i = bp->find_item(s_address.c_str());
+			if (i)
+			{
+				VaribleInfo* v;
+				if (i->parent_i())
+					v = i->parent_i()->varible_info();
+				else if (i->parent_o())
+					v = i->parent_o()->varible_info();
+				auto value_before = v->serialize_value(&i->data().v, false, 2);
+				v->unserialize_value(s_value, &i->data().v, false);
+				auto value_after = v->serialize_value(&i->data().v, false, 2);
+				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
+			}
+			else
+				printf("item not found\n");
+		}
+		else if (s_command_line == "update")
+		{
+			bp->install_dummys();
+			bp->update();
+			bp->uninstall_dummys();
+			printf("BP updated\n");
 		}
 		else if (s_command_line == "save")
 		{

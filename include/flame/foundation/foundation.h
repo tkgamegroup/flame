@@ -1023,6 +1023,9 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const char *parameters, bool wait);
 	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
 
+	// now, for void(void) member function or constructor only
+	FLAME_FOUNDATION_EXPORTS void run_module_function(const wchar_t *module_name, const void *rva, void *thiz);
+
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const StringW &s);
 

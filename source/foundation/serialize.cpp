@@ -529,6 +529,7 @@ namespace flame
 	struct UDTPrivate : UDT
 	{
 		std::string name;
+		int size;
 		std::vector<std::unique_ptr<VaribleInfoPrivate>> items;
 		void* update_function_rva;
 		std::wstring update_function_module_name;
@@ -571,6 +572,11 @@ namespace flame
 	const char *UDT::name() const
 	{
 		return ((UDTPrivate*)this)->name.c_str();
+	}
+
+	int UDT::size() const
+	{
+		return ((UDTPrivate*)this)->size;
 	}
 
 	int UDT::item_count() const
@@ -1713,7 +1719,6 @@ namespace flame
 					}
 
 					auto dll_path = ext_replace(fn, L".dll");
-					HMODULE module = 0;
 
 					LONG l;
 					ULONG ul;
@@ -1788,14 +1793,14 @@ namespace flame
 								std::wstring wname(pwname);
 								if (wname == wprefix + L"R")
 								{
-									symbol->get_length(&ull);
-									auto udt_size = (int)ull;
 									auto udt_namehash = H(udt_name.c_str());
 
 									if (udts.find(udt_namehash) == udts.end())
 									{
+										symbol->get_length(&ull);
 										auto udt = new UDTPrivate;
 										udt->name = udt_name;
+										udt->size = (int)ull;
 
 										IDiaEnumSymbols *members;
 										symbol->findChildren(SymTagData, NULL, nsNone, &members);
@@ -1943,21 +1948,8 @@ namespace flame
 													function->get_relativeVirtualAddress(&dw);
 													if (dw)
 													{
-														if (!module)
-															module = LoadLibraryW(dll_path.c_str());
-														struct Dummy
-														{
-														};
-														typedef void (Dummy::*F)();
-														union
-														{
-															void *p;
-															F f;
-														}ctor;
-														ctor.p = (char*)module + dw;
-
-														auto new_obj = (Dummy*)malloc(udt_size);
-														(*new_obj.*ctor.f)();
+														auto new_obj = malloc(udt->size);
+														run_module_function(dll_path.c_str(), (void*)dw, new_obj);
 														for (auto &i : udt->items)
 														{
 															if (i->size <= sizeof(CommonData::v))
@@ -1998,9 +1990,6 @@ namespace flame
 						symbol->Release();
 					}
 					symbols->Release();
-
-					if (module)
-						FreeLibrary(module);
 				}
 			}
 		}
@@ -2045,6 +2034,7 @@ namespace flame
 			{
 				auto u = new UDTPrivate;
 				u->name = n_udt->find_attr("name")->value();
+				u->size = std::stoi(n_udt->find_attr("size")->value());
 
 				for (auto j = 0; j < n_udt->node_count(); j++)
 				{
@@ -2067,6 +2057,7 @@ namespace flame
 						i->name = n_item->find_attr("name")->value();
 						i->attribute = n_item->find_attr("attribute")->value();
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
+						i->size = std::stoi(n_item->find_attr("size")->value());
 						auto a_default_value = n_item->find_attr("default_value");
 						if (a_default_value)
 							i->unserialize_default_value(a_default_value->value());
@@ -2104,6 +2095,7 @@ namespace flame
 		{
 			auto n_udt = n_serializables->new_node("udt");
 			n_udt->new_attr("name", u.second->name);
+			n_udt->new_attr("size", std::to_string(u.second->size));
 
 			for (auto &i : u.second->items)
 			{
@@ -2113,6 +2105,7 @@ namespace flame
 				n_item->new_attr("name", i->name);
 				n_item->new_attr("attribute", i->attribute);
 				n_item->new_attr("offset", std::to_string(i->offset));
+				n_item->new_attr("size", std::to_string(i->size));
 				auto default_value_str = i->serialize_default_value(1);
 				if (default_value_str.size() > 0)
 					n_item->new_attr("default_value", default_value_str);

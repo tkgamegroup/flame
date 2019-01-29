@@ -86,6 +86,7 @@ namespace flame
 		bool enable;
 
 		bool updated;
+		void* dummy; // represents the object
 
 		inline NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt);
 		inline ~NodePrivate();
@@ -104,6 +105,11 @@ namespace flame
 		inline ItemPrivate *find_item(const std::string &address);
 
 		inline void clear();
+
+		inline void install_dummys();
+		inline void uninstall_dummys();
+		inline void update();
+
 		inline void load(const wchar_t *filename);
 		inline void save(const wchar_t *filename);
 	};
@@ -144,7 +150,7 @@ namespace flame
 		varible_info(_varible_info)
 	{
 		if (!is_array())
-			/* so we need an element stands for the content */
+			/* so we need an item stands for the content */
 			items.emplace_back(new ItemPrivate(this, nullptr));
 	}
 
@@ -181,7 +187,10 @@ namespace flame
 	NodePrivate::NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt) :
 		bp(_bp),
 		id(_id),
-		udt(_udt)
+		udt(_udt),
+		enable(true),
+		updated(false),
+		dummy(nullptr)
 	{
 		for (auto i = 0; i < udt->item_count(); i++)
 		{
@@ -211,6 +220,32 @@ namespace flame
 			if (link)
 				link->link = nullptr;
 		}
+	}
+
+	void NodePrivate::update()
+	{
+		// if we have updated this node in one frame, return
+		if (updated)
+			return;
+		// now, check if all inputs' nodes are updated, if not, update them
+		for (auto &input : inputs)
+		{
+			for (auto &i : input->items)
+			{
+				auto link = i->link;
+				if (link)
+				{
+					auto n = link->parent_o->node;
+					if (!n->updated)
+						n->update();
+				}
+			}
+		}
+		// do this node's updating
+		auto update_function_rva = udt->update_function_rva();
+		if (update_function_rva)
+			run_module_function(udt->update_function_module_name(), update_function_rva, dummy);
+		updated = true;
 	}
 
 	NodePrivate *BPPrivate::add_node(const char *id, UDT *udt)
@@ -305,6 +340,45 @@ namespace flame
 	void BPPrivate::clear()
 	{
 		nodes.clear();
+	}
+
+	inline void BPPrivate::install_dummys()
+	{
+		for (auto &n : nodes)
+		{
+			if (!n->dummy)
+				n->dummy = malloc(n->udt->size);
+		}
+	}
+
+	inline void BPPrivate::uninstall_dummys()
+	{
+		for (auto &n : nodes)
+		{
+			if (n->dummy)
+			{
+				free(n->dummy);
+				n->dummy = nullptr;
+			}
+		}
+	}
+
+	inline void BPPrivate::update()
+	{
+		// set all nodes to not-updated, and put their inputs into dummy
+		for (auto &n : nodes)
+		{
+			n->updated = false;
+
+		}
+		// update all nodes
+		for (auto &n : nodes)
+			n->update();
+		// get nodes' ouputs from dummy
+		for (auto &n : nodes)
+		{
+
+		}
 	}
 
 	void BPPrivate::load(const wchar_t *filename)
@@ -452,6 +526,11 @@ namespace flame
 		return ((ItemPrivate*)this)->data;
 	}
 
+	void BP::Item::set_data(const CommonData &d)
+	{
+		((ItemPrivate*)this)->data = d;
+	}
+
 	BP::Item *BP::Item::link() const
 	{
 		return ((ItemPrivate*)this)->link;
@@ -595,6 +674,21 @@ namespace flame
 	void BP::clear()
 	{
 		((BPPrivate*)this)->clear();
+	}
+
+	void BP::install_dummys()
+	{
+		((BPPrivate*)this)->install_dummys();
+	}
+
+	void BP::uninstall_dummys()
+	{
+		((BPPrivate*)this)->uninstall_dummys();
+	}
+
+	void BP::update()
+	{
+		((BPPrivate*)this)->update();
 	}
 
 	void BP::save(const wchar_t *filename)

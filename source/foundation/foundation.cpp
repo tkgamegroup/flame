@@ -214,6 +214,26 @@ namespace flame
 		return output;
 	}
 
+	void run_module_function(const wchar_t *module_name, const void *rva, void *_thiz)
+	{
+		auto module = LoadLibraryW(module_name);
+		if (module)
+		{
+			struct Dummy { };
+			auto thiz = (Dummy*)_thiz;
+			typedef void (Dummy::*F)();
+			union
+			{
+				void *p;
+				F f;
+			}cvt;
+			cvt.p = (char*)module + (uint)rva;
+			(*thiz.*cvt.f)();
+
+			FreeLibrary(module);
+		}
+	}
+
 	StringW get_clipboard()
 	{
 		OpenClipboard(NULL);

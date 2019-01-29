@@ -26,6 +26,19 @@
 
 namespace flame
 {
+	/*
+		- A blueprint(BP) is a scene that represents relations between objects.
+		- An object is called node in a BP.
+		- A node is bound to an udt which its name started with 'BP_'.
+		- The reflected members of the udt will be separated into inputs and outpus.
+		- An input has an attribute 'i', and an output has an attribute 'o'.
+		- Both inputs and outputs must be compatible with CommonData.
+		- Only for inputs, if it is an Array<>, there will be multiple items of it,
+		  else, there will be only one item of it
+		- An available udt must have at least one input and one output
+		- A BP file is basically a XML file, you can use both .xml or .bp.
+	*/
+
 	struct EnumInfo;
 	struct VaribleInfo;
 	struct UDT;
@@ -41,11 +54,12 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Input *parent_i() const; // null or its parent is input
 			FLAME_FOUNDATION_EXPORTS Output *parent_o() const; // null or its parent is output
 			FLAME_FOUNDATION_EXPORTS CommonData &data();
+			FLAME_FOUNDATION_EXPORTS void set_data(const CommonData &d); // setting datas for output's item is ok, but the data will be rushed when the node update
 
 			FLAME_FOUNDATION_EXPORTS Item *link() const;
-			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // well, it is vaild for input's item only
+			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // it is vaild for input's item only
 
-			FLAME_FOUNDATION_EXPORTS String get_address() const; // node_id.varible_name.item_index (item_index is default for 0)
+			FLAME_FOUNDATION_EXPORTS String get_address() const; // node_id.varible_name.item_index (item_index is default for 0, vaild on input's item)
 		};
 
 		struct Input
@@ -64,7 +78,7 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS Node *node() const;
 			FLAME_FOUNDATION_EXPORTS VaribleInfo *varible_info() const;
-			FLAME_FOUNDATION_EXPORTS Item *item() const; /* output has only one item */
+			FLAME_FOUNDATION_EXPORTS Item *item() const;
 		};
 
 		struct Node
@@ -78,6 +92,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Output *output(int idx) const;
 			FLAME_FOUNDATION_EXPORTS bool enable() const;
 			FLAME_FOUNDATION_EXPORTS void set_enable(bool enable) const;
+
+			FLAME_FOUNDATION_EXPORTS void update() const;
 		};
 
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
@@ -89,6 +105,14 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Item *find_item(const char *address);
 
 		FLAME_FOUNDATION_EXPORTS void clear();
+
+		// before you update the BP, you should call install_dummys, basically, 
+		// it let all notes create a piece of memory to represent the 'true' object
+		FLAME_FOUNDATION_EXPORTS void install_dummys();
+		// when you're done all of your updatings, call uninstall_dummys
+		FLAME_FOUNDATION_EXPORTS void uninstall_dummys();
+		FLAME_FOUNDATION_EXPORTS void update();
+
 		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
 
 		FLAME_FOUNDATION_EXPORTS static BP *create();
@@ -96,14 +120,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
 	};
 
-	// here, we define some blueprint nodes
-	// you can define your own, here are the rules:
-	// 1. name must starts with BP_
-	// 2. it must and only inherits from R
-	// 3. it must have a ctor that has no parameters
-	// 4. it must have a function call update that has no parameters and has no return value
-
-	// ** the ctor, update function will be collectd by typeinfogen
+	// here, we define some basic blueprint nodes
 
 	struct BP_Vec2 : R
 	{
