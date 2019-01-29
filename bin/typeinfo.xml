@@ -383,7 +383,7 @@
 			<item tag="varible" type="float" name="x" attribute="i" offset="0" size="4" default_value="0.0"/>
 			<item tag="varible" type="float" name="y" attribute="i" offset="4" size="4" default_value="0.0"/>
 			<item tag="varible" type="Vec2" name="out" attribute="o" offset="8" size="8" default_value="0.0;0.0"/>
-			<update_function module="flame_foundation.dll" rva="328528"/>
+			<update_function rva="328144" module="flame_foundation.dll"/>
 		</udt>
 		<udt name="BP_GraphicsSwapchain" size="72">
 			<item tag="pointer" type="void" name="swapchain_in" attribute="i" offset="0" size="8"/>
@@ -395,7 +395,7 @@
 			<item tag="pointer" type="void" name="renderpass_dont_clear" attribute="o" offset="48" size="8"/>
 			<item tag="pointer" type="void" name="framebuffer0" attribute="o" offset="56" size="8"/>
 			<item tag="pointer" type="void" name="framebuffer1" attribute="o" offset="64" size="8"/>
-			<update_function module="flame_graphics.dll" rva="171088"/>
+			<update_function rva="171088" module="flame_graphics.dll"/>
 		</udt>
 	</udts>
 </typeinfo>

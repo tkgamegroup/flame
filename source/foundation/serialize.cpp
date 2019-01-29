@@ -131,37 +131,52 @@ namespace flame
 			{
 			case VariableTagEnumSingle: case VariableTagEnumMulti:
 				dst->i1() = *(int*)src;
+				break;
 			case VariableTagVariable:
 				switch (type_hash)
 				{
 				case cH("bool"):
 					dst->i1() = *(bool*)src;
+					break;
 				case cH("uint"):
 					dst->i1() = *(uint*)src;
+					break;
 				case cH("int"):
 					dst->i1() = *(int*)src;
+					break;
 				case cH("Ivec2"):
 					dst->i2() = *(Ivec2*)src;
+					break;
 				case cH("Ivec3"):
 					dst->i3() = *(Ivec3*)src;
+					break;
 				case cH("Ivec4"):
 					dst->i4() = *(Ivec4*)src;
+					break;
 				case cH("float"):
 					dst->f1() = *(float*)src;
+					break;
 				case cH("Vec2"):
 					dst->f2() = *(Vec2*)src;
+					break;
 				case cH("Vec3"):
 					dst->f3() = *(Vec3*)src;
+					break;
 				case cH("Vec4"):
 					dst->f4() = *(Vec4*)src;
+					break;
 				case cH("uchar"):
 					dst->b1() = *(uchar*)src;
+					break;
 				case cH("Bvec2"):
 					dst->b2() = *(Bvec2*)src;
+					break;
 				case cH("Bvec3"):
 					dst->b3() = *(Bvec3*)src;
+					break;
 				case cH("Bvec4"):
 					dst->b4() = *(Bvec4*)src;
+					break;
 				}
 				break;
 			}
@@ -175,37 +190,52 @@ namespace flame
 			{
 			case VariableTagEnumSingle: case VariableTagEnumMulti:
 				*(int*)dst = src->v.i[0];
+				break;
 			case VariableTagVariable:
 				switch (type_hash)
 				{
 				case cH("bool"):
 					*(bool*)dst = src->v.i[0];
+					break;
 				case cH("uint"):
 					*(uint*)dst = src->v.i[0];
+					break;
 				case cH("int"):
 					*(int*)dst = src->v.i[0];
+					break;
 				case cH("Ivec2"):
 					*(Ivec2*)dst = src->v.i;
+					break;
 				case cH("Ivec3"):
 					*(Ivec3*)dst = src->v.i;
+					break;
 				case cH("Ivec4"):
 					*(Ivec4*)dst = src->v.i;
+					break;
 				case cH("float"):
 					*(float*)dst = src->v.f[0];
+					break;
 				case cH("Vec2"):
 					*(Vec2*)dst = src->v.f;
+					break;
 				case cH("Vec3"):
 					*(Vec3*)dst = src->v.f;
+					break;
 				case cH("Vec4"):
 					*(Vec4*)dst = src->v.f;
+					break;
 				case cH("uchar"):
 					*(uchar*)dst = src->v.b[0];
+					break;
 				case cH("Bvec2"):
 					*(Bvec2*)dst = src->v.b;
+					break;
 				case cH("Bvec3"):
 					*(Bvec3*)dst = src->v.b;
+					break;
 				case cH("Bvec4"):
 					*(Bvec4*)dst = src->v.b;
+					break;
 				}
 				break;
 			}
@@ -596,12 +626,12 @@ namespace flame
 
 	void VaribleInfo::get(const void *src, bool is_obj, CommonData *dst) const
 	{
-
+		((VaribleInfoPrivate*)this)->get(src, is_obj, dst);
 	}
 
 	void VaribleInfo::set(const CommonData *src, void *dst, bool is_obj) const
 	{
-
+		((VaribleInfoPrivate*)this)->set(src, dst, is_obj);
 	}
 
 	bool VaribleInfo::compare(void *src, void *dst) const
@@ -2163,6 +2193,13 @@ namespace flame
 					}
 				}
 
+				auto n_update_function = n_udt->find_node("update_function");
+				if (n_update_function)
+				{
+					u->update_function_rva = (void*)stou1(n_update_function->find_attr("rva")->value().c_str());
+					u->update_function_module_name = s2w(n_update_function->find_attr("module")->value());
+				}
+
 				udts.emplace(H(u->name.c_str()), u);
 			}
 		}
@@ -2212,8 +2249,8 @@ namespace flame
 			if (u.second->update_function_rva)
 			{
 				auto n_update_function = n_udt->new_node("update_function");
-				n_update_function->new_attr("module", w2s(u.second->update_function_module_name));
 				n_update_function->new_attr("rva", to_string((uint)u.second->update_function_rva).v);
+				n_update_function->new_attr("module", w2s(u.second->update_function_module_name));
 			}
 		}
 

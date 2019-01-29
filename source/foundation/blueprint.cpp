@@ -347,7 +347,11 @@ namespace flame
 		for (auto &n : nodes)
 		{
 			if (!n->dummy)
-				n->dummy = malloc(n->udt->size());
+			{
+				auto size = n->udt->size();
+				n->dummy = malloc(size);
+				memset(n->dummy, 0, size);
+			}
 		}
 	}
 
@@ -379,7 +383,7 @@ namespace flame
 				{
 					auto v = input->varible_info;
 					auto i = input->items[0].get();
-					
+					v->set(&i->data, n->dummy, true);
 				}
 			}
 		}
@@ -389,7 +393,12 @@ namespace flame
 		// get nodes' ouputs from dummy
 		for (auto &n : nodes)
 		{
-
+			for (auto &output : n->outputs)
+			{
+				auto v = output->varible_info;
+				auto i = output->item.get();
+				v->get(n->dummy, true , &i->data);
+			}
 		}
 	}
 
