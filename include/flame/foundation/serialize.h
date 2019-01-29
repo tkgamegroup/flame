@@ -605,6 +605,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS int size() const;
 		FLAME_FOUNDATION_EXPORTS const CommonData &default_value() const;
 
+		FLAME_FOUNDATION_EXPORTS void get(const void *src, bool is_obj, CommonData *dst) const;
+		FLAME_FOUNDATION_EXPORTS void set(const CommonData *src, void *dst, bool is_obj) const;
 		FLAME_FOUNDATION_EXPORTS bool compare(void *src, void *dst) const;
 		FLAME_FOUNDATION_EXPORTS bool compare_to_default(void *src, bool is_obj) const;
 		FLAME_FOUNDATION_EXPORTS String serialize_value(void *src, bool is_obj, int precision = 6) const;

@@ -347,7 +347,7 @@ namespace flame
 		for (auto &n : nodes)
 		{
 			if (!n->dummy)
-				n->dummy = malloc(n->udt->size);
+				n->dummy = malloc(n->udt->size());
 		}
 	}
 
@@ -369,7 +369,19 @@ namespace flame
 		for (auto &n : nodes)
 		{
 			n->updated = false;
-
+			for (auto &input : n->inputs)
+			{
+				if (input->is_array())
+				{
+					// TODO: WIP
+				}
+				else
+				{
+					auto v = input->varible_info;
+					auto i = input->items[0].get();
+					
+				}
+			}
 		}
 		// update all nodes
 		for (auto &n : nodes)
