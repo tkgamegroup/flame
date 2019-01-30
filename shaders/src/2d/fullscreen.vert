@@ -4,7 +4,7 @@
 #define UBO_MATRIX_BINDING 0
 #endif
 
-#include "resources.glsl"
+#include "../resources.glsl"
 
 #if defined(UV)
 layout(location = 0) out vec2 o_uv;

@@ -453,8 +453,8 @@ namespace flame
 			}
 			{
 				GraphicsPipelineInfo info;
-				info.shaders.emplace_back(L"fullscreen.vert", "#define UV\n");
-				info.shaders.emplace_back(L"tex-trans.frag", "");
+				info.shaders.emplace_back(L"2d/fullscreen.vert", "#define UV\n");
+				info.shaders.emplace_back(L"2d/tex-trans.frag", "");
 				info.renderpass = rp_one_rgba32;
 				pl_trans = Pipeline::create(this, info);
 			}

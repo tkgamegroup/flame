@@ -736,19 +736,145 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
+	BP_Int::BP_Int() :
+		v$i(0.f),
+		v$o(0.f)
+	{
+	}
+
+	void BP_Int::update()
+	{
+		v$o = v$i;
+	}
+
+	BP_Int bp_int_unused;
+
+	BP_Float::BP_Float() :
+		v$i(0.f),
+		v$o(0.f)
+	{
+	}
+
+	void BP_Float::update()
+	{
+		v$o = v$i;
+	}
+
+	BP_Float bp_float_unused;
+
+	BP_Bool::BP_Bool() :
+		v$i(false),
+		v$o(false)
+	{
+	}
+
+	void BP_Bool::update()
+	{
+		v$o = v$i;
+	}
+
+	BP_Bool bp_bool_unused;
+
 	BP_Vec2::BP_Vec2() :
 		x$i(0.f),
 		y$i(0.f),
-		out$o(0.f, 0.f)
+		v$o(0.f)
 	{
 	}
 
 	void BP_Vec2::update()
 	{
-		out$o.x = x$i;
-		out$o.y = y$i;
+		v$o.x = x$i;
+		v$o.y = y$i;
 	}
 
 	BP_Vec2 bp_vec2_unused;
+
+	BP_Vec3::BP_Vec3() :
+		x$i(0.f),
+		y$i(0.f),
+		z$i(0.f),
+		v$o(0.f)
+	{
+	}
+
+	void BP_Vec3::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+	}
+
+	BP_Vec3 bp_vec3_unused;
+
+	BP_Vec4::BP_Vec4() :
+		x$i(0.f),
+		y$i(0.f),
+		z$i(0.f),
+		w$i(0.f),
+		v$o(0.f)
+	{
+	}
+
+	void BP_Vec4::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+		v$o.w = w$i;
+	}
+
+	BP_Vec4 bp_vec4_unused;
+
+	BP_Ivec2::BP_Ivec2() :
+		x$i(0),
+		y$i(0),
+		v$o(0)
+	{
+	}
+
+	void BP_Ivec2::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+	}
+
+	BP_Ivec2 bp_ivec2_unused;
+
+	BP_Ivec3::BP_Ivec3() :
+		x$i(0),
+		y$i(0),
+		z$i(0),
+		v$o(0)
+	{
+	}
+
+	void BP_Ivec3::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+	}
+
+	BP_Ivec3 bp_ivec3_unused;
+
+	BP_Ivec4::BP_Ivec4() :
+		x$i(0),
+		y$i(0),
+		z$i(0),
+		w$i(0),
+		v$o(0)
+	{
+	}
+
+	void BP_Ivec4::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+		v$o.w = w$i;
+	}
+
+	BP_Ivec4 bp_ivec4_unused;
 }
 

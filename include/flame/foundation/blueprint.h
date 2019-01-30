@@ -122,14 +122,105 @@ namespace flame
 
 	// here, we define some basic blueprint nodes
 
+	struct BP_Int : R
+	{
+		int v$i;
+
+		int v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Int();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Float : R
+	{
+		float v$i;
+
+		float v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Float();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Bool : R
+	{
+		bool v$i;
+
+		bool v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Bool();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
 	struct BP_Vec2 : R
 	{
 		float x$i;
 		float y$i;
 
-		Vec2 out$o;
+		Vec2 v$o;
 
 		FLAME_FOUNDATION_EXPORTS BP_Vec2();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Vec3 : R
+	{
+		float x$i;
+		float y$i;
+		float z$i;
+
+		Vec3 v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Vec3();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Vec4 : R
+	{
+		float x$i;
+		float y$i;
+		float z$i;
+		float w$i;
+
+		Vec4 v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Vec4();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Ivec2 : R
+	{
+		int x$i;
+		int y$i;
+
+		Ivec2 v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Ivec2();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Ivec3 : R
+	{
+		int x$i;
+		int y$i;
+		int z$i;
+
+		Ivec3 v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Ivec3();
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Ivec4 : R
+	{
+		int x$i;
+		int y$i;
+		int z$i;
+		int w$i;
+
+		Ivec4 v$o;
+
+		FLAME_FOUNDATION_EXPORTS BP_Ivec4();
 		FLAME_FOUNDATION_EXPORTS void update();
 	};
 }
