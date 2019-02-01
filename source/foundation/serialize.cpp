@@ -654,7 +654,7 @@ namespace flame
 		return ((VaribleInfoPrivate*)this)->unserialize_value(str, dst, is_obj);
 	}
 
-	struct UDTPrivate : UDT
+	struct UdtInfoPrivate : UdtInfo
 	{
 		std::string name;
 		int size;
@@ -664,7 +664,7 @@ namespace flame
 
 		int find_pos;
 
-		inline UDTPrivate()
+		inline UdtInfoPrivate()
 		{
 			update_function_rva = nullptr;
 
@@ -697,43 +697,43 @@ namespace flame
 		}
 	};
 
-	const char *UDT::name() const
+	const char *UdtInfo::name() const
 	{
-		return ((UDTPrivate*)this)->name.c_str();
+		return ((UdtInfoPrivate*)this)->name.c_str();
 	}
 
-	int UDT::size() const
+	int UdtInfo::size() const
 	{
-		return ((UDTPrivate*)this)->size;
+		return ((UdtInfoPrivate*)this)->size;
 	}
 
-	int UDT::item_count() const
+	int UdtInfo::item_count() const
 	{
-		return ((UDTPrivate*)this)->items.size();
+		return ((UdtInfoPrivate*)this)->items.size();
 	}
 
-	VaribleInfo *UDT::item(int idx) const
+	VaribleInfo *UdtInfo::item(int idx) const
 	{
-		return ((UDTPrivate*)this)->items[idx].get();
+		return ((UdtInfoPrivate*)this)->items[idx].get();
 	}
 
-	int UDT::find_item_i(const char *name) const
+	int UdtInfo::find_item_i(const char *name) const
 	{
-		return ((UDTPrivate*)this)->find_item_i(name);
+		return ((UdtInfoPrivate*)this)->find_item_i(name);
 	}
 
-	const void* UDT::update_function_rva() const
+	const void* UdtInfo::update_function_rva() const
 	{
-		return ((UDTPrivate*)this)->update_function_rva;
+		return ((UdtInfoPrivate*)this)->update_function_rva;
 	}
 
-	const wchar_t* UDT::update_function_module_name() const
+	const wchar_t* UdtInfo::update_function_module_name() const
 	{
-		return ((UDTPrivate*)this)->update_function_module_name.c_str();
+		return ((UdtInfoPrivate*)this)->update_function_module_name.c_str();
 	}
 
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
-	static std::map<unsigned int, std::unique_ptr<UDTPrivate>> udts;
+	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
 
 	Array<EnumInfo*> get_enums()
 	{
@@ -754,9 +754,9 @@ namespace flame
 		return it == enums.end() ? nullptr : it->second.get();
 	}
 
-	Array<UDT*> get_udts()
+	Array<UdtInfo*> get_udts()
 	{
-		Array<UDT*> ret;
+		Array<UdtInfo*> ret;
 		ret.resize(udts.size());
 		auto i = 0;
 		for (auto it = udts.begin(); it != udts.end(); it++)
@@ -767,7 +767,7 @@ namespace flame
 		return ret;
 	}
 
-	UDT *find_udt(unsigned int name_hash)
+	UdtInfo *find_udt(unsigned int name_hash)
 	{
 		auto it = udts.find(name_hash);
 		return it == udts.end() ? nullptr : it->second.get();
@@ -995,7 +995,7 @@ namespace flame
 		return (SerializableNodePrivate*)n;
 	}
 
-	static void *create_obj(UDT *u, Function<SerializableNode::ObjGeneratorParm> &obj_generator, void *parent, uint att_hash)
+	static void *create_obj(UdtInfo *u, Function<SerializableNode::ObjGeneratorParm> &obj_generator, void *parent, uint att_hash)
 	{
 		obj_generator.p.udt() = u;
 		obj_generator.p.udt() = u;
@@ -1157,7 +1157,7 @@ namespace flame
 			return nullptr;
 		}
 
-		void serialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *src, int precision)
+		void serialize_RE(UdtInfo *u, std::vector<std::pair<void*, uint>> &obj_table, void *src, int precision)
 		{
 			for (auto i = 0; i < u->item_count(); i++)
 			{
@@ -1280,7 +1280,7 @@ namespace flame
 			}
 		}
 
-		void unserialize_RE(UDT *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function<SerializableNode::ObjGeneratorParm> &obj_generator)
+		void unserialize_RE(UdtInfo *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function<SerializableNode::ObjGeneratorParm> &obj_generator)
 		{
 			for (auto i = 0; i < node_count(); i++)
 			{
@@ -1605,7 +1605,7 @@ namespace flame
 		bin_save(file, (SerializableNodePrivate*)this);
 	}
 
-	void *SerializableNode::unserialize(UDT *u, Function<ObjGeneratorParm> &obj_generator)
+	void *SerializableNode::unserialize(UdtInfo *u, Function<ObjGeneratorParm> &obj_generator)
 	{
 		assert(name() == "obj");
 
@@ -1714,7 +1714,7 @@ namespace flame
 		delete (SerializableNodePrivate*)n;
 	}
 
-	SerializableNode *SerializableNode::serialize(UDT *u, void *src, int precision)
+	SerializableNode *SerializableNode::serialize(UdtInfo *u, void *src, int precision)
 	{
 		srand(time(0));
 
@@ -1839,6 +1839,7 @@ namespace flame
 						printf("session failed to open\n");
 						continue;
 					}
+
 					CComPtr<IDiaSymbol> global;
 					if (FAILED(session->get_globalScope(&global)))
 					{
@@ -1926,7 +1927,7 @@ namespace flame
 									if (udts.find(udt_namehash) == udts.end())
 									{
 										symbol->get_length(&ull);
-										auto udt = new UDTPrivate;
+										auto udt = new UdtInfoPrivate;
 										udt->name = udt_name;
 										udt->size = (int)ull;
 
@@ -2160,7 +2161,7 @@ namespace flame
 			auto n_udt = n_serializables->node(i);
 			if (n_udt->name() == "udt")
 			{
-				auto u = new UDTPrivate;
+				auto u = new UdtInfoPrivate;
 				u->name = n_udt->find_attr("name")->value();
 				u->size = std::stoi(n_udt->find_attr("size")->value());
 

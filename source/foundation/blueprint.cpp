@@ -80,7 +80,7 @@ namespace flame
 	{
 		BPPrivate *bp;
 		std::string id;
-		UDT *udt;
+		UdtInfo *udt;
 		std::vector<std::unique_ptr<InputPrivate>> inputs;
 		std::vector<std::unique_ptr<OutputPrivate>> outputs;
 		bool enable;
@@ -88,7 +88,7 @@ namespace flame
 		bool updated;
 		void* dummy; // represents the object
 
-		inline NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt);
+		inline NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
 		inline ~NodePrivate();
 
 		inline void update();
@@ -98,7 +98,7 @@ namespace flame
 	{
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
-		inline NodePrivate *add_node(const char *id, UDT *udt);
+		inline NodePrivate *add_node(const char *id, UdtInfo *udt);
 		inline void remove_node(NodePrivate *n);
 		inline NodePrivate *find_node(const std::string &id);
 
@@ -184,7 +184,7 @@ namespace flame
 	{
 	}
 
-	NodePrivate::NodePrivate(BPPrivate *_bp, const std::string &_id, UDT *_udt) :
+	NodePrivate::NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt) :
 		bp(_bp),
 		id(_id),
 		udt(_udt),
@@ -248,7 +248,7 @@ namespace flame
 		updated = true;
 	}
 
-	NodePrivate *BPPrivate::add_node(const char *id, UDT *udt)
+	NodePrivate *BPPrivate::add_node(const char *id, UdtInfo *udt)
 	{
 		std::string s_id;
 		if (id)
@@ -627,7 +627,7 @@ namespace flame
 		return ((NodePrivate*)this)->id.c_str();
 	}
 
-	UDT *BP::Node::udt() const
+	UdtInfo *BP::Node::udt() const
 	{
 		return ((NodePrivate*)this)->udt;
 	}
@@ -672,7 +672,7 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(const char *id, UDT *udt)
+	BP::Node *BP::add_node(const char *id, UdtInfo *udt)
 	{
 		return ((BPPrivate*)this)->add_node(id, udt);
 	}

@@ -613,7 +613,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::string &str, void *dst, bool is_obj) const;
 	};
 
-	struct UDT
+	struct UdtInfo
 	{
 		FLAME_FOUNDATION_EXPORTS const char *name() const;
 
@@ -627,13 +627,18 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const wchar_t* update_function_module_name() const;
 	};
 
-	typedef UDT* UDTPtr;
+	typedef UdtInfo* UdtInfoPtr;
+
+	struct FunctionInfo
+	{
+
+	};
 
 	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
 	FLAME_FOUNDATION_EXPORTS EnumInfo *find_enum(uint name_hash);
 
-	FLAME_FOUNDATION_EXPORTS Array<UDT*> get_udts();
-	FLAME_FOUNDATION_EXPORTS UDT *find_udt(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
+	FLAME_FOUNDATION_EXPORTS UdtInfo*find_udt(uint name_hash);
 
 	struct SerializableAttribute
 	{
@@ -677,18 +682,18 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void save_bin(const std::wstring &filename) const;
 
 		FLAME_PACKAGE_BEGIN(ObjGeneratorParm)
-			FLAME_PACKAGE_ITEM(UDTPtr, udt, p)
+			FLAME_PACKAGE_ITEM(UdtInfoPtr, udt, p)
 			FLAME_PACKAGE_ITEM(voidptr, parent, p)
 			FLAME_PACKAGE_ITEM(uint, att_hash, u)
 			FLAME_PACKAGE_ITEM(voidptr, out_obj, p)
 		FLAME_PACKAGE_END
 
-		FLAME_FOUNDATION_EXPORTS void *unserialize(UDT *u, Function<ObjGeneratorParm> &obj_generator);
+		FLAME_FOUNDATION_EXPORTS void *unserialize(UdtInfo*u, Function<ObjGeneratorParm> &obj_generator);
 
 		FLAME_FOUNDATION_EXPORTS static SerializableNode *create(const std::string &name);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode *create_from_xml(const std::wstring &filename);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode *create_from_bin(const std::wstring &filename);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode *serialize(UDT *u, void *src, int precision = 6);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode *serialize(UdtInfo*u, void *src, int precision = 6);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode *n);
 	};
 
