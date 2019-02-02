@@ -631,14 +631,22 @@ namespace flame
 
 	struct FunctionInfo
 	{
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
+		FLAME_FOUNDATION_EXPORTS void* rva() const;
+		FLAME_FOUNDATION_EXPORTS int parameter_count() const;
 	};
+
+	typedef FunctionInfo* FunctionInfoPtr;
 
 	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
 	FLAME_FOUNDATION_EXPORTS EnumInfo *find_enum(uint name_hash);
 
 	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
 	FLAME_FOUNDATION_EXPORTS UdtInfo*find_udt(uint name_hash);
+
+	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
 
 	struct SerializableAttribute
 	{

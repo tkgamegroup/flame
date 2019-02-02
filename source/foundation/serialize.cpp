@@ -732,8 +732,31 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->update_function_module_name.c_str();
 	}
 
+	struct FunctionInfoPrivate : FunctionInfo
+	{
+		std::string name;
+		void* rva;
+		int parameter_count;
+	};
+
+	const char* FunctionInfo::name() const
+	{
+		return ((FunctionInfoPrivate*)this)->name.c_str();
+	}
+
+	void* FunctionInfo::rva() const
+	{
+		return ((FunctionInfoPrivate*)this)->rva;
+	}
+
+	int FunctionInfo::parameter_count() const
+	{
+		return ((FunctionInfoPrivate*)this)->parameter_count;
+	}
+
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
 	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
+	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
 
 	Array<EnumInfo*> get_enums()
 	{
@@ -771,6 +794,25 @@ namespace flame
 	{
 		auto it = udts.find(name_hash);
 		return it == udts.end() ? nullptr : it->second.get();
+	}
+
+	Array<FunctionInfo*> get_functions()
+	{
+		Array<FunctionInfo*> ret;
+		ret.resize(udts.size());
+		auto i = 0;
+		for (auto it = functions.begin(); it != functions.end(); it++)
+		{
+			ret[i] = (*it).second.get();
+			i++;
+		}
+		return ret;
+	}
+
+	FunctionInfo* find_funcion(unsigned int name_hash)
+	{
+		auto it = functions.find(name_hash);
+		return it == functions.end() ? nullptr : it->second.get();
 	}
 
 	struct SerializableAttributePrivate : SerializableAttribute
@@ -1224,22 +1266,22 @@ namespace flame
 
 						for (auto i_i = 0; i_i < arr.size; i_i++)
 						{
-							const auto &f = arr[i_i];
-							auto r = find_registered_function(0, f.pf);
+							//const auto &f = arr[i_i];
+							//auto r = find_registered_function(0, f.pf);
 
-							auto n_fn = n_item->new_node("function");
-							n_fn->new_attr("id", to_stdstring(r->id));
+							//auto n_fn = n_item->new_node("function");
+							//n_fn->new_attr("id", to_stdstring(r->id));
 
-							auto d = f.p.d + r->parameter_count;
-							for (auto i = 0; i < f.capture_count; i++)
-							{
-								auto n_cpt = n_fn->new_node("capture");
-								std::string ty_str, vl_str;
-								serialize_commondata(obj_table, precision, ty_str, vl_str, (CommonData*)d);
-								n_cpt->new_attr("type", ty_str);
-								n_cpt->new_attr("value", vl_str);
-								d++;
-							}
+							//auto d = f.p.d + r->parameter_count;
+							//for (auto i = 0; i < f.capture_count; i++)
+							//{
+							//	auto n_cpt = n_fn->new_node("capture");
+							//	std::string ty_str, vl_str;
+							//	serialize_commondata(obj_table, precision, ty_str, vl_str, (CommonData*)d);
+							//	n_cpt->new_attr("type", ty_str);
+							//	n_cpt->new_attr("value", vl_str);
+							//	d++;
+							//}
 						}
 					}
 				}
@@ -1360,33 +1402,33 @@ namespace flame
 
 						for (auto i_i = 0; i_i < cnt; i_i++)
 						{
-							auto n_i = n_item->node(i_i);
+							//auto n_i = n_item->node(i_i);
 
-							if (n_i->name() == "function")
-							{
-								auto cpt_cnt = n_i->node_count();
-								auto id = stoi(n_i->find_attr("id")->value());
-								std::vector<CommonData> capts;
-								capts.resize(cpt_cnt);
+							//if (n_i->name() == "function")
+							//{
+							//	auto cpt_cnt = n_i->node_count();
+							//	auto id = stoi(n_i->find_attr("id")->value());
+							//	std::vector<CommonData> capts;
+							//	capts.resize(cpt_cnt);
 
-								for (auto i_c = 0; i_c < cpt_cnt; i_c++)
-								{
-									auto n_c = n_i->node(i_c);
-									if (n_c->name() == "capture")
-										unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), &capts[i_c]);
-									else
-										assert(0);
-								}
+							//	for (auto i_c = 0; i_c < cpt_cnt; i_c++)
+							//	{
+							//		auto n_c = n_i->node(i_c);
+							//		if (n_c->name() == "capture")
+							//			unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), &capts[i_c]);
+							//		else
+							//			assert(0);
+							//	}
 
-								auto r = find_registered_function(id, nullptr);
-								if (!r)
-									assert(0);
+							//	auto r = find_registered_function(id, nullptr);
+							//	if (!r)
+							//		assert(0);
 
-								arr[i_i] = Function<>();
-								arr[i_i].set(r->pf, r->parameter_count, capts);
-							}
-							else
-								assert(0);
+							//	arr[i_i] = Function<>();
+							//	arr[i_i].set(r->pf, r->parameter_count, capts);
+							//}
+							//else
+							//	assert(0);
 						}
 					}
 				}
@@ -1852,23 +1894,24 @@ namespace flame
 					LONG l;
 					ULONG ul;
 					ULONGLONG ull;
-					IDiaEnumSymbols *symbols;
-					IDiaSymbol *symbol;
 					DWORD dw;
 					wchar_t *pwname;
 					std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
 					std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
 					std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
-					global->findChildren(SymTagEnum, NULL, nsNone, &symbols);
-					while (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
+					// enums
+					IDiaEnumSymbols* _enums;
+					global->findChildren(SymTagEnum, NULL, nsNone, &_enums);
+					IDiaSymbol* _enum;
+					while (SUCCEEDED(_enums->Next(1, &_enum, &ul)) && (ul == 1))
 					{
-						symbol->get_name(&pwname);
+						_enum->get_name(&pwname);
 						std::wstring wname(pwname);
 						if (wname.compare(0, wprefix.size(), wprefix) == 0)
 						{
 							auto name = w2s(wname.c_str() + wprefix.size());
-							if (name.find("unnamed", 0) != std::string::npos)
+							if (name.find("unnamed") != std::string::npos)
 								continue;
 							auto hash = H(name.c_str());
 							if (enums.find(hash) == enums.end())
@@ -1877,7 +1920,7 @@ namespace flame
 								e->name = name;
 
 								IDiaEnumSymbols *items;
-								symbol->findChildren(SymTagNull, NULL, nsNone, &items);
+								_enum->findChildren(SymTagNull, NULL, nsNone, &items);
 								IDiaSymbol *item;
 								while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
 								{
@@ -1898,21 +1941,24 @@ namespace flame
 								enums.emplace(hash, e);
 							}
 						}
-						symbol->Release();
+						_enum->Release();
 					}
-					symbols->Release();
+					_enums->Release();
 
-					global->findChildren(SymTagUDT, NULL, nsNone, &symbols);
-					while (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
+					// udts
+					IDiaEnumSymbols* _udts;
+					global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
+					IDiaSymbol* _udt;
+					while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
 					{
-						symbol->get_name(&pwname);
+						_udt->get_name(&pwname);
 						std::wstring wname(pwname);
 						if (wname.compare(0, wprefix.size(), wprefix) == 0)
 						{
 							auto udt_name = w2s(wname.c_str() + wprefix.size());
 
 							IDiaEnumSymbols *bases;
-							symbol->findChildren(SymTagBaseClass, NULL, nsNone, &bases);
+							_udt->findChildren(SymTagBaseClass, NULL, nsNone, &bases);
 							if (SUCCEEDED(bases->get_Count(&l)) && l == 1)
 							{
 								IDiaSymbol *base;
@@ -1926,13 +1972,13 @@ namespace flame
 
 									if (udts.find(udt_namehash) == udts.end())
 									{
-										symbol->get_length(&ull);
+										_udt->get_length(&ull);
 										auto udt = new UdtInfoPrivate;
 										udt->name = udt_name;
 										udt->size = (int)ull;
 
 										IDiaEnumSymbols *members;
-										symbol->findChildren(SymTagData, NULL, nsNone, &members);
+										_udt->findChildren(SymTagData, NULL, nsNone, &members);
 										IDiaSymbol *member;
 										while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
 										{
@@ -2054,7 +2100,7 @@ namespace flame
 										}
 
 										IDiaEnumSymbols *functions;
-										symbol->findChildren(SymTagFunction, NULL, nsNone, &functions);
+										_udt->findChildren(SymTagFunction, NULL, nsNone, &functions);
 										IDiaSymbol *function;
 										while (SUCCEEDED(functions->Next(1, &function, &ul)) && (ul == 1))
 										{
@@ -2065,7 +2111,7 @@ namespace flame
 											IDiaSymbol* return_type;
 											function_type->get_type(&return_type);
 											IDiaEnumSymbols *parameters;
-											function->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+											function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
 											if (SUCCEEDED(parameters->get_Count(&l)))
 											{
 												auto parameters_count = l;
@@ -2087,7 +2133,7 @@ namespace flame
 														free(new_obj);
 													}
 												}
-												else if (wname == L"update")
+												else if (wname == L"update" && parameters_count == 0)
 												{
 													DWORD baseType;
 													return_type->get_baseType(&baseType);
@@ -2116,9 +2162,85 @@ namespace flame
 							}
 							bases->Release();
 						}
-						symbol->Release();
+						_udt->Release();
 					}
-					symbols->Release();
+					_udts->Release();
+
+					// functions
+					IDiaEnumSymbols* _functions;
+					global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+					IDiaSymbol* _function;
+					while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+					{
+						_function->get_name(&pwname);
+						std::wstring function_wname(pwname);
+						if (function_wname[function_wname.size() - 1] == L'$')
+						{
+							IDiaSymbol* function_type;
+							_function->get_type(&function_type);
+
+							IDiaEnumSymbols* parameters;
+							function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+							if (SUCCEEDED(parameters->get_Count(&l)) && l == 1)
+							{
+								IDiaSymbol* parameter;
+								parameters->Item(0, &parameter);
+
+								IDiaSymbol* parameter_type;
+								parameter->get_type(&parameter_type);
+
+								parameter_type->get_symTag(&dw);
+								if (dw == SymTagPointerType)
+								{
+									IDiaSymbol* parameter_base_type;
+									parameter_type->get_type(&parameter_base_type);
+
+									parameter_base_type->get_symTag(&dw);
+									if (dw == SymTagUDT)
+									{
+										IDiaEnumSymbols* members;
+										parameter_base_type->findChildren(SymTagEnum, NULL, nsNone, &members);
+										IDiaSymbol* member;
+										while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
+										{
+											member->get_name(&pwname);
+											std::wstring name(pwname);
+											if (name.find(L"SIZE") != std::wstring::npos)
+											{
+												IDiaEnumSymbols* items;
+												member->findChildren(SymTagNull, NULL, nsNone, &items);
+												IDiaSymbol* item;
+												items->Item(0, &item);
+												VARIANT v;
+												ZeroMemory(&v, sizeof(v));
+												item->get_value(&v);
+
+												_function->get_relativeVirtualAddress(&dw);
+
+												auto f = new FunctionInfoPrivate;
+												f->name = w2s(function_wname);
+												f->rva = (void*)dw;
+												f->parameter_count = v.lVal;
+
+												item->Release();
+												items->Release();
+											}
+											member->Release();
+										}
+										members->Release();
+									}
+									parameter_base_type->Release();
+								}
+								parameter_type->Release();
+
+								parameter->Release();
+							}
+							parameters->Release();
+							function_type->Release();
+						}
+						_function->Release();
+					}
+					_functions->Release();
 				}
 			}
 		}
@@ -2263,5 +2385,10 @@ namespace flame
 	{
 		enums.clear();
 		udts.clear();
+	}
+
+	void test$(Package& p)
+	{
+
 	}
 }

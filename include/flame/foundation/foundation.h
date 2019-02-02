@@ -764,19 +764,6 @@ namespace flame
 
 	typedef void(*PF)(Package &p);
 
-	struct RegisteredFunction
-	{
-		uint id;
-		PF pf;
-		int parameter_count;
-		String filename;
-		int line_beg;
-		int line_end;
-	};
-
-	FLAME_FOUNDATION_EXPORTS void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end);
-	FLAME_FOUNDATION_EXPORTS RegisteredFunction *find_registered_function(uint id, PF pf); // if !id, then use pf
-
 #define FLAME_PACKAGE_BEGIN(name) \
 	struct name : Package\
 	{\
@@ -794,23 +781,6 @@ namespace flame
 			return *(CP*)(d + SIZE);\
 		}\
 	};
-
-#define FLAME_REGISTER_FUNCTION_BEG(name, id, package) \
-	struct name\
-	{\
-		name()\
-		{\
-			register_function(id, v, package::PARM_SIZE, __FILE__, line_beg, line_end);\
-		}\
-		static const int line_beg = __LINE__;\
-		static void v(const ParmPackage &_p)\
-		{\
-			auto &p = (package&)_p;
-#define FLAME_REGISTER_FUNCTION_END(name) \
-		}\
-		static const int line_end = __LINE__;\
-	};\
-	static name name##_;
 
 	template<class PP = Package/* parameter package */>
 	struct Function

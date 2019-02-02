@@ -48,50 +48,6 @@ void flame_free(void *p)
 
 namespace flame
 {
-	static std::vector<RegisteredFunction*> pfs;
-
-	void register_function(uint id, PF pf, int parm_count, const char *filename, int line_beg, int line_end)
-	{
-		assert(id);
-		for (auto &r : pfs)
-		{
-			if (r->id == id)
-				assert(0);
-		}
-
-		auto r = new RegisteredFunction;
-		r->id = id;
-		r->pf = pf;
-		r->parameter_count = parm_count;
-		r->filename = filename;
-		r->line_beg = line_beg;
-		r->line_end = line_end;
-		pfs.push_back(r);
-	}
-
-	RegisteredFunction *find_registered_function(uint id, PF pf)
-	{
-		if (id)
-		{
-			for (auto &r : pfs)
-			{
-				if (r->id == id)
-					return r;
-			}
-			return nullptr;
-		}
-		else
-		{
-			for (auto &r : pfs)
-			{
-				if (r->pf == pf)
-					return r;
-			}
-			return nullptr;
-		}
-		return nullptr;
-	}
-
 	static void do_thread(void *p)
 	{
 		auto f = (Function<>*)p;
