@@ -1,1 +1,0 @@
-setx FLAME_PATH "%cd%"

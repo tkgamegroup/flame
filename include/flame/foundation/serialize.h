@@ -706,7 +706,7 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_collect_init();
-	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring &pdb_dir, const std::wstring &pdb_prefix);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::vector<std::wstring> &filenames);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring &filename);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring &filename);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_clear();

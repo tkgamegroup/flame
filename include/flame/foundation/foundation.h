@@ -821,9 +821,8 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void thread(Function<> &f);
 
-	inline std::wstring ext_replace(const std::wstring &str, const std::wstring &ext)
+	inline std::filesystem::path ext_replace(const std::filesystem::path& path, const std::wstring& ext)
 	{
-		std::filesystem::path path(str);
 		if (path.extension().wstring() != ext)
 		{
 			auto pp = path.parent_path().wstring();
@@ -831,7 +830,7 @@ namespace flame
 				pp += L"\\";
 			return pp + path.stem().wstring() + ext;
 		}
-		return str;
+		return path;
 	}
 
 	template<class T>

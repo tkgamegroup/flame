@@ -137,12 +137,7 @@ namespace flame
 		assert(SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0));
 
 		wchar_t cl_buf[1024 * 8];
-		{
-			auto tail = cl_buf;
-			if (filename[0] == 0)
-				tail = wcscpy(cl_buf, filename);
-			wcscpy(tail, s2w(parameters).c_str());
-		}
+		wcscpy(cl_buf, s2w(parameters).c_str());
 		cl_buf[FLAME_ARRAYSIZE(cl_buf) - 1] = 0;
 
 		STARTUPINFOW start_info = {};
