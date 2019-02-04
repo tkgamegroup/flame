@@ -82,14 +82,14 @@ namespace flame
 		}
 	}
 
-	BP_GraphicsCommandbuffer::BP_GraphicsCommandbuffer() :
-		commandbuffer$i(nullptr),
-		commandbuffer$o(nullptr)
-	{
-	}
+	//BP_GraphicsCommandbuffer::BP_GraphicsCommandbuffer() :
+	//	commandbuffer$i(nullptr),
+	//	commandbuffer$o(nullptr)
+	//{
+	//}
 
-	void BP_GraphicsCommandbuffer::update()
-	{
+	//void BP_GraphicsCommandbuffer::update()
+	//{
 
-	}
+	//}
 }

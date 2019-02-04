@@ -415,17 +415,12 @@
 			<item tag="varible" type="float" name="v" attribute="o" offset="4" size="4" default_value="0.0"/>
 			<update_function rva="328256" module="flame_foundation.dll"/>
 		</udt>
-		<udt name="BP_GraphicsCommandbuffer" size="16">
-			<item tag="pointer" type="void" name="commandbuffer" attribute="i" offset="0" size="8"/>
-			<item tag="pointer" type="void" name="commandbuffer" attribute="o" offset="8" size="8"/>
-			<update_function rva="149952" module="flame_graphics.dll"/>
-		</udt>
 		<udt name="BP_GraphicsClearvalues" size="40">
 			<item tag="pointer" type="void" name="clearvalues" attribute="i" offset="0" size="8"/>
 			<item tag="pointer" type="void" name="renderpass" attribute="i" offset="8" size="8"/>
 			<item tag="array_of_varible" type="Bvec4" name="colors" attribute="i" offset="16" size="16"/>
 			<item tag="pointer" type="void" name="clearvalues" attribute="o" offset="32" size="8"/>
-			<update_function rva="149696" module="flame_graphics.dll"/>
+			<update_function rva="149664" module="flame_graphics.dll"/>
 		</udt>
 		<udt name="BP_Ivec3" size="24">
 			<item tag="varible" type="int" name="x" attribute="i" offset="0" size="4" default_value="0"/>
@@ -458,7 +453,7 @@
 			<item tag="pointer" type="void" name="renderpass_dont_clear" attribute="o" offset="48" size="8"/>
 			<item tag="pointer" type="void" name="framebuffer1" attribute="o" offset="56" size="8"/>
 			<item tag="pointer" type="void" name="framebuffer2" attribute="o" offset="64" size="8"/>
-			<update_function rva="149360" module="flame_graphics.dll"/>
+			<update_function rva="149328" module="flame_graphics.dll"/>
 		</udt>
 	</udts>
 </typeinfo>

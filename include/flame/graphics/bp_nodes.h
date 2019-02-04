@@ -54,64 +54,64 @@ namespace flame
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
-	struct BP_GraphicsCommandbuffer : R
-	{
-		void* commandbuffer$i;
+	//struct BP_GraphicsCommandbuffer : R
+	//{
+	//	void* commandbuffer$i;
 
-		void* commandbuffer$o;
+	//	void* commandbuffer$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCommandbuffer();
-		FLAME_GRAPHICS_EXPORTS void update();
-	};
+	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCommandbuffer();
+	//	FLAME_GRAPHICS_EXPORTS void update();
+	//};
 
-	struct BP_GraphicsCmdBegin : R
-	{
-		void* commandbuffer1$i;
-		void* commandbuffer2$i;
+	//struct BP_GraphicsCmdBegin : R
+	//{
+	//	void* commandbuffer1$i;
+	//	void* commandbuffer2$i;
 
-		void* commandbuffer1$o;
-		void* commandbuffer2$o;
+	//	void* commandbuffer1$o;
+	//	void* commandbuffer2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBegin();
-		FLAME_GRAPHICS_EXPORTS void update();
-	};
+	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBegin();
+	//	FLAME_GRAPHICS_EXPORTS void update();
+	//};
 
-	struct BP_GraphicsCmdEnd : R
-	{
-		void* commandbuffer1$i;
-		void* commandbuffer2$i;
+	//struct BP_GraphicsCmdEnd : R
+	//{
+	//	void* commandbuffer1$i;
+	//	void* commandbuffer2$i;
 
-		void* commandbuffer1$o;
-		void* commandbuffer2$o;
+	//	void* commandbuffer1$o;
+	//	void* commandbuffer2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEnd();
-		FLAME_GRAPHICS_EXPORTS void update();
-	};
+	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEnd();
+	//	FLAME_GRAPHICS_EXPORTS void update();
+	//};
 
-	struct BP_GraphicsCmdBeginRenderpass : R
-	{
-		void* commandbuffer1$i;
-		void* commandbuffer2$i;
-		void* renderpass$i;
-		void* clearvalues$i;
-		void* framebuffer$i;
+	//struct BP_GraphicsCmdBeginRenderpass : R
+	//{
+	//	void* commandbuffer1$i;
+	//	void* commandbuffer2$i;
+	//	void* renderpass$i;
+	//	void* clearvalues$i;
+	//	void* framebuffer$i;
 
-		void* commandbuffer1$o;
-		void* commandbuffer2$o;
+	//	void* commandbuffer1$o;
+	//	void* commandbuffer2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBeginRenderpass();
-		FLAME_GRAPHICS_EXPORTS void update();
-	};
+	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBeginRenderpass();
+	//	FLAME_GRAPHICS_EXPORTS void update();
+	//};
 
-	struct BP_GraphicsCmdEndRenderpass : R
-	{
-		void* commandbuffer1$i;
-		void* commandbuffer2$i;
+	//struct BP_GraphicsCmdEndRenderpass : R
+	//{
+	//	void* commandbuffer1$i;
+	//	void* commandbuffer2$i;
 
-		void* commandbuffer1$o;
-		void* commandbuffer2$o;
+	//	void* commandbuffer1$o;
+	//	void* commandbuffer2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEndRenderpass();
-		FLAME_GRAPHICS_EXPORTS void update();
-	};
+	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEndRenderpass();
+	//	FLAME_GRAPHICS_EXPORTS void update();
+	//};
 }
