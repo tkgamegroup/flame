@@ -1997,7 +1997,7 @@ namespace flame
 			Device* d;
 			bool sdf;
 
-			std::pair<std::unique_ptr<char[]>, int> font_file;
+			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
 			int pixel_height;
 			int max_width;
