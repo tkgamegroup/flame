@@ -49,35 +49,24 @@ int main(int argc, char **args)
 	cmd_prefix += VS_LOCATION;
 	cmd_prefix += "/Common7/Tools/VsDevCmd.bat\" & dumpbin /DEPENDENTS ";
 
-	wchar_t* exts[] = {
-		L".dll",
-		L".exe"
-	};
-
 	for (auto& d : pdb_dirs)
 	{
 		for (std::filesystem::directory_iterator end, it(d); it != end; it++)
 		{
-			if (!std::filesystem::is_directory(it->status()) && it->path().extension() == L".pdb")
+			if (!std::filesystem::is_directory(it->status()))
 			{
-				if (it->path().filename() == L"flame_foundation.pdb")
+				if (it->path().filename() == L"flame_foundation.dll")
 				{
 					pdb_filenames.push_back(it->path().wstring());
 					continue;
 				}
 
-				auto pp = it->path().parent_path().wstring() + L"/" + it->path().stem().wstring();
-
-				for (auto i = 0; i < FLAME_ARRAYSIZE(exts); i++)
+				auto ext = it->path().extension();
+				if (ext == L".dll" || ext == L".exe")
 				{
-					auto fn = pp + exts[i];
-					if (std::filesystem::exists(fn))
-					{
-						auto output = std::string(exec_and_get_output(L"", (cmd_prefix + w2s(fn)).c_str()).v);
-						if (output.find("flame_foundation.dll") != std::string::npos)
-							pdb_filenames.push_back(it->path().wstring());
-						break;
-					}
+					auto output = std::string(exec_and_get_output(L"", (cmd_prefix + w2s(it->path().wstring())).c_str()).v);
+					if (output.find("flame_foundation.dll") != std::string::npos)
+						pdb_filenames.push_back(it->path().wstring());
 				}
 			}
 		}

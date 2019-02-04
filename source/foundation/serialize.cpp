@@ -1863,7 +1863,7 @@ namespace flame
 				printf("dia not found\n");
 				continue;
 			}
-			if (FAILED(dia_source->loadDataFromPdb(fn.c_str())))
+			if (FAILED(dia_source->loadDataFromPdb(ext_replace(fn, L".pdb").c_str())))
 			{
 				printf("pdb failed to open\n");
 				continue;
@@ -1881,6 +1881,8 @@ namespace flame
 				printf("failed to get global\n");
 				continue;
 			}
+
+			auto fn_related = std::filesystem::path(fn).filename().wstring();
 
 			LONG l;
 			ULONG ul;
@@ -2134,7 +2136,7 @@ namespace flame
 												if (dw)
 												{
 													udt->update_function_rva = (void*)dw;
-													udt->update_function_module_name = fn;
+													udt->update_function_module_name = fn_related;
 												}
 											}
 										}

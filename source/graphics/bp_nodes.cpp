@@ -20,26 +20,76 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/swapchain.h>
+#include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/bp_nodes.h>
 
 namespace flame
 {
 	BP_GraphicsSwapchain::BP_GraphicsSwapchain() :
-		swapchain_in$i(nullptr),
-		swapchain_out$o(nullptr),
+		swapchain$i(nullptr),
+		swapchain$o(nullptr),
 		window$o(nullptr),
-		image0$o(nullptr),
 		image1$o(nullptr),
+		image2$o(nullptr),
 		renderpass_clear$o(nullptr),
 		renderpass_dont_clear$o(nullptr),
-		framebuffer0$o(nullptr),
-		framebuffer1$o(nullptr)
+		framebuffer1$o(nullptr),
+		framebuffer2$o(nullptr)
 	{
 	}
 
 	void BP_GraphicsSwapchain::update()
 	{
-		if (swapchain_in$i)
-			swapchain_out$o = swapchain_in$i;
+		if (swapchain$i)
+		{
+			swapchain$o = swapchain$i;
+			auto sc = (graphics::Swapchain*)swapchain$i;
+			window$o = sc->window();
+			image1$o = sc->get_image(0);
+			image2$o = sc->get_image(1);
+			renderpass_clear$o = sc->get_renderpass_clear();
+			renderpass_dont_clear$o = sc->get_renderpass_dont_clear();
+			framebuffer1$o = sc->get_framebuffer(0);
+			framebuffer2$o = sc->get_framebuffer(1);
+		}
+	}
+
+	BP_GraphicsClearvalues::BP_GraphicsClearvalues() :
+		clearvalues$i(nullptr),
+		clearvalues$o(nullptr)
+	{
+	}
+
+	void BP_GraphicsClearvalues::update()
+	{
+		if (clearvalues$i)
+			clearvalues$o = clearvalues$i;
+		else
+		{
+			if (renderpass$i)
+				clearvalues$o = graphics::ClearValues::create((graphics::Renderpass*)renderpass$i);
+		}
+
+		if (clearvalues$o)
+		{
+			for (auto i = 0; i < colors$i.size; i++)
+			{
+				auto cv = (graphics::ClearValues*)clearvalues$o;
+				cv->set(i, colors$i[i]);
+			}
+		}
+	}
+
+	BP_GraphicsCommandbuffer::BP_GraphicsCommandbuffer() :
+		commandbuffer$i(nullptr),
+		commandbuffer$o(nullptr)
+	{
+	}
+
+	void BP_GraphicsCommandbuffer::update()
+	{
+
 	}
 }
