@@ -35,6 +35,11 @@ namespace flame
 		- Both inputs and outputs must be compatible with CommonData.
 		- Only for inputs, if it is an Array<>, there will be multiple items of it,
 		  else, there will be only one item of it
+		- Address in BP: [node_id].[varible_name].[item_index]
+		  you can use address to find an object in BP, e.g.
+		  'a'     for node
+		  'a.b'   for node input or output
+		  'a.b.3' for item, index is default to 0
 		- An available udt must have at least one input and one output
 		- A BP file is basically a XML file, you can use both .xml or .bp.
 	*/
@@ -59,7 +64,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Item *link() const;
 			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // it is vaild for input's item only
 
-			FLAME_FOUNDATION_EXPORTS String get_address() const; // node_id.varible_name.item_index (item_index is default for 0, vaild on input's item)
+			FLAME_FOUNDATION_EXPORTS String get_address() const;
 		};
 
 		struct Input
@@ -86,13 +91,20 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS BP *bp() const;
 			FLAME_FOUNDATION_EXPORTS const char *id() const;
 			FLAME_FOUNDATION_EXPORTS UdtInfo*udt() const;
+
 			FLAME_FOUNDATION_EXPORTS int input_count() const;
 			FLAME_FOUNDATION_EXPORTS Input *input(int idx) const;
 			FLAME_FOUNDATION_EXPORTS int output_count() const;
 			FLAME_FOUNDATION_EXPORTS Output *output(int idx) const;
+
+			FLAME_FOUNDATION_EXPORTS Input *find_input(const char *name) const;
+			FLAME_FOUNDATION_EXPORTS Output *find_output(const char *name) const;
+
 			FLAME_FOUNDATION_EXPORTS bool enable() const;
 			FLAME_FOUNDATION_EXPORTS void set_enable(bool enable) const;
 
+			FLAME_FOUNDATION_EXPORTS void create() const;
+			FLAME_FOUNDATION_EXPORTS void destroy() const;
 			FLAME_FOUNDATION_EXPORTS void update() const;
 		};
 
@@ -100,9 +112,11 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Node *node(int idx) const;
 		FLAME_FOUNDATION_EXPORTS Node *add_node(const char *id, UdtInfo*udt);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
-		FLAME_FOUNDATION_EXPORTS Node *find_node(const char *id) const;
 
-		FLAME_FOUNDATION_EXPORTS Item *find_item(const char *address);
+		FLAME_FOUNDATION_EXPORTS Node *find_node(const char *id) const;
+		FLAME_FOUNDATION_EXPORTS Input *find_input(const char *address) const;
+		FLAME_FOUNDATION_EXPORTS Output *find_output(const char *address) const;
+		FLAME_FOUNDATION_EXPORTS Item *find_item(const char *address) const;
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 

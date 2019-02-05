@@ -373,6 +373,7 @@ namespace flame
 
 		inline BasicString()
 		{
+			size = -1;
 			v = nullptr;
 			resize(0);
 		}

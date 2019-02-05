@@ -179,6 +179,9 @@ namespace flame
 					break;
 				}
 				break;
+			case VariableTagPointer:
+				dst->p() = *(void**)src;
+				break;
 			}
 		}
 
@@ -238,7 +241,21 @@ namespace flame
 					break;
 				}
 				break;
+			case VariableTagPointer:
+				*(void**)dst = src->v.p;
+				break;
 			}
+		}
+
+		inline void array_resize(int size, void *dst, bool is_obj) const
+		{
+			if (tag != VariableTagArrayOfVariable || tag != VariableTagArrayOfPointer)
+				return;
+
+			if (is_obj)
+				dst = (char*)dst + offset;
+
+
 		}
 
 		inline bool compare(void *src, void *dst) const
@@ -464,7 +481,8 @@ namespace flame
 				break;
 			case VariableTagEnumMulti:
 				break;
-			case VariableTagVariable:
+			case VariableTagVariable: 
+			case VariableTagArrayOfVariable: // means one item of the array
 				switch (type_hash)
 				{
 				case cH("bool"):
@@ -501,6 +519,9 @@ namespace flame
 					return *(StringAndHash*)src;
 				}
 				break;
+			case VariableTagPointer: 
+			case VariableTagArrayOfPointer: // means one item of the array
+				return "pointer";
 			}
 
 			return "";
@@ -632,6 +653,11 @@ namespace flame
 	void VaribleInfo::set(const CommonData *src, void *dst, bool is_obj) const
 	{
 		((VaribleInfoPrivate*)this)->set(src, dst, is_obj);
+	}
+
+	void VaribleInfo::array_resize(int size, void *dst, bool is_obj) const
+	{
+		((VaribleInfoPrivate*)this)->array_resize(size, dst, is_obj);
 	}
 
 	bool VaribleInfo::compare(void *src, void *dst) const
@@ -2300,6 +2326,7 @@ namespace flame
 						i->attribute = n_item->find_attr("attribute")->value();
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
 						i->size = std::stoi(n_item->find_attr("size")->value());
+						memset(&i->default_value, 0, sizeof(CommonData));
 						auto a_default_value = n_item->find_attr("default_value");
 						if (a_default_value)
 							i->unserialize_default_value(a_default_value->value());

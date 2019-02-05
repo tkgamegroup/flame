@@ -1,0 +1,20 @@
+<BP>
+	<node id="cv" type="BP_GraphicsClearvalues">
+		<input name="clearvalues">
+			<item value="pointer"/>
+		</input>
+		<input name="renderpass">
+			<item value="pointer"/>
+		</input>
+		<input name="colors">
+			<item value="255;127;0;1"/>
+		</input>
+	</node>
+	<node id="sc" type="BP_GraphicsSwapchain">
+		<input name="in">
+			<item value="pointer"/>
+		</input>
+	</node>
+	<link from="sc.renderpass_clear" to="cv.renderpass.0"/>
+</BP>
+

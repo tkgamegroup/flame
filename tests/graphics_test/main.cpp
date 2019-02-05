@@ -29,12 +29,20 @@ struct MyApp : BasicApp
 {
 	Commandbuffer *cb;
 	ClearValues *cv;
+	BP* render_path;
 
 	inline virtual void on_create() override
 	{
 		cb = Commandbuffer::create(d->gcp);
-		cv = ClearValues::create(sc->get_renderpass_clear());
-		cv->set(0, Bvec4(255, 128, 0, 255));
+
+		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
+		auto n_sc = render_path->find_node("sc");
+		auto i_sc = n_sc->find_input("swapchain");
+		i_sc->array_item(0)->set_data(sc);
+		render_path->install_dummys();
+		render_path->update();
+		render_path->uninstall_dummys();
+		cv = (ClearValues*)render_path->find_node("cv")->find_output("clearvalues")->item()->data().v.p;
 	}
 
 	inline virtual void do_run() override

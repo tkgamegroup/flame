@@ -27,9 +27,9 @@ namespace flame
 {
 	struct BP_GraphicsSwapchain : R
 	{
-		void* swapchain$i;
+		void* in$i;
 
-		void* swapchain$o;
+		void* out$o;
 		void* window$o;
 		void* image1$o;
 		void* image2$o;
@@ -44,11 +44,11 @@ namespace flame
 
 	struct BP_GraphicsClearvalues : R
 	{
-		void* clearvalues$i;
+		void* in$i;
 		void* renderpass$i;
 		Array<Bvec4> colors$i;
 
-		void* clearvalues$o;
+		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS BP_GraphicsClearvalues();
 		FLAME_GRAPHICS_EXPORTS void update();
@@ -56,9 +56,9 @@ namespace flame
 
 	//struct BP_GraphicsCommandbuffer : R
 	//{
-	//	void* commandbuffer$i;
+	//	void* in$i;
 
-	//	void* commandbuffer$o;
+	//	void* out$o;
 
 	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCommandbuffer();
 	//	FLAME_GRAPHICS_EXPORTS void update();
@@ -66,11 +66,11 @@ namespace flame
 
 	//struct BP_GraphicsCmdBegin : R
 	//{
-	//	void* commandbuffer1$i;
-	//	void* commandbuffer2$i;
+	//	void* in1$i;
+	//	void* in2$i;
 
-	//	void* commandbuffer1$o;
-	//	void* commandbuffer2$o;
+	//	void* out1$o;
+	//	void* out2$o;
 
 	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBegin();
 	//	FLAME_GRAPHICS_EXPORTS void update();
@@ -78,11 +78,11 @@ namespace flame
 
 	//struct BP_GraphicsCmdEnd : R
 	//{
-	//	void* commandbuffer1$i;
-	//	void* commandbuffer2$i;
+	//	void* in1$i;
+	//	void* in2$i;
 
-	//	void* commandbuffer1$o;
-	//	void* commandbuffer2$o;
+	//	void* out1$o;
+	//	void* out2$o;
 
 	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEnd();
 	//	FLAME_GRAPHICS_EXPORTS void update();
@@ -90,14 +90,14 @@ namespace flame
 
 	//struct BP_GraphicsCmdBeginRenderpass : R
 	//{
-	//	void* commandbuffer1$i;
-	//	void* commandbuffer2$i;
+	//	void* in1$i;
+	//	void* in2$i;
 	//	void* renderpass$i;
 	//	void* clearvalues$i;
 	//	void* framebuffer$i;
 
-	//	void* commandbuffer1$o;
-	//	void* commandbuffer2$o;
+	//	void* out1$o;
+	//	void* out2$o;
 
 	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBeginRenderpass();
 	//	FLAME_GRAPHICS_EXPORTS void update();
@@ -105,11 +105,11 @@ namespace flame
 
 	//struct BP_GraphicsCmdEndRenderpass : R
 	//{
-	//	void* commandbuffer1$i;
-	//	void* commandbuffer2$i;
+	//	void* in1$i;
+	//	void* in2$i;
 
-	//	void* commandbuffer1$o;
-	//	void* commandbuffer2$o;
+	//	void* out1$o;
+	//	void* out2$o;
 
 	//	FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEndRenderpass();
 	//	FLAME_GRAPHICS_EXPORTS void update();

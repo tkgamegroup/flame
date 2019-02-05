@@ -28,8 +28,8 @@
 namespace flame
 {
 	BP_GraphicsSwapchain::BP_GraphicsSwapchain() :
-		swapchain$i(nullptr),
-		swapchain$o(nullptr),
+		in$i(nullptr),
+		out$o(nullptr),
 		window$o(nullptr),
 		image1$o(nullptr),
 		image2$o(nullptr),
@@ -42,10 +42,10 @@ namespace flame
 
 	void BP_GraphicsSwapchain::update()
 	{
-		if (swapchain$i)
+		if (in$i)
 		{
-			swapchain$o = swapchain$i;
-			auto sc = (graphics::Swapchain*)swapchain$i;
+			out$o = in$i;
+			auto sc = (graphics::Swapchain*)out$o;
 			window$o = sc->window();
 			image1$o = sc->get_image(0);
 			image2$o = sc->get_image(1);
@@ -57,26 +57,27 @@ namespace flame
 	}
 
 	BP_GraphicsClearvalues::BP_GraphicsClearvalues() :
-		clearvalues$i(nullptr),
-		clearvalues$o(nullptr)
+		in$i(nullptr),
+		renderpass$i(nullptr),
+		out$o(nullptr)
 	{
 	}
 
 	void BP_GraphicsClearvalues::update()
 	{
-		if (clearvalues$i)
-			clearvalues$o = clearvalues$i;
+		if (in$i)
+			out$o = in$i;
 		else
 		{
 			if (renderpass$i)
-				clearvalues$o = graphics::ClearValues::create((graphics::Renderpass*)renderpass$i);
+				out$o = graphics::ClearValues::create((graphics::Renderpass*)renderpass$i);
 		}
 
-		if (clearvalues$o)
+		if (out$o)
 		{
 			for (auto i = 0; i < colors$i.size; i++)
 			{
-				auto cv = (graphics::ClearValues*)clearvalues$o;
+				auto cv = (graphics::ClearValues*)out$o;
 				cv->set(i, colors$i[i]);
 			}
 		}

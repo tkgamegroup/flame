@@ -55,17 +55,19 @@ int main(int argc, char **args)
 		if (s_command_line == "help")
 		{
 			printf(
-				"	help - show this help\n"
-				"	show udts - show all available udts (see blueprint.h for more details)\n"
-				"	show udt [udt_name] - show an udt\n"
-				"	show nodes - show all nodes\n"
-				"	show node [id] - show a node\n"
-				"	add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
-				"	add link [out_adress] [in_adress] - add a link (e.g. add link a.b c.d.0)\n"
-				"	remove node [id] - remove a node\n"
-				"	remove link [in_adress] - remove a link (e.g. remove link c.d.0)\n"
-				"	set [in_adress] [value] - set value for item (e.g. set a.b.0 46)\n"
-				"	save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
+				"  help - show this help\n"
+				"  show udts - show all available udts (see blueprint.h for more details)\n"
+				"  show udt [udt_name] - show an udt\n"
+				"  show nodes - show all nodes\n"
+				"  show node [id] - show a node\n"
+				"  add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
+				"  add link [out_adress] [in_adress] - add a link\n"
+				"  add item [in_adress] - add an item to input\n"
+				"  remove node [id] - remove a node\n"
+				"  remove link [in_adress] - remove a link\n"
+				"  remove item [in_adress] - remove an item from input\n"
+				"  set [in_adress] [value] - set value for item\n"
+				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
 			);
 		}
 		else if (s_command_line == "show")
@@ -142,30 +144,36 @@ int main(int argc, char **args)
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
-						printf("%s\n", input->varible_info()->name());
-						for (auto i_v = 0; i_v < input->array_item_count(); i_v++)
+						printf(" %s\n", input->varible_info()->name());
+						if (input->array_item_count() > 0)
 						{
-							auto v = input->array_item(i_v);
-							std::string link_address;
-							if (v->link())
-								link_address = v->link()->get_address().v;
-							printf("  [%s]->\n", link_address.c_str());
-							printf("  %s\n", input->varible_info()->serialize_value(&v->data().v, false, 2).v);
+							for (auto i_v = 0; i_v < input->array_item_count(); i_v++)
+							{
+								auto v = input->array_item(i_v);
+								std::string link_address;
+								if (v->link())
+									link_address = v->link()->get_address().v;
+								printf("  %d -\n", i_v);
+								printf("   [%s]->\n", link_address.c_str());
+								printf("   %s\n", input->varible_info()->serialize_value(&v->data().v, false, 2).v);
+							}
 						}
+						else
+							printf("  -\n");
 					}
 					printf("[Out]\n");
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
-						printf("%s\n", output->varible_info()->name());
+						printf(" %s\n", output->varible_info()->name());
 						/* output has only one item */
 						{
 							auto v = output->item();
 							std::string link_address;
 							if (v->link())
 								link_address = v->link()->get_address().v;
-							printf("  %s\n", output->varible_info()->serialize_value(&v->data().v, false, 2).v);
-							printf("  ->[%s]\n", link_address.c_str());
+							printf("   %s\n", output->varible_info()->serialize_value(&v->data().v, false, 2).v);
+							printf("   ->[%s]\n", link_address.c_str());
 						}
 					}
 				}
@@ -220,7 +228,31 @@ int main(int argc, char **args)
 					printf("link added: %s - %s\n", in_item->link()->get_address().v, in_item->get_address().v);
 				}
 				else
-					printf("address wrong\n");
+					printf("wrong address\n");
+			}
+			else if (s_what == "item")
+			{
+				scanf("%s", command_line);
+				auto s_in_address = std::string(command_line);
+
+				auto sp = string_split(s_in_address, '.');
+				if (sp.size() >= 2)
+				{
+					uint index = 0;
+					if (sp.size() >= 3)
+						index = std::stoi(sp[2]);
+
+					auto input = bp->find_input((sp[0] + "." + sp[1]).c_str());
+					if (input)
+					{
+						auto item = input->array_insert_item(index);
+						printf("item added: %s\n", item->get_address().v);
+					}
+					else
+						printf("input not found");
+				}
+				else
+					printf("wrong address");
 			}
 			else
 				printf("unknow object to add\n");
@@ -306,8 +338,8 @@ int main(int argc, char **args)
 
 				if (!std::filesystem::exists(s_filename))
 				{
-					bp->save(filename.c_str());
 					filename = s2w(s_filename);
+					bp->save(filename.c_str());
 					printf("file saved\n");
 					printf("%s:\n", s_filename.c_str());
 				}

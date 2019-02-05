@@ -24,6 +24,7 @@
 
 #include <flame/foundation/serialize.h>
 #include <flame/foundation/window.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/renderpass.h>
