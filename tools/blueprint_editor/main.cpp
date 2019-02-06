@@ -144,7 +144,7 @@ int main(int argc, char **args)
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
-						printf(" %s\n", input->varible_info()->name());
+						printf(" %s\n", input->variable_info()->name());
 						if (input->array_item_count() > 0)
 						{
 							for (auto i_v = 0; i_v < input->array_item_count(); i_v++)
@@ -155,7 +155,7 @@ int main(int argc, char **args)
 									link_address = v->link()->get_address().v;
 								printf("  %d:\n", i_v);
 								printf("   [%s]->\n", link_address.c_str());
-								auto str = input->varible_info()->serialize_value(&v->data().v, false, -1, 2);
+								auto str = input->variable_info()->serialize_value(&v->data().v, false, -1, 2);
 								if (str.size == 0)
 									str = "-";
 								printf("   %s\n", str.v);
@@ -168,11 +168,11 @@ int main(int argc, char **args)
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
-						printf(" %s\n", output->varible_info()->name());
+						printf(" %s\n", output->variable_info()->name());
 						/* output has only one item */
 						{
 							auto v = output->item();
-							auto str = output->varible_info()->serialize_value(&v->data().v, false, -1, 2);
+							auto str = output->variable_info()->serialize_value(&v->data().v, false, -1, 2);
 							if (str.size == 0)
 								str = "-";
 							printf("   %s\n", str.v);
@@ -308,9 +308,9 @@ int main(int argc, char **args)
 			{
 				VaribleInfo* v;
 				if (i->parent_i())
-					v = i->parent_i()->varible_info();
+					v = i->parent_i()->variable_info();
 				else if (i->parent_o())
-					v = i->parent_o()->varible_info();
+					v = i->parent_o()->variable_info();
 				auto value_before = v->serialize_value(&i->data().v, false, -1, 2);
 				v->unserialize_value(s_value, &i->data().v, false, -1);
 				auto value_after = v->serialize_value(&i->data().v, false, -1, 2);

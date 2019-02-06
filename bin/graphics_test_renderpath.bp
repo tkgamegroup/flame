@@ -1,20 +1,15 @@
 <BP>
 	<node id="cv" type="BP_GraphicsClearvalues">
-		<input name="in">
-			<item value="pointer"/>
-		</input>
-		<input name="renderpass">
-			<item value="pointer"/>
-		</input>
 		<input name="colors">
 			<item value="255;127;0;1"/>
 		</input>
 	</node>
-	<node id="sc" type="BP_GraphicsSwapchain">
-		<input name="in">
-			<item value="pointer"/>
-		</input>
-	</node>
+	<node id="sc" type="BP_GraphicsSwapchain"/>
+	<node id="d" type="BP_GraphicsDevice"/>
+	<node id="cb1" type="BP_GraphicsCommandbuffer"/>
+	<node id="cb2" type="BP_GraphicsCommandbuffer"/>
 	<link from="sc.renderpass_clear" to="cv.renderpass.0"/>
+	<link from="d.out" to="cb1.device.0"/>
+	<link from="d.out" to="cb2.device.0"/>
 </BP>
 
