@@ -137,8 +137,6 @@ namespace flame
 		if (link)
 			link->link = nullptr;
 		link = target;
-		if (link)
-			link->link = this;
 		return true;
 	}
 
@@ -211,15 +209,6 @@ namespace flame
 
 	NodePrivate::~NodePrivate()
 	{
-		for (auto &input : inputs)
-		{
-			for (auto &i : input->items)
-			{
-				auto link = i->link;
-				if (link)
-					link->link = nullptr;
-			}
-		}
 		for (auto &output : outputs)
 		{
 			auto link = output->item->link;
@@ -290,14 +279,21 @@ namespace flame
 						n->update();
 				}
 			}
+			auto v = input->varible_info;
 			if (!input->is_array())
 			{
 				for (auto &i : input->items)
-					input->varible_info->set(i->link ? &i->link->data : &i->data, dummy, true);
+					v->set(i->link ? &i->link->data : &i->data, dummy, true, -1);
 			}
 			else
 			{
-				// TODO: WIP
+				v->array_resize(input->items.size(), dummy, true);
+				auto idx = 0;
+				for (auto &i : input->items)
+				{
+					v->set(i->link ? &i->link->data : &i->data, dummy, true, idx);
+					idx++;
+				}
 			}
 		}
 
@@ -309,7 +305,7 @@ namespace flame
 		{
 			auto v = output->varible_info;
 			auto i = output->item.get();
-			v->get(dummy, true, &i->data);
+			v->get(dummy, true, -1, &i->data);
 		}
 
 		updated = true;
@@ -489,7 +485,7 @@ namespace flame
 											if (n_item->name() == "item")
 											{
 												auto v = new ItemPrivate(input.get(), nullptr);
-												input->varible_info->unserialize_value(n_item->find_attr("value")->value(), &v->data.v, false);
+												input->varible_info->unserialize_value(n_item->find_attr("value")->value(), &v->data.v, false, -1);
 												input->items.emplace_back(v);
 											}
 										}

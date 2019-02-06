@@ -61,7 +61,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS CommonData &data();
 			FLAME_FOUNDATION_EXPORTS void set_data(const CommonData &d); // setting datas for output's item is ok, but the data will be rushed when the node update
 
-			FLAME_FOUNDATION_EXPORTS Item *link() const;
+			FLAME_FOUNDATION_EXPORTS Item *link() const; // link is only storaged in input's item
 			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // it is vaild for input's item only
 
 			FLAME_FOUNDATION_EXPORTS String get_address() const;

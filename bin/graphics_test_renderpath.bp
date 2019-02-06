@@ -1,6 +1,6 @@
 <BP>
 	<node id="cv" type="BP_GraphicsClearvalues">
-		<input name="clearvalues">
+		<input name="in">
 			<item value="pointer"/>
 		</input>
 		<input name="renderpass">

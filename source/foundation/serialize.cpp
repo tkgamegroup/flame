@@ -123,7 +123,7 @@ namespace flame
 			default_value.fmt[3] = 0;
 		}
 
-		inline void get(const void *src, bool is_obj, CommonData *dst) const
+		inline void get(const void *src, bool is_obj, int item_index, CommonData *dst) const
 		{
 			if (is_obj)
 				src = (char*)src + offset;
@@ -132,60 +132,28 @@ namespace flame
 			case VariableTagEnumSingle: case VariableTagEnumMulti:
 				dst->i1() = *(int*)src;
 				break;
-			case VariableTagVariable:
-				switch (type_hash)
+			case VariableTagArrayOfVariable:
+				if (item_index != -1)
 				{
-				case cH("bool"):
-					dst->i1() = *(bool*)src;
-					break;
-				case cH("uint"):
-					dst->i1() = *(uint*)src;
-					break;
-				case cH("int"):
-					dst->i1() = *(int*)src;
-					break;
-				case cH("Ivec2"):
-					dst->i2() = *(Ivec2*)src;
-					break;
-				case cH("Ivec3"):
-					dst->i3() = *(Ivec3*)src;
-					break;
-				case cH("Ivec4"):
-					dst->i4() = *(Ivec4*)src;
-					break;
-				case cH("float"):
-					dst->f1() = *(float*)src;
-					break;
-				case cH("Vec2"):
-					dst->f2() = *(Vec2*)src;
-					break;
-				case cH("Vec3"):
-					dst->f3() = *(Vec3*)src;
-					break;
-				case cH("Vec4"):
-					dst->f4() = *(Vec4*)src;
-					break;
-				case cH("uchar"):
-					dst->b1() = *(uchar*)src;
-					break;
-				case cH("Bvec2"):
-					dst->b2() = *(Bvec2*)src;
-					break;
-				case cH("Bvec3"):
-					dst->b3() = *(Bvec3*)src;
-					break;
-				case cH("Bvec4"):
-					dst->b4() = *(Bvec4*)src;
-					break;
+					auto &arr = *(Array<int>*)src;
+					src = arr.v + size * item_index;
 				}
+			case VariableTagVariable:
+				memcpy(&dst->v, src, size);
 				break;
+			case VariableTagArrayOfPointer:
+				if (item_index != -1)
+				{
+					auto &arr = *(Array<void*>*)src;
+					src = arr.v + size * item_index;
+				}
 			case VariableTagPointer:
 				dst->p() = *(void**)src;
 				break;
 			}
 		}
 
-		inline void set(const CommonData *src, void *dst, bool is_obj) const
+		inline void set(const CommonData *src, void *dst, bool is_obj, int item_index) const
 		{
 			if (is_obj)
 				dst = (char*)dst + offset;
@@ -194,68 +162,36 @@ namespace flame
 			case VariableTagEnumSingle: case VariableTagEnumMulti:
 				*(int*)dst = src->v.i[0];
 				break;
-			case VariableTagVariable:
-				switch (type_hash)
+			case VariableTagArrayOfVariable:
+				if (item_index != -1)
 				{
-				case cH("bool"):
-					*(bool*)dst = src->v.i[0];
-					break;
-				case cH("uint"):
-					*(uint*)dst = src->v.i[0];
-					break;
-				case cH("int"):
-					*(int*)dst = src->v.i[0];
-					break;
-				case cH("Ivec2"):
-					*(Ivec2*)dst = src->v.i;
-					break;
-				case cH("Ivec3"):
-					*(Ivec3*)dst = src->v.i;
-					break;
-				case cH("Ivec4"):
-					*(Ivec4*)dst = src->v.i;
-					break;
-				case cH("float"):
-					*(float*)dst = src->v.f[0];
-					break;
-				case cH("Vec2"):
-					*(Vec2*)dst = src->v.f;
-					break;
-				case cH("Vec3"):
-					*(Vec3*)dst = src->v.f;
-					break;
-				case cH("Vec4"):
-					*(Vec4*)dst = src->v.f;
-					break;
-				case cH("uchar"):
-					*(uchar*)dst = src->v.b[0];
-					break;
-				case cH("Bvec2"):
-					*(Bvec2*)dst = src->v.b;
-					break;
-				case cH("Bvec3"):
-					*(Bvec3*)dst = src->v.b;
-					break;
-				case cH("Bvec4"):
-					*(Bvec4*)dst = src->v.b;
-					break;
+					auto &arr = *(Array<int>*)dst;
+					dst = arr.v + size * item_index;
 				}
+			case VariableTagVariable:
+				memcpy(dst, &src->v, size);
 				break;
+			case VariableTagArrayOfPointer:
+				if (item_index != -1)
+				{
+					auto &arr = *(Array<void*>*)dst;
+					dst = arr.v + size * item_index;
+				}
 			case VariableTagPointer:
 				*(void**)dst = src->v.p;
 				break;
 			}
 		}
 
-		inline void array_resize(int size, void *dst, bool is_obj) const
+		inline void array_resize(int _size, void *dst, bool is_obj) const
 		{
-			if (tag != VariableTagArrayOfVariable || tag != VariableTagArrayOfPointer)
+			if (tag != VariableTagArrayOfVariable && tag != VariableTagArrayOfPointer)
 				return;
 
 			if (is_obj)
 				dst = (char*)dst + offset;
 
-
+			(*(Array<int>*)dst).resize_pod_typeness(_size, size);
 		}
 
 		inline bool compare(void *src, void *dst) const
@@ -268,42 +204,7 @@ namespace flame
 			case VariableTagEnumSingle: case VariableTagEnumMulti:
 				return *(int*)src == *(int*)dst;
 			case VariableTagVariable:
-				switch (type_hash)
-				{
-				case cH("bool"):
-					return *(bool*)src == *(bool*)dst;
-				case cH("uint"):
-					return *(uint*)src == *(uint*)dst;
-				case cH("int"):
-					return *(int*)src == *(int*)dst;
-				case cH("Ivec2"):
-					return *(Ivec2*)src == *(Ivec2*)dst;
-				case cH("Ivec3"):
-					return *(Ivec3*)src == *(Ivec3*)dst;
-				case cH("Ivec4"):
-					return *(Ivec4*)src == *(Ivec4*)dst;
-				case cH("float"):
-					return *(float*)src == *(float*)dst;
-				case cH("Vec2"):
-					return *(Vec2*)src == *(Vec2*)dst;
-				case cH("Vec3"):
-					return *(Vec3*)src == *(Vec3*)dst;
-				case cH("Vec4"):
-					return *(Vec4*)src == *(Vec4*)dst;
-				case cH("uchar"):
-					return *(uchar*)src == *(uchar*)dst;
-				case cH("Bvec2"):
-					return *(Bvec2*)src == *(Bvec2*)dst;
-				case cH("Bvec3"):
-					return *(Bvec3*)src == *(Bvec3*)dst;
-				case cH("Bvec4"):
-					return *(Bvec4*)src == *(Bvec4*)dst;
-				case cH("String"):
-					return *(String*)src == *(String*)dst;
-				case cH("StringAndHash"):
-					return *(StringAndHash*)src == *(StringAndHash*)dst;
-				}
-				break;
+				return memcmp(src, dst, size) == 0;
 			}
 
 			return false;
@@ -319,154 +220,13 @@ namespace flame
 			case VariableTagEnumSingle: case VariableTagEnumMulti:
 				return *(int*)src == default_value.v.i[0];
 			case VariableTagVariable:
-				switch (type_hash)
-				{
-				case cH("bool"):
-					return *(bool*)src == default_value.v.i[0];
-				case cH("uint"):
-					return *(uint*)src == (uint)default_value.v.i[0];
-				case cH("int"):
-					return *(int*)src == default_value.v.i[0];
-				case cH("Ivec2"):
-					return *(Ivec2*)src == (Ivec2)default_value.v.i;
-				case cH("Ivec3"):
-					return *(Ivec3*)src == (Ivec3)default_value.v.i;
-				case cH("Ivec4"):
-					return *(Ivec4*)src == default_value.v.i;
-				case cH("float"):
-					return *(float*)src == default_value.v.f[0];
-				case cH("Vec2"):
-					return *(Vec2*)src == (Vec2)default_value.v.f;
-				case cH("Vec3"):
-					return *(Vec3*)src == (Vec3)default_value.v.f;
-				case cH("Vec4"):
-					return *(Vec4*)src == default_value.v.f;
-				case cH("uchar"):
-					return *(uchar*)src == default_value.v.b[0];
-				case cH("Bvec2"):
-					return *(Bvec2*)src == (Bvec2)default_value.v.b;
-				case cH("Bvec3"):
-					return *(Bvec3*)src == (Bvec3)default_value.v.b;
-				case cH("Bvec4"):
-					return *(Bvec4*)src == default_value.v.b;
-				}
-				break;
+				return memcmp(src, &default_value.v, size) == 0;
 			}
 
 			return false;
 		}
 
-		inline std::string serialize_default_value(int precision = 6) const
-		{
-			switch (tag)
-			{
-			case VariableTagEnumSingle:
-			{
-				auto e = find_enum(type_hash);
-				return e->serialize_value(true, default_value.v.i[0]).v;
-			}
-				break;
-			case VariableTagEnumMulti:
-				break;
-			case VariableTagVariable:
-				switch (type_hash)
-				{
-				case cH("bool"):
-					return default_value.v.i[0] ? "true" : "false";
-				case cH("uint"):
-					return to_stdstring((uint)default_value.v.i[0]);
-				case cH("int"):
-					return to_stdstring(default_value.v.i[0]);
-				case cH("Ivec2"):
-					return to_stdstring((Ivec2)default_value.v.i);
-				case cH("Ivec3"):
-					return to_stdstring((Ivec3)default_value.v.i);
-				case cH("Ivec4"):
-					return to_stdstring(default_value.v.i);
-				case cH("float"):
-					return to_stdstring(default_value.v.f[0], precision);
-				case cH("Vec2"):
-					return to_stdstring((Vec2)default_value.v.f, precision);
-				case cH("Vec3"):
-					return to_stdstring((Vec3)default_value.v.f, precision);
-				case cH("Vec4"):
-					return to_stdstring(default_value.v.f, precision);
-				case cH("uchar"):
-					return to_stdstring(default_value.v.b[0]);
-				case cH("Bvec2"):
-					return to_stdstring((Bvec2)default_value.v.b);
-				case cH("Bvec3"):
-					return to_stdstring((Bvec3)default_value.v.b);
-				case cH("Bvec4"):
-					return to_stdstring(default_value.v.b);
-				}
-				break;
-			}
-
-			return "";
-		}
-
-		inline void unserialize_default_value(const std::string &str)
-		{
-			switch (tag)
-			{
-			case VariableTagEnumSingle:
-			{
-				auto e = find_enum(type_hash);
-				default_value.i1() = e->find_item(str.c_str());
-			}
-				break;
-			case VariableTagVariable:
-				switch (type_hash)
-				{
-				case cH("bool"):
-					default_value.i1() = str == "true" ? true : false;
-					break;
-				case cH("uint"):
-					default_value.i1() = stou1(str.c_str());
-					break;
-				case cH("int"):
-					default_value.i1() = stoi1(str.c_str());
-					break;
-				case cH("Ivec2"):
-					default_value.i2() = stoi2(str.c_str());
-					break;
-				case cH("Ivec3"):
-					default_value.i3() = stoi3(str.c_str());
-					break;
-				case cH("Ivec4"):
-					default_value.i4() = stoi4(str.c_str());
-					break;
-				case cH("float"):
-					default_value.f1() = stof1(str.c_str());
-					break;
-				case cH("Vec2"):
-					default_value.f2() = stof2(str.c_str());
-					break;
-				case cH("Vec3"):
-					default_value.f3() = stof3(str.c_str());
-					break;
-				case cH("Vec4"):
-					default_value.f4() = stof4(str.c_str());
-					break;
-				case cH("uchar"):
-					default_value.b1() = stob1(str.c_str());
-					break;
-				case cH("Bvec2"):
-					default_value.b2() = stob2(str.c_str());
-					break;
-				case cH("Bvec3"):
-					default_value.b3() = stob3(str.c_str());
-					break;
-				case cH("Bvec4"):
-					default_value.b4() = stob4(str.c_str());
-					break;
-				}
-				break;
-			}
-		}
-
-		inline String serialize_value(void *src, bool is_obj, int precision) const
+		inline String serialize_value(const void *src, bool is_obj, int item_index, int precision) const
 		{
 			if (is_obj)
 				src = (char*)src + offset;
@@ -481,8 +241,13 @@ namespace flame
 				break;
 			case VariableTagEnumMulti:
 				break;
+			case VariableTagArrayOfVariable:
+				if (item_index != -1)
+				{
+					auto &arr = *(Array<int>*)src;
+					src = arr.v + size * item_index;
+				}
 			case VariableTagVariable: 
-			case VariableTagArrayOfVariable: // means one item of the array
 				switch (type_hash)
 				{
 				case cH("bool"):
@@ -519,15 +284,12 @@ namespace flame
 					return *(StringAndHash*)src;
 				}
 				break;
-			case VariableTagPointer: 
-			case VariableTagArrayOfPointer: // means one item of the array
-				return "pointer";
 			}
 
 			return "";
 		}
 
-		inline void unserialize_value(const std::string &str, void *dst, bool is_obj) const
+		inline void unserialize_value(const std::string &str, void *dst, bool is_obj, int item_index) const
 		{
 			if (is_obj)
 				dst = (char*)dst + offset;
@@ -540,6 +302,12 @@ namespace flame
 				*(int*)dst = e->find_item(str.c_str());
 			}
 				break;
+			case VariableTagArrayOfVariable:
+				if (item_index != -1)
+				{
+					auto &arr = *(Array<int>*)dst;
+					dst = arr.v + size * item_index;
+				}
 			case VariableTagVariable:
 				switch (type_hash)
 				{
@@ -645,14 +413,14 @@ namespace flame
 		return ((VaribleInfoPrivate*)this)->default_value;
 	}
 
-	void VaribleInfo::get(const void *src, bool is_obj, CommonData *dst) const
+	void VaribleInfo::get(const void *src, bool is_obj, int item_index, CommonData *dst) const
 	{
-		((VaribleInfoPrivate*)this)->get(src, is_obj, dst);
+		((VaribleInfoPrivate*)this)->get(src, is_obj, item_index, dst);
 	}
 
-	void VaribleInfo::set(const CommonData *src, void *dst, bool is_obj) const
+	void VaribleInfo::set(const CommonData *src, void *dst, bool is_obj, int item_index) const
 	{
-		((VaribleInfoPrivate*)this)->set(src, dst, is_obj);
+		((VaribleInfoPrivate*)this)->set(src, dst, is_obj, item_index);
 	}
 
 	void VaribleInfo::array_resize(int size, void *dst, bool is_obj) const
@@ -670,14 +438,14 @@ namespace flame
 		return ((VaribleInfoPrivate*)this)->compare_to_default(src, is_obj);
 	}
 
-	String VaribleInfo::serialize_value(void *src, bool is_obj, int precision) const
+	String VaribleInfo::serialize_value(const void *src, bool is_obj, int item_index, int precision) const
 	{
-		return ((VaribleInfoPrivate*)this)->serialize_value(src, is_obj, precision);
+		return ((VaribleInfoPrivate*)this)->serialize_value(src, is_obj, item_index, precision);
 	}
 
-	void VaribleInfo::unserialize_value(const std::string &str, void *dst, bool is_obj) const
+	void VaribleInfo::unserialize_value(const std::string &str, void *dst, bool is_obj, int item_index) const
 	{
-		return ((VaribleInfoPrivate*)this)->unserialize_value(str, dst, is_obj);
+		return ((VaribleInfoPrivate*)this)->unserialize_value(str, dst, is_obj, item_index);
 	}
 
 	struct UdtInfoPrivate : UdtInfo
@@ -721,6 +489,16 @@ namespace flame
 			}
 			return -1;
 		}
+
+		inline void construct(void *dst, bool is_obj)
+		{
+
+		}
+
+		inline void destruct(void *dst, bool is_obj)
+		{
+
+		}
 	};
 
 	const char *UdtInfo::name() const
@@ -756,6 +534,16 @@ namespace flame
 	const wchar_t* UdtInfo::update_function_module_name() const
 	{
 		return ((UdtInfoPrivate*)this)->update_function_module_name.c_str();
+	}
+
+	void UdtInfo::construct(void *dst, bool is_obj) const
+	{
+		((UdtInfoPrivate*)this)->construct(dst, is_obj);
+	}
+
+	void UdtInfo::destruct(void *dst, bool is_obj) const
+	{
+		((UdtInfoPrivate*)this)->destruct(dst, is_obj);
 	}
 
 	struct FunctionInfoPrivate : FunctionInfo
@@ -1342,7 +1130,7 @@ namespace flame
 						auto n_item = new_node("attribute");
 						n_item->new_attr("name", item->name());
 
-						n_item->new_attr("value", item->serialize_value(src, true, precision).v);
+						n_item->new_attr("value", item->serialize_value(src, true, -1, precision).v);
 					}
 				}
 			}
@@ -1487,7 +1275,7 @@ namespace flame
 				}
 					break;
 				default:
-					item->unserialize_value(n_item->find_attr("value")->value(), obj, true);
+					item->unserialize_value(n_item->find_attr("value")->value(), obj, true, -1);
 				}
 			}
 		}
@@ -2327,9 +2115,12 @@ namespace flame
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
 						i->size = std::stoi(n_item->find_attr("size")->value());
 						memset(&i->default_value, 0, sizeof(CommonData));
-						auto a_default_value = n_item->find_attr("default_value");
-						if (a_default_value)
-							i->unserialize_default_value(a_default_value->value());
+						if (i->tag != VariableTagArrayOfVariable && i->tag != VariableTagArrayOfPointer)
+						{
+							auto a_default_value = n_item->find_attr("default_value");
+							if (a_default_value)
+								i->unserialize_value(a_default_value->value(), &i->default_value.v, false, -1);
+						}
 						u->items.emplace_back(i);
 					}
 				}
@@ -2382,9 +2173,12 @@ namespace flame
 				n_item->new_attr("attribute", i->attribute);
 				n_item->new_attr("offset", std::to_string(i->offset));
 				n_item->new_attr("size", std::to_string(i->size));
-				auto default_value_str = i->serialize_default_value(1);
-				if (default_value_str.size() > 0)
-					n_item->new_attr("default_value", default_value_str);
+				if (i->tag != VariableTagArrayOfVariable && i->tag != VariableTagArrayOfPointer)
+				{
+					auto default_value_str = i->serialize_value(&i->default_value.v, false, -1, 1);
+					if (default_value_str.size > 0)
+						n_item->new_attr("default_value", default_value_str.v);
+				}
 			}
 
 			if (u.second->update_function_rva)
@@ -2403,10 +2197,5 @@ namespace flame
 	{
 		enums.clear();
 		udts.clear();
-	}
-
-	void test$(Package& p)
-	{
-
 	}
 }

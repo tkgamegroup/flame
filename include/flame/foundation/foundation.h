@@ -251,6 +251,25 @@ namespace flame
 		int size;
 		T *v;
 
+		inline void resize_pod_typeness(int new_size, int type_size) //only pod can use this
+		{
+			if (size == new_size)
+				return;
+
+			if (new_size == 0)
+			{
+				flame_free(v);
+				v = nullptr;
+			}
+			else
+				v = (T*)flame_realloc(v, type_size * new_size);
+
+			if (new_size > size)
+				memset(&v[size], 0, type_size * (new_size - size));
+
+			size = new_size;
+		}
+
 		inline void resize(int new_size)
 		{
 			if (size == new_size)

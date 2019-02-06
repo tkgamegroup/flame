@@ -153,9 +153,12 @@ int main(int argc, char **args)
 								std::string link_address;
 								if (v->link())
 									link_address = v->link()->get_address().v;
-								printf("  %d -\n", i_v);
+								printf("  %d:\n", i_v);
 								printf("   [%s]->\n", link_address.c_str());
-								printf("   %s\n", input->varible_info()->serialize_value(&v->data().v, false, 2).v);
+								auto str = input->varible_info()->serialize_value(&v->data().v, false, -1, 2);
+								if (str.size == 0)
+									str = "-";
+								printf("   %s\n", str.v);
 							}
 						}
 						else
@@ -169,11 +172,10 @@ int main(int argc, char **args)
 						/* output has only one item */
 						{
 							auto v = output->item();
-							std::string link_address;
-							if (v->link())
-								link_address = v->link()->get_address().v;
-							printf("   %s\n", output->varible_info()->serialize_value(&v->data().v, false, 2).v);
-							printf("   ->[%s]\n", link_address.c_str());
+							auto str = output->varible_info()->serialize_value(&v->data().v, false, -1, 2);
+							if (str.size == 0)
+								str = "-";
+							printf("   %s\n", str.v);
 						}
 					}
 				}
@@ -309,9 +311,9 @@ int main(int argc, char **args)
 					v = i->parent_i()->varible_info();
 				else if (i->parent_o())
 					v = i->parent_o()->varible_info();
-				auto value_before = v->serialize_value(&i->data().v, false, 2);
-				v->unserialize_value(s_value, &i->data().v, false);
-				auto value_after = v->serialize_value(&i->data().v, false, 2);
+				auto value_before = v->serialize_value(&i->data().v, false, -1, 2);
+				v->unserialize_value(s_value, &i->data().v, false, -1);
+				auto value_after = v->serialize_value(&i->data().v, false, -1, 2);
 				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
 			}
 			else

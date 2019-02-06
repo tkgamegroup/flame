@@ -605,15 +605,16 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS int size() const;
 		FLAME_FOUNDATION_EXPORTS const CommonData &default_value() const;
 
-		FLAME_FOUNDATION_EXPORTS void construct(void *dst, bool is_obj) const;
-		FLAME_FOUNDATION_EXPORTS void destruct(void *dst, bool is_obj) const;
-		FLAME_FOUNDATION_EXPORTS void get(const void *src, bool is_obj, CommonData *dst) const;
-		FLAME_FOUNDATION_EXPORTS void set(const CommonData *src, void *dst, bool is_obj) const;
+		FLAME_FOUNDATION_EXPORTS void get(const void *src, bool is_obj, int item_index, CommonData *dst) const;
+		FLAME_FOUNDATION_EXPORTS void set(const CommonData *src, void *dst, bool is_obj, int item_index) const;
 		FLAME_FOUNDATION_EXPORTS void array_resize(int size, void *dst, bool is_obj) const;
 		FLAME_FOUNDATION_EXPORTS bool compare(void *src, void *dst) const;
 		FLAME_FOUNDATION_EXPORTS bool compare_to_default(void *src, bool is_obj) const;
-		FLAME_FOUNDATION_EXPORTS String serialize_value(void *src, bool is_obj, int precision = 6) const;
-		FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::string &str, void *dst, bool is_obj) const;
+		FLAME_FOUNDATION_EXPORTS String serialize_value(const void *src, bool is_obj, int item_index, int precision = 6) const;
+		FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::string &str, void *dst, bool is_obj, int item_index) const;
+		// when this is an array, item_index is ignored
+		// when item_index is -1, means the data is one item of the array
+		// else, means data is an array, and use item_index to index the item
 	};
 
 	struct UdtInfo
@@ -628,6 +629,9 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const void* update_function_rva() const;
 		FLAME_FOUNDATION_EXPORTS const wchar_t* update_function_module_name() const;
+
+		FLAME_FOUNDATION_EXPORTS void construct(void *dst, bool is_obj) const;
+		FLAME_FOUNDATION_EXPORTS void destruct(void *dst, bool is_obj) const;
 	};
 
 	typedef UdtInfo* UdtInfoPtr;

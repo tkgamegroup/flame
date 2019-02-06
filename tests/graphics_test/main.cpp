@@ -37,12 +37,12 @@ struct MyApp : BasicApp
 
 		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
 		auto n_sc = render_path->find_node("sc");
-		auto i_sc = n_sc->find_input("swapchain");
+		auto i_sc = n_sc->find_input("in");
 		i_sc->array_item(0)->set_data(sc);
 		render_path->install_dummys();
 		render_path->update();
 		render_path->uninstall_dummys();
-		cv = (ClearValues*)render_path->find_node("cv")->find_output("clearvalues")->item()->data().v.p;
+		cv = (ClearValues*)render_path->find_node("cv")->find_output("out")->item()->data().v.p;
 	}
 
 	inline virtual void do_run() override
