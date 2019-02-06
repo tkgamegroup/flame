@@ -382,7 +382,17 @@
 		<udt name="BP_Int" size="8">
 			<item tag="varible" type="int" name="v" attribute="i" offset="0" size="4" default_value="0"/>
 			<item tag="varible" type="int" name="v" attribute="o" offset="4" size="4" default_value="0"/>
-			<update_function rva="328672" module="flame_foundation.dll"/>
+			<update_function rva="328704" module="flame_foundation.dll"/>
+		</udt>
+		<udt name="BP_GraphicsCmdBeginRenderpass" size="56">
+			<item tag="pointer" type="void" name="in1" attribute="i" offset="0" size="8"/>
+			<item tag="pointer" type="void" name="in2" attribute="i" offset="8" size="8"/>
+			<item tag="pointer" type="void" name="renderpass" attribute="i" offset="16" size="8"/>
+			<item tag="pointer" type="void" name="framebuffer" attribute="i" offset="24" size="8"/>
+			<item tag="pointer" type="void" name="clearvalues" attribute="i" offset="32" size="8"/>
+			<item tag="pointer" type="void" name="out1" attribute="o" offset="40" size="8"/>
+			<item tag="pointer" type="void" name="out2" attribute="o" offset="48" size="8"/>
+			<update_function rva="150896" module="flame_graphics.dll"/>
 		</udt>
 		<udt name="BP_Vec4" size="32">
 			<item tag="varible" type="float" name="x" attribute="i" offset="0" size="4" default_value="0.0"/>
@@ -390,44 +400,76 @@
 			<item tag="varible" type="float" name="z" attribute="i" offset="8" size="4" default_value="0.0"/>
 			<item tag="varible" type="float" name="w" attribute="i" offset="12" size="4" default_value="0.0"/>
 			<item tag="varible" type="Vec4" name="v" attribute="o" offset="16" size="16" default_value="0.0;0.0;0.0;0.0"/>
-			<update_function rva="329360" module="flame_foundation.dll"/>
+			<update_function rva="329392" module="flame_foundation.dll"/>
 		</udt>
 		<udt name="BP_Vec2" size="16">
 			<item tag="varible" type="float" name="x" attribute="i" offset="0" size="4" default_value="0.0"/>
 			<item tag="varible" type="float" name="y" attribute="i" offset="4" size="4" default_value="0.0"/>
 			<item tag="varible" type="Vec2" name="v" attribute="o" offset="8" size="8" default_value="0.0;0.0"/>
-			<update_function rva="328976" module="flame_foundation.dll"/>
+			<update_function rva="329008" module="flame_foundation.dll"/>
 		</udt>
 		<udt name="BP_Vec3" size="24">
 			<item tag="varible" type="float" name="x" attribute="i" offset="0" size="4" default_value="0.0"/>
 			<item tag="varible" type="float" name="y" attribute="i" offset="4" size="4" default_value="0.0"/>
 			<item tag="varible" type="float" name="z" attribute="i" offset="8" size="4" default_value="0.0"/>
 			<item tag="varible" type="Vec3" name="v" attribute="o" offset="12" size="12" default_value="0.0;0.0;0.0"/>
-			<update_function rva="329152" module="flame_foundation.dll"/>
+			<update_function rva="329184" module="flame_foundation.dll"/>
 		</udt>
 		<udt name="BP_Bool" size="2">
 			<item tag="varible" type="bool" name="v" attribute="i" offset="0" size="1" default_value="false"/>
 			<item tag="varible" type="bool" name="v" attribute="o" offset="1" size="1" default_value="false"/>
-			<update_function rva="328848" module="flame_foundation.dll"/>
+			<update_function rva="328880" module="flame_foundation.dll"/>
+		</udt>
+		<udt name="BP_GraphicsCmdEnd" size="32">
+			<item tag="pointer" type="void" name="in1" attribute="i" offset="0" size="8"/>
+			<item tag="pointer" type="void" name="in2" attribute="i" offset="8" size="8"/>
+			<item tag="pointer" type="void" name="out1" attribute="o" offset="16" size="8"/>
+			<item tag="pointer" type="void" name="out2" attribute="o" offset="24" size="8"/>
+			<update_function rva="150656" module="flame_graphics.dll"/>
 		</udt>
 		<udt name="BP_Float" size="8">
 			<item tag="varible" type="float" name="v" attribute="i" offset="0" size="4" default_value="0.0"/>
 			<item tag="varible" type="float" name="v" attribute="o" offset="4" size="4" default_value="0.0"/>
-			<update_function rva="328752" module="flame_foundation.dll"/>
+			<update_function rva="328784" module="flame_foundation.dll"/>
+		</udt>
+		<udt name="BP_GraphicsDevice" size="16">
+			<item tag="pointer" type="void" name="in" attribute="i" offset="0" size="8"/>
+			<item tag="pointer" type="void" name="out" attribute="o" offset="8" size="8"/>
+			<update_function rva="149424" module="flame_graphics.dll"/>
+		</udt>
+		<udt name="BP_GraphicsCommandbuffer" size="24">
+			<item tag="pointer" type="void" name="in" attribute="i" offset="0" size="8"/>
+			<item tag="pointer" type="void" name="device" attribute="i" offset="8" size="8"/>
+			<item tag="pointer" type="void" name="out" attribute="o" offset="16" size="8"/>
+			<update_function rva="150240" module="flame_graphics.dll"/>
 		</udt>
 		<udt name="BP_GraphicsClearvalues" size="40">
 			<item tag="pointer" type="void" name="in" attribute="i" offset="0" size="8"/>
 			<item tag="pointer" type="void" name="renderpass" attribute="i" offset="8" size="8"/>
 			<item tag="array_of_varible" type="Bvec4" name="colors" attribute="i" offset="16" size="16"/>
 			<item tag="pointer" type="void" name="out" attribute="o" offset="32" size="8"/>
-			<update_function rva="149680" module="flame_graphics.dll"/>
+			<update_function rva="149968" module="flame_graphics.dll"/>
+		</udt>
+		<udt name="BP_GraphicsCmdBegin" size="32">
+			<item tag="pointer" type="void" name="in1" attribute="i" offset="0" size="8"/>
+			<item tag="pointer" type="void" name="in2" attribute="i" offset="8" size="8"/>
+			<item tag="pointer" type="void" name="out1" attribute="o" offset="16" size="8"/>
+			<item tag="pointer" type="void" name="out2" attribute="o" offset="24" size="8"/>
+			<update_function rva="150448" module="flame_graphics.dll"/>
+		</udt>
+		<udt name="BP_GraphicsCmdEndRenderpass" size="32">
+			<item tag="pointer" type="void" name="in1" attribute="i" offset="0" size="8"/>
+			<item tag="pointer" type="void" name="in2" attribute="i" offset="8" size="8"/>
+			<item tag="pointer" type="void" name="out1" attribute="o" offset="16" size="8"/>
+			<item tag="pointer" type="void" name="out2" attribute="o" offset="24" size="8"/>
+			<update_function rva="151168" module="flame_graphics.dll"/>
 		</udt>
 		<udt name="BP_Ivec3" size="24">
 			<item tag="varible" type="int" name="x" attribute="i" offset="0" size="4" default_value="0"/>
 			<item tag="varible" type="int" name="y" attribute="i" offset="4" size="4" default_value="0"/>
 			<item tag="varible" type="int" name="z" attribute="i" offset="8" size="4" default_value="0"/>
 			<item tag="varible" type="Ivec3" name="v" attribute="o" offset="12" size="12" default_value="0;0;0"/>
-			<update_function rva="329712" module="flame_foundation.dll"/>
+			<update_function rva="329744" module="flame_foundation.dll"/>
 		</udt>
 		<udt name="BP_Ivec4" size="32">
 			<item tag="varible" type="int" name="x" attribute="i" offset="0" size="4" default_value="0"/>
@@ -435,13 +477,13 @@
 			<item tag="varible" type="int" name="z" attribute="i" offset="8" size="4" default_value="0"/>
 			<item tag="varible" type="int" name="w" attribute="i" offset="12" size="4" default_value="0"/>
 			<item tag="varible" type="Ivec4" name="v" attribute="o" offset="16" size="16" default_value="0;0;0;0"/>
-			<update_function rva="329904" module="flame_foundation.dll"/>
+			<update_function rva="329936" module="flame_foundation.dll"/>
 		</udt>
 		<udt name="BP_Ivec2" size="16">
 			<item tag="varible" type="int" name="x" attribute="i" offset="0" size="4" default_value="0"/>
 			<item tag="varible" type="int" name="y" attribute="i" offset="4" size="4" default_value="0"/>
 			<item tag="varible" type="Ivec2" name="v" attribute="o" offset="8" size="8" default_value="0;0"/>
-			<update_function rva="329552" module="flame_foundation.dll"/>
+			<update_function rva="329584" module="flame_foundation.dll"/>
 		</udt>
 		<udt name="BP_GraphicsSwapchain" size="72">
 			<item tag="pointer" type="void" name="in" attribute="i" offset="0" size="8"/>
@@ -453,7 +495,7 @@
 			<item tag="pointer" type="void" name="renderpass_dont_clear" attribute="o" offset="48" size="8"/>
 			<item tag="pointer" type="void" name="framebuffer1" attribute="o" offset="56" size="8"/>
 			<item tag="pointer" type="void" name="framebuffer2" attribute="o" offset="64" size="8"/>
-			<update_function rva="149328" module="flame_graphics.dll"/>
+			<update_function rva="149616" module="flame_graphics.dll"/>
 		</udt>
 	</udts>
 </typeinfo>

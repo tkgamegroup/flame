@@ -490,14 +490,21 @@ namespace flame
 			return -1;
 		}
 
-		inline void construct(void *dst, bool is_obj)
+		inline void construct(void *dst)
 		{
 
 		}
 
-		inline void destruct(void *dst, bool is_obj)
+		inline void destruct(void *dst)
 		{
-
+			for (auto& i : items)
+			{
+				if (i->tag == VariableTagArrayOfVariable || i->tag == VariableTagArrayOfPointer)
+				{
+					auto &arr = *(Array<int>*)((char*)dst + i->offset);
+					arr.destroy_pod();
+				}
+			}
 		}
 	};
 
@@ -536,14 +543,14 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->update_function_module_name.c_str();
 	}
 
-	void UdtInfo::construct(void *dst, bool is_obj) const
+	void UdtInfo::construct(void *dst) const
 	{
-		((UdtInfoPrivate*)this)->construct(dst, is_obj);
+		((UdtInfoPrivate*)this)->construct(dst);
 	}
 
-	void UdtInfo::destruct(void *dst, bool is_obj) const
+	void UdtInfo::destruct(void *dst) const
 	{
-		((UdtInfoPrivate*)this)->destruct(dst, is_obj);
+		((UdtInfoPrivate*)this)->destruct(dst);
 	}
 
 	struct FunctionInfoPrivate : FunctionInfo

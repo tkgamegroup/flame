@@ -251,7 +251,12 @@ namespace flame
 		int size;
 		T *v;
 
-		inline void resize_pod_typeness(int new_size, int type_size) //only pod can use this
+		inline void destroy_pod()
+		{
+			flame_free(v);
+		}
+
+		inline void resize_pod_typeness(int new_size, int type_size)
 		{
 			if (size == new_size)
 				return;
@@ -314,6 +319,8 @@ namespace flame
 
 		inline ~Array()
 		{
+			for (auto i = 0; i < size; i++)
+				v[i].~T();
 			flame_free(v);
 		}
 

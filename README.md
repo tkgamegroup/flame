@@ -45,8 +45,6 @@ A lightweight and powerful 3D Game Engine.
 - set path to OpenAL
   
 - cmake flame generate
-
-- run flame/set_path.bat to set environment variable
   
 - enjoy
   

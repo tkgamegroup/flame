@@ -414,9 +414,11 @@ namespace flame
 		{
 			if (!n->dummy)
 			{
-				auto size = n->udt->size();
+				auto udt = n->udt;
+				auto size = udt->size();
 				n->dummy = malloc(size);
 				memset(n->dummy, 0, size);
+				udt->construct(n->dummy);
 			}
 		}
 	}
@@ -427,6 +429,8 @@ namespace flame
 		{
 			if (n->dummy)
 			{
+				auto udt = n->udt;
+				udt->destruct(n->dummy);
 				free(n->dummy);
 				n->dummy = nullptr;
 			}

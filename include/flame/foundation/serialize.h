@@ -630,8 +630,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const void* update_function_rva() const;
 		FLAME_FOUNDATION_EXPORTS const wchar_t* update_function_module_name() const;
 
-		FLAME_FOUNDATION_EXPORTS void construct(void *dst, bool is_obj) const;
-		FLAME_FOUNDATION_EXPORTS void destruct(void *dst, bool is_obj) const;
+		FLAME_FOUNDATION_EXPORTS void construct(void *dst) const;
+		FLAME_FOUNDATION_EXPORTS void destruct(void *dst) const;
 	};
 
 	typedef UdtInfo* UdtInfoPtr;
