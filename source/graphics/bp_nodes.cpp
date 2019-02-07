@@ -91,64 +91,40 @@ namespace flame
 
 	void BP_GraphicsCmdBegin::update()
 	{
-		if (in1$i)
-		{
-			out1$o = in1$i;
-			((graphics::Commandbuffer*)out1$o)->begin();
-		}
-		if (in2$i)
-		{
-			out2$o = in2$i;
-			((graphics::Commandbuffer*)out2$o)->begin();
-		}
+		if (cmd1$i)
+			((graphics::Commandbuffer*)cmd1$i)->begin();
+		if (cmd2$i)
+			((graphics::Commandbuffer*)cmd2$i)->begin();
 	}
 
 	BP_GraphicsCmdBegin bp_graphics_cmd_begin_unused;
 
 	void BP_GraphicsCmdEnd::update()
 	{
-		if (in1$i)
-		{
-			out1$o = in1$i;
-			((graphics::Commandbuffer*)out1$o)->end();
-		}
-		if (in2$i)
-		{
-			out2$o = in2$i;
-			((graphics::Commandbuffer*)out2$o)->end();
-		}
+		if (cmd1$i)
+			((graphics::Commandbuffer*)cmd1$i)->end();
+		if (cmd2$i)
+			((graphics::Commandbuffer*)cmd2$i)->end();
 	}
 
 	BP_GraphicsCmdEnd bp_graphics_cmd_end_unused;
 
 	void BP_GraphicsCmdBeginRenderpass::update()
 	{
-		if (in1$i)
-		{
-			out1$o = in1$i;
-			((graphics::Commandbuffer*)out1$o)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer1$i, (graphics::ClearValues*)clearvalues$i);
-		}
-		if (in2$i)
-		{
-			out2$o = in2$i;
-			((graphics::Commandbuffer*)out2$o)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer2$i, (graphics::ClearValues*)clearvalues$i);
-		}
+		if (cmd1$i)
+			((graphics::Commandbuffer*)cmd1$i)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer1$i, (graphics::ClearValues*)clearvalues$i);
+		if (cmd2$i)
+			((graphics::Commandbuffer*)cmd2$i)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer2$i, (graphics::ClearValues*)clearvalues$i);
 	}
 
 	BP_GraphicsCmdBeginRenderpass bp_graphics_cmd_begin_renderpass_unused;
 
 	void BP_GraphicsCmdEndRenderpass::update()
 	{
-		if (in1$i)
-		{
-			out1$o = in1$i;
-			((graphics::Commandbuffer*)out1$o)->end_renderpass();
-		}
-		if (in2$i)
-		{
-			out2$o = in2$i;
-			((graphics::Commandbuffer*)out2$o)->end_renderpass();
-		}
+		if (cmd1$i)
+			((graphics::Commandbuffer*)cmd1$i)->end_renderpass();
+		if (cmd2$i)
+			((graphics::Commandbuffer*)cmd2$i)->end_renderpass();
 	}
 
 	BP_GraphicsCmdEndRenderpass bp_graphics_cmd_end_renderpass_unused;

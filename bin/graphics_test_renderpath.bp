@@ -15,17 +15,21 @@
 	<link from="sc.renderpass_clear" to="cv.renderpass.0"/>
 	<link from="d.out" to="cb1.device.0"/>
 	<link from="d.out" to="cb2.device.0"/>
-	<link from="cb1.out" to="cmd_begin.in1.0"/>
-	<link from="cb2.out" to="cmd_begin.in2.0"/>
-	<link from="cmd_begin.out1" to="cmd_begin_renderpass.in1.0"/>
-  <link from="cmd_begin.out2" to="cmd_begin_renderpass.in2.0"/>
+	<link from="cb1.out" to="cmd_begin.cmd1.0"/>
+	<link from="cb2.out" to="cmd_begin.cmd2.0"/>
+  <link from="cb1.out" to="cmd_begin_renderpass.cmd1.0"/>
+  <link from="cb2.out" to="cmd_begin_renderpass.cmd2.0"/>
+  <link from="cb1.out" to="cmd_end_renderpass.cmd1.0"/>
+  <link from="cb2.out" to="cmd_end_renderpass.cmd2.0"/>
+  <link from="cb1.out" to="cmd_end.cmd1.0"/>
+  <link from="cb2.out" to="cmd_end.cmd2.0"/>
+  
+	<link from="cmd_begin.out" to="cmd_begin_renderpass.in.0"/>
 	<link from="sc.renderpass_clear" to="cmd_begin_renderpass.renderpass.0"/>
 	<link from="sc.framebuffer1" to="cmd_begin_renderpass.framebuffer1.0"/>
   <link from="sc.framebuffer2" to="cmd_begin_renderpass.framebuffer2.0"/>
 	<link from="cv.out" to="cmd_begin_renderpass.clearvalues.0"/>
-	<link from="cmd_begin_renderpass.out1" to="cmd_end_renderpass.in1.0"/>
-	<link from="cmd_begin_renderpass.out2" to="cmd_end_renderpass.in2.0"/>
-  <link from="cmd_end_renderpass.out1" to="cmd_end.in1.0"/>
-  <link from="cmd_end_renderpass.out2" to="cmd_end.in2.0"/>
+	<link from="cmd_begin_renderpass.out" to="cmd_end_renderpass.in.0"/>
+  <link from="cmd_end_renderpass.out" to="cmd_end.in.0"/>
 </BP>
 

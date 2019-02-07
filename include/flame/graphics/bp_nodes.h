@@ -69,52 +69,50 @@ namespace flame
 		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
-	};
+	}; 
 
 	struct BP_GraphicsCmdBegin : R
 	{
-		void* in1$i;
-		void* in2$i;
+		void* cmd1$i;
+		void* cmd2$i;
 
-		void* out1$o;
-		void* out2$o;
+		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
 	struct BP_GraphicsCmdEnd : R
 	{
-		void* in1$i;
-		void* in2$i;
-
-		void* out1$o;
-		void* out2$o;
+		void* in$i;
+		void* cmd1$i;
+		void* cmd2$i;
 
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
 	struct BP_GraphicsCmdBeginRenderpass : R
 	{
-		void* in1$i;
-		void* in2$i;
+		void* in$i;
+		void* cmd1$i;
+		void* cmd2$i;
+
 		void* renderpass$i;
 		void* framebuffer1$i;
 		void* framebuffer2$i;
 		void* clearvalues$i;
 
-		void* out1$o;
-		void* out2$o;
+		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
 	struct BP_GraphicsCmdEndRenderpass : R
 	{
-		void* in1$i;
-		void* in2$i;
+		void* in$i;
+		void* cmd1$i;
+		void* cmd2$i;
 
-		void* out1$o;
-		void* out2$o;
+		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
 	};

@@ -469,7 +469,7 @@ namespace flame
 	{
 		if (update_list.empty())
 		{
-			printf("no nodes to update or didn't call 'prepare'\n");
+			printf("no nodes or didn't call 'prepare'\n");
 			return;
 		}
 
@@ -482,6 +482,14 @@ namespace flame
 
 	void BPPrivate::generate_code(const wchar_t* filename)
 	{
+		if (update_list.empty())
+		{
+			printf("no nodes or didn't call 'prepare'\n");
+			return;
+		}
+
+		std::vector<std::pair<std::string, std::string>> variables;
+
 
 	}
 

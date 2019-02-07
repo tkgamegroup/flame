@@ -40,12 +40,10 @@ namespace flame
 		  'a'     for node
 		  'a.b'   for node input or output
 		  'a.b.3' for item, index is default to 0
-		- An available udt must have:
-			at least one input
-			at least one output
-			all datas work fine with zero memory (basically, BP nodes will use udts to create a all-zeros
+		- An available udt must:
+			all datas work fine with zero memory (basically, BP nodes will use udts to create an all-zeros
 			 memory, (Array<>, String, StringW are fined with zero memory))
-			an nonparametric no-return-value function called 'update'
+			have an nonparametric no-return-value function called 'update'
 		  and optional:
 		    a nonparametric const function called 'code' that returns const char*
 		- A BP file is basically a XML file, you can use both .xml or .bp.

@@ -81,18 +81,8 @@ int main(int argc, char **args)
 				for (auto i_u = 0; i_u < udts.size; i_u++)
 				{
 					auto udt = udts[i_u];
-					auto input_count = 0;
-					auto output_count = 0;
-					for (auto i_i = 0; i_i < udt->item_count(); i_i++)
-					{
-						auto item = udt->item(i_i);
-						auto attribute = std::string(item->attribute());
-						if (attribute.find('i') != std::string::npos)
-							input_count++;
-						if (attribute.find('o') != std::string::npos)
-							output_count++;
-					}
-					if (input_count > 0 && output_count > 0)
+					auto name = std::string(udt->name());
+					if (name.find("BP_") == 0)
 						printf("%s\n", udt->name());
 				}
 			}
