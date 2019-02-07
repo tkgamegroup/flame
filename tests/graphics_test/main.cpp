@@ -36,9 +36,9 @@ struct MyApp : BasicApp
 		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
 		render_path->find_item("d.in")->set_data(d);
 		render_path->find_item("sc.in")->set_data(sc);
-		render_path->install_dummys();
+		render_path->prepare();
 		render_path->update();
-		render_path->uninstall_dummys();
+		render_path->unprepare();
 		cv = (ClearValues*)render_path->find_item("cv.out")->data().v.p;
 		cbs[0]  = (Commandbuffer*)render_path->find_item("cb1.out")->data().v.p;
 		cbs[1] = (Commandbuffer*)render_path->find_item("cb2.out")->data().v.p;

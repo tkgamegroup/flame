@@ -114,9 +114,11 @@ namespace flame
 
 		inline void clear();
 
-		inline void prepare_update();
-		inline void done_update();
+		inline void prepare();
+		inline void unprepare();
+
 		inline void update();
+		inline void generate_code(const wchar_t* filename);
 
 		inline void load(const wchar_t *filename);
 		inline void save(const wchar_t *filename);
@@ -426,7 +428,7 @@ namespace flame
 		nodes.clear();
 	}
 
-	inline void BPPrivate::prepare_update()
+	void BPPrivate::prepare()
 	{
 		for (auto &n : nodes)
 		{
@@ -447,7 +449,7 @@ namespace flame
 			n->report_order();
 	}
 
-	inline void BPPrivate::done_update()
+	void BPPrivate::unprepare()
 	{
 		for (auto &n : nodes)
 		{
@@ -463,11 +465,11 @@ namespace flame
 		update_list.clear();
 	}
 
-	inline void BPPrivate::update()
+	void BPPrivate::update()
 	{
 		if (update_list.empty())
 		{
-			printf("no nodes to update or didn't call prepare_update\n");
+			printf("no nodes to update or didn't call 'prepare'\n");
 			return;
 		}
 
@@ -476,6 +478,11 @@ namespace flame
 
 		for (auto &n : update_list)
 			n->update();
+	}
+
+	void BPPrivate::generate_code(const wchar_t* filename)
+	{
+
 	}
 
 	void BPPrivate::load(const wchar_t *filename)
@@ -781,19 +788,24 @@ namespace flame
 		((BPPrivate*)this)->clear();
 	}
 
-	void BP::prepare_update()
+	void BP::prepare()
 	{
-		((BPPrivate*)this)->prepare_update();
+		((BPPrivate*)this)->prepare();
 	}
 
-	void BP::done_update()
+	void BP::unprepare()
 	{
-		((BPPrivate*)this)->done_update();
+		((BPPrivate*)this)->unprepare();
 	}
 
 	void BP::update()
 	{
 		((BPPrivate*)this)->update();
+	}
+
+	void BP::generate_code(const wchar_t* filename)
+	{
+		((BPPrivate*)this)->generate_code(filename);
 	}
 
 	void BP::save(const wchar_t *filename)

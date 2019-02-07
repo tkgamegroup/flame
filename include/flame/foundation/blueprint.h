@@ -40,7 +40,13 @@ namespace flame
 		  'a'     for node
 		  'a.b'   for node input or output
 		  'a.b.3' for item, index is default to 0
-		- An available udt must have at least one input and one output
+		- An available udt must have:
+			at least one input
+			at least one output
+			a nonparametric constructor
+			an nonparametric no-return-value function called 'update'
+		  and optional:
+		    a nonparametric const function called 'code' that returns const char*
 		- A BP file is basically a XML file, you can use both .xml or .bp.
 	*/
 
@@ -120,13 +126,18 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 
-		// before you update the BP, you should call prepare_update, basically, 
-		// it let all notes create a piece of memory to represent the 'true' object and
+		// build data so that bp can do 'update' and 'generate_code'
+		// let all notes create a piece of memory to represent the 'true' object and
 		// determines update order
-		FLAME_FOUNDATION_EXPORTS void prepare_update();
-		// when you're done all of your updates, call done_update
-		FLAME_FOUNDATION_EXPORTS void done_update();
+		FLAME_FOUNDATION_EXPORTS void prepare();
+		// release the data that built by 'prepare'
+		FLAME_FOUNDATION_EXPORTS void unprepare();
+
+		// update the 'bp' using nodes
 		FLAME_FOUNDATION_EXPORTS void update();
+		// generate cpp codes that do the 'update' job and save to a file
+		// note: all nodes in bp need to have 'code' function
+		FLAME_FOUNDATION_EXPORTS void generate_code(const wchar_t* filename);
 
 		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
 

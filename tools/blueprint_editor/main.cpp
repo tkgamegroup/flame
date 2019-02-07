@@ -323,9 +323,9 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "update")
 		{
-			bp->prepare_update();
+			bp->prepare();
 			bp->update();
-			bp->done_update();
+			bp->unprepare();
 			printf("BP updated\n");
 		}
 		else if (s_command_line == "save")
