@@ -27,32 +27,28 @@ using namespace graphics;
 
 struct MyApp : BasicApp
 {
-	Commandbuffer *cb;
+	Commandbuffer *cbs[2];
 	ClearValues *cv;
 	BP* render_path;
 
 	inline virtual void on_create() override
 	{
-		cb = Commandbuffer::create(d->gcp);
-
 		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
+		render_path->find_item("d.in")->set_data(d);
 		render_path->find_item("sc.in")->set_data(sc);
 		render_path->install_dummys();
 		render_path->update();
 		render_path->uninstall_dummys();
 		cv = (ClearValues*)render_path->find_item("cv.out")->data().v.p;
+		cbs[0]  = (Commandbuffer*)render_path->find_item("cb1.out")->data().v.p;
+		cbs[1] = (Commandbuffer*)render_path->find_item("cb2.out")->data().v.p;
 	}
 
 	inline virtual void do_run() override
 	{
 		sc->acquire_image(image_avalible);
 
-		cb->begin();
-		cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), cv);
-		cb->end_renderpass();
-		cb->end();
-
-		d->gq->submit(cb, image_avalible, render_finished);
+		d->gq->submit(cbs[sc->get_avalible_image_index()], image_avalible, render_finished);
 		d->gq->wait_idle();
 
 		d->gq->present(sc, render_finished);

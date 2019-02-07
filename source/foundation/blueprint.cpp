@@ -381,6 +381,8 @@ namespace flame
 	ItemPrivate *BPPrivate::find_item(const std::string &address) const
 	{
 		auto sp = string_split(address, '.');
+		if (sp.size() < 2)
+			return nullptr;
 		uint index = 0;
 		if (sp.size() >= 3)
 			index = std::stoi(sp[2]);

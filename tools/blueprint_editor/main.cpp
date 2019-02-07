@@ -99,7 +99,7 @@ int main(int argc, char **args)
 			else if (s_what == "udt")
 			{
 				scanf("%s", command_line);
-				auto s_name = std::string(command_line);
+				auto s_name = "BP_" + std::string(command_line);
 
 				auto udt = find_udt(H(s_name.c_str()));
 				if (udt)
@@ -118,11 +118,13 @@ int main(int argc, char **args)
 					}
 					printf("[In]\n");
 					for (auto &i : inputs)
-						printf("name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
 					printf("[Out]\n");
 					for (auto &i : outputs)
-						printf("name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
 				}
+				else
+					printf("udt not found\n");
 			}
 			else if (s_what == "nodes")
 			{
