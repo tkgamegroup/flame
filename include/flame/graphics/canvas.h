@@ -26,17 +26,16 @@
 
 namespace flame
 {
-	struct FontAtlas;
-
 	namespace graphics
 	{
 		struct Device;
+		struct Swapchain;
 		struct Commandbuffer;
 
 		enum DrawCmdType
 		{
-			DrawCmd2d,
-			DrawCmdText,
+			DrawCmdElement,
+			DrawCmdTextLcd,
 			DrawCmdTextSdf,
 			DrawCmdScissor
 		};
@@ -53,9 +52,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void stroke_col2(const Bvec4 &inner_col, const Bvec4 &outter_col, float thickness, bool closed);
 			FLAME_GRAPHICS_EXPORTS void fill(const Bvec4 &col);
 
-			FLAME_GRAPHICS_EXPORTS void add_char_stroke(const Vec2 &pos, const Bvec4 &col, wchar_t ch);
+			FLAME_GRAPHICS_EXPORTS void add_char_lcd(const Vec2 &pos, const Bvec4 &col, wchar_t ch);
 			FLAME_GRAPHICS_EXPORTS void add_char_sdf(const Vec2 &pos, const Bvec4 &col, wchar_t ch, float scale);
-			FLAME_GRAPHICS_EXPORTS void add_text_stroke(const Vec2 &pos, const Bvec4 &col, const wchar_t *text);
+			FLAME_GRAPHICS_EXPORTS void add_text_lcd(const Vec2 &pos, const Bvec4 &col, const wchar_t *text);
 			FLAME_GRAPHICS_EXPORTS void add_text_sdf(const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale);
 			FLAME_GRAPHICS_EXPORTS void add_line(const Vec2 &p0, const Vec2 &p1, const Bvec4 &col, float thickness);
 			FLAME_GRAPHICS_EXPORTS void add_triangle_filled(const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Bvec4 &col);
@@ -81,7 +80,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Commandbuffer *get_cb() const;
 			FLAME_GRAPHICS_EXPORTS void record_cb(int swacpchain_image_index);
 
-			FLAME_GRAPHICS_EXPORTS static Canvas *create(Device *d);
+			FLAME_GRAPHICS_EXPORTS static Canvas *create(Device *d, Swapchain *sc);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Canvas *c);
 		};
 

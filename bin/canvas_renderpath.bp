@@ -1,0 +1,8 @@
+<BP>
+	<node id="cb" type="BP_GraphicsCommandbuffer"/>
+	<node id="cmd_begin" type="BP_GraphicsCmdBegin"/>
+	<node id="cmd_end" type="BP_GraphicsCmdEnd"/>
+	<node id="cmd_begin_renderpass" type="BP_GraphicsCmdBeginRenderpass"/>
+	<node id="cmd_end_renderpass" type="BP_GraphicsCmdEndRenderpass"/>
+</BP>
+
