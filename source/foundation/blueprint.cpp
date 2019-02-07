@@ -95,12 +95,14 @@ namespace flame
 		inline InputPrivate* find_input(const std::string &name) const;
 		inline OutputPrivate* find_output(const std::string &name) const;
 
+		inline void report_order(); // use by BP's prepare update, report update order from dependencies
 		inline void update();
 	};
 
 	struct BPPrivate : BP
 	{
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
+		std::vector<NodePrivate*> update_list;
 
 		inline NodePrivate *add_node(const char *id, UdtInfo *udt);
 		inline void remove_node(NodePrivate *n);
@@ -112,8 +114,8 @@ namespace flame
 
 		inline void clear();
 
-		inline void install_dummys();
-		inline void uninstall_dummys();
+		inline void prepare_update();
+		inline void done_update();
 		inline void update();
 
 		inline void load(const wchar_t *filename);
@@ -262,7 +264,7 @@ namespace flame
 		return input_or_output == 1 ? (OutputPrivate*)ret : nullptr;
 	}
 
-	void NodePrivate::update()
+	void NodePrivate::report_order()
 	{
 		if (updated)
 			return;
@@ -276,9 +278,23 @@ namespace flame
 				{
 					auto n = link->parent_o->node;
 					if (!n->updated)
-						n->update();
+						n->report_order();
 				}
 			}
+		}
+
+		bp->update_list.push_back(this);
+
+		updated = true;
+	}
+
+	void NodePrivate::update()
+	{
+		if (updated)
+			return;
+
+		for (auto &input : inputs)
+		{
 			auto v = input->variable_info;
 			if (!input->is_array())
 			{
@@ -410,7 +426,7 @@ namespace flame
 		nodes.clear();
 	}
 
-	inline void BPPrivate::install_dummys()
+	inline void BPPrivate::prepare_update()
 	{
 		for (auto &n : nodes)
 		{
@@ -423,9 +439,15 @@ namespace flame
 				udt->construct(n->dummy);
 			}
 		}
+
+		update_list.clear();
+		for (auto &n : nodes)
+			n->updated = false;
+		for (auto &n : nodes)
+			n->report_order();
 	}
 
-	inline void BPPrivate::uninstall_dummys()
+	inline void BPPrivate::done_update()
 	{
 		for (auto &n : nodes)
 		{
@@ -437,14 +459,22 @@ namespace flame
 				n->dummy = nullptr;
 			}
 		}
+
+		update_list.clear();
 	}
 
 	inline void BPPrivate::update()
 	{
-		for (auto &n : nodes)
+		if (update_list.empty())
+		{
+			printf("no nodes to update or didn't call prepare_update\n");
+			return;
+		}
+
+		for (auto &n : update_list)
 			n->updated = false;
 
-		for (auto &n : nodes)
+		for (auto &n : update_list)
 			n->update();
 	}
 
@@ -751,14 +781,14 @@ namespace flame
 		((BPPrivate*)this)->clear();
 	}
 
-	void BP::install_dummys()
+	void BP::prepare_update()
 	{
-		((BPPrivate*)this)->install_dummys();
+		((BPPrivate*)this)->prepare_update();
 	}
 
-	void BP::uninstall_dummys()
+	void BP::done_update()
 	{
-		((BPPrivate*)this)->uninstall_dummys();
+		((BPPrivate*)this)->done_update();
 	}
 
 	void BP::update()

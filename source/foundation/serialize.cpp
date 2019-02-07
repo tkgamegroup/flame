@@ -482,10 +482,10 @@ namespace flame
 					return t;
 				}
 				find_pos++;
-				if (find_pos == p)
-					return -1;
 				if (find_pos >= items.size())
 					find_pos = 0;
+				if (find_pos == p)
+					return -1;
 			}
 			return -1;
 		}

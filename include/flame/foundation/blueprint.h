@@ -120,11 +120,12 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 
-		// before you update the BP, you should call install_dummys, basically, 
-		// it let all notes create a piece of memory to represent the 'true' object
-		FLAME_FOUNDATION_EXPORTS void install_dummys();
-		// when you're done all of your updatings, call uninstall_dummys
-		FLAME_FOUNDATION_EXPORTS void uninstall_dummys();
+		// before you update the BP, you should call prepare_update, basically, 
+		// it let all notes create a piece of memory to represent the 'true' object and
+		// determines update order
+		FLAME_FOUNDATION_EXPORTS void prepare_update();
+		// when you're done all of your updates, call done_update
+		FLAME_FOUNDATION_EXPORTS void done_update();
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);

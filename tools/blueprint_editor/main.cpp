@@ -323,9 +323,9 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "update")
 		{
-			bp->install_dummys();
+			bp->prepare_update();
 			bp->update();
-			bp->uninstall_dummys();
+			bp->done_update();
 			printf("BP updated\n");
 		}
 		else if (s_command_line == "save")
