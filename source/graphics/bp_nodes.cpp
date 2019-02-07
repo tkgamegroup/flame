@@ -28,30 +28,13 @@
 
 namespace flame
 {
-	BP_GraphicsDevice::BP_GraphicsDevice() :
-		in$i(nullptr),
-		out$o(nullptr)
-	{
-	}
-
 	void BP_GraphicsDevice::update()
 	{
 		if (in$i)
 			out$o = in$i;
 	}
 
-	BP_GraphicsSwapchain::BP_GraphicsSwapchain() :
-		in$i(nullptr),
-		out$o(nullptr),
-		window$o(nullptr),
-		image1$o(nullptr),
-		image2$o(nullptr),
-		renderpass_clear$o(nullptr),
-		renderpass_dont_clear$o(nullptr),
-		framebuffer1$o(nullptr),
-		framebuffer2$o(nullptr)
-	{
-	}
+	BP_GraphicsDevice bp_graphics_device_unused;
 
 	void BP_GraphicsSwapchain::update()
 	{
@@ -69,12 +52,7 @@ namespace flame
 		}
 	}
 
-	BP_GraphicsClearvalues::BP_GraphicsClearvalues() :
-		in$i(nullptr),
-		renderpass$i(nullptr),
-		out$o(nullptr)
-	{
-	}
+	BP_GraphicsSwapchain bp_graphics_swapchain_unused;
 
 	void BP_GraphicsClearvalues::update()
 	{
@@ -96,12 +74,7 @@ namespace flame
 		}
 	}
 
-	BP_GraphicsCommandbuffer::BP_GraphicsCommandbuffer() :
-		in$i(nullptr),
-		device$i(nullptr),
-		out$o(nullptr)
-	{
-	}
+	BP_GraphicsClearvalues bp_graphics_clearvalues_unused;
 
 	void BP_GraphicsCommandbuffer::update()
 	{
@@ -114,13 +87,7 @@ namespace flame
 		}
 	}
 
-	BP_GraphicsCmdBegin::BP_GraphicsCmdBegin() :
-		in1$i(nullptr),
-		in2$i(nullptr),
-		out1$o(nullptr),
-		out2$o(nullptr)
-	{
-	}
+	BP_GraphicsCommandbuffer bp_graphics_commandbuffer_unused;
 
 	void do_cmd_begin(void* cb)
 	{
@@ -141,13 +108,7 @@ namespace flame
 		}
 	}
 
-	BP_GraphicsCmdEnd::BP_GraphicsCmdEnd() :
-		in1$i(nullptr),
-		in2$i(nullptr),
-		out1$o(nullptr),
-		out2$o(nullptr)
-	{
-	}
+	BP_GraphicsCmdBegin bp_graphics_cmd_begin_unused;
 
 	void do_cmd_end(void* cb)
 	{
@@ -168,16 +129,7 @@ namespace flame
 		}
 	}
 
-	BP_GraphicsCmdBeginRenderpass::BP_GraphicsCmdBeginRenderpass() :
-		in1$i(nullptr),
-		in2$i(nullptr),
-		renderpass$i(nullptr),
-		framebuffer$i(nullptr),
-		clearvalues$i(nullptr),
-		out1$o(nullptr),
-		out2$o(nullptr)
-	{
-	}
+	BP_GraphicsCmdEnd bp_graphics_cmd_end_unused;
 
 	void do_cmd_begin_renderpass(void* cb, void* renderpass, void* framebuffer, void* clearvalues)
 	{
@@ -198,13 +150,7 @@ namespace flame
 		}
 	}
 
-	BP_GraphicsCmdEndRenderpass::BP_GraphicsCmdEndRenderpass() :
-		in1$i(nullptr),
-		in2$i(nullptr),
-		out1$o(nullptr),
-		out2$o(nullptr)
-	{
-	}
+	BP_GraphicsCmdBeginRenderpass bp_graphics_cmd_begin_renderpass_unused;
 
 	void do_cmd_end_renderpass(void* cb)
 	{
@@ -224,4 +170,6 @@ namespace flame
 			do_cmd_end_renderpass(out2$o);
 		}
 	}
+
+	BP_GraphicsCmdEndRenderpass bp_graphics_cmd_end_renderpass_unused;
 }

@@ -1815,8 +1815,7 @@ namespace flame
 										i->attribute = attribute;
 										i->offset = l;
 										i->size = (int)ull;
-										memset(&i->default_value.fmt, 0, sizeof(CommonData::fmt));
-										memset(&i->default_value.v, 0, sizeof(CommonData::v));
+										memset(&i->default_value, 0, sizeof(CommonData));
 
 										type->get_symTag(&dw);
 										switch (dw)

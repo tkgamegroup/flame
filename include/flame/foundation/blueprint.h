@@ -43,7 +43,8 @@ namespace flame
 		- An available udt must have:
 			at least one input
 			at least one output
-			a nonparametric constructor
+			all datas work fine with zero memory (basically, BP nodes will use udts to create a all-zeros
+			 memory, (Array<>, String, StringW are fined with zero memory))
 			an nonparametric no-return-value function called 'update'
 		  and optional:
 		    a nonparametric const function called 'code' that returns const char*
@@ -146,7 +147,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
 	};
 
-	// here, we define some basic blueprint nodes
+	// here, we define some basic udt for blueprint nodes
 
 	struct BP_Int : R
 	{
@@ -154,8 +155,8 @@ namespace flame
 
 		int v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Int();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Float : R
@@ -164,8 +165,8 @@ namespace flame
 
 		float v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Float();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Bool : R
@@ -174,8 +175,8 @@ namespace flame
 
 		bool v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Bool();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Vec2 : R
@@ -185,8 +186,8 @@ namespace flame
 
 		Vec2 v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Vec2();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Vec3 : R
@@ -197,8 +198,8 @@ namespace flame
 
 		Vec3 v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Vec3();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Vec4 : R
@@ -210,8 +211,8 @@ namespace flame
 
 		Vec4 v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Vec4();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Ivec2 : R
@@ -221,8 +222,8 @@ namespace flame
 
 		Ivec2 v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Ivec2();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Ivec3 : R
@@ -233,8 +234,8 @@ namespace flame
 
 		Ivec3 v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Ivec3();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Ivec4 : R
@@ -246,8 +247,8 @@ namespace flame
 
 		Ivec4 v$o;
 
-		FLAME_FOUNDATION_EXPORTS BP_Ivec4();
 		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 }
 

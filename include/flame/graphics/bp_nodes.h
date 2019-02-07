@@ -31,7 +31,6 @@ namespace flame
 
 		void* out$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsDevice();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
@@ -48,7 +47,6 @@ namespace flame
 		void* framebuffer1$o;
 		void* framebuffer2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsSwapchain();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
@@ -60,7 +58,6 @@ namespace flame
 
 		void* out$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsClearvalues();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
@@ -71,7 +68,6 @@ namespace flame
 
 		void* out$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCommandbuffer();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
@@ -83,7 +79,6 @@ namespace flame
 		void* out1$o;
 		void* out2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBegin();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
@@ -95,7 +90,6 @@ namespace flame
 		void* out1$o;
 		void* out2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEnd();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
@@ -110,7 +104,6 @@ namespace flame
 		void* out1$o;
 		void* out2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdBeginRenderpass();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 
@@ -122,7 +115,6 @@ namespace flame
 		void* out1$o;
 		void* out2$o;
 
-		FLAME_GRAPHICS_EXPORTS BP_GraphicsCmdEndRenderpass();
 		FLAME_GRAPHICS_EXPORTS void update();
 	};
 }
