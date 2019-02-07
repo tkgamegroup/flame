@@ -22,6 +22,8 @@
 
 #pragma once
 
+#define FLAME_STR_(x) #x
+#define FLAME_STR(x) FLAME_STR_(x)
 #define FLAME_ARRAYSIZE(_ARR) ((int)(sizeof(_ARR)/sizeof(*_ARR)))
 #define FLAME_DERIVE_OFFSET(D, B) (TK_LONG_PTR((B*)((D*)1))-1)
 #define FLAME_LOW(I) ((I) & 0xffff)

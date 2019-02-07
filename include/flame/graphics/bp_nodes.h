@@ -98,7 +98,8 @@ namespace flame
 		void* in1$i;
 		void* in2$i;
 		void* renderpass$i;
-		void* framebuffer$i;
+		void* framebuffer1$i;
+		void* framebuffer2$i;
 		void* clearvalues$i;
 
 		void* out1$o;

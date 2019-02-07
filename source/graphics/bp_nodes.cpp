@@ -89,85 +89,65 @@ namespace flame
 
 	BP_GraphicsCommandbuffer bp_graphics_commandbuffer_unused;
 
-	void do_cmd_begin(void* cb)
-	{
-		((graphics::Commandbuffer*)cb)->begin();
-	}
-
 	void BP_GraphicsCmdBegin::update()
 	{
 		if (in1$i)
 		{
 			out1$o = in1$i;
-			do_cmd_begin(out1$o);
+			((graphics::Commandbuffer*)out1$o)->begin();
 		}
 		if (in2$i)
 		{
 			out2$o = in2$i;
-			do_cmd_begin(out2$o);
+			((graphics::Commandbuffer*)out2$o)->begin();
 		}
 	}
 
 	BP_GraphicsCmdBegin bp_graphics_cmd_begin_unused;
-
-	void do_cmd_end(void* cb)
-	{
-		((graphics::Commandbuffer*)cb)->end();
-	}
 
 	void BP_GraphicsCmdEnd::update()
 	{
 		if (in1$i)
 		{
 			out1$o = in1$i;
-			do_cmd_end(out1$o);
+			((graphics::Commandbuffer*)out1$o)->end();
 		}
 		if (in2$i)
 		{
 			out2$o = in2$i;
-			do_cmd_end(out2$o);
+			((graphics::Commandbuffer*)out2$o)->end();
 		}
 	}
 
 	BP_GraphicsCmdEnd bp_graphics_cmd_end_unused;
-
-	void do_cmd_begin_renderpass(void* cb, void* renderpass, void* framebuffer, void* clearvalues)
-	{
-		((graphics::Commandbuffer*)cb)->begin_renderpass((graphics::Renderpass*)renderpass, (graphics::Framebuffer*)framebuffer, (graphics::ClearValues*)clearvalues);
-	}
 
 	void BP_GraphicsCmdBeginRenderpass::update()
 	{
 		if (in1$i)
 		{
 			out1$o = in1$i;
-			do_cmd_begin_renderpass(out1$o, renderpass$i, framebuffer$i, clearvalues$i);
+			((graphics::Commandbuffer*)out1$o)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer1$i, (graphics::ClearValues*)clearvalues$i);
 		}
 		if (in2$i)
 		{
 			out2$o = in2$i;
-			do_cmd_begin_renderpass(out2$o, renderpass$i, framebuffer$i, clearvalues$i);
+			((graphics::Commandbuffer*)out2$o)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer2$i, (graphics::ClearValues*)clearvalues$i);
 		}
 	}
 
 	BP_GraphicsCmdBeginRenderpass bp_graphics_cmd_begin_renderpass_unused;
-
-	void do_cmd_end_renderpass(void* cb)
-	{
-		((graphics::Commandbuffer*)cb)->end_renderpass();
-	}
 
 	void BP_GraphicsCmdEndRenderpass::update()
 	{
 		if (in1$i)
 		{
 			out1$o = in1$i;
-			do_cmd_end_renderpass(out1$o);
+			((graphics::Commandbuffer*)out1$o)->end_renderpass();
 		}
 		if (in2$i)
 		{
 			out2$o = in2$i;
-			do_cmd_end_renderpass(out2$o);
+			((graphics::Commandbuffer*)out2$o)->end_renderpass();
 		}
 	}
 

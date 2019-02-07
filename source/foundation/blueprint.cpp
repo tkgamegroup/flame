@@ -832,10 +832,20 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
+#define CODE \
+			v$o = v$i;
+
 	void BP_Int::update()
 	{
-		v$o = v$i;
+		CODE
 	}
+
+	const char* BP_Int::code()
+	{
+		return FLAME_STR(CODE);
+	}
+
+#undef CODE
 
 	BP_Int bp_int_unused;
 
