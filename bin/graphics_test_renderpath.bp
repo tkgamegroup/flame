@@ -1,35 +1,34 @@
 <BP>
-	<node id="cv" type="BP_GraphicsClearvalues">
+	<node type="BP_GraphicsClearvalues" id="cv">
 		<input name="colors">
 			<item value="255;127;0;1"/>
 		</input>
 	</node>
-	<node id="sc" type="BP_GraphicsSwapchain"/>
-	<node id="d" type="BP_GraphicsDevice"/>
-	<node id="cb1" type="BP_GraphicsCommandbuffer"/>
-	<node id="cb2" type="BP_GraphicsCommandbuffer"/>
-	<node id="cmd_begin" type="BP_GraphicsCmdBegin"/>
-	<node id="cmd_begin_renderpass" type="BP_GraphicsCmdBeginRenderpass"/>
-	<node id="cmd_end_renderpass" type="BP_GraphicsCmdEndRenderpass"/>
-  <node id="cmd_end" type="BP_GraphicsCmdEnd"/>
-	<link from="sc.renderpass_clear" to="cv.renderpass.0"/>
-	<link from="d.out" to="cb1.device.0"/>
-	<link from="d.out" to="cb2.device.0"/>
-	<link from="cb1.out" to="cmd_begin.cmd1.0"/>
-	<link from="cb2.out" to="cmd_begin.cmd2.0"/>
-  <link from="cb1.out" to="cmd_begin_renderpass.cmd1.0"/>
-  <link from="cb2.out" to="cmd_begin_renderpass.cmd2.0"/>
-  <link from="cb1.out" to="cmd_end_renderpass.cmd1.0"/>
-  <link from="cb2.out" to="cmd_end_renderpass.cmd2.0"/>
-  <link from="cb1.out" to="cmd_end.cmd1.0"/>
-  <link from="cb2.out" to="cmd_end.cmd2.0"/>
-  
-	<link from="cmd_begin.out" to="cmd_begin_renderpass.in.0"/>
-	<link from="sc.renderpass_clear" to="cmd_begin_renderpass.renderpass.0"/>
-	<link from="sc.framebuffer1" to="cmd_begin_renderpass.framebuffer1.0"/>
-  <link from="sc.framebuffer2" to="cmd_begin_renderpass.framebuffer2.0"/>
-	<link from="cv.out" to="cmd_begin_renderpass.clearvalues.0"/>
-	<link from="cmd_begin_renderpass.out" to="cmd_end_renderpass.in.0"/>
-  <link from="cmd_end_renderpass.out" to="cmd_end.in.0"/>
+	<node type="BP_GraphicsSwapchain" id="sc"/>
+	<node type="BP_GraphicsDevice" id="d"/>
+	<node type="BP_GraphicsCommandbuffer" id="cb1"/>
+	<node type="BP_GraphicsCommandbuffer" id="cb2"/>
+	<node type="BP_GraphicsCmdBegin" id="cmd_begin"/>
+	<node type="BP_GraphicsCmdBeginRenderpass" id="cmd_begin_renderpass"/>
+	<node type="BP_GraphicsCmdEndRenderpass" id="cmd_end_renderpass"/>
+	<node type="BP_GraphicsCmdEnd" id="cmd_end"/>
+	<link in="cv.renderpass.0" out="sc.renderpass_clear"/>
+	<link in="cb1.device.0" out="d.out"/>
+	<link in="cb2.device.0" out="d.out"/>
+	<link in="cmd_begin.cmd1.0" out="cb1.out"/>
+	<link in="cmd_begin.cmd2.0" out="cb2.out"/>
+	<link in="cmd_begin_renderpass.in.0" out="cmd_begin.out"/>
+	<link in="cmd_begin_renderpass.cmd1.0" out="cb1.out"/>
+	<link in="cmd_begin_renderpass.cmd2.0" out="cb2.out"/>
+	<link in="cmd_begin_renderpass.renderpass.0" out="sc.renderpass_clear"/>
+	<link in="cmd_begin_renderpass.framebuffer1.0" out="sc.framebuffer1"/>
+	<link in="cmd_begin_renderpass.framebuffer2.0" out="sc.framebuffer2"/>
+	<link in="cmd_begin_renderpass.clearvalues.0" out="cv.out"/>
+	<link in="cmd_end_renderpass.in.0" out="cmd_begin_renderpass.out"/>
+	<link in="cmd_end_renderpass.cmd1.0" out="cb1.out"/>
+	<link in="cmd_end_renderpass.cmd2.0" out="cb2.out"/>
+	<link in="cmd_end.in.0" out="cmd_end_renderpass.out"/>
+	<link in="cmd_end.cmd1.0" out="cb1.out"/>
+	<link in="cmd_end.cmd2.0" out="cb2.out"/>
 </BP>
 

@@ -32,6 +32,7 @@ namespace flame
 		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	};
 
 	struct BP_GraphicsSwapchain : R
@@ -48,6 +49,7 @@ namespace flame
 		void* framebuffer2$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	};
 
 	struct BP_GraphicsClearvalues : R
@@ -59,6 +61,7 @@ namespace flame
 		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	};
 
 	struct BP_GraphicsCommandbuffer : R
@@ -69,6 +72,7 @@ namespace flame
 		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	}; 
 
 	struct BP_GraphicsCmdBegin : R
@@ -79,6 +83,7 @@ namespace flame
 		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	};
 
 	struct BP_GraphicsCmdEnd : R
@@ -88,6 +93,7 @@ namespace flame
 		void* cmd2$i;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	};
 
 	struct BP_GraphicsCmdBeginRenderpass : R
@@ -104,6 +110,7 @@ namespace flame
 		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	};
 
 	struct BP_GraphicsCmdEndRenderpass : R
@@ -115,5 +122,6 @@ namespace flame
 		void* out$o;
 
 		FLAME_GRAPHICS_EXPORTS void update();
+		FLAME_GRAPHICS_EXPORTS const char* code();
 	};
 }

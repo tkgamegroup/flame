@@ -67,7 +67,9 @@ int main(int argc, char **args)
 				"  remove link [in_adress] - remove a link\n"
 				"  remove item [in_adress] - remove an item from input\n"
 				"  set [in_adress] [value] - set value for item\n"
+				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
+				"  generate code [filename] - generate code to a file\n"
 			);
 		}
 		else if (s_command_line == "show")
@@ -340,6 +342,25 @@ int main(int argc, char **args)
 				else
 					printf("filename taken\n");
 			}
+		}
+		else if (s_command_line == "generate")
+		{
+			scanf("%s", command_line);
+			auto s_what = std::string(command_line);
+
+			if (s_what == "code")
+			{
+				scanf("%s", command_line);
+				auto s_filename = std::string(command_line);
+
+				bp->prepare();
+				bp->generate_code(s2w(s_filename).c_str());
+				bp->unprepare();
+
+				printf("code generated: %s\n", s_filename.c_str());
+			}
+			else
+				printf("unknow object to generate\n");
 		}
 		else
 			printf("unknow command\n");

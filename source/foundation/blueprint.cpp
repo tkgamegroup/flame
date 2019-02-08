@@ -317,7 +317,7 @@ namespace flame
 
 		auto update_function_rva = udt->update_function_rva();
 		if (update_function_rva)
-			run_module_function(udt->update_function_module_name(), update_function_rva, dummy);
+			run_module_function_member_void_void(udt->module_name(), update_function_rva, dummy);
 
 		for (auto &output : outputs)
 		{
@@ -488,11 +488,64 @@ namespace flame
 			return;
 		}
 
-		std::vector<std::pair<std::string, std::string>> variables;
+		auto print_variable = [](NodePrivate *n, VaribleInfo *v, int item_index, const CommonData& data) {
+			auto id = n->id + "_" + v->name();
+			auto type = std::string(v->type_name());
+			if (v->tag() == VariableTagPointer)
+				type += "*";
+			std::string value;
+			switch (v->type_hash())
+			{
+			case cH("void"):
+				value = "nullptr";
+				break;
+			}
+			if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+				id += "_" + std::to_string(item_index);
+			return type + " " + id + " = " + value + ";\n";
+		};
 
+		std::string code;
+		code += "#include <flame/foundation/foundation.h>\n\n";
+		code += "using namespace flame;\n\n";
 
+		for (auto& n : update_list)
+		{
+			for (auto& input : n->inputs)
+			{
+				auto idx = 0;
+				for (auto& i : input->items)
+				{
+					code += print_variable(n, input->variable_info, idx, i->data);
+					idx++;
+				}
+			}
+			for (auto& output : n->outputs)
+				code += print_variable(n, output->variable_info, -1, output->item->data);
+		}
+
+		code += "\nvoid update()\n{\n";
+
+		for (auto& n : update_list)
+		{
+			auto udt = n->udt;
+			auto code_function_rva = udt->code_function_rva();
+			if (code_function_rva)
+			{
+				auto line = run_module_function_member_constcharp_void(udt->module_name(), code_function_rva, nullptr);
+				code += "\t" + std::string(line.v) + "\n";
+			}
+		}
+
+		code += "}\n";
+
+		code += "\n";
+
+		std::ofstream file(filename);
+		file << code;
+		file.close();
 	}
-
+	
 	void BPPrivate::load(const wchar_t *filename)
 	{
 		auto file = SerializableNode::create_from_xml(filename);
@@ -504,8 +557,8 @@ namespace flame
 			auto n_node = file->node(i_n);
 			if (n_node->name() == "node")
 			{
-				auto id = n_node->find_attr("id")->value();
 				auto type = n_node->find_attr("type")->value();
+				auto id = n_node->find_attr("id")->value();
 
 				auto udt = find_udt(H(type.c_str()));
 				if (!udt)
@@ -554,8 +607,8 @@ namespace flame
 			}
 			else if (n_node->name() == "link")
 			{
-				auto o = find_item(n_node->find_attr("from")->value());
-				auto i = find_item( n_node->find_attr("to")->value());
+				auto i = find_item(n_node->find_attr("in")->value());
+				auto o = find_item(n_node->find_attr("out")->value());
 				if (o && i)
 					i->set_link(o);
 			}
@@ -571,8 +624,8 @@ namespace flame
 		for (auto &n : nodes)
 		{
 			auto n_node = file->new_node("node");
-			n_node->new_attr("id", n->id);
 			n_node->new_attr("type", n->udt->name());
+			n_node->new_attr("id", n->id);
 			for (auto &input : n->inputs)
 			{
 				auto v = input->variable_info;
@@ -599,8 +652,8 @@ namespace flame
 					if (o)
 					{
 						auto n_link = file->new_node("link");
-						n_link->new_attr("from", o->get_address().v);
-						n_link->new_attr("to", i->get_address().v);
+						n_link->new_attr("in", i->get_address().v);
+						n_link->new_attr("out", o->get_address().v);
 					}
 					idx++;
 				}
@@ -840,89 +893,133 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-#define CODE \
+#define CODE_vec1 \
 			v$o = v$i;
+#define CODE_vec2 \
+			v$o.x = x$i;\
+			v$o.y = y$i;
+#define CODE_vec3 \
+			v$o.x = x$i;\
+			v$o.y = y$i;\
+			v$o.z = z$i;
+#define CODE_vec4 \
+			v$o.x = x$i;\
+			v$o.y = y$i;\
+			v$o.z = z$i;\
+			v$o.w = w$i;
 
 	void BP_Int::update()
 	{
-		CODE
+		CODE_vec1
 	}
 
 	const char* BP_Int::code()
 	{
-		return FLAME_STR(CODE);
+		return FLAME_STR(CODE_vec1);
 	}
-
-#undef CODE
 
 	BP_Int bp_int_unused;
 
 	void BP_Float::update()
 	{
-		v$o = v$i;
+		CODE_vec1
+	}
+
+	const char* BP_Float::code()
+	{
+		return FLAME_STR(CODE_vec1);
 	}
 
 	BP_Float bp_float_unused;
 
 	void BP_Bool::update()
 	{
-		v$o = v$i;
+		CODE_vec1
+	}
+
+	const char* BP_Bool::code()
+	{
+		return FLAME_STR(CODE_vec1);
 	}
 
 	BP_Bool bp_bool_unused;
 
 	void BP_Vec2::update()
 	{
-		v$o.x = x$i;
-		v$o.y = y$i;
+		CODE_vec2
+	}
+
+	const char* BP_Vec2::code()
+	{
+		return FLAME_STR(CODE_vec2);
 	}
 
 	BP_Vec2 bp_vec2_unused;
 
 	void BP_Vec3::update()
 	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
+		CODE_vec3
+	}
+
+	const char* BP_Vec3::code()
+	{
+		return FLAME_STR(CODE_vec3);
 	}
 
 	BP_Vec3 bp_vec3_unused;
 
 	void BP_Vec4::update()
 	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-		v$o.w = w$i;
+		CODE_vec4
+	}
+
+	const char* BP_Vec4::code()
+	{
+		return FLAME_STR(CODE_vec4);
 	}
 
 	BP_Vec4 bp_vec4_unused;
 
 	void BP_Ivec2::update()
 	{
-		v$o.x = x$i;
-		v$o.y = y$i;
+		CODE_vec2
+	}
+
+	const char* BP_Ivec2::code()
+	{
+		return FLAME_STR(CODE_vec2);
 	}
 
 	BP_Ivec2 bp_ivec2_unused;
 
 	void BP_Ivec3::update()
 	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
+		CODE_vec3
+	}
+
+	const char* BP_Ivec3::code()
+	{
+		return FLAME_STR(CODE_vec3);
 	}
 
 	BP_Ivec3 bp_ivec3_unused;
 
 	void BP_Ivec4::update()
 	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-		v$o.w = w$i;
+		CODE_vec4
+	}
+
+	const char* BP_Ivec4::code()
+	{
+		return FLAME_STR(CODE_vec4);
 	}
 
 	BP_Ivec4 bp_ivec4_unused;
+
+#undef CODE_vec1
+#undef CODE_vec2
+#undef CODE_vec3
+#undef CODE_vec4
+
 }
 

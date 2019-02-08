@@ -453,14 +453,16 @@ namespace flame
 		std::string name;
 		int size;
 		std::vector<std::unique_ptr<VaribleInfoPrivate>> items;
+		std::wstring module_name;
 		void* update_function_rva;
-		std::wstring update_function_module_name;
+		void* code_function_rva;
 
 		int find_pos;
 
 		inline UdtInfoPrivate()
 		{
 			update_function_rva = nullptr;
+			code_function_rva = nullptr;
 
 			find_pos = 0;
 		}
@@ -538,9 +540,14 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->update_function_rva;
 	}
 
-	const wchar_t* UdtInfo::update_function_module_name() const
+	const void* UdtInfo::code_function_rva() const
 	{
-		return ((UdtInfoPrivate*)this)->update_function_module_name.c_str();
+		return ((UdtInfoPrivate*)this)->code_function_rva;
+	}
+
+	const wchar_t* UdtInfo::module_name() const
+	{
+		return ((UdtInfoPrivate*)this)->module_name.c_str();
 	}
 
 	void UdtInfo::construct(void *dst) const
@@ -1829,13 +1836,13 @@ namespace flame
 												type_name = type_name.c_str() + prefix.size();
 											i->type_name = type_name;
 										}
-										break;
+											break;
 										case SymTagBaseType:
 										{
 											i->tag = VariableTagVariable;
 											i->type_name = get_base_type_name(type);
 										}
-										break;
+											break;
 										case SymTagPointerType:
 										{
 											i->tag = VariableTagPointer;
@@ -1860,7 +1867,7 @@ namespace flame
 											}
 											point_type->Release();
 										}
-										break;
+											break;
 										case SymTagUDT:
 										{
 											type->get_name(&pwname);
@@ -1895,7 +1902,7 @@ namespace flame
 												type_name = type_name.c_str() + prefix.size();
 											i->type_name = type_name;
 										}
-										break;
+											break;
 										}
 										type->Release();
 
@@ -1915,6 +1922,7 @@ namespace flame
 								IDiaEnumSymbols* functions;
 								_udt->findChildren(SymTagFunction, NULL, nsNone, &functions);
 								IDiaSymbol* function;
+								auto udt_need_module_name = false;
 								while (SUCCEEDED(functions->Next(1, &function, &ul)) && (ul == 1))
 								{
 									function->get_name(&pwname);
@@ -1937,7 +1945,7 @@ namespace flame
 											if (dw)
 											{
 												auto new_obj = malloc(udt->size);
-												run_module_function(fn.c_str(), (void*)dw, new_obj);
+												run_module_function_member_void_void(fn.c_str(), (void*)dw, new_obj);
 												for (auto& i : udt->items)
 												{
 													if (i->size <= sizeof(CommonData::v))
@@ -1949,15 +1957,34 @@ namespace flame
 										else if (wname == L"update" && parameters_count == 0)
 										{
 											DWORD baseType;
-											return_type->get_baseType(&baseType);
-											if (baseType == btVoid)
+											if (SUCCEEDED(return_type->get_baseType(&baseType)) && baseType == btVoid)
 											{
 												function->get_relativeVirtualAddress(&dw);
 												if (dw)
 												{
 													udt->update_function_rva = (void*)dw;
-													udt->update_function_module_name = fn_related;
+													udt_need_module_name = true;
 												}
+											}
+										}
+										else if (wname == L"code" && parameters_count == 0)
+										{
+											return_type->get_symTag(&dw);
+											if (dw == SymTagPointerType)
+											{
+												IDiaSymbol* return_base_type;
+												return_type->get_type(&return_base_type);
+												DWORD baseType;
+												if (SUCCEEDED(return_base_type->get_baseType(&baseType)) && baseType == btChar)
+												{
+													function->get_relativeVirtualAddress(&dw);
+													if (dw)
+													{
+														udt->code_function_rva = (void*)dw;
+														udt_need_module_name = true;
+													}
+												}
+												return_base_type->Release();
 											}
 										}
 									}
@@ -1967,6 +1994,8 @@ namespace flame
 
 									function->Release();
 								}
+								if (udt_need_module_name)
+									udt->module_name = fn_related;
 								functions->Release();
 
 								udts.emplace(udt_namehash, udt);
@@ -2131,11 +2160,24 @@ namespace flame
 					}
 				}
 
-				auto n_update_function = n_udt->find_node("update_function");
-				if (n_update_function)
+				auto n_functions = n_udt->find_node("functions");
+				if (n_functions)
 				{
-					u->update_function_rva = (void*)stou1(n_update_function->find_attr("rva")->value().c_str());
-					u->update_function_module_name = s2w(n_update_function->find_attr("module")->value());
+					u->module_name = s2w(n_functions->find_attr("module_name")->value());
+					for (auto j = 0; j < n_functions->node_count(); j++)
+					{
+						auto n_function = n_functions->node(j);
+						if (n_function->name() == "function")
+						{
+							auto name = n_function->find_attr("name")->value();
+							auto rva = (void*)stou1(n_function->find_attr("rva")->value().c_str());
+
+							if (name == "update")
+								u->update_function_rva = rva;
+							else if (name == "code")
+								u->code_function_rva = rva;
+						}
+					}
 				}
 
 				udts.emplace(H(u->name.c_str()), u);
@@ -2187,11 +2229,22 @@ namespace flame
 				}
 			}
 
-			if (u.second->update_function_rva)
+			if (!u.second->module_name.empty())
 			{
-				auto n_update_function = n_udt->new_node("update_function");
-				n_update_function->new_attr("rva", to_string((uint)u.second->update_function_rva).v);
-				n_update_function->new_attr("module", w2s(u.second->update_function_module_name));
+				auto n_functions = n_udt->new_node("functions");
+				n_functions->new_attr("module_name", w2s(u.second->module_name));
+				if (u.second->update_function_rva)
+				{
+					auto n_func = n_functions->new_node("function");
+					n_func->new_attr("name", "update");
+					n_func->new_attr("rva", to_string((uint)u.second->update_function_rva).v);
+				}
+				if (u.second->code_function_rva)
+				{
+					auto n_func = n_functions->new_node("function");
+					n_func->new_attr("name", "code");
+					n_func->new_attr("rva", to_string((uint)u.second->code_function_rva).v);
+				}
 			}
 		}
 

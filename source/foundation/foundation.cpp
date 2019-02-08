@@ -165,7 +165,7 @@ namespace flame
 		return output;
 	}
 
-	void run_module_function(const wchar_t *module_name, const void *rva, void *_thiz)
+	void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *_thiz)
 	{
 		auto module = LoadLibraryW(module_name);
 		if (module)
@@ -183,6 +183,29 @@ namespace flame
 
 			FreeLibrary(module);
 		}
+	}
+
+	String run_module_function_member_constcharp_void(const wchar_t *module_name, const void *rva, void *_thiz)
+	{
+		auto module = LoadLibraryW(module_name);
+		if (module)
+		{
+			struct Dummy { };
+			auto thiz = (Dummy*)_thiz;
+			typedef const char* (Dummy::*F)();
+			union
+			{
+				void *p;
+				F f;
+			}cvt;
+			cvt.p = (char*)module + (uint)rva;
+			auto ret = String((*thiz.*cvt.f)());
+
+			FreeLibrary(module);
+
+			return ret;
+		}
+		return nullptr;
 	}
 
 	StringW get_clipboard()
