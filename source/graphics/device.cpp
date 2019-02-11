@@ -460,9 +460,17 @@ namespace flame
 			}
 			sp_bi_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
 			gcp = Commandpool::create(this, gq_idx);
-			tcp = Commandpool::create(this, tq_idx);
 			gq = Queue::create(this, gq_idx);
-			tq = Queue::create(this, tq_idx);
+			if (tq_idx > 0)
+			{
+				tcp = Commandpool::create(this, tq_idx);
+				tq = Queue::create(this, tq_idx);
+			}
+			else
+			{
+				tcp = nullptr;
+				tq = nullptr;
+			}
 			dp = Descriptorpool::create(this);
 		}
 
