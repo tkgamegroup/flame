@@ -488,6 +488,32 @@ namespace flame
 			return;
 		}
 
+		std::string code;
+
+		auto using_graphics_module = false;
+		auto using_sound_module = false;
+		auto using_universe_module = false;
+		auto using_physics_module = false;
+
+		for (auto& n : nodes)
+		{
+			auto module_name = std::wstring(n->udt->module_name());
+			if (module_name == L"flame_graphics.dll")
+				using_graphics_module = true;
+			else if (module_name == L"flame_sound.dll")
+				using_sound_module = true;
+			else if (module_name == L"flame_universe.dll")
+				using_universe_module = true;
+			else if (module_name == L"flame_physics.dll")
+				using_physics_module = true;
+		}
+
+		code += "#include <flame/foundation/foundation.h>\n";
+		if (using_graphics_module)
+			code += "#include <flame/graphics/all.h>\n";
+
+		code += "\nusing namespace flame;\n\n";
+
 		auto define_variable = [](const std::string &id_prefix, VaribleInfo *v) {
 			auto id = id_prefix + v->name();
 			auto type = std::string(v->type_name());
@@ -550,10 +576,6 @@ namespace flame
 				id += "[" + to_stdstring(item_index) + "]";
 			return id + " = " + value + ";\n";
 		};
-
-		std::string code;
-		code += "#include <flame/foundation/foundation.h>\n\n";
-		code += "using namespace flame;\n\n";
 
 		for (auto& n : update_list)
 		{
