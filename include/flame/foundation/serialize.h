@@ -590,19 +590,25 @@ namespace flame
 		VariableTagPointer,
 		VariableTagArrayOfVariable,
 		VariableTagArrayOfPointer
+
+		// 'Array' means Array<>, which is a special UDT, NOT 'array' in C/C++ language (e.g. int abc[100])
 	};
 
 	FLAME_FOUNDATION_EXPORTS const char *get_variable_tag_name(VariableTag tag);
+
+	struct UdtInfo;
 
 	struct VaribleInfo
 	{
 		FLAME_FOUNDATION_EXPORTS VariableTag tag() const;
 		FLAME_FOUNDATION_EXPORTS const char *type_name() const;
 		FLAME_FOUNDATION_EXPORTS uint type_hash() const;
+		FLAME_FOUNDATION_EXPORTS UdtInfo* type() const; // return nullptr or this is an UDT
 		FLAME_FOUNDATION_EXPORTS const char *name() const;
 		FLAME_FOUNDATION_EXPORTS const char *attribute() const;
 		FLAME_FOUNDATION_EXPORTS int offset() const;
 		FLAME_FOUNDATION_EXPORTS int size() const;
+		FLAME_FOUNDATION_EXPORTS int count() const; // for array count in C/C++ language (e.g. int abc[100] is 100)
 		FLAME_FOUNDATION_EXPORTS const CommonData &default_value() const;
 
 		FLAME_FOUNDATION_EXPORTS void get(const void *src, bool is_obj, int item_index, CommonData *dst) const;
