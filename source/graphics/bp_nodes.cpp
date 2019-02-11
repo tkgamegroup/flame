@@ -29,12 +29,16 @@
 namespace flame
 {
 #define CODE \
-		if (in$i)\
-			out$o = in$i;
+		TAB if (in$i) NL\
+		TAB TAB out$o = in$i;
 
 	void BP_GraphicsDevice::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsDevice::code()
@@ -47,22 +51,26 @@ namespace flame
 	BP_GraphicsDevice bp_graphics_device_unused;
 
 #define CODE \
-		if (in$i)\
-		{\
-			out$o = in$i;\
-			auto sc = (graphics::Swapchain*)out$o;\
-			window$o = sc->window();\
-			image1$o = sc->get_image(0);\
-			image2$o = sc->get_image(1);\
-			renderpass_clear$o = sc->get_renderpass_clear();\
-			renderpass_dont_clear$o = sc->get_renderpass_dont_clear();\
-			framebuffer1$o = sc->get_framebuffer(0);\
-			framebuffer2$o = sc->get_framebuffer(1);\
-		}
+		TAB if (in$i) NL\
+		TAB { NL\
+		TAB TAB out$o = in$i; NL\
+		TAB TAB auto sc = (graphics::Swapchain*)out$o; NL\
+		TAB TAB window$o = sc->window(); NL\
+		TAB TAB image1$o = sc->get_image(0); NL\
+		TAB TAB image2$o = sc->get_image(1); NL\
+		TAB TAB renderpass_clear$o = sc->get_renderpass_clear(); NL\
+		TAB TAB renderpass_dont_clear$o = sc->get_renderpass_dont_clear(); NL\
+		TAB TAB framebuffer1$o = sc->get_framebuffer(0); NL\
+		TAB TAB framebuffer2$o = sc->get_framebuffer(1); NL\
+		TAB }
 
 	void BP_GraphicsSwapchain::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsSwapchain::code()
@@ -75,25 +83,29 @@ namespace flame
 	BP_GraphicsSwapchain bp_graphics_swapchain_unused;
 
 #define CODE \
-		if (in$i)\
-			out$o = in$i;\
-		else\
-		{\
-			if (renderpass$i)\
-				out$o = graphics::ClearValues::create((graphics::Renderpass*)renderpass$i);\
-		}\
-		if (out$o)\
-		{\
-			for (auto i = 0; i < colors$i.size; i++)\
-			{\
-				auto cv = (graphics::ClearValues*)out$o;\
-				cv->set(i, colors$i[i]);\
-			}\
-		}
+		TAB if (in$i) NL\
+		TAB TAB out$o = in$i; NL\
+		TAB else NL\
+		TAB { NL\
+		TAB TAB if (renderpass$i) NL\
+		TAB TAB TAB out$o = graphics::ClearValues::create((graphics::Renderpass*)renderpass$i); NL\
+		TAB } NL\
+		TAB if (out$o) NL\
+		TAB { NL\
+		TAB TAB for (auto i = 0; i < colors$i.size; i++) NL\
+		TAB TAB { NL\
+		TAB TAB TAB auto cv = (graphics::ClearValues*)out$o; NL\
+		TAB TAB TAB cv->set(i, colors$i[i]); NL\
+		TAB TAB } NL\
+		TAB }
 
 	void BP_GraphicsClearvalues::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsClearvalues::code()
@@ -106,17 +118,21 @@ namespace flame
 	BP_GraphicsClearvalues bp_graphics_clearvalues_unused;
 
 #define CODE \
-		if (in$i)\
-			out$o = in$i;\
-		else\
-		{\
-			if (device$i)\
-				out$o = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);\
-		}
+		TAB if (in$i) NL\
+		TAB TAB out$o = in$i; NL\
+		TAB else NL\
+		TAB { NL\
+		TAB TAB if (device$i) NL\
+		TAB TAB TAB out$o = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp); NL\
+		TAB }
 
 	void BP_GraphicsCommandbuffer::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsCommandbuffer::code()
@@ -127,14 +143,18 @@ namespace flame
 	BP_GraphicsCommandbuffer bp_graphics_commandbuffer_unused;
 
 #define CODE \
-		if (cmd1$i)\
-			((graphics::Commandbuffer*)cmd1$i)->begin();\
-		if (cmd2$i)\
-			((graphics::Commandbuffer*)cmd2$i)->begin();
+		TAB if (cmd1$i) NL\
+		TAB TAB ((graphics::Commandbuffer*)cmd1$i)->begin(); NL\
+		TAB if (cmd2$i) NL\
+		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->begin();
 
 	void BP_GraphicsCmdBegin::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsCmdBegin::code()
@@ -145,14 +165,18 @@ namespace flame
 	BP_GraphicsCmdBegin bp_graphics_cmd_begin_unused;
 
 #define CODE \
-		if (cmd1$i)\
-			((graphics::Commandbuffer*)cmd1$i)->end();\
-		if (cmd2$i)\
-			((graphics::Commandbuffer*)cmd2$i)->end();
+		TAB if (cmd1$i) NL\
+		TAB TAB ((graphics::Commandbuffer*)cmd1$i)->end(); NL\
+		TAB if (cmd2$i) NL\
+		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->end();
 
 	void BP_GraphicsCmdEnd::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsCmdEnd::code()
@@ -163,14 +187,28 @@ namespace flame
 	BP_GraphicsCmdEnd bp_graphics_cmd_end_unused;
 
 #define CODE \
-		if (cmd1$i)\
-			((graphics::Commandbuffer*)cmd1$i)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer1$i, (graphics::ClearValues*)clearvalues$i);\
-		if (cmd2$i)\
-			((graphics::Commandbuffer*)cmd2$i)->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffer2$i, (graphics::ClearValues*)clearvalues$i);\
+		TAB if (cmd1$i) NL\
+		TAB {\
+		TAB TAB ((graphics::Commandbuffer*)cmd1$i)->begin_renderpass( NL\
+		TAB TAB TAB (graphics::Renderpass*)renderpass$i,  NL\
+		TAB TAB TAB (graphics::Framebuffer*)framebuffer1$i,  NL\
+		TAB TAB TAB (graphics::ClearValues*)clearvalues$i); NL\
+		TAB }\
+		TAB if (cmd2$i) NL\
+		TAB {\
+		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->begin_renderpass( NL\
+		TAB TAB TAB (graphics::Renderpass*)renderpass$i, NL\
+		TAB TAB TAB (graphics::Framebuffer*)framebuffer2$i, NL\
+		TAB TAB TAB (graphics::ClearValues*)clearvalues$i); NL\
+		TAB }
 
 	void BP_GraphicsCmdBeginRenderpass::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsCmdBeginRenderpass::code()
@@ -181,14 +219,18 @@ namespace flame
 	BP_GraphicsCmdBeginRenderpass bp_graphics_cmd_begin_renderpass_unused;
 
 #define CODE \
-		if (cmd1$i)\
-			((graphics::Commandbuffer*)cmd1$i)->end_renderpass();\
-		if (cmd2$i)\
-			((graphics::Commandbuffer*)cmd2$i)->end_renderpass();
+		TAB if (cmd1$i) NL\
+		TAB TAB ((graphics::Commandbuffer*)cmd1$i)->end_renderpass(); NL\
+		TAB if (cmd2$i) NL\
+		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->end_renderpass();
 
 	void BP_GraphicsCmdEndRenderpass::update()
 	{
+#define NL
+#define TAB
 		CODE
+#undef NL
+#undef TAB
 	}
 
 	const char* BP_GraphicsCmdEndRenderpass::code()

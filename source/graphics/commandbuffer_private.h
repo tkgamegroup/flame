@@ -75,5 +75,18 @@ namespace flame
 
 			void end();
 		};
+
+		struct QueuePrivate : Queue
+		{
+			DevicePrivate *d;
+			VkQueue v;
+
+			QueuePrivate(Device *d, int queue_family_idx);
+			~QueuePrivate();
+
+			void wait_idle();
+			void submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore);
+			void present(Swapchain *s, Semaphore *wait_semaphore);
+		};
 	}
 }

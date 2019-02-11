@@ -23,7 +23,6 @@
 #include "device_private.h"
 #include "buffer_private.h"
 #include "commandbuffer_private.h"
-#include "queue_private.h"
 
 namespace flame
 {

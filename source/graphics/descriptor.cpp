@@ -25,7 +25,6 @@
 #include "pipeline_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
-#include "sampler_private.h"
 
 namespace flame
 {

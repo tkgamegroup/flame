@@ -32,7 +32,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		static std::wstring shader_path(L"shaders/");
+		static std::wstring shader_path(L"../shaders/");
 		static std::wstring conf_path(shader_path + L"src/config.conf");
 
 		static void serialize_members(spirv_cross::CompilerGLSL &glsl, uint32_t tid, SerializableNode *dst)
@@ -176,18 +176,16 @@ namespace flame
 
 			std::filesystem::remove(L"temp.spv"); // glslc cannot write to an existed file. well we did delete it when we finish compiling, but there can be one somehow
 
-			auto root_dir = s2w(getenv("flame_path"));
-			auto shader_path_abs = root_dir + L"/" + shader_path;
-			auto conf_path_abs = root_dir + L"/" + conf_path;
+			auto conf_path_abs = conf_path;
 
-			auto glsl_filename = shader_path_abs + L"src/" + filename;
+			auto glsl_filename = shader_path + L"src/" + filename;
 
 			std::wstring spv_filename(filename);
 			auto hash = H(prefix.c_str());
 			spv_filename += L".";
 			spv_filename += std::to_wstring(hash);
 			spv_filename += L".spv";
-			spv_filename = shader_path_abs + L"bin/" + spv_filename;
+			spv_filename = shader_path + L"bin/" + spv_filename;
 
 			if (!std::filesystem::exists(spv_filename) ||
 				std::filesystem::last_write_time(spv_filename) <= std::filesystem::last_write_time(glsl_filename))

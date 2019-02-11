@@ -147,7 +147,7 @@ namespace flame
 	String ItemPrivate::get_address() const
 	{
 		if (parent_i)
-			return parent_i->node->id + "." + parent_i->variable_info->name() + "." + std::to_string(parent_i->find_item(this));
+			return parent_i->node->id + "." + parent_i->variable_info->name() + "." + to_stdstring(parent_i->find_item(this));
 		else if (parent_o)
 			return parent_o->node->id + "." + parent_o->variable_info->name();
 		return "";
@@ -342,7 +342,7 @@ namespace flame
 		{
 			for (auto i = 0; i < nodes.size() + 1; i++)
 			{
-				s_id = "node_" + std::to_string(i);
+				s_id = "node_" + to_stdstring(i);
 				if (find_node(s_id))
 					continue;
 			}
@@ -488,55 +488,165 @@ namespace flame
 			return;
 		}
 
-		auto print_variable = [](NodePrivate *n, VaribleInfo *v, int item_index, const CommonData& data) {
-			auto id = n->id + "_" + v->name();
+		std::string code;
+
+		auto using_graphics_module = false;
+		auto using_sound_module = false;
+		auto using_universe_module = false;
+		auto using_physics_module = false;
+
+		for (auto& n : nodes)
+		{
+			auto module_name = std::wstring(n->udt->module_name());
+			if (module_name == L"flame_graphics.dll")
+				using_graphics_module = true;
+			else if (module_name == L"flame_sound.dll")
+				using_sound_module = true;
+			else if (module_name == L"flame_universe.dll")
+				using_universe_module = true;
+			else if (module_name == L"flame_physics.dll")
+				using_physics_module = true;
+		}
+
+		code += "#include <flame/foundation/foundation.h>\n";
+		if (using_graphics_module)
+			code += "#include <flame/graphics/all.h>\n";
+
+		code += "\nusing namespace flame;\n\n";
+
+		auto define_variable = [](const std::string &id_prefix, VaribleInfo *v) {
+			auto id = id_prefix + v->name();
 			auto type = std::string(v->type_name());
 			if (v->tag() == VariableTagPointer)
 				type += "*";
+			if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+				type = "Array<" + type + ">";
+			return type + " " + id + ";\n";
+		};
+
+		auto set_variable_value = [](const std::string &id_prefix, VaribleInfo *v, int item_index, const CommonData& data) {
+			auto id = id_prefix + v->name();
 			std::string value;
 			switch (v->type_hash())
 			{
+			case cH("bool"):
+				value = data.v.i[0] ? "true" : "false";
+				break;
+			case cH("uint"):
+				value = to_stdstring((uint)data.v.i[0]);
+				break;
+			case cH("int"):
+				value = to_stdstring(data.v.i[0]);
+				break;
+			case cH("Ivec2"):
+				value = "Ivec2(" + to_stdstring(data.v.i[0]) + ", " + to_stdstring(data.v.i[1]) + ")";
+				break;
+			case cH("Ivec3"):
+				value = "Ivec3(" + to_stdstring(data.v.i[0]) + ", " + to_stdstring(data.v.i[1]) + ", " + to_stdstring(data.v.i[2]) + ")";
+				break;
+			case cH("Ivec4"):
+				value = "Ivec4(" + to_stdstring(data.v.i[0]) + ", " + to_stdstring(data.v.i[1]) + ", " + to_stdstring(data.v.i[2]) + ", " + to_stdstring(data.v.i[3]) + ")";
+				break;
+			case cH("float"):
+				value = to_stdstring(data.v.f[0]);
+				break;
+			case cH("Vec2"):
+				value = "Vec2(" + to_stdstring(data.v.f[0]) + ", " + to_stdstring(data.v.f[1]) + ")";
+				break;
+			case cH("Vec3"):
+				value = "Vec3(" + to_stdstring(data.v.f[0]) + ", " + to_stdstring(data.v.f[1]) + ", " + to_stdstring(data.v.f[2]) + ")";
+				break;
+			case cH("Vec4"):
+				value = "Vec4(" + to_stdstring(data.v.f[0]) + ", " + to_stdstring(data.v.f[1]) + ", " + to_stdstring(data.v.f[2]) + ", " + to_stdstring(data.v.f[3]) + ")";
+				break;
+			case cH("Bvec2"):
+				value = "Bvec2(" + to_stdstring(data.v.b[0]) + ", " + to_stdstring(data.v.b[1]) + ")";
+				break;
+			case cH("Bvec3"):
+				value = "Bvec3(" + to_stdstring(data.v.b[0]) + ", " + to_stdstring(data.v.b[1]) + ", " + to_stdstring(data.v.b[2]) + ")";
+				break;
+			case cH("Bvec4"):
+				value = "Bvec4(" + to_stdstring(data.v.b[0]) + ", " + to_stdstring(data.v.b[1]) + ", " + to_stdstring(data.v.b[2]) + ", " + to_stdstring(data.v.b[3]) + ")";
+				break;
 			case cH("void"):
 				value = "nullptr";
 				break;
 			}
 			if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
-				id += "_" + std::to_string(item_index);
-			return type + " " + id + " = " + value + ";\n";
+				id += "[" + to_stdstring(item_index) + "]";
+			return id + " = " + value + ";\n";
 		};
-
-		std::string code;
-		code += "#include <flame/foundation/foundation.h>\n\n";
-		code += "using namespace flame;\n\n";
 
 		for (auto& n : update_list)
 		{
+			auto id_prefix = n->id + "_";
+			for (auto& input : n->inputs)
+				code += define_variable(id_prefix, input->variable_info);
+			for (auto& output : n->outputs)
+				code += define_variable(id_prefix, output->variable_info);
+		}
+
+		code += "\nvoid initialize()\n{\n";
+		for (auto& n : update_list)
+		{
+			auto id_prefix = n->id + "_";
 			for (auto& input : n->inputs)
 			{
+				auto v = input->variable_info;
+				if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+					code += "\t" + id_prefix + v->name() + ".resize("+ to_stdstring((int)input->items.size()) + ");\n";
 				auto idx = 0;
 				for (auto& i : input->items)
 				{
-					code += print_variable(n, input->variable_info, idx, i->data);
+					code += "\t" + set_variable_value(id_prefix, v, idx, i->data);
 					idx++;
 				}
 			}
 			for (auto& output : n->outputs)
-				code += print_variable(n, output->variable_info, -1, output->item->data);
+				code += "\t" + set_variable_value(id_prefix, output->variable_info, -1, output->item->data);
 		}
+		code += "}\n";
 
 		code += "\nvoid update()\n{\n";
-
+		std::regex reg_nl(R"(\bNL\b)");
+		std::regex reg_tab(R"(\bTAB\b)");
+		std::regex reg_variable(R"(\b([\w]+)\$\w*\b)");
 		for (auto& n : update_list)
 		{
+			auto id_prefix = n->id + "_";
 			auto udt = n->udt;
 			auto code_function_rva = udt->code_function_rva();
+			auto fmt_id = id_prefix + "$1";
+
+			for (auto& input : n->inputs)
+			{
+				auto v = input->variable_info;
+				auto idx = 0;
+				for (auto& i : input->items)
+				{
+					auto link = i->link;
+					if (link)
+					{
+						auto dst_id = id_prefix + v->name();
+						if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+							dst_id += "[" + to_stdstring(idx) + "]";
+						auto output = link->parent_o;
+						code += "\t" + dst_id + " = " + output->node->id + "_" + output->variable_info->name() + ";\n";
+					}
+					idx++;
+				}
+			}
+
 			if (code_function_rva)
 			{
-				auto line = run_module_function_member_constcharp_void(udt->module_name(), code_function_rva, nullptr);
-				code += "\t" + std::string(line.v) + "\n";
+				auto str = std::string(run_module_function_member_constcharp_void(udt->module_name(), code_function_rva, nullptr).v);
+				str = std::regex_replace(str, reg_nl, "\n");
+				str = std::regex_replace(str, reg_tab, "\t");
+				str = std::regex_replace(str, reg_variable, fmt_id);
+				code += str + "\n";
 			}
+			code += "\n";
 		}
-
 		code += "}\n";
 
 		code += "\n";
@@ -896,16 +1006,16 @@ namespace flame
 #define CODE_vec1 \
 			v$o = v$i;
 #define CODE_vec2 \
-			v$o.x = x$i;\
+			v$o.x = x$i; NL\
 			v$o.y = y$i;
 #define CODE_vec3 \
-			v$o.x = x$i;\
-			v$o.y = y$i;\
+			v$o.x = x$i; NL\
+			v$o.y = y$i; NL\
 			v$o.z = z$i;
 #define CODE_vec4 \
-			v$o.x = x$i;\
-			v$o.y = y$i;\
-			v$o.z = z$i;\
+			v$o.x = x$i; NL\
+			v$o.y = y$i; NL\
+			v$o.z = z$i; NL\
 			v$o.w = w$i;
 
 	void BP_Int::update()
@@ -946,7 +1056,9 @@ namespace flame
 
 	void BP_Vec2::update()
 	{
+#define NL
 		CODE_vec2
+#undef NL
 	}
 
 	const char* BP_Vec2::code()
@@ -958,7 +1070,9 @@ namespace flame
 
 	void BP_Vec3::update()
 	{
+#define NL
 		CODE_vec3
+#undef NL
 	}
 
 	const char* BP_Vec3::code()
@@ -970,7 +1084,9 @@ namespace flame
 
 	void BP_Vec4::update()
 	{
+#define NL
 		CODE_vec4
+#undef NL
 	}
 
 	const char* BP_Vec4::code()
@@ -982,7 +1098,9 @@ namespace flame
 
 	void BP_Ivec2::update()
 	{
+#define NL
 		CODE_vec2
+#undef NL
 	}
 
 	const char* BP_Ivec2::code()
@@ -994,7 +1112,9 @@ namespace flame
 
 	void BP_Ivec3::update()
 	{
+#define NL
 		CODE_vec3
+#undef NL
 	}
 
 	const char* BP_Ivec3::code()
@@ -1006,7 +1126,9 @@ namespace flame
 
 	void BP_Ivec4::update()
 	{
+#define NL
 		CODE_vec4
+#undef NL
 	}
 
 	const char* BP_Ivec4::code()

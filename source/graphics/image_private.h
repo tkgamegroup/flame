@@ -103,6 +103,15 @@ namespace flame
 			}
 			return ImageAspectColor;
 		}
+
+		struct SamplerPrivate : Sampler
+		{
+			DevicePrivate *d;
+			VkSampler v;
+
+			SamplerPrivate(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
+			~SamplerPrivate();
+		};
 	}
 }
 
