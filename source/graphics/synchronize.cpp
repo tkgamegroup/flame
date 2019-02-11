@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "device_private.h"
-#include "semaphore_private.h"
+#include "synchronize_private.h"
 
 namespace flame
 {

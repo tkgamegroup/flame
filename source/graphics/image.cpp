@@ -28,7 +28,6 @@
 #include "pipeline_private.h"
 #include "descriptor_private.h"
 #include "commandbuffer_private.h"
-#include "queue_private.h"
 #include "image_private.h"
 
 #include <algorithm>
@@ -588,6 +587,47 @@ namespace flame
 			}
 			else
 				((ImageviewPrivate*)v)->ref_count--;
+		}
+
+		inline SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
+		{
+			d = (DevicePrivate*)_d;
+			VkSamplerCreateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+			info.flags = 0;
+			info.pNext = nullptr;
+			info.magFilter = Z(mag_filter);
+			info.minFilter = Z(min_filter);
+			info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			info.anisotropyEnable = VK_FALSE;
+			info.maxAnisotropy = 1.f;
+			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+			info.unnormalizedCoordinates = unnormalized_coordinates;
+			info.compareEnable = VK_FALSE;
+			info.compareOp = VK_COMPARE_OP_ALWAYS;
+			info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+			info.mipLodBias = 0.0f;
+			info.minLod = 0.0f;
+			info.maxLod = 0.0f;
+
+			vk_chk_res(vkCreateSampler(d->v, &info, nullptr, &v));
+		}
+
+		inline SamplerPrivate::~SamplerPrivate()
+		{
+			vkDestroySampler(d->v, v, nullptr);
+		}
+
+		Sampler *Sampler::create(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
+		{
+			return new SamplerPrivate(d, mag_filter, min_filter, unnormalized_coordinates);
+		}
+
+		void Sampler::destroy(Sampler *s)
+		{
+			delete (SamplerPrivate*)s;
 		}
 	}
 }

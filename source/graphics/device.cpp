@@ -25,9 +25,8 @@
 #include "renderpass_private.h"
 #include "pipeline_private.h"
 #include "descriptor_private.h"
-#include "sampler_private.h"
+#include "image_private.h"
 #include "commandbuffer_private.h"
-#include "queue_private.h"
 
 #include <vector>
 #ifdef FLAME_ANDROID

@@ -22,20 +22,22 @@
 
 #pragma once
 
-#include <flame/graphics/graphics.h>
+#include <flame/graphics/synchronize.h>
+#include "graphics_private.h"
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
+		struct DevicePrivate;
 
-		struct Sampler
+		struct SemaphorePrivate : Semaphore
 		{
-			FLAME_GRAPHICS_EXPORTS static Sampler *create(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Sampler *s);
-		};
+			DevicePrivate *d;
+			VkSemaphore v;
 
+			SemaphorePrivate(Device *d);
+			~SemaphorePrivate();
+		};
 	}
 }
-

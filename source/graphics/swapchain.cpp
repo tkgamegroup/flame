@@ -25,7 +25,7 @@
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/framebuffer.h>
 #include "swapchain_private.h"
-#include "semaphore_private.h"
+#include "synchronize_private.h"
 
 #include <flame/type.h>
 #ifdef FLAME_ANDROID

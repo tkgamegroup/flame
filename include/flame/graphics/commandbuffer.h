@@ -37,6 +37,8 @@ namespace flame
 		struct Pipeline;
 		struct Pipelinelayout;
 		struct Descriptorset;
+		struct Swapchain;
+		struct Semaphore;
 
 		struct Commandpool
 		{
@@ -134,6 +136,16 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS  static Commandbuffer* create(Commandpool *p, bool sub = false);
 			FLAME_GRAPHICS_EXPORTS  static void destroy(Commandbuffer *c);
+		};
+
+		struct Queue
+		{
+			FLAME_GRAPHICS_EXPORTS void wait_idle();
+			FLAME_GRAPHICS_EXPORTS void submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore);
+			FLAME_GRAPHICS_EXPORTS void present(Swapchain *s, Semaphore *wait_semaphore);
+
+			FLAME_GRAPHICS_EXPORTS static Queue *create(Device *d, int queue_family_idx);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Queue *q);
 		};
 	}
 }
