@@ -45,7 +45,7 @@ int main(int argc, char **args)
 		}
 	}
 
-	std::string cmd_prefix("cmd /c \"");
+	std::string cmd_prefix("\"");
 	cmd_prefix += VS_LOCATION;
 	cmd_prefix += "/Common7/Tools/VsDevCmd.bat\" & dumpbin /DEPENDENTS ";
 

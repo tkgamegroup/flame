@@ -24,51 +24,34 @@
 
 using namespace flame;
 
+std::vector<std::string> sources;
 std::vector<std::string> include_dirs;
 std::vector<std::string> link_libraries;
-std::string output_dir;
+std::string output;
 
 bool force = false;
 
-void compile(const std::string &cpp_filename)
+void compile()
 {
-	std::filesystem::path cpp_path(cpp_filename);
-	auto dll_filename = output_dir + cpp_path.stem().string() + ".dll";
-
-	if (!force && std::filesystem::exists(dll_filename) && std::filesystem::last_write_time(cpp_path) < std::filesystem::last_write_time(dll_filename))
-	{
-		printf("%s (up to date)\n\n\n", cpp_filename.c_str());
-		return;
-	}
-
-	printf("compiling: %s\n", cpp_filename.c_str());
-
 	std::string cl("\"");
 	cl += VS_LOCATION;
 	cl += "/VC/Auxiliary/Build/vcvars64.bat\"";
 
 	cl += " & cl ";
-	cl += cpp_filename;
-	cl += " -LD -MD -EHsc -Zi";
+	for (auto& s : sources)
+		cl += s + " ";
+	cl += "-LD -MD -EHsc -Zi";
 	for (auto &d : include_dirs)
 		cl += " -I " + d;
 	cl += " -link -DEBUG ";
 	for (auto &l : link_libraries)
 		cl += l + " ";
 
-	std::string out_parent_path;
-	if (!output_dir.empty())
-	{
-		out_parent_path = output_dir;
-		if (!is_slash_chr(output_dir.back()))
-			out_parent_path += '/';
-	}
-
-	cl += " -out:" + dll_filename;
+	cl += " -out:" + output;
 
 	auto output = exec_and_get_output(L"", cl.c_str());
 
-	printf("%s\n\n\n", output.v);
+	printf("%s\n", output.v);
 }
 
 int main(int argc, char **args)
@@ -76,8 +59,7 @@ int main(int argc, char **args)
 	if (argc <= 1)
 		return 0;
 
-	auto input = std::string(args[1]);
-	for (auto i = 2; i < argc; i++)
+	for (auto i = 1; i < argc; i++)
 	{
 		auto param = std::string(args[i]);
 		if (param[0] == '-' && param.size() > 1)
@@ -95,15 +77,17 @@ int main(int argc, char **args)
 				break;
 			case 'o':
 				if (param.size() > 2)
-					output_dir = param.c_str() + 2;
+					output = param.c_str() + 2;
 				break;
 			case 'f':
 				force = true;
 				break;
 			}
 		}
+		else
+			sources.push_back(param);
 	}
-	compile(input);
+	compile();
 
 	system("pause");
 
