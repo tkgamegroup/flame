@@ -165,6 +165,26 @@ namespace flame
 		return output;
 	}
 
+	String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
+	{
+		std::string cl("\"");
+		cl += VS_LOCATION;
+		cl += "/VC/Auxiliary/Build/vcvars64.bat\"";
+
+		cl += " & cl ";
+		for (auto& s : sources)
+			cl += w2s(s) + " ";
+		cl += "-LD -MD -EHsc -Zi -I ../include -link -DEBUG ";
+		for (auto& l : libraries)
+			cl += w2s(l) + " ";
+
+		cl += " -out:" + w2s(out);
+
+		printf("exec:\n%s\n\n", cl.c_str());
+
+		return exec_and_get_output(L"", cl.c_str());
+	}
+
 	void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *_thiz)
 	{
 		auto module = LoadLibraryW(module_name);

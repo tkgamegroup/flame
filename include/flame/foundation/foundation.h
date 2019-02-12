@@ -1018,6 +1018,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const char *parameters, bool wait);
 	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
+	FLAME_FOUNDATION_EXPORTS String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 
 	FLAME_FOUNDATION_EXPORTS void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *thiz);
 	FLAME_FOUNDATION_EXPORTS String run_module_function_member_constcharp_void(const wchar_t *module_name, const void *rva, void *thiz);

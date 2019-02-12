@@ -343,24 +343,13 @@ int main(int argc, char **args)
 					printf("filename taken\n");
 			}
 		}
-		else if (s_command_line == "generate")
+		else if (s_command_line == "tobin")
 		{
-			scanf("%s", command_line);
-			auto s_what = std::string(command_line);
+			bp->prepare();
+			bp->tobin();
+			bp->unprepare();
 
-			if (s_what == "code")
-			{
-				scanf("%s", command_line);
-				auto s_filename = std::string(command_line);
-
-				bp->prepare();
-				bp->generate_code(s2w(s_filename).c_str());
-				bp->unprepare();
-
-				printf("code generated: %s\n", s_filename.c_str());
-			}
-			else
-				printf("unknow object to generate\n");
+			printf("code generated\n");
 		}
 		else
 			printf("unknow command\n");

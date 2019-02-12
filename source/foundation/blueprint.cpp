@@ -593,7 +593,7 @@ namespace flame
 				code += define_variable(id_prefix, output->variable_info);
 		}
 
-		code += "\nvoid initialize()\n{\n";
+		code += "\n __declspec(dllexport) void initialize()\n{\n";
 		for (auto& n : update_list)
 		{
 			auto id_prefix = n->id + "_";
@@ -614,7 +614,7 @@ namespace flame
 		}
 		code += "}\n";
 
-		code += "\nvoid update()\n{\n";
+		code += "\n __declspec(dllexport) void update()\n{\n";
 		std::regex reg_nl(R"(\bNL\b)");
 		std::regex reg_tab(R"(\bTAB\b)");
 		std::regex reg_variable(R"(\b([\w]+)\$\w*\b)");
@@ -658,9 +658,25 @@ namespace flame
 
 		code += "\n";
 
-		std::ofstream file(ext_replace(filename, L".cpp"));
+		auto cpp_filename = ext_replace(filename, L".cpp");
+		std::ofstream file(cpp_filename);
 		file << code;
 		file.close();
+
+		std::vector<std::wstring> libraries;
+		libraries.push_back(L"flame_foundation.lib");
+		if (using_graphics_module)
+			libraries.push_back(L"flame_graphics.lib");
+		if (using_sound_module)
+			libraries.push_back(L"flame_sound.lib");
+		if (using_universe_module)
+			libraries.push_back(L"flame_universe.lib");
+		if (using_physics_module)
+			libraries.push_back(L"flame_physics.lib");
+
+		auto output = compile_to_dll({ cpp_filename }, libraries, ext_replace(filename, L".dll"));
+
+		printf("compiling:\n%s\n\n", output.v);
 	}
 	
 	void BPPrivate::load(const wchar_t *_filename)

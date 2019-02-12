@@ -1,6 +1,7 @@
 file(GLOB SOURCE_LIST "*.c*")
 add_lib(flame_foundation "${SOURCE_LIST}" "flame")
 target_compile_definitions(flame_foundation PRIVATE FLAME_FOUNDATION_MODULE)
+target_compile_definitions(flame_foundation PUBLIC VS_LOCATION="${VS_PATH}")
 target_include_directories(flame_foundation PRIVATE ${RAPIDXML_PATH})
 target_include_directories(flame_foundation PRIVATE "${VS_PATH}/DIA SDK/include")
 target_include_directories(flame_foundation PRIVATE "${VS_PATH}/VC/Tools/MSVC/14.14.26428/atlmfc/include")

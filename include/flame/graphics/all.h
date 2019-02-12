@@ -23,8 +23,7 @@
 #pragma once
 
 #include "device.h"
-#include "queue.h"
-#include "semaphore.h"
+#include "synchronize.h"
 #include "commandbuffer.h"
 #include "buffer.h"
 #include "image.h"
@@ -32,6 +31,5 @@
 #include "pipeline.h"
 #include "renderpass.h"
 #include "descriptor.h"
-#include "sampler.h"
 #include "framebuffer.h"
 #include "swapchain.h"

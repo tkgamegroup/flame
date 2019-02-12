@@ -1,4 +1,5 @@
 #include <flame/foundation/foundation.h>
+#include <flame/graphics/all.h>
 
 using namespace flame;
 
@@ -42,7 +43,7 @@ void* cmd_end_in;
 void* cmd_end_cmd1;
 void* cmd_end_cmd2;
 
-void initialize()
+ __declspec(dllexport) void initialize()
 {
 	sc_in = nullptr;
 	sc_out = nullptr;
@@ -86,7 +87,7 @@ void initialize()
 	cmd_end_cmd2 = nullptr;
 }
 
-void update()
+ __declspec(dllexport) void update()
 {
 	 if (sc_in) 
  	 { 
@@ -154,9 +155,16 @@ void update()
 	cmd_begin_renderpass_framebuffer2 = sc_framebuffer2;
 	cmd_begin_renderpass_clearvalues = cv_out;
 	 if (cmd_begin_renderpass_cmd1) 
- 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd1)->begin_renderpass((graphics::Renderpass*)cmd_begin_renderpass_renderpass, (graphics::Framebuffer*)cmd_begin_renderpass_framebuffer1, (graphics::ClearValues*)cmd_begin_renderpass_clearvalues); 
- 	 if (cmd_begin_renderpass_cmd2) 
- 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd2)->begin_renderpass((graphics::Renderpass*)cmd_begin_renderpass_renderpass, (graphics::Framebuffer*)cmd_begin_renderpass_framebuffer2, (graphics::ClearValues*)cmd_begin_renderpass_clearvalues);
+ 	 { 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd1)->begin_renderpass( 
+ 	 	 	 (graphics::Renderpass*)cmd_begin_renderpass_renderpass, 
+ 	 	 	 (graphics::Framebuffer*)cmd_begin_renderpass_framebuffer1, 
+ 	 	 	 (graphics::ClearValues*)cmd_begin_renderpass_clearvalues); 
+ 	 } 	 if (cmd_begin_renderpass_cmd2) 
+ 	 { 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd2)->begin_renderpass( 
+ 	 	 	 (graphics::Renderpass*)cmd_begin_renderpass_renderpass, 
+ 	 	 	 (graphics::Framebuffer*)cmd_begin_renderpass_framebuffer2, 
+ 	 	 	 (graphics::ClearValues*)cmd_begin_renderpass_clearvalues); 
+ 	 }
 
 	cmd_end_renderpass_in = cmd_begin_renderpass_out;
 	cmd_end_renderpass_cmd1 = cb1_out;
