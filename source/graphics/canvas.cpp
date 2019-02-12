@@ -534,8 +534,8 @@ namespace flame
 					cb->bind_vertexbuffer(vtx_buffer, 0);
 					cb->bind_indexbuffer(idx_buffer, IndiceTypeUint);
 
-					auto pc = Vec4(2.f / surface_size.x, 2.f / surface_size.y, 
-						4.f / /*share_data.font_sdf_image->size*/1.f, 4.f / /*share_data.font_sdf_image->size*/1.f);
+					auto sdf_scale = 4.f / 512.f/*sdf_image->size*/;
+					auto pc = Vec4(2.f / surface_size.x, 2.f / surface_size.y, sdf_scale, sdf_scale);
 
 					cb->push_constant(0, sizeof(Vec4), &pc, pl_element->layout());
 

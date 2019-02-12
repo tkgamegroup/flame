@@ -52,7 +52,7 @@ namespace flame
 			app = Application::create();
 			w = Window::create(app, title, res, style);
 			d = graphics::Device::/*get_shared*/create(true);
-			sc = graphics::Swapchain::create(d, w);
+			sc = graphics::Swapchain::create(d, w, graphics::SampleCount_8);
 			image_avalible = graphics::Semaphore::create(d);
 			render_finished = graphics::Semaphore::create(d);
 

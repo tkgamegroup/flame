@@ -55,22 +55,20 @@ namespace flame
 
 			image_ms = nullptr;
 
+			RenderpassInfo rp_info;
+			if (sc != SampleCount_1)
 			{
-				RenderpassInfo info;
-				if (sc != SampleCount_1)
-				{
-					info.attachments.emplace_back(swapchain_format, true, sc);
-					info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
-				}
-				else
-					info.attachments.emplace_back(swapchain_format, true, SampleCount_1);
-				info.subpasses[0].color_attachments.push_back(0);
-				if (sc != SampleCount_1)
-					info.subpasses[0].resolve_attachments.push_back(1);
-				rp = Renderpass::get(d, info);
-				info.attachments[0].clear = false;
-				rp_dc = Renderpass::get(d, info);
+				rp_info.attachments.emplace_back(swapchain_format, true, sc);
+				rp_info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
 			}
+			else
+				rp_info.attachments.emplace_back(swapchain_format, true, SampleCount_1);
+			rp_info.subpasses[0].color_attachments.push_back(0);
+			if (sc != SampleCount_1)
+				rp_info.subpasses[0].resolve_attachments.push_back(1);
+			rp = Renderpass::get(d, rp_info);
+			rp_info.attachments[0].clear = false;
+			rp_dc = Renderpass::get(d, rp_info);
 
 			fbs[0] = nullptr;
 			fbs[1] = nullptr;
@@ -179,7 +177,7 @@ namespace flame
 					{
 						if (image_ms)
 							Image::destroy(image_ms);
-						image_ms = Image::create(d, get_swapchain_format(), size, 1, 1, sc, ImageUsageAttachment, MemPropDevice);
+						image_ms = Image::create(d, swapchain_format, size, 1, 1, sc, ImageUsageAttachment, MemPropDevice);
 					}
 					fb_info.views.push_back(Imageview::get(image_ms));
 				}
@@ -196,7 +194,10 @@ namespace flame
 				Framebuffer::release(fbs[i]);
 			}
 			if (image_ms)
+			{
 				Image::destroy(image_ms);
+				image_ms = nullptr;
+			}
 
 			vkDestroySwapchainKHR(d->v, v, nullptr);
 			vkDestroySurfaceKHR(d->ins, s, nullptr);
