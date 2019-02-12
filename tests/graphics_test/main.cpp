@@ -49,7 +49,7 @@ struct MyApp : BasicApp
 		Canvas::initialize(d, sc);
 		canvas = Canvas::create(sc);
 
-		font = Font::create(d, L"c:/windows/fonts/msyh.ttc", 16);
+		font = Font::create(d, L"c:/windows/fonts/msyh.ttc", 32, true);
 		font_index = canvas->add_font(font);
 	}
 
@@ -58,7 +58,7 @@ struct MyApp : BasicApp
 		sc->acquire_image(image_avalible);
 
 		canvas->add_rect_filled(Vec2(0.f), Vec2(100.f), Bvec4(255, 128, 0, 255));
-		canvas->add_text(font_index, Vec2(0.f), Bvec4(255), L"123");
+		canvas->add_text(font_index, Vec2(0.f), Bvec4(255), L"123", 5.f);
 		canvas->record_cb();
 
 		d->gq->submit(canvas->get_cb(), image_avalible, render_finished);

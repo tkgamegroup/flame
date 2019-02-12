@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include <flame/foundation/foundation.h>
+#include <flame/foundation/bitmap.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 
@@ -2144,7 +2145,7 @@ namespace flame
 						msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
 						msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x, g->off.y - ascender) + sdf_range);
 
-						auto pitch = atlas->pitch_;
+						auto pitch = Bitmap::get_pitch(size.x * 4);
 						auto temp = new uchar[pitch * size.y];
 						for (auto y = 0; y < size.y; y++)
 						{
