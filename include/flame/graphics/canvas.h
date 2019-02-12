@@ -31,6 +31,7 @@ namespace flame
 		struct Device;
 		struct Swapchain;
 		struct Commandbuffer;
+		struct Font;
 
 		enum DrawCmdType
 		{
@@ -42,6 +43,8 @@ namespace flame
 
 		struct Canvas
 		{
+			FLAME_GRAPHICS_EXPORTS int add_font(Font* font);
+
 			FLAME_GRAPHICS_EXPORTS void start_cmd(DrawCmdType type, int id);
 			FLAME_GRAPHICS_EXPORTS void path_line_to(const Vec2 &p);
 			FLAME_GRAPHICS_EXPORTS void path_rect(const Vec2 &pos, const Vec2 &size, float round_radius, int round_flags);
@@ -52,10 +55,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void stroke_col2(const Bvec4 &inner_col, const Bvec4 &outter_col, float thickness, bool closed);
 			FLAME_GRAPHICS_EXPORTS void fill(const Bvec4 &col);
 
-			FLAME_GRAPHICS_EXPORTS void add_char_lcd(const Vec2 &pos, const Bvec4 &col, wchar_t ch);
-			FLAME_GRAPHICS_EXPORTS void add_char_sdf(const Vec2 &pos, const Bvec4 &col, wchar_t ch, float scale);
-			FLAME_GRAPHICS_EXPORTS void add_text_lcd(const Vec2 &pos, const Bvec4 &col, const wchar_t *text);
-			FLAME_GRAPHICS_EXPORTS void add_text_sdf(const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale);
+			FLAME_GRAPHICS_EXPORTS void add_text(int font_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale = 1.f /* for sdf */);
 			FLAME_GRAPHICS_EXPORTS void add_line(const Vec2 &p0, const Vec2 &p1, const Bvec4 &col, float thickness);
 			FLAME_GRAPHICS_EXPORTS void add_triangle_filled(const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Bvec4 &col);
 			FLAME_GRAPHICS_EXPORTS void add_rect(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float thickness, float round_radius = 0.f, int round_flags = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE);
@@ -80,7 +80,10 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Commandbuffer *get_cb() const;
 			FLAME_GRAPHICS_EXPORTS void record_cb();
 
-			FLAME_GRAPHICS_EXPORTS static Canvas *create(Device *d, Swapchain *sc);
+			FLAME_GRAPHICS_EXPORTS static void initialize(Device* d, Swapchain* sc);
+			FLAME_GRAPHICS_EXPORTS static void deinitialize();
+
+			FLAME_GRAPHICS_EXPORTS static Canvas* create(Swapchain* sc); // all swapchains that used to create canvas should have the same sample_count as the one pass to initialize
 			FLAME_GRAPHICS_EXPORTS static void destroy(Canvas *c);
 		};
 

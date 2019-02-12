@@ -46,6 +46,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS int pixel_height() const;
 			FLAME_GRAPHICS_EXPORTS int max_width() const;
 			FLAME_GRAPHICS_EXPORTS int ascender() const;
+			FLAME_GRAPHICS_EXPORTS bool sdf() const;
 				
 			FLAME_GRAPHICS_EXPORTS const Glyph *get_glyph(wchar_t unicode);
 			FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);

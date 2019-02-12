@@ -2032,10 +2032,11 @@ namespace flame
 				ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
 				ft_req.height = pixel_height * 64;
 				FT_Request_Size(ft_face, &ft_req);
-				max_width = ft_face->size->metrics.max_advance;
+				max_width = ft_face->size->metrics.max_advance / 64;
 				ascender = ft_face->size->metrics.ascender / 64;
 
 				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+				atlas->init(Bvec4(0));
 
 				glyph_head = glyph_tail = nullptr;
 
@@ -2094,7 +2095,9 @@ namespace flame
 
 					FT_Load_Char(ft_face, unicode, FT_LOAD_TARGET_LCD);
 					auto ft_glyph = ft_face->glyph;
-					g->size = Vec2(ft_glyph->bitmap.width / 3, ft_glyph->bitmap.rows);
+					auto width = ft_glyph->bitmap.width / 3;
+					auto height = ft_glyph->bitmap.rows;
+					g->size = Vec2(width, height);
 					g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y - ft_glyph->metrics.horiBearingY / 64.f);
 					g->advance = ft_glyph->advance.x / 64;
 
@@ -2102,11 +2105,9 @@ namespace flame
 					{
 						FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
 
-						auto width = ft_glyph->bitmap.width / 3;
-						auto height = ft_glyph->bitmap.rows;
 						auto pitch_ft = ft_glyph->bitmap.pitch;
 						auto pitch_temp = width * 4;
-						auto temp = new uchar[pitch_ft * height];
+						auto temp = new uchar[pitch_temp * height];
 						for (auto y = 0; y < height; y++)
 						{
 							for (auto x = 0; x < width; x++)
@@ -2123,10 +2124,10 @@ namespace flame
 
 						atlas->set_pixels(x, y, width, height, temp);
 
-						delete temp;
+						delete[] temp;
 
-						g->uv0 = Vec2(x, y + pixel_height) / atlas->size;
-						g->uv1 = Vec2(x + max_width, y) / atlas->size;
+						g->uv0 = Vec2(x, y + height) / atlas->size;
+						g->uv1 = Vec2(x + width, y) / atlas->size;
 					}
 					else
 					{
@@ -2216,6 +2217,11 @@ namespace flame
 		int Font::ascender() const
 		{
 			return ((FontPrivate*)this)->ascender;
+		}
+
+		bool Font::sdf() const
+		{
+			return ((FontPrivate*)this)->sdf;
 		}
 
 		int Font::get_text_width(const wchar_t *text_beg, const wchar_t *text_end)

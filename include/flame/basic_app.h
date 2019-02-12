@@ -31,6 +31,7 @@
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/canvas.h>
+#include <flame/graphics/font.h>
 
 namespace flame
 {

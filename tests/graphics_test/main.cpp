@@ -31,6 +31,8 @@ struct MyApp : BasicApp
 	//ClearValues* cv;
 	//BP* render_path;
 	Canvas* canvas;
+	Font* font;
+	int font_index;
 
 	inline virtual void on_create() override
 	{
@@ -44,7 +46,11 @@ struct MyApp : BasicApp
 		//cbs[0]  = (Commandbuffer*)render_path->find_item("cb1.out")->data().v.p;
 		//cbs[1] = (Commandbuffer*)render_path->find_item("cb2.out")->data().v.p;
 
-		canvas = Canvas::create(d, sc);
+		Canvas::initialize(d, sc);
+		canvas = Canvas::create(sc);
+
+		font = Font::create(d, L"c:/windows/fonts/msyh.ttc", 16);
+		font_index = canvas->add_font(font);
 	}
 
 	inline virtual void do_run() override
@@ -52,6 +58,7 @@ struct MyApp : BasicApp
 		sc->acquire_image(image_avalible);
 
 		canvas->add_rect_filled(Vec2(0.f), Vec2(100.f), Bvec4(255, 128, 0, 255));
+		canvas->add_text(font_index, Vec2(0.f), Bvec4(255), L"123");
 		canvas->record_cb();
 
 		d->gq->submit(canvas->get_cb(), image_avalible, render_finished);

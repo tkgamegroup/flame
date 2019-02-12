@@ -46,8 +46,8 @@ namespace flame
 		static Image* white_image;
 		static Imageview* white_imageview;
 		static Pipeline* pl_element;
-
-		static auto resource_ready = false;
+		static Pipeline* pl_text_lcd;
+		static Pipeline* pl_text_sdf;
 
 		struct Vertex
 		{
@@ -83,6 +83,7 @@ namespace flame
 		{
 			Swapchain* sc;
 			Descriptorset* ds;
+			ClearValues* cv;
 
 			std::vector<Vec2> points;
 			std::vector<DrawCmd> draw_cmds;
@@ -93,51 +94,21 @@ namespace flame
 			int *idx_end;
 			Commandbuffer *cb;
 
-			inline CanvasPrivate(Device *_d, Swapchain *_sc)
+			std::vector<std::tuple<Font*, bool, int>> fonts;
+
+			inline CanvasPrivate(Swapchain *_sc)
 			{
 				sc = _sc;
+				ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
 
-				if (!resource_ready)
+				for (auto i = 0; i < MaxImageviewCount; i++)
 				{
-					device = _d;
-
-					white_image = Image::create(device, Format_R8G8B8A8_UNORM, Ivec2(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
-					white_image->init(Bvec4(255));
-					white_imageview = Imageview::get(white_image);
-
-					auto vib = VertexInputBufferInfo({
-							Format_R32G32_SFLOAT,
-							Format_R32G32_SFLOAT,
-							Format_R8G8B8A8_UNORM });
-
-					GraphicsPipelineInfo pl_element_info;
-					pl_element_info.shaders.resize(2);
-					pl_element_info.shaders[0].filename = L"2d/element.vert";
-					pl_element_info.shaders[1].filename = L"2d/element.frag";
-					pl_element_info.vi_buffers.push_back(vib);
-					pl_element_info.cull_mode = CullModeNone;
-					pl_element_info.sample_count = sc->get_sample_count();
-					pl_element_info.blend_states[0] = BlendInfo(
-						BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
-						BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-					pl_element_info.renderpass = sc->get_renderpass_clear();
-					pl_element = Pipeline::create(device, pl_element_info);
-					ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
-
-					for (auto i = 0; i < MaxImageviewCount; i++)
-					{
-						//image_views[i] = white_imageview;
-						ds->set_imageview(0, i, white_imageview, device->sp_bi_linear);
-					}
-
-					for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
-					{
-						auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
-						circle_subdiv[i].y = sin(rad);
-						circle_subdiv[i].x = cos(rad);
-					}
-					resource_ready = true;
+					//image_views[i] = white_imageview;
+					ds->set_imageview(0, i, white_imageview, device->sp_bi_linear);
 				}
+
+				cv = ClearValues::create(sc->get_renderpass_clear());
+				cv->set(0, Bvec4(0));
 
 				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690,
 					BufferUsageVertex, MemPropHost | MemPropHostCoherent);
@@ -147,6 +118,7 @@ namespace flame
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (int*)idx_buffer->mapped;
+
 				cb = Commandbuffer::create(device->gcp);
 			}
 
@@ -155,6 +127,16 @@ namespace flame
 				Buffer::destroy(vtx_buffer);
 				Buffer::destroy(idx_buffer);
 				Commandbuffer::destroy(cb);
+			}
+
+			inline int add_font(Font* font)
+			{
+				auto image_idx = fonts.size() + 1;
+				fonts.emplace_back(font, font->sdf(), (int)image_idx);
+
+				ds->set_imageview(0, image_idx, Imageview::get(font->get_atlas()), device->sp_bi_linear);
+
+				return image_idx - 1;
 			}
 
 			inline void start_cmd(DrawCmdType type, int id)
@@ -365,151 +347,58 @@ namespace flame
 				}
 			}
 
-			//inline void add_char_lcd(const Vec2 &pos, const Bvec4 &col, wchar_t ch)
-			//{
-			//	auto _pos = Vec2(Ivec2(pos));
+			inline void add_text(int font_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
+			{
+				if (text[0] == 0 || font_index >= fonts.size())
+					return;
 
-			//	start_cmd(DrawCmdTextLcd, 0);
-			//	auto &vtx_cnt = draw_cmds.back().vtx_cnt;
-			//	auto &idx_cnt = draw_cmds.back().idx_cnt;
+				const auto& f = fonts[font_index];
+				auto font = std::get<0>(f);
+				auto pixel_height = font->pixel_height();
+				auto sdf = std::get<1>(f);
+				if (!sdf)
+					scale = 1.f;
 
-			//	auto g = share_data.font_atlas->get_glyph(ch);
+				auto _pos = Vec2(Ivec2(pos));
 
-			//	auto p = _pos + Vec2(0.f, g.off.y);
-			//	vtx_end->pos = p;							  vtx_end->uv = g.uv0;					vtx_end->col = col; vtx_end++;
-			//	vtx_end->pos = p + Vec2(0.f, -g.size.y);	  vtx_end->uv = Vec2(g.uv0.x, g.uv1.y); vtx_end->col = col; vtx_end++;
-			//	vtx_end->pos = p + Vec2(g.size.x, -g.size.y); vtx_end->uv = g.uv1;					vtx_end->col = col; vtx_end++;
-			//	vtx_end->pos = p + Vec2(g.size.x, 0.f);		  vtx_end->uv = Vec2(g.uv1.x, g.uv0.y); vtx_end->col = col; vtx_end++;
+				start_cmd(sdf ? DrawCmdTextSdf : DrawCmdTextLcd, std::get<2>(f));
+				auto &vtx_cnt = draw_cmds.back().vtx_cnt;
+				auto &idx_cnt = draw_cmds.back().idx_cnt;
 
-			//	*idx_end = vtx_cnt + 0; idx_end++;
-			//	*idx_end = vtx_cnt + 2; idx_end++;
-			//	*idx_end = vtx_cnt + 1; idx_end++;
-			//	*idx_end = vtx_cnt + 0; idx_end++;
-			//	*idx_end = vtx_cnt + 3; idx_end++;
-			//	*idx_end = vtx_cnt + 2; idx_end++;
+				auto s = text;
+				while (*s != 0)
+				{
+					if (*s == '\n')
+					{
+						_pos.y += pixel_height;
+						_pos.x = pos.x;
+					}
+					else
+					{
+						auto g = font->get_glyph(*s);
+						auto size = Vec2(g->size) * scale;
 
-			//	vtx_cnt += 4;
-			//	idx_cnt += 6;
-			//}
+						auto p = _pos + Vec2(g->off) * scale;
+						vtx_end->pos = p;						  vtx_end->uv = g->uv0;						vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2(0.f, -size.y);	  vtx_end->uv = Vec2(g->uv0.x, g->uv1.y);   vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2(size.x, -size.y); vtx_end->uv = g->uv1;						vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2(size.x, 0.f);	  vtx_end->uv = Vec2(g->uv1.x, g->uv0.y);   vtx_end->col = col; vtx_end++;
 
-			//inline void add_char_sdf(const Vec2 &pos, const Bvec4 &col, wchar_t ch, float scale)
-			//{
-			//	auto _pos = Vec2(Ivec2(pos));
+						*idx_end = vtx_cnt + 0; idx_end++;
+						*idx_end = vtx_cnt + 2; idx_end++;
+						*idx_end = vtx_cnt + 1; idx_end++;
+						*idx_end = vtx_cnt + 0; idx_end++;
+						*idx_end = vtx_cnt + 3; idx_end++;
+						*idx_end = vtx_cnt + 2; idx_end++;
 
-			//	start_cmd(DrawCmdTextSdf, 0);
-			//	auto &vtx_cnt = draw_cmds.back().vtx_cnt;
-			//	auto &idx_cnt = draw_cmds.back().idx_cnt;
+						vtx_cnt += 4;
+						idx_cnt += 6;
 
-			//	auto g = share_data.font_atlas->get_glyph(ch);
-			//	auto size = Vec2(g.size) * scale;
-
-			//	auto p = _pos + Vec2(0.f, g.off.y) * scale;
-			//	vtx_end->pos = p;						  vtx_end->uv = g.uv0_sdf;						vtx_end->col = col; vtx_end++;
-			//	vtx_end->pos = p + Vec2(0.f, -size.y);	  vtx_end->uv = Vec2(g.uv0_sdf.x, g.uv1_sdf.y); vtx_end->col = col; vtx_end++;
-			//	vtx_end->pos = p + Vec2(size.x, -size.y); vtx_end->uv = g.uv1_sdf;						vtx_end->col = col; vtx_end++;
-			//	vtx_end->pos = p + Vec2(size.x, 0.f);	  vtx_end->uv = Vec2(g.uv1_sdf.x, g.uv0_sdf.y); vtx_end->col = col; vtx_end++;
-
-			//	*idx_end = vtx_cnt + 0; idx_end++;
-			//	*idx_end = vtx_cnt + 2; idx_end++;
-			//	*idx_end = vtx_cnt + 1; idx_end++;
-			//	*idx_end = vtx_cnt + 0; idx_end++;
-			//	*idx_end = vtx_cnt + 3; idx_end++;
-			//	*idx_end = vtx_cnt + 2; idx_end++;
-
-			//	vtx_cnt += 4;
-			//	idx_cnt += 6;
-			//}
-
-			//inline void add_text_lcd(const Vec2 &pos, const Bvec4 &col, const wchar_t *text)
-			//{
-			//	if (text[0] == 0)
-			//		return;
-
-			//	auto _pos = Vec2(Ivec2(pos));
-
-			//	start_cmd(DrawCmdTextLcd, 0);
-			//	auto &vtx_cnt = draw_cmds.back().vtx_cnt;
-			//	auto &idx_cnt = draw_cmds.back().idx_cnt;
-
-			//	auto s = text;
-			//	while (*s != 0)
-			//	{
-			//		if (*s == '\n')
-			//		{
-			//			_pos.y += share_data.font_atlas->pixel_height;
-			//			_pos.x = pos.x;
-			//		}
-			//		else
-			//		{
-			//			auto g = share_data.font_atlas->get_glyph(*s);
-
-			//			auto p = _pos + g.off;
-			//			vtx_end->pos = p;							  vtx_end->uv = g.uv0;					vtx_end->col = col; vtx_end++;
-			//			vtx_end->pos = p + Vec2(0.f, -g.size.y);	  vtx_end->uv = Vec2(g.uv0.x, g.uv1.y); vtx_end->col = col; vtx_end++;
-			//			vtx_end->pos = p + Vec2(g.size.x, -g.size.y); vtx_end->uv = g.uv1;					vtx_end->col = col; vtx_end++;
-			//			vtx_end->pos = p + Vec2(g.size.x, 0.f);		  vtx_end->uv = Vec2(g.uv1.x, g.uv0.y); vtx_end->col = col; vtx_end++;
-
-			//			*idx_end = vtx_cnt + 0; idx_end++;
-			//			*idx_end = vtx_cnt + 2; idx_end++;
-			//			*idx_end = vtx_cnt + 1; idx_end++;
-			//			*idx_end = vtx_cnt + 0; idx_end++;
-			//			*idx_end = vtx_cnt + 3; idx_end++;
-			//			*idx_end = vtx_cnt + 2; idx_end++;
-
-			//			vtx_cnt += 4;
-			//			idx_cnt += 6;
-
-			//			_pos.x += g.advance;
-			//		}
-			//		s++;
-			//	}
-			//}
-
-			//inline void add_text_sdf(const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
-			//{
-			//	if (text[0] == 0)
-			//		return;
-
-			//	auto _pos = Vec2(Ivec2(pos));
-
-			//	start_cmd(DrawCmdTextSdf, 0);
-			//	auto &vtx_cnt = draw_cmds.back().vtx_cnt;
-			//	auto &idx_cnt = draw_cmds.back().idx_cnt;
-
-			//	auto s = text;
-			//	while (*s != 0)
-			//	{
-			//		if (*s == '\n')
-			//		{
-			//			_pos.y += share_data.font_atlas->pixel_height;
-			//			_pos.x = pos.x;
-			//		}
-			//		else
-			//		{
-			//			auto g = share_data.font_atlas->get_glyph(*s);
-			//			auto size = Vec2(g.size) * scale;
-
-			//			auto p = _pos + Vec2(g.off) * scale;
-			//			vtx_end->pos = p;						  vtx_end->uv = g.uv0_sdf;						vtx_end->col = col; vtx_end++;
-			//			vtx_end->pos = p + Vec2(0.f, -size.y);	  vtx_end->uv = Vec2(g.uv0_sdf.x, g.uv1_sdf.y); vtx_end->col = col; vtx_end++;
-			//			vtx_end->pos = p + Vec2(size.x, -size.y); vtx_end->uv = g.uv1_sdf;						vtx_end->col = col; vtx_end++;
-			//			vtx_end->pos = p + Vec2(size.x, 0.f);	  vtx_end->uv = Vec2(g.uv1_sdf.x, g.uv0_sdf.y); vtx_end->col = col; vtx_end++;
-
-			//			*idx_end = vtx_cnt + 0; idx_end++;
-			//			*idx_end = vtx_cnt + 2; idx_end++;
-			//			*idx_end = vtx_cnt + 1; idx_end++;
-			//			*idx_end = vtx_cnt + 0; idx_end++;
-			//			*idx_end = vtx_cnt + 3; idx_end++;
-			//			*idx_end = vtx_cnt + 2; idx_end++;
-
-			//			vtx_cnt += 4;
-			//			idx_cnt += 6;
-
-			//			_pos.x += g.advance * scale;
-			//		}
-			//		s++;
-			//	}
-			//}
+						_pos.x += g->advance * scale;
+					}
+					s++;
+				}
+			}
 
 			inline void add_line(const Vec2 &p0, const Vec2 &p1, const Bvec4 &col, float thickness)
 			{
@@ -635,7 +524,7 @@ namespace flame
 			{
 				cb->begin();
 				//cb->begin_renderpass(clear_col.w > 0 ? share_data.renderpass : share_data.renderpass_noclear, s->framebuffers[swacpchain_image_index], clear_col.w > 0 ? clear_values : nullptr);
-				cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), nullptr);
+				cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), cv);
 				if (idx_end != idx_buffer->mapped)
 				{
 					auto surface_size = Vec2(sc->window()->size);
@@ -663,20 +552,20 @@ namespace flame
 							vtx_off += dc.vtx_cnt;
 							idx_off += dc.idx_cnt;
 							break;
-						//case DrawCmdTextLcd:
-						//	cb->bind_pipeline(share_data.pl_text_stroke);
-						//	cb->bind_descriptorset(share_data.ds_text_stroke, 0);
-						//	cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, 0);
-						//	vtx_off += dc.vtx_cnt;
-						//	idx_off += dc.idx_cnt;
-						//	break;
-						//case DrawCmdTextSdf:
-						//	cb->bind_pipeline(share_data.pl_text_sdf);
-						//	cb->bind_descriptorset(share_data.ds_text_sdf, 0);
-						//	cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, 0);
-						//	vtx_off += dc.vtx_cnt;
-						//	idx_off += dc.idx_cnt;
-						//	break;
+						case DrawCmdTextLcd:
+							cb->bind_pipeline(pl_text_lcd);
+							cb->bind_descriptorset(ds, 0);
+							cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, dc.id);
+							vtx_off += dc.vtx_cnt;
+							idx_off += dc.idx_cnt;
+							break;
+						case DrawCmdTextSdf:
+							cb->bind_pipeline(pl_text_sdf);
+							cb->bind_descriptorset(ds, 0);
+							cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, dc.id);
+							vtx_off += dc.vtx_cnt;
+							idx_off += dc.idx_cnt;
+							break;
 						case DrawCmdScissor:
 							cb->set_scissor(dc.scissor);
 							break;
@@ -691,6 +580,11 @@ namespace flame
 				draw_cmds.clear();
 			}
 		};
+
+		int Canvas::add_font(Font* font)
+		{
+			return ((CanvasPrivate*)this)->add_font(font);
+		}
 
 		void Canvas::start_cmd(DrawCmdType type, int id)
 		{
@@ -737,24 +631,9 @@ namespace flame
 			((CanvasPrivate*)this)->fill(col);
 		}
 
-		void Canvas::add_char_lcd(const Vec2 &pos, const Bvec4 &col, wchar_t ch)
+		void Canvas::add_text(int font_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
 		{
-			((CanvasPrivate*)this)->add_char_lcd(pos, col, ch);
-		}
-
-		void Canvas::add_char_sdf(const Vec2 &pos, const Bvec4 &col, wchar_t ch, float scale)
-		{
-			((CanvasPrivate*)this)->add_char_sdf(pos, col, ch, scale);
-		}
-
-		void Canvas::add_text_lcd(const Vec2 &pos, const Bvec4 &col, const wchar_t *text)
-		{
-			((CanvasPrivate*)this)->add_text_lcd(pos, col, text);
-		}
-
-		void Canvas::add_text_sdf(const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
-		{
-			((CanvasPrivate*)this)->add_text_sdf(pos, col, text, scale);
+			((CanvasPrivate*)this)->add_text(font_index, pos, col, text, scale);
 		}
 
 		void Canvas::add_line(const Vec2 &p0, const Vec2 &p1, const Bvec4 &col, float thickness)
@@ -827,9 +706,77 @@ namespace flame
 			((CanvasPrivate*)this)->record_cb();
 		}
 
-		Canvas *Canvas::create(Device *d, Swapchain *sc)
+		void Canvas::initialize(Device* d, Swapchain* sc)
 		{
-			return new CanvasPrivate(d, sc);
+			device = d;
+
+			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Ivec2(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+			white_image->init(Bvec4(255));
+			white_imageview = Imageview::get(white_image);
+
+			auto vib = VertexInputBufferInfo({
+					Format_R32G32_SFLOAT,
+					Format_R32G32_SFLOAT,
+					Format_R8G8B8A8_UNORM });
+
+			auto sample_count = sc->get_sample_count();
+			auto renderpass = sc->get_renderpass_clear();
+
+			GraphicsPipelineInfo pl_element_info;
+			pl_element_info.shaders.resize(2);
+			pl_element_info.shaders[0].filename = L"2d/element.vert";
+			pl_element_info.shaders[1].filename = L"2d/element.frag";
+			pl_element_info.vi_buffers.push_back(vib);
+			pl_element_info.cull_mode = CullModeNone;
+			pl_element_info.sample_count = sample_count;
+			pl_element_info.blend_states[0] = BlendInfo(
+				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
+				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
+			pl_element_info.renderpass = renderpass;
+			pl_element = Pipeline::create(device, pl_element_info);
+
+			graphics::GraphicsPipelineInfo pl_info_text_lcd;
+			pl_info_text_lcd.shaders.resize(2);
+			pl_info_text_lcd.shaders[0].filename = L"2d/element.vert";
+			pl_info_text_lcd.shaders[1].filename = L"2d/text_lcd.frag";
+			pl_info_text_lcd.vi_buffers.push_back(vib);
+			pl_info_text_lcd.cull_mode = graphics::CullModeNone;
+			pl_info_text_lcd.sample_count = sample_count;
+			pl_info_text_lcd.blend_states[0] = graphics::BlendInfo(
+				graphics::BlendFactorSrc1Color, graphics::BlendFactorOneMinusSrc1Color,
+				graphics::BlendFactorZero, graphics::BlendFactorZero);
+			pl_info_text_lcd.renderpass = renderpass;
+			pl_text_lcd = graphics::Pipeline::create(d, pl_info_text_lcd);
+
+			graphics::GraphicsPipelineInfo pl_info_text_sdf;
+			pl_info_text_sdf.shaders.resize(2);
+			pl_info_text_sdf.shaders[0].filename = L"2d/element.vert";
+			pl_info_text_sdf.shaders[1].filename = L"2d/text_sdf.frag";
+			pl_info_text_sdf.vi_buffers.push_back(vib);
+			pl_info_text_sdf.cull_mode = graphics::CullModeNone;
+			pl_info_text_sdf.sample_count = sample_count;
+			pl_info_text_sdf.blend_states[0] = graphics::BlendInfo(
+				graphics::BlendFactorSrcAlpha, graphics::BlendFactorOneMinusSrcAlpha,
+				graphics::BlendFactorZero, graphics::BlendFactorOneMinusSrcAlpha);
+			pl_info_text_sdf.renderpass = renderpass;
+			pl_text_sdf = graphics::Pipeline::create(d, pl_info_text_sdf);
+
+			for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
+			{
+				auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
+				circle_subdiv[i].y = sin(rad);
+				circle_subdiv[i].x = cos(rad);
+			}
+		}
+
+		void Canvas::deinitialize()
+		{
+
+		}
+
+		Canvas *Canvas::create(Swapchain *sc)
+		{
+			return new CanvasPrivate(sc);
 		}
 
 		void Canvas::destroy(Canvas *c)

@@ -68,39 +68,10 @@ namespace flame
 			font_stroke_image = graphics::Image::create_from_bitmap(d, font_atlas->get_stroke_image());
 			font_sdf_image = graphics::Image::create_from_bitmap(d, font_atlas->get_sdf_image());
 
-			{
-				graphics::GraphicsPipelineInfo info;
-				info.shaders.resize(2);
-				info.shaders[0].filename = L"ui/text_stroke.vert";
-				info.shaders[1].filename = L"ui/text_stroke.frag";
-				info.vi_buffers.push_back(vib);
-				info.cull_mode = graphics::CullModeNone;
-				info.sample_count = sample_count;
-				info.blend_states[0] = graphics::BlendInfo(
-					graphics::BlendFactorSrc1Color, graphics::BlendFactorOneMinusSrc1Color,
-					graphics::BlendFactorZero, graphics::BlendFactorZero);
-				info.renderpass = renderpass;
-				pl_text_stroke = graphics::Pipeline::create(d, info);
-			}
-
 			ds_text_stroke = graphics::Descriptorset::create(d->dp, pl_text_stroke->layout()->dsl(0));
 			font_stroke_imageview =  graphics::Imageview::get(font_stroke_image);
 			ds_text_stroke->set_imageview(0, 0, font_stroke_imageview, d->sp_bi_linear);
 
-			{
-				graphics::GraphicsPipelineInfo info;
-				info.shaders.resize(2);
-				info.shaders[0].filename = L"ui/text_sdf.vert";
-				info.shaders[1].filename = L"ui/text_sdf.frag";
-				info.vi_buffers.push_back(vib);
-				info.cull_mode = graphics::CullModeNone;
-				info.sample_count = sample_count;
-				info.blend_states[0] = graphics::BlendInfo(
-					graphics::BlendFactorSrcAlpha, graphics::BlendFactorOneMinusSrcAlpha,
-					graphics::BlendFactorZero, graphics::BlendFactorOneMinusSrcAlpha);
-				info.renderpass = renderpass;
-				pl_text_sdf = graphics::Pipeline::create(d, info);
-			}
 
 			ds_text_sdf = graphics::Descriptorset::create(d->dp, pl_text_sdf->layout()->dsl(0));
 			font_sdf_imageview = graphics::Imageview::get(font_sdf_image);
