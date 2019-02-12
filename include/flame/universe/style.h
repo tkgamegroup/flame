@@ -22,17 +22,13 @@
 
 #pragma once
 
-#include <flame/math.h>
-#include <flame/ui/ui.h>
+#include <flame/universe/universe.h>
 
 namespace flame
 {
-	namespace ui
-	{
-		struct Widget;
+	struct Element;
 
-		FLAME_UI_EXPORTS void add_style_background_offset(Widget *w, int closet_id, const Vec4 &active_offset, const Vec4 &else_offset);
-		FLAME_UI_EXPORTS void add_style_background_color(Widget *w, int closet_id, const Bvec4 &normal_col, const Bvec4 &hovering_col, const Bvec4 &active_col);
-		FLAME_UI_EXPORTS void add_style_text_color(Widget *w, int closet_id, const Bvec4 &normal_col, const Bvec4 &else_col);
-	}
+	FLAME_UNIVERSE_EXPORTS void add_style_background_offset(Element* e, int closet_id, const Vec4& active_offset, const Vec4& else_offset);
+	FLAME_UNIVERSE_EXPORTS void add_style_background_color(Element* e, int closet_id, const Bvec4& normal_col, const Bvec4& hovering_col, const Bvec4& active_col);
+	FLAME_UNIVERSE_EXPORTS void add_style_text_color(Element* e, int closet_id, const Bvec4& normal_col, const Bvec4& else_col);
 }

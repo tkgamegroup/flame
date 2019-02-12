@@ -22,12 +22,8 @@
 
 #pragma once
 
-#ifdef FLAME_WINDOWS
-#ifdef FLAME_3D_MODULE
-#define FLAME_3D_EXPORTS __declspec(dllexport)
+#ifdef FLAME_UNIVERSE_MODULE
+#define FLAME_UNIVERSE_EXPORTS __declspec(dllexport)
 #else
-#define FLAME_3D_EXPORTS __declspec(dllimport)
-#endif
-#else
-#define FLAME_3D_EXPORTS
+#define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
 #endif

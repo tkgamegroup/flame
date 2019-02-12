@@ -22,17 +22,12 @@
 
 #pragma once
 
-#include <flame/ui/ui.h>
-
-#include <flame/math.h>
+#include <flame/universe/universe.h>
 
 namespace flame
 {
-	namespace ui
-	{
-		struct Widget;
+	struct Element;
 
-		FLAME_UI_EXPORTS void add_animation_moveto(Widget *w, float duration, const Vec2 &pos_a, const Vec2 &pos_b);
-		FLAME_UI_EXPORTS void add_animation_fade(Widget *w, float duration, float alpha_a, float alpha_b);
-	}
+	FLAME_UNIVERSE_EXPORTS void add_animation_moveto(Element* e, float duration, const Vec2& pos_a, const Vec2& pos_b);
+	FLAME_UNIVERSE_EXPORTS void add_animation_fade(Element* e, float duration, float alpha_a, float alpha_b);
 }

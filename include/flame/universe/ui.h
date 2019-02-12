@@ -22,10 +22,119 @@
 
 #pragma once
 
-#ifdef FLAME_UI_MODULE
-#define FLAME_UI_EXPORTS __declspec(dllexport)
-#else
-#define FLAME_UI_EXPORTS __declspec(dllimport)
-#endif
+#include <flame/window.h>
+#include <flame/graphics/graphics.h>
+#include <flame/ui/ui.h>
 
-#include <flame/config.h>
+namespace flame
+{
+	struct Window;
+	
+	namespace graphics
+	{
+		struct Device;
+		struct Imageview;
+		struct Swapchain;
+	}
+
+	namespace ui
+	{
+		struct Widget;
+		struct Canvas;
+
+		const auto MaxImageviewCount = 128;
+
+		FLAME_UI_EXPORTS void init(graphics::Device *d, graphics::SampleCount sample_count = graphics::SampleCount_1);
+		FLAME_UI_EXPORTS void deinit();
+
+		enum DefaultStyle
+		{
+			DefaultStyleDark,
+			DefaultStyleLight
+		};
+
+		struct Instance
+		{
+			int key_states[Key_count];
+
+			Ivec2 mouse_pos;
+			Ivec2 mouse_disp;
+			int mouse_scroll;
+
+			int mouse_buttons[MouseKey_count];
+
+			bool processed_mouse_input;
+			bool processed_keyboard_input;
+
+			// mouse just down
+			inline bool just_down_M(int idx)
+			{
+				return mouse_buttons[idx] == (KeyStateJust | KeyStateDown);
+			}
+
+			// mouse just up
+			inline bool just_up_M(int idx)
+			{
+				return mouse_buttons[idx] == (KeyStateJust | KeyStateUp);
+			}
+
+			// mouse pressing
+			inline bool pressing_M(int idx)
+			{
+				return (mouse_buttons[idx] & KeyStateDown) != 0;
+			}
+
+			// key just down
+			inline bool just_down_K(Key k)
+			{
+				return key_states[k] == (KeyStateJust | KeyStateDown);
+			}
+
+			// key just up
+			inline bool just_up_K(Key k)
+			{
+				return key_states[k] == (KeyStateJust | KeyStateUp);
+			}
+
+			// key pressing
+			inline bool pressing_K(Key k)
+			{
+				return (key_states[k] & KeyStateDown) != 0;
+			}
+
+			FLAME_UI_EXPORTS void set_default_style(DefaultStyle s);
+
+			FLAME_UI_EXPORTS Ivec2 size() const;
+
+			FLAME_UI_EXPORTS void on_key(KeyState action, int value);
+			FLAME_UI_EXPORTS void on_mouse(KeyState action, MouseKey key, const Ivec2 &pos);
+			FLAME_UI_EXPORTS void on_resize(const Ivec2 &size);
+
+			FLAME_UI_EXPORTS graphics::Imageview *imageview(int index);
+			FLAME_UI_EXPORTS void set_imageview(int index, graphics::Imageview *v);
+
+			FLAME_UI_EXPORTS Widget *root();
+			FLAME_UI_EXPORTS Widget *hovering_widget();
+			FLAME_UI_EXPORTS Widget *focus_widget();
+			FLAME_UI_EXPORTS Widget *key_focus_widget();
+			FLAME_UI_EXPORTS Widget *dragging_widget();
+			FLAME_UI_EXPORTS Widget *popup_widget();
+			FLAME_UI_EXPORTS void set_hovering_widget(Widget *w);
+			FLAME_UI_EXPORTS void set_focus_widget(Widget *w);
+			FLAME_UI_EXPORTS void set_key_focus_widget(Widget *w);
+			FLAME_UI_EXPORTS void set_dragging_widget(Widget *w);
+			FLAME_UI_EXPORTS void set_popup_widget(Widget *w, bool modual = false);
+			FLAME_UI_EXPORTS void close_popup();
+
+			FLAME_UI_EXPORTS void begin(float elp_time);
+			FLAME_UI_EXPORTS void end(Canvas *canvas, const Vec2 &show_off = Vec2(0.f));
+
+			FLAME_UI_EXPORTS float total_time() const;
+
+			FLAME_UI_EXPORTS static Instance *create(Window *w = nullptr);
+			FLAME_UI_EXPORTS static void destroy(Instance *i);
+		};
+
+		typedef Instance* InstancePtr;
+	}
+}
