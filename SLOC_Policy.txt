@@ -1,2 +1,2 @@
 accept: [default] .vert .tesc .tese .geom .frag .xml
-ignore: [default] */bin */build cmake
+ignore: [default] */bin */build asset

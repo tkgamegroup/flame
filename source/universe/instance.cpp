@@ -64,18 +64,6 @@ namespace flame
 				font_atlas = FontAtlas::create(descs, 14, 2.f);
 				font_atlas->save(L"UI/font.xml");
 			}
-
-			font_stroke_image = graphics::Image::create_from_bitmap(d, font_atlas->get_stroke_image());
-			font_sdf_image = graphics::Image::create_from_bitmap(d, font_atlas->get_sdf_image());
-
-			ds_text_stroke = graphics::Descriptorset::create(d->dp, pl_text_stroke->layout()->dsl(0));
-			font_stroke_imageview =  graphics::Imageview::get(font_stroke_image);
-			ds_text_stroke->set_imageview(0, 0, font_stroke_imageview, d->sp_bi_linear);
-
-
-			ds_text_sdf = graphics::Descriptorset::create(d->dp, pl_text_sdf->layout()->dsl(0));
-			font_sdf_imageview = graphics::Imageview::get(font_sdf_image);
-			ds_text_sdf->set_imageview(0, 0, font_sdf_imageview, d->sp_bi_linear);
 		}
 
 		void ShareData::destroy()
@@ -101,17 +89,6 @@ namespace flame
 		}
 
 		ShareData share_data;
-
-		void init(graphics::Device *d, graphics::SampleCount sample_count)
-		{
-			share_data.create(d, sample_count);
-			printf("ui initialized\n");
-		}
-
-		void deinit()
-		{
-			share_data.destroy();
-		}
 
 		FLAME_REGISTER_FUNCTION_BEG(InstanceKey, FLAME_GID(28755), Window::KeyListenerParm)
 			((InstancePrivate*)p.thiz())->on_key(p.action(), p.value());

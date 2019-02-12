@@ -20,29 +20,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/foundation/window.h>
+#include <string>
 
-using namespace flame;
+void test_window();
+void test_graphics();
 
-FLAME_PACKAGE_BEGIN(WindowClickC)
-	FLAME_PACKAGE_ITEM(WindowPtr, w, p)
-FLAME_PACKAGE_END
-
-int main(int argc, char **args)
+int main(int argc, char** args)
 {
-	auto app = Application::create();
-	auto w = Window::create(app, "Window Test",  Ivec2(1280, 720), WindowFrame);
+	if (argc <= 1)
+	{
+		printf("provide a name to start a test");
+		return 0;
+	}
 
-	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Window::MouseListenerParm &p) {
-		if (p.is_down())
-		{
-			auto c = p.get_capture<WindowClickC>();
-			c.w()->close();
-		}
-	}, { w }));
-
-	app->run(Function<>([](Package &p){
-	}));
+	auto name = std::string(args[1]);
+	if (name == "window")
+		test_window();
+	else if (name == "graphics")
+		test_graphics();
+	else
+		printf("test not found");
 
 	return 0;
 }
