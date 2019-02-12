@@ -101,6 +101,8 @@ namespace flame
 
 	struct BPPrivate : BP
 	{
+		std::wstring filename;
+
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
@@ -118,10 +120,10 @@ namespace flame
 		inline void unprepare();
 
 		inline void update();
-		inline void generate_code(const wchar_t* filename);
 
 		inline void load(const wchar_t *filename);
 		inline void save(const wchar_t *filename);
+		inline void tobin();
 	};
 
 	ItemPrivate::ItemPrivate(InputPrivate *_parent_i, OutputPrivate *_parent_o) :
@@ -480,8 +482,13 @@ namespace flame
 			n->update();
 	}
 
-	void BPPrivate::generate_code(const wchar_t* filename)
+	void BPPrivate::tobin()
 	{
+		if (filename.empty())
+		{
+			printf("you need to do 'save' first\n");
+			return;
+		}
 		if (update_list.empty())
 		{
 			printf("no nodes or didn't call 'prepare'\n");
@@ -651,13 +658,15 @@ namespace flame
 
 		code += "\n";
 
-		std::ofstream file(filename);
+		std::ofstream file(ext_replace(filename, L".cpp"));
 		file << code;
 		file.close();
 	}
 	
-	void BPPrivate::load(const wchar_t *filename)
+	void BPPrivate::load(const wchar_t *_filename)
 	{
+		filename = _filename;
+
 		auto file = SerializableNode::create_from_xml(filename);
 		if (!file)
 			return;
@@ -727,8 +736,10 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void BPPrivate::save(const wchar_t *filename)
+	void BPPrivate::save(const wchar_t *_filename)
 	{
+		filename = _filename;
+
 		auto file = SerializableNode::create("BP");
 
 		for (auto &n : nodes)
@@ -974,9 +985,9 @@ namespace flame
 		((BPPrivate*)this)->update();
 	}
 
-	void BP::generate_code(const wchar_t* filename)
+	void BP::tobin()
 	{
-		((BPPrivate*)this)->generate_code(filename);
+		((BPPrivate*)this)->tobin();
 	}
 
 	void BP::save(const wchar_t *filename)
@@ -993,6 +1004,7 @@ namespace flame
 	{
 		if (!std::filesystem::exists(filename))
 			return nullptr;
+
 		auto bp = new BPPrivate();
 		bp->load(filename);
 		return bp;

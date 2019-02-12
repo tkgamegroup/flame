@@ -1,5 +1,0 @@
-file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_exe(skeleton_test "${SOURCE_LIST}" "tests")
-target_link_libraries(skeleton_test flame_surface)
-target_link_libraries(skeleton_test flame_graphics)
-target_link_libraries(skeleton_test flame_model)

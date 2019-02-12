@@ -210,3 +210,1446 @@ OLD GRAPHICS TEST:
 	//		printf("%lld\n", sm->fps);
 	//	last_fps = sm->fps;
 	//});
+
+UI_TEST:
+
+#include <flame/file.h>
+#include <flame/serialize.h>
+#include <flame/graphics/image.h>
+#include <flame/ui/style.h>
+
+#include <flame/basic_app.h>
+
+using namespace flame;
+
+BasicApp app;
+
+const auto img_id = 99;
+ui::wLayout *layout;
+
+void create_widgets(ui::DefaultStyle style)
+{
+	using namespace ui;
+
+	app.ui_ins->set_default_style(style);
+	if (style == DefaultStyleDark)
+		app.canvas->set_clear_color(Bvec4(0, 0, 0, 255));
+	else
+		app.canvas->set_clear_color(Bvec4(200, 200, 200, 255));
+
+	auto layout1 = Widget::createT<wLayout>(app.ui_ins, LayoutVertical);
+	layout1->pos$ = Vec2(16.f, 8.f);
+	layout1->item_padding$ = 8.f;
+
+	auto w_checkbox = Widget::createT<wCheckbox>(app.ui_ins);
+	w_checkbox->align$ = AlignLittleEnd;
+	layout1->add_child(w_checkbox);
+
+	auto w_text = Widget::createT<wText>(app.ui_ins);
+	w_text->align$ = AlignLittleEnd;
+	w_text->text() = L"sub-pixel";
+	w_text->set_size_auto();
+	layout1->add_child(w_text);
+
+	auto w_text_sdf = Widget::createT<wText>(app.ui_ins);
+	w_text_sdf->align$ = AlignLittleEnd;
+	w_text_sdf->sdf_scale() = 4.f;
+	w_text_sdf->text() = L"SDF";
+	w_text_sdf->set_size_auto();
+	layout1->add_child(w_text_sdf);
+
+	auto w_button = Widget::createT<wButton>(app.ui_ins, L"button");
+	w_button->align$ = AlignLittleEnd;
+	layout1->add_child(w_button);
+
+	auto w_toggle1 = Widget::createT<wToggle>(app.ui_ins);
+	w_toggle1->align$ = AlignLittleEnd;
+	w_toggle1->text() = L"toggled";
+	w_toggle1->set_size_auto();
+	w_toggle1->set_toggle(true);
+	layout1->add_child(w_toggle1);
+
+	auto w_toggle2 = Widget::createT<wToggle>(app.ui_ins);
+	w_toggle2->align$ = AlignLittleEnd;
+	w_toggle2->text() = L"untoggled";
+	w_toggle2->set_size_auto();
+	w_toggle2->set_toggle(false);
+	layout1->add_child(w_toggle2);
+
+	auto w_menubar = Widget::createT<wMenuBar>(app.ui_ins);
+	w_menubar->align$ = AlignLittleEnd;
+
+	auto w_menu = Widget::createT<wMenu>(app.ui_ins, L"menu");
+
+	auto w_menuitem1 = Widget::createT<wMenuItem>(app.ui_ins, L"item 1");
+	auto w_menuitem2 = Widget::createT<wMenuItem>(app.ui_ins, L"item 2");
+	auto w_menuitem3 = Widget::createT<wMenuItem>(app.ui_ins, L"item 3");
+
+	w_menu->w_items()->add_child(w_menuitem1);
+	w_menu->w_items()->add_child(w_menuitem2);
+	w_menu->w_items()->add_child(w_menuitem3);
+
+	w_menubar->add_child(w_menu);
+
+	layout1->add_child(w_menubar);
+
+	//{
+	//	auto file = SerializableNode::create_from_xml(L"d:/ui.xml");
+	//	if (file)
+	//	{
+	//		auto w = Widget::create_from_file(app.ui_ins, file->node(0));
+
+	//		SerializableNode::destroy(file);
+
+	//		layout1->add_child(w);
+	//	}
+	//}
+	auto w_combo = Widget::createT<wCombo>(app.ui_ins);
+	w_combo->align$ = AlignLittleEnd;
+	//add_style_background_color(w_combo, 0, Vec3(0.f, 0.f, 0.7f));
+
+	auto w_comboitem1 = Widget::createT<wMenuItem>(app.ui_ins, L"item 1");
+	auto w_comboitem2 = Widget::createT<wMenuItem>(app.ui_ins, L"item 2");
+	auto w_comboitem3 = Widget::createT<wMenuItem>(app.ui_ins, L"item 3");
+
+	w_combo->w_items()->add_child(w_comboitem1);
+	w_combo->w_items()->add_child(w_comboitem2);
+	w_combo->w_items()->add_child(w_comboitem3);
+
+	layout1->add_child(w_combo);
+
+	auto w_edit = Widget::createT<wEdit>(app.ui_ins);
+	w_edit->align$ = AlignLittleEnd;
+	w_edit->set_size_by_width(100.f);
+	layout1->add_child(w_edit);
+
+	auto w_image = Widget::createT<wImage>(app.ui_ins);
+	w_image->size$ = Vec2(250.f);
+	w_image->id() = img_id;
+	w_image->align$ = AlignLittleEnd;
+	layout1->add_child(w_image);
+
+	layout->add_child(layout1, 1, -1, true);
+
+	auto w_list = Widget::createT<wList>(app.ui_ins);
+	w_list->pos$ = Vec2(800.f, 8.f);
+	w_list->size$ = Vec2(300.f);
+
+	auto w_sizedrag = Widget::createT<wSizeDrag>(app.ui_ins, w_list);
+	w_sizedrag->min_size() = Vec2(100.f);
+
+	w_list->add_child(w_sizedrag, 1);
+
+	for (auto i = 0; i < 20; i++)
+	{
+		auto item = Widget::createT<wListItem>(app.ui_ins, (L"item " + to_stdwstring(i)).c_str());
+		w_list->add_child(item);
+	}
+
+	layout->add_child(w_list, 1, -1, true);
+
+	auto w_treenode1 = Widget::createT<wTreeNode>(app.ui_ins, L"A");
+	w_treenode1->pos$ = Vec2(800.f, 400.f);
+
+	auto w_treenode2 = Widget::createT<wTreeNode>(app.ui_ins, L"B");
+	auto w_treenode3 = Widget::createT<wTreeNode>(app.ui_ins, L"C");
+	auto w_treenode4 = Widget::createT<wTreeNode>(app.ui_ins, L"D");
+
+	w_treenode1->w_items()->add_child(w_treenode2);
+	w_treenode1->w_items()->add_child(w_treenode3);
+	w_treenode3->w_items()->add_child(w_treenode4);
+
+	layout->add_child(w_treenode1, 1, -1, true);
+
+	if (style == DefaultStyleDark)
+		app.t_fps->text_col() = Bvec4(255, 255, 255, 255);
+	else if (style == DefaultStyleLight)
+		app.t_fps->text_col() = Bvec4(0, 0, 0, 255);
+}
+
+extern "C" __declspec(dllexport) int main()
+{
+	using namespace ui;
+
+	app.create("ui test", Ivec2(1280, 720), WindowFrame | WindowResizable);
+
+	auto img = graphics::Image::create_from_file(app.d, L"ui/imgs/9.png");
+	app.ui_ins->set_imageview(img_id, graphics::Imageview::get(img));
+
+	auto layout_top = Widget::createT<wLayout>(app.ui_ins, LayoutHorizontal);
+	layout_top->align$ = AlignTop;
+
+	auto w_btn_dark = Widget::createT<wButton>(app.ui_ins, L"dark");
+	w_btn_dark->align$ = AlignLittleEnd;
+	w_btn_dark->text_col() = Bvec4(255);
+	w_btn_dark->add_listener(Widget::ListenerMouse, [](const ParmPackage &_p) {
+		auto &p = (Widget::MouseListenerParm&)_p;
+		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+			return;
+
+		layout->clear_children(1, 0, -1, true);
+		create_widgets(DefaultStyleDark);
+	}, nullptr, {});
+	layout_top->add_child(w_btn_dark);
+	auto w_btn_light = Widget::createT<wButton>(app.ui_ins, L"light");
+	w_btn_light->align$ = AlignLittleEnd;
+	w_btn_light->text_col() = Bvec4(255);
+	w_btn_light->add_listener(Widget::ListenerMouse, [](const ParmPackage &_p) {
+		auto &p = (Widget::MouseListenerParm&)_p;
+		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+			return;
+
+		layout->clear_children(1, 0, -1, true);
+		create_widgets(DefaultStyleLight);
+	}, nullptr, {});
+	layout_top->add_child(w_btn_light);
+
+	app.ui_ins->root()->add_child(layout_top, 1);
+
+	layout = Widget::createT<wLayout>(app.ui_ins);
+	app.ui_ins->root()->add_child(layout, 1);
+	create_widgets(DefaultStyleDark);
+	//{
+	//	auto file = SerializableNode::create("ui");
+
+	//	auto n = w_combo->save();
+	//	file->add_node(n);
+
+	//	file->save_xml(L"d:/ui.xml");
+	//	SerializableNode::destroy(file);
+	//}
+
+	app.run();
+
+	return 0;
+}
+
+
+TERRAIN_TEST:
+
+
+#include <flame/time.h>
+#include <flame/system.h>
+#include <flame/surface.h>
+#include <flame/image.h>
+#include <flame/math.h>
+#include <flame/model/model.h>
+#include <flame/graphics/device.h>
+#include <flame/graphics/swapchain.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/shader.h>
+#include <flame/graphics/pipeline.h>
+#include <flame/graphics/descriptor.h>
+#include <flame/graphics/buffer.h>
+#include <flame/graphics/texture.h>
+#include <flame/graphics/sampler.h>
+#include <flame/graphics/framebuffer.h>
+#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/semaphore.h>
+#include <flame/graphics/queue.h>
+
+#include <algorithm>
+
+int main(int argc, char **args)
+{
+	using namespace flame;
+	using namespace graphics;
+	using namespace glm;
+
+	auto near_plane = 0.1f;
+	auto far_plane = 1000.f;
+	auto fovy = 60.f;
+
+	vec2 res(1280, 720);
+
+	auto aspect = (float)res.x / res.y;
+
+	auto sm = create_surface_manager();
+	auto s = sm->create_surface(res.x, res.y, SurfaceStyleFrame,
+		"Hello");
+
+	auto d = create_device(true);
+
+	auto sc = create_swapchain(d, s->get_win32_handle(), s->cx, s->cy);
+
+	auto q = create_queue(d);
+	auto cp = create_commandpool(d);
+
+	struct UBO_terrain
+	{
+		vec3 coord;
+		float dummy0;
+		ivec2 count;
+		float size;
+		float height;
+		vec2 resolution;
+		float tessellation_factor;
+		float dummy1;
+		mat4 view_matrix;
+		mat4 proj_matrix;
+		vec4 frustum_planes[6];
+	};
+
+	auto ub_terrain = create_buffer(d, sizeof(UBO_terrain), BufferUsageUniformBuffer,
+		MemPropHost | MemPropHostCoherent);
+	ub_terrain->map();
+
+	auto ubo_terrain = (UBO_terrain*)ub_terrain->mapped;
+
+	ubo_terrain->coord = vec3(-32.f, 0.f, -32.f);
+	ubo_terrain->count = ivec2(64);
+	ubo_terrain->size = 1.f;
+	ubo_terrain->height = 1.f;
+	ubo_terrain->resolution = vec2(1280.f, 720.f);
+	ubo_terrain->tessellation_factor = 1.f;
+	ubo_terrain->proj_matrix = mat4(
+		vec4(1.f, 0.f, 0.f, 0.f),
+		vec4(0.f, -1.f, 0.f, 0.f),
+		vec4(0.f, 0.f, 1.f, 0.f),
+		vec4(0.f, 0.f, 0.f, 1.f)
+	) * perspective(radians(fovy), aspect, near_plane, far_plane);
+
+	Format depth_format;
+	depth_format.v = Format::Depth16;
+
+	auto depth_tex = create_texture(d, res.x, res.y, 1, 1, depth_format, 
+		TextureUsageAttachment, MemPropDevice);
+	auto depth_tex_view = create_textureview(d, depth_tex);
+
+	auto rp = create_renderpass(d);
+	rp->add_attachment_swapchain(sc, true);
+	rp->add_attachment(depth_format, true);
+	rp->add_subpass({0}, 1);
+	rp->build();
+
+	auto terrain_vert = create_shader(d, "test/terrain.vert");
+	terrain_vert->build();
+	auto terrain_tesc = create_shader(d, "test/terrain.tesc");
+	terrain_tesc->build();
+	auto terrain_tese = create_shader(d, "test/terrain.tese");
+	terrain_tese->build();
+	auto terrain_geom = create_shader(d, "test/terrain.geom");
+	terrain_geom->build();
+	auto terrain_frag = create_shader(d, "test/terrain.frag");
+	terrain_frag->build();
+	auto terrain_mod_comp = create_shader(d, "test/terrain_mod.comp");
+	terrain_mod_comp->build();
+
+	auto pipeline = create_pipeline(d);
+	pipeline->set_size(res.x, res.y);
+	pipeline->set_renderpass(rp, 0);
+	pipeline->set_patch_control_points(4);
+	pipeline->set_depth_test(true);
+	pipeline->set_depth_write(true);
+	pipeline->set_cull_mode(CullModeFront);
+	pipeline->set_primitive_topology(PrimitiveTopologyPatchList);
+	pipeline->add_shader(terrain_vert);
+	pipeline->add_shader(terrain_tesc);
+	pipeline->add_shader(terrain_tese);
+	pipeline->add_shader(terrain_geom);
+	pipeline->add_shader(terrain_frag);
+	pipeline->build_graphics();
+
+	auto pipeline_terrain_mod = create_pipeline(d);
+	pipeline_terrain_mod->add_shader(terrain_mod_comp);
+	pipeline_terrain_mod->build_compute();
+
+	auto dp = create_descriptorpool(d);
+
+	auto ds = dp->create_descriptorset(pipeline, 0);
+	ds->set_uniformbuffer(0, 0, ub_terrain);
+
+	auto sampler = create_sampler(d, FilterLinear, FilterLinear,
+		false);
+
+	Format h_format;
+	h_format.v = Format::R16;
+	auto h_map = create_texture(d, 2048, 2048, 1, 1, h_format,
+		TextureUsageShaderStorage | TextureUsageShaderSampled, MemPropDevice);
+	auto h_map_view = create_textureview(d, h_map);
+	ds->set_texture(1, 0, h_map_view, sampler);
+
+	auto ds_mod = dp->create_descriptorset(pipeline_terrain_mod, 0);
+	ds_mod->set_storagetexture(0, 0, h_map_view);
+
+	Framebuffer *fbs[2];
+	Commandbuffer *cbs[2];
+	for (auto i = 0; i < 2; i++)
+	{
+		fbs[i] = create_framebuffer(d, res.x, res.y, rp);
+		fbs[i]->set_view_swapchain(0, sc, i);
+		fbs[i]->set_view(1, depth_tex_view);
+		fbs[i]->build();
+
+		cbs[i] = cp->create_commandbuffer();
+		cbs[i]->begin();
+		cbs[i]->begin_renderpass(rp, fbs[i]);
+		cbs[i]->bind_pipeline(pipeline);
+		cbs[i]->bind_descriptorset(ds);
+		cbs[i]->draw(4, ubo_terrain->count.x * ubo_terrain->count.y, 0);
+		cbs[i]->end_renderpass();
+		cbs[i]->end();
+	}
+
+	auto image_avalible = create_semaphore(d);
+	auto render_finished = create_semaphore(d);
+
+	auto cb_mod = cp->create_commandbuffer();
+	cb_mod->begin(true);
+	cb_mod->change_texture_layout(h_map, TextureLayoutUndefined, TextureLayoutShaderReadOnly);
+	cb_mod->end();
+	q->submit(cb_mod, nullptr, nullptr);
+	q->wait_idle();
+
+	auto x_ang = 0.f;
+	auto view_changed = true;
+	s->add_mousemove_listener([&](Surface *s, int, int){
+		if (s->mouse_buttons[0] & KeyStateDown)
+		{
+			x_ang += s->mouse_disp_x;
+			view_changed = true;
+		}
+	});
+
+	struct PC
+	{
+		vec2 center;
+		float size;
+		float press;
+	}pc;
+
+	s->add_mousedown_listener([&](Surface *s, int, int x, int y){
+		cb_mod->begin(true);
+		cb_mod->change_texture_layout(h_map, TextureLayoutShaderReadOnly, TextureLayoutShaderStorage);
+		cb_mod->bind_pipeline(pipeline_terrain_mod);
+		cb_mod->bind_descriptorset(ds_mod);
+		pc.center = vec2(x, y) * 0.5f;
+		pc.size = 100.f;
+		pc.press = 10.f;
+		cb_mod->push_constant(ShaderComp, 0, sizeof(PC), &pc);
+		cb_mod->dispatch(h_map->cx, h_map->cy, 1);
+		cb_mod->change_texture_layout(h_map, TextureLayoutShaderStorage, TextureLayoutShaderReadOnly);
+		cb_mod->end();
+		q->submit(cb_mod, nullptr, nullptr);
+		q->wait_idle();
+	});
+
+
+	sm->run([&](){
+		if (view_changed)
+		{
+			ubo_terrain->view_matrix = lookAt(vec3(0.f, 50.f, 50.f), vec3(0.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f)) *
+				rotate(radians(x_ang), vec3(0.f, 1.f, 0.f));
+
+			auto proj_view = ubo_terrain->proj_matrix * ubo_terrain->view_matrix;
+			ubo_terrain->frustum_planes[0].x = proj_view[0].w + proj_view[0].x;
+			ubo_terrain->frustum_planes[0].y = proj_view[1].w + proj_view[1].x;
+			ubo_terrain->frustum_planes[0].z = proj_view[2].w + proj_view[2].x;
+			ubo_terrain->frustum_planes[0].w = proj_view[3].w + proj_view[3].x;
+			ubo_terrain->frustum_planes[1].x = proj_view[0].w - proj_view[0].x;
+			ubo_terrain->frustum_planes[1].y = proj_view[1].w - proj_view[1].x;
+			ubo_terrain->frustum_planes[1].z = proj_view[2].w - proj_view[2].x;
+			ubo_terrain->frustum_planes[1].w = proj_view[3].w - proj_view[3].x;
+			ubo_terrain->frustum_planes[2].x = proj_view[0].w + proj_view[0].y;
+			ubo_terrain->frustum_planes[2].y = proj_view[1].w + proj_view[1].y;
+			ubo_terrain->frustum_planes[2].z = proj_view[2].w + proj_view[2].y;
+			ubo_terrain->frustum_planes[2].w = proj_view[3].w + proj_view[3].y;
+			ubo_terrain->frustum_planes[3].x = proj_view[0].w - proj_view[0].y;
+			ubo_terrain->frustum_planes[3].y = proj_view[1].w - proj_view[1].y;
+			ubo_terrain->frustum_planes[3].z = proj_view[2].w - proj_view[2].y;
+			ubo_terrain->frustum_planes[3].w = proj_view[3].w - proj_view[3].y;
+			ubo_terrain->frustum_planes[4].x = proj_view[0].w + proj_view[0].z;
+			ubo_terrain->frustum_planes[4].y = proj_view[1].w + proj_view[1].z;
+			ubo_terrain->frustum_planes[4].z = proj_view[2].w + proj_view[2].z;
+			ubo_terrain->frustum_planes[4].w = proj_view[3].w + proj_view[3].z;
+			ubo_terrain->frustum_planes[5].x = proj_view[0].w - proj_view[0].z;
+			ubo_terrain->frustum_planes[5].y = proj_view[1].w - proj_view[1].z;
+			ubo_terrain->frustum_planes[5].z = proj_view[2].w - proj_view[2].z;
+			ubo_terrain->frustum_planes[5].w = proj_view[3].w - proj_view[3].z;
+
+			view_changed = false;
+		}
+
+		auto index = sc->acquire_image(image_avalible);
+		q->submit(cbs[index], image_avalible, render_finished);
+		q->present(index, sc, render_finished);
+
+		static long long last_fps = 0;
+		if (last_fps != sm->fps)
+			printf("%lld\n", sm->fps);
+		last_fps = sm->fps;
+	});
+
+	return 0;
+}
+
+SKELETON_TEST:
+
+
+#include <flame/time.h>
+#include <flame/system.h>
+#include <flame/surface.h>
+#include <flame/image.h>
+#include <flame/math.h>
+#include <flame/model/model.h>
+#include <flame/graphics/device.h>
+#include <flame/graphics/swapchain.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/pipeline.h>
+#include <flame/graphics/descriptor.h>
+#include <flame/graphics/buffer.h>
+#include <flame/graphics/texture.h>
+#include <flame/graphics/sampler.h>
+#include <flame/graphics/framebuffer.h>
+#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/semaphore.h>
+#include <flame/graphics/queue.h>
+
+#include <algorithm>
+
+int main(int argc, char **args)
+{
+	using namespace flame;
+	using namespace graphics;
+	using namespace glm;
+
+	auto near_plane = 0.1f;
+	auto far_plane = 1000.f;
+	auto fovy = 60.f;
+
+	vec2 res(1280, 720);
+
+	auto aspect = (float)res.x / res.y;
+
+	auto sm = create_surface_manager();
+	auto s = sm->create_surface(res.x, res.y, SurfaceStyleFrame,
+		"Hello");
+
+	auto d = create_device(true);
+
+	auto sc = create_swapchain(d, s->get_win32_handle(), s->cx, s->cy);
+
+	auto q = create_queue(d);
+	auto cp = create_commandpool(d);
+
+	auto ub = create_buffer(d, sizeof(mat4) * 3, BufferUsageUniformBuffer, 
+		MemPropHost | MemPropHostCoherent);
+	ub->map();
+
+	struct UBO
+	{
+		mat4 proj;
+		mat4 view;
+		mat4 model;
+	};
+
+	auto ubo = (UBO*)ub->mapped;
+	ubo->proj = mat4(
+		vec4(1.f, 0.f, 0.f, 0.f),
+		vec4(0.f, -1.f, 0.f, 0.f),
+		vec4(0.f, 0.f, 1.f, 0.f),
+		vec4(0.f, 0.f, 0.f, 1.f)
+	) * perspective(radians(fovy), aspect, near_plane, far_plane);
+	ubo->view = lookAt(vec3(0.f, 0.f, 20.f), vec3(0.f), vec3(0.f, 1.f, 0.f));
+
+	Format depth_format;
+	depth_format.v = Format::Depth16;
+
+	auto depth_tex = create_texture(d, res.x, res.y, 1, 1, depth_format, 
+		TextureUsageAttachment, MemPropDevice);
+	auto depth_tex_view = create_textureview(d, depth_tex);
+
+	auto rp = create_renderpass(d);
+	rp->add_attachment_swapchain(sc, true);
+	rp->add_attachment(depth_format, true);
+	rp->add_subpass({0}, 1);
+	rp->build();
+
+	auto pipeline = create_pipeline(d, rp, 0);
+	pipeline->set_vertex_attributes({{
+			VertexAttributeFloat3, 
+			VertexAttributeFloat2,
+			VertexAttributeFloat3,
+			VertexAttributeFloat4,
+			VertexAttributeFloat4
+	}});
+	pipeline->set_size(res.x, res.y);
+	pipeline->set_depth_test(true);
+	pipeline->set_depth_write(true);
+	pipeline->add_shader("test/test_skeleton.vert", {});
+	pipeline->add_shader("test/test.frag", {});
+	pipeline->build_graphics();
+
+	auto pipeline_line = create_pipeline(d, rp, 0);
+	pipeline_line->set_vertex_attributes({{
+			VertexAttributeFloat2
+		}});
+	pipeline_line->set_polygon_mode(PolygonModeLine);
+	pipeline_line->set_size(res.x, res.y);
+	pipeline_line->set_cull_mode(CullModeNone);
+	pipeline_line->add_shader("test/line2d.vert", {});
+	pipeline_line->add_shader("test/line2d.frag", {});
+	pipeline_line->build_graphics();
+
+	auto dp = create_descriptorpool(d);
+	auto ds = dp->create_descriptorset(pipeline, 0);
+	ds->set_uniformbuffer(0, 0, ub);
+
+	auto m = load_model("../../Vulkan/data/models/goblin.dae");
+	m->root_node->calc_global_matrix();
+	auto global_inverse = inverse(m->root_node->global_matrix);
+
+	auto vb = create_buffer(d, m->vertex_count * m->vertex_buffers[0].size * sizeof(float), BufferUsageVertexBuffer | 
+		BufferUsageTransferDst, MemPropDevice);
+	auto ib = create_buffer(d, m->indice_count * sizeof(int), BufferUsageIndexBuffer |
+		BufferUsageTransferDst, MemPropDevice);
+	auto sb = create_buffer(d, vb->size + ib->size, BufferUsageTransferSrc, 
+		MemPropHost | MemPropHostCoherent);
+	sb->map();
+	{
+		auto c = cp->create_commandbuffer();
+		c->begin(true);
+		memcpy(sb->mapped, m->vertex_buffers[0].pVertex, vb->size);
+		BufferCopy r1 = {0, 0, vb->size};
+		c->copy_buffer(sb, vb, 1, &r1);
+		memcpy((unsigned char*)sb->mapped + vb->size, m->pIndices, ib->size);
+		BufferCopy r2 = {vb->size, 0, ib->size};
+		c->copy_buffer(sb, ib, 1, &r2);
+		c->end();
+		q->submit(c, nullptr, nullptr);
+		q->wait_idle();
+		cp->destroy_commandbuffer(c);
+	}
+	sb->unmap();
+	destroy_buffer(d, sb);
+
+	auto vb_bone_pos = create_buffer(d, m->bone_count * 3 * sizeof(vec2), BufferUsageVertexBuffer,
+		MemPropHost | MemPropHostCoherent);
+	vb_bone_pos->map();
+	auto bone_pos = (vec2*)vb_bone_pos->mapped;
+
+	auto ub_bone = create_buffer(d, sizeof(mat4) * m->bone_count, BufferUsageUniformBuffer,
+		MemPropHost | MemPropHostCoherent);
+	ub_bone->map();
+	auto bone_matrix = (mat4*)ub_bone->mapped;
+	for (auto i = 0; i < m->bone_count; i++)
+		bone_matrix[i] = m->bones[i]->pNode->global_matrix * m->bones[i]->offset_matrix;
+
+	ds->set_uniformbuffer(2, 0, ub_bone);
+
+	auto sampler = create_sampler(d, FilterLinear, FilterLinear,
+		false);
+
+	//auto m_map = create_texture_from_file(d, cp, q, "../../Vulkan/data/textures/goblin_bc3_unorm.ktx");
+	//auto m_map_view = create_textureview(d, m_map);
+	//ds->set_texture(1, 0, m_map_view, sampler);
+
+	Framebuffer *fbs[2];
+	Commandbuffer *cbs[2];
+	for (auto i = 0; i < 2; i++)
+	{
+		fbs[i] = create_framebuffer(d, res.x, res.y, rp);
+		fbs[i]->set_view_swapchain(0, sc, i);
+		fbs[i]->set_view(1, depth_tex_view);
+		fbs[i]->build();
+
+		cbs[i] = cp->create_commandbuffer();
+		cbs[i]->begin();
+		cbs[i]->begin_renderpass(rp, fbs[i]);
+		cbs[i]->bind_pipeline(pipeline);
+		cbs[i]->bind_descriptorset(ds);
+		cbs[i]->bind_vertexbuffer(vb);
+		cbs[i]->bind_indexbuffer(ib, IndiceTypeUint);
+		cbs[i]->draw_indexed(m->indice_count, 0, 1, 0);
+		cbs[i]->bind_pipeline(pipeline_line);
+		cbs[i]->bind_vertexbuffer(vb_bone_pos);
+		cbs[i]->draw(m->bone_count * 3, 1, 0);
+		cbs[i]->end_renderpass();
+		cbs[i]->end();
+	}
+
+	auto image_avalible = create_semaphore(d);
+	auto render_finished = create_semaphore(d);
+
+	auto x_ang = 0.f;
+	auto view_changed = true;
+	s->add_mousemove_listener([&](Surface *s, int, int){
+		if (s->mouse_buttons[0] & KeyStateDown)
+		{
+			x_ang += s->mouse_disp_x;
+			view_changed = true;
+		}
+	});
+
+	struct Channel
+	{
+		std::vector<ModelPositionKey> position_keys;
+		std::vector<ModelRotationKey> rotation_keys;
+	};
+
+	auto anim = m->animations[0];
+	auto total_time = (float)anim->total_ticks / anim->ticks_per_second;
+
+	struct AnimationPlayer
+	{
+		float time;
+		ModelNode *root_bone;
+		glm::mat4 *bone_matrix;
+		std::vector<std::unique_ptr<Channel>> channels;
+
+		void update_node(ModelNode *n)
+		{
+			ModelBone *b = nullptr;
+			if (n->type == ModelNodeBone)
+				b = (ModelBone*)n->p;
+			if (b)
+			{
+				auto ch = channels[b->id].get();
+				if (ch)
+				{
+					vec4 quat = vec4(0.f, 0.f, 0.f, 1.f);
+					vec3 position = vec3(0.f);
+
+					if (ch->rotation_keys.size() == 1)
+						quat = ch->rotation_keys[0].value;
+					else if (ch->rotation_keys.size() > 0)
+					{
+						auto curr_frame = std::lower_bound(ch->rotation_keys.begin() + 1, 
+							ch->rotation_keys.end(), time, 
+							[](const ModelRotationKey &a, float v){
+							return a.time < v;
+						});
+						auto next_frame = ch->rotation_keys.begin() + ((std::distance(ch->rotation_keys.begin(), curr_frame) + 1)
+							% ch->rotation_keys.size());
+						auto t = (time - next_frame->time) / (curr_frame->time - next_frame->time);
+
+						quat = (1 - t) * next_frame->value + t * curr_frame->value;
+						quat = normalize(quat);
+					}
+
+					if (ch->position_keys.size() == 1)
+						position = ch->position_keys[0].value;
+					else if (ch->position_keys.size() > 0)
+					{
+						auto curr_frame = std::lower_bound(ch->position_keys.begin() + 1,
+							ch->position_keys.end(), time,
+							[](const ModelPositionKey &a, float v){
+							return a.time < v;
+						});
+						auto next_frame = ch->position_keys.begin() + ((std::distance(ch->position_keys.begin(), curr_frame) + 1)
+							% ch->position_keys.size());
+						auto t = (time - next_frame->time) / (curr_frame->time - next_frame->time);
+
+						position = (1 - t) * next_frame->value + t * curr_frame->value;
+					}
+
+					n->global_matrix = n->parent->global_matrix * translate(position) * mat4(quat_to_mat3(quat));
+				}
+
+				bone_matrix[b->id] = n->global_matrix * b->offset_matrix;
+			}
+			else
+				n->global_matrix = n->parent->global_matrix * transpose(n->local_matrix);
+
+			auto c = n->first_child;
+			while (c)
+			{
+				update_node(c);
+				c = c->next_sibling;
+			}
+		}
+
+		void update(float _time)
+		{
+			time = _time;
+			update_node(root_bone);
+		}
+	}anim_player;
+	anim_player.root_bone = m->root_bone;
+	anim_player.bone_matrix = bone_matrix;
+	anim_player.channels.resize(m->bone_count);
+	for (auto i = 0; i < m->bone_count; i++)
+	{
+		auto iMo = anim->find_motion(m->bones[i]->name);
+		if (iMo == -1)
+			anim_player.channels[i] = nullptr;
+		else
+		{
+			anim_player.channels[i] = std::make_unique<Channel>();
+			auto mo = &anim->motions[iMo];
+			auto ch = anim_player.channels[i].get();
+			ch->position_keys.resize(mo->position_key_count);
+			for (auto j = 0; j < mo->position_key_count; j++)
+			{
+				ch->position_keys[j].time = mo->position_keys[j].time;
+				ch->position_keys[j].value = mo->position_keys[j].value;
+			}
+			ch->rotation_keys.resize(mo->rotation_key_count);
+			for (auto j = 0; j < mo->rotation_key_count; j++)
+			{
+				ch->rotation_keys[j].time = mo->rotation_keys[j].time;
+				ch->rotation_keys[j].value = mo->rotation_keys[j].value;
+			}
+		}
+	}
+
+	sm->run([&](){
+		auto update_bone_pos = [&]() {
+			for (auto i = 0; i < m->bone_count; i++)
+			{
+				auto b = m->bones[i];
+
+				if (b->pNode->parent)
+				{
+					auto p0 = b->pNode->parent->global_matrix[3];
+					auto p1 = b->pNode->global_matrix[3];
+
+					p0 = ubo->model * p0;
+					p1 = ubo->model * p1;
+
+					p0 = ubo->proj * ubo->view * p0;
+					p0 /= p0.w;
+					p1 = ubo->proj * ubo->view * p1;
+					p1 /= p1.w;
+
+					if (glm::length(p0 - p1) > 0.001f)
+					{
+						auto w = glm::normalize(
+							glm::cross(glm::vec3(p1) - glm::vec3(p0), glm::vec3(0.f, 0.f, 1.f)));
+						w *= 5.f / glm::length(glm::vec2(w.x * res.x, w.y * res.y));
+						bone_pos[i * 3 + 0] = vec2(p0) + vec2(w);
+						bone_pos[i * 3 + 1] = vec2(p0) - vec2(w);
+						bone_pos[i * 3 + 2] = p1;
+
+						continue;
+					}
+				}
+
+				bone_pos[i * 3 + 0] = vec2(-10.f, -10.f);
+				bone_pos[i * 3 + 1] = vec2(-10.f, -10.f);
+				bone_pos[i * 3 + 2] = vec2(-10.f, -10.f);
+			}
+		};
+
+		auto need_update_bone_pos = false;
+
+		if (view_changed)
+		{
+			ubo->model = rotate(radians(x_ang), vec3(0.f, 1.f, 0.f)) * scale(vec3(0.1f));
+			need_update_bone_pos = true;
+
+			view_changed = false;
+		}
+		
+		static float time = 0.f;
+		static long long last_ns = 0;
+		auto t = get_now_ns();
+		if (t - last_ns >= 41666666)
+		{
+			anim_player.update(time);
+			need_update_bone_pos = true;
+			time += 0.041666;
+			time = fmod(time, total_time);
+
+			last_ns = t;
+		}
+
+		if (need_update_bone_pos)
+			update_bone_pos();
+
+		auto index = sc->acquire_image(image_avalible);
+		q->submit(cbs[index], image_avalible, render_finished);
+		q->present(index, sc, render_finished);
+
+		//static long long last_ns = 0;
+		//auto t = get_now_ns();
+		//if (t - last_ns >= 10000000)
+		//{
+		//	static int B = 0;
+		//	vec4 color(0.5f, 0.7f, (B / 255.f), 1.f);
+		//	memcpy(ub->mapped, &color, sizeof(vec4));
+		//	B++;
+		//	if (B == 256)
+		//		B = 0;
+		//	last_ns = t;
+		//}
+
+		static long long last_fps = 0;
+		if (last_fps != sm->fps)
+			printf("%lld\n", sm->fps);
+		last_fps = sm->fps;
+	});
+
+	return 0;
+}
+
+SCENE_TEST:
+
+#include <flame/serialize.h>
+#include <flame/graphics/image.h>
+#include <flame/ui/style.h>
+#include <flame/3d/model.h>
+#include <flame/3d/camera.h>
+
+using namespace flame;
+
+BasicApp app;
+
+void add_wall(const Vec3 &pos, const Vec3 &vx, float height)
+{
+	auto m = _3d::Model::create();
+	m->add_plane(pos + Vec3(0.f, height, 0.f), vx, Vec3(0.f, -height, 0.f));
+	app.scene_3d->register_model(m);
+}
+
+void add_ceil(const Vec3 &pos, float width, float depth)
+{
+	auto m = _3d::Model::create();
+	m->add_plane(pos + Vec3(0.f, 0.f, depth), Vec3(width, 0.f, 0.f), Vec3(0.f, 0.f, -depth));
+	app.scene_3d->register_model(m);
+}
+
+void add_floor(const Vec3 &pos, float width, float depth)
+{
+	auto m = _3d::Model::create();
+	m->add_plane(pos, Vec3(width, 0.f, 0.f), Vec3(0.f, 0.f, depth));
+	app.scene_3d->register_model(m);
+}
+
+extern "C" __declspec(dllexport) int main()
+{
+	auto res = Ivec2(1280, 720);
+	const auto image_id = 99;
+
+	app.create("Scene Test", res, WindowFrame, true);
+	app.ui->set_imageview(image_id, graphics::Imageview::get(app.scene_3d->get_col_image()));
+
+	auto w_image = ui::wImage::create(app.ui);
+	w_image->size$ = res;
+	w_image->align$ = ui::AlignLittleEnd;
+	w_image->id() = image_id;
+	app.ui->root()->add_child(w_image);
+
+	auto w_ratio = ui::wEdit::create(app.ui);
+	w_ratio->add_char_filter_float();
+	w_ratio->set_size_by_width(100.f);
+	app.ui->root()->add_child(w_ratio, 1);
+
+	auto w_set = ui::wButton::create(app.ui);
+	w_set->pos$ = Vec2(108.f, 0.f);
+	w_set->set_classic(L"set bake props");
+	app.ui->root()->add_child(w_set, 1);
+
+	w_set->add_listener(cH("clicked"), [](CommonData *d) {
+		auto w_e = (ui::wEdit*)d[0].p;
+
+		app.scene_3d->set_bake_props(stof(w_e->text()), Ivec2(512));
+		{
+			auto bk_pen = app.scene_3d->get_bake_pen_pos();
+			printf("bake pen: %d, %d\n", bk_pen.x, bk_pen.y);
+		}
+	}, "p:edit", w_ratio);
+
+	auto w_bake = ui::wButton::create(app.ui);
+	w_bake->pos$ = Vec2(200.f, 0.f);
+	w_bake->set_classic(L"bake");
+	app.ui->root()->add_child(w_bake, 1);
+
+	w_bake->add_listener(cH("clicked"), [](CommonData *d) {
+		app.scene_3d->bake(1);
+	}, "");
+
+	auto w_showmode = ui::wCombo::create(app.ui);
+	w_showmode->pos$ = Vec2(0.f, 20.f);
+	ui::add_style_color(w_showmode, 0, Vec3(0.f, 0.f, 0.7f));
+
+	w_showmode->w_items()->add_child(ui::wMenuItem::create(app.ui, L"light map"));
+	w_showmode->w_items()->add_child(ui::wMenuItem::create(app.ui, L"camera light"));
+
+	w_showmode->add_listener(cH("changed"), [](CommonData *d) {
+		auto thiz = (ui::wCombo*)d[0].p;
+
+		app.scene_3d->set_show_mode(thiz->sel() == 0 ? _3d::ShowModeLightmap : _3d::ShowModeCameraLight);
+	}, "p:this", w_showmode);
+
+	w_showmode->set_sel(0);
+
+	app.ui->root()->add_child(w_showmode);
+
+	auto w_showframe = ui::wCheckbox::create(app.ui);
+	w_showframe->pos$ = Vec2(0.f, 40.f);
+	w_showframe->checked() = 1;
+	app.ui->root()->add_child(w_showframe, 1);
+
+	auto t_showframe = ui::wText::create(app.ui);
+	t_showframe->pos$ = Vec2(20.f, 40.f);
+	t_showframe->set_text(L"show frame");
+	app.ui->root()->add_child(t_showframe, 1);
+
+	w_showframe->add_listener(cH("clicked"), [](CommonData *d) {
+		auto thiz = (ui::wCheckbox*)d[0].p;
+
+		app.scene_3d->set_show_frame(thiz->checked());
+	}, "p:this", w_showframe);
+
+	auto c = _3d::Camera::create(60.f, (float)res.x / (float)res.y, 0.1f, 1000.f);
+	app.scene_3d->set_camera(c);
+
+	add_wall(Vec3(-1.f, 0.f, -3.f), Vec3(2.f, 0.f, 0.f), 2.f);
+	add_wall(Vec3(1.f, 0.f, -3.f), Vec3(0.f, 0.f, 2.f), 2.f);
+	add_wall(Vec3(-1.f, 0.f, -1.f), Vec3(0.f, 0.f, -2.f), 2.f);
+	add_wall(Vec3(1.f, 0.f, -1.f), Vec3(-1.5f, 0.f, 0.f), 2.f);
+	add_ceil(Vec3(-1.f, 2.f, -3.f), 2.f, 2.f);
+	add_floor(Vec3(-1.f, 0.f, -3.f), 2.f, 2.f);
+
+	app.scene_3d->set_bake_props(16.f, Ivec2(512));
+	{
+		auto bk_pen = app.scene_3d->get_bake_pen_pos();
+		printf("bake pen: %d, %d\n", bk_pen.x, bk_pen.y);
+	}
+
+	w_image->want_key_focus$ = true;
+	app.ui->set_key_focus_widget(w_image);
+	w_image->add_listener(cH("key down"), _3d::Camera::pf_keydown, "this:camera", c);
+	w_image->add_listener(cH("key up"), _3d::Camera::pf_keyup, "this:camera", c);
+
+	app.run();
+
+	return 0;
+}
+
+PHYSICS_TEST:
+
+#include <flame/time.h>
+#include <flame/filesystem.h>
+#include <flame/system.h>
+#include <flame/surface.h>
+#include <flame/image.h>
+#include <flame/math.h>
+#include <flame/model/model.h>
+#include <flame/graphics/device.h>
+#include <flame/graphics/swapchain.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/shader.h>
+#include <flame/graphics/pipeline.h>
+#include <flame/graphics/descriptor.h>
+#include <flame/graphics/buffer.h>
+#include <flame/graphics/texture.h>
+#include <flame/graphics/sampler.h>
+#include <flame/graphics/framebuffer.h>
+#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/semaphore.h>
+#include <flame/graphics/queue.h>
+#include <flame/physics/device.h>
+#include <flame/physics/material.h>
+#include <flame/physics/scene.h>
+#include <flame/physics/rigid.h>
+#include <flame/physics/shape.h>
+#include <flame/UI/UI.h>
+
+#include <algorithm>
+#include <Windows.h>
+
+int main(int argc, char **args)
+{
+	using namespace flame;
+	using namespace glm;
+
+	auto near_plane = 0.1f;
+	auto far_plane = 1000.f;
+	auto fovy = 60.f;
+
+	vec2 res(1280, 720);
+
+	auto aspect = (float)res.x / res.y;
+
+	auto sm = create_surface_manager();
+	auto s = sm->create_surface(res.x, res.y, SurfaceStyleFrame,
+		"Hello");
+
+	auto d = graphics::create_device(false);
+
+	auto sc = graphics::create_swapchain(d, s->get_win32_handle(), s->cx, s->cy);
+
+	struct UBO_matrix
+	{
+		mat4 proj;
+		mat4 view;
+	};
+
+	auto ub_matrix = graphics::create_buffer(d, sizeof(UBO_matrix),  graphics::BufferUsageUniformBuffer, 
+		graphics::MemPropHost | graphics::MemPropHostCoherent);
+	ub_matrix->map();
+
+	struct UBO_matrix_ins
+	{
+		mat4 model[65536];
+	};
+
+	auto ub_matrix_ins = graphics::create_buffer(d, sizeof(UBO_matrix_ins), graphics::BufferUsageTransferDst |
+		graphics::BufferUsageStorageBuffer, graphics::MemPropDevice);
+
+	auto ub_stag = graphics::create_buffer(d, ub_matrix_ins->size, graphics::BufferUsageTransferSrc,
+		graphics::MemPropHost | graphics::MemPropHostCoherent);
+	ub_stag->map();
+
+	struct CopyBufferUpdate
+	{
+		graphics::Buffer *src;
+		graphics::Buffer *dst;
+		std::vector<graphics::BufferCopy> ranges;
+	};
+
+	std::vector<CopyBufferUpdate> updates;
+
+	auto ubo_matrix = (UBO_matrix*)ub_matrix->mapped;
+	ubo_matrix->proj = mat4(
+		vec4(1.f, 0.f, 0.f, 0.f),
+		vec4(0.f, -1.f, 0.f, 0.f),
+		vec4(0.f, 0.f, 1.f, 0.f),
+		vec4(0.f, 0.f, 0.f, 1.f)
+	) * perspective(radians(fovy), aspect, near_plane, far_plane);
+
+	auto ubo_matrix_ins = (UBO_matrix_ins*)ub_stag->mapped;
+
+	ModelDescription desc;
+	desc.set_to_default();
+	auto m = create_cube_model(&desc, 0.5f);
+	m->root_node->calc_global_matrix();
+
+	auto depth_tex = graphics::create_texture(d, res.x, res.y, 1, 1, graphics::Format_Depth16,
+		graphics::TextureUsageAttachment, graphics::MemPropDevice);
+	auto depth_tex_view = graphics::create_textureview(d, depth_tex);
+
+	auto rp = graphics::create_renderpass(d);
+	rp->add_attachment(sc->format, true);
+	rp->add_attachment(graphics::Format_Depth16, true);
+	rp->add_subpass({0}, 1);
+	rp->build();
+
+	auto rp_ui = graphics::create_renderpass(d);
+	rp_ui->add_attachment(sc->format, false);
+	rp_ui->add_subpass({0}, -1);
+	rp_ui->build();
+
+	auto test_vert = graphics::create_shader(d, "test/test.vert");
+	test_vert->build();
+	auto test_frag = graphics::create_shader(d, "test/test.frag");
+	test_frag->build();
+
+	auto p = graphics::create_pipeline(d);
+	p->set_renderpass(rp, 0);
+	p->set_vertex_attributes({{
+			graphics::VertexAttributeFloat3,
+			//graphics::VertexAttributeFloat2,
+			graphics::VertexAttributeFloat3
+	}});
+	p->set_size(res.x, res.y);
+	p->set_depth_test(true);
+	p->set_depth_write(true);
+	p->add_shader(test_vert);
+	p->add_shader(test_frag);
+	p->build_graphics();
+
+	auto ds = d->dp->create_descriptorset(p, 0);
+	ds->set_uniformbuffer(0, 0, ub_matrix);
+	ds->set_storagebuffer(1, 0, ub_matrix_ins);
+
+	auto vb = graphics::create_buffer(d, m->vertex_count * m->vertex_buffers[0].size * sizeof(float), graphics::BufferUsageVertexBuffer |
+		graphics::BufferUsageTransferDst, graphics::MemPropDevice);
+	auto ib = create_buffer(d, m->indice_count * sizeof(int), graphics::BufferUsageIndexBuffer |
+		graphics::BufferUsageTransferDst, graphics::MemPropDevice);
+	auto sb = graphics::create_buffer(d, vb->size + ib->size, graphics::BufferUsageTransferSrc,
+		graphics::MemPropHost | graphics::MemPropHostCoherent);
+	sb->map();
+	{
+		auto c = d->cp->create_commandbuffer();
+		c->begin(true);
+		memcpy(sb->mapped, m->vertex_buffers[0].pVertex, vb->size);
+		graphics::BufferCopy r1 = {0, 0, vb->size};
+		c->copy_buffer(sb, vb, 1, &r1);
+		memcpy((unsigned char*)sb->mapped + vb->size, m->pIndices, ib->size);
+		graphics::BufferCopy r2 = {vb->size, 0, ib->size};
+		c->copy_buffer(sb, ib, 1, &r2);
+		c->end();
+		d->q->submit(c, nullptr, nullptr);
+		d->q->wait_idle();
+		d->cp->destroy_commandbuffer(c);
+	}
+	sb->unmap();
+	destroy_buffer(d, sb);
+
+	auto sampler = graphics::create_sampler(d, graphics::FilterLinear, graphics::FilterLinear,
+		false);
+
+	graphics::Framebuffer *fbs[2];
+	graphics::Framebuffer *fbs_ui[2];
+	graphics::Commandbuffer *cbs[2];
+	graphics::Commandbuffer *cbs_ui[2];
+	for (auto i = 0; i < 2; i++)
+	{
+		fbs[i] = create_framebuffer(d, res.x, res.y, rp);
+		fbs[i]->set_view_swapchain(0, sc, i);
+		fbs[i]->set_view(1, depth_tex_view);
+		fbs[i]->build();
+
+		fbs_ui[i] = create_framebuffer(d, res.x, res.y, rp_ui);
+		fbs_ui[i]->set_view_swapchain(0, sc, i);
+		fbs_ui[i]->build();
+
+		cbs[i] = d->cp->create_commandbuffer();
+		cbs_ui[i] = d->cp->create_commandbuffer();
+		cbs_ui[i]->begin();
+		cbs_ui[i]->end();
+	}
+
+	auto p_d = physics::create_device();
+	auto material = physics::create_material(p_d, 0.f, 0.f, 0.f);
+	auto scene = physics::create_scene(p_d, -0.98f/*0.f*/, 1);
+
+	struct Ins
+	{
+		bool dynamic;
+		vec3 coord;
+		vec4 quat;
+		vec3 size;
+		physics::Rigid *r;
+		physics::Shape *s;
+
+		void create(physics::Device *d, bool _dynamic, physics::Material *m, physics::Scene *sc)
+		{
+			dynamic = _dynamic;
+			if (dynamic)
+				r = physics::create_dynamic_rigid(d, coord);
+			else
+				r = physics::create_static_rigid(d, coord);
+			s = physics::create_box_shape(d, m, vec3(0.f), size.x, size.y, size.z);
+			r->attach_shape(s);
+			sc->add_rigid(r);
+		}
+
+		void destroy()
+		{
+			physics::destroy_shape(s);
+			physics::destroy_rigid(r);
+		}
+	};
+
+	std::vector<Ins> inses;
+
+	auto update_main_cmd = [&](){
+		for (auto i = 0; i < 2; i++)
+		{
+			cbs[i]->begin();
+			cbs[i]->begin_renderpass(rp, fbs[i]);
+			cbs[i]->bind_pipeline(p);
+			cbs[i]->bind_descriptorset(ds);
+			cbs[i]->bind_vertexbuffer(vb);
+			cbs[i]->bind_indexbuffer(ib, graphics::IndiceTypeUint);
+			for (auto j = 0; j < inses.size(); j++)
+				cbs[i]->draw_indexed(m->indice_count, 0, 0, 1, j);
+			cbs[i]->end_renderpass();
+			cbs[i]->end();
+		}
+	};
+	update_main_cmd();
+
+	auto cb_update = d->cp->create_commandbuffer();
+
+	auto image_avalible = graphics::create_semaphore(d);
+	auto render_finished = graphics::create_semaphore(d);
+	auto ui_finished = graphics::create_semaphore(d);
+
+	auto ui = UI::create_instance(d, rp_ui);
+
+	auto x_ang = 0.f;
+	auto view_need_update = true;
+	s->add_mousemove_listener([&](Surface *s, int, int){
+		if (!ui->processed_mouse_input && (s->mouse_buttons[0] & KeyStateDown))
+		{
+			x_ang += s->mouse_disp_x;
+			view_need_update = true;
+		}
+	});
+
+	s->add_keydown_listener([&](Surface *s, int vk){
+		switch (vk)
+		{
+			case VK_F1:
+				for (auto it = inses.begin(); it != inses.end(); it++)
+				{
+					if (it->dynamic)
+						it->r->add_force(vec3(10.f, 0.f, 0.f));
+				}
+				break;
+		}
+	});
+
+
+	auto matrix_need_update = true;
+
+	sm->run([&](){
+		ui->begin(res.x, res.y, sm->elapsed_time, s->mouse_x, s->mouse_y,
+			(s->mouse_buttons[0] & KeyStateDown) != 0,
+			(s->mouse_buttons[1] & KeyStateDown) != 0,
+			(s->mouse_buttons[2] & KeyStateDown) != 0,
+			s->mouse_scroll);
+		ui->begin_window("Control Panel");
+		static vec3 coord = vec3(0.f);
+		static vec3 size = vec3(0.5f);
+		static bool dynamic = false;
+		ui->dragfloat("x", &coord.x, 0.1f);
+		ui->dragfloat("y", &coord.y, 0.1f);
+		ui->dragfloat("z", &coord.z, 0.1f);
+		ui->dragfloat("sx", &size.x, 0.1f);
+		ui->dragfloat("sy", &size.y, 0.1f);
+		ui->dragfloat("sz", &size.z, 0.1f);
+		ui->checkbox("dynamic", &dynamic);
+		if (ui->button("Create"))
+		{
+			Ins i;
+			i.coord = coord;
+			i.quat = vec4(0.f, 0.f, 0.f, 1.f);
+			i.size = size;
+			i.create(p_d, dynamic, material, scene);
+			inses.push_back(i);
+
+			update_main_cmd();
+			matrix_need_update = true;
+		}
+		if (ui->button("Clear"))
+		{
+			for (auto &i : inses)
+				i.destroy();
+			inses.clear();
+
+			update_main_cmd();
+			matrix_need_update = true;
+		}
+		if (ui->button("Save Scene"))
+		{
+			std::ofstream out("physics test scene.txt");
+			for (auto &i : inses)
+			{
+				write_fmt(out, "%d %f %f %f %f %f %f %f %f %f %f\n", (int)i.dynamic, i.coord.x, i.coord.y, i.coord.z,
+					i.quat.x, i.quat.y, i.quat.z, i.quat.w,
+					i.size.x, i.size.y, i.size.z);
+			}
+		}
+		if (ui->button("Load Scene"))
+		{
+			std::ifstream in("physics test scene.txt");
+			for (auto &i : inses)
+				i.destroy();
+			inses.clear();
+			while (!in.eof())
+			{
+				std::string line;
+				std::getline(in, line);
+				Ins i;
+				int dynamic;
+				if (sscanf(line.c_str(), "%d %f %f %f %f %f %f %f %f %f %f", &dynamic, &i.coord.x, &i.coord.y, &i.coord.z,
+					&i.quat.x, &i.quat.y, &i.quat.z, &i.quat.w,
+					&i.size.x, &i.size.y, &i.size.z) >= 11)
+				{
+					i.dynamic = dynamic;
+					i.create(p_d, i.dynamic, material, scene);
+					inses.push_back(i);
+				}
+			}
+
+			update_main_cmd();
+			matrix_need_update = true;
+		}
+		ui->end_window();
+		ui->end();
+
+		for (auto i = 0; i < 2; i++)
+		{
+			cbs_ui[i]->begin();
+			ui->record_commandbuffer(cbs_ui[i], rp_ui, fbs_ui[i]);
+			cbs_ui[i]->end();
+		}
+
+		auto t = get_now_ns();
+
+		static long long last_ns0 = 0;
+		if (t - last_ns0 >= 41666666)
+		{
+			scene->update(1.f / 24);
+
+			auto need_update_cmd = false;
+			for (auto it = inses.begin(); it != inses.end();)
+			{
+				if (it->dynamic)
+				{
+					it->r->get_pose(it->coord, it->quat);
+					if (it->coord.y < -4.f)
+					{
+						it->destroy();
+						it = inses.erase(it);
+						need_update_cmd = true;
+						continue;
+					}
+				}
+				it++;
+			}
+			if (need_update_cmd)
+				update_main_cmd();
+
+			last_ns0 = t;
+
+			matrix_need_update = true;
+		}
+
+		if (matrix_need_update)
+		{
+			for (auto i = 0; i < inses.size(); i++)
+			{
+				ubo_matrix_ins->model[i] = translate(inses[i].coord) * mat4(quat_to_mat3(inses[i].quat))
+					* scale(inses[i].size / vec3(0.5f));
+			}
+
+			CopyBufferUpdate upd;
+			upd.src = ub_stag;
+			upd.dst = ub_matrix_ins;
+			upd.ranges.push_back({0, 0, int(inses.size() * sizeof(mat4))});
+			updates.push_back(upd);
+
+			matrix_need_update = false;
+		}
+
+		if (view_need_update)
+		{
+			ubo_matrix->view = lookAt(vec3(rotate(radians(-x_ang), vec3(0.f, 1.f, 0.f)) * vec4(0.f, 0.f, 10.f, 1.f)),
+				vec3(0.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
+
+			view_need_update = false;
+		}
+
+		if (!updates.empty())
+		{
+			cb_update->begin(true);
+			for (auto &u : updates)
+				cb_update->copy_buffer(u.src, u.dst, u.ranges.size(), u.ranges.data());
+			cb_update->end();
+			d->q->submit(cb_update, nullptr, nullptr);
+			d->q->wait_idle();
+			updates.clear();
+		}
+
+		auto index = sc->acquire_image(image_avalible);
+
+		d->q->submit(cbs[index], image_avalible, render_finished);
+		d->q->submit(cbs_ui[index], render_finished, ui_finished);
+		d->q->wait_idle();
+		d->q->present(index, sc, ui_finished);
+
+		static long long last_fps = 0;
+		if (last_fps != sm->fps)
+			printf("%lld\n", sm->fps);
+		last_fps = sm->fps;
+	});
+
+	return 0;
+}

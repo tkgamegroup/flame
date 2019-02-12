@@ -125,7 +125,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 
-		// build data for 'update' or 'generate_code'
+		// build data for 'update' or 'tobin'
 		// let all notes create a piece of memory to represent the 'true' object and
 		// determines update order
 		FLAME_FOUNDATION_EXPORTS void prepare();
@@ -137,8 +137,9 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
 		// generate cpp codes that do the 'update' job and save to a file
-		// note: all nodes in bp need to have 'code' function
-		FLAME_FOUNDATION_EXPORTS void generate_code();
+		// use that file to compile a dll
+		// note: need filename first and all nodes need to have 'code' function
+		FLAME_FOUNDATION_EXPORTS void tobin();
 
 		FLAME_FOUNDATION_EXPORTS static BP *create();
 		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const wchar_t *filename);
