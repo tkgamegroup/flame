@@ -28,9 +28,9 @@
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/renderpass.h>
-#include <flame/graphics/semaphore.h>
+#include <flame/graphics/synchronize.h>
 #include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/queue.h>
+#include <flame/graphics/canvas.h>
 
 namespace flame
 {

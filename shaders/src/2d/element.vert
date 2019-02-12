@@ -5,6 +5,7 @@ layout(location = 2) in vec4 aColor;
 layout(push_constant) uniform uPushConstant
 {
 	vec2 scale;
+	vec2 sdf_range;
 }pc;
 
 layout(location = 0) out vec4 outColor;

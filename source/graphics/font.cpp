@@ -2036,7 +2036,6 @@ namespace flame
 				ascender = ft_face->size->metrics.ascender / 64;
 
 				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
-				atlas->set_pixels(atlas_width - 1, atlas_height - 1, 1, 1, &Bvec4(255));
 
 				glyph_head = glyph_tail = nullptr;
 

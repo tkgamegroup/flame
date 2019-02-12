@@ -31,9 +31,6 @@
 
 namespace flame
 {
-	struct Img;
-	struct FontAtlas;
-
 	namespace graphics
 	{
 		struct Buffer;

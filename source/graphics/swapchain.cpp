@@ -157,7 +157,7 @@ namespace flame
 			swapchain_info.pQueueFamilyIndices = nullptr;
 			swapchain_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 			swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			swapchain_info.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+			swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 			swapchain_info.clipped = true;
 			swapchain_info.oldSwapchain = 0;
 			vk_chk_res(vkCreateSwapchainKHR(d->v, &swapchain_info, nullptr, &v));
@@ -220,6 +220,11 @@ namespace flame
 		uint Swapchain::get_avalible_image_index() const
 		{
 			return ((SwapchainPrivate*)this)->avalible_image_index;
+		}
+
+		SampleCount Swapchain::get_sample_count() const
+		{
+			return ((SwapchainPrivate*)this)->sc;
 		}
 
 		Renderpass *Swapchain::get_renderpass_clear() const

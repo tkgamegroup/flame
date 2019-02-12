@@ -20,12 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <flame/foundation/window.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/pipeline.h>
+#include <flame/graphics/descriptor.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
@@ -37,6 +39,14 @@ namespace flame
 	namespace graphics
 	{
 		static Vec2 circle_subdiv[36];
+
+		const auto MaxImageviewCount = 64;
+
+		static Device* device;
+		static Image* white_image;
+		static Imageview* white_imageview;
+		static Pipeline* pl_element;
+
 		static auto resource_ready = false;
 
 		struct Vertex
@@ -71,8 +81,8 @@ namespace flame
 
 		struct CanvasPrivate : Canvas
 		{
-			Device *d;
-			Swapchain *sc;
+			Swapchain* sc;
+			Descriptorset* ds;
 
 			std::vector<Vec2> points;
 			std::vector<DrawCmd> draw_cmds;
@@ -85,11 +95,41 @@ namespace flame
 
 			inline CanvasPrivate(Device *_d, Swapchain *_sc)
 			{
-				d = _d;
 				sc = _sc;
 
 				if (!resource_ready)
 				{
+					device = _d;
+
+					white_image = Image::create(device, Format_R8G8B8A8_UNORM, Ivec2(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+					white_image->init(Bvec4(255));
+					white_imageview = Imageview::get(white_image);
+
+					auto vib = VertexInputBufferInfo({
+							Format_R32G32_SFLOAT,
+							Format_R32G32_SFLOAT,
+							Format_R8G8B8A8_UNORM });
+
+					GraphicsPipelineInfo pl_element_info;
+					pl_element_info.shaders.resize(2);
+					pl_element_info.shaders[0].filename = L"2d/element.vert";
+					pl_element_info.shaders[1].filename = L"2d/element.frag";
+					pl_element_info.vi_buffers.push_back(vib);
+					pl_element_info.cull_mode = CullModeNone;
+					pl_element_info.sample_count = sc->get_sample_count();
+					pl_element_info.blend_states[0] = BlendInfo(
+						BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
+						BlendFactorZero, BlendFactorOneMinusSrcAlpha);
+					pl_element_info.renderpass = sc->get_renderpass_clear();
+					pl_element = Pipeline::create(device, pl_element_info);
+					ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
+
+					for (auto i = 0; i < MaxImageviewCount; i++)
+					{
+						//image_views[i] = white_imageview;
+						ds->set_imageview(0, i, white_imageview, device->sp_bi_linear);
+					}
+
 					for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
 					{
 						auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
@@ -99,15 +139,15 @@ namespace flame
 					resource_ready = true;
 				}
 
-				vtx_buffer = Buffer::create(d, sizeof(Vertex) * 43690,
+				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690,
 					BufferUsageVertex, MemPropHost | MemPropHostCoherent);
-				idx_buffer = Buffer::create(d, sizeof(int) * 65535,
+				idx_buffer = Buffer::create(device, sizeof(int) * 65536,
 					BufferUsageIndex, MemPropHost | MemPropHostCoherent);
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (int*)idx_buffer->mapped;
-				cb = Commandbuffer::create(d->gcp);
+				cb = Commandbuffer::create(device->gcp);
 			}
 
 			inline ~CanvasPrivate()
@@ -564,94 +604,92 @@ namespace flame
 				idx_cnt += 6;
 			}
 
-			//inline void add_image_stretch(const Vec2 &pos, const Vec2 &size, int id, const Vec4 &border, const Bvec4 &tint_col = Bvec4(255))
-			//{
-			//	auto image_size = share_data.image_views[id]->image()->size;
+			inline void add_image_stretch(const Vec2 &pos, const Vec2 &size, int id, const Vec4 &border, const Bvec4 &tint_col = Bvec4(255))
+			{
+				//auto image_size = share_data.image_views[id]->image()->size;
 
-			//	auto b_uv = Vec4(Vec2(border[0], border[1]) / image_size.x,
-			//		Vec2(border[2], border[3]) / image_size.y);
+				//auto b_uv = Vec4(Vec2(border[0], border[1]) / image_size.x,
+				//	Vec2(border[2], border[3]) / image_size.y);
 
-			//	// corners
-			//	add_image(pos, Vec2(border[0], border[2]), id, Vec2(0.f), Vec2(b_uv[0], b_uv[2])); // LT
-			//	add_image(pos + Vec2(0.f, size.y - border[3]), Vec2(border[0], border[3]), id, Vec2(0.f, 1.f - b_uv[3]), Vec2(b_uv[0], 1.f)); // LB
-			//	add_image(pos + Vec2(size.x - border[1], 0.f), Vec2(border[1], border[2]), id, Vec2(1.f - b_uv[1], 0.f), Vec2(1.f, b_uv[2])); // RT
-			//	add_image(pos + Vec2(size.x - border[1], size.y - border[3]), Vec2(border[1], border[3]), id, Vec2(1.f - b_uv[1], 1.f - b_uv[3]), Vec2(1.f)); // RB
+				//// corners
+				//add_image(pos, Vec2(border[0], border[2]), id, Vec2(0.f), Vec2(b_uv[0], b_uv[2])); // LT
+				//add_image(pos + Vec2(0.f, size.y - border[3]), Vec2(border[0], border[3]), id, Vec2(0.f, 1.f - b_uv[3]), Vec2(b_uv[0], 1.f)); // LB
+				//add_image(pos + Vec2(size.x - border[1], 0.f), Vec2(border[1], border[2]), id, Vec2(1.f - b_uv[1], 0.f), Vec2(1.f, b_uv[2])); // RT
+				//add_image(pos + Vec2(size.x - border[1], size.y - border[3]), Vec2(border[1], border[3]), id, Vec2(1.f - b_uv[1], 1.f - b_uv[3]), Vec2(1.f)); // RB
 
-			//	// borders
-			//	add_image(pos + Vec2(0.f, border[2]), Vec2(border[0], size.y - border[2] - border[3]), id, Vec2(0.f, b_uv[2]), Vec2(b_uv[0], 1.f - b_uv[3])); // L
-			//	add_image(pos + Vec2(size.x - border[1], border[2]), Vec2(border[1], size.y - border[2] - border[3]), id, Vec2(1.f - b_uv[1], b_uv[2]), Vec2(1.f, 1.f - b_uv[3])); // R
-			//	add_image(pos + Vec2(border[0], 0.f), Vec2(size.x - border[0] - border[1], border[2]), id, Vec2(b_uv[0], 0.f), Vec2(1.f - b_uv[1], b_uv[2])); // T
-			//	add_image(pos + Vec2(border[0], size.y - border[3]), Vec2(size.x - border[0] - border[1], border[3]), id, Vec2(b_uv[0], 1.f - b_uv[3]), Vec2(1.f - b_uv[1], 1.f)); // B
+				//// borders
+				//add_image(pos + Vec2(0.f, border[2]), Vec2(border[0], size.y - border[2] - border[3]), id, Vec2(0.f, b_uv[2]), Vec2(b_uv[0], 1.f - b_uv[3])); // L
+				//add_image(pos + Vec2(size.x - border[1], border[2]), Vec2(border[1], size.y - border[2] - border[3]), id, Vec2(1.f - b_uv[1], b_uv[2]), Vec2(1.f, 1.f - b_uv[3])); // R
+				//add_image(pos + Vec2(border[0], 0.f), Vec2(size.x - border[0] - border[1], border[2]), id, Vec2(b_uv[0], 0.f), Vec2(1.f - b_uv[1], b_uv[2])); // T
+				//add_image(pos + Vec2(border[0], size.y - border[3]), Vec2(size.x - border[0] - border[1], border[3]), id, Vec2(b_uv[0], 1.f - b_uv[3]), Vec2(1.f - b_uv[1], 1.f)); // B
 
-			//	add_image(pos + Vec2(border[0], border[2]), Vec2(size.x - border[0] - border[1], size.y - border[2] - border[3]), id, Vec2(b_uv[0], b_uv[2]), Vec2(1.f - b_uv[1], 1.f - b_uv[3]));
-			//}
+				//add_image(pos + Vec2(border[0], border[2]), Vec2(size.x - border[0] - border[1], size.y - border[2] - border[3]), id, Vec2(b_uv[0], b_uv[2]), Vec2(1.f - b_uv[1], 1.f - b_uv[3]));
+			}
 
 			inline void set_scissor(const Rect &scissor)
 			{
 				draw_cmds.emplace_back(scissor);
 			}
 
-			//inline void record_cb(int swacpchain_image_index)
-			//{
-			//	cb->begin();
-			//	cb->begin_renderpass(clear_col.w > 0 ? share_data.renderpass : share_data.renderpass_noclear, s->framebuffers[swacpchain_image_index], clear_col.w > 0 ? clear_values : nullptr);
-			//	if (idx_end != idx_buffer->mapped)
-			//	{
-			//		auto surface_size = Vec2(s->w->size);
+			inline void record_cb()
+			{
+				cb->begin();
+				//cb->begin_renderpass(clear_col.w > 0 ? share_data.renderpass : share_data.renderpass_noclear, s->framebuffers[swacpchain_image_index], clear_col.w > 0 ? clear_values : nullptr);
+				cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), nullptr);
+				if (idx_end != idx_buffer->mapped)
+				{
+					auto surface_size = Vec2(sc->window()->size);
 
-			//		cb->set_viewport(Rect(Vec2(0.f), surface_size));
-			//		cb->set_scissor(Rect(Vec2(0.f), surface_size));
-			//		cb->bind_vertexbuffer(vtx_buffer, 0);
-			//		cb->bind_indexbuffer(idx_buffer, IndiceTypeUint);
+					cb->set_viewport(Rect(Vec2(0.f), surface_size));
+					cb->set_scissor(Rect(Vec2(0.f), surface_size));
+					cb->bind_vertexbuffer(vtx_buffer, 0);
+					cb->bind_indexbuffer(idx_buffer, IndiceTypeUint);
 
-			//		auto scale = Vec2(2.f / surface_size.x, 2.f / surface_size.y);
-			//		auto sdf_range = Vec2(4.f) / Vec2(share_data.font_sdf_image->size);
+					auto pc = Vec4(2.f / surface_size.x, 2.f / surface_size.y, 
+						4.f / /*share_data.font_sdf_image->size*/1.f, 4.f / /*share_data.font_sdf_image->size*/1.f);
 
-			//		cb->push_constant(0, sizeof(Vec2), &scale, share_data.pl_plain->layout());
-			//		cb->push_constant(0, sizeof(Vec2), &scale, share_data.pl_text_stroke->layout());
-			//		cb->push_constant(0, sizeof(Vec2), &scale, share_data.pl_text_sdf->layout());
-			//		cb->push_constant(sizeof(Vec2), sizeof(Vec2), &sdf_range, share_data.pl_text_sdf->layout());
+					cb->push_constant(0, sizeof(Vec4), &pc, pl_element->layout());
 
-			//		auto vtx_off = 0;
-			//		auto idx_off = 0;
-			//		for (auto &dc : draw_cmds)
-			//		{
-			//			switch (dc.type)
-			//			{
-			//			case DrawCmdElement:
-			//				cb->bind_pipeline(share_data.pl_plain);
-			//				cb->bind_descriptorset(share_data.ds_plain, 0);
-			//				cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, dc.id);
-			//				vtx_off += dc.vtx_cnt;
-			//				idx_off += dc.idx_cnt;
-			//				break;
-			//			case DrawCmdTextLcd:
-			//				cb->bind_pipeline(share_data.pl_text_stroke);
-			//				cb->bind_descriptorset(share_data.ds_text_stroke, 0);
-			//				cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, 0);
-			//				vtx_off += dc.vtx_cnt;
-			//				idx_off += dc.idx_cnt;
-			//				break;
-			//			case DrawCmdTextSdf:
-			//				cb->bind_pipeline(share_data.pl_text_sdf);
-			//				cb->bind_descriptorset(share_data.ds_text_sdf, 0);
-			//				cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, 0);
-			//				vtx_off += dc.vtx_cnt;
-			//				idx_off += dc.idx_cnt;
-			//				break;
-			//			case DrawCmdScissor:
-			//				cb->set_scissor(dc.scissor);
-			//				break;
-			//			}
-			//		}
-			//	}
-			//	cb->end_renderpass();
-			//	cb->end();
+					auto vtx_off = 0;
+					auto idx_off = 0;
+					for (auto &dc : draw_cmds)
+					{
+						switch (dc.type)
+						{
+						case DrawCmdElement:
+							cb->bind_pipeline(pl_element);
+							cb->bind_descriptorset(ds, 0);
+							cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, dc.id);
+							vtx_off += dc.vtx_cnt;
+							idx_off += dc.idx_cnt;
+							break;
+						//case DrawCmdTextLcd:
+						//	cb->bind_pipeline(share_data.pl_text_stroke);
+						//	cb->bind_descriptorset(share_data.ds_text_stroke, 0);
+						//	cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, 0);
+						//	vtx_off += dc.vtx_cnt;
+						//	idx_off += dc.idx_cnt;
+						//	break;
+						//case DrawCmdTextSdf:
+						//	cb->bind_pipeline(share_data.pl_text_sdf);
+						//	cb->bind_descriptorset(share_data.ds_text_sdf, 0);
+						//	cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, 0);
+						//	vtx_off += dc.vtx_cnt;
+						//	idx_off += dc.idx_cnt;
+						//	break;
+						case DrawCmdScissor:
+							cb->set_scissor(dc.scissor);
+							break;
+						}
+					}
+				}
+				cb->end_renderpass();
+				cb->end();
 
-			//	vtx_end = (Vertex*)vtx_buffer->mapped;
-			//	idx_end = (int*)idx_buffer->mapped;
-			//	draw_cmds.clear();
-			//}
+				vtx_end = (Vertex*)vtx_buffer->mapped;
+				idx_end = (int*)idx_buffer->mapped;
+				draw_cmds.clear();
+			}
 		};
 
 		void Canvas::start_cmd(DrawCmdType type, int id)
@@ -784,9 +822,9 @@ namespace flame
 			return ((CanvasPrivate*)this)->cb;
 		}
 
-		void Canvas::record_cb(int swacpchain_image_index)
+		void Canvas::record_cb()
 		{
-			((CanvasPrivate*)this)->record_cb(swacpchain_image_index);
+			((CanvasPrivate*)this)->record_cb();
 		}
 
 		Canvas *Canvas::create(Device *d, Swapchain *sc)

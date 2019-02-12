@@ -29,7 +29,6 @@
 namespace flame
 {
 	struct Window;
-	struct FontAtlas;
 	
 	namespace graphics
 	{

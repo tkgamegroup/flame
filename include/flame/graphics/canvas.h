@@ -78,7 +78,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void set_scissor(const Rect &scissor);
 
 			FLAME_GRAPHICS_EXPORTS Commandbuffer *get_cb() const;
-			FLAME_GRAPHICS_EXPORTS void record_cb(int swacpchain_image_index);
+			FLAME_GRAPHICS_EXPORTS void record_cb();
 
 			FLAME_GRAPHICS_EXPORTS static Canvas *create(Device *d, Swapchain *sc);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Canvas *c);

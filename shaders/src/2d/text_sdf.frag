@@ -1,7 +1,8 @@
-layout(binding = 0) uniform sampler2D image;
+layoutlayout(binding = 0) uniform sampler2D images[64];
 
 layout(location = 0) in vec4 inColor;
 layout(location = 1) in vec2 inUV;
+layout(location = 2) in flat uint inID;
 
 layout(push_constant) uniform uPushConstant
 {
@@ -18,7 +19,7 @@ float median(vec3 v)
  
 void main()
 {
-	float sig_dist = median(texture(image, inUV).rgb) - 0.5;
+	float sig_dist = median(texture(images[inID], inUV).rgb) - 0.5;
 	sig_dist *= dot(pc.sdf_range, 0.5 / fwidth(inUV));
 	fColor = vec4(inColor.rgb, inColor.a * clamp(sig_dist + 0.5, 0.0, 1.0));
 }

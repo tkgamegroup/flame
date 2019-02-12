@@ -20,15 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/ui/icon.h>
-#include <flame/ui/style.h>
-#include <flame/ui/canvas.h>
 #include "instance_private.h"
 
-#include <flame/file.h>
 #include <flame/math.h>
-#include <flame/system.h>
-#include <flame/font.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
@@ -71,36 +65,8 @@ namespace flame
 				font_atlas->save(L"UI/font.xml");
 			}
 
-			white_image = graphics::Image::create_from_file(d, L"UI/imgs/white.bmp");
 			font_stroke_image = graphics::Image::create_from_bitmap(d, font_atlas->get_stroke_image());
 			font_sdf_image = graphics::Image::create_from_bitmap(d, font_atlas->get_sdf_image());
-
-			auto vib = graphics::VertexInputBufferInfo({
-					graphics::Format_R32G32_SFLOAT,
-					graphics::Format_R32G32_SFLOAT,
-					graphics::Format_R8G8B8A8_UNORM });
-
-			{
-				graphics::GraphicsPipelineInfo info;
-				info.shaders.resize(2);
-				info.shaders[0].filename = L"ui/plain.vert";
-				info.shaders[1].filename = L"ui/plain.frag";
-				info.vi_buffers.push_back(vib);
-				info.cull_mode = graphics::CullModeNone;
-				info.sample_count = sample_count;
-				info.blend_states[0] = graphics::BlendInfo(
-					graphics::BlendFactorSrcAlpha, graphics::BlendFactorOneMinusSrcAlpha,
-					graphics::BlendFactorZero, graphics::BlendFactorOneMinusSrcAlpha);
-				info.renderpass = renderpass;
-				pl_plain = graphics::Pipeline::create(d, info);
-			}
-			ds_plain = graphics::Descriptorset::create(d->dp, pl_plain->layout()->dsl(0));
-			white_imageview = graphics::Imageview::get(white_image);
-			for (auto i = 0; i < MaxImageviewCount; i++)
-			{
-				image_views[i] = white_imageview;
-				ds_plain->set_imageview(0, i, white_imageview, d->sp_bi_linear);
-			}
 
 			{
 				graphics::GraphicsPipelineInfo info;

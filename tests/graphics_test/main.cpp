@@ -27,28 +27,34 @@ using namespace graphics;
 
 struct MyApp : BasicApp
 {
-	Commandbuffer *cbs[2];
-	ClearValues *cv;
-	BP* render_path;
+	//Commandbuffer* cbs[2];
+	//ClearValues* cv;
+	//BP* render_path;
+	Canvas* canvas;
 
 	inline virtual void on_create() override
 	{
-		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
-		render_path->find_item("d.in")->set_data(d);
-		render_path->find_item("sc.in")->set_data(sc);
-		render_path->prepare();
-		render_path->update();
-		render_path->unprepare();
-		cv = (ClearValues*)render_path->find_item("cv.out")->data().v.p;
-		cbs[0]  = (Commandbuffer*)render_path->find_item("cb1.out")->data().v.p;
-		cbs[1] = (Commandbuffer*)render_path->find_item("cb2.out")->data().v.p;
+		//render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
+		//render_path->find_item("d.in")->set_data(d);
+		//render_path->find_item("sc.in")->set_data(sc);
+		//render_path->prepare();
+		//render_path->update();
+		//render_path->unprepare();
+		//cv = (ClearValues*)render_path->find_item("cv.out")->data().v.p;
+		//cbs[0]  = (Commandbuffer*)render_path->find_item("cb1.out")->data().v.p;
+		//cbs[1] = (Commandbuffer*)render_path->find_item("cb2.out")->data().v.p;
+
+		canvas = Canvas::create(d, sc);
 	}
 
 	inline virtual void do_run() override
 	{
 		sc->acquire_image(image_avalible);
 
-		d->gq->submit(cbs[sc->get_avalible_image_index()], image_avalible, render_finished);
+		canvas->add_rect_filled(Vec2(0.f), Vec2(100.f), Bvec4(255, 128, 0, 255));
+		canvas->record_cb();
+
+		d->gq->submit(canvas->get_cb(), image_avalible, render_finished);
 		d->gq->wait_idle();
 
 		d->gq->present(sc, render_finished);
