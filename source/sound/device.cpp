@@ -26,9 +26,14 @@ namespace flame
 {
 	namespace sound
 	{
-		inline DevicePrivate::DevicePrivate()
+		inline DevicePrivate::DevicePrivate(DeviceType t) :
+			type(t)
 		{
-			al_dev = alcOpenDevice(nullptr);
+			if (type == DevicePlay)
+				al_dev = alcOpenDevice(nullptr);
+			else if (type == DeviceRecord)
+				al_dev = alcCaptureOpenDevice(nullptr, 44100, AL_FORMAT_STEREO16, 44100 /* one second */);
+			al_dev = nullptr;
 		}
 
 		inline DevicePrivate::~DevicePrivate()
@@ -36,9 +41,9 @@ namespace flame
 			alcCloseDevice(al_dev);
 		}
 
-		Device *Device::create()
+		Device *Device::create(DeviceType t)
 		{
-			return new DevicePrivate;
+			return new DevicePrivate(t);
 		}
 
 		void Device::destroy(Device *d)
