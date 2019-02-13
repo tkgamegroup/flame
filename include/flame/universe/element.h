@@ -249,8 +249,8 @@ namespace flame
 		Array<Function<ChangedListenerParm>> changed_listeners$;
 		Array<Function<ChildListenerParm>> child_listeners$;
 
-		Array<CommonData> data_storages$;
-		Array<StringW> string_storages$;
+		CommonData datas$[8];
+		StringW text$;
 
 		inline Element()
 		{
@@ -360,7 +360,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS SerializableNode* save();
 
 		enum { DATA_SIZE = 0 };
-		enum { STRING_SIZE = 0 };
 
 		FLAME_UNIVERSE_EXPORTS static Element* create(UI* ui);
 		template<typename T, typename ... Args>
@@ -381,214 +380,203 @@ namespace flame
 	struct name : base\
 	{\
 		enum { D_BASE = __COUNTER__ + 1 };\
-		enum { B_D_SIZE = base::DATA_SIZE };\
-		enum { B_S_SIZE = base::STRING_SIZE };
+		enum { B_SIZE = base::DATA_SIZE };
 #define FLAME_ELEMENT_DATA(t, n, tf) \
 		inline t &n()\
 		{\
-			return (t&)data_storages$[__COUNTER__ - D_BASE + B_D_SIZE].tf();\
-		}
-#define FLAME_ELEMENT_SEPARATOR \
-		enum { DATA_SIZE = __COUNTER__ - D_BASE + B_D_SIZE };\
-		enum { S_BASE = __COUNTER__ + 1 };
-#define FLAME_ELEMENT_STRING(n) \
-		inline StringW &n()\
-		{\
-			return string_storages$[__COUNTER__ - S_BASE + B_S_SIZE];\
+			return (t&)datas$[__COUNTER__ - D_BASE + B_SIZE].tf();\
 		}
 #define FLAME_ELEMENT_END \
-		enum { STRING_SIZE = __COUNTER__ - S_BASE + B_S_SIZE };\
+		enum { DATA_SIZE = __COUNTER__ - D_BASE + B_SIZE };\
 	};
 
 	FLAME_ELEMENT_BEGIN(wLayout, Element)
 		FLAME_UNIVERSE_EXPORTS void init(LayoutType type = LayoutFree, float item_padding = 0.f);
-	FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wCheckbox, Element)
+	FLAME_ELEMENT_BEGIN(wCheckbox, Element)
 		FLAME_UNIVERSE_EXPORTS void init(void* target = nullptr);
-	FLAME_ELEMENT_DATA(int, checked, i1)
+		FLAME_ELEMENT_DATA(int, checked, i1)
 		FLAME_ELEMENT_DATA(voidptr, target, p)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wText, Element)
+	FLAME_ELEMENT_BEGIN(wText, Element)
 		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_DATA(Bvec4, text_col, b4)
+		FLAME_ELEMENT_DATA(Bvec4, text_col, b4)
 		FLAME_ELEMENT_DATA(float, sdf_scale, f1)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_STRING(text)
+		
 		FLAME_UNIVERSE_EXPORTS void set_size_auto();
 	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wButton, wText)
+	FLAME_ELEMENT_BEGIN(wButton, wText)
 		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title);
-	FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+	
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wToggle, wText)
+	FLAME_ELEMENT_BEGIN(wToggle, wText)
 		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_DATA(int, toggled, i1)
-		FLAME_ELEMENT_SEPARATOR
+		FLAME_ELEMENT_DATA(int, toggled, i1)
+		
 		FLAME_UNIVERSE_EXPORTS void set_toggle(bool v);
 	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wMenuItem, wText)
+	FLAME_ELEMENT_BEGIN(wMenuItem, wText)
 		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title);
-	FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+	
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wMenu, wLayout)
+	FLAME_ELEMENT_BEGIN(wMenu, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title, bool only_for_context_menu = false);
-	FLAME_ELEMENT_DATA(int, sub, i1)
+		FLAME_ELEMENT_DATA(int, sub, i1)
 		FLAME_ELEMENT_DATA(int, opened, i1)
 		FLAME_ELEMENT_DATA(wTextPtr, w_title, p)
 		FLAME_ELEMENT_DATA(wTextPtr, w_rarrow, p)
 		FLAME_ELEMENT_DATA(wLayoutPtr, w_items, p)
-		FLAME_ELEMENT_SEPARATOR
+		
 		FLAME_UNIVERSE_EXPORTS void open();
-	FLAME_UNIVERSE_EXPORTS void popup(const Vec2& pos);
-	FLAME_UNIVERSE_EXPORTS void close();
+		FLAME_UNIVERSE_EXPORTS void popup(const Vec2& pos);
+		FLAME_UNIVERSE_EXPORTS void close();
 	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wMenuBar, wLayout)
+	FLAME_ELEMENT_BEGIN(wMenuBar, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+	
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wCombo, wMenu)
+	FLAME_ELEMENT_BEGIN(wCombo, wMenu)
 		FLAME_UNIVERSE_EXPORTS void init(void* enum_info = nullptr, void* target = nullptr);
-	FLAME_ELEMENT_DATA(int, sel, i1)
+		FLAME_ELEMENT_DATA(int, sel, i1)
 		FLAME_ELEMENT_DATA(voidptr, enum_info, p)
 		FLAME_ELEMENT_DATA(voidptr, target, p)
-		FLAME_ELEMENT_SEPARATOR
+		
 		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
 	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wEdit, wText)
+	FLAME_ELEMENT_BEGIN(wEdit, wText)
 		enum Type
-	{
-		TypeNull,
-		TypeString,
-		TypeStringW,
-		TypeInt,
-		TypeUint,
-		TypeFloat,
-		TypeUchar
-	};
-	FLAME_UNIVERSE_EXPORTS void init(Type type = TypeNull, void* target = nullptr);
-	FLAME_ELEMENT_DATA(int, cursor, i1)
+		{
+			TypeNull,
+			TypeString,
+			TypeStringW,
+			TypeInt,
+			TypeUint,
+			TypeFloat,
+			TypeUchar
+		};
+		FLAME_UNIVERSE_EXPORTS void init(Type type = TypeNull, void* target = nullptr);
+		FLAME_ELEMENT_DATA(int, cursor, i1)
 		FLAME_ELEMENT_DATA(int, type, i1)
 		FLAME_ELEMENT_DATA(voidptr, target, p)
-		FLAME_ELEMENT_SEPARATOR
+		
 		FLAME_UNIVERSE_EXPORTS void set_size_by_width(float width);
 	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wImage, Element)
+	FLAME_ELEMENT_BEGIN(wImage, Element)
 		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_DATA(int, id, i1)
+		FLAME_ELEMENT_DATA(int, id, i1)
 		FLAME_ELEMENT_DATA(Vec2, uv0, f2)
 		FLAME_ELEMENT_DATA(Vec2, uv1, f2)
 		FLAME_ELEMENT_DATA(int, stretch, i1)
 		FLAME_ELEMENT_DATA(Vec4, border, f4) // L R T B
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wSizeDrag, Element)
+	FLAME_ELEMENT_BEGIN(wSizeDrag, Element)
 		FLAME_UNIVERSE_EXPORTS void init(Element* target);
-	FLAME_ELEMENT_DATA(Vec2, min_size, f2)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		FLAME_ELEMENT_DATA(Vec2, min_size, f2)
+		
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wScrollbar, wLayout)
+	FLAME_ELEMENT_BEGIN(wScrollbar, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init(Element* target);
-	FLAME_ELEMENT_DATA(wButtonPtr, w_btn, p)
+		FLAME_ELEMENT_DATA(wButtonPtr, w_btn, p)
 		FLAME_ELEMENT_DATA(ElementPtr, w_target, p)
-		FLAME_ELEMENT_SEPARATOR
+		
 		FLAME_UNIVERSE_EXPORTS void scroll(int v);
 	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wListItem, wLayout)
+	FLAME_ELEMENT_BEGIN(wListItem, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title);
-	FLAME_ELEMENT_DATA(wTextPtr, w_title, p)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		FLAME_ELEMENT_DATA(wTextPtr, w_title, p)
+		
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wList, wLayout)
+	FLAME_ELEMENT_BEGIN(wList, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_DATA(wListItemPtr, w_sel, p)
+		FLAME_ELEMENT_DATA(wListItemPtr, w_sel, p)
 		FLAME_ELEMENT_DATA(wScrollbarPtr, w_scrollbar, p)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		
+	FLAME_ELEMENT_END
 
-		struct wTree;
+	struct wTree;
 	FLAME_ELEMENT_BEGIN(wTreeNode, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title, wTree* tree = nullptr);
-	FLAME_ELEMENT_DATA(wTextPtr, w_title, p)
+		FLAME_ELEMENT_DATA(wTextPtr, w_title, p)
 		FLAME_ELEMENT_DATA(wLayoutPtr, w_items, p)
 		FLAME_ELEMENT_DATA(wTextPtr, w_larrow, p)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wTree, wLayout)
+	FLAME_ELEMENT_BEGIN(wTree, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_DATA(wTreeNodePtr, w_sel, p)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		FLAME_ELEMENT_DATA(wTreeNodePtr, w_sel, p)
+		
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wDialog, wLayout)
+	FLAME_ELEMENT_BEGIN(wDialog, wLayout)
 		FLAME_UNIVERSE_EXPORTS void init(bool resize = false, bool modual = false);
-	FLAME_ELEMENT_DATA(wScrollbarPtr, w_scrollbar, p)
+		FLAME_ELEMENT_DATA(wScrollbarPtr, w_scrollbar, p)
 		FLAME_ELEMENT_DATA(wSizeDragPtr, w_sizedrag, p)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		
+	FLAME_ELEMENT_END
 
-		FLAME_ELEMENT_BEGIN(wMessageDialog, wDialog)
+	FLAME_ELEMENT_BEGIN(wMessageDialog, wDialog)
 		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* text);
-	FLAME_ELEMENT_DATA(wTextPtr, w_text, p)
+		FLAME_ELEMENT_DATA(wTextPtr, w_text, p)
 		FLAME_ELEMENT_DATA(wButtonPtr, w_ok, p)
-		FLAME_ELEMENT_SEPARATOR
-		FLAME_ELEMENT_END
+		
+	FLAME_ELEMENT_END
 
-		//struct wYesNoDialog : wDialog
-		//{
-		//	FLAME_UNIVERSE_EXPORTS void init(const wchar_t *text, const wchar_t *prompt, cconst std::function<void(bool)> &callback);
+	//struct wYesNoDialog : wDialog
+	//{
+	//	FLAME_UNIVERSE_EXPORTS void init(const wchar_t *text, const wchar_t *prompt, cconst std::function<void(bool)> &callback);
 
-		//	FLAME_UNIVERSE_EXPORTS wTextPtr &w_text();
-		//	FLAME_UNIVERSE_EXPORTS wLayoutPtr &w_buttons();
-		//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_yes();
-		//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_no();
-		//};
+	//	FLAME_UNIVERSE_EXPORTS wTextPtr &w_text();
+	//	FLAME_UNIVERSE_EXPORTS wLayoutPtr &w_buttons();
+	//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_yes();
+	//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_no();
+	//};
 
-		//struct wInputDialog : wDialog
-		//{
-		//	FLAME_UNIVERSE_EXPORTS void init(const wchar_t *title, float sdf_scale, const std::function<void(bool ok, const wchar_t *input)> &callback);
+	//struct wInputDialog : wDialog
+	//{
+	//	FLAME_UNIVERSE_EXPORTS void init(const wchar_t *title, float sdf_scale, const std::function<void(bool ok, const wchar_t *input)> &callback);
 
-		//	FLAME_UNIVERSE_EXPORTS wEditPtr &w_input();
-		//	FLAME_UNIVERSE_EXPORTS wLayoutPtr &w_buttons();
-		//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_ok();
-		//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_cancel();
-		//};
+	//	FLAME_UNIVERSE_EXPORTS wEditPtr &w_input();
+	//	FLAME_UNIVERSE_EXPORTS wLayoutPtr &w_buttons();
+	//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_ok();
+	//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_cancel();
+	//};
 
-		//struct wFileDialog : wDialog
-		//{
-		//	FLAME_UNIVERSE_EXPORTS void init(const wchar_t *title, int io, const std::function<void(bool ok, const wchar_t *filename)> &callback, const wchar_t *exts = nullptr);
+	//struct wFileDialog : wDialog
+	//{
+	//	FLAME_UNIVERSE_EXPORTS void init(const wchar_t *title, int io, const std::function<void(bool ok, const wchar_t *filename)> &callback, const wchar_t *exts = nullptr);
 
-		//	FLAME_UNIVERSE_EXPORTS wMenuBarPtr &w_pathstems();
-		//	FLAME_UNIVERSE_EXPORTS wListPtr &w_list();
-		//	FLAME_UNIVERSE_EXPORTS wEditPtr &w_input();
-		//	FLAME_UNIVERSE_EXPORTS wComboPtr &w_ext();
-		//	FLAME_UNIVERSE_EXPORTS wLayoutPtr &w_buttons();
-		//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_ok();
-		//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_cancel();
+	//	FLAME_UNIVERSE_EXPORTS wMenuBarPtr &w_pathstems();
+	//	FLAME_UNIVERSE_EXPORTS wListPtr &w_list();
+	//	FLAME_UNIVERSE_EXPORTS wEditPtr &w_input();
+	//	FLAME_UNIVERSE_EXPORTS wComboPtr &w_ext();
+	//	FLAME_UNIVERSE_EXPORTS wLayoutPtr &w_buttons();
+	//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_ok();
+	//	FLAME_UNIVERSE_EXPORTS wButtonPtr &w_cancel();
 
-		//	FLAME_UNIVERSE_EXPORTS const wchar_t *curr_path();
-		//	FLAME_UNIVERSE_EXPORTS int curr_path_len();
-		//	FLAME_UNIVERSE_EXPORTS void set_curr_path(const wchar_t *path);
-		//	FLAME_UNIVERSE_EXPORTS const wchar_t *curr_exts();
-		//	FLAME_UNIVERSE_EXPORTS int curr_exts_len();
-		//	FLAME_UNIVERSE_EXPORTS void set_curr_exts(const wchar_t *exts);
+	//	FLAME_UNIVERSE_EXPORTS const wchar_t *curr_path();
+	//	FLAME_UNIVERSE_EXPORTS int curr_path_len();
+	//	FLAME_UNIVERSE_EXPORTS void set_curr_path(const wchar_t *path);
+	//	FLAME_UNIVERSE_EXPORTS const wchar_t *curr_exts();
+	//	FLAME_UNIVERSE_EXPORTS int curr_exts_len();
+	//	FLAME_UNIVERSE_EXPORTS void set_curr_exts(const wchar_t *exts);
 
-		//	FLAME_UNIVERSE_EXPORTS void set_path(const wchar_t *path);
-		//};
+	//	FLAME_UNIVERSE_EXPORTS void set_path(const wchar_t *path);
+	//};
 }
