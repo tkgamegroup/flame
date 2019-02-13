@@ -31,9 +31,11 @@ namespace flame
 	{
 		struct DevicePrivate : Device
 		{
+			DeviceType type;
+
 			ALCdevice *al_dev;
 
-			DevicePrivate();
+			DevicePrivate(DeviceType t);
 			~DevicePrivate();
 		};
 	}

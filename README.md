@@ -15,7 +15,7 @@ A lightweight and powerful 3D Game Engine.
 
 - SPIRV-Cross - for shader reflection (https://github.com/KhronosGroup/SPIRV-Cross)
 
-- OpenAL      - for sound playing (http://www.openal.org/)
+- OpenAL      - for sound playing and recording (http://www.openal.org/)
   
 
 # build:

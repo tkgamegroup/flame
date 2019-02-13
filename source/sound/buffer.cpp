@@ -22,7 +22,7 @@
 
 #include "buffer_private.h"
 
-#include <flame/file.h>
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
