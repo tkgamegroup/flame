@@ -20,27 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/foundation/window.h>
-
 using namespace flame;
 
-FLAME_PACKAGE_BEGIN(WindowClickC)
-	FLAME_PACKAGE_ITEM(WindowPtr, w, p)
-FLAME_PACKAGE_END
-
-void test_window()
+void test_sound_record()
 {
-	auto app = Application::create();
-	auto w = Window::create(app, "Window Test", Ivec2(1280, 720), WindowFrame);
 
-	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Window::MouseListenerParm & p) {
-		if (p.is_down())
-		{
-			auto c = p.get_capture<WindowClickC>();
-			c.w()->close();
-		}
-	}, { w }));
-
-	app->run(Function<>([](Package & p) {
-	}));
 }

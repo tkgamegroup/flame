@@ -668,11 +668,8 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	FLAME_PACKAGE_BEGIN(FileWatcherThreadC)
-		FLAME_PACKAGE_ITEM(wcharptr, filepath, p)
-		FLAME_PACKAGE_ITEM(FileWatcherPtr, filewatcher, p)
-		FLAME_PACKAGE_ITEM(voidptr, pcallback, p) /* do convert yourself */
-	FLAME_PACKAGE_END
+	FLAME_PACKAGE_BEGIN_3(FileWatcherThreadC, wcharptr, filepath, p, FileWatcherPtr, filewatcher, p, voidptr/* do convert yourself */, pcallback, p)
+	FLAME_PACKAGE_END_3
 
 	FileWatcher *add_file_watcher(const wchar_t *path, Function<FileWatcherParm> &callback, int options)
 	{
