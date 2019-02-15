@@ -5463,15 +5463,15 @@ namespace flame
 	}
 
 	/* fmt:
-		i    - int
+		i1   - int
 		i2   - Ivec2
 		i3   - Ivec3
 		i4   - Ivec4
-		f    - float
+		f1   - float
 		f2   - Vec2
 		f3   - Vec3
 		f4   - Vec4
-		b    - uchar
+		b1   - uchar
 		b2   - Bvec2
 		b3   - Bvec3
 		b4   - Bvec4
@@ -5573,7 +5573,7 @@ namespace flame
 		inline CommonData(float f)
 		{
 			fmt[0] = 'f';
-			fmt[1] = 0;
+			fmt[1] = '1';
 			fmt[2] = 0;
 			fmt[3] = 0;
 
@@ -5613,7 +5613,7 @@ namespace flame
 		inline CommonData(int i)
 		{
 			fmt[0] = 'i';
-			fmt[1] = 0;
+			fmt[1] = '1';
 			fmt[2] = 0;
 			fmt[3] = 0;
 
@@ -5653,7 +5653,7 @@ namespace flame
 		inline CommonData(uchar b)
 		{
 			fmt[0] = 'b';
-			fmt[1] = 0;
+			fmt[1] = '1';
 			fmt[2] = 0;
 			fmt[3] = 0;
 

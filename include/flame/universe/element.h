@@ -161,51 +161,31 @@ namespace flame
 		Array<Element*> children_2$;
 
 		bool draw_default$;
-		FLAME_PACKAGE_BEGIN(ExtraDrawParm)
-			FLAME_PACKAGE_ITEM(graphics::CanvasPtr, canvas, p)
-			FLAME_PACKAGE_ITEM(Vec2, off, f2)
-			FLAME_PACKAGE_ITEM(float, scl, f1)
-
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_4(ExtraDrawParm, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1, ElementPtr, thiz, p)
+		FLAME_PACKAGE_END_4
 		Array<Function<ExtraDrawParm>> extra_draws$;
 
 		int closet_id$;
-		FLAME_PACKAGE_BEGIN(StyleParm)
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-			FLAME_PACKAGE_ITEM(int, closet_id, i1)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_2(StyleParm, ElementPtr, thiz, p, int, closet_id, i1)
+		FLAME_PACKAGE_END_2
 		int style_level;
 		Array<Function<StyleParm>> styles$;
 
-		FLAME_PACKAGE_BEGIN(AnimationParm)
-			FLAME_PACKAGE_ITEM(float, time, f1)
-
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-			FLAME_PACKAGE_ITEM(float, duration, f1)
-			FLAME_PACKAGE_ITEM(int, looping, i1)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_4(AnimationParm, float, time, f1, ElementPtr, thiz, p, float, duration, f1, int, looping, i1)
+		FLAME_PACKAGE_END_4
 		Array<Function<AnimationParm>> animations$;
 
-		FLAME_PACKAGE_BEGIN(FoucusListenerParm)
-			FLAME_PACKAGE_ITEM(FocusType, type, i1)
-			FLAME_PACKAGE_ITEM(int, focus_or_keyfocus, i1)
-			
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_3(FoucusListenerParm, FocusType, type, i1, int, focus_or_keyfocus, i1, ElementPtr, thiz, p)
+		FLAME_PACKAGE_END_3
 
-		FLAME_PACKAGE_BEGIN(KeyListenerParm)
+		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, KeyState, action, i1, int, value, i1, ElementPtr, thiz, p)
 		/*
 			- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
 			- when char, action is KeyStateNull, value is ch
 		*/
-			FLAME_PACKAGE_ITEM(KeyState, action, i1)
-			FLAME_PACKAGE_ITEM(int, value, i1)
+		FLAME_PACKAGE_END_3
 
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-		FLAME_PACKAGE_END
-
-		FLAME_PACKAGE_BEGIN(MouseListenerParm)
+		FLAME_PACKAGE_BEGIN_4(MouseListenerParm, KeyState, action, i1, MouseKey, key, i1, Vec2, value, f2, ElementPtr, thiz, p)
 		/*
 			- when enter/leave, action is KeyStateDown or KeyStateUp, key is Mouse_Null
 			- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey, value is pos
@@ -213,34 +193,21 @@ namespace flame
 			- when scroll, action is KeyStateNull, key is Mouse_Middle, value.x is scroll value
 			- when clicked, action is KeyStateDown | KeyStateUp | (KeyStateDouble ? for double clicked), key is Mouse_Null
 		*/
-			FLAME_PACKAGE_ITEM(KeyState, action, i1)
-			FLAME_PACKAGE_ITEM(MouseKey, key, i1)
-			FLAME_PACKAGE_ITEM(Vec2, value, f2)
+		FLAME_PACKAGE_END_4
 
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_2(DropListenerParm, ElementPtr, src, p, ElementPtr, thiz, p)
+		FLAME_PACKAGE_END_2
 
-		FLAME_PACKAGE_BEGIN(DropListenerParm)
-			FLAME_PACKAGE_ITEM(ElementPtr, src, p)
-
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-		FLAME_PACKAGE_END
-
-		FLAME_PACKAGE_BEGIN(ChangedListenerParm)
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_1(ChangedListenerParm, ElementPtr, thiz, p)
+		FLAME_PACKAGE_END_1
 
 		enum ChildOp
 		{
 			ChildAdd,
 			ChildRemove
 		};
-		FLAME_PACKAGE_BEGIN(ChildListenerParm)
-			FLAME_PACKAGE_ITEM(ChildOp, op, i1)
-			FLAME_PACKAGE_ITEM(ElementPtr, src, p)
-
-			FLAME_PACKAGE_ITEM(ElementPtr, thiz, p)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_3(ChildListenerParm, ChildOp, op, i1, ElementPtr, src, p, ElementPtr, thiz, p)
+		FLAME_PACKAGE_END_3
 
 		Array<Function<FoucusListenerParm>> focus_listeners$;
 		Array<Function<KeyListenerParm>> key_listeners$;
@@ -249,7 +216,7 @@ namespace flame
 		Array<Function<ChangedListenerParm>> changed_listeners$;
 		Array<Function<ChildListenerParm>> child_listeners$;
 
-		CommonData datas$[8];
+		Array<CommonData> datas$;
 		StringW text$;
 
 		inline Element()
@@ -374,32 +341,254 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static void destroy(Element* w);
 	};
 
-#define FLAME_ELEMENT_BEGIN(name, base) \
+#define FLAME_ELEMENT_BEGIN_0(name, base) \
 	struct name;\
 	typedef name* name##Ptr;\
 	struct name : base\
 	{\
-		enum { D_BASE = __COUNTER__ + 1 };\
 		enum { B_SIZE = base::DATA_SIZE };
-#define FLAME_ELEMENT_DATA(t, n, tf) \
-		inline t &n()\
-		{\
-			return (t&)datas$[__COUNTER__ - D_BASE + B_SIZE].tf();\
-		}
-#define FLAME_ELEMENT_END \
-		enum { DATA_SIZE = __COUNTER__ - D_BASE + B_SIZE };\
+#define FLAME_ELEMENT_END_0 \
+		enum { DATA_SIZE = B_SIZE };\
 	};
 
-	FLAME_ELEMENT_BEGIN(wLayout, Element)
-		FLAME_UNIVERSE_EXPORTS void init(LayoutType type = LayoutFree, float item_padding = 0.f);
-	FLAME_ELEMENT_END
+	// t is type, n is name, tf is type format
+	// remember to call 'init_data_types' in 'init'
 
-	FLAME_ELEMENT_BEGIN(wCheckbox, Element)
+#define FLAME_ELEMENT_BEGIN_1(name, base, t1, n1, tf1) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline void init_data_types()\
+		{\
+			
+		}
+#define FLAME_ELEMENT_END_1 \
+		enum { DATA_SIZE = 1 + B_SIZE };\
+	};
+
+#define FLAME_ELEMENT_BEGIN_2(name, base, t1, n1, tf1, t2, n2, tf2) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)datas$[1 + B_SIZE].tf2();\
+		}
+#define FLAME_ELEMENT_END_2 \
+		enum { DATA_SIZE = 2 + B_SIZE };\
+	};
+
+#define FLAME_ELEMENT_BEGIN_3(name, base, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)datas$[1 + B_SIZE].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)datas$[2 + B_SIZE].tf3();\
+		}
+#define FLAME_ELEMENT_END_3 \
+		enum { DATA_SIZE = 3 + B_SIZE };\
+	};
+
+#define FLAME_ELEMENT_BEGIN_4(name, base, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)datas$[1 + B_SIZE].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)datas$[2 + B_SIZE].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)datas$[3 + B_SIZE].tf4();\
+		}
+#define FLAME_ELEMENT_END_4 \
+		enum { DATA_SIZE = 4 + B_SIZE };\
+	};
+
+#define FLAME_ELEMENT_BEGIN_5(name, base, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)datas$[1 + B_SIZE].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)datas$[2 + B_SIZE].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)datas$[3 + B_SIZE].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)datas$[4 + B_SIZE].tf5();\
+		}
+#define FLAME_ELEMENT_END_5 \
+		enum { DATA_SIZE = 5 + B_SIZE };\
+	};
+
+#define FLAME_ELEMENT_BEGIN_6(name, base, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5, t6, n6, tf6) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)datas$[1 + B_SIZE].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)datas$[2 + B_SIZE].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)datas$[3 + B_SIZE].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)datas$[4 + B_SIZE].tf5();\
+		}\
+		inline t6 &n6()\
+		{\
+			return (t6&)datas$[5 + B_SIZE].tf6();\
+		}
+#define FLAME_ELEMENT_END_6 \
+		enum { DATA_SIZE = 6 + B_SIZE };\
+	};
+
+#define FLAME_ELEMENT_BEGIN_7(name, base, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5, t6, n6, tf6, t7, n7, tf7) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)datas$[1 + B_SIZE].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)datas$[2 + B_SIZE].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)datas$[3 + B_SIZE].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)datas$[4 + B_SIZE].tf5();\
+		}\
+		inline t6 &n6()\
+		{\
+			return (t6&)datas$[5 + B_SIZE].tf6();\
+		}\
+		inline t7 &n7()\
+		{\
+			return (t7&)datas$[6 + B_SIZE].tf7();\
+		}
+#define FLAME_ELEMENT_END_7 \
+		enum { DATA_SIZE = 7 + B_SIZE };\
+	};
+
+#define FLAME_ELEMENT_BEGIN_8(name, base, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5, t6, n6, tf6, t7, n7, tf7, t8, n8, tf8) \
+	struct name;\
+	typedef name* name##Ptr;\
+	struct name : base\
+	{\
+		enum { B_SIZE = base::DATA_SIZE };\
+		inline t1 &n1()\
+		{\
+			return (t1&)datas$[0 + B_SIZE].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)datas$[1 + B_SIZE].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)datas$[2 + B_SIZE].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)datas$[3 + B_SIZE].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)datas$[4 + B_SIZE].tf5();\
+		}\
+		inline t6 &n6()\
+		{\
+			return (t6&)datas$[5 + B_SIZE].tf6();\
+		}\
+		inline t7 &n7()\
+		{\
+			return (t7&)datas$[6 + B_SIZE].tf7();\
+		}\
+		inline t8 &n8()\
+		{\
+			return (t8&)datas$[7 + B_SIZE].tf8();\
+		}
+#define FLAME_ELEMENT_END_8 \
+		enum { DATA_SIZE = 8 + B_SIZE };\
+	};
+
+	FLAME_ELEMENT_BEGIN_0(wLayout, Element)
+		FLAME_UNIVERSE_EXPORTS void init(LayoutType type = LayoutFree, float item_padding = 0.f);
+	FLAME_ELEMENT_END_0
+
+	FLAME_ELEMENT_BEGIN_2(wCheckbox, Element, int, checked, i1, voidptr, target, p)
 		FLAME_UNIVERSE_EXPORTS void init(void* target = nullptr);
-		FLAME_ELEMENT_DATA(int, checked, i1)
-		FLAME_ELEMENT_DATA(voidptr, target, p)
-		
-	FLAME_ELEMENT_END
+	FLAME_ELEMENT_END_2
 
 	FLAME_ELEMENT_BEGIN(wText, Element)
 		FLAME_UNIVERSE_EXPORTS void init();
@@ -478,7 +667,7 @@ namespace flame
 		FLAME_ELEMENT_DATA(Vec2, uv0, f2)
 		FLAME_ELEMENT_DATA(Vec2, uv1, f2)
 		FLAME_ELEMENT_DATA(int, stretch, i1)
-		FLAME_ELEMENT_DATA(Vec4, border, f4) // L R T B
+		FLAME_ELEMENT_DATA(Vec4, border, f4) /* L R T B */
 		
 	FLAME_ELEMENT_END
 
