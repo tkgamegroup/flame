@@ -37,6 +37,11 @@ namespace flame
 
 			DevicePrivate(DeviceType t);
 			~DevicePrivate();
+
+			void start_record();
+			int get_recorded_samples();
+			void get_recorded_data(void* dst, int samples);
+			void stop_record();
 		};
 	}
 }
