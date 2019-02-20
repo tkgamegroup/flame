@@ -1,9 +1,6 @@
 bin/*.lib
 bin/*.dll
-!bin/zlib1.dll
-!bin/freetype.dll
 bin/*.exe
-flame_center.exe
 *.exp
 *.suo
 *.user
@@ -11,7 +8,6 @@ flame_center.exe
 *.sln.docstates
 *.userprefs
 build/
-android_build/
 
 .vs/
 
