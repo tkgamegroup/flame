@@ -791,21 +791,237 @@ namespace flame
 
 	typedef void(*PF)(Package &p);
 
-#define FLAME_PACKAGE_BEGIN(name) \
+	// t is type, n is name, tf is type format
+
+#define FLAME_PACKAGE_BEGIN_1(name, t1, n1, tf1) \
 	struct name : Package\
 	{\
-		enum { BASE = __COUNTER__ + 1 };
-#define FLAME_PACKAGE_ITEM(t, n, tf) \
-		inline t &n()\
+		inline t1 &n1()\
 		{\
-			return (t&)d[__COUNTER__ - BASE].tf();\
+			return (t1&)d[0].tf1();\
 		}
-#define FLAME_PACKAGE_END \
-		enum { SIZE = __COUNTER__ - BASE };\
-		template<class CP/* capture package */>\
+#define FLAME_PACKAGE_END_1 \
+		template<class CP>\
 		inline CP &get_capture()\
 		{\
-			return *(CP*)(d + SIZE);\
+			return *(CP*)(d + 1);\
+		}\
+	};
+
+#define FLAME_PACKAGE_BEGIN_2(name, t1, n1, tf1, t2, n2, tf2) \
+	struct name : Package\
+	{\
+		inline t1 &n1()\
+		{\
+			return (t1&)d[0].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)d[1].tf2();\
+		}
+#define FLAME_PACKAGE_END_2 \
+		template<class CP>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + 2);\
+		}\
+	};
+
+#define FLAME_PACKAGE_BEGIN_3(name, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3) \
+	struct name : Package\
+	{\
+		inline t1 &n1()\
+		{\
+			return (t1&)d[0].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)d[1].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)d[2].tf3();\
+		}
+#define FLAME_PACKAGE_END_3 \
+		template<class CP>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + 3);\
+		}\
+	};
+
+#define FLAME_PACKAGE_BEGIN_4(name, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4) \
+	struct name : Package\
+	{\
+		inline t1 &n1()\
+		{\
+			return (t1&)d[0].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)d[1].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)d[2].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)d[3].tf4();\
+		}
+#define FLAME_PACKAGE_END_4 \
+		template<class CP>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + 4);\
+		}\
+	};
+
+#define FLAME_PACKAGE_BEGIN_5(name, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5) \
+	struct name : Package\
+	{\
+		inline t1 &n1()\
+		{\
+			return (t1&)d[0].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)d[1].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)d[2].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)d[3].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)d[4].tf5();\
+		}
+#define FLAME_PACKAGE_END_5 \
+		template<class CP>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + 5);\
+		}\
+	};
+
+#define FLAME_PACKAGE_BEGIN_6(name, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5, t6, n6, tf6) \
+	struct name : Package\
+	{\
+		inline t1 &n1()\
+		{\
+			return (t1&)d[0].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)d[1].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)d[2].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)d[3].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)d[4].tf5();\
+		}\
+		inline t6 &n6()\
+		{\
+			return (t6&)d[5].tf6();\
+		}
+#define FLAME_PACKAGE_END_6 \
+		template<class CP>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + 6);\
+		}\
+	};
+
+#define FLAME_PACKAGE_BEGIN_7(name, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5, t6, n6, tf6, t7, n7, tf7) \
+	struct name : Package\
+	{\
+		inline t1 &n1()\
+		{\
+			return (t1&)d[0].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)d[1].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)d[2].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)d[3].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)d[4].tf5();\
+		}\
+		inline t6 &n6()\
+		{\
+			return (t6&)d[5].tf6();\
+		}\
+		inline t7 &n7()\
+		{\
+			return (t7&)d[6].tf7();\
+		}
+#define FLAME_PACKAGE_END_7 \
+		template<class CP>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + 7);\
+		}\
+	};
+
+#define FLAME_PACKAGE_BEGIN_8(name, t1, n1, tf1, t2, n2, tf2, t3, n3, tf3, t4, n4, tf4, t5, n5, tf5, t6, n6, tf6, t7, n7, tf7, t8, n8, tf8) \
+	struct name : Package\
+	{\
+		inline t1 &n1()\
+		{\
+			return (t1&)d[0].tf1();\
+		}\
+		inline t2 &n2()\
+		{\
+			return (t2&)d[1].tf2();\
+		}\
+		inline t3 &n3()\
+		{\
+			return (t3&)d[2].tf3();\
+		}\
+		inline t4 &n4()\
+		{\
+			return (t4&)d[3].tf4();\
+		}\
+		inline t5 &n5()\
+		{\
+			return (t5&)d[4].tf5();\
+		}\
+		inline t6 &n6()\
+		{\
+			return (t6&)d[5].tf6();\
+		}\
+		inline t7 &n7()\
+		{\
+			return (t7&)d[6].tf7();\
+		}\
+		inline t8 &n8()\
+		{\
+			return (t8&)d[7].tf8();\
+		}
+#define FLAME_PACKAGE_END_8 \
+		template<class CP>\
+		inline CP &get_capture()\
+		{\
+			return *(CP*)(d + 8);\
 		}\
 	};
 
@@ -1033,9 +1249,8 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-	FLAME_PACKAGE_BEGIN(GlobalKeyParm)
-		FLAME_PACKAGE_ITEM(KeyState, action, i1)
-	FLAME_PACKAGE_END
+	FLAME_PACKAGE_BEGIN_1(GlobalKeyParm, KeyState, action, i1)
+	FLAME_PACKAGE_END_1
 
 	FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<GlobalKeyParm> &callback);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void *handle/* return by add_global_key_listener */);
@@ -1059,10 +1274,8 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_PACKAGE_BEGIN(FileWatcherParm)
-		FLAME_PACKAGE_ITEM(FileChangeType, type, i1)
-		FLAME_PACKAGE_ITEM(wcharptr, filename, p)
-	FLAME_PACKAGE_END
+	FLAME_PACKAGE_BEGIN_2(FileWatcherParm, FileChangeType, type, i1, wcharptr, filename, p)
+	FLAME_PACKAGE_END_2
 
 	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t *path, Function<FileWatcherParm> &callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher *w);

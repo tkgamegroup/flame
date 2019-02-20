@@ -20,31 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <string>
-#include <vector>
-#include <list>
+using namespace flame;
 
-void test_window();
-void test_graphics();
-void test_sound_record();
-
-int main(int argc, char** args)
+void test_sound_record()
 {
-	if (argc <= 1)
-	{
-		printf("provide a name to start a test");
-		return 0;
-	}
 
-	auto name = std::string(args[1]);
-	if (name == "window")
-		test_window();
-	else if (name == "graphics")
-		test_graphics();
-	else if (name == "sound_record")
-		test_sound_record();
-	else
-		printf("test not found");
-
-	return 0;
 }

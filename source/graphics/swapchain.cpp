@@ -36,9 +36,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		FLAME_PACKAGE_BEGIN(ResizeC)
-			FLAME_PACKAGE_ITEM(SwapchainPrivatePtr, s, p)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_1(ResizeC, SwapchainPrivatePtr, s, p)
+		FLAME_PACKAGE_END_1
 
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 

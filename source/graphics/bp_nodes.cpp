@@ -188,14 +188,14 @@ namespace flame
 
 #define CODE \
 		TAB if (cmd1$i) NL\
-		TAB {\
+		TAB { NL\
 		TAB TAB ((graphics::Commandbuffer*)cmd1$i)->begin_renderpass( NL\
 		TAB TAB TAB (graphics::Renderpass*)renderpass$i,  NL\
 		TAB TAB TAB (graphics::Framebuffer*)framebuffer1$i,  NL\
 		TAB TAB TAB (graphics::ClearValues*)clearvalues$i); NL\
-		TAB }\
+		TAB } NL\
 		TAB if (cmd2$i) NL\
-		TAB {\
+		TAB { NL\
 		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->begin_renderpass( NL\
 		TAB TAB TAB (graphics::Renderpass*)renderpass$i, NL\
 		TAB TAB TAB (graphics::Framebuffer*)framebuffer2$i, NL\

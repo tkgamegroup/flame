@@ -74,38 +74,32 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		FLAME_PACKAGE_BEGIN(KeyListenerParm)
+		FLAME_PACKAGE_BEGIN_2(KeyListenerParm, KeyState, action, i1, int, value, i1)
 			/*
 				- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
 				- when char, action is KeyStateNull, value is ch
 			*/
-			FLAME_PACKAGE_ITEM(KeyState, action, i1)
-			FLAME_PACKAGE_ITEM(int, value, i1)
 
 			inline bool is_down() { return action() == KeyStateDown; }
 			inline bool is_up()   { return action() == KeyStateUp;   }
 			inline bool is_char() { return action() == KeyStateNull; }
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_END_2
 
-		FLAME_PACKAGE_BEGIN(MouseListenerParm)
+		FLAME_PACKAGE_BEGIN_3(MouseListenerParm, KeyState, action, i1, MouseKey, key, i1, Ivec2, pos, i2)
 			/*
 				- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey
 				- when move, action is KeyStateNull, key is Mouse_Null
 				- when scroll, action is KeyStateNull, key is Mouse_Middle, pos.x is scroll value
 			*/
-			FLAME_PACKAGE_ITEM(KeyState, action, i1)
-			FLAME_PACKAGE_ITEM(MouseKey, key, i1)
-			FLAME_PACKAGE_ITEM(Ivec2, pos, i2)
 
 			inline bool is_down()   { return action() == KeyStateDown;                          }
 			inline bool is_up()     { return action() == KeyStateUp;                            }
 			inline bool is_move()   { return action() == KeyStateNull && key() == Mouse_Null;   }
 			inline bool is_scroll() { return action() == KeyStateNull && key() == Mouse_Middle; }
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_END_3
 
-		FLAME_PACKAGE_BEGIN(ResizeListenerParm)
-			FLAME_PACKAGE_ITEM(Ivec2, size, i2)
-		FLAME_PACKAGE_END
+		FLAME_PACKAGE_BEGIN_1(ResizeListenerParm, Ivec2, size, i2)
+		FLAME_PACKAGE_END_1
 
 		FLAME_FOUNDATION_EXPORTS int add_key_listener    (Function<KeyListenerParm>    &listener);
 		FLAME_FOUNDATION_EXPORTS int add_mouse_listener  (Function<MouseListenerParm>  &listener);
