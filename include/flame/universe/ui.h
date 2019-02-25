@@ -22,8 +22,7 @@
 
 #pragma once
 
-#include <flame/window.h>
-#include <flame/graphics/graphics.h>
+#include <flame/universe/universe.h>
 
 namespace flame
 {
@@ -38,11 +37,6 @@ namespace flame
 	}
 
 	struct Element;
-
-	const auto MaxImageviewCount = 128;
-
-	FLAME_UI_EXPORTS void init(graphics::Device* d, graphics::SampleCount sample_count = graphics::SampleCount_1);
-	FLAME_UI_EXPORTS void deinit();
 
 	enum DefaultStyle
 	{
@@ -99,37 +93,49 @@ namespace flame
 			return (key_states[k] & KeyStateDown) != 0;
 		}
 
-		FLAME_UI_EXPORTS void set_default_style(DefaultStyle s);
+		Bvec4 default_text_col;
+		Bvec4 default_text_col_hovering_or_active;
+		Bvec4 default_window_col;
+		Bvec4 default_frame_col;
+		Bvec4 default_frame_col_hovering;
+		Bvec4 default_frame_col_active;
+		Bvec4 default_button_col;
+		Bvec4 default_button_col_hovering;
+		Bvec4 default_button_col_active;
+		Bvec4 default_header_col;
+		Bvec4 default_header_col_hovering;
+		Bvec4 default_header_col_active;
+		float default_sdf_scale;
 
-		FLAME_UI_EXPORTS Ivec2 size() const;
+		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas();
+		FLAME_UNIVERSE_EXPORTS Ivec2 size() const;
 
-		FLAME_UI_EXPORTS void on_key(KeyState action, int value);
-		FLAME_UI_EXPORTS void on_mouse(KeyState action, MouseKey key, const Ivec2 & pos);
-		FLAME_UI_EXPORTS void on_resize(const Ivec2 & size);
+		FLAME_UNIVERSE_EXPORTS void set_default_style(DefaultStyle s);
 
-		FLAME_UI_EXPORTS graphics::Imageview* imageview(int index);
-		FLAME_UI_EXPORTS void set_imageview(int index, graphics::Imageview * v);
+		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, int value);
+		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Ivec2 & pos);
+		FLAME_UNIVERSE_EXPORTS void on_resize(const Ivec2 & size);
 
-		FLAME_UI_EXPORTS Widget* root();
-		FLAME_UI_EXPORTS Widget* hovering_widget();
-		FLAME_UI_EXPORTS Widget* focus_widget();
-		FLAME_UI_EXPORTS Widget* key_focus_widget();
-		FLAME_UI_EXPORTS Widget* dragging_widget();
-		FLAME_UI_EXPORTS Widget* popup_widget();
-		FLAME_UI_EXPORTS void set_hovering_widget(Widget * w);
-		FLAME_UI_EXPORTS void set_focus_widget(Widget * w);
-		FLAME_UI_EXPORTS void set_key_focus_widget(Widget * w);
-		FLAME_UI_EXPORTS void set_dragging_widget(Widget * w);
-		FLAME_UI_EXPORTS void set_popup_widget(Widget * w, bool modual = false);
-		FLAME_UI_EXPORTS void close_popup();
+		FLAME_UNIVERSE_EXPORTS Element* root();
+		FLAME_UNIVERSE_EXPORTS Element* hovering_widget();
+		FLAME_UNIVERSE_EXPORTS Element* focus_widget();
+		FLAME_UNIVERSE_EXPORTS Element* key_focus_widget();
+		FLAME_UNIVERSE_EXPORTS Element* dragging_widget();
+		FLAME_UNIVERSE_EXPORTS Element* popup_widget();
+		FLAME_UNIVERSE_EXPORTS void set_hovering_widget(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_focus_widget(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_key_focus_widget(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_dragging_widget(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_popup_widget(Element * w, bool modual = false);
+		FLAME_UNIVERSE_EXPORTS void close_popup();
 
-		FLAME_UI_EXPORTS void begin(float elp_time);
-		FLAME_UI_EXPORTS void end(Canvas * canvas, const Vec2 & show_off = Vec2(0.f));
+		FLAME_UNIVERSE_EXPORTS void begin(float elp_time);
+		FLAME_UNIVERSE_EXPORTS void end(const Vec2 & show_off = Vec2(0.f));
 
-		FLAME_UI_EXPORTS float total_time() const;
+		FLAME_UNIVERSE_EXPORTS float total_time() const;
 
-		FLAME_UI_EXPORTS static Instance * create(Window * w = nullptr);
-		FLAME_UI_EXPORTS static void destroy(Instance * i);
+		FLAME_UNIVERSE_EXPORTS static UI * create(graphics::Canvas* canvas, Window * w = nullptr);
+		FLAME_UNIVERSE_EXPORTS static void destroy(UI * ui);
 	};
 
 	typedef UI* UIPtr;

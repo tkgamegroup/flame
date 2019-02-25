@@ -32,8 +32,6 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 
-#include <vector>
-
 namespace flame
 {
 	namespace graphics
@@ -94,6 +92,8 @@ namespace flame
 			int *idx_end;
 			Commandbuffer *cb;
 
+			Imageview* image_views[MaxImageviewCount];
+
 			std::vector<std::tuple<Font*, bool, int>> fonts;
 
 			inline CanvasPrivate(Swapchain *_sc)
@@ -103,7 +103,7 @@ namespace flame
 
 				for (auto i = 0; i < MaxImageviewCount; i++)
 				{
-					//image_views[i] = white_imageview;
+					image_views[i] = white_imageview;
 					ds->set_imageview(0, i, white_imageview, device->sp_bi_linear);
 				}
 
@@ -134,6 +134,7 @@ namespace flame
 				auto image_idx = fonts.size() + 1;
 				fonts.emplace_back(font, font->sdf(), (int)image_idx);
 
+				image_views[i] = white_imageview;
 				ds->set_imageview(0, image_idx, Imageview::get(font->get_atlas()), device->sp_bi_linear);
 
 				return image_idx - 1;
@@ -584,6 +585,11 @@ namespace flame
 		int Canvas::add_font(Font* font)
 		{
 			return ((CanvasPrivate*)this)->add_font(font);
+		}
+
+		Font* Canvas::get_font(int idx)
+		{
+			return std::get<0>(((CanvasPrivate*)this)->fonts[idx]);
 		}
 
 		void Canvas::start_cmd(DrawCmdType type, int id)

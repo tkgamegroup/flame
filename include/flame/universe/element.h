@@ -175,6 +175,9 @@ namespace flame
 		Array<Element*> children_1$;
 		Array<Element*> children_2$;
 
+		FLAME_PACKAGE_BEGIN_1(ThizCapture, ElementPtr, thiz, p)
+		FLAME_PACKAGE_END_1
+
 		bool draw_default$;
 		FLAME_PACKAGE_BEGIN_3(ExtraDrawParm, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1)
 		FLAME_PACKAGE_END_3
@@ -284,7 +287,11 @@ namespace flame
 	struct name : base\
 	{\
 		enum { B_SIZE = base::DATA_SIZE };\
-		enum { DATA_SIZE = 0 + B_SIZE }; 
+		enum { DATA_SIZE = 0 + B_SIZE };\
+		inline void init_data_types()\
+		{\
+			class$ = #name;\
+		}
 #define FLAME_ELEMENT_END \
 	};
 
@@ -304,6 +311,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 		}
 
@@ -324,6 +332,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 		}
@@ -349,6 +358,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -379,6 +389,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -414,6 +425,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -454,6 +466,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -499,6 +512,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -549,6 +563,7 @@ namespace flame
 		}\
 		inline void init_data_types()\
 		{\
+			class$ = #name;\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -567,8 +582,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void init(void* target = nullptr);
 	FLAME_ELEMENT_END
 
-	FLAME_ELEMENT_BEGIN_2(wText, Element, Bvec4, text_col, b4, float, sdf_scale, f1)
-		FLAME_UNIVERSE_EXPORTS void init();
+	FLAME_ELEMENT_BEGIN_3(wText, Element, int, font_idx, i1, Bvec4, text_col, b4, float, sdf_scale, f1)
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx);
 		FLAME_UNIVERSE_EXPORTS void set_size_auto();
 	FLAME_ELEMENT_END
 

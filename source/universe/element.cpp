@@ -22,6 +22,7 @@
 
 #include <flame/foundation/serialize.h>
 #include <flame/graphics/font.h>
+#include <flame/graphics/canvas.h>
 #include <flame/universe/icon.h>
 #include <flame/universe/style.h>
 #include <flame/universe/animation.h>
@@ -657,9 +658,7 @@ namespace flame
 
 	void wLayout::init(LayoutType type, float item_padding)
 	{
-		class$ = "layout";
-		add_data_storages({ });
-		add_string_storages(STRING_SIZE);
+		init_data_types();
 
 		layout_type$ = type;
 		item_padding$ = item_padding;
@@ -668,73 +667,79 @@ namespace flame
 		size_policy_vert$ = SizeFitChildren;
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(CheckboxMouse, FLAME_GID(15432), Element::MouseListenerParm)
+	void checkbox_mouse_event$(Element::MouseListenerParm &p)
+	{
 		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
 			return;
 
-	((wCheckbox*)p.thiz())->checked() = !((wCheckbox*)p.thiz())->checked();
+		auto thiz = (wCheckbox*)p.get_capture<Element::ThizCapture>().thiz();
 
-	if (((wCheckbox*)p.thiz())->target())
-		* (bool*)((wCheckbox*)p.thiz())->target() = ((wCheckbox*)p.thiz())->checked();
+		thiz->checked() = !thiz->checked();
 
-	p.thiz()->on_changed();
-	FLAME_REGISTER_FUNCTION_END(CheckboxMouse)
+		if (thiz->target())
+			* (bool*)(thiz->target()) = thiz->checked();
 
-		FLAME_REGISTER_FUNCTION_BEG(CheckboxExtraDraw, FLAME_GID(8818), Element::ExtraDrawParm)
-		p.canvas()->add_rect(p.thiz()->pos$ * p.scl() + p.off(), p.thiz()->size$ * p.scl(), p.thiz()->background_col$, 2.f * p.scl());
-	if (((wCheckbox*)p.thiz())->checked())
-		p.canvas()->add_rect_filled((p.thiz()->pos$ + 3.f) * p.scl() + p.off(), (p.thiz()->size$ - 6.f) * p.scl(), p.thiz()->background_col$);
-	FLAME_REGISTER_FUNCTION_END(CheckboxExtraDraw)
+		thiz->on_changed();
+	}
 
-		void wCheckbox::init(void* _target)
+	void checkbox_extra_draw$(Element::ExtraDrawParm &p)
 	{
-		class$ = "checkbox";
-		add_data_storages({ 0, _target });
-		add_string_storages(STRING_SIZE);
+		auto thiz = (wCheckbox*)p.get_capture<Element::ThizCapture>().thiz();
 
-		size$ = Vec2(share_data.font_atlas->pixel_height);
+		p.canvas()->add_rect(thiz->pos$ * p.scl() + p.off(), thiz->size$ * p.scl(), thiz->background_col$, 2.f * p.scl());
+		if (thiz->checked())
+			p.canvas()->add_rect_filled((thiz->pos$ + 3.f) * p.scl() + p.off(), (thiz->size$ - 6.f) * p.scl(), thiz->background_col$);
+	}
+
+	void wCheckbox::init(void* _target)
+	{
+		size$ = Vec2(16.f);
 		background_col$ = Bvec4(255);
+
+		checked() = 0;
+		target() = _target;
 
 		if (target())
 			checked() = *(bool*)target();
 
 		draw_default$ = false;
-		add_extra_draw(CheckboxExtraDraw::v, {});
+		extra_draws$.push_back(Function<Element::ExtraDrawParm>(checkbox_extra_draw$, { this }));
 
-		add_listener(ListenerMouse, CheckboxMouse::v, this, {});
+		mouse_listeners$.push_back(Function<Element::MouseListenerParm>(checkbox_mouse_event$, { this }));
 
-		auto i = (InstancePrivate*)instance();
-		add_style_background_color(this, 0, i->default_frame_col, i->default_frame_col_hovering, i->default_frame_col_active);
+		add_style_background_color(this, 0, ui->default_frame_col, ui->default_frame_col_hovering, ui->default_frame_col_active);
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(TextExtraDraw, FLAME_GID(9510), Element::ExtraDrawParm)
-		if (p.thiz()->alpha$ > 0.f && ((wText*)p.thiz())->text_col().w > 0.f)
-		{
-			auto _pos = (p.thiz()->pos$ + Vec2(p.thiz()->inner_padding$[0], p.thiz()->inner_padding$[2])) * p.scl() + p.off();
-			if (((wText*)p.thiz())->sdf_scale() < 0.f)
-				p.canvas()->add_text_stroke(_pos, Bvec4(((wText*)p.thiz())->text_col(), p.thiz()->alpha$), ((wText*)p.thiz())->text().v);
-			else
-				p.canvas()->add_text_sdf(_pos, Bvec4(((wText*)p.thiz())->text_col(), p.thiz()->alpha$), ((wText*)p.thiz())->text().v, ((wText*)p.thiz())->sdf_scale() * p.scl());
-		}
-	FLAME_REGISTER_FUNCTION_END(TextExtraDraw)
-
-		void wText::init()
+	void text_extra_draw$(Element::ExtraDrawParm& p)
 	{
-		auto i = (InstancePrivate*)instance();
+		auto thiz = (wText*)p.get_capture<Element::ThizCapture>().thiz();
 
-		class$ = "text";
-		add_data_storages({ i->default_text_col, i->default_sdf_scale });
-		add_string_storages(STRING_SIZE);
+		if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
+		{
+			auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
+			if (thiz->sdf_scale() < 0.f)
+				p.canvas()->add_text(thiz->font_idx(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v);
+			else
+				p.canvas()->add_text(thiz->font_idx(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v, thiz->sdf_scale() * p.scl());
+		}
+	}
 
+	void wText::init(int _font_idx)
+	{
 		event_attitude$ = EventIgnore;
 
-		text() = L"";
+		text$ = L"";
+		font_idx() = _font_idx;
+		text_col() = ui->default_text_col;
+		sdf_scale() = ui->default_sdf_scale;
 
-		add_extra_draw(TextExtraDraw::v, {});
+		extra_draws$.push_back(Function<Element::ExtraDrawParm>(text_extra_draw$, { this }));
 	}
 
 	void wText::set_size_auto()
 	{
+		auto font = ;
+
 		auto v = Vec2(share_data.font_atlas->get_text_width(text().v), share_data.font_atlas->pixel_height);
 		if (sdf_scale() > 0.f)
 			v *= sdf_scale();
@@ -747,14 +752,9 @@ namespace flame
 	{
 		wText::init();
 
-		class$ = "button";
-		add_data_storages({ });
-		add_string_storages(STRING_SIZE);
-
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		event_attitude$ = EventAccept;
 
-		auto i = (InstancePrivate*)instance();
 		add_style_background_color(this, 0, i->default_button_col, i->default_button_col_hovering, i->default_button_col_active);
 
 		if (title)
@@ -775,9 +775,7 @@ namespace flame
 	{
 		wText::init();
 
-		class$ = "toggle";
 		add_data_storages({ 0 });
-		add_string_storages(STRING_SIZE);
 
 		background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
 		background_round_radius$ = share_data.font_atlas->pixel_height * 0.5f;
@@ -832,10 +830,6 @@ namespace flame
 	{
 		wText::init();
 
-		class$ = "menuitem";
-		add_data_storages({ });
-		add_string_storages(STRING_SIZE);
-
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		size_policy_hori$ = SizeFitLayout;
 		align$ = AlignLittleEnd;
@@ -846,7 +840,6 @@ namespace flame
 
 		add_listener(ListenerMouse, MenuItemMouse::v, this, {});
 
-		auto i = (InstancePrivate*)instance();
 		add_style_background_color(this, 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
 	}
 
@@ -881,9 +874,7 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "menu";
 		add_data_storages({ 0, 0, nullptr, nullptr, nullptr });
-		add_string_storages(STRING_SIZE);
 
 		align$ = AlignLittleEnd;
 		layout_type$ = LayoutVertical;
@@ -899,7 +890,6 @@ namespace flame
 
 		w_title()->add_listener(ListenerMouse, MenuTitleMouse::v, this, {});
 
-		auto i = (InstancePrivate*)instance();
 		add_style_background_color(w_title(), 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
 
 		w_rarrow() = nullptr;
@@ -1008,10 +998,6 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "menubar";
-		add_data_storages({ });
-		add_string_storages(STRING_SIZE);
-
 		layout_type$ = LayoutHorizontal;
 
 		add_listener(ListenerChild, MenuBarChild::v, this, {});
@@ -1085,9 +1071,7 @@ namespace flame
 	{
 		((wMenu*)this)->init(L"");
 
-		class$ = "combo";
 		add_data_storages({ -1, _enum_info, _target });
-		add_string_storages(STRING_SIZE);
 
 		background_frame_thickness$ = 1.f;
 
@@ -1303,12 +1287,9 @@ namespace flame
 	{
 		wText::init();
 
-		class$ = "edit";
 		add_data_storages({ 0, (int)_type, _target });
-		add_string_storages(STRING_SIZE);
 
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
-		auto i = (InstancePrivate*)instance();
 		background_col$ = i->default_frame_col;
 		event_attitude$ = EventAccept;
 		want_key_focus$ = true;
@@ -1368,9 +1349,7 @@ namespace flame
 
 		void wImage::init()
 	{
-		class$ = "image";
 		add_data_storages({ 0, Vec2(0.f), Vec2(1.f), 0, Vec4(0.f) });
-		add_string_storages(STRING_SIZE);
 
 		add_extra_draw(ImageExtraDraw::v, {});
 	}
@@ -1415,9 +1394,7 @@ namespace flame
 
 		void wSizeDrag::init(Element * target)
 	{
-		class$ = "sizedrag";
 		add_data_storages({ Vec2(0.f) });
-		add_string_storages(STRING_SIZE);
 
 		size$ = Vec2(10.f);
 		background_col$ = Bvec4(140, 225, 15, 255 * 0.5f);
@@ -1428,7 +1405,6 @@ namespace flame
 
 		add_listener(ListenerMouse, SizeDragMouse::v, this, { target });
 
-		auto i = (InstancePrivate*)instance();
 		add_style_background_color(this, 0, i->default_button_col, i->default_button_col_hovering, i->default_button_col_active);
 	}
 
@@ -1472,9 +1448,7 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "scrollbar";
 		add_data_storages({ nullptr, nullptr });
-		add_string_storages(STRING_SIZE);
 
 		size$ = Vec2(10.f);
 		size_policy_vert$ = SizeFitLayout;
@@ -1515,9 +1489,7 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "listitem";
 		add_data_storages({ nullptr });
-		add_string_storages(STRING_SIZE);
 
 		size_policy_hori$ = SizeFitLayout;
 		align$ = AlignLittleEnd;
@@ -1534,7 +1506,6 @@ namespace flame
 
 		w_title()->add_listener(ListenerMouse, ListItemTextMouse::v, this, {});
 
-		auto i = (InstancePrivate*)instance();
 		add_style_background_color(w_title(), 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
 	}
 
@@ -1589,12 +1560,9 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "list";
 		add_data_storages({ nullptr, nullptr });
-		add_string_storages(STRING_SIZE);
 
 		inner_padding$ = Vec4(4.f);
-		auto i = (InstancePrivate*)instance();
 		background_col$ = i->default_frame_col;
 		size_policy_hori$ = SizeFitLayout;
 		size_policy_vert$ = SizeFitLayout;
@@ -1657,9 +1625,7 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "treenode";
 		add_data_storages({ nullptr, nullptr, nullptr });
-		add_string_storages(STRING_SIZE);
 
 		layout_type$ = LayoutVertical;
 		align$ = AlignLittleEnd;
@@ -1692,7 +1658,6 @@ namespace flame
 		w_larrow()->set_size(Vec2(w_title()->inner_padding$[0], w_title()->size$.y));
 		w_larrow()->text() = Icon_CARET_RIGHT;
 
-		auto i = (InstancePrivate*)instance();
 		add_style_text_color(w_title(), 0, i->default_text_col, i->default_text_col_hovering_or_active);
 		add_style_text_color(w_larrow(), 0, i->default_text_col, i->default_text_col_hovering_or_active);
 
@@ -1705,9 +1670,7 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "tree";
 		add_data_storages({ nullptr });
-		add_string_storages(STRING_SIZE);
 
 		layout_type$ = LayoutVertical;
 	}
@@ -1726,9 +1689,7 @@ namespace flame
 	{
 		wLayout::init();
 
-		class$ = "dialog";
 		add_data_storages({ nullptr, nullptr });
-		add_string_storages(STRING_SIZE);
 
 		auto radius = 8.f;
 
@@ -1782,9 +1743,7 @@ namespace flame
 	{
 		((wDialog*)this)->init(false, true);
 
-		class$ = "message dialog";
 		add_data_storages({ nullptr, nullptr });
-		add_string_storages(STRING_SIZE);
 
 		want_key_focus$ = true;
 

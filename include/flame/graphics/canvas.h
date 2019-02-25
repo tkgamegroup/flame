@@ -43,7 +43,11 @@ namespace flame
 
 		struct Canvas
 		{
+			FLAME_GRAPHICS_EXPORTS Imageview* get_imageview(int index);
+			FLAME_GRAPHICS_EXPORTS void set_imageview(int index, Imageview* v);
+
 			FLAME_GRAPHICS_EXPORTS int add_font(Font* font);
+			FLAME_GRAPHICS_EXPORTS Font* get_font(int idx);
 
 			FLAME_GRAPHICS_EXPORTS void start_cmd(DrawCmdType type, int id);
 			FLAME_GRAPHICS_EXPORTS void path_line_to(const Vec2 &p);
