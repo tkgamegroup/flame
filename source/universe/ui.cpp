@@ -33,353 +33,840 @@
 #include <flame/graphics/swapchain.h>
 
 #include <stdarg.h>
-#include <list>
 #include <sstream>
 
 namespace flame
 {
-	namespace ui
+	void Element::arrange()
 	{
-		void ShareData::create(graphics::Device *_d, graphics::SampleCount _sample_count)
+		switch (layout_type$)
 		{
-			d = _d;
-
-			font_atlas = FontAtlas::create_from_file(L"UI/font.xml");
-			if (!font_atlas)
+		case LayoutVertical:
+		{
+			if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
 			{
-				wchar_t default_code_begin;
-				wchar_t default_code_end;
-				get_default_char_range(default_code_begin, default_code_end);
+				auto width = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
 
-				std::vector<FontDescription> descs;
-				descs.resize(2);
+					if (!c->visible$)
+						continue;
 
-				descs[0].filename = L"c:/windows/fonts/msyh.ttc";
-				descs[0].ranges.emplace_back(default_code_begin, default_code_end, true);
-				descs[0].ranges.emplace_back(0x4e00, 0x9FAF, false);
+					width = max(width, c->size$.x);
+				}
 
-				descs[1].filename = L"UI/font_awesome.ttf";
-				descs[1].ranges.emplace_back(IconMin, IconMax, true);
+				width += inner_padding$[0] + inner_padding$[1];
+				if (size_policy_hori$ == SizeFitChildren)
+					set_width(width, this);
+				else if (size_policy_hori$ == SizeGreedy)
+				{
+					if (width > size$.x)
+						set_width(width, this);
+				}
+			}
+			if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
+			{
+				auto height = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
 
-				font_atlas = FontAtlas::create(descs, 14, 2.f);
-				font_atlas->save(L"UI/font.xml");
+					if (!c->visible$)
+						continue;
+
+					height += c->size$.y + item_padding$;
+				}
+				height -= item_padding$;
+				content_size = height;
+
+				height += inner_padding$[2] + inner_padding$[3];
+				if (size_policy_vert$ == SizeFitChildren)
+					set_height(height, this);
+				else if (size_policy_vert$ == SizeGreedy)
+				{
+					if (height > size$.y)
+						set_height(height, this);
+				}
+			}
+			else if (size_policy_vert$ == SizeFitLayout)
+			{
+				auto cnt = 0;
+				auto height = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_vert$ == SizeFitLayout)
+						cnt++;
+					else
+						height += c->size$.y;
+					height += item_padding$;
+				}
+				height -= item_padding$;
+				content_size = height;
+
+				height = max(0, (size$.y - inner_padding$[2] - inner_padding$[3] - height) / cnt);
+
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_vert$ == SizeFitLayout)
+						c->set_height(height, this);
+				}
+			}
+
+			auto width = size$.x - inner_padding$[0] - inner_padding$[1];
+			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+
+			auto content_size = get_content_size();
+			scroll_offset$ = content_size > height ? clamp((float)scroll_offset$, height - content_size, 0.f) : 0.f;
+
+			auto y = inner_padding$[2] + scroll_offset$;
+
+			for (auto i_c = 0; i_c < children_1$.size; i_c++)
+			{
+				auto c = children_1$[i_c];
+
+				if (!c->visible$)
+					continue;
+
+				if (c->size_policy_hori$ == SizeFitLayout)
+					c->set_width(width, this);
+				else if (c->size_policy_hori$ == SizeGreedy)
+				{
+					if (width > c->size$.x)
+						c->set_width(width, this);
+				}
+
+				switch (c->align$)
+				{
+				case AlignLittleEnd:
+					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$, y);
+					break;
+				case AlignLargeEnd:
+					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$, y);
+					break;
+				case AlignMiddle:
+					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0], y);
+					break;
+				}
+
+				y += c->size$.y + item_padding$;
 			}
 		}
-
-		void ShareData::destroy()
+		break;
+		case LayoutHorizontal:
 		{
-			FontAtlas::destroy(font_atlas);
+			if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
+			{
+				auto width = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
 
-			graphics::Renderpass::release(renderpass);
-			graphics::Renderpass::release(renderpass_noclear);
+					if (!c->visible$)
+						continue;
 
-			graphics::Image::destroy(white_image);
-			graphics::Image::destroy(font_stroke_image);
-			if (font_sdf_image)
-				graphics::Image::destroy(font_sdf_image);
+					width += c->size$.x + item_padding$;
+				}
+				width -= item_padding$;
+				content_size = width;
 
-			graphics::Pipeline::destroy(pl_plain);
-			graphics::Descriptorset::destroy(ds_plain);
+				width += inner_padding$[0] + inner_padding$[1];
+				if (size_policy_hori$ == SizeFitChildren)
+					set_width(width, this);
+				else if (size_policy_hori$ == SizeGreedy)
+				{
+					if (width > size$.x)
+						set_width(width, this);
+				}
+			}
+			else if (size_policy_hori$ == SizeFitLayout)
+			{
+				auto cnt = 0;
+				auto width = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
 
-			graphics::Pipeline::destroy(pl_text_stroke);
-			graphics::Descriptorset::destroy(ds_text_stroke);
+					if (!c->visible$)
+						continue;
 
-			graphics::Pipeline::destroy(pl_text_sdf);
-			graphics::Descriptorset::destroy(ds_text_sdf);
+					if (c->size_policy_hori$ == SizeFitLayout)
+						cnt++;
+					else
+						width += c->size$.x;
+					width += item_padding$;
+				}
+				width -= item_padding$;
+				content_size = width;
+
+				width = max(0, (size$.x - inner_padding$[0] - inner_padding$[1] - width) / cnt);
+
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_hori$ == SizeFitLayout)
+						c->set_width(width, this);
+				}
+			}
+			if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
+			{
+				auto height = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					height = max(height, c->size$.y);
+				}
+
+				height += inner_padding$[2] + inner_padding$[3];
+				if (size_policy_vert$ == SizeFitChildren)
+					set_height(height, this);
+				else if (size_policy_vert$ == SizeGreedy)
+				{
+					if (height > size$.y)
+						set_height(height, this);
+				}
+			}
+
+			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+			auto x = inner_padding$[0];
+			for (auto i_c = 0; i_c < children_1$.size; i_c++)
+			{
+				auto c = children_1$[i_c];
+
+				if (!c->visible$)
+					continue;
+
+				if (c->size_policy_vert$ == SizeFitLayout)
+					c->set_height(height, this);
+				else if (c->size_policy_vert$ == SizeGreedy)
+				{
+					if (height > c->size$.y)
+						c->set_height(height, this);
+				}
+
+				switch (c->align$)
+				{
+				case AlignLittleEnd:
+					c->pos$ = Vec2(x, inner_padding$[2] + c->layout_padding$);
+					break;
+				case AlignLargeEnd:
+					c->pos$ = Vec2(x, size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+					break;
+				case AlignMiddle:
+					c->pos$ = Vec2(x, (size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+					break;
+				}
+
+				x += c->size$.x + item_padding$;
+			}
+		}
+		break;
+		case LayoutGrid:
+		{
+			auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
+
+			auto cnt = 0;
+			auto line_height = 0.f;
+			auto max_width = 0.f;
+			for (auto i_c = 0; i_c < children_1$.size; i_c++)
+			{
+				auto c = children_1$[i_c];
+
+				c->pos$ = pos;
+				line_height = max(line_height, c->size$.y);
+
+				pos.x += c->size$.x + item_padding$;
+				max_width = max(max_width, pos.x);
+				cnt++;
+				if (cnt >= grid_hori_count$)
+				{
+					pos.x = inner_padding$[0];
+					pos.y += line_height + item_padding$;
+					cnt = 0;
+					line_height = 0.f;
+				}
+			}
+
+			if (size_policy_hori$ == SizeFitChildren)
+				set_width(max(max_width - item_padding$, 0.f), this);
+			if (size_policy_vert$ == SizeFitChildren)
+				set_height(max(pos.y - item_padding$, 0.f), this);
+		}
+		break;
 		}
 
-		ShareData share_data;
+		for (auto i_c = 0; i_c < children_2$.size; i_c++)
+		{
+			auto c = children_2$[i_c];
 
-		FLAME_REGISTER_FUNCTION_BEG(InstanceKey, FLAME_GID(28755), Window::KeyListenerParm)
-			((InstancePrivate*)p.thiz())->on_key(p.action(), p.value());
-		FLAME_REGISTER_FUNCTION_END(InstanceKey)
+			switch (c->align$)
+			{
+			case AlignLeft:
+				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+				break;
+			case AlignRight:
+				if (c->size_policy_vert$ == SizeFitLayout)
+					c->size$.y = size$.y - inner_padding$[2] - inner_padding$[3];
+				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+				break;
+			case AlignTop:
+				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
+					inner_padding$[2] + c->layout_padding$);
+				break;
+			case AlignBottom:
+				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
+					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+				break;
+			case AlignLeftTop:
+				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+					inner_padding$[2] + c->layout_padding$);
+				break;
+			case AlignLeftBottom:
+				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+				break;
+			case AlignRightTop:
+				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+					inner_padding$[2] + c->layout_padding$);
+				break;
+			case AlignRightBottom:
+				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+				break;
+			case AlignLeftNoPadding:
+				c->pos$ = Vec2(c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
+				break;
+			case AlignRightNoPadding:
+				c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
+				break;
+			case AlignTopNoPadding:
+				c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, c->layout_padding$);
+				break;
+			case AlignBottomNoPadding:
+				c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, size$.y - c->size$.y - c->layout_padding$);
+				break;
+			case AlignLeftTopNoPadding:
+				c->pos$ = Vec2(c->layout_padding$, c->layout_padding$);
+				break;
+			case AlignLeftBottomNoPadding:
+				c->pos$ = Vec2(c->layout_padding$, size$.y - c->size$.y - c->layout_padding$);
+				break;
+			case AlignRightTopNoPadding:
+				c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, c->layout_padding$);
+				break;
+			case AlignRightBottomNoPadding:
+				c->pos$ = size$ - c->size$ - Vec2(c->layout_padding$);
+				break;
+			case AlignCenter:
+				c->pos$ = (size$ - c->size$) * 0.5f;
+				break;
+			case AlignLeftOutside:
+				c->pos$ = Vec2(-c->size$.x, 0.f);
+				break;
+			case AlignRightOutside:
+				c->pos$ = Vec2(size$.x, 0.f);
+				break;
+			case AlignTopOutside:
+				c->pos$ = Vec2(0.f, -c->size$.y);
+				break;
+			case AlignBottomOutside:
+				c->pos$ = Vec2(0.f, size$.y);
+				break;
+			}
+		}
+	}
+
+	void ShareData::create(graphics::Device* _d, graphics::SampleCount _sample_count)
+	{
+		d = _d;
+
+		font_atlas = FontAtlas::create_from_file(L"UI/font.xml");
+		if (!font_atlas)
+		{
+			wchar_t default_code_begin;
+			wchar_t default_code_end;
+			get_default_char_range(default_code_begin, default_code_end);
+
+			std::vector<FontDescription> descs;
+			descs.resize(2);
+
+			descs[0].filename = L"c:/windows/fonts/msyh.ttc";
+			descs[0].ranges.emplace_back(default_code_begin, default_code_end, true);
+			descs[0].ranges.emplace_back(0x4e00, 0x9FAF, false);
+
+			descs[1].filename = L"UI/font_awesome.ttf";
+			descs[1].ranges.emplace_back(IconMin, IconMax, true);
+
+			font_atlas = FontAtlas::create(descs, 14, 2.f);
+			font_atlas->save(L"UI/font.xml");
+		}
+	}
+
+	void ShareData::destroy()
+	{
+		FontAtlas::destroy(font_atlas);
+
+		graphics::Renderpass::release(renderpass);
+		graphics::Renderpass::release(renderpass_noclear);
+
+		graphics::Image::destroy(white_image);
+		graphics::Image::destroy(font_stroke_image);
+		if (font_sdf_image)
+			graphics::Image::destroy(font_sdf_image);
+
+		graphics::Pipeline::destroy(pl_plain);
+		graphics::Descriptorset::destroy(ds_plain);
+
+		graphics::Pipeline::destroy(pl_text_stroke);
+		graphics::Descriptorset::destroy(ds_text_stroke);
+
+		graphics::Pipeline::destroy(pl_text_sdf);
+		graphics::Descriptorset::destroy(ds_text_sdf);
+	}
+
+	ShareData share_data;
+
+	FLAME_REGISTER_FUNCTION_BEG(InstanceKey, FLAME_GID(28755), Window::KeyListenerParm)
+		((InstancePrivate*)p.thiz())->on_key(p.action(), p.value());
+	FLAME_REGISTER_FUNCTION_END(InstanceKey)
 
 		FLAME_REGISTER_FUNCTION_BEG(InstanceMouse, FLAME_GID(19621), Window::MouseListenerParm)
-			((InstancePrivate*)p.thiz())->on_mouse(p.action(), p.key(), p.pos());
-		FLAME_REGISTER_FUNCTION_END(InstanceMouse)
+		((InstancePrivate*)p.thiz())->on_mouse(p.action(), p.key(), p.pos());
+	FLAME_REGISTER_FUNCTION_END(InstanceMouse)
 
 		FLAME_REGISTER_FUNCTION_BEG(InstanceResize, FLAME_GID(16038), Window::ResizeListenerParm)
-			((InstancePrivate*)p.thiz())->on_resize(p.size());
-		FLAME_REGISTER_FUNCTION_END(InstanceResize)
+		((InstancePrivate*)p.thiz())->on_resize(p.size());
+	FLAME_REGISTER_FUNCTION_END(InstanceResize)
 
 		FLAME_WIDGET_BEGIN(wDebug, wDialog)
-			FLAME_UI_EXPORTS void init();
-			FLAME_WIDGET_SEPARATOR
+		FLAME_UI_EXPORTS void init();
+	FLAME_WIDGET_SEPARATOR
 		FLAME_WIDGET_END
 
 		void wDebug::init()
-		{
-			class$ = "debug";
+	{
+		class$ = "debug";
 
-			align$ = AlignRightTop;
-			visible$ = false;
+		align$ = AlignRightTop;
+		visible$ = false;
+	}
+
+	InstancePrivate::InstancePrivate(Window * w)
+	{
+		set_default_style(DefaultStyleDark);
+
+		root_ = std::unique_ptr<WidgetPrivate>((WidgetPrivate*)Widget::create(this));
+		root_->name$ = "root";
+		root_->size_policy_hori$ = SizeFitLayout;
+		root_->size_policy_vert$ = SizeFitLayout;
+		root_->event_attitude$ = EventAccept;
+		root_->want_key_focus$ = true;
+
+		hovering_widget_ = nullptr;
+		focus_widget_ = nullptr;
+		key_focus_widget_ = root_.get();
+		dragging_widget_ = nullptr;
+		popup_widget_ = nullptr;
+		popup_widget_modual_ = false;
+		potential_doubleclick_widget_ = nullptr;
+		doubleclick_timer_ = 0.f;
+		char_input_compelete_ = true;
+
+		for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
+			key_states[i] = KeyStateUp;
+
+		mouse_pos = Ivec2(0);
+		mouse_prev_pos_ = Ivec2(0);
+		mouse_disp = Ivec2(0);
+		mouse_scroll = 0;
+
+		for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
+			mouse_buttons[i] = KeyStateUp;
+
+		elp_time_ = 0.f;
+		total_time_ = 0.f;
+
+		if (w)
+		{
+			root_->size$ = w->size;
+
+			w->add_listener(Window::ListenerKey, InstanceKey::v, this, {});
+			w->add_listener(Window::ListenerMouse, InstanceMouse::v, this, {});
+			w->add_listener(Window::ListenerResize, InstanceResize::v, this, {});
 		}
 
-		InstancePrivate::InstancePrivate(Window *w)
+		auto w_debug = Widget::createT<wDebug>(this);
+		root_->add_child((WidgetPrivate*)w_debug, 1);
+	}
+
+	inline void InstancePrivate::set_default_style(DefaultStyle s)
+	{
+		switch (s)
 		{
-			set_default_style(DefaultStyleDark);
-
-			root_ = std::unique_ptr<WidgetPrivate>((WidgetPrivate*)Widget::create(this));
-			root_->name$ = "root";
-			root_->size_policy_hori$ = SizeFitLayout;
-			root_->size_policy_vert$ = SizeFitLayout;
-			root_->event_attitude$ = EventAccept;
-			root_->want_key_focus$ = true;
-
-			hovering_widget_ = nullptr;
-			focus_widget_ = nullptr;
-			key_focus_widget_ = root_.get();
-			dragging_widget_ = nullptr;
-			popup_widget_ = nullptr;
-			popup_widget_modual_ = false;
-			potential_doubleclick_widget_ = nullptr;
-			doubleclick_timer_ = 0.f;
-			char_input_compelete_ = true;
-
-			for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
-				key_states[i] = KeyStateUp;
-
-			mouse_pos = Ivec2(0);
-			mouse_prev_pos_ = Ivec2(0);
-			mouse_disp = Ivec2(0);
-			mouse_scroll = 0;
-
-			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
-				mouse_buttons[i] = KeyStateUp;
-
-			elp_time_ = 0.f;
-			total_time_ = 0.f;
-
-			if (w)
-			{
-				root_->size$ = w->size;
-
-				w->add_listener(Window::ListenerKey, InstanceKey::v, this, {});
-				w->add_listener(Window::ListenerMouse, InstanceMouse::v, this, {});
-				w->add_listener(Window::ListenerResize, InstanceResize::v, this, {});
-			}
-
-			auto w_debug = Widget::createT<wDebug>(this);
-			root_->add_child((WidgetPrivate*)w_debug, 1);
+		case DefaultStyleDark:
+			default_text_col = Bvec4(255, 255, 255, 255);
+			default_text_col_hovering_or_active = Bvec4(180, 180, 180, 255);
+			default_window_col = Colorf(0.06f, 0.06f, 0.06f, 0.94f);
+			default_frame_col = HSV(55.f, 0.67f, 0.47f, 0.54f);
+			default_frame_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.40f);
+			default_frame_col_active = HSV(52.f, 0.73f, 0.97f, 0.67f);
+			default_button_col = HSV(52.f, 0.73f, 0.97f, 0.40f);
+			default_button_col_hovering = HSV(52.f, 0.73f, 0.97f, 1.00f);
+			default_button_col_active = HSV(49.f, 0.93f, 0.97f, 1.00f);
+			default_header_col = HSV(52.f, 0.73f, 0.97f, 0.31f);
+			default_header_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.80f);
+			default_header_col_active = HSV(52.f, 0.73f, 0.97f, 1.00f);
+			break;
+		case DefaultStyleLight:
+			default_text_col = Bvec4(0, 0, 0, 255);
+			default_text_col_hovering_or_active = Bvec4(255, 255, 255, 255);
+			default_window_col = Colorf(0.94f, 0.94f, 0.94f, 1.00f);
+			default_frame_col = Colorf(1.00f, 1.00f, 1.00f, 1.00f);
+			default_frame_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.40f);
+			default_frame_col_active = HSV(52.f, 0.73f, 0.97f, 0.67f);
+			default_button_col = HSV(52.f, 0.73f, 0.97f, 0.40f);
+			default_button_col_hovering = HSV(52.f, 0.73f, 0.97f, 1.00f);
+			default_button_col_active = HSV(45.f, 0.73f, 0.97f, 1.00f);
+			default_header_col = HSV(52.f, 0.73f, 0.97f, 0.31f);
+			default_header_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.80f);
+			default_header_col_active = HSV(52.f, 0.73f, 0.97f, 1.00f);
+			break;
 		}
+		default_sdf_scale = -1.f;
+	}
 
-		inline void InstancePrivate::set_default_style(DefaultStyle s)
+	inline void InstancePrivate::on_key(KeyState action, int value)
+	{
+		if (action == KeyStateNull)
 		{
-			switch (s)
+			if (!char_input_compelete_ && !char_inputs_.empty())
 			{
-			case DefaultStyleDark:
-				default_text_col                    = Bvec4(255, 255, 255, 255);
-				default_text_col_hovering_or_active = Bvec4(180, 180, 180, 255);
-				default_window_col                  = Colorf(0.06f, 0.06f, 0.06f, 0.94f);
-				default_frame_col                   = HSV(55.f, 0.67f, 0.47f, 0.54f);
-				default_frame_col_hovering          = HSV(52.f, 0.73f, 0.97f, 0.40f);
-				default_frame_col_active            = HSV(52.f, 0.73f, 0.97f, 0.67f);
-				default_button_col                  = HSV(52.f, 0.73f, 0.97f, 0.40f);
-				default_button_col_hovering         = HSV(52.f, 0.73f, 0.97f, 1.00f);
-				default_button_col_active           = HSV(49.f, 0.93f, 0.97f, 1.00f);
-				default_header_col                  = HSV(52.f, 0.73f, 0.97f, 0.31f);
-				default_header_col_hovering         = HSV(52.f, 0.73f, 0.97f, 0.80f);
-				default_header_col_active           = HSV(52.f, 0.73f, 0.97f, 1.00f);
-				break;
-			case DefaultStyleLight:
-				default_text_col                    = Bvec4(0, 0, 0, 255);
-				default_text_col_hovering_or_active = Bvec4(255, 255, 255, 255);
-				default_window_col                  = Colorf(0.94f, 0.94f, 0.94f, 1.00f);
-				default_frame_col                   = Colorf(1.00f, 1.00f, 1.00f, 1.00f);
-				default_frame_col_hovering          = HSV(52.f, 0.73f, 0.97f, 0.40f);
-				default_frame_col_active            = HSV(52.f, 0.73f, 0.97f, 0.67f);
-				default_button_col                  = HSV(52.f, 0.73f, 0.97f, 0.40f);
-				default_button_col_hovering         = HSV(52.f, 0.73f, 0.97f, 1.00f);
-				default_button_col_active           = HSV(45.f, 0.73f, 0.97f, 1.00f);
-				default_header_col                  = HSV(52.f, 0.73f, 0.97f, 0.31f);
-				default_header_col_hovering         = HSV(52.f, 0.73f, 0.97f, 0.80f);
-				default_header_col_active           = HSV(52.f, 0.73f, 0.97f, 1.00f);
-				break;
-			}
-			default_sdf_scale = -1.f;
-		}
-
-		inline void InstancePrivate::on_key(KeyState action, int value)
-		{
-			if (action == KeyStateNull)
-			{
-				if (!char_input_compelete_ && !char_inputs_.empty())
-				{
-					std::string ansi;
-					ansi += char_inputs_.back();
-					ansi += value;
-					auto wstr = a2w(ansi);
-					char_inputs_.back() = wstr[0];
-					char_input_compelete_ = true;
-				}
-				else
-				{
-					char_inputs_.push_back(value);
-					if (value >= 0x80)
-						char_input_compelete_ = false;
-				}
+				std::string ansi;
+				ansi += char_inputs_.back();
+				ansi += value;
+				auto wstr = a2w(ansi);
+				char_inputs_.back() = wstr[0];
+				char_input_compelete_ = true;
 			}
 			else
 			{
-				key_states[value] = action | KeyStateJust;
-				if (action == KeyStateDown)
-					keydown_inputs_.push_back(value);
-				else if (action == KeyStateUp)
-					keyup_inputs_.push_back(value);
+				char_inputs_.push_back(value);
+				if (value >= 0x80)
+					char_input_compelete_ = false;
 			}
 		}
-
-		inline void InstancePrivate::on_mouse(KeyState action, MouseKey key, const Ivec2 &pos)
+		else
 		{
-			if (action == KeyStateNull)
-			{
-				if (key == Mouse_Middle)
-					mouse_scroll = pos.x;
-				else if (key == Mouse_Null)
-					mouse_pos = pos;
-			}
-			else
-			{
-				mouse_buttons[key] = action | KeyStateJust;
+			key_states[value] = action | KeyStateJust;
+			if (action == KeyStateDown)
+				keydown_inputs_.push_back(value);
+			else if (action == KeyStateUp)
+				keyup_inputs_.push_back(value);
+		}
+	}
+
+	inline void InstancePrivate::on_mouse(KeyState action, MouseKey key, const Ivec2 & pos)
+	{
+		if (action == KeyStateNull)
+		{
+			if (key == Mouse_Middle)
+				mouse_scroll = pos.x;
+			else if (key == Mouse_Null)
 				mouse_pos = pos;
-			}
 		}
-
-		inline void InstancePrivate::on_resize(const Ivec2 &size)
+		else
 		{
-			root_->set_size(Vec2(size));
+			mouse_buttons[key] = action | KeyStateJust;
+			mouse_pos = pos;
 		}
+	}
 
-		inline void InstancePrivate::set_hovering_widget(WidgetPrivate *w)
-		{
-			if (w == hovering_widget_)
-				return;
-			if (hovering_widget_)
-				hovering_widget_->on_mouse(KeyStateUp, Mouse_Null, Vec2(0.f));
-			hovering_widget_ = w;
-			if (hovering_widget_)
-				hovering_widget_->on_mouse(KeyStateDown, Mouse_Null, Vec2(0.f));
-		}
+	inline void InstancePrivate::on_resize(const Ivec2 & size)
+	{
+		root_->set_size(Vec2(size));
+	}
 
-		void InstancePrivate::set_key_focus_widget(WidgetPrivate *w)
-		{
-			if (w == nullptr)
-				w = root_.get();
-			if (w->want_key_focus$)
-			{
-				auto old = key_focus_widget_;
-				key_focus_widget_ = w;
-				if (old)
-					old->on_focus(Focus_Lost, 1);
-				if (key_focus_widget_)
-					key_focus_widget_->on_focus(Focus_Gain, 1);
-				return;
-			}
-			set_key_focus_widget(w->parent);
-		}
+	inline void InstancePrivate::set_hovering_widget(WidgetPrivate * w)
+	{
+		if (w == hovering_widget_)
+			return;
+		if (hovering_widget_)
+			hovering_widget_->on_mouse(KeyStateUp, Mouse_Null, Vec2(0.f));
+		hovering_widget_ = w;
+		if (hovering_widget_)
+			hovering_widget_->on_mouse(KeyStateDown, Mouse_Null, Vec2(0.f));
+	}
 
-		inline void InstancePrivate::set_focus_widget(WidgetPrivate *w)
+	void InstancePrivate::set_key_focus_widget(WidgetPrivate * w)
+	{
+		if (w == nullptr)
+			w = root_.get();
+		if (w->want_key_focus$)
 		{
-			auto old = focus_widget_;
-			focus_widget_ = w;
+			auto old = key_focus_widget_;
+			key_focus_widget_ = w;
 			if (old)
-				old->on_focus(Focus_Lost, 0);
-			if (focus_widget_)
-				focus_widget_->on_focus(Focus_Gain, 0);
-			set_key_focus_widget(w);
+				old->on_focus(Focus_Lost, 1);
+			if (key_focus_widget_)
+				key_focus_widget_->on_focus(Focus_Gain, 1);
+			return;
 		}
+		set_key_focus_widget(w->parent);
+	}
 
-		inline void InstancePrivate::set_dragging_widget(WidgetPrivate *w)
-		{
-			dragging_widget_ = w;
-		}
+	inline void InstancePrivate::set_focus_widget(WidgetPrivate * w)
+	{
+		auto old = focus_widget_;
+		focus_widget_ = w;
+		if (old)
+			old->on_focus(Focus_Lost, 0);
+		if (focus_widget_)
+			focus_widget_->on_focus(Focus_Gain, 0);
+		set_key_focus_widget(w);
+	}
 
-		inline void InstancePrivate::set_popup_widget(WidgetPrivate *w, bool modual)
-		{
-			popup_widget_ = w;
-			popup_widget_modual_ = modual;
-		}
+	inline void InstancePrivate::set_dragging_widget(WidgetPrivate * w)
+	{
+		dragging_widget_ = w;
+	}
 
-		inline void InstancePrivate::close_popup()
+	inline void InstancePrivate::set_popup_widget(WidgetPrivate * w, bool modual)
+	{
+		popup_widget_ = w;
+		popup_widget_modual_ = modual;
+	}
+
+	inline void InstancePrivate::close_popup()
+	{
+		if (popup_widget_ && !popup_widget_modual_)
 		{
-			if (popup_widget_ && !popup_widget_modual_)
+			switch (popup_widget_->class$.hash)
 			{
-				switch (popup_widget_->class$.hash)
+			case cH("menubar"):
+				for (auto i_c = 0; i_c < popup_widget_->children_1$.size; i_c++)
 				{
-				case cH("menubar"):
-					for (auto i_c = 0; i_c < popup_widget_->children_1$.size; i_c++)
-					{
-						auto c = popup_widget_->children_1$[i_c];
+					auto c = popup_widget_->children_1$[i_c];
 
-						if (c->class$.hash == cH("menu"))
-							((wMenu*)c)->close();
-					}
-					break;
-				case cH("menu items"):
-					((wMenu*)popup_widget_->parent)->close();
-					break;
-				case cH("combo"):
-					((wMenu*)popup_widget_)->close();
-					break;
+					if (c->class$.hash == cH("menu"))
+						((wMenu*)c)->close();
 				}
-				popup_widget_ = nullptr;
+				break;
+			case cH("menu items"):
+				((wMenu*)popup_widget_->parent)->close();
+				break;
+			case cH("combo"):
+				((wMenu*)popup_widget_)->close();
+				break;
+			}
+			popup_widget_ = nullptr;
+		}
+	}
+
+	inline void InstancePrivate::begin(float elp_time)
+	{
+		processed_mouse_input = false;
+		processed_keyboard_input = false;
+
+		elp_time_ = elp_time;
+		total_time_ += elp_time;
+	}
+
+	struct _Package
+	{
+		Vec2 mpos;
+		bool mljustdown;
+		bool mljustup;
+		bool mrjustdown;
+		int mscroll;
+		Ivec2 mdisp;
+		Widget* temp_dragging_widget;
+		Rect curr_scissor;
+		Vec2 surface_size;
+		bool hovering_any_widget;
+		bool clicking_nothing;
+		Vec2 popup_off;
+		float popup_scl;
+		bool meet_popup_first;
+		bool ban_event;
+		Canvas* canvas;
+		Vec2 show_off;
+	};
+
+	void InstancePrivate::preprocessing_children(void* __p, WidgetPrivate * w, const Array<Widget*> & children, const Vec2 & off, float scl)
+	{
+		auto& p = *(_Package*)__p;
+
+		if (children.size == 0)
+			return;
+
+		if (w->clip$)
+			p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
+
+		auto _off = w->pos$ * scl + off;
+		auto _scl = w->scale$ * scl;
+
+		for (auto i_c = children.size - 1; i_c >= 0; i_c--)
+			preprocessing(&p, (WidgetPrivate*)children[i_c], w->showed, _off, _scl);
+
+		if (w->clip$)
+			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+	}
+
+	void InstancePrivate::preprocessing(void* __p, WidgetPrivate * w, bool visible, const Vec2 & off, float scl)
+	{
+		auto& p = *(_Package*)__p;
+
+		if (w == popup_widget_ && p.meet_popup_first)
+		{
+			p.popup_off = off;
+			p.popup_scl = scl;
+			p.meet_popup_first = false;
+			return;
+		}
+
+		w->global_pos = w->pos$ * scl + off;
+		w->global_scale = w->scale$ * scl;
+		w->showed = w->visible$ && visible;
+
+		preprocessing_children(__p, w, w->children_2$, off, scl);
+		preprocessing_children(__p, w, w->children_1$, off, scl);
+
+		if (!p.ban_event && visible && w->event_attitude$ != EventIgnore)
+		{
+			auto mhover = p.curr_scissor.contains(p.mpos) &&
+				(Rect(w->pos$ * scl, (w->pos$ + w->size$) * scl * w->scale$) + off).contains(p.mpos);
+			if (w->event_attitude$ == EventBlackHole || mhover)
+			{
+				if (!p.hovering_any_widget)
+				{
+					set_hovering_widget(w);
+					p.hovering_any_widget = true;
+				}
+				if (p.mdisp.x != 0 || p.mdisp.y != 0)
+				{
+					w->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
+					p.mdisp = Ivec2(0);
+				}
+				if (p.mljustdown)
+				{
+					p.clicking_nothing = false;
+					set_focus_widget(w);
+					if (mhover)
+						dragging_widget_ = w;
+					w->on_mouse(KeyStateDown, Mouse_Left, p.mpos);
+					p.mljustdown = false;
+				}
+				if (p.mrjustdown)
+				{
+					w->on_mouse(KeyStateDown, Mouse_Right, p.mpos);
+					p.mrjustdown = false;
+				}
+				if (p.mljustup)
+				{
+					if (focus_widget_ == w)
+					{
+						w->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
+						if (potential_doubleclick_widget_ == w)
+						{
+							w->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2(0.f));
+							potential_doubleclick_widget_ = nullptr;
+							doubleclick_timer_ = 0.f;
+						}
+						else
+							potential_doubleclick_widget_ = w;
+					}
+					if (p.temp_dragging_widget&& w != p.temp_dragging_widget)
+						w->on_drop(p.temp_dragging_widget);
+					p.mljustup = false;
+				}
+				if (p.mscroll)
+				{
+					w->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.mscroll, 0.f));
+					p.mscroll = 0;
+				}
+			}
+		}
+	}
+
+	void InstancePrivate::show_children(void* __p, WidgetPrivate * w, const Array<Widget*> & children, bool visible, const Vec2 & off, float scl)
+	{
+		auto& p = *(_Package*)__p;
+
+		if (children.size == 0)
+			return;
+
+		if (w->clip$)
+		{
+			p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
+			p.canvas->set_scissor(p.curr_scissor);
+		}
+
+		auto _off = w->pos$ * scl + off;
+		auto _scl = w->scale$ * scl;
+
+		for (auto i_c = 0; i_c < children.size; i_c++)
+		{
+			auto c = (WidgetPrivate*)children[i_c];
+			show(&p, c, c->visible$ && visible, _off, _scl);
+		}
+
+		if (w->clip$)
+		{
+			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+			p.canvas->set_scissor(p.curr_scissor);
+		}
+	}
+
+	void InstancePrivate::show(void* __p, WidgetPrivate * w, bool visible, const Vec2 & off, float scl)
+	{
+		auto& p = *(_Package*)__p;
+
+		w->style_level = -1;
+		for (auto i_s = 0; i_s < w->styles$.size; i_s++)
+			w->styles$[i_s]->exec();
+
+		for (auto i_a = 0; i_a < w->animations$.size; )
+		{
+			auto f = w->animations$[i_a];
+			auto& p = (Widget::AnimationParm&)f->p;
+
+			p.time() += elp_time_;
+			if (p.time() >= p.duration())
+			{
+				p.time() = -1.f;
+				f->exec();
+				Function::destroy(f);
+				w->animations$.remove(i_a);
+			}
+			else
+			{
+				f->exec();
+				i_a++;
 			}
 		}
 
-		inline void InstancePrivate::begin(float elp_time) 
+		if (visible && ((w->size$.x == 0.f && w->size$.y == 0.f) || (Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos).overlapping(p.curr_scissor)))
 		{
-			processed_mouse_input = false;
-			processed_keyboard_input = false;
-
-			elp_time_ = elp_time;
-			total_time_ += elp_time;
-		}
-
-		struct _Package
-		{
-			Vec2 mpos;
-			bool mljustdown;
-			bool mljustup;
-			bool mrjustdown;
-			int mscroll;
-			Ivec2 mdisp;
-			Widget *temp_dragging_widget;
-			Rect curr_scissor;
-			Vec2 surface_size;
-			bool hovering_any_widget;
-			bool clicking_nothing;
-			Vec2 popup_off;
-			float popup_scl;
-			bool meet_popup_first;
-			bool ban_event;
-			Canvas *canvas;
-			Vec2 show_off;
-		};
-
-		void InstancePrivate::preprocessing_children(void *__p, WidgetPrivate *w, const Array<Widget*> &children, const Vec2 &off, float scl)
-		{
-			auto &p = *(_Package*)__p;
-
-			if (children.size == 0)
-				return;
-
-			if (w->clip$)
-				p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
-
-			auto _off = w->pos$ * scl + off;
-			auto _scl = w->scale$ * scl;
-
-			for (auto i_c = children.size - 1; i_c >= 0; i_c--)
-				preprocessing(&p, (WidgetPrivate*)children[i_c], w->showed, _off, _scl);
-
-			if (w->clip$)
-				p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-		}
-
-		void InstancePrivate::preprocessing(void *__p, WidgetPrivate *w, bool visible, const Vec2 &off, float scl)
-		{
-			auto &p = *(_Package*)__p;
-
 			if (w == popup_widget_ && p.meet_popup_first)
 			{
 				p.popup_off = off;
@@ -387,485 +874,353 @@ namespace flame
 				p.meet_popup_first = false;
 				return;
 			}
-
-			w->global_pos = w->pos$ * scl + off;
-			w->global_scale = w->scale$ * scl;
-			w->showed = w->visible$ && visible;
-
-			preprocessing_children(__p, w, w->children_2$, off, scl);
-			preprocessing_children(__p, w, w->children_1$, off, scl);
-
-			if (!p.ban_event && visible && w->event_attitude$ != EventIgnore)
-			{
-				auto mhover = p.curr_scissor.contains(p.mpos) &&
-					(Rect(w->pos$ * scl, (w->pos$ + w->size$) * scl * w->scale$) + off).contains(p.mpos);
-				if (w->event_attitude$ == EventBlackHole || mhover)
-				{
-					if (!p.hovering_any_widget)
-					{
-						set_hovering_widget(w);
-						p.hovering_any_widget = true;
-					}
-					if (p.mdisp.x != 0 || p.mdisp.y != 0)
-					{
-						w->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
-						p.mdisp = Ivec2(0);
-					}
-					if (p.mljustdown)
-					{
-						p.clicking_nothing = false;
-						set_focus_widget(w);
-						if (mhover)
-							dragging_widget_ = w;
-						w->on_mouse(KeyStateDown, Mouse_Left, p.mpos);
-						p.mljustdown = false;
-					}
-					if (p.mrjustdown)
-					{
-						w->on_mouse(KeyStateDown, Mouse_Right, p.mpos);
-						p.mrjustdown = false;
-					}
-					if (p.mljustup)
-					{
-						if (focus_widget_ == w)
-						{
-							w->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
-							if (potential_doubleclick_widget_ == w)
-							{
-								w->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2(0.f));
-								potential_doubleclick_widget_ = nullptr;
-								doubleclick_timer_ = 0.f;
-							}
-							else
-								potential_doubleclick_widget_ = w;
-						}
-						if (p.temp_dragging_widget && w != p.temp_dragging_widget)
-							w->on_drop(p.temp_dragging_widget);
-						p.mljustup = false;
-					}
-					if (p.mscroll)
-					{
-						w->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.mscroll, 0.f));
-						p.mscroll = 0;
-					}
-				}
-			}
-		}
-
-		void InstancePrivate::show_children(void *__p, WidgetPrivate *w, const Array<Widget*> &children, bool visible, const Vec2 &off, float scl)
-		{
-			auto &p = *(_Package*)__p;
-
-			if (children.size == 0)
-				return;
-
-			if (w->clip$)
-			{
-				p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
-				p.canvas->set_scissor(p.curr_scissor);
-			}
-
-			auto _off = w->pos$ * scl + off;
-			auto _scl = w->scale$ * scl;
-
-			for (auto i_c = 0; i_c < children.size; i_c++)
-			{
-				auto c = (WidgetPrivate*)children[i_c];
-				show(&p, c, c->visible$ && visible, _off, _scl);
-			}
-
-			if (w->clip$)
-			{
-				p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-				p.canvas->set_scissor(p.curr_scissor);
-			}
-		}
-
-		void InstancePrivate::show(void *__p, WidgetPrivate *w, bool visible, const Vec2 &off, float scl)
-		{
-			auto &p = *(_Package*)__p;
-
-			w->style_level = -1;
-			for (auto i_s = 0; i_s < w->styles$.size; i_s++)
-				w->styles$[i_s]->exec();
-
-			for (auto i_a = 0; i_a < w->animations$.size; )
-			{
-				auto f = w->animations$[i_a];
-				auto &p = (Widget::AnimationParm&)f->p;
-
-				p.time() += elp_time_;
-				if (p.time() >= p.duration())
-				{
-					p.time() = -1.f;
-					f->exec();
-					Function::destroy(f);
-					w->animations$.remove(i_a);
-				}
-				else
-				{
-					f->exec();
-					i_a++;
-				}
-			}
-
-			if (visible && ((w->size$.x == 0.f && w->size$.y == 0.f) || (Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos).overlapping(p.curr_scissor)))
-			{
-				if (w == popup_widget_ && p.meet_popup_first)
-				{
-					p.popup_off = off;
-					p.popup_scl = scl;
-					p.meet_popup_first = false;
-					return;
-				}
-				else
-					w->on_draw(p.canvas, off + p.show_off, scl);
-			}
-
-			show_children(__p, w, w->children_1$, visible, off, scl);
-			show_children(__p, w, w->children_2$, visible, off, scl);
-		}
-
-		void InstancePrivate::postprocessing_children(const Array<Widget*> &children)
-		{
-			if (children.size == 0)
-				return;
-
-			for (auto i_c = children.size - 1; i_c >= 0; i_c--)
-			{
-				auto c = (WidgetPrivate*)children[i_c];
-				if (c->visible$)
-					postprocessing(c);
-			}
-		}
-
-		void InstancePrivate::postprocessing(WidgetPrivate *w)
-		{
-			postprocessing_children(w->children_2$);
-			postprocessing_children(w->children_1$);
-
-			w->state = StateNormal;
-			if (dragging_widget_)
-			{
-				if (dragging_widget_ == w && hovering_widget_ == w)
-					w->state = StateActive;
-			}
 			else
+				w->on_draw(p.canvas, off + p.show_off, scl);
+		}
+
+		show_children(__p, w, w->children_1$, visible, off, scl);
+		show_children(__p, w, w->children_2$, visible, off, scl);
+	}
+
+	void InstancePrivate::postprocessing_children(const Array<Widget*> & children)
+	{
+		if (children.size == 0)
+			return;
+
+		for (auto i_c = children.size - 1; i_c >= 0; i_c--)
+		{
+			auto c = (WidgetPrivate*)children[i_c];
+			if (c->visible$)
+				postprocessing(c);
+		}
+	}
+
+	void InstancePrivate::postprocessing(WidgetPrivate * w)
+	{
+		postprocessing_children(w->children_2$);
+		postprocessing_children(w->children_1$);
+
+		w->state = StateNormal;
+		if (dragging_widget_)
+		{
+			if (dragging_widget_ == w && hovering_widget_ == w)
+				w->state = StateActive;
+		}
+		else
+		{
+			if (hovering_widget_ == w)
+				w->state = StateHovering;
+		}
+
+		if (!w->delay_listener_remove.empty())
+		{
+			for (auto& t : w->delay_listener_remove)
+				w->remove_listener(t.first, t.second);
+			w->delay_listener_remove.clear();
+		}
+
+		if (!w->delay_takes_by_idx.empty())
+		{
+			for (auto& t : w->delay_takes_by_idx)
+				w->take_child(t.first, t.second);
+			w->delay_takes_by_idx.clear();
+		}
+		if (!w->delay_takes_by_ptr.empty())
+		{
+			for (auto& t : w->delay_takes_by_ptr)
+				w->take_child(t);
+			w->delay_takes_by_ptr.clear();
+		}
+		if (!w->delay_removes_by_idx.empty())
+		{
+			for (auto& r : w->delay_removes_by_idx)
+				w->remove_child(r.first, r.second);
+			w->delay_removes_by_idx.clear();
+		}
+		if (!w->delay_removes_by_ptr.empty())
+		{
+			for (auto& r : w->delay_removes_by_ptr)
+				w->remove_child(r);
+			w->delay_removes_by_ptr.clear();
+		}
+		if (!w->delay_clears.empty())
+		{
+			for (auto& r : w->delay_clears)
+				w->clear_children(std::get<0>(r), std::get<1>(r), std::get<2>(r));
+			w->delay_clears.clear();
+		}
+		if (!w->delay_takes.empty())
+		{
+			for (auto& t : w->delay_takes)
+				w->take_children(std::get<0>(t), std::get<1>(t), std::get<2>(t));
+			w->delay_takes.clear();
+		}
+		if (!w->delay_adds.empty())
+		{
+			for (auto& a : w->delay_adds)
 			{
-				if (hovering_widget_ == w)
-					w->state = StateHovering;
+				w->add_child(std::get<0>(a), std::get<1>(a), std::get<2>(a));
+				if (std::get<3>(a))
+					set_popup_widget(std::get<0>(a), true);
 			}
+			w->delay_adds.clear();
+		}
+	}
 
-			if (!w->delay_listener_remove.empty())
+	inline void InstancePrivate::end(Canvas * canvas, const Vec2 & show_off)
+	{
+		mouse_disp = mouse_pos - mouse_prev_pos_;
+
+		_Package p;
+		p.mpos = Vec2(mouse_pos);
+		p.mljustdown = just_down_M(0);
+		p.mljustup = just_up_M(0);
+		p.mrjustdown = just_down_M(1);
+		p.mscroll = mouse_scroll;
+		p.mdisp = mouse_disp;
+		p.temp_dragging_widget = dragging_widget_;
+
+		if (dragging_widget_)
+		{
+			if (!dragging_widget_->visible$ || !pressing_M(0))
+				dragging_widget_ = nullptr;
+			else if (dragging_widget_->event_attitude$ != EventIgnore)
 			{
-				for (auto &t : w->delay_listener_remove)
-					w->remove_listener(t.first, t.second);
-				w->delay_listener_remove.clear();
+				dragging_widget_->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
+				p.mdisp = Ivec2(0);
 			}
+		}
 
-			if (!w->delay_takes_by_idx.empty())
+		if (focus_widget_)
+		{
+			if (!focus_widget_->visible$)
+				focus_widget_ = nullptr;
+		}
+		if (key_focus_widget_)
+		{
+			if (!key_focus_widget_->visible$)
+				key_focus_widget_ = nullptr;
+			else if (key_focus_widget_->event_attitude$ != EventIgnore)
 			{
-				for (auto &t : w->delay_takes_by_idx)
-					w->take_child(t.first, t.second);
-				w->delay_takes_by_idx.clear();
+				for (auto& code : keydown_inputs_)
+					key_focus_widget_->on_key(KeyStateDown, code);
+				for (auto& code : keyup_inputs_)
+					key_focus_widget_->on_key(KeyStateUp, code);
+				for (auto& ch : char_inputs_)
+					key_focus_widget_->on_key(KeyStateNull, ch);
 			}
-			if (!w->delay_takes_by_ptr.empty())
+		}
+		keydown_inputs_.clear();
+		keyup_inputs_.clear();
+		char_inputs_.clear();
+
+		if (p.mljustdown)
+		{
+			set_key_focus_widget(nullptr);
+			set_focus_widget(nullptr);
+		}
+
+		p.surface_size = root_->size$;
+		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+		p.hovering_any_widget = false;
+		p.clicking_nothing = p.mljustdown;
+		p.popup_off = popup_widget_ ? popup_widget_->pos$ : Vec2(0.f);
+		p.popup_scl = 1.f;
+		p.meet_popup_first = true;
+		p.ban_event = popup_widget_;
+		p.canvas = canvas;
+		p.show_off = show_off;
+
+		preprocessing(&p, root_.get(), true, Vec2(0.f), 1.f);
+		p.ban_event = false;
+		if (popup_widget_)
+			preprocessing(&p, popup_widget_, true, p.popup_off, p.popup_scl);
+		if (!p.hovering_any_widget)
+			set_hovering_widget(nullptr);
+		if (p.clicking_nothing&& popup_widget_)
+			close_popup();
+
+		if (dragging_widget_)
+		{
+			if (!dragging_widget_->visible$ || !pressing_M(0))
+				dragging_widget_ = nullptr;
+		}
+
+		if (potential_doubleclick_widget_)
+		{
+			doubleclick_timer_ += elp_time_;
+			if (doubleclick_timer_ > 0.5f)
 			{
-				for (auto &t : w->delay_takes_by_ptr)
-					w->take_child(t);
-				w->delay_takes_by_ptr.clear();
-			}
-			if (!w->delay_removes_by_idx.empty())
-			{
-				for (auto &r : w->delay_removes_by_idx)
-					w->remove_child(r.first, r.second);
-				w->delay_removes_by_idx.clear();
-			}
-			if (!w->delay_removes_by_ptr.empty())
-			{
-				for (auto &r : w->delay_removes_by_ptr)
-					w->remove_child(r);
-				w->delay_removes_by_ptr.clear();
-			}
-			if (!w->delay_clears.empty())
-			{
-				for (auto &r : w->delay_clears)
-					w->clear_children(std::get<0>(r), std::get<1>(r), std::get<2>(r));
-				w->delay_clears.clear();
-			}
-			if (!w->delay_takes.empty())
-			{
-				for (auto &t : w->delay_takes)
-					w->take_children(std::get<0>(t), std::get<1>(t), std::get<2>(t));
-				w->delay_takes.clear();
-			}
-			if (!w->delay_adds.empty())
-			{
-				for (auto &a : w->delay_adds)
-				{
-					w->add_child(std::get<0>(a), std::get<1>(a), std::get<2>(a));
-					if (std::get<3>(a))
-						set_popup_widget(std::get<0>(a), true);
-				}
-				w->delay_adds.clear();
+				potential_doubleclick_widget_ = nullptr;
+				doubleclick_timer_ = 0.f;
 			}
 		}
 
-		inline void InstancePrivate::end(Canvas *canvas, const Vec2 &show_off)
+		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+
+		p.meet_popup_first = true;
+		show(&p, root_.get(), true, Vec2(0.f), 1.f);
+		if (popup_widget_)
 		{
-			mouse_disp = mouse_pos - mouse_prev_pos_;
-
-			_Package p;
-			p.mpos = Vec2(mouse_pos);
-			p.mljustdown = just_down_M(0);
-			p.mljustup = just_up_M(0);
-			p.mrjustdown = just_down_M(1);
-			p.mscroll = mouse_scroll;
-			p.mdisp = mouse_disp;
-			p.temp_dragging_widget = dragging_widget_;
-
-			if (dragging_widget_)
-			{
-				if (!dragging_widget_->visible$ || !pressing_M(0))
-					dragging_widget_ = nullptr;
-				else if (dragging_widget_->event_attitude$ != EventIgnore)
-				{
-					dragging_widget_->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
-					p.mdisp = Ivec2(0);
-				}
-			}
-
-			if (focus_widget_)
-			{
-				if (!focus_widget_->visible$)
-					focus_widget_ = nullptr;
-			}
-			if (key_focus_widget_)
-			{
-				if (!key_focus_widget_->visible$)
-					key_focus_widget_ = nullptr;
-				else if (key_focus_widget_->event_attitude$ != EventIgnore)
-				{
-					for (auto &code : keydown_inputs_)
-						key_focus_widget_->on_key(KeyStateDown, code);
-					for (auto &code : keyup_inputs_)
-						key_focus_widget_->on_key(KeyStateUp, code);
-					for (auto &ch : char_inputs_)
-						key_focus_widget_->on_key(KeyStateNull, ch);
-				}
-			}
-			keydown_inputs_.clear();
-			keyup_inputs_.clear();
-			char_inputs_.clear();
-
-			if (p.mljustdown)
-			{
-				set_key_focus_widget(nullptr);
-				set_focus_widget(nullptr);
-			}
-
-			p.surface_size = root_->size$;
-			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-			p.hovering_any_widget = false;
-			p.clicking_nothing = p.mljustdown;
-			p.popup_off = popup_widget_ ? popup_widget_->pos$ : Vec2(0.f);
-			p.popup_scl = 1.f;
-			p.meet_popup_first = true;
-			p.ban_event = popup_widget_;
-			p.canvas = canvas;
-			p.show_off = show_off;
-
-			preprocessing(&p, root_.get(), true, Vec2(0.f), 1.f);
-			p.ban_event = false;
-			if (popup_widget_)
-				preprocessing(&p, popup_widget_, true, p.popup_off, p.popup_scl);
-			if (!p.hovering_any_widget)
-				set_hovering_widget(nullptr);
-			if (p.clicking_nothing && popup_widget_)
-				close_popup();
-
-			if (dragging_widget_)
-			{
-				if (!dragging_widget_->visible$ || !pressing_M(0))
-					dragging_widget_ = nullptr;
-			}
-
-			if (potential_doubleclick_widget_)
-			{
-				doubleclick_timer_ += elp_time_;
-				if (doubleclick_timer_ > 0.5f)
-				{
-					potential_doubleclick_widget_ = nullptr;
-					doubleclick_timer_ = 0.f;
-				}
-			}
-
-			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-
-			p.meet_popup_first = true;
-			show(&p, root_.get(), true, Vec2(0.f), 1.f);
-			if (popup_widget_)
-			{
-				if (popup_widget_modual_)
-					p.canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
-				show(&p, popup_widget_, true, p.popup_off, p.popup_scl);
-			}
-
-			postprocessing(root_.get());
-
-			for (int i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
-				key_states[i] &= ~KeyStateJust;
-
-			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
-				mouse_buttons[i] &= ~KeyStateJust;
-
-			mouse_prev_pos_ = mouse_pos;
-			mouse_scroll = 0;
+			if (popup_widget_modual_)
+				p.canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
+			show(&p, popup_widget_, true, p.popup_off, p.popup_scl);
 		}
 
-		//void Drawlist::draw_grid(const Vec2 &wnd_off, const Vec2 &off, const Vec2 &size)
-		//{
-		//	for (auto i = mod((int)off.x, 100); i.y < size.x; i.y += 100, i.x--)
-		//	{
-		//		if (i.y < 0)
-		//			continue;
-		//		add_line(Vec2(i.y, 0.f) + wnd_off, Vec2(i.y, size.y) + wnd_off, Vec4(1.f));
-		//		add_text_stroke(Vec2(i.y + 4, 0.f) + wnd_off, Vec4(1.f), "%d", i.x * -100);
-		//	}
-		//	for (auto i = mod((int)off.y, 100); i.y < size.y; i.y += 100, i.x--)
-		//	{
-		//		if (i.y < 0)
-		//			continue;
-		//		add_line(Vec2(0.f, i.y) + wnd_off, Vec2(size.x, i.y) + wnd_off, Vec4(1.f));
-		//		add_text_stroke(Vec2(4.f, i.y) + wnd_off, Vec4(1.f), "%d", i.x * -100);
-		//	}
-		//}
+		postprocessing(root_.get());
 
-		void Instance::set_default_style(DefaultStyle s)
-		{
-			((InstancePrivate*)this)->set_default_style(s);
-		}
+		for (int i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
+			key_states[i] &= ~KeyStateJust;
 
-		Ivec2 Instance::size() const
-		{
-			return Ivec2(((InstancePrivate*)this)->root_->size$);
-		}
+		for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
+			mouse_buttons[i] &= ~KeyStateJust;
 
-		void Instance::on_key(KeyState action, int value)
-		{
-			((InstancePrivate*)this)->on_key(action, value);
-		}
+		mouse_prev_pos_ = mouse_pos;
+		mouse_scroll = 0;
+	}
 
-		void Instance::on_mouse(KeyState action, MouseKey key, const Ivec2 &pos)
-		{
-			((InstancePrivate*)this)->on_mouse(action, key, pos);
-		}
+	//void Drawlist::draw_grid(const Vec2 &wnd_off, const Vec2 &off, const Vec2 &size)
+	//{
+	//	for (auto i = mod((int)off.x, 100); i.y < size.x; i.y += 100, i.x--)
+	//	{
+	//		if (i.y < 0)
+	//			continue;
+	//		add_line(Vec2(i.y, 0.f) + wnd_off, Vec2(i.y, size.y) + wnd_off, Vec4(1.f));
+	//		add_text_stroke(Vec2(i.y + 4, 0.f) + wnd_off, Vec4(1.f), "%d", i.x * -100);
+	//	}
+	//	for (auto i = mod((int)off.y, 100); i.y < size.y; i.y += 100, i.x--)
+	//	{
+	//		if (i.y < 0)
+	//			continue;
+	//		add_line(Vec2(0.f, i.y) + wnd_off, Vec2(size.x, i.y) + wnd_off, Vec4(1.f));
+	//		add_text_stroke(Vec2(4.f, i.y) + wnd_off, Vec4(1.f), "%d", i.x * -100);
+	//	}
+	//}
 
-		void Instance::on_resize(const Ivec2 &size)
-		{
-			((InstancePrivate*)this)->on_resize(size);
-		}
+	void Instance::set_default_style(DefaultStyle s)
+	{
+		((InstancePrivate*)this)->set_default_style(s);
+	}
 
-		graphics::Imageview *Instance::imageview(int index)
-		{
-			auto v = share_data.image_views[index];
-			if (v == share_data.white_imageview)
-				v = nullptr;
-			return v;
-		}
+	Ivec2 Instance::size() const
+	{
+		return Ivec2(((InstancePrivate*)this)->root_->size$);
+	}
 
-		void Instance::set_imageview(int index, graphics::Imageview *v)
-		{
-			if (!v)
-				v = share_data.white_imageview;
-			share_data.image_views[index] = v;
-			share_data.ds_plain->set_imageview(0, index, v, share_data.d->sp_bi_linear);
-		}
+	void Instance::on_key(KeyState action, int value)
+	{
+		((InstancePrivate*)this)->on_key(action, value);
+	}
 
-		Widget *Instance::root()
-		{
-			return ((InstancePrivate*)this)->root_.get();
-		}
+	void Instance::on_mouse(KeyState action, MouseKey key, const Ivec2 & pos)
+	{
+		((InstancePrivate*)this)->on_mouse(action, key, pos);
+	}
 
-		Widget *Instance::hovering_widget()
-		{
-			return ((InstancePrivate*)this)->hovering_widget_;
-		}
+	void Instance::on_resize(const Ivec2 & size)
+	{
+		((InstancePrivate*)this)->on_resize(size);
+	}
 
-		Widget *Instance::focus_widget()
-		{
-			return ((InstancePrivate*)this)->focus_widget_;
-		}
+	graphics::Imageview* Instance::imageview(int index)
+	{
+		auto v = share_data.image_views[index];
+		if (v == share_data.white_imageview)
+			v = nullptr;
+		return v;
+	}
 
-		Widget *Instance::key_focus_widget() 
-		{
-			return ((InstancePrivate*)this)->key_focus_widget_;
-		}
+	void Instance::set_imageview(int index, graphics::Imageview * v)
+	{
+		if (!v)
+			v = share_data.white_imageview;
+		share_data.image_views[index] = v;
+		share_data.ds_plain->set_imageview(0, index, v, share_data.d->sp_bi_linear);
+	}
 
-		Widget *Instance::dragging_widget()
-		{
-			return ((InstancePrivate*)this)->dragging_widget_;
-		}
+	Widget* Instance::root()
+	{
+		return ((InstancePrivate*)this)->root_.get();
+	}
 
-		Widget *Instance::popup_widget()
-		{
-			return ((InstancePrivate*)this)->popup_widget_;
-		}
+	Widget* Instance::hovering_widget()
+	{
+		return ((InstancePrivate*)this)->hovering_widget_;
+	}
 
-		void Instance::set_hovering_widget(Widget *w)
-		{
-			((InstancePrivate*)this)->set_hovering_widget((WidgetPrivate*)w);
-		}
+	Widget* Instance::focus_widget()
+	{
+		return ((InstancePrivate*)this)->focus_widget_;
+	}
 
-		void Instance::set_focus_widget(Widget *w)
-		{
-			((InstancePrivate*)this)->set_focus_widget((WidgetPrivate*)w);
-		}
+	Widget* Instance::key_focus_widget()
+	{
+		return ((InstancePrivate*)this)->key_focus_widget_;
+	}
 
-		void Instance::set_key_focus_widget(Widget *w)
-		{
-			((InstancePrivate*)this)->set_key_focus_widget((WidgetPrivate*)w);
-		}
+	Widget* Instance::dragging_widget()
+	{
+		return ((InstancePrivate*)this)->dragging_widget_;
+	}
 
-		void Instance::set_dragging_widget(Widget *w)
-		{
-			((InstancePrivate*)this)->set_dragging_widget((WidgetPrivate*)w);
-		}
+	Widget* Instance::popup_widget()
+	{
+		return ((InstancePrivate*)this)->popup_widget_;
+	}
 
-		void Instance::set_popup_widget(Widget *w, bool modual)
-		{
-			((InstancePrivate*)this)->set_popup_widget((WidgetPrivate*)w, modual);
-		}
+	void Instance::set_hovering_widget(Widget * w)
+	{
+		((InstancePrivate*)this)->set_hovering_widget((WidgetPrivate*)w);
+	}
 
-		void Instance::close_popup()
-		{
-			((InstancePrivate*)this)->close_popup();
-		}
+	void Instance::set_focus_widget(Widget * w)
+	{
+		((InstancePrivate*)this)->set_focus_widget((WidgetPrivate*)w);
+	}
 
-		void Instance::begin(float elp_time)
-		{
-			((InstancePrivate*)this)->begin(elp_time);
-		}
+	void Instance::set_key_focus_widget(Widget * w)
+	{
+		((InstancePrivate*)this)->set_key_focus_widget((WidgetPrivate*)w);
+	}
 
-		void Instance::end(Canvas *canvas, const Vec2 &show_off)
-		{
-			((InstancePrivate*)this)->end(canvas, show_off);
-		}
+	void Instance::set_dragging_widget(Widget * w)
+	{
+		((InstancePrivate*)this)->set_dragging_widget((WidgetPrivate*)w);
+	}
 
-		float Instance::total_time() const
-		{
-			return ((InstancePrivate*)this)->total_time_;
-		}
+	void Instance::set_popup_widget(Widget * w, bool modual)
+	{
+		((InstancePrivate*)this)->set_popup_widget((WidgetPrivate*)w, modual);
+	}
 
-		Instance *Instance::create(Window *w)
-		{
-			return new InstancePrivate(w);
-		}
+	void Instance::close_popup()
+	{
+		((InstancePrivate*)this)->close_popup();
+	}
 
-		void Instance::destroy(Instance *i)
-		{
-			delete (InstancePrivate*)i;
-		}
+	void Instance::begin(float elp_time)
+	{
+		((InstancePrivate*)this)->begin(elp_time);
+	}
+
+	void Instance::end(Canvas * canvas, const Vec2 & show_off)
+	{
+		((InstancePrivate*)this)->end(canvas, show_off);
+	}
+
+	float Instance::total_time() const
+	{
+		return ((InstancePrivate*)this)->total_time_;
+	}
+
+	Instance* Instance::create(Window * w)
+	{
+		return new InstancePrivate(w);
+	}
+
+	void Instance::destroy(Instance * i)
+	{
+		delete (InstancePrivate*)i;
 	}
 }
 

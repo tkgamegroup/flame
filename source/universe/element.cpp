@@ -85,6 +85,8 @@ namespace flame
 
 		parent = nullptr;
 		layer = 0;
+		flag = FlagNull;
+		need_arrange = false;
 	}
 
 	Element::~Element()
@@ -107,9 +109,9 @@ namespace flame
 			return;
 		size$.x = x;
 		if (sender != this)
-			arrange();
+			need_arrange = true;
 		if (parent&& parent != sender)
-			parent->arrange();
+			parent->need_arrange = true;
 	}
 
 	void Element::set_height(float y, Element * sender)
@@ -118,9 +120,9 @@ namespace flame
 			return;
 		size$.y = y;
 		if (sender != this)
-			arrange();
+			need_arrange = true;
 		if (parent&& parent != sender)
-			parent->arrange();
+			parent->need_arrange = true;
 	}
 
 	void Element::set_size(const Vec2 & v, Element * sender)
@@ -142,9 +144,9 @@ namespace flame
 		if (!changed)
 			return;
 		if (do_arrange)
-			arrange();
+			need_arrange = true;
 		if (parent&& parent != sender)
-			parent->arrange();
+			parent->need_arrange = true;
 	}
 
 	void Element::set_visibility(bool v)
@@ -155,19 +157,13 @@ namespace flame
 		visible$ = v;
 		if (!visible$)
 			remove_animations();
-		arrange();
+		need_arrange = true;
 		if (parent)
-			parent->arrange();
+			parent->need_arrange = true;
 	}
 
 	void Element::add_child(Element * w, int layer, int pos, bool modual)
 	{
-		if (delay)
-		{
-			delay_adds.emplace_back(w, layer, pos, modual);
-			return;
-		}
-
 		auto& children = layer == 0 ? children_1$ : children_2$;
 		if (pos < 0)
 			pos = children.size + pos + 1;
@@ -175,8 +171,9 @@ namespace flame
 
 		w->parent = this;
 		w->layer = layer;
+		w->flag = modual ? FlagJustCreatedNeedModual : FlagJustCreated;
 
-		arrange();
+		need_arrange = true;
 
 		for (auto i = 0; i < child_listeners$.size; i++)
 		{
@@ -191,95 +188,97 @@ namespace flame
 
 	void Element::remove_child(int layer, int idx, bool delay)
 	{
+		auto& children = layer == 0 ? children_1$ : children_2$;
+		auto w = children[idx];
 		if (delay)
 		{
-			delay_removes_by_idx.emplace_back(layer, idx);
+			w->flag = FlagNeedToRemoveFromParent;
 			return;
 		}
-
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		Element::destroy(children[idx]);
+		Element::destroy(w);
 		children.remove(idx);
 
-		arrange();
+		need_arrange = true;
 	}
 
 	void Element::take_child(int layer, int idx, bool delay)
 	{
+		auto& children = layer == 0 ? children_1$ : children_2$;
+		auto w = children[idx];
 		if (delay)
 		{
-			delay_takes_by_idx.emplace_back(layer, idx);
+			w->flag = FlagNeedToTakeFromParent;
 			return;
 		}
-
-		auto& children = layer == 0 ? children_1$ : children_2$;
 		children.remove(idx);
 
 		remove_animations();
 
-		arrange();
+		need_arrange = true;
 	}
 
 	void Element::clear_children(int layer, int begin, int end, bool delay)
 	{
-		if (delay)
-		{
-			delay_clears.emplace_back(layer, begin, end);
-			return;
-		}
-
 		auto& children = layer == 0 ? children_1$ : children_2$;
 		if (end < 0)
 			end = children.size + end + 1;
-		for (auto i = begin; i < end; i++)
-			Element::destroy(children[i]);
-		children.remove(begin, end - begin);
+		if (!delay)
+		{
+			for (auto i = begin; i < end; i++)
+				Element::destroy(children[i]);
+			children.remove(begin, end - begin);
 
-		arrange();
+			need_arrange = true;
+		}
+		else
+		{
+			for (auto i = begin; i < end; i++)
+				children[i]->flag = FlagNeedToRemoveFromParent;
+		}
 	}
 
 	void Element::take_children(int layer, int begin, int end, bool delay)
 	{
-		if (delay)
-		{
-			delay_takes.emplace_back(layer, begin, end);
-			return;
-		}
-
 		auto& children = layer == 0 ? children_1$ : children_2$;
 		if (end == -1)
 			end = children.size;
-		for (auto i = begin; i < end; i++)
-			((ElementPrivate*)children[i])->remove_animations();
-		children.remove(begin, end - begin);
+		if (!delay)
+		{
+			for (auto i = begin; i < end; i++)
+				children[i]->remove_animations();
+			children.remove(begin, end - begin);
 
-		arrange();
+			need_arrange = true;
+		}
+		else
+		{
+			for (auto i = begin; i < end; i++)
+				children[i]->flag = FlagNeedToTakeFromParent;
+		}
 	}
 
 	void Element::remove_from_parent(bool delay)
 	{
 		if (delay)
 		{
-			if (parent)
-				parent->remove_child(this, true);
+			flag = FlagNeedToRemoveFromParent;
 			return;
 		}
 
 		if (parent)
-			parent->remove_child(this);
+			parent->remove_child(layer, parent->find_child(layer, this));
 	}
 
 	void Element::take_from_parent(bool delay)
 	{
 		if (delay)
 		{
-			if (parent)
-				parent->take_child(this, true);
+			flag = FlagNeedToTakeFromParent;
 			return;
 		}
 
 		if (parent)
-			parent->take_child(this);
+			parent->take_child(layer, parent->find_child(layer, this));
 	}
 
 	int Element::find_child(int layer, Element * w)
@@ -303,365 +302,6 @@ namespace flame
 		return content_size + scroll_spare_spacing;
 	}
 
-	void Element::arrange()
-	{
-		switch (layout_type$)
-		{
-		case LayoutVertical:
-		{
-			if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
-			{
-				auto width = 0;
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					width = max(width, c->size$.x);
-				}
-
-				width += inner_padding$[0] + inner_padding$[1];
-				if (size_policy_hori$ == SizeFitChildren)
-					set_width(width, this);
-				else if (size_policy_hori$ == SizeGreedy)
-				{
-					if (width > size$.x)
-						set_width(width, this);
-				}
-			}
-			if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
-			{
-				auto height = 0;
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					height += c->size$.y + item_padding$;
-				}
-				height -= item_padding$;
-				content_size = height;
-
-				height += inner_padding$[2] + inner_padding$[3];
-				if (size_policy_vert$ == SizeFitChildren)
-					set_height(height, this);
-				else if (size_policy_vert$ == SizeGreedy)
-				{
-					if (height > size$.y)
-						set_height(height, this);
-				}
-			}
-			else if (size_policy_vert$ == SizeFitLayout)
-			{
-				auto cnt = 0;
-				auto height = 0;
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					if (c->size_policy_vert$ == SizeFitLayout)
-						cnt++;
-					else
-						height += c->size$.y;
-					height += item_padding$;
-				}
-				height -= item_padding$;
-				content_size = height;
-
-				height = max(0, (size$.y - inner_padding$[2] - inner_padding$[3] - height) / cnt);
-
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					if (c->size_policy_vert$ == SizeFitLayout)
-						c->set_height(height, this);
-				}
-			}
-
-			auto width = size$.x - inner_padding$[0] - inner_padding$[1];
-			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
-
-			auto content_size = get_content_size();
-			scroll_offset$ = content_size > height ? clamp((float)scroll_offset$, height - content_size, 0.f) : 0.f;
-
-			auto y = inner_padding$[2] + scroll_offset$;
-
-			for (auto i_c = 0; i_c < children_1$.size; i_c++)
-			{
-				auto c = children_1$[i_c];
-
-				if (!c->visible$)
-					continue;
-
-				if (c->size_policy_hori$ == SizeFitLayout)
-					c->set_width(width, this);
-				else if (c->size_policy_hori$ == SizeGreedy)
-				{
-					if (width > c->size$.x)
-						c->set_width(width, this);
-				}
-
-				switch (c->align$)
-				{
-				case AlignLittleEnd:
-					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$, y);
-					break;
-				case AlignLargeEnd:
-					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$, y);
-					break;
-				case AlignMiddle:
-					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0], y);
-					break;
-				}
-
-				y += c->size$.y + item_padding$;
-			}
-		}
-		break;
-		case LayoutHorizontal:
-		{
-			if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
-			{
-				auto width = 0;
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					width += c->size$.x + item_padding$;
-				}
-				width -= item_padding$;
-				content_size = width;
-
-				width += inner_padding$[0] + inner_padding$[1];
-				if (size_policy_hori$ == SizeFitChildren)
-					set_width(width, this);
-				else if (size_policy_hori$ == SizeGreedy)
-				{
-					if (width > size$.x)
-						set_width(width, this);
-				}
-			}
-			else if (size_policy_hori$ == SizeFitLayout)
-			{
-				auto cnt = 0;
-				auto width = 0;
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					if (c->size_policy_hori$ == SizeFitLayout)
-						cnt++;
-					else
-						width += c->size$.x;
-					width += item_padding$;
-				}
-				width -= item_padding$;
-				content_size = width;
-
-				width = max(0, (size$.x - inner_padding$[0] - inner_padding$[1] - width) / cnt);
-
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					if (c->size_policy_hori$ == SizeFitLayout)
-						c->set_width(width, this);
-				}
-			}
-			if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
-			{
-				auto height = 0;
-				for (auto i_c = 0; i_c < children_1$.size; i_c++)
-				{
-					auto c = children_1$[i_c];
-
-					if (!c->visible$)
-						continue;
-
-					height = max(height, c->size$.y);
-				}
-
-				height += inner_padding$[2] + inner_padding$[3];
-				if (size_policy_vert$ == SizeFitChildren)
-					set_height(height, this);
-				else if (size_policy_vert$ == SizeGreedy)
-				{
-					if (height > size$.y)
-						set_height(height, this);
-				}
-			}
-
-			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
-			auto x = inner_padding$[0];
-			for (auto i_c = 0; i_c < children_1$.size; i_c++)
-			{
-				auto c = children_1$[i_c];
-
-				if (!c->visible$)
-					continue;
-
-				if (c->size_policy_vert$ == SizeFitLayout)
-					c->set_height(height, this);
-				else if (c->size_policy_vert$ == SizeGreedy)
-				{
-					if (height > c->size$.y)
-						c->set_height(height, this);
-				}
-
-				switch (c->align$)
-				{
-				case AlignLittleEnd:
-					c->pos$ = Vec2(x, inner_padding$[2] + c->layout_padding$);
-					break;
-				case AlignLargeEnd:
-					c->pos$ = Vec2(x, size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-					break;
-				case AlignMiddle:
-					c->pos$ = Vec2(x, (size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
-					break;
-				}
-
-				x += c->size$.x + item_padding$;
-			}
-		}
-		break;
-		case LayoutGrid:
-		{
-			auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
-
-			auto cnt = 0;
-			auto line_height = 0.f;
-			auto max_width = 0.f;
-			for (auto i_c = 0; i_c < children_1$.size; i_c++)
-			{
-				auto c = children_1$[i_c];
-
-				c->pos$ = pos;
-				line_height = max(line_height, c->size$.y);
-
-				pos.x += c->size$.x + item_padding$;
-				max_width = max(max_width, pos.x);
-				cnt++;
-				if (cnt >= grid_hori_count$)
-				{
-					pos.x = inner_padding$[0];
-					pos.y += line_height + item_padding$;
-					cnt = 0;
-					line_height = 0.f;
-				}
-			}
-
-			if (size_policy_hori$ == SizeFitChildren)
-				set_width(max(max_width - item_padding$, 0.f), this);
-			if (size_policy_vert$ == SizeFitChildren)
-				set_height(max(pos.y - item_padding$, 0.f), this);
-		}
-		break;
-		}
-
-		for (auto i_c = 0; i_c < children_2$.size; i_c++)
-		{
-			auto c = children_2$[i_c];
-
-			switch (c->align$)
-			{
-			case AlignLeft:
-				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
-				break;
-			case AlignRight:
-				if (c->size_policy_vert$ == SizeFitLayout)
-					c->size$.y = size$.y - inner_padding$[2] - inner_padding$[3];
-				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
-				break;
-			case AlignTop:
-				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
-					inner_padding$[2] + c->layout_padding$);
-				break;
-			case AlignBottom:
-				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
-					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-				break;
-			case AlignLeftTop:
-				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-					inner_padding$[2] + c->layout_padding$);
-				break;
-			case AlignLeftBottom:
-				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-				break;
-			case AlignRightTop:
-				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-					inner_padding$[2] + c->layout_padding$);
-				break;
-			case AlignRightBottom:
-				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
-				break;
-			case AlignLeftNoPadding:
-				c->pos$ = Vec2(c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
-				break;
-			case AlignRightNoPadding:
-				c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
-				break;
-			case AlignTopNoPadding:
-				c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, c->layout_padding$);
-				break;
-			case AlignBottomNoPadding:
-				c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, size$.y - c->size$.y - c->layout_padding$);
-				break;
-			case AlignLeftTopNoPadding:
-				c->pos$ = Vec2(c->layout_padding$, c->layout_padding$);
-				break;
-			case AlignLeftBottomNoPadding:
-				c->pos$ = Vec2(c->layout_padding$, size$.y - c->size$.y - c->layout_padding$);
-				break;
-			case AlignRightTopNoPadding:
-				c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, c->layout_padding$);
-				break;
-			case AlignRightBottomNoPadding:
-				c->pos$ = size$ - c->size$ - Vec2(c->layout_padding$);
-				break;
-			case AlignCenter:
-				c->pos$ = (size$ - c->size$) * 0.5f;
-				break;
-			case AlignLeftOutside:
-				c->pos$ = Vec2(-c->size$.x, 0.f);
-				break;
-			case AlignRightOutside:
-				c->pos$ = Vec2(size$.x, 0.f);
-				break;
-			case AlignTopOutside:
-				c->pos$ = Vec2(0.f, -c->size$.y);
-				break;
-			case AlignBottomOutside:
-				c->pos$ = Vec2(0.f, size$.y);
-				break;
-			}
-		}
-	}
-
 	void Element::remove_animations()
 	{
 		for (auto i = 0; i < animations$.size; i++)
@@ -673,9 +313,9 @@ namespace flame
 		}
 		animations$.resize(0);
 		for (auto i = 0; i < children_1$.size; i++)
-			((ElementPrivate*)children_1$[i])->remove_animations();
+			children_1$[i]->remove_animations();
 		for (auto i = 0; i < children_2$.size; i++)
-			((ElementPrivate*)children_2$[i])->remove_animations();
+			children_2$[i]->remove_animations();
 	}
 
 	void Element::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
@@ -716,10 +356,10 @@ namespace flame
 		for (auto i = 0; i < focus_listeners$.size; i++)
 		{
 			auto& f = focus_listeners$[i];
-			auto& p = (FoucusListenerParm&)f->p;
+			auto& p = (FoucusListenerParm&)f.p;
 			p.type() = type;
 			p.focus_or_keyfocus() = focus_or_keyfocus;
-			f->exec();
+			f.exec();
 		}
 	}
 
@@ -728,10 +368,10 @@ namespace flame
 		for (auto i = 0; i < key_listeners$.size; i++)
 		{
 			auto& f = key_listeners$[i];
-			auto& p = (KeyListenerParm&)f->p;
+			auto& p = (KeyListenerParm&)f.p;
 			p.action() = action;
 			p.value() = value;
-			f->exec();
+			f.exec();
 		}
 	}
 
@@ -740,11 +380,11 @@ namespace flame
 		for (auto i = 0; i < mouse_listeners$.size; i++)
 		{
 			auto& f = mouse_listeners$[i];
-			auto& p = (MouseListenerParm&)f->p;
+			auto& p = (MouseListenerParm&)f.p;
 			p.action() = action;
 			p.key() = key;
-			p.value() = value;
-			f->exec();
+			p.value() = pos;
+			f.exec();
 		}
 	}
 
@@ -753,9 +393,9 @@ namespace flame
 		for (auto i = 0; i < drop_listeners$.size; i++)
 		{
 			auto& f = drop_listeners$[i];
-			auto& p = (DropListenerParm&)f->p;
+			auto& p = (DropListenerParm&)f.p;
 			p.src() = src;
-			f->exec();
+			f.exec();
 		}
 	}
 
@@ -764,28 +404,27 @@ namespace flame
 		for (auto i = 0; i < changed_listeners$.size; i++)
 		{
 			auto& f = changed_listeners$[i];
-			auto& p = (ChangedListenerParm&)f->p;
-			f->exec();
+			f.exec();
 		}
 	}
 
 	SerializableNode* Element::save()
 	{
-		return SerializableNode::serialize(find_udt(cH("ui::Element")), this, 1);
+		return SerializableNode::serialize(find_udt(cH("Element")), this, 1);
 	}
 
 	Element* Element::create(UI * ui)
 	{
-		return new ElementPrivate(ui);
+		return new Element(ui);
 	}
 
-	void Element::create_from_typeinfo(Instance * ins, VaribleInfo * info, void* p, Element * dst)
+	void Element::create_from_typeinfo(UI * ui, VaribleInfo * info, void* p, Element * dst)
 	{
 		switch (info->tag())
 		{
 		case VariableTagEnumSingle:
 		{
-			auto c = createT<wCombo>(ins, find_enum(info->type_hash()), (char*)p + info->offset());
+			auto c = createT<wCombo>(ui, find_enum(info->type_hash()), (char*)p + info->offset());
 			c->align$ = AlignLittleEnd;
 			dst->add_child(c, 0, -1, true);
 		}
@@ -798,14 +437,14 @@ namespace flame
 			{
 			case cH("bool"):
 			{
-				auto c = createT<wCheckbox>(ins, (char*)p + info->offset());
+				auto c = createT<wCheckbox>(ui, (char*)p + info->offset());
 				c->align$ = AlignLittleEnd;
 				dst->add_child(c, 0, -1, true);
 			}
 				break;
 			case cH("uint"):
 			{
-				auto e = createT<wEdit>(ins, wEdit::TypeUint, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, wEdit::TypeUint, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -814,7 +453,7 @@ namespace flame
 				break;
 			case cH("int"):
 			{
-				auto e = createT<wEdit>(ins, wEdit::TypeInt, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, wEdit::TypeInt, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -827,7 +466,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -841,7 +480,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -855,7 +494,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -865,7 +504,7 @@ namespace flame
 				break;
 			case cH("float"):
 			{
-				auto e = createT<wEdit>(ins, wEdit::TypeFloat, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, wEdit::TypeFloat, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -878,7 +517,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -892,7 +531,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -906,7 +545,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -916,7 +555,7 @@ namespace flame
 				break;
 			case cH("uchar"):
 			{
-				auto e = createT<wEdit>(ins, wEdit::TypeUchar, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, wEdit::TypeUchar, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -929,7 +568,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -943,7 +582,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -957,7 +596,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ins, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -981,9 +620,7 @@ namespace flame
 			case cH("Function"):
 				for (auto i_i = 0; i_i < arr.size; i_i++)
 				{
-					auto f = (Function*)arr[i_i];
-					auto r = find_registered_function(f->pf);
-
+					arr[i_i];
 				}
 				break;
 			}
@@ -992,32 +629,30 @@ namespace flame
 		}
 	}
 
-	Element* Element::create_from_file(Instance * ins, SerializableNode * src)
+	FLAME_PACKAGE_BEGIN_1(ObjGeneratorData, UIPtr, ui, p)
+	FLAME_PACKAGE_END_1
+
+	Element* Element::create_from_file(UI * ui, SerializableNode * src)
 	{
-		FLAME_DATA_PACKAGE_BEGIN(ObjGeneratorData, SerializableNode::ObjGeneratorParm)
-			FLAME_DATA_PACKAGE_CAPT(InstancePtr, ins, p)
-			FLAME_DATA_PACKAGE_END
-
-			return (Element*)src->unserialize(find_udt(cH("ui::Element")), [](const ParmPackage & _p) {
-			auto& p = (ObjGeneratorData&)_p;
-
-			auto w = (ElementPrivate*)Element::create(p.ins());
+		return (Element*)src->unserialize(find_udt(cH("Element")), Function<SerializableNode::ObjGeneratorParm>([](SerializableNode::ObjGeneratorParm & p) {
+			auto c = p.get_capture<ObjGeneratorData>();
+			auto w = Element::create(c.ui());
 			p.out_obj() = w;
 
 			if (p.parent())
 			{
-				w->parent = (ElementPrivate*)p.parent();
+				w->parent = p.parent;
 				if (p.att_hash() == cH("children_1"))
 					w->layer = 0;
 				else /* if (att_hash == cH("children_2")) */
 					w->layer = 1;
 			}
-		}, { ins });
+		}, { ui }));
 	}
 
 	void Element::destroy(Element * w)
 	{
-		delete(ElementPrivate*)w;
+		delete w;
 	}
 
 	void wLayout::init(LayoutType type, float item_padding)

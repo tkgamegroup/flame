@@ -25,7 +25,7 @@
 #include <flame/window.h>
 
 #include "widget_private.h"
-#include <flame/universe/instance.h>
+#include <flame/universe/ui.h>
 
 #include <vector>
 

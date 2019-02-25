@@ -115,6 +115,7 @@ namespace flame
 		{
 			FlagNull,
 			FlagJustCreated,
+			FlagJustCreatedNeedModual,
 			FlagNeedToRemoveFromParent,
 			FlagNeedToTakeFromParent
 		};
@@ -169,6 +170,7 @@ namespace flame
 		Element* parent;
 		int layer;
 		Flag flag;
+		bool need_arrange;
 
 		Array<Element*> children_1$;
 		Array<Element*> children_2$;
@@ -249,8 +251,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_to_foreground();
 
 		FLAME_UNIVERSE_EXPORTS float get_content_size() const;
-
-		FLAME_UNIVERSE_EXPORTS void arrange();
 
 		FLAME_UNIVERSE_EXPORTS void remove_animations();
 
