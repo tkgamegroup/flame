@@ -57,14 +57,14 @@ namespace flame
 		ApplicationPrivate();
 		~ApplicationPrivate();
 
-		int run(Function<> &idle_func);
-		void add_delay_event(Function<> &event);
+		int run(Function<>& idle_func);
+		void add_delay_event(Function<>& event);
 		void clear_delay_events();
 	};
 
 	struct WindowPrivate : Window
 	{
-		ApplicationPrivate *app;
+		ApplicationPrivate* app;
 
 #ifdef FLAME_WINDOWS
 		HWND hWnd;
@@ -72,7 +72,7 @@ namespace flame
 		HCURSOR cursors[CursorCount];
 		CursorType cursor_type;
 #elif FLAME_ANDROID
-		android_app *android_state_;
+		android_app* android_state_;
 #endif
 
 		std::vector<Function<KeyListenerParm>> key_listeners;
@@ -83,7 +83,7 @@ namespace flame
 		bool dead;
 
 #ifdef FLAME_WINDOWS
-		inline WindowPrivate(const char *_title, const Ivec2 &_size, int _style)
+		inline WindowPrivate(const char* _title, const Ivec2& _size, int _style)
 		{
 			title = _title;
 
@@ -148,7 +148,7 @@ namespace flame
 			dead = false;
 		}
 #elif FLAME_ANDROID
-		inline WindowPrivate(android_app *android_state) :
+		inline WindowPrivate(android_app* android_state) :
 			android_state_(android_state)
 		{
 		}
@@ -156,7 +156,7 @@ namespace flame
 
 		inline ~WindowPrivate()
 		{
-			for (auto &f : destroy_listeners)
+			for (auto& f : destroy_listeners)
 				f.exec();
 		}
 
@@ -176,7 +176,7 @@ namespace flame
 			}
 		}
 
-		inline void set_size(const Ivec2 &_pos, const Ivec2 &_size, int _style)
+		inline void set_size(const Ivec2 & _pos, const Ivec2 & _size, int _style)
 		{
 			if (_size.x > 0)
 				size.x = _size.x;
@@ -200,11 +200,11 @@ namespace flame
 				win32_style |= WS_POPUP | WS_BORDER;
 			else
 			{
-				if (style & WindowFullscreen)
+				if (style& WindowFullscreen)
 					final_size = screen_size;
-				if (style & WindowFrame)
+				if (style& WindowFrame)
 					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-				if (style & WindowResizable)
+				if (style& WindowResizable)
 					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
 			}
 
@@ -234,28 +234,28 @@ namespace flame
 			ShowWindow(hWnd, v ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
 		}
 #endif
-		inline int add_key_listener(Function<KeyListenerParm> &listener)
+		inline int add_key_listener(Function<KeyListenerParm> & listener)
 		{
 			auto idx = key_listeners.size();
 			key_listeners.push_back(listener);
 			return idx;
 		}
 
-		inline int add_mouse_listener(Function<MouseListenerParm> &listener)
+		inline int add_mouse_listener(Function<MouseListenerParm> & listener)
 		{
 			auto idx = mouse_listeners.size();
 			mouse_listeners.push_back(listener);
 			return idx;
 		}
 
-		inline int add_resize_listener(Function<ResizeListenerParm> &listener)
+		inline int add_resize_listener(Function<ResizeListenerParm> & listener)
 		{
 			auto idx = resize_listeners.size();
 			resize_listeners.push_back(listener);
 			return idx;
 		}
 
-		inline int add_destroy_listener(Function<> &listener)
+		inline int add_destroy_listener(Function<> & listener)
 		{
 			auto idx = destroy_listeners.size();
 			destroy_listeners.push_back(listener);
@@ -283,7 +283,7 @@ namespace flame
 		}
 	};
 
-	void *Window::get_native()
+	void* Window::get_native()
 	{
 #ifdef FLAME_WINDOWS
 		return reinterpret_cast<WindowPrivate*>(this)->hWnd;
@@ -298,7 +298,7 @@ namespace flame
 		reinterpret_cast<WindowPrivate*>(this)->set_cursor(type);
 	}
 
-	void Window::set_size(const Ivec2 &_pos, const Ivec2 &_size, int _style)
+	void Window::set_size(const Ivec2 & _pos, const Ivec2 & _size, int _style)
 	{
 		reinterpret_cast<WindowPrivate*>(this)->set_size(_pos, _size, _style);
 	}
@@ -309,22 +309,22 @@ namespace flame
 	}
 #endif
 
-	int Window::add_key_listener(Function<KeyListenerParm> &listener)
+	int Window::add_key_listener(Function<KeyListenerParm> & listener)
 	{
 		return ((WindowPrivate*)this)->add_key_listener(listener);
 	}
 
-	int Window::add_mouse_listener(Function<MouseListenerParm> &listener)
+	int Window::add_mouse_listener(Function<MouseListenerParm> & listener)
 	{
 		return ((WindowPrivate*)this)->add_mouse_listener(listener);
 	}
 
-	int Window::add_resize_listener(Function<ResizeListenerParm> &listener)
+	int Window::add_resize_listener(Function<ResizeListenerParm> & listener)
 	{
 		return ((WindowPrivate*)this)->add_resize_listener(listener);
 	}
 
-	int Window::add_destroy_listener(Function<> &listener)
+	int Window::add_destroy_listener(Function<> & listener)
 	{
 		return ((WindowPrivate*)this)->add_destroy_listener(listener);
 	}
@@ -366,9 +366,9 @@ namespace flame
 			case WM_KEYDOWN:
 			{
 				auto v = vk_code_to_key(wParam);
-				for (auto &f : w->key_listeners)
+				for (auto& f : w->key_listeners)
 				{
-					auto &p = (Window::KeyListenerParm&)f.p;
+					auto& p = (Window::KeyListenerParm&)f.p;
 					p.action() = KeyStateDown;
 					p.value() = v;
 					f.exec();
@@ -378,9 +378,9 @@ namespace flame
 			case WM_KEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
-				for (auto &f : w->key_listeners)
+				for (auto& f : w->key_listeners)
 				{
-					auto &p = (Window::KeyListenerParm&)f.p;
+					auto& p = (Window::KeyListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.value() = v;
 					f.exec();
@@ -388,7 +388,7 @@ namespace flame
 				break;
 			}
 			case WM_CHAR:
-				for (auto &f : w->key_listeners)
+				for (auto& f : w->key_listeners)
 				{
 					f.p.action() = KeyStateNull;
 					f.p.value() = wParam;
@@ -398,7 +398,7 @@ namespace flame
 			case WM_LBUTTONDOWN:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
 					f.p.action() = KeyStateDown;
 					f.p.key() = Mouse_Left;
@@ -410,9 +410,9 @@ namespace flame
 			case WM_LBUTTONUP:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
+					auto& p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Left;
 					p.pos() = pos;
@@ -423,9 +423,9 @@ namespace flame
 			case WM_MBUTTONDOWN:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
+					auto& p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateDown;
 					p.key() = Mouse_Middle;
 					p.pos() = pos;
@@ -436,9 +436,9 @@ namespace flame
 			case WM_MBUTTONUP:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
+					auto& p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Middle;
 					p.pos() = pos;
@@ -449,9 +449,9 @@ namespace flame
 			case WM_RBUTTONDOWN:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
+					auto& p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateDown;
 					p.key() = Mouse_Right;
 					p.pos() = pos;
@@ -462,9 +462,9 @@ namespace flame
 			case WM_RBUTTONUP:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
+					auto& p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Right;
 					p.pos() = pos;
@@ -475,9 +475,9 @@ namespace flame
 			case WM_MOUSEMOVE:
 			{
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
+					auto& p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateNull;
 					p.key() = Mouse_Null;
 					p.pos() = pos;
@@ -488,9 +488,9 @@ namespace flame
 			case WM_MOUSEWHEEL:
 			{
 				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
-				for (auto &f : w->mouse_listeners)
+				for (auto& f : w->mouse_listeners)
 				{
-					auto &p = (Window::MouseListenerParm&)f.p;
+					auto& p = (Window::MouseListenerParm&)f.p;
 					p.action() = KeyStateNull;
 					p.key() = Mouse_Middle;
 					p.pos().x = v;
@@ -507,9 +507,9 @@ namespace flame
 				if (size != w->size)
 				{
 					w->size = size;
-					for (auto &f : w->resize_listeners)
+					for (auto& f : w->resize_listeners)
 					{
-						auto &p = (Window::ResizeListenerParm&)f.p;
+						auto& p = (Window::ResizeListenerParm&)f.p;
 						p.size() = size;
 						f.exec();
 					}
@@ -523,7 +523,7 @@ namespace flame
 	}
 #endif
 
-	Window *Window::create(Application *app, const char *_title, const Ivec2 &_size, int _style)
+	Window* Window::create(Application * app, const char* _title, const Ivec2 & _size, int _style)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -562,41 +562,41 @@ namespace flame
 	}
 
 #ifdef FLAME_ANDROID
-	static int32_t android_handle_input(android_app *state, AInputEvent* event)
+	static int32_t android_handle_input(android_app * state, AInputEvent * event)
 	{
-	    if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION)
+		if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION)
 			return 1;
 		return 0;
 	}
 
 	void (*created_callback)();
 
-	static void android_handle_cmd(android_app *state, int32_t cmd)
+	static void android_handle_cmd(android_app * state, int32_t cmd)
 	{
 		//auto w = (Window*)app->userData;
-		switch (cmd) 
+		switch (cmd)
 		{
-			case APP_CMD_SAVE_STATE:
-				//engine->app->savedState = malloc(sizeof(???));
-				//*((struct ???*)engine->app->savedState) = ???;
-				//engine->app->savedStateSize = sizeof(struct ???);
-				break;
-			case APP_CMD_INIT_WINDOW:
-				if (state->window)
-					created_callback();
-				break;
-			case APP_CMD_TERM_WINDOW:
-				break;
-			case APP_CMD_GAINED_FOCUS:
-				break;
-			case APP_CMD_LOST_FOCUS:
-				break;
+		case APP_CMD_SAVE_STATE:
+			//engine->app->savedState = malloc(sizeof(???));
+			//*((struct ???*)engine->app->savedState) = ???;
+			//engine->app->savedStateSize = sizeof(struct ???);
+			break;
+		case APP_CMD_INIT_WINDOW:
+			if (state->window)
+				created_callback();
+			break;
+		case APP_CMD_TERM_WINDOW:
+			break;
+		case APP_CMD_GAINED_FOCUS:
+			break;
+		case APP_CMD_LOST_FOCUS:
+			break;
 		}
 	}
 
-	Window *Window::create(Application *app, void *android_state, void(*callback)())
+	Window* Window::create(Application * app, void* android_state, void(*callback)())
 	{
-        auto android_state_ = reinterpret_cast<android_app*>(android_state);
+		auto android_state_ = reinterpret_cast<android_app*>(android_state);
 		auto w = new WindowPrivate(android_state_);
 		w->app = reinterpret_cast<ApplicationPrivate*>(app);
 		(reinterpret_cast<ApplicationPrivate*>(app))->windows.push_back(w);
@@ -604,15 +604,15 @@ namespace flame
 		android_state_->userData = w;
 		android_state_->onAppCmd = android_handle_cmd;
 		android_state_->onInputEvent = android_handle_input;
-        created_callback = callback;
+		created_callback = callback;
 
 		return w;
 	}
 #endif
 
-	void Window::destroy(Window *w)
+	void Window::destroy(Window * w)
 	{
-		auto &windows = reinterpret_cast<WindowPrivate*>(w)->app->windows;
+		auto& windows = reinterpret_cast<WindowPrivate*>(w)->app->windows;
 		for (auto it = windows.begin(); it != windows.end(); it++)
 		{
 			if ((*it) == w)
@@ -629,14 +629,14 @@ namespace flame
 
 	inline ApplicationPrivate::ApplicationPrivate()
 	{
-	    total_frame = 0;
+		total_frame = 0;
 		fps = 0;
 		elapsed_time = 0.f;
 	}
 
 	inline ApplicationPrivate::~ApplicationPrivate()
 	{
-		for (auto &w : windows)
+		for (auto& w : windows)
 		{
 #ifdef FLAME_WINDOWS
 			DestroyWindow(w->hWnd);
@@ -645,7 +645,7 @@ namespace flame
 		}
 	}
 
-	inline int ApplicationPrivate::run(Function<> &idle_func)
+	inline int ApplicationPrivate::run(Function<> & idle_func)
 	{
 		if (windows.size() == 0)
 			return 1;
@@ -671,14 +671,14 @@ namespace flame
 
 			auto w = (*windows.begin());
 
-            while ((ident = ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0)
-            {
-                if (source != NULL)
-                    source->process(w->android_state_, source);
+			while ((ident = ALooper_pollAll(0, NULL, &events, (void**)& source)) >= 0)
+			{
+				if (source != NULL)
+					source->process(w->android_state_, source);
 
-                if (w->android_state_->destroyRequested != 0)
-                    w->destroy_event = true;
-            }
+				if (w->android_state_->destroyRequested != 0)
+					w->destroy_event = true;
+			}
 #endif
 
 			for (auto it = windows.begin(); it != windows.end(); )
@@ -697,32 +697,32 @@ namespace flame
 			if (windows.empty())
 				return 0;
 
-            if (last_time - last_frame_time >= 1000000000)
-            {
-                fps = counting_frame;
-                counting_frame = 0;
-                last_frame_time = last_time;
-            }
+			if (last_time - last_frame_time >= 1000000000)
+			{
+				fps = counting_frame;
+				counting_frame = 0;
+				last_frame_time = last_time;
+			}
 
 			idle_func.exec();
 
-            if (!delay_events.empty())
-            {
-				for (auto &f : delay_events)
+			if (!delay_events.empty())
+			{
+				for (auto& f : delay_events)
 					f.exec();
-                delay_events.clear();
-            }
+				delay_events.clear();
+			}
 
-            total_frame++;
-            counting_frame++;
-            auto et = last_time;
-            last_time = get_now_ns();
-            et = last_time - et;
-            elapsed_time = et / 1000000000.f;
+			total_frame++;
+			counting_frame++;
+			auto et = last_time;
+			last_time = get_now_ns();
+			et = last_time - et;
+			elapsed_time = et / 1000000000.f;
 		}
 	}
 
-	inline void ApplicationPrivate::add_delay_event(Function<> &event)
+	inline void ApplicationPrivate::add_delay_event(Function<> & event)
 	{
 		delay_events.emplace_back(event);
 	}
@@ -732,7 +732,7 @@ namespace flame
 		delay_events.clear();
 	}
 
-	int Application::run(Function<> &idle_func)
+	int Application::run(Function<> & idle_func)
 	{
 		return ((ApplicationPrivate*)this)->run(idle_func);
 	}
@@ -742,17 +742,17 @@ namespace flame
 		((ApplicationPrivate*)this)->clear_delay_events();
 	}
 
-	void Application::add_delay_event(Function<> &event)
+	void Application::add_delay_event(Function<> & event)
 	{
 		((ApplicationPrivate*)this)->add_delay_event(event);
 	}
 
-	Application *Application::create()
+	Application* Application::create()
 	{
 		return new ApplicationPrivate;
 	}
 
-	void Application::destroy(Application *app)
+	void Application::destroy(Application * app)
 	{
 		delete (ApplicationPrivate*)app;
 	}

@@ -24,9 +24,8 @@
 
 using namespace flame;
 
-FLAME_PACKAGE_BEGIN(WindowClickC)
-	FLAME_PACKAGE_ITEM(WindowPtr, w, p)
-FLAME_PACKAGE_END
+FLAME_PACKAGE_BEGIN_1(WindowClickC, WindowPtr, w, p)
+FLAME_PACKAGE_END_1
 
 void test_window()
 {

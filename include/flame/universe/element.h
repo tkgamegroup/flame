@@ -161,31 +161,31 @@ namespace flame
 		Array<Element*> children_2$;
 
 		bool draw_default$;
-		FLAME_PACKAGE_BEGIN_4(ExtraDrawParm, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1, ElementPtr, thiz, p)
-		FLAME_PACKAGE_END_4
+		FLAME_PACKAGE_BEGIN_3(ExtraDrawParm, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1)
+		FLAME_PACKAGE_END_3
 		Array<Function<ExtraDrawParm>> extra_draws$;
 
 		int closet_id$;
-		FLAME_PACKAGE_BEGIN_2(StyleParm, ElementPtr, thiz, p, int, closet_id, i1)
-		FLAME_PACKAGE_END_2
+		FLAME_PACKAGE_BEGIN_1(StyleParm, int, closet_id, i1)
+		FLAME_PACKAGE_END_1
 		int style_level;
 		Array<Function<StyleParm>> styles$;
 
-		FLAME_PACKAGE_BEGIN_4(AnimationParm, float, time, f1, ElementPtr, thiz, p, float, duration, f1, int, looping, i1)
-		FLAME_PACKAGE_END_4
+		FLAME_PACKAGE_BEGIN_1(AnimationParm, float, time, f1)
+		FLAME_PACKAGE_END_1
 		Array<Function<AnimationParm>> animations$;
 
-		FLAME_PACKAGE_BEGIN_3(FoucusListenerParm, FocusType, type, i1, int, focus_or_keyfocus, i1, ElementPtr, thiz, p)
-		FLAME_PACKAGE_END_3
+		FLAME_PACKAGE_BEGIN_2(FoucusListenerParm, FocusType, type, i1, int, focus_or_keyfocus, i1)
+		FLAME_PACKAGE_END_2
 
-		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, KeyState, action, i1, int, value, i1, ElementPtr, thiz, p)
+		FLAME_PACKAGE_BEGIN_2(KeyListenerParm, KeyState, action, i1, int, value, i1)
 		/*
 			- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
 			- when char, action is KeyStateNull, value is ch
 		*/
-		FLAME_PACKAGE_END_3
+		FLAME_PACKAGE_END_2
 
-		FLAME_PACKAGE_BEGIN_4(MouseListenerParm, KeyState, action, i1, MouseKey, key, i1, Vec2, value, f2, ElementPtr, thiz, p)
+		FLAME_PACKAGE_BEGIN_3(MouseListenerParm, KeyState, action, i1, MouseKey, key, i1, Vec2, value, f2)
 		/*
 			- when enter/leave, action is KeyStateDown or KeyStateUp, key is Mouse_Null
 			- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey, value is pos
@@ -193,12 +193,9 @@ namespace flame
 			- when scroll, action is KeyStateNull, key is Mouse_Middle, value.x is scroll value
 			- when clicked, action is KeyStateDown | KeyStateUp | (KeyStateDouble ? for double clicked), key is Mouse_Null
 		*/
-		FLAME_PACKAGE_END_4
+		FLAME_PACKAGE_END_3
 
-		FLAME_PACKAGE_BEGIN_2(DropListenerParm, ElementPtr, src, p, ElementPtr, thiz, p)
-		FLAME_PACKAGE_END_2
-
-		FLAME_PACKAGE_BEGIN_1(ChangedListenerParm, ElementPtr, thiz, p)
+		FLAME_PACKAGE_BEGIN_1(DropListenerParm, ElementPtr, src, p)
 		FLAME_PACKAGE_END_1
 
 		enum ChildOp
@@ -213,7 +210,7 @@ namespace flame
 		Array<Function<KeyListenerParm>> key_listeners$;
 		Array<Function<MouseListenerParm>> mouse_listeners$;
 		Array<Function<DropListenerParm>> drop_listeners$;
-		Array<Function<ChangedListenerParm>> changed_listeners$;
+		Array<Function<>> changed_listeners$;
 		Array<Function<ChildListenerParm>> child_listeners$;
 
 		Array<CommonData> datas$;
@@ -240,19 +237,12 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void remove_from_parent(bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void take_from_parent(bool delay = false);
-		FLAME_UNIVERSE_EXPORTS int find_child(Element* w);
+		FLAME_UNIVERSE_EXPORTS int find_child(int layer, Element* w);
 		FLAME_UNIVERSE_EXPORTS void set_to_foreground();
 
 		FLAME_UNIVERSE_EXPORTS float get_content_size() const;
 
 		FLAME_UNIVERSE_EXPORTS void arrange();
-
-		FLAME_UNIVERSE_EXPORTS void add_extra_draw(PF pf, const std::vector<CommonData>& capt);
-
-		FLAME_UNIVERSE_EXPORTS void add_style(int closet_id, PF pf, const std::vector<CommonData>& capt, int pos = -1);
-		FLAME_UNIVERSE_EXPORTS void remove_style(int idx);
-
-		FLAME_UNIVERSE_EXPORTS void add_animation(float duration, int looping, PF pf, const std::vector<CommonData>& capt);
 
 		FLAME_UNIVERSE_EXPORTS void on_draw(graphics::Canvas* c, const Vec2& off, float scl);
 		FLAME_UNIVERSE_EXPORTS void on_focus(FocusType type, int focus_or_keyfocus);
@@ -260,20 +250,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2& value);
 		FLAME_UNIVERSE_EXPORTS void on_drop(Element* src);
 		FLAME_UNIVERSE_EXPORTS void on_changed();
-
-		FLAME_FOUNDATION_EXPORTS int add_focus_listener(Function<FoucusListenerParm>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_key_listener(Function<KeyListenerParm>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<MouseListenerParm>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_drop_listener(Function<DropListenerParm>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_changed_listener(Function<ChangedListenerParm>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_child_listener(Function<ChildListenerParm>& listener);
-
-		FLAME_FOUNDATION_EXPORTS void remove_focus_listener(int idx, bool delay = false);
-		FLAME_FOUNDATION_EXPORTS void remove_key_listener(int idx, bool delay = false);
-		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(int idx, bool delay = false);
-		FLAME_FOUNDATION_EXPORTS void remove_drop_listener(int idx, bool delay = false);
-		FLAME_FOUNDATION_EXPORTS void remove_changed_listener(int idx, bool delay = false);
-		FLAME_FOUNDATION_EXPORTS void remove_child_listener(int idx, bool delay = false);
 
 		FLAME_UNIVERSE_EXPORTS SerializableNode* save();
 

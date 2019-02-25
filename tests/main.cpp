@@ -26,7 +26,6 @@
 
 void test_window();
 void test_graphics();
-void test_sound_record();
 
 int main(int argc, char** args)
 {
@@ -41,8 +40,6 @@ int main(int argc, char** args)
 		test_window();
 	else if (name == "graphics")
 		test_graphics();
-	else if (name == "sound_record")
-		test_sound_record();
 	else
 		printf("test not found");
 

@@ -24,16 +24,15 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/icon.h>
 #include "element_private.h"
-#include <flame/universe/style.h>
 #include "ui_private.h"
 
 namespace flame
 {
 	const Vec2 hidden_pos(9999.f);
 
-	inline ElementPrivate::ElementPrivate(Instance* ins)
+	inline ElementPrivate::ElementPrivate(UI* ui) :
+		ui(ui)
 	{
-		instance = ins;
 		parent = nullptr;
 		layer = 0;
 	}
@@ -131,12 +130,12 @@ namespace flame
 
 		for (auto i = 0; i < child_listeners$.size; i++)
 		{
-			auto f = child_listeners$[i];
+			auto& f = child_listeners$[i];
 
-			auto p = (ChildListenerParm&)f->p;
+			auto& p = (ChildListenerParm&)f.p;
 			p.op() = ChildAdd;
 			p.src() = w;
-			f->exec();
+			f.exec();
 		}
 	}
 
@@ -270,7 +269,7 @@ namespace flame
 			parent->take_child(this);
 	}
 
-	inline int ElementPrivate::find_child(ElementPrivate * w)
+	inline int ElementPrivate::find_child(int layer, ElementPrivate * w)
 	{
 		auto& children = layer == 0 ? children_1$ : children_2$;
 		return children.find(w);
@@ -643,51 +642,14 @@ namespace flame
 		}
 	}
 
-	inline void ElementPrivate::add_extra_draw(PF pf, const std::vector<CommonData> & _capt)
-	{
-		auto capt = _capt;
-		capt.emplace(capt.begin(), this);
-		extra_draws$.push_back(Function::create(pf, ExtraDrawParm::PARM_SIZE, capt));
-	}
-
-	inline void ElementPrivate::add_style(int closet_id, PF pf, const std::vector<CommonData> & _capt, int pos)
-	{
-		auto capt = _capt;
-		capt.emplace(capt.begin(), closet_id);
-		capt.emplace(capt.begin(), this);
-		if (pos == -1)
-			pos = styles$.size;
-		styles$.insert(pos, Function::create(pf, StyleParm::PARM_SIZE, capt));
-	}
-
-	inline void ElementPrivate::remove_style(int idx)
-	{
-		auto s = styles$[idx];
-		styles$.remove(idx);
-		Function::destroy(s);
-	}
-
-	inline void ElementPrivate::add_animation(float duration, int looping, PF pf, const std::vector<CommonData> & _capt)
-	{
-		auto capt = _capt;
-		capt.emplace(capt.begin(), looping);
-		capt.emplace(capt.begin(), duration);
-		capt.emplace(capt.begin(), this);
-		auto f = Function::create(pf, AnimationParm::PARM_SIZE, capt);
-		auto& p = (AnimationParm&)f->p;
-		p.time() = 0.f;
-		animations$.push_back(f);
-	}
-
 	void ElementPrivate::remove_animations()
 	{
 		for (auto i = 0; i < animations$.size; i++)
 		{
-			auto f = animations$[i];
-			auto& p = (AnimationParm&)f->p;
+			auto& f = animations$[i];
+			auto& p = (AnimationParm&)f.p;
 			p.time() = -1.f;
-			f->exec();
-			Function::destroy(animations$[i]);
+			f.exec();
 		}
 		animations$.resize(0);
 		for (auto i = 0; i < children_1$.size; i++)
@@ -696,7 +658,7 @@ namespace flame
 			((ElementPrivate*)children_2$[i])->remove_animations();
 	}
 
-	inline void ElementPrivate::on_draw(Canvas * c, const Vec2 & off, float scl)
+	inline void ElementPrivate::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
 	{
 		if (draw_default$)
 		{
@@ -720,12 +682,12 @@ namespace flame
 		}
 		for (auto i = 0; i < extra_draws$.size; i++)
 		{
-			auto f = extra_draws$[i];
-			auto& p = (ExtraDrawParm&)f->p;
+			auto& f = extra_draws$[i];
+			auto& p = (ExtraDrawParm&)f.p;
 			p.canvas() = c;
 			p.off() = off;
 			p.scl() = scl;
-			f->exec();
+			f.exec();
 		}
 	}
 
@@ -733,7 +695,7 @@ namespace flame
 	{
 		for (auto i = 0; i < focus_listeners$.size; i++)
 		{
-			auto f = focus_listeners$[i];
+			auto& f = focus_listeners$[i];
 			auto& p = (FoucusListenerParm&)f->p;
 			p.type() = type;
 			p.focus_or_keyfocus() = focus_or_keyfocus;
@@ -745,7 +707,7 @@ namespace flame
 	{
 		for (auto i = 0; i < key_listeners$.size; i++)
 		{
-			auto f = key_listeners$[i];
+			auto& f = key_listeners$[i];
 			auto& p = (KeyListenerParm&)f->p;
 			p.action() = action;
 			p.value() = value;
@@ -757,7 +719,7 @@ namespace flame
 	{
 		for (auto i = 0; i < mouse_listeners$.size; i++)
 		{
-			auto f = mouse_listeners$[i];
+			auto& f = mouse_listeners$[i];
 			auto& p = (MouseListenerParm&)f->p;
 			p.action() = action;
 			p.key() = key;
@@ -770,7 +732,7 @@ namespace flame
 	{
 		for (auto i = 0; i < drop_listeners$.size; i++)
 		{
-			auto f = drop_listeners$[i];
+			auto& f = drop_listeners$[i];
 			auto& p = (DropListenerParm&)f->p;
 			p.src() = src;
 			f->exec();
@@ -781,115 +743,10 @@ namespace flame
 	{
 		for (auto i = 0; i < changed_listeners$.size; i++)
 		{
-			auto f = changed_listeners$[i];
+			auto& f = changed_listeners$[i];
 			auto& p = (ChangedListenerParm&)f->p;
 			f->exec();
 		}
-	}
-
-	inline Function* ElementPrivate::add_listener(Listener l, PF pf, void* thiz, const std::vector<CommonData> & _capt)
-	{
-		auto parm_cnt = 0;
-		Array<Function*>* list;
-
-		switch (l)
-		{
-		case ListenerFocus:
-			parm_cnt = FoucusListenerParm::PARM_SIZE;
-			list = &focus_listeners$;
-			break;
-		case ListenerKey:
-			parm_cnt = KeyListenerParm::PARM_SIZE;
-			list = &key_listeners$;
-			break;
-		case ListenerMouse:
-			parm_cnt = MouseListenerParm::PARM_SIZE;
-			list = &mouse_listeners$;
-			break;
-		case ListenerDrop:
-			parm_cnt = DropListenerParm::PARM_SIZE;
-			list = &drop_listeners$;
-			break;
-		case ListenerChanged:
-			parm_cnt = ChangedListenerParm::PARM_SIZE;
-			list = &changed_listeners$;
-			break;
-		case ListenerChild:
-			parm_cnt = ChildListenerParm::PARM_SIZE;
-			list = &child_listeners$;
-			break;
-		default:
-			assert(0);
-			return nullptr;
-		}
-
-		auto capt = _capt;
-		capt.emplace(capt.begin(), thiz);
-		auto f = Function::create(pf, parm_cnt, capt);
-		list->push_back(f);
-		return f;
-	}
-
-	inline void ElementPrivate::remove_listener(Listener l, Function * f, bool delay)
-	{
-		if (delay)
-		{
-			delay_listener_remove.emplace_back(l, f);
-			return;
-		}
-
-		Array<Function*>* list;
-
-		switch (l)
-		{
-		case ListenerFocus:
-			list = &focus_listeners$;
-			break;
-		case ListenerKey:
-			list = &key_listeners$;
-			break;
-		case ListenerMouse:
-			list = &mouse_listeners$;
-			break;
-		case ListenerDrop:
-			list = &drop_listeners$;
-			break;
-		case ListenerChanged:
-			list = &changed_listeners$;
-			break;
-		case ListenerChild:
-			list = &child_listeners$;
-			break;
-		default:
-			assert(0);
-			return;
-		}
-
-		list->remove(list->find(f));
-		Function::destroy(f);
-	}
-
-	inline void ElementPrivate::add_data_storages(const std::vector<CommonData> & datas)
-	{
-		if (datas.empty())
-			return;
-
-		auto original_size = data_storages$.size;
-		data_storages$.resize(original_size + datas.size());
-		auto d = &data_storages$[original_size];
-		for (auto& t : datas)
-		{
-			*d = t;
-
-			d++;
-		}
-	}
-
-	inline void ElementPrivate::add_string_storages(int count)
-	{
-		if (count == 0)
-			return;
-		string_storages$.resize(string_storages$.size + count);
 	}
 
 	Element::Element()
@@ -963,9 +820,9 @@ namespace flame
 		((ElementPrivate*)this)->set_visibility(v);
 	}
 
-	Instance* Element::instance() const
+	UI* Element::ui() const
 	{
-		return ((ElementPrivate*)this)->instance;
+		return ((ElementPrivate*)this)->ui;
 	}
 
 	Element* Element::parent() const
@@ -1023,9 +880,9 @@ namespace flame
 		((ElementPrivate*)this)->take_from_parent(delay);
 	}
 
-	int Element::find_child(Element * w)
+	int Element::find_child(int layer, Element * w)
 	{
-		return ((ElementPrivate*)this)->find_child((ElementPrivate*)w);
+		return ((ElementPrivate*)this)->find_child(layer, (ElementPrivate*)w);
 	}
 
 	void Element::set_to_foreground()
@@ -1045,27 +902,7 @@ namespace flame
 		((ElementPrivate*)this)->arrange();
 	}
 
-	void Element::add_extra_draw(PF pf, const std::vector<CommonData> & capt)
-	{
-		((ElementPrivate*)this)->add_extra_draw(pf, capt);
-	}
-
-	void Element::add_style(int closet_id, PF pf, const std::vector<CommonData> & capt, int pos)
-	{
-		((ElementPrivate*)this)->add_style(closet_id, pf, capt, pos);
-	}
-
-	void Element::remove_style(int idx)
-	{
-		((ElementPrivate*)this)->remove_style(idx);
-	}
-
-	void Element::add_animation(float duration, int looping, PF pf, const std::vector<CommonData> & capt)
-	{
-		((ElementPrivate*)this)->add_animation(duration, looping, pf, capt);
-	}
-
-	void Element::on_draw(Canvas * c, const Vec2 & off, float scl)
+	void Element::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
 	{
 		((ElementPrivate*)this)->on_draw(c, off, scl);
 	}
@@ -1095,34 +932,14 @@ namespace flame
 		((ElementPrivate*)this)->on_changed();
 	}
 
-	Function* Element::add_listener(Listener l, PF pf, void* thiz, const std::vector<CommonData> & capt)
-	{
-		return ((ElementPrivate*)this)->add_listener(l, pf, thiz, capt);
-	}
-
-	void Element::remove_listener(Listener l, Function * f, bool delay)
-	{
-		((ElementPrivate*)this)->remove_listener(l, f, delay);
-	}
-
-	void Element::add_data_storages(const std::vector<CommonData> & datas)
-	{
-		((ElementPrivate*)this)->add_data_storages(datas);
-	}
-
-	void Element::add_string_storages(int count)
-	{
-		((ElementPrivate*)this)->add_string_storages(count);
-	}
-
 	SerializableNode* Element::save()
 	{
 		return SerializableNode::serialize(find_udt(cH("ui::Element")), this, 1);
 	}
 
-	Element* Element::create(Instance * ins)
+	Element* Element::create(UI * ui)
 	{
-		return new ElementPrivate(ins);
+		return new ElementPrivate(ui);
 	}
 
 	void Element::create_from_typeinfo(Instance * ins, VaribleInfo * info, void* p, Element * dst)
