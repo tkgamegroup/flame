@@ -111,6 +111,14 @@ namespace flame
 
 	struct Element : R
 	{
+		enum Flag
+		{
+			FlagNull,
+			FlagJustCreated,
+			FlagNeedToRemoveFromParent,
+			FlagNeedToTakeFromParent
+		};
+
 		StringAndHash class$;
 
 		String name$;
@@ -154,8 +162,13 @@ namespace flame
 
 		bool cliped; // valid after arranging by parent
 		int content_size; // valid after arranging
-		bool showed; // vaild after instance processing
-		State state; // vaild after instance processing
+		bool showed; // vaild after processing
+		State state; // vaild after processing
+
+		UI* ui;
+		Element* parent;
+		int layer;
+		Flag flag;
 
 		Array<Element*> children_1$;
 		Array<Element*> children_2$;
@@ -216,7 +229,8 @@ namespace flame
 		Array<CommonData> datas$;
 		StringW text$;
 
-		FLAME_UNIVERSE_EXPORTS Element();
+		FLAME_UNIVERSE_EXPORTS Element(UI* ui);
+		FLAME_UNIVERSE_EXPORTS ~Element();
 
 		FLAME_UNIVERSE_EXPORTS void set_width(float x, Element* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_height(float y, Element* sender = nullptr);
@@ -224,15 +238,9 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_visibility(bool v);
 
-		FLAME_UNIVERSE_EXPORTS UI* ui() const;
-		FLAME_UNIVERSE_EXPORTS Element* parent() const;
-		FLAME_UNIVERSE_EXPORTS int layer() const;
-
-		FLAME_UNIVERSE_EXPORTS void add_child(Element* w, int layer = 0, int pos = -1, bool delay = false, bool modual = false);
+		FLAME_UNIVERSE_EXPORTS void add_child(Element* w, int layer = 0, int pos = -1, bool modual = false);
 		FLAME_UNIVERSE_EXPORTS void remove_child(int layer, int idx, bool delay = false);
-		FLAME_UNIVERSE_EXPORTS void remove_child(Element* w, bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void take_child(int layer, int idx, bool delay = false);
-		FLAME_UNIVERSE_EXPORTS void take_child(Element* w, bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void clear_children(int layer, int begin, int end, bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void remove_from_parent(bool delay = false);
@@ -243,6 +251,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS float get_content_size() const;
 
 		FLAME_UNIVERSE_EXPORTS void arrange();
+
+		FLAME_UNIVERSE_EXPORTS void remove_animations();
 
 		FLAME_UNIVERSE_EXPORTS void on_draw(graphics::Canvas* c, const Vec2& off, float scl);
 		FLAME_UNIVERSE_EXPORTS void on_focus(FocusType type, int focus_or_keyfocus);

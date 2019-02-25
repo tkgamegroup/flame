@@ -23,21 +23,71 @@
 #include <flame/foundation/serialize.h>
 #include <flame/graphics/font.h>
 #include <flame/universe/icon.h>
-#include "element_private.h"
+#include <flame/universe/style.h>
+#include <flame/universe/animation.h>
+#include <flame/universe/element.h>
 #include "ui_private.h"
 
 namespace flame
 {
 	const Vec2 hidden_pos(9999.f);
 
-	inline ElementPrivate::ElementPrivate(UI* ui) :
+	Element::Element(UI* ui) :
 		ui(ui)
 	{
+		class$ = "";
+
+		pos$ = Vec2(0.f);
+		size$ = Vec2(0.f);
+
+		alpha$ = 1.f;
+		scale$ = 1.f;
+
+		inner_padding$ = Vec4(0.f);
+		layout_padding$ = 0.f;
+
+		background_offset$ = Vec4(0.f);
+		background_round_radius$ = 0.f;
+		background_round_flags$ = 0;
+		background_frame_thickness$ = 0.f;
+		background_col$ = Bvec4(0);
+		background_frame_col$ = Bvec4(255);
+		background_shaow_thickness$ = 0.f;
+
+		size_policy_hori$ = SizeFixed;
+		size_policy_vert$ = SizeFixed;
+
+		align$ = AlignFree;
+
+		layout_type$ = LayoutFree;
+		item_padding$ = 0.f;
+		grid_hori_count$ = 1;
+		clip$ = false;
+
+		scroll_offset$ = 0.f;
+
+		event_attitude$ = EventAccept;
+		want_key_focus$ = false;
+
+		visible$ = true;
+
+		global_pos = Vec2(0.f);
+		global_scale = 1.f;
+
+		cliped = false;
+		content_size = 0.f;
+		showed = false;
+		state = StateNormal;
+
+		closet_id$ = 0;
+
+		draw_default$ = true;
+
 		parent = nullptr;
 		layer = 0;
 	}
 
-	inline ElementPrivate::~ElementPrivate()
+	Element::~Element()
 	{
 		if (this == instance->hovering_Element())
 			instance->set_hovering_Element(nullptr);
@@ -51,7 +101,7 @@ namespace flame
 			instance->set_popup_Element(nullptr);
 	}
 
-	inline void ElementPrivate::set_width(float x, Element * sender)
+	void Element::set_width(float x, Element * sender)
 	{
 		if (size$.x == x)
 			return;
@@ -62,7 +112,7 @@ namespace flame
 			parent->arrange();
 	}
 
-	inline void ElementPrivate::set_height(float y, Element * sender)
+	void Element::set_height(float y, Element * sender)
 	{
 		if (size$.y == y)
 			return;
@@ -73,7 +123,7 @@ namespace flame
 			parent->arrange();
 	}
 
-	inline void ElementPrivate::set_size(const Vec2 & v, Element * sender)
+	void Element::set_size(const Vec2 & v, Element * sender)
 	{
 		auto changed = false;
 		auto do_arrange = false;
@@ -97,7 +147,7 @@ namespace flame
 			parent->arrange();
 	}
 
-	inline void ElementPrivate::set_visibility(bool v)
+	void Element::set_visibility(bool v)
 	{
 		if (visible$ == v)
 			return;
@@ -110,7 +160,7 @@ namespace flame
 			parent->arrange();
 	}
 
-	inline void ElementPrivate::add_child(ElementPrivate * w, int layer, int pos, bool delay, bool modual)
+	void Element::add_child(Element * w, int layer, int pos, bool modual)
 	{
 		if (delay)
 		{
@@ -139,7 +189,7 @@ namespace flame
 		}
 	}
 
-	inline void ElementPrivate::remove_child(int layer, int idx, bool delay)
+	void Element::remove_child(int layer, int idx, bool delay)
 	{
 		if (delay)
 		{
@@ -154,26 +204,7 @@ namespace flame
 		arrange();
 	}
 
-	inline void ElementPrivate::remove_child(ElementPrivate * w, bool delay)
-	{
-		if (delay)
-		{
-			delay_removes_by_ptr.push_back(w);
-			return;
-		}
-
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		auto idx = children.find(w);
-		if (idx != -1)
-		{
-			Element::destroy(children[idx]);
-			children.remove(idx);
-
-			arrange();
-		}
-	}
-
-	inline void ElementPrivate::take_child(int layer, int idx, bool delay)
+	void Element::take_child(int layer, int idx, bool delay)
 	{
 		if (delay)
 		{
@@ -189,25 +220,7 @@ namespace flame
 		arrange();
 	}
 
-	inline void ElementPrivate::take_child(ElementPrivate * w, bool delay)
-	{
-		if (delay)
-		{
-			delay_takes_by_ptr.push_back(w);
-			return;
-		}
-
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		auto idx = children.find(w);
-		if (idx != -1)
-		{
-			children.remove(idx);
-
-			arrange();
-		}
-	}
-
-	inline void ElementPrivate::clear_children(int layer, int begin, int end, bool delay)
+	void Element::clear_children(int layer, int begin, int end, bool delay)
 	{
 		if (delay)
 		{
@@ -225,7 +238,7 @@ namespace flame
 		arrange();
 	}
 
-	inline void ElementPrivate::take_children(int layer, int begin, int end, bool delay)
+	void Element::take_children(int layer, int begin, int end, bool delay)
 	{
 		if (delay)
 		{
@@ -243,7 +256,7 @@ namespace flame
 		arrange();
 	}
 
-	inline void ElementPrivate::remove_from_parent(bool delay)
+	void Element::remove_from_parent(bool delay)
 	{
 		if (delay)
 		{
@@ -256,7 +269,7 @@ namespace flame
 			parent->remove_child(this);
 	}
 
-	inline void ElementPrivate::take_from_parent(bool delay)
+	void Element::take_from_parent(bool delay)
 	{
 		if (delay)
 		{
@@ -269,13 +282,13 @@ namespace flame
 			parent->take_child(this);
 	}
 
-	inline int ElementPrivate::find_child(int layer, ElementPrivate * w)
+	int Element::find_child(int layer, Element * w)
 	{
 		auto& children = layer == 0 ? children_1$ : children_2$;
 		return children.find(w);
 	}
 
-	inline void ElementPrivate::set_to_foreground()
+	void Element::set_to_foreground()
 	{
 		auto& list = layer == 0 ? parent->children_1$ : parent->children_2$;
 		for (auto i = list.find(this); i < list.size - 1; i++)
@@ -283,7 +296,14 @@ namespace flame
 		list[list.size - 1] = this;
 	}
 
-	inline void ElementPrivate::arrange()
+	const auto scroll_spare_spacing = 20.f;
+
+	float Element::get_content_size() const
+	{
+		return content_size + scroll_spare_spacing;
+	}
+
+	void Element::arrange()
 	{
 		switch (layout_type$)
 		{
@@ -642,7 +662,7 @@ namespace flame
 		}
 	}
 
-	void ElementPrivate::remove_animations()
+	void Element::remove_animations()
 	{
 		for (auto i = 0; i < animations$.size; i++)
 		{
@@ -658,7 +678,7 @@ namespace flame
 			((ElementPrivate*)children_2$[i])->remove_animations();
 	}
 
-	inline void ElementPrivate::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
+	void Element::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
 	{
 		if (draw_default$)
 		{
@@ -691,7 +711,7 @@ namespace flame
 		}
 	}
 
-	void ElementPrivate::on_focus(FocusType type, int focus_or_keyfocus)
+	void Element::on_focus(FocusType type, int focus_or_keyfocus)
 	{
 		for (auto i = 0; i < focus_listeners$.size; i++)
 		{
@@ -703,7 +723,7 @@ namespace flame
 		}
 	}
 
-	inline void ElementPrivate::on_key(KeyState action, int value)
+	void Element::on_key(KeyState action, int value)
 	{
 		for (auto i = 0; i < key_listeners$.size; i++)
 		{
@@ -715,7 +735,7 @@ namespace flame
 		}
 	}
 
-	inline void ElementPrivate::on_mouse(KeyState action, MouseKey key, const Vec2 & value)
+	void Element::on_mouse(KeyState action, MouseKey key, const Vec2 & pos)
 	{
 		for (auto i = 0; i < mouse_listeners$.size; i++)
 		{
@@ -728,7 +748,7 @@ namespace flame
 		}
 	}
 
-	inline void ElementPrivate::on_drop(Element * src)
+	void Element::on_drop(Element * src)
 	{
 		for (auto i = 0; i < drop_listeners$.size; i++)
 		{
@@ -739,7 +759,7 @@ namespace flame
 		}
 	}
 
-	inline void ElementPrivate::on_changed()
+	void Element::on_changed()
 	{
 		for (auto i = 0; i < changed_listeners$.size; i++)
 		{
@@ -747,189 +767,6 @@ namespace flame
 			auto& p = (ChangedListenerParm&)f->p;
 			f->exec();
 		}
-	}
-
-	Element::Element()
-	{
-		class$ = "";
-
-		pos$ = Vec2(0.f);
-		size$ = Vec2(0.f);
-
-		alpha$ = 1.f;
-		scale$ = 1.f;
-
-		inner_padding$ = Vec4(0.f);
-		layout_padding$ = 0.f;
-
-		background_offset$ = Vec4(0.f);
-		background_round_radius$ = 0.f;
-		background_round_flags$ = 0;
-		background_frame_thickness$ = 0.f;
-		background_col$ = Bvec4(0);
-		background_frame_col$ = Bvec4(255);
-		background_shaow_thickness$ = 0.f;
-
-		size_policy_hori$ = SizeFixed;
-		size_policy_vert$ = SizeFixed;
-
-		align$ = AlignFree;
-
-		layout_type$ = LayoutFree;
-		item_padding$ = 0.f;
-		grid_hori_count$ = 1;
-		clip$ = false;
-
-		scroll_offset$ = 0.f;
-
-		event_attitude$ = EventAccept;
-		want_key_focus$ = false;
-
-		visible$ = true;
-
-		global_pos = Vec2(0.f);
-		global_scale = 1.f;
-
-		cliped = false;
-		content_size = 0.f;
-		showed = false;
-		state = StateNormal;
-
-		closet_id$ = 0;
-
-		draw_default$ = true;
-	}
-
-	void Element::set_width(float x, Element * sender)
-	{
-		((ElementPrivate*)this)->set_width(x, sender);
-	}
-
-	void Element::set_height(float y, Element * sender)
-	{
-		((ElementPrivate*)this)->set_height(y, sender);
-	}
-
-	void Element::set_size(const Vec2 & v, Element * sender)
-	{
-		((ElementPrivate*)this)->set_size(v, sender);
-	}
-
-	void Element::set_visibility(bool v)
-	{
-		((ElementPrivate*)this)->set_visibility(v);
-	}
-
-	UI* Element::ui() const
-	{
-		return ((ElementPrivate*)this)->ui;
-	}
-
-	Element* Element::parent() const
-	{
-		return ((ElementPrivate*)this)->parent;
-	}
-
-	int Element::layer() const
-	{
-		return ((ElementPrivate*)this)->layer;
-	}
-
-	void Element::add_child(Element * w, int layer, int pos, bool delay, bool modual)
-	{
-		((ElementPrivate*)this)->add_child((ElementPrivate*)w, layer, pos, delay, modual);
-	}
-
-	void Element::remove_child(int layer, int idx, bool delay)
-	{
-		((ElementPrivate*)this)->remove_child(idx, delay);
-	}
-
-	void Element::remove_child(Element * w, bool delay)
-	{
-		((ElementPrivate*)this)->remove_child((ElementPrivate*)w, delay);
-	}
-
-	void Element::take_child(int layer, int idx, bool delay)
-	{
-		((ElementPrivate*)this)->take_child(layer, idx, delay);
-	}
-
-	void Element::take_child(Element * w, bool delay)
-	{
-		((ElementPrivate*)this)->take_child((ElementPrivate*)w, delay);
-	}
-
-	void Element::clear_children(int layer, int begin, int end, bool delay)
-	{
-		((ElementPrivate*)this)->clear_children(layer, begin, end, delay);
-	}
-
-	void Element::take_children(int layer, int begin, int end, bool delay)
-	{
-		((ElementPrivate*)this)->take_children(layer, begin, end, delay);
-	}
-
-	void Element::remove_from_parent(bool delay)
-	{
-		((ElementPrivate*)this)->remove_from_parent(delay);
-	}
-
-	void Element::take_from_parent(bool delay)
-	{
-		((ElementPrivate*)this)->take_from_parent(delay);
-	}
-
-	int Element::find_child(int layer, Element * w)
-	{
-		return ((ElementPrivate*)this)->find_child(layer, (ElementPrivate*)w);
-	}
-
-	void Element::set_to_foreground()
-	{
-		((ElementPrivate*)this)->set_to_foreground();
-	}
-
-	const auto scroll_spare_spacing = 20.f;
-
-	float Element::get_content_size() const
-	{
-		return content_size + scroll_spare_spacing;
-	}
-
-	void Element::arrange()
-	{
-		((ElementPrivate*)this)->arrange();
-	}
-
-	void Element::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
-	{
-		((ElementPrivate*)this)->on_draw(c, off, scl);
-	}
-
-	void Element::on_focus(FocusType type, int focus_or_keyfocus)
-	{
-		((ElementPrivate*)this)->on_focus(type, focus_or_keyfocus);
-	}
-
-	void Element::on_key(KeyState action, int value)
-	{
-		((ElementPrivate*)this)->on_key(action, value);
-	}
-
-	void Element::on_mouse(KeyState action, MouseKey key, const Vec2 & pos)
-	{
-		((ElementPrivate*)this)->on_mouse(action, key, pos);
-	}
-
-	void Element::on_drop(Element * src)
-	{
-		((ElementPrivate*)this)->on_drop(src);
-	}
-
-	void Element::on_changed()
-	{
-		((ElementPrivate*)this)->on_changed();
 	}
 
 	SerializableNode* Element::save()
@@ -952,7 +789,7 @@ namespace flame
 			c->align$ = AlignLittleEnd;
 			dst->add_child(c, 0, -1, true);
 		}
-		break;
+			break;
 		case VariableTagEnumMulti:
 			break;
 		case VariableTagVariable:
@@ -965,7 +802,7 @@ namespace flame
 				c->align$ = AlignLittleEnd;
 				dst->add_child(c, 0, -1, true);
 			}
-			break;
+				break;
 			case cH("uint"):
 			{
 				auto e = createT<wEdit>(ins, wEdit::TypeUint, (char*)p + info->offset());
@@ -974,7 +811,7 @@ namespace flame
 				e->set_size_by_width(10.f);
 				dst->add_child(e, 0, -1, true);
 			}
-			break;
+				break;
 			case cH("int"):
 			{
 				auto e = createT<wEdit>(ins, wEdit::TypeInt, (char*)p + info->offset());
@@ -983,7 +820,7 @@ namespace flame
 				e->set_size_by_width(10.f);
 				dst->add_child(e, 0, -1, true);
 			}
-			break;
+				break;
 			case cH("Ivec2"):
 			{
 				auto pp = (Ivec2*)((char*)p + info->offset());
@@ -997,7 +834,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("Ivec3"):
 			{
 				auto pp = (Ivec3*)((char*)p + info->offset());
@@ -1011,7 +848,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("Ivec4"):
 			{
 				auto pp = (Ivec4*)((char*)p + info->offset());
@@ -1025,7 +862,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("float"):
 			{
 				auto e = createT<wEdit>(ins, wEdit::TypeFloat, (char*)p + info->offset());
@@ -1034,7 +871,7 @@ namespace flame
 				e->set_size_by_width(10.f);
 				dst->add_child(e, 0, -1, true);
 			}
-			break;
+				break;
 			case cH("Vec2"):
 			{
 				auto pp = (Vec2*)((char*)p + info->offset());
@@ -1048,7 +885,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("Vec3"):
 			{
 				auto pp = (Vec3*)((char*)p + info->offset());
@@ -1062,7 +899,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("Vec4"):
 			{
 				auto pp = (Vec4*)((char*)p + info->offset());
@@ -1076,7 +913,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("uchar"):
 			{
 				auto e = createT<wEdit>(ins, wEdit::TypeUchar, (char*)p + info->offset());
@@ -1085,7 +922,7 @@ namespace flame
 				e->set_size_by_width(10.f);
 				dst->add_child(e, 0, -1, true);
 			}
-			break;
+				break;
 			case cH("Bvec2"):
 			{
 				auto pp = (Bvec2*)((char*)p + info->offset());
@@ -1099,7 +936,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("Bvec3"):
 			{
 				auto pp = (Bvec3*)((char*)p + info->offset());
@@ -1113,7 +950,7 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			case cH("Bvec4"):
 			{
 				auto pp = (Bvec4*)((char*)p + info->offset());
@@ -1127,14 +964,14 @@ namespace flame
 					dst->add_child(e, 0, -1, true);
 				}
 			}
-			break;
+				break;
 			}
 		}
-		break;
+			break;
 		case VariableTagArrayOfVariable:
 		{
 		}
-		break;
+			break;
 		case VariableTagArrayOfPointer:
 		{
 			auto& arr = *(Array<void*>*)((char*)p + info->offset());
@@ -1151,7 +988,7 @@ namespace flame
 				break;
 			}
 		}
-		break;
+			break;
 		}
 	}
 
