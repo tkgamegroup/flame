@@ -78,7 +78,7 @@ namespace flame
 		std::vector<Function<KeyListenerParm>> key_listeners;
 		std::vector<Function<MouseListenerParm>> mouse_listeners;
 		std::vector<Function<ResizeListenerParm>> resize_listeners;
-		std::vector<Function<>> destroy_listeners;
+		std::vector<Function<DestroyListenerParm>> destroy_listeners;
 
 		bool dead;
 
@@ -157,7 +157,10 @@ namespace flame
 		inline ~WindowPrivate()
 		{
 			for (auto& f : destroy_listeners)
+			{
+				f.p.thiz() = this;
 				f.exec();
+			}
 		}
 
 #ifdef FLAME_WINDOWS
@@ -255,7 +258,7 @@ namespace flame
 			return idx;
 		}
 
-		inline int add_destroy_listener(Function<> & listener)
+		inline int add_destroy_listener(Function<DestroyListenerParm> & listener)
 		{
 			auto idx = destroy_listeners.size();
 			destroy_listeners.push_back(listener);
@@ -324,7 +327,7 @@ namespace flame
 		return ((WindowPrivate*)this)->add_resize_listener(listener);
 	}
 
-	int Window::add_destroy_listener(Function<> & listener)
+	int Window::add_destroy_listener(Function<DestroyListenerParm> & listener)
 	{
 		return ((WindowPrivate*)this)->add_destroy_listener(listener);
 	}
@@ -369,6 +372,7 @@ namespace flame
 				for (auto& f : w->key_listeners)
 				{
 					auto& p = (Window::KeyListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateDown;
 					p.value() = v;
 					f.exec();
@@ -381,6 +385,7 @@ namespace flame
 				for (auto& f : w->key_listeners)
 				{
 					auto& p = (Window::KeyListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateUp;
 					p.value() = v;
 					f.exec();
@@ -390,8 +395,10 @@ namespace flame
 			case WM_CHAR:
 				for (auto& f : w->key_listeners)
 				{
-					f.p.action() = KeyStateNull;
-					f.p.value() = wParam;
+					auto& p = (Window::KeyListenerParm&)f.p;
+					p.thiz() = w;
+					p.action() = KeyStateNull;
+					p.value() = wParam;
 					f.exec();
 				}
 				break;
@@ -400,9 +407,11 @@ namespace flame
 				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 				{
-					f.p.action() = KeyStateDown;
-					f.p.key() = Mouse_Left;
-					f.p.pos() = pos;
+					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
+					p.action() = KeyStateDown;
+					p.key() = Mouse_Left;
+					p.pos() = pos;
 					f.exec();
 				}
 			}
@@ -413,6 +422,7 @@ namespace flame
 				for (auto& f : w->mouse_listeners)
 				{
 					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Left;
 					p.pos() = pos;
@@ -426,6 +436,7 @@ namespace flame
 				for (auto& f : w->mouse_listeners)
 				{
 					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateDown;
 					p.key() = Mouse_Middle;
 					p.pos() = pos;
@@ -439,6 +450,7 @@ namespace flame
 				for (auto& f : w->mouse_listeners)
 				{
 					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Middle;
 					p.pos() = pos;
@@ -452,6 +464,7 @@ namespace flame
 				for (auto& f : w->mouse_listeners)
 				{
 					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateDown;
 					p.key() = Mouse_Right;
 					p.pos() = pos;
@@ -465,6 +478,7 @@ namespace flame
 				for (auto& f : w->mouse_listeners)
 				{
 					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateUp;
 					p.key() = Mouse_Right;
 					p.pos() = pos;
@@ -478,6 +492,7 @@ namespace flame
 				for (auto& f : w->mouse_listeners)
 				{
 					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateNull;
 					p.key() = Mouse_Null;
 					p.pos() = pos;
@@ -491,6 +506,7 @@ namespace flame
 				for (auto& f : w->mouse_listeners)
 				{
 					auto& p = (Window::MouseListenerParm&)f.p;
+					p.thiz() = w;
 					p.action() = KeyStateNull;
 					p.key() = Mouse_Middle;
 					p.pos().x = v;
@@ -510,6 +526,7 @@ namespace flame
 					for (auto& f : w->resize_listeners)
 					{
 						auto& p = (Window::ResizeListenerParm&)f.p;
+						p.thiz() = w;
 						p.size() = size;
 						f.exec();
 					}

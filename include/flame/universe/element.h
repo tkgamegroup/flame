@@ -175,35 +175,35 @@ namespace flame
 		Array<Element*> children_1$;
 		Array<Element*> children_2$;
 
-		FLAME_PACKAGE_BEGIN_1(ThizCapture, ElementPtr, thiz, p)
-		FLAME_PACKAGE_END_1
-
 		bool draw_default$;
-		FLAME_PACKAGE_BEGIN_3(ExtraDrawParm, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1)
-		FLAME_PACKAGE_END_3
+		FLAME_PACKAGE_BEGIN_4(ExtraDrawParm, ElementPtr, thiz, p, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1)
+		FLAME_PACKAGE_END_4
 		Array<Function<ExtraDrawParm>> extra_draws$;
 
 		int closet_id$;
-		FLAME_PACKAGE_BEGIN_1(StyleParm, int, closet_id, i1)
-		FLAME_PACKAGE_END_1
+		FLAME_PACKAGE_BEGIN_2(StyleParm, ElementPtr, thiz, p, int, closet_id, i1)
+		FLAME_PACKAGE_END_2
 		int style_level;
 		Array<Function<StyleParm>> styles$;
 
-		FLAME_PACKAGE_BEGIN_1(AnimationParm, float, time, f1)
-		FLAME_PACKAGE_END_1
+		FLAME_PACKAGE_BEGIN_2(AnimationParm, ElementPtr, thiz, p, float, time, f1)
+		FLAME_PACKAGE_END_2
 		Array<Function<AnimationParm>> animations$;
 
-		FLAME_PACKAGE_BEGIN_2(FoucusListenerParm, FocusType, type, i1, int, focus_or_keyfocus, i1)
-		FLAME_PACKAGE_END_2
+		FLAME_PACKAGE_BEGIN_3(FoucusListenerParm, ElementPtr, thiz, p, FocusType, type, i1, int, is_keyfocus, i1)
+		FLAME_PACKAGE_END_3
 
-		FLAME_PACKAGE_BEGIN_2(KeyListenerParm, KeyState, action, i1, int, value, i1)
+		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, ElementPtr, thiz, p, KeyState, action, i1, int, value, i1)
 		/*
 			- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
 			- when char, action is KeyStateNull, value is ch
 		*/
-		FLAME_PACKAGE_END_2
+			inline bool is_down() { return action() == KeyStateDown; }
+			inline bool is_up()   { return action() == KeyStateUp;   }
+			inline bool is_char() { return action() == KeyStateNull; }
+		FLAME_PACKAGE_END_3
 
-		FLAME_PACKAGE_BEGIN_3(MouseListenerParm, KeyState, action, i1, MouseKey, key, i1, Vec2, value, f2)
+		FLAME_PACKAGE_BEGIN_4(MouseListenerParm, ElementPtr, thiz, p, KeyState, action, i1, MouseKey, key, i1, Vec2, value, f2)
 		/*
 			- when enter/leave, action is KeyStateDown or KeyStateUp, key is Mouse_Null
 			- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey, value is pos
@@ -211,9 +211,20 @@ namespace flame
 			- when scroll, action is KeyStateNull, key is Mouse_Middle, value.x is scroll value
 			- when clicked, action is KeyStateDown | KeyStateUp | (KeyStateDouble ? for double clicked), key is Mouse_Null
 		*/
-		FLAME_PACKAGE_END_3
+			inline bool is_enter()  { return action() == KeyStateDown && key() == Mouse_Null;   }
+			inline bool is_leave()  { return action() == KeyStateUp   && key() == Mouse_Null;   }
+			inline bool is_down()   { return action() == KeyStateDown && key() != Mouse_Null;   }
+			inline bool is_up()     { return action() == KeyStateUp   && key() != Mouse_Null;   }
+			inline bool is_move()   { return action() == KeyStateNull && key() == Mouse_Null;   }
+			inline bool is_scroll() { return action() == KeyStateNull && key() == Mouse_Middle; }
+			inline bool is_clicked(){ return action() == KeyStateDown | KeyStateUp && key() == Mouse_Null; }
+			inline bool is_double_clicked() { return action() == KeyStateDown | KeyStateUp | KeyStateDouble && key() == Mouse_Null; }
+		FLAME_PACKAGE_END_4
 
-		FLAME_PACKAGE_BEGIN_1(DropListenerParm, ElementPtr, src, p)
+		FLAME_PACKAGE_BEGIN_2(DropListenerParm, ElementPtr, thiz, p, ElementPtr, src, p)
+		FLAME_PACKAGE_END_2
+
+		FLAME_PACKAGE_BEGIN_1(ChangedListenerParm, ElementPtr, thiz, p)
 		FLAME_PACKAGE_END_1
 
 		enum ChildOp
@@ -221,14 +232,14 @@ namespace flame
 			ChildAdd,
 			ChildRemove
 		};
-		FLAME_PACKAGE_BEGIN_3(ChildListenerParm, ChildOp, op, i1, ElementPtr, src, p, ElementPtr, thiz, p)
+		FLAME_PACKAGE_BEGIN_3(ChildListenerParm, ElementPtr, thiz, p, ChildOp, op, i1, ElementPtr, src, p)
 		FLAME_PACKAGE_END_3
 
 		Array<Function<FoucusListenerParm>> focus_listeners$;
 		Array<Function<KeyListenerParm>> key_listeners$;
 		Array<Function<MouseListenerParm>> mouse_listeners$;
 		Array<Function<DropListenerParm>> drop_listeners$;
-		Array<Function<>> changed_listeners$;
+		Array<Function<ChangedListenerParm>> changed_listeners$;
 		Array<Function<ChildListenerParm>> child_listeners$;
 
 		Array<CommonData> datas$;
@@ -252,6 +263,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void take_from_parent(bool delay = false);
 		FLAME_UNIVERSE_EXPORTS int find_child(int layer, Element* w);
 		FLAME_UNIVERSE_EXPORTS void set_to_foreground();
+
+		FLAME_UNIVERSE_EXPORTS void do_arrange(); // only ui can call this
 
 		FLAME_UNIVERSE_EXPORTS float get_content_size() const;
 
@@ -588,16 +601,16 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_0(wButton, wText)
-		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title);
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wToggle, wText, int, toggled, i1)
-		FLAME_UNIVERSE_EXPORTS void init();
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx);
 		FLAME_UNIVERSE_EXPORTS void set_toggle(bool v);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_0(wMenuItem, wText)
-		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title);
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_5(wMenu, wLayout, bool, sub, i1, bool, opened, i1, wTextPtr, w_title, p, wTextPtr, w_rarrow, p, wLayoutPtr, w_items, p)

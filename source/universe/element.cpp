@@ -92,16 +92,16 @@ namespace flame
 
 	Element::~Element()
 	{
-		if (this == instance->hovering_Element())
-			instance->set_hovering_Element(nullptr);
-		if (this == instance->focus_Element())
-			instance->set_focus_Element(nullptr);
-		if (this == instance->key_focus_Element())
-			instance->set_key_focus_Element(nullptr);
-		if (this == instance->dragging_Element())
-			instance->set_dragging_Element(nullptr);
-		if (this == instance->popup_Element())
-			instance->set_popup_Element(nullptr);
+		if (this == ui->hovering_element())
+			ui->set_hovering_element(nullptr);
+		if (this == ui->focus_element())
+			ui->set_focus_element(nullptr);
+		if (this == ui->key_focus_element())
+			ui->set_key_focus_element(nullptr);
+		if (this == ui->dragging_element())
+			ui->set_dragging_element(nullptr);
+		if (this == ui->popup_element())
+			ui->set_popup_element(nullptr);
 	}
 
 	void Element::set_width(float x, Element * sender)
@@ -296,6 +296,365 @@ namespace flame
 		list[list.size - 1] = this;
 	}
 
+	void Element::do_arrange()
+	{
+		switch (layout_type$)
+		{
+		case LayoutVertical:
+		{
+			if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
+			{
+				auto width = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					width = max(width, c->size$.x);
+				}
+
+				width += inner_padding$[0] + inner_padding$[1];
+				if (size_policy_hori$ == SizeFitChildren)
+					set_width(width, this);
+				else if (size_policy_hori$ == SizeGreedy)
+				{
+					if (width > size$.x)
+						set_width(width, this);
+				}
+			}
+			if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
+			{
+				auto height = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					height += c->size$.y + item_padding$;
+				}
+				height -= item_padding$;
+				content_size = height;
+
+				height += inner_padding$[2] + inner_padding$[3];
+				if (size_policy_vert$ == SizeFitChildren)
+					set_height(height, this);
+				else if (size_policy_vert$ == SizeGreedy)
+				{
+					if (height > size$.y)
+						set_height(height, this);
+				}
+			}
+			else if (size_policy_vert$ == SizeFitLayout)
+			{
+				auto cnt = 0;
+				auto height = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_vert$ == SizeFitLayout)
+						cnt++;
+					else
+						height += c->size$.y;
+					height += item_padding$;
+				}
+				height -= item_padding$;
+				content_size = height;
+
+				height = max(0, (size$.y - inner_padding$[2] - inner_padding$[3] - height) / cnt);
+
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_vert$ == SizeFitLayout)
+						c->set_height(height, this);
+				}
+			}
+
+			auto width = size$.x - inner_padding$[0] - inner_padding$[1];
+			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+
+			auto content_size = get_content_size();
+			scroll_offset$ = content_size > height ? clamp((float)scroll_offset$, height - content_size, 0.f) : 0.f;
+
+			auto y = inner_padding$[2] + scroll_offset$;
+
+			for (auto i_c = 0; i_c < children_1$.size; i_c++)
+			{
+				auto c = children_1$[i_c];
+
+				if (!c->visible$)
+					continue;
+
+				if (c->size_policy_hori$ == SizeFitLayout)
+					c->set_width(width, this);
+				else if (c->size_policy_hori$ == SizeGreedy)
+				{
+					if (width > c->size$.x)
+						c->set_width(width, this);
+				}
+
+				switch (c->align$)
+				{
+				case AlignLittleEnd:
+					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$, y);
+					break;
+				case AlignLargeEnd:
+					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$, y);
+					break;
+				case AlignMiddle:
+					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0], y);
+					break;
+				}
+
+				y += c->size$.y + item_padding$;
+			}
+		}
+			break;
+		case LayoutHorizontal:
+		{
+			if (size_policy_hori$ == SizeFitChildren || size_policy_hori$ == SizeGreedy)
+			{
+				auto width = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					width += c->size$.x + item_padding$;
+				}
+				width -= item_padding$;
+				content_size = width;
+
+				width += inner_padding$[0] + inner_padding$[1];
+				if (size_policy_hori$ == SizeFitChildren)
+					set_width(width, this);
+				else if (size_policy_hori$ == SizeGreedy)
+				{
+					if (width > size$.x)
+						set_width(width, this);
+				}
+			}
+			else if (size_policy_hori$ == SizeFitLayout)
+			{
+				auto cnt = 0;
+				auto width = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_hori$ == SizeFitLayout)
+						cnt++;
+					else
+						width += c->size$.x;
+					width += item_padding$;
+				}
+				width -= item_padding$;
+				content_size = width;
+
+				width = max(0, (size$.x - inner_padding$[0] - inner_padding$[1] - width) / cnt);
+
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					if (c->size_policy_hori$ == SizeFitLayout)
+						c->set_width(width, this);
+				}
+			}
+			if (size_policy_vert$ == SizeFitChildren || size_policy_vert$ == SizeGreedy)
+			{
+				auto height = 0;
+				for (auto i_c = 0; i_c < children_1$.size; i_c++)
+				{
+					auto c = children_1$[i_c];
+
+					if (!c->visible$)
+						continue;
+
+					height = max(height, c->size$.y);
+				}
+
+				height += inner_padding$[2] + inner_padding$[3];
+				if (size_policy_vert$ == SizeFitChildren)
+					set_height(height, this);
+				else if (size_policy_vert$ == SizeGreedy)
+				{
+					if (height > size$.y)
+						set_height(height, this);
+				}
+			}
+
+			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+			auto x = inner_padding$[0];
+			for (auto i_c = 0; i_c < children_1$.size; i_c++)
+			{
+				auto c = children_1$[i_c];
+
+				if (!c->visible$)
+					continue;
+
+				if (c->size_policy_vert$ == SizeFitLayout)
+					c->set_height(height, this);
+				else if (c->size_policy_vert$ == SizeGreedy)
+				{
+					if (height > c->size$.y)
+						c->set_height(height, this);
+				}
+
+				switch (c->align$)
+				{
+				case AlignLittleEnd:
+					c->pos$ = Vec2(x, inner_padding$[2] + c->layout_padding$);
+					break;
+				case AlignLargeEnd:
+					c->pos$ = Vec2(x, size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+					break;
+				case AlignMiddle:
+					c->pos$ = Vec2(x, (size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+					break;
+				}
+
+				x += c->size$.x + item_padding$;
+			}
+		}
+			break;
+		case LayoutGrid:
+		{
+			auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
+
+			auto cnt = 0;
+			auto line_height = 0.f;
+			auto max_width = 0.f;
+			for (auto i_c = 0; i_c < children_1$.size; i_c++)
+			{
+				auto c = children_1$[i_c];
+
+				c->pos$ = pos;
+				line_height = max(line_height, c->size$.y);
+
+				pos.x += c->size$.x + item_padding$;
+				max_width = max(max_width, pos.x);
+				cnt++;
+				if (cnt >= grid_hori_count$)
+				{
+					pos.x = inner_padding$[0];
+					pos.y += line_height + item_padding$;
+					cnt = 0;
+					line_height = 0.f;
+				}
+			}
+
+			if (size_policy_hori$ == SizeFitChildren)
+				set_width(max(max_width - item_padding$, 0.f), this);
+			if (size_policy_vert$ == SizeFitChildren)
+				set_height(max(pos.y - item_padding$, 0.f), this);
+		}
+			break;
+		}
+
+		for (auto i_c = 0; i_c < children_2$.size; i_c++)
+		{
+			auto c = children_2$[i_c];
+
+			switch (c->align$)
+			{
+			case AlignLeft:
+				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+				break;
+			case AlignRight:
+				if (c->size_policy_vert$ == SizeFitLayout)
+					c->size$.y = size$.y - inner_padding$[2] - inner_padding$[3];
+				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+				break;
+			case AlignTop:
+				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
+					inner_padding$[2] + c->layout_padding$);
+				break;
+			case AlignBottom:
+				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
+					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+				break;
+			case AlignLeftTop:
+				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+					inner_padding$[2] + c->layout_padding$);
+				break;
+			case AlignLeftBottom:
+				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
+					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+				break;
+			case AlignRightTop:
+				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+					inner_padding$[2] + c->layout_padding$);
+				break;
+			case AlignRightBottom:
+				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
+				break;
+			case AlignLeftNoPadding:
+				c->pos$ = Vec2(c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
+				break;
+			case AlignRightNoPadding:
+				c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, (size$.y - c->size$.y) * 0.5f);
+				break;
+			case AlignTopNoPadding:
+				c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, c->layout_padding$);
+				break;
+			case AlignBottomNoPadding:
+				c->pos$ = Vec2((size$.x - c->size$.x) * 0.5f, size$.y - c->size$.y - c->layout_padding$);
+				break;
+			case AlignLeftTopNoPadding:
+				c->pos$ = Vec2(c->layout_padding$, c->layout_padding$);
+				break;
+			case AlignLeftBottomNoPadding:
+				c->pos$ = Vec2(c->layout_padding$, size$.y - c->size$.y - c->layout_padding$);
+				break;
+			case AlignRightTopNoPadding:
+				c->pos$ = Vec2(size$.x - c->size$.x - c->layout_padding$, c->layout_padding$);
+				break;
+			case AlignRightBottomNoPadding:
+				c->pos$ = size$ - c->size$ - Vec2(c->layout_padding$);
+				break;
+			case AlignCenter:
+				c->pos$ = (size$ - c->size$) * 0.5f;
+				break;
+			case AlignLeftOutside:
+				c->pos$ = Vec2(-c->size$.x, 0.f);
+				break;
+			case AlignRightOutside:
+				c->pos$ = Vec2(size$.x, 0.f);
+				break;
+			case AlignTopOutside:
+				c->pos$ = Vec2(0.f, -c->size$.y);
+				break;
+			case AlignBottomOutside:
+				c->pos$ = Vec2(0.f, size$.y);
+				break;
+			}
+		}
+	}
+
 	const auto scroll_spare_spacing = 20.f;
 
 	float Element::get_content_size() const
@@ -345,6 +704,7 @@ namespace flame
 		{
 			auto& f = extra_draws$[i];
 			auto& p = (ExtraDrawParm&)f.p;
+			p.thiz() = this;
 			p.canvas() = c;
 			p.off() = off;
 			p.scl() = scl;
@@ -637,7 +997,7 @@ namespace flame
 	{
 		return (Element*)src->unserialize(find_udt(cH("Element")), Function<SerializableNode::ObjGeneratorParm>([](SerializableNode::ObjGeneratorParm & p) {
 			auto c = p.get_capture<ObjGeneratorData>();
-			auto w = Element::create(c.ui());
+			auto w = create(c.ui());
 			p.out_obj() = w;
 
 			if (p.parent())
@@ -669,10 +1029,10 @@ namespace flame
 
 	void checkbox_mouse_event$(Element::MouseListenerParm &p)
 	{
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+		if (!p.is_clicked())
 			return;
 
-		auto thiz = (wCheckbox*)p.get_capture<Element::ThizCapture>().thiz();
+		auto thiz = (wCheckboxPtr)p.get_capture<Element::ThizCapture>().thiz();
 
 		thiz->checked() = !thiz->checked();
 
@@ -684,7 +1044,7 @@ namespace flame
 
 	void checkbox_extra_draw$(Element::ExtraDrawParm &p)
 	{
-		auto thiz = (wCheckbox*)p.get_capture<Element::ThizCapture>().thiz();
+		auto thiz = (wCheckboxPtr)p.thiz();
 
 		p.canvas()->add_rect(thiz->pos$ * p.scl() + p.off(), thiz->size$ * p.scl(), thiz->background_col$, 2.f * p.scl());
 		if (thiz->checked())
@@ -693,6 +1053,8 @@ namespace flame
 
 	void wCheckbox::init(void* _target)
 	{
+		init_data_types();
+
 		size$ = Vec2(16.f);
 		background_col$ = Bvec4(255);
 
@@ -703,16 +1065,16 @@ namespace flame
 			checked() = *(bool*)target();
 
 		draw_default$ = false;
-		extra_draws$.push_back(Function<Element::ExtraDrawParm>(checkbox_extra_draw$, { this }));
+		extra_draws$.push_back(Function<ExtraDrawParm>(checkbox_extra_draw$, {}));
 
-		mouse_listeners$.push_back(Function<Element::MouseListenerParm>(checkbox_mouse_event$, { this }));
+		mouse_listeners$.push_back(Function<MouseListenerParm>(checkbox_mouse_event$, { this }));
 
 		add_style_background_color(this, 0, ui->default_frame_col, ui->default_frame_col_hovering, ui->default_frame_col_active);
 	}
 
 	void text_extra_draw$(Element::ExtraDrawParm& p)
 	{
-		auto thiz = (wText*)p.get_capture<Element::ThizCapture>().thiz();
+		auto thiz = (wTextPtr)p.thiz();
 
 		if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
 		{
@@ -726,6 +1088,8 @@ namespace flame
 
 	void wText::init(int _font_idx)
 	{
+		init_data_types();
+
 		event_attitude$ = EventIgnore;
 
 		text$ = L"";
@@ -733,14 +1097,14 @@ namespace flame
 		text_col() = ui->default_text_col;
 		sdf_scale() = ui->default_sdf_scale;
 
-		extra_draws$.push_back(Function<Element::ExtraDrawParm>(text_extra_draw$, { this }));
+		extra_draws$.push_back(Function<ExtraDrawParm>(text_extra_draw$, {}));
 	}
 
 	void wText::set_size_auto()
 	{
-		auto font = ;
+		auto font = ui->canvas()->get_font(font_idx());
 
-		auto v = Vec2(share_data.font_atlas->get_text_width(text().v), share_data.font_atlas->pixel_height);
+		auto v = Vec2(font->get_text_width(text$.v), font->pixel_height());
 		if (sdf_scale() > 0.f)
 			v *= sdf_scale();
 		v.x += inner_padding$[0] + inner_padding$[1];
@@ -748,43 +1112,49 @@ namespace flame
 		set_size(v);
 	}
 
-	void wButton::init(const wchar_t* title)
+	void wButton::init(int font_idx, const wchar_t* title)
 	{
-		wText::init();
+		wText::init(font_idx);
+		init_data_types();
 
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		event_attitude$ = EventAccept;
 
-		add_style_background_color(this, 0, i->default_button_col, i->default_button_col_hovering, i->default_button_col_active);
+		add_style_background_color(this, 0, ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active);
 
 		if (title)
 		{
-			text() = L"OK";
+			text$ = title;
 			set_size_auto();
 		}
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(ToggleMouse, FLAME_GID(23140), Element::MouseListenerParm)
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+	void toggle_mouse_event$(Element::MouseListenerParm& p)
+	{
+		if (!p.is_clicked())
 			return;
 
-	((wToggle*)p.thiz())->set_toggle(!((wToggle*)p.thiz())->toggled());
-	FLAME_REGISTER_FUNCTION_END(ToggleMouse)
+		auto thiz = (wTogglePtr)p.get_capture<Element::ThizCapture>().thiz();
+		thiz->set_toggle(!thiz->toggled());
+	}
 
-		void wToggle::init()
+	void wToggle::init(int font_idx)
 	{
-		wText::init();
+		wText::init(font_idx);
+		init_data_types();
 
-		add_data_storages({ 0 });
+		auto font = ui->canvas()->get_font(font_idx);
 
 		background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
-		background_round_radius$ = share_data.font_atlas->pixel_height * 0.5f;
+		background_round_radius$ = font->pixel_height() * 0.5f;
 		background_offset$ = Vec4(background_round_radius$, 0.f, background_round_radius$, 0.f);
 		background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
 
 		event_attitude$ = EventAccept;
 
-		add_listener(ListenerMouse, ToggleMouse::v, this, {});
+		toggled() = 0;
+
+		mouse_listeners$.push_back(Function<MouseListenerParm>(toggle_mouse_event$, { this }));
 	}
 
 	void wToggle::set_toggle(bool v)
@@ -803,7 +1173,7 @@ namespace flame
 		if (w->w_rarrow())
 			return;
 
-		if (w->parent() && w->parent()->class$.hash == cH("menubar"))
+		if (w->parent && w->parent->class$.hash == cH("menubar"))
 			return;
 		if (!w->sub() && w->class$.hash != cH("combo"))
 			return;
@@ -811,104 +1181,116 @@ namespace flame
 		w->w_title()->inner_padding$[1] += w->w_title()->size$.y * 0.6f;
 		w->w_title()->set_size_auto();
 
-		w->w_rarrow() = Element::createT<wText>(w->instance());
+		w->w_rarrow() = Element::createT<wText>(w->ui);
 		w->w_rarrow()->align$ = AlignRightNoPadding;
 		w->w_rarrow()->sdf_scale() = w->w_title()->sdf_scale();
-		w->w_rarrow()->text() = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
+		w->w_rarrow()->text$ = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
 		w->w_rarrow()->set_size_auto();
 		w->add_child(w->w_rarrow(), 1);
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(MenuItemMouse, FLAME_GID(11216), Element::MouseListenerParm)
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+	void menuitem_mouse_event$(Element::MouseListenerParm& p)
+	{
+		if (!p.is_clicked())
 			return;
 
-	p.thiz()->instance()->close_popup();
-	FLAME_REGISTER_FUNCTION_END(MenuItemMouse)
+		auto thiz = (wMenuItemPtr)p.get_capture<Element::ThizCapture>().thiz();
+		thiz->ui->close_popup();
+	}
 
-		void wMenuItem::init(const wchar_t* title)
+	void wMenuItem::init(int font_idx, const wchar_t* title)
 	{
-		wText::init();
+		wText::init(font_idx);
+		init_data_types();
 
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		size_policy_hori$ = SizeFitLayout;
 		align$ = AlignLittleEnd;
 		event_attitude$ = EventAccept;
 
-		text() = title;
+		text$ = title;
 		set_size_auto();
 
-		add_listener(ListenerMouse, MenuItemMouse::v, this, {});
+		mouse_listeners$.push_back(Function<MouseListenerParm>(menuitem_mouse_event$, { this }));
 
-		add_style_background_color(this, 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
+		add_style_background_color(this, 0, Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active);
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(MenuTitleMouse, FLAME_GID(10376), Element::MouseListenerParm)
-		if (!(p.action() == KeyStateNull && p.key() == Mouse_Null))
+	void menu_title_mouse_event$(Element::MouseListenerParm& p)
+	{
+		if (!p.is_move())
 			return;
 
-	if (p.thiz()->instance()->popup_Element())
-		((wMenu*)p.thiz())->open();
-	FLAME_REGISTER_FUNCTION_END(MenuTitleMouse)
+		auto thiz = (wMenuPtr)p.get_capture<Element::ThizCapture>().thiz();
+		if (thiz->ui->popup_element())
+			thiz->open();
+	}
 
-		FLAME_REGISTER_FUNCTION_BEG(MenuItemsChild, FLAME_GID(21018), Element::ChildListenerParm)
+	void menu_items_child_event$(Element::ChildListenerParm& p)
+	{
 		if (p.op() != Element::ChildAdd)
 			return;
 
-	switch (p.src()->class$.hash)
-	{
-	case cH("menuitem"):
-		menu_add_rarrow((wMenu*)p.thiz());
-		break;
-	case cH("menu"):
-		((wMenu*)p.src())->sub() = 1;
-		((wMenu*)p.src())->size_policy_hori$ = SizeGreedy;
-		((wMenu*)p.src())->w_items()->align$ = AlignRightOutside;
+		auto thiz = (wMenuPtr)p.get_capture<Element::ThizCapture>().thiz();
+		switch (p.src()->class$.hash)
+		{
+		case cH("menuitem"):
+			menu_add_rarrow(thiz);
+			break;
+		case cH("menu"):
+		{
+			auto src = (wMenu*)p.src();
+			src->sub() = 1;
+			src->size_policy_hori$ = SizeGreedy;
+			src->w_items()->align$ = AlignRightOutside;
 
-		menu_add_rarrow((wMenu*)p.thiz());
-		break;
+			menu_add_rarrow(thiz);
+		}
+			break;
+		}
 	}
-	FLAME_REGISTER_FUNCTION_END(MenuItemsChild)
 
-		void wMenu::init(const wchar_t* title, bool only_for_context_menu)
+	void wMenu::init(const wchar_t* title, bool only_for_context_menu)
 	{
 		wLayout::init();
-
-		add_data_storages({ 0, 0, nullptr, nullptr, nullptr });
+		init_data_types();
 
 		align$ = AlignLittleEnd;
 		layout_type$ = LayoutVertical;
 
-		w_title() = createT<wText>(instance());
+		sub() = 0;
+		opened() = 0;
+
+		w_title() = createT<wText>(ui);
 		w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		w_title()->size_policy_hori$ = SizeGreedy;
 		w_title()->align$ = AlignLittleEnd;
 		w_title()->event_attitude$ = EventAccept;
-		w_title()->text() = title;
+		w_title()->text$ = title;
 		w_title()->set_size_auto();
 		add_child(w_title());
 
-		w_title()->add_listener(ListenerMouse, MenuTitleMouse::v, this, {});
+		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(menu_title_mouse_event$, { this }));
 
-		add_style_background_color(w_title(), 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
+		add_style_background_color(w_title(), 0, Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active);
 
 		w_rarrow() = nullptr;
 
-		w_items() = createT<wLayout>(instance(), LayoutVertical);
+		w_items() = createT<wLayout>(ui, LayoutVertical);
 		w_items()->class$ = "menu items";
-		w_items()->background_col$ = i->default_window_col;
+		w_items()->background_col$ = ui->default_window_col;
 		w_items()->align$ = AlignBottomOutside;
 		w_items()->visible$ = false;
 		add_child(w_items(), 1);
 
-		w_items()->add_listener(ListenerChild, MenuItemsChild::v, this, {});
+		w_items()->child_listeners$.push_back(Function<ChildListenerParm>(menu_items_child_event$, { this }));
 
 		if (only_for_context_menu)
 		{
 			pos$ = hidden_pos;
 			sub() = 1;
 			w_items()->align$ = AlignFree;
-			instance()->root()->add_child(this, 1);
+			ui->root()->add_child(this, 1);
 		}
 	}
 
@@ -917,11 +1299,11 @@ namespace flame
 		if (opened())
 			return;
 
-		if (parent() && (parent()->class$.hash == cH("menubar") || parent()->class$.hash == cH("menu items")))
+		if (parent && (parent->class$.hash == cH("menubar") || parent->class$.hash == cH("menu items")))
 		{
-			for (auto i = 0; i < parent()->children_1$.size; i++)
+			for (auto i = 0; i < parent->children_1$.size; i++)
 			{
-				auto c = parent()->children_1$[i];
+				auto c = parent->children_1$[i];
 				if (c->class$.hash == cH("menu"))
 					((wMenu*)c)->close();
 			}
@@ -939,12 +1321,12 @@ namespace flame
 
 	void wMenu::popup(const Vec2 & pos)
 	{
-		if (opened() || instance()->popup_Element())
+		if (opened() || ui->popup_element())
 			return;
 
 		open();
 
-		instance()->set_popup_Element(w_items());
+		ui->set_popup_element(w_items());
 		w_items()->pos$ = pos - hidden_pos;
 	}
 
@@ -965,71 +1347,80 @@ namespace flame
 		opened() = 0;
 	}
 
-	FLAME_DATA_PACKAGE_BEGIN(MenuBarMenuTextMouseData, Element::MouseListenerParm)
-		FLAME_DATA_PACKAGE_CAPT(wMenuPtr, menu, p)
-		FLAME_DATA_PACKAGE_END
+	FLAME_PACKAGE_BEGIN_2(MenuTextMouseInMenubarEventData, ElementPtr, thiz, p, wMenuPtr, menu, p)
+	FLAME_PACKAGE_END_2
 
-		FLAME_REGISTER_FUNCTION_BEG(MenuBarMenuTextMouse, FLAME_GID(24104), MenuBarMenuTextMouseData)
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+	void menu_text_mouse_event_in_menubar$(Element::MouseListenerParm &p)
+	{
+		if (!p.is_clicked())
 			return;
 
-	if (!p.menu()->opened())
-	{
-		if (!p.thiz()->instance()->popup_Element())
+		auto& c = p.get_capture<MenuTextMouseInMenubarEventData>();
+		auto thiz = c.thiz();
+		auto menu = c.menu();
+		if (!menu->opened())
 		{
-			p.menu()->open();
+			if (!thiz->ui->popup_element())
+			{
+				menu->open();
 
-			p.thiz()->instance()->set_popup_Element(p.thiz());
+				thiz->ui->set_popup_element(thiz);
+			}
 		}
+		else
+			thiz->ui->close_popup();
 	}
-	else
-		p.thiz()->instance()->close_popup();
-	FLAME_REGISTER_FUNCTION_END(MenuBarMenuTextMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(MenuBarChild, FLAME_GID(10208), Element::ChildListenerParm)
+	void menubar_child_event$(Element::ChildListenerParm &p)
+	{
 		if (p.op() != Element::ChildAdd)
 			return;
 
-	if (p.src()->class$.hash == cH("menu"))
-		((wMenu*)p.src())->w_title()->add_listener(Element::ListenerMouse, MenuBarMenuTextMouse::v, p.thiz(), { p.src() });
-	FLAME_REGISTER_FUNCTION_END(MenuBarChild)
+		if (p.src()->class$.hash == cH("menu"))
+			((wMenu*)p.src())->w_title()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(menu_text_mouse_event_in_menubar$, { p.thiz(), p.src() }));
+	}
 
-		void wMenuBar::init()
+	void wMenuBar::init()
 	{
 		wLayout::init();
+		init_data_types();
 
 		layout_type$ = LayoutHorizontal;
 
-		add_listener(ListenerChild, MenuBarChild::v, this, {});
+		child_listeners$.push_back(Function<ChildListenerParm>(menubar_child_event$, { this }));
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(ComboTextMouse, FLAME_GID(10368), Element::MouseListenerParm)
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
-			return;
-
-	if (!((wMenu*)p.thiz())->opened())
+	void combo_text_mouse_event$(Element::MouseListenerParm &p)
 	{
-		if (!p.thiz()->instance()->popup_Element())
-		{
-			((wMenu*)p.thiz())->open();
-
-			p.thiz()->instance()->set_popup_Element(p.thiz());
-		}
-	}
-	else
-		p.thiz()->instance()->close_popup();
-	FLAME_REGISTER_FUNCTION_END(ComboTextMouse)
-
-		FLAME_DATA_PACKAGE_BEGIN(ComboItemMouseData, Element::MouseListenerParm)
-		FLAME_DATA_PACKAGE_CAPT(int, idx, i1)
-		FLAME_DATA_PACKAGE_END
-
-		FLAME_REGISTER_FUNCTION_BEG(ComboItemMouse, FLAME_GID(22268), ComboItemMouseData)
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+		if (!p.is_clicked())
 			return;
 
-	((wCombo*)p.thiz())->set_sel(p.idx());
-	FLAME_REGISTER_FUNCTION_END(ComboItemMouse)
+		auto thiz = (wMenuPtr)p.get_capture<Element::ThizCapture>().thiz();
+		if (!thiz->opened())
+		{
+			if (!thiz->ui->popup_element())
+			{
+				thiz->open();
+
+				thiz->ui->set_popup_element(thiz);
+			}
+		}
+		else
+			thiz->ui->close_popup();
+	}
+
+	FLAME_PACKAGE_BEGIN_2(ComboItemsMouseEventData, ElementPtr, thiz, p, int, idx, i1)
+	FLAME_PACKAGE_END_2
+
+	void combo_items_mouse_event$(Element::MouseListenerParm &p)
+	{
+		if (!p.is_clicked())
+			return;
+
+		auto c = p.get_capture<ComboItemsMouseEventData>();
+		((wCombo*)c.thiz())->set_sel(c.idx());
+	}
+	
 
 		FLAME_DATA_PACKAGE_BEGIN(ComboItemStyleData, Element::StyleParm)
 		FLAME_DATA_PACKAGE_CAPT(wComboPtr, list, p)
@@ -1425,7 +1816,7 @@ namespace flame
 	FLAME_REGISTER_FUNCTION_END(ScrollbarBtnMouse)
 
 		FLAME_REGISTER_FUNCTION_BEG(ScrollbarMouse, FLAME_GID(2126), Element::MouseListenerParm)
-		if (!(p.action() == KeyStateNull && p.key() == Mouse_Middle))
+		if (!p.is_scroll())
 			return;
 
 	((wScrollbar*)p.thiz())->scroll(p.value().x);
@@ -1478,7 +1869,7 @@ namespace flame
 	}
 
 	FLAME_REGISTER_FUNCTION_BEG(ListItemTextMouse, FLAME_GID(6526), Element::MouseListenerParm)
-		if (!(p.action() == KeyStateNull && p.key() == Mouse_Middle))
+		if (!p.is_scroll())
 			return;
 
 	if (p.thiz()->parent())
@@ -1596,7 +1987,7 @@ namespace flame
 	FLAME_REGISTER_FUNCTION_END(TreeNodeTitleMouse)
 
 		FLAME_REGISTER_FUNCTION_BEG(TreeNodeLarrowMouse, FLAME_GID(20989), Element::MouseListenerParm)
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+		if (!p.is_clicked())
 			return;
 
 	auto v = !((wTreeNode*)p.thiz())->w_items()->visible$;
@@ -1733,7 +2124,7 @@ namespace flame
 	}
 
 	FLAME_REGISTER_FUNCTION_BEG(MessageDialogOkMouse, FLAME_GID(8291), Element::MouseListenerParm)
-		if (!(p.action() == (KeyStateDown | KeyStateUp) && p.key() == Mouse_Null))
+		if (!p.is_clicked())
 			return;
 
 	p.thiz()->remove_from_parent(true);

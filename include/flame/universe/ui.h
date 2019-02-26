@@ -117,16 +117,16 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void on_resize(const Ivec2 & size);
 
 		FLAME_UNIVERSE_EXPORTS Element* root();
-		FLAME_UNIVERSE_EXPORTS Element* hovering_widget();
-		FLAME_UNIVERSE_EXPORTS Element* focus_widget();
-		FLAME_UNIVERSE_EXPORTS Element* key_focus_widget();
-		FLAME_UNIVERSE_EXPORTS Element* dragging_widget();
-		FLAME_UNIVERSE_EXPORTS Element* popup_widget();
-		FLAME_UNIVERSE_EXPORTS void set_hovering_widget(Element * w);
-		FLAME_UNIVERSE_EXPORTS void set_focus_widget(Element * w);
-		FLAME_UNIVERSE_EXPORTS void set_key_focus_widget(Element * w);
-		FLAME_UNIVERSE_EXPORTS void set_dragging_widget(Element * w);
-		FLAME_UNIVERSE_EXPORTS void set_popup_widget(Element * w, bool modual = false);
+		FLAME_UNIVERSE_EXPORTS Element* hovering_element();
+		FLAME_UNIVERSE_EXPORTS Element* focus_element();
+		FLAME_UNIVERSE_EXPORTS Element* key_focus_element();
+		FLAME_UNIVERSE_EXPORTS Element* dragging_element();
+		FLAME_UNIVERSE_EXPORTS Element* popup_element();
+		FLAME_UNIVERSE_EXPORTS void set_hovering_element(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_focus_element(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_key_focus_element(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_dragging_element(Element * w);
+		FLAME_UNIVERSE_EXPORTS void set_popup_element(Element * w, bool modual = false);
 		FLAME_UNIVERSE_EXPORTS void close_popup();
 
 		FLAME_UNIVERSE_EXPORTS void begin(float elp_time);

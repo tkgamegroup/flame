@@ -56,6 +56,9 @@ namespace flame
 		CursorCount
 	};
 
+	struct Window;
+	typedef Window* WindowPtr;
+
 	struct Window
 	{
 		Ivec2 pos;
@@ -74,7 +77,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		FLAME_PACKAGE_BEGIN_2(KeyListenerParm, KeyState, action, i1, int, value, i1)
+		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, WindowPtr, thiz, p, KeyState, action, i1, int, value, i1)
 			/*
 				- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
 				- when char, action is KeyStateNull, value is ch
@@ -83,28 +86,31 @@ namespace flame
 			inline bool is_down() { return action() == KeyStateDown; }
 			inline bool is_up()   { return action() == KeyStateUp;   }
 			inline bool is_char() { return action() == KeyStateNull; }
-		FLAME_PACKAGE_END_2
+		FLAME_PACKAGE_END_3
 
-		FLAME_PACKAGE_BEGIN_3(MouseListenerParm, KeyState, action, i1, MouseKey, key, i1, Ivec2, pos, i2)
+		FLAME_PACKAGE_BEGIN_4(MouseListenerParm, WindowPtr, thiz, p, KeyState, action, i1, MouseKey, key, i1, Ivec2, pos, i2)
 			/*
 				- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey
 				- when move, action is KeyStateNull, key is Mouse_Null
 				- when scroll, action is KeyStateNull, key is Mouse_Middle, pos.x is scroll value
 			*/
 
-			inline bool is_down()   { return action() == KeyStateDown;                          }
-			inline bool is_up()     { return action() == KeyStateUp;                            }
+			inline bool is_down()   { return action() == KeyStateDown && key() != Mouse_Null;   }
+			inline bool is_up()     { return action() == KeyStateUp   && key() != Mouse_Null;   }
 			inline bool is_move()   { return action() == KeyStateNull && key() == Mouse_Null;   }
 			inline bool is_scroll() { return action() == KeyStateNull && key() == Mouse_Middle; }
-		FLAME_PACKAGE_END_3
+		FLAME_PACKAGE_END_4
 
-		FLAME_PACKAGE_BEGIN_1(ResizeListenerParm, Ivec2, size, i2)
+		FLAME_PACKAGE_BEGIN_2(ResizeListenerParm, WindowPtr, thiz, p, Ivec2, size, i2)
+		FLAME_PACKAGE_END_2
+
+		FLAME_PACKAGE_BEGIN_1(DestroyListenerParm, WindowPtr, thiz, p)
 		FLAME_PACKAGE_END_1
 
-		FLAME_FOUNDATION_EXPORTS int add_key_listener    (Function<KeyListenerParm>    &listener);
-		FLAME_FOUNDATION_EXPORTS int add_mouse_listener  (Function<MouseListenerParm>  &listener);
-		FLAME_FOUNDATION_EXPORTS int add_resize_listener (Function<ResizeListenerParm> &listener);
-		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<>                   &listener);
+		FLAME_FOUNDATION_EXPORTS int add_key_listener    (Function<KeyListenerParm>     &listener);
+		FLAME_FOUNDATION_EXPORTS int add_mouse_listener  (Function<MouseListenerParm>   &listener);
+		FLAME_FOUNDATION_EXPORTS int add_resize_listener (Function<ResizeListenerParm>  &listener);
+		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<DestroyListenerParm> &listener);
 
 		FLAME_FOUNDATION_EXPORTS void remove_key_listener    (int idx);
 		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener  (int idx);
@@ -116,8 +122,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Ivec2 &_size, int _style);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Window *s);
 	};
-
-	typedef Window* WindowPtr;
 
 	struct Application
 	{
