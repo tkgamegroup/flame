@@ -22,10 +22,7 @@
 
 #include <flame/foundation/serialize.h>
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
 #include <flame/universe/icon.h>
-#include <flame/universe/style.h>
-#include <flame/universe/animation.h>
 #include <flame/universe/element.h>
 #include "ui_private.h"
 
@@ -179,8 +176,8 @@ namespace flame
 		for (auto i = 0; i < child_listeners$.size; i++)
 		{
 			auto& f = child_listeners$[i];
-
 			auto& p = (ChildListenerParm&)f.p;
+			p.thiz() = this;
 			p.op() = ChildAdd;
 			p.src() = w;
 			f.exec();
@@ -666,10 +663,12 @@ namespace flame
 	{
 		for (auto i = 0; i < animations$.size; i++)
 		{
-			auto& f = animations$[i];
-			auto& p = (AnimationParm&)f.p;
-			p.time() = -1.f;
-			f.exec();
+			auto& a = animations$[i];
+			a.time = -1.f;
+			auto& p = (AnimationParm&)a.f$.p;
+			p.thiz() = &a;
+			p.e() = this;
+			a.f$.exec();
 		}
 		animations$.resize(0);
 		for (auto i = 0; i < children_1$.size; i++)
@@ -712,14 +711,15 @@ namespace flame
 		}
 	}
 
-	void Element::on_focus(FocusType type, int focus_or_keyfocus)
+	void Element::on_focus(FocusType type, int is_keyfocus)
 	{
 		for (auto i = 0; i < focus_listeners$.size; i++)
 		{
 			auto& f = focus_listeners$[i];
 			auto& p = (FoucusListenerParm&)f.p;
+			p.thiz() = this;
 			p.type() = type;
-			p.focus_or_keyfocus() = focus_or_keyfocus;
+			p.is_keyfocus() = is_keyfocus;
 			f.exec();
 		}
 	}
@@ -730,6 +730,7 @@ namespace flame
 		{
 			auto& f = key_listeners$[i];
 			auto& p = (KeyListenerParm&)f.p;
+			p.thiz() = this;
 			p.action() = action;
 			p.value() = value;
 			f.exec();
@@ -742,6 +743,7 @@ namespace flame
 		{
 			auto& f = mouse_listeners$[i];
 			auto& p = (MouseListenerParm&)f.p;
+			p.thiz() = this;
 			p.action() = action;
 			p.key() = key;
 			p.value() = pos;
@@ -755,6 +757,7 @@ namespace flame
 		{
 			auto& f = drop_listeners$[i];
 			auto& p = (DropListenerParm&)f.p;
+			p.thiz() = this;
 			p.src() = src;
 			f.exec();
 		}
@@ -765,6 +768,8 @@ namespace flame
 		for (auto i = 0; i < changed_listeners$.size; i++)
 		{
 			auto& f = changed_listeners$[i];
+			auto& p = (DropListenerParm&)f.p;
+			p.thiz() = this;
 			f.exec();
 		}
 	}
@@ -1032,7 +1037,7 @@ namespace flame
 		if (!p.is_clicked())
 			return;
 
-		auto thiz = (wCheckboxPtr)p.get_capture<Element::ThizCapture>().thiz();
+		auto thiz = (wCheckboxPtr)p.thiz();
 
 		thiz->checked() = !thiz->checked();
 
@@ -1066,10 +1071,8 @@ namespace flame
 
 		draw_default$ = false;
 		extra_draws$.push_back(Function<ExtraDrawParm>(checkbox_extra_draw$, {}));
-
-		mouse_listeners$.push_back(Function<MouseListenerParm>(checkbox_mouse_event$, { this }));
-
-		add_style_background_color(this, 0, ui->default_frame_col, ui->default_frame_col_hovering, ui->default_frame_col_active);
+		styles$.push_back({ 0, 0, Style::background_color(ui->default_frame_col, ui->default_frame_col_hovering, ui->default_frame_col_active)});
+		mouse_listeners$.push_back(Function<MouseListenerParm>(checkbox_mouse_event$, {}));
 	}
 
 	void text_extra_draw$(Element::ExtraDrawParm& p)
@@ -1079,10 +1082,7 @@ namespace flame
 		if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
 		{
 			auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
-			if (thiz->sdf_scale() < 0.f)
-				p.canvas()->add_text(thiz->font_idx(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v);
-			else
-				p.canvas()->add_text(thiz->font_idx(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v, thiz->sdf_scale() * p.scl());
+			p.canvas()->add_text(thiz->font_idx(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v, thiz->sdf_scale() * p.scl());
 		}
 	}
 
@@ -1104,9 +1104,7 @@ namespace flame
 	{
 		auto font = ui->canvas()->get_font(font_idx());
 
-		auto v = Vec2(font->get_text_width(text$.v), font->pixel_height());
-		if (sdf_scale() > 0.f)
-			v *= sdf_scale();
+		auto v = Vec2(font->get_text_width(text$.v), font->pixel_height()) * sdf_scale();
 		v.x += inner_padding$[0] + inner_padding$[1];
 		v.y += inner_padding$[2] + inner_padding$[3];
 		set_size(v);
@@ -1120,7 +1118,7 @@ namespace flame
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		event_attitude$ = EventAccept;
 
-		add_style_background_color(this, 0, ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active);
+		styles$.push_back({ 0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active) });
 
 		if (title)
 		{
@@ -1134,7 +1132,7 @@ namespace flame
 		if (!p.is_clicked())
 			return;
 
-		auto thiz = (wTogglePtr)p.get_capture<Element::ThizCapture>().thiz();
+		auto thiz = (wTogglePtr)p.thiz();
 		thiz->set_toggle(!thiz->toggled());
 	}
 
@@ -1154,7 +1152,7 @@ namespace flame
 
 		toggled() = 0;
 
-		mouse_listeners$.push_back(Function<MouseListenerParm>(toggle_mouse_event$, { this }));
+		mouse_listeners$.push_back(Function<MouseListenerParm>(toggle_mouse_event$, {}));
 	}
 
 	void wToggle::set_toggle(bool v)
@@ -1194,7 +1192,7 @@ namespace flame
 		if (!p.is_clicked())
 			return;
 
-		auto thiz = (wMenuItemPtr)p.get_capture<Element::ThizCapture>().thiz();
+		auto thiz = (wMenuItemPtr)p.thiz();
 		thiz->ui->close_popup();
 	}
 
@@ -1208,12 +1206,11 @@ namespace flame
 		align$ = AlignLittleEnd;
 		event_attitude$ = EventAccept;
 
+		styles$.push_back({ 0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active) });
+		mouse_listeners$.push_back(Function<MouseListenerParm>(menuitem_mouse_event$, {}));
+
 		text$ = title;
 		set_size_auto();
-
-		mouse_listeners$.push_back(Function<MouseListenerParm>(menuitem_mouse_event$, { this }));
-
-		add_style_background_color(this, 0, Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active);
 	}
 
 	void menu_title_mouse_event$(Element::MouseListenerParm& p)
@@ -1221,9 +1218,9 @@ namespace flame
 		if (!p.is_move())
 			return;
 
-		auto thiz = (wMenuPtr)p.get_capture<Element::ThizCapture>().thiz();
-		if (thiz->ui->popup_element())
-			thiz->open();
+		auto menu = (wMenuPtr)p.thiz()->parent;
+		if (menu->ui->popup_element())
+			menu->open();
 	}
 
 	void menu_items_child_event$(Element::ChildListenerParm& p)
@@ -1231,11 +1228,11 @@ namespace flame
 		if (p.op() != Element::ChildAdd)
 			return;
 
-		auto thiz = (wMenuPtr)p.get_capture<Element::ThizCapture>().thiz();
+		auto menu = (wMenuPtr)p.thiz()->parent;
 		switch (p.src()->class$.hash)
 		{
 		case cH("menuitem"):
-			menu_add_rarrow(thiz);
+			menu_add_rarrow(menu);
 			break;
 		case cH("menu"):
 		{
@@ -1244,7 +1241,7 @@ namespace flame
 			src->size_policy_hori$ = SizeGreedy;
 			src->w_items()->align$ = AlignRightOutside;
 
-			menu_add_rarrow(thiz);
+			menu_add_rarrow(menu);
 		}
 			break;
 		}
@@ -1270,9 +1267,8 @@ namespace flame
 		w_title()->set_size_auto();
 		add_child(w_title());
 
+		w_title()->styles$.push_back({ 0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active) });
 		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(menu_title_mouse_event$, { this }));
-
-		add_style_background_color(w_title(), 0, Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active);
 
 		w_rarrow() = nullptr;
 
@@ -1313,7 +1309,7 @@ namespace flame
 		for (auto i = 0; i < w_items()->children_1$.size; i++)
 		{
 			auto w = w_items()->children_1$[i];
-			add_animation_fade(w, 0.2f, 0.f, w->alpha$);
+			w->animations$.push_back(Animation(0.2f, false, Animation::fade(0.f, w->alpha$)));
 		}
 
 		opened() = 1;
@@ -1390,95 +1386,91 @@ namespace flame
 		child_listeners$.push_back(Function<ChildListenerParm>(menubar_child_event$, { this }));
 	}
 
-	void combo_text_mouse_event$(Element::MouseListenerParm &p)
+	void combo_title_mouse_event$(Element::MouseListenerParm &p)
 	{
 		if (!p.is_clicked())
 			return;
 
-		auto thiz = (wMenuPtr)p.get_capture<Element::ThizCapture>().thiz();
-		if (!thiz->opened())
+		auto combo = (wComboPtr)(p.thiz()->parent);
+		if (!combo->opened())
 		{
-			if (!thiz->ui->popup_element())
+			if (!combo->ui->popup_element())
 			{
-				thiz->open();
+				combo->open();
 
-				thiz->ui->set_popup_element(thiz);
+				combo->ui->set_popup_element(combo);
 			}
 		}
 		else
-			thiz->ui->close_popup();
+			combo->ui->close_popup();
 	}
 
-	FLAME_PACKAGE_BEGIN_2(ComboItemsMouseEventData, ElementPtr, thiz, p, int, idx, i1)
+	FLAME_PACKAGE_BEGIN_1(ComboItemStyleData, wComboPtr, combo, p)
+	FLAME_PACKAGE_END_1
+
+	void combo_item_style$(StyleParm& p)
+	{
+		auto combo = p.get_capture<ComboItemStyleData>().combo;
+		auto sel = combo->sel();
+		auto e = p.e();
+		if (sel != -1 && combo->w_items()->children_1$[sel] == e)
+		{
+			if (e->state == StateNormal)
+				e->background_col$ = e->ui->default_header_col;
+		}
+	}
+
+	FLAME_PACKAGE_BEGIN_2(ComboItemsMouseEventData, wComboPtr, combo, p, int, idx, i1)
 	FLAME_PACKAGE_END_2
 
-	void combo_items_mouse_event$(Element::MouseListenerParm &p)
+	void combo_item_mouse_event$(Element::MouseListenerParm &p)
 	{
 		if (!p.is_clicked())
 			return;
 
 		auto c = p.get_capture<ComboItemsMouseEventData>();
-		((wCombo*)c.thiz())->set_sel(c.idx());
+		c.combo()->set_sel(c.idx());
 	}
-	
 
-		FLAME_DATA_PACKAGE_BEGIN(ComboItemStyleData, Element::StyleParm)
-		FLAME_DATA_PACKAGE_CAPT(wComboPtr, list, p)
-		FLAME_DATA_PACKAGE_END
-
-		FLAME_REGISTER_FUNCTION_BEG(ComboItemStyle, FLAME_GID(3278), ComboItemStyleData)
-		auto sel = p.list()->sel();
-	if (sel != -1 && p.list()->w_items()->children_1$[sel] == p.thiz())
+	void combo_items_child_event$(Element::ChildListenerParm& p)
 	{
-		if (p.thiz()->state == StateNormal)
-		{
-			if (p.thiz()->style_level <= 1)
-			{
-				auto i = (InstancePrivate*)p.thiz()->instance();
-
-				p.thiz()->background_col$ = i->default_header_col;
-				p.thiz()->style_level = 1;
-			}
-		}
-	}
-	FLAME_REGISTER_FUNCTION_END(ComboItemStyle)
-
-		FLAME_REGISTER_FUNCTION_BEG(ComboItemsChild, FLAME_GID(7524), Element::ChildListenerParm)
 		if (p.op() != Element::ChildAdd)
 			return;
 
-	if (p.src()->class$.hash == cH("menuitem"))
-	{
-		p.thiz()->set_width(p.thiz()->inner_padding$[0] + p.thiz()->inner_padding$[1] + ((wCombo*)p.thiz())->w_title()->inner_padding$[0] + ((wCombo*)p.thiz())->w_title()->inner_padding$[1] + ((wCombo*)p.thiz())->w_items()->size$.x);
-		auto idx = ((wCombo*)p.thiz())->w_items()->children_1$.size - 1;
-
-		((wMenuItem*)p.src())->add_listener(Element::ListenerMouse, ComboItemMouse::v, p.thiz(), { idx });
-
-		((wMenuItem*)p.src())->add_style(0, ComboItemStyle::v, { p.thiz() });
+		auto combo = (wComboPtr)(p.thiz()->parent);
+		if (p.src()->class$.hash == cH("menuitem"))
+		{
+			combo->set_width(combo->inner_padding$[0] + combo->inner_padding$[1] + combo->w_title()->inner_padding$[0] + combo->w_title()->inner_padding$[1] + combo->w_items()->size$.x);
+			auto idx = combo->w_items()->children_1$.size - 1;
+			p.src()->styles$.push_back(Style(0, 1, Function<StyleParm>(combo_item_style$, { combo })));
+			p.src()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(combo_item_mouse_event$, { combo, idx }));
+		}
 	}
-	FLAME_REGISTER_FUNCTION_END(ComboItemsChild)
 
-		void wCombo::init(void* _enum_info, void* _target)
+	void wCombo::init(void* _enum_info, void* _target)
 	{
 		((wMenu*)this)->init(L"");
+		init_data_types();
 
-		add_data_storages({ -1, _enum_info, _target });
+		sel() = -1;
+		enum_info() = _enum_info;
+		target() = _target;
 
 		background_frame_thickness$ = 1.f;
 
 		size_policy_hori$ = SizeFixed;
 
 		w_title()->size_policy_hori$ = SizeFitLayout;
-		w_title()->add_listener(ListenerMouse, ComboTextMouse::v, this, {});
+		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(combo_title_mouse_event$, {}));
 
-		w_items()->add_listener(ListenerChild, ComboItemsChild::v, this, {});
+		w_items()->child_listeners$.push_back(Function<ChildListenerParm>(combo_items_child_event$, {}));
 
 		if (enum_info())
 		{
 			auto e = (EnumInfo*)enum_info();
 
 			for (auto i = 0; i < e->item_count(); i++)
-				w_items()->add_child(createT<wMenuItem>(instance(), s2w(e->item(i)->name()).c_str()));
+				w_items()->add_child(createT<wMenuItem>(ui, s2w(e->item(i)->name()).c_str()));
 		}
 
 		if (target())
@@ -1498,7 +1490,7 @@ namespace flame
 	{
 		sel() = idx;
 		auto i = (wMenuItem*)w_items()->children_1$[idx];
-		w_title()->text() = i->text();
+		w_title()->text$ = i->text$;
 
 		if (from_inner)
 			return;
@@ -1518,32 +1510,34 @@ namespace flame
 		on_changed();
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(EditExtraDraw, FLAME_GID(9908), Element::ExtraDrawParm)
-		if (p.thiz()->instance()->key_focus_Element() == p.thiz() && int(p.thiz()->instance()->total_time() * 2) % 2 == 0)
+	void edit_extra_draw$(Element::ExtraDrawParm &p)
+	{
+		auto thiz = (wEditPtr)p.thiz();
+		auto ui = thiz->ui;
+		if (ui->key_focus_element() == thiz && int(ui->total_time() * 2) % 2 == 0)
 		{
-			auto len = share_data.font_atlas->get_text_width(((wEdit*)p.thiz())->text().v, ((wEdit*)p.thiz())->text().v + ((wEdit*)p.thiz())->cursor());
-			auto pos = (p.thiz()->pos$ + Vec2(p.thiz()->inner_padding$[0], p.thiz()->inner_padding$[2])) * p.scl() + p.off();
-			if (((wEdit*)p.thiz())->sdf_scale() < 0.f)
-				p.canvas()->add_char_stroke(pos + Vec2(len - 1.f, 0.f) * p.scl(), ((wEdit*)p.thiz())->text_col(), '|');
-			else
-			{
-				auto sdf_scale = ((wEdit*)p.thiz())->sdf_scale() * p.scl();
-				p.canvas()->add_char_sdf(pos + Vec2(len - 1.f, 0.f) * sdf_scale, ((wEdit*)p.thiz())->text_col(), '|', sdf_scale);
-			}
+			auto font_idx = thiz->font_idx();
+			auto font = ui->canvas()->get_font(font_idx);
+			auto len = font->get_text_width(thiz->text$.v, thiz->text$.v + thiz->cursor());
+			auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
+			auto scl = p.scl() * thiz->sdf_scale();
+			p.canvas()->add_text(font_idx, pos + Vec2(len - 1.f, 0.f) * scl, thiz->text_col(), L"|", scl);
 		}
-	FLAME_REGISTER_FUNCTION_END(EditExtraDraw)
+	}
 
-		FLAME_REGISTER_FUNCTION_BEG(EditKey, FLAME_GID(27590), Element::KeyListenerParm)
+	void edit_key_event$(Element::KeyListenerParm &p)
+	{
+		auto thiz = (wEditPtr)p.thiz();
 		if (p.action() == KeyStateNull)
 		{
-			if (((wEdit*)p.thiz())->type() != wEdit::TypeNull && p.value() != '\b' && p.value() != 22 && p.value() != 27)
+			if (thiz->type() != wEdit::TypeNull && p.value() != '\b' && p.value() != 22 && p.value() != 27)
 			{
-				switch (((wEdit*)p.thiz())->type())
+				switch (thiz->type())
 				{
 				case wEdit::TypeInt:
 					if (p.value() == L'-')
 					{
-						if (((wEdit*)p.thiz())->cursor() != 0 || ((wEdit*)p.thiz())->text().v[0] == L'-')
+						if (thiz->cursor() != 0 || thiz->text$.v[0] == L'-')
 							return;
 					}
 					if (p.value() < '0' || p.value() > '9')
@@ -1556,7 +1550,7 @@ namespace flame
 				case wEdit::TypeFloat:
 					if (p.value() == L'.')
 					{
-						if (((wEdit*)p.thiz())->text().find(L'.') != -1)
+						if (thiz->text$.find(L'.') != -1)
 							return;
 					}
 					if (p.value() < '0' || p.value() > '9')
@@ -1568,28 +1562,28 @@ namespace flame
 			switch (p.value())
 			{
 			case L'\b':
-				if (((wEdit*)p.thiz())->cursor() > 0)
+				if (thiz->cursor() > 0)
 				{
-					((wEdit*)p.thiz())->cursor()--;
-					((wEdit*)p.thiz())->text().remove(((wEdit*)p.thiz())->cursor());
-					p.thiz()->on_changed();
+					thiz->cursor()--;
+					thiz->text$.remove(thiz->cursor());
+					thiz->on_changed();
 				}
 				break;
 			case 22:
 			{
 				auto str = get_clipboard();
 
-				((wEdit*)p.thiz())->cursor() = 0;
-				((wEdit*)p.thiz())->text() = str.v;
-				p.thiz()->on_changed();
+				thiz->cursor() = 0;
+				thiz->text$ = str.v;
+				thiz->on_changed();
 			}
-			break;
+				break;
 			case 27:
 				break;
 			default:
-				((wEdit*)p.thiz())->text().insert(((wEdit*)p.thiz())->cursor(), p.value());
-				((wEdit*)p.thiz())->cursor()++;
-				p.thiz()->on_changed();
+				thiz->text$.insert(thiz->cursor(), p.value());
+				thiz->cursor()++;
+				thiz->on_changed();
 			}
 		}
 		else if (p.action() == KeyStateDown)
@@ -1597,98 +1591,101 @@ namespace flame
 			switch (p.value())
 			{
 			case Key_Left:
-				if (((wEdit*)p.thiz())->cursor() > 0)
-					((wEdit*)p.thiz())->cursor()--;
+				if (thiz->cursor() > 0)
+					thiz->cursor()--;
 				break;
 			case Key_Right:
-				if (((wEdit*)p.thiz())->cursor() < ((wEdit*)p.thiz())->text().size)
-					((wEdit*)p.thiz())->cursor()++;
+				if (thiz->cursor() < thiz->text$.size)
+					thiz->cursor()++;
 				break;
 			case Key_Home:
-				((wEdit*)p.thiz())->cursor() = 0;
+				thiz->cursor() = 0;
 				break;
 			case Key_End:
-				((wEdit*)p.thiz())->cursor() = ((wEdit*)p.thiz())->text().size;
+				thiz->cursor() = thiz->text$.size;
 				break;
 			case Key_Del:
-				if (((wEdit*)p.thiz())->cursor() < ((wEdit*)p.thiz())->text().size)
+				if (thiz->cursor() < thiz->text$.size)
 				{
-					((wEdit*)p.thiz())->text().remove(((wEdit*)p.thiz())->cursor());
-					p.thiz()->on_changed();
+					thiz->text$.remove(thiz->cursor());
+					thiz->on_changed();
 				}
 				break;
 			}
 		}
-	FLAME_REGISTER_FUNCTION_END(EditKey)
+	}
 
-		FLAME_REGISTER_FUNCTION_BEG(ComboFocus, FLAME_GID(12998), Element::FoucusListenerParm)
-		if (p.focus_or_keyfocus() != 1)
+	void edit_focus_event$(Element::FoucusListenerParm& p)
+	{
+		if (p.is_keyfocus() != 1)
 			return;
 
-	switch (p.type())
-	{
-	case Focus_Gain:
-		if (((wEdit*)p.thiz())->target())
-			((wEdit*)p.thiz())->cursor() = ((wEdit*)p.thiz())->text().size;
-		break;
-	case Focus_Lost:
-		if (((wEdit*)p.thiz())->target())
+		auto thiz = (wEditPtr)p.thiz();
+		switch (p.type())
 		{
-			switch (((wEdit*)p.thiz())->type())
+		case Focus_Gain:
+			if (thiz->target())
+				thiz->cursor() = thiz->text$.size;
+			break;
+		case Focus_Lost:
+			if (((wEdit*)p.thiz())->target())
 			{
-			case wEdit::TypeInt:
-			{
-				auto v = (int*)(((wEdit*)p.thiz())->target());
-				*v = stoi1(((wEdit*)p.thiz())->text().v);
-				((wEdit*)p.thiz())->text() = to_wstring(*v);
-				((wEdit*)p.thiz())->cursor() = 0;
+				switch (((wEdit*)p.thiz())->type())
+				{
+				case wEdit::TypeInt:
+				{
+					auto v = (int*)(thiz->target());
+					*v = stoi1(thiz->text$.v);
+					thiz->text$ = to_wstring(*v);
+					thiz->cursor() = 0;
+				}
+					break;
+				case wEdit::TypeUint:
+				{
+					auto v = (uint*)(thiz->target());
+					*v = stou1(thiz->text$.v);
+					thiz->text$ = to_wstring(*v);
+					thiz->cursor() = 0;
+				}
+					break;
+				case wEdit::TypeFloat:
+				{
+					auto v = (float*)(thiz->target());
+					*v = stof1(thiz->text$.v);
+					thiz->text$ = to_wstring(*v);
+					thiz->cursor() = 0;
+				}
+					break;
+				case wEdit::TypeUchar:
+				{
+					auto v = (uchar*)(thiz->target());
+					*v = stob1(thiz->text$.v);
+					thiz->text$ = to_wstring(*v);
+					thiz->cursor() = 0;
+				}
+					break;
+				}
 			}
 			break;
-			case wEdit::TypeUint:
-			{
-				auto v = (uint*)(((wEdit*)p.thiz())->target());
-				*v = stou1(((wEdit*)p.thiz())->text().v);
-				((wEdit*)p.thiz())->text() = to_wstring(*v);
-				((wEdit*)p.thiz())->cursor() = 0;
-			}
-			break;
-			case wEdit::TypeFloat:
-			{
-				auto v = (float*)(((wEdit*)p.thiz())->target());
-				*v = stof1(((wEdit*)p.thiz())->text().v);
-				((wEdit*)p.thiz())->text() = to_wstring(*v);
-				((wEdit*)p.thiz())->cursor() = 0;
-			}
-			break;
-			case wEdit::TypeUchar:
-			{
-				auto v = (uchar*)(((wEdit*)p.thiz())->target());
-				*v = stob1(((wEdit*)p.thiz())->text().v);
-				((wEdit*)p.thiz())->text() = to_wstring(*v);
-				((wEdit*)p.thiz())->cursor() = 0;
-			}
-			break;
-			}
 		}
-		break;
 	}
-	FLAME_REGISTER_FUNCTION_END(ComboFocus)
 
-		void wEdit::init(Type _type, void* _target)
+	void wEdit::init(int font_idx, Type _type, void* _target)
 	{
-		wText::init();
+		wText::init(font_idx);
+		init_data_types();
 
-		add_data_storages({ 0, (int)_type, _target });
+		type() = _type;
+		target() = _target;
 
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
-		background_col$ = i->default_frame_col;
+		background_col$ = ui->default_frame_col;
 		event_attitude$ = EventAccept;
 		want_key_focus$ = true;
 
-		add_extra_draw(EditExtraDraw::v, {});
-
-		add_listener(ListenerKey, EditKey::v, this, {});
-		add_listener(ListenerFocus, ComboFocus::v, this, {});
+		extra_draws$.push_back(Function<ExtraDrawParm>(edit_extra_draw$, {}));
+		key_listeners$.push_back(Function<KeyListenerParm>(edit_key_event$, {}));
+		focus_listeners$.push_back(Function<FoucusListenerParm>(edit_focus_event$, {}));
 
 		if (type() != TypeNull && target())
 		{
@@ -1697,175 +1694,199 @@ namespace flame
 			case wEdit::TypeInt:
 			{
 				auto p = (int*)target();
-				text() = to_wstring(*p);
+				text$ = to_wstring(*p);
 			}
-			break;
+				break;
 			case wEdit::TypeUint:
 			{
 				auto p = (uint*)target();
-				text() = to_wstring(*p);
+				text$ = to_wstring(*p);
 			}
-			break;
+				break;
 			case wEdit::TypeFloat:
 			{
 				auto p = (float*)target();
-				text() = to_wstring(*p);
+				text$ = to_wstring(*p);
 			}
-			break;
+				break;
 			case wEdit::TypeUchar:
 			{
 				auto p = (uchar*)target();
-				text() = to_wstring(*p);
+				text$ = to_wstring(*p);
 			}
-			break;
+				break;
 			}
 		}
 	}
 
 	void wEdit::set_size_by_width(float width)
 	{
-		set_size(Vec2(width + inner_padding$[0] + inner_padding$[1],
-			share_data.font_atlas->pixel_height * (sdf_scale() > 0.f ? sdf_scale() : 1.f) +
-			inner_padding$[2] + inner_padding$[3]));
+		auto font = ui->canvas()->get_font(font_idx());
+		set_size(Vec2(width + inner_padding$[0] + inner_padding$[1], font->pixel_height * sdf_scale() + inner_padding$[2] + inner_padding$[3]));
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(ImageExtraDraw, FLAME_GID(30624), Element::ExtraDrawParm)
-		auto pos = (p.thiz()->pos$ + Vec2(p.thiz()->inner_padding$[0], p.thiz()->inner_padding$[2])) * p.scl() + p.off();
-	auto size = (p.thiz()->size$ - Vec2(p.thiz()->inner_padding$[0] + p.thiz()->inner_padding$[1], p.thiz()->inner_padding$[2] + p.thiz()->inner_padding$[3])) * p.scl() * p.thiz()->scale$;
-	if (!((wImage*)p.thiz())->stretch())
-		p.canvas()->add_image(pos, size, ((wImage*)p.thiz())->id(), ((wImage*)p.thiz())->uv0(), ((wImage*)p.thiz())->uv1());
-	else
-		p.canvas()->add_image_stretch(pos, size, ((wImage*)p.thiz())->id(), ((wImage*)p.thiz())->border());
-	FLAME_REGISTER_FUNCTION_END(ImageExtraDraw)
-
-		void wImage::init()
+	void image_extra_draw$(Element::ExtraDrawParm& p)
 	{
-		add_data_storages({ 0, Vec2(0.f), Vec2(1.f), 0, Vec4(0.f) });
-
-		add_extra_draw(ImageExtraDraw::v, {});
+		auto thiz = (wImagePtr)p.thiz();
+		auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
+		auto size = (thiz->size$ - Vec2(thiz->inner_padding$[0] + thiz->inner_padding$[1], thiz->inner_padding$[2] + thiz->inner_padding$[3])) * p.scl() * thiz->scale$;
+		if (!thiz->stretch())
+			p.canvas()->add_image(pos, size, thiz->id(), thiz->uv0(), thiz->uv1());
+		else
+			p.canvas()->add_image_stretch(pos, size, thiz->id(), thiz->border());
 	}
 
-	FLAME_DATA_PACKAGE_BEGIN(SizeDragMouseData, Element::MouseListenerParm)
-		FLAME_DATA_PACKAGE_CAPT(ElementPtr, target, p)
-		FLAME_DATA_PACKAGE_END
+	void wImage::init()
+	{
+		init_data_types();
 
-		FLAME_REGISTER_FUNCTION_BEG(SizeDragMouse, FLAME_GID(2863), SizeDragMouseData)
-		if (!(p.action() == KeyStateNull && p.key() == Mouse_Null))
+		id() = 0;
+		uv0() = Vec2(0.f);
+		uv1() = Vec2(1.f);
+		stretch() = 0;
+		border() = Vec4(0.f);
+
+		extra_draws$.push_back(Function<ExtraDrawParm>(image_extra_draw$, {}));
+	}
+
+	void sizedrag_extra_draw$(Element::ExtraDrawParm& p)
+	{
+		auto thiz = (wSizeDragPtr)p.thiz();
+		p.canvas()->add_triangle_filled(
+			(thiz->pos$ + Vec2(thiz->size$.x, 0.f)) * p.scl() + p.off(),
+			(thiz->pos$ + Vec2(0.f, thiz->size$.y)) * p.scl() + p.off(),
+			(thiz->pos$ + Vec2(thiz->size$)) * p.scl() + p.off(),
+			thiz->background_col$);
+	}
+
+	void sizedrag_mouse_event$(Element::MouseListenerParm& p)
+	{
+		if (!p.is_move())
 			return;
 
-	if (p.thiz() == p.thiz()->instance()->dragging_Element())
-	{
-		auto changed = false;
-		auto d = p.value() / p.thiz()->parent()->scale$;
-		auto new_size = p.target()->size$;
-
-		if (new_size.x + d.x > ((wSizeDrag*)p.thiz())->min_size().x)
+		auto thiz = (wSizeDragPtr)p.thiz();
+		if (thiz == thiz->ui->dragging_element())
 		{
-			new_size.x += d.x;
-			changed = true;
-		}
-		if (new_size.y + d.y > ((wSizeDrag*)p.thiz())->min_size().y)
-		{
-			new_size.y += d.y;
-			changed = true;
-		}
+			auto target = thiz->w_target();
+			auto changed = false;
+			auto d = p.value() / thiz->parent->scale$;
+			auto new_size = target->size$;
 
-		if (changed)
-			p.target()->set_size(new_size);
+			if (new_size.x + d.x > thiz->min_size().x)
+			{
+				new_size.x += d.x;
+				changed = true;
+			}
+			if (new_size.y + d.y > thiz->min_size().y)
+			{
+				new_size.y += d.y;
+				changed = true;
+			}
+
+			if (changed)
+				target->set_size(new_size);
+		}
 	}
-	FLAME_REGISTER_FUNCTION_END(SizeDragMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(SizeDragExtraDraw, FLAME_GID(4242), Element::ExtraDrawParm)
-		p.canvas()->add_triangle_filled(
-		(p.thiz()->pos$ + Vec2(p.thiz()->size$.x, 0.f)) * p.scl() + p.off(),
-			(p.thiz()->pos$ + Vec2(0.f, p.thiz()->size$.y)) * p.scl() + p.off(),
-			(p.thiz()->pos$ + Vec2(p.thiz()->size$)) * p.scl() + p.off(),
-			p.thiz()->background_col$);
-	FLAME_REGISTER_FUNCTION_END(SizeDragExtraDraw)
-
-		void wSizeDrag::init(Element * target)
+	void wSizeDrag::init(Element * target)
 	{
-		add_data_storages({ Vec2(0.f) });
+		init_data_types();
+
+		w_target() = target;
+		min_size() = Vec2(0.f);
 
 		size$ = Vec2(10.f);
 		background_col$ = Bvec4(140, 225, 15, 255 * 0.5f);
 		align$ = AlignRightBottomNoPadding;
 
 		draw_default$ = false;
-		add_extra_draw(SizeDragExtraDraw::v, {});
-
-		add_listener(ListenerMouse, SizeDragMouse::v, this, { target });
-
-		add_style_background_color(this, 0, i->default_button_col, i->default_button_col_hovering, i->default_button_col_active);
+		extra_draws$.push_back(Function<ExtraDrawParm>(sizedrag_extra_draw$, {}));
+		styles$.push_back(Style(0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active)));
+		mouse_listeners$.push_back(Function<MouseListenerParm>(sizedrag_mouse_event$, {}));
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(ScrollbarBtnMouse, FLAME_GID(1385), Element::MouseListenerParm)
+	void scrollbar_btn_mouse_event$(Element::MouseListenerParm& p)
+	{
 		if (p.action() != KeyStateNull)
 			return;
 
-	if (p.key() == Mouse_Middle)
-		p.thiz()->parent()->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
-	else
-	{
-		if (((wScrollbar*)p.thiz())->w_btn() == p.thiz()->instance()->dragging_Element())
+		auto scrollbar = (wScrollbarPtr)(p.thiz()->parent);
+		if (p.key() == Mouse_Middle)
+			scrollbar->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
+		else
 		{
-			((wScrollbar*)p.thiz())->w_target()->scroll_offset$ -= (p.value().y / p.thiz()->size$.y) * ((wScrollbar*)p.thiz())->w_target()->get_content_size();
-			((wScrollbar*)p.thiz())->w_target()->arrange();
+			if (scrollbar->w_btn() == scrollbar->ui->dragging_element())
+			{
+				scrollbar->w_target()->scroll_offset$ -= (p.value().y / scrollbar->size$.y) * scrollbar->w_target()->get_content_size();
+				scrollbar->w_target()->need_arrange = true;
+			}
 		}
 	}
-	FLAME_REGISTER_FUNCTION_END(ScrollbarBtnMouse)
 
-		FLAME_REGISTER_FUNCTION_BEG(ScrollbarMouse, FLAME_GID(2126), Element::MouseListenerParm)
+	FLAME_PACKAGE_BEGIN_1(ScrollbarTargetMouseEventData, wScrollbarPtr, scrollbar, p)
+	FLAME_PACKAGE_END_1
+
+	void scrollbar_target_mouse_event$(Element::MouseListenerParm& p)
+	{
 		if (!p.is_scroll())
 			return;
 
-	((wScrollbar*)p.thiz())->scroll(p.value().x);
-	FLAME_REGISTER_FUNCTION_END(ScrollbarMouse)
-
-		FLAME_REGISTER_FUNCTION_BEG(ScrollbarStyle, FLAME_GID(18956), Element::StyleParm)
-		auto s = ((wScrollbar*)p.thiz())->w_target()->size$.y - ((wScrollbar*)p.thiz())->w_target()->inner_padding$[2] - ((wScrollbar*)p.thiz())->w_target()->inner_padding$[3];
-	auto content_size = ((wScrollbar*)p.thiz())->w_target()->get_content_size();
-	if (content_size > s)
-	{
-		((wScrollbar*)p.thiz())->w_btn()->set_visibility(true);
-		((wScrollbar*)p.thiz())->w_btn()->pos$.y = p.thiz()->size$.y * (-((wScrollbar*)p.thiz())->w_target()->scroll_offset$ / content_size);
-		((wScrollbar*)p.thiz())->w_btn()->size$.y = p.thiz()->size$.y * (s / content_size);
+		auto scrollbar = p.get_capture<ScrollbarTargetMouseEventData>().scrollbar();
+		scrollbar->scroll(p.value().x);
 	}
-	else
-		((wScrollbar*)p.thiz())->w_btn()->set_visibility(false);
-	FLAME_REGISTER_FUNCTION_END(ScrollbarStyle)
 
-		void wScrollbar::init(Element * target)
+	void scrollbar_style$(StyleParm& p)
+	{
+		auto thiz = (wScrollbarPtr)p.thiz();
+		auto s = thiz->w_target()->size$.y - thiz->w_target()->inner_padding$[2] - thiz->w_target()->inner_padding$[3];
+		auto content_size = thiz->w_target()->get_content_size();
+		if (content_size > s)
+		{
+			thiz->w_btn()->set_visibility(true);
+			thiz->w_btn()->pos$.y = thiz->size$.y * (-thiz->w_target()->scroll_offset$ / content_size);
+			thiz->w_btn()->size$.y = thiz->size$.y * (s / content_size);
+		}
+		else
+			thiz->w_btn()->set_visibility(false);
+	}
+
+	void scrollbar_mouse_event$(Element::MouseListenerParm& p)
+	{
+		if (!p.is_scroll())
+			return;
+
+		auto thiz = (wScrollbarPtr)p.thiz();
+		thiz->scroll(p.value().x);
+	}
+
+	void wScrollbar::init(Element * target)
 	{
 		wLayout::init();
-
-		add_data_storages({ nullptr, nullptr });
+		init_data_types();
 
 		size$ = Vec2(10.f);
 		size_policy_vert$ = SizeFitLayout;
 		align$ = AlignRight;
 		event_attitude$ = EventAccept;
 
-		w_btn() = createT<wButton>(instance(), nullptr);
+		w_btn() = createT<wButton>(ui, nullptr);
 		w_btn()->size$ = size$;
 		w_btn()->background_round_radius$ = 5.f;
 		w_btn()->background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
+		w_btn()->mouse_listeners$.push_back(Function<MouseListenerParm>(scrollbar_btn_mouse_event$, {}));
 		add_child(w_btn());
 
 		w_target() = target;
-		w_target()->add_listener(ListenerMouse, ScrollbarMouse::v, this, {});
+		w_target()->mouse_listeners$.push_back(Function<MouseListenerParm>(scrollbar_target_mouse_event$, { this }));
 
-		w_btn()->add_listener(ListenerMouse, ScrollbarBtnMouse::v, this, {});
-
-		add_listener(ListenerMouse, ScrollbarMouse::v, this, {});
-
-		add_style(0, ScrollbarStyle::v, {});
+		styles$.push_back(Style(0, 0, Function<StyleParm>(scrollbar_style$, {})));
+		mouse_listeners$.push_back(Function<MouseListenerParm>(scrollbar_mouse_event$, {}));
 	}
 
 	void wScrollbar::scroll(int v)
 	{
 		w_target()->scroll_offset$ += v * 20.f;
-		w_target()->arrange();
+		w_target()->need_arrange = true;
 	}
 
 	FLAME_REGISTER_FUNCTION_BEG(ListItemTextMouse, FLAME_GID(6526), Element::MouseListenerParm)

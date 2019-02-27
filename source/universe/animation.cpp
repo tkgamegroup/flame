@@ -20,40 +20,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include <flame/universe/universe.h>
+#include <flame/foundation/foundation.h>
+#include <flame/universe/element.h>
+#include <flame/universe/animation.h>
 
 namespace flame
 {
-	struct Element;
-	typedef Element* ElementPtr;
-
-	struct Style;
-	typedef Style* StylePtr;
-
-	FLAME_PACKAGE_BEGIN_2(StyleParm, StylePtr, thiz, p, ElementPtr, e, p)
+	FLAME_PACKAGE_BEGIN_2(AnimationMovetoData, Vec2, pos_a, f2, Vec2, pos_b, f2)
 	FLAME_PACKAGE_END_2
 
-	struct Style : R
+	void animation_moveto(AnimationParm& p)
 	{
-		int closet_id$;
-		int level$;
-		Function<StyleParm> f$;
+		auto e = p.e();
+		auto& thiz = *p.thiz();
+		auto& c = p.get_capture<AnimationMovetoData>();
 
-		Style() 
+		if (thiz.time < 0.f)
 		{
+			e->pos$ = c.pos_b();
+			return;
 		}
 
-		Style(int closet_id, int level, const Function<StyleParm> &f) :
-			closet_id$(closet_id),
-			level$(level),
-			f$(f)
+		e->pos$ = c.pos_a() + (c.pos_b() - c.pos_a()) * (thiz.time / thiz.duration$);
+	}
+
+	Function<AnimationParm> Animation::moveto(const Vec2& pos_a, const Vec2& pos_b)
+	{
+		return Function<AnimationParm>(animation_moveto, { pos_a, pos_b });
+	}
+
+	FLAME_PACKAGE_BEGIN_2(AnimationFadeData, float, alpha_a, f1, float, alpha_b, f1)
+	FLAME_PACKAGE_END_2
+
+	void animation_fade(AnimationParm& p)
+	{
+		auto e = p.e();
+		auto& thiz = *p.thiz();
+		auto& c = p.get_capture<AnimationFadeData>();
+
+		if (thiz.time < 0.f)
 		{
+			e->alpha$ = c.alpha_b();
+			return;
 		}
 
-		FLAME_UNIVERSE_EXPORTS static Function<StyleParm> background_offset(const Vec4& active_offset, const Vec4& else_offset);
-		FLAME_UNIVERSE_EXPORTS static Function<StyleParm> background_color(const Bvec4& normal_col, const Bvec4& hovering_col, const Bvec4& active_col);
-		FLAME_UNIVERSE_EXPORTS static Function<StyleParm> text_color(const Bvec4& normal_col, const Bvec4& else_col);
-	};
+		e->alpha$ = c.alpha_a() + (c.alpha_b() - c.alpha_a()) * (thiz.time / thiz.duration$);
+	}
+
+	Function<AnimationParm> Animation::fade(float alpha_a, float alpha_b)
+	{
+		return Function<AnimationParm>(animation_fade, { alpha_a, alpha_b });
+	}
 }

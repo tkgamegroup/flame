@@ -25,8 +25,8 @@
 #include <flame/foundation/foundation.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/universe.h>
-
-#include <vector>
+#include <flame/universe/style.h>
+#include <flame/universe/animation.h>
 
 namespace flame
 {
@@ -181,14 +181,10 @@ namespace flame
 		Array<Function<ExtraDrawParm>> extra_draws$;
 
 		int closet_id$;
-		FLAME_PACKAGE_BEGIN_2(StyleParm, ElementPtr, thiz, p, int, closet_id, i1)
-		FLAME_PACKAGE_END_2
 		int style_level;
-		Array<Function<StyleParm>> styles$;
+		Array<Style> styles$;
 
-		FLAME_PACKAGE_BEGIN_2(AnimationParm, ElementPtr, thiz, p, float, time, f1)
-		FLAME_PACKAGE_END_2
-		Array<Function<AnimationParm>> animations$;
+		Array<Animation> animations$;
 
 		FLAME_PACKAGE_BEGIN_3(FoucusListenerParm, ElementPtr, thiz, p, FocusType, type, i1, int, is_keyfocus, i1)
 		FLAME_PACKAGE_END_3
@@ -271,7 +267,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void remove_animations();
 
 		FLAME_UNIVERSE_EXPORTS void on_draw(graphics::Canvas* c, const Vec2& off, float scl);
-		FLAME_UNIVERSE_EXPORTS void on_focus(FocusType type, int focus_or_keyfocus);
+		FLAME_UNIVERSE_EXPORTS void on_focus(FocusType type, int is_keyfocus);
 		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, int value);
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2& value);
 		FLAME_UNIVERSE_EXPORTS void on_drop(Element* src);
@@ -640,7 +636,7 @@ namespace flame
 			TypeFloat,
 			TypeUchar
 		};
-		FLAME_UNIVERSE_EXPORTS void init(Type type = TypeNull, void* target = nullptr);
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, Type type = TypeNull, void* target = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_size_by_width(float width);
 	FLAME_ELEMENT_END
 
@@ -648,7 +644,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void init();
 	FLAME_ELEMENT_END
 
-	FLAME_ELEMENT_BEGIN_1(wSizeDrag, Element, Vec2, min_size, f2)
+	FLAME_ELEMENT_BEGIN_2(wSizeDrag, Element, ElementPtr, w_target, p, Vec2, min_size, f2)
 		FLAME_UNIVERSE_EXPORTS void init(Element* target);
 	FLAME_ELEMENT_END
 

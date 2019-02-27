@@ -29,6 +29,7 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
+		struct Imageview;
 		struct Swapchain;
 		struct Commandbuffer;
 		struct Font;
