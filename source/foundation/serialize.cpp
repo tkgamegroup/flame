@@ -2223,9 +2223,12 @@ namespace flame
 				n_item->new_attr("size", std::to_string(i->size));
 				if (i->tag != VariableTagArrayOfVariable && i->tag != VariableTagArrayOfPointer)
 				{
-					auto default_value_str = i->serialize_value(&i->default_value.v, false, -1, 1);
-					if (default_value_str.size > 0)
-						n_item->new_attr("default_value", default_value_str.v);
+					if (i->type_hash != cH("String") && i->type_hash != cH("StringAndHash"))
+					{
+						auto default_value_str = i->serialize_value(&i->default_value.v, false, -1, 1);
+						if (default_value_str.size > 0)
+							n_item->new_attr("default_value", default_value_str.v);
+					}
 				}
 			}
 
