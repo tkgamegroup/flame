@@ -281,11 +281,11 @@ namespace flame
 		template<typename T, typename ... Args>
 		inline static T* createT(UI* ui, Args ... args)
 		{
-			auto w = (T*)create(ins);
+			auto w = (T*)create(ui);
 			w->init(args...);
 			return w;
 		}
-		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, VaribleInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
+		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_idx, VaribleInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
 		FLAME_UNIVERSE_EXPORTS static Element* create_from_file(UI* ui, SerializableNode* src);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Element* w);
 	};
@@ -610,7 +610,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_5(wMenu, wLayout, bool, sub, i1, bool, opened, i1, wTextPtr, w_title, p, wTextPtr, w_rarrow, p, wLayoutPtr, w_items, p)
-		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title, bool only_for_context_menu = false);
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title, bool only_for_context_menu = false);
 		FLAME_UNIVERSE_EXPORTS void open();
 		FLAME_UNIVERSE_EXPORTS void popup(const Vec2& pos);
 		FLAME_UNIVERSE_EXPORTS void close();
@@ -621,7 +621,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_3(wCombo, wMenu, int, sel, i1, voidptr, enum_info, p, voidptr, target, p)
-		FLAME_UNIVERSE_EXPORTS void init(void* enum_info = nullptr, void* target = nullptr);
+		FLAME_UNIVERSE_EXPORTS void init(void* enum_info = nullptr, void* target = nullptr, int font_idx = -1 /* use for init items with enum info */ );
 		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
 	FLAME_ELEMENT_END
 
@@ -654,7 +654,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wListItem, wLayout, wTextPtr, w_title, p)
-		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title);
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wList, wLayout, wListItemPtr, w_sel, p, wScrollbarPtr, w_scrollbar, p)
@@ -663,7 +663,7 @@ namespace flame
 
 	struct wTree;
 	FLAME_ELEMENT_BEGIN_3(wTreeNode, wLayout, wTextPtr, w_title, p, wLayoutPtr, w_items, p, wTextPtr, w_larrow, p)
-		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* title, wTree* tree = nullptr);
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title, wTree* tree = nullptr);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wTree, wLayout, wTreeNodePtr, w_sel, p)
@@ -675,7 +675,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wMessageDialog, wDialog, wTextPtr, w_text, p, wButtonPtr, w_ok, p)
-		FLAME_UNIVERSE_EXPORTS void init(const wchar_t* text);
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* text);
 	FLAME_ELEMENT_END
 
 	//struct wYesNoDialog : wDialog

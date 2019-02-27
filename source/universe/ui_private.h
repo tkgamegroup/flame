@@ -30,6 +30,7 @@ namespace flame
 {
 	struct UIPrivate : UI
 	{
+		graphics::Canvas* canvas;
 		std::unique_ptr<Element> root_;
 		Element* hovering_element_;
 		Element* focus_element_;
@@ -72,5 +73,7 @@ namespace flame
 		void postprocessing(Element* w);
 		void end(const Vec2& show_off = Vec2(0.f));
 	};
+
+	typedef UIPrivate* UIPrivatePtr;
 }
 

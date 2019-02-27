@@ -665,9 +665,8 @@ namespace flame
 		{
 			auto& a = animations$[i];
 			a.time = -1.f;
-			auto& p = (AnimationParm&)a.f$.p;
-			p.thiz() = &a;
-			p.e() = this;
+			a.f$.p.thiz() = &a;
+			a.f$.p.e() = this;
 			a.f$.exec();
 		}
 		animations$.resize(0);
@@ -784,7 +783,7 @@ namespace flame
 		return new Element(ui);
 	}
 
-	void Element::create_from_typeinfo(UI * ui, VaribleInfo * info, void* p, Element * dst)
+	void Element::create_from_typeinfo(UI * ui, int font_idx, VaribleInfo * info, void* p, Element * dst)
 	{
 		switch (info->tag())
 		{
@@ -810,7 +809,7 @@ namespace flame
 				break;
 			case cH("uint"):
 			{
-				auto e = createT<wEdit>(ui, wEdit::TypeUint, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUint, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -819,7 +818,7 @@ namespace flame
 				break;
 			case cH("int"):
 			{
-				auto e = createT<wEdit>(ui, wEdit::TypeInt, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -832,7 +831,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -846,7 +845,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -860,7 +859,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -870,7 +869,7 @@ namespace flame
 				break;
 			case cH("float"):
 			{
-				auto e = createT<wEdit>(ui, wEdit::TypeFloat, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -883,7 +882,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -897,7 +896,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -911,7 +910,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -921,7 +920,7 @@ namespace flame
 				break;
 			case cH("uchar"):
 			{
-				auto e = createT<wEdit>(ui, wEdit::TypeUchar, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -934,7 +933,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -948,7 +947,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -962,7 +961,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ui, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -1007,7 +1006,7 @@ namespace flame
 
 			if (p.parent())
 			{
-				w->parent = p.parent;
+				w->parent = (ElementPtr)p.parent();
 				if (p.att_hash() == cH("children_1"))
 					w->layer = 0;
 				else /* if (att_hash == cH("children_2")) */
@@ -1092,19 +1091,23 @@ namespace flame
 
 		event_attitude$ = EventIgnore;
 
-		text$ = L"";
 		font_idx() = _font_idx;
 		text_col() = ui->default_text_col;
 		sdf_scale() = ui->default_sdf_scale;
+		text$ = L"";
 
 		extra_draws$.push_back(Function<ExtraDrawParm>(text_extra_draw$, {}));
 	}
 
 	void wText::set_size_auto()
 	{
-		auto font = ui->canvas()->get_font(font_idx());
+		Vec2 v(0.f);
 
-		auto v = Vec2(font->get_text_width(text$.v), font->pixel_height()) * sdf_scale();
+		if (font_idx() >= 0)
+		{
+			auto font = ui->canvas()->get_font(font_idx());
+			v = Vec2(font->get_text_width(text$.v), font->pixel_height()) * sdf_scale();
+		}
 		v.x += inner_padding$[0] + inner_padding$[1];
 		v.y += inner_padding$[2] + inner_padding$[3];
 		set_size(v);
@@ -1141,10 +1144,8 @@ namespace flame
 		wText::init(font_idx);
 		init_data_types();
 
-		auto font = ui->canvas()->get_font(font_idx);
-
 		background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
-		background_round_radius$ = font->pixel_height() * 0.5f;
+		background_round_radius$ = font_idx >= 0 ? ui->canvas()->get_font(font_idx)->pixel_height() * 0.5f : 0.f;
 		background_offset$ = Vec4(background_round_radius$, 0.f, background_round_radius$, 0.f);
 		background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
 
@@ -1176,15 +1177,19 @@ namespace flame
 		if (!w->sub() && w->class$.hash != cH("combo"))
 			return;
 
-		w->w_title()->inner_padding$[1] += w->w_title()->size$.y * 0.6f;
-		w->w_title()->set_size_auto();
+		auto title = w->w_title();
 
-		w->w_rarrow() = Element::createT<wText>(w->ui);
-		w->w_rarrow()->align$ = AlignRightNoPadding;
-		w->w_rarrow()->sdf_scale() = w->w_title()->sdf_scale();
-		w->w_rarrow()->text$ = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
-		w->w_rarrow()->set_size_auto();
-		w->add_child(w->w_rarrow(), 1);
+		title->inner_padding$[1] += title->size$.y * 0.6f;
+		title->set_size_auto();
+
+		auto rarrow = Element::createT<wText>(w->ui, title->font_idx());
+
+		w->w_rarrow() = rarrow;
+		rarrow->align$ = AlignRightNoPadding;
+		rarrow->sdf_scale() = w->w_title()->sdf_scale();
+		rarrow->text$ = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
+		rarrow->set_size_auto();
+		w->add_child(rarrow, 1);
 	}
 
 	void menuitem_mouse_event$(Element::MouseListenerParm& p)
@@ -1247,7 +1252,7 @@ namespace flame
 		}
 	}
 
-	void wMenu::init(const wchar_t* title, bool only_for_context_menu)
+	void wMenu::init(int font_idx, const wchar_t* title, bool only_for_context_menu)
 	{
 		wLayout::init();
 		init_data_types();
@@ -1258,7 +1263,7 @@ namespace flame
 		sub() = 0;
 		opened() = 0;
 
-		w_title() = createT<wText>(ui);
+		w_title() = createT<wText>(ui, font_idx);
 		w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		w_title()->size_policy_hori$ = SizeGreedy;
 		w_title()->align$ = AlignLittleEnd;
@@ -1410,7 +1415,7 @@ namespace flame
 
 	void combo_item_style$(StyleParm& p)
 	{
-		auto combo = p.get_capture<ComboItemStyleData>().combo;
+		auto combo = p.get_capture<ComboItemStyleData>().combo();
 		auto sel = combo->sel();
 		auto e = p.e();
 		if (sel != -1 && combo->w_items()->children_1$[sel] == e)
@@ -1447,9 +1452,9 @@ namespace flame
 		}
 	}
 
-	void wCombo::init(void* _enum_info, void* _target)
+	void wCombo::init(void* _enum_info, void* _target, int font_idx)
 	{
-		((wMenu*)this)->init(L"");
+		((wMenu*)this)->init(-1, L"");
 		init_data_types();
 
 		sel() = -1;
@@ -1470,7 +1475,7 @@ namespace flame
 			auto e = (EnumInfo*)enum_info();
 
 			for (auto i = 0; i < e->item_count(); i++)
-				w_items()->add_child(createT<wMenuItem>(ui, s2w(e->item(i)->name()).c_str()));
+				w_items()->add_child(createT<wMenuItem>(ui, font_idx, s2w(e->item(i)->name()).c_str()));
 		}
 
 		if (target())
@@ -1513,10 +1518,12 @@ namespace flame
 	void edit_extra_draw$(Element::ExtraDrawParm &p)
 	{
 		auto thiz = (wEditPtr)p.thiz();
+		auto font_idx = thiz->font_idx();
+		if (font_idx < 0)
+			return;
 		auto ui = thiz->ui;
 		if (ui->key_focus_element() == thiz && int(ui->total_time() * 2) % 2 == 0)
 		{
-			auto font_idx = thiz->font_idx();
 			auto font = ui->canvas()->get_font(font_idx);
 			auto len = font->get_text_width(thiz->text$.v, thiz->text$.v + thiz->cursor());
 			auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
@@ -1721,8 +1728,8 @@ namespace flame
 
 	void wEdit::set_size_by_width(float width)
 	{
-		auto font = ui->canvas()->get_font(font_idx());
-		set_size(Vec2(width + inner_padding$[0] + inner_padding$[1], font->pixel_height * sdf_scale() + inner_padding$[2] + inner_padding$[3]));
+		set_size(Vec2(width + inner_padding$[0] + inner_padding$[1], 
+			(font_idx() >= 0 ? ui->canvas()->get_font(font_idx())->pixel_height() * sdf_scale() : 0.f) + inner_padding$[2] + inner_padding$[3]));
 	}
 
 	void image_extra_draw$(Element::ExtraDrawParm& p)
@@ -1869,7 +1876,7 @@ namespace flame
 		align$ = AlignRight;
 		event_attitude$ = EventAccept;
 
-		w_btn() = createT<wButton>(ui, nullptr);
+		w_btn() = createT<wButton>(ui, -1, nullptr);
 		w_btn()->size$ = size$;
 		w_btn()->background_round_radius$ = 5.f;
 		w_btn()->background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
@@ -1889,219 +1896,207 @@ namespace flame
 		w_target()->need_arrange = true;
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(ListItemTextMouse, FLAME_GID(6526), Element::MouseListenerParm)
+	void listitem_title_mouse_event$(Element::MouseListenerParm &p)
+	{
 		if (!p.is_scroll())
 			return;
 
-	if (p.thiz()->parent())
-		p.thiz()->parent()->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
-	FLAME_REGISTER_FUNCTION_END(ListItemTextMouse)
+		auto listitem = (wListItemPtr)(p.thiz()->parent);
+		if (listitem->parent)
+			listitem->parent->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
+	}
 
-		void wListItem::init(const wchar_t* title)
+	void wListItem::init(int font_idx, const wchar_t* title)
 	{
 		wLayout::init();
-
-		add_data_storages({ nullptr });
+		init_data_types();
 
 		size_policy_hori$ = SizeFitLayout;
 		align$ = AlignLittleEnd;
 		layout_type$ = LayoutHorizontal;
 
-		w_title() = createT<wText>(instance());
+		w_title() = createT<wText>(ui, font_idx);
 		w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		w_title()->size_policy_hori$ = SizeFitLayout;
 		w_title()->align$ = AlignLittleEnd;
 		w_title()->event_attitude$ = EventAccept;
-		w_title()->text() = title;
+		w_title()->text$ = title;
 		w_title()->set_size_auto();
+		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(listitem_title_mouse_event$, {}));
 		add_child(w_title());
 
-		w_title()->add_listener(ListenerMouse, ListItemTextMouse::v, this, {});
-
-		add_style_background_color(w_title(), 0, Bvec4(0), i->default_header_col_hovering, i->default_header_col_active);
+		styles$.push_back(Style(0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active)));
 	}
 
-	FLAME_DATA_PACKAGE_BEGIN(ListItemTitleMouseData, Element::MouseListenerParm)
-		FLAME_DATA_PACKAGE_CAPT(wListItemPtr, item, p)
-		FLAME_DATA_PACKAGE_END
+	void listitem_title_style$(StyleParm& p)
+	{
+		auto e = p.e();
+		auto listitem = (wListItemPtr)e->parent;
+		auto list = (wListPtr)listitem->parent;
+		if (list->w_sel() && list->w_sel()->w_title() == e && e->state == StateNormal)
+			e->background_col$ = e->ui->default_header_col;
+	}
 
-		FLAME_REGISTER_FUNCTION_BEG(ListListItemTitleMouse, FLAME_GID(8928), ListItemTitleMouseData)
-		if (!(p.action() == KeyStateDown && p.key() == Mouse_Left))
+	void listitem_title_mouse_event_in_list$(Element::MouseListenerParm &p)
+	{
+		if (!(p.is_down() && p.key() == Mouse_Left))
 			return;
 
-	((wList*)p.thiz())->w_sel() = p.item();
-	p.thiz()->on_changed();
-	FLAME_REGISTER_FUNCTION_END(ListListItemTitleMouse)
+		auto thiz = (wListItemPtr)(p.thiz()->parent);
+		auto list = (wListPtr)thiz->parent;
+		list->w_sel() = thiz;
+		list->on_changed();
+	}
 
-		FLAME_DATA_PACKAGE_BEGIN(ListItemTitleStyleData, Element::StyleParm)
-		FLAME_DATA_PACKAGE_CAPT(wListPtr, list, p)
-		FLAME_DATA_PACKAGE_END
-
-		FLAME_REGISTER_FUNCTION_BEG(ListItemTitleStyle, FLAME_GID(408), ListItemTitleStyleData)
-		if (p.list()->w_sel() && p.list()->w_sel()->w_title() == p.thiz() &&
-			p.thiz()->state == StateNormal && p.thiz()->style_level <= 1)
-		{
-			auto i = (InstancePrivate*)p.thiz()->instance();
-
-			p.thiz()->background_col$ = i->default_header_col;
-			p.thiz()->style_level = 1;
-		}
-	FLAME_REGISTER_FUNCTION_END(ListItemTitleStyle)
-
-		FLAME_REGISTER_FUNCTION_BEG(ListMouse, FLAME_GID(19124), Element::MouseListenerParm)
-		if (!(p.action() == KeyStateDown && p.key() == Mouse_Left))
+	void list_mouse_event$(Element::MouseListenerParm& p)
+	{
+		if (!(p.is_down() && p.key() == Mouse_Left))
 			return;
 
-	((wList*)p.thiz())->w_sel() = nullptr;
-	p.thiz()->on_changed();
-	FLAME_REGISTER_FUNCTION_END(ListMouse)
+		auto thiz = (wListPtr)p.thiz();
+		thiz->w_sel() = nullptr;
+		thiz->on_changed();
+	}
 
-		FLAME_REGISTER_FUNCTION_BEG(ListChild, FLAME_GID(8288), Element::ChildListenerParm)
+	void list_child_event$(Element::ChildListenerParm &p)
+	{
 		if (p.op() != Element::ChildAdd)
 			return;
 
-	if (p.src()->class$.hash == cH("listitem"))
-	{
-		((wListItem*)p.src())->w_title()->add_listener(Element::ListenerMouse, ListListItemTitleMouse::v, p.thiz(), { p.src() });
-
-		((wListItem*)p.src())->w_title()->add_style(0, ListItemTitleStyle::v, { p.thiz() });
+		if (p.src()->class$.hash == cH("listitem"))
+		{
+			auto listitem = (wListItem*)p.src();
+			auto title = listitem->w_title();
+			title->styles$.push_back(Style(0, 1, Function<StyleParm>(listitem_title_style$, {})));
+			title->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(listitem_title_mouse_event_in_list$, {}));
+		}
 	}
-	FLAME_REGISTER_FUNCTION_END(ListChild)
 
-		void wList::init()
+	void wList::init()
 	{
 		wLayout::init();
-
-		add_data_storages({ nullptr, nullptr });
+		init_data_types();
 
 		inner_padding$ = Vec4(4.f);
-		background_col$ = i->default_frame_col;
+		background_col$ = ui->default_frame_col;
 		size_policy_hori$ = SizeFitLayout;
 		size_policy_vert$ = SizeFitLayout;
 		event_attitude$ = EventAccept;
 		layout_type$ = LayoutVertical;
 		clip$ = true;
 
-		add_listener(ListenerMouse, ListMouse::v, this, {});
-
-		w_scrollbar() = createT<wScrollbar>(instance(), this);
+		w_scrollbar() = createT<wScrollbar>(ui, this);
 		add_child(w_scrollbar(), 1);
 
-		add_listener(ListenerChild, ListChild::v, this, {});
+		mouse_listeners$.push_back(Function<MouseListenerParm>(list_mouse_event$, {}));
+		child_listeners$.push_back(Function<ChildListenerParm>(list_child_event$, {}));
 	}
 
-	FLAME_DATA_PACKAGE_BEGIN(TreeNodeTitleMouseData, Element::MouseListenerParm)
-		FLAME_DATA_PACKAGE_CAPT(wTreeNodePtr, item, p)
-		FLAME_DATA_PACKAGE_END
+	FLAME_PACKAGE_BEGIN_1(TreenodeTitleStyleData, wTreePtr, tree, p)
+	FLAME_PACKAGE_END_1
 
-		FLAME_REGISTER_FUNCTION_BEG(TreeNodeTitleMouse, FLAME_GID(10825), TreeNodeTitleMouseData)
-		if (p.action() == KeyStateDown && p.key() == Mouse_Left)
+	void treenode_title_style$(StyleParm& p)
+	{
+		auto e = p.e();
+		auto tree = p.get_capture<TreenodeTitleStyleData>().tree();
+		if (tree->w_sel() && tree->w_sel()->w_title() == e)
+			e->background_col$ = e->ui->default_header_col;
+		else
+			e->background_col$ = Bvec4(0);
+	}
+
+	FLAME_PACKAGE_BEGIN_1(TreenodeTitleMouseEventData, wTreePtr, tree, p)
+	FLAME_PACKAGE_END_1
+
+	void treenode_title_mouse_event$(Element::MouseListenerParm& p)
+	{
+		auto treenode = (wTreeNodePtr)(p.thiz()->parent);
+		auto tree = p.get_capture<TreenodeTitleMouseEventData>().tree();
+		if (p.is_down() && p.key() == Mouse_Left)
 		{
-			if (p.thiz())
-			{
-				((wTree*)p.thiz())->w_sel() = p.item();
-				p.thiz()->on_changed();
-			}
+			tree->w_sel() = treenode;
+			tree->on_changed();
 		}
-		else if (p.action() == (KeyStateDown | KeyStateUp | KeyStateDouble) && p.key() == Mouse_Null)
-			((wTreeNode*)p.item())->w_larrow()->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
-	FLAME_REGISTER_FUNCTION_END(TreeNodeTitleMouse)
+		else if (p.is_double_clicked())
+			treenode->w_larrow()->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
+	}
 
-		FLAME_REGISTER_FUNCTION_BEG(TreeNodeLarrowMouse, FLAME_GID(20989), Element::MouseListenerParm)
+	void treenode_larrow_mouse_event$(Element::MouseListenerParm& p)
+	{
 		if (!p.is_clicked())
 			return;
 
-	auto v = !((wTreeNode*)p.thiz())->w_items()->visible$;
-	((wTreeNode*)p.thiz())->w_items()->set_visibility(v);
+		auto treenode = (wTreeNodePtr)(p.thiz()->parent);
+		auto v = !treenode->w_items()->visible$;
+		treenode->w_items()->set_visibility(v);
+		treenode->w_larrow()->text$ = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
+	}
 
-	((wTreeNode*)p.thiz())->w_larrow()->text() = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
-	FLAME_REGISTER_FUNCTION_END(TreeNodeLarrowMouse)
-
-		FLAME_DATA_PACKAGE_BEGIN(TreeNodeTitleStyleData, Element::StyleParm)
-		FLAME_DATA_PACKAGE_CAPT(wTreePtr, tree, p)
-		FLAME_DATA_PACKAGE_END
-
-		FLAME_REGISTER_FUNCTION_BEG(TreeNodeTitleStyle, FLAME_GID(1879), TreeNodeTitleStyleData)
-		if (p.tree()->w_sel() && p.tree()->w_sel()->w_title() == p.thiz())
-		{
-			auto i = (InstancePrivate*)p.thiz()->instance();
-
-			p.thiz()->background_col$ = i->default_header_col;
-			p.thiz()->style_level = 1;
-		}
-		else
-			p.thiz()->background_col$ = Bvec4(0);
-	FLAME_REGISTER_FUNCTION_END(TreeNodeTitleStyle)
-
-		void wTreeNode::init(const wchar_t* title, wTree * tree)
+	void wTreeNode::init(int font_idx, const wchar_t* title, wTree * tree)
 	{
 		wLayout::init();
-
-		add_data_storages({ nullptr, nullptr, nullptr });
+		init_data_types();
 
 		layout_type$ = LayoutVertical;
 		align$ = AlignLittleEnd;
 
-		w_title() = createT<wText>(instance());
-		w_title()->inner_padding$[0] = share_data.font_atlas->pixel_height * 0.8f;
+		w_title() = createT<wText>(ui, font_idx);
+		w_title()->inner_padding$[0] = font_idx >= 0 ? ui->canvas()->get_font(font_idx)->pixel_height() * 0.8f : 0.f;
 		w_title()->inner_padding$ += Vec4(4.f, 4.f, 2.f, 2.f);
 		w_title()->align$ = AlignLittleEnd;
 		w_title()->event_attitude$ = EventAccept;
-		w_title()->text() = title;
+		w_title()->text$ = title;
 		w_title()->set_size_auto();
+		w_title()->styles$.push_back(Style(0, 0, Style::text_color(ui->default_text_col, ui->default_text_col_hovering_or_active)));
+		if (tree)
+			w_title()->styles$.push_back(Style(0, 1, Function<StyleParm>(treenode_title_style$, { tree })));
+		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(treenode_title_mouse_event$, { tree }));
 		add_child(w_title());
 
-		w_title()->add_listener(ListenerMouse, TreeNodeTitleMouse::v, tree, { this });
-
-		if (tree)
-			w_title()->add_style(0, TreeNodeTitleStyle::v, { tree });
-
-		w_items() = createT<wLayout>(instance(), LayoutVertical);
+		w_items() = createT<wLayout>(ui, LayoutVertical);
 		w_items()->layout_padding$ = w_title()->inner_padding$[0];
 		w_items()->align$ = AlignLittleEnd;
 		w_items()->visible$ = false;
 		add_child(w_items());
 
-		w_larrow() = createT<wText>(instance());
+		w_larrow() = createT<wText>(ui, font_idx);
 		w_larrow()->inner_padding$ = Vec4(4.f, 0.f, 4.f, 0.f);
 		w_larrow()->background_col$ = Bvec4(255, 255, 255, 0);
 		w_larrow()->align$ = AlignLeftTopNoPadding;
 		w_larrow()->event_attitude$ = EventAccept;
 		w_larrow()->set_size(Vec2(w_title()->inner_padding$[0], w_title()->size$.y));
-		w_larrow()->text() = Icon_CARET_RIGHT;
-
-		add_style_text_color(w_title(), 0, i->default_text_col, i->default_text_col_hovering_or_active);
-		add_style_text_color(w_larrow(), 0, i->default_text_col, i->default_text_col_hovering_or_active);
-
-		w_larrow()->add_listener(ListenerMouse, TreeNodeLarrowMouse::v, this, {});
-
+		w_larrow()->text$ = Icon_CARET_RIGHT;
+		w_larrow()->styles$.push_back(Style(0, 0, Style::text_color(ui->default_text_col, ui->default_text_col_hovering_or_active)));
+		w_larrow()->mouse_listeners$.push_back(Function<MouseListenerParm>(treenode_larrow_mouse_event$, {}));
 		add_child(w_larrow(), 1);
 	}
 
 	void wTree::init()
 	{
 		wLayout::init();
+		init_data_types();
 
-		add_data_storages({ nullptr });
+		w_sel() = nullptr;
 
 		layout_type$ = LayoutVertical;
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(DialogMouse, FLAME_GID(9227), Element::MouseListenerParm)
-		if (p.action() == KeyStateDown && p.key() == Mouse_Left)
-			p.thiz()->set_to_foreground();
+	void dialog_mouse_event$(Element::MouseListenerParm& p)
+	{
+		auto thiz = (wDialogPtr)p.thiz();
+		if (p.is_down() && p.key() == Mouse_Left)
+			thiz->set_to_foreground();
 		else if (p.action() == KeyStateNull && p.key() == Mouse_Null)
 		{
-			if (p.thiz() == p.thiz()->instance()->dragging_Element())
-				p.thiz()->pos$ += p.value() / p.thiz()->parent()->scale$;
+			if (thiz == thiz->ui->dragging_element())
+				thiz->pos$ += p.value() / thiz->parent->scale$;
 		}
-	FLAME_REGISTER_FUNCTION_END(DialogMouse)
+	}
 
-		void wDialog::init(bool resize, bool modual)
+	void wDialog::init(bool resize, bool modual)
 	{
 		wLayout::init();
-
-		add_data_storages({ nullptr, nullptr });
+		init_data_types();
 
 		auto radius = 8.f;
 
@@ -2116,19 +2111,19 @@ namespace flame
 			clip$ = true;
 		}
 
-		add_listener(ListenerMouse, DialogMouse::v, this, {});
-
 		background_offset$[1] = 0.f;
 		background_round_radius$ = radius;
 		background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
 		background_shaow_thickness$ = 8.f;
 
+		mouse_listeners$.push_back(Function<MouseListenerParm>(dialog_mouse_event$, {}));
+
 		if (resize)
 		{
-			w_scrollbar() = createT<wScrollbar>(instance(), this);
+			w_scrollbar() = createT<wScrollbar>(ui, this);
 			add_child(w_scrollbar(), 1);
 
-			w_sizedrag() = createT<wSizeDrag>(instance(), this);
+			w_sizedrag() = createT<wSizeDrag>(ui, this);
 			w_sizedrag()->min_size() = Vec2(10.f);
 			set_size(Vec2(100.f));
 			add_child(w_sizedrag(), 1);
@@ -2138,41 +2133,40 @@ namespace flame
 
 		if (modual)
 		{
-			pos$ = (Vec2(instance()->root()->size$) - size$) * 0.5f;
+			pos$ = (Vec2(ui->root()->size$) - size$) * 0.5f;
 
-			instance()->root()->add_child(this, 0, -1, true, true);
+			ui->root()->add_child(this, 0, -1, true);
 		}
 	}
 
-	FLAME_REGISTER_FUNCTION_BEG(MessageDialogOkMouse, FLAME_GID(8291), Element::MouseListenerParm)
+	void message_dialog_ok_mouse_event$(Element::MouseListenerParm& p)
+	{
 		if (!p.is_clicked())
 			return;
 
-	p.thiz()->remove_from_parent(true);
-	FLAME_REGISTER_FUNCTION_END(MessageDialogOkMouse)
+		p.thiz()->remove_from_parent(true);
+	}
 
-		void wMessageDialog::init(const wchar_t* text)
+	void wMessageDialog::init(int font_idx, const wchar_t* text)
 	{
 		((wDialog*)this)->init(false, true);
-
-		add_data_storages({ nullptr, nullptr });
+		init_data_types();
 
 		want_key_focus$ = true;
 
 		layout_type$ = LayoutVertical;
 		item_padding$ = 8.f;
 
-		w_text() = createT<wText>(instance());
+		w_text() = createT<wText>(ui, font_idx);
 		w_text()->align$ = AlignLittleEnd;
-		w_text()->text() = text;
+		w_text()->text$ = text;
 		w_text()->set_size_auto();
 		add_child(w_text());
 
-		w_ok() = createT<wButton>(instance(), L"OK");
+		w_ok() = createT<wButton>(ui, font_idx, L"OK");
 		w_ok()->align$ = AlignMiddle;
+		w_ok()->mouse_listeners$.push_back(Function<MouseListenerParm>(message_dialog_ok_mouse_event$, {}));
 		add_child(w_ok());
-
-		w_ok()->add_listener(ListenerMouse, MessageDialogOkMouse::v, this, {});
 	}
 
 	//void wYesNoDialog::init(const wchar_t *title, float sdf_scale, const wchar_t *text, const wchar_t *yes_text, const wchar_t *no_text, const std::function<void(bool)> &callback)

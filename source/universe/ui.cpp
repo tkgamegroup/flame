@@ -32,17 +32,23 @@
 
 namespace flame
 {
-	//FLAME_REGISTER_FUNCTION_BEG(UIKey, FLAME_GID(28755), Window::KeyListenerParm)
-	//	((UIPrivate*)p.thiz())->on_key(p.action(), p.value());
-	//FLAME_REGISTER_FUNCTION_END(UIKey)
+	FLAME_PACKAGE_BEGIN_1(UIEventData, UIPrivatePtr, ui, p)
+	FLAME_PACKAGE_END_1
 
-	//FLAME_REGISTER_FUNCTION_BEG(UIMouse, FLAME_GID(19621), Window::MouseListenerParm)
-	//	((UIPrivate*)p.thiz())->on_mouse(p.action(), p.key(), p.pos());
-	//FLAME_REGISTER_FUNCTION_END(UIMouse)
+	void ui_key_event$(Window::KeyListenerParm& p)
+	{
+		p.get_capture<UIEventData>().ui()->on_key(p.action(), p.value());
+	}
 
-	//FLAME_REGISTER_FUNCTION_BEG(UIResize, FLAME_GID(16038), Window::ResizeListenerParm)
-	//	((UIPrivate*)p.thiz())->on_resize(p.size());
-	//FLAME_REGISTER_FUNCTION_END(UIResize)
+	void ui_mouse_event$(Window::MouseListenerParm& p)
+	{
+		p.get_capture<UIEventData>().ui()->on_mouse(p.action(), p.key(), p.pos());
+	}
+
+	void ui_resize_event$(Window::ResizeListenerParm& p)
+	{
+		p.get_capture<UIEventData>().ui()->on_resize(p.size());
+	}
 
 	FLAME_ELEMENT_BEGIN_0(wDebug, wDialog)
 		FLAME_UNIVERSE_EXPORTS void init();
@@ -56,11 +62,13 @@ namespace flame
 		visible$ = false;
 	}
 
-	UIPrivate::UIPrivate(graphics::Canvas* canvas, Window * w)
+	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
 	{
+		canvas = _canvas;
+
 		set_default_style(DefaultStyleDark);
 
-		root_ = std::unique_ptr<ElementPrivate>((ElementPrivate*)Element::create(this));
+		root_ = std::unique_ptr<Element>(Element::create(this));
 		root_->name$ = "root";
 		root_->size_policy_hori$ = SizeFitLayout;
 		root_->size_policy_vert$ = SizeFitLayout;
@@ -95,13 +103,13 @@ namespace flame
 		{
 			root_->size$ = w->size;
 
-			w->add_listener(Window::ListenerKey, UIKey::v, this, {});
-			w->add_listener(Window::ListenerMouse, UIMouse::v, this, {});
-			w->add_listener(Window::ListenerResize, UIResize::v, this, {});
+			w->add_key_listener(Function<Window::KeyListenerParm>(ui_key_event$, { this }));
+			w->add_mouse_listener(Function<Window::MouseListenerParm>(ui_mouse_event$, { this }));
+			w->add_resize_listener(Function<Window::ResizeListenerParm>(ui_resize_event$, { this }));
 		}
 
 		auto w_debug = Element::createT<wDebug>(this);
-		root_->add_child((ElementPrivate*)w_debug, 1);
+		root_->add_child(w_debug, 1);
 	}
 
 	inline void UIPrivate::set_default_style(DefaultStyle s)
@@ -191,7 +199,7 @@ namespace flame
 		root_->set_size(Vec2(size));
 	}
 
-	inline void UIPrivate::set_hovering_element(ElementPrivate * w)
+	inline void UIPrivate::set_hovering_element(Element * w)
 	{
 		if (w == hovering_element_)
 			return;
@@ -202,7 +210,7 @@ namespace flame
 			hovering_element_->on_mouse(KeyStateDown, Mouse_Null, Vec2(0.f));
 	}
 
-	void UIPrivate::set_key_focus_element(ElementPrivate * w)
+	void UIPrivate::set_key_focus_element(Element * w)
 	{
 		if (w == nullptr)
 			w = root_.get();
@@ -219,7 +227,7 @@ namespace flame
 		set_key_focus_element(w->parent);
 	}
 
-	inline void UIPrivate::set_focus_element(ElementPrivate * w)
+	inline void UIPrivate::set_focus_element(Element * w)
 	{
 		auto old = focus_element_;
 		focus_element_ = w;
@@ -230,12 +238,12 @@ namespace flame
 		set_key_focus_element(w);
 	}
 
-	inline void UIPrivate::set_dragging_element(ElementPrivate * w)
+	inline void UIPrivate::set_dragging_element(Element * w)
 	{
 		dragging_element_ = w;
 	}
 
-	inline void UIPrivate::set_popup_element(ElementPrivate * w, bool modual)
+	inline void UIPrivate::set_popup_element(Element * w, bool modual)
 	{
 		popup_element_ = w;
 		popup_element_modual_ = modual;
@@ -293,11 +301,10 @@ namespace flame
 		float popup_scl;
 		bool meet_popup_first;
 		bool ban_event;
-		Canvas* canvas;
 		Vec2 show_off;
 	};
 
-	void UIPrivate::preprocessing_children(void* __p, ElementPrivate * w, const Array<Element*> & children, const Vec2 & off, float scl)
+	void UIPrivate::preprocessing_children(void* __p, Element * w, const Array<Element*> & children, const Vec2 & off, float scl)
 	{
 		auto& p = *(_Package*)__p;
 
@@ -311,15 +318,24 @@ namespace flame
 		auto _scl = w->scale$ * scl;
 
 		for (auto i_c = children.size - 1; i_c >= 0; i_c--)
-			preprocessing(&p, (ElementPrivate*)children[i_c], w->showed, _off, _scl);
+			preprocessing(&p, children[i_c], w->showed, _off, _scl);
 
 		if (w->clip$)
 			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
 	}
 
-	void UIPrivate::preprocessing(void* __p, ElementPrivate * w, bool visible, const Vec2 & off, float scl)
+	void UIPrivate::preprocessing(void* __p, Element * w, bool visible, const Vec2 & off, float scl)
 	{
 		auto& p = *(_Package*)__p;
+
+		switch (w->flag)
+		{
+		case Element::FlagJustCreatedNeedModual:
+			set_popup_element(w, true);
+		case Element::FlagJustCreated:
+			w->flag = Element::FlagNull;
+			break;
+		}
 
 		if (w == popup_element_ && p.meet_popup_first)
 		{
@@ -393,7 +409,7 @@ namespace flame
 		}
 	}
 
-	void UIPrivate::show_children(void* __p, ElementPrivate * w, const Array<Element*> & children, bool visible, const Vec2 & off, float scl)
+	void UIPrivate::show_children(void* __p, Element * w, const Array<Element*> & children, bool visible, const Vec2 & off, float scl)
 	{
 		auto& p = *(_Package*)__p;
 
@@ -403,7 +419,7 @@ namespace flame
 		if (w->clip$)
 		{
 			p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
-			p.canvas->set_scissor(p.curr_scissor);
+			canvas->set_scissor(p.curr_scissor);
 		}
 
 		auto _off = w->pos$ * scl + off;
@@ -411,20 +427,26 @@ namespace flame
 
 		for (auto i_c = 0; i_c < children.size; i_c++)
 		{
-			auto c = (ElementPrivate*)children[i_c];
+			auto c = (Element*)children[i_c];
 			show(&p, c, c->visible$ && visible, _off, _scl);
 		}
 
 		if (w->clip$)
 		{
 			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-			p.canvas->set_scissor(p.curr_scissor);
+			canvas->set_scissor(p.curr_scissor);
 		}
 	}
 
 	void UIPrivate::show(void* __p, Element * e, bool visible, const Vec2 & off, float scl)
 	{
 		auto& p = *(_Package*)__p;
+
+		if (e->need_arrange)
+		{
+			e->do_arrange();
+			e->need_arrange = false;
+		}
 
 		e->style_level = -1;
 		for (auto i_s = 0; i_s < e->styles$.size; i_s++)
@@ -435,28 +457,28 @@ namespace flame
 			if (e->style_level <= s.level$)
 			{
 				e->style_level = s.level$;
-				auto& p = s.f$.p;
-				p.thiz() = &s;
-				p.e() = e;
+				s.f$.p.thiz() = &s;
+				s.f$.p.e() = e;
 				s.f$.exec();
 			}
 		}
 
 		for (auto i_a = 0; i_a < e->animations$.size; )
 		{
-			auto f = e->animations$[i_a];
-			auto& p = (Element::AnimationParm&)f->p;
+			auto& a = e->animations$[i_a];
+			a.time += elp_time_;
+			a.f$.p.thiz() = &a;
+			a.f$.p.e() = e;
 
-			p.time() += elp_time_;
-			if (p.time() >= p.duration())
+			if (a.time >= a.duration$)
 			{
-				p.time() = -1.f;
-				f->exec();
+				a.time = -1.f;
+				a.f$.exec();
 				e->animations$.remove(i_a);
 			}
 			else
 			{
-				f->exec();
+				a.f$.exec();
 				i_a++;
 			}
 		}
@@ -471,7 +493,7 @@ namespace flame
 				return;
 			}
 			else
-				e->on_draw(p.canvas, off + p.show_off, scl);
+				e->on_draw(canvas, off + p.show_off, scl);
 		}
 
 		show_children(__p, e, e->children_1$, visible, off, scl);
@@ -484,14 +506,10 @@ namespace flame
 			return;
 
 		for (auto i_c = children.size - 1; i_c >= 0; i_c--)
-		{
-			auto c = (ElementPrivate*)children[i_c];
-			if (c->visible$)
-				postprocessing(c);
-		}
+			postprocessing(children[i_c]);
 	}
 
-	void UIPrivate::postprocessing(ElementPrivate * w)
+	void UIPrivate::postprocessing(Element * w)
 	{
 		postprocessing_children(w->children_2$);
 		postprocessing_children(w->children_1$);
@@ -508,62 +526,19 @@ namespace flame
 				w->state = StateHovering;
 		}
 
-		if (!w->delay_listener_remove.empty())
+		if (w->flag == Element::FlagNeedToRemoveFromParent)
 		{
-			for (auto& t : w->delay_listener_remove)
-				w->remove_listener(t.first, t.second);
-			w->delay_listener_remove.clear();
+			w->remove_from_parent();
+			return;
 		}
-
-		if (!w->delay_takes_by_idx.empty())
+		if (w->flag == Element::FlagNeedToTakeFromParent)
 		{
-			for (auto& t : w->delay_takes_by_idx)
-				w->take_child(t.first, t.second);
-			w->delay_takes_by_idx.clear();
-		}
-		if (!w->delay_takes_by_ptr.empty())
-		{
-			for (auto& t : w->delay_takes_by_ptr)
-				w->take_child(t);
-			w->delay_takes_by_ptr.clear();
-		}
-		if (!w->delay_removes_by_idx.empty())
-		{
-			for (auto& r : w->delay_removes_by_idx)
-				w->remove_child(r.first, r.second);
-			w->delay_removes_by_idx.clear();
-		}
-		if (!w->delay_removes_by_ptr.empty())
-		{
-			for (auto& r : w->delay_removes_by_ptr)
-				w->remove_child(r);
-			w->delay_removes_by_ptr.clear();
-		}
-		if (!w->delay_clears.empty())
-		{
-			for (auto& r : w->delay_clears)
-				w->clear_children(std::get<0>(r), std::get<1>(r), std::get<2>(r));
-			w->delay_clears.clear();
-		}
-		if (!w->delay_takes.empty())
-		{
-			for (auto& t : w->delay_takes)
-				w->take_children(std::get<0>(t), std::get<1>(t), std::get<2>(t));
-			w->delay_takes.clear();
-		}
-		if (!w->delay_adds.empty())
-		{
-			for (auto& a : w->delay_adds)
-			{
-				w->add_child(std::get<0>(a), std::get<1>(a), std::get<2>(a));
-				if (std::get<3>(a))
-					set_popup_element(std::get<0>(a), true);
-			}
-			w->delay_adds.clear();
+			w->take_from_parent();
+			w->flag = Element::FlagNull;
 		}
 	}
 
-	inline void UIPrivate::end(Canvas * canvas, const Vec2 & show_off)
+	inline void UIPrivate::end(const Vec2 & show_off)
 	{
 		mouse_disp = mouse_pos - mouse_prev_pos_;
 
@@ -624,7 +599,6 @@ namespace flame
 		p.popup_scl = 1.f;
 		p.meet_popup_first = true;
 		p.ban_event = popup_element_;
-		p.canvas = canvas;
 		p.show_off = show_off;
 
 		preprocessing(&p, root_.get(), true, Vec2(0.f), 1.f);
@@ -659,7 +633,7 @@ namespace flame
 		if (popup_element_)
 		{
 			if (popup_element_modual_)
-				p.canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
+				canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
 			show(&p, popup_element_, true, p.popup_off, p.popup_scl);
 		}
 
@@ -698,6 +672,11 @@ namespace flame
 		((UIPrivate*)this)->set_default_style(s);
 	}
 
+	graphics::Canvas* UI::canvas()
+	{
+		return ((UIPrivate*)this)->canvas;
+	}
+
 	Ivec2 UI::size() const
 	{
 		return Ivec2(((UIPrivate*)this)->root_->size$);
@@ -716,22 +695,6 @@ namespace flame
 	void UI::on_resize(const Ivec2 & size)
 	{
 		((UIPrivate*)this)->on_resize(size);
-	}
-
-	graphics::Imageview* UI::imageview(int index)
-	{
-		auto v = share_data.image_views[index];
-		if (v == share_data.white_imageview)
-			v = nullptr;
-		return v;
-	}
-
-	void UI::set_imageview(int index, graphics::Imageview * v)
-	{
-		if (!v)
-			v = share_data.white_imageview;
-		share_data.image_views[index] = v;
-		share_data.ds_plain->set_imageview(0, index, v, share_data.d->sp_bi_linear);
 	}
 
 	Element* UI::root()
@@ -766,27 +729,27 @@ namespace flame
 
 	void UI::set_hovering_element(Element * w)
 	{
-		((UIPrivate*)this)->set_hovering_element((ElementPrivate*)w);
+		((UIPrivate*)this)->set_hovering_element((Element*)w);
 	}
 
 	void UI::set_focus_element(Element * w)
 	{
-		((UIPrivate*)this)->set_focus_element((ElementPrivate*)w);
+		((UIPrivate*)this)->set_focus_element((Element*)w);
 	}
 
 	void UI::set_key_focus_element(Element * w)
 	{
-		((UIPrivate*)this)->set_key_focus_element((ElementPrivate*)w);
+		((UIPrivate*)this)->set_key_focus_element((Element*)w);
 	}
 
 	void UI::set_dragging_element(Element * w)
 	{
-		((UIPrivate*)this)->set_dragging_element((ElementPrivate*)w);
+		((UIPrivate*)this)->set_dragging_element((Element*)w);
 	}
 
 	void UI::set_popup_element(Element * w, bool modual)
 	{
-		((UIPrivate*)this)->set_popup_element((ElementPrivate*)w, modual);
+		((UIPrivate*)this)->set_popup_element((Element*)w, modual);
 	}
 
 	void UI::close_popup()
@@ -799,9 +762,9 @@ namespace flame
 		((UIPrivate*)this)->begin(elp_time);
 	}
 
-	void UI::end(Canvas * canvas, const Vec2 & show_off)
+	void UI::end(const Vec2 & show_off)
 	{
-		((UIPrivate*)this)->end(canvas, show_off);
+		((UIPrivate*)this)->end(show_off);
 	}
 
 	float UI::total_time() const
@@ -809,9 +772,9 @@ namespace flame
 		return ((UIPrivate*)this)->total_time_;
 	}
 
-	UI* UI::create(Window * w)
+	UI* UI::create(graphics::Canvas* canvas, Window * w)
 	{
-		return new UIPrivate(w);
+		return new UIPrivate(canvas, w);
 	}
 
 	void UI::destroy(UI * i)

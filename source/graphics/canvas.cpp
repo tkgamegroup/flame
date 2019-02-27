@@ -103,10 +103,7 @@ namespace flame
 				ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
 
 				for (auto i = 0; i < MaxImageviewCount; i++)
-				{
-					image_views[i] = white_imageview;
-					ds->set_imageview(0, i, white_imageview, device->sp_bi_linear);
-				}
+					set_imageview(i, white_imageview);
 
 				cv = ClearValues::create(sc->get_renderpass_clear());
 				cv->set(0, Bvec4(0));
@@ -132,14 +129,19 @@ namespace flame
 				Commandbuffer::destroy(cb);
 			}
 
+			inline void set_imageview(int index, Imageview* v)
+			{
+				image_views[index] = v;
+				ds->set_imageview(0, index, v, device->sp_bi_linear);
+			}
+
 			inline int add_font(Font* font)
 			{
 				auto image_idx = current_image_view_index++;
 				fonts.emplace_back(font, font->sdf(), (int)image_idx);
 
 				auto view = Imageview::get(font->get_atlas());
-				image_views[image_idx] = view;
-				ds->set_imageview(0, image_idx, view, device->sp_bi_linear);
+				set_imageview(image_idx, view);
 
 				return fonts.size() - 1;
 			}
@@ -585,6 +587,16 @@ namespace flame
 				draw_cmds.clear();
 			}
 		};
+
+		Imageview* Canvas::get_imageview(int index)
+		{
+			return ((CanvasPrivate*)this)->image_views[index];
+		}
+
+		void Canvas::set_imageview(int index, Imageview* v)
+		{
+			((CanvasPrivate*)this)->set_imageview(index, v);
+		}
 
 		int Canvas::add_font(Font* font)
 		{
