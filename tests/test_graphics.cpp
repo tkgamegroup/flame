@@ -25,7 +25,7 @@
 using namespace flame;
 using namespace graphics;
 
-struct MyApp : BasicApp
+struct GraphicsApp : BasicApp
 {
 	//Commandbuffer* cbs[2];
 	//ClearValues* cv;

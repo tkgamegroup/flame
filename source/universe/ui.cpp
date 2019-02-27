@@ -145,7 +145,7 @@ namespace flame
 			default_header_col_active = HSV(52.f, 0.73f, 0.97f, 1.00f);
 			break;
 		}
-		default_sdf_scale = -1.f;
+		default_sdf_scale = 1.f;
 	}
 
 	inline void UIPrivate::on_key(KeyState action, int value)

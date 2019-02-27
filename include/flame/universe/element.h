@@ -321,6 +321,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(1 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 		}
 
@@ -342,6 +343,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(2 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 		}
@@ -368,6 +370,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(3 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -399,6 +402,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(4 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -435,6 +439,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(5 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -476,6 +481,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(6 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -522,6 +528,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(7 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\
@@ -573,6 +580,7 @@ namespace flame
 		inline void init_data_types()\
 		{\
 			class$ = #name;\
+			datas$.resize(8 + B_SIZE);\
 			str_to_typefmt(datas$[0 + B_SIZE].fmt, #tf1);\
 			str_to_typefmt(datas$[1 + B_SIZE].fmt, #tf2);\
 			str_to_typefmt(datas$[2 + B_SIZE].fmt, #tf3);\

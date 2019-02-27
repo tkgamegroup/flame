@@ -799,7 +799,8 @@ namespace flame
 		inline t1 &n1()\
 		{\
 			return (t1&)d[0].tf1();\
-		}
+		}\
+		enum { SIZE = 1 };
 #define FLAME_PACKAGE_END_1 \
 		template<class CP>\
 		inline CP &get_capture()\
@@ -818,7 +819,8 @@ namespace flame
 		inline t2 &n2()\
 		{\
 			return (t2&)d[1].tf2();\
-		}
+		}\
+		enum { SIZE = 2 };
 #define FLAME_PACKAGE_END_2 \
 		template<class CP>\
 		inline CP &get_capture()\
@@ -841,7 +843,8 @@ namespace flame
 		inline t3 &n3()\
 		{\
 			return (t3&)d[2].tf3();\
-		}
+		}\
+		enum { SIZE = 3 };
 #define FLAME_PACKAGE_END_3 \
 		template<class CP>\
 		inline CP &get_capture()\
@@ -868,7 +871,8 @@ namespace flame
 		inline t4 &n4()\
 		{\
 			return (t4&)d[3].tf4();\
-		}
+		}\
+		enum { SIZE = 4 };
 #define FLAME_PACKAGE_END_4 \
 		template<class CP>\
 		inline CP &get_capture()\
@@ -899,7 +903,8 @@ namespace flame
 		inline t5 &n5()\
 		{\
 			return (t5&)d[4].tf5();\
-		}
+		}\
+		enum { SIZE = 5 };
 #define FLAME_PACKAGE_END_5 \
 		template<class CP>\
 		inline CP &get_capture()\
@@ -934,7 +939,8 @@ namespace flame
 		inline t6 &n6()\
 		{\
 			return (t6&)d[5].tf6();\
-		}
+		}\
+		enum { SIZE = 6 };
 #define FLAME_PACKAGE_END_6 \
 		template<class CP>\
 		inline CP &get_capture()\
@@ -973,7 +979,8 @@ namespace flame
 		inline t7 &n7()\
 		{\
 			return (t7&)d[6].tf7();\
-		}
+		}\
+		enum { SIZE = 7 };
 #define FLAME_PACKAGE_END_7 \
 		template<class CP>\
 		inline CP &get_capture()\
@@ -1016,7 +1023,8 @@ namespace flame
 		inline t8 &n8()\
 		{\
 			return (t8&)d[7].tf8();\
-		}
+		}\
+		enum { SIZE = 8 };
 #define FLAME_PACKAGE_END_8 \
 		template<class CP>\
 		inline CP &get_capture()\

@@ -26,6 +26,7 @@
 
 void test_window();
 void test_graphics();
+void test_ui();
 
 int main(int argc, char** args)
 {
@@ -40,6 +41,8 @@ int main(int argc, char** args)
 		test_window();
 	else if (name == "graphics")
 		test_graphics();
+	else if (name == "ui")
+		test_ui();
 	else
 		printf("test not found");
 
