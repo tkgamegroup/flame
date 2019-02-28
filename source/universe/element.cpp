@@ -2049,8 +2049,10 @@ namespace flame
 		w_title()->set_size_auto();
 		w_title()->styles$.push_back(Style(0, 0, Style::text_color(ui->default_text_col, ui->default_text_col_hovering_or_active)));
 		if (tree)
+		{
 			w_title()->styles$.push_back(Style(0, 1, Function<StyleParm>(treenode_title_style$, { tree })));
-		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(treenode_title_mouse_event$, { tree }));
+			w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(treenode_title_mouse_event$, { tree }));
+		}
 		add_child(w_title());
 
 		w_items() = createT<wLayout>(ui, LayoutVertical);

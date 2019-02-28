@@ -128,7 +128,7 @@ struct UIApp : BasicApp
 		w_image->align$ = AlignLittleEnd;
 		layout1->add_child(w_image);
 
-		layout->add_child(layout1, 1, -1, true);
+		layout->add_child(layout1, 1);
 
 		auto w_list = Element::createT<wList>(ui);
 		w_list->pos$ = Vec2(800.f, 8.f);
@@ -145,7 +145,7 @@ struct UIApp : BasicApp
 			w_list->add_child(item);
 		}
 
-		layout->add_child(w_list, 1, -1, true);
+		layout->add_child(w_list, 1);
 
 		auto w_treenode1 = Element::createT<wTreeNode>(ui, font_index, L"A");
 		w_treenode1->pos$ = Vec2(800.f, 400.f);
@@ -158,7 +158,7 @@ struct UIApp : BasicApp
 		w_treenode1->w_items()->add_child(w_treenode3);
 		w_treenode3->w_items()->add_child(w_treenode4);
 
-		layout->add_child(w_treenode1, 1, -1, true);
+		layout->add_child(w_treenode1, 1);
 
 		if (style == DefaultStyleDark)
 			t_fps->text_col() = Bvec4(255, 255, 255, 255);
