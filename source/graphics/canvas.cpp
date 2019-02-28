@@ -530,7 +530,6 @@ namespace flame
 			inline void record_cb()
 			{
 				cb->begin();
-				//cb->begin_renderpass(clear_col.w > 0 ? share_data.renderpass : share_data.renderpass_noclear, s->framebuffers[swacpchain_image_index], clear_col.w > 0 ? clear_values : nullptr);
 				cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), cv);
 				if (idx_end != idx_buffer->mapped)
 				{
@@ -587,6 +586,11 @@ namespace flame
 				draw_cmds.clear();
 			}
 		};
+
+		void Canvas::set_clear_color(const Bvec4& col)
+		{
+			((CanvasPrivate*)this)->cv->set(0, col);
+		}
 
 		Imageview* Canvas::get_imageview(int index)
 		{

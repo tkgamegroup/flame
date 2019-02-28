@@ -213,8 +213,8 @@ namespace flame
 			inline bool is_up()     { return action() == KeyStateUp   && key() != Mouse_Null;   }
 			inline bool is_move()   { return action() == KeyStateNull && key() == Mouse_Null;   }
 			inline bool is_scroll() { return action() == KeyStateNull && key() == Mouse_Middle; }
-			inline bool is_clicked(){ return action() == KeyStateDown | KeyStateUp && key() == Mouse_Null; }
-			inline bool is_double_clicked() { return action() == KeyStateDown | KeyStateUp | KeyStateDouble && key() == Mouse_Null; }
+			inline bool is_clicked(){ return action() == (KeyStateDown | KeyStateUp) && key() == Mouse_Null; }
+			inline bool is_double_clicked() { return action() == (KeyStateDown | KeyStateUp | KeyStateDouble) && key() == Mouse_Null; }
 		FLAME_PACKAGE_END_4
 
 		FLAME_PACKAGE_BEGIN_2(DropListenerParm, ElementPtr, thiz, p, ElementPtr, src, p)

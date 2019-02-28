@@ -44,6 +44,8 @@ namespace flame
 
 		struct Canvas
 		{
+			FLAME_GRAPHICS_EXPORTS void set_clear_color(const Bvec4& col);
+
 			FLAME_GRAPHICS_EXPORTS Imageview* get_imageview(int index);
 			FLAME_GRAPHICS_EXPORTS void set_imageview(int index, Imageview* v);
 

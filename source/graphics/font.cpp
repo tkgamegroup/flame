@@ -2106,26 +2106,29 @@ namespace flame
 					{
 						FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
 
-						auto pitch_ft = ft_glyph->bitmap.pitch;
-						auto pitch_temp = width * 4;
-						auto temp = new uchar[pitch_temp * height];
-						for (auto y = 0; y < height; y++)
-						{
-							for (auto x = 0; x < width; x++)
-							{
-								temp[y * pitch_temp + x * 4 + 0] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 0];
-								temp[y * pitch_temp + x * 4 + 1] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 1];
-								temp[y * pitch_temp + x * 4 + 2] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 2];
-								temp[y * pitch_temp + x * 4 + 3] = 255;
-							}
-						}
-
 						auto x = g->grid_x * max_width;
 						auto y = g->grid_y * pixel_height;
 
-						atlas->set_pixels(x, y, width, height, temp);
+						if (width > 0 && height > 0)
+						{
+							auto pitch_ft = ft_glyph->bitmap.pitch;
+							auto pitch_temp = width * 4;
+							auto temp = new uchar[pitch_temp * height];
+							for (auto y = 0; y < height; y++)
+							{
+								for (auto x = 0; x < width; x++)
+								{
+									temp[y * pitch_temp + x * 4 + 0] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 0];
+									temp[y * pitch_temp + x * 4 + 1] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 1];
+									temp[y * pitch_temp + x * 4 + 2] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 2];
+									temp[y * pitch_temp + x * 4 + 3] = 255;
+								}
+							}
 
-						delete[] temp;
+							atlas->set_pixels(x, y, width, height, temp);
+
+							delete[] temp;
+						}
 
 						g->uv0 = Vec2(x, y + height) / atlas->size;
 						g->uv1 = Vec2(x + width, y) / atlas->size;

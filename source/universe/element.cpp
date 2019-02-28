@@ -1844,7 +1844,7 @@ namespace flame
 
 	void scrollbar_style$(StyleParm& p)
 	{
-		auto thiz = (wScrollbarPtr)p.thiz();
+		auto thiz = (wScrollbarPtr)p.e();
 		auto s = thiz->w_target()->size$.y - thiz->w_target()->inner_padding$[2] - thiz->w_target()->inner_padding$[3];
 		auto content_size = thiz->w_target()->get_content_size();
 		if (content_size > s)

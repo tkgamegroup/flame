@@ -1019,10 +1019,10 @@ namespace flame
 					return nodes[t].get();
 				}
 				node_find_pos++;
-				if (node_find_pos == p)
-					return nullptr;
 				if (node_find_pos >= nodes.size())
 					node_find_pos = 0;
+				if (node_find_pos == p)
+					return nullptr;
 			}
 			return nullptr;
 		}
