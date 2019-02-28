@@ -448,6 +448,8 @@ namespace flame
 			e->need_arrange = false;
 		}
 
+		if (e->class$.hash == cH("wToggle"))
+			int cut = 1;
 		e->style_level = -1;
 		for (auto i_s = 0; i_s < e->styles$.size; i_s++)
 		{

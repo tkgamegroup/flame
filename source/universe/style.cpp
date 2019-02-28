@@ -81,22 +81,22 @@ namespace flame
 
 	void style_text_color(StyleParm& p)
 	{
-		auto e = p.e();
+		auto e = (wTextPtr)p.e();
 		auto& c = p.get_capture<StyleTextColorData>();
 		switch (e->state)
 		{
 		case StateNormal:
-			e->background_col$ = c.normal_color();
+			e->text_col() = c.normal_color();
 			break;
 		case StateHovering: case StateActive:
-			e->background_col$ = c.else_color();
+			e->text_col() = c.else_color();
 			break;
 		}
 	}
 
 	Function<StyleParm> Style::text_color(const Bvec4& normal_col, const Bvec4& else_col)
 	{
-		return Function<StyleParm>(style_background_color, { normal_col, else_col });
+		return Function<StyleParm>(style_text_color, { normal_col, else_col });
 	}
 }
 

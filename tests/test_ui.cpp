@@ -73,19 +73,12 @@ struct UIApp : BasicApp
 		w_button->align$ = AlignLittleEnd;
 		layout1->add_child(w_button);
 
-		auto w_toggle1 = Element::createT<wToggle>(ui, font_index);
-		w_toggle1->align$ = AlignLittleEnd;
-		w_toggle1->text$ = L"toggled";
-		w_toggle1->set_size_auto();
-		w_toggle1->set_toggle(true);
-		layout1->add_child(w_toggle1);
-
-		auto w_toggle2 = Element::createT<wToggle>(ui, font_index);
-		w_toggle2->align$ = AlignLittleEnd;
-		w_toggle2->text$ = L"untoggled";
-		w_toggle2->set_size_auto();
-		w_toggle2->set_toggle(false);
-		layout1->add_child(w_toggle2);
+		auto w_toggle = Element::createT<wToggle>(ui, font_index);
+		w_toggle->align$ = AlignLittleEnd;
+		w_toggle->text$ = L"toggle";
+		w_toggle->set_size_auto();
+		w_toggle->set_toggle(true);
+		layout1->add_child(w_toggle);
 
 		auto w_menubar = Element::createT<wMenuBar>(ui);
 		w_menubar->align$ = AlignLittleEnd;

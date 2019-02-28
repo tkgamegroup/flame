@@ -295,9 +295,6 @@ namespace flame
 
 	void Element::do_arrange()
 	{
-		if (class$.hash == cH("wCombo"))
-			int cut = 1;
-
 		switch (layout_type$)
 		{
 		case LayoutVertical:
@@ -1156,6 +1153,8 @@ namespace flame
 
 		toggled() = 0;
 
+		styles$.push_back({ 0, 0, Style::background_color(HSV(52.f, 0.23f, 0.97f, 0.40f), HSV(52.f, 0.23f, 0.97f, 1.00f), HSV(49.f, 0.43f, 0.97f, 1.00f)) });
+		styles$.push_back({ 1, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active) });
 		mouse_listeners$.push_back(Function<MouseListenerParm>(toggle_mouse_event$, {}));
 	}
 
