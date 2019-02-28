@@ -57,7 +57,7 @@ void* cmd_end_cmd2;
 	cv_in = nullptr;
 	cv_renderpass = nullptr;
 	cv_colors.resize(1);
-	cv_colors[0] = Bvec4(255, 127, 0, 1);
+	cv_colors[0] = Bvec4(64, 127, 255, 255);
 	cv_out = nullptr;
 	d_in = nullptr;
 	d_out = nullptr;
@@ -155,12 +155,15 @@ void* cmd_end_cmd2;
 	cmd_begin_renderpass_framebuffer2 = sc_framebuffer2;
 	cmd_begin_renderpass_clearvalues = cv_out;
 	 if (cmd_begin_renderpass_cmd1) 
- 	 { 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd1)->begin_renderpass( 
+ 	 { 
+ 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd1)->begin_renderpass( 
  	 	 	 (graphics::Renderpass*)cmd_begin_renderpass_renderpass, 
  	 	 	 (graphics::Framebuffer*)cmd_begin_renderpass_framebuffer1, 
  	 	 	 (graphics::ClearValues*)cmd_begin_renderpass_clearvalues); 
- 	 } 	 if (cmd_begin_renderpass_cmd2) 
- 	 { 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd2)->begin_renderpass( 
+ 	 } 
+ 	 if (cmd_begin_renderpass_cmd2) 
+ 	 { 
+ 	 	 ((graphics::Commandbuffer*)cmd_begin_renderpass_cmd2)->begin_renderpass( 
  	 	 	 (graphics::Renderpass*)cmd_begin_renderpass_renderpass, 
  	 	 	 (graphics::Framebuffer*)cmd_begin_renderpass_framebuffer2, 
  	 	 	 (graphics::ClearValues*)cmd_begin_renderpass_clearvalues); 

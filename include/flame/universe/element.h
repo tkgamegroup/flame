@@ -629,7 +629,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_3(wCombo, wMenu, int, sel, i1, voidptr, enum_info, p, voidptr, target, p)
-		FLAME_UNIVERSE_EXPORTS void init(void* enum_info = nullptr, void* target = nullptr, int font_idx = -1 /* use for init items with enum info */ );
+		FLAME_UNIVERSE_EXPORTS void init(int font_idx, void* enum_info = nullptr, void* target = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
 	FLAME_ELEMENT_END
 

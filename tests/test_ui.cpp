@@ -104,7 +104,7 @@ struct UIApp : BasicApp
 
 		layout1->add_child(w_menubar);
 
-		auto w_combo = Element::createT<wCombo>(ui);
+		auto w_combo = Element::createT<wCombo>(ui, font_index);
 		w_combo->align$ = AlignLittleEnd;
 
 		auto w_comboitem1 = Element::createT<wMenuItem>(ui, font_index, L"item 1");

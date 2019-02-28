@@ -1,7 +1,7 @@
 <BP>
 	<node type="BP_GraphicsClearvalues" id="cv">
 		<input name="colors">
-			<item value="255;127;0;1"/>
+			<item value="64;127;255;255"/>
 		</input>
 	</node>
 	<node type="BP_GraphicsSwapchain" id="sc"/>

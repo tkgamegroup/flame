@@ -69,7 +69,7 @@ int main(int argc, char **args)
 				"  set [in_adress] [value] - set value for item\n"
 				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
-				"  generate code [filename] - generate code to a file\n"
+				"  tobin - generate code to a dll\n"
 			);
 		}
 		else if (s_command_line == "show")

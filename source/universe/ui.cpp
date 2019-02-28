@@ -255,19 +255,19 @@ namespace flame
 		{
 			switch (popup_element_->class$.hash)
 			{
-			case cH("menubar"):
+			case cH("wMenuBar"):
 				for (auto i_c = 0; i_c < popup_element_->children_1$.size; i_c++)
 				{
 					auto c = popup_element_->children_1$[i_c];
 
-					if (c->class$.hash == cH("menu"))
+					if (c->class$.hash == cH("wMenu"))
 						((wMenu*)c)->close();
 				}
 				break;
 			case cH("menu items"):
 				((wMenu*)popup_element_->parent)->close();
 				break;
-			case cH("combo"):
+			case cH("wCombo"):
 				((wMenu*)popup_element_)->close();
 				break;
 			}

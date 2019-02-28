@@ -84,7 +84,7 @@ namespace flame
 		parent = nullptr;
 		layer = 0;
 		flag = FlagNull;
-		need_arrange = false;
+		need_arrange = true;
 	}
 
 	Element::~Element()
@@ -295,6 +295,9 @@ namespace flame
 
 	void Element::do_arrange()
 	{
+		if (class$.hash == cH("wCombo"))
+			int cut = 1;
+
 		switch (layout_type$)
 		{
 		case LayoutVertical:
@@ -789,7 +792,7 @@ namespace flame
 		{
 		case VariableTagEnumSingle:
 		{
-			auto c = createT<wCombo>(ui, find_enum(info->type_hash()), (char*)p + info->offset());
+			auto c = createT<wCombo>(ui, font_idx, find_enum(info->type_hash()), (char*)p + info->offset());
 			c->align$ = AlignLittleEnd;
 			dst->add_child(c, 0, -1, true);
 		}
@@ -1172,9 +1175,9 @@ namespace flame
 		if (w->w_rarrow())
 			return;
 
-		if (w->parent && w->parent->class$.hash == cH("menubar"))
+		if (w->parent && w->parent->class$.hash == cH("wMenuBar"))
 			return;
-		if (!w->sub() && w->class$.hash != cH("combo"))
+		if (!w->sub() && w->class$.hash != cH("wCombo"))
 			return;
 
 		auto title = w->w_title();
@@ -1236,10 +1239,10 @@ namespace flame
 		auto menu = (wMenuPtr)p.thiz()->parent;
 		switch (p.src()->class$.hash)
 		{
-		case cH("menuitem"):
+		case cH("wMenuItem"):
 			menu_add_rarrow(menu);
 			break;
-		case cH("menu"):
+		case cH("wMenu"):
 		{
 			auto src = (wMenu*)p.src();
 			src->sub() = 1;
@@ -1270,10 +1273,9 @@ namespace flame
 		w_title()->event_attitude$ = EventAccept;
 		w_title()->text$ = title;
 		w_title()->set_size_auto();
-		add_child(w_title());
-
 		w_title()->styles$.push_back({ 0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active) });
 		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(menu_title_mouse_event$, { this }));
+		add_child(w_title());
 
 		w_rarrow() = nullptr;
 
@@ -1300,12 +1302,12 @@ namespace flame
 		if (opened())
 			return;
 
-		if (parent && (parent->class$.hash == cH("menubar") || parent->class$.hash == cH("menu items")))
+		if (parent && (parent->class$.hash == cH("wMenuBar") || parent->class$.hash == cH("menu items")))
 		{
 			for (auto i = 0; i < parent->children_1$.size; i++)
 			{
 				auto c = parent->children_1$[i];
-				if (c->class$.hash == cH("menu"))
+				if (c->class$.hash == cH("wMenu"))
 					((wMenu*)c)->close();
 			}
 		}
@@ -1339,7 +1341,7 @@ namespace flame
 		for (auto i = 0; i < w_items()->children_1$.size; i++)
 		{
 			auto c = w_items()->children_1$[i];
-			if (c->class$.hash == cH("menu"))
+			if (c->class$.hash == cH("wMenu"))
 				((wMenu*)c)->close();
 		}
 
@@ -1351,7 +1353,7 @@ namespace flame
 	FLAME_PACKAGE_BEGIN_2(MenuTextMouseInMenubarEventData, ElementPtr, thiz, p, wMenuPtr, menu, p)
 	FLAME_PACKAGE_END_2
 
-	void menu_text_mouse_event_in_menubar$(Element::MouseListenerParm &p)
+	void menu_title_mouse_event_in_menubar$(Element::MouseListenerParm &p)
 	{
 		if (!p.is_clicked())
 			return;
@@ -1377,8 +1379,8 @@ namespace flame
 		if (p.op() != Element::ChildAdd)
 			return;
 
-		if (p.src()->class$.hash == cH("menu"))
-			((wMenu*)p.src())->w_title()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(menu_text_mouse_event_in_menubar$, { p.thiz(), p.src() }));
+		if (p.src()->class$.hash == cH("wMenu"))
+			((wMenu*)p.src())->w_title()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(menu_title_mouse_event_in_menubar$, { p.thiz(), p.src() }));
 	}
 
 	void wMenuBar::init()
@@ -1443,18 +1445,18 @@ namespace flame
 			return;
 
 		auto combo = (wComboPtr)(p.thiz()->parent);
-		if (p.src()->class$.hash == cH("menuitem"))
+		if (p.src()->class$.hash == cH("wMenuItem"))
 		{
-			combo->set_width(combo->inner_padding$[0] + combo->inner_padding$[1] + combo->w_title()->inner_padding$[0] + combo->w_title()->inner_padding$[1] + combo->w_items()->size$.x);
+			combo->set_width(combo->inner_padding$[0] + combo->inner_padding$[1] + combo->w_title()->inner_padding$[0] + combo->w_title()->inner_padding$[1] + p.src()->size$.x);
 			auto idx = combo->w_items()->children_1$.size - 1;
 			p.src()->styles$.push_back(Style(0, 1, Function<StyleParm>(combo_item_style$, { combo })));
 			p.src()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(combo_item_mouse_event$, { combo, idx }));
 		}
 	}
 
-	void wCombo::init(void* _enum_info, void* _target, int font_idx)
+	void wCombo::init(int font_idx, void* _enum_info, void* _target)
 	{
-		((wMenu*)this)->init(-1, L"");
+		((wMenu*)this)->init(font_idx, L"");
 		init_data_types();
 
 		sel() = -1;
@@ -1963,7 +1965,7 @@ namespace flame
 		if (p.op() != Element::ChildAdd)
 			return;
 
-		if (p.src()->class$.hash == cH("listitem"))
+		if (p.src()->class$.hash == cH("wListItem"))
 		{
 			auto listitem = (wListItem*)p.src();
 			auto title = listitem->w_title();
