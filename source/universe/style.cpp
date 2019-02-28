@@ -43,6 +43,7 @@ namespace flame
 			e->background_offset$ = c.active_offset();
 			break;
 		}
+		p.out_active() = 1;
 	}
 
 	Function<StyleParm> Style::background_offset(const Vec4& active_offset, const Vec4& else_offset)
@@ -69,6 +70,7 @@ namespace flame
 			e->background_col$ = c.active_color();
 			break;
 		}
+		p.out_active() = 1;
 	}
 
 	Function<StyleParm> Style::background_color(const Bvec4& normal_col, const Bvec4& hovering_col, const Bvec4& active_col)
@@ -92,6 +94,7 @@ namespace flame
 			e->text_col() = c.else_color();
 			break;
 		}
+		p.out_active() = 1;
 	}
 
 	Function<StyleParm> Style::text_color(const Bvec4& normal_col, const Bvec4& else_col)

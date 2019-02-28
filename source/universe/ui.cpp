@@ -448,21 +448,22 @@ namespace flame
 			e->need_arrange = false;
 		}
 
-		if (e->class$.hash == cH("wToggle"))
-			int cut = 1;
 		e->style_level = -1;
 		for (auto i_s = 0; i_s < e->styles$.size; i_s++)
 		{
 			auto& s = e->styles$[i_s];
 			if (e->closet_id$ != s.closet_id$)
 				continue;
-			if (e->style_level <= s.level$)
-			{
+			if (e->style_level > s.level$)
+				continue;
+
+			s.f$.p.thiz() = &s;
+			s.f$.p.e() = e;
+			s.f$.p.out_active() = 0;
+			s.f$.exec();
+
+			if (s.f$.p.out_active())
 				e->style_level = s.level$;
-				s.f$.p.thiz() = &s;
-				s.f$.p.e() = e;
-				s.f$.exec();
-			}
 		}
 
 		for (auto i_a = 0; i_a < e->animations$.size; )

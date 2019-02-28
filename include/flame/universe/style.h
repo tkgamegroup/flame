@@ -32,8 +32,8 @@ namespace flame
 	struct Style;
 	typedef Style* StylePtr;
 
-	FLAME_PACKAGE_BEGIN_2(StyleParm, StylePtr, thiz, p, ElementPtr, e, p)
-	FLAME_PACKAGE_END_2
+	FLAME_PACKAGE_BEGIN_3(StyleParm, StylePtr, thiz, p, ElementPtr, e, p, int, out_active, i1)
+	FLAME_PACKAGE_END_3
 
 	struct Style : R
 	{

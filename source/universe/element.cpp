@@ -1422,7 +1422,10 @@ namespace flame
 		if (sel != -1 && combo->w_items()->children_1$[sel] == e)
 		{
 			if (e->state == StateNormal)
+			{
 				e->background_col$ = e->ui->default_header_col;
+				p.out_active() = 1;
+			}
 		}
 	}
 
@@ -1923,10 +1926,10 @@ namespace flame
 		w_title()->event_attitude$ = EventAccept;
 		w_title()->text$ = title;
 		w_title()->set_size_auto();
+		w_title()->styles$.push_back(Style(0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active)));
 		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(listitem_title_mouse_event$, {}));
 		add_child(w_title());
 
-		styles$.push_back(Style(0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active)));
 	}
 
 	void listitem_title_style$(StyleParm& p)
@@ -1935,7 +1938,10 @@ namespace flame
 		auto listitem = (wListItemPtr)e->parent;
 		auto list = (wListPtr)listitem->parent;
 		if (list->w_sel() && list->w_sel()->w_title() == e && e->state == StateNormal)
+		{
 			e->background_col$ = e->ui->default_header_col;
+			p.out_active() = 1;
+		}
 	}
 
 	void listitem_title_mouse_event_in_list$(Element::MouseListenerParm &p)
@@ -2004,6 +2010,7 @@ namespace flame
 			e->background_col$ = e->ui->default_header_col;
 		else
 			e->background_col$ = Bvec4(0);
+		p.out_active() = 1;
 	}
 
 	FLAME_PACKAGE_BEGIN_1(TreenodeTitleMouseEventData, wTreePtr, tree, p)
