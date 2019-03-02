@@ -275,6 +275,26 @@ namespace flame
 		}
 	}
 
+	struct _Package
+	{
+		Vec2 mpos;
+		bool mljustdown;
+		bool mljustup;
+		bool mrjustdown;
+		int mscroll;
+		Ivec2 mdisp;
+		Element* temp_dragging_element;
+		Rect curr_scissor;
+		Vec2 surface_size;
+		bool hovering_any_element;
+		bool clicking_nothing;
+		Vec2 popup_off;
+		float popup_scl;
+		bool meet_popup_first;
+		bool ban_event;
+		Vec2 show_off;
+	};
+
 	inline void UIPrivate::step(float elp_time, const Vec2& show_off)
 	{
 		processed_mouse_input = false;
@@ -391,26 +411,6 @@ namespace flame
 		mouse_prev_pos_ = mouse_pos;
 		mouse_scroll = 0;
 	}
-
-	struct _Package
-	{
-		Vec2 mpos;
-		bool mljustdown;
-		bool mljustup;
-		bool mrjustdown;
-		int mscroll;
-		Ivec2 mdisp;
-		Element* temp_dragging_element;
-		Rect curr_scissor;
-		Vec2 surface_size;
-		bool hovering_any_element;
-		bool clicking_nothing;
-		Vec2 popup_off;
-		float popup_scl;
-		bool meet_popup_first;
-		bool ban_event;
-		Vec2 show_off;
-	};
 
 	void UIPrivate::preprocessing_children(void* __p, Element * w, const Array<Element*> & children, const Vec2 & off, float scl)
 	{
