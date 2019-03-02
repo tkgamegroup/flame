@@ -2130,9 +2130,10 @@ namespace flame
 						auto font = (FontPrivate*)_font;
 						auto ft_face = font->ft_face;
 						auto ascender = font->ascender;
-						auto ok = FT_Load_Char(ft_face, unicode, FT_LOAD_TARGET_LCD);
-						if (ok != 0)
+						auto glyph_index = FT_Get_Char_Index(ft_face, unicode);
+						if (glyph_index == 0)
 							continue;
+						FT_Load_Glyph(ft_face, glyph_index, FT_LOAD_TARGET_LCD);
 
 						auto ft_glyph = ft_face->glyph;
 						auto width = ft_glyph->bitmap.width / 3;
@@ -2211,6 +2212,8 @@ namespace flame
 							g->uv0 = Vec2(x + sdf_range, y + sdf_range) / atlas->size;
 							g->uv1 = Vec2(x + size.x - sdf_range, y + size.y - sdf_range) / atlas->size;
 						}
+
+						break;
 					}
 				}
 
