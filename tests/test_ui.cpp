@@ -41,8 +41,10 @@ FLAME_PACKAGE_END_1
 struct UIApp : BasicApp
 {
 	Canvas* canvas;
-	Font* font;
-	int font_index;
+	Font* font_msyh;
+	Font* font_awesome;
+	FontAtlas* font_atlas;
+	int font_atlas_index;
 
 	UI* ui;
 	wText* t_fps;
@@ -63,17 +65,17 @@ struct UIApp : BasicApp
 		w_checkbox->align$ = AlignLittleEnd;
 		layout1->add_child(w_checkbox);
 
-		auto w_text = Element::createT<wText>(ui, font_index);
+		auto w_text = Element::createT<wText>(ui, font_atlas_index);
 		w_text->align$ = AlignLittleEnd;
 		w_text->text$ = L"some text";
 		w_text->set_size_auto();
 		layout1->add_child(w_text);
 
-		auto w_button = Element::createT<wButton>(ui, font_index, L"button");
+		auto w_button = Element::createT<wButton>(ui, font_atlas_index, L"button");
 		w_button->align$ = AlignLittleEnd;
 		layout1->add_child(w_button);
 
-		auto w_toggle = Element::createT<wToggle>(ui, font_index);
+		auto w_toggle = Element::createT<wToggle>(ui, font_atlas_index);
 		w_toggle->align$ = AlignLittleEnd;
 		w_toggle->text$ = L"toggle";
 		w_toggle->set_size_auto();
@@ -83,11 +85,11 @@ struct UIApp : BasicApp
 		auto w_menubar = Element::createT<wMenuBar>(ui);
 		w_menubar->align$ = AlignLittleEnd;
 
-		auto w_menu = Element::createT<wMenu>(ui, font_index, L"menu");
+		auto w_menu = Element::createT<wMenu>(ui, font_atlas_index, L"menu");
 
-		auto w_menuitem1 = Element::createT<wMenuItem>(ui, font_index, L"item 1");
-		auto w_menuitem2 = Element::createT<wMenuItem>(ui, font_index, L"item 2");
-		auto w_menuitem3 = Element::createT<wMenuItem>(ui, font_index, L"item 3");
+		auto w_menuitem1 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 1");
+		auto w_menuitem2 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 2");
+		auto w_menuitem3 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 3");
 
 		w_menu->w_items()->add_child(w_menuitem1);
 		w_menu->w_items()->add_child(w_menuitem2);
@@ -97,12 +99,12 @@ struct UIApp : BasicApp
 
 		layout1->add_child(w_menubar);
 
-		auto w_combo = Element::createT<wCombo>(ui, font_index);
+		auto w_combo = Element::createT<wCombo>(ui, font_atlas_index);
 		w_combo->align$ = AlignLittleEnd;
 
-		auto w_comboitem1 = Element::createT<wMenuItem>(ui, font_index, L"item 1");
-		auto w_comboitem2 = Element::createT<wMenuItem>(ui, font_index, L"item 2");
-		auto w_comboitem3 = Element::createT<wMenuItem>(ui, font_index, L"item 3");
+		auto w_comboitem1 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 1");
+		auto w_comboitem2 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 2");
+		auto w_comboitem3 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 3");
 
 		w_combo->w_items()->add_child(w_comboitem1);
 		w_combo->w_items()->add_child(w_comboitem2);
@@ -110,7 +112,7 @@ struct UIApp : BasicApp
 
 		layout1->add_child(w_combo);
 
-		auto w_edit = Element::createT<wEdit>(ui, font_index);
+		auto w_edit = Element::createT<wEdit>(ui, font_atlas_index);
 		w_edit->align$ = AlignLittleEnd;
 		w_edit->set_size_by_width(100.f);
 		layout1->add_child(w_edit);
@@ -134,18 +136,18 @@ struct UIApp : BasicApp
 
 		for (auto i = 0; i < 20; i++)
 		{
-			auto item = Element::createT<wListItem>(ui, font_index, (L"item " + to_stdwstring(i)).c_str());
+			auto item = Element::createT<wListItem>(ui, font_atlas_index, (L"item " + to_stdwstring(i)).c_str());
 			w_list->add_child(item);
 		}
 
 		layout->add_child(w_list, 1);
 
-		auto w_treenode1 = Element::createT<wTreeNode>(ui, font_index, L"A");
+		auto w_treenode1 = Element::createT<wTreeNode>(ui, font_atlas_index, L"A");
 		w_treenode1->pos$ = Vec2(800.f, 400.f);
 
-		auto w_treenode2 = Element::createT<wTreeNode>(ui, font_index, L"B");
-		auto w_treenode3 = Element::createT<wTreeNode>(ui, font_index, L"C");
-		auto w_treenode4 = Element::createT<wTreeNode>(ui, font_index, L"D");
+		auto w_treenode2 = Element::createT<wTreeNode>(ui, font_atlas_index, L"B");
+		auto w_treenode3 = Element::createT<wTreeNode>(ui, font_atlas_index, L"C");
+		auto w_treenode4 = Element::createT<wTreeNode>(ui, font_atlas_index, L"D");
 
 		w_treenode1->w_items()->add_child(w_treenode2);
 		w_treenode1->w_items()->add_child(w_treenode3);
@@ -164,12 +166,14 @@ struct UIApp : BasicApp
 		Canvas::initialize(d, sc);
 		canvas = Canvas::create(sc);
 
-		font = Font::create(d, L"c:/windows/fonts/msyh.ttc", 16, false);
-		font_index = canvas->add_font(font);
+		font_msyh = Font::create(L"c:/windows/fonts/msyh.ttc", 16);
+		font_awesome = Font::create(L"../asset/font_awesome.ttf", 16);
+		font_atlas = FontAtlas::create(d, 16, false, { font_msyh, font_awesome });
+		font_atlas_index = canvas->add_font_atlas(font_atlas);
 
 		ui = UI::create(canvas, w);
 
-		t_fps = Element::createT<wText>(ui, font_index);
+		t_fps = Element::createT<wText>(ui, font_atlas_index);
 		t_fps->align$ = AlignLeftBottom;
 		ui->root()->add_child(t_fps, 1);
 
@@ -179,7 +183,7 @@ struct UIApp : BasicApp
 		auto layout_top = Element::createT<wLayout>(ui, LayoutHorizontal);
 		layout_top->align$ = AlignTop;
 
-		auto w_btn_dark = Element::createT<wButton>(ui, font_index, L"dark");
+		auto w_btn_dark = Element::createT<wButton>(ui, font_atlas_index, L"dark");
 		w_btn_dark->align$ = AlignLittleEnd;
 		w_btn_dark->text_col() = Bvec4(255);
 		w_btn_dark->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm &p) {
@@ -192,7 +196,7 @@ struct UIApp : BasicApp
 		}, { this }));
 		layout_top->add_child(w_btn_dark);
 
-		auto w_btn_light = Element::createT<wButton>(ui, font_index, L"light");
+		auto w_btn_light = Element::createT<wButton>(ui, font_atlas_index, L"light");
 		w_btn_light->align$ = AlignLittleEnd;
 		w_btn_light->text_col() = Bvec4(255);
 		w_btn_light->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm & p) {

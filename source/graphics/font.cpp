@@ -1995,31 +1995,12 @@ namespace flame
 
 		struct FontPrivate : Font
 		{
-			Device* d;
-			bool sdf;
-
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
-			int pixel_height;
-			int max_width;
-			int ascender;
 
-			Glyph* map[65536];
-			GlyphPrivate* glyph_head;
-			GlyphPrivate* glyph_tail;
-			int grid_cx;
-			int grid_cy;
-			int grid_curr_x;
-			int grid_curr_y;
-
-			Image *atlas;
-
-			inline FontPrivate(Device *_d, const wchar_t *filename, int _pixel_height, bool _sdf) :
-				d(_d),
-				pixel_height(_pixel_height),
-				sdf(_sdf)
+			inline FontPrivate(const wchar_t *filename, int _pixel_height)
 			{
-				memset(map, 0, sizeof(map));
+				pixel_height = _pixel_height;
 
 				if (!ft_library)
 				{
@@ -2035,9 +2016,60 @@ namespace flame
 				FT_Request_Size(ft_face, &ft_req);
 				max_width = ft_face->size->metrics.max_advance / 64;
 				ascender = ft_face->size->metrics.ascender / 64;
+			}
+
+			inline ~FontPrivate()
+			{
+				FT_Done_Face(ft_face);
+			}
+		};
+
+		Font *Font::create(const wchar_t *filename, int pixel_height)
+		{
+			return new FontPrivate(filename, pixel_height);
+		}
+
+		void Font::destroy(Font *f)
+		{
+			delete (FontPrivate*)f;
+		}
+
+		struct FontAtlasPrivate : FontAtlas
+		{
+			Device* d;
+
+			std::vector<Font*> fonts;
+
+			Glyph* map[65536];
+			GlyphPrivate* glyph_head;
+			GlyphPrivate* glyph_tail;
+			int grid_cx;
+			int grid_cy;
+			int grid_curr_x;
+			int grid_curr_y;
+
+			Image* atlas;
+
+			inline FontAtlasPrivate(Device* _d, int _pixel_height, bool _sdf, const std::vector<Font*>& _fonts) :
+				d(_d)
+			{
+				sdf = _sdf;
+				pixel_height = _pixel_height;
+
+				memset(map, 0, sizeof(map));
 
 				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 				atlas->init(Bvec4(0));
+
+				max_width = 0;
+				for (auto src : _fonts)
+				{
+					if (src->pixel_height == pixel_height)
+					{
+						fonts.push_back(src);
+						max_width = max(src->max_width, max_width);
+					}
+				}
 
 				glyph_head = glyph_tail = nullptr;
 
@@ -2046,9 +2078,8 @@ namespace flame
 				grid_curr_x = grid_curr_y = 0;
 			}
 
-			inline ~FontPrivate()
+			inline ~FontAtlasPrivate()
 			{
-				FT_Done_Face(ft_face);
 				Image::destroy(atlas);
 			}
 
@@ -2094,90 +2125,99 @@ namespace flame
 
 					map[unicode] = g;
 
-					FT_Load_Char(ft_face, unicode, FT_LOAD_TARGET_LCD);
-					auto ft_glyph = ft_face->glyph;
-					auto width = ft_glyph->bitmap.width / 3;
-					auto height = ft_glyph->bitmap.rows;
-					g->size = Vec2(width, height);
-					g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y - ft_glyph->metrics.horiBearingY / 64.f);
-					g->advance = ft_glyph->advance.x / 64;
-
-					if (!sdf)
+					for (auto _font : fonts)
 					{
-						FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
+						auto font = (FontPrivate*)_font;
+						auto ft_face = font->ft_face;
+						auto ascender = font->ascender;
+						auto ok = FT_Load_Char(ft_face, unicode, FT_LOAD_TARGET_LCD);
+						if (ok != 0)
+							continue;
 
-						auto x = g->grid_x * max_width;
-						auto y = g->grid_y * pixel_height;
+						auto ft_glyph = ft_face->glyph;
+						auto width = ft_glyph->bitmap.width / 3;
+						auto height = ft_glyph->bitmap.rows;
+						g->size = Vec2(width, height);
+						g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y - ft_glyph->metrics.horiBearingY / 64.f);
+						g->advance = ft_glyph->advance.x / 64;
 
-						if (width > 0 && height > 0)
+						if (!sdf)
 						{
-							auto pitch_ft = ft_glyph->bitmap.pitch;
-							auto pitch_temp = width * 4;
-							auto temp = new uchar[pitch_temp * height];
-							for (auto y = 0; y < height; y++)
+							FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
+
+							auto x = g->grid_x * max_width;
+							auto y = g->grid_y * pixel_height;
+
+							if (width > 0 && height > 0)
 							{
-								for (auto x = 0; x < width; x++)
+								auto pitch_ft = ft_glyph->bitmap.pitch;
+								auto pitch_temp = width * 4;
+								auto temp = new uchar[pitch_temp * height];
+								for (auto y = 0; y < height; y++)
 								{
-									temp[y * pitch_temp + x * 4 + 0] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 0];
-									temp[y * pitch_temp + x * 4 + 1] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 1];
-									temp[y * pitch_temp + x * 4 + 2] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 2];
-									temp[y * pitch_temp + x * 4 + 3] = 255;
+									for (auto x = 0; x < width; x++)
+									{
+										temp[y * pitch_temp + x * 4 + 0] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 0];
+										temp[y * pitch_temp + x * 4 + 1] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 1];
+										temp[y * pitch_temp + x * 4 + 2] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 2];
+										temp[y * pitch_temp + x * 4 + 3] = 255;
+									}
+								}
+
+								atlas->set_pixels(x, y, width, height, temp);
+
+								delete[] temp;
+							}
+
+							g->uv0 = Vec2(x, y + height) / atlas->size;
+							g->uv1 = Vec2(x + width, y) / atlas->size;
+						}
+						else
+						{
+							void* ptr = ft_face;
+
+							msdfgen::Shape shape;
+							msdfgen::loadGlyph(shape, (msdfgen::FontHandle*) & ptr, unicode);
+
+							auto size = g->size;
+							size += sdf_range * 2.f;
+
+							shape.normalize();
+							msdfgen::edgeColoringSimple(shape, 3.f);
+							msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
+							msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x, g->off.y - ascender) + sdf_range);
+
+							auto pitch = Bitmap::get_pitch(size.x * 4);
+							auto temp = new uchar[pitch * size.y];
+							for (auto y = 0; y < size.y; y++)
+							{
+								for (auto x = 0; x < size.x; x++)
+								{
+									auto& src = bmp(x, y);
+									temp[y * pitch + x * 4 + 0] = clamp(src.r * 255.f, 0.f, 255.f);
+									temp[y * pitch + x * 4 + 1] = clamp(src.g * 255.f, 0.f, 255.f);
+									temp[y * pitch + x * 4 + 2] = clamp(src.b * 255.f, 0.f, 255.f);
+									temp[y * pitch + x * 4 + 3] = 255.f;
 								}
 							}
 
-							atlas->set_pixels(x, y, width, height, temp);
+							auto x = g->grid_x * (max_width + sdf_range);
+							auto y = g->grid_y * (pixel_height + sdf_range);
 
-							delete[] temp;
+							atlas->set_pixels(x, y, size.x, size.y, temp);
+
+							delete temp;
+
+							g->uv0 = Vec2(x + sdf_range, y + sdf_range) / atlas->size;
+							g->uv1 = Vec2(x + size.x - sdf_range, y + size.y - sdf_range) / atlas->size;
 						}
-
-						g->uv0 = Vec2(x, y + height) / atlas->size;
-						g->uv1 = Vec2(x + width, y) / atlas->size;
-					}
-					else
-					{
-						void *ptr = ft_face;
-
-						msdfgen::Shape shape;
-						msdfgen::loadGlyph(shape, (msdfgen::FontHandle*)&ptr, unicode);
-
-						auto size = g->size;
-						size += sdf_range * 2.f;
-
-						shape.normalize();
-						msdfgen::edgeColoringSimple(shape, 3.f);
-						msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
-						msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x, g->off.y - ascender) + sdf_range);
-
-						auto pitch = Bitmap::get_pitch(size.x * 4);
-						auto temp = new uchar[pitch * size.y];
-						for (auto y = 0; y < size.y; y++)
-						{
-							for (auto x = 0; x < size.x; x++)
-							{
-								auto &src = bmp(x, y);
-								temp[y * pitch + x * 4 + 0] = clamp(src.r * 255.f, 0.f, 255.f);
-								temp[y * pitch + x * 4 + 1] = clamp(src.g * 255.f, 0.f, 255.f);
-								temp[y * pitch + x * 4 + 2] = clamp(src.b * 255.f, 0.f, 255.f);
-								temp[y * pitch + x * 4 + 3] = 255.f;
-							}
-						}
-
-						auto x = g->grid_x * (max_width + sdf_range);
-						auto y = g->grid_y * (pixel_height + sdf_range);
-
-						atlas->set_pixels(x, y, size.x, size.y, temp);
-
-						delete temp;
-
-						g->uv0 = Vec2(x + sdf_range, y + sdf_range) / atlas->size;
-						g->uv1 = Vec2(x + size.x - sdf_range, y + size.y - sdf_range) / atlas->size;
 					}
 				}
 
 				return map[unicode];
 			}
 
-			inline int get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
+			inline int get_text_width(const wchar_t* text_beg, const wchar_t* text_end)
 			{
 				auto w = 0;
 				auto s = text_beg;
@@ -2203,51 +2243,30 @@ namespace flame
 			}
 		};
 
-		const Glyph* Font::get_glyph(wchar_t unicode)
+		FontAtlas* FontAtlas::create(Device* d, int pixel_height, bool sdf, const std::vector<Font*>& fonts)
 		{
-			return ((FontPrivate*)this)->get_glyph(unicode);
+			return new FontAtlasPrivate(d, pixel_height, sdf, fonts);
 		}
 
-		int Font::pixel_height() const
+		void FontAtlas::destroy(FontAtlas* f)
 		{
-			return ((FontPrivate*)this)->pixel_height;
+			delete (FontAtlasPrivate*)f;
 		}
 
-		int Font::max_width() const
+		const Glyph* FontAtlas::get_glyph(wchar_t unicode)
 		{
-			return ((FontPrivate*)this)->max_width;
+			return ((FontAtlasPrivate*)this)->get_glyph(unicode);
 		}
 
-		int Font::ascender() const
+		int FontAtlas::get_text_width(const wchar_t* text_beg, const wchar_t* text_end)
 		{
-			return ((FontPrivate*)this)->ascender;
+			return ((FontAtlasPrivate*)this)->get_text_width(text_beg, text_end);
 		}
 
-		bool Font::sdf() const
+		Image* FontAtlas::atlas() const
 		{
-			return ((FontPrivate*)this)->sdf;
+			return ((FontAtlasPrivate*)this)->atlas;
 		}
-
-		int Font::get_text_width(const wchar_t *text_beg, const wchar_t *text_end)
-		{
-			return ((FontPrivate*)this)->get_text_width(text_beg, text_end);
-		}
-
-		Image *Font::get_atlas() const
-		{
-			return ((FontPrivate*)this)->atlas;
-		}
-
-		Font *Font::create(Device *d, const wchar_t *filename, int pixel_height, bool sdf)
-		{
-			return new FontPrivate(d, filename, pixel_height, sdf);
-		}
-
-		void Font::destroy(Font *f)
-		{
-			delete (FontPrivate*)f;
-		}
-
 	}
 }
 

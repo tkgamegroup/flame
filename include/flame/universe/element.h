@@ -285,7 +285,7 @@ namespace flame
 			w->init(args...);
 			return w;
 		}
-		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_idx, VaribleInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
+		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VaribleInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
 		FLAME_UNIVERSE_EXPORTS static Element* create_from_file(UI* ui, SerializableNode* src);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Element* w);
 	};
@@ -599,26 +599,26 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void init(void* target = nullptr);
 	FLAME_ELEMENT_END
 
-	FLAME_ELEMENT_BEGIN_3(wText, Element, int, font_idx, i1, Bvec4, text_col, b4, float, sdf_scale, f1)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx);
+	FLAME_ELEMENT_BEGIN_3(wText, Element, int, font_atlas_index, i1, Bvec4, text_col, b4, float, sdf_scale, f1)
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index);
 		FLAME_UNIVERSE_EXPORTS void set_size_auto();
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_0(wButton, wText)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wToggle, wText, int, toggled, i1)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index);
 		FLAME_UNIVERSE_EXPORTS void set_toggle(bool v);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_0(wMenuItem, wText)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_5(wMenu, wLayout, bool, sub, i1, bool, opened, i1, wTextPtr, w_title, p, wTextPtr, w_rarrow, p, wLayoutPtr, w_items, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title, bool only_for_context_menu = false);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title, bool only_for_context_menu = false);
 		FLAME_UNIVERSE_EXPORTS void open();
 		FLAME_UNIVERSE_EXPORTS void popup(const Vec2& pos);
 		FLAME_UNIVERSE_EXPORTS void close();
@@ -629,7 +629,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_3(wCombo, wMenu, int, sel, i1, voidptr, enum_info, p, voidptr, target, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, void* enum_info = nullptr, void* target = nullptr);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, void* enum_info = nullptr, void* target = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
 	FLAME_ELEMENT_END
 
@@ -644,7 +644,7 @@ namespace flame
 			TypeFloat,
 			TypeUchar
 		};
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, Type type = TypeNull, void* target = nullptr);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, Type type = TypeNull, void* target = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_size_by_width(float width);
 	FLAME_ELEMENT_END
 
@@ -662,7 +662,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wListItem, wLayout, wTextPtr, w_title, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wList, wLayout, wListItemPtr, w_sel, p, wScrollbarPtr, w_scrollbar, p)
@@ -671,7 +671,7 @@ namespace flame
 
 	struct wTree;
 	FLAME_ELEMENT_BEGIN_3(wTreeNode, wLayout, wTextPtr, w_title, p, wLayoutPtr, w_items, p, wTextPtr, w_larrow, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* title, wTree* tree = nullptr);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title, wTree* tree = nullptr);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wTree, wLayout, wTreeNodePtr, w_sel, p)
@@ -683,7 +683,7 @@ namespace flame
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wMessageDialog, wDialog, wTextPtr, w_text, p, wButtonPtr, w_ok, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_idx, const wchar_t* text);
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* text);
 	FLAME_ELEMENT_END
 
 	//struct wYesNoDialog : wDialog

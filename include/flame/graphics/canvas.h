@@ -32,7 +32,7 @@ namespace flame
 		struct Imageview;
 		struct Swapchain;
 		struct Commandbuffer;
-		struct Font;
+		struct FontAtlas;
 
 		enum DrawCmdType
 		{
@@ -49,8 +49,8 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Imageview* get_imageview(int index);
 			FLAME_GRAPHICS_EXPORTS void set_imageview(int index, Imageview* v);
 
-			FLAME_GRAPHICS_EXPORTS int add_font(Font* font);
-			FLAME_GRAPHICS_EXPORTS Font* get_font(int idx);
+			FLAME_GRAPHICS_EXPORTS int add_font_atlas(FontAtlas* font_atlas);
+			FLAME_GRAPHICS_EXPORTS FontAtlas* get_font_atlas(int idx);
 
 			FLAME_GRAPHICS_EXPORTS void start_cmd(DrawCmdType type, int id);
 			FLAME_GRAPHICS_EXPORTS void path_line_to(const Vec2 &p);
@@ -62,7 +62,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void stroke_col2(const Bvec4 &inner_col, const Bvec4 &outter_col, float thickness, bool closed);
 			FLAME_GRAPHICS_EXPORTS void fill(const Bvec4 &col);
 
-			FLAME_GRAPHICS_EXPORTS void add_text(int font_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale = 1.f /* for sdf */);
+			FLAME_GRAPHICS_EXPORTS void add_text(int font_atlas_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale = 1.f /* for sdf */);
 			FLAME_GRAPHICS_EXPORTS void add_line(const Vec2 &p0, const Vec2 &p1, const Bvec4 &col, float thickness);
 			FLAME_GRAPHICS_EXPORTS void add_triangle_filled(const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Bvec4 &col);
 			FLAME_GRAPHICS_EXPORTS void add_rect(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float thickness, float round_radius = 0.f, int round_flags = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE);

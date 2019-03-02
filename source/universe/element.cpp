@@ -783,13 +783,13 @@ namespace flame
 		return new Element(ui);
 	}
 
-	void Element::create_from_typeinfo(UI * ui, int font_idx, VaribleInfo * info, void* p, Element * dst)
+	void Element::create_from_typeinfo(UI * ui, int font_atlas_index, VaribleInfo * info, void* p, Element * dst)
 	{
 		switch (info->tag())
 		{
 		case VariableTagEnumSingle:
 		{
-			auto c = createT<wCombo>(ui, font_idx, find_enum(info->type_hash()), (char*)p + info->offset());
+			auto c = createT<wCombo>(ui, font_atlas_index, find_enum(info->type_hash()), (char*)p + info->offset());
 			c->align$ = AlignLittleEnd;
 			dst->add_child(c, 0, -1, true);
 		}
@@ -809,7 +809,7 @@ namespace flame
 				break;
 			case cH("uint"):
 			{
-				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUint, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUint, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -818,7 +818,7 @@ namespace flame
 				break;
 			case cH("int"):
 			{
-				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -831,7 +831,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -845,7 +845,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -859,7 +859,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeInt, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -869,7 +869,7 @@ namespace flame
 				break;
 			case cH("float"):
 			{
-				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -882,7 +882,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -896,7 +896,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -910,7 +910,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -920,7 +920,7 @@ namespace flame
 				break;
 			case cH("uchar"):
 			{
-				auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, (char*)p + info->offset());
+				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, (char*)p + info->offset());
 				e->size_policy_hori$ = SizeFitLayout;
 				e->align$ = AlignLittleEnd;
 				e->set_size_by_width(10.f);
@@ -933,7 +933,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 2; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -947,7 +947,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 3; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -961,7 +961,7 @@ namespace flame
 
 				for (auto i_v = 0; i_v < 4; i_v++)
 				{
-					auto e = createT<wEdit>(ui, font_idx, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, &((*pp)[i_v]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -1081,17 +1081,17 @@ namespace flame
 		if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
 		{
 			auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
-			p.canvas()->add_text(thiz->font_idx(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v, thiz->sdf_scale() * p.scl());
+			p.canvas()->add_text(thiz->font_atlas_index(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v, thiz->sdf_scale() * p.scl());
 		}
 	}
 
-	void wText::init(int _font_idx)
+	void wText::init(int _font_atlas_index)
 	{
 		init_data_types();
 
 		event_attitude$ = EventIgnore;
 
-		font_idx() = _font_idx;
+		font_atlas_index() = _font_atlas_index;
 		text_col() = ui->default_text_col;
 		sdf_scale() = ui->default_sdf_scale;
 		text$ = L"";
@@ -1103,19 +1103,19 @@ namespace flame
 	{
 		Vec2 v(0.f);
 
-		if (font_idx() >= 0)
+		if (font_atlas_index() >= 0)
 		{
-			auto font = ui->canvas()->get_font(font_idx());
-			v = Vec2(font->get_text_width(text$.v), font->pixel_height()) * sdf_scale();
+			auto font_atlas = ui->canvas()->get_font_atlas(font_atlas_index());
+			v = Vec2(font_atlas->get_text_width(text$.v), font_atlas->pixel_height) * sdf_scale();
 		}
 		v.x += inner_padding$[0] + inner_padding$[1];
 		v.y += inner_padding$[2] + inner_padding$[3];
 		set_size(v);
 	}
 
-	void wButton::init(int font_idx, const wchar_t* title)
+	void wButton::init(int font_atlas_index, const wchar_t* title)
 	{
-		wText::init(font_idx);
+		wText::init(font_atlas_index);
 		init_data_types();
 
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
@@ -1139,13 +1139,13 @@ namespace flame
 		thiz->set_toggle(!thiz->toggled());
 	}
 
-	void wToggle::init(int font_idx)
+	void wToggle::init(int font_atlas_index)
 	{
-		wText::init(font_idx);
+		wText::init(font_atlas_index);
 		init_data_types();
 
 		background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
-		background_round_radius$ = font_idx >= 0 ? ui->canvas()->get_font(font_idx)->pixel_height() * 0.5f : 0.f;
+		background_round_radius$ = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.5f : 0.f;
 		background_offset$ = Vec4(background_round_radius$, 0.f, background_round_radius$, 0.f);
 		background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
 
@@ -1184,7 +1184,7 @@ namespace flame
 		title->inner_padding$[1] += title->size$.y * 0.6f;
 		title->set_size_auto();
 
-		auto rarrow = Element::createT<wText>(w->ui, title->font_idx());
+		auto rarrow = Element::createT<wText>(w->ui, title->font_atlas_index());
 
 		w->w_rarrow() = rarrow;
 		rarrow->align$ = AlignRightNoPadding;
@@ -1203,9 +1203,9 @@ namespace flame
 		thiz->ui->close_popup();
 	}
 
-	void wMenuItem::init(int font_idx, const wchar_t* title)
+	void wMenuItem::init(int font_atlas_index, const wchar_t* title)
 	{
-		wText::init(font_idx);
+		wText::init(font_atlas_index);
 		init_data_types();
 
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
@@ -1254,7 +1254,7 @@ namespace flame
 		}
 	}
 
-	void wMenu::init(int font_idx, const wchar_t* title, bool only_for_context_menu)
+	void wMenu::init(int font_atlas_index, const wchar_t* title, bool only_for_context_menu)
 	{
 		wLayout::init();
 		init_data_types();
@@ -1265,7 +1265,7 @@ namespace flame
 		sub() = 0;
 		opened() = 0;
 
-		w_title() = createT<wText>(ui, font_idx);
+		w_title() = createT<wText>(ui, font_atlas_index);
 		w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		w_title()->size_policy_hori$ = SizeGreedy;
 		w_title()->align$ = AlignLittleEnd;
@@ -1456,9 +1456,9 @@ namespace flame
 		}
 	}
 
-	void wCombo::init(int font_idx, void* _enum_info, void* _target)
+	void wCombo::init(int font_atlas_index, void* _enum_info, void* _target)
 	{
-		((wMenu*)this)->init(font_idx, L"");
+		((wMenu*)this)->init(font_atlas_index, L"");
 		init_data_types();
 
 		sel() = -1;
@@ -1479,7 +1479,7 @@ namespace flame
 			auto e = (EnumInfo*)enum_info();
 
 			for (auto i = 0; i < e->item_count(); i++)
-				w_items()->add_child(createT<wMenuItem>(ui, font_idx, s2w(e->item(i)->name()).c_str()));
+				w_items()->add_child(createT<wMenuItem>(ui, font_atlas_index, s2w(e->item(i)->name()).c_str()));
 		}
 
 		if (target())
@@ -1522,17 +1522,17 @@ namespace flame
 	void edit_extra_draw$(Element::ExtraDrawParm &p)
 	{
 		auto thiz = (wEditPtr)p.thiz();
-		auto font_idx = thiz->font_idx();
-		if (font_idx < 0)
+		auto font_atlas_index = thiz->font_atlas_index();
+		if (font_atlas_index < 0)
 			return;
 		auto ui = thiz->ui;
 		if (ui->key_focus_element() == thiz && int(ui->total_time() * 2) % 2 == 0)
 		{
-			auto font = ui->canvas()->get_font(font_idx);
-			auto len = font->get_text_width(thiz->text$.v, thiz->text$.v + thiz->cursor());
+			auto font_atlas = ui->canvas()->get_font_atlas(font_atlas_index);
+			auto len = font_atlas->get_text_width(thiz->text$.v, thiz->text$.v + thiz->cursor());
 			auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
 			auto scl = p.scl() * thiz->sdf_scale();
-			p.canvas()->add_text(font_idx, pos + Vec2(len - 1.f, 0.f) * scl, thiz->text_col(), L"|", scl);
+			p.canvas()->add_text(font_atlas_index, pos + Vec2(len - 1.f, 0.f) * scl, thiz->text_col(), L"|", scl);
 		}
 	}
 
@@ -1681,9 +1681,9 @@ namespace flame
 		}
 	}
 
-	void wEdit::init(int font_idx, Type _type, void* _target)
+	void wEdit::init(int font_atlas_index, Type _type, void* _target)
 	{
-		wText::init(font_idx);
+		wText::init(font_atlas_index);
 		init_data_types();
 
 		type() = _type;
@@ -1733,7 +1733,7 @@ namespace flame
 	void wEdit::set_size_by_width(float width)
 	{
 		set_size(Vec2(width + inner_padding$[0] + inner_padding$[1], 
-			(font_idx() >= 0 ? ui->canvas()->get_font(font_idx())->pixel_height() * sdf_scale() : 0.f) + inner_padding$[2] + inner_padding$[3]));
+			(font_atlas_index() >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index())->pixel_height * sdf_scale() : 0.f) + inner_padding$[2] + inner_padding$[3]));
 	}
 
 	void image_extra_draw$(Element::ExtraDrawParm& p)
@@ -1910,7 +1910,7 @@ namespace flame
 			listitem->parent->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
 	}
 
-	void wListItem::init(int font_idx, const wchar_t* title)
+	void wListItem::init(int font_atlas_index, const wchar_t* title)
 	{
 		wLayout::init();
 		init_data_types();
@@ -1919,7 +1919,7 @@ namespace flame
 		align$ = AlignLittleEnd;
 		layout_type$ = LayoutHorizontal;
 
-		w_title() = createT<wText>(ui, font_idx);
+		w_title() = createT<wText>(ui, font_atlas_index);
 		w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
 		w_title()->size_policy_hori$ = SizeFitLayout;
 		w_title()->align$ = AlignLittleEnd;
@@ -2040,7 +2040,7 @@ namespace flame
 		treenode->w_larrow()->text$ = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
 	}
 
-	void wTreeNode::init(int font_idx, const wchar_t* title, wTree * tree)
+	void wTreeNode::init(int font_atlas_index, const wchar_t* title, wTree * tree)
 	{
 		wLayout::init();
 		init_data_types();
@@ -2048,8 +2048,8 @@ namespace flame
 		layout_type$ = LayoutVertical;
 		align$ = AlignLittleEnd;
 
-		w_title() = createT<wText>(ui, font_idx);
-		w_title()->inner_padding$[0] = font_idx >= 0 ? ui->canvas()->get_font(font_idx)->pixel_height() * 0.8f : 0.f;
+		w_title() = createT<wText>(ui, font_atlas_index);
+		w_title()->inner_padding$[0] = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.8f : 0.f;
 		w_title()->inner_padding$ += Vec4(4.f, 4.f, 2.f, 2.f);
 		w_title()->align$ = AlignLittleEnd;
 		w_title()->event_attitude$ = EventAccept;
@@ -2069,7 +2069,7 @@ namespace flame
 		w_items()->visible$ = false;
 		add_child(w_items());
 
-		w_larrow() = createT<wText>(ui, font_idx);
+		w_larrow() = createT<wText>(ui, font_atlas_index);
 		w_larrow()->inner_padding$ = Vec4(4.f, 0.f, 4.f, 0.f);
 		w_larrow()->background_col$ = Bvec4(255, 255, 255, 0);
 		w_larrow()->align$ = AlignLeftTopNoPadding;
@@ -2157,7 +2157,7 @@ namespace flame
 		p.thiz()->remove_from_parent(true);
 	}
 
-	void wMessageDialog::init(int font_idx, const wchar_t* text)
+	void wMessageDialog::init(int font_atlas_index, const wchar_t* text)
 	{
 		((wDialog*)this)->init(false, true);
 		init_data_types();
@@ -2167,13 +2167,13 @@ namespace flame
 		layout_type$ = LayoutVertical;
 		item_padding$ = 8.f;
 
-		w_text() = createT<wText>(ui, font_idx);
+		w_text() = createT<wText>(ui, font_atlas_index);
 		w_text()->align$ = AlignLittleEnd;
 		w_text()->text$ = text;
 		w_text()->set_size_auto();
 		add_child(w_text());
 
-		w_ok() = createT<wButton>(ui, font_idx, L"OK");
+		w_ok() = createT<wButton>(ui, font_atlas_index, L"OK");
 		w_ok()->align$ = AlignMiddle;
 		w_ok()->mouse_listeners$.push_back(Function<MouseListenerParm>(message_dialog_ok_mouse_event$, {}));
 		add_child(w_ok());

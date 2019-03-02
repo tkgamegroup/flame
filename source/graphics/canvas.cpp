@@ -95,7 +95,7 @@ namespace flame
 			int current_image_view_index;
 			Imageview* image_views[MaxImageviewCount];
 
-			std::vector<std::tuple<Font*, bool, int>> fonts;
+			std::vector<std::tuple<FontAtlas*, bool, int>> font_atlases;
 
 			inline CanvasPrivate(Swapchain *_sc)
 			{
@@ -124,6 +124,7 @@ namespace flame
 
 			inline ~CanvasPrivate()
 			{
+				Descriptorset::destroy(ds);
 				Buffer::destroy(vtx_buffer);
 				Buffer::destroy(idx_buffer);
 				Commandbuffer::destroy(cb);
@@ -135,15 +136,15 @@ namespace flame
 				ds->set_imageview(0, index, v, device->sp_bi_linear);
 			}
 
-			inline int add_font(Font* font)
+			inline int add_font_atlas(FontAtlas* font_atlas)
 			{
 				auto image_idx = current_image_view_index++;
-				fonts.emplace_back(font, font->sdf(), (int)image_idx);
+				font_atlases.emplace_back(font_atlas, font_atlas->sdf, (int)image_idx);
 
-				auto view = Imageview::get(font->get_atlas());
+				auto view = Imageview::get(font_atlas->atlas());
 				set_imageview(image_idx, view);
 
-				return fonts.size() - 1;
+				return font_atlases.size() - 1;
 			}
 
 			inline void start_cmd(DrawCmdType type, int id)
@@ -354,14 +355,14 @@ namespace flame
 				}
 			}
 
-			inline void add_text(int font_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
+			inline void add_text(int font_atlas_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
 			{
-				if (text[0] == 0 || font_index >= fonts.size())
+				if (text[0] == 0 || font_atlas_index >= font_atlases.size())
 					return;
 
-				const auto& f = fonts[font_index];
-				auto font = std::get<0>(f);
-				auto pixel_height = font->pixel_height();
+				const auto& f = font_atlases[font_atlas_index];
+				auto font_atlas = std::get<0>(f);
+				auto pixel_height = font_atlas->pixel_height;
 				auto sdf = std::get<1>(f);
 				if (!sdf)
 					scale = 1.f;
@@ -382,7 +383,7 @@ namespace flame
 					}
 					else
 					{
-						auto g = font->get_glyph(*s);
+						auto g = font_atlas->get_glyph(*s);
 						auto size = Vec2(g->size) * scale;
 
 						auto p = _pos + Vec2(g->off) * scale;
@@ -602,14 +603,14 @@ namespace flame
 			((CanvasPrivate*)this)->set_imageview(index, v);
 		}
 
-		int Canvas::add_font(Font* font)
+		int Canvas::add_font_atlas(FontAtlas* font_atlas)
 		{
-			return ((CanvasPrivate*)this)->add_font(font);
+			return ((CanvasPrivate*)this)->add_font_atlas(font_atlas);
 		}
 
-		Font* Canvas::get_font(int idx)
+		FontAtlas* Canvas::get_font_atlas(int idx)
 		{
-			return std::get<0>(((CanvasPrivate*)this)->fonts[idx]);
+			return std::get<0>(((CanvasPrivate*)this)->font_atlases[idx]);
 		}
 
 		void Canvas::start_cmd(DrawCmdType type, int id)
@@ -761,31 +762,31 @@ namespace flame
 			pl_element_info.renderpass = renderpass;
 			pl_element = Pipeline::create(device, pl_element_info);
 
-			graphics::GraphicsPipelineInfo pl_info_text_lcd;
+			GraphicsPipelineInfo pl_info_text_lcd;
 			pl_info_text_lcd.shaders.resize(2);
 			pl_info_text_lcd.shaders[0].filename = L"2d/element.vert";
 			pl_info_text_lcd.shaders[1].filename = L"2d/text_lcd.frag";
 			pl_info_text_lcd.vi_buffers.push_back(vib);
-			pl_info_text_lcd.cull_mode = graphics::CullModeNone;
+			pl_info_text_lcd.cull_mode = CullModeNone;
 			pl_info_text_lcd.sample_count = sample_count;
-			pl_info_text_lcd.blend_states[0] = graphics::BlendInfo(
-				graphics::BlendFactorSrc1Color, graphics::BlendFactorOneMinusSrc1Color,
-				graphics::BlendFactorZero, graphics::BlendFactorZero);
+			pl_info_text_lcd.blend_states[0] = BlendInfo(
+				BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color,
+				BlendFactorZero, BlendFactorZero);
 			pl_info_text_lcd.renderpass = renderpass;
-			pl_text_lcd = graphics::Pipeline::create(d, pl_info_text_lcd);
+			pl_text_lcd = Pipeline::create(d, pl_info_text_lcd);
 
-			graphics::GraphicsPipelineInfo pl_info_text_sdf;
+			GraphicsPipelineInfo pl_info_text_sdf;
 			pl_info_text_sdf.shaders.resize(2);
 			pl_info_text_sdf.shaders[0].filename = L"2d/element.vert";
 			pl_info_text_sdf.shaders[1].filename = L"2d/text_sdf.frag";
 			pl_info_text_sdf.vi_buffers.push_back(vib);
-			pl_info_text_sdf.cull_mode = graphics::CullModeNone;
+			pl_info_text_sdf.cull_mode = CullModeNone;
 			pl_info_text_sdf.sample_count = sample_count;
-			pl_info_text_sdf.blend_states[0] = graphics::BlendInfo(
-				graphics::BlendFactorSrcAlpha, graphics::BlendFactorOneMinusSrcAlpha,
-				graphics::BlendFactorZero, graphics::BlendFactorOneMinusSrcAlpha);
+			pl_info_text_sdf.blend_states[0] = BlendInfo(
+				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
+				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
 			pl_info_text_sdf.renderpass = renderpass;
-			pl_text_sdf = graphics::Pipeline::create(d, pl_info_text_sdf);
+			pl_text_sdf = Pipeline::create(d, pl_info_text_sdf);
 
 			for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
 			{
@@ -793,44 +794,14 @@ namespace flame
 				circle_subdiv[i].y = sin(rad);
 				circle_subdiv[i].x = cos(rad);
 			}
-
-			//wchar_t default_code_begin;
-			//wchar_t default_code_end;
-			//get_default_char_range(default_code_begin, default_code_end);
-
-			//std::vector<FontDescription> descs;
-			//descs.resize(2);
-
-			//descs[0].filename = L"c:/windows/fonts/msyh.ttc";
-			//descs[0].ranges.emplace_back(default_code_begin, default_code_end, true);
-			//descs[0].ranges.emplace_back(0x4e00, 0x9FAF, false);
-
-			//descs[1].filename = L"UI/font_awesome.ttf";
-			//descs[1].ranges.emplace_back(IconMin, IconMax, true);
-
-			//font_atlas = FontAtlas::create(descs, 14, 2.f);
 		}
 
 		void Canvas::deinitialize()
 		{
-			//FontAtlas::destroy(font_atlas);
-
-			//graphics::Renderpass::release(renderpass);
-			//graphics::Renderpass::release(renderpass_noclear);
-
-			//graphics::Image::destroy(white_image);
-			//graphics::Image::destroy(font_stroke_image);
-			//if (font_sdf_image)
-			//	graphics::Image::destroy(font_sdf_image);
-
-			//graphics::Pipeline::destroy(pl_plain);
-			//graphics::Descriptorset::destroy(ds_plain);
-
-			//graphics::Pipeline::destroy(pl_text_stroke);
-			//graphics::Descriptorset::destroy(ds_text_stroke);
-
-			//graphics::Pipeline::destroy(pl_text_sdf);
-			//graphics::Descriptorset::destroy(ds_text_sdf);
+			Image::destroy(white_image);
+			Pipeline::destroy(pl_element);
+			Pipeline::destroy(pl_text_lcd);
+			Pipeline::destroy(pl_text_sdf);
 		}
 
 		Canvas *Canvas::create(Swapchain *sc)

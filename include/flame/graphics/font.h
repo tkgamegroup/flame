@@ -43,18 +43,27 @@ namespace flame
 
 		struct Font
 		{
-			FLAME_GRAPHICS_EXPORTS int pixel_height() const;
-			FLAME_GRAPHICS_EXPORTS int max_width() const;
-			FLAME_GRAPHICS_EXPORTS int ascender() const;
-			FLAME_GRAPHICS_EXPORTS bool sdf() const;
-				
-			FLAME_GRAPHICS_EXPORTS const Glyph *get_glyph(wchar_t unicode);
-			FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t *text_beg, const wchar_t *text_end = nullptr);
+			int pixel_height;
+			int max_width;
+			int ascender;
 
-			FLAME_GRAPHICS_EXPORTS Image *get_atlas() const;
-
-			FLAME_GRAPHICS_EXPORTS static Font *create(Device *d, const wchar_t *filename, int pixel_height, bool sdf = false);
+			FLAME_GRAPHICS_EXPORTS static Font *create(const wchar_t *filename, int pixel_height);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Font *f);
+		};
+
+		struct FontAtlas
+		{
+			bool sdf;
+			int pixel_height;
+			int max_width;
+
+			FLAME_GRAPHICS_EXPORTS const Glyph* get_glyph(wchar_t unicode);
+			FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t* text_beg, const wchar_t* text_end = nullptr);
+
+			FLAME_GRAPHICS_EXPORTS Image* atlas() const;
+
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, int pixel_height, bool sdf, const std::vector<Font*> &fonts);
+			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}
 }
