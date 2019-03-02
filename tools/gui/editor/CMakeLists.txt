@@ -9,9 +9,6 @@ target_link_libraries(editor flame_engine)
 set_target_properties(editor PROPERTIES FOLDER "tools/editor") 
 set_target_properties(editor PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
-
-set_output_dir("${CMAKE_SOURCE_DIR}/bin/ui/windows")
-
 file(GLOB_RECURSE EDITOR_WINDOWS_SOURCE_LIST "windows/*.c*")
 
 foreach(f ${EDITOR_WINDOWS_SOURCE_LIST})
