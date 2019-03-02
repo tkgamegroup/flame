@@ -64,14 +64,13 @@ namespace flame
 		void set_popup_element(Element* w, bool modual = false);
 		void close_popup();
 
-		void begin(float elp_time);
+		void step(float elp_time, const Vec2& show_off = Vec2(0.f));
 		void preprocessing_children(void* __p, Element* w, const Array<Element*>& children, const Vec2& off, float scl);
 		void preprocessing(void* __p, Element* w, bool visible, const Vec2& off, float scl);
 		void show_children(void* __p, Element* w, const Array<Element*>& children, bool visible, const Vec2& off, float scl);
 		void show(void* __p, Element* w, bool visible, const Vec2& off, float scl);
 		void postprocessing_children(const Array<Element*>& children);
 		void postprocessing(Element* w);
-		void end(const Vec2& show_off = Vec2(0.f));
 	};
 
 	typedef UIPrivate* UIPrivatePtr;

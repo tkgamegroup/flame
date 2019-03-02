@@ -129,8 +129,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_popup_element(Element * w, bool modual = false);
 		FLAME_UNIVERSE_EXPORTS void close_popup();
 
-		FLAME_UNIVERSE_EXPORTS void begin(float elp_time);
-		FLAME_UNIVERSE_EXPORTS void end(const Vec2 & show_off = Vec2(0.f));
+		FLAME_UNIVERSE_EXPORTS void step(float elp_time, const Vec2& show_off = Vec2(0.f));
 
 		FLAME_UNIVERSE_EXPORTS float total_time() const;
 

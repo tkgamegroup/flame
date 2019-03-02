@@ -223,8 +223,7 @@ struct UIApp : BasicApp
 		t_fps->text$ = L"FPS:" + std::to_wstring(app->fps);
 		t_fps->set_size_auto();
 
-		ui->begin(app->elapsed_time);
-		ui->end();
+		ui->step(app->elapsed_time);
 
 		canvas->record_cb();
 

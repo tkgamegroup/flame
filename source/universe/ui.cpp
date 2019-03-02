@@ -275,13 +275,121 @@ namespace flame
 		}
 	}
 
-	inline void UIPrivate::begin(float elp_time)
+	inline void UIPrivate::step(float elp_time, const Vec2& show_off)
 	{
 		processed_mouse_input = false;
 		processed_keyboard_input = false;
 
 		elp_time_ = elp_time;
 		total_time_ += elp_time;
+
+		mouse_disp = mouse_pos - mouse_prev_pos_;
+
+		_Package p;
+		p.mpos = Vec2(mouse_pos);
+		p.mljustdown = just_down_M(0);
+		p.mljustup = just_up_M(0);
+		p.mrjustdown = just_down_M(1);
+		p.mscroll = mouse_scroll;
+		p.mdisp = mouse_disp;
+		p.temp_dragging_element = dragging_element_;
+
+		if (dragging_element_)
+		{
+			if (!dragging_element_->visible$ || !pressing_M(0))
+				dragging_element_ = nullptr;
+			else if (dragging_element_->event_attitude$ != EventIgnore)
+			{
+				dragging_element_->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
+				p.mdisp = Ivec2(0);
+			}
+		}
+
+		if (focus_element_)
+		{
+			if (!focus_element_->visible$)
+				focus_element_ = nullptr;
+		}
+		if (key_focus_element_)
+		{
+			if (!key_focus_element_->visible$)
+				key_focus_element_ = nullptr;
+			else if (key_focus_element_->event_attitude$ != EventIgnore)
+			{
+				for (auto& code : keydown_inputs_)
+					key_focus_element_->on_key(KeyStateDown, code);
+				for (auto& code : keyup_inputs_)
+					key_focus_element_->on_key(KeyStateUp, code);
+				for (auto& ch : char_inputs_)
+					key_focus_element_->on_key(KeyStateNull, ch);
+			}
+		}
+		keydown_inputs_.clear();
+		keyup_inputs_.clear();
+		char_inputs_.clear();
+
+		if (p.mljustdown)
+		{
+			set_key_focus_element(nullptr);
+			set_focus_element(nullptr);
+		}
+
+		p.surface_size = root_->size$;
+		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+		p.hovering_any_element = false;
+		p.clicking_nothing = p.mljustdown;
+		p.popup_off = popup_element_ ? popup_element_->pos$ : Vec2(0.f);
+		p.popup_scl = 1.f;
+		p.meet_popup_first = true;
+		p.ban_event = popup_element_;
+		p.show_off = show_off;
+
+		preprocessing(&p, root_.get(), true, Vec2(0.f), 1.f);
+		p.ban_event = false;
+		if (popup_element_)
+			preprocessing(&p, popup_element_, true, p.popup_off, p.popup_scl);
+		if (!p.hovering_any_element)
+			set_hovering_element(nullptr);
+		if (p.clicking_nothing && popup_element_)
+			close_popup();
+
+		if (dragging_element_)
+		{
+			if (!dragging_element_->visible$ || !pressing_M(0))
+				dragging_element_ = nullptr;
+		}
+
+		if (potential_doubleclick_element_)
+		{
+			doubleclick_timer_ += elp_time_;
+			if (doubleclick_timer_ > 0.5f)
+			{
+				potential_doubleclick_element_ = nullptr;
+				doubleclick_timer_ = 0.f;
+			}
+		}
+
+		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
+
+		p.meet_popup_first = true;
+		show(&p, root_.get(), true, Vec2(0.f), 1.f);
+		if (popup_element_)
+		{
+			if (popup_element_modual_)
+				canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
+			show(&p, popup_element_, true, p.popup_off, p.popup_scl);
+		}
+
+		postprocessing(root_.get());
+
+		for (int i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
+			key_states[i] &= ~KeyStateJust;
+
+		for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
+			mouse_buttons[i] &= ~KeyStateJust;
+
+		mouse_prev_pos_ = mouse_pos;
+		mouse_scroll = 0;
 	}
 
 	struct _Package
@@ -541,117 +649,6 @@ namespace flame
 		}
 	}
 
-	inline void UIPrivate::end(const Vec2 & show_off)
-	{
-		mouse_disp = mouse_pos - mouse_prev_pos_;
-
-		_Package p;
-		p.mpos = Vec2(mouse_pos);
-		p.mljustdown = just_down_M(0);
-		p.mljustup = just_up_M(0);
-		p.mrjustdown = just_down_M(1);
-		p.mscroll = mouse_scroll;
-		p.mdisp = mouse_disp;
-		p.temp_dragging_element = dragging_element_;
-
-		if (dragging_element_)
-		{
-			if (!dragging_element_->visible$ || !pressing_M(0))
-				dragging_element_ = nullptr;
-			else if (dragging_element_->event_attitude$ != EventIgnore)
-			{
-				dragging_element_->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
-				p.mdisp = Ivec2(0);
-			}
-		}
-
-		if (focus_element_)
-		{
-			if (!focus_element_->visible$)
-				focus_element_ = nullptr;
-		}
-		if (key_focus_element_)
-		{
-			if (!key_focus_element_->visible$)
-				key_focus_element_ = nullptr;
-			else if (key_focus_element_->event_attitude$ != EventIgnore)
-			{
-				for (auto& code : keydown_inputs_)
-					key_focus_element_->on_key(KeyStateDown, code);
-				for (auto& code : keyup_inputs_)
-					key_focus_element_->on_key(KeyStateUp, code);
-				for (auto& ch : char_inputs_)
-					key_focus_element_->on_key(KeyStateNull, ch);
-			}
-		}
-		keydown_inputs_.clear();
-		keyup_inputs_.clear();
-		char_inputs_.clear();
-
-		if (p.mljustdown)
-		{
-			set_key_focus_element(nullptr);
-			set_focus_element(nullptr);
-		}
-
-		p.surface_size = root_->size$;
-		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-		p.hovering_any_element = false;
-		p.clicking_nothing = p.mljustdown;
-		p.popup_off = popup_element_ ? popup_element_->pos$ : Vec2(0.f);
-		p.popup_scl = 1.f;
-		p.meet_popup_first = true;
-		p.ban_event = popup_element_;
-		p.show_off = show_off;
-
-		preprocessing(&p, root_.get(), true, Vec2(0.f), 1.f);
-		p.ban_event = false;
-		if (popup_element_)
-			preprocessing(&p, popup_element_, true, p.popup_off, p.popup_scl);
-		if (!p.hovering_any_element)
-			set_hovering_element(nullptr);
-		if (p.clicking_nothing&& popup_element_)
-			close_popup();
-
-		if (dragging_element_)
-		{
-			if (!dragging_element_->visible$ || !pressing_M(0))
-				dragging_element_ = nullptr;
-		}
-
-		if (potential_doubleclick_element_)
-		{
-			doubleclick_timer_ += elp_time_;
-			if (doubleclick_timer_ > 0.5f)
-			{
-				potential_doubleclick_element_ = nullptr;
-				doubleclick_timer_ = 0.f;
-			}
-		}
-
-		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-
-		p.meet_popup_first = true;
-		show(&p, root_.get(), true, Vec2(0.f), 1.f);
-		if (popup_element_)
-		{
-			if (popup_element_modual_)
-				canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
-			show(&p, popup_element_, true, p.popup_off, p.popup_scl);
-		}
-
-		postprocessing(root_.get());
-
-		for (int i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
-			key_states[i] &= ~KeyStateJust;
-
-		for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
-			mouse_buttons[i] &= ~KeyStateJust;
-
-		mouse_prev_pos_ = mouse_pos;
-		mouse_scroll = 0;
-	}
-
 	//void Drawlist::draw_grid(const Vec2 &wnd_off, const Vec2 &off, const Vec2 &size)
 	//{
 	//	for (auto i = mod((int)off.x, 100); i.y < size.x; i.y += 100, i.x--)
@@ -760,14 +757,9 @@ namespace flame
 		((UIPrivate*)this)->close_popup();
 	}
 
-	void UI::begin(float elp_time)
+	void UI::step(float elp_time, const Vec2& show_off)
 	{
-		((UIPrivate*)this)->begin(elp_time);
-	}
-
-	void UI::end(const Vec2 & show_off)
-	{
-		((UIPrivate*)this)->end(show_off);
+		((UIPrivate*)this)->step(elp_time, show_off);
 	}
 
 	float UI::total_time() const
