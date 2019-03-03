@@ -1760,62 +1760,6 @@ namespace flame
 		extra_draws$.push_back(Function<ExtraDrawParm>(image_extra_draw$, {}));
 	}
 
-	void sizedrag_extra_draw$(Element::ExtraDrawParm& p)
-	{
-		auto thiz = (wSizeDragPtr)p.thiz();
-		p.canvas()->add_triangle_filled(
-			(thiz->pos$ + Vec2(thiz->size$.x, 0.f)) * p.scl() + p.off(),
-			(thiz->pos$ + Vec2(0.f, thiz->size$.y)) * p.scl() + p.off(),
-			(thiz->pos$ + Vec2(thiz->size$)) * p.scl() + p.off(),
-			thiz->background_col$);
-	}
-
-	void sizedrag_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_move())
-			return;
-
-		auto thiz = (wSizeDragPtr)p.thiz();
-		if (thiz == thiz->ui->dragging_element())
-		{
-			auto target = thiz->w_target();
-			auto changed = false;
-			auto d = p.value() / thiz->parent->scale$;
-			auto new_size = target->size$;
-
-			if (new_size.x + d.x > thiz->min_size().x)
-			{
-				new_size.x += d.x;
-				changed = true;
-			}
-			if (new_size.y + d.y > thiz->min_size().y)
-			{
-				new_size.y += d.y;
-				changed = true;
-			}
-
-			if (changed)
-				target->set_size(new_size);
-		}
-	}
-
-	void wSizeDrag::init(Element * target)
-	{
-		init_data_types();
-
-		w_target() = target;
-		min_size() = Vec2(0.f);
-
-		size$ = Vec2(10.f);
-		background_col$ = Bvec4(140, 225, 15, 255 * 0.5f);
-		align$ = AlignRightBottomNoPadding;
-
-		draw_default$ = false;
-		extra_draws$.push_back(Function<ExtraDrawParm>(sizedrag_extra_draw$, {}));
-		styles$.push_back(Style(0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active)));
-		mouse_listeners$.push_back(Function<MouseListenerParm>(sizedrag_mouse_event$, {}));
-	}
-
 	void scrollbar_btn_mouse_event$(Element::MouseListenerParm& p)
 	{
 		if (p.action() != KeyStateNull)
@@ -1898,6 +1842,106 @@ namespace flame
 	{
 		w_target()->scroll_offset$ += v * 20.f;
 		w_target()->need_arrange = true;
+	}
+
+	void sizedrag_extra_draw$(Element::ExtraDrawParm& p)
+	{
+		auto thiz = (wSizeDragPtr)p.thiz();
+		p.canvas()->add_triangle_filled(
+			(thiz->pos$ + Vec2(thiz->size$.x, 0.f)) * p.scl() + p.off(),
+			(thiz->pos$ + Vec2(0.f, thiz->size$.y)) * p.scl() + p.off(),
+			(thiz->pos$ + Vec2(thiz->size$)) * p.scl() + p.off(),
+			thiz->background_col$);
+	}
+
+	void sizedrag_mouse_event$(Element::MouseListenerParm & p)
+	{
+		if (!p.is_move())
+			return;
+
+		auto thiz = (wSizeDragPtr)p.thiz();
+		if (thiz == thiz->ui->dragging_element())
+		{
+			auto changed = false;
+			auto target = thiz->w_target();
+			auto d = p.value() / thiz->parent->scale$;
+			auto new_size = target->size$;
+
+			if (new_size.x + d.x > thiz->min_size().x)
+			{
+				new_size.x += d.x;
+				changed = true;
+			}
+			if (new_size.y + d.y > thiz->min_size().y)
+			{
+				new_size.y += d.y;
+				changed = true;
+			}
+
+			if (changed)
+				target->set_size(new_size);
+		}
+	}
+
+	void wSizeDrag::init(Element * target)
+	{
+		init_data_types();
+
+		w_target() = target;
+		min_size() = Vec2(0.f);
+
+		size$ = Vec2(10.f);
+		background_col$ = Bvec4(140, 225, 15, 128);
+		align$ = AlignRightBottomNoPadding;
+
+		draw_default$ = false;
+		extra_draws$.push_back(Function<ExtraDrawParm>(sizedrag_extra_draw$, {}));
+		styles$.push_back(Style(0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active)));
+		mouse_listeners$.push_back(Function<MouseListenerParm>(sizedrag_mouse_event$, {}));
+	}
+
+	void splitter_mouse_event$(Element::MouseListenerParm& p)
+	{
+		if (!p.is_move())
+			return;
+
+		auto thiz = (wSplitterPtr)p.thiz();
+		if (thiz == thiz->ui->dragging_element())
+		{
+			auto target1 = thiz->w_target1();
+			auto target2 = thiz->w_target2();
+			auto d = p.value() / thiz->parent->scale$;
+			if (thiz->dir() == 0)
+			{
+				target1->set_width(target1->size$.x + d.x);
+				target2->set_width(target2->size$.x - d.x);
+			}
+			else
+			{
+				target1->set_height(target1->size$.y + d.y);
+				target2->set_height(target2->size$.y - d.y);
+			}
+		}
+	}
+
+	void wSplitter::init(int _dir, Element* target1, Element* target2)
+	{
+		init_data_types();
+
+		dir() = _dir;
+		w_target1() = target1;
+		w_target2() = target2;
+
+		size$ = Vec2(10.f);
+		background_col$ = Bvec4(255, 225, 255, 255);
+		align$ = AlignLittleEnd;
+
+		if (dir() == 0)
+			size_policy_vert$ = SizeFitLayout;
+		else
+			size_policy_hori$ = SizeFitLayout;
+
+		mouse_listeners$.push_back(Function<MouseListenerParm>(splitter_mouse_event$, {}));
 	}
 
 	void listitem_title_mouse_event$(Element::MouseListenerParm &p)
@@ -2124,7 +2168,6 @@ namespace flame
 		background_offset$[1] = 0.f;
 		background_round_radius$ = radius;
 		background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
-		background_shaow_thickness$ = 8.f;
 
 		mouse_listeners$.push_back(Function<MouseListenerParm>(dialog_mouse_event$, {}));
 

@@ -652,13 +652,17 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void init();
 	FLAME_ELEMENT_END
 
+	FLAME_ELEMENT_BEGIN_2(wScrollbar, wLayout, wButtonPtr, w_btn, p, ElementPtr, w_target, p)
+		FLAME_UNIVERSE_EXPORTS void init(Element* target);
+		FLAME_UNIVERSE_EXPORTS void scroll(int v);
+	FLAME_ELEMENT_END
+
 	FLAME_ELEMENT_BEGIN_2(wSizeDrag, Element, ElementPtr, w_target, p, Vec2, min_size, f2)
 		FLAME_UNIVERSE_EXPORTS void init(Element* target);
 	FLAME_ELEMENT_END
 
-	FLAME_ELEMENT_BEGIN_2(wScrollbar, wLayout, wButtonPtr, w_btn, p, ElementPtr, w_target, p)
-		FLAME_UNIVERSE_EXPORTS void init(Element* target);
-		FLAME_UNIVERSE_EXPORTS void scroll(int v);
+	FLAME_ELEMENT_BEGIN_3(wSplitter, Element, int, dir /* 0, else = hori, vert */, i1, ElementPtr, w_target1, p, ElementPtr, w_target2, p)
+		FLAME_UNIVERSE_EXPORTS void init(int dir, Element* target1, Element* target2);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wListItem, wLayout, wTextPtr, w_title, p)
@@ -727,4 +731,24 @@ namespace flame
 
 	//	FLAME_UNIVERSE_EXPORTS void set_path(const wchar_t *path);
 	//};
+
+	FLAME_ELEMENT_BEGIN_0(wDocker, wDialog)
+		enum Dir
+		{
+			DirCenter = 1 << 0,
+			DirLeft = 1 << 1,
+			DirRight = 1 << 2,
+			DirTop = 1 << 3,
+			DirBottom = 1 << 4,
+			DirAll = DirCenter | DirLeft | DirRight | DirTop | DirBottom
+		};
+
+		enum Type
+		{
+			TypeCenter,
+			TypeHorizontal,
+			TypeVertical
+		};
+		FLAME_UNIVERSE_EXPORTS void init();
+	FLAME_ELEMENT_END
 }

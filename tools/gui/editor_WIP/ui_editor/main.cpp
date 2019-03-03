@@ -22,12 +22,6 @@
 
 #include <flame/serialize.h>
 #include <flame/ui/icon.h>
-#include <flame/ui/style.h>
-
-#include <flame/basic_app.h>
-
-using namespace flame;
-using namespace ui;
 
 BasicApp app;
 UDT *widget_info;
