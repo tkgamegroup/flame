@@ -623,6 +623,8 @@ namespace flame
 		// else, means data is an array, and use item_index to index the item
 	};
 
+	typedef VaribleInfo* VaribleInfoPtr;
+
 	struct UdtInfo
 	{
 		FLAME_FOUNDATION_EXPORTS const char *name() const;

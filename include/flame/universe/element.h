@@ -633,18 +633,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
 	FLAME_ELEMENT_END
 
-	FLAME_ELEMENT_BEGIN_3(wEdit, wText, int, cursor, i1, int, type, i1, voidptr, target, p)
-		enum Type
-		{
-			TypeNull,
-			TypeString,
-			TypeStringW,
-			TypeInt,
-			TypeUint,
-			TypeFloat,
-			TypeUchar
-		};
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, Type type = TypeNull, void* target = nullptr);
+	FLAME_ELEMENT_BEGIN_3(wEdit, wText, int, cursor, i1, VaribleInfoPtr, info, p, voidptr, target, p)
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, VaribleInfo* info = nullptr, void* target = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_size_by_width(float width);
 	FLAME_ELEMENT_END
 
@@ -732,7 +722,7 @@ namespace flame
 	//	FLAME_UNIVERSE_EXPORTS void set_path(const wchar_t *path);
 	//};
 
-	FLAME_ELEMENT_BEGIN_0(wDocker, wDialog)
+	FLAME_ELEMENT_BEGIN_0(wDocker, Element)
 		enum Dir
 		{
 			DirCenter = 1 << 0,
@@ -749,6 +739,7 @@ namespace flame
 			TypeHorizontal,
 			TypeVertical
 		};
+
 		FLAME_UNIVERSE_EXPORTS void init();
 	FLAME_ELEMENT_END
 }

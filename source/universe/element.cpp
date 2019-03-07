@@ -808,109 +808,21 @@ namespace flame
 			}
 				break;
 			case cH("uint"):
-			{
-				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUint, (char*)p + info->offset());
-				e->size_policy_hori$ = SizeFitLayout;
-				e->align$ = AlignLittleEnd;
-				e->set_size_by_width(10.f);
-				dst->add_child(e, 0, -1, true);
-			}
-				break;
 			case cH("int"):
-			{
-				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, (char*)p + info->offset());
-				e->size_policy_hori$ = SizeFitLayout;
-				e->align$ = AlignLittleEnd;
-				e->set_size_by_width(10.f);
-				dst->add_child(e, 0, -1, true);
-			}
-				break;
 			case cH("Ivec2"):
-			{
-				auto pp = (Ivec2*)((char*)p + info->offset());
-
-				for (auto i_v = 0; i_v < 2; i_v++)
-				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, &((*pp)[i_v]));
-					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
-					e->set_size_by_width(10.f);
-					dst->add_child(e, 0, -1, true);
-				}
-			}
-				break;
 			case cH("Ivec3"):
-			{
-				auto pp = (Ivec3*)((char*)p + info->offset());
-
-				for (auto i_v = 0; i_v < 3; i_v++)
-				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, &((*pp)[i_v]));
-					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
-					e->set_size_by_width(10.f);
-					dst->add_child(e, 0, -1, true);
-				}
-			}
-				break;
 			case cH("Ivec4"):
-			{
-				auto pp = (Ivec4*)((char*)p + info->offset());
-
-				for (auto i_v = 0; i_v < 4; i_v++)
-				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeInt, &((*pp)[i_v]));
-					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
-					e->set_size_by_width(10.f);
-					dst->add_child(e, 0, -1, true);
-				}
-			}
-				break;
 			case cH("float"):
-			{
-				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, (char*)p + info->offset());
-				e->size_policy_hori$ = SizeFitLayout;
-				e->align$ = AlignLittleEnd;
-				e->set_size_by_width(10.f);
-				dst->add_child(e, 0, -1, true);
-			}
-				break;
 			case cH("Vec2"):
-			{
-				auto pp = (Vec2*)((char*)p + info->offset());
-
-				for (auto i_v = 0; i_v < 2; i_v++)
-				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, &((*pp)[i_v]));
-					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
-					e->set_size_by_width(10.f);
-					dst->add_child(e, 0, -1, true);
-				}
-			}
-				break;
 			case cH("Vec3"):
-			{
-				auto pp = (Vec3*)((char*)p + info->offset());
-
-				for (auto i_v = 0; i_v < 3; i_v++)
-				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, &((*pp)[i_v]));
-					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
-					e->set_size_by_width(10.f);
-					dst->add_child(e, 0, -1, true);
-				}
-			}
-				break;
 			case cH("Vec4"):
 			{
-				auto pp = (Vec4*)((char*)p + info->offset());
+				auto pp = (Ivec2*)((char*)p + info->offset());
+				auto count = info->size() / 4;
 
-				for (auto i_v = 0; i_v < 4; i_v++)
+				for (auto i = 0; i < count; i++)
 				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeFloat, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, info, &((*pp)[i]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -919,49 +831,16 @@ namespace flame
 			}
 				break;
 			case cH("uchar"):
-			{
-				auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, (char*)p + info->offset());
-				e->size_policy_hori$ = SizeFitLayout;
-				e->align$ = AlignLittleEnd;
-				e->set_size_by_width(10.f);
-				dst->add_child(e, 0, -1, true);
-			}
-				break;
 			case cH("Bvec2"):
-			{
-				auto pp = (Bvec2*)((char*)p + info->offset());
-
-				for (auto i_v = 0; i_v < 2; i_v++)
-				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, &((*pp)[i_v]));
-					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
-					e->set_size_by_width(10.f);
-					dst->add_child(e, 0, -1, true);
-				}
-			}
-				break;
 			case cH("Bvec3"):
-			{
-				auto pp = (Bvec3*)((char*)p + info->offset());
-
-				for (auto i_v = 0; i_v < 3; i_v++)
-				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, &((*pp)[i_v]));
-					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
-					e->set_size_by_width(10.f);
-					dst->add_child(e, 0, -1, true);
-				}
-			}
-				break;
 			case cH("Bvec4"):
 			{
-				auto pp = (Bvec4*)((char*)p + info->offset());
+				auto pp = (Ivec2*)((char*)p + info->offset());
+				auto count = info->size();
 
-				for (auto i_v = 0; i_v < 4; i_v++)
+				for (auto i = 0; i < count; i++)
 				{
-					auto e = createT<wEdit>(ui, font_atlas_index, wEdit::TypeUchar, &((*pp)[i_v]));
+					auto e = createT<wEdit>(ui, font_atlas_index, info, &((*pp)[i]));
 					e->size_policy_hori$ = SizeFitLayout;
 					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
@@ -1541,11 +1420,14 @@ namespace flame
 		auto thiz = (wEditPtr)p.thiz();
 		if (p.action() == KeyStateNull)
 		{
-			if (thiz->type() != wEdit::TypeNull && p.value() != '\b' && p.value() != 22 && p.value() != 27)
+			if (thiz->info() && p.value() != '\b' && p.value() != 22 && p.value() != 27)
 			{
-				switch (thiz->type())
+				switch (thiz->info()->type_hash())
 				{
-				case wEdit::TypeInt:
+				case cH("int"):
+				case cH("Ivec2"):
+				case cH("Ivec3"):
+				case cH("Ivec4"):
 					if (p.value() == L'-')
 					{
 						if (thiz->cursor() != 0 || thiz->text$.v[0] == L'-')
@@ -1554,11 +1436,18 @@ namespace flame
 					if (p.value() < '0' || p.value() > '9')
 						return;
 					break;
-				case wEdit::TypeUint: case wEdit::TypeUchar:
+				case cH("uint"):
+				case cH("uchar"):
+				case cH("Bvec2"):
+				case cH("Bvec3"):
+				case cH("Bvec4"):
 					if (p.value() < '0' || p.value() > '9')
 						return;
 					break;
-				case wEdit::TypeFloat:
+				case cH("float"):
+				case cH("Vec2"):
+				case cH("Vec3"):
+				case cH("Vec4"):
 					if (p.value() == L'.')
 					{
 						if (thiz->text$.find(L'.') != -1)
@@ -1639,54 +1528,60 @@ namespace flame
 				thiz->cursor() = thiz->text$.size;
 			break;
 		case Focus_Lost:
-			if (((wEdit*)p.thiz())->target())
+			if (thiz->info() && thiz->target())
 			{
-				switch (((wEdit*)p.thiz())->type())
+				switch (thiz->info()->type_hash())
 				{
-				case wEdit::TypeInt:
+				case cH("uint"):
+				{
+					auto v = (uint*)(thiz->target());
+					*v = stoi1(thiz->text$.v);
+					thiz->text$ = to_wstring(*v);
+				}
+					break;
+				case cH("int"):
+				case cH("Ivec2"):
+				case cH("Ivec3"):
+				case cH("Ivec4"):
 				{
 					auto v = (int*)(thiz->target());
 					*v = stoi1(thiz->text$.v);
 					thiz->text$ = to_wstring(*v);
-					thiz->cursor() = 0;
 				}
 					break;
-				case wEdit::TypeUint:
-				{
-					auto v = (uint*)(thiz->target());
-					*v = stou1(thiz->text$.v);
-					thiz->text$ = to_wstring(*v);
-					thiz->cursor() = 0;
-				}
-					break;
-				case wEdit::TypeFloat:
+				case cH("float"):
+				case cH("Vec2"):
+				case cH("Vec3"):
+				case cH("Vec4"):
 				{
 					auto v = (float*)(thiz->target());
 					*v = stof1(thiz->text$.v);
 					thiz->text$ = to_wstring(*v);
-					thiz->cursor() = 0;
 				}
 					break;
-				case wEdit::TypeUchar:
+				case cH("uchar"):
+				case cH("Bvec2"):
+				case cH("Bvec3"):
+				case cH("Bvec4"):
 				{
 					auto v = (uchar*)(thiz->target());
 					*v = stob1(thiz->text$.v);
 					thiz->text$ = to_wstring(*v);
-					thiz->cursor() = 0;
 				}
 					break;
 				}
+				thiz->cursor() = 0;
 			}
 			break;
 		}
 	}
 
-	void wEdit::init(int font_atlas_index, Type _type, void* _target)
+	void wEdit::init(int font_atlas_index, VaribleInfo* _info, void* _target)
 	{
 		wText::init(font_atlas_index);
 		init_data_types();
 
-		type() = _type;
+		info() = _info;
 		target() = _target;
 
 		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
@@ -1698,29 +1593,38 @@ namespace flame
 		key_listeners$.push_back(Function<KeyListenerParm>(edit_key_event$, {}));
 		focus_listeners$.push_back(Function<FoucusListenerParm>(edit_focus_event$, {}));
 
-		if (type() != TypeNull && target())
+		if (info() && target())
 		{
-			switch (type())
+			switch (info()->type_hash())
 			{
-			case wEdit::TypeInt:
-			{
-				auto p = (int*)target();
-				text$ = to_wstring(*p);
-			}
-				break;
-			case wEdit::TypeUint:
+			case cH("uint"):
 			{
 				auto p = (uint*)target();
 				text$ = to_wstring(*p);
 			}
 				break;
-			case wEdit::TypeFloat:
+			case cH("int"):
+			case cH("Ivec2"):
+			case cH("Ivec3"):
+			case cH("Ivec4"):
+			{
+				auto p = (int*)target();
+				text$ = to_wstring(*p);
+			}
+				break;
+			case cH("float"):
+			case cH("Vec2"):
+			case cH("Vec3"):
+			case cH("Vec4"):
 			{
 				auto p = (float*)target();
 				text$ = to_wstring(*p);
 			}
 				break;
-			case wEdit::TypeUchar:
+			case cH("uchar"):
+			case cH("Bvec2"):
+			case cH("Bvec3"):
+			case cH("Bvec4"):
 			{
 				auto p = (uchar*)target();
 				text$ = to_wstring(*p);
