@@ -57,6 +57,7 @@ void add_default_accept()
 	accept_exts.push_back(L".c");
 	accept_exts.push_back(L".cpp");
 	accept_exts.push_back(L".cxx");
+	accept_exts.push_back(L".js");
 }
 
 void add_default_ignore()

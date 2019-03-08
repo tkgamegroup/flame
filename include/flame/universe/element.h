@@ -30,7 +30,7 @@
 
 namespace flame
 {
-	struct VaribleInfo;
+	struct VariableInfo;
 	struct SerializableNode;
 
 	struct UI;
@@ -285,7 +285,7 @@ namespace flame
 			w->init(args...);
 			return w;
 		}
-		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VaribleInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
+		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VariableInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
 		FLAME_UNIVERSE_EXPORTS static Element* create_from_file(UI* ui, SerializableNode* src);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Element* w);
 	};
@@ -633,8 +633,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
 	FLAME_ELEMENT_END
 
-	FLAME_ELEMENT_BEGIN_3(wEdit, wText, int, cursor, i1, VaribleInfoPtr, info, p, voidptr, target, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, VaribleInfo* info = nullptr, void* target = nullptr);
+	FLAME_ELEMENT_BEGIN_3(wEdit, wText, int, cursor, i1, voidptr, info, p, voidptr, target, p)
+		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, void* info = nullptr, void* target = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_size_by_width(float width);
 	FLAME_ELEMENT_END
 

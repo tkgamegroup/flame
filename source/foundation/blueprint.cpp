@@ -47,11 +47,11 @@ namespace flame
 	struct InputPrivate : BP::Input
 	{
 		NodePrivate *node;
-		VaribleInfo *variable_info;
+		VariableInfo *variable_info;
 		std::vector<std::unique_ptr<ItemPrivate>> items;
 
 		inline bool is_array() { auto tag = variable_info->tag(); return tag == VariableTagArrayOfVariable || tag == VariableTagArrayOfPointer; }
-		inline InputPrivate(NodePrivate *_node, VaribleInfo *_variable_info);
+		inline InputPrivate(NodePrivate *_node, VariableInfo *_variable_info);
 		inline ItemPrivate *array_insert_item(int idx);
 		inline void array_remove_item(int idx);
 		inline void array_clear();
@@ -70,10 +70,10 @@ namespace flame
 	struct OutputPrivate : BP::Output
 	{
 		NodePrivate *node;
-		VaribleInfo *variable_info;
+		VariableInfo *variable_info;
 		std::unique_ptr<ItemPrivate> item;
 
-		inline OutputPrivate(NodePrivate *_node, VaribleInfo *_variable_info);
+		inline OutputPrivate(NodePrivate *_node, VariableInfo *_variable_info);
 	};
 
 	struct NodePrivate : BP::Node
@@ -155,7 +155,7 @@ namespace flame
 		return "";
 	}
 
-	InputPrivate::InputPrivate(NodePrivate *_node, VaribleInfo *_variable_info) :
+	InputPrivate::InputPrivate(NodePrivate *_node, VariableInfo *_variable_info) :
 		node(_node),
 		variable_info(_variable_info)
 	{
@@ -187,7 +187,7 @@ namespace flame
 		items.clear();
 	}
 
-	OutputPrivate::OutputPrivate(NodePrivate *_node, VaribleInfo *_variable_info) :
+	OutputPrivate::OutputPrivate(NodePrivate *_node, VariableInfo *_variable_info) :
 		node(_node),
 		variable_info(_variable_info),
 		item(new ItemPrivate(nullptr, this))
@@ -521,7 +521,7 @@ namespace flame
 
 		code += "\nusing namespace flame;\n\n";
 
-		auto define_variable = [](const std::string &id_prefix, VaribleInfo *v) {
+		auto define_variable = [](const std::string &id_prefix, VariableInfo *v) {
 			auto id = id_prefix + v->name();
 			auto type = std::string(v->type_name());
 			if (v->tag() == VariableTagPointer)
@@ -531,7 +531,7 @@ namespace flame
 			return type + " " + id + ";\n";
 		};
 
-		auto set_variable_value = [](const std::string &id_prefix, VaribleInfo *v, int item_index, const CommonData& data) {
+		auto set_variable_value = [](const std::string &id_prefix, VariableInfo *v, int item_index, const CommonData& data) {
 			auto id = id_prefix + v->name();
 			std::string value;
 			switch (v->type_hash())
@@ -841,7 +841,7 @@ namespace flame
 		return ((InputPrivate*)this)->node;
 	}
 
-	VaribleInfo *BP::Input::variable_info() const
+	VariableInfo *BP::Input::variable_info() const
 	{
 		return ((InputPrivate*)this)->variable_info;
 	}
@@ -876,7 +876,7 @@ namespace flame
 		return ((OutputPrivate*)this)->node;
 	}
 
-	VaribleInfo *BP::Output::variable_info() const
+	VariableInfo *BP::Output::variable_info() const
 	{
 		return ((OutputPrivate*)this)->variable_info;
 	}

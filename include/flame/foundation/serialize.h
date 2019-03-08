@@ -598,7 +598,7 @@ namespace flame
 
 	struct UdtInfo;
 
-	struct VaribleInfo
+	struct VariableInfo
 	{
 		FLAME_FOUNDATION_EXPORTS VariableTag tag() const;
 		FLAME_FOUNDATION_EXPORTS const char *type_name() const;
@@ -623,7 +623,7 @@ namespace flame
 		// else, means data is an array, and use item_index to index the item
 	};
 
-	typedef VaribleInfo* VaribleInfoPtr;
+	typedef VariableInfo* VariableInfoPtr;
 
 	struct UdtInfo
 	{
@@ -632,7 +632,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS int size() const;
 
 		FLAME_FOUNDATION_EXPORTS int item_count() const;
-		FLAME_FOUNDATION_EXPORTS VaribleInfo *item(int idx) const;
+		FLAME_FOUNDATION_EXPORTS VariableInfo*item(int idx) const;
 		FLAME_FOUNDATION_EXPORTS int find_item_i(const char *name) const;
 
 		FLAME_FOUNDATION_EXPORTS const void* update_function_rva() const;

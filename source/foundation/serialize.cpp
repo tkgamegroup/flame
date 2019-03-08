@@ -104,7 +104,7 @@ namespace flame
 		return ((EnumInfoPrivate*)this)->serialize_value(single, v);
 	}
 
-	struct VaribleInfoPrivate : VaribleInfo
+	struct VariableInfoPrivate : VariableInfo
 	{
 		VariableTag tag;
 		std::string type_name;
@@ -115,7 +115,7 @@ namespace flame
 		int size;
 		CommonData default_value;
 
-		inline VaribleInfoPrivate()
+		inline VariableInfoPrivate()
 		{
 			default_value.fmt[0] = 0;
 			default_value.fmt[1] = 0;
@@ -373,86 +373,86 @@ namespace flame
 		return tag_names[tag];
 	}
 
-	VariableTag VaribleInfo::tag() const
+	VariableTag VariableInfo::tag() const
 	{
-		return ((VaribleInfoPrivate*)this)->tag;
+		return ((VariableInfoPrivate*)this)->tag;
 	}
 
-	const char *VaribleInfo::type_name() const
+	const char *VariableInfo::type_name() const
 	{
-		return ((VaribleInfoPrivate*)this)->type_name.c_str();
+		return ((VariableInfoPrivate*)this)->type_name.c_str();
 	}
 
-	uint VaribleInfo::type_hash() const
+	uint VariableInfo::type_hash() const
 	{
-		return ((VaribleInfoPrivate*)this)->type_hash;
+		return ((VariableInfoPrivate*)this)->type_hash;
 	}
 
-	const char *VaribleInfo::name() const
+	const char *VariableInfo::name() const
 	{
-		return ((VaribleInfoPrivate*)this)->name.c_str();
+		return ((VariableInfoPrivate*)this)->name.c_str();
 	}
 
-	int VaribleInfo::offset() const
+	int VariableInfo::offset() const
 	{
-		return ((VaribleInfoPrivate*)this)->offset;
+		return ((VariableInfoPrivate*)this)->offset;
 	}
 
-	int VaribleInfo::size() const
+	int VariableInfo::size() const
 	{
-		return ((VaribleInfoPrivate*)this)->size;
+		return ((VariableInfoPrivate*)this)->size;
 	}
 
-	const char *VaribleInfo::attribute() const
+	const char *VariableInfo::attribute() const
 	{
-		return ((VaribleInfoPrivate*)this)->attribute.c_str();
+		return ((VariableInfoPrivate*)this)->attribute.c_str();
 	}
 
-	const CommonData &VaribleInfo::default_value() const
+	const CommonData &VariableInfo::default_value() const
 	{
-		return ((VaribleInfoPrivate*)this)->default_value;
+		return ((VariableInfoPrivate*)this)->default_value;
 	}
 
-	void VaribleInfo::get(const void *src, bool is_obj, int item_index, CommonData *dst) const
+	void VariableInfo::get(const void *src, bool is_obj, int item_index, CommonData *dst) const
 	{
-		((VaribleInfoPrivate*)this)->get(src, is_obj, item_index, dst);
+		((VariableInfoPrivate*)this)->get(src, is_obj, item_index, dst);
 	}
 
-	void VaribleInfo::set(const CommonData *src, void *dst, bool is_obj, int item_index) const
+	void VariableInfo::set(const CommonData *src, void *dst, bool is_obj, int item_index) const
 	{
-		((VaribleInfoPrivate*)this)->set(src, dst, is_obj, item_index);
+		((VariableInfoPrivate*)this)->set(src, dst, is_obj, item_index);
 	}
 
-	void VaribleInfo::array_resize(int size, void *dst, bool is_obj) const
+	void VariableInfo::array_resize(int size, void *dst, bool is_obj) const
 	{
-		((VaribleInfoPrivate*)this)->array_resize(size, dst, is_obj);
+		((VariableInfoPrivate*)this)->array_resize(size, dst, is_obj);
 	}
 
-	bool VaribleInfo::compare(void *src, void *dst) const
+	bool VariableInfo::compare(void *src, void *dst) const
 	{
-		return ((VaribleInfoPrivate*)this)->compare(src, dst);
+		return ((VariableInfoPrivate*)this)->compare(src, dst);
 	}
 
-	bool VaribleInfo::compare_to_default(void *src, bool is_obj) const
+	bool VariableInfo::compare_to_default(void *src, bool is_obj) const
 	{
-		return ((VaribleInfoPrivate*)this)->compare_to_default(src, is_obj);
+		return ((VariableInfoPrivate*)this)->compare_to_default(src, is_obj);
 	}
 
-	String VaribleInfo::serialize_value(const void *src, bool is_obj, int item_index, int precision) const
+	String VariableInfo::serialize_value(const void *src, bool is_obj, int item_index, int precision) const
 	{
-		return ((VaribleInfoPrivate*)this)->serialize_value(src, is_obj, item_index, precision);
+		return ((VariableInfoPrivate*)this)->serialize_value(src, is_obj, item_index, precision);
 	}
 
-	void VaribleInfo::unserialize_value(const std::string &str, void *dst, bool is_obj, int item_index) const
+	void VariableInfo::unserialize_value(const std::string &str, void *dst, bool is_obj, int item_index) const
 	{
-		return ((VaribleInfoPrivate*)this)->unserialize_value(str, dst, is_obj, item_index);
+		return ((VariableInfoPrivate*)this)->unserialize_value(str, dst, is_obj, item_index);
 	}
 
 	struct UdtInfoPrivate : UdtInfo
 	{
 		std::string name;
 		int size;
-		std::vector<std::unique_ptr<VaribleInfoPrivate>> items;
+		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
 		std::wstring module_name;
 		void* update_function_rva;
 		void* code_function_rva;
@@ -525,7 +525,7 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->items.size();
 	}
 
-	VaribleInfo *UdtInfo::item(int idx) const
+	VariableInfo *UdtInfo::item(int idx) const
 	{
 		return ((UdtInfoPrivate*)this)->items[idx].get();
 	}
@@ -1817,7 +1817,7 @@ namespace flame
 										member->get_offset(&l);
 										type->get_length(&ull);
 
-										auto i = new VaribleInfoPrivate;
+										auto i = new VariableInfoPrivate;
 										i->name = w2s(wname);
 										i->attribute = attribute;
 										i->offset = l;
@@ -2141,7 +2141,7 @@ namespace flame
 							e_tag++;
 						}
 
-						auto i = new VaribleInfoPrivate;
+						auto i = new VariableInfoPrivate;
 						i->tag = (VariableTag)e_tag;
 						i->type_name = n_item->find_attr("type")->value();
 						i->type_hash = H(i->type_name.c_str());

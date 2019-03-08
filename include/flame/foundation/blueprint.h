@@ -50,7 +50,7 @@ namespace flame
 	*/
 
 	struct EnumInfo;
-	struct VaribleInfo;
+	struct VariableInfo;
 	struct UdtInfo;
 
 	struct BP
@@ -75,7 +75,7 @@ namespace flame
 		struct Input
 		{
 			FLAME_FOUNDATION_EXPORTS Node *node() const;
-			FLAME_FOUNDATION_EXPORTS VaribleInfo *variable_info() const;
+			FLAME_FOUNDATION_EXPORTS VariableInfo*variable_info() const;
 
 			FLAME_FOUNDATION_EXPORTS int array_item_count() const;
 			FLAME_FOUNDATION_EXPORTS Item *array_item(int idx) const;
@@ -87,7 +87,7 @@ namespace flame
 		struct Output
 		{
 			FLAME_FOUNDATION_EXPORTS Node *node() const;
-			FLAME_FOUNDATION_EXPORTS VaribleInfo *variable_info() const;
+			FLAME_FOUNDATION_EXPORTS VariableInfo*variable_info() const;
 			FLAME_FOUNDATION_EXPORTS Item *item() const;
 		};
 

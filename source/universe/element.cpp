@@ -783,7 +783,7 @@ namespace flame
 		return new Element(ui);
 	}
 
-	void Element::create_from_typeinfo(UI * ui, int font_atlas_index, VaribleInfo * info, void* p, Element * dst)
+	void Element::create_from_typeinfo(UI * ui, int font_atlas_index, VariableInfo * info, void* p, Element * dst)
 	{
 		switch (info->tag())
 		{
@@ -1420,9 +1420,10 @@ namespace flame
 		auto thiz = (wEditPtr)p.thiz();
 		if (p.action() == KeyStateNull)
 		{
-			if (thiz->info() && p.value() != '\b' && p.value() != 22 && p.value() != 27)
+			auto info = (VariableInfo*)thiz->info();
+			if (info && p.value() != '\b' && p.value() != 22 && p.value() != 27)
 			{
-				switch (thiz->info()->type_hash())
+				switch (info->type_hash())
 				{
 				case cH("int"):
 				case cH("Ivec2"):
@@ -1528,9 +1529,11 @@ namespace flame
 				thiz->cursor() = thiz->text$.size;
 			break;
 		case Focus_Lost:
-			if (thiz->info() && thiz->target())
+		{
+			auto info = (VariableInfo*)thiz->info();
+			if (info && thiz->target())
 			{
-				switch (thiz->info()->type_hash())
+				switch (info->type_hash())
 				{
 				case cH("uint"):
 				{
@@ -1538,7 +1541,7 @@ namespace flame
 					*v = stoi1(thiz->text$.v);
 					thiz->text$ = to_wstring(*v);
 				}
-					break;
+				break;
 				case cH("int"):
 				case cH("Ivec2"):
 				case cH("Ivec3"):
@@ -1548,7 +1551,7 @@ namespace flame
 					*v = stoi1(thiz->text$.v);
 					thiz->text$ = to_wstring(*v);
 				}
-					break;
+				break;
 				case cH("float"):
 				case cH("Vec2"):
 				case cH("Vec3"):
@@ -1558,7 +1561,7 @@ namespace flame
 					*v = stof1(thiz->text$.v);
 					thiz->text$ = to_wstring(*v);
 				}
-					break;
+				break;
 				case cH("uchar"):
 				case cH("Bvec2"):
 				case cH("Bvec3"):
@@ -1568,15 +1571,16 @@ namespace flame
 					*v = stob1(thiz->text$.v);
 					thiz->text$ = to_wstring(*v);
 				}
-					break;
+				break;
 				}
 				thiz->cursor() = 0;
 			}
+		}
 			break;
 		}
 	}
 
-	void wEdit::init(int font_atlas_index, VaribleInfo* _info, void* _target)
+	void wEdit::init(int font_atlas_index, void* _info, void* _target)
 	{
 		wText::init(font_atlas_index);
 		init_data_types();
@@ -1595,7 +1599,8 @@ namespace flame
 
 		if (info() && target())
 		{
-			switch (info()->type_hash())
+			auto vinfo = (VariableInfo*)_info;
+			switch (vinfo->type_hash())
 			{
 			case cH("uint"):
 			{
