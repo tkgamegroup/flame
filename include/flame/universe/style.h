@@ -41,16 +41,8 @@ namespace flame
 		int level$;
 		Function<StyleParm> f$;
 
-		Style() 
-		{
-		}
-
-		Style(int closet_id, int level, const Function<StyleParm> &f) :
-			closet_id$(closet_id),
-			level$(level),
-			f$(f)
-		{
-		}
+		FLAME_UNIVERSE_EXPORTS Style();
+		FLAME_UNIVERSE_EXPORTS Style(int closet_id, int level, const Function<StyleParm>& f);
 
 		FLAME_UNIVERSE_EXPORTS static Function<StyleParm> background_offset(const Vec4& active_offset, const Vec4& else_offset);
 		FLAME_UNIVERSE_EXPORTS static Function<StyleParm> background_color(const Bvec4& normal_col, const Bvec4& hovering_col, const Bvec4& active_col);

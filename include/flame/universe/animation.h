@@ -42,17 +42,8 @@ namespace flame
 		bool looping$;
 		Function<AnimationParm> f$;
 
-		Animation()
-		{
-		}
-
-		Animation(float duration, bool looping, const Function<AnimationParm>& f) :
-			time(0.f),
-			duration$(duration),
-			looping$(looping),
-			f$(f)
-		{
-		}
+		FLAME_UNIVERSE_EXPORTS Animation();
+		FLAME_UNIVERSE_EXPORTS Animation(float duration, bool looping, const Function<AnimationParm>& f);
 
 		FLAME_UNIVERSE_EXPORTS static Function<AnimationParm> moveto(const Vec2& pos_a, const Vec2& pos_b);
 		FLAME_UNIVERSE_EXPORTS static Function<AnimationParm> fade(float alpha_a, float alpha_b);

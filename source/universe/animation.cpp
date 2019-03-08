@@ -22,10 +22,24 @@
 
 #include <flame/foundation/foundation.h>
 #include <flame/universe/element.h>
-#include <flame/universe/animation.h>
 
 namespace flame
 {
+	Animation::Animation() :
+		time(0.f),
+		duration$(0.f),
+		looping$(false)
+	{
+	}
+
+	Animation::Animation(float duration, bool looping, const Function<AnimationParm>& f) :
+		time(0.f),
+		duration$(duration),
+		looping$(looping),
+		f$(f)
+	{
+	}
+
 	FLAME_PACKAGE_BEGIN_2(AnimationMovetoData, Vec2, pos_a, f2, Vec2, pos_b, f2)
 	FLAME_PACKAGE_END_2
 
