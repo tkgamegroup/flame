@@ -7,4 +7,5 @@ target_include_directories(flame_foundation PRIVATE "${VS_PATH}/DIA SDK/include"
 target_include_directories(flame_foundation PRIVATE "${VS_PATH}/VC/Tools/MSVC/14.14.26428/atlmfc/include")
 target_include_directories(flame_foundation PRIVATE ${STB_PATH})
 target_include_directories(flame_foundation PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries(flame_foundation imagehlp.lib)
 target_link_libraries(flame_foundation "${VS_PATH}/DIA SDK/lib/amd64/diaguids.lib")

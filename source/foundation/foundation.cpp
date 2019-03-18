@@ -25,6 +25,7 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <process.h>
+#include <ImageHlp.h>
 #include <shellapi.h>
 #include <ShlObj.h>
 #include <Shlwapi.h>
@@ -185,13 +186,67 @@ namespace flame
 		return exec_and_get_output(L"", cl.c_str());
 	}
 
-	void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *_thiz)
+	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
+	{
+		PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(pNTHeader);
+
+		for (auto i = 0; i < pNTHeader->FileHeader.NumberOfSections; i++, section++)
+		{
+			DWORD size = section->Misc.VirtualSize;
+			if (0 == size)
+				size = section->SizeOfRawData;
+
+			if ((rva >= section->VirtualAddress) && (rva < (section->VirtualAddress + size)))
+				return section;
+		}
+
+		return 0;
+	}
+
+	static LPVOID get_ptr_from_rva(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader, PBYTE imageBase)
+	{
+		PIMAGE_SECTION_HEADER pSectionHdr;
+		INT delta;
+
+		pSectionHdr = get_enclosing_section_header(rva, pNTHeader);
+		if (!pSectionHdr)
+			return 0;
+
+		delta = (INT)(pSectionHdr->VirtualAddress - pSectionHdr->PointerToRawData);
+		return (PVOID)(imageBase + rva - delta);
+	}
+
+	Array<String> get_module_dependancies(const wchar_t* module_name)
+	{
+		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::filesystem::path(module_name).parent_path().string().c_str());
+
+		Array<String> ret;
+		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2) 
+		{
+			PIMAGE_IMPORT_DESCRIPTOR importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
+					image->FileHeader->OptionalHeader.DataDirectory[1].VirtualAddress,
+					image->FileHeader, image->MappedAddress);
+			while (true)
+			{
+				if ((importDesc->TimeDateStamp == 0) && (importDesc->Name == 0))
+					break;
+
+				ret.push_back((char*)get_ptr_from_rva(importDesc->Name,
+					image->FileHeader,
+					image->MappedAddress));
+				importDesc++;
+			}
+		}
+		ImageUnload(image);
+		return ret;
+	}
+
+	void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *thiz)
 	{
 		auto module = LoadLibraryW(module_name);
 		if (module)
 		{
 			struct Dummy { };
-			auto thiz = (Dummy*)_thiz;
 			typedef void (Dummy::*F)();
 			union
 			{
@@ -199,7 +254,7 @@ namespace flame
 				F f;
 			}cvt;
 			cvt.p = (char*)module + (uint)rva;
-			(*thiz.*cvt.f)();
+			(*((Dummy*)thiz).*cvt.f)();
 
 			FreeLibrary(module);
 		}

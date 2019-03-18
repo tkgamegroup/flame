@@ -417,6 +417,12 @@ namespace flame
 			std::swap(v, rhs.v);
 		}
 
+		inline BasicString(const CH* rhs) :
+			BasicString()
+		{
+			_assign(rhs);
+		}
+
 		inline BasicString(const std::basic_string<CH> &rhs) :
 			BasicString()
 		{
@@ -1244,6 +1250,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
 	FLAME_FOUNDATION_EXPORTS String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 
+	FLAME_FOUNDATION_EXPORTS Array<String> get_module_dependancies(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *thiz);
 	FLAME_FOUNDATION_EXPORTS String run_module_function_member_constcharp_void(const wchar_t *module_name, const void *rva, void *thiz);
 
