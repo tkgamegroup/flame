@@ -311,10 +311,10 @@ namespace flame
 
 		inline Array(const Array<T> &rhs)
 		{
-			size = 0;
-			v = nullptr;
-			resize(rhs.size);
-			memcpy(v, rhs.v, sizeof(T) * size);
+			size = rhs.size;
+			v = (T*)flame_malloc(sizeof(T) * size);
+			for (auto i = 0; i < size; i++)
+				new(&v[i])T(rhs[i]);
 		}
 
 		inline ~Array()

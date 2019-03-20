@@ -65,9 +65,14 @@ int main(int argc, char **args)
 				if (ext == L".dll" || ext == L".exe")
 				{
 					auto dependancies = get_module_dependancies(it->path().wstring().c_str());
-					int cut = 1;
-					//if (output.find("flame_foundation.dll") != std::string::npos)
-					//	pdb_filenames.push_back(it->path().wstring());
+					for (auto i = 0; i < dependancies.size; i++)
+					{
+						if (dependancies[i] == "flame_foundation.dll")
+						{
+							pdb_filenames.push_back(it->path().wstring());
+							break;
+						}
+					}
 				}
 			}
 		}
