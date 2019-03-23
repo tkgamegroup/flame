@@ -32,7 +32,7 @@ namespace flame
 		TAB if (in$i) NL\
 		TAB TAB out$o = in$i;
 
-	void BP_GraphicsDevice::update()
+	void BP_GraphicsDevice$::update()
 	{
 #define NL
 #define TAB
@@ -41,14 +41,14 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsDevice::code()
+	const char* BP_GraphicsDevice$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
 #undef CODE
 
-	BP_GraphicsDevice bp_graphics_device_unused;
+	BP_GraphicsDevice$ bp_graphics_device_unused;
 
 #define CODE \
 		TAB if (in$i) NL\
@@ -64,7 +64,7 @@ namespace flame
 		TAB TAB framebuffer2$o = sc->get_framebuffer(1); NL\
 		TAB }
 
-	void BP_GraphicsSwapchain::update()
+	void BP_GraphicsSwapchain$::update()
 	{
 #define NL
 #define TAB
@@ -73,14 +73,14 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsSwapchain::code()
+	const char* BP_GraphicsSwapchain$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
 #undef CODE
 
-	BP_GraphicsSwapchain bp_graphics_swapchain_unused;
+	BP_GraphicsSwapchain$ bp_graphics_swapchain_unused;
 
 #define CODE \
 		TAB if (in$i) NL\
@@ -99,7 +99,7 @@ namespace flame
 		TAB TAB } NL\
 		TAB }
 
-	void BP_GraphicsClearvalues::update()
+	void BP_GraphicsClearvalues$::update()
 	{
 #define NL
 #define TAB
@@ -108,14 +108,14 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsClearvalues::code()
+	const char* BP_GraphicsClearvalues$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
 #undef CODE
 
-	BP_GraphicsClearvalues bp_graphics_clearvalues_unused;
+	BP_GraphicsClearvalues$ bp_graphics_clearvalues_unused;
 
 #define CODE \
 		TAB if (in$i) NL\
@@ -126,7 +126,7 @@ namespace flame
 		TAB TAB TAB out$o = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp); NL\
 		TAB }
 
-	void BP_GraphicsCommandbuffer::update()
+	void BP_GraphicsCommandbuffer$::update()
 	{
 #define NL
 #define TAB
@@ -135,12 +135,12 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsCommandbuffer::code()
+	const char* BP_GraphicsCommandbuffer$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
-	BP_GraphicsCommandbuffer bp_graphics_commandbuffer_unused;
+	BP_GraphicsCommandbuffer$ bp_graphics_commandbuffer_unused;
 
 #define CODE \
 		TAB if (cmd1$i) NL\
@@ -148,7 +148,7 @@ namespace flame
 		TAB if (cmd2$i) NL\
 		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->begin();
 
-	void BP_GraphicsCmdBegin::update()
+	void BP_GraphicsCmdBegin$::update()
 	{
 #define NL
 #define TAB
@@ -157,12 +157,12 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsCmdBegin::code()
+	const char* BP_GraphicsCmdBegin$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
-	BP_GraphicsCmdBegin bp_graphics_cmd_begin_unused;
+	BP_GraphicsCmdBegin$ bp_graphics_cmd_begin_unused;
 
 #define CODE \
 		TAB if (cmd1$i) NL\
@@ -170,7 +170,7 @@ namespace flame
 		TAB if (cmd2$i) NL\
 		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->end();
 
-	void BP_GraphicsCmdEnd::update()
+	void BP_GraphicsCmdEnd$::update()
 	{
 #define NL
 #define TAB
@@ -179,12 +179,12 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsCmdEnd::code()
+	const char* BP_GraphicsCmdEnd$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
-	BP_GraphicsCmdEnd bp_graphics_cmd_end_unused;
+	BP_GraphicsCmdEnd$ bp_graphics_cmd_end_unused;
 
 #define CODE \
 		TAB if (cmd1$i) NL\
@@ -202,7 +202,7 @@ namespace flame
 		TAB TAB TAB (graphics::ClearValues*)clearvalues$i); NL\
 		TAB }
 
-	void BP_GraphicsCmdBeginRenderpass::update()
+	void BP_GraphicsCmdBeginRenderpass$::update()
 	{
 #define NL
 #define TAB
@@ -211,12 +211,12 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsCmdBeginRenderpass::code()
+	const char* BP_GraphicsCmdBeginRenderpass$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
-	BP_GraphicsCmdBeginRenderpass bp_graphics_cmd_begin_renderpass_unused;
+	BP_GraphicsCmdBeginRenderpass$ bp_graphics_cmd_begin_renderpass_unused;
 
 #define CODE \
 		TAB if (cmd1$i) NL\
@@ -224,7 +224,7 @@ namespace flame
 		TAB if (cmd2$i) NL\
 		TAB TAB ((graphics::Commandbuffer*)cmd2$i)->end_renderpass();
 
-	void BP_GraphicsCmdEndRenderpass::update()
+	void BP_GraphicsCmdEndRenderpass$::update()
 	{
 #define NL
 #define TAB
@@ -233,10 +233,10 @@ namespace flame
 #undef TAB
 	}
 
-	const char* BP_GraphicsCmdEndRenderpass::code()
+	const char* BP_GraphicsCmdEndRenderpass$::code()
 	{
 		return FLAME_STR(CODE);
 	}
 
-	BP_GraphicsCmdEndRenderpass bp_graphics_cmd_end_renderpass_unused;
+	BP_GraphicsCmdEndRenderpass$ bp_graphics_cmd_end_renderpass_unused;
 }
