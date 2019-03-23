@@ -1734,32 +1734,37 @@ namespace flame
 					auto name = w2s(wname.c_str() + wprefix.size());
 					if (name.find("unnamed") != std::string::npos)
 						continue;
-					auto hash = H(name.c_str());
-					if (name.find(L'$') != std::wstring::npos && enums.find(hash) == enums.end())
+					auto pos_$ = name.find(L'$');
+					if (pos_$ != std::wstring::npos)
 					{
-						auto e = new EnumInfoPrivate;
-						e->name = name;
-
-						IDiaEnumSymbols* items;
-						_enum->findChildren(SymTagNull, NULL, nsNone, &items);
-						IDiaSymbol* item;
-						while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
+						name[pos_$] = 0;
+						auto hash = H(name.c_str());
+						if (enums.find(hash) == enums.end())
 						{
-							VARIANT v;
-							ZeroMemory(&v, sizeof(v));
-							item->get_name(&pwname);
-							item->get_value(&v);
+							auto e = new EnumInfoPrivate;
+							e->name = name;
 
-							auto i = new EnumItemPrivate;
-							i->name = w2s(pwname);
-							i->value = v.lVal;
-							e->items.emplace_back(i);
+							IDiaEnumSymbols* items;
+							_enum->findChildren(SymTagNull, NULL, nsNone, &items);
+							IDiaSymbol* item;
+							while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
+							{
+								VARIANT v;
+								ZeroMemory(&v, sizeof(v));
+								item->get_name(&pwname);
+								item->get_value(&v);
 
-							item->Release();
+								auto i = new EnumItemPrivate;
+								i->name = w2s(pwname);
+								i->value = v.lVal;
+								e->items.emplace_back(i);
+
+								item->Release();
+							}
+							items->Release();
+
+							enums.emplace(hash, e);
 						}
-						items->Release();
-
-						enums.emplace(hash, e);
 					}
 				}
 				_enum->Release();
@@ -1777,210 +1782,215 @@ namespace flame
 				if (wname.compare(0, wprefix.size(), wprefix) == 0)
 				{
 					auto udt_name = w2s(wname.c_str() + wprefix.size());
-					auto udt_namehash = H(udt_name.c_str());
+					auto pos_$ = udt_name.find(L'$');
 
-					if (udt_name.find(L'$') != std::wstring::npos && udts.find(udt_namehash) == udts.end())
+					if (pos_$ != std::wstring::npos)
 					{
-						_udt->get_length(&ull);
-						auto udt = new UdtInfoPrivate;
-						udt->name = udt_name;
-						udt->size = (int)ull;
-
-						IDiaEnumSymbols* members;
-						_udt->findChildren(SymTagData, NULL, nsNone, &members);
-						IDiaSymbol* member;
-						while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
+						udt_name[pos_$] = 0;
+						auto udt_namehash = H(udt_name.c_str());
+						if (udts.find(udt_namehash) == udts.end())
 						{
-							member->get_name(&pwname);
-							std::wstring wname(pwname);
-							auto pos_$ = wname.find(L'$');
-							if (pos_$ != std::wstring::npos)
+							_udt->get_length(&ull);
+							auto udt = new UdtInfoPrivate;
+							udt->name = udt_name;
+							udt->size = (int)ull;
+
+							IDiaEnumSymbols* members;
+							_udt->findChildren(SymTagData, NULL, nsNone, &members);
+							IDiaSymbol* member;
+							while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
 							{
-								auto attribute = w2s(wname.c_str() + pos_$ + 1);
-								wname[pos_$] = 0;
-
-								IDiaSymbol * type;
-								member->get_type(&type);
-
-								member->get_offset(&l);
-								type->get_length(&ull);
-
-								auto i = new VariableInfoPrivate;
-								i->name = w2s(wname);
-								i->attribute = attribute;
-								i->offset = l;
-								i->size = (int)ull;
-								memset(&i->default_value, 0, sizeof(CommonData));
-
-								type->get_symTag(&dw);
-								switch (dw)
+								member->get_name(&pwname);
+								std::wstring wname(pwname);
+								auto pos_$ = wname.find(L'$');
+								if (pos_$ != std::wstring::npos)
 								{
-								case SymTagEnum:
-								{
-									i->tag = attribute.find('m') != std::string::npos ? VariableTagEnumMulti : VariableTagEnumSingle;
-									type->get_name(&pwname);
-									auto type_name = w2s(pwname);
-									if (type_name.compare(0, prefix.size(), prefix) == 0)
-										type_name = type_name.c_str() + prefix.size();
-									i->type_name = type_name;
-								}
-									break;
-								case SymTagBaseType:
-								{
-									i->tag = VariableTagVariable;
-									i->type_name = get_base_type_name(type);
-								}
-									break;
-								case SymTagPointerType:
-								{
-									i->tag = VariableTagPointer;
-									IDiaSymbol* point_type;
-									type->get_type(&point_type);
-									point_type->get_symTag(&dw);
+									auto attribute = w2s(wname.c_str() + pos_$ + 1);
+									wname[pos_$] = 0;
+
+									IDiaSymbol * type;
+									member->get_type(&type);
+
+									member->get_offset(&l);
+									type->get_length(&ull);
+
+									auto i = new VariableInfoPrivate;
+									i->name = w2s(wname);
+									i->attribute = attribute;
+									i->offset = l;
+									i->size = (int)ull;
+									memset(&i->default_value, 0, sizeof(CommonData));
+
+									type->get_symTag(&dw);
 									switch (dw)
 									{
-									case SymTagBaseType:
-										i->type_name = get_base_type_name(point_type);
-										break;
-									case SymTagPointerType:
-										assert(0);
-										break;
-									case SymTagUDT:
-										point_type->get_name(&pwname);
+									case SymTagEnum:
+									{
+										i->tag = attribute.find('m') != std::string::npos ? VariableTagEnumMulti : VariableTagEnumSingle;
+										type->get_name(&pwname);
 										auto type_name = w2s(pwname);
 										if (type_name.compare(0, prefix.size(), prefix) == 0)
 											type_name = type_name.c_str() + prefix.size();
 										i->type_name = type_name;
-										break;
 									}
-									point_type->Release();
-								}
-									break;
-								case SymTagUDT:
-								{
-									type->get_name(&pwname);
-									auto type_name = w2s(pwname);
-									std::smatch match;
-									if (std::regex_search(type_name, match, reg_str))
+										break;
+									case SymTagBaseType:
 									{
 										i->tag = VariableTagVariable;
-										if (match[1].str() == "char")
-											type_name = "String";
-										else
-											type_name = "StringW";
+										i->type_name = get_base_type_name(type);
 									}
-									else if (std::regex_search(type_name, match, reg_arr))
+										break;
+									case SymTagPointerType:
 									{
-										if (match[2].matched)
-											i->tag = VariableTagArrayOfPointer;
-										else
-											i->tag = VariableTagArrayOfVariable;
-										type_name = match[1].str().c_str();
+										i->tag = VariableTagPointer;
+										IDiaSymbol* point_type;
+										type->get_type(&point_type);
+										point_type->get_symTag(&dw);
+										switch (dw)
+										{
+										case SymTagBaseType:
+											i->type_name = get_base_type_name(point_type);
+											break;
+										case SymTagPointerType:
+											assert(0);
+											break;
+										case SymTagUDT:
+											point_type->get_name(&pwname);
+											auto type_name = w2s(pwname);
+											if (type_name.compare(0, prefix.size(), prefix) == 0)
+												type_name = type_name.c_str() + prefix.size();
+											i->type_name = type_name;
+											break;
+										}
+										point_type->Release();
+									}
+										break;
+									case SymTagUDT:
+									{
+										type->get_name(&pwname);
+										auto type_name = w2s(pwname);
+										std::smatch match;
 										if (std::regex_search(type_name, match, reg_str))
 										{
+											i->tag = VariableTagVariable;
 											if (match[1].str() == "char")
 												type_name = "String";
 											else
 												type_name = "StringW";
 										}
-									}
-									else
-										i->tag = VariableTagVariable;
-									if (type_name.compare(0, prefix.size(), prefix) == 0)
-										type_name = type_name.c_str() + prefix.size();
-									i->type_name = type_name;
-								}
-									break;
-								}
-								type->Release();
-
-								i->type_hash = H(i->type_name.c_str());
-								udt->items.emplace_back(i);
-							}
-							member->Release();
-						}
-						members->Release();
-
-						IDiaEnumSymbols* functions;
-						_udt->findChildren(SymTagFunction, NULL, nsNone, &functions);
-						IDiaSymbol* function;
-						auto udt_need_module_name = false;
-						while (SUCCEEDED(functions->Next(1, &function, &ul)) && (ul == 1))
-						{
-							function->get_name(&pwname);
-							auto name = w2s(pwname);
-							IDiaSymbol* function_type;
-							function->get_type(&function_type);
-							IDiaSymbol* return_type;
-							function_type->get_type(&return_type);
-							IDiaEnumSymbols* parameters;
-							function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-							if (SUCCEEDED(parameters->get_Count(&l)))
-							{
-								auto parameters_count = l;
-								if (name == udt_name && parameters_count == 0)
-								{
-									// a ctor func is a func that its name equals its class's name and its count of parameters is 0
-									// we get the ctor func and try to run it at a dummy memory to get the default value of the class
-
-									function->get_relativeVirtualAddress(&dw);
-									if (dw)
-									{
-										auto new_obj = malloc(udt->size);
-										run_module_function_member_void_void(fn.c_str(), (void*)dw, new_obj);
-										for (auto& i : udt->items)
+										else if (std::regex_search(type_name, match, reg_arr))
 										{
-											if (i->size <= sizeof(CommonData::v))
-												memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
+											if (match[2].matched)
+												i->tag = VariableTagArrayOfPointer;
+											else
+												i->tag = VariableTagArrayOfVariable;
+											type_name = match[1].str().c_str();
+											if (std::regex_search(type_name, match, reg_str))
+											{
+												if (match[1].str() == "char")
+													type_name = "String";
+												else
+													type_name = "StringW";
+											}
 										}
-										free(new_obj);
+										else
+											i->tag = VariableTagVariable;
+										if (type_name.compare(0, prefix.size(), prefix) == 0)
+											type_name = type_name.c_str() + prefix.size();
+										i->type_name = type_name;
 									}
+										break;
+									}
+									type->Release();
+
+									i->type_hash = H(i->type_name.c_str());
+									udt->items.emplace_back(i);
 								}
-								else if (name == "update" && parameters_count == 0)
+								member->Release();
+							}
+							members->Release();
+
+							IDiaEnumSymbols* functions;
+							_udt->findChildren(SymTagFunction, NULL, nsNone, &functions);
+							IDiaSymbol* function;
+							auto udt_need_module_name = false;
+							while (SUCCEEDED(functions->Next(1, &function, &ul)) && (ul == 1))
+							{
+								function->get_name(&pwname);
+								auto name = w2s(pwname);
+								IDiaSymbol* function_type;
+								function->get_type(&function_type);
+								IDiaSymbol* return_type;
+								function_type->get_type(&return_type);
+								IDiaEnumSymbols* parameters;
+								function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+								if (SUCCEEDED(parameters->get_Count(&l)))
 								{
-									DWORD baseType;
-									if (SUCCEEDED(return_type->get_baseType(&baseType)) && baseType == btVoid)
+									auto parameters_count = l;
+									if (name == udt_name && parameters_count == 0)
 									{
+										// a ctor func is a func that its name equals its class's name and its count of parameters is 0
+										// we get the ctor func and try to run it at a dummy memory to get the default value of the class
+
 										function->get_relativeVirtualAddress(&dw);
 										if (dw)
 										{
-											udt->update_function_rva = (void*)dw;
-											udt_need_module_name = true;
+											auto new_obj = malloc(udt->size);
+											run_module_function_member_void_void(fn.c_str(), (void*)dw, new_obj);
+											for (auto& i : udt->items)
+											{
+												if (i->size <= sizeof(CommonData::v))
+													memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
+											}
+											free(new_obj);
 										}
 									}
-								}
-								else if (name == "code" && parameters_count == 0)
-								{
-									return_type->get_symTag(&dw);
-									if (dw == SymTagPointerType)
+									else if (name == "update" && parameters_count == 0)
 									{
-										IDiaSymbol* return_base_type;
-										return_type->get_type(&return_base_type);
 										DWORD baseType;
-										if (SUCCEEDED(return_base_type->get_baseType(&baseType)) && baseType == btChar)
+										if (SUCCEEDED(return_type->get_baseType(&baseType)) && baseType == btVoid)
 										{
 											function->get_relativeVirtualAddress(&dw);
 											if (dw)
 											{
-												udt->code_function_rva = (void*)dw;
+												udt->update_function_rva = (void*)dw;
 												udt_need_module_name = true;
 											}
 										}
-										return_base_type->Release();
+									}
+									else if (name == "code" && parameters_count == 0)
+									{
+										return_type->get_symTag(&dw);
+										if (dw == SymTagPointerType)
+										{
+											IDiaSymbol* return_base_type;
+											return_type->get_type(&return_base_type);
+											DWORD baseType;
+											if (SUCCEEDED(return_base_type->get_baseType(&baseType)) && baseType == btChar)
+											{
+												function->get_relativeVirtualAddress(&dw);
+												if (dw)
+												{
+													udt->code_function_rva = (void*)dw;
+													udt_need_module_name = true;
+												}
+											}
+											return_base_type->Release();
+										}
 									}
 								}
+								function_type->Release();
+								return_type->Release();
+								parameters->Release();
+
+								function->Release();
 							}
-							function_type->Release();
-							return_type->Release();
-							parameters->Release();
+							if (udt_need_module_name)
+								udt->module_name = fn_related;
+							functions->Release();
 
-							function->Release();
+							udts.emplace(udt_namehash, udt);
 						}
-						if (udt_need_module_name)
-							udt->module_name = fn_related;
-						functions->Release();
-
-						udts.emplace(udt_namehash, udt);
 					}
 				}
 				_udt->Release();
@@ -1994,71 +2004,81 @@ namespace flame
 			while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
 			{
 				_function->get_name(&pwname);
-				std::wstring function_wname(pwname);
-				if (function_wname[function_wname.size() - 1] == L'$')
+				std::wstring wname(pwname);
+				if (wname.compare(0, wprefix.size(), wprefix) == 0)
 				{
-					IDiaSymbol* function_type;
-					_function->get_type(&function_type);
+					auto function_name = w2s(wname.c_str() + wprefix.size());
+					auto pos_$ = function_name.find(L'$');
 
-					IDiaEnumSymbols* parameters;
-					function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-					if (SUCCEEDED(parameters->get_Count(&l)) && l == 1)
+					if (pos_$ != std::wstring::npos)
 					{
-						IDiaSymbol* parameter;
-						parameters->Item(0, &parameter);
+						function_name[pos_$] = 0;
+						auto function_namehash = H(function_name.c_str());
 
-						IDiaSymbol* parameter_type;
-						parameter->get_type(&parameter_type);
+						IDiaSymbol* function_type;
+						_function->get_type(&function_type);
 
-						parameter_type->get_symTag(&dw);
-						if (dw == SymTagPointerType)
+						IDiaEnumSymbols* parameters;
+						function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+						if (SUCCEEDED(parameters->get_Count(&l)) && l == 1)
 						{
-							IDiaSymbol* parameter_base_type;
-							parameter_type->get_type(&parameter_base_type);
+							IDiaSymbol* parameter;
+							parameters->Item(0, &parameter);
 
-							parameter_base_type->get_symTag(&dw);
-							if (dw == SymTagUDT)
+							IDiaSymbol* parameter_type;
+							parameter->get_type(&parameter_type);
+
+							parameter_type->get_symTag(&dw);
+							if (dw == SymTagPointerType)
 							{
-								IDiaEnumSymbols* members;
-								parameter_base_type->findChildren(SymTagEnum, NULL, nsNone, &members);
-								IDiaSymbol* member;
-								while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
+								IDiaSymbol* parameter_base_type;
+								parameter_type->get_type(&parameter_base_type);
+
+								parameter_base_type->get_symTag(&dw);
+								if (dw == SymTagUDT)
 								{
-									member->get_name(&pwname);
-									std::wstring name(pwname);
-									if (name.find(L"SIZE") != std::wstring::npos)
+									IDiaEnumSymbols* members;
+									parameter_base_type->findChildren(SymTagEnum, NULL, nsNone, &members);
+									IDiaSymbol* member;
+									while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
 									{
-										IDiaEnumSymbols* items;
-										member->findChildren(SymTagNull, NULL, nsNone, &items);
-										IDiaSymbol* item;
-										items->Item(0, &item);
-										VARIANT v;
-										ZeroMemory(&v, sizeof(v));
-										item->get_value(&v);
+										member->get_name(&pwname);
+										std::wstring name(pwname);
+										if (name.find(L"SIZE") != std::wstring::npos)
+										{
+											IDiaEnumSymbols* items;
+											member->findChildren(SymTagNull, NULL, nsNone, &items);
+											IDiaSymbol* item;
+											items->Item(0, &item);
+											VARIANT v;
+											ZeroMemory(&v, sizeof(v));
+											item->get_value(&v);
 
-										_function->get_relativeVirtualAddress(&dw);
+											_function->get_relativeVirtualAddress(&dw);
 
-										auto f = new FunctionInfoPrivate;
-										f->name = w2s(function_wname);
-										f->rva = (void*)dw;
-										f->parameter_count = v.lVal;
+											auto f = new FunctionInfoPrivate;
+											f->name = function_name;
+											f->rva = (void*)dw;
+											f->parameter_count = v.lVal;
 
-										item->Release();
-										items->Release();
+											item->Release();
+											items->Release();
+										}
+										member->Release();
 									}
-									member->Release();
+									members->Release();
 								}
-								members->Release();
+								parameter_base_type->Release();
 							}
-							parameter_base_type->Release();
-						}
-						parameter_type->Release();
+							parameter_type->Release();
 
-						parameter->Release();
+							parameter->Release();
+						}
+						parameters->Release();
+						function_type->Release();
 					}
-					parameters->Release();
-					function_type->Release();
 				}
+
 				_function->Release();
 			}
 			_functions->Release();
