@@ -1046,125 +1046,125 @@ namespace flame
 			v$o.z = z$i; NL\
 			v$o.w = w$i;
 
-	void BP_Int::update()
+	void BP_Int$::update()
 	{
 		CODE_vec1
 	}
 
-	const char* BP_Int::code()
+	const char* BP_Int$::code()
 	{
 		return FLAME_STR(CODE_vec1);
 	}
 
-	BP_Int bp_int_unused;
+	BP_Int$ bp_int_unused;
 
-	void BP_Float::update()
+	void BP_Float$::update()
 	{
 		CODE_vec1
 	}
 
-	const char* BP_Float::code()
+	const char* BP_Float$::code()
 	{
 		return FLAME_STR(CODE_vec1);
 	}
 
-	BP_Float bp_float_unused;
+	BP_Float$ bp_float_unused;
 
-	void BP_Bool::update()
+	void BP_Bool$::update()
 	{
 		CODE_vec1
 	}
 
-	const char* BP_Bool::code()
+	const char* BP_Bool$::code()
 	{
 		return FLAME_STR(CODE_vec1);
 	}
 
-	BP_Bool bp_bool_unused;
+	BP_Bool$ bp_bool_unused;
 
-	void BP_Vec2::update()
+	void BP_Vec2$::update()
 	{
 #define NL
 		CODE_vec2
 #undef NL
 	}
 
-	const char* BP_Vec2::code()
+	const char* BP_Vec2$::code()
 	{
 		return FLAME_STR(CODE_vec2);
 	}
 
-	BP_Vec2 bp_vec2_unused;
+	BP_Vec2$ bp_vec2_unused;
 
-	void BP_Vec3::update()
+	void BP_Vec3$::update()
 	{
 #define NL
 		CODE_vec3
 #undef NL
 	}
 
-	const char* BP_Vec3::code()
+	const char* BP_Vec3$::code()
 	{
 		return FLAME_STR(CODE_vec3);
 	}
 
-	BP_Vec3 bp_vec3_unused;
+	BP_Vec3$ bp_vec3_unused;
 
-	void BP_Vec4::update()
+	void BP_Vec4$::update()
 	{
 #define NL
 		CODE_vec4
 #undef NL
 	}
 
-	const char* BP_Vec4::code()
+	const char* BP_Vec4$::code()
 	{
 		return FLAME_STR(CODE_vec4);
 	}
 
-	BP_Vec4 bp_vec4_unused;
+	BP_Vec4$ bp_vec4_unused;
 
-	void BP_Ivec2::update()
+	void BP_Ivec2$::update()
 	{
 #define NL
 		CODE_vec2
 #undef NL
 	}
 
-	const char* BP_Ivec2::code()
+	const char* BP_Ivec2$::code()
 	{
 		return FLAME_STR(CODE_vec2);
 	}
 
-	BP_Ivec2 bp_ivec2_unused;
+	BP_Ivec2$ bp_ivec2_unused;
 
-	void BP_Ivec3::update()
+	void BP_Ivec3$::update()
 	{
 #define NL
 		CODE_vec3
 #undef NL
 	}
 
-	const char* BP_Ivec3::code()
+	const char* BP_Ivec3$::code()
 	{
 		return FLAME_STR(CODE_vec3);
 	}
 
-	BP_Ivec3 bp_ivec3_unused;
+	BP_Ivec3$ bp_ivec3_unused;
 
-	void BP_Ivec4::update()
+	void BP_Ivec4$::update()
 	{
 #define NL
 		CODE_vec4
 #undef NL
 	}
 
-	const char* BP_Ivec4::code()
+	const char* BP_Ivec4$::code()
 	{
 		return FLAME_STR(CODE_vec4);
 	}
 
-	BP_Ivec4 bp_ivec4_unused;
+	BP_Ivec4$ bp_ivec4_unused;
 
 #undef CODE_vec1
 #undef CODE_vec2

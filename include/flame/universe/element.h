@@ -109,7 +109,7 @@ namespace flame
 	struct Element;
 	typedef Element* ElementPtr;
 
-	struct Element : R
+	struct Element
 	{
 		enum Flag
 		{

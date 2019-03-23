@@ -148,7 +148,7 @@ namespace flame
 
 	// here, we define some basic udt for blueprint nodes
 
-	struct BP_Int : R
+	struct BP_Int$
 	{
 		int v$i;
 
@@ -158,7 +158,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Float : R
+	struct BP_Float$
 	{
 		float v$i;
 
@@ -168,7 +168,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Bool : R
+	struct BP_Bool$
 	{
 		bool v$i;
 
@@ -178,7 +178,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Vec2 : R
+	struct BP_Vec2$
 	{
 		float x$i;
 		float y$i;
@@ -189,7 +189,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Vec3 : R
+	struct BP_Vec3$
 	{
 		float x$i;
 		float y$i;
@@ -201,7 +201,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Vec4 : R
+	struct BP_Vec4$
 	{
 		float x$i;
 		float y$i;
@@ -214,7 +214,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Ivec2 : R
+	struct BP_Ivec2$
 	{
 		int x$i;
 		int y$i;
@@ -225,7 +225,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Ivec3 : R
+	struct BP_Ivec3$
 	{
 		int x$i;
 		int y$i;
@@ -237,7 +237,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
-	struct BP_Ivec4 : R
+	struct BP_Ivec4$
 	{
 		int x$i;
 		int y$i;
