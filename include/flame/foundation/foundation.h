@@ -786,11 +786,22 @@ namespace flame
 	{
 		F f;
 		void* c;
+		uint c_hash;
 
 		inline Function()
 		{
 			f = nullptr;
 			c = nullptr;
+		}
+
+		inline Function(F f, int c_size, uint c_hash = 0) :
+			f(f),
+			c_hash(c_hash)
+		{
+			if (c_size > 0)
+				c = flame_malloc(c_size);
+			else
+				c = nullptr;
 		}
 	};
 
