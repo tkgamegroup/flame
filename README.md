@@ -22,6 +22,8 @@ A lightweight and powerful 3D Game Engine.
 
 - regsvr32 msdia**.dll in visual studio's dia sdk
 
+- download & install git-lfs
+
 - download rapidxml
 
 - download STB
