@@ -21,3 +21,11 @@
 // SOFTWARE.
 
 #pragma once
+
+namespace flame
+{
+	struct Entity
+	{
+
+	};
+}

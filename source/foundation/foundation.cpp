@@ -554,7 +554,7 @@ namespace flame
 		bool use_modifier_shift;
 		bool use_modifier_ctrl;
 		bool use_modifier_alt;
-		Function<GlobalKeyParm> callback;
+		Function<void(KeyState action, void* c)> callback;
 	};
 
 	static HHOOK global_key_hook = 0;
@@ -580,15 +580,14 @@ namespace flame
 					action = KeyStateDown;
 				else if (wParam == WM_KEYUP)
 					action = KeyStateUp;
-				l->callback.p.action() = action;
-				l->callback.exec();
+				l->callback.f(action, l->callback.c);
 			}
 		}
 
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<GlobalKeyParm> &callback)
+	void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<void(KeyState action, void* c)> &callback)
 	{
 		auto l = new GlobalKeyListener;
 		l->callback = callback;
@@ -646,7 +645,7 @@ namespace flame
 		}
 	};
 
-	void do_file_watch(FileWatcher *filewatcher, bool only_content, const wchar_t *path, Function<FileWatcherParm> &callback)
+	void do_file_watch(FileWatcher *filewatcher, bool only_content, const wchar_t *path, Function<void(FileChangeType type, const wchar_t* filename, void* c)> &callback)
 	{
 		auto dir_handle = CreateFileW(path, GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
@@ -723,10 +722,10 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	FLAME_PACKAGE_BEGIN_3(FileWatcherThreadC, wcharptr, filepath, p, FileWatcherPtr, filewatcher, p, voidptr/* do convert yourself */, pcallback, p)
-	FLAME_PACKAGE_END_3
+	//FLAME_PACKAGE_BEGIN_3(FileWatcherThreadC, wcharptr, filepath, p, FileWatcherPtr, filewatcher, p, voidptr/* do convert yourself */, pcallback, p)
+	//FLAME_PACKAGE_END_3
 
-	FileWatcher *add_file_watcher(const wchar_t *path, Function<FileWatcherParm> &callback, int options)
+	FileWatcher *add_file_watcher(const wchar_t *path, Function<void(FileChangeType type, const wchar_t* filename, void* c)> &callback, int options)
 	{
 		if (options & FileWatcherAsynchronous)
 		{
@@ -734,10 +733,10 @@ namespace flame
 			w->options = options;
 			w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
-			auto pcallback = new Function<FileWatcherParm>;
+			auto pcallback = new Function<void(FileChangeType type, const wchar_t* filename, void* c)>;
 			*pcallback = callback;
 
-			thread(Function<>([](Package &p) {
+			thread(Function<void(void* c)>([](void *c) {
 				auto c = p.get_capture<FileWatcherThreadC>();
 				do_file_watch(c.filewatcher(), c.filewatcher()->options & FileWatcherMonitorOnlyContentChanged, c.filepath(), (*(Function<FileWatcherParm>*)c.pcallback()));
 				delete c.filewatcher();
