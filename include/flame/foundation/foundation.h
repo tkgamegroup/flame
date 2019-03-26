@@ -259,19 +259,6 @@ namespace flame
 				new(&v[i])T(p[i]);
 		}
 
-		inline void assign(const T* p, int len)
-		{
-			for (auto i = 0; i < size; i++)
-				v[i].~T();
-
-			size = len;
-
-			v = (T*)flame_realloc(v, sizeof(T) * size);
-
-			for (auto i = 0; i < size; i++)
-				new(&p[i])T();
-		}
-
 		inline Array()
 		{
 			size = 0;
@@ -332,10 +319,25 @@ namespace flame
 			return v[idx];
 		}
 
-		inline void resize(int new_size)
+		inline void assign(const T* p, int len)
+		{
+			for (auto i = 0; i < size; i++)
+				v[i].~T();
+
+			size = len;
+
+			v = (T*)flame_realloc(v, sizeof(T) * size);
+
+			for (auto i = 0; i < size; i++)
+				new(&p[i])T();
+		}
+
+		inline void resize(int new_size, int type_size = 0 /* for pod that is not T type */)
 		{
 			if (size == new_size)
 				return;
+			if (type_size == 0)
+				type_size = sizeof(T);
 
 			if (size > new_size)
 			{
@@ -349,7 +351,7 @@ namespace flame
 				v = nullptr;
 			}
 			else
-				v = (T*)flame_realloc(v, sizeof(T) * new_size);
+				v = (T*)flame_realloc(v, type_size * new_size);
 
 			if (new_size > size)
 			{
@@ -364,7 +366,7 @@ namespace flame
 		{
 			resize(size + 1);
 			for (auto i = size - 1; i > pos; i--)
-				memcpy(&v[i], &v[i - 1], sizeof(T));
+				v[i] = std::move(v[i - 1]);
 			v[pos] = _v;
 		}
 
@@ -377,7 +379,7 @@ namespace flame
 		{
 			auto new_size = size - count;
 			for (auto i = idx; i < new_size; i++)
-				memcpy(&v[i], &v[i + count], sizeof(T));
+				v[i] = std::move(v[i + count]);
 			resize(new_size);
 		}
 
@@ -395,25 +397,6 @@ namespace flame
 		{
 			flame_free(v);
 		}
-
-		inline void resize_pod_typeness(int new_size, int type_size) // use when assign data that is NOT 'T' type (pod only)
-		{
-			if (size == new_size)
-				return;
-
-			if (new_size == 0)
-			{
-				flame_free(v);
-				v = nullptr;
-			}
-			else
-				v = (T*)flame_realloc(v, type_size * new_size);
-
-			if (new_size > size)
-				memset(&v[size], 0, type_size * (new_size - size));
-
-			size = new_size;
-		}
 	};
 
 	template<typename CH>
@@ -430,15 +413,6 @@ namespace flame
 			size = len;
 			v = (CH*)flame_malloc(sizeof(CH) * (size + 1));
 			v[size] = (CH)0;
-		}
-
-		inline void assign(const CH* s, int len = 0)
-		{
-			if (len == 0)
-				len = std::char_traits<CH>::length(s);
-
-			resize(len);
-			memcpy(v, s, sizeof(CH) * size);
 		}
 
 		inline BasicString()
@@ -504,6 +478,15 @@ namespace flame
 			assign(rhs.c_str(), rhs.size());
 
 			return *this;
+		}
+
+		inline void assign(const CH* s, int len = 0)
+		{
+			if (len == 0)
+				len = std::char_traits<CH>::length(s);
+
+			resize(len);
+			memcpy(v, s, sizeof(CH) * size);
 		}
 
 		inline void resize(int new_size)
@@ -838,27 +821,72 @@ namespace flame
 	struct Function
 	{
 		F f;
+		int c_size;
 		void* c;
 		uint c_hash;
+
+		inline void _init(F _f, int _c_size, void* _c, uint _c_hash = 0)
+		{
+			f = _f;
+			c_size = _c_size;
+			if (c_size > 0)
+			{
+				c = flame_malloc(c_size);
+				memcpy(c, _c, c_size);
+			}
+			else
+				c = nullptr;
+			c_hash = _c_hash;
+		}
+
+		inline void assign(F _f, int _c_size, void* _c, uint c_hash = 0)
+		{
+			flame_free(c);
+			f = _f;
+			c_size = _c_size;
+			if (c_size > 0)
+			{
+				c = flame_malloc(c_size);
+				memcpy(c, _c, c_size);
+			}
+			else
+				c = nullptr;
+			c_hash = _c_hash;
+		}
 
 		inline Function()
 		{
 			f = nullptr;
+			c_size+ = 0;
 			c = nullptr;
+			c_hash = 0;
 		}
 
-		inline Function(F f, int c_size, uint c_hash = 0) :
-			f(f),
-			c_hash(c_hash)
+		inline Function(F f, int c_size, void* c, uint c_hash = 0)
 		{
-			if (c_size > 0)
-				c = flame_malloc(c_size);
-			else
-				c = nullptr;
+			_init(f, c_size, c, c_hash);
 		}
 
 		inline Function(const Function<F>& rhs)
 		{
+			_init(rhs.f, rhs.c_size, rhs.c, rhs.c_hash);
+		}
+
+		inline Function& operator=(const Function& rhs)
+		{
+			assign(rhs.f, rhs.c_size, rhs.c, rhs.c_hash);
+
+			return *this;
+		}
+
+		inline Function& operator=(Function&& rhs)
+		{
+			std::swap(f, rhs.f);
+			std::swap(c_size, rhs.c_size);
+			std::swap(c, rhs.c);
+			std::swap(c_hash, rhs.c_hash);
+
+			return *this;
 		}
 	};
 

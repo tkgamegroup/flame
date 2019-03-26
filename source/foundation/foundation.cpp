@@ -51,14 +51,14 @@ namespace flame
 {
 	static void do_thread(void *p)
 	{
-		auto f = (Function<>*)p;
-		f->exec();
+		auto f = (Function<void(void*)>*)p;
+		f->f(f->c);
 		delete f;
 	}
 
-	void thread(Function<> &_f)
+	void thread(const Function<void(void* c)>& _f)
 	{
-		auto f = new Function<>(_f);
+		auto f = new Function<void(void* c)>(_f);
 		_beginthread(do_thread, 0, f);
 	}
 
