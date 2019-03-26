@@ -251,28 +251,85 @@ namespace flame
 		int size;
 		T *v;
 
-		inline void destroy_pod()
+		inline void _init(const T* p, int len)
 		{
+			size = len;
+			v = (T*)flame_malloc(sizeof(T) * size);
+			for (auto i = 0; i < size; i++)
+				new(&v[i])T(p[i]);
+		}
+
+		inline void assign(const T* p, int len)
+		{
+			for (auto i = 0; i < size; i++)
+				v[i].~T();
+
+			size = len;
+
+			v = (T*)flame_realloc(v, sizeof(T) * size);
+
+			for (auto i = 0; i < size; i++)
+				new(&p[i])T();
+		}
+
+		inline Array()
+		{
+			size = 0;
+			v = nullptr;
+		}
+
+		inline Array(const Array& rhs)
+		{
+			size = rhs.size;
+			v = (T*)flame_malloc(sizeof(T) * size);
+			for (auto i = 0; i < size; i++)
+				new(&v[i])T(rhs[i]);
+		}
+
+		inline Array(Array&& rhs)
+		{
+			rhs.size = 0;
+			rhs.v = nullptr;
+
+			size = rhs.size;
+			v = rhs.v;
+		}
+
+		inline ~Array()
+		{
+			for (auto i = 0; i < size; i++)
+				v[i].~T();
 			flame_free(v);
 		}
 
-		inline void resize_pod_typeness(int new_size, int type_size)
+		inline Array& operator=(const Array& rhs)
 		{
-			if (size == new_size)
-				return;
+			assign(rhs.v, rhs.size);
+		}
 
-			if (new_size == 0)
-			{
-				flame_free(v);
-				v = nullptr;
-			}
-			else
-				v = (T*)flame_realloc(v, type_size * new_size);
+		inline Array& operator=(Array&& rhs)
+		{
+			std::swap(size, rhs.size);
+			std::swap(v, rhs.v);
 
-			if (new_size > size)
-				memset(&v[size], 0, type_size * (new_size - size));
+			return *this;
+		}
 
-			size = new_size;
+		inline Array& operator=(const std::vector<T>& rhs)
+		{
+			assign(rhs.data(), rhs.size());
+
+			return *this;
+		}
+
+		inline T &operator[](int idx)
+		{
+			return v[idx];
+		}
+
+		inline const T &operator[](int idx) const
+		{
+			return v[idx];
 		}
 
 		inline void resize(int new_size)
@@ -301,43 +358,6 @@ namespace flame
 			}
 
 			size = new_size;
-		}
-
-		inline Array()
-		{
-			size = 0;
-			v = nullptr;
-		}
-
-		inline Array(const Array<T> &rhs)
-		{
-			size = rhs.size;
-			v = (T*)flame_malloc(sizeof(T) * size);
-			for (auto i = 0; i < size; i++)
-				new(&v[i])T(rhs[i]);
-		}
-
-		inline ~Array()
-		{
-			for (auto i = 0; i < size; i++)
-				v[i].~T();
-			flame_free(v);
-		}
-
-		inline void operator=(const Array<T> &rhs)
-		{
-			resize(rhs.size);
-			memcpy(v, rhs.v, sizeof(T) * size);
-		}
-
-		inline T &operator[](int idx)
-		{
-			return v[idx];
-		}
-
-		inline const T &operator[](int idx) const
-		{
-			return v[idx];
 		}
 
 		inline void insert(int pos, const T &_v)
@@ -370,6 +390,30 @@ namespace flame
 			}
 			return -1;
 		}
+
+		inline void destroy_pod()
+		{
+			flame_free(v);
+		}
+
+		inline void resize_pod_typeness(int new_size, int type_size) // use when assign data that is NOT 'T' type (pod only)
+		{
+			if (size == new_size)
+				return;
+
+			if (new_size == 0)
+			{
+				flame_free(v);
+				v = nullptr;
+			}
+			else
+				v = (T*)flame_realloc(v, type_size * new_size);
+
+			if (new_size > size)
+				memset(&v[size], 0, type_size * (new_size - size));
+
+			size = new_size;
+		}
 	};
 
 	template<typename CH>
@@ -378,17 +422,17 @@ namespace flame
 		int size;
 		CH *v;
 
-		inline void resize(int new_size)
+		inline void _init(const CH* s, int len = 0)
 		{
-			if (size == new_size)
-				return;
+			if (len == 0)
+				len = std::char_traits<CH>::length(s);
 
-			size = new_size;
-			v = (CH*)flame_realloc(v, sizeof(CH) * (size + 1));
+			size = len;
+			v = (CH*)flame_malloc(sizeof(CH) * (size + 1));
 			v[size] = (CH)0;
 		}
 
-		inline void _assign(const CH *s, int len = 0)
+		inline void assign(const CH* s, int len = 0)
 		{
 			if (len == 0)
 				len = std::char_traits<CH>::length(s);
@@ -399,68 +443,77 @@ namespace flame
 
 		inline BasicString()
 		{
-			size = -1;
-			v = nullptr;
-			resize(0);
+			size = 0;
+			v = (CH*)flame_malloc(v, sizeof(CH) * 1);
+			v[size] = (CH)0;
 		}
 
-		inline BasicString(const BasicString &rhs) :
-			BasicString()
+		inline BasicString(const BasicString& rhs)
 		{
-			_assign(rhs.v, rhs.size);
+			_init(rhs.v, rhs.size);
 		}
 
-		inline BasicString(BasicString &&rhs) :
-			BasicString()
+		inline BasicString(BasicString&& rhs)
 		{
-			std::swap(size, rhs.size);
-			std::swap(v, rhs.v);
+			rhs.size = 0;
+			rhs.v = nullptr;
+
+			size = rhs.size;
+			v = rhs.v;
 		}
 
-		inline BasicString(const CH* rhs) :
-			BasicString()
+		inline BasicString(const CH* rhs)
 		{
-			_assign(rhs);
+			_init(rhs);
 		}
 
-		inline BasicString(const std::basic_string<CH> &rhs) :
-			BasicString()
+		inline BasicString(const std::basic_string<CH>& rhs)
 		{
-			_assign(rhs.c_str(), rhs.size());
-		}
-
-		inline BasicString &operator=(const BasicString &rhs)
-		{
-			_assign(rhs.v, rhs.size);
-
-			return *this;
-		}
-
-		inline BasicString &operator=(BasicString &&rhs)
-		{
-			std::swap(size, rhs.size);
-			std::swap(v, rhs.v);
-
-			return *this;
-		}
-
-		inline BasicString &operator=(const CH *str)
-		{
-			_assign(str);
-
-			return *this;
-		}
-
-		inline BasicString &operator=(const std::basic_string<CH> &rhs)
-		{
-			_assign(rhs.c_str(), rhs.size());
-
-			return *this;
+			_init(rhs.c_str(), rhs.size());
 		}
 
 		inline ~BasicString()
 		{
 			flame_free(v);
+		}
+
+		inline BasicString& operator=(const BasicString& rhs)
+		{
+			assign(rhs.v, rhs.size);
+
+			return *this;
+		}
+
+		inline BasicString& operator=(BasicString &&rhs)
+		{
+			std::swap(size, rhs.size);
+			std::swap(v, rhs.v);
+
+			return *this;
+		}
+
+		inline BasicString& operator=(const CH *str)
+		{
+			assign(str);
+
+			return *this;
+		}
+
+		inline BasicString& operator=(const std::basic_string<CH>& rhs)
+		{
+			assign(rhs.c_str(), rhs.size());
+
+			return *this;
+		}
+
+		inline void resize(int new_size)
+		{
+			if (size == new_size)
+				return;
+
+			size = new_size;
+			v = (CH*)flame_realloc(v, sizeof(CH) * (size + 1));
+			v[size] = (CH)0;
 		}
 
 		inline void insert(int pos, CH _v)
@@ -535,9 +588,9 @@ namespace flame
 	{
 		uint hash;
 
-		inline void _assign(const char *s, int len = 0)
+		inline void assign(const char *s, int len = 0)
 		{
-			String::_assign(s, len);
+			String::assign(s, len);
 			hash = v ? H(v) : 0;
 		}
 
@@ -549,7 +602,7 @@ namespace flame
 		inline StringAndHash(const StringAndHash &rhs) :
 			StringAndHash()
 		{
-			_assign(rhs.v, rhs.size);
+			assign(rhs.v, rhs.size);
 		}
 
 		inline StringAndHash(StringAndHash &&rhs) :
@@ -563,12 +616,12 @@ namespace flame
 		inline StringAndHash(const std::string &rhs) :
 			StringAndHash()
 		{
-			_assign(rhs.c_str(), rhs.size());
+			assign(rhs.c_str(), rhs.size());
 		}
 
 		inline StringAndHash &operator=(const StringAndHash &rhs)
 		{
-			_assign(rhs.v, rhs.size);
+			assign(rhs.v, rhs.size);
 
 			return *this;
 		}
@@ -584,14 +637,14 @@ namespace flame
 
 		inline StringAndHash &operator=(const char *str)
 		{
-			_assign(str);
+			assign(str);
 
 			return *this;
 		}
 
 		inline StringAndHash &operator=(const std::string &rhs)
 		{
-			_assign(rhs.c_str(), rhs.size());
+			assign(rhs.c_str(), rhs.size());
 
 			return *this;
 		}
@@ -802,6 +855,10 @@ namespace flame
 				c = flame_malloc(c_size);
 			else
 				c = nullptr;
+		}
+
+		inline Function(const Function<F>& rhs)
+		{
 		}
 	};
 
