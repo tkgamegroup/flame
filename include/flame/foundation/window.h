@@ -78,27 +78,9 @@ namespace flame
 #endif
 
 		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, WindowPtr, thiz, p, KeyState, action, i1, int, value, i1)
-			/*
-				- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
-				- when char, action is KeyStateNull, value is ch
-			*/
-
-			inline bool is_down() { return action() == KeyStateDown; }
-			inline bool is_up()   { return action() == KeyStateUp;   }
-			inline bool is_char() { return action() == KeyStateNull; }
 		FLAME_PACKAGE_END_3
 
 		FLAME_PACKAGE_BEGIN_4(MouseListenerParm, WindowPtr, thiz, p, KeyState, action, i1, MouseKey, key, i1, Ivec2, pos, i2)
-			/*
-				- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey
-				- when move, action is KeyStateNull, key is Mouse_Null
-				- when scroll, action is KeyStateNull, key is Mouse_Middle, pos.x is scroll value
-			*/
-
-			inline bool is_down()   { return action() == KeyStateDown && key() != Mouse_Null;   }
-			inline bool is_up()     { return action() == KeyStateUp   && key() != Mouse_Null;   }
-			inline bool is_move()   { return action() == KeyStateNull && key() == Mouse_Null;   }
-			inline bool is_scroll() { return action() == KeyStateNull && key() == Mouse_Middle; }
 		FLAME_PACKAGE_END_4
 
 		FLAME_PACKAGE_BEGIN_2(ResizeListenerParm, WindowPtr, thiz, p, Ivec2, size, i2)

@@ -191,7 +191,7 @@ namespace flame
 			if (is_obj)
 				dst = (char*)dst + offset;
 
-			(*(Array<int>*)dst).resize_pod_typeness(_size, size);
+			(*(Array<int>*)dst).resize(_size, size);
 		}
 
 		inline bool compare(void *src, void *dst) const
@@ -865,18 +865,6 @@ namespace flame
 		return (SerializableNodePrivate*)n;
 	}
 
-	static void *create_obj(UdtInfo *u, Function<SerializableNode::ObjGeneratorParm> &obj_generator, void *parent, uint att_hash)
-	{
-		obj_generator.p.udt() = u;
-		obj_generator.p.udt() = u;
-		obj_generator.p.parent() = parent;
-		obj_generator.p.att_hash() = att_hash;
-		obj_generator.exec();
-		auto obj = obj_generator.p.out_obj();
-		assert(obj);
-		return obj;
-	}
-
 	struct SerializableNodePrivate : SerializableNode
 	{
 		std::string name;
@@ -1090,7 +1078,7 @@ namespace flame
 					}
 					else if (item->type_hash() == cH("Function"))
 					{
-						auto &arr = *(Array<Function<>>*)((char*)src + item->offset());
+						auto &arr = *(Array<Function<void()>>*)((char*)src + item->offset());
 
 						for (auto i_i = 0; i_i < arr.size; i_i++)
 						{
@@ -1150,7 +1138,7 @@ namespace flame
 			}
 		}
 
-		void unserialize_RE(UdtInfo *u, std::vector<std::pair<void*, uint>> &obj_table, void *obj, Function<SerializableNode::ObjGeneratorParm> &obj_generator)
+		void unserialize_RE(UdtInfo* u, std::vector<std::pair<void*, uint>> &obj_table, void* obj, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)>& obj_generator)
 		{
 			for (auto i = 0; i < node_count(); i++)
 			{
@@ -1224,7 +1212,7 @@ namespace flame
 					}
 					else if (item->type_hash() == cH("Function"))
 					{
-						auto &arr = *(Array<Function<>>*)((char*)obj + item->offset());
+						auto &arr = *(Array<Function<void()>>*)((char*)obj + item->offset());
 						auto cnt = n_item->node_count();
 						arr.resize(cnt);
 
@@ -1276,7 +1264,7 @@ namespace flame
 							auto n_i = n_item->node(i_i);
 							assert(n_i->name() == "obj");
 
-							auto obj_sub = create_obj(u_sub, obj_generator, obj, name_hash);
+							auto obj_sub = obj_generator(u_sub, obj, name_hash);
 							if (obj_sub)
 							{
 								obj_table.emplace_back(obj_sub, stoi1(n_i->find_attr("id")->value().c_str()));
@@ -1475,11 +1463,11 @@ namespace flame
 		bin_save(file, (SerializableNodePrivate*)this);
 	}
 
-	void *SerializableNode::unserialize(UdtInfo *u, Function<ObjGeneratorParm> &obj_generator)
+	void *SerializableNode::unserialize(UdtInfo *u, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)> &obj_generator)
 	{
 		assert(name() == "obj");
 
-		auto obj = create_obj(u, obj_generator, nullptr, 0);
+		auto obj = obj_generator(u, nullptr, 0);
 
 		std::vector<std::pair<void*, uint>> obj_table;
 		obj_table.emplace_back(obj, stoi1(find_attr("id")->value().c_str()));

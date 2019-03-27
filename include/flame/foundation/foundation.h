@@ -215,6 +215,61 @@ namespace flame
 		Focus_Lost
 	};
 
+	inline bool is_key_down(KeyState action) // value is Key
+	{
+		return action == KeyStateDown;
+	}
+
+	inline bool is_key_up(KeyState action) // value is Key
+	{
+		return action == KeyStateUp;
+	}
+
+	inline bool is_key_char(KeyState action) // value is ch
+	{
+		return action == KeyStateNull;
+	}
+
+	inline bool is_mouse_enter(KeyState action, MouseKey key)
+	{ 
+		return action == KeyStateDown && key == Mouse_Null; 
+	}
+
+	inline bool is_mouse_leave(KeyState action, MouseKey key)
+	{ 
+		return action == KeyStateUp && key == Mouse_Null; 
+	}
+
+	inline bool is_mouse_down(KeyState action, MouseKey key) // value is pos
+	{ 
+		return action == KeyStateDown && key != Mouse_Null; 
+	}
+
+	inline bool is_mouse_up(KeyState action, MouseKey key) // value is pos
+	{ 
+		return action == KeyStateUp && key != Mouse_Null; 
+	}
+
+	inline bool is_mouse_move(KeyState action, MouseKey key) // value is disp
+	{ 
+		return action == KeyStateNull && key == Mouse_Null; 
+	}
+
+	inline bool is_mouse_scroll(KeyState action, MouseKey key) // value.x is scroll value
+	{ 
+		return action == KeyStateNull && key == Mouse_Middle; 
+	}
+
+	inline bool is_mouse_clicked(KeyState action, MouseKey key)
+	{ 
+		return action == (KeyStateDown | KeyStateUp) && key == Mouse_Null; 
+	}
+
+	inline bool is_mouse_double_clicked(KeyState action, MouseKey key)
+	{ 
+		return action == (KeyStateDown | KeyStateUp | KeyStateDouble) && key == Mouse_Null; 
+	}
+
 	inline const char *get_error_string(Err errNum)
 	{
 		switch (errNum)

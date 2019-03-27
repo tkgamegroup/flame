@@ -705,10 +705,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void save_xml(const std::wstring &filename) const;
 		FLAME_FOUNDATION_EXPORTS void save_bin(const std::wstring &filename) const;
 
-		FLAME_PACKAGE_BEGIN_4(ObjGeneratorParm, UdtInfoPtr, udt, p, voidptr, parent, p, uint, att_hash, u, voidptr, out_obj, p)
-		FLAME_PACKAGE_END_4
-
-		FLAME_FOUNDATION_EXPORTS void *unserialize(UdtInfo*u, Function<ObjGeneratorParm> &obj_generator);
+		FLAME_FOUNDATION_EXPORTS void *unserialize(UdtInfo*u, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)>& obj_generator);
 
 		FLAME_FOUNDATION_EXPORTS static SerializableNode *create(const std::string &name);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode *create_from_xml(const std::wstring &filename);

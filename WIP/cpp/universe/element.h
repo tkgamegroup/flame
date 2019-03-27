@@ -190,31 +190,9 @@ namespace flame
 		FLAME_PACKAGE_END_3
 
 		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, ElementPtr, thiz, p, KeyState, action, i1, int, value, i1)
-		/*
-			- when key down/up, action is KeyStateDown or KeyStateUp, value is Key
-			- when char, action is KeyStateNull, value is ch
-		*/
-			inline bool is_down() { return action() == KeyStateDown; }
-			inline bool is_up()   { return action() == KeyStateUp;   }
-			inline bool is_char() { return action() == KeyStateNull; }
 		FLAME_PACKAGE_END_3
 
 		FLAME_PACKAGE_BEGIN_4(MouseListenerParm, ElementPtr, thiz, p, KeyState, action, i1, MouseKey, key, i1, Vec2, value, f2)
-		/*
-			- when enter/leave, action is KeyStateDown or KeyStateUp, key is Mouse_Null
-			- when down/up, action is KeyStateDown or KeyStateUp, key is MouseKey, value is pos
-			- when move, action is KeyStateNull, key is Mouse_Null, value is disp
-			- when scroll, action is KeyStateNull, key is Mouse_Middle, value.x is scroll value
-			- when clicked, action is KeyStateDown | KeyStateUp | (KeyStateDouble ? for double clicked), key is Mouse_Null
-		*/
-			inline bool is_enter()  { return action() == KeyStateDown && key() == Mouse_Null;   }
-			inline bool is_leave()  { return action() == KeyStateUp   && key() == Mouse_Null;   }
-			inline bool is_down()   { return action() == KeyStateDown && key() != Mouse_Null;   }
-			inline bool is_up()     { return action() == KeyStateUp   && key() != Mouse_Null;   }
-			inline bool is_move()   { return action() == KeyStateNull && key() == Mouse_Null;   }
-			inline bool is_scroll() { return action() == KeyStateNull && key() == Mouse_Middle; }
-			inline bool is_clicked(){ return action() == (KeyStateDown | KeyStateUp) && key() == Mouse_Null; }
-			inline bool is_double_clicked() { return action() == (KeyStateDown | KeyStateUp | KeyStateDouble) && key() == Mouse_Null; }
 		FLAME_PACKAGE_END_4
 
 		FLAME_PACKAGE_BEGIN_2(DropListenerParm, ElementPtr, thiz, p, ElementPtr, src, p)
