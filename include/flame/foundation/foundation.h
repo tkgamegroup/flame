@@ -196,7 +196,9 @@ namespace flame
 		Key_NumLock,
 		Key_ScrollLock,
 
-		Key_count
+		Key_count,
+
+		KeyMax = 0xffffffff
 	};
 
 	enum MouseKey

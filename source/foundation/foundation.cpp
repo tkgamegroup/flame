@@ -718,9 +718,6 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	//FLAME_PACKAGE_BEGIN_3(FileWatcherThreadC, wcharptr, filepath, p, FileWatcherPtr, filewatcher, p, voidptr/* do convert yourself */, pcallback, p)
-	//FLAME_PACKAGE_END_3
-
 	FileWatcher *add_file_watcher(const wchar_t* path, Function<void(void* c, FileChangeType type, const wchar_t* filename)> &callback, int options)
 	{
 		if (options & FileWatcherAsynchronous)
