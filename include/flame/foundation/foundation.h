@@ -418,7 +418,7 @@ namespace flame
 		inline BasicString()
 		{
 			size = 0;
-			v = (CH*)flame_malloc(v, sizeof(CH) * 1);
+			v = (CH*)flame_malloc(sizeof(CH));
 			v[size] = (CH)0;
 		}
 
@@ -820,7 +820,7 @@ namespace flame
 	template<class F>
 	struct Function
 	{
-		F f;
+		F *f;
 		int c_size;
 		void* c;
 		uint c_hash;
@@ -839,7 +839,7 @@ namespace flame
 			c_hash = _c_hash;
 		}
 
-		inline void assign(F _f, int _c_size, void* _c, uint c_hash = 0)
+		inline void assign(F _f, int _c_size, void* _c, uint _c_hash = 0)
 		{
 			flame_free(c);
 			f = _f;
@@ -857,7 +857,7 @@ namespace flame
 		inline Function()
 		{
 			f = nullptr;
-			c_size+ = 0;
+			c_size = 0;
 			c = nullptr;
 			c_hash = 0;
 		}
@@ -887,6 +887,12 @@ namespace flame
 			std::swap(c_hash, rhs.c_hash);
 
 			return *this;
+		}
+
+		template<class ...Args>
+		inline auto operator()(Args... args)
+		{
+			return f(c, args...);
 		}
 	};
 
@@ -1078,7 +1084,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-	FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(KeyState action, void* c)>& callback);
+	FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(void* c, KeyState action)>& callback);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void *handle/* return by add_global_key_listener */);
 
 	struct FileWatcher;
@@ -1100,9 +1106,9 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t *path, const Function<void(FileChangeType type, const wchar_t *filename, void* c)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
-	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher *w);
+	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t* path, const Function<void(void* c, FileChangeType type, const wchar_t *filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
-	FLAME_FOUNDATION_EXPORTS void add_work(const Function<void()>& fun);
+	FLAME_FOUNDATION_EXPORTS void add_work(const Function<void(void* c)>& fun);
 	FLAME_FOUNDATION_EXPORTS void clear_works();
 }
