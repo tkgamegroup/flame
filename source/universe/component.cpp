@@ -20,15 +20,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include <flame/universe/universe.h>
-
-namespace flame
-{
-	struct Entity
-	{
-		FLAME_UNIVERSE_EXPORTS static Entity* create();
-		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
-	};
-}
+#include <flame/universe/component.h>

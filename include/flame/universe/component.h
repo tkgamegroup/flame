@@ -26,9 +26,9 @@
 
 namespace flame
 {
-	struct Entity
+	struct Component
 	{
-		FLAME_UNIVERSE_EXPORTS static Entity* create();
-		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
+		FLAME_UNIVERSE_EXPORTS static Component* create();
+		FLAME_UNIVERSE_EXPORTS static void destroy(Component* w);
 	};
 }
