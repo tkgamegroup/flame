@@ -919,7 +919,7 @@ namespace flame
 			c_hash = 0;
 		}
 
-		inline Function(F f, int c_size, void* c, uint c_hash = 0)
+		inline Function(F f, int c_size = 0, void* c = 0, uint c_hash = 0)
 		{
 			_init(f, c_size, c, c_hash);
 		}

@@ -24,22 +24,20 @@
 
 using namespace flame;
 
-FLAME_PACKAGE_BEGIN_1(WindowClickC, WindowPtr, w, p)
-FLAME_PACKAGE_END_1
-
-void test_window()
+int main(int argc, char** args)
 {
 	auto app = Application::create();
 	auto w = Window::create(app, "Window Test", Ivec2(1280, 720), WindowFrame);
 
-	w->add_mouse_listener(Function<Window::MouseListenerParm>([](Window::MouseListenerParm & p) {
-		if (p.is_down())
-		{
-			auto c = p.get_capture<WindowClickC>();
-			c.w()->close();
-		}
-	}, { w }));
+	w->add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>(
+	[](void* c, KeyState action, MouseKey key, const Ivec2 & pos) {
+		if (is_mouse_down(action, key))
+			(*((WindowPtr*)c))->close();
+	}, sizeof(void*), &w));
 
-	app->run(Function<>([](Package & p) {
+	app->run(Function<void(void* c)>(
+	[](void* c) {
 	}));
+
+	return 0;
 }

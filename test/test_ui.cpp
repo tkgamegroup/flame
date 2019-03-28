@@ -234,12 +234,14 @@ struct UIApp : BasicApp
 	}
 }app;
 
-void test_ui()
+int main(int argc, char** args)
 {
 	Ivec2 res(1280, 720);
 
 	app.create("UI Test", res, WindowFrame);
 	app.run();
+
+	return 0;
 }
 
 //{

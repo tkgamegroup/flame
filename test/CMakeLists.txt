@@ -1,3 +1,8 @@
-file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_exe(test "${SOURCE_LIST}" "test")
-target_link_libraries(test flame_universe)
+add_exe(window_test "test_window.cpp" "test")
+target_link_libraries(window_test flame_foundation)
+
+add_exe(graphics_test "test_graphics.cpp" "test")
+target_link_libraries(graphics_test flame_graphics)
+
+add_exe(ui_test "test_ui.cpp" "test")
+target_link_libraries(ui_test flame_universe)
