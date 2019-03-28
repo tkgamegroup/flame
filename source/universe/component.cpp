@@ -21,3 +21,11 @@
 // SOFTWARE.
 
 #include <flame/universe/component.h>
+
+namespace flame
+{
+	Component::Component(Entity* e) :
+		entity(e)
+	{
+	}
+}

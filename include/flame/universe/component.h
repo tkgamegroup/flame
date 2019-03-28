@@ -26,9 +26,12 @@
 
 namespace flame
 {
-	struct Component
+	struct Entity;
+
+	struct Component // pod
 	{
-		FLAME_UNIVERSE_EXPORTS static Component* create();
-		FLAME_UNIVERSE_EXPORTS static void destroy(Component* w);
+		Entity* entity;
+
+		FLAME_UNIVERSE_EXPORTS Component(Entity* e);
 	};
 }

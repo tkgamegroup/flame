@@ -332,11 +332,11 @@ namespace flame
 
 		inline Array(Array&& rhs)
 		{
-			rhs.size = 0;
-			rhs.v = nullptr;
-
 			size = rhs.size;
 			v = rhs.v;
+
+			rhs.size = 0;
+			rhs.v = nullptr;
 		}
 
 		inline ~Array()
@@ -469,6 +469,7 @@ namespace flame
 
 			size = len;
 			v = (CH*)flame_malloc(sizeof(CH) * (size + 1));
+			memcpy(v, s, size);
 			v[size] = (CH)0;
 		}
 
@@ -486,11 +487,11 @@ namespace flame
 
 		inline BasicString(BasicString&& rhs)
 		{
-			rhs.size = 0;
-			rhs.v = nullptr;
-
 			size = rhs.size;
 			v = rhs.v;
+
+			rhs.size = 0;
+			rhs.v = nullptr;
 		}
 
 		inline BasicString(const CH* rhs)
@@ -515,7 +516,7 @@ namespace flame
 			return *this;
 		}
 
-		inline BasicString& operator=(BasicString &&rhs)
+		inline BasicString& operator=(BasicString&& rhs)
 		{
 			std::swap(size, rhs.size);
 			std::swap(v, rhs.v);

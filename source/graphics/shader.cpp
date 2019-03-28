@@ -32,7 +32,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		static std::wstring shader_path(L"../shaders/");
+		static std::wstring shader_path(L"../shader/");
 		static std::wstring conf_path(shader_path + L"src/config.conf");
 
 		static void serialize_members(spirv_cross::CompilerGLSL &glsl, uint32_t tid, SerializableNode *dst)
