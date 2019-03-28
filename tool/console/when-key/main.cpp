@@ -24,11 +24,6 @@
 
 using namespace flame;
 
-FLAME_PACKAGE_BEGIN(GlobalKeyC)
-	FLAME_PACKAGE_ITEM(charptr, key, p)
-	FLAME_PACKAGE_ITEM(charptr, command, p)
-FLAME_PACKAGE_END
-
 int main(int argc, char **args)
 {
 	if (argc != 3)
@@ -69,19 +64,31 @@ int main(int argc, char **args)
 				key = Key(Key_A + ch - 'a');
 		}
 	}
-	add_global_key_listener(key, shift, ctrl, alt, Function<GlobalKeyParm>([](GlobalKeyParm &p){
-		if (p.action() == KeyStateDown)
+
+	struct Capture
+	{
+		const char* key;
+		const char* command;
+	};
+
+	Capture capture;
+	capture.key = args[1];
+	capture.command = args[2];
+
+	add_global_key_listener(key, shift, ctrl, alt, Function<void(void* c, KeyState action)>(
+	[](void* _c, KeyState action){
+		if (action == KeyStateDown)
 		{
-			auto c = p.get_capture<GlobalKeyC>();
+			auto c = (Capture*)_c;
 
-			printf("key down: %s\n", c.key());
-			printf("run: %s\n", c.command());
+			printf("key down: %s\n", c->key);
+			printf("run: %s\n", c->command);
 
-			system(c.command());
+			system(c->command);
 
-			printf("key=[ %s ] cmd=[ %s ]\n", c.key(), c.command());
+			printf("key=[ %s ] cmd=[ %s ]\n", c->key, c->command);
 		}
-	}, { args[1], args[2] }));
+	}, sizeof(Capture), &capture));
 
 	do_simple_dispatch_loop();
 

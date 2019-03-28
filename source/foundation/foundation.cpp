@@ -587,7 +587,7 @@ namespace flame
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<void(void* c, KeyState action)> &callback)
+	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(void* c, KeyState action)>& callback)
 	{
 		auto l = new GlobalKeyListener;
 		l->callback = callback;
@@ -718,7 +718,7 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	FileWatcher *add_file_watcher(const wchar_t* path, Function<void(void* c, FileChangeType type, const wchar_t* filename)> &callback, int options)
+	FileWatcher *add_file_watcher(const wchar_t* path, const Function<void(void* c, FileChangeType type, const wchar_t* filename)>& callback, int options)
 	{
 		if (options & FileWatcherAsynchronous)
 		{
@@ -751,7 +751,8 @@ namespace flame
 		}
 		else
 		{
-			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback);
+			auto callback_cpy = callback;
+			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback_cpy);
 
 			return nullptr;
 		}

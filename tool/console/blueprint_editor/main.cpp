@@ -97,8 +97,8 @@ int main(int argc, char **args)
 				if (udt)
 				{
 					printf("%s:\n", udt->name());
-					std::vector<VaribleInfo*> inputs;
-					std::vector<VaribleInfo*> outputs;
+					std::vector<VariableInfo*> inputs;
+					std::vector<VariableInfo*> outputs;
 					for (auto i_i = 0; i_i < udt->item_count(); i_i++)
 					{
 						auto item = udt->item(i_i);
@@ -300,7 +300,7 @@ int main(int argc, char **args)
 			auto i = bp->find_item(s_address.c_str());
 			if (i)
 			{
-				VaribleInfo* v;
+				VariableInfo* v;
 				if (i->parent_i())
 					v = i->parent_i()->variable_info();
 				else if (i->parent_o())

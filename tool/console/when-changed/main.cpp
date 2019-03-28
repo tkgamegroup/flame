@@ -24,11 +24,6 @@
 
 using namespace flame;
 
-FLAME_PACKAGE_BEGIN(FileWatcherC)
-	FLAME_PACKAGE_ITEM(charptr, filename, p)
-	FLAME_PACKAGE_ITEM(charptr, command, p)
-FLAME_PACKAGE_END
-
 static ulonglong last_change_time = 0;
 
 int main(int argc, char **args)
@@ -47,20 +42,31 @@ int main(int argc, char **args)
 
 	printf("watch=[ %s ] cmd=[ %s ]\n", args[1], args[2]);
 
-	add_file_watcher(std::filesystem::path(args[1]).parent_path().wstring().c_str(), Function<FileWatcherParm>([](FileWatcherParm &p) {
-		auto c = p.get_capture<FileWatcherC>();
+	struct Capture
+	{
+		const char* filename;
+		const char* command;
+	};
+
+	Capture capture;
+	capture.filename = args[1];
+	capture.command = args[2];
+
+	add_file_watcher(std::filesystem::path(args[1]).parent_path().wstring().c_str(), Function<void(void* c, FileChangeType type, const wchar_t* filename)>(
+	[](void* _c, FileChangeType type, const wchar_t* filename) {
+		auto c = (Capture*)_c;
 
 		auto now_time = get_now_ns();
-		if (s2w(c.filename()) == p.filename() && now_time - last_change_time > 1'000'000'000)
+		if (s2w(c->filename) == filename && now_time - last_change_time > 1'000'000'000)
 		{
-			printf("file changed: %s\n", c.filename());
-			printf("run: %s\n", c.command());
+			printf("file changed: %s\n", c->filename);
+			printf("run: %s\n", c->command);
 
-			system(c.command());
+			system(c->command);
 
-			printf("watch=[ %s ] cmd=[ %s ]\n", c.filename(), c.command());
+			printf("watch=[ %s ] cmd=[ %s ]\n", c->filename, c->command);
 		}
 		last_change_time = now_time;
 
-	}, { (voidptr)args[1], (voidptr)args[2] }), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
+	}, sizeof(Capture), &capture), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
 }

@@ -1141,7 +1141,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-	FLAME_FOUNDATION_EXPORTS void *add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(void* c, KeyState action)>& callback);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(void* c, KeyState action)>& callback);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void *handle/* return by add_global_key_listener */);
 
 	struct FileWatcher;
@@ -1163,7 +1163,7 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t* path, const Function<void(void* c, FileChangeType type, const wchar_t *filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t* path, const Function<void(void* c, FileChangeType type, const wchar_t* filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
 	FLAME_FOUNDATION_EXPORTS void add_work(const Function<void(void* c)>& fun);
