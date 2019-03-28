@@ -21,3 +21,11 @@
 // SOFTWARE.
 
 #include <flame/universe/entity.h>
+
+namespace flame
+{
+	struct EntityPrivate : Entity
+	{
+
+	};
+}
