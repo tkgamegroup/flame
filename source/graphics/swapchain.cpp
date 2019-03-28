@@ -36,8 +36,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		FLAME_PACKAGE_BEGIN_1(ResizeC, SwapchainPrivatePtr, s, p)
-		FLAME_PACKAGE_END_1
+		//FLAME_PACKAGE_BEGIN_1(ResizeC, SwapchainPrivatePtr, s, p)
+		//FLAME_PACKAGE_END_1
 
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
@@ -76,12 +76,13 @@ namespace flame
 
 			create();
 
-			w->add_resize_listener(Function<Window::ResizeListenerParm>([](Window::ResizeListenerParm &p) {
-				auto c = p.get_capture<ResizeC>();
+			auto thiz = this;
 
-				c.s()->destroy();
-				c.s()->create();
-			}, { this }));
+			w->add_resize_listener(Function<void(void* c, const Ivec2& size)>(
+			[](void* c, const Ivec2 & size) {
+				(*((SwapchainPrivatePtr*)c))->destroy();
+				(*((SwapchainPrivatePtr*)c))->create();
+			}, sizeof(void*), &thiz));
 		}
 
 		inline SwapchainPrivate::~SwapchainPrivate()

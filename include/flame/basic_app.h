@@ -35,6 +35,9 @@
 
 namespace flame
 {
+	struct BasicApp;
+	typedef BasicApp* BasicAppPtr;
+
 	struct BasicApp
 	{
 		Application *app;
@@ -63,10 +66,11 @@ namespace flame
 
 		inline void run()
 		{
-			app->run(Function<>([](Package &p) {
-				auto thiz = (BasicApp*)p.d[0].p();
-				thiz->do_run();
-			}, { this }));
+			auto thiz = this;
+			app->run(Function<void(void* c)>(
+			[](void* c) {
+				(*((BasicAppPtr*)c))->do_run();
+			}, sizeof(void*), &thiz));
 		}
 	};
 }
