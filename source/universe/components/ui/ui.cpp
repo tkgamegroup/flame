@@ -21,11 +21,12 @@
 // SOFTWARE.
 
 #include <flame/foundation/foundation.h>
+#include <flame/universe/entity.h>
 #include <flame/universe/components/ui/ui.h>
 
 namespace flame
 {
-	UI::UI(Entity* e) :
+	UI::UI(Entity* e, graphics::Canvas* canvas, Window* w) :
 		Component(e)
 	{
 	}
@@ -37,6 +38,6 @@ namespace flame
 
 	void UI::update(float delta_time)
 	{
-
+		;
 	}
 }

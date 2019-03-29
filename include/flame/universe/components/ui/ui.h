@@ -26,11 +26,21 @@
 
 namespace flame
 {
+	struct Window;
+
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
 	struct UI : Component
 	{
-		FLAME_UNIVERSE_EXPORTS UI(Entity* e);
+		FLAME_UNIVERSE_EXPORTS UI(Entity* e, graphics::Canvas* canvas, Window* w = nullptr);
+		FLAME_UNIVERSE_EXPORTS virtual ~UI() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
+
+		FLAME_UNIVERSE_EXPORTS static UI* create();
 	};
 }

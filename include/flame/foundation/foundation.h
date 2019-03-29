@@ -96,6 +96,29 @@ namespace flame
 		ErrResourceLost
 	};
 
+	inline const char* get_error_string(Err errNum)
+	{
+		switch (errNum)
+		{
+		case NoErr:
+			return "No error.";
+		case ErrInvalidEnum:
+			return "Invalid enum.";
+		case ErrInvalidValue:
+			return "Invalid value.";
+		case ErrInvalidOperation:
+			return "Invalid operation.";
+		case ErrOutOfMemory:
+			return "Out of memory.";
+		case ErrContextLost:
+			return "Context lost.";
+		case ErrResourceLost:
+			return "Resource lost.";
+		default:
+			return "Unknow error.";
+		}
+	}
+
 	enum KeyState
 	{
 		KeyStateNull,
@@ -270,29 +293,6 @@ namespace flame
 	inline bool is_mouse_double_clicked(KeyState action, MouseKey key)
 	{ 
 		return action == (KeyStateDown | KeyStateUp | KeyStateDouble) && key == Mouse_Null; 
-	}
-
-	inline const char *get_error_string(Err errNum)
-	{
-		switch (errNum)
-		{
-		case NoErr:
-			return "No error.";
-		case ErrInvalidEnum:
-			return "Invalid enum.";
-		case ErrInvalidValue:
-			return "Invalid value.";
-		case ErrInvalidOperation:
-			return "Invalid operation.";
-		case ErrOutOfMemory:
-			return "Out of memory.";
-		case ErrContextLost:
-			return "Context lost.";
-		case ErrResourceLost:
-			return "Resource lost.";
-		default:
-			return "Unknow error.";
-		}
 	}
 
 	inline ulonglong get_now_ns()

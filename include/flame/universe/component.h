@@ -34,6 +34,7 @@ namespace flame
 		Entity* entity;
 
 		FLAME_UNIVERSE_EXPORTS Component(Entity* e);
+		virtual ~Component() = 0;
 
 		virtual uint type_hash() const = 0;
 		virtual void update(float delta_time) = 0;
