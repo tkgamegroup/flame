@@ -36,6 +36,10 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Array<Component*> components(uint type_hash /* 0 to get all components */ );
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 
+		FLAME_UNIVERSE_EXPORTS int children_count();
+		FLAME_UNIVERSE_EXPORTS Entity* child(int index);
+		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e);
+
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};

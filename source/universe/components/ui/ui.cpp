@@ -21,14 +21,22 @@
 // SOFTWARE.
 
 #include <flame/foundation/foundation.h>
-#include <flame/universe/entity.h>
-#include <flame/universe/component.h>
+#include <flame/universe/components/ui/ui.h>
 
 namespace flame
 {
-	struct EntityPrivate : Entity
+	UI::UI(Entity* e) :
+		Component(e)
 	{
-		std::map<uint, std::vector<std::unique_ptr<Component>>> componets;
-		std::vector<std::unique_ptr<Entity>> children;
-	};
+	}
+
+	uint UI::type_hash() const
+	{
+		return cH("UI");
+	}
+
+	void UI::update(float delta_time)
+	{
+
+	}
 }

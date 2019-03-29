@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <flame/type.h>
 #include <flame/universe/universe.h>
 
 namespace flame
@@ -33,5 +34,8 @@ namespace flame
 		Entity* entity;
 
 		FLAME_UNIVERSE_EXPORTS Component(Entity* e);
+
+		virtual uint type_hash() const = 0;
+		virtual void update(float delta_time) = 0;
 	};
 }

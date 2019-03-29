@@ -20,15 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/foundation/foundation.h>
-#include <flame/universe/entity.h>
+#pragma once
+
 #include <flame/universe/component.h>
 
 namespace flame
 {
-	struct EntityPrivate : Entity
+	struct UI : Component
 	{
-		std::map<uint, std::vector<std::unique_ptr<Component>>> componets;
-		std::vector<std::unique_ptr<Entity>> children;
+		FLAME_UNIVERSE_EXPORTS UI(Entity* e);
+
+		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
+		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 	};
 }
