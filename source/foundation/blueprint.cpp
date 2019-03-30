@@ -615,14 +615,11 @@ namespace flame
 		code += "}\n";
 
 		code += "\n __declspec(dllexport) void update()\n{\n";
-		std::regex reg_nl(R"(\bNL\b)");
-		std::regex reg_tab(R"(\bTAB\b)");
 		std::regex reg_variable(R"(\b([\w]+)\$\w*\b)");
 		for (auto& n : update_list)
 		{
 			auto id_prefix = n->id + "_";
 			auto udt = n->udt;
-			auto code_function_rva = udt->code_function_rva();
 			auto fmt_id = id_prefix + "$1";
 
 			for (auto& input : n->inputs)
@@ -644,14 +641,9 @@ namespace flame
 				}
 			}
 
-			if (code_function_rva)
-			{
-				auto str = std::string(run_module_function_member_constcharp_void(udt->module_name(), code_function_rva, nullptr).v);
-				str = std::regex_replace(str, reg_nl, "\n");
-				str = std::regex_replace(str, reg_tab, "\t");
-				str = std::regex_replace(str, reg_variable, fmt_id);
-				code += str + "\n";
-			}
+			std::string str(udt->update_function_code());
+			str = std::regex_replace(str, reg_variable, fmt_id);
+			code += str + "\n";
 			code += "\n";
 		}
 		code += "}\n";
@@ -1031,145 +1023,106 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-#define CODE_vec1 \
-			v$o = v$i;
-#define CODE_vec2 \
-			v$o.x = x$i; NL\
-			v$o.y = y$i;
-#define CODE_vec3 \
-			v$o.x = x$i; NL\
-			v$o.y = y$i; NL\
-			v$o.z = z$i;
-#define CODE_vec4 \
-			v$o.x = x$i; NL\
-			v$o.y = y$i; NL\
-			v$o.z = z$i; NL\
-			v$o.w = w$i;
-
 	void BP_Int$::update()
 	{
-		CODE_vec1
-	}
-
-	const char* BP_Int$::code()
-	{
-		return FLAME_STR(CODE_vec1);
+		v$o = v$i;
 	}
 
 	BP_Int$ bp_int_unused;
 
 	void BP_Float$::update()
 	{
-		CODE_vec1
-	}
-
-	const char* BP_Float$::code()
-	{
-		return FLAME_STR(CODE_vec1);
+		v$o = v$i;
 	}
 
 	BP_Float$ bp_float_unused;
 
 	void BP_Bool$::update()
 	{
-		CODE_vec1
-	}
-
-	const char* BP_Bool$::code()
-	{
-		return FLAME_STR(CODE_vec1);
+		v$o = v$i;
 	}
 
 	BP_Bool$ bp_bool_unused;
 
 	void BP_Vec2$::update()
 	{
-#define NL
-		CODE_vec2
-#undef NL
-	}
-
-	const char* BP_Vec2$::code()
-	{
-		return FLAME_STR(CODE_vec2);
+		v$o.x = x$i; 
+		v$o.y = y$i;
 	}
 
 	BP_Vec2$ bp_vec2_unused;
 
 	void BP_Vec3$::update()
 	{
-#define NL
-		CODE_vec3
-#undef NL
-	}
-
-	const char* BP_Vec3$::code()
-	{
-		return FLAME_STR(CODE_vec3);
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
 	}
 
 	BP_Vec3$ bp_vec3_unused;
 
 	void BP_Vec4$::update()
 	{
-#define NL
-		CODE_vec4
-#undef NL
-	}
-
-	const char* BP_Vec4$::code()
-	{
-		return FLAME_STR(CODE_vec4);
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+		v$o.w = w$i;
 	}
 
 	BP_Vec4$ bp_vec4_unused;
 
 	void BP_Ivec2$::update()
 	{
-#define NL
-		CODE_vec2
-#undef NL
-	}
-
-	const char* BP_Ivec2$::code()
-	{
-		return FLAME_STR(CODE_vec2);
+		v$o.x = x$i;
+		v$o.y = y$i;
 	}
 
 	BP_Ivec2$ bp_ivec2_unused;
 
 	void BP_Ivec3$::update()
 	{
-#define NL
-		CODE_vec3
-#undef NL
-	}
-
-	const char* BP_Ivec3$::code()
-	{
-		return FLAME_STR(CODE_vec3);
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
 	}
 
 	BP_Ivec3$ bp_ivec3_unused;
 
 	void BP_Ivec4$::update()
 	{
-#define NL
-		CODE_vec4
-#undef NL
-	}
-
-	const char* BP_Ivec4$::code()
-	{
-		return FLAME_STR(CODE_vec4);
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+		v$o.w = w$i;
 	}
 
 	BP_Ivec4$ bp_ivec4_unused;
 
-#undef CODE_vec1
-#undef CODE_vec2
-#undef CODE_vec3
-#undef CODE_vec4
+	void BP_Bvec2$::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+	}
 
+	BP_Bvec2$ bp_bvec2_unused;
+
+	void BP_Bvec3$::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+	}
+
+	BP_Bvec3$ bp_bvec3_unused;
+
+	void BP_Bvec4$::update()
+	{
+		v$o.x = x$i;
+		v$o.y = y$i;
+		v$o.z = z$i;
+		v$o.w = w$i;
+	}
+
+	BP_Bvec4$ bp_bvec4_unused;
 }
 

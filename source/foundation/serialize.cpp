@@ -455,14 +455,13 @@ namespace flame
 		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
 		std::wstring module_name;
 		void* update_function_rva;
-		void* code_function_rva;
+		std::string update_function_code;
 
 		int find_pos;
 
 		inline UdtInfoPrivate()
 		{
 			update_function_rva = nullptr;
-			code_function_rva = nullptr;
 
 			find_pos = 0;
 		}
@@ -535,19 +534,19 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->find_item_i(name);
 	}
 
+	const wchar_t* UdtInfo::module_name() const
+	{
+		return ((UdtInfoPrivate*)this)->module_name.c_str();
+	}
+
 	const void* UdtInfo::update_function_rva() const
 	{
 		return ((UdtInfoPrivate*)this)->update_function_rva;
 	}
 
-	const void* UdtInfo::code_function_rva() const
+	const char* UdtInfo::update_function_code() const
 	{
-		return ((UdtInfoPrivate*)this)->code_function_rva;
-	}
-
-	const wchar_t* UdtInfo::module_name() const
-	{
-		return ((UdtInfoPrivate*)this)->module_name.c_str();
+		return ((UdtInfoPrivate*)this)->update_function_code.c_str();
 	}
 
 	void UdtInfo::construct(void *dst) const
@@ -1698,8 +1697,6 @@ namespace flame
 				continue;
 			}
 
-			auto fn_related = std::filesystem::path(fn).filename().wstring();
-
 			LONG l;
 			ULONG ul;
 			ULONGLONG ull;
@@ -1708,6 +1705,8 @@ namespace flame
 			std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
 			std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
 			std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
+
+			std::map<DWORD, std::vector<std::string>> source_files;
 
 			// enums
 			IDiaEnumSymbols * _enums;
@@ -1901,7 +1900,6 @@ namespace flame
 							IDiaEnumSymbols* functions;
 							_udt->findChildren(SymTagFunction, NULL, nsNone, &functions);
 							IDiaSymbol* function;
-							auto udt_need_module_name = false;
 							while (SUCCEEDED(functions->Next(1, &function, &ul)) && (ul == 1))
 							{
 								function->get_name(&pwname);
@@ -1942,28 +1940,58 @@ namespace flame
 											if (dw)
 											{
 												udt->update_function_rva = (void*)dw;
-												udt_need_module_name = true;
-											}
-										}
-									}
-									else if (name == "code" && parameters_count == 0)
-									{
-										return_type->get_symTag(&dw);
-										if (dw == SymTagPointerType)
-										{
-											IDiaSymbol* return_base_type;
-											return_type->get_type(&return_base_type);
-											DWORD baseType;
-											if (SUCCEEDED(return_base_type->get_baseType(&baseType)) && baseType == btChar)
-											{
-												function->get_relativeVirtualAddress(&dw);
-												if (dw)
+												udt->module_name = std::filesystem::path(fn).filename().wstring();;
+												
+												function->get_length(&ull);
+												IDiaEnumLineNumbers* lines;
+
+												if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
 												{
-													udt->code_function_rva = (void*)dw;
-													udt_need_module_name = true;
+													IDiaLineNumber* line;
+													DWORD src_file_id = -1;
+													DWORD line_num;
+
+													while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1)) 
+													{
+														if (src_file_id == -1)
+														{
+															line->get_sourceFileId(&src_file_id);
+
+															if (source_files.find(src_file_id) == source_files.end())
+															{
+																BSTR filename;
+																IDiaSourceFile* source_file;
+																line->get_sourceFile(&source_file);
+																source_file->get_fileName(&filename);
+																source_file->Release();
+
+																auto& vec = (source_files[src_file_id] = std::vector<std::string>());
+																vec.push_back("\n");
+
+																std::ifstream file(filename);
+																if (file.good())
+																{
+																	while (!file.eof())
+																	{
+																		std::string line;
+																		std::getline(file, line);
+
+																		vec.push_back(line + "\n");
+																	}
+																	file.close();
+																}
+															}
+														}
+
+														line->get_lineNumber(&line_num);
+														udt->update_function_code += source_files[src_file_id][line_num];
+
+														line->Release();
+													}
+
+													lines->Release();
 												}
 											}
-											return_base_type->Release();
 										}
 									}
 								}
@@ -1973,8 +2001,6 @@ namespace flame
 
 								function->Release();
 							}
-							if (udt_need_module_name)
-								udt->module_name = fn_related;
 							functions->Release();
 
 							udts.emplace(udt_namehash, udt);
@@ -2160,9 +2186,10 @@ namespace flame
 							auto rva = (void*)stou1(n_function->find_attr("rva")->value().c_str());
 
 							if (name == "update")
+							{
 								u->update_function_rva = rva;
-							else if (name == "code")
-								u->code_function_rva = rva;
+								u->update_function_code = n_function->find_node("code")->value();
+							}
 						}
 					}
 				}
@@ -2228,12 +2255,7 @@ namespace flame
 					auto n_func = n_functions->new_node("function");
 					n_func->new_attr("name", "update");
 					n_func->new_attr("rva", to_string((uint)u.second->update_function_rva).v);
-				}
-				if (u.second->code_function_rva)
-				{
-					auto n_func = n_functions->new_node("function");
-					n_func->new_attr("name", "code");
-					n_func->new_attr("rva", to_string((uint)u.second->code_function_rva).v);
+					n_func->new_node("code")->set_value(u.second->update_function_code);
 				}
 			}
 		}

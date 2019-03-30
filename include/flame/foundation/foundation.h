@@ -1130,7 +1130,6 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS Array<String> get_module_dependancies(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *thiz);
-	FLAME_FOUNDATION_EXPORTS String run_module_function_member_constcharp_void(const wchar_t *module_name, const void *rva, void *thiz);
 
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const StringW &s);

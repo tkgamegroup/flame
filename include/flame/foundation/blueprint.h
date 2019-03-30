@@ -155,7 +155,6 @@ namespace flame
 		int v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Float$
@@ -165,7 +164,6 @@ namespace flame
 		float v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Bool$
@@ -175,7 +173,6 @@ namespace flame
 		bool v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Vec2$
@@ -186,7 +183,6 @@ namespace flame
 		Vec2 v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Vec3$
@@ -198,7 +194,6 @@ namespace flame
 		Vec3 v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Vec4$
@@ -211,7 +206,6 @@ namespace flame
 		Vec4 v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Ivec2$
@@ -222,7 +216,6 @@ namespace flame
 		Ivec2 v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Ivec3$
@@ -234,7 +227,6 @@ namespace flame
 		Ivec3 v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
 	};
 
 	struct BP_Ivec4$
@@ -247,7 +239,39 @@ namespace flame
 		Ivec4 v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update();
-		FLAME_FOUNDATION_EXPORTS const char* code();
+	};
+
+	struct BP_Bvec2$
+	{
+		uchar x$i;
+		uchar y$i;
+
+		Bvec2 v$o;
+
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Bvec3$
+	{
+		uchar x$i;
+		uchar y$i;
+		uchar z$i;
+
+		Bvec3 v$o;
+
+		FLAME_FOUNDATION_EXPORTS void update();
+	};
+
+	struct BP_Bvec4$
+	{
+		uchar x$i;
+		uchar y$i;
+		uchar z$i;
+		uchar w$i;
+
+		Bvec4 v$o;
+
+		FLAME_FOUNDATION_EXPORTS void update();
 	};
 }
 

@@ -635,9 +635,9 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS VariableInfo*item(int idx) const;
 		FLAME_FOUNDATION_EXPORTS int find_item_i(const char *name) const;
 
-		FLAME_FOUNDATION_EXPORTS const void* update_function_rva() const;
-		FLAME_FOUNDATION_EXPORTS const void* code_function_rva() const;
 		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
+		FLAME_FOUNDATION_EXPORTS const void* update_function_rva() const;
+		FLAME_FOUNDATION_EXPORTS const char* update_function_code() const;
 
 		FLAME_FOUNDATION_EXPORTS void construct(void *dst) const;
 		FLAME_FOUNDATION_EXPORTS void destruct(void *dst) const;
