@@ -26,4 +26,50 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
+	/*
+			   pos                        size.x
+				   +------------------------------------------------
+				   |	              top inner padding
+				   |			****************************
+				   |	 left   *                          *  right
+			size.y |	 inner  *          content         *  inner
+				   |	padding *                          * padding
+				   |	        ****************************
+				   |			     bottom inner padding
+	*/
+
+	struct Element : Component
+	{
+		Vec2 pos;
+		Vec2 size;
+
+		float alpha;
+		float scale;
+
+		Vec4 inner_padding; // L T R B
+		float layout_padding;
+
+		Vec4 background_offset; // L T R B
+		float background_round_radius;
+		int background_round_flags;
+		float background_frame_thickness;
+		Bvec4 background_color;
+		Bvec4 background_frame_color;
+		float background_shaow_thickness;
+
+		FLAME_UNIVERSE_EXPORTS virtual ~Element() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
+		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
+		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
+
+		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas() const;
+
+		FLAME_UNIVERSE_EXPORTS static Element* create();
+	};
 }

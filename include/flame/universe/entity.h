@@ -31,13 +31,17 @@ namespace flame
 
 	struct Entity
 	{
-		FLAME_UNIVERSE_EXPORTS int component_count();
-		FLAME_UNIVERSE_EXPORTS Component* component(uint type_hash);
-		FLAME_UNIVERSE_EXPORTS Array<Component*> components(uint type_hash /* 0 to get all components */ );
+		FLAME_UNIVERSE_EXPORTS const char* name() const;
+		FLAME_UNIVERSE_EXPORTS void set_name(const char* name) const;
+
+		FLAME_UNIVERSE_EXPORTS int component_count() const;
+		FLAME_UNIVERSE_EXPORTS Component* component(uint type_hash) const;
+		FLAME_UNIVERSE_EXPORTS Array<Component*> components(uint type_hash /* 0 to get all components */ ) const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 
-		FLAME_UNIVERSE_EXPORTS int children_count();
-		FLAME_UNIVERSE_EXPORTS Entity* child(int index);
+		FLAME_UNIVERSE_EXPORTS Entity* parent() const;
+		FLAME_UNIVERSE_EXPORTS int children_count() const;
+		FLAME_UNIVERSE_EXPORTS Entity* child(int index) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e);
 
 		FLAME_UNIVERSE_EXPORTS void update(float delta_time);

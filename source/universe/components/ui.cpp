@@ -38,6 +38,11 @@ namespace flame
 		}
 	};
 
+	const char* UI::type_name() const
+	{
+		return "UI";
+	}
+
 	uint UI::type_hash() const
 	{
 		return cH("UI");
@@ -46,6 +51,11 @@ namespace flame
 	void UI::update(float delta_time)
 	{
 		;
+	}
+
+	graphics::Canvas* UI::canvas() const
+	{
+		return ((UIPrivate*)this)->canvas;
 	}
 
 	UI* UI::create(graphics::Canvas* canvas, Window* w)

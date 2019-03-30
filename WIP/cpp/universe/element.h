@@ -11,18 +11,6 @@ namespace flame
 
 	struct UI;
 
-	/*
-			   pos                        size.x
-				   +------------------------------------------------
-				   |	              top inner padding
-				   |			****************************
-				   |	 left   *                          *  right
-			size.y |	 inner  *          content         *  inner
-				   |	padding *                          * padding
-				   |	        ****************************
-				   |			     bottom inner padding
-	*/
-
 	enum SizePolicy
 	{
 		SizeFixed,
@@ -95,27 +83,6 @@ namespace flame
 			FlagNeedToRemoveFromParent,
 			FlagNeedToTakeFromParent
 		};
-
-		StringAndHash class$;
-
-		String name$;
-
-		Vec2 pos$;
-		Vec2 size$;
-
-		float alpha$;
-		float scale$;
-
-		Vec4 inner_padding$; // L R T B
-		float layout_padding$;
-
-		Vec4 background_offset$; // L T R B
-		float background_round_radius$;
-		int background_round_flags$;
-		float background_frame_thickness$;
-		Bvec4 background_col$;
-		Bvec4 background_frame_col$;
-		float background_shaow_thickness$;
 
 		SizePolicy size_policy_hori$;
 		SizePolicy size_policy_vert$;

@@ -11,25 +11,6 @@ namespace flame
 	Element::Element(UI* ui) :
 		ui(ui)
 	{
-		class$ = "";
-
-		pos$ = Vec2(0.f);
-		size$ = Vec2(0.f);
-
-		alpha$ = 1.f;
-		scale$ = 1.f;
-
-		inner_padding$ = Vec4(0.f);
-		layout_padding$ = 0.f;
-
-		background_offset$ = Vec4(0.f);
-		background_round_radius$ = 0.f;
-		background_round_flags$ = 0;
-		background_frame_thickness$ = 0.f;
-		background_col$ = Bvec4(0);
-		background_frame_col$ = Bvec4(255);
-		background_shaow_thickness$ = 0.f;
-
 		size_policy_hori$ = SizeFixed;
 		size_policy_vert$ = SizeFixed;
 
@@ -290,7 +271,7 @@ namespace flame
 					width = max(width, c->size$.x);
 				}
 
-				width += inner_padding$[0] + inner_padding$[1];
+				width += inner_padding$[0] + inner_padding$[2];
 				if (size_policy_hori$ == SizeFitChildren)
 					set_width(width, this);
 				else if (size_policy_hori$ == SizeGreedy)
@@ -314,7 +295,7 @@ namespace flame
 				height -= item_padding$;
 				content_size = height;
 
-				height += inner_padding$[2] + inner_padding$[3];
+				height += inner_padding$[1] + inner_padding$[3];
 				if (size_policy_vert$ == SizeFitChildren)
 					set_height(height, this);
 				else if (size_policy_vert$ == SizeGreedy)
@@ -343,7 +324,7 @@ namespace flame
 				height -= item_padding$;
 				content_size = height;
 
-				height = max(0, (size$.y - inner_padding$[2] - inner_padding$[3] - height) / cnt);
+				height = max(0, (size$.y - inner_padding$[1] - inner_padding$[3] - height) / cnt);
 
 				for (auto i_c = 0; i_c < children_1$.size; i_c++)
 				{
@@ -357,13 +338,13 @@ namespace flame
 				}
 			}
 
-			auto width = size$.x - inner_padding$[0] - inner_padding$[1];
-			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+			auto width = size$.x - inner_padding$[0] - inner_padding$[2];
+			auto height = size$.y - inner_padding$[1] - inner_padding$[3];
 
 			auto content_size = get_content_size();
 			scroll_offset$ = content_size > height ? clamp((float)scroll_offset$, height - content_size, 0.f) : 0.f;
 
-			auto y = inner_padding$[2] + scroll_offset$;
+			auto y = inner_padding$[1] + scroll_offset$;
 
 			for (auto i_c = 0; i_c < children_1$.size; i_c++)
 			{
@@ -386,10 +367,10 @@ namespace flame
 					c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$, y);
 					break;
 				case AlignLargeEnd:
-					c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$, y);
+					c->pos$ = Vec2(size$.x - inner_padding$[2] - c->size$.x - c->layout_padding$, y);
 					break;
 				case AlignMiddle:
-					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0], y);
+					c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[2] - c->size$.x) * 0.5f + inner_padding$[0], y);
 					break;
 				}
 
@@ -414,7 +395,7 @@ namespace flame
 				width -= item_padding$;
 				content_size = width;
 
-				width += inner_padding$[0] + inner_padding$[1];
+				width += inner_padding$[0] + inner_padding$[2];
 				if (size_policy_hori$ == SizeFitChildren)
 					set_width(width, this);
 				else if (size_policy_hori$ == SizeGreedy)
@@ -443,7 +424,7 @@ namespace flame
 				width -= item_padding$;
 				content_size = width;
 
-				width = max(0, (size$.x - inner_padding$[0] - inner_padding$[1] - width) / cnt);
+				width = max(0, (size$.x - inner_padding$[0] - inner_padding$[2] - width) / cnt);
 
 				for (auto i_c = 0; i_c < children_1$.size; i_c++)
 				{
@@ -469,7 +450,7 @@ namespace flame
 					height = max(height, c->size$.y);
 				}
 
-				height += inner_padding$[2] + inner_padding$[3];
+				height += inner_padding$[1] + inner_padding$[3];
 				if (size_policy_vert$ == SizeFitChildren)
 					set_height(height, this);
 				else if (size_policy_vert$ == SizeGreedy)
@@ -479,7 +460,7 @@ namespace flame
 				}
 			}
 
-			auto height = size$.y - inner_padding$[2] - inner_padding$[3];
+			auto height = size$.y - inner_padding$[1] - inner_padding$[3];
 			auto x = inner_padding$[0];
 			for (auto i_c = 0; i_c < children_1$.size; i_c++)
 			{
@@ -499,13 +480,13 @@ namespace flame
 				switch (c->align$)
 				{
 				case AlignLittleEnd:
-					c->pos$ = Vec2(x, inner_padding$[2] + c->layout_padding$);
+					c->pos$ = Vec2(x, inner_padding$[1] + c->layout_padding$);
 					break;
 				case AlignLargeEnd:
 					c->pos$ = Vec2(x, size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
 					break;
 				case AlignMiddle:
-					c->pos$ = Vec2(x, (size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+					c->pos$ = Vec2(x, (size$.y - inner_padding$[1] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
 					break;
 				}
 
@@ -515,7 +496,7 @@ namespace flame
 			break;
 		case LayoutGrid:
 		{
-			auto pos = Vec2(inner_padding$[0], inner_padding$[2]);
+			auto pos = Vec2(inner_padding$[0], inner_padding$[1]);
 
 			auto cnt = 0;
 			auto line_height = 0.f;
@@ -555,36 +536,36 @@ namespace flame
 			{
 			case AlignLeft:
 				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+					(size$.y - inner_padding$[1] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
 				break;
 			case AlignRight:
 				if (c->size_policy_vert$ == SizeFitLayout)
-					c->size$.y = size$.y - inner_padding$[2] - inner_padding$[3];
-				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-					(size$.y - inner_padding$[2] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
+					c->size$.y = size$.y - inner_padding$[1] - inner_padding$[3];
+				c->pos$ = Vec2(size$.x - inner_padding$[2] - c->size$.x - c->layout_padding$,
+					(size$.y - inner_padding$[1] - inner_padding$[3] - c->size$.y) * 0.5f + inner_padding$[2]);
 				break;
 			case AlignTop:
-				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
-					inner_padding$[2] + c->layout_padding$);
+				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[2] - c->size$.x) * 0.5f + inner_padding$[0],
+					inner_padding$[1] + c->layout_padding$);
 				break;
 			case AlignBottom:
-				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[1] - c->size$.x) * 0.5f + inner_padding$[0],
+				c->pos$ = Vec2((size$.x - inner_padding$[0] - inner_padding$[2] - c->size$.x) * 0.5f + inner_padding$[0],
 					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
 				break;
 			case AlignLeftTop:
 				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
-					inner_padding$[2] + c->layout_padding$);
+					inner_padding$[1] + c->layout_padding$);
 				break;
 			case AlignLeftBottom:
 				c->pos$ = Vec2(inner_padding$[0] + c->layout_padding$,
 					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
 				break;
 			case AlignRightTop:
-				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
-					inner_padding$[2] + c->layout_padding$);
+				c->pos$ = Vec2(size$.x - inner_padding$[2] - c->size$.x - c->layout_padding$,
+					inner_padding$[1] + c->layout_padding$);
 				break;
 			case AlignRightBottom:
-				c->pos$ = Vec2(size$.x - inner_padding$[1] - c->size$.x - c->layout_padding$,
+				c->pos$ = Vec2(size$.x - inner_padding$[2] - c->size$.x - c->layout_padding$,
 					size$.y - inner_padding$[3] - c->size$.y - c->layout_padding$);
 				break;
 			case AlignLeftNoPadding:
@@ -937,7 +918,7 @@ namespace flame
 
 		if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
 		{
-			auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
+			auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[1])) * p.scl() + p.off();
 			p.canvas()->add_text(thiz->font_atlas_index(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v, thiz->sdf_scale() * p.scl());
 		}
 	}
@@ -965,8 +946,8 @@ namespace flame
 			auto font_atlas = ui->canvas()->get_font_atlas(font_atlas_index());
 			v = Vec2(font_atlas->get_text_width(text$.v), font_atlas->pixel_height) * sdf_scale();
 		}
-		v.x += inner_padding$[0] + inner_padding$[1];
-		v.y += inner_padding$[2] + inner_padding$[3];
+		v.x += inner_padding$[0] + inner_padding$[2];
+		v.y += inner_padding$[1] + inner_padding$[3];
 		set_size(v);
 	}
 
@@ -975,7 +956,7 @@ namespace flame
 		wText::init(font_atlas_index);
 		init_data_types();
 
-		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
+		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		event_attitude$ = EventAccept;
 
 		styles$.push_back({ 0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active) });
@@ -1038,7 +1019,7 @@ namespace flame
 
 		auto title = w->w_title();
 
-		title->inner_padding$[1] += title->size$.y * 0.6f;
+		title->inner_padding$[2] += title->size$.y * 0.6f;
 		title->set_size_auto();
 
 		auto rarrow = Element::createT<wText>(w->ui, title->font_atlas_index());
@@ -1065,7 +1046,7 @@ namespace flame
 		wText::init(font_atlas_index);
 		init_data_types();
 
-		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
+		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		size_policy_hori$ = SizeFitLayout;
 		align$ = AlignLittleEnd;
 		event_attitude$ = EventAccept;
@@ -1123,7 +1104,7 @@ namespace flame
 		opened() = 0;
 
 		w_title() = createT<wText>(ui, font_atlas_index);
-		w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
+		w_title()->inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		w_title()->size_policy_hori$ = SizeGreedy;
 		w_title()->align$ = AlignLittleEnd;
 		w_title()->event_attitude$ = EventAccept;
@@ -1306,7 +1287,7 @@ namespace flame
 		auto combo = (wComboPtr)(p.thiz()->parent);
 		if (p.src()->class$.hash == cH("wMenuItem"))
 		{
-			combo->set_width(combo->inner_padding$[0] + combo->inner_padding$[1] + combo->w_title()->inner_padding$[0] + combo->w_title()->inner_padding$[1] + p.src()->size$.x);
+			combo->set_width(combo->inner_padding$[0] + combo->inner_padding$[2] + combo->w_title()->inner_padding$[0] + combo->w_title()->inner_padding$[2] + p.src()->size$.x);
 			auto idx = combo->w_items()->children_1$.size - 1;
 			p.src()->styles$.push_back(Style(0, 1, Function<StyleParm>(combo_item_style$, { combo })));
 			p.src()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(combo_item_mouse_event$, { combo, idx }));
@@ -1387,7 +1368,7 @@ namespace flame
 		{
 			auto font_atlas = ui->canvas()->get_font_atlas(font_atlas_index);
 			auto len = font_atlas->get_text_width(thiz->text$.v, thiz->text$.v + thiz->cursor());
-			auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
+			auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[1])) * p.scl() + p.off();
 			auto scl = p.scl() * thiz->sdf_scale();
 			p.canvas()->add_text(font_atlas_index, pos + Vec2(len - 1.f, 0.f) * scl, thiz->text_col(), L"|", scl);
 		}
@@ -1566,7 +1547,7 @@ namespace flame
 		info() = _info;
 		target() = _target;
 
-		inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
+		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		background_col$ = ui->default_frame_col;
 		event_attitude$ = EventAccept;
 		want_key_focus$ = true;
@@ -1619,15 +1600,15 @@ namespace flame
 
 	void wEdit::set_size_by_width(float width)
 	{
-		set_size(Vec2(width + inner_padding$[0] + inner_padding$[1], 
-			(font_atlas_index() >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index())->pixel_height * sdf_scale() : 0.f) + inner_padding$[2] + inner_padding$[3]));
+		set_size(Vec2(width + inner_padding$[0] + inner_padding$[2], 
+			(font_atlas_index() >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index())->pixel_height * sdf_scale() : 0.f) + inner_padding$[1] + inner_padding$[3]));
 	}
 
 	void image_extra_draw$(Element::ExtraDrawParm& p)
 	{
 		auto thiz = (wImagePtr)p.thiz();
-		auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[2])) * p.scl() + p.off();
-		auto size = (thiz->size$ - Vec2(thiz->inner_padding$[0] + thiz->inner_padding$[1], thiz->inner_padding$[2] + thiz->inner_padding$[3])) * p.scl() * thiz->scale$;
+		auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[1])) * p.scl() + p.off();
+		auto size = (thiz->size$ - Vec2(thiz->inner_padding$[0] + thiz->inner_padding$[2], thiz->inner_padding$[1] + thiz->inner_padding$[3])) * p.scl() * thiz->scale$;
 		if (!thiz->stretch())
 			p.canvas()->add_image(pos, size, thiz->id(), thiz->uv0(), thiz->uv1());
 		else
@@ -1680,7 +1661,7 @@ namespace flame
 	void scrollbar_style$(StyleParm& p)
 	{
 		auto thiz = (wScrollbarPtr)p.e();
-		auto s = thiz->w_target()->size$.y - thiz->w_target()->inner_padding$[2] - thiz->w_target()->inner_padding$[3];
+		auto s = thiz->w_target()->size$.y - thiz->w_target()->inner_padding$[1] - thiz->w_target()->inner_padding$[3];
 		auto content_size = thiz->w_target()->get_content_size();
 		if (content_size > s)
 		{
@@ -1851,7 +1832,7 @@ namespace flame
 		layout_type$ = LayoutHorizontal;
 
 		w_title() = createT<wText>(ui, font_atlas_index);
-		w_title()->inner_padding$ = Vec4(4.f, 4.f, 2.f, 2.f);
+		w_title()->inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		w_title()->size_policy_hori$ = SizeFitLayout;
 		w_title()->align$ = AlignLittleEnd;
 		w_title()->event_attitude$ = EventAccept;
@@ -1981,7 +1962,7 @@ namespace flame
 
 		w_title() = createT<wText>(ui, font_atlas_index);
 		w_title()->inner_padding$[0] = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.8f : 0.f;
-		w_title()->inner_padding$ += Vec4(4.f, 4.f, 2.f, 2.f);
+		w_title()->inner_padding$ += Vec4(4.f, 2.f, 4.f, 2.f);
 		w_title()->align$ = AlignLittleEnd;
 		w_title()->event_attitude$ = EventAccept;
 		w_title()->text$ = title;
@@ -2001,7 +1982,7 @@ namespace flame
 		add_child(w_items());
 
 		w_larrow() = createT<wText>(ui, font_atlas_index);
-		w_larrow()->inner_padding$ = Vec4(4.f, 0.f, 4.f, 0.f);
+		w_larrow()->inner_padding$ = Vec4(4.f, 4.f, 0.f, 0.f);
 		w_larrow()->background_col$ = Bvec4(255, 255, 255, 0);
 		w_larrow()->align$ = AlignLeftTopNoPadding;
 		w_larrow()->event_attitude$ = EventAccept;
