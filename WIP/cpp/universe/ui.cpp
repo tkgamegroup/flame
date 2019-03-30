@@ -1,25 +1,3 @@
-// MIT License
-// 
-// Copyright (c) 2018 wjs
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
 #include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
@@ -32,9 +10,6 @@
 
 namespace flame
 {
-	FLAME_PACKAGE_BEGIN_1(UIEventData, UIPrivatePtr, ui, p)
-	FLAME_PACKAGE_END_1
-
 	void ui_key_event$(Window::KeyListenerParm& p)
 	{
 		p.get_capture<UIEventData>().ui()->on_key(p.action(), p.value());
@@ -108,42 +83,6 @@ namespace flame
 
 		auto w_debug = Element::createT<wDebug>(this);
 		root_->add_child(w_debug, 1);
-	}
-
-	inline void UIPrivate::set_default_style(DefaultStyle s)
-	{
-		switch (s)
-		{
-		case DefaultStyleDark:
-			default_text_col = Bvec4(255, 255, 255, 255);
-			default_text_col_hovering_or_active = Bvec4(180, 180, 180, 255);
-			default_window_col = Colorf(0.06f, 0.06f, 0.06f, 0.94f);
-			default_frame_col = HSV(55.f, 0.67f, 0.47f, 0.54f);
-			default_frame_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.40f);
-			default_frame_col_active = HSV(52.f, 0.73f, 0.97f, 0.67f);
-			default_button_col = HSV(52.f, 0.73f, 0.97f, 0.40f);
-			default_button_col_hovering = HSV(52.f, 0.73f, 0.97f, 1.00f);
-			default_button_col_active = HSV(49.f, 0.93f, 0.97f, 1.00f);
-			default_header_col = HSV(52.f, 0.73f, 0.97f, 0.31f);
-			default_header_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.80f);
-			default_header_col_active = HSV(52.f, 0.73f, 0.97f, 1.00f);
-			break;
-		case DefaultStyleLight:
-			default_text_col = Bvec4(0, 0, 0, 255);
-			default_text_col_hovering_or_active = Bvec4(255, 255, 255, 255);
-			default_window_col = Colorf(0.94f, 0.94f, 0.94f, 1.00f);
-			default_frame_col = Colorf(1.00f, 1.00f, 1.00f, 1.00f);
-			default_frame_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.40f);
-			default_frame_col_active = HSV(52.f, 0.73f, 0.97f, 0.67f);
-			default_button_col = HSV(52.f, 0.73f, 0.97f, 0.40f);
-			default_button_col_hovering = HSV(52.f, 0.73f, 0.97f, 1.00f);
-			default_button_col_active = HSV(45.f, 0.73f, 0.97f, 1.00f);
-			default_header_col = HSV(52.f, 0.73f, 0.97f, 0.31f);
-			default_header_col_hovering = HSV(52.f, 0.73f, 0.97f, 0.80f);
-			default_header_col_active = HSV(52.f, 0.73f, 0.97f, 1.00f);
-			break;
-		}
-		default_sdf_scale = 1.f;
 	}
 
 	inline void UIPrivate::on_key(KeyState action, int value)
@@ -664,11 +603,6 @@ namespace flame
 	//		add_text_stroke(Vec2(4.f, i.y) + wnd_off, Vec4(1.f), "%d", i.x * -100);
 	//	}
 	//}
-
-	void UI::set_default_style(DefaultStyle s)
-	{
-		((UIPrivate*)this)->set_default_style(s);
-	}
 
 	graphics::Canvas* UI::canvas()
 	{

@@ -1,11 +1,3 @@
-#pragma once
-
-#include <string>
-#include <memory>
-
-#include <flame/math.h>
-#include <flame/spare_list.h>
-
 namespace flame
 {
 	enum { MaxMaterialCount = 256 };

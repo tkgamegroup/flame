@@ -1,10 +1,3 @@
-#pragma once
-
-#include <memory>
-
-#include <flame/global.h>
-#include <flame/spare_list.h>
-#include <flame/math.h>
 #include <flame/engine/core/object.h>
 #include <flame/engine/graphics/resource.h>
 #include <flame/engine/graphics/graphics.h>
@@ -12,19 +5,6 @@
 
 namespace flame
 {
-	struct CameraComponent;
-	struct Model;
-	struct Buffer;
-	struct DescriptorSet;
-	struct Framebuffer;
-	struct CommandBuffer;
-	struct Scene;
-
-	struct Renderer : Object
-	{
-
-	};
-
 	struct PlainRenderer
 	{
 		static bool first;

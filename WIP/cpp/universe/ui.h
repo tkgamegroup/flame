@@ -1,39 +1,5 @@
-// MIT License
-// 
-// Copyright (c) 2018 wjs
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
-#pragma once
-
-#include <flame/universe/universe.h>
-
 namespace flame
 {
-	struct Element;
-
-	enum DefaultStyle
-	{
-		DefaultStyleDark,
-		DefaultStyleLight
-	};
-
 	struct UI
 	{
 		int key_states[Key_count];
@@ -47,60 +13,8 @@ namespace flame
 		bool processed_mouse_input;
 		bool processed_keyboard_input;
 
-		// mouse just down
-		inline bool just_down_M(int idx)
-		{
-			return mouse_buttons[idx] == (KeyStateJust | KeyStateDown);
-		}
-
-		// mouse just up
-		inline bool just_up_M(int idx)
-		{
-			return mouse_buttons[idx] == (KeyStateJust | KeyStateUp);
-		}
-
-		// mouse pressing
-		inline bool pressing_M(int idx)
-		{
-			return (mouse_buttons[idx] & KeyStateDown) != 0;
-		}
-
-		// key just down
-		inline bool just_down_K(Key k)
-		{
-			return key_states[k] == (KeyStateJust | KeyStateDown);
-		}
-
-		// key just up
-		inline bool just_up_K(Key k)
-		{
-			return key_states[k] == (KeyStateJust | KeyStateUp);
-		}
-
-		// key pressing
-		inline bool pressing_K(Key k)
-		{
-			return (key_states[k] & KeyStateDown) != 0;
-		}
-
-		Bvec4 default_text_col;
-		Bvec4 default_text_col_hovering_or_active;
-		Bvec4 default_window_col;
-		Bvec4 default_frame_col;
-		Bvec4 default_frame_col_hovering;
-		Bvec4 default_frame_col_active;
-		Bvec4 default_button_col;
-		Bvec4 default_button_col_hovering;
-		Bvec4 default_button_col_active;
-		Bvec4 default_header_col;
-		Bvec4 default_header_col_hovering;
-		Bvec4 default_header_col_active;
-		float default_sdf_scale;
-
 		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas();
 		FLAME_UNIVERSE_EXPORTS Ivec2 size() const;
-
-		FLAME_UNIVERSE_EXPORTS void set_default_style(DefaultStyle s);
 
 		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, int value);
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Ivec2 & pos);

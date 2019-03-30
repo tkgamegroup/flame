@@ -1,7 +1,3 @@
-#pragma once
-
-#include <memory>
-
 #include <flame/engine/core/object.h>
 
 namespace flame
