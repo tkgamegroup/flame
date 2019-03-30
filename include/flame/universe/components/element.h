@@ -43,7 +43,7 @@ namespace flame
 				   |			     bottom inner padding
 	*/
 
-	struct Element : Component
+	struct cElement : Component
 	{
 		Vec2 pos;
 		Vec2 size;
@@ -62,14 +62,12 @@ namespace flame
 		Bvec4 background_frame_color;
 		float background_shaow_thickness;
 
-		FLAME_UNIVERSE_EXPORTS virtual ~Element() override;
+		FLAME_UNIVERSE_EXPORTS virtual ~cElement() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
 		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
-		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas() const;
-
-		FLAME_UNIVERSE_EXPORTS static Element* create();
+		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};
 }

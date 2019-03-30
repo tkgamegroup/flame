@@ -29,9 +29,18 @@ namespace flame
 	struct EntityPrivate : Entity
 	{
 		std::string name;
+		bool visible;
 		std::map<uint, std::vector<std::unique_ptr<Component>>> components;
 		Entity* parent;
 		std::vector<std::unique_ptr<Entity>> children;
+
+		bool visible_;
+
+		inline EntityPrivate() :
+			visible(true),
+			visible_(false)
+		{
+		}
 
 		inline Component* get_component(uint type_hash)
 		{
@@ -74,7 +83,13 @@ namespace flame
 					c->update(delta_time);
 			}
 			for (auto& e : children)
-				e->update(delta_time);
+			{
+				auto e_ = (EntityPrivate*)e.get();
+				e_->visible_ = e_->visible;
+				if (e_->parent)
+					e_->visible_ &= e_->parent->visible_;
+				e_->update(delta_time);
+			}
 		}
 	};
 
@@ -86,6 +101,21 @@ namespace flame
 	void Entity::set_name(const char* name) const
 	{
 		((EntityPrivate*)this)->name = name;
+	}
+
+	bool Entity::visible() const
+	{
+		return ((EntityPrivate*)this)->visible;
+	}
+
+	bool Entity::visible_() const
+	{
+		return ((EntityPrivate*)this)->visible_;
+	}
+
+	void Entity::set_visible(bool visible) const
+	{
+		((EntityPrivate*)this)->visible = visible;
 	}
 
 	int Entity::component_count() const

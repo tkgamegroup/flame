@@ -26,11 +26,11 @@
 
 namespace flame
 {
-	struct ElementPrivate : Element
+	struct cElementPrivate : cElement
 	{
-		graphics::Canvas* canvas;
+		graphics::Canvas* canvas_;
 
-		ElementPrivate::ElementPrivate()
+		cElementPrivate::cElementPrivate()
 		{
 			pos = Vec2(0.f);
 			size = Vec2(0.f);
@@ -52,32 +52,28 @@ namespace flame
 
 		void update(float delta_time)
 		{
-			canvas = nullptr;
+			canvas_ = nullptr;
+
 		}
 	};
 
-	const char* Element::type_name() const
+	const char* cElement::type_name() const
 	{
 		return "Element";
 	}
 
-	uint Element::type_hash() const
+	uint cElement::type_hash() const
 	{
 		return cH("Element");
 	}
 
-	void Element::update(float delta_time)
+	void cElement::update(float delta_time)
 	{
-		((ElementPrivate*)this)->update(delta_time);
+		((cElementPrivate*)this)->update(delta_time);
 	}
 
-	graphics::Canvas* Element::canvas() const
+	cElement* cElement::create()
 	{
-		return ((ElementPrivate*)this)->canvas;
-	}
-
-	Element* Element::create()
-	{
-		return new ElementPrivate();
+		return new cElementPrivate();
 	}
 }

@@ -27,3 +27,5 @@
 #else
 #define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
 #endif
+
+// in ecs system, a member followed by a '_' means it's a real-time value
