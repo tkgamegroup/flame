@@ -20,12 +20,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/universe/component.h>
+#include <flame/foundation/foundation.h>
+#include <flame/universe/entity.h>
+#include <flame/universe/components/ui.h>
 
 namespace flame
 {
-	Component::Component(Entity* e) :
-		entity(e)
+	struct UIPrivate : UI
 	{
+		graphics::Canvas* canvas;
+		Window* window;
+
+		UIPrivate::UIPrivate(graphics::Canvas* canvas, Window* window) :
+			canvas(canvas),
+			window(window)
+		{
+		}
+	};
+
+	uint UI::type_hash() const
+	{
+		return cH("UI");
+	}
+
+	void UI::update(float delta_time)
+	{
+		;
+	}
+
+	UI* UI::create(graphics::Canvas* canvas, Window* w)
+	{
+		return new UIPrivate(canvas, w);
 	}
 }

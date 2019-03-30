@@ -20,24 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/foundation/foundation.h>
-#include <flame/universe/entity.h>
-#include <flame/universe/components/ui/ui.h>
+#include <flame/universe/components/element.h>
 
 namespace flame
 {
-	UI::UI(Entity* e, graphics::Canvas* canvas, Window* w) :
-		Component(e)
-	{
-	}
-
-	uint UI::type_hash() const
-	{
-		return cH("UI");
-	}
-
-	void UI::update(float delta_time)
-	{
-		;
-	}
 }

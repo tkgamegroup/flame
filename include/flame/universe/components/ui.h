@@ -22,20 +22,24 @@
 
 #pragma once
 
-#include <flame/type.h>
-#include <flame/universe/universe.h>
+#include <flame/universe/component.h>
 
 namespace flame
 {
-	struct Entity;
+	struct Window;
 
-	struct Component // pod
+	namespace graphics
 	{
-		Entity* entity;
+		struct Canvas;
+	}
 
-		virtual ~Component() = 0;
+	struct UI : Component
+	{
+		FLAME_UNIVERSE_EXPORTS virtual ~UI() override;
 
-		virtual uint type_hash() const = 0;
-		virtual void update(float delta_time) = 0;
+		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
+		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
+
+		FLAME_UNIVERSE_EXPORTS static UI* create(graphics::Canvas* canvas, Window* window = nullptr);
 	};
 }

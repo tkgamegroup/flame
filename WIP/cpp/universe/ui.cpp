@@ -64,8 +64,6 @@ namespace flame
 
 	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
 	{
-		canvas = _canvas;
-
 		set_default_style(DefaultStyleDark);
 
 		root_ = std::unique_ptr<Element>(Element::create(this));

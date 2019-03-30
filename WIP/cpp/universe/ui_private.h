@@ -30,7 +30,6 @@ namespace flame
 {
 	struct UIPrivate : UI
 	{
-		graphics::Canvas* canvas;
 		std::unique_ptr<Element> root_;
 		Element* hovering_element_;
 		Element* focus_element_;

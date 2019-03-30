@@ -28,7 +28,88 @@ namespace flame
 {
 	struct EntityPrivate : Entity
 	{
-		std::map<uint, std::vector<std::unique_ptr<Component>>> componets;
+		std::map<uint, std::vector<std::unique_ptr<Component>>> components;
 		std::vector<std::unique_ptr<Entity>> children;
+
+		inline Component* get_component(uint type_hash)
+		{
+			for (auto& cl : components)
+			{
+				if (cl.first == type_hash)
+					return cl.second[0].get();
+			}
+		}
+
+		inline Array<Component*> get_components(uint type_hash)
+		{
+			Array<Component*> ret;
+			for (auto& cl : components)
+			{
+				if (cl.first == type_hash)
+					ret.push_back(cl.second[0].get());
+			}
+			return ret;
+		}
+
+		inline void update(float delta_time)
+		{
+			for (auto& cl : components)
+			{
+				for (auto& c : cl.second)
+					c->update(delta_time);
+			}
+			for (auto& e : children)
+				e->update(delta_time);
+		}
 	};
+
+	int Entity::component_count()
+	{
+		return ((EntityPrivate*)this)->components.size();
+	}
+
+	Component* Entity::component(uint type_hash)
+	{
+		return ((EntityPrivate*)this)->get_component(type_hash);
+	}
+
+	Array<Component*> Entity::components(uint type_hash)
+	{
+		return ((EntityPrivate*)this)->get_components(type_hash);
+	}
+
+	void Entity::add_component(Component* c)
+	{
+		((EntityPrivate*)this)->components[c->type_hash()].emplace_back(c);
+	}
+
+	int Entity::children_count()
+	{
+		return ((EntityPrivate*)this)->children.size();
+	}
+
+	Entity* Entity::child(int index)
+	{
+		return ((EntityPrivate*)this)->children[index].get();
+	}
+
+	void Entity::add_child(Entity* e)
+	{
+		((EntityPrivate*)this)->children.emplace_back(e);
+	}
+
+	void Entity::update(float delta_time)
+	{
+		((EntityPrivate*)this)->update(delta_time);
+	}
+
+	Entity* Entity::create()
+	{
+		return new EntityPrivate;
+	}
+
+	void Entity::destroy(Entity* w)
+	{
+		delete (EntityPrivate*)w;
+	}
 }

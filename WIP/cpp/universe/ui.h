@@ -26,16 +26,6 @@
 
 namespace flame
 {
-	struct Window;
-	
-	namespace graphics
-	{
-		struct Device;
-		struct Imageview;
-		struct Swapchain;
-		struct Canvas;
-	}
-
 	struct Element;
 
 	enum DefaultStyle
@@ -132,9 +122,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void step(float elp_time, const Vec2& show_off = Vec2(0.f));
 
 		FLAME_UNIVERSE_EXPORTS float total_time() const;
-
-		FLAME_UNIVERSE_EXPORTS static UI * create(graphics::Canvas* canvas, Window * w = nullptr);
-		FLAME_UNIVERSE_EXPORTS static void destroy(UI * ui);
 	};
 
 	typedef UI* UIPtr;

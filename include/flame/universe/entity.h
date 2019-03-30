@@ -40,6 +40,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* child(int index);
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e);
 
+		FLAME_UNIVERSE_EXPORTS void update(float delta_time);
+
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};
