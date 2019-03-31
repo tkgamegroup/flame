@@ -27,51 +27,22 @@
 
 namespace flame
 {
-	namespace graphics
+	struct cText : Component // required: Element
 	{
-		struct Canvas;
-	}
+		int font_atlas_index;
+		Bvec4 color;
+		float sdf_scale;
 
-	/*
-			   pos                        size.x
-				   +------------------------------------------------
-				   |	              top inner padding
-				   |			****************************
-				   |	 left   *                          *  right
-			size.y |	 inner  *          content         *  inner
-				   |	padding *                          * padding
-				   |	        ****************************
-				   |			     bottom inner padding
-	*/
-
-	struct cElement : Component
-	{
-		Vec2 pos;
-		float scale;
-		Vec2 size;
-
-		Vec4 inner_padding; // L T R B
-		float layout_padding;
-
-		float alpha;
-
-		Vec4 background_offset; // L T R B
-		float background_round_radius;
-		int background_round_flags;
-		float background_frame_thickness;
-		Bvec4 background_color;
-		Bvec4 background_frame_color;
-		float background_shadow_thickness;
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cElement() override;
+		FLAME_UNIVERSE_EXPORTS virtual ~cText() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
 		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_attach() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
-		FLAME_UNIVERSE_EXPORTS static cElement* create(graphics::Canvas* canvas = nullptr);
+		FLAME_UNIVERSE_EXPORTS const wchar_t* text() const;
+		FLAME_UNIVERSE_EXPORTS void set_text(const wchar_t* text);
+
+		FLAME_UNIVERSE_EXPORTS static cText* create(int font_atlas_index);
 	};
 }

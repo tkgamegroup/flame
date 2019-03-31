@@ -20,96 +20,89 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/foundation/foundation.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/entity.h>
-#include <flame/universe/components/element.h>
+
+#include "element_private.h"
 
 namespace flame
 {
-	struct cElementPrivate : cElement
+
+	cElementPrivate::cElementPrivate(graphics::Canvas* canvas) :
+		canvas_(canvas)
 	{
-		graphics::Canvas* canvas_;
+		pos = Vec2(0.f);
+		scale = 1.f;
+		size = Vec2(0.f);
 
-		Vec2 pos_;
-		float scl_;
+		inner_padding = Vec4(0.f);
+		layout_padding = 0.f;
 
-		cElementPrivate::cElementPrivate(graphics::Canvas* canvas) :
-			canvas_(canvas)
-		{
-			pos = Vec2(0.f);
-			scale = 1.f;
-			size = Vec2(0.f);
+		alpha = 1.f;
 
-			inner_padding = Vec4(0.f);
-			layout_padding = 0.f;
+		background_offset = Vec4(0.f);
+		background_round_radius = 0.f;
+		background_round_flags = 0;
+		background_frame_thickness = 0.f;
+		background_color = Bvec4(0);
+		background_frame_color = Bvec4(255);
+		background_shadow_thickness = 0.f;
 
-			alpha = 1.f;
+		pos_ = Vec2(0.f);
+		scl_ = 1.f;
+	}
 
-			background_offset = Vec4(0.f);
-			background_round_radius = 0.f;
-			background_round_flags = 0;
-			background_frame_thickness = 0.f;
-			background_color = Bvec4(0);
-			background_frame_color = Bvec4(255);
-			background_shaow_thickness = 0.f;
-
-			pos_ = Vec2(0.f);
-			scl_ = 1.f;
-		}
-
-		void on_attach()
-		{
-			if (!canvas_)
-			{
-				auto e = entity->parent();
-				while (e)
-				{
-					auto c = (cElementPrivate*)(e->component(cH("Element")));
-					if (c)
-					{
-						canvas_ = (c)->canvas_;
-						break;
-					}
-					e = e->parent();
-				}
-			}
-		}
-
-		void update(float delta_time)
+	void cElementPrivate::on_attach()
+	{
+		if (!canvas_)
 		{
 			auto e = entity->parent();
-			if (e)
+			while (e)
 			{
 				auto c = (cElementPrivate*)(e->component(cH("Element")));
 				if (c)
 				{
-					pos_ = c->pos_ + c->scl_ * pos;
-					scl_ = c->scl_ * scale;
+					canvas_ = (c)->canvas_;
+					break;
 				}
-			}
-
-			if (canvas_)
-			{
-				auto p = (pos_ - Vec2(background_offset[0], background_offset[1])) * scl_;
-				auto s = (size + Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * scl_;
-				auto rr = background_round_radius * scl_;
-
-				if (background_shaow_thickness > 0.f)
-				{
-					canvas_->add_rect_col2(p - Vec2(background_shaow_thickness * 0.5f), s + Vec2(background_shaow_thickness), Bvec4(0, 0, 0, 128), Bvec4(0),
-						background_shaow_thickness, rr, background_round_flags);
-				}
-				if (alpha > 0.f)
-				{
-					if (background_color.w > 0)
-						canvas_->add_rect_filled(p, s, Bvec4(background_color, alpha), rr, background_round_flags);
-					if (background_frame_thickness > 0.f && background_frame_color.w > 0)
-						canvas_->add_rect(p, s, Bvec4(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
-				}
+				e = e->parent();
 			}
 		}
-	};
+	}
+
+	void cElementPrivate::update(float delta_time)
+	{
+		auto e = entity->parent();
+		if (e)
+		{
+			auto c = (cElementPrivate*)(e->component(cH("Element")));
+			if (c)
+			{
+				pos_ = c->pos_ + c->scl_ * pos;
+				scl_ = c->scl_ * scale;
+			}
+		}
+
+		if (canvas_)
+		{
+			auto p = (pos_ - Vec2(background_offset[0], background_offset[1])) * scl_;
+			auto s = (size + Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * scl_;
+			auto rr = background_round_radius * scl_;
+
+			if (background_shadow_thickness > 0.f)
+			{
+				canvas_->add_rect_col2(p - Vec2(background_shadow_thickness * 0.5f), s + Vec2(background_shadow_thickness), Bvec4(0, 0, 0, 128), Bvec4(0),
+					background_shadow_thickness, rr, background_round_flags);
+			}
+			if (alpha > 0.f)
+			{
+				if (background_color.w > 0)
+					canvas_->add_rect_filled(p, s, Bvec4(background_color, alpha), rr, background_round_flags);
+				if (background_frame_thickness > 0.f && background_frame_color.w > 0)
+					canvas_->add_rect(p, s, Bvec4(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
+			}
+		}
+	}
 
 	cElement::~cElement()
 	{

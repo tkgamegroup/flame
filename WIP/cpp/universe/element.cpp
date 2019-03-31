@@ -882,35 +882,9 @@ namespace flame
 		if (target())
 			checked() = *(bool*)target();
 
-		draw_default$ = false;
 		extra_draws$.push_back(Function<ExtraDrawParm>(checkbox_extra_draw$, {}));
 		styles$.push_back({ 0, 0, Style::background_color(ui->default_frame_col, ui->default_frame_col_hovering, ui->default_frame_col_active)});
 		mouse_listeners$.push_back(Function<MouseListenerParm>(checkbox_mouse_event$, {}));
-	}
-
-	void text_extra_draw$(Element::ExtraDrawParm& p)
-	{
-		auto thiz = (wTextPtr)p.thiz();
-
-		if (thiz->alpha$ > 0.f && thiz->text_col().w > 0.f)
-		{
-			auto _pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[1])) * p.scl() + p.off();
-			p.canvas()->add_text(thiz->font_atlas_index(), _pos, Bvec4(thiz->text_col(), thiz->alpha$), thiz->text$.v, thiz->sdf_scale() * p.scl());
-		}
-	}
-
-	void wText::init(int _font_atlas_index)
-	{
-		init_data_types();
-
-		event_attitude$ = EventIgnore;
-
-		font_atlas_index() = _font_atlas_index;
-		text_col() = ui->default_text_col;
-		sdf_scale() = ui->default_sdf_scale;
-		text$ = L"";
-
-		extra_draws$.push_back(Function<ExtraDrawParm>(text_extra_draw$, {}));
 	}
 
 	void wText::set_size_auto()

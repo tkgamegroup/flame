@@ -30,7 +30,7 @@ namespace flame
 	{
 		std::string name;
 		bool visible;
-		std::map<uint, std::vector<std::unique_ptr<Component>>> components;
+		std::vector<std::unique_ptr<Component>> components;
 		EntityPrivate* parent;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
@@ -55,10 +55,10 @@ namespace flame
 
 		inline Component* get_component(uint type_hash)
 		{
-			for (auto& cl : components)
+			for (auto& c : components)
 			{
-				if (cl.first == type_hash)
-					return cl.second[0].get();
+				if (c->type_hash() == type_hash)
+					return c.get();
 			}
 			return nullptr;
 		}
@@ -66,17 +66,17 @@ namespace flame
 		inline Array<Component*> get_components(uint type_hash)
 		{
 			Array<Component*> ret;
-			for (auto& cl : components)
+			for (auto& c : components)
 			{
-				if (cl.first == type_hash)
-					ret.push_back(cl.second[0].get());
+				if (c->type_hash() == type_hash)
+					ret.push_back(c.get());
 			}
 			return ret;
 		}
 
 		inline void add_component(Component* c)
 		{
-			components[c->type_hash()].emplace_back(c);
+			components.emplace_back(c);
 			c->entity = this;
 		}
 
@@ -90,22 +90,16 @@ namespace flame
 
 		inline void on_attach()
 		{
-			for (auto& cl : components)
-			{
-				for (auto& c : cl.second)
-					c->on_attach();
-			}
+			for (auto& c : components)
+				c->on_attach();
 			for (auto& e : children)
 				e->on_attach();
 		}
 
 		inline void update(float delta_time)
 		{
-			for (auto& cl : components)
-			{
-				for (auto& c : cl.second)
-					c->update(delta_time);
-			}
+			for (auto& c : components)
+				c->update(delta_time);
 			for (auto& e : children)
 				e->update(delta_time);
 		}
