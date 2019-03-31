@@ -36,7 +36,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS bool visible() const;
 		FLAME_UNIVERSE_EXPORTS bool visible_() const;
-		FLAME_UNIVERSE_EXPORTS void set_visible(bool visible) const;
+		FLAME_UNIVERSE_EXPORTS void set_visible(bool visible);
 
 		FLAME_UNIVERSE_EXPORTS int component_count() const;
 		FLAME_UNIVERSE_EXPORTS Component* component(uint type_hash) const;

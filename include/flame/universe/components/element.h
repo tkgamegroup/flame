@@ -46,13 +46,13 @@ namespace flame
 	struct cElement : Component
 	{
 		Vec2 pos;
-		Vec2 size;
-
-		float alpha;
 		float scale;
+		Vec2 size;
 
 		Vec4 inner_padding; // L T R B
 		float layout_padding;
+
+		float alpha;
 
 		Vec4 background_offset; // L T R B
 		float background_round_radius;
@@ -66,8 +66,11 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
 		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_attach() override;
+
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
-		FLAME_UNIVERSE_EXPORTS static cElement* create();
+		FLAME_UNIVERSE_EXPORTS static cElement* create(graphics::Canvas* canvas = nullptr);
 	};
 }

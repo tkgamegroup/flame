@@ -31,15 +31,26 @@ namespace flame
 		std::string name;
 		bool visible;
 		std::map<uint, std::vector<std::unique_ptr<Component>>> components;
-		Entity* parent;
-		std::vector<std::unique_ptr<Entity>> children;
+		EntityPrivate* parent;
+		std::vector<std::unique_ptr<EntityPrivate>> children;
 
 		bool visible_;
 
 		inline EntityPrivate() :
 			visible(true),
-			visible_(false)
+			parent(nullptr),
+			visible_(true)
 		{
+		}
+
+		inline void set_visible(bool _visible)
+		{
+			visible = _visible;
+			visible_ = visible;
+			if (parent)
+				visible_ = visible_ && parent->visible_;
+			for (auto& e : children)
+				e->set_visible(e->visible);
 		}
 
 		inline Component* get_component(uint type_hash)
@@ -69,10 +80,23 @@ namespace flame
 			c->entity = this;
 		}
 
-		inline void add_child(Entity* e)
+		inline void add_child(EntityPrivate* e)
 		{
 			children.emplace_back(e);
 			e->parent = this;
+			e->set_visible(e->visible);
+			e->on_attach();
+		}
+
+		inline void on_attach()
+		{
+			for (auto& cl : components)
+			{
+				for (auto& c : cl.second)
+					c->on_attach();
+			}
+			for (auto& e : children)
+				e->on_attach();
 		}
 
 		inline void update(float delta_time)
@@ -83,13 +107,7 @@ namespace flame
 					c->update(delta_time);
 			}
 			for (auto& e : children)
-			{
-				auto e_ = (EntityPrivate*)e.get();
-				e_->visible_ = e_->visible;
-				if (e_->parent)
-					e_->visible_ &= e_->parent->visible_;
-				e_->update(delta_time);
-			}
+				e->update(delta_time);
 		}
 	};
 
@@ -113,7 +131,7 @@ namespace flame
 		return ((EntityPrivate*)this)->visible_;
 	}
 
-	void Entity::set_visible(bool visible) const
+	void Entity::set_visible(bool visible)
 	{
 		((EntityPrivate*)this)->visible = visible;
 	}
@@ -155,7 +173,7 @@ namespace flame
 
 	void Entity::add_child(Entity* e)
 	{
-		((EntityPrivate*)this)->add_child(e);
+		((EntityPrivate*)this)->add_child((EntityPrivate*)e);
 	}
 
 	void Entity::update(float delta_time)

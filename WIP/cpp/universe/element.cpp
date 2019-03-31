@@ -38,10 +38,6 @@ namespace flame
 
 		closet_id$ = 0;
 
-		draw_default$ = true;
-
-		parent = nullptr;
-		layer = 0;
 		flag = FlagNull;
 		need_arrange = true;
 	}
@@ -637,26 +633,6 @@ namespace flame
 
 	void Element::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
 	{
-		if (draw_default$)
-		{
-			auto p = (pos$ - Vec2(background_offset$[0], background_offset$[1])) * scl + off;
-			auto ss = scl * scale$;
-			auto s = (size$ + Vec2(background_offset$[0] + background_offset$[2], background_offset$[1] + background_offset$[3])) * ss;
-			auto rr = background_round_radius$ * ss;
-
-			if (background_shaow_thickness$ > 0.f)
-			{
-				c->add_rect_col2(p - Vec2(background_shaow_thickness$ * 0.5f), s + Vec2(background_shaow_thickness$), Bvec4(0, 0, 0, 128), Bvec4(0),
-					background_shaow_thickness$, rr, background_round_flags$);
-			}
-			if (alpha$ > 0.f)
-			{
-				if (background_col$.w > 0)
-					c->add_rect_filled(p, s, Bvec4(background_col$, alpha$), rr, background_round_flags$);
-				if (background_frame_thickness$ > 0.f&& background_frame_col$.w > 0)
-					c->add_rect(p, s, Bvec4(background_frame_col$, alpha$), background_frame_thickness$, rr, background_round_flags$);
-			}
-		}
 		for (auto i = 0; i < extra_draws$.size; i++)
 		{
 			auto& f = extra_draws$[i];

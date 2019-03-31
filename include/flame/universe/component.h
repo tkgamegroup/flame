@@ -33,10 +33,13 @@ namespace flame
 	{
 		Entity* entity;
 
-		virtual ~Component() = 0;
+		virtual ~Component() = 0 {};
 
 		virtual const char* type_name() const = 0;
 		virtual uint type_hash() const = 0;
+
+		virtual void on_attach() {}
+
 		virtual void update(float delta_time) = 0;
 	};
 }

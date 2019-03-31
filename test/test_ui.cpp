@@ -24,7 +24,7 @@
 
 #include <flame/graphics/image.h>
 #include <flame/universe/entity.h>
-#include <flame/universe/components/ui.h>
+#include <flame/universe/components/element.h>
 
 using namespace flame;
 using namespace graphics;
@@ -45,7 +45,6 @@ struct App : BasicApp
 
 	Entity* root;
 
-	UI* ui;
 	//wText* t_fps;
 
 	//void create_elements(DefaultStyle style)
@@ -171,8 +170,10 @@ struct App : BasicApp
 		font_atlas_index = canvas->add_font_atlas(font_atlas);
 
 		root = Entity::create();
-		ui = UI::create(canvas, w);
-		root->add_component(ui);
+		auto wBackground = cElement::create(canvas);
+		wBackground->size = Vec2(100.f);
+		wBackground->background_color = Bvec4(255, 128, 128, 255);
+		root->add_component(wBackground);
 
 		//t_fps = Element::createT<wText>(ui, font_atlas_index);
 		//t_fps->align$ = AlignLeftBottom;

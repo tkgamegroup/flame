@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include <flame/foundation/foundation.h>
+#include <flame/graphics/canvas.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 
@@ -30,16 +31,20 @@ namespace flame
 	{
 		graphics::Canvas* canvas_;
 
-		cElementPrivate::cElementPrivate()
+		Vec2 pos_;
+		float scl_;
+
+		cElementPrivate::cElementPrivate(graphics::Canvas* canvas) :
+			canvas_(canvas)
 		{
 			pos = Vec2(0.f);
-			size = Vec2(0.f);
-
-			alpha = 1.f;
 			scale = 1.f;
+			size = Vec2(0.f);
 
 			inner_padding = Vec4(0.f);
 			layout_padding = 0.f;
+
+			alpha = 1.f;
 
 			background_offset = Vec4(0.f);
 			background_round_radius = 0.f;
@@ -48,14 +53,67 @@ namespace flame
 			background_color = Bvec4(0);
 			background_frame_color = Bvec4(255);
 			background_shaow_thickness = 0.f;
+
+			pos_ = Vec2(0.f);
+			scl_ = 1.f;
+		}
+
+		void on_attach()
+		{
+			if (!canvas_)
+			{
+				auto e = entity->parent();
+				while (e)
+				{
+					auto c = (cElementPrivate*)(e->component(cH("Element")));
+					if (c)
+					{
+						canvas_ = (c)->canvas_;
+						break;
+					}
+					e = e->parent();
+				}
+			}
 		}
 
 		void update(float delta_time)
 		{
-			canvas_ = nullptr;
+			auto e = entity->parent();
+			if (e)
+			{
+				auto c = (cElementPrivate*)(e->component(cH("Element")));
+				if (c)
+				{
+					pos_ = c->pos_ + c->scl_ * pos;
+					scl_ = c->scl_ * scale;
+				}
+			}
 
+			if (canvas_)
+			{
+				auto p = (pos_ - Vec2(background_offset[0], background_offset[1])) * scl_;
+				auto s = (size + Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * scl_;
+				auto rr = background_round_radius * scl_;
+
+				if (background_shaow_thickness > 0.f)
+				{
+					canvas_->add_rect_col2(p - Vec2(background_shaow_thickness * 0.5f), s + Vec2(background_shaow_thickness), Bvec4(0, 0, 0, 128), Bvec4(0),
+						background_shaow_thickness, rr, background_round_flags);
+				}
+				if (alpha > 0.f)
+				{
+					if (background_color.w > 0)
+						canvas_->add_rect_filled(p, s, Bvec4(background_color, alpha), rr, background_round_flags);
+					if (background_frame_thickness > 0.f && background_frame_color.w > 0)
+						canvas_->add_rect(p, s, Bvec4(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
+				}
+			}
 		}
 	};
+
+	cElement::~cElement()
+	{
+	}
 
 	const char* cElement::type_name() const
 	{
@@ -67,13 +125,18 @@ namespace flame
 		return cH("Element");
 	}
 
+	void cElement::on_attach()
+	{
+		((cElementPrivate*)this)->on_attach();
+	}
+
 	void cElement::update(float delta_time)
 	{
 		((cElementPrivate*)this)->update(delta_time);
 	}
 
-	cElement* cElement::create()
+	cElement* cElement::create(graphics::Canvas* canvas)
 	{
-		return new cElementPrivate();
+		return new cElementPrivate(canvas);
 	}
 }
