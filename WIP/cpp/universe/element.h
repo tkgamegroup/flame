@@ -159,9 +159,6 @@ namespace flame
 		Array<Function<ChangedListenerParm>> changed_listeners$;
 		Array<Function<ChildListenerParm>> child_listeners$;
 
-		Array<CommonData> datas$;
-		StringW text$;
-
 		FLAME_UNIVERSE_EXPORTS Element(UI* ui);
 		FLAME_UNIVERSE_EXPORTS ~Element();
 

@@ -829,11 +829,6 @@ namespace flame
 		}, { ui }));
 	}
 
-	void Element::destroy(Element * w)
-	{
-		delete w;
-	}
-
 	void wLayout::init(LayoutType type, float item_padding)
 	{
 		init_data_types();
