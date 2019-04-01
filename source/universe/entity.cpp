@@ -186,6 +186,11 @@ namespace flame
 		for (auto& c : src->components)
 		{
 			std::string type_name = c->type_name();
+			auto u = find_udt(H((type_name + "Archive").c_str()));
+			if (u)
+			{
+
+			}
 		}
 	}
 
