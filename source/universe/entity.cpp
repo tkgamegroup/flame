@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include <flame/foundation/foundation.h>
+#include <flame/foundation/serialize.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/component.h>
 
@@ -41,16 +42,6 @@ namespace flame
 			parent(nullptr),
 			visible_(true)
 		{
-		}
-
-		inline void set_visible(bool _visible)
-		{
-			visible = _visible;
-			visible_ = visible;
-			if (parent)
-				visible_ = visible_ && parent->visible_;
-			for (auto& e : children)
-				e->set_visible(e->visible);
 		}
 
 		inline Component* get_component(uint type_hash)
@@ -96,6 +87,16 @@ namespace flame
 				e->on_attach();
 		}
 
+		inline void set_visible(bool _visible)
+		{
+			visible = _visible;
+			visible_ = visible;
+			if (parent)
+				visible_ = visible_ && parent->visible_;
+			for (auto& e : children)
+				e->set_visible(e->visible);
+		}
+
 		inline void update(float delta_time)
 		{
 			for (auto& c : components)
@@ -118,16 +119,6 @@ namespace flame
 	bool Entity::visible() const
 	{
 		return ((EntityPrivate*)this)->visible;
-	}
-
-	bool Entity::visible_() const
-	{
-		return ((EntityPrivate*)this)->visible_;
-	}
-
-	void Entity::set_visible(bool visible)
-	{
-		((EntityPrivate*)this)->visible = visible;
 	}
 
 	int Entity::component_count() const
@@ -170,9 +161,33 @@ namespace flame
 		((EntityPrivate*)this)->add_child((EntityPrivate*)e);
 	}
 
+	bool Entity::visible_() const
+	{
+		return ((EntityPrivate*)this)->visible_;
+	}
+
+	void Entity::set_visible(bool visible)
+	{
+		((EntityPrivate*)this)->visible = visible;
+	}
+
 	void Entity::update(float delta_time)
 	{
 		((EntityPrivate*)this)->update(delta_time);
+	}
+
+	void Entity::load(const wchar_t* filename)
+	{
+		auto file = SerializableNode::create_from_xml(filename);
+		if (!file || file->name() != "BP")
+			return;
+
+
+	}
+
+	void Entity::save(const wchar_t* filename)
+	{
+
 	}
 
 	Entity* Entity::create()

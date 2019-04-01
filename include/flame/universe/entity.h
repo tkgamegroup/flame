@@ -35,8 +35,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_name(const char* name) const;
 
 		FLAME_UNIVERSE_EXPORTS bool visible() const;
-		FLAME_UNIVERSE_EXPORTS bool visible_() const;
-		FLAME_UNIVERSE_EXPORTS void set_visible(bool visible);
 
 		FLAME_UNIVERSE_EXPORTS int component_count() const;
 		FLAME_UNIVERSE_EXPORTS Component* component(uint type_hash) const;
@@ -48,7 +46,13 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* child(int index) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e);
 
+		FLAME_UNIVERSE_EXPORTS bool visible_() const;
+		FLAME_UNIVERSE_EXPORTS void set_visible(bool visible);
+
 		FLAME_UNIVERSE_EXPORTS void update(float delta_time);
+
+		FLAME_UNIVERSE_EXPORTS void load(const wchar_t* filename);
+		FLAME_UNIVERSE_EXPORTS void save(const wchar_t* filename);
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);

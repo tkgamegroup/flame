@@ -714,7 +714,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode *n);
 	};
 
-	// something with $ means it is reflected
+	// something with $ means it is reflectable
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_collect_init();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::vector<std::wstring> &filenames);

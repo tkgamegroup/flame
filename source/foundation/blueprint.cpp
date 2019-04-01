@@ -676,7 +676,7 @@ namespace flame
 		filename = _filename;
 
 		auto file = SerializableNode::create_from_xml(filename);
-		if (!file)
+		if (!file || file->name() != "BP")
 			return;
 
 		for (auto i_n = 0; i_n < file->node_count(); i_n++)
