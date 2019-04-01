@@ -99,6 +99,8 @@ namespace flame
 
 		inline void update(float delta_time)
 		{
+			if (!visible_)
+				return;
 			for (auto& c : components)
 				c->update(delta_time);
 			for (auto& e : children)
@@ -176,10 +178,26 @@ namespace flame
 		((EntityPrivate*)this)->update(delta_time);
 	}
 
+	static void serialize(EntityPrivate* src, SerializableNode* dst)
+	{
+		dst->new_attr("name", src->name);
+		dst->new_attr("visible", to_stdstring(src->visible));
+		auto n_components = dst->new_node("components");
+		for (auto& c : src->components)
+		{
+			std::string type_name = c->type_name();
+		}
+	}
+
+	static void unserialize(EntityPrivate* dst, SerializableNode* src)
+	{
+
+	}
+
 	void Entity::load(const wchar_t* filename)
 	{
 		auto file = SerializableNode::create_from_xml(filename);
-		if (!file || file->name() != "BP")
+		if (!file || file->name() != "node")
 			return;
 
 
