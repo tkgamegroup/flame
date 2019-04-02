@@ -41,10 +41,10 @@ namespace flame
 		  'a.b'   for node input or output
 		  'a.b.3' for item, index is default to 0
 		- An available udt must:
-			inherites from BP_Object and implements the update function
+			a nonparametric void function called 'update'
 			all datas work fine with zero memory (basically, BP nodes will use udts to create an all-zeros
 			 memory, (Array<>, String, StringW are fined with zero memory))
-			have an nonparametric no-return-value function called 'update'
+			have an nonparametric void function called 'update'
 		- A BP file is basically a XML file, you can use both .xml or .bp.
 	*/
 
@@ -136,18 +136,13 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
 		// generate cpp codes that do the 'update' job and save to a file
-		// use that file to compile a dll
-		// note: need filename first and all nodes need to have 'code' function
+		// then use that file to compile a dll
+		// note: need filename first and all nodes need to have code
 		FLAME_FOUNDATION_EXPORTS void tobin();
 
 		FLAME_FOUNDATION_EXPORTS static BP *create();
 		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const wchar_t *filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
-	};
-
-	struct BP_Object // pod
-	{
-		virtual void update(float delta_time) = 0;
 	};
 
 	// here, we define some basic udt for blueprint nodes

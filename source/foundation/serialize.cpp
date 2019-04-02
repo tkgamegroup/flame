@@ -32,6 +32,42 @@
 
 namespace flame
 {
+	static const char* tag_names[] = {
+		"enum_single",
+		"enum_multi",
+		"varible",
+		"pointer",
+		"array_of_varible",
+		"array_of_pointer"
+	};
+
+	const char* get_type_tag_name(TypeTag tag)
+	{
+		return tag_names[tag];
+	}
+
+	struct TypeInfoPrivate : TypeInfo
+	{
+		TypeTag tag;
+		std::string name;
+		uint name_hash;
+	};
+
+	TypeTag TypeInfo::tag() const
+	{
+		return ((TypeInfoPrivate*)this)->tag;
+	}
+
+	const char* TypeInfo::name() const
+	{
+		return ((TypeInfoPrivate*)this)->name.c_str();
+	}
+
+	uint TypeInfo::name_hash() const
+	{
+		return ((TypeInfoPrivate*)this)->name_hash;
+	}
+
 	struct EnumItemPrivate : EnumItem
 	{
 		std::string name;
@@ -106,9 +142,7 @@ namespace flame
 
 	struct VariableInfoPrivate : VariableInfo
 	{
-		VariableTag tag;
-		std::string type_name;
-		uint type_hash;
+		TypeInfoPrivate type;
 		std::string name;
 		std::string attribute;
 		int offset;
@@ -127,27 +161,27 @@ namespace flame
 		{
 			if (is_obj)
 				src = (char*)src + offset;
-			switch (tag)
+			switch (type.tag)
 			{
-			case VariableTagEnumSingle: case VariableTagEnumMulti:
+			case TypeTagEnumSingle: case TypeTagEnumMulti:
 				dst->i1() = *(int*)src;
 				break;
-			case VariableTagArrayOfVariable:
+			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
 					auto &arr = *(Array<int>*)src;
 					src = arr.v + size * item_index;
 				}
-			case VariableTagVariable:
+			case TypeTagVariable:
 				memcpy(&dst->v, src, size);
 				break;
-			case VariableTagArrayOfPointer:
+			case TypeTagArrayOfPointer:
 				if (item_index != -1)
 				{
 					auto &arr = *(Array<void*>*)src;
 					src = arr.v + size * item_index;
 				}
-			case VariableTagPointer:
+			case TypeTagPointer:
 				dst->p() = *(void**)src;
 				break;
 			}
@@ -157,27 +191,27 @@ namespace flame
 		{
 			if (is_obj)
 				dst = (char*)dst + offset;
-			switch (tag)
+			switch (type.tag)
 			{
-			case VariableTagEnumSingle: case VariableTagEnumMulti:
+			case TypeTagEnumSingle: case TypeTagEnumMulti:
 				*(int*)dst = src->v.i[0];
 				break;
-			case VariableTagArrayOfVariable:
+			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
 					auto &arr = *(Array<int>*)dst;
 					dst = arr.v + size * item_index;
 				}
-			case VariableTagVariable:
+			case TypeTagVariable:
 				memcpy(dst, &src->v, size);
 				break;
-			case VariableTagArrayOfPointer:
+			case TypeTagArrayOfPointer:
 				if (item_index != -1)
 				{
 					auto &arr = *(Array<void*>*)dst;
 					dst = arr.v + size * item_index;
 				}
-			case VariableTagPointer:
+			case TypeTagPointer:
 				*(void**)dst = src->v.p;
 				break;
 			}
@@ -185,7 +219,7 @@ namespace flame
 
 		inline void array_resize(int _size, void *dst, bool is_obj) const
 		{
-			if (tag != VariableTagArrayOfVariable && tag != VariableTagArrayOfPointer)
+			if (type.tag != TypeTagArrayOfVariable && type.tag != TypeTagArrayOfPointer)
 				return;
 
 			if (is_obj)
@@ -199,11 +233,11 @@ namespace flame
 			src = (char*)src + offset;
 			dst = (char*)dst + offset;
 
-			switch (tag)
+			switch (type.tag)
 			{
-			case VariableTagEnumSingle: case VariableTagEnumMulti:
+			case TypeTagEnumSingle: case TypeTagEnumMulti:
 				return *(int*)src == *(int*)dst;
-			case VariableTagVariable:
+			case TypeTagVariable:
 				return memcmp(src, dst, size) == 0;
 			}
 
@@ -215,11 +249,11 @@ namespace flame
 			if (is_obj)
 				src = (char*)src + offset;
 
-			switch (tag)
+			switch (type.tag)
 			{
-			case VariableTagEnumSingle: case VariableTagEnumMulti:
+			case TypeTagEnumSingle: case TypeTagEnumMulti:
 				return *(int*)src == default_value.v.i[0];
-			case VariableTagVariable:
+			case TypeTagVariable:
 				return memcmp(src, &default_value.v, size) == 0;
 			}
 
@@ -231,24 +265,24 @@ namespace flame
 			if (is_obj)
 				src = (char*)src + offset;
 
-			switch (tag)
+			switch (type.tag)
 			{
-			case VariableTagEnumSingle:
+			case TypeTagEnumSingle:
 			{
-				auto e = find_enum(type_hash);
+				auto e = find_enum(type.name_hash);
 				return e->serialize_value(true, *(int*)src);
 			}
 				break;
-			case VariableTagEnumMulti:
+			case TypeTagEnumMulti:
 				break;
-			case VariableTagArrayOfVariable:
+			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
 					auto &arr = *(Array<int>*)src;
 					src = arr.v + size * item_index;
 				}
-			case VariableTagVariable: 
-				switch (type_hash)
+			case TypeTagVariable: 
+				switch (type.name_hash)
 				{
 				case cH("bool"):
 					return *(bool*)src ? "true" : "false";
@@ -294,22 +328,22 @@ namespace flame
 			if (is_obj)
 				dst = (char*)dst + offset;
 
-			switch (tag)
+			switch (type.tag)
 			{
-			case VariableTagEnumSingle:
+			case TypeTagEnumSingle:
 			{
-				auto e = find_enum(type_hash);
+				auto e = find_enum(type.name_hash);
 				*(int*)dst = e->find_item(str.c_str());
 			}
 				break;
-			case VariableTagArrayOfVariable:
+			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
 					auto &arr = *(Array<int>*)dst;
 					dst = arr.v + size * item_index;
 				}
-			case VariableTagVariable:
-				switch (type_hash)
+			case TypeTagVariable:
+				switch (type.name_hash)
 				{
 				case cH("bool"):
 					*(bool*)dst = str == "true" ? true : false;
@@ -359,33 +393,9 @@ namespace flame
 		}
 	};
 
-	static const char *tag_names[] = {
-		"enum_single",
-		"enum_multi",
-		"varible",
-		"pointer",
-		"array_of_varible",
-		"array_of_pointer"
-	};
-
-	const char *get_variable_tag_name(VariableTag tag)
+	const TypeInfo* VariableInfo::type() const
 	{
-		return tag_names[tag];
-	}
-
-	VariableTag VariableInfo::tag() const
-	{
-		return ((VariableInfoPrivate*)this)->tag;
-	}
-
-	const char *VariableInfo::type_name() const
-	{
-		return ((VariableInfoPrivate*)this)->type_name.c_str();
-	}
-
-	uint VariableInfo::type_hash() const
-	{
-		return ((VariableInfoPrivate*)this)->type_hash;
+		return &(((VariableInfoPrivate*)this)->type);
 	}
 
 	const char *VariableInfo::name() const
@@ -448,22 +458,60 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->unserialize_value(str, dst, is_obj, item_index);
 	}
 
+	struct FunctionInfoPrivate : FunctionInfo
+	{
+		std::string name;
+		void* rva;
+		TypeInfoPrivate return_type;
+		std::vector<TypeInfoPrivate> parameter_types;
+		std::string code;
+	};
+
+	const char* FunctionInfo::name() const
+	{
+		return ((FunctionInfoPrivate*)this)->name.c_str();
+	}
+
+	void* FunctionInfo::rva() const
+	{
+		return ((FunctionInfoPrivate*)this)->rva;
+	}
+
+	const TypeInfo* FunctionInfo::return_type() const
+	{
+		return &(((FunctionInfoPrivate*)this)->return_type);
+	}
+
+	int FunctionInfo::parameter_count() const
+	{
+		return ((FunctionInfoPrivate*)this)->parameter_types.size();
+	}
+
+	const TypeInfo* FunctionInfo::parameter_type(int idx) const
+	{
+		return &(((FunctionInfoPrivate*)this)->parameter_types[idx]);
+	}
+
+	const char* FunctionInfo::code() const
+	{
+		return ((FunctionInfoPrivate*)this)->code.c_str();
+	}
+
 	struct UdtInfoPrivate : UdtInfo
 	{
 		std::string name;
 		int size;
-		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
 		std::wstring module_name;
-		void* update_function_rva;
-		std::string update_function_code;
+		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
+		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
-		int find_pos;
+		int item_find_pos;
+		int func_find_pos;
 
 		inline UdtInfoPrivate()
 		{
-			update_function_rva = nullptr;
-
-			find_pos = 0;
+			item_find_pos = 0;
+			func_find_pos = 0;
 		}
 
 		inline int find_item_i(const char *name)
@@ -471,41 +519,49 @@ namespace flame
 			if (items.empty())
 				return -1;
 
-			auto p = find_pos;
+			auto p = item_find_pos;
 			while (true)
 			{
-				if (items[find_pos]->name == name)
+				if (items[item_find_pos]->name == name)
 				{
-					auto t = find_pos;
-					find_pos++;
-					if (find_pos >= items.size())
-						find_pos = 0;
+					auto t = item_find_pos;
+					item_find_pos++;
+					if (item_find_pos >= items.size())
+						item_find_pos = 0;
 					return t;
 				}
-				find_pos++;
-				if (find_pos >= items.size())
-					find_pos = 0;
-				if (find_pos == p)
+				item_find_pos++;
+				if (item_find_pos >= items.size())
+					item_find_pos = 0;
+				if (item_find_pos == p)
 					return -1;
 			}
 			return -1;
 		}
 
-		inline void construct(void *dst)
+		inline int find_func_i(const char* name)
 		{
+			if (functions.empty())
+				return -1;
 
-		}
-
-		inline void destruct(void *dst)
-		{
-			for (auto& i : items)
+			auto p = func_find_pos;
+			while (true)
 			{
-				if (i->tag == VariableTagArrayOfVariable || i->tag == VariableTagArrayOfPointer)
+				if (functions[func_find_pos]->name == name)
 				{
-					auto &arr = *(Array<int>*)((char*)dst + i->offset);
-					arr.destroy_pod();
+					auto t = func_find_pos;
+					func_find_pos++;
+					if (func_find_pos >= functions.size())
+						func_find_pos = 0;
+					return t;
 				}
+				func_find_pos++;
+				if (func_find_pos >= functions.size())
+					func_find_pos = 0;
+				if (func_find_pos == p)
+					return -1;
 			}
+			return -1;
 		}
 	};
 
@@ -517,6 +573,11 @@ namespace flame
 	int UdtInfo::size() const
 	{
 		return ((UdtInfoPrivate*)this)->size;
+	}
+
+	const wchar_t* UdtInfo::module_name() const
+	{
+		return ((UdtInfoPrivate*)this)->module_name.c_str();
 	}
 
 	int UdtInfo::item_count() const
@@ -534,56 +595,24 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->find_item_i(name);
 	}
 
-	const wchar_t* UdtInfo::module_name() const
+	int UdtInfo::function_count() const
 	{
-		return ((UdtInfoPrivate*)this)->module_name.c_str();
+		((UdtInfoPrivate*)this)->functions.size();
 	}
 
-	const void* UdtInfo::update_function_rva() const
+	FunctionInfo* UdtInfo::function(int idx) const 
 	{
-		return ((UdtInfoPrivate*)this)->update_function_rva;
+		return ((UdtInfoPrivate*)this)->functions[idx].get();
 	}
 
-	const char* UdtInfo::update_function_code() const
+	int UdtInfo::find_function_i(const char* name) const
 	{
-		return ((UdtInfoPrivate*)this)->update_function_code.c_str();
-	}
-
-	void UdtInfo::construct(void *dst) const
-	{
-		((UdtInfoPrivate*)this)->construct(dst);
-	}
-
-	void UdtInfo::destruct(void *dst) const
-	{
-		((UdtInfoPrivate*)this)->destruct(dst);
-	}
-
-	struct FunctionInfoPrivate : FunctionInfo
-	{
-		std::string name;
-		void* rva;
-		int parameter_count;
-	};
-
-	const char* FunctionInfo::name() const
-	{
-		return ((FunctionInfoPrivate*)this)->name.c_str();
-	}
-
-	void* FunctionInfo::rva() const
-	{
-		return ((FunctionInfoPrivate*)this)->rva;
-	}
-
-	int FunctionInfo::parameter_count() const
-	{
-		return ((FunctionInfoPrivate*)this)->parameter_count;
+		return ((UdtInfoPrivate*)this)->find_func_i(name);
 	}
 
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
-	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
 	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
+	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
 
 	Array<EnumInfo*> get_enums()
 	{
@@ -1020,9 +1049,9 @@ namespace flame
 			{
 				auto item = u->item(i);
 
-				switch (item->tag())
+				switch (item->type()->tag())
 				{
-				case VariableTagArrayOfVariable:
+				case TypeTagArrayOfVariable:
 				{
 					auto cnt = ((Array<int>*)((char*)src + item->offset()))->size;
 
@@ -1032,9 +1061,11 @@ namespace flame
 					auto n_item = new_node("attribute");
 					n_item->new_attr("name", item->name());
 
-					if (item->type_hash() == cH("CommonData"))
+					switch (item->type()->name_hash())
 					{
-						auto &arr = *(Array<CommonData>*)((char*)src + item->offset());
+					case cH("CommonData"):
+					{
+						auto& arr = *(Array<CommonData>*)((char*)src + item->offset());
 
 						for (auto i_i = 0; i_i < cnt; i_i++)
 						{
@@ -1045,9 +1076,10 @@ namespace flame
 							n_it->new_attr("value", vl_str);
 						}
 					}
-					else if (item->type_hash() == cH("String"))
+						break;
+					case cH("String"):
 					{
-						auto &arr = *(Array<String>*)((char*)src + item->offset());
+						auto& arr = *(Array<String>*)((char*)src + item->offset());
 
 						for (auto i_i = 0; i_i < cnt; i_i++)
 						{
@@ -1055,9 +1087,10 @@ namespace flame
 							n_it->new_attr("value", arr[i_i].v);
 						}
 					}
-					else if (item->type_hash() == cH("StringW"))
+						break;
+					case cH("StringW"):
 					{
-						auto &arr = *(Array<StringW>*)((char*)src + item->offset());
+						auto& arr = *(Array<StringW>*)((char*)src + item->offset());
 
 						for (auto i_i = 0; i_i < cnt; i_i++)
 						{
@@ -1065,9 +1098,10 @@ namespace flame
 							n_it->new_attr("value", w2s(arr[i_i].v));
 						}
 					}
-					else if (item->type_hash() == cH("StringAndHash"))
+						break;
+					case cH("StringAndHash"):
 					{
-						auto &arr = *(Array<StringAndHash>*)((char*)src + item->offset());
+						auto& arr = *(Array<StringAndHash>*)((char*)src + item->offset());
 
 						for (auto i_i = 0; i_i < cnt; i_i++)
 						{
@@ -1075,9 +1109,10 @@ namespace flame
 							n_it->new_attr("value", arr[i_i].v);
 						}
 					}
-					else if (item->type_hash() == cH("Function"))
+						break;
+					case cH("Function"):
 					{
-						auto &arr = *(Array<Function<void()>>*)((char*)src + item->offset());
+						auto& arr = *(Array<Function<void()>>*)((char*)src + item->offset());
 
 						for (auto i_i = 0; i_i < arr.size; i_i++)
 						{
@@ -1099,9 +1134,11 @@ namespace flame
 							//}
 						}
 					}
+						break;
+					}
 				}
 					break;
-				case VariableTagArrayOfPointer:
+				case TypeTagArrayOfPointer:
 				{
 					const auto &arr = *(Array<void*>*)((char*)src + item->offset());
 
@@ -1111,7 +1148,7 @@ namespace flame
 					auto n_item = new_node("attribute");
 					n_item->new_attr("name", item->name());
 
-					auto u_sub = find_udt(item->type_hash());
+					auto u_sub = find_udt(item->type()->name_hash());
 					if (u_sub)
 					{
 						for (auto i_i = 0; i_i < arr.size; i_i++)
@@ -1145,13 +1182,15 @@ namespace flame
 
 				auto item = u->item(u->find_item_i(n_item->find_attr("name")->value().c_str()));
 
-				switch (item->tag())
+				switch (item->type()->tag())
 				{
-				case VariableTagArrayOfVariable:
+				case TypeTagArrayOfVariable:
 				{
-					if (item->type_hash() == cH("CommonData"))
+					switch (item->type()->name_hash())
 					{
-						auto &arr = *(Array<CommonData>*)((char*)obj + item->offset());
+					case cH("CommonData"):
+					{
+						auto& arr = *(Array<CommonData>*)((char*)obj + item->offset());
 						auto cnt = n_item->node_count();
 						arr.resize(cnt);
 
@@ -1164,9 +1203,10 @@ namespace flame
 								assert(0);
 						}
 					}
-					else if (item->type_hash() == cH("String"))
+						break;
+					case cH("String"):
 					{
-						auto &arr = *(Array<String>*)((char*)obj + item->offset());
+						auto& arr = *(Array<String>*)((char*)obj + item->offset());
 						auto cnt = n_item->node_count();
 						arr.resize(cnt);
 
@@ -1179,9 +1219,10 @@ namespace flame
 								assert(0);
 						}
 					}
-					else if (item->type_hash() == cH("StringW"))
+						break;
+					case cH("StringW"):
 					{
-						auto &arr = *(Array<StringW>*)((char*)obj + item->offset());
+						auto& arr = *(Array<StringW>*)((char*)obj + item->offset());
 						auto cnt = n_item->node_count();
 						arr.resize(cnt);
 
@@ -1194,9 +1235,10 @@ namespace flame
 								assert(0);
 						}
 					}
-					else if (item->type_hash() == cH("StringAndHash"))
+						break;
+					case cH("StringAndHash"):
 					{
-						auto &arr = *(Array<StringAndHash>*)((char*)obj + item->offset());
+						auto& arr = *(Array<StringAndHash>*)((char*)obj + item->offset());
 						auto cnt = n_item->node_count();
 						arr.resize(cnt);
 
@@ -1209,9 +1251,10 @@ namespace flame
 								assert(0);
 						}
 					}
-					else if (item->type_hash() == cH("Function"))
+						break;
+					case cH("Function"):
 					{
-						auto &arr = *(Array<Function<void()>>*)((char*)obj + item->offset());
+						auto& arr = *(Array<Function<void()>>*)((char*)obj + item->offset());
 						auto cnt = n_item->node_count();
 						arr.resize(cnt);
 
@@ -1246,15 +1289,17 @@ namespace flame
 							//	assert(0);
 						}
 					}
+						break;
+					}
 				}
 					break;
-				case VariableTagArrayOfPointer:
+				case TypeTagArrayOfPointer:
 				{
 					auto &arr = *(Array<void*>*)((char*)obj + item->offset());
 					auto cnt = n_item->node_count();
 					arr.resize(cnt);
 
-					auto u_sub = find_udt(item->type_hash());
+					auto u_sub = find_udt(item->type()->name_hash());
 					if (u_sub)
 					{
 						auto name_hash = H(item->name());
@@ -1665,15 +1710,138 @@ namespace flame
 		return name_base_type[baseType];
 	}
 
+	static std::string prefix("flame::");
+	static std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
+	static std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
+	static std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
+
+	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& attribute)
+	{
+		DWORD dw;
+		wchar_t* pwname;
+
+		TypeInfoPrivate info;
+
+		symbol->get_symTag(&dw);
+		switch (dw)
+		{
+		case SymTagEnum:
+		{
+			info.tag = attribute.find('m') != std::string::npos ? TypeTagEnumMulti : TypeTagEnumSingle;
+			symbol->get_name(&pwname);
+			auto type_name = w2s(pwname);
+			if (type_name.compare(0, prefix.size(), prefix) == 0)
+				type_name = type_name.c_str() + prefix.size();
+			info.name = type_name;
+		}
+			break;
+		case SymTagBaseType:
+		{
+			info.tag = TypeTagVariable;
+			info.name = get_base_type_name(symbol);
+		}
+			break;
+		case SymTagPointerType:
+		{
+			info.tag = TypeTagPointer;
+			IDiaSymbol* point_type;
+			symbol->get_type(&point_type);
+			point_type->get_symTag(&dw);
+			switch (dw)
+			{
+			case SymTagBaseType:
+				info.name = get_base_type_name(point_type);
+				break;
+			case SymTagPointerType:
+				assert(0);
+				break;
+			case SymTagUDT:
+				point_type->get_name(&pwname);
+				auto type_name = w2s(pwname);
+				if (type_name.compare(0, prefix.size(), prefix) == 0)
+					type_name = type_name.c_str() + prefix.size();
+				info.name = type_name;
+				break;
+			}
+			point_type->Release();
+		}
+			break;
+		case SymTagUDT:
+		{
+			symbol->get_name(&pwname);
+			auto type_name = w2s(pwname);
+			std::smatch match;
+			if (std::regex_search(type_name, match, reg_str))
+			{
+				info.tag = TypeTagVariable;
+				if (match[1].str() == "char")
+					type_name = "String";
+				else
+					type_name = "StringW";
+			}
+			else if (std::regex_search(type_name, match, reg_arr))
+			{
+				if (match[2].matched)
+					info.tag = TypeTagArrayOfPointer;
+				else
+					info.tag = TypeTagArrayOfVariable;
+				type_name = match[1].str().c_str();
+				if (std::regex_search(type_name, match, reg_str))
+				{
+					if (match[1].str() == "char")
+						type_name = "String";
+					else
+						type_name = "StringW";
+				}
+			}
+			else
+				info.tag = TypeTagVariable;
+			if (type_name.compare(0, prefix.size(), prefix) == 0)
+				type_name = type_name.c_str() + prefix.size();
+			info.name = type_name;
+		}
+			break;
+		}
+
+		info.name_hash = H(info.name.c_str());
+
+		return info;
+	}
+
+	void serialize_typeinfo(const TypeInfoPrivate& src, SerializableNode* dst)
+	{
+		dst->new_attr("tag", get_type_tag_name(src.tag));
+		dst->new_attr("type", src.name);
+	}
+
+	TypeInfoPrivate unserialize_typeinfo(SerializableNode* src)
+	{
+		TypeInfoPrivate info;
+
+		auto tag = src->find_attr("tag")->value();
+		auto e_tag = 0;
+		for (auto s : tag_names)
+		{
+			if (tag == s)
+				break;
+			e_tag++;
+		}
+
+		info.tag = (TypeTag)e_tag;
+		info.name = src->find_attr("type")->value();
+		info.name_hash = H(info.name.c_str());
+
+		return info;
+	}
+
 	void typeinfo_collect(const std::vector<std::wstring>& filenames)
 	{
-		std::string prefix("flame::");
 		std::wstring wprefix(s2w(prefix));
 
 		for (auto& fn : filenames)
 		{
 			CComPtr<IDiaDataSource> dia_source;
-			if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)& dia_source)))
+			if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
 			{
 				printf("dia not found\n");
 				continue;
@@ -1702,9 +1870,6 @@ namespace flame
 			ULONGLONG ull;
 			DWORD dw;
 			wchar_t* pwname;
-			std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
-			std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
-			std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
 			std::map<DWORD, std::vector<std::string>> source_files;
 
@@ -1781,6 +1946,7 @@ namespace flame
 							auto udt = new UdtInfoPrivate;
 							udt->name = udt_name;
 							udt->size = (int)ull;
+							udt->module_name = std::filesystem::path(fn).filename().wstring();
 
 							IDiaEnumSymbols* members;
 							_udt->findChildren(SymTagData, NULL, nsNone, &members);
@@ -1795,102 +1961,21 @@ namespace flame
 									auto attribute = w2s(wname.c_str() + pos_$ + 1);
 									wname[pos_$] = 0;
 
-									IDiaSymbol * type;
+									IDiaSymbol* type;
 									member->get_type(&type);
-
-									member->get_offset(&l);
-									type->get_length(&ull);
 
 									auto i = new VariableInfoPrivate;
 									i->name = w2s(wname);
 									i->attribute = attribute;
+									member->get_offset(&l);
 									i->offset = l;
+									type->get_length(&ull);
 									i->size = (int)ull;
 									memset(&i->default_value, 0, sizeof(CommonData));
 
-									type->get_symTag(&dw);
-									switch (dw)
-									{
-									case SymTagEnum:
-									{
-										i->tag = attribute.find('m') != std::string::npos ? VariableTagEnumMulti : VariableTagEnumSingle;
-										type->get_name(&pwname);
-										auto type_name = w2s(pwname);
-										if (type_name.compare(0, prefix.size(), prefix) == 0)
-											type_name = type_name.c_str() + prefix.size();
-										i->type_name = type_name;
-									}
-										break;
-									case SymTagBaseType:
-									{
-										i->tag = VariableTagVariable;
-										i->type_name = get_base_type_name(type);
-									}
-										break;
-									case SymTagPointerType:
-									{
-										i->tag = VariableTagPointer;
-										IDiaSymbol* point_type;
-										type->get_type(&point_type);
-										point_type->get_symTag(&dw);
-										switch (dw)
-										{
-										case SymTagBaseType:
-											i->type_name = get_base_type_name(point_type);
-											break;
-										case SymTagPointerType:
-											assert(0);
-											break;
-										case SymTagUDT:
-											point_type->get_name(&pwname);
-											auto type_name = w2s(pwname);
-											if (type_name.compare(0, prefix.size(), prefix) == 0)
-												type_name = type_name.c_str() + prefix.size();
-											i->type_name = type_name;
-											break;
-										}
-										point_type->Release();
-									}
-										break;
-									case SymTagUDT:
-									{
-										type->get_name(&pwname);
-										auto type_name = w2s(pwname);
-										std::smatch match;
-										if (std::regex_search(type_name, match, reg_str))
-										{
-											i->tag = VariableTagVariable;
-											if (match[1].str() == "char")
-												type_name = "String";
-											else
-												type_name = "StringW";
-										}
-										else if (std::regex_search(type_name, match, reg_arr))
-										{
-											if (match[2].matched)
-												i->tag = VariableTagArrayOfPointer;
-											else
-												i->tag = VariableTagArrayOfVariable;
-											type_name = match[1].str().c_str();
-											if (std::regex_search(type_name, match, reg_str))
-											{
-												if (match[1].str() == "char")
-													type_name = "String";
-												else
-													type_name = "StringW";
-											}
-										}
-										else
-											i->tag = VariableTagVariable;
-										if (type_name.compare(0, prefix.size(), prefix) == 0)
-											type_name = type_name.c_str() + prefix.size();
-										i->type_name = type_name;
-									}
-										break;
-									}
+									i->type = symbol_to_typeinfo(type, attribute);
 									type->Release();
 
-									i->type_hash = H(i->type_name.c_str());
 									udt->items.emplace_back(i);
 								}
 								member->Release();
@@ -1902,18 +1987,95 @@ namespace flame
 							IDiaSymbol* function;
 							while (SUCCEEDED(functions->Next(1, &function, &ul)) && (ul == 1))
 							{
-								function->get_name(&pwname);
-								auto name = w2s(pwname);
 								IDiaSymbol* function_type;
 								function->get_type(&function_type);
-								IDiaSymbol* return_type;
-								function_type->get_type(&return_type);
+
 								IDiaEnumSymbols* parameters;
 								function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-								if (SUCCEEDED(parameters->get_Count(&l)))
+
+								function->get_name(&pwname);
+								std::wstring wname(pwname);
+								auto pos_$ = wname.find(L'$');
+								if (pos_$ != std::wstring::npos)
 								{
-									auto parameters_count = l;
-									if (name == udt_name && parameters_count == 0)
+									auto attribute = w2s(wname.c_str() + pos_$ + 1);
+									wname[pos_$] = 0;
+
+									IDiaSymbol* return_type;
+									function_type->get_type(&return_type);
+
+									auto f = new FunctionInfoPrivate;
+									f->name = w2s(wname);
+									function->get_relativeVirtualAddress(&dw);
+									f->rva = (void*)dw;
+									f->return_type = symbol_to_typeinfo(return_type, "");
+
+									IDiaSymbol* parameter;
+									while (SUCCEEDED(parameters->Next(1, &parameter, &ul)) && (ul == 1))
+									{
+										f->parameter_types.push_back(symbol_to_typeinfo(parameter, ""));
+
+										parameter->Release();
+									}
+
+									if (f->rva)
+									{
+										function->get_length(&ull);
+										IDiaEnumLineNumbers* lines;
+
+										if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
+										{
+											IDiaLineNumber* line;
+											DWORD src_file_id = -1;
+											DWORD line_num;
+
+											while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
+											{
+												if (src_file_id == -1)
+												{
+													line->get_sourceFileId(&src_file_id);
+
+													if (source_files.find(src_file_id) == source_files.end())
+													{
+														BSTR filename;
+														IDiaSourceFile* source_file;
+														line->get_sourceFile(&source_file);
+														source_file->get_fileName(&filename);
+														source_file->Release();
+
+														auto& vec = (source_files[src_file_id] = std::vector<std::string>());
+														vec.push_back("\n");
+
+														std::ifstream file(filename);
+														if (file.good())
+														{
+															while (!file.eof())
+															{
+																std::string line;
+																std::getline(file, line);
+
+																vec.push_back(line + "\n");
+															}
+															file.close();
+														}
+													}
+												}
+
+												line->get_lineNumber(&line_num);
+												f->code += source_files[src_file_id][line_num];
+
+												line->Release();
+											}
+
+											lines->Release();
+										}
+									}
+
+									return_type->Release();
+								}
+								else if (w2s(wname) == udt_name)
+								{
+									if (SUCCEEDED(parameters->get_Count(&l)) && l == 0)
 									{
 										// a ctor func is a func that its name equals its class's name and its count of parameters is 0
 										// we get the ctor func and try to run it at a dummy memory to get the default value of the class
@@ -1931,78 +2093,10 @@ namespace flame
 											free(new_obj);
 										}
 									}
-									else if (name == "update" && parameters_count == 0)
-									{
-										DWORD baseType;
-										if (SUCCEEDED(return_type->get_baseType(&baseType)) && baseType == btVoid)
-										{
-											function->get_relativeVirtualAddress(&dw);
-											if (dw)
-											{
-												udt->update_function_rva = (void*)dw;
-												udt->module_name = std::filesystem::path(fn).filename().wstring();
-												
-												function->get_length(&ull);
-												IDiaEnumLineNumbers* lines;
-
-												if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
-												{
-													IDiaLineNumber* line;
-													DWORD src_file_id = -1;
-													DWORD line_num;
-
-													while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1)) 
-													{
-														if (src_file_id == -1)
-														{
-															line->get_sourceFileId(&src_file_id);
-
-															if (source_files.find(src_file_id) == source_files.end())
-															{
-																BSTR filename;
-																IDiaSourceFile* source_file;
-																line->get_sourceFile(&source_file);
-																source_file->get_fileName(&filename);
-																source_file->Release();
-
-																auto& vec = (source_files[src_file_id] = std::vector<std::string>());
-																vec.push_back("\n");
-
-																std::ifstream file(filename);
-																if (file.good())
-																{
-																	while (!file.eof())
-																	{
-																		std::string line;
-																		std::getline(file, line);
-
-																		vec.push_back(line + "\n");
-																	}
-																	file.close();
-																}
-															}
-														}
-
-														line->get_lineNumber(&line_num);
-														udt->update_function_code += source_files[src_file_id][line_num];
-
-														line->Release();
-													}
-
-													lines->Release();
-												}
-											}
-										}
-									}
-									else if (name == "create")
-									{
-										int cut = 1;
-									}
 								}
-								function_type->Release();
-								return_type->Release();
-								parameters->Release();
 
+								parameters->Release();
+								function_type->Release();
 								function->Release();
 							}
 							functions->Release();
@@ -2143,31 +2237,21 @@ namespace flame
 				auto u = new UdtInfoPrivate;
 				u->name = n_udt->find_attr("name")->value();
 				u->size = std::stoi(n_udt->find_attr("size")->value());
+				u->module_name = s2w(n_udt->find_attr("module_name")->value());
 
 				for (auto j = 0; j < n_udt->node_count(); j++)
 				{
 					auto n_item = n_udt->node(j);
 					if (n_item->name() == "item")
 					{
-						auto tag = n_item->find_attr("tag")->value();
-						auto e_tag = 0;
-						for (auto s : tag_names)
-						{
-							if (tag == s)
-								break;
-							e_tag++;
-						}
-
 						auto i = new VariableInfoPrivate;
-						i->tag = (VariableTag)e_tag;
-						i->type_name = n_item->find_attr("type")->value();
-						i->type_hash = H(i->type_name.c_str());
+						i->type = unserialize_typeinfo(n_item->find_node("type"));
 						i->name = n_item->find_attr("name")->value();
 						i->attribute = n_item->find_attr("attribute")->value();
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
 						i->size = std::stoi(n_item->find_attr("size")->value());
 						memset(&i->default_value, 0, sizeof(CommonData));
-						if (i->tag != VariableTagArrayOfVariable && i->tag != VariableTagArrayOfPointer)
+						if (i->type.tag != TypeTagArrayOfVariable && i->type.tag != TypeTagArrayOfPointer)
 						{
 							auto a_default_value = n_item->find_attr("default_value");
 							if (a_default_value)
@@ -2180,20 +2264,29 @@ namespace flame
 				auto n_functions = n_udt->find_node("functions");
 				if (n_functions)
 				{
-					u->module_name = s2w(n_functions->find_attr("module_name")->value());
 					for (auto j = 0; j < n_functions->node_count(); j++)
 					{
 						auto n_function = n_functions->node(j);
 						if (n_function->name() == "function")
 						{
-							auto name = n_function->find_attr("name")->value();
-							auto rva = (void*)stou1(n_function->find_attr("rva")->value().c_str());
-
-							if (name == "update")
+							auto f = new FunctionInfoPrivate;
+							f->name = n_function->find_attr("name")->value();
+							f->rva = (void*)stou1(n_function->find_attr("rva")->value().c_str());
+							f->return_type = unserialize_typeinfo(n_function->find_node("return_type"));
+							auto n_parameters = n_function->find_node("parameters");
+							if (n_parameters)
 							{
-								u->update_function_rva = rva;
-								u->update_function_code = n_function->find_node("code")->value();
+								for (auto k = 0; k < n_parameters->node_count(); k++)
+								{
+									auto n_parameter = n_parameters->node(k);
+									if (n_parameter->name() == "parameter")
+										f->parameter_types.push_back(unserialize_typeinfo(n_parameter));
+								}
 							}
+							auto n_code = n_function->find_node("code");
+							if (n_code)
+								f->code = n_code->value();
+							u->functions.emplace_back(f);
 						}
 					}
 				}
@@ -2229,19 +2322,20 @@ namespace flame
 			auto n_udt = n_serializables->new_node("udt");
 			n_udt->new_attr("name", u.second->name);
 			n_udt->new_attr("size", std::to_string(u.second->size));
+			n_udt->new_attr("module_name", w2s(u.second->module_name));
 
 			for (auto &i : u.second->items)
 			{
 				auto n_item = n_udt->new_node("item");
-				n_item->new_attr("tag", get_variable_tag_name(i->tag));
-				n_item->new_attr("type", i->type_name);
+				auto n_type = n_item->new_node("type");
+				serialize_typeinfo(i->type, n_type);
 				n_item->new_attr("name", i->name);
 				n_item->new_attr("attribute", i->attribute);
 				n_item->new_attr("offset", std::to_string(i->offset));
 				n_item->new_attr("size", std::to_string(i->size));
-				if (i->tag != VariableTagArrayOfVariable && i->tag != VariableTagArrayOfPointer)
+				if (i->type.tag != TypeTagArrayOfVariable && i->type.tag != TypeTagArrayOfPointer)
 				{
-					if (i->type_hash != cH("String") && i->type_hash != cH("StringAndHash"))
+					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
 					{
 						auto default_value_str = i->serialize_value(&i->default_value.v, false, -1, 1);
 						if (default_value_str.size > 0)
@@ -2253,13 +2347,24 @@ namespace flame
 			if (!u.second->module_name.empty())
 			{
 				auto n_functions = n_udt->new_node("functions");
-				n_functions->new_attr("module_name", w2s(u.second->module_name));
-				if (u.second->update_function_rva)
+				for (auto& f : u.second->functions)
 				{
-					auto n_func = n_functions->new_node("function");
-					n_func->new_attr("name", "update");
-					n_func->new_attr("rva", to_string((uint)u.second->update_function_rva).v);
-					n_func->new_node("code")->set_value(u.second->update_function_code);
+					auto n_function = n_functions->new_node("function");
+					n_function->new_attr("name", f->name);
+					n_function->new_attr("rva", to_string((uint)f->rva).v);
+					auto n_return_type = n_function->new_node("return_type");
+					serialize_typeinfo(f->return_type, n_return_type);
+					if (!f->parameter_types.empty())
+					{
+						auto n_parameters = n_function->new_node("parameters");
+						for (auto& p : f->parameter_types)
+						{
+							auto n_parameter = n_parameters->new_node("parameter");
+							serialize_typeinfo(p, n_parameter);
+						}
+					}
+					if (f->code.length() > 0)
+						n_function->new_node("code")->set_value(f->code);
 				}
 			}
 		}

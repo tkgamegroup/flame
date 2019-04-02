@@ -1,1 +1,0 @@
-typeinfogen D:/flame/bin

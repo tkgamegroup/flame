@@ -564,6 +564,39 @@ namespace flame
 		return Bvec4(ret.x, ret.y, ret.z, ret.w);
 	}
 
+	enum TypeTag
+	{
+		TypeTagEnumSingle,
+		TypeTagEnumMulti,
+		TypeTagVariable,
+		TypeTagPointer,
+		TypeTagArrayOfVariable,
+		TypeTagArrayOfPointer
+
+		// 'Array' means Array<>, which is a special UDT, NOT 'array' in C/C++ language (e.g. int abc[100])
+	};
+
+	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag tag);
+
+	struct TypeInfo;
+	struct EnumInfo;
+	struct VariableInfo;
+	struct UdtInfo;
+	struct FunctionInfo;
+
+	typedef TypeInfo* TypeInfoPtr;
+	typedef EnumInfo* EnumInfoPtr;
+	typedef VariableInfo* VariableInfoPtr;
+	typedef FunctionInfo* FunctionInfoPtr;
+	typedef UdtInfo* UdtInfoPtr;
+
+	struct TypeInfo
+	{
+		FLAME_FOUNDATION_EXPORTS TypeTag tag() const;
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
+	};
+
 	struct EnumItem
 	{
 		FLAME_FOUNDATION_EXPORTS const char *name() const;
@@ -582,28 +615,9 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS String serialize_value(bool single, int v) const;
 	};
 
-	enum VariableTag
-	{
-		VariableTagEnumSingle,
-		VariableTagEnumMulti,
-		VariableTagVariable,
-		VariableTagPointer,
-		VariableTagArrayOfVariable,
-		VariableTagArrayOfPointer
-
-		// 'Array' means Array<>, which is a special UDT, NOT 'array' in C/C++ language (e.g. int abc[100])
-	};
-
-	FLAME_FOUNDATION_EXPORTS const char *get_variable_tag_name(VariableTag tag);
-
-	struct UdtInfo;
-
 	struct VariableInfo
 	{
-		FLAME_FOUNDATION_EXPORTS VariableTag tag() const;
-		FLAME_FOUNDATION_EXPORTS const char *type_name() const;
-		FLAME_FOUNDATION_EXPORTS uint type_hash() const;
-		FLAME_FOUNDATION_EXPORTS UdtInfo* type() const; // return nullptr or this is an UDT
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
 		FLAME_FOUNDATION_EXPORTS const char *name() const;
 		FLAME_FOUNDATION_EXPORTS const char *attribute() const;
 		FLAME_FOUNDATION_EXPORTS int offset() const;
@@ -623,7 +637,17 @@ namespace flame
 		// else, means data is an array, and use item_index to index the item
 	};
 
-	typedef VariableInfo* VariableInfoPtr;
+	struct FunctionInfo
+	{
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
+
+		FLAME_FOUNDATION_EXPORTS void* rva() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
+		FLAME_FOUNDATION_EXPORTS int parameter_count() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(int idx) const;
+		FLAME_FOUNDATION_EXPORTS const char* code() const;
+
+	};
 
 	struct UdtInfo
 	{
@@ -631,38 +655,25 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int size() const;
 
+		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
+
 		FLAME_FOUNDATION_EXPORTS int item_count() const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo*item(int idx) const;
 		FLAME_FOUNDATION_EXPORTS int find_item_i(const char *name) const;
 
-		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
-		FLAME_FOUNDATION_EXPORTS const void* update_function_rva() const;
-		FLAME_FOUNDATION_EXPORTS const char* update_function_code() const;
-
-		FLAME_FOUNDATION_EXPORTS void construct(void *dst) const;
-		FLAME_FOUNDATION_EXPORTS void destruct(void *dst) const;
+		FLAME_FOUNDATION_EXPORTS int function_count() const;
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(int idx) const;
+		FLAME_FOUNDATION_EXPORTS int find_function_i(const char* name) const;
 	};
-
-	typedef UdtInfo* UdtInfoPtr;
-
-	struct FunctionInfo
-	{
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
-
-		FLAME_FOUNDATION_EXPORTS void* rva() const;
-		FLAME_FOUNDATION_EXPORTS int parameter_count() const;
-	};
-
-	typedef FunctionInfo* FunctionInfoPtr;
 
 	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
 	FLAME_FOUNDATION_EXPORTS EnumInfo *find_enum(uint name_hash);
 
-	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
-	FLAME_FOUNDATION_EXPORTS UdtInfo*find_udt(uint name_hash);
-
 	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
+
+	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
+	FLAME_FOUNDATION_EXPORTS UdtInfo*find_udt(uint name_hash);
 
 	struct SerializableAttribute
 	{
@@ -714,7 +725,23 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode *n);
 	};
 
-	// something with $ means it is reflectable
+	/*
+		something end with '$[a]' means it is reflectable
+		the 'a' is called attribute, and it is optional
+
+		such as:
+			struct Apple$ // mark this will be collected by typeinfogen
+			{
+				float size$; // mark this member will be collected
+				Vec3 color$i; // mark this member will be collected, and its attribute is 'i'
+			};
+
+		the attribute can be one or more chars, and order doesn't matter
+
+		currently, the following attributes are used by typeinfogen, others are free to use:
+			'm' for enum variable, means it can hold combination of the enum
+			'c' for function, means to collect the code of the function
+	*/
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_collect_init();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::vector<std::wstring> &filenames);
