@@ -27,13 +27,13 @@
 
 namespace flame
 {
-	struct cText : Component // required: Element
+	struct cText$ : Component // required: Element
 	{
 		int font_atlas_index;
 		Bvec4 color;
 		float sdf_scale;
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cText() override;
+		FLAME_UNIVERSE_EXPORTS virtual ~cText$() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
 		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
@@ -43,6 +43,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS const wchar_t* text() const;
 		FLAME_UNIVERSE_EXPORTS void set_text(const wchar_t* text);
 
-		FLAME_UNIVERSE_EXPORTS static cText* create(int font_atlas_index);
+		FLAME_UNIVERSE_EXPORTS static cText$* create(void* data);
 	};
 }

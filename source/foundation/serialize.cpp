@@ -1940,7 +1940,7 @@ namespace flame
 											if (dw)
 											{
 												udt->update_function_rva = (void*)dw;
-												udt->module_name = std::filesystem::path(fn).filename().wstring();;
+												udt->module_name = std::filesystem::path(fn).filename().wstring();
 												
 												function->get_length(&ull);
 												IDiaEnumLineNumbers* lines;
@@ -1993,6 +1993,10 @@ namespace flame
 												}
 											}
 										}
+									}
+									else if (name == "create")
+									{
+										int cut = 1;
 									}
 								}
 								function_type->Release();

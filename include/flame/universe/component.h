@@ -42,13 +42,22 @@ namespace flame
 
 		virtual void update(float delta_time) = 0;
 
-		virtual void from_archive(void* data) {}
-		virtual void to_archive(void* data) {}
+		virtual void serialize(void* data) {}
+
+		// a derived component should have one and only one
+		// static void function call 'create' that takes one 
+		// void* parameter
+		// for example:
+		// FLAME_UNIVERSE_EXPORTS static cText$* create(void*);
+
+		// *NOTE: the void* contents the data of type '*Archive$'
+		//		  which will be described below
 	};
 
 	// if a component wants serialization (well, most of the time), 
-	// you need to make a struct call '*Archive$' (while * is the 
-	// name of component).
+	// you need to add a '$' at the end of the component name 
+	// and make a struct call '*Archive$' (while * is the name of 
+	// component).
 	// in the '*Archive$', define the members you want to serialize, 
 	// the member should end with a '$', and its type should be one of 
 	// the CommonData's union types). 
@@ -56,7 +65,7 @@ namespace flame
 	// serialize, and you don't need to allocate/free the data.
 
 	// for example:
-	// struct cShootingMachine : Component
+	// struct cShootingMachine$ : Component
 	// {
 	//		...
 	//		float speed;
@@ -69,5 +78,6 @@ namespace flame
 
 	// *NOTE: the 'c' at the begin of name is the cue for component, 
 	//        don't add it if you don't like it
-	// *NOTE: the 'type_name' and 'type_hash' return shouldn't have the 'c'
+	// *NOTE: the value that 'type_name' and 'type_hash' returned shouldn't 
+	//		  have the 'c' and the '$'
 }

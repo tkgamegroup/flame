@@ -29,15 +29,18 @@
 
 namespace flame
 {
-	struct cTextPrivate : cText
+	struct cText$Private : cText$
 	{
 		std::wstring text;
 
-		cTextPrivate(int _font_atlas_index)
+		cText$Private(void* data)
 		{
-			font_atlas_index = _font_atlas_index;
-			color = default_style.text_color_normal;
-			sdf_scale = default_style.sdf_scale;
+			if (!data)
+			{
+				font_atlas_index = -1;
+				color = default_style.text_color_normal;
+				sdf_scale = default_style.sdf_scale;
+			}
 		}
 
 		void update(float delta_time)
@@ -48,37 +51,37 @@ namespace flame
 		}
 	};
 
-	cText::~cText()
+	cText$::~cText$()
 	{
 	}
 
-	const char* cText::type_name() const
+	const char* cText$::type_name() const
 	{
 		return "Text";
 	}
 
-	uint cText::type_hash() const
+	uint cText$::type_hash() const
 	{
 		return cH("Text");
 	}
 
-	void cText::update(float delta_time)
+	void cText$::update(float delta_time)
 	{
-		((cTextPrivate*)this)->update(delta_time);
+		((cText$Private*)this)->update(delta_time);
 	}
 
-	const wchar_t* cText::text() const
+	const wchar_t* cText$::text() const
 	{
-		return ((cTextPrivate*)this)->text.c_str();
+		return ((cText$Private*)this)->text.c_str();
 	}
 
-	void cText::set_text(const wchar_t* text)
+	void cText$::set_text(const wchar_t* text)
 	{
-		((cTextPrivate*)this)->text = text;
+		((cText$Private*)this)->text = text;
 	}
 
-	cText* cText::create(int font_atlas_index)
+	cText$* cText$::create(void* data)
 	{
-		return new cTextPrivate(font_atlas_index);
+		return new cText$Private(data);
 	}
 }
