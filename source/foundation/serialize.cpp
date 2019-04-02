@@ -597,7 +597,7 @@ namespace flame
 
 	int UdtInfo::function_count() const
 	{
-		((UdtInfoPrivate*)this)->functions.size();
+		return ((UdtInfoPrivate*)this)->functions.size();
 	}
 
 	FunctionInfo* UdtInfo::function(int idx) const 
@@ -2171,7 +2171,6 @@ namespace flame
 											auto f = new FunctionInfoPrivate;
 											f->name = function_name;
 											f->rva = (void*)dw;
-											f->parameter_count = v.lVal;
 
 											item->Release();
 											items->Release();

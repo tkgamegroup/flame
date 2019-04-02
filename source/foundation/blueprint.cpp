@@ -50,7 +50,7 @@ namespace flame
 		VariableInfo *variable_info;
 		std::vector<std::unique_ptr<ItemPrivate>> items;
 
-		inline bool is_array() { auto tag = variable_info->tag(); return tag == VariableTagArrayOfVariable || tag == VariableTagArrayOfPointer; }
+		inline bool is_array() { auto tag = variable_info->type()->tag(); return tag == TypeTagArrayOfVariable || tag == TypeTagArrayOfPointer; }
 		inline InputPrivate(NodePrivate *_node, VariableInfo *_variable_info);
 		inline ItemPrivate *array_insert_item(int idx);
 		inline void array_remove_item(int idx);
@@ -81,6 +81,7 @@ namespace flame
 		BPPrivate *bp;
 		std::string id;
 		UdtInfo *udt;
+		FunctionInfo* update_function;
 		std::vector<std::unique_ptr<InputPrivate>> inputs;
 		std::vector<std::unique_ptr<OutputPrivate>> outputs;
 		bool enable;
@@ -202,6 +203,10 @@ namespace flame
 		updated(false),
 		dummy(nullptr)
 	{
+		auto update_function_idx = udt->find_function_i("update");
+		if (update_function_idx != -1)
+			update_function = udt->function(update_function_idx);
+
 		for (auto i = 0; i < udt->item_count(); i++)
 		{
 			auto v = udt->item(i);
@@ -317,9 +322,8 @@ namespace flame
 			}
 		}
 
-		auto update_function_rva = udt->update_function_rva();
-		if (update_function_rva)
-			run_module_function_member_void_void(udt->module_name(), update_function_rva, dummy);
+		if (update_function)
+			run_module_function_member_void_void(udt->module_name(), update_function->rva(), dummy);
 
 		for (auto &output : outputs)
 		{
@@ -440,7 +444,6 @@ namespace flame
 				auto size = udt->size();
 				n->dummy = malloc(size);
 				memset(n->dummy, 0, size);
-				udt->construct(n->dummy);
 			}
 		}
 
@@ -455,11 +458,22 @@ namespace flame
 	{
 		for (auto &n : nodes)
 		{
-			if (n->dummy)
+			auto dummy = n->dummy;
+			if (dummy)
 			{
 				auto udt = n->udt;
-				udt->destruct(n->dummy);
-				free(n->dummy);
+
+				for (auto i = 0; i < udt->item_count(); i++)
+				{
+					auto v = udt->item(i);
+					if (v->type()->tag() == TypeTagArrayOfVariable || v->type()->tag() == TypeTagArrayOfPointer)
+					{
+						auto& arr = *(Array<int>*)((char*)dummy + v->offset());
+						arr.destroy_pod();
+					}
+				}
+
+				free(dummy);
 				n->dummy = nullptr;
 			}
 		}
@@ -523,10 +537,10 @@ namespace flame
 
 		auto define_variable = [](const std::string &id_prefix, VariableInfo *v) {
 			auto id = id_prefix + v->name();
-			auto type = std::string(v->type_name());
-			if (v->tag() == VariableTagPointer)
+			auto type = std::string(v->type()->name());
+			if (v->type()->tag() == TypeTagPointer)
 				type += "*";
-			if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+			if (v->type()->tag() == TypeTagArrayOfVariable || v->type()->tag() == TypeTagArrayOfPointer)
 				type = "Array<" + type + ">";
 			return type + " " + id + ";\n";
 		};
@@ -534,7 +548,7 @@ namespace flame
 		auto set_variable_value = [](const std::string &id_prefix, VariableInfo *v, int item_index, const CommonData& data) {
 			auto id = id_prefix + v->name();
 			std::string value;
-			switch (v->type_hash())
+			switch (v->type()->name_hash())
 			{
 			case cH("bool"):
 				value = data.v.i[0] ? "true" : "false";
@@ -579,7 +593,7 @@ namespace flame
 				value = "nullptr";
 				break;
 			}
-			if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+			if (v->type()->tag() == TypeTagArrayOfVariable || v->type()->tag() == TypeTagArrayOfPointer)
 				id += "[" + to_stdstring(item_index) + "]";
 			return id + " = " + value + ";\n";
 		};
@@ -600,7 +614,7 @@ namespace flame
 			for (auto& input : n->inputs)
 			{
 				auto v = input->variable_info;
-				if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+				if (v->type()->tag() == TypeTagArrayOfVariable || v->type()->tag() == TypeTagArrayOfPointer)
 					code += "\t" + id_prefix + v->name() + ".resize("+ to_stdstring((int)input->items.size()) + ");\n";
 				auto idx = 0;
 				for (auto& i : input->items)
@@ -632,7 +646,7 @@ namespace flame
 					if (link)
 					{
 						auto dst_id = id_prefix + v->name();
-						if (v->tag() == VariableTagArrayOfVariable || v->tag() == VariableTagArrayOfPointer)
+						if (v->type()->tag() == TypeTagArrayOfVariable || v->type()->tag() == TypeTagArrayOfPointer)
 							dst_id += "[" + to_stdstring(idx) + "]";
 						auto output = link->parent_o;
 						code += "\t" + dst_id + " = " + output->node->id + "_" + output->variable_info->name() + ";\n";
@@ -641,7 +655,7 @@ namespace flame
 				}
 			}
 
-			std::string str(udt->update_function_code());
+			std::string str(n->update_function->code());
 			str = std::regex_replace(str, reg_variable, fmt_id);
 			code += str + "\n";
 			code += "\n";
@@ -702,7 +716,7 @@ namespace flame
 						if (udt_item_idx >= 0)
 						{
 							auto udt_item = udt->item(udt_item_idx);
-							if (udt_item->tag() != VariableTagPointer && udt_item->tag() != VariableTagArrayOfPointer)
+							if (udt_item->type()->tag() != TypeTagPointer && udt_item->type()->tag() != TypeTagArrayOfPointer)
 							{
 								if (std::string(udt_item->attribute()).find('i') != std::string::npos)
 								{
@@ -758,7 +772,7 @@ namespace flame
 			for (auto &input : n->inputs)
 			{
 				auto v = input->variable_info;
-				if (v->tag() != VariableTagPointer && v->tag() != VariableTagArrayOfPointer)
+				if (v->type()->tag() != TypeTagPointer && v->type()->tag() != TypeTagArrayOfPointer)
 				{
 					auto n_input = n_node->new_node("input");
 					n_input->new_attr("name", input->variable_info->name());
