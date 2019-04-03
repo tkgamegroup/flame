@@ -1880,7 +1880,8 @@ namespace flame
 				DWORD src_file_id = -1;
 				DWORD line_num;
 
-				std::vector<std::string> my_lines;
+				int min_line = 1000000;
+				int max_line = 0;
 
 				while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
 				{
@@ -1915,18 +1916,22 @@ namespace flame
 					}
 
 					line->get_lineNumber(&line_num);
-					my_lines.push_back(source_files[src_file_id][line_num]);
+					if (min_line > line_num)
+						min_line = line_num;
+					if (max_line < line_num)
+						max_line = line_num;
 
 					line->Release();
 				}
 
 				lines->Release();
 
-				if (!my_lines.empty())
+				if (max_line > min_line)
 				{
 					f->code = "\n";
-					for (auto i = 1; i < my_lines.size() - 1; i++)
-						f->code += tab_str1 + my_lines[i];
+
+					for (auto i = min_line; i <= max_line; i++)
+						f->code += tab_str1 + source_files[src_file_id][i];
 					f->code += tab_str2;
 				}
 			}
