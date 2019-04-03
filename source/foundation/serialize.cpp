@@ -1669,7 +1669,7 @@ namespace flame
 		"char32_t"                          // btChar32 = 33
 	};
 
-	static std::string get_base_type_name(IDiaSymbol *s)
+	static std::string base_type_name(IDiaSymbol *s)
 	{
 		DWORD baseType;
 		s->get_baseType(&baseType);
@@ -1738,7 +1738,7 @@ namespace flame
 		case SymTagBaseType:
 		{
 			info.tag = TypeTagVariable;
-			info.name = get_base_type_name(symbol);
+			info.name = base_type_name(symbol);
 		}
 			break;
 		case SymTagPointerType:
@@ -1750,7 +1750,7 @@ namespace flame
 			switch (dw)
 			{
 			case SymTagBaseType:
-				info.name = get_base_type_name(point_type);
+				info.name = base_type_name(point_type);
 				break;
 			case SymTagPointerType:
 				assert(0);
@@ -1801,6 +1801,14 @@ namespace flame
 			info.name = type_name;
 		}
 			break;
+		case SymTagFunctionArgType:
+		{
+			IDiaSymbol* type;
+			symbol->get_type(&type);
+			info = symbol_to_typeinfo(type, "");
+			type->Release();
+		}
+			break;
 		}
 
 		info.name_hash = H(info.name.c_str());
@@ -1832,6 +1840,91 @@ namespace flame
 		info.name_hash = H(info.name.c_str());
 
 		return info;
+	}
+
+	void symbol_to_function(IDiaSymbol* symbol, FunctionInfoPrivate* f, const std::string& attribute, CComPtr<IDiaSession>& session, std::map<DWORD, std::vector<std::string>>& source_files)
+	{
+		ULONG ul;
+		ULONGLONG ull;
+		DWORD dw;
+
+		IDiaSymbol* function_type;
+		symbol->get_type(&function_type);
+
+		IDiaEnumSymbols* parameters;
+		function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+
+		IDiaSymbol* return_type;
+		function_type->get_type(&return_type);
+
+		symbol->get_relativeVirtualAddress(&dw);
+		f->rva = (void*)dw;
+		f->return_type = symbol_to_typeinfo(return_type, "");
+
+		IDiaSymbol* parameter;
+		while (SUCCEEDED(parameters->Next(1, &parameter, &ul)) && (ul == 1))
+		{
+			f->parameter_types.push_back(symbol_to_typeinfo(parameter, ""));
+
+			parameter->Release();
+		}
+
+		if (f->rva && attribute.find('c') != std::string::npos)
+		{
+			symbol->get_length(&ull);
+			IDiaEnumLineNumbers* lines;
+
+			if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
+			{
+				IDiaLineNumber* line;
+				DWORD src_file_id = -1;
+				DWORD line_num;
+
+				while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
+				{
+					if (src_file_id == -1)
+					{
+						line->get_sourceFileId(&src_file_id);
+
+						if (source_files.find(src_file_id) == source_files.end())
+						{
+							BSTR filename;
+							IDiaSourceFile* source_file;
+							line->get_sourceFile(&source_file);
+							source_file->get_fileName(&filename);
+							source_file->Release();
+
+							auto& vec = (source_files[src_file_id] = std::vector<std::string>());
+							vec.push_back("\n");
+
+							std::ifstream file(filename);
+							if (file.good())
+							{
+								while (!file.eof())
+								{
+									std::string line;
+									std::getline(file, line);
+
+									vec.push_back(line + "\n");
+								}
+								file.close();
+							}
+						}
+					}
+
+					line->get_lineNumber(&line_num);
+					f->code += source_files[src_file_id][line_num];
+
+					line->Release();
+				}
+
+				lines->Release();
+			}
+		}
+
+		return_type->Release();
+		parameters->Release();
+		function_type->Release();
 	}
 
 	void typeinfo_collect(const std::vector<std::wstring>& filenames)
@@ -1982,18 +2075,12 @@ namespace flame
 							}
 							members->Release();
 
-							IDiaEnumSymbols* functions;
-							_udt->findChildren(SymTagFunction, NULL, nsNone, &functions);
-							IDiaSymbol* function;
-							while (SUCCEEDED(functions->Next(1, &function, &ul)) && (ul == 1))
+							IDiaEnumSymbols* _functions;
+							_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+							IDiaSymbol* _function;
+							while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
 							{
-								IDiaSymbol* function_type;
-								function->get_type(&function_type);
-
-								IDiaEnumSymbols* parameters;
-								function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-
-								function->get_name(&pwname);
+								_function->get_name(&pwname);
 								std::wstring wname(pwname);
 								auto pos_$ = wname.find(L'$');
 								if (pos_$ != std::wstring::npos)
@@ -2001,90 +2088,19 @@ namespace flame
 									auto attribute = w2s(wname.c_str() + pos_$ + 1);
 									wname[pos_$] = 0;
 
-									IDiaSymbol* return_type;
-									function_type->get_type(&return_type);
-
 									auto f = new FunctionInfoPrivate;
 									f->name = w2s(wname);
-									function->get_relativeVirtualAddress(&dw);
-									f->rva = (void*)dw;
-									f->return_type = symbol_to_typeinfo(return_type, "");
+									symbol_to_function(_function, f, attribute, session, source_files);
 
-									IDiaSymbol* parameter;
-									while (SUCCEEDED(parameters->Next(1, &parameter, &ul)) && (ul == 1))
+									if (f->name == udt_name)
 									{
-										f->parameter_types.push_back(symbol_to_typeinfo(parameter, ""));
-
-										parameter->Release();
-									}
-
-									if (f->rva)
-									{
-										function->get_length(&ull);
-										IDiaEnumLineNumbers* lines;
-
-										if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
+										if (f->parameter_types.empty())
 										{
-											IDiaLineNumber* line;
-											DWORD src_file_id = -1;
-											DWORD line_num;
+											// a ctor func is a func that its name equals its class's name and its count of parameters is 0
+											// we get the ctor func and try to run it at a dummy memory to get the default value of the class
 
-											while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
-											{
-												if (src_file_id == -1)
-												{
-													line->get_sourceFileId(&src_file_id);
-
-													if (source_files.find(src_file_id) == source_files.end())
-													{
-														BSTR filename;
-														IDiaSourceFile* source_file;
-														line->get_sourceFile(&source_file);
-														source_file->get_fileName(&filename);
-														source_file->Release();
-
-														auto& vec = (source_files[src_file_id] = std::vector<std::string>());
-														vec.push_back("\n");
-
-														std::ifstream file(filename);
-														if (file.good())
-														{
-															while (!file.eof())
-															{
-																std::string line;
-																std::getline(file, line);
-
-																vec.push_back(line + "\n");
-															}
-															file.close();
-														}
-													}
-												}
-
-												line->get_lineNumber(&line_num);
-												f->code += source_files[src_file_id][line_num];
-
-												line->Release();
-											}
-
-											lines->Release();
-										}
-									}
-
-									return_type->Release();
-								}
-								else if (w2s(wname) == udt_name)
-								{
-									if (SUCCEEDED(parameters->get_Count(&l)) && l == 0)
-									{
-										// a ctor func is a func that its name equals its class's name and its count of parameters is 0
-										// we get the ctor func and try to run it at a dummy memory to get the default value of the class
-
-										function->get_relativeVirtualAddress(&dw);
-										if (dw)
-										{
 											auto new_obj = malloc(udt->size);
-											run_module_function_member_void_void(fn.c_str(), (void*)dw, new_obj);
+											run_module_function_member_void_void(fn.c_str(), (void*)f->rva, new_obj);
 											for (auto& i : udt->items)
 											{
 												if (i->size <= sizeof(CommonData::v))
@@ -2093,13 +2109,12 @@ namespace flame
 											free(new_obj);
 										}
 									}
+									else
+										udt->functions.emplace_back(f);
 								}
-
-								parameters->Release();
-								function_type->Release();
-								function->Release();
+								_function->Release();
 							}
-							functions->Release();
+							_functions->Release();
 
 							udts.emplace(udt_namehash, udt);
 						}
@@ -2119,74 +2134,17 @@ namespace flame
 				std::wstring wname(pwname);
 				if (wname.compare(0, wprefix.size(), wprefix) == 0)
 				{
-					auto function_name = w2s(wname.c_str() + wprefix.size());
-					auto pos_$ = function_name.find(L'$');
-
+					auto pos_$ = wname.find(L'$');
 					if (pos_$ != std::wstring::npos)
 					{
-						function_name[pos_$] = 0;
-						auto function_namehash = H(function_name.c_str());
+						auto attribute = w2s(wname.c_str() + pos_$ + 1);
+						wname[pos_$] = 0;
 
-						IDiaSymbol* function_type;
-						_function->get_type(&function_type);
+						auto f = new FunctionInfoPrivate;
+						f->name = w2s(wname);
+						symbol_to_function(_function, f, attribute, session, source_files);
 
-						IDiaEnumSymbols* parameters;
-						function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-						if (SUCCEEDED(parameters->get_Count(&l)) && l == 1)
-						{
-							IDiaSymbol* parameter;
-							parameters->Item(0, &parameter);
-
-							IDiaSymbol* parameter_type;
-							parameter->get_type(&parameter_type);
-
-							parameter_type->get_symTag(&dw);
-							if (dw == SymTagPointerType)
-							{
-								IDiaSymbol* parameter_base_type;
-								parameter_type->get_type(&parameter_base_type);
-
-								parameter_base_type->get_symTag(&dw);
-								if (dw == SymTagUDT)
-								{
-									IDiaEnumSymbols* members;
-									parameter_base_type->findChildren(SymTagEnum, NULL, nsNone, &members);
-									IDiaSymbol* member;
-									while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
-									{
-										member->get_name(&pwname);
-										std::wstring name(pwname);
-										if (name.find(L"SIZE") != std::wstring::npos)
-										{
-											IDiaEnumSymbols* items;
-											member->findChildren(SymTagNull, NULL, nsNone, &items);
-											IDiaSymbol* item;
-											items->Item(0, &item);
-											VARIANT v;
-											ZeroMemory(&v, sizeof(v));
-											item->get_value(&v);
-
-											_function->get_relativeVirtualAddress(&dw);
-
-											auto f = new FunctionInfoPrivate;
-											f->name = function_name;
-											f->rva = (void*)dw;
-
-											item->Release();
-											items->Release();
-										}
-										member->Release();
-									}
-									members->Release();
-								}
-								parameter_base_type->Release();
-							}
-							parameter_type->Release();
-
-							parameter->Release();
-						}
-						parameters->Release();
-						function_type->Release();
+						functions.emplace(H(f->name.c_str()), f);
 					}
 				}
 
@@ -2244,7 +2202,7 @@ namespace flame
 					if (n_item->name() == "item")
 					{
 						auto i = new VariableInfoPrivate;
-						i->type = unserialize_typeinfo(n_item->find_node("type"));
+						i->type = unserialize_typeinfo(n_item);
 						i->name = n_item->find_attr("name")->value();
 						i->attribute = n_item->find_attr("attribute")->value();
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
@@ -2326,8 +2284,7 @@ namespace flame
 			for (auto &i : u.second->items)
 			{
 				auto n_item = n_udt->new_node("item");
-				auto n_type = n_item->new_node("type");
-				serialize_typeinfo(i->type, n_type);
+				serialize_typeinfo(i->type, n_item);
 				n_item->new_attr("name", i->name);
 				n_item->new_attr("attribute", i->attribute);
 				n_item->new_attr("offset", std::to_string(i->offset));

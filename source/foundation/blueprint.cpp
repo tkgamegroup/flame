@@ -1037,28 +1037,28 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-	void BP_Int$::update()
+	void BP_Int$::update$()
 	{
 		v$o = v$i;
 	}
 
 	BP_Int$ bp_int_unused;
 
-	void BP_Float$::update()
+	void BP_Float$::update$()
 	{
 		v$o = v$i;
 	}
 
 	BP_Float$ bp_float_unused;
 
-	void BP_Bool$::update()
+	void BP_Bool$::update$()
 	{
 		v$o = v$i;
 	}
 
 	BP_Bool$ bp_bool_unused;
 
-	void BP_Vec2$::update()
+	void BP_Vec2$::update$()
 	{
 		v$o.x = x$i; 
 		v$o.y = y$i;
@@ -1066,7 +1066,7 @@ namespace flame
 
 	BP_Vec2$ bp_vec2_unused;
 
-	void BP_Vec3$::update()
+	void BP_Vec3$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
@@ -1075,7 +1075,7 @@ namespace flame
 
 	BP_Vec3$ bp_vec3_unused;
 
-	void BP_Vec4$::update()
+	void BP_Vec4$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
@@ -1085,7 +1085,7 @@ namespace flame
 
 	BP_Vec4$ bp_vec4_unused;
 
-	void BP_Ivec2$::update()
+	void BP_Ivec2$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
@@ -1093,7 +1093,7 @@ namespace flame
 
 	BP_Ivec2$ bp_ivec2_unused;
 
-	void BP_Ivec3$::update()
+	void BP_Ivec3$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
@@ -1102,7 +1102,7 @@ namespace flame
 
 	BP_Ivec3$ bp_ivec3_unused;
 
-	void BP_Ivec4$::update()
+	void BP_Ivec4$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
@@ -1112,7 +1112,7 @@ namespace flame
 
 	BP_Ivec4$ bp_ivec4_unused;
 
-	void BP_Bvec2$::update()
+	void BP_Bvec2$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
@@ -1120,7 +1120,7 @@ namespace flame
 
 	BP_Bvec2$ bp_bvec2_unused;
 
-	void BP_Bvec3$::update()
+	void BP_Bvec3$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
@@ -1129,7 +1129,7 @@ namespace flame
 
 	BP_Bvec3$ bp_bvec3_unused;
 
-	void BP_Bvec4$::update()
+	void BP_Bvec4$::update$()
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;
