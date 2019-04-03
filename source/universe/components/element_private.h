@@ -27,7 +27,7 @@
 
 namespace flame
 {
-	struct cElementPrivate : cElement
+	struct cElementPrivate : cElement$
 	{
 		graphics::Canvas* canvas_;
 

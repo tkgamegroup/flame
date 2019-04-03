@@ -323,7 +323,23 @@ namespace flame
 		}
 
 		if (update_function)
-			run_module_function_member_void_void(udt->module_name(), update_function->rva(), dummy);
+		{
+			auto library = load_module(udt->module_name());
+			if (library)
+			{
+				struct Dummy { };
+				typedef void (Dummy:: * F)();
+				union
+				{
+					void* p;
+					F f;
+				}cvt;
+				cvt.p = (char*)library + (uint)update_function->rva();
+				(*((Dummy*)dummy).*cvt.f)();
+
+				free_module(library);
+			}
+		}
 
 		for (auto &output : outputs)
 		{

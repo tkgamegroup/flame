@@ -241,23 +241,14 @@ namespace flame
 		return ret;
 	}
 
-	void run_module_function_member_void_void(const wchar_t *module_name, const void *rva, void *thiz)
+	void* load_module(const wchar_t* module_name)
 	{
-		auto module = LoadLibraryW(module_name);
-		if (module)
-		{
-			struct Dummy { };
-			typedef void (Dummy::*F)();
-			union
-			{
-				void *p;
-				F f;
-			}cvt;
-			cvt.p = (char*)module + (uint)rva;
-			(*((Dummy*)thiz).*cvt.f)();
+		return LoadLibraryW(module_name);
+	}
 
-			FreeLibrary(module);
-		}
+	void free_module(void* library)
+	{
+		FreeLibrary((HMODULE)library);
 	}
 
 	StringW get_clipboard()

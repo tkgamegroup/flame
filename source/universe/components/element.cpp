@@ -104,31 +104,31 @@ namespace flame
 		}
 	}
 
-	cElement::~cElement()
+	cElement$::~cElement$()
 	{
 	}
 
-	const char* cElement::type_name() const
+	const char* cElement$::type_name() const
 	{
 		return "Element";
 	}
 
-	uint cElement::type_hash() const
+	uint cElement$::type_hash() const
 	{
 		return cH("Element");
 	}
 
-	void cElement::on_attach()
+	void cElement$::on_attach()
 	{
 		((cElementPrivate*)this)->on_attach();
 	}
 
-	void cElement::update(float delta_time)
+	void cElement$::update(float delta_time)
 	{
 		((cElementPrivate*)this)->update(delta_time);
 	}
 
-	cElement* cElement::create(graphics::Canvas* canvas)
+	cElement$* cElement$::create$(graphics::Canvas* canvas)
 	{
 		return new cElementPrivate(canvas);
 	}
