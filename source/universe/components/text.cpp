@@ -80,7 +80,7 @@ namespace flame
 		((cText$Private*)this)->text = text;
 	}
 
-	cText$* cText$::create(void* data)
+	cText$* cText$::create$(void* data)
 	{
 		return new cText$Private(data);
 	}

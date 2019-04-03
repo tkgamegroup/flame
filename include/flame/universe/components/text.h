@@ -43,6 +43,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS const wchar_t* text() const;
 		FLAME_UNIVERSE_EXPORTS void set_text(const wchar_t* text);
 
-		FLAME_UNIVERSE_EXPORTS static cText$* create(void* data);
+		FLAME_UNIVERSE_EXPORTS static cText$* create$(void* data);
 	};
 }

@@ -1842,7 +1842,7 @@ namespace flame
 		return info;
 	}
 
-	void symbol_to_function(IDiaSymbol* symbol, FunctionInfoPrivate* f, const std::string& attribute, CComPtr<IDiaSession>& session, std::map<DWORD, std::vector<std::string>>& source_files)
+	void symbol_to_function(IDiaSymbol* symbol, FunctionInfoPrivate* f, const std::string& attribute, CComPtr<IDiaSession>& session, std::map<DWORD, std::vector<std::string>>& source_files, const std::string& tab_str1, const std::string& tab_str2)
 	{
 		ULONG ul;
 		ULONGLONG ull;
@@ -1880,6 +1880,8 @@ namespace flame
 				DWORD src_file_id = -1;
 				DWORD line_num;
 
+				std::vector<std::string> my_lines;
+
 				while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
 				{
 					if (src_file_id == -1)
@@ -1913,12 +1915,20 @@ namespace flame
 					}
 
 					line->get_lineNumber(&line_num);
-					f->code += source_files[src_file_id][line_num];
+					my_lines.push_back(source_files[src_file_id][line_num]);
 
 					line->Release();
 				}
 
 				lines->Release();
+
+				if (!my_lines.empty())
+				{
+					f->code = "\n";
+					for (auto i = 1; i < my_lines.size() - 1; i++)
+						f->code += tab_str1 + my_lines[i];
+					f->code += tab_str2;
+				}
 			}
 		}
 
@@ -2090,7 +2100,7 @@ namespace flame
 
 									auto f = new FunctionInfoPrivate;
 									f->name = w2s(wname);
-									symbol_to_function(_function, f, attribute, session, source_files);
+									symbol_to_function(_function, f, attribute, session, source_files, "\t\t\t\t", "\t\t\t\t\t");
 
 									if (f->name == udt_name)
 									{
@@ -2142,7 +2152,7 @@ namespace flame
 
 						auto f = new FunctionInfoPrivate;
 						f->name = w2s(wname);
-						symbol_to_function(_function, f, attribute, session, source_files);
+						symbol_to_function(_function, f, attribute, session, source_files, "\t\t", "\t\t\t");
 
 						functions.emplace(H(f->name.c_str()), f);
 					}
