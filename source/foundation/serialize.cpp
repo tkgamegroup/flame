@@ -1942,6 +1942,45 @@ namespace flame
 		function_type->Release();
 	}
 
+	void serialize_function(FunctionInfoPrivate* src, SerializableNode* dst)
+	{
+		dst->new_attr("name", src->name);
+		dst->new_attr("rva", to_string((uint)src->rva).v);
+		auto n_return_type = dst->new_node("return_type");
+		serialize_typeinfo(src->return_type, n_return_type);
+		if (!src->parameter_types.empty())
+		{
+			auto n_parameters = dst->new_node("parameters");
+			for (auto& p : src->parameter_types)
+			{
+				auto n_parameter = n_parameters->new_node("parameter");
+				serialize_typeinfo(p, n_parameter);
+			}
+		}
+		if (src->code.length() > 0)
+			dst->new_node("code")->set_value(src->code);
+	}
+
+	void unserialize_function(SerializableNode* src, FunctionInfoPrivate* dst)
+	{
+		dst->name = src->find_attr("name")->value();
+		dst->rva = (void*)stou1(src->find_attr("rva")->value().c_str());
+		dst->return_type = unserialize_typeinfo(src->find_node("return_type"));
+		auto n_parameters = src->find_node("parameters");
+		if (n_parameters)
+		{
+			for (auto k = 0; k < n_parameters->node_count(); k++)
+			{
+				auto n_parameter = n_parameters->node(k);
+				if (n_parameter->name() == "parameter")
+					dst->parameter_types.push_back(unserialize_typeinfo(n_parameter));
+			}
+		}
+		auto n_code = src->find_node("code");
+		if (n_code)
+			dst->code = n_code->value();
+	}
+
 	void typeinfo_collect(const std::vector<std::wstring>& filenames)
 	{
 		std::wstring wprefix(s2w(prefix));
@@ -2214,10 +2253,10 @@ namespace flame
 			}
 		}
 
-		auto n_serializables = file->find_node("udts");
-		for (auto i = 0; i < n_serializables->node_count(); i++)
+		auto n_udts = file->find_node("udts");
+		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
-			auto n_udt = n_serializables->node(i);
+			auto n_udt = n_udts->node(i);
 			if (n_udt->name() == "udt")
 			{
 				auto u = new UdtInfoPrivate;
@@ -2256,28 +2295,25 @@ namespace flame
 						if (n_function->name() == "function")
 						{
 							auto f = new FunctionInfoPrivate;
-							f->name = n_function->find_attr("name")->value();
-							f->rva = (void*)stou1(n_function->find_attr("rva")->value().c_str());
-							f->return_type = unserialize_typeinfo(n_function->find_node("return_type"));
-							auto n_parameters = n_function->find_node("parameters");
-							if (n_parameters)
-							{
-								for (auto k = 0; k < n_parameters->node_count(); k++)
-								{
-									auto n_parameter = n_parameters->node(k);
-									if (n_parameter->name() == "parameter")
-										f->parameter_types.push_back(unserialize_typeinfo(n_parameter));
-								}
-							}
-							auto n_code = n_function->find_node("code");
-							if (n_code)
-								f->code = n_code->value();
+							unserialize_function(n_function, f);
 							u->functions.emplace_back(f);
 						}
 					}
 				}
 
 				udts.emplace(H(u->name.c_str()), u);
+			}
+		}
+
+		auto n_functions = file->find_node("function");
+		for (auto i = 0; i < n_functions->node_count(); i++)
+		{
+			auto n_function = n_functions->node(i);
+			if (n_function->name() == "function")
+			{
+				auto f = new FunctionInfoPrivate;
+				unserialize_function(n_function, f);
+				functions.emplace(H(f->name.c_str()), f);
 			}
 		}
 
@@ -2302,15 +2338,15 @@ namespace flame
 			}
 		}
 
-		auto n_serializables = file->new_node("udts");
-		for (auto &u : udts)
+		auto n_udts = file->new_node("udts");
+		for (auto& u : udts)
 		{
-			auto n_udt = n_serializables->new_node("udt");
+			auto n_udt = n_udts->new_node("udt");
 			n_udt->new_attr("name", u.second->name);
 			n_udt->new_attr("size", std::to_string(u.second->size));
 			n_udt->new_attr("module_name", w2s(u.second->module_name));
 
-			for (auto &i : u.second->items)
+			for (auto& i : u.second->items)
 			{
 				auto n_item = n_udt->new_node("item");
 				serialize_typeinfo(i->type, n_item);
@@ -2335,23 +2371,16 @@ namespace flame
 				for (auto& f : u.second->functions)
 				{
 					auto n_function = n_functions->new_node("function");
-					n_function->new_attr("name", f->name);
-					n_function->new_attr("rva", to_string((uint)f->rva).v);
-					auto n_return_type = n_function->new_node("return_type");
-					serialize_typeinfo(f->return_type, n_return_type);
-					if (!f->parameter_types.empty())
-					{
-						auto n_parameters = n_function->new_node("parameters");
-						for (auto& p : f->parameter_types)
-						{
-							auto n_parameter = n_parameters->new_node("parameter");
-							serialize_typeinfo(p, n_parameter);
-						}
-					}
-					if (f->code.length() > 0)
-						n_function->new_node("code")->set_value(f->code);
+					serialize_function(f.get(), n_function);
 				}
 			}
+		}
+
+		auto n_functions = file->new_node("functions");
+		for (auto& f : functions)
+		{
+			auto n_function = n_functions->new_node("function");
+			serialize_function(f.second.get(), n_function);
 		}
 
 		file->save_xml(filename);
@@ -2362,5 +2391,6 @@ namespace flame
 	{
 		enums.clear();
 		udts.clear();
+		functions.clear();
 	}
 }
