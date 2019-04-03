@@ -186,10 +186,16 @@ namespace flame
 		for (auto& c : src->components)
 		{
 			std::string type_name = c->type_name();
-			auto u = find_udt(H((type_name + "Archive").c_str()));
-			if (u)
+			auto u_c = find_udt(H(type_name.c_str()));
+			auto u_a = find_udt(H((type_name + "Archive").c_str()));
+			if (u_c && u_a)
 			{
-
+				auto create_func_idx = u_c->find_function_i("create");
+				if (create_func_idx != -1)
+				{
+					auto create_func = u_c->function(create_func_idx);
+					int cut = 1;
+				}
 			}
 		}
 	}

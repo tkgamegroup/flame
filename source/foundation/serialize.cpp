@@ -2110,16 +2110,30 @@ namespace flame
 											// we get the ctor func and try to run it at a dummy memory to get the default value of the class
 
 											auto new_obj = malloc(udt->size);
-											run_module_function_member_void_void(fn.c_str(), (void*)f->rva, new_obj);
-											for (auto& i : udt->items)
+											auto library = load_module(fn.c_str());
+											if (library)
 											{
-												if (i->size <= sizeof(CommonData::v))
-													memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
+												struct Dummy { };
+												typedef void (Dummy:: * F)();
+												union
+												{
+													void* p;
+													F f;
+												}cvt;
+												cvt.p = (char*)library + (uint)f->rva;
+												(*((Dummy*)new_obj).*cvt.f)();
+
+												for (auto& i : udt->items)
+												{
+													if (i->size <= sizeof(CommonData::v))
+														memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
+												}
+												free_module(library);
 											}
 											free(new_obj);
 										}
 									}
-									else
+									else if (f->name[0] != '~')
 										udt->functions.emplace_back(f);
 								}
 								_function->Release();

@@ -28,7 +28,7 @@
 
 namespace flame
 {
-	void BP_GraphicsDevice$::update()
+	void BP_GraphicsDevice$::update$c()
 	{
 		if (in$i)
 			out$o = in$i;
@@ -36,7 +36,7 @@ namespace flame
 
 	BP_GraphicsDevice$ bp_graphics_device_unused;
 
-	void BP_GraphicsSwapchain$::update()
+	void BP_GraphicsSwapchain$::update$c()
 	{
 		if (in$i)
 		{
@@ -54,7 +54,7 @@ namespace flame
 
 	BP_GraphicsSwapchain$ bp_graphics_swapchain_unused;
 
-	void BP_GraphicsClearvalues$::update()
+	void BP_GraphicsClearvalues$::update$c()
 	{
 		if (in$i)
 			out$o = in$i;
@@ -75,7 +75,7 @@ namespace flame
 
 	BP_GraphicsClearvalues$ bp_graphics_clearvalues_unused;
 
-	void BP_GraphicsCommandbuffer$::update()
+	void BP_GraphicsCommandbuffer$::update$c()
 	{
 		if (in$i)
 			out$o = in$i;
@@ -88,7 +88,7 @@ namespace flame
 
 	BP_GraphicsCommandbuffer$ bp_graphics_commandbuffer_unused;
 
-	void BP_GraphicsCmdBegin$::update()
+	void BP_GraphicsCmdBegin$::update$c()
 	{
 		if (cmd1$i)
 			((graphics::Commandbuffer*)cmd1$i)->begin();
@@ -98,7 +98,7 @@ namespace flame
 
 	BP_GraphicsCmdBegin$ bp_graphics_cmd_begin_unused;
 
-	void BP_GraphicsCmdEnd$::update()
+	void BP_GraphicsCmdEnd$::update$c()
 	{
 		if (cmd1$i)
 			((graphics::Commandbuffer*)cmd1$i)->end();
@@ -108,7 +108,7 @@ namespace flame
 
 	BP_GraphicsCmdEnd$ bp_graphics_cmd_end_unused;
 
-	void BP_GraphicsCmdBeginRenderpass$::update()
+	void BP_GraphicsCmdBeginRenderpass$::update$c()
 	{
 		if (cmd1$i)
 		{
@@ -128,7 +128,7 @@ namespace flame
 
 	BP_GraphicsCmdBeginRenderpass$ bp_graphics_cmd_begin_renderpass_unused;
 
-	void BP_GraphicsCmdEndRenderpass$::update()
+	void BP_GraphicsCmdEndRenderpass$::update$c()
 	{
 		if (cmd1$i)
 			((graphics::Commandbuffer*)cmd1$i)->end_renderpass();

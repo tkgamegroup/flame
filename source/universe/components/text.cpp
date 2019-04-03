@@ -41,6 +41,13 @@ namespace flame
 				color = default_style.text_color_normal;
 				sdf_scale = default_style.sdf_scale;
 			}
+			else
+			{
+				auto src = (cTextArchive$*)data;
+				font_atlas_index = src->font_atlas_index$;
+				color = src->color$;
+				sdf_scale = src->sdf_scale$;
+			}
 		}
 
 		void update(float delta_time)

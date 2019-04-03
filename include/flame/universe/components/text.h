@@ -45,4 +45,11 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cText$* create$(void* data);
 	};
+
+	struct cTextArchive$
+	{
+		int font_atlas_index$;
+		Bvec4 color$;
+		float sdf_scale$;
+	};
 }
