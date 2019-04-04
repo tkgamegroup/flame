@@ -21,19 +21,20 @@
 // SOFTWARE.
 
 #include <flame/graphics/canvas.h>
+#include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/default_style.h>
-
-#include "element_private.h"
 
 namespace flame
 {
 	struct cText$Private : cText$
 	{
+		cElement$* element_;
 		std::wstring text;
 
-		cText$Private(void* data)
+		cText$Private(void* data) :
+			element_(nullptr)
 		{
 			if (!data)
 			{
@@ -50,11 +51,17 @@ namespace flame
 			}
 		}
 
+		void on_attach()
+		{
+			element_ = (cElement$*)(entity->component(cH("Element")));
+			assert(element_);
+		}
+
 		void update(float delta_time)
 		{
-			auto c = (cElementPrivate*)(entity->component(cH("Element")));
-			if (c && c->canvas_)
-				c->canvas_->add_text(font_atlas_index, c->pos_ + Vec2(c->inner_padding[0], c->inner_padding[1]) * c->scl_, Bvec4(color, c->alpha), text.c_str(), sdf_scale * c->scl_);
+			element_->canvas()->add_text(font_atlas_index, element_->pos_() + 
+				Vec2(element_->inner_padding[0], element_->inner_padding[1]) * element_->scl_(), 
+				Bvec4(color, element_->alpha), text.c_str(), sdf_scale * element_->scl_());
 		}
 	};
 
@@ -70,6 +77,11 @@ namespace flame
 	uint cText$::type_hash() const
 	{
 		return cH("Text");
+	}
+
+	void cText$::on_attach()
+	{
+		((cText$Private*)this)->on_attach();
 	}
 
 	void cText$::update(float delta_time)

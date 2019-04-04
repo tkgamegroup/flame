@@ -72,6 +72,10 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
+		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas() const;
+		FLAME_UNIVERSE_EXPORTS Vec2 pos_() const;
+		FLAME_UNIVERSE_EXPORTS float scl_() const;
+
 		FLAME_UNIVERSE_EXPORTS static cElement$* create$(void* data);
 	};
 }

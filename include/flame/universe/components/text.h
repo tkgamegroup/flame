@@ -38,6 +38,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
 		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
 
+		FLAME_UNIVERSE_EXPORTS virtual void on_attach() override;
+
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
 		FLAME_UNIVERSE_EXPORTS const wchar_t* text() const;

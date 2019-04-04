@@ -2314,7 +2314,7 @@ namespace flame
 			}
 		}
 
-		auto n_functions = file->find_node("function");
+		auto n_functions = file->find_node("functions");
 		for (auto i = 0; i < n_functions->node_count(); i++)
 		{
 			auto n_function = n_functions->node(i);
