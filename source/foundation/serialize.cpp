@@ -611,8 +611,8 @@ namespace flame
 	}
 
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
-	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
 	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
+	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
 
 	Array<EnumInfo*> get_enums()
 	{
@@ -633,6 +633,25 @@ namespace flame
 		return it == enums.end() ? nullptr : it->second.get();
 	}
 
+	Array<FunctionInfo*> get_functions()
+	{
+		Array<FunctionInfo*> ret;
+		ret.resize(functions.size());
+		auto i = 0;
+		for (auto it = functions.begin(); it != functions.end(); it++)
+		{
+			ret[i] = (*it).second.get();
+			i++;
+		}
+		return ret;
+	}
+
+	FunctionInfo* find_funcion(unsigned int name_hash)
+	{
+		auto it = functions.find(name_hash);
+		return it == functions.end() ? nullptr : it->second.get();
+	}
+
 	Array<UdtInfo*> get_udts()
 	{
 		Array<UdtInfo*> ret;
@@ -650,25 +669,6 @@ namespace flame
 	{
 		auto it = udts.find(name_hash);
 		return it == udts.end() ? nullptr : it->second.get();
-	}
-
-	Array<FunctionInfo*> get_functions()
-	{
-		Array<FunctionInfo*> ret;
-		ret.resize(udts.size());
-		auto i = 0;
-		for (auto it = functions.begin(); it != functions.end(); it++)
-		{
-			ret[i] = (*it).second.get();
-			i++;
-		}
-		return ret;
-	}
-
-	FunctionInfo* find_funcion(unsigned int name_hash)
-	{
-		auto it = functions.find(name_hash);
-		return it == functions.end() ? nullptr : it->second.get();
 	}
 
 	struct SerializableAttributePrivate : SerializableAttribute
@@ -1981,58 +1981,54 @@ namespace flame
 			dst->code = n_code->value();
 	}
 
-	void typeinfo_collect(const std::vector<std::wstring>& filenames)
+	void typeinfo_collect(const std::wstring& filename)
 	{
-		std::wstring wprefix(s2w(prefix));
-
-		for (auto& fn : filenames)
+		CComPtr<IDiaDataSource> dia_source;
+		if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)& dia_source)))
 		{
-			CComPtr<IDiaDataSource> dia_source;
-			if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
-			{
-				printf("dia not found\n");
-				continue;
-			}
-			if (FAILED(dia_source->loadDataFromPdb(ext_replace(fn, L".pdb").c_str())))
-			{
-				printf("pdb failed to open\n");
-				continue;
-			}
-			CComPtr<IDiaSession> session;
-			if (FAILED(dia_source->openSession(&session)))
-			{
-				printf("session failed to open\n");
-				continue;
-			}
+			printf("dia not found\n");
+			return;
+		}
+		if (FAILED(dia_source->loadDataFromPdb(ext_replace(filename, L".pdb").c_str())))
+		{
+			printf("pdb failed to open\n");
+			return;
+		}
+		CComPtr<IDiaSession> session;
+		if (FAILED(dia_source->openSession(&session)))
+		{
+			printf("session failed to open\n");
+			return;
+		}
 
-			CComPtr<IDiaSymbol> global;
-			if (FAILED(session->get_globalScope(&global)))
+		CComPtr<IDiaSymbol> global;
+		if (FAILED(session->get_globalScope(&global)))
+		{
+			printf("failed to get global\n");
+			return;
+		}
+
+		LONG l;
+		ULONG ul;
+		ULONGLONG ull;
+		DWORD dw;
+		wchar_t* pwname;
+
+		std::map<DWORD, std::vector<std::string>> source_files;
+
+		// enums
+		IDiaEnumSymbols* _enums;
+		global->findChildren(SymTagEnum, NULL, nsNone, &_enums);
+		IDiaSymbol* _enum;
+		while (SUCCEEDED(_enums->Next(1, &_enum, &ul)) && (ul == 1))
+		{
+			_enum->get_name(&pwname);
+			auto name = w2s(pwname);
+			if (name.compare(0, prefix.size(), prefix) == 0)
 			{
-				printf("failed to get global\n");
-				continue;
-			}
-
-			LONG l;
-			ULONG ul;
-			ULONGLONG ull;
-			DWORD dw;
-			wchar_t* pwname;
-
-			std::map<DWORD, std::vector<std::string>> source_files;
-
-			// enums
-			IDiaEnumSymbols * _enums;
-			global->findChildren(SymTagEnum, NULL, nsNone, &_enums);
-			IDiaSymbol * _enum;
-			while (SUCCEEDED(_enums->Next(1, &_enum, &ul)) && (ul == 1))
-			{
-				_enum->get_name(&pwname);
-				std::wstring wname(pwname);
-				if (wname.compare(0, wprefix.size(), wprefix) == 0)
+				name.erase(0, prefix.size());
+				if (name.find("unnamed") == std::string::npos)
 				{
-					auto name = w2s(wname.c_str() + wprefix.size());
-					if (name.find("unnamed") != std::string::npos)
-						continue;
 					auto pos_$ = name.find(L'$');
 					if (pos_$ != std::wstring::npos)
 					{
@@ -2066,160 +2062,163 @@ namespace flame
 						}
 					}
 				}
-				_enum->Release();
 			}
-			_enums->Release();
+			_enum->Release();
+		}
+		_enums->Release();
 
-			// udts
-			IDiaEnumSymbols* _udts;
-			global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
-			IDiaSymbol* _udt;
-			while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
+		// udts
+		IDiaEnumSymbols* _udts;
+		global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
+		IDiaSymbol* _udt;
+		while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
+		{
+			_udt->get_name(&pwname);
+			auto udt_name = w2s(pwname);
+			if (udt_name.compare(0, prefix.size(), prefix) == 0)
 			{
-				_udt->get_name(&pwname);
-				std::wstring wname(pwname);
-				if (wname.compare(0, wprefix.size(), wprefix) == 0)
+				udt_name.erase(0, prefix.size());
+				auto pos_$ = udt_name.find('$');
+				if (pos_$ != std::wstring::npos)
 				{
-					auto udt_name = w2s(wname.c_str() + wprefix.size());
-					auto pos_$ = udt_name.find(L'$');
-
-					if (pos_$ != std::wstring::npos)
+					udt_name[pos_$] = 0;
+					auto udt_namehash = H(udt_name.c_str());
+					if (udts.find(udt_namehash) == udts.end())
 					{
-						udt_name[pos_$] = 0;
-						auto udt_namehash = H(udt_name.c_str());
-						if (udts.find(udt_namehash) == udts.end())
+						_udt->get_length(&ull);
+						auto udt = new UdtInfoPrivate;
+						udt->name = udt_name;
+						udt->size = (int)ull;
+						udt->module_name = std::filesystem::path(filename).filename().wstring();
+
+						IDiaEnumSymbols* members;
+						_udt->findChildren(SymTagData, NULL, nsNone, &members);
+						IDiaSymbol* member;
+						while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
 						{
-							_udt->get_length(&ull);
-							auto udt = new UdtInfoPrivate;
-							udt->name = udt_name;
-							udt->size = (int)ull;
-							udt->module_name = std::filesystem::path(fn).filename().wstring();
-
-							IDiaEnumSymbols* members;
-							_udt->findChildren(SymTagData, NULL, nsNone, &members);
-							IDiaSymbol* member;
-							while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
+							member->get_name(&pwname);
+							auto name = w2s(pwname);
+							auto pos_$ = name.find('$');
+							if (pos_$ != std::wstring::npos)
 							{
-								member->get_name(&pwname);
-								std::wstring wname(pwname);
-								auto pos_$ = wname.find(L'$');
-								if (pos_$ != std::wstring::npos)
-								{
-									auto attribute = w2s(wname.c_str() + pos_$ + 1);
-									wname[pos_$] = 0;
+								auto attribute = std::string(name.c_str() + pos_$ + 1);
+								name[pos_$] = 0;
 
-									IDiaSymbol* type;
-									member->get_type(&type);
+								IDiaSymbol * type;
+								member->get_type(&type);
 
-									auto i = new VariableInfoPrivate;
-									i->name = w2s(wname);
-									i->attribute = attribute;
-									member->get_offset(&l);
-									i->offset = l;
-									type->get_length(&ull);
-									i->size = (int)ull;
-									memset(&i->default_value, 0, sizeof(CommonData));
+								auto i = new VariableInfoPrivate;
+								i->name = name;
+								i->attribute = attribute;
+								member->get_offset(&l);
+								i->offset = l;
+								type->get_length(&ull);
+								i->size = (int)ull;
+								memset(&i->default_value, 0, sizeof(CommonData));
 
-									i->type = symbol_to_typeinfo(type, attribute);
-									type->Release();
+								i->type = symbol_to_typeinfo(type, attribute);
+								type->Release();
 
-									udt->items.emplace_back(i);
-								}
-								member->Release();
+								udt->items.emplace_back(i);
 							}
-							members->Release();
-
-							IDiaEnumSymbols* _functions;
-							_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-							IDiaSymbol* _function;
-							while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
-							{
-								_function->get_name(&pwname);
-								std::wstring wname(pwname);
-								auto pos_$ = wname.find(L'$');
-								if (pos_$ != std::wstring::npos)
-								{
-									auto attribute = w2s(wname.c_str() + pos_$ + 1);
-									wname[pos_$] = 0;
-
-									auto f = new FunctionInfoPrivate;
-									f->name = w2s(wname);
-									symbol_to_function(_function, f, attribute, session, source_files, "\t\t\t\t", "\t\t\t\t\t");
-
-									if (f->name == udt_name)
-									{
-										if (f->parameter_types.empty())
-										{
-											// a ctor func is a func that its name equals its class's name and its count of parameters is 0
-											// we get the ctor func and try to run it at a dummy memory to get the default value of the class
-
-											auto new_obj = malloc(udt->size);
-											auto library = load_module(fn.c_str());
-											if (library)
-											{
-												struct Dummy { };
-												typedef void (Dummy:: * F)();
-												union
-												{
-													void* p;
-													F f;
-												}cvt;
-												cvt.p = (char*)library + (uint)f->rva;
-												(*((Dummy*)new_obj).*cvt.f)();
-
-												for (auto& i : udt->items)
-												{
-													if (i->size <= sizeof(CommonData::v))
-														memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
-												}
-												free_module(library);
-											}
-											free(new_obj);
-										}
-									}
-									else if (f->name[0] != '~')
-										udt->functions.emplace_back(f);
-								}
-								_function->Release();
-							}
-							_functions->Release();
-
-							udts.emplace(udt_namehash, udt);
+							member->Release();
 						}
+						members->Release();
+
+						IDiaEnumSymbols* _functions;
+						_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+						IDiaSymbol* _function;
+						while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+						{
+							_function->get_name(&pwname);
+							auto name = w2s(pwname);
+							auto pos_$ = name.find('$');
+							if (pos_$ != std::wstring::npos)
+							{
+								auto attribute = std::string(name.c_str() + pos_$ + 1);
+								name[pos_$] = 0;
+
+								auto f = new FunctionInfoPrivate;
+								f->name = name;
+								symbol_to_function(_function, f, attribute, session, source_files, "\t\t\t\t", "\t\t\t\t\t");
+
+								if (f->name == udt_name)
+								{
+									if (f->parameter_types.empty())
+									{
+										// a ctor func is a func that its name equals its class's name and its count of parameters is 0
+										// we get the ctor func and try to run it at a dummy memory to get the default value of the class
+
+										auto new_obj = malloc(udt->size);
+										auto library = load_module(filename.c_str());
+										if (library)
+										{
+											struct Dummy { };
+											typedef void (Dummy:: * F)();
+											union
+											{
+												void* p;
+												F f;
+											}cvt;
+											cvt.p = (char*)library + (uint)f->rva;
+											(*((Dummy*)new_obj).*cvt.f)();
+
+											for (auto& i : udt->items)
+											{
+												if (i->size <= sizeof(CommonData::v))
+													memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
+											}
+											free_module(library);
+										}
+										free(new_obj);
+									}
+								}
+								else if (f->name[0] != '~')
+									udt->functions.emplace_back(f);
+							}
+							_function->Release();
+						}
+						_functions->Release();
+
+						udts.emplace(udt_namehash, udt);
 					}
 				}
-				_udt->Release();
 			}
-			_udts->Release();
+			_udt->Release();
+		}
+		_udts->Release();
 
-			// functions
-			IDiaEnumSymbols* _functions;
-			global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-			IDiaSymbol* _function;
-			while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+		// functions
+		IDiaEnumSymbols* _functions;
+		global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+		IDiaSymbol* _function;
+		while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+		{
+			_function->get_name(&pwname);
+			auto name = w2s(pwname);
+			if (name.compare(0, prefix.size(), prefix) == 0)
 			{
-				_function->get_name(&pwname);
-				std::wstring wname(pwname);
-				if (wname.compare(0, wprefix.size(), wprefix) == 0)
+				name.erase(0, prefix.size());
+				if (name.find("::") == std::string::npos)
 				{
-					auto pos_$ = wname.find(L'$');
+					auto pos_$ = name.find('$');
 					if (pos_$ != std::wstring::npos)
 					{
-						auto attribute = w2s(wname.c_str() + pos_$ + 1);
-						wname[pos_$] = 0;
+						auto attribute = std::string(name.c_str() + pos_$ + 1);
+						name[pos_$] = 0;
 
 						auto f = new FunctionInfoPrivate;
-						f->name = w2s(wname);
+						f->name = name;
 						symbol_to_function(_function, f, attribute, session, source_files, "\t\t", "\t\t\t");
 
 						functions.emplace(H(f->name.c_str()), f);
 					}
 				}
-
-				_function->Release();
 			}
-			_functions->Release();
+
+			_function->Release();
 		}
+		_functions->Release();
 	}
 
 	void typeinfo_load(const std::wstring &filename)
@@ -2325,7 +2324,10 @@ namespace flame
 		auto file = SerializableNode::create("typeinfo");
 
 		auto n_enums = file->new_node("enums");
-		for (auto &e : enums)
+		std::map<std::string, EnumInfoPrivate*> _enums;
+		for (auto& e : enums)
+			_enums.emplace(e.second->name, e.second.get());
+		for (auto& e : _enums)
 		{
 			auto n_enum = n_enums->new_node("enum");
 			n_enum->new_attr("name", e.second->name);
@@ -2339,7 +2341,10 @@ namespace flame
 		}
 
 		auto n_udts = file->new_node("udts");
+		std::map<std::string, UdtInfoPrivate*> _udts;
 		for (auto& u : udts)
+			_udts.emplace(u.second->name, u.second.get());
+		for (auto& u : _udts)
 		{
 			auto n_udt = n_udts->new_node("udt");
 			n_udt->new_attr("name", u.second->name);
@@ -2365,22 +2370,22 @@ namespace flame
 				}
 			}
 
-			if (!u.second->module_name.empty())
+			auto n_functions = n_udt->new_node("functions");
+			for (auto& f : u.second->functions)
 			{
-				auto n_functions = n_udt->new_node("functions");
-				for (auto& f : u.second->functions)
-				{
-					auto n_function = n_functions->new_node("function");
-					serialize_function(f.get(), n_function);
-				}
+				auto n_function = n_functions->new_node("function");
+				serialize_function(f.get(), n_function);
 			}
 		}
 
 		auto n_functions = file->new_node("functions");
+		std::map<std::string, FunctionInfoPrivate*> _functions;
 		for (auto& f : functions)
+			_functions.emplace(f.second->name, f.second.get());
+		for (auto& f : _functions)
 		{
 			auto n_function = n_functions->new_node("function");
-			serialize_function(f.second.get(), n_function);
+			serialize_function(f.second, n_function);
 		}
 
 		file->save_xml(filename);

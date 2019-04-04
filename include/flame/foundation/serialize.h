@@ -669,11 +669,11 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
 	FLAME_FOUNDATION_EXPORTS EnumInfo *find_enum(uint name_hash);
 
+	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
+
 	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
-
-	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
-	FLAME_FOUNDATION_EXPORTS UdtInfo*find_udt(uint name_hash);
 
 	struct SerializableAttribute
 	{
@@ -744,9 +744,9 @@ namespace flame
 	*/
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_collect_init();
-	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::vector<std::wstring> &filenames);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring &filename);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring &filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_clear();
 }
 

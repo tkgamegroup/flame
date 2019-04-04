@@ -31,7 +31,6 @@ int main(int argc, char **args)
 		return 0;
 
 	std::vector<std::wstring> pdb_dirs;
-	std::vector<std::wstring> pdb_filenames;
 	std::wstring output_filename(L"typeinfo.xml");
 
 	for (auto i = 1; i < argc; i++)
@@ -49,6 +48,8 @@ int main(int argc, char **args)
 	cmd_prefix += VS_LOCATION;
 	cmd_prefix += "/Common7/Tools/VsDevCmd.bat\" & dumpbin /DEPENDENTS ";
 
+	typeinfo_collect_init();
+
 	for (auto& d : pdb_dirs)
 	{
 		for (std::filesystem::directory_iterator end, it(d); it != end; it++)
@@ -57,7 +58,7 @@ int main(int argc, char **args)
 			{
 				if (it->path().filename() == L"flame_foundation.dll")
 				{
-					pdb_filenames.push_back(it->path().wstring());
+					typeinfo_collect(it->path().wstring());
 					continue;
 				}
 
@@ -69,7 +70,7 @@ int main(int argc, char **args)
 					{
 						if (dependancies[i] == "flame_foundation.dll")
 						{
-							pdb_filenames.push_back(it->path().wstring());
+							typeinfo_collect(it->path().wstring());
 							break;
 						}
 					}
@@ -78,8 +79,6 @@ int main(int argc, char **args)
 		}
 	}
 
-	typeinfo_collect_init();
-	typeinfo_collect(pdb_filenames);
 	typeinfo_save(output_filename);
 	typeinfo_clear();
 
