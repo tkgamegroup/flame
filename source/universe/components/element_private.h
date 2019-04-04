@@ -34,7 +34,7 @@ namespace flame
 		Vec2 pos_;
 		float scl_;
 
-		cElementPrivate(graphics::Canvas* canvas);
+		cElementPrivate(void* data);
 		void on_attach();
 		void update(float delta_time);
 	};

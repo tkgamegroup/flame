@@ -1715,6 +1715,34 @@ namespace flame
 	static std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
 	static std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
+	std::string format_name(const wchar_t* in, std::string* attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
+	{
+		if (pass_prefix)
+			* pass_prefix = false;
+		if (pass_$)
+			* pass_$ = false;
+
+		auto name = w2s(in);
+		if (name.compare(0, prefix.size(), prefix) == 0)
+		{
+			name.erase(0, prefix.size());
+
+			if (pass_prefix)
+				* pass_prefix = true;
+		}
+		auto pos_$ = name.find('$');
+		if (pos_$ != std::wstring::npos)
+		{
+			if (attribute)
+				*attribute = std::string(name.c_str() + pos_$ + 1);
+			name[pos_$] = 0;
+
+			if (pass_$)
+				* pass_$ = true;
+		}
+		return name;
+	}
+
 	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& attribute)
 	{
 		DWORD dw;
@@ -1729,9 +1757,7 @@ namespace flame
 		{
 			info.tag = attribute.find('m') != std::string::npos ? TypeTagEnumMulti : TypeTagEnumSingle;
 			symbol->get_name(&pwname);
-			auto type_name = w2s(pwname);
-			if (type_name.compare(0, prefix.size(), prefix) == 0)
-				type_name = type_name.c_str() + prefix.size();
+			auto type_name = format_name(pwname);
 			info.name = type_name;
 		}
 			break;
@@ -1757,9 +1783,7 @@ namespace flame
 				break;
 			case SymTagUDT:
 				point_type->get_name(&pwname);
-				auto type_name = w2s(pwname);
-				if (type_name.compare(0, prefix.size(), prefix) == 0)
-					type_name = type_name.c_str() + prefix.size();
+				auto type_name = format_name(pwname);
 				info.name = type_name;
 				break;
 			}
@@ -1769,7 +1793,7 @@ namespace flame
 		case SymTagUDT:
 		{
 			symbol->get_name(&pwname);
-			auto type_name = w2s(pwname);
+			auto type_name = format_name(pwname);
 			std::smatch match;
 			if (std::regex_search(type_name, match, reg_str))
 			{
@@ -1796,8 +1820,6 @@ namespace flame
 			}
 			else
 				info.tag = TypeTagVariable;
-			if (type_name.compare(0, prefix.size(), prefix) == 0)
-				type_name = type_name.c_str() + prefix.size();
 			info.name = type_name;
 		}
 			break;
@@ -2023,44 +2045,36 @@ namespace flame
 		while (SUCCEEDED(_enums->Next(1, &_enum, &ul)) && (ul == 1))
 		{
 			_enum->get_name(&pwname);
-			auto name = w2s(pwname);
-			if (name.compare(0, prefix.size(), prefix) == 0)
+			bool pass_prefix, pass_$;
+			auto name = format_name(pwname, nullptr, &pass_prefix, &pass_$);
+			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
 			{
-				name.erase(0, prefix.size());
-				if (name.find("unnamed") == std::string::npos)
+				auto hash = H(name.c_str());
+				if (enums.find(hash) == enums.end())
 				{
-					auto pos_$ = name.find(L'$');
-					if (pos_$ != std::wstring::npos)
+					auto e = new EnumInfoPrivate;
+					e->name = name;
+
+					IDiaEnumSymbols* items;
+					_enum->findChildren(SymTagNull, NULL, nsNone, &items);
+					IDiaSymbol* item;
+					while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
 					{
-						name[pos_$] = 0;
-						auto hash = H(name.c_str());
-						if (enums.find(hash) == enums.end())
-						{
-							auto e = new EnumInfoPrivate;
-							e->name = name;
+						VARIANT v;
+						ZeroMemory(&v, sizeof(v));
+						item->get_name(&pwname);
+						item->get_value(&v);
 
-							IDiaEnumSymbols* items;
-							_enum->findChildren(SymTagNull, NULL, nsNone, &items);
-							IDiaSymbol* item;
-							while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
-							{
-								VARIANT v;
-								ZeroMemory(&v, sizeof(v));
-								item->get_name(&pwname);
-								item->get_value(&v);
+						auto i = new EnumItemPrivate;
+						i->name = w2s(pwname);
+						i->value = v.lVal;
+						e->items.emplace_back(i);
 
-								auto i = new EnumItemPrivate;
-								i->name = w2s(pwname);
-								i->value = v.lVal;
-								e->items.emplace_back(i);
-
-								item->Release();
-							}
-							items->Release();
-
-							enums.emplace(hash, e);
-						}
+						item->Release();
 					}
+					items->Release();
+
+					enums.emplace(hash, e);
 				}
 			}
 			_enum->Release();
@@ -2074,80 +2088,76 @@ namespace flame
 		while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
 		{
 			_udt->get_name(&pwname);
-			auto udt_name = w2s(pwname);
-			if (udt_name.compare(0, prefix.size(), prefix) == 0)
+			bool pass_prefix, pass_$;
+			auto udt_name = format_name(pwname, nullptr, &pass_prefix, &pass_$);
+			if (pass_prefix && pass_$)
 			{
-				udt_name.erase(0, prefix.size());
-				auto pos_$ = udt_name.find('$');
-				if (pos_$ != std::wstring::npos)
+				auto udt_namehash = H(udt_name.c_str());
+				if (udts.find(udt_namehash) == udts.end())
 				{
-					udt_name[pos_$] = 0;
-					auto udt_namehash = H(udt_name.c_str());
-					if (udts.find(udt_namehash) == udts.end())
+					_udt->get_length(&ull);
+					auto udt = new UdtInfoPrivate;
+					udt->name = udt_name;
+					udt->size = (int)ull;
+					udt->module_name = std::filesystem::path(filename).filename().wstring();
+
+					IDiaEnumSymbols* members;
+					_udt->findChildren(SymTagData, NULL, nsNone, &members);
+					IDiaSymbol* member;
+					while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
 					{
-						_udt->get_length(&ull);
-						auto udt = new UdtInfoPrivate;
-						udt->name = udt_name;
-						udt->size = (int)ull;
-						udt->module_name = std::filesystem::path(filename).filename().wstring();
-
-						IDiaEnumSymbols* members;
-						_udt->findChildren(SymTagData, NULL, nsNone, &members);
-						IDiaSymbol* member;
-						while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
+						member->get_name(&pwname);
+						std::string attribute;
+						auto name = format_name(pwname, &attribute, &pass_prefix, &pass_$);
+						if (pass_$)
 						{
-							member->get_name(&pwname);
-							auto name = w2s(pwname);
-							auto pos_$ = name.find('$');
-							if (pos_$ != std::wstring::npos)
-							{
-								auto attribute = std::string(name.c_str() + pos_$ + 1);
-								name[pos_$] = 0;
+							IDiaSymbol * type;
+							member->get_type(&type);
 
-								IDiaSymbol * type;
-								member->get_type(&type);
+							auto i = new VariableInfoPrivate;
+							i->name = name;
+							i->attribute = attribute;
+							member->get_offset(&l);
+							i->offset = l;
+							type->get_length(&ull);
+							i->size = (int)ull;
+							memset(&i->default_value, 0, sizeof(CommonData));
 
-								auto i = new VariableInfoPrivate;
-								i->name = name;
-								i->attribute = attribute;
-								member->get_offset(&l);
-								i->offset = l;
-								type->get_length(&ull);
-								i->size = (int)ull;
-								memset(&i->default_value, 0, sizeof(CommonData));
+							i->type = symbol_to_typeinfo(type, attribute);
+							type->Release();
 
-								i->type = symbol_to_typeinfo(type, attribute);
-								type->Release();
-
-								udt->items.emplace_back(i);
-							}
-							member->Release();
+							udt->items.emplace_back(i);
 						}
-						members->Release();
+						member->Release();
+					}
+					members->Release();
 
-						IDiaEnumSymbols* _functions;
-						_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-						IDiaSymbol* _function;
-						while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+					IDiaEnumSymbols* _functions;
+					_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+					IDiaSymbol* _function;
+					while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+					{
+						_function->get_name(&pwname);
+						std::string attribute;
+						auto name = format_name(pwname, &attribute, &pass_prefix, &pass_$);
+						if (pass_$)
 						{
-							_function->get_name(&pwname);
-							auto name = w2s(pwname);
-							auto pos_$ = name.find('$');
-							if (pos_$ != std::wstring::npos)
+							if (name[0] != '~')
 							{
-								auto attribute = std::string(name.c_str() + pos_$ + 1);
-								name[pos_$] = 0;
-
-								auto f = new FunctionInfoPrivate;
-								f->name = name;
-								symbol_to_function(_function, f, attribute, session, source_files, "\t\t\t\t", "\t\t\t\t\t");
-
-								if (f->name == udt_name)
+								if (name == udt_name)
 								{
-									if (f->parameter_types.empty())
+									IDiaSymbol* function_type;
+									_function->get_type(&function_type);
+
+									IDiaEnumSymbols* parameters;
+									function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+
+									if (SUCCEEDED(parameters->get_Count(&l)) && l == 0)
 									{
 										// a ctor func is a func that its name equals its class's name and its count of parameters is 0
 										// we get the ctor func and try to run it at a dummy memory to get the default value of the class
+
+										_function->get_relativeVirtualAddress(&dw);
 
 										auto new_obj = malloc(udt->size);
 										auto library = load_module(filename.c_str());
@@ -2160,7 +2170,7 @@ namespace flame
 												void* p;
 												F f;
 											}cvt;
-											cvt.p = (char*)library + (uint)f->rva;
+											cvt.p = (char*)library + (uint)dw;
 											(*((Dummy*)new_obj).*cvt.f)();
 
 											for (auto& i : udt->items)
@@ -2172,16 +2182,25 @@ namespace flame
 										}
 										free(new_obj);
 									}
-								}
-								else if (f->name[0] != '~')
-									udt->functions.emplace_back(f);
-							}
-							_function->Release();
-						}
-						_functions->Release();
 
-						udts.emplace(udt_namehash, udt);
+									parameters->Release();
+									function_type->Release();
+								}
+								else
+								{
+									auto f = new FunctionInfoPrivate;
+									f->name = name;
+									symbol_to_function(_function, f, attribute, session, source_files, "\t\t\t\t", "\t\t\t\t\t");
+
+									udt->functions.emplace_back(f);
+								}
+							}
+						}
+						_function->Release();
 					}
+					_functions->Release();
+
+					udts.emplace(udt_namehash, udt);
 				}
 			}
 			_udt->Release();
@@ -2195,25 +2214,16 @@ namespace flame
 		while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
 		{
 			_function->get_name(&pwname);
-			auto name = w2s(pwname);
-			if (name.compare(0, prefix.size(), prefix) == 0)
+			bool pass_prefix, pass_$;
+			std::string attribute;
+			auto name = format_name(pwname, &attribute, &pass_prefix, &pass_$);
+			if (pass_prefix && pass_$ && name.find("::") == std::string::npos)
 			{
-				name.erase(0, prefix.size());
-				if (name.find("::") == std::string::npos)
-				{
-					auto pos_$ = name.find('$');
-					if (pos_$ != std::wstring::npos)
-					{
-						auto attribute = std::string(name.c_str() + pos_$ + 1);
-						name[pos_$] = 0;
+				auto f = new FunctionInfoPrivate;
+				f->name = name;
+				symbol_to_function(_function, f, attribute, session, source_files, "\t\t", "\t\t\t");
 
-						auto f = new FunctionInfoPrivate;
-						f->name = name;
-						symbol_to_function(_function, f, attribute, session, source_files, "\t\t", "\t\t\t");
-
-						functions.emplace(H(f->name.c_str()), f);
-					}
-				}
+				functions.emplace(H(f->name.c_str()), f);
 			}
 
 			_function->Release();

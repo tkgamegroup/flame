@@ -28,45 +28,44 @@
 namespace flame
 {
 
-	cElementPrivate::cElementPrivate(graphics::Canvas* canvas) :
-		canvas_(canvas)
+	cElementPrivate::cElementPrivate(void* data) :
+		canvas_(nullptr),
+		pos_(0.f),
+		scl_(1.f)
 	{
-		pos = Vec2(0.f);
-		scale = 1.f;
-		size = Vec2(0.f);
+		if (!data)
+		{
+			pos = Vec2(0.f);
+			scale = 1.f;
+			size = Vec2(0.f);
 
-		inner_padding = Vec4(0.f);
-		layout_padding = 0.f;
+			inner_padding = Vec4(0.f);
+			layout_padding = 0.f;
 
-		alpha = 1.f;
+			alpha = 1.f;
 
-		background_offset = Vec4(0.f);
-		background_round_radius = 0.f;
-		background_round_flags = 0;
-		background_frame_thickness = 0.f;
-		background_color = Bvec4(0);
-		background_frame_color = Bvec4(255);
-		background_shadow_thickness = 0.f;
-
-		pos_ = Vec2(0.f);
-		scl_ = 1.f;
+			background_offset = Vec4(0.f);
+			background_round_radius = 0.f;
+			background_round_flags = 0;
+			background_frame_thickness = 0.f;
+			background_color = Bvec4(0);
+			background_frame_color = Bvec4(255);
+			background_shadow_thickness = 0.f;
+		}
 	}
 
 	void cElementPrivate::on_attach()
 	{
-		if (!canvas_)
+		auto e = entity->parent();
+		while (e)
 		{
-			auto e = entity->parent();
-			while (e)
+			auto c = (cElementPrivate*)(e->component(cH("Element")));
+			if (c)
 			{
-				auto c = (cElementPrivate*)(e->component(cH("Element")));
-				if (c)
-				{
-					canvas_ = (c)->canvas_;
-					break;
-				}
-				e = e->parent();
+				canvas_ = (c)->canvas_;
+				break;
 			}
+			e = e->parent();
 		}
 	}
 
@@ -128,8 +127,8 @@ namespace flame
 		((cElementPrivate*)this)->update(delta_time);
 	}
 
-	cElement$* cElement$::create$(graphics::Canvas* canvas)
+	cElement$* cElement$::create$(void* data)
 	{
-		return new cElementPrivate(canvas);
+		return new cElementPrivate(data);
 	}
 }

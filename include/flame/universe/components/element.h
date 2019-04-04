@@ -72,6 +72,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
-		FLAME_UNIVERSE_EXPORTS static cElement$* create$(graphics::Canvas* canvas = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cElement$* create$(void* data);
 	};
 }
