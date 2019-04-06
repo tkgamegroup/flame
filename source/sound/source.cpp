@@ -29,7 +29,8 @@ namespace flame
 {
 	namespace sound
 	{
-		inline SourcePrivate::SourcePrivate(Buffer *b)
+		inline SourcePrivate::SourcePrivate(Buffer *b) :
+			al_src(0)
 		{
 			alGenSources(1, &al_src);
 			alSourcei(al_src, AL_BUFFER, ((BufferPrivate*)b)->al_buf);

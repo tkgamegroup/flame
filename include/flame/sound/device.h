@@ -41,8 +41,8 @@ namespace flame
 			FLAME_SOUND_EXPORTS void get_recorded_data(void* dst, int samples);
 			FLAME_SOUND_EXPORTS void stop_record();
 
-			FLAME_SOUND_EXPORTS static Device *create(DeviceType t);
-			FLAME_SOUND_EXPORTS static void destroy(Device  *d);
+			FLAME_SOUND_EXPORTS static Device* create(DeviceType t);
+			FLAME_SOUND_EXPORTS static void destroy(Device* d);
 		};
 	}
 }

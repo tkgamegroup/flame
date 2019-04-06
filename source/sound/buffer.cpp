@@ -28,7 +28,8 @@ namespace flame
 {
 	namespace sound
 	{
-		inline BufferPrivate::BufferPrivate(FILE *f, bool reverse)
+		inline BufferPrivate::BufferPrivate(FILE* f, bool reverse) :
+			al_buf(0)
 		{
 			struct RIFF_Header
 			{
@@ -107,12 +108,24 @@ namespace flame
 			delete[]data;
 		}
 
+		inline BufferPrivate::BufferPrivate(int size, void* data) :
+			al_buf(0)
+		{
+			alGenBuffers(1, &al_buf);
+			alBufferData(al_buf, AL_FORMAT_STEREO16, data, size, 44100);
+		}
+
 		inline BufferPrivate::~BufferPrivate()
 		{
 			alDeleteBuffers(1, &al_buf);
 		}
 
-		Buffer *Buffer::create_from_file(const wchar_t *filename, bool reverse)
+		Buffer* Buffer::create_from_data(int size, void* data)
+		{
+			return new BufferPrivate(size, data);
+		}
+
+		Buffer* Buffer::create_from_file(const wchar_t *filename, bool reverse)
 		{
 			auto file = _wfopen(filename, L"rb");
 			if (!file)
