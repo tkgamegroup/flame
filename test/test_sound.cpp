@@ -28,25 +28,15 @@
 
 using namespace flame;
 
-int main(int argc, char **args)
+int main(int argc, char** args)
 {
-	//auto recorder = sound::Device::create(sound::DeviceRecord);
-	//recorder->start_record();
-	//sleep(1000);
-	//recorder->stop_record();
-	//auto samples = recorder->get_recorded_samples();
-	//auto data = new ushort[samples * 2];
-	//recorder->get_recorded_data(data, samples);
-
-	//auto file = fopen("d:/record.txt", "w");
-	//for (auto i = 0; i < samples * 2; i++)
-	//	fprintf(file, "%d\n", data[i]);
-	//fclose(file);
-	auto samples = 44100 *2;
+	auto recorder = sound::Device::create(sound::DeviceRecord);
+	recorder->start_record();
+	sleep(1000);
+	auto samples = recorder->get_recorded_samples();
 	auto data = new ushort[samples * 2];
-	for (auto i = 0; i < samples * 2; i++)
-		data[i] = 30000;
-		//data[i] = sin(i) * 65535;
+	recorder->get_recorded_data(data, samples);
+	recorder->stop_record();
 
 	auto device = sound::Device::create(sound::DevicePlay);
 	auto context = sound::Context::create(device);
@@ -55,7 +45,7 @@ int main(int argc, char **args)
 	auto source = sound::Source::create(buffer);
 	source->play();
 
-	sleep(2000);
+	sleep(1000);
 
 	return 0;
 }
