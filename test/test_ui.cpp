@@ -24,6 +24,7 @@
 
 #include <flame/graphics/image.h>
 #include <flame/universe/entity.h>
+#include <flame/universe/components/ui.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 
@@ -171,14 +172,22 @@ struct App : BasicApp
 		font_atlas_index = canvas->add_font_atlas(font_atlas);
 
 		root = Entity::create();
-		auto wBackground = cElement::create(canvas);
+		auto ui = cUI$::create$(nullptr);
+		ui->set_canvas(canvas);
+		root->add_component(ui);
+
+		auto bg = Entity::create();
+		auto wBackground = cElement$::create$(nullptr);
 		wBackground->size = Vec2(100.f);
 		wBackground->background_color = Bvec4(255, 128, 128, 255);
-		root->add_component(wBackground);
+		bg->add_component(wBackground);
 
-		auto wFps = cText::create(font_atlas_index);
+		auto wFps = cText$::create$(nullptr);
+		wFps->font_atlas_index = font_atlas_index;
 		wFps->set_text(L"QAQ");
-		root->add_component(wFps);
+		bg->add_component(wFps);
+
+		root->add_child(bg);
 
 		//t_fps = Element::createT<wText>(ui, font_atlas_index);
 		//t_fps->align$ = AlignLeftBottom;

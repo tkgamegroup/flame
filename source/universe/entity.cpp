@@ -69,6 +69,7 @@ namespace flame
 		{
 			components.emplace_back(c);
 			c->entity = this;
+			c->on_attach();
 		}
 
 		inline void add_child(EntityPrivate* e)

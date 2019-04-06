@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <flame/universe/components/ui.h>
 #include <flame/universe/entity.h>
+#include <flame/universe/components/ui.h>
 
 namespace flame
 {

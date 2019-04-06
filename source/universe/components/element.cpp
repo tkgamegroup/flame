@@ -21,9 +21,9 @@
 // SOFTWARE.
 
 #include <flame/graphics/canvas.h>
+#include <flame/universe/entity.h>
 #include <flame/universe/components/ui.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/entity.h>
 
 namespace flame
 {
