@@ -1,0 +1,40 @@
+vert:
+attribute position
+attribute UV
+output vec2 tc
+void main()
+{
+	gl_Position = vec4(a_position, 0, 1);
+	vs_out.tc = a_uv;
+}
+
+frag:
+uniform float exposure
+uniform float white
+uniform float aveLum
+texutre float 2D tex
+fragout vec4 fragColor
+void main()
+{
+	mat3 rgb2xyz = mat3(0.433953, 0.212671, 0.017758, 
+						0.376219, 0.715160, 0.109477, 
+						0.189828, 0.072169, 0.872765);
+	mat3 xyz2rgb = mat3(3.0799327, -0.921235, 0.0528909, 
+						-1.537150, 1.875992, -0.204043, 
+						-0.542782, 0.0452442, 1.1511515);
+	vec3 color = texture(tex, fs_in.tc).rgb;
+	vec3 xyzColor = rgb2xyz * color;
+	vec3 xyYColor = vec3(0);
+	float xyzSum = xyzColor.x + xyzColor.y + xyzColor.z;
+	if(xyzSum > 0)
+		xyYColor = vec3(xyzColor.x / xyzSum, xyzColor.y / xyzSum, xyzColor.y);
+	float L = u_exposure * xyYColor.z / u_aveLum;
+	L = (L * ( 1 + L / (u_white * u_white) )) / ( 1 + L );
+	if(xyYColor.y > 0.0 ) 
+	{
+		xyzColor.x = (L * xyYColor.x) / (xyYColor.y);
+		xyzColor.y = L;
+		xyzColor.z = (L * (1 - xyYColor.x - xyYColor.y)) / xyYColor.y;
+	}
+	o_fragColor = vec4(max(vec3(0.0), xyz2rgb * xyzColor), 1.0);
+}

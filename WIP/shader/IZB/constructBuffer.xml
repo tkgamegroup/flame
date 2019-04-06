@@ -1,0 +1,15 @@
+<pipeline cull_mode="none">
+  
+  <uniform_buffer binding="0" count="1"  stage="frag" >
+	<link name="Matrix.UniformBuffer" />
+  </uniform_buffer>
+  <texture 		  binding="1" count="1"  stage="frag" >
+	<link name="OriginalDepth.Texture" />
+  </texture>
+  <storage_buffer binding="2" count="32" stage="frag" />
+  <storage_image  binding="3" count="32" stage="frag" />
+  
+  <stage type="vert" filename="..\fullscreenViewInstance.vert.c" />
+  <stage type="frag" include="..\head.c" filename="constructBuffer.frag.c" />
+  
+</pipeline>
