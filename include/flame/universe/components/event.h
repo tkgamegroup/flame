@@ -44,7 +44,11 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
-		FLAME_UNIVERSE_EXPORTS bool can_receive(const Vec2& mpos) const;
+		FLAME_UNIVERSE_EXPORTS bool contains(const Vec2& pos) const;
+		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, int value);
+		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2& value);
+		FLAME_UNIVERSE_EXPORTS void on_drop(cEvent$* src);
+		FLAME_UNIVERSE_EXPORTS void on_changed();
 
 		FLAME_UNIVERSE_EXPORTS static cEvent$* create$(void* data);
 	};

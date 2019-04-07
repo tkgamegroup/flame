@@ -147,12 +147,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Element(UI* ui);
 		FLAME_UNIVERSE_EXPORTS ~Element();
 
-		FLAME_UNIVERSE_EXPORTS void set_width(float x, Element* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_height(float y, Element* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_size(const Vec2& v, Element* sender = nullptr);
-
-		FLAME_UNIVERSE_EXPORTS void set_visibility(bool v);
-
 		FLAME_UNIVERSE_EXPORTS void add_child(Element* w, int layer = 0, int pos = -1, bool modual = false);
 		FLAME_UNIVERSE_EXPORTS void remove_child(int layer, int idx, bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void take_child(int layer, int idx, bool delay = false);
@@ -163,18 +157,12 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS int find_child(int layer, Element* w);
 		FLAME_UNIVERSE_EXPORTS void set_to_foreground();
 
-		FLAME_UNIVERSE_EXPORTS void do_arrange(); // only ui can call this
-
 		FLAME_UNIVERSE_EXPORTS float get_content_size() const;
 
 		FLAME_UNIVERSE_EXPORTS void remove_animations();
 
 		FLAME_UNIVERSE_EXPORTS void on_draw(graphics::Canvas* c, const Vec2& off, float scl);
 		FLAME_UNIVERSE_EXPORTS void on_focus(FocusType type, int is_keyfocus);
-		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, int value);
-		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2& value);
-		FLAME_UNIVERSE_EXPORTS void on_drop(Element* src);
-		FLAME_UNIVERSE_EXPORTS void on_changed();
 
 		FLAME_UNIVERSE_EXPORTS SerializableNode* save();
 

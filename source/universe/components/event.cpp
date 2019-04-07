@@ -58,9 +58,9 @@ namespace flame
 		{
 		}
 
-		bool can_receive(const Vec2& mpos) const
+		bool contains(const Vec2& pos) const
 		{
-			return blackhole || (Rect::b(Vec2(element->global_x, element->global_y), Vec2(element->global_width, element->global_height)).contains(mpos));
+			return Rect::b(Vec2(element->global_x, element->global_y), Vec2(element->global_width, element->global_height)).contains(pos);
 		}
 	};
 
@@ -88,9 +88,9 @@ namespace flame
 		((cEventPrivate*)this)->update(delta_time);
 	}
 
-	bool cEvent$::can_receive(const Vec2& mpos) const
+	bool cEvent$::contains(const Vec2& pos) const
 	{
-		return ((cEventPrivate*)this)->can_receive(mpos);
+		return ((cEventPrivate*)this)->contains(pos);
 	}
 
 	cEvent$* cEvent$::create$(void* data)

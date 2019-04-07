@@ -280,17 +280,11 @@ namespace flame
 		if (children.size == 0)
 			return;
 
-		if (w->clip$)
-			p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
-
 		auto _off = w->pos$ * scl + off;
 		auto _scl = w->scale$ * scl;
 
 		for (auto i_c = children.size - 1; i_c >= 0; i_c--)
 			preprocessing(&p, children[i_c], w->showed, _off, _scl);
-
-		if (w->clip$)
-			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
 	}
 
 	void UIPrivate::preprocessing(void* __p, Element * w, bool visible, const Vec2 & off, float scl)
@@ -319,8 +313,7 @@ namespace flame
 
 		if (!p.ban_event && visible && w->event_attitude$ != EventIgnore)
 		{
-			auto mhover = p.curr_scissor.contains(p.mpos) &&
-				(Rect(w->pos$ * scl, (w->pos$ + w->size$) * scl * w->scale$) + off).contains(p.mpos);
+			auto mhover = (Rect(w->pos$ * scl, (w->pos$ + w->size$) * scl * w->scale$) + off).contains(p.mpos);
 			if (w->event_attitude$ == EventBlackHole || mhover)
 			{
 				if (!p.hovering_any_element)

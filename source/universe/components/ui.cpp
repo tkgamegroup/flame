@@ -53,7 +53,6 @@ namespace flame
 		{
 			mouse_disp = mouse_pos - mouse_pos_prev;
 
-			f_all_done = false;
 			f_mljustdown = is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true);
 			f_mljustup = is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true);
 			f_mrjustdown = is_mouse_down((KeyState)mouse_buttons[Mouse_Right], Mouse_Right, true);
@@ -78,6 +77,8 @@ namespace flame
 				}
 			}
 
+			f_all_done = !f_mljustdown && !f_mljustup && !f_mrjustdown && !f_mrjustup && f_mdisp == 0 && f_mscroll == 0;
+
 			traverse_backward(entity, Function<void(void*, Entity*)>(
 				[](void* c, Entity* e) {
 					auto thiz = *((cUIPrivate**)c);
@@ -88,6 +89,9 @@ namespace flame
 					if (ev)
 					{
 						thiz->f_all_done = true;
+
+						auto mhover = ev->contains(thiz->f_mpos);
+
 						if (thiz->f_mljustdown)
 						{
 							if (ev->can_receive(thiz->f_mpos))
