@@ -144,13 +144,6 @@ namespace flame
 		FLAME_PACKAGE_BEGIN_3(ChildListenerParm, ElementPtr, thiz, p, ChildOp, op, i1, ElementPtr, src, p)
 		FLAME_PACKAGE_END_3
 
-		Array<Function<FoucusListenerParm>> focus_listeners$;
-		Array<Function<KeyListenerParm>> key_listeners$;
-		Array<Function<MouseListenerParm>> mouse_listeners$;
-		Array<Function<DropListenerParm>> drop_listeners$;
-		Array<Function<ChangedListenerParm>> changed_listeners$;
-		Array<Function<ChildListenerParm>> child_listeners$;
-
 		FLAME_UNIVERSE_EXPORTS Element(UI* ui);
 		FLAME_UNIVERSE_EXPORTS ~Element();
 

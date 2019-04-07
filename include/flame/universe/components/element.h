@@ -48,15 +48,15 @@ namespace flame
 	{
 		ATTRIBUTE_NUMBER<float> x;
 		ATTRIBUTE_NUMBER<float> y;
+		ATTRIBUTE_NUMBER<float> scale;
 		ATTRIBUTE_NUMBER<float> width;
 		ATTRIBUTE_NUMBER<float> height;
-		ATTRIBUTE_NUMBER<float> scale;
 
 		ATTRIBUTE_NUMBER<float> global_x;
 		ATTRIBUTE_NUMBER<float> global_y;
+		ATTRIBUTE_NUMBER<float> global_scale;
 		ATTRIBUTE_NUMBER<float> global_width;
 		ATTRIBUTE_NUMBER<float> global_height;
-		ATTRIBUTE_NUMBER<float> global_scale;
 
 		Vec4 inner_padding; // L T R B
 		float layout_padding;

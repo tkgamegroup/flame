@@ -37,7 +37,8 @@ namespace flame
 
 	struct cUI$ : Component
 	{
-		cEvent$* focus_;
+		cEvent$* hovering;
+		cEvent$* focusing;
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cUI$() override;
 

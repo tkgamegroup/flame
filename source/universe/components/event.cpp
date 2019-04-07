@@ -28,19 +28,30 @@ namespace flame
 {
 	struct cEventPrivate : cEvent$
 	{
-		cElement$* element_;
-		
-		cEventPrivate(void* data)
+		cElement$* element;
+
+		Array<Function<FoucusListenerParm>> focus_listeners$;
+		Array<Function<KeyListenerParm>> key_listeners$;
+		Array<Function<MouseListenerParm>> mouse_listeners$;
+		Array<Function<DropListenerParm>> drop_listeners$;
+		Array<Function<ChangedListenerParm>> changed_listeners$;
+		Array<Function<ChildListenerParm>> child_listeners$;
+
+		cEventPrivate(void* data) :
+			element(nullptr)
 		{
 			blackhole = false;
 			want_key = false;
-			clicked = 0;
+
+			hovering = false;
+			dragging = false;
+			focusing = false;
 		}
 
 		void on_attach()
 		{
-			element_ = (cElement$*)(entity->component(cH("Element")));
-			assert(element_);
+			element = (cElement$*)(entity->component(cH("Element")));
+			assert(element);
 		}
 
 		void update(float delta_time)
@@ -49,7 +60,7 @@ namespace flame
 
 		bool can_receive(const Vec2& mpos) const
 		{
-			return blackhole || (Rect::b(element_->pos_(), element_->size_()).contains(mpos));
+			return blackhole || (Rect::b(Vec2(element->global_x, element->global_y), Vec2(element->global_width, element->global_height)).contains(mpos));
 		}
 	};
 

@@ -22,12 +22,8 @@ namespace flame
 
 	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
 	{
-		root_ = std::unique_ptr<Element>(Element::create(this));
-		root_->name$ = "root";
 		root_->size_policy_hori$ = SizeFitLayout;
 		root_->size_policy_vert$ = SizeFitLayout;
-		root_->event_attitude$ = EventAccept;
-		root_->want_key_focus$ = true;
 
 		hovering_element_ = nullptr;
 		focus_element_ = nullptr;
@@ -42,7 +38,6 @@ namespace flame
 		for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
 			key_states[i] = KeyStateUp;
 
-		elp_time_ = 0.f;
 		total_time_ = 0.f;
 
 		if (w)
@@ -174,7 +169,6 @@ namespace flame
 		Rect curr_scissor;
 		Vec2 surface_size;
 		bool hovering_any_element;
-		bool clicking_nothing;
 		Vec2 popup_off;
 		float popup_scl;
 		bool meet_popup_first;

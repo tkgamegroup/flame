@@ -30,11 +30,11 @@ namespace flame
 {
 	struct cText$Private : cText$
 	{
-		cElement$* element_;
+		cElement$* element;
 		std::wstring text;
 
 		cText$Private(void* data) :
-			element_(nullptr)
+			element(nullptr)
 		{
 			if (!data)
 			{
@@ -53,15 +53,15 @@ namespace flame
 
 		void on_attach()
 		{
-			element_ = (cElement$*)(entity->component(cH("Element")));
-			assert(element_);
+			element = (cElement$*)(entity->component(cH("Element")));
+			assert(element);
 		}
 
 		void update(float delta_time)
 		{
-			element_->canvas()->add_text(font_atlas_index, element_->pos_() + 
-				Vec2(element_->inner_padding[0], element_->inner_padding[1]) * element_->scl_(), 
-				Bvec4(color, element_->alpha), text.c_str(), sdf_scale * element_->scl_());
+			element->canvas()->add_text(font_atlas_index, Vec2(element->global_x, element->global_y) + 
+				Vec2(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
+				Bvec4(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 		}
 	};
 

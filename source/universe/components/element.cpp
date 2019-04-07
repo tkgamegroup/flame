@@ -40,9 +40,9 @@ namespace flame
 			{
 				x = 0.f;
 				y = 0.f;
+				scale = 1.f;
 				width = 0.;
 				height = 0.f;
-				scale = 1.f;
 
 				inner_padding = Vec4(0.f);
 				layout_padding = 0.f;
@@ -86,40 +86,46 @@ namespace flame
 
 		void update(float delta_time)
 		{
-			global_x.update(x);
-			global_y.update(y);
-			global_width.update(width);
-			global_height.update(height);
-			global_scale.update(scale);
-
 			if (!p_element)
 			{
-
-				pos_ = p_element_->pos_ + p_element_->scl_ * pos;
-				scl_ = p_element_->scl_ * scale;
+				if (x.frame > global_x.frame)
+					global_x = x;
+				if (y.frame > global_y.frame)
+					global_y = y;
+				if (scale.frame > global_scale.frame)
+					global_scale = scale;
 			}
 			else
 			{
-
+				if (x.frame > global_x.frame || p_element->global_x.frame > global_x.frame || p_element->global_scale.frame > global_x.frame)
+					global_x = p_element->global_x + p_element->global_scale * x;
+				if (y.frame > global_y.frame || p_element->global_y.frame > global_y.frame || p_element->global_scale.frame > global_y.frame)
+					global_y = p_element->global_y + p_element->global_scale * y;
+				if (scale.frame > global_scale.frame || p_element->global_scale.frame > global_scale.frame)
+					global_scale = p_element->global_scale * scale;
 			}
+			if (width.frame > global_width.frame || global_scale.frame > global_width.frame)
+				global_width = width * global_scale;
+			if (height.frame > global_height.frame || global_scale.frame > global_height.frame)
+				global_height = height * global_scale;
 
 			if (canvas)
 			{
-				auto p = pos_ - (Vec2(background_offset[0], background_offset[1])) * scl_;
-				auto s = size_ + (Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * scl_;
-				auto rr = background_round_radius * scl_;
+				auto p = Vec2(global_x, global_y) - (Vec2(background_offset[0], background_offset[1])) * global_scale;
+				auto s = Vec2(global_width, global_height) + (Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * global_scale;
+				auto rr = background_round_radius * global_scale;
 
 				if (background_shadow_thickness > 0.f)
 				{
-					canvas_->add_rect_col2(p - Vec2(background_shadow_thickness * 0.5f), s + Vec2(background_shadow_thickness), Bvec4(0, 0, 0, 128), Bvec4(0),
+					canvas->add_rect_col2(p - Vec2(background_shadow_thickness * 0.5f), s + Vec2(background_shadow_thickness), Bvec4(0, 0, 0, 128), Bvec4(0),
 						background_shadow_thickness, rr, background_round_flags);
 				}
 				if (alpha > 0.f)
 				{
 					if (background_color.w > 0)
-						canvas_->add_rect_filled(p, s, Bvec4(background_color, alpha), rr, background_round_flags);
+						canvas->add_rect_filled(p, s, Bvec4(background_color, alpha), rr, background_round_flags);
 					if (background_frame_thickness > 0.f && background_frame_color.w > 0)
-						canvas_->add_rect(p, s, Bvec4(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
+						canvas->add_rect(p, s, Bvec4(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
 				}
 			}
 		}
@@ -151,17 +157,7 @@ namespace flame
 
 	graphics::Canvas* cElement$::canvas() const
 	{
-		return ((cElementPrivate*)this)->canvas_;
-	}
-
-	Vec2 cElement$::pos_() const 
-	{
-		return ((cElementPrivate*)this)->pos_;
-	}
-
-	float cElement$::scl_() const
-	{
-		return ((cElementPrivate*)this)->scl_;
+		return ((cElementPrivate*)this)->canvas;
 	}
 
 	cElement$* cElement$::create$(void* data)

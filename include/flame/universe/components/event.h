@@ -31,7 +31,9 @@ namespace flame
 		bool blackhole;
 		bool want_key;
 
-		ATTRIBUTE<int> clicked;
+		ATTRIBUTE_BOOL hovering;
+		ATTRIBUTE_BOOL dragging;
+		ATTRIBUTE_BOOL focusing;
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cEvent$() override;
 
