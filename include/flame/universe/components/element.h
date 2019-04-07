@@ -46,9 +46,17 @@ namespace flame
 
 	struct cElement$ : Component
 	{
-		Vec2 pos;
-		float scale;
-		Vec2 size;
+		ATTRIBUTE_NUMBER<float> x;
+		ATTRIBUTE_NUMBER<float> y;
+		ATTRIBUTE_NUMBER<float> width;
+		ATTRIBUTE_NUMBER<float> height;
+		ATTRIBUTE_NUMBER<float> scale;
+
+		ATTRIBUTE_NUMBER<float> global_x;
+		ATTRIBUTE_NUMBER<float> global_y;
+		ATTRIBUTE_NUMBER<float> global_width;
+		ATTRIBUTE_NUMBER<float> global_height;
+		ATTRIBUTE_NUMBER<float> global_scale;
 
 		Vec4 inner_padding; // L T R B
 		float layout_padding;
@@ -73,9 +81,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
 		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas() const;
-		FLAME_UNIVERSE_EXPORTS Vec2 pos_() const;
-		FLAME_UNIVERSE_EXPORTS float scl_() const;
-		FLAME_UNIVERSE_EXPORTS Vec2 size_() const;
 
 		FLAME_UNIVERSE_EXPORTS static cElement$* create$(void* data);
 	};

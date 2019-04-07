@@ -29,25 +29,20 @@ namespace flame
 {
 	struct cElementPrivate : cElement$
 	{
-		cElementPrivate* p_element_;
-		graphics::Canvas* canvas_;
-
-		Vec2 pos_;
-		float scl_;
-		Vec2 size_;
+		cElementPrivate* p_element;
+		graphics::Canvas* canvas;
 
 		cElementPrivate(void* data) :
-			p_element_(nullptr),
-			canvas_(nullptr),
-			pos_(0.f),
-			scl_(1.f),
-			size_(0.f)
+			p_element(nullptr),
+			canvas(nullptr)
 		{
 			if (!data)
 			{
-				pos = Vec2(0.f);
+				x = 0.f;
+				y = 0.f;
+				width = 0.;
+				height = 0.f;
 				scale = 1.f;
-				size = Vec2(0.f);
 
 				inner_padding = Vec4(0.f);
 				layout_padding = 0.f;
@@ -69,10 +64,10 @@ namespace flame
 			auto e = entity->parent();
 			if (e)
 			{
-				p_element_ = (cElementPrivate*)(e->component(cH("Element")));
-				if (p_element_)
+				p_element = (cElementPrivate*)(e->component(cH("Element")));
+				if (p_element)
 				{
-					canvas_ = p_element_->canvas_;
+					canvas = p_element->canvas;
 					return;
 				}
 			}
@@ -82,7 +77,7 @@ namespace flame
 				auto c = (cUI$*)(e->component(cH("UI")));
 				if (c)
 				{
-					canvas_ = c->canvas();
+					canvas = c->canvas();
 					break;
 				}
 				e = e->parent();
@@ -91,19 +86,24 @@ namespace flame
 
 		void update(float delta_time)
 		{
-			if (p_element_)
+			global_x.update(x);
+			global_y.update(y);
+			global_width.update(width);
+			global_height.update(height);
+			global_scale.update(scale);
+
+			if (!p_element)
 			{
+
 				pos_ = p_element_->pos_ + p_element_->scl_ * pos;
 				scl_ = p_element_->scl_ * scale;
 			}
 			else
 			{
-				pos_ = pos;
-				scl_ = scale;
-			}
-			size_ = scl_ * size;
 
-			if (canvas_)
+			}
+
+			if (canvas)
 			{
 				auto p = pos_ - (Vec2(background_offset[0], background_offset[1])) * scl_;
 				auto s = size_ + (Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * scl_;

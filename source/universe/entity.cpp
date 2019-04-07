@@ -30,18 +30,14 @@ namespace flame
 	struct EntityPrivate : Entity
 	{
 		std::string name;
-		bool visible;
 		std::vector<std::unique_ptr<Component>> components;
 		EntityPrivate* parent;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
-		bool visible_;
-
 		inline EntityPrivate() :
-			visible(true),
-			parent(nullptr),
-			visible_(true)
+			parent(nullptr)
 		{
+			visible = true;
 		}
 
 		inline Component* get_component(uint type_hash)
@@ -76,7 +72,6 @@ namespace flame
 		{
 			children.emplace_back(e);
 			e->parent = this;
-			e->set_visible(e->visible);
 			e->on_attach();
 		}
 
@@ -88,19 +83,19 @@ namespace flame
 				e->on_attach();
 		}
 
-		inline void set_visible(bool _visible)
-		{
-			visible = _visible;
-			visible_ = visible;
-			if (parent)
-				visible_ = visible_ && parent->visible_;
-			for (auto& e : children)
-				e->set_visible(e->visible);
-		}
-
 		inline void update(float delta_time)
 		{
-			if (!visible_)
+			if (!parent)
+			{
+				if (visible.frame > global_visible.frame)
+					global_visible = visible;
+			}
+			else
+			{
+				if (visible.frame > global_visible.frame || parent->global_visible.frame > global_visible.frame)
+					global_visible = visible && parent->global_visible;
+			}
+			if (!global_visible)
 				return;
 			for (auto& c : components)
 				c->update(delta_time);
@@ -117,11 +112,6 @@ namespace flame
 	void Entity::set_name(const char* name) const
 	{
 		((EntityPrivate*)this)->name = name;
-	}
-
-	bool Entity::visible() const
-	{
-		return ((EntityPrivate*)this)->visible;
 	}
 
 	int Entity::component_count() const
@@ -164,16 +154,6 @@ namespace flame
 		((EntityPrivate*)this)->add_child((EntityPrivate*)e);
 	}
 
-	bool Entity::visible_() const
-	{
-		return ((EntityPrivate*)this)->visible_;
-	}
-
-	void Entity::set_visible(bool visible)
-	{
-		((EntityPrivate*)this)->visible = visible;
-	}
-
 	void Entity::update(float delta_time)
 	{
 		((EntityPrivate*)this)->update(delta_time);
@@ -189,7 +169,7 @@ namespace flame
 			std::string type_name = c->type_name();
 			auto u_c = find_udt(H(type_name.c_str()));
 			auto u_a = find_udt(H((type_name + "Archive").c_str()));
-			if (u_c && u_a)
+			if (u_c)
 			{
 				auto create_func_idx = u_c->find_function_i("create");
 				if (create_func_idx != -1)
