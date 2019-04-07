@@ -26,20 +26,13 @@ namespace flame
 		event_attitude$ = EventAccept;
 		want_key_focus$ = false;
 
-		visible$ = true;
-
-		global_pos = Vec2(0.f);
-		global_scale = 1.f;
-
 		cliped = false;
 		content_size = 0.f;
-		showed = false;
 		state = StateNormal;
 
 		closet_id$ = 0;
 
 		flag = FlagNull;
-		need_arrange = true;
 	}
 
 	Element::~Element()
@@ -54,65 +47,6 @@ namespace flame
 			ui->set_dragging_element(nullptr);
 		if (this == ui->popup_element())
 			ui->set_popup_element(nullptr);
-	}
-
-	void Element::set_width(float x, Element * sender)
-	{
-		if (size$.x == x)
-			return;
-		size$.x = x;
-		if (sender != this)
-			need_arrange = true;
-		if (parent&& parent != sender)
-			parent->need_arrange = true;
-	}
-
-	void Element::set_height(float y, Element * sender)
-	{
-		if (size$.y == y)
-			return;
-		size$.y = y;
-		if (sender != this)
-			need_arrange = true;
-		if (parent&& parent != sender)
-			parent->need_arrange = true;
-	}
-
-	void Element::set_size(const Vec2 & v, Element * sender)
-	{
-		auto changed = false;
-		auto do_arrange = false;
-		if (size$.x != v.x)
-		{
-			size$.x = v.x;
-			do_arrange |= (size_policy_hori$ == SizeFitLayout && sender != this);
-			changed = true;
-		}
-		if (size$.y != v.y)
-		{
-			size$.y = v.y;
-			do_arrange |= (size_policy_vert$ == SizeFitLayout && sender != this);
-			changed = true;
-		}
-		if (!changed)
-			return;
-		if (do_arrange)
-			need_arrange = true;
-		if (parent&& parent != sender)
-			parent->need_arrange = true;
-	}
-
-	void Element::set_visibility(bool v)
-	{
-		if (visible$ == v)
-			return;
-
-		visible$ = v;
-		if (!visible$)
-			remove_animations();
-		need_arrange = true;
-		if (parent)
-			parent->need_arrange = true;
 	}
 
 	void Element::add_child(Element * w, int layer, int pos, bool modual)
