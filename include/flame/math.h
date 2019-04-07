@@ -1019,6 +1019,8 @@ namespace flame
 		bool contains(const Vec2 &p);
 		bool overlapping(const Rect &oth);
 		Side calc_side(const Vec2 &p, float threshold);
+
+		static Rect b(const Vec2& base, const Vec2& ext);
 	};
 
 	Vec2 get_side_dir();
@@ -5089,6 +5091,11 @@ namespace flame
 		if (contains(p))
 			return Inside;
 		return Outside;
+	}
+
+	inline Rect Rect::b(const Vec2& base, const Vec2& ext)
+	{
+		return Rect(base, base + ext);
 	}
 
 	inline Vec2 get_side_dir(Rect::Side s)

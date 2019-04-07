@@ -26,13 +26,19 @@
 
 namespace flame
 {
+	struct Window;
+
 	namespace graphics
 	{
 		struct Canvas;
 	}
 
+	struct cEvent$;
+
 	struct cUI$ : Component
 	{
+		cEvent$* focus_;
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cUI$() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
@@ -41,7 +47,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
 		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas() const;
-		FLAME_UNIVERSE_EXPORTS void set_canvas(graphics::Canvas* canvas);
+		FLAME_UNIVERSE_EXPORTS void setup(graphics::Canvas* canvas, Window* window = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cUI$* create$(void* data);
 	};

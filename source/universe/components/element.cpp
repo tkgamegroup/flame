@@ -34,13 +34,14 @@ namespace flame
 
 		Vec2 pos_;
 		float scl_;
-
+		Vec2 size_;
 
 		cElementPrivate(void* data) :
 			p_element_(nullptr),
 			canvas_(nullptr),
 			pos_(0.f),
-			scl_(1.f)
+			scl_(1.f),
+			size_(0.f)
 		{
 			if (!data)
 			{
@@ -90,21 +91,22 @@ namespace flame
 
 		void update(float delta_time)
 		{
-			auto e = entity->parent();
-			if (e)
+			if (p_element_)
 			{
-				auto c = (cElementPrivate*)(e->component(cH("Element")));
-				if (c)
-				{
-					pos_ = c->pos_ + c->scl_ * pos;
-					scl_ = c->scl_ * scale;
-				}
+				pos_ = p_element_->pos_ + p_element_->scl_ * pos;
+				scl_ = p_element_->scl_ * scale;
 			}
+			else
+			{
+				pos_ = pos;
+				scl_ = scale;
+			}
+			size_ = scl_ * size;
 
 			if (canvas_)
 			{
-				auto p = (pos_ - Vec2(background_offset[0], background_offset[1])) * scl_;
-				auto s = (size + Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * scl_;
+				auto p = pos_ - (Vec2(background_offset[0], background_offset[1])) * scl_;
+				auto s = size_ + (Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * scl_;
 				auto rr = background_round_radius * scl_;
 
 				if (background_shadow_thickness > 0.f)

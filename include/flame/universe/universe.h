@@ -28,4 +28,67 @@
 #define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
 #endif
 
-// in ecs system, a member followed by a '_' means it's a real-time value
+namespace flame
+{
+	struct Entity;
+
+	FLAME_UNIVERSE_EXPORTS int get_world_frame();
+	FLAME_UNIVERSE_EXPORTS void reset_world_frame();
+	FLAME_UNIVERSE_EXPORTS void update_world(Entity* root_node, float delta_time);
+	FLAME_UNIVERSE_EXPORTS void traverse_forward(Entity* node, const Function<void(void* c, Entity* e)>& callback);
+	FLAME_UNIVERSE_EXPORTS void traverse_backward(Entity* node, const Function<void(void* c, Entity* e)>& callback);
+
+	template <class T>
+	struct ATTRIBUTE
+	{
+		T val;
+		int frame;
+
+		ATTRIBUTE() :
+			frame(get_world_frame())
+		{
+		}
+
+		ATTRIBUTE(const T& rhs) :
+			val(rhs),
+			frame(get_world_frame())
+		{
+		}
+
+		operator T() const
+		{
+			return val;
+		}
+
+		operator=(const T& rhs)
+		{
+			val = rhs;
+			frame = get_world_frame();
+		}
+
+		operator+=(const T& rhs)
+		{
+			val += rhs;
+			frame = get_world_frame();
+		}
+
+		operator-=(const T& rhs)
+		{
+			val -= rhs;
+			frame = get_world_frame();
+		}
+
+		operator*=(const T& rhs)
+		{
+			val *= rhs;
+			frame = get_world_frame();
+		}
+
+		operator/=(const T& rhs)
+		{
+			val /= rhs;
+			frame = get_world_frame();
+		}
+	};
+}
+

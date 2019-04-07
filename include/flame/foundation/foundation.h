@@ -265,14 +265,14 @@ namespace flame
 		return action == KeyStateUp && key == Mouse_Null; 
 	}
 
-	inline bool is_mouse_down(KeyState action, MouseKey key) // value is pos
+	inline bool is_mouse_down(KeyState action, MouseKey key, bool just = false) // value is pos
 	{ 
-		return action == KeyStateDown && key != Mouse_Null; 
+		return action == (KeyStateDown | (just ? KeyStateJust : 0)) && key != Mouse_Null; 
 	}
 
-	inline bool is_mouse_up(KeyState action, MouseKey key) // value is pos
+	inline bool is_mouse_up(KeyState action, MouseKey key, bool just = false) // value is pos
 	{ 
-		return action == KeyStateUp && key != Mouse_Null; 
+		return action == (KeyStateUp | (just ? KeyStateJust : 0)) && key != Mouse_Null;
 	}
 
 	inline bool is_mouse_move(KeyState action, MouseKey key) // value is disp
@@ -285,14 +285,9 @@ namespace flame
 		return action == KeyStateNull && key == Mouse_Middle; 
 	}
 
-	inline bool is_mouse_clicked(KeyState action, MouseKey key)
+	inline bool is_mouse_clicked(KeyState action, MouseKey key, bool db = false)
 	{ 
-		return action == (KeyStateDown | KeyStateUp) && key == Mouse_Null; 
-	}
-
-	inline bool is_mouse_double_clicked(KeyState action, MouseKey key)
-	{ 
-		return action == (KeyStateDown | KeyStateUp | KeyStateDouble) && key == Mouse_Null; 
+		return action == (KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0)) && key == Mouse_Null;
 	}
 
 	inline ulonglong get_now_ns()

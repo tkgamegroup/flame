@@ -15,32 +15,13 @@ namespace flame
 		p.get_capture<UIEventData>().ui()->on_key(p.action(), p.value());
 	}
 
-	void ui_mouse_event$(Window::MouseListenerParm& p)
-	{
-		p.get_capture<UIEventData>().ui()->on_mouse(p.action(), p.key(), p.pos());
-	}
-
 	void ui_resize_event$(Window::ResizeListenerParm& p)
 	{
 		p.get_capture<UIEventData>().ui()->on_resize(p.size());
 	}
 
-	FLAME_ELEMENT_BEGIN_0(wDebug, wDialog)
-		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_END
-
-	void wDebug::init()
-	{
-		init_data_types();
-
-		align$ = AlignRightTop;
-		visible$ = false;
-	}
-
 	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
 	{
-		set_default_style(DefaultStyleDark);
-
 		root_ = std::unique_ptr<Element>(Element::create(this));
 		root_->name$ = "root";
 		root_->size_policy_hori$ = SizeFitLayout;
@@ -61,14 +42,6 @@ namespace flame
 		for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
 			key_states[i] = KeyStateUp;
 
-		mouse_pos = Ivec2(0);
-		mouse_prev_pos_ = Ivec2(0);
-		mouse_disp = Ivec2(0);
-		mouse_scroll = 0;
-
-		for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
-			mouse_buttons[i] = KeyStateUp;
-
 		elp_time_ = 0.f;
 		total_time_ = 0.f;
 
@@ -77,7 +50,6 @@ namespace flame
 			root_->size$ = w->size;
 
 			w->add_key_listener(Function<Window::KeyListenerParm>(ui_key_event$, { this }));
-			w->add_mouse_listener(Function<Window::MouseListenerParm>(ui_mouse_event$, { this }));
 			w->add_resize_listener(Function<Window::ResizeListenerParm>(ui_resize_event$, { this }));
 		}
 
@@ -112,22 +84,6 @@ namespace flame
 				keydown_inputs_.push_back(value);
 			else if (action == KeyStateUp)
 				keyup_inputs_.push_back(value);
-		}
-	}
-
-	inline void UIPrivate::on_mouse(KeyState action, MouseKey key, const Ivec2 & pos)
-	{
-		if (action == KeyStateNull)
-		{
-			if (key == Mouse_Middle)
-				mouse_scroll = pos.x;
-			else if (key == Mouse_Null)
-				mouse_pos = pos;
-		}
-		else
-		{
-			mouse_buttons[key] = action | KeyStateJust;
-			mouse_pos = pos;
 		}
 	}
 
@@ -214,12 +170,6 @@ namespace flame
 
 	struct _Package
 	{
-		Vec2 mpos;
-		bool mljustdown;
-		bool mljustup;
-		bool mrjustdown;
-		int mscroll;
-		Ivec2 mdisp;
 		Element* temp_dragging_element;
 		Rect curr_scissor;
 		Vec2 surface_size;
@@ -229,7 +179,6 @@ namespace flame
 		float popup_scl;
 		bool meet_popup_first;
 		bool ban_event;
-		Vec2 show_off;
 	};
 
 	inline void UIPrivate::step(float elp_time, const Vec2& show_off)
@@ -240,15 +189,7 @@ namespace flame
 		elp_time_ = elp_time;
 		total_time_ += elp_time;
 
-		mouse_disp = mouse_pos - mouse_prev_pos_;
-
 		_Package p;
-		p.mpos = Vec2(mouse_pos);
-		p.mljustdown = just_down_M(0);
-		p.mljustup = just_up_M(0);
-		p.mrjustdown = just_down_M(1);
-		p.mscroll = mouse_scroll;
-		p.mdisp = mouse_disp;
 		p.temp_dragging_element = dragging_element_;
 
 		if (dragging_element_)
@@ -262,11 +203,6 @@ namespace flame
 			}
 		}
 
-		if (focus_element_)
-		{
-			if (!focus_element_->visible$)
-				focus_element_ = nullptr;
-		}
 		if (key_focus_element_)
 		{
 			if (!key_focus_element_->visible$)
@@ -341,12 +277,6 @@ namespace flame
 
 		for (int i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
 			key_states[i] &= ~KeyStateJust;
-
-		for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
-			mouse_buttons[i] &= ~KeyStateJust;
-
-		mouse_prev_pos_ = mouse_pos;
-		mouse_scroll = 0;
 	}
 
 	void UIPrivate::preprocessing_children(void* __p, Element * w, const Array<Element*> & children, const Vec2 & off, float scl)
@@ -627,86 +557,6 @@ namespace flame
 	void UI::on_resize(const Ivec2 & size)
 	{
 		((UIPrivate*)this)->on_resize(size);
-	}
-
-	Element* UI::root()
-	{
-		return ((UIPrivate*)this)->root_.get();
-	}
-
-	Element* UI::hovering_element()
-	{
-		return ((UIPrivate*)this)->hovering_element_;
-	}
-
-	Element* UI::focus_element()
-	{
-		return ((UIPrivate*)this)->focus_element_;
-	}
-
-	Element* UI::key_focus_element()
-	{
-		return ((UIPrivate*)this)->key_focus_element_;
-	}
-
-	Element* UI::dragging_element()
-	{
-		return ((UIPrivate*)this)->dragging_element_;
-	}
-
-	Element* UI::popup_element()
-	{
-		return ((UIPrivate*)this)->popup_element_;
-	}
-
-	void UI::set_hovering_element(Element * w)
-	{
-		((UIPrivate*)this)->set_hovering_element((Element*)w);
-	}
-
-	void UI::set_focus_element(Element * w)
-	{
-		((UIPrivate*)this)->set_focus_element((Element*)w);
-	}
-
-	void UI::set_key_focus_element(Element * w)
-	{
-		((UIPrivate*)this)->set_key_focus_element((Element*)w);
-	}
-
-	void UI::set_dragging_element(Element * w)
-	{
-		((UIPrivate*)this)->set_dragging_element((Element*)w);
-	}
-
-	void UI::set_popup_element(Element * w, bool modual)
-	{
-		((UIPrivate*)this)->set_popup_element((Element*)w, modual);
-	}
-
-	void UI::close_popup()
-	{
-		((UIPrivate*)this)->close_popup();
-	}
-
-	void UI::step(float elp_time, const Vec2& show_off)
-	{
-		((UIPrivate*)this)->step(elp_time, show_off);
-	}
-
-	float UI::total_time() const
-	{
-		return ((UIPrivate*)this)->total_time_;
-	}
-
-	UI* UI::create(graphics::Canvas* canvas, Window * w)
-	{
-		return new UIPrivate(canvas, w);
-	}
-
-	void UI::destroy(UI * i)
-	{
-		delete (UIPrivate*)i;
 	}
 }
 

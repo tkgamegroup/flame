@@ -48,13 +48,6 @@ namespace flame
 		AlignBottomOutside
 	};
 
-	enum EventAttitude
-	{
-		EventAccept,
-		EventIgnore,
-		EventBlackHole
-	};
-
 	enum LayoutType
 	{
 		LayoutFree,
@@ -96,7 +89,6 @@ namespace flame
 
 		float scroll_offset$;
 
-		EventAttitude event_attitude$;
 		bool want_key_focus$;
 
 		bool visible$;

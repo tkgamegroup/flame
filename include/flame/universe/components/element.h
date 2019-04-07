@@ -75,6 +75,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas() const;
 		FLAME_UNIVERSE_EXPORTS Vec2 pos_() const;
 		FLAME_UNIVERSE_EXPORTS float scl_() const;
+		FLAME_UNIVERSE_EXPORTS Vec2 size_() const;
 
 		FLAME_UNIVERSE_EXPORTS static cElement$* create$(void* data);
 	};

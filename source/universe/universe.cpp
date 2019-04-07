@@ -20,30 +20,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include <flame/universe/component.h>
+#include <flame/universe/universe.h>
+#include <flame/universe/entity.h>
 
 namespace flame
 {
-	struct cEvent$ : Component
+	static int world_frame = 0;
+
+	int get_world_frame()
 	{
-		bool blackhole;
-		bool want_key;
+		return world_frame;
+	}
 
-		ATTRIBUTE<int> clicked;
+	void reset_world_frame()
+	{
+		world_frame = 0;
+	}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cEvent$() override;
+	void update_world(Entity* root_node, float delta_time)
+	{
+		root_node->update(delta_time);
+		world_frame++;
+	}
 
-		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
-		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
+	void traverse_forward_RE(Entity* node, Function<void(void* c, Entity* e)>& callback)
+	{
+		callback(node);
+		for (auto i = 0; i < node->children_count(); i++)
+			traverse_forward_RE(node->child(i), callback);
+	}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_attach() override;
+	void traverse_forward(Entity* node, const Function<void(void* c, Entity* e)>& callback)
+	{
+		auto callback_ = callback;
+		traverse_forward_RE(node, callback_);
+	}
 
-		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
+	void traverse_backward_RE(Entity* node, Function<void(void* c, Entity* e)>& callback)
+	{
+		for (auto i = 0; i < node->children_count(); i++)
+			traverse_forward_RE(node->child(i), callback);
+		callback(node);
+	}
 
-		FLAME_UNIVERSE_EXPORTS bool can_receive(const Vec2& mpos) const;
-
-		FLAME_UNIVERSE_EXPORTS static cEvent$* create$(void* data);
-	};
+	void traverse_backward(Entity* node, const Function<void(void* c, Entity* e)>& callback)
+	{
+		auto callback_ = callback;
+		traverse_backward_RE(node, callback_);
+	}
 }
