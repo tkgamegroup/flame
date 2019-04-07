@@ -314,10 +314,6 @@ namespace flame
 			return;
 		}
 
-		w->global_pos = w->pos$ * scl + off;
-		w->global_scale = w->scale$ * scl;
-		w->showed = w->visible$ && visible;
-
 		preprocessing_children(__p, w, w->children_2$, off, scl);
 		preprocessing_children(__p, w, w->children_1$, off, scl);
 
