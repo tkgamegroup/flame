@@ -48,7 +48,8 @@ namespace flame
 
 			vk_chk_res(vkCreateCommandPool(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
-
+			auto res = d->v->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&v));
+			assert(SUCCEEDED(res));
 #endif
 		}
 
@@ -86,7 +87,9 @@ namespace flame
 
 			vk_chk_res(vkAllocateCommandBuffers(p->d->v, &info, &v));
 #elif defined(FLAME_D3D12)
-
+			auto res = p->d->v->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, p->v, nullptr, IID_PPV_ARGS(&v));
+			assert(SUCCEEDED(res));
+			recording = true;
 #endif
 		}
 
@@ -111,7 +114,9 @@ namespace flame
 
 			vk_chk_res(vkBeginCommandBuffer(v, &info));
 #elif defined(FLAME_D3D12)
-
+			if (recording)
+				return;
+			v->Reset(p->v, nullptr);
 #endif
 			current_pipeline = nullptr;
 		}
@@ -441,7 +446,13 @@ namespace flame
 			vkCmdPipelineBarrier(v, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
 #elif defined(FLAME_D3D12)
-
+			D3D12_RESOURCE_BARRIER barrier = {};
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource = ((ImagePrivate*)i)->v;
+			barrier.Transition.StateBefore = Z(from);
+			barrier.Transition.StateAfter = Z(to);
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 #endif
 		}
 
@@ -470,7 +481,12 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			vk_chk_res(vkEndCommandBuffer(v));
 #elif defined(FLAME_D3D12)
-
+			if (recording)
+			{
+				auto res = v->Close();
+				assert(SUCCEEDED(res));
+				recording = false;
+			}
 #endif
 		}
 
@@ -627,7 +643,13 @@ namespace flame
 
 			vk_chk_res(vkQueueSubmit(v, 1, &info, VK_NULL_HANDLE));
 #elif defined(FLAME_D3D12)
+			ID3D12CommandList* list[] = { ((CommandbufferPrivate*)c)->v };
+			v->ExecuteCommandLists(1, list);
 
+			auto s_seph = (SemaphorePrivate*)signal_semaphore;
+			s_seph->vl++;
+			auto res = v->Signal(s_seph->v, s_seph->vl);
+			assert(SUCCEEDED(res));
 #endif
 		}
 
@@ -646,7 +668,19 @@ namespace flame
 			present_info.pImageIndices = &index;
 			vk_chk_res(vkQueuePresentKHR(v, &present_info));
 #elif defined(FLAME_D3D12)
+			HRESULT res;
 
+			auto w_seph = (SemaphorePrivate*)wait_semaphore;
+			if (w_seph->v->GetCompletedValue() < w_seph->vl)
+			{
+				res = w_seph->v->SetEventOnCompletion(w_seph->vl, w_seph->ev);
+				assert(SUCCEEDED(res));
+
+				WaitForSingleObject(w_seph->ev, INFINITE);
+			}
+
+			res = ((SwapchainPrivate*)s)->v->Present(0, 0);
+			assert(SUCCEEDED(res));
 #endif
 		}
 

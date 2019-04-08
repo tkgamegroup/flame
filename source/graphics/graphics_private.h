@@ -26,7 +26,7 @@
 
 #include <assert.h>
 
-#if defined(FLMAE_VULKAN)
+#if defined(FLAME_VULKAN)
 
 #ifdef FLAME_WINDOWS
 #define NOMINMAX
@@ -399,19 +399,19 @@ namespace flame
 		inline VkBufferUsageFlags Z(BufferUsage u)
 		{
 			VkBufferUsageFlags vk_usage = 0;
-			if (usage & BufferUsageTransferSrc)
+			if (u & BufferUsageTransferSrc)
 				vk_usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-			if (usage & BufferUsageTransferDst)
+			if (u & BufferUsageTransferDst)
 				vk_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-			if (usage & BufferUsageUniform)
+			if (u & BufferUsageUniform)
 				vk_usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-			if (usage & BufferUsageStorage)
+			if (u & BufferUsageStorage)
 				vk_usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-			if (usage & BufferUsageVertex)
+			if (u & BufferUsageVertex)
 				vk_usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-			if (usage & BufferUsageIndex)
+			if (u & BufferUsageIndex)
 				vk_usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-			if (usage & BufferUsageIndirect)
+			if (u & BufferUsageIndirect)
 				vk_usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 			return vk_usage;
 		}
@@ -458,6 +458,8 @@ namespace flame
 				return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 			case ImageLayoutTransferDst:
 				return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			case ImageLayoutPresent:
+				return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 			}
 			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
@@ -569,6 +571,18 @@ namespace flame
 			default:
 				assert(0);
 			}
+		}
+
+		inline D3D12_RESOURCE_STATES Z(ImageLayout l)
+		{
+			switch (l)
+			{
+			case ImageLayoutAttachment:
+				return D3D12_RESOURCE_STATE_RENDER_TARGET;
+			case ImageLayoutPresent:
+				return D3D12_RESOURCE_STATE_PRESENT;
+			}
+			return D3D12_RESOURCE_STATE_COMMON;
 		}
 
 #endif

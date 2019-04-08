@@ -151,7 +151,8 @@ namespace flame
 			ImageLayoutShaderReadOnly,
 			ImageLayoutShaderStorage,
 			ImageLayoutTransferSrc,
-			ImageLayoutTransferDst
+			ImageLayoutTransferDst,
+			ImageLayoutPresent
 		};
 
 		enum ImageAspect

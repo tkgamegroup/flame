@@ -37,7 +37,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkCommandPool v;
 #elif defined(FLAME_D3D12)
-
+			ID3D12CommandAllocator* v;
 #endif
 
 			CommandpoolPrivate(Device *d, int queue_family_idx);
@@ -51,7 +51,8 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkCommandBuffer v;
 #elif defined(FLAME_D3D12)
-
+			ID3D12GraphicsCommandList* v;
+			bool recording;
 #endif
 
 			CommandbufferPrivate(Commandpool *p, bool sub = false);

@@ -11,5 +11,4 @@ add_exe(ui_test "test_ui.cpp" "test")
 target_link_libraries(ui_test flame_universe)
 
 add_exe(dx_test "test_dx.cpp" "test")
-target_link_libraries(dx_test flame_foundation)
 target_link_libraries(dx_test flame_graphics)

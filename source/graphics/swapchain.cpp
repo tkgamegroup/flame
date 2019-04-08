@@ -193,12 +193,12 @@ namespace flame
 			IDXGISwapChain* temp_swapchain;
 			res = d->factory->CreateSwapChain(((QueuePrivate*)d->gq)->v, &desc, &temp_swapchain);
 			assert(SUCCEEDED(res));
-			swapchain = (IDXGISwapChain3*)temp_swapchain;
+			v = (IDXGISwapChain3*)temp_swapchain;
 
 			ID3D12Resource* backbuffers[2];
 			for (auto i = 0; i < 2; i++)
 			{
-				res = swapchain->GetBuffer(i, IID_PPV_ARGS(&backbuffers[i]));
+				res = v->GetBuffer(i, IID_PPV_ARGS(&backbuffers[i]));
 				assert(SUCCEEDED(res));
 				native_images[i] = backbuffers[i];
 			}

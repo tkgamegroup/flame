@@ -146,7 +146,7 @@ namespace flame
 			v = (VkImage)native;
 			m = 0;
 #elif defined(FLAME_D3D12)
-
+			v = (ID3D12Resource*)native;
 #endif
 		}
 
@@ -534,7 +534,18 @@ namespace flame
 
 			vk_chk_res(vkCreateImageView(i->d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
+			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+			desc.NumDescriptors = 1;
+			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			auto d = i->d->v;
+			auto res = d->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&v));
+			assert(SUCCEEDED(res));
 
+			//auto descriptor_size = d->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			auto descriptor_handle = v->GetCPUDescriptorHandleForHeapStart();
+			d->CreateRenderTargetView(i->v, nullptr, descriptor_handle);
+			//descriptor_handle.ptr += descriptor_size;
 #endif
 		}
 

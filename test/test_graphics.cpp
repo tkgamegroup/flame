@@ -62,7 +62,6 @@ struct App : BasicApp
 		//canvas->record_cb();
 
 		d->gq->submit(cbs[sc->get_avalible_image_index()], image_avalible, render_finished);
-		d->gq->wait_idle();
 
 		d->gq->present(sc, render_finished);
 	}

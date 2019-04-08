@@ -36,6 +36,11 @@ namespace flame
 			vk_chk_res(vkCreateSemaphore(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
+			auto res = d->v->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&v));
+			vl = 0;
+
+			ev = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			assert(ev);
 #endif
 		}
 
