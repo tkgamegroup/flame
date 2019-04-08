@@ -90,7 +90,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkQueue v;
 #elif defined(FLAME_D3D12)
-
+			ID3D12CommandQueue* v;
 #endif
 
 			QueuePrivate(Device *d, int queue_family_idx);

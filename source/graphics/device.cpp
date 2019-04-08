@@ -88,6 +88,7 @@ namespace flame
 		inline DevicePrivate::DevicePrivate(bool debug)
 		{
 #if defined(FLAME_VULKAN)
+
 #ifdef FLAME_ANDROID
 			auto libvulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
 			if (!libvulkan)
@@ -472,8 +473,43 @@ namespace flame
 				tq = nullptr;
 			}
 			dp = Descriptorpool::create(this);
+
 #elif defined(FLAME_D3D12)
 
+			HRESULT res;
+
+			res = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
+
+			auto adapter_idx = 0;
+			auto adapter_found = false;
+
+			while (factory->EnumAdapters1(adapter_idx, &adapter) != DXGI_ERROR_NOT_FOUND)
+			{
+				DXGI_ADAPTER_DESC1 desc;
+				adapter->GetDesc1(&desc);
+
+				if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+				{
+					adapter_idx++;
+					continue;
+				}
+
+				res = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr);
+				if (SUCCEEDED(res))
+				{
+					adapter_found = true;
+					break;
+				}
+
+				adapter_idx++;
+			}
+
+			assert(adapter_found);
+
+			res = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&v));
+			assert(SUCCEEDED(res));
+
+			gq = Queue::create(this, -1);
 #endif
 		}
 

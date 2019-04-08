@@ -37,8 +37,6 @@ namespace flame
 			RenderpassInfo info;
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
-#elif defined(FLAME_D3D12)
-
 #endif
 
 			int ref_count;
@@ -52,7 +50,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			std::vector<VkClearValue> v;
 #elif defined(FLAME_D3D12)
-
+			std::vector<Vec4> v;
 #endif
 
 			ClearvaluesPrivate(Renderpass *r);

@@ -591,7 +591,9 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			vkGetDeviceQueue(d->v, queue_family_idx, 0, &v);
 #elif defined(FLAME_D3D12)
-
+			D3D12_COMMAND_QUEUE_DESC desc = {};
+			auto res = d->v->CreateCommandQueue(&desc, IID_PPV_ARGS(&v));
+			assert(SUCCEEDED(res));
 #endif
 		}
 

@@ -24,10 +24,7 @@
 
 using namespace flame;
 
-ID3D12CommandQueue* command_queue;
-IDXGISwapChain3* swapchain;
 ID3D12DescriptorHeap* descriptor_heap;
-ID3D12Resource* backbuffers[2];
 ID3D12CommandAllocator* command_allocator;
 ID3D12GraphicsCommandList* command_lists[2];
 ID3D12Fence* fence;
@@ -50,64 +47,6 @@ int main(int argc, char** args)
 {
 	auto app = Application::create();
 	auto w = Window::create(app, "DX Test", Ivec2(1280, 720), WindowFrame);
-
-	HRESULT res;
-
-	res = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-
-	auto adapter_idx = 0;
-	auto adapter_found = false;
-
-	while (factory->EnumAdapters1(adapter_idx, &adapter) != DXGI_ERROR_NOT_FOUND)
-	{
-		DXGI_ADAPTER_DESC1 desc;
-		adapter->GetDesc1(&desc);
-
-		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-		{
-			adapter_idx++;
-			continue;
-		}
-
-		res = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr);
-		if (SUCCEEDED(res))
-		{
-			adapter_found = true;
-			break;
-		}
-
-		adapter_idx++;
-	}
-
-	assert(adapter_found);
-
-	res = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device));
-	assert(SUCCEEDED(res));
-
-	D3D12_COMMAND_QUEUE_DESC queue_desc = {};
-	res = device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&command_queue));
-	assert(SUCCEEDED(res));
-
-	DXGI_MODE_DESC backbuffer_desc = {};
-	backbuffer_desc.Width = 1024;
-	backbuffer_desc.Height = 720;
-	backbuffer_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	DXGI_SAMPLE_DESC sample_desc = {};
-	sample_desc.Count = 1;
-
-	DXGI_SWAP_CHAIN_DESC swapchain_desc = {};
-	swapchain_desc.BufferCount = 2;
-	swapchain_desc.BufferDesc = backbuffer_desc;
-	swapchain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapchain_desc.OutputWindow = (HWND)(w->get_native());
-	swapchain_desc.SampleDesc = sample_desc;
-	swapchain_desc.Windowed = true;
-
-	IDXGISwapChain* temp_swapchain;
-	factory->CreateSwapChain(command_queue, &swapchain_desc, &temp_swapchain);
-	swapchain = (IDXGISwapChain3*)temp_swapchain;
 
 	D3D12_DESCRIPTOR_HEAP_DESC descriptor_heap_desc = {};
 	descriptor_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;

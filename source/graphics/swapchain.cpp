@@ -24,6 +24,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/framebuffer.h>
+#include "commandbuffer_private.h"
 #include "swapchain_private.h"
 #include "synchronize_private.h"
 
@@ -90,6 +91,7 @@ namespace flame
 		void SwapchainPrivate::create()
 		{
 			auto size = w->size;
+			void* native_images[2];
 
 #if defined(FLAME_VULKAN)
 
@@ -164,18 +166,47 @@ namespace flame
 			uint image_count = 0;
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, nullptr);
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, vk_images);
+			native_images[0] = vk_images[0];
+			native_images[1] = vk_images[1];
 
 #elif defined(FLAME_D3D12)
 
+			HRESULT res;
+
+			DXGI_MODE_DESC backbuffer_desc = {};
+			backbuffer_desc.Width = size.x;
+			backbuffer_desc.Height = size.y;
+			backbuffer_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+			DXGI_SAMPLE_DESC sample_desc = {};
+			sample_desc.Count = 1;
+
+			DXGI_SWAP_CHAIN_DESC desc = {};
+			desc.BufferCount = 2;
+			desc.BufferDesc = backbuffer_desc;
+			desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+			desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+			desc.OutputWindow = (HWND)(w->get_native());
+			desc.SampleDesc = sample_desc;
+			desc.Windowed = true;
+
+			IDXGISwapChain* temp_swapchain;
+			res = d->factory->CreateSwapChain(((QueuePrivate*)d->gq)->v, &desc, &temp_swapchain);
+			assert(SUCCEEDED(res));
+			swapchain = (IDXGISwapChain3*)temp_swapchain;
+
+			ID3D12Resource* backbuffers[2];
+			for (auto i = 0; i < 2; i++)
+			{
+				res = swapchain->GetBuffer(i, IID_PPV_ARGS(&backbuffers[i]));
+				assert(SUCCEEDED(res));
+				native_images[i] = backbuffers[i];
+			}
 #endif
 
 			for (int i = 0; i < 2; i++)
 			{
-#if defined(FLAME_VULKAN)
-				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, (void*)vk_images[i]);
-#elif defined(FLAME_D3D12)
-				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, nullptr);
-#endif
+				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, (void*)native_images[i]);
 
 				FramebufferInfo fb_info;
 				fb_info.rp = rp;

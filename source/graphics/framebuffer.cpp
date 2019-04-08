@@ -65,8 +65,6 @@ namespace flame
 			create_info.pAttachments = vk_views.data();
 
 			vk_chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
-#elif defined(FLAME_D3D12)
-
 #endif
 		}
 
@@ -74,8 +72,6 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyFramebuffer(d->v, v, nullptr);
-#elif defined(FLAME_D3D12)
-
 #endif
 		}
 

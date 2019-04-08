@@ -42,7 +42,7 @@ namespace flame
 			VkSurfaceKHR s;
 			VkSwapchainKHR v;
 #elif defined(FLAME_D3D12)
-
+			IDXGISwapChain3* swapchain;
 #endif
 
 			Image *images[2];

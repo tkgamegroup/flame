@@ -147,8 +147,6 @@ namespace flame
 			create_info.pDependencies = vk_dependencies.data();
 
 			vk_chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
-#elif defined(FLAME_D3D12)
-
 #endif
 		}
 
@@ -156,8 +154,6 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyRenderPass(d->v, v, nullptr);
-#elif defined(FLAME_D3D12)
-
 #endif
 		}
 
@@ -200,18 +196,22 @@ namespace flame
 
 		inline ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
 		{
-#if defined(FLAME_VULKAN)
 			for (auto i = 0; i < ((RenderpassPrivate*)r)->info.attachments.size(); i++)
 			{
 				auto fmt = ((RenderpassPrivate*)r)->info.attachments[i].format;
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
+#if defined(FLAME_VULKAN)
 					v.push_back({});
-				else
-					v.push_back({ 1, 0.f });
-			}
 #elif defined(FLAME_D3D12)
-
+					v.push_back(Vec4(0.f));
 #endif
+				else
+#if defined(FLAME_VULKAN)
+					v.push_back({ 1, 0.f });
+#elif defined(FLAME_D3D12)
+					v.push_back(Vec4(1.f, 0.f, 0.f, 0.f));
+#endif
+			}
 		}
 
 		inline ClearvaluesPrivate::~ClearvaluesPrivate()
@@ -226,7 +226,10 @@ namespace flame
 			v[idx].color.float32[2] = col.z / 255.f;
 			v[idx].color.float32[3] = col.w / 255.f;
 #elif defined(FLAME_D3D12)
-
+			v[idx].x = col.x / 255.0;
+			v[idx].y = col.y / 255.0;
+			v[idx].z = col.z / 255.0;
+			v[idx].w = col.w / 255.0;
 #endif
 		}
 
