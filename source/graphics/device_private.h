@@ -43,7 +43,7 @@ namespace flame
 			DevicePrivate(bool debug);
 			~DevicePrivate();
 
-			int find_memory_type(uint typeFilter, VkMemoryPropertyFlags properties);
+			int find_memory_type(uint type_filter, VkMemoryPropertyFlags properties);
 			bool has_feature(Feature f);
 		};
 	}

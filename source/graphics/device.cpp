@@ -28,7 +28,6 @@
 #include "image_private.h"
 #include "commandbuffer_private.h"
 
-#include <vector>
 #ifdef FLAME_ANDROID
 #include <dlfcn.h>
 #endif
@@ -477,11 +476,11 @@ namespace flame
 		{
 		}
 
-		int DevicePrivate::find_memory_type(uint typeFilter, VkMemoryPropertyFlags properties)
+		int DevicePrivate::find_memory_type(uint type_filter, VkMemoryPropertyFlags properties)
 		{
 			for (uint i = 0; i < mem_props.memoryTypeCount; i++)
 			{
-				if ((typeFilter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & properties) == properties)
+				if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & properties) == properties)
 					return i;
 			}
 			return -1;
