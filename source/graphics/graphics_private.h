@@ -24,6 +24,10 @@
 
 #include <flame/graphics/graphics.h>
 
+#include <assert.h>
+
+#if defined(FLMAE_VULKAN)
+
 #ifdef FLAME_WINDOWS
 #define NOMINMAX
 #elif FLAME_ANDROID
@@ -232,14 +236,18 @@ extern PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT;
 
 #endif
 
-#include <list>
-#include <assert.h>
+#elif defined(FLAME_D3D12)
+
+#include <d3d12.h>
+#include <dxgi1_4.h>
+
+#endif
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
+#if defined(FLAME_VULKAN)
 
 		inline void vk_chk_res(VkResult res)
 		{
@@ -278,7 +286,6 @@ namespace flame
 					return VK_FORMAT_BC3_UNORM_BLOCK;
 				case Format_RGBA_ETC2:
 					return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
-
 				case Format_Depth16:
 					return VK_FORMAT_D16_UNORM;
 				case Format_Depth32:
@@ -389,6 +396,26 @@ namespace flame
 			}
 		}
 
+		inline VkBufferUsageFlags Z(BufferUsage u)
+		{
+			VkBufferUsageFlags vk_usage = 0;
+			if (usage & BufferUsageTransferSrc)
+				vk_usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+			if (usage & BufferUsageTransferDst)
+				vk_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+			if (usage & BufferUsageUniform)
+				vk_usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+			if (usage & BufferUsageStorage)
+				vk_usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			if (usage & BufferUsageVertex)
+				vk_usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+			if (usage & BufferUsageIndex)
+				vk_usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+			if (usage & BufferUsageIndirect)
+				vk_usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+			return vk_usage;
+		}
+
 		inline VkImageUsageFlags Z(ImageUsage u, Format fmt, SampleCount sc)
 		{
 			VkImageUsageFlags vk_usage = 0;
@@ -410,6 +437,29 @@ namespace flame
 					vk_usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
 			}
 			return vk_usage;
+		}
+
+		inline VkImageLayout Z(ImageLayout l, Format fmt)
+		{
+			switch (l)
+			{
+			case ImageLayoutUndefined:
+				return VK_IMAGE_LAYOUT_UNDEFINED;
+			case ImageLayoutAttachment:
+				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
+					return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				else
+					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			case ImageLayoutShaderReadOnly:
+				return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			case ImageLayoutShaderStorage:
+				return VK_IMAGE_LAYOUT_GENERAL;
+			case ImageLayoutTransferSrc:
+				return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			case ImageLayoutTransferDst:
+				return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			}
+			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 
 		inline VkImageAspectFlags Z(ImageAspect a)
@@ -476,5 +526,51 @@ namespace flame
 					return VK_FILTER_LINEAR;
 			}
 		}
+
+#elif defined(FLAME_D3D12)
+
+		inline DXGI_FORMAT Z(Format f)
+		{
+			switch (f)
+			{
+			case Format_R8_UNORM:
+				return DXGI_FORMAT_R8_UNORM;
+			case Format_R16_UNORM:
+				return DXGI_FORMAT_R16_UNORM;
+			case Format_R32_SFLOAT:
+				return DXGI_FORMAT_R32_FLOAT;
+			case Format_R32G32_SFLOAT:
+				return DXGI_FORMAT_R32G32_FLOAT;
+			case Format_R32G32B32_SFLOAT:
+				return DXGI_FORMAT_R32G32B32_FLOAT;
+			case Format_R8G8B8A8_UNORM:
+				return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case Format_R8G8B8A8_SRGB:
+				return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+			case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
+				return DXGI_FORMAT_B8G8R8A8_UNORM;
+			case Format_B8G8R8A8_SRGB: case Format_Swapchain_B8G8R8A8_SRGB:
+				return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+			case Format_R16G16B16A16_UNORM:
+				return DXGI_FORMAT_R16G16B16A16_UNORM;
+			case Format_R16G16B16A16_SFLOAT:
+				return DXGI_FORMAT_R16G16B16A16_FLOAT;
+			case Format_R32G32B32A32_SFLOAT:
+				return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case Format_RGBA_BC3:
+				return DXGI_FORMAT_BC3_UNORM;
+			case Format_Depth16:
+				return DXGI_FORMAT_D16_UNORM;
+			case Format_Depth32:
+				return DXGI_FORMAT_D32_FLOAT;
+			case Format_Depth24Stencil8:
+				return DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+			default:
+				assert(0);
+			}
+		}
+
+#endif
 	}
 }

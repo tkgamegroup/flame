@@ -34,6 +34,7 @@ namespace flame
 		{
 			d = (DevicePrivate*)_d;
 
+#if defined(FLAME_VULKAN)
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
 				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 128},
 				{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32},
@@ -49,11 +50,18 @@ namespace flame
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 			descriptorPoolInfo.maxSets = 64;
 			vk_chk_res(vkCreateDescriptorPool(((DevicePrivate*)d)->v, &descriptorPoolInfo, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline DescriptorpoolPrivate::~DescriptorpoolPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroyDescriptorPool(((DevicePrivate*)d)->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		Descriptorpool *Descriptorpool::create(Device *d)
@@ -77,6 +85,7 @@ namespace flame
 
 			d = (DevicePrivate*)_d;
 
+#if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
 			vk_bindings.resize(bindings.size());
 			for (auto i = 0; i < bindings.size(); i++)
@@ -97,11 +106,18 @@ namespace flame
 
 			vk_chk_res(vkCreateDescriptorSetLayout(((DevicePrivate*)d)->v,
 				&info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline DescriptorsetlayoutPrivate::~DescriptorsetlayoutPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroyDescriptorSetLayout(((DevicePrivate*)d)->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		static std::vector<DescriptorsetlayoutPrivate*> created_layouts;
@@ -148,6 +164,7 @@ namespace flame
 		{
 			p = (DescriptorpoolPrivate*)_p;
 
+#if defined(FLAME_VULKAN)
 			VkDescriptorSetAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 			info.pNext = nullptr;
@@ -156,15 +173,23 @@ namespace flame
 			info.pSetLayouts = &((DescriptorsetlayoutPrivate*)l)->v;
 
 			vk_chk_res(vkAllocateDescriptorSets(p->d->v, &info, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline DescriptorsetPrivate::~DescriptorsetPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vk_chk_res(vkFreeDescriptorSets(p->d->v, p->v, 1, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void DescriptorsetPrivate::set_uniformbuffer(int binding, int index, Buffer *b, int offset, int range)
 		{
+#if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
 			i.buffer = ((BufferPrivate*)b)->v;
 			i.offset = offset;
@@ -183,10 +208,14 @@ namespace flame
 			write.pTexelBufferView = nullptr;
 
 			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void DescriptorsetPrivate::set_storagebuffer(int binding, int index, Buffer *b, int offset, int range)
 		{
+#if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
 			i.buffer = ((BufferPrivate*)b)->v;
 			i.offset = offset;
@@ -205,10 +234,14 @@ namespace flame
 			write.pTexelBufferView = nullptr;
 
 			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void DescriptorsetPrivate::set_imageview(int binding, int index, Imageview *iv, Sampler *sampler)
 		{
+#if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
 			i.imageView = ((ImageviewPrivate*)iv)->v;
 			i.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -227,10 +260,14 @@ namespace flame
 			write.pTexelBufferView = nullptr;
 
 			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void DescriptorsetPrivate::set_storageimage(int binding, int index, Imageview *iv)
 		{
+#if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
 			i.imageView = ((ImageviewPrivate*)iv)->v;
 			i.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -249,6 +286,9 @@ namespace flame
 			write.pTexelBufferView = nullptr;
 
 			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		void Descriptorset::set_uniformbuffer(int binding, int index, Buffer *b, int offset, int range)

@@ -38,6 +38,7 @@ namespace flame
 	{
 		static Device *shared_device;
 
+#if defined(FLAME_VULKAN)
 		VkBool32 VKAPI_PTR report_callback(
 			VkDebugReportFlagsEXT                       flags,
 			VkDebugReportObjectTypeEXT                  objectType,
@@ -82,9 +83,11 @@ namespace flame
 
 			return VK_FALSE;
 		}
+#endif
 
 		inline DevicePrivate::DevicePrivate(bool debug)
 		{
+#if defined(FLAME_VULKAN)
 #ifdef FLAME_ANDROID
 			auto libvulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
 			if (!libvulkan)
@@ -93,7 +96,7 @@ namespace flame
 				return;
 			}
 
-            LOGI("start loading vulkan functions");
+			LOGI("start loading vulkan functions");
 
 			vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(dlsym(libvulkan, "vkCreateInstance"));
 			vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(dlsym(libvulkan, "vkDestroyInstance"));
@@ -321,8 +324,7 @@ namespace flame
 				reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(dlsym(libvulkan, "vkDestroyDebugReportCallbackEXT"));
 			vkDebugReportMessageEXT = reinterpret_cast<PFN_vkDebugReportMessageEXT>(dlsym(libvulkan, "vkDebugReportMessageEXT"));
 
-            LOGI("end loading vulkan functions");
-
+			LOGI("end loading vulkan functions");
 #endif
 
 			VkApplicationInfo appInfo;
@@ -340,9 +342,9 @@ namespace flame
 
 			std::vector<const char*> instExtensions;
 			instExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-#ifdef FLAME_WINDOWS
+#if defined(FLAME_WINDOWS)
 			instExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#else
+#elif defined(FLAME_ANDROID)
 			instExtensions.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
 #endif
 			if (debug)
@@ -470,24 +472,32 @@ namespace flame
 				tq = nullptr;
 			}
 			dp = Descriptorpool::create(this);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline DevicePrivate::~DevicePrivate()
 		{
 		}
 
-		int DevicePrivate::find_memory_type(uint type_filter, VkMemoryPropertyFlags properties)
+		int DevicePrivate::find_memory_type(uint type_filter, int properties /* MemProp */)
 		{
+#if defined(FLAME_VULKAN)
 			for (uint i = 0; i < mem_props.memoryTypeCount; i++)
 			{
 				if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & properties) == properties)
 					return i;
 			}
+#elif defined(FLAME_D3D12)
+
+#endif
 			return -1;
 		}
 
 		inline bool DevicePrivate::has_feature(Feature f)
 		{
+#if defined(FLAME_VULKAN)
 			switch (f)
 			{
 			case FeatureTextureCompressionBC:
@@ -499,6 +509,9 @@ namespace flame
 			default:
 				break;
 			}
+#elif defined(FLAME_D3D12)
+
+#endif
 			return false;
 		}
 

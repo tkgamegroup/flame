@@ -60,7 +60,11 @@ namespace flame
 			std::vector<std::unique_ptr<ShaderResource>> resources;
 
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkShaderModule v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			int ref_count;
 

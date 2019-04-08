@@ -38,8 +38,12 @@ namespace flame
 			SampleCount sc;
 
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkSurfaceKHR s;
 			VkSwapchainKHR v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			Image *images[2];
 			Image *image_ms;

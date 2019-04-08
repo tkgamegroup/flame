@@ -25,8 +25,6 @@
 #include <flame/graphics/pipeline.h>
 #include "graphics_private.h"
 
-#include <vector>
-
 namespace flame
 {
 	namespace graphics
@@ -35,6 +33,7 @@ namespace flame
 		struct RenderpassPrivate;
 		struct ShaderPrivate;
 
+#if defined(FLAME_VULKAN)
 		inline VkVertexInputRate Z(VertexInputRate r)
 		{
 			switch (r)
@@ -193,13 +192,18 @@ namespace flame
 					return VK_DYNAMIC_STATE_STENCIL_REFERENCE;
 			}
 		}
+#endif
 
 		struct PipelinelayoutPrivate : Pipelinelayout
 		{
 			DevicePrivate *d;
 			std::vector<Descriptorsetlayout*> dsls;
 			std::vector<PushconstantInfo> pcs;
+#if defined(FLAME_VULKAN)
 			VkPipelineLayout v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			int ref_count;
 
@@ -219,7 +223,11 @@ namespace flame
 			ShaderPrivate *comp_shader;
 			std::vector<Descriptorsetlayout*> dsls;
 			PipelinelayoutPrivate *layout;
+#if defined(FLAME_VULKAN)
 			VkPipeline v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			void init();
 
@@ -228,7 +236,11 @@ namespace flame
 			~PipelinePrivate();
 
 			void add_shader(const ShaderInfo &info);
+#if defined(FLAME_VULKAN)
 			std::vector<VkPipelineShaderStageCreateInfo> process_stages();
+#elif defined(FLAME_D3D12)
+
+#endif
 		};
 	}
 }

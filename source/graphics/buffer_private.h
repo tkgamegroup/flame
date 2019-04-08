@@ -35,8 +35,12 @@ namespace flame
 			int mem_prop;
 
 			DevicePrivate *d;
+#if defined(FLMAE_VULKAN)
 			VkBuffer v;
 			VkDeviceMemory m;
+#elif defined(FLAME_D3D12)
+			ID3D12Resource* v;
+#endif
 
 			BufferPrivate(Device *d, int size, int usage, int mem_prop, bool sharing = false);
 			~BufferPrivate();

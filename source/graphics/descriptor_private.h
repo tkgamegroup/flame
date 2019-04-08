@@ -36,7 +36,11 @@ namespace flame
 		struct DescriptorpoolPrivate : Descriptorpool
 		{
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkDescriptorPool v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			DescriptorpoolPrivate(Device *d);
 			~DescriptorpoolPrivate();
@@ -47,7 +51,11 @@ namespace flame
 			std::vector<Binding> bindings;
 
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkDescriptorSetLayout v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			int ref_count;
 
@@ -58,7 +66,11 @@ namespace flame
 		struct DescriptorsetPrivate : Descriptorset
 		{
 			DescriptorpoolPrivate *p;
+#if defined(FLAME_VULKAN)
 			VkDescriptorSet v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			DescriptorsetPrivate(Descriptorpool *p, Descriptorsetlayout *l);
 			~DescriptorsetPrivate();

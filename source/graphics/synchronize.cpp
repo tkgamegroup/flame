@@ -30,14 +30,22 @@ namespace flame
 		inline SemaphorePrivate::SemaphorePrivate(Device *_d)
 		{
 			d = (DevicePrivate*)_d;
+#if defined(FLAME_VULKAN)
 			VkSemaphoreCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			vk_chk_res(vkCreateSemaphore(d->v, &info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline SemaphorePrivate::~SemaphorePrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroySemaphore(d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		Semaphore *Semaphore::create(Device *d)

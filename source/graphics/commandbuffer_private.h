@@ -34,7 +34,11 @@ namespace flame
 		struct CommandpoolPrivate : Commandpool
 		{
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkCommandPool v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			CommandpoolPrivate(Device *d, int queue_family_idx);
 			~CommandpoolPrivate();
@@ -44,7 +48,11 @@ namespace flame
 		{
 			CommandpoolPrivate *p;
 			PipelinePrivate *current_pipeline;
+#if defined(FLAME_VULKAN)
 			VkCommandBuffer v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			CommandbufferPrivate(Commandpool *p, bool sub = false);
 			~CommandbufferPrivate();
@@ -79,7 +87,11 @@ namespace flame
 		struct QueuePrivate : Queue
 		{
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkQueue v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			QueuePrivate(Device *d, int queue_family_idx);
 			~QueuePrivate();

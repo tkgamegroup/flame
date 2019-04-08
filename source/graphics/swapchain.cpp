@@ -36,9 +36,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		//FLAME_PACKAGE_BEGIN_1(ResizeC, SwapchainPrivatePtr, s, p)
-		//FLAME_PACKAGE_END_1
-
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
 		Format get_swapchain_format()
@@ -78,11 +75,11 @@ namespace flame
 
 			auto thiz = this;
 
-			w->add_resize_listener(Function<void(void* c, const Ivec2& size)>(
-			[](void* c, const Ivec2 & size) {
-				(*((SwapchainPrivatePtr*)c))->destroy();
-				(*((SwapchainPrivatePtr*)c))->create();
-			}, sizeof(void*), &thiz));
+			w->add_resize_listener(Function<void(void* c, const Ivec2 & size)>(
+				[](void* c, const Ivec2 & size) {
+					(*((SwapchainPrivatePtr*)c))->destroy();
+					(*((SwapchainPrivatePtr*)c))->create();
+				}, sizeof(void*), &thiz));
 		}
 
 		inline SwapchainPrivate::~SwapchainPrivate()
@@ -92,6 +89,10 @@ namespace flame
 
 		void SwapchainPrivate::create()
 		{
+			auto size = w->size;
+
+#if defined(FLAME_VULKAN)
+
 #ifdef FLAME_WINDOWS
 			VkWin32SurfaceCreateInfoKHR surface_info;
 			surface_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -121,7 +122,6 @@ namespace flame
 			VkSurfaceCapabilitiesKHR surface_capabilities;
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->pd, s, &surface_capabilities);
 
-			auto size = w->size;
 			size.x = clamp(size.x,
 				surface_capabilities.minImageExtent.width,
 				surface_capabilities.maxImageExtent.width);
@@ -165,9 +165,17 @@ namespace flame
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, nullptr);
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, vk_images);
 
+#elif defined(FLAME_D3D12)
+
+#endif
+
 			for (int i = 0; i < 2; i++)
 			{
+#if defined(FLAME_VULKAN)
 				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, (void*)vk_images[i]);
+#elif defined(FLAME_D3D12)
+				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, nullptr);
+#endif
 
 				FramebufferInfo fb_info;
 				fb_info.rp = rp;
@@ -199,13 +207,21 @@ namespace flame
 				image_ms = nullptr;
 			}
 
+#if defined(FLAME_VULKAN)
 			vkDestroySwapchainKHR(d->v, v, nullptr);
 			vkDestroySurfaceKHR(d->ins, s, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
 		{
+#if defined(FLAME_VULKAN)
 			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, ((SemaphorePrivate*)signal_semaphore)->v, VK_NULL_HANDLE, &avalible_image_index));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		Window *Swapchain::window() const

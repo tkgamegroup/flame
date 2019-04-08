@@ -34,7 +34,11 @@ namespace flame
 		struct SemaphorePrivate : Semaphore
 		{
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkSemaphore v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			SemaphorePrivate(Device *d);
 			~SemaphorePrivate();

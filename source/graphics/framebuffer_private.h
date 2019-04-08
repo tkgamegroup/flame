@@ -36,7 +36,11 @@ namespace flame
 		{
 			DevicePrivate *d;
 			FramebufferInfo info;
+#if defined(FLAME_VULKAN)
 			VkFramebuffer v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			int ref_count;
 

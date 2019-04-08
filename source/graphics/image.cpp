@@ -89,6 +89,7 @@ namespace flame
 			mem_prop = _mem_prop;
 			d = (DevicePrivate*)_d;
 
+#if defined(FLAME_VULKAN)
 			VkImageCreateInfo imageInfo;
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 			imageInfo.flags = 0;
@@ -122,6 +123,9 @@ namespace flame
 			vk_chk_res(vkAllocateMemory(d->v, &allocInfo, nullptr, &m));
 
 			vk_chk_res(vkBindImageMemory(d->v, v, m, 0));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, void *native)
@@ -138,17 +142,25 @@ namespace flame
 			mem_prop = 0;
 			d = (DevicePrivate*)_d;
 
+#if defined(FLAME_VULKAN)
 			v = (VkImage)native;
 			m = 0;
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline ImagePrivate::~ImagePrivate()
 		{
+#if defined(FLAME_VULKAN)
 			if (m != 0)
 			{
 				vkFreeMemory(d->v, m, nullptr);
 				vkDestroyImage(d->v, v, nullptr);
 			}
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void ImagePrivate::set_props()
@@ -502,6 +514,7 @@ namespace flame
 			else
 				mapping.r = mapping.g = mapping.b = mapping.a = SwizzleIdentity;
 
+#if defined(FLAME_VULKAN)
 			VkImageViewCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			info.flags = 0;
@@ -520,11 +533,18 @@ namespace flame
 			info.subresourceRange.layerCount = layer_count;
 
 			vk_chk_res(vkCreateImageView(i->d->v, &info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline ImageviewPrivate::~ImageviewPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroyImageView(i->d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline bool ImageviewPrivate::same(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
@@ -592,6 +612,7 @@ namespace flame
 		inline SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{
 			d = (DevicePrivate*)_d;
+#if defined(FLAME_VULKAN)
 			VkSamplerCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 			info.flags = 0;
@@ -613,11 +634,18 @@ namespace flame
 			info.maxLod = 0.0f;
 
 			vk_chk_res(vkCreateSampler(d->v, &info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline SamplerPrivate::~SamplerPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroySampler(d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		Sampler *Sampler::create(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)

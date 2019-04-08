@@ -45,7 +45,11 @@ elseif (FLAME_RENDER_API MATCHES "D3D12")
 	add_definitions(-DFLAME_D3D12)
 endif()
 
-set(VS_PATH "" CACHE PATH "VisualStudio Path")
+if (FLAME_PLATFORM MATCHES "Android" AND FLAME_RENDER_API MATCHES "D3D12")
+	message(FATAL_ERROR "cannot use D3D on Android")
+endif()
+
+set(VS_PATH "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community" CACHE PATH "VisualStudio Path")
 set(RAPIDXML_PATH "" CACHE PATH "RapidXML Path")
 set(STB_PATH "" CACHE PATH "STB Path")
 set(FREETYPE_PATH "" CACHE PATH "FreeType Path")

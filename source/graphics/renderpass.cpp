@@ -52,6 +52,7 @@ namespace flame
 
 			info = _info;
 
+#if defined(FLAME_VULKAN)
 			std::vector<VkAttachmentDescription> vk_attachments(info.attachments.size());
 			for (auto i = 0; i < vk_attachments.size(); i++)
 			{
@@ -146,11 +147,18 @@ namespace flame
 			create_info.pDependencies = vk_dependencies.data();
 
 			vk_chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline RenderpassPrivate::~RenderpassPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroyRenderPass(d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		std::vector<RenderpassPrivate*> created_renderpasses;
@@ -192,6 +200,7 @@ namespace flame
 
 		inline ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
 		{
+#if defined(FLAME_VULKAN)
 			for (auto i = 0; i < ((RenderpassPrivate*)r)->info.attachments.size(); i++)
 			{
 				auto fmt = ((RenderpassPrivate*)r)->info.attachments[i].format;
@@ -200,6 +209,9 @@ namespace flame
 				else
 					v.push_back({ 1, 0.f });
 			}
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline ClearvaluesPrivate::~ClearvaluesPrivate()
@@ -208,10 +220,14 @@ namespace flame
 
 		inline void ClearvaluesPrivate::set(int idx, const Bvec4 &col)
 		{
+#if defined(FLAME_VULKAN)
 			v[idx].color.float32[0] = col.x / 255.f;
 			v[idx].color.float32[1] = col.y / 255.f;
 			v[idx].color.float32[2] = col.z / 255.f;
 			v[idx].color.float32[3] = col.w / 255.f;
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		void ClearValues::set(int idx, const Bvec4 &col)

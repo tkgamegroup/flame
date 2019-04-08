@@ -39,9 +39,12 @@ namespace flame
 
 			DevicePrivate *d;
 			std::vector<ImageviewPrivate*> views;
+#if defined(FLAME_VULKAN)
 			VkDeviceMemory m;
 			VkImage v;
+#elif defined(FLAME_D3D12)
 
+#endif
 			ImagePrivate(Device *d, Format format, const Ivec2 &size, int level, int layer, SampleCount sample_count, int usage, int mem_prop);
 			ImagePrivate(Device *d, Format format, const Ivec2 &size, int level, int layer, void *native);
 			~ImagePrivate();
@@ -58,8 +61,11 @@ namespace flame
 		struct ImageviewPrivate : Imageview
 		{
 			ImagePrivate *i;
+#if defined(FLAME_VULKAN)
 			VkImageView v;
+#elif defined(FLAME_D3D12)
 
+#endif
 			int ref_count;
 
 			ImageviewPrivate(Image *i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping *mapping = nullptr);
@@ -67,28 +73,6 @@ namespace flame
 
 			bool same(Image *i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping);
 		};
-
-		inline VkImageLayout Z(ImageLayout l, Format fmt)
-		{
-			switch (l)
-			{
-				case ImageLayoutUndefined:
-					return VK_IMAGE_LAYOUT_UNDEFINED;
-				case ImageLayoutAttachment:
-					if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
-						return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					else
-						return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-				case ImageLayoutShaderReadOnly:
-					return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				case ImageLayoutShaderStorage:
-					return VK_IMAGE_LAYOUT_GENERAL;
-				case ImageLayoutTransferSrc:
-					return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-				case ImageLayoutTransferDst:
-					return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			}
-		}
 
 		inline ImageAspect aspect_from_format(Format fmt)
 		{
@@ -107,7 +91,11 @@ namespace flame
 		struct SamplerPrivate : Sampler
 		{
 			DevicePrivate *d;
+#if defined(FLAME_VULKAN)
 			VkSampler v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			SamplerPrivate(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			~SamplerPrivate();

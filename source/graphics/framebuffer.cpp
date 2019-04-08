@@ -38,6 +38,7 @@ namespace flame
 
 			Ivec2 size(0);
 
+#if defined(FLAME_VULKAN)
 			std::vector<VkImageView> vk_views(info.views.size());
 			for (auto i = 0; i < info.views.size(); i++)
 			{
@@ -64,11 +65,18 @@ namespace flame
 			create_info.pAttachments = vk_views.data();
 
 			vk_chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline FramebufferPrivate::~FramebufferPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroyFramebuffer(d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		std::vector<FramebufferPrivate*> created_framebuffers;

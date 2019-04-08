@@ -26,7 +26,9 @@
 #include <flame/foundation/foundation.h>
 #include <flame/foundation/serialize.h>
 
+#if defined(FLAME_VULKAN)
 #include <spirv_glsl.hpp>
+#endif
 
 namespace flame
 {
@@ -35,6 +37,7 @@ namespace flame
 		static std::wstring shader_path(L"../shader/");
 		static std::wstring conf_path(shader_path + L"src/config.conf");
 
+#if defined(FLAME_VULKAN)
 		static void serialize_members(spirv_cross::CompilerGLSL &glsl, uint32_t tid, SerializableNode *dst)
 		{
 			auto t = glsl.get_type(tid);
@@ -153,6 +156,7 @@ namespace flame
 			file->save_xml(res_file_out);
 			SerializableNode::destroy(file);
 		}
+#endif
 
 		inline ShaderPrivate::ShaderPrivate(Device *_d, const std::wstring &filename, const std::string &prefix)
 		{
@@ -264,6 +268,7 @@ namespace flame
 			if (!spv_file.first)
 				assert(0);
 
+#if defined(FLAME_VULKAN)
 			VkShaderModuleCreateInfo shader_info;
 			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			shader_info.flags = 0;
@@ -411,6 +416,9 @@ namespace flame
 
 				SerializableNode::destroy(res_file);
 			}
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void ShaderPrivate::load_members(SerializableNode *src, ShaderVariableInfo *dst)
@@ -442,8 +450,12 @@ namespace flame
 
 		inline ShaderPrivate::~ShaderPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			if (v)
 				vkDestroyShaderModule(d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline bool ShaderPrivate::same(const std::wstring &filename, const std::string &prefix)

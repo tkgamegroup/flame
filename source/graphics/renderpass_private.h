@@ -35,7 +35,11 @@ namespace flame
 		{
 			DevicePrivate *d;
 			RenderpassInfo info;
+#if defined(FLAME_VULKAN)
 			VkRenderPass v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			int ref_count;
 
@@ -45,7 +49,11 @@ namespace flame
 
 		struct ClearvaluesPrivate : ClearValues
 		{
+#if defined(FLAME_VULKAN)
 			std::vector<VkClearValue> v;
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			ClearvaluesPrivate(Renderpass *r);
 			~ClearvaluesPrivate();

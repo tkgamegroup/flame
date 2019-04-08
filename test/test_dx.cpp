@@ -20,16 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <d3d12.h>
-#include <dxgi1_4.h>
-
 #include <flame/foundation/window.h>
 
 using namespace flame;
 
-IDXGIFactory4* factory;
-IDXGIAdapter1* adapter;
-ID3D12Device4* device;
 ID3D12CommandQueue* command_queue;
 IDXGISwapChain3* swapchain;
 ID3D12DescriptorHeap* descriptor_heap;

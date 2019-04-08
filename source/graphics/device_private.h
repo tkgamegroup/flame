@@ -31,6 +31,7 @@ namespace flame
 	{
 		struct DevicePrivate : Device
 		{
+#if defined(FLAME_VULKAN)
 			VkInstance ins;
 			VkPhysicalDevice pd;
 			VkPhysicalDeviceProperties props;
@@ -39,11 +40,16 @@ namespace flame
 			VkDevice v;
 			int gq_idx;
 			int tq_idx;
+#elif defined(FLAME_D3D12)
+			IDXGIFactory4* factory; // just like instance
+			IDXGIAdapter1* adapter; // just like physical device
+			ID3D12Device4* v; // just like device
+#endif
 
 			DevicePrivate(bool debug);
 			~DevicePrivate();
 
-			int find_memory_type(uint type_filter, VkMemoryPropertyFlags properties);
+			int find_memory_type(uint type_filter, int properties /* MemProp */);
 			bool has_feature(Feature f);
 		};
 	}

@@ -45,6 +45,7 @@ namespace flame
 				dsls[i] = (DescriptorsetlayoutPrivate*)_setlayouts[i];
 			pcs = _pushconstants;
 
+#if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayout> vk_descriptorsetlayouts;
 			vk_descriptorsetlayouts.resize(dsls.size());
 			for (auto i = 0; i < vk_descriptorsetlayouts.size(); i++)
@@ -69,11 +70,18 @@ namespace flame
 			info.pPushConstantRanges = vk_pushconstants.data();
 
 			vk_chk_res(vkCreatePipelineLayout(d->v, &info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline PipelinelayoutPrivate::~PipelinelayoutPrivate()
 		{
+#if defined(FLAME_VULKAN)
 			vkDestroyPipelineLayout(d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		std::vector<PipelinelayoutPrivate*> created_layouts;
@@ -134,6 +142,7 @@ namespace flame
 
 			d = (DevicePrivate*)_d;
 
+#if defined(FLAME_VULKAN)
 			std::vector<VkVertexInputBindingDescription> vk_vi_bindings;
 			std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
@@ -341,6 +350,9 @@ namespace flame
 			pipeline_info.basePipelineIndex = 0;
 
 			vk_chk_res(vkCreateGraphicsPipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			type = PipelineGraphics;
 		}
@@ -353,6 +365,7 @@ namespace flame
 
 			add_shader(compute_shader);
 
+#if defined(FLAME_VULKAN)
 			auto vk_stage_infos = process_stages();
 			assert(vk_stage_infos.size() == 1);
 
@@ -366,6 +379,9 @@ namespace flame
 			pipeline_info.stage = vk_stage_infos[0];
 
 			vk_chk_res(vkCreateComputePipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
+#elif defined(FLAME_D3D12)
+
+#endif
 
 			type = PipelineCompute;
 		}
@@ -387,7 +403,11 @@ namespace flame
 			for (auto &l : dsls)
 				Descriptorsetlayout::release(l);
 			Pipelinelayout::release(layout);
+#if defined(FLAME_VULKAN)
 			vkDestroyPipeline(d->v, v, nullptr);
+#elif defined(FLAME_D3D12)
+
+#endif
 		}
 
 		inline void PipelinePrivate::add_shader(const ShaderInfo &info)
@@ -418,6 +438,7 @@ namespace flame
 			}
 		}
 
+#if defined(FLAME_VULKAN)
 		static void process_stage(ShaderPrivate *s, std::vector<VkPipelineShaderStageCreateInfo> &stage_infos, std::vector<std::vector<Descriptorsetlayout::Binding>> &sets, std::vector<PushconstantInfo> &pcs)
 		{
 			VkPipelineShaderStageCreateInfo info;
@@ -492,6 +513,9 @@ namespace flame
 
 			return stage_infos;
 		}
+#elif defined(FLAME_D3D12)
+
+#endif
 
 		Pipelinelayout *Pipeline::layout() const
 		{
