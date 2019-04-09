@@ -75,6 +75,9 @@ namespace flame
 		inline CommandbufferPrivate::CommandbufferPrivate(Commandpool *_p, bool sub)
 		{
 			p = (CommandpoolPrivate*)_p;
+			current_renderpass = nullptr;
+			current_subpass = 0;
+			current_framebuffer = nullptr;
 			current_pipeline = nullptr;
 
 #if defined(FLAME_VULKAN)
@@ -117,30 +120,57 @@ namespace flame
 			if (recording)
 				return;
 			v->Reset(p->v, nullptr);
+			recording = true;
 #endif
+			current_renderpass = nullptr;
+			current_subpass = 0;
+			current_framebuffer = nullptr;
 			current_pipeline = nullptr;
 		}
 
-		inline void CommandbufferPrivate::begin_renderpass(Renderpass *r, Framebuffer *f, ClearValues *cv)
+		inline void CommandbufferPrivate::begin_renderpass(Renderpass *_r, Framebuffer *_f, ClearValues *_cv)
 		{
-			auto size = ((FramebufferPrivate*)f)->info.views[0]->image()->size;
+			auto r = (RenderpassPrivate*)_r;
+			auto f = (FramebufferPrivate*)_f;
+			auto cv = (ClearvaluesPrivate*)_cv;
+
+			current_renderpass = r;
+			current_subpass = 0;
+			current_framebuffer = f;
+
+			auto size = f->info.views[0]->image()->size;
 
 #if defined(FLAME_VULKAN)
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			info.pNext = nullptr;
-			info.renderPass = ((RenderpassPrivate*)r)->v;
-			info.framebuffer = ((FramebufferPrivate*)f)->v;
+			info.renderPass = r->v;
+			info.framebuffer = f->v;
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
 			info.renderArea.extent.width = size.x;
 			info.renderArea.extent.height = size.y;
-			info.clearValueCount = cv ? ((ClearvaluesPrivate*)cv)->v.size() : 0;
-			info.pClearValues = cv ? ((ClearvaluesPrivate*)cv)->v.data() : nullptr;
+			info.clearValueCount = cv ? cv->v.size() : 0;
+			info.pClearValues = cv ? cv->v.data() : nullptr;
 
 			vkCmdBeginRenderPass(v, &info, VK_SUBPASS_CONTENTS_INLINE);
 #elif defined(FLAME_D3D12)
-
+			auto& attachments = r->info.attachments;
+			auto& subpass = r->info.subpasses[current_subpass];
+			auto& views = f->info.views;
+			for (auto& idx : subpass.color_attachments)
+			{
+				auto& a = attachments[idx];
+				auto view = (ImageviewPrivate*)views[idx];
+				auto layout_from = ImageLayoutUndefined;
+				if (a.format >= Format_Swapchain_Begin && a.format <= Format_Swapchain_End)
+					layout_from = ImageLayoutPresent;
+				change_image_layout(view->i, layout_from, ImageLayoutAttachment);
+				auto descriptor = view->v->GetCPUDescriptorHandleForHeapStart();
+				v->OMSetRenderTargets(1, &descriptor, false, nullptr);
+				if (a.clear)
+					v->ClearRenderTargetView(descriptor, &cv->v[idx].x, 0, nullptr);
+			}
 #endif
 		}
 
@@ -149,7 +179,18 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			vkCmdEndRenderPass(v);
 #elif defined(FLAME_D3D12)
-
+			auto& attachments = current_renderpass->info.attachments;
+			auto& subpass = current_renderpass->info.subpasses[current_subpass];
+			auto& views = current_framebuffer->info.views;
+			for (auto& idx : subpass.color_attachments)
+			{
+				auto& a = attachments[idx];
+				auto view = (ImageviewPrivate*)views[idx];
+				auto layout_to = ImageLayoutUndefined;
+				if (a.format >= Format_Swapchain_Begin && a.format <= Format_Swapchain_End)
+					layout_to = ImageLayoutPresent;
+				change_image_layout(view->i, ImageLayoutAttachment, layout_to);
+			}
 #endif
 		}
 

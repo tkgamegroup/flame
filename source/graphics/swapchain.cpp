@@ -251,7 +251,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, ((SemaphorePrivate*)signal_semaphore)->v, VK_NULL_HANDLE, &avalible_image_index));
 #elif defined(FLAME_D3D12)
-
+			avalible_image_index = v->GetCurrentBackBufferIndex();
 #endif
 		}
 

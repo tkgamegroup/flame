@@ -29,6 +29,8 @@ namespace flame
 	{
 		struct DevicePrivate;
 		struct ImagePrivate;
+		struct RenderpassPrivate;
+		struct FramebufferPrivate;
 		struct PipelinePrivate;
 
 		struct CommandpoolPrivate : Commandpool
@@ -46,8 +48,11 @@ namespace flame
 
 		struct CommandbufferPrivate : Commandbuffer
 		{
-			CommandpoolPrivate *p;
-			PipelinePrivate *current_pipeline;
+			CommandpoolPrivate* p;
+			RenderpassPrivate* current_renderpass;
+			int current_subpass;
+			FramebufferPrivate* current_framebuffer;
+			PipelinePrivate* current_pipeline;
 #if defined(FLAME_VULKAN)
 			VkCommandBuffer v;
 #elif defined(FLAME_D3D12)

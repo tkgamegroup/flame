@@ -509,6 +509,7 @@ namespace flame
 			res = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
 
+			gcp = Commandpool::create(this, -1);
 			gq = Queue::create(this, -1);
 #endif
 		}

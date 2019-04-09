@@ -21,32 +21,47 @@
 // SOFTWARE.
 
 #include <flame/foundation/window.h>
+#include <flame/graphics/device.h>
+#include <flame/graphics/swapchain.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/synchronize.h>
+#include <flame/graphics/commandbuffer.h>
 
 using namespace flame;
+
+graphics::Device* d;
+graphics::Swapchain* sc;
+graphics::Commandbuffer* cbs[2];
+graphics::Semaphore* render_finished;
 
 int main(int argc, char** args)
 {
 	auto app = Application::create();
 	auto w = Window::create(app, "DX Test", Ivec2(1280, 720), WindowFrame);
 
+	d = graphics::Device::create(false);
+	sc = graphics::Swapchain::create(d, w);
+	render_finished = graphics::Semaphore::create(d);
+	auto cv = graphics::ClearValues::create(sc->get_renderpass_clear());
+	cv->set(0, Bvec4(255, 128, 0, 255));
+
 	for (auto i = 0; i < 2; i++)
 	{
-		command_list->ResourceBarrier(1, &dx_barrier_transition(backbuffers[i], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-		auto descriptor_handle = descriptor_heap->GetCPUDescriptorHandleForHeapStart();
-		descriptor_handle.ptr += i * descriptor_size;
-
-		command_list->OMSetRenderTargets(1, &descriptor_handle, false, nullptr);
-
-		const float clear_color[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-		command_list->ClearRenderTargetView(descriptor_handle, clear_color, 0, nullptr);
-
-		command_list->ResourceBarrier(1, &dx_barrier_transition(backbuffers[i], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+		auto cb = graphics::Commandbuffer::create(d->gcp);
+		cb->begin();
+		cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(i), cv);
+		cb->end_renderpass();
+		cb->end();
+		cbs[i] = cb;
 	}
 
 	app->run(Function<void(void* c)>(
 		[](void* c) {
-			auto frame_index = swapchain->GetCurrentBackBufferIndex();
+			sc->acquire_image(nullptr);
+
+			d->gq->submit(cbs[sc->get_avalible_image_index()], nullptr, render_finished);
+
+			d->gq->present(sc, render_finished);
 		}));
 
 	return 0;
