@@ -70,6 +70,7 @@ int main(int argc, char **args)
 				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
 				"  tobin - generate code to a dll\n"
+				"  gui-html - use the power of html to show and edit\n"
 			);
 		}
 		else if (s_command_line == "show")
@@ -350,6 +351,15 @@ int main(int argc, char **args)
 			bp->unprepare();
 
 			printf("code generated\n");
+		}
+		else if (s_command_line == "gui-html")
+		{
+			exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
+			printf("waiting for html on port 5566 ...");
+			while (true)
+			{
+				
+			}
 		}
 		else
 			printf("unknow command\n");

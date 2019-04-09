@@ -109,14 +109,15 @@ namespace flame
 		}
 	}
 
-	void exec(const wchar_t *filename, const char *parameters, bool wait)
+	void exec(const wchar_t *filename, const char *_parameters, bool wait)
 	{
 		SHELLEXECUTEINFOW info = {};
 		info.cbSize = sizeof(SHELLEXECUTEINFOW);
 		info.fMask = SEE_MASK_NOCLOSEPROCESS;
 		info.lpVerb = L"open";
 		info.lpFile = filename;
-		info.lpParameters = s2w(parameters).c_str();
+		auto parameters = s2w(_parameters);
+		info.lpParameters = parameters.c_str();
 		ShellExecuteExW(&info);
 		if (wait)
 			WaitForSingleObject(info.hProcess, INFINITE);
