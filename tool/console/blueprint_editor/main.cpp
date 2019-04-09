@@ -110,10 +110,10 @@ int main(int argc, char **args)
 					}
 					printf("[In]\n");
 					for (auto &i : inputs)
-						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_type_tag_name(i->type()->tag()), i->type()->name());
 					printf("[Out]\n");
 					for (auto &i : outputs)
-						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_variable_tag_name(i->tag()), i->type_name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_type_tag_name(i->type()->tag()), i->type()->name());
 				}
 				else
 					printf("udt not found\n");
