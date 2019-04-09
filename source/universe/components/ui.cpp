@@ -37,7 +37,7 @@ namespace flame
 		int mouse_buttons[3];
 
 		bool f_all_done;
-		bool f_mljustdown, f_mljustup, f_mrjustdown, f_mrjustup;
+		bool f_hovering, f_mljustdown, f_mljustup, f_mrjustdown, f_mrjustup;
 		Vec2 f_mpos;
 		Ivec2 f_mdisp;
 		int f_mscroll;
@@ -88,32 +88,25 @@ namespace flame
 					auto ev = (cEvent$*)e->component(cH("Event"));
 					if (ev)
 					{
-						thiz->f_all_done = true;
-
 						auto mhover = ev->contains(thiz->f_mpos);
-
-						if (thiz->f_mljustdown)
+						if (ev->blackhole || mhover)
 						{
-							if (ev->can_receive(thiz->f_mpos))
+							if (thiz->f_mljustdown)
 							{
 								thiz->f_mljustdown = false;
 								thiz->focusing = ev;
 								ev->focusing = true;
-								ev->dragging = true;
+								if (mhover)
+									ev->dragging = true;
 							}
-							else
-								thiz->f_all_done = false;
-						}
-						if (thiz->f_mljustup)
-						{
-							if (ev->can_receive(thiz->f_mpos))
+							if (thiz->f_mljustup)
 							{
 								thiz->f_mljustdown = false;
-
 							}
-							else
-								thiz->f_all_done = false;
 						}
+
+						thiz->f_all_done = !thiz->f_mljustdown && !thiz->f_mljustup && 
+							!thiz->f_mrjustdown && !thiz->f_mrjustup && thiz->f_mdisp == 0 && thiz->f_mscroll == 0;
 					}
 				}));
 
