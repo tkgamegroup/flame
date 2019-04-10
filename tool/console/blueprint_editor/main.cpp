@@ -367,7 +367,6 @@ int main(int argc, char **args)
 			else
 			{
 				printf("  ok\nbrowser working\n");
-				s->send(2, "a");
 			}
 		}
 		else

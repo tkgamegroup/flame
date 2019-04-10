@@ -74,9 +74,7 @@ namespace flame
 			return nullptr;
 		}
 
-		address = {};
-		int address_length = sizeof(address);
-		auto fd_c = accept(fd_s, (sockaddr*)& address, &address_length);
+		auto fd_c = accept(fd_s, nullptr, nullptr);
 
 		auto s = new OneClientServerWebSocketPrivate;
 		s->fd_s = fd_s;
@@ -93,11 +91,46 @@ namespace flame
 					auto ret = recv(thiz->fd_c, buf, 1024, 0);
 					if (ret <= 0)
 						return;
-					buf[ret] = 0;
 
-					std::string req(buf);
+					if (ret > 3 &&
+						buf[0] == 'G' &&
+						buf[1] == 'E' &&
+						buf[2] == 'T')
+					{
+						buf[ret] = 0;
 
-					thiz->message_callback(ret, buf);
+						std::regex reg_key(R"(Sec-WebSocket-Key: ([\w\+\/]+))");
+
+						std::string req(buf);
+						auto lines = string_split(req, '\n');
+						for (auto& l : lines)
+						{
+							std::smatch match;
+							if (std::regex_search(l, match, reg_key))
+							{
+								std::string key = match[1];
+								SHA1 sha1;
+								sha1.update(key);
+								sha1.update("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+								key = base64_encode(sha1.final());
+
+								char reply[1024], time_str[100];
+								auto time = std::time(nullptr);
+								std::strftime(time_str, 100, "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
+								sprintf(reply, "HTTP/1.1 101 Switching Protocols\n"
+												"Content-Length: 0\n"
+												"Upgrade: websocket\n"
+												"Sec-Websocket-Accept: %s\n"
+												"Server: flame\n"
+												"Connection: Upgrade\n"
+												"Data: %s\n"
+												"\n", key.c_str(), time_str);
+								thiz->send(strlen(reply), reply);
+							}
+						}
+					}
+					else
+						thiz->message_callback(ret, buf);
 				}
 			}, sizeof(void*), & thiz));
 
