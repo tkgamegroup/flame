@@ -22,6 +22,7 @@
 
 #include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
+#include <flame/network/network.h>
 
 using namespace flame;
 
@@ -47,6 +48,8 @@ int main(int argc, char **args)
 	else
 		printf("\"unnamed\":\n");
 
+	network_init();
+
 	while (true)
 	{
 		char command_line[260];
@@ -70,7 +73,7 @@ int main(int argc, char **args)
 				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
 				"  tobin - generate code to a dll\n"
-				"  gui-html - use the power of html to show and edit\n"
+				"  gui-browser - use the power of browser to show and edit\n"
 			);
 		}
 		else if (s_command_line == "show")
@@ -352,13 +355,19 @@ int main(int argc, char **args)
 
 			printf("code generated\n");
 		}
-		else if (s_command_line == "gui-html")
+		else if (s_command_line == "gui-browser")
 		{
-			exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
-			printf("waiting for html on port 5566 ...");
-			while (true)
+			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
+			printf("waiting for browser on port 5566 ...");
+			auto s = OneClientServerWebSocket::create(5566, 100, Function<void(void*, int, void*)>([](void* c, int len, void* data) {
+					;
+				}, 0, nullptr));
+			if (!s)
+				printf("  timeout\n");
+			else
 			{
-				
+				printf("  ok\nbrowser working\n");
+				s->send(2, "a");
 			}
 		}
 		else

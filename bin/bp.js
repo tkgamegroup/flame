@@ -1,4 +1,3 @@
-
 window.onload = function(){
     // base canvas
     var svg = document.getElementById("svg");
@@ -257,7 +256,21 @@ window.onload = function(){
         // update.
         this.updatePosition();
     };
-    
+	
+	window.sock_s = new WebSocket("ws://localhost:5566/");
+    window.sock_s.onopen = function(a){
+        console.log("1");
+    };
+    window.sock_s.onmessage = function(a){
+        console.log("2");
+    };
+    window.sock_s.onclose = function(a){
+        console.log("3");
+    };
+    window.sock_s.onerror = function(a){
+        console.log("4");
+    };
+
     // Test nodes.
     var node01 = new Node("Generate Cube");
     node01.addInput("Name");
