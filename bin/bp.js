@@ -260,8 +260,11 @@ window.onload = function(){
 	window.sock_s = new WebSocket("ws://localhost:5566/");
     window.sock_s.onopen = function(a){
         console.log("1");
+        window.sock_s.send('fuck you');
     };
     window.sock_s.onmessage = function(a){
+        var reader = new FileReader();
+        reader.readAsArrayBuffer();
         console.log("2");
     };
     window.sock_s.onclose = function(a){
