@@ -22,9 +22,7 @@
 
 #include <flame/foundation/serialize.h>
 
-#include <rapidxml.hpp>
-#include <rapidxml_utils.hpp>
-#include <rapidxml_print.hpp>
+#include <pugixml.hpp>
 
 #include <Windows.h>
 #include <dia2.h>
@@ -1442,32 +1440,27 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->find_node(name);
 	}
 
-	void xml_save(rapidxml::xml_document<> &doc, rapidxml::xml_node<> *dst, SerializableNodePrivate *src)
+	void xml_save(pugi::xml_node dst, SerializableNodePrivate *src)
 	{
 		for (auto &sa : src->attrs)
-			dst->append_attribute(doc.allocate_attribute(sa->name.c_str(), sa->value.c_str()));
+			dst.append_attribute(sa->name.c_str()).set_value(sa->value.c_str());
 
 		for (auto &sn : src->nodes)
 		{
-			auto n = doc.allocate_node(sn->xml_CDATA ? rapidxml::node_cdata : rapidxml::node_element, sn->name.c_str(), sn->value.c_str());
-			dst->append_node(n);
-			xml_save(doc, n, sn.get());
+			auto n = sn->xml_CDATA ? dst.append_child(pugi::node_pcdata) : dst.append_child(sn->name.c_str());
+			n.set_value(sn->value.c_str());
+			xml_save(n, sn.get());
 		}
 	}
 
 	void SerializableNode::save_xml(const std::wstring &filename) const
 	{
-		rapidxml::xml_document<> xml_doc;
-		auto rn = xml_doc.allocate_node(rapidxml::node_element, name().c_str());
-		xml_doc.append_node(rn);
+		pugi::xml_document doc;
+		auto rn = doc.append_child(name().c_str());
 
-		xml_save(xml_doc, rn, (SerializableNodePrivate*)this);
+		xml_save(rn, (SerializableNodePrivate*)this);
 
-		std::string str;
-		rapidxml::print(std::back_inserter(str), xml_doc);
-
-		std::ofstream file(filename);
-		file.write(str.data(), str.size());
+		doc.save_file(filename.c_str());
 	}
 
 	static void save_file_string(std::ofstream &dst, const std::string &src)
@@ -1529,17 +1522,17 @@ namespace flame
 		return n;
 	}
 
-	void xml_load(rapidxml::xml_node<> *src, SerializableNode *dst)
+	void xml_load(pugi::xml_node src, SerializableNode *dst)
 	{
-		for (auto a = src->first_attribute(); a; a = a->next_attribute())
-			dst->new_attr(a->name(), a->value());
+		for (auto a : src.attributes())
+			dst->new_attr(a.name(), a.value());
 
-		dst->set_value(src->value());
+		dst->set_value(src.value());
 
-		for (auto n = src->first_node(); n; n = n->next_sibling())
+		for (auto n : src.children())
 		{
-			auto node = dst->new_node(n->name());
-			if (n->type() == rapidxml::node_cdata)
+			auto node = dst->new_node(n.name());
+			if (n.type() == pugi::node_cdata)
 				node->set_xml_CDATA(true);
 			xml_load(n, node);
 		}
@@ -1580,17 +1573,15 @@ namespace flame
 
 	SerializableNode *SerializableNode::create_from_xml(const std::wstring &filename)
 	{
-		auto content = get_file_content(filename);
-		if (!content.first)
+		pugi::xml_document doc;
+		auto result = doc.load_file(filename.c_str());
+		if (!result)
 			return nullptr;
 
 		auto n = new SerializableNodePrivate;
 
-		rapidxml::xml_document<> xml_doc;
-		xml_doc.parse<0>(content.first.get());
-
-		auto rn = xml_doc.first_node();
-		n->name = rn->name();
+		auto rn = doc.first_child();
+		n->name = rn.name();
 		xml_load(rn, n);
 
 		return n;

@@ -3,7 +3,7 @@ A lightweight and powerful 3D Game Engine.
 
 # thanks to:
 
-- rapidxml    - for parsing and loading XML files (http://rapidxml.sourceforge.net/)
+- pugixml     - for parsing and loading XML files (https://github.com/zeux/pugixml)
 
 - STB         - for image loading/saving (https://github.com/nothings/stb)
   
@@ -24,7 +24,7 @@ A lightweight and powerful 3D Game Engine.
 
 - download & install git-lfs
 
-- download rapidxml
+- download & build pugixml
 
 - download STB
 
@@ -38,7 +38,7 @@ A lightweight and powerful 3D Game Engine.
   
 - cmake flame & configure
   
-- set path to rapidxml
+- set path to pugixml
 
 - set path to STB
 
