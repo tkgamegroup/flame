@@ -99,7 +99,7 @@ namespace flame
 					{
 						buf[ret] = 0;
 
-						std::regex reg_key(R"(Sec-WebSocket-Key: ([\w\+\/]+))");
+						std::regex reg_key(R"(Sec-WebSocket-Key: (.*))");
 
 						std::string req(buf);
 						auto lines = string_split(req, '\n');
@@ -110,21 +110,20 @@ namespace flame
 							{
 								std::string key = match[1];
 								SHA1 sha1;
-								sha1.update(key);
-								sha1.update("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-								key = base64_encode(sha1.final());
+								sha1.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+								key = base64_encode(sha1.final_bin());
 
 								char reply[1024], time_str[100];
 								auto time = std::time(nullptr);
 								std::strftime(time_str, 100, "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
-								sprintf(reply, "HTTP/1.1 101 Switching Protocols\n"
-												"Content-Length: 0\n"
-												"Upgrade: websocket\n"
-												"Sec-Websocket-Accept: %s\n"
-												"Server: flame\n"
-												"Connection: Upgrade\n"
-												"Data: %s\n"
-												"\n", key.c_str(), time_str);
+								sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
+												"Content-Length: 0\r\n"
+												"Upgrade: websocket\r\n"
+												"Sec-Websocket-Accept: %s\r\n"
+												"Server: flame\r\n"
+												"Connection: Upgrade\r\n"
+												"Data: %s\r\n"
+												"\r\n", key.c_str(), time_str);
 								thiz->send(strlen(reply), reply);
 							}
 						}

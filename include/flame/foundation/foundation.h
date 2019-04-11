@@ -1030,16 +1030,14 @@ namespace flame
 			}
 		}
 
-		inline std::string final()
+		inline void _final()
 		{
 			ulonglong total_bits = (transforms * BLOCK_BYTES + buffer.size()) * 8;
 
 			buffer += (char)0x80;
 			size_t orig_size = buffer.size();
 			while (buffer.size() < BLOCK_BYTES)
-			{
 				buffer += (char)0x00;
-			}
 
 			uint block[BLOCK_INTS];
 			buffer_to_block(buffer, block);
@@ -1048,17 +1046,39 @@ namespace flame
 			{
 				transform(digest, block, transforms);
 				for (size_t i = 0; i < BLOCK_INTS - 2; i++)
-				{
 					block[i] = 0;
-				}
 			}
 
 			block[BLOCK_INTS - 1] = (uint)total_bits;
 			block[BLOCK_INTS - 2] = (uint)(total_bits >> 32);
 			transform(digest, block, transforms);
+		}
+
+		inline std::string final_bin()
+		{
+			_final();
+
+			std::string result;
+			result.resize(sizeof(uint) * FLAME_ARRAYSIZE(digest));
+			auto dst = &result[0];
+			for (auto i = 0; i < FLAME_ARRAYSIZE(digest); i++)
+			{
+				for (auto j = 0; j < 4; j++)
+					dst[j] = ((char*)(&digest[i]))[4 - j - 1];
+				dst += 4;
+			}
+
+			reset();
+
+			return result;
+		}
+
+		inline std::string final_str()
+		{
+			_final();
 
 			std::ostringstream result;
-			for (size_t i = 0; i < sizeof(digest) / sizeof(digest[0]); i++)
+			for (auto i = 0; i < FLAME_ARRAYSIZE(digest); i++)
 			{
 				result << std::hex << std::setfill('0') << std::setw(8);
 				result << digest[i];
