@@ -72,7 +72,7 @@ namespace flame
 		int value;
 	};
 
-	const char *EnumItem::name() const
+	const char* EnumItem::name() const
 	{
 		return ((EnumItemPrivate*)this)->name.c_str();
 	}
@@ -96,7 +96,7 @@ namespace flame
 		}
 	};
 
-	const char *EnumInfo::name() const
+	const char* EnumInfo::name() const
 	{
 		return ((EnumInfoPrivate*)this)->name.c_str();
 	}
@@ -106,14 +106,14 @@ namespace flame
 		return ((EnumInfoPrivate*)this)->items.size();
 	}
 
-	EnumItem *EnumInfo::item(int idx) const
+	EnumItem* EnumInfo::item(int idx) const
 	{
 		return ((EnumInfoPrivate*)this)->items[idx].get();
 	}
 
-	int EnumInfo::find_item(const char *name) const
+	int EnumInfo::find_item(const char* name) const
 	{
-		auto &items = ((EnumInfoPrivate*)this)->items;
+		auto& items = ((EnumInfoPrivate*)this)->items;
 		for (auto i = 0; i < items.size(); i++)
 		{
 			if (items[i]->name == name)
@@ -124,7 +124,7 @@ namespace flame
 
 	int EnumInfo::find_item(int value) const
 	{
-		auto &items = ((EnumInfoPrivate*)this)->items;
+		auto& items = ((EnumInfoPrivate*)this)->items;
 		for (auto i = 0; i < items.size(); i++)
 		{
 			if (items[i]->value == value)
@@ -155,7 +155,7 @@ namespace flame
 			default_value.fmt[3] = 0;
 		}
 
-		inline void get(const void *src, bool is_obj, int item_index, CommonData *dst) const
+		inline void get(const void* src, bool is_obj, int item_index, CommonData* dst) const
 		{
 			if (is_obj)
 				src = (char*)src + offset;
@@ -167,7 +167,7 @@ namespace flame
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
-					auto &arr = *(Array<int>*)src;
+					auto& arr = *(Array<int>*)src;
 					src = arr.v + size * item_index;
 				}
 			case TypeTagVariable:
@@ -176,7 +176,7 @@ namespace flame
 			case TypeTagArrayOfPointer:
 				if (item_index != -1)
 				{
-					auto &arr = *(Array<void*>*)src;
+					auto& arr = *(Array<void*>*)src;
 					src = arr.v + size * item_index;
 				}
 			case TypeTagPointer:
@@ -185,7 +185,7 @@ namespace flame
 			}
 		}
 
-		inline void set(const CommonData *src, void *dst, bool is_obj, int item_index) const
+		inline void set(const CommonData* src, void* dst, bool is_obj, int item_index) const
 		{
 			if (is_obj)
 				dst = (char*)dst + offset;
@@ -197,7 +197,7 @@ namespace flame
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
-					auto &arr = *(Array<int>*)dst;
+					auto& arr = *(Array<int>*)dst;
 					dst = arr.v + size * item_index;
 				}
 			case TypeTagVariable:
@@ -206,7 +206,7 @@ namespace flame
 			case TypeTagArrayOfPointer:
 				if (item_index != -1)
 				{
-					auto &arr = *(Array<void*>*)dst;
+					auto& arr = *(Array<void*>*)dst;
 					dst = arr.v + size * item_index;
 				}
 			case TypeTagPointer:
@@ -215,7 +215,7 @@ namespace flame
 			}
 		}
 
-		inline void array_resize(int _size, void *dst, bool is_obj) const
+		inline void array_resize(int _size, void* dst, bool is_obj) const
 		{
 			if (type.tag != TypeTagArrayOfVariable && type.tag != TypeTagArrayOfPointer)
 				return;
@@ -226,7 +226,7 @@ namespace flame
 			(*(Array<int>*)dst).resize(_size, size);
 		}
 
-		inline bool compare(void *src, void *dst) const
+		inline bool compare(void* src, void* dst) const
 		{
 			src = (char*)src + offset;
 			dst = (char*)dst + offset;
@@ -242,7 +242,7 @@ namespace flame
 			return false;
 		}
 
-		inline bool compare_to_default(void *src, bool is_obj) const
+		inline bool compare_to_default(void* src, bool is_obj) const
 		{
 			if (is_obj)
 				src = (char*)src + offset;
@@ -258,7 +258,7 @@ namespace flame
 			return false;
 		}
 
-		inline String serialize_value(const void *src, bool is_obj, int item_index, int precision) const
+		inline String serialize_value(const void* src, bool is_obj, int item_index, int precision) const
 		{
 			if (is_obj)
 				src = (char*)src + offset;
@@ -270,16 +270,16 @@ namespace flame
 				auto e = find_enum(type.name_hash);
 				return e->serialize_value(true, *(int*)src);
 			}
-				break;
+			break;
 			case TypeTagEnumMulti:
 				break;
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
-					auto &arr = *(Array<int>*)src;
+					auto& arr = *(Array<int>*)src;
 					src = arr.v + size * item_index;
 				}
-			case TypeTagVariable: 
+			case TypeTagVariable:
 				switch (type.name_hash)
 				{
 				case cH("bool"):
@@ -321,7 +321,7 @@ namespace flame
 			return "";
 		}
 
-		inline void unserialize_value(const std::string &str, void *dst, bool is_obj, int item_index) const
+		inline void unserialize_value(const std::string & str, void* dst, bool is_obj, int item_index) const
 		{
 			if (is_obj)
 				dst = (char*)dst + offset;
@@ -333,11 +333,11 @@ namespace flame
 				auto e = find_enum(type.name_hash);
 				*(int*)dst = e->find_item(str.c_str());
 			}
-				break;
+			break;
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
 				{
-					auto &arr = *(Array<int>*)dst;
+					auto& arr = *(Array<int>*)dst;
 					dst = arr.v + size * item_index;
 				}
 			case TypeTagVariable:
@@ -396,7 +396,7 @@ namespace flame
 		return &(((VariableInfoPrivate*)this)->type);
 	}
 
-	const char *VariableInfo::name() const
+	const char* VariableInfo::name() const
 	{
 		return ((VariableInfoPrivate*)this)->name.c_str();
 	}
@@ -411,47 +411,47 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->size;
 	}
 
-	const char *VariableInfo::attribute() const
+	const char* VariableInfo::attribute() const
 	{
 		return ((VariableInfoPrivate*)this)->attribute.c_str();
 	}
 
-	const CommonData &VariableInfo::default_value() const
+	const CommonData& VariableInfo::default_value() const
 	{
 		return ((VariableInfoPrivate*)this)->default_value;
 	}
 
-	void VariableInfo::get(const void *src, bool is_obj, int item_index, CommonData *dst) const
+	void VariableInfo::get(const void* src, bool is_obj, int item_index, CommonData* dst) const
 	{
 		((VariableInfoPrivate*)this)->get(src, is_obj, item_index, dst);
 	}
 
-	void VariableInfo::set(const CommonData *src, void *dst, bool is_obj, int item_index) const
+	void VariableInfo::set(const CommonData* src, void* dst, bool is_obj, int item_index) const
 	{
 		((VariableInfoPrivate*)this)->set(src, dst, is_obj, item_index);
 	}
 
-	void VariableInfo::array_resize(int size, void *dst, bool is_obj) const
+	void VariableInfo::array_resize(int size, void* dst, bool is_obj) const
 	{
 		((VariableInfoPrivate*)this)->array_resize(size, dst, is_obj);
 	}
 
-	bool VariableInfo::compare(void *src, void *dst) const
+	bool VariableInfo::compare(void* src, void* dst) const
 	{
 		return ((VariableInfoPrivate*)this)->compare(src, dst);
 	}
 
-	bool VariableInfo::compare_to_default(void *src, bool is_obj) const
+	bool VariableInfo::compare_to_default(void* src, bool is_obj) const
 	{
 		return ((VariableInfoPrivate*)this)->compare_to_default(src, is_obj);
 	}
 
-	String VariableInfo::serialize_value(const void *src, bool is_obj, int item_index, int precision) const
+	String VariableInfo::serialize_value(const void* src, bool is_obj, int item_index, int precision) const
 	{
 		return ((VariableInfoPrivate*)this)->serialize_value(src, is_obj, item_index, precision);
 	}
 
-	void VariableInfo::unserialize_value(const std::string &str, void *dst, bool is_obj, int item_index) const
+	void VariableInfo::unserialize_value(const std::string& str, void* dst, bool is_obj, int item_index) const
 	{
 		return ((VariableInfoPrivate*)this)->unserialize_value(str, dst, is_obj, item_index);
 	}
@@ -512,7 +512,7 @@ namespace flame
 			func_find_pos = 0;
 		}
 
-		inline int find_item_i(const char *name)
+		inline int find_item_i(const char* name)
 		{
 			if (items.empty())
 				return -1;
@@ -563,7 +563,7 @@ namespace flame
 		}
 	};
 
-	const char *UdtInfo::name() const
+	const char* UdtInfo::name() const
 	{
 		return ((UdtInfoPrivate*)this)->name.c_str();
 	}
@@ -583,12 +583,12 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->items.size();
 	}
 
-	VariableInfo *UdtInfo::item(int idx) const
+	VariableInfo* UdtInfo::item(int idx) const
 	{
 		return ((UdtInfoPrivate*)this)->items[idx].get();
 	}
 
-	int UdtInfo::find_item_i(const char *name) const
+	int UdtInfo::find_item_i(const char* name) const
 	{
 		return ((UdtInfoPrivate*)this)->find_item_i(name);
 	}
@@ -598,7 +598,7 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->functions.size();
 	}
 
-	FunctionInfo* UdtInfo::function(int idx) const 
+	FunctionInfo* UdtInfo::function(int idx) const
 	{
 		return ((UdtInfoPrivate*)this)->functions[idx].get();
 	}
@@ -625,7 +625,7 @@ namespace flame
 		return ret;
 	}
 
-	EnumInfo *find_enum(unsigned int name_hash)
+	EnumInfo* find_enum(unsigned int name_hash)
 	{
 		auto it = enums.find(name_hash);
 		return it == enums.end() ? nullptr : it->second.get();
@@ -663,7 +663,7 @@ namespace flame
 		return ret;
 	}
 
-	UdtInfo *find_udt(unsigned int name_hash)
+	UdtInfo* find_udt(unsigned int name_hash)
 	{
 		auto it = udts.find(name_hash);
 		return it == udts.end() ? nullptr : it->second.get();
@@ -675,27 +675,27 @@ namespace flame
 		std::string value;
 	};
 
-	const std::string &SerializableAttribute::name() const
+	const std::string& SerializableAttribute::name() const
 	{
 		return ((SerializableAttributePrivate*)this)->name;
 	}
 
-	const std::string &SerializableAttribute::value() const
+	const std::string& SerializableAttribute::value() const
 	{
 		return ((SerializableAttributePrivate*)this)->value;
 	}
 
-	void SerializableAttribute::set_name(const std::string &name)
+	void SerializableAttribute::set_name(const std::string & name)
 	{
 		((SerializableAttributePrivate*)this)->name = name;
 	}
 
-	void SerializableAttribute::set_value(const std::string &value)
+	void SerializableAttribute::set_value(const std::string & value)
 	{
 		((SerializableAttributePrivate*)this)->value = value;
 	}
 
-	static int find_obj_pos(const std::vector<std::pair<void*, uint>> &table, void *obj)
+	static int find_obj_pos(const std::vector<std::pair<void*, uint>> & table, void* obj)
 	{
 		for (auto i = 0; i < table.size(); i++)
 		{
@@ -706,7 +706,7 @@ namespace flame
 		return -1;
 	}
 
-	static void serialize_commondata(const std::vector<std::pair<void*, uint>> &table, int precision, std::string &ty_str, std::string &vl_str, CommonData *d)
+	static void serialize_commondata(const std::vector<std::pair<void*, uint>> & table, int precision, std::string & ty_str, std::string & vl_str, CommonData * d)
 	{
 		if (typefmt_compare(d->fmt, "f"))
 		{
@@ -777,7 +777,7 @@ namespace flame
 			assert(0);
 	}
 
-	static void *find_obj(const std::vector<std::pair<void*, uint>> &table, uint id)
+	static void* find_obj(const std::vector<std::pair<void*, uint>> & table, uint id)
 	{
 		for (auto i = 0; i < table.size(); i++)
 		{
@@ -788,7 +788,7 @@ namespace flame
 		return nullptr;
 	}
 
-	static void unserialize_commondata(const std::vector<std::pair<void*, uint>> &table, const std::string &ty_str, const std::string &vl_str, CommonData *d)
+	static void unserialize_commondata(const std::vector<std::pair<void*, uint>> & table, const std::string & ty_str, const std::string & vl_str, CommonData * d)
 	{
 		if (ty_str == "f")
 		{
@@ -859,9 +859,9 @@ namespace flame
 			assert(0);
 	}
 
-	static bool has_id(const std::vector<std::pair<void*, uint>> &obj_table, uint id)
+	static bool has_id(const std::vector<std::pair<void*, uint>> & obj_table, uint id)
 	{
-		for (auto &o : obj_table)
+		for (auto& o : obj_table)
 		{
 			if (o.second == id)
 				return true;
@@ -869,7 +869,7 @@ namespace flame
 		return false;
 	}
 
-	static uint generate_id(const std::vector<std::pair<void*, uint>> &obj_table)
+	static uint generate_id(const std::vector<std::pair<void*, uint>> & obj_table)
 	{
 		while (true)
 		{
@@ -882,7 +882,7 @@ namespace flame
 
 	struct SerializableNodePrivate;
 
-	static SerializableNodePrivate *create_obj_node(std::vector<std::pair<void*, uint>> &table, void *obj)
+	static SerializableNodePrivate* create_obj_node(std::vector<std::pair<void*, uint>> & table, void* obj)
 	{
 		auto n = SerializableNode::create("obj");
 		auto id = generate_id(table);
@@ -911,12 +911,12 @@ namespace flame
 			xml_CDATA = false;
 		}
 
-		inline SerializableAttribute *new_attr(const std::string &name, const std::string &value)
+		inline SerializableAttribute* new_attr(const std::string& name, const std::string& value)
 		{
 			return insert_attr(-1, name, value);
 		}
 
-		inline SerializableAttribute *insert_attr(int idx, const std::string &name, const std::string &value)
+		inline SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value)
 		{
 			if (idx == -1)
 				idx = attrs.size();
@@ -932,7 +932,7 @@ namespace flame
 			attrs.erase(attrs.begin() + idx);
 		}
 
-		inline void remove_attr(SerializableAttribute *a)
+		inline void remove_attr(SerializableAttribute * a)
 		{
 			for (auto it = attrs.begin(); it != attrs.end(); it++)
 			{
@@ -949,7 +949,7 @@ namespace flame
 			attrs.clear();
 		}
 
-		inline SerializableAttribute *find_attr(const std::string &name)
+		inline SerializableAttribute* find_attr(const std::string & name)
 		{
 			if (attrs.empty())
 				return nullptr;
@@ -974,17 +974,17 @@ namespace flame
 			return nullptr;
 		}
 
-		inline void add_node(SerializableNode *n)
+		inline void add_node(SerializableNode * n)
 		{
 			nodes.emplace_back((SerializableNodePrivate*)n);
 		}
 
-		inline SerializableNode *new_node(const std::string &name)
+		inline SerializableNode* new_node(const std::string & name)
 		{
 			return insert_node(-1, name);
 		}
 
-		inline SerializableNode *insert_node(int idx, const std::string &name)
+		inline SerializableNode* insert_node(int idx, const std::string & name)
 		{
 			if (idx == -1)
 				idx = nodes.size();
@@ -999,7 +999,7 @@ namespace flame
 			nodes.erase(nodes.begin() + idx);
 		}
 
-		inline void remove_node(SerializableNode *n)
+		inline void remove_node(SerializableNode * n)
 		{
 			for (auto it = nodes.begin(); it != nodes.end(); it++)
 			{
@@ -1016,7 +1016,7 @@ namespace flame
 			nodes.clear();
 		}
 
-		inline SerializableNode *find_node(const std::string &name)
+		inline SerializableNode* find_node(const std::string & name)
 		{
 			if (nodes.empty())
 				return nullptr;
@@ -1041,7 +1041,7 @@ namespace flame
 			return nullptr;
 		}
 
-		void serialize_RE(UdtInfo *u, std::vector<std::pair<void*, uint>> &obj_table, void *src, int precision)
+		void serialize_RE(UdtInfo * u, std::vector<std::pair<void*, uint>> & obj_table, void* src, int precision)
 		{
 			for (auto i = 0; i < u->item_count(); i++)
 			{
@@ -1074,7 +1074,7 @@ namespace flame
 							n_it->new_attr("value", vl_str);
 						}
 					}
-						break;
+					break;
 					case cH("String"):
 					{
 						auto& arr = *(Array<String>*)((char*)src + item->offset());
@@ -1085,7 +1085,7 @@ namespace flame
 							n_it->new_attr("value", arr[i_i].v);
 						}
 					}
-						break;
+					break;
 					case cH("StringW"):
 					{
 						auto& arr = *(Array<StringW>*)((char*)src + item->offset());
@@ -1096,7 +1096,7 @@ namespace flame
 							n_it->new_attr("value", w2s(arr[i_i].v));
 						}
 					}
-						break;
+					break;
 					case cH("StringAndHash"):
 					{
 						auto& arr = *(Array<StringAndHash>*)((char*)src + item->offset());
@@ -1107,7 +1107,7 @@ namespace flame
 							n_it->new_attr("value", arr[i_i].v);
 						}
 					}
-						break;
+					break;
 					case cH("Function"):
 					{
 						auto& arr = *(Array<Function<void()>>*)((char*)src + item->offset());
@@ -1132,13 +1132,13 @@ namespace flame
 							//}
 						}
 					}
-						break;
+					break;
 					}
 				}
-					break;
+				break;
 				case TypeTagArrayOfPointer:
 				{
-					const auto &arr = *(Array<void*>*)((char*)src + item->offset());
+					const auto& arr = *(Array<void*>*)((char*)src + item->offset());
 
 					if (arr.size == 0)
 						break;
@@ -1159,7 +1159,7 @@ namespace flame
 						}
 					}
 				}
-					break;
+				break;
 				default:
 					if (!item->compare_to_default(src, true))
 					{
@@ -1172,7 +1172,7 @@ namespace flame
 			}
 		}
 
-		void unserialize_RE(UdtInfo* u, std::vector<std::pair<void*, uint>> &obj_table, void* obj, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)>& obj_generator)
+		void unserialize_RE(UdtInfo * u, std::vector<std::pair<void*, uint>> & obj_table, void* obj, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)> & obj_generator)
 		{
 			for (auto i = 0; i < node_count(); i++)
 			{
@@ -1201,7 +1201,7 @@ namespace flame
 								assert(0);
 						}
 					}
-						break;
+					break;
 					case cH("String"):
 					{
 						auto& arr = *(Array<String>*)((char*)obj + item->offset());
@@ -1217,7 +1217,7 @@ namespace flame
 								assert(0);
 						}
 					}
-						break;
+					break;
 					case cH("StringW"):
 					{
 						auto& arr = *(Array<StringW>*)((char*)obj + item->offset());
@@ -1233,7 +1233,7 @@ namespace flame
 								assert(0);
 						}
 					}
-						break;
+					break;
 					case cH("StringAndHash"):
 					{
 						auto& arr = *(Array<StringAndHash>*)((char*)obj + item->offset());
@@ -1249,7 +1249,7 @@ namespace flame
 								assert(0);
 						}
 					}
-						break;
+					break;
 					case cH("Function"):
 					{
 						auto& arr = *(Array<Function<void()>>*)((char*)obj + item->offset());
@@ -1287,13 +1287,13 @@ namespace flame
 							//	assert(0);
 						}
 					}
-						break;
+					break;
 					}
 				}
-					break;
+				break;
 				case TypeTagArrayOfPointer:
 				{
-					auto &arr = *(Array<void*>*)((char*)obj + item->offset());
+					auto& arr = *(Array<void*>*)((char*)obj + item->offset());
 					auto cnt = n_item->node_count();
 					arr.resize(cnt);
 
@@ -1317,7 +1317,7 @@ namespace flame
 						}
 					}
 				}
-					break;
+				break;
 				default:
 					item->unserialize_value(n_item->find_attr("value")->value(), obj, true, -1);
 				}
@@ -1325,12 +1325,12 @@ namespace flame
 		}
 	};
 
-	const std::string &SerializableNode::name() const
+	const std::string& SerializableNode::name() const
 	{
 		return ((SerializableNodePrivate*)this)->name;
 	}
 
-	const std::string &SerializableNode::value() const
+	const std::string& SerializableNode::value() const
 	{
 		return ((SerializableNodePrivate*)this)->value;
 	}
@@ -1340,12 +1340,12 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->xml_CDATA;
 	}
 
-	void SerializableNode::set_name(const std::string &name)
+	void SerializableNode::set_name(const std::string & name)
 	{
 		((SerializableNodePrivate*)this)->name = name;
 	}
 
-	void SerializableNode::set_value(const std::string &value)
+	void SerializableNode::set_value(const std::string & value)
 	{
 		((SerializableNodePrivate*)this)->value = value;
 	}
@@ -1355,12 +1355,12 @@ namespace flame
 		((SerializableNodePrivate*)this)->xml_CDATA = v;
 	}
 
-	SerializableAttribute *SerializableNode::new_attr(const std::string &name, const std::string &value)
+	SerializableAttribute* SerializableNode::new_attr(const std::string & name, const std::string & value)
 	{
 		return ((SerializableNodePrivate*)this)->new_attr(name, value);
 	}
 
-	SerializableAttribute *SerializableNode::insert_attr(int idx, const std::string &name, const std::string &value)
+	SerializableAttribute* SerializableNode::insert_attr(int idx, const std::string & name, const std::string & value)
 	{
 		return ((SerializableNodePrivate*)this)->insert_attr(idx, name, value);
 	}
@@ -1370,7 +1370,7 @@ namespace flame
 		((SerializableNodePrivate*)this)->remove_attr(idx);
 	}
 
-	void SerializableNode::remove_attr(SerializableAttribute *a)
+	void SerializableNode::remove_attr(SerializableAttribute * a)
 	{
 		((SerializableNodePrivate*)this)->remove_attr(a);
 	}
@@ -1385,27 +1385,27 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->attrs.size();
 	}
 
-	SerializableAttribute *SerializableNode::attr(int idx) const
+	SerializableAttribute* SerializableNode::attr(int idx) const
 	{
 		return ((SerializableNodePrivate*)this)->attrs[idx].get();
 	}
 
-	SerializableAttribute *SerializableNode::find_attr(const std::string &name)
+	SerializableAttribute* SerializableNode::find_attr(const std::string & name)
 	{
 		return ((SerializableNodePrivate*)this)->find_attr(name);
 	}
 
-	void SerializableNode::add_node(SerializableNode *n)
+	void SerializableNode::add_node(SerializableNode * n)
 	{
 		((SerializableNodePrivate*)this)->add_node(n);
 	}
 
-	SerializableNode *SerializableNode::new_node(const std::string &name)
+	SerializableNode* SerializableNode::new_node(const std::string & name)
 	{
 		return ((SerializableNodePrivate*)this)->new_node(name);
 	}
 
-	SerializableNode *SerializableNode::insert_node(int idx, const std::string &name)
+	SerializableNode* SerializableNode::insert_node(int idx, const std::string & name)
 	{
 		return ((SerializableNodePrivate*)this)->insert_node(idx, name);
 	}
@@ -1415,7 +1415,7 @@ namespace flame
 		((SerializableNodePrivate*)this)->remove_node(idx);
 	}
 
-	void SerializableNode::remove_node(SerializableNode *n)
+	void SerializableNode::remove_node(SerializableNode * n)
 	{
 		((SerializableNodePrivate*)this)->remove_node(n);
 	}
@@ -1430,22 +1430,22 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->nodes.size();
 	}
 
-	SerializableNode *SerializableNode::node(int idx) const
+	SerializableNode* SerializableNode::node(int idx) const
 	{
 		return ((SerializableNodePrivate*)this)->nodes[idx].get();
 	}
 
-	SerializableNode *SerializableNode::find_node(const std::string &name)
+	SerializableNode* SerializableNode::find_node(const std::string & name)
 	{
 		return ((SerializableNodePrivate*)this)->find_node(name);
 	}
 
-	void xml_save(pugi::xml_node dst, SerializableNodePrivate *src)
+	void xml_save(pugi::xml_node dst, SerializableNodePrivate * src)
 	{
-		for (auto &sa : src->attrs)
+		for (auto& sa : src->attrs)
 			dst.append_attribute(sa->name.c_str()).set_value(sa->value.c_str());
 
-		for (auto &sn : src->nodes)
+		for (auto& sn : src->nodes)
 		{
 			auto n = sn->xml_CDATA ? dst.append_child(pugi::node_pcdata) : dst.append_child(sn->name.c_str());
 			n.set_value(sn->value.c_str());
@@ -1453,7 +1453,61 @@ namespace flame
 		}
 	}
 
-	void SerializableNode::save_xml(const std::wstring &filename) const
+	String SerializableNode::to_string_xml() const
+	{
+		pugi::xml_document doc;
+		auto rn = doc.append_child(name().c_str());
+
+		xml_save(rn, (SerializableNodePrivate*)this);
+
+		struct xml_string_writer : pugi::xml_writer
+		{
+			std::string result;
+
+			virtual void write(const void* data, size_t size)
+			{
+				result.append(static_cast<const char*>(data), size);
+			}
+		};
+		xml_string_writer writer;
+		doc.print(writer);
+
+		return writer.result;
+	}
+
+	void json_save(rapidjson::Document& doc, rapidjson::Value& dst, SerializableNodePrivate* src)
+	{
+		for (auto& sa : src->attrs)
+		{
+			dst.AddMember(rapidjson::Value(sa->name.c_str(), doc.GetAllocator()).Move(),
+				rapidjson::Value(sa->value.c_str(), doc.GetAllocator()).Move(),
+				doc.GetAllocator());
+		}
+
+		for (auto& sn : src->nodes)
+		{
+			rapidjson::Value n;
+			n.SetObject();
+			dst.AddMember(rapidjson::Value(sn->name.c_str(), doc.GetAllocator()).Move(), n, doc.GetAllocator());
+			json_save(doc, n, sn.get());
+		}
+	}
+
+	String SerializableNode::to_string_json() const
+	{
+		rapidjson::Document doc;
+		doc.SetObject();
+
+		json_save(doc, doc, (SerializableNodePrivate*)this);
+
+		rapidjson::StringBuffer buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+		doc.Accept(writer);
+
+ 		return buffer.GetString();
+	}
+
+	void SerializableNode::save_xml(const std::wstring & filename) const
 	{
 		pugi::xml_document doc;
 		auto rn = doc.append_child(name().c_str());
@@ -1463,44 +1517,14 @@ namespace flame
 		doc.save_file(filename.c_str());
 	}
 
-	static void save_file_string(std::ofstream &dst, const std::string &src)
+	static void save_file_string(std::ofstream & dst, const std::string & src)
 	{
 		int len = src.size();
-		dst.write((char*)&len, sizeof(int));
+		dst.write((char*)& len, sizeof(int));
 		dst.write((char*)src.c_str(), len);
 	}
 
-	void bin_save(std::ofstream &dst, SerializableNodePrivate *src)
-	{
-		int att_cnt = src->attrs.size();
-		dst.write((char*)&att_cnt, sizeof(int));
-		for (auto &a : src->attrs)
-		{
-			save_file_string(dst, a->name);
-			save_file_string(dst, a->value);
-		}
-
-		save_file_string(dst, src->value);
-
-		int node_cnt = src->nodes.size();
-		dst.write((char*)&node_cnt, sizeof(int));
-		for (auto &n : src->nodes)
-		{
-			save_file_string(dst, n->name);
-			bin_save(dst, n.get());
-		}
-	}
-
-	void SerializableNode::save_bin(const std::wstring &filename) const
-	{
-		std::ofstream file(filename);
-
-		save_file_string(file, name());
-
-		bin_save(file, (SerializableNodePrivate*)this);
-	}
-
-	void *SerializableNode::unserialize(UdtInfo *u, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)> &obj_generator)
+	void* SerializableNode::unserialize(UdtInfo * u, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)> & obj_generator)
 	{
 		assert(name() == "obj");
 
@@ -1514,7 +1538,7 @@ namespace flame
 		return obj;
 	}
 
-	SerializableNode *SerializableNode::create(const std::string &name)
+	SerializableNode* SerializableNode::create(const std::string & name)
 	{
 		auto n = new SerializableNodePrivate;
 		n->name = name;
@@ -1522,7 +1546,7 @@ namespace flame
 		return n;
 	}
 
-	void xml_load(pugi::xml_node src, SerializableNode *dst)
+	void xml_load(pugi::xml_node src, SerializableNode * dst)
 	{
 		for (auto a : src.attributes())
 			dst->new_attr(a.name(), a.value());
@@ -1538,40 +1562,23 @@ namespace flame
 		}
 	}
 
-	static std::string load_file_string(std::ifstream &src)
+	SerializableNode* SerializableNode::create_from_xml_string(const std::string & str)
 	{
-		int len;
-		src.read((char*)&len, sizeof(int));
-		std::string ret;
-		ret.resize(len);
-		src.read((char*)ret.c_str(), len);
-		return ret;
+		pugi::xml_document doc;
+		auto result = doc.load_string(str.c_str());
+		if (!result)
+			return nullptr;
+
+		auto n = new SerializableNodePrivate;
+
+		auto rn = doc.first_child();
+		n->name = rn.name();
+		xml_load(rn, n);
+
+		return n;
 	}
 
-	void bin_load(std::ifstream &src, SerializableNode *dst)
-	{
-		int att_cnt;
-		src.read((char*)&att_cnt, sizeof(int));
-		for (auto i = 0; i < att_cnt; i++)
-		{
-			auto name = load_file_string(src);
-			auto value = load_file_string(src);
-			dst->new_attr(name, value);
-		}
-
-		dst->set_value(load_file_string(src));
-
-		int node_cnt;
-		src.read((char*)&node_cnt, sizeof(int));
-		for (auto i = 0; i < node_cnt; i++)
-		{
-			auto name = load_file_string(src);
-			auto node = dst->new_node(name);
-			bin_load(src, node);
-		}
-	}
-
-	SerializableNode *SerializableNode::create_from_xml(const std::wstring &filename)
+	SerializableNode* SerializableNode::create_from_xml_file(const std::wstring & filename)
 	{
 		pugi::xml_document doc;
 		auto result = doc.load_file(filename.c_str());
@@ -1587,27 +1594,22 @@ namespace flame
 		return n;
 	}
 
-	SerializableNode *SerializableNode::create_from_bin(const std::wstring &filename)
+	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)
 	{
-		std::ifstream file(filename);
-		if (!file.good())
-			return nullptr;
-
-		auto n = new SerializableNodePrivate;
-
-		n->name = load_file_string(file);
-
-		bin_load(file, n);
-
-		return n;
+		return nullptr;
 	}
 
-	void SerializableNode::destroy(SerializableNode *n)
+	SerializableNode* SerializableNode::create_from_json_file(const std::wstring& filename)
+	{
+		return nullptr;
+	}
+
+	void SerializableNode::destroy(SerializableNode * n)
 	{
 		delete (SerializableNodePrivate*)n;
 	}
 
-	SerializableNode *SerializableNode::serialize(UdtInfo *u, void *src, int precision)
+	SerializableNode* SerializableNode::serialize(UdtInfo * u, void* src, int precision)
 	{
 		srand(time(0));
 
@@ -1660,7 +1662,7 @@ namespace flame
 		"char32_t"                          // btChar32 = 33
 	};
 
-	static std::string base_type_name(IDiaSymbol *s)
+	static std::string base_type_name(IDiaSymbol * s)
 	{
 		DWORD baseType;
 		s->get_baseType(&baseType);
@@ -1706,7 +1708,7 @@ namespace flame
 	static std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
 	static std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
-	std::string format_name(const wchar_t* in, std::string* attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
+	std::string format_name(const wchar_t* in, std::string * attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
 	{
 		if (pass_prefix)
 			* pass_prefix = false;
@@ -1725,7 +1727,7 @@ namespace flame
 		if (pos_$ != std::wstring::npos)
 		{
 			if (attribute)
-				*attribute = std::string(name.c_str() + pos_$ + 1);
+				* attribute = std::string(name.c_str() + pos_$ + 1);
 			name[pos_$] = 0;
 
 			if (pass_$)
@@ -1734,7 +1736,7 @@ namespace flame
 		return name;
 	}
 
-	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& attribute)
+	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol * symbol, const std::string & attribute)
 	{
 		DWORD dw;
 		wchar_t* pwname;
@@ -1751,13 +1753,13 @@ namespace flame
 			auto type_name = format_name(pwname);
 			info.name = type_name;
 		}
-			break;
+		break;
 		case SymTagBaseType:
 		{
 			info.tag = TypeTagVariable;
 			info.name = base_type_name(symbol);
 		}
-			break;
+		break;
 		case SymTagPointerType:
 		{
 			info.tag = TypeTagPointer;
@@ -1780,7 +1782,7 @@ namespace flame
 			}
 			point_type->Release();
 		}
-			break;
+		break;
 		case SymTagUDT:
 		{
 			symbol->get_name(&pwname);
@@ -1813,7 +1815,7 @@ namespace flame
 				info.tag = TypeTagVariable;
 			info.name = type_name;
 		}
-			break;
+		break;
 		case SymTagFunctionArgType:
 		{
 			IDiaSymbol* type;
@@ -1821,7 +1823,7 @@ namespace flame
 			info = symbol_to_typeinfo(type, "");
 			type->Release();
 		}
-			break;
+		break;
 		}
 
 		info.name_hash = H(info.name.c_str());
@@ -1829,13 +1831,13 @@ namespace flame
 		return info;
 	}
 
-	void serialize_typeinfo(const TypeInfoPrivate& src, SerializableNode* dst)
+	void serialize_typeinfo(const TypeInfoPrivate & src, SerializableNode * dst)
 	{
 		dst->new_attr("tag", get_type_tag_name(src.tag));
 		dst->new_attr("type", src.name);
 	}
 
-	TypeInfoPrivate unserialize_typeinfo(SerializableNode* src)
+	TypeInfoPrivate unserialize_typeinfo(SerializableNode * src)
 	{
 		TypeInfoPrivate info;
 
@@ -1855,7 +1857,7 @@ namespace flame
 		return info;
 	}
 
-	void symbol_to_function(IDiaSymbol* symbol, FunctionInfoPrivate* f, const std::string& attribute, CComPtr<IDiaSession>& session, std::map<DWORD, std::vector<std::string>>& source_files, const std::string& tab_str1, const std::string& tab_str2)
+	void symbol_to_function(IDiaSymbol * symbol, FunctionInfoPrivate * f, const std::string & attribute, CComPtr<IDiaSession> & session, std::map<DWORD, std::vector<std::string>> & source_files, const std::string & tab_str1, const std::string & tab_str2)
 	{
 		ULONG ul;
 		ULONGLONG ull;
@@ -1955,7 +1957,7 @@ namespace flame
 		function_type->Release();
 	}
 
-	void serialize_function(FunctionInfoPrivate* src, SerializableNode* dst)
+	void serialize_function(FunctionInfoPrivate * src, SerializableNode * dst)
 	{
 		dst->new_attr("name", src->name);
 		dst->new_attr("rva", to_string((uint)src->rva).v);
@@ -1974,7 +1976,7 @@ namespace flame
 			dst->new_node("code")->set_value(src->code);
 	}
 
-	void unserialize_function(SerializableNode* src, FunctionInfoPrivate* dst)
+	void unserialize_function(SerializableNode * src, FunctionInfoPrivate * dst)
 	{
 		dst->name = src->find_attr("name")->value();
 		dst->rva = (void*)stou1(src->find_attr("rva")->value().c_str());
@@ -1994,7 +1996,7 @@ namespace flame
 			dst->code = n_code->value();
 	}
 
-	void typeinfo_collect(const std::wstring& filename)
+	void typeinfo_collect(const std::wstring & filename)
 	{
 		CComPtr<IDiaDataSource> dia_source;
 		if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)& dia_source)))
@@ -2102,7 +2104,7 @@ namespace flame
 						auto name = format_name(pwname, &attribute, &pass_prefix, &pass_$);
 						if (pass_$)
 						{
-							IDiaSymbol * type;
+							IDiaSymbol* type;
 							member->get_type(&type);
 
 							auto i = new VariableInfoPrivate;
@@ -2222,9 +2224,9 @@ namespace flame
 		_functions->Release();
 	}
 
-	void typeinfo_load(const std::wstring &filename)
+	void typeinfo_load(const std::wstring & filename)
 	{
-		auto file = SerializableNode::create_from_xml(filename);
+		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file)
 			return;
 
@@ -2320,7 +2322,7 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void typeinfo_save(const std::wstring &filename)
+	void typeinfo_save(const std::wstring & filename)
 	{
 		auto file = SerializableNode::create("typeinfo");
 
@@ -2333,7 +2335,7 @@ namespace flame
 			auto n_enum = n_enums->new_node("enum");
 			n_enum->new_attr("name", e.second->name);
 
-			for (auto &i : e.second->items)
+			for (auto& i : e.second->items)
 			{
 				auto n_item = n_enum->new_node("item");
 				n_item->new_attr("name", i->name);

@@ -705,7 +705,7 @@ namespace flame
 	{
 		filename = _filename;
 
-		auto file = SerializableNode::create_from_xml(filename);
+		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file || file->name() != "BP")
 			return;
 

@@ -28,6 +28,10 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
+	auto json = SerializableNode::create("");
+
+	auto str = json->to_string_json();
+
 	std::wstring filename;
 
 	typeinfo_load(L"typeinfo.xml");
@@ -367,7 +371,18 @@ int main(int argc, char **args)
 			else
 			{
 				printf("  ok\nbrowser working\n");
-				s->send(5, "Hello");
+
+				auto json = SerializableNode::create("");
+				for (auto i = 0; i < bp->node_count(); i++)
+				{
+					auto n = bp->node(i);
+					auto o = json->new_node(n->id());
+					o->new_attr("color", "red");
+				}
+
+				auto str = json->to_string_json();
+
+				auto cut = 1;
 			}
 		}
 		else
