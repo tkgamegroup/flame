@@ -16,7 +16,6 @@ svg {
 .node {
     background-color: #2e2e2e;
     display: inline-block;
-    position: absolute;
 }
 
 .node:before {

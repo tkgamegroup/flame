@@ -37,7 +37,7 @@ namespace flame
 
 		inline bool send(int size, void* data)
 		{
-			uchar buf[1024];
+			uchar buf[1024 * 10];
 
 			auto p = buf;
 
@@ -111,7 +111,7 @@ namespace flame
 			return nullptr;
 		}
 
-		uchar buf[1024];
+		uchar buf[1024 * 10];
 		auto ret = recv(fd_c, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
 
 		auto p = buf;
@@ -139,7 +139,7 @@ namespace flame
 				sha1.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 				key = base64_encode(sha1.final_bin());
 
-				char reply[1024], time_str[100];
+				char reply[1024 * 10], time_str[100];
 				auto time = std::time(nullptr);
 				std::strftime(time_str, FLAME_ARRAYSIZE(time_str), "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
 				sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
@@ -166,7 +166,7 @@ namespace flame
 				auto thiz = *((OneClientServerWebSocketPrivate * *)c);
 				while (true)
 				{
-					uchar buf[1024];
+					uchar buf[1024 * 10];
 					auto ret = recv(thiz->fd_c, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
 					if (ret <= 0)
 						return;

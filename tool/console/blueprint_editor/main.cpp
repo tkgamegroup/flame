@@ -370,12 +370,13 @@ int main(int argc, char **args)
 				printf("  ok\nbrowser working\n");
 
 				auto json = SerializableNode::create("");
-				json->set_array(true);
+				auto n_nodes = json->new_node("nodes");
+				n_nodes->set_array(true);
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto src = bp->node(i);
 
-					auto n = json->new_node("");
+					auto n = n_nodes->new_node("");
 					n->new_attr("name", src->id());
 					auto n_inputs = n->new_node("inputs");
 					n_inputs->set_array(true);
@@ -395,6 +396,27 @@ int main(int argc, char **args)
 						n_output->new_attr("", output->variable_info()->name());
 					}
 					n_outputs->set_array(true);
+				}
+				auto n_links = json->new_node("links");
+				n_links->set_array(true);
+				for (auto i = 0; i < bp->node_count(); i++)
+				{
+					auto src = bp->node(i);
+
+					for (auto j = 0; j < src->input_count(); j++)
+					{
+						auto input = src->input(j);
+						for (auto k = 0; k < input->array_item_count(); k++)
+						{
+							auto item = input->array_item(k);
+							if (item->link())
+							{
+								auto l = n_links->new_node("");
+								l->new_attr("in", item->get_address().v);
+								l->new_attr("out", item->link()->get_address().v);
+							}
+						}
+					}
 				}
 
 				auto str = json->to_string_json();

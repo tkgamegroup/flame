@@ -806,17 +806,14 @@ namespace flame
 		{
 			for (auto &input : n->inputs)
 			{
-				auto idx = 0;
 				for (auto &i : input->items)
 				{
-					auto o = i->link;
-					if (o)
+					if (i->link)
 					{
 						auto n_link = file->new_node("link");
 						n_link->new_attr("in", i->get_address().v);
-						n_link->new_attr("out", o->get_address().v);
+						n_link->new_attr("out", i->link->get_address().v);
 					}
-					idx++;
 				}
 			}
 		}
