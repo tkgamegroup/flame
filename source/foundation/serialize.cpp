@@ -905,6 +905,7 @@ namespace flame
 		int node_find_pos;
 
 		bool cdata;
+		bool object;
 		bool array;
 
 		inline SerializableNodePrivate() :
@@ -912,6 +913,7 @@ namespace flame
 			attr_find_pos(0),
 			node_find_pos(0),
 			cdata(false),
+			object(true),
 			array(false)
 		{
 		}
@@ -1347,6 +1349,11 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->cdata;
 	}
 
+	bool SerializableNode::object() const
+	{
+		return ((SerializableNodePrivate*)this)->object;
+	}
+
 	bool SerializableNode::array() const
 	{
 		return ((SerializableNodePrivate*)this)->array;
@@ -1365,6 +1372,11 @@ namespace flame
 	void SerializableNode::set_cdata(bool v)
 	{
 		((SerializableNodePrivate*)this)->cdata = v;
+	}
+
+	void SerializableNode::set_object(bool v)
+	{
+		((SerializableNodePrivate*)this)->object = v;
 	}
 
 	void SerializableNode::set_array(bool v)
@@ -1496,8 +1508,13 @@ namespace flame
 	{
 		if (!src->array)
 		{
-			for (auto& sa : src->attrs)
-				dst[sa->name] = sa->value;
+			if (!src->object && !src->attrs.empty())
+				dst = src->attrs[0]->value;
+			else
+			{
+				for (auto& sa : src->attrs)
+					dst[sa->name] = sa->value;
+			}
 
 			for (auto& sn : src->nodes)
 				to_json(dst[sn->name], sn.get());

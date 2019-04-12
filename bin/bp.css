@@ -1,6 +1,6 @@
 body {
     background-color: #d4d4d4;
-    color: #111;
+    color: rgb(196, 190, 190);
     font-family: sans-serif;
 }
 
@@ -15,24 +15,17 @@ svg {
 
 .node {
     background-color: #2e2e2e;
-    border-radius: .75em;
     display: inline-block;
-    padding: 0.1em .7em .25em;
-    position: relative;
-    user-select: none;
+    position: absolute;
 }
 
-/*
 .node:before {
     content: attr(title) " ";
     display: block;
-    border-top-left-radius: .75em;
-    border-top-right-radius: .75em;
-    background-color: #135d9c;
-    padding: 0.1em 2em 0.4em;
-    margin: -.1em -0.7em 0.5em;
-    width: 1e;
+    background-color: #9c5113;
 }
+
+/*
 
 .output, .connection:after {
     position: absolute;

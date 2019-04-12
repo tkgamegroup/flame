@@ -372,7 +372,30 @@ int main(int argc, char **args)
 				auto json = SerializableNode::create("");
 				json->set_array(true);
 				for (auto i = 0; i < bp->node_count(); i++)
-					json->new_node("")->new_attr("name", bp->node(i)->id());
+				{
+					auto src = bp->node(i);
+
+					auto n = json->new_node("");
+					n->new_attr("name", src->id());
+					auto n_inputs = n->new_node("inputs");
+					n_inputs->set_array(true);
+					for (auto j = 0; j < src->input_count(); j++)
+					{
+						auto input = src->input(j);
+						auto n_input = n_inputs->new_node("");
+						n_input->set_object(false);
+						n_input->new_attr("", input->variable_info()->name());
+					}
+					auto n_outputs = n->new_node("outputs");
+					for (auto j = 0; j < src->output_count(); j++)
+					{
+						auto output = src->output(j);
+						auto n_output = n_outputs->new_node("");
+						n_output->set_object(false);
+						n_output->new_attr("", output->variable_info()->name());
+					}
+					n_outputs->set_array(true);
+				}
 
 				auto str = json->to_string_json();
 				//auto str = String("123");

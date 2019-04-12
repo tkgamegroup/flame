@@ -1,9 +1,34 @@
 window.onload = function(){
-    function Node(name) {
-        this.domElement = document.createElement("div");
-        this.domElement.classList.add("node");
-        this.domElement.setAttribute("title", name);
+    function Node(name, x, y) {
+        this.eMain = document.createElement("div");
+        this.eMain.classList.add("node");
+        this.eMain.setAttribute("title", name);
+
+        this.eMain.style.left = x + "px";
+        this.eMain.style.top = y + "px";
+
+        $(this.eMain).draggable();
+
+        this.eLeft = document.createElement("div");
+        this.eLeft.style.float = "left";
+        this.eLeft.style.marginRight = "15px";
+        this.eMain.appendChild(this.eLeft);
+
+        this.eRight = document.createElement("div");
+        this.eRight.style.float = "left";
+        this.eMain.appendChild(this.eRight);
     }
+
+    Node.prototype.AddInput = function (name) {
+        var e = document.createElement("div");
+        e.innerHTML = name;
+        this.eLeft.appendChild(e);
+    };
+    Node.prototype.AddOutput = function (name) {
+        var e = document.createElement("div");
+        e.innerHTML = name;
+        this.eRight.appendChild(e);
+    };
 
 	window.sock_s = new WebSocket("ws://localhost:5566/");
     window.sock_s.onopen = function(a){
@@ -14,14 +39,14 @@ window.onload = function(){
         var obj = eval('(' + a.data + ')');
         for (var i in obj)
         {
-            var n = new Node(obj[i]);
-            n.domElement.style.top = (i * 20) + "px";
-            n.domElement.style.left = (i * 100) + "px";
-
-            $(n.domElement).draggable();
-            n.domElement.style.position = "absolute";
+            var o = obj[i];
+            var n = new Node(o.name, i * 100, i * 20);
+            for (var j in o.inputs)
+                n.AddInput(o.inputs[j]);
+            for (var j in o.outputs)
+                n.AddOutput(o.outputs[j]);
         
-            document.body.appendChild(n.domElement);
+            document.body.appendChild(n.eMain);
         }
     };
     window.sock_s.onclose = function(a){
@@ -32,6 +57,15 @@ window.onload = function(){
     };
 
     var cut = 1;
+
+    var n1 = new Node("test", 100, 20);
+    n1.AddInput("a");
+    n1.AddInput("b");
+    n1.AddInput("c");
+    n1.AddOutput("1");
+    n1.AddOutput("2");
+    document.body.appendChild(n1.eMain);
+
     /*
     var svg = document.getElementById("svg");
     svg.ns = svg.namespaceURI;
