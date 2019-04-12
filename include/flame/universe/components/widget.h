@@ -26,7 +26,7 @@
 
 namespace flame
 {
-	struct cEvent$ : Component
+	struct cWidget$ : Component // requires: Element
 	{
 		bool blackhole;
 		bool want_key;

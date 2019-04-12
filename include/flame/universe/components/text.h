@@ -27,7 +27,7 @@
 
 namespace flame
 {
-	struct cText$ : Component // required: Element
+	struct cText$ : Component // requires: Element
 	{
 		int font_atlas_index;
 		Bvec4 color;
