@@ -107,6 +107,8 @@ namespace flame
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
+		Vec2 pos;
+
 		inline NodePrivate *add_node(const char *id, UdtInfo *udt);
 		inline void remove_node(NodePrivate *n);
 

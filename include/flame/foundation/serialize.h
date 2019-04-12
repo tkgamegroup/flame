@@ -688,11 +688,13 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
-		FLAME_FOUNDATION_EXPORTS bool is_xml_CDATA() const;
+		FLAME_FOUNDATION_EXPORTS bool cdata() const;
+		FLAME_FOUNDATION_EXPORTS bool array() const;
 
 		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
 		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
-		FLAME_FOUNDATION_EXPORTS void set_xml_CDATA(bool v);
+		FLAME_FOUNDATION_EXPORTS void set_cdata(bool v);
+		FLAME_FOUNDATION_EXPORTS void set_array(bool v);
 
 		FLAME_FOUNDATION_EXPORTS SerializableAttribute* new_attr(const std::string& name, const std::string& value);
 		FLAME_FOUNDATION_EXPORTS SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value);

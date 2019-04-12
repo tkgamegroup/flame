@@ -23,6 +23,7 @@
 #include <flame/foundation/serialize.h>
 
 #include <pugixml.hpp>
+#include <nlohmann/json.hpp>
 
 #include <Windows.h>
 #include <dia2.h>
@@ -898,17 +899,21 @@ namespace flame
 
 		std::vector<std::unique_ptr<SerializableAttributePrivate>> attrs;
 		std::vector<std::unique_ptr<SerializableNodePrivate>> nodes;
+		SerializableNodePrivate* parent;
 
 		int attr_find_pos;
 		int node_find_pos;
 
-		bool xml_CDATA;
+		bool cdata;
+		bool array;
 
-		inline SerializableNodePrivate()
+		inline SerializableNodePrivate() :
+			parent(nullptr),
+			attr_find_pos(0),
+			node_find_pos(0),
+			cdata(false),
+			array(false)
 		{
-			attr_find_pos = 0;
-			node_find_pos = 0;
-			xml_CDATA = false;
 		}
 
 		inline SerializableAttribute* new_attr(const std::string& name, const std::string& value)
@@ -974,8 +979,9 @@ namespace flame
 			return nullptr;
 		}
 
-		inline void add_node(SerializableNode * n)
+		inline void add_node(SerializableNodePrivate* n)
 		{
+			n->parent = this;
 			nodes.emplace_back((SerializableNodePrivate*)n);
 		}
 
@@ -990,6 +996,7 @@ namespace flame
 				idx = nodes.size();
 			auto n = new SerializableNodePrivate;
 			n->name = name;
+			n->parent = this;
 			nodes.emplace(nodes.begin() + idx, n);
 			return n;
 		}
@@ -1335,9 +1342,14 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->value;
 	}
 
-	bool SerializableNode::is_xml_CDATA() const
+	bool SerializableNode::cdata() const
 	{
-		return ((SerializableNodePrivate*)this)->xml_CDATA;
+		return ((SerializableNodePrivate*)this)->cdata;
+	}
+
+	bool SerializableNode::array() const
+	{
+		return ((SerializableNodePrivate*)this)->array;
 	}
 
 	void SerializableNode::set_name(const std::string & name)
@@ -1350,9 +1362,14 @@ namespace flame
 		((SerializableNodePrivate*)this)->value = value;
 	}
 
-	void SerializableNode::set_xml_CDATA(bool v)
+	void SerializableNode::set_cdata(bool v)
 	{
-		((SerializableNodePrivate*)this)->xml_CDATA = v;
+		((SerializableNodePrivate*)this)->cdata = v;
+	}
+
+	void SerializableNode::set_array(bool v)
+	{
+		((SerializableNodePrivate*)this)->array = v;
 	}
 
 	SerializableAttribute* SerializableNode::new_attr(const std::string & name, const std::string & value)
@@ -1397,7 +1414,7 @@ namespace flame
 
 	void SerializableNode::add_node(SerializableNode * n)
 	{
-		((SerializableNodePrivate*)this)->add_node(n);
+		((SerializableNodePrivate*)this)->add_node((SerializableNodePrivate*)n);
 	}
 
 	SerializableNode* SerializableNode::new_node(const std::string & name)
@@ -1440,16 +1457,16 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->find_node(name);
 	}
 
-	void xml_save(pugi::xml_node dst, SerializableNodePrivate * src)
+	void to_xml(pugi::xml_node dst, SerializableNodePrivate * src)
 	{
 		for (auto& sa : src->attrs)
 			dst.append_attribute(sa->name.c_str()).set_value(sa->value.c_str());
 
 		for (auto& sn : src->nodes)
 		{
-			auto n = sn->xml_CDATA ? dst.append_child(pugi::node_pcdata) : dst.append_child(sn->name.c_str());
+			auto n = sn->cdata ? dst.append_child(pugi::node_pcdata) : dst.append_child(sn->name.c_str());
 			n.set_value(sn->value.c_str());
-			xml_save(n, sn.get());
+			to_xml(n, sn.get());
 		}
 	}
 
@@ -1458,7 +1475,7 @@ namespace flame
 		pugi::xml_document doc;
 		auto rn = doc.append_child(name().c_str());
 
-		xml_save(rn, (SerializableNodePrivate*)this);
+		to_xml(rn, (SerializableNodePrivate*)this);
 
 		struct xml_string_writer : pugi::xml_writer
 		{
@@ -1475,36 +1492,30 @@ namespace flame
 		return writer.result;
 	}
 
-	void json_save(rapidjson::Document& doc, rapidjson::Value& dst, SerializableNodePrivate* src)
+	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
 	{
-		for (auto& sa : src->attrs)
+		if (!src->array)
 		{
-			dst.AddMember(rapidjson::Value(sa->name.c_str(), doc.GetAllocator()).Move(),
-				rapidjson::Value(sa->value.c_str(), doc.GetAllocator()).Move(),
-				doc.GetAllocator());
-		}
+			for (auto& sa : src->attrs)
+				dst[sa->name] = sa->value;
 
-		for (auto& sn : src->nodes)
+			for (auto& sn : src->nodes)
+				to_json(dst[sn->name], sn.get());
+		}
+		else
 		{
-			rapidjson::Value n;
-			n.SetObject();
-			dst.AddMember(rapidjson::Value(sn->name.c_str(), doc.GetAllocator()).Move(), n, doc.GetAllocator());
-			json_save(doc, n, sn.get());
+			for (auto i = 0; i < src->nodes.size(); i++)
+				to_json(dst[i], src->nodes[i].get());
 		}
 	}
 
 	String SerializableNode::to_string_json() const
 	{
-		rapidjson::Document doc;
-		doc.SetObject();
+		nlohmann::json doc;
 
-		json_save(doc, doc, (SerializableNodePrivate*)this);
+		to_json(doc, (SerializableNodePrivate*)this);
 
-		rapidjson::StringBuffer buffer;
-		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-		doc.Accept(writer);
-
- 		return buffer.GetString();
+ 		return doc.dump();
 	}
 
 	void SerializableNode::save_xml(const std::wstring & filename) const
@@ -1512,7 +1523,7 @@ namespace flame
 		pugi::xml_document doc;
 		auto rn = doc.append_child(name().c_str());
 
-		xml_save(rn, (SerializableNodePrivate*)this);
+		to_xml(rn, (SerializableNodePrivate*)this);
 
 		doc.save_file(filename.c_str());
 	}
@@ -1546,7 +1557,7 @@ namespace flame
 		return n;
 	}
 
-	void xml_load(pugi::xml_node src, SerializableNode * dst)
+	void from_xml(pugi::xml_node src, SerializableNode * dst)
 	{
 		for (auto a : src.attributes())
 			dst->new_attr(a.name(), a.value());
@@ -1557,8 +1568,8 @@ namespace flame
 		{
 			auto node = dst->new_node(n.name());
 			if (n.type() == pugi::node_cdata)
-				node->set_xml_CDATA(true);
-			xml_load(n, node);
+				node->set_cdata(true);
+			from_xml(n, node);
 		}
 	}
 
@@ -1573,7 +1584,7 @@ namespace flame
 
 		auto rn = doc.first_child();
 		n->name = rn.name();
-		xml_load(rn, n);
+		from_xml(rn, n);
 
 		return n;
 	}
@@ -1589,7 +1600,7 @@ namespace flame
 
 		auto rn = doc.first_child();
 		n->name = rn.name();
-		xml_load(rn, n);
+		from_xml(rn, n);
 
 		return n;
 	}

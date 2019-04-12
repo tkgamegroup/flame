@@ -51,6 +51,7 @@ endif()
 
 set(VS_PATH "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community" CACHE PATH "VisualStudio Path")
 set(PUGIXML_PATH "" CACHE PATH "Pugi XML Path")
+set(NLOHMANNJSON_PATH "" CACHE PATH "Nlohmann JSON Path")
 set(STB_PATH "" CACHE PATH "STB Path")
 set(FREETYPE_PATH "" CACHE PATH "FreeType Path")
 set(SPRIV_CROSS_PATH "" CACHE PATH "SPIRV-Cross Path")

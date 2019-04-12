@@ -1,5 +1,38 @@
 window.onload = function(){
-    // base canvas
+    function Node(name) {
+        this.domElement = document.createElement("div");
+        this.domElement.classList.add("node");
+        this.domElement.setAttribute("title", name);
+    }
+
+	window.sock_s = new WebSocket("ws://localhost:5566/");
+    window.sock_s.onopen = function(a){
+        console.log("1");
+        window.sock_s.send('fuck you');
+    };
+    window.sock_s.onmessage = function(a){
+        var obj = eval('(' + a.data + ')');
+        for (var i in obj)
+        {
+            var n = new Node(obj[i]);
+            n.domElement.style.top = (i * 20) + "px";
+            n.domElement.style.left = (i * 100) + "px";
+
+            $(n.domElement).draggable();
+            n.domElement.style.position = "absolute";
+        
+            document.body.appendChild(n.domElement);
+        }
+    };
+    window.sock_s.onclose = function(a){
+        console.log("3");
+    };
+    window.sock_s.onerror = function(a){
+        console.log("4");
+    };
+
+    var cut = 1;
+    /*
     var svg = document.getElementById("svg");
     svg.ns = svg.namespaceURI;
     
@@ -256,24 +289,8 @@ window.onload = function(){
         // update.
         this.updatePosition();
     };
-	
-	window.sock_s = new WebSocket("ws://localhost:5566/");
-    window.sock_s.onopen = function(a){
-        console.log("1");
-        window.sock_s.send('fuck you');
-    };
-    window.sock_s.onmessage = function(a){
-        var reader = new FileReader();
-        reader.readAsArrayBuffer();
-        console.log("2");
-    };
-    window.sock_s.onclose = function(a){
-        console.log("3");
-    };
-    window.sock_s.onerror = function(a){
-        console.log("4");
-    };
 
+    /*
     // Test nodes.
     var node01 = new Node("Generate Cube");
     node01.addInput("Name");
@@ -300,5 +317,6 @@ window.onload = function(){
     node01.initUI();
     node02.initUI();
     node03.initUI();
+    */
 };
 

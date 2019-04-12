@@ -28,10 +28,6 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	auto json = SerializableNode::create("");
-
-	auto str = json->to_string_json();
-
 	std::wstring filename;
 
 	typeinfo_load(L"typeinfo.xml");
@@ -363,7 +359,8 @@ int main(int argc, char **args)
 		{
 			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
 			printf("waiting for browser on port 5566 ...");
-			auto s = OneClientServerWebSocket::create(5566, 100, Function<void(void*, int, void*)>([](void* c, int len, void* data) {
+			auto s = OneClientServerWebSocket::create(5566, 100, Function<void(void*, int, void*)>(
+				[](void* c, int len, void* data) {
 					;
 				}, 0, nullptr));
 			if (!s)
@@ -373,16 +370,13 @@ int main(int argc, char **args)
 				printf("  ok\nbrowser working\n");
 
 				auto json = SerializableNode::create("");
+				json->set_array(true);
 				for (auto i = 0; i < bp->node_count(); i++)
-				{
-					auto n = bp->node(i);
-					auto o = json->new_node(n->id());
-					o->new_attr("color", "red");
-				}
+					json->new_node("")->new_attr("name", bp->node(i)->id());
 
-				auto str = json->to_string_json();
-
-				auto cut = 1;
+				//auto str = json->to_string_json();
+				auto str = String("123");
+				s->send(str.size, str.v);
 			}
 		}
 		else

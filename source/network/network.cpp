@@ -41,14 +41,14 @@ namespace flame
 
 			auto p = buf;
 
-			*p++ = 130;
+			*p++ = 129;
 			if (size <= 125)
-				* p++ = size;
+				*p++ = size;
 			else if (size <= 65535)
 			{
 				*p++ = 126;
-				*(ushort*)p = size;
-				p += sizeof(ushort);
+				*p++ = size & 0xff;
+				*p++ = size >> 8;
 			}
 			else
 			{
@@ -59,7 +59,7 @@ namespace flame
 
 			memcpy(p, data, size);
 
-			auto res = ::send(fd_c, (char*)buf, 2 + size, 0);
+			auto res = ::send(fd_c, (char*)buf, (p - buf) + size, 0);
 			return res > 0;
 		}
 	};
