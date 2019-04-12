@@ -8,7 +8,7 @@ window.onload = function(){
 	window.sock_s = new WebSocket("ws://localhost:5566/");
     window.sock_s.onopen = function(a){
         console.log("1");
-        window.sock_s.send('fuck you');
+        //window.sock_s.send('fuck you');
     };
     window.sock_s.onmessage = function(a){
         var obj = eval('(' + a.data + ')');

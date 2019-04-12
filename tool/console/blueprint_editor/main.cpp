@@ -374,8 +374,8 @@ int main(int argc, char **args)
 				for (auto i = 0; i < bp->node_count(); i++)
 					json->new_node("")->new_attr("name", bp->node(i)->id());
 
-				//auto str = json->to_string_json();
-				auto str = String("123");
+				auto str = json->to_string_json();
+				//auto str = String("123");
 				s->send(str.size, str.v);
 			}
 		}

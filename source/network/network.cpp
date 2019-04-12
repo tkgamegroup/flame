@@ -47,14 +47,16 @@ namespace flame
 			else if (size <= 65535)
 			{
 				*p++ = 126;
-				*p++ = size & 0xff;
 				*p++ = size >> 8;
+				*p++ = size & 0xff;
 			}
 			else
 			{
 				*p++ = 127;
-				*(ulonglong*)p = size;
-				p += sizeof(ulonglong);
+				*p++ = size >> 24;
+				*p++ = (size >> 16) & 0xff;
+				*p++ = (size >> 8) & 0xff;
+				*p++ = size & 0xff;
 			}
 
 			memcpy(p, data, size);
