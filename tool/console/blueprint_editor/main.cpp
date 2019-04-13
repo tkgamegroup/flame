@@ -190,7 +190,7 @@ int main(int argc, char **args)
 					auto src = bp->node(i);
 					auto name = std::string(src->id());
 
-					auto n = name + " [label = \"" + name + "|{{";
+					auto n = "\t" + name + " [label = \"{";
 					for (auto j = 0; j < src->input_count(); j++)
 					{
 						auto input = src->input(j);
@@ -208,7 +208,7 @@ int main(int argc, char **args)
 						if (j != src->output_count() - 1)
 							n += "|";
 					}
-					n += "}}\"];\n";
+					n += "}\" xlabel = \"" + name + "\"];\n";
 					
 					gv += n;
 				}
@@ -227,7 +227,7 @@ int main(int argc, char **args)
 								auto in_sp = string_split(std::string(item->get_address().v), '.');
 								auto out_sp = string_split(std::string(item->link()->get_address().v), '.');
 
-								gv += out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+								gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
 							}
 						}
 					}
