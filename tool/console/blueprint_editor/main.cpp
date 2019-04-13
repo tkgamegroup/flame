@@ -63,6 +63,7 @@ int main(int argc, char **args)
 				"  show udt [udt_name] - show an udt\n"
 				"  show nodes - show all nodes\n"
 				"  show node [id] - show a node\n"
+				"  show graph - use GraphViz to show graph\n"
 				"  add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
 				"  add link [out_adress] [in_adress] - add a link\n"
 				"  add item [in_adress] - add an item to input\n"
@@ -179,6 +180,60 @@ int main(int argc, char **args)
 				}
 				else
 					printf("node not found\n");
+			}
+			else if (s_what == "graph")
+			{
+				std::string gv = "digraph bp {\n";
+				gv += "node [shape = record];\n";
+				for (auto i = 0; i < bp->node_count(); i++)
+				{
+					auto src = bp->node(i);
+					auto name = std::string(src->id());
+
+					auto n = name + " [label = \"" + name + "|{{";
+					for (auto j = 0; j < src->input_count(); j++)
+					{
+						auto input = src->input(j);
+						auto name = std::string(input->variable_info()->name());
+						n += "<" + name + ">" + name;
+						if (j != src->input_count() - 1)
+							n += "|";
+					}
+					n += "}|{";
+					for (auto j = 0; j < src->output_count(); j++)
+					{
+						auto output = src->output(j);
+						auto name = std::string(output->variable_info()->name());
+						n += "<" + name + ">" + name;
+						if (j != src->output_count() - 1)
+							n += "|";
+					}
+					n += "}}\"];\n";
+					
+					gv += n;
+				}
+				for (auto i = 0; i < bp->node_count(); i++)
+				{
+					auto src = bp->node(i);
+
+					for (auto j = 0; j < src->input_count(); j++)
+					{
+						auto input = src->input(j);
+						for (auto k = 0; k < input->array_item_count(); k++)
+						{
+							auto item = input->array_item(k);
+							if (item->link())
+							{
+								auto in_sp = string_split(std::string(item->get_address().v), '.');
+								auto out_sp = string_split(std::string(item->link()->get_address().v), '.');
+
+								gv += out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+							}
+						}
+					}
+				}
+				gv += "}\n";
+				auto cut = 1;
 			}
 			else
 				printf("unknow object to show\n");
@@ -388,6 +443,7 @@ int main(int argc, char **args)
 						n_input->new_attr("", input->variable_info()->name());
 					}
 					auto n_outputs = n->new_node("outputs");
+					n_outputs->set_array(true);
 					for (auto j = 0; j < src->output_count(); j++)
 					{
 						auto output = src->output(j);
@@ -395,7 +451,6 @@ int main(int argc, char **args)
 						n_output->set_object(false);
 						n_output->new_attr("", output->variable_info()->name());
 					}
-					n_outputs->set_array(true);
 				}
 				auto n_links = json->new_node("links");
 				n_links->set_array(true);
