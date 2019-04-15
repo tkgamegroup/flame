@@ -234,8 +234,7 @@ namespace flame
 		TypeInfoPrivate type;
 		std::string name;
 		std::string attribute;
-		int offset;
-		int size;
+		int offset, size, count;
 		CommonData default_value;
 
 		inline VariableInfoPrivate()
@@ -255,18 +254,27 @@ namespace flame
 			case TypeTagEnumSingle: case TypeTagEnumMulti:
 				dst->i1() = *(int*)src;
 				break;
-			case TypeTagArrayOfVariable:
-				if (item_index != -1)
-					memcpy(&dst->v, ((Array<int>*)src)->v + size * item_index, size);
-				break;
 			case TypeTagVariable:
 				memcpy(&dst->v, src, size);
 				break;
-			case TypeTagArrayOfPointer:
-				if (item_index != -1)
-					dst->p() = *(void**)(((Array<void*>*)src)->v + size * item_index);
 			case TypeTagPointer:
 				dst->p() = *(void**)src;
+				break;
+			case TypeTagNativeArrayOfVariable:
+				if (item_index != -1)
+					memcpy(&dst->v, (char*)src + size * item_index, size);
+				break;
+			case TypeTagNativeArrayOfPointer:
+				if (item_index != -1)
+					dst->p() = *(void**)((char*)src + size * item_index);
+				break;
+			case TypeTagArrayOfVariable:
+				if (item_index != -1)
+					memcpy(&dst->v, (char*)((Array<int>*)src)->v + size * item_index, size);
+				break;
+			case TypeTagArrayOfPointer:
+				if (item_index != -1)
+					dst->p() = *(void**)((char*)((Array<void*>*)src)->v + size * item_index);
 				break;
 			}
 		}
@@ -280,26 +288,34 @@ namespace flame
 			case TypeTagEnumSingle: case TypeTagEnumMulti:
 				*(int*)dst = src->v.i[0];
 				break;
-			case TypeTagArrayOfVariable:
-				if (item_index != -1)
-					memcpy(((Array<int>*)dst)->v + size * item_index, &src->v, size);
-				break;
 			case TypeTagVariable:
 				memcpy(dst, &src->v, size);
 				break;
-			case TypeTagArrayOfPointer:
-				if (item_index != -1)
-					*(void**)(((Array<void*>*)dst)->v + size * item_index) = src->v.p;
-				break;
 			case TypeTagPointer:
 				*(void**)dst = src->v.p;
+				break;
+			case TypeTagNativeArrayOfVariable:
+				if (item_index != -1)
+					memcpy((char*)dst + size * item_index, &src->v, size);
+				break;
+			case TypeTagNativeArrayOfPointer:
+				if (item_index != -1)
+					*(void**)((char*)dst + size * item_index) = src->v.p;
+				break;
+			case TypeTagArrayOfVariable:
+				if (item_index != -1)
+					memcpy((char*)((Array<int>*)dst)->v + size * item_index, &src->v, size);
+				break;
+			case TypeTagArrayOfPointer:
+				if (item_index != -1)
+					*(void**)((char*)((Array<void*>*)dst)->v + size * item_index) = src->v.p;
 				break;
 			}
 		}
 
 		inline void array_resize(int _size, void* dst, bool is_obj) const
 		{
-			if (type.tag != TypeTagArrayOfVariable && type.tag != TypeTagArrayOfPointer)
+			if (!is_type_tag_array(type.tag))
 				return;
 
 			if (is_obj)
@@ -338,55 +354,6 @@ namespace flame
 			}
 
 			return false;
-		}
-
-		inline String serialize_value(const void* src, bool is_obj, int item_index, int precision) const
-		{
-			if (is_obj)
-				src = (char*)src + offset;
-
-			switch (type.tag)
-			{
-			case TypeTagEnumSingle:
-			{
-				auto e = find_enum(type.name_hash);
-				return e->serialize_value(true, *(int*)src);
-			}
-			break;
-			case TypeTagEnumMulti:
-				break;
-			case TypeTagArrayOfVariable:
-				if (item_index != -1)
-					return to_string(type.name_hash, ((Array<int>*)src)->v + size * item_index, precision);
-				break;
-			case TypeTagVariable:
-				return to_string(type.name_hash, src, precision);
-			}
-
-			return "";
-		}
-
-		inline void unserialize_value(const std::string & str, void* dst, bool is_obj, int item_index) const
-		{
-			if (is_obj)
-				dst = (char*)dst + offset;
-
-			switch (type.tag)
-			{
-			case TypeTagEnumSingle:
-			{
-				auto e = find_enum(type.name_hash);
-				*(int*)dst = e->find_item(str.c_str());
-			}
-			break;
-			case TypeTagArrayOfVariable:
-				if (item_index != -1)
-					from_string(type.name_hash, str, ((Array<int>*)dst)->v + size * item_index);
-				break;
-			case TypeTagVariable:
-				from_string(type.name_hash, str, dst);
-				break;
-			}
 		}
 	};
 
@@ -445,14 +412,55 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->compare_to_default(src, is_obj);
 	}
 
-	String VariableInfo::serialize_value(const void* src, bool is_obj, int item_index, int precision) const
+	String serialize_value(TypeTag tag, uint type_hash, int size, const void* src, int item_index, int precision)
 	{
-		return ((VariableInfoPrivate*)this)->serialize_value(src, is_obj, item_index, precision);
+		switch (tag)
+		{
+		case TypeTagEnumSingle:
+		{
+			auto e = find_enum(type_hash);
+			return e->serialize_value(true, *(int*)src);
+		}
+		break;
+		case TypeTagEnumMulti:
+			break;
+		case TypeTagVariable:
+			return to_string(type_hash, src, precision);
+		case TypeTagNativeArrayOfVariable:
+			if (item_index != -1)
+				to_string(type_hash, (char*)src + size * item_index, precision);
+			break;
+		case TypeTagArrayOfVariable:
+			if (item_index != -1)
+				return to_string(type_hash, (char*)((Array<int>*)src)->v + size * item_index, precision);
+			break;
+		}
+
+		return "";
 	}
 
-	void VariableInfo::unserialize_value(const std::string& str, void* dst, bool is_obj, int item_index) const
+	void unserialize_value(TypeTag tag, uint type_hash, int size, const std::string & str, void* dst, int item_index)
 	{
-		return ((VariableInfoPrivate*)this)->unserialize_value(str, dst, is_obj, item_index);
+		switch (tag)
+		{
+		case TypeTagEnumSingle:
+		{
+			auto e = find_enum(type_hash);
+			*(int*)dst = e->find_item(str.c_str());
+		}
+		break;
+		case TypeTagVariable:
+			from_string(type_hash, str, dst);
+			break;
+		case TypeTagNativeArrayOfVariable:
+			if (item_index != -1)
+				from_string(type_hash, str, (char*)dst + size * item_index);
+			break;
+		case TypeTagArrayOfVariable:
+			if (item_index != -1)
+				from_string(type_hash, str, (char*)((Array<int>*)dst)->v + size * item_index);
+			break;
+		}
 	}
 
 	struct FunctionInfoPrivate : FunctionInfo
@@ -1063,7 +1071,7 @@ namespace flame
 					if (cnt == 0)
 						break;
 
-					auto n_item = new_node("attribute");
+					auto n_item = new_node("item");
 					n_item->new_attr("name", item->name());
 
 					switch (item->type()->name_hash())
@@ -1150,7 +1158,7 @@ namespace flame
 					if (arr.size == 0)
 						break;
 
-					auto n_item = new_node("attribute");
+					auto n_item = new_node("item");
 					n_item->new_attr("name", item->name());
 
 					auto u_sub = find_udt(item->type()->name_hash());
@@ -1170,7 +1178,7 @@ namespace flame
 				default:
 					if (!item->compare_to_default(src, true))
 					{
-						auto n_item = new_node("attribute");
+						auto n_item = new_node("item");
 						n_item->new_attr("name", item->name());
 
 						n_item->new_attr("value", item->serialize_value(src, true, -1, precision).v);
@@ -1181,9 +1189,10 @@ namespace flame
 
 		void unserialize_RE(UdtInfo * u, std::vector<std::pair<void*, uint>> & obj_table, void* obj, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)> & obj_generator)
 		{
-			for (auto i = 0; i < node_count(); i++)
+			for (auto& n_item : nodes)
 			{
-				auto n_item = node(i);
+				if (n_item->name != "item")
+					continue;
 
 				auto item = u->item(u->find_item_i(n_item->find_attr("name")->value().c_str()));
 
