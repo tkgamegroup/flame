@@ -282,7 +282,7 @@ namespace flame
 				std::filesystem::last_write_time(res_filename) <= std::filesystem::last_write_time(spv_filename))
 				produce_shader_resource_file(spv_filename.c_str(), res_filename.c_str());
 
-			auto res_file = SerializableNode::create_from_xml(res_filename);
+			auto res_file = SerializableNode::create_from_xml_file(res_filename);
 			if (res_file)
 			{
 				for (auto i = 0; i < res_file->node_count(); i++)

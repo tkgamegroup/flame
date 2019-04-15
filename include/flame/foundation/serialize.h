@@ -570,11 +570,20 @@ namespace flame
 		TypeTagEnumMulti,
 		TypeTagVariable,
 		TypeTagPointer,
+		TypeTagNativeArrayOfVariable,
+		TypeTagNativeArrayOfPointer,
 		TypeTagArrayOfVariable,
 		TypeTagArrayOfPointer
 
-		// 'Array' means Array<>, which is a special UDT, NOT 'array' in C/C++ language (e.g. int abc[100])
+		// 'Array' means Array<>
+		// 'Native Array' means array in C/C++ language (e.g. int abc[100])
 	};
+
+	inline bool is_type_tag_array(TypeTag tag)
+	{
+		return tag == TypeTagNativeArrayOfVariable || tag == TypeTagNativeArrayOfPointer ||
+			tag == TypeTagArrayOfVariable || tag == TypeTagArrayOfPointer;
+	}
 
 	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag tag);
 

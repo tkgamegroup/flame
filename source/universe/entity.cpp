@@ -188,7 +188,7 @@ namespace flame
 
 	void Entity::load(const wchar_t* filename)
 	{
-		auto file = SerializableNode::create_from_xml(filename);
+		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file || file->name() != "node")
 			return;
 

@@ -139,6 +139,96 @@ namespace flame
 		return ((EnumInfoPrivate*)this)->serialize_value(single, v);
 	}
 
+	static String to_string(uint type_hash, const void* src, int precision)
+	{
+		switch (type_hash)
+		{
+		case cH("bool"):
+			return *(bool*)src ? "true" : "false";
+		case cH("uint"):
+			return to_string(*(uint*)src);
+		case cH("int"):
+			return to_string(*(int*)src);
+		case cH("Ivec2"):
+			return to_string(*(Ivec2*)src);
+		case cH("Ivec3"):
+			return to_string(*(Ivec3*)src);
+		case cH("Ivec4"):
+			return to_string(*(Ivec4*)src);
+		case cH("float"):
+			return to_string(*(float*)src, precision);
+		case cH("Vec2"):
+			return to_string(*(Vec2*)src, precision);
+		case cH("Vec3"):
+			return to_string(*(Vec3*)src, precision);
+		case cH("Vec4"):
+			return to_string(*(Vec4*)src, precision);
+		case cH("uchar"):
+			return to_string(*(uchar*)src);
+		case cH("Bvec2"):
+			return to_string(*(Bvec2*)src);
+		case cH("Bvec3"):
+			return to_string(*(Bvec3*)src);
+		case cH("Bvec4"):
+			return to_string(*(Bvec4*)src);
+		case cH("String"):
+			return *(String*)src;
+		case cH("StringAndHash"):
+			return *(StringAndHash*)src;
+		}
+
+		return "";
+	}
+
+	static void from_string(uint type_hash, const std::string& str, void* dst)
+	{
+		switch (type_hash)
+		{
+		case cH("bool"):
+			*(bool*)dst = str == "true" ? true : false;
+			break;
+		case cH("uint"):
+			*(uint*)dst = stou1(str.c_str());
+			break;
+		case cH("int"):
+			*(int*)dst = stoi1(str.c_str());
+			break;
+		case cH("Ivec2"):
+			*(Ivec2*)dst = stoi2(str.c_str());
+			break;
+		case cH("Ivec3"):
+			*(Ivec3*)dst = stoi3(str.c_str());
+			break;
+		case cH("Ivec4"):
+			*(Ivec4*)dst = stoi4(str.c_str());
+			break;
+		case cH("float"):
+			*(float*)dst = stof1(str.c_str());
+			break;
+		case cH("Vec2"):
+			*(Vec2*)dst = stof2(str.c_str());
+			break;
+		case cH("Vec3"):
+			*(Vec3*)dst = stof3(str.c_str());
+			break;
+		case cH("Vec4"):
+			*(Vec4*)dst = stof4(str.c_str());
+			break;
+		case cH("uchar"):
+			*(uchar*)dst = stob1(str.c_str());
+			break;
+		case cH("Bvec2"):
+			*(Bvec2*)dst = stob2(str.c_str());
+			break;
+		case cH("Bvec3"):
+			*(Bvec3*)dst = stob3(str.c_str());
+			break;
+		case cH("Bvec4"):
+			*(Bvec4*)dst = stob4(str.c_str());
+			break;
+		}
+	}
+
 	struct VariableInfoPrivate : VariableInfo
 	{
 		TypeInfoPrivate type;
@@ -167,19 +257,14 @@ namespace flame
 				break;
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
-				{
-					auto& arr = *(Array<int>*)src;
-					src = arr.v + size * item_index;
-				}
+					memcpy(&dst->v, ((Array<int>*)src)->v + size * item_index, size);
+				break;
 			case TypeTagVariable:
 				memcpy(&dst->v, src, size);
 				break;
 			case TypeTagArrayOfPointer:
 				if (item_index != -1)
-				{
-					auto& arr = *(Array<void*>*)src;
-					src = arr.v + size * item_index;
-				}
+					dst->p() = *(void**)(((Array<void*>*)src)->v + size * item_index);
 			case TypeTagPointer:
 				dst->p() = *(void**)src;
 				break;
@@ -197,19 +282,15 @@ namespace flame
 				break;
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
-				{
-					auto& arr = *(Array<int>*)dst;
-					dst = arr.v + size * item_index;
-				}
+					memcpy(((Array<int>*)dst)->v + size * item_index, &src->v, size);
+				break;
 			case TypeTagVariable:
 				memcpy(dst, &src->v, size);
 				break;
 			case TypeTagArrayOfPointer:
 				if (item_index != -1)
-				{
-					auto& arr = *(Array<void*>*)dst;
-					dst = arr.v + size * item_index;
-				}
+					*(void**)(((Array<void*>*)dst)->v + size * item_index) = src->v.p;
+				break;
 			case TypeTagPointer:
 				*(void**)dst = src->v.p;
 				break;
@@ -276,47 +357,10 @@ namespace flame
 				break;
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
-				{
-					auto& arr = *(Array<int>*)src;
-					src = arr.v + size * item_index;
-				}
-			case TypeTagVariable:
-				switch (type.name_hash)
-				{
-				case cH("bool"):
-					return *(bool*)src ? "true" : "false";
-				case cH("uint"):
-					return to_string(*(uint*)src);
-				case cH("int"):
-					return to_string(*(int*)src);
-				case cH("Ivec2"):
-					return to_string(*(Ivec2*)src);
-				case cH("Ivec3"):
-					return to_string(*(Ivec3*)src);
-				case cH("Ivec4"):
-					return to_string(*(Ivec4*)src);
-				case cH("float"):
-					return to_string(*(float*)src, precision);
-				case cH("Vec2"):
-					return to_string(*(Vec2*)src, precision);
-				case cH("Vec3"):
-					return to_string(*(Vec3*)src, precision);
-				case cH("Vec4"):
-					return to_string(*(Vec4*)src, precision);
-				case cH("uchar"):
-					return to_string(*(uchar*)src);
-				case cH("Bvec2"):
-					return to_string(*(Bvec2*)src);
-				case cH("Bvec3"):
-					return to_string(*(Bvec3*)src);
-				case cH("Bvec4"):
-					return to_string(*(Bvec4*)src);
-				case cH("String"):
-					return *(String*)src;
-				case cH("StringAndHash"):
-					return *(StringAndHash*)src;
-				}
+					return to_string(type.name_hash, ((Array<int>*)src)->v + size * item_index, precision);
 				break;
+			case TypeTagVariable:
+				return to_string(type.name_hash, src, precision);
 			}
 
 			return "";
@@ -337,56 +381,10 @@ namespace flame
 			break;
 			case TypeTagArrayOfVariable:
 				if (item_index != -1)
-				{
-					auto& arr = *(Array<int>*)dst;
-					dst = arr.v + size * item_index;
-				}
+					from_string(type.name_hash, str, ((Array<int>*)dst)->v + size * item_index);
+				break;
 			case TypeTagVariable:
-				switch (type.name_hash)
-				{
-				case cH("bool"):
-					*(bool*)dst = str == "true" ? true : false;
-					break;
-				case cH("uint"):
-					*(uint*)dst = stou1(str.c_str());
-					break;
-				case cH("int"):
-					*(int*)dst = stoi1(str.c_str());
-					break;
-				case cH("Ivec2"):
-					*(Ivec2*)dst = stoi2(str.c_str());
-					break;
-				case cH("Ivec3"):
-					*(Ivec3*)dst = stoi3(str.c_str());
-					break;
-				case cH("Ivec4"):
-					*(Ivec4*)dst = stoi4(str.c_str());
-					break;
-				case cH("float"):
-					*(float*)dst = stof1(str.c_str());
-					break;
-				case cH("Vec2"):
-					*(Vec2*)dst = stof2(str.c_str());
-					break;
-				case cH("Vec3"):
-					*(Vec3*)dst = stof3(str.c_str());
-					break;
-				case cH("Vec4"):
-					*(Vec4*)dst = stof4(str.c_str());
-					break;
-				case cH("uchar"):
-					*(uchar*)dst = stob1(str.c_str());
-					break;
-				case cH("Bvec2"):
-					*(Bvec2*)dst = stob2(str.c_str());
-					break;
-				case cH("Bvec3"):
-					*(Bvec3*)dst = stob3(str.c_str());
-					break;
-				case cH("Bvec4"):
-					*(Bvec4*)dst = stob4(str.c_str());
-					break;
-				}
+				from_string(type.name_hash, str, dst);
 				break;
 			}
 		}
@@ -2113,6 +2111,8 @@ namespace flame
 			auto udt_name = format_name(pwname, nullptr, &pass_prefix, &pass_$);
 			if (pass_prefix && pass_$)
 			{
+				if (strcmp(udt_name.c_str(), "test") == 0)
+					auto cut = 1;
 				auto udt_namehash = H(udt_name.c_str());
 				if (udts.find(udt_namehash) == udts.end())
 				{
@@ -2306,7 +2306,7 @@ namespace flame
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
 						i->size = std::stoi(n_item->find_attr("size")->value());
 						memset(&i->default_value, 0, sizeof(CommonData));
-						if (i->type.tag != TypeTagArrayOfVariable && i->type.tag != TypeTagArrayOfPointer)
+						if (is_type_tag_array(i->type.tag))
 						{
 							auto a_default_value = n_item->find_attr("default_value");
 							if (a_default_value)
@@ -2390,7 +2390,7 @@ namespace flame
 				n_item->new_attr("attribute", i->attribute);
 				n_item->new_attr("offset", std::to_string(i->offset));
 				n_item->new_attr("size", std::to_string(i->size));
-				if (i->type.tag != TypeTagArrayOfVariable && i->type.tag != TypeTagArrayOfPointer)
+				if (is_type_tag_array(i->type.tag))
 				{
 					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
 					{

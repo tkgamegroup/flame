@@ -33,12 +33,12 @@ namespace flame
 		struct Canvas;
 	}
 
-	struct cEvent$;
+	struct cWidget$;
 
 	struct cUI$ : Component
 	{
-		cEvent$* hovering;
-		cEvent$* focusing;
+		cWidget$* hovering;
+		cWidget$* focusing;
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cUI$() override;
 

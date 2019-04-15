@@ -35,7 +35,7 @@ namespace flame
 		ATTRIBUTE_BOOL dragging;
 		ATTRIBUTE_BOOL focusing;
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cEvent$() override;
+		FLAME_UNIVERSE_EXPORTS virtual ~cWidget$() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
 		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
@@ -48,8 +48,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, int value);
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2& value);
-		FLAME_UNIVERSE_EXPORTS void on_drop(cEvent$* src);
+		FLAME_UNIVERSE_EXPORTS void on_drop(cWidget$* src);
 
-		FLAME_UNIVERSE_EXPORTS static cEvent$* create$(void* data);
+		FLAME_UNIVERSE_EXPORTS static cWidget$* create$(void* data);
 	};
 }

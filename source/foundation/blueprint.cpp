@@ -1165,5 +1165,7 @@ namespace flame
 	}
 
 	BP_Bvec4$ bp_bvec4_unused;
+
+	test$ test_unused;
 }
 

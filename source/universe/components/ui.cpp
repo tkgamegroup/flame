@@ -22,7 +22,7 @@
 
 #include <flame/foundation/window.h>
 #include <flame/universe/entity.h>
-#include <flame/universe/components/event.h>
+#include <flame/universe/components/widget.h>
 #include <flame/universe/components/ui.h>
 
 namespace flame
@@ -85,7 +85,7 @@ namespace flame
 					if (thiz->f_all_done)
 						return;
 
-					auto ev = (cEvent$*)e->component(cH("Event"));
+					auto ev = (cWidget$*)e->component(cH("Event"));
 					if (ev)
 					{
 						auto mhover = ev->contains(thiz->f_mpos);

@@ -22,22 +22,22 @@
 
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/event.h>
+#include <flame/universe/components/widget.h>
 
 namespace flame
 {
-	struct cEventPrivate : cEvent$
+	struct cWidgetPrivate : cWidget$
 	{
 		cElement$* element;
 
-		Array<Function<FoucusListenerParm>> focus_listeners$;
-		Array<Function<KeyListenerParm>> key_listeners$;
-		Array<Function<MouseListenerParm>> mouse_listeners$;
-		Array<Function<DropListenerParm>> drop_listeners$;
-		Array<Function<ChangedListenerParm>> changed_listeners$;
-		Array<Function<ChildListenerParm>> child_listeners$;
+		//Array<Function<FoucusListenerParm>> focus_listeners$;
+		//Array<Function<KeyListenerParm>> key_listeners$;
+		//Array<Function<MouseListenerParm>> mouse_listeners$;
+		//Array<Function<DropListenerParm>> drop_listeners$;
+		//Array<Function<ChangedListenerParm>> changed_listeners$;
+		//Array<Function<ChildListenerParm>> child_listeners$;
 
-		cEventPrivate(void* data) :
+		cWidgetPrivate(void* data) :
 			element(nullptr)
 		{
 			blackhole = false;
@@ -64,37 +64,37 @@ namespace flame
 		}
 	};
 
-	cEvent$::~cEvent$()
+	cWidget$::~cWidget$()
 	{
 	}
 
-	const char* cEvent$::type_name() const
+	const char* cWidget$::type_name() const
 	{
-		return "Event";
+		return "Widget";
 	}
 
-	uint cEvent$::type_hash() const
+	uint cWidget$::type_hash() const
 	{
 		return cH("Event");
 	}
 
-	void cEvent$::on_attach()
+	void cWidget$::on_attach()
 	{
-		((cEventPrivate*)this)->on_attach();
+		((cWidgetPrivate*)this)->on_attach();
 	}
 
-	void cEvent$::update(float delta_time)
+	void cWidget$::update(float delta_time)
 	{
-		((cEventPrivate*)this)->update(delta_time);
+		((cWidgetPrivate*)this)->update(delta_time);
 	}
 
-	bool cEvent$::contains(const Vec2& pos) const
+	bool cWidget$::contains(const Vec2& pos) const
 	{
-		return ((cEventPrivate*)this)->contains(pos);
+		return ((cWidgetPrivate*)this)->contains(pos);
 	}
 
-	cEvent$* cEvent$::create$(void* data)
+	cWidget$* cWidget$::create$(void* data)
 	{
-		return new cEventPrivate(data);
+		return new cWidgetPrivate(data);
 	}
 }

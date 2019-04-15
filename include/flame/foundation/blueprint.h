@@ -42,8 +42,9 @@ namespace flame
 		  'a.b.3' for item, index is default to 0
 		- An available udt must:
 			a nonparametric void function called 'update'
-			all datas work fine with zero memory (basically, BP nodes will use udts to create an all-zeros
-			 memory, (Array<>, String, StringW are fined with zero memory))
+			all data types should be one of these:
+			 CommonData's fmt
+			 String or StringW
 			have an nonparametric void function called 'update'
 		- A BP file is basically a XML file, you can use both .xml or .bp.
 	*/
@@ -273,6 +274,11 @@ namespace flame
 		Bvec4 v$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$c();
+	};
+
+	struct test$
+	{
+		void* emm$[2];
 	};
 }
 
