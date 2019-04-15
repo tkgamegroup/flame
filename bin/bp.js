@@ -123,7 +123,7 @@ window.onload = function(){
         for (var i in src_nodes)
         {
             var src = src_nodes[i];
-            var n = new Node(src.name, Math.floor(i % 5) * 200, Math.floor(i / 5) * 200);
+            var n = new Node(src.name, src.x, src.y);
             for (var j in src.inputs)
                 n.AddInput(src.inputs[j]);
             for (var j in src.outputs)

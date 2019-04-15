@@ -16,6 +16,8 @@ A lightweight and powerful 3D Game Engine.
 - SPIRV-Cross - for shader reflection (https://github.com/KhronosGroup/SPIRV-Cross)
 
 - OpenAL      - for sound playing and recording (http://www.openal.org/)
+
+- Graphviz    - for visualizing bp nodes
   
 
 # build:
@@ -35,6 +37,8 @@ A lightweight and powerful 3D Game Engine.
 - download & build SPIRV-Cross
 
 - download OpenAL
+
+- download & install Graphviz (optional)
   
 - cmake flame & configure
   
@@ -45,6 +49,8 @@ A lightweight and powerful 3D Game Engine.
 - set path to freetype
 
 - set path to OpenAL
+
+- set path to Graphviz (optional)
   
 - cmake flame generate
   

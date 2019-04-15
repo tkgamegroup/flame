@@ -95,6 +95,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS BP *bp() const;
 			FLAME_FOUNDATION_EXPORTS const char *id() const;
 			FLAME_FOUNDATION_EXPORTS UdtInfo*udt() const;
+			FLAME_FOUNDATION_EXPORTS Vec2 position() const;
+			FLAME_FOUNDATION_EXPORTS void set_position(const Vec2& p);
 
 			FLAME_FOUNDATION_EXPORTS int input_count() const;
 			FLAME_FOUNDATION_EXPORTS Input *input(int idx) const;

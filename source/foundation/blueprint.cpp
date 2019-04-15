@@ -81,6 +81,7 @@ namespace flame
 		BPPrivate *bp;
 		std::string id;
 		UdtInfo *udt;
+		Vec2 position;
 		FunctionInfo* update_function;
 		std::vector<std::unique_ptr<InputPrivate>> inputs;
 		std::vector<std::unique_ptr<OutputPrivate>> outputs;
@@ -201,6 +202,7 @@ namespace flame
 		bp(_bp),
 		id(_id),
 		udt(_udt),
+		position(0.f),
 		enable(true),
 		updated(false),
 		dummy(nullptr)
@@ -920,6 +922,16 @@ namespace flame
 	UdtInfo *BP::Node::udt() const
 	{
 		return ((NodePrivate*)this)->udt;
+	}
+
+	Vec2 BP::Node::position() const
+	{
+		return ((NodePrivate*)this)->position;
+	}
+
+	void BP::Node::set_position(const Vec2& p)
+	{
+		((NodePrivate*)this)->position = p;
 	}
 
 	int BP::Node::input_count() const

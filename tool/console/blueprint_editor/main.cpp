@@ -63,7 +63,7 @@ int main(int argc, char **args)
 				"  show udt [udt_name] - show an udt\n"
 				"  show nodes - show all nodes\n"
 				"  show node [id] - show a node\n"
-				"  show graph - use GraphViz to show graph\n"
+				"  show graph - use Graphviz to show graph\n"
 				"  add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
 				"  add link [out_adress] [in_adress] - add a link\n"
 				"  add item [in_adress] - add an item to input\n"
@@ -74,6 +74,7 @@ int main(int argc, char **args)
 				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
 				"  tobin - generate code to a dll\n"
+				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
 				"  gui-browser - use the power of browser to show and edit\n"
 			);
 		}
@@ -183,57 +184,68 @@ int main(int argc, char **args)
 			}
 			else if (s_what == "graph")
 			{
-				std::string gv = "digraph bp {\n";
-				gv += "node [shape = record];\n";
-				for (auto i = 0; i < bp->node_count(); i++)
+				if (GRAPHVIZ_PATH != std::string(""))
 				{
-					auto src = bp->node(i);
-					auto name = std::string(src->id());
+					auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
 
-					auto n = "\t" + name + " [label = \"{";
-					for (auto j = 0; j < src->input_count(); j++)
+					std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
+					for (auto i = 0; i < bp->node_count(); i++)
 					{
-						auto input = src->input(j);
-						auto name = std::string(input->variable_info()->name());
-						n += "<" + name + ">" + name;
-						if (j != src->input_count() - 1)
-							n += "|";
-					}
-					n += "}|{";
-					for (auto j = 0; j < src->output_count(); j++)
-					{
-						auto output = src->output(j);
-						auto name = std::string(output->variable_info()->name());
-						n += "<" + name + ">" + name;
-						if (j != src->output_count() - 1)
-							n += "|";
-					}
-					n += "}\" xlabel = \"" + name + "\"];\n";
-					
-					gv += n;
-				}
-				for (auto i = 0; i < bp->node_count(); i++)
-				{
-					auto src = bp->node(i);
+						auto src = bp->node(i);
+						auto name = std::string(src->id());
 
-					for (auto j = 0; j < src->input_count(); j++)
-					{
-						auto input = src->input(j);
-						for (auto k = 0; k < input->array_item_count(); k++)
+						auto n = "\t" + name + " [label = \"" + name + "|{{";
+						for (auto j = 0; j < src->input_count(); j++)
 						{
-							auto item = input->array_item(k);
-							if (item->link())
-							{
-								auto in_sp = string_split(std::string(item->get_address().v), '.');
-								auto out_sp = string_split(std::string(item->link()->get_address().v), '.');
+							auto input = src->input(j);
+							auto name = std::string(input->variable_info()->name());
+							n += "<" + name + ">" + name;
+							if (j != src->input_count() - 1)
+								n += "|";
+						}
+						n += "}|{";
+						for (auto j = 0; j < src->output_count(); j++)
+						{
+							auto output = src->output(j);
+							auto name = std::string(output->variable_info()->name());
+							n += "<" + name + ">" + name;
+							if (j != src->output_count() - 1)
+								n += "|";
+						}
+						n += "}}\"];\n";
 
-								gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+						gv += n;
+					}
+					for (auto i = 0; i < bp->node_count(); i++)
+					{
+						auto src = bp->node(i);
+
+						for (auto j = 0; j < src->input_count(); j++)
+						{
+							auto input = src->input(j);
+							for (auto k = 0; k < input->array_item_count(); k++)
+							{
+								auto item = input->array_item(k);
+								if (item->link())
+								{
+									auto in_sp = string_split(std::string(item->get_address().v), '.');
+									auto out_sp = string_split(std::string(item->link()->get_address().v), '.');
+
+									gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+								}
 							}
 						}
 					}
+					gv += "}\n";
+
+					std::ofstream file("bp.gv");
+					file << gv;
+					file.close();
+
+					exec(dot_path.c_str(), "-Tpng bp.gv -o bp.png", true);
+					exec(dot_path.c_str(), "-Tplain bp.gv -y -o bp.graph.txt", true);
+					exec(L"bp.png", "", false);
 				}
-				gv += "}\n";
-				auto cut = 1;
 			}
 			else
 				printf("unknow object to show\n");
@@ -410,6 +422,31 @@ int main(int argc, char **args)
 
 			printf("code generated\n");
 		}
+		else if (s_command_line == "set-layout")
+		{
+			if (std::filesystem::exists(L"bp.graph.txt"))
+			{
+				auto lwt = std::filesystem::last_write_time(filename);
+				if (std::filesystem::last_write_time(L"bp.png") >= lwt && std::filesystem::last_write_time(L"bp.graph.txt") >= lwt)
+				{
+					auto str = get_file_string(L"bp.graph.txt");
+					std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
+					std::smatch match;
+					while (std::regex_search(str, match, reg_node))
+					{
+						auto n = bp->find_node(match[1].str().c_str());
+						if (n)
+							n->set_position(Vec2(stof1(match[2].str().c_str()), stof1(match[3].str().c_str())) * 100.f);
+
+						str = match.suffix();
+					}
+				}
+				printf("ok\n");
+			}
+			else
+				printf("bp.graph.txt not found\n");
+
+		}
 		else if (s_command_line == "gui-browser")
 		{
 			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
@@ -432,7 +469,10 @@ int main(int argc, char **args)
 					auto src = bp->node(i);
 
 					auto n = n_nodes->new_node("");
+					auto pos = src->position();
 					n->new_attr("name", src->id());
+					n->new_attr("x", to_stdstring(pos.x));
+					n->new_attr("y", to_stdstring(pos.y));
 					auto n_inputs = n->new_node("inputs");
 					n_inputs->set_array(true);
 					for (auto j = 0; j < src->input_count(); j++)
@@ -475,7 +515,6 @@ int main(int argc, char **args)
 				}
 
 				auto str = json->to_string_json();
-				//auto str = String("123");
 				s->send(str.size, str.v);
 			}
 		}
