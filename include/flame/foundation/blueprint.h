@@ -39,7 +39,6 @@ namespace flame
 		  you can use address to find an object in BP, e.g.
 		  'a'     for node
 		  'a.b'   for node input or output
-		  'a.b.3' for item, index is default to 0
 		- An available udt must:
 			a nonparametric void function called 'update'
 			all data types should be one of these:
@@ -56,56 +55,36 @@ namespace flame
 	struct BP
 	{
 		struct Node;
-		struct Input;
-		struct Output;
 
-		struct Item
+		struct Slot
 		{
-			FLAME_FOUNDATION_EXPORTS Input *parent_i() const; // null or its parent is input
-			FLAME_FOUNDATION_EXPORTS Output *parent_o() const; // null or its parent is output
-			FLAME_FOUNDATION_EXPORTS CommonData &data();
-			FLAME_FOUNDATION_EXPORTS void set_data(const CommonData &d); // setting datas for output's item is ok, but the data will be rushed when the node update
+			FLAME_FOUNDATION_EXPORTS Node *node() const;
+			FLAME_FOUNDATION_EXPORTS VariableInfo*variable_info() const;
 
-			FLAME_FOUNDATION_EXPORTS Item *link() const; // link is only storaged in input's item
-			FLAME_FOUNDATION_EXPORTS bool set_link(Item *target); // it is vaild for input's item only
+			FLAME_FOUNDATION_EXPORTS CommonData& data();
+			FLAME_FOUNDATION_EXPORTS void set_data(const CommonData& d); // setting datas for output's item is ok, but the data will be rushed when the node update
+
+			FLAME_FOUNDATION_EXPORTS Slot* link() const; // link is only storaged in input's item
+			FLAME_FOUNDATION_EXPORTS bool set_link(Slot* target); // it is vaild for input's item only
 
 			FLAME_FOUNDATION_EXPORTS String get_address() const;
 		};
 
-		struct Input
-		{
-			FLAME_FOUNDATION_EXPORTS Node *node() const;
-			FLAME_FOUNDATION_EXPORTS VariableInfo*variable_info() const;
-
-			FLAME_FOUNDATION_EXPORTS int array_item_count() const;
-			FLAME_FOUNDATION_EXPORTS Item *array_item(int idx) const;
-			FLAME_FOUNDATION_EXPORTS Item *array_insert_item(int idx);
-			FLAME_FOUNDATION_EXPORTS void array_remove_item(int idx);
-			FLAME_FOUNDATION_EXPORTS void array_clear() const;
-		};
-
-		struct Output
-		{
-			FLAME_FOUNDATION_EXPORTS Node *node() const;
-			FLAME_FOUNDATION_EXPORTS VariableInfo*variable_info() const;
-			FLAME_FOUNDATION_EXPORTS Item *item() const;
-		};
-
 		struct Node
 		{
-			FLAME_FOUNDATION_EXPORTS BP *bp() const;
-			FLAME_FOUNDATION_EXPORTS const char *id() const;
-			FLAME_FOUNDATION_EXPORTS UdtInfo*udt() const;
+			FLAME_FOUNDATION_EXPORTS BP* bp() const;
+			FLAME_FOUNDATION_EXPORTS const char* id() const;
+			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
 			FLAME_FOUNDATION_EXPORTS Vec2 position() const;
 			FLAME_FOUNDATION_EXPORTS void set_position(const Vec2& p);
 
 			FLAME_FOUNDATION_EXPORTS int input_count() const;
-			FLAME_FOUNDATION_EXPORTS Input *input(int idx) const;
+			FLAME_FOUNDATION_EXPORTS Slot* input(int idx) const;
 			FLAME_FOUNDATION_EXPORTS int output_count() const;
-			FLAME_FOUNDATION_EXPORTS Output *output(int idx) const;
+			FLAME_FOUNDATION_EXPORTS Slot* output(int idx) const;
 
-			FLAME_FOUNDATION_EXPORTS Input *find_input(const char *name) const;
-			FLAME_FOUNDATION_EXPORTS Output *find_output(const char *name) const;
+			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
+			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
 
 			FLAME_FOUNDATION_EXPORTS bool enable() const;
 			FLAME_FOUNDATION_EXPORTS void set_enable(bool enable) const;
@@ -116,14 +95,13 @@ namespace flame
 		};
 
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
-		FLAME_FOUNDATION_EXPORTS Node *node(int idx) const;
-		FLAME_FOUNDATION_EXPORTS Node *add_node(const char *id, UdtInfo*udt);
-		FLAME_FOUNDATION_EXPORTS void remove_node(Node *n);
+		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;
+		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* id, UdtInfo* udt);
+		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 
-		FLAME_FOUNDATION_EXPORTS Node *find_node(const char *id) const;
-		FLAME_FOUNDATION_EXPORTS Input *find_input(const char *address) const;
-		FLAME_FOUNDATION_EXPORTS Output *find_output(const char *address) const;
-		FLAME_FOUNDATION_EXPORTS Item *find_item(const char *address) const;
+		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* id) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address) const;
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 

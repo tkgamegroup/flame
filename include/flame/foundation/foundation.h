@@ -445,11 +445,6 @@ namespace flame
 			}
 			return -1;
 		}
-
-		inline void destroy_pod()
-		{
-			flame_free(v);
-		}
 	};
 
 	template<typename CH>
