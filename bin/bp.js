@@ -132,7 +132,7 @@ window.onload = function(){
                 var a = s.GetPos();
                 var b = s.link.GetPos();
         
-                s.path.setAttributeNS(null, "d", "M" + a.x + "," + a.y + " L" + b.x + "," + b.y);
+                s.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x-50) + " " + a.y + " " + (b.x+50) + " " + b.y + " " + b.x + " " + b.y);
             }
         }
         for (var i in this.outputs)
@@ -143,7 +143,7 @@ window.onload = function(){
                 var a = s.link[j].GetPos();
                 var b = s.GetPos();
         
-                s.link[j].path.setAttributeNS(null, "d", "M" + a.x + "," + a.y + " L" + b.x + "," + b.y);
+                s.link[j].path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x-50) + " " + a.y + " " + (b.x+50) + " " + b.y + " " + b.x + " " + b.y);
             }
         }
     };
@@ -203,7 +203,7 @@ window.onload = function(){
     };
 
     /*
-    
+
     var n = new Node('test', 0, 0);
     nodes.push(n);
     n.eMain.style.position = "absolute";
