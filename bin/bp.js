@@ -30,15 +30,21 @@ window.onload = function(){
         this.eMain.style.left = x + "px";
         this.eMain.style.top = y + "px";
 
-        $(this.eMain).draggable();
+        var thiz = this;
+        $(this.eMain).draggable({
+            drag: function (event, ui) {
+                thiz.updatePosition();
+            }
+        });
 
         this.eLeft = document.createElement("div");
-        this.eLeft.style.float = "left";
-        this.eLeft.style.marginRight = "15px";
+        this.eLeft.style.display = "inline-block";
+        this.eLeft.style.marginRight = "30px";
         this.eMain.appendChild(this.eLeft);
 
         this.eRight = document.createElement("div");
-        this.eRight.style.float = "left";
+        this.eRight.style.display = "inline-block";
+        this.eRight.style.float = "right";
         this.eMain.appendChild(this.eRight);
 
         this.inputs = [];
@@ -50,7 +56,14 @@ window.onload = function(){
         this.node = null;
     
         this.eMain = document.createElement("div");
-        this.eMain.innerHTML = name;
+
+        this.eName = document.createElement("div");
+        this.eName.innerHTML = name;
+        this.eName.style.display = "inline-block";
+        
+        this.eSlot = document.createElement("div");
+        this.eSlot.innerHTML = '*';
+        this.eSlot.style.display = "inline-block";
 
         if (io == 0)
         {
@@ -59,9 +72,21 @@ window.onload = function(){
             this.path.setAttributeNS(null, "stroke-width", "2");
             this.path.setAttributeNS(null, "fill", "none");
             svg.appendChild(this.path);
+
+            this.eMain.appendChild(this.eSlot);
+            this.eMain.appendChild(this.eName);
+
+            this.link = null;
         }
         else
-            this.eMain.style.align = "right";
+        {
+            this.eMain.style.textAlign = "right";
+
+            this.eMain.appendChild(this.eName);
+            this.eMain.appendChild(this.eSlot);
+            
+            this.link = [];
+        }
     }
 
     Node.prototype.AddInput = function (name) {
@@ -97,12 +122,37 @@ window.onload = function(){
         }
         return null;
     };
+
+    Node.prototype.updatePosition = function () {
+        for (var i in this.inputs)
+        {
+            var s = this.inputs[i];
+            if (s.link)
+            {
+                var a = s.GetPos();
+                var b = s.link.GetPos();
+        
+                s.path.setAttributeNS(null, "d", "M" + a.x + "," + a.y + " L" + b.x + "," + b.y);
+            }
+        }
+        for (var i in this.outputs)
+        {
+            var s = this.outputs[i];
+            for (var j = 0; j < s.link.length; j++)
+            {
+                var a = s.link[j].GetPos();
+                var b = s.GetPos();
+        
+                s.link[j].path.setAttributeNS(null, "d", "M" + a.x + "," + a.y + " L" + b.x + "," + b.y);
+            }
+        }
+    };
     
     Slot.prototype.GetPos = function () {
-        var offset = GetGlobalOffset(this.eMain);
+        var offset = GetGlobalOffset(this.eSlot);
         return {
-            x: offset.left + this.eMain.offsetWidth - 2,
-            y: offset.top + this.eMain.offsetHeight / 2
+            x: offset.left + this.eSlot.offsetWidth / 2,
+            y: offset.top + this.eSlot.offsetHeight / 2
         };
     };
 
@@ -144,15 +194,21 @@ window.onload = function(){
             var input = FindNode(addr_in[0]).FindInput(addr_in[1]);
             var output = FindNode(addr_out[0]).FindOutput(addr_out[1]);
 
-            var a = input.GetPos();
-            var b = output.GetPos();
-            input.path.setAttributeNS(null, "d", "M" + a.x + "," + a.y + " L" + b.x + "," + b.y);
+            input.link = output;
+            output.link.push(input);
         }
+        for (var i in src_nodes)
+            nodes[i].updatePosition();
+        
     };
 
-    var cut = 1;
-
     /*
+    
+    var n = new Node('test', 0, 0);
+    nodes.push(n);
+    n.eMain.style.position = "absolute";
+    document.body.appendChild(n.eMain);
+    
     var n1 = new Node("test", 100, 20);
     n1.AddInput("a");
     n1.AddInput("b");

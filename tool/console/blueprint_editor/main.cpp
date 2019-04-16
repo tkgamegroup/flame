@@ -66,11 +66,9 @@ int main(int argc, char **args)
 				"  show graph - use Graphviz to show graph\n"
 				"  add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
 				"  add link [out_adress] [in_adress] - add a link\n"
-				"  add item [in_adress] - add an item to input\n"
 				"  remove node [id] - remove a node\n"
 				"  remove link [in_adress] - remove a link\n"
-				"  remove item [in_adress] - remove an item from input\n"
-				"  set [in_adress] [value] - set value for item\n"
+				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
 				"  tobin - generate code to a dll\n"
@@ -144,39 +142,27 @@ int main(int argc, char **args)
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
-						printf(" %s\n", input->variable_info()->name());
-						if (input->array_item_count() > 0)
-						{
-							for (auto i_v = 0; i_v < input->array_item_count(); i_v++)
-							{
-								auto v = input->array_item(i_v);
-								std::string link_address;
-								if (v->link())
-									link_address = v->link()->get_address().v;
-								printf("  %d:\n", i_v);
-								printf("   [%s]->\n", link_address.c_str());
-								auto str = input->variable_info()->serialize_value(&v->data().v, false, -1, 2);
-								if (str.size == 0)
-									str = "-";
-								printf("   %s\n", str.v);
-							}
-						}
-						else
-							printf("  -\n");
+						auto v = input->variable_info();
+						printf(" %s\n", v->name());
+						std::string link_address;
+						if (input->link())
+							link_address = input->link()->get_address().v;
+						printf("   [%s]->\n", link_address.c_str());
+						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &input->data().v, -1, 2);
+						if (str.size == 0)
+							str = "-";
+						printf("   %s\n", str.v);
 					}
 					printf("[Out]\n");
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
+						auto v = output->variable_info();
 						printf(" %s\n", output->variable_info()->name());
-						/* output has only one item */
-						{
-							auto v = output->item();
-							auto str = output->variable_info()->serialize_value(&v->data().v, false, -1, 2);
-							if (str.size == 0)
-								str = "-";
-							printf("   %s\n", str.v);
-						}
+						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &output->data().v, -1, 2);
+						if (str.size == 0)
+							str = "-";
+						printf("   %s\n", str.v);
 					}
 				}
 				else
@@ -223,16 +209,12 @@ int main(int argc, char **args)
 						for (auto j = 0; j < src->input_count(); j++)
 						{
 							auto input = src->input(j);
-							for (auto k = 0; k < input->array_item_count(); k++)
+							if (input->link())
 							{
-								auto item = input->array_item(k);
-								if (item->link())
-								{
-									auto in_sp = string_split(std::string(item->get_address().v), '.');
-									auto out_sp = string_split(std::string(item->link()->get_address().v), '.');
+								auto in_sp = string_split(std::string(input->get_address().v), '.');
+								auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
 
-									gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
-								}
+								gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
 							}
 						}
 					}
@@ -287,39 +269,15 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_in_address = std::string(command_line);
 
-				auto out_item = bp->find_item(s_out_address.c_str());
-				auto in_item = bp->find_item(s_in_address.c_str());
-				if (out_item && in_item)
+				auto out = bp->find_output(s_out_address.c_str());
+				auto in = bp->find_input(s_in_address.c_str());
+				if (out && in)
 				{
-					in_item->set_link(out_item);
-					printf("link added: %s - %s\n", in_item->link()->get_address().v, in_item->get_address().v);
+					in->set_link(out);
+					printf("link added: %s - %s\n", in->link()->get_address().v, in->get_address().v);
 				}
 				else
 					printf("wrong address\n");
-			}
-			else if (s_what == "item")
-			{
-				scanf("%s", command_line);
-				auto s_in_address = std::string(command_line);
-
-				auto sp = string_split(s_in_address, '.');
-				if (sp.size() >= 2)
-				{
-					uint index = 0;
-					if (sp.size() >= 3)
-						index = std::stoi(sp[2]);
-
-					auto input = bp->find_input((sp[0] + "." + sp[1]).c_str());
-					if (input)
-					{
-						auto item = input->array_insert_item(index);
-						printf("item added: %s\n", item->get_address().v);
-					}
-					else
-						printf("input not found");
-				}
-				else
-					printf("wrong address");
 			}
 			else
 				printf("unknow object to add\n");
@@ -348,14 +306,14 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_in_address = std::string(command_line);
 
-				auto i = bp->find_item(s_in_address.c_str());
+				auto i = bp->find_input(s_in_address.c_str());
 				if (i)
 				{
 					i->set_link(nullptr);
 					printf("link removed: %s\n", s_in_address.c_str());
 				}
 				else
-					printf("item not found\n");
+					printf("input not found\n");
 			}
 			else
 				printf("unknow object to remove\n");
@@ -368,21 +326,17 @@ int main(int argc, char **args)
 			scanf("%s", command_line);
 			auto s_value = std::string(command_line);
 
-			auto i = bp->find_item(s_address.c_str());
+			auto i = bp->find_input(s_address.c_str());
 			if (i)
 			{
-				VariableInfo* v;
-				if (i->parent_i())
-					v = i->parent_i()->variable_info();
-				else if (i->parent_o())
-					v = i->parent_o()->variable_info();
-				auto value_before = v->serialize_value(&i->data().v, false, -1, 2);
-				v->unserialize_value(s_value, &i->data().v, false, -1);
-				auto value_after = v->serialize_value(&i->data().v, false, -1, 2);
+				auto v = i->variable_info();
+				auto value_before = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &i->data().v, -1, 2);
+				unserialize_value(v->type()->tag(), v->type()->name_hash(), -1, s_value, &i->data().v, -1);
+				auto value_after = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &i->data().v, -1, 2);
 				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
 			}
 			else
-				printf("item not found\n");
+				printf("input not found\n");
 		}
 		else if (s_command_line == "update")
 		{
@@ -501,15 +455,11 @@ int main(int argc, char **args)
 					for (auto j = 0; j < src->input_count(); j++)
 					{
 						auto input = src->input(j);
-						for (auto k = 0; k < input->array_item_count(); k++)
+						if (input->link())
 						{
-							auto item = input->array_item(k);
-							if (item->link())
-							{
-								auto l = n_links->new_node("");
-								l->new_attr("in", item->get_address().v);
-								l->new_attr("out", item->link()->get_address().v);
-							}
+							auto l = n_links->new_node("");
+							l->new_attr("in", input->get_address().v);
+							l->new_attr("out", input->link()->get_address().v);
 						}
 					}
 				}
