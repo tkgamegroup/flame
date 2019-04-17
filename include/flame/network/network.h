@@ -40,6 +40,8 @@ namespace flame
 
 	struct OneClientServerWebSocket // only first one client can connect
 	{
+		void* ev_closed;
+
 		FLAME_NETWORK_EXPORTS bool send(int size, void* data);
 
 		FLAME_NETWORK_EXPORTS static OneClientServerWebSocket* create(ushort port, int timeout/* second */, const Function<void(void* c, int size, void* data)>& on_message);

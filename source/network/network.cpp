@@ -29,9 +29,7 @@ namespace flame
 {
 	struct OneClientServerWebSocketPrivate : OneClientServerWebSocket
 	{
-		std::mutex mtx; // all ops
-
-		int fd_s, fd_c;
+		int fd_c;
 
 		Function<void(void* c, int size, void* data)> message_callback;
 
@@ -104,9 +102,10 @@ namespace flame
 		FD_ZERO(&rfds);
 		FD_SET(fd_c, &rfds);
 		res = select(-1, &rfds, nullptr, nullptr, &timeout);
+		closesocket(fd_s);
+
 		if (res <= 0)
 		{
-			closesocket(fd_s);
 			closesocket(fd_c);
 			return nullptr;
 		}
@@ -118,7 +117,6 @@ namespace flame
 
 		if (ret <= 0 || !(ret > 3 && p[0] == 'G' && p[1] == 'E' && p[2] == 'T'))
 		{
-			closesocket(fd_s);
 			closesocket(fd_c);
 			return nullptr;
 		}
@@ -156,7 +154,7 @@ namespace flame
 		}
 
 		auto s = new OneClientServerWebSocketPrivate;
-		s->fd_s = fd_s;
+		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
 		s->fd_c = fd_c;
 		s->message_callback = on_message;
 
@@ -169,7 +167,10 @@ namespace flame
 					uchar buf[1024 * 10];
 					auto ret = recv(thiz->fd_c, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
 					if (ret <= 0)
+					{
+						SetEvent(thiz->ev_closed);
 						return;
+					}
 
 					auto p = buf;
 

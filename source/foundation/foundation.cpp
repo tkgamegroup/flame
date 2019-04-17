@@ -96,6 +96,11 @@ namespace flame
 		Sleep(time < 0 ? INFINITE : time);
 	}
 
+	void wait_for(void* ev)
+	{
+		WaitForSingleObject(ev, INFINITE);
+	}
+
 	void do_simple_dispatch_loop()
 	{
 		for (;;)
