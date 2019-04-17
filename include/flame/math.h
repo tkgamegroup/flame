@@ -38,6 +38,33 @@ namespace flame
 
 	const float EPS = 0.000001f;
 
+	template<uint N, class T>
+	struct vec;
+
+	template<class T>
+	struct vec<1, T>
+	{
+		T x;
+	};
+
+	template<class T>
+	struct vec<2, T>
+	{
+		T x, y;
+	};
+
+	template<class T>
+	struct vec<3, T>
+	{
+		T x, y, z;
+	};
+
+	template<class T>
+	struct vec<4, T>
+	{
+		T x, y, z, w;
+	};
+
 	template<class T>
 	inline T min(const T& a, const T& b)
 	{
