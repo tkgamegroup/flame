@@ -469,7 +469,6 @@ int main(int argc, char **args)
 				s->send(str.size, str.v);
 
 				wait_for(s->ev_closed);
-
 				printf("browser: closed\n");
 			}
 		}

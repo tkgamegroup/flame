@@ -24,6 +24,7 @@
 
 #include <flame/type.h>
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <string>
 
@@ -32,142 +33,25 @@
 
 namespace flame
 {
-	// == copy from math.h of C ==
-	const float E           = 2.7182818f;  // e
-	const float LOG2E       = 1.4426950f;  // log2(e)
-	const float LOG10E      = 0.4342944f;  // log10(e)
-	const float LN2         = 0.6931471f;  // ln(2)
-	const float LN10        = 2.3025850f;  // ln(10)
-	const float PI          = 3.1415926f;  // pi
-	const float PI_2        = 1.5707963f;  // pi/2
-	const float PI_4        = 0.7853981f;  // pi/4
-	const float PI_INV      = 0.3183098f;  // 1/pi
-	const float PI_INV2     = 0.6366197f;  // 2/pi
-	const float RAD_ANG     = 180.f / PI;  // rad to angle
-	const float ANG_RAD     = PI / 180.f;  // angle to rad
-	const float SQRTPI_INV2 = 1.1283791f;  // 2/sqrt(pi)
-	const float SQRT2       = 1.4142135f;  // sqrt(2)
-	const float SQRT1_2     = 0.7071067f;  // 1/sqrt(2)
-	// == 
+	const float RAD_ANG     = 180.f / M_PI;  // rad to angle
+	const float ANG_RAD     = M_PI / 180.f;  // angle to rad
 
 	const float EPS = 0.000001f;
 
-	inline float get_inf()
-	{
-		auto zero = 0.f;
-		return 1.f / zero;
-	}
-
-	inline bool is_inf(float v)
-	{
-		return (1.f + v) == v;
-	}
-
-	inline float abs(float v)
-	{
-		return v > 0.f ? v : -v;
-	}
-
-	inline float min(float a, float b)
+	template<class T>
+	inline T min(const T& a, const T& b)
 	{
 		return a < b ? a : b;
 	}
 
-	inline float max(float a, float b)
+	template<class T>
+	inline T max(const T& a, const T& b)
 	{
 		return a > b ? a : b;
 	}
 
-	inline float min(int a, int b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(int a, int b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float min(uint a, uint b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(uint a, uint b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float min(int a, uint b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(int a, uint b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float min(uint a, int b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(uint a, int b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float min(float a, int b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(float a, int b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float min(int a, float b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(int a, float b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float min(float a, uint b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(float a, uint b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float min(uint a, float b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float max(uint a, float b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline int clamp(int v, int a, int b)
-	{
-		if (v < a)
-			return a;
-		if (v > b)
-			return b;
-		return v;
-	}
-
-	inline float clamp(float v, float a, float b)
+	template<class T>
+	inline T clamp(const T& v, const T& a, const T& b)
 	{
 		if (v < a)
 			return a;
@@ -5385,14 +5269,14 @@ namespace flame
 			if (test > 0.499f * unit)
 			{ // singularity at north pole
 				e.yaw = 2.f * atan2(q.x, q.w);
-				e.pitch = PI / 2.f;
+				e.pitch = M_PI / 2.f;
 				e.roll = 0;
 				return;
 			}
 			if (test < -0.499f * unit)
 			{ // singularity at south pole
 				e.yaw = -2.f * atan2(q.x, q.w);
-				e.pitch = -PI / 2.f;
+				e.pitch = -M_PI / 2.f;
 				e.roll = 0;
 				return;
 			}
