@@ -618,8 +618,8 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int item_count() const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* item(int idx) const;
-		FLAME_FOUNDATION_EXPORTS int find_item(const char* name) const;
-		FLAME_FOUNDATION_EXPORTS int find_item(int value) const;
+		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(const char* name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(int value, int* out_idx = nullptr) const;
 
 		FLAME_FOUNDATION_EXPORTS String serialize_value(bool single, int v) const;
 	};
@@ -668,11 +668,11 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int item_count() const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* item(int idx) const;
-		FLAME_FOUNDATION_EXPORTS int find_item_i(const char* name) const;
+		FLAME_FOUNDATION_EXPORTS VariableInfo* find_item(const char* name, int *out_idx = nullptr) const;
 
 		FLAME_FOUNDATION_EXPORTS int function_count() const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(int idx) const;
-		FLAME_FOUNDATION_EXPORTS int find_function_i(const char* name) const;
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const char* name, int *out_idx = nullptr) const;
 	};
 
 	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();

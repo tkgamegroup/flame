@@ -168,8 +168,8 @@ window.onload = function(){
 
 	var sock_s = new WebSocket("ws://localhost:5566/");
     sock_s.onmessage = function(a){
-        var obj = eval('(' + a.data + ')');
-        var src_nodes = obj.nodes;
+        var src = eval('(' + a.data + ')');
+        var src_nodes = src.nodes;
         for (var i in src_nodes)
         {
             var src = src_nodes[i];
@@ -183,7 +183,7 @@ window.onload = function(){
             n.eMain.style.position = "absolute";
             document.body.appendChild(n.eMain);
         }
-        var src_links = obj.links;
+        var src_links = src.links;
         for (var i in src_links)
         {
             var src = src_links[i];
@@ -201,6 +201,7 @@ window.onload = function(){
             nodes[i].updatePosition();
         
     };
+    window.sock_s = sock_s;
 
     /*
 
@@ -209,30 +210,8 @@ window.onload = function(){
     n.eMain.style.position = "absolute";
     document.body.appendChild(n.eMain);
     
-    var n1 = new Node("test", 100, 20);
-    n1.AddInput("a");
-    n1.AddInput("b");
-    n1.AddInput("c");
-    n1.AddOutput("1");
-    n1.AddOutput("2");
-    document.body.appendChild(n1.eMain);
-    
     var mouse = {
-        currentInput: null,
-        createPath: function (a, b) {
-            var diff = {
-                x: b.x - a.x,
-                y: b.y - a.y
-            };
-    
-            var pathStr = "M" + a.x + "," + a.y + " ";
-            pathStr += "C";
-            pathStr += a.x + diff.x / 3 * 2 + "," + a.y + " ";
-            pathStr += a.x + diff.x / 3 + "," + b.y + " ";
-            pathStr += b.x + "," + b.y;
-    
-            return pathStr;
-        }
+        currentInput: null
     };
     
     window.onmousemove = function (e) {
@@ -256,11 +235,6 @@ window.onload = function(){
     };
     
     function Node(name) {
-        // DOM Element creation
-        this.domElement = document.createElement("div");
-        this.domElement.classList.add("node");
-        this.domElement.setAttribute("title", name);
-    
         // Create output visual
         var outDom = document.createElement("span");
         outDom.classList.add("output");
@@ -277,14 +251,6 @@ window.onload = function(){
             }
             e.stopPropagation();
         };
-    
-        // Node Stuffs
-        this.value = "";
-        this.inputs = [];
-        this.connected = false;
-    
-        // SVG Connectors
-        this.attachedPaths = [];
     }
     
     function NodeInput(name) {
@@ -318,23 +284,6 @@ window.onload = function(){
         };
     }
     
-    Node.prototype.getOutputPoint = function () {
-        var tmp = this.domElement.firstElementChild;
-        var offset = GetFullOffset(tmp);
-        return {
-            x: offset.left + tmp.offsetWidth / 2,
-            y: offset.top + tmp.offsetHeight / 2
-        };
-    };
-    
-    Node.prototype.addInput = function (name) {
-        var input = new NodeInput(name);
-        this.inputs.push(input);
-        this.domElement.appendChild(input.domElement);
-    
-        return input;
-    };
-    
     Node.prototype.detachInput = function (input) {
         var index = -1;
         for (var i = 0; i < this.attachedPaths.length; i++) {
@@ -350,49 +299,6 @@ window.onload = function(){
         if (this.attachedPaths.length <= 0) {
             this.domElement.classList.remove("connected");
         }
-    };
-    
-    Node.prototype.ownsInput = function (input) {
-        for (var i = 0; i < this.inputs.length; i++) {
-            if (this.inputs[i] == input) return true;
-        }
-        return false;
-    };
-    
-    Node.prototype.updatePosition = function () {
-        var outPoint = this.getOutputPoint();
-    
-        var aPaths = this.attachedPaths;
-        for (var i = 0; i < aPaths.length; i++) {
-            var iPoint = aPaths[i].input.getAttachPoint();
-            var pathStr = this.createPath(iPoint, outPoint);
-            aPaths[i].path.setAttributeNS(null, "d", pathStr);
-        }
-    
-        for (var j = 0; j < this.inputs.length; j++) {
-            if (this.inputs[j].node != null) {
-                var iP = this.inputs[j].getAttachPoint();
-                var oP = this.inputs[j].node.getOutputPoint();
-    
-                var pStr = this.createPath(iP, oP);
-                this.inputs[j].path.setAttributeNS(null, "d", pStr);
-            }
-        }
-    };
-    
-    Node.prototype.createPath = function (a, b) {
-        var diff = {
-            x: b.x - a.x,
-            y: b.y - a.y
-        };
-    
-        var pathStr = "M" + a.x + "," + a.y + " ";
-        pathStr += "C";
-        pathStr += a.x + diff.x / 3 * 2 + "," + a.y + " ";
-        pathStr += a.x + diff.x / 3 + "," + b.y + " ";
-        pathStr += b.x + "," + b.y;
-    
-        return pathStr;
     };
     
     Node.prototype.connectTo = function (input) {
@@ -423,23 +329,10 @@ window.onload = function(){
     };
     
     Node.prototype.initUI = function () {
-        var that = this;
-    
-        // Make draggable
         $(this.domElement).draggable({
             containment: "window",
-            cancel: ".connection,.output",
-            drag: function (event, ui) {
-                that.updatePosition();
-            }
+            cancel: ".connection,.output"
         });
-        // Fix positioning
-        this.domElement.style.position = "absolute";
-    
-        document.body.appendChild(this.domElement);
-    
-        // update.
-        this.updatePosition();
     };
 
     /*
@@ -472,3 +365,11 @@ window.onload = function(){
     */
 };
 
+function on_save_clicked()
+{
+    var sock_s = window.sock_s;
+    if (!sock_s)
+        return;
+
+    
+}

@@ -129,9 +129,7 @@ namespace flame
 		updated(false),
 		dummy(nullptr)
 	{
-		auto update_function_idx = udt->find_function_i("update");
-		if (update_function_idx != -1)
-			update_function = udt->function(update_function_idx);
+		update_function = udt->find_function("update");
 
 		for (auto i = 0; i < udt->item_count(); i++)
 		{
@@ -156,10 +154,9 @@ namespace flame
 
 	void *NodePrivate::_find_input_or_output(const std::string &name, int &input_or_output) const
 	{
-		auto udt_item_idx = udt->find_item_i(name.c_str());
-		if (udt_item_idx < 0)
+		auto udt_item = udt->find_item(name.c_str());
+		if (!udt_item)
 			return nullptr;
-		auto udt_item = udt->item(udt_item_idx);
 		auto udt_item_attribute = std::string(udt_item->attribute());
 		if (udt_item_attribute.find('i') != std::string::npos)
 		{
@@ -561,6 +558,9 @@ namespace flame
 				if (!udt)
 					continue;
 				auto n = new NodePrivate(this, id, udt);
+				auto a_pos = n_node->find_attr("pos");
+				if (a_pos)
+					n->position = stof2(a_pos->value().c_str());
 
 				for (auto i_i = 0; i_i < n_node->node_count(); i_i++)
 				{
@@ -568,23 +568,17 @@ namespace flame
 					if (n_input->name() == "input")
 					{
 						auto name = n_input->find_attr("name")->value();
-						auto udt_item_idx = udt->find_item_i(name.c_str());
-						if (udt_item_idx >= 0)
+						auto udt_item = udt->find_item(name.c_str());
+						if (udt_item && udt_item->type()->tag() != TypeTagPointer && 
+							std::string(udt_item->attribute()).find('i') != std::string::npos)
 						{
-							auto udt_item = udt->item(udt_item_idx);
-							if (udt_item->type()->tag() != TypeTagPointer)
+							for (auto& input : n->inputs)
 							{
-								if (std::string(udt_item->attribute()).find('i') != std::string::npos)
+								auto v = input->variable_info;
+								if (name == v->name())
 								{
-									for (auto &input : n->inputs)
-									{
-										auto v = input->variable_info;
-										if (name == v->name())
-										{
-											unserialize_value(v->type()->tag(), v->type()->name_hash(), -1, n_input->find_attr("value")->value(), &input->data.v, -1);
-											break;
-										}
-									}
+									unserialize_value(v->type()->tag(), v->type()->name_hash(), -1, n_input->find_attr("value")->value(), &input->data.v, -1);
+									break;
 								}
 							}
 						}
@@ -616,6 +610,7 @@ namespace flame
 			auto n_node = file->new_node("node");
 			n_node->new_attr("type", n->udt->name());
 			n_node->new_attr("id", n->id);
+			n_node->new_attr("pos", to_stdstring(n->position));
 			for (auto &input : n->inputs)
 			{
 				auto v = input->variable_info;

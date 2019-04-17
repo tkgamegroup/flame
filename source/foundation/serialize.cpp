@@ -112,26 +112,38 @@ namespace flame
 		return ((EnumInfoPrivate*)this)->items[idx].get();
 	}
 
-	int EnumInfo::find_item(const char* name) const
+	EnumItem* EnumInfo::find_item(const char* name, int *out_idx) const
 	{
 		auto& items = ((EnumInfoPrivate*)this)->items;
 		for (auto i = 0; i < items.size(); i++)
 		{
 			if (items[i]->name == name)
-				return i;
+			{
+				if (out_idx)
+					* out_idx = i;
+				return items[i].get();
+			}
 		}
-		return -1;
+		if (out_idx)
+			* out_idx = -1;
+		return nullptr;
 	}
 
-	int EnumInfo::find_item(int value) const
+	EnumItem* EnumInfo::find_item(int value, int* out_idx) const
 	{
 		auto& items = ((EnumInfoPrivate*)this)->items;
 		for (auto i = 0; i < items.size(); i++)
 		{
 			if (items[i]->value == value)
-				return i;
+			{
+				if (out_idx)
+					* out_idx = i;
+				return items[i].get();
+			}
 		}
-		return -1;
+		if (out_idx)
+			* out_idx = -1;
+		return nullptr;
 	}
 
 	String EnumInfo::serialize_value(bool single, int v) const
@@ -444,11 +456,8 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-		{
-			auto e = find_enum(type_hash);
-			*(int*)dst = e->find_item(str.c_str());
-		}
-		break;
+			find_enum(type_hash)->find_item(str.c_str(), (int*)dst);
+			break;
 		case TypeTagVariable:
 			from_string(type_hash, str, dst);
 			break;
@@ -519,10 +528,14 @@ namespace flame
 			func_find_pos = 0;
 		}
 
-		inline int find_item_i(const char* name)
+		inline VariableInfoPrivate* find_item(const char* name, int *out_idx)
 		{
 			if (items.empty())
-				return -1;
+			{
+				if (out_idx)
+					* out_idx = -1;
+				return nullptr;
+			}
 
 			auto p = item_find_pos;
 			while (true)
@@ -533,21 +546,33 @@ namespace flame
 					item_find_pos++;
 					if (item_find_pos >= items.size())
 						item_find_pos = 0;
-					return t;
+					if (out_idx)
+						* out_idx = t;
+					return items[func_find_pos].get();
 				}
 				item_find_pos++;
 				if (item_find_pos >= items.size())
 					item_find_pos = 0;
 				if (item_find_pos == p)
-					return -1;
+				{
+					if (out_idx)
+						* out_idx = -1;
+					return nullptr;
+				}
 			}
-			return -1;
+			if (out_idx)
+				* out_idx = -1;
+			return nullptr;
 		}
 
-		inline int find_func_i(const char* name)
+		inline FunctionInfoPrivate* find_func(const char* name, int* out_idx)
 		{
 			if (functions.empty())
-				return -1;
+			{
+				if (out_idx)
+					* out_idx = -1;
+				return nullptr;
+			}
 
 			auto p = func_find_pos;
 			while (true)
@@ -558,15 +583,23 @@ namespace flame
 					func_find_pos++;
 					if (func_find_pos >= functions.size())
 						func_find_pos = 0;
-					return t;
+					if (out_idx)
+						* out_idx = t;
+					return functions[func_find_pos].get();
 				}
 				func_find_pos++;
 				if (func_find_pos >= functions.size())
 					func_find_pos = 0;
 				if (func_find_pos == p)
-					return -1;
+				{
+					if (out_idx)
+						* out_idx = -1;
+					return nullptr;
+				}
 			}
-			return -1;
+			if (out_idx)
+				* out_idx = -1;
+			return nullptr;
 		}
 	};
 
@@ -595,9 +628,9 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->items[idx].get();
 	}
 
-	int UdtInfo::find_item_i(const char* name) const
+	VariableInfo* UdtInfo::find_item(const char* name, int *out_idx) const
 	{
-		return ((UdtInfoPrivate*)this)->find_item_i(name);
+		return ((UdtInfoPrivate*)this)->find_item(name, out_idx);
 	}
 
 	int UdtInfo::function_count() const
@@ -610,9 +643,9 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->functions[idx].get();
 	}
 
-	int UdtInfo::find_function_i(const char* name) const
+	FunctionInfo* UdtInfo::find_function(const char* name, int* out_idx) const
 	{
-		return ((UdtInfoPrivate*)this)->find_func_i(name);
+		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
 	}
 
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
@@ -1194,7 +1227,7 @@ namespace flame
 				if (n_item->name != "item")
 					continue;
 
-				auto item = u->item(u->find_item_i(n_item->find_attr("name")->value().c_str()));
+				auto item = u->find_item(n_item->find_attr("name")->value().c_str());
 
 				switch (item->type()->tag())
 				{
