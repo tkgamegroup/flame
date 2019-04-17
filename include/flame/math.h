@@ -71,6 +71,15 @@ namespace flame
 		return a < b ? a : b;
 	}
 
+	template<uint N, class T>
+	inline vec<N, T> min(const vec<N, T>& a, const vec<N, T>& b)
+	{
+		vec<N, T> ret;
+		for (auto i = 0; i < N; i++)
+			ret[i] = a[i] < b[i] ? a[i] : b[i];
+		return ret;
+	}
+
 	template<class T>
 	inline T max(const T& a, const T& b)
 	{
