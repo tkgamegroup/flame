@@ -641,10 +641,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS bool compare_to_default(void* src, bool is_obj) const;
 	};
 
-	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag tag, uint type_hash, int size, const void* src, int item_index, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag tag, uint type_hash, int size, const std::string& str, void* dst, int item_index);
-	// when this is not an array, item_index is ignored
-	// else, means data is an array, and use item_index to index the item
+	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag tag, uint type_hash, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag tag, uint type_hash, const std::string& str, void* dst);
 
 	struct FunctionInfo
 	{

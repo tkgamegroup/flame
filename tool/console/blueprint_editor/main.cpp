@@ -148,7 +148,7 @@ int main(int argc, char **args)
 						if (input->link())
 							link_address = input->link()->get_address().v;
 						printf("   [%s]->\n", link_address.c_str());
-						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &input->data().v, -1, 2);
+						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), &input->data().v, 2);
 						if (str.size == 0)
 							str = "-";
 						printf("   %s\n", str.v);
@@ -159,7 +159,7 @@ int main(int argc, char **args)
 						auto output = n->output(i);
 						auto v = output->variable_info();
 						printf(" %s\n", output->variable_info()->name());
-						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &output->data().v, -1, 2);
+						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), &output->data().v, 2);
 						if (str.size == 0)
 							str = "-";
 						printf("   %s\n", str.v);
@@ -330,9 +330,9 @@ int main(int argc, char **args)
 			if (i)
 			{
 				auto v = i->variable_info();
-				auto value_before = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &i->data().v, -1, 2);
-				unserialize_value(v->type()->tag(), v->type()->name_hash(), -1, s_value, &i->data().v, -1);
-				auto value_after = serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &i->data().v, -1, 2);
+				auto value_before = serialize_value(v->type()->tag(), v->type()->name_hash(), &i->data().v, 2);
+				unserialize_value(v->type()->tag(), v->type()->name_hash(), s_value, &i->data().v);
+				auto value_after = serialize_value(v->type()->tag(), v->type()->name_hash(), &i->data().v, 2);
 				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
 			}
 			else

@@ -424,34 +424,22 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->compare_to_default(src, is_obj);
 	}
 
-	String serialize_value(TypeTag tag, uint type_hash, int size, const void* src, int item_index, int precision)
+	String serialize_value(TypeTag tag, uint type_hash, const void* src, int precision)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-		{
-			auto e = find_enum(type_hash);
-			return e->serialize_value(true, *(int*)src);
-		}
-		break;
+			return find_enum(type_hash)->serialize_value(true, *(int*)src);
 		case TypeTagEnumMulti:
 			break;
 		case TypeTagVariable:
 			return to_string(type_hash, src, precision);
-		case TypeTagNativeArrayOfVariable:
-			if (item_index != -1)
-				to_string(type_hash, (char*)src + size * item_index, precision);
-			break;
-		case TypeTagArrayOfVariable:
-			if (item_index != -1)
-				return to_string(type_hash, (char*)((Array<int>*)src)->v + size * item_index, precision);
-			break;
 		}
 
 		return "";
 	}
 
-	void unserialize_value(TypeTag tag, uint type_hash, int size, const std::string & str, void* dst, int item_index)
+	void unserialize_value(TypeTag tag, uint type_hash, const std::string & str, void* dst)
 	{
 		switch (tag)
 		{
@@ -460,14 +448,6 @@ namespace flame
 			break;
 		case TypeTagVariable:
 			from_string(type_hash, str, dst);
-			break;
-		case TypeTagNativeArrayOfVariable:
-			if (item_index != -1)
-				from_string(type_hash, str, (char*)dst + size * item_index);
-			break;
-		case TypeTagArrayOfVariable:
-			if (item_index != -1)
-				from_string(type_hash, str, (char*)((Array<int>*)dst)->v + size * item_index);
 			break;
 		}
 	}
@@ -1214,7 +1194,7 @@ namespace flame
 						auto n_item = new_node("item");
 						n_item->new_attr("name", item->name());
 
-						n_item->new_attr("value", serialize_value(item->type()->tag(), item->type()->name_hash(), -1, src, -1, precision).v);
+						n_item->new_attr("value", serialize_value(item->type()->tag(), item->type()->name_hash(), src, precision).v);
 					}
 				}
 			}
@@ -1368,7 +1348,7 @@ namespace flame
 				}
 				break;
 				default:
-					unserialize_value(item->type()->tag(), item->type()->name_hash(), -1, n_item->find_attr("value")->value(), (char*)obj + item->offset(), -1);
+					unserialize_value(item->type()->tag(), item->type()->name_hash(), n_item->find_attr("value")->value(), (char*)obj + item->offset());
 				}
 			}
 		}
@@ -2352,7 +2332,7 @@ namespace flame
 						{
 							auto a_default_value = n_item->find_attr("default_value");
 							if (a_default_value)
-								unserialize_value(i->type.tag, i->type.name_hash, -1, a_default_value->value(), &i->default_value.v, -1);
+								unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), &i->default_value.v);
 						}
 						u->items.emplace_back(i);
 					}
@@ -2436,7 +2416,7 @@ namespace flame
 				{
 					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
 					{
-						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, -1, &i->default_value.v, -1, 1);
+						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
 						if (default_value_str.size > 0)
 							n_item->new_attr("default_value", default_value_str.v);
 					}

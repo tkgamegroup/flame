@@ -619,7 +619,7 @@ namespace flame
 					auto v = input->variable_info;
 					auto n_input = n_node->new_node("input");
 					n_input->new_attr("name", v->name());
-					n_input->new_attr("value", serialize_value(v->type()->tag(), v->type()->name_hash(), -1, &input->data.v, -1, 2).v);
+					n_input->new_attr("value", serialize_value(v->type()->tag(), v->type()->name_hash(), &input->data.v, 2).v);
 				}
 			}
 		}
