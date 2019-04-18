@@ -5358,19 +5358,6 @@ namespace flame
 
 	typedef char TypeFmt[4];
 
-	inline void str_to_typefmt(TypeFmt &lhs, const char *rhs)
-	{
-		auto i = 0;
-		for (;; i++)
-		{
-			lhs[i] = rhs[i];
-			if (lhs[i] == 0)
-				break;
-		}
-		for (; i < 4; i++)
-			lhs[i] = 0;
-	}
-
 	inline void typefmt_assign(TypeFmt &lhs, const char *rhs)
 	{
 		for (auto i = 0; i < 4; i++)

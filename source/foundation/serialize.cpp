@@ -35,9 +35,7 @@ namespace flame
 		"enum_single",
 		"enum_multi",
 		"varible",
-		"pointer",
-		"array_of_varible",
-		"array_of_pointer"
+		"pointer"
 	};
 
 	const char* get_type_tag_name(TypeTag tag)
@@ -159,32 +157,34 @@ namespace flame
 			return *(bool*)src ? "true" : "false";
 		case cH("uint"):
 			return to_string(*(uint*)src);
-		case cH("int"):
+		case cH("int"): case cH("i"):
 			return to_string(*(int*)src);
-		case cH("Ivec2"):
+		case cH("Ivec2"): case cH("i2"):
 			return to_string(*(Ivec2*)src);
-		case cH("Ivec3"):
+		case cH("Ivec3"): case cH("i3"):
 			return to_string(*(Ivec3*)src);
-		case cH("Ivec4"):
+		case cH("Ivec4"): case cH("i4"):
 			return to_string(*(Ivec4*)src);
-		case cH("float"):
+		case cH("float"): case cH("f"):
 			return to_string(*(float*)src, precision);
-		case cH("Vec2"):
+		case cH("Vec2"): case cH("f2"):
 			return to_string(*(Vec2*)src, precision);
-		case cH("Vec3"):
+		case cH("Vec3"): case cH("f3"):
 			return to_string(*(Vec3*)src, precision);
-		case cH("Vec4"):
+		case cH("Vec4"): case cH("f4"):
 			return to_string(*(Vec4*)src, precision);
-		case cH("uchar"):
+		case cH("uchar"): case cH("b"):
 			return to_string(*(uchar*)src);
-		case cH("Bvec2"):
+		case cH("Bvec2"): case cH("b2"):
 			return to_string(*(Bvec2*)src);
-		case cH("Bvec3"):
+		case cH("Bvec3"): case cH("b3"):
 			return to_string(*(Bvec3*)src);
-		case cH("Bvec4"):
+		case cH("Bvec4"): case cH("b4"):
 			return to_string(*(Bvec4*)src);
 		case cH("String"):
 			return *(String*)src;
+		case cH("StringW"):
+			return w2s(((StringW*)src)->v);
 		case cH("StringAndHash"):
 			return *(StringAndHash*)src;
 		}
@@ -202,41 +202,50 @@ namespace flame
 		case cH("uint"):
 			*(uint*)dst = stou1(str.c_str());
 			break;
-		case cH("int"):
+		case cH("int"): case cH("i"):
 			*(int*)dst = stoi1(str.c_str());
 			break;
-		case cH("Ivec2"):
+		case cH("Ivec2"): case cH("i2"):
 			*(Ivec2*)dst = stoi2(str.c_str());
 			break;
-		case cH("Ivec3"):
+		case cH("Ivec3"): case cH("i3"):
 			*(Ivec3*)dst = stoi3(str.c_str());
 			break;
-		case cH("Ivec4"):
+		case cH("Ivec4"): case cH("i4"):
 			*(Ivec4*)dst = stoi4(str.c_str());
 			break;
-		case cH("float"):
+		case cH("float"): case cH("f"):
 			*(float*)dst = stof1(str.c_str());
 			break;
-		case cH("Vec2"):
+		case cH("Vec2"): case cH("f2"):
 			*(Vec2*)dst = stof2(str.c_str());
 			break;
-		case cH("Vec3"):
+		case cH("Vec3"): case cH("f3"):
 			*(Vec3*)dst = stof3(str.c_str());
 			break;
-		case cH("Vec4"):
+		case cH("Vec4"): case cH("f4"):
 			*(Vec4*)dst = stof4(str.c_str());
 			break;
-		case cH("uchar"):
+		case cH("uchar"): case cH("b"):
 			*(uchar*)dst = stob1(str.c_str());
 			break;
-		case cH("Bvec2"):
+		case cH("Bvec2"): case cH("b2"):
 			*(Bvec2*)dst = stob2(str.c_str());
 			break;
-		case cH("Bvec3"):
+		case cH("Bvec3"): case cH("b3"):
 			*(Bvec3*)dst = stob3(str.c_str());
 			break;
-		case cH("Bvec4"):
+		case cH("Bvec4"): case cH("b4"):
 			*(Bvec4*)dst = stob4(str.c_str());
+			break;
+		case cH("String"):
+			*(String*)dst = str;
+			break;
+		case cH("StringW"):
+			*(StringW*)dst = s2w(str);
+			break;
+		case cH("StringAndHash"):
+			*(StringAndHash*)dst = str;
 			break;
 		}
 	}
@@ -255,117 +264,6 @@ namespace flame
 			default_value.fmt[1] = 0;
 			default_value.fmt[2] = 0;
 			default_value.fmt[3] = 0;
-		}
-
-		inline void get(const void* src, bool is_obj, int item_index, CommonData* dst) const
-		{
-			if (is_obj)
-				src = (char*)src + offset;
-			switch (type.tag)
-			{
-			case TypeTagEnumSingle: case TypeTagEnumMulti:
-				dst->i1() = *(int*)src;
-				break;
-			case TypeTagVariable:
-				memcpy(&dst->v, src, size);
-				break;
-			case TypeTagPointer:
-				dst->p() = *(void**)src;
-				break;
-			case TypeTagNativeArrayOfVariable:
-				if (item_index != -1)
-					memcpy(&dst->v, (char*)src + size * item_index, size);
-				break;
-			case TypeTagNativeArrayOfPointer:
-				if (item_index != -1)
-					dst->p() = *(void**)((char*)src + size * item_index);
-				break;
-			case TypeTagArrayOfVariable:
-				if (item_index != -1)
-					memcpy(&dst->v, (char*)((Array<int>*)src)->v + size * item_index, size);
-				break;
-			case TypeTagArrayOfPointer:
-				if (item_index != -1)
-					dst->p() = *(void**)((char*)((Array<void*>*)src)->v + size * item_index);
-				break;
-			}
-		}
-
-		inline void set(const CommonData* src, void* dst, bool is_obj, int item_index) const
-		{
-			if (is_obj)
-				dst = (char*)dst + offset;
-			switch (type.tag)
-			{
-			case TypeTagEnumSingle: case TypeTagEnumMulti:
-				*(int*)dst = src->v.i[0];
-				break;
-			case TypeTagVariable:
-				memcpy(dst, &src->v, size);
-				break;
-			case TypeTagPointer:
-				*(void**)dst = src->v.p;
-				break;
-			case TypeTagNativeArrayOfVariable:
-				if (item_index != -1)
-					memcpy((char*)dst + size * item_index, &src->v, size);
-				break;
-			case TypeTagNativeArrayOfPointer:
-				if (item_index != -1)
-					*(void**)((char*)dst + size * item_index) = src->v.p;
-				break;
-			case TypeTagArrayOfVariable:
-				if (item_index != -1)
-					memcpy((char*)((Array<int>*)dst)->v + size * item_index, &src->v, size);
-				break;
-			case TypeTagArrayOfPointer:
-				if (item_index != -1)
-					*(void**)((char*)((Array<void*>*)dst)->v + size * item_index) = src->v.p;
-				break;
-			}
-		}
-
-		inline void array_resize(int _size, void* dst, bool is_obj) const
-		{
-			if (!is_type_tag_array(type.tag))
-				return;
-
-			if (is_obj)
-				dst = (char*)dst + offset;
-
-			(*(Array<int>*)dst).resize(_size, size);
-		}
-
-		inline bool compare(void* src, void* dst) const
-		{
-			src = (char*)src + offset;
-			dst = (char*)dst + offset;
-
-			switch (type.tag)
-			{
-			case TypeTagEnumSingle: case TypeTagEnumMulti:
-				return *(int*)src == *(int*)dst;
-			case TypeTagVariable:
-				return memcmp(src, dst, size) == 0;
-			}
-
-			return false;
-		}
-
-		inline bool compare_to_default(void* src, bool is_obj) const
-		{
-			if (is_obj)
-				src = (char*)src + offset;
-
-			switch (type.tag)
-			{
-			case TypeTagEnumSingle: case TypeTagEnumMulti:
-				return *(int*)src == default_value.v.i[0];
-			case TypeTagVariable:
-				return memcmp(src, &default_value.v, size) == 0;
-			}
-
-			return false;
 		}
 	};
 
@@ -399,29 +297,49 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->default_value;
 	}
 
-	void VariableInfo::get(const void* src, bool is_obj, int item_index, CommonData* dst) const
+	void get(TypeTag tag, int size, const void* src, CommonData* dst)
 	{
-		((VariableInfoPrivate*)this)->get(src, is_obj, item_index, dst);
+		switch (tag)
+		{
+		case TypeTagEnumSingle: case TypeTagEnumMulti:
+			dst->i1() = *(int*)src;
+			break;
+		case TypeTagVariable:
+			memcpy(&dst->v, src, size);
+			break;
+		case TypeTagPointer:
+			dst->p() = *(void**)src;
+			break;
+		}
 	}
 
-	void VariableInfo::set(const CommonData* src, void* dst, bool is_obj, int item_index) const
+	void set(TypeTag tag, int size, const CommonData* src, void* dst)
 	{
-		((VariableInfoPrivate*)this)->set(src, dst, is_obj, item_index);
+		switch (tag)
+		{
+		case TypeTagEnumSingle: case TypeTagEnumMulti:
+			*(int*)dst = src->v.i[0];
+			break;
+		case TypeTagVariable:
+			memcpy(dst, &src->v, size);
+			break;
+		case TypeTagPointer:
+			*(void**)dst = src->v.p;
+			break;
+		}
 	}
 
-	void VariableInfo::array_resize(int size, void* dst, bool is_obj) const
+	bool compare(TypeTag tag, int size, const void* src, const void* dst)
 	{
-		((VariableInfoPrivate*)this)->array_resize(size, dst, is_obj);
-	}
+		switch (tag)
+		{
+		case TypeTagEnumSingle: case TypeTagEnumMulti:
+			return *(int*)src == *(int*)dst;
+		case TypeTagVariable:
+			return memcmp(src, dst, size) == 0;
+		}
 
-	bool VariableInfo::compare(void* src, void* dst) const
-	{
-		return ((VariableInfoPrivate*)this)->compare(src, dst);
-	}
-
-	bool VariableInfo::compare_to_default(void* src, bool is_obj) const
-	{
-		return ((VariableInfoPrivate*)this)->compare_to_default(src, is_obj);
+		return false;
 	}
 
 	String serialize_value(TypeTag tag, uint type_hash, const void* src, int precision)
@@ -715,170 +633,6 @@ namespace flame
 		((SerializableAttributePrivate*)this)->value = value;
 	}
 
-	static int find_obj_pos(const std::vector<std::pair<void*, uint>> & table, void* obj)
-	{
-		for (auto i = 0; i < table.size(); i++)
-		{
-			if (table[i].first == obj)
-				return table[i].second;
-		}
-		assert(0);
-		return -1;
-	}
-
-	static void serialize_commondata(const std::vector<std::pair<void*, uint>> & table, int precision, std::string & ty_str, std::string & vl_str, CommonData * d)
-	{
-		if (typefmt_compare(d->fmt, "f"))
-		{
-			ty_str = "f";
-			vl_str = to_stdstring(d->f1(), precision);
-		}
-		else if (typefmt_compare(d->fmt, "f2"))
-		{
-			ty_str = "f2";
-			vl_str = to_stdstring(d->f2(), precision);
-		}
-		else if (typefmt_compare(d->fmt, "f3"))
-		{
-			ty_str = "f3";
-			vl_str = to_stdstring(d->f3(), precision);
-		}
-		else if (typefmt_compare(d->fmt, "f4"))
-		{
-			ty_str = "f4";
-			vl_str = to_stdstring(d->f4(), precision);
-		}
-		else if (typefmt_compare(d->fmt, "i"))
-		{
-			ty_str = "i";
-			vl_str = to_stdstring(d->i1());
-		}
-		else if (typefmt_compare(d->fmt, "i2"))
-		{
-			ty_str = "i2";
-			vl_str = to_stdstring(d->i2());
-		}
-		else if (typefmt_compare(d->fmt, "i3"))
-		{
-			ty_str = "i3";
-			vl_str = to_stdstring(d->i3());
-		}
-		else if (typefmt_compare(d->fmt, "i4"))
-		{
-			ty_str = "i4";
-			vl_str = to_stdstring(d->i4());
-		}
-		else if (typefmt_compare(d->fmt, "b"))
-		{
-			ty_str = "b";
-			vl_str = to_stdstring((int)d->b1());
-		}
-		else if (typefmt_compare(d->fmt, "b2"))
-		{
-			ty_str = "b2";
-			vl_str = to_stdstring(d->b2());
-		}
-		else if (typefmt_compare(d->fmt, "b3"))
-		{
-			ty_str = "b3";
-			vl_str = to_stdstring(d->b3());
-		}
-		else if (typefmt_compare(d->fmt, "b4"))
-		{
-			ty_str = "b4";
-			vl_str = to_stdstring(d->b4());
-		}
-		else if (typefmt_compare(d->fmt, "p"))
-		{
-			ty_str = "p";
-			vl_str = to_stdstring(find_obj_pos(table, d->p()));
-		}
-		else
-			assert(0);
-	}
-
-	static void* find_obj(const std::vector<std::pair<void*, uint>> & table, uint id)
-	{
-		for (auto i = 0; i < table.size(); i++)
-		{
-			if (table[i].second == id)
-				return table[i].first;
-		}
-		assert(0);
-		return nullptr;
-	}
-
-	static void unserialize_commondata(const std::vector<std::pair<void*, uint>> & table, const std::string & ty_str, const std::string & vl_str, CommonData * d)
-	{
-		if (ty_str == "f")
-		{
-			typefmt_assign(d->fmt, "f");
-			d->f1() = stof1(vl_str.c_str());
-		}
-		else if (ty_str == "f2")
-		{
-			typefmt_assign(d->fmt, "f2");
-			d->f2() = stof2(vl_str.c_str());
-		}
-		else if (ty_str == "f3")
-		{
-			typefmt_assign(d->fmt, "f3");
-			d->f3() = stof3(vl_str.c_str());
-		}
-		else if (ty_str == "f4")
-		{
-			typefmt_assign(d->fmt, "f4");
-			d->f4() = stof4(vl_str.c_str());
-		}
-		else if (ty_str == "i")
-		{
-			typefmt_assign(d->fmt, "i");
-			d->i1() = stoi1(vl_str.c_str());
-		}
-		else if (ty_str == "i2")
-		{
-			typefmt_assign(d->fmt, "i2");
-			d->i2() = stoi2(vl_str.c_str());
-		}
-		else if (ty_str == "i3")
-		{
-			typefmt_assign(d->fmt, "i3");
-			d->i3() = stoi3(vl_str.c_str());
-		}
-		else if (ty_str == "i4")
-		{
-			typefmt_assign(d->fmt, "i4");
-			d->i4() = stoi4(vl_str.c_str());
-		}
-		else if (ty_str == "b")
-		{
-			typefmt_assign(d->fmt, "b");
-			d->b1() = stob1(vl_str.c_str());
-		}
-		else if (ty_str == "b2")
-		{
-			typefmt_assign(d->fmt, "b2");
-			d->b2() = stob2(vl_str.c_str());
-		}
-		else if (ty_str == "b3")
-		{
-			typefmt_assign(d->fmt, "b3");
-			d->b3() = stob3(vl_str.c_str());
-		}
-		else if (ty_str == "b4")
-		{
-			typefmt_assign(d->fmt, "b4");
-			d->b4() = stob4(vl_str.c_str());
-		}
-		else if (ty_str == "p")
-		{
-			typefmt_assign(d->fmt, "p");
-			d->p() = find_obj(table, stoi1(vl_str.c_str()));
-		}
-		else
-			assert(0);
-	}
-
 	static bool has_id(const std::vector<std::pair<void*, uint>> & obj_table, uint id)
 	{
 		for (auto& o : obj_table)
@@ -1069,138 +823,60 @@ namespace flame
 			return nullptr;
 		}
 
-		void serialize_RE(UdtInfo * u, std::vector<std::pair<void*, uint>> & obj_table, void* src, int precision)
+		void serialize(UdtInfo * u, void* src, int precision)
 		{
 			for (auto i = 0; i < u->item_count(); i++)
 			{
 				auto item = u->item(i);
+				auto tag = item->type()->tag();
+				auto hash = item->type()->name_hash();
 
-				switch (item->type()->tag())
+				switch (tag)
 				{
-				case TypeTagArrayOfVariable:
-				{
-					auto cnt = ((Array<int>*)((char*)src + item->offset()))->size;
-
-					if (cnt == 0)
-						break;
-
-					auto n_item = new_node("item");
-					n_item->new_attr("name", item->name());
-
-					switch (item->type()->name_hash())
+				case TypeTagVariable:
+					switch (hash)
 					{
 					case cH("CommonData"):
 					{
-						auto& arr = *(Array<CommonData>*)((char*)src + item->offset());
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_it = n_item->new_node("item");
-							std::string ty_str, vl_str;
-							serialize_commondata(obj_table, precision, ty_str, vl_str, &arr[i_i]);
-							n_it->new_attr("type", ty_str);
-							n_it->new_attr("value", vl_str);
-						}
-					}
-					break;
-					case cH("String"):
-					{
-						auto& arr = *(Array<String>*)((char*)src + item->offset());
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_it = n_item->new_node("item");
-							n_it->new_attr("value", arr[i_i].v);
-						}
-					}
-					break;
-					case cH("StringW"):
-					{
-						auto& arr = *(Array<StringW>*)((char*)src + item->offset());
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_it = n_item->new_node("item");
-							n_it->new_attr("value", w2s(arr[i_i].v));
-						}
-					}
-					break;
-					case cH("StringAndHash"):
-					{
-						auto& arr = *(Array<StringAndHash>*)((char*)src + item->offset());
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_it = n_item->new_node("item");
-							n_it->new_attr("value", arr[i_i].v);
-						}
-					}
-					break;
-					case cH("Function"):
-					{
-						auto& arr = *(Array<Function<void()>>*)((char*)src + item->offset());
-
-						for (auto i_i = 0; i_i < arr.size; i_i++)
-						{
-							//const auto &f = arr[i_i];
-							//auto r = find_registered_function(0, f.pf);
-
-							//auto n_fn = n_item->new_node("function");
-							//n_fn->new_attr("id", to_stdstring(r->id));
-
-							//auto d = f.p.d + r->parameter_count;
-							//for (auto i = 0; i < f.capture_count; i++)
-							//{
-							//	auto n_cpt = n_fn->new_node("capture");
-							//	std::string ty_str, vl_str;
-							//	serialize_commondata(obj_table, precision, ty_str, vl_str, (CommonData*)d);
-							//	n_cpt->new_attr("type", ty_str);
-							//	n_cpt->new_attr("value", vl_str);
-							//	d++;
-							//}
-						}
-					}
-					break;
-					}
-				}
-				break;
-				case TypeTagArrayOfPointer:
-				{
-					const auto& arr = *(Array<void*>*)((char*)src + item->offset());
-
-					if (arr.size == 0)
-						break;
-
-					auto n_item = new_node("item");
-					n_item->new_attr("name", item->name());
-
-					auto u_sub = find_udt(item->type()->name_hash());
-					if (u_sub)
-					{
-						for (auto i_i = 0; i_i < arr.size; i_i++)
-						{
-							auto obj_sub = arr[i_i];
-
-							auto n_sub = create_obj_node(obj_table, obj_sub);
-							n_sub->serialize_RE(u_sub, obj_table, obj_sub, precision);
-							n_item->add_node(n_sub);
-						}
-					}
-				}
-				break;
-				default:
-					if (!item->compare_to_default(src, true))
-					{
+						auto d = (CommonData*)src;
 						auto n_item = new_node("item");
 						n_item->new_attr("name", item->name());
-
-						n_item->new_attr("value", serialize_value(item->type()->tag(), item->type()->name_hash(), src, precision).v);
+						n_item->new_attr("type", d->fmt);
+						n_item->new_attr("value", to_string(H(d->fmt), &d->v, precision).v);
 					}
+						break;
+					case cH("Function"):
+						//const auto &f = arr[i_i];
+						//auto r = find_registered_function(0, f.pf);
+
+						//auto n_fn = n_item->new_node("function");
+						//n_fn->new_attr("id", to_stdstring(r->id));
+
+						//auto d = f.p.d + r->parameter_count;
+						//for (auto i = 0; i < f.capture_count; i++)
+						//{
+						//	auto n_cpt = n_fn->new_node("capture");
+						//	std::string ty_str, vl_str;
+						//	serialize_commondata(obj_table, precision, ty_str, vl_str, (CommonData*)d);
+						//	n_cpt->new_attr("type", ty_str);
+						//	n_cpt->new_attr("value", vl_str);
+						//	d++;
+						//}
+						break;
+					default:
+						if (!compare(tag, hash, src, &item->default_value()))
+						{
+							auto n_item = new_node("item");
+							n_item->new_attr("name", item->name());
+							n_item->new_attr("value", serialize_value(tag, hash, src, precision).v);
+						}
+					}
+					break;
 				}
 			}
 		}
 
-		void unserialize_RE(UdtInfo * u, std::vector<std::pair<void*, uint>> & obj_table, void* obj, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)> & obj_generator)
+		void unserialize(UdtInfo * u, void* dst)
 		{
 			for (auto& n_item : nodes)
 			{
@@ -1208,147 +884,54 @@ namespace flame
 					continue;
 
 				auto item = u->find_item(n_item->find_attr("name")->value().c_str());
+				auto tag = item->type()->tag();
+				auto hash = item->type()->name_hash();
 
-				switch (item->type()->tag())
+				switch (tag)
 				{
-				case TypeTagArrayOfVariable:
-				{
-					switch (item->type()->name_hash())
+				case TypeTagVariable:
+					switch (hash)
 					{
 					case cH("CommonData"):
 					{
-						auto& arr = *(Array<CommonData>*)((char*)obj + item->offset());
-						auto cnt = n_item->node_count();
-						arr.resize(cnt);
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_i = n_item->node(i_i);
-							if (n_i->name() == "item")
-								unserialize_commondata(obj_table, n_i->find_attr("type")->value(), n_i->find_attr("value")->value(), &arr[i_i]);
-							else
-								assert(0);
-						}
+						auto d = (CommonData*)dst;
+						typefmt_assign(d->fmt, n_item->find_attr("type")->value().c_str());
+						from_string(H(d->fmt), n_item->find_attr("value")->value(), &d->v);
 					}
-					break;
-					case cH("String"):
-					{
-						auto& arr = *(Array<String>*)((char*)obj + item->offset());
-						auto cnt = n_item->node_count();
-						arr.resize(cnt);
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_i = n_item->node(i_i);
-							if (n_i->name() == "item")
-								arr[i_i] = n_i->find_attr("value")->value();
-							else
-								assert(0);
-						}
-					}
-					break;
-					case cH("StringW"):
-					{
-						auto& arr = *(Array<StringW>*)((char*)obj + item->offset());
-						auto cnt = n_item->node_count();
-						arr.resize(cnt);
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_i = n_item->node(i_i);
-							if (n_i->name() == "item")
-								arr[i_i] = s2w(n_i->find_attr("value")->value());
-							else
-								assert(0);
-						}
-					}
-					break;
-					case cH("StringAndHash"):
-					{
-						auto& arr = *(Array<StringAndHash>*)((char*)obj + item->offset());
-						auto cnt = n_item->node_count();
-						arr.resize(cnt);
-
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_i = n_item->node(i_i);
-							if (n_i->name() == "item")
-								arr[i_i] = n_i->find_attr("value")->value();
-							else
-								assert(0);
-						}
-					}
-					break;
+						break;
 					case cH("Function"):
-					{
-						auto& arr = *(Array<Function<void()>>*)((char*)obj + item->offset());
-						auto cnt = n_item->node_count();
-						arr.resize(cnt);
+						//auto n_i = n_item->node(i_i);
 
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							//auto n_i = n_item->node(i_i);
+						//if (n_i->name() == "function")
+						//{
+						//	auto cpt_cnt = n_i->node_count();
+						//	auto id = stoi(n_i->find_attr("id")->value());
+						//	std::vector<CommonData> capts;
+						//	capts.resize(cpt_cnt);
 
-							//if (n_i->name() == "function")
-							//{
-							//	auto cpt_cnt = n_i->node_count();
-							//	auto id = stoi(n_i->find_attr("id")->value());
-							//	std::vector<CommonData> capts;
-							//	capts.resize(cpt_cnt);
+						//	for (auto i_c = 0; i_c < cpt_cnt; i_c++)
+						//	{
+						//		auto n_c = n_i->node(i_c);
+						//		if (n_c->name() == "capture")
+						//			unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), &capts[i_c]);
+						//		else
+						//			assert(0);
+						//	}
 
-							//	for (auto i_c = 0; i_c < cpt_cnt; i_c++)
-							//	{
-							//		auto n_c = n_i->node(i_c);
-							//		if (n_c->name() == "capture")
-							//			unserialize_commondata(obj_table, n_c->find_attr("type")->value(), n_c->find_attr("value")->value(), &capts[i_c]);
-							//		else
-							//			assert(0);
-							//	}
+						//	auto r = find_registered_function(id, nullptr);
+						//	if (!r)
+						//		assert(0);
 
-							//	auto r = find_registered_function(id, nullptr);
-							//	if (!r)
-							//		assert(0);
-
-							//	arr[i_i] = Function<>();
-							//	arr[i_i].set(r->pf, r->parameter_count, capts);
-							//}
-							//else
-							//	assert(0);
-						}
+						//	arr[i_i] = Function<>();
+						//	arr[i_i].set(r->pf, r->parameter_count, capts);
+						//}
+						//else
+						//	assert(0);
+						break;
+					default:
+						unserialize_value(tag, hash, n_item->find_attr("value")->value(), dst);
 					}
 					break;
-					}
-				}
-				break;
-				case TypeTagArrayOfPointer:
-				{
-					auto& arr = *(Array<void*>*)((char*)obj + item->offset());
-					auto cnt = n_item->node_count();
-					arr.resize(cnt);
-
-					auto u_sub = find_udt(item->type()->name_hash());
-					if (u_sub)
-					{
-						auto name_hash = H(item->name());
-						for (auto i_i = 0; i_i < cnt; i_i++)
-						{
-							auto n_i = n_item->node(i_i);
-							assert(n_i->name() == "obj");
-
-							auto obj_sub = obj_generator(u_sub, obj, name_hash);
-							if (obj_sub)
-							{
-								obj_table.emplace_back(obj_sub, stoi1(n_i->find_attr("id")->value().c_str()));
-								((SerializableNodePrivate*)n_i)->unserialize_RE(u_sub, obj_table, obj_sub, obj_generator);
-							}
-
-							arr[i_i] = obj_sub;
-						}
-					}
-				}
-				break;
-				default:
-					unserialize_value(item->type()->tag(), item->type()->name_hash(), n_item->find_attr("value")->value(), (char*)obj + item->offset());
 				}
 			}
 		}
@@ -1572,18 +1155,14 @@ namespace flame
 		dst.write((char*)src.c_str(), len);
 	}
 
-	void* SerializableNode::unserialize(UdtInfo * u, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)> & obj_generator)
+	void SerializableNode::serialize(UdtInfo* u, void* src, int precision)
 	{
-		assert(name() == "obj");
+		((SerializableNodePrivate*)this)->serialize(u, src, precision);
+	}
 
-		auto obj = obj_generator(u, nullptr, 0);
-
-		std::vector<std::pair<void*, uint>> obj_table;
-		obj_table.emplace_back(obj, stoi1(find_attr("id")->value().c_str()));
-
-		((SerializableNodePrivate*)this)->unserialize_RE(u, obj_table, obj, obj_generator);
-
-		return obj;
+	void SerializableNode::unserialize(UdtInfo * u, void* dst)
+	{
+		((SerializableNodePrivate*)this)->unserialize(u, dst);
 	}
 
 	SerializableNode* SerializableNode::create(const std::string & name)
@@ -1655,17 +1234,6 @@ namespace flame
 	void SerializableNode::destroy(SerializableNode * n)
 	{
 		delete (SerializableNodePrivate*)n;
-	}
-
-	SerializableNode* SerializableNode::serialize(UdtInfo * u, void* src, int precision)
-	{
-		srand(time(0));
-
-		std::vector<std::pair<void*, uint>> obj_table;
-
-		auto n = create_obj_node(obj_table, src);
-		n->serialize_RE(u, obj_table, src, precision);
-		return n;
 	}
 
 	int typeinfo_collect_init()
@@ -1753,7 +1321,6 @@ namespace flame
 
 	static std::string prefix("flame::");
 	static std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
-	static std::regex reg_arr("^" + prefix + R"(Array<([\w:\<\>]+)\s*(\*)?>)");
 	static std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
 	std::string format_name(const wchar_t* in, std::string * attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
@@ -1843,21 +1410,6 @@ namespace flame
 					type_name = "String";
 				else
 					type_name = "StringW";
-			}
-			else if (std::regex_search(type_name, match, reg_arr))
-			{
-				if (match[2].matched)
-					info.tag = TypeTagArrayOfPointer;
-				else
-					info.tag = TypeTagArrayOfVariable;
-				type_name = match[1].str().c_str();
-				if (std::regex_search(type_name, match, reg_str))
-				{
-					if (match[1].str() == "char")
-						type_name = "String";
-					else
-						type_name = "StringW";
-				}
 			}
 			else
 				info.tag = TypeTagVariable;
@@ -2133,8 +1685,6 @@ namespace flame
 			auto udt_name = format_name(pwname, nullptr, &pass_prefix, &pass_$);
 			if (pass_prefix && pass_$)
 			{
-				if (strcmp(udt_name.c_str(), "test") == 0)
-					auto cut = 1;
 				auto udt_namehash = H(udt_name.c_str());
 				if (udts.find(udt_namehash) == udts.end())
 				{
@@ -2328,12 +1878,9 @@ namespace flame
 						i->offset = std::stoi(n_item->find_attr("offset")->value());
 						i->size = std::stoi(n_item->find_attr("size")->value());
 						memset(&i->default_value, 0, sizeof(CommonData));
-						if (is_type_tag_array(i->type.tag))
-						{
-							auto a_default_value = n_item->find_attr("default_value");
-							if (a_default_value)
-								unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), &i->default_value.v);
-						}
+						auto a_default_value = n_item->find_attr("default_value");
+						if (a_default_value)
+							unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), &i->default_value.v);
 						u->items.emplace_back(i);
 					}
 				}
@@ -2412,14 +1959,11 @@ namespace flame
 				n_item->new_attr("attribute", i->attribute);
 				n_item->new_attr("offset", std::to_string(i->offset));
 				n_item->new_attr("size", std::to_string(i->size));
-				if (is_type_tag_array(i->type.tag))
+				if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
 				{
-					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
-					{
-						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
-						if (default_value_str.size > 0)
-							n_item->new_attr("default_value", default_value_str.v);
-					}
+					auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
+					if (default_value_str.size > 0)
+						n_item->new_attr("default_value", default_value_str.v);
 				}
 			}
 

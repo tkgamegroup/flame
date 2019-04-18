@@ -569,21 +569,8 @@ namespace flame
 		TypeTagEnumSingle,
 		TypeTagEnumMulti,
 		TypeTagVariable,
-		TypeTagPointer,
-		TypeTagNativeArrayOfVariable,
-		TypeTagNativeArrayOfPointer,
-		TypeTagArrayOfVariable,
-		TypeTagArrayOfPointer
-
-		// 'Array' means Array<>
-		// 'Native Array' means array in C/C++ language (e.g. int abc[100])
+		TypeTagPointer
 	};
-
-	inline bool is_type_tag_array(TypeTag tag)
-	{
-		return tag == TypeTagNativeArrayOfVariable || tag == TypeTagNativeArrayOfPointer ||
-			tag == TypeTagArrayOfVariable || tag == TypeTagArrayOfPointer;
-	}
 
 	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag tag);
 
@@ -633,14 +620,11 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS int size() const;
 		FLAME_FOUNDATION_EXPORTS int count() const; // for native array count
 		FLAME_FOUNDATION_EXPORTS const CommonData& default_value() const;
-
-		FLAME_FOUNDATION_EXPORTS void get(const void* src, bool is_obj, int item_index, CommonData* dst) const;
-		FLAME_FOUNDATION_EXPORTS void set(const CommonData* src, void* dst, bool is_obj, int item_index) const;
-		FLAME_FOUNDATION_EXPORTS void array_resize(int size, void* dst, bool is_obj) const;
-		FLAME_FOUNDATION_EXPORTS bool compare(void* src, void* dst) const;
-		FLAME_FOUNDATION_EXPORTS bool compare_to_default(void* src, bool is_obj) const;
 	};
 
+	FLAME_FOUNDATION_EXPORTS void get(TypeTag tag, int size, const void* src, CommonData* dst);
+	FLAME_FOUNDATION_EXPORTS void set(TypeTag tag, int size, const CommonData* src, void* dst);
+	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag tag, int size, const void* src, const void* dst);
 	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag tag, uint type_hash, const void* src, int precision = 6);
 	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag tag, uint type_hash, const std::string& str, void* dst);
 
@@ -728,14 +712,14 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS String to_string_json() const;
 		FLAME_FOUNDATION_EXPORTS void save_xml(const std::wstring& filename) const;
 
-		FLAME_FOUNDATION_EXPORTS void* unserialize(UdtInfo* u, Function<voidptr(void* c, UdtInfoPtr udt, voidptr parent, uint att_hash)>& obj_generator);
+		FLAME_FOUNDATION_EXPORTS void serialize(UdtInfo* u, void* src, int precision = 6);
+		FLAME_FOUNDATION_EXPORTS void unserialize(UdtInfo* u, void* dst);
 
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create(const std::string& name);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_string(const std::string& str);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* serialize(UdtInfo* u, void* src, int precision = 6);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
 	};
 

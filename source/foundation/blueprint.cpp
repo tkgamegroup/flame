@@ -222,8 +222,11 @@ namespace flame
 		if (updated)
 			return;
 
-		for (auto &input : inputs)
-			input->variable_info->set(input->link ? &input->link->data : &input->data, dummy, true, -1);
+		for (auto& input : inputs)
+		{
+			auto type = input->variable_info->type();
+			set(type->tag(), type->name_hash(), input->link ? &input->link->data : &input->data, dummy);
+		}
 
 		if (update_function)
 		{
@@ -244,8 +247,11 @@ namespace flame
 			}
 		}
 
-		for (auto &output : outputs)
-			output->variable_info->get(dummy, true, -1, &output->data);
+		for (auto& output : outputs)
+		{
+			auto type = output->variable_info->type();
+			get(type->tag(), type->name_hash(), dummy, &output->data);
+		}
 
 		updated = true;
 	}
@@ -577,7 +583,8 @@ namespace flame
 								auto v = input->variable_info;
 								if (name == v->name())
 								{
-									unserialize_value(v->type()->tag(), v->type()->name_hash(), -1, n_input->find_attr("value")->value(), &input->data.v, -1);
+									auto type = v->type();
+									unserialize_value(type->tag(), type->name_hash(), n_input->find_attr("value")->value(), &input->data.v);
 									break;
 								}
 							}
@@ -614,7 +621,7 @@ namespace flame
 			for (auto &input : n->inputs)
 			{
 				auto v = input->variable_info;
-				if (v->type()->tag() != TypeTagPointer && v->type()->tag() != TypeTagArrayOfPointer)
+				if (v->type()->tag() != TypeTagPointer)
 				{
 					auto v = input->variable_info;
 					auto n_input = n_node->new_node("input");
@@ -926,7 +933,5 @@ namespace flame
 	}
 
 	BP_Bvec4$ bp_bvec4_unused;
-
-	test$ test_unused;
 }
 

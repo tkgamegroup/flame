@@ -253,10 +253,5 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update$c();
 	};
-
-	struct test$
-	{
-		void* emm$[2];
-	};
 }
 
