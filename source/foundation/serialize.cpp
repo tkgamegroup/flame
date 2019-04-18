@@ -1155,12 +1155,12 @@ namespace flame
 
 	void from_xml(pugi::xml_node src, SerializableNode * dst)
 	{
-		for (auto a : src.attributes())
+		for (auto& a : src.attributes())
 			dst->new_attr(a.name(), a.value());
 
 		dst->set_value(src.value());
 
-		for (auto n : src.children())
+		for (auto& n : src.children())
 		{
 			auto node = dst->new_node(n.name());
 			if (n.type() == pugi::node_cdata)
@@ -1206,6 +1206,10 @@ namespace flame
 		if (src.is_object())
 		{
 			dst->set_type(SerializableNode::Object);
+
+		}
+		for (auto& c : src)
+		{
 
 		}
 	}
