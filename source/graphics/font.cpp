@@ -642,8 +642,8 @@ namespace msdfgen
 			t = acos(t);
 			a /= 3; q = -2 * sqrt(q);
 			x[0] = q * cos(t / 3) - a;
-			x[1] = q * cos((t + 2 * flame::PI) / 3) - a;
-			x[2] = q * cos((t - 2 * flame::PI) / 3) - a;
+			x[1] = q * cos((t + 2 * M_PI) / 3) - a;
+			x[2] = q * cos((t - 2 * M_PI) / 3) - a;
 			return 3;
 		}
 		else {

@@ -125,11 +125,11 @@ namespace flame
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->pd, s, &surface_capabilities);
 
 			size.x = clamp(size.x,
-				surface_capabilities.minImageExtent.width,
-				surface_capabilities.maxImageExtent.width);
+				(int)surface_capabilities.minImageExtent.width,
+				(int)surface_capabilities.maxImageExtent.width);
 			size.y = clamp(size.y,
-				surface_capabilities.minImageExtent.height,
-				surface_capabilities.maxImageExtent.height);
+				(int)surface_capabilities.minImageExtent.height,
+				(int)surface_capabilities.maxImageExtent.height);
 
 			unsigned int surface_format_count = 0;
 			std::vector<VkSurfaceFormatKHR> surface_formats;

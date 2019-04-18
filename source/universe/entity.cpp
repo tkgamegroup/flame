@@ -171,12 +171,9 @@ namespace flame
 			auto u_a = find_udt(H((type_name + "Archive").c_str()));
 			if (u_c)
 			{
-				auto create_func_idx = u_c->find_function_i("create");
-				if (create_func_idx != -1)
-				{
-					auto create_func = u_c->function(create_func_idx);
+				auto create_func = u_c->find_function("create");
+				if (create_func)
 					int cut = 1;
-				}
 			}
 		}
 	}

@@ -214,10 +214,10 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			VkRect2D sc;
-			sc.offset.x = max(0, rect.min.x);
-			sc.offset.y = max(0, rect.min.y);
-			sc.extent.width = max(0, rect.width());
-			sc.extent.height = max(0, rect.height());
+			sc.offset.x = max(0.f, rect.min.x);
+			sc.offset.y = max(0.f, rect.min.y);
+			sc.extent.width = max(0.f, rect.width());
+			sc.extent.height = max(0.f, rect.height());
 			vkCmdSetScissor(v, 0, 1, &sc);
 #elif defined(FLAME_D3D12)
 
