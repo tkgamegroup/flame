@@ -3,6 +3,17 @@ window.onload = function(){
     svg.ns = svg.namespaceURI;
 
     var nodes = [];
+    window.nodes = nodes;
+
+    function FindNode(name) {
+        for (var i in nodes)
+        {
+            var n = nodes[i];
+            if (n.name == name)
+                return n;
+        }
+        return null;
+    }
 
     function GetGlobalOffset(element) {
         var offset = {
@@ -54,6 +65,7 @@ window.onload = function(){
     function Slot(name, io) {
         this.name = name;
         this.node = null;
+        this.link = null;
     
         this.eMain = document.createElement("div");
 
@@ -75,8 +87,6 @@ window.onload = function(){
 
             this.eMain.appendChild(this.eSlot);
             this.eMain.appendChild(this.eName);
-
-            this.link = null;
         }
         else
         {
@@ -84,8 +94,6 @@ window.onload = function(){
 
             this.eMain.appendChild(this.eName);
             this.eMain.appendChild(this.eSlot);
-            
-            this.link = [];
         }
     }
 
@@ -132,19 +140,24 @@ window.onload = function(){
                 var a = s.GetPos();
                 var b = s.link.GetPos();
         
-                s.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x-50) + " " + a.y + " " + (b.x+50) + " " + b.y + " " + b.x + " " + b.y);
+                s.SetPath(a, b);
             }
         }
-        for (var i in this.outputs)
+        for (var i in nodes)
         {
-            var s = this.outputs[i];
-            for (var j = 0; j < s.link.length; j++)
+            var n = nodes[i];
+            for (var j in n.inputs)
             {
-                var a = s.link[j].GetPos();
-                var b = s.GetPos();
-        
-                s.link[j].path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x-50) + " " + a.y + " " + (b.x+50) + " " + b.y + " " + b.x + " " + b.y);
+                var s = n.inputs[j];
+                if (s.link && s.link.node == this)
+                {
+                    var a = s.GetPos();
+                    var b = s.link.GetPos();
+            
+                    s.SetPath(a, b);
+                }
             }
+
         }
     };
     
@@ -156,15 +169,9 @@ window.onload = function(){
         };
     };
 
-    function FindNode(name) {
-        for (var i in nodes)
-        {
-            var n = nodes[i];
-            if (n.name == name)
-                return n;
-        }
-        return null;
-    }
+    Slot.prototype.SetPath = function (a, b) {
+        this.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x - 50) + " " + a.y + " " + (b.x + 50) + " " + b.y + " " + b.x + " " + b.y);
+    };
 
 	var sock_s = new WebSocket("ws://localhost:5566/");
     sock_s.onmessage = function(a){
@@ -172,12 +179,12 @@ window.onload = function(){
         var src_nodes = src.nodes;
         for (var i in src_nodes)
         {
-            var src = src_nodes[i];
-            var n = new Node(src.name, src.x, src.y);
-            for (var j in src.inputs)
-                n.AddInput(src.inputs[j]);
-            for (var j in src.outputs)
-                n.AddOutput(src.outputs[j]);
+            var sn = src_nodes[i];
+            var n = new Node(sn.name, sn.x, sn.y);
+            for (var j in sn.inputs)
+                n.AddInput(sn.inputs[j]);
+            for (var j in sn.outputs)
+                n.AddOutput(sn.outputs[j]);
             nodes.push(n);
         
             n.eMain.style.position = "absolute";
@@ -186,16 +193,15 @@ window.onload = function(){
         var src_links = src.links;
         for (var i in src_links)
         {
-            var src = src_links[i];
+            var sl = src_links[i];
 
-            var addr_in = src.in.split(".");
-            var addr_out = src.out.split(".");
+            var addr_in = sl.in.split(".");
+            var addr_out = sl.out.split(".");
 
             var input = FindNode(addr_in[0]).FindInput(addr_in[1]);
             var output = FindNode(addr_out[0]).FindOutput(addr_out[1]);
 
             input.link = output;
-            output.link.push(input);
         }
         for (var i in src_nodes)
             nodes[i].updatePosition();

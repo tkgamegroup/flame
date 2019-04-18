@@ -438,7 +438,8 @@ namespace flame
 			auto p = item_find_pos;
 			while (true)
 			{
-				if (items[item_find_pos]->name == name)
+				auto item = items[item_find_pos].get();
+				if (item->name == name)
 				{
 					auto t = item_find_pos;
 					item_find_pos++;
@@ -446,7 +447,7 @@ namespace flame
 						item_find_pos = 0;
 					if (out_idx)
 						* out_idx = t;
-					return items[func_find_pos].get();
+					return item;
 				}
 				item_find_pos++;
 				if (item_find_pos >= items.size())
@@ -475,7 +476,8 @@ namespace flame
 			auto p = func_find_pos;
 			while (true)
 			{
-				if (functions[func_find_pos]->name == name)
+				auto func = functions[func_find_pos].get();
+				if (func->name == name)
 				{
 					auto t = func_find_pos;
 					func_find_pos++;
@@ -483,7 +485,7 @@ namespace flame
 						func_find_pos = 0;
 					if (out_idx)
 						* out_idx = t;
-					return functions[func_find_pos].get();
+					return func;
 				}
 				func_find_pos++;
 				if (func_find_pos >= functions.size())
@@ -737,13 +739,14 @@ namespace flame
 			auto p = attr_find_pos;
 			while (true)
 			{
-				if (attrs[attr_find_pos]->name == name)
+				auto attr = attrs[attr_find_pos].get();
+				if (attr->name == name)
 				{
 					auto t = attr_find_pos;
 					attr_find_pos++;
 					if (attr_find_pos >= attrs.size())
 						attr_find_pos = 0;
-					return attrs[t].get();
+					return attr;
 				}
 				attr_find_pos++;
 				if (attr_find_pos >= attrs.size())
@@ -806,13 +809,14 @@ namespace flame
 			auto p = node_find_pos;
 			while (true)
 			{
-				if (nodes[node_find_pos]->name == name)
+				auto node = nodes[node_find_pos].get();
+				if (node->name == name)
 				{
 					auto t = node_find_pos;
 					node_find_pos++;
 					if (node_find_pos >= nodes.size())
 						node_find_pos = 0;
-					return nodes[t].get();
+					return node;
 				}
 				node_find_pos++;
 				if (node_find_pos >= nodes.size())
