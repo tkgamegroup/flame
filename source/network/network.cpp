@@ -35,7 +35,7 @@ namespace flame
 
 		inline bool send(int size, void* data)
 		{
-			uchar buf[1024 * 10];
+			uchar buf[1024 * 100];
 
 			auto p = buf;
 
@@ -57,6 +57,7 @@ namespace flame
 				*p++ = size & 0xff;
 			}
 
+			assert(sizeof(buf) > size + (p - buf));
 			memcpy(p, data, size);
 
 			auto res = ::send(fd_c, (char*)buf, (p - buf) + size, 0);
@@ -164,7 +165,7 @@ namespace flame
 				auto thiz = *((OneClientServerWebSocketPrivate * *)c);
 				while (true)
 				{
-					uchar buf[1024 * 10];
+					uchar buf[1024 * 100];
 					auto ret = recv(thiz->fd_c, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
 					if (ret <= 0)
 					{
@@ -186,13 +187,20 @@ namespace flame
 						len = payload_len;
 					else if (payload_len == 126)
 					{
-						len = *(ushort*)p;
-						p += sizeof(ushort);
+						len = (*p++) << 8;
+						len += *p++;
 					}
 					else if (payload_len == 127)
 					{
-						len = *(ulonglong*)p;
-						p += sizeof(ulonglong);
+						len = (*p++) << 8;
+						len += *p++;
+						len += *p++;
+						len += *p++;
+
+						len += *p++;
+						len += *p++;
+						len += *p++;
+						len += *p++;
 					}
 
 					uint mask_key;
@@ -207,6 +215,7 @@ namespace flame
 						for (auto i = 0; i < len; i++)
 							p[i] = p[i] ^ ((char*)& mask_key)[i % 4];
 					}
+					p[len] = 0;
 
 					thiz->message_callback(len, p);
 				}

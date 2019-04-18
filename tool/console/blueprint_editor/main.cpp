@@ -408,8 +408,20 @@ int main(int argc, char **args)
 
 			auto s = OneClientServerWebSocket::create(5566, 100, Function<void(void*, int, void*)>(
 				[](void* c, int len, void* data) {
-					;
-				}, 0, nullptr));
+					auto bp = *(BP**)c;
+					auto json = SerializableNode::create_from_json_string((char*)data);
+					auto n_nodes = json->find_node("nodes");
+					if (n_nodes)
+					{
+						for (auto i = 0; i < n_nodes->node_count(); i++)
+						{
+							auto n_node = n_nodes->node(i);
+							bp->find_node(n_node->find_attr("name")->value().c_str())->set_position(
+								Vec2(stof1(n_node->find_attr("x")->value().c_str()), stof1(n_node->find_attr("y")->value().c_str())));
+						}
+					}
+					SerializableNode::destroy(json);
+				}, sizeof(void*), &bp));
 			if (!s)
 				printf("  timeout\n");
 			else

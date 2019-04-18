@@ -669,6 +669,8 @@ namespace flame
 
 	struct SerializableNodePrivate : SerializableNode
 	{
+		Type type;
+
 		std::string name;
 		std::string value;
 
@@ -679,17 +681,11 @@ namespace flame
 		int attr_find_pos;
 		int node_find_pos;
 
-		bool cdata;
-		bool object;
-		bool array;
-
 		inline SerializableNodePrivate() :
+			type(Object),
 			parent(nullptr),
 			attr_find_pos(0),
-			node_find_pos(0),
-			cdata(false),
-			object(true),
-			array(false)
+			node_find_pos(0)
 		{
 		}
 
@@ -951,19 +947,14 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->value;
 	}
 
-	bool SerializableNode::cdata() const
+	SerializableNode::Type SerializableNode::type() const
 	{
-		return ((SerializableNodePrivate*)this)->cdata;
+		return ((SerializableNodePrivate*)this)->type;
 	}
 
-	bool SerializableNode::object() const
+	void SerializableNode::set_type(Type type)
 	{
-		return ((SerializableNodePrivate*)this)->object;
-	}
-
-	bool SerializableNode::array() const
-	{
-		return ((SerializableNodePrivate*)this)->array;
+		((SerializableNodePrivate*)this)->type = type;
 	}
 
 	void SerializableNode::set_name(const std::string & name)
@@ -974,21 +965,6 @@ namespace flame
 	void SerializableNode::set_value(const std::string & value)
 	{
 		((SerializableNodePrivate*)this)->value = value;
-	}
-
-	void SerializableNode::set_cdata(bool v)
-	{
-		((SerializableNodePrivate*)this)->cdata = v;
-	}
-
-	void SerializableNode::set_object(bool v)
-	{
-		((SerializableNodePrivate*)this)->object = v;
-	}
-
-	void SerializableNode::set_array(bool v)
-	{
-		((SerializableNodePrivate*)this)->array = v;
 	}
 
 	SerializableAttribute* SerializableNode::new_attr(const std::string & name, const std::string & value)
@@ -1083,7 +1059,7 @@ namespace flame
 
 		for (auto& sn : src->nodes)
 		{
-			auto n = sn->cdata ? dst.append_child(pugi::node_pcdata) : dst.append_child(sn->name.c_str());
+			auto n = sn->type == SerializableNode::Cdata ? dst.append_child(pugi::node_pcdata) : dst.append_child(sn->name.c_str());
 			n.set_value(sn->value.c_str());
 			to_xml(n, sn.get());
 		}
@@ -1113,9 +1089,9 @@ namespace flame
 
 	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
 	{
-		if (!src->array)
+		if (!src->type != SerializableNode::Array)
 		{
-			if (!src->object && !src->attrs.empty())
+			if (!src->type != SerializableNode::Object && !src->attrs.empty())
 				dst = src->attrs[0]->value;
 			else
 			{
@@ -1188,7 +1164,7 @@ namespace flame
 		{
 			auto node = dst->new_node(n.name());
 			if (n.type() == pugi::node_cdata)
-				node->set_cdata(true);
+				node->set_type(SerializableNode::Cdata);
 			from_xml(n, node);
 		}
 	}
@@ -1225,9 +1201,25 @@ namespace flame
 		return n;
 	}
 
+	void from_json(nlohmann::json::reference src, SerializableNode* dst)
+	{
+		if (src.is_object())
+		{
+			dst->set_type(SerializableNode::Object);
+
+		}
+	}
+
 	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)
 	{
-		return nullptr;
+		nlohmann::json doc;
+		doc.parse(str);
+
+		auto n = new SerializableNodePrivate;
+
+		from_json(doc, n);
+
+		return n;
 	}
 
 	SerializableNode* SerializableNode::create_from_json_file(const std::wstring& filename)

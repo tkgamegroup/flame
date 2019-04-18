@@ -677,17 +677,22 @@ namespace flame
 
 	struct SerializableNode
 	{
+		enum Type
+		{
+			Value,
+			Object,
+			Array,
+			Cdata
+		};
+
+		FLAME_FOUNDATION_EXPORTS Type type() const;
+		FLAME_FOUNDATION_EXPORTS void set_type(Type type);
+
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
-		FLAME_FOUNDATION_EXPORTS bool cdata() const;
-		FLAME_FOUNDATION_EXPORTS bool object() const;
-		FLAME_FOUNDATION_EXPORTS bool array() const;
 
 		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
 		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
-		FLAME_FOUNDATION_EXPORTS void set_cdata(bool v);
-		FLAME_FOUNDATION_EXPORTS void set_object(bool v);
-		FLAME_FOUNDATION_EXPORTS void set_array(bool v);
 
 		FLAME_FOUNDATION_EXPORTS SerializableAttribute* new_attr(const std::string& name, const std::string& value);
 		FLAME_FOUNDATION_EXPORTS SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value);
@@ -711,6 +716,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS String to_string_xml() const;
 		FLAME_FOUNDATION_EXPORTS String to_string_json() const;
 		FLAME_FOUNDATION_EXPORTS void save_xml(const std::wstring& filename) const;
+		FLAME_FOUNDATION_EXPORTS void save_json(const std::wstring& filename) const;
 
 		FLAME_FOUNDATION_EXPORTS void serialize(UdtInfo* u, void* src, int precision = 6);
 		FLAME_FOUNDATION_EXPORTS void unserialize(UdtInfo* u, void* dst);

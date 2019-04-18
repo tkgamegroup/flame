@@ -377,5 +377,22 @@ function on_save_clicked()
     if (!sock_s)
         return;
 
-    
+    var dst = {};
+    dst.nodes = [];
+    for (var i in window.nodes)
+    {
+        var sn = window.nodes[i];
+        var n = {};
+        n.name = sn.name;
+        n.x = sn.x;
+        n.y = sn.y;
+        dst.nodes.push(n);
+    }
+    for (var i in window.nodes)
+    {
+        
+    }
+    dst.links = [];
+
+    sock_s.send(JSON.stringify(dst));
 }
