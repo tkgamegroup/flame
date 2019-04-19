@@ -1206,8 +1206,7 @@ namespace flame
 		if (src.is_object())
 		{
 			dst->set_type(SerializableNode::Object);
-
-			for (auto it = src.begin(); it != src.end(); it++)
+			for (auto it = src.begin(); it != src.end(); ++it)
 			{
 				auto node = dst->new_node(it.key());
 				from_json(it.value(), node);
@@ -1216,7 +1215,6 @@ namespace flame
 		else if (src.is_array())
 		{
 			dst->set_type(SerializableNode::Array);
-
 			for (auto& n : src)
 			{
 				auto node = dst->new_node("");
@@ -1224,13 +1222,15 @@ namespace flame
 			}
 		}
 		else
-			dst->set_value(src.get<std::string>());
+		{
+			dst->set_type(SerializableNode::Value);
+			dst->set_value(src.dump());
+		}
 	}
 
 	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)
 	{
-		nlohmann::json doc;
-		doc.parse(str);
+		auto doc = nlohmann::json::parse(str);
 
 		auto n = new SerializableNodePrivate;
 

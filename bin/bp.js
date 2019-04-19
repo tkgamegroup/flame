@@ -132,6 +132,9 @@ window.onload = function(){
     };
 
     Node.prototype.updatePosition = function () {
+        this.x = parseInt(this.eMain.style.left);
+        this.y = parseInt(this.eMain.style.top);
+
         for (var i in this.inputs)
         {
             var s = this.inputs[i];
@@ -394,5 +397,6 @@ function on_save_clicked()
     }
     dst.links = [];
 
-    sock_s.send(JSON.stringify(dst));
+    var json = JSON.stringify(dst);
+    sock_s.send(json);
 }
