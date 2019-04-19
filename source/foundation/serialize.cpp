@@ -1224,7 +1224,7 @@ namespace flame
 		else
 		{
 			dst->set_type(SerializableNode::Value);
-			dst->set_value(src.dump());
+			dst->set_value(src.is_string() ? src.get<std::string>() : src.dump());
 		}
 	}
 

@@ -179,6 +179,7 @@ namespace flame
 					b1 = *p++;
 					b2 = *p++;
 
+					auto op = b1 & 0xf;
 					auto mask = (b2 & 128) != 0;
 					auto payload_len = b2 & 127;
 
@@ -217,7 +218,8 @@ namespace flame
 					}
 					p[len] = 0;
 
-					thiz->message_callback(len, p);
+					if (op == 1)
+						thiz->message_callback(len, p);
 				}
 			}, sizeof(void*), & thiz));
 

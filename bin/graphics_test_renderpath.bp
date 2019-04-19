@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <BP>
-	<node type="BP_GraphicsClearvalues" id="cv" pos="498.610016;603.469971">
+	<node type="BP_GraphicsClearvalues" id="cv" pos="209.000000;506.000000">
 		<input name="colors" value="" />
 	</node>
-	<node type="BP_GraphicsSwapchain" id="sc" pos="252.780014;600.690002" />
-	<node type="BP_GraphicsDevice" id="d" pos="42.361000;277.080017" />
-	<node type="BP_GraphicsCommandbuffer" id="cb1" pos="252.780014;200.690002" />
-	<node type="BP_GraphicsCommandbuffer" id="cb2" pos="252.780014;322.919983" />
-	<node type="BP_GraphicsCmdBegin" id="cmd_begin" pos="498.610016;359.029999" />
-	<node type="BP_GraphicsCmdBeginRenderpass" id="cmd_begin_renderpass" pos="728.469971;472.919983" />
-	<node type="BP_GraphicsCmdEndRenderpass" id="cmd_end_renderpass" pos="975.690002;217.360001" />
-	<node type="BP_GraphicsCmdEnd" id="cmd_end" pos="1168.799927;64.583000" />
+	<node type="BP_GraphicsSwapchain" id="sc" pos="133.000000;267.000000" />
+	<node type="BP_GraphicsDevice" id="d" pos="33.000000;58.000000" />
+	<node type="BP_GraphicsCommandbuffer" id="cb1" pos="221.000000;64.000000" />
+	<node type="BP_GraphicsCommandbuffer" id="cb2" pos="223.000000;153.000000" />
+	<node type="BP_GraphicsCmdBegin" id="cmd_begin" pos="543.000000;174.000000" />
+	<node type="BP_GraphicsCmdBeginRenderpass" id="cmd_begin_renderpass" pos="545.000000;265.000000" />
+	<node type="BP_GraphicsCmdEndRenderpass" id="cmd_end_renderpass" pos="548.000000;432.000000" />
+	<node type="BP_GraphicsCmdEnd" id="cmd_end" pos="554.000000;526.000000" />
 	<link in="cv.renderpass" out="sc.renderpass_clear" />
 	<link in="cb1.device" out="d.out" />
 	<link in="cb2.device" out="d.out" />
