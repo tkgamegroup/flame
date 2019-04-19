@@ -1089,9 +1089,9 @@ namespace flame
 
 	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
 	{
-		if (!src->type != SerializableNode::Array)
+		if (src->type != SerializableNode::Array)
 		{
-			if (!src->type != SerializableNode::Object && !src->attrs.empty())
+			if (src->type == SerializableNode::Value && !src->attrs.empty())
 				dst = src->attrs[0]->value;
 			else
 			{
@@ -1153,7 +1153,7 @@ namespace flame
 		return n;
 	}
 
-	void from_xml(pugi::xml_node src, SerializableNode * dst)
+	static void from_xml(pugi::xml_node src, SerializableNode * dst)
 	{
 		for (auto& a : src.attributes())
 			dst->new_attr(a.name(), a.value());
@@ -1201,17 +1201,30 @@ namespace flame
 		return n;
 	}
 
-	void from_json(nlohmann::json::reference src, SerializableNode* dst)
+	static void from_json(nlohmann::json::reference src, SerializableNode* dst)
 	{
 		if (src.is_object())
 		{
 			dst->set_type(SerializableNode::Object);
 
+			for (auto it = src.begin(); it != src.end(); it++)
+			{
+				auto node = dst->new_node(it.key());
+				from_json(it.value(), node);
+			}
 		}
-		for (auto& c : src)
+		else if (src.is_array())
 		{
+			dst->set_type(SerializableNode::Array);
 
+			for (auto& n : src)
+			{
+				auto node = dst->new_node("");
+				from_json(n, node);
+			}
 		}
+		else
+			dst->set_value(src.get<std::string>());
 	}
 
 	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)

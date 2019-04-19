@@ -408,19 +408,19 @@ int main(int argc, char **args)
 
 			auto s = OneClientServerWebSocket::create(5566, 100, Function<void(void*, int, void*)>(
 				[](void* c, int len, void* data) {
-					auto bp = *(BP**)c;
-					auto json = SerializableNode::create_from_json_string((char*)data);
-					auto n_nodes = json->find_node("nodes");
-					if (n_nodes)
-					{
-						for (auto i = 0; i < n_nodes->node_count(); i++)
-						{
-							auto n_node = n_nodes->node(i);
-							bp->find_node(n_node->find_attr("name")->value().c_str())->set_position(
-								Vec2(stof1(n_node->find_attr("x")->value().c_str()), stof1(n_node->find_attr("y")->value().c_str())));
-						}
-					}
-					SerializableNode::destroy(json);
+					//auto bp = *(BP**)c;
+					//auto json = SerializableNode::create_from_json_string((char*)data);
+					//auto n_nodes = json->find_node("nodes");
+					//if (n_nodes)
+					//{
+					//	for (auto i = 0; i < n_nodes->node_count(); i++)
+					//	{
+					//		auto n_node = n_nodes->node(i);
+					//		bp->find_node(n_node->find_attr("name")->value().c_str())->set_position(
+					//			Vec2(stof1(n_node->find_attr("x")->value().c_str()), stof1(n_node->find_attr("y")->value().c_str())));
+					//	}
+					//}
+					//SerializableNode::destroy(json);
 				}, sizeof(void*), &bp));
 			if (!s)
 				printf("  timeout\n");
@@ -430,7 +430,7 @@ int main(int argc, char **args)
 
 				auto json = SerializableNode::create("");
 				auto n_nodes = json->new_node("nodes");
-				n_nodes->set_array(true);
+				n_nodes->set_type(SerializableNode::Array);
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto src = bp->node(i);
@@ -441,26 +441,26 @@ int main(int argc, char **args)
 					n->new_attr("x", to_stdstring(pos.x));
 					n->new_attr("y", to_stdstring(pos.y));
 					auto n_inputs = n->new_node("inputs");
-					n_inputs->set_array(true);
+					n_inputs->set_type(SerializableNode::Array);
 					for (auto j = 0; j < src->input_count(); j++)
 					{
 						auto input = src->input(j);
 						auto n_input = n_inputs->new_node("");
-						n_input->set_object(false);
+						n_input->set_type(SerializableNode::Value);
 						n_input->new_attr("", input->variable_info()->name());
 					}
 					auto n_outputs = n->new_node("outputs");
-					n_outputs->set_array(true);
+					n_outputs->set_type(SerializableNode::Array);
 					for (auto j = 0; j < src->output_count(); j++)
 					{
 						auto output = src->output(j);
 						auto n_output = n_outputs->new_node("");
-						n_output->set_object(false);
+						n_output->set_type(SerializableNode::Value);
 						n_output->new_attr("", output->variable_info()->name());
 					}
 				}
 				auto n_links = json->new_node("links");
-				n_links->set_array(true);
+				n_links->set_type(SerializableNode::Array);
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto src = bp->node(i);
