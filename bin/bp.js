@@ -60,7 +60,7 @@ window.onload = function(){
             containment: "window",
             cancel: ".slot",
             drag: function (event, ui) {
-                thiz.updatePosition();
+                thiz.UpdatePosition();
             }
         });
 
@@ -93,6 +93,8 @@ window.onload = function(){
         this.eSlot.innerHTML = '*';
         this.eSlot.classList.add("slot");
 
+        var thiz = this;
+
         this.io = io;
         if (io == 0)
         {
@@ -100,6 +102,20 @@ window.onload = function(){
 
             this.eMain.appendChild(this.eSlot);
             this.eMain.appendChild(this.eName);
+    
+            this.eSlot.onclick = function (e) {
+                if (!mouse.curr_slot) {
+                    if (thiz.link)
+                    {
+                        thiz.path.setAttributeNS(null, "d", "");
+                        thiz.link = null;
+                    }
+
+                    mouse.curr_slot = thiz;
+                    mouse.path.setAttributeNS(null, "d", "");
+                }
+                e.stopPropagation();
+            };
         }
         else
         {
@@ -107,19 +123,20 @@ window.onload = function(){
 
             this.eMain.appendChild(this.eName);
             this.eMain.appendChild(this.eSlot);
-        }
     
-        var thiz = this;
-        this.eSlot.onclick = function (e) {
-            if (mouse.curr_slot) {
-                ;
-            }
-            else{
-                mouse.curr_slot = thiz;
-                mouse.path.setAttributeNS(null, "d", "");
-            }
-            e.stopPropagation();
-        };
+            this.eSlot.onclick = function (e) {
+                if (mouse.curr_slot && mouse.curr_slot.io == 0) {
+                    mouse.curr_slot.link = thiz;
+                    var a = mouse.curr_slot.GetPos();
+                    var b = thiz.GetPos();
+                    mouse.curr_slot.SetPath(a, b);
+
+                    mouse.curr_slot = null;
+                    mouse.path.setAttributeNS(null, "d", "");
+                }
+                e.stopPropagation();
+            };
+        }
     }
 
     Node.prototype.AddInput = function (name) {
@@ -156,7 +173,7 @@ window.onload = function(){
         return null;
     };
 
-    Node.prototype.updatePosition = function () {
+    Node.prototype.UpdatePosition = function () {
         this.x = parseInt(this.eMain.style.left);
         this.y = parseInt(this.eMain.style.top);
 
@@ -205,23 +222,23 @@ window.onload = function(){
         if (mouse.curr_slot) {
             var a = mouse.curr_slot.GetPos();
             var b = { x: e.pageX, y: e.pageY };
-            mouse.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x + (mouse.curr_slot.io == 0 ? -50 : 50)) + " " + a.y + " " + b.x + " " + b.y + " " + b.x + " " + b.y);
+            mouse.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x - 50) + " " + a.y + " " + b.x + " " + b.y + " " + b.x + " " + b.y);
         }
     };
     
     window.onclick = function (e) {
         if (mouse.curr_slot) {
             mouse.path.setAttributeNS(null, "d", "");
-            // if (mouse.curr_slot.io == 0) {
-            //     mouse.currentInput.node.detachInput(mouse.currentInput);
-            // }
             mouse.curr_slot = null;
         }
     };
 
 	var sock_s = new WebSocket("ws://localhost:5566/");
-    sock_s.onmessage = function(a){
-        var src = eval('(' + a.data + ')');
+    window.sock_s = sock_s;
+    sock_s.onmessage = function(res){
+        nodes = [];
+
+        var src = eval('(' + res.data + ')');
         var src_nodes = src.nodes;
         for (var i in src_nodes)
         {
@@ -249,11 +266,18 @@ window.onload = function(){
 
             input.link = output;
         }
-        for (var i in src_nodes)
-            nodes[i].updatePosition();
+        for (var i in nodes)
+            nodes[i].UpdatePosition();
         
     };
-    window.sock_s = sock_s;
+    sock_s.onclose = function(){
+        setTimeout(function(){
+            var s = new WebSocket("ws://localhost:5566/");
+            s.onmessage = window.sock_s.onmessage;
+            s.onclose = window.sock_s.onclose;
+            window.sock_s = s;
+        }, 1000);
+    };
 
     /*
 
