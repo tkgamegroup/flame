@@ -2,8 +2,22 @@ window.onload = function(){
     var svg = document.getElementById("svg");
     svg.ns = svg.namespaceURI;
 
+    function CreatePath() {
+        var path = document.createElementNS(svg.ns, "path");
+        path.setAttributeNS(null, "stroke", "#8e8e8e");
+        path.setAttributeNS(null, "stroke-width", "2");
+        path.setAttributeNS(null, "fill", "none");
+        svg.appendChild(path);
+        return path;
+    }
+
     var nodes = [];
     window.nodes = nodes;
+
+    var mouse = {
+        curr_slot: null,
+        path: CreatePath()
+    };
 
     function FindNode(name) {
         for (var i in nodes)
@@ -43,6 +57,8 @@ window.onload = function(){
 
         var thiz = this;
         $(this.eMain).draggable({
+            containment: "window",
+            cancel: ".slot",
             drag: function (event, ui) {
                 thiz.updatePosition();
             }
@@ -75,15 +91,12 @@ window.onload = function(){
         
         this.eSlot = document.createElement("div");
         this.eSlot.innerHTML = '*';
-        this.eSlot.style.display = "inline-block";
+        this.eSlot.classList.add("slot");
 
+        this.io = io;
         if (io == 0)
         {
-            this.path = document.createElementNS(svg.ns, "path");
-            this.path.setAttributeNS(null, "stroke", "#8e8e8e");
-            this.path.setAttributeNS(null, "stroke-width", "2");
-            this.path.setAttributeNS(null, "fill", "none");
-            svg.appendChild(this.path);
+            this.path = CreatePath();
 
             this.eMain.appendChild(this.eSlot);
             this.eMain.appendChild(this.eName);
@@ -95,6 +108,18 @@ window.onload = function(){
             this.eMain.appendChild(this.eName);
             this.eMain.appendChild(this.eSlot);
         }
+    
+        var thiz = this;
+        this.eSlot.onclick = function (e) {
+            if (mouse.curr_slot) {
+                ;
+            }
+            else{
+                mouse.curr_slot = thiz;
+                mouse.path.setAttributeNS(null, "d", "");
+            }
+            e.stopPropagation();
+        };
     }
 
     Node.prototype.AddInput = function (name) {
@@ -176,6 +201,24 @@ window.onload = function(){
         this.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x - 50) + " " + a.y + " " + (b.x + 50) + " " + b.y + " " + b.x + " " + b.y);
     };
 
+    window.onmousemove = function (e) {
+        if (mouse.curr_slot) {
+            var a = mouse.curr_slot.GetPos();
+            var b = { x: e.pageX, y: e.pageY };
+            mouse.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x + (mouse.curr_slot.io == 0 ? -50 : 50)) + " " + a.y + " " + b.x + " " + b.y + " " + b.x + " " + b.y);
+        }
+    };
+    
+    window.onclick = function (e) {
+        if (mouse.curr_slot) {
+            mouse.path.setAttributeNS(null, "d", "");
+            // if (mouse.curr_slot.io == 0) {
+            //     mouse.currentInput.node.detachInput(mouse.currentInput);
+            // }
+            mouse.curr_slot = null;
+        }
+    };
+
 	var sock_s = new WebSocket("ws://localhost:5566/");
     sock_s.onmessage = function(a){
         var src = eval('(' + a.data + ')');
@@ -218,159 +261,7 @@ window.onload = function(){
     nodes.push(n);
     n.eMain.style.position = "absolute";
     document.body.appendChild(n.eMain);
-    
-    var mouse = {
-        currentInput: null
-    };
-    
-    window.onmousemove = function (e) {
-        if (mouse.currentInput) {
-            var p = mouse.currentInput.path;
-            var iP = mouse.currentInput.getAttachPoint();
-            var oP = { x: e.pageX, y: e.pageY };
-            var s = mouse.createPath(iP, oP);
-            p.setAttributeNS(null, "d", s);
-        }
-    };
-    
-    window.onclick = function (e) {
-        if (mouse.currentInput) {
-            mouse.currentInput.path.removeAttribute("d");
-            if (mouse.currentInput.node) {
-                mouse.currentInput.node.detachInput(mouse.currentInput);
-            }
-            mouse.currentInput = null;
-        }
-    };
-    
-    function Node(name) {
-        // Create output visual
-        var outDom = document.createElement("span");
-        outDom.classList.add("output");
-        outDom.innerHTML = "&nbsp;";
-        this.domElement.appendChild(outDom);
-    
-        // Output Click handler
-        var that = this;
-        outDom.onclick = function (e) {
-            if (mouse.currentInput && !that.ownsInput(mouse.currentInput)) {
-                var tmp = mouse.currentInput;
-                mouse.currentInput = null;
-                that.connectTo(tmp);
-            }
-            e.stopPropagation();
-        };
-    }
-    
-    function NodeInput(name) {
-        this.name = name;
-        this.node = null;
-    
-        // setup the varying input types
-        this.domElement = document.createElement("div");
-        this.domElement.innerHTML = name;
-        this.domElement.classList.add("connection");
-        this.domElement.classList.add("empty");
-    
-        // DOM Event handlers
-        var that = this;
-        this.domElement.onclick = function (e) {
-            if (mouse.currentInput) {
-                if (mouse.currentInput.path.hasAttribute("d"))
-                    mouse.currentInput.path.removeAttribute("d");
-                if (mouse.currentInput.node) {
-                    mouse.currentInput.node.detachInput(mouse.currentInput);
-                    mouse.currentInput.node = null;
-                }
-            }
-            mouse.currentInput = that;
-            if (that.node) {
-                that.node.detachInput(that);
-                that.domElement.classList.remove("filled");
-                that.domElement.classList.add("empty");
-            }
-            e.stopPropagation();
-        };
-    }
-    
-    Node.prototype.detachInput = function (input) {
-        var index = -1;
-        for (var i = 0; i < this.attachedPaths.length; i++) {
-            if (this.attachedPaths[i].input == input) index = i;
-        }
-    
-        if (index >= 0) {
-            this.attachedPaths[index].path.removeAttribute("d");
-            this.attachedPaths[index].input.node = null;
-            this.attachedPaths.splice(index, 1);
-        }
-    
-        if (this.attachedPaths.length <= 0) {
-            this.domElement.classList.remove("connected");
-        }
-    };
-    
-    Node.prototype.connectTo = function (input) {
-        input.node = this;
-        this.connected = true;
-        this.domElement.classList.add("connected");
-    
-        input.domElement.classList.remove("empty");
-        input.domElement.classList.add("filled");
-    
-        this.attachedPaths.push({
-            input: input,
-            path: input.path
-        });
-    
-        var iPoint = input.getAttachPoint();
-        var oPoint = this.getOutputPoint();
-    
-        var pathStr = this.createPath(iPoint, oPoint);
-    
-        input.path.setAttributeNS(null, "d", pathStr);
-    };
-    
-    Node.prototype.moveTo = function (point) {
-        this.domElement.style.top = point.y + "px";
-        this.domElement.style.left = point.x + "px";
-        this.updatePosition();
-    };
-    
-    Node.prototype.initUI = function () {
-        $(this.domElement).draggable({
-            containment: "window",
-            cancel: ".connection,.output"
-        });
-    };
 
-    /*
-    // Test nodes.
-    var node01 = new Node("Generate Cube");
-    node01.addInput("Name");
-    node01.addInput("Size");
-    
-    var node02 = new Node("Add");
-    node02.addInput("Left&nbsp;&nbsp;&nbsp;&nbsp;");
-    node02.addInput("Right&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-    
-    var node03 = new Node("Translate");
-    node03.addInput("Object");
-    node03.addInput("X");
-    node03.addInput("Y");
-    node03.addInput("Z");
-    
-    // Move and connect.
-    node01.moveTo({ x: 75, y: 125 });
-    node02.moveTo({ x: 350, y: 20 });
-    node03.moveTo({ x: 500, y: 150 });
-    node01.connectTo(node02.inputs[0]);
-    node03.connectTo(node02.inputs[1]);
-    
-    // Add to canvas
-    node01.initUI();
-    node02.initUI();
-    node03.initUI();
     */
 };
 

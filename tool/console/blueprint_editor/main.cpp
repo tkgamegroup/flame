@@ -423,12 +423,14 @@ int main(int argc, char **args)
 						}
 					}
 					SerializableNode::destroy(json);
+
+					printf("browser: bp updated\n");
 				}, sizeof(void*), &bp));
 			if (!s)
 				printf("  timeout\n");
 			else
 			{
-				printf("  ok\nbrowser working\n");
+				printf("  ok\nbrowser: working\n");
 
 				auto json = SerializableNode::create("");
 				auto n_nodes = json->new_node("nodes");
