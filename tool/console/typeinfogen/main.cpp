@@ -38,11 +38,7 @@ int main(int argc, char **args)
 			pdb_dirs.push_back(s2w(args[i]));
 	}
 
-	std::string cmd_prefix("\"");
-	cmd_prefix += VS_LOCATION;
-	cmd_prefix += "/Common7/Tools/VsDevCmd.bat\" & dumpbin /DEPENDENTS ";
-
-	typeinfo_collect_init();
+	std::vector<std::wstring> pdbs;
 
 	for (auto& d : pdb_dirs)
 	{
@@ -52,7 +48,7 @@ int main(int argc, char **args)
 			{
 				if (it->path().filename() == L"flame_foundation.dll")
 				{
-					typeinfo_collect(it->path().wstring());
+					pdbs.push_back(it->path().wstring());
 					continue;
 				}
 
@@ -64,7 +60,7 @@ int main(int argc, char **args)
 					{
 						if (dependancies[i] == "flame_foundation.dll")
 						{
-							typeinfo_collect(it->path().wstring());
+							pdbs.push_back(it->path().wstring());
 							break;
 						}
 					}
@@ -73,9 +69,36 @@ int main(int argc, char **args)
 		}
 	}
 
-	typeinfo_save(L"typeinfo.xml");
+	auto lwt = std::filesystem::exists(L"typeinfo.xml") ? std::filesystem::last_write_time(L"typeinfo.xml") : std::chrono::system_clock::time_point();
+	auto need_regenerate = false;
+	for (auto& fn : pdbs)
+	{
+		if (std::filesystem::last_write_time(fn) > lwt)
+		{
+			need_regenerate = true;
+			break;
+		}
+	}
+	if (need_regenerate)
+	{
+		printf("updating: typeinfo.xml\n");
+
+		typeinfo_collect_init();
+		for (auto& fn : pdbs)
+			typeinfo_collect(fn);
+		typeinfo_save(L"typeinfo.xml");
+
+		printf("generated: typeinfo.xml\n");
+	}
+	else
+	{
+		printf("typeinfo.xml up to data\n");
+
+		typeinfo_load(L"typeinfo.xml");
+	}
+
 	typeinfo_to_js(L"typeinfo.js", "flame");
-	typeinfo_clear();
+	printf("generated: typeinfo.js\n");
 
 	return 0;
 }

@@ -1356,7 +1356,7 @@ namespace flame
 		{
 			if (attribute)
 				* attribute = std::string(name.c_str() + pos_$ + 1);
-			name[pos_$] = 0;
+			name.resize(pos_$);
 
 			if (pass_$)
 				* pass_$ = true;
@@ -2038,6 +2038,42 @@ namespace flame
 				file << "\t},\n";
 			}
 		}
+		{
+			file << "\tudts: [\n";
+			std::vector<UdtInfoPrivate*> sorted_udts;
+			for (auto& u : udts)
+				sorted_udts.push_back(u.second.get());
+			std::sort(sorted_udts.begin(), sorted_udts.end(), [](UdtInfoPrivate * a, UdtInfoPrivate * b) {
+				return a->name < b->name;
+			});
+			for (auto& u : sorted_udts)
+			{
+				file << "\t\t{\n";
+				file << "\t\t\tname: \"" + u->name + "\",\n";
+				file << "\t\t\titems: [\n";
+				for (auto& i : u->items)
+				{
+					file << "\t\t\t\t{\n";
+					file << "\t\t\t\t\tname: \"" + i->name + "\",\n";
+					file << "\t\t\t\t\ttag: " + to_stdstring(i->type.tag) + ",\n";
+					file << "\t\t\t\t\ttype_name: \"" + i->type.name + "\",\n";
+					file << "\t\t\t\t\tattribute: \"" + i->attribute + "\",\n";
+					file << "\t\t\t\t},\n";
+				}
+				file << "\t\t\t],\n";
+				file << "\t\t},\n";
+			}
+			file << "\t],\n";
+		}
+
+		file << "\tfind_udt : function(name) {\n";
+		file << "\t\tfor(var i in this.udts) {\n";
+		file << "\t\t\tvar u = this.udts[i];\n";
+		file << "\t\t\tif(u.name == name)\n";
+		file << "\t\t\t\treturn u;\n";
+		file << "\t\t}\n";
+		file << "\t\treturn null;\n";
+		file << "\t},\n";
 
 		file << "};\n";
 

@@ -13,9 +13,6 @@ window.onload = function(){
         return path;
     }
 
-    var udts = [];
-    window.udts = udts;
-
     var nodes = [];
     window.nodes = nodes;
 
@@ -48,11 +45,6 @@ window.onload = function(){
         } 
         else 
             return offset;
-    }
-    
-    function UDT(name) {
-        this.eMain = document.createElement("div");
-        this.eMain.innerHTML = name;
     }
 
     function Node(name, x, y) {
@@ -246,8 +238,6 @@ window.onload = function(){
 	var sock_s = new WebSocket("ws://localhost:5566/");
     window.sock_s = sock_s;
     sock_s.onmessage = function(res){
-        for (var i in udts)
-            toolbar.removeChild(udts[i].eMain);
         for (var i in nodes)
         {
             var n = nodes[i];
@@ -258,19 +248,9 @@ window.onload = function(){
                 svg.removeChild(n.inputs[j].path);
         }
 
-        udts = [];
         nodes = [];
 
         var src = eval('(' + res.data + ')');
-
-        var src_udts = src.udts;
-        for (var i in src_udts)
-        {
-            var sn = src_udts[i];
-            var u = new UDT(sn.name);
-            
-            toolbar.appendChild(u.eMain);
-        }
 
         var src_nodes = src.nodes;
         for (var i in src_nodes)

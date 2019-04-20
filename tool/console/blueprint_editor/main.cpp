@@ -449,25 +449,6 @@ int main(int argc, char **args)
 
 				auto json = SerializableNode::create("");
 
-				auto n_udts = json->new_node("udts");
-				n_udts->set_type(SerializableNode::Array);
-				for (auto u : available_udts)
-				{
-					auto n = n_udts->new_node("");
-					n->new_attr("name", u->name());
-					auto n_items = n->new_node("items");
-					n_items->set_type(SerializableNode::Array);
-					for (auto i = 0; i < u->item_count(); i++)
-					{
-						auto it = u->item(i);
-						auto n_it = n->new_node("");
-						n_it->new_attr("name", it->name());
-						n_it->new_attr("attribute", it->attribute());
-						auto ty = it->type();
-						
-					}
-				}
-
 				auto n_nodes = json->new_node("nodes");
 				n_nodes->set_type(SerializableNode::Array);
 				for (auto i = 0; i < bp->node_count(); i++)
