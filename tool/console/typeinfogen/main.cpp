@@ -81,18 +81,18 @@ int main(int argc, char **args)
 	}
 	if (need_regenerate)
 	{
-		printf("updating: typeinfo.xml\n");
+		printf("generating: typeinfo.xml");
 
 		typeinfo_collect_init();
 		for (auto& fn : pdbs)
 			typeinfo_collect(fn);
 		typeinfo_save(L"typeinfo.xml");
 
-		printf("generated: typeinfo.xml\n");
+		printf("	- done\n");
 	}
 	else
 	{
-		printf("typeinfo.xml up to data\n");
+		printf("up-to-data: typeinfo.xml \n");
 
 		typeinfo_load(L"typeinfo.xml");
 	}

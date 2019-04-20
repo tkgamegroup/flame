@@ -329,14 +329,14 @@ namespace flame
 		}
 	}
 
-	bool compare(TypeTag$ tag, int size, const void* src, const void* dst)
+	bool compare(TypeTag$ tag, int size, const void* a, const void* b)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle: case TypeTagEnumMulti:
-			return *(int*)src == *(int*)dst;
+			return *(int*)a == *(int*)b;
 		case TypeTagVariable:
-			return memcmp(src, dst, size) == 0;
+			return memcmp(a, b, size) == 0;
 		}
 
 		return false;
@@ -1981,7 +1981,7 @@ namespace flame
 					n_item->new_attr("attribute", i->attribute);
 					n_item->new_attr("offset", to_stdstring(i->offset));
 					n_item->new_attr("size", to_stdstring(i->size));
-					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
+					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringW") && i->type.name_hash != cH("StringAndHash"))
 					{
 						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
 						if (default_value_str.size > 0)
@@ -2058,6 +2058,12 @@ namespace flame
 					file << "\t\t\t\t\ttag: " + to_stdstring(i->type.tag) + ",\n";
 					file << "\t\t\t\t\ttype_name: \"" + i->type.name + "\",\n";
 					file << "\t\t\t\t\tattribute: \"" + i->attribute + "\",\n";
+					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringW") && i->type.name_hash != cH("StringAndHash"))
+					{
+						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
+						if (default_value_str.size > 0)
+							file << "\t\t\t\t\tdefault_value: \"" + std::string(default_value_str.v) + "\",\n";
+					}
 					file << "\t\t\t\t},\n";
 				}
 				file << "\t\t\t],\n";
@@ -2067,9 +2073,9 @@ namespace flame
 		}
 
 		file << "\tfind_udt : function(name) {\n";
-		file << "\t\tfor(var i in this.udts) {\n";
+		file << "\t\tfor (var i in this.udts) {\n";
 		file << "\t\t\tvar u = this.udts[i];\n";
-		file << "\t\t\tif(u.name == name)\n";
+		file << "\t\t\tif (u.name == name)\n";
 		file << "\t\t\t\treturn u;\n";
 		file << "\t\t}\n";
 		file << "\t\treturn null;\n";

@@ -621,12 +621,16 @@ namespace flame
 			for (auto &input : n->inputs)
 			{
 				auto v = input->variable_info;
-				if (v->type()->tag() != TypeTagPointer)
+				auto tag = v->type()->tag();
+				auto hash = v->type()->name_hash();
+				if (tag != TypeTagPointer)
 				{
-					auto v = input->variable_info;
-					auto n_input = n_node->new_node("input");
-					n_input->new_attr("name", v->name());
-					n_input->new_attr("value", serialize_value(v->type()->tag(), v->type()->name_hash(), &input->data.v, 2).v);
+					if (!compare(tag, v->size(), &v->default_value(), &input->data.v))
+					{
+						auto n_input = n_node->new_node("input");
+						n_input->new_attr("name", v->name());
+						n_input->new_attr("value", serialize_value(tag, hash, &input->data.v, 2).v);
+					}
 				}
 			}
 		}

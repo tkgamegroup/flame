@@ -47,12 +47,12 @@ window.onload = function(){
             return offset;
     }
 
-    function Node(name, x, y) {
-        this.name = name;
+    function Node(type, id, x, y) {
+        this.name = id;
 
         this.eMain = document.createElement("div");
         this.eMain.classList.add("node");
-        this.eMain.setAttribute("title", name);
+        this.eMain.setAttribute("title", this.name);
 
         this.eMain.style.left = x + "px";
         this.eMain.style.top = y + "px";
@@ -78,6 +78,17 @@ window.onload = function(){
 
         this.inputs = [];
         this.outputs = [];
+
+        var udt = flame.find_udt(type);
+        console.assert(udt);
+        for (var i in udt.items)
+        {
+            var item = udt.items[i];
+            if (item.attribute.indexOf("i") >= 0)
+                this.AddInput(item.name);
+            else if (item.attribute.indexOf("o") >= 0)
+                this.AddOutput(item.name);
+        }
     }
 
     function Slot(name, io) {
@@ -256,11 +267,14 @@ window.onload = function(){
         for (var i in src_nodes)
         {
             var sn = src_nodes[i];
-            var n = new Node(sn.name, sn.x, sn.y);
-            for (var j in sn.inputs)
-                n.AddInput(sn.inputs[j]);
-            for (var j in sn.outputs)
-                n.AddOutput(sn.outputs[j]);
+            var n = new Node(sn.type, sn.id, sn.x, sn.y);
+            for (var item in sn)
+            {
+                if (item == "input")
+                {
+
+                }
+            }
             nodes.push(n);
         
             n.eMain.style.position = "absolute";

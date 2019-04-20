@@ -454,28 +454,27 @@ int main(int argc, char **args)
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto src = bp->node(i);
-					auto n = n_nodes->new_node("");
+					auto n_node = n_nodes->new_node("");
 					auto pos = src->position();
-					n->new_attr("name", src->id());
-					n->new_attr("x", to_stdstring(pos.x));
-					n->new_attr("y", to_stdstring(pos.y));
-					auto n_inputs = n->new_node("inputs");
-					n_inputs->set_type(SerializableNode::Array);
-					for (auto j = 0; j < src->input_count(); j++)
+					n_node->new_attr("type", src->udt()->name());
+					n_node->new_attr("id", src->id());
+					n_node->new_attr("x", to_stdstring(pos.x));
+					n_node->new_attr("y", to_stdstring(pos.y));
+					for (auto i = 0; i < src->input_count(); i++)
 					{
-						auto input = src->input(j);
-						auto n_input = n_inputs->new_node("");
-						n_input->set_type(SerializableNode::Value);
-						n_input->new_attr("", input->variable_info()->name());
-					}
-					auto n_outputs = n->new_node("outputs");
-					n_outputs->set_type(SerializableNode::Array);
-					for (auto j = 0; j < src->output_count(); j++)
-					{
-						auto output = src->output(j);
-						auto n_output = n_outputs->new_node("");
-						n_output->set_type(SerializableNode::Value);
-						n_output->new_attr("", output->variable_info()->name());
+						auto input = src->input(i);
+						auto v = input->variable_info();
+						auto tag = v->type()->tag();
+						auto hash = v->type()->name_hash();
+						if (tag != TypeTagPointer)
+						{
+							if (!compare(tag, v->size(), &v->default_value(), &input->data().v))
+							{
+								auto n_input = n_node->new_node("input");
+								n_input->new_attr("name", v->name());
+								n_input->new_attr("value", serialize_value(tag, hash, &input->data().v, 2).v);
+							}
+						}
 					}
 				}
 
