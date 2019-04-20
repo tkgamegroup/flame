@@ -26,6 +26,67 @@
 
 using namespace flame;
 
+void generate_graph_and_layout(BP *bp)
+{
+	if (GRAPHVIZ_PATH != std::string(""))
+	{
+		auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
+
+		std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
+		for (auto i = 0; i < bp->node_count(); i++)
+		{
+			auto src = bp->node(i);
+			auto name = std::string(src->id());
+
+			auto n = "\t" + name + " [label = \"" + name + "|{{";
+			for (auto j = 0; j < src->input_count(); j++)
+			{
+				auto input = src->input(j);
+				auto name = std::string(input->variable_info()->name());
+				n += "<" + name + ">" + name;
+				if (j != src->input_count() - 1)
+					n += "|";
+			}
+			n += "}|{";
+			for (auto j = 0; j < src->output_count(); j++)
+			{
+				auto output = src->output(j);
+				auto name = std::string(output->variable_info()->name());
+				n += "<" + name + ">" + name;
+				if (j != src->output_count() - 1)
+					n += "|";
+			}
+			n += "}}\"];\n";
+
+			gv += n;
+		}
+		for (auto i = 0; i < bp->node_count(); i++)
+		{
+			auto src = bp->node(i);
+
+			for (auto j = 0; j < src->input_count(); j++)
+			{
+				auto input = src->input(j);
+				if (input->link())
+				{
+					auto in_sp = string_split(std::string(input->get_address().v), '.');
+					auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
+
+					gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+				}
+			}
+		}
+		gv += "}\n";
+
+		std::ofstream file("bp.gv");
+		file << gv;
+		file.close();
+
+		exec(dot_path.c_str(), "-Tpng bp.gv -o bp.png", true);
+		exec(dot_path.c_str(), "-Tplain bp.gv -y -o bp.graph.txt", true);
+	}
+}
+
 int main(int argc, char **args)
 {
 	std::wstring filename;
@@ -170,64 +231,12 @@ int main(int argc, char **args)
 			}
 			else if (s_what == "graph")
 			{
-				if (GRAPHVIZ_PATH != std::string(""))
-				{
-					auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
-
-					std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
-					for (auto i = 0; i < bp->node_count(); i++)
-					{
-						auto src = bp->node(i);
-						auto name = std::string(src->id());
-
-						auto n = "\t" + name + " [label = \"" + name + "|{{";
-						for (auto j = 0; j < src->input_count(); j++)
-						{
-							auto input = src->input(j);
-							auto name = std::string(input->variable_info()->name());
-							n += "<" + name + ">" + name;
-							if (j != src->input_count() - 1)
-								n += "|";
-						}
-						n += "}|{";
-						for (auto j = 0; j < src->output_count(); j++)
-						{
-							auto output = src->output(j);
-							auto name = std::string(output->variable_info()->name());
-							n += "<" + name + ">" + name;
-							if (j != src->output_count() - 1)
-								n += "|";
-						}
-						n += "}}\"];\n";
-
-						gv += n;
-					}
-					for (auto i = 0; i < bp->node_count(); i++)
-					{
-						auto src = bp->node(i);
-
-						for (auto j = 0; j < src->input_count(); j++)
-						{
-							auto input = src->input(j);
-							if (input->link())
-							{
-								auto in_sp = string_split(std::string(input->get_address().v), '.');
-								auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
-
-								gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
-							}
-						}
-					}
-					gv += "}\n";
-
-					std::ofstream file("bp.gv");
-					file << gv;
-					file.close();
-
-					exec(dot_path.c_str(), "-Tpng bp.gv -o bp.png", true);
-					exec(dot_path.c_str(), "-Tplain bp.gv -y -o bp.graph.txt", true);
+				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(filename))
+					generate_graph_and_layout(bp);
+				if (std::filesystem::exists(L"bp.png"))
 					exec(L"bp.png", "", false);
-				}
+				else
+					printf("bp.png not found, perhaps Graphviz is not available\n");
 			}
 			else
 				printf("unknow object to show\n");
@@ -378,28 +387,25 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "set-layout")
 		{
+			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(filename))
+				generate_graph_and_layout(bp);
 			if (std::filesystem::exists(L"bp.graph.txt"))
 			{
-				auto lwt = std::filesystem::last_write_time(filename);
-				if (std::filesystem::last_write_time(L"bp.png") >= lwt && std::filesystem::last_write_time(L"bp.graph.txt") >= lwt)
+				auto str = get_file_string(L"bp.graph.txt");
+				std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
+				std::smatch match;
+				while (std::regex_search(str, match, reg_node))
 				{
-					auto str = get_file_string(L"bp.graph.txt");
-					std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
-					std::smatch match;
-					while (std::regex_search(str, match, reg_node))
-					{
-						auto n = bp->find_node(match[1].str().c_str());
-						if (n)
-							n->set_position(Vec2(stof1(match[2].str().c_str()), stof1(match[3].str().c_str())) * 100.f);
+					auto n = bp->find_node(match[1].str().c_str());
+					if (n)
+						n->set_position(Vec2(stof1(match[2].str().c_str()), stof1(match[3].str().c_str())) * 100.f);
 
-						str = match.suffix();
-					}
+					str = match.suffix();
 				}
 				printf("ok\n");
 			}
 			else
 				printf("bp.graph.txt not found\n");
-
 		}
 		else if (s_command_line == "gui-browser")
 		{
