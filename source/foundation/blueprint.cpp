@@ -50,7 +50,9 @@ namespace flame
 		std::string id;
 		UdtInfo *udt;
 		Vec2 position;
+		FunctionInfo* initialize_function;
 		FunctionInfo* update_function;
+		FunctionInfo* finish_function;
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 		bool enable;
@@ -87,8 +89,8 @@ namespace flame
 
 		inline void clear();
 
-		inline void prepare();
-		inline void unprepare();
+		inline void initialize();
+		inline void finish();
 
 		inline void update();
 
@@ -129,7 +131,9 @@ namespace flame
 		updated(false),
 		dummy(nullptr)
 	{
+		initialize_function = udt->find_function("initialize");
 		update_function = udt->find_function("update");
+		finish_function = udt->find_function("finish");
 
 		for (auto i = 0; i < udt->item_count(); i++)
 		{
@@ -328,7 +332,7 @@ namespace flame
 		nodes.clear();
 	}
 
-	void BPPrivate::prepare()
+	void BPPrivate::initialize()
 	{
 		for (auto &n : nodes)
 		{
@@ -348,7 +352,7 @@ namespace flame
 			n->report_order();
 	}
 
-	void BPPrivate::unprepare()
+	void BPPrivate::finish()
 	{
 		for (auto &n : nodes)
 		{
@@ -791,14 +795,14 @@ namespace flame
 		((BPPrivate*)this)->clear();
 	}
 
-	void BP::prepare()
+	void BP::initialize()
 	{
-		((BPPrivate*)this)->prepare();
+		((BPPrivate*)this)->initialize();
 	}
 
-	void BP::unprepare()
+	void BP::finish()
 	{
-		((BPPrivate*)this)->unprepare();
+		((BPPrivate*)this)->finish();
 	}
 
 	void BP::update()

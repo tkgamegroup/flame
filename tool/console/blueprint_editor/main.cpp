@@ -358,9 +358,9 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "update")
 		{
-			bp->prepare();
+			bp->initialize();
 			bp->update();
-			bp->unprepare();
+			bp->finish();
 			printf("BP updated\n");
 		}
 		else if (s_command_line == "save")
@@ -388,9 +388,9 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "tobin")
 		{
-			bp->prepare();
+			bp->initialize();
 			bp->tobin();
-			bp->unprepare();
+			bp->finish();
 
 			printf("code generated\n");
 		}

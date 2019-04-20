@@ -88,10 +88,6 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS bool enable() const;
 			FLAME_FOUNDATION_EXPORTS void set_enable(bool enable) const;
-
-			FLAME_FOUNDATION_EXPORTS void create() const;
-			FLAME_FOUNDATION_EXPORTS void destroy() const;
-			FLAME_FOUNDATION_EXPORTS void update() const;
 		};
 
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
@@ -108,14 +104,16 @@ namespace flame
 		// build data for 'update' or 'tobin'
 		// let all notes create a piece of memory to represent the 'true' object and
 		// determines update order
-		FLAME_FOUNDATION_EXPORTS void prepare();
-		// release the data that built by 'prepare'
-		FLAME_FOUNDATION_EXPORTS void unprepare();
+		FLAME_FOUNDATION_EXPORTS void initialize();
+
+		// release the data that built by 'initialize'
+		FLAME_FOUNDATION_EXPORTS void finish();
 
 		// update the 'bp' using nodes
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
+
 		// generate cpp codes that do the 'update' job and save to a file
 		// then use that file to compile a dll
 		// note: need filename first and all nodes need to have code
