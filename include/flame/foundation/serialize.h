@@ -564,7 +564,7 @@ namespace flame
 		return Bvec4(ret.x, ret.y, ret.z, ret.w);
 	}
 
-	enum TypeTag
+	enum TypeTag$
 	{
 		TypeTagEnumSingle,
 		TypeTagEnumMulti,
@@ -572,7 +572,7 @@ namespace flame
 		TypeTagPointer
 	};
 
-	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag tag);
+	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag$ tag);
 
 	struct TypeInfo;
 	struct EnumInfo;
@@ -588,7 +588,7 @@ namespace flame
 
 	struct TypeInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeTag tag() const;
+		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
 	};
@@ -622,11 +622,11 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const CommonData& default_value() const;
 	};
 
-	FLAME_FOUNDATION_EXPORTS void get(TypeTag tag, int size, const void* src, CommonData* dst);
-	FLAME_FOUNDATION_EXPORTS void set(TypeTag tag, int size, const CommonData* src, void* dst);
-	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag tag, int size, const void* src, const void* dst);
-	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag tag, uint type_hash, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag tag, uint type_hash, const std::string& str, void* dst);
+	FLAME_FOUNDATION_EXPORTS void get(TypeTag$ tag, int size, const void* src, CommonData* dst);
+	FLAME_FOUNDATION_EXPORTS void set(TypeTag$ tag, int size, const CommonData* src, void* dst);
+	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* src, const void* dst);
+	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint type_hash, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint type_hash, const std::string& str, void* dst);
 
 	struct FunctionInfo
 	{
@@ -727,6 +727,10 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
+
+		/*
+			for from json action, no attrs will be used, all represented by nodes
+		*/
 	};
 
 	/*
@@ -751,6 +755,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_to_js(const std::wstring& filename, const std::string& ns);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_clear();
 }
 

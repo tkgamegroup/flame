@@ -38,19 +38,19 @@ namespace flame
 		"pointer"
 	};
 
-	const char* get_type_tag_name(TypeTag tag)
+	const char* get_type_tag_name(TypeTag$ tag)
 	{
 		return tag_names[tag];
 	}
 
 	struct TypeInfoPrivate : TypeInfo
 	{
-		TypeTag tag;
+		TypeTag$ tag;
 		std::string name;
 		uint name_hash;
 	};
 
-	TypeTag TypeInfo::tag() const
+	TypeTag$ TypeInfo::tag() const
 	{
 		return ((TypeInfoPrivate*)this)->tag;
 	}
@@ -297,7 +297,7 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->default_value;
 	}
 
-	void get(TypeTag tag, int size, const void* src, CommonData* dst)
+	void get(TypeTag$ tag, int size, const void* src, CommonData* dst)
 	{
 		switch (tag)
 		{
@@ -313,7 +313,7 @@ namespace flame
 		}
 	}
 
-	void set(TypeTag tag, int size, const CommonData* src, void* dst)
+	void set(TypeTag$ tag, int size, const CommonData* src, void* dst)
 	{
 		switch (tag)
 		{
@@ -329,7 +329,7 @@ namespace flame
 		}
 	}
 
-	bool compare(TypeTag tag, int size, const void* src, const void* dst)
+	bool compare(TypeTag$ tag, int size, const void* src, const void* dst)
 	{
 		switch (tag)
 		{
@@ -342,7 +342,7 @@ namespace flame
 		return false;
 	}
 
-	String serialize_value(TypeTag tag, uint type_hash, const void* src, int precision)
+	String serialize_value(TypeTag$ tag, uint type_hash, const void* src, int precision)
 	{
 		switch (tag)
 		{
@@ -357,7 +357,7 @@ namespace flame
 		return "";
 	}
 
-	void unserialize_value(TypeTag tag, uint type_hash, const std::string & str, void* dst)
+	void unserialize_value(TypeTag$ tag, uint type_hash, const std::string & str, void* dst)
 	{
 		switch (tag)
 		{
@@ -1463,7 +1463,7 @@ namespace flame
 			e_tag++;
 		}
 
-		info.tag = (TypeTag)e_tag;
+		info.tag = (TypeTag$)e_tag;
 		info.name = src->find_attr("type")->value();
 		info.name_hash = H(info.name.c_str());
 
@@ -1937,69 +1937,111 @@ namespace flame
 		auto file = SerializableNode::create("typeinfo");
 
 		auto n_enums = file->new_node("enums");
-		std::map<std::string, EnumInfoPrivate*> _enums;
-		for (auto& e : enums)
-			_enums.emplace(e.second->name, e.second.get());
-		for (auto& e : _enums)
 		{
-			auto n_enum = n_enums->new_node("enum");
-			n_enum->new_attr("name", e.second->name);
-
-			for (auto& i : e.second->items)
+			std::vector<EnumInfoPrivate*> sorted_enums;
+			for (auto& e : enums)
+				sorted_enums.push_back(e.second.get());
+			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfoPrivate * a, EnumInfoPrivate * b) {
+				return a->name < b->name;
+			});
+			for (auto& e : sorted_enums)
 			{
-				auto n_item = n_enum->new_node("item");
-				n_item->new_attr("name", i->name);
-				n_item->new_attr("value", std::to_string(i->value));
+				auto n_enum = n_enums->new_node("enum");
+				n_enum->new_attr("name", e->name);
+
+				for (auto& i : e->items)
+				{
+					auto n_item = n_enum->new_node("item");
+					n_item->new_attr("name", i->name);
+					n_item->new_attr("value", to_stdstring(i->value));
+				}
 			}
 		}
 
 		auto n_udts = file->new_node("udts");
-		std::map<std::string, UdtInfoPrivate*> _udts;
-		for (auto& u : udts)
-			_udts.emplace(u.second->name, u.second.get());
-		for (auto& u : _udts)
 		{
-			auto n_udt = n_udts->new_node("udt");
-			n_udt->new_attr("name", u.second->name);
-			n_udt->new_attr("size", std::to_string(u.second->size));
-			n_udt->new_attr("module_name", w2s(u.second->module_name));
-
-			for (auto& i : u.second->items)
+			std::vector<UdtInfoPrivate*> sorted_udts;
+			for (auto& u : udts)
+				sorted_udts.push_back(u.second.get());
+			std::sort(sorted_udts.begin(), sorted_udts.end(), [](UdtInfoPrivate * a, UdtInfoPrivate * b) {
+				return a->name < b->name;
+			});
+			for (auto& u : sorted_udts)
 			{
-				auto n_item = n_udt->new_node("item");
-				serialize_typeinfo(i->type, n_item);
-				n_item->new_attr("name", i->name);
-				n_item->new_attr("attribute", i->attribute);
-				n_item->new_attr("offset", std::to_string(i->offset));
-				n_item->new_attr("size", std::to_string(i->size));
-				if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
+				auto n_udt = n_udts->new_node("udt");
+				n_udt->new_attr("name", u->name);
+				n_udt->new_attr("size", std::to_string(u->size));
+				n_udt->new_attr("module_name", w2s(u->module_name));
+
+				for (auto& i : u->items)
 				{
-					auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
-					if (default_value_str.size > 0)
-						n_item->new_attr("default_value", default_value_str.v);
+					auto n_item = n_udt->new_node("item");
+					serialize_typeinfo(i->type, n_item);
+					n_item->new_attr("name", i->name);
+					n_item->new_attr("attribute", i->attribute);
+					n_item->new_attr("offset", to_stdstring(i->offset));
+					n_item->new_attr("size", to_stdstring(i->size));
+					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringAndHash"))
+					{
+						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
+						if (default_value_str.size > 0)
+							n_item->new_attr("default_value", default_value_str.v);
+					}
 				}
-			}
 
-			auto n_functions = n_udt->new_node("functions");
-			for (auto& f : u.second->functions)
-			{
-				auto n_function = n_functions->new_node("function");
-				serialize_function(f.get(), n_function);
+				auto n_functions = n_udt->new_node("functions");
+				for (auto& f : u->functions)
+				{
+					auto n_function = n_functions->new_node("function");
+					serialize_function(f.get(), n_function);
+				}
 			}
 		}
 
 		auto n_functions = file->new_node("functions");
-		std::map<std::string, FunctionInfoPrivate*> _functions;
-		for (auto& f : functions)
-			_functions.emplace(f.second->name, f.second.get());
-		for (auto& f : _functions)
 		{
-			auto n_function = n_functions->new_node("function");
-			serialize_function(f.second, n_function);
+			std::vector<FunctionInfoPrivate*> sorted_functions;
+			for (auto& f : functions)
+				sorted_functions.push_back(f.second.get());
+			std::sort(sorted_functions.begin(), sorted_functions.end(), [](FunctionInfoPrivate * a, FunctionInfoPrivate * b) {
+				return a->name < b->name;
+			});
+			for (auto& f : sorted_functions)
+			{
+				auto n_function = n_functions->new_node("function");
+				serialize_function(f, n_function);
+			}
 		}
 
 		file->save_xml(filename);
 		SerializableNode::destroy(file);
+	}
+
+	void typeinfo_to_js(const std::wstring& filename, const std::string& ns)
+	{
+		std::ofstream file(filename);
+
+		file << "var " + ns + " = {\n";
+
+		{
+			std::vector<EnumInfoPrivate*> sorted_enums;
+			for (auto& e : enums)
+				sorted_enums.push_back(e.second.get());
+			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfoPrivate * a, EnumInfoPrivate * b) {
+				return a->name < b->name;
+			});
+			for (auto& e : sorted_enums)
+			{
+				file << "\t" + e->name + ": {\n";
+				for (auto& i : e->items)
+					file << "\t\t" + i->name + ": " + to_stdstring(i->value) + ",\n";
+				file << "\t},\n";
+			}
+		}
+
+		file << "};\n";
+
+		file.close();
 	}
 
 	void typeinfo_clear()

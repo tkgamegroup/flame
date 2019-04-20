@@ -111,6 +111,21 @@ int main(int argc, char **args)
 
 	network_init();
 
+	std::vector<UdtInfo*> available_udts;
+	{
+		auto udts = get_udts();
+		for (auto i = 0; i < udts.size; i++)
+		{
+			auto u = udts[i];
+			auto name = std::string(u->name());
+			if (name.find("BP_") == 0)
+				available_udts.push_back(u);
+		}
+		std::sort(available_udts.begin(), available_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+			return std::string(a->name()) < std::string(b->name());
+		});
+	}
+
 	while (true)
 	{
 		char command_line[260];
@@ -144,14 +159,8 @@ int main(int argc, char **args)
 
 			if (s_what == "udts")
 			{
-				auto udts = get_udts();
-				for (auto i_u = 0; i_u < udts.size; i_u++)
-				{
-					auto udt = udts[i_u];
-					auto name = std::string(udt->name());
-					if (name.find("BP_") == 0)
-						printf("%s\n", udt->name());
-				}
+				for (auto u : available_udts)
+					printf("%s\n", u->name());
 			}
 			else if (s_what == "udt")
 			{
@@ -439,12 +448,31 @@ int main(int argc, char **args)
 				printf("  ok\nbrowser: working\n");
 
 				auto json = SerializableNode::create("");
+
+				auto n_udts = json->new_node("udts");
+				n_udts->set_type(SerializableNode::Array);
+				for (auto u : available_udts)
+				{
+					auto n = n_udts->new_node("");
+					n->new_attr("name", u->name());
+					auto n_items = n->new_node("items");
+					n_items->set_type(SerializableNode::Array);
+					for (auto i = 0; i < u->item_count(); i++)
+					{
+						auto it = u->item(i);
+						auto n_it = n->new_node("");
+						n_it->new_attr("name", it->name());
+						n_it->new_attr("attribute", it->attribute());
+						auto ty = it->type();
+						
+					}
+				}
+
 				auto n_nodes = json->new_node("nodes");
 				n_nodes->set_type(SerializableNode::Array);
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto src = bp->node(i);
-
 					auto n = n_nodes->new_node("");
 					auto pos = src->position();
 					n->new_attr("name", src->id());
@@ -469,6 +497,7 @@ int main(int argc, char **args)
 						n_output->new_attr("", output->variable_info()->name());
 					}
 				}
+
 				auto n_links = json->new_node("links");
 				n_links->set_type(SerializableNode::Array);
 				for (auto i = 0; i < bp->node_count(); i++)

@@ -31,17 +31,11 @@ int main(int argc, char **args)
 		return 0;
 
 	std::vector<std::wstring> pdb_dirs;
-	std::wstring output_filename(L"typeinfo.xml");
 
 	for (auto i = 1; i < argc; i++)
 	{
 		if (args[i][0] != '-')
 			pdb_dirs.push_back(s2w(args[i]));
-		else
-		{
-			if (args[i][1] == 'o')
-				output_filename = s2w(&args[i][2]);
-		}
 	}
 
 	std::string cmd_prefix("\"");
@@ -79,7 +73,8 @@ int main(int argc, char **args)
 		}
 	}
 
-	typeinfo_save(output_filename);
+	typeinfo_save(L"typeinfo.xml");
+	typeinfo_to_js(L"typeinfo.js", "flame");
 	typeinfo_clear();
 
 	return 0;

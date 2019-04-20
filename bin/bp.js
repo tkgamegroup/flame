@@ -2,6 +2,8 @@ window.onload = function(){
     var svg = document.getElementById("svg");
     svg.ns = svg.namespaceURI;
 
+    var toolbar = document.getElementById("toolbar");
+
     function CreatePath() {
         var path = document.createElementNS(svg.ns, "path");
         path.setAttributeNS(null, "stroke", "#8e8e8e");
@@ -10,6 +12,9 @@ window.onload = function(){
         svg.appendChild(path);
         return path;
     }
+
+    var udts = [];
+    window.udts = udts;
 
     var nodes = [];
     window.nodes = nodes;
@@ -43,6 +48,11 @@ window.onload = function(){
         } 
         else 
             return offset;
+    }
+    
+    function UDT(name) {
+        this.eMain = document.createElement("div");
+        this.eMain.innerHTML = name;
     }
 
     function Node(name, x, y) {
@@ -236,9 +246,32 @@ window.onload = function(){
 	var sock_s = new WebSocket("ws://localhost:5566/");
     window.sock_s = sock_s;
     sock_s.onmessage = function(res){
+        for (var i in udts)
+            toolbar.removeChild(udts[i].eMain);
+        for (var i in nodes)
+        {
+            var n = nodes[i];
+
+            document.body.removeChild(n.eMain);
+
+            for (var j in n.inputs)
+                svg.removeChild(n.inputs[j].path);
+        }
+
+        udts = [];
         nodes = [];
 
         var src = eval('(' + res.data + ')');
+
+        var src_udts = src.udts;
+        for (var i in src_udts)
+        {
+            var sn = src_udts[i];
+            var u = new UDT(sn.name);
+            
+            toolbar.appendChild(u.eMain);
+        }
+
         var src_nodes = src.nodes;
         for (var i in src_nodes)
         {
@@ -253,6 +286,7 @@ window.onload = function(){
             n.eMain.style.position = "absolute";
             document.body.appendChild(n.eMain);
         }
+
         var src_links = src.links;
         for (var i in src_links)
         {
@@ -266,6 +300,7 @@ window.onload = function(){
 
             input.link = output;
         }
+
         for (var i in nodes)
             nodes[i].UpdatePosition();
         
@@ -276,7 +311,7 @@ window.onload = function(){
             s.onmessage = window.sock_s.onmessage;
             s.onclose = window.sock_s.onclose;
             window.sock_s = s;
-        }, 1000);
+        }, 2000);
     };
 
     /*
