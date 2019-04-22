@@ -31,7 +31,7 @@ namespace flame
 
 		void* out$o;
 
-		FLAME_GRAPHICS_EXPORTS void update$c();
+		FLAME_GRAPHICS_EXPORTS void initialize$c();
 	};
 
 	struct BP_GraphicsSwapchain$
@@ -47,6 +47,7 @@ namespace flame
 		void* framebuffer1$o;
 		void* framebuffer2$o;
 
+		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void update$c();
 	};
 
@@ -58,6 +59,8 @@ namespace flame
 
 		void* out$o;
 
+		FLAME_GRAPHICS_EXPORTS void initialize$c();
+		FLAME_GRAPHICS_EXPORTS void finish$c();
 		FLAME_GRAPHICS_EXPORTS void update$c();
 	};
 
@@ -68,6 +71,8 @@ namespace flame
 
 		void* out$o;
 
+		FLAME_GRAPHICS_EXPORTS void initialize$c();
+		FLAME_GRAPHICS_EXPORTS void finish$c();
 		FLAME_GRAPHICS_EXPORTS void update$c();
 	}; 
 

@@ -1059,8 +1059,12 @@ namespace flame
 
 		for (auto& sn : src->nodes)
 		{
-			auto n = sn->type == SerializableNode::Cdata ? dst.append_child(pugi::node_pcdata) : dst.append_child(sn->name.c_str());
-			n.set_value(sn->value.c_str());
+			auto n = sn->type == SerializableNode::Cdata ? dst.append_child(pugi::node_cdata) : dst.append_child(sn->name.c_str());
+			if (!sn->value.empty())
+			{
+				auto nn = n.append_child(pugi::node_pcdata);
+				nn.set_value(sn->value.c_str());
+			}
 			to_xml(n, sn.get());
 		}
 	}
@@ -1823,7 +1827,7 @@ namespace flame
 			bool pass_prefix, pass_$;
 			std::string attribute;
 			auto name = format_name(pwname, &attribute, &pass_prefix, &pass_$);
-			if (pass_prefix && pass_$ && name.find("::") == std::string::npos)
+			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos)
 			{
 				auto f = new FunctionInfoPrivate;
 				f->name = name;

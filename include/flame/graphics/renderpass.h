@@ -93,12 +93,16 @@ namespace flame
 
 		struct Renderpass
 		{
+			FLAME_GRAPHICS_EXPORTS int attachment_count() const;
+
 			FLAME_GRAPHICS_EXPORTS static Renderpass *get(Device *d, const RenderpassInfo &info);
 			FLAME_GRAPHICS_EXPORTS static void release(Renderpass *r);
 		};
 
 		struct ClearValues
 		{
+			FLAME_GRAPHICS_EXPORTS Renderpass* renderpass() const;
+
 			FLAME_GRAPHICS_EXPORTS void set(int idx, const Bvec4 &col);
 
 			FLAME_GRAPHICS_EXPORTS static ClearValues *create(Renderpass *r);

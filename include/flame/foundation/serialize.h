@@ -682,7 +682,8 @@ namespace flame
 			Value,
 			Object,
 			Array,
-			Cdata
+			Cdata,
+			Document
 		};
 
 		FLAME_FOUNDATION_EXPORTS Type type() const;

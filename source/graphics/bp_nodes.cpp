@@ -28,19 +28,28 @@
 
 namespace flame
 {
-	void BP_GraphicsDevice$::update$c()
+	void BP_GraphicsDevice$::initialize$c()
 	{
 		if (in$i)
 			out$o = in$i;
+		else
+			out$o = nullptr;
 	}
 
 	BP_GraphicsDevice$ bp_graphics_device_unused;
 
-	void BP_GraphicsSwapchain$::update$c()
+	void BP_GraphicsSwapchain$::initialize$c()
 	{
 		if (in$i)
-		{
 			out$o = in$i;
+		else
+			out$o = nullptr;
+	}
+
+	void BP_GraphicsSwapchain$::update$c()
+	{
+		if (out$o)
+		{
 			auto sc = (graphics::Swapchain*)out$o;
 			window$o = sc->window();
 			image1$o = sc->get_image(0);
@@ -54,7 +63,7 @@ namespace flame
 
 	BP_GraphicsSwapchain$ bp_graphics_swapchain_unused;
 
-	void BP_GraphicsClearvalues$::update$c()
+	void BP_GraphicsClearvalues$::initialize$c()
 	{
 		if (in$i)
 			out$o = in$i;
@@ -63,13 +72,21 @@ namespace flame
 			if (renderpass$i)
 				out$o = graphics::ClearValues::create((graphics::Renderpass*)renderpass$i);
 		}
+	}
+
+	void BP_GraphicsClearvalues$::finish$c()
+	{
+		if (!in$i)
+			graphics::ClearValues::destroy((graphics::ClearValues*)out$o);
+	}
+
+	void BP_GraphicsClearvalues$::update$c()
+	{
 		if (out$o)
 		{
+			auto cv = (graphics::ClearValues*)out$o;
 			for (auto i = 0; i < colors$i.size; i++)
-			{
-				auto cv = (graphics::ClearValues*)out$o;
 				cv->set(i, colors$i[i]);
-			}
 		}
 	}
 

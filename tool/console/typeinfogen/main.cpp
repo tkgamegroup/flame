@@ -88,7 +88,7 @@ int main(int argc, char **args)
 			typeinfo_collect(fn);
 		typeinfo_save(L"typeinfo.xml");
 
-		printf("	- done\n");
+		printf(" - done\n");
 	}
 	else
 	{

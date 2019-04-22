@@ -51,8 +51,8 @@ namespace flame
 		UdtInfo *udt;
 		Vec2 position;
 		FunctionInfo* initialize_function;
-		FunctionInfo* update_function;
 		FunctionInfo* finish_function;
+		FunctionInfo* update_function;
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 		bool enable;
@@ -132,8 +132,8 @@ namespace flame
 		dummy(nullptr)
 	{
 		initialize_function = udt->find_function("initialize");
-		update_function = udt->find_function("update");
 		finish_function = udt->find_function("finish");
+		update_function = udt->find_function("update");
 
 		for (auto i = 0; i < udt->item_count(); i++)
 		{
