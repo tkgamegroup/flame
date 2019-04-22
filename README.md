@@ -3,7 +3,9 @@ A lightweight and powerful 3D Game Engine.
 
 # thanks to:
 
-- pugixml     - for parsing and loading XML files (https://github.com/zeux/pugixml)
+- pugixml     - for parsing and loading XML (https://github.com/zeux/pugixml)
+
+- nlohmannjson     - for parsing and loading JSON (https://github.com/nlohmann/json)
 
 - STB         - for image loading/saving (https://github.com/nothings/stb)
   

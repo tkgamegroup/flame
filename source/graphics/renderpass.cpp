@@ -157,6 +157,11 @@ namespace flame
 #endif
 		}
 
+		int Renderpass::attachment_count() const
+		{
+			return ((RenderpassPrivate*)this)->info.attachments.size();
+		}
+
 		std::vector<RenderpassPrivate*> created_renderpasses;
 
 		Renderpass *Renderpass::get(Device *d, const RenderpassInfo &info)
@@ -231,6 +236,11 @@ namespace flame
 			v[idx].z = col.z / 255.0;
 			v[idx].w = col.w / 255.0;
 #endif
+		}
+
+		Renderpass* ClearValues::renderpass() const
+		{
+			return ((ClearvaluesPrivate*)this)->renderpass;
 		}
 
 		void ClearValues::set(int idx, const Bvec4 &col)

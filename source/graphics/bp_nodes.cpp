@@ -85,14 +85,15 @@ namespace flame
 		if (out$o)
 		{
 			auto cv = (graphics::ClearValues*)out$o;
-			for (auto i = 0; i < colors$i.size; i++)
+			auto count = cv->renderpass()->attachment_count();
+			for (auto i = 0; i < count; i++)
 				cv->set(i, colors$i[i]);
 		}
 	}
 
 	BP_GraphicsClearvalues$ bp_graphics_clearvalues_unused;
 
-	void BP_GraphicsCommandbuffer$::update$c()
+	void BP_GraphicsCommandbuffer$::initialize$c()
 	{
 		if (in$i)
 			out$o = in$i;
@@ -101,6 +102,12 @@ namespace flame
 			if (device$i)
 				out$o = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);
 		}
+	}
+
+	void BP_GraphicsCommandbuffer$::finish$c()
+	{
+		if (!in$i)
+			graphics::Commandbuffer::destroy((graphics::Commandbuffer*)out$o);
 	}
 
 	BP_GraphicsCommandbuffer$ bp_graphics_commandbuffer_unused;

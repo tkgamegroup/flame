@@ -73,7 +73,6 @@ namespace flame
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void finish$c();
-		FLAME_GRAPHICS_EXPORTS void update$c();
 	}; 
 
 	struct BP_GraphicsCmdBegin$
