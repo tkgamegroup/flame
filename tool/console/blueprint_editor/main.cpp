@@ -421,7 +421,7 @@ int main(int argc, char **args)
 			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
 			printf("waiting for browser on port 5566 ...");
 
-			auto s = OneClientServerWebSocket::create(5566, 100, Function<void(void*, int, void*)>(
+			auto s = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, int, void*)>(
 				[](void* c, int len, void* data) {
 					auto bp = *(BP**)c;
 					auto json = SerializableNode::create_from_json_string((char*)data);
