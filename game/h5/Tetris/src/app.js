@@ -176,7 +176,7 @@ class App
 						thiz.curr_tetrises[1].h_move = parseInt(src.h_move2);
 						thiz.curr_tetrises[1].v_move = parseInt(src.v_move2);
 					}
-					setTimeout("app.Update()", 16);
+					setTimeout("app.Update()", 66);
 				}
 			};
 			sock_s.onclose = function(){
