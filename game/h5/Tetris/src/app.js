@@ -1,5 +1,12 @@
 'use strict';
 
+window.seed = 0;
+function Random()
+{
+	window.seed = (window.seed * 9301 + 49297) % 233280; 
+	return window.seed / 233280.0;
+}
+
 class Tetris
 {
     constructor(x, y, style, down_frame)
@@ -17,7 +24,7 @@ class Tetris
 		this.down_frame_max = down_frame;
 		this.down_frame = this.down_frame_max;
 
-		this.die_frame = -1;
+		this.die = false;
 	}
 
 	SetData()
@@ -135,6 +142,12 @@ class App
 			this.text_level.text = this.curr_level + 1;
 			//
 
+			// init sync
+			this.frame = 0;
+			this.h_move = 0;
+			this.v_move = 0;
+			//
+
 			var thiz = this;
 
 			var sock_s = new WebSocket("ws://localhost:5567/");
@@ -143,8 +156,28 @@ class App
 				console.log("connected to server");
 			};
 			sock_s.onmessage = function(res){
-				if (res.data == "start")
+				var src = eval('(' + res.data + ')');
+				if (src.action == "start")
+				{
+					window.seed = src.seed;
 					thiz.GameStart();
+					app.FrameSync();
+				}
+				else if (src.action == "frame")
+				{
+					app.frame++;
+					if (thiz.curr_tetrises[0])
+					{
+						thiz.curr_tetrises[0].h_move = parseInt(src.h_move1);
+						thiz.curr_tetrises[0].v_move = parseInt(src.v_move1);
+					}
+					if (thiz.curr_tetrises[1])
+					{
+						thiz.curr_tetrises[1].h_move = parseInt(src.h_move2);
+						thiz.curr_tetrises[1].v_move = parseInt(src.v_move2);
+					}
+					setTimeout("app.Update()", 16);
+				}
 			};
 			sock_s.onclose = function(){
 				setTimeout(function(){
@@ -163,9 +196,9 @@ class App
     
     GameStart()
     {
-		this.ShowNextTetrisStyles();
+		this.frame = 0;
 
-		Laya.timer.frameLoop(1, this, this.Update);
+		this.ShowNextTetrisStyles();
 
         Laya.stage.on(laya.events.Event.KEY_DOWN, this, this.OnKeydown);
 	}
@@ -189,7 +222,7 @@ class App
 
 	NewTetrisStyle()
 	{
-		return TetrisStyles[Math.floor(Math.random() * TetrisStyles.length)];
+		return TetrisStyles[Math.floor(Random() * TetrisStyles.length)];
 	}
 
 	CheckForTwoTetrises()
@@ -223,6 +256,17 @@ class App
 		}
 
 		return true;
+	}
+
+	FrameSync()
+	{
+		var data = {};
+		data.frame = this.frame;
+		data.h_move = this.h_move;
+		data.v_move = this.v_move;
+		this.h_move = this.v_move = 0;
+		var json = JSON.stringify(data);
+		window.sock_s.send(json);
 	}
 	
 	Update()
@@ -369,16 +413,11 @@ class App
 				curr_t.y++;
 				if (!curr_t.Check(this.grids))
 				{
-					//curr_t.down_frame_max = Levels[this.curr_level].speed;
 					curr_t.y--;
-					if (curr_t.die_frame < 0)
-						curr_t.die_frame = Constant.dieTime;
+					curr_t.die = true;
 				}
 				else if (!this.CheckForTwoTetrises())
-				{
-					//curr_t.down_frame_max = Levels[this.curr_level].speed;
 					curr_t.y--;
-				}
 			}
 		}
 
@@ -388,14 +427,12 @@ class App
 			if (curr_t)
 			{
 				curr_t.SetToGrids(this.grids, true);
-				if (curr_t.die_frame > 0)
-				{
-					curr_t.die_frame--;
-					if (curr_t.die_frame == 0)
-						this.curr_tetrises[i] = null;
-				}
+				if (curr_t.die)
+					this.curr_tetrises[i] = null;
 			}
 		}
+
+		this.FrameSync();
 	}
 
 	OnKeydown(event)
@@ -403,36 +440,16 @@ class App
 		switch (event.keyCode)
 		{
 		case laya.events.Keyboard.LEFT:
-			if (this.curr_tetrises[0])
-				this.curr_tetrises[0].h_move = -1;
+			this.h_move = -1;
 			break;
 		case laya.events.Keyboard.RIGHT:
-			if (this.curr_tetrises[0])
-				this.curr_tetrises[0].h_move = 1;
+			this.h_move = 1;
 			break;
 		case laya.events.Keyboard.UP:
-			if (this.curr_tetrises[0])
-				this.curr_tetrises[0].v_move = -1;
+			this.v_move = -1;
 			break;
 		case laya.events.Keyboard.DOWN:
-			if (this.curr_tetrises[0])
-				this.curr_tetrises[0].v_move = 1;
-			break;
-		case laya.events.Keyboard.A:
-			if (this.curr_tetrises[1])
-				this.curr_tetrises[1].h_move = -1;
-			break;
-		case laya.events.Keyboard.D:
-			if (this.curr_tetrises[1])
-				this.curr_tetrises[1].h_move = 1;
-			break;
-		case laya.events.Keyboard.W:
-			if (this.curr_tetrises[1])
-				this.curr_tetrises[1].v_move = -1;
-			break;
-		case laya.events.Keyboard.S:
-			if (this.curr_tetrises[1])
-				this.curr_tetrises[1].v_move = 1;
+			this.v_move = 1;
 			break;
 		}
 	}

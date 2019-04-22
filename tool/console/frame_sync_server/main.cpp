@@ -24,11 +24,50 @@
 
 using namespace flame;
 
+struct Player
+{
+	int h_move;
+	int v_move;
+};
+
+struct App
+{
+	FrameSyncServer* s;
+	Player players[2];
+
+	void create();
+}app;
+auto papp = &app;
+
+void App::create()
+{
+	s = FrameSyncServer::create(SocketWeb, 5567, 2,
+		Function<void(void* c, int client_idx, SerializableNode * src)>([](void* c, int client_idx, SerializableNode * src) {
+				auto thiz = *(App * *)c;
+				thiz->players[client_idx].h_move = stoi1(src->find_node("h_move")->value().c_str());
+				thiz->players[client_idx].v_move = stoi1(src->find_node("v_move")->value().c_str());
+			}, sizeof(void*), &papp),
+		Function<void(void* c)>([](void* c) {
+				auto thiz = *(App * *)c;
+				auto json = SerializableNode::create("");
+				json->new_attr("action", "frame");
+				json->new_attr("h_move1", to_stdstring(thiz->players[0].h_move));
+				json->new_attr("v_move1", to_stdstring(thiz->players[0].v_move));
+				json->new_attr("h_move2", to_stdstring(thiz->players[1].h_move));
+				json->new_attr("v_move2", to_stdstring(thiz->players[1].v_move));
+				auto str = json->to_string_json();
+				for (auto i = 0; i < 2; i++)
+					thiz->s->send(i, str.size, str.v);
+				SerializableNode::destroy(json);
+			}, sizeof(void*), &papp));
+}
+
 int main(int argc, char **args)
 {
 	network_init();
 
-	auto s = FrameSyncServer::create(SocketWeb, 5567, 2);
+	app.create();
+	wait_for(app.s->ev_closed);
 
 	return 0;
 }

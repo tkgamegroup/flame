@@ -188,21 +188,6 @@ namespace flame
 		}
 	};
 
-	struct FrameSyncServerPrivate : FrameSyncServer
-	{
-		SocketType type;
-
-		std::vector<int> fd_cs;
-
-		inline bool send(int client_idx, int size, void* data)
-		{
-			if (type == SocketWeb)
-				return websocket_send(fd_cs[client_idx], size, data);
-			else
-				return ::send(fd_cs[client_idx], (char*)data, size, 0) > 0;
-		}
-	};
-
 	bool OneClientServer::send(int size, void* data)
 	{
 		return ((OneClientServerPrivate*)this)->send(size, data);
@@ -247,9 +232,9 @@ namespace flame
 
 		auto s = new OneClientServerPrivate;
 		s->type = type;
-		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
 		s->fd_c = fd_c;
 		s->message_callback = on_message;
+		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
 
 		auto thiz = s;
 
@@ -282,7 +267,30 @@ namespace flame
 
 	}
 
-	FrameSyncServer* FrameSyncServer::create(SocketType type, ushort port, int client_count)
+	struct FrameSyncServerPrivate : FrameSyncServer
+	{
+		SocketType type;
+
+		int frame;
+		int semaphore;
+
+		std::vector<int> fd_cs;
+
+		Function<void(void* c, int client_idx, SerializableNode* src)> client_frame_callback;
+		Function<void(void* c)> frame_advance_callback;
+
+		inline bool send(int client_idx, int size, void* data)
+		{
+			if (type == SocketWeb)
+				return websocket_send(fd_cs[client_idx], size, data);
+			else
+				return ::send(fd_cs[client_idx], (char*)data, size, 0) > 0;
+		}
+	};
+
+	FrameSyncServer* FrameSyncServer::create(SocketType type, ushort port, int client_count,
+		const Function<void(void* c, int client_idx, SerializableNode* src)>& on_client_frame,
+		const Function<void(void* c)>& on_frame_advance)
 	{
 		int res;
 
@@ -318,10 +326,24 @@ namespace flame
 
 		auto s = new FrameSyncServerPrivate;
 		s->type = type;
+		s->frame = 0;
+		s->semaphore = 0;
 		s->fd_cs = fd_cs;
+		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
+		s->client_frame_callback = on_client_frame;
+		s->frame_advance_callback = on_frame_advance;
 
-		for (auto i = 0; i < client_count; i++)
-			s->send(i, 5, "start");
+		srand(time(0));
+
+		{
+			auto json = SerializableNode::create("");
+			json->new_attr("action", "start");
+			json->new_attr("seed", to_stdstring(::rand()));
+			auto str = json->to_string_json();
+			for (auto i = 0; i < client_count; i++)
+				s->send(i, str.size, str.v);
+			SerializableNode::destroy(json);
+		}
 
 		auto thiz = s;
 
@@ -342,13 +364,51 @@ namespace flame
 						{
 							if (FD_ISSET(fd, &rfds))
 							{
+								uchar buf[1024 * 100];
+								auto ret = recv(fd, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
+								if (ret > 0)
+								{
+									ulonglong len;
+									auto p = buf;
+									auto op = websocket_process_recv(len, p);
 
+									if (op == 1)
+									{
+										auto json = SerializableNode::create_from_json_string((char*)p);
+										auto n = json->find_node("frame");
+										if (n && n->type() == SerializableNode::Value)
+										{
+											auto frame = stoi1(n->value().c_str());
+											if (frame == thiz->frame)
+											{
+												thiz->semaphore++;
+												thiz->client_frame_callback(client_idx, json);
+
+												if (thiz->semaphore >= thiz->fd_cs.size())
+												{
+													thiz->frame++;
+													thiz->semaphore = 0;
+
+													thiz->frame_advance_callback();
+												}
+											}
+										}
+										SerializableNode::destroy(json);
+									}
+								}
 							}
 							client_idx++;
 						}
 					}
 				}
 			}, sizeof(void*), & thiz));
+
+		return s;
+	}
+
+	bool FrameSyncServer::send(int client_idx, int size, void* data)
+	{
+		return ((FrameSyncServerPrivate*)this)->send(client_idx, size, data);
 	}
 
 	void FrameSyncServer::destroy(FrameSyncServer* sock)
