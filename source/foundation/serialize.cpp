@@ -35,7 +35,8 @@ namespace flame
 		"enum_single",
 		"enum_multi",
 		"varible",
-		"pointer"
+		"pointer",
+		"array"
 	};
 
 	const char* get_type_tag_name(TypeTag$ tag)
@@ -310,6 +311,8 @@ namespace flame
 		case TypeTagPointer:
 			dst->p() = *(void**)src;
 			break;
+		case TypeTagArray:
+			break;
 		}
 	}
 
@@ -325,6 +328,8 @@ namespace flame
 			break;
 		case TypeTagPointer:
 			*(void**)dst = src->v.p;
+			break;
+		case TypeTagArray:
 			break;
 		}
 	}
@@ -1385,13 +1390,13 @@ namespace flame
 			auto type_name = format_name(pwname);
 			info.name = type_name;
 		}
-		break;
+			break;
 		case SymTagBaseType:
 		{
 			info.tag = TypeTagVariable;
 			info.name = base_type_name(symbol);
 		}
-		break;
+			break;
 		case SymTagPointerType:
 		{
 			info.tag = TypeTagPointer;
@@ -1408,13 +1413,34 @@ namespace flame
 				break;
 			case SymTagUDT:
 				point_type->get_name(&pwname);
-				auto type_name = format_name(pwname);
-				info.name = type_name;
+				info.name = format_name(pwname);
 				break;
 			}
 			point_type->Release();
 		}
-		break;
+			break;
+		case SymTagArrayType:
+		{
+			info.tag = TypeTagPointer;
+			IDiaSymbol* array_type;
+			symbol->get_type(&array_type);
+			array_type->get_symTag(&dw);
+			switch (dw)
+			{
+			case SymTagBaseType:
+				info.name = base_type_name(array_type);
+				break;
+			case SymTagPointerType:
+				assert(0);
+				break;
+			case SymTagUDT:
+				array_type->get_name(&pwname);
+				info.name = format_name(pwname);
+				break;
+			}
+			array_type->Release();
+		}
+			break;
 		case SymTagUDT:
 		{
 			symbol->get_name(&pwname);
@@ -1432,7 +1458,7 @@ namespace flame
 				info.tag = TypeTagVariable;
 			info.name = type_name;
 		}
-		break;
+			break;
 		case SymTagFunctionArgType:
 		{
 			IDiaSymbol* type;
@@ -1440,7 +1466,7 @@ namespace flame
 			info = symbol_to_typeinfo(type, "");
 			type->Release();
 		}
-		break;
+			break;
 		}
 
 		info.name_hash = H(info.name.c_str());
@@ -1731,9 +1757,13 @@ namespace flame
 							i->offset = l;
 							type->get_length(&ull);
 							i->size = (int)ull;
+							if (SUCCEEDED(type->get_count(&dw)))
+								i->count = dw;
+							else
+								i->count = 0;
 							memset(&i->default_value, 0, sizeof(CommonData));
-
 							i->type = symbol_to_typeinfo(type, attribute);
+
 							type->Release();
 
 							udt->items.emplace_back(i);

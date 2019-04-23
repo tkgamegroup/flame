@@ -201,7 +201,9 @@ namespace flame
 
 		inline ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
 		{
-			for (auto i = 0; i < ((RenderpassPrivate*)r)->info.attachments.size(); i++)
+			renderpass = (RenderpassPrivate*)r;
+
+			for (auto i = 0; i < renderpass->info.attachments.size(); i++)
 			{
 				auto fmt = ((RenderpassPrivate*)r)->info.attachments[i].format;
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)

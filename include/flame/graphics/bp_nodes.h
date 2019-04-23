@@ -55,7 +55,7 @@ namespace flame
 	{
 		void* in$i;
 		void* renderpass$i;
-		Array<Bvec4> colors$i;
+		CommonData* colors$i;
 
 		void* out$o;
 

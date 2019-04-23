@@ -37,14 +37,14 @@ struct App : BasicApp
 	inline virtual void on_create() override
 	{
 		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
-		render_path->find_item("d.in")->set_data(d);
-		render_path->find_item("sc.in")->set_data(sc);
-		render_path->prepare();
+		render_path->find_input("d.in")->set_data(d);
+		render_path->find_input("sc.in")->set_data(sc);
+		render_path->initialize();
 		render_path->update();
-		render_path->unprepare();
-		cv = (ClearValues*)render_path->find_item("cv.out")->data().v.p;
-		cbs[0]  = (Commandbuffer*)render_path->find_item("cb1.out")->data().v.p;
-		cbs[1] = (Commandbuffer*)render_path->find_item("cb2.out")->data().v.p;
+		//render_path->finish();
+		cv = (ClearValues*)render_path->find_output("cv.out")->data().v.p;
+		cbs[0]  = (Commandbuffer*)render_path->find_output("cb1.out")->data().v.p;
+		cbs[1] = (Commandbuffer*)render_path->find_output("cb2.out")->data().v.p;
 
 		//Canvas::initialize(d, sc);
 		//canvas = Canvas::create(sc);
@@ -71,7 +71,7 @@ int main(int argc, char** args)
 {
 	Ivec2 res(1280, 720);
 
-	app.create("Graphics Test", res, WindowFrame);
+	app.create("Graphics Test", res, WindowFrame, graphics::SampleCount_1);
 	app.run();
 
 	return 0;

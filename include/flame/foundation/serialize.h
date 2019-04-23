@@ -569,7 +569,8 @@ namespace flame
 		TypeTagEnumSingle,
 		TypeTagEnumMulti,
 		TypeTagVariable,
-		TypeTagPointer
+		TypeTagPointer,
+		TypeTagArray
 	};
 
 	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag$ tag);

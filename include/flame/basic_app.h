@@ -49,13 +49,13 @@ namespace flame
 
 		virtual void on_create() = 0;
 
-		inline void create(const char *title, const Ivec2 &res, int style)
+		inline void create(const char *title, const Ivec2 &res, int style, graphics::SampleCount sample_count)
 		{
 			typeinfo_load(L"typeinfo.xml");
 			app = Application::create();
 			w = Window::create(app, title, res, style);
 			d = graphics::Device::/*get_shared*/create(true);
-			sc = graphics::Swapchain::create(d, w, graphics::SampleCount_8);
+			sc = graphics::Swapchain::create(d, w, sample_count);
 			image_avalible = graphics::Semaphore::create(d);
 			render_finished = graphics::Semaphore::create(d);
 

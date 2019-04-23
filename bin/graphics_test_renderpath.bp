@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 <BP>
-	<node type="BP_GraphicsClearvalues" id="cv" pos="209.000000;506.000000">
-		<input name="colors" value="" />
-	</node>
+	<node type="BP_GraphicsClearvalues" id="cv" pos="209.000000;506.000000" />
 	<node type="BP_GraphicsSwapchain" id="sc" pos="133.000000;267.000000" />
 	<node type="BP_GraphicsDevice" id="d" pos="33.000000;58.000000" />
 	<node type="BP_GraphicsCommandbuffer" id="cb1" pos="221.000000;64.000000" />
@@ -11,7 +9,9 @@
 	<node type="BP_GraphicsCmdBeginRenderpass" id="cmd_begin_renderpass" pos="545.000000;265.000000" />
 	<node type="BP_GraphicsCmdEndRenderpass" id="cmd_end_renderpass" pos="548.000000;432.000000" />
 	<node type="BP_GraphicsCmdEnd" id="cmd_end" pos="554.000000;526.000000" />
+	<node type="BP_Socket4" id="color" pos="0.000000;0.000000" />
 	<link in="cv.renderpass" out="sc.renderpass_clear" />
+	<link in="cv.colors" out="color.v" />
 	<link in="cb1.device" out="d.out" />
 	<link in="cb2.device" out="d.out" />
 	<link in="cmd_begin.cmd1" out="cb1.out" />

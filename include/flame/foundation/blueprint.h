@@ -126,6 +126,20 @@ namespace flame
 
 	// here, we define some basic udt for blueprint nodes
 
+	struct BP_Socket4$
+	{
+		CommonData v1$i;
+		CommonData v2$i;
+		CommonData v3$i;
+		CommonData v4$i;
+
+		CommonData* v$o;
+
+		FLAME_FOUNDATION_EXPORTS void initialize$c();
+		FLAME_FOUNDATION_EXPORTS void finish$c();
+		FLAME_FOUNDATION_EXPORTS void update$c();
+	};
+
 	struct BP_Int$
 	{
 		int v$i;

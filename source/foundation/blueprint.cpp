@@ -68,6 +68,8 @@ namespace flame
 		inline SlotPrivate* find_output(const std::string &name) const;
 
 		inline void report_order(); // use by BP's prepare update, report update order from dependencies
+		inline void initialize();
+		inline void finish();
 		inline void update();
 	};
 
@@ -221,6 +223,64 @@ namespace flame
 		updated = true;
 	}
 
+	void NodePrivate::initialize()
+	{
+		for (auto& input : inputs)
+		{
+			auto v = input->variable_info;
+			auto type = v->type();
+			set(type->tag(), v->size(), input->link ? &input->link->data : &input->data, (char*)dummy + v->offset());
+		}
+
+		if (initialize_function)
+		{
+			auto library = load_module(udt->module_name());
+			if (library)
+			{
+				struct Dummy { };
+				typedef void (Dummy:: * F)();
+				union
+				{
+					void* p;
+					F f;
+				}cvt;
+				cvt.p = (char*)library + (uint)initialize_function->rva();
+				(*((Dummy*)dummy).*cvt.f)();
+
+				free_module(library);
+			}
+		}
+
+		for (auto& output : outputs)
+		{
+			auto v = output->variable_info;
+			auto type = v->type();
+			get(type->tag(), v->size(), (char*)dummy + v->offset(), &output->data);
+		}
+	}
+
+	void NodePrivate::finish()
+	{
+		if (finish_function)
+		{
+			auto library = load_module(udt->module_name());
+			if (library)
+			{
+				struct Dummy { };
+				typedef void (Dummy:: * F)();
+				union
+				{
+					void* p;
+					F f;
+				}cvt;
+				cvt.p = (char*)library + (uint)finish_function->rva();
+				(*((Dummy*)dummy).*cvt.f)();
+
+				free_module(library);
+			}
+		}
+	}
+
 	void NodePrivate::update()
 	{
 		if (updated)
@@ -228,8 +288,9 @@ namespace flame
 
 		for (auto& input : inputs)
 		{
-			auto type = input->variable_info->type();
-			set(type->tag(), type->name_hash(), input->link ? &input->link->data : &input->data, dummy);
+			auto v = input->variable_info;
+			auto type = v->type();
+			set(type->tag(), v->size(), input->link ? &input->link->data : &input->data, (char*)dummy + v->offset());
 		}
 
 		if (update_function)
@@ -253,8 +314,9 @@ namespace flame
 
 		for (auto& output : outputs)
 		{
-			auto type = output->variable_info->type();
-			get(type->tag(), type->name_hash(), dummy, &output->data);
+			auto v = output->variable_info;
+			auto type = v->type();
+			get(type->tag(), v->size(), (char*)dummy + v->offset(), &output->data);
 		}
 
 		updated = true;
@@ -350,6 +412,9 @@ namespace flame
 			n->updated = false;
 		for (auto &n : nodes)
 			n->report_order();
+
+		for (auto& n : update_list)
+			n->initialize();
 	}
 
 	void BPPrivate::finish()
@@ -359,6 +424,8 @@ namespace flame
 			auto dummy = n->dummy;
 			if (dummy)
 			{
+				n->finish();
+
 				free(dummy);
 				n->dummy = nullptr;
 			}
@@ -839,6 +906,26 @@ namespace flame
 	{
 		delete(BPPrivate*)bp;
 	}
+
+	void BP_Socket4$::initialize$c()
+	{
+		v$o = new CommonData[4];
+	}
+
+	void BP_Socket4$::finish$c()
+	{
+		delete[]v$o;
+	}
+
+	void BP_Socket4$::update$c()
+	{
+		v$o[0] = v1$i;
+		v$o[1] = v2$i;
+		v$o[2] = v3$i;
+		v$o[3] = v4$i;
+	}
+
+	BP_Socket4$ bp_socket4_unused;
 
 	void BP_Int$::update$c()
 	{

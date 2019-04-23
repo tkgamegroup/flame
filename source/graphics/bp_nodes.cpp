@@ -44,6 +44,7 @@ namespace flame
 			out$o = in$i;
 		else
 			out$o = nullptr;
+		update$c();
 	}
 
 	void BP_GraphicsSwapchain$::update$c()
@@ -87,7 +88,7 @@ namespace flame
 			auto cv = (graphics::ClearValues*)out$o;
 			auto count = cv->renderpass()->attachment_count();
 			for (auto i = 0; i < count; i++)
-				cv->set(i, colors$i[i]);
+				cv->set(i, colors$i[i].b4());
 		}
 	}
 
@@ -100,7 +101,10 @@ namespace flame
 		else
 		{
 			if (device$i)
+			{
 				out$o = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);
+				((graphics::Commandbuffer*)out$o)->end();
+			}
 		}
 	}
 
