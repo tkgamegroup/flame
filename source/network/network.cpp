@@ -330,12 +330,13 @@ namespace flame
 		s->frame_advance_data = SerializableNode::create("");
 		s->frame_advance_data->new_attr("action", "frame");
 
-		srand(time(0));
 
 		{
+			srand(time(0));
+			auto seed = ::rand();
 			auto json = SerializableNode::create("");
 			json->new_attr("action", "start");
-			json->new_attr("seed", to_stdstring(::rand()));
+			json->new_attr("seed", to_stdstring(seed));
 			auto str = json->to_string_json();
 			for (auto i = 0; i < client_count; i++)
 				s->send(i, str.size, str.v);

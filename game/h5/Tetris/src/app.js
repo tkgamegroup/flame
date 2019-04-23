@@ -117,33 +117,6 @@ class App
 			}
 			//
 
-			// init curr tetrises
-			this.curr_tetrises = [];
-			this.curr_tetrises[0] = null;
-			this.curr_tetrises[1] = null;
-			this.next_tetris_styles = [];
-			this.next_tetris_style_count = 3;
-			for (var i = 0; i < this.next_tetris_style_count; i++)
-			{
-				var grids = [];
-				for (var y = 0 ; y < 4; y++)
-				{
-					for (var x = 0; x < 4; x++)
-					{
-						var s = new laya.display.Sprite();
-						s.size(Scene.w, Scene.h);
-						s.x = (x + Scene.cx) * (Scene.w + 5) + 60;
-						s.y = (y + i * 4) * (Scene.h + 5) + i * 15 + 20;
-						s.graphics.drawRect(0, 0, 20, 20, "#ff0000");
-						Laya.stage.addChild(s);
-						grids.push(s);
-					}
-				}
-
-				this.next_tetris_styles.push({grids: grids, style: this.NewTetrisStyle()});
-			}
-			//
-
 			// init level
 			this.score = 0;
 			this.curr_level = 0;
@@ -180,7 +153,7 @@ class App
 				var src = eval('(' + res.data + ')');
 				if (src.action == "start")
 				{
-					window.seed = src.seed;
+					window.seed = parseInt(src.seed);
 					thiz.GameStart();
 					app.FrameSync();
 				}
@@ -218,6 +191,33 @@ class App
     GameStart()
     {
 		this.frame = 0;
+
+		// init curr tetrises
+		this.curr_tetrises = [];
+		this.curr_tetrises[0] = null;
+		this.curr_tetrises[1] = null;
+		this.next_tetris_styles = [];
+		this.next_tetris_style_count = 3;
+		for (var i = 0; i < this.next_tetris_style_count; i++)
+		{
+			var grids = [];
+			for (var y = 0 ; y < 4; y++)
+			{
+				for (var x = 0; x < 4; x++)
+				{
+					var s = new laya.display.Sprite();
+					s.size(Scene.w, Scene.h);
+					s.x = (x + Scene.cx) * (Scene.w + 5) + 60;
+					s.y = (y + i * 4) * (Scene.h + 5) + i * 15 + 20;
+					s.graphics.drawRect(0, 0, 20, 20, "#ff0000");
+					Laya.stage.addChild(s);
+					grids.push(s);
+				}
+			}
+
+			this.next_tetris_styles.push({grids: grids, style: this.NewTetrisStyle()});
+		}
+		//
 
 		this.ShowNextTetrisStyles();
 
@@ -585,11 +585,12 @@ class App
 		}
 
 		var y = event.stageY;
-		if (this.mouse_down_in_short_time && y > this.mouse_y + 40)
+		if (this.mouse_down_in_short_time && y > this.mouse_y + 30)
 		{
 			this.v_move = 2;
 			this.mouse_y = y;
 			this.mouse_pos_shifted = true;
+			this.mouse_pressing = false;
 		}
 		if (y > this.mouse_y + 20)
 		{
