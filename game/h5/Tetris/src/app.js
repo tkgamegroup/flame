@@ -54,11 +54,11 @@ class Tetris
 					}
 					else if (d_op == 1)
 					{
-						grid.s.graphics.drawRect(0, 0, 20, 20, color);
+						grid.s.graphics.drawRect(0, 0, Scene.w, Scene.h, color);
 						grid.c = color;
 					}
 					else if (d_op == 2)
-						grid.s.graphics.drawRect(0, 0, 20, 20, null, color);
+						grid.s.graphics.drawRect(0, 0, Scene.w, Scene.h, null, color);
 				}
 			}
 		}
@@ -87,7 +87,7 @@ class App
     {
         try
         {
-			Laya.init( 800, 600 );
+			Laya.init(1080, 1920);
 			
 			var bg = new laya.display.Sprite();
 			bg.graphics.drawRect(0, 0, Scene.cx * (Scene.w + 5) + 40, 20, "#ffffff");
@@ -209,7 +209,6 @@ class App
 					s.size(Scene.w, Scene.h);
 					s.x = (x + Scene.cx) * (Scene.w + 5) + 60;
 					s.y = (y + i * 4) * (Scene.h + 5) + i * 15 + 20;
-					s.graphics.drawRect(0, 0, 20, 20, "#ff0000");
 					Laya.stage.addChild(s);
 					grids.push(s);
 				}
@@ -248,7 +247,7 @@ class App
 					var idx = y * 4 + x;
 					var s = grids[idx];
 					if (transformer[idx] == 1)
-						s.graphics.drawRect(0, 0, 20, 20, color);
+						s.graphics.drawRect(0, 0, Scene.w, Scene.h, color);
 					else
 						s.graphics.clear();
 				}
@@ -263,7 +262,7 @@ class App
 
 	CheckForTwoTetrises(offs)
 	{
-		for (var i = 0; i < 2; i++)
+		for (var i in this.curr_tetrises)
 		{
 			if (!this.curr_tetrises[i])
 				return true;
@@ -311,7 +310,7 @@ class App
 	
 	Update()
 	{
-		for (var i = 0; i < 2; i++)
+		for (var i in this.curr_tetrises)
 		{
 			var curr_t = this.curr_tetrises[i];
 			if (curr_t)
@@ -321,7 +320,7 @@ class App
 			}
 		}
 
-		for (var i = 0; i < 2; i++)
+		for (var i in this.curr_tetrises)
 		{
 			if (!this.curr_tetrises[i])
 			{
@@ -350,7 +349,7 @@ class App
 								if (dst.c == "")
 									dst.s.graphics.clear();
 								else
-									dst.s.graphics.drawRect(0, 0, 20, 20, dst.c);
+									dst.s.graphics.drawRect(0, 0, Scene.w, Scene.h, dst.c);
 							}
 						}
 
@@ -377,7 +376,7 @@ class App
 							this.curr_level++;
 							this.text_level.text = this.curr_level + 1;
 
-							for (var j = 0; j < 2; j++)
+							for (var j in this.curr_tetrises)
 							{
 								var curr_t = this.curr_tetrises[j];
 								if (curr_t)
@@ -410,7 +409,7 @@ class App
 							item.s.visible = false;
 						}
 					}
-					for (var i = 0; i < 2; i++)
+					for (var i in this.curr_tetrises)
 						this.curr_tetrises[i] = null;
 
 					this.score = this.curr_level = 0;
@@ -486,30 +485,33 @@ class App
 			curr_t.v_move = 0;
 		}
 
-		for (var i = 0; i < 2; i++)
+		for (var i in this.curr_tetrises)
 		{
 			var off = [0, 0];
 			var curr_t = this.curr_tetrises[i];
 			if (curr_t)
 			{
+				var need_deduce = false;
 				curr_t.y_max_adv = 0;
 				while (curr_t.Check(this.grids, curr_t.y_max_adv) && this.CheckForTwoTetrises(off))
 				{
 					curr_t.y_max_adv++;
 					off[i] = curr_t.y_max_adv;
+					need_deduce = true;
 				}
-				curr_t.y_max_adv--;
+				if (need_deduce)
+					curr_t.y_max_adv--;
 				curr_t.SetToGrids(this.grids, curr_t.y_max_adv, 2, 2);
 
 			}
 		}
-		for (var i = 0; i < 2; i++)
+		for (var i in this.curr_tetrises)
 		{
 			var curr_t = this.curr_tetrises[i];
 			if (curr_t)
 				curr_t.SetToGrids(this.grids, 0, 1, 1);
 		}
-		for (var i = 0; i < 2; i++)
+		for (var i in this.curr_tetrises)
 		{
 			if (this.curr_tetrises[i].die)
 				this.curr_tetrises[i] = null;
@@ -571,28 +573,30 @@ class App
 			return;
 
 		var x = event.stageX;
-		if (x < this.mouse_x - 20)
-		{
-			this.h_move = -1;
-			this.mouse_x = x;
-			this.mouse_pos_shifted = true;
-		}
-		if (x > this.mouse_x + 20)
-		{
-			this.h_move = 1;
-			this.mouse_x = x;
-			this.mouse_pos_shifted = true;
-		}
-
 		var y = event.stageY;
-		if (this.mouse_down_in_short_time && y > this.mouse_y + 30)
+
+		if (this.mouse_down_in_short_time && y > this.mouse_y + 120 && Math.abs(x - this.mouse_x) < 40)
 		{
 			this.v_move = 2;
 			this.mouse_y = y;
 			this.mouse_pos_shifted = true;
 			this.mouse_pressing = false;
 		}
-		if (y > this.mouse_y + 20)
+
+		if (x < this.mouse_x - 72)
+		{
+			this.h_move = -1;
+			this.mouse_x = x;
+			this.mouse_pos_shifted = true;
+		}
+		if (x > this.mouse_x + 72)
+		{
+			this.h_move = 1;
+			this.mouse_x = x;
+			this.mouse_pos_shifted = true;
+		}
+
+		if (y > this.mouse_y + 72)
 		{
 			this.v_move = 1;
 			this.mouse_y = y;
