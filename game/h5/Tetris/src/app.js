@@ -144,43 +144,63 @@ class App
 
 			var thiz = this;
 
-			var sock_s = new WebSocket(AppConfig.url);
-			window.sock_s = sock_s;
-			sock_s.onopen = function(){
-				console.log("connected to server");
-			};
-			sock_s.onmessage = function(res){
-				var src = eval('(' + res.data + ')');
-				if (src.action == "start")
-				{
-					window.seed = parseInt(src.seed);
-					thiz.GameStart();
-					app.FrameSync();
-				}
-				else if (src.action == "frame")
-				{
-					app.frame++;
-					if (thiz.curr_tetrises[0])
+			if (AppConfig.mode == "double")
+			{
+				var sock_s = new WebSocket(AppConfig.url);
+				window.sock_s = sock_s;
+				sock_s.onopen = function(){
+					console.log("connected to server");
+				};
+				sock_s.onmessage = function(res){
+					var src = eval('(' + res.data + ')');
+					if (src.action == "start")
 					{
-						thiz.curr_tetrises[0].h_move = parseInt(src.h_move1);
-						thiz.curr_tetrises[0].v_move = parseInt(src.v_move1);
+						window.seed = parseInt(src.seed);
+						thiz.GameStart();
+						app.FrameSync();
 					}
-					if (thiz.curr_tetrises[1])
+					else if (src.action == "frame")
 					{
-						thiz.curr_tetrises[1].h_move = parseInt(src.h_move2);
-						thiz.curr_tetrises[1].v_move = parseInt(src.v_move2);
+						app.frame++;
+						if (thiz.curr_tetrises[0])
+						{
+							thiz.curr_tetrises[0].h_move = parseInt(src.h_move1);
+							thiz.curr_tetrises[0].v_move = parseInt(src.v_move1);
+						}
+						if (thiz.curr_tetrises[1])
+						{
+							thiz.curr_tetrises[1].h_move = parseInt(src.h_move2);
+							thiz.curr_tetrises[1].v_move = parseInt(src.v_move2);
+						}
+						Laya.timer.once(16, null, function(){
+							app.Update();
+							app.FrameSync();
+						});
 					}
-					Laya.timer.once(16, app, app.Update);
-				}
-			};
-			sock_s.onclose = function(){
-				setTimeout(function(){
-					var s = new WebSocket(AppConfig.url);
-					s.onmessage = window.sock_s.onmessage;
-					s.onclose = window.sock_s.onclose;
-					window.sock_s = s;
-				}, 2000);
-			};
+				};
+				sock_s.onclose = function(){
+					setTimeout(function(){
+						var s = new WebSocket(AppConfig.url);
+						s.onmessage = window.sock_s.onmessage;
+						s.onclose = window.sock_s.onclose;
+						window.sock_s = s;
+					}, 2000);
+				};
+			}
+			else
+			{
+				this.GameStart();
+				Laya.stage.frameLoop(1, null, function(){
+					var curr_t = thiz.curr_tetrises[0];
+					if (curr_t)
+					{
+						curr_t.h_move = thiz.h_move;
+						curr_t.v_move = thiz.v_move;
+					}
+					thiz.h_move = thiz.v_move = 0;
+					thiz.Update();
+				});
+			}
         }
 		catch( e )
 		{
@@ -195,7 +215,8 @@ class App
 		// init curr tetrises
 		this.curr_tetrises = [];
 		this.curr_tetrises[0] = null;
-		this.curr_tetrises[1] = null;
+		if (AppConfig.mode == "double")
+			this.curr_tetrises[1] = null;
 		this.next_tetris_styles = [];
 		this.next_tetris_style_count = 3;
 		for (var i = 0; i < this.next_tetris_style_count; i++)
@@ -262,6 +283,9 @@ class App
 
 	CheckForTwoTetrises(offs)
 	{
+		if (this.curr_tetrises.length < 2)
+			return true;
+
 		for (var i in this.curr_tetrises)
 		{
 			if (!this.curr_tetrises[i])
@@ -516,8 +540,6 @@ class App
 			if (this.curr_tetrises[i].die)
 				this.curr_tetrises[i] = null;
 		}
-		
-		this.FrameSync();
 	}
 
 	OnKeyDown(event)
@@ -550,7 +572,7 @@ class App
 		this.mouse_pos_shifted = false;
 		this.mouse_down_in_short_time = true;
 		var thiz = this;
-		Laya.timer.once(100, null, function(){
+		Laya.timer.once(80, null, function(){
 			thiz.mouse_down_in_short_time = false;
 		});
 	}
@@ -574,32 +596,31 @@ class App
 
 		var x = event.stageX;
 		var y = event.stageY;
+		var disp_x = Math.abs(x - this.mouse_x);
 
-		if (this.mouse_down_in_short_time && y > this.mouse_y + 120 && Math.abs(x - this.mouse_x) < 40)
+		if (this.mouse_down_in_short_time && y > this.mouse_y + 150 && disp_x < 30)
 		{
 			this.v_move = 2;
 			this.mouse_y = y;
 			this.mouse_pos_shifted = true;
 			this.mouse_pressing = false;
 		}
-
-		if (x < this.mouse_x - 72)
+		else if (y > this.mouse_y + 72 && disp_x < 40)
+		{
+			this.v_move = 1;
+			this.mouse_y = y;
+			this.mouse_pos_shifted = true;
+		}
+		else if (x < this.mouse_x - 72)
 		{
 			this.h_move = -1;
 			this.mouse_x = x;
 			this.mouse_pos_shifted = true;
 		}
-		if (x > this.mouse_x + 72)
+		else if (x > this.mouse_x + 72)
 		{
 			this.h_move = 1;
 			this.mouse_x = x;
-			this.mouse_pos_shifted = true;
-		}
-
-		if (y > this.mouse_y + 72)
-		{
-			this.v_move = 1;
-			this.mouse_y = y;
 			this.mouse_pos_shifted = true;
 		}
 	}
