@@ -458,32 +458,31 @@ namespace flame
 		}
 		if (update_list.empty())
 		{
-			printf("no nodes or didn't call 'prepare'\n");
+			printf("no nodes or didn't call 'initialize'\n");
 			return;
 		}
 
 		std::string code;
 
-		auto using_graphics_module = false;
-		auto using_sound_module = false;
-		auto using_universe_module = false;
-		auto using_physics_module = false;
+		std::vector<std::pair<std::wstring, bool>> using_modules = {
+			{L"flame_graphics.dll", false}, 
+			{L"flame_sound.dll", false},
+			{L"flame_physics.dll", false},
+			{L"flame_network.dll", false},
+			{L"flame_universe.dll", false}
+		};
 
 		for (auto& n : nodes)
 		{
-			auto module_name = std::wstring(n->udt->module_name());
-			if (module_name == L"flame_graphics.dll")
-				using_graphics_module = true;
-			else if (module_name == L"flame_sound.dll")
-				using_sound_module = true;
-			else if (module_name == L"flame_universe.dll")
-				using_universe_module = true;
-			else if (module_name == L"flame_physics.dll")
-				using_physics_module = true;
+			for (auto& m : using_modules)
+			{
+				if (m.first == n->udt->module_name())
+					m.second = true;
+			}
 		}
 
 		code += "#include <flame/foundation/foundation.h>\n";
-		if (using_graphics_module)
+		if (using_modules[0].second)
 			code += "#include <flame/graphics/all.h>\n";
 
 		code += "\nusing namespace flame;\n\n";
@@ -601,14 +600,11 @@ namespace flame
 
 		std::vector<std::wstring> libraries;
 		libraries.push_back(L"flame_foundation.lib");
-		if (using_graphics_module)
-			libraries.push_back(L"flame_graphics.lib");
-		if (using_sound_module)
-			libraries.push_back(L"flame_sound.lib");
-		if (using_universe_module)
-			libraries.push_back(L"flame_universe.lib");
-		if (using_physics_module)
-			libraries.push_back(L"flame_physics.lib");
+		for (auto& m : using_modules)
+		{
+			if (m.second)
+				libraries.push_back(m.first);
+		}
 
 		auto output = compile_to_dll({ cpp_filename }, libraries, ext_replace(filename, L".dll"));
 
