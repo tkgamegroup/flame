@@ -144,7 +144,7 @@ class App
 
 			var thiz = this;
 
-			var sock_s = new WebSocket("ws://localhost:5567/");
+			var sock_s = new WebSocket(AppConfig.url);
 			window.sock_s = sock_s;
 			sock_s.onopen = function(){
 				console.log("connected to server");
@@ -175,7 +175,7 @@ class App
 			};
 			sock_s.onclose = function(){
 				setTimeout(function(){
-					var s = new WebSocket("ws://localhost:5567/");
+					var s = new WebSocket(AppConfig.url);
 					s.onmessage = window.sock_s.onmessage;
 					s.onclose = window.sock_s.onclose;
 					window.sock_s = s;
