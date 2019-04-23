@@ -87,7 +87,7 @@ class App
     {
         try
         {
-			Laya.init(1080, 1920);
+			Laya.init((Scene.cx + 4) * (Scene.w + 5) + 100, Scene.cy * (Scene.h + 5) + 60);
 			
 			var bg = new laya.display.Sprite();
 			bg.graphics.drawRect(0, 0, Scene.cx * (Scene.w + 5) + 40, 20, "#ffffff");
@@ -578,13 +578,13 @@ class App
 	}
 
 	OnMouseUp(event)
-	{
-		if (this.mouse_pressing && !this.mouse_pos_shifted)
-		{
-			if (Math.abs(event.stageX - this.mouse_x) < 5 &&
-				Math.abs(event.stageY - this.mouse_y) < 5)
-				this.v_move = -1;
-		}
+    {
+        if (this.mouse_pressing && !this.mouse_pos_shifted)
+        {
+            if (Math.abs(event.stageX - this.mouse_x) < 5 &&
+                Math.abs(event.stageY - this.mouse_y) < 5)
+                this.v_move = -1;
+        }
 
 		this.mouse_pressing = false;
 	}
@@ -598,15 +598,15 @@ class App
 		var y = event.stageY;
 		var disp_x = Math.abs(x - this.mouse_x);
 
-		if (this.mouse_down_in_short_time && y > this.mouse_y + 150 && disp_x < 30)
-		{
-			this.v_move = 2;
-			this.mouse_y = y;
-			this.mouse_pos_shifted = true;
-			this.mouse_pressing = false;
-		}
-		else if (y > this.mouse_y + 72 && disp_x < 40)
-		{
+        if (this.mouse_down_in_short_time && y > this.mouse_y + 150 && disp_x < 30)
+        {
+            this.v_move = 2;
+            this.mouse_y = y;
+            this.mouse_pos_shifted = true;
+            this.mouse_pressing = false;
+        }
+        else if (y > this.mouse_y + 72 && disp_x < 40)
+        {
 			this.v_move = 1;
 			this.mouse_y = y;
 			this.mouse_pos_shifted = true;

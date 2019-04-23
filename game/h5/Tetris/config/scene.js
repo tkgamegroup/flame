@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 var Scene = {
 	cx: 12, // 横向方块数
