@@ -13,6 +13,7 @@ class Tetris
     {
 		this.x = x;
 		this.y = y;
+		this.y_max_adv = 0;
 
 		this.h_move = 0;
 		this.v_move = 0;
@@ -29,33 +30,48 @@ class Tetris
 
 	SetData()
 	{
-		this.data = this.style[this.style_idx];
+		this.data = this.style.transformers[this.style_idx];
 	}
 
-	SetToGrids(grids, b)
+	SetToGrids(grids, y_off, v_op, d_op)
 	{
+		var color = this.style.color;
 		for (var y = 0; y < 4; y++)
 		{
 			for (var x = 0; x < 4; x++)
 			{
 				if (this.data[y * 4 + x] == 1)
 				{
-					var grid = grids[(y + this.y) * Scene.cx + x + this.x];
-					grid.v = b ? 1 : 0;
-					grid.s.visible = b;
+					var grid = grids[(y + this.y + y_off) * Scene.cx + x + this.x];
+					if (v_op == 0)
+						grid.v = 0;
+					else if (v_op == 1)
+						grid.v = 1;
+					if (d_op == 0)
+					{
+						grid.s.graphics.clear();
+						grid.c = "";
+					}
+					else if (d_op == 1)
+					{
+						grid.s.graphics.drawRect(0, 0, 20, 20, color);
+						grid.c = color;
+					}
+					else if (d_op == 2)
+						grid.s.graphics.drawRect(0, 0, 20, 20, null, color);
 				}
 			}
 		}
 	}
 
-	Check(grids)
+	Check(grids, y_off)
 	{
 		for (var y = 0; y < 4; y++)
 		{
 			for (var x = 0; x < 4; x++)
 			{
 				var px = x + this.x;
-				var py = y + this.y;
+				var py = y + this.y + y_off;
 				if (this.data[y * 4 + x] == 1 && (px < 0 || py < 0 || px >= Scene.cx || py >= Scene.cy ||
 				(grids[py * Scene.cx + px].v == 1)))
 					return false;
@@ -71,7 +87,14 @@ class App
     {
         try
         {
-		    Laya.init( 800, 600 );
+			Laya.init( 800, 600 );
+			
+			var bg = new laya.display.Sprite();
+			bg.graphics.drawRect(0, 0, Scene.cx * (Scene.w + 5) + 40, 20, "#ffffff");
+			bg.graphics.drawRect(0, 20, 20, Scene.cy * (Scene.h + 5), "#ffffff");
+			bg.graphics.drawRect(Scene.cx * (Scene.w + 5) + 20, 20, 20, Scene.cy * (Scene.h + 5) + 20, "#ffffff");
+			bg.graphics.drawRect(0, Scene.cy * (Scene.h + 5) + 20, Scene.cx * (Scene.w + 5) + 40, 20, "#ffffff");
+			Laya.stage.addChild(bg);
 	
 			// init grids
 			this.grids = [];
@@ -81,15 +104,14 @@ class App
 				{
 					var s = new laya.display.Sprite();
 					s.size(Scene.w, Scene.h);
-					s.x = x * (Scene.w + 5);
+					s.x = x * (Scene.w + 5) + 20;
 					s.y = y * (Scene.h + 5) + 20;
-					s.graphics.drawRect(0, 0, 20, 20, "#ff0000");
-					s.visible = false;
 					Laya.stage.addChild(s);
 	
 					var item = {};
 					item.v = 0;
 					item.s = s;
+					item.c = "";
 					this.grids.push(item);
 				}
 			}
@@ -110,10 +132,9 @@ class App
 					{
 						var s = new laya.display.Sprite();
 						s.size(Scene.w, Scene.h);
-						s.x = (x + Scene.cx) * (Scene.w + 5) + 30;
+						s.x = (x + Scene.cx) * (Scene.w + 5) + 60;
 						s.y = (y + i * 4) * (Scene.h + 5) + i * 15 + 20;
 						s.graphics.drawRect(0, 0, 20, 20, "#ff0000");
-						s.visible = false;
 						Laya.stage.addChild(s);
 						grids.push(s);
 					}
@@ -176,7 +197,7 @@ class App
 						thiz.curr_tetrises[1].h_move = parseInt(src.h_move2);
 						thiz.curr_tetrises[1].v_move = parseInt(src.v_move2);
 					}
-					setTimeout("app.Update()", 66);
+					Laya.timer.once(16, app, app.Update);
 				}
 			};
 			sock_s.onclose = function(){
@@ -200,21 +221,36 @@ class App
 
 		this.ShowNextTetrisStyles();
 
-        Laya.stage.on(laya.events.Event.KEY_DOWN, this, this.OnKeydown);
+		this.mouse_x = 0;
+		this.mouse_y = 0;
+		this.mouse_pressing = false;
+		this.mouse_pos_shifted = false;
+		this.mouse_down_in_short_time = false;
+
+        Laya.stage.on(laya.events.Event.KEY_DOWN, this, this.OnKeyDown);
+        Laya.stage.on(laya.events.Event.MOUSE_DOWN, this, this.OnMouseDown);
+        Laya.stage.on(laya.events.Event.MOUSE_UP, this, this.OnMouseUp);
+        Laya.stage.on(laya.events.Event.MOUSE_MOVE, this, this.OnMouseMove);
 	}
 
 	ShowNextTetrisStyles()
 	{
 		for (var i = 0; i < this.next_tetris_style_count; i++)
 		{
-			var style = this.next_tetris_styles[i].style;
+			var grids = this.next_tetris_styles[i].grids;
+			var transformer = this.next_tetris_styles[i].style.transformers[0];
+			var color = this.next_tetris_styles[i].style.color;
 
 			for (var y = 0 ; y < 4; y++)
 			{
 				for (var x = 0; x < 4; x++)
 				{
 					var idx = y * 4 + x;
-					this.next_tetris_styles[i].grids[idx].visible = style[0][idx] == 1;
+					var s = grids[idx];
+					if (transformer[idx] == 1)
+						s.graphics.drawRect(0, 0, 20, 20, color);
+					else
+						s.graphics.clear();
 				}
 			}
 		}
@@ -225,7 +261,7 @@ class App
 		return TetrisStyles[Math.floor(Random() * TetrisStyles.length)];
 	}
 
-	CheckForTwoTetrises()
+	CheckForTwoTetrises(offs)
 	{
 		for (var i = 0; i < 2; i++)
 		{
@@ -235,19 +271,23 @@ class App
 
 		var a = this.curr_tetrises[0];
 		var b = this.curr_tetrises[1];
+		var ax = a.x;
+		var ay = a.y + offs[0];
+		var bx = b.x;
+		var by = b.y + offs[1];
 
 		for (var y = 0; y < 4; y++)
 		{
 			for (var x = 0; x < 4; x++)
 			{
-				var px = x + a.x;
-				var py = y + a.y;
+				var px = x + ax;
+				var py = y + ay;
 
-				if (px >= b.x && px < b.x + 4 &&
-					py >= b.y && py < b.y + 4)
+				if (px >= bx && px < bx + 4 &&
+					py >= by && py < by + 4)
 				{
-					px -= b.x;
-					py -= b.y;
+					px -= bx;
+					py -= by;
 					if (a.data[y * 4 + x] == 1 &&
 						b.data[py * 4 + px] == 1)
 						return false;
@@ -273,14 +313,21 @@ class App
 	{
 		for (var i = 0; i < 2; i++)
 		{
-			if (this.curr_tetrises[i])
-				this.curr_tetrises[i].SetToGrids(this.grids, false);
+			var curr_t = this.curr_tetrises[i];
+			if (curr_t)
+			{
+				curr_t.SetToGrids(this.grids, curr_t.y_max_adv, 2, 0);
+				curr_t.SetToGrids(this.grids, 0, 0, 0);
+			}
 		}
 
 		for (var i = 0; i < 2; i++)
 		{
 			if (!this.curr_tetrises[i])
 			{
+				if (i == 0)
+					this.mouse_pressing = false;
+
 				var lines = 0;
 				for (var y = Scene.cy - 1; y >= 0; y--)
 				{
@@ -299,7 +346,11 @@ class App
 								var src = this.grids[(yy - 1) * Scene.cx + x];
 								var dst = this.grids[yy * Scene.cx + x];
 								dst.v = src.v;
-								dst.s.visible = src.s.visible;
+								dst.c = src.c;
+								if (dst.c == "")
+									dst.s.graphics.clear();
+								else
+									dst.s.graphics.drawRect(0, 0, 20, 20, dst.c);
 							}
 						}
 
@@ -346,7 +397,7 @@ class App
 				this.curr_tetrises[i] = curr_t;
 				this.ShowNextTetrisStyles();
 	
-				if (!curr_t.Check(this.grids))
+				if (!curr_t.Check(this.grids, 0))
 				{
 					var gameover = true;
 
@@ -379,9 +430,8 @@ class App
 			{
 				var tx = curr_t.x;
 				curr_t.x += curr_t.h_move;
-				if (!curr_t.Check(this.grids) || !this.CheckForTwoTetrises())
+				if (!curr_t.Check(this.grids, 0) || !this.CheckForTwoTetrises([0, 0]))
 					curr_t.x = tx;
-				curr_t.h_move = 0;
 			}
 	
 			if (curr_t.v_move == -1)
@@ -390,19 +440,15 @@ class App
 				curr_t.style_idx++;
 				curr_t.style_idx %= 4;
 				curr_t.SetData();
-				if (!curr_t.Check(this.grids) || !this.CheckForTwoTetrises())
+				if (!curr_t.Check(this.grids, 0) || !this.CheckForTwoTetrises([0, 0]))
 				{
 					curr_t.style_idx = idx;
 					curr_t.SetData();
 				}
-				curr_t.v_move = 0;
 			}
 	
 			if (curr_t.v_move == 1)
-			{
-				curr_t.down_frame = curr_t.down_frame_max = 0;
-				curr_t.v_move = 0;
-			}
+				curr_t.down_frame = 0;
 	
 			if (curr_t.down_frame > 0)
 				curr_t.down_frame--;
@@ -411,31 +457,68 @@ class App
 				curr_t.down_frame = curr_t.down_frame_max;
 		
 				curr_t.y++;
-				if (!curr_t.Check(this.grids))
+				if (!curr_t.Check(this.grids, 0))
 				{
 					curr_t.y--;
 					curr_t.die = true;
 				}
-				else if (!this.CheckForTwoTetrises())
+				else if (!this.CheckForTwoTetrises([0, 0]))
 					curr_t.y--;
 			}
+
+			if (curr_t.v_move == 2)
+			{
+				while (true)
+				{
+					if (!curr_t.Check(this.grids, 0))
+					{
+						curr_t.die = true;
+						break;
+					}
+					if (!this.CheckForTwoTetrises([0, 0]))
+						break;
+					curr_t.y++;
+				}
+				curr_t.y--;
+			}
+
+			curr_t.h_move = 0;
+			curr_t.v_move = 0;
 		}
 
 		for (var i = 0; i < 2; i++)
 		{
+			var off = [0, 0];
 			var curr_t = this.curr_tetrises[i];
 			if (curr_t)
 			{
-				curr_t.SetToGrids(this.grids, true);
-				if (curr_t.die)
-					this.curr_tetrises[i] = null;
+				curr_t.y_max_adv = 0;
+				while (curr_t.Check(this.grids, curr_t.y_max_adv) && this.CheckForTwoTetrises(off))
+				{
+					curr_t.y_max_adv++;
+					off[i] = curr_t.y_max_adv;
+				}
+				curr_t.y_max_adv--;
+				curr_t.SetToGrids(this.grids, curr_t.y_max_adv, 2, 2);
+
 			}
 		}
-
+		for (var i = 0; i < 2; i++)
+		{
+			var curr_t = this.curr_tetrises[i];
+			if (curr_t)
+				curr_t.SetToGrids(this.grids, 0, 1, 1);
+		}
+		for (var i = 0; i < 2; i++)
+		{
+			if (this.curr_tetrises[i].die)
+				this.curr_tetrises[i] = null;
+		}
+		
 		this.FrameSync();
 	}
 
-	OnKeydown(event)
+	OnKeyDown(event)
 	{
 		switch (event.keyCode)
 		{
@@ -451,6 +534,68 @@ class App
 		case laya.events.Keyboard.DOWN:
 			this.v_move = 1;
 			break;
+		case laya.events.Keyboard.SPACE:
+			this.v_move = 2;
+			break;
+		}
+	}
+
+	OnMouseDown(event)
+	{
+		this.mouse_x = event.stageX;
+		this.mouse_y = event.stageY;
+		this.mouse_pressing = true;
+		this.mouse_pos_shifted = false;
+		this.mouse_down_in_short_time = true;
+		var thiz = this;
+		Laya.timer.once(100, null, function(){
+			thiz.mouse_down_in_short_time = false;
+		});
+	}
+
+	OnMouseUp(event)
+	{
+		if (this.mouse_pressing && !this.mouse_pos_shifted)
+		{
+			if (Math.abs(event.stageX - this.mouse_x) < 5 &&
+				Math.abs(event.stageY - this.mouse_y) < 5)
+				this.v_move = -1;
+		}
+
+		this.mouse_pressing = false;
+	}
+	
+	OnMouseMove(event)
+	{
+		if (!this.mouse_pressing)
+			return;
+
+		var x = event.stageX;
+		if (x < this.mouse_x - 20)
+		{
+			this.h_move = -1;
+			this.mouse_x = x;
+			this.mouse_pos_shifted = true;
+		}
+		if (x > this.mouse_x + 20)
+		{
+			this.h_move = 1;
+			this.mouse_x = x;
+			this.mouse_pos_shifted = true;
+		}
+
+		var y = event.stageY;
+		if (this.mouse_down_in_short_time && y > this.mouse_y + 40)
+		{
+			this.v_move = 2;
+			this.mouse_y = y;
+			this.mouse_pos_shifted = true;
+		}
+		if (y > this.mouse_y + 20)
+		{
+			this.v_move = 1;
+			this.mouse_y = y;
+			this.mouse_pos_shifted = true;
 		}
 	}
 };

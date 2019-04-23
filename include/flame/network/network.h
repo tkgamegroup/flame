@@ -62,9 +62,7 @@ namespace flame
 
 		FLAME_NETWORK_EXPORTS bool send(int client_idx, int size, void* data);
 
-		FLAME_NETWORK_EXPORTS static FrameSyncServer* create(SocketType type, ushort port, int client_count, 
-			const Function<void(void* c, int client_idx, SerializableNode* src)>& on_client_frame,
-			const Function<void(void* c)>& on_frame_advance);
+		FLAME_NETWORK_EXPORTS static FrameSyncServer* create(SocketType type, ushort port, int client_count);
 		FLAME_NETWORK_EXPORTS static void destroy(FrameSyncServer* sock);
 	};
 

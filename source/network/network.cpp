@@ -276,8 +276,7 @@ namespace flame
 
 		std::vector<int> fd_cs;
 
-		Function<void(void* c, int client_idx, SerializableNode* src)> client_frame_callback;
-		Function<void(void* c)> frame_advance_callback;
+		SerializableNode* frame_advance_data;
 
 		inline bool send(int client_idx, int size, void* data)
 		{
@@ -288,9 +287,7 @@ namespace flame
 		}
 	};
 
-	FrameSyncServer* FrameSyncServer::create(SocketType type, ushort port, int client_count,
-		const Function<void(void* c, int client_idx, SerializableNode* src)>& on_client_frame,
-		const Function<void(void* c)>& on_frame_advance)
+	FrameSyncServer* FrameSyncServer::create(SocketType type, ushort port, int client_count)
 	{
 		int res;
 
@@ -330,8 +327,8 @@ namespace flame
 		s->semaphore = 0;
 		s->fd_cs = fd_cs;
 		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
-		s->client_frame_callback = on_client_frame;
-		s->frame_advance_callback = on_frame_advance;
+		s->frame_advance_data = SerializableNode::create("");
+		s->frame_advance_data->new_attr("action", "frame");
 
 		srand(time(0));
 
@@ -382,14 +379,24 @@ namespace flame
 											if (frame == thiz->frame)
 											{
 												thiz->semaphore++;
-												thiz->client_frame_callback(client_idx, json);
+												for (auto i = 0; i < json->node_count(); i++)
+												{
+													auto n = json->node(i);
+													if (n->name() != "frame")
+														thiz->frame_advance_data->new_attr(n->name() + to_stdstring(client_idx + 1), n->value());
+												}
 
 												if (thiz->semaphore >= thiz->fd_cs.size())
 												{
 													thiz->frame++;
 													thiz->semaphore = 0;
 
-													thiz->frame_advance_callback();
+													auto str = thiz->frame_advance_data->to_string_json();
+													for (auto i = 0; i < 2; i++)
+														thiz->send(i, str.size, str.v);
+													SerializableNode::destroy(thiz->frame_advance_data);
+													thiz->frame_advance_data = SerializableNode::create("");
+													thiz->frame_advance_data->new_attr("action", "frame");
 												}
 											}
 										}
