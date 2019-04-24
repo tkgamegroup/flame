@@ -750,6 +750,7 @@ namespace flame
 
 		currently, the following attributes are used by typeinfogen, others are free to use:
 			'm' for enum variable, means it can hold combination of the enum
+			'm' for udt member, means its name is the udt's module name
 			'c' for function, means to collect the code of the function
 	*/
 

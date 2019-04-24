@@ -39,12 +39,15 @@ namespace flame
 		  you can use address to find an object in BP, e.g.
 		  'a'     for node
 		  'a.b'   for node input or output
-		- An available udt must:
-			a nonparametric void function called 'update'
-			all data types should be one of these:
+		- An available udt should:
+			have all data types being one of these:
 			 CommonData's fmt
 			 String or StringW
 			have an nonparametric void function called 'update'
+			have an nonparametric void function called 'initialize' (optional)
+			have an nonparametric void function called 'finish' (optional)
+			have a member indicates the module name (optional), such as: 'static const int flame_foundation$m;'
+			 (we use the module name to run 'update', 'initialize' and 'finish' functions)
 		- A BP file is basically a XML file, you can use both .xml or .bp.
 	*/
 
@@ -128,6 +131,8 @@ namespace flame
 
 	struct BP_Socket4$
 	{
+		static const int flame_foundation$m;
+
 		CommonData v1$i;
 		CommonData v2$i;
 		CommonData v3$i;
@@ -142,6 +147,8 @@ namespace flame
 
 	struct BP_Int$
 	{
+		static const int flame_foundation$m;
+
 		int v$i;
 
 		int v$o;
@@ -151,6 +158,8 @@ namespace flame
 
 	struct BP_Float$
 	{
+		static const int flame_foundation$m;
+
 		float v$i;
 
 		float v$o;
@@ -160,6 +169,8 @@ namespace flame
 
 	struct BP_Bool$
 	{
+		static const int flame_foundation$m;
+
 		bool v$i;
 
 		bool v$o;
@@ -169,6 +180,8 @@ namespace flame
 
 	struct BP_Vec2$
 	{
+		static const int flame_foundation$m;
+
 		float x$i;
 		float y$i;
 
@@ -179,6 +192,8 @@ namespace flame
 
 	struct BP_Vec3$
 	{
+		static const int flame_foundation$m;
+
 		float x$i;
 		float y$i;
 		float z$i;
@@ -190,6 +205,8 @@ namespace flame
 
 	struct BP_Vec4$
 	{
+		static const int flame_foundation$m;
+
 		float x$i;
 		float y$i;
 		float z$i;
@@ -202,6 +219,8 @@ namespace flame
 
 	struct BP_Ivec2$
 	{
+		static const int flame_foundation$m;
+
 		int x$i;
 		int y$i;
 
@@ -212,6 +231,8 @@ namespace flame
 
 	struct BP_Ivec3$
 	{
+		static const int flame_foundation$m;
+
 		int x$i;
 		int y$i;
 		int z$i;
@@ -223,6 +244,8 @@ namespace flame
 
 	struct BP_Ivec4$
 	{
+		static const int flame_foundation$m;
+
 		int x$i;
 		int y$i;
 		int z$i;
@@ -235,6 +258,8 @@ namespace flame
 
 	struct BP_Bvec2$
 	{
+		static const int flame_foundation$m;
+
 		uchar x$i;
 		uchar y$i;
 
@@ -245,6 +270,8 @@ namespace flame
 
 	struct BP_Bvec3$
 	{
+		static const int flame_foundation$m;
+
 		uchar x$i;
 		uchar y$i;
 		uchar z$i;
@@ -256,6 +283,8 @@ namespace flame
 
 	struct BP_Bvec4$
 	{
+		static const int flame_foundation$m;
+
 		uchar x$i;
 		uchar y$i;
 		uchar z$i;

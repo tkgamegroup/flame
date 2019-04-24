@@ -1735,7 +1735,6 @@ namespace flame
 					auto udt = new UdtInfoPrivate;
 					udt->name = udt_name;
 					udt->size = (int)ull;
-					udt->module_name = std::filesystem::path(filename).filename().wstring();
 
 					IDiaEnumSymbols* members;
 					_udt->findChildren(SymTagData, NULL, nsNone, &members);
@@ -1747,26 +1746,31 @@ namespace flame
 						auto name = format_name(pwname, &attribute, &pass_prefix, &pass_$);
 						if (pass_$)
 						{
-							IDiaSymbol* type;
-							member->get_type(&type);
-
-							auto i = new VariableInfoPrivate;
-							i->name = name;
-							i->attribute = attribute;
-							member->get_offset(&l);
-							i->offset = l;
-							type->get_length(&ull);
-							i->size = (int)ull;
-							if (SUCCEEDED(type->get_count(&dw)))
-								i->count = dw;
+							if (attribute.find('m') != std::string::npos)
+								udt->module_name = s2w(name);
 							else
-								i->count = 0;
-							memset(&i->default_value, 0, sizeof(CommonData));
-							i->type = symbol_to_typeinfo(type, attribute);
+							{
+								IDiaSymbol* type;
+								member->get_type(&type);
 
-							type->Release();
+								auto i = new VariableInfoPrivate;
+								i->name = name;
+								i->attribute = attribute;
+								member->get_offset(&l);
+								i->offset = l;
+								type->get_length(&ull);
+								i->size = (int)ull;
+								if (SUCCEEDED(type->get_count(&dw)))
+									i->count = dw;
+								else
+									i->count = 0;
+								memset(&i->default_value, 0, sizeof(CommonData));
+								i->type = symbol_to_typeinfo(type, attribute);
 
-							udt->items.emplace_back(i);
+								type->Release();
+
+								udt->items.emplace_back(i);
+							}
 						}
 						member->Release();
 					}

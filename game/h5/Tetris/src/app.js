@@ -53,12 +53,14 @@ class Tetris
 						grid.c = "";
 					}
 					else if (d_op == 1)
+						grid.s.graphics.drawRect(0, 0, Scene.w, Scene.h, color);
+					else if (d_op == 2)
+						grid.s.graphics.drawRect(0, 0, Scene.w, Scene.h, null, color);
+					else if (d_op == 3)
 					{
 						grid.s.graphics.drawRect(0, 0, Scene.w, Scene.h, color);
 						grid.c = color;
 					}
-					else if (d_op == 2)
-						grid.s.graphics.drawRect(0, 0, Scene.w, Scene.h, null, color);
 				}
 			}
 		}
@@ -79,6 +81,11 @@ class Tetris
 		}
 		return true;
 	}
+};
+
+class Player
+{
+	;
 };
 
 class App
@@ -140,6 +147,10 @@ class App
 			this.frame = 0;
 			this.h_move = 0;
 			this.v_move = 0;
+			this.use_item1 = false;
+			this.use_item2 = false;
+			this.use_item3 = false;
+			this.use_item4 = false;
 			//
 
 			var thiz = this;
@@ -411,7 +422,8 @@ class App
 				}
 	
 				var curr_t = new Tetris(
-					(Scene.cx / 2 - 4) / 2 + (1 - i) * Scene.cx / 2, 0,
+					AppConfig.mode == "double" ?
+					((Scene.cx / 2 - 4) / 2 + (1 - i) * Scene.cx / 2) : Scene.cx / 2 - 4 / 2, 0,
 					this.next_tetris_styles[0].style,
 					Levels[this.curr_level].speed);
 				for (var j = 0; j < this.next_tetris_style_count - 1; j++)
@@ -533,7 +545,7 @@ class App
 		{
 			var curr_t = this.curr_tetrises[i];
 			if (curr_t)
-				curr_t.SetToGrids(this.grids, 0, 1, 1);
+				curr_t.SetToGrids(this.grids, 0, 1, curr_t.die ? 3 : 1);
 		}
 		for (var i in this.curr_tetrises)
 		{
@@ -560,6 +572,18 @@ class App
 			break;
 		case laya.events.Keyboard.SPACE:
 			this.v_move = 2;
+			break;
+		case laya.events.Keyboard.Q:
+			this.use_item1 = true;
+			break;
+		case laya.events.Keyboard.W:
+			this.use_item2 = true;
+			break;
+		case laya.events.Keyboard.E:
+			this.use_item3 = true;
+			break;
+		case laya.events.Keyboard.R:
+			this.use_item4 = true;
 			break;
 		}
 	}
