@@ -373,18 +373,19 @@ namespace flame
 									if (op == 1)
 									{
 										auto json = SerializableNode::create_from_json_string((char*)p);
-										auto n = json->find_node("frame");
-										if (n && n->type() == SerializableNode::Value)
+										auto n_frame = json->find_node("frame");
+										if (n_frame && n_frame->type() == SerializableNode::Value)
 										{
-											auto frame = stoi1(n->value().c_str());
+											auto frame = stoi1(n_frame->value().c_str());
 											if (frame == thiz->frame)
 											{
 												thiz->semaphore++;
-												for (auto i = 0; i < json->node_count(); i++)
+												auto n_data = json->find_node("data");
+												auto dst = thiz->frame_advance_data->new_node(to_stdstring(client_idx + 1));
+												for (auto i = 0; i < n_data->node_count(); i++)
 												{
 													auto n = json->node(i);
-													if (n->name() != "frame")
-														thiz->frame_advance_data->new_attr(n->name() + to_stdstring(client_idx + 1), n->value());
+													dst->new_attr(n->name(), n->value());
 												}
 
 												if (thiz->semaphore >= thiz->fd_cs.size())
