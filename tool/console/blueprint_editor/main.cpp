@@ -147,7 +147,6 @@ int main(int argc, char **args)
 				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
-				"  tobin - generate code to a dll\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
 				"  gui-browser - use the power of browser to show and edit\n"
 			);
@@ -385,14 +384,6 @@ int main(int argc, char **args)
 				else
 					printf("filename taken\n");
 			}
-		}
-		else if (s_command_line == "tobin")
-		{
-			bp->initialize();
-			bp->tobin();
-			bp->finish();
-
-			printf("code generated\n");
 		}
 		else if (s_command_line == "set-layout")
 		{
