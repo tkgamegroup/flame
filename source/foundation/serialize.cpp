@@ -1064,11 +1064,19 @@ namespace flame
 
 		for (auto& sn : src->nodes)
 		{
-			auto n = sn->type == SerializableNode::Cdata ? dst.append_child(pugi::node_cdata) : dst.append_child(sn->name.c_str());
-			if (!sn->value.empty())
+			pugi::xml_node n;
+			switch (sn->type)
 			{
-				auto nn = n.append_child(pugi::node_pcdata);
-				nn.set_value(sn->value.c_str());
+			case SerializableNode::Cdata:
+				n = dst.append_child(pugi::node_cdata);
+				n.set_value(sn->value.c_str());
+				break;
+			case SerializableNode::Pcdata:
+				n = dst.append_child(pugi::node_pcdata);
+				n.set_value(sn->value.c_str());
+				break;
+			default:
+				n = dst.append_child(sn->name.c_str());
 			}
 			to_xml(n, sn.get());
 		}
@@ -1617,7 +1625,11 @@ namespace flame
 			}
 		}
 		if (src->code.length() > 0)
-			dst->new_node("code")->set_value(src->code);
+		{
+			auto n = dst->new_node("code")->new_node("");
+			n->set_type(SerializableNode::Pcdata);
+			n->set_value(src->code);
+		}
 	}
 
 	void unserialize_function(SerializableNode * src, FunctionInfoPrivate * dst)
@@ -1637,7 +1649,7 @@ namespace flame
 		}
 		auto n_code = src->find_node("code");
 		if (n_code)
-			dst->code = n_code->value();
+			dst->code = n_code->node(0)->value();
 	}
 
 	void typeinfo_collect(const std::wstring & filename)
@@ -1729,8 +1741,6 @@ namespace flame
 			auto udt_name = format_name(pwname, nullptr, &pass_prefix, &pass_$);
 			if (pass_prefix && pass_$)
 			{
-				if (udt_name == "BP_Bool")
-					int cut = 1;
 				auto udt_namehash = H(udt_name.c_str());
 				if (udts.find(udt_namehash) == udts.end())
 				{
