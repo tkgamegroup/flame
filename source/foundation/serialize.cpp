@@ -1506,6 +1506,9 @@ namespace flame
 		ULONGLONG ull;
 		DWORD dw;
 
+		symbol->get_relativeVirtualAddress(&dw);
+		f->rva = (void*)dw;
+
 		IDiaSymbol* function_type;
 		symbol->get_type(&function_type);
 
@@ -1515,8 +1518,6 @@ namespace flame
 		IDiaSymbol* return_type;
 		function_type->get_type(&return_type);
 
-		symbol->get_relativeVirtualAddress(&dw);
-		f->rva = (void*)dw;
 		f->return_type = symbol_to_typeinfo(return_type, "");
 
 		IDiaSymbol* parameter;
@@ -1728,6 +1729,8 @@ namespace flame
 			auto udt_name = format_name(pwname, nullptr, &pass_prefix, &pass_$);
 			if (pass_prefix && pass_$)
 			{
+				if (udt_name == "BP_Bool")
+					int cut = 1;
 				auto udt_namehash = H(udt_name.c_str());
 				if (udts.find(udt_namehash) == udts.end())
 				{

@@ -38,36 +38,14 @@ int main(int argc, char **args)
 			pdb_dirs.push_back(s2w(args[i]));
 	}
 
-	std::vector<std::wstring> pdbs;
-
-	for (auto& d : pdb_dirs)
-	{
-		for (std::filesystem::directory_iterator end, it(d); it != end; it++)
-		{
-			if (!std::filesystem::is_directory(it->status()))
-			{
-				if (it->path().filename() == L"flame_foundation.dll")
-				{
-					pdbs.push_back(it->path().wstring());
-					continue;
-				}
-
-				auto ext = it->path().extension();
-				if (ext == L".dll" || ext == L".exe")
-				{
-					auto dependancies = get_module_dependancies(it->path().wstring().c_str());
-					for (auto i = 0; i < dependancies.size; i++)
-					{
-						if (dependancies[i] == "flame_foundation.dll")
-						{
-							pdbs.push_back(it->path().wstring());
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
+	// typeinfo collect must do by order, because it only record the first entry
+	std::vector<std::wstring> pdbs = {
+		L"flame_foundation.dll",
+		L"flame_graphics.dll",
+		L"flame_network.dll",
+		L"flame_sound.dll",
+		L"flame_universe.dll",
+	};
 
 	auto lwt = std::filesystem::exists(L"typeinfo.xml") ? std::filesystem::last_write_time(L"typeinfo.xml") : std::chrono::system_clock::time_point();
 	auto need_regenerate = false;
