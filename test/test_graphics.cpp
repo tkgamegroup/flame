@@ -57,10 +57,6 @@ struct App : BasicApp
 	{
 		sc->acquire_image(image_avalible);
 
-		//canvas->add_rect_filled(Vec2(0.f), Vec2(100.f), Bvec4(255, 128, 0, 255));
-		//canvas->add_text(font_index, Vec2(0.f), Bvec4(255), L"123", 5.f);
-		//canvas->record_cb();
-
 		d->gq->submit(cbs[sc->get_avalible_image_index()], image_avalible, render_finished);
 
 		d->gq->present(sc, render_finished);
