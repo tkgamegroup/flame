@@ -34,13 +34,6 @@ namespace flame
 			VkSemaphoreCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			vk_chk_res(vkCreateSemaphore(d->v, &info, nullptr, &v));
-#elif defined(FLAME_D3D12)
-
-			auto res = d->v->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&v));
-			vl = 0;
-
-			ev = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-			assert(ev);
 #endif
 		}
 
@@ -48,8 +41,6 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroySemaphore(d->v, v, nullptr);
-#elif defined(FLAME_D3D12)
-
 #endif
 		}
 
@@ -58,9 +49,58 @@ namespace flame
 			return new SemaphorePrivate(d);
 		}
 
-		void destroy_semaphore(Device *d, Semaphore *s)
+		void Semaphore::destroy(Semaphore *s)
 		{
 			delete (SemaphorePrivate*)s;
+		}
+
+		FencePrivate::FencePrivate(Device* _d)
+		{
+			d = (DevicePrivate*)_d;
+#if defined(FLAME_VULKAN)
+
+#elif defined(FLAME_D3D12)
+			auto res = d->v->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&v));
+			vl = 0;
+
+			ev = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			assert(ev);
+#endif
+		}
+
+		void FencePrivate::wait()
+		{
+			if (v->GetCompletedValue() < vl)
+			{
+				auto res = v->SetEventOnCompletion(vl, ev);
+				assert(SUCCEEDED(res));
+
+				WaitForSingleObject(ev, INFINITE);
+		}
+	}
+
+		FencePrivate::~FencePrivate()
+		{
+#if defined(FLAME_VULKAN)
+
+#elif defined(FLAME_D3D12)
+
+#endif
+		}
+
+		Fence* Fence::create(Device* d)
+		{
+			return new FencePrivate(d);
+		}
+
+		void Fence::destroy(Fence* s)
+		{
+			delete (FencePrivate*)s;
+		}
+
+		void Fence::wait()
+		{
+			((FencePrivate*)this)->wait();
 		}
 	}
 }

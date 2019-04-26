@@ -40,6 +40,8 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* d);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Fence* s);
+
+			FLAME_GRAPHICS_EXPORTS void wait();
 		};
 	}
 }

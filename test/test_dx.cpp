@@ -32,7 +32,8 @@ using namespace flame;
 graphics::Device* d;
 graphics::Swapchain* sc;
 graphics::Commandbuffer* cbs[2];
-graphics::Semaphore* render_finished;
+graphics::Fence* fence[2];
+int frame;
 
 int main(int argc, char** args)
 {
@@ -41,7 +42,6 @@ int main(int argc, char** args)
 
 	d = graphics::Device::create(false);
 	sc = graphics::Swapchain::create(d, w);
-	render_finished = graphics::Semaphore::create(d);
 	auto cv = graphics::ClearValues::create(sc->get_renderpass_clear());
 	cv->set(0, Bvec4(255, 128, 0, 255));
 
@@ -53,15 +53,23 @@ int main(int argc, char** args)
 		cb->end_renderpass();
 		cb->end();
 		cbs[i] = cb;
+		fence[i] = graphics::Fence::create(d);
 	}
+
+	frame = 0;
 
 	app->run(Function<void(void* c)>(
 		[](void* c) {
+			auto idx = frame % 2;
+
 			sc->acquire_image(nullptr);
 
-			d->gq->submit(cbs[sc->get_avalible_image_index()], nullptr, render_finished);
+			d->gq->submit(cbs[sc->get_avalible_image_index()], nullptr, nullptr, fence[idx]);
 
-			d->gq->present(sc, render_finished);
+			fence[idx]->wait();
+			d->gq->present(sc, nullptr);
+
+			frame++;
 		}));
 
 	return 0;

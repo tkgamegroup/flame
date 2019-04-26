@@ -39,6 +39,7 @@ namespace flame
 		struct Descriptorset;
 		struct Swapchain;
 		struct Semaphore;
+		struct Fence;
 
 		struct Commandpool
 		{
@@ -141,7 +142,7 @@ namespace flame
 		struct Queue
 		{
 			FLAME_GRAPHICS_EXPORTS void wait_idle();
-			FLAME_GRAPHICS_EXPORTS void submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore);
+			FLAME_GRAPHICS_EXPORTS void submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence);
 			FLAME_GRAPHICS_EXPORTS void present(Swapchain *s, Semaphore *wait_semaphore);
 
 			FLAME_GRAPHICS_EXPORTS static Queue *create(Device *d, int queue_family_idx);

@@ -212,7 +212,7 @@ namespace flame
 			cb->clear_image(this, col);
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->submit(cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 		}
@@ -235,7 +235,7 @@ namespace flame
 			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(cx, cy, 0, 0, x, y));
 			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->submit(cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 
@@ -267,7 +267,7 @@ namespace flame
 			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(cx, cy, 0, 0, x, y));
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->submit(cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 
@@ -302,7 +302,7 @@ namespace flame
 
 				cb->end_renderpass();
 				cb->end();
-				d->gq->submit(cb, nullptr, nullptr);
+				d->gq->submit(cb, nullptr, nullptr, nullptr);
 				d->gq->wait_idle();
 
 				Framebuffer::release(fb);
@@ -358,7 +358,7 @@ namespace flame
 				cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 				cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
-				d->gq->submit(cb, nullptr, nullptr);
+				d->gq->submit(cb, nullptr, nullptr, nullptr);
 				d->gq->wait_idle();
 				Commandbuffer::destroy(cb);
 				Buffer::destroy(staging_buffer);
@@ -383,7 +383,7 @@ namespace flame
 			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->submit(cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 			Buffer::destroy(staging_buffer);
@@ -481,7 +481,7 @@ namespace flame
 			cb->copy_buffer_to_image(staging_buffer, i, buffer_copy_regions.size(), buffer_copy_regions.data());
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(cb, nullptr, nullptr);
+			d->gq->submit(cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 

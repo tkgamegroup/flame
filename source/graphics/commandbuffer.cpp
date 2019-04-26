@@ -667,7 +667,7 @@ namespace flame
 #endif
 		}
 
-		void QueuePrivate::submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore)
+		void QueuePrivate::submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence)
 		{
 #if defined(FLAME_VULKAN)
 			VkSubmitInfo info;
@@ -687,10 +687,13 @@ namespace flame
 			ID3D12CommandList* list[] = { ((CommandbufferPrivate*)c)->v };
 			v->ExecuteCommandLists(1, list);
 
-			auto s_seph = (SemaphorePrivate*)signal_semaphore;
-			s_seph->vl++;
-			auto res = v->Signal(s_seph->v, s_seph->vl);
-			assert(SUCCEEDED(res));
+			if (signal_fence)
+			{
+				auto fence = (FencePrivate*)signal_fence;
+				fence->vl++;
+				auto res = v->Signal(fence->v, fence->vl);
+				assert(SUCCEEDED(res));
+			}
 #endif
 		}
 
@@ -709,18 +712,8 @@ namespace flame
 			present_info.pImageIndices = &index;
 			vk_chk_res(vkQueuePresentKHR(v, &present_info));
 #elif defined(FLAME_D3D12)
-			HRESULT res;
 
-			auto w_seph = (SemaphorePrivate*)wait_semaphore;
-			if (w_seph->v->GetCompletedValue() < w_seph->vl)
-			{
-				res = w_seph->v->SetEventOnCompletion(w_seph->vl, w_seph->ev);
-				assert(SUCCEEDED(res));
-
-				WaitForSingleObject(w_seph->ev, INFINITE);
-			}
-
-			res = ((SwapchainPrivate*)s)->v->Present(0, 0);
+			auto res = ((SwapchainPrivate*)s)->v->Present(0, 0);
 			assert(SUCCEEDED(res));
 #endif
 		}
@@ -730,9 +723,9 @@ namespace flame
 			((QueuePrivate*)this)->wait_idle();
 		}
 
-		void Queue::submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore)
+		void Queue::submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence)
 		{
-			((QueuePrivate*)this)->submit(c, wait_semaphore, signal_semaphore);
+			((QueuePrivate*)this)->submit(c, wait_semaphore, signal_semaphore, signal_fence);
 		}
 
 		void Queue::present(Swapchain *s, Semaphore *wait_semaphore)
