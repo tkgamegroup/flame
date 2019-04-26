@@ -58,7 +58,10 @@ namespace flame
 		{
 			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
-
+			VkFenceCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+			info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+			vk_chk_res(vkCreateFence(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 			auto res = d->v->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&v));
 			vl = 0;
@@ -70,14 +73,18 @@ namespace flame
 
 		void FencePrivate::wait()
 		{
+#if defined(FLAME_VULKAN)
+			vk_chk_res(vkWaitForFences(d->v, 1, &v, true, UINT64_MAX));
+			vk_chk_res(vkResetFences(d->v, 1, &v));
+#elif defined(FLAME_D3D12)
 			if (v->GetCompletedValue() < vl)
 			{
 				auto res = v->SetEventOnCompletion(vl, ev);
 				assert(SUCCEEDED(res));
 
 				WaitForSingleObject(ev, INFINITE);
+#endif
 		}
-	}
 
 		FencePrivate::~FencePrivate()
 		{

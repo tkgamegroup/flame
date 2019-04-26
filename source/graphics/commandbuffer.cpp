@@ -682,7 +682,7 @@ namespace flame
 			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
 			info.pSignalSemaphores = signal_semaphore ? &((SemaphorePrivate*)signal_semaphore)->v : nullptr;
 
-			vk_chk_res(vkQueueSubmit(v, 1, &info, VK_NULL_HANDLE));
+			vk_chk_res(vkQueueSubmit(v, 1, &info, ((FencePrivate*)signal_fence)->v));
 #elif defined(FLAME_D3D12)
 			ID3D12CommandList* list[] = { ((CommandbufferPrivate*)c)->v };
 			v->ExecuteCommandLists(1, list);
@@ -700,19 +700,18 @@ namespace flame
 		void QueuePrivate::present(Swapchain *s, Semaphore *wait_semaphore)
 		{
 #if defined(FLAME_VULKAN)
-			VkPresentInfoKHR present_info;
-			present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-			present_info.pNext = nullptr;
-			present_info.pResults = nullptr;
-			present_info.waitSemaphoreCount = 1;
-			present_info.pWaitSemaphores = &((SemaphorePrivate*)wait_semaphore)->v;
-			present_info.swapchainCount = 1;
-			present_info.pSwapchains = &((SwapchainPrivate*)s)->v;
+			VkPresentInfoKHR info;
+			info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+			info.pNext = nullptr;
+			info.pResults = nullptr;
+			info.waitSemaphoreCount = 1;
+			info.pWaitSemaphores = &((SemaphorePrivate*)wait_semaphore)->v;
+			info.swapchainCount = 1;
+			info.pSwapchains = &((SwapchainPrivate*)s)->v;
 			auto index = s->get_avalible_image_index();
-			present_info.pImageIndices = &index;
-			vk_chk_res(vkQueuePresentKHR(v, &present_info));
+			info.pImageIndices = &index;
+			vk_chk_res(vkQueuePresentKHR(v, &info));
 #elif defined(FLAME_D3D12)
-
 			auto res = ((SwapchainPrivate*)s)->v->Present(0, 0);
 			assert(SUCCEEDED(res));
 #endif

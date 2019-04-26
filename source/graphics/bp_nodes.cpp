@@ -101,10 +101,7 @@ namespace flame
 		else
 		{
 			if (device$i)
-			{
 				out$o = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);
-				((graphics::Commandbuffer*)out$o)->end();
-			}
 		}
 	}
 

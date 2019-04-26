@@ -36,7 +36,7 @@ struct App : BasicApp
 
 	virtual void on_create() override
 	{
-		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
+		render_path = BP::create_from_file(L"../renderpath/test/renderpath.bp");
 		render_path->find_input("d.in")->set_data(d);
 		render_path->find_input("sc.in")->set_data(sc);
 		render_path->initialize();
@@ -55,11 +55,17 @@ struct App : BasicApp
 
 	virtual void do_run() override
 	{
+		auto idx = frame % 2;
+
 		sc->acquire_image(image_avalible);
 
-		d->gq->submit(cbs[sc->get_avalible_image_index()], image_avalible, render_finished);
+		fences[idx]->wait();
+
+		d->gq->submit(cbs[sc->get_avalible_image_index()], image_avalible, render_finished, fences[idx]);
 
 		d->gq->present(sc, render_finished);
+
+		frame++;
 	}
 }app;
 

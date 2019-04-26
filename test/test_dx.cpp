@@ -32,7 +32,7 @@ using namespace flame;
 graphics::Device* d;
 graphics::Swapchain* sc;
 graphics::Commandbuffer* cbs[2];
-graphics::Fence* fence[2];
+graphics::Fence* fences[2];
 int frame;
 
 int main(int argc, char** args)
@@ -53,7 +53,7 @@ int main(int argc, char** args)
 		cb->end_renderpass();
 		cb->end();
 		cbs[i] = cb;
-		fence[i] = graphics::Fence::create(d);
+		fences[i] = graphics::Fence::create(d);
 	}
 
 	frame = 0;
@@ -64,7 +64,7 @@ int main(int argc, char** args)
 
 			sc->acquire_image(nullptr);
 
-			d->gq->submit(cbs[sc->get_avalible_image_index()], nullptr, nullptr, fence[idx]);
+			d->gq->submit(cbs[sc->get_avalible_image_index()], nullptr, nullptr, fences[idx]);
 
 			fence[idx]->wait();
 			d->gq->present(sc, nullptr);

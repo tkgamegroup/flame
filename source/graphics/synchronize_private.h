@@ -45,7 +45,9 @@ namespace flame
 		struct FencePrivate : Fence
 		{
 			DevicePrivate* d;
-#if defined(FLAME_D3D12)
+#if defined(FLAME_VULKAN)
+			VkFence v;
+#elif defined(FLAME_D3D12)
 			ID3D12Fence* v;
 			HANDLE ev;
 			uint vl;
