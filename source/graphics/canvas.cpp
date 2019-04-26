@@ -105,7 +105,7 @@ namespace flame
 				for (auto i = 0; i < MaxImageviewCount; i++)
 					set_imageview(i, white_imageview);
 
-				cv = ClearValues::create(sc->get_renderpass_clear());
+				cv = ClearValues::create(sc->renderpass(true));
 				cv->set(0, Bvec4(0));
 
 				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690,
@@ -531,7 +531,7 @@ namespace flame
 			void record_cb()
 			{
 				cb->begin();
-				cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), cv);
+				cb->begin_renderpass(sc->renderpass(true), sc->framebuffer(sc->image_index()), cv);
 				if (idx_end != idx_buffer->mapped)
 				{
 					auto surface_size = Vec2(sc->window()->size);
@@ -746,8 +746,8 @@ namespace flame
 					Format_R32G32_SFLOAT,
 					Format_R8G8B8A8_UNORM });
 
-			auto sample_count = sc->get_sample_count();
-			auto renderpass = sc->get_renderpass_clear();
+			auto sample_count = sc->sample_count();
+			auto renderpass = sc->renderpass(true);
 
 			GraphicsPipelineInfo pl_element_info;
 			pl_element_info.shaders.resize(2);

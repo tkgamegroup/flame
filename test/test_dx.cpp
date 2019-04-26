@@ -29,10 +29,12 @@
 
 using namespace flame;
 
+const int image_count = 3;
+
 graphics::Device* d;
 graphics::Swapchain* sc;
-graphics::Commandbuffer* cbs[2];
-graphics::Fence* fences[2];
+graphics::Commandbuffer* cbs[image_count];
+graphics::Fence* fences[image_count];
 int frame;
 
 int main(int argc, char** args)
@@ -42,14 +44,14 @@ int main(int argc, char** args)
 
 	d = graphics::Device::create(false);
 	sc = graphics::Swapchain::create(d, w);
-	auto cv = graphics::ClearValues::create(sc->get_renderpass_clear());
+	auto cv = graphics::ClearValues::create(sc->renderpass(true));
 	cv->set(0, Bvec4(255, 128, 0, 255));
 
-	for (auto i = 0; i < 2; i++)
+	for (auto i = 0; i < image_count; i++)
 	{
 		auto cb = graphics::Commandbuffer::create(d->gcp);
 		cb->begin();
-		cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(i), cv);
+		cb->begin_renderpass(sc->renderpass(true), sc->framebuffer(i), cv);
 		cb->end_renderpass();
 		cb->end();
 		cbs[i] = cb;
@@ -60,13 +62,13 @@ int main(int argc, char** args)
 
 	app->run(Function<void(void* c)>(
 		[](void* c) {
-			auto idx = frame % 2;
+			auto idx = frame % image_count;
 
 			sc->acquire_image(nullptr);
 
-			d->gq->submit(cbs[sc->get_avalible_image_index()], nullptr, nullptr, fences[idx]);
+			d->gq->submit(cbs[sc->image_index()], nullptr, nullptr, fences[idx]);
 
-			fence[idx]->wait();
+			fences[idx]->wait();
 			d->gq->present(sc, nullptr);
 
 			frame++;

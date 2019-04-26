@@ -704,11 +704,11 @@ namespace flame
 			info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 			info.pNext = nullptr;
 			info.pResults = nullptr;
-			info.waitSemaphoreCount = 1;
-			info.pWaitSemaphores = &((SemaphorePrivate*)wait_semaphore)->v;
+			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
+			info.pWaitSemaphores = wait_semaphore  ? &((SemaphorePrivate*)wait_semaphore)->v : nullptr;
 			info.swapchainCount = 1;
 			info.pSwapchains = &((SwapchainPrivate*)s)->v;
-			auto index = s->get_avalible_image_index();
+			auto index = s->image_index();
 			info.pImageIndices = &index;
 			vk_chk_res(vkQueuePresentKHR(v, &info));
 #elif defined(FLAME_D3D12)

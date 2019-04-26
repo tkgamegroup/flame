@@ -46,7 +46,7 @@ namespace flame
 		graphics::Swapchain *sc;
 		graphics::Semaphore *image_avalible;
 		graphics::Semaphore *render_finished;
-		graphics::Fence* fences[2];
+		graphics::Fence* fences[3];
 		int frame;
 
 		virtual void on_create() = 0;
@@ -60,7 +60,7 @@ namespace flame
 			sc = graphics::Swapchain::create(d, w, sample_count);
 			image_avalible = graphics::Semaphore::create(d);
 			render_finished = graphics::Semaphore::create(d);
-			for (auto i = 0; i < 2; i++)
+			for (auto i = 0; i < FLAME_ARRAYSIZE(fences); i++)
 				fences[i] = graphics::Fence::create(d);
 			frame = 0;
 

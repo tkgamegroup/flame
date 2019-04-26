@@ -46,10 +46,12 @@ namespace flame
 		void* window$o;
 		void* image1$o;
 		void* image2$o;
+		void* image3$o;
 		void* renderpass_clear$o;
 		void* renderpass_dont_clear$o;
 		void* framebuffer1$o;
 		void* framebuffer2$o;
+		void* framebuffer3$o;
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void update$c();

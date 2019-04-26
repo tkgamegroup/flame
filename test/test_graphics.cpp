@@ -34,6 +34,8 @@ struct App : BasicApp
 	//Font* font;
 	//int font_index;
 
+	float last_time;
+
 	virtual void on_create() override
 	{
 		render_path = BP::create_from_file(L"../renderpath/test/renderpath.bp");
@@ -51,11 +53,13 @@ struct App : BasicApp
 
 		//font = Font::create(d, L"c:/windows/fonts/msyh.ttc", 32, true);
 		//font_index = canvas->add_font(font);
+
+		last_time = 0.f;
 	}
 
 	virtual void do_run() override
 	{
-		auto idx = frame % 2;
+		auto idx = frame % FLAME_ARRAYSIZE(fences);
 
 		sc->acquire_image(image_avalible);
 
@@ -66,6 +70,13 @@ struct App : BasicApp
 		d->gq->present(sc, render_finished);
 
 		frame++;
+
+		last_time += app->elapsed_time;
+		if (last_time > 1.f)
+		{
+			last_time -= 1.f;
+			printf("%d\n", (int)app->fps);
+		}
 	}
 }app;
 

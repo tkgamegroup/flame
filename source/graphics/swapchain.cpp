@@ -70,7 +70,7 @@ namespace flame
 			fbs[0] = nullptr;
 			fbs[1] = nullptr;
 
-			avalible_image_index = -1;
+			image_index = -1;
 
 			create();
 
@@ -91,7 +91,7 @@ namespace flame
 		void SwapchainPrivate::create()
 		{
 			auto size = w->size;
-			void* native_images[2];
+			uint image_count = 3;
 
 #if defined(FLAME_VULKAN)
 
@@ -145,7 +145,7 @@ namespace flame
 			swapchain_info.flags = 0;
 			swapchain_info.pNext = nullptr;
 			swapchain_info.surface = s;
-			swapchain_info.minImageCount = 2;
+			swapchain_info.minImageCount = image_count;
 			swapchain_info.imageFormat = Z(swapchain_format);
 			swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
 			swapchain_info.imageExtent.width = size.x;
@@ -162,12 +162,10 @@ namespace flame
 			swapchain_info.oldSwapchain = 0;
 			vk_chk_res(vkCreateSwapchainKHR(d->v, &swapchain_info, nullptr, &v));
 
-			VkImage vk_images[2];
-			uint image_count = 0;
+			std::vector<VkImage> native_images;
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, nullptr);
-			vkGetSwapchainImagesKHR(d->v, v, &image_count, vk_images);
-			native_images[0] = vk_images[0];
-			native_images[1] = vk_images[1];
+			native_images.resize(image_count);
+			vkGetSwapchainImagesKHR(d->v, v, &image_count, native_images.data());
 
 #elif defined(FLAME_D3D12)
 
@@ -182,7 +180,7 @@ namespace flame
 			sample_desc.Count = 1;
 
 			DXGI_SWAP_CHAIN_DESC desc = {};
-			desc.BufferCount = 2;
+			desc.BufferCount = image_count;
 			desc.BufferDesc = backbuffer_desc;
 			desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -195,16 +193,18 @@ namespace flame
 			assert(SUCCEEDED(res));
 			v = (IDXGISwapChain3*)temp_swapchain;
 
-			ID3D12Resource* backbuffers[2];
-			for (auto i = 0; i < 2; i++)
+			std::vector<void*> vk_images;
+
+			std::vector<ID3D12Resource*> native_images;
+			native_images.resize(image_count);
+			for (auto i = 0; i < image_count; i++)
 			{
-				res = v->GetBuffer(i, IID_PPV_ARGS(&backbuffers[i]));
+				res = v->GetBuffer(i, IID_PPV_ARGS(&native_images[i]));
 				assert(SUCCEEDED(res));
-				native_images[i] = backbuffers[i];
 			}
 #endif
 
-			for (int i = 0; i < 2; i++)
+			for (int i = 0; i < image_count; i++)
 			{
 				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, (void*)native_images[i]);
 
@@ -249,10 +249,15 @@ namespace flame
 		void SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
 		{
 #if defined(FLAME_VULKAN)
-			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, ((SemaphorePrivate*)signal_semaphore)->v, VK_NULL_HANDLE, &avalible_image_index));
+			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, signal_semaphore ? ((SemaphorePrivate*)signal_semaphore)->v : nullptr, VK_NULL_HANDLE, &image_index));
 #elif defined(FLAME_D3D12)
 			avalible_image_index = v->GetCurrentBackBufferIndex();
 #endif
+		}
+
+		SampleCount Swapchain::sample_count() const
+		{
+			return ((SwapchainPrivate*)this)->sc;
 		}
 
 		Window *Swapchain::window() const
@@ -260,32 +265,22 @@ namespace flame
 			return ((SwapchainPrivate*)this)->w;
 		}
 
-		Image *Swapchain::get_image(int idx) const
+		Image *Swapchain::image(int idx) const
 		{
 			return ((SwapchainPrivate*)this)->images[idx];
 		}
 
-		uint Swapchain::get_avalible_image_index() const
+		uint Swapchain::image_index() const
 		{
-			return ((SwapchainPrivate*)this)->avalible_image_index;
+			return ((SwapchainPrivate*)this)->image_index;
 		}
 
-		SampleCount Swapchain::get_sample_count() const
+		Renderpass *Swapchain::renderpass(bool clar) const
 		{
-			return ((SwapchainPrivate*)this)->sc;
+			return clar ? ((SwapchainPrivate*)this)->rp : ((SwapchainPrivate*)this)->rp_dc;
 		}
 
-		Renderpass *Swapchain::get_renderpass_clear() const
-		{
-			return ((SwapchainPrivate*)this)->rp;
-		}
-
-		Renderpass *Swapchain::get_renderpass_dont_clear() const
-		{
-			return ((SwapchainPrivate*)this)->rp_dc;
-		}
-
-		Framebuffer *Swapchain::get_framebuffer(uint index) const
+		Framebuffer *Swapchain::framebuffer(uint index) const
 		{
 			return ((SwapchainPrivate*)this)->fbs[index];
 		}

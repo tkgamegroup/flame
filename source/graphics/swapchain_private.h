@@ -51,7 +51,7 @@ namespace flame
 			Renderpass *rp, *rp_dc/*dont clear*/;
 			Framebuffer *fbs[2];
 
-			uint avalible_image_index;
+			uint image_index;
 
 			SwapchainPrivate(Device *d, Window *w, SampleCount sc);
 			~SwapchainPrivate();

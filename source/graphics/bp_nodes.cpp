@@ -53,12 +53,14 @@ namespace flame
 		{
 			auto sc = (graphics::Swapchain*)out$o;
 			window$o = sc->window();
-			image1$o = sc->get_image(0);
-			image2$o = sc->get_image(1);
-			renderpass_clear$o = sc->get_renderpass_clear();
-			renderpass_dont_clear$o = sc->get_renderpass_dont_clear();
-			framebuffer1$o = sc->get_framebuffer(0);
-			framebuffer2$o = sc->get_framebuffer(1);
+			image1$o = sc->image(0);
+			image2$o = sc->image(1);
+			image3$o = sc->image(2);
+			renderpass_clear$o = sc->renderpass(true);
+			renderpass_dont_clear$o = sc->renderpass(false);
+			framebuffer1$o = sc->framebuffer(0);
+			framebuffer2$o = sc->framebuffer(1);
+			framebuffer3$o = sc->framebuffer(2);
 		}
 	}
 
