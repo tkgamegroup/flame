@@ -53,11 +53,11 @@ namespace flame
 			std::wstring filename;
 			std::string prefix;
 
-			inline ShaderInfo()
+			ShaderInfo()
 			{
 			}
 
-			inline ShaderInfo(const std::wstring &_filename, const std::string &_prefix) : 
+			ShaderInfo(const std::wstring &_filename, const std::string &_prefix) : 
 				filename(_filename),
 				prefix(_prefix)
 			{
@@ -75,12 +75,12 @@ namespace flame
 			std::vector<Format> attributes;
 			VertexInputRate rate;
 
-			inline VertexInputBufferInfo() :
+			VertexInputBufferInfo() :
 				rate(VertexInputRateVertex)
 			{
 			}
 
-			inline VertexInputBufferInfo(const std::vector<Format> &_attributes, VertexInputRate _rate = VertexInputRateVertex) :
+			VertexInputBufferInfo(const std::vector<Format> &_attributes, VertexInputRate _rate = VertexInputRateVertex) :
 				attributes(_attributes),
 				rate(_rate)
 			{
@@ -159,7 +159,7 @@ namespace flame
 			BlendFactor blend_src_alpha;
 			BlendFactor blend_dst_alpha;
 
-			inline BlendInfo()
+			BlendInfo()
 			{
 				blend_enable = false;
 				blend_src_color = BlendFactorOne;
@@ -168,7 +168,7 @@ namespace flame
 				blend_dst_alpha = BlendFactorZero;
 			}
 
-			inline BlendInfo(BlendFactor bsc, BlendFactor bdc, BlendFactor bsa, BlendFactor bda)
+			BlendInfo(BlendFactor bsc, BlendFactor bdc, BlendFactor bsa, BlendFactor bda)
 			{
 				blend_enable = true;
 				blend_src_color = bsc;
@@ -231,7 +231,7 @@ namespace flame
 			Renderpass *renderpass;
 			int subpass_index;
 
-			inline GraphicsPipelineInfo() :
+			GraphicsPipelineInfo() :
 				primitive_topology(PrimitiveTopologyTriangleList),
 				patch_control_points(0),
 				viewport_size(0),

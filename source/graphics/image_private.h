@@ -74,7 +74,7 @@ namespace flame
 			bool same(Image *i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping);
 		};
 
-		inline ImageAspect aspect_from_format(Format fmt)
+		ImageAspect aspect_from_format(Format fmt)
 		{
 			if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				return ImageAspectColor;

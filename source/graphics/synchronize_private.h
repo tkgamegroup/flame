@@ -36,14 +36,19 @@ namespace flame
 			DevicePrivate *d;
 #if defined(FLAME_VULKAN)
 			VkSemaphore v;
-#elif defined(FLAME_D3D12)
-			ID3D12Fence* v;
-			HANDLE ev;
-			uint vl;
 #endif
 
 			SemaphorePrivate(Device *d);
 			~SemaphorePrivate();
+		};
+
+		struct FencePrivate : Fence
+		{
+#if defined(FLAME_D3D12)
+			ID3D12Fence* v;
+			HANDLE ev;
+			uint vl;
+#endif
 		};
 	}
 }

@@ -37,55 +37,55 @@ namespace msdfgen
 
 	/// Returns the smaller of the arguments.
 	template <typename T>
-	inline T min(T a, T b) {
+	T min(T a, T b) {
 		return b < a ? b : a;
 	}
 
 	/// Returns the larger of the arguments.
 	template <typename T>
-	inline T max(T a, T b) {
+	T max(T a, T b) {
 		return a < b ? b : a;
 	}
 
 	/// Returns the middle out of three values
 	template <typename T>
-	inline T median(T a, T b, T c) {
+	T median(T a, T b, T c) {
 		return max(min(a, b), min(max(a, b), c));
 	}
 
 	/// Returns the weighted average of a and b.
 	template <typename T, typename S>
-	inline T mix(T a, T b, S weight) {
+	T mix(T a, T b, S weight) {
 		return T((S(1) - weight)*a + weight * b);
 	}
 
 	/// Clamps the number to the interval from 0 to 1.
 	template <typename T>
-	inline T clamp(T n) {
+	T clamp(T n) {
 		return n >= T(0) && n <= T(1) ? n : T(n > T(0));
 	}
 
 	/// Clamps the number to the interval from 0 to b.
 	template <typename T>
-	inline T clamp(T n, T b) {
+	T clamp(T n, T b) {
 		return n >= T(0) && n <= b ? n : T(n > T(0))*b;
 	}
 
 	/// Clamps the number to the interval from a to b.
 	template <typename T>
-	inline T clamp(T n, T a, T b) {
+	T clamp(T n, T a, T b) {
 		return n >= a && n <= b ? n : n < a ? a : b;
 	}
 
 	/// Returns 1 for positive values, -1 for negative values, and 0 for zero.
 	template <typename T>
-	inline int sign(T n) {
+	int sign(T n) {
 		return (T(0) < n) - (n < T(0));
 	}
 
 	/// Returns 1 for non-negative values and -1 for negative values.
 	template <typename T>
-	inline int nonZeroSign(T n) {
+	int nonZeroSign(T n) {
 		return 2 * (n > T(0)) - 1;
 	}
 
@@ -1284,7 +1284,7 @@ namespace msdfgen
 	}
 
 	template <typename S>
-	inline FloatRGB mix(FloatRGB a, FloatRGB b, S weight) {
+	FloatRGB mix(FloatRGB a, FloatRGB b, S weight) {
 		FloatRGB output = {
 			mix(a.r, b.r, weight),
 			mix(a.g, b.g, weight),
@@ -1387,7 +1387,7 @@ namespace msdfgen
 		double med;
 	};
 
-	static inline bool pixelClash(const FloatRGB &a, const FloatRGB &b, double threshold) {
+	static bool pixelClash(const FloatRGB &a, const FloatRGB &b, double threshold) {
 		// Only consider pair where both are on the inside or both are on the outside
 		bool aIn = (a.r > .5f) + (a.g > .5f) + (a.b > .5f) >= 2;
 		bool bIn = (b.r > .5f) + (b.g > .5f) + (b.b > .5f) >= 2;
@@ -1998,7 +1998,7 @@ namespace flame
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
 
-			inline FontPrivate(const wchar_t *filename, int _pixel_height)
+			FontPrivate(const wchar_t *filename, int _pixel_height)
 			{
 				pixel_height = _pixel_height;
 
@@ -2018,7 +2018,7 @@ namespace flame
 				ascender = ft_face->size->metrics.ascender / 64;
 			}
 
-			inline ~FontPrivate()
+			~FontPrivate()
 			{
 				FT_Done_Face(ft_face);
 			}
@@ -2050,7 +2050,7 @@ namespace flame
 
 			Image* atlas;
 
-			inline FontAtlasPrivate(Device* _d, int _pixel_height, bool _sdf, const std::vector<Font*>& _fonts) :
+			FontAtlasPrivate(Device* _d, int _pixel_height, bool _sdf, const std::vector<Font*>& _fonts) :
 				d(_d)
 			{
 				sdf = _sdf;
@@ -2078,12 +2078,12 @@ namespace flame
 				grid_curr_x = grid_curr_y = 0;
 			}
 
-			inline ~FontAtlasPrivate()
+			~FontAtlasPrivate()
 			{
 				Image::destroy(atlas);
 			}
 
-			inline const Glyph* get_glyph(wchar_t unicode)
+			const Glyph* get_glyph(wchar_t unicode)
 			{
 				if (!map[unicode])
 				{
@@ -2220,7 +2220,7 @@ namespace flame
 				return map[unicode];
 			}
 
-			inline int get_text_width(const wchar_t* text_beg, const wchar_t* text_end)
+			int get_text_width(const wchar_t* text_beg, const wchar_t* text_end)
 			{
 				auto w = 0;
 				auto s = text_beg;

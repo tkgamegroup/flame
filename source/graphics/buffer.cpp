@@ -28,7 +28,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline BufferPrivate::BufferPrivate(Device *_d, int _size, int _usage, int _mem_prop, bool sharing)
+		BufferPrivate::BufferPrivate(Device *_d, int _size, int _usage, int _mem_prop, bool sharing)
 		{
 			size = _size;
 			mapped = nullptr;
@@ -74,7 +74,7 @@ namespace flame
 #endif
 		}
 
-		inline BufferPrivate::~BufferPrivate()
+		BufferPrivate::~BufferPrivate()
 		{
 			if (mapped)
 				unmap();
@@ -87,7 +87,7 @@ namespace flame
 #endif
 		}
 
-		inline void BufferPrivate::map(int offset, int _size)
+		void BufferPrivate::map(int offset, int _size)
 		{
 			if (_size == 0)
 				_size = size;
@@ -98,7 +98,7 @@ namespace flame
 #endif
 		}
 
-		inline void BufferPrivate::unmap()
+		void BufferPrivate::unmap()
 		{
 			if (mapped)
 			{
@@ -111,7 +111,7 @@ namespace flame
 			}
 		}
 
-		inline void BufferPrivate::flush()
+		void BufferPrivate::flush()
 		{
 #if defined(FLAME_VULKAN)
 			VkMappedMemoryRange range;
@@ -126,7 +126,7 @@ namespace flame
 #endif
 		}
 
-		inline void BufferPrivate::copy_from_data(void *data)
+		void BufferPrivate::copy_from_data(void *data)
 		{
 			auto stag_buf = Buffer::create(d, size, BufferUsageTransferSrc, MemPropHost);
 			stag_buf->map();

@@ -179,7 +179,7 @@ namespace flame
 
 		Function<void(void* c, int size, void* data)> message_callback;
 
-		inline bool send(int size, void* data)
+		bool send(int size, void* data)
 		{
 			if (type == SocketWeb)
 				return websocket_send(fd_c, size, data);
@@ -278,7 +278,7 @@ namespace flame
 
 		SerializableNode* frame_advance_data;
 
-		inline bool send(int client_idx, int size, void* data)
+		bool send(int client_idx, int size, void* data)
 		{
 			if (type == SocketWeb)
 				return websocket_send(fd_cs[client_idx], size, data);

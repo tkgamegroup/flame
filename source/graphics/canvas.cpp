@@ -97,7 +97,7 @@ namespace flame
 
 			std::vector<std::tuple<FontAtlas*, bool, int>> font_atlases;
 
-			inline CanvasPrivate(Swapchain *_sc)
+			CanvasPrivate(Swapchain *_sc)
 			{
 				sc = _sc;
 				ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
@@ -122,7 +122,7 @@ namespace flame
 				current_image_view_index = 1;
 			}
 
-			inline ~CanvasPrivate()
+			~CanvasPrivate()
 			{
 				Descriptorset::destroy(ds);
 				Buffer::destroy(vtx_buffer);
@@ -130,13 +130,13 @@ namespace flame
 				Commandbuffer::destroy(cb);
 			}
 
-			inline void set_imageview(int index, Imageview* v)
+			void set_imageview(int index, Imageview* v)
 			{
 				image_views[index] = v;
 				ds->set_imageview(0, index, v, device->sp_bi_linear);
 			}
 
-			inline int add_font_atlas(FontAtlas* font_atlas)
+			int add_font_atlas(FontAtlas* font_atlas)
 			{
 				auto image_idx = current_image_view_index++;
 				font_atlases.emplace_back(font_atlas, font_atlas->sdf, (int)image_idx);
@@ -147,7 +147,7 @@ namespace flame
 				return font_atlases.size() - 1;
 			}
 
-			inline void start_cmd(DrawCmdType type, int id)
+			void start_cmd(DrawCmdType type, int id)
 			{
 				if (!draw_cmds.empty())
 				{
@@ -158,12 +158,12 @@ namespace flame
 				draw_cmds.emplace_back(type, id);
 			}
 
-			inline void path_line_to(const Vec2 &p)
+			void path_line_to(const Vec2 &p)
 			{
 				points.push_back(p);
 			}
 
-			inline void path_rect(const Vec2 &pos, const Vec2 &size, float round_radius, int round_flags)
+			void path_rect(const Vec2 &pos, const Vec2 &size, float round_radius, int round_flags)
 			{
 				if (round_radius == 0.f || round_flags == 0)
 				{
@@ -193,13 +193,13 @@ namespace flame
 				}
 			}
 
-			inline void path_arc_to(const Vec2 &center, float radius, int a_min, int a_max)
+			void path_arc_to(const Vec2 &center, float radius, int a_min, int a_max)
 			{
 				for (auto a = a_min; a <= a_max; a++)
 					points.push_back(center + circle_subdiv[a % FLAME_ARRAYSIZE(circle_subdiv)] * radius);
 			}
 
-			inline void path_bezier(const Vec2 &p1, const Vec2 &p2, const Vec2 &p3, const Vec2 &p4, int level = 0)
+			void path_bezier(const Vec2 &p1, const Vec2 &p2, const Vec2 &p3, const Vec2 &p4, int level = 0)
 			{
 				auto dx = p4.x - p1.x;
 				auto dy = p4.y - p1.y;
@@ -227,17 +227,17 @@ namespace flame
 				}
 			}
 
-			inline void clear_path()
+			void clear_path()
 			{
 				points.clear();
 			}
 
-			inline void stroke(const Bvec4 &col, float thickness, bool closed)
+			void stroke(const Bvec4 &col, float thickness, bool closed)
 			{
 				stroke_col2(col, col, thickness, closed);
 			}
 
-			inline void stroke_col2(const Bvec4 &inner_col, const Bvec4 &outter_col, float thickness, bool closed)
+			void stroke_col2(const Bvec4 &inner_col, const Bvec4 &outter_col, float thickness, bool closed)
 			{
 				if (points.size() < 2)
 					return;
@@ -331,7 +331,7 @@ namespace flame
 				}
 			}
 
-			inline void fill(const Bvec4 &col)
+			void fill(const Bvec4 &col)
 			{
 				if (points.size() < 3)
 					return;
@@ -355,7 +355,7 @@ namespace flame
 				}
 			}
 
-			inline void add_text(int font_atlas_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
+			void add_text(int font_atlas_index, const Vec2 &pos, const Bvec4 &col, const wchar_t *text, float scale)
 			{
 				if (text[0] == 0 || font_atlas_index >= font_atlases.size())
 					return;
@@ -408,7 +408,7 @@ namespace flame
 				}
 			}
 
-			inline void add_line(const Vec2 &p0, const Vec2 &p1, const Bvec4 &col, float thickness)
+			void add_line(const Vec2 &p0, const Vec2 &p1, const Bvec4 &col, float thickness)
 			{
 				if (distance(p0, p1) < 0.5f)
 					return;
@@ -419,7 +419,7 @@ namespace flame
 				clear_path();
 			}
 
-			inline void add_triangle_filled(const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Bvec4 &col)
+			void add_triangle_filled(const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Bvec4 &col)
 			{
 				path_line_to(p0);
 				path_line_to(p1);
@@ -428,19 +428,19 @@ namespace flame
 				clear_path();
 			}
 
-			inline void add_rect(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float thickness, float round_radius = 0.f, int round_flags = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE)
+			void add_rect(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float thickness, float round_radius = 0.f, int round_flags = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE)
 			{
 				add_rect_col2(pos, size, col, col, thickness, round_radius, round_flags);
 			}
 
-			inline void add_rect_col2(const Vec2 &pos, const Vec2 &size, const Bvec4 &inner_col, const Bvec4 &outter_col, float thickness, float round_radius = 0.f, int round_flags = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE)
+			void add_rect_col2(const Vec2 &pos, const Vec2 &size, const Bvec4 &inner_col, const Bvec4 &outter_col, float thickness, float round_radius = 0.f, int round_flags = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE)
 			{
 				path_rect(pos, size, round_radius, round_flags);
 				stroke_col2(inner_col, outter_col, thickness, true);
 				clear_path();
 			}
 
-			inline void add_rect_rotate(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float thickness, const Vec2 &rotate_center, float angle)
+			void add_rect_rotate(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float thickness, const Vec2 &rotate_center, float angle)
 			{
 				path_rect(pos, size, 0.f, 0);
 				for (auto &p : points)
@@ -449,35 +449,35 @@ namespace flame
 				clear_path();
 			}
 
-			inline void add_rect_filled(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float round_radius = 0.f, int round_flags = 0)
+			void add_rect_filled(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float round_radius = 0.f, int round_flags = 0)
 			{
 				path_rect(pos, size, round_radius, round_flags);
 				fill(col);
 				clear_path();
 			}
 
-			inline void add_circle(const Vec2 &center, float radius, const Bvec4 &col, float thickness)
+			void add_circle(const Vec2 &center, float radius, const Bvec4 &col, float thickness)
 			{
 				path_arc_to(center, radius, 0, FLAME_ARRAYSIZE(circle_subdiv) - 1);
 				stroke(col, thickness, true);
 				clear_path();
 			}
 
-			inline void add_circle_filled(const Vec2 &center, float radius, const Bvec4 &col)
+			void add_circle_filled(const Vec2 &center, float radius, const Bvec4 &col)
 			{
 				path_arc_to(center, radius, 0, FLAME_ARRAYSIZE(circle_subdiv) - 1);
 				fill(col);
 				clear_path();
 			}
 
-			inline void add_bezier(const Vec2 &p1, const Vec2 &p2, const Vec2 &p3, const Vec2 &p4, const Bvec4 &col, float thickness)
+			void add_bezier(const Vec2 &p1, const Vec2 &p2, const Vec2 &p3, const Vec2 &p4, const Bvec4 &col, float thickness)
 			{
 				path_bezier(p1, p2, p3, p4);
 				stroke(col, thickness, false);
 				clear_path();
 			}
 
-			inline void add_image(const Vec2 &pos, const Vec2 &size, int id, const Vec2 &uv0 = Vec2(0.f), const Vec2 &uv1 = Vec2(1.f), const Bvec4 &tint_col = Bvec4(255))
+			void add_image(const Vec2 &pos, const Vec2 &size, int id, const Vec2 &uv0 = Vec2(0.f), const Vec2 &uv1 = Vec2(1.f), const Bvec4 &tint_col = Bvec4(255))
 			{
 				auto _pos = Vec2(Ivec2(pos));
 
@@ -501,7 +501,7 @@ namespace flame
 				idx_cnt += 6;
 			}
 
-			inline void add_image_stretch(const Vec2 &pos, const Vec2 &size, int id, const Vec4 &border, const Bvec4 &tint_col = Bvec4(255))
+			void add_image_stretch(const Vec2 &pos, const Vec2 &size, int id, const Vec4 &border, const Bvec4 &tint_col = Bvec4(255))
 			{
 				//auto image_size = share_data.image_views[id]->image()->size;
 
@@ -523,12 +523,12 @@ namespace flame
 				//add_image(pos + Vec2(border[0], border[2]), Vec2(size.x - border[0] - border[1], size.y - border[2] - border[3]), id, Vec2(b_uv[0], b_uv[2]), Vec2(1.f - b_uv[1], 1.f - b_uv[3]));
 			}
 
-			inline void set_scissor(const Rect &scissor)
+			void set_scissor(const Rect &scissor)
 			{
 				draw_cmds.emplace_back(scissor);
 			}
 
-			inline void record_cb()
+			void record_cb()
 			{
 				cb->begin();
 				cb->begin_renderpass(sc->get_renderpass_clear(), sc->get_framebuffer(sc->get_avalible_image_index()), cv);

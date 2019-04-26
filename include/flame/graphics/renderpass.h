@@ -38,14 +38,14 @@ namespace flame
 			bool clear;
 			SampleCount sample_count;
 
-			inline AttachmentInfo()
+			AttachmentInfo()
 			{
 				format = Format_R8G8B8A8_UNORM;
 				clear = true;
 				sample_count = SampleCount_1;
 			}
 
-			inline AttachmentInfo(Format _format, bool _clear = true, SampleCount _sample_count = SampleCount_1) :
+			AttachmentInfo(Format _format, bool _clear = true, SampleCount _sample_count = SampleCount_1) :
 				format(_format),
 				clear(_clear),
 				sample_count(_sample_count)
@@ -59,12 +59,12 @@ namespace flame
 			std::vector<int> resolve_attachments;
 			int depth_attachment;
 
-			inline SubpassInfo() :
+			SubpassInfo() :
 				depth_attachment(-1)
 			{
 			}
 
-			inline SubpassInfo(const std::vector<int> &_color_attachments, int _depth_attachment = -1, const std::vector<int> &_resolve_attachments = std::vector<int>()) :
+			SubpassInfo(const std::vector<int> &_color_attachments, int _depth_attachment = -1, const std::vector<int> &_resolve_attachments = std::vector<int>()) :
 				color_attachments(_color_attachments),
 				depth_attachment(_depth_attachment),
 				resolve_attachments(_resolve_attachments)
@@ -84,7 +84,7 @@ namespace flame
 			std::vector<SubpassInfo> subpasses;
 			std::vector<DependencyInfo> dependencies;
 
-			inline RenderpassInfo()
+			RenderpassInfo()
 			{
 				SubpassInfo sp;
 				subpasses.push_back(sp);

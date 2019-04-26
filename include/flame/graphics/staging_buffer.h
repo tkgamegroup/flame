@@ -42,7 +42,7 @@ namespace flame
 
 			std::map<Buffer*, std::vector<BufferCopy>> copies;
 
-			inline StagingBuffer(Device *d, int size)
+			StagingBuffer(Device *d, int size)
 			{
 				v = graphics::create_buffer(d, size, graphics::BufferUsageTransferSrc,
 					graphics::MemPropHost | graphics::MemPropHostCoherent);
@@ -50,12 +50,12 @@ namespace flame
 				curr_size = 0;
 			}
 
-			inline ~StagingBuffer()
+			~StagingBuffer()
 			{
 				graphics::destroy_buffer(v);
 			}
 
-			inline void update(Buffer *b, int off, int size, void *data = nullptr)
+			void update(Buffer *b, int off, int size, void *data = nullptr)
 			{
 				auto it = copies.find(b);
 				if (it == copies.end())
@@ -73,7 +73,7 @@ namespace flame
 				curr_size += size;
 			}
 
-			inline void flush(Commandbuffer *cb)
+			void flush(Commandbuffer *cb)
 			{
 				for (auto &it : copies)
 					cb->copy_buffer(v, it.first, it.second.size(), it.second.data());

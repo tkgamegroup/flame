@@ -26,7 +26,7 @@ namespace flame
 {
 	namespace sound
 	{
-		inline DevicePrivate::DevicePrivate(DeviceType t) :
+		DevicePrivate::DevicePrivate(DeviceType t) :
 			type(t),
 			al_dev(nullptr)
 		{
@@ -36,29 +36,29 @@ namespace flame
 				al_dev = alcCaptureOpenDevice(nullptr, 44100, AL_FORMAT_STEREO16, 44100 * 4 /* one second */);
 		}
 
-		inline DevicePrivate::~DevicePrivate()
+		DevicePrivate::~DevicePrivate()
 		{
 			alcCloseDevice(al_dev);
 		}
 
-		inline void DevicePrivate::start_record()
+		void DevicePrivate::start_record()
 		{
 			alcCaptureStart(al_dev);
 		}
 
-		inline int DevicePrivate::get_recorded_samples()
+		int DevicePrivate::get_recorded_samples()
 		{
 			ALint samples;
 			alcGetIntegerv(al_dev, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
 			return samples;
 		}
 
-		inline void DevicePrivate::get_recorded_data(void* dst, int samples)
+		void DevicePrivate::get_recorded_data(void* dst, int samples)
 		{
 			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
 		}
 
-		inline void DevicePrivate::stop_record()
+		void DevicePrivate::stop_record()
 		{
 			alcCaptureStop(al_dev);
 		}

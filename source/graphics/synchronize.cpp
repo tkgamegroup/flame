@@ -27,7 +27,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline SemaphorePrivate::SemaphorePrivate(Device *_d)
+		SemaphorePrivate::SemaphorePrivate(Device *_d)
 		{
 			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
@@ -44,7 +44,7 @@ namespace flame
 #endif
 		}
 
-		inline SemaphorePrivate::~SemaphorePrivate()
+		SemaphorePrivate::~SemaphorePrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroySemaphore(d->v, v, nullptr);

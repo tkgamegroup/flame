@@ -42,7 +42,7 @@ namespace flame
 		{
 			BP *s;
 
-			inline RenderpathPrivate(Device *d, const wchar_t *filename)
+			RenderpathPrivate(Device *d, const wchar_t *filename)
 			{
 		//		s = blueprint::Scene::create();
 		//		s->load(filename);
@@ -341,7 +341,7 @@ namespace flame
 		//		//}
 			}
 
-		//	inline ~RenderpathPrivate()
+		//	~RenderpathPrivate()
 		//	{
 		//		for (auto i = 0; i < s->node_count(); i++)
 		//		{

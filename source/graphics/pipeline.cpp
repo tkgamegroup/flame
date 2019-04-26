@@ -32,12 +32,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline bool operator==(const PushconstantInfo &lhs, const PushconstantInfo &rhs)
+		bool operator==(const PushconstantInfo &lhs, const PushconstantInfo &rhs)
 		{
 			return lhs.offset == rhs.offset && lhs.size == rhs.size;
 		}
 
-		inline PipelinelayoutPrivate::PipelinelayoutPrivate(Device *_d, const std::vector<Descriptorsetlayout*> &_setlayouts, const std::vector<PushconstantInfo> &_pushconstants)
+		PipelinelayoutPrivate::PipelinelayoutPrivate(Device *_d, const std::vector<Descriptorsetlayout*> &_setlayouts, const std::vector<PushconstantInfo> &_pushconstants)
 		{
 			d = (DevicePrivate*)_d;
 			dsls.resize(_setlayouts.size());
@@ -75,7 +75,7 @@ namespace flame
 #endif
 		}
 
-		inline PipelinelayoutPrivate::~PipelinelayoutPrivate()
+		PipelinelayoutPrivate::~PipelinelayoutPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyPipelineLayout(d->v, v, nullptr);
@@ -126,7 +126,7 @@ namespace flame
 				((PipelinelayoutPrivate*)l)->ref_count--;
 		}
 
-		inline void PipelinePrivate::init()
+		void PipelinePrivate::init()
 		{
 			vert_shader = nullptr;
 			tesc_shader = nullptr;
@@ -136,7 +136,7 @@ namespace flame
 			comp_shader = nullptr;
 		}
 
-		inline PipelinePrivate::PipelinePrivate(Device *_d, const GraphicsPipelineInfo &info)
+		PipelinePrivate::PipelinePrivate(Device *_d, const GraphicsPipelineInfo &info)
 		{
 			init();
 
@@ -357,7 +357,7 @@ namespace flame
 			type = PipelineGraphics;
 		}
 
-		inline PipelinePrivate::PipelinePrivate(Device *_d, const ShaderInfo &compute_shader)
+		PipelinePrivate::PipelinePrivate(Device *_d, const ShaderInfo &compute_shader)
 		{
 			init();
 
@@ -386,7 +386,7 @@ namespace flame
 			type = PipelineCompute;
 		}
 
-		inline PipelinePrivate::~PipelinePrivate()
+		PipelinePrivate::~PipelinePrivate()
 		{
 			if (vert_shader)
 				Shader::release(vert_shader);
@@ -410,7 +410,7 @@ namespace flame
 #endif
 		}
 
-		inline void PipelinePrivate::add_shader(const ShaderInfo &info)
+		void PipelinePrivate::add_shader(const ShaderInfo &info)
 		{
 			auto s = Shader::get(d, info.filename, info.prefix);
 			switch (s->type)
@@ -485,7 +485,7 @@ namespace flame
 			}
 		}
 
-		inline std::vector<VkPipelineShaderStageCreateInfo> PipelinePrivate::process_stages()
+		std::vector<VkPipelineShaderStageCreateInfo> PipelinePrivate::process_stages()
 		{
 			std::vector<VkPipelineShaderStageCreateInfo> stage_infos;
 			std::vector<std::vector<Descriptorsetlayout::Binding>> sets;

@@ -34,7 +34,7 @@ struct App : BasicApp
 	//Font* font;
 	//int font_index;
 
-	inline virtual void on_create() override
+	virtual void on_create() override
 	{
 		render_path = BP::create_from_file(L"graphics_test_renderpath.bp");
 		render_path->find_input("d.in")->set_data(d);
@@ -53,7 +53,7 @@ struct App : BasicApp
 		//font_index = canvas->add_font(font);
 	}
 
-	inline virtual void do_run() override
+	virtual void do_run() override
 	{
 		sc->acquire_image(image_avalible);
 

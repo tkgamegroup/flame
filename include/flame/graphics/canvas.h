@@ -70,12 +70,12 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void add_rect_rotate(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float thickness, const Vec2 &rotate_center, float angle);
 			FLAME_GRAPHICS_EXPORTS void add_rect_filled(const Vec2 &pos, const Vec2 &size, const Bvec4 &col, float round_radius = 0.f, int round_flags = 0);
 			FLAME_GRAPHICS_EXPORTS void add_circle(const Vec2 &center, float radius, const Bvec4 &col, float thickness);
-			inline void add_circle_LT(const Vec2 &center, float diameter, const Bvec4 &col, float thickness)
+			void add_circle_LT(const Vec2 &center, float diameter, const Bvec4 &col, float thickness)
 			{
 				add_circle(center + diameter * 0.5f, diameter * 0.5f, col, thickness);
 			}
 			FLAME_GRAPHICS_EXPORTS void add_circle_filled(const Vec2 &center, float radius, const Bvec4 &col);
-			inline void add_circle_filled_LT(const Vec2 &center, float diameter, const Bvec4 &col)
+			void add_circle_filled_LT(const Vec2 &center, float diameter, const Bvec4 &col)
 			{
 				add_circle_filled(center + diameter * 0.5f, diameter * 0.5f, col);
 			}

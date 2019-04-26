@@ -44,7 +44,7 @@ namespace flame
 			return swapchain_format;
 		}
 
-		inline SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w, SampleCount _sc)
+		SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w, SampleCount _sc)
 		{
 			d = (DevicePrivate*)_d;
 			w = _w;
@@ -83,7 +83,7 @@ namespace flame
 				}, sizeof(void*), &thiz));
 		}
 
-		inline SwapchainPrivate::~SwapchainPrivate()
+		SwapchainPrivate::~SwapchainPrivate()
 		{
 			destroy();
 		}
@@ -246,7 +246,7 @@ namespace flame
 #endif
 		}
 
-		inline void SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
+		void SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
 		{
 #if defined(FLAME_VULKAN)
 			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, ((SemaphorePrivate*)signal_semaphore)->v, VK_NULL_HANDLE, &avalible_image_index));

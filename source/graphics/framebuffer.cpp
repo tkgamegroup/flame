@@ -31,7 +31,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline FramebufferPrivate::FramebufferPrivate(Device *_d, const FramebufferInfo &_info)
+		FramebufferPrivate::FramebufferPrivate(Device *_d, const FramebufferInfo &_info)
 		{
 			d = (DevicePrivate*)_d;
 			info = _info;
@@ -68,7 +68,7 @@ namespace flame
 #endif
 		}
 
-		inline FramebufferPrivate::~FramebufferPrivate()
+		FramebufferPrivate::~FramebufferPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyFramebuffer(d->v, v, nullptr);

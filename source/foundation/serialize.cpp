@@ -87,7 +87,7 @@ namespace flame
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 
-		inline std::string serialize_value(bool single, int v) const
+		std::string serialize_value(bool single, int v) const
 		{
 			if (single)
 				return item(v)->name();
@@ -259,7 +259,7 @@ namespace flame
 		int offset, size, count;
 		CommonData default_value;
 
-		inline VariableInfoPrivate()
+		VariableInfoPrivate()
 		{
 			default_value.fmt[0] = 0;
 			default_value.fmt[1] = 0;
@@ -425,13 +425,13 @@ namespace flame
 		int item_find_pos;
 		int func_find_pos;
 
-		inline UdtInfoPrivate()
+		UdtInfoPrivate()
 		{
 			item_find_pos = 0;
 			func_find_pos = 0;
 		}
 
-		inline VariableInfoPrivate* find_item(const char* name, int *out_idx)
+		VariableInfoPrivate* find_item(const char* name, int *out_idx)
 		{
 			if (items.empty())
 			{
@@ -469,7 +469,7 @@ namespace flame
 			return nullptr;
 		}
 
-		inline FunctionInfoPrivate* find_func(const char* name, int* out_idx)
+		FunctionInfoPrivate* find_func(const char* name, int* out_idx)
 		{
 			if (functions.empty())
 			{
@@ -686,7 +686,7 @@ namespace flame
 		int attr_find_pos;
 		int node_find_pos;
 
-		inline SerializableNodePrivate() :
+		SerializableNodePrivate() :
 			type(Object),
 			parent(nullptr),
 			attr_find_pos(0),
@@ -694,12 +694,12 @@ namespace flame
 		{
 		}
 
-		inline SerializableAttribute* new_attr(const std::string& name, const std::string& value)
+		SerializableAttribute* new_attr(const std::string& name, const std::string& value)
 		{
 			return insert_attr(-1, name, value);
 		}
 
-		inline SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value)
+		SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value)
 		{
 			if (idx == -1)
 				idx = attrs.size();
@@ -710,12 +710,12 @@ namespace flame
 			return a;
 		}
 
-		inline void remove_attr(int idx)
+		void remove_attr(int idx)
 		{
 			attrs.erase(attrs.begin() + idx);
 		}
 
-		inline void remove_attr(SerializableAttribute * a)
+		void remove_attr(SerializableAttribute * a)
 		{
 			for (auto it = attrs.begin(); it != attrs.end(); it++)
 			{
@@ -727,12 +727,12 @@ namespace flame
 			}
 		}
 
-		inline void clear_attrs()
+		void clear_attrs()
 		{
 			attrs.clear();
 		}
 
-		inline SerializableAttribute* find_attr(const std::string & name)
+		SerializableAttribute* find_attr(const std::string & name)
 		{
 			if (attrs.empty())
 				return nullptr;
@@ -758,18 +758,18 @@ namespace flame
 			return nullptr;
 		}
 
-		inline void add_node(SerializableNodePrivate* n)
+		void add_node(SerializableNodePrivate* n)
 		{
 			n->parent = this;
 			nodes.emplace_back((SerializableNodePrivate*)n);
 		}
 
-		inline SerializableNode* new_node(const std::string & name)
+		SerializableNode* new_node(const std::string & name)
 		{
 			return insert_node(-1, name);
 		}
 
-		inline SerializableNode* insert_node(int idx, const std::string & name)
+		SerializableNode* insert_node(int idx, const std::string & name)
 		{
 			if (idx == -1)
 				idx = nodes.size();
@@ -780,12 +780,12 @@ namespace flame
 			return n;
 		}
 
-		inline void remove_node(int idx)
+		void remove_node(int idx)
 		{
 			nodes.erase(nodes.begin() + idx);
 		}
 
-		inline void remove_node(SerializableNode * n)
+		void remove_node(SerializableNode * n)
 		{
 			for (auto it = nodes.begin(); it != nodes.end(); it++)
 			{
@@ -797,12 +797,12 @@ namespace flame
 			}
 		}
 
-		inline void clear_nodes()
+		void clear_nodes()
 		{
 			nodes.clear();
 		}
 
-		inline SerializableNode* find_node(const std::string & name)
+		SerializableNode* find_node(const std::string & name)
 		{
 			if (nodes.empty())
 				return nullptr;

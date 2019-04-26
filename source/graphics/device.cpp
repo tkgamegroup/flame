@@ -85,7 +85,7 @@ namespace flame
 		}
 #endif
 
-		inline DevicePrivate::DevicePrivate(bool debug)
+		DevicePrivate::DevicePrivate(bool debug)
 		{
 #if defined(FLAME_VULKAN)
 
@@ -514,7 +514,7 @@ namespace flame
 #endif
 		}
 
-		inline DevicePrivate::~DevicePrivate()
+		DevicePrivate::~DevicePrivate()
 		{
 		}
 
@@ -532,7 +532,7 @@ namespace flame
 			return -1;
 		}
 
-		inline bool DevicePrivate::has_feature(Feature f)
+		bool DevicePrivate::has_feature(Feature f)
 		{
 #if defined(FLAME_VULKAN)
 			switch (f)

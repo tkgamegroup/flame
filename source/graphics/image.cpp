@@ -75,7 +75,7 @@ namespace flame
 			}
 		}
 
-		inline ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, SampleCount _sample_count, int _usage, int _mem_prop)
+		ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, SampleCount _sample_count, int _usage, int _mem_prop)
 		{
 			format = _format;
 			size = _size;
@@ -128,7 +128,7 @@ namespace flame
 #endif
 		}
 
-		inline ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, void *native)
+		ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, void *native)
 		{
 			format = _format;
 			size = _size;
@@ -150,7 +150,7 @@ namespace flame
 #endif
 		}
 
-		inline ImagePrivate::~ImagePrivate()
+		ImagePrivate::~ImagePrivate()
 		{
 #if defined(FLAME_VULKAN)
 			if (m != 0)
@@ -163,7 +163,7 @@ namespace flame
 #endif
 		}
 
-		inline void ImagePrivate::set_props()
+		void ImagePrivate::set_props()
 		{
 			switch (format)
 			{
@@ -204,7 +204,7 @@ namespace flame
 			data_size_ = pitch_ * size.y;
 		}
 
-		inline void ImagePrivate::init(const Bvec4 &col)
+		void ImagePrivate::init(const Bvec4 &col)
 		{
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
@@ -217,7 +217,7 @@ namespace flame
 			Commandbuffer::destroy(cb);
 		}
 
-		inline void ImagePrivate::get_pixels(int x, int y, int cx, int cy, void *dst)
+		void ImagePrivate::get_pixels(int x, int y, int cx, int cy, void *dst)
 		{
 			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 			if (cx == -1)
@@ -246,7 +246,7 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		inline void ImagePrivate::set_pixels(int x, int y, int cx, int cy, const void *src)
+		void ImagePrivate::set_pixels(int x, int y, int cx, int cy, const void *src)
 		{
 			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 			if (cx == -1)
@@ -274,7 +274,7 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		inline void ImagePrivate::save_png(const wchar_t *filename)
+		void ImagePrivate::save_png(const wchar_t *filename)
 		{
 			if (bpp_ / channel_ > 8)
 			{
@@ -500,7 +500,7 @@ namespace flame
 			delete (ImagePrivate*)i;
 		}
 
-		inline ImageviewPrivate::ImageviewPrivate(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
+		ImageviewPrivate::ImageviewPrivate(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
 		{
 			i = (ImagePrivate*)_i;
 			type = _type;
@@ -549,7 +549,7 @@ namespace flame
 #endif
 		}
 
-		inline ImageviewPrivate::~ImageviewPrivate()
+		ImageviewPrivate::~ImageviewPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyImageView(i->d->v, v, nullptr);
@@ -558,7 +558,7 @@ namespace flame
 #endif
 		}
 
-		inline bool ImageviewPrivate::same(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
+		bool ImageviewPrivate::same(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
 		{
 			if (type != _type ||
 				base_level != _base_level || level_count != _level_count ||
@@ -620,7 +620,7 @@ namespace flame
 				((ImageviewPrivate*)v)->ref_count--;
 		}
 
-		inline SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
+		SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{
 			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
@@ -650,7 +650,7 @@ namespace flame
 #endif
 		}
 
-		inline SamplerPrivate::~SamplerPrivate()
+		SamplerPrivate::~SamplerPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroySampler(d->v, v, nullptr);

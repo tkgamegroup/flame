@@ -84,7 +84,7 @@ namespace flame
 		bool dead;
 
 #ifdef FLAME_WINDOWS
-		inline WindowPrivate(const char* _title, const Ivec2& _size, int _style)
+		WindowPrivate(const char* _title, const Ivec2& _size, int _style)
 		{
 			title = _title;
 
@@ -149,20 +149,20 @@ namespace flame
 			dead = false;
 		}
 #elif FLAME_ANDROID
-		inline WindowPrivate(android_app* android_state) :
+		WindowPrivate(android_app* android_state) :
 			android_state_(android_state)
 		{
 		}
 #endif
 
-		inline ~WindowPrivate()
+		~WindowPrivate()
 		{
 			for (auto& f : destroy_listeners)
 				f.second();
 		}
 
 #ifdef FLAME_WINDOWS
-		inline void set_cursor(CursorType type)
+		void set_cursor(CursorType type)
 		{
 			if (type == cursor_type)
 				return;
@@ -177,7 +177,7 @@ namespace flame
 			}
 		}
 
-		inline void set_size(const Ivec2 & _pos, const Ivec2 & _size, int _style)
+		void set_size(const Ivec2 & _pos, const Ivec2 & _size, int _style)
 		{
 			if (_size.x > 0)
 				size.x = _size.x;
@@ -230,36 +230,36 @@ namespace flame
 			}
 		}
 
-		inline void set_maximized(bool v)
+		void set_maximized(bool v)
 		{
 			ShowWindow(hWnd, v ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
 		}
 #endif
-		inline int add_key_listener(Function<void(void* c, KeyState action, Key key)>& listener)
+		int add_key_listener(Function<void(void* c, KeyState action, Key key)>& listener)
 		{
 			key_listeners.emplace_back(listener_magic, listener);
 			return listener_magic++;
 		}
 
-		inline int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>& listener)
+		int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>& listener)
 		{
 			mouse_listeners.emplace_back(listener_magic, listener);
 			return listener_magic++;
 		}
 
-		inline int add_resize_listener(Function<void(void* c, const Ivec2& size)>& listener)
+		int add_resize_listener(Function<void(void* c, const Ivec2& size)>& listener)
 		{
 			resize_listeners.emplace_back(listener_magic, listener);
 			return listener_magic++;
 		}
 
-		inline int add_destroy_listener(Function<void(void* c)>& listener)
+		int add_destroy_listener(Function<void(void* c)>& listener)
 		{
 			destroy_listeners.emplace_back(listener_magic, listener);
 			return listener_magic++;
 		}
 
-		inline void remove_key_listener(int id)
+		void remove_key_listener(int id)
 		{
 			for (auto it = key_listeners.begin(); it != key_listeners.end(); it++)
 			{
@@ -271,7 +271,7 @@ namespace flame
 			}
 		}
 
-		inline void remove_mouse_listener(int id)
+		void remove_mouse_listener(int id)
 		{
 			for (auto it = mouse_listeners.begin(); it != mouse_listeners.end(); it++)
 			{
@@ -283,7 +283,7 @@ namespace flame
 			}
 		}
 
-		inline void remove_resize_listener(int id)
+		void remove_resize_listener(int id)
 		{
 			for (auto it = resize_listeners.begin(); it != resize_listeners.end(); it++)
 			{
@@ -295,7 +295,7 @@ namespace flame
 			}
 		}
 
-		inline void remove_destroy_listener(int id)
+		void remove_destroy_listener(int id)
 		{
 			for (auto it = destroy_listeners.begin(); it != destroy_listeners.end(); it++)
 			{
@@ -587,14 +587,14 @@ namespace flame
 		delete reinterpret_cast<WindowPrivate*>(w);
 	}
 
-	inline ApplicationPrivate::ApplicationPrivate()
+	ApplicationPrivate::ApplicationPrivate()
 	{
 		total_frame = 0;
 		fps = 0;
 		elapsed_time = 0.f;
 	}
 
-	inline ApplicationPrivate::~ApplicationPrivate()
+	ApplicationPrivate::~ApplicationPrivate()
 	{
 		for (auto& w : windows)
 		{
@@ -605,7 +605,7 @@ namespace flame
 		}
 	}
 
-	inline int ApplicationPrivate::run(Function<void(void* c)> & idle_func)
+	int ApplicationPrivate::run(Function<void(void* c)> & idle_func)
 	{
 		if (windows.size() == 0)
 			return 1;
@@ -682,12 +682,12 @@ namespace flame
 		}
 	}
 
-	inline void ApplicationPrivate::add_delay_event(Function<void(void* c)> & event)
+	void ApplicationPrivate::add_delay_event(Function<void(void* c)> & event)
 	{
 		delay_events.emplace_back(event);
 	}
 
-	inline void ApplicationPrivate::clear_delay_events()
+	void ApplicationPrivate::clear_delay_events()
 	{
 		delay_events.clear();
 	}

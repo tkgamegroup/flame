@@ -36,7 +36,7 @@ namespace flame
 		unsigned char *data;
 		int data_size;
 
-		static inline int get_pitch(int line_bytes)
+		static int get_pitch(int line_bytes)
 		{
 			auto p = line_bytes;
 			if (p % 4 == 0)
@@ -44,12 +44,12 @@ namespace flame
 			return p + 4 - p % 4;
 		}
 
-		static inline int get_pitch(int cx, int bpp)
+		static int get_pitch(int cx, int bpp)
 		{
 			return get_pitch(cx * (bpp / 8));
 		}
 
-		inline void calc_pitch()
+		void calc_pitch()
 		{
 			pitch = get_pitch(size.x, bpp);
 		}

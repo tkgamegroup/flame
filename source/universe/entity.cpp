@@ -34,13 +34,13 @@ namespace flame
 		EntityPrivate* parent;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
-		inline EntityPrivate() :
+		EntityPrivate() :
 			parent(nullptr)
 		{
 			visible = true;
 		}
 
-		inline Component* get_component(uint type_hash)
+		Component* get_component(uint type_hash)
 		{
 			for (auto& c : components)
 			{
@@ -50,7 +50,7 @@ namespace flame
 			return nullptr;
 		}
 
-		inline Array<Component*> get_components(uint type_hash)
+		Array<Component*> get_components(uint type_hash)
 		{
 			Array<Component*> ret;
 			for (auto& c : components)
@@ -61,21 +61,21 @@ namespace flame
 			return ret;
 		}
 
-		inline void add_component(Component* c)
+		void add_component(Component* c)
 		{
 			components.emplace_back(c);
 			c->entity = this;
 			c->on_attach();
 		}
 
-		inline void add_child(EntityPrivate* e)
+		void add_child(EntityPrivate* e)
 		{
 			children.emplace_back(e);
 			e->parent = this;
 			e->on_attach();
 		}
 
-		inline void on_attach()
+		void on_attach()
 		{
 			for (auto& c : components)
 				c->on_attach();
@@ -83,7 +83,7 @@ namespace flame
 				e->on_attach();
 		}
 
-		inline void update(float delta_time)
+		void update(float delta_time)
 		{
 			if (!parent)
 			{

@@ -158,7 +158,7 @@ namespace flame
 		}
 #endif
 
-		inline ShaderPrivate::ShaderPrivate(Device *_d, const std::wstring &filename, const std::string &prefix)
+		ShaderPrivate::ShaderPrivate(Device *_d, const std::wstring &filename, const std::string &prefix)
 		{
 			filename_ = filename;
 			prefix_ = prefix;
@@ -421,7 +421,7 @@ namespace flame
 #endif
 		}
 
-		inline void ShaderPrivate::load_members(SerializableNode *src, ShaderVariableInfo *dst)
+		void ShaderPrivate::load_members(SerializableNode *src, ShaderVariableInfo *dst)
 		{
 			for (auto i = 0; i < src->node_count(); i++)
 			{
@@ -448,7 +448,7 @@ namespace flame
 			}
 		}
 
-		inline ShaderPrivate::~ShaderPrivate()
+		ShaderPrivate::~ShaderPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			if (v)
@@ -458,7 +458,7 @@ namespace flame
 #endif
 		}
 
-		inline bool ShaderPrivate::same(const std::wstring &filename, const std::string &prefix)
+		bool ShaderPrivate::same(const std::wstring &filename, const std::string &prefix)
 		{
 			return filename_ == filename && prefix_ == prefix;
 		}

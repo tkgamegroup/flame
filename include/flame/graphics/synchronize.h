@@ -35,6 +35,12 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Semaphore *create(Device *d);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Semaphore *s);
 		};
+
+		struct Fence
+		{
+			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* d);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Fence* s);
+		};
 	}
 }
 

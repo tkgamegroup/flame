@@ -49,7 +49,7 @@ namespace flame
 
 		virtual void on_create() = 0;
 
-		inline void create(const char *title, const Ivec2 &res, int style, graphics::SampleCount sample_count)
+		void create(const char *title, const Ivec2 &res, int style, graphics::SampleCount sample_count)
 		{
 			typeinfo_load(L"typeinfo.xml");
 			app = Application::create();
@@ -64,7 +64,7 @@ namespace flame
 
 		virtual void do_run() = 0;
 
-		inline void run()
+		void run()
 		{
 			auto thiz = this;
 			app->run(Function<void(void* c)>(

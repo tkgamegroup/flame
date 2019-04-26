@@ -29,34 +29,34 @@ namespace flame
 {
 	namespace sound
 	{
-		inline SourcePrivate::SourcePrivate(Buffer *b) :
+		SourcePrivate::SourcePrivate(Buffer *b) :
 			al_src(0)
 		{
 			alGenSources(1, &al_src);
 			alSourcei(al_src, AL_BUFFER, ((BufferPrivate*)b)->al_buf);
 		}
 
-		inline SourcePrivate::~SourcePrivate()
+		SourcePrivate::~SourcePrivate()
 		{
 			alDeleteSources(1, &al_src);
 		}
 
-		inline void SourcePrivate::set_volume(float v) 
+		void SourcePrivate::set_volume(float v) 
 		{
 			alSourcef(al_src, AL_GAIN, v);
 		}
 
-		inline void SourcePrivate::set_looping(bool v)
+		void SourcePrivate::set_looping(bool v)
 		{
 			alSourcei(al_src, AL_LOOPING, v);
 		}
 
-		inline void SourcePrivate::play()
+		void SourcePrivate::play()
 		{
 			alSourcePlay(al_src);
 		}
 
-		inline void SourcePrivate::stop()
+		void SourcePrivate::stop()
 		{
 			alSourceStop(al_src);
 		}

@@ -31,17 +31,17 @@ namespace flame
 		{
 			ALCcontext *al_ctx;
 
-			inline ContextPrivate(Device *d)
+			ContextPrivate(Device *d)
 			{
 				al_ctx = alcCreateContext(((DevicePrivate*)d)->al_dev, nullptr);
 			}
 
-			inline ~ContextPrivate()
+			~ContextPrivate()
 			{
 				alcDestroyContext(al_ctx);
 			}
 
-			inline void make_current()
+			void make_current()
 			{
 				alcMakeContextCurrent(al_ctx);
 			}

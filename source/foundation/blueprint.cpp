@@ -38,10 +38,10 @@ namespace flame
 
 		SlotPrivate*link;
 
-		inline SlotPrivate(NodePrivate* _node, VariableInfo* _variable_info);
-		inline bool set_link(SlotPrivate*target);
+		SlotPrivate(NodePrivate* _node, VariableInfo* _variable_info);
+		bool set_link(SlotPrivate*target);
 
-		inline String get_address() const;
+		String get_address() const;
 	};
 
 	struct NodePrivate : BP::Node
@@ -60,17 +60,17 @@ namespace flame
 		bool updated;
 		void* dummy; // represents the object
 
-		inline NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
-		inline ~NodePrivate();
+		NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
+		~NodePrivate();
 
-		inline void *_find_input_or_output(const std::string &name, int &input_or_output /* 0 or 1 */) const;
-		inline SlotPrivate* find_input(const std::string &name) const;
-		inline SlotPrivate* find_output(const std::string &name) const;
+		void *_find_input_or_output(const std::string &name, int &input_or_output /* 0 or 1 */) const;
+		SlotPrivate* find_input(const std::string &name) const;
+		SlotPrivate* find_output(const std::string &name) const;
 
-		inline void report_order(); // use by BP's prepare update, report update order from dependencies
-		inline void initialize();
-		inline void finish();
-		inline void update();
+		void report_order(); // use by BP's prepare update, report update order from dependencies
+		void initialize();
+		void finish();
+		void update();
 	};
 
 	struct BPPrivate : BP
@@ -82,23 +82,23 @@ namespace flame
 
 		Vec2 pos;
 
-		inline NodePrivate *add_node(const char *id, UdtInfo *udt);
-		inline void remove_node(NodePrivate *n);
+		NodePrivate *add_node(const char *id, UdtInfo *udt);
+		void remove_node(NodePrivate *n);
 
-		inline NodePrivate* find_node(const std::string &id) const;
-		inline SlotPrivate* find_input(const std::string &address) const;
-		inline SlotPrivate* find_output(const std::string &address) const;
+		NodePrivate* find_node(const std::string &id) const;
+		SlotPrivate* find_input(const std::string &address) const;
+		SlotPrivate* find_output(const std::string &address) const;
 
-		inline void clear();
+		void clear();
 
-		inline void initialize();
-		inline void finish();
+		void initialize();
+		void finish();
 
-		inline void update();
+		void update();
 
-		inline void load(const wchar_t *filename);
-		inline void save(const wchar_t *filename);
-		inline void tobin();
+		void load(const wchar_t *filename);
+		void save(const wchar_t *filename);
+		void tobin();
 	};
 
 	SlotPrivate::SlotPrivate(NodePrivate* _node, VariableInfo* _variable_info) :

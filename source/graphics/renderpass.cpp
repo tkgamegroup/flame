@@ -31,22 +31,22 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline bool operator==(const AttachmentInfo &lhs, const AttachmentInfo &rhs)
+		bool operator==(const AttachmentInfo &lhs, const AttachmentInfo &rhs)
 		{
 			return lhs.format == rhs.format && lhs.sample_count == rhs.sample_count && lhs.clear == rhs.clear;
 		}
 
-		inline bool operator==(const SubpassInfo &lhs, const SubpassInfo &rhs)
+		bool operator==(const SubpassInfo &lhs, const SubpassInfo &rhs)
 		{
 			return lhs.color_attachments == rhs.color_attachments && lhs.resolve_attachments == rhs.resolve_attachments && lhs.depth_attachment == rhs.depth_attachment;
 		}
 
-		inline bool operator==(const DependencyInfo &lhs, const DependencyInfo &rhs)
+		bool operator==(const DependencyInfo &lhs, const DependencyInfo &rhs)
 		{
 			return lhs.src_subpass == rhs.src_subpass && lhs.dst_subpass == rhs.dst_subpass;
 		}
 
-		inline RenderpassPrivate::RenderpassPrivate(Device *_d, const RenderpassInfo &_info)
+		RenderpassPrivate::RenderpassPrivate(Device *_d, const RenderpassInfo &_info)
 		{
 			d = (DevicePrivate*)_d;
 
@@ -150,7 +150,7 @@ namespace flame
 #endif
 		}
 
-		inline RenderpassPrivate::~RenderpassPrivate()
+		RenderpassPrivate::~RenderpassPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyRenderPass(d->v, v, nullptr);
@@ -199,7 +199,7 @@ namespace flame
 				((RenderpassPrivate*)r)->ref_count--;
 		}
 
-		inline ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
+		ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
 		{
 			renderpass = (RenderpassPrivate*)r;
 
@@ -221,11 +221,11 @@ namespace flame
 			}
 		}
 
-		inline ClearvaluesPrivate::~ClearvaluesPrivate()
+		ClearvaluesPrivate::~ClearvaluesPrivate()
 		{
 		}
 
-		inline void ClearvaluesPrivate::set(int idx, const Bvec4 &col)
+		void ClearvaluesPrivate::set(int idx, const Bvec4 &col)
 		{
 #if defined(FLAME_VULKAN)
 			v[idx].color.float32[0] = col.x / 255.f;

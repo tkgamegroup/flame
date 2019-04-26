@@ -30,7 +30,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline DescriptorpoolPrivate::DescriptorpoolPrivate(Device *_d)
+		DescriptorpoolPrivate::DescriptorpoolPrivate(Device *_d)
 		{
 			d = (DevicePrivate*)_d;
 
@@ -55,7 +55,7 @@ namespace flame
 #endif
 		}
 
-		inline DescriptorpoolPrivate::~DescriptorpoolPrivate()
+		DescriptorpoolPrivate::~DescriptorpoolPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyDescriptorPool(((DevicePrivate*)d)->v, v, nullptr);
@@ -74,12 +74,12 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		inline bool operator==(const Descriptorsetlayout::Binding &lhs, const Descriptorsetlayout::Binding &rhs)
+		bool operator==(const Descriptorsetlayout::Binding &lhs, const Descriptorsetlayout::Binding &rhs)
 		{
 			return lhs.binding == rhs.binding && lhs.type == rhs.type && lhs.count == rhs.count;
 		}
 
-		inline DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device *_d, const std::vector<Binding> &_bindings)
+		DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device *_d, const std::vector<Binding> &_bindings)
 		{
 			bindings = _bindings;
 
@@ -111,7 +111,7 @@ namespace flame
 #endif
 		}
 
-		inline DescriptorsetlayoutPrivate::~DescriptorsetlayoutPrivate()
+		DescriptorsetlayoutPrivate::~DescriptorsetlayoutPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyDescriptorSetLayout(((DevicePrivate*)d)->v, v, nullptr);
@@ -160,7 +160,7 @@ namespace flame
 			delete (DescriptorsetlayoutPrivate*)l;
 		}
 
-		inline DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool *_p, Descriptorsetlayout *l)
+		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool *_p, Descriptorsetlayout *l)
 		{
 			p = (DescriptorpoolPrivate*)_p;
 
@@ -178,7 +178,7 @@ namespace flame
 #endif
 		}
 
-		inline DescriptorsetPrivate::~DescriptorsetPrivate()
+		DescriptorsetPrivate::~DescriptorsetPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vk_chk_res(vkFreeDescriptorSets(p->d->v, p->v, 1, &v));
@@ -187,7 +187,7 @@ namespace flame
 #endif
 		}
 
-		inline void DescriptorsetPrivate::set_uniformbuffer(int binding, int index, Buffer *b, int offset, int range)
+		void DescriptorsetPrivate::set_uniformbuffer(int binding, int index, Buffer *b, int offset, int range)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
@@ -213,7 +213,7 @@ namespace flame
 #endif
 		}
 
-		inline void DescriptorsetPrivate::set_storagebuffer(int binding, int index, Buffer *b, int offset, int range)
+		void DescriptorsetPrivate::set_storagebuffer(int binding, int index, Buffer *b, int offset, int range)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
@@ -239,7 +239,7 @@ namespace flame
 #endif
 		}
 
-		inline void DescriptorsetPrivate::set_imageview(int binding, int index, Imageview *iv, Sampler *sampler)
+		void DescriptorsetPrivate::set_imageview(int binding, int index, Imageview *iv, Sampler *sampler)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
@@ -265,7 +265,7 @@ namespace flame
 #endif
 		}
 
-		inline void DescriptorsetPrivate::set_storageimage(int binding, int index, Imageview *iv)
+		void DescriptorsetPrivate::set_storageimage(int binding, int index, Imageview *iv)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;

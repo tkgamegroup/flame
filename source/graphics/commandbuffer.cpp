@@ -35,7 +35,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline CommandpoolPrivate::CommandpoolPrivate(Device *_d, int queue_family_idx)
+		CommandpoolPrivate::CommandpoolPrivate(Device *_d, int queue_family_idx)
 		{
 			d = (DevicePrivate*)_d;
 
@@ -53,7 +53,7 @@ namespace flame
 #endif
 		}
 
-		inline CommandpoolPrivate::~CommandpoolPrivate()
+		CommandpoolPrivate::~CommandpoolPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyCommandPool(d->v, v, nullptr);
@@ -72,7 +72,7 @@ namespace flame
 			delete (CommandpoolPrivate*)p;
 		}
 
-		inline CommandbufferPrivate::CommandbufferPrivate(Commandpool *_p, bool sub)
+		CommandbufferPrivate::CommandbufferPrivate(Commandpool *_p, bool sub)
 		{
 			p = (CommandpoolPrivate*)_p;
 			current_renderpass = nullptr;
@@ -96,7 +96,7 @@ namespace flame
 #endif
 		}
 
-		inline CommandbufferPrivate::~CommandbufferPrivate()
+		CommandbufferPrivate::~CommandbufferPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkFreeCommandBuffers(p->d->v, p->v, 1, &v);
@@ -105,7 +105,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::begin(bool once)
+		void CommandbufferPrivate::begin(bool once)
 		{
 #if defined(FLAME_VULKAN)
 			VkCommandBufferBeginInfo info;
@@ -128,7 +128,7 @@ namespace flame
 			current_pipeline = nullptr;
 		}
 
-		inline void CommandbufferPrivate::begin_renderpass(Renderpass *_r, Framebuffer *_f, ClearValues *_cv)
+		void CommandbufferPrivate::begin_renderpass(Renderpass *_r, Framebuffer *_f, ClearValues *_cv)
 		{
 			auto r = (RenderpassPrivate*)_r;
 			auto f = (FramebufferPrivate*)_f;
@@ -174,7 +174,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::end_renderpass()
+		void CommandbufferPrivate::end_renderpass()
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdEndRenderPass(v);
@@ -194,7 +194,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::set_viewport(const Rect &rect)
+		void CommandbufferPrivate::set_viewport(const Rect &rect)
 		{
 #if defined(FLAME_VULKAN)
 			VkViewport vp;
@@ -210,7 +210,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::set_scissor(const Rect &rect)
+		void CommandbufferPrivate::set_scissor(const Rect &rect)
 		{
 #if defined(FLAME_VULKAN)
 			VkRect2D sc;
@@ -224,7 +224,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::bind_pipeline(Pipeline *p)
+		void CommandbufferPrivate::bind_pipeline(Pipeline *p)
 		{
 			if (current_pipeline == p)
 				return;
@@ -238,7 +238,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::bind_descriptorset(Descriptorset *s, int idx)
+		void CommandbufferPrivate::bind_descriptorset(Descriptorset *s, int idx)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdBindDescriptorSets(v, Z(current_pipeline->type), current_pipeline->layout->v, idx, 1, &((DescriptorsetPrivate*)s)->v, 0, nullptr);
@@ -247,7 +247,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::bind_vertexbuffer(Buffer *b, int id)
+		void CommandbufferPrivate::bind_vertexbuffer(Buffer *b, int id)
 		{
 #if defined(FLAME_VULKAN)
 			VkDeviceSize offset = 0;
@@ -257,7 +257,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::bind_indexbuffer(Buffer *b, IndiceType t)
+		void CommandbufferPrivate::bind_indexbuffer(Buffer *b, IndiceType t)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdBindIndexBuffer(v, ((BufferPrivate*)b)->v, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
@@ -266,7 +266,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::push_constant(int offset, int size,  const void *data, Pipelinelayout *layout)
+		void CommandbufferPrivate::push_constant(int offset, int size,  const void *data, Pipelinelayout *layout)
 		{
 			if (layout == nullptr)
 				layout = current_pipeline->layout;
@@ -277,7 +277,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::draw(int count, int instance_count, int first_vertex, int first_instance)
+		void CommandbufferPrivate::draw(int count, int instance_count, int first_vertex, int first_instance)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdDraw(v, count, instance_count, first_vertex, first_instance);
@@ -286,7 +286,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::draw_indexed(int count, int first_index, int vertex_offset, int instance_count, int first_instance)
+		void CommandbufferPrivate::draw_indexed(int count, int first_index, int vertex_offset, int instance_count, int first_instance)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdDrawIndexed(v, count, instance_count, first_index, vertex_offset, first_instance);
@@ -295,7 +295,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::dispatch(const Ivec3 &_v)
+		void CommandbufferPrivate::dispatch(const Ivec3 &_v)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdDispatch(v, _v.x, _v.y, _v.z);
@@ -304,7 +304,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::copy_buffer(Buffer *src, Buffer *dst, int copy_count, BufferCopy *copies)
+		void CommandbufferPrivate::copy_buffer(Buffer *src, Buffer *dst, int copy_count, BufferCopy *copies)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkBufferCopy> vk_copies(copy_count);
@@ -320,7 +320,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::copy_image(Image *src, Image *dst, int copy_count, ImageCopy *copies)
+		void CommandbufferPrivate::copy_image(Image *src, Image *dst, int copy_count, ImageCopy *copies)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkImageCopy> vk_copies(copy_count);
@@ -368,7 +368,7 @@ namespace flame
 		}
 #endif
 
-		inline void CommandbufferPrivate::copy_buffer_to_image(Buffer *src, Image *dst, int copy_count, BufferImageCopy *copies)
+		void CommandbufferPrivate::copy_buffer_to_image(Buffer *src, Image *dst, int copy_count, BufferImageCopy *copies)
 		{
 #if defined(FLAME_VULKAN)
 			auto aspect = Z(aspect_from_format(dst->format));
@@ -383,7 +383,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::copy_image_to_buffer(Image *src, Buffer *dst, int copy_count, BufferImageCopy *copies)
+		void CommandbufferPrivate::copy_image_to_buffer(Image *src, Buffer *dst, int copy_count, BufferImageCopy *copies)
 		{
 #if defined(FLAME_VULKAN)
 			auto aspect = Z(aspect_from_format(src->format));
@@ -398,7 +398,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::change_image_layout(Image *i, ImageLayout from, ImageLayout to,
+		void CommandbufferPrivate::change_image_layout(Image *i, ImageLayout from, ImageLayout to,
 			int base_level, int level_count, int base_layer, int layer_count)
 		{
 			level_count = level_count == 0 ? i->level : level_count;
@@ -497,7 +497,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::clear_image(ImagePrivate *i, const Bvec4 &col)
+		void CommandbufferPrivate::clear_image(ImagePrivate *i, const Bvec4 &col)
 		{
 #if defined(FLAME_VULKAN)
 			VkClearColorValue cv;
@@ -517,7 +517,7 @@ namespace flame
 #endif
 		}
 
-		inline void CommandbufferPrivate::end() 
+		void CommandbufferPrivate::end() 
 		{
 #if defined(FLAME_VULKAN)
 			vk_chk_res(vkEndCommandBuffer(v));
@@ -642,7 +642,7 @@ namespace flame
 			delete (CommandbufferPrivate*)c;
 		}
 
-		inline QueuePrivate::QueuePrivate(Device *_d, int queue_family_idx)
+		QueuePrivate::QueuePrivate(Device *_d, int queue_family_idx)
 		{
 			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
@@ -654,7 +654,7 @@ namespace flame
 #endif
 		}
 
-		inline QueuePrivate::~QueuePrivate()
+		QueuePrivate::~QueuePrivate()
 		{
 		}
 

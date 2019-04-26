@@ -304,7 +304,7 @@ namespace flame
 		int size;
 		T *v;
 
-		inline void _init(const T* p, int len)
+		void _init(const T* p, int len)
 		{
 			size = len;
 			v = (T*)flame_malloc(sizeof(T) * size);
@@ -312,13 +312,13 @@ namespace flame
 				new(&v[i])T(p[i]);
 		}
 
-		inline Array()
+		Array()
 		{
 			size = 0;
 			v = nullptr;
 		}
 
-		inline Array(const Array& rhs)
+		Array(const Array& rhs)
 		{
 			size = rhs.size;
 			v = (T*)flame_malloc(sizeof(T) * size);
@@ -326,7 +326,7 @@ namespace flame
 				new(&v[i])T(rhs[i]);
 		}
 
-		inline Array(Array&& rhs)
+		Array(Array&& rhs)
 		{
 			size = rhs.size;
 			v = rhs.v;
@@ -335,19 +335,19 @@ namespace flame
 			rhs.v = nullptr;
 		}
 
-		inline ~Array()
+		~Array()
 		{
 			for (auto i = 0; i < size; i++)
 				v[i].~T();
 			flame_free(v);
 		}
 
-		inline Array& operator=(const Array& rhs)
+		Array& operator=(const Array& rhs)
 		{
 			assign(rhs.v, rhs.size);
 		}
 
-		inline Array& operator=(Array&& rhs)
+		Array& operator=(Array&& rhs)
 		{
 			std::swap(size, rhs.size);
 			std::swap(v, rhs.v);
@@ -355,24 +355,24 @@ namespace flame
 			return *this;
 		}
 
-		inline Array& operator=(const std::vector<T>& rhs)
+		Array& operator=(const std::vector<T>& rhs)
 		{
 			assign(rhs.data(), rhs.size());
 
 			return *this;
 		}
 
-		inline T &operator[](int idx)
+		T &operator[](int idx)
 		{
 			return v[idx];
 		}
 
-		inline const T &operator[](int idx) const
+		const T &operator[](int idx) const
 		{
 			return v[idx];
 		}
 
-		inline void assign(const T* p, int len)
+		void assign(const T* p, int len)
 		{
 			for (auto i = 0; i < size; i++)
 				v[i].~T();
@@ -385,7 +385,7 @@ namespace flame
 				new(&p[i])T();
 		}
 
-		inline void resize(int new_size, int type_size = 0 /* for pod that is not T type */)
+		void resize(int new_size, int type_size = 0 /* for pod that is not T type */)
 		{
 			if (size == new_size)
 				return;
@@ -415,7 +415,7 @@ namespace flame
 			size = new_size;
 		}
 
-		inline void insert(int pos, const T &_v)
+		void insert(int pos, const T &_v)
 		{
 			resize(size + 1);
 			for (auto i = size - 1; i > pos; i--)
@@ -423,12 +423,12 @@ namespace flame
 			v[pos] = _v;
 		}
 
-		inline void push_back(const T &_v)
+		void push_back(const T &_v)
 		{
 			insert(size, _v);
 		}
 
-		inline void remove(int idx, int count = 1)
+		void remove(int idx, int count = 1)
 		{
 			auto new_size = size - count;
 			for (auto i = idx; i < new_size; i++)
@@ -436,7 +436,7 @@ namespace flame
 			resize(new_size);
 		}
 
-		inline int find(const T &_v)
+		int find(const T &_v)
 		{
 			for (auto i = 0; i < size; i++)
 			{
@@ -453,7 +453,7 @@ namespace flame
 		int size;
 		CH *v;
 
-		inline void _init(const CH* s, int len = 0)
+		void _init(const CH* s, int len = 0)
 		{
 			if (len == 0)
 				len = std::char_traits<CH>::length(s);
@@ -464,19 +464,19 @@ namespace flame
 			v[size] = (CH)0;
 		}
 
-		inline BasicString()
+		BasicString()
 		{
 			size = 0;
 			v = (CH*)flame_malloc(sizeof(CH));
 			v[size] = (CH)0;
 		}
 
-		inline BasicString(const BasicString& rhs)
+		BasicString(const BasicString& rhs)
 		{
 			_init(rhs.v, rhs.size);
 		}
 
-		inline BasicString(BasicString&& rhs)
+		BasicString(BasicString&& rhs)
 		{
 			size = rhs.size;
 			v = rhs.v;
@@ -485,29 +485,29 @@ namespace flame
 			rhs.v = nullptr;
 		}
 
-		inline BasicString(const CH* rhs)
+		BasicString(const CH* rhs)
 		{
 			_init(rhs);
 		}
 
-		inline BasicString(const std::basic_string<CH>& rhs)
+		BasicString(const std::basic_string<CH>& rhs)
 		{
 			_init(rhs.c_str(), rhs.size());
 		}
 
-		inline ~BasicString()
+		~BasicString()
 		{
 			flame_free(v);
 		}
 
-		inline BasicString& operator=(const BasicString& rhs)
+		BasicString& operator=(const BasicString& rhs)
 		{
 			assign(rhs.v, rhs.size);
 
 			return *this;
 		}
 
-		inline BasicString& operator=(BasicString&& rhs)
+		BasicString& operator=(BasicString&& rhs)
 		{
 			std::swap(size, rhs.size);
 			std::swap(v, rhs.v);
@@ -515,21 +515,21 @@ namespace flame
 			return *this;
 		}
 
-		inline BasicString& operator=(const CH *str)
+		BasicString& operator=(const CH *str)
 		{
 			assign(str);
 
 			return *this;
 		}
 
-		inline BasicString& operator=(const std::basic_string<CH>& rhs)
+		BasicString& operator=(const std::basic_string<CH>& rhs)
 		{
 			assign(rhs.c_str(), rhs.size());
 
 			return *this;
 		}
 
-		inline void assign(const CH* s, int len = 0)
+		void assign(const CH* s, int len = 0)
 		{
 			if (len == 0)
 				len = std::char_traits<CH>::length(s);
@@ -538,7 +538,7 @@ namespace flame
 			memcpy(v, s, sizeof(CH) * size);
 		}
 
-		inline void resize(int new_size)
+		void resize(int new_size)
 		{
 			if (size == new_size)
 				return;
@@ -548,7 +548,7 @@ namespace flame
 			v[size] = (CH)0;
 		}
 
-		inline void insert(int pos, CH _v)
+		void insert(int pos, CH _v)
 		{
 			resize(size + 1);
 			for (auto i = size - 1; i > pos; i--)
@@ -556,7 +556,7 @@ namespace flame
 			v[pos] = _v;
 		}
 
-		inline void remove(int idx, int count = 1)
+		void remove(int idx, int count = 1)
 		{
 			auto new_size = size - count;
 			for (auto i = idx; i < new_size; i++)
@@ -564,7 +564,7 @@ namespace flame
 			resize(new_size);
 		}
 
-		inline int find(CH _v)
+		int find(CH _v)
 		{
 			for (auto i = 0; i < size; i++)
 			{
@@ -620,24 +620,24 @@ namespace flame
 	{
 		uint hash;
 
-		inline void assign(const char *s, int len = 0)
+		void assign(const char *s, int len = 0)
 		{
 			String::assign(s, len);
 			hash = v ? H(v) : 0;
 		}
 
-		inline StringAndHash()
+		StringAndHash()
 		{
 			hash = 0;
 		}
 
-		inline StringAndHash(const StringAndHash &rhs) :
+		StringAndHash(const StringAndHash &rhs) :
 			StringAndHash()
 		{
 			assign(rhs.v, rhs.size);
 		}
 
-		inline StringAndHash(StringAndHash &&rhs) :
+		StringAndHash(StringAndHash &&rhs) :
 			StringAndHash()
 		{
 			std::swap(size, rhs.size);
@@ -645,20 +645,20 @@ namespace flame
 			std::swap(hash, rhs.hash);
 		}
 
-		inline StringAndHash(const std::string &rhs) :
+		StringAndHash(const std::string &rhs) :
 			StringAndHash()
 		{
 			assign(rhs.c_str(), rhs.size());
 		}
 
-		inline StringAndHash &operator=(const StringAndHash &rhs)
+		StringAndHash &operator=(const StringAndHash &rhs)
 		{
 			assign(rhs.v, rhs.size);
 
 			return *this;
 		}
 
-		inline StringAndHash &operator=(StringAndHash &&rhs)
+		StringAndHash &operator=(StringAndHash &&rhs)
 		{
 			std::swap(size, rhs.size);
 			std::swap(v, rhs.v);
@@ -667,14 +667,14 @@ namespace flame
 			return *this;
 		}
 
-		inline StringAndHash &operator=(const char *str)
+		StringAndHash &operator=(const char *str)
 		{
 			assign(str);
 
 			return *this;
 		}
 
-		inline StringAndHash &operator=(const std::string &rhs)
+		StringAndHash &operator=(const std::string &rhs)
 		{
 			assign(rhs.c_str(), rhs.size());
 
@@ -989,12 +989,12 @@ namespace flame
 
 		enum { BLOCK_INTS = 16, BLOCK_BYTES = BLOCK_INTS * 4 };
 
-		inline SHA1() 
+		SHA1() 
 		{
 			reset();
 		}
 
-		inline void reset()
+		void reset()
 		{
 			digest[0] = 0x67452301;
 			digest[1] = 0xefcdab89;
@@ -1006,7 +1006,7 @@ namespace flame
 			transforms = 0;
 		}
 
-		inline void update(const std::string& s)
+		void update(const std::string& s)
 		{
 			std::istringstream is(s);
 			while (true)
@@ -1025,7 +1025,7 @@ namespace flame
 			}
 		}
 
-		inline void _final()
+		void _final()
 		{
 			ulonglong total_bits = (transforms * BLOCK_BYTES + buffer.size()) * 8;
 
@@ -1049,7 +1049,7 @@ namespace flame
 			transform(digest, block, transforms);
 		}
 
-		inline std::string final_bin()
+		std::string final_bin()
 		{
 			_final();
 
@@ -1068,7 +1068,7 @@ namespace flame
 			return result;
 		}
 
-		inline std::string final_str()
+		std::string final_str()
 		{
 			_final();
 
@@ -1084,52 +1084,52 @@ namespace flame
 			return result.str();
 		}
 
-		inline static uint rol(const uint value, const size_t bits)
+		static uint rol(const uint value, const size_t bits)
 		{
 			return (value << bits) | (value >> (32 - bits));
 		}
 
 
-		inline static uint blk(const uint block[BLOCK_INTS], const size_t i)
+		static uint blk(const uint block[BLOCK_INTS], const size_t i)
 		{
 			return rol(block[(i + 13) & 15] ^ block[(i + 8) & 15] ^ block[(i + 2) & 15] ^ block[i], 1);
 		}
 
-		inline static void R0(const uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
+		static void R0(const uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
 		{
 			z += ((w & (x ^ y)) ^ y) + block[i] + 0x5a827999 + rol(v, 5);
 			w = rol(w, 30);
 		}
 
-		inline static void R1(uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
+		static void R1(uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
 		{
 			block[i] = blk(block, i);
 			z += ((w & (x ^ y)) ^ y) + block[i] + 0x5a827999 + rol(v, 5);
 			w = rol(w, 30);
 		}
 
-		inline static void R2(uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
+		static void R2(uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
 		{
 			block[i] = blk(block, i);
 			z += (w ^ x ^ y) + block[i] + 0x6ed9eba1 + rol(v, 5);
 			w = rol(w, 30);
 		}
 
-		inline static void R3(uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
+		static void R3(uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
 		{
 			block[i] = blk(block, i);
 			z += (((w | x) & y) | (w & x)) + block[i] + 0x8f1bbcdc + rol(v, 5);
 			w = rol(w, 30);
 		}
 
-		inline static void R4(uint block[BLOCK_INTS], const uint v, uint & w, const uint x, const uint y, uint & z, const size_t i)
+		static void R4(uint block[BLOCK_INTS], const uint v, uint & w, const uint x, const uint y, uint & z, const size_t i)
 		{
 			block[i] = blk(block, i);
 			z += (w ^ x ^ y) + block[i] + 0xca62c1d6 + rol(v, 5);
 			w = rol(w, 30);
 		}
 
-		inline static void transform(uint digest[], uint block[BLOCK_INTS], ulonglong& transforms)
+		static void transform(uint digest[], uint block[BLOCK_INTS], ulonglong& transforms)
 		{
 			uint a = digest[0];
 			uint b = digest[1];
@@ -1227,7 +1227,7 @@ namespace flame
 			transforms++;
 		}
 
-		inline static void buffer_to_block(const std::string& buffer, uint block[BLOCK_INTS])
+		static void buffer_to_block(const std::string& buffer, uint block[BLOCK_INTS])
 		{
 			for (size_t i = 0; i < BLOCK_INTS; i++)
 			{
@@ -1237,7 +1237,6 @@ namespace flame
 					| (buffer[4 * i + 0] & 0xff) << 24;
 			}
 		}
-
 	};
 
 	template<class F>
@@ -1248,7 +1247,7 @@ namespace flame
 		void* c;
 		uint c_hash;
 
-		inline void _init(F _f, int _c_size, void* _c, uint _c_hash = 0)
+		void _init(F _f, int _c_size, void* _c, uint _c_hash = 0)
 		{
 			f = _f;
 			c_size = _c_size;
@@ -1262,7 +1261,7 @@ namespace flame
 			c_hash = _c_hash;
 		}
 
-		inline void assign(F _f, int _c_size, void* _c, uint _c_hash = 0)
+		void assign(F _f, int _c_size, void* _c, uint _c_hash = 0)
 		{
 			flame_free(c);
 			f = _f;
@@ -1277,7 +1276,7 @@ namespace flame
 			c_hash = _c_hash;
 		}
 
-		inline Function()
+		Function()
 		{
 			f = nullptr;
 			c_size = 0;
@@ -1285,24 +1284,24 @@ namespace flame
 			c_hash = 0;
 		}
 
-		inline Function(F f, int c_size = 0, void* c = 0, uint c_hash = 0)
+		Function(F f, int c_size = 0, void* c = 0, uint c_hash = 0)
 		{
 			_init(f, c_size, c, c_hash);
 		}
 
-		inline Function(const Function<F>& rhs)
+		Function(const Function<F>& rhs)
 		{
 			_init(rhs.f, rhs.c_size, rhs.c, rhs.c_hash);
 		}
 
-		inline Function& operator=(const Function& rhs)
+		Function& operator=(const Function& rhs)
 		{
 			assign(rhs.f, rhs.c_size, rhs.c, rhs.c_hash);
 
 			return *this;
 		}
 
-		inline Function& operator=(Function&& rhs)
+		Function& operator=(Function&& rhs)
 		{
 			std::swap(f, rhs.f);
 			std::swap(c_size, rhs.c_size);
@@ -1313,7 +1312,7 @@ namespace flame
 		}
 
 		template<class ...Args>
-		inline auto operator()(Args... args)
+		auto operator()(Args... args)
 		{
 			return f(c, args...);
 		}
