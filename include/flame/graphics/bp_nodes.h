@@ -27,8 +27,6 @@ namespace flame
 {
 	struct BP_GraphicsDevice$
 	{
-		static const int flame_graphics$m;
-
 		void* in$i;
 
 		void* out$o;
@@ -38,8 +36,6 @@ namespace flame
 
 	struct BP_GraphicsSwapchain$
 	{
-		static const int flame_graphics$m;
-
 		void* in$i;
 
 		void* out$o;
@@ -59,8 +55,6 @@ namespace flame
 
 	struct BP_GraphicsClearvalues$
 	{
-		static const int flame_graphics$m;
-
 		void* in$i;
 		void* renderpass$i;
 		CommonData* colors$i;
@@ -74,8 +68,6 @@ namespace flame
 
 	struct BP_GraphicsCommandbuffer$
 	{
-		static const int flame_graphics$m;
-
 		void* in$i;
 		void* device$i;
 
@@ -87,8 +79,6 @@ namespace flame
 
 	struct BP_GraphicsCmdBegin$
 	{
-		static const int flame_graphics$m;
-
 		void* cmd1$i;
 		void* cmd2$i;
 
@@ -99,8 +89,6 @@ namespace flame
 
 	struct BP_GraphicsCmdEnd$
 	{
-		static const int flame_graphics$m;
-
 		void* in$i;
 		void* cmd1$i;
 		void* cmd2$i;
@@ -110,8 +98,6 @@ namespace flame
 
 	struct BP_GraphicsCmdBeginRenderpass$
 	{
-		static const int flame_graphics$m;
-
 		void* in$i;
 		void* cmd1$i;
 		void* cmd2$i;
@@ -128,8 +114,6 @@ namespace flame
 
 	struct BP_GraphicsCmdEndRenderpass$
 	{
-		static const int flame_graphics$m;
-
 		void* in$i;
 		void* cmd1$i;
 		void* cmd2$i;

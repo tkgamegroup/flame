@@ -465,7 +465,7 @@ namespace flame
 				auto type = n_node->find_attr("type")->value();
 				auto id = n_node->find_attr("id")->value();
 
-				auto udt = find_udt(H(type.c_str()));
+				auto udt = type_db->find_udt(H(type.c_str()));
 				if (!udt)
 					continue;
 				auto n = new NodePrivate(this, id, udt);

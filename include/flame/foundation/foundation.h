@@ -1485,6 +1485,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Ivec2 get_screen_size();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_curr_path();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_app_path();
+	FLAME_FOUNDATION_EXPORTS void com_init();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(uint time); // a time less than 0 means forever
 	FLAME_FOUNDATION_EXPORTS void wait_for(void* ev);

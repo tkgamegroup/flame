@@ -307,6 +307,15 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
+	void com_init()
+	{
+		static bool inited = false;
+		if (inited)
+			return;
+		assert(SUCCEEDED(CoInitialize(NULL)));
+		inited = true;
+	}
+
 	void read_process_memory(void *process, void *address, int size, void *dst)
 	{
 		SIZE_T ret_byte;

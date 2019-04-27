@@ -658,15 +658,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const char* name, int *out_idx = nullptr) const;
 	};
 
-	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
-
-	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
-
-	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
-
 	struct SerializableAttribute
 	{
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
@@ -750,15 +741,30 @@ namespace flame
 
 		currently, the following attributes are used by typeinfogen, others are free to use:
 			'm' for enum variable, means it can hold combination of the enum
-			'm' for udt member, means its name is the udt's module name
 			'c' for function, means to collect the code of the function
 	*/
 
-	FLAME_FOUNDATION_EXPORTS int typeinfo_collect_init();
-	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_to_js(const std::wstring& filename, const std::string& ns);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_clear();
+	struct TypeInfoDB
+	{
+		FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
+		FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
+
+		FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
+		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
+
+		FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
+
+		FLAME_FOUNDATION_EXPORTS void collect(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS void load(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS void to_js(const std::wstring& filename, const std::string& ns);
+		FLAME_FOUNDATION_EXPORTS void clear();
+
+		FLAME_FOUNDATION_EXPORTS static TypeInfoDB* create();
+		FLAME_FOUNDATION_EXPORTS static void destroy(TypeInfoDB* db);
+	};
+
+	FLAME_FOUNDATION_EXPORTS extern TypeInfoDB* type_db;
 }
 

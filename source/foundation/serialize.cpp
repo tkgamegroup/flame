@@ -352,7 +352,7 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			return find_enum(type_hash)->serialize_value(true, *(int*)src);
+			return type_db->find_enum(type_hash)->serialize_value(true, *(int*)src);
 		case TypeTagEnumMulti:
 			break;
 		case TypeTagVariable:
@@ -367,7 +367,7 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			find_enum(type_hash)->find_item(str.c_str(), (int*)dst);
+			type_db->find_enum(type_hash)->find_item(str.c_str(), (int*)dst);
 			break;
 		case TypeTagVariable:
 			from_string(type_hash, str, dst);
@@ -553,66 +553,78 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
 	}
 
-	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
-	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
-	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
-
-	Array<EnumInfo*> get_enums()
+	struct TypeInfoDBPrivate : TypeInfoDB
 	{
-		Array<EnumInfo*> ret;
-		ret.resize(enums.size());
-		auto i = 0;
-		for (auto it = enums.begin(); it != enums.end(); it++)
+		std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
+		std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
+		std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
+
+		Array<EnumInfo*> get_enums()
 		{
-			ret[i] = (*it).second.get();
-			i++;
+			Array<EnumInfo*> ret;
+			ret.resize(enums.size());
+			auto i = 0;
+			for (auto it = enums.begin(); it != enums.end(); it++)
+			{
+				ret[i] = (*it).second.get();
+				i++;
+			}
+			return ret;
 		}
-		return ret;
-	}
 
-	EnumInfo* find_enum(unsigned int name_hash)
-	{
-		auto it = enums.find(name_hash);
-		return it == enums.end() ? nullptr : it->second.get();
-	}
-
-	Array<FunctionInfo*> get_functions()
-	{
-		Array<FunctionInfo*> ret;
-		ret.resize(functions.size());
-		auto i = 0;
-		for (auto it = functions.begin(); it != functions.end(); it++)
+		EnumInfo* find_enum(unsigned int name_hash)
 		{
-			ret[i] = (*it).second.get();
-			i++;
+			auto it = enums.find(name_hash);
+			return it == enums.end() ? nullptr : it->second.get();
 		}
-		return ret;
-	}
 
-	FunctionInfo* find_funcion(unsigned int name_hash)
-	{
-		auto it = functions.find(name_hash);
-		return it == functions.end() ? nullptr : it->second.get();
-	}
-
-	Array<UdtInfo*> get_udts()
-	{
-		Array<UdtInfo*> ret;
-		ret.resize(udts.size());
-		auto i = 0;
-		for (auto it = udts.begin(); it != udts.end(); it++)
+		Array<FunctionInfo*> get_functions()
 		{
-			ret[i] = (*it).second.get();
-			i++;
+			Array<FunctionInfo*> ret;
+			ret.resize(functions.size());
+			auto i = 0;
+			for (auto it = functions.begin(); it != functions.end(); it++)
+			{
+				ret[i] = (*it).second.get();
+				i++;
+			}
+			return ret;
 		}
-		return ret;
-	}
 
-	UdtInfo* find_udt(unsigned int name_hash)
-	{
-		auto it = udts.find(name_hash);
-		return it == udts.end() ? nullptr : it->second.get();
-	}
+		FunctionInfo* find_funcion(unsigned int name_hash)
+		{
+			auto it = functions.find(name_hash);
+			return it == functions.end() ? nullptr : it->second.get();
+		}
+
+		Array<UdtInfo*> get_udts()
+		{
+			Array<UdtInfo*> ret;
+			ret.resize(udts.size());
+			auto i = 0;
+			for (auto it = udts.begin(); it != udts.end(); it++)
+			{
+				ret[i] = (*it).second.get();
+				i++;
+			}
+			return ret;
+		}
+
+		UdtInfo* find_udt(unsigned int name_hash)
+		{
+			auto it = udts.find(name_hash);
+			return it == udts.end() ? nullptr : it->second.get();
+		}
+
+		void collect(const std::wstring& filename);
+		void load(const std::wstring& filename);
+		void save(const std::wstring& filename);
+		void to_js(const std::wstring& filename, const std::string& ns);
+		void clear();
+	};
+
+	static TypeInfoDBPrivate s_type_db;
+	TypeInfoDB* type_db = &s_type_db;
 
 	struct SerializableAttributePrivate : SerializableAttribute
 	{
@@ -1266,11 +1278,6 @@ namespace flame
 		delete (SerializableNodePrivate*)n;
 	}
 
-	int typeinfo_collect_init()
-	{
-		return FAILED(CoInitialize(NULL));
-	}
-
 	static const char* name_base_type[] = {
 		"<NoType>",                         // btNoType = 0,
 		"void",                             // btVoid = 1,
@@ -1652,8 +1659,10 @@ namespace flame
 			dst->code = n_code->node(0)->value();
 	}
 
-	void typeinfo_collect(const std::wstring & filename)
+	void TypeInfoDBPrivate::collect(const std::wstring & filename)
 	{
+		com_init();
+
 		CComPtr<IDiaDataSource> dia_source;
 		if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)& dia_source)))
 		{
@@ -1748,6 +1757,7 @@ namespace flame
 					auto udt = new UdtInfoPrivate;
 					udt->name = udt_name;
 					udt->size = (int)ull;
+					udt->module_name = std::filesystem::path(filename).filename().wstring();
 
 					IDiaEnumSymbols* members;
 					_udt->findChildren(SymTagData, NULL, nsNone, &members);
@@ -1759,31 +1769,26 @@ namespace flame
 						auto name = format_name(pwname, &attribute, &pass_prefix, &pass_$);
 						if (pass_$)
 						{
-							if (attribute.find('m') != std::string::npos)
-								udt->module_name = s2w(name);
+							IDiaSymbol* type;
+							member->get_type(&type);
+
+							auto i = new VariableInfoPrivate;
+							i->name = name;
+							i->attribute = attribute;
+							member->get_offset(&l);
+							i->offset = l;
+							type->get_length(&ull);
+							i->size = (int)ull;
+							if (SUCCEEDED(type->get_count(&dw)))
+								i->count = dw;
 							else
-							{
-								IDiaSymbol* type;
-								member->get_type(&type);
+								i->count = 0;
+							memset(&i->default_value, 0, sizeof(CommonData));
+							i->type = symbol_to_typeinfo(type, attribute);
 
-								auto i = new VariableInfoPrivate;
-								i->name = name;
-								i->attribute = attribute;
-								member->get_offset(&l);
-								i->offset = l;
-								type->get_length(&ull);
-								i->size = (int)ull;
-								if (SUCCEEDED(type->get_count(&dw)))
-									i->count = dw;
-								else
-									i->count = 0;
-								memset(&i->default_value, 0, sizeof(CommonData));
-								i->type = symbol_to_typeinfo(type, attribute);
+							type->Release();
 
-								type->Release();
-
-								udt->items.emplace_back(i);
-							}
+							udt->items.emplace_back(i);
 						}
 						member->Release();
 					}
@@ -1888,7 +1893,7 @@ namespace flame
 		_functions->Release();
 	}
 
-	void typeinfo_load(const std::wstring & filename)
+	void TypeInfoDBPrivate::load(const std::wstring & filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file)
@@ -1983,7 +1988,7 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void typeinfo_save(const std::wstring & filename)
+	void TypeInfoDBPrivate::save(const std::wstring & filename)
 	{
 		auto file = SerializableNode::create("typeinfo");
 
@@ -2068,7 +2073,7 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void typeinfo_to_js(const std::wstring& filename, const std::string& ns)
+	void TypeInfoDBPrivate::to_js(const std::wstring& filename, const std::string& ns)
 	{
 		std::ofstream file(filename);
 
@@ -2137,10 +2142,75 @@ namespace flame
 		file.close();
 	}
 
-	void typeinfo_clear()
+	void TypeInfoDBPrivate::clear()
 	{
 		enums.clear();
 		udts.clear();
 		functions.clear();
+	}
+
+	Array<EnumInfo*> TypeInfoDB::get_enums()
+	{
+		return ((TypeInfoDBPrivate*)this)->get_enums();
+	}
+
+	EnumInfo* TypeInfoDB::find_enum(uint name_hash)
+	{
+		return ((TypeInfoDBPrivate*)this)->find_enum(name_hash);
+	}
+
+	Array<UdtInfo*> TypeInfoDB::get_udts()
+	{
+		return ((TypeInfoDBPrivate*)this)->get_udts();
+	}
+
+	UdtInfo* TypeInfoDB::find_udt(uint name_hash)
+	{
+		return ((TypeInfoDBPrivate*)this)->find_udt(name_hash);
+	}
+
+	Array<FunctionInfo*> TypeInfoDB::get_functions()
+	{
+		return ((TypeInfoDBPrivate*)this)->get_functions();
+	}
+
+	FunctionInfo* TypeInfoDB::find_function(uint name_hash)
+	{
+		return ((TypeInfoDBPrivate*)this)->find_function(name_hash);
+	}
+
+	void TypeInfoDB::collect(const std::wstring& filename)
+	{
+		((TypeInfoDBPrivate*)this)->collect(filename);
+	}
+
+	void TypeInfoDB::load(const std::wstring& filename)
+	{
+		((TypeInfoDBPrivate*)this)->load(filename);
+	}
+
+	void TypeInfoDB::save(const std::wstring& filename)
+	{
+		((TypeInfoDBPrivate*)this)->save(filename);
+	}
+
+	void TypeInfoDB::to_js(const std::wstring& filename, const std::string& ns)
+	{
+		((TypeInfoDBPrivate*)this)->to_js(filename, ns);
+	}
+
+	void TypeInfoDB::clear()
+	{
+		((TypeInfoDBPrivate*)this)->clear();
+	}
+
+	TypeInfoDB* TypeInfoDB::create()
+	{
+		return new TypeInfoDBPrivate;
+	}
+
+	void TypeInfoDB::destroy(TypeInfoDB* db)
+	{
+		delete (TypeInfoDBPrivate*)db;
 	}
 }

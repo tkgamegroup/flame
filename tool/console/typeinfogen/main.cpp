@@ -61,7 +61,6 @@ int main(int argc, char **args)
 	{
 		printf("generating: typeinfo.xml\n");
 
-		typeinfo_collect_init();
 		for (auto& fn : pdbs)
 			typeinfo_collect(fn);
 		typeinfo_save(L"typeinfo.xml");

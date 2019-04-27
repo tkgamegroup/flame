@@ -91,7 +91,7 @@ int main(int argc, char **args)
 {
 	std::wstring filename;
 
-	typeinfo_load(L"typeinfo.xml");
+	type_db->load(L"typeinfo.xml");
 
 	BP *bp = nullptr;
 	if (argc > 1)
@@ -113,7 +113,7 @@ int main(int argc, char **args)
 
 	std::vector<UdtInfo*> available_udts;
 	{
-		auto udts = get_udts();
+		auto udts = type_db->get_udts();
 		for (auto i = 0; i < udts.size; i++)
 		{
 			auto u = udts[i];
@@ -166,7 +166,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_name = "BP_" + std::string(command_line);
 
-				auto udt = find_udt(H(s_name.c_str()));
+				auto udt = type_db->find_udt(H(s_name.c_str()));
 				if (udt)
 				{
 					printf("%s:\n", udt->name());
@@ -262,7 +262,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_udt = "BP_" + std::string(command_line);
 
-				auto udt = find_udt(H(s_udt.c_str()));
+				auto udt = type_db->find_udt(H(s_udt.c_str()));
 				if (udt)
 				{
 					auto ids = string_split(s_ids, ',');
