@@ -1,32 +1,17 @@
 <?xml version="1.0"?>
 <BP>
-	<node type="BP_GraphicsClearvalues" id="cv" pos="209.000000;506.000000" />
-	<node type="BP_GraphicsSwapchain" id="sc" pos="133.000000;267.000000" />
-	<node type="BP_GraphicsDevice" id="d" pos="33.000000;58.000000" />
-	<node type="BP_GraphicsCommandbuffer" id="cb1" pos="221.000000;64.000000" />
-	<node type="BP_GraphicsCommandbuffer" id="cb2" pos="223.000000;153.000000" />
-	<node type="BP_GraphicsCmdBegin" id="cmd_begin" pos="543.000000;174.000000" />
-	<node type="BP_GraphicsCmdBeginRenderpass" id="cmd_begin_renderpass" pos="545.000000;265.000000" />
-	<node type="BP_GraphicsCmdEndRenderpass" id="cmd_end_renderpass" pos="548.000000;432.000000" />
-	<node type="BP_GraphicsCmdEnd" id="cmd_end" pos="554.000000;526.000000" />
-	<node type="BP_Socket4" id="color" pos="0.000000;0.000000" />
+	<node type="BP_GraphicsClearvalues" id="cv" pos="363.890015;353.470001" />
+	<node type="BP_GraphicsSwapchain" id="sc" pos="118.060005;406.250000" />
+	<node type="BP_GraphicsDevice" id="d" pos="118.060005;32.639000" />
+	<node type="BP_GraphicsCommandbuffers" id="cb" pos="363.890015;214.580017" />
+	<node type="BP_Socket4" id="color" pos="118.060005;171.529999" />
+	<node type="../renderpath/test/typeinfo.xml:BP_MakeCmd" id="make_cmd" pos="566.669983;440.970001" />
 	<link in="cv.renderpass" out="sc.renderpass_clear" />
 	<link in="cv.colors" out="color.v" />
-	<link in="cb1.device" out="d.out" />
-	<link in="cb2.device" out="d.out" />
-	<link in="cmd_begin.cmd1" out="cb1.out" />
-	<link in="cmd_begin.cmd2" out="cb2.out" />
-	<link in="cmd_begin_renderpass.in" out="cmd_begin.out" />
-	<link in="cmd_begin_renderpass.cmd1" out="cb1.out" />
-	<link in="cmd_begin_renderpass.cmd2" out="cb2.out" />
-	<link in="cmd_begin_renderpass.renderpass" out="sc.renderpass_clear" />
-	<link in="cmd_begin_renderpass.framebuffer1" out="sc.framebuffer1" />
-	<link in="cmd_begin_renderpass.framebuffer2" out="sc.framebuffer2" />
-	<link in="cmd_begin_renderpass.clearvalues" out="cv.out" />
-	<link in="cmd_end_renderpass.in" out="cmd_begin_renderpass.out" />
-	<link in="cmd_end_renderpass.cmd1" out="cb1.out" />
-	<link in="cmd_end_renderpass.cmd2" out="cb2.out" />
-	<link in="cmd_end.in" out="cmd_end_renderpass.out" />
-	<link in="cmd_end.cmd1" out="cb1.out" />
-	<link in="cmd_end.cmd2" out="cb2.out" />
+	<link in="cb.count" out="sc.image_count" />
+	<link in="cb.device" out="d.out" />
+	<link in="make_cmd.cmdbufs" out="cb.out" />
+	<link in="make_cmd.renderpass" out="sc.renderpass_clear" />
+	<link in="make_cmd.clearvalues" out="cv.out" />
+	<link in="make_cmd.framebuffers" out="sc.framebuffers" />
 </BP>

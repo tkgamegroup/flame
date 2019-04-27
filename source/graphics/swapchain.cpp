@@ -67,9 +67,6 @@ namespace flame
 			rp_info.attachments[0].clear = false;
 			rp_dc = Renderpass::get(d, rp_info);
 
-			fbs[0] = nullptr;
-			fbs[1] = nullptr;
-
 			image_index = -1;
 
 			create();
@@ -204,6 +201,8 @@ namespace flame
 			}
 #endif
 
+			images.resize(image_count);
+			fbs.resize(image_count);
 			for (int i = 0; i < image_count; i++)
 			{
 				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, (void*)native_images[i]);
@@ -227,11 +226,12 @@ namespace flame
 
 		void SwapchainPrivate::destroy()
 		{
-			for (auto i = 0; i < 2; i++)
-			{
-				Image::destroy(images[i]);
-				Framebuffer::release(fbs[i]);
-			}
+			for (auto i : images)
+				Image::destroy(i);
+			for (auto f : fbs)
+				Framebuffer::release(f);
+			images.clear();
+			fbs.clear();
 			if (image_ms)
 			{
 				Image::destroy(image_ms);
@@ -263,6 +263,11 @@ namespace flame
 		Window *Swapchain::window() const
 		{
 			return ((SwapchainPrivate*)this)->w;
+		}
+
+		int Swapchain::image_count() const
+		{
+			return ((SwapchainPrivate*)this)->images.size();
 		}
 
 		Image *Swapchain::image(int idx) const

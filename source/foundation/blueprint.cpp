@@ -330,7 +330,7 @@ namespace flame
 
 	NodePrivate *BPPrivate::add_node(const char* type_name, const char *id)
 	{
-		auto type_name_sp = string_split(std::string(type_name));
+		auto type_name_sp = string_split(std::string(type_name), ':');
 		UdtInfo* udt = nullptr;
 		if (type_name_sp.size() == 1)
 			udt = type_db->find_udt(H(type_name_sp[0].c_str()));
@@ -543,8 +543,6 @@ namespace flame
 						}
 					}
 				}
-
-				nodes.emplace_back(n);
 			}
 			else if (n_node->name() == "link")
 			{
@@ -571,7 +569,7 @@ namespace flame
 			auto tn = std::string(u->name());
 			auto fn = std::wstring(u->db()->filename());
 			if (fn != L"typeinfo.xml")
-				tn = w2s(fn) + tn;
+				tn = w2s(fn) + ":" + tn;
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("pos", to_stdstring(n->position));

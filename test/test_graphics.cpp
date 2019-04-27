@@ -27,8 +27,7 @@ using namespace graphics;
 
 struct App : BasicApp
 {
-	Commandbuffer* cbs[2];
-	ClearValues* cv;
+	VoidPtrs cbs;
 	BP* render_path;
 	//Canvas* canvas;
 	//Font* font;
@@ -44,9 +43,7 @@ struct App : BasicApp
 		render_path->initialize();
 		render_path->update();
 		//render_path->finish();
-		cv = (ClearValues*)render_path->find_output("cv.out")->data().v.p;
-		cbs[0]  = (Commandbuffer*)render_path->find_output("cb1.out")->data().v.p;
-		cbs[1] = (Commandbuffer*)render_path->find_output("cb2.out")->data().v.p;
+		memcpy(&cbs, &render_path->find_output("cb.out")->data().v, sizeof(VoidPtrs));
 
 		//Canvas::initialize(d, sc);
 		//canvas = Canvas::create(sc);
@@ -65,7 +62,7 @@ struct App : BasicApp
 
 		fences[idx]->wait();
 
-		d->gq->submit(cbs[sc->get_avalible_image_index()], image_avalible, render_finished, fences[idx]);
+		d->gq->submit((graphics::Commandbuffer*)cbs.v[sc->image_index()], image_avalible, render_finished, fences[idx]);
 
 		d->gq->present(sc, render_finished);
 

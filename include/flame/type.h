@@ -41,4 +41,9 @@ namespace flame
 	typedef unsigned long long  ulonglong;
 
 	typedef void* voidptr;
+	struct VoidPtrs
+	{
+		int count;
+		voidptr* v;
+	};
 }

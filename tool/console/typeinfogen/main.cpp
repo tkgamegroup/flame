@@ -62,17 +62,17 @@ int main(int argc, char **args)
 		printf("generating: typeinfo.xml\n");
 
 		for (auto& fn : pdbs)
-			typeinfo_collect(fn);
-		typeinfo_save(L"typeinfo.xml");
+			type_db->collect(fn);
+		type_db->save(L"typeinfo.xml");
 	}
 	else
 	{
 		printf("up-to-data: typeinfo.xml \n");
 
-		typeinfo_load(L"typeinfo.xml");
+		type_db->load(L"typeinfo.xml");
 	}
 
-	typeinfo_to_js(L"typeinfo.js", "flame");
+	type_db->to_js(L"typeinfo.js", "flame");
 	printf("generated: typeinfo.js\n");
 
 	return 0;

@@ -147,6 +147,7 @@ int main(int argc, char **args)
 				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
+				"  make-script [filename] - compile cpp that contains nodes, and do typeinfogen to it\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
 				"  gui-browser - use the power of browser to show and edit\n"
 			);
@@ -397,9 +398,36 @@ int main(int argc, char **args)
 			else
 				printf("bp.graph.txt not found\n");
 		}
+		else if (s_command_line == "make-script")
+		{
+			scanf("%s", command_line);
+			auto s_filename = std::string(command_line);
+
+			if (std::filesystem::exists(s_filename))
+			{
+				auto w_filename = s2w(s_filename);
+				auto path = std::filesystem::path(w_filename);
+				auto w_ppath = path.parent_path().wstring();
+				auto fn = w_ppath + L"/" + path.stem().wstring() + L".dll";
+				auto compile_output = compile_to_dll({ w_filename }, { L"flame_foundation.lib", L"flame_graphics.lib" }, fn);
+				printf("%s\n", compile_output.v);
+				if (!std::filesystem::exists(fn) || std::filesystem::last_write_time(fn) < std::filesystem::last_write_time(path))
+					printf("compile error\n");
+				else
+				{
+					auto db = TypeInfoDB::create();
+					db->collect(fn);
+					db->save(w_ppath + L"/typeinfo.xml");
+					TypeInfoDB::destroy(db);
+					printf("ok\n");
+				}
+			}
+			else
+				printf("file not found\n");
+		}
 		else if (s_command_line == "gui-browser")
 		{
-			exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
+			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
 			printf("waiting for browser on port 5566 ...");
 
 			auto s = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, int, void*)>(

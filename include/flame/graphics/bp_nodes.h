@@ -40,17 +40,14 @@ namespace flame
 
 		void* out$o;
 		void* window$o;
-		void* image1$o;
-		void* image2$o;
-		void* image3$o;
+		int image_count$o;
+		VoidPtrs images$o;
 		void* renderpass_clear$o;
 		void* renderpass_dont_clear$o;
-		void* framebuffer1$o;
-		void* framebuffer2$o;
-		void* framebuffer3$o;
+		VoidPtrs framebuffers$o;
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
-		FLAME_GRAPHICS_EXPORTS void update$c();
+		FLAME_GRAPHICS_EXPORTS void finish$c();
 	};
 
 	struct BP_GraphicsClearvalues$
@@ -66,60 +63,14 @@ namespace flame
 		FLAME_GRAPHICS_EXPORTS void update$c();
 	};
 
-	struct BP_GraphicsCommandbuffer$
+	struct BP_GraphicsCommandbuffers$
 	{
-		void* in$i;
+		int count$i;
 		void* device$i;
 
-		void* out$o;
+		VoidPtrs out$o;
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void finish$c();
-	}; 
-
-	struct BP_GraphicsCmdBegin$
-	{
-		void* cmd1$i;
-		void* cmd2$i;
-
-		void* out$o;
-
-		FLAME_GRAPHICS_EXPORTS void update$c();
-	};
-
-	struct BP_GraphicsCmdEnd$
-	{
-		void* in$i;
-		void* cmd1$i;
-		void* cmd2$i;
-
-		FLAME_GRAPHICS_EXPORTS void update$c();
-	};
-
-	struct BP_GraphicsCmdBeginRenderpass$
-	{
-		void* in$i;
-		void* cmd1$i;
-		void* cmd2$i;
-
-		void* renderpass$i;
-		void* framebuffer1$i;
-		void* framebuffer2$i;
-		void* clearvalues$i;
-
-		void* out$o;
-
-		FLAME_GRAPHICS_EXPORTS void update$c();
-	};
-
-	struct BP_GraphicsCmdEndRenderpass$
-	{
-		void* in$i;
-		void* cmd1$i;
-		void* cmd2$i;
-
-		void* out$o;
-
-		FLAME_GRAPHICS_EXPORTS void update$c();
 	};
 }

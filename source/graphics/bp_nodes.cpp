@@ -41,27 +41,46 @@ namespace flame
 	void BP_GraphicsSwapchain$::initialize$c()
 	{
 		if (in$i)
-			out$o = in$i;
-		else
-			out$o = nullptr;
-		update$c();
-	}
-
-	void BP_GraphicsSwapchain$::update$c()
-	{
-		if (out$o)
 		{
+			out$o = in$i;
 			auto sc = (graphics::Swapchain*)out$o;
 			window$o = sc->window();
-			image1$o = sc->image(0);
-			image2$o = sc->image(1);
-			image3$o = sc->image(2);
+			image_count$o = sc->image_count();
+			if (image_count$o > 0)
+			{
+				images$o.count = image_count$o;
+				images$o.v = new voidptr[image_count$o];
+				for (auto i = 0; i < image_count$o; i++)
+					images$o.v[i] = sc->image(i);
+			}
+			else
+			{
+				images$o.count = 0;
+				images$o.v = nullptr;
+			}
 			renderpass_clear$o = sc->renderpass(true);
 			renderpass_dont_clear$o = sc->renderpass(false);
-			framebuffer1$o = sc->framebuffer(0);
-			framebuffer2$o = sc->framebuffer(1);
-			framebuffer3$o = sc->framebuffer(2);
+			if (image_count$o > 0)
+			{
+				framebuffers$o.count = image_count$o;
+				framebuffers$o.v = new voidptr[image_count$o];
+				for (auto i = 0; i < image_count$o; i++)
+					framebuffers$o.v[i] = sc->framebuffer(i);
+			}
+			else
+			{
+				framebuffers$o.count = 0;
+				framebuffers$o.v = nullptr;
+			}
 		}
+		else
+			out$o = nullptr;
+	}
+
+	void BP_GraphicsSwapchain$::finish$c()
+	{
+		delete[]images$o.v;
+		delete[]framebuffers$o.v;
 	}
 
 	BP_GraphicsSwapchain$ bp_graphics_swapchain_unused;
@@ -96,72 +115,28 @@ namespace flame
 
 	BP_GraphicsClearvalues$ bp_graphics_clearvalues_unused;
 
-	void BP_GraphicsCommandbuffer$::initialize$c()
+	void BP_GraphicsCommandbuffers$::initialize$c()
 	{
-		if (in$i)
-			out$o = in$i;
+		if (count$i > 0 && device$i)
+		{
+			out$o.count = count$i;
+			out$o.v = new voidptr[count$i];
+			for (auto i = 0; i < count$i; i++)
+				out$o.v[i] = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);
+		}
 		else
 		{
-			if (device$i)
-				out$o = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);
+			out$o.count = 0;
+			out$o.v = nullptr;
 		}
 	}
 
-	void BP_GraphicsCommandbuffer$::finish$c()
+	void BP_GraphicsCommandbuffers$::finish$c()
 	{
-		if (!in$i)
-			graphics::Commandbuffer::destroy((graphics::Commandbuffer*)out$o);
+		for (auto i = 0; i < out$o.count; i++)
+			graphics::Commandbuffer::destroy((graphics::Commandbuffer*)out$o.v[i]);
+		delete[]out$o.v;
 	}
 
-	BP_GraphicsCommandbuffer$ bp_graphics_commandbuffer_unused;
-
-	void BP_GraphicsCmdBegin$::update$c()
-	{
-		if (cmd1$i)
-			((graphics::Commandbuffer*)cmd1$i)->begin();
-		if (cmd2$i)
-			((graphics::Commandbuffer*)cmd2$i)->begin();
-	}
-
-	BP_GraphicsCmdBegin$ bp_graphics_cmd_begin_unused;
-
-	void BP_GraphicsCmdEnd$::update$c()
-	{
-		if (cmd1$i)
-			((graphics::Commandbuffer*)cmd1$i)->end();
-		if (cmd2$i)
-			((graphics::Commandbuffer*)cmd2$i)->end();
-	}
-
-	BP_GraphicsCmdEnd$ bp_graphics_cmd_end_unused;
-
-	void BP_GraphicsCmdBeginRenderpass$::update$c()
-	{
-		if (cmd1$i)
-		{
-			((graphics::Commandbuffer*)cmd1$i)->begin_renderpass(
-				(graphics::Renderpass*)renderpass$i,
-				(graphics::Framebuffer*)framebuffer1$i,
-				(graphics::ClearValues*)clearvalues$i);
-		}
-		if (cmd2$i)
-		{
-			((graphics::Commandbuffer*)cmd2$i)->begin_renderpass(
-				(graphics::Renderpass*)renderpass$i,
-				(graphics::Framebuffer*)framebuffer2$i,
-				(graphics::ClearValues*)clearvalues$i);
-		}
-	}
-
-	BP_GraphicsCmdBeginRenderpass$ bp_graphics_cmd_begin_renderpass_unused;
-
-	void BP_GraphicsCmdEndRenderpass$::update$c()
-	{
-		if (cmd1$i)
-			((graphics::Commandbuffer*)cmd1$i)->end_renderpass();
-		if (cmd2$i)
-			((graphics::Commandbuffer*)cmd2$i)->end_renderpass();
-	}
-
-	BP_GraphicsCmdEndRenderpass$ bp_graphics_cmd_end_renderpass_unused;
+	BP_GraphicsCommandbuffers$ bp_graphics_commandbuffers_unused;
 }

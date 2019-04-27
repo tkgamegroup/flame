@@ -1781,7 +1781,7 @@ namespace flame
 					auto udt = new UdtInfoPrivate;
 					udt->name = udt_name;
 					udt->size = (int)ull;
-					udt->module_name = std::filesystem::path(filename).filename().wstring();
+					udt->module_name = filename;
 
 					IDiaEnumSymbols* members;
 					_udt->findChildren(SymTagData, NULL, nsNone, &members);

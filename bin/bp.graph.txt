@@ -1,33 +1,16 @@
-graph 1 12.167 7.3893
-node cv 4.9861 5.1254 1.5556 1.2917 "cv|{{<in>in|<renderpass>renderpass|<colors>colors}|{<out>out}}" solid Mrecord black lightgrey
-node sc 2.5278 5.9449 2.3611 2.8889 "sc|{{<in>in}|{<out>out|<window>window|<image1>image1|<image2>image2|<renderpass_clear>renderpass_clear|<renderpass_dont_clear>renderpass_\
-dont_clear|<framebuffer1>framebuffer1|<framebuffer2>framebuffer2}}" solid Mrecord black lightgrey
-node d 0.42361 1.4449 0.84722 0.65278 "d|{{<in>in}|{<out>out}}" solid Mrecord black lightgrey
-node cb1 2.5278 0.68098 1.2222 0.97222 "cb1|{{<in>in|<device>device}|{<out>out}}" solid Mrecord black lightgrey
-node cb2 2.5278 1.9032 1.2222 0.97222 "cb2|{{<in>in|<device>device}|{<out>out}}" solid Mrecord black lightgrey
-node cmd_begin 4.9861 1.7365 1.1528 0.97222 "cmd_begin|{{<cmd1>cmd1|<cmd2>cmd2}|{<out>out}}" solid Mrecord black lightgrey
-node cmd_begin_renderpass 7.2847 4.8199 2.0417 2.5694 "cmd_begin_renderpass|{{<in>in|<cmd1>cmd1|<cmd2>cmd2|<renderpass>renderpass|<framebuffer1>framebuffer1|<framebuffer2>framebuffer2|<\
-clearvalues>clearvalues}|{<out>out}}" solid Mrecord black lightgrey
-node cmd_end_renderpass 9.7569 2.0976 1.9028 1.2917 "cmd_end_renderpass|{{<in>in|<cmd1>cmd1|<cmd2>cmd2}|{<out>out}}" solid Mrecord black lightgrey
-node cmd_end 11.688 2.431 0.95833 1.2917 "cmd_end|{{<in>in|<cmd1>cmd1|<cmd2>cmd2}|{}}" solid Mrecord black lightgrey
-node color 2.5278 3.4449 0.75 1.6111 "color|{{<v1>v1|<v2>v2|<v3>v3|<v4>v4}|{<v>v}}" solid Mrecord black lightgrey
-edge cv cmd_begin_renderpass 4 5.7639 5.2921 6.0722 5.2921 5.956 5.7568 6.1317 5.902 solid black
-edge sc cv 4 3.7083 6.2643 4.1373 6.2643 3.8199 5.5066 4.0739 5.329 solid black
-edge sc cmd_begin_renderpass 7 3.7083 6.2643 4.6359 6.2643 5.0104 6.4442 5.7639 5.9032 6.0937 5.6664 5.8739 5.1422 6.1246 5.0148 solid black
-edge sc cmd_begin_renderpass 7 3.7083 6.9032 4.6547 6.9032 5.0362 6.9527 5.7639 6.3476 6.1156 6.0552 5.8301 5.4574 6.1262 5.3301 solid black
-edge sc cmd_begin_renderpass 7 3.7083 7.2226 4.6294 7.2226 5.0418 7.5306 5.7639 6.9588 6.2154 6.6011 5.7349 5.79 6.1221 5.6471 solid black
-edge d cb1 7 0.84722 1.6115 1.1109 1.6115 1.1192 1.4245 1.3472 1.2921 1.5413 1.1794 1.6022 1.0592 1.7639 1.0166 solid black
-edge d cb2 4 0.84722 1.6115 1.3385 1.6115 1.361 2.1134 1.7644 2.2075 solid black
-edge cb1 cmd_begin 4 3.1528 0.84765 3.7792 0.84765 3.7252 1.6095 4.2507 1.7226 solid black
-edge cb1 cmd_begin_renderpass 7 3.1528 0.84765 4.3198 0.84765 4.9189 0.3205 5.7639 1.1254 6.2476 1.5862 5.6458 3.9436 6.1263 4.291 solid black
-edge cb1 cmd_end_renderpass 10 3.1528 0.84765 3.6268 0.84765 3.7355 0.72891 4.2083 0.69487 4.8979 0.64523 5.092 0.53176 5.7639 0.69487 7.1945 1.0422 7.2801 2.1872 8.663 2.2606 solid black
-edge cb1 cmd_end 10 3.1528 0.84765 3.6527 0.84765 3.7161 0.54654 4.2083 0.45876 7.078 -0.053047 8.4502 -0.50959 10.708 1.3338 11.132 1.68 10.702 2.4367 11.068 2.5755 solid black
-edge cb2 cmd_begin 4 3.1528 2.0699 3.6507 2.0699 3.8101 2.0585 4.2446 2.0563 solid black
-edge cb2 cmd_begin_renderpass 10 2.9028 2.4032 2.9028 2.5839 3.5572 2.4153 3.7083 2.5143 4.0652 2.7481 3.9101 3.0287 4.2083 3.3338 4.2493 3.3756 5.7009 4.3285 6.1407 4.5883 solid black
-edge cb2 cmd_end_renderpass 7 3.1528 2.0699 3.6379 2.0699 3.729 2.2731 4.2083 2.3476 6.1825 2.6547 6.734 2.5872 8.6642 2.5839 solid black
-edge cb2 cmd_end 7 3.1528 2.0699 3.6746 2.0699 3.7039 2.4505 4.2083 2.5838 7.1741 3.3671 8.0667 2.9308 11.068 2.9174 solid black
-edge cmd_begin cmd_begin_renderpass 4 5.3194 2.2365 5.3194 2.6385 5.7207 3.7532 6.1266 3.9755 solid black
-edge cmd_begin_renderpass cmd_end_renderpass 4 8.3056 4.9865 9.6306 4.9865 7.5916 2.1536 8.667 1.9433 solid black
-edge cmd_end_renderpass cmd_end 4 10.708 2.2643 10.875 2.2643 10.948 2.2643 11.068 2.2643 solid black
-edge color cv 7 2.7361 4.2643 2.7361 4.4818 3.5352 4.2438 3.7083 4.3754 4.1358 4.7005 3.7124 5.4516 4.0704 5.5896 solid black
+graph 1 6.4167 5.3542
+node cv 3.6389 3.5069 1.5556 1.2917 "cv|{{<in>in|<renderpass>renderpass|<colors>colors}|{<out>out}}" solid Mrecord black lightgrey
+node sc 1.1806 4.0625 2.3611 2.5694 "sc|{{<in>in}|{<out>out|<window>window|<image_count>image_count|<images>images|<renderpass_clear>renderpass_clear|<renderpass_dont_\
+clear>renderpass_dont_clear|<framebuffers>framebuffers}}" solid Mrecord black lightgrey
+node d 1.1806 0.32639 0.84722 0.65278 "d|{{<in>in}|{<out>out}}" solid Mrecord black lightgrey
+node cb 3.6389 2.1181 1.2222 0.97222 "cb|{{<count>count|<device>device}|{<out>out}}" solid Mrecord black lightgrey
+node color 1.1806 1.7153 0.75 1.6111 "color|{{<v1>v1|<v2>v2|<v3>v3|<v4>v4}|{<v>v}}" solid Mrecord black lightgrey
+node make_cmd 5.6667 4.5486 1.5 1.6111 "make_cmd|{{<cmdbufs>cmdbufs|<renderpass>renderpass|<clearvalues>clearvalues|<framebuffers>framebuffers}|{}}" solid Mrecord black lightgrey
+edge sc cv 4 2.3611 4.5486 2.7495 4.5486 2.5035 3.8906 2.7233 3.7158 solid black
+edge sc cb 4 2.3611 3.8958 3.1486 3.8958 2.2973 2.3398 2.8735 2.1393 solid black
+edge sc make_cmd 4 2.3611 4.5486 3.4481 4.5486 3.7549 4.5486 4.7748 4.5486 solid black
+edge sc make_cmd 4 2.3611 5.1875 3.4481 5.1875 3.7549 5.1875 4.7748 5.1875 solid black
+edge d cb 7 1.625 0.49306 1.9769 0.49306 2.1124 0.53575 2.3611 0.78472 2.8822 1.3064 2.3109 2.2946 2.8754 2.4235 solid black
+edge cb make_cmd 7 4.0139 2.6181 4.0139 2.8055 4.2826 2.6121 4.4167 2.7431 4.8763 3.1919 4.3212 4.0762 4.7776 4.2116 solid black
+edge color cv 7 1.3889 2.5347 1.3889 2.7525 2.1904 2.5245 2.3611 2.6597 2.8126 3.0174 2.3322 3.8285 2.7194 3.9714 solid black
 stop

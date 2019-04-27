@@ -45,11 +45,11 @@ namespace flame
 			IDXGISwapChain3* v;
 #endif
 
-			Image *images[2];
+			std::vector<Image*> images;
 			Image *image_ms;
 
 			Renderpass *rp, *rp_dc/*dont clear*/;
-			Framebuffer *fbs[2];
+			std::vector<Framebuffer*> fbs;
 
 			uint image_index;
 

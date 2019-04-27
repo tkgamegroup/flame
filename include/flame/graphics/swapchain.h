@@ -42,6 +42,7 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS SampleCount sample_count() const;
 			FLAME_GRAPHICS_EXPORTS Window *window() const;
+			FLAME_GRAPHICS_EXPORTS int image_count() const;
 			FLAME_GRAPHICS_EXPORTS Image *image(int idx) const;
 			FLAME_GRAPHICS_EXPORTS uint image_index() const;
 			FLAME_GRAPHICS_EXPORTS Renderpass *renderpass(bool clear = false) const;
