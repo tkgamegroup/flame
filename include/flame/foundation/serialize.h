@@ -768,7 +768,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void collect(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void load(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS void to_js(const std::wstring& filename, const std::string& ns);
 		FLAME_FOUNDATION_EXPORTS void clear();
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfoDB* create();

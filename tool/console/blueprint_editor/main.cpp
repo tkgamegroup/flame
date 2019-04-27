@@ -244,7 +244,10 @@ int main(int argc, char **args)
 				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(filename))
 					generate_graph_and_layout(bp);
 				if (std::filesystem::exists(L"bp.png"))
+				{
 					exec(L"bp.png", "", false);
+					printf("ok\n");
+				}
 				else
 					printf("bp.png not found, perhaps Graphviz is not available\n");
 			}

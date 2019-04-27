@@ -661,7 +661,6 @@ namespace flame
 		void collect(const std::wstring& filename);
 		void load(const std::wstring& filename);
 		void save(const std::wstring& filename);
-		void to_js(const std::wstring& filename, const std::string& ns);
 		void clear();
 	};
 
@@ -1181,6 +1180,17 @@ namespace flame
 		to_xml(rn, (SerializableNodePrivate*)this);
 
 		doc.save_file(filename.c_str());
+	}
+
+	void SerializableNode::save_json(const std::wstring& filename) const
+	{
+		std::ofstream file(filename);
+		nlohmann::json doc;
+
+		to_json(doc, (SerializableNodePrivate*)this);
+
+		file << doc.dump();
+		file.close();
 	}
 
 	static void save_file_string(std::ofstream & dst, const std::string & src)
@@ -2105,77 +2115,11 @@ namespace flame
 			}
 		}
 
-		file->save_xml(filename);
+		if (std::filesystem::path(filename).extension() == L".json")
+			file->save_json(filename);
+		else
+			file->save_xml(filename);
 		SerializableNode::destroy(file);
-	}
-
-	void TypeInfoDBPrivate::to_js(const std::wstring& filename, const std::string& ns)
-	{
-		std::ofstream file(filename);
-
-		file << "var " + ns + " = {\n";
-
-		{
-			std::vector<EnumInfoPrivate*> sorted_enums;
-			for (auto& e : enums)
-				sorted_enums.push_back(e.second.get());
-			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfoPrivate * a, EnumInfoPrivate * b) {
-				return a->name < b->name;
-			});
-			for (auto& e : sorted_enums)
-			{
-				file << "\t" + e->name + ": {\n";
-				for (auto& i : e->items)
-					file << "\t\t" + i->name + ": " + to_stdstring(i->value) + ",\n";
-				file << "\t},\n";
-			}
-		}
-		{
-			file << "\tudts: [\n";
-			std::vector<UdtInfoPrivate*> sorted_udts;
-			for (auto& u : udts)
-				sorted_udts.push_back(u.second.get());
-			std::sort(sorted_udts.begin(), sorted_udts.end(), [](UdtInfoPrivate * a, UdtInfoPrivate * b) {
-				return a->name < b->name;
-			});
-			for (auto& u : sorted_udts)
-			{
-				file << "\t\t{\n";
-				file << "\t\t\tname: \"" + u->name + "\",\n";
-				file << "\t\t\titems: [\n";
-				for (auto& i : u->items)
-				{
-					file << "\t\t\t\t{\n";
-					file << "\t\t\t\t\tname: \"" + i->name + "\",\n";
-					file << "\t\t\t\t\ttag: " + to_stdstring(i->type.tag) + ",\n";
-					file << "\t\t\t\t\ttype_name: \"" + i->type.name + "\",\n";
-					file << "\t\t\t\t\tattribute: \"" + i->attribute + "\",\n";
-					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringW") && i->type.name_hash != cH("StringAndHash"))
-					{
-						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
-						if (default_value_str.size > 0)
-							file << "\t\t\t\t\tdefault_value: \"" + std::string(default_value_str.v) + "\",\n";
-					}
-					file << "\t\t\t\t},\n";
-				}
-				file << "\t\t\t],\n";
-				file << "\t\t},\n";
-			}
-			file << "\t],\n";
-		}
-
-		file << "\tfind_udt : function(name) {\n";
-		file << "\t\tfor (var i in this.udts) {\n";
-		file << "\t\t\tvar u = this.udts[i];\n";
-		file << "\t\t\tif (u.name == name)\n";
-		file << "\t\t\t\treturn u;\n";
-		file << "\t\t}\n";
-		file << "\t\treturn null;\n";
-		file << "\t},\n";
-
-		file << "};\n";
-
-		file.close();
 	}
 
 	void TypeInfoDBPrivate::clear()
@@ -2233,11 +2177,6 @@ namespace flame
 	void TypeInfoDB::save(const std::wstring& filename)
 	{
 		((TypeInfoDBPrivate*)this)->save(filename);
-	}
-
-	void TypeInfoDB::to_js(const std::wstring& filename, const std::string& ns)
-	{
-		((TypeInfoDBPrivate*)this)->to_js(filename, ns);
 	}
 
 	void TypeInfoDB::clear()

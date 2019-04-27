@@ -1,5 +1,5 @@
 *.dll
 typeinfo.xml
-typeinfo.js
+typeinfo.json
 bp.gv
 bp.png

@@ -64,6 +64,9 @@ int main(int argc, char **args)
 		for (auto& fn : pdbs)
 			type_db->collect(fn);
 		type_db->save(L"typeinfo.xml");
+		type_db->save(L"typeinfo.json");
+
+		printf("ok\n");
 	}
 	else
 	{
@@ -71,9 +74,6 @@ int main(int argc, char **args)
 
 		type_db->load(L"typeinfo.xml");
 	}
-
-	type_db->to_js(L"typeinfo.js", "flame");
-	printf("generated: typeinfo.js\n");
 
 	return 0;
 }
