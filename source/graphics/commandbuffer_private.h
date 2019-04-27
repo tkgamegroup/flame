@@ -65,7 +65,7 @@ namespace flame
 
 			void begin(bool once = false);
 
-			void begin_renderpass(Renderpass *r, Framebuffer *f, ClearValues *cv);
+			void begin_renderpass(Renderpass *r, Framebuffer *f, Clearvalues*cv);
 			void end_renderpass();
 			void set_viewport(const Rect &rect);
 			void set_scissor(const Rect &rect);

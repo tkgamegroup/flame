@@ -81,7 +81,7 @@ namespace flame
 		{
 			Swapchain* sc;
 			Descriptorset* ds;
-			ClearValues* cv;
+			Clearvalues* cv;
 
 			std::vector<Vec2> points;
 			std::vector<DrawCmd> draw_cmds;
@@ -105,7 +105,7 @@ namespace flame
 				for (auto i = 0; i < MaxImageviewCount; i++)
 					set_imageview(i, white_imageview);
 
-				cv = ClearValues::create(sc->renderpass(true));
+				cv = Clearvalues::create(sc->renderpass(true));
 				cv->set(0, Bvec4(0));
 
 				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690,

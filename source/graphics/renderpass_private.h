@@ -45,7 +45,7 @@ namespace flame
 			~RenderpassPrivate();
 		};
 
-		struct ClearvaluesPrivate : ClearValues
+		struct ClearvaluesPrivate : Clearvalues
 		{
 			RenderpassPrivate* renderpass;
 

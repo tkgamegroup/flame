@@ -240,22 +240,22 @@ namespace flame
 #endif
 		}
 
-		Renderpass* ClearValues::renderpass() const
+		Renderpass* Clearvalues::renderpass() const
 		{
 			return ((ClearvaluesPrivate*)this)->renderpass;
 		}
 
-		void ClearValues::set(int idx, const Bvec4 &col)
+		void Clearvalues::set(int idx, const Bvec4 &col)
 		{
 			((ClearvaluesPrivate*)this)->set(idx, col);
 		}
 
-		ClearValues *ClearValues::create(Renderpass *f)
+		Clearvalues* Clearvalues::create(Renderpass *f)
 		{
 			return new ClearvaluesPrivate(f);
 		}
 
-		void ClearValues::destroy(ClearValues *c)
+		void Clearvalues::destroy(Clearvalues*c)
 		{
 			delete (ClearvaluesPrivate*)c;
 		}

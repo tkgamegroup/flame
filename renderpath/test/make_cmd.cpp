@@ -11,14 +11,6 @@ namespace flame
 		
 		__declspec(dllexport) void initialize$c()
 		{
-			for (auto i = 0; i < cmdbufs$i.count; i++)
-			{
-				auto cb = (graphics::Commandbuffer*)cmdbufs$i.v[i];
-				cb->begin();
-				cb->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffers$i.v[i], (graphics::ClearValues*)clearvalues$i);
-				cb->end_renderpass();
-				cb->end();
-			}
 		}
 		
 		__declspec(dllexport) void finish$c()
@@ -27,6 +19,14 @@ namespace flame
 		
 		__declspec(dllexport) void update$c()
 		{
+			for (auto i = 0; i < cmdbufs$i.count; i++)
+			{
+				auto cb = (graphics::Commandbuffer*)cmdbufs$i.v[i];
+				cb->begin();
+				cb->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffers$i.v[i], (graphics::Clearvalues*)clearvalues$i);
+				cb->end_renderpass();
+				cb->end();
+			}
 		}
 	};
 

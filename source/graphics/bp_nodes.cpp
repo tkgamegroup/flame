@@ -92,21 +92,21 @@ namespace flame
 		else
 		{
 			if (renderpass$i)
-				out$o = graphics::ClearValues::create((graphics::Renderpass*)renderpass$i);
+				out$o = graphics::Clearvalues::create((graphics::Renderpass*)renderpass$i);
 		}
 	}
 
 	void BP_GraphicsClearvalues$::finish$c()
 	{
 		if (!in$i)
-			graphics::ClearValues::destroy((graphics::ClearValues*)out$o);
+			graphics::Clearvalues::destroy((graphics::Clearvalues*)out$o);
 	}
 
 	void BP_GraphicsClearvalues$::update$c()
 	{
 		if (out$o)
 		{
-			auto cv = (graphics::ClearValues*)out$o;
+			auto cv = (graphics::Clearvalues*)out$o;
 			auto count = cv->renderpass()->attachment_count();
 			for (auto i = 0; i < count; i++)
 				cv->set(i, colors$i[i].b4());

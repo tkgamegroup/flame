@@ -546,8 +546,8 @@ namespace flame
 			}
 			else if (n_node->name() == "link")
 			{
-				auto i = find_input(n_node->find_attr("in")->value());
 				auto o = find_output(n_node->find_attr("out")->value());
+				auto i = find_input(n_node->find_attr("in")->value());
 				if (o && i)
 					i->set_link(o);
 			}
@@ -596,8 +596,8 @@ namespace flame
 				if (input->link)
 				{
 					auto n_link = file->new_node("link");
-					n_link->new_attr("in", input->get_address().v);
 					n_link->new_attr("out", input->link->get_address().v);
+					n_link->new_attr("in", input->get_address().v);
 				}
 			}
 		}

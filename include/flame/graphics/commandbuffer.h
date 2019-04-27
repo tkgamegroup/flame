@@ -32,7 +32,7 @@ namespace flame
 		struct Buffer;
 		struct Image;
 		struct Renderpass;
-		struct ClearValues;
+		struct Clearvalues;
 		struct Framebuffer;
 		struct Pipeline;
 		struct Pipelinelayout;
@@ -111,7 +111,7 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS void begin(bool once = false);
 
-			FLAME_GRAPHICS_EXPORTS void begin_renderpass(Renderpass *r, Framebuffer *f, ClearValues *cv);
+			FLAME_GRAPHICS_EXPORTS void begin_renderpass(Renderpass *r, Framebuffer *f, Clearvalues *cv);
 			FLAME_GRAPHICS_EXPORTS void end_renderpass();
 			FLAME_GRAPHICS_EXPORTS void set_viewport(const Rect &rect);
 			FLAME_GRAPHICS_EXPORTS void set_scissor(const Rect &rect);

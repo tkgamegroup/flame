@@ -195,6 +195,12 @@ namespace flame
 			return w2s(((StringW*)src)->v);
 		case cH("StringAndHash"):
 			return *(StringAndHash*)src;
+		case cH("CommonData"):
+		{
+			auto d = (CommonData*)src;
+			return std::string(d->fmt) + ":" + to_string(H(d->fmt), &d->v, precision).v;
+		}
+			break;
 		}
 
 		return "";
@@ -254,6 +260,19 @@ namespace flame
 			break;
 		case cH("StringAndHash"):
 			*(StringAndHash*)dst = str;
+			break;
+		case cH("CommonData"):
+		{
+			auto sp = string_split(str, ':');
+			auto d = (CommonData*)dst;
+			if (sp.size() < 2)
+				d->fmt[0] = 0;
+			else
+			{
+				typefmt_assign(d->fmt, sp[0].c_str());
+				from_string(H(d->fmt), sp[1], &d->v);
+			}
+		}
 			break;
 		}
 	}
@@ -876,15 +895,6 @@ namespace flame
 				case TypeTagVariable:
 					switch (hash)
 					{
-					case cH("CommonData"):
-					{
-						auto d = (CommonData*)src;
-						auto n_item = new_node("item");
-						n_item->new_attr("name", item->name());
-						n_item->new_attr("type", d->fmt);
-						n_item->new_attr("value", to_string(H(d->fmt), &d->v, precision).v);
-					}
-						break;
 					case cH("Function"):
 						//const auto &f = arr[i_i];
 						//auto r = find_registered_function(0, f.pf);
@@ -932,13 +942,6 @@ namespace flame
 				case TypeTagVariable:
 					switch (hash)
 					{
-					case cH("CommonData"):
-					{
-						auto d = (CommonData*)dst;
-						typefmt_assign(d->fmt, n_item->find_attr("type")->value().c_str());
-						from_string(H(d->fmt), n_item->find_attr("value")->value(), &d->v);
-					}
-						break;
 					case cH("Function"):
 						//auto n_i = n_item->node(i_i);
 

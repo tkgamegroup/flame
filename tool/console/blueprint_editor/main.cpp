@@ -146,6 +146,7 @@ int main(int argc, char **args)
 				"  remove link [in_adress] - remove a link\n"
 				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
+				"  refresh - reload the bp\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
 				"  make-script [filename] - compile cpp that contains nodes, and do typeinfogen to it\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
@@ -352,6 +353,15 @@ int main(int argc, char **args)
 			bp->update();
 			bp->finish();
 			printf("BP updated\n");
+		}
+		else if (s_command_line == "refresh")
+		{
+			if (filename == L"")
+				printf("you need to save first\n");
+			else
+			{
+
+			}
 		}
 		else if (s_command_line == "save")
 		{
