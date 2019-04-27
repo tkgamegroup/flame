@@ -1189,7 +1189,7 @@ namespace flame
 
 		to_json(doc, (SerializableNodePrivate*)this);
 
-		file << doc.dump();
+		file << doc.dump(2);
 		file.close();
 	}
 
