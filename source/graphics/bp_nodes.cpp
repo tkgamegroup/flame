@@ -122,7 +122,12 @@ namespace flame
 			out$o.count = count$i;
 			out$o.v = new voidptr[count$i];
 			for (auto i = 0; i < count$i; i++)
+			{
 				out$o.v[i] = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);
+#if defined(FLAME_D3D12)
+				((graphics::Commandbuffer*)out$o.v[i])->end();
+#endif
+			}
 		}
 		else
 		{

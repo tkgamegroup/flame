@@ -71,6 +71,15 @@ namespace flame
 #endif
 		}
 
+		FencePrivate::~FencePrivate()
+		{
+#if defined(FLAME_VULKAN)
+
+#elif defined(FLAME_D3D12)
+
+#endif
+		}
+
 		void FencePrivate::wait()
 		{
 #if defined(FLAME_VULKAN)
@@ -83,15 +92,7 @@ namespace flame
 				assert(SUCCEEDED(res));
 
 				WaitForSingleObject(ev, INFINITE);
-#endif
-		}
-
-		FencePrivate::~FencePrivate()
-		{
-#if defined(FLAME_VULKAN)
-
-#elif defined(FLAME_D3D12)
-
+			}
 #endif
 		}
 
