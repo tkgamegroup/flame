@@ -48,13 +48,17 @@ namespace flame
 	{
 		BPPrivate *bp;
 		std::string id;
-		UdtInfo *udt;
+		UdtInfo* udt;
+
 		Vec2 position;
+
 		FunctionInfo* initialize_function;
 		FunctionInfo* finish_function;
 		FunctionInfo* update_function;
+
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
+
 		bool enable;
 
 		bool updated;
@@ -77,12 +81,14 @@ namespace flame
 	{
 		std::wstring filename;
 
+		std::vector<TypeInfoDB*> dbs;
+
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
 		Vec2 pos;
 
-		NodePrivate *add_node(const char *id, UdtInfo *udt);
+		NodePrivate *add_node(const char* id, const char* type_name);
 		void remove_node(NodePrivate *n);
 
 		NodePrivate* find_node(const std::string &id) const;
@@ -322,8 +328,49 @@ namespace flame
 		updated = true;
 	}
 
-	NodePrivate *BPPrivate::add_node(const char *id, UdtInfo *udt)
+	NodePrivate *BPPrivate::add_node(const char* type_name, const char *id)
 	{
+		auto type_name_sp = string_split(std::string(type_name));
+		UdtInfo* udt = nullptr;
+		if (type_name_sp.size() == 1)
+			udt = type_db->find_udt(H(type_name_sp[0].c_str()));
+		else if (type_name_sp.size() == 2)
+		{
+			auto fn = s2w(type_name_sp[0]);
+			TypeInfoDB* db = nullptr;
+			for (auto d : dbs)
+			{
+				if (d->filename() == fn)
+				{
+					db = d;
+					break;
+				}
+			}
+			if (!db)
+			{
+				if (std::filesystem::exists(fn))
+				{
+					db = TypeInfoDB::create();
+					db->load(fn);
+					if (db->filename()[0] == 0)
+					{
+						TypeInfoDB::destroy(db);
+						db = nullptr;
+					}
+					else
+						dbs.push_back(db);
+				}
+			}
+			if (!db)
+				return nullptr;
+			udt = db->find_udt(H(type_name_sp[1].c_str()));
+		}
+		else
+			return nullptr;
+
+		if (!udt)
+			return nullptr;
+
 		std::string s_id;
 		if (id)
 		{
@@ -465,14 +512,14 @@ namespace flame
 				auto type = n_node->find_attr("type")->value();
 				auto id = n_node->find_attr("id")->value();
 
-				auto udt = type_db->find_udt(H(type.c_str()));
-				if (!udt)
+				auto n = add_node(type.c_str(), id.c_str());
+				if (!n)
 					continue;
-				auto n = new NodePrivate(this, id, udt);
 				auto a_pos = n_node->find_attr("pos");
 				if (a_pos)
 					n->position = stof2(a_pos->value().c_str());
 
+				auto udt = n->udt;
 				for (auto i_i = 0; i_i < n_node->node_count(); i_i++)
 				{
 					auto n_input = n_node->node(i_i);
@@ -520,7 +567,12 @@ namespace flame
 		for (auto &n : nodes)
 		{
 			auto n_node = file->new_node("node");
-			n_node->new_attr("type", n->udt->name());
+			auto u = n->udt;
+			auto tn = std::string(u->name());
+			auto fn = std::wstring(u->db()->filename());
+			if (fn != L"typeinfo.xml")
+				tn = w2s(fn) + tn;
+			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("pos", to_stdstring(n->position));
 			for (auto &input : n->inputs)
@@ -666,9 +718,9 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(const char *id, UdtInfo *udt)
+	BP::Node *BP::add_node(const char* type_name, const char *id)
 	{
-		return ((BPPrivate*)this)->add_node(id, udt);
+		return ((BPPrivate*)this)->add_node(type_name, id);
 	}
 
 	void BP::remove_node(BP::Node *n)

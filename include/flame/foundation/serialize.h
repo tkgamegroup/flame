@@ -580,12 +580,14 @@ namespace flame
 	struct VariableInfo;
 	struct UdtInfo;
 	struct FunctionInfo;
+	struct TypeInfoDB;
 
 	typedef TypeInfo* TypeInfoPtr;
 	typedef EnumInfo* EnumInfoPtr;
 	typedef VariableInfo* VariableInfoPtr;
 	typedef FunctionInfo* FunctionInfoPtr;
 	typedef UdtInfo* UdtInfoPtr;
+	typedef TypeInfoDB* TypeInfoDBPtr;
 
 	struct TypeInfo
 	{
@@ -602,6 +604,8 @@ namespace flame
 
 	struct EnumInfo
 	{
+		FLAME_FOUNDATION_EXPORTS TypeInfoDB* db() const;
+
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS int item_count() const;
@@ -631,6 +635,8 @@ namespace flame
 
 	struct FunctionInfo
 	{
+		FLAME_FOUNDATION_EXPORTS TypeInfoDB* db() const;
+
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
@@ -643,6 +649,8 @@ namespace flame
 
 	struct UdtInfo
 	{
+		FLAME_FOUNDATION_EXPORTS TypeInfoDB* db() const;
+
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS int size() const;
@@ -746,6 +754,8 @@ namespace flame
 
 	struct TypeInfoDB
 	{
+		FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
+
 		FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
 		FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
 

@@ -140,7 +140,7 @@ int main(int argc, char **args)
 				"  show nodes - show all nodes\n"
 				"  show node [id] - show a node\n"
 				"  show graph - use Graphviz to show graph\n"
-				"  add node [id1,id2...] [udt_name] - add a node (id of '-' means don't care)\n"
+				"  add node [type_name] [id] - add a node (id of '-' means don't care)\n"
 				"  add link [out_adress] [in_adress] - add a link\n"
 				"  remove node [id] - remove a node\n"
 				"  remove link [in_adress] - remove a link\n"
@@ -164,7 +164,7 @@ int main(int argc, char **args)
 			else if (s_what == "udt")
 			{
 				scanf("%s", command_line);
-				auto s_name = "BP_" + std::string(command_line);
+				auto s_name = std::string(command_line);
 
 				auto udt = type_db->find_udt(H(s_name.c_str()));
 				if (udt)
@@ -257,26 +257,16 @@ int main(int argc, char **args)
 			if (s_what == "node")
 			{
 				scanf("%s", command_line);
-				auto s_ids = std::string(command_line);
+				auto s_tn = std::string(command_line);
 
 				scanf("%s", command_line);
-				auto s_udt = "BP_" + std::string(command_line);
+				auto s_id = std::string(command_line);
 
-				auto udt = type_db->find_udt(H(s_udt.c_str()));
-				if (udt)
-				{
-					auto ids = string_split(s_ids, ',');
-					for (auto &id : ids)
-					{
-						auto n = bp->add_node(id == "-" ? nullptr : id.c_str(), udt);
-						if (!n)
-							printf("%s already exist\n", id.c_str());
-						else
-							printf("node added: %s\n", n->id());
-					}
-				}
+				auto n = bp->add_node(s_tn.c_str(), s_id == "-" ? nullptr : s_id.c_str());
+				if (!n)
+					printf("bad udt name or id already exist\n");
 				else
-					printf("bad udt name\n");
+					printf("node added: %s\n", n->id());
 			}
 			else if (s_what == "link")
 			{

@@ -84,6 +84,8 @@ namespace flame
 
 	struct EnumInfoPrivate : EnumInfo
 	{
+		TypeInfoDB* db;
+
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 
@@ -95,6 +97,11 @@ namespace flame
 			return "";
 		}
 	};
+
+	TypeInfoDB* EnumInfo::db() const
+	{
+		return ((EnumInfoPrivate*)this)->db;
+	}
 
 	const char* EnumInfo::name() const
 	{
@@ -377,12 +384,19 @@ namespace flame
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
+		TypeInfoDB* db;
+
 		std::string name;
 		void* rva;
 		TypeInfoPrivate return_type;
 		std::vector<TypeInfoPrivate> parameter_types;
 		std::string code;
 	};
+
+	TypeInfoDB* FunctionInfo::db() const
+	{
+		return ((FunctionInfoPrivate*)this)->db;
+	}
 
 	const char* FunctionInfo::name() const
 	{
@@ -416,6 +430,8 @@ namespace flame
 
 	struct UdtInfoPrivate : UdtInfo
 	{
+		TypeInfoDB* db;
+
 		std::string name;
 		int size;
 		std::wstring module_name;
@@ -508,6 +524,11 @@ namespace flame
 		}
 	};
 
+	TypeInfoDB* UdtInfo::db() const
+	{
+		return ((UdtInfoPrivate*)this)->db;
+	}
+
 	const char* UdtInfo::name() const
 	{
 		return ((UdtInfoPrivate*)this)->name.c_str();
@@ -555,6 +576,8 @@ namespace flame
 
 	struct TypeInfoDBPrivate : TypeInfoDB
 	{
+		std::wstring filename;
+
 		std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
 		std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
 		std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
@@ -1732,6 +1755,7 @@ namespace flame
 					}
 					items->Release();
 
+					e->db = this;
 					enums.emplace(hash, e);
 				}
 			}
@@ -1854,6 +1878,7 @@ namespace flame
 									f->name = name;
 									symbol_to_function(_function, f, attribute, session, source_files, "\t\t\t\t", "\t\t\t\t\t");
 
+									f->db = this;
 									udt->functions.emplace_back(f);
 								}
 							}
@@ -1862,6 +1887,7 @@ namespace flame
 					}
 					_functions->Release();
 
+					udt->db = this;
 					udts.emplace(udt_namehash, udt);
 				}
 			}
@@ -1885,6 +1911,7 @@ namespace flame
 				f->name = name;
 				symbol_to_function(_function, f, attribute, session, source_files, "\t\t", "\t\t\t");
 
+				f->db = this;
 				functions.emplace(H(f->name.c_str()), f);
 			}
 
@@ -1893,11 +1920,13 @@ namespace flame
 		_functions->Release();
 	}
 
-	void TypeInfoDBPrivate::load(const std::wstring & filename)
+	void TypeInfoDBPrivate::load(const std::wstring & _filename)
 	{
-		auto file = SerializableNode::create_from_xml_file(filename);
+		auto file = SerializableNode::create_from_xml_file(_filename);
 		if (!file)
 			return;
+
+		filename = _filename;
 
 		auto n_enums = file->find_node("enums");
 		for (auto i = 0; i < n_enums->node_count(); i++)
@@ -1920,6 +1949,7 @@ namespace flame
 					}
 				}
 
+				e->db = this;
 				enums.emplace(H(e->name.c_str()), e);
 			}
 		}
@@ -1964,11 +1994,13 @@ namespace flame
 						{
 							auto f = new FunctionInfoPrivate;
 							unserialize_function(n_function, f);
+							f->db = this;
 							u->functions.emplace_back(f);
 						}
 					}
 				}
 
+				u->db = this;
 				udts.emplace(H(u->name.c_str()), u);
 			}
 		}
@@ -1981,6 +2013,7 @@ namespace flame
 			{
 				auto f = new FunctionInfoPrivate;
 				unserialize_function(n_function, f);
+				f->db = this;
 				functions.emplace(H(f->name.c_str()), f);
 			}
 		}
@@ -2147,6 +2180,11 @@ namespace flame
 		enums.clear();
 		udts.clear();
 		functions.clear();
+	}
+
+	const wchar_t* TypeInfoDB::filename() const
+	{
+		return ((TypeInfoDBPrivate*)this)->filename.c_str();
 	}
 
 	Array<EnumInfo*> TypeInfoDB::get_enums()

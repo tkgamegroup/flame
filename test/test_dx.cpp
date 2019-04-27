@@ -32,7 +32,8 @@ using namespace flame;
 const int image_count = 3;
 
 graphics::Device* d;
-graphics::Swapchain* sc;
+graphics::Swapchain* sc; 
+graphics::ClearValues* cv;
 graphics::Commandbuffer* cbs[image_count];
 graphics::Fence* fences[image_count];
 int frame;
@@ -44,7 +45,7 @@ int main(int argc, char** args)
 
 	d = graphics::Device::create(false);
 	sc = graphics::Swapchain::create(d, w);
-	auto cv = graphics::ClearValues::create(sc->renderpass(true));
+	cv = graphics::ClearValues::create(sc->renderpass(true));
 	cv->set(0, Bvec4(255, 128, 0, 255));
 
 	for (auto i = 0; i < image_count; i++)
@@ -59,9 +60,11 @@ int main(int argc, char** args)
 	}
 
 	frame = 0;
-
 	app->run(Function<void(void* c)>(
 		[](void* c) {
+			if (frame == 1000)
+				cv->set(0, Bvec4(0, 128, 0, 255));
+
 			auto idx = frame % image_count;
 
 			sc->acquire_image(nullptr);
