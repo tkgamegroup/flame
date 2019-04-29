@@ -246,75 +246,86 @@ window.onload = function(){
         }
     };
 
-	var sock_s = new WebSocket("ws://localhost:5566/");
-    window.sock_s = sock_s;
-    sock_s.onmessage = function(res){
-        for (var i in nodes)
-        {
-            var n = nodes[i];
-
-            document.body.removeChild(n.eMain);
-
-            for (var j in n.inputs)
-                svg.removeChild(n.inputs[j].path);
-        }
-
-        nodes = [];
-
-        var src = eval('(' + res.data + ')');
-
-        var src_nodes = src.nodes;
-        for (var i in src_nodes)
-        {
-            var sn = src_nodes[i];
-            var n = new Node(sn.type, sn.id, sn.x, sn.y);
-            for (var item in sn)
+    var req_typeinfo = new XMLHttpRequest;
+    req_typeinfo.timeout = 3000;
+    req_typeinfo.addEventListener('load', function(){
+        var sock_s = new WebSocket("ws://localhost:5566/");
+        window.sock_s = sock_s;
+        sock_s.onmessage = function(res){
+            for (var i in nodes)
             {
-                if (item == "input")
-                {
-
-                }
+                var n = nodes[i];
+    
+                document.body.removeChild(n.eMain);
+    
+                for (var j in n.inputs)
+                    svg.removeChild(n.inputs[j].path);
             }
-            nodes.push(n);
-        
-            n.eMain.style.position = "absolute";
-            document.body.appendChild(n.eMain);
-        }
-
-        var src_links = src.links;
-        for (var i in src_links)
-        {
-            var sl = src_links[i];
-
-            var addr_in = sl.in.split(".");
-            var addr_out = sl.out.split(".");
-
-            var input = FindNode(addr_in[0]).FindInput(addr_in[1]);
-            var output = FindNode(addr_out[0]).FindOutput(addr_out[1]);
-
-            input.link = output;
-        }
-
-        for (var i in nodes)
-            nodes[i].UpdatePosition();
-        
-    };
-    sock_s.onclose = function(){
-        setTimeout(function(){
-            var s = new WebSocket("ws://localhost:5566/");
-            s.onmessage = window.sock_s.onmessage;
-            s.onclose = window.sock_s.onclose;
-            window.sock_s = s;
-        }, 2000);
-    };
+    
+            nodes = [];
+    
+            var src = eval('(' + res.data + ')');
+    
+            var src_nodes = src.nodes;
+            for (var i in src_nodes)
+            {
+                var sn = src_nodes[i];
+                var n = new Node(sn.type, sn.id, sn.x, sn.y);
+                for (var item in sn)
+                {
+                    if (item == "input")
+                    {
+    
+                    }
+                }
+                nodes.push(n);
+            
+                n.eMain.style.position = "absolute";
+                document.body.appendChild(n.eMain);
+            }
+    
+            var src_links = src.links;
+            for (var i in src_links)
+            {
+                var sl = src_links[i];
+    
+                var addr_in = sl.in.split(".");
+                var addr_out = sl.out.split(".");
+    
+                var input = FindNode(addr_in[0]).FindInput(addr_in[1]);
+                var output = FindNode(addr_out[0]).FindOutput(addr_out[1]);
+    
+                input.link = output;
+            }
+    
+            for (var i in nodes)
+                nodes[i].UpdatePosition();
+            
+        };
+        sock_s.onclose = function(){
+            setTimeout(function(){
+                var s = new WebSocket("ws://localhost:5566/");
+                s.onmessage = window.sock_s.onmessage;
+                s.onclose = window.sock_s.onclose;
+                window.sock_s = s;
+            }, 2000);
+        };
+    });
+    req_typeinfo.addEventListener('abort', function(e){
+        alert("typeinfo loading: aborted");
+    });
+    req_typeinfo.addEventListener('error', function(e){
+        alert("typeinfo loading: error");
+    });
+    req_typeinfo.open('GET', "typeinfo.json");
+    req_typeinfo.responseType = 'json';
+    req_typeinfo.send(null);
 
     /*
-
     var n = new Node('test', 0, 0);
     nodes.push(n);
     n.eMain.style.position = "absolute";
     document.body.appendChild(n.eMain);
-
     */
 };
 
