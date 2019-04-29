@@ -514,7 +514,10 @@ namespace flame
 
 				auto n = add_node(type.c_str(), id.c_str());
 				if (!n)
+				{
+					printf("node \"%s\" with type \"%s\" add failed\n", id.c_str(), type.c_str());
 					continue;
+				}
 				auto a_pos = n_node->find_attr("pos");
 				if (a_pos)
 					n->position = stof2(a_pos->value().c_str());

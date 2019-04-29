@@ -245,6 +245,10 @@ window.onload = function(){
             mouse.curr_slot = null;
         }
     };
+	
+	$.getJSON("typeinfo.json", function(){
+		var cut = 1;
+	});
 
     var req_typeinfo = new XMLHttpRequest;
     req_typeinfo.timeout = 3000;
@@ -319,7 +323,7 @@ window.onload = function(){
     });
     req_typeinfo.open('GET', "typeinfo.json");
     req_typeinfo.responseType = 'json';
-    req_typeinfo.send(null);
+    //req_typeinfo.send(null);
 
     /*
     var n = new Node('test', 0, 0);

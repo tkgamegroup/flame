@@ -68,11 +68,7 @@ int main(int argc, char **args)
 		printf("ok\n");
 	}
 	else
-	{
 		printf("up-to-data: typeinfo.json \n");
-
-		type_db->load(L"typeinfo.xml");
-	}
 
 	return 0;
 }

@@ -280,9 +280,9 @@ namespace flame
 			return ((SwapchainPrivate*)this)->image_index;
 		}
 
-		Renderpass *Swapchain::renderpass(bool clar) const
+		Renderpass *Swapchain::renderpass(bool clear) const
 		{
-			return clar ? ((SwapchainPrivate*)this)->rp : ((SwapchainPrivate*)this)->rp_dc;
+			return clear ? ((SwapchainPrivate*)this)->rp : ((SwapchainPrivate*)this)->rp_dc;
 		}
 
 		Framebuffer *Swapchain::framebuffer(uint index) const

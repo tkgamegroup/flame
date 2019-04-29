@@ -53,7 +53,7 @@ namespace flame
 
 		void create(const char *title, const Ivec2 &res, int style, graphics::SampleCount sample_count)
 		{
-			type_db->load(L"typeinfo.xml");
+			type_db->load(L"typeinfo.json");
 			app = Application::create();
 			w = Window::create(app, title, res, style);
 			d = graphics::Device::/*get_shared*/create(true);
