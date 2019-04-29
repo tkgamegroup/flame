@@ -568,7 +568,7 @@ namespace flame
 			auto u = n->udt;
 			auto tn = std::string(u->name());
 			auto fn = std::wstring(u->db()->filename());
-			if (fn != L"typeinfo.xml")
+			if (fn != L"typeinfo.json")
 				tn = w2s(fn) + ":" + tn;
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
@@ -835,7 +835,7 @@ namespace flame
 
 	BP_Vec2$ bp_vec2_unused;
 
-	void BP_Vec3$::update$c()
+	void BP_Vec3$::update$c(float a)
 	{
 		v$o.x = x$i;
 		v$o.y = y$i;

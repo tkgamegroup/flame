@@ -47,7 +47,7 @@ int main(int argc, char **args)
 		L"flame_universe.dll",
 	};
 
-	auto lwt = std::filesystem::exists(L"typeinfo.xml") ? std::filesystem::last_write_time(L"typeinfo.xml") : std::chrono::system_clock::time_point();
+	auto lwt = std::filesystem::exists(L"typeinfo.json") ? std::filesystem::last_write_time(L"typeinfo.json") : std::chrono::system_clock::time_point();
 	auto need_regenerate = false;
 	for (auto& fn : pdbs)
 	{
@@ -59,18 +59,17 @@ int main(int argc, char **args)
 	}
 	if (need_regenerate)
 	{
-		printf("generating: typeinfo.xml\n");
+		printf("generating: typeinfo.json\n");
 
 		for (auto& fn : pdbs)
 			type_db->collect(fn);
-		type_db->save(L"typeinfo.xml");
 		type_db->save(L"typeinfo.json");
 
 		printf("ok\n");
 	}
 	else
 	{
-		printf("up-to-data: typeinfo.xml \n");
+		printf("up-to-data: typeinfo.json \n");
 
 		type_db->load(L"typeinfo.xml");
 	}

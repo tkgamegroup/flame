@@ -91,7 +91,7 @@ int main(int argc, char **args)
 {
 	std::wstring filename;
 
-	type_db->load(L"typeinfo.xml");
+	type_db->load(L"typeinfo.json");
 
 	BP *bp = nullptr;
 	if (argc > 1)
@@ -430,7 +430,7 @@ int main(int argc, char **args)
 				{
 					auto db = TypeInfoDB::create();
 					db->collect(fn);
-					db->save(w_ppath + L"/typeinfo.xml");
+					db->save(w_ppath + L"/typeinfo.json");
 					TypeInfoDB::destroy(db);
 					printf("ok\n");
 				}

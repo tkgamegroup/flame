@@ -1306,7 +1306,11 @@ namespace flame
 
 	SerializableNode* SerializableNode::create_from_json_file(const std::wstring& filename)
 	{
-		return nullptr;
+		auto str = get_file_string(filename);
+		if (str.empty())
+			return nullptr;
+
+		return create_from_json_string(str);
 	}
 
 	void SerializableNode::destroy(SerializableNode * n)
@@ -1525,33 +1529,33 @@ namespace flame
 		return info;
 	}
 
-	void serialize_typeinfo(const TypeInfoPrivate & src, SerializableNode * dst)
+	std::string serialize_typeinfo(const TypeInfoPrivate & src)
 	{
-		dst->new_attr("tag", get_type_tag_name(src.tag));
-		dst->new_attr("type", src.name);
+		return std::string(get_type_tag_name(src.tag)) + ":" + src.name;
 	}
 
-	TypeInfoPrivate unserialize_typeinfo(SerializableNode * src)
+	TypeInfoPrivate unserialize_typeinfo(const std::string& src)
 	{
 		TypeInfoPrivate info;
 
-		auto tag = src->find_attr("tag")->value();
+		auto sp = string_split(src, ':');
+
 		auto e_tag = 0;
 		for (auto s : tag_names)
 		{
-			if (tag == s)
+			if (sp[0] == s)
 				break;
 			e_tag++;
 		}
 
 		info.tag = (TypeTag$)e_tag;
-		info.name = src->find_attr("type")->value();
+		info.name = sp[1];
 		info.name_hash = H(info.name.c_str());
 
 		return info;
 	}
 
-	void symbol_to_function(IDiaSymbol * symbol, FunctionInfoPrivate * f, const std::string & attribute, CComPtr<IDiaSession> & session, std::map<DWORD, std::vector<std::string>> & source_files, const std::string & tab_str1, const std::string & tab_str2)
+	void symbol_to_function(IDiaSymbol * symbol, FunctionInfoPrivate * f, const std::string & attribute, CComPtr<IDiaSession> & session, std::map<DWORD, std::vector<std::string>> & source_files)
 	{
 		ULONG ul;
 		ULONGLONG ull;
@@ -1641,8 +1645,7 @@ namespace flame
 					f->code = "\n";
 
 					for (auto i = min_line; i <= max_line; i++)
-						f->code += tab_str1 + source_files[src_file_id][i];
-					f->code += tab_str2;
+						f->code += source_files[src_file_id][i];
 				}
 			}
 		}
@@ -1656,43 +1659,39 @@ namespace flame
 	{
 		dst->new_attr("name", src->name);
 		dst->new_attr("rva", to_string((uint)src->rva).v);
-		auto n_return_type = dst->new_node("return_type");
-		serialize_typeinfo(src->return_type, n_return_type);
+		dst->new_attr("return_type", serialize_typeinfo(src->return_type));
 		if (!src->parameter_types.empty())
 		{
 			auto n_parameters = dst->new_node("parameters");
+			n_parameters->set_type(SerializableNode::Array);
 			for (auto& p : src->parameter_types)
 			{
-				auto n_parameter = n_parameters->new_node("parameter");
-				serialize_typeinfo(p, n_parameter);
+				auto n = n_parameters->new_node("");
+				n->set_type(SerializableNode::Value);
+				n->new_attr("", serialize_typeinfo(p));
 			}
 		}
 		if (src->code.length() > 0)
-		{
-			auto n = dst->new_node("code")->new_node("");
-			n->set_type(SerializableNode::Pcdata);
-			n->set_value(src->code);
-		}
+			dst->new_attr("code", src->code);
 	}
 
 	void unserialize_function(SerializableNode * src, FunctionInfoPrivate * dst)
 	{
-		dst->name = src->find_attr("name")->value();
-		dst->rva = (void*)stou1(src->find_attr("rva")->value().c_str());
-		dst->return_type = unserialize_typeinfo(src->find_node("return_type"));
+		dst->name = src->find_node("name")->value();
+		dst->rva = (void*)stou1(src->find_node("rva")->value().c_str());
+		dst->return_type = unserialize_typeinfo(src->find_node("return_type")->value());
 		auto n_parameters = src->find_node("parameters");
 		if (n_parameters)
 		{
 			for (auto k = 0; k < n_parameters->node_count(); k++)
 			{
-				auto n_parameter = n_parameters->node(k);
-				if (n_parameter->name() == "parameter")
-					dst->parameter_types.push_back(unserialize_typeinfo(n_parameter));
+				auto n = n_parameters->node(k);
+				dst->parameter_types.push_back(unserialize_typeinfo(n->value()));
 			}
 		}
 		auto n_code = src->find_node("code");
 		if (n_code)
-			dst->code = n_code->node(0)->value();
+			dst->code = n_code->value();
 	}
 
 	void TypeInfoDBPrivate::collect(const std::wstring & filename)
@@ -1707,7 +1706,7 @@ namespace flame
 		}
 		if (FAILED(dia_source->loadDataFromPdb(ext_replace(filename, L".pdb").c_str())))
 		{
-			printf("pdb failed to open\n");
+			printf("pdb failed to open: %s\n", std::filesystem::path(filename).stem().string().c_str());
 			return;
 		}
 		CComPtr<IDiaSession> session;
@@ -1889,7 +1888,7 @@ namespace flame
 								{
 									auto f = new FunctionInfoPrivate;
 									f->name = name;
-									symbol_to_function(_function, f, attribute, session, source_files, "\t\t\t\t", "\t\t\t\t\t");
+									symbol_to_function(_function, f, attribute, session, source_files);
 
 									f->db = this;
 									udt->functions.emplace_back(f);
@@ -1922,7 +1921,7 @@ namespace flame
 			{
 				auto f = new FunctionInfoPrivate;
 				f->name = name;
-				symbol_to_function(_function, f, attribute, session, source_files, "\t\t", "\t\t\t");
+				symbol_to_function(_function, f, attribute, session, source_files);
 
 				f->db = this;
 				functions.emplace(H(f->name.c_str()), f);
@@ -1935,7 +1934,7 @@ namespace flame
 
 	void TypeInfoDBPrivate::load(const std::wstring & _filename)
 	{
-		auto file = SerializableNode::create_from_xml_file(_filename);
+		auto file = SerializableNode::create_from_json_file(_filename);
 		if (!file)
 			return;
 
@@ -1945,90 +1944,74 @@ namespace flame
 		for (auto i = 0; i < n_enums->node_count(); i++)
 		{
 			auto n_enum = n_enums->node(i);
-			if (n_enum->name() == "enum")
+			auto e = new EnumInfoPrivate;
+			e->name = n_enum->find_node("name")->value();
+
+			auto n_items = n_enum->find_node("items");
+			for (auto j = 0; j < n_items->node_count(); j++)
 			{
-				auto e = new EnumInfoPrivate;
-				e->name = n_enum->find_attr("name")->value();
-
-				for (auto j = 0; j < n_enum->node_count(); j++)
-				{
-					auto n_item = n_enum->node(j);
-					if (n_item->name() == "item")
-					{
-						auto i = new EnumItemPrivate;
-						i->name = n_item->find_attr("name")->value();
-						i->value = std::stoi(n_item->find_attr("value")->value());
-						e->items.emplace_back(i);
-					}
-				}
-
-				e->db = this;
-				enums.emplace(H(e->name.c_str()), e);
+				auto n_item = n_items->node(j);
+				auto i = new EnumItemPrivate;
+				i->name = n_item->find_node("name")->value();
+				i->value = std::stoi(n_item->find_node("value")->value());
+				e->items.emplace_back(i);
 			}
+
+			e->db = this;
+			enums.emplace(H(e->name.c_str()), e);
 		}
 
 		auto n_udts = file->find_node("udts");
 		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
 			auto n_udt = n_udts->node(i);
-			if (n_udt->name() == "udt")
+			auto u = new UdtInfoPrivate;
+			u->name = n_udt->find_node("name")->value();
+			u->size = std::stoi(n_udt->find_node("size")->value());
+			u->module_name = s2w(n_udt->find_node("module_name")->value());
+
+			auto n_items = n_udt->find_node("items");
+			for (auto j = 0; j < n_items->node_count(); j++)
 			{
-				auto u = new UdtInfoPrivate;
-				u->name = n_udt->find_attr("name")->value();
-				u->size = std::stoi(n_udt->find_attr("size")->value());
-				u->module_name = s2w(n_udt->find_attr("module_name")->value());
-
-				for (auto j = 0; j < n_udt->node_count(); j++)
-				{
-					auto n_item = n_udt->node(j);
-					if (n_item->name() == "item")
-					{
-						auto i = new VariableInfoPrivate;
-						i->type = unserialize_typeinfo(n_item);
-						i->name = n_item->find_attr("name")->value();
-						i->attribute = n_item->find_attr("attribute")->value();
-						i->offset = std::stoi(n_item->find_attr("offset")->value());
-						i->size = std::stoi(n_item->find_attr("size")->value());
-						memset(&i->default_value, 0, sizeof(CommonData));
-						auto a_default_value = n_item->find_attr("default_value");
-						if (a_default_value)
-							unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), &i->default_value.v);
-						u->items.emplace_back(i);
-					}
-				}
-
-				auto n_functions = n_udt->find_node("functions");
-				if (n_functions)
-				{
-					for (auto j = 0; j < n_functions->node_count(); j++)
-					{
-						auto n_function = n_functions->node(j);
-						if (n_function->name() == "function")
-						{
-							auto f = new FunctionInfoPrivate;
-							unserialize_function(n_function, f);
-							f->db = this;
-							u->functions.emplace_back(f);
-						}
-					}
-				}
-
-				u->db = this;
-				udts.emplace(H(u->name.c_str()), u);
+				auto n_item = n_items->node(j);
+				auto i = new VariableInfoPrivate;
+				i->type = unserialize_typeinfo(n_item->find_node("type")->value());
+				i->name = n_item->find_node("name")->value();
+				i->attribute = n_item->find_node("attribute")->value();
+				i->offset = std::stoi(n_item->find_node("offset")->value());
+				i->size = std::stoi(n_item->find_node("size")->value());
+				memset(&i->default_value, 0, sizeof(CommonData));
+				auto a_default_value = n_item->find_node("default_value");
+				if (a_default_value)
+					unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), &i->default_value.v);
+				u->items.emplace_back(i);
 			}
+
+			auto n_functions = n_udt->find_node("functions");
+			if (n_functions)
+			{
+				for (auto j = 0; j < n_functions->node_count(); j++)
+				{
+					auto n_function = n_functions->node(j);
+					auto f = new FunctionInfoPrivate;
+					unserialize_function(n_function, f);
+					f->db = this;
+					u->functions.emplace_back(f);
+				}
+			}
+
+			u->db = this;
+			udts.emplace(H(u->name.c_str()), u);
 		}
 
 		auto n_functions = file->find_node("functions");
 		for (auto i = 0; i < n_functions->node_count(); i++)
 		{
 			auto n_function = n_functions->node(i);
-			if (n_function->name() == "function")
-			{
-				auto f = new FunctionInfoPrivate;
-				unserialize_function(n_function, f);
-				f->db = this;
-				functions.emplace(H(f->name.c_str()), f);
-			}
+			auto f = new FunctionInfoPrivate;
+			unserialize_function(n_function, f);
+			f->db = this;
+			functions.emplace(H(f->name.c_str()), f);
 		}
 
 		SerializableNode::destroy(file);
@@ -2039,6 +2022,7 @@ namespace flame
 		auto file = SerializableNode::create("typeinfo");
 
 		auto n_enums = file->new_node("enums");
+		n_enums->set_type(SerializableNode::Array);
 		{
 			std::vector<EnumInfoPrivate*> sorted_enums;
 			for (auto& e : enums)
@@ -2048,12 +2032,14 @@ namespace flame
 			});
 			for (auto& e : sorted_enums)
 			{
-				auto n_enum = n_enums->new_node("enum");
+				auto n_enum = n_enums->new_node("");
 				n_enum->new_attr("name", e->name);
 
+				auto n_items = n_enum->new_node("items");
+				n_items->set_type(SerializableNode::Array);
 				for (auto& i : e->items)
 				{
-					auto n_item = n_enum->new_node("item");
+					auto n_item = n_items->new_node("");
 					n_item->new_attr("name", i->name);
 					n_item->new_attr("value", to_stdstring(i->value));
 				}
@@ -2061,6 +2047,7 @@ namespace flame
 		}
 
 		auto n_udts = file->new_node("udts");
+		n_udts->set_type(SerializableNode::Array);
 		{
 			std::vector<UdtInfoPrivate*> sorted_udts;
 			for (auto& u : udts)
@@ -2070,15 +2057,17 @@ namespace flame
 			});
 			for (auto& u : sorted_udts)
 			{
-				auto n_udt = n_udts->new_node("udt");
+				auto n_udt = n_udts->new_node("");
 				n_udt->new_attr("name", u->name);
 				n_udt->new_attr("size", std::to_string(u->size));
 				n_udt->new_attr("module_name", w2s(u->module_name));
 
+				auto n_items = n_udt->new_node("items");
+				n_items->set_type(SerializableNode::Array);
 				for (auto& i : u->items)
 				{
-					auto n_item = n_udt->new_node("item");
-					serialize_typeinfo(i->type, n_item);
+					auto n_item = n_items->new_node("");
+					n_item->new_attr("type", serialize_typeinfo(i->type));
 					n_item->new_attr("name", i->name);
 					n_item->new_attr("attribute", i->attribute);
 					n_item->new_attr("offset", to_stdstring(i->offset));
@@ -2092,15 +2081,17 @@ namespace flame
 				}
 
 				auto n_functions = n_udt->new_node("functions");
+				n_functions->set_type(SerializableNode::Array);
 				for (auto& f : u->functions)
 				{
-					auto n_function = n_functions->new_node("function");
+					auto n_function = n_functions->new_node("");
 					serialize_function(f.get(), n_function);
 				}
 			}
 		}
 
 		auto n_functions = file->new_node("functions");
+		n_functions->set_type(SerializableNode::Array);
 		{
 			std::vector<FunctionInfoPrivate*> sorted_functions;
 			for (auto& f : functions)
@@ -2110,15 +2101,12 @@ namespace flame
 			});
 			for (auto& f : sorted_functions)
 			{
-				auto n_function = n_functions->new_node("function");
+				auto n_function = n_functions->new_node("");
 				serialize_function(f, n_function);
 			}
 		}
 
-		if (std::filesystem::path(filename).extension() == L".json")
-			file->save_json(filename);
-		else
-			file->save_xml(filename);
+		file->save_json(filename);
 		SerializableNode::destroy(file);
 	}
 

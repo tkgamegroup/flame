@@ -1478,7 +1478,9 @@ namespace flame
 	inline std::string get_file_string(const std::wstring &filename)
 	{
 		auto content = get_file_content(filename);
-		return std::string(content.first.get(), content.first.get() + content.second);
+		if (content.first)
+			return std::string(content.first.get(), content.first.get() + content.second);
+		return std::string();
 	}
 
 	FLAME_FOUNDATION_EXPORTS void *get_hinst();

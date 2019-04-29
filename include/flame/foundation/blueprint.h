@@ -183,7 +183,7 @@ namespace flame
 
 		Vec3 v$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$c();
+		FLAME_FOUNDATION_EXPORTS void update$c(float a);
 	};
 
 	struct BP_Vec4$
