@@ -84,8 +84,8 @@ namespace flame
 
 	struct EnumInfoPrivate : EnumInfo
 	{
-		TypeInfoDB* db;
 		int level;
+		std::wstring module_name;
 
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
@@ -98,11 +98,6 @@ namespace flame
 			return "";
 		}
 	};
-
-	TypeInfoDB* EnumInfo::db() const
-	{
-		return ((EnumInfoPrivate*)this)->db;
-	}
 
 	const char* EnumInfo::name() const
 	{
@@ -404,8 +399,8 @@ namespace flame
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
-		TypeInfoDB* db;
 		int level;
+		std::wstring module_name;
 
 		std::string name;
 		void* rva;
@@ -413,11 +408,6 @@ namespace flame
 		std::vector<TypeInfoPrivate> parameter_types;
 		std::string code;
 	};
-
-	TypeInfoDB* FunctionInfo::db() const
-	{
-		return ((FunctionInfoPrivate*)this)->db;
-	}
 
 	const char* FunctionInfo::name() const
 	{
@@ -451,12 +441,11 @@ namespace flame
 
 	struct UdtInfoPrivate : UdtInfo
 	{
-		TypeInfoDB* db;
 		int level;
+		std::wstring module_name;
 
 		std::string name;
 		int size;
-		std::wstring module_name;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
@@ -545,11 +534,6 @@ namespace flame
 			return nullptr;
 		}
 	};
-
-	TypeInfoDB* UdtInfo::db() const
-	{
-		return ((UdtInfoPrivate*)this)->db;
-	}
 
 	const char* UdtInfo::name() const
 	{
@@ -1623,9 +1607,15 @@ namespace flame
 			dst->code = n_code->value();
 	}
 
-	std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
-	std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
-	std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
+	static int _typeinfo_maxlevel = -1;
+	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
+	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
+	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
+
+	int typeinfo_maxlevel()
+	{
+		return _typeinfo_maxlevel;
+	}
 
 	Array<EnumInfo*> get_enums()
 	{
@@ -1712,6 +1702,8 @@ namespace flame
 			printf("failed to get global\n");
 			return;
 		}
+
+		_typeinfo_maxlevel = max(_typeinfo_maxlevel, level);
 
 		LONG l;
 		ULONG ul;

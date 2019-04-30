@@ -81,12 +81,14 @@ namespace flame
 	{
 		std::wstring filename;
 
-		std::vector<TypeInfoDB*> dbs;
+		std::vector<std::pair<int, std::wstring>> extra_typeinfos;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
 		Vec2 pos;
+
+		~BPPrivate();
 
 		NodePrivate *add_node(const char* id, const char* type_name);
 		void remove_node(NodePrivate *n);
@@ -104,7 +106,6 @@ namespace flame
 
 		void load(const wchar_t *filename);
 		void save(const wchar_t *filename);
-		void tobin();
 	};
 
 	SlotPrivate::SlotPrivate(NodePrivate* _node, VariableInfo* _variable_info) :
@@ -328,6 +329,12 @@ namespace flame
 		updated = true;
 	}
 
+	BPPrivate::~BPPrivate()
+	{
+		for (auto& t : extra_typeinfos)
+			typeinfo_clear(t.first);
+	}
+
 	NodePrivate *BPPrivate::add_node(const char* type_name, const char *id)
 	{
 		auto type_name_sp = string_split(std::string(type_name), ':');
@@ -337,33 +344,26 @@ namespace flame
 		else if (type_name_sp.size() == 2)
 		{
 			auto fn = s2w(type_name_sp[0]);
-			TypeInfoDB* db = nullptr;
-			for (auto d : dbs)
+			for (auto& t : extra_typeinfos)
 			{
-				if (d->filename() == fn)
+				if (t.second == fn)
 				{
-					db = d;
+					udt = find_udt(H(type_name_sp[1].c_str()));
 					break;
 				}
 			}
-			if (!db)
+			if (!udt)
 			{
 				if (std::filesystem::exists(fn))
 				{
-					db = TypeInfoDB::create();
-					db->load(fn);
-					if (db->filename()[0] == 0)
-					{
-						TypeInfoDB::destroy(db);
-						db = nullptr;
-					}
-					else
-						dbs.push_back(db);
+					auto lv = typeinfo_maxlevel() + 1;
+					typeinfo_load(fn, lv);
+					extra_typeinfos.emplace_back(lv, fn);
+					udt = find_udt(H(type_name_sp[1].c_str()));
 				}
 			}
-			if (!db )
+			if (!udt)
 				return nullptr;
-			udt = db->find_udt(H(type_name_sp[1].c_str()));
 		}
 		else
 			return nullptr;
@@ -570,9 +570,8 @@ namespace flame
 			auto n_node = file->new_node("node");
 			auto u = n->udt;
 			auto tn = std::string(u->name());
-			auto fn = std::wstring(u->db()->filename());
-			if (fn != L"typeinfo.json")
-				tn = w2s(fn) + ":" + tn;
+			if (u->level() != 0)
+				tn = w2s(u->module_name()) + ":" + tn;
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("pos", to_stdstring(n->position));
