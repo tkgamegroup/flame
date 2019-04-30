@@ -333,7 +333,7 @@ namespace flame
 		auto type_name_sp = string_split(std::string(type_name), ':');
 		UdtInfo* udt = nullptr;
 		if (type_name_sp.size() == 1)
-			udt = type_db->find_udt(H(type_name_sp[0].c_str()));
+			udt = find_udt(H(type_name_sp[0].c_str()));
 		else if (type_name_sp.size() == 2)
 		{
 			auto fn = s2w(type_name_sp[0]);
@@ -361,7 +361,7 @@ namespace flame
 						dbs.push_back(db);
 				}
 			}
-			if (!db)
+			if (!db )
 				return nullptr;
 			udt = db->find_udt(H(type_name_sp[1].c_str()));
 		}

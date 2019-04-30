@@ -85,6 +85,7 @@ namespace flame
 	struct EnumInfoPrivate : EnumInfo
 	{
 		TypeInfoDB* db;
+		int level;
 
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
@@ -378,7 +379,7 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			return type_db->find_enum(type_hash)->serialize_value(true, *(int*)src);
+			return find_enum(type_hash)->serialize_value(true, *(int*)src);
 		case TypeTagEnumMulti:
 			break;
 		case TypeTagVariable:
@@ -393,7 +394,7 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			type_db->find_enum(type_hash)->find_item(str.c_str(), (int*)dst);
+			find_enum(type_hash)->find_item(str.c_str(), (int*)dst);
 			break;
 		case TypeTagVariable:
 			from_string(type_hash, str, dst);
@@ -404,6 +405,7 @@ namespace flame
 	struct FunctionInfoPrivate : FunctionInfo
 	{
 		TypeInfoDB* db;
+		int level;
 
 		std::string name;
 		void* rva;
@@ -450,6 +452,7 @@ namespace flame
 	struct UdtInfoPrivate : UdtInfo
 	{
 		TypeInfoDB* db;
+		int level;
 
 		std::string name;
 		int size;
@@ -592,80 +595,6 @@ namespace flame
 	{
 		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
 	}
-
-	struct TypeInfoDBPrivate : TypeInfoDB
-	{
-		std::wstring filename;
-
-		std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
-		std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
-		std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
-
-		Array<EnumInfo*> get_enums()
-		{
-			Array<EnumInfo*> ret;
-			ret.resize(enums.size());
-			auto i = 0;
-			for (auto it = enums.begin(); it != enums.end(); it++)
-			{
-				ret[i] = (*it).second.get();
-				i++;
-			}
-			return ret;
-		}
-
-		EnumInfo* find_enum(unsigned int name_hash)
-		{
-			auto it = enums.find(name_hash);
-			return it == enums.end() ? nullptr : it->second.get();
-		}
-
-		Array<FunctionInfo*> get_functions()
-		{
-			Array<FunctionInfo*> ret;
-			ret.resize(functions.size());
-			auto i = 0;
-			for (auto it = functions.begin(); it != functions.end(); it++)
-			{
-				ret[i] = (*it).second.get();
-				i++;
-			}
-			return ret;
-		}
-
-		FunctionInfo* find_funcion(unsigned int name_hash)
-		{
-			auto it = functions.find(name_hash);
-			return it == functions.end() ? nullptr : it->second.get();
-		}
-
-		Array<UdtInfo*> get_udts()
-		{
-			Array<UdtInfo*> ret;
-			ret.resize(udts.size());
-			auto i = 0;
-			for (auto it = udts.begin(); it != udts.end(); it++)
-			{
-				ret[i] = (*it).second.get();
-				i++;
-			}
-			return ret;
-		}
-
-		UdtInfo* find_udt(unsigned int name_hash)
-		{
-			auto it = udts.find(name_hash);
-			return it == udts.end() ? nullptr : it->second.get();
-		}
-
-		void collect(const std::wstring& filename);
-		void load(const std::wstring& filename);
-		void save(const std::wstring& filename);
-		void clear();
-	};
-
-	static TypeInfoDBPrivate s_type_db;
-	TypeInfoDB* type_db = &s_type_db;
 
 	struct SerializableAttributePrivate : SerializableAttribute
 	{
@@ -1694,7 +1623,68 @@ namespace flame
 			dst->code = n_code->value();
 	}
 
-	void TypeInfoDBPrivate::collect(const std::wstring & filename)
+	std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
+	std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
+	std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
+
+	Array<EnumInfo*> get_enums()
+	{
+		Array<EnumInfo*> ret;
+		ret.resize(enums.size());
+		auto i = 0;
+		for (auto it = enums.begin(); it != enums.end(); it++)
+		{
+			ret[i] = (*it).second.get();
+			i++;
+		}
+		return ret;
+	}
+
+	EnumInfo* find_enum(unsigned int name_hash)
+	{
+		auto it = enums.find(name_hash);
+		return it == enums.end() ? nullptr : it->second.get();
+	}
+
+	Array<FunctionInfo*> get_functions()
+	{
+		Array<FunctionInfo*> ret;
+		ret.resize(functions.size());
+		auto i = 0;
+		for (auto it = functions.begin(); it != functions.end(); it++)
+		{
+			ret[i] = (*it).second.get();
+			i++;
+		}
+		return ret;
+	}
+
+	FunctionInfo* find_funcion(unsigned int name_hash)
+	{
+		auto it = functions.find(name_hash);
+		return it == functions.end() ? nullptr : it->second.get();
+	}
+
+	Array<UdtInfo*> get_udts()
+	{
+		Array<UdtInfo*> ret;
+		ret.resize(udts.size());
+		auto i = 0;
+		for (auto it = udts.begin(); it != udts.end(); it++)
+		{
+			ret[i] = (*it).second.get();
+			i++;
+		}
+		return ret;
+	}
+
+	UdtInfo* find_udt(unsigned int name_hash)
+	{
+		auto it = udts.find(name_hash);
+		return it == udts.end() ? nullptr : it->second.get();
+	}
+
+	void typeinfo_collect(const std::wstring & filename, int level)
 	{
 		com_init();
 
@@ -1767,7 +1757,7 @@ namespace flame
 					}
 					items->Release();
 
-					e->db = this;
+					e->level = level;
 					enums.emplace(hash, e);
 				}
 			}
@@ -1790,10 +1780,10 @@ namespace flame
 				if (udts.find(udt_namehash) == udts.end())
 				{
 					_udt->get_length(&ull);
-					auto udt = new UdtInfoPrivate;
-					udt->name = udt_name;
-					udt->size = (int)ull;
-					udt->module_name = filename;
+					auto u = new UdtInfoPrivate;
+					u->name = udt_name;
+					u->size = (int)ull;
+					u->module_name = filename;
 
 					IDiaEnumSymbols* members;
 					_udt->findChildren(SymTagData, NULL, nsNone, &members);
@@ -1824,7 +1814,7 @@ namespace flame
 
 							type->Release();
 
-							udt->items.emplace_back(i);
+							u->items.emplace_back(i);
 						}
 						member->Release();
 					}
@@ -1857,7 +1847,7 @@ namespace flame
 
 										_function->get_relativeVirtualAddress(&dw);
 
-										auto new_obj = malloc(udt->size);
+										auto new_obj = malloc(u->size);
 										auto library = load_module(filename.c_str());
 										if (library)
 										{
@@ -1871,7 +1861,7 @@ namespace flame
 											cvt.p = (char*)library + (uint)dw;
 											(*((Dummy*)new_obj).*cvt.f)();
 
-											for (auto& i : udt->items)
+											for (auto& i : u->items)
 											{
 												if (i->size <= sizeof(CommonData::v))
 													memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
@@ -1890,8 +1880,8 @@ namespace flame
 									f->name = name;
 									symbol_to_function(_function, f, attribute, session, source_files);
 
-									f->db = this;
-									udt->functions.emplace_back(f);
+									f->level = level;
+									u->functions.emplace_back(f);
 								}
 							}
 						}
@@ -1899,8 +1889,8 @@ namespace flame
 					}
 					_functions->Release();
 
-					udt->db = this;
-					udts.emplace(udt_namehash, udt);
+					u->level = level;
+					udts.emplace(udt_namehash, u);
 				}
 			}
 			_udt->Release();
@@ -1923,7 +1913,7 @@ namespace flame
 				f->name = name;
 				symbol_to_function(_function, f, attribute, session, source_files);
 
-				f->db = this;
+				f->level = level;
 				functions.emplace(H(f->name.c_str()), f);
 			}
 
@@ -1932,13 +1922,11 @@ namespace flame
 		_functions->Release();
 	}
 
-	void TypeInfoDBPrivate::load(const std::wstring & _filename)
+	void typeinfo_load(const std::wstring & filename, int level)
 	{
-		auto file = SerializableNode::create_from_json_file(_filename);
+		auto file = SerializableNode::create_from_json_file(filename);
 		if (!file)
 			return;
-
-		filename = _filename;
 
 		auto n_enums = file->find_node("enums");
 		for (auto i = 0; i < n_enums->node_count(); i++)
@@ -1957,7 +1945,7 @@ namespace flame
 				e->items.emplace_back(i);
 			}
 
-			e->db = this;
+			e->level = level;
 			enums.emplace(H(e->name.c_str()), e);
 		}
 
@@ -1995,12 +1983,13 @@ namespace flame
 					auto n_function = n_functions->node(j);
 					auto f = new FunctionInfoPrivate;
 					unserialize_function(n_function, f);
-					f->db = this;
+
+					f->level = level;
 					u->functions.emplace_back(f);
 				}
 			}
 
-			u->db = this;
+			u->level = level;
 			udts.emplace(H(u->name.c_str()), u);
 		}
 
@@ -2010,14 +1999,15 @@ namespace flame
 			auto n_function = n_functions->node(i);
 			auto f = new FunctionInfoPrivate;
 			unserialize_function(n_function, f);
-			f->db = this;
+
+			f->level = level;
 			functions.emplace(H(f->name.c_str()), f);
 		}
 
 		SerializableNode::destroy(file);
 	}
 
-	void TypeInfoDBPrivate::save(const std::wstring & filename)
+	void typeinfo_save(const std::wstring & filename, int level)
 	{
 		auto file = SerializableNode::create("typeinfo");
 
@@ -2032,6 +2022,9 @@ namespace flame
 			});
 			for (auto& e : sorted_enums)
 			{
+				if (!(e->level == level || level == -1))
+					continue;
+
 				auto n_enum = n_enums->new_node("");
 				n_enum->new_attr("name", e->name);
 
@@ -2057,6 +2050,9 @@ namespace flame
 			});
 			for (auto& u : sorted_udts)
 			{
+				if (!(u->level == level || level == -1))
+					continue;
+
 				auto n_udt = n_udts->new_node("");
 				n_udt->new_attr("name", u->name);
 				n_udt->new_attr("size", std::to_string(u->size));
@@ -2101,6 +2097,9 @@ namespace flame
 			});
 			for (auto& f : sorted_functions)
 			{
+				if (!(f->level == level || level == -1))
+					continue;
+
 				auto n_function = n_functions->new_node("");
 				serialize_function(f, n_function);
 			}
@@ -2110,75 +2109,37 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void TypeInfoDBPrivate::clear()
+	void typeinfo_clear(int level)
 	{
-		enums.clear();
-		udts.clear();
-		functions.clear();
-	}
-
-	const wchar_t* TypeInfoDB::filename() const
-	{
-		return ((TypeInfoDBPrivate*)this)->filename.c_str();
-	}
-
-	Array<EnumInfo*> TypeInfoDB::get_enums()
-	{
-		return ((TypeInfoDBPrivate*)this)->get_enums();
-	}
-
-	EnumInfo* TypeInfoDB::find_enum(uint name_hash)
-	{
-		return ((TypeInfoDBPrivate*)this)->find_enum(name_hash);
-	}
-
-	Array<UdtInfo*> TypeInfoDB::get_udts()
-	{
-		return ((TypeInfoDBPrivate*)this)->get_udts();
-	}
-
-	UdtInfo* TypeInfoDB::find_udt(uint name_hash)
-	{
-		return ((TypeInfoDBPrivate*)this)->find_udt(name_hash);
-	}
-
-	Array<FunctionInfo*> TypeInfoDB::get_functions()
-	{
-		return ((TypeInfoDBPrivate*)this)->get_functions();
-	}
-
-	FunctionInfo* TypeInfoDB::find_function(uint name_hash)
-	{
-		return ((TypeInfoDBPrivate*)this)->find_function(name_hash);
-	}
-
-	void TypeInfoDB::collect(const std::wstring& filename)
-	{
-		((TypeInfoDBPrivate*)this)->collect(filename);
-	}
-
-	void TypeInfoDB::load(const std::wstring& filename)
-	{
-		((TypeInfoDBPrivate*)this)->load(filename);
-	}
-
-	void TypeInfoDB::save(const std::wstring& filename)
-	{
-		((TypeInfoDBPrivate*)this)->save(filename);
-	}
-
-	void TypeInfoDB::clear()
-	{
-		((TypeInfoDBPrivate*)this)->clear();
-	}
-
-	TypeInfoDB* TypeInfoDB::create()
-	{
-		return new TypeInfoDBPrivate;
-	}
-
-	void TypeInfoDB::destroy(TypeInfoDB* db)
-	{
-		delete (TypeInfoDBPrivate*)db;
+		if (level == -1)
+		{
+			enums.clear();
+			udts.clear();
+			functions.clear();
+		}
+		else
+		{
+			for (auto it = enums.begin(); it != enums.end(); )
+			{
+				if (it->second->level == level)
+					it = enums.erase(it);
+				else
+					it++;
+			}
+			for (auto it = udts.begin(); it != udts.end(); )
+			{
+				if (it->second->level == level)
+					it = udts.erase(it);
+				else
+					it++;
+			}
+			for (auto it = functions.begin(); it != functions.end(); )
+			{
+				if (it->second->level == level)
+					it = functions.erase(it);
+				else
+					it++;
+			}
+		}
 	}
 }

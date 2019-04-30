@@ -580,14 +580,12 @@ namespace flame
 	struct VariableInfo;
 	struct UdtInfo;
 	struct FunctionInfo;
-	struct TypeInfoDB;
 
 	typedef TypeInfo* TypeInfoPtr;
 	typedef EnumInfo* EnumInfoPtr;
 	typedef VariableInfo* VariableInfoPtr;
 	typedef FunctionInfo* FunctionInfoPtr;
 	typedef UdtInfo* UdtInfoPtr;
-	typedef TypeInfoDB* TypeInfoDBPtr;
 
 	struct TypeInfo
 	{
@@ -604,8 +602,6 @@ namespace flame
 
 	struct EnumInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeInfoDB* db() const;
-
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS int item_count() const;
@@ -635,8 +631,6 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeInfoDB* db() const;
-
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
@@ -649,8 +643,6 @@ namespace flame
 
 	struct UdtInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeInfoDB* db() const;
-
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS int size() const;
@@ -752,28 +744,20 @@ namespace flame
 			'c' for function, means to collect the code of the function
 	*/
 
-	struct TypeInfoDB
-	{
-		FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
+	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
 
-		FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
-		FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
 
-		FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
-		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
 
-		FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename, int level = 0);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, int level = -1);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_clear(int level = -1);
 
-		FLAME_FOUNDATION_EXPORTS void collect(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS void load(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS void clear();
-
-		FLAME_FOUNDATION_EXPORTS static TypeInfoDB* create();
-		FLAME_FOUNDATION_EXPORTS static void destroy(TypeInfoDB* db);
-	};
-
-	FLAME_FOUNDATION_EXPORTS extern TypeInfoDB* type_db;
+	// level is to separate different sources, such as typeinfos that come from different files, level of -1 means all
 }
 

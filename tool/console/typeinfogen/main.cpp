@@ -30,14 +30,6 @@ int main(int argc, char **args)
 	if (argc == 1)
 		return 0;
 
-	std::vector<std::wstring> pdb_dirs;
-
-	for (auto i = 1; i < argc; i++)
-	{
-		if (args[i][0] != '-')
-			pdb_dirs.push_back(s2w(args[i]));
-	}
-
 	// typeinfo collect must do by order, because it only record the first entry
 	std::vector<std::wstring> pdbs = {
 		L"flame_foundation.dll",
@@ -47,28 +39,24 @@ int main(int argc, char **args)
 		L"flame_universe.dll",
 	};
 
-	auto lwt = std::filesystem::exists(L"typeinfo.json") ? std::filesystem::last_write_time(L"typeinfo.json") : std::chrono::system_clock::time_point();
-	auto need_regenerate = false;
+	auto id = 0;
 	for (auto& fn : pdbs)
 	{
-		if (std::filesystem::last_write_time(fn) > lwt)
+		auto w_dst = ext_replace(fn, L".typeinfo");
+		auto dst = w2s(w_dst);
+		if (!std::filesystem::exists(w_dst) || std::filesystem::last_write_time(w_dst) < std::filesystem::last_write_time(fn))
 		{
-			need_regenerate = true;
-			break;
+			printf("generating: %s\n", dst.c_str());
+
+			typeinfo_collect(fn, id);
+			typeinfo_save(w_dst, id);
+
+			printf("ok\n");
 		}
+		else
+			printf("up-to-data: %s\n", dst.c_str());
+		id++;
 	}
-	if (need_regenerate)
-	{
-		printf("generating: typeinfo.json\n");
-
-		for (auto& fn : pdbs)
-			type_db->collect(fn);
-		type_db->save(L"typeinfo.json");
-
-		printf("ok\n");
-	}
-	else
-		printf("up-to-data: typeinfo.json \n");
 
 	return 0;
 }
