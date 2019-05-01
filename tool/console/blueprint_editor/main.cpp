@@ -91,7 +91,12 @@ int main(int argc, char **args)
 {
 	std::wstring filename;
 
-	type_db->load(L"typeinfo.json");
+	auto typeinfo_lv = typeinfo_free_level();
+	typeinfo_load(L"flame_foundation.typeinfo", typeinfo_lv);
+	typeinfo_load(L"flame_graphics.typeinfo", typeinfo_lv);
+	typeinfo_load(L"flame_network.typeinfo", typeinfo_lv);
+	typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
+	typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
 
 	BP *bp = nullptr;
 	if (argc > 1)
@@ -113,7 +118,7 @@ int main(int argc, char **args)
 
 	std::vector<UdtInfo*> available_udts;
 	{
-		auto udts = type_db->get_udts();
+		auto udts = get_udts();
 		for (auto i = 0; i < udts.size; i++)
 		{
 			auto u = udts[i];
@@ -168,7 +173,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_name = std::string(command_line);
 
-				auto udt = type_db->find_udt(H(s_name.c_str()));
+				auto udt = find_udt(H(s_name.c_str()));
 				if (udt)
 				{
 					printf("%s:\n", udt->name());
@@ -414,24 +419,21 @@ int main(int argc, char **args)
 		else if (s_command_line == "make-script")
 		{
 			scanf("%s", command_line);
-			auto s_filename = std::string(command_line);
+			auto w_filename = std::filesystem::path(filename).parent_path().wstring() + L"/" + s2w(command_line);
 
-			if (std::filesystem::exists(s_filename))
+			if (std::filesystem::exists(w_filename))
 			{
-				auto w_filename = s2w(s_filename);
-				auto path = std::filesystem::path(w_filename);
-				auto w_ppath = path.parent_path().wstring();
-				auto fn = w_ppath + L"/" + path.stem().wstring() + L".dll";
-				auto compile_output = compile_to_dll({ w_filename }, { L"flame_foundation.lib", L"flame_graphics.lib" }, fn);
+				auto p_dll = ext_replace(w_filename, L".dll");
+				auto compile_output = compile_to_dll({ w_filename }, { L"flame_foundation.lib", L"flame_graphics.lib" }, p_dll);
 				printf("%s\n", compile_output.v);
-				if (!std::filesystem::exists(fn) || std::filesystem::last_write_time(fn) < std::filesystem::last_write_time(path))
+				if (!std::filesystem::exists(p_dll) || std::filesystem::last_write_time(p_dll) < std::filesystem::last_write_time(w_filename))
 					printf("compile error\n");
 				else
 				{
-					auto db = TypeInfoDB::create();
-					db->collect(fn);
-					db->save(w_ppath + L"/typeinfo.json");
-					TypeInfoDB::destroy(db);
+					auto lv = typeinfo_free_level();
+					typeinfo_collect(p_dll, lv);
+					typeinfo_save(ext_replace(w_filename, L".typeinfo"), lv);
+					typeinfo_clear(lv);
 					printf("ok\n");
 				}
 			}

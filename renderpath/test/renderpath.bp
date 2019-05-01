@@ -7,7 +7,7 @@
   <node type="BP_Socket4" id="color" pos="118.060005;171.529999" >
     <input name="v1" value="b4:64;200;128;255"></input>
   </node>
-	<node type="../renderpath/test/typeinfo.json:BP_MakeCmd" id="make_cmd" pos="566.669983;440.970001" />
+	<node type="make_cmd.dll:BP_MakeCmd" id="make_cmd" pos="566.669983;440.970001" />
 	<link out="sc.renderpass_clear" in="cv.renderpass" />
 	<link out="color.v" in="cv.colors" />
 	<link out="sc.image_count" in="cb.count" />

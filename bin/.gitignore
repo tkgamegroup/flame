@@ -1,4 +1,4 @@
 *.dll
-typeinfo.json
+*.typeinfo
 bp.gv
 bp.png

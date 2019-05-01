@@ -99,6 +99,16 @@ namespace flame
 		}
 	};
 
+	int EnumInfo::level() const
+	{
+		return ((EnumInfoPrivate*)this)->level;
+	}
+
+	const wchar_t* EnumInfo::module_name() const
+	{
+		return ((EnumInfoPrivate*)this)->module_name.c_str();
+	}
+
 	const char* EnumInfo::name() const
 	{
 		return ((EnumInfoPrivate*)this)->name.c_str();
@@ -409,6 +419,16 @@ namespace flame
 		std::string code;
 	};
 
+	int FunctionInfo::level() const
+	{
+		return ((FunctionInfoPrivate*)this)->level;
+	}
+
+	const wchar_t* FunctionInfo::module_name() const
+	{
+		return ((FunctionInfoPrivate*)this)->module_name.c_str();
+	}
+
 	const char* FunctionInfo::name() const
 	{
 		return ((FunctionInfoPrivate*)this)->name.c_str();
@@ -535,6 +555,16 @@ namespace flame
 		}
 	};
 
+	int UdtInfo::level() const
+	{
+		return ((UdtInfoPrivate*)this)->level;
+	}
+
+	const wchar_t* UdtInfo::module_name() const
+	{
+		return ((UdtInfoPrivate*)this)->module_name.c_str();
+	}
+
 	const char* UdtInfo::name() const
 	{
 		return ((UdtInfoPrivate*)this)->name.c_str();
@@ -543,11 +573,6 @@ namespace flame
 	int UdtInfo::size() const
 	{
 		return ((UdtInfoPrivate*)this)->size;
-	}
-
-	const wchar_t* UdtInfo::module_name() const
-	{
-		return ((UdtInfoPrivate*)this)->module_name.c_str();
 	}
 
 	int UdtInfo::item_count() const
@@ -1607,14 +1632,21 @@ namespace flame
 			dst->code = n_code->value();
 	}
 
-	static int _typeinfo_maxlevel = -1;
+	static std::vector<bool> typeinfo_levels;
 	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
 	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
 	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
 
-	int typeinfo_maxlevel()
+	int typeinfo_free_level()
 	{
-		return _typeinfo_maxlevel;
+		for (auto i = 0; i < typeinfo_levels.size(); i++)
+		{
+			if (!typeinfo_levels[i])
+				return i;
+		}
+		auto lv = typeinfo_levels.size();
+		typeinfo_levels.push_back(true);
+		return lv;
 	}
 
 	Array<EnumInfo*> get_enums()
@@ -1703,8 +1735,6 @@ namespace flame
 			return;
 		}
 
-		_typeinfo_maxlevel = max(_typeinfo_maxlevel, level);
-
 		LONG l;
 		ULONG ul;
 		ULONGLONG ull;
@@ -1750,6 +1780,7 @@ namespace flame
 					items->Release();
 
 					e->level = level;
+					e->module_name = filename;
 					enums.emplace(hash, e);
 				}
 			}
@@ -1873,6 +1904,7 @@ namespace flame
 									symbol_to_function(_function, f, attribute, session, source_files);
 
 									f->level = level;
+									f->module_name = filename;
 									u->functions.emplace_back(f);
 								}
 							}
@@ -1882,6 +1914,7 @@ namespace flame
 					_functions->Release();
 
 					u->level = level;
+					u->module_name = filename;
 					udts.emplace(udt_namehash, u);
 				}
 			}
@@ -1906,6 +1939,7 @@ namespace flame
 				symbol_to_function(_function, f, attribute, session, source_files);
 
 				f->level = level;
+				f->module_name = filename;
 				functions.emplace(H(f->name.c_str()), f);
 			}
 
@@ -1918,7 +1952,10 @@ namespace flame
 	{
 		auto file = SerializableNode::create_from_json_file(filename);
 		if (!file)
+		{
+			assert(0);
 			return;
+		}
 
 		auto n_enums = file->find_node("enums");
 		for (auto i = 0; i < n_enums->node_count(); i++)
@@ -2108,9 +2145,13 @@ namespace flame
 			enums.clear();
 			udts.clear();
 			functions.clear();
+			typeinfo_levels.clear();
 		}
 		else
 		{
+			if (level >= typeinfo_levels.size() || !typeinfo_levels[level])
+				return;
+
 			for (auto it = enums.begin(); it != enums.end(); )
 			{
 				if (it->second->level == level)
@@ -2132,6 +2173,8 @@ namespace flame
 				else
 					it++;
 			}
+
+			typeinfo_levels[level] = false;
 		}
 	}
 }

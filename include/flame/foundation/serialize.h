@@ -760,7 +760,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
 
-	FLAME_FOUNDATION_EXPORTS int typeinfo_maxlevel();
+	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, int level = -1);

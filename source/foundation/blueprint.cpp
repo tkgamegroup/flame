@@ -354,10 +354,11 @@ namespace flame
 			}
 			if (!udt)
 			{
-				if (std::filesystem::exists(fn))
+				auto abs_fn = ext_replace(std::filesystem::path(filename).parent_path().wstring() + L"\\" + fn, L".typeinfo");
+				if (std::filesystem::exists(abs_fn))
 				{
-					auto lv = typeinfo_maxlevel() + 1;
-					typeinfo_load(fn, lv);
+					auto lv = typeinfo_free_level();
+					typeinfo_load(abs_fn, lv);
 					extra_typeinfos.emplace_back(lv, fn);
 					udt = find_udt(H(type_name_sp[1].c_str()));
 				}
@@ -562,6 +563,7 @@ namespace flame
 	void BPPrivate::save(const wchar_t *_filename)
 	{
 		filename = _filename;
+		auto ppath = std::filesystem::path(filename).parent_path().wstring() + L"\\";
 
 		auto file = SerializableNode::create("BP");
 
@@ -571,7 +573,12 @@ namespace flame
 			auto u = n->udt;
 			auto tn = std::string(u->name());
 			if (u->level() != 0)
-				tn = w2s(u->module_name()) + ":" + tn;
+			{
+				auto src = std::filesystem::path(u->module_name()).wstring();
+				if (ppath.size() < src.size() && ppath.compare(0, ppath.size(), src.c_str()) == 0)
+					src.erase(src.begin(), src.begin() + ppath.size());
+				tn = w2s(src) + ":" + tn;
+			}
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("pos", to_stdstring(n->position));
