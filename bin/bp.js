@@ -13,8 +13,37 @@ window.onload = function(){
         return path;
     }
 
+    var enums = [];
+    window.enums = enums;
+
+    var udts = [];
+    window.udts = udts;
+    var find_udt = function(name){
+        for (var i in udts)
+        {
+            var u = udts[i];
+            if (u.name == name)
+                return u;
+        }
+        return null;
+    };
+
+    var functions = [];
+    window.functions = functions;
+
     var nodes = [];
     window.nodes = nodes;
+
+    var load_typeinfo = function(json){
+        for (var i in json.enums)
+            enums.push(json.enums[i]);
+        
+        for (var i in json.udts)
+            udts.push(json.udts[i]);
+    
+        for (var i in json.functions)
+            functions.push(json.functions[i]);
+    };
 
     var mouse = {
         curr_slot: null,
@@ -47,7 +76,7 @@ window.onload = function(){
             return offset;
     }
 
-    function Node(type, id, x, y) {
+    function Node(udt_name, id, x, y) {
         this.name = id;
 
         this.eMain = document.createElement("div");
@@ -79,15 +108,28 @@ window.onload = function(){
         this.inputs = [];
         this.outputs = [];
 
-        var udt = flame.find_udt(type);
-        console.assert(udt);
-        for (var i in udt.items)
+        var thiz = this;
+
+        var sp = udt_name.split(":");
+        var load = function(u_name){
+            var udt = find_udt(u_name);
+            for (var i in udt.items)
+            {
+                var item = udt.items[i];
+                if (item.attribute.indexOf("i") >= 0)
+                    thiz.AddInput(item.name);
+                else if (item.attribute.indexOf("o") >= 0)
+                    thiz.AddOutput(item.name);
+            }
+        };
+        if (sp.length == 1)
+            load(sp[0]);
+        else
         {
-            var item = udt.items[i];
-            if (item.attribute.indexOf("i") >= 0)
-                this.AddInput(item.name);
-            else if (item.attribute.indexOf("o") >= 0)
-                this.AddOutput(item.name);
+            $.getJSON(sp[0].replace(/.dll/, ".typeinfo"), function(res){
+                load_typeinfo(res);
+                load(sp[1]);
+            });
         }
     }
 
@@ -245,14 +287,9 @@ window.onload = function(){
             mouse.curr_slot = null;
         }
     };
-	
-	$.getJSON("typeinfo.json", function(){
-		var cut = 1;
-	});
-
-    var req_typeinfo = new XMLHttpRequest;
-    req_typeinfo.timeout = 3000;
-    req_typeinfo.addEventListener('load', function(){
+    
+    var wait_typeinfos = 5;
+    var do_connect = function(){
         var sock_s = new WebSocket("ws://localhost:5566/");
         window.sock_s = sock_s;
         sock_s.onmessage = function(res){
@@ -274,7 +311,7 @@ window.onload = function(){
             for (var i in src_nodes)
             {
                 var sn = src_nodes[i];
-                var n = new Node(sn.type, sn.id, sn.x, sn.y);
+                var n = new Node(sn.udt_name, sn.id, sn.x, sn.y);
                 for (var item in sn)
                 {
                     if (item == "input")
@@ -299,7 +336,10 @@ window.onload = function(){
                 var input = FindNode(addr_in[0]).FindInput(addr_in[1]);
                 var output = FindNode(addr_out[0]).FindOutput(addr_out[1]);
     
-                input.link = output;
+                if (input && output)
+                    input.link = output;
+                else
+                    console.log("cannot link " + sl.out + " and " + sl.in);
             }
     
             for (var i in nodes)
@@ -314,16 +354,37 @@ window.onload = function(){
                 window.sock_s = s;
             }, 2000);
         };
-    });
-    req_typeinfo.addEventListener('abort', function(e){
-        alert("typeinfo loading: aborted");
-    });
-    req_typeinfo.addEventListener('error', function(e){
-        alert("typeinfo loading: error");
-    });
-    req_typeinfo.open('GET', "typeinfo.json");
-    req_typeinfo.responseType = 'json';
-    //req_typeinfo.send(null);
+    };
+	$.getJSON("flame_foundation.typeinfo", function(res){
+        load_typeinfo(res);
+        wait_typeinfos--;
+        if (wait_typeinfos == 0)
+            do_connect();
+	});
+	$.getJSON("flame_network.typeinfo", function(res){
+        load_typeinfo(res);
+        wait_typeinfos--;
+        if (wait_typeinfos == 0)
+            do_connect();
+	});
+	$.getJSON("flame_graphics.typeinfo", function(res){
+        load_typeinfo(res);
+        wait_typeinfos--;
+        if (wait_typeinfos == 0)
+            do_connect();
+	});
+	$.getJSON("flame_sound.typeinfo", function(res){
+        load_typeinfo(res);
+        wait_typeinfos--;
+        if (wait_typeinfos == 0)
+            do_connect();
+	});
+	$.getJSON("flame_universe.typeinfo", function(res){
+        load_typeinfo(res);
+        wait_typeinfos--;
+        if (wait_typeinfos == 0)
+            do_connect();
+	});
 
     /*
     var n = new Node('test', 0, 0);

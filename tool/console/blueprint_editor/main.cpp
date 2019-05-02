@@ -109,7 +109,7 @@ int main(int argc, char **args)
 
 	if (!bp)
 		bp = BP::create();
-	if (filename != L"")
+	if (!filename.empty())
 		printf("\"%s\":\n", w2s(filename).c_str());
 	else
 		printf("\"unnamed\":\n");
@@ -152,7 +152,8 @@ int main(int argc, char **args)
 				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
 				"  refresh - reload the bp\n"
-				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having a filename)\n"
+				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having one)\n"
+				"  reload - reload the bp\n"
 				"  make-script [filename] - compile cpp that contains nodes, and do typeinfogen to it\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
 				"  gui-browser - use the power of browser to show and edit\n"
@@ -373,7 +374,7 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "save")
 		{
-			if (filename != L"")
+			if (!filename.empty())
 			{
 				bp->save(filename.c_str());
 				printf("file saved\n");
@@ -393,6 +394,17 @@ int main(int argc, char **args)
 				else
 					printf("filename taken\n");
 			}
+		}
+		else if (s_command_line == "reload")
+		{
+			if (!filename.empty())
+			{
+				BP::destroy(bp);
+				bp = BP::create_from_file(filename.c_str());
+				printf("reloaded\n");
+			}
+			else
+				printf("you need to save the bp first\n");
 		}
 		else if (s_command_line == "set-layout")
 		{
@@ -480,7 +492,11 @@ int main(int argc, char **args)
 					auto src = bp->node(i);
 					auto n_node = n_nodes->new_node("");
 					auto pos = src->position();
-					n_node->new_attr("type", src->udt()->name());
+					auto u = src->udt();
+					auto udt_name = std::string(u->name());
+					if (u->level() > 0)
+						udt_name = w2s(u->module_name()) + ":" + udt_name;
+					n_node->new_attr("udt_name", udt_name);
 					n_node->new_attr("id", src->id());
 					n_node->new_attr("x", to_stdstring(pos.x));
 					n_node->new_attr("y", to_stdstring(pos.y));

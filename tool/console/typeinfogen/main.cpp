@@ -33,8 +33,8 @@ int main(int argc, char **args)
 	// typeinfo collect must do by order, because it only record the first entry
 	std::vector<std::wstring> pdbs = {
 		L"flame_foundation.dll",
-		L"flame_graphics.dll",
 		L"flame_network.dll",
+		L"flame_graphics.dll",
 		L"flame_sound.dll",
 		L"flame_universe.dll",
 	};
