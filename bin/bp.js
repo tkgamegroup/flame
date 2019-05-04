@@ -122,9 +122,9 @@ window.onload = function(){
             {
                 var item = udt.items[i];
                 if (item.attribute.indexOf("i") >= 0)
-                    thiz.AddInput(item.name);
+                    thiz.AddInput(item);
                 else if (item.attribute.indexOf("o") >= 0)
-                    thiz.AddOutput(item.name);
+                    thiz.AddOutput(item);
             }
             for (var i = 0; i < window.staging_links.length; i++)
             {
@@ -172,15 +172,15 @@ window.onload = function(){
         }
     }
 
-    function Slot(name, io) {
-        this.name = name;
+    function Slot(vi, io) {
+        this.vi = vi;
         this.node = null;
         this.links = [];
     
         this.eMain = document.createElement("div");
 
         this.eName = document.createElement("div");
-        this.eName.innerHTML = name;
+        this.eName.innerHTML = vi.name;
         this.eName.style.display = "inline-block";
         
         this.eSlot = document.createElement("div");
@@ -247,15 +247,15 @@ window.onload = function(){
         }
     }
 
-    Node.prototype.AddInput = function (name) {
-        var s = new Slot(name, 0);
+    Node.prototype.AddInput = function (item) {
+        var s = new Slot(item, 0);
         s.node = this;
         this.inputs.push(s);
         this.eLeft.appendChild(s.eMain);
     };
 
-    Node.prototype.AddOutput = function (name) {
-        var s = new Slot(name, 1);
+    Node.prototype.AddOutput = function (item) {
+        var s = new Slot(item, 1);
         s.node = this;
         this.outputs.push(s);
         this.eRight.appendChild(s.eMain);
@@ -265,7 +265,7 @@ window.onload = function(){
         for (var i in this.inputs)
         {
             var s = this.inputs[i];
-            if (s.name == name)
+            if (s.vi.name == name)
                 return s;
         }
         return null;
@@ -275,7 +275,7 @@ window.onload = function(){
         for (var i in this.outputs)
         {
             var s = this.outputs[i];
-            if (s.name == name)
+            if (s.vi.name == name)
                 return s;
         }
         return null;
