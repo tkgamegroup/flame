@@ -34,6 +34,9 @@ window.onload = function(){
     var nodes = [];
     window.nodes = nodes;
 
+    var staging_links = [];
+    window.staging_links = staging_links;
+
     var load_typeinfo = function(json){
         for (var i in json.enums)
             enums.push(json.enums[i]);
@@ -113,6 +116,8 @@ window.onload = function(){
         var sp = udt_name.split(":");
         var load = function(u_name){
             var udt = find_udt(u_name);
+            if (!udt)
+                return false;
             for (var i in udt.items)
             {
                 var item = udt.items[i];
@@ -121,22 +126,56 @@ window.onload = function(){
                 else if (item.attribute.indexOf("o") >= 0)
                     thiz.AddOutput(item.name);
             }
+            for (var i = 0; i < window.staging_links.length; i++)
+            {
+                var sl = window.staging_links[i];
+    
+                var addr_in = sl.in.split(".");
+                var addr_out = sl.out.split(".");
+    
+                var n1 = FindNode(addr_in[0]);
+                var n2 = FindNode(addr_out[0]);
+                var input = n1.FindInput(addr_in[1]);
+                var output = n2.FindOutput(addr_out[1]);
+    
+                if (input && output)
+                {
+                    input.links[0] = output;
+                    output.links.push(input);
+
+                    n1.UpdatePosition();
+                    n2.UpdatePosition();
+
+                    window.staging_links.splice(i, 1);
+                    i--;
+                }
+            }
+            return true;
         };
         if (sp.length == 1)
-            load(sp[0]);
+            console.assert(load(sp[0]));
         else
         {
-            $.getJSON(sp[0].replace(/.dll/, ".typeinfo"), function(res){
-                load_typeinfo(res);
-                load(sp[1]);
-            });
+            if (!load(sp[1]))
+            {
+                var url = sp[0].replace(/.dll/, ".typeinfo");
+                $.getJSON(url, function(res, status){
+                    if (status == "success")
+                    {
+                        load_typeinfo(res);
+                        console.assert(load(sp[1]));
+                    }
+                    else
+                        console.log("load failed: " + url);
+                });
+            }
         }
     }
 
     function Slot(name, io) {
         this.name = name;
         this.node = null;
-        this.link = null;
+        this.links = [];
     
         this.eMain = document.createElement("div");
 
@@ -153,6 +192,8 @@ window.onload = function(){
         this.io = io;
         if (io == 0)
         {
+            this.links.push(null);
+
             this.path = CreatePath();
 
             this.eMain.appendChild(this.eSlot);
@@ -160,10 +201,20 @@ window.onload = function(){
     
             this.eSlot.onclick = function (e) {
                 if (!mouse.curr_slot) {
-                    if (thiz.link)
+                    if (thiz.links[0])
                     {
                         thiz.path.setAttributeNS(null, "d", "");
-                        thiz.link = null;
+
+                        var o = thiz.links[0];
+                        for (var i = 0; i < o.links; i++)
+                        {
+                            if (o.links[i] == thiz)
+                            {
+                                o.links.splice(i, 1);
+                                break;
+                            }
+                        }
+                        thiz.links[0] = null;
                     }
 
                     mouse.curr_slot = thiz;
@@ -181,7 +232,9 @@ window.onload = function(){
     
             this.eSlot.onclick = function (e) {
                 if (mouse.curr_slot && mouse.curr_slot.io == 0) {
-                    mouse.curr_slot.link = thiz;
+                    mouse.curr_slot.links[0] = thiz;
+                    thiz.links.push(mouse.curr_slot);
+
                     var a = mouse.curr_slot.GetPos();
                     var b = thiz.GetPos();
                     mouse.curr_slot.SetPath(a, b);
@@ -235,27 +288,25 @@ window.onload = function(){
         for (var i in this.inputs)
         {
             var s = this.inputs[i];
-            if (s.link)
+            if (s.links[0])
             {
                 var a = s.GetPos();
-                var b = s.link.GetPos();
+                var b = s.links[0].GetPos();
         
                 s.SetPath(a, b);
             }
         }
-        for (var i in nodes)
+        for (var i in this.outputs)
         {
-            var n = nodes[i];
-            for (var j in n.inputs)
+            var s = this.outputs[i];
+            for (var j in s.links)
             {
-                var s = n.inputs[j];
-                if (s.link && s.link.node == this)
-                {
-                    var a = s.GetPos();
-                    var b = s.link.GetPos();
-            
-                    s.SetPath(a, b);
-                }
+                var t = s.links[j];
+
+                var a = t.GetPos();
+                var b = s.GetPos();
+        
+                t.SetPath(a, b);
             }
 
         }
@@ -325,22 +376,7 @@ window.onload = function(){
                 document.body.appendChild(n.eMain);
             }
     
-            var src_links = src.links;
-            for (var i in src_links)
-            {
-                var sl = src_links[i];
-    
-                var addr_in = sl.in.split(".");
-                var addr_out = sl.out.split(".");
-    
-                var input = FindNode(addr_in[0]).FindInput(addr_in[1]);
-                var output = FindNode(addr_out[0]).FindOutput(addr_out[1]);
-    
-                if (input && output)
-                    input.link = output;
-                else
-                    console.log("cannot link " + sl.out + " and " + sl.in);
-            }
+            window.staging_links = src.links;
     
             for (var i in nodes)
                 nodes[i].UpdatePosition();
