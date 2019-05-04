@@ -32,10 +32,7 @@ namespace flame
 		- A node is bound to an udt which its name started with 'BP_'.
 		- The reflected members of the udt will be separated into inputs and outpus.
 		- An input has an attribute 'i', and an output has an attribute 'o'.
-		- Both inputs and outputs must be compatible with CommonData.
-		- Only for inputs, if it is an Array<>, there will be multiple items of it,
-		  else, there will be only one item of it
-		- Address in BP: [node_id].[varible_name].[item_index]
+		- Address in BP: [node_id].[varible_name]
 		  you can use address to find an object in BP, e.g.
 		  'a'     for node
 		  'a.b'   for node input or output
@@ -48,7 +45,7 @@ namespace flame
 			have an nonparametric void function called 'finish' (optional)
 			have a member indicates the module name (optional), such as: 'static const int flame_foundation$m;'
 			 (we use the module name to run 'update', 'initialize' and 'finish' functions)
-		- A BP file is basically a XML file, you can use both .xml or .bp.
+		- A BP file is basically a XML file
 	*/
 
 	struct EnumInfo;
@@ -61,14 +58,22 @@ namespace flame
 
 		struct Slot
 		{
-			FLAME_FOUNDATION_EXPORTS Node *node() const;
-			FLAME_FOUNDATION_EXPORTS VariableInfo*variable_info() const;
+			enum Type
+			{
+				Input,
+				Output
+			};
 
-			FLAME_FOUNDATION_EXPORTS CommonData& data();
-			FLAME_FOUNDATION_EXPORTS void set_data(const CommonData& d); // setting datas for output's item is ok, but the data will be rushed when the node update
+			FLAME_FOUNDATION_EXPORTS Type type() const;
+			FLAME_FOUNDATION_EXPORTS Node* node() const;
+			FLAME_FOUNDATION_EXPORTS VariableInfo* variable_info() const;
 
-			FLAME_FOUNDATION_EXPORTS Slot* link() const; // link is only storaged in input
-			FLAME_FOUNDATION_EXPORTS bool set_link(Slot* target); // it is vaild for input only
+			FLAME_FOUNDATION_EXPORTS void* data();
+			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
+
+			FLAME_FOUNDATION_EXPORTS int link_count() const;
+			FLAME_FOUNDATION_EXPORTS Slot* link(int idx = 0) const;
+			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);
 
 			FLAME_FOUNDATION_EXPORTS String get_address() const;
 		};

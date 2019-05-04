@@ -225,7 +225,7 @@ int main(int argc, char **args)
 						if (input->link())
 							link_address = input->link()->get_address().v;
 						printf("   [%s]->\n", link_address.c_str());
-						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), &input->data().v, 2);
+						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), input->data(), 2);
 						if (str.size == 0)
 							str = "-";
 						printf("   %s\n", str.v);
@@ -236,7 +236,7 @@ int main(int argc, char **args)
 						auto output = n->output(i);
 						auto v = output->variable_info();
 						printf(" %s\n", output->variable_info()->name());
-						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), &output->data().v, 2);
+						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), output->data(), 2);
 						if (str.size == 0)
 							str = "-";
 						printf("   %s\n", str.v);
@@ -291,7 +291,7 @@ int main(int argc, char **args)
 				auto in = bp->find_input(s_in_address.c_str());
 				if (out && in)
 				{
-					in->set_link(out);
+					in->link_to(out);
 					printf("link added: %s - %s\n", in->link()->get_address().v, in->get_address().v);
 				}
 				else
@@ -327,7 +327,7 @@ int main(int argc, char **args)
 				auto i = bp->find_input(s_in_address.c_str());
 				if (i)
 				{
-					i->set_link(nullptr);
+					i->link_to(nullptr);
 					printf("link removed: %s\n", s_in_address.c_str());
 				}
 				else
@@ -348,9 +348,9 @@ int main(int argc, char **args)
 			if (i)
 			{
 				auto v = i->variable_info();
-				auto value_before = serialize_value(v->type()->tag(), v->type()->name_hash(), &i->data().v, 2);
-				unserialize_value(v->type()->tag(), v->type()->name_hash(), s_value, &i->data().v);
-				auto value_after = serialize_value(v->type()->tag(), v->type()->name_hash(), &i->data().v, 2);
+				auto value_before = serialize_value(v->type()->tag(), v->type()->name_hash(), i->data(), 2);
+				unserialize_value(v->type()->tag(), v->type()->name_hash(), s_value, i->data());
+				auto value_after = serialize_value(v->type()->tag(), v->type()->name_hash(), i->data(), 2);
 				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
 			}
 			else
@@ -508,11 +508,11 @@ int main(int argc, char **args)
 						auto hash = v->type()->name_hash();
 						if (tag != TypeTagPointer)
 						{
-							if (!compare(tag, v->size(), &v->default_value(), &input->data().v))
+							if (!compare(tag, v->size(), &v->default_value(), input->data()))
 							{
 								auto n_input = n_node->new_node("input");
 								n_input->new_attr("name", v->name());
-								n_input->new_attr("value", serialize_value(tag, hash, &input->data().v, 2).v);
+								n_input->new_attr("value", serialize_value(tag, hash, input->data(), 2).v);
 							}
 						}
 					}

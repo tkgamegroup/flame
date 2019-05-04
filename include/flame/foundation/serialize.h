@@ -592,6 +592,11 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
+
+		static bool equal(const TypeInfo* lhs, const TypeInfo* rhs)
+		{
+			return lhs->tag() == rhs->tag() && lhs->name_hash() == rhs->name_hash();
+		}
 	};
 
 	struct EnumItem
@@ -626,8 +631,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const CommonData& default_value() const;
 	};
 
-	FLAME_FOUNDATION_EXPORTS void get(TypeTag$ tag, int size, const void* src, CommonData* dst);
-	FLAME_FOUNDATION_EXPORTS void set(TypeTag$ tag, int size, const CommonData* src, void* dst);
+	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
 	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
 	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint type_hash, const void* src, int precision = 6);
 	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint type_hash, const std::string& str, void* dst);

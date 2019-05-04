@@ -31,15 +31,19 @@ namespace flame
 
 	struct SlotPrivate : BP::Slot
 	{
+		Type type;
 		NodePrivate* node;
 		VariableInfo* variable_info;
 
-		CommonData data;
+		void* data;
 
-		SlotPrivate*link;
+		std::vector<SlotPrivate*> links;
 
-		SlotPrivate(NodePrivate* _node, VariableInfo* _variable_info);
-		bool set_link(SlotPrivate*target);
+		SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info);
+		~SlotPrivate();
+
+		void set_data(const void* data);
+		bool link_to(SlotPrivate*target);
 
 		String get_address() const;
 	};
@@ -67,7 +71,6 @@ namespace flame
 		NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
 		~NodePrivate();
 
-		void *_find_input_or_output(const std::string &name, int &input_or_output /* 0 or 1 */) const;
 		SlotPrivate* find_input(const std::string &name) const;
 		SlotPrivate* find_output(const std::string &name) const;
 
@@ -108,21 +111,59 @@ namespace flame
 		void save(const wchar_t *filename);
 	};
 
-	SlotPrivate::SlotPrivate(NodePrivate* _node, VariableInfo* _variable_info) :
+	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
+		type(_type),
 		node(_node),
 		variable_info(_variable_info),
-		link(nullptr)
+		data(nullptr)
 	{
-		data = variable_info->default_value();
+		auto size = variable_info->size();
+		data = new char[size];
+		set(data, variable_info->type()->tag(), size, &variable_info->default_value());
+
+		if (type == Input)
+			links.push_back(nullptr);
 	}
 
-	bool SlotPrivate::set_link(SlotPrivate* target)
+	SlotPrivate::~SlotPrivate()
 	{
-		if (target && !typefmt_compare(data.fmt, target->data.fmt))
+		delete[]data;
+	}
+
+	void SlotPrivate::set_data(const void* d)
+	{
+		memcpy(data, d, variable_info->size());
+	}
+
+	bool SlotPrivate::link_to(SlotPrivate* target)
+	{
+		if (type == Output)
+		{
+			assert(0);
 			return false;
-		if (link)
-			link->link = nullptr;
-		link = target;
+		}
+
+		if (target && (target->type == Input || !TypeInfo::equal(variable_info->type(), target->variable_info->type())))
+			return false;
+		if (links[0] == target)
+			return true;
+
+		if (links[0])
+		{
+			auto o = links[0];
+			for (auto it = o->links.begin(); it != o->links.end(); it++)
+			{
+				if (*it == this)
+				{
+					o->links.erase(it);
+					break;
+				}
+			}
+		}
+
+		links[0] = target;
+		target->links.push_back(this);
+
 		return true;
 	}
 
@@ -149,64 +190,66 @@ namespace flame
 			auto v = udt->item(i);
 			auto attr = std::string(v->attribute());
 			if (attr.find('i') != std::string::npos)
-				inputs.emplace_back(new SlotPrivate(this, v));
+				inputs.emplace_back(new SlotPrivate(SlotPrivate::Input, this, v));
 			if (attr.find('o') != std::string::npos)
-				outputs.emplace_back(new SlotPrivate(this, v));
+				outputs.emplace_back(new SlotPrivate(SlotPrivate::Output, this, v));
 		}
 	}
 
 	NodePrivate::~NodePrivate()
 	{
-		for (auto &output : outputs)
+		for (auto& i : inputs)
 		{
-			auto link = output->link;
-			if (link)
-				link->link = nullptr;
+			auto o = i->links[0];
+			for (auto it = o->links.begin(); it != o->links.end(); it++)
+			{
+				if (*it == i.get())
+				{
+					o->links.erase(it);
+					break;
+				}
+			}
 		}
-	}
+		for (auto& o : outputs)
+		{
+			for (auto& l : o->links)
+				l->links[0] = nullptr;
+		}
 
-	void *NodePrivate::_find_input_or_output(const std::string &name, int &input_or_output) const
-	{
-		auto udt_item = udt->find_item(name.c_str());
-		if (!udt_item)
-			return nullptr;
-		auto udt_item_attribute = std::string(udt_item->attribute());
-		if (udt_item_attribute.find('i') != std::string::npos)
-		{
-			for (auto &input : inputs)
-			{
-				if (name == input->variable_info->name())
-				{
-					input_or_output = 0;
-					return input.get();
-				}
-			}
-		}
-		else if (udt_item_attribute.find('o') != std::string::npos)
-		{
-			for (auto &output : outputs)
-			{
-				if (name == output->variable_info->name())
-				{
-					input_or_output = 1;
-					return output.get();
-				}
-			}
-		}
+		if (dummy)
+			free(dummy);
 	}
 
 	SlotPrivate* NodePrivate::find_input(const std::string &name) const
 	{
-		int input_or_output;
-		auto ret = _find_input_or_output(name, input_or_output);
-		return input_or_output == 0 ? (SlotPrivate*)ret : nullptr;
+		auto udt_item = udt->find_item(name.c_str());
+		if (!udt_item)
+			return nullptr;
+		if (std::string(udt_item->attribute()).find('i') != std::string::npos)
+		{
+			for (auto& input : inputs)
+			{
+				if (name == input->variable_info->name())
+					return input.get();
+			}
+		}
+		return nullptr;
 	}
 
 	SlotPrivate* NodePrivate::find_output(const std::string &name) const
 	{
-		int input_or_output;
-		auto ret = _find_input_or_output(name, input_or_output);
-		return input_or_output == 1 ? (SlotPrivate*)ret : nullptr;
+		auto udt_item = udt->find_item(name.c_str());
+		if (!udt_item)
+			return nullptr;
+		if (std::string(udt_item->attribute()).find('o') != std::string::npos)
+		{
+			for (auto& output : outputs)
+			{
+				if (name == output->variable_info->name())
+					return output.get();
+			}
+		}
+		return nullptr;
 	}
 
 	void NodePrivate::report_order()
@@ -216,10 +259,10 @@ namespace flame
 
 		for (auto &input : inputs)
 		{
-			auto link = input->link;
-			if (link)
+			auto o = input->links[0];
+			if (o)
 			{
-				auto n = link->node;
+				auto n = o->node;
 				if (!n->updated)
 					n->report_order();
 			}
@@ -236,7 +279,7 @@ namespace flame
 		{
 			auto v = input->variable_info;
 			auto type = v->type();
-			set(type->tag(), v->size(), input->link ? &input->link->data : &input->data, (char*)dummy + v->offset());
+			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? &input->links[0]->data : &input->data);
 		}
 
 		if (initialize_function)
@@ -262,7 +305,7 @@ namespace flame
 		{
 			auto v = output->variable_info;
 			auto type = v->type();
-			get(type->tag(), v->size(), (char*)dummy + v->offset(), &output->data);
+			set((char*)dummy + v->offset(), type->tag(), v->size(), output->data);
 		}
 	}
 
@@ -297,7 +340,7 @@ namespace flame
 		{
 			auto v = input->variable_info;
 			auto type = v->type();
-			set(type->tag(), v->size(), input->link ? &input->link->data : &input->data, (char*)dummy + v->offset());
+			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? &input->links[0]->data : &input->data);
 		}
 
 		if (update_function)
@@ -323,7 +366,7 @@ namespace flame
 		{
 			auto v = output->variable_info;
 			auto type = v->type();
-			get(type->tag(), v->size(), (char*)dummy + v->offset(), &output->data);
+			set((char*)dummy + v->offset(), type->tag(), v->size(), output->data);
 		}
 
 		updated = true;
@@ -415,26 +458,22 @@ namespace flame
 		return nullptr;
 	}
 
-	SlotPrivate *BPPrivate::find_input(const std::string &address) const
+	SlotPrivate* BPPrivate::find_input(const std::string &address) const
 	{
 		auto sp = string_split(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
-		int input_or_output;
-		auto ret = (SlotPrivate*)n->_find_input_or_output(sp[1], input_or_output);
-		return input_or_output == 0 ? ret : nullptr;
+		return (SlotPrivate*)n->find_input(sp[1]);
 	}
 
-	SlotPrivate*BPPrivate::find_output(const std::string &address) const
+	SlotPrivate* BPPrivate::find_output(const std::string &address) const
 	{
 		auto sp = string_split(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
-		int input_or_output;
-		auto ret = (SlotPrivate*)n->_find_input_or_output(sp[1], input_or_output);
-		return input_or_output == 1 ? ret : nullptr;
+		return (SlotPrivate*)n->find_output(sp[1]);
 	}
 
 	void BPPrivate::clear()
@@ -540,7 +579,7 @@ namespace flame
 								if (name == v->name())
 								{
 									auto type = v->type();
-									unserialize_value(type->tag(), type->name_hash(), n_input->find_attr("value")->value(), &input->data.v);
+									unserialize_value(type->tag(), type->name_hash(), n_input->find_attr("value")->value(), input->data);
 									break;
 								}
 							}
@@ -553,7 +592,7 @@ namespace flame
 				auto o = find_output(n_node->find_attr("out")->value());
 				auto i = find_input(n_node->find_attr("in")->value());
 				if (o && i)
-					i->set_link(o);
+					i->link_to(o);
 			}
 		}
 
@@ -589,11 +628,11 @@ namespace flame
 				auto hash = v->type()->name_hash();
 				if (tag != TypeTagPointer)
 				{
-					if (!compare(tag, v->size(), &v->default_value(), &input->data.v))
+					if (!compare(tag, v->size(), &v->default_value(), input->data))
 					{
 						auto n_input = n_node->new_node("input");
 						n_input->new_attr("name", v->name());
-						n_input->new_attr("value", serialize_value(tag, hash, &input->data.v, 2).v);
+						n_input->new_attr("value", serialize_value(tag, hash, input->data, 2).v);
 					}
 				}
 			}
@@ -602,10 +641,10 @@ namespace flame
 		{
 			for (auto &input : n->inputs)
 			{
-				if (input->link)
+				if (input->links[0])
 				{
 					auto n_link = file->new_node("link");
-					n_link->new_attr("out", input->link->get_address().v);
+					n_link->new_attr("out", input->links[0]->get_address().v);
 					n_link->new_attr("in", input->get_address().v);
 				}
 			}
@@ -615,24 +654,29 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	CommonData &BP::Slot::data()
+	void* BP::Slot::data()
 	{
 		return ((SlotPrivate*)this)->data;
 	}
 
-	void BP::Slot::set_data(const CommonData &d)
+	void BP::Slot::set_data(const void* d)
 	{
-		((SlotPrivate*)this)->data = d;
+		((SlotPrivate*)this)->set_data(d);
 	}
 
-	BP::Slot* BP::Slot::link() const
+	int BP::Slot::link_count() const
 	{
-		return ((SlotPrivate*)this)->link;
+		return ((SlotPrivate*)this)->links.size();
 	}
 
-	bool BP::Slot::set_link(BP::Slot*target)
+	BP::Slot* BP::Slot::link(int idx) const
 	{
-		return ((SlotPrivate*)this)->set_link((SlotPrivate*)target);
+		return ((SlotPrivate*)this)->links[idx];
+	}
+
+	bool BP::Slot::link_to(BP::Slot*target)
+	{
+		return ((SlotPrivate*)this)->link_to((SlotPrivate*)target);
 	}
 
 	String BP::Slot::get_address() const

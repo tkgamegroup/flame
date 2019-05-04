@@ -330,36 +330,18 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->default_value;
 	}
 
-	void get(TypeTag$ tag, int size, const void* src, CommonData* dst)
+	void set(void* dst, TypeTag$ tag, int size, const void* src)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle: case TypeTagEnumMulti:
-			dst->i1() = *(int*)src;
+			*(int*)dst = *(int*)src;
 			break;
 		case TypeTagVariable:
-			memcpy(&dst->v, src, size);
+			memcpy(dst, src, size);
 			break;
 		case TypeTagPointer:
-			dst->p() = *(void**)src;
-			break;
-		case TypeTagArray:
-			break;
-		}
-	}
-
-	void set(TypeTag$ tag, int size, const CommonData* src, void* dst)
-	{
-		switch (tag)
-		{
-		case TypeTagEnumSingle: case TypeTagEnumMulti:
-			*(int*)dst = src->v.i[0];
-			break;
-		case TypeTagVariable:
-			memcpy(dst, &src->v, size);
-			break;
-		case TypeTagPointer:
-			*(void**)dst = src->v.p;
+			*(void**)dst = *(void**)src;
 			break;
 		case TypeTagArray:
 			break;
