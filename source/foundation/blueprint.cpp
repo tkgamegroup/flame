@@ -201,12 +201,15 @@ namespace flame
 		for (auto& i : inputs)
 		{
 			auto o = i->links[0];
-			for (auto it = o->links.begin(); it != o->links.end(); it++)
+			if (o)
 			{
-				if (*it == i.get())
+				for (auto it = o->links.begin(); it != o->links.end(); it++)
 				{
-					o->links.erase(it);
-					break;
+					if (*it == i.get())
+					{
+						o->links.erase(it);
+						break;
+					}
 				}
 			}
 		}

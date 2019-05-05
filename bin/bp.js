@@ -1,3 +1,12 @@
+var enums = [];
+var udts = [];
+var functions = [];
+
+var nodes = [];
+var staging_links = [];
+
+var sock_s = null;
+
 window.onload = function(){
     var svg = document.getElementById("svg");
     svg.ns = svg.namespaceURI;
@@ -13,11 +22,6 @@ window.onload = function(){
         return path;
     }
 
-    var enums = [];
-    window.enums = enums;
-
-    var udts = [];
-    window.udts = udts;
     var find_udt = function(name){
         for (var i in udts)
         {
@@ -27,15 +31,6 @@ window.onload = function(){
         }
         return null;
     };
-
-    var functions = [];
-    window.functions = functions;
-
-    var nodes = [];
-    window.nodes = nodes;
-
-    var staging_links = [];
-    window.staging_links = staging_links;
 
     var load_typeinfo = function(json){
         for (var i in json.enums)
@@ -79,22 +74,22 @@ window.onload = function(){
             return offset;
     }
 
-    function Node(udt_name, id, x, y) {
-        this.name = id;
+    function Node(sn) {
+        this.name = sn.id;
 
         this.eMain = document.createElement("div");
         this.eMain.classList.add("node");
         this.eMain.setAttribute("title", this.name);
 
-        this.eMain.style.left = x + "px";
-        this.eMain.style.top = y + "px";
+        this.eMain.style.left = sn.x + "px";
+        this.eMain.style.top = sn.y + "px";
 
         var thiz = this;
         $(this.eMain).draggable({
             containment: "window",
             cancel: ".slot, .slot_edit",
             drag: function (event, ui) {
-                thiz.UpdatePosition();
+                thiz.update_links_positions();
             }
         });
 
@@ -113,40 +108,65 @@ window.onload = function(){
 
         var thiz = this;
 
-        var sp = udt_name.split(":");
+        this.abs_udt_name = sn.udt_name;
+        var sp = sn.udt_name.split(":");
         var load = function(u_name){
             var udt = find_udt(u_name);
             if (!udt)
                 return false;
+
+            thiz.udt = udt;
             for (var i in udt.items)
             {
                 var item = udt.items[i];
                 if (item.attribute.indexOf("i") >= 0)
-                    thiz.AddInput(item);
+                {
+                    var s = new Slot(item, 0);
+                    s.node = thiz;
+                    if (item.default_value)
+                        s.data = item.default_value;
+                    else
+                        s.data = "";
+                    thiz.inputs.push(s);
+                    thiz.eLeft.appendChild(s.eMain);
+                }
                 else if (item.attribute.indexOf("o") >= 0)
-                    thiz.AddOutput(item);
+                {
+                    var s = new Slot(item, 1);
+                    s.node = thiz;
+                    thiz.outputs.push(s);
+                    thiz.eRight.appendChild(s.eMain);
+                }
             }
-            for (var i = 0; i < window.staging_links.length; i++)
+            for (var i in sn.datas)
             {
-                var sl = window.staging_links[i];
+                var item = sn.datas[i];
+                var input = thiz.FindInput(item.name);
+                input.data = item.value;
+                if (input.eEdit)
+                    input.eEdit.value = input.data;
+            }
+            for (var i = 0; i < staging_links.length; i++)
+            {
+                var sl = staging_links[i];
     
-                var addr_in = sl.in.split(".");
                 var addr_out = sl.out.split(".");
+                var addr_in = sl.in.split(".");
     
-                var n1 = FindNode(addr_in[0]);
-                var n2 = FindNode(addr_out[0]);
-                var input = n1.FindInput(addr_in[1]);
-                var output = n2.FindOutput(addr_out[1]);
+                var n1 = FindNode(addr_out[0]);
+                var n2 = FindNode(addr_in[0]);
+                var output = n1.FindOutput(addr_out[1]);
+                var input = n2.FindInput(addr_in[1]);
     
                 if (input && output)
                 {
                     input.links[0] = output;
                     output.links.push(input);
 
-                    n1.UpdatePosition();
-                    n2.UpdatePosition();
+                    n1.update_links_positions();
+                    n2.update_links_positions();
 
-                    window.staging_links.splice(i, 1);
+                    staging_links.splice(i, 1);
                     i--;
                 }
             }
@@ -194,20 +214,22 @@ window.onload = function(){
         {
             this.links.push(null);
 
+            this.eMain.appendChild(this.eSlot);
+            this.eMain.appendChild(this.eName);
+
             var type_sp = vi.type.split(":");
-            if (type_sp[0] == "variable")
+            if (type_sp[0] != "pointer")
             {
-                this.eEdit = document.createElement("input");
-                this.eEdit.type = "text";
-                this.eEdit.classList.add("slot_edit");
+                thiz.eEdit = document.createElement("input");
+                thiz.eEdit.type = "text";
+                thiz.eEdit.classList.add("slot_edit");
+                if (vi.default_value)
+                    thiz.eEdit.value = vi.default_value;
+                
+                this.eMain.appendChild(thiz.eEdit);
             }
 
             this.path = CreatePath();
-
-            this.eMain.appendChild(this.eSlot);
-            this.eMain.appendChild(this.eName);
-            if (this.eEdit)
-                this.eMain.appendChild(this.eEdit);
     
             this.eSlot.onclick = function (e) {
                 if (!mouse.curr_slot) {
@@ -257,20 +279,6 @@ window.onload = function(){
         }
     }
 
-    Node.prototype.AddInput = function (item) {
-        var s = new Slot(item, 0);
-        s.node = this;
-        this.inputs.push(s);
-        this.eLeft.appendChild(s.eMain);
-    };
-
-    Node.prototype.AddOutput = function (item) {
-        var s = new Slot(item, 1);
-        s.node = this;
-        this.outputs.push(s);
-        this.eRight.appendChild(s.eMain);
-    };
-
     Node.prototype.FindInput = function (name) {
         for (var i in this.inputs)
         {
@@ -291,7 +299,7 @@ window.onload = function(){
         return null;
     };
 
-    Node.prototype.UpdatePosition = function () {
+    Node.prototype.update_links_positions = function () {
         this.x = parseInt(this.eMain.style.left);
         this.y = parseInt(this.eMain.style.top);
 
@@ -318,7 +326,6 @@ window.onload = function(){
         
                 t.SetPath(a, b);
             }
-
         }
     };
     
@@ -332,6 +339,10 @@ window.onload = function(){
 
     Slot.prototype.SetPath = function (a, b) {
         this.path.setAttributeNS(null, "d", "M" + a.x + " " + a.y + " C" + (a.x - 50) + " " + a.y + " " + (b.x + 50) + " " + b.y + " " + b.x + " " + b.y);
+    };
+
+    Slot.prototype.GetAddress = function () {
+        return this.n.id + "." + this.vi.name;
     };
 
     window.onmousemove = function (e) {
@@ -351,8 +362,7 @@ window.onload = function(){
     
     var wait_typeinfos = 0;
     var do_connect = function(){
-        var sock_s = new WebSocket("ws://localhost:5566/");
-        window.sock_s = sock_s;
+        sock_s = new WebSocket("ws://localhost:5566/");
         sock_s.onmessage = function(res){
             for (var i in nodes)
             {
@@ -372,32 +382,21 @@ window.onload = function(){
             for (var i in src_nodes)
             {
                 var sn = src_nodes[i];
-                var n = new Node(sn.udt_name, sn.id, sn.x, sn.y);
-                for (var item in sn)
-                {
-                    if (item == "input")
-                    {
-    
-                    }
-                }
+                var n = new Node(sn);
                 nodes.push(n);
             
                 n.eMain.style.position = "absolute";
                 document.body.appendChild(n.eMain);
             }
     
-            window.staging_links = src.links;
-    
-            for (var i in nodes)
-                nodes[i].UpdatePosition();
+            staging_links = src.links;
             
         };
         sock_s.onclose = function(){
             setTimeout(function(){
                 var s = new WebSocket("ws://localhost:5566/");
-                s.onmessage = window.sock_s.onmessage;
-                s.onclose = window.sock_s.onclose;
-                window.sock_s = s;
+                s.onmessage = sock_s.onmessage;
+                s.onclose = sock_s.onclose;
             }, 2000);
         };
     };
@@ -447,26 +446,49 @@ window.onload = function(){
 
 function on_save_clicked()
 {
-    var sock_s = window.sock_s;
     if (!sock_s)
         return;
 
     var dst = {};
     dst.nodes = [];
-    for (var i in window.nodes)
+    for (var i in nodes)
     {
-        var sn = window.nodes[i];
+        var sn = nodes[i];
         var n = {};
-        n.name = sn.name;
+        n.udt_name = sn.abs_udt_name;
+        n.id = sn.name;
         n.x = sn.x;
         n.y = sn.y;
+        n.datas = [];
+        for (var j in sn.inputs)
+        {
+            var input = sn.inputs[j];
+            var vi = input.vi;
+            var type_sp = vi.type.split(":");
+            if (type_sp[0] != "pointer")
+            {
+                if (!(vi.default_value && vi.default_value == input.data))
+                    n.datas.push({name: vi.name, value: input.data});
+            }
+        }
         dst.nodes.push(n);
     }
-    for (var i in window.nodes)
-    {
-        
-    }
     dst.links = [];
+    for (var i in nodes)
+    {
+        var sn = nodes[i];
+        for (var j in sn.inputs)
+        {
+            var input = sn.inputs[j];
+            if (input.links[0])
+            {
+                var sl = {};
+                sl.out = input.links[0].GetAddress();
+                sl.in = input.GetAddress();
+                dst.links.push(sl);
+            }
+        }
+    }
 
     var json = JSON.stringify(dst);
     sock_s.send(json);

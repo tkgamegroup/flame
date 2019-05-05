@@ -500,6 +500,8 @@ int main(int argc, char **args)
 					n_node->new_attr("id", src->id());
 					n_node->new_attr("x", to_stdstring(pos.x));
 					n_node->new_attr("y", to_stdstring(pos.y));
+					auto n_datas = n_node->new_node("datas");
+					n_datas->set_type(SerializableNode::Array);
 					for (auto i = 0; i < src->input_count(); i++)
 					{
 						auto input = src->input(i);
@@ -510,9 +512,9 @@ int main(int argc, char **args)
 						{
 							if (!compare(tag, v->size(), &v->default_value(), input->data()))
 							{
-								auto n_input = n_node->new_node("input");
-								n_input->new_attr("name", v->name());
-								n_input->new_attr("value", serialize_value(tag, hash, input->data(), 2).v);
+								auto n_data = n_node->new_node("");
+								n_data->new_attr("name", v->name());
+								n_data->new_attr("value", serialize_value(tag, hash, input->data(), 2).v);
 							}
 						}
 					}
