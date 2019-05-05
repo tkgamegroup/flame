@@ -32,43 +32,6 @@ svg {
     background: #dbc04677;
 }
 
-/*
-
-.output, .connection:after {
-    position: absolute;
-    border: solid 1px #dedede;
-    background-color: #2e2e2e;
-    width: 0.5em;
-    height: 0.5em;
-    border-radius: 0.5em;
+.slot_edit{
+    width: 30px;
 }
-
-.node.connected > .output, .connection.filled:after {
-    border: solid 1px transparent;
-    background-color: #aeaeae;
-}
-
-.node > .output:hover, .connection:hover:after {
-    border-color: red;
-}
-
-.output {
-    left: -.5em;
-    top: 1em;
-    cursor: pointer;
-}
-
-.connection {
-    width: 0%;
-    position: relative;
-    padding-left: 1.5em;
-    cursor: pointer;
-}
-
-.connection:after {
-    content: "";
-    right: 1em;
-    top: 0.25em;
-}
-
-*/

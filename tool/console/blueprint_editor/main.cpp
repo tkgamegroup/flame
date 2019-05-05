@@ -93,10 +93,10 @@ int main(int argc, char **args)
 
 	auto typeinfo_lv = typeinfo_free_level();
 	typeinfo_load(L"flame_foundation.typeinfo", typeinfo_lv);
+	//typeinfo_load(L"flame_network.typeinfo", typeinfo_lv);
 	typeinfo_load(L"flame_graphics.typeinfo", typeinfo_lv);
-	typeinfo_load(L"flame_network.typeinfo", typeinfo_lv);
-	typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
-	typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
+	//typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
+	//typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
 
 	BP *bp = nullptr;
 	if (argc > 1)

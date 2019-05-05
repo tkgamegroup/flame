@@ -27,9 +27,6 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	if (argc == 1)
-		return 0;
-
 	// typeinfo collect must do by order, because it only record the first entry
 	std::vector<std::wstring> pdbs = {
 		L"flame_foundation.dll",
@@ -42,6 +39,9 @@ int main(int argc, char **args)
 	auto id = 0;
 	for (auto& fn : pdbs)
 	{
+		if (!std::filesystem::exists(fn))
+			continue;
+
 		auto w_dst = ext_replace(fn, L".typeinfo");
 		auto dst = w2s(w_dst);
 		if (!std::filesystem::exists(w_dst) || std::filesystem::last_write_time(w_dst) < std::filesystem::last_write_time(fn))

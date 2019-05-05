@@ -34,7 +34,7 @@ namespace flame
 	static const char* tag_names[] = {
 		"enum_single",
 		"enum_multi",
-		"varible",
+		"variable",
 		"pointer",
 		"array"
 	};

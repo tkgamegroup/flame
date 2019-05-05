@@ -92,7 +92,7 @@ window.onload = function(){
         var thiz = this;
         $(this.eMain).draggable({
             containment: "window",
-            cancel: ".slot",
+            cancel: ".slot, .slot_edit",
             drag: function (event, ui) {
                 thiz.UpdatePosition();
             }
@@ -194,10 +194,20 @@ window.onload = function(){
         {
             this.links.push(null);
 
+            var type_sp = vi.type.split(":");
+            if (type_sp[0] == "variable")
+            {
+                this.eEdit = document.createElement("input");
+                this.eEdit.type = "text";
+                this.eEdit.classList.add("slot_edit");
+            }
+
             this.path = CreatePath();
 
             this.eMain.appendChild(this.eSlot);
             this.eMain.appendChild(this.eName);
+            if (this.eEdit)
+                this.eMain.appendChild(this.eEdit);
     
             this.eSlot.onclick = function (e) {
                 if (!mouse.curr_slot) {
@@ -339,7 +349,7 @@ window.onload = function(){
         }
     };
     
-    var wait_typeinfos = 5;
+    var wait_typeinfos = 0;
     var do_connect = function(){
         var sock_s = new WebSocket("ws://localhost:5566/");
         window.sock_s = sock_s;
@@ -391,36 +401,41 @@ window.onload = function(){
             }, 2000);
         };
     };
-	$.getJSON("flame_foundation.typeinfo", function(res){
+    wait_typeinfos++;
+	$.getJSON("flame_foundation.typeinfo", function(res, status){
         load_typeinfo(res);
         wait_typeinfos--;
         if (wait_typeinfos == 0)
             do_connect();
 	});
-	$.getJSON("flame_network.typeinfo", function(res){
+    // wait_typeinfos++;
+	// $.getJSON("flame_network.typeinfo", function(res, status){
+    //     load_typeinfo(res);
+    //     wait_typeinfos--;
+    //     if (wait_typeinfos == 0)
+    //         do_connect();
+	// });
+    wait_typeinfos++;
+	$.getJSON("flame_graphics.typeinfo", function(res, status){
         load_typeinfo(res);
         wait_typeinfos--;
         if (wait_typeinfos == 0)
             do_connect();
 	});
-	$.getJSON("flame_graphics.typeinfo", function(res){
-        load_typeinfo(res);
-        wait_typeinfos--;
-        if (wait_typeinfos == 0)
-            do_connect();
-	});
-	$.getJSON("flame_sound.typeinfo", function(res){
-        load_typeinfo(res);
-        wait_typeinfos--;
-        if (wait_typeinfos == 0)
-            do_connect();
-	});
-	$.getJSON("flame_universe.typeinfo", function(res){
-        load_typeinfo(res);
-        wait_typeinfos--;
-        if (wait_typeinfos == 0)
-            do_connect();
-	});
+    // wait_typeinfos++;
+	// $.getJSON("flame_sound.typeinfo", function(res, status){
+    //     load_typeinfo(res);
+    //     wait_typeinfos--;
+    //     if (wait_typeinfos == 0)
+    //         do_connect();
+	// });
+    // wait_typeinfos++;
+	// $.getJSON("flame_universe.typeinfo", function(res, status){
+    //     load_typeinfo(res);
+    //     wait_typeinfos--;
+    //     if (wait_typeinfos == 0)
+    //         do_connect();
+	// });
 
     /*
     var n = new Node('test', 0, 0);
