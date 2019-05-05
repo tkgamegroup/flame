@@ -483,63 +483,8 @@ int main(int argc, char **args)
 			{
 				printf("  ok\nbrowser: working\n");
 
-				auto json = SerializableNode::create("");
-
-				auto n_nodes = json->new_node("nodes");
-				n_nodes->set_type(SerializableNode::Array);
-				for (auto i = 0; i < bp->node_count(); i++)
-				{
-					auto src = bp->node(i);
-					auto n_node = n_nodes->new_node("");
-					auto pos = src->position();
-					auto u = src->udt();
-					auto udt_name = std::string(u->name());
-					if (u->level() > 0)
-						udt_name = w2s(u->module_name()) + ":" + udt_name;
-					n_node->new_attr("udt_name", udt_name);
-					n_node->new_attr("id", src->id());
-					n_node->new_attr("x", to_stdstring(pos.x));
-					n_node->new_attr("y", to_stdstring(pos.y));
-					auto n_datas = n_node->new_node("datas");
-					n_datas->set_type(SerializableNode::Array);
-					for (auto i = 0; i < src->input_count(); i++)
-					{
-						auto input = src->input(i);
-						auto v = input->variable_info();
-						auto tag = v->type()->tag();
-						auto hash = v->type()->name_hash();
-						if (tag != TypeTagPointer)
-						{
-							if (!compare(tag, v->size(), &v->default_value(), input->data()))
-							{
-								auto n_data = n_node->new_node("");
-								n_data->new_attr("name", v->name());
-								n_data->new_attr("value", serialize_value(tag, hash, input->data(), 2).v);
-							}
-						}
-					}
-				}
-
-				auto n_links = json->new_node("links");
-				n_links->set_type(SerializableNode::Array);
-				for (auto i = 0; i < bp->node_count(); i++)
-				{
-					auto src = bp->node(i);
-
-					for (auto j = 0; j < src->input_count(); j++)
-					{
-						auto input = src->input(j);
-						if (input->link())
-						{
-							auto l = n_links->new_node("");
-							l->new_attr("in", input->get_address().v);
-							l->new_attr("out", input->link()->get_address().v);
-						}
-					}
-				}
-
-				auto str = json->to_string_json();
-				s->send(str.size, str.v);
+				auto content = get_file_content(filename);
+				s->send(content.second, content.first.get());
 
 				wait_for(s->ev_closed);
 				printf("browser: closed\n");

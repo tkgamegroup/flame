@@ -543,60 +543,46 @@ namespace flame
 	{
 		filename = _filename;
 
-		auto file = SerializableNode::create_from_xml_file(filename);
-		if (!file || file->name() != "BP")
+		auto file = SerializableNode::create_from_json_file(filename);
+		if (!file)
 			return;
 
-		for (auto i_n = 0; i_n < file->node_count(); i_n++)
+		auto n_nodes = file->find_node("nodes");
+		for (auto i_n = 0; i_n < n_nodes->node_count(); i_n++)
 		{
 			auto n_node = file->node(i_n);
-			if (n_node->name() == "node")
-			{
-				auto type = n_node->find_attr("type")->value();
-				auto id = n_node->find_attr("id")->value();
+			auto type = n_node->find_node("type")->value();
+			auto id = n_node->find_node("id")->value();
 
-				auto n = add_node(type.c_str(), id.c_str());
-				if (!n)
-				{
-					printf("node \"%s\" with type \"%s\" add failed\n", id.c_str(), type.c_str());
-					continue;
-				}
-				auto a_pos = n_node->find_attr("pos");
-				if (a_pos)
-					n->position = stof2(a_pos->value().c_str());
-
-				auto udt = n->udt;
-				for (auto i_i = 0; i_i < n_node->node_count(); i_i++)
-				{
-					auto n_input = n_node->node(i_i);
-					if (n_input->name() == "input")
-					{
-						auto name = n_input->find_attr("name")->value();
-						auto udt_item = udt->find_item(name.c_str());
-						if (udt_item && udt_item->type()->tag() != TypeTagPointer && 
-							std::string(udt_item->attribute()).find('i') != std::string::npos)
-						{
-							for (auto& input : n->inputs)
-							{
-								auto v = input->variable_info;
-								if (name == v->name())
-								{
-									auto type = v->type();
-									unserialize_value(type->tag(), type->name_hash(), n_input->find_attr("value")->value(), input->data);
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-			else if (n_node->name() == "link")
+			auto n = add_node(type.c_str(), id.c_str());
+			if (!n)
 			{
-				auto o = find_output(n_node->find_attr("out")->value());
-				auto i = find_input(n_node->find_attr("in")->value());
-				if (o && i)
-					i->link_to(o);
+				printf("node \"%s\" with type \"%s\" add failed\n", id.c_str(), type.c_str());
+				continue;
 			}
+			auto a_pos = n_node->find_node("pos");
+			if (a_pos)
+				n->position = stof2(a_pos->value().c_str());
+
+			auto n_datas = n_node->find_node("datas");
+			for (auto i_d = 0; i_d < n_datas->node_count(); i_d++)
+			{
+				auto n_data = n_node->node(i_d);
+				auto input = n->find_input(n_data->find_attr("name")->value());
+				auto type = input->variable_info->type();
+				if (type->tag() != TypeTagPointer)
+					unserialize_value(type->tag(), type->name_hash(), n_data->find_attr("value")->value(), input->data);
+			}
+		}
+
+		auto n_links = file->find_node("links");
+		for (auto i_l = 0; i_l < n_links->node_count(); i_l++)
+		{
+			auto n_link = n_links->node(i_l);
+			auto o = find_output(n_link->find_attr("out")->value());
+			auto i = find_input(n_link->find_attr("in")->value());
+			if (o && i)
+				i->link_to(o);
 		}
 
 		SerializableNode::destroy(file);
@@ -609,9 +595,11 @@ namespace flame
 
 		auto file = SerializableNode::create("BP");
 
+		auto n_nodes = file->new_node("nodes");
+		n_nodes->set_type(SerializableNode::Array);
 		for (auto &n : nodes)
 		{
-			auto n_node = file->new_node("node");
+			auto n_node = n_nodes->new_node("");
 			auto u = n->udt;
 			auto tn = std::string(u->name());
 			if (u->level() != 0)
@@ -624,36 +612,41 @@ namespace flame
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("pos", to_stdstring(n->position));
+
+			auto n_datas = n_node->new_node("datas");
+			n_datas->set_type(SerializableNode::Array);
 			for (auto &input : n->inputs)
 			{
 				auto v = input->variable_info;
-				auto tag = v->type()->tag();
-				auto hash = v->type()->name_hash();
-				if (tag != TypeTagPointer)
+				auto type = v->type();
+				if (type->tag() != TypeTagPointer)
 				{
-					if (!compare(tag, v->size(), &v->default_value(), input->data))
+					if (!compare(type->tag, v->size(), &v->default_value(), input->data))
 					{
-						auto n_input = n_node->new_node("input");
-						n_input->new_attr("name", v->name());
-						n_input->new_attr("value", serialize_value(tag, hash, input->data, 2).v);
+						auto n_data = n_datas->new_node("");
+						n_data->new_attr("name", v->name());
+						n_data->new_attr("value", serialize_value(type->tag(), type->name_hash(), input->data, 2).v);
 					}
 				}
 			}
 		}
+
+		auto n_links = file->new_node("links");
+		n_links->set_type(SerializableNode::Array);
 		for (auto &n : nodes)
 		{
 			for (auto &input : n->inputs)
 			{
 				if (input->links[0])
 				{
-					auto n_link = file->new_node("link");
+					auto n_link = n_links->new_node("");
 					n_link->new_attr("out", input->links[0]->get_address().v);
 					n_link->new_attr("in", input->get_address().v);
 				}
 			}
 		}
 
-		file->save_xml(filename);
+		file->save_json(filename);
 		SerializableNode::destroy(file);
 	}
 
