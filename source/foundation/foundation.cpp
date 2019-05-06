@@ -632,7 +632,7 @@ namespace flame
 	{
 		auto path = std::wstring(_path);
 
-		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+		auto dir_handle = CreateFileW(!path.empty() ? path.c_str() : get_curr_path(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];
@@ -691,7 +691,7 @@ namespace flame
 				}
 
 				if (!(only_content && (type != FileModified)))
-					callback(type, (path + L"\\" + p->FileName).c_str());
+					callback(type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
 
 				if (p->NextEntryOffset <= 0)
 					break;
