@@ -422,45 +422,14 @@ namespace flame
 #endif
 		}
 
-		bool ShaderPrivate::same(const std::wstring &filename, const std::string &prefix)
+		Shader *Shader::create(Device *d, const std::wstring &filename, const std::string &prefix)
 		{
-			return filename_ == filename && prefix_ == prefix;
+			return new ShaderPrivate(d, filename, prefix);
 		}
 
-		std::vector<ShaderPrivate*> loaded_shaders;
-
-		Shader *Shader::get(Device *d, const std::wstring &filename, const std::string &prefix)
+		void Shader::destroy(Shader *s)
 		{
-			for (auto &s : loaded_shaders)
-			{
-				if (!s->same(filename, prefix))
-					continue;
-				s->ref_count++;
-				return s;
-			}
-
-			auto s = new ShaderPrivate(d, filename, prefix);
-			s->ref_count = 1;
-			loaded_shaders.push_back(s);
-			return s;
-		}
-
-		void Shader::release(Shader *s)
-		{
-			if (((ShaderPrivate*)s)->ref_count == 1)
-			{
-				for (auto it = loaded_shaders.begin(); it != loaded_shaders.end(); it++)
-				{
-					if ((*it) == s)
-					{
-						loaded_shaders.erase(it);
-						break;
-					}
-				}
-				delete (ShaderPrivate*)s;
-			}
-			else
-				((ShaderPrivate*)s)->ref_count--;
+			delete (ShaderPrivate*)s;
 		}
 	}
 }

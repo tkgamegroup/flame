@@ -23,29 +23,12 @@
 
 #include "device_private.h"
 #include "renderpass_private.h"
-
-#include <memory>
-#include <algorithm>
+#include "image_private.h"
 
 namespace flame
 {
 	namespace graphics
 	{
-		bool operator==(const AttachmentInfo &lhs, const AttachmentInfo &rhs)
-		{
-			return lhs.format == rhs.format && lhs.sample_count == rhs.sample_count && lhs.clear == rhs.clear;
-		}
-
-		bool operator==(const SubpassInfo &lhs, const SubpassInfo &rhs)
-		{
-			return lhs.color_attachments == rhs.color_attachments && lhs.resolve_attachments == rhs.resolve_attachments && lhs.depth_attachment == rhs.depth_attachment;
-		}
-
-		bool operator==(const DependencyInfo &lhs, const DependencyInfo &rhs)
-		{
-			return lhs.src_subpass == rhs.src_subpass && lhs.dst_subpass == rhs.dst_subpass;
-		}
-
 		RenderpassPrivate::RenderpassPrivate(Device *_d, const RenderpassInfo &_info)
 		{
 			d = (DevicePrivate*)_d;
@@ -162,41 +145,14 @@ namespace flame
 			return ((RenderpassPrivate*)this)->info.attachments.size();
 		}
 
-		std::vector<RenderpassPrivate*> created_renderpasses;
-
-		Renderpass *Renderpass::get(Device *d, const RenderpassInfo &info)
+		Renderpass* Renderpass::create(Device *d, const RenderpassInfo &info)
 		{
-			for (auto &r : created_renderpasses)
-			{
-				if (r->info.attachments == info.attachments && r->info.subpasses == info.subpasses && r->info.dependencies == info.dependencies)
-				{
-					r->ref_count++;
-					return r;
-				}
-			}
-
-			auto r = new RenderpassPrivate(d, info);
-			r->ref_count = 1;
-			created_renderpasses.push_back(r);
-			return r;
+			return new RenderpassPrivate(d, info);
 		}
 
-		void Renderpass::release(Renderpass *r)
+		void Renderpass::destroy(Renderpass *r)
 		{
-			if (((RenderpassPrivate*)r)->ref_count == 1)
-			{
-				for (auto it = created_renderpasses.begin(); it != created_renderpasses.end(); it++)
-				{
-					if ((*it) == r)
-					{
-						created_renderpasses.erase(it);
-						break;
-					}
-				}
-				delete (RenderpassPrivate*)r;
-			}
-			else
-				((RenderpassPrivate*)r)->ref_count--;
+			delete (RenderpassPrivate*)r;
 		}
 
 		ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
@@ -258,6 +214,60 @@ namespace flame
 		void Clearvalues::destroy(Clearvalues*c)
 		{
 			delete (ClearvaluesPrivate*)c;
+		}
+
+		FramebufferPrivate::FramebufferPrivate(Device* _d, const FramebufferInfo& _info)
+		{
+			d = (DevicePrivate*)_d;
+			info = _info;
+
+			Ivec2 size(0);
+
+#if defined(FLAME_VULKAN)
+			std::vector<VkImageView> vk_views(info.views.size());
+			for (auto i = 0; i < info.views.size(); i++)
+			{
+				if (size.x == 0 && size.y == 0)
+					size = info.views[i]->image()->size;
+				else
+				{
+					if (size != 1)
+						assert(size == info.views[i]->image()->size);
+				}
+
+				vk_views[i] = ((ImageviewPrivate*)info.views[i])->v;
+			}
+
+			VkFramebufferCreateInfo create_info;
+			create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			create_info.flags = 0;
+			create_info.pNext = nullptr;
+			create_info.width = size.x;
+			create_info.height = size.y;
+			create_info.layers = 1;
+			create_info.renderPass = ((RenderpassPrivate*)info.rp)->v;
+			create_info.attachmentCount = info.views.size();
+			create_info.pAttachments = vk_views.data();
+
+			vk_chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
+#endif
+		}
+
+		FramebufferPrivate::~FramebufferPrivate()
+		{
+#if defined(FLAME_VULKAN)
+			vkDestroyFramebuffer(d->v, v, nullptr);
+#endif
+		}
+
+		Framebuffer* Framebuffer::create(Device * d, const FramebufferInfo & info)
+		{
+			return new FramebufferPrivate(d, info);
+		}
+
+		void Framebuffer::destroy(Framebuffer * f)
+		{
+			delete (FramebufferPrivate*)f;
 		}
 	}
 }

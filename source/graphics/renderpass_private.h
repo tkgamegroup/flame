@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "graphics_private.h"
 #include <flame/graphics/renderpass.h>
+#include "graphics_private.h"
 
 namespace flame
 {
@@ -38,9 +38,6 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
-
-			int ref_count;
-
 			RenderpassPrivate(Device *d, const RenderpassInfo &info);
 			~RenderpassPrivate();
 		};
@@ -59,6 +56,19 @@ namespace flame
 			~ClearvaluesPrivate();
 
 			void set(int idx, const Bvec4 &col);
+		};
+
+		struct FramebufferPrivate : Framebuffer
+		{
+			DevicePrivate* d;
+			FramebufferInfo info;
+#if defined(FLAME_VULKAN)
+			VkFramebuffer v;
+#elif defined(FLAME_D3D12)
+
+#endif
+			FramebufferPrivate(Device* d, const FramebufferInfo& info);
+			~FramebufferPrivate();
 		};
 	}
 }

@@ -50,8 +50,8 @@ namespace flame
 				int count;
 			};
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorsetlayout *get(Device *d, const std::vector<Binding> &bindings);
-			FLAME_GRAPHICS_EXPORTS static void release(Descriptorsetlayout *l);
+			FLAME_GRAPHICS_EXPORTS static Descriptorsetlayout *create(Device *d, const std::vector<Binding> &bindings);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorsetlayout *l);
 		};
 
 		struct Descriptorset

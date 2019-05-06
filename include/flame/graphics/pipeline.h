@@ -44,8 +44,8 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS Descriptorsetlayout *dsl(int index) const;
 
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout *get(Device *d, const std::vector<Descriptorsetlayout*> &setlayouts, const std::vector<PushconstantInfo> &pushconstants);
-			FLAME_GRAPHICS_EXPORTS static void release(Pipelinelayout *p);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device *d, const std::vector<Descriptorsetlayout*> &setlayouts, const std::vector<PushconstantInfo> &pushconstants);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout *p);
 		};
 
 		struct ShaderInfo

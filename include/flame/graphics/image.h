@@ -94,13 +94,13 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Image *image() const;
 
-			FLAME_GRAPHICS_EXPORTS static Imageview *get(Image *i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping *mapping = nullptr);
-			FLAME_GRAPHICS_EXPORTS static void release(Imageview *v);
+			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image *i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping *mapping = nullptr);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Imageview *v);
 		};
 
 		struct Sampler
 		{
-			FLAME_GRAPHICS_EXPORTS static Sampler *create(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
+			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Sampler *s);
 		};
 	}

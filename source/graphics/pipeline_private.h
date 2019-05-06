@@ -204,9 +204,6 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
-			int ref_count;
-
 			PipelinelayoutPrivate(Device *d, const std::vector<Descriptorsetlayout*> &_setlayouts, const std::vector<PushconstantInfo> &_pushconstants);
 			~PipelinelayoutPrivate();
 		};

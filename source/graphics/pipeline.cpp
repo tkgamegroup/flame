@@ -26,17 +26,10 @@
 #include "descriptor_private.h"
 #include "pipeline_private.h"
 
-#include <algorithm>
-
 namespace flame
 {
 	namespace graphics
 	{
-		bool operator==(const PushconstantInfo &lhs, const PushconstantInfo &rhs)
-		{
-			return lhs.offset == rhs.offset && lhs.size == rhs.size;
-		}
-
 		PipelinelayoutPrivate::PipelinelayoutPrivate(Device *_d, const std::vector<Descriptorsetlayout*> &_setlayouts, const std::vector<PushconstantInfo> &_pushconstants)
 		{
 			d = (DevicePrivate*)_d;
@@ -84,46 +77,19 @@ namespace flame
 #endif
 		}
 
-		std::vector<PipelinelayoutPrivate*> created_layouts;
-
 		Descriptorsetlayout *Pipelinelayout::dsl(int index) const
 		{
 			return ((PipelinelayoutPrivate*)this)->dsls[index];
 		}
 
-		Pipelinelayout *Pipelinelayout::get(Device *d, const std::vector<Descriptorsetlayout*> &setlayouts, const std::vector<PushconstantInfo> &pushconstants)
+		Pipelinelayout *Pipelinelayout::create(Device *d, const std::vector<Descriptorsetlayout*> &setlayouts, const std::vector<PushconstantInfo> &pushconstants)
 		{
-			for (auto &l : created_layouts)
-			{
-				if (!(l->dsls == setlayouts && l->pcs == pushconstants))
-					continue;
-
-				l->ref_count++;
-				return l;
-			}
-
-			auto l = new PipelinelayoutPrivate(d, setlayouts, pushconstants);
-			l->ref_count++;
-			created_layouts.push_back(l);
-			return l;
+			return new PipelinelayoutPrivate(d, setlayouts, pushconstants);
 		}
 
-		void Pipelinelayout::release(Pipelinelayout *l)
+		void Pipelinelayout::destroy(Pipelinelayout *l)
 		{
-			if (((PipelinelayoutPrivate*)l)->ref_count == 1)
-			{
-				for (auto it = created_layouts.begin(); it != created_layouts.end(); it++)
-				{
-					if ((*it) == l)
-					{
-						created_layouts.erase(it);
-						break;
-					}
-				}
-				delete (PipelinelayoutPrivate*)l;
-			}
-			else
-				((PipelinelayoutPrivate*)l)->ref_count--;
+			delete (PipelinelayoutPrivate*)l;
 		}
 
 		void PipelinePrivate::init()
@@ -389,20 +355,20 @@ namespace flame
 		PipelinePrivate::~PipelinePrivate()
 		{
 			if (vert_shader)
-				Shader::release(vert_shader);
+				Shader::destroy(vert_shader);
 			if (tesc_shader)
-				Shader::release(tesc_shader);
+				Shader::destroy(tesc_shader);
 			if (tese_shader)
-				Shader::release(tese_shader);
+				Shader::destroy(tese_shader);
 			if (geom_shader)
-				Shader::release(geom_shader);
+				Shader::destroy(geom_shader);
 			if (frag_shader)
-				Shader::release(frag_shader);
+				Shader::destroy(frag_shader);
 			if (comp_shader)
-				Shader::release(comp_shader);
+				Shader::destroy(comp_shader);
 			for (auto &l : dsls)
-				Descriptorsetlayout::release(l);
-			Pipelinelayout::release(layout);
+				Descriptorsetlayout::destroy(l);
+			Pipelinelayout::destroy(layout);
 #if defined(FLAME_VULKAN)
 			vkDestroyPipeline(d->v, v, nullptr);
 #elif defined(FLAME_D3D12)
@@ -412,7 +378,7 @@ namespace flame
 
 		void PipelinePrivate::add_shader(const ShaderInfo &info)
 		{
-			auto s = Shader::get(d, info.filename, info.prefix);
+			auto s = Shader::create(d, info.filename, info.prefix);
 			switch (s->type)
 			{
 			case ShaderVert:
@@ -506,10 +472,10 @@ namespace flame
 
 			for (auto &g : sets)
 			{
-				auto l = Descriptorsetlayout::get(d, g);
+				auto l = Descriptorsetlayout::create(d, g);
 				dsls.push_back(l);
 			}
-			layout =  (PipelinelayoutPrivate*)Pipelinelayout::get(d, dsls, pcs);
+			layout =  (PipelinelayoutPrivate*)Pipelinelayout::create(d, dsls, pcs);
 
 			return stage_infos;
 		}

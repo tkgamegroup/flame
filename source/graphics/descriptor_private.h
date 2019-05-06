@@ -25,8 +25,6 @@
 #include <flame/graphics/descriptor.h>
 #include "graphics_private.h"
 
-#include <vector>
-
 namespace flame
 {
 	namespace graphics
@@ -56,9 +54,6 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
-			int ref_count;
-
 			DescriptorsetlayoutPrivate(Device *d, const std::vector<Binding> &_bindings);
 			~DescriptorsetlayoutPrivate();
 		};

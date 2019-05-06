@@ -74,11 +74,6 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		bool operator==(const Descriptorsetlayout::Binding &lhs, const Descriptorsetlayout::Binding &rhs)
-		{
-			return lhs.binding == rhs.binding && lhs.type == rhs.type && lhs.count == rhs.count;
-		}
-
 		DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device *_d, const std::vector<Binding> &_bindings)
 		{
 			bindings = _bindings;
@@ -120,43 +115,13 @@ namespace flame
 #endif
 		}
 
-		static std::vector<DescriptorsetlayoutPrivate*> created_layouts;
-
-		Descriptorsetlayout *Descriptorsetlayout::get(Device *d, const std::vector<Binding> &bindings)
+		Descriptorsetlayout *Descriptorsetlayout::create(Device *d, const std::vector<Binding> &bindings)
 		{
-			for (auto &l : created_layouts)
-			{
-				if (!(l->bindings == bindings))
-					continue;
-				l->ref_count++;
-				return l;
-			}
-
-			auto l = new DescriptorsetlayoutPrivate(d, bindings);
-			l->ref_count = 1;
-			created_layouts.push_back(l);
-			return l;
+			return new DescriptorsetlayoutPrivate(d, bindings);
 		}
 
-		void Descriptorsetlayout::release(Descriptorsetlayout *l)
+		void Descriptorsetlayout::destroy(Descriptorsetlayout *l)
 		{
-			for (auto it = created_layouts.begin(); it != created_layouts.end(); it++)
-			{
-				if (*it == l)
-				{
-					if ((*it)->ref_count == 1)
-					{
-						created_layouts.erase(it);
-						break;
-					}
-					else
-					{
-						(*it)->ref_count--;
-						return;
-					}
-				}
-			}
-			
 			delete (DescriptorsetlayoutPrivate*)l;
 		}
 

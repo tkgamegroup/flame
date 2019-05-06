@@ -31,6 +31,7 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
+		struct Imageview;
 
 		struct AttachmentInfo
 		{
@@ -95,8 +96,8 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS int attachment_count() const;
 
-			FLAME_GRAPHICS_EXPORTS static Renderpass *get(Device *d, const RenderpassInfo &info);
-			FLAME_GRAPHICS_EXPORTS static void release(Renderpass *r);
+			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo &info);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
 		};
 
 		struct Clearvalues
@@ -107,6 +108,18 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Clearvalues* create(Renderpass* r);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Clearvalues* c);
+		};
+
+		struct FramebufferInfo
+		{
+			Renderpass* rp;
+			std::vector<Imageview*> views;
+		};
+
+		struct Framebuffer
+		{
+			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, const FramebufferInfo& info);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
 		};
 	}
 }

@@ -34,8 +34,8 @@ namespace flame
 		{
 			ShaderType type;
 
-			FLAME_GRAPHICS_EXPORTS static Shader *get(Device *d, const std::wstring &filename, const std::string &prefix);
-			FLAME_GRAPHICS_EXPORTS static void release(Shader *s);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device *d, const std::wstring &filename, const std::string &prefix);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Shader *s);
 		};
 	}
 }

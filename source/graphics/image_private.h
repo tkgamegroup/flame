@@ -23,8 +23,6 @@
 #include <flame/graphics/image.h>
 #include "graphics_private.h"
 
-#include <vector>
-
 namespace flame
 {
 	namespace graphics
@@ -38,7 +36,6 @@ namespace flame
 			int mem_prop;
 
 			DevicePrivate *d;
-			std::vector<ImageviewPrivate*> views;
 #if defined(FLAME_VULKAN)
 			VkDeviceMemory m;
 			VkImage v;
@@ -70,8 +67,6 @@ namespace flame
 
 			ImageviewPrivate(Image *i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping *mapping = nullptr);
 			~ImageviewPrivate();
-
-			bool same(Image *i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping);
 		};
 
 		inline ImageAspect aspect_from_format(Format fmt)

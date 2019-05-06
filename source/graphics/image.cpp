@@ -24,13 +24,11 @@
 #include <flame/foundation/bitmap.h>
 #include "device_private.h"
 #include "buffer_private.h"
-#include "framebuffer_private.h"
+#include "renderpass_private.h"
 #include "pipeline_private.h"
 #include "descriptor_private.h"
 #include "commandbuffer_private.h"
 #include "image_private.h"
-
-#include <algorithm>
 
 namespace flame
 {
@@ -279,15 +277,17 @@ namespace flame
 			if (bpp_ / channel_ > 8)
 			{
 				auto img = Image::create(d, Format_R8G8B8A8_UNORM, size, 1, 1, SampleCount_1, ImageUsageAttachment | ImageUsageTransferSrc, MemPropDevice);
+				auto img_v = Imageview::create(img);
 
 				FramebufferInfo fb_info;
 				fb_info.rp = d->rp_one_rgba32;
-				fb_info.views.push_back(Imageview::get(img));
-				auto fb = Framebuffer::get(d, fb_info);
+				fb_info.views.push_back(img_v);
+				auto fb = Framebuffer::create(d, fb_info);
 				auto ds = Descriptorset::create(d->dp, d->pl_trans->layout()->dsl(0));
 				auto cb = Commandbuffer::create(d->gcp);
 
-				ds->set_imageview(0, 0, Imageview::get(this), d->sp_bi_linear);
+				auto my_view = Imageview::create(this);
+				ds->set_imageview(0, 0, my_view, d->sp_bi_linear);
 
 				cb->begin(true);
 				cb->begin_renderpass(d->rp_one_rgba32, fb, nullptr);
@@ -305,11 +305,14 @@ namespace flame
 				d->gq->submit(cb, nullptr, nullptr, nullptr);
 				d->gq->wait_idle();
 
-				Framebuffer::release(fb);
+				Imageview::destroy(my_view);
+
+				Framebuffer::destroy(fb);
 				Commandbuffer::destroy(cb);
 
 				img->save_png(filename);
 
+				Imageview::destroy(img_v);
 				Image::destroy(img);
 			}
 			else
@@ -558,66 +561,19 @@ namespace flame
 #endif
 		}
 
-		bool ImageviewPrivate::same(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
-		{
-			if (type != _type ||
-				base_level != _base_level || level_count != _level_count ||
-				base_layer != _base_layer || layer_count != _layer_count ||
-				!(
-					!_mapping ?
-					(!(mapping.r != SwizzleIdentity || mapping.r != SwizzleR ||
-						mapping.g != SwizzleIdentity || mapping.g != SwizzleG ||
-						mapping.b != SwizzleIdentity || mapping.b != SwizzleB ||
-						mapping.a != SwizzleIdentity || mapping.a != SwizzleA))
-					:
-					(!(mapping.r != _mapping->r ||
-						mapping.g != _mapping->g ||
-						mapping.b != _mapping->b ||
-						mapping.a != _mapping->a))
-					)
-				)
-				return false;
-			return true;
-		}
-
-		Image *Imageview::image() const
+		Image* Imageview::image() const
 		{
 			return ((ImageviewPrivate*)this)->i;
 		}
 
-		Imageview *Imageview::get(Image *_i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping)
+		Imageview* Imageview::create(Image *_i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping)
 		{
-			for (auto v : ((ImagePrivate*)_i)->views)
-			{
-				if (!v->same(_i, type, base_level, level_count, base_layer, layer_count, mapping))
-					continue;
-				v->ref_count++;
-				return v;
-			}
-
-			auto v = new ImageviewPrivate(_i, type, base_level, level_count, base_layer, layer_count, mapping);
-			v->ref_count = 1;
-			((ImagePrivate*)_i)->views.push_back(v);
-			return v;
+			return new ImageviewPrivate(_i, type, base_level, level_count, base_layer, layer_count, mapping);
 		}
 
-		void Imageview::release(Imageview *v)
+		void Imageview::destroy(Imageview *v)
 		{
-			if (((ImageviewPrivate*)v)->ref_count == 1)
-			{
-				auto &views = ((ImageviewPrivate*)v)->i->views;
-				for (auto it = views.begin(); it != views.end(); it++)
-				{
-					if ((*it) == v)
-					{
-						views.erase(it);
-						break;
-					}
-				}
-				delete (ImageviewPrivate*)v;
-			}
-			else
-				((ImageviewPrivate*)v)->ref_count--;
+			delete (ImageviewPrivate*)v;
 		}
 
 		SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)

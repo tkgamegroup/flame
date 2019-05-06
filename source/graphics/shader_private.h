@@ -23,8 +23,8 @@
 #pragma once
 
 #include <flame/foundation/foundation.h>
-#include "graphics_private.h"
 #include <flame/graphics/shader.h>
+#include "graphics_private.h"
 
 namespace flame
 {
@@ -65,13 +65,9 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
-			int ref_count;
-
 			ShaderPrivate(Device *d, const std::wstring &filename, const std::string &prefix);
 			~ShaderPrivate();
 
-			bool same(const std::wstring &filename, const std::string &prefix);
 			void load_members(SerializableNode*, ShaderVariableInfo*);
 		};
 	}
