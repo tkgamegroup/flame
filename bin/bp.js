@@ -494,8 +494,9 @@ function on_save_clicked()
             var input = sn.inputs[j];
             var vi = input.vi;
             var type_sp = vi.type.split(":");
-            if (type_sp[0] != "pointer")
+            if (type_sp[0] != "pointer" && type_sp[1] != "VoidPtrs")
             {
+                input.data = input.eEdit.value;
                 if (!(vi.default_value && vi.default_value == input.data))
                     n.datas.push({name: vi.name, value: input.data});
             }
