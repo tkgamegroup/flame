@@ -1,19 +1,71 @@
-<?xml version="1.0"?>
-<BP>
-	<node type="BP_GraphicsClearvalues" id="cv" pos="363.890015;353.470001" />
-	<node type="BP_GraphicsSwapchain" id="sc" pos="118.060005;406.250000" />
-	<node type="BP_GraphicsDevice" id="d" pos="118.060005;32.639000" />
-	<node type="BP_GraphicsCommandbuffers" id="cb" pos="363.890015;214.580017" />
-  <node type="BP_Socket4" id="color" pos="118.060005;171.529999" >
-    <input name="v1" value="b4:64;200;128;255"></input>
-  </node>
-	<node type="make_cmd.dll:BP_MakeCmd" id="make_cmd" pos="566.669983;440.970001" />
-	<link out="sc.renderpass_clear" in="cv.renderpass" />
-	<link out="color.v" in="cv.colors" />
-	<link out="sc.image_count" in="cb.count" />
-	<link out="d.out" in="cb.device" />
-	<link out="cb.out" in="make_cmd.cmdbufs" />
-	<link out="sc.renderpass_clear" in="make_cmd.renderpass" />
-	<link out="cv.out" in="make_cmd.clearvalues" />
-	<link out="sc.framebuffers" in="make_cmd.framebuffers" />
-</BP>
+{
+  "links": [
+    {
+      "in": "cv.renderpass",
+      "out": "sc.renderpass_clear"
+    },
+    {
+      "in": "cv.colors",
+      "out": "color.v"
+    },
+    {
+      "in": "cb.count",
+      "out": "sc.image_count"
+    },
+    {
+      "in": "cb.device",
+      "out": "d.out"
+    },
+    {
+      "in": "make_cmd.renderpass",
+      "out": "sc.renderpass_clear"
+    },
+    {
+      "in": "make_cmd.clearvalues",
+      "out": "cv.out"
+    }
+  ],
+  "nodes": [
+    {
+      "datas": null,
+      "id": "cv",
+      "pos": "363.890015;353.470001",
+      "type": "BP_GraphicsClearvalues"
+    },
+    {
+      "datas": null,
+      "id": "sc",
+      "pos": "118.060005;406.250000",
+      "type": "BP_GraphicsSwapchain"
+    },
+    {
+      "datas": null,
+      "id": "d",
+      "pos": "118.060005;32.639000",
+      "type": "BP_GraphicsDevice"
+    },
+    {
+      "datas": null,
+      "id": "cb",
+      "pos": "363.890015;214.580017",
+      "type": "BP_GraphicsCommandbuffers"
+    },
+    {
+      "datas": [
+        {
+          "name": "v1",
+          "value": "b4:64;200;128;255"
+        }
+      ],
+      "id": "color",
+      "pos": "118.060005;171.529999",
+      "type": "BP_Socket4"
+    },
+    {
+      "datas": null,
+      "id": "make_cmd",
+      "pos": "566.669983;440.970001",
+      "type": "make_cmd.dll:BP_MakeCmd"
+    }
+  ]
+}
