@@ -41,7 +41,7 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	printf("key=[ %s ] cmd=[ %s ]\n", args[1], args[2]);
+	printf("key=\"%s\" cmd=\"%s\"\n", args[1], args[2]);
 
 	auto keys = string_split(std::string(args[1]), '+');
 	auto key = Key_Null;

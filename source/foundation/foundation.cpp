@@ -628,9 +628,11 @@ namespace flame
 		}
 	};
 
-	void do_file_watch(FileWatcher *filewatcher, bool only_content, const wchar_t *path, Function<void(void* c, FileChangeType type, const wchar_t* filename)> &callback)
+	void do_file_watch(FileWatcher *filewatcher, bool only_content, const wchar_t *_path, Function<void(void* c, FileChangeType type, const wchar_t* filename)> &callback)
 	{
-		auto dir_handle = CreateFileW(path, GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+		auto path = std::wstring(_path);
+
+		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];
@@ -665,6 +667,7 @@ namespace flame
 
 			auto base = 0;
 			auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;
+			p->FileName[p->FileNameLength / 2] = 0;
 			while (true)
 			{
 				FileChangeType type;
@@ -688,7 +691,7 @@ namespace flame
 				}
 
 				if (!(only_content && (type != FileModified)))
-					callback(type, p->FileName);
+					callback(type, (path + L"\\" + p->FileName).c_str());
 
 				if (p->NextEntryOffset <= 0)
 					break;

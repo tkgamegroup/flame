@@ -40,7 +40,7 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	printf("watch=[ %s ] cmd=[ %s ]\n", args[1], args[2]);
+	printf("watch=\"%s\" cmd=\"%s\"\n", args[1], args[2]);
 
 	struct Capture
 	{

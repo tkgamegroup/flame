@@ -78,9 +78,9 @@ namespace flame
 #endif
 
 		FLAME_FOUNDATION_EXPORTS int add_key_listener(Function<void(void* c, KeyState action, Key key)>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>   &listener);
-		FLAME_FOUNDATION_EXPORTS int add_resize_listener(Function<void(void* c, const Ivec2& size)>  &listener);
-		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<void(void* c)> &listener);
+		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>& listener);
+		FLAME_FOUNDATION_EXPORTS int add_resize_listener(Function<void(void* c, const Ivec2& size)>& listener);
+		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<void(void* c)>& listener);
 
 		FLAME_FOUNDATION_EXPORTS void remove_key_listener(int id);
 		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(int id);
