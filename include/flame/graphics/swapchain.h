@@ -32,25 +32,20 @@ namespace flame
 	{
 		struct Device;
 		struct Image;
-		//struct Renderpass;
-		//struct Framebuffer;
 		struct Semaphore;
 
 		FLAME_GRAPHICS_EXPORTS Format get_swapchain_format();
 
 		struct Swapchain
 		{
-			//FLAME_GRAPHICS_EXPORTS SampleCount sample_count() const;
 			FLAME_GRAPHICS_EXPORTS Window *window() const;
 			FLAME_GRAPHICS_EXPORTS int image_count() const;
 			FLAME_GRAPHICS_EXPORTS Image *image(int idx) const;
 			FLAME_GRAPHICS_EXPORTS uint image_index() const;
-			//FLAME_GRAPHICS_EXPORTS Renderpass *renderpass(bool clear = false) const;
-			//FLAME_GRAPHICS_EXPORTS Framebuffer *framebuffer(uint index) const;
 
 			FLAME_GRAPHICS_EXPORTS void acquire_image(Semaphore *signal_semaphore);
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w/*, SampleCount sc = SampleCount_1*/);
+			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
 	}

@@ -42,12 +42,31 @@ namespace flame
 		void* window$o;
 		int image_count$o;
 		VoidPtrs images$o;
-		//void* renderpass_clear$o;
-		//void* renderpass_dont_clear$o;
-		//VoidPtrs framebuffers$o;
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void finish$c();
+	};
+
+	struct BP_GraphicsRenderpass$
+	{
+		void* in$i;
+
+		void* out$o;
+
+		FLAME_GRAPHICS_EXPORTS void initialize$c();
+		FLAME_GRAPHICS_EXPORTS void finish$c();
+		FLAME_GRAPHICS_EXPORTS void update$c();
+	};
+
+	struct BP_GraphicsFramebuffer$
+	{
+		void* in$i;
+
+		void* out$o;
+
+		FLAME_GRAPHICS_EXPORTS void initialize$c();
+		FLAME_GRAPHICS_EXPORTS void finish$c();
+		FLAME_GRAPHICS_EXPORTS void update$c();
 	};
 
 	struct BP_GraphicsClearvalues$

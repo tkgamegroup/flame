@@ -58,20 +58,6 @@ namespace flame
 				images$o.count = 0;
 				images$o.v = nullptr;
 			}
-			//renderpass_clear$o = sc->renderpass(true);
-			//renderpass_dont_clear$o = sc->renderpass(false);
-			//if (image_count$o > 0)
-			//{
-			//	framebuffers$o.count = image_count$o;
-			//	framebuffers$o.v = new voidptr[image_count$o];
-			//	for (auto i = 0; i < image_count$o; i++)
-			//		framebuffers$o.v[i] = sc->framebuffer(i);
-			//}
-			//else
-			//{
-			//	framebuffers$o.count = 0;
-			//	framebuffers$o.v = nullptr;
-			//}
 		}
 		else
 			out$o = nullptr;
@@ -80,7 +66,6 @@ namespace flame
 	void BP_GraphicsSwapchain$::finish$c()
 	{
 		delete[]images$o.v;
-		//delete[]framebuffers$o.v;
 	}
 
 	BP_GraphicsSwapchain$ bp_graphics_swapchain_unused;

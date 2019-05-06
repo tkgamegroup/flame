@@ -43,28 +43,10 @@ namespace flame
 			return swapchain_format;
 		}
 
-		SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w/*, SampleCount _sc*/)
+		SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w)
 		{
 			d = (DevicePrivate*)_d;
 			w = _w;
-			//sc = _sc;
-
-			//image_ms = nullptr;
-
-			//RenderpassInfo rp_info;
-			//if (sc != SampleCount_1)
-			//{
-			//	rp_info.attachments.emplace_back(swapchain_format, true, sc);
-			//	rp_info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
-			//}
-			//else
-			//	rp_info.attachments.emplace_back(swapchain_format, true, SampleCount_1);
-			//rp_info.subpasses[0].color_attachments.push_back(0);
-			//if (sc != SampleCount_1)
-			//	rp_info.subpasses[0].resolve_attachments.push_back(1);
-			//rp = Renderpass::create(d, rp_info);
-			//rp_info.attachments[0].clear = false;
-			//rp_dc = Renderpass::create(d, rp_info);
 
 			image_index = -1;
 
@@ -201,54 +183,12 @@ namespace flame
 #endif
 
 			images.resize(image_count);
-			//image_views.resize(image_count);
-			//fbs.resize(image_count);
-			//for (int i = 0; i < image_count; i++)
-			//{
-			//	images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, (void*)native_images[i]);
-
-			//	FramebufferInfo fb_info;
-			//	fb_info.rp = rp;
-			//	if (sc != SampleCount_1)
-			//	{
-			//		if (!image_ms || image_ms->size != size)
-			//		{
-			//			if (image_ms)
-			//			{
-			//				Imageview::destroy(image_ms_view);
-			//				Image::destroy(image_ms);
-			//			}
-			//			image_ms = Image::create(d, swapchain_format, size, 1, 1, sc, ImageUsageAttachment, MemPropDevice);
-			//			image_ms_view = Imageview::create(image_ms);
-			//		}
-			//		image_views[i] = Imageview::create(image_ms);
-			//		fb_info.views.push_back(image_views[i]);
-			//	}
-			//	fb_info.views.push_back(Imageview::create(images[i]));
-			//	fbs[i] = Framebuffer::create(d, fb_info);
-			//}
 		}
 
 		void SwapchainPrivate::destroy()
 		{
 			for (auto i : images)
 				Image::destroy(i);
-			//for (auto v : image_views)
-			//	Imageview::destroy(v);
-			//for (auto f : fbs)
-			//	Framebuffer::destroy(f);
-			//images.clear();
-			//image_views.clear();
-			//fbs.clear();
-			//if (image_ms)
-			//{
-			//	Imageview::destroy(image_ms_view);
-			//	image_ms_view = nullptr;
-			//	Image::destroy(image_ms);
-			//	image_ms = nullptr;
-			//}
-			//Renderpass::destroy(rp);
-			//Renderpass::destroy(rp_dc);
 
 #if defined(FLAME_VULKAN)
 			vkDestroySwapchainKHR(d->v, v, nullptr);
@@ -266,11 +206,6 @@ namespace flame
 			image_index = v->GetCurrentBackBufferIndex();
 #endif
 		}
-
-		//SampleCount Swapchain::sample_count() const
-		//{
-		//	return ((SwapchainPrivate*)this)->sc;
-		//}
 
 		Window *Swapchain::window() const
 		{
@@ -292,24 +227,14 @@ namespace flame
 			return ((SwapchainPrivate*)this)->image_index;
 		}
 
-		//Renderpass *Swapchain::renderpass(bool clear) const
-		//{
-		//	return clear ? ((SwapchainPrivate*)this)->rp : ((SwapchainPrivate*)this)->rp_dc;
-		//}
-
-		//Framebuffer *Swapchain::framebuffer(uint index) const
-		//{
-		//	return ((SwapchainPrivate*)this)->fbs[index];
-		//}
-
 		void Swapchain::acquire_image(Semaphore *signal_semaphore)
 		{
 			((SwapchainPrivate*)this)->acquire_image(signal_semaphore);
 		}
 
-		Swapchain *Swapchain::create(Device *d, Window *w/*, SampleCount sc*/)
+		Swapchain *Swapchain::create(Device *d, Window *w)
 		{
-			return new SwapchainPrivate(d, w/*, sc*/);
+			return new SwapchainPrivate(d, w);
 		}
 
 		void Swapchain::destroy(Swapchain *s)
