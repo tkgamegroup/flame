@@ -178,11 +178,11 @@ namespace flame
 
 			d = (DevicePrivate*)_d;
 
-			std::filesystem::remove(L"temp.spv"); // glslc cannot write to an existed file. well we did delete it when we finish compiling, but there can be one somehow
+			std::filesystem::remove(L"temp.spv"); // glslc cannot write to an existed file (well we did delete it when we finish compiling, but there can be one somehow)
 
 			auto conf_path_abs = conf_path;
 
-			auto glsl_filename = shader_path + L"src/" + filename;
+			auto glsl_path = std::filesystem::path(shader_path + L"src/" + filename);
 
 			std::wstring spv_filename(filename);
 			auto hash = H(prefix.c_str());
@@ -191,31 +191,21 @@ namespace flame
 			spv_filename += L".spv";
 			spv_filename = shader_path + L"bin/" + spv_filename;
 
-			if (!std::filesystem::exists(spv_filename) ||
-				std::filesystem::last_write_time(spv_filename) <= std::filesystem::last_write_time(glsl_filename))
+			if (!std::filesystem::exists(spv_filename) || std::filesystem::last_write_time(spv_filename) <= std::filesystem::last_write_time(glsl_path))
 			{
 				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
 				assert(vk_sdk_path != L"");
 
-				std::filesystem::path glsl_path(glsl_filename);
-
 				std::string pfx;
-				if (glsl_path.extension().string() == ".comp")
-				{
-					pfx += "#version 450 core\n";
+				pfx += "#version 450 core\n";
+				pfx += "#extension GL_ARB_shading_language_420pack : enable\n";  // Allows the setting of uniform buffer object and sampler binding points directly from GLSL
+				if (glsl_path.extension().string() != ".comp")
 					pfx += "#extension GL_ARB_separate_shader_objects : enable\n";
-					pfx += "#extension GL_ARB_shading_language_420pack : enable\n";  // Allows the setting of Uniform Buffer Object and sampler binding points directly from GLSL
-				}
-				else
-				{
-					pfx += "#version 450 core\n";
-					pfx += "#extension GL_ARB_shading_language_420pack : enable\n";  // Allows the setting of Uniform Buffer Object and sampler binding points directly from GLSL
-				}
-				pfx += prefix;
+				pfx += "\n" + prefix;
 				auto temp_filename = glsl_path.parent_path().wstring() + L"/temp." + glsl_path.filename().wstring();
 				{
 					std::ofstream ofile(temp_filename);
-					auto file = get_file_content(glsl_filename);
+					auto file = get_file_content(glsl_path.wstring());
 					ofile.write(pfx.c_str(), pfx.size());
 					ofile.write(file.first.get(), file.second);
 					ofile.close();
@@ -227,39 +217,13 @@ namespace flame
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), w2s(command_line).c_str());
 				std::filesystem::remove(temp_filename);
 				if (!std::filesystem::exists("temp.spv"))
-				{
-					auto prefix_lines_count = std::count(pfx.begin(), pfx.end(), '\n');
-					printf("\n=====Shader Compile Error=====\n");
-					auto p = (char*)output.v;
-					while (true)
-					{
-						auto p0 = std::strstr(p, ":");
-						if (!p0)
-							break;
-						auto p1 = std::strstr(p0 + 1, ":");
-						if (!p1)
-							break;
-						*p0 = 0;
-						*p1 = 0;
-						auto filename = p;
-						auto line = std::atoi(p0 + 1) - prefix_lines_count;
-						p = std::strstr(p1 + 1, "\n");
-						if (p)
-							*p = 0;
-						auto what = p1 + 1;
-						printf("%s:%d:%s\n", filename, line, what);
-						if (!p)
-							break;
-					}
-					printf("=============================\n");
-				}
+					printf("shader \"%s\" compile error:\n\n%s\n\n", glsl_path.string().c_str(), output.v);
 				else
 				{
-					std::filesystem::path spv_path(spv_filename);
-					std::filesystem::path spv_dir = spv_path.parent_path();
+					auto spv_dir = std::filesystem::path(spv_filename).parent_path();
 					if (!std::filesystem::exists(spv_dir))
 						std::filesystem::create_directories(spv_dir);
-					std::filesystem::copy_file("temp.spv", spv_path, std::filesystem::copy_options::overwrite_existing);
+					std::filesystem::copy_file("temp.spv", spv_filename, std::filesystem::copy_options::overwrite_existing);
 					std::filesystem::remove("temp.spv");
 				}
 			}
