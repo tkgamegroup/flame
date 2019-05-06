@@ -23,7 +23,6 @@
 #include "device_private.h"
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
-#include <flame/graphics/framebuffer.h>
 #include "commandbuffer_private.h"
 #include "swapchain_private.h"
 #include "synchronize_private.h"
@@ -63,9 +62,9 @@ namespace flame
 			rp_info.subpasses[0].color_attachments.push_back(0);
 			if (sc != SampleCount_1)
 				rp_info.subpasses[0].resolve_attachments.push_back(1);
-			rp = Renderpass::get(d, rp_info);
+			rp = Renderpass::create(d, rp_info);
 			rp_info.attachments[0].clear = false;
-			rp_dc = Renderpass::get(d, rp_info);
+			rp_dc = Renderpass::create(d, rp_info);
 
 			image_index = -1;
 
@@ -202,6 +201,7 @@ namespace flame
 #endif
 
 			images.resize(image_count);
+			image_views.resize(image_count);
 			fbs.resize(image_count);
 			for (int i = 0; i < image_count; i++)
 			{
@@ -214,13 +214,18 @@ namespace flame
 					if (!image_ms || image_ms->size != size)
 					{
 						if (image_ms)
+						{
+							Imageview::destroy(image_ms_view);
 							Image::destroy(image_ms);
+						}
 						image_ms = Image::create(d, swapchain_format, size, 1, 1, sc, ImageUsageAttachment, MemPropDevice);
+						image_ms_view = Imageview::create(image_ms);
 					}
-					fb_info.views.push_back(Imageview::get(image_ms));
+					image_views[i] = Imageview::create(image_ms);
+					fb_info.views.push_back(image_views[i]);
 				}
-				fb_info.views.push_back(Imageview::get(images[i]));
-				fbs[i] = Framebuffer::get(d, fb_info);
+				fb_info.views.push_back(Imageview::create(images[i]));
+				fbs[i] = Framebuffer::create(d, fb_info);
 			}
 		}
 
@@ -228,15 +233,22 @@ namespace flame
 		{
 			for (auto i : images)
 				Image::destroy(i);
+			for (auto v : image_views)
+				Imageview::destroy(v);
 			for (auto f : fbs)
-				Framebuffer::release(f);
+				Framebuffer::destroy(f);
 			images.clear();
+			image_views.clear();
 			fbs.clear();
 			if (image_ms)
 			{
+				Imageview::destroy(image_ms_view);
+				image_ms_view = nullptr;
 				Image::destroy(image_ms);
 				image_ms = nullptr;
 			}
+			Renderpass::destroy(rp);
+			Renderpass::destroy(rp_dc);
 
 #if defined(FLAME_VULKAN)
 			vkDestroySwapchainKHR(d->v, v, nullptr);

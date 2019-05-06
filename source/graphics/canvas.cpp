@@ -92,10 +92,9 @@ namespace flame
 			int *idx_end;
 			Commandbuffer *cb;
 
-			int current_image_view_index;
 			Imageview* image_views[MaxImageviewCount];
 
-			std::vector<std::tuple<FontAtlas*, bool, int>> font_atlases;
+			std::vector<std::tuple<FontAtlas*, int, Imageview*>> font_atlases;
 
 			CanvasPrivate(Swapchain *_sc)
 			{
@@ -118,8 +117,6 @@ namespace flame
 				idx_end = (int*)idx_buffer->mapped;
 
 				cb = Commandbuffer::create(device->gcp);
-
-				current_image_view_index = 1;
 			}
 
 			~CanvasPrivate()
@@ -128,6 +125,8 @@ namespace flame
 				Buffer::destroy(vtx_buffer);
 				Buffer::destroy(idx_buffer);
 				Commandbuffer::destroy(cb);
+				for (auto& f : font_atlases)
+					Imageview::destroy(std::get<2>(f));
 			}
 
 			void set_imageview(int index, Imageview* v)
@@ -138,13 +137,19 @@ namespace flame
 
 			int add_font_atlas(FontAtlas* font_atlas)
 			{
-				auto image_idx = current_image_view_index++;
-				font_atlases.emplace_back(font_atlas, font_atlas->sdf, (int)image_idx);
+				for (auto i = 1; i < MaxImageviewCount; i++)
+				{
+					if (image_views[i] == white_imageview)
+					{
+						auto view = Imageview::create(font_atlas->atlas());
+						set_imageview(i, view);
 
-				auto view = Imageview::get(font_atlas->atlas());
-				set_imageview(image_idx, view);
+						font_atlases.emplace_back(font_atlas, i, view);
 
-				return font_atlases.size() - 1;
+						return font_atlases.size() - 1;
+					}
+				}
+				return -1;
 			}
 
 			void start_cmd(DrawCmdType type, int id)
@@ -363,13 +368,12 @@ namespace flame
 				const auto& f = font_atlases[font_atlas_index];
 				auto font_atlas = std::get<0>(f);
 				auto pixel_height = font_atlas->pixel_height;
-				auto sdf = std::get<1>(f);
-				if (!sdf)
+				if (!font_atlas->sdf)
 					scale = 1.f;
 
 				auto _pos = Vec2(Ivec2(pos));
 
-				start_cmd(sdf ? DrawCmdTextSdf : DrawCmdTextLcd, std::get<2>(f));
+				start_cmd(font_atlas->sdf ? DrawCmdTextSdf : DrawCmdTextLcd, std::get<1>(f));
 				auto &vtx_cnt = draw_cmds.back().vtx_cnt;
 				auto &idx_cnt = draw_cmds.back().idx_cnt;
 
@@ -739,7 +743,7 @@ namespace flame
 
 			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Ivec2(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 			white_image->init(Bvec4(255));
-			white_imageview = Imageview::get(white_image);
+			white_imageview = Imageview::create(white_image);
 
 			auto vib = VertexInputBufferInfo({
 					Format_R32G32_SFLOAT,
@@ -798,6 +802,7 @@ namespace flame
 
 		void Canvas::deinitialize()
 		{
+			Imageview::destroy(white_imageview);
 			Image::destroy(white_image);
 			Pipeline::destroy(pl_element);
 			Pipeline::destroy(pl_text_lcd);

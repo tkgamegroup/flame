@@ -26,7 +26,6 @@
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
-#include <flame/graphics/framebuffer.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/pipeline.h>
 #include <flame/graphics/descriptor.h>

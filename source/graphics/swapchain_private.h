@@ -46,7 +46,9 @@ namespace flame
 #endif
 
 			std::vector<Image*> images;
-			Image *image_ms;
+			std::vector<Imageview*> image_views;
+			Image* image_ms;
+			Imageview* image_ms_view;
 
 			Renderpass *rp, *rp_dc/*dont clear*/;
 			std::vector<Framebuffer*> fbs;
