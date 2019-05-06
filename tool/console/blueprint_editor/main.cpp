@@ -483,8 +483,11 @@ int main(int argc, char **args)
 			{
 				printf("  ok\nbrowser: working\n");
 
-				auto content = get_file_content(filename);
-				s->send(content.second, content.first.get());
+				auto json = SerializableNode::create_from_json_file(filename);
+				json->new_attr("file", w2s(filename));
+				auto str = json->to_string_json();
+				s->send(str.size, str.v);
+				SerializableNode::destroy(json);
 
 				wait_for(s->ev_closed);
 				printf("browser: closed\n");

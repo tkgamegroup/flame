@@ -1067,6 +1067,8 @@ namespace flame
 		{
 			if (src->type == SerializableNode::Value && !src->attrs.empty())
 				dst = src->attrs[0]->value;
+			else if (!src->value.empty())
+				dst = src->value;
 			else
 			{
 				for (auto& sa : src->attrs)

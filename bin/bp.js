@@ -7,6 +7,9 @@ var staging_links = [];
 
 var sock_s = null;
 
+var filename = null;
+var filepath = null;
+
 window.onload = function(){
     var svg = document.getElementById("svg");
     svg.ns = svg.namespaceURI;
@@ -81,8 +84,9 @@ window.onload = function(){
         this.eMain.classList.add("node");
         this.eMain.setAttribute("title", this.name);
 
-        this.eMain.style.left = sn.x + "px";
-        this.eMain.style.top = sn.y + "px";
+        var pos_sp = sn.pos.split(";");
+        this.eMain.style.left = pos_sp[0] + "px";
+        this.eMain.style.top = pos_sp[1] + "px";
 
         var thiz = this;
         $(this.eMain).draggable({
@@ -108,8 +112,8 @@ window.onload = function(){
 
         var thiz = this;
 
-        this.abs_udt_name = sn.udt_name;
-        var sp = sn.udt_name.split(":");
+        this.abs_udt_name = sn.type;
+        var sp = sn.type.split(":");
         var load = function(u_name){
             var udt = find_udt(u_name);
             if (!udt)
@@ -138,13 +142,16 @@ window.onload = function(){
                     thiz.eRight.appendChild(s.eMain);
                 }
             }
-            for (var i in sn.datas)
+            if (sn.datas != "null")
             {
-                var item = sn.datas[i];
-                var input = thiz.FindInput(item.name);
-                input.data = item.value;
-                if (input.eEdit)
-                    input.eEdit.value = input.data;
+                for (var i in sn.datas)
+                {
+                    var item = sn.datas[i];
+                    var input = thiz.FindInput(item.name);
+                    input.data = item.value;
+                    if (input.eEdit)
+                        input.eEdit.value = input.data;
+                }
             }
             for (var i = 0; i < staging_links.length; i++)
             {
@@ -178,7 +185,7 @@ window.onload = function(){
         {
             if (!load(sp[1]))
             {
-                var url = sp[0].replace(/.dll/, ".typeinfo");
+                var url = filepath + "/" + sp[0].replace(/.dll/, ".typeinfo");
                 $.getJSON(url, function(res, status){
                     if (status == "success")
                     {
@@ -218,7 +225,7 @@ window.onload = function(){
             this.eMain.appendChild(this.eName);
 
             var type_sp = vi.type.split(":");
-            if (type_sp[0] != "pointer")
+            if (type_sp[0] != "pointer" && type_sp[1] != "VoidPtrs")
             {
                 thiz.eEdit = document.createElement("input");
                 thiz.eEdit.type = "text";
@@ -377,11 +384,21 @@ window.onload = function(){
             nodes = [];
     
             var src = eval('(' + res.data + ')');
-    
-            var src_nodes = src.nodes;
-            for (var i in src_nodes)
+
+            filename = src.file;
+            filepath = filename;
+            for (var i = filepath.length - 1; i > 0; i--)
             {
-                var sn = src_nodes[i];
+                if (filepath[i] == "/")
+                {
+                    filepath = filepath.slice(0, i);
+                    break;
+                }
+            }
+    
+            for (var i in src.nodes)
+            {
+                var sn = src.nodes[i];
                 var n = new Node(sn);
                 nodes.push(n);
             
@@ -390,7 +407,6 @@ window.onload = function(){
             }
     
             staging_links = src.links;
-            
         };
         sock_s.onclose = function(){
             setTimeout(function(){
