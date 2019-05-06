@@ -35,15 +35,27 @@ window.onload = function(){
         return null;
     };
 
-    var load_typeinfo = function(json){
+    var load_typeinfo = function(json, level){
         for (var i in json.enums)
-            enums.push(json.enums[i]);
+        {
+            var e = json.enums[i];
+            e.level = level;
+            enums.push(e);
+        }
         
         for (var i in json.udts)
-            udts.push(json.udts[i]);
+        {
+            var u = json.udts[i];
+            u.level = level;
+            udts.push(u);
+        }
     
         for (var i in json.functions)
-            functions.push(json.functions[i]);
+        {
+            var f = json.functions[i];
+            f.level = level;
+            functions.push(f);
+        }
     };
 
     var mouse = {
@@ -189,7 +201,7 @@ window.onload = function(){
                 $.getJSON(url, function(res, status){
                     if (status == "success")
                     {
-                        load_typeinfo(res);
+                        load_typeinfo(res, 1);
                         console.assert(load(sp[1]));
                     }
                     else
@@ -368,7 +380,9 @@ window.onload = function(){
     };
     
     var wait_typeinfos = 0;
-    var do_connect = function(){
+    var start = function(){
+        ;
+
         sock_s = new WebSocket("ws://localhost:5566/");
         sock_s.onmessage = function(res){
             for (var i in nodes)
@@ -418,38 +432,38 @@ window.onload = function(){
     };
     wait_typeinfos++;
 	$.getJSON("flame_foundation.typeinfo", function(res, status){
-        load_typeinfo(res);
+        load_typeinfo(res, 0);
         wait_typeinfos--;
         if (wait_typeinfos == 0)
-            do_connect();
+            start();
 	});
     // wait_typeinfos++;
 	// $.getJSON("flame_network.typeinfo", function(res, status){
-    //     load_typeinfo(res);
+    //     load_typeinfo(res, 0);
     //     wait_typeinfos--;
     //     if (wait_typeinfos == 0)
-    //         do_connect();
+    //         start();
 	// });
     wait_typeinfos++;
 	$.getJSON("flame_graphics.typeinfo", function(res, status){
-        load_typeinfo(res);
+        load_typeinfo(res, 0);
         wait_typeinfos--;
         if (wait_typeinfos == 0)
-            do_connect();
+            start();
 	});
     // wait_typeinfos++;
 	// $.getJSON("flame_sound.typeinfo", function(res, status){
-    //     load_typeinfo(res);
+    //     load_typeinfo(res, 0);
     //     wait_typeinfos--;
     //     if (wait_typeinfos == 0)
-    //         do_connect();
+    //         start();
 	// });
     // wait_typeinfos++;
 	// $.getJSON("flame_universe.typeinfo", function(res, status){
-    //     load_typeinfo(res);
+    //     load_typeinfo(res, 0);
     //     wait_typeinfos--;
     //     if (wait_typeinfos == 0)
-    //         do_connect();
+    //         start();
 	// });
 
     /*

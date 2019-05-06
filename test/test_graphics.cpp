@@ -38,12 +38,12 @@ struct App : BasicApp
 	virtual void on_create() override
 	{
 		render_path = BP::create_from_file(L"../renderpath/test/renderpath.bp");
-		render_path->find_input("d.in")->set_data(d);
-		render_path->find_input("sc.in")->set_data(sc);
+		render_path->find_input("d.in")->set_data(&d);
+		render_path->find_input("sc.in")->set_data(&sc);
 		render_path->initialize();
 		render_path->update();
 		//render_path->finish();
-		memcpy(&cbs, &render_path->find_output("cb.out")->data().v, sizeof(VoidPtrs));
+		memcpy(&cbs, render_path->find_output("cb.out")->data(), sizeof(VoidPtrs));
 
 		//Canvas::initialize(d, sc);
 		//canvas = Canvas::create(sc);

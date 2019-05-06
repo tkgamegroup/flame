@@ -119,7 +119,10 @@ namespace flame
 	{
 		auto size = variable_info->size();
 		data = new char[size];
-		set(data, variable_info->type()->tag(), size, &variable_info->default_value());
+		memset(data, 0, size);
+		auto vtype = variable_info->type();
+		if (vtype->tag() != TypeTagPointer && vtype->name_hash() != cH("VoidPtrs"))
+			set(data, variable_info->type()->tag(), size, &variable_info->default_value());
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -270,7 +273,7 @@ namespace flame
 		{
 			auto v = input->variable_info;
 			auto type = v->type();
-			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? &input->links[0]->data : &input->data);
+			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
 		}
 
 		if (initialize_function)
@@ -296,7 +299,7 @@ namespace flame
 		{
 			auto v = output->variable_info;
 			auto type = v->type();
-			set((char*)dummy + v->offset(), type->tag(), v->size(), output->data);
+			set(output->data, type->tag(), v->size(), (char*)dummy + v->offset());
 		}
 	}
 
@@ -331,7 +334,7 @@ namespace flame
 		{
 			auto v = input->variable_info;
 			auto type = v->type();
-			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? &input->links[0]->data : &input->data);
+			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
 		}
 
 		if (update_function)
@@ -357,7 +360,7 @@ namespace flame
 		{
 			auto v = output->variable_info;
 			auto type = v->type();
-			set((char*)dummy + v->offset(), type->tag(), v->size(), output->data);
+			set(output->data, type->tag(), v->size(), (char*)dummy + v->offset());
 		}
 
 		updated = true;
@@ -564,13 +567,21 @@ namespace flame
 		}
 
 		auto n_links = file->find_node("links");
+		auto lc = n_links->node_count();
 		for (auto i_l = 0; i_l < n_links->node_count(); i_l++)
 		{
 			auto n_link = n_links->node(i_l);
-			auto o = find_output(n_link->find_node("out")->value());
-			auto i = find_input(n_link->find_node("in")->value());
+			auto o_address = n_link->find_node("out")->value();
+			auto i_address = n_link->find_node("in")->value();
+			auto o = find_output(o_address);
+			auto i = find_input(i_address);
 			if (o && i)
-				i->link_to(o);
+			{
+				if (!i->link_to(o))
+					printf("link type mismatch: %s - > %s\n", o_address.c_str(), i_address.c_str());
+			}
+			else
+				printf("unable to link: %s - > %s\n", o_address.c_str(), i_address.c_str());
 		}
 
 		SerializableNode::destroy(file);

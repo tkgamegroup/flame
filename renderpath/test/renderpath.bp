@@ -1,1 +1,88 @@
-{"nodes":[{"type":"BP_GraphicsClearvalues","id":"cv","pos":"399;305","datas":[]},{"type":"BP_GraphicsSwapchain","id":"sc","pos":"90;141","datas":[]},{"type":"BP_GraphicsDevice","id":"d","pos":"127;42","datas":[]},{"type":"BP_GraphicsCommandbuffers","id":"cb","pos":"385;59","datas":[]},{"type":"BP_Socket4","id":"color","pos":"386;160","datas":[{"name":"v1","value":"b4:64;200;128;255"}]},{"type":"make_cmd.dll:BP_MakeCmd","id":"make_cmd","pos":"613;241","datas":[{"name":"cmdbufs","value":""},{"name":"framebuffers","value":""}]}],"links":[{"out":"sc.renderpass_clear","in":"cv.renderpass"},{"out":"color.v","in":"cv.colors"},{"out":"sc.image_count","in":"cb.count"},{"out":"d.out","in":"cb.device"},{"out":"sc.renderpass_clear","in":"make_cmd.renderpass"},{"out":"cv.out","in":"make_cmd.clearvalues"}]}
+{
+  "nodes": [
+    {
+      "type": "BP_GraphicsClearvalues",
+      "id": "cv",
+      "pos": "399;305",
+      "datas": []
+    },
+    {
+      "type": "BP_GraphicsSwapchain",
+      "id": "sc",
+      "pos": "90;141",
+      "datas": []
+    },
+    {
+      "type": "BP_GraphicsDevice",
+      "id": "d",
+      "pos": "127;42",
+      "datas": []
+    },
+    {
+      "type": "BP_GraphicsCommandbuffers",
+      "id": "cb",
+      "pos": "385;59",
+      "datas": []
+    },
+    {
+      "type": "BP_Socket4",
+      "id": "color",
+      "pos": "386;160",
+      "datas": [
+        {
+          "name": "v1",
+          "value": "b4:64;200;128;255"
+        }
+      ]
+    },
+    {
+      "type": "make_cmd.dll:BP_MakeCmd",
+      "id": "make_cmd",
+      "pos": "613;241",
+      "datas": [
+        {
+          "name": "cmdbufs",
+          "value": ""
+        },
+        {
+          "name": "framebuffers",
+          "value": ""
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "out": "sc.renderpass_clear",
+      "in": "cv.renderpass"
+    },
+    {
+      "out": "color.v",
+      "in": "cv.colors"
+    },
+    {
+      "out": "sc.image_count",
+      "in": "cb.count"
+    },
+    {
+      "out": "d.out",
+      "in": "cb.device"
+    },
+    {
+      "out": "cb.out",
+      "in": "make_cmd.cmdbufs"
+    },
+    {
+      "out": "sc.renderpass_clear",
+      "in": "make_cmd.renderpass"
+    },
+    {
+      "out": "cv.out",
+      "in": "make_cmd.clearvalues"
+    },
+    {
+      "out": "sc.framebuffers",
+      "in": "make_cmd.framebuffers"
+    }
+  ]
+}
