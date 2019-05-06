@@ -87,10 +87,15 @@ void generate_graph_and_layout(BP *bp)
 	}
 }
 
-int main(int argc, char **args)
+struct App
 {
 	std::wstring filename;
+	BP* bp;
+}app;
+auto papp = &app;
 
+int main(int argc, char **args)
+{
 	auto typeinfo_lv = typeinfo_free_level();
 	typeinfo_load(L"flame_foundation.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_network.typeinfo", typeinfo_lv);
@@ -98,19 +103,19 @@ int main(int argc, char **args)
 	//typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
 
-	BP *bp = nullptr;
+	app.bp = nullptr;
 	if (argc > 1)
 	{
-		filename = s2w(args[1]);
-		bp = BP::create_from_file(filename.c_str());
-		if (!bp)
-			filename = L"";
+		app.filename = s2w(args[1]);
+		app.bp = BP::create_from_file(app.filename.c_str());
+		if (!app.bp)
+			app.filename = L"";
 	}
 
-	if (!bp)
-		bp = BP::create();
-	if (!filename.empty())
-		printf("\"%s\":\n", w2s(filename).c_str());
+	if (!app.bp)
+		app.bp = BP::create();
+	if (!app.filename.empty())
+		printf("\"%s\":\n", w2s(app.filename).c_str());
 	else
 		printf("\"unnamed\":\n");
 
@@ -201,9 +206,9 @@ int main(int argc, char **args)
 			}
 			else if (s_what == "nodes")
 			{
-				for (auto i = 0; i < bp->node_count(); i++)
+				for (auto i = 0; i < app.bp->node_count(); i++)
 				{
-					auto n = bp->node(i);
+					auto n = app.bp->node(i);
 					printf("id:%s type:%s\n", n->id(), n->udt()->name());
 				}
 			}
@@ -212,7 +217,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_id = std::string(command_line);
 
-				auto n = bp->find_node(s_id.c_str());
+				auto n = app.bp->find_node(s_id.c_str());
 				if (n)
 				{
 					printf("[In]\n");
@@ -247,8 +252,8 @@ int main(int argc, char **args)
 			}
 			else if (s_what == "graph")
 			{
-				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(filename))
-					generate_graph_and_layout(bp);
+				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(app.filename))
+					generate_graph_and_layout(app.bp);
 				if (std::filesystem::exists(L"bp.png"))
 				{
 					exec(L"bp.png", "", false);
@@ -273,7 +278,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_id = std::string(command_line);
 
-				auto n = bp->add_node(s_tn.c_str(), s_id == "-" ? nullptr : s_id.c_str());
+				auto n = app.bp->add_node(s_tn.c_str(), s_id == "-" ? nullptr : s_id.c_str());
 				if (!n)
 					printf("bad udt name or id already exist\n");
 				else
@@ -287,8 +292,8 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_in_address = std::string(command_line);
 
-				auto out = bp->find_output(s_out_address.c_str());
-				auto in = bp->find_input(s_in_address.c_str());
+				auto out = app.bp->find_output(s_out_address.c_str());
+				auto in = app.bp->find_input(s_in_address.c_str());
 				if (out && in)
 				{
 					in->link_to(out);
@@ -310,10 +315,10 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_id = std::string(command_line);
 
-				auto n = bp->find_node(s_id.c_str());
+				auto n = app.bp->find_node(s_id.c_str());
 				if (n)
 				{
-					bp->remove_node(n);
+					app.bp->remove_node(n);
 					printf("node removed: %s\n", s_id.c_str());
 				}
 				else
@@ -324,7 +329,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_in_address = std::string(command_line);
 
-				auto i = bp->find_input(s_in_address.c_str());
+				auto i = app.bp->find_input(s_in_address.c_str());
 				if (i)
 				{
 					i->link_to(nullptr);
@@ -344,7 +349,7 @@ int main(int argc, char **args)
 			scanf("%s", command_line);
 			auto s_value = std::string(command_line);
 
-			auto i = bp->find_input(s_address.c_str());
+			auto i = app.bp->find_input(s_address.c_str());
 			if (i)
 			{
 				auto v = i->variable_info();
@@ -358,14 +363,14 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "update")
 		{
-			bp->initialize();
-			bp->update();
-			bp->finish();
+			app.bp->initialize();
+			app.bp->update();
+			app.bp->finish();
 			printf("BP updated\n");
 		}
 		else if (s_command_line == "refresh")
 		{
-			if (filename == L"")
+			if (app.filename == L"")
 				printf("you need to save first\n");
 			else
 			{
@@ -374,9 +379,9 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "save")
 		{
-			if (!filename.empty())
+			if (!app.filename.empty())
 			{
-				bp->save(filename.c_str());
+				app.bp->save(app.filename.c_str());
 				printf("file saved\n");
 			}
 			else
@@ -386,21 +391,21 @@ int main(int argc, char **args)
 
 				if (!std::filesystem::exists(s_filename))
 				{
-					filename = s2w(s_filename);
-					bp->save(filename.c_str());
+					app.filename = s2w(s_filename);
+					app.bp->save(app.filename.c_str());
 					printf("file saved\n");
 					printf("%s:\n", s_filename.c_str());
 				}
 				else
-					printf("filename taken\n");
+					printf("app.filename taken\n");
 			}
 		}
 		else if (s_command_line == "reload")
 		{
-			if (!filename.empty())
+			if (!app.filename.empty())
 			{
-				BP::destroy(bp);
-				bp = BP::create_from_file(filename.c_str());
+				BP::destroy(app.bp);
+				app.bp = BP::create_from_file(app.filename.c_str());
 				printf("reloaded\n");
 			}
 			else
@@ -408,8 +413,8 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "set-layout")
 		{
-			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(filename))
-				generate_graph_and_layout(bp);
+			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(app.filename))
+				generate_graph_and_layout(app.bp);
 			if (std::filesystem::exists(L"bp.graph.txt"))
 			{
 				auto str = get_file_string(L"bp.graph.txt");
@@ -417,7 +422,7 @@ int main(int argc, char **args)
 				std::smatch match;
 				while (std::regex_search(str, match, reg_node))
 				{
-					auto n = bp->find_node(match[1].str().c_str());
+					auto n = app.bp->find_node(match[1].str().c_str());
 					if (n)
 						n->set_position(Vec2(stof1(match[2].str().c_str()), stof1(match[3].str().c_str())) * 100.f);
 
@@ -431,7 +436,7 @@ int main(int argc, char **args)
 		else if (s_command_line == "make-script")
 		{
 			scanf("%s", command_line);
-			auto w_filename = std::filesystem::path(filename).parent_path().wstring() + L"/" + s2w(command_line);
+			auto w_filename = std::filesystem::path(app.filename).parent_path().wstring() + L"/" + s2w(command_line);
 
 			if (std::filesystem::exists(w_filename))
 			{
@@ -459,32 +464,25 @@ int main(int argc, char **args)
 
 			auto s = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, int, void*)>(
 				[](void* c, int len, void* data) {
-					auto bp = *(BP**)c;
-					auto json = SerializableNode::create_from_json_string((char*)data);
-					auto n_nodes = json->find_node("nodes");
-					if (n_nodes)
-					{
-						for (auto i = 0; i < n_nodes->node_count(); i++)
-						{
-							auto n_node = n_nodes->node(i);
-							auto name = n_node->find_node("name")->value();
-							auto x = n_node->find_node("x")->value();
-							auto y = n_node->find_node("y")->value();
-							bp->find_node(name.c_str())->set_position(Vec2(stof1(x.c_str()), stof1(y.c_str())));
-						}
-					}
-					SerializableNode::destroy(json);
+					auto app = *(App**)c;
+					auto wtf = (char*)data;
+					std::ofstream file(app->filename);
+					file << (char*)data;
+					file.close();
+
+					BP::destroy(app->bp);
+					app->bp = BP::create_from_file(app->filename.c_str());
 
 					printf("browser: bp updated\n");
-				}, sizeof(void*), &bp));
+				}, sizeof(void*), &papp));
 			if (!s)
 				printf("  timeout\n");
 			else
 			{
 				printf("  ok\nbrowser: working\n");
 
-				auto json = SerializableNode::create_from_json_file(filename);
-				json->new_attr("file", w2s(filename));
+				auto json = SerializableNode::create_from_json_file(app.filename);
+				json->new_attr("file", w2s(app.filename));
 				auto str = json->to_string_json();
 				s->send(str.size, str.v);
 				SerializableNode::destroy(json);

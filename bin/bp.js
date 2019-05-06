@@ -55,7 +55,7 @@ window.onload = function(){
         for (var i in nodes)
         {
             var n = nodes[i];
-            if (n.name == name)
+            if (n.id == name)
                 return n;
         }
         return null;
@@ -78,11 +78,12 @@ window.onload = function(){
     }
 
     function Node(sn) {
-        this.name = sn.id;
+        this.id = sn.id;
+        this.type = sn.type;
 
         this.eMain = document.createElement("div");
         this.eMain.classList.add("node");
-        this.eMain.setAttribute("title", this.name);
+        this.eMain.setAttribute("title", this.id);
 
         var pos_sp = sn.pos.split(";");
         this.eMain.style.left = pos_sp[0] + "px";
@@ -112,7 +113,6 @@ window.onload = function(){
 
         var thiz = this;
 
-        this.abs_udt_name = sn.type;
         var sp = sn.type.split(":");
         var load = function(u_name){
             var udt = find_udt(u_name);
@@ -349,7 +349,7 @@ window.onload = function(){
     };
 
     Slot.prototype.GetAddress = function () {
-        return this.n.id + "." + this.vi.name;
+        return this.node.id + "." + this.vi.name;
     };
 
     window.onmousemove = function (e) {
@@ -471,10 +471,9 @@ function on_save_clicked()
     {
         var sn = nodes[i];
         var n = {};
-        n.udt_name = sn.abs_udt_name;
-        n.id = sn.name;
-        n.x = sn.x;
-        n.y = sn.y;
+        n.type = sn.type;
+        n.id = sn.id;
+        n.pos = sn.x + ";" + sn.y;
         n.datas = [];
         for (var j in sn.inputs)
         {
