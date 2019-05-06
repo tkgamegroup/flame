@@ -42,9 +42,9 @@ namespace flame
 		void* window$o;
 		int image_count$o;
 		VoidPtrs images$o;
-		void* renderpass_clear$o;
-		void* renderpass_dont_clear$o;
-		VoidPtrs framebuffers$o;
+		//void* renderpass_clear$o;
+		//void* renderpass_dont_clear$o;
+		//VoidPtrs framebuffers$o;
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void finish$c();

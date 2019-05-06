@@ -23,8 +23,8 @@
 #pragma once
 
 #include <flame/foundation/window.h>
-#include "graphics_private.h"
 #include <flame/graphics/swapchain.h>
+#include "graphics_private.h"
 
 namespace flame
 {
@@ -35,7 +35,7 @@ namespace flame
 		struct SwapchainPrivate : Swapchain
 		{
 			Window *w;
-			SampleCount sc;
+			//SampleCount sc;
 
 			DevicePrivate *d;
 #if defined(FLAME_VULKAN)
@@ -46,16 +46,16 @@ namespace flame
 #endif
 
 			std::vector<Image*> images;
-			std::vector<Imageview*> image_views;
-			Image* image_ms;
-			Imageview* image_ms_view;
+			//std::vector<Imageview*> image_views;
+			//Image* image_ms;
+			//Imageview* image_ms_view;
 
-			Renderpass *rp, *rp_dc/*dont clear*/;
-			std::vector<Framebuffer*> fbs;
+			//Renderpass *rp, *rp_dc/*dont clear*/;
+			//std::vector<Framebuffer*> fbs;
 
 			uint image_index;
 
-			SwapchainPrivate(Device *d, Window *w, SampleCount sc);
+			SwapchainPrivate(Device *d, Window *w/*, SampleCount sc*/);
 			~SwapchainPrivate();
 
 			void create();
