@@ -854,25 +854,24 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-	void BP_Socket4$::initialize$c()
+	void BP_LNA1Bvec4$::initialize$c()
 	{
-		v$o = new CommonData[4];
+		v$o.count = 1;
+		v$o.v = new Bvec4[1];
 	}
 
-	void BP_Socket4$::finish$c()
+	void BP_LNA1Bvec4$::finish$c()
 	{
-		delete[]v$o;
+		v$o.count = 0;
+		delete[]v$o.v;
 	}
 
-	void BP_Socket4$::update$c()
+	void BP_LNA1Bvec4$::update$c()
 	{
-		v$o[0] = v1$i;
-		v$o[1] = v2$i;
-		v$o[2] = v3$i;
-		v$o[3] = v4$i;
+		v$o.v[0] = v$i;
 	}
 
-	BP_Socket4$ bp_socket4_unused;
+	BP_LNA1Bvec4$ bp_lna1bvec4_unused;
 
 	void BP_Int$::update$c()
 	{

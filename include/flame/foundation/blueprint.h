@@ -129,14 +129,22 @@ namespace flame
 
 	// here, we define some basic udt for blueprint nodes
 
-	struct BP_Socket4$
+	struct BP_LNA1Bvec4$
 	{
-		CommonData v1$i;
-		CommonData v2$i;
-		CommonData v3$i;
-		CommonData v4$i;
+		Bvec4 v$i;
 
-		CommonData* v$o;
+		LNA<Bvec4> v$o;
+
+		FLAME_FOUNDATION_EXPORTS void initialize$c();
+		FLAME_FOUNDATION_EXPORTS void finish$c();
+		FLAME_FOUNDATION_EXPORTS void update$c();
+	};
+
+	struct BP_LNA1Voidptr$
+	{
+		void* v$i;
+
+		LNA<void*> v$o;
 
 		FLAME_FOUNDATION_EXPORTS void initialize$c();
 		FLAME_FOUNDATION_EXPORTS void finish$c();

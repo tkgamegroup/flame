@@ -299,10 +299,17 @@ namespace flame
 	}
 
 	template<typename T>
+	struct LNA // LengthAndArray
+	{
+		int count;
+		T* v;
+	};
+
+	template<typename T>
 	struct Array
 	{
 		int size;
-		T *v;
+		T* v;
 
 		void _init(const T* p, int len)
 		{

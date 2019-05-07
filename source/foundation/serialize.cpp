@@ -36,7 +36,8 @@ namespace flame
 		"enum_multi",
 		"variable",
 		"pointer",
-		"array"
+		"array",
+		"length_and_array"
 	};
 
 	const char* get_type_tag_name(TypeTag$ tag)
@@ -1319,6 +1320,7 @@ namespace flame
 	}
 
 	static std::string prefix("flame::");
+	static std::regex reg_lna("^" + prefix + R"(LengthAndArray<([\w\*]+)>)");
 	static std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
 	static std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
