@@ -197,7 +197,7 @@ window.onload = function(){
         {
             if (!load(sp[1]))
             {
-                var url = filepath + "/" + sp[0].replace(/.dll/, ".typeinfo");
+                var url = filepath + "/" + sp[0] + ".typeinfo";
                 $.getJSON(url, function(res, status){
                     if (status == "success")
                     {

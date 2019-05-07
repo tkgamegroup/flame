@@ -187,7 +187,7 @@ namespace flame
 
 		cl += " -out:" + w2s(out);
 
-		printf("exec:\n%s\n\n", cl.c_str());
+		//printf("exec:\n%s\n\n", cl.c_str());
 
 		return exec_and_get_output(L"", cl.c_str());
 	}

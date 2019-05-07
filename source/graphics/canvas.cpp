@@ -41,11 +41,14 @@ namespace flame
 		const auto MaxImageviewCount = 64;
 
 		static Device* device;
+		static Renderpass* rp;
 		static Image* white_image;
 		static Imageview* white_imageview;
 		static Pipeline* pl_element;
 		static Pipeline* pl_text_lcd;
 		static Pipeline* pl_text_sdf;
+
+		static SampleCount sample_count = SampleCount_8;
 
 		struct Vertex
 		{
@@ -80,8 +83,11 @@ namespace flame
 		struct CanvasPrivate : Canvas
 		{
 			Swapchain* sc;
-			Descriptorset* ds;
+			Image* image_ms;
+			Imageview* image_ms_view;
+			std::vector<std::pair<Framebuffer*, Imageview*>> fbs;
 			Clearvalues* cv;
+			Descriptorset* ds;
 
 			std::vector<Vec2> points;
 			std::vector<DrawCmd> draw_cmds;
@@ -99,13 +105,26 @@ namespace flame
 			CanvasPrivate(Swapchain *_sc)
 			{
 				sc = _sc;
-				ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
 
-				for (auto i = 0; i < MaxImageviewCount; i++)
-					set_imageview(i, white_imageview);
+				auto swapchain_format = get_swapchain_format();
 
-				cv = Clearvalues::create(sc->renderpass(true));
+				image_ms = Image::create(device, swapchain_format, sc->image(0)->size, 1, 1, sample_count, ImageUsageAttachment, MemPropDevice);
+				image_ms_view = Imageview::create(image_ms);
+				FramebufferInfo fb_info;
+				fb_info.rp = rp;
+				for (auto i = 0; i < sc->image_count(); i++)
+				{
+					auto view = Imageview::create(sc->image(i));
+					fb_info.views.push_back(image_ms_view);
+					fb_info.views.push_back(view);
+					fbs.emplace_back(Framebuffer::create(device, fb_info), view);
+					fb_info.views.clear();
+				}
+
+				cv = Clearvalues::create(rp);
 				cv->set(0, Bvec4(0));
+
+				ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
 
 				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690,
 					BufferUsageVertex, MemPropHost | MemPropHostCoherent);
@@ -117,10 +136,21 @@ namespace flame
 				idx_end = (int*)idx_buffer->mapped;
 
 				cb = Commandbuffer::create(device->gcp);
+
+				for (auto i = 0; i < MaxImageviewCount; i++)
+					set_imageview(i, white_imageview);
 			}
 
 			~CanvasPrivate()
 			{
+				Imageview::destroy(image_ms_view);
+				Image::destroy(image_ms);
+				for (auto& f : fbs)
+				{
+					Imageview::destroy(f.second);
+					Framebuffer::destroy(f.first);
+				}
+				Clearvalues::destroy(cv);
 				Descriptorset::destroy(ds);
 				Buffer::destroy(vtx_buffer);
 				Buffer::destroy(idx_buffer);
@@ -535,7 +565,7 @@ namespace flame
 			void record_cb()
 			{
 				cb->begin();
-				cb->begin_renderpass(sc->renderpass(true), sc->framebuffer(sc->image_index()), cv);
+				cb->begin_renderpass(rp, fbs[sc->image_index()].first, cv);
 				if (idx_end != idx_buffer->mapped)
 				{
 					auto surface_size = Vec2(sc->window()->size);
@@ -741,6 +771,15 @@ namespace flame
 		{
 			device = d;
 
+			auto swapchain_format = get_swapchain_format();
+
+			RenderpassInfo rp_info;
+			rp_info.attachments.emplace_back(swapchain_format, true, sample_count);
+			rp_info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
+			rp_info.subpasses[0].color_attachments.push_back(0);
+			rp_info.subpasses[0].resolve_attachments.push_back(1);
+			rp = Renderpass::create(device, rp_info);
+
 			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Ivec2(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 			white_image->init(Bvec4(255));
 			white_imageview = Imageview::create(white_image);
@@ -749,9 +788,6 @@ namespace flame
 					Format_R32G32_SFLOAT,
 					Format_R32G32_SFLOAT,
 					Format_R8G8B8A8_UNORM });
-
-			auto sample_count = sc->sample_count();
-			auto renderpass = sc->renderpass(true);
 
 			GraphicsPipelineInfo pl_element_info;
 			pl_element_info.shaders.resize(2);
@@ -763,7 +799,7 @@ namespace flame
 			pl_element_info.blend_states[0] = BlendInfo(
 				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
 				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-			pl_element_info.renderpass = renderpass;
+			pl_element_info.renderpass = rp;
 			pl_element = Pipeline::create(device, pl_element_info);
 
 			GraphicsPipelineInfo pl_info_text_lcd;
@@ -776,7 +812,7 @@ namespace flame
 			pl_info_text_lcd.blend_states[0] = BlendInfo(
 				BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color,
 				BlendFactorZero, BlendFactorZero);
-			pl_info_text_lcd.renderpass = renderpass;
+			pl_info_text_lcd.renderpass = rp;
 			pl_text_lcd = Pipeline::create(d, pl_info_text_lcd);
 
 			GraphicsPipelineInfo pl_info_text_sdf;
@@ -789,7 +825,7 @@ namespace flame
 			pl_info_text_sdf.blend_states[0] = BlendInfo(
 				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
 				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-			pl_info_text_sdf.renderpass = renderpass;
+			pl_info_text_sdf.renderpass = rp;
 			pl_text_sdf = Pipeline::create(d, pl_info_text_sdf);
 
 			for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
@@ -802,6 +838,7 @@ namespace flame
 
 		void Canvas::deinitialize()
 		{
+			Renderpass::destroy(rp);
 			Imageview::destroy(white_imageview);
 			Image::destroy(white_image);
 			Pipeline::destroy(pl_element);

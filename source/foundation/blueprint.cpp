@@ -392,20 +392,31 @@ namespace flame
 			if (!udt)
 			{
 				auto abs_fn = std::filesystem::path(filename).parent_path().wstring() + L"\\" + fn;
-				auto fn_cpp = abs_fn + L".cpp"; assert(std::filesystem::exists(fn_cpp));
-				auto fn_ti = abs_fn + L".typeinfo";
-				if (!std::filesystem::exists(fn_ti) || std::filesystem::last_write_time(fn_ti) < std::filesystem::last_write_time(fn_cpp))
+				auto fn_cpp = abs_fn + L".cpp";
+				if (!std::filesystem::exists(fn_cpp))
 				{
-					auto fn_dll = abs_fn + L".dll";
+					assert(0);
+					return nullptr;
+				}
+				auto fn_dll = abs_fn + L".dll";
+				auto fn_ti = abs_fn + L".typeinfo";
+				if (!std::filesystem::exists(fn_dll) || std::filesystem::last_write_time(fn_dll) < std::filesystem::last_write_time(fn_cpp))
+				{
 					auto compile_output = compile_to_dll({ fn_cpp }, { L"flame_foundation.lib", L"flame_graphics.lib" }, fn_dll);
 					if (!std::filesystem::exists(fn_dll) || std::filesystem::last_write_time(fn_dll) < std::filesystem::last_write_time(fn_cpp))
-						printf("compile error:\n%s\n", compile_output.v);
-					else
 					{
-						typeinfo_collect(fn_dll, 99);
-						typeinfo_save(fn_ti, 99);
-						typeinfo_clear(99);
+						printf("compile error:\n%s\n", compile_output.v);
+						assert(0);
+						return nullptr;
 					}
+					if (std::filesystem::exists(fn_ti))
+						std::filesystem::remove(fn_ti);
+				}
+				if (!std::filesystem::exists(fn_ti) || std::filesystem::last_write_time(fn_ti) < std::filesystem::last_write_time(fn_dll))
+				{
+					typeinfo_collect(fn_dll, 99);
+					typeinfo_save(fn_ti, 99);
+					typeinfo_clear(99);
 				}
 				auto lv = typeinfo_free_level();
 				typeinfo_load(fn_ti, lv);
