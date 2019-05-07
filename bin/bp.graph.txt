@@ -1,15 +1,17 @@
 graph 1 6.4167 5.3403
-node cv 3.6389 3.7153 1.5556 1.2917 "cv|{{<in>in|<renderpass>renderpass|<colors>colors}|{<out>out}}" solid Mrecord black lightgrey
+node cv 3.6389 3.1181 1.5556 1.2917 "cv|{{<in>in|<renderpass>renderpass|<colors>colors}|{<out>out}}" solid Mrecord black lightgrey
 node sc 1.1806 2.1875 2.3611 2.5694 "sc|{{<in>in}|{<out>out|<window>window|<image_count>image_count|<images>images|<renderpass_clear>renderpass_clear|<renderpass_dont_\
 clear>renderpass_dont_clear|<framebuffers>framebuffers}}" solid Mrecord black lightgrey
 node d 1.1806 0.32639 0.84722 0.65278 "d|{{<in>in}|{<out>out}}" solid Mrecord black lightgrey
-node cb 3.6389 0.99306 1.2222 0.97222 "cb|{{<count>count|<device>device}|{<out>out}}" solid Mrecord black lightgrey
+node cb 3.6389 1.2014 1.2222 0.97222 "cb|{{<count>count|<device>device}|{<out>out}}" solid Mrecord black lightgrey
 node color 1.1806 4.5347 0.75 1.6111 "color|{{<v1>v1|<v2>v2|<v3>v3|<v4>v4}|{<v>v}}" solid Mrecord black lightgrey
-node make_cmd 5.6667 3.1181 1.5 1.6111 "make_cmd|{{<cmdbufs>cmdbufs|<renderpass>renderpass|<clearvalues>clearvalues|<framebuffers>framebuffers}|{}}" solid Mrecord black lightgrey
-edge cv make_cmd 4 4.4167 3.8819 4.6559 3.8819 4.6414 3.5942 4.7815 3.4817 solid black
-edge sc cv 4 2.3611 2.6736 2.8856 2.6736 2.3974 3.6575 2.7241 3.8496 solid black
-edge sc cb 4 2.3611 2.0208 2.8473 2.0208 2.55 1.1912 2.877 1.0227 solid black
-edge sc make_cmd 7 2.3611 2.6736 3.283 2.6736 3.5186 2.743 4.4167 2.9514 4.5896 2.9915 4.653 3.0665 4.7756 3.1005 solid black
-edge d cb 7 1.625 0.49306 1.9747 0.49306 2.0588 0.59504 2.3611 0.77083 2.6386 0.93222 2.6435 1.2115 2.8716 1.2909 solid black
-edge color cv 4 1.5694 4.7014 2.1345 4.7014 2.2319 4.2801 2.7202 4.2109 solid black
+node make_cmd 5.6667 2.5208 1.5 1.6111 "make_cmd|{{<cmdbufs>cmdbufs|<renderpass>renderpass|<clearvalues>clearvalues|<framebuffers>framebuffers}|{}}" solid Mrecord black lightgrey
+edge cv make_cmd 4 4.4167 3.2847 4.6559 3.2847 4.6414 2.9969 4.7815 2.8845 solid black
+edge sc cv 4 2.3611 2.6736 2.6545 2.6736 2.5615 3.1007 2.7281 3.2408 solid black
+edge sc cb 4 2.3611 2.0208 2.7722 2.0208 2.6033 1.3822 2.8785 1.2325 solid black
+edge sc make_cmd 10 2.3611 2.6736 2.6282 2.6736 2.6055 2.4177 2.8611 2.3403 3.5228 2.1399 3.7357 2.2211 4.4167 2.3403 4.5949 2.3715 4.6548 2.4607 4.7791 2.5009 solid black
+edge sc make_cmd 10 2.3611 3.3125 2.7026 3.3125 2.5509 3.7532 2.8611 3.8958 3.4892 4.1847 3.8057 4.2194 4.4167 3.8958 4.7143 3.7382 4.5808 3.3152 4.7788 3.1931 solid black
+edge d cb 7 1.625 0.49306 1.9747 0.49306 2.074 0.57117 2.3611 0.77083 2.6785 0.99162 2.6019 1.4002 2.8738 1.499 solid black
+edge cb make_cmd 4 4.2639 1.3681 4.6792 1.3681 4.5033 2.0175 4.7801 2.1697 solid black
+edge color cv 4 1.5694 4.7014 2.2712 4.7014 2.1327 3.7491 2.7196 3.6188 solid black
 stop

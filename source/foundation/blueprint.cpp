@@ -391,14 +391,26 @@ namespace flame
 			}
 			if (!udt)
 			{
-				auto abs_fn = ext_replace(std::filesystem::path(filename).parent_path().wstring() + L"\\" + fn, L".typeinfo");
-				if (std::filesystem::exists(abs_fn))
+				auto abs_fn = std::filesystem::path(filename).parent_path().wstring() + L"\\" + fn;
+				auto fn_cpp = abs_fn + L".cpp"; assert(std::filesystem::exists(fn_cpp));
+				auto fn_ti = abs_fn + L".typeinfo";
+				if (!std::filesystem::exists(fn_ti) || std::filesystem::last_write_time(fn_ti) < std::filesystem::last_write_time(fn_cpp))
 				{
-					auto lv = typeinfo_free_level();
-					typeinfo_load(abs_fn, lv);
-					extra_typeinfos.emplace_back(lv, fn);
-					udt = find_udt(H(type_name_sp[1].c_str()));
+					auto fn_dll = abs_fn + L".dll";
+					auto compile_output = compile_to_dll({ fn_cpp }, { L"flame_foundation.lib", L"flame_graphics.lib" }, fn_dll);
+					if (!std::filesystem::exists(fn_dll) || std::filesystem::last_write_time(fn_dll) < std::filesystem::last_write_time(fn_cpp))
+						printf("compile error:\n%s\n", compile_output.v);
+					else
+					{
+						typeinfo_collect(fn_dll, 99);
+						typeinfo_save(fn_ti, 99);
+						typeinfo_clear(99);
+					}
 				}
+				auto lv = typeinfo_free_level();
+				typeinfo_load(fn_ti, lv);
+				extra_typeinfos.emplace_back(lv, fn);
+				udt = find_udt(H(type_name_sp[1].c_str()));
 			}
 			if (!udt)
 				return nullptr;

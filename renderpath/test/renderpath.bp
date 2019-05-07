@@ -36,7 +36,7 @@
       ]
     },
     {
-      "type": "make_cmd.dll:BP_MakeCmd",
+      "type": "make_cmd:BP_MakeCmd",
       "id": "make_cmd",
       "pos": "613;241",
       "datas": []

@@ -159,7 +159,6 @@ int main(int argc, char **args)
 				"  refresh - reload the bp\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having one)\n"
 				"  reload - reload the bp\n"
-				"  make-script [filename] - compile cpp that contains nodes, and do typeinfogen to it\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
 				"  gui-browser - use the power of browser to show and edit\n"
 			);
@@ -432,30 +431,6 @@ int main(int argc, char **args)
 			}
 			else
 				printf("bp.graph.txt not found\n");
-		}
-		else if (s_command_line == "make-script")
-		{
-			scanf("%s", command_line);
-			auto w_filename = std::filesystem::path(app.filename).parent_path().wstring() + L"/" + s2w(command_line);
-
-			if (std::filesystem::exists(w_filename))
-			{
-				auto p_dll = ext_replace(w_filename, L".dll");
-				auto compile_output = compile_to_dll({ w_filename }, { L"flame_foundation.lib", L"flame_graphics.lib" }, p_dll);
-				printf("%s\n", compile_output.v);
-				if (!std::filesystem::exists(p_dll) || std::filesystem::last_write_time(p_dll) < std::filesystem::last_write_time(w_filename))
-					printf("compile error\n");
-				else
-				{
-					auto lv = typeinfo_free_level();
-					typeinfo_collect(p_dll, lv);
-					typeinfo_save(ext_replace(w_filename, L".typeinfo"), lv);
-					typeinfo_clear(lv);
-					printf("ok\n");
-				}
-			}
-			else
-				printf("file not found\n");
 		}
 		else if (s_command_line == "gui-browser")
 		{
