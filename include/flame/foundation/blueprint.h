@@ -151,33 +151,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void update$c();
 	};
 
-	struct BP_Int$
-	{
-		int v$i;
-
-		int v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Float$
-	{
-		float v$i;
-
-		float v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Bool$
-	{
-		bool v$i;
-
-		bool v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
 	struct BP_Vec2$
 	{
 		float x$i;

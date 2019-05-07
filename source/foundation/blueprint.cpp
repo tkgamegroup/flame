@@ -873,27 +873,6 @@ namespace flame
 
 	BP_LNA1Bvec4$ bp_lna1bvec4_unused;
 
-	void BP_Int$::update$c()
-	{
-		v$o = v$i;
-	}
-
-	BP_Int$ bp_int_unused;
-
-	void BP_Float$::update$c()
-	{
-		v$o = v$i;
-	}
-
-	BP_Float$ bp_float_unused;
-
-	void BP_Bool$::update$c()
-	{
-		v$o = v$i;
-	}
-
-	BP_Bool$ bp_bool_unused;
-
 	void BP_Vec2$::update$c()
 	{
 		v$o.x = x$i; 
