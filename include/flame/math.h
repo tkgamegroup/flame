@@ -38,75 +38,7 @@ namespace flame
 
 	const float EPS = 0.000001f;
 
-	template<uint N, class T>
-	struct vec;
-
-	template<class T>
-	struct vec<1, T>
-	{
-		T x;
-	};
-
-	template<class T>
-	struct vec<2, T>
-	{
-		T x, y;
-	};
-
-	template<class T>
-	struct vec<3, T>
-	{
-		T x, y, z;
-	};
-
-	template<class T>
-	struct vec<4, T>
-	{
-		T x, y, z, w;
-	};
-
-	template<class T>
-	inline T min(const T& a, const T& b)
-	{
-		return a < b ? a : b;
-	}
-
-	template<uint N, class T>
-	inline vec<N, T> min(const vec<N, T>& a, const vec<N, T>& b)
-	{
-		vec<N, T> ret;
-		for (auto i = 0; i < N; i++)
-			ret[i] = a[i] < b[i] ? a[i] : b[i];
-		return ret;
-	}
-
-	template<class T>
-	inline T max(const T& a, const T& b)
-	{
-		return a > b ? a : b;
-	}
-
-	template<class T>
-	inline T clamp(const T& v, const T& a, const T& b)
-	{
-		if (v < a)
-			return a;
-		if (v > b)
-			return b;
-		return v;
-	}
-
-	inline bool equals(float a, float b)
-	{
-		return abs(a - b) < EPS;
-	}
-
-	inline float fract(float v)
-	{
-		return v - floor(v);
-	}
-
-	class Float16Compressor
+	class F16
 	{
 		union Bits
 		{
@@ -178,27 +110,6 @@ namespace flame
 		}
 	};
 
-	inline ushort to_f16(float f)
-	{
-		return Float16Compressor::compress(f);
-	}
-
-	inline float to_f32(ushort h)
-	{
-		return Float16Compressor::decompress(h);
-	}
-
-	inline int digit_count(int a)
-	{
-		auto d = 0;
-		do
-		{
-			d++;
-			a /= 10;
-		} while (a);
-		return d;
-	}
-
 	inline float linear_depth_ortho(float z, float depth_near, float depth_far)
 	{
 		z = z * 0.5 + 0.5;
@@ -212,20 +123,435 @@ namespace flame
 		return 1.f / (a * z + b);
 	}
 
-	struct Vec2;
-	struct Vec3;
-	struct Vec4;
-	struct Hvec4;
-	struct Ivec2;
-	struct Ivec3;
-	struct Ivec4;
-	struct Bvec2;
-	struct Bvec3;
-	struct Bvec4;
-	struct Mat2;
-	struct Mat3;
-	struct Mat4;
-	struct EulerYawPitchRoll;
+	template<uint N, class T>
+	struct Vec
+	{
+		T v[N];
+
+		Vec() 
+		{
+		}
+
+		explicit Vec(T rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] = v;
+		}
+
+		template<M, U>
+		explicit Vec(const Vec<M, U>& rhs)
+		{
+			static_assert(N <= M);
+			for (auto i = 0; i < N; i++)
+				v[i] = rhs[i];
+		}
+
+		Vec(const T* rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] = rhs[i];
+		}
+
+		template<class U>
+		Vec(typename std::enable_if<N == 2, U>::type x, U y)
+		{
+			v[0] = x;
+			v[1] = y;
+		}
+
+		template<class U>
+		Vec(typename std::enable_if<N == 3, U>::type x, U y, U z)
+		{
+			v[0] = x;
+			v[1] = y;
+			v[2] = z;
+		}
+
+		template<class U>
+		Vec(const typename std::enable_if<N == 3, Vec<2, U>>::type& v1, U z)
+		{
+			v[0] = v1[0];
+			v[1] = v1[1];
+			v[2] = z;
+		}
+
+		template<class U>
+		Vec(typename std::enable_if<N == 3, U>::type x, const Vec<2, U>& v1)
+		{
+			v[0] = x;
+			v[1] = v1[0];
+			v[2] = v1[1];
+		}
+
+		template<class U>
+		Vec(typename std::enable_if<N == 4, U>::type x, U y, U z, U w)
+		{
+			v[0] = x;
+			v[1] = y;
+			v[2] = z;
+			v[3] = w;
+		}
+
+		template<class U>
+		Vec(const typename std::enable_if<N == 4, Vec<2, U>>::type& v1, U z, U w)
+		{
+			v[0] = v1[0];
+			v[1] = v1[1];
+			v[2] = z;
+			v[3] = w;
+		}
+
+		template<class U>
+		Vec(typename std::enable_if<N == 4, U>::type x, const Vec<2, U>& v1, U w)
+		{
+			v[0] = x;
+			v[1] = v1[0];
+			v[2] = v1[1];
+			v[3] = w;
+		}
+
+		template<class U>
+		Vec(typename std::enable_if<N == 4, U>::type x, U y, const Vec<2, U>& v1)
+		{
+			v[0] = x;
+			v[1] = y;
+			v[2] = v1[0];
+			v[3] = v1[1];
+		}
+
+		template<class U>
+		Vec(const typename std::enable_if<N == 4, Vec<3, U>>::type& v1, U w)
+		{
+			v[0] = v1[0];
+			v[1] = v1[1];
+			v[2] = v1[2];
+			v[3] = w;
+		}
+
+		template<class U>
+		Vec(typename std::enable_if<N == 4, U>::type x, const Vec<3, U>& v1)
+		{
+			v[0] = x;
+			v[1] = v1[0];
+			v[2] = v1[1];
+			v[3] = v1[2];
+		}
+
+		Vec<N, T> operator-()
+		{
+			Vec<N, T> ret;
+			for (auto i = 0; i < N; i++)
+				ret[i] = -v[i];
+			return ret;
+		}
+
+		template<class U>
+		Vec<N, T>& operator=(U rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] = rhs;
+			return *this;
+		}
+
+		template<uint M, class U>
+		Vec<N, T>& operator=(U rhs) 
+		{
+			static_assert(N <= M);
+			for (auto i = 0; i < N; i++)
+				v[i] = rhs;
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator+=(U rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] += rhs;
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator+=(const Vec<N, U>& rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] += rhs[i];
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator-=(U rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] -= rhs;
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator-=(const Vec<N, U>& rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] -= rhs[i];
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator*=(U rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] *= rhs;
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator*=(const Vec<N, U>& rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] *= rhs[i];
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator/=(U rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] /= rhs;
+			return *this;
+		}
+
+		template<class U>
+		Vec<N, T>& operator/=(const Vec<N, U>& rhs)
+		{
+			for (auto i = 0; i < N; i++)
+				v[i] /= rhs[i];
+			return *this;
+		}
+	};
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator+(U lhs, const Vec<N, T>& rhs)
+	{
+		Vec<N, T> ret(rhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] += lhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator+(const Vec<N, T>& lhs, U rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] += rhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator+(const Vec<N, T>& lhs, const Vec<N, U>& rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] += rhs[i];
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator-(U lhs, const Vec<N, T>& rhs)
+	{
+		Vec<N, T> ret(rhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] -= lhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator+(const Vec<N, T> & lhs, U rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] -= rhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator+(const Vec<N, T> & lhs, const Vec<N, U> & rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] -= rhs[i];
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator*(U lhs, const Vec<N, T>& rhs)
+	{
+		Vec<N, T> ret(rhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] *= lhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator+(const Vec<N, T> & lhs, U rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] *= rhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator+(const Vec<N, T> & lhs, const Vec<N, U> & rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] *= rhs[i];
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator/(U lhs, const Vec<N, T>& rhs)
+	{
+		Vec<N, T> ret(rhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] /= lhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator/(const Vec<N, T> & lhs, U rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] /= rhs;
+		return ret;
+	}
+
+	template<uint N, class T, class U>
+	Vec<N, T> operator/(const Vec<N, T> & lhs, const Vec<N, U> & rhs)
+	{
+		Vec<N, T> ret(lhs);
+		for (auto i = 0; i < N; i++)
+			ret[i] /= rhs[i];
+		return ret;
+	}
+
+	template<uint C, uint R, class T>
+	struct Mat
+	{
+		T v[C][R];
+	};
+
+	template<class T>
+	inline T min(const T& a, const T& b)
+	{
+		return a < b ? a : b;
+	}
+
+	template<uint N, class T>
+	inline Vec<N, T> min(const Vec<N, T>& a, const Vec<N, T>& b)
+	{
+		Vec<N, T> ret;
+		for (auto i = 0; i < N; i++)
+			ret[i] = min(a[i], b[i]);
+		return ret;
+	}
+
+	template<class T>
+	inline T max(const T& a, const T& b)
+	{
+		return a > b ? a : b;
+	}
+
+	template<uint N, class T>
+	inline Vec<N, T> max(const Vec<N, T>& a, const Vec<N, T>& b)
+	{
+		Vec<N, T> ret;
+		for (auto i = 0; i < N; i++)
+			ret[i] = max(a[i], b[i]);
+		return ret;
+	}
+
+	template<class T>
+	inline T clamp(const T& v, const T& a, const T& b)
+	{
+		if (v < a)
+			return a;
+		if (v > b)
+			return b;
+		return v;
+	}
+
+	template<uint N, class T>
+	inline Vec<N, T> clamp(const Vec<N, T>& v, const Vec<N, T>& a, const Vec<N, T>& b)
+	{
+		Vec<N, T> ret;
+		for (auto i = 0; i < N; i++)
+			ret[i] = clamp(v[i], a[i], b[i]);
+		return ret;
+	}
+
+	template<class T>
+	inline T fract(T v)
+	{
+		return v - floor(v);
+	}
+
+	template<uint N, class T>
+	inline Vec<N, T> fract(const Vec<N, T>& v)
+	{
+		Vec<N, T> ret;
+		for (auto i = 0; i < N; i++)
+			ret[i] = fract(v[i]);
+		return ret;
+	}
+
+	template<class T>
+	inline Vec<2, T> mod(T a, T b)
+	{
+		return Vec<2, T>(a / b, a % b);
+	}
+
+	template<class T>
+	inline T mix(T v0, T v1, T q)
+	{
+		return v0 + q * (v1 - v0);
+	}
+
+	template<uint N, class T>
+	inline Vec<N, T> mix(const Vec<N, T>& v0, const Vec<N, T>& v1, T q)
+	{
+		Vec<N, T> ret;
+		for (auto i = 0; i < N; i++)
+			ret[i] = mix(v0[i], v1[i], q);
+		return ret;
+	}
+	
+	template<uint N, class T>
+	inline T dot(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
+	{
+		T ret = 0;
+		for (auto i = 0; i < N; i++)
+			ret += lhs.v[i] * rhs.v[i];
+		return ret;
+	}
+
+	template<class T>
+	inline Vec<3, T> cross(const Vec<3, T>& lhs, const Vec<3, T>& rhs)
+	{
+		return Vec<3, T>(
+			lhs.v[1] * rhs.v[2] - rhs.v[1] * lhs.v[2],
+			lhs.v[2] * rhs.v[0] - rhs.v[2] * lhs.v[0],
+			lhs.v[0] * rhs.v[1] - rhs.v[0] * lhs.v[1]);
+	}
+
+	template<uint N, class T>
+	inline T distance(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
+	{
+		auto d = lhs - rhs;
+		return dot(d, d);
+	}
+
+	struct EulerYPR;
 	struct Quat;
 	struct Rect;
 	struct Plane;
@@ -233,24 +559,13 @@ namespace flame
 
 	enum Axis
 	{
-		AxisPositiveX = 1 << 0,
-		AxisNegativeX = 1 << 1,
-		AxisPositiveY = 1 << 2,
-		AxisNegativeY = 1 << 3,
-		AxisPositiveZ = 1 << 4,
-		AxisNegativeZ = 1 << 5
+		AxisPosX = 1 << 0,
+		AxisNegX = 1 << 1,
+		AxisPosY = 1 << 2,
+		AxisNegY = 1 << 3,
+		AxisPosZ = 1 << 4,
+		AxisNegZ = 1 << 5
 	};
-
-	Ivec2 mod(int a, int b);
-	float mix(float v0, float v1, float q);
-
-	float dot(const Vec2 &lhs, const Vec2 &rhs);
-	float dot(const Vec3 &lhs, const Vec3 &rhs);
-	float dot(const Vec4 &lhs, const Vec4 &rhs);
-
-	Vec3 cross(const Vec3 &lhs, const Vec3 &rhs);
-
-	float distance(const Vec2 &a, const Vec2 &b);
 
 	Vec2 rotate(const Vec2 &p, const Vec2 &c, float rad);
 
@@ -275,60 +590,10 @@ namespace flame
 		float x;
 		float y;
 
-		Vec2() = default;
-		explicit Vec2(float v);
-		explicit Vec2(float *v);
-		Vec2(float _x, float _y);
-		Vec2(const Vec2 &v);
-		explicit Vec2(const Vec3 &v);
-		explicit Vec2(const Vec4 &v);
-		explicit Vec2(const Ivec2 &v);
-		explicit Vec2(const Ivec3 &v);
-		explicit Vec2(const Ivec4 &v);
-		float &operator[](int i);
-		float const&operator[](int i) const;
-		Vec2 &operator=(const Vec2 &v);
-		Vec2 &operator=(const Vec3 &v);
-		Vec2 &operator=(const Vec4 &v);
-		Vec2 &operator=(const Ivec2 &v);
-		Vec2 &operator=(const Ivec3 &v);
-		Vec2 &operator=(const Ivec4 &v);
-		Vec2 &operator+=(const Vec2 &v);
-		Vec2 &operator-=(const Vec2 &v);
-		Vec2 &operator*=(const Vec2 &v);
-		Vec2 &operator/=(const Vec2 &v);
-		Vec2 &operator+=(const Ivec2 &v);
-		Vec2 &operator-=(const Ivec2 &v);
-		Vec2 &operator*=(const Ivec2 &v);
-		Vec2 &operator/=(const Ivec2 &v);
-		Vec2 &operator+=(float v);
-		Vec2 &operator-=(float v);
-		Vec2 &operator*=(float v);
-		Vec2 &operator/=(float v);
 		float length() const;
 		void normalize();
 		Vec2 get_normalized() const;
 	};
-
-	bool operator==(const Vec2 &lhs, const Vec2 &rhs);
-	bool operator!=(const Vec2 &lhs, const Vec2 &rhs);
-	Vec2 operator+(const Vec2 &lhs, const Vec2 &rhs);
-	Vec2 operator-(const Vec2 &v);
-	Vec2 operator-(const Vec2 &lhs, const Vec2 &rhs);
-	Vec2 operator*(const Vec2 &lhs, const Vec2 &rhs);
-	Vec2 operator/(const Vec2 &lhs, const Vec2 &rhs);
-	Vec2 operator+(const Vec2 &lhs, const Ivec2 &rhs);
-	Vec2 operator-(const Vec2 &lhs, const Ivec2 &rhs);
-	Vec2 operator*(const Vec2 &lhs, const Ivec2 &rhs);
-	Vec2 operator/(const Vec2 &lhs, const Ivec2 &rhs);
-	Vec2 operator+(const Vec2 &lhs, float rhs);
-	Vec2 operator-(const Vec2 &lhs, float rhs);
-	Vec2 operator*(const Vec2 &lhs, float rhs);
-	Vec2 operator/(const Vec2 &lhs, float rhs);
-	Vec2 operator+(float lhs, const Vec2 &rhs);
-	Vec2 operator-(float lhs, const Vec2 &rhs);
-	Vec2 operator*(float lhs, const Vec2 &rhs);
-	Vec2 operator/(float lhs, const Vec2 &rhs);
 
 	struct Vec3
 	{
@@ -341,58 +606,10 @@ namespace flame
 		static Vec3 z_axis();
 		static Vec3 axis(int idx);
 
-		Vec3() = default;
-		explicit Vec3(float v);
-		explicit Vec3(float *v);
-		Vec3(float _x, float _y, float _z);
-		Vec3(const Vec2 &v, float _z);
-		Vec3(const Vec3 &v);
-		explicit Vec3(const Vec4 &v);
-		Vec3(const Ivec2 &v, float _z);
-		explicit Vec3(const Ivec3 &v);
-		explicit Vec3(const Ivec4 &v);
-		float &operator[](int i);
-		float const&operator[](int i) const;
-		Vec3 &operator=(const Vec3 &v);
-		Vec3 &operator=(const Vec4 &v);
-		Vec3 &operator=(const Ivec3 &v);
-		Vec3 &operator=(const Ivec4 &v);
-		Vec3 &operator+=(const Vec3 &v);
-		Vec3 &operator-=(const Vec3 &v);
-		Vec3 &operator*=(const Vec3 &v);
-		Vec3 &operator/=(const Vec3 &v);
-		Vec3 &operator+=(const Ivec3 &v);
-		Vec3 &operator-=(const Ivec3 &v);
-		Vec3 &operator*=(const Ivec3 &v);
-		Vec3 &operator/=(const Ivec3 &v);
-		Vec3 &operator+=(float v);
-		Vec3 &operator-=(float v);
-		Vec3 &operator*=(float v);
-		Vec3 &operator/=(float v);
 		float length() const;
 		void normalize();
 		Vec3 get_normalized() const;
 	};
-
-	bool operator==(const Vec3 &lhs, const Vec3 &rhs);
-	bool operator!=(const Vec3 &lhs, const Vec3 &rhs);
-	Vec3 operator+(const Vec3 &lhs, const Vec3 &rhs);
-	Vec3 operator-(const Vec3 &lhs, const Vec3 &rhs);
-	Vec3 operator*(const Vec3 &lhs, const Vec3 &rhs);
-	Vec3 operator/(const Vec3 &lhs, const Vec3 &rhs);
-	Vec3 operator+(const Vec3 &lhs, const Ivec3 &rhs);
-	Vec3 operator-(const Vec3 &v);
-	Vec3 operator-(const Vec3 &lhs, const Ivec3 &rhs);
-	Vec3 operator*(const Vec3 &lhs, const Ivec3 &rhs);
-	Vec3 operator/(const Vec3 &lhs, const Ivec3 &rhs);
-	Vec3 operator+(const Vec3 &lhs, float rhs);
-	Vec3 operator-(const Vec3 &lhs, float rhs);
-	Vec3 operator*(const Vec3 &lhs, float rhs);
-	Vec3 operator/(const Vec3 &lhs, float rhs);
-	Vec3 operator+(float lhs, const Vec3 &rhs);
-	Vec3 operator-(float lhs, const Vec3 &rhs);
-	Vec3 operator*(float lhs, const Vec3 &rhs);
-	Vec3 operator/(float lhs, const Vec3 &rhs);
 
 	struct Vec4
 	{
@@ -401,71 +618,9 @@ namespace flame
 		float z;
 		float w;
 
-		Vec4() = default;
-		explicit Vec4(float v);
-		explicit Vec4(float *v);
-		Vec4(float _x, float _y, float _z, float _w);
-		Vec4(const Vec2 &v, float _z, float _w);
-		Vec4(const Vec2 &v1, const Vec2 &v2);
-		Vec4(const Vec3 &v, float _w);
-		Vec4(const Vec4 &v);
-		Vec4(const Ivec2 &v, float _z, float _w);
-		Vec4(const Ivec3 &v, float _w);
-		explicit Vec4(const Ivec4 &v);
-		float &operator[](int i);
-		float const&operator[](int i) const;
-		Vec4 &operator=(float v);
-		Vec4 &operator=(const Vec2 &v);
-		Vec4 &operator=(const Vec3 &v);
-		Vec4 &operator=(const Vec4 &v);
-		Vec4 &operator=(const Ivec4 &v);
-		Vec4 &operator+=(const Vec4 &v);
-		Vec4 &operator-=(const Vec4 &v);
-		Vec4 &operator*=(const Vec4 &v);
-		Vec4 &operator/=(const Vec4 &v);
-		Vec4 &operator+=(const Ivec4 &v);
-		Vec4 &operator-=(const Ivec4 &v);
-		Vec4 &operator*=(const Ivec4 &v);
-		Vec4 &operator/=(const Ivec4 &v);
-		Vec4 &operator+=(float v);
-		Vec4 &operator-=(float v);
-		Vec4 &operator*=(float v);
-		Vec4 &operator/=(float v);
 		float length() const;
 		void normalize();
 		Vec4 get_normalized() const;
-	};
-
-	bool operator==(const Vec4 &lhs, const Vec4 &rhs);
-	bool operator!=(const Vec4 &lhs, const Vec4 &rhs);
-	Vec4 operator+(const Vec4 &lhs, const Vec4 &rhs);
-	Vec4 operator-(const Vec4 &lhs, const Vec4 &rhs);
-	Vec4 operator*(const Vec4 &lhs, const Vec4 &rhs);
-	Vec4 operator/(const Vec4 &lhs, const Vec4 &rhs);
-	Vec4 operator+(const Vec4 &lhs, const Ivec4 &rhs);
-	Vec4 operator-(const Vec4 &v);
-	Vec4 operator-(const Vec4 &lhs, const Ivec4 &rhs);
-	Vec4 operator*(const Vec4 &lhs, const Ivec4 &rhs);
-	Vec4 operator/(const Vec4 &lhs, const Ivec4 &rhs);
-	Vec4 operator+(const Vec4 &lhs, float rhs);
-	Vec4 operator-(const Vec4 &lhs, float rhs);
-	Vec4 operator*(const Vec4 &lhs, float rhs);
-	Vec4 operator/(const Vec4 &lhs, float rhs);
-	Vec4 operator+(float lhs, const Vec4 &rhs);
-	Vec4 operator-(float lhs, const Vec4 &rhs);
-	Vec4 operator*(float lhs, const Vec4 &rhs);
-	Vec4 operator/(float lhs, const Vec4 &rhs);
-
-	struct Hvec4
-	{
-		ushort x;
-		ushort y;
-		ushort z;
-		ushort w;
-
-		Hvec4() = default;
-		Hvec4(ushort v);
-		Hvec4(float _x, float _y, float _z, float _w);
 	};
 
 	struct Ivec2
@@ -473,60 +628,8 @@ namespace flame
 		int x;
 		int y;
 
-		Ivec2() = default;
-		explicit Ivec2(int v);
-		explicit Ivec2(int *v);
-		Ivec2(int _x, int _y);
-		explicit Ivec2(const Vec2 &v);
-		explicit Ivec2(const Vec3 &v);
-		explicit Ivec2(const Vec4 &v);
-		Ivec2(const Ivec2 &v);
-		explicit Ivec2(const Ivec3 &v);
-		explicit Ivec2(const Ivec4 &v);
-		int &operator[](int i);
-		int const&operator[](int i) const;
-		Ivec2 &operator=(const Vec2 &v);
-		Ivec2 &operator=(const Vec3 &v);
-		Ivec2 &operator=(const Vec4 &v);
-		Ivec2 &operator=(const Ivec2 &v);
-		Ivec2 &operator=(const Ivec3 &v);
-		Ivec2 &operator=(const Ivec4 &v);
-		Ivec2 &operator+=(const Vec2 &v);
-		Ivec2 &operator-=(const Vec2 &v);
-		Ivec2 &operator*=(const Vec2 &v);
-		Ivec2 &operator/=(const Vec2 &v);
-		Ivec2 &operator+=(const Ivec2 &v);
-		Ivec2 &operator-=(const Ivec2 &v);
-		Ivec2 &operator*=(const Ivec2 &v);
-		Ivec2 &operator/=(const Ivec2 &v);
-		Ivec2 &operator+=(int v);
-		Ivec2 &operator-=(int v);
-		Ivec2 &operator*=(int v);
-		Ivec2 &operator/=(int v);
 		float length() const;
 	};
-
-	bool operator==(const Ivec2 &lhs, int rhs);
-	bool operator!=(const Ivec2 &lhs, int rhs);
-	bool operator==(const Ivec2 &lhs, const Ivec2 &rhs);
-	bool operator!=(const Ivec2 &lhs, const Ivec2 &rhs);
-	Ivec2 operator+(const Ivec2 &lhs, const Vec2 &rhs);
-	Ivec2 operator-(const Ivec2 &v);
-	Ivec2 operator-(const Ivec2 &lhs, const Vec2 &rhs);
-	Ivec2 operator*(const Ivec2 &lhs, const Vec2 &rhs);
-	Ivec2 operator/(const Ivec2 &lhs, const Vec2 &rhs);
-	Ivec2 operator+(const Ivec2 &lhs, const Ivec2 &rhs);
-	Ivec2 operator-(const Ivec2 &lhs, const Ivec2 &rhs);
-	Ivec2 operator*(const Ivec2 &lhs, const Ivec2 &rhs);
-	Ivec2 operator/(const Ivec2 &lhs, const Ivec2 &rhs);
-	Ivec2 operator+(const Ivec2 &lhs, int rhs);
-	Ivec2 operator-(const Ivec2 &lhs, int rhs);
-	Ivec2 operator*(const Ivec2 &lhs, int rhs);
-	Ivec2 operator/(const Ivec2 &lhs, int rhs);
-	Ivec2 operator+(int lhs, const Ivec2 &rhs);
-	Ivec2 operator-(int lhs, const Ivec2 &rhs);
-	Ivec2 operator*(int lhs, const Ivec2 &rhs);
-	Ivec2 operator/(int lhs, const Ivec2 &rhs);
 
 	struct Ivec3
 	{
@@ -534,60 +637,8 @@ namespace flame
 		int y;
 		int z;
 
-		Ivec3() = default;
-		explicit Ivec3(int v);
-		explicit Ivec3(int *v);
-		Ivec3(int _x, int _y, int _z);
-		Ivec3(const Vec2 &v, int _z);
-		explicit Ivec3(const Vec3 &v);
-		explicit Ivec3(const Vec4 &v);
-		Ivec3(const Ivec2 &v, int _z);
-		Ivec3(const Ivec3 &v);
-		explicit Ivec3(const Ivec4 &v);
-		int &operator[](int i);
-		int const&operator[](int i) const;
-		Ivec3 &operator=(const Vec3 &v);
-		Ivec3 &operator=(const Vec4 &v);
-		Ivec3 &operator=(const Ivec3 &v);
-		Ivec3 &operator=(const Ivec4 &v);
-		Ivec3 &operator+=(const Vec3 &v);
-		Ivec3 &operator-=(const Vec3 &v);
-		Ivec3 &operator*=(const Vec3 &v);
-		Ivec3 &operator/=(const Vec3 &v);
-		Ivec3 &operator+=(const Ivec3 &v);
-		Ivec3 &operator-=(const Ivec3 &v);
-		Ivec3 &operator*=(const Ivec3 &v);
-		Ivec3 &operator/=(const Ivec3 &v);
-		Ivec3 &operator+=(int v);
-		Ivec3 &operator-=(int v);
-		Ivec3 &operator*=(int v);
-		Ivec3 &operator/=(int v);
 		float length() const;
 	};
-
-	bool operator==(const Ivec3 &lhs, int v);
-	bool operator!=(const Ivec3 &lhs, int v);
-	bool operator==(int v, const Ivec3 &rhs);
-	bool operator!=(int v, const Ivec3 &rhs);
-	bool operator==(const Ivec3 &lhs, const Ivec3 &rhs);
-	bool operator!=(const Ivec3 &lhs, const Ivec3 &rhs);
-	Ivec3 operator+(const Ivec3 &lhs, const Vec3 &rhs);
-	Ivec3 operator-(const Ivec3 &v);
-	Ivec3 operator-(const Ivec3 &lhs, const Vec3 &rhs);
-	Ivec3 operator*(const Ivec3 &lhs, const Vec3 &rhs);
-	Ivec3 operator/(const Ivec3 &lhs, const Vec3 &rhs);
-	Ivec3 operator+(const Ivec3 &lhs, const Ivec3 &rhs);
-	Ivec3 operator-(const Ivec3 &lhs, const Ivec3 &rhs);
-	Ivec3 operator*(const Ivec3 &lhs, const Ivec3 &rhs);
-	Ivec3 operator/(const Ivec3 &lhs, const Ivec3 &rhs);
-	Ivec3 operator+(const Ivec3 &lhs, int rhs);
-	Ivec3 operator-(const Ivec3 &lhs, int rhs);
-	Ivec3 operator*(const Ivec3 &lhs, int rhs);
-	Ivec3 operator/(const Ivec3 &lhs, int rhs);
-	Ivec3 operator+(int lhs, const Ivec3 &rhs);
-	Ivec3 operator-(int lhs, const Ivec3 &rhs);
-	Ivec3 operator*(int lhs, const Ivec3 &rhs);
-	Ivec3 operator/(int lhs, const Ivec3 &rhs);
 
 	struct Ivec4
 	{
@@ -596,105 +647,21 @@ namespace flame
 		int z;
 		int w;
 
-		Ivec4() = default;
-		explicit Ivec4(int v);
-		explicit Ivec4(int *v);
-		Ivec4(int _x, int _y, int _z, int _w);
-		Ivec4(const Vec2 &v, int _z, int _w);
-		Ivec4(const Vec2 &v0, const Vec2 &v1);
-		Ivec4(const Vec3 &v, int _w);
-		explicit Ivec4(const Vec4 &v);
-		Ivec4(const Ivec2 &v, int _z, int _w);
-		Ivec4(const Ivec2 &v0, const Ivec2 &v1);
-		Ivec4(const Ivec3 &v, int _w);
-		Ivec4(const Ivec4 &v);
-		int &operator[](int i);
-		int const&operator[](int i) const;
-		Ivec4 &operator=(const Vec4 &v);
-		Ivec4 &operator=(int v);
-		Ivec4 &operator=(const Ivec2 &v);
-		Ivec4 &operator=(const Ivec3 &v);
-		Ivec4 &operator=(const Ivec4 &v);
-		Ivec4 &operator+=(const Vec4 &v);
-		Ivec4 &operator-=(const Vec4 &v);
-		Ivec4 &operator*=(const Vec4 &v);
-		Ivec4 &operator/=(const Vec4 &v);
-		Ivec4 &operator+=(const Ivec4 &v);
-		Ivec4 &operator-=(const Ivec4 &v);
-		Ivec4 &operator*=(const Ivec4 &v);
-		Ivec4 &operator/=(const Ivec4 &v);
-		Ivec4 &operator+=(int v);
-		Ivec4 &operator-=(int v);
-		Ivec4 &operator*=(int v);
-		Ivec4 &operator/=(int v);
 		float length() const;
 	};
-
-	bool operator==(const Ivec4 &lhs, const Ivec4 &rhs);
-	bool operator!=(const Ivec4 &lhs, const Ivec4 &rhs);
-	Ivec4 operator+(const Ivec4 &lhs, const Vec4 &rhs);
-	Ivec4 operator-(const Ivec4 &lhs, const Vec4 &rhs);
-	Ivec4 operator*(const Ivec4 &lhs, const Vec4 &rhs);
-	Ivec4 operator/(const Ivec4 &lhs, const Vec4 &rhs);
-	Ivec4 operator+(const Ivec4 &lhs, const Ivec4 &rhs);
-	Ivec4 operator-(const Ivec4 &v);
-	Ivec4 operator-(const Ivec4 &lhs, const Ivec4 &rhs);
-	Ivec4 operator*(const Ivec4 &lhs, const Ivec4 &rhs);
-	Ivec4 operator/(const Ivec4 &lhs, const Ivec4 &rhs);
-	Ivec4 operator+(const Ivec4 &lhs, int rhs);
-	Ivec4 operator-(const Ivec4 &lhs, int rhs);
-	Ivec4 operator*(const Ivec4 &lhs, int rhs);
-	Ivec4 operator/(const Ivec4 &lhs, int rhs);
-	Ivec4 operator+(int lhs, const Ivec4 &rhs);
-	Ivec4 operator-(int lhs, const Ivec4 &rhs);
-	Ivec4 operator*(int lhs, const Ivec4 &rhs);
-	Ivec4 operator/(int lhs, const Ivec4 &rhs);
 
 	struct Bvec2
 	{
 		uchar x;
 		uchar y;
-
-		Bvec2() = default;
-		explicit Bvec2(uchar v);
-		explicit Bvec2(uchar *v);
-		Bvec2(uchar _x, uchar _y);
-		Bvec2(const Bvec2 &v);
-		explicit Bvec2(const Bvec3 &v);
-		explicit Bvec2(const Bvec4 &v);
-		uchar &operator[](int i);
-		uchar const &operator[](int i) const;
-		Bvec2 &operator=(float v);
-		Bvec2 &operator=(const Bvec2 &v);
-		Bvec2 &operator=(const Bvec3 &v);
-		Bvec2 &operator=(const Bvec4 &v);
 	};
-
-	bool operator==(const Bvec2 &lhs, const Bvec2 &rhs);
-	bool operator!=(const Bvec2 &lhs, const Bvec2 &rhs);
 
 	struct Bvec3
 	{
 		uchar x;
 		uchar y;
 		uchar z;
-
-		Bvec3() = default;
-		explicit Bvec3(uchar v);
-		explicit Bvec3(uchar *v);
-		Bvec3(uchar _x, uchar _y, uchar _z);
-		Bvec3(const Bvec2 &v, uchar _z);
-		Bvec3(const Bvec3 &v);
-		explicit Bvec3(const Bvec4 &v);
-		uchar &operator[](int i);
-		uchar const &operator[](int i) const;
-		Bvec3 &operator=(float v);
-		Bvec3 &operator=(const Bvec3 &v);
-		Bvec3 &operator=(const Bvec4 &v);
 	};
-
-	bool operator==(const Bvec3 &lhs, const Bvec3 &rhs);
-	bool operator!=(const Bvec3 &lhs, const Bvec3 &rhs);
 
 	struct Bvec4
 	{
@@ -702,31 +669,7 @@ namespace flame
 		uchar y;
 		uchar z;
 		uchar w;
-
-		Bvec4() = default;
-		explicit Bvec4(int v);
-		explicit Bvec4(uchar *v);
-		Bvec4(uchar _x, uchar _y, uchar _z, uchar _w);
-		Bvec4(const Bvec2 &v, uchar _z, uchar _w);
-		Bvec4(const Bvec3 &v, uchar _w);
-		Bvec4(const Bvec4 &v);
-		Bvec4(const Bvec4 &v, float w_multipler);
-		uchar &operator[](int i);
-		uchar const &operator[](int i) const;
-		Bvec4 &operator=(float v);
-		Bvec4 &operator=(const Bvec2 &v);
-		Bvec4 &operator=(const Bvec3 &v);
-		Bvec4 &operator=(const Bvec4 &v);
-		Bvec4 &operator+=(const Bvec4 &v);
-		Bvec4 &operator*=(float v);
 	};
-
-	bool operator==(const Bvec4 &lhs, const Bvec4 &rhs);
-	bool operator!=(const Bvec4 &lhs, const Bvec4 &rhs);
-
-	Bvec4 operator+(const Bvec4 &lhs, const Bvec4 &rhs);
-	Bvec4 operator*(const Bvec4 &lhs, float rhs);
-	Bvec4 operator*(float lhs, const Bvec4 &rhs);
 
 	Bvec4 Color(uchar R, uchar G, uchar B, uchar A = 255);
 	Bvec4 Colorf(float R, float G, float B, float A = 1.f);
@@ -745,8 +688,6 @@ namespace flame
 		Mat2(const Mat2 &v);
 		explicit Mat2(const Mat3 &v);
 		explicit Mat2(const Mat4 &v);
-		Vec2 &operator[](int i);
-		Vec2 const &operator[](int i) const;
 		Mat2 &operator=(const Mat2 &v);
 		Mat2 &operator=(const Mat3 &v);
 		Mat2 &operator=(const Mat4 &v);
@@ -789,14 +730,12 @@ namespace flame
 			float Zx, float Zy, float Zz);
 		explicit Mat3(const Vec3 &scale);
 		Mat3(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2);
-		explicit Mat3(const EulerYawPitchRoll &e);
+		explicit Mat3(const EulerYPR &e);
 		explicit Mat3(const Quat &q);
 		Mat3(const Vec3 &axis, float rad);
 		Mat3(const Mat3 &v);
 		explicit Mat3(const Mat4 &v);
-		Vec3 &operator[](int i);
-		Vec3 const &operator[](int i) const;
-		Mat3 &operator=(const EulerYawPitchRoll &e);
+		Mat3 &operator=(const EulerYPR &e);
 		Mat3 &operator=(const Quat &q);
 		Mat3 &operator=(const Mat3 &v);
 		Mat3 &operator=(const Mat4 &v);
@@ -843,8 +782,6 @@ namespace flame
 		Mat4(const Mat4 &v);
 		Mat4(const Mat3 &mat3, const Vec3 &coord);
 		Mat4(const Vec3 &x_axis, const Vec3 &y_axis, const Vec3 &coord);
-		Vec4 &operator[](int i);
-		Vec4 const &operator[](int i) const;
 		Mat4 &operator=(const Mat4 &v);
 		Mat4 &operator+=(const Mat4 &v);
 		Mat4 &operator-=(const Mat4 &v);
@@ -877,15 +814,15 @@ namespace flame
 	Mat4 operator/(float lhs, const Mat4 &rhs);
 
 	// in angle
-	struct EulerYawPitchRoll
+	struct EulerYPR // yaw pitch roll
 	{
 		float yaw;
 		float pitch;
 		float roll;
 
-		EulerYawPitchRoll();
-		EulerYawPitchRoll(float y, float p, float r);
-		explicit EulerYawPitchRoll(const Quat &q);
+		EulerYPR();
+		EulerYPR(float y, float p, float r);
+		explicit EulerYPR(const Quat &q);
 	};
 
 	struct Quat
@@ -988,34 +925,9 @@ namespace flame
 	{
 		void rotate(const Vec3 &axis, float rad, Mat3 &m);
 		void mat3_to_quat(const Mat3 &m, Quat &q);
-		void euler_to_mat3(const EulerYawPitchRoll &e, Mat3 &m);
-		void quat_to_euler(const Quat &q, EulerYawPitchRoll &e);
+		void euler_to_mat3(const EulerYPR &e, Mat3 &m);
+		void quat_to_euler(const Quat &q, EulerYPR &e);
 		void quat_to_mat3(const Quat &q, Mat3 &m);
-	}
-
-	inline Ivec2 mod(int a, int b)
-	{
-		return Ivec2(a / b, a % b);
-	}
-
-	inline float mix(float v0, float v1, float q)
-	{
-		return v0 + q * (v1 - v0);
-	}
-
-	inline float dot(const Vec2 &lhs, const Vec2 &rhs)
-	{
-		return lhs.x * rhs.x + lhs.y * rhs.y;
-	}
-
-	inline float dot(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
-	}
-
-	inline float dot(const Vec4 &lhs, const Vec4 &rhs)
-	{
-		return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
 	}
 
 	inline Vec2 bezier(float t, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3)
@@ -1026,7 +938,7 @@ namespace flame
 			t * t * t * p3;
 	}
 
-	inline float closet_to_bezier(int iters, const Vec2 &pos, float start, float end,
+	inline float bezier_closest(int iters, const Vec2 &pos, float start, float end,
 		int slices, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3) 
 	{
 		if (iters <= 0)
@@ -1050,14 +962,13 @@ namespace flame
 			t += tick;
 		}
 
-		return closet_to_bezier(iters - 1, pos, max(best - tick, 0.f), min(best + tick, 1.f), slices, p0, p1, p2, p3);
+		return bezier_closest(iters - 1, pos, max(best - tick, 0.f), min(best + tick, 1.f), slices, p0, p1, p2, p3);
 	}
 
-	inline Vec2 closet_point_to_bezier(const Vec2 &pos, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3,
+	inline Vec2 bezier_closest_point(const Vec2 &pos, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3,
 		int slices, int iters)
 	{
-		float t = closet_to_bezier(iters, pos, 0.f, 1.f, slices, p0, p1, p2, p3);
-		return bezier(t, p0, p1, p2, p3);
+		return bezier(bezier_closest(iters, pos, 0.f, 1.f, slices, p0, p1, p2, p3), p0, p1, p2, p3);
 	}
 
 	inline float rand(const Vec2 &v)
@@ -1144,196 +1055,6 @@ namespace flame
 			return get_fit_rect(desired_size, size.x / size.y);
 	}
 
-	inline Vec2::Vec2(float v) :
-		x(v),
-		y(v)
-	{
-	}
-
-	inline Vec2::Vec2(float *v) :
-		x(v[0]),
-		y(v[1])
-	{
-	}
-
-	inline Vec2::Vec2(float _x, float _y) :
-		x(_x),
-		y(_y)
-	{
-	}
-
-	inline Vec2::Vec2(const Vec2 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Vec2::Vec2(const Vec3 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Vec2::Vec2(const Vec4 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Vec2::Vec2(const Ivec2 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Vec2::Vec2(const Ivec3 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Vec2::Vec2(const Ivec4 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline float &Vec2::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline float const&Vec2::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Vec2 &Vec2::operator=(const Vec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator=(const Vec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator=(const Vec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator=(const Ivec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator=(const Ivec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator=(const Ivec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator+=(const Vec2 &v)
-	{
-		x += v.x;
-		y += v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator-=(const Vec2 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator*=(const Vec2 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator/=(const Vec2 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator+=(const Ivec2 &v)
-	{
-		x += v.x;
-		y += v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator-=(const Ivec2 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator*=(const Ivec2 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator/=(const Ivec2 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator+=(float v)
-	{
-		x += v;
-		y += v;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator-=(float v)
-	{
-		x -= v;
-		y -= v;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator*=(float v)
-	{
-		x *= v;
-		y *= v;
-		return *this;
-	}
-
-	inline Vec2 &Vec2::operator/=(float v)
-	{
-		x /= v;
-		y /= v;
-		return *this;
-	}
-
 	inline float Vec2::length() const
 	{
 		return sqrt(x * x + y * y);
@@ -1350,141 +1071,6 @@ namespace flame
 	{
 		Vec2 ret(*this);
 		ret.normalize();
-		return ret;
-	}
-
-	inline bool operator==(const Vec2 &lhs, const Vec2 &rhs)
-	{
-		return equals(lhs.x, rhs.x) && equals(lhs.y, rhs.y);
-	}
-
-	inline bool operator!=(const Vec2 &lhs, const Vec2 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Vec2 operator+(const Vec2 &lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Vec2 operator-(const Vec2 &v)
-	{
-		return Vec2(-v.x, -v.y);
-	}
-
-	inline Vec2 operator-(const Vec2 &lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator*(const Vec2 &lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator/(const Vec2 &lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator+(const Vec2 &lhs, const Ivec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Vec2 operator-(const Vec2 &lhs, const Ivec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator*(const Vec2 &lhs, const Ivec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator/(const Vec2 &lhs, const Ivec2 &rhs)
-	{
-		Vec2 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator+(const Vec2 &lhs, float rhs)
-	{
-		Vec2 ret(lhs);
-		ret.x += rhs;
-		ret.y += rhs;
-		return ret;
-	}
-
-	inline Vec2 operator-(const Vec2 &lhs, float rhs)
-	{
-		Vec2 ret(lhs);
-		ret.x -= rhs;
-		ret.y -= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator*(const Vec2 &lhs, float rhs)
-	{
-		Vec2 ret(lhs);
-		ret.x *= rhs;
-		ret.y *= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator/(const Vec2 &lhs, float rhs)
-	{
-		Vec2 ret(lhs);
-		ret.x /= rhs;
-		ret.y /= rhs;
-		return ret;
-	}
-
-	inline Vec2 operator+(float lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(rhs);
-		ret.x += lhs;
-		ret.y += lhs;
-		return ret;
-	}
-
-	inline Vec2 operator-(float lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(rhs);
-		ret.x -= lhs;
-		ret.y -= lhs;
-		return ret;
-	}
-
-	inline Vec2 operator*(float lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(rhs);
-		ret.x *= lhs;
-		ret.y *= lhs;
-		return ret;
-	}
-
-	inline Vec2 operator/(float lhs, const Vec2 &rhs)
-	{
-		Vec2 ret(rhs);
-		ret.x /= lhs;
-		ret.y /= lhs;
 		return ret;
 	}
 
@@ -1513,207 +1099,6 @@ namespace flame
 		return axes[idx];
 	}
 
-	inline Vec3::Vec3(float v) :
-		x(v),
-		y(v),
-		z(v)
-	{
-	}
-
-	inline Vec3::Vec3(float *v) :
-		x(v[0]),
-		y(v[1]),
-		z(v[2])
-	{
-	}
-
-	inline Vec3::Vec3(float _x, float _y, float _z) :
-		x(_x),
-		y(_y),
-		z(_z)
-	{
-	}
-
-	inline Vec3::Vec3(const Vec2 &v, float _z) :
-		x(v.x),
-		y(v.y),
-		z(_z)
-	{
-	}
-
-	inline Vec3::Vec3(const Vec3 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline Vec3::Vec3(const Vec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline Vec3::Vec3(const Ivec2 &v, float _z) :
-		x(v.x),
-		y(v.y),
-		z(_z)
-	{
-	}
-
-	inline Vec3::Vec3(const Ivec3 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline Vec3::Vec3(const Ivec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline float &Vec3::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline float const&Vec3::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Vec3 &Vec3::operator=(const Vec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator=(const Vec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator=(const Ivec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator=(const Ivec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator+=(const Vec3 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator-=(const Vec3 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator*=(const Vec3 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator/=(const Vec3 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator+=(const Ivec3 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator-=(const Ivec3 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator*=(const Ivec3 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator/=(const Ivec3 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator+=(float v)
-	{
-		x += v;
-		y += v;
-		z += v;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator-=(float v)
-	{
-		x -= v;
-		y -= v;
-		z -= v;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator*=(float v)
-	{
-		x *= v;
-		y *= v;
-		z *= v;
-		return *this;
-	}
-
-	inline Vec3 &Vec3::operator/=(float v)
-	{
-		x /= v;
-		y /= v;
-		z /= v;
-		return *this;
-	}
-
 	inline float Vec3::length() const
 	{
 		return sqrt(x * x + y * y + z * z);
@@ -1732,386 +1117,6 @@ namespace flame
 		Vec3 ret(*this);
 		ret.normalize();
 		return ret;
-	}
-
-	inline bool operator==(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		return equals(lhs.x, rhs.x) && equals(lhs.y, rhs.y) && equals(lhs.z, rhs.z);
-	}
-
-	inline bool operator!=(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Vec3 operator+(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Vec3 operator-(const Vec3 &v)
-	{
-		return Vec3(-v.x, -v.y, -v.z);
-	}
-
-	inline Vec3 operator-(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator*(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator/(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator+(const Vec3 &lhs, const Ivec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Vec3 operator-(const Vec3 &lhs, const Ivec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator*(const Vec3 &lhs, const Ivec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator/(const Vec3 &lhs, const Ivec3 &rhs)
-	{
-		Vec3 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator+(const Vec3 &lhs, float rhs)
-	{
-		Vec3 ret(lhs);
-		ret.x += rhs;
-		ret.y += rhs;
-		ret.z += rhs;
-		return ret;
-	}
-
-	inline Vec3 operator-(const Vec3 &lhs, float rhs)
-	{
-		Vec3 ret(lhs);
-		ret.x -= rhs;
-		ret.y -= rhs;
-		ret.z -= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator*(const Vec3 &lhs, float rhs)
-	{
-		Vec3 ret(lhs);
-		ret.x *= rhs;
-		ret.y *= rhs;
-		ret.z *= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator/(const Vec3 &lhs, float rhs)
-	{
-		Vec3 ret(lhs);
-		ret.x /= rhs;
-		ret.y /= rhs;
-		ret.z /= rhs;
-		return ret;
-	}
-
-	inline Vec3 operator+(float lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(rhs);
-		ret.x += lhs;
-		ret.y += lhs;
-		ret.z += lhs;
-		return ret;
-	}
-
-	inline Vec3 operator-(float lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(rhs);
-		ret.x -= lhs;
-		ret.y -= lhs;
-		ret.z -= lhs;
-		return ret;
-	}
-
-	inline Vec3 operator*(float lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(rhs);
-		ret.x *= lhs;
-		ret.y *= lhs;
-		ret.z *= lhs;
-		return ret;
-	}
-
-	inline Vec3 operator/(float lhs, const Vec3 &rhs)
-	{
-		Vec3 ret(rhs);
-		ret.x /= lhs;
-		ret.y /= lhs;
-		ret.z /= lhs;
-		return ret;
-	}
-
-	inline Vec4::Vec4(float v) :
-		x(v),
-		y(v),
-		z(v),
-		w(v)
-	{
-	}
-
-	inline Vec4::Vec4(float *v) :
-		x(v[0]),
-		y(v[1]),
-		z(v[2]),
-		w(v[3])
-	{
-	}
-
-	inline Vec4::Vec4(float _x, float _y, float _z, float _w) :
-		x(_x),
-		y(_y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Vec4::Vec4(const Vec2 &v, float _z, float _w) :
-		x(v.x),
-		y(v.y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Vec4::Vec4(const Vec2 &v1, const Vec2 &v2) :
-		x(v1.x),
-		y(v1.y),
-		z(v2.x),
-		w(v2.y)
-	{
-	}
-
-	inline Vec4::Vec4(const Vec3 &v, float _w) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(_w)
-	{
-	}
-
-	inline Vec4::Vec4(const Vec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(v.w)
-	{
-	}
-
-	inline Vec4::Vec4(const Ivec2 &v, float _z, float _w) :
-		x(v.x),
-		y(v.y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Vec4::Vec4(const Ivec3 &v, float _w) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(_w)
-	{
-	}
-
-	inline Vec4::Vec4(const Ivec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(v.w)
-	{
-	}
-
-	inline float &Vec4::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline float const&Vec4::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Vec4 &Vec4::operator=(float v)
-	{
-		x = v;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator=(const Vec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator=(const Vec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator=(const Vec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator=(const Ivec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator+=(const Vec4 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		w += v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator-=(const Vec4 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		w -= v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator*=(const Vec4 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		w *= v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator/=(const Vec4 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		w /= v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator+=(const Ivec4 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		w += v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator-=(const Ivec4 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		w -= v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator*=(const Ivec4 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		w *= v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator/=(const Ivec4 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		w /= v.w;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator+=(float v)
-	{
-		x += v;
-		y += v;
-		z += v;
-		w += v;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator-=(float v)
-	{
-		x -= v;
-		y -= v;
-		z -= v;
-		w -= v;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator*=(float v)
-	{
-		x *= v;
-		y *= v;
-		z *= v;
-		w *= v;
-		return *this;
-	}
-
-	inline Vec4 &Vec4::operator/=(float v)
-	{
-		x /= v;
-		y /= v;
-		z /= v;
-		w /= v;
-		return *this;
 	}
 
 	inline float Vec4::length() const
@@ -2135,164 +1140,6 @@ namespace flame
 		return ret;
 	}
 
-	inline bool operator==(const Vec4 &lhs, const Vec4 &rhs)
-	{
-		return equals(lhs.x, rhs.x) && equals(lhs.y, rhs.y) && equals(lhs.z, rhs.z) && equals(lhs.w, rhs.w);
-	}
-
-	inline bool operator!=(const Vec4 &lhs, const Vec4 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Vec4 operator+(const Vec4 &lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Vec4 operator-(const Vec4 &v)
-	{
-		return Vec4(-v.x, -v.y, -v.z, -v.w);
-	}
-
-	inline Vec4 operator-(const Vec4 &lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator*(const Vec4 &lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator/(const Vec4 &lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator+(const Vec4 &lhs, const Ivec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Vec4 operator-(const Vec4 &lhs, const Ivec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator*(const Vec4 &lhs, const Ivec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator/(const Vec4 &lhs, const Ivec4 &rhs)
-	{
-		Vec4 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator+(const Vec4 &lhs, float rhs)
-	{
-		Vec4 ret(lhs);
-		ret.x += rhs;
-		ret.y += rhs;
-		ret.z += rhs;
-		ret.w += rhs;
-		return ret;
-	}
-
-	inline Vec4 operator-(const Vec4 &lhs, float rhs)
-	{
-		Vec4 ret(lhs);
-		ret.x -= rhs;
-		ret.y -= rhs;
-		ret.z -= rhs;
-		ret.w -= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator*(const Vec4 &lhs, float rhs)
-	{
-		Vec4 ret(lhs);
-		ret.x *= rhs;
-		ret.y *= rhs;
-		ret.z *= rhs;
-		ret.w *= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator/(const Vec4 &lhs, float rhs)
-	{
-		Vec4 ret(lhs);
-		ret.x /= rhs;
-		ret.y /= rhs;
-		ret.z /= rhs;
-		ret.w /= rhs;
-		return ret;
-	}
-
-	inline Vec4 operator+(float lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(rhs);
-		ret.x += lhs;
-		ret.y += lhs;
-		ret.z += lhs;
-		ret.w += lhs;
-		return ret;
-	}
-
-	inline Vec4 operator-(float lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(rhs);
-		ret.x -= lhs;
-		ret.y -= lhs;
-		ret.z -= lhs;
-		ret.w -= lhs;
-		return ret;
-	}
-
-	inline Vec4 operator*(float lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(rhs);
-		ret.x *= lhs;
-		ret.y *= lhs;
-		ret.z *= lhs;
-		ret.w *= lhs;
-		return ret;
-	}
-
-	inline Vec4 operator/(float lhs, const Vec4 &rhs)
-	{
-		Vec4 ret(rhs);
-		ret.x /= lhs;
-		ret.y /= lhs;
-		ret.z /= lhs;
-		ret.w /= lhs;
-		return ret;
-	}
-
-	inline Hvec4::Hvec4(ushort v) :
-		x(v),
-		y(v),
-		z(v),
-		w(v)
-	{
-	}
 
 	inline Hvec4::Hvec4(float _x, float _y, float _z, float _w)
 	{
@@ -2302,1429 +1149,20 @@ namespace flame
 		w = to_f16(_w);
 	}
 
-	inline Ivec2::Ivec2(int v) :
-		x(v),
-		y(v)
-	{
-	}
-
-	inline Ivec2::Ivec2(int *v) :
-		x(v[0]),
-		y(v[1])
-	{
-	}
-
-	inline Ivec2::Ivec2(int _x, int _y) :
-		x(_x),
-		y(_y)
-	{
-	}
-
-	inline Ivec2::Ivec2(const Vec2 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Ivec2::Ivec2(const Vec3 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Ivec2::Ivec2(const Vec4 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Ivec2::Ivec2(const Ivec2 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Ivec2::Ivec2(const Ivec3 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Ivec2::Ivec2(const Ivec4 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline int &Ivec2::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline int const&Ivec2::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Ivec2 &Ivec2::operator=(const Vec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator=(const Vec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator=(const Vec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator=(const Ivec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator=(const Ivec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator=(const Ivec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator+=(const Vec2 &v)
-	{
-		x += v.x;
-		y += v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator-=(const Vec2 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator*=(const Vec2 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator/=(const Vec2 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator+=(const Ivec2 &v)
-	{
-		x += v.x;
-		y += v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator-=(const Ivec2 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator*=(const Ivec2 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator/=(const Ivec2 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator+=(int v)
-	{
-		x += v;
-		y += v;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator-=(int v)
-	{
-		x -= v;
-		y -= v;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator*=(int v)
-	{
-		x *= v;
-		y *= v;
-		return *this;
-	}
-
-	inline Ivec2 &Ivec2::operator/=(int v)
-	{
-		x /= v;
-		y /= v;
-		return *this;
-	}
-
 	inline float Ivec2::length() const
 	{
 		return sqrt(x * x + y * y);
 	}
 
-	inline bool operator==(const Ivec2 &lhs, int rhs)
-	{
-		return lhs.x == rhs && lhs.y == rhs;
-	}
-
-	inline bool operator!=(const Ivec2 &lhs, int rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline bool operator==(const Ivec2 &lhs, const Ivec2 &rhs)
-	{
-		return lhs.x == rhs.x && lhs.y == rhs.y;
-	}
-
-	inline bool operator!=(const Ivec2 &lhs, const Ivec2 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Ivec2 operator+(const Ivec2 &lhs, const Vec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator-(const Ivec2 &lhs, const Vec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator*(const Ivec2 &lhs, const Vec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator/(const Ivec2 &lhs, const Vec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator+(const Ivec2 &lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator-(const Ivec2 &v)
-	{
-		return Ivec2(-v.x, -v.y);
-	}
-
-	inline Ivec2 operator-(const Ivec2 &lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator*(const Ivec2 &lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator/(const Ivec2 &lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator+(const Ivec2 &lhs, int rhs)
-	{
-		Ivec2 ret(lhs);
-		ret.x += rhs;
-		ret.y += rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator-(const Ivec2 &lhs, int rhs)
-	{
-		Ivec2 ret(lhs);
-		ret.x -= rhs;
-		ret.y -= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator*(const Ivec2 &lhs, int rhs)
-	{
-		Ivec2 ret(lhs);
-		ret.x *= rhs;
-		ret.y *= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator/(const Ivec2 &lhs, int rhs)
-	{
-		Ivec2 ret(lhs);
-		ret.x /= rhs;
-		ret.y /= rhs;
-		return ret;
-	}
-
-	inline Ivec2 operator+(int lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(rhs);
-		ret.x += lhs;
-		ret.y += lhs;
-		return ret;
-	}
-
-	inline Ivec2 operator-(int lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(rhs);
-		ret.x -= lhs;
-		ret.y -= lhs;
-		return ret;
-	}
-
-	inline Ivec2 operator*(int lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(rhs);
-		ret.x *= lhs;
-		ret.y *= lhs;
-		return ret;
-	}
-
-	inline Ivec2 operator/(int lhs, const Ivec2 &rhs)
-	{
-		Ivec2 ret(rhs);
-		ret.x /= lhs;
-		ret.y /= lhs;
-		return ret;
-	}
-
-	inline Ivec3::Ivec3(int v) :
-		x(v),
-		y(v),
-		z(v)
-	{
-	}
-
-	inline Ivec3::Ivec3(int *v) :
-		x(v[0]),
-		y(v[1]),
-		z(v[2])
-	{
-	}
-
-	inline Ivec3::Ivec3(int _x, int _y, int _z) :
-		x(_x),
-		y(_y),
-		z(_z)
-	{
-	}
-
-	inline Ivec3::Ivec3(const Vec2 &v, int _z) :
-		x(v.x),
-		y(v.y),
-		z(_z)
-	{
-	}
-
-	inline Ivec3::Ivec3(const Vec3 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline Ivec3::Ivec3(const Vec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline Ivec3::Ivec3(const Ivec2 &v, int _z) :
-		x(v.x),
-		y(v.y),
-		z(_z)
-	{
-	}
-
-	inline Ivec3::Ivec3(const Ivec3 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline Ivec3::Ivec3(const Ivec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline int &Ivec3::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline int const&Ivec3::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Ivec3 &Ivec3::operator=(const Vec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator=(const Vec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator=(const Ivec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator=(const Ivec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator+=(const Vec3 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator-=(const Vec3 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator*=(const Vec3 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator/=(const Vec3 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator+=(const Ivec3 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator-=(const Ivec3 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator*=(const Ivec3 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator/=(const Ivec3 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator+=(int v)
-	{
-		x += v;
-		y += v;
-		z += v;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator-=(int v)
-	{
-		x -= v;
-		y -= v;
-		z -= v;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator*=(int v)
-	{
-		x *= v;
-		y *= v;
-		z *= v;
-		return *this;
-	}
-
-	inline Ivec3 &Ivec3::operator/=(int v)
-	{
-		x /= v;
-		y /= v;
-		z /= v;
-		return *this;
-	}
 
 	inline float Ivec3::length() const
 	{
 		return sqrt(x * x + y * y + z * z);
 	}
 
-	inline bool operator==(const Ivec3 &lhs, int v)
-	{
-		return lhs.x == v && lhs.y == v && lhs.z == v;
-	}
-
-	inline bool operator!=(const Ivec3 &lhs, int v)
-	{
-		return !(lhs == v);
-	}
-
-	inline bool operator==(int v, const Ivec3 &rhs)
-	{
-		return v == rhs.x && v == rhs.y && v == rhs.z;
-	}
-
-	inline bool operator!=(int v, const Ivec3 &rhs)
-	{
-		return !(v == rhs);
-	}
-
-	inline bool operator==(const Ivec3 &lhs, const Ivec3 &rhs)
-	{
-		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
-	}
-
-	inline bool operator!=(const Ivec3 &lhs, const Ivec3 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Ivec3 operator+(const Ivec3 &lhs, const Vec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator-(const Ivec3 &v)
-	{
-		return Ivec3(-v.x, -v.y, -v.z);
-	}
-
-	inline Ivec3 operator-(const Ivec3 &lhs, const Vec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator*(const Ivec3 &lhs, const Vec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator/(const Ivec3 &lhs, const Vec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator+(const Ivec3 &lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator-(const Ivec3 &lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator*(const Ivec3 &lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator/(const Ivec3 &lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator+(const Ivec3 &lhs, int rhs)
-	{
-		Ivec3 ret(lhs);
-		ret.x += rhs;
-		ret.y += rhs;
-		ret.z += rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator-(const Ivec3 &lhs, int rhs)
-	{
-		Ivec3 ret(lhs);
-		ret.x -= rhs;
-		ret.y -= rhs;
-		ret.z -= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator*(const Ivec3 &lhs, int rhs)
-	{
-		Ivec3 ret(lhs);
-		ret.x *= rhs;
-		ret.y *= rhs;
-		ret.z *= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator/(const Ivec3 &lhs, int rhs)
-	{
-		Ivec3 ret(lhs);
-		ret.x /= rhs;
-		ret.y /= rhs;
-		ret.z /= rhs;
-		return ret;
-	}
-
-	inline Ivec3 operator+(int lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(rhs);
-		ret.x += lhs;
-		ret.y += lhs;
-		ret.z += lhs;
-		return ret;
-	}
-
-	inline Ivec3 operator-(int lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(rhs);
-		ret.x -= lhs;
-		ret.y -= lhs;
-		ret.z -= lhs;
-		return ret;
-	}
-
-	inline Ivec3 operator*(int lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(rhs);
-		ret.x *= lhs;
-		ret.y *= lhs;
-		ret.z *= lhs;
-		return ret;
-	}
-
-	inline Ivec3 operator/(int lhs, const Ivec3 &rhs)
-	{
-		Ivec3 ret(rhs);
-		ret.x /= lhs;
-		ret.y /= lhs;
-		ret.z /= lhs;
-		return ret;
-	}
-
-	inline Ivec4::Ivec4(int v) :
-		x(v),
-		y(v),
-		z(v),
-		w(v)
-	{
-	}
-
-	inline Ivec4::Ivec4(int *v) :
-		x(v[0]),
-		y(v[1]),
-		z(v[2]),
-		w(v[3])
-	{
-	}
-
-	inline Ivec4::Ivec4(int _x, int _y, int _z, int _w) :
-		x(_x),
-		y(_y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Vec2 &v, int _z, int _w) :
-		x(v.x),
-		y(v.y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Vec2 &v0, const Vec2 &v1) :
-		x(v0.x),
-		y(v0.y),
-		z(v1.x),
-		w(v1.y)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Vec3 &v, int _w) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(_w)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Vec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(v.w)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Ivec2 &v, int _z, int _w) :
-		x(v.x),
-		y(v.y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Ivec2 &v0, const Ivec2 &v1) :
-		x(v0.x),
-		y(v0.y),
-		z(v1.x),
-		w(v1.y)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Ivec3 &v, int _w) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(_w)
-	{
-	}
-
-	inline Ivec4::Ivec4(const Ivec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(v.w)
-	{
-	}
-
-	inline int &Ivec4::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline int const&Ivec4::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Ivec4 &Ivec4::operator=(const Vec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator=(int v)
-	{
-		x = v;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator=(const Ivec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator=(const Ivec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator=(const Ivec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator+=(const Vec4 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		w += v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator-=(const Vec4 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		w -= v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator*=(const Vec4 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		w *= v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator/=(const Vec4 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		w /= v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator+=(const Ivec4 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		w += v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator-=(const Ivec4 &v)
-	{
-		x -= v.x;
-		y -= v.y;
-		z -= v.z;
-		w -= v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator*=(const Ivec4 &v)
-	{
-		x *= v.x;
-		y *= v.y;
-		z *= v.z;
-		w *= v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator/=(const Ivec4 &v)
-	{
-		x /= v.x;
-		y /= v.y;
-		z /= v.z;
-		w /= v.w;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator+=(int v)
-	{
-		x += v;
-		y += v;
-		z += v;
-		w += v;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator-=(int v)
-	{
-		x -= v;
-		y -= v;
-		z -= v;
-		w -= v;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator*=(int v)
-	{
-		x *= v;
-		y *= v;
-		z *= v;
-		w *= v;
-		return *this;
-	}
-
-	inline Ivec4 &Ivec4::operator/=(int v)
-	{
-		x /= v;
-		y /= v;
-		z /= v;
-		w /= v;
-		return *this;
-	}
-
 	inline float Ivec4::length() const
 	{
 		return sqrt(x * x + y * y + z * z + w * w);
-	}
-
-	inline bool operator==(const Ivec4 &lhs, const Ivec4 &rhs)
-	{
-		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
-	}
-
-	inline bool operator!=(const Ivec4 &lhs, const Ivec4 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Ivec4 operator+(const Ivec4 &lhs, const Vec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator-(const Ivec4 &lhs, const Vec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator*(const Ivec4 &lhs, const Vec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator/(const Ivec4 &lhs, const Vec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator+(const Ivec4 &lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator-(const Ivec4 &v)
-	{
-		return Ivec4(-v.x, -v.y, -v.z, -v.w);
-	}
-
-	inline Ivec4 operator-(const Ivec4 &lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator*(const Ivec4 &lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator/(const Ivec4 &lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator+(const Ivec4 &lhs, int rhs)
-	{
-		Ivec4 ret(lhs);
-		ret.x += rhs;
-		ret.y += rhs;
-		ret.z += rhs;
-		ret.w += rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator-(const Ivec4 &lhs, int rhs)
-	{
-		Ivec4 ret(lhs);
-		ret.x -= rhs;
-		ret.y -= rhs;
-		ret.z -= rhs;
-		ret.w -= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator*(const Ivec4 &lhs, int rhs)
-	{
-		Ivec4 ret(lhs);
-		ret.x *= rhs;
-		ret.y *= rhs;
-		ret.z *= rhs;
-		ret.w *= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator/(const Ivec4 &lhs, int rhs)
-	{
-		Ivec4 ret(lhs);
-		ret.x /= rhs;
-		ret.y /= rhs;
-		ret.z /= rhs;
-		ret.w /= rhs;
-		return ret;
-	}
-
-	inline Ivec4 operator+(int lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(rhs);
-		ret.x += lhs;
-		ret.y += lhs;
-		ret.z += lhs;
-		ret.w += lhs;
-		return ret;
-	}
-
-	inline Ivec4 operator-(int lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(rhs);
-		ret.x -= lhs;
-		ret.y -= lhs;
-		ret.z -= lhs;
-		ret.w -= lhs;
-		return ret;
-	}
-
-	inline Ivec4 operator*(int lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(rhs);
-		ret.x *= lhs;
-		ret.y *= lhs;
-		ret.z *= lhs;
-		ret.w *= lhs;
-		return ret;
-	}
-
-	inline Ivec4 operator/(int lhs, const Ivec4 &rhs)
-	{
-		Ivec4 ret(rhs);
-		ret.x /= lhs;
-		ret.y /= lhs;
-		ret.z /= lhs;
-		ret.w /= lhs;
-		return ret;
-	}
-
-	inline Bvec2::Bvec2(uchar v) :
-		x(v),
-		y(v)
-	{
-	}
-
-	inline Bvec2::Bvec2(uchar *v) :
-		x(v[0]),
-		y(v[1])
-	{
-	}
-
-	inline Bvec2::Bvec2(uchar _x, uchar _y) :
-		x(_x),
-		y(_y)
-	{
-	}
-
-	inline Bvec2::Bvec2(const Bvec2 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Bvec2::Bvec2(const Bvec3 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline Bvec2::Bvec2(const Bvec4 &v) :
-		x(v.x),
-		y(v.y)
-	{
-	}
-
-	inline uchar &Bvec2::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline uchar const &Bvec2::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Bvec2 &Bvec2::operator=(float v)
-	{
-		x = v;
-		y = v;
-		return *this;
-	}
-
-	inline Bvec2 &Bvec2::operator=(const Bvec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Bvec2 &Bvec2::operator=(const Bvec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Bvec2 &Bvec2::operator=(const Bvec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline bool operator==(const Bvec2 &lhs, const Bvec2 &rhs)
-	{
-		return lhs.x == rhs.x && lhs.y == rhs.y;
-	}
-
-	inline bool operator!=(const Bvec2 &lhs, const Bvec2 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Bvec3::Bvec3(uchar v) :
-		x(v),
-		y(v),
-		z(v)
-	{
-	}
-
-	inline Bvec3::Bvec3(uchar *v) :
-		x(v[0]),
-		y(v[1]),
-		z(v[2])
-	{
-	}
-
-	inline Bvec3::Bvec3(uchar _x, uchar _y, uchar _z) :
-		x(_x),
-		y(_y),
-		z(_z)
-	{
-	}
-
-	inline Bvec3::Bvec3(const Bvec2 &v, uchar _z) :
-		x(v.x),
-		y(v.y),
-		z(_z)
-	{
-	}
-
-	inline Bvec3::Bvec3(const Bvec3 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline Bvec3::Bvec3(const Bvec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z)
-	{
-	}
-
-	inline uchar &Bvec3::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline uchar const &Bvec3::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Bvec3 &Bvec3::operator=(float v)
-	{
-		x = v;
-		y = v;
-		z = v;
-		return *this;
-	}
-
-	inline Bvec3 &Bvec3::operator=(const Bvec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Bvec3 &Bvec3::operator=(const Bvec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline bool operator==(const Bvec3 &lhs, const Bvec3 &rhs)
-	{
-		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
-	}
-
-	inline bool operator!=(const Bvec3 &lhs, const Bvec3 &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Bvec4::Bvec4(int v) :
-		x(v),
-		y(v),
-		z(v),
-		w(v)
-	{
-	}
-
-	inline Bvec4::Bvec4(uchar *v) :
-		x(v[0]),
-		y(v[1]),
-		z(v[2]),
-		w(v[3])
-	{
-	}
-
-	inline Bvec4::Bvec4(uchar _x, uchar _y, uchar _z, uchar _w) :
-		x(_x),
-		y(_y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Bvec4::Bvec4(const Bvec2 &v, uchar _z, uchar _w) :
-		x(v.x),
-		y(v.y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Bvec4::Bvec4(const Bvec3 &v, uchar _w) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(_w)
-	{
-	}
-
-	inline Bvec4::Bvec4(const Bvec4 &v) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(v.w)
-	{
-	}
-
-	inline Bvec4::Bvec4(const Bvec4 &v, float w_multipler) :
-		x(v.x),
-		y(v.y),
-		z(v.z),
-		w(v.w * w_multipler)
-	{
-	}
-
-	inline uchar &Bvec4::operator[](int i)
-	{
-		return *(&x + i);
-	}
-
-	inline uchar const &Bvec4::operator[](int i) const
-	{
-		return *(&x + i);
-	}
-
-	inline Bvec4 &Bvec4::operator=(float v)
-	{
-		x = v;
-		return *this;
-	}
-
-	inline Bvec4 &Bvec4::operator=(const Bvec2 &v)
-	{
-		x = v.x;
-		y = v.y;
-		return *this;
-	}
-
-	inline Bvec4 &Bvec4::operator=(const Bvec3 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		return *this;
-	}
-
-	inline Bvec4 &Bvec4::operator=(const Bvec4 &v)
-	{
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = v.w;
-		return *this;
-	}
-
-	inline Bvec4 &Bvec4::operator+=(const Bvec4 &v)
-	{
-		x += v.x;
-		y += v.y;
-		z += v.z;
-		w += v.w;
-		return *this;
-	}
-
-	inline Bvec4 &Bvec4::operator*=(float v)
-	{
-		x *= v;
-		y *= v;
-		z *= v;
-		w *= v;
-		return *this;
-	}
-
-	inline bool operator==(const Bvec4 &lhs, const Bvec4 &rhs)
-	{
-		return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
-	}
-
-	inline bool operator!=(const Bvec4 &lhs, const Bvec4 &rhs) 
-	{
-		return !(lhs == rhs);
-	}
-
-	inline Bvec4 operator+(const Bvec4 &lhs, const Bvec4 &rhs)
-	{
-		Bvec4 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Bvec4 operator*(const Bvec4 &lhs, float rhs)
-	{
-		Bvec4 ret(lhs);
-		ret *= rhs;
-		return ret;
-	}
-
-	inline Bvec4 operator*(float lhs, const Bvec4 &rhs)
-	{
-		Bvec4 ret(rhs);
-		ret *= lhs;
-		return ret;
 	}
 
 	inline Bvec4 Color(uchar R, uchar G, uchar B, uchar A)
@@ -3835,16 +1273,6 @@ namespace flame
 	{
 		(*this)[0] = v[0];
 		(*this)[1] = v[1];
-	}
-
-	inline Vec2 &Mat2::operator[](int i)
-	{
-		return cols[i];
-	}
-
-	inline Vec2 const&Mat2::operator[](int i) const
-	{
-		return cols[i];
 	}
 
 	inline Mat2 &Mat2::operator=(const Mat2 &v)
@@ -4092,7 +1520,7 @@ namespace flame
 		(*this)[2] = v2;
 	}
 
-	inline Mat3::Mat3(const EulerYawPitchRoll &e)
+	inline Mat3::Mat3(const EulerYPR &e)
 	{
 		math_detail::euler_to_mat3(e, *this);
 	}
@@ -4129,16 +1557,6 @@ namespace flame
 		(*this)[0] = v[0];
 		(*this)[1] = v[1];
 		(*this)[2] = v[2];
-	}
-
-	inline Vec3 &Mat3::operator[](int i)
-	{
-		return cols[i];
-	}
-
-	inline Vec3 const&Mat3::operator[](int i) const
-	{
-		return cols[i];
 	}
 
 	inline Mat3 &Mat3::operator=(const Mat3 &v)
@@ -4438,16 +1856,6 @@ namespace flame
 		(*this)[1] = Vec4(y_axis, 0.f);
 		(*this)[2] = Vec4(cross(x_axis, y_axis), 0.f);
 		(*this)[3] = Vec4(coord, 1.f);
-	}
-
-	inline Vec4 &Mat4::operator[](int i)
-	{
-		return cols[i];
-	}
-
-	inline Vec4 const&Mat4::operator[](int i) const
-	{
-		return cols[i];
 	}
 
 	inline Mat4 &Mat4::operator=(const Mat4 &v)
@@ -4761,14 +2169,6 @@ namespace flame
 		return ret;
 	}
 
-	inline Vec3 cross(const Vec3 &lhs, const Vec3 &rhs)
-	{
-		return Vec3(
-			lhs.y * rhs.z - rhs.y * lhs.z,
-			lhs.z * rhs.x - rhs.z * lhs.x,
-			lhs.x * rhs.y - rhs.x * lhs.y);
-	}
-
 	inline Mat4 get_view_mat(const Vec3 &eye, const Vec3 &target, const Vec3 &up)
 	{
 		auto f = target - eye;
@@ -4809,12 +2209,6 @@ namespace flame
 			0.f, 0.f, 0.f, 1.f) * ret;
 	}
 
-	inline float distance(const Vec2 &a, const Vec2 &b)
-	{
-		auto d = a - b;
-		return dot(d, d);
-	}
-
 	inline Vec2 rotate(const Vec2 &p, const Vec2 &c, float rad)
 	{
 		Vec2 ret(p - c);
@@ -4831,16 +2225,16 @@ namespace flame
 		return ret;
 	}
 
-	inline EulerYawPitchRoll::EulerYawPitchRoll()
+	inline EulerYPR::EulerYPR()
 	{
 	}
 
-	inline EulerYawPitchRoll::EulerYawPitchRoll(float y, float p, float r) :
+	inline EulerYPR::EulerYPR(float y, float p, float r) :
 		yaw(y), pitch(p), roll(r)
 	{
 	}
 
-	inline EulerYawPitchRoll::EulerYawPitchRoll(const Quat &q)
+	inline EulerYPR::EulerYPR(const Quat &q)
 	{
 		math_detail::quat_to_euler(q, *this);
 	}
@@ -5277,7 +2671,7 @@ namespace flame
 			q.normalize();
 		}
 
-		inline void euler_to_mat3(const EulerYawPitchRoll &e, Mat3 &m)
+		inline void euler_to_mat3(const EulerYPR &e, Mat3 &m)
 		{
 			m[0] = Vec3(1.f, 0.f, 0.f);
 			m[1] = Vec3(0.f, 1.f, 0.f);
@@ -5293,7 +2687,7 @@ namespace flame
 			m[0] = mat_roll * m[0];
 		}
 
-		inline void quat_to_euler(const Quat &q, EulerYawPitchRoll &e)
+		inline void quat_to_euler(const Quat &q, EulerYPR &e)
 		{
 			auto sqw = q.w * q.w;
 			auto sqx = q.x * q.x;
