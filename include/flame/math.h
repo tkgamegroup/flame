@@ -325,6 +325,27 @@ namespace flame
 				v[i] /= rhs[i];
 			return *this;
 		}
+
+		float length() const
+		{
+			float s = 0.f;
+			for (auto i = 0; i < N; i++)
+				s += v[i] * v[i];
+			return sqrt(s);
+		}
+
+		void normalize()
+		{
+			auto l = length();
+			*this /= l;
+		}
+
+		Vec<N, T> get_normalized() const
+		{
+			Vec<N, T> ret(*this);
+			ret.normalize();
+			return ret;
+		}
 	};
 
 	template<uint N, class T, class U>
@@ -585,16 +606,6 @@ namespace flame
 	Rect get_fit_rect(const Vec2 &desired_size, float xy_aspect);
 	Rect get_fit_rect_no_zoom_in(const Vec2 &desired_size, const Vec2 &size);
 
-	struct Vec2
-	{
-		float x;
-		float y;
-
-		float length() const;
-		void normalize();
-		Vec2 get_normalized() const;
-	};
-
 	struct Vec3
 	{
 		float x;
@@ -605,70 +616,6 @@ namespace flame
 		static Vec3 y_axis();
 		static Vec3 z_axis();
 		static Vec3 axis(int idx);
-
-		float length() const;
-		void normalize();
-		Vec3 get_normalized() const;
-	};
-
-	struct Vec4
-	{
-		float x;
-		float y;
-		float z;
-		float w;
-
-		float length() const;
-		void normalize();
-		Vec4 get_normalized() const;
-	};
-
-	struct Ivec2
-	{
-		int x;
-		int y;
-
-		float length() const;
-	};
-
-	struct Ivec3
-	{
-		int x;
-		int y;
-		int z;
-
-		float length() const;
-	};
-
-	struct Ivec4
-	{
-		int x;
-		int y;
-		int z;
-		int w;
-
-		float length() const;
-	};
-
-	struct Bvec2
-	{
-		uchar x;
-		uchar y;
-	};
-
-	struct Bvec3
-	{
-		uchar x;
-		uchar y;
-		uchar z;
-	};
-
-	struct Bvec4
-	{
-		uchar x;
-		uchar y;
-		uchar z;
-		uchar w;
 	};
 
 	Bvec4 Color(uchar R, uchar G, uchar B, uchar A = 255);
@@ -1055,25 +1002,6 @@ namespace flame
 			return get_fit_rect(desired_size, size.x / size.y);
 	}
 
-	inline float Vec2::length() const
-	{
-		return sqrt(x * x + y * y);
-	}
-
-	inline void Vec2::normalize()
-	{
-		auto l = length();
-		x /= l;
-		y /= l;
-	}
-
-	inline Vec2 Vec2::get_normalized() const
-	{
-		Vec2 ret(*this);
-		ret.normalize();
-		return ret;
-	}
-
 	inline Vec3 Vec3::x_axis()
 	{
 		return Vec3(1.f, 0.f, 0.f);
@@ -1099,70 +1027,12 @@ namespace flame
 		return axes[idx];
 	}
 
-	inline float Vec3::length() const
-	{
-		return sqrt(x * x + y * y + z * z);
-	}
-
-	inline void Vec3::normalize()
-	{
-		auto l = length();
-		x /= l;
-		y /= l;
-		z /= l;
-	}
-
-	inline Vec3 Vec3::get_normalized() const
-	{
-		Vec3 ret(*this);
-		ret.normalize();
-		return ret;
-	}
-
-	inline float Vec4::length() const
-	{
-		return sqrt(x * x + y * y + z * z + w * w);
-	}
-
-	inline void Vec4::normalize()
-	{
-		auto l = length();
-		x /= l;
-		y /= l;
-		z /= l;
-		w /= l;
-	}
-
-	inline Vec4 Vec4::get_normalized() const
-	{
-		Vec4 ret(*this);
-		ret.normalize();
-		return ret;
-	}
-
-
 	inline Hvec4::Hvec4(float _x, float _y, float _z, float _w)
 	{
 		x = to_f16(_x);
 		y = to_f16(_y);
 		z = to_f16(_z);
 		w = to_f16(_w);
-	}
-
-	inline float Ivec2::length() const
-	{
-		return sqrt(x * x + y * y);
-	}
-
-
-	inline float Ivec3::length() const
-	{
-		return sqrt(x * x + y * y + z * z);
-	}
-
-	inline float Ivec4::length() const
-	{
-		return sqrt(x * x + y * y + z * z + w * w);
 	}
 
 	inline Bvec4 Color(uchar R, uchar G, uchar B, uchar A)
