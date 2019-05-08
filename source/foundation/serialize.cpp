@@ -1320,16 +1320,25 @@ namespace flame
 	}
 
 	static std::string prefix("flame::");
+	static std::regex reg_name(R"(^()" + prefix + R"()?([\w]+)(\$([\w]*))?(<([\w\s\*\,]+)>)?)");
 	static std::regex reg_lna("^" + prefix + R"(LengthAndArray<([\w\*]+)>)");
 	static std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
 	static std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
-	std::string format_name(const wchar_t* in, std::string * attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
+	std::string format_name(const wchar_t* in, std::string* attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
 	{
 		if (pass_prefix)
 			* pass_prefix = false;
 		if (pass_$)
 			* pass_$ = false;
+
+		std::smatch match;
+		auto _name = w2s(in);
+		_name = "flame::BP_abc$<abc>";
+		if (std::regex_search(_name, match, reg_name))
+		{
+			auto emm = 1;
+		}
 
 		auto name = w2s(in);
 		if (name.compare(0, prefix.size(), prefix) == 0)
@@ -1343,13 +1352,13 @@ namespace flame
 		if (pos_$ != std::wstring::npos)
 		{
 			if (attribute)
-				* attribute = std::string(name.c_str() + pos_$ + 1);
+				*attribute = (name.c_str() + pos_$ + 1);
 			name.resize(pos_$);
 
 			if (pass_$)
 				* pass_$ = true;
 		}
-		return name;
+		return "";
 	}
 
 	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol * symbol, const std::string & attribute)
