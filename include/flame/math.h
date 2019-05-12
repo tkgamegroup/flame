@@ -123,6 +123,16 @@ namespace flame
 		return 1.f / (a * z + b);
 	}
 
+	enum Axis
+	{
+		AxisPosX = 1 << 0,
+		AxisNegX = 1 << 1,
+		AxisPosY = 1 << 2,
+		AxisNegY = 1 << 3,
+		AxisPosZ = 1 << 4,
+		AxisNegZ = 1 << 5
+	};
+
 	template<uint N, class T>
 	struct Vec
 	{
@@ -153,14 +163,14 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(typename std::enable_if<N == 2, U>::type x, U y)
+		Vec(U x, U y, typename std::enable_if<N == 2, char*>::type unused = "")
 		{
 			v[0] = x;
 			v[1] = y;
 		}
 
 		template<class U>
-		Vec(typename std::enable_if<N == 3, U>::type x, U y, U z)
+		Vec(U x, U y, U z, typename std::enable_if<N == 3, char*>::type unused = "")
 		{
 			v[0] = x;
 			v[1] = y;
@@ -168,7 +178,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const typename std::enable_if<N == 3, Vec<2, U>>::type& v1, U z)
+		Vec(const Vec<2, U>& v1, U z, typename std::enable_if<N == 3, char*>::type unused = "")
 		{
 			v[0] = v1[0];
 			v[1] = v1[1];
@@ -176,7 +186,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(typename std::enable_if<N == 3, U>::type x, const Vec<2, U>& v1)
+		Vec(U x, const Vec<2, U>& v1, typename std::enable_if<N == 3, char*>::type unused = "")
 		{
 			v[0] = x;
 			v[1] = v1[0];
@@ -184,7 +194,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(typename std::enable_if<N == 4, U>::type x, U y, U z, U w)
+		Vec(U x, U y, U z, U w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
 			v[0] = x;
 			v[1] = y;
@@ -193,7 +203,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const typename std::enable_if<N == 4, Vec<2, U>>::type& v1, U z, U w)
+		Vec(const Vec<2, U>& v1, U z, U w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
 			v[0] = v1[0];
 			v[1] = v1[1];
@@ -202,7 +212,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(typename std::enable_if<N == 4, U>::type x, const Vec<2, U>& v1, U w)
+		Vec(U x, const Vec<2, U>& v1, U w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
 			v[0] = x;
 			v[1] = v1[0];
@@ -211,7 +221,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(typename std::enable_if<N == 4, U>::type x, U y, const Vec<2, U>& v1)
+		Vec(U x, U y, const Vec<2, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
 			v[0] = x;
 			v[1] = y;
@@ -220,7 +230,16 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const typename std::enable_if<N == 4, Vec<3, U>>::type& v1, U w)
+		Vec(const Vec<2, U>& v1, const Vec<2, U>& v2, typename std::enable_if<N == 4, char*>::type unused = "")
+		{
+			v[0] = v1[0];
+			v[1] = v1[1];
+			v[2] = v2[0];
+			v[3] = v2[1];
+		}
+
+		template<class U>
+		Vec(const Vec<3, U>& v1, U w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
 			v[0] = v1[0];
 			v[1] = v1[1];
@@ -229,20 +248,12 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(typename std::enable_if<N == 4, U>::type x, const Vec<3, U>& v1)
+		Vec(U x, const Vec<3, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
 			v[0] = x;
 			v[1] = v1[0];
 			v[2] = v1[1];
 			v[3] = v1[2];
-		}
-
-		Vec<N, T> operator-()
-		{
-			Vec<N, T> ret;
-			for (auto i = 0; i < N; i++)
-				ret[i] = -v[i];
-			return ret;
 		}
 
 		template<class U>
@@ -260,6 +271,14 @@ namespace flame
 			for (auto i = 0; i < N; i++)
 				v[i] = rhs;
 			return *this;
+		}
+
+		Vec<N, T> operator-()
+		{
+			Vec<N, T> ret;
+			for (auto i = 0; i < N; i++)
+				ret[i] = -v[i];
+			return ret;
 		}
 
 		template<class U>
@@ -460,7 +479,42 @@ namespace flame
 	struct Mat
 	{
 		T v[C][R];
+
+		Mat()
+		{
+		}
+
 	};
+
+	static Vec3 x_axis();
+	static Vec3 y_axis();
+	static Vec3 z_axis();
+	static Vec3 axis(int idx);
+
+	inline Vec3 Vec3::x_axis()
+	{
+		return Vec3(1.f, 0.f, 0.f);
+	}
+
+	inline Vec3 Vec3::y_axis()
+	{
+		return Vec3(0.f, 1.f, 0.f);
+	}
+
+	inline Vec3 Vec3::z_axis()
+	{
+		return Vec3(0.f, 0.f, 1.f);
+	}
+
+	inline Vec3 Vec3::axis(int idx)
+	{
+		static Vec3 axes[] = {
+			x_axis(),
+			y_axis(),
+			z_axis()
+		};
+		return axes[idx];
+	}
 
 	template<class T>
 	inline T min(const T& a, const T& b)
@@ -572,23 +626,22 @@ namespace flame
 		return dot(d, d);
 	}
 
-	struct EulerYPR;
-	struct Quat;
-	struct Rect;
-	struct Plane;
-	struct AABB;
-
-	enum Axis
+	template<class T>
+	inline Vec<2, T> rotate(const Vec<2, T>& p, const Vec<2, T>& c, float rad)
 	{
-		AxisPosX = 1 << 0,
-		AxisNegX = 1 << 1,
-		AxisPosY = 1 << 2,
-		AxisNegY = 1 << 3,
-		AxisPosZ = 1 << 4,
-		AxisNegZ = 1 << 5
-	};
+		Vec<2, T> ret(p - c);
 
-	Vec2 rotate(const Vec2 &p, const Vec2 &c, float rad);
+		auto sin_v = sin(rad);
+		auto cos_v = cos(rad);
+
+		auto xnew = ret.x * cos_v - ret.y * sin_v;
+		auto ynew = ret.x * sin_v + ret.y * cos_v;
+
+		ret.x = xnew + c.x;
+		ret.y = ynew + c.y;
+
+		return ret;
+	}
 
 	Mat4 get_view_mat(const Vec3 &eye, const Vec3 &center, const Vec3 &up);
 	Mat4 get_proj_mat(float fovy, float aspect, float zNear, float zFar);
@@ -611,11 +664,6 @@ namespace flame
 		float x;
 		float y;
 		float z;
-
-		static Vec3 x_axis();
-		static Vec3 y_axis();
-		static Vec3 z_axis();
-		static Vec3 axis(int idx);
 	};
 
 	Bvec4 Color(uchar R, uchar G, uchar B, uchar A = 255);
@@ -625,8 +673,6 @@ namespace flame
 
 	struct Mat2
 	{
-		Vec2 cols[2];
-
 		Mat2();
 		explicit Mat2(float diagonal);
 		Mat2(float Xx, float Xy, 
@@ -759,18 +805,6 @@ namespace flame
 	Mat4 operator-(float lhs, const Mat4 &rhs);
 	Mat4 operator*(float lhs, const Mat4 &rhs);
 	Mat4 operator/(float lhs, const Mat4 &rhs);
-
-	// in angle
-	struct EulerYPR // yaw pitch roll
-	{
-		float yaw;
-		float pitch;
-		float roll;
-
-		EulerYPR();
-		EulerYPR(float y, float p, float r);
-		explicit EulerYPR(const Quat &q);
-	};
 
 	struct Quat
 	{
@@ -1000,31 +1034,6 @@ namespace flame
 		}
 		else
 			return get_fit_rect(desired_size, size.x / size.y);
-	}
-
-	inline Vec3 Vec3::x_axis()
-	{
-		return Vec3(1.f, 0.f, 0.f);
-	}
-
-	inline Vec3 Vec3::y_axis()
-	{
-		return Vec3(0.f, 1.f, 0.f);
-	}
-
-	inline Vec3 Vec3::z_axis()
-	{
-		return Vec3(0.f, 0.f, 1.f);
-	}
-
-	inline Vec3 Vec3::axis(int idx)
-	{
-		static Vec3 axes[] = {
-			x_axis(),
-			y_axis(),
-			z_axis()
-		};
-		return axes[idx];
 	}
 
 	inline Hvec4::Hvec4(float _x, float _y, float _z, float _w)
@@ -2077,22 +2086,6 @@ namespace flame
 			0.f, -1.f, 0.f, 0.f,
 			0.f, 0.f, 1.f, 0.f,
 			0.f, 0.f, 0.f, 1.f) * ret;
-	}
-
-	inline Vec2 rotate(const Vec2 &p, const Vec2 &c, float rad)
-	{
-		Vec2 ret(p - c);
-
-		auto sin_v = sin(rad);
-		auto cos_v = cos(rad);
-
-		auto xnew = ret.x * cos_v - ret.y * sin_v;
-		auto ynew = ret.x * sin_v + ret.y * cos_v;
-
-		ret.x = xnew + c.x;
-		ret.y = ynew + c.y;
-
-		return ret;
 	}
 
 	inline EulerYPR::EulerYPR()
