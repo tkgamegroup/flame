@@ -475,10 +475,10 @@ namespace flame
 		return ret;
 	}
 
-	template<uint C, uint R, class T>
+	template<uint N, uint M, class T>
 	struct Mat
 	{
-		T v[C][R];
+		Vec<N, T> v[M];
 
 		Mat()
 		{
