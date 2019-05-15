@@ -136,16 +136,86 @@ namespace flame
 	template<uint N, class T>
 	struct Vec
 	{
-		T v[N];
+		T v_[N];
 
 		Vec() 
 		{
 		}
 
+		T& x(typename std::enable_if<N > 0, char*>::type unused = "")
+		{
+			return v_[0];
+		}
+
+		T& y(typename std::enable_if<N > 1, char*>::type unused = "")
+		{
+			return v_[1];
+		}
+
+		T& z(typename std::enable_if<N > 2, char*> ::type unused = "")
+		{
+			return v_[2];
+		}
+
+		T& w(typename std::enable_if<N > 3, char*> ::type unused = "")
+		{
+			return v_[3];
+		}
+
+		T& r(typename std::enable_if<N > 0, char*> ::type unused = "")
+		{
+			return v_[0];
+		}
+
+		T& g(typename std::enable_if<N > 1, char*> ::type unused = "")
+		{
+			return v_[1];
+		}
+
+		T& b(typename std::enable_if<N > 2, char*> ::type unused = "")
+		{
+			return v_[2];
+		}
+
+		T& a(typename std::enable_if<N > 3, char*> ::type unused = "")
+		{
+			return v_[3];
+		}
+
+		T& s(typename std::enable_if<N > 0, char*> ::type unused = "")
+		{
+			return v_[0];
+		}
+
+		T& t(typename std::enable_if<N > 1, char*> ::type unused = "")
+		{
+			return v_[1];
+		}
+
+		T& p(typename std::enable_if<N > 2, char*> ::type unused = "")
+		{
+			return v_[2];
+		}
+
+		T& q(typename std::enable_if<N > 3, char*> ::type unused = "")
+		{
+			return v_[3];
+		}
+
+		T operator[](uint i) const
+		{
+			return v_[i];
+		}
+
+		T& operator[](uint i)
+		{
+			return v_[i];
+		}
+
 		explicit Vec(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] = v;
+				v_[i] = v;
 		}
 
 		template<M, U>
@@ -153,114 +223,114 @@ namespace flame
 		{
 			static_assert(N <= M);
 			for (auto i = 0; i < N; i++)
-				v[i] = rhs[i];
+				v_[i] = rhs[i];
 		}
 
 		Vec(const T* rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] = rhs[i];
+				v_[i] = rhs[i];
 		}
 
 		template<class U>
-		Vec(U x, U y, typename std::enable_if<N == 2, char*>::type unused = "")
+		Vec(U _x, U _y, typename std::enable_if<N == 2, char*>::type unused = "")
 		{
-			v[0] = x;
-			v[1] = y;
+			x() = _x;
+			y() = _y;
 		}
 
 		template<class U>
-		Vec(U x, U y, U z, typename std::enable_if<N == 3, char*>::type unused = "")
+		Vec(U _x, U _y, U _z, typename std::enable_if<N == 3, char*>::type unused = "")
 		{
-			v[0] = x;
-			v[1] = y;
-			v[2] = z;
+			x() = _x;
+			y() = _y;
+			z() = _z;
 		}
 
 		template<class U>
-		Vec(const Vec<2, U>& v1, U z, typename std::enable_if<N == 3, char*>::type unused = "")
+		Vec(const Vec<2, U>& v1, U _z, typename std::enable_if<N == 3, char*>::type unused = "")
 		{
-			v[0] = v1[0];
-			v[1] = v1[1];
-			v[2] = z;
+			x() = v1.x();
+			y() = v1.y();
+			z() = _z;
 		}
 
 		template<class U>
-		Vec(U x, const Vec<2, U>& v1, typename std::enable_if<N == 3, char*>::type unused = "")
+		Vec(U _x, const Vec<2, U>& v1, typename std::enable_if<N == 3, char*>::type unused = "")
 		{
-			v[0] = x;
-			v[1] = v1[0];
-			v[2] = v1[1];
+			x() = _x;
+			y() = v1.x();
+			z() = v1.y();
 		}
 
 		template<class U>
-		Vec(U x, U y, U z, U w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, U _y, U _z, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
-			v[0] = x;
-			v[1] = y;
-			v[2] = z;
-			v[3] = w;
+			x() = _x;
+			y() = _y;
+			z() = _z;
+			w() = _w;
 		}
 
 		template<class U>
-		Vec(const Vec<2, U>& v1, U z, U w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(const Vec<2, U>& v1, U _z, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
-			v[0] = v1[0];
-			v[1] = v1[1];
-			v[2] = z;
-			v[3] = w;
+			x() = v1.x();
+			y() = v1.y();
+			z() = _z;
+			w() = _w;
 		}
 
 		template<class U>
-		Vec(U x, const Vec<2, U>& v1, U w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, const Vec<2, U>& v1, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
-			v[0] = x;
-			v[1] = v1[0];
-			v[2] = v1[1];
-			v[3] = w;
+			x() = _x;
+			y() = v1.x();
+			z() = v1.y();
+			w() = _w;
 		}
 
 		template<class U>
-		Vec(U x, U y, const Vec<2, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, U _y, const Vec<2, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
-			v[0] = x;
-			v[1] = y;
-			v[2] = v1[0];
-			v[3] = v1[1];
+			x() = _x;
+			y() = _y;
+			z() = v1.x();
+			w() = v1.y();
 		}
 
 		template<class U>
 		Vec(const Vec<2, U>& v1, const Vec<2, U>& v2, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
-			v[0] = v1[0];
-			v[1] = v1[1];
-			v[2] = v2[0];
-			v[3] = v2[1];
+			x() = v1.x();
+			y() = v1.y();
+			z() = v2.x();
+			w() = v2.y();
 		}
 
 		template<class U>
-		Vec(const Vec<3, U>& v1, U w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(const Vec<3, U>& v1, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
-			v[0] = v1[0];
-			v[1] = v1[1];
-			v[2] = v1[2];
-			v[3] = w;
+			x() = v1.x();
+			y() = v1.y();
+			z() = v1.z();
+			w() = w;
 		}
 
 		template<class U>
-		Vec(U x, const Vec<3, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, const Vec<3, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
 		{
-			v[0] = x;
-			v[1] = v1[0];
-			v[2] = v1[1];
-			v[3] = v1[2];
+			x() = _x;
+			y() = v1.x();
+			z() = v1.y();
+			w() = v1.z();
 		}
 
 		template<class U>
 		Vec<N, T>& operator=(U rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] = rhs;
+				v_[i] = rhs;
 			return *this;
 		}
 
@@ -269,7 +339,7 @@ namespace flame
 		{
 			static_assert(N <= M);
 			for (auto i = 0; i < N; i++)
-				v[i] = rhs;
+				v_[i] = rhs;
 			return *this;
 		}
 
@@ -277,7 +347,7 @@ namespace flame
 		{
 			Vec<N, T> ret;
 			for (auto i = 0; i < N; i++)
-				ret[i] = -v[i];
+				ret[i] = -v_[i];
 			return ret;
 		}
 
@@ -285,7 +355,7 @@ namespace flame
 		Vec<N, T>& operator+=(U rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] += rhs;
+				v_[i] += rhs;
 			return *this;
 		}
 
@@ -293,7 +363,7 @@ namespace flame
 		Vec<N, T>& operator+=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] += rhs[i];
+				v_[i] += rhs[i];
 			return *this;
 		}
 
@@ -301,7 +371,7 @@ namespace flame
 		Vec<N, T>& operator-=(U rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] -= rhs;
+				v_[i] -= rhs;
 			return *this;
 		}
 
@@ -309,7 +379,7 @@ namespace flame
 		Vec<N, T>& operator-=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] -= rhs[i];
+				v_[i] -= rhs[i];
 			return *this;
 		}
 
@@ -317,7 +387,7 @@ namespace flame
 		Vec<N, T>& operator*=(U rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] *= rhs;
+				v_[i] *= rhs;
 			return *this;
 		}
 
@@ -325,15 +395,16 @@ namespace flame
 		Vec<N, T>& operator*=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] *= rhs[i];
+				v_[i] *= rhs[i];
 			return *this;
 		}
 
 		template<class U>
 		Vec<N, T>& operator/=(U rhs)
 		{
+			rhs = 1 / rhs;
 			for (auto i = 0; i < N; i++)
-				v[i] /= rhs;
+				v_[i] *= rhs;
 			return *this;
 		}
 
@@ -341,7 +412,7 @@ namespace flame
 		Vec<N, T>& operator/=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v[i] /= rhs[i];
+				v_[i] /= rhs[i];
 			return *this;
 		}
 
@@ -349,14 +420,13 @@ namespace flame
 		{
 			float s = 0.f;
 			for (auto i = 0; i < N; i++)
-				s += v[i] * v[i];
+				s += v_[i] * v_[i];
 			return sqrt(s);
 		}
 
 		void normalize()
 		{
-			auto l = length();
-			*this /= l;
+			*this /= length();
 		}
 
 		Vec<N, T> get_normalized() const
@@ -478,37 +548,52 @@ namespace flame
 	template<uint N, uint M, class T>
 	struct Mat
 	{
-		Vec<N, T> v[M];
+		Vec<N, T> v_[M];
+
+		T operator[](uint i) const
+		{
+			return v_[i];
+		}
+
+		T& operator[](uint i)
+		{
+			return v_[i];
+		}
 
 		Mat()
 		{
 		}
 
+		explicit Mat(T rhs)
+		{
+			auto n = min(N, M);
+			for (auto i = 0; i < n; i++)
+				v_[i][i] = v;
+		}
 	};
 
-	static Vec3 x_axis();
-	static Vec3 y_axis();
-	static Vec3 z_axis();
-	static Vec3 axis(int idx);
-
-	inline Vec3 Vec3::x_axis()
+	template<class T>
+	inline Vec<3, T> x_axis()
 	{
-		return Vec3(1.f, 0.f, 0.f);
+		return Vec<3, T>(1.f, 0.f, 0.f);
 	}
 
-	inline Vec3 Vec3::y_axis()
+	template<class T>
+	inline Vec<3, T> y_axis()
 	{
-		return Vec3(0.f, 1.f, 0.f);
+		return Vec<3, T>(0.f, 1.f, 0.f);
 	}
 
-	inline Vec3 Vec3::z_axis()
+	template<class T>
+	inline Vec<3, T> z_axis()
 	{
-		return Vec3(0.f, 0.f, 1.f);
+		return Vec<3, T>(0.f, 0.f, 1.f);
 	}
 
-	inline Vec3 Vec3::axis(int idx)
+	template<class T>
+	inline Vec<3, T> axis(int idx)
 	{
-		static Vec3 axes[] = {
+		static Vec<3, T> axes[] = {
 			x_axis(),
 			y_axis(),
 			z_axis()
@@ -643,8 +728,8 @@ namespace flame
 		return ret;
 	}
 
-	Mat4 get_view_mat(const Vec3 &eye, const Vec3 &center, const Vec3 &up);
-	Mat4 get_proj_mat(float fovy, float aspect, float zNear, float zFar);
+	Mat<4, 4, float> view_mat(const Vec3 &eye, const Vec3 &center, const Vec3 &up);
+	Mat<4, 4, float> proj_mat(float fovy, float aspect, float zNear, float zFar);
 
 	Vec2 bezier(float t, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3);
 	float closet_to_bezier(int iters, const Vec2 &pos, float start, float end, 
@@ -659,13 +744,6 @@ namespace flame
 	Rect get_fit_rect(const Vec2 &desired_size, float xy_aspect);
 	Rect get_fit_rect_no_zoom_in(const Vec2 &desired_size, const Vec2 &size);
 
-	struct Vec3
-	{
-		float x;
-		float y;
-		float z;
-	};
-
 	Bvec4 Color(uchar R, uchar G, uchar B, uchar A = 255);
 	Bvec4 Colorf(float R, float G, float B, float A = 1.f);
 	Bvec4 HSV(float h, float s, float v, float A = 1.f);
@@ -673,10 +751,6 @@ namespace flame
 
 	struct Mat2
 	{
-		Mat2();
-		explicit Mat2(float diagonal);
-		Mat2(float Xx, float Xy, 
-			float Yx, float Yy);
 		Mat2(const Vec2 &v0, const Vec2 &v1);
 		Mat2(const Mat2 &v);
 		explicit Mat2(const Mat3 &v);
@@ -763,8 +837,6 @@ namespace flame
 
 	struct Mat4
 	{
-		Vec4 cols[4];
-
 		Mat4();
 		explicit Mat4(float diagonal);
 		Mat4(float Xx, float Xy, float Xz, float Xw,
