@@ -142,63 +142,75 @@ namespace flame
 		{
 		}
 
-		T& x(typename std::enable_if<N > 0, char*>::type unused = "")
+		T& x()
 		{
+			static_assert(N > 0);
 			return v_[0];
 		}
 
-		T& y(typename std::enable_if<N > 1, char*>::type unused = "")
+		T& y()
 		{
+			static_assert(N > 1);
 			return v_[1];
 		}
 
-		T& z(typename std::enable_if<N > 2, char*> ::type unused = "")
+		T& z()
 		{
+			static_assert(N > 2);
 			return v_[2];
 		}
 
-		T& w(typename std::enable_if<N > 3, char*> ::type unused = "")
+		T& w()
 		{
+			static_assert(N > 3);
 			return v_[3];
 		}
 
-		T& r(typename std::enable_if<N > 0, char*> ::type unused = "")
+		T& r()
 		{
+			static_assert(N > 0);
 			return v_[0];
 		}
 
-		T& g(typename std::enable_if<N > 1, char*> ::type unused = "")
+		T& g()
 		{
+			static_assert(N > 1);
 			return v_[1];
 		}
 
-		T& b(typename std::enable_if<N > 2, char*> ::type unused = "")
+		T& b()
 		{
+			static_assert(N > 2);
 			return v_[2];
 		}
 
-		T& a(typename std::enable_if<N > 3, char*> ::type unused = "")
+		T& a()
 		{
+			static_assert(N > 3);
 			return v_[3];
 		}
 
-		T& s(typename std::enable_if<N > 0, char*> ::type unused = "")
+		T& s()
 		{
+			static_assert(N > 0);
 			return v_[0];
 		}
 
-		T& t(typename std::enable_if<N > 1, char*> ::type unused = "")
+		T& t()
 		{
+			static_assert(N > 1);
 			return v_[1];
 		}
 
-		T& p(typename std::enable_if<N > 2, char*> ::type unused = "")
+		T& p()
 		{
+			static_assert(N > 2);
 			return v_[2];
 		}
 
-		T& q(typename std::enable_if<N > 3, char*> ::type unused = "")
+		T& q()
 		{
+			static_assert(N > 3);
 			return v_[3];
 		}
 
@@ -233,39 +245,44 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, U _y, typename std::enable_if<N == 2, char*>::type unused = "")
+		Vec(U _x, U _y)
 		{
+			static_assert(N == 2);
 			x() = _x;
 			y() = _y;
 		}
 
 		template<class U>
-		Vec(U _x, U _y, U _z, typename std::enable_if<N == 3, char*>::type unused = "")
+		Vec(U _x, U _y, U _z)
 		{
+			static_assert(N == 2);
 			x() = _x;
 			y() = _y;
 			z() = _z;
 		}
 
 		template<class U>
-		Vec(const Vec<2, U>& v1, U _z, typename std::enable_if<N == 3, char*>::type unused = "")
+		Vec(const Vec<2, U>& v1, U _z)
 		{
+			static_assert(N == 3);
 			x() = v1.x();
 			y() = v1.y();
 			z() = _z;
 		}
 
 		template<class U>
-		Vec(U _x, const Vec<2, U>& v1, typename std::enable_if<N == 3, char*>::type unused = "")
+		Vec(U _x, const Vec<2, U>& v1)
 		{
+			static_assert(N == 3);
 			x() = _x;
 			y() = v1.x();
 			z() = v1.y();
 		}
 
 		template<class U>
-		Vec(U _x, U _y, U _z, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, U _y, U _z, U _w)
 		{
+			static_assert(N == 4);
 			x() = _x;
 			y() = _y;
 			z() = _z;
@@ -273,8 +290,9 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const Vec<2, U>& v1, U _z, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(const Vec<2, U>& v1, U _z, U _w)
 		{
+			static_assert(N == 4);
 			x() = v1.x();
 			y() = v1.y();
 			z() = _z;
@@ -282,8 +300,9 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, const Vec<2, U>& v1, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, const Vec<2, U>& v1, U _w)
 		{
+			static_assert(N == 4);
 			x() = _x;
 			y() = v1.x();
 			z() = v1.y();
@@ -291,8 +310,9 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, U _y, const Vec<2, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, U _y, const Vec<2, U>& v1)
 		{
+			static_assert(N == 4);
 			x() = _x;
 			y() = _y;
 			z() = v1.x();
@@ -300,8 +320,9 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const Vec<2, U>& v1, const Vec<2, U>& v2, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(const Vec<2, U>& v1, const Vec<2, U>& v2)
 		{
+			static_assert(N == 4);
 			x() = v1.x();
 			y() = v1.y();
 			z() = v2.x();
@@ -309,8 +330,9 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const Vec<3, U>& v1, U _w, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(const Vec<3, U>& v1, U _w)
 		{
+			static_assert(N == 4);
 			x() = v1.x();
 			y() = v1.y();
 			z() = v1.z();
@@ -318,8 +340,9 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, const Vec<3, U>& v1, typename std::enable_if<N == 4, char*>::type unused = "")
+		Vec(U _x, const Vec<3, U>& v1)
 		{
+			static_assert(N == 4);
 			x() = _x;
 			y() = v1.x();
 			z() = v1.y();
@@ -414,26 +437,6 @@ namespace flame
 			for (auto i = 0; i < N; i++)
 				v_[i] /= rhs[i];
 			return *this;
-		}
-
-		float length() const
-		{
-			float s = 0.f;
-			for (auto i = 0; i < N; i++)
-				s += v_[i] * v_[i];
-			return sqrt(s);
-		}
-
-		void normalize()
-		{
-			*this /= length();
-		}
-
-		Vec<N, T> get_normalized() const
-		{
-			Vec<N, T> ret(*this);
-			ret.normalize();
-			return ret;
 		}
 	};
 
@@ -545,6 +548,8 @@ namespace flame
 		return ret;
 	}
 
+	using Vec3f = Vec<3, float>;
+
 	template<uint N, uint M, class T>
 	struct Mat
 	{
@@ -569,6 +574,131 @@ namespace flame
 			auto n = min(N, M);
 			for (auto i = 0; i < n; i++)
 				v_[i][i] = v;
+		}
+
+		template<O, P, U>
+		explicit Mat(const Mat<O, P, U>& rhs)
+		{
+			static_assert(N <= O && M <= P);
+			for (auto i = 0; i < M; i++)
+			{
+				for (auto j = 0; j < N; j++)
+					v_[i][j] = rhs[i][j];
+			}
+		}
+
+		Mat(const T * rhs)
+		{
+			for (auto i = 0; i < M; i++)
+			{
+				for (auto j = 0; j < N; j++)
+					v_[i][j] = *rhs++;
+			}
+		}
+
+		template<uint O, class U>
+		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2)
+		{
+			static_assert(N == O && M == 2);
+			v_[0] = _v1;
+			v_[1] = _v2;
+		}
+
+		template<uint O, class U>
+		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2, const Vec<O, U>& _v3)
+		{
+			static_assert(N == O && M == 3);
+			v_[0] = _v1;
+			v_[1] = _v2;
+			v_[2] = _v3;
+		}
+
+		template<uint O, class U>
+		Mat(const Mat<O, 2, U>& _m1, const Vec<O, U>& _v1)
+		{
+			static_assert(N == O && M == 3);
+			v_[0] = _m1[0];
+			v_[1] = _m1[1];
+			v_[2] = _v1;
+		}
+
+		template<uint O, class U>
+		Mat(const Vec<O, U>& _v1, const Mat<O, 2, U>& _m1)
+		{
+			static_assert(N == O && M == 3);
+			v_[0] = _v1;
+			v_[1] = _m1[0];
+			v_[2] = _m1[1];
+		}
+
+		template<uint O, class U>
+		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2, const Vec<O, U>& _v3, const Vec<O, U>& _v4)
+		{
+			static_assert(N == O && M == 4);
+			v_[0] = _v1;
+			v_[1] = _v2;
+			v_[2] = _v3;
+			v_[3] = _v4;
+		}
+
+		template<uint O, class U>
+		Mat(const Mat<O, 2, U>& _m1, const Vec<O, U>& _v1, const Vec<O, U>& _v2)
+		{
+			static_assert(N == O && M == 4);
+			v_[0] = _m1[0];
+			v_[1] = _m1[1];
+			v_[2] = _v1;
+			v_[3] = _v2;
+		}
+
+		template<uint O, class U>
+		Mat(const Vec<O, U>& _v1, const Mat<O, 2, U>& _m1, const Vec<O, U>& _v2)
+		{
+			static_assert(N == O && M == 4);
+			v_[0] = _v1;
+			v_[1] = _m1[0];
+			v_[2] = _m1[1];
+			v_[3] = _v2;
+		}
+
+		template<uint O, class U>
+		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2, const Mat<O, 2, U>& _m1)
+		{
+			static_assert(N == O && M == 4);
+			v_[0] = _v1;
+			v_[1] = _v2;
+			v_[2] = _m1[0];
+			v_[3] = _m1[1];
+		}
+
+		template<uint O, class U>
+		Mat(const Mat<O, 2, U>& _m1, const Mat<O, 2, U>& _m2)
+		{
+			static_assert(N == O && M == 4);
+			v_[0] = _m1[0];
+			v_[1] = _m1[1];
+			v_[2] = _m1[0];
+			v_[3] = _m1[1];
+		}
+
+		template<uint O, class U>
+		Mat(const Mat<O, 3, U>& _m1, const Vec<O, U>& _v1)
+		{
+			static_assert(N == O && M == 4);
+			v_[0] = _m1[0];
+			v_[1] = _m1[1];
+			v_[2] = _m1[2];
+			v_[3] = _v1;
+		}
+
+		template<uint O, class U>
+		Mat(const Vec<O, U>& _v1, const Mat<O, 3, U>& _m1)
+		{
+			static_assert(N == O && M == 4);
+			v_[0] = _v1;
+			v_[1] = _m1[0];
+			v_[2] = _m1[1];
+			v_[3] = _m1[2];
 		}
 	};
 
@@ -599,6 +729,28 @@ namespace flame
 			z_axis()
 		};
 		return axes[idx];
+	}
+
+	template<uint N, class T>
+	inline float length(const Vec<N, T>& v)
+	{
+		float s = 0.f;
+		for (auto i = 0; i < N; i++)
+			s += v[i] * v[i];
+		return sqrt(s);
+	}
+
+	template<uint N, class T>
+	void normalize(const Vec<N, T>& v)
+	{
+		v /= length(v);
+	}
+
+	template<uint N, class T>
+	void normalize(const Vec<N, T>& v, Vec<N, T>& o)
+	{
+		o = *this;
+		ret.normalize();
 	}
 
 	template<class T>
@@ -728,8 +880,15 @@ namespace flame
 		return ret;
 	}
 
-	Mat<4, 4, float> view_mat(const Vec3 &eye, const Vec3 &center, const Vec3 &up);
-	Mat<4, 4, float> proj_mat(float fovy, float aspect, float zNear, float zFar);
+	inline Mat<4, 4, float> view_mat(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
+	{
+
+	}
+
+	inline Mat<4, 4, float> proj_mat(float fovy, float aspect, float zNear, float zFar)
+	{
+
+	}
 
 	Vec2 bezier(float t, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3);
 	float closet_to_bezier(int iters, const Vec2 &pos, float start, float end, 
@@ -751,10 +910,6 @@ namespace flame
 
 	struct Mat2
 	{
-		Mat2(const Vec2 &v0, const Vec2 &v1);
-		Mat2(const Mat2 &v);
-		explicit Mat2(const Mat3 &v);
-		explicit Mat2(const Mat4 &v);
 		Mat2 &operator=(const Mat2 &v);
 		Mat2 &operator=(const Mat3 &v);
 		Mat2 &operator=(const Mat4 &v);
@@ -790,18 +945,6 @@ namespace flame
 	{
 		Vec3 cols[3];
 
-		Mat3();
-		explicit Mat3(float diagonal /* scale */);
-		Mat3(float Xx, float Xy, float Xz,
-			float Yx, float Yy, float Yz,
-			float Zx, float Zy, float Zz);
-		explicit Mat3(const Vec3 &scale);
-		Mat3(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2);
-		explicit Mat3(const EulerYPR &e);
-		explicit Mat3(const Quat &q);
-		Mat3(const Vec3 &axis, float rad);
-		Mat3(const Mat3 &v);
-		explicit Mat3(const Mat4 &v);
 		Mat3 &operator=(const EulerYPR &e);
 		Mat3 &operator=(const Quat &q);
 		Mat3 &operator=(const Mat3 &v);
@@ -837,16 +980,6 @@ namespace flame
 
 	struct Mat4
 	{
-		Mat4();
-		explicit Mat4(float diagonal);
-		Mat4(float Xx, float Xy, float Xz, float Xw,
-			float Yx, float Yy, float Yz, float Yw,
-			float Zx, float Zy, float Zz, float Zw,
-			float Wx, float Wy, float Wz, float Ww);
-		Mat4(const Vec4 &v0, const Vec4 &v1, const Vec4 &v2, const Vec4 &v3);
-		Mat4(const Mat4 &v);
-		Mat4(const Mat3 &mat3, const Vec3 &coord);
-		Mat4(const Vec3 &x_axis, const Vec3 &y_axis, const Vec3 &coord);
 		Mat4 &operator=(const Mat4 &v);
 		Mat4 &operator+=(const Mat4 &v);
 		Mat4 &operator-=(const Mat4 &v);
@@ -1185,47 +1318,6 @@ namespace flame
 		return Vec3(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
 	}
 
-	inline Mat2::Mat2()
-	{
-	}
-
-	inline Mat2::Mat2(float diagonal)
-	{
-		(*this)[0][0] = diagonal; (*this)[1][0] = 0.f;
-		(*this)[0][1] = 0.f;      (*this)[1][1] = diagonal;
-	}
-
-	inline Mat2::Mat2(float Xx, float Xy,
-		float Yx, float Yy)
-	{
-		(*this)[0][0] = Xx;  (*this)[1][0] = Yx;
-		(*this)[0][1] = Xy;  (*this)[1][1] = Yy;
-	}
-
-	inline Mat2::Mat2(const Vec2 &v0, const Vec2 &v1)
-	{
-		(*this)[0] = v0;
-		(*this)[1] = v1;
-	}
-
-	inline Mat2::Mat2(const Mat2 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-	}
-
-	inline Mat2::Mat2(const Mat3 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-	}
-
-	inline Mat2::Mat2(const Mat4 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-	}
-
 	inline Mat2 &Mat2::operator=(const Mat2 &v)
 	{
 		(*this)[0] = v[0];
@@ -1437,40 +1529,6 @@ namespace flame
 		return ret;
 	}
 
-	inline Mat3::Mat3()
-	{
-	}
-
-	inline Mat3::Mat3(float diagonal)
-	{
-		(*this)[0][0] = diagonal; (*this)[1][0] = 0.f;      (*this)[2][0] = 0.f;
-		(*this)[0][1] = 0.f;      (*this)[1][1] = diagonal; (*this)[2][1] = 0.f;
-		(*this)[0][2] = 0.f;      (*this)[1][2] = 0.f;      (*this)[2][2] = diagonal;
-	}
-
-	inline Mat3::Mat3(float Xx, float Xy, float Xz,
-		float Yx, float Yy, float Yz,
-		float Zx, float Zy, float Zz)
-	{
-		(*this)[0][0] = Xx; (*this)[1][0] = Yx; (*this)[2][0] = Zx;
-		(*this)[0][1] = Xy; (*this)[1][1] = Yy; (*this)[2][1] = Zy;
-		(*this)[0][2] = Xz; (*this)[1][2] = Yz; (*this)[2][2] = Zz;
-	}
-
-	inline Mat3::Mat3(const Vec3 &scale)
-	{
-		(*this)[0][0] = scale.x; (*this)[1][0] = 0.f;     (*this)[2][0] = 0.f;
-		(*this)[0][1] = 0.f;     (*this)[1][1] = scale.y; (*this)[2][1] = 0.f;
-		(*this)[0][2] = 0.f;     (*this)[1][2] = 0.f;     (*this)[2][2] = scale.z;
-	}
-
-	inline Mat3::Mat3(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2)
-	{
-		(*this)[0] = v0;
-		(*this)[1] = v1;
-		(*this)[2] = v2;
-	}
-
 	inline Mat3::Mat3(const EulerYPR &e)
 	{
 		math_detail::euler_to_mat3(e, *this);
@@ -1494,20 +1552,6 @@ namespace flame
 		(*this)[2][0] = temp[2] * axis[0] + s * axis[1];
 		(*this)[2][1] = temp[2] * axis[1] - s * axis[0];
 		(*this)[2][2] = c + temp[2] * axis[2];
-	}
-
-	inline Mat3::Mat3(const Mat3 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		(*this)[2] = v[2];
-	}
-
-	inline Mat3::Mat3(const Mat4 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		(*this)[2] = v[2];
 	}
 
 	inline Mat3 &Mat3::operator=(const Mat3 &v)
@@ -1752,61 +1796,6 @@ namespace flame
 		ret[1] /= lhs;
 		ret[2] /= lhs;
 		return ret;
-	}
-
-	inline Mat4::Mat4()
-	{
-	}
-
-	inline Mat4::Mat4(float diagonal)
-	{
-		(*this)[0][0] = diagonal; (*this)[1][0] = 0.f;      (*this)[2][0] = 0.f;      (*this)[3][0] = 0.f;
-		(*this)[0][1] = 0.f;      (*this)[1][1] = diagonal; (*this)[2][1] = 0.f;      (*this)[3][1] = 0.f;
-		(*this)[0][2] = 0.f;      (*this)[1][2] = 0.f;      (*this)[2][2] = diagonal; (*this)[3][2] = 0.f;
-		(*this)[0][3] = 0.f;      (*this)[1][3] = 0.f;      (*this)[2][3] = 0.f;      (*this)[3][3] = diagonal;
-	}
-
-	inline Mat4::Mat4(float Xx, float Xy, float Xz, float Xw,
-		float Yx, float Yy, float Yz, float Yw,
-		float Zx, float Zy, float Zz, float Zw,
-		float Wx, float Wy, float Wz, float Ww)
-	{
-		(*this)[0][0] = Xx; (*this)[1][0] = Yx; (*this)[2][0] = Zx; (*this)[3][0] = Wx;
-		(*this)[0][1] = Xy; (*this)[1][1] = Yy; (*this)[2][1] = Zy; (*this)[3][1] = Wy;
-		(*this)[0][2] = Xz; (*this)[1][2] = Yz; (*this)[2][2] = Zz; (*this)[3][2] = Wz;
-		(*this)[0][3] = Xw; (*this)[1][3] = Yw; (*this)[2][3] = Zw; (*this)[3][3] = Ww;
-	}
-
-	inline Mat4::Mat4(const Vec4 &v0, const Vec4 &v1, const Vec4 &v2, const Vec4 &v3)
-	{
-		(*this)[0] = v0;
-		(*this)[1] = v1;
-		(*this)[2] = v2;
-		(*this)[3] = v3;
-	}
-
-	inline Mat4::Mat4(const Mat4 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		(*this)[2] = v[2];
-		(*this)[3] = v[3];
-	}
-
-	inline Mat4::Mat4(const Mat3 &mat3, const Vec3 &coord)
-	{
-		(*this)[0] = Vec4(mat3[0], 0.f);
-		(*this)[1] = Vec4(mat3[1], 0.f);
-		(*this)[2] = Vec4(mat3[2], 0.f);
-		(*this)[3] = Vec4(coord, 1.f);
-	}
-
-	inline Mat4::Mat4(const Vec3 &x_axis, const Vec3 &y_axis, const Vec3 &coord)
-	{
-		(*this)[0] = Vec4(x_axis, 0.f);
-		(*this)[1] = Vec4(y_axis, 0.f);
-		(*this)[2] = Vec4(cross(x_axis, y_axis), 0.f);
-		(*this)[3] = Vec4(coord, 1.f);
 	}
 
 	inline Mat4 &Mat4::operator=(const Mat4 &v)
