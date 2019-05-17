@@ -417,7 +417,7 @@ namespace flame
 
 		Vec<N, T>& operator/=(T rhs)
 		{
-			rhs = 1 / rhs;
+			rhs = T(1) / rhs;
 			for (auto i = 0; i < N; i++)
 				v_[i] *= rhs;
 			return *this;
@@ -540,19 +540,21 @@ namespace flame
 		return ret;
 	}
 
+	using Vec2f = Vec<2, float>;
 	using Vec3f = Vec<3, float>;
+	using Vec4f = Vec<4, float>;
 
 	template<uint N, uint M, class T>
 	struct Mat
 	{
 		Vec<N, T> v_[M];
 
-		T operator[](uint i) const
+		Vec<N, T> operator[](uint i) const
 		{
 			return v_[i];
 		}
 
-		T& operator[](uint i)
+		Vec<N, T>& operator[](uint i)
 		{
 			return v_[i];
 		}
@@ -828,22 +830,26 @@ namespace flame
 		return ret;
 	}
 
+	using Mat2x2f = Mat<2, 2, float>;
+	using Mat3x3f = Mat<3, 3, float>;
+	using Mat4x4f = Mat<4, 4, float>;
+
 	template<class T>
 	inline Vec<3, T> x_axis()
 	{
-		return Vec<3, T>(1.f, 0.f, 0.f);
+		return Vec<3, T>(1, 0, 0);
 	}
 
 	template<class T>
 	inline Vec<3, T> y_axis()
 	{
-		return Vec<3, T>(0.f, 1.f, 0.f);
+		return Vec<3, T>(0, 1, 0);
 	}
 
 	template<class T>
 	inline Vec<3, T> z_axis()
 	{
-		return Vec<3, T>(0.f, 0.f, 1.f);
+		return Vec<3, T>(0, 0, 1);
 	}
 
 	template<class T>
@@ -858,9 +864,9 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	inline float length(const Vec<N, T>& v)
+	inline T length(const Vec<N, T>& v)
 	{
-		float s = 0.f;
+		T s = 0;
 		for (auto i = 0; i < N; i++)
 			s += v[i] * v[i];
 		return sqrt(s);
@@ -1019,20 +1025,85 @@ namespace flame
 		return ret;
 	}
 
-	inline Mat<4, 4, float> view_mat(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
+	template<class T>
+	inline Mat<4, 4, T> view_mat(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
 	{
+		auto f = normalize(center - eye);
+		auto s = normalize(cross(f, up));
+		auto u = cross(s, f);
 
+		Mat<4, 4, T> ret(1);
+		ret[0][0] = s.x;
+		ret[1][0] = s.y;
+		ret[2][0] = s.z;
+		ret[0][1] = u.x;
+		ret[1][1] = u.y;
+		ret[2][1] = u.z;
+		ret[0][2] = -f.x;
+		ret[1][2] = -f.y;
+		ret[2][2] = -f.z;
+		ret[3][0] = -dot(s, eye);
+		ret[3][1] = -dot(u, eye);
+		ret[3][2] = dot(f, eye);
+		return ret;
 	}
 
-	inline Mat<4, 4, float> proj_mat(float fovy, float aspect, float zNear, float zFar)
+	template<class T>
+	inline Mat<4, 4, T> proj_mat(float fovy, float aspect, float zNear, float zFar)
 	{
+		auto tanHalfFovy = tan(fovy / 2.f);
 
+		Mat<4, 4, T> ret(1);
+		ret[0][0] = T(1) / (aspect * tanHalfFovy);
+		ret[1][1] = T(1) / (tanHalfFovy);
+		ret[2][2] = zFar / (zNear - zFar);
+		ret[2][3] = T(-1);
+		ret[3][2] = -(zFar * zNear) / (zFar - zNear);
+		return Mat<4, 4, T>(
+			Vec<4, T>(1, 0, 0, 0),
+			Vec<4, T>(0, -1, 0, 0),
+			Vec<4, T>(0, 0, 1, 0),
+			Vec<4, T>(0, 0, 0, 1)) * ret;
 	}
 
-	Vec2 bezier(float t, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3);
-	float closet_to_bezier(int iters, const Vec2 &pos, float start, float end, 
-		int slices, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3);
-	Vec2 closet_point_to_bezier(const Vec2 &pos, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3,
+	template<uint N, class T>
+	Vec<N, T> bezier(float t, const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3)
+	{
+		return (T(1) - t) * (T(1) - t) * (T(1) - t) * p0 +
+			T(3) * (T(1) - t) * (T(1) - t) * t * p1 +
+			T(3) * (T(1) - t) * t * t * p2 +
+			t * t * t * p3;
+	}
+
+	template<uint N, class T>
+	T bezier_closest(int iters, const Vec<N, T>& pos, float start, float end, int slices,
+		const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3)
+	{
+		if (iters <= 0)
+			return (start + end) / 2;
+
+		float tick = (end - start) / float(slices);
+		float best = 0;
+		float bestDistance = 1000000.f;
+		float t = start;
+
+		while (t <= end)
+		{
+			auto v = bezier(t, p0, p1, p2, p3);
+			auto d = v - pos;
+			float currentDistance = d.x * d.x + d.y * d.y;
+			if (currentDistance < bestDistance)
+			{
+				bestDistance = currentDistance;
+				best = t;
+			}
+			t += tick;
+		}
+
+		return bezier_closest(iters - 1, pos, max(best - tick, 0.f), min(best + tick, 1.f), slices, p0, p1, p2, p3);
+	}
+
+	Vec2 bezier_closest_point(const Vec2 &pos, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3,
 		int slices, int iters);
 
 	float rand(const Vec2 &v);
@@ -1046,26 +1117,6 @@ namespace flame
 	Bvec4 Colorf(float R, float G, float B, float A = 1.f);
 	Bvec4 HSV(float h, float s, float v, float A = 1.f);
 	Vec3 to_HSV(const Bvec4 &rgb);
-
-	struct Mat2
-	{
-		void inverse();
-		Mat2 get_inversed() const;
-	};
-
-	struct Mat3
-	{
-		Mat3 &operator=(const EulerYPR &e);
-		Mat3 &operator=(const Quat &q);
-		void inverse();
-		Mat3 get_inversed() const;
-	};
-
-	struct Mat4
-	{
-		void inverse();
-		Mat4 get_inversed() const;
-	};
 
 	struct Quat
 	{
@@ -1170,41 +1221,6 @@ namespace flame
 		void euler_to_mat3(const EulerYPR &e, Mat3 &m);
 		void quat_to_euler(const Quat &q, EulerYPR &e);
 		void quat_to_mat3(const Quat &q, Mat3 &m);
-	}
-
-	inline Vec2 bezier(float t, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3)
-	{
-		return (1.f - t) * (1.f - t) * (1.f - t) * p0 +
-			3.f * (1.f - t) * (1.f - t) * t * p1 +
-			3.f * (1.f - t) * t * t * p2 +
-			t * t * t * p3;
-	}
-
-	inline float bezier_closest(int iters, const Vec2 &pos, float start, float end,
-		int slices, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3) 
-	{
-		if (iters <= 0)
-			return (start + end) / 2;
-
-		float tick = (end - start) / float(slices);
-		float best = 0;
-		float bestDistance = 1000000.f;
-		float t = start;
-
-		while (t <= end)
-		{
-			auto v = bezier(t, p0, p1, p2, p3);
-			auto d = v - pos;
-			float currentDistance = d.x * d.x + d.y * d.y;
-			if (currentDistance < bestDistance)
-			{
-				bestDistance = currentDistance;
-				best = t;
-			}
-			t += tick;
-		}
-
-		return bezier_closest(iters - 1, pos, max(best - tick, 0.f), min(best + tick, 1.f), slices, p0, p1, p2, p3);
 	}
 
 	inline Vec2 bezier_closest_point(const Vec2 &pos, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3,
@@ -1520,46 +1536,6 @@ namespace flame
 		auto det_inv = 1.f / dot1;
 
 		return inverse * det_inv;
-	}
-
-	inline Mat4 get_view_mat(const Vec3 &eye, const Vec3 &target, const Vec3 &up)
-	{
-		auto f = target - eye;
-		f.normalize();
-		auto s = cross(f, up);
-		s.normalize();
-		auto u = cross(s, f);
-
-		Mat4 ret(1.f);
-		ret[0][0] = s.x;
-		ret[1][0] = s.y;
-		ret[2][0] = s.z;
-		ret[0][1] = u.x;
-		ret[1][1] = u.y;
-		ret[2][1] = u.z;
-		ret[0][2] = -f.x;
-		ret[1][2] = -f.y;
-		ret[2][2] = -f.z;
-		ret[3][0] = -dot(s, eye);
-		ret[3][1] = -dot(u, eye);
-		ret[3][2] = dot(f, eye);
-		return ret;
-	}
-
-	inline Mat4 get_proj_mat(float fovy, float aspect, float zNear, float zFar)
-	{
-		auto tanHalfFovy = tan(fovy / 2.f);
-
-		Mat4 ret(0.f);
-		ret[0][0] = 1.f / (aspect * tanHalfFovy);
-		ret[1][1] = 1.f / (tanHalfFovy);
-		ret[2][2] = zFar / (zNear - zFar);
-		ret[2][3] = -1.f;
-		ret[3][2] = -(zFar * zNear) / (zFar - zNear);
-		return Mat4(1.f, 0.f, 0.f, 0.f,
-			0.f, -1.f, 0.f, 0.f,
-			0.f, 0.f, 1.f, 0.f,
-			0.f, 0.f, 0.f, 1.f) * ret;
 	}
 
 	inline EulerYPR::EulerYPR()
