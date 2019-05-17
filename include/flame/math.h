@@ -230,7 +230,7 @@ namespace flame
 				v_[i] = v;
 		}
 
-		template<M, U>
+		template<uint M, class U>
 		explicit Vec(const Vec<M, U>& rhs)
 		{
 			static_assert(N <= M);
@@ -244,16 +244,14 @@ namespace flame
 				v_[i] = rhs[i];
 		}
 
-		template<class U>
-		Vec(U _x, U _y)
+		Vec(T _x, T _y)
 		{
 			static_assert(N == 2);
 			x() = _x;
 			y() = _y;
 		}
 
-		template<class U>
-		Vec(U _x, U _y, U _z)
+		Vec(T _x, T _y, T _z)
 		{
 			static_assert(N == 2);
 			x() = _x;
@@ -262,7 +260,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const Vec<2, U>& v1, U _z)
+		Vec(const Vec<2, U>& v1, T _z)
 		{
 			static_assert(N == 3);
 			x() = v1.x();
@@ -271,7 +269,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, const Vec<2, U>& v1)
+		Vec(T _x, const Vec<2, U>& v1)
 		{
 			static_assert(N == 3);
 			x() = _x;
@@ -279,8 +277,7 @@ namespace flame
 			z() = v1.y();
 		}
 
-		template<class U>
-		Vec(U _x, U _y, U _z, U _w)
+		Vec(T _x, T _y, T _z, T _w)
 		{
 			static_assert(N == 4);
 			x() = _x;
@@ -290,7 +287,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const Vec<2, U>& v1, U _z, U _w)
+		Vec(const Vec<2, U>& v1, T _z, T _w)
 		{
 			static_assert(N == 4);
 			x() = v1.x();
@@ -300,7 +297,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, const Vec<2, U>& v1, U _w)
+		Vec(T _x, const Vec<2, U>& v1, T _w)
 		{
 			static_assert(N == 4);
 			x() = _x;
@@ -310,7 +307,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, U _y, const Vec<2, U>& v1)
+		Vec(T _x, T _y, const Vec<2, U>& v1)
 		{
 			static_assert(N == 4);
 			x() = _x;
@@ -330,7 +327,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(const Vec<3, U>& v1, U _w)
+		Vec(const Vec<3, U>& v1, T _w)
 		{
 			static_assert(N == 4);
 			x() = v1.x();
@@ -340,7 +337,7 @@ namespace flame
 		}
 
 		template<class U>
-		Vec(U _x, const Vec<3, U>& v1)
+		Vec(T _x, const Vec<3, U>& v1)
 		{
 			static_assert(N == 4);
 			x() = _x;
@@ -349,8 +346,7 @@ namespace flame
 			w() = v1.z();
 		}
 
-		template<class U>
-		Vec<N, T>& operator=(U rhs)
+		Vec<N, T>& operator=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
 				v_[i] = rhs;
@@ -358,7 +354,7 @@ namespace flame
 		}
 
 		template<uint M, class U>
-		Vec<N, T>& operator=(U rhs) 
+		Vec<N, T>& operator=(const Vec<M, U>& rhs) 
 		{
 			static_assert(N <= M);
 			for (auto i = 0; i < N; i++)
@@ -374,8 +370,7 @@ namespace flame
 			return ret;
 		}
 
-		template<class U>
-		Vec<N, T>& operator+=(U rhs)
+		Vec<N, T>& operator+=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
 				v_[i] += rhs;
@@ -390,8 +385,7 @@ namespace flame
 			return *this;
 		}
 
-		template<class U>
-		Vec<N, T>& operator-=(U rhs)
+		Vec<N, T>& operator-=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
 				v_[i] -= rhs;
@@ -406,8 +400,7 @@ namespace flame
 			return *this;
 		}
 
-		template<class U>
-		Vec<N, T>& operator*=(U rhs)
+		Vec<N, T>& operator*=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
 				v_[i] *= rhs;
@@ -422,8 +415,7 @@ namespace flame
 			return *this;
 		}
 
-		template<class U>
-		Vec<N, T>& operator/=(U rhs)
+		Vec<N, T>& operator/=(T rhs)
 		{
 			rhs = 1 / rhs;
 			for (auto i = 0; i < N; i++)
@@ -440,8 +432,8 @@ namespace flame
 		}
 	};
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator+(U lhs, const Vec<N, T>& rhs)
+	template<uint N, class T>
+	Vec<N, T> operator+(T lhs, const Vec<N, T>& rhs)
 	{
 		Vec<N, T> ret(rhs);
 		for (auto i = 0; i < N; i++)
@@ -449,8 +441,8 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator+(const Vec<N, T>& lhs, U rhs)
+	template<uint N, class T>
+	Vec<N, T> operator+(const Vec<N, T>& lhs, T rhs)
 	{
 		Vec<N, T> ret(lhs);
 		for (auto i = 0; i < N; i++)
@@ -467,8 +459,8 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator-(U lhs, const Vec<N, T>& rhs)
+	template<uint N, class T>
+	Vec<N, T> operator-(T lhs, const Vec<N, T>& rhs)
 	{
 		Vec<N, T> ret(rhs);
 		for (auto i = 0; i < N; i++)
@@ -476,8 +468,8 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator+(const Vec<N, T> & lhs, U rhs)
+	template<uint N, class T>
+	Vec<N, T> operator-(const Vec<N, T> & lhs, T rhs)
 	{
 		Vec<N, T> ret(lhs);
 		for (auto i = 0; i < N; i++)
@@ -486,7 +478,7 @@ namespace flame
 	}
 
 	template<uint N, class T, class U>
-	Vec<N, T> operator+(const Vec<N, T> & lhs, const Vec<N, U> & rhs)
+	Vec<N, T> operator-(const Vec<N, T> & lhs, const Vec<N, U> & rhs)
 	{
 		Vec<N, T> ret(lhs);
 		for (auto i = 0; i < N; i++)
@@ -494,8 +486,8 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator*(U lhs, const Vec<N, T>& rhs)
+	template<uint N, class T>
+	Vec<N, T> operator*(T lhs, const Vec<N, T>& rhs)
 	{
 		Vec<N, T> ret(rhs);
 		for (auto i = 0; i < N; i++)
@@ -503,8 +495,8 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator+(const Vec<N, T> & lhs, U rhs)
+	template<uint N, class T>
+	Vec<N, T> operator*(const Vec<N, T> & lhs, T rhs)
 	{
 		Vec<N, T> ret(lhs);
 		for (auto i = 0; i < N; i++)
@@ -513,7 +505,7 @@ namespace flame
 	}
 
 	template<uint N, class T, class U>
-	Vec<N, T> operator+(const Vec<N, T> & lhs, const Vec<N, U> & rhs)
+	Vec<N, T> operator*(const Vec<N, T> & lhs, const Vec<N, U> & rhs)
 	{
 		Vec<N, T> ret(lhs);
 		for (auto i = 0; i < N; i++)
@@ -521,8 +513,8 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator/(U lhs, const Vec<N, T>& rhs)
+	template<uint N, class T>
+	Vec<N, T> operator/(T lhs, const Vec<N, T>& rhs)
 	{
 		Vec<N, T> ret(rhs);
 		for (auto i = 0; i < N; i++)
@@ -530,8 +522,8 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N, class T, class U>
-	Vec<N, T> operator/(const Vec<N, T> & lhs, U rhs)
+	template<uint N, class T>
+	Vec<N, T> operator/(const Vec<N, T> & lhs, T rhs)
 	{
 		Vec<N, T> ret(lhs);
 		for (auto i = 0; i < N; i++)
@@ -571,12 +563,14 @@ namespace flame
 
 		explicit Mat(T rhs)
 		{
+			for (auto i = 0; i < M; i++)
+				v_[i] = Vec<N, T>(0);
 			auto n = min(N, M);
 			for (auto i = 0; i < n; i++)
 				v_[i][i] = v;
 		}
 
-		template<O, P, U>
+		template<uint O, uint P, class U>
 		explicit Mat(const Mat<O, P, U>& rhs)
 		{
 			static_assert(N <= O && M <= P);
@@ -700,7 +694,139 @@ namespace flame
 			v_[2] = _m1[1];
 			v_[3] = _m1[2];
 		}
+
+		Mat<N, M, T>& operator=(T rhs)
+		{
+			for (auto i = 0; i < M; i++)
+				v_[i] = Vec<N, T>(0);
+			auto n = min(N, M);
+			for (auto i = 0; i < n; i++)
+				v_[i][i] = rhs;
+			return *this;
+		}
+
+		template<uint O, uint P, class U>
+		Mat<N, M, T>& operator=(const Mat<O, P, U> & rhs)
+		{
+			static_assert(N <= O && M <= P);
+			for (auto i = 0; i < M; i++)
+			{
+				for (auto j = 0; j < N; j++)
+					v_[i][j] = rhs[i][j];
+			}
+			return *this;
+		}
+
+		template<class U>
+		Mat<N, M, T>& operator+=(const Mat<N, M, U>& rhs)
+		{
+			for (auto i = 0; i < M; i++)
+				v_[i] += rhs[i];
+			return *this;
+		}
+
+		template<class U>
+		Mat<N, M, T>& operator-=(const Mat<N, M, U>& rhs)
+		{
+			for (auto i = 0; i < M; i++)
+				v_[i] -= rhs[i];
+			return *this;
+		}
+
+		Mat<N, M, T>& operator*=(T rhs)
+		{
+			for (auto i = 0; i < M; i++)
+				v_[i] *= rhs;
+			return *this;
+		}
+
+		Mat<N, M, T>& operator/=(T rhs)
+		{
+			for (auto i = 0; i < M; i++)
+				v_[i] /= rhs;
+			return *this;
+		}
 	};
+
+	template<uint N, uint M, class T, class U>
+	Mat<N, M, T> operator+(const Mat<N, M, T>& lhs, const Mat<N, M, U>& rhs)
+	{
+		Mat<N, M, T> ret(lhs);
+		for (auto i = 0; i < M; i++)
+			ret[i] += rhs[i];
+		return ret;
+	}
+
+	template<uint N, uint M, class T, class U>
+	Mat<N, M, T> operator-(const Mat<N, M, T>& lhs, const Mat<N, M, U>& rhs)
+	{
+		Mat<N, M, T> ret(lhs);
+		for (auto i = 0; i < M; i++)
+			ret[i] -= rhs[i];
+		return ret;
+	}
+
+	template<uint N, uint M, class T>
+	Mat<N, M, T> operator*(const Mat<N, M, T>& lhs, T rhs)
+	{
+		Mat<N, M, T> ret(lhs);
+		for (auto i = 0; i < M; i++)
+			ret[i] *= rhs;
+		return ret;
+	}
+
+	template<uint N, uint M, class T>
+	Mat<N, M, T> operator*(T lhs, const Mat<N, M, T>& rhs)
+	{
+		Mat<N, M, T> ret(rhs);
+		for (auto i = 0; i < M; i++)
+			ret[i] *= lhs;
+		return ret;
+	}
+
+	template<uint N, uint M, uint O, class T>
+	Mat<N, O, T> operator*(const Mat<N, M, T>& lhs, const Mat<M, O, T>& rhs)
+	{
+		Mat<N, O, T> ret;
+		for (auto i = 0; i < O; i++)
+		{
+			ret[i][j] = 0;
+			for (auto j = 0; j < N; j++)
+				ret[i][j] += lhs[j][i] * rhs[i][j];
+		}
+		return ret;
+	}
+
+	template<uint N, uint M, class T>
+	Vec<M, T> operator*(const Mat<N, M, T>& lhs, const Vec<M, T>& rhs)
+	{
+		Vec<M, T> ret;
+		for (auto i = 0; i < M; i++)
+		{
+			ret[i] = 0;
+			for (auto j = 0; j < N; j++)
+				ret[i] += lhs[j][i] * rhs[i];
+		}
+		return ret;
+	}
+
+	template<uint N, uint M, class T>
+	Mat<N, M, T> operator/(const Mat<N, M, T>& lhs, T rhs)
+	{
+		Mat<N, M, T> ret(lhs);
+		for (auto i = 0; i < M; i++)
+			ret[i] /= rhs;
+		return ret;
+	}
+
+	template<uint N, uint M, class T>
+	Mat<N, M, T> operator/(T lhs, const Mat<N, M, T>& rhs)
+	{
+		Mat<N, M, T> ret(rhs);
+		for (auto i = 0; i < M; i++)
+			ret[i] /= lhs;
+		return ret;
+	}
 
 	template<class T>
 	inline Vec<3, T> x_axis()
@@ -741,16 +867,11 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	void normalize(const Vec<N, T>& v)
+	Vec<N, T> normalize(const Vec<N, T>& v)
 	{
-		v /= length(v);
-	}
-
-	template<uint N, class T>
-	void normalize(const Vec<N, T>& v, Vec<N, T>& o)
-	{
-		o = *this;
-		ret.normalize();
+		Vec<N, T> ret(v);
+		ret /= length(v);
+		return ret;
 	}
 
 	template<class T>
@@ -863,6 +984,24 @@ namespace flame
 		return dot(d, d);
 	}
 
+	template<uint N, class T>
+	inline Mat<N, N, T> transpose(const Mat<N, N, T>& m)
+	{
+		Mat<N, N, T> ret;
+		for (auto i = 0; i < N; i++)
+		{
+			for (auto j = 0; j < N; j++)
+				ret[i][j] = m[j][i];
+		}
+	}
+
+	template<uint N, class T>
+	inline Mat<N, N, T> inverse(const Mat<N, N, T>& m)
+	{
+		Mat<N, N, T> ret;
+
+	}
+
 	template<class T>
 	inline Vec<2, T> rotate(const Vec<2, T>& p, const Vec<2, T>& c, float rad)
 	{
@@ -910,106 +1049,23 @@ namespace flame
 
 	struct Mat2
 	{
-		Mat2 &operator=(const Mat2 &v);
-		Mat2 &operator=(const Mat3 &v);
-		Mat2 &operator=(const Mat4 &v);
-		Mat2 &operator+=(const Mat2 &v);
-		Mat2 &operator-=(const Mat2 &v);
-		Mat2 &operator*=(const Mat2 &v);
-		Mat2 &operator/=(const Mat2 &v);
-		Mat2 &operator+=(float v);
-		Mat2 &operator-=(float v);
-		Mat2 &operator*=(float v);
-		Mat2 &operator/=(float v);
-		void transpose();
-		Mat2 get_transposed() const;
 		void inverse();
 		Mat2 get_inversed() const;
 	};
 
-	Mat2 operator+(const Mat2 &lhs, const Mat2 &rhs);
-	Mat2 operator-(const Mat2 &lhs, const Mat2 &rhs);
-	Mat2 operator*(const Mat2 &lhs, const Mat2 &rhs);
-	Vec2 operator*(const Mat2 &lhs, const Vec2 &rhs);
-	Mat2 operator/(const Mat2 &lhs, const Mat2 &rhs);
-	Mat2 operator+(const Mat2 &lhs, float rhs);
-	Mat2 operator-(const Mat2 &lhs, float rhs);
-	Mat2 operator*(const Mat2 &lhs, float rhs);
-	Mat2 operator/(const Mat2 &lhs, float rhs);
-	Mat2 operator+(float lhs, const Mat2 &rhs);
-	Mat2 operator-(float lhs, const Mat2 &rhs);
-	Mat2 operator*(float lhs, const Mat2 &rhs);
-	Mat2 operator/(float lhs, const Mat2 &rhs);
-
 	struct Mat3
 	{
-		Vec3 cols[3];
-
 		Mat3 &operator=(const EulerYPR &e);
 		Mat3 &operator=(const Quat &q);
-		Mat3 &operator=(const Mat3 &v);
-		Mat3 &operator=(const Mat4 &v);
-		Mat3 &operator+=(const Mat3 &v);
-		Mat3 &operator-=(const Mat3 &v);
-		Mat3 &operator*=(const Mat3 &v);
-		Mat3 &operator/=(const Mat3 &v);
-		Mat3 &operator+=(float v);
-		Mat3 &operator-=(float v);
-		Mat3 &operator*=(float v);
-		Mat3 &operator/=(float v);
-		void normalize();
-		void transpose();
-		Mat3 get_transposed() const;
 		void inverse();
 		Mat3 get_inversed() const;
 	};
 
-	Mat3 operator+(const Mat3 &lhs, const Mat3 &rhs);
-	Mat3 operator-(const Mat3 &lhs, const Mat3 &rhs);
-	Mat3 operator*(const Mat3 &lhs, const Mat3 &rhs);
-	Vec3 operator*(const Mat3 &lhs, const Vec3 &rhs);
-	Mat3 operator/(const Mat3 &lhs, const Mat3 &rhs);
-	Mat3 operator+(const Mat3 &lhs, float rhs);
-	Mat3 operator-(const Mat3 &lhs, float rhs);
-	Mat3 operator*(const Mat3 &lhs, float rhs);
-	Mat3 operator/(const Mat3 &lhs, float rhs);
-	Mat3 operator+(float lhs, const Mat3 &rhs);
-	Mat3 operator-(float lhs, const Mat3 &rhs);
-	Mat3 operator*(float lhs, const Mat3 &rhs);
-	Mat3 operator/(float lhs, const Mat3 &rhs);
-
 	struct Mat4
 	{
-		Mat4 &operator=(const Mat4 &v);
-		Mat4 &operator+=(const Mat4 &v);
-		Mat4 &operator-=(const Mat4 &v);
-		Mat4 &operator*=(const Mat4 &v);
-		Mat4 &operator/=(const Mat4 &v);
-		Mat4 &operator+=(float v);
-		Mat4 &operator-=(float v);
-		Mat4 &operator*=(float v);
-		Mat4 &operator/=(float v);
-		void normalize_33();
-		void transpose();
-		Mat4 get_transposed() const;
 		void inverse();
 		Mat4 get_inversed() const;
 	};
-
-	Mat4 operator+(const Mat4 &lhs, const Mat4 &rhs);
-	Mat4 operator-(const Mat4 &lhs, const Mat4 &rhs);
-	Mat4 operator*(const Mat4 &lhs, const Mat4 &rhs);
-	Vec4 operator*(const Mat4 &lhs, const Vec4 &rhs);
-	Vec3 operator*(const Mat4 &lhs, const Vec3 &rhs);
-	Mat4 operator/(const Mat4 &lhs, const Mat4 &rhs);
-	Mat4 operator+(const Mat4 &lhs, float rhs);
-	Mat4 operator-(const Mat4 &lhs, float rhs);
-	Mat4 operator*(const Mat4 &lhs, float rhs);
-	Mat4 operator/(const Mat4 &lhs, float rhs);
-	Mat4 operator+(float lhs, const Mat4 &rhs);
-	Mat4 operator-(float lhs, const Mat4 &rhs);
-	Mat4 operator*(float lhs, const Mat4 &rhs);
-	Mat4 operator/(float lhs, const Mat4 &rhs);
 
 	struct Quat
 	{
@@ -1318,92 +1374,9 @@ namespace flame
 		return Vec3(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
 	}
 
-	inline Mat2 &Mat2::operator=(const Mat2 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		return *this;
-	}
-
-	inline Mat2 &Mat2::operator=(const Mat3 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		return *this;
-	}
-
-	inline Mat2 &Mat2::operator=(const Mat4 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		return *this;
-	}
-
-	inline Mat2 &Mat2::operator+=(const Mat2 &v)
-	{
-		(*this)[0] += v[0];
-		(*this)[1] += v[1];
-		return *this;
-	}
-
-	inline Mat2 &Mat2::operator-=(const Mat2 &v)
-	{
-		(*this)[0] -= v[0];
-		(*this)[1] -= v[1];
-		return *this;
-	}
-
 	inline Mat2 &Mat2::operator*=(const Mat2 &v)
 	{
 		return (*this = *this * v);
-	}
-
-	inline Mat2 &Mat2::operator/=(const Mat2 &v)
-	{
-		return *this *= v.get_inversed();
-	}
-
-	inline Mat2 &Mat2::operator+=(float v)
-	{
-		(*this)[0] += v;
-		(*this)[1] += v;
-		return *this;
-	}
-
-	inline Mat2 &Mat2::operator-=(float v)
-	{
-		(*this)[0] -= v;
-		(*this)[1] -= v;
-		return *this;
-	}
-
-	inline Mat2 &Mat2::operator*=(float v)
-	{
-		(*this)[0] *= v;
-		(*this)[1] *= v;
-		return *this;
-	}
-
-	inline Mat2 &Mat2::operator/=(float v)
-	{
-		(*this)[0] /= v;
-		(*this)[1] /= v;
-		return *this;
-	}
-
-	inline void Mat2::transpose()
-	{
-		*this = get_transposed();
-	}
-
-	inline Mat2 Mat2::get_transposed() const
-	{
-		Mat2 ret;
-		ret[0][0] = (*this)[0][0];
-		ret[0][1] = (*this)[1][0];
-		ret[1][0] = (*this)[0][1];
-		ret[1][1] = (*this)[1][1];
-		return ret;
 	}
 
 	inline void Mat2::inverse()
@@ -1423,109 +1396,6 @@ namespace flame
 			-(*this)[1][0] * det_inv,
 			+(*this)[0][0] * det_inv);
 
-		return ret;
-	}
-
-	inline Mat2 operator+(const Mat2 &lhs, const Mat2 &rhs)
-	{
-		Mat2 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Mat2 operator-(const Mat2 &lhs, const Mat2 &rhs)
-	{
-		Mat2 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Mat2 operator*(const Mat2 &lhs, const Mat2 &rhs)
-	{
-		Mat2 ret;
-		ret[0][0] = lhs[0][0] * rhs[0][0] + lhs[1][0] * rhs[0][1];
-		ret[0][1] = lhs[0][1] * rhs[0][0] + lhs[1][1] * rhs[0][1];
-		ret[1][0] = lhs[0][0] * rhs[1][0] + lhs[1][0] * rhs[1][1];
-		ret[1][1] = lhs[0][1] * rhs[1][0] + lhs[1][1] * rhs[1][1];
-		return ret;
-	}
-
-	inline Vec2 operator*(const Mat2 &lhs, const Vec2 &rhs)
-	{
-		Vec2 ret;
-		ret.x = lhs[0][0] * rhs.x + lhs[1][0] * rhs.y;
-		ret.y = lhs[0][1] * rhs.x + lhs[1][1] * rhs.y;
-		return ret;
-	}
-
-	inline Mat2 operator/(const Mat2 &lhs, const Mat2 &rhs)
-	{
-		Mat2 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Mat2 operator+(const Mat2 &lhs, float rhs)
-	{
-		Mat2 ret(lhs);
-		ret[0] += rhs;
-		ret[1] += rhs;
-		return ret;
-	}
-
-	inline Mat2 operator-(const Mat2 &lhs, float rhs)
-	{
-		Mat2 ret(lhs);
-		ret[0] -= rhs;
-		ret[1] -= rhs;
-		return ret;
-	}
-
-	inline Mat2 operator*(const Mat2 &lhs, float rhs)
-	{
-		Mat2 ret(lhs);
-		ret[0] *= rhs;
-		ret[1] *= rhs;
-		return ret;
-	}
-
-	inline Mat2 operator/(const Mat2 &lhs, float rhs)
-	{
-		Mat2 ret(lhs);
-		ret[0] /= rhs;
-		ret[1] /= rhs;
-		return ret;
-	}
-
-	inline Mat2 operator+(float lhs, const Mat2 &rhs)
-	{
-		Mat2 ret(rhs);
-		ret[0] += lhs;
-		ret[1] += lhs;
-		return ret;
-	}
-
-	inline Mat2 operator-(float lhs, const Mat2 &rhs)
-	{
-		Mat2 ret(rhs);
-		ret[0] -= lhs;
-		ret[1] -= lhs;
-		return ret;
-	}
-
-	inline Mat2 operator*(float lhs, const Mat2 &rhs)
-	{
-		Mat2 ret(rhs);
-		ret[0] *= lhs;
-		ret[1] *= lhs;
-		return ret;
-	}
-
-	inline Mat2 operator/(float lhs, const Mat2 &rhs)
-	{
-		Mat2 ret(rhs);
-		ret[0] /= lhs;
-		ret[1] /= lhs;
 		return ret;
 	}
 
@@ -1554,105 +1424,9 @@ namespace flame
 		(*this)[2][2] = c + temp[2] * axis[2];
 	}
 
-	inline Mat3 &Mat3::operator=(const Mat3 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		(*this)[2] = v[2];
-		return *this;
-	}
-
-	inline Mat3 &Mat3::operator=(const Mat4 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		(*this)[2] = v[2];
-		return *this;
-	}
-
-	inline Mat3 &Mat3::operator+=(const Mat3 &v)
-	{
-		(*this)[0] += v[0];
-		(*this)[1] += v[1];
-		(*this)[2] += v[2];
-		return *this;
-	}
-
-	inline Mat3 &Mat3::operator-=(const Mat3 &v)
-	{
-		(*this)[0] -= v[0];
-		(*this)[1] -= v[1];
-		(*this)[2] -= v[2];
-		return *this;
-	}
-
 	inline Mat3 &Mat3::operator*=(const Mat3 &v)
 	{
 		return (*this = *this * v);
-	}
-
-	inline Mat3 &Mat3::operator/=(const Mat3 &v)
-	{
-		return *this *= v.get_inversed();
-	}
-
-	inline Mat3 &Mat3::operator+=(float v)
-	{
-		(*this)[0] += v;
-		(*this)[1] += v;
-		(*this)[2] += v;
-		return *this;
-	}
-
-	inline Mat3 &Mat3::operator-=(float v)
-	{
-		(*this)[0] -= v;
-		(*this)[1] -= v;
-		(*this)[2] -= v;
-		return *this;
-	}
-
-	inline Mat3 &Mat3::operator*=(float v)
-	{
-		(*this)[0] *= v;
-		(*this)[1] *= v;
-		(*this)[2] *= v;
-		return *this;
-	}
-
-	inline Mat3 &Mat3::operator/=(float v)
-	{
-		(*this)[0] /= v;
-		(*this)[1] /= v;
-		(*this)[2] /= v;
-		return *this;
-	}
-
-	inline void Mat3::normalize()
-	{
-		(*this)[0].normalize();
-		(*this)[1].normalize();
-		(*this)[2].normalize();
-	}
-
-	inline void Mat3::transpose()
-	{
-		*this = get_transposed();
-	}
-
-	inline Mat3 Mat3::get_transposed() const
-	{
-		Mat3 ret;
-		ret[0][0] = (*this)[0][0];
-		ret[0][1] = (*this)[1][0];
-		ret[0][2] = (*this)[2][0];
-		ret[1][0] = (*this)[0][1];
-		ret[1][1] = (*this)[1][1];
-		ret[1][2] = (*this)[2][1];
-		ret[2][0] = (*this)[0][2];
-		ret[2][1] = (*this)[1][2];
-		ret[2][2] = (*this)[2][2];
-		return ret;
 	}
 
 	inline void Mat3::inverse()
@@ -1681,228 +1455,9 @@ namespace flame
 		return ret;
 	}
 
-	inline Mat3 operator+(const Mat3 &lhs, const Mat3 &rhs)
-	{
-		Mat3 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Mat3 operator-(const Mat3 &lhs, const Mat3 &rhs)
-	{
-		Mat3 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Mat3 operator*(const Mat3 &lhs, const Mat3 &rhs)
-	{
-		Mat3 ret;
-		ret[0][0] = lhs[0][0] * rhs[0][0] + lhs[1][0] * rhs[0][1] + lhs[2][0] * rhs[0][2];
-		ret[0][1] = lhs[0][1] * rhs[0][0] + lhs[1][1] * rhs[0][1] + lhs[2][1] * rhs[0][2];
-		ret[0][2] = lhs[0][2] * rhs[0][0] + lhs[1][2] * rhs[0][1] + lhs[2][2] * rhs[0][2];
-		ret[1][0] = lhs[0][0] * rhs[1][0] + lhs[1][0] * rhs[1][1] + lhs[2][0] * rhs[1][2];
-		ret[1][1] = lhs[0][1] * rhs[1][0] + lhs[1][1] * rhs[1][1] + lhs[2][1] * rhs[1][2];
-		ret[1][2] = lhs[0][2] * rhs[1][0] + lhs[1][2] * rhs[1][1] + lhs[2][2] * rhs[1][2];
-		ret[2][0] = lhs[0][0] * rhs[2][0] + lhs[1][0] * rhs[2][1] + lhs[2][0] * rhs[2][2];
-		ret[2][1] = lhs[0][1] * rhs[2][0] + lhs[1][1] * rhs[2][1] + lhs[2][1] * rhs[2][2];
-		ret[2][2] = lhs[0][2] * rhs[2][0] + lhs[1][2] * rhs[2][1] + lhs[2][2] * rhs[2][2];
-		return ret;
-	}
-
-	inline Vec3 operator*(const Mat3 &lhs, const Vec3 &rhs)
-	{
-		Vec3 ret;
-		ret.x = lhs[0][0] * rhs.x + lhs[1][0] * rhs.y + lhs[2][0] * rhs.z;
-		ret.y = lhs[0][1] * rhs.x + lhs[1][1] * rhs.y + lhs[2][1] * rhs.z;
-		ret.z = lhs[0][2] * rhs.x + lhs[1][2] * rhs.y + lhs[2][2] * rhs.z;
-		return ret;
-	}
-
-	inline Mat3 operator/(const Mat3 &lhs, const Mat3 &rhs)
-	{
-		Mat3 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Mat3 operator+(const Mat3 &lhs, float rhs)
-	{
-		Mat3 ret(lhs);
-		ret[0] += rhs;
-		ret[1] += rhs;
-		ret[2] += rhs;
-		return ret;
-	}
-
-	inline Mat3 operator-(const Mat3 &lhs, float rhs)
-	{
-		Mat3 ret(lhs);
-		ret[0] -= rhs;
-		ret[1] -= rhs;
-		ret[2] -= rhs;
-		return ret;
-	}
-
-	inline Mat3 operator*(const Mat3 &lhs, float rhs)
-	{
-		Mat3 ret(lhs);
-		ret[0] *= rhs;
-		ret[1] *= rhs;
-		ret[2] *= rhs;
-		return ret;
-	}
-
-	inline Mat3 operator/(const Mat3 &lhs, float rhs)
-	{
-		Mat3 ret(lhs);
-		ret[0] /= rhs;
-		ret[1] /= rhs;
-		ret[2] /= rhs;
-		return ret;
-	}
-
-	inline Mat3 operator+(float lhs, const Mat3 &rhs)
-	{
-		Mat3 ret(rhs);
-		ret[0] += lhs;
-		ret[1] += lhs;
-		ret[2] += lhs;
-		return ret;
-	}
-
-	inline Mat3 operator-(float lhs, const Mat3 &rhs)
-	{
-		Mat3 ret(rhs);
-		ret[0] -= lhs;
-		ret[1] -= lhs;
-		ret[2] -= lhs;
-		return ret;
-	}
-
-	inline Mat3 operator*(float lhs, const Mat3 &rhs)
-	{
-		Mat3 ret(rhs);
-		ret[0] *= lhs;
-		ret[1] *= lhs;
-		ret[2] *= lhs;
-		return ret;
-	}
-
-	inline Mat3 operator/(float lhs, const Mat3 &rhs)
-	{
-		Mat3 ret(rhs);
-		ret[0] /= lhs;
-		ret[1] /= lhs;
-		ret[2] /= lhs;
-		return ret;
-	}
-
-	inline Mat4 &Mat4::operator=(const Mat4 &v)
-	{
-		(*this)[0] = v[0];
-		(*this)[1] = v[1];
-		(*this)[2] = v[2];
-		(*this)[3] = v[3];
-		return *this;
-	}
-
-	inline Mat4 &Mat4::operator+=(const Mat4 &v)
-	{
-		(*this)[0] += v[0];
-		(*this)[1] += v[1];
-		(*this)[2] += v[2];
-		(*this)[3] += v[3];
-		return *this;
-	}
-
-	inline Mat4 &Mat4::operator-=(const Mat4 &v)
-	{
-		(*this)[0] -= v[0];
-		(*this)[1] -= v[1];
-		(*this)[2] -= v[2];
-		(*this)[3] -= v[3];
-		return *this;
-	}
-
 	inline Mat4 &Mat4::operator*=(const Mat4 &v)
 	{
 		return (*this = *this * v);
-	}
-
-	inline Mat4 &Mat4::operator/=(const Mat4 &v)
-	{
-		return *this *= v.get_inversed();
-	}
-
-	inline Mat4 &Mat4::operator+=(float v)
-	{
-		(*this)[0] += v;
-		(*this)[1] += v;
-		(*this)[2] += v;
-		(*this)[3] += v;
-		return *this;
-	}
-
-	inline Mat4 &Mat4::operator-=(float v)
-	{
-		(*this)[0] -= v;
-		(*this)[1] -= v;
-		(*this)[2] -= v;
-		(*this)[3] -= v;
-		return *this;
-	}
-
-	inline Mat4 &Mat4::operator*=(float v)
-	{
-		(*this)[0] *= v;
-		(*this)[1] *= v;
-		(*this)[2] *= v;
-		(*this)[3] *= v;
-		return *this;
-	}
-
-	inline Mat4 &Mat4::operator/=(float v)
-	{
-		(*this)[0] /= v;
-		(*this)[1] /= v;
-		(*this)[2] /= v;
-		(*this)[3] /= v;
-		return *this;
-	}
-
-	inline void Mat4::normalize_33()
-	{
-		((Vec3*)&cols[0])->normalize();
-		((Vec3*)&cols[1])->normalize();
-		((Vec3*)&cols[2])->normalize();
-	}
-
-	inline void Mat4::transpose()
-	{
-		*this = get_transposed();
-	}
-
-	inline Mat4 Mat4::get_transposed() const
-	{
-		Mat4 ret;
-		ret[0][0] = (*this)[0][0];
-		ret[0][1] = (*this)[1][0];
-		ret[0][2] = (*this)[2][0];
-		ret[0][3] = (*this)[3][0];
-		ret[1][0] = (*this)[0][1];
-		ret[1][1] = (*this)[1][1];
-		ret[1][2] = (*this)[2][1];
-		ret[1][3] = (*this)[3][1];
-		ret[2][0] = (*this)[0][2];
-		ret[2][1] = (*this)[1][2];
-		ret[2][2] = (*this)[2][2];
-		ret[2][3] = (*this)[3][2];
-		ret[3][0] = (*this)[0][3];
-		ret[3][1] = (*this)[1][3];
-		ret[3][2] = (*this)[2][3];
-		ret[3][3] = (*this)[3][3];
-		return ret;
 	}
 
 	inline void Mat4::inverse()
@@ -1965,148 +1520,6 @@ namespace flame
 		auto det_inv = 1.f / dot1;
 
 		return inverse * det_inv;
-	}
-
-	inline Mat4 operator+(const Mat4 &lhs, const Mat4 &rhs)
-	{
-		Mat4 ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Mat4 operator-(const Mat4 &lhs, const Mat4 &rhs)
-	{
-		Mat4 ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Mat4 operator*(const Mat4 &lhs, const Mat4 &rhs)
-	{
-		Mat4 ret;
-		ret[0][0] = lhs[0][0] * rhs[0][0] + lhs[1][0] * rhs[0][1] + lhs[2][0] * rhs[0][2] + lhs[3][0] * rhs[0][3];
-		ret[0][1] = lhs[0][1] * rhs[0][0] + lhs[1][1] * rhs[0][1] + lhs[2][1] * rhs[0][2] + lhs[3][1] * rhs[0][3];
-		ret[0][2] = lhs[0][2] * rhs[0][0] + lhs[1][2] * rhs[0][1] + lhs[2][2] * rhs[0][2] + lhs[3][2] * rhs[0][3];
-		ret[0][3] = lhs[0][3] * rhs[0][0] + lhs[1][3] * rhs[0][1] + lhs[2][3] * rhs[0][2] + lhs[3][3] * rhs[0][3];
-		ret[1][0] = lhs[0][0] * rhs[1][0] + lhs[1][0] * rhs[1][1] + lhs[2][0] * rhs[1][2] + lhs[3][0] * rhs[1][3];
-		ret[1][1] = lhs[0][1] * rhs[1][0] + lhs[1][1] * rhs[1][1] + lhs[2][1] * rhs[1][2] + lhs[3][1] * rhs[1][3];
-		ret[1][2] = lhs[0][2] * rhs[1][0] + lhs[1][2] * rhs[1][1] + lhs[2][2] * rhs[1][2] + lhs[3][2] * rhs[1][3];
-		ret[1][3] = lhs[0][3] * rhs[1][0] + lhs[1][3] * rhs[1][1] + lhs[2][3] * rhs[1][2] + lhs[3][3] * rhs[1][3];
-		ret[2][0] = lhs[0][0] * rhs[2][0] + lhs[1][0] * rhs[2][1] + lhs[2][0] * rhs[2][2] + lhs[3][0] * rhs[2][3];
-		ret[2][1] = lhs[0][1] * rhs[2][0] + lhs[1][1] * rhs[2][1] + lhs[2][1] * rhs[2][2] + lhs[3][1] * rhs[2][3];
-		ret[2][2] = lhs[0][2] * rhs[2][0] + lhs[1][2] * rhs[2][1] + lhs[2][2] * rhs[2][2] + lhs[3][2] * rhs[2][3];
-		ret[2][3] = lhs[0][3] * rhs[2][0] + lhs[1][3] * rhs[2][1] + lhs[2][3] * rhs[2][2] + lhs[3][3] * rhs[2][3];
-		ret[3][0] = lhs[0][0] * rhs[3][0] + lhs[1][0] * rhs[3][1] + lhs[2][0] * rhs[3][2] + lhs[3][0] * rhs[3][3];
-		ret[3][1] = lhs[0][1] * rhs[3][0] + lhs[1][1] * rhs[3][1] + lhs[2][1] * rhs[3][2] + lhs[3][1] * rhs[3][3];
-		ret[3][2] = lhs[0][2] * rhs[3][0] + lhs[1][2] * rhs[3][1] + lhs[2][2] * rhs[3][2] + lhs[3][2] * rhs[3][3];
-		ret[3][3] = lhs[0][3] * rhs[3][0] + lhs[1][3] * rhs[3][1] + lhs[2][3] * rhs[3][2] + lhs[3][3] * rhs[3][3];
-		return ret;
-	}
-
-	inline Vec4 operator*(const Mat4 &lhs, const Vec4 &rhs)
-	{
-		Vec4 ret;
-		ret.x = lhs[0][0] * rhs.x + lhs[1][0] * rhs.y + lhs[2][0] * rhs.z + lhs[3][0] * rhs.w;
-		ret.y = lhs[0][1] * rhs.x + lhs[1][1] * rhs.y + lhs[2][1] * rhs.z + lhs[3][1] * rhs.w;
-		ret.z = lhs[0][2] * rhs.x + lhs[1][2] * rhs.y + lhs[2][2] * rhs.z + lhs[3][2] * rhs.w;
-		ret.w = lhs[0][3] * rhs.x + lhs[1][3] * rhs.y + lhs[2][3] * rhs.z + lhs[3][3] * rhs.w;
-		return ret;
-	}
-
-	inline Vec3 operator*(const Mat4 &lhs, const Vec3 &rhs)
-	{
-		Vec3 ret;
-		ret.x = lhs[0][0] * rhs.x + lhs[1][0] * rhs.y + lhs[2][0] * rhs.z + lhs[3][0];
-		ret.y = lhs[0][1] * rhs.x + lhs[1][1] * rhs.y + lhs[2][1] * rhs.z + lhs[3][1];
-		ret.z = lhs[0][2] * rhs.x + lhs[1][2] * rhs.y + lhs[2][2] * rhs.z + lhs[3][2];
-		return ret;
-	}
-
-	inline Mat4 operator/(const Mat4 &lhs, const Mat4 &rhs)
-	{
-		Mat4 ret(lhs);
-		ret /= rhs;
-		return ret;
-	}
-
-	inline Mat4 operator+(const Mat4 &lhs, float rhs)
-	{
-		Mat4 ret(lhs);
-		ret[0] += rhs;
-		ret[1] += rhs;
-		ret[2] += rhs;
-		ret[3] += rhs;
-		return ret;
-	}
-
-	inline Mat4 operator-(const Mat4 &lhs, float rhs)
-	{
-		Mat4 ret(lhs);
-		ret[0] -= rhs;
-		ret[1] -= rhs;
-		ret[2] -= rhs;
-		ret[3] -= rhs;
-		return ret;
-	}
-
-	inline Mat4 operator*(const Mat4 &lhs, float rhs)
-	{
-		Mat4 ret(lhs);
-		ret[0] *= rhs;
-		ret[1] *= rhs;
-		ret[2] *= rhs;
-		ret[3] *= rhs;
-		return ret;
-	}
-
-	inline Mat4 operator/(const Mat4 &lhs, float rhs)
-	{
-		Mat4 ret(lhs);
-		ret[0] /= rhs;
-		ret[1] /= rhs;
-		ret[2] /= rhs;
-		ret[3] /= rhs;
-		return ret;
-	}
-
-	inline Mat4 operator+(float lhs, const Mat4 &rhs)
-	{
-		Mat4 ret(rhs);
-		ret[0] += lhs;
-		ret[1] += lhs;
-		ret[2] += lhs;
-		ret[3] += lhs;
-		return ret;
-	}
-
-	inline Mat4 operator-(float lhs, const Mat4 &rhs)
-	{
-		Mat4 ret(rhs);
-		ret[0] -= lhs;
-		ret[1] -= lhs;
-		ret[2] -= lhs;
-		ret[3] -= lhs;
-		return ret;
-	}
-
-	inline Mat4 operator*(float lhs, const Mat4 &rhs)
-	{
-		Mat4 ret(rhs);
-		ret[0] *= lhs;
-		ret[1] *= lhs;
-		ret[2] *= lhs;
-		ret[3] *= lhs;
-		return ret;
-	}
-
-	inline Mat4 operator/(float lhs, const Mat4 &rhs)
-	{
-		Mat4 ret(rhs);
-		ret[0] /= lhs;
-		ret[1] /= lhs;
-		ret[2] /= lhs;
-		ret[3] /= lhs;
-		return ret;
 	}
 
 	inline Mat4 get_view_mat(const Vec3 &eye, const Vec3 &target, const Vec3 &up)
