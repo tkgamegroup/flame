@@ -133,6 +133,20 @@ namespace flame
 		AxisNegZ = 1 << 5
 	};
 
+	enum Side
+	{
+		Outside = 0,
+		SideN = 1 << 0,
+		SideS = 1 << 1,
+		SideW = 1 << 2,
+		SideE = 1 << 3,
+		SideNW = 1 << 4,
+		SideNE = 1 << 5,
+		SideSW = 1 << 6,
+		SideSE = 1 << 7,
+		Inside
+	};
+
 	template<uint N, class T>
 	struct Vec
 	{
@@ -148,7 +162,19 @@ namespace flame
 			return v_[0];
 		}
 
+		T x() const
+		{
+			static_assert(N > 0);
+			return v_[0];
+		}
+
 		T& y()
+		{
+			static_assert(N > 1);
+			return v_[1];
+		}
+
+		T y() const
 		{
 			static_assert(N > 1);
 			return v_[1];
@@ -160,7 +186,19 @@ namespace flame
 			return v_[2];
 		}
 
+		T z() const
+		{
+			static_assert(N > 2);
+			return v_[2];
+		}
+
 		T& w()
+		{
+			static_assert(N > 3);
+			return v_[3];
+		}
+
+		T w() const
 		{
 			static_assert(N > 3);
 			return v_[3];
@@ -172,7 +210,19 @@ namespace flame
 			return v_[0];
 		}
 
+		T r() const
+		{
+			static_assert(N > 0);
+			return v_[0];
+		}
+
 		T& g()
+		{
+			static_assert(N > 1);
+			return v_[1];
+		}
+
+		T g() const
 		{
 			static_assert(N > 1);
 			return v_[1];
@@ -184,7 +234,19 @@ namespace flame
 			return v_[2];
 		}
 
+		T b() const
+		{
+			static_assert(N > 2);
+			return v_[2];
+		}
+
 		T& a()
+		{
+			static_assert(N > 3);
+			return v_[3];
+		}
+
+		T a() const
 		{
 			static_assert(N > 3);
 			return v_[3];
@@ -196,7 +258,19 @@ namespace flame
 			return v_[0];
 		}
 
+		T s() const
+		{
+			static_assert(N > 0);
+			return v_[0];
+		}
+
 		T& t()
+		{
+			static_assert(N > 1);
+			return v_[1];
+		}
+
+		T t() const
 		{
 			static_assert(N > 1);
 			return v_[1];
@@ -208,7 +282,19 @@ namespace flame
 			return v_[2];
 		}
 
+		T p() const
+		{
+			static_assert(N > 2);
+			return v_[2];
+		}
+
 		T& q()
+		{
+			static_assert(N > 3);
+			return v_[3];
+		}
+
+		T q() const
 		{
 			static_assert(N > 3);
 			return v_[3];
@@ -1076,7 +1162,7 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	T bezier_closest(int iters, const Vec<N, T>& pos, float start, float end, int slices,
+	inline T bezier_closest(int iters, const Vec<N, T>& pos, float start, float end, int slices,
 		const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3)
 	{
 		if (iters <= 0)
@@ -1103,90 +1189,266 @@ namespace flame
 		return bezier_closest(iters - 1, pos, max(best - tick, 0.f), min(best + tick, 1.f), slices, p0, p1, p2, p3);
 	}
 
-	Vec2 bezier_closest_point(const Vec2 &pos, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3,
-		int slices, int iters);
-
-	float rand(const Vec2 &v);
-	float noise(const Vec2 &v);
-	float fbm(const Vec2 &v);
-
-	Rect get_fit_rect(const Vec2 &desired_size, float xy_aspect);
-	Rect get_fit_rect_no_zoom_in(const Vec2 &desired_size, const Vec2 &size);
-
-	Bvec4 Color(uchar R, uchar G, uchar B, uchar A = 255);
-	Bvec4 Colorf(float R, float G, float B, float A = 1.f);
-	Bvec4 HSV(float h, float s, float v, float A = 1.f);
-	Vec3 to_HSV(const Bvec4 &rgb);
-
-	struct Quat
+	template<uint N, class T>
+	inline Vec<N, T> bezier_closest_point(const Vec<N, T>& pos, 
+		const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3,
+		int slices, int iters)
 	{
-		float x;
-		float y;
-		float z;
-		float w;
+		return bezier(bezier_closest(iters, pos, 0.f, 1.f, slices, p0, p1, p2, p3), p0, p1, p2, p3);
+	}
 
-		Quat();
-		Quat(float _x, float _y, float _z, float _w);
-		void normalize();
-	};
-	
-	Quat operator*(const Quat &lhs, const Quat &rhs);
-
-	struct Rect
+	template<class T>
+	inline T rand(const Vec<2, T>& v)
 	{
-		Vec2 min;
-		Vec2 max;
+		return fract(cos(v.x() * (12.9898) + v.y() * (4.1414)) * 43758.5453);
+	}
 
-		enum Side
+	template<class T>
+	inline T noise(const Vec<2, T>& v)
+	{
+		const auto SC = 250;
+
+		auto v = _v / SC;
+		Vec<2, T> vf(fract(v.x()), fract(v.y()));
+		Vec<2, T> vi(floor(v.x()), floor(v.y()));
+
+		auto r0 = rand(vi);
+		auto r1 = rand(vi + Vec<2, T>(T(1), T(0)));
+		auto r2 = rand(vi + Vec<2, T>(T(0), T(1)));
+		auto r3 = rand(vi + Vec<2, T>(T(1), T(1)));
+
+		auto vs = T(3) * vf * vf - T(2) * vf * vf * vf;
+
+		return mix(
+			mix(r0, r1, vs.x()),
+			mix(r2, r3, vs.x()),
+			vs.y());
+	}
+
+	template<class T>
+	inline T fbm(const Vec<2, T>& v)
+	{
+		auto v = _v;
+		auto r = T(0);
+
+		auto a = T(1) / T(3);
+		for (auto i = 0; i < 4; i++)
 		{
-			Outside = 0,
-			SideN = 1 << 0,
-			SideS = 1 << 1,
-			SideW = 1 << 2,
-			SideE = 1 << 3,
-			SideNW = 1 << 4,
-			SideNE = 1 << 5,
-			SideSW = 1 << 6,
-			SideSE = 1 << 7,
-			Inside
-		};
+			r += noise(v) * a;
+			a /= T(3);
+			v *= T(3);
+		}
 
-		Rect();
-		Rect(const Vec2 &_min, const Vec2 &_max);
-		Rect(float min_x, float min_y, float max_x, float max_y);
-		Rect(const Rect &v);
-		Rect &operator=(const Rect &v);
-		Rect &operator+=(const Rect &v);
-		Rect &operator-=(const Rect &v);
-		Rect &operator+=(const Vec2 &v);
-		Rect &operator-=(const Vec2 &v);
-		Rect &operator*=(float v);
-		float width() const;
-		float height() const;
-		Vec2 center() const;
-		void expand(float length);
-		Rect get_expanded(float length);
-		bool contains(const Vec2 &p);
-		bool overlapping(const Rect &oth);
-		Side calc_side(const Vec2 &p, float threshold);
+		return r;
+	}
 
-		static Rect b(const Vec2& base, const Vec2& ext);
-	};
+	template<class T>
+	inline Vec<4, T> rect(const Vec<2, T>& base, const Vec<2, T>& ext)
+		// (x, y) - min, (z, w) - max
+	{
+		return Vec<4, T>(base, base + ext);
+	}
 
-	Vec2 get_side_dir();
+	template<class T>
+	inline Vec<4, T> rect_expand(const Vec<4, T>& rect, T length)
+	{
+		Rect ret(*this);
+		min.x -= length;
+		min.y -= length;
+		max.x += length;
+		max.y += length;
+		return ret;
+	}
 
-	Rect operator+(const Rect &lhs, const Rect &rhs);
-	Rect operator-(const Rect &lhs, const Rect &rhs);
-	Rect operator+(const Rect &r, const Vec2 &off);
-	Rect operator-(const Rect &r, const Vec2 &off);
-	Rect operator*(const Rect &r, float v);
+	template<class T>
+	inline bool rect_contains(const Vec<4, T>& rect, const Vec<2, T>& p)
+	{
+		return p.x > min.x&& p.x < max.x&&
+			p.y > min.y&& p.y < max.y;
+	}
+
+	template<class T>
+	inline bool rect_overlapping(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
+	{
+		return min.x <= oth.max.x && max.x >= oth.min.x &&
+			min.y <= oth.max.y && max.y >= oth.min.y;
+	}
+
+	template<class T>
+	inline Side rect_side(const Vec<4, T>& lhs, T threshold)
+	{
+		if (p.x < max.x && p.x > max.x - threshold &&
+			p.y > min.y && p.y < min.y + threshold)
+			return SideNE;
+		if (p.x > min.x && p.x < min.x + threshold &&
+			p.y > min.y && p.y < min.y + threshold)
+			return SideNW;
+		if (p.x < max.x && p.x > max.x - threshold &&
+			p.y < max.y && p.y > max.y - threshold)
+			return SideSE;
+		if (p.x > min.x && p.x < min.x + threshold &&
+			p.y < max.y && p.y > max.y - threshold)
+			return SideSW;
+		if (p.y > min.y - threshold && p.y < min.y + threshold &&
+			p.x > min.x && p.x < max.x)
+			return SideN;
+		if (p.y < max.y && p.y > max.y - threshold &&
+			p.x > min.x && p.x < max.x)
+			return SideS;
+		if (p.x < max.x && p.x > max.x - threshold &&
+			p.y > min.y && p.y < max.y)
+			return SideE;
+		if (p.x > min.x && p.x < min.x + threshold &&
+			p.y > min.y && p.y < max.y)
+			return SideW;
+		if (contains(p))
+			return Inside;
+		return Outside;
+	}
+
+	template<class T>
+	inline Vec<2, T> side_dir(Side s)
+	{
+		switch (s)
+		{
+		case ::SideN:
+			return Vec<2, T>(T(0), T(-1));
+		case ::SideS:
+			return Vec<2, T>(T(0), T(1));
+		case ::SideW:
+			return Vec<2, T>(T(-1), T(0));
+		case ::SideE:
+			return Vec<2, T>(T(1), T(0));
+		case ::SideNW:
+			return Vec<2, T>(T(-1), T(-1));
+		case ::SideNE:
+			return Vec<2, T>(T(1), T(-1));
+		case ::SideSW:
+			return Vec<2, T>(T(-1), T(1));
+		case ::SideSE:
+			return Vec<2, T>(T(1), T(1));
+		case ::Outside:
+			return Vec<2, T>(T(2));
+		case ::Inside:
+			return Vec<2, T>(T(0));
+		}
+	}
+
+	template<class T>
+	inline Vec<4, T> fited_rect(const Vec<2, T>& desired_size, float xy_aspect)
+	{
+		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
+			return Vec<4, T>(T(0), T(0), T(1), T(1));
+		Vec<4, T> ret;
+		if (desired_size.x() / desired_size.y() > xy_aspect)
+		{
+			ret.z() = xy_aspect * desired_size.y();
+			ret.w() = desired_size.y();
+			ret.x() = (desired_size.x() - ret.w()) * 0.5f;
+			ret.y() = 0;
+			ret.z() += ret.x();
+		}
+		else
+		{
+			ret.z() = desired_size.x();
+			ret.w() = desired_size.x() / xy_aspect;
+			ret.x() = 0;
+			ret.y() = (desired_size.y() - ret.w()) * 0.5f;
+			ret.w() += ret.x();
+		}
+		return ret;
+	}
+
+	template<class T>
+	inline Vec<4, T> fited_rect_no_zoom_in(const Vec<2, T>& desired_size, const Vec<2, T>& size)
+	{
+		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
+			return Vec4<4, T>(T(0), T(0), T(1), T(1));
+		if (size.x() <= desired_size.x() && size.y() <= desired_size.y())
+		{
+			Vec<4, T> ret;
+			ret.z() = size.x();
+			ret.w() = size.y();
+			ret.x() = (desired_size.x() - size.x()) * 0.5f;
+			ret.y() = (desired_size.y() - size.y()) * 0.5f;
+			ret.z() += ret.x();
+			ret.w() += ret.y();
+			return ret;
+		}
+		else
+			return fited_rect(desired_size, size.x() / size.y());
+	}
+
+	inline Vec<3, uchar> from_hsv(float h, float s, float v)
+	{
+		auto hdiv60 = h / 60.f;
+		auto hi = int(hdiv60) % 6;
+		auto f = hdiv60 - hi;
+		auto p = v * (1.f - s);
+		float q, t;
+
+		switch (hi)
+		{
+		case 0:
+			t = v * (1.f - (1.f - f) * s);
+			return Vec<3, uchar>(v * 255.f, t * 255.f, p * 255.f);
+		case 1:
+			q = v * (1.f - f * s);
+			return Vec<3, uchar>(q * 255.f, v * 255.f, p * 255.f);
+		case 2:
+			t = v * (1.f - (1.f - f) * s);
+			return Vec<3, uchar>(p * 255.f, v * 255.f, t * 255.f);
+		case 3:
+			q = v * (1.f - f * s);
+			return Vec<3, uchar>(p * 255.f, q * 255.f, v * 255.f);
+		case 4:
+			t = v * (1.f - (1.f - f) * s);
+			return Vec<3, uchar>(t * 255.f, p * 255.f, v * 255.f);
+		case 5:
+			q = v * (1.f - f * s);
+			return Vec<3, uchar>(v * 255.f, p * 255.f, q * 255.f);
+		default:
+			return Vec<3, uchar>(0.f);
+		}
+	}
+
+	inline Vec<3, float> to_hsv(const Vec<3, uchar>& rgb)
+	{
+		auto r = rgb.x() / 255.f;
+		auto g = rgb.y() / 255.f;
+		auto b = rgb.z() / 255.f;
+
+		auto cmax = max(r, max(g, b));
+		auto cmin = min(r, min(g, b));
+		auto delta = cmax - cmin;
+
+		float h;
+
+		if (delta == 0.f)
+			h = 0.f;
+		else if (cmax == r)
+			h = 60.f * fmod((g - b) / delta + 0.f, 6.f);
+		else if (cmax == g)
+			h = 60.f * fmod((b - r) / delta + 2.f, 6.f);
+		else if (cmax == b)
+			h = 60.f * fmod((r - g) / delta + 4.f, 6.f);
+		else
+			h = 0.f;
+
+		return Vec<3, float>(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
+	}
+	
+	template<class T>
+	Vec<4, T> quaternion_multiply(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
+	{
+
+	}
 
 	struct Plane 
 	{
 		Vec3 normal;
 		float d;
 
-		Plane();
 		Plane(const Vec3 &n, float _d);
 		Plane(const Vec3 &n, const Vec3 &p);
 		float intersect(const Vec3 &origin, const Vec3 &dir);
@@ -1201,11 +1463,6 @@ namespace flame
 		AABB(const Vec3 &_min, const Vec3 &_max);
 		AABB(const AABB &v);
 		AABB &operator=(const AABB &v);
-		void reset();
-		float width() const;
-		float height() const;
-		float depth() const;
-		Vec3 center() const;
 		void merge(const Vec3 &p);
 		void merge(const AABB &v);
 		void get_points(Vec3 *dst);
@@ -1221,173 +1478,6 @@ namespace flame
 		void euler_to_mat3(const EulerYPR &e, Mat3 &m);
 		void quat_to_euler(const Quat &q, EulerYPR &e);
 		void quat_to_mat3(const Quat &q, Mat3 &m);
-	}
-
-	inline Vec2 bezier_closest_point(const Vec2 &pos, const Vec2 &p0, const Vec2 &p1, const Vec2 &p2, const Vec2 &p3,
-		int slices, int iters)
-	{
-		return bezier(bezier_closest(iters, pos, 0.f, 1.f, slices, p0, p1, p2, p3), p0, p1, p2, p3);
-	}
-
-	inline float rand(const Vec2 &v)
-	{
-		return fract(cos(v.x * (12.9898) + v.y * (4.1414)) * 43758.5453);
-	}
-
-	inline float noise(const Vec2 &_v)
-	{
-		const auto SC = 250;
-
-		auto v = _v / SC;
-		Vec2 vf(fract(v.x), fract(v.y));
-		Vec2 vi(floor(v.x), floor(v.y));
-
-		auto r0 = rand(vi);
-		auto r1 = rand(vi + Vec2(1.f, 0.f));
-		auto r2 = rand(vi + Vec2(0.f, 1.f));
-		auto r3 = rand(vi + Vec2(1.f, 1.f));
-
-		auto vs = 3.f * vf * vf - 2.f * vf * vf * vf;
-
-		return mix(
-			mix(r0, r1, vs.x),
-			mix(r2, r3, vs.x),
-			vs.y);
-	}
-
-	inline float fbm(const Vec2 &_v)
-	{
-		auto v = _v;
-		auto r = 0.f;
-
-		auto a = 1.f / 3.f;
-		for (auto i = 0; i < 4; i++)
-		{
-			r += noise(v) * a;
-			a /= 3.f;
-			v *= 3.f;
-		}
-
-		return r;
-	}
-
-	inline Rect get_fit_rect(const Vec2 &desired_size, float xy_aspect)
-	{
-		if (desired_size.x <= 0.f || desired_size.y <= 0.f)
-			return Rect(0.f, 0.f, 1.f, 1.f);
-		Rect ret;
-		if (desired_size.x / desired_size.y > xy_aspect)
-		{
-			ret.max.x = xy_aspect * desired_size.y;
-			ret.max.y = desired_size.y;
-			ret.min.x = (desired_size.x - ret.max.x) * 0.5f;
-			ret.min.y = 0;
-			ret.max += ret.min;
-		}
-		else
-		{
-			ret.max.x = desired_size.x;
-			ret.max.y = desired_size.x / xy_aspect;
-			ret.min.x = 0;
-			ret.min.y = (desired_size.y - ret.max.y) * 0.5f;
-			ret.max += ret.min;
-		}
-		return ret;
-	}
-
-	inline Rect get_fit_rect_no_zoom_in(const Vec2 &desired_size, const Vec2 &size)
-	{
-		if (desired_size.x <= 0.f || desired_size.y <= 0.f)
-			return Rect(0.f, 0.f, 1.f, 1.f);
-		if (size.x <= desired_size.x && size.y <= desired_size.y)
-		{
-			Rect ret;
-			ret.max.x = size.x;
-			ret.max.y = size.y;
-			ret.min.x = (desired_size.x - size.x) * 0.5f;
-			ret.min.y = (desired_size.y - size.y) * 0.5f;
-			ret.max += ret.min;
-			return ret;
-		}
-		else
-			return get_fit_rect(desired_size, size.x / size.y);
-	}
-
-	inline Hvec4::Hvec4(float _x, float _y, float _z, float _w)
-	{
-		x = to_f16(_x);
-		y = to_f16(_y);
-		z = to_f16(_z);
-		w = to_f16(_w);
-	}
-
-	inline Bvec4 Color(uchar R, uchar G, uchar B, uchar A)
-	{
-		return Bvec4(R, G, B, A);
-	}
-
-	inline Bvec4 Colorf(float R, float G, float B, float A)
-	{
-		return Bvec4(uchar(R * 255.f), uchar(G * 255.f), uchar(B * 255.f), uchar(A * 255.f));
-	}
-
-	inline Bvec4 HSV(float h, float s, float v, float A)
-	{
-		auto hdiv60 = h / 60.f;
-		auto hi = int(hdiv60) % 6;
-		auto f = hdiv60 - hi;
-		auto p = v * (1.f - s);
-		float q, t;
-
-		switch (hi)
-		{
-		case 0:
-			t = v * (1.f - (1.f - f) * s);
-			return Bvec4(v * 255.f, t * 255.f, p * 255.f, A * 255.f);
-		case 1:
-			q = v * (1.f - f * s);
-			return Bvec4(q * 255.f, v * 255.f, p * 255.f, A * 255.f);
-		case 2:
-			t = v * (1.f - (1.f - f) * s);
-			return Bvec4(p * 255.f, v * 255.f, t * 255.f, A * 255.f);
-		case 3:
-			q = v * (1.f - f * s);
-			return Bvec4(p * 255.f, q * 255.f, v * 255.f, A * 255.f);
-		case 4:
-			t = v * (1.f - (1.f - f) * s);
-			return Bvec4(t * 255.f, p * 255.f, v * 255.f, A * 255.f);
-		case 5:
-			q = v * (1.f - f * s);
-			return Bvec4(v * 255.f, p * 255.f, q * 255.f, A * 255.f);
-		default:
-			return Bvec4(0.f);
-		}
-	}
-
-	inline Vec3 to_HSV(const Bvec4 &rgb)
-	{
-		auto r = rgb.x / 255.f;
-		auto g = rgb.y / 255.f;
-		auto b = rgb.z / 255.f;
-
-		auto cmax = max(r, max(g, b));
-		auto cmin = min(r, min(g, b));
-		auto delta = cmax - cmin;
-
-		float h;
-		
-		if (delta == 0.f)
-			h = 0.f;
-		else if (cmax == r)
-			h = 60.f * fmod((g - b) / delta + 0.f, 6.f);
-		else if (cmax == g)
-			h = 60.f * fmod((b - r) / delta + 2.f, 6.f);
-		else if (cmax == b)
-			h = 60.f * fmod((r - g) / delta + 4.f, 6.f);
-		else
-			h = 0.f;
-
-		return Vec3(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
 	}
 
 	inline Mat2 &Mat2::operator*=(const Mat2 &v)
@@ -1538,10 +1628,6 @@ namespace flame
 		return inverse * det_inv;
 	}
 
-	inline EulerYPR::EulerYPR()
-	{
-	}
-
 	inline EulerYPR::EulerYPR(float y, float p, float r) :
 		yaw(y), pitch(p), roll(r)
 	{
@@ -1564,15 +1650,6 @@ namespace flame
 	{
 	}
 
-	inline void Quat::normalize()
-	{
-		auto l = sqrt(x * x + y * y + z * z + w * w);
-		x /= l;
-		y /= l;
-		z /= l;
-		w /= l;
-	}
-
 	inline Quat operator*(const Quat &lhs, const Quat &rhs)
 	{
 		Quat ret;
@@ -1580,210 +1657,6 @@ namespace flame
 		ret.y = lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x;
 		ret.z = lhs.w * rhs.z + lhs.x * rhs.y + lhs.y * rhs.w + lhs.z * rhs.x;
 		ret.w = lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z;
-		return ret;
-	}
-
-	inline Rect::Rect()
-	{
-	}
-
-	inline Rect::Rect(const Vec2 &_min, const Vec2 &_max) :
-		min(_min),
-		max(_max)
-	{
-	}
-
-	inline Rect::Rect(float min_x, float min_y, float max_x, float max_y) :
-		min(min_x, min_y),
-		max(max_x, max_y)
-	{
-	}
-
-	inline Rect::Rect(const Rect &v) :
-		min(v.min),
-		max(v.max)
-	{
-	}
-
-	inline Rect &Rect::operator=(const Rect &v)
-	{
-		min = v.min;
-		max = v.max;
-		return *this;
-	}
-
-	inline Rect &Rect::operator+=(const Rect &v)
-	{
-		min += v.min;
-		max += v.max;
-		return *this;
-	}
-
-	inline Rect &Rect::operator-=(const Rect &v)
-	{
-		min -= v.min;
-		max -= v.max;
-		return *this;
-	}
-	
-	inline Rect &Rect::operator+=(const Vec2 &v)
-	{
-		min += v;
-		max += v;
-		return *this;
-	}
-
-	inline Rect &Rect::operator-=(const Vec2 &v)
-	{
-		min -= v;
-		max -= v;
-		return *this;
-	}
-
-	inline Rect &Rect::operator*=(float v)
-	{
-		min *= v;
-		max *= v;
-		return *this;
-	}
-
-	inline float Rect::width() const
-	{
-		return max.x - min.x;
-	}
-
-	inline float Rect::height() const
-	{
-		return max.y - min.y;
-	}
-
-	inline Vec2 Rect::center() const
-	{
-		return (min + max) / 2;
-	}
-
-	inline void Rect::expand(float length)
-	{
-		min.x -= length;
-		min.y -= length;
-		max.x += length;
-		max.y += length;
-	}
-
-	inline Rect Rect::get_expanded(float length)
-	{
-		Rect ret(*this);
-		ret.expand(length);
-		return ret;
-	}
-
-	inline bool Rect::contains(const Vec2 &p)
-	{
-		return p.x > min.x && p.x < max.x &&
-			p.y > min.y && p.y < max.y;
-	}
-
-	inline bool Rect::overlapping(const Rect &oth)
-	{
-		return min.x <= oth.max.x && max.x >= oth.min.x &&
-			   min.y <= oth.max.y && max.y >= oth.min.y;
-	}
-
-	inline Rect::Side Rect::calc_side(const Vec2 &p, float threshold)
-	{
-		if (p.x < max.x && p.x > max.x - threshold &&
-			p.y > min.y && p.y < min.y + threshold)
-			return SideNE;
-		if (p.x > min.x && p.x < min.x + threshold &&
-			p.y > min.y && p.y < min.y + threshold)
-			return SideNW;
-		if (p.x < max.x && p.x > max.x - threshold &&
-			p.y < max.y && p.y > max.y - threshold)
-			return SideSE;
-		if (p.x > min.x && p.x < min.x + threshold &&
-			p.y < max.y && p.y > max.y - threshold)
-			return SideSW;
-		if (p.y > min.y - threshold && p.y < min.y + threshold &&
-			p.x > min.x && p.x < max.x)
-			return SideN;
-		if (p.y < max.y && p.y > max.y - threshold &&
-			p.x > min.x && p.x < max.x)
-			return SideS;
-		if (p.x < max.x && p.x > max.x - threshold &&
-			p.y > min.y && p.y < max.y)
-			return SideE;
-		if (p.x > min.x && p.x < min.x + threshold &&
-			p.y > min.y && p.y < max.y)
-			return SideW;
-		if (contains(p))
-			return Inside;
-		return Outside;
-	}
-
-	inline Rect Rect::b(const Vec2& base, const Vec2& ext)
-	{
-		return Rect(base, base + ext);
-	}
-
-	inline Vec2 get_side_dir(Rect::Side s)
-	{
-		switch (s)
-		{
-		case Rect::SideN:
-			return Vec2(0.f, -1.f);
-		case Rect::SideS:
-			return Vec2(0.f, 1.f);
-		case Rect::SideW:
-			return Vec2(-1.f, 0.f);
-		case Rect::SideE:
-			return Vec2(1.f, 0.f);
-		case Rect::SideNW:
-			return Vec2(-1.f, -1.f);
-		case Rect::SideNE:
-			return Vec2(1.f, -1.f);
-		case Rect::SideSW:
-			return Vec2(-1.f, 1.f);
-		case Rect::SideSE:
-			return Vec2(1.f, 1.f);
-		case Rect::Outside:
-			return Vec2(2.f);
-		case Rect::Inside:
-			return Vec2(0.f);
-		}
-	}
-
-	inline Rect operator+(const Rect &lhs, const Rect &rhs)
-	{
-		Rect ret(lhs);
-		ret += rhs;
-		return ret;
-	}
-
-	inline Rect operator-(const Rect &lhs, const Rect &rhs)
-	{
-		Rect ret(lhs);
-		ret -= rhs;
-		return ret;
-	}
-
-	inline Rect operator+(const Rect &r, const Vec2 &off)
-	{
-		Rect ret(r);
-		ret += off;
-		return ret;
-	}
-
-	inline Rect operator-(const Rect &r, const Vec2 &off)
-	{
-		Rect ret(r);
-		ret -= off;
-		return ret;
-	}
-
-	inline Rect operator*(const Rect &r, float v)
-	{
-		Rect ret(r);
-		ret *= v;
 		return ret;
 	}
 
