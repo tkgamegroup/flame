@@ -1092,21 +1092,41 @@ namespace flame
 	{
 		Mat<N, N, T> ret;
 
+
+
+		return ret;
 	}
 
 	template<class T>
-	inline Vec<2, T> rotate(const Vec<2, T>& p, const Vec<2, T>& c, float rad)
+	inline Mat<2, 2, T> rotate(T rad)
 	{
-		Vec<2, T> ret(p - c);
+		const auto c = cos(rad);
+		const auto s = sin(rad);
 
-		auto sin_v = sin(rad);
-		auto cos_v = cos(rad);
+		return Mat<2, T>(Vec<2, T>(c, s), Vec<2, T>(-s, c));
+	}
 
-		auto xnew = ret.x * cos_v - ret.y * sin_v;
-		auto ynew = ret.x * sin_v + ret.y * cos_v;
+	template<class T>
+	inline Mat<3, 3, T> rotate(const Vec<3, T>& axis, T rad)
+	{
+		const auto c = cos(rad);
+		const auto s = sin(rad);
 
-		ret.x = xnew + c.x;
-		ret.y = ynew + c.y;
+		Vec<3, T> temp((T(1) - c) * axis);
+
+		Mat<3, 3, T> ret;
+
+		ret[0][0] = c + temp[0] * axis[0];
+		ret[0][1] = 0 + temp[0] * axis[1] + s * axis[2];
+		ret[0][2] = 0 + temp[0] * axis[2] - s * axis[1];
+
+		ret[1][0] = 0 + temp[1] * axis[0] - s * axis[2];
+		ret[1][1] = c + temp[1] * axis[1];
+		ret[1][2] = 0 + temp[1] * axis[2] + s * axis[0];
+
+		ret[2][0] = 0 + temp[2] * axis[0] + s * axis[1];
+		ret[2][1] = 0 + temp[2] * axis[1] - s * axis[0];
+		ret[2][2] = c + temp[2] * axis[2];
 
 		return ret;
 	}
@@ -1437,57 +1457,78 @@ namespace flame
 
 		return Vec<3, float>(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
 	}
+
+	// Vec4 as quat
 	
 	template<class T>
 	Vec<4, T> quaternion_multiply(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
 	{
-
+		Vec<4, T> ret;
+		ret.x() = lhs.w() * rhs.x() + lhs.x() * rhs.w() + lhs.y() * rhs.z() - lhs.z() * rhs.y();
+		ret.y() = lhs.w() * rhs.y() - lhs.x() * rhs.z() + lhs.y() * rhs.w() + lhs.z() * rhs.x();
+		ret.z() = lhs.w() * rhs.z() + lhs.x() * rhs.y() + lhs.y() * rhs.w() + lhs.z() * rhs.x();
+		ret.w() = lhs.w() * rhs.w() - lhs.x() * rhs.x() - lhs.y() * rhs.y() - lhs.z() * rhs.z();
+		return ret;
 	}
 
-	struct Plane 
+	// Vec4 as plane:
+	// (x, y, z) - normal, w - d
+
+	template<class T>
+	T plane_intersect(const Vec<4, T>& plane, const Vec<3, T>& origin, const Vec<3, T>& dir)
 	{
-		Vec3 normal;
-		float d;
+		auto normal = Vec<3, T>(plane);
+		auto numer = dot(normal, origin) - plane.w();
+		auto denom = dot(normal, dir);
 
-		Plane(const Vec3 &n, float _d);
-		Plane(const Vec3 &n, const Vec3 &p);
-		float intersect(const Vec3 &origin, const Vec3 &dir);
-	};
+		if (abs(denom) < EPS)
+			return -1.f;
 
-	struct AABB
+		return -(numer / denom);
+	}
+
+	// Mat2x3 as AABB:
+	// v_[0] - min, v_[1] - max
+
+	template<class T>
+	void AABB_offset(Mat<2, 3, T>& AABB, const Vec<3, T>& off)
 	{
-		Vec3 min;
-		Vec3 max;
+		AABB.v_[0] += off;
+		AABB.v_[1] += off;
+	}
 
-		AABB();
-		AABB(const Vec3 &_min, const Vec3 &_max);
-		AABB(const AABB &v);
-		AABB &operator=(const AABB &v);
-		void merge(const Vec3 &p);
-		void merge(const AABB &v);
-		void get_points(Vec3 *dst);
-	};
+	template<class T>
+	void AABB_merge(Mat<2, 3, T>& AABB, const Vec<3, T>& p)
+	{
+		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
+		v1.x() = min(v1.x(), p.x());
+		v1.y() = min(v1.y(), p.y());
+		v1.z() = min(v1.z(), p.z());
+		v2.x() = max(v2.x(), p.x());
+		v2.y() = max(v2.y(), p.y());
+		v2.z() = max(v2.z(), p.z());
+	}
 
-	AABB operator+(const AABB &a, const Vec3 &off);
-	AABB operator-(const AABB &a, const Vec3 &off);
+	template<class T>
+	void AABB_points(const Mat<2, 3, T>& AABB, Vec<3, T>* dst)
+	{
+		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
+		dst[0] = v1;
+		dst[1] = Vec<3, T>(v2.x(), v1.y(), v1.z());
+		dst[2] = Vec<3, T>(v2.x(), v1.y(), v2.z());
+		dst[3] = Vec<3, T>(v1.x(), v1.y(), v2.z());
+		dst[4] = Vec<3, T>(v1.x(), v2.y(), v1.z());
+		dst[5] = Vec<3, T>(v2.x(), v2.y(), v1.z());
+		dst[6] = v2;
+		dst[7] = Vec<3, T>(v1.x(), v2.y(), v2.z());
+	}
 
 	namespace math_detail
 	{
-		void rotate(const Vec3 &axis, float rad, Mat3 &m);
 		void mat3_to_quat(const Mat3 &m, Quat &q);
 		void euler_to_mat3(const EulerYPR &e, Mat3 &m);
 		void quat_to_euler(const Quat &q, EulerYPR &e);
 		void quat_to_mat3(const Quat &q, Mat3 &m);
-	}
-
-	inline Mat2 &Mat2::operator*=(const Mat2 &v)
-	{
-		return (*this = *this * v);
-	}
-
-	inline void Mat2::inverse()
-	{
-		*this = get_inversed();
 	}
 
 	inline Mat2 Mat2::get_inversed() const
@@ -1510,34 +1551,9 @@ namespace flame
 		math_detail::euler_to_mat3(e, *this);
 	}
 
-	inline Mat3::Mat3(const Vec3 &axis, float rad)
-	{
-		auto c = cos(rad);
-		auto s = sin(rad);
-
-		Vec3 temp((1.f - c) * axis);
-
-		(*this)[0][0] = c + temp[0] * axis[0];
-		(*this)[0][1] = temp[0] * axis[1] + s * axis[2];
-		(*this)[0][2] = temp[0] * axis[2] - s * axis[1];
-
-		(*this)[1][0] = temp[1] * axis[0] - s * axis[2];
-		(*this)[1][1] = c + temp[1] * axis[1];
-		(*this)[1][2] = temp[1] * axis[2] + s * axis[0];
-
-		(*this)[2][0] = temp[2] * axis[0] + s * axis[1];
-		(*this)[2][1] = temp[2] * axis[1] - s * axis[0];
-		(*this)[2][2] = c + temp[2] * axis[2];
-	}
-
 	inline Mat3 &Mat3::operator*=(const Mat3 &v)
 	{
 		return (*this = *this * v);
-	}
-
-	inline void Mat3::inverse()
-	{
-		*this = get_inversed();
 	}
 
 	inline Mat3 Mat3::get_inversed() const
@@ -1564,11 +1580,6 @@ namespace flame
 	inline Mat4 &Mat4::operator*=(const Mat4 &v)
 	{
 		return (*this = *this * v);
-	}
-
-	inline void Mat4::inverse()
-	{
-		*this = get_inversed();
 	}
 
 	inline Mat4 Mat4::get_inversed() const
@@ -1616,192 +1627,20 @@ namespace flame
 
 		Vec4 signA(+1, -1, +1, -1);
 		Vec4 signB(-1, +1, -1, +1);
-		Mat4 inverse(inv0 * signA, inv1 * signB, inv2 * signA, inv3 * signB);
+		Mat4 inv(inv0 * signA, inv1 * signB, inv2 * signA, inv3 * signB);
 
-		Vec4 row0(inverse[0][0], inverse[1][0], inverse[2][0], inverse[3][0]);
+		Vec4 row0(inv[0][0], inv[1][0], inv[2][0], inv[3][0]);
 
 		Vec4 dot0((*this)[0] * row0);
 		auto dot1 = (dot0.x + dot0.y) + (dot0.z + dot0.w);
 
 		auto det_inv = 1.f / dot1;
 
-		return inverse * det_inv;
-	}
-
-	inline EulerYPR::EulerYPR(float y, float p, float r) :
-		yaw(y), pitch(p), roll(r)
-	{
-	}
-
-	inline EulerYPR::EulerYPR(const Quat &q)
-	{
-		math_detail::quat_to_euler(q, *this);
-	}
-
-	inline Quat::Quat()
-	{
-	}
-
-	inline Quat::Quat(float _x, float _y, float _z, float _w) :
-		x(_x),
-		y(_y),
-		z(_z),
-		w(_w)
-	{
-	}
-
-	inline Quat operator*(const Quat &lhs, const Quat &rhs)
-	{
-		Quat ret;
-		ret.x = lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y;
-		ret.y = lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x;
-		ret.z = lhs.w * rhs.z + lhs.x * rhs.y + lhs.y * rhs.w + lhs.z * rhs.x;
-		ret.w = lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z;
-		return ret;
-	}
-
-	inline Plane::Plane()
-	{
-	}
-
-	inline Plane::Plane(const Vec3 &n, float _d) :
-		normal(n),
-		d(_d)
-	{
-	}
-
-	inline Plane::Plane(const Vec3 &n, const Vec3 &p) :
-		normal(n),
-		d(dot(normal, p))
-	{
-	}
-
-	inline float Plane::intersect(const Vec3 &origin, const Vec3 &dir)
-	{
-		auto numer = dot(normal, origin) - d;
-		auto denom = dot(normal, dir);
-
-		if (abs(denom) < EPS)
-			return -1.f;
-
-		return -(numer / denom);
-	}
-
-	inline AABB::AABB()
-	{
-	}
-
-	inline AABB::AABB(const Vec3 &_min, const Vec3 &_max) :
-		min(_min),
-		max(_max)
-	{
-	}
-
-	inline AABB::AABB(const AABB &v) :
-		min(v.min),
-		max(v.max)
-	{
-	}
-
-	inline AABB &AABB::operator=(const AABB &v)
-	{
-		min = v.min;
-		max = v.max;
-		return *this;
-	}
-
-	inline void AABB::reset()
-	{
-		min = Vec3(0.f);
-		max = Vec3(0.f);
-	}
-
-	inline float AABB::width() const
-	{
-		return max.x - min.x;
-	}
-
-	inline float AABB::height() const
-	{
-		return max.y - min.y;
-	}
-
-	inline float AABB::depth() const
-	{
-		return max.z - min.z;
-	}
-
-	inline Vec3 AABB::center() const
-	{
-		return (min + max) / 2.f;
-	}
-
-	inline void AABB::merge(const Vec3 &p)
-	{
-		min.x = ::flame::min(min.x, p.x);
-		min.y = ::flame::min(min.y, p.y);
-		min.z = ::flame::min(min.z, p.z);
-		max.x = ::flame::max(max.x, p.x);
-		max.y = ::flame::max(max.y, p.y);
-		max.z = ::flame::max(max.z, p.z);
-	}
-
-	inline void AABB::merge(const AABB &v)
-	{
-		merge(v.min);
-		merge(v.max);
-	}
-
-	inline void AABB::get_points(Vec3 *dst)
-	{
-		dst[0] = min;
-		dst[1] = Vec3(max.x, min.y, min.z);
-		dst[2] = Vec3(max.x, min.y, max.z);
-		dst[3] = Vec3(min.x, min.y, max.z);
-		dst[4] = Vec3(min.x, max.y, min.z);
-		dst[5] = Vec3(max.x, max.y, min.z);
-		dst[6] = max;
-		dst[7] = Vec3(min.x, max.y, max.z);
-	}
-
-	inline AABB operator+(const AABB &a, const Vec3 &off)
-	{
-		AABB ret(a);
-		ret.min += off;
-		ret.max += off;
-		return ret;
-	}
-
-	inline AABB operator-(const AABB &a, const Vec3 &off)
-	{
-		AABB ret(a);
-		ret.min -= off;
-		ret.max -= off;
-		return ret;
+		return inv * det_inv;
 	}
 
 	namespace math_detail
 	{
-		inline void rotate(const Vec3 &axis, float rad, Mat3 &m)
-		{
-			const auto c = cos(rad);
-			const auto s = sin(rad);
-
-			Vec3 temp((1.f - c) * axis);
-
-			m[0][0] = c + temp[0] * axis[0];
-			m[0][1] = 0 + temp[0] * axis[1] + s * axis[2];
-			m[0][2] = 0 + temp[0] * axis[2] - s * axis[1];
-
-			m[1][0] = 0 + temp[1] * axis[0] - s * axis[2];
-			m[1][1] = c + temp[1] * axis[1];
-			m[1][2] = 0 + temp[1] * axis[2] + s * axis[0];
-
-			m[2][0] = 0 + temp[2] * axis[0] + s * axis[1];
-			m[2][1] = 0 + temp[2] * axis[1] - s * axis[0];
-			m[2][2] = c + temp[2] * axis[2];
-		}
-
 		inline void mat3_to_quat(const Mat3 &m, Quat &q)
 		{
 			float s;
