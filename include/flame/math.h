@@ -152,9 +152,7 @@ namespace flame
 	{
 		T v_[N];
 
-		Vec() 
-		{
-		}
+		Vec() = default;
 
 		T& x()
 		{
@@ -626,9 +624,25 @@ namespace flame
 		return ret;
 	}
 
+	using Vec1f = Vec<1, float>;
 	using Vec2f = Vec<2, float>;
 	using Vec3f = Vec<3, float>;
 	using Vec4f = Vec<4, float>;
+
+	using Vec1u = Vec<1, uint>;
+	using Vec2u = Vec<2, uint>;
+	using Vec3u = Vec<3, uint>;
+	using Vec4u = Vec<4, uint>;
+
+	using Vec1i = Vec<1, int>;
+	using Vec2i = Vec<2, int>;
+	using Vec3i = Vec<3, int>;
+	using Vec4i = Vec<4, int>;
+
+	using Vec1b = Vec<1, uchar>;
+	using Vec2b = Vec<2, uchar>;
+	using Vec3b = Vec<3, uchar>;
+	using Vec4b = Vec<4, uchar>;
 
 	template<uint N, uint M, class T>
 	struct Mat
@@ -645,9 +659,7 @@ namespace flame
 			return v_[i];
 		}
 
-		Mat()
-		{
-		}
+		Mat() = default;
 
 		explicit Mat(T rhs)
 		{
@@ -1087,27 +1099,105 @@ namespace flame
 		}
 	}
 
-	template<uint N, class T>
-	inline Mat<N, N, T> inverse(const Mat<N, N, T>& m)
+	template<class T>
+	inline Mat<2, 2, T> inverse(const Mat<2, 2, T>& m)
 	{
-		Mat<N, N, T> ret;
+		auto det_inv = T(1) / (
+			m[0][0] * m[1][1] -
+			m[1][0] * m[0][1]);
 
+		return Mat<2, 2, T>(
+			Vec<2, T>(m[1][1] * det_inv, -m[0][1] * det_inv),
+			Vec<2, T>(-m[1][0] * det_inv, m[0][0] * det_inv));
+	}
 
+	template<class T>
+	inline Mat<3, 3, T> inverse(const Mat<3, 3, T>& m)
+	{
+		auto det_inv = T(1) / (
+			m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2])
+			- m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2])
+			+ m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]));
+
+		Mat<3, 3, T> ret;
+		ret[0][0] = +(m[1][1] * m[2][2] - m[2][1] * m[1][2]) * det_inv;
+		ret[1][0] = -(m[1][0] * m[2][2] - m[2][0] * m[1][2]) * det_inv;
+		ret[2][0] = +(m[1][0] * m[2][1] - m[2][0] * m[1][1]) * det_inv;
+		ret[0][1] = -(m[0][1] * m[2][2] - m[2][1] * m[0][2]) * det_inv;
+		ret[1][1] = +(m[0][0] * m[2][2] - m[2][0] * m[0][2]) * det_inv;
+		ret[2][1] = -(m[0][0] * m[2][1] - m[2][0] * m[0][1]) * det_inv;
+		ret[0][2] = +(m[0][1] * m[1][2] - m[1][1] * m[0][2]) * det_inv;
+		ret[1][2] = -(m[0][0] * m[1][2] - m[1][0] * m[0][2]) * det_inv;
+		ret[2][2] = +(m[0][0] * m[1][1] - m[1][0] * m[0][1]) * det_inv;
 
 		return ret;
 	}
 
 	template<class T>
-	inline Mat<2, 2, T> rotate(T rad)
+	inline Mat<4, 4, T> inverse(const Mat<4, 4, T>& m)
+	{
+		auto coef00 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
+		auto coef02 = m[1][2] * m[3][3] - m[3][2] * m[1][3];
+		auto coef03 = m[1][2] * m[2][3] - m[2][2] * m[1][3];
+
+		auto coef04 = m[2][1] * m[3][3] - m[3][1] * m[2][3];
+		auto coef06 = m[1][1] * m[3][3] - m[3][1] * m[1][3];
+		auto coef07 = m[1][1] * m[2][3] - m[2][1] * m[1][3];
+
+		auto coef08 = m[2][1] * m[3][2] - m[3][1] * m[2][2];
+		auto coef10 = m[1][1] * m[3][2] - m[3][1] * m[1][2];
+		auto coef11 = m[1][1] * m[2][2] - m[2][1] * m[1][2];
+
+		auto coef12 = m[2][0] * m[3][3] - m[3][0] * m[2][3];
+		auto coef14 = m[1][0] * m[3][3] - m[3][0] * m[1][3];
+		auto coef15 = m[1][0] * m[2][3] - m[2][0] * m[1][3];
+
+		auto coef16 = m[2][0] * m[3][2] - m[3][0] * m[2][2];
+		auto coef18 = m[1][0] * m[3][2] - m[3][0] * m[1][2];
+		auto coef19 = m[1][0] * m[2][2] - m[2][0] * m[1][2];
+
+		auto coef20 = m[2][0] * m[3][1] - m[3][0] * m[2][1];
+		auto coef22 = m[1][0] * m[3][1] - m[3][0] * m[1][1];
+		auto coef23 = m[1][0] * m[2][1] - m[2][0] * m[1][1];
+
+		Vec<4, T> fac0(coef00, coef00, coef02, coef03);
+		Vec<4, T> fac1(coef04, coef04, coef06, coef07);
+		Vec<4, T> fac2(coef08, coef08, coef10, coef11);
+		Vec<4, T> fac3(coef12, coef12, coef14, coef15);
+		Vec<4, T> fac4(coef16, coef16, coef18, coef19);
+		Vec<4, T> fac5(coef20, coef20, coef22, coef23);
+
+		Vec<4, T> vec0(m[1][0], m[0][0], m[0][0], m[0][0]);
+		Vec<4, T> vec1(m[1][1], m[0][1], m[0][1], m[0][1]);
+		Vec<4, T> vec2(m[1][2], m[0][2], m[0][2], m[0][2]);
+		Vec<4, T> vec3(m[1][3], m[0][3], m[0][3], m[0][3]);
+
+		Vec<4, T> inv0(vec1 * fac0 - vec2 * fac1 + vec3 * fac2);
+		Vec<4, T> inv1(vec0 * fac0 - vec2 * fac3 + vec3 * fac4);
+		Vec<4, T> inv2(vec0 * fac1 - vec1 * fac3 + vec3 * fac5);
+		Vec<4, T> inv3(vec0 * fac2 - vec1 * fac4 + vec2 * fac5);
+
+		Vec<4, T> signA(+1, -1, +1, -1);
+		Vec<4, T> signB(-1, +1, -1, +1);
+		Mat<4, 4, T> inv(inv0 * signA, inv1 * signB, inv2 * signA, inv3 * signB);
+
+		Vec<4, T> row0(inv[0][0], inv[1][0], inv[2][0], inv[3][0]);
+
+		Vec<4, T> dot0(m[0] * row0);
+		return inv / ((dot0.x + dot0.y) + (dot0.z + dot0.w));
+	}
+
+	template<class T>
+	inline Mat<2, 2, T> rotation(T rad)
 	{
 		const auto c = cos(rad);
 		const auto s = sin(rad);
 
-		return Mat<2, T>(Vec<2, T>(c, s), Vec<2, T>(-s, c));
+		return Mat<2, 2, T>(Vec<2, T>(c, s), Vec<2, T>(-s, c));
 	}
 
 	template<class T>
-	inline Mat<3, 3, T> rotate(const Vec<3, T>& axis, T rad)
+	inline Mat<3, 3, T> rotation(const Vec<3, T>& axis, T rad)
 	{
 		const auto c = cos(rad);
 		const auto s = sin(rad);
@@ -1190,7 +1280,7 @@ namespace flame
 
 		float tick = (end - start) / float(slices);
 		float best = 0;
-		float bestDistance = 1000000.f;
+		float bestDistance = T(1000000);
 		float t = start;
 
 		while (t <= end)
@@ -1206,7 +1296,7 @@ namespace flame
 			t += tick;
 		}
 
-		return bezier_closest(iters - 1, pos, max(best - tick, 0.f), min(best + tick, 1.f), slices, p0, p1, p2, p3);
+		return bezier_closest(iters - 1, pos, max(best - tick, 0.f), min(best + tick, T(1)), slices, p0, p1, p2, p3);
 	}
 
 	template<uint N, class T>
@@ -1214,7 +1304,7 @@ namespace flame
 		const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3,
 		int slices, int iters)
 	{
-		return bezier(bezier_closest(iters, pos, 0.f, 1.f, slices, p0, p1, p2, p3), p0, p1, p2, p3);
+		return bezier(bezier_closest(iters, pos, 0.f, T(1), slices, p0, p1, p2, p3), p0, p1, p2, p3);
 	}
 
 	template<class T>
@@ -1272,56 +1362,56 @@ namespace flame
 	template<class T>
 	inline Vec<4, T> rect_expand(const Vec<4, T>& rect, T length)
 	{
-		Rect ret(*this);
-		min.x -= length;
-		min.y -= length;
-		max.x += length;
-		max.y += length;
+		Vec<4, T> ret(*this);
+		ret.x() -= length;
+		ret.y() -= length;
+		ret.z() += length;
+		ret.w() += length;
 		return ret;
 	}
 
 	template<class T>
 	inline bool rect_contains(const Vec<4, T>& rect, const Vec<2, T>& p)
 	{
-		return p.x > min.x&& p.x < max.x&&
-			p.y > min.y&& p.y < max.y;
+		return p.x() > rect.x() && p.x() < rect.z() &&
+			p.y() > rect.y() && p.y() < rect.w();
 	}
 
 	template<class T>
 	inline bool rect_overlapping(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
 	{
-		return min.x <= oth.max.x && max.x >= oth.min.x &&
-			min.y <= oth.max.y && max.y >= oth.min.y;
+		return lhs.x() <= rhs.z() && lhs.z() >= rhs.x() &&
+			lhs.y() <= rhs.w() && lhs.w() >= rhs.y();
 	}
 
 	template<class T>
-	inline Side rect_side(const Vec<4, T>& lhs, T threshold)
+	inline Side rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
 	{
-		if (p.x < max.x && p.x > max.x - threshold &&
-			p.y > min.y && p.y < min.y + threshold)
+		if (p.x() < rect.z() && p.x() > rect.z() - threshold &&
+			p.y() > rect.y() && p.y() < rect.y() + threshold)
 			return SideNE;
-		if (p.x > min.x && p.x < min.x + threshold &&
-			p.y > min.y && p.y < min.y + threshold)
+		if (p.x() > rect.x() && p.x() < rect.x() + threshold &&
+			p.y() > rect.y() && p.y() < rect.y() + threshold)
 			return SideNW;
-		if (p.x < max.x && p.x > max.x - threshold &&
-			p.y < max.y && p.y > max.y - threshold)
+		if (p.x() < rect.z() && p.x() > rect.z() - threshold &&
+			p.y() < rect.w() && p.y() > rect.w() - threshold)
 			return SideSE;
-		if (p.x > min.x && p.x < min.x + threshold &&
-			p.y < max.y && p.y > max.y - threshold)
+		if (p.x() > rect.x() && p.x() < rect.x() + threshold &&
+			p.y() < rect.w() && p.y() > rect.w() - threshold)
 			return SideSW;
-		if (p.y > min.y - threshold && p.y < min.y + threshold &&
-			p.x > min.x && p.x < max.x)
+		if (p.y() > rect.y() - threshold && p.y() < rect.y() + threshold &&
+			p.x() > rect.x() && p.x() < rect.z())
 			return SideN;
-		if (p.y < max.y && p.y > max.y - threshold &&
-			p.x > min.x && p.x < max.x)
+		if (p.y() < rect.w() && p.y() > rect.w() - threshold &&
+			p.x() > rect.x() && p.x() < rect.z())
 			return SideS;
-		if (p.x < max.x && p.x > max.x - threshold &&
-			p.y > min.y && p.y < max.y)
+		if (p.x() < rect.z() && p.x() > rect.z() - threshold &&
+			p.y() > rect.y() && p.y() < rect.w())
 			return SideE;
-		if (p.x > min.x && p.x < min.x + threshold &&
-			p.y > min.y && p.y < max.y)
+		if (p.x() > rect.x() && p.x() < rect.x() + threshold &&
+			p.y() > rect.y() && p.y() < rect.w())
 			return SideW;
-		if (contains(p))
+		if (rect_contains(rect, p))
 			return Inside;
 		return Outside;
 	}
@@ -1399,8 +1489,11 @@ namespace flame
 			return fited_rect(desired_size, size.x() / size.y());
 	}
 
-	inline Vec<3, uchar> from_hsv(float h, float s, float v)
+	inline Vec<3, uchar> color(const Vec<3, float>& hsv)
 	{
+		auto h = hsv.x();
+		auto s = hsv.y();
+		auto v = hsv.z();
 		auto hdiv60 = h / 60.f;
 		auto hi = int(hdiv60) % 6;
 		auto f = hdiv60 - hi;
@@ -1432,7 +1525,7 @@ namespace flame
 		}
 	}
 
-	inline Vec<3, float> to_hsv(const Vec<3, uchar>& rgb)
+	inline Vec<3, float> hsv(const Vec<3, uchar>& rgb)
 	{
 		auto r = rgb.x() / 255.f;
 		auto g = rgb.y() / 255.f;
@@ -1459,9 +1552,60 @@ namespace flame
 	}
 
 	// Vec4 as quat
+
+	template<class T>
+	inline Vec<4, T> quat(const Mat<3, 3, T>& m)
+	{
+		T s;
+		T tq[4];
+		int i, j;
+		// Use tq to store the largest trace
+		tq[0] = T(1) + m[0][0] + m[1][1] + m[2][2];
+		tq[1] = T(1) + m[0][0] - m[1][1] - m[2][2];
+		tq[2] = T(1) - m[0][0] + m[1][1] - m[2][2];
+		tq[3] = T(1) - m[0][0] - m[1][1] + m[2][2];
+		// Find the maximum (could also use stacked if's later)
+		j = 0;
+		for (i = 1; i < 4; i++)
+			j = (tq[i] > tq[j]) ? i : j;
+
+		Vec<4, T> ret;
+		// check the diagonal
+		if (j == 0)
+		{
+			/* perform instant calculation */
+			ret.w() = tq[0];
+			ret.x() = m[1][2] - m[2][1];
+			ret.y() = m[2][0] - m[0][2];
+			ret.z() = m[0][1] - m[1][0];
+		}
+		else if (j == 1)
+		{
+			ret.w() = m[1][2] - m[2][1];
+			ret.x() = tq[1];
+			ret.y() = m[0][1] + m[1][0];
+			ret.z() = m[2][0] + m[0][2];
+		}
+		else if (j == 2)
+		{
+			ret.w() = m[2][0] - m[0][2];
+			ret.x() = m[0][1] + m[1][0];
+			ret.y() = tq[2];
+			ret.z() = m[1][2] + m[2][1];
+		}
+		else /* if (j==3) */
+		{
+			ret.w() = m[0][1] - m[1][0];
+			ret.x() = m[2][0] + m[0][2];
+			ret.y() = m[1][2] + m[2][1];
+			ret.z() = tq[3];
+		}
+		ret = normalize(ret * sqrt(T(0.25) / tq[j]));
+		return ret;
+	}
 	
 	template<class T>
-	Vec<4, T> quaternion_multiply(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
+	inline Vec<4, T> quat_mul(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
 	{
 		Vec<4, T> ret;
 		ret.x() = lhs.w() * rhs.x() + lhs.x() * rhs.w() + lhs.y() * rhs.z() - lhs.z() * rhs.y();
@@ -1471,11 +1615,95 @@ namespace flame
 		return ret;
 	}
 
+	template<class T>
+	inline Mat<3, 3, T> rotation(const Vec<4, T>& q)
+	{
+		T wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
+
+		x2 = T(2) * q.x();
+		y2 = T(2) * q.y();
+		z2 = T(2) * q.z();
+
+		xx = q.x() * x2;
+		xy = q.x() * y2;
+		xz = q.x() * z2;
+
+		yy = q.y() * y2;
+		yz = q.y() * z2;
+		zz = q.z() * z2;
+
+		wx = q.w * x2;
+		wy = q.w * y2;
+		wz = q.w * z2;
+
+		Mat<3, 3, T> ret;
+
+		ret[0][0] = T(1) - (yy + zz);
+		ret[1][0] = xy - wz;
+		ret[2][0] = xz + wy;
+
+		ret[0][1] = xy + wz;
+		ret[1][1] = T(1) - (xx + zz);
+		ret[2][1] = yz - wx;
+
+		ret[0][2] = xz - wy;
+		ret[1][2] = yz + wx;
+		ret[2][2] = T(1) - (xx + yy);
+
+		return ret;
+	}
+
+	// Vec3 as euler:
+	// (x, y z) - (yaw pitch roll)
+
+	template<class T>
+	inline Vec<3, T> eulerYPR(const Vec<4, T>& quat)
+	{
+		auto sqw = quat.w() * quat.w();
+		auto sqx = quat.x() * quat.x();
+		auto sqy = quat.y() * quat.y();
+		auto sqz = quat.z() * quat.z();
+
+		auto unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+		auto test = quat.x() * quat.y() + quat.z() * quat.w();
+		if (test > T(0.499) * unit)  // singularity at north pole
+			return Vec<3, T>(T(2) * atan2(quat.x(), quat.w()), M_PI / T(2), T(0)) * RAD_ANG;
+		if (test < T(-0.499) * unit)  // singularity at south pole
+		{
+			e.yaw = ;
+			e.pitch = ;
+			e.roll = 0;
+			return Vec<3, T>(-T(2) * atan2(quat.x(), quat.w()), -M_PI / T(2), T(0)) * RAD_ANG;
+		}
+
+		return Vec<3, T>(atan2(T(2) * quat.y() * quat.w() - T(2) * quat.x() * quat.z(), sqx - sqy - sqz + sqw),
+			asin(T(2) * test / unit),
+			atan2(T(2) * quat.x() * quat.w() - T(2) * quat.y() * quat.z(), -sqx + sqy - sqz + sqw)) * RAD_ANG;
+	}
+
+	template<class T>
+	inline Mat<3, 3, T> rotation(const Vec<3, T>& euler_ypr)
+	{
+		Mat<3, 3, T> ret(T(1));
+
+		Mat3 mat_yaw(Vec3(m[1]), e.yaw * ANG_RAD);
+		m[0] = mat_yaw * m[0];
+		m[2] = mat_yaw * m[2];
+		Mat3 mat_pitch(Vec3(m[0]), e.pitch * ANG_RAD);
+		m[2] = mat_pitch * m[2];
+		m[1] = mat_pitch * m[1];
+		Mat3 mat_roll(Vec3(m[2]), e.roll * ANG_RAD);
+		m[1] = mat_roll * m[1];
+		m[0] = mat_roll * m[0];
+
+		return ret;
+	}
+
 	// Vec4 as plane:
 	// (x, y, z) - normal, w - d
 
 	template<class T>
-	T plane_intersect(const Vec<4, T>& plane, const Vec<3, T>& origin, const Vec<3, T>& dir)
+	inline T plane_intersect(const Vec<4, T>& plane, const Vec<3, T>& origin, const Vec<3, T>& dir)
 	{
 		auto normal = Vec<3, T>(plane);
 		auto numer = dot(normal, origin) - plane.w();
@@ -1491,14 +1719,14 @@ namespace flame
 	// v_[0] - min, v_[1] - max
 
 	template<class T>
-	void AABB_offset(Mat<2, 3, T>& AABB, const Vec<3, T>& off)
+	inline void AABB_offset(Mat<2, 3, T>& AABB, const Vec<3, T>& off)
 	{
 		AABB.v_[0] += off;
 		AABB.v_[1] += off;
 	}
 
 	template<class T>
-	void AABB_merge(Mat<2, 3, T>& AABB, const Vec<3, T>& p)
+	inline void AABB_merge(Mat<2, 3, T>& AABB, const Vec<3, T>& p)
 	{
 		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
 		v1.x() = min(v1.x(), p.x());
@@ -1510,7 +1738,7 @@ namespace flame
 	}
 
 	template<class T>
-	void AABB_points(const Mat<2, 3, T>& AABB, Vec<3, T>* dst)
+	inline void AABB_points(const Mat<2, 3, T>& AABB, Vec<3, T>* dst)
 	{
 		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
 		dst[0] = v1;
@@ -1521,258 +1749,6 @@ namespace flame
 		dst[5] = Vec<3, T>(v2.x(), v2.y(), v1.z());
 		dst[6] = v2;
 		dst[7] = Vec<3, T>(v1.x(), v2.y(), v2.z());
-	}
-
-	namespace math_detail
-	{
-		void mat3_to_quat(const Mat3 &m, Quat &q);
-		void euler_to_mat3(const EulerYPR &e, Mat3 &m);
-		void quat_to_euler(const Quat &q, EulerYPR &e);
-		void quat_to_mat3(const Quat &q, Mat3 &m);
-	}
-
-	inline Mat2 Mat2::get_inversed() const
-	{
-		auto det_inv = 1.f / (
-			(*this)[0][0] * (*this)[1][1] - 
-			(*this)[1][0] * (*this)[0][1]);
-
-		Mat2 ret(
-			+(*this)[1][1] * det_inv,
-			-(*this)[0][1] * det_inv,
-			-(*this)[1][0] * det_inv,
-			+(*this)[0][0] * det_inv);
-
-		return ret;
-	}
-
-	inline Mat3::Mat3(const EulerYPR &e)
-	{
-		math_detail::euler_to_mat3(e, *this);
-	}
-
-	inline Mat3 &Mat3::operator*=(const Mat3 &v)
-	{
-		return (*this = *this * v);
-	}
-
-	inline Mat3 Mat3::get_inversed() const
-	{
-		auto det_inv = 1.f / (
-			+(*this)[0][0] * ((*this)[1][1] * (*this)[2][2] - (*this)[2][1] * (*this)[1][2])
-			-(*this)[1][0] * ((*this)[0][1] * (*this)[2][2] - (*this)[2][1] * (*this)[0][2])
-			+(*this)[2][0] * ((*this)[0][1] * (*this)[1][2] - (*this)[1][1] * (*this)[0][2]));
-
-		Mat3 ret;;
-		ret[0][0] = +((*this)[1][1] * (*this)[2][2] - (*this)[2][1] * (*this)[1][2]) * det_inv;
-		ret[1][0] = -((*this)[1][0] * (*this)[2][2] - (*this)[2][0] * (*this)[1][2]) * det_inv;
-		ret[2][0] = +((*this)[1][0] * (*this)[2][1] - (*this)[2][0] * (*this)[1][1]) * det_inv;
-		ret[0][1] = -((*this)[0][1] * (*this)[2][2] - (*this)[2][1] * (*this)[0][2]) * det_inv;
-		ret[1][1] = +((*this)[0][0] * (*this)[2][2] - (*this)[2][0] * (*this)[0][2]) * det_inv;
-		ret[2][1] = -((*this)[0][0] * (*this)[2][1] - (*this)[2][0] * (*this)[0][1]) * det_inv;
-		ret[0][2] = +((*this)[0][1] * (*this)[1][2] - (*this)[1][1] * (*this)[0][2]) * det_inv;
-		ret[1][2] = -((*this)[0][0] * (*this)[1][2] - (*this)[1][0] * (*this)[0][2]) * det_inv;
-		ret[2][2] = +((*this)[0][0] * (*this)[1][1] - (*this)[1][0] * (*this)[0][1]) * det_inv;
-
-		return ret;
-	}
-
-	inline Mat4 &Mat4::operator*=(const Mat4 &v)
-	{
-		return (*this = *this * v);
-	}
-
-	inline Mat4 Mat4::get_inversed() const
-	{
-		auto coef00 = (*this)[2][2] * (*this)[3][3] - (*this)[3][2] * (*this)[2][3];
-		auto coef02 = (*this)[1][2] * (*this)[3][3] - (*this)[3][2] * (*this)[1][3];
-		auto coef03 = (*this)[1][2] * (*this)[2][3] - (*this)[2][2] * (*this)[1][3];
-
-		auto coef04 = (*this)[2][1] * (*this)[3][3] - (*this)[3][1] * (*this)[2][3];
-		auto coef06 = (*this)[1][1] * (*this)[3][3] - (*this)[3][1] * (*this)[1][3];
-		auto coef07 = (*this)[1][1] * (*this)[2][3] - (*this)[2][1] * (*this)[1][3];
-
-		auto coef08 = (*this)[2][1] * (*this)[3][2] - (*this)[3][1] * (*this)[2][2];
-		auto coef10 = (*this)[1][1] * (*this)[3][2] - (*this)[3][1] * (*this)[1][2];
-		auto coef11 = (*this)[1][1] * (*this)[2][2] - (*this)[2][1] * (*this)[1][2];
-
-		auto coef12 = (*this)[2][0] * (*this)[3][3] - (*this)[3][0] * (*this)[2][3];
-		auto coef14 = (*this)[1][0] * (*this)[3][3] - (*this)[3][0] * (*this)[1][3];
-		auto coef15 = (*this)[1][0] * (*this)[2][3] - (*this)[2][0] * (*this)[1][3];
-
-		auto coef16 = (*this)[2][0] * (*this)[3][2] - (*this)[3][0] * (*this)[2][2];
-		auto coef18 = (*this)[1][0] * (*this)[3][2] - (*this)[3][0] * (*this)[1][2];
-		auto coef19 = (*this)[1][0] * (*this)[2][2] - (*this)[2][0] * (*this)[1][2];
-
-		auto coef20 = (*this)[2][0] * (*this)[3][1] - (*this)[3][0] * (*this)[2][1];
-		auto coef22 = (*this)[1][0] * (*this)[3][1] - (*this)[3][0] * (*this)[1][1];
-		auto coef23 = (*this)[1][0] * (*this)[2][1] - (*this)[2][0] * (*this)[1][1];
-
-		Vec4 fac0(coef00, coef00, coef02, coef03);
-		Vec4 fac1(coef04, coef04, coef06, coef07);
-		Vec4 fac2(coef08, coef08, coef10, coef11);
-		Vec4 fac3(coef12, coef12, coef14, coef15);
-		Vec4 fac4(coef16, coef16, coef18, coef19);
-		Vec4 fac5(coef20, coef20, coef22, coef23);
-
-		Vec4 vec0((*this)[1][0], (*this)[0][0], (*this)[0][0], (*this)[0][0]);
-		Vec4 vec1((*this)[1][1], (*this)[0][1], (*this)[0][1], (*this)[0][1]);
-		Vec4 vec2((*this)[1][2], (*this)[0][2], (*this)[0][2], (*this)[0][2]);
-		Vec4 vec3((*this)[1][3], (*this)[0][3], (*this)[0][3], (*this)[0][3]);
-
-		Vec4 inv0(vec1 * fac0 - vec2 * fac1 + vec3 * fac2);
-		Vec4 inv1(vec0 * fac0 - vec2 * fac3 + vec3 * fac4);
-		Vec4 inv2(vec0 * fac1 - vec1 * fac3 + vec3 * fac5);
-		Vec4 inv3(vec0 * fac2 - vec1 * fac4 + vec2 * fac5);
-
-		Vec4 signA(+1, -1, +1, -1);
-		Vec4 signB(-1, +1, -1, +1);
-		Mat4 inv(inv0 * signA, inv1 * signB, inv2 * signA, inv3 * signB);
-
-		Vec4 row0(inv[0][0], inv[1][0], inv[2][0], inv[3][0]);
-
-		Vec4 dot0((*this)[0] * row0);
-		auto dot1 = (dot0.x + dot0.y) + (dot0.z + dot0.w);
-
-		auto det_inv = 1.f / dot1;
-
-		return inv * det_inv;
-	}
-
-	namespace math_detail
-	{
-		inline void mat3_to_quat(const Mat3 &m, Quat &q)
-		{
-			float s;
-			float tq[4];
-			int   i, j;
-			// Use tq to store the largest trace
-			tq[0] = 1.f + m[0][0] + m[1][1] + m[2][2];
-			tq[1] = 1.f + m[0][0] - m[1][1] - m[2][2];
-			tq[2] = 1.f - m[0][0] + m[1][1] - m[2][2];
-			tq[3] = 1.f - m[0][0] - m[1][1] + m[2][2];
-			// Find the maximum (could also use stacked if's later)
-			j = 0;
-			for (i = 1; i < 4; i++)
-			{
-				j = (tq[i] > tq[j]) ? i : j;
-			}
-
-			// check the diagonal
-			if (j == 0)
-			{
-				/* perform instant calculation */
-				q.w = tq[0];
-				q.x = m[1][2] - m[2][1];
-				q.y = m[2][0] - m[0][2];
-				q.z = m[0][1] - m[1][0];
-			}
-			else if (j == 1)
-			{
-				q.w = m[1][2] - m[2][1];
-				q.x = tq[1];
-				q.y = m[0][1] + m[1][0];
-				q.z = m[2][0] + m[0][2];
-			}
-			else if (j == 2)
-			{
-				q.w = m[2][0] - m[0][2];
-				q.x = m[0][1] + m[1][0];
-				q.y = tq[2];
-				q.z = m[1][2] + m[2][1];
-			}
-			else /* if (j==3) */
-			{
-				q.w = m[0][1] - m[1][0];
-				q.x = m[2][0] + m[0][2];
-				q.y = m[1][2] + m[2][1];
-				q.z = tq[3];
-			}
-			s = sqrt(0.25f / tq[j]);
-			q.w *= s;
-			q.x *= s;
-			q.y *= s;
-			q.z *= s;
-			q.normalize();
-		}
-
-		inline void euler_to_mat3(const EulerYPR &e, Mat3 &m)
-		{
-			m[0] = Vec3(1.f, 0.f, 0.f);
-			m[1] = Vec3(0.f, 1.f, 0.f);
-			m[2] = Vec3(0.f, 0.f, 1.f);
-			Mat3 mat_yaw(Vec3(m[1]), e.yaw * ANG_RAD);
-			m[0] = mat_yaw * m[0];
-			m[2] = mat_yaw * m[2];
-			Mat3 mat_pitch(Vec3(m[0]), e.pitch * ANG_RAD);
-			m[2] = mat_pitch * m[2];
-			m[1] = mat_pitch * m[1];
-			Mat3 mat_roll(Vec3(m[2]), e.roll * ANG_RAD);
-			m[1] = mat_roll * m[1];
-			m[0] = mat_roll * m[0];
-		}
-
-		inline void quat_to_euler(const Quat &q, EulerYPR &e)
-		{
-			auto sqw = q.w * q.w;
-			auto sqx = q.x * q.x;
-			auto sqy = q.y * q.y;
-			auto sqz = q.z * q.z;
-
-			auto unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
-			auto test = q.x * q.y + q.z * q.w;
-			if (test > 0.499f * unit)
-			{ // singularity at north pole
-				e.yaw = 2.f * atan2(q.x, q.w);
-				e.pitch = M_PI / 2.f;
-				e.roll = 0;
-				return;
-			}
-			if (test < -0.499f * unit)
-			{ // singularity at south pole
-				e.yaw = -2.f * atan2(q.x, q.w);
-				e.pitch = -M_PI / 2.f;
-				e.roll = 0;
-				return;
-			}
-
-			e.yaw = atan2(2.f * q.y * q.w - 2.f * q.x * q.z, sqx - sqy - sqz + sqw) * RAD_ANG;
-			e.pitch = asin(2.f * test / unit) * RAD_ANG;
-			e.roll = atan2(2.f * q.x * q.w - 2.f * q.y * q.z, -sqx + sqy - sqz + sqw) * RAD_ANG;
-		}
-
-		inline void quat_to_mat3(const Quat &q, Mat3 &m)
-		{
-			float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
-
-			x2 = 2.f * q.x;
-			y2 = 2.f * q.y;
-			z2 = 2.f * q.z;
-
-			xx = q.x * x2;
-			xy = q.x * y2;
-			xz = q.x * z2;
-
-			yy = q.y * y2;
-			yz = q.y * z2;
-			zz = q.z * z2;
-
-			wx = q.w * x2;
-			wy = q.w * y2;
-			wz = q.w * z2;
-
-			m[0][0] = 1.f - (yy + zz);
-			m[1][0] = xy - wz;
-			m[2][0] = xz + wy;
-
-			m[0][1] = xy + wz;
-			m[1][1] = 1.f - (xx + zz);
-			m[2][1] = yz - wx;
-
-			m[0][2] = xz - wy;
-			m[1][2] = yz + wx;
-			m[2][2] = 1.f - (xx + yy);
-		}
 	}
 
 	typedef char TypeFmt[4];
@@ -1795,104 +1771,18 @@ namespace flame
 		return true;
 	}
 
-	/* fmt:
-		i1   - int
-		i2   - Ivec2
-		i3   - Ivec3
-		i4   - Ivec4
-		f1   - float
-		f2   - Vec2
-		f3   - Vec3
-		f4   - Vec4
-		b1   - uchar
-		b2   - Bvec2
-		b3   - Bvec3
-		b4   - Bvec4
-		p    - void*
-	*/
-
 	struct CommonData
 	{
 		TypeFmt fmt;
 
 		union
 		{
-			uint u;
-			Vec4 f;
-			Ivec4 i;
-			Bvec4 b;
+			Vec4f f;
+			Vec4u u;
+			Vec4i i;
+			Vec4b b;
 			void *p;
 		}v;
-
-		inline uint &u()
-		{
-			return v.u;
-		}
-
-		inline float &f1()
-		{
-			return v.f[0];
-		}
-
-		inline Vec2 &f2()
-		{
-			return *(Vec2*)&v.f;
-		}
-
-		inline Vec3 &f3()
-		{
-			return *(Vec3*)&v.f;
-		}
-
-		inline Vec4 &f4()
-		{
-			return v.f;
-		}
-
-		inline int &i1()
-		{
-			return v.i[0];
-		}
-
-		inline Ivec2 &i2()
-		{
-			return *(Ivec2*)&v.i;
-		}
-
-		inline Ivec3 &i3()
-		{
-			return *(Ivec3*)&v.i;
-		}
-
-		inline Ivec4 &i4()
-		{
-			return v.i;
-		}
-
-		inline uchar &b1()
-		{
-			return v.b[0];
-		}
-
-		inline Bvec2 &b2()
-		{
-			return *(Bvec2*)&v.b;
-		}
-
-		inline Bvec3 &b3()
-		{
-			return *(Bvec3*)&v.b;
-		}
-
-		inline Bvec4 &b4()
-		{
-			return v.b;
-		}
-
-		inline void *&p()
-		{
-			return v.p;
-		}
 
 		CommonData() = default;
 
@@ -1903,124 +1793,108 @@ namespace flame
 			memcpy(&v, &rhs.v, sizeof(v));
 		}
 
-		inline CommonData(float f)
+		inline CommonData(float _v)
 		{
 			fmt[0] = 'f';
 			fmt[1] = '1';
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.f = f;
+			v.f.x() = _v;
+			for (auto i = 1; i < 4; i++)
+				v.f[i] = 0.f;
 		}
 
-		inline CommonData(const Vec2 &f)
+		template<uint N>
+		inline CommonData(const Vec<N, float> & _v)
 		{
 			fmt[0] = 'f';
-			fmt[1] = '2';
+			fmt[1] = '0' + N;
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.f = f;
+			for (auto i = 0; i < N; i++)
+				v.f[i] = _v[i];
+			for (auto i = N; i < 4; i++)
+				v.f[i] = 0.f;
 		}
 
-		inline CommonData(const Vec3 &f)
+		inline CommonData(uint _v)
 		{
-			fmt[0] = 'f';
-			fmt[1] = '3';
+			fmt[0] = 'u';
+			fmt[1] = '1';
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.f = f;
+			v.f.x() = _v;
+			for (auto i = 1; i < 4; i++)
+				v.f[i] = 0;
 		}
 
-		inline CommonData(const Vec4 &f)
+		template<uint N>
+		inline CommonData(const Vec<N, uint>& _v)
 		{
-			fmt[0] = 'f';
-			fmt[1] = '4';
+			fmt[0] = 'u';
+			fmt[1] = '0' + N;
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.f = f;
+			for (auto i = 0; i < N; i++)
+				v.f[i] = _v[i];
+			for (auto i = N; i < 4; i++)
+				v.f[i] = 0;
 		}
 
-		inline CommonData(int i)
+		inline CommonData(int _v)
 		{
 			fmt[0] = 'i';
 			fmt[1] = '1';
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.i = i;
+			v.f.x() = _v;
+			for (auto i = 1; i < 4; i++)
+				v.f[i] = 0;
 		}
 
-		inline CommonData(const Ivec2 &i)
+		template<uint N>
+		inline CommonData(const Vec<N, int>& v)
 		{
-			fmt[0] = 'i';
-			fmt[1] = '2';
+			fmt[0] = 'f';
+			fmt[1] = '0' + N;
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.i = i;
+			for (auto i = 0; i < N; i++)
+				v.f[i] = v[i];
+			for (auto i = N; i < 4; i++)
+				v.f[i] = 0;
 		}
 
-		inline CommonData(const Ivec3 &i)
-		{
-			fmt[0] = 'i';
-			fmt[1] = '3';
-			fmt[2] = 0;
-			fmt[3] = 0;
-
-			v.i = i;
-		}
-
-		inline CommonData(const Ivec4 &i)
-		{
-			fmt[0] = 'i';
-			fmt[1] = '4';
-			fmt[2] = 0;
-			fmt[3] = 0;
-
-			v.i = i;
-		}
-
-		inline CommonData(uchar b)
+		inline CommonData(uchar _v)
 		{
 			fmt[0] = 'b';
 			fmt[1] = '1';
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.b = b;
+			v.f.x() = _v;
+			for (auto i = 1; i < 4; i++)
+				v.f[i] = 0;
 		}
 
-		inline CommonData(const Bvec2 &b)
+		template<uint N>
+		inline CommonData(const Vec<N, uchar>& _v)
 		{
 			fmt[0] = 'b';
-			fmt[1] = '2';
+			fmt[1] = '0' + N;
 			fmt[2] = 0;
 			fmt[3] = 0;
 
-			v.b = b;
-		}
-
-		inline CommonData(const Bvec3 &b)
-		{
-			fmt[0] = 'b';
-			fmt[1] = '3';
-			fmt[2] = 0;
-			fmt[3] = 0;
-
-			v.b = b;
-		}
-
-		inline CommonData(const Bvec4 &b)
-		{
-			fmt[0] = 'b';
-			fmt[1] = '4';
-			fmt[2] = 0;
-			fmt[3] = 0;
-
-			v.b = b;
+			for (auto i = 0; i < N; i++)
+				v.f[i] = _v[i];
+			for (auto i = N; i < 4; i++)
+				v.f[i] = 0;
 		}
 
 		inline CommonData(void *p)
