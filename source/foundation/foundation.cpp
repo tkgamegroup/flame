@@ -67,11 +67,11 @@ namespace flame
 		return GetModuleHandle(nullptr);
 	}
 
-	Ivec2 get_screen_size()
+	Vec2u get_screen_size()
 	{
-		Ivec2 ret;
-		ret.x = GetSystemMetrics(SM_CXSCREEN);
-		ret.y = GetSystemMetrics(SM_CYSCREEN);
+		Vec2u ret;
+		ret.x() = GetSystemMetrics(SM_CXSCREEN);
+		ret.y() = GetSystemMetrics(SM_CYSCREEN);
 		return ret;
 	}
 

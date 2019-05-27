@@ -26,93 +26,45 @@
 
 namespace flame
 {
-	inline String to_string(float v, int precision = 6)
+	inline std::string to_string(float v, int precision = 6)
 	{
 		char buf[20];
 		sprintf(buf, "%.*f", precision, v);
 		return buf;
 	}
 
-	inline String to_string(const Vec2& v, int precision = 6)
+	inline std::string to_string(uint v, int precision = 0)
 	{
-		char buf[40];
-		sprintf(buf, "%.*f;%.*f", precision, v.x, precision, v.y);
+		char buf[20];
+		if (precision == 0)
+			sprintf(buf, "%u", v);
+		else
+			sprintf(buf, "%*u", precision, v);
 		return buf;
 	}
 
-	inline String to_string(const Vec3& v, int precision = 6)
+	inline std::string to_string(int v, int precision = 0)
 	{
-		char buf[60];
-		sprintf(buf, "%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z);
+		char buf[20];
+		if (precision == 0)
+			sprintf(buf, "%d", v);
+		else
+			sprintf(buf, "%*d", precision, v);
 		return buf;
 	}
 
-	inline String to_string(const Vec4& v, int precision = 6)
-	{
-		char buf[80];
-		sprintf(buf, "%.*f;%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z, precision, v.w);
-		return buf;
-	}
-
-	inline String to_string(bool v)
+	inline std::string to_string(bool v)
 	{
 		return v ? "true" : "false";
 	}
 
-	inline String to_string(int v)
+	template<uint N, class T>
+	inline std::string to_string(const Vec<N, T>& v, int precision = std::is_floating_point<T>::value ? 6 : 0)
 	{
-		char buf[20];
-		sprintf(buf, "%d", v);
-		return buf;
-	}
-
-	inline String to_string(uint v)
-	{
-		char buf[20];
-		sprintf(buf, "%u", v);
-		return buf;
-	}
-
-	inline String to_string(const Ivec2& v)
-	{
-		char buf[40];
-		sprintf(buf, "%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline String to_string(const Ivec3& v)
-	{
-		char buf[60];
-		sprintf(buf, "%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline String to_string(const Ivec4& v)
-	{
-		char buf[80];
-		sprintf(buf, "%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
-	}
-
-	inline String to_string(const Bvec2& v)
-	{
-		char buf[40];
-		sprintf(buf, "%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline String to_string(const Bvec3& v)
-	{
-		char buf[60];
-		sprintf(buf, "%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline String to_string(const Bvec4& v)
-	{
-		char buf[80];
-		sprintf(buf, "%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
+		auto ret = to_string(v[0], precision);
+		for (auto i = 1; i < N; i++)
+			ret += ";" + to_string(v[i], precision);
+		return ret;
 	}
 
 	inline std::wstring to_wstring(float v, int precision = 6)
@@ -122,305 +74,94 @@ namespace flame
 		return buf;
 	}
 
-	inline StringW to_wstring(const Vec2& v, int precision = 6)
+	inline std::wstring to_wstring(uint v, int precision = 0)
 	{
-		wchar_t buf[40];
-		swprintf(buf, L"%.*f;%.*f", precision, v.x, precision, v.y);
+		wchar_t buf[20];
+		if (precision == 0)
+			swprintf(buf, L"%u", v);
+		else
+			swprintf(buf, L"%*u", precision, v);
 		return buf;
 	}
 
-	inline StringW to_wstring(const Vec3& v, int precision = 6)
+	inline std::wstring to_wstring(int v, int precision = 0)
 	{
-		wchar_t buf[60];
-		swprintf(buf, L"%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z);
+		wchar_t buf[20];
+		if (precision == 0)
+			swprintf(buf, L"%d", v);
+		else
+			swprintf(buf, L"%*d", precision, v);
 		return buf;
 	}
 
-	inline StringW to_wstring(const Vec4& v, int precision = 6)
-	{
-		wchar_t buf[80];
-		swprintf(buf, L"%.*f;%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z, precision, v.w);
-		return buf;
-	}
-
-	inline StringW to_wstring(bool v)
+	inline std::wstring to_wstring(bool v)
 	{
 		return v ? L"true" : L"false";
 	}
 
-	inline StringW to_wstring(int v)
+	template<uint N, class T>
+	inline std::wstring to_wstring(const Vec<N, T>& v, int precision = std::is_floating_point<T>::value ? 6 : 0)
 	{
-		wchar_t buf[20];
-		swprintf(buf, L"%d", v);
-		return buf;
+		auto ret = to_string(v[0], precision);
+		for (auto i = 1; i < N; i++)
+			ret += L";" + to_string(v[i], precision);
+		return ret;
 	}
 
-	inline StringW to_wstring(uint v)
-	{
-		wchar_t buf[20];
-		swprintf(buf, L"%u", v);
-		return buf;
-	}
-
-	inline StringW to_wstring(const Ivec2& v)
-	{
-		wchar_t buf[40];
-		swprintf(buf, L"%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline StringW to_wstring(const Ivec3& v)
-	{
-		wchar_t buf[60];
-		swprintf(buf, L"%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline StringW to_wstring(const Ivec4& v)
-	{
-		wchar_t buf[80];
-		swprintf(buf, L"%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
-	}
-
-	inline StringW to_wstring(const Bvec2& v)
-	{
-		wchar_t buf[40];
-		swprintf(buf, L"%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline StringW to_wstring(const Bvec3& v)
-	{
-		wchar_t buf[60];
-		swprintf(buf, L"%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline StringW to_wstring(const Bvec4& v)
-	{
-		wchar_t buf[80];
-		swprintf(buf, L"%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
-	}
-
-	inline std::string to_stdstring(float v, int precision = 6)
-	{
-		char buf[20];
-		sprintf(buf, "%.*f", precision, v);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Vec2& v, int precision = 6)
-	{
-		char buf[40];
-		sprintf(buf, "%.*f;%.*f", precision, v.x, precision, v.y);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Vec3& v, int precision = 6)
-	{
-		char buf[60];
-		sprintf(buf, "%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Vec4& v, int precision = 6)
-	{
-		char buf[80];
-		sprintf(buf, "%.*f;%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z, precision, v.w);
-		return buf;
-	}
-
-	inline std::string to_stdstring(bool v)
-	{
-		return v ? "true" : "false";
-	}
-
-	inline std::string to_stdstring(int v)
-	{
-		char buf[20];
-		sprintf(buf, "%d", v);
-		return buf;
-	}
-
-	inline std::string to_stdstring(uint v)
-	{
-		char buf[20];
-		sprintf(buf, "%u", v);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Ivec2& v)
-	{
-		char buf[40];
-		sprintf(buf, "%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Ivec3& v)
-	{
-		char buf[60];
-		sprintf(buf, "%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Ivec4& v)
-	{
-		char buf[80];
-		sprintf(buf, "%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Bvec2& v)
-	{
-		char buf[40];
-		sprintf(buf, "%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Bvec3& v)
-	{
-		char buf[60];
-		sprintf(buf, "%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline std::string to_stdstring(const Bvec4& v)
-	{
-		char buf[80];
-		sprintf(buf, "%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(float v, int precision = 6)
-	{
-		wchar_t buf[20];
-		swprintf(buf, L"%.*f", precision, v);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Vec2& v, int precision = 6)
-	{
-		wchar_t buf[40];
-		swprintf(buf, L"%.*f;%.*f", precision, v.x, precision, v.y);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Vec3& v, int precision = 6)
-	{
-		wchar_t buf[60];
-		swprintf(buf, L"%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Vec4& v, int precision = 6)
-	{
-		wchar_t buf[80];
-		swprintf(buf, L"%.*f;%.*f;%.*f;%.*f", precision, v.x, precision, v.y, precision, v.z, precision, v.w);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(bool v)
-	{
-		return v ? L"true" : L"false";
-	}
-
-	inline std::wstring to_stdwstring(int v)
-	{
-		wchar_t buf[20];
-		swprintf(buf, L"%d", v);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(uint v)
-	{
-		wchar_t buf[20];
-		swprintf(buf, L"%u", v);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Ivec2& v)
-	{
-		wchar_t buf[40];
-		swprintf(buf, L"%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Ivec3& v)
-	{
-		wchar_t buf[60];
-		swprintf(buf, L"%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Ivec4& v)
-	{
-		wchar_t buf[80];
-		swprintf(buf, L"%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Bvec2& v)
-	{
-		wchar_t buf[40];
-		swprintf(buf, L"%d;%d", v.x, v.y);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Bvec3& v)
-	{
-		wchar_t buf[60];
-		swprintf(buf, L"%d;%d;%d", v.x, v.y, v.z);
-		return buf;
-	}
-
-	inline std::wstring to_stdwstring(const Bvec4& v)
-	{
-		wchar_t buf[80];
-		swprintf(buf, L"%d;%d;%d;%d", v.x, v.y, v.z, v.w);
-		return buf;
-	}
-
-	inline float stof1(const char* s)
+	inline float stof(const char* s)
 	{
 		float ret;
 		sscanf(s, "%f", &ret);
 		return ret;
 	}
 
-	inline Vec2 stof2(const char* s)
+	inline uint stou(const char* s)
 	{
-		Vec2 ret;
-		sscanf(s, "%f;%f", &ret.x, &ret.y);
-		return ret;
-	}
-
-	inline Vec3 stof3(const char* s)
-	{
-		Vec3 ret;
-		sscanf(s, "%f;%f;%f", &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	inline Vec4 stof4(const char* s)
-	{
-		Vec4 ret;
-		sscanf(s, "%f;%f;%f;%f", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
-	}
-
-	inline int stou1(const char* s)
-	{
-		int ret;
+		float ret;
 		sscanf(s, "%u", &ret);
 		return ret;
 	}
 
-	inline int stoi1(const char* s)
+	inline int stoi(const char* s)
 	{
-		int ret;
+		float ret;
 		sscanf(s, "%d", &ret);
+		return ret;
+	}
+
+	inline uchar stob(const char* s)
+	{
+		uchar ret;
+		sscanf(s, "%d", &ret);
+		return ret;
+	}
+
+	template<uint N, class T>
+	inline void stot(const char* s, Vec<N, T>& out)
+	{
+		Vec2f ret;
+		sscanf(s, "%f;%f", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	inline Vec2f stof2(const char* s)
+	{
+		Vec2f ret;
+		sscanf(s, "%f;%f", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	inline Vec3f stof3(const char* s)
+	{
+		Vec3f ret;
+		sscanf(s, "%f;%f;%f", &ret.x(), &ret.y(), &ret.z());
+		return ret;
+	}
+
+	inline Vec4f stof4(const char* s)
+	{
+		Vec4f ret;
+		sscanf(s, "%f;%f;%f;%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
 	}
 
@@ -443,13 +184,6 @@ namespace flame
 		Ivec4 ret;
 		sscanf(s, "%d;%d;%d;%d", &ret.x, &ret.y, &ret.z, &ret.w);
 		return ret;
-	}
-
-	inline uchar stob1(const char* s)
-	{
-		int ret;
-		sscanf(s, "%d", &ret);
-		return (uchar)ret;
 	}
 
 	inline Bvec2 stob2(const char* s)
