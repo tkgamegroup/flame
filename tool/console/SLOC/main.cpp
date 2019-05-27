@@ -38,7 +38,7 @@ void add_accept(const std::wstring &i)
 
 void add_igonore(const std::wstring &i)
 {
-	std::filesystem::path p(i);
+	std::fs::path p(i);
 	auto i_fmt = p.wstring();
 
 	if (i_fmt.size() > 2 && i_fmt[0] == L'*' &&  is_slash_chr(i_fmt[1]))
@@ -70,7 +70,7 @@ long long empty_lines = 0;
 
 void iter(const std::wstring &p)
 {
-	for (std::filesystem::directory_iterator end, it(p); it != end; it++)
+	for (std::fs::directory_iterator end, it(p); it != end; it++)
 	{
 		auto ffn = it->path().wstring();
 		auto fn = it->path().filename().wstring();
@@ -97,7 +97,7 @@ void iter(const std::wstring &p)
 		if (ignore)
 			continue;
 
-		if (std::filesystem::is_directory(it->status()))
+		if (std::fs::is_directory(it->status()))
 		{
 			auto s = it->path().stem().wstring();
 			if (s.size() > 1 && s[0] != L'.')

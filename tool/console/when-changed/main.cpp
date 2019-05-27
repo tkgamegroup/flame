@@ -52,7 +52,7 @@ int main(int argc, char **args)
 	capture.filename = args[1];
 	capture.command = args[2];
 
-	add_file_watcher(std::filesystem::path(args[1]).parent_path().wstring().c_str(), Function<void(void* c, FileChangeType type, const wchar_t* filename)>(
+	add_file_watcher(std::fs::path(args[1]).parent_path().wstring().c_str(), Function<void(void* c, FileChangeType type, const wchar_t* filename)>(
 	[](void* _c, FileChangeType type, const wchar_t* filename) {
 		auto c = (Capture*)_c;
 

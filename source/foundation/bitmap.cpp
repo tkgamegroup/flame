@@ -33,55 +33,65 @@ namespace flame
 	{
 		assert(channel == 3);
 
-		auto new_data = new unsigned char[size.x * size.y * 4];
-		pitch = size.x * 4;
-		for (auto j = 0; j < size.y; j++)
+		auto new_data = new uchar[size.x() * size.y() * 4];
+		auto dst = new_data;
+		for (auto j = 0; j < size.y(); j++)
 		{
-			for (auto i = 0; i < size.x; i++)
+			auto src = data + j * pitch;
+			for (auto i = 0; i < size.x(); i++)
 			{
-				new_data[j * pitch + i * 4 + 0] = data[j * size.x * 3 + i * 3 + 0];
-				new_data[j * pitch + i * 4 + 1] = data[j * size.x * 3 + i * 3 + 1];
-				new_data[j * pitch + i * 4 + 2] = data[j * size.x * 3 + i * 3 + 2];
-				new_data[j * pitch + i * 4 + 3] = 255;
+				*dst++ = *src++;
+				*dst++ = *src++;
+				*dst++ = *src++;
+				*dst++ = 255;
 			}
 		}
 		channel = 4;
 		bpp = 32;
-		data_size = size.x * 4 * size.y;
+		pitch = size.x() * 4;
+		data_size = pitch * size.y();
 		delete[]data;
 		data = new_data;
 	}
 
 	void Bitmap::swap_channel(int ch1, int ch2)
 	{
-		for (auto j = 0; j < size.y; j++)
+		for (auto j = 0; j < size.y(); j++)
 		{
-			for (auto i = 0; i < size.x; i++)
-				std::swap(data[j * pitch + i * channel + ch1], data[j * pitch + i * channel + ch2]);
+			auto line = data + j * pitch;
+			for (auto i = 0; i < size.x(); i++)
+			{
+				auto p = line + i * channel;
+				std::swap(p[ch1], p[ch2]);
+			}
 		}
 	}
 
-	void Bitmap::copy_to(Bitmap *dst, const Ivec2 &src_off, const Ivec2 &cpy_size, const Ivec2 &dst_off)
+	void Bitmap::copy_to(Bitmap *b, const Vec2u &src_off, const Vec2u &cpy_size, const Vec2u &dst_off)
 	{
-		for (auto j = 0; j < cpy_size.y; j++)
+		assert(channel == b->channel);
+		assert(src_off + cpy_size < size);
+
+		for (auto j = 0; j < cpy_size.y(); j++)
 		{
-			for (auto i = 0; i < cpy_size.x; i++)
-				dst->data[(dst_off.y + j) * dst->pitch + dst_off.x + i] = data[(src_off.y + j) * pitch + src_off.x + i];
+			auto src_line = data + (src_off.y() + j) * pitch;
+			auto dst_line = b->data + (dst_off.y() + j) * b->pitch;
+			memcpy(dst_line, src_line, cpy_size.x() * channel);
 		}
 	}
 
 	void Bitmap::save(const std::wstring &wfilename)
 	{
 		auto filename = w2s(wfilename);
-		auto ext = std::filesystem::path(filename).extension();
+		auto ext = std::fs::path(filename).extension();
 
 		if (ext == ".png")
-			stbi_write_png(filename.c_str(), size.x, size.y, channel, data, pitch);
+			stbi_write_png(filename.c_str(), size.x(), size.y(), channel, data, pitch);
 		else if (ext == ".bmp")
-			stbi_write_bmp(filename.c_str(), size.x, size.y, channel, data);
+			stbi_write_bmp(filename.c_str(), size.x(), size.y(), channel, data);
 	}
 
-	Bitmap *Bitmap::create(const Ivec2 &size, int channel, int bpp, unsigned char *data, bool data_owner)
+	Bitmap *Bitmap::create(const Vec2u &size, int channel, int bpp, unsigned char *data, bool data_owner)
 	{
 		auto b = new Bitmap;
 		b->size = size;
@@ -89,7 +99,7 @@ namespace flame
 		b->bpp = bpp;
 		b->sRGB = false;
 		b->calc_pitch();
-		b->data_size = b->pitch * b->size.y;
+		b->data_size = b->pitch * b->size.y();
 		if (!data)
 		{
 			b->data = new unsigned char[b->data_size];
@@ -120,12 +130,12 @@ namespace flame
 			return nullptr;
 		auto b = new Bitmap;
 		b->sRGB = false;
-		b->size.x = cx;
-		b->size.y = cy;
+		b->size.x() = cx;
+		b->size.y() = cy;
 		b->channel = 4;
 		b->bpp = 32;
 		b->calc_pitch();
-		b->data_size = b->pitch * b->size.y;
+		b->data_size = b->pitch * b->size.y();
 		b->data = new unsigned char[b->data_size];
 		memcpy(b->data, data, b->data_size);
 		stbi_image_free(data);

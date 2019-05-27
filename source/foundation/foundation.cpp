@@ -86,7 +86,7 @@ namespace flame
 	{
 		static wchar_t buf[260];
 		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		auto path = std::filesystem::path(buf).parent_path().generic_wstring();
+		auto path = std::fs::path(buf).parent_path().generic_wstring();
 		wcscpy(buf, path.data());
 		return buf;
 	}
@@ -224,7 +224,7 @@ namespace flame
 
 	Array<String> get_module_dependancies(const wchar_t* module_name)
 	{
-		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::filesystem::path(module_name).parent_path().string().c_str());
+		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::fs::path(module_name).parent_path().string().c_str());
 
 		Array<String> ret;
 		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2) 
@@ -753,7 +753,7 @@ namespace flame
 
 	void get_thumbnai(int width, const wchar_t *_filename, int *out_width, int *out_height, char **out_data)
 	{
-		std::filesystem::path path(_filename);
+		std::fs::path path(_filename);
 		path.make_preferred();
 		auto filename = path.wstring();
 

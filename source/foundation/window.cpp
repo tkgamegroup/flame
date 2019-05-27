@@ -77,14 +77,14 @@ namespace flame
 
 		int listener_magic;
 		std::vector<std::pair<int, Function<void(void* c, KeyState action, Key key)>>> key_listeners;
-		std::vector<std::pair<int, Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>>> mouse_listeners;
-		std::vector<std::pair<int, Function<void(void* c, const Ivec2& size)>>> resize_listeners;
+		std::vector<std::pair<int, Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>>> mouse_listeners;
+		std::vector<std::pair<int, Function<void(void* c, const Vec2u& size)>>> resize_listeners;
 		std::vector<std::pair<int, Function<void(void* c)>>> destroy_listeners;
 
 		bool dead;
 
 #ifdef FLAME_WINDOWS
-		WindowPrivate(const char* _title, const Ivec2& _size, int _style)
+		WindowPrivate(const char* _title, const Vec2u& _size, int _style)
 		{
 			title = _title;
 
@@ -92,7 +92,7 @@ namespace flame
 
 			hWnd = 0;
 
-			set_size(Ivec2(-1), _size, _style);
+			set_size(Vec2i(-1), _size, _style);
 
 			SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
@@ -177,12 +177,12 @@ namespace flame
 			}
 		}
 
-		void set_size(const Ivec2 & _pos, const Ivec2 & _size, int _style)
+		void set_size(const Vec2i& _pos, const Vec2u& _size, int _style)
 		{
-			if (_size.x > 0)
-				size.x = _size.x;
-			if (_size.y > 0)
-				size.y = _size.y;
+			if (_size.x() > 0)
+				size.x() = _size.x();
+			if (_size.y() > 0)
+				size.y() = _size.y();
 
 			bool style_changed = false;
 			if (_style != -1 && _style != style)
@@ -193,7 +193,7 @@ namespace flame
 
 			assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
 
-			Ivec2 final_size;
+			Vec2u final_size;
 			auto screen_size = get_screen_size();
 
 			auto win32_style = WS_VISIBLE;
@@ -209,24 +209,24 @@ namespace flame
 					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
 			}
 
-			RECT rect = { 0, 0, size.x, size.y };
+			RECT rect = { 0, 0, size.x(), size.y() };
 			AdjustWindowRect(&rect, win32_style, false);
-			final_size.x = rect.right - rect.left;
-			final_size.y = rect.bottom - rect.top;
+			final_size.x() = rect.right - rect.left;
+			final_size.y() = rect.bottom - rect.top;
 
-			pos.x = _pos.x == -1 ? (screen_size.x - final_size.x) / 2 : _pos.x;
-			pos.y = _pos.y == -1 ? (screen_size.y - final_size.y) / 2 : _pos.y;
+			pos.x() = _pos.x() == -1 ? (screen_size.x() - final_size.x()) / 2 : _pos.x();
+			pos.y() = _pos.y() == -1 ? (screen_size.y() - final_size.y()) / 2 : _pos.y();
 
 			if (!hWnd)
 			{
 				hWnd = CreateWindowA("flame_wnd", title.v, win32_style,
-					pos.x, pos.y, final_size.x, final_size.y, NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+					pos.x(), pos.y(), final_size.x(), final_size.y(), NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 			}
 			else
 			{
 				if (style_changed)
 					SetWindowLong(hWnd, GWL_STYLE, win32_style);
-				MoveWindow(hWnd, pos.x, pos.y, size.x, size.y, true);
+				MoveWindow(hWnd, pos.x(), pos.y(), size.x(), size.y(), true);
 			}
 		}
 
@@ -241,13 +241,13 @@ namespace flame
 			return listener_magic++;
 		}
 
-		int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>& listener)
+		int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>& listener)
 		{
 			mouse_listeners.emplace_back(listener_magic, listener);
 			return listener_magic++;
 		}
 
-		int add_resize_listener(Function<void(void* c, const Ivec2& size)>& listener)
+		int add_resize_listener(Function<void(void* c, const Vec2u& size)>& listener)
 		{
 			resize_listeners.emplace_back(listener_magic, listener);
 			return listener_magic++;
@@ -323,7 +323,7 @@ namespace flame
 		reinterpret_cast<WindowPrivate*>(this)->set_cursor(type);
 	}
 
-	void Window::set_size(const Ivec2 & _pos, const Ivec2 & _size, int _style)
+	void Window::set_size(const Vec2i& _pos, const Vec2u& _size, int _style)
 	{
 		reinterpret_cast<WindowPrivate*>(this)->set_size(_pos, _size, _style);
 	}
@@ -339,12 +339,12 @@ namespace flame
 		return ((WindowPrivate*)this)->add_key_listener(listener);
 	}
 
-	int Window::add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>& listener)
+	int Window::add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>& listener)
 	{
 		return ((WindowPrivate*)this)->add_mouse_listener(listener);
 	}
 
-	int Window::add_resize_listener(Function<void(void* c, const Ivec2& size)>& listener)
+	int Window::add_resize_listener(Function<void(void* c, const Vec2u& size)>& listener)
 	{
 		return ((WindowPrivate*)this)->add_resize_listener(listener);
 	}
@@ -408,56 +408,56 @@ namespace flame
 				break;
 			case WM_LBUTTONDOWN:
 			{
-				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateDown, Mouse_Left, pos);
 			}
 				break;
 			case WM_LBUTTONUP:
 			{
-				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateUp, Mouse_Left, pos);
 			}
 				break;
 			case WM_MBUTTONDOWN:
 			{
-				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateDown, Mouse_Middle, pos);
 			}
 				break;
 			case WM_MBUTTONUP:
 			{
-				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateUp, Mouse_Middle, pos);
 			}
 				break;
 			case WM_RBUTTONDOWN:
 			{
-				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateDown, Mouse_Right, pos);
 			}
 				break;
 			case WM_RBUTTONUP:
 			{
-				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateUp, Mouse_Right, pos);
 			}
 				break;
 			case WM_MOUSEMOVE:
 			{
-				auto pos = Ivec2(LOWORD(lParam), HIWORD(lParam));
+				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateNull, Mouse_Null, pos);
 			}
 				break;
 			case WM_MOUSEWHEEL:
 			{
-				auto v = Ivec2((short)HIWORD(wParam) > 0 ? 1 : -1, 0);
+				auto v = Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0);
 				for (auto& f : w->mouse_listeners)
 					f.second(KeyStateNull, Mouse_Middle, v);
 			}
@@ -466,8 +466,8 @@ namespace flame
 				w->dead = true;
 			case WM_SIZE:
 			{
-				auto size = Ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				w->minimized = (size.x == 0 || size.y == 0);
+				auto size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->minimized = (size.x() == 0 || size.y() == 0);
 				if (size != w->size)
 				{
 					w->size = size;
@@ -483,7 +483,7 @@ namespace flame
 	}
 #endif
 
-	Window* Window::create(Application * app, const char* _title, const Ivec2 & _size, int _style)
+	Window* Window::create(Application * app, const char* _title, const Vec2u& _size, int _style)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -499,7 +499,7 @@ namespace flame
 			if (icon_image)
 			{
 				icon_image->swap_channel(0, 2);
-				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x, icon_image->size.y, 1,
+				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x(), icon_image->size.y(), 1,
 					icon_image->bpp, nullptr, icon_image->data);
 				Bitmap::destroy(icon_image);
 			}

@@ -308,7 +308,7 @@ namespace flame
 			return v_[i];
 		}
 
-		explicit Vec(T rhs)
+		explicit Vec(T v)
 		{
 			for (auto i = 0; i < N; i++)
 				v_[i] = v;
@@ -337,7 +337,7 @@ namespace flame
 
 		Vec(T _x, T _y, T _z)
 		{
-			static_assert(N == 2);
+			static_assert(N == 3);
 			x() = _x;
 			y() = _y;
 			z() = _z;
@@ -622,6 +622,123 @@ namespace flame
 		for (auto i = 0; i < N; i++)
 			ret[i] /= rhs[i];
 		return ret;
+	}
+
+	template<uint N, class T>
+	bool operator<(T lhs, const Vec<N, T>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs >= rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator<(const Vec<N, T>& lhs, T rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] >= rhs)
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T, class U>
+	bool operator<(const Vec<N, T>& lhs, const Vec<N, U>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] >= rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator>(T lhs, const Vec<N, T>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs <= rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator>(const Vec<N, T>& lhs, T rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] <= rhs)
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T, class U>
+	bool operator>(const Vec<N, T>& lhs, const Vec<N, U>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] <= rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator==(T lhs, const Vec<N, T>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs != rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator==(const Vec<N, T>& lhs, T rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] != rhs)
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T, class U>
+	bool operator==(const Vec<N, T>& lhs, const Vec<N, U>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] != rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator!=(T lhs, const Vec<N, T>& rhs)
+	{
+		return !(lhs == rhs);
+	}
+
+	template<uint N, class T>
+	bool operator!=(const Vec<N, T>& lhs, T rhs)
+	{
+		return !(lhs == rhs);
+	}
+
+	template<uint N, class T, class U>
+	bool operator!=(const Vec<N, T>& lhs, const Vec<N, U>& rhs)
+	{
+		return !(lhs == rhs);
 	}
 
 	using Vec1f = Vec<1, float>;

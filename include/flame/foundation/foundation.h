@@ -60,6 +60,11 @@
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "flame", __VA_ARGS__))
 #endif
 
+namespace std
+{
+	namespace fs = std::experimental::filesystem;
+}
+
 FLAME_FOUNDATION_EXPORTS void *flame_malloc(int size);
 FLAME_FOUNDATION_EXPORTS void *flame_realloc(void *p, int size);
 FLAME_FOUNDATION_EXPORTS void flame_free(void *p);
@@ -78,11 +83,6 @@ struct EnsureConst
 };
 
 #define cH(x) (EnsureConst<_HASH(x, 0)>::value)
-
-namespace std
-{
-	namespace filesystem = std::experimental::filesystem;
-}
 
 namespace flame
 {
@@ -1327,7 +1327,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void thread(const Function<void(void* c)>& f);
 
-	inline std::filesystem::path ext_replace(const std::filesystem::path& path, const std::wstring& ext)
+	inline std::fs::path ext_replace(const std::fs::path& path, const std::wstring& ext)
 	{
 		if (path.extension().wstring() != ext)
 		{
@@ -1491,7 +1491,7 @@ namespace flame
 	}
 
 	FLAME_FOUNDATION_EXPORTS void *get_hinst();
-	FLAME_FOUNDATION_EXPORTS Ivec2 get_screen_size();
+	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_curr_path();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_app_path();
 	FLAME_FOUNDATION_EXPORTS void com_init();

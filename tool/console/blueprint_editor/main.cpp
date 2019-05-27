@@ -251,9 +251,9 @@ int main(int argc, char **args)
 			}
 			else if (s_what == "graph")
 			{
-				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(app.filename))
+				if (!std::fs::exists(L"bp.png") || std::fs::last_write_time(L"bp.png") < std::fs::last_write_time(app.filename))
 					generate_graph_and_layout(app.bp);
-				if (std::filesystem::exists(L"bp.png"))
+				if (std::fs::exists(L"bp.png"))
 				{
 					exec(L"bp.png", "", false);
 					printf("ok\n");
@@ -388,7 +388,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_filename = std::string(command_line);
 
-				if (!std::filesystem::exists(s_filename))
+				if (!std::fs::exists(s_filename))
 				{
 					app.filename = s2w(s_filename);
 					app.bp->save(app.filename.c_str());
@@ -412,9 +412,9 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "set-layout")
 		{
-			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(app.filename))
+			if (!std::fs::exists(L"bp.graph.txt") || std::fs::last_write_time(L"bp.graph.txt") < std::fs::last_write_time(app.filename))
 				generate_graph_and_layout(app.bp);
-			if (std::filesystem::exists(L"bp.graph.txt"))
+			if (std::fs::exists(L"bp.graph.txt"))
 			{
 				auto str = get_file_string(L"bp.graph.txt");
 				std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");

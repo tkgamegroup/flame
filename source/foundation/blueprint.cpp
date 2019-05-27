@@ -391,28 +391,28 @@ namespace flame
 			}
 			if (!udt)
 			{
-				auto abs_fn = std::filesystem::path(filename).parent_path().wstring() + L"\\" + fn;
+				auto abs_fn = std::fs::path(filename).parent_path().wstring() + L"\\" + fn;
 				auto fn_cpp = abs_fn + L".cpp";
-				if (!std::filesystem::exists(fn_cpp))
+				if (!std::fs::exists(fn_cpp))
 				{
 					assert(0);
 					return nullptr;
 				}
 				auto fn_dll = abs_fn + L".dll";
 				auto fn_ti = abs_fn + L".typeinfo";
-				if (!std::filesystem::exists(fn_dll) || std::filesystem::last_write_time(fn_dll) < std::filesystem::last_write_time(fn_cpp))
+				if (!std::fs::exists(fn_dll) || std::fs::last_write_time(fn_dll) < std::fs::last_write_time(fn_cpp))
 				{
 					auto compile_output = compile_to_dll({ fn_cpp }, { L"flame_foundation.lib", L"flame_graphics.lib" }, fn_dll);
-					if (!std::filesystem::exists(fn_dll) || std::filesystem::last_write_time(fn_dll) < std::filesystem::last_write_time(fn_cpp))
+					if (!std::fs::exists(fn_dll) || std::fs::last_write_time(fn_dll) < std::fs::last_write_time(fn_cpp))
 					{
 						printf("compile error:\n%s\n", compile_output.v);
 						assert(0);
 						return nullptr;
 					}
-					if (std::filesystem::exists(fn_ti))
-						std::filesystem::remove(fn_ti);
+					if (std::fs::exists(fn_ti))
+						std::fs::remove(fn_ti);
 				}
-				if (!std::filesystem::exists(fn_ti) || std::filesystem::last_write_time(fn_ti) < std::filesystem::last_write_time(fn_dll))
+				if (!std::fs::exists(fn_ti) || std::fs::last_write_time(fn_ti) < std::fs::last_write_time(fn_dll))
 				{
 					typeinfo_collect(fn_dll, 99);
 					typeinfo_save(fn_ti, 99);
@@ -613,7 +613,7 @@ namespace flame
 	void BPPrivate::save(const wchar_t *_filename)
 	{
 		filename = _filename;
-		auto ppath = std::filesystem::path(filename).parent_path().wstring() + L"\\";
+		auto ppath = std::fs::path(filename).parent_path().wstring() + L"\\";
 
 		auto file = SerializableNode::create("BP");
 
@@ -626,7 +626,7 @@ namespace flame
 			auto tn = std::string(u->name());
 			if (u->level() != 0)
 			{
-				auto src = std::filesystem::path(u->module_name()).wstring();
+				auto src = std::fs::path(u->module_name()).wstring();
 				if (ppath.size() < src.size() && src.compare(0, ppath.size(), ppath.c_str()) == 0)
 					src.erase(src.begin(), src.begin() + ppath.size());
 				tn = w2s(src) + ":" + tn;
@@ -841,7 +841,7 @@ namespace flame
 
 	BP *BP::create_from_file(const wchar_t *filename)
 	{
-		if (!std::filesystem::exists(filename))
+		if (!std::fs::exists(filename))
 			return nullptr;
 
 		auto bp = new BPPrivate();

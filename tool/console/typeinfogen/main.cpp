@@ -39,12 +39,12 @@ int main(int argc, char **args)
 	auto id = 0;
 	for (auto& fn : pdbs)
 	{
-		if (!std::filesystem::exists(fn))
+		if (!std::fs::exists(fn))
 			continue;
 
 		auto w_dst = ext_replace(fn, L".typeinfo");
 		auto dst = w2s(w_dst);
-		if (!std::filesystem::exists(w_dst) || std::filesystem::last_write_time(w_dst) < std::filesystem::last_write_time(fn))
+		if (!std::fs::exists(w_dst) || std::fs::last_write_time(w_dst) < std::fs::last_write_time(fn))
 		{
 			printf("generating: %s\n", dst.c_str());
 

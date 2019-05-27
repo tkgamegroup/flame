@@ -61,8 +61,8 @@ namespace flame
 
 	struct Window
 	{
-		Ivec2 pos;
-		Ivec2 size;
+		Vec2i pos;
+		Vec2u size;
 		int style;
 		String title;
 
@@ -73,13 +73,13 @@ namespace flame
 #ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
 
-		FLAME_FOUNDATION_EXPORTS void set_size(const Ivec2 &_pos, const Ivec2 &_size, int _style);
+		FLAME_FOUNDATION_EXPORTS void set_size(const Vec2i &_pos, const Vec2u &_size, int _style);
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
 		FLAME_FOUNDATION_EXPORTS int add_key_listener(Function<void(void* c, KeyState action, Key key)>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Ivec2& pos)>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_resize_listener(Function<void(void* c, const Ivec2& size)>& listener);
+		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>& listener);
+		FLAME_FOUNDATION_EXPORTS int add_resize_listener(Function<void(void* c, const Vec2u& size)>& listener);
 		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<void(void* c)>& listener);
 
 		FLAME_FOUNDATION_EXPORTS void remove_key_listener(int id);
@@ -89,7 +89,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
-		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Ivec2 &_size, int _style);
+		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Vec2u& _size, int _style);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Window *s);
 	};
 

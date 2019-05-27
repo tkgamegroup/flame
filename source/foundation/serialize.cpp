@@ -1704,7 +1704,7 @@ namespace flame
 		}
 		if (FAILED(dia_source->loadDataFromPdb(ext_replace(filename, L".pdb").c_str())))
 		{
-			printf("pdb failed to open: %s\n", std::filesystem::path(filename).stem().string().c_str());
+			printf("pdb failed to open: %s\n", std::fs::path(filename).stem().string().c_str());
 			return;
 		}
 		CComPtr<IDiaSession> session;
