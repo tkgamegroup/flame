@@ -39,6 +39,11 @@ struct StringTraits
 		return narrow;
 	}
 
+	static void copy(char* dst, const char* src)
+	{
+		strcpy(dst, src);
+	}
+
 	static int sprintf(char* buf, const char* fmt, ...)
 	{
 		int res;
@@ -65,6 +70,11 @@ struct StringTraits<wchar_t>
 		return wide;
 	}
 
+	static void copy(wchar_t* dst, const wchar_t* src)
+	{
+		wcscpy(dst, src);
+	}
+
 	static int sprintf(wchar_t* buf, const wchar_t* fmt, ...)
 	{
 		int res;
@@ -80,66 +90,48 @@ struct StringTraits<wchar_t>
 
 namespace flame
 {
-	template<class T>
-	inline void to_tstring(std::basic_string<T>& out, float v, int precision = 6)
+	template<class CH, class T>
+	inline void to_tstring(std::basic_string<CH>& out, T v, int precision = std::is_floating_point<T>::value ? 6 : 0)
 	{
-		T buf[20];
-		StringTraits<T>::sprintf(buf, LITERAL(T, "%.*f"), precision, v);
+		std::char_traits<char>::copy
+		CH buf[20];
+		if (std::is_same<T, float>::value)
+			StringTraits<CH>::sprintf(buf, LITERAL(CH, "%.*f"), precision, v);
+		else if (std::is_same<T, uint>::value)
+		{
+			if (precision == 0)
+				StringTraits<CH>::sprintf(buf, LITERAL(CH, "%u"), v);
+			else
+				StringTraits<CH>::sprintf(buf, LITERAL(CH, "%0*u"), precision, v);
+		}
+		else if (std::is_same<T, int>::value)
+		{
+			if (precision == 0)
+				StringTraits<CH>::sprintf(buf, LITERAL(CH, "%d"), v);
+			else
+				StringTraits<CH>::sprintf(buf, LITERAL(CH, "%0*d"), precision, v);
+		}
+		else if (std::is_same<T, bool>::value)
+			StringTraits<CH>::copy(buf, v ? LITERAL(CH, "true") : LITERAL(CH, "false"), v);
+		else
+			assert(0);
 		out = buf;
 	}
 
-	inline std::string to_string(float v, int precision = 6)
+	template<class T>
+	inline std::string to_string(T v, int precision = std::is_floating_point<T>::value ? 6 : 0)
 	{
 		std::string ret;
 		to_tstring(ret, v, precision);
 		return ret;
 	}
 
-	inline std::wstring to_wstring(float v, int precision = 6)
-	{
-		std::wstring ret;
-		to_tstring(ret, v, precision);
-		return ret;
-	}
-
 	template<class T>
-	inline void to_tstring(std::basic_string<T>& out, uint v, int precision = 0)
-	{
-		T buf[20];
-		if (precision == 0)
-			StringTraits<T>::sprintf(buf, LITERAL(T, "%u"), v);
-		else
-			StringTraits<T>::sprintf(buf, LITERAL(T, "%0*u"), precision, v);
-		out = buf;
-	}
-
-	inline std::string to_string(uint v, int precision = 0)
-	{
-		std::string ret;
-		to_tstring(ret, v, precision);
-		return ret;
-	}
-
-	inline std::wstring to_wstring(uint v, int precision = 0)
+	inline std::wstring to_wstring(T v, int precision = std::is_floating_point<T>::value ? 6 : 0)
 	{
 		std::wstring ret;
 		to_tstring(ret, v, precision);
 		return ret;
-	}
-
-	inline std::string to_string(int v, int precision = 0)
-	{
-		char buf[20];
-		if (precision == 0)
-			sprintf(buf, "%d", v);
-		else
-			sprintf(buf, "%0*d", precision, v);
-		return buf;
-	}
-
-	inline std::string to_string(bool v)
-	{
-		return v ? "true" : "false";
 	}
 
 	template<uint N, class T>
@@ -148,6 +140,15 @@ namespace flame
 		auto ret = to_string(v[0], precision);
 		for (auto i = 1; i < N; i++)
 			ret += ";" + to_string(v[i], precision);
+		return ret;
+	}
+
+	template<uint N, class T>
+	inline std::string to_wstring(const Vec<N, T>& v, int precision = std::is_floating_point<T>::value ? 6 : 0)
+	{
+		auto ret = to_wstring(v[0], precision);
+		for (auto i = 1; i < N; i++)
+			ret += L";" + to_wstring(v[i], precision);
 		return ret;
 	}
 
@@ -160,31 +161,58 @@ namespace flame
 
 	inline uint stou(const char* s)
 	{
-		float ret;
+		uint ret;
 		sscanf(s, "%u", &ret);
 		return ret;
 	}
 
 	inline int stoi(const char* s)
 	{
-		float ret;
+		int ret;
 		sscanf(s, "%d", &ret);
 		return ret;
 	}
 
-	inline uchar stob(const char* s)
+	inline uchar stoc(const char* s)
 	{
 		uchar ret;
 		sscanf(s, "%d", &ret);
 		return ret;
 	}
 
-	template<uint N, class T>
-	inline void stot(const char* s, Vec<N, T>& out)
+	inline bool stob(const char* s)
 	{
-		Vec2f ret;
-		sscanf(s, "%f;%f", &ret.x(), &ret.y());
-		return ret;
+		if (strcmp(s, "true") == 0)
+			return true;
+		else if (strcmp(s, "false") == 0)
+			return false;
+		else
+			assert(0);
+	}
+
+	template<class T>
+	inline void stot(const char* s, T& out)
+	{
+		if (std::is_same<T, float>::value)
+			out = stof(s);
+		else if (std::is_same<T, uint>::value)
+		{
+			if (precision == 0)
+				StringTraits<T>::sprintf(buf, LITERAL(CH, "%u"), v);
+			else
+				StringTraits<T>::sprintf(buf, LITERAL(CH, "%0*u"), precision, v);
+		}
+		else if (std::is_same<T, int>::value)
+		{
+			if (precision == 0)
+				StringTraits<T>::sprintf(buf, LITERAL(CH, "%d"), v);
+			else
+				StringTraits<T>::sprintf(buf, LITERAL(CH, "%0*d"), precision, v);
+		}
+		else if (std::is_same<T, bool>::value)
+			StringTraits<T>::copy(buf, v ? LITERAL(CH, "true") : LITERAL(CH, "false"), v);
+		else
+			assert(0);
 	}
 
 	inline Vec2f stof2(const char* s)

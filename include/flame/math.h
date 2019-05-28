@@ -756,10 +756,15 @@ namespace flame
 	using Vec3i = Vec<3, int>;
 	using Vec4i = Vec<4, int>;
 
-	using Vec1b = Vec<1, uchar>;
-	using Vec2b = Vec<2, uchar>;
-	using Vec3b = Vec<3, uchar>;
-	using Vec4b = Vec<4, uchar>;
+	using Vec1c = Vec<1, uchar>;
+	using Vec2c = Vec<2, uchar>;
+	using Vec3c = Vec<3, uchar>;
+	using Vec4c = Vec<4, uchar>;
+
+	using Vec1b = Vec<1, bool>;
+	using Vec2b = Vec<2, bool>;
+	using Vec3b = Vec<3, bool>;
+	using Vec4b = Vec<4, bool>;
 
 	template<uint N, uint M, class T>
 	struct Mat
