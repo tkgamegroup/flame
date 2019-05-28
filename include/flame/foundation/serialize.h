@@ -24,23 +24,107 @@
 
 #include <flame/foundation/foundation.h>
 
+template<class T>
+struct StringTraits
+{
+	typedef char char_type;
+
+	static const char* choose(const char* narrow, const wchar_t* wide)
+	{
+		return narrow;
+	}
+
+	static char choose(char narrow, wchar_t wide)
+	{
+		return narrow;
+	}
+
+	static int sprintf(char* buf, const char* fmt, ...)
+	{
+		int res;
+		va_list args;
+		va_start(args, fmt);
+		res = vsprintf(buf, fmt, args);
+		va_end(args);
+		return res;
+	}
+};
+
+template<>
+struct StringTraits<wchar_t>
+{
+	typedef wchar_t char_type;
+
+	static const wchar_t* choose(const char* narrow, const wchar_t* wide)
+	{
+		return wide;
+	}
+
+	static wchar_t choose(char narrow, wchar_t wide)
+	{
+		return wide;
+	}
+
+	static int sprintf(wchar_t* buf, const wchar_t* fmt, ...)
+	{
+		int res;
+		va_list args;
+		va_start(args, fmt);
+		res = vswprintf(buf, fmt, args);
+		va_end(args);
+		return res;
+	}
+};
+
+#define LITERAL(T, x) StringTraits<T>::choose(x, L##x)
+
 namespace flame
 {
+	template<class T>
+	inline void to_tstring(std::basic_string<T>& out, float v, int precision = 6)
+	{
+		T buf[20];
+		StringTraits<T>::sprintf(buf, LITERAL(T, "%.*f"), precision, v);
+		out = buf;
+	}
+
 	inline std::string to_string(float v, int precision = 6)
 	{
-		char buf[20];
-		sprintf(buf, "%.*f", precision, v);
-		return buf;
+		std::string ret;
+		to_tstring(ret, v, precision);
+		return ret;
+	}
+
+	inline std::wstring to_wstring(float v, int precision = 6)
+	{
+		std::wstring ret;
+		to_tstring(ret, v, precision);
+		return ret;
+	}
+
+	template<class T>
+	inline void to_tstring(std::basic_string<T>& out, uint v, int precision = 0)
+	{
+		T buf[20];
+		if (precision == 0)
+			StringTraits<T>::sprintf(buf, LITERAL(T, "%u"), v);
+		else
+			StringTraits<T>::sprintf(buf, LITERAL(T, "%0*u"), precision, v);
+		out = buf;
 	}
 
 	inline std::string to_string(uint v, int precision = 0)
 	{
-		char buf[20];
-		if (precision == 0)
-			sprintf(buf, "%u", v);
-		else
-			sprintf(buf, "%*u", precision, v);
-		return buf;
+		std::string ret;
+		to_tstring(ret, v, precision);
+		return ret;
+	}
+
+	inline std::wstring to_wstring(uint v, int precision = 0)
+	{
+		std::wstring ret;
+		to_tstring(ret, v, precision);
+		return ret;
 	}
 
 	inline std::string to_string(int v, int precision = 0)
@@ -49,7 +133,7 @@ namespace flame
 		if (precision == 0)
 			sprintf(buf, "%d", v);
 		else
-			sprintf(buf, "%*d", precision, v);
+			sprintf(buf, "%0*d", precision, v);
 		return buf;
 	}
 
@@ -64,47 +148,6 @@ namespace flame
 		auto ret = to_string(v[0], precision);
 		for (auto i = 1; i < N; i++)
 			ret += ";" + to_string(v[i], precision);
-		return ret;
-	}
-
-	inline std::wstring to_wstring(float v, int precision = 6)
-	{
-		wchar_t buf[20];
-		swprintf(buf, L"%.*f", precision, v);
-		return buf;
-	}
-
-	inline std::wstring to_wstring(uint v, int precision = 0)
-	{
-		wchar_t buf[20];
-		if (precision == 0)
-			swprintf(buf, L"%u", v);
-		else
-			swprintf(buf, L"%*u", precision, v);
-		return buf;
-	}
-
-	inline std::wstring to_wstring(int v, int precision = 0)
-	{
-		wchar_t buf[20];
-		if (precision == 0)
-			swprintf(buf, L"%d", v);
-		else
-			swprintf(buf, L"%*d", precision, v);
-		return buf;
-	}
-
-	inline std::wstring to_wstring(bool v)
-	{
-		return v ? L"true" : L"false";
-	}
-
-	template<uint N, class T>
-	inline std::wstring to_wstring(const Vec<N, T>& v, int precision = std::is_floating_point<T>::value ? 6 : 0)
-	{
-		auto ret = to_string(v[0], precision);
-		for (auto i = 1; i < N; i++)
-			ret += L";" + to_string(v[i], precision);
 		return ret;
 	}
 
