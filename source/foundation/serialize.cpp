@@ -164,50 +164,46 @@ namespace flame
 		return ((EnumInfoPrivate*)this)->serialize_value(single, v);
 	}
 
-	static String to_string(uint type_hash, const void* src, int precision)
+	static std::string to_string(uint type_hash, const void* src, int precision)
 	{
 		switch (type_hash)
 		{
 		case cH("bool"):
-			return *(bool*)src ? "true" : "false";
+			return *(bool*)src ? "1" : "0";
 		case cH("uint"):
 			return to_string(*(uint*)src);
 		case cH("int"): case cH("i"):
 			return to_string(*(int*)src);
-		case cH("Ivec2"): case cH("i2"):
-			return to_string(*(Ivec2*)src);
-		case cH("Ivec3"): case cH("i3"):
-			return to_string(*(Ivec3*)src);
-		case cH("Ivec4"): case cH("i4"):
-			return to_string(*(Ivec4*)src);
-		case cH("float"): case cH("f"):
-			return to_string(*(float*)src, precision);
-		case cH("Vec2"): case cH("f2"):
-			return to_string(*(Vec2*)src, precision);
-		case cH("Vec3"): case cH("f3"):
-			return to_string(*(Vec3*)src, precision);
-		case cH("Vec4"): case cH("f4"):
-			return to_string(*(Vec4*)src, precision);
-		case cH("uchar"): case cH("b"):
-			return to_string(*(uchar*)src);
-		case cH("Bvec2"): case cH("b2"):
-			return to_string(*(Bvec2*)src);
-		case cH("Bvec3"): case cH("b3"):
-			return to_string(*(Bvec3*)src);
-		case cH("Bvec4"): case cH("b4"):
-			return to_string(*(Bvec4*)src);
+		//case cH("Ivec2"): case cH("i2"):
+		//	return to_string(*(Ivec2*)src);
+		//case cH("Ivec3"): case cH("i3"):
+		//	return to_string(*(Ivec3*)src);
+		//case cH("Ivec4"): case cH("i4"):
+		//	return to_string(*(Ivec4*)src);
+		//case cH("float"): case cH("f"):
+		//	return to_string(*(float*)src, precision);
+		//case cH("Vec2"): case cH("f2"):
+		//	return to_string(*(Vec2*)src, precision);
+		//case cH("Vec3"): case cH("f3"):
+		//	return to_string(*(Vec3*)src, precision);
+		//case cH("Vec4"): case cH("f4"):
+		//	return to_string(*(Vec4*)src, precision);
+		//case cH("uchar"): case cH("b"):
+		//	return to_string(*(uchar*)src);
+		//case cH("Bvec2"): case cH("b2"):
+		//	return to_string(*(Bvec2*)src);
+		//case cH("Bvec3"): case cH("b3"):
+		//	return to_string(*(Bvec3*)src);
+		//case cH("Bvec4"): case cH("b4"):
+		//	return to_string(*(Bvec4*)src);
 		case cH("String"):
-			return *(String*)src;
+			return ((String*)src)->v;
 		case cH("StringW"):
 			return w2s(((StringW*)src)->v);
 		case cH("StringAndHash"):
-			return *(StringAndHash*)src;
-		case cH("CommonData"):
-		{
-			auto d = (CommonData*)src;
-			return std::string(d->fmt) + ":" + to_string(H(d->fmt), &d->v, precision).v;
-		}
-			break;
+			return ((StringAndHash*)src)->v;
+		default:
+			assert(0);
 		}
 
 		return "";
@@ -218,47 +214,47 @@ namespace flame
 		switch (type_hash)
 		{
 		case cH("bool"):
-			*(bool*)dst = str == "true" ? true : false;
+			*(bool*)dst = (str != "0");
 			break;
 		case cH("uint"):
-			*(uint*)dst = stou1(str.c_str());
+			*(uint*)dst = std::stoul(str);
 			break;
 		case cH("int"): case cH("i"):
-			*(int*)dst = stoi1(str.c_str());
+			*(int*)dst = std::stoi(str);
 			break;
-		case cH("Ivec2"): case cH("i2"):
-			*(Ivec2*)dst = stoi2(str.c_str());
-			break;
-		case cH("Ivec3"): case cH("i3"):
-			*(Ivec3*)dst = stoi3(str.c_str());
-			break;
-		case cH("Ivec4"): case cH("i4"):
-			*(Ivec4*)dst = stoi4(str.c_str());
-			break;
-		case cH("float"): case cH("f"):
-			*(float*)dst = stof1(str.c_str());
-			break;
-		case cH("Vec2"): case cH("f2"):
-			*(Vec2*)dst = stof2(str.c_str());
-			break;
-		case cH("Vec3"): case cH("f3"):
-			*(Vec3*)dst = stof3(str.c_str());
-			break;
-		case cH("Vec4"): case cH("f4"):
-			*(Vec4*)dst = stof4(str.c_str());
-			break;
-		case cH("uchar"): case cH("b"):
-			*(uchar*)dst = stob1(str.c_str());
-			break;
-		case cH("Bvec2"): case cH("b2"):
-			*(Bvec2*)dst = stob2(str.c_str());
-			break;
-		case cH("Bvec3"): case cH("b3"):
-			*(Bvec3*)dst = stob3(str.c_str());
-			break;
-		case cH("Bvec4"): case cH("b4"):
-			*(Bvec4*)dst = stob4(str.c_str());
-			break;
+		//case cH("Ivec2"): case cH("i2"):
+		//	*(Ivec2*)dst = stoi2(str.c_str());
+		//	break;
+		//case cH("Ivec3"): case cH("i3"):
+		//	*(Ivec3*)dst = stoi3(str.c_str());
+		//	break;
+		//case cH("Ivec4"): case cH("i4"):
+		//	*(Ivec4*)dst = stoi4(str.c_str());
+		//	break;
+		//case cH("float"): case cH("f"):
+		//	*(float*)dst = stof1(str.c_str());
+		//	break;
+		//case cH("Vec2"): case cH("f2"):
+		//	*(Vec2*)dst = stof2(str.c_str());
+		//	break;
+		//case cH("Vec3"): case cH("f3"):
+		//	*(Vec3*)dst = stof3(str.c_str());
+		//	break;
+		//case cH("Vec4"): case cH("f4"):
+		//	*(Vec4*)dst = stof4(str.c_str());
+		//	break;
+		//case cH("uchar"): case cH("b"):
+		//	*(uchar*)dst = stob1(str.c_str());
+		//	break;
+		//case cH("Bvec2"): case cH("b2"):
+		//	*(Bvec2*)dst = stob2(str.c_str());
+		//	break;
+		//case cH("Bvec3"): case cH("b3"):
+		//	*(Bvec3*)dst = stob3(str.c_str());
+		//	break;
+		//case cH("Bvec4"): case cH("b4"):
+		//	*(Bvec4*)dst = stob4(str.c_str());
+		//	break;
 		case cH("String"):
 			*(String*)dst = str;
 			break;
@@ -268,19 +264,8 @@ namespace flame
 		case cH("StringAndHash"):
 			*(StringAndHash*)dst = str;
 			break;
-		case cH("CommonData"):
-		{
-			auto sp = string_split(str, ':');
-			auto d = (CommonData*)dst;
-			if (sp.size() < 2)
-				d->fmt[0] = 0;
-			else
-			{
-				typefmt_assign(d->fmt, sp[0].c_str());
-				from_string(H(d->fmt), sp[1], &d->v);
-			}
-		}
-			break;
+		default:
+			assert(0);
 		}
 	}
 
@@ -642,7 +627,7 @@ namespace flame
 		auto n = SerializableNode::create("obj");
 		auto id = generate_id(table);
 		table.emplace_back(obj, id);
-		n->new_attr("id", to_stdstring(id));
+		n->new_attr("id", std::to_string(id));
 		return (SerializableNodePrivate*)n;
 	}
 
@@ -1322,7 +1307,6 @@ namespace flame
 	static std::string prefix("flame::");
 	static std::regex reg_lna("^" + prefix + R"(LengthAndArray<([\w\*]+)>)");
 	static std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
-	static std::regex reg_fun("^" + prefix + R"(Function<([\w:\<\>]+)\s*(\*)?>)");
 
 	std::string format_name(const wchar_t* in, std::string* attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
 	{
@@ -1582,7 +1566,7 @@ namespace flame
 	void serialize_function(FunctionInfoPrivate * src, SerializableNode * dst)
 	{
 		dst->new_attr("name", src->name);
-		dst->new_attr("rva", to_string((uint)src->rva).v);
+		dst->new_attr("rva", std::to_string((uint)src->rva));
 		dst->new_attr("return_type", serialize_typeinfo(src->return_type));
 		if (!src->parameter_types.empty())
 		{
@@ -1602,7 +1586,7 @@ namespace flame
 	void unserialize_function(SerializableNode * src, FunctionInfoPrivate * dst)
 	{
 		dst->name = src->find_node("name")->value();
-		dst->rva = (void*)stou1(src->find_node("rva")->value().c_str());
+		dst->rva = (void*)std::stoul(src->find_node("rva")->value().c_str());
 		dst->return_type = unserialize_typeinfo(src->find_node("return_type")->value());
 		auto n_parameters = src->find_node("parameters");
 		if (n_parameters)
@@ -2049,7 +2033,7 @@ namespace flame
 				{
 					auto n_item = n_items->new_node("");
 					n_item->new_attr("name", i->name);
-					n_item->new_attr("value", to_stdstring(i->value));
+					n_item->new_attr("value", std::to_string(i->value));
 				}
 			}
 		}
@@ -2081,8 +2065,8 @@ namespace flame
 					n_item->new_attr("type", serialize_typeinfo(i->type));
 					n_item->new_attr("name", i->name);
 					n_item->new_attr("attribute", i->attribute);
-					n_item->new_attr("offset", to_stdstring(i->offset));
-					n_item->new_attr("size", to_stdstring(i->size));
+					n_item->new_attr("offset", std::to_string(i->offset));
+					n_item->new_attr("size", std::to_string(i->size));
 					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringW") && i->type.name_hash != cH("StringAndHash"))
 					{
 						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);

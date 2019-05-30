@@ -54,7 +54,7 @@ namespace flame
 		std::string id;
 		UdtInfo* udt;
 
-		Vec2 position;
+		Vec2f position;
 
 		FunctionInfo* initialize_function;
 		FunctionInfo* finish_function;
@@ -89,7 +89,7 @@ namespace flame
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
-		Vec2 pos;
+		Vec2f pos;
 
 		~BPPrivate();
 
@@ -443,7 +443,7 @@ namespace flame
 		{
 			for (auto i = 0; i < nodes.size() + 1; i++)
 			{
-				s_id = "node_" + to_stdstring(i);
+				s_id = "node_" + std::to_string(i);
 				if (find_node(s_id))
 					continue;
 			}
@@ -633,7 +633,7 @@ namespace flame
 			}
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
-			n_node->new_attr("pos", to_stdstring(n->position));
+			n_node->new_attr("pos", to_string(n->position, 2));
 
 			auto n_datas = n_node->new_node("datas");
 			n_datas->set_type(SerializableNode::Array);
@@ -724,12 +724,12 @@ namespace flame
 		return ((NodePrivate*)this)->udt;
 	}
 
-	Vec2 BP::Node::position() const
+	Vec2f BP::Node::position() const
 	{
 		return ((NodePrivate*)this)->position;
 	}
 
-	void BP::Node::set_position(const Vec2& p)
+	void BP::Node::set_position(const Vec2f& p)
 	{
 		((NodePrivate*)this)->position = p;
 	}
@@ -853,105 +853,5 @@ namespace flame
 	{
 		delete(BPPrivate*)bp;
 	}
-
-	void BP_LNA1Bvec4$::initialize$c()
-	{
-		v$o.count = 1;
-		v$o.v = new Bvec4[1];
-	}
-
-	void BP_LNA1Bvec4$::finish$c()
-	{
-		v$o.count = 0;
-		delete[]v$o.v;
-	}
-
-	void BP_LNA1Bvec4$::update$c()
-	{
-		v$o.v[0] = v$i;
-	}
-
-	BP_LNA1Bvec4$ bp_lna1bvec4_unused;
-
-	void BP_Vec2$::update$c()
-	{
-		v$o.x = x$i; 
-		v$o.y = y$i;
-	}
-
-	BP_Vec2$ bp_vec2_unused;
-
-	void BP_Vec3$::update$c(float a)
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-	}
-
-	BP_Vec3$ bp_vec3_unused;
-
-	void BP_Vec4$::update$c()
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-		v$o.w = w$i;
-	}
-
-	BP_Vec4$ bp_vec4_unused;
-
-	void BP_Ivec2$::update$c()
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-	}
-
-	BP_Ivec2$ bp_ivec2_unused;
-
-	void BP_Ivec3$::update$c()
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-	}
-
-	BP_Ivec3$ bp_ivec3_unused;
-
-	void BP_Ivec4$::update$c()
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-		v$o.w = w$i;
-	}
-
-	BP_Ivec4$ bp_ivec4_unused;
-
-	void BP_Bvec2$::update$c()
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-	}
-
-	BP_Bvec2$ bp_bvec2_unused;
-
-	void BP_Bvec3$::update$c()
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-	}
-
-	BP_Bvec3$ bp_bvec3_unused;
-
-	void BP_Bvec4$::update$c()
-	{
-		v$o.x = x$i;
-		v$o.y = y$i;
-		v$o.z = z$i;
-		v$o.w = w$i;
-	}
-
-	BP_Bvec4$ bp_bvec4_unused;
 }
 

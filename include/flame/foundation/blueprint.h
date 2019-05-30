@@ -38,13 +38,11 @@ namespace flame
 		  'a.b'   for node input or output
 		- An available udt should:
 			have all data types being one of these:
-			 CommonData's fmt
+			 float, uint, int, uchar, bool, voidptr
 			 String or StringW
 			have an nonparametric void function called 'update'
 			have an nonparametric void function called 'initialize' (optional)
 			have an nonparametric void function called 'finish' (optional)
-			have a member indicates the module name (optional), such as: 'static const int flame_foundation$m;'
-			 (we use the module name to run 'update', 'initialize' and 'finish' functions)
 		- A BP file is basically a XML file
 	*/
 
@@ -83,8 +81,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 			FLAME_FOUNDATION_EXPORTS const char* id() const;
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
-			FLAME_FOUNDATION_EXPORTS Vec2 position() const;
-			FLAME_FOUNDATION_EXPORTS void set_position(const Vec2& p);
+			FLAME_FOUNDATION_EXPORTS Vec2f position() const;
+			FLAME_FOUNDATION_EXPORTS void set_position(const Vec2f& p);
 
 			FLAME_FOUNDATION_EXPORTS int input_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* input(int idx) const;
@@ -127,127 +125,10 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
 	};
 
-	// here, we define some basic udt for blueprint nodes
-
-	struct BP_LNA1Bvec4$
-	{
-		Bvec4 v$i;
-
-		LNA<Bvec4> v$o;
-
-		FLAME_FOUNDATION_EXPORTS void initialize$c();
-		FLAME_FOUNDATION_EXPORTS void finish$c();
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_LNA1Voidptr$
-	{
-		void* v$i;
-
-		LNA<void*> v$o;
-
-		FLAME_FOUNDATION_EXPORTS void initialize$c();
-		FLAME_FOUNDATION_EXPORTS void finish$c();
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Vec2$
-	{
-		float x$i;
-		float y$i;
-
-		Vec2 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Vec3$
-	{
-		float x$i;
-		float y$i;
-		float z$i;
-
-		Vec3 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c(float a);
-	};
-
-	struct BP_Vec4$
-	{
-		float x$i;
-		float y$i;
-		float z$i;
-		float w$i;
-
-		Vec4 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Ivec2$
-	{
-		int x$i;
-		int y$i;
-
-		Ivec2 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Ivec3$
-	{
-		int x$i;
-		int y$i;
-		int z$i;
-
-		Ivec3 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Ivec4$
-	{
-		int x$i;
-		int y$i;
-		int z$i;
-		int w$i;
-
-		Ivec4 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Bvec2$
-	{
-		uchar x$i;
-		uchar y$i;
-
-		Bvec2 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Bvec3$
-	{
-		uchar x$i;
-		uchar y$i;
-		uchar z$i;
-
-		Bvec3 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
-
-	struct BP_Bvec4$
-	{
-		uchar x$i;
-		uchar y$i;
-		uchar z$i;
-		uchar w$i;
-
-		Bvec4 v$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$c();
-	};
+	// basic nodes are available after creating the first BP
+	// they are:
+	//  Vec<[1-4], [float, uint, int, uchar, bool] (as Vec<*>)
+	//  Mat<[2-4], [2-4], [float, double]> (as Mat<*>)
+	//  LNA<[1-16], [float, uint, int, uchar, bool, voidptr, Vec<*>, Mat<*>]>
 }
 

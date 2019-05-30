@@ -26,7 +26,6 @@
 
 namespace flame
 {
-	template<class T>
 	inline std::string to_string(float v, int precision = 6)
 	{
 		char buf[20];
@@ -46,40 +45,30 @@ namespace flame
 	template<uint N>
 	inline std::string to_string(const Vec<N, uint>& v)
 	{
-		auto ret = to_string(v[0]);
+		auto ret = std::to_string(v[0]);
 		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i]);
+			ret += ";" + std::to_string(v[i]);
 		return ret;
 	}
 
 	template<uint N>
 	inline std::string to_string(const Vec<N, int>& v)
 	{
-		auto ret = to_string(v[0]);
+		auto ret = std::to_string(v[0]);
 		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i]);
+			ret += ";" + std::to_string(v[i]);
 		return ret;
 	}
 
 	template<uint N>
 	inline std::string to_string(const Vec<N, uchar>& v)
 	{
-		auto ret = to_string(v[0]);
+		auto ret = std::to_string(v[0]);
 		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i]);
+			ret += ";" + std::to_string(v[i]);
 		return ret;
 	}
 
-	template<uint N>
-	inline std::string to_string(const Vec<N, bool>& v)
-	{
-		auto ret = to_string(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i]);
-		return ret;
-	}
-
-	template<class T>
 	inline std::wstring to_wstring(float v, int precision = 6)
 	{
 		wchar_t buf[20];
@@ -99,36 +88,27 @@ namespace flame
 	template<uint N>
 	inline std::wstring to_wstring(const Vec<N, uint>& v)
 	{
-		auto ret = to_string(v[0]);
+		auto ret = std::to_string(v[0]);
 		for (auto i = 1; i < N; i++)
-			ret += L";" + to_string(v[i]);
+			ret += L";" + std::to_string(v[i]);
 		return ret;
 	}
 
 	template<uint N>
 	inline std::wstring to_wstring(const Vec<N, int>& v)
 	{
-		auto ret = to_string(v[0]);
+		auto ret = std::to_string(v[0]);
 		for (auto i = 1; i < N; i++)
-			ret += L";" + to_string(v[i]);
+			ret += L";" + std::to_string(v[i]);
 		return ret;
 	}
 
 	template<uint N>
 	inline std::wstring to_wstring(const Vec<N, uchar>& v)
 	{
-		auto ret = to_string(v[0]);
+		auto ret = std::to_string(v[0]);
 		for (auto i = 1; i < N; i++)
-			ret += L";" + to_string(v[i]);
-		return ret;
-	}
-
-	template<uint N>
-	inline std::wstring to_wstring(const Vec<N, bool>& v)
-	{
-		auto ret = to_string(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += L";" + to_string(v[i]);
+			ret += L";" + std::to_string(v[i]);
 		return ret;
 	}
 
@@ -287,6 +267,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
+		FLAME_FOUNDATION_EXPORTS const char* templates() const; // separate by ';'
+		FLAME_FOUNDATION_EXPORTS uint templates_hash() const;
 
 		static bool equal(const TypeInfo* lhs, const TypeInfo* rhs)
 		{
@@ -323,7 +305,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS int offset() const;
 		FLAME_FOUNDATION_EXPORTS int size() const;
 		FLAME_FOUNDATION_EXPORTS int count() const; // for native array count
-		FLAME_FOUNDATION_EXPORTS const CommonData& default_value() const;
+		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
 	};
 
 	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
