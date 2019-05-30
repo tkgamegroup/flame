@@ -1249,7 +1249,7 @@ namespace flame
 	template<class F>
 	struct Function
 	{
-		F *f;
+		F* f;
 		int c_size;
 		void* c;
 		uint c_hash;

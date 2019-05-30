@@ -244,8 +244,7 @@ namespace flame
 		TypeTagEnumMulti,
 		TypeTagVariable,
 		TypeTagPointer,
-		TypeTagArray,
-		TypeTagLengthAndArray
+		TypeTagArray
 	};
 
 	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag$ tag);
@@ -422,7 +421,7 @@ namespace flame
 			struct Apple$ // mark this will be collected by typeinfogen
 			{
 				float size$; // mark this member will be collected
-				Vec3 color$i; // mark this member will be collected, and its attribute is 'i'
+				Vec3f color$i; // mark this member will be collected, and its attribute is 'i'
 			};
 
 		the attribute can be one or more chars, and order doesn't matter

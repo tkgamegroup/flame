@@ -275,14 +275,11 @@ namespace flame
 		std::string name;
 		std::string attribute;
 		int offset, size, count;
-		CommonData default_value;
+		void* default_value;
 
-		VariableInfoPrivate()
+		~VariableInfoPrivate()
 		{
-			default_value.fmt[0] = 0;
-			default_value.fmt[1] = 0;
-			default_value.fmt[2] = 0;
-			default_value.fmt[3] = 0;
+			delete default_value;
 		}
 	};
 
@@ -311,7 +308,7 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->attribute.c_str();
 	}
 
-	const CommonData& VariableInfo::default_value() const
+	const void* VariableInfo::default_value() const
 	{
 		return ((VariableInfoPrivate*)this)->default_value;
 	}
@@ -819,7 +816,7 @@ namespace flame
 						//}
 						break;
 					default:
-						if (!compare(tag, hash, src, &item->default_value()))
+						if (!compare(tag, hash, src, item->default_value()))
 						{
 							auto n_item = new_node("item");
 							n_item->new_attr("name", item->name());
@@ -1307,6 +1304,7 @@ namespace flame
 	static std::string prefix("flame::");
 	static std::regex reg_lna("^" + prefix + R"(LengthAndArray<([\w\*]+)>)");
 	static std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
+	static std::regex reg_fun("^" + prefix + "Function");
 
 	std::string format_name(const wchar_t* in, std::string* attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
 	{
@@ -1792,6 +1790,7 @@ namespace flame
 							member->get_type(&type);
 
 							auto i = new VariableInfoPrivate;
+							i->type = symbol_to_typeinfo(type, attribute);
 							i->name = name;
 							i->attribute = attribute;
 							member->get_offset(&l);
@@ -1802,8 +1801,8 @@ namespace flame
 								i->count = dw;
 							else
 								i->count = 0;
+							if (i->type.tag)
 							memset(&i->default_value, 0, sizeof(CommonData));
-							i->type = symbol_to_typeinfo(type, attribute);
 
 							type->Release();
 
@@ -1857,7 +1856,7 @@ namespace flame
 											for (auto& i : u->items)
 											{
 												if (i->size <= sizeof(CommonData::v))
-													memcpy(&i->default_value.v, (char*)new_obj + i->offset, i->size);
+													memcpy(i->default_value, (char*)new_obj + i->offset, i->size);
 											}
 											free_module(library);
 										}
@@ -1970,7 +1969,7 @@ namespace flame
 				memset(&i->default_value, 0, sizeof(CommonData));
 				auto a_default_value = n_item->find_node("default_value");
 				if (a_default_value)
-					unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), &i->default_value.v);
+					unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), i->default_value);
 				u->items.emplace_back(i);
 			}
 
@@ -2069,7 +2068,7 @@ namespace flame
 					n_item->new_attr("size", std::to_string(i->size));
 					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringW") && i->type.name_hash != cH("StringAndHash"))
 					{
-						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, &i->default_value.v, 1);
+						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, i->default_value, 1);
 						if (default_value_str.size > 0)
 							n_item->new_attr("default_value", default_value_str.v);
 					}

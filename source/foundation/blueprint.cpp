@@ -122,7 +122,7 @@ namespace flame
 		memset(data, 0, size);
 		auto vtype = variable_info->type();
 		if (vtype->tag() != TypeTagPointer && vtype->name_hash() != cH("VoidPtrs"))
-			set(data, variable_info->type()->tag(), size, &variable_info->default_value());
+			set(data, variable_info->type()->tag(), size, variable_info->default_value());
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -641,7 +641,7 @@ namespace flame
 			{
 				auto v = input->variable_info;
 				auto type = v->type();
-				if (type->tag() != TypeTagPointer && type->name_hash() != cH("VoidPtrs") && !compare(type->tag(), v->size(), &v->default_value(), input->data))
+				if (type->tag() != TypeTagPointer && type->name_hash() != cH("VoidPtrs") && !compare(type->tag(), v->size(), v->default_value(), input->data))
 				{
 					auto n_data = n_datas->new_node("");
 					n_data->new_attr("name", v->name());
