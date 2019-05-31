@@ -281,6 +281,21 @@ namespace flame
 		{
 			delete default_value;
 		}
+
+		void _init_default_value()
+		{
+			default_value = nullptr;
+			if (type.tag != TypeTagEnumSingle && type.tag != TypeTagEnumMulti && type.tag != TypeTagVariable)
+				return;
+			if (type.tag == TypeTagVariable && (
+				type.name == "LNA" ||
+				type.name == "Array" ||
+				type.name == "String" ||
+				type.name == "Function"))
+				return;
+			default_value = new char[size];
+			memset(default_value, 0, size);
+		}
 	};
 
 	const TypeInfo* VariableInfo::type() const
@@ -325,8 +340,6 @@ namespace flame
 			break;
 		case TypeTagPointer:
 			*(void**)dst = *(void**)src;
-			break;
-		case TypeTagArray:
 			break;
 		}
 	}
@@ -1801,8 +1814,7 @@ namespace flame
 								i->count = dw;
 							else
 								i->count = 0;
-							if (i->type.tag)
-							memset(&i->default_value, 0, sizeof(CommonData));
+							i->_init_default_value();
 
 							type->Release();
 
@@ -1855,7 +1867,7 @@ namespace flame
 
 											for (auto& i : u->items)
 											{
-												if (i->size <= sizeof(CommonData::v))
+												if (i->default_value)
 													memcpy(i->default_value, (char*)new_obj + i->offset, i->size);
 											}
 											free_module(library);
@@ -1966,10 +1978,13 @@ namespace flame
 				i->attribute = n_item->find_node("attribute")->value();
 				i->offset = std::stoi(n_item->find_node("offset")->value());
 				i->size = std::stoi(n_item->find_node("size")->value());
-				memset(&i->default_value, 0, sizeof(CommonData));
-				auto a_default_value = n_item->find_node("default_value");
-				if (a_default_value)
-					unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), i->default_value);
+				i->_init_default_value();
+				if (i->default_value)
+				{
+					auto a_default_value = n_item->find_node("default_value");
+					if (a_default_value)
+						unserialize_value(i->type.tag, i->type.name_hash, a_default_value->value(), i->default_value);
+				}
 				u->items.emplace_back(i);
 			}
 
