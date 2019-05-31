@@ -104,7 +104,7 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS Renderpass* renderpass() const;
 
-			FLAME_GRAPHICS_EXPORTS void set(int idx, const Bvec4 &col);
+			FLAME_GRAPHICS_EXPORTS void set(int idx, const Vec4c &col);
 
 			FLAME_GRAPHICS_EXPORTS static Clearvalues* create(Renderpass* r);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Clearvalues* c);

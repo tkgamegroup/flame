@@ -336,7 +336,7 @@ namespace flame
 			auto seed = ::rand();
 			auto json = SerializableNode::create("");
 			json->new_attr("action", "start");
-			json->new_attr("seed", to_stdstring(seed));
+			json->new_attr("seed", std::to_string(seed));
 			auto str = json->to_string_json();
 			for (auto i = 0; i < client_count; i++)
 				s->send(i, str.size, str.v);
@@ -376,12 +376,12 @@ namespace flame
 										auto n_frame = json->find_node("frame");
 										if (n_frame && n_frame->type() == SerializableNode::Value)
 										{
-											auto frame = stoi1(n_frame->value().c_str());
+											auto frame = std::stoi(n_frame->value().c_str());
 											if (frame == thiz->frame)
 											{
 												thiz->semaphore++;
 												auto n_data = json->find_node("data");
-												auto dst = thiz->frame_advance_data->new_node(to_stdstring(client_idx + 1));
+												auto dst = thiz->frame_advance_data->new_node(std::to_string(client_idx + 1));
 												for (auto i = 0; i < n_data->node_count(); i++)
 												{
 													auto n = json->node(i);

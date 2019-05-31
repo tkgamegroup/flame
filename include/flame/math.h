@@ -1012,9 +1012,12 @@ namespace flame
 		Mat<N, O, T> ret;
 		for (auto i = 0; i < O; i++)
 		{
-			ret[i][j] = 0;
 			for (auto j = 0; j < N; j++)
-				ret[i][j] += lhs[j][i] * rhs[i][j];
+			{
+				ret[i][j] = 0;
+				for (auto k = 0; k < M; k++)
+					ret[i][j] += lhs[k][j] * rhs[i][k];
+			}
 		}
 		return ret;
 	}
@@ -1474,9 +1477,10 @@ namespace flame
 		return r;
 	}
 
+	// Vec4 as Rect
+	// (x, y) - min, (z, w) - max
 	template<class T>
 	inline Vec<4, T> rect(const Vec<2, T>& base, const Vec<2, T>& ext)
-		// (x, y) - min, (z, w) - max
 	{
 		return Vec<4, T>(base, base + ext);
 	}
@@ -1673,7 +1677,8 @@ namespace flame
 		return Vec<3, float>(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
 	}
 
-	// Vec4 as quat
+	// Vec4 as Quat
+	// (x, y, z) - vector, (w) - scalar
 
 	template<class T>
 	inline Vec<4, T> quat(const Mat<3, 3, T>& m)
@@ -1738,6 +1743,17 @@ namespace flame
 	}
 
 	template<class T>
+	inline Vec<3, T> quat_mul(const Vec<4, T>& lhs, const Vec<3, T>& rhs)
+	{
+		Vec<4, T> ret;
+		ret.x() = lhs.w() * rhs.x() + lhs.y() * rhs.z() - lhs.z() * rhs.y();
+		ret.y() = lhs.w() * rhs.y() - lhs.x() * rhs.z() + lhs.z() * rhs.x();
+		ret.z() = lhs.w() * rhs.z() + lhs.x() * rhs.y() + lhs.z() * rhs.x();
+		ret.w() = -lhs.x() * rhs.x() - lhs.y() * rhs.y() - lhs.z() * rhs.z();
+		return Vec<3, T>(quat_mul(ret, Vec<4, T>(-lhs.x(), -lhs.y(), -lhs.z(), lhs.w())));
+	}
+
+	template<class T>
 	inline Mat<3, 3, T> rotation(const Vec<4, T>& q)
 	{
 		T wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
@@ -1775,7 +1791,7 @@ namespace flame
 		return ret;
 	}
 
-	// Vec3 as euler:
+	// Vec3 as Euler:
 	// (x, y z) - (yaw pitch roll)
 
 	template<class T>
@@ -1821,7 +1837,7 @@ namespace flame
 		return ret;
 	}
 
-	// Vec4 as plane:
+	// Vec4 as Plane:
 	// (x, y, z) - normal, w - d
 
 	template<class T>

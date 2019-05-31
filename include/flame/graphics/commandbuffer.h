@@ -49,9 +49,9 @@ namespace flame
 
 		struct BufferCopy
 		{
-			int src_off;
-			int dst_off;
-			int size;
+			uint src_off;
+			uint dst_off;
+			uint size;
 
 			BufferCopy() 
 			{
@@ -67,15 +67,15 @@ namespace flame
 
 		struct ImageCopy
 		{
-			Ivec2 src_off;
-			Ivec2 dst_off;
-			Ivec2 size;
+			Vec2u src_off;
+			Vec2u dst_off;
+			Vec2u size;
 
 			ImageCopy()
 			{
 			}
 
-			ImageCopy(const Ivec2 &_src_off, const Ivec2 &_dst_off, const Ivec2 &_size) :
+			ImageCopy(const Vec2u &_src_off, const Vec2u &_dst_off, const Vec2u &_size) :
 				src_off(_src_off),
 				dst_off(_dst_off),
 				size(_size)
@@ -85,18 +85,18 @@ namespace flame
 
 		struct BufferImageCopy
 		{
-			int buffer_offset;
-			int image_x;
-			int image_y;
-			int image_width;
-			int image_height;
-			int image_level;
+			uint buffer_offset;
+			uint image_x;
+			uint image_y;
+			uint image_width;
+			uint image_height;
+			uint image_level;
 
 			BufferImageCopy()
 			{
 			}
 
-			BufferImageCopy(int w, int h, int buf_off = 0, int level = 0, int x = 0, int y = 0) :
+			BufferImageCopy(uint w, uint h, uint buf_off = 0, uint level = 0, uint x = 0, uint y = 0) :
 				buffer_offset(buf_off),
 				image_x(x),
 				image_y(y),
@@ -113,8 +113,8 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void begin_renderpass(Renderpass *r, Framebuffer *f, Clearvalues *cv);
 			FLAME_GRAPHICS_EXPORTS void end_renderpass();
-			FLAME_GRAPHICS_EXPORTS void set_viewport(const Rect &rect);
-			FLAME_GRAPHICS_EXPORTS void set_scissor(const Rect &rect);
+			FLAME_GRAPHICS_EXPORTS void set_viewport(const Vec4f& rect);
+			FLAME_GRAPHICS_EXPORTS void set_scissor(const Vec4f& rect);
 			FLAME_GRAPHICS_EXPORTS void bind_pipeline(Pipeline *p);
 			FLAME_GRAPHICS_EXPORTS void bind_descriptorset(Descriptorset *s, int idx);
 			FLAME_GRAPHICS_EXPORTS void bind_vertexbuffer(Buffer *b, int id);
@@ -122,7 +122,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void push_constant(int offset, int size, const void *data, Pipelinelayout *layout = nullptr);
 			FLAME_GRAPHICS_EXPORTS void draw(int count, int instance_count, int first_vertex, int first_instance);
 			FLAME_GRAPHICS_EXPORTS void draw_indexed(int count, int first_index, int vertex_offset, int instance_count, int first_instance);
-			FLAME_GRAPHICS_EXPORTS void dispatch(const Ivec3 &v);
+			FLAME_GRAPHICS_EXPORTS void dispatch(const Vec3u& v);
 
 			FLAME_GRAPHICS_EXPORTS void copy_buffer(Buffer *src, Buffer *dst, int copy_count, BufferCopy *copies);
 			FLAME_GRAPHICS_EXPORTS void copy_image(Image *src, Image *dst, int copy_count, ImageCopy *copies);
@@ -131,7 +131,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void change_image_layout(Image *t, ImageLayout from, ImageLayout to,
 				int base_level = 0, int level_count = 0, int base_layer = 0, int layer_count = 0);
 
-			FLAME_GRAPHICS_EXPORTS void clear_image(Image *i, const Bvec4 &col);
+			FLAME_GRAPHICS_EXPORTS void clear_image(Image *i, const Vec4b &col);
 
 			FLAME_GRAPHICS_EXPORTS void end();
 

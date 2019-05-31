@@ -423,7 +423,7 @@ int main(int argc, char **args)
 				{
 					auto n = app.bp->find_node(match[1].str().c_str());
 					if (n)
-						n->set_position(Vec2(stof1(match[2].str().c_str()), stof1(match[3].str().c_str())) * 100.f);
+						n->set_position(Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f);
 
 					str = match.suffix();
 				}
