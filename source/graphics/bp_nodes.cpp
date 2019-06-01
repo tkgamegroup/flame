@@ -94,7 +94,7 @@ namespace flame
 			auto cv = (graphics::Clearvalues*)out$o;
 			auto count = cv->renderpass()->attachment_count();
 			for (auto i = 0; i < count; i++)
-				cv->set(i, colors$i[i].b4());
+				cv->set(i, colors$i.v[i]);
 		}
 	}
 

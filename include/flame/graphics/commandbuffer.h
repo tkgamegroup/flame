@@ -131,7 +131,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void change_image_layout(Image *t, ImageLayout from, ImageLayout to,
 				int base_level = 0, int level_count = 0, int base_layer = 0, int layer_count = 0);
 
-			FLAME_GRAPHICS_EXPORTS void clear_image(Image *i, const Vec4b &col);
+			FLAME_GRAPHICS_EXPORTS void clear_image(Image *i, const Vec4c& col);
 
 			FLAME_GRAPHICS_EXPORTS void end();
 

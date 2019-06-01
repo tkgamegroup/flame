@@ -67,8 +67,8 @@ namespace flame
 
 			void begin_renderpass(Renderpass *r, Framebuffer *f, Clearvalues*cv);
 			void end_renderpass();
-			void set_viewport(const Rect &rect);
-			void set_scissor(const Rect &rect);
+			void set_viewport(const Vec4f& rect);
+			void set_scissor(const Vec4f& rect);
 			void bind_pipeline(Pipeline *p);
 			void bind_descriptorset(Descriptorset *s, int idx);
 			void bind_vertexbuffer(Buffer *b, int id);
@@ -76,7 +76,7 @@ namespace flame
 			void push_constant(int offset, int size, const void *data, Pipelinelayout *layout = nullptr);
 			void draw(int count, int instance_count, int first_vertex, int first_instance);
 			void draw_indexed(int count, int first_index, int vertex_offset, int instance_count, int first_instance);
-			void dispatch(const Ivec3 &v);
+			void dispatch(const Vec3u& v);
 
 			void copy_buffer(Buffer *src, Buffer *dst, int copy_count, BufferCopy *copies);
 			void copy_image(Image *src, Image *dst, int copy_count, ImageCopy *copies);
@@ -85,7 +85,7 @@ namespace flame
 			void change_image_layout(Image *i, ImageLayout from, ImageLayout to,
 				int base_level = 0, int level_count = 0, int base_layer = 0, int layer_count = 0);
 
-			void clear_image(ImagePrivate *i, const Bvec4 &col);
+			void clear_image(ImagePrivate *i, const Vec4c& col);
 
 			void end();
 		};

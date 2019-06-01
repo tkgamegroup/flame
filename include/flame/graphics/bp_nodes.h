@@ -41,7 +41,7 @@ namespace flame
 		void* out$o;
 		void* window$o;
 		int image_count$o;
-		VoidPtrs images$o;
+		LNA<void*> images$o;
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void finish$c();
@@ -73,7 +73,7 @@ namespace flame
 	{
 		void* in$i;
 		void* renderpass$i;
-		CommonData* colors$i;
+		LNA<Vec4c> colors$i;
 
 		void* out$o;
 
@@ -87,7 +87,7 @@ namespace flame
 		int count$i;
 		void* device$i;
 
-		VoidPtrs out$o;
+		LNA<void*> out$o;
 
 		FLAME_GRAPHICS_EXPORTS void initialize$c();
 		FLAME_GRAPHICS_EXPORTS void finish$c();

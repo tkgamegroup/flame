@@ -193,30 +193,30 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::set_viewport(const Rect &rect)
+		void CommandbufferPrivate::set_viewport(const Vec4f& rect)
 		{
 #if defined(FLAME_VULKAN)
 			VkViewport vp;
 			vp.minDepth = 0.f;
 			vp.maxDepth = 1.f;
-			vp.x = rect.min.x;
-			vp.y = rect.min.y;
-			vp.width = max(rect.width(), 1.f);
-			vp.height = max(rect.height(), 1.f);
+			vp.x = rect.x();
+			vp.y = rect.y();
+			vp.width = max(rect.z() - rect.x(), 1.f);
+			vp.height = max(rect.w() - rect.y(), 1.f);
 			vkCmdSetViewport(v, 0, 1, &vp);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::set_scissor(const Rect &rect)
+		void CommandbufferPrivate::set_scissor(const Vec4f& rect)
 		{
 #if defined(FLAME_VULKAN)
 			VkRect2D sc;
-			sc.offset.x = max(0.f, rect.min.x);
-			sc.offset.y = max(0.f, rect.min.y);
-			sc.extent.width = max(0.f, rect.width());
-			sc.extent.height = max(0.f, rect.height());
+			sc.offset.x = max(0.f, rect.x());
+			sc.offset.y = max(0.f, rect.y());
+			sc.extent.width = max(0.f, rect.z() - rect.x());
+			sc.extent.height = max(0.f, rect.w() - rect.y());
 			vkCmdSetScissor(v, 0, 1, &sc);
 #elif defined(FLAME_D3D12)
 
@@ -294,7 +294,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::dispatch(const Ivec3 &_v)
+		void CommandbufferPrivate::dispatch(const Vec3u& _v)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdDispatch(v, _v.x, _v.y, _v.z);
@@ -496,14 +496,14 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::clear_image(ImagePrivate *i, const Bvec4 &col)
+		void CommandbufferPrivate::clear_image(ImagePrivate *i, const Vec4c& col)
 		{
 #if defined(FLAME_VULKAN)
 			VkClearColorValue cv;
-			cv.float32[0] = col.x / 255.f;
-			cv.float32[1] = col.y / 255.f;
-			cv.float32[2] = col.z / 255.f;
-			cv.float32[3] = col.w / 255.f;
+			cv.float32[0] = col.x() / 255.f;
+			cv.float32[1] = col.y() / 255.f;
+			cv.float32[2] = col.z() / 255.f;
+			cv.float32[3] = col.w() / 255.f;
 			VkImageSubresourceRange r;
 			r.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			r.baseMipLevel = 0;
@@ -545,12 +545,12 @@ namespace flame
 			((CommandbufferPrivate*)this)->end_renderpass();
 		}
 
-		void Commandbuffer::set_viewport(const Rect &rect)
+		void Commandbuffer::set_viewport(const Vec4f& rect)
 		{
 			((CommandbufferPrivate*)this)->set_viewport(rect);
 		}
 
-		void Commandbuffer::set_scissor(const Rect &rect)
+		void Commandbuffer::set_scissor(const Vec4f& rect)
 		{
 			((CommandbufferPrivate*)this)->set_scissor(rect);
 		}
@@ -590,7 +590,7 @@ namespace flame
 			((CommandbufferPrivate*)this)->draw_indexed(count, first_index, vertex_offset, instance_count, first_instance);
 		}
 
-		void Commandbuffer::dispatch(const Ivec3 &v)
+		void Commandbuffer::dispatch(const Vec3u& v)
 		{
 			((CommandbufferPrivate*)this)->dispatch(v);
 		}
@@ -621,7 +621,7 @@ namespace flame
 			((CommandbufferPrivate*)this)->change_image_layout(i, from, to, base_level, level_count, base_layer, layer_count);
 		}
 
-		void Commandbuffer::clear_image(Image *i, const Bvec4 &col)
+		void Commandbuffer::clear_image(Image *i, const Vec4c& col)
 		{
 			((CommandbufferPrivate*)this)->clear_image((ImagePrivate*)i, col);
 		}

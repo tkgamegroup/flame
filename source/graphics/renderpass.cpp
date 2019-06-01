@@ -25,6 +25,8 @@
 #include "renderpass_private.h"
 #include "image_private.h"
 
+#include <memory>
+
 namespace flame
 {
 	namespace graphics
@@ -181,18 +183,18 @@ namespace flame
 		{
 		}
 
-		void ClearvaluesPrivate::set(int idx, const Bvec4 &col)
+		void ClearvaluesPrivate::set(int idx, const Vec4c& col)
 		{
 #if defined(FLAME_VULKAN)
-			v[idx].color.float32[0] = col.x / 255.f;
-			v[idx].color.float32[1] = col.y / 255.f;
-			v[idx].color.float32[2] = col.z / 255.f;
-			v[idx].color.float32[3] = col.w / 255.f;
+			v[idx].color.float32[0] = col.x() / 255.f;
+			v[idx].color.float32[1] = col.y() / 255.f;
+			v[idx].color.float32[2] = col.z() / 255.f;
+			v[idx].color.float32[3] = col.w() / 255.f;
 #elif defined(FLAME_D3D12)
-			v[idx].x = col.x / 255.0;
-			v[idx].y = col.y / 255.0;
-			v[idx].z = col.z / 255.0;
-			v[idx].w = col.w / 255.0;
+			v[idx].x() = col.x() / 255.0;
+			v[idx].y() = col.y() / 255.0;
+			v[idx].z() = col.z() / 255.0;
+			v[idx].w() = col.w() / 255.0;
 #endif
 		}
 
@@ -201,7 +203,7 @@ namespace flame
 			return ((ClearvaluesPrivate*)this)->renderpass;
 		}
 
-		void Clearvalues::set(int idx, const Bvec4 &col)
+		void Clearvalues::set(int idx, const Vec4c& col)
 		{
 			((ClearvaluesPrivate*)this)->set(idx, col);
 		}
@@ -221,13 +223,13 @@ namespace flame
 			d = (DevicePrivate*)_d;
 			info = _info;
 
-			Ivec2 size(0);
+			Vec2i size(0);
 
 #if defined(FLAME_VULKAN)
 			std::vector<VkImageView> vk_views(info.views.size());
 			for (auto i = 0; i < info.views.size(); i++)
 			{
-				if (size.x == 0 && size.y == 0)
+				if (size.x() == 0 && size.y() == 0)
 					size = info.views[i]->image()->size;
 				else
 				{
@@ -242,8 +244,8 @@ namespace flame
 			create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			create_info.flags = 0;
 			create_info.pNext = nullptr;
-			create_info.width = size.x;
-			create_info.height = size.y;
+			create_info.width = size.x();
+			create_info.height = size.y();
 			create_info.layers = 1;
 			create_info.renderPass = ((RenderpassPrivate*)info.rp)->v;
 			create_info.attachmentCount = info.views.size();

@@ -53,7 +53,7 @@ namespace flame
 		struct Image
 		{
 			Format format;
-			Ivec2 size;
+			Vec2u size;
 			int level;
 			int layer;
 			SampleCount sample_count;

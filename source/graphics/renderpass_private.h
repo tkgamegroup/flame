@@ -55,7 +55,7 @@ namespace flame
 			ClearvaluesPrivate(Renderpass *r);
 			~ClearvaluesPrivate();
 
-			void set(int idx, const Bvec4 &col);
+			void set(int idx, const Vec4c& col);
 		};
 
 		struct FramebufferPrivate : Framebuffer

@@ -322,12 +322,6 @@ namespace flame
 				v_[i] = rhs[i];
 		}
 
-		Vec(const T* rhs)
-		{
-			for (auto i = 0; i < N; i++)
-				v_[i] = rhs[i];
-		}
-
 		Vec(T _x, T _y)
 		{
 			static_assert(N == 2);
