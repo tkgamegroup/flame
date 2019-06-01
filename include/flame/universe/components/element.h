@@ -58,17 +58,17 @@ namespace flame
 		ATTRIBUTE_NUMBER<float> global_width;
 		ATTRIBUTE_NUMBER<float> global_height;
 
-		Vec4 inner_padding; // L T R B
+		Vec4f inner_padding; // L T R B
 		float layout_padding;
 
 		float alpha;
 
-		Vec4 background_offset; // L T R B
+		Vec4f background_offset; // L T R B
 		float background_round_radius;
 		int background_round_flags;
 		float background_frame_thickness;
-		Bvec4 background_color;
-		Bvec4 background_frame_color;
+		Vec4c background_color;
+		Vec4c background_frame_color;
 		float background_shadow_thickness;
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cElement$() override;

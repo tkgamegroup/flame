@@ -202,7 +202,7 @@ namespace flame
 			data_size_ = pitch_ * size.y();
 		}
 
-		void ImagePrivate::init(const Bvec4 &col)
+		void ImagePrivate::init(const Vec4c &col)
 		{
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
@@ -292,7 +292,7 @@ namespace flame
 				cb->begin(true);
 				cb->begin_renderpass(d->rp_one_rgba32, fb, nullptr);
 
-				auto vp = Rect(Vec2(0.f), Vec2(size));
+				auto vp = Rect(Vec2f(0.f), Vec2f(size));
 				cb->set_viewport(vp);
 				cb->set_scissor(vp);
 
@@ -323,7 +323,7 @@ namespace flame
 			}
 		}
 
-		void Image::init(const Bvec4 &col)
+		void Image::init(const Vec4c &col)
 		{
 			((ImagePrivate*)this)->init(col);
 		}

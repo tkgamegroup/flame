@@ -39,7 +39,7 @@ namespace flame
 			_priv->v->detachShape(*s->_priv->v);
 		}
 
-		void Rigid::get_pose(Vec3 &out_coord, Vec4 &out_quat)
+		void Rigid::get_pose(Vec3f &out_coord, Vec4f &out_quat)
 		{
 			auto trans = _priv->v->getGlobalPose();
 			out_coord.x() = trans.p.x();
@@ -51,7 +51,7 @@ namespace flame
 			out_quat.w() = trans.q.w();
 		}
 
-		void Rigid::add_force(const Vec3 &v)
+		void Rigid::add_force(const Vec3f &v)
 		{
 			auto d = (PxRigidDynamic*)_priv->v;
 			d->addForce(Z(v));
@@ -63,25 +63,25 @@ namespace flame
 			d->clearForce();
 		}
 		
-		Rigid *create_static_rigid(Device *d, const Vec3 &coord)
+		Rigid *create_static_rigid(Device *d, const Vec3f &coord)
 		{
 			auto r = new Rigid;
 			
 			r->_priv = new RigidPrivate;
 			r->_priv->v = d->_priv->inst->createRigidStatic(
-				Z(coord, Vec4(0.f, 0.f, 0.f, 1.f)));
+				Z(coord, Vec4f(0.f, 0.f, 0.f, 1.f)));
 			r->_priv->v->userData = r;
 
 			return r;
 		}
 
-		Rigid *create_dynamic_rigid(Device *d, const Vec3 &coord)
+		Rigid *create_dynamic_rigid(Device *d, const Vec3f &coord)
 		{
 			auto r = new Rigid;
 
 			r->_priv = new RigidPrivate;
 			r->_priv->v = d->_priv->inst->createRigidDynamic(
-				Z(coord, Vec4(0.f, 0.f, 0.f, 1.f)));
+				Z(coord, Vec4f(0.f, 0.f, 0.f, 1.f)));
 			//PxRigidBodyExt::updateMassAndInertia(*body, density);
 			//if (kinematic) body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 			r->_priv->v->userData = r;

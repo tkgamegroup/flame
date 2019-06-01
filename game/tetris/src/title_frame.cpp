@@ -39,7 +39,7 @@ struct Rain : UI::Widget
 	{
 	}
 
-	virtual void on_draw(UI::Canvas *c, const Vec2 &off, float scl) override
+	virtual void on_draw(UI::Canvas *c, const Vec2f &off, float scl) override
 	{
 		
 	}
@@ -61,13 +61,13 @@ UI::Button *create_round_button(const wchar_t *text)
 	btn->inner_padding[0] = 20.f;
 	btn->background_round_radius = btn->size.y() * 0.4f;
 	btn->background_round_flags = Rect::SideNE | Rect::SideSE;
-	btn->background_offset = Vec4(-15.f, 0.f,
+	btn->background_offset = Vec4f(-15.f, 0.f,
 		btn->background_round_radius, 0.f);
-	btn->background_col = Bvec4(255, 255, 255, 0);
+	btn->background_col = Vec4c(255, 255, 255, 0);
 	btn->background_frame_thickness = 7.f;
-	btn->background_frame_col = Bvec4(0, 0, 0, 255);
-	btn->text_col = Bvec4(0, 0, 0, 255);
-	btn->add_style_T<UI::ButtonStyleColor>(0, Vec3(0.f, 0.f, 0.7f));
+	btn->background_frame_col = Vec4c(0, 0, 0, 255);
+	btn->text_col = Vec4c(0, 0, 0, 255);
+	btn->add_style_T<UI::ButtonStyleColor>(0, Vec3f(0.f, 0.f, 0.7f));
 
 	return btn;
 }
@@ -84,7 +84,7 @@ void create_title_frame()
 	w_title_text->layout_padding = 16.f;
 	w_title_text->sdf_scale = 10.f;
 	w_title_text->set_text_and_size(L"TETRIS");
-	w_title_text->text_col = Bvec4(0, 0, 0, 255);
+	w_title_text->text_col = Vec4c(0, 0, 0, 255);
 	w_title_bg->add_widget(-1, w_title_text, true);
 
 	w_title_start_btn = create_round_button(L"Start");

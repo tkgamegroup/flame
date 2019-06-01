@@ -168,13 +168,13 @@ namespace flame
 #if defined(FLAME_VULKAN)
 					v.push_back({});
 #elif defined(FLAME_D3D12)
-					v.push_back(Vec4(0.f));
+					v.push_back(Vec4f(0.f));
 #endif
 				else
 #if defined(FLAME_VULKAN)
 					v.push_back({ 1, 0.f });
 #elif defined(FLAME_D3D12)
-					v.push_back(Vec4(1.f, 0.f, 0.f, 0.f));
+					v.push_back(Vec4f(1.f, 0.f, 0.f, 0.f));
 #endif
 			}
 		}

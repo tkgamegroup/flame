@@ -37,7 +37,7 @@ namespace flame
 		{
 			Ivec2 off;
 			Ivec2 size;
-			Vec2 uv0, uv1;
+			Vec2f uv0, uv1;
 			int advance;
 		};
 

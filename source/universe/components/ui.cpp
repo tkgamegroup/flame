@@ -38,7 +38,7 @@ namespace flame
 
 		bool f_all_done;
 		bool f_hovering, f_mljustdown, f_mljustup, f_mrjustdown, f_mrjustup;
-		Vec2 f_mpos;
+		Vec2f f_mpos;
 		Ivec2 f_mdisp;
 		int f_mscroll;
 

@@ -53,12 +53,12 @@ struct App : BasicApp
 	//{
 	//	ui->set_default_style(style);
 	//	if (style == DefaultStyleDark)
-	//		canvas->set_clear_color(Bvec4(0, 0, 0, 255));
+	//		canvas->set_clear_color(Vec4c(0, 0, 0, 255));
 	//	else
-	//		canvas->set_clear_color(Bvec4(200, 200, 200, 255));
+	//		canvas->set_clear_color(Vec4c(200, 200, 200, 255));
 
 	//	auto layout1 = Element::createT<wLayout>(ui, LayoutVertical);
-	//	layout1->pos$ = Vec2(16.f, 8.f);
+	//	layout1->pos$ = Vec2f(16.f, 8.f);
 	//	layout1->item_padding$ = 8.f;
 
 	//	auto w_checkbox = Element::createT<wCheckbox>(ui);
@@ -118,7 +118,7 @@ struct App : BasicApp
 	//	layout1->add_child(w_edit);
 
 	//	auto w_image = Element::createT<wImage>(ui);
-	//	w_image->size$ = Vec2(250.f);
+	//	w_image->size$ = Vec2f(250.f);
 	//	w_image->id() = img_id;
 	//	w_image->align$ = AlignLittleEnd;
 	//	layout1->add_child(w_image);
@@ -126,11 +126,11 @@ struct App : BasicApp
 	//	layout->add_child(layout1, 1);
 
 	//	auto w_list = Element::createT<wList>(ui);
-	//	w_list->pos$ = Vec2(800.f, 8.f);
-	//	w_list->size$ = Vec2(300.f);
+	//	w_list->pos$ = Vec2f(800.f, 8.f);
+	//	w_list->size$ = Vec2f(300.f);
 
 	//	auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
-	//	w_sizedrag->min_size() = Vec2(100.f);
+	//	w_sizedrag->min_size() = Vec2f(100.f);
 
 	//	w_list->add_child(w_sizedrag, 1);
 
@@ -143,7 +143,7 @@ struct App : BasicApp
 	//	layout->add_child(w_list, 1);
 
 	//	auto w_treenode1 = Element::createT<wTreeNode>(ui, font_atlas_index, L"A");
-	//	w_treenode1->pos$ = Vec2(800.f, 400.f);
+	//	w_treenode1->pos$ = Vec2f(800.f, 400.f);
 
 	//	auto w_treenode2 = Element::createT<wTreeNode>(ui, font_atlas_index, L"B");
 	//	auto w_treenode3 = Element::createT<wTreeNode>(ui, font_atlas_index, L"C");
@@ -156,9 +156,9 @@ struct App : BasicApp
 	//	layout->add_child(w_treenode1, 1);
 
 	//	if (style == DefaultStyleDark)
-	//		t_fps->text_col() = Bvec4(255, 255, 255, 255);
+	//		t_fps->text_col() = Vec4c(255, 255, 255, 255);
 	//	else if (style == DefaultStyleLight)
-	//		t_fps->text_col() = Bvec4(0, 0, 0, 255);
+	//		t_fps->text_col() = Vec4c(0, 0, 0, 255);
 	//}
 
 	virtual void on_create() override
@@ -178,8 +178,8 @@ struct App : BasicApp
 
 		auto bg = Entity::create();
 		auto wBackground = cElement$::create$(nullptr);
-		wBackground->size = Vec2(100.f);
-		wBackground->background_color = Bvec4(255, 128, 128, 255);
+		wBackground->size = Vec2f(100.f);
+		wBackground->background_color = Vec4c(255, 128, 128, 255);
 		bg->add_component(wBackground);
 
 		auto wFps = cText$::create$(nullptr);
@@ -201,7 +201,7 @@ struct App : BasicApp
 
 		//auto w_btn_dark = Element::createT<wButton>(ui, font_atlas_index, L"dark");
 		//w_btn_dark->align$ = AlignLittleEnd;
-		//w_btn_dark->text_col() = Bvec4(255);
+		//w_btn_dark->text_col() = Vec4c(255);
 		//w_btn_dark->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm &p) {
 		//	auto app = p.get_capture<AppData>().app();
 		//	if (!p.is_clicked())
@@ -214,7 +214,7 @@ struct App : BasicApp
 
 		//auto w_btn_light = Element::createT<wButton>(ui, font_atlas_index, L"light");
 		//w_btn_light->align$ = AlignLittleEnd;
-		//w_btn_light->text_col() = Bvec4(255);
+		//w_btn_light->text_col() = Vec4c(255);
 		//w_btn_light->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm & p) {
 		//	auto app = p.get_capture<AppData>().app();
 		//	if (!p.is_clicked())

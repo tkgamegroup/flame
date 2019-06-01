@@ -59,12 +59,12 @@ struct App : BasicApp
 		auto layout = Element::createT<wLayout>(ui, LayoutHorizontal);
 
 		auto image1 = Element::createT<wImage>(ui);
-		image1->size$ = Vec2(250.f);
+		image1->size$ = Vec2f(250.f);
 		image1->id() = 0;
 		image1->align$ = AlignLittleEnd;
 
 		auto image2 = Element::createT<wImage>(ui);
-		image2->size$ = Vec2(250.f);
+		image2->size$ = Vec2f(250.f);
 		image2->id() = 0;
 		image2->align$ = AlignLittleEnd;
 

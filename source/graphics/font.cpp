@@ -2059,7 +2059,7 @@ namespace flame
 				memset(map, 0, sizeof(map));
 
 				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
-				atlas->init(Bvec4(0));
+				atlas->init(Vec4c(0));
 
 				max_width = 0;
 				for (auto src : _fonts)
@@ -2138,8 +2138,8 @@ namespace flame
 						auto ft_glyph = ft_face->glyph;
 						auto width = ft_glyph->bitmap.width / 3;
 						auto height = ft_glyph->bitmap.rows;
-						g->size = Vec2(width, height);
-						g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
+						g->size = Vec2f(width, height);
+						g->off = Vec2f(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
 						g->advance = ft_glyph->advance.x() / 64;
 
 						if (!sdf)
@@ -2170,8 +2170,8 @@ namespace flame
 								delete[] temp;
 							}
 
-							g->uv0 = Vec2(x, y + height) / atlas->size;
-							g->uv1 = Vec2(x + width, y) / atlas->size;
+							g->uv0 = Vec2f(x, y + height) / atlas->size;
+							g->uv1 = Vec2f(x + width, y) / atlas->size;
 						}
 						else
 						{
@@ -2209,8 +2209,8 @@ namespace flame
 
 							delete temp;
 
-							g->uv0 = Vec2(x + sdf_range, y + sdf_range) / atlas->size;
-							g->uv1 = Vec2(x + size.x() - sdf_range, y + size.y() - sdf_range) / atlas->size;
+							g->uv0 = Vec2f(x + sdf_range, y + sdf_range) / atlas->size;
+							g->uv1 = Vec2f(x + size.x() - sdf_range, y + size.y() - sdf_range) / atlas->size;
 						}
 
 						break;

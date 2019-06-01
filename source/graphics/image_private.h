@@ -48,7 +48,7 @@ namespace flame
 
 			void set_props();
 
-			void init(const Bvec4 &col);
+			void init(const Vec4c &col);
 			void get_pixels(int x, int y, int cx, int cy, void *dst);
 			void set_pixels(int x, int y, int cx, int cy, const void *src);
 

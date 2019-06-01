@@ -33,8 +33,8 @@ namespace flame
 
 	void DefaultStyle::set_to_light()
 	{
-		text_color_normal = Bvec4(0, 0, 0, 255);
-		text_color_hovering_or_active = Bvec4(255, 255, 255, 255);
+		text_color_normal = Vec4c(0, 0, 0, 255);
+		text_color_hovering_or_active = Vec4c(255, 255, 255, 255);
 		window_color = Colorf(0.94f, 0.94f, 0.94f, 1.00f);
 		frame_color_normal = Colorf(1.00f, 1.00f, 1.00f, 1.00f);
 		frame_color_hovering = HSV(52.f, 0.73f, 0.97f, 0.40f);
@@ -50,8 +50,8 @@ namespace flame
 
 	void DefaultStyle::set_to_dark()
 	{
-		text_color_normal = Bvec4(255, 255, 255, 255);
-		text_color_hovering_or_active = Bvec4(180, 180, 180, 255);
+		text_color_normal = Vec4c(255, 255, 255, 255);
+		text_color_hovering_or_active = Vec4c(180, 180, 180, 255);
 		window_color = Colorf(0.06f, 0.06f, 0.06f, 0.94f);
 		frame_color_normal = HSV(55.f, 0.67f, 0.47f, 0.54f);
 		frame_color_hovering = HSV(52.f, 0.73f, 0.97f, 0.40f);

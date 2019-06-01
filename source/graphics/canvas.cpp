@@ -536,7 +536,7 @@ namespace flame
 			{
 				//auto image_size = share_data.image_views[id]->image()->size;
 
-				//auto b_uv = Vec4(Vec2f(border[0], border[1]) / image_size.x(),
+				//auto b_uv = Vec4f(Vec2f(border[0], border[1]) / image_size.x(),
 				//	Vec2f(border[2], border[3]) / image_size.y());
 
 				//// corners

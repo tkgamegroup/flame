@@ -50,7 +50,7 @@ int main(int argc, char **args)
 
 	ui = UI::Instance::create(d, sc, graphics::SampleCount_8);
 	auto canvas = UI::Canvas::create(d);
-	canvas->clear_values->set(0, Bvec4(200, 200, 200, 0));
+	canvas->clear_values->set(0, Vec4c(200, 200, 200, 0));
 
 	auto image_avalible = graphics::Semaphore::create(d);
 	auto render_finished = graphics::Semaphore::create(d);

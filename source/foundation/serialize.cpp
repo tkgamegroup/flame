@@ -182,20 +182,20 @@ namespace flame
 		//	return to_string(*(Ivec4*)src);
 		//case cH("float"): case cH("f"):
 		//	return to_string(*(float*)src, precision);
-		//case cH("Vec2"): case cH("f2"):
-		//	return to_string(*(Vec2*)src, precision);
-		//case cH("Vec3"): case cH("f3"):
-		//	return to_string(*(Vec3*)src, precision);
-		//case cH("Vec4"): case cH("f4"):
-		//	return to_string(*(Vec4*)src, precision);
+		//case cH("Vec2f"): case cH("f2"):
+		//	return to_string(*(Vec2f*)src, precision);
+		//case cH("Vec3f"): case cH("f3"):
+		//	return to_string(*(Vec3f*)src, precision);
+		//case cH("Vec4f"): case cH("f4"):
+		//	return to_string(*(Vec4f*)src, precision);
 		//case cH("uchar"): case cH("b"):
 		//	return to_string(*(uchar*)src);
-		//case cH("Bvec2"): case cH("b2"):
-		//	return to_string(*(Bvec2*)src);
-		//case cH("Bvec3"): case cH("b3"):
-		//	return to_string(*(Bvec3*)src);
-		//case cH("Bvec4"): case cH("b4"):
-		//	return to_string(*(Bvec4*)src);
+		//case cH("Vec2c"): case cH("b2"):
+		//	return to_string(*(Vec2c*)src);
+		//case cH("Vec3c"): case cH("b3"):
+		//	return to_string(*(Vec3c*)src);
+		//case cH("Vec4c"): case cH("b4"):
+		//	return to_string(*(Vec4c*)src);
 		case cH("String"):
 			return ((String*)src)->v;
 		case cH("StringW"):
@@ -234,26 +234,26 @@ namespace flame
 		//case cH("float"): case cH("f"):
 		//	*(float*)dst = stof1(str.c_str());
 		//	break;
-		//case cH("Vec2"): case cH("f2"):
-		//	*(Vec2*)dst = stof2(str.c_str());
+		//case cH("Vec2f"): case cH("f2"):
+		//	*(Vec2f*)dst = stof2(str.c_str());
 		//	break;
-		//case cH("Vec3"): case cH("f3"):
-		//	*(Vec3*)dst = stof3(str.c_str());
+		//case cH("Vec3f"): case cH("f3"):
+		//	*(Vec3f*)dst = stof3(str.c_str());
 		//	break;
-		//case cH("Vec4"): case cH("f4"):
-		//	*(Vec4*)dst = stof4(str.c_str());
+		//case cH("Vec4f"): case cH("f4"):
+		//	*(Vec4f*)dst = stof4(str.c_str());
 		//	break;
 		//case cH("uchar"): case cH("b"):
 		//	*(uchar*)dst = stob1(str.c_str());
 		//	break;
-		//case cH("Bvec2"): case cH("b2"):
-		//	*(Bvec2*)dst = stob2(str.c_str());
+		//case cH("Vec2c"): case cH("b2"):
+		//	*(Vec2c*)dst = stob2(str.c_str());
 		//	break;
-		//case cH("Bvec3"): case cH("b3"):
-		//	*(Bvec3*)dst = stob3(str.c_str());
+		//case cH("Vec3c"): case cH("b3"):
+		//	*(Vec3c*)dst = stob3(str.c_str());
 		//	break;
-		//case cH("Bvec4"): case cH("b4"):
-		//	*(Bvec4*)dst = stob4(str.c_str());
+		//case cH("Vec4c"): case cH("b4"):
+		//	*(Vec4c*)dst = stob4(str.c_str());
 		//	break;
 		case cH("String"):
 			*(String*)dst = str;

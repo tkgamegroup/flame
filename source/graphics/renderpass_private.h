@@ -49,7 +49,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			std::vector<VkClearValue> v;
 #elif defined(FLAME_D3D12)
-			std::vector<Vec4> v;
+			std::vector<Vec4f> v;
 #endif
 
 			ClearvaluesPrivate(Renderpass *r);

@@ -26,18 +26,18 @@ namespace flame
 {
 	struct DefaultStyle
 	{
-		Bvec4 text_color_normal;
-		Bvec4 text_color_hovering_or_active;
-		Bvec4 window_color;
-		Bvec4 frame_color_normal;
-		Bvec4 frame_color_hovering;
-		Bvec4 frame_color_active;
-		Bvec4 button_color_normal;
-		Bvec4 button_color_hovering;
-		Bvec4 button_color_active;
-		Bvec4 header_color_normal;
-		Bvec4 header_color_hovering;
-		Bvec4 header_color_active;
+		Vec4c text_color_normal;
+		Vec4c text_color_hovering_or_active;
+		Vec4c window_color;
+		Vec4c frame_color_normal;
+		Vec4c frame_color_hovering;
+		Vec4c frame_color_active;
+		Vec4c button_color_normal;
+		Vec4c button_color_hovering;
+		Vec4c button_color_active;
+		Vec4c header_color_normal;
+		Vec4c header_color_hovering;
+		Vec4c header_color_active;
 		float sdf_scale;
 
 		FLAME_UNIVERSE_EXPORTS DefaultStyle();

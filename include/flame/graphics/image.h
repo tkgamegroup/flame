@@ -65,7 +65,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Format find_format(int channel, int bpp);
 
 			// a layout change from Undefined to ShaderReadOnly, and a clear
-			FLAME_GRAPHICS_EXPORTS void init(const Bvec4 &col);
+			FLAME_GRAPHICS_EXPORTS void init(const Vec4c &col);
 
 			// accepted formats for get/set pixels: Format_R8G8B8A8_UNORM, Format_R16G16B16A16_UNORM
 			FLAME_GRAPHICS_EXPORTS void get_pixels(int x, int y, int cx/* -1 means whole */, int cy/* -1 means whole */, void *dst);

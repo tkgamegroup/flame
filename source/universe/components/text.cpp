@@ -59,9 +59,9 @@ namespace flame
 
 		void update(float delta_time)
 		{
-			element->canvas()->add_text(font_atlas_index, Vec2(element->global_x, element->global_y) + 
-				Vec2(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
-				Bvec4(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+			element->canvas()->add_text(font_atlas_index, Vec2f(element->global_x, element->global_y) + 
+				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
+				Vec4c(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 		}
 	};
 

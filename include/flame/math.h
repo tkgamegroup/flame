@@ -1471,7 +1471,7 @@ namespace flame
 		return r;
 	}
 
-	// Vec4 as Rect
+	// Vec4f as Rect
 	// (x, y) - min, (z, w) - max
 	template<class T>
 	inline Vec<4, T> rect(const Vec<2, T>& base, const Vec<2, T>& ext)
@@ -1593,7 +1593,7 @@ namespace flame
 	inline Vec<4, T> fited_rect_no_zoom_in(const Vec<2, T>& desired_size, const Vec<2, T>& size)
 	{
 		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
-			return Vec4<4, T>(T(0), T(0), T(1), T(1));
+			return Vec4f<4, T>(T(0), T(0), T(1), T(1));
 		if (size.x() <= desired_size.x() && size.y() <= desired_size.y())
 		{
 			Vec<4, T> ret;
@@ -1671,7 +1671,7 @@ namespace flame
 		return Vec<3, float>(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
 	}
 
-	// Vec4 as Quat
+	// Vec4f as Quat
 	// (x, y, z) - vector, (w) - scalar
 
 	template<class T>
@@ -1785,7 +1785,7 @@ namespace flame
 		return ret;
 	}
 
-	// Vec3 as Euler:
+	// Vec3f as Euler:
 	// (x, y z) - (yaw pitch roll)
 
 	template<class T>
@@ -1818,20 +1818,20 @@ namespace flame
 	{
 		Mat<3, 3, T> ret(T(1));
 
-		Mat3 mat_yaw(Vec3(m[1]), e.yaw * ANG_RAD);
+		Mat3 mat_yaw(Vec3f(m[1]), e.yaw * ANG_RAD);
 		m[0] = mat_yaw * m[0];
 		m[2] = mat_yaw * m[2];
-		Mat3 mat_pitch(Vec3(m[0]), e.pitch * ANG_RAD);
+		Mat3 mat_pitch(Vec3f(m[0]), e.pitch * ANG_RAD);
 		m[2] = mat_pitch * m[2];
 		m[1] = mat_pitch * m[1];
-		Mat3 mat_roll(Vec3(m[2]), e.roll * ANG_RAD);
+		Mat3 mat_roll(Vec3f(m[2]), e.roll * ANG_RAD);
 		m[1] = mat_roll * m[1];
 		m[0] = mat_roll * m[0];
 
 		return ret;
 	}
 
-	// Vec4 as Plane:
+	// Vec4f as Plane:
 	// (x, y, z) - normal, w - d
 
 	template<class T>

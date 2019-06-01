@@ -44,17 +44,17 @@ namespace flame
 				width = 0.;
 				height = 0.f;
 
-				inner_padding = Vec4(0.f);
+				inner_padding = Vec4f(0.f);
 				layout_padding = 0.f;
 
 				alpha = 1.f;
 
-				background_offset = Vec4(0.f);
+				background_offset = Vec4f(0.f);
 				background_round_radius = 0.f;
 				background_round_flags = 0;
 				background_frame_thickness = 0.f;
-				background_color = Bvec4(0);
-				background_frame_color = Bvec4(255);
+				background_color = Vec4c(0);
+				background_frame_color = Vec4c(255);
 				background_shadow_thickness = 0.f;
 			}
 		}
@@ -111,21 +111,21 @@ namespace flame
 
 			if (canvas)
 			{
-				auto p = Vec2(global_x, global_y) - (Vec2(background_offset[0], background_offset[1])) * global_scale;
-				auto s = Vec2(global_width, global_height) + (Vec2(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * global_scale;
+				auto p = Vec2f(global_x, global_y) - (Vec2f(background_offset[0], background_offset[1])) * global_scale;
+				auto s = Vec2f(global_width, global_height) + (Vec2f(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * global_scale;
 				auto rr = background_round_radius * global_scale;
 
 				if (background_shadow_thickness > 0.f)
 				{
-					canvas->add_rect_col2(p - Vec2(background_shadow_thickness * 0.5f), s + Vec2(background_shadow_thickness), Bvec4(0, 0, 0, 128), Bvec4(0),
+					canvas->add_rect_col2(p - Vec2f(background_shadow_thickness * 0.5f), s + Vec2f(background_shadow_thickness), Vec4c(0, 0, 0, 128), Vec4c(0),
 						background_shadow_thickness, rr, background_round_flags);
 				}
 				if (alpha > 0.f)
 				{
 					if (background_color.w() > 0)
-						canvas->add_rect_filled(p, s, Bvec4(background_color, alpha), rr, background_round_flags);
+						canvas->add_rect_filled(p, s, Vec4c(background_color, alpha), rr, background_round_flags);
 					if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
-						canvas->add_rect(p, s, Bvec4(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
+						canvas->add_rect(p, s, Vec4c(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
 				}
 			}
 		}

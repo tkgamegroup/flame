@@ -35,7 +35,7 @@ namespace flame
 			s->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
 		}
 
-		Shape *create_box_shape(Device *d, Material *m, const Vec3 &coord,
+		Shape *create_box_shape(Device *d, Material *m, const Vec3f &coord,
 			float x_hf_ext, float y_hf_ext, float z_hf_ext)
 		{
 			auto s = new Shape;
@@ -44,7 +44,7 @@ namespace flame
 
 			s->_priv->v = d->_priv->inst->createShape(PxBoxGeometry(x_hf_ext, y_hf_ext, z_hf_ext),
 				*m->_priv->v);
-			s->_priv->v->setLocalPose(Z(coord, Vec4(0.f, 0.f, 0.f, 1.f)));
+			s->_priv->v->setLocalPose(Z(coord, Vec4f(0.f, 0.f, 0.f, 1.f)));
 			s->_priv->v->userData = s;
 
 			return s;

@@ -58,9 +58,9 @@ namespace flame
 		{
 		}
 
-		bool contains(const Vec2& pos) const
+		bool contains(const Vec2f& pos) const
 		{
-			return Rect::b(Vec2(element->global_x, element->global_y), Vec2(element->global_width, element->global_height)).contains(pos);
+			return Rect::b(Vec2f(element->global_x, element->global_y), Vec2f(element->global_width, element->global_height)).contains(pos);
 		}
 	};
 
@@ -88,7 +88,7 @@ namespace flame
 		((cWidgetPrivate*)this)->update(delta_time);
 	}
 
-	bool cWidget$::contains(const Vec2& pos) const
+	bool cWidget$::contains(const Vec2f& pos) const
 	{
 		return ((cWidgetPrivate*)this)->contains(pos);
 	}

@@ -106,9 +106,9 @@ int main(int argc, char **args)
 	//auto p_d = physics::create_device();
 	//auto material = physics::create_material(p_d, 0.f, 0.f, 0.f);
 	//auto scene = physics::create_scene(p_d, -0.98f/*0.f*/, 1);
-	//auto basket_trriger_s = physics::create_box_shape(p_d, material, Vec3(0.f), 0.75f, 0.1f, 0.75f);
+	//auto basket_trriger_s = physics::create_box_shape(p_d, material, Vec3f(0.f), 0.75f, 0.1f, 0.75f);
 	//basket_trriger_s->set_trigger(true);
-	//auto basket_trriger_r = physics::create_static_rigid(p_d, Vec3(0.f, -3.f, 0.f));
+	//auto basket_trriger_r = physics::create_static_rigid(p_d, Vec3f(0.f, -3.f, 0.f));
 	//basket_trriger_r->attach_shape(basket_trriger_s);
 	//scene->add_rigid(basket_trriger_r);
 
@@ -194,7 +194,7 @@ int main(int argc, char **args)
 	auto ui_finished = graphics::create_semaphore(d);
 
 	auto t_fps = new UI::Text(ui);
-	t_fps->pos = Vec2(0.f);
+	t_fps->pos = Vec2f(0.f);
 	ui->root()->add_widget(-1, t_fps, UI::LayoutAlignLittleEnd);
 
 	sm->run([&](){

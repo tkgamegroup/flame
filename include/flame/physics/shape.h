@@ -50,7 +50,7 @@ namespace flame
 		//FLAME_PHYSICS_EXPORTS void create_capsule_shape(Material *m, const glm::vec3 &coord,
 		//	float radius, float height);
 
-		FLAME_PHYSICS_EXPORTS Shape *create_box_shape(Device *d, Material *m, const Vec3 &coord,
+		FLAME_PHYSICS_EXPORTS Shape *create_box_shape(Device *d, Material *m, const Vec3f &coord,
 			float x_hf_ext, float y_hf_ext, float z_hf_ext);
 		FLAME_PHYSICS_EXPORTS void destroy_shape(Shape *s);
 	}

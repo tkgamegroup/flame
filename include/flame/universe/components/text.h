@@ -30,7 +30,7 @@ namespace flame
 	struct cText$ : Component // requires: Element
 	{
 		int font_atlas_index;
-		Bvec4 color;
+		Vec4c color;
 		float sdf_scale;
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cText$() override;
@@ -51,7 +51,7 @@ namespace flame
 	struct cTextArchive$
 	{
 		int font_atlas_index$;
-		Bvec4 color$;
+		Vec4c color$;
 		float sdf_scale$;
 	};
 }

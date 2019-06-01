@@ -351,7 +351,7 @@ struct WidgetGameScene : UI::Widget
 	WidgetGameScene(UI::Instance *ui);
 	~WidgetGameScene();
 
-	virtual void on_draw(UI::Canvas *c, const Vec2 &off, float scl) override;
+	virtual void on_draw(UI::Canvas *c, const Vec2f &off, float scl) override;
 };
 
 WidgetGameScene::WidgetGameScene(UI::Instance *ui) :
@@ -371,7 +371,7 @@ bool clean_lines[grid_vert_size];
 const auto clean_time_total = 4;
 int clean_timer;
 
-void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
+void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2f &off, float scl)
 {
 	if (running)
 	{
@@ -552,7 +552,7 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 	const auto cube_width = 20.f;
 	const auto cube_gap = 8.f;
 
-	auto draw_cube = [&](const Vec2 &pen, float h, float w, float A) {
+	auto draw_cube = [&](const Vec2f &pen, float h, float w, float A) {
 		auto col0 = HSV(h, 0.3f, 1.f, A);
 		auto col1 = HSV(h, 0.9f, 0.8f, A);
 		auto col2 = HSV(h, 0.75f, 0.9f, A);
@@ -560,42 +560,42 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 		auto col4 = HSV(h, 0.54f, 0.96f, A);
 		auto col5 = HSV(h, 0.85f, 0.68f, A);
 
-		c->add_rect_filled(pen + Vec2(w), Vec2(cube_width - w), col4);
+		c->add_rect_filled(pen + Vec2f(w), Vec2f(cube_width - w), col4);
 
-		c->path_line_to(pen + Vec2(w - 4.f));
-		c->path_line_to(pen + Vec2(w));
-		c->path_line_to(pen + Vec2(cube_width - w, w));
-		c->path_line_to(pen + Vec2(cube_width - w + 4.f, w - 4.f));
+		c->path_line_to(pen + Vec2f(w - 4.f));
+		c->path_line_to(pen + Vec2f(w));
+		c->path_line_to(pen + Vec2f(cube_width - w, w));
+		c->path_line_to(pen + Vec2f(cube_width - w + 4.f, w - 4.f));
 		c->fill(col0);
 		c->stroke(col5, 1.f, true);
 		c->clear_path();
 
-		c->path_line_to(pen + Vec2(cube_width - w, w));
-		c->path_line_to(pen + Vec2(cube_width - w));
-		c->path_line_to(pen + Vec2(cube_width - w + 4.f));
-		c->path_line_to(pen + Vec2(cube_width - w + 4.f, w - 4.f));
+		c->path_line_to(pen + Vec2f(cube_width - w, w));
+		c->path_line_to(pen + Vec2f(cube_width - w));
+		c->path_line_to(pen + Vec2f(cube_width - w + 4.f));
+		c->path_line_to(pen + Vec2f(cube_width - w + 4.f, w - 4.f));
 		c->fill(col1);
 		c->stroke(col5, 1.f, true);
 		c->clear_path();
 
-		c->path_line_to(pen + Vec2(w, cube_width - w));
-		c->path_line_to(pen + Vec2(w - 4.f, cube_width - w + 4.f));
-		c->path_line_to(pen + Vec2(cube_width - w + 4.f));
-		c->path_line_to(pen + Vec2(cube_width - w));
+		c->path_line_to(pen + Vec2f(w, cube_width - w));
+		c->path_line_to(pen + Vec2f(w - 4.f, cube_width - w + 4.f));
+		c->path_line_to(pen + Vec2f(cube_width - w + 4.f));
+		c->path_line_to(pen + Vec2f(cube_width - w));
 		c->fill(col2);
 		c->stroke(col5, 1.f, true);
 		c->clear_path();
 
-		c->path_line_to(pen + Vec2(w - 4.f));
-		c->path_line_to(pen + Vec2(w - 4.f, cube_width - w + 4.f));
-		c->path_line_to(pen + Vec2(w, cube_width - w));
-		c->path_line_to(pen + Vec2(w));
+		c->path_line_to(pen + Vec2f(w - 4.f));
+		c->path_line_to(pen + Vec2f(w - 4.f, cube_width - w + 4.f));
+		c->path_line_to(pen + Vec2f(w, cube_width - w));
+		c->path_line_to(pen + Vec2f(w));
 		c->fill(col3);
 		c->stroke(col5, 1.f, true);
 		c->clear_path();
 	};
 
-	auto pos = off + Vec2(20.f, 30.f);
+	auto pos = off + Vec2f(20.f, 30.f);
 	auto pen = pos;
 	for (auto y = 0; y < grid_vert_size; y++)
 	{
@@ -620,8 +620,8 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 	}
 
 	{
-		auto _pos = pos + Vec2((cube_width + cube_gap) * grid_hori_size + 50.f, 0.f);
-		c->add_text_sdf(_pos, Bvec4(0, 0, 0, 255), L"NEXT", 3.f);
+		auto _pos = pos + Vec2f((cube_width + cube_gap) * grid_hori_size + 50.f, 0.f);
+		c->add_text_sdf(_pos, Vec4c(0, 0, 0, 255), L"NEXT", 3.f);
 
 		_pos.y() += 60.f;
 		auto pen = _pos;
@@ -640,13 +640,13 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 			pen.y() += cube_width + cube_gap;
 		}
 
-		c->add_rect(_pos - Vec2(16.f), Vec2((cube_width + cube_gap) * Tetris::hori_size - cube_gap,
-			(cube_width + cube_gap) * Tetris::vert_size - cube_gap) + Vec2(16.f * 2.f), Bvec4(0, 0, 0, 255), 4.f);
+		c->add_rect(_pos - Vec2f(16.f), Vec2f((cube_width + cube_gap) * Tetris::hori_size - cube_gap,
+			(cube_width + cube_gap) * Tetris::vert_size - cube_gap) + Vec2f(16.f * 2.f), Vec4c(0, 0, 0, 255), 4.f);
 	}
 
 	if (show_prober)
 	{
-		auto _pos = pos + Vec2(prober_pos) * Vec2(cube_width + cube_gap);
+		auto _pos = pos + Vec2f(prober_pos) * Vec2f(cube_width + cube_gap);
 		auto pen = _pos;
 		auto col = HSV(tetris.t->h, 0.85f, 0.68f, 1.f);
 
@@ -656,7 +656,7 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 			for (auto x = 0; x < Tetris::hori_size; x++)
 			{
 				if (vs[y * Tetris::hori_size + x])
-					c->add_rect(pen - Vec2(3.f), Vec2(cube_width + 6.f), col, 1.f);
+					c->add_rect(pen - Vec2f(3.f), Vec2f(cube_width + 6.f), col, 1.f);
 				pen.x() += cube_width + cube_gap;
 			}
 			pen.x() = _pos.x();
@@ -664,8 +664,8 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 		}
 	}
 
-	c->add_rect(pos - Vec2(6.f), Vec2((cube_width + cube_gap) * grid_hori_size - cube_gap,
-		(cube_width + cube_gap) * grid_vert_size - cube_gap) + Vec2(6.f * 2.f), Bvec4(0, 0, 0, 255), 4.f);
+	c->add_rect(pos - Vec2f(6.f), Vec2f((cube_width + cube_gap) * grid_hori_size - cube_gap,
+		(cube_width + cube_gap) * grid_vert_size - cube_gap) + Vec2f(6.f * 2.f), Vec4c(0, 0, 0, 255), 4.f);
 }
 
 void start_game()
