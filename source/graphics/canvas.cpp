@@ -777,7 +777,7 @@ namespace flame
 			rp_info.subpasses[0].resolve_attachments.push_back(1);
 			rp = Renderpass::create(device, rp_info);
 
-			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2i(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 			white_image->init(Vec4c(255));
 			white_imageview = Imageview::create(white_image);
 

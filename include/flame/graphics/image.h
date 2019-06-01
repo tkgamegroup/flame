@@ -32,7 +32,7 @@ namespace flame
 	{
 		struct Device;
 
-		struct ComponentMapping 
+		struct ComponentMapping
 		{
 			Swizzle r;
 			Swizzle g;
@@ -65,22 +65,22 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Format find_format(int channel, int bpp);
 
 			// a layout change from Undefined to ShaderReadOnly, and a clear
-			FLAME_GRAPHICS_EXPORTS void init(const Vec4c &col);
+			FLAME_GRAPHICS_EXPORTS void init(const Vec4c& col);
 
 			// accepted formats for get/set pixels: Format_R8G8B8A8_UNORM, Format_R16G16B16A16_UNORM
-			FLAME_GRAPHICS_EXPORTS void get_pixels(int x, int y, int cx/* -1 means whole */, int cy/* -1 means whole */, void *dst);
-			FLAME_GRAPHICS_EXPORTS void set_pixels(int x, int y, int cx/* -1 means whole */, int cy/* -1 means whole */, const void *src);
+			FLAME_GRAPHICS_EXPORTS void get_pixels(int x, int y, int cx/* -1 means whole */, int cy/* -1 means whole */, void* dst);
+			FLAME_GRAPHICS_EXPORTS void set_pixels(int x, int y, int cx/* -1 means whole */, int cy/* -1 means whole */, const void* src);
 
-			FLAME_GRAPHICS_EXPORTS void save_png(const wchar_t *filename);
+			FLAME_GRAPHICS_EXPORTS void save_png(const wchar_t* filename);
 
-			FLAME_GRAPHICS_EXPORTS static Image *create(Device *d, Format format, const Ivec2 &size, int level, int layer, SampleCount sample_count, int usage, int mem_prop, void *data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, int level, int layer, SampleCount sample_count, int usage, int mem_prop, void* data = nullptr);
 			// default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image *create_from_bitmap(Device *d, Bitmap *bmp, int extra_usage = 0);
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, int extra_usage = 0);
 			// default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image *create_from_file(Device *d, const wchar_t *filename, int extra_usage = 0);
-			FLAME_GRAPHICS_EXPORTS static Image *create_from_native(Device *d, Format format, const Ivec2 &size, int level, int layer, void *native);
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const wchar_t* filename, int extra_usage = 0);
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format format, const Vec2u& size, int level, int layer, void* native);
 
-			FLAME_GRAPHICS_EXPORTS static void destroy(Image *i);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Image* i);
 		};
 
 		struct Imageview
@@ -92,16 +92,16 @@ namespace flame
 			int layer_count;
 			ComponentMapping mapping;
 
-			FLAME_GRAPHICS_EXPORTS Image *image() const;
+			FLAME_GRAPHICS_EXPORTS Image* image() const;
 
-			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image *i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping *mapping = nullptr);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Imageview *v);
+			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image* i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping * mapping = nullptr);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Imageview* v);
 		};
 
 		struct Sampler
 		{
-			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Sampler *s);
+			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Sampler* s);
 		};
 	}
 }

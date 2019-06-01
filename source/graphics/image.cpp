@@ -73,7 +73,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, SampleCount _sample_count, int _usage, int _mem_prop)
+		ImagePrivate::ImagePrivate(Device *_d, Format _format, const Vec2u &_size, int _level, int _layer, SampleCount _sample_count, int _usage, int _mem_prop)
 		{
 			format = _format;
 			size = _size;
@@ -126,7 +126,7 @@ namespace flame
 #endif
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format _format, const Ivec2 &_size, int _level, int _layer, void *native)
+		ImagePrivate::ImagePrivate(Device *_d, Format _format, const Vec2u &_size, int _level, int _layer, void *native)
 		{
 			format = _format;
 			size = _size;
@@ -343,7 +343,7 @@ namespace flame
 			((ImagePrivate*)this)->save_png(filename);
 		}
 
-		Image *Image::create(Device *d, Format format, const Ivec2 &size, int level, int layer, SampleCount sample_count, int usage, int mem_prop, void *data)
+		Image *Image::create(Device *d, Format format, const Vec2u &size, int level, int layer, SampleCount sample_count, int usage, int mem_prop, void *data)
 		{
 			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage, mem_prop);
 
@@ -475,7 +475,7 @@ namespace flame
 				buffer_copy_regions.push_back(BufferImageCopy(width, height));
 			}
 
-			auto i = Image::create(d, fmt, Ivec2(width, height), level, layer, SampleCount_1,
+			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1,
 				ImageUsageSampled | ImageUsageTransferDst | extra_usage, MemPropDevice);
 
 			auto cb = Commandbuffer::create(d->gcp);
@@ -493,7 +493,7 @@ namespace flame
 			return i;
 		}
 
-		Image *Image::create_from_native(Device *d, Format format, const Ivec2 &size, int level, int layer, void *native)
+		Image *Image::create_from_native(Device *d, Format format, const Vec2u &size, int level, int layer, void *native)
 		{
 			return new ImagePrivate(d, format, size, level, layer, native);
 		}

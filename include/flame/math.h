@@ -436,7 +436,7 @@ namespace flame
 		{
 			static_assert(N <= M);
 			for (auto i = 0; i < N; i++)
-				v_[i] = rhs;
+				v_[i] = rhs[i];
 			return *this;
 		}
 

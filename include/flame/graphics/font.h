@@ -31,12 +31,12 @@ namespace flame
 		struct Device;
 		struct Image;
 
-		FLAME_GRAPHICS_EXPORTS void get_latin_code_range(wchar_t &out_begin, wchar_t &out_end);
+		FLAME_GRAPHICS_EXPORTS void get_latin_code_range(wchar_t& out_begin, wchar_t& out_end);
 
 		struct Glyph
 		{
-			Ivec2 off;
-			Ivec2 size;
+			Vec2u off;
+			Vec2u size;
 			Vec2f uv0, uv1;
 			int advance;
 		};
@@ -47,8 +47,8 @@ namespace flame
 			int max_width;
 			int ascender;
 
-			FLAME_GRAPHICS_EXPORTS static Font *create(const wchar_t *filename, int pixel_height);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Font *f);
+			FLAME_GRAPHICS_EXPORTS static Font* create(const wchar_t* filename, int pixel_height);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Font* f);
 		};
 
 		struct FontAtlas
@@ -62,7 +62,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Image* atlas() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, int pixel_height, bool sdf, const std::vector<Font*> &fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, int pixel_height, bool sdf, const std::vector<Font*>& fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

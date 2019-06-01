@@ -32,14 +32,14 @@ namespace flame
 		graphics::Canvas* canvas;
 		Window* window;
 
-		Ivec2 mouse_pos, mouse_pos_prev, mouse_disp;
+		Vec2i mouse_pos, mouse_pos_prev, mouse_disp;
 		int mouse_scroll;
 		int mouse_buttons[3];
 
 		bool f_all_done;
 		bool f_hovering, f_mljustdown, f_mljustup, f_mrjustdown, f_mrjustup;
 		Vec2f f_mpos;
-		Ivec2 f_mdisp;
+		Vec2i f_mdisp;
 		int f_mscroll;
 
 		cUIPrivate(void* data) :
@@ -73,7 +73,7 @@ namespace flame
 					focusing->dragging = false;
 				else if (focusing->dragging && f_mdisp != 0)
 				{
-					f_mdisp = Ivec2(0);
+					f_mdisp = Vec2i(0);
 				}
 			}
 
@@ -129,9 +129,9 @@ namespace flame
 			canvas = canvas;
 			window = window;
 
-			mouse_pos = Ivec2(0);
-			mouse_pos_prev = Ivec2(0);
-			mouse_disp = Ivec2(0);
+			mouse_pos = Vec2i(0);
+			mouse_pos_prev = Vec2i(0);
+			mouse_disp = Vec2i(0);
 			mouse_scroll = 0;
 
 			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
@@ -141,8 +141,8 @@ namespace flame
 
 			if (window)
 			{
-				window->add_mouse_listener(Function<void(void*, KeyState, MouseKey, const Ivec2&)>(
-					[](void* c, KeyState action, MouseKey key, const Ivec2 & pos) {
+				window->add_mouse_listener(Function<void(void*, KeyState, MouseKey, const Vec2i&)>(
+					[](void* c, KeyState action, MouseKey key, const Vec2i & pos) {
 						auto thiz = *((cUIPrivate**)c);
 
 						if (action == KeyStateNull)

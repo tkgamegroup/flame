@@ -206,7 +206,7 @@ namespace flame
 			int patch_control_points;
 
 			// viewport
-			Ivec2 viewport_size;
+			Vec2u viewport_size;
 
 			// raster
 			bool depth_clamp;

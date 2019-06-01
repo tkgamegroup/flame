@@ -31,6 +31,7 @@
 #include FT_OUTLINE_H
 
 #include <msdfgen.h>
+#include <msdfgen-ext.h>
 
 namespace flame
 {
@@ -38,7 +39,7 @@ namespace flame
 	{
 		FT_Library ft_library = 0;
 
-		void get_latin_code_range(wchar_t &out_begin, wchar_t &out_end)
+		void get_latin_code_range(wchar_t& out_begin, wchar_t& out_end)
 		{
 			out_begin = 0x20;
 			out_end = 0xff;
@@ -60,7 +61,7 @@ namespace flame
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
 
-			FontPrivate(const wchar_t *filename, int _pixel_height)
+			FontPrivate(const wchar_t* filename, int _pixel_height)
 			{
 				pixel_height = _pixel_height;
 
@@ -86,12 +87,12 @@ namespace flame
 			}
 		};
 
-		Font *Font::create(const wchar_t *filename, int pixel_height)
+		Font* Font::create(const wchar_t* filename, int pixel_height)
 		{
 			return new FontPrivate(filename, pixel_height);
 		}
 
-		void Font::destroy(Font *f)
+		void Font::destroy(Font* f)
 		{
 			delete (FontPrivate*)f;
 		}
@@ -120,7 +121,7 @@ namespace flame
 
 				memset(map, 0, sizeof(map));
 
-				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Ivec2(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 				atlas->init(Vec4c(0));
 
 				max_width = 0;
@@ -200,9 +201,9 @@ namespace flame
 						auto ft_glyph = ft_face->glyph;
 						auto width = ft_glyph->bitmap.width / 3;
 						auto height = ft_glyph->bitmap.rows;
-						g->size = Vec2f(width, height);
-						g->off = Vec2f(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
-						g->advance = ft_glyph->advance.x() / 64;
+						g->size = Vec2u(width, height);
+						g->off = Vec2u(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
+						g->advance = ft_glyph->advance.x / 64;
 
 						if (!sdf)
 						{
@@ -247,7 +248,7 @@ namespace flame
 
 							shape.normalize();
 							msdfgen::edgeColoringSimple(shape, 3.f);
-							msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x(), size.y());
+							msdfgen::Bitmap<float, 3> bmp(size.x(), size.y());
 							msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x(), g->off.y() - ascender) + sdf_range);
 
 							auto pitch = Bitmap::get_pitch(size.x() * 4);
@@ -256,10 +257,10 @@ namespace flame
 							{
 								for (auto x = 0; x < size.x(); x++)
 								{
-									auto& src = bmp(x, y);
-									temp[y * pitch + x * 4 + 0] = clamp(src.r * 255.f, 0.f, 255.f);
-									temp[y * pitch + x * 4 + 1] = clamp(src.g * 255.f, 0.f, 255.f);
-									temp[y * pitch + x * 4 + 2] = clamp(src.b * 255.f, 0.f, 255.f);
+									auto src = bmp(x, y);
+									temp[y * pitch + x * 4 + 0] = clamp(src[0] * 255.f, 0.f, 255.f);
+									temp[y * pitch + x * 4 + 1] = clamp(src[1] * 255.f, 0.f, 255.f);
+									temp[y * pitch + x * 4 + 2] = clamp(src[2] * 255.f, 0.f, 255.f);
 									temp[y * pitch + x * 4 + 3] = 255.f;
 								}
 							}

@@ -42,8 +42,8 @@ namespace flame
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
-			ImagePrivate(Device *d, Format format, const Ivec2 &size, int level, int layer, SampleCount sample_count, int usage, int mem_prop);
-			ImagePrivate(Device *d, Format format, const Ivec2 &size, int level, int layer, void *native);
+			ImagePrivate(Device *d, Format format, const Vec2u &size, int level, int layer, SampleCount sample_count, int usage, int mem_prop);
+			ImagePrivate(Device *d, Format format, const Vec2u &size, int level, int layer, void *native);
 			~ImagePrivate();
 
 			void set_props();

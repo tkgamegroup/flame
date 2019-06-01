@@ -54,8 +54,8 @@ namespace flame
 
 			auto thiz = this;
 
-			w->add_resize_listener(Function<void(void* c, const Ivec2 & size)>(
-				[](void* c, const Ivec2 & size) {
+			w->add_resize_listener(Function<void(void* c, const Vec2u & size)>(
+				[](void* c, const Vec2u & size) {
 					(*((SwapchainPrivatePtr*)c))->destroy();
 					(*((SwapchainPrivatePtr*)c))->create();
 				}, sizeof(void*), &thiz));
