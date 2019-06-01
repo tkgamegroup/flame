@@ -54,6 +54,7 @@ set(PUGIXML_PATH "" CACHE PATH "Pugi XML Path")
 set(NLOHMANNJSON_PATH "" CACHE PATH "Nlohmann JSON Path")
 set(STB_PATH "" CACHE PATH "STB Path")
 set(FREETYPE_PATH "" CACHE PATH "FreeType Path")
+set(MSDFGEN_PATH "" CACHE PATH "Msdfgen Path")
 set(SPRIV_CROSS_PATH "" CACHE PATH "SPIRV-Cross Path")
 set(GRAPHVIZ_PATH "" CACHE PATH "Graphviz Path (optional)")
 

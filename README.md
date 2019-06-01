@@ -34,6 +34,8 @@ A lightweight and powerful 3D Game Engine.
 
 - download freetype
 
+- download & build msdfgen
+
 - download & install VulkanSDK
 
 - download & build SPIRV-Cross
@@ -49,6 +51,8 @@ A lightweight and powerful 3D Game Engine.
 - set path to STB
 
 - set path to freetype
+
+- set path to msdfgen
 
 - set path to OpenAL
 
