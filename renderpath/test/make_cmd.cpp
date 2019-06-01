@@ -1,13 +1,15 @@
+
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/all.h>
 
 namespace flame
 {
 	struct BP_MakeCmd$
 	{
-		VoidPtrs cmdbufs$i;
+		LNA<void*> cmdbufs$i;
 		void* renderpass$i;
 		void* clearvalues$i;
-		VoidPtrs framebuffers$i;
+		LNA<void*> framebuffers$i;
 		
 		__declspec(dllexport) void initialize$c()
 		{

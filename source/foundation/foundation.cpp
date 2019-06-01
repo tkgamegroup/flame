@@ -181,7 +181,7 @@ namespace flame
 		cl += " & cl ";
 		for (auto& s : sources)
 			cl += w2s(s) + " ";
-		cl += "-LD -MD -EHsc -Zi -I ../include -link -DEBUG ";
+		cl += "-LD -MD -EHsc -Zi -std:c++17 -I ../include -link -DEBUG ";
 		for (auto& l : libraries)
 			cl += w2s(l) + " ";
 

@@ -192,14 +192,14 @@ namespace flame
 			viewport.height = (float)info.viewport_size.y();
 			viewport.minDepth = (float)0.0f;
 			viewport.maxDepth = (float)1.0f;
-			viewport.x() = 0;
-			viewport.y() = 0;
+			viewport.x = 0;
+			viewport.y = 0;
 
 			VkRect2D scissor;
 			scissor.extent.width = info.viewport_size.x();
 			scissor.extent.height = info.viewport_size.y();
-			scissor.offset.x() = 0;
-			scissor.offset.y() = 0;
+			scissor.offset.x = 0;
+			scissor.offset.y = 0;
 
 			VkPipelineViewportStateCreateInfo viewport_state;
 			viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

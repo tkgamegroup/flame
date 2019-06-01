@@ -35,9 +35,7 @@ namespace flame
 		"enum_single",
 		"enum_multi",
 		"variable",
-		"pointer",
-		"array",
-		"length_and_array"
+		"pointer"
 	};
 
 	const char* get_type_tag_name(TypeTag$ tag)
@@ -50,6 +48,8 @@ namespace flame
 		TypeTag$ tag;
 		std::string name;
 		uint name_hash;
+		std::string templates;
+		uint templates_hash;
 	};
 
 	TypeTag$ TypeInfo::tag() const
@@ -65,6 +65,16 @@ namespace flame
 	uint TypeInfo::name_hash() const
 	{
 		return ((TypeInfoPrivate*)this)->name_hash;
+	}
+
+	const char* TypeInfo::templates() const
+	{
+		return ((TypeInfoPrivate*)this)->templates.c_str();
+	}
+
+	uint TypeInfo::templates_hash() const
+	{
+		return ((TypeInfoPrivate*)this)->templates_hash;
 	}
 
 	struct EnumItemPrivate : EnumItem
@@ -1315,16 +1325,13 @@ namespace flame
 	}
 
 	static std::string prefix("flame::");
-	static std::regex reg_lna("^" + prefix + R"(LengthAndArray<([\w\*]+)>)");
-	static std::regex reg_str("^" + prefix + R"(BasicString<(char|wchar_t)>)");
-	static std::regex reg_fun("^" + prefix + "Function");
+	static std::regex reg_temp(R"((\w)+\<(.)+\>)");
+	static std::regex reg_word(R"((\w)+)");
 
-	std::string format_name(const wchar_t* in, std::string* attribute = nullptr, bool* pass_prefix = nullptr, bool* pass_$ = nullptr)
+	std::string format_type_name(const wchar_t* in, bool* pass_prefix = nullptr, std::string* templates = nullptr)
 	{
 		if (pass_prefix)
 			* pass_prefix = false;
-		if (pass_$)
-			* pass_$ = false;
 
 		auto name = w2s(in);
 		if (name.compare(0, prefix.size(), prefix) == 0)
@@ -1334,6 +1341,43 @@ namespace flame
 			if (pass_prefix)
 				* pass_prefix = true;
 		}
+		if (name.compare(0, sizeof("Function"), "Function") == 0)
+		{
+			name = "Function";
+			if (templates)
+				*templates = "";
+		}
+		else
+		{
+			std::smatch match;
+			if (std::regex_search(name, match, reg_temp))
+			{
+				name = match[1].str();
+				auto temp_str = match[2].str();
+				if (templates)
+				{
+					*templates = "";
+					while (std::regex_search(temp_str, match, reg_word))
+					{
+						auto tn = match[1].str();
+						tn.erase(std::remove(tn.begin(), tn.end(), ' '));
+						if (templates->empty())
+							*templates += ",";
+						*templates += tn;
+						temp_str = match.suffix();
+					}
+				}
+			}
+		}
+		return name;
+	}
+
+	std::string format_variable_name(const wchar_t* in, bool* pass_$ = nullptr, std::string* attribute = nullptr)
+	{
+		if (pass_$)
+			* pass_$ = false;
+
+		auto name = w2s(in);
 		auto pos_$ = name.find('$');
 		if (pos_$ != std::wstring::npos)
 		{
@@ -1418,19 +1462,8 @@ namespace flame
 		case SymTagUDT:
 		{
 			symbol->get_name(&pwname);
-			auto type_name = format_name(pwname);
-			std::smatch match;
-			if (std::regex_search(type_name, match, reg_str))
-			{
-				info.tag = TypeTagVariable;
-				if (match[1].str() == "char")
-					type_name = "String";
-				else
-					type_name = "StringW";
-			}
-			else
-				info.tag = TypeTagVariable;
-			info.name = type_name;
+			info.tag = TypeTagVariable;
+			info.name = format_name(pwname);
 		}
 			break;
 		case SymTagFunctionArgType:
@@ -2081,7 +2114,7 @@ namespace flame
 					n_item->new_attr("attribute", i->attribute);
 					n_item->new_attr("offset", std::to_string(i->offset));
 					n_item->new_attr("size", std::to_string(i->size));
-					if (i->type.name_hash != cH("String") && i->type.name_hash != cH("StringW") && i->type.name_hash != cH("StringAndHash"))
+					if (i->default_value)
 					{
 						auto default_value_str = serialize_value(i->type.tag, i->type.name_hash, i->default_value, 1);
 						if (default_value_str.size > 0)

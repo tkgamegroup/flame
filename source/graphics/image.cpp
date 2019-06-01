@@ -292,7 +292,7 @@ namespace flame
 				cb->begin(true);
 				cb->begin_renderpass(d->rp_one_rgba32, fb, nullptr);
 
-				auto vp = Rect(Vec2f(0.f), Vec2f(size));
+				auto vp = Vec4f(Vec2f(0.f), Vec2f(size));
 				cb->set_viewport(vp);
 				cb->set_scissor(vp);
 

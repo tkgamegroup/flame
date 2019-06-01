@@ -1187,7 +1187,7 @@ namespace flame
 	{
 		T ret = 0;
 		for (auto i = 0; i < N; i++)
-			ret += lhs.v[i] * rhs.v[i];
+			ret += lhs.v_[i] * rhs.v_[i];
 		return ret;
 	}
 
@@ -1195,9 +1195,9 @@ namespace flame
 	inline Vec<3, T> cross(const Vec<3, T>& lhs, const Vec<3, T>& rhs)
 	{
 		return Vec<3, T>(
-			lhs.v[1] * rhs.v[2] - rhs.v[1] * lhs.v[2],
-			lhs.v[2] * rhs.v[0] - rhs.v[2] * lhs.v[0],
-			lhs.v[0] * rhs.v[1] - rhs.v[0] * lhs.v[1]);
+			lhs.v_[1] * rhs.v_[2] - rhs.v_[1] * lhs.v_[2],
+			lhs.v_[2] * rhs.v_[0] - rhs.v_[2] * lhs.v_[0],
+			lhs.v_[0] * rhs.v_[1] - rhs.v_[0] * lhs.v_[1]);
 	}
 
 	template<uint N, class T>

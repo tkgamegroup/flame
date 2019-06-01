@@ -450,7 +450,7 @@ namespace flame
 				RenderpassInfo info;
 				info.attachments.emplace_back(Format_R8G8B8A8_UNORM);
 				info.subpasses[0].color_attachments.push_back(0);
-				rp_one_rgba32 = Renderpass::get(this, info);
+				rp_one_rgba32 = Renderpass::create(this, info);
 			}
 			{
 				GraphicsPipelineInfo info;

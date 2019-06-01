@@ -145,8 +145,8 @@ namespace flame
 			info.pNext = nullptr;
 			info.renderPass = r->v;
 			info.framebuffer = f->v;
-			info.renderArea.offset.x() = 0;
-			info.renderArea.offset.y() = 0;
+			info.renderArea.offset.x = 0;
+			info.renderArea.offset.y = 0;
 			info.renderArea.extent.width = size.x();
 			info.renderArea.extent.height = size.y();
 			info.clearValueCount = cv ? cv->v.size() : 0;
@@ -199,8 +199,8 @@ namespace flame
 			VkViewport vp;
 			vp.minDepth = 0.f;
 			vp.maxDepth = 1.f;
-			vp.x() = rect.x();
-			vp.y() = rect.y();
+			vp.x = rect.x();
+			vp.y = rect.y();
 			vp.width = max(rect.z() - rect.x(), 1.f);
 			vp.height = max(rect.w() - rect.y(), 1.f);
 			vkCmdSetViewport(v, 0, 1, &vp);
@@ -213,8 +213,8 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			VkRect2D sc;
-			sc.offset.x() = max(0.f, rect.x());
-			sc.offset.y() = max(0.f, rect.y());
+			sc.offset.x = max(0.f, rect.x());
+			sc.offset.y = max(0.f, rect.y());
 			sc.extent.width = max(0.f, rect.z() - rect.x());
 			sc.extent.height = max(0.f, rect.w() - rect.y());
 			vkCmdSetScissor(v, 0, 1, &sc);
@@ -329,16 +329,16 @@ namespace flame
 				vk_copies[i].srcSubresource.mipLevel = 0;
 				vk_copies[i].srcSubresource.baseArrayLayer = 0;
 				vk_copies[i].srcSubresource.layerCount = 1;
-				vk_copies[i].srcOffset.x() = copies[i].src_off.x();
-				vk_copies[i].srcOffset.y() = copies[i].src_off.y();
-				vk_copies[i].srcOffset.z() = 0;
+				vk_copies[i].srcOffset.x = copies[i].src_off.x();
+				vk_copies[i].srcOffset.y = copies[i].src_off.y();
+				vk_copies[i].srcOffset.z = 0;
 				vk_copies[i].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 				vk_copies[i].dstSubresource.mipLevel = 0;
 				vk_copies[i].dstSubresource.baseArrayLayer = 0;
 				vk_copies[i].dstSubresource.layerCount = 1;
-				vk_copies[i].dstOffset.x() = copies[i].dst_off.x();
-				vk_copies[i].dstOffset.y() = copies[i].dst_off.y();
-				vk_copies[i].dstOffset.z() = 0;
+				vk_copies[i].dstOffset.x = copies[i].dst_off.x();
+				vk_copies[i].dstOffset.y = copies[i].dst_off.y();
+				vk_copies[i].dstOffset.z = 0;
 				vk_copies[i].extent.width = copies[i].size.x();
 				vk_copies[i].extent.height = copies[i].size.y();
 				vk_copies[i].extent.depth = 1;
@@ -355,8 +355,8 @@ namespace flame
 		{
 			VkBufferImageCopy vk_cpy = {};
 			vk_cpy.bufferOffset = cpy.buffer_offset;
-			vk_cpy.imageOffset.x() = cpy.image_x;
-			vk_cpy.imageOffset.y() = cpy.image_y;
+			vk_cpy.imageOffset.x = cpy.image_x;
+			vk_cpy.imageOffset.y = cpy.image_y;
 			vk_cpy.imageExtent.width = cpy.image_width;
 			vk_cpy.imageExtent.height = cpy.image_height;
 			vk_cpy.imageExtent.depth = 1;
