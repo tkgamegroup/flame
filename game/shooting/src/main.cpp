@@ -62,7 +62,7 @@ int main(int argc, char **args)
 {
 	Ivec2 res(800, 600);
 
-	graphics::Camera camera((float)res.x / res.y);
+	graphics::Camera camera((float)res.x() / res.y());
 	camera.update_proj();
 	camera.calc_dir();
 	camera.update_view();
@@ -142,7 +142,7 @@ int main(int argc, char **args)
 				r = physics::create_dynamic_rigid(d, coord);
 			else
 				r = physics::create_static_rigid(d, coord);
-			s = physics::create_box_shape(d, m, vec3(0.f), size.x, size.y, size.z);
+			s = physics::create_box_shape(d, m, vec3(0.f), size.x(), size.y(), size.z());
 			r->attach_shape(s);
 			sc->add_rigid(r);
 		}
@@ -204,8 +204,8 @@ int main(int argc, char **args)
 		//auto y_ang = 0.f;
 		//if (s->pressing_M(1))
 		//{
-		//	x_ang -= (s->mouse_disp.x) * 180.f / s->size.x;
-		//	y_ang -= (s->mouse_disp.y) * 180.f / s->size.y;
+		//	x_ang -= (s->mouse_disp.x()) * 180.f / s->size.x();
+		//	y_ang -= (s->mouse_disp.y()) * 180.f / s->size.y();
 		//	view_changed = true;
 		//}
 		//if (view_changed)
@@ -232,7 +232,7 @@ int main(int argc, char **args)
 		//		if (it->dynamic)
 		//		{
 		//			it->r->get_pose(it->coord, it->quat);
-		//			if (it->coord.y < -4.f)
+		//			if (it->coord.y() < -4.f)
 		//			{
 		//				it->destroy();
 		//				it = inses.erase(it);

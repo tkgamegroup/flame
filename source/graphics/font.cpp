@@ -518,11 +518,11 @@ namespace msdfgen
 	}
 
 	bool Vector2::operator==(const Vector2 &other) const {
-		return x == other.x && y == other.y;
+		return x == other.x() && y == other.y();
 	}
 
 	bool Vector2::operator!=(const Vector2 &other) const {
-		return x != other.x || y != other.y;
+		return x != other.x() || y != other.y();
 	}
 
 	Vector2 Vector2::operator+() const {
@@ -534,19 +534,19 @@ namespace msdfgen
 	}
 
 	Vector2 Vector2::operator+(const Vector2 &other) const {
-		return Vector2(x + other.x, y + other.y);
+		return Vector2(x + other.x(), y + other.y());
 	}
 
 	Vector2 Vector2::operator-(const Vector2 &other) const {
-		return Vector2(x - other.x, y - other.y);
+		return Vector2(x - other.x(), y - other.y());
 	}
 
 	Vector2 Vector2::operator*(const Vector2 &other) const {
-		return Vector2(x*other.x, y*other.y);
+		return Vector2(x*other.x(), y*other.y());
 	}
 
 	Vector2 Vector2::operator/(const Vector2 &other) const {
-		return Vector2(x / other.x, y / other.y);
+		return Vector2(x / other.x(), y / other.y());
 	}
 
 	Vector2 Vector2::operator*(double value) const {
@@ -558,22 +558,22 @@ namespace msdfgen
 	}
 
 	Vector2 & Vector2::operator+=(const Vector2 &other) {
-		x += other.x, y += other.y;
+		x += other.x(), y += other.y();
 		return *this;
 	}
 
 	Vector2 & Vector2::operator-=(const Vector2 &other) {
-		x -= other.x, y -= other.y;
+		x -= other.x(), y -= other.y();
 		return *this;
 	}
 
 	Vector2 & Vector2::operator*=(const Vector2 &other) {
-		x *= other.x, y *= other.y;
+		x *= other.x(), y *= other.y();
 		return *this;
 	}
 
 	Vector2 & Vector2::operator/=(const Vector2 &other) {
-		x /= other.x, y /= other.y;
+		x /= other.x(), y /= other.y();
 		return *this;
 	}
 
@@ -588,19 +588,19 @@ namespace msdfgen
 	}
 
 	double dotProduct(const Vector2 &a, const Vector2 &b) {
-		return a.x*b.x + a.y*b.y;
+		return a.x()*b.x() + a.y()*b.y();
 	}
 
 	double crossProduct(const Vector2 &a, const Vector2 &b) {
-		return a.x*b.y - a.y*b.x;
+		return a.x()*b.y() - a.y()*b.x();
 	}
 
 	Vector2 operator*(double value, const Vector2 &vector) {
-		return Vector2(value*vector.x, value*vector.y);
+		return Vector2(value*vector.x(), value*vector.y());
 	}
 
 	Vector2 operator/(double value, const Vector2 &vector) {
-		return Vector2(value / vector.x, value / vector.y);
+		return Vector2(value / vector.x(), value / vector.y());
 	}
 
 	int solveQuadratic(double x[2], double a, double b, double c) {
@@ -855,10 +855,10 @@ namespace msdfgen
 	}
 
 	static void pointBounds(Point2 p, double &l, double &b, double &r, double &t) {
-		if (p.x < l) l = p.x;
-		if (p.y < b) b = p.y;
-		if (p.x > r) r = p.x;
-		if (p.y > t) t = p.y;
+		if (p.x() < l) l = p.x();
+		if (p.y() < b) b = p.y();
+		if (p.x() > r) r = p.x();
+		if (p.y() > t) t = p.y();
 	}
 
 	void LinearSegment::bounds(double &l, double &b, double &r, double &t) const {
@@ -870,13 +870,13 @@ namespace msdfgen
 		pointBounds(p[0], l, b, r, t);
 		pointBounds(p[2], l, b, r, t);
 		Vector2 bot = (p[1] - p[0]) - (p[2] - p[1]);
-		if (bot.x) {
-			double param = (p[1].x - p[0].x) / bot.x;
+		if (bot.x()) {
+			double param = (p[1].x() - p[0].x()) / bot.x();
 			if (param > 0 && param < 1)
 				pointBounds(point(param), l, b, r, t);
 		}
-		if (bot.y) {
-			double param = (p[1].y - p[0].y) / bot.y;
+		if (bot.y()) {
+			double param = (p[1].y() - p[0].y()) / bot.y();
 			if (param > 0 && param < 1)
 				pointBounds(point(param), l, b, r, t);
 		}
@@ -890,11 +890,11 @@ namespace msdfgen
 		Vector2 a2 = p[3] - 3 * p[2] + 3 * p[1] - p[0];
 		double params[2];
 		int solutions;
-		solutions = solveQuadratic(params, a2.x, a1.x, a0.x);
+		solutions = solveQuadratic(params, a2.x(), a1.x(), a0.x());
 		for (int i = 0; i < solutions; ++i)
 			if (params[i] > 0 && params[i] < 1)
 				pointBounds(point(params[i]), l, b, r, t);
-		solutions = solveQuadratic(params, a2.y, a1.y, a0.y);
+		solutions = solveQuadratic(params, a2.y(), a1.y(), a0.y());
 		for (int i = 0; i < solutions; ++i)
 			if (params[i] > 0 && params[i] < 1)
 				pointBounds(point(params[i]), l, b, r, t);
@@ -1019,7 +1019,7 @@ namespace msdfgen
 	}
 
 	static double shoelace(const Point2 &a, const Point2 &b) {
-		return (b.x - a.x)*(a.y + b.y);
+		return (b.x() - a.x())*(a.y() + b.y());
 	}
 
 	void Contour::addEdge(const EdgeHolder &edge) {
@@ -1129,14 +1129,14 @@ namespace msdfgen
 	}
 
 	template <typename T>
-	Bitmap<T>::Bitmap(const Bitmap<T> &orig) : w(orig.w), h(orig.h) {
+	Bitmap<T>::Bitmap(const Bitmap<T> &orig) : w(orig.w()), h(orig.h) {
 		content = new T[w*h];
 		memcpy(content, orig.content, w*h * sizeof(T));
 	}
 
 #ifdef MSDFGEN_USE_CPP11
 	template <typename T>
-	Bitmap<T>::Bitmap(Bitmap<T> &&orig) : content(orig.content), w(orig.w), h(orig.h) {
+	Bitmap<T>::Bitmap(Bitmap<T> &&orig) : content(orig.content), w(orig.w()), h(orig.h) {
 		orig.content = NULL;
 	}
 #endif
@@ -1149,7 +1149,7 @@ namespace msdfgen
 	template <typename T>
 	Bitmap<T> & Bitmap<T>::operator=(const Bitmap<T> &orig) {
 		delete[] content;
-		w = orig.w, h = orig.h;
+		w = orig.w(), h = orig.h;
 		content = new T[w*h];
 		memcpy(content, orig.content, w*h * sizeof(T));
 		return *this;
@@ -1160,7 +1160,7 @@ namespace msdfgen
 	Bitmap<T> & Bitmap<T>::operator=(Bitmap<T> &&orig) {
 		delete[] content;
 		content = orig.content;
-		w = orig.w, h = orig.h;
+		w = orig.w(), h = orig.h;
 		orig.content = NULL;
 		return *this;
 	}
@@ -1296,8 +1296,8 @@ namespace msdfgen
 	template <typename T>
 	static T sample(const Bitmap<T> &bitmap, Point2 pos) {
 		int w = bitmap.width(), h = bitmap.height();
-		double x = pos.x*w - .5;
-		double y = pos.y*h - .5;
+		double x = pos.x()*w - .5;
+		double y = pos.y()*h - .5;
 		int l = (int)floor(x);
 		int b = (int)floor(y);
 		int r = l + 1;
@@ -1430,10 +1430,10 @@ namespace msdfgen
 		int w = output.width(), h = output.height();
 		for (int y = 0; y < h; ++y)
 			for (int x = 0; x < w; ++x) {
-				if ((x > 0 && pixelClash(output(x, y), output(x - 1, y), threshold.x))
-					|| (x < w - 1 && pixelClash(output(x, y), output(x + 1, y), threshold.x))
-					|| (y > 0 && pixelClash(output(x, y), output(x, y - 1), threshold.y))
-					|| (y < h - 1 && pixelClash(output(x, y), output(x, y + 1), threshold.y)))
+				if ((x > 0 && pixelClash(output(x, y), output(x - 1, y), threshold.x()))
+					|| (x < w - 1 && pixelClash(output(x, y), output(x + 1, y), threshold.x()))
+					|| (y > 0 && pixelClash(output(x, y), output(x, y - 1), threshold.y()))
+					|| (y < h - 1 && pixelClash(output(x, y), output(x, y + 1), threshold.y())))
 					clashes.push_back(std::make_pair(x, y));
 			}
 		for (std::vector<std::pair<int, int> >::const_iterator clash = clashes.begin(); clash != clashes.end(); ++clash) {
@@ -1853,7 +1853,7 @@ namespace msdfgen
 	};
 
 	static Point2 ftPoint2(const FT_Vector &vector) {
-		return Point2(vector.x / 64., vector.y / 64.);
+		return Point2(vector.x() / 64., vector.y() / 64.);
 	}
 
 	static int ftMoveTo(const FT_Vector *to, void *user) {
@@ -1925,11 +1925,11 @@ namespace msdfgen
 		FT_Error error = FT_Load_Char(font->face, ' ', FT_LOAD_NO_SCALE);
 		if (error)
 			return false;
-		spaceAdvance = font->face->glyph->advance.x / 64.;
+		spaceAdvance = font->face->glyph->advance.x() / 64.;
 		error = FT_Load_Char(font->face, '\t', FT_LOAD_NO_SCALE);
 		if (error)
 			return false;
-		tabAdvance = font->face->glyph->advance.x / 64.;
+		tabAdvance = font->face->glyph->advance.x() / 64.;
 		return true;
 	}
 
@@ -1942,7 +1942,7 @@ namespace msdfgen
 		output.contours.clear();
 		output.inverseYAxis = false;
 		if (advance)
-			*advance = font->face->glyph->advance.x / 64.;
+			*advance = font->face->glyph->advance.x() / 64.;
 
 		FtContext context = { };
 		context.shape = &output;
@@ -1965,7 +1965,7 @@ namespace msdfgen
 			output = 0;
 			return false;
 		}
-		output = kerning.x / 64.;
+		output = kerning.x() / 64.;
 		return true;
 	}
 }
@@ -2139,8 +2139,8 @@ namespace flame
 						auto width = ft_glyph->bitmap.width / 3;
 						auto height = ft_glyph->bitmap.rows;
 						g->size = Vec2(width, height);
-						g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y - ft_glyph->metrics.horiBearingY / 64.f);
-						g->advance = ft_glyph->advance.x / 64;
+						g->off = Vec2(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
+						g->advance = ft_glyph->advance.x() / 64;
 
 						if (!sdf)
 						{
@@ -2185,14 +2185,14 @@ namespace flame
 
 							shape.normalize();
 							msdfgen::edgeColoringSimple(shape, 3.f);
-							msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x, size.y);
-							msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x, g->off.y - ascender) + sdf_range);
+							msdfgen::Bitmap<msdfgen::FloatRGB> bmp(size.x(), size.y());
+							msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x(), g->off.y() - ascender) + sdf_range);
 
-							auto pitch = Bitmap::get_pitch(size.x * 4);
-							auto temp = new uchar[pitch * size.y];
-							for (auto y = 0; y < size.y; y++)
+							auto pitch = Bitmap::get_pitch(size.x() * 4);
+							auto temp = new uchar[pitch * size.y()];
+							for (auto y = 0; y < size.y(); y++)
 							{
-								for (auto x = 0; x < size.x; x++)
+								for (auto x = 0; x < size.x(); x++)
 								{
 									auto& src = bmp(x, y);
 									temp[y * pitch + x * 4 + 0] = clamp(src.r * 255.f, 0.f, 255.f);
@@ -2205,12 +2205,12 @@ namespace flame
 							auto x = g->grid_x * (max_width + sdf_range);
 							auto y = g->grid_y * (pixel_height + sdf_range);
 
-							atlas->set_pixels(x, y, size.x, size.y, temp);
+							atlas->set_pixels(x, y, size.x(), size.y(), temp);
 
 							delete temp;
 
 							g->uv0 = Vec2(x + sdf_range, y + sdf_range) / atlas->size;
-							g->uv1 = Vec2(x + size.x - sdf_range, y + size.y - sdf_range) / atlas->size;
+							g->uv1 = Vec2(x + size.x() - sdf_range, y + size.y() - sdf_range) / atlas->size;
 						}
 
 						break;

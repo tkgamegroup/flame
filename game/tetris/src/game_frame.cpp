@@ -290,8 +290,8 @@ void Tetris::take_away()
 		{
 			if (vs[y * hori_size + x])
 			{
-				auto xx = pos.x + x;
-				auto yy = pos.y + y;
+				auto xx = pos.x() + x;
+				auto yy = pos.y() + y;
 				if (xx >= 0 && xx < grid_hori_size &&
 					yy >= 0 && yy < grid_vert_size)
 					grids[yy * grid_hori_size + xx].b = false;
@@ -309,8 +309,8 @@ bool Tetris::try_pos(const Ivec2 &off)
 		{
 			if (vs[y * hori_size + x])
 			{
-				auto xx = pos.x + off.x + x;
-				auto yy = pos.y + off.y + y;
+				auto xx = pos.x() + off.x() + x;
+				auto yy = pos.y() + off.y() + y;
 				if (xx < 0 || xx > grid_hori_size - 1 ||
 					yy < 0 || yy > grid_vert_size - 1 ||
 					grids[yy * grid_hori_size + xx].b)
@@ -330,8 +330,8 @@ void Tetris::print()
 		{
 			if (vs[y * Tetris::hori_size + x])
 			{
-				auto xx = pos.x + x;
-				auto yy = pos.y + y;
+				auto xx = pos.x() + x;
+				auto yy = pos.y() + y;
 				if (xx >= 0 && xx < grid_hori_size &&
 					yy >= 0 && yy < grid_vert_size)
 				{
@@ -388,7 +388,7 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 				}
 
 				prober_pos = tetris.pos;
-				prober_pos.y += i - 1;
+				prober_pos.y() += i - 1;
 			};
 
 			if (gameover)
@@ -505,7 +505,7 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 
 					if (tetris.try_pos(Ivec2(tetris.x_move, 0)))
 					{
-						tetris.pos.x += tetris.x_move;
+						tetris.pos.x() += tetris.x_move;
 						need_update_prober = true;
 					}
 					tetris.x_move = 0;
@@ -515,7 +515,7 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 					while (true)
 					{
 						if (tetris.try_pos(Ivec2(0, 1)))
-							tetris.pos.y += 1;
+							tetris.pos.y() += 1;
 						else
 						{
 							bottom_hit = true;
@@ -613,17 +613,17 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 
 				draw_cube(pen, g.h, w, A);
 			}
-			pen.x += cube_width + cube_gap;
+			pen.x() += cube_width + cube_gap;
 		}
-		pen.x = pos.x;
-		pen.y += cube_width + cube_gap;
+		pen.x() = pos.x();
+		pen.y() += cube_width + cube_gap;
 	}
 
 	{
 		auto _pos = pos + Vec2((cube_width + cube_gap) * grid_hori_size + 50.f, 0.f);
 		c->add_text_sdf(_pos, Bvec4(0, 0, 0, 255), L"NEXT", 3.f);
 
-		_pos.y += 60.f;
+		_pos.y() += 60.f;
 		auto pen = _pos;
 
 		auto t = &tetris_types[next_id];
@@ -634,10 +634,10 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 			{
 				if (vs[y * Tetris::hori_size + x])
 					draw_cube(pen, t->h, 0.f, 1.f);
-				pen.x += cube_width + cube_gap;
+				pen.x() += cube_width + cube_gap;
 			}
-			pen.x = _pos.x;
-			pen.y += cube_width + cube_gap;
+			pen.x() = _pos.x();
+			pen.y() += cube_width + cube_gap;
 		}
 
 		c->add_rect(_pos - Vec2(16.f), Vec2((cube_width + cube_gap) * Tetris::hori_size - cube_gap,
@@ -657,10 +657,10 @@ void WidgetGameScene::on_draw(UI::Canvas *c, const Vec2 &off, float scl)
 			{
 				if (vs[y * Tetris::hori_size + x])
 					c->add_rect(pen - Vec2(3.f), Vec2(cube_width + 6.f), col, 1.f);
-				pen.x += cube_width + cube_gap;
+				pen.x() += cube_width + cube_gap;
 			}
-			pen.x = _pos.x;
-			pen.y += cube_width + cube_gap;
+			pen.x() = _pos.x();
+			pen.y() += cube_width + cube_gap;
 		}
 	}
 

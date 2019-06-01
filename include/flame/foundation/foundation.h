@@ -281,7 +281,7 @@ namespace flame
 		return action == KeyStateNull && key == Mouse_Null; 
 	}
 
-	inline bool is_mouse_scroll(KeyState action, MouseKey key) // value.x is scroll value
+	inline bool is_mouse_scroll(KeyState action, MouseKey key) // value.x() is scroll value
 	{ 
 		return action == KeyStateNull && key == Mouse_Middle; 
 	}

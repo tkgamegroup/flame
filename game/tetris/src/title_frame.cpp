@@ -59,7 +59,7 @@ UI::Button *create_round_button(const wchar_t *text)
 	btn->sdf_scale = 7.f;
 	btn->set_text_and_size(text);
 	btn->inner_padding[0] = 20.f;
-	btn->background_round_radius = btn->size.y * 0.4f;
+	btn->background_round_radius = btn->size.y() * 0.4f;
 	btn->background_round_flags = Rect::SideNE | Rect::SideSE;
 	btn->background_offset = Vec4(-15.f, 0.f,
 		btn->background_round_radius, 0.f);

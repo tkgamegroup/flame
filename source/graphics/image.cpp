@@ -94,8 +94,8 @@ namespace flame
 			imageInfo.pNext = nullptr;
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
 			imageInfo.format = Z(format);
-			imageInfo.extent.width = size.x;
-			imageInfo.extent.height = size.y;
+			imageInfo.extent.width = size.x();
+			imageInfo.extent.height = size.y();
 			imageInfo.extent.depth = 1;
 			imageInfo.mipLevels = level;
 			imageInfo.arrayLayers = layer;
@@ -198,8 +198,8 @@ namespace flame
 				bpp_ = 0;
 				assert(0);
 			}
-			pitch_ = Bitmap::get_pitch(size.x, bpp_);
-			data_size_ = pitch_ * size.y;
+			pitch_ = Bitmap::get_pitch(size.x(), bpp_);
+			data_size_ = pitch_ * size.y();
 		}
 
 		void ImagePrivate::init(const Bvec4 &col)
@@ -219,9 +219,9 @@ namespace flame
 		{
 			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 			if (cx == -1)
-				cx = size.x;
+				cx = size.x();
 			if (cy == -1)
-				cy = size.y;
+				cy = size.y();
 
 			auto data_size = (bpp_ / 8) * cx * cy;
 
@@ -248,9 +248,9 @@ namespace flame
 		{
 			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 			if (cx == -1)
-				cx = size.x;
+				cx = size.x();
 			if (cy == -1)
-				cy = size.y;
+				cy = size.y();
 
 			auto data_size = (bpp_ / 8) * cx * cy;
 
@@ -357,7 +357,7 @@ namespace flame
 				auto cb = Commandbuffer::create(d->gcp);
 				cb->begin(true);
 				cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-				BufferImageCopy copy(i->size.x, i->size.y);
+				BufferImageCopy copy(i->size.x(), i->size.y());
 				cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 				cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
@@ -382,7 +382,7 @@ namespace flame
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
 			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-			BufferImageCopy copy(bmp->size.x, bmp->size.y);
+			BufferImageCopy copy(bmp->size.x(), bmp->size.y());
 			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
@@ -419,8 +419,8 @@ namespace flame
 				//assert(gli_texture.target() == gli::TARGET_2D);
 				//auto const gli_format = GL.translate(gli_texture.format(), gli_texture.swizzles());
 
-				//width = gli_texture.extent().x;
-				//height = gli_texture.extent().y;
+				//width = gli_texture.extent().x();
+				//height = gli_texture.extent().y();
 				//level = gli_texture.levels();
 				//layer = gli_texture.layers();
 
@@ -446,8 +446,8 @@ namespace flame
 				//	c.buffer_offset = offset;
 				//	c.image_x = 0;
 				//	c.image_y = 0;
-				//	c.image_width = gli_texture.extent(i).x;
-				//	c.image_height = gli_texture.extent(i).y;
+				//	c.image_width = gli_texture.extent(i).x();
+				//	c.image_height = gli_texture.extent(i).y();
 				//	c.image_level = i;
 				//	buffer_copy_regions.push_back(c);
 				//	offset += gli_texture.size(i);
@@ -459,8 +459,8 @@ namespace flame
 				if (bmp->channel == 3)
 					bmp->add_alpha_channel();
 
-				width = bmp->size.x;
-				height = bmp->size.y;
+				width = bmp->size.x();
+				height = bmp->size.y();
 				level = layer = 1;
 
 				fmt = find_format(bmp->channel, bmp->bpp);

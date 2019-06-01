@@ -188,18 +188,18 @@ namespace flame
 			tess_state.patchControlPoints = info.patch_control_points;
 
 			VkViewport viewport;
-			viewport.width = (float)info.viewport_size.x;
-			viewport.height = (float)info.viewport_size.y;
+			viewport.width = (float)info.viewport_size.x();
+			viewport.height = (float)info.viewport_size.y();
 			viewport.minDepth = (float)0.0f;
 			viewport.maxDepth = (float)1.0f;
-			viewport.x = 0;
-			viewport.y = 0;
+			viewport.x() = 0;
+			viewport.y() = 0;
 
 			VkRect2D scissor;
-			scissor.extent.width = info.viewport_size.x;
-			scissor.extent.height = info.viewport_size.y;
-			scissor.offset.x = 0;
-			scissor.offset.y = 0;
+			scissor.extent.width = info.viewport_size.x();
+			scissor.extent.height = info.viewport_size.y();
+			scissor.offset.x() = 0;
+			scissor.offset.y() = 0;
 
 			VkPipelineViewportStateCreateInfo viewport_state;
 			viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -279,7 +279,7 @@ namespace flame
 
 			for (auto &s : info.dynamic_states)
 				vk_dynamic_states.push_back(Z(s));
-			if (info.viewport_size.x == 0 && info.viewport_size.y == 0)
+			if (info.viewport_size.x() == 0 && info.viewport_size.y() == 0)
 			{
 				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
 					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);

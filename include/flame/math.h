@@ -1303,7 +1303,7 @@ namespace flame
 		Vec<4, T> row0(inv[0][0], inv[1][0], inv[2][0], inv[3][0]);
 
 		Vec<4, T> dot0(m[0] * row0);
-		return inv / ((dot0.x + dot0.y) + (dot0.z + dot0.w));
+		return inv / ((dot0.x() + dot0.y()) + (dot0.z() + dot0.w()));
 	}
 
 	template<class T>
@@ -1348,15 +1348,15 @@ namespace flame
 		auto u = cross(s, f);
 
 		Mat<4, 4, T> ret(1);
-		ret[0][0] = s.x;
-		ret[1][0] = s.y;
-		ret[2][0] = s.z;
-		ret[0][1] = u.x;
-		ret[1][1] = u.y;
-		ret[2][1] = u.z;
-		ret[0][2] = -f.x;
-		ret[1][2] = -f.y;
-		ret[2][2] = -f.z;
+		ret[0][0] = s.x();
+		ret[1][0] = s.y();
+		ret[2][0] = s.z();
+		ret[0][1] = u.x();
+		ret[1][1] = u.y();
+		ret[2][1] = u.z();
+		ret[0][2] = -f.x();
+		ret[1][2] = -f.y();
+		ret[2][2] = -f.z();
 		ret[3][0] = -dot(s, eye);
 		ret[3][1] = -dot(u, eye);
 		ret[3][2] = dot(f, eye);
@@ -1406,7 +1406,7 @@ namespace flame
 		{
 			auto v = bezier(t, p0, p1, p2, p3);
 			auto d = v - pos;
-			float currentDistance = d.x * d.x + d.y * d.y;
+			float currentDistance = d.x() * d.x() + d.y() * d.y();
 			if (currentDistance < bestDistance)
 			{
 				bestDistance = currentDistance;
@@ -1764,9 +1764,9 @@ namespace flame
 		yz = q.y() * z2;
 		zz = q.z() * z2;
 
-		wx = q.w * x2;
-		wy = q.w * y2;
-		wz = q.w * z2;
+		wx = q.w() * x2;
+		wy = q.w() * y2;
+		wz = q.w() * z2;
 
 		Mat<3, 3, T> ret;
 

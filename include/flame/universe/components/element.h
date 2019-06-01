@@ -33,12 +33,12 @@ namespace flame
 	}
 
 	/*
-			   pos                        size.x
+			   pos                        size.x()
 				   +------------------------------------------------
 				   |	              top inner padding
 				   |			****************************
 				   |	 left   *                          *  right
-			size.y |	 inner  *          content         *  inner
+			size.y() |	 inner  *          content         *  inner
 				   |	padding *                          * padding
 				   |	        ****************************
 				   |			     bottom inner padding

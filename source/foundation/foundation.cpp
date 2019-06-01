@@ -723,7 +723,7 @@ namespace flame
 			};
 			Capture capture;
 			capture.path = path;
-			capture.w = w;
+			capture.w() = w;
 			capture.pcallback = pcallback;
 
 			thread(Function<void(void* c)>([](void *_c) {

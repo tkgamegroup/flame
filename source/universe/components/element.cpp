@@ -122,9 +122,9 @@ namespace flame
 				}
 				if (alpha > 0.f)
 				{
-					if (background_color.w > 0)
+					if (background_color.w() > 0)
 						canvas->add_rect_filled(p, s, Bvec4(background_color, alpha), rr, background_round_flags);
-					if (background_frame_thickness > 0.f && background_frame_color.w > 0)
+					if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
 						canvas->add_rect(p, s, Bvec4(background_frame_color, alpha), background_frame_thickness, rr, background_round_flags);
 				}
 			}

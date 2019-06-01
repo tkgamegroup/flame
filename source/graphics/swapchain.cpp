@@ -102,10 +102,10 @@ namespace flame
 			VkSurfaceCapabilitiesKHR surface_capabilities;
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->pd, s, &surface_capabilities);
 
-			size.x = clamp(size.x,
+			size.x() = clamp(size.x(),
 				(int)surface_capabilities.minImageExtent.width,
 				(int)surface_capabilities.maxImageExtent.width);
-			size.y = clamp(size.y,
+			size.y() = clamp(size.y(),
 				(int)surface_capabilities.minImageExtent.height,
 				(int)surface_capabilities.maxImageExtent.height);
 
@@ -126,8 +126,8 @@ namespace flame
 			swapchain_info.minImageCount = image_count;
 			swapchain_info.imageFormat = Z(swapchain_format);
 			swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
-			swapchain_info.imageExtent.width = size.x;
-			swapchain_info.imageExtent.height = size.y;
+			swapchain_info.imageExtent.width = size.x();
+			swapchain_info.imageExtent.height = size.y();
 			swapchain_info.imageArrayLayers = 1;
 			swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 			swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -150,8 +150,8 @@ namespace flame
 			HRESULT res;
 
 			DXGI_MODE_DESC backbuffer_desc = {};
-			backbuffer_desc.Width = size.x;
-			backbuffer_desc.Height = size.y;
+			backbuffer_desc.Width = size.x();
+			backbuffer_desc.Height = size.y();
 			backbuffer_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 			DXGI_SAMPLE_DESC sample_desc = {};

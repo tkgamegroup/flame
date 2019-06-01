@@ -35,12 +35,12 @@ namespace flame
 	{
 		inline PxVec3 Z(const Vec3 &v)
 		{
-			return PxVec3(v.x, v.y, v.z);
+			return PxVec3(v.x(), v.y(), v.z());
 		}
 
 		inline Vec3 Z(const PxVec3 &v)
 		{
-			return Vec3(v.x, v.y, v.z);
+			return Vec3(v.x(), v.y(), v.z());
 		}
 
 		inline PxMat33 Z(const Mat3 &m)
@@ -54,7 +54,7 @@ namespace flame
 
 		inline PxTransform Z(const Vec3 &coord, const Vec4 &quat)
 		{
-			return PxTransform(Z(coord), PxQuat(quat.x, quat.y, quat.z, quat.w));
+			return PxTransform(Z(coord), PxQuat(quat.x(), quat.y(), quat.z(), quat.w()));
 		}
 
 		inline PxTransform Z(const Vec3 &coord, const Mat3 &axis)

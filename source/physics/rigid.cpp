@@ -42,13 +42,13 @@ namespace flame
 		void Rigid::get_pose(Vec3 &out_coord, Vec4 &out_quat)
 		{
 			auto trans = _priv->v->getGlobalPose();
-			out_coord.x = trans.p.x;
-			out_coord.y = trans.p.y;
-			out_coord.z = trans.p.z;
-			out_quat.x = trans.q.x;
-			out_quat.y = trans.q.y;
-			out_quat.z = trans.q.z;
-			out_quat.w = trans.q.w;
+			out_coord.x() = trans.p.x();
+			out_coord.y() = trans.p.y();
+			out_coord.z() = trans.p.z();
+			out_quat.x() = trans.q.x();
+			out_quat.y() = trans.q.y();
+			out_quat.z() = trans.q.z();
+			out_quat.w() = trans.q.w();
 		}
 
 		void Rigid::add_force(const Vec3 &v)

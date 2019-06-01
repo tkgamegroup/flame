@@ -148,7 +148,7 @@ namespace flame
 						if (action == KeyStateNull)
 						{
 							if (key == Mouse_Middle)
-								thiz->mouse_scroll = pos.x;
+								thiz->mouse_scroll = pos.x();
 							else if (key == Mouse_Null)
 								thiz->mouse_pos = pos;
 						}
