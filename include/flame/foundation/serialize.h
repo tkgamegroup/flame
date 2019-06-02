@@ -264,13 +264,19 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
-		FLAME_FOUNDATION_EXPORTS const char* templates() const; // separate by ';'
-		FLAME_FOUNDATION_EXPORTS uint templates_hash() const;
+		FLAME_FOUNDATION_EXPORTS const char* templates() const;
+		FLAME_FOUNDATION_EXPORTS uint hash() const;
+		// templates:
+		//  separate by ','
+		//  may contains pointers, in which case, '*' will be involved
+		//  no space chars
+		// hash:
+		//  if templates is empty, hash will be the hash of name
+		//  if not, hash will be hash name<templates>
 
 		static bool equal(const TypeInfo* lhs, const TypeInfo* rhs)
 		{
-			return lhs->tag() == rhs->tag() && lhs->name_hash() == rhs->name_hash();
+			return lhs->tag() == rhs->tag() && lhs->hash() == rhs->hash();
 		}
 	};
 
@@ -291,8 +297,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS EnumItem* item(int idx) const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(const char* name, int *out_idx = nullptr) const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(int value, int* out_idx = nullptr) const;
-
-		FLAME_FOUNDATION_EXPORTS String serialize_value(bool single, int v) const;
 	};
 
 	struct VariableInfo
@@ -308,8 +312,8 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
 	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
-	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint type_hash, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint type_hash, const std::string& str, void* dst);
+	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const char* name, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const char* name, const std::string& str, void* dst);
 
 	struct FunctionInfo
 	{
@@ -431,13 +435,13 @@ namespace flame
 	*/
 
 	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, const char* name);
 
 	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, const char* name);
 
 	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, const char* name);
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);

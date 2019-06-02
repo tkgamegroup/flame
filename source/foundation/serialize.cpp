@@ -47,9 +47,8 @@ namespace flame
 	{
 		TypeTag$ tag;
 		std::string name;
-		uint name_hash;
 		std::string templates;
-		uint templates_hash;
+		uint hash;
 	};
 
 	TypeTag$ TypeInfo::tag() const
@@ -62,19 +61,14 @@ namespace flame
 		return ((TypeInfoPrivate*)this)->name.c_str();
 	}
 
-	uint TypeInfo::name_hash() const
-	{
-		return ((TypeInfoPrivate*)this)->name_hash;
-	}
-
 	const char* TypeInfo::templates() const
 	{
 		return ((TypeInfoPrivate*)this)->templates.c_str();
 	}
 
-	uint TypeInfo::templates_hash() const
+	uint TypeInfo::hash() const
 	{
-		return ((TypeInfoPrivate*)this)->templates_hash;
+		return ((TypeInfoPrivate*)this)->hash;
 	}
 
 	struct EnumItemPrivate : EnumItem
@@ -100,14 +94,6 @@ namespace flame
 
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
-
-		std::string serialize_value(bool single, int v) const
-		{
-			if (single)
-				return item(v)->name();
-
-			return "";
-		}
 	};
 
 	int EnumInfo::level() const
@@ -135,7 +121,7 @@ namespace flame
 		return ((EnumInfoPrivate*)this)->items[idx].get();
 	}
 
-	EnumItem* EnumInfo::find_item(const char* name, int *out_idx) const
+	EnumItem* EnumInfo::find_item(const char* name, int* out_idx) const
 	{
 		auto& items = ((EnumInfoPrivate*)this)->items;
 		for (auto i = 0; i < items.size(); i++)
@@ -167,11 +153,6 @@ namespace flame
 		if (out_idx)
 			* out_idx = -1;
 		return nullptr;
-	}
-
-	String EnumInfo::serialize_value(bool single, int v) const
-	{
-		return ((EnumInfoPrivate*)this)->serialize_value(single, v);
 	}
 
 	static std::string to_string(uint type_hash, const void* src, int precision)
@@ -367,27 +348,53 @@ namespace flame
 		return false;
 	}
 
-	String serialize_value(TypeTag$ tag, uint type_hash, const void* src, int precision)
+	String serialize_value(TypeTag$ tag, uint hash, const char* name, const void* src, int precision)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			return find_enum(type_hash)->serialize_value(true, *(int*)src);
+			return find_enum(hash, name)->find_item(*(int*)src)->name();
 		case TypeTagEnumMulti:
+		{
+			std::string ret;
+			auto e = (EnumInfoPrivate*)find_enum(hash, name);
+			auto v = *(int*)src;
+			for (auto i = 0; i < e->items.size(); i++)
+			{
+				if ((v & 1) == 1)
+				{
+					if (!ret.empty())
+						ret += ";";
+					ret += e->find_item(1 << i)->name();
+				}
+				v >>= 1;
+			}
+			return ret;
+		}
 			break;
 		case TypeTagVariable:
-			return to_string(type_hash, src, precision);
+			return to_string(hash, src, precision);
 		}
 
 		return "";
 	}
 
-	void unserialize_value(TypeTag$ tag, uint type_hash, const std::string & str, void* dst)
+	void unserialize_value(TypeTag$ tag, uint hash, const char* name, const std::string & str, void* dst)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			find_enum(type_hash)->find_item(str.c_str(), (int*)dst);
+			find_enum(hash, name)->find_item(str.c_str(), (int*)dst);
+			break;
+		case TypeTagEnumMulti:
+		{
+			auto v = 0;
+			auto e = (EnumInfoPrivate*)find_enum(hash, name);
+			auto sp = string_split(str, ';');
+			for (auto& t : sp)
+				v |= e->find_item(t.c_str())->value();
+			return v;
+		}
 			break;
 		case TypeTagVariable:
 			from_string(type_hash, str, dst);
@@ -1647,9 +1654,9 @@ namespace flame
 	}
 
 	static std::vector<bool> typeinfo_levels;
-	static std::map<unsigned int, std::unique_ptr<EnumInfoPrivate>> enums;
-	static std::map<unsigned int, std::unique_ptr<UdtInfoPrivate>> udts;
-	static std::map<unsigned int, std::unique_ptr<FunctionInfoPrivate>> functions;
+	static std::map<uint, std::list<std::unique_ptr<EnumInfoPrivate>>> enums;
+	static std::map<uint, std::list<std::unique_ptr<UdtInfoPrivate>>> udts;
+	static std::map<uint, std::list<std::unique_ptr<FunctionInfoPrivate>>> functions;
 
 	int typeinfo_free_level()
 	{
@@ -1663,23 +1670,46 @@ namespace flame
 		return lv;
 	}
 
-	Array<EnumInfo*> get_enums()
+	template<class T, class U>
+	Array<T*> get_typeinfo_objects(const std::map<uint, std::list<std::unique_ptr<U>>>& map)
 	{
-		Array<EnumInfo*> ret;
-		ret.resize(enums.size());
+		Array<T*> ret;
+		ret.resize(map.size());
 		auto i = 0;
-		for (auto it = enums.begin(); it != enums.end(); it++)
+		for (auto it = map.begin(); it != map.end(); it++)
 		{
-			ret[i] = (*it).second.get();
+			for (auto& i : it->second)
+				ret[i] = i.get();
 			i++;
 		}
 		return ret;
 	}
 
-	EnumInfo* find_enum(unsigned int name_hash)
+	template<class T>
+	T* find_typeinfo_object(const std::map<uint, std::list<std::unique_ptr<T>>>& map, uint name_hash, const char* name)
 	{
-		auto it = enums.find(name_hash);
-		return it == enums.end() ? nullptr : it->second.get();
+		auto it = map.find(name_hash);
+		if (it == map.end())
+			return nullptr;
+		if (it->second.size() == 1)
+			return it->second.begin()->get();
+		for (auto& i : it->second)
+		{
+			if (i->name == name)
+				return i.get();
+		}
+		assert(0);
+		return nullptr; // should not go here
+	}
+
+	Array<EnumInfo*> get_enums()
+	{
+		return get_typeinfo_objects<EnumInfo>(enums);
+	}
+
+	EnumInfo* find_enum(uint name_hash, const char* name)
+	{
+		return find_typeinfo_object(enums, name_hash, name);
 	}
 
 	Array<FunctionInfo*> get_functions()
@@ -1689,13 +1719,14 @@ namespace flame
 		auto i = 0;
 		for (auto it = functions.begin(); it != functions.end(); it++)
 		{
-			ret[i] = (*it).second.get();
+			for (auto& f : it->second)
+				ret[i] = f.get();
 			i++;
 		}
 		return ret;
 	}
 
-	FunctionInfo* find_funcion(unsigned int name_hash)
+	FunctionInfo* find_funcion(uint name_hash, const char* name)
 	{
 		auto it = functions.find(name_hash);
 		return it == functions.end() ? nullptr : it->second.get();
@@ -1708,13 +1739,14 @@ namespace flame
 		auto i = 0;
 		for (auto it = udts.begin(); it != udts.end(); it++)
 		{
-			ret[i] = (*it).second.get();
+			for (auto& u : it->second)
+				ret[i] = u.get();
 			i++;
 		}
 		return ret;
 	}
 
-	UdtInfo* find_udt(unsigned int name_hash)
+	UdtInfo* find_udt(uint name_hash, const char* name)
 	{
 		auto it = udts.find(name_hash);
 		return it == udts.end() ? nullptr : it->second.get();
