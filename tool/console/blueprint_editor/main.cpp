@@ -178,7 +178,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_name = std::string(command_line);
 
-				auto udt = find_udt(H(s_name.c_str()));
+				auto udt = find_udt(H(s_name.c_str()), s_name.c_str());
 				if (udt)
 				{
 					printf("%s:\n", udt->name());
@@ -224,12 +224,13 @@ int main(int argc, char **args)
 					{
 						auto input = n->input(i);
 						auto v = input->variable_info();
+						auto type = v->type();
 						printf(" %s\n", v->name());
 						std::string link_address;
 						if (input->link())
 							link_address = input->link()->get_address().v;
 						printf("   [%s]->\n", link_address.c_str());
-						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), input->data(), 2);
+						auto str = serialize_value(type->tag(), type->hash(), type->name(), input->data(), 2);
 						if (str.size == 0)
 							str = "-";
 						printf("   %s\n", str.v);
@@ -239,8 +240,9 @@ int main(int argc, char **args)
 					{
 						auto output = n->output(i);
 						auto v = output->variable_info();
+						auto type = v->type();
 						printf(" %s\n", output->variable_info()->name());
-						auto str = serialize_value(v->type()->tag(), v->type()->name_hash(), output->data(), 2);
+						auto str = serialize_value(type->tag(), type->hash(), type->name(), output->data(), 2);
 						if (str.size == 0)
 							str = "-";
 						printf("   %s\n", str.v);
@@ -352,9 +354,10 @@ int main(int argc, char **args)
 			if (i)
 			{
 				auto v = i->variable_info();
-				auto value_before = serialize_value(v->type()->tag(), v->type()->name_hash(), i->data(), 2);
-				unserialize_value(v->type()->tag(), v->type()->name_hash(), s_value, i->data());
-				auto value_after = serialize_value(v->type()->tag(), v->type()->name_hash(), i->data(), 2);
+				auto type = v->type();
+				auto value_before = serialize_value(type->tag(), type->hash(), type->name(), i->data(), 2);
+				unserialize_value(type->tag(), type->hash(), type->name(), s_value, i->data());
+				auto value_after = serialize_value(type->tag(), type->hash(), type->name(), i->data(), 2);
 				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
 			}
 			else

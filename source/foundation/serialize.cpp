@@ -231,16 +231,16 @@ namespace flame
 		return false;
 	}
 
-	String serialize_value(TypeTag$ tag, uint hash, const char* str, const void* src, int precision)
+	String serialize_value(TypeTag$ tag, uint hash, const char* name, const void* src, int precision)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			return find_enum(hash, str)->find_item(*(int*)src)->name();
+			return find_enum(hash, name)->find_item(*(int*)src)->name();
 		case TypeTagEnumMulti:
 		{
 			std::string ret;
-			auto e = (EnumInfoPrivate*)find_enum(hash, str);
+			auto e = (EnumInfoPrivate*)find_enum(hash, name);
 			auto v = *(int*)src;
 			for (auto i = 0; i < e->items.size(); i++)
 			{
@@ -300,17 +300,17 @@ namespace flame
 		return "";
 	}
 
-	void unserialize_value(TypeTag$ tag, uint hash, const char* str, const std::string& src, void* dst)
+	void unserialize_value(TypeTag$ tag, uint hash, const char* name, const std::string& src, void* dst)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			find_enum(hash, str)->find_item(src.c_str(), (int*)dst);
+			find_enum(hash, name)->find_item(src.c_str(), (int*)dst);
 			break;
 		case TypeTagEnumMulti:
 		{
 			auto v = 0;
-			auto e = (EnumInfoPrivate*)find_enum(hash, str);
+			auto e = (EnumInfoPrivate*)find_enum(hash, name);
 			auto sp = string_split(src, ';');
 			for (auto& t : sp)
 				v |= e->find_item(t.c_str())->value();
@@ -1256,7 +1256,7 @@ namespace flame
 	static std::regex reg_temp(R"((\w)+\<(.)+\>)");
 	static std::string str_func("Function");
 
-	std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr, std::string* template_str = nullptr)
+	std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
 		if (pass_prefix)
 			* pass_prefix = false;
@@ -1282,24 +1282,8 @@ namespace flame
 				* pass_$ = true;
 		}
 		if (name.compare(0, str_func.size(), str_func) == 0)
-		{
 			name = "Function";
-			if (template_str)
-				*template_str = "";
-		}
-		else
-		{
-			std::smatch match;
-			if (std::regex_search(name, match, reg_temp))
-			{
-				name = match[1].str();
-				if (template_str)
-				{
-					*template_str = match[2].str();
-					template_str->erase(std::remove(template_str->begin(), template_str->end(), ' '));
-				}
-			}
-		}
+		name.erase(std::remove(name.begin(), name.end(), ' '));
 		return name;
 	}
 
@@ -1309,14 +1293,6 @@ namespace flame
 		wchar_t* pwname;
 
 		TypeInfoPrivate info;
-
-		auto get_udt_name = [](const wchar_t* pwname) {
-			std::string template_str;
-			auto name = format_name(pwname, nullptr, nullptr, nullptr, &template_str);
-			if (!template_str.empty())
-				name += "<" + template_str + ">";
-			return name;
-		};
 
 		symbol->get_symTag(&dw);
 		switch (dw)
@@ -1350,7 +1326,7 @@ namespace flame
 				break;
 			case SymTagUDT:
 				pointer_type->get_name(&pwname);
-				info.name = get_udt_name(pwname);
+				info.name = format_name(pwname);
 				break;
 			}
 			pointer_type->Release();
@@ -1360,7 +1336,7 @@ namespace flame
 		{
 			symbol->get_name(&pwname);
 			info.tag = TypeTagVariable;
-			info.name = get_udt_name(pwname);
+			info.name = format_name(pwname);
 		}
 			break;
 		case SymTagFunctionArgType:
@@ -1761,12 +1737,9 @@ namespace flame
 		{
 			_udt->get_name(&pwname);
 			bool pass_prefix, pass_$;
-			std::string template_str;
-			auto udt_name = format_name(pwname, &pass_prefix, &pass_$, nullptr, &template_str);
+			auto udt_name = format_name(pwname, &pass_prefix, &pass_$);
 			if (pass_prefix && pass_$)
 			{
-				if (!template_str.empty())
-					udt_name += "<" + template_str + ">";
 				auto udt_hash = H(udt_name.c_str());
 				auto it = db->udts.find(udt_hash);
 				if (it == db->udts.end())
