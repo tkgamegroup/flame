@@ -264,19 +264,16 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS const char* templates() const;
 		FLAME_FOUNDATION_EXPORTS uint hash() const;
-		// templates:
-		//  separate by ','
-		//  may contains pointers, in which case, '*' will be involved
-		//  no space chars
-		// hash:
-		//  if templates is empty, hash will be the hash of name
-		//  if not, hash will be hash name<templates>
+		// name:
+		//  if has template, name is with template
+		//  template args are separated by ',', with no space char and wrap by '<>'
+		//  e.g. 'LNA<void*>' or Vec<4,float>
 
 		static bool equal(const TypeInfo* lhs, const TypeInfo* rhs)
 		{
-			return lhs->tag() == rhs->tag() && lhs->hash() == rhs->hash();
+			return lhs->tag() == rhs->tag() && lhs->hash() == rhs->hash() &&
+				strcmp(lhs->name(), rhs->name()) == 0;
 		}
 	};
 
@@ -288,7 +285,6 @@ namespace flame
 
 	struct EnumInfo
 	{
-		FLAME_FOUNDATION_EXPORTS int level() const;
 		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
 
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
@@ -306,18 +302,16 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const char* attribute() const;
 		FLAME_FOUNDATION_EXPORTS int offset() const;
 		FLAME_FOUNDATION_EXPORTS int size() const;
-		FLAME_FOUNDATION_EXPORTS int count() const; // for native array count
 		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
 	};
 
 	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
 	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
-	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const char* name, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const char* name, const std::string& str, void* dst);
+	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const char* str, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const char* str, const std::string& src, void* dst);
 
 	struct FunctionInfo
 	{
-		FLAME_FOUNDATION_EXPORTS int level() const;
 		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
 
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
@@ -332,7 +326,6 @@ namespace flame
 
 	struct UdtInfo
 	{
-		FLAME_FOUNDATION_EXPORTS int level() const;
 		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
 
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
@@ -434,14 +427,14 @@ namespace flame
 			'c' for function, means to collect the code of the function
 	*/
 
-	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, const char* name);
+	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums(int level = 0);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, const char* str, int level = -1);
 
-	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, const char* name);
+	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts(int level = 0);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, const char* str, int level = -1);
 
-	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, const char* name);
+	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions(int level = 0);
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, const char* str, int level = -1);
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);

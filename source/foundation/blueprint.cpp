@@ -53,6 +53,7 @@ namespace flame
 		BPPrivate *bp;
 		std::string id;
 		UdtInfo* udt;
+		bool udt_from_default_db;
 
 		Vec2f position;
 
@@ -120,8 +121,7 @@ namespace flame
 		auto size = variable_info->size();
 		data = new char[size];
 		memset(data, 0, size);
-		auto vtype = variable_info->type();
-		if (vtype->tag() != TypeTagPointer && vtype->name_hash() != cH("VoidPtrs"))
+		if (variable_info->default_value())
 			set(data, variable_info->type()->tag(), size, variable_info->default_value());
 
 		if (type == Input)
@@ -376,16 +376,19 @@ namespace flame
 	{
 		auto type_name_sp = string_split(std::string(type_name), ':');
 		UdtInfo* udt = nullptr;
+		auto udt_from_default_db = true;
 		if (type_name_sp.size() == 1)
-			udt = find_udt(H(type_name_sp[0].c_str()));
+			udt = find_udt(H(type_name_sp[0].c_str()), type_name_sp[0].c_str());
 		else if (type_name_sp.size() == 2)
 		{
+			udt_from_default_db = false;
 			auto fn = s2w(type_name_sp[0]);
 			for (auto& t : extra_typeinfos)
 			{
 				if (t.second == fn)
 				{
-					udt = find_udt(H(type_name_sp[1].c_str()));
+					udt = find_udt(H(type_name_sp[1].c_str()), type_name_sp[1].c_str(), t.first);
+					assert(udt);
 					break;
 				}
 			}
@@ -421,7 +424,7 @@ namespace flame
 				auto lv = typeinfo_free_level();
 				typeinfo_load(fn_ti, lv);
 				extra_typeinfos.emplace_back(lv, fn);
-				udt = find_udt(H(type_name_sp[1].c_str()));
+				udt = find_udt(H(type_name_sp[1].c_str()), type_name_sp[1].c_str(), lv);
 			}
 			if (!udt)
 				return nullptr;
@@ -449,6 +452,7 @@ namespace flame
 			}
 		}
 		auto n = new NodePrivate(this, s_id, udt);
+		n->udt_from_default_db = udt_from_default_db;
 		nodes.emplace_back(n);
 		return n;
 	}
@@ -585,7 +589,7 @@ namespace flame
 				auto input = n->find_input(n_data->find_node("name")->value());
 				auto type = input->variable_info->type();
 				if (type->tag() != TypeTagPointer)
-					unserialize_value(type->tag(), type->name_hash(), n_data->find_node("value")->value(), input->data);
+					unserialize_value(type->tag(), type->hash(), type->name(), n_data->find_node("value")->value(), input->data);
 			}
 		}
 
@@ -624,7 +628,7 @@ namespace flame
 			auto n_node = n_nodes->new_node("");
 			auto u = n->udt;
 			auto tn = std::string(u->name());
-			if (u->level() != 0)
+			if (!n->udt_from_default_db)
 			{
 				auto src = std::fs::path(u->module_name()).wstring();
 				if (ppath.size() < src.size() && src.compare(0, ppath.size(), ppath.c_str()) == 0)
@@ -641,11 +645,11 @@ namespace flame
 			{
 				auto v = input->variable_info;
 				auto type = v->type();
-				if (type->tag() != TypeTagPointer && type->name_hash() != cH("VoidPtrs") && !compare(type->tag(), v->size(), v->default_value(), input->data))
+				if (v->default_value() && !compare(type->tag(), v->size(), v->default_value(), input->data))
 				{
 					auto n_data = n_datas->new_node("");
 					n_data->new_attr("name", v->name());
-					n_data->new_attr("value", serialize_value(type->tag(), type->name_hash(), input->data, 2).v);
+					n_data->new_attr("value", serialize_value(type->tag(), type->hash(), type->name(), input->data, 2).v);
 				}
 			}
 		}
