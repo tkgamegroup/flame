@@ -1587,8 +1587,21 @@ namespace flame
 
 	EnumInfo* find_enum(uint name_hash, const char* name, int level)
 	{
-		auto db = find_typeinfo_db(level);
-		return db ? find_typeinfo_object(db->enums, name_hash, name) : nullptr;
+		if (level != -1)
+		{
+			auto db = find_typeinfo_db(level);
+			return db ? find_typeinfo_object(db->enums, name_hash, name) : nullptr;
+		}
+		else
+		{
+			for (auto& db : typeinfo_dbs)
+			{
+				auto ret = find_typeinfo_object(db->enums, name_hash, name);
+				if (ret)
+					return ret;
+			}
+			return nullptr;
+		}
 	}
 
 	Array<FunctionInfo*> get_functions(int level)
@@ -1599,8 +1612,21 @@ namespace flame
 
 	FunctionInfo* find_funcion(uint name_hash, const char* name, int level)
 	{
-		auto db = find_typeinfo_db(level);
-		return db ? find_typeinfo_object(db->functions, name_hash, name) : nullptr;
+		if (level != -1)
+		{
+			auto db = find_typeinfo_db(level);
+			return db ? find_typeinfo_object(db->functions, name_hash, name) : nullptr;
+		}
+		else
+		{
+			for (auto& db : typeinfo_dbs)
+			{
+				auto ret = find_typeinfo_object(db->functions, name_hash, name);
+				if (ret)
+					return ret;
+			}
+			return nullptr;
+		}
 	}
 
 	Array<UdtInfo*> get_udts(int level)
@@ -1611,8 +1637,21 @@ namespace flame
 
 	UdtInfo* find_udt(uint name_hash, const char* name, int level)
 	{
-		auto db = find_typeinfo_db(level);
-		return db ? find_typeinfo_object(db->udts, name_hash, name) : nullptr;
+		if (level != -1)
+		{
+			auto db = find_typeinfo_db(level);
+			return db ? find_typeinfo_object(db->udts, name_hash, name) : nullptr;
+		}
+		else
+		{
+			for (auto& db : typeinfo_dbs)
+			{
+				auto ret = find_typeinfo_object(db->udts, name_hash, name);
+				if (ret)
+					return ret;
+			}
+			return nullptr;
+		}
 	}
 
 	int typeinfo_free_level()
