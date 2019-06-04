@@ -28,63 +28,62 @@ using namespace flame;
 
 void generate_graph_and_layout(BP *bp)
 {
-	if (GRAPHVIZ_PATH != std::string(""))
+	if (GRAPHVIZ_PATH == std::string(""))
+		assert(0);
+	auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
+
+	std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
+	for (auto i = 0; i < bp->node_count(); i++)
 	{
-		auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
+		auto src = bp->node(i);
+		auto name = std::string(src->id());
 
-		std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
-		for (auto i = 0; i < bp->node_count(); i++)
+		auto n = "\t" + name + " [label = \"" + name + "|{{";
+		for (auto j = 0; j < src->input_count(); j++)
 		{
-			auto src = bp->node(i);
-			auto name = std::string(src->id());
-
-			auto n = "\t" + name + " [label = \"" + name + "|{{";
-			for (auto j = 0; j < src->input_count(); j++)
-			{
-				auto input = src->input(j);
-				auto name = std::string(input->variable_info()->name());
-				n += "<" + name + ">" + name;
-				if (j != src->input_count() - 1)
-					n += "|";
-			}
-			n += "}|{";
-			for (auto j = 0; j < src->output_count(); j++)
-			{
-				auto output = src->output(j);
-				auto name = std::string(output->variable_info()->name());
-				n += "<" + name + ">" + name;
-				if (j != src->output_count() - 1)
-					n += "|";
-			}
-			n += "}}\"];\n";
-
-			gv += n;
+			auto input = src->input(j);
+			auto name = std::string(input->variable_info()->name());
+			n += "<" + name + ">" + name;
+			if (j != src->input_count() - 1)
+				n += "|";
 		}
-		for (auto i = 0; i < bp->node_count(); i++)
+		n += "}|{";
+		for (auto j = 0; j < src->output_count(); j++)
 		{
-			auto src = bp->node(i);
-
-			for (auto j = 0; j < src->input_count(); j++)
-			{
-				auto input = src->input(j);
-				if (input->link())
-				{
-					auto in_sp = string_split(std::string(input->get_address().v), '.');
-					auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
-
-					gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
-				}
-			}
+			auto output = src->output(j);
+			auto name = std::string(output->variable_info()->name());
+			n += "<" + name + ">" + name;
+			if (j != src->output_count() - 1)
+				n += "|";
 		}
-		gv += "}\n";
+		n += "}}\"];\n";
 
-		std::ofstream file("bp.gv");
-		file << gv;
-		file.close();
-
-		exec(dot_path.c_str(), "-Tpng bp.gv -o bp.png", true);
-		exec(dot_path.c_str(), "-Tplain bp.gv -y -o bp.graph.txt", true);
+		gv += n;
 	}
+	for (auto i = 0; i < bp->node_count(); i++)
+	{
+		auto src = bp->node(i);
+
+		for (auto j = 0; j < src->input_count(); j++)
+		{
+			auto input = src->input(j);
+			if (input->link())
+			{
+				auto in_sp = string_split(std::string(input->get_address().v), '.');
+				auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
+
+				gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+			}
+		}
+	}
+	gv += "}\n";
+
+	std::ofstream file("bp.gv");
+	file << gv;
+	file.close();
+
+	exec(dot_path.c_str(), "-Tpng bp.gv -o bp.png", true);
+	exec(dot_path.c_str(), "-Tplain bp.gv -y -o bp.graph.txt", true);
 }
 
 struct App

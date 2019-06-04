@@ -161,12 +161,20 @@ namespace flame
 			default_value = nullptr;
 			if (type.tag != TypeTagEnumSingle && type.tag != TypeTagEnumMulti && type.tag != TypeTagVariable)
 				return;
-			if (type.tag == TypeTagVariable && (
-				type.name == "LNA" ||
-				type.name == "Array" ||
-				type.name == "String" ||
-				type.name == "Function"))
-				return;
+			const std::string ignore_types[] = {
+				"LNA",
+				"Array",
+				"String",
+				"Function"
+			};
+			if (type.tag == TypeTagVariable)
+			{
+				for (auto& t : ignore_types)
+				{
+					if (type.name.compare(0, t.size(), t) == 0)
+						return;
+				}
+			}
 			default_value = new char[size];
 			memset(default_value, 0, size);
 		}
