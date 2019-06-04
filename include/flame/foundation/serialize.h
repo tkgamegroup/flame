@@ -437,6 +437,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, const char* str, int level = -1);
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();
+	FLAME_FOUNDATION_EXPORTS void typeinfo_init_basic_bp_nodes();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, int level = -1);

@@ -1675,6 +1675,34 @@ namespace flame
 		return l;
 	}
 
+	template<uint N, class T>
+	struct BP_Vec
+	{
+		void update()
+		{
+
+		}
+	};
+
+	template<class T>
+	void* pf2p(T f)
+	{
+		union
+		{
+			T* f;
+			void* p;
+		}cvt;
+		cvt.f = f;
+		return cvt.p;
+	}
+
+	void typeinfo_init_basic_bp_nodes()
+	{
+		auto f = new FunctionInfoPrivate;
+		auto wtf = &BP_Vec<1, float>::update;
+		f->rva = pf2p(wtf);
+	}
+
 	void typeinfo_collect(const std::wstring & filename, int level)
 	{
 		auto db = find_typeinfo_db(level);
