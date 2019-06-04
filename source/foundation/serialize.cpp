@@ -1644,17 +1644,20 @@ namespace flame
 		if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)& dia_source)))
 		{
 			printf("dia not found\n");
+			assert(0);
 			return;
 		}
 		if (FAILED(dia_source->loadDataFromPdb(ext_replace(filename, L".pdb").c_str())))
 		{
 			printf("pdb failed to open: %s\n", std::fs::path(filename).stem().string().c_str());
+			assert(0);
 			return;
 		}
 		CComPtr<IDiaSession> session;
 		if (FAILED(dia_source->openSession(&session)))
 		{
 			printf("session failed to open\n");
+			assert(0);
 			return;
 		}
 
@@ -1662,6 +1665,7 @@ namespace flame
 		if (FAILED(session->get_globalScope(&global)))
 		{
 			printf("failed to get global\n");
+			assert(0);
 			return;
 		}
 

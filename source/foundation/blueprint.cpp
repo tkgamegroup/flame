@@ -405,7 +405,7 @@ namespace flame
 				auto fn_ti = abs_fn + L".typeinfo";
 				if (!std::fs::exists(fn_dll) || std::fs::last_write_time(fn_dll) < std::fs::last_write_time(fn_cpp))
 				{
-					auto compile_output = compile_to_dll({ fn_cpp }, { L"flame_foundation.lib", L"flame_graphics.lib" }, fn_dll);
+					auto compile_output = compile_to_dll({ fn_cpp }, { }, fn_dll);
 					if (!std::fs::exists(fn_dll) || std::fs::last_write_time(fn_dll) < std::fs::last_write_time(fn_cpp))
 					{
 						printf("compile error:\n%s\n", compile_output.v);
