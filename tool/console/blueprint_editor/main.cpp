@@ -101,6 +101,7 @@ int main(int argc, char **args)
 	typeinfo_load(L"flame_graphics.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
+	typeinfo_init_basic_bp_nodes();
 
 	app.bp = nullptr;
 	if (argc > 1)

@@ -374,7 +374,7 @@ namespace flame
 
 	NodePrivate *BPPrivate::add_node(const char* type_name, const char *id)
 	{
-		auto type_name_sp = string_split(std::string(type_name), ':');
+		auto type_name_sp = string_split(std::string(type_name), '#');
 		UdtInfo* udt = nullptr;
 		auto udt_from_default_db = true;
 		if (type_name_sp.size() == 1)
@@ -633,7 +633,7 @@ namespace flame
 				auto src = std::fs::path(u->module_name()).wstring();
 				if (ppath.size() < src.size() && src.compare(0, ppath.size(), ppath.c_str()) == 0)
 					src.erase(src.begin(), src.begin() + ppath.size());
-				tn = w2s(src) + ":" + tn;
+				tn = w2s(src) + "#" + tn;
 			}
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);

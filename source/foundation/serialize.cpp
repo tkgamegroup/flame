@@ -270,7 +270,7 @@ namespace flame
 				return *(bool*)src ? "1" : "0";
 			case cH("uint"):
 				return to_string(*(uint*)src);
-			case cH("int"): case cH("i"):
+			case cH("int"):
 				return to_string(*(int*)src);
 				//case cH("Ivec2"): case cH("i2"):
 				//	return to_string(*(Ivec2*)src);
@@ -292,8 +292,8 @@ namespace flame
 				//	return to_string(*(Vec2c*)src);
 				//case cH("Vec3c"): case cH("b3"):
 				//	return to_string(*(Vec3c*)src);
-				//case cH("Vec4c"): case cH("b4"):
-				//	return to_string(*(Vec4c*)src);
+			case cH("Vec<4,uchar>"):
+				return to_string(*(Vec4c*)src);
 			case cH("String"):
 				return ((String*)src)->v;
 			case cH("StringW"):
@@ -334,7 +334,7 @@ namespace flame
 			case cH("uint"):
 				*(uint*)dst = std::stoul(src);
 				break;
-			case cH("int"): case cH("i"):
+			case cH("int"):
 				*(int*)dst = std::stoi(src);
 				break;
 				//case cH("Ivec2"): case cH("i2"):
@@ -367,9 +367,9 @@ namespace flame
 				//case cH("Vec3c"): case cH("b3"):
 				//	*(Vec3c*)dst = stob3(src.c_str());
 				//	break;
-				//case cH("Vec4c"): case cH("b4"):
-				//	*(Vec4c*)dst = stob4(src.c_str());
-				//	break;
+			case cH("Vec<4,uchar>"):
+				*(Vec4c*)dst = stoi4(src.c_str());
+				break;
 			case cH("String"):
 				*(String*)dst = src;
 				break;
@@ -1262,6 +1262,7 @@ namespace flame
 
 	static std::string prefix("flame::");
 	static std::regex reg_temp(R"((\w)+\<(.)+\>)");
+	static std::regex reg_usig(R"(\bunsigned\b)");
 	static std::string str_func("Function");
 
 	std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
@@ -1675,32 +1676,193 @@ namespace flame
 		return l;
 	}
 
-	template<uint N, class T>
-	struct BP_Vec
-	{
-		void update()
-		{
-
-		}
-	};
-
 	template<class T>
 	void* pf2p(T f)
 	{
 		union
 		{
-			T* f;
+			T f;
 			void* p;
 		}cvt;
 		cvt.f = f;
 		return cvt.p;
 	}
 
+	template<uint N, class T>
+	struct BP_Vec
+	{
+		Vec<N, T> in;
+		Vec<N, T> out;
+
+		void update()
+		{
+			out = in;
+		}
+	};
+
+	template<uint N, class T>
+	void install_vec_udt(const char* name_suffix, const char* type_name)
+	{
+		auto u = new UdtInfoPrivate;
+		u->name = "BP_Vec";
+		u->name += name_suffix;
+		u->size = sizeof(T) * N * 2 /* both in and out */;
+		u->module_name = L"flame_foundation.dll";
+
+		for (auto i = 0; i < N; i++)
+		{
+			auto v = new VariableInfoPrivate;
+			v->type.tag = TypeTagVariable;
+			v->type.name = type_name;
+			v->type.hash = H(v->type.name.c_str());
+			v->name = "xyzw"[i];
+			v->attribute = "i";
+			v->offset = sizeof(T) * i;
+			v->size = sizeof(T);
+			v->_init_default_value();
+			u->items.emplace_back(v);
+		}
+		{
+			auto v = new VariableInfoPrivate;
+			v->type.tag = TypeTagVariable;
+			v->type.name = "Vec";
+			v->type.name += "<" + std::string(type_name) + ">";
+			v->type.hash = H(v->type.name.c_str());
+			v->name = "v";
+			v->attribute = "o";
+			v->offset = sizeof(T) * N;
+			v->size = sizeof(T) * N;
+			v->_init_default_value();
+			u->items.emplace_back(v);
+		}
+
+		auto f = new FunctionInfoPrivate;
+		f->name = "update";
+		f->rva = pf2p(&BP_Vec<N, T>::update);
+		f->return_type.tag = TypeTagVariable;
+		f->return_type.name = "void";
+		f->return_type.hash = H(f->return_type.name.c_str());
+
+		u->functions.emplace_back(f);
+
+		auto hash = H(u->name.c_str());
+		auto db0 = find_typeinfo_db(0);
+		assert(db0);
+		auto it = db0->udts.find(hash);
+		if (it == db0->udts.end())
+			it = db0->udts.emplace(hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
+		it->second.emplace_back(u);
+		
+	}
+
+	template<uint N, class T>
+	struct BP_Array
+	{
+		T in[N];
+		LNA<T> out;
+
+		void initialize()
+		{
+			out.count = N;
+			out.v = new T[N];
+		}
+
+		void update()
+		{
+			for (auto i = 0; i < N; i++)
+				out.v[i] = in[i];
+		}
+
+		void finish()
+		{
+			delete[]out.v;
+		}
+	};
+
+	template<uint N, class T>
+	void install_array_udt(const char* name_suffix, const char* type_name)
+	{
+		auto u = new UdtInfoPrivate;
+		u->name = "BP_Array_";
+		u->name += name_suffix;
+		u->size = sizeof(LNA<T>) + sizeof(T) * N;
+		u->module_name = L"flame_foundation.dll";
+
+		for (auto i = 0; i < N; i++)
+		{
+			auto v = new VariableInfoPrivate;
+			v->type.tag = TypeTagVariable;
+			v->type.name = type_name;
+			v->type.hash = H(v->type.name.c_str());
+			v->name = std::to_string(i + 1);
+			v->attribute = "i";
+			v->offset = sizeof(T) * i;
+			v->size = sizeof(T);
+			v->_init_default_value();
+			u->items.emplace_back(v);
+		}
+		{
+			auto v = new VariableInfoPrivate;
+			v->type.tag = TypeTagVariable;
+			v->type.name = "LNA";
+			v->type.name += "<" + std::string(type_name) + ">";
+			v->type.hash = H(v->type.name.c_str());
+			v->name = "v";
+			v->attribute = "o";
+			v->offset = sizeof(T) * N;
+			v->size = sizeof(LNA<T>);
+			v->_init_default_value();
+			u->items.emplace_back(v);
+		}
+
+		{
+			auto f = new FunctionInfoPrivate;
+			f->name = "initialize";
+			f->rva = pf2p(&BP_Array<N, T>::initialize);
+			f->return_type.tag = TypeTagVariable;
+			f->return_type.name = "void";
+			f->return_type.hash = H(f->return_type.name.c_str());
+
+			u->functions.emplace_back(f);
+		}
+		{
+			auto f = new FunctionInfoPrivate;
+			f->name = "update";
+			f->rva = pf2p(&BP_Array<N, T>::update);
+			f->return_type.tag = TypeTagVariable;
+			f->return_type.name = "void";
+			f->return_type.hash = H(f->return_type.name.c_str());
+
+			u->functions.emplace_back(f);
+		}
+		{
+			auto f = new FunctionInfoPrivate;
+			f->name = "finish";
+			f->rva = pf2p(&BP_Array<N, T>::finish);
+			f->return_type.tag = TypeTagVariable;
+			f->return_type.name = "void";
+			f->return_type.hash = H(f->return_type.name.c_str());
+
+			u->functions.emplace_back(f);
+		}
+
+		auto hash = H(u->name.c_str());
+		auto db0 = find_typeinfo_db(0);
+		assert(db0);
+		auto it = db0->udts.find(hash);
+		if (it == db0->udts.end())
+			it = db0->udts.emplace(hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
+		it->second.emplace_back(u);
+	}
+
 	void typeinfo_init_basic_bp_nodes()
 	{
-		auto f = new FunctionInfoPrivate;
-		auto wtf = &BP_Vec<1, float>::update;
-		f->rva = pf2p(wtf);
+		install_vec_udt<1, float>("1f", "float");
+		install_vec_udt<2, float>("2f", "float");
+		install_vec_udt<3, float>("3f", "float");
+		install_vec_udt<4, float>("4f", "float");
+
+		install_array_udt<1, Vec4c>("1_4c", "Vec<4,uchar>");
 	}
 
 	void typeinfo_collect(const std::wstring & filename, int level)
@@ -1817,6 +1979,7 @@ namespace flame
 			_udt->get_name(&pwname);
 			bool pass_prefix, pass_$;
 			auto udt_name = format_name(pwname, &pass_prefix, &pass_$);
+			std::regex_replace(udt_name, reg_usig, "u");
 			if (pass_prefix && pass_$)
 			{
 				auto udt_hash = H(udt_name.c_str());
@@ -1931,7 +2094,6 @@ namespace flame
 									f->name = name;
 									symbol_to_function(_function, f, attribute, session, source_files);
 
-									f->module_name = filename;
 									u->functions.emplace_back(f);
 								}
 							}

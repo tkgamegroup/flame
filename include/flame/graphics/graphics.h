@@ -38,7 +38,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		enum Format
+		enum Format$
 		{
 			Format_Undefined,
 
@@ -86,7 +86,7 @@ namespace flame
 			BoneSetDescriptorBinding
 		};
 
-		enum SampleCount
+		enum SampleCount$
 		{
 			SampleCount_1,
 			SampleCount_2,

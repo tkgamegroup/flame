@@ -22,9 +22,8 @@
 
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
-
-#include <vector>
 
 namespace flame
 {
@@ -33,62 +32,58 @@ namespace flame
 		struct Device;
 		struct Imageview;
 
-		struct AttachmentInfo
+		struct AttachmentInfo$
 		{
-			Format format;
-			bool clear;
-			SampleCount sample_count;
+			Format$ format$;
+			bool clear$;
+			SampleCount$ sample_count$;
 
-			AttachmentInfo()
+			AttachmentInfo$()
 			{
-				format = Format_R8G8B8A8_UNORM;
-				clear = true;
-				sample_count = SampleCount_1;
+				format$ = Format_R8G8B8A8_UNORM;
+				clear$ = true;
+				sample_count$ = SampleCount_1;
 			}
 
-			AttachmentInfo(Format _format, bool _clear = true, SampleCount _sample_count = SampleCount_1) :
-				format(_format),
-				clear(_clear),
-				sample_count(_sample_count)
-			{
-			}
-		};
-
-		struct SubpassInfo
-		{
-			std::vector<int> color_attachments;
-			std::vector<int> resolve_attachments;
-			int depth_attachment;
-
-			SubpassInfo() :
-				depth_attachment(-1)
-			{
-			}
-
-			SubpassInfo(const std::vector<int> &_color_attachments, int _depth_attachment = -1, const std::vector<int> &_resolve_attachments = std::vector<int>()) :
-				color_attachments(_color_attachments),
-				depth_attachment(_depth_attachment),
-				resolve_attachments(_resolve_attachments)
+			AttachmentInfo$(Format$ format, bool clear = true, SampleCount$ sample_count = SampleCount_1) :
+				format$(format),
+				clear$(clear),
+				sample_count$(sample_count)
 			{
 			}
 		};
 
-		struct DependencyInfo
+		struct SubpassInfo$
 		{
-			int src_subpass;
-			int dst_subpass;
+			LNA<int> color_attachments$;
+			LNA<int> resolve_attachments$;
+			int depth_attachment$;
+
+			SubpassInfo$() :
+				depth_attachment$(-1)
+			{
+				memset(&color_attachments$, 0, sizeof(LNA<int>));
+				memset(&resolve_attachments$, 0, sizeof(LNA<int>));
+			}
 		};
 
-		struct RenderpassInfo
+		struct DependencyInfo$
 		{
-			std::vector<AttachmentInfo> attachments;
-			std::vector<SubpassInfo> subpasses;
-			std::vector<DependencyInfo> dependencies;
+			int src_subpass$;
+			int dst_subpass$;
+		};
 
-			RenderpassInfo()
+		struct RenderpassInfo$
+		{
+			LNA<AttachmentInfo$*> attachments$;
+			LNA<SubpassInfo$*> subpasses$;
+			LNA<DependencyInfo$*> dependencies$;
+
+			RenderpassInfo$()
 			{
-				SubpassInfo sp;
-				subpasses.push_back(sp);
+				memset(&attachments$, 0, sizeof(LNA<AttachmentInfo$*>));
+				memset(&subpasses$, 0, sizeof(LNA<SubpassInfo$*>));
+				memset(&dependencies$, 0, sizeof(LNA<DependencyInfo$*>));
 			}
 		};
 
@@ -96,7 +91,7 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS int attachment_count() const;
 
-			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo &info);
+			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo$ &info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
 		};
 

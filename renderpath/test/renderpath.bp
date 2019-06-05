@@ -25,18 +25,18 @@
       "datas": []
     },
     {
-      "type": "BP_Socket4",
+      "type": "BP_Array_1_4c",
       "id": "color",
       "pos": "386;160",
       "datas": [
         {
-          "name": "v1",
-          "value": "b4:128;100;64;255"
+          "name": "1",
+          "value": "128;100;64;255"
         }
       ]
     },
     {
-      "type": "make_cmd:BP_MakeCmd",
+      "type": "make_cmd#BP_MakeCmd",
       "id": "make_cmd",
       "pos": "613;241",
       "datas": []

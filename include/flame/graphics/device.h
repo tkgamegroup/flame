@@ -63,6 +63,16 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Device *get_shared();
 			FLAME_GRAPHICS_EXPORTS static void destroy(Device *d);
 		};
+
+		struct Device$
+		{
+			void* in$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$c();
+		};
+
 	}
 }
 

@@ -25,15 +25,6 @@
 
 namespace flame
 {
-	struct BP_GraphicsDevice$
-	{
-		void* in$i;
-
-		void* out$o;
-
-		FLAME_GRAPHICS_EXPORTS void initialize$c();
-	};
-
 	struct BP_GraphicsSwapchain$
 	{
 		void* in$i;
@@ -58,9 +49,11 @@ namespace flame
 		FLAME_GRAPHICS_EXPORTS void update$c();
 	};
 
-	struct BP_GraphicsFramebuffer$
+	struct BP_GraphicsClearvalues$
 	{
 		void* in$i;
+		void* renderpass$i;
+		LNA<Vec4c> colors$i;
 
 		void* out$o;
 
@@ -69,11 +62,9 @@ namespace flame
 		FLAME_GRAPHICS_EXPORTS void update$c();
 	};
 
-	struct BP_GraphicsClearvalues$
+	struct BP_GraphicsFramebuffer$
 	{
 		void* in$i;
-		void* renderpass$i;
-		LNA<Vec4c> colors$i;
 
 		void* out$o;
 
