@@ -32,58 +32,83 @@ namespace flame
 		struct Device;
 		struct Imageview;
 
+		struct AttachmentInfo
+		{
+			Format$ format;
+			bool clear;
+			SampleCount$ sample_count;
+
+			AttachmentInfo() :
+				format(Format_R8G8B8A8_UNORM),
+				clear(true),
+				sample_count(SampleCount_1)
+			{
+			}
+		};
+
 		struct AttachmentInfo$
 		{
-			Format$ format$;
-			bool clear$;
-			SampleCount$ sample_count$;
+			Format$ format$i;
+			bool clear$i;
+			SampleCount$ sample_count$i;
 
-			AttachmentInfo$()
+			void* out$o;
+
+			AttachmentInfo$() :
+				format$i(Format_R8G8B8A8_UNORM),
+				clear$i(true),
+				sample_count$i(SampleCount_1)
 			{
-				format$ = Format_R8G8B8A8_UNORM;
-				clear$ = true;
-				sample_count$ = SampleCount_1;
 			}
 
-			AttachmentInfo$(Format$ format, bool clear = true, SampleCount$ sample_count = SampleCount_1) :
-				format$(format),
-				clear$(clear),
-				sample_count$(sample_count)
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
+			FLAME_GRAPHICS_EXPORTS void update$();
+		};
+
+		struct SubpassInfo
+		{
+			LNA<int> color_attachments;
+			LNA<int> resolve_attachments;
+			int depth_attachment;
+
+			SubpassInfo() :
+				depth_attachment(-1)
 			{
+				memset(&color_attachments, 0, sizeof(LNA<int>));
+				memset(&resolve_attachments, 0, sizeof(LNA<int>));
 			}
 		};
 
 		struct SubpassInfo$
 		{
-			LNA<int> color_attachments$;
-			LNA<int> resolve_attachments$;
-			int depth_attachment$;
+			LNA<int> color_attachments$i;
+			LNA<int> resolve_attachments$i;
+			int depth_attachment$i;
+
+			void* out$o;
 
 			SubpassInfo$() :
-				depth_attachment$(-1)
+				depth_attachment$i(-1)
 			{
-				memset(&color_attachments$, 0, sizeof(LNA<int>));
-				memset(&resolve_attachments$, 0, sizeof(LNA<int>));
 			}
+
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
+			FLAME_GRAPHICS_EXPORTS void update$();
 		};
 
-		struct DependencyInfo$
+		struct RenderpassInfo
 		{
-			int src_subpass$;
-			int dst_subpass$;
-		};
+			LNA<AttachmentInfo*> attachments;
+			LNA<SubpassInfo*> subpasses;
+			LNA<Vec<2, uint>> dependencies;
 
-		struct RenderpassInfo$
-		{
-			LNA<AttachmentInfo$*> attachments$;
-			LNA<SubpassInfo$*> subpasses$;
-			LNA<DependencyInfo$*> dependencies$;
-
-			RenderpassInfo$()
+			RenderpassInfo()
 			{
-				memset(&attachments$, 0, sizeof(LNA<AttachmentInfo$*>));
-				memset(&subpasses$, 0, sizeof(LNA<SubpassInfo$*>));
-				memset(&dependencies$, 0, sizeof(LNA<DependencyInfo$*>));
+				memset(&attachments, 0, sizeof(LNA<AttachmentInfo*>));
+				memset(&subpasses, 0, sizeof(LNA<SubpassInfo*>));
+				memset(&dependencies, 0, sizeof(LNA<Vec<2, uint>>));
 			}
 		};
 
@@ -91,19 +116,21 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS int attachment_count() const;
 
-			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo$ &info);
+			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo& info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
 		};
 
 		struct Renderpass$
 		{
-			void* in$i;
+			void* device$i;
+			LNA<AttachmentInfo*> attachments$;
+			LNA<SubpassInfo*> subpasses$;
+			LNA<Vec<2, uint>> dependencies$;
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$c();
-			FLAME_GRAPHICS_EXPORTS void finish$c();
-			FLAME_GRAPHICS_EXPORTS void update$c();
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
 		};
 
 		struct Clearvalues
@@ -118,15 +145,15 @@ namespace flame
 
 		struct Clearvalues$
 		{
-			void* in$i;
+			void* device$i;
 			void* renderpass$i;
 			LNA<Vec4c> colors$i;
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$c();
-			FLAME_GRAPHICS_EXPORTS void finish$c();
-			FLAME_GRAPHICS_EXPORTS void update$c();
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
+			FLAME_GRAPHICS_EXPORTS void update$();
 		};
 
 		struct FramebufferInfo
@@ -137,13 +164,13 @@ namespace flame
 
 		struct Framebuffer$
 		{
-			void* in$i;
+			void* device$i;
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$c();
-			FLAME_GRAPHICS_EXPORTS void finish$c();
-			FLAME_GRAPHICS_EXPORTS void update$c();
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
+			FLAME_GRAPHICS_EXPORTS void update$();
 		};
 
 		struct Framebuffer

@@ -58,8 +58,8 @@ namespace flame
 			int image_count$o;
 			LNA<void*> images$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$c();
-			FLAME_GRAPHICS_EXPORTS void finish$c();
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
 		};
 	}
 }

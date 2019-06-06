@@ -150,15 +150,14 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Queue *q);
 		};
 
-		struct Commandbuffers$
+		struct Commandbuffer$
 		{
-			int count$i;
 			void* device$i;
 
-			LNA<void*> out$o;
+			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$c();
-			FLAME_GRAPHICS_EXPORTS void finish$c();
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
 		};
 	}
 }

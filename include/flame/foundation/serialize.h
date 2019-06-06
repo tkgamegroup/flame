@@ -307,8 +307,8 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
 	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
-	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const char* str, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const char* str, const std::string& src, void* dst);
+	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst);
 
 	struct FunctionInfo
 	{
@@ -428,13 +428,13 @@ namespace flame
 	*/
 
 	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums(int level = 0);
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, const char* str, int level = -1);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, int level = -1);
 
 	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts(int level = 0);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, const char* str, int level = -1);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
 
 	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions(int level = 0);
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, const char* str, int level = -1);
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, int level = -1);
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_init_basic_bp_nodes();
@@ -442,6 +442,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, int level = -1);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_clear(int level = -1);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_check_update();
 
 	// level is to separate different sources, such as typeinfos that come from different files, level of -1 means all
 }

@@ -741,34 +741,22 @@ namespace flame
 			delete (QueuePrivate*)q;
 		}
 
-		void Commandbuffers$::initialize$c()
+		void Commandbuffer$::initialize$()
 		{
-			if (count$i > 0 && device$i)
+			if (device$i)
 			{
-				out$o.count = count$i;
-				out$o.v = new voidptr[count$i];
-				for (auto i = 0; i < count$i; i++)
-				{
-					out$o.v[i] = graphics::Commandbuffer::create(((graphics::Device*)device$i)->gcp);
+				out$o = Commandbuffer::create(((Device*)device$i)->gcp);
 #if defined(FLAME_D3D12)
-					((graphics::Commandbuffer*)out$o.v[i])->end();
+				((Commandbuffer*)out$o)->end();
 #endif
-				}
-			}
-			else
-			{
-				out$o.count = 0;
-				out$o.v = nullptr;
 			}
 		}
 
-		void Commandbuffers$::finish$c()
+		void Commandbuffer$::finish$()
 		{
-			for (auto i = 0; i < out$o.count; i++)
-				graphics::Commandbuffer::destroy((graphics::Commandbuffer*)out$o.v[i]);
-			delete[]out$o.v;
+			Commandbuffer::destroy((Commandbuffer*)out$o);
 		}
 
-		Commandbuffers$ bp_commandbuffers_unused;
+		Commandbuffer$ bp_commandbuffer_unused;
 	}
 }

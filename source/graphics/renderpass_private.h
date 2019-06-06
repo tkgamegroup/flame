@@ -38,7 +38,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
-			RenderpassPrivate(Device *d, const RenderpassInfo$ &info);
+			RenderpassPrivate(Device *d, const RenderpassInfo& info);
 			~RenderpassPrivate();
 		};
 

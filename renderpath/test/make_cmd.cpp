@@ -13,15 +13,15 @@ namespace flame
 		void* clearvalues$i;
 		LNA<void*> framebuffers$i;
 		
-		__declspec(dllexport) void initialize$c()
+		__declspec(dllexport) void initialize$()
 		{
 		}
 		
-		__declspec(dllexport) void finish$c()
+		__declspec(dllexport) void finish$()
 		{
 		}
 		
-		__declspec(dllexport) void update$c()
+		__declspec(dllexport) void update$()
 		{
 			for (auto i = 0; i < cmdbufs$i.count; i++)
 			{

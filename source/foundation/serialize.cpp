@@ -239,16 +239,16 @@ namespace flame
 		return false;
 	}
 
-	String serialize_value(TypeTag$ tag, uint hash, const char* name, const void* src, int precision)
+	String serialize_value(TypeTag$ tag, uint hash, const void* src, int precision)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			return find_enum(hash, name)->find_item(*(int*)src)->name();
+			return find_enum(hash)->find_item(*(int*)src)->name();
 		case TypeTagEnumMulti:
 		{
 			std::string ret;
-			auto e = (EnumInfoPrivate*)find_enum(hash, name);
+			auto e = (EnumInfoPrivate*)find_enum(hash);
 			auto v = *(int*)src;
 			for (auto i = 0; i < e->items.size(); i++)
 			{
@@ -266,26 +266,28 @@ namespace flame
 		case TypeTagVariable:
 			switch (hash)
 			{
-			case cH("bool"):
-				return *(bool*)src ? "1" : "0";
+			case cH("float"):
+				return to_string(*(float*)src, precision);
 			case cH("uint"):
 				return to_string(*(uint*)src);
 			case cH("int"):
 				return to_string(*(int*)src);
+			case cH("bool"):
+				return *(bool*)src ? "1" : "0";
+			case cH("Vec<1,float>"):
+				return to_string(*(Vec1f*)src, precision);
+			case cH("Vec<2,float>"):
+				return to_string(*(Vec2f*)src, precision);
+			case cH("Vec<3,float>"):
+				return to_string(*(Vec3f*)src, precision);
+			case cH("Vec<4,float>"):
+				return to_string(*(Vec4f*)src, precision);
 				//case cH("Ivec2"): case cH("i2"):
 				//	return to_string(*(Ivec2*)src);
 				//case cH("Ivec3"): case cH("i3"):
 				//	return to_string(*(Ivec3*)src);
 				//case cH("Ivec4"): case cH("i4"):
 				//	return to_string(*(Ivec4*)src);
-				//case cH("float"): case cH("f"):
-				//	return to_string(*(float*)src, precision);
-				//case cH("Vec2f"): case cH("f2"):
-				//	return to_string(*(Vec2f*)src, precision);
-				//case cH("Vec3f"): case cH("f3"):
-				//	return to_string(*(Vec3f*)src, precision);
-				//case cH("Vec4f"): case cH("f4"):
-				//	return to_string(*(Vec4f*)src, precision);
 				//case cH("uchar"): case cH("b"):
 				//	return to_string(*(uchar*)src);
 				//case cH("Vec2c"): case cH("b2"):
@@ -308,17 +310,17 @@ namespace flame
 		return "";
 	}
 
-	void unserialize_value(TypeTag$ tag, uint hash, const char* name, const std::string& src, void* dst)
+	void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst)
 	{
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			find_enum(hash, name)->find_item(src.c_str(), (int*)dst);
+			find_enum(hash)->find_item(src.c_str(), (int*)dst);
 			break;
 		case TypeTagEnumMulti:
 		{
 			auto v = 0;
-			auto e = (EnumInfoPrivate*)find_enum(hash, name);
+			auto e = (EnumInfoPrivate*)find_enum(hash);
 			auto sp = string_split(src, ';');
 			for (auto& t : sp)
 				v |= e->find_item(t.c_str())->value();
@@ -328,14 +330,29 @@ namespace flame
 		case TypeTagVariable:
 			switch (hash)
 			{
-			case cH("bool"):
-				*(bool*)dst = (src != "0");
+			case cH("float"):
+				*(float*)dst = std::stof(src.c_str());
 				break;
 			case cH("uint"):
 				*(uint*)dst = std::stoul(src);
 				break;
 			case cH("int"):
 				*(int*)dst = std::stoi(src);
+				break;
+			case cH("bool"):
+				*(bool*)dst = (src != "0");
+				break;
+			case cH("Vec<1,float>"):
+				*(Vec1f*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec<2,float>"):
+				*(Vec2f*)dst = stof2(src.c_str());
+				break;
+			case cH("Vec<3,float>"):
+				*(Vec3f*)dst = stof3(src.c_str());
+				break;
+			case cH("Vec<4,float>"):
+				*(Vec4f*)dst = stof4(src.c_str());
 				break;
 				//case cH("Ivec2"): case cH("i2"):
 				//	*(Ivec2*)dst = stoi2(src.c_str());
@@ -345,9 +362,6 @@ namespace flame
 				//	break;
 				//case cH("Ivec4"): case cH("i4"):
 				//	*(Ivec4*)dst = stoi4(src.c_str());
-				//	break;
-				//case cH("float"): case cH("f"):
-				//	*(float*)dst = stof1(src.c_str());
 				//	break;
 				//case cH("Vec2f"): case cH("f2"):
 				//	*(Vec2f*)dst = stof2(src.c_str());
@@ -806,7 +820,7 @@ namespace flame
 						{
 							auto n_item = new_node("item");
 							n_item->new_attr("name", item->name());
-							n_item->new_attr("value", serialize_value(type->tag(), type->hash(), type->name(), src, precision).v);
+							n_item->new_attr("value", serialize_value(type->tag(), type->hash(), src, precision).v);
 						}
 					}
 					break;
@@ -833,7 +847,7 @@ namespace flame
 
 						break;
 					default:
-						unserialize_value(type->tag(), type->hash(), type->name(), n_item->find_attr("value")->value(), dst);
+						unserialize_value(type->tag(), type->hash(), n_item->find_attr("value")->value(), dst);
 					}
 					break;
 				}
@@ -1541,9 +1555,9 @@ namespace flame
 	struct TypeinfoDB
 	{
 		int level;
-		std::map<uint, std::vector<std::unique_ptr<EnumInfoPrivate>>> enums;
-		std::map<uint, std::vector<std::unique_ptr<UdtInfoPrivate>>> udts;
-		std::map<uint, std::vector<std::unique_ptr<FunctionInfoPrivate>>> functions;
+		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
+		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
+		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
 	};
 
 	static std::vector<std::unique_ptr<TypeinfoDB>> typeinfo_dbs;
@@ -1559,35 +1573,26 @@ namespace flame
 	}
 
 	template<class T, class U>
-	Array<T*> get_typeinfo_objects(const std::map<uint, std::vector<std::unique_ptr<U>>>& map)
+	Array<T*> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
 	{
 		Array<T*> ret;
 		ret.resize(map.size());
 		auto i = 0;
 		for (auto it = map.begin(); it != map.end(); it++)
 		{
-			for (auto& o : it->second)
-				ret[i] = o.get();
+			ret[i] = it->second.get();
 			i++;
 		}
 		return ret;
 	}
 
 	template<class T>
-	T* find_typeinfo_object(const std::map<uint, std::vector<std::unique_ptr<T>>>& map, uint name_hash, const char* name)
+	T* find_typeinfo_object(const std::map<uint, std::unique_ptr<T>>& map, uint name_hash)
 	{
 		auto it = map.find(name_hash);
 		if (it == map.end())
 			return nullptr;
-		if (it->second.size() == 1)
-			return it->second.begin()->get();
-		for (auto& i : it->second)
-		{
-			if (i->name == name)
-				return i.get();
-		}
-		assert(0);
-		return nullptr; // should not go here
+		return it->second.get();
 	}
 
 	Array<EnumInfo*> get_enums(int level)
@@ -1596,18 +1601,18 @@ namespace flame
 		return db ? get_typeinfo_objects<EnumInfo>(db->enums) : Array<EnumInfo*>();
 	}
 
-	EnumInfo* find_enum(uint name_hash, const char* name, int level)
+	EnumInfo* find_enum(uint name_hash, int level)
 	{
 		if (level != -1)
 		{
 			auto db = find_typeinfo_db(level);
-			return db ? find_typeinfo_object(db->enums, name_hash, name) : nullptr;
+			return db ? find_typeinfo_object(db->enums, name_hash) : nullptr;
 		}
 		else
 		{
 			for (auto& db : typeinfo_dbs)
 			{
-				auto ret = find_typeinfo_object(db->enums, name_hash, name);
+				auto ret = find_typeinfo_object(db->enums, name_hash);
 				if (ret)
 					return ret;
 			}
@@ -1621,18 +1626,18 @@ namespace flame
 		return db ? get_typeinfo_objects<FunctionInfo>(db->functions) : Array<FunctionInfo*>();
 	}
 
-	FunctionInfo* find_funcion(uint name_hash, const char* name, int level)
+	FunctionInfo* find_funcion(uint name_hash, int level)
 	{
 		if (level != -1)
 		{
 			auto db = find_typeinfo_db(level);
-			return db ? find_typeinfo_object(db->functions, name_hash, name) : nullptr;
+			return db ? find_typeinfo_object(db->functions, name_hash) : nullptr;
 		}
 		else
 		{
 			for (auto& db : typeinfo_dbs)
 			{
-				auto ret = find_typeinfo_object(db->functions, name_hash, name);
+				auto ret = find_typeinfo_object(db->functions, name_hash);
 				if (ret)
 					return ret;
 			}
@@ -1646,18 +1651,18 @@ namespace flame
 		return db ? get_typeinfo_objects<UdtInfo>(db->udts) : Array<UdtInfo*>();
 	}
 
-	UdtInfo* find_udt(uint name_hash, const char* name, int level)
+	UdtInfo* find_udt(uint name_hash, int level)
 	{
 		if (level != -1)
 		{
 			auto db = find_typeinfo_db(level);
-			return db ? find_typeinfo_object(db->udts, name_hash, name) : nullptr;
+			return db ? find_typeinfo_object(db->udts, name_hash) : nullptr;
 		}
 		else
 		{
 			for (auto& db : typeinfo_dbs)
 			{
-				auto ret = find_typeinfo_object(db->udts, name_hash, name);
+				auto ret = find_typeinfo_object(db->udts, name_hash);
 				if (ret)
 					return ret;
 			}
@@ -1736,7 +1741,7 @@ namespace flame
 			auto v = new VariableInfoPrivate;
 			v->type.tag = TypeTagVariable;
 			v->type.name = "Vec";
-			v->type.name += "<" + std::string(type_name) + ">";
+			v->type.name += "<" + std::to_string(N) + "," + std::string(type_name) + ">";
 			v->type.hash = H(v->type.name.c_str());
 			v->name = "v";
 			v->attribute = "o";
@@ -1755,13 +1760,14 @@ namespace flame
 
 		u->functions.emplace_back(f);
 
-		auto hash = H(u->name.c_str());
 		auto db0 = find_typeinfo_db(0);
-		assert(db0);
-		auto it = db0->udts.find(hash);
-		if (it == db0->udts.end())
-			it = db0->udts.emplace(hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
-		it->second.emplace_back(u);
+		if (!db0)
+		{
+			db0 = new TypeinfoDB;
+			db0->level = 0;
+			typeinfo_dbs.emplace_back(db0);
+		}
+		db0->udts.emplace(H(u->name.c_str()), u);
 		
 	}
 
@@ -1856,13 +1862,14 @@ namespace flame
 			u->functions.emplace_back(f);
 		}
 
-		auto hash = H(u->name.c_str());
 		auto db0 = find_typeinfo_db(0);
-		assert(db0);
-		auto it = db0->udts.find(hash);
-		if (it == db0->udts.end())
-			it = db0->udts.emplace(hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
-		it->second.emplace_back(u);
+		if (!db0)
+		{
+			db0 = new TypeinfoDB;
+			db0->level = 0;
+			typeinfo_dbs.emplace_back(db0);
+		}
+		db0->udts.emplace(H(u->name.c_str()), u);
 	}
 
 	void typeinfo_init_basic_bp_nodes()
@@ -1942,24 +1949,12 @@ namespace flame
 					auto it = db->enums.find(hash);
 					if (it != db->enums.end())
 					{
-						for (auto& i : it->second)
-						{
-							if (i->name == name)
-							{
-								found = true;
-								break;
-							}
-						}
-					}
-					if (found)
+						found = true;
 						break;
+					}
 				}
 				if (!found)
 				{
-					auto it = db->enums.find(hash);
-					if (it == db->enums.end())
-						it = db->enums.emplace(hash, std::vector<std::unique_ptr<EnumInfoPrivate>>()).first;
-
 					auto e = new EnumInfoPrivate;
 					e->name = name;
 
@@ -1983,7 +1978,7 @@ namespace flame
 					items->Release();
 
 					e->module_name = filename;
-					it->second.emplace_back(e);
+					db->enums.emplace(hash, e);
 				}
 			}
 			_enum->Release();
@@ -2008,24 +2003,12 @@ namespace flame
 					auto it = db->udts.find(udt_hash);
 					if (it != db->udts.end())
 					{
-						for (auto& i : it->second)
-						{
-							if (i->name == udt_name)
-							{
-								found = true;
-								break;
-							}
-						}
-					}
-					if (found)
+						found = true;
 						break;
+					}
 				}
 				if (!found)
 				{
-					auto it = db->udts.find(udt_hash);
-					if (it == db->udts.end())
-						it = db->udts.emplace(udt_hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
-
 					_udt->get_length(&ull);
 					auto u = new UdtInfoPrivate;
 					u->name = udt_name;
@@ -2132,7 +2115,7 @@ namespace flame
 					_functions->Release();
 
 					u->module_name = filename;
-					it->second.emplace_back(u);
+					db->udts.emplace(udt_hash, u);
 				}
 			}
 			_udt->Release();
@@ -2158,30 +2141,18 @@ namespace flame
 					auto it = db->functions.find(hash);
 					if (it != db->functions.end())
 					{
-						for (auto& i : it->second)
-						{
-							if (i->name == name)
-							{
-								found = true;
-								break;
-							}
-						}
-					}
-					if (found)
+						found = true;
 						break;
+					}
 				}
 				if (!found)
 				{
-					auto it = db->functions.find(hash);
-					if (it == db->functions.end())
-						it = db->functions.emplace(hash, std::vector<std::unique_ptr<FunctionInfoPrivate>>()).first;
-
 					auto f = new FunctionInfoPrivate;
 					f->name = name;
 					symbol_to_function(_function, f, attribute, session, source_files);
 
 					f->module_name = filename;
-					it->second.emplace_back(f);
+					db->functions.emplace(hash, f);
 				}
 			}
 
@@ -2224,11 +2195,7 @@ namespace flame
 				e->items.emplace_back(i);
 			}
 
-			auto hash = H(e->name.c_str());
-			auto it = db->enums.find(hash);
-			if (it == db->enums.end())
-				it = db->enums.emplace(hash, std::vector<std::unique_ptr<EnumInfoPrivate>>()).first;
-			it->second.emplace_back(e);
+			db->enums.emplace(H(e->name.c_str()), e);
 		}
 
 		auto n_udts = file->find_node("udts");
@@ -2255,7 +2222,7 @@ namespace flame
 				{
 					auto a_default_value = n_item->find_node("default_value");
 					if (a_default_value)
-						unserialize_value(i->type.tag, i->type.hash, i->type.name.c_str(), a_default_value->value(), i->default_value);
+						unserialize_value(i->type.tag, i->type.hash, a_default_value->value(), i->default_value);
 				}
 				u->items.emplace_back(i);
 			}
@@ -2273,11 +2240,7 @@ namespace flame
 				}
 			}
 
-			auto hash = H(u->name.c_str());
-			auto it = db->udts.find(hash);
-			if (it == db->udts.end())
-				it = db->udts.emplace(hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
-			it->second.emplace_back(u);
+			db->udts.emplace(H(u->name.c_str()), u);
 		}
 
 		auto n_functions = file->find_node("functions");
@@ -2287,11 +2250,7 @@ namespace flame
 			auto f = new FunctionInfoPrivate;
 			unserialize_function(n_function, f);
 
-			auto hash = H(f->name.c_str());
-			auto it = db->functions.find(hash);
-			if (it == db->functions.end())
-				it = db->functions.emplace(hash, std::vector<std::unique_ptr<FunctionInfoPrivate>>()).first;
-			it->second.emplace_back(f);
+			db->functions.emplace(H(f->name.c_str()), f);
 		}
 
 		SerializableNode::destroy(file);
@@ -2314,21 +2273,15 @@ namespace flame
 			std::vector<EnumInfoPrivate*> sorted_enums;
 			if (db)
 			{
-				for (auto& v : db->enums)
-				{
-					for (auto& e : v.second)
-						sorted_enums.push_back(e.get());
-				}
+				for (auto& e : db->enums)
+					sorted_enums.push_back(e.second.get());
 			}
 			else
 			{
 				for (auto& db : typeinfo_dbs)
 				{
-					for (auto& v : db->enums)
-					{
-						for (auto& e : v.second)
-							sorted_enums.push_back(e.get());
-					}
+					for (auto& e : db->enums)
+						sorted_enums.push_back(e.second.get());
 				}
 			}
 			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfoPrivate * a, EnumInfoPrivate * b) {
@@ -2356,21 +2309,15 @@ namespace flame
 			std::vector<UdtInfoPrivate*> sorted_udts;
 			if (db)
 			{
-				for (auto& v : db->udts)
-				{
-					for (auto& e : v.second)
-						sorted_udts.push_back(e.get());
-				}
+				for (auto& u : db->udts)
+					sorted_udts.push_back(u.second.get());
 			}
 			else
 			{
 				for (auto& db : typeinfo_dbs)
 				{
-					for (auto& v : db->udts)
-					{
-						for (auto& u : v.second)
-							sorted_udts.push_back(u.get());
-					}
+					for (auto& u : db->udts)
+						sorted_udts.push_back(u.second.get());
 				}
 			}
 			std::sort(sorted_udts.begin(), sorted_udts.end(), [](UdtInfoPrivate * a, UdtInfoPrivate * b) {
@@ -2396,7 +2343,7 @@ namespace flame
 					n_item->new_attr("size", std::to_string(i->size));
 					if (i->default_value)
 					{
-						auto default_value_str = serialize_value(type.tag, type.hash, type.name.c_str(), i->default_value, 1);
+						auto default_value_str = serialize_value(type.tag, type.hash, i->default_value, 1);
 						if (default_value_str.size > 0)
 							n_item->new_attr("default_value", default_value_str.v);
 					}
@@ -2418,21 +2365,15 @@ namespace flame
 			std::vector<FunctionInfoPrivate*> sorted_functions;
 			if (db)
 			{
-				for (auto& v : db->functions)
-				{
-					for (auto& f : v.second)
-						sorted_functions.push_back(f.get());
-				}
+				for (auto& f : db->functions)
+					sorted_functions.push_back(f.second.get());
 			}
 			else
 			{
 				for (auto& db : typeinfo_dbs)
 				{
-					for (auto& v : db->functions)
-					{
-						for (auto& f : v.second)
-							sorted_functions.push_back(f.get());
-					}
+					for (auto& f : db->functions)
+						sorted_functions.push_back(f.second.get());
 				}
 			}
 			std::sort(sorted_functions.begin(), sorted_functions.end(), [](FunctionInfoPrivate * a, FunctionInfoPrivate * b) {
@@ -2465,5 +2406,45 @@ namespace flame
 			}
 			assert(0);
 		}
+	}
+
+	void typeinfo_check_update()
+	{
+		// typeinfo collect must do by order, because it only record the first entry
+		std::vector<std::wstring> pdbs = {
+			L"flame_foundation.dll",
+			L"flame_network.dll",
+			L"flame_graphics.dll",
+			L"flame_sound.dll",
+			L"flame_universe.dll",
+		};
+
+		printf("typeinfo update begin\n");
+
+		typeinfo_init_basic_bp_nodes();
+
+		auto id = 0;
+		for (auto& fn : pdbs)
+		{
+			if (!std::fs::exists(fn))
+				continue;
+
+			auto w_dst = ext_replace(fn, L".typeinfo");
+			auto dst = w2s(w_dst);
+			if (!std::fs::exists(w_dst) || std::fs::last_write_time(w_dst) < std::fs::last_write_time(fn))
+			{
+				printf("generating: %s\n", dst.c_str());
+
+				typeinfo_collect(fn, id);
+				typeinfo_save(w_dst, id);
+
+				printf("ok\n");
+			}
+			else
+				printf("up-to-data: %s\n", dst.c_str());
+			id++;
+		}
+
+		printf("typeinfo update end\n");
 	}
 }

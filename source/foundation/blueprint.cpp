@@ -378,7 +378,7 @@ namespace flame
 		UdtInfo* udt = nullptr;
 		auto udt_from_default_db = true;
 		if (type_name_sp.size() == 1)
-			udt = find_udt(H(type_name_sp[0].c_str()), type_name_sp[0].c_str());
+			udt = find_udt(H(type_name_sp[0].c_str()));
 		else if (type_name_sp.size() == 2)
 		{
 			udt_from_default_db = false;
@@ -387,7 +387,7 @@ namespace flame
 			{
 				if (t.second == fn)
 				{
-					udt = find_udt(H(type_name_sp[1].c_str()), type_name_sp[1].c_str(), t.first);
+					udt = find_udt(H(type_name_sp[1].c_str()), t.first);
 					assert(udt);
 					break;
 				}
@@ -424,7 +424,7 @@ namespace flame
 				auto lv = typeinfo_free_level();
 				typeinfo_load(fn_ti, lv);
 				extra_typeinfos.emplace_back(lv, fn);
-				udt = find_udt(H(type_name_sp[1].c_str()), type_name_sp[1].c_str(), lv);
+				udt = find_udt(H(type_name_sp[1].c_str()), lv);
 			}
 			if (!udt)
 				return nullptr;
@@ -589,7 +589,7 @@ namespace flame
 				auto input = n->find_input(n_data->find_node("name")->value());
 				auto type = input->variable_info->type();
 				if (type->tag() != TypeTagPointer)
-					unserialize_value(type->tag(), type->hash(), type->name(), n_data->find_node("value")->value(), input->data);
+					unserialize_value(type->tag(), type->hash(), n_data->find_node("value")->value(), input->data);
 			}
 		}
 
@@ -605,10 +605,7 @@ namespace flame
 			if (o && i)
 			{
 				if (!i->link_to(o))
-				{
 					printf("link type mismatch: %s - > %s\n", o_address.c_str(), i_address.c_str());
-					i->link_to(o);
-				}
 			}
 			else
 				printf("unable to link: %s - > %s\n", o_address.c_str(), i_address.c_str());
@@ -652,7 +649,7 @@ namespace flame
 				{
 					auto n_data = n_datas->new_node("");
 					n_data->new_attr("name", v->name());
-					n_data->new_attr("value", serialize_value(type->tag(), type->hash(), type->name(), input->data, 2).v);
+					n_data->new_attr("value", serialize_value(type->tag(), type->hash(), input->data, 2).v);
 				}
 			}
 		}

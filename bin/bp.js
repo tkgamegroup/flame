@@ -125,7 +125,7 @@ window.onload = function(){
 
         var thiz = this;
 
-        var sp = sn.type.split(":");
+        var sp = sn.type.split("#");
         var load = function(u_name){
             var udt = find_udt(u_name);
             if (!udt)
@@ -381,8 +381,6 @@ window.onload = function(){
     
     var wait_typeinfos = 0;
     var start = function(){
-        ;
-
         sock_s = new WebSocket("ws://localhost:5566/");
         sock_s.onmessage = function(res){
             for (var i in nodes)

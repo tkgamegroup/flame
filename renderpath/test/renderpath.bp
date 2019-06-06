@@ -1,6 +1,12 @@
 {
   "nodes": [
     {
+      "type": "graphics::AttachmentInfo",
+      "id": "col_att",
+      "pos": "0;500",
+      "datas": []
+    },
+    {
       "type": "graphics::Clearvalues",
       "id": "cv",
       "pos": "399;305",
@@ -19,7 +25,7 @@
       "datas": []
     },
     {
-      "type": "graphics::Commandbuffers",
+      "type": "graphics::Commandbuffer",
       "id": "cb",
       "pos": "385;59",
       "datas": []
@@ -46,10 +52,6 @@
     {
       "out": "color.v",
       "in": "cv.colors"
-    },
-    {
-      "out": "sc.image_count",
-      "in": "cb.count"
     },
     {
       "out": "d.out",

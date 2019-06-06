@@ -70,7 +70,7 @@ namespace flame
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$c();
+			FLAME_GRAPHICS_EXPORTS void initialize$();
 		};
 
 	}

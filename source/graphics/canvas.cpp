@@ -770,23 +770,25 @@ namespace flame
 
 			auto swapchain_format = get_swapchain_format();
 
-			AttachmentInfo$ at_info1(swapchain_format, true, sample_count);
-			AttachmentInfo$ at_info2(swapchain_format, false, SampleCount_1);
+			AttachmentInfo at_info1;
+			at_info1.format = swapchain_format;
+			at_info1.clear = true;
+			at_info1.sample_count = sample_count;
+			AttachmentInfo at_info2;
+			at_info2.format = swapchain_format;
+			at_info2.clear = false;
+			at_info2.sample_count = SampleCount_1;
 
-			SubpassInfo$ sp_info;
-			sp_info.color_attachments$.count = 1;
-			sp_info.color_attachments$.v = new int[1];
-			sp_info.color_attachments$.v[0] = 0;
-			sp_info.resolve_attachments$.count = 1;
-			sp_info.resolve_attachments$.v = new int[1];
-			sp_info.resolve_attachments$.v[0] = 1;
+			std::vector<int> col_refs = {0};
+			std::vector<int> res_refs = {1};
+			SubpassInfo sp_info;
+			sp_info.color_attachments.count = col_refs.size();
+			sp_info.color_attachments.v = col_refs.data();
+			sp_info.resolve_attachments.count = res_refs.size();
+			sp_info.resolve_attachments.v = res_refs.data();
 
-			RenderpassInfo$ rp_info;
+			RenderpassInfo rp_info;
 			rp = Renderpass::create(device, rp_info);
-			delete[]sp_info.color_attachments$.v;
-			delete[]sp_info.resolve_attachments$.v;
-			delete[]rp_info.attachments$.v;
-			delete[]rp_info.subpasses$.v;
 
 			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 			white_image->init(Vec4c(255));

@@ -31,26 +31,79 @@ namespace flame
 {
 	namespace graphics
 	{
-		RenderpassPrivate::RenderpassPrivate(Device *_d, const RenderpassInfo$ &info)
+		void AttachmentInfo$::initialize$()
+		{
+			out$o = new AttachmentInfo;
+		}
+
+		void AttachmentInfo$::finish$()
+		{
+			delete (AttachmentInfo*)out$o;
+		}
+
+		void AttachmentInfo$::update$()
+		{
+			auto info = (AttachmentInfo*)out$o;
+			info->format = format$i;
+			info->clear = clear$i;
+			info->sample_count = sample_count$i;
+		}
+
+		void SubpassInfo$::initialize$()
+		{
+			out$o = new SubpassInfo;
+		}
+
+		void SubpassInfo$::finish$()
+		{
+			delete (SubpassInfo*)out$o;
+		}
+
+		void SubpassInfo$::update$()
+		{
+			auto info = (SubpassInfo*)out$o;
+			info->color_attachments = color_attachments$i;
+			info->resolve_attachments = resolve_attachments$i;
+			info->depth_attachment = depth_attachment$i;
+		}
+
+		void Renderpass$::initialize$()
+		{
+			if (device$i)
+			{
+				RenderpassInfo info;
+				info.attachments = attachments$;
+				info.subpasses = subpasses$;
+				info.dependencies = dependencies$;
+				out$o = Renderpass::create((Device*)device$i, info);
+			}
+		}
+
+		void Renderpass$::finish$()
+		{
+			delete (SubpassInfo*)out$o;
+		}
+
+		RenderpassPrivate::RenderpassPrivate(Device *_d, const RenderpassInfo& info)
 		{
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
-			std::vector<VkAttachmentDescription> vk_attachments(info.attachments$.count);
+			std::vector<VkAttachmentDescription> vk_attachments(info.attachments.count);
 			for (auto i = 0; i < vk_attachments.size(); i++)
 			{
-				auto at_info = info.attachments$.v[i];
+				auto at_info = info.attachments.v[i];
 
 				vk_attachments[i].flags = 0;
-				vk_attachments[i].format = Z(at_info->format$);
-				vk_attachments[i].samples = Z(at_info->sample_count$);
-				vk_attachments[i].loadOp = at_info->clear$ ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				vk_attachments[i].format = Z(at_info->format);
+				vk_attachments[i].samples = Z(at_info->sample_count);
+				vk_attachments[i].loadOp = at_info->clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				vk_attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				vk_attachments[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				vk_attachments[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 				vk_attachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-				auto fmt = info.attachments$.v[i]->format$;
+				auto fmt = info.attachments.v[i]->format;
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				{
 					if (fmt >= Format_Swapchain_Begin && fmt <= Format_Swapchain_End)
@@ -62,13 +115,13 @@ namespace flame
 					vk_attachments[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			}
 
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(info.subpasses$.count);
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(info.subpasses$.count);
-			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(info.subpasses$.count);
-			std::vector<VkSubpassDescription> vk_subpasses(info.subpasses$.count);
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(info.subpasses.count);
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(info.subpasses.count);
+			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(info.subpasses.count);
+			std::vector<VkSubpassDescription> vk_subpasses(info.subpasses.count);
 			for (auto i = 0; i < vk_subpasses.size(); i++)
 			{
-				auto sp_info = info.subpasses$.v[i];
+				auto sp_info = info.subpasses.v[i];
 
 				vk_subpasses[i].flags = 0;
 				vk_subpasses[i].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -80,43 +133,43 @@ namespace flame
 				vk_subpasses[i].pDepthStencilAttachment = nullptr;
 				vk_subpasses[i].preserveAttachmentCount = 0;
 				vk_subpasses[i].pPreserveAttachments = nullptr;
-				if (sp_info->color_attachments$.count > 0)
+				if (sp_info->color_attachments.count > 0)
 				{
-					vk_color_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments$.count]);
-					for (auto j = 0; j < sp_info->color_attachments$.count; j++)
+					vk_color_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.count]);
+					for (auto j = 0; j < sp_info->color_attachments.count; j++)
 					{
-						vk_color_refs[i][j].attachment = sp_info->color_attachments$.v[j];
+						vk_color_refs[i][j].attachment = sp_info->color_attachments.v[j];
 						vk_color_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
-					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachments$.count;
+					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachments.count;
 					vk_subpasses[i].pColorAttachments = vk_color_refs[i].get();
 				}
-				if (sp_info->resolve_attachments$.count != 0)
+				if (sp_info->resolve_attachments.count != 0)
 				{
-					vk_resolve_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments$.count]);
-					for (auto j = 0; j < sp_info->color_attachments$.count; j++)
+					vk_resolve_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.count]);
+					for (auto j = 0; j < sp_info->color_attachments.count; j++)
 					{
-						vk_resolve_refs[i][j].attachment = sp_info->resolve_attachments$.v[j];
+						vk_resolve_refs[i][j].attachment = sp_info->resolve_attachments.v[j];
 						vk_resolve_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
 					vk_subpasses[i].pResolveAttachments = vk_resolve_refs[i].get();
 				}
-				if (sp_info->depth_attachment$ != -1)
+				if (sp_info->depth_attachment != -1)
 				{
 					vk_depth_refs[i] = std::unique_ptr<VkAttachmentReference>(new VkAttachmentReference);
-					vk_depth_refs[i]->attachment = sp_info->depth_attachment$;
+					vk_depth_refs[i]->attachment = sp_info->depth_attachment;
 					vk_depth_refs[i]->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					vk_subpasses[i].pDepthStencilAttachment = vk_depth_refs[i].get();
 				}
 			}
 
-			std::vector<VkSubpassDependency> vk_dependencies(info.dependencies$.count);
-			for (auto i = 0; i < info.dependencies$.count; i++)
+			std::vector<VkSubpassDependency> vk_dependencies(info.dependencies.count);
+			for (auto i = 0; i < info.dependencies.count; i++)
 			{
-				auto dp_info = info.dependencies$.v[i];
+				auto& dp_info = info.dependencies.v[i];
 
-				vk_dependencies[i].srcSubpass = dp_info->src_subpass$;
-				vk_dependencies[i].dstSubpass = dp_info->dst_subpass$;
+				vk_dependencies[i].srcSubpass = dp_info.x();
+				vk_dependencies[i].dstSubpass = dp_info.y();
 				vk_dependencies[i].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 				vk_dependencies[i].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 				vk_dependencies[i].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -137,9 +190,9 @@ namespace flame
 
 			vk_chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
 
-			attachments.resize(info.attachments$.count);
-			for (auto i = 0; i < info.attachments$.count; i++)
-				attachments[i] = info.attachments$.v[i]->format$;
+			attachments.resize(info.attachments.count);
+			for (auto i = 0; i < info.attachments.count; i++)
+				attachments[i] = info.attachments.v[i]->format;
 #endif
 		}
 
@@ -155,7 +208,7 @@ namespace flame
 			return ((RenderpassPrivate*)this)->attachments.size();
 		}
 
-		Renderpass* Renderpass::create(Device *d, const RenderpassInfo$ &info)
+		Renderpass* Renderpass::create(Device *d, const RenderpassInfo& info)
 		{
 			return new RenderpassPrivate(d, info);
 		}
@@ -226,28 +279,22 @@ namespace flame
 			delete (ClearvaluesPrivate*)c;
 		}
 
-		void Clearvalues$::initialize$c()
+		void Clearvalues$::initialize$()
 		{
-			if (in$i)
-				out$o = in$i;
-			else
-			{
-				if (renderpass$i)
-					out$o = graphics::Clearvalues::create((graphics::Renderpass*)renderpass$i);
-			}
+			if (renderpass$i)
+				out$o = Clearvalues::create((Renderpass*)renderpass$i);
 		}
 
-		void Clearvalues$::finish$c()
+		void Clearvalues$::finish$()
 		{
-			if (!in$i)
-				graphics::Clearvalues::destroy((graphics::Clearvalues*)out$o);
+			Clearvalues::destroy((Clearvalues*)out$o);
 		}
 
-		void Clearvalues$::update$c()
+		void Clearvalues$::update$()
 		{
 			if (out$o)
 			{
-				auto cv = (graphics::Clearvalues*)out$o;
+				auto cv = (Clearvalues*)out$o;
 				auto count = cv->renderpass()->attachment_count();
 				for (auto i = 0; i < count; i++)
 					cv->set(i, colors$i.v[i]);

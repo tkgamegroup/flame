@@ -447,26 +447,25 @@ namespace flame
 			LOGI("vulkan device created");
 
 			{
-				AttachmentInfo$ at_info;
+				AttachmentInfo at_info;
+				at_info.format = Format_R8G8B8A8_UNORM;
+				at_info.clear = true;
+				at_info.sample_count = SampleCount_1;
+				
+				std::vector<int> at_refs = { 0 };
+				SubpassInfo sp_info;
+				sp_info.color_attachments.count = at_refs.size();
+				sp_info.color_attachments.v = at_refs.data();
 
-				SubpassInfo$ sp_info;
-				sp_info.color_attachments$.count = 1;
-				sp_info.color_attachments$.v = new int[1];
-				sp_info.color_attachments$.v[0] = 0;
-
-				RenderpassInfo$ info;
-				info.attachments$.count = 1;
-				info.attachments$.v = new AttachmentInfo$*[1];
-				info.attachments$.v[0] = &at_info;
-
-				info.subpasses$.count = 1;
-				info.subpasses$.v = new SubpassInfo$ * [1];
-				info.subpasses$.v[0] = &sp_info;
+				std::vector<AttachmentInfo*> ats = { &at_info };
+				std::vector<SubpassInfo*> sps = { &sp_info };
+				RenderpassInfo info;
+				info.attachments.count = ats.size();
+				info.attachments.v = ats.data();
+				info.subpasses.count = sps.size();
+				info.subpasses.v = sps.data();
 
 				rp_one_rgba32 = Renderpass::create(this, info);
-				delete[]sp_info.color_attachments$.v;
-				delete[]info.attachments$.v;
-				delete[]info.subpasses$.v;
 			}
 			{
 				GraphicsPipelineInfo info;
@@ -593,12 +592,9 @@ namespace flame
 			delete (DevicePrivate*)d;
 		}
 
-		void Device$::initialize$c()
+		void Device$::initialize$()
 		{
-			if (in$i)
-				out$o = in$i;
-			else
-				out$o = nullptr;
+			out$o = in$i;
 		}
 
 		Device$ bp_device_unused;

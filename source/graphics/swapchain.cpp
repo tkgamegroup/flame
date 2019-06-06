@@ -242,7 +242,7 @@ namespace flame
 			delete (SwapchainPrivate*)s;
 		}
 
-		void Swapchain$::initialize$c()
+		void Swapchain$::initialize$()
 		{
 			if (in$i)
 			{
@@ -253,21 +253,14 @@ namespace flame
 				if (image_count$o > 0)
 				{
 					images$o.count = image_count$o;
-					images$o.v = new voidptr[image_count$o];
+					images$o.v = new void*[image_count$o];
 					for (auto i = 0; i < image_count$o; i++)
 						images$o.v[i] = sc->image(i);
 				}
-				else
-				{
-					images$o.count = 0;
-					images$o.v = nullptr;
-				}
 			}
-			else
-				out$o = nullptr;
 		}
 
-		void Swapchain$::finish$c()
+		void Swapchain$::finish$()
 		{
 			delete[]images$o.v;
 		}
