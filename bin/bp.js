@@ -14,8 +14,6 @@ window.onload = function(){
     var svg = document.getElementById("svg");
     svg.ns = svg.namespaceURI;
 
-    var toolbar = document.getElementById("toolbar");
-
     function CreatePath() {
         var path = document.createElementNS(svg.ns, "path");
         path.setAttributeNS(null, "stroke", "#8e8e8e");
@@ -236,8 +234,8 @@ window.onload = function(){
             this.eMain.appendChild(this.eSlot);
             this.eMain.appendChild(this.eName);
 
-            var type_sp = vi.type.split(":");
-            if (type_sp[0] != "pointer" && type_sp[1] != "VoidPtrs")
+            var type_sp = vi.type.split("#");
+            if (type_sp[0] != "pointer")
             {
                 thiz.eEdit = document.createElement("input");
                 thiz.eEdit.type = "text";
@@ -463,14 +461,23 @@ window.onload = function(){
     //     if (wait_typeinfos == 0)
     //         start();
 	// });
-
-    /*
-    var n = new Node('test', 0, 0);
-    nodes.push(n);
-    n.eMain.style.position = "absolute";
-    document.body.appendChild(n.eMain);
-    */
 };
+
+function on_add_clicked()
+{
+    var add_type = document.getElementById("add_type");
+    var add_id = document.getElementById("add_id");
+    
+    add_type.value = "";
+    add_id.value = "";
+}
+
+function on_remove_clicked()
+{
+    var remove_id = document.getElementById("add_id");
+    
+    remove_id.value = "";
+}
 
 function on_save_clicked()
 {
@@ -491,8 +498,8 @@ function on_save_clicked()
         {
             var input = sn.inputs[j];
             var vi = input.vi;
-            var type_sp = vi.type.split(":");
-            if (type_sp[0] != "pointer" && type_sp[1] != "VoidPtrs")
+            var type_sp = vi.type.split("#");
+            if (type_sp[0] != "pointer")
             {
                 input.data = input.eEdit.value;
                 if (!(vi.default_value && vi.default_value == input.data))
