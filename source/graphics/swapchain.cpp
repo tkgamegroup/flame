@@ -38,7 +38,7 @@ namespace flame
 	{
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
-		Format get_swapchain_format()
+		Format$ get_swapchain_format()
 		{
 			return swapchain_format;
 		}
@@ -241,6 +241,38 @@ namespace flame
 		{
 			delete (SwapchainPrivate*)s;
 		}
+
+		void Swapchain$::initialize$c()
+		{
+			if (in$i)
+			{
+				out$o = in$i;
+				auto sc = (graphics::Swapchain*)out$o;
+				window$o = sc->window();
+				image_count$o = sc->image_count();
+				if (image_count$o > 0)
+				{
+					images$o.count = image_count$o;
+					images$o.v = new voidptr[image_count$o];
+					for (auto i = 0; i < image_count$o; i++)
+						images$o.v[i] = sc->image(i);
+				}
+				else
+				{
+					images$o.count = 0;
+					images$o.v = nullptr;
+				}
+			}
+			else
+				out$o = nullptr;
+		}
+
+		void Swapchain$::finish$c()
+		{
+			delete[]images$o.v;
+		}
+
+		Swapchain$ bp_swapchain_unused;
 	}
 }
 

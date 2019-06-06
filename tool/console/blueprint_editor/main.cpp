@@ -125,12 +125,7 @@ int main(int argc, char **args)
 	{
 		auto udts = get_udts();
 		for (auto i = 0; i < udts.size; i++)
-		{
-			auto u = udts[i];
-			auto name = std::string(u->name());
-			if (name.find("BP_") == 0)
-				available_udts.push_back(u);
-		}
+			available_udts.push_back(udts[i]);
 		std::sort(available_udts.begin(), available_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return std::string(a->name()) < std::string(b->name());
 		});

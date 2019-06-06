@@ -29,7 +29,6 @@ namespace flame
 	/*
 		- A blueprint(BP) is a scene that represents relations between objects.
 		- An object is called node in a BP.
-		- A node is bound to an udt which its name started with 'BP_'.
 		- The reflected members of the udt will be separated into inputs and outpus.
 		- An input has an attribute 'i', and an output has an attribute 'o'.
 		- Address in BP: [node_id].[varible_name]

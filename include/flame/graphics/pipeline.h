@@ -72,7 +72,7 @@ namespace flame
 
 		struct VertexInputBufferInfo
 		{
-			std::vector<Format> attributes;
+			std::vector<Format$> attributes;
 			VertexInputRate rate;
 
 			VertexInputBufferInfo() :
@@ -80,7 +80,7 @@ namespace flame
 			{
 			}
 
-			VertexInputBufferInfo(const std::vector<Format> &_attributes, VertexInputRate _rate = VertexInputRateVertex) :
+			VertexInputBufferInfo(const std::vector<Format$> &_attributes, VertexInputRate _rate = VertexInputRateVertex) :
 				attributes(_attributes),
 				rate(_rate)
 			{
@@ -214,7 +214,7 @@ namespace flame
 			CullMode cull_mode;
 
 			// multisample
-			SampleCount sample_count;
+			SampleCount$ sample_count;
 
 			// depth stencil
 			bool depth_test;

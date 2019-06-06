@@ -34,11 +34,11 @@ namespace flame
 		struct RenderpassPrivate : Renderpass
 		{
 			DevicePrivate *d;
-			RenderpassInfo info;
+			std::vector<Format$> attachments;
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
-			RenderpassPrivate(Device *d, const RenderpassInfo &info);
+			RenderpassPrivate(Device *d, const RenderpassInfo$ &info);
 			~RenderpassPrivate();
 		};
 

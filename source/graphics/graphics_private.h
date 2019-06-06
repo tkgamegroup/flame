@@ -254,7 +254,7 @@ namespace flame
 			assert(res == VK_SUCCESS);
 		}
 
-		inline VkFormat Z(Format f)
+		inline VkFormat Z(Format$ f)
 		{
 			switch (f)
 			{
@@ -298,7 +298,7 @@ namespace flame
 			}
 		}
 
-		inline Format Z(VkFormat f, bool is_swapchain)
+		inline Format$ Z(VkFormat f, bool is_swapchain)
 		{
 			switch (f)
 			{
@@ -324,7 +324,7 @@ namespace flame
 			return vk_mem_prop;
 		}
 
-		inline VkSampleCountFlagBits Z(SampleCount s)
+		inline VkSampleCountFlagBits Z(SampleCount$ s)
 		{
 			switch (s)
 			{
@@ -416,7 +416,7 @@ namespace flame
 			return vk_usage;
 		}
 
-		inline VkImageUsageFlags Z(ImageUsage u, Format fmt, SampleCount sc)
+		inline VkImageUsageFlags Z(ImageUsage u, Format$ fmt, SampleCount$ sc)
 		{
 			VkImageUsageFlags vk_usage = 0;
 			if (u & ImageUsageTransferSrc)
@@ -439,7 +439,7 @@ namespace flame
 			return vk_usage;
 		}
 
-		inline VkImageLayout Z(ImageLayout l, Format fmt)
+		inline VkImageLayout Z(ImageLayout l, Format$ fmt)
 		{
 			switch (l)
 			{

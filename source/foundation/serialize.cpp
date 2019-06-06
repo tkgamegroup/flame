@@ -1280,8 +1280,9 @@ namespace flame
 			if (pass_prefix)
 				* pass_prefix = true;
 		}
+
 		auto pos_$ = name.find('$');
-		if (pos_$ != std::wstring::npos)
+		if (pos_$ != std::wstring::npos && pos_$ < name.find('<'))
 		{
 			if (attribute)
 				* attribute = std::string(name.c_str() + pos_$ + 1);
@@ -1365,14 +1366,14 @@ namespace flame
 
 	std::string serialize_typeinfo(const TypeInfoPrivate & src)
 	{
-		return std::string(get_type_tag_name(src.tag)) + ":" + src.name;
+		return std::string(get_type_tag_name(src.tag)) + "#" + src.name;
 	}
 
 	TypeInfoPrivate unserialize_typeinfo(const std::string& src)
 	{
 		TypeInfoPrivate info;
 
-		auto sp = string_split(src, ':');
+		auto sp = string_split(src, '#');
 
 		auto e_tag = 0;
 		for (auto s : tag_names)
@@ -1704,7 +1705,7 @@ namespace flame
 	void install_vec_udt(const char* name_suffix, const char* type_name)
 	{
 		auto u = new UdtInfoPrivate;
-		u->name = "BP_Vec";
+		u->name = "Vec";
 		u->name += name_suffix;
 		u->size = sizeof(T) * N * 2 /* both in and out */;
 		u->module_name = L"flame_foundation.dll";
@@ -1783,7 +1784,7 @@ namespace flame
 	void install_array_udt(const char* name_suffix, const char* type_name)
 	{
 		auto u = new UdtInfoPrivate;
-		u->name = "BP_Array_";
+		u->name = "Array_";
 		u->name += name_suffix;
 		u->size = sizeof(LNA<T>) + sizeof(T) * N;
 		u->module_name = L"flame_foundation.dll";
@@ -1926,20 +1927,30 @@ namespace flame
 			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
 			{
 				auto hash = H(name.c_str());
-				auto it = db->enums.find(hash);
-				if (it == db->enums.end())
-					it = db->enums.emplace(hash, std::vector<std::unique_ptr<EnumInfoPrivate>>()).first;
 				auto found = false;
-				for(auto& i : it->second)
+				for (auto& db : typeinfo_dbs)
 				{
-					if (i->name == name)
+					auto it = db->enums.find(hash);
+					if (it != db->enums.end())
 					{
-						found = true;
-						break;
+						for (auto& i : it->second)
+						{
+							if (i->name == name)
+							{
+								found = true;
+								break;
+							}
+						}
 					}
+					if (found)
+						break;
 				}
 				if (!found)
 				{
+					auto it = db->enums.find(hash);
+					if (it == db->enums.end())
+						it = db->enums.emplace(hash, std::vector<std::unique_ptr<EnumInfoPrivate>>()).first;
+
 					auto e = new EnumInfoPrivate;
 					e->name = name;
 
@@ -1983,20 +1994,30 @@ namespace flame
 			if (pass_prefix && pass_$)
 			{
 				auto udt_hash = H(udt_name.c_str());
-				auto it = db->udts.find(udt_hash);
-				if (it == db->udts.end())
-					it = db->udts.emplace(udt_hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
 				auto found = false;
-				for (auto& i : it->second)
+				for (auto& db : typeinfo_dbs)
 				{
-					if (i->name == udt_name)
+					auto it = db->udts.find(udt_hash);
+					if (it != db->udts.end())
 					{
-						found = true;
-						break;
+						for (auto& i : it->second)
+						{
+							if (i->name == udt_name)
+							{
+								found = true;
+								break;
+							}
+						}
 					}
+					if (found)
+						break;
 				}
 				if (!found)
 				{
+					auto it = db->udts.find(udt_hash);
+					if (it == db->udts.end())
+						it = db->udts.emplace(udt_hash, std::vector<std::unique_ptr<UdtInfoPrivate>>()).first;
+
 					_udt->get_length(&ull);
 					auto u = new UdtInfoPrivate;
 					u->name = udt_name;
@@ -2123,20 +2144,30 @@ namespace flame
 			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */ )
 			{
 				auto hash = H(name.c_str());
-				auto it = db->functions.find(hash);
-				if (it == db->functions.end())
-					it = db->functions.emplace(hash, std::vector<std::unique_ptr<FunctionInfoPrivate>>()).first;
 				auto found = false;
-				for (auto& i : it->second)
+				for (auto& db : typeinfo_dbs)
 				{
-					if (i->name == name)
+					auto it = db->functions.find(hash);
+					if (it != db->functions.end())
 					{
-						found = true;
-						break;
+						for (auto& i : it->second)
+						{
+							if (i->name == name)
+							{
+								found = true;
+								break;
+							}
+						}
 					}
+					if (found)
+						break;
 				}
 				if (!found)
 				{
+					auto it = db->functions.find(hash);
+					if (it == db->functions.end())
+						it = db->functions.emplace(hash, std::vector<std::unique_ptr<FunctionInfoPrivate>>()).first;
+
 					auto f = new FunctionInfoPrivate;
 					f->name = name;
 					symbol_to_function(_function, f, attribute, session, source_files);

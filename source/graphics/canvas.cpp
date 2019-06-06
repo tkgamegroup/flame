@@ -48,7 +48,7 @@ namespace flame
 		static Pipeline* pl_text_lcd;
 		static Pipeline* pl_text_sdf;
 
-		static SampleCount sample_count = SampleCount_8;
+		static SampleCount$ sample_count = SampleCount_8;
 
 		struct Vertex
 		{
@@ -770,12 +770,23 @@ namespace flame
 
 			auto swapchain_format = get_swapchain_format();
 
-			RenderpassInfo rp_info;
-			rp_info.attachments.emplace_back(swapchain_format, true, sample_count);
-			rp_info.attachments.emplace_back(swapchain_format, false, SampleCount_1);
-			rp_info.subpasses[0].color_attachments.push_back(0);
-			rp_info.subpasses[0].resolve_attachments.push_back(1);
+			AttachmentInfo$ at_info1(swapchain_format, true, sample_count);
+			AttachmentInfo$ at_info2(swapchain_format, false, SampleCount_1);
+
+			SubpassInfo$ sp_info;
+			sp_info.color_attachments$.count = 1;
+			sp_info.color_attachments$.v = new int[1];
+			sp_info.color_attachments$.v[0] = 0;
+			sp_info.resolve_attachments$.count = 1;
+			sp_info.resolve_attachments$.v = new int[1];
+			sp_info.resolve_attachments$.v[0] = 1;
+
+			RenderpassInfo$ rp_info;
 			rp = Renderpass::create(device, rp_info);
+			delete[]sp_info.color_attachments$.v;
+			delete[]sp_info.resolve_attachments$.v;
+			delete[]rp_info.attachments$.v;
+			delete[]rp_info.subpasses$.v;
 
 			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
 			white_image->init(Vec4c(255));

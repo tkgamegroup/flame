@@ -447,10 +447,26 @@ namespace flame
 			LOGI("vulkan device created");
 
 			{
-				RenderpassInfo info;
-				info.attachments.emplace_back(Format_R8G8B8A8_UNORM);
-				info.subpasses[0].color_attachments.push_back(0);
+				AttachmentInfo$ at_info;
+
+				SubpassInfo$ sp_info;
+				sp_info.color_attachments$.count = 1;
+				sp_info.color_attachments$.v = new int[1];
+				sp_info.color_attachments$.v[0] = 0;
+
+				RenderpassInfo$ info;
+				info.attachments$.count = 1;
+				info.attachments$.v = new AttachmentInfo$*[1];
+				info.attachments$.v[0] = &at_info;
+
+				info.subpasses$.count = 1;
+				info.subpasses$.v = new SubpassInfo$ * [1];
+				info.subpasses$.v[0] = &sp_info;
+
 				rp_one_rgba32 = Renderpass::create(this, info);
+				delete[]sp_info.color_attachments$.v;
+				delete[]info.attachments$.v;
+				delete[]info.subpasses$.v;
 			}
 			{
 				GraphicsPipelineInfo info;
@@ -576,6 +592,17 @@ namespace flame
 		{
 			delete (DevicePrivate*)d;
 		}
+
+		void Device$::initialize$c()
+		{
+			if (in$i)
+				out$o = in$i;
+			else
+				out$o = nullptr;
+		}
+
+		Device$ bp_device_unused;
+
 	}
 }
 

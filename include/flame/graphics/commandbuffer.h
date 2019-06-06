@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
@@ -147,6 +148,17 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Queue *create(Device *d, int queue_family_idx);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Queue *q);
+		};
+
+		struct Commandbuffers$
+		{
+			int count$i;
+			void* device$i;
+
+			LNA<void*> out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$c();
+			FLAME_GRAPHICS_EXPORTS void finish$c();
 		};
 	}
 }

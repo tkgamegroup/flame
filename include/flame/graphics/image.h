@@ -52,17 +52,17 @@ namespace flame
 
 		struct Image
 		{
-			Format format;
+			Format$ format;
 			Vec2u size;
 			int level;
 			int layer;
-			SampleCount sample_count;
+			SampleCount$ sample_count;
 
 			int channel_, bpp_;
 			int pitch_;
 			int data_size_;
 
-			FLAME_GRAPHICS_EXPORTS static Format find_format(int channel, int bpp);
+			FLAME_GRAPHICS_EXPORTS static Format$ find_format(int channel, int bpp);
 
 			// a layout change from Undefined to ShaderReadOnly, and a clear
 			FLAME_GRAPHICS_EXPORTS void init(const Vec4c& col);
@@ -73,12 +73,12 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void save_png(const wchar_t* filename);
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, int level, int layer, SampleCount sample_count, int usage, int mem_prop, void* data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, int level, int layer, SampleCount$ sample_count, int usage, int mem_prop, void* data = nullptr);
 			// default usage: ShaderSampled, TransferDst
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, int extra_usage = 0);
 			// default usage: ShaderSampled, TransferDst
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const wchar_t* filename, int extra_usage = 0);
-			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format format, const Vec2u& size, int level, int layer, void* native);
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format$ format, const Vec2u& size, int level, int layer, void* native);
 
 			FLAME_GRAPHICS_EXPORTS static void destroy(Image* i);
 		};

@@ -95,6 +95,17 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
 		};
 
+		struct Renderpass$
+		{
+			void* in$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$c();
+			FLAME_GRAPHICS_EXPORTS void finish$c();
+			FLAME_GRAPHICS_EXPORTS void update$c();
+		};
+
 		struct Clearvalues
 		{
 			FLAME_GRAPHICS_EXPORTS Renderpass* renderpass() const;
@@ -105,10 +116,34 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Clearvalues* c);
 		};
 
+		struct Clearvalues$
+		{
+			void* in$i;
+			void* renderpass$i;
+			LNA<Vec4c> colors$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$c();
+			FLAME_GRAPHICS_EXPORTS void finish$c();
+			FLAME_GRAPHICS_EXPORTS void update$c();
+		};
+
 		struct FramebufferInfo
 		{
 			Renderpass* rp;
 			std::vector<Imageview*> views;
+		};
+
+		struct Framebuffer$
+		{
+			void* in$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$c();
+			FLAME_GRAPHICS_EXPORTS void finish$c();
+			FLAME_GRAPHICS_EXPORTS void update$c();
 		};
 
 		struct Framebuffer

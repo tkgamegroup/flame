@@ -1,31 +1,31 @@
 {
   "nodes": [
     {
-      "type": "BP_GraphicsClearvalues",
+      "type": "graphics::Clearvalues",
       "id": "cv",
       "pos": "399;305",
       "datas": []
     },
     {
-      "type": "BP_GraphicsSwapchain",
+      "type": "graphics::Swapchain",
       "id": "sc",
       "pos": "90;141",
       "datas": []
     },
     {
-      "type": "BP_GraphicsDevice",
+      "type": "graphics::Device",
       "id": "d",
       "pos": "127;42",
       "datas": []
     },
     {
-      "type": "BP_GraphicsCommandbuffers",
+      "type": "graphics::Commandbuffers",
       "id": "cb",
       "pos": "385;59",
       "datas": []
     },
     {
-      "type": "BP_Array_1_4c",
+      "type": "Array_1_4c",
       "id": "color",
       "pos": "386;160",
       "datas": [
@@ -36,17 +36,13 @@
       ]
     },
     {
-      "type": "make_cmd#BP_MakeCmd",
+      "type": "make_cmd#MakeCmd",
       "id": "make_cmd",
       "pos": "613;241",
       "datas": []
     }
   ],
   "links": [
-    {
-      "out": "sc.renderpass_clear",
-      "in": "cv.renderpass"
-    },
     {
       "out": "color.v",
       "in": "cv.colors"
@@ -64,16 +60,8 @@
       "in": "make_cmd.cmdbufs"
     },
     {
-      "out": "sc.renderpass_clear",
-      "in": "make_cmd.renderpass"
-    },
-    {
       "out": "cv.out",
       "in": "make_cmd.clearvalues"
-    },
-    {
-      "out": "sc.framebuffers",
-      "in": "make_cmd.framebuffers"
     }
   ]
 }

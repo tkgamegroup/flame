@@ -34,7 +34,7 @@ namespace flame
 		struct Image;
 		struct Semaphore;
 
-		FLAME_GRAPHICS_EXPORTS Format get_swapchain_format();
+		FLAME_GRAPHICS_EXPORTS Format$ get_swapchain_format();
 
 		struct Swapchain
 		{
@@ -47,6 +47,19 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
+		};
+
+		struct Swapchain$
+		{
+			void* in$i;
+
+			void* out$o;
+			void* window$o;
+			int image_count$o;
+			LNA<void*> images$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$c();
+			FLAME_GRAPHICS_EXPORTS void finish$c();
 		};
 	}
 }
