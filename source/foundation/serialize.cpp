@@ -162,6 +162,7 @@ namespace flame
 			if (type.tag != TypeTagEnumSingle && type.tag != TypeTagEnumMulti && type.tag != TypeTagVariable)
 				return;
 			const std::string ignore_types[] = {
+				"void*",
 				"LNA",
 				"Array",
 				"String",
@@ -1880,6 +1881,7 @@ namespace flame
 		install_vec_udt<4, float>("4f", "float");
 
 		install_array_udt<1, Vec4c>("1_4c", "Vec<4,uchar>");
+		install_array_udt<1, voidptr>("1_vp", "void*");
 	}
 
 	void typeinfo_collect(const std::wstring & filename, int level)

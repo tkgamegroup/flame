@@ -55,7 +55,6 @@ namespace flame
 
 			void* out$o;
 			void* window$o;
-			int image_count$o;
 			LNA<void*> images$o;
 
 			FLAME_GRAPHICS_EXPORTS void initialize$();

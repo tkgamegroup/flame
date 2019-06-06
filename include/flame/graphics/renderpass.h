@@ -149,24 +149,25 @@ namespace flame
 		struct FramebufferInfo
 		{
 			Renderpass* rp;
-			std::vector<Imageview*> views;
-		};
-
-		struct Framebuffer$
-		{
-			void* device$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
-			FLAME_GRAPHICS_EXPORTS void update$();
+			LNA<void*> views;
 		};
 
 		struct Framebuffer
 		{
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, const FramebufferInfo& info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
+		};
+
+		struct Framebuffer$
+		{
+			void* device$i;
+			void* renderpass$i;
+			LNA<void*> views$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$();
+			FLAME_GRAPHICS_EXPORTS void finish$();
 		};
 	}
 }

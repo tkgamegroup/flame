@@ -248,13 +248,12 @@ namespace flame
 			{
 				out$o = in$i;
 				auto sc = (graphics::Swapchain*)out$o;
-				window$o = sc->window();
-				image_count$o = sc->image_count();
-				if (image_count$o > 0)
+				auto image_count = sc->image_count();
+				if (image_count > 0)
 				{
-					images$o.count = image_count$o;
-					images$o.v = new void*[image_count$o];
-					for (auto i = 0; i < image_count$o; i++)
+					images$o.count = image_count;
+					images$o.v = new void*[image_count];
+					for (auto i = 0; i < image_count; i++)
 						images$o.v[i] = sc->image(i);
 				}
 			}

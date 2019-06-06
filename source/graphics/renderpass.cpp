@@ -323,18 +323,15 @@ namespace flame
 			Vec2i size(0);
 
 #if defined(FLAME_VULKAN)
-			std::vector<VkImageView> vk_views(info.views.size());
-			for (auto i = 0; i < info.views.size(); i++)
+			std::vector<VkImageView> vk_views(info.views.count);
+			for (auto i = 0; i < info.views.count; i++)
 			{
-				if (size.x() == 0 && size.y() == 0)
-					size = info.views[i]->image()->size;
+				if (i == 0)
+					size = ((Imageview*)info.views.v[i])->image()->size;
 				else
-				{
-					if (size != 1)
-						assert(size == info.views[i]->image()->size);
-				}
+					assert(size == ((Imageview*)info.views.v[i])->image()->size);
 
-				vk_views[i] = ((ImageviewPrivate*)info.views[i])->v;
+				vk_views[i] = ((ImageviewPrivate*)info.views.v[i])->v;
 			}
 
 			VkFramebufferCreateInfo create_info;
@@ -345,7 +342,7 @@ namespace flame
 			create_info.height = size.y();
 			create_info.layers = 1;
 			create_info.renderPass = ((RenderpassPrivate*)info.rp)->v;
-			create_info.attachmentCount = info.views.size();
+			create_info.attachmentCount = info.views.count;
 			create_info.pAttachments = vk_views.data();
 
 			vk_chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
@@ -367,6 +364,19 @@ namespace flame
 		void Framebuffer::destroy(Framebuffer * f)
 		{
 			delete (FramebufferPrivate*)f;
+		}
+
+		void Framebuffer$::initialize$()
+		{
+			FramebufferInfo info;
+			info.rp = (Renderpass*)renderpass$i;
+			info.views = views$i;
+			out$o = Framebuffer::create((Device*)device$i, info);
+		}
+
+		void Framebuffer$::finish$()
+		{
+			Framebuffer::destroy((Framebuffer*)out$o);
 		}
 	}
 }

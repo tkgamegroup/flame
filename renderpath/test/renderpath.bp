@@ -7,6 +7,12 @@
       "datas": []
     },
     {
+      "type": "Array_1_vp",
+      "id": "col_atts",
+      "pos": "100;500",
+      "datas": []
+    },
+    {
       "type": "graphics::Clearvalues",
       "id": "cv",
       "pos": "399;305",
