@@ -54,13 +54,7 @@ namespace flame
 
 			void* out$o;
 
-			AttachmentInfo$() :
-				format$i(Format_R8G8B8A8_UNORM),
-				clear$i(true),
-				sample_count$i(SampleCount_1)
-			{
-			}
-
+			FLAME_GRAPHICS_EXPORTS AttachmentInfo$();
 			FLAME_GRAPHICS_EXPORTS void initialize$();
 			FLAME_GRAPHICS_EXPORTS void finish$();
 			FLAME_GRAPHICS_EXPORTS void update$();
@@ -88,11 +82,7 @@ namespace flame
 
 			void* out$o;
 
-			SubpassInfo$() :
-				depth_attachment$i(-1)
-			{
-			}
-
+			FLAME_GRAPHICS_EXPORTS SubpassInfo$();
 			FLAME_GRAPHICS_EXPORTS void initialize$();
 			FLAME_GRAPHICS_EXPORTS void finish$();
 			FLAME_GRAPHICS_EXPORTS void update$();
@@ -123,9 +113,9 @@ namespace flame
 		struct Renderpass$
 		{
 			void* device$i;
-			LNA<AttachmentInfo*> attachments$;
-			LNA<SubpassInfo*> subpasses$;
-			LNA<Vec<2, uint>> dependencies$;
+			LNA<AttachmentInfo*> attachments$i;
+			LNA<SubpassInfo*> subpasses$i;
+			LNA<Vec<2, uint>> dependencies$i;
 
 			void* out$o;
 

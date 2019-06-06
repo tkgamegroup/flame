@@ -31,6 +31,13 @@ namespace flame
 {
 	namespace graphics
 	{
+		AttachmentInfo$::AttachmentInfo$() :
+			format$i(Format_R8G8B8A8_UNORM),
+			clear$i(true),
+			sample_count$i(SampleCount_1)
+		{
+		}
+
 		void AttachmentInfo$::initialize$()
 		{
 			out$o = new AttachmentInfo;
@@ -47,6 +54,11 @@ namespace flame
 			info->format = format$i;
 			info->clear = clear$i;
 			info->sample_count = sample_count$i;
+		}
+
+		SubpassInfo$::SubpassInfo$() :
+			depth_attachment$i(-1)
+		{
 		}
 
 		void SubpassInfo$::initialize$()
@@ -72,9 +84,9 @@ namespace flame
 			if (device$i)
 			{
 				RenderpassInfo info;
-				info.attachments = attachments$;
-				info.subpasses = subpasses$;
-				info.dependencies = dependencies$;
+				info.attachments = attachments$i;
+				info.subpasses = subpasses$i;
+				info.dependencies = dependencies$i;
 				out$o = Renderpass::create((Device*)device$i, info);
 			}
 		}

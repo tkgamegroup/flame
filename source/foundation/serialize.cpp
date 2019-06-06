@@ -269,9 +269,9 @@ namespace flame
 			case cH("float"):
 				return to_string(*(float*)src, precision);
 			case cH("uint"):
-				return to_string(*(uint*)src);
+				return std::to_string(*(uint*)src);
 			case cH("int"):
-				return to_string(*(int*)src);
+				return std::to_string(*(int*)src);
 			case cH("bool"):
 				return *(bool*)src ? "1" : "0";
 			case cH("Vec<1,float>"):
@@ -2049,6 +2049,12 @@ namespace flame
 					IDiaEnumSymbols* _functions;
 					_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
 					IDiaSymbol* _function;
+					auto udt_name_nns = udt_name;
+					{
+						auto pos = udt_name_nns.find_last_of(':');
+						if (pos != std::string::npos)
+							udt_name_nns.erase(udt_name_nns.begin(), udt_name_nns.begin() + pos + 1);
+					}
 					while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
 					{
 						_function->get_name(&pwname);
@@ -2058,7 +2064,7 @@ namespace flame
 						{
 							if (name[0] != '~')
 							{
-								if (name == udt_name)
+								if (name == udt_name_nns)
 								{
 									IDiaSymbol* function_type;
 									_function->get_type(&function_type);
