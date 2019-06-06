@@ -1262,6 +1262,7 @@ namespace flame
 
 	static std::string prefix("flame::");
 	static std::regex reg_temp(R"((\w)+\<(.)+\>)");
+	static std::regex reg_pref(prefix);
 	static std::regex reg_usig(R"(\bunsigned\b)");
 	static std::string str_func("Function");
 
@@ -1281,8 +1282,10 @@ namespace flame
 				* pass_prefix = true;
 		}
 
+		auto pos_lt = name.find('<');
+
 		auto pos_$ = name.find('$');
-		if (pos_$ != std::wstring::npos && pos_$ < name.find('<'))
+		if (pos_$ != std::string::npos && pos_$ < pos_lt)
 		{
 			if (attribute)
 				* attribute = std::string(name.c_str() + pos_$ + 1);
@@ -1293,7 +1296,13 @@ namespace flame
 		}
 		if (name.compare(0, str_func.size(), str_func) == 0)
 			name = "Function";
-		name.erase(std::remove(name.begin(), name.end(), ' '));
+		if (((pass_prefix && *pass_prefix) || !pass_prefix) && pos_lt != std::string::npos)
+		{
+			name = std::regex_replace(name, reg_pref, "");
+			name = std::regex_replace(name, reg_usig, "u");
+			name.erase(std::remove(name.begin(), name.end(), ' '), name.end());
+			name.erase(std::remove(name.begin(), name.end(), '$'), name.end());
+		}
 		return name;
 	}
 
@@ -1358,7 +1367,7 @@ namespace flame
 		}
 			break;
 		}
-		
+
 		info.hash = H(info.name.c_str());
 
 		return info;
@@ -1990,7 +1999,6 @@ namespace flame
 			_udt->get_name(&pwname);
 			bool pass_prefix, pass_$;
 			auto udt_name = format_name(pwname, &pass_prefix, &pass_$);
-			std::regex_replace(udt_name, reg_usig, "u");
 			if (pass_prefix && pass_$)
 			{
 				auto udt_hash = H(udt_name.c_str());

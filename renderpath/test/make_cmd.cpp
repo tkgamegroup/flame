@@ -6,7 +6,7 @@
 
 namespace flame
 {
-	struct BP_MakeCmd$
+	struct MakeCmd$
 	{
 		LNA<void*> cmdbufs$i;
 		void* renderpass$i;
@@ -34,5 +34,5 @@ namespace flame
 		}
 	};
 
-	static BP_MakeCmd$ bp_makecmd_unused;
+	static MakeCmd$ bp_makecmd_unused;
 }

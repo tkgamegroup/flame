@@ -605,7 +605,10 @@ namespace flame
 			if (o && i)
 			{
 				if (!i->link_to(o))
+				{
 					printf("link type mismatch: %s - > %s\n", o_address.c_str(), i_address.c_str());
+					i->link_to(o);
+				}
 			}
 			else
 				printf("unable to link: %s - > %s\n", o_address.c_str(), i_address.c_str());
