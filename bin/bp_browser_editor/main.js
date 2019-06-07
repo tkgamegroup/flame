@@ -16,6 +16,7 @@ var filepath = null;
 var add_dialog;
 var add_dialog_list;
 var add_dialog_type;
+var add_dialog_id;
 var overlay;
 
 function get_global_offset(element) 
@@ -57,14 +58,28 @@ var find_udt = function(name)
     return null;
 };
 
-var load_typeinfo = function(json)
+var load_typeinfo = function(json, file)
 {
+    if (!file)
+        file = "";
     for (var i in json.enums)
-        enums.push(json.enums[i]);
+    {
+        var e = json.enums[i];
+        e.file = file;
+        enums.push(e);
+    }
     for (var i in json.udts)
-        udts.push(json.udts[i]);
+    {
+        var u = json.udts[i];
+        u.file = file;
+        udts.push(u);
+    }
     for (var i in json.functions)
-        functions.push(json.functions[i]);
+    {
+        var f = json.functions[i];
+        f.file = file;
+        functions.push(f);
+    }
 };
 
 function find_node(name) 
@@ -202,6 +217,7 @@ window.onload = function()
     add_dialog = document.getElementById("add_dialog");
     add_dialog_list = document.getElementById("add_dialog_list");
     add_dialog_type = document.getElementById("add_dialog_type");
+    add_dialog_id = document.getElementById("add_dialog_id");
     overlay = document.getElementById("overlay");
 };
 
@@ -226,25 +242,42 @@ function on_add_clicked()
 
 function on_add_dialog_open_clicked()
 {
-    add_dialog.style.display='block';
-    overlay.style.display='block';
+    add_dialog.style.display = "block";
+    overlay.style.display = "block";
 
     add_dialog_list.innerHTML = "";
     for (var i = 0; i < udts.length; i++)
     {
         var item = document.createElement("li");
-        item.innerHTML = udts[i].name;
-        item.onclick = function() {
-            add_dialog_type.value = udts[i].name;
-        };
+        var u = udts[i];
+        var text = u.name
+        if (u.file != "")
+            text = u.file + "#" + text;
+        item.innerHTML = text;
+        item.onclick = (function(text) {
+            return function(){
+                add_dialog_type.value = text;
+            };
+        })(text);
         add_dialog_list.appendChild(item);
     }
 }
 
 function on_add_dialog_close_clicked()
 {
-    add_dialog.style.display='none';
-    overlay.style.display='none';
+    add_dialog.style.display = "none";
+    overlay.style.display = "none";
+}
+
+function on_add_dialog_add_clicked()
+{
+    var n = new Node({
+        id: add_dialog_id.value,
+        type: add_dialog_type.value,
+        pos: "0;0",
+        data: "null"
+    });
+    add_node(n);
 }
 
 function on_save_clicked()
@@ -266,8 +299,7 @@ function on_save_clicked()
         {
             var input = sn.inputs[j];
             var vi = input.vi;
-            var type_sp = vi.type.split("#");
-            if (type_sp[0] != "pointer")
+            if (vi.default_value)
             {
                 input.data = input.eEdit.value;
                 if (!(vi.default_value && vi.default_value == input.data))

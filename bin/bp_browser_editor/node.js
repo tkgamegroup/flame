@@ -12,8 +12,10 @@ class Node
         this.eMain.setAttribute("title", this.id);
     
         var pos_sp = sn.pos.split(";");
-        this.eMain.style.left = pos_sp[0] + "px";
-        this.eMain.style.top = pos_sp[1] + "px";
+        this.x = parseInt(pos_sp[0]);
+        this.y = parseInt(pos_sp[1]);
+        this.eMain.style.left = this.x.toString() + "px";
+        this.eMain.style.top = this.y.toString() + "px";
     
         var thiz = this;
         $(this.eMain).draggable({
@@ -125,7 +127,7 @@ class Node
                 $.getJSON(url, function(res, status){
                     if (status == "success")
                     {
-                        load_typeinfo(res);
+                        load_typeinfo(res, sp[0]);
                         console.assert(load(sp[1]));
                     }
                     else

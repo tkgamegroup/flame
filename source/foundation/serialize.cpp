@@ -303,8 +303,6 @@ namespace flame
 				return w2s(((StringW*)src)->v);
 			case cH("StringAndHash"):
 				return ((StringAndHash*)src)->v;
-			case cH("void*"):
-				return "";
 			default:
 				assert(0);
 			}
@@ -395,8 +393,6 @@ namespace flame
 				break;
 			case cH("StringAndHash"):
 				*(StringAndHash*)dst = src;
-				break;
-			case cH("void*"):
 				break;
 			default:
 				assert(0);
@@ -1808,17 +1804,25 @@ namespace flame
 		u->name += name_suffix;
 		u->size = sizeof(LNA<T>) + sizeof(T) * N;
 		u->module_name = L"flame_foundation.dll";
+		
+		auto is_pointer = false;
+		auto s_type_name = std::string(type_name);
+		if (*s_type_name.rbegin() == '*')
+		{
+			s_type_name.erase(s_type_name.end() - 1);
+			is_pointer = true;
+		}
 
 		for (auto i = 0; i < N; i++)
 		{
 			auto v = new VariableInfoPrivate;
-			v->type.tag = TypeTagVariable;
-			v->type.name = type_name;
+			v->type.tag = is_pointer ? TypeTagPointer : TypeTagVariable;
+			v->type.name = s_type_name;
 			v->type.hash = H(v->type.name.c_str());
 			v->name = std::to_string(i + 1);
 			v->attribute = "i";
 			v->offset = sizeof(T) * i;
-			v->size = sizeof(T);
+			v->size = sizeof(T);;
 			v->_init_default_value();
 			u->items.emplace_back(v);
 		}
@@ -1884,6 +1888,7 @@ namespace flame
 		install_vec_udt<3, float>("3f", "float");
 		install_vec_udt<4, float>("4f", "float");
 
+		install_array_udt<1, uint>("1_u", "uint");
 		install_array_udt<1, Vec4c>("1_4c", "Vec<4,uchar>");
 		install_array_udt<1, voidptr>("1_vp", "void*");
 	}

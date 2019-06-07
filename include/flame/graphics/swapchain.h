@@ -32,6 +32,7 @@ namespace flame
 	{
 		struct Device;
 		struct Image;
+		struct Imageview;
 		struct Semaphore;
 
 		FLAME_GRAPHICS_EXPORTS Format$ get_swapchain_format();
@@ -56,6 +57,7 @@ namespace flame
 			void* out$o;
 			void* window$o;
 			LNA<void*> images$o;
+			LNA<void*> imageviews$o;
 
 			FLAME_GRAPHICS_EXPORTS void initialize$();
 			FLAME_GRAPHICS_EXPORTS void finish$();

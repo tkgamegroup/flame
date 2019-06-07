@@ -255,6 +255,10 @@ namespace flame
 					images$o.v = new void*[image_count];
 					for (auto i = 0; i < image_count; i++)
 						images$o.v[i] = sc->image(i);
+					imageviews$o.count = image_count;
+					imageviews$o.v = new void* [image_count];
+					for (auto i = 0; i < image_count; i++)
+						imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
 				}
 			}
 		}
@@ -262,6 +266,7 @@ namespace flame
 		void Swapchain$::finish$()
 		{
 			delete[]images$o.v;
+			delete[]imageviews$o.v;
 		}
 
 		Swapchain$ bp_swapchain_unused;

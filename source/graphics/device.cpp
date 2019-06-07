@@ -457,8 +457,8 @@ namespace flame
 				sp_info.color_attachments.count = at_refs.size();
 				sp_info.color_attachments.v = at_refs.data();
 
-				std::vector<AttachmentInfo*> ats = { &at_info };
-				std::vector<SubpassInfo*> sps = { &sp_info };
+				std::vector<void*> ats = { &at_info };
+				std::vector<void*> sps = { &sp_info };
 				RenderpassInfo info;
 				info.attachments.count = ats.size();
 				info.attachments.v = ats.data();

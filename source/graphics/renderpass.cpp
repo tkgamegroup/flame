@@ -103,7 +103,7 @@ namespace flame
 			std::vector<VkAttachmentDescription> vk_attachments(info.attachments.count);
 			for (auto i = 0; i < vk_attachments.size(); i++)
 			{
-				auto at_info = info.attachments.v[i];
+				auto at_info = (AttachmentInfo*)info.attachments.v[i];
 
 				vk_attachments[i].flags = 0;
 				vk_attachments[i].format = Z(at_info->format);
@@ -114,7 +114,7 @@ namespace flame
 				vk_attachments[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 				vk_attachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-				auto fmt = info.attachments.v[i]->format;
+				auto fmt = at_info->format;
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				{
 					if (fmt >= Format_Swapchain_Begin && fmt <= Format_Swapchain_End)
@@ -132,7 +132,7 @@ namespace flame
 			std::vector<VkSubpassDescription> vk_subpasses(info.subpasses.count);
 			for (auto i = 0; i < vk_subpasses.size(); i++)
 			{
-				auto sp_info = info.subpasses.v[i];
+				auto sp_info = (SubpassInfo*)info.subpasses.v[i];
 
 				vk_subpasses[i].flags = 0;
 				vk_subpasses[i].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -203,7 +203,7 @@ namespace flame
 
 			attachments.resize(info.attachments.count);
 			for (auto i = 0; i < info.attachments.count; i++)
-				attachments[i] = info.attachments.v[i]->format;
+				attachments[i] = ((AttachmentInfo*)(info.attachments.v[i]))->format;
 #endif
 		}
 

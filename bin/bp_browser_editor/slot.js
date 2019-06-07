@@ -26,14 +26,11 @@ class Slot
             this.eMain.appendChild(this.eSlot);
             this.eMain.appendChild(this.eName);
     
-            var type_sp = vi.type.split("#");
-            if (type_sp[0] != "pointer")
+            if (vi.default_value)
             {
                 thiz.eEdit = document.createElement("input");
-                thiz.eEdit.type = "text";
                 thiz.eEdit.classList.add("slot_edit");
-                if (vi.default_value)
-                    thiz.eEdit.value = vi.default_value;
+                thiz.eEdit.value = vi.default_value;
                 
                 this.eMain.appendChild(thiz.eEdit);
             }

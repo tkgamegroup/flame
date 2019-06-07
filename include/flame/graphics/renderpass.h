@@ -90,8 +90,8 @@ namespace flame
 
 		struct RenderpassInfo
 		{
-			LNA<AttachmentInfo*> attachments;
-			LNA<SubpassInfo*> subpasses;
+			LNA<void*> attachments;
+			LNA<void*> subpasses;
 			LNA<Vec<2, uint>> dependencies;
 
 			RenderpassInfo()
@@ -113,8 +113,8 @@ namespace flame
 		struct Renderpass$
 		{
 			void* device$i;
-			LNA<AttachmentInfo*> attachments$i;
-			LNA<SubpassInfo*> subpasses$i;
+			LNA<void*> attachments$i;
+			LNA<void*> subpasses$i;
 			LNA<Vec<2, uint>> dependencies$i;
 
 			void* out$o;
@@ -135,7 +135,6 @@ namespace flame
 
 		struct Clearvalues$
 		{
-			void* device$i;
 			void* renderpass$i;
 			LNA<Vec4c> colors$i;
 
