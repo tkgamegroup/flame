@@ -24,6 +24,7 @@
 
 #include <flame/graphics/renderpass.h>
 #include "graphics_private.h"
+#include "image_private.h"
 
 namespace flame
 {
@@ -61,7 +62,8 @@ namespace flame
 		struct FramebufferPrivate : Framebuffer
 		{
 			DevicePrivate* d;
-			FramebufferInfo info;
+			RenderpassPrivate* renderpass;
+			std::vector<ImageviewPrivate*> views;
 #if defined(FLAME_VULKAN)
 			VkFramebuffer v;
 #elif defined(FLAME_D3D12)

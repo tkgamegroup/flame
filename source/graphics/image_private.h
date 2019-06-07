@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
 #include <flame/graphics/image.h>
 #include "graphics_private.h"
 
@@ -57,7 +59,7 @@ namespace flame
 
 		struct ImageviewPrivate : Imageview
 		{
-			ImagePrivate *i;
+			ImagePrivate *image;
 #if defined(FLAME_VULKAN)
 			VkImageView v;
 #elif defined(FLAME_D3D12)

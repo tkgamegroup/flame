@@ -303,6 +303,8 @@ namespace flame
 				return w2s(((StringW*)src)->v);
 			case cH("StringAndHash"):
 				return ((StringAndHash*)src)->v;
+			case cH("void*"):
+				return "";
 			default:
 				assert(0);
 			}
@@ -393,6 +395,8 @@ namespace flame
 				break;
 			case cH("StringAndHash"):
 				*(StringAndHash*)dst = src;
+				break;
+			case cH("void*"):
 				break;
 			default:
 				assert(0);

@@ -587,8 +587,9 @@ namespace flame
 			{
 				auto n_data = n_datas->node(i_d);
 				auto input = n->find_input(n_data->find_node("name")->value());
-				auto type = input->variable_info->type();
-				if (type->tag() != TypeTagPointer)
+				auto v = input->variable_info;
+				auto type = v->type();
+				if (v->default_value())
 					unserialize_value(type->tag(), type->hash(), n_data->find_node("value")->value(), input->data);
 			}
 		}

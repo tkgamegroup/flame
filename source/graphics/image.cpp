@@ -281,7 +281,9 @@ namespace flame
 
 				FramebufferInfo fb_info;
 				fb_info.rp = d->rp_one_rgba32;
-				fb_info.views.push_back(img_v);
+				std::vector<void*> views = { img_v };
+				fb_info.views.count = views.size();
+				fb_info.views.v = views.data();
 				auto fb = Framebuffer::create(d, fb_info);
 				auto ds = Descriptorset::create(d->dp, d->pl_trans->layout()->dsl(0));
 				auto cb = Commandbuffer::create(d->gcp);
@@ -503,9 +505,9 @@ namespace flame
 			delete (ImagePrivate*)i;
 		}
 
-		ImageviewPrivate::ImageviewPrivate(Image *_i, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
+		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
 		{
-			i = (ImagePrivate*)_i;
+			image = (ImagePrivate*)_image;
 			type = _type;
 			base_level = _base_level;
 			level_count = _level_count;
@@ -526,22 +528,22 @@ namespace flame
 			info.components.g = Z(mapping.g);
 			info.components.b = Z(mapping.b);
 			info.components.a = Z(mapping.a);
-			info.image = i->v;
+			info.image = image->v;
 			info.viewType = Z(type);
-			info.format = Z(i->format);
-			info.subresourceRange.aspectMask = Z(aspect_from_format(i->format));
+			info.format = Z(image->format);
+			info.subresourceRange.aspectMask = Z(aspect_from_format(image->format));
 			info.subresourceRange.baseMipLevel = base_level;
 			info.subresourceRange.levelCount = level_count;
 			info.subresourceRange.baseArrayLayer = base_layer;
 			info.subresourceRange.layerCount = layer_count;
 
-			vk_chk_res(vkCreateImageView(i->d->v, &info, nullptr, &v));
+			vk_chk_res(vkCreateImageView(image->d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 			desc.NumDescriptors = 1;
 			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-			auto d = i->d->v;
+			auto d = image->d->v;
 			auto res = d->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
 
@@ -555,7 +557,7 @@ namespace flame
 		ImageviewPrivate::~ImageviewPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyImageView(i->d->v, v, nullptr);
+			vkDestroyImageView(image->d->v, v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -563,7 +565,7 @@ namespace flame
 
 		Image* Imageview::image() const
 		{
-			return ((ImageviewPrivate*)this)->i;
+			return ((ImageviewPrivate*)this)->image;
 		}
 
 		Imageview* Imageview::create(Image *_i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping)

@@ -23,7 +23,6 @@
 
 #include "device_private.h"
 #include "renderpass_private.h"
-#include "image_private.h"
 
 #include <memory>
 
@@ -315,23 +314,26 @@ namespace flame
 
 		Clearvalues$ bp_clearvalues_unused;
 
-		FramebufferPrivate::FramebufferPrivate(Device* _d, const FramebufferInfo& _info)
+		FramebufferPrivate::FramebufferPrivate(Device* _d, const FramebufferInfo& info)
 		{
 			d = (DevicePrivate*)_d;
-			info = _info;
+			renderpass = (RenderpassPrivate*)info.rp;
+			views.resize(info.views.count);
+			for (auto i = 0; i < info.views.count; i++)
+				views[i] = (ImageviewPrivate*)info.views.v[i];
 
 			Vec2i size(0);
 
 #if defined(FLAME_VULKAN)
-			std::vector<VkImageView> vk_views(info.views.count);
-			for (auto i = 0; i < info.views.count; i++)
+			std::vector<VkImageView> vk_views(views.size());
+			for (auto i = 0; i < views.size(); i++)
 			{
 				if (i == 0)
-					size = ((Imageview*)info.views.v[i])->image()->size;
+					size = views[i]->image->size;
 				else
-					assert(size == ((Imageview*)info.views.v[i])->image()->size);
+					assert(size == views[i]->image->size);
 
-				vk_views[i] = ((ImageviewPrivate*)info.views.v[i])->v;
+				vk_views[i] = views[i]->v;
 			}
 
 			VkFramebufferCreateInfo create_info;
@@ -341,7 +343,7 @@ namespace flame
 			create_info.width = size.x();
 			create_info.height = size.y();
 			create_info.layers = 1;
-			create_info.renderPass = ((RenderpassPrivate*)info.rp)->v;
+			create_info.renderPass = renderpass->v;
 			create_info.attachmentCount = info.views.count;
 			create_info.pAttachments = vk_views.data();
 

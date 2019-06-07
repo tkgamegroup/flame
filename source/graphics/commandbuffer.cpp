@@ -137,7 +137,7 @@ namespace flame
 			current_subpass = 0;
 			current_framebuffer = f;
 
-			auto size = f->info.views[0]->image()->size;
+			auto size = f->views[0]->image->size;
 
 #if defined(FLAME_VULKAN)
 			VkRenderPassBeginInfo info;

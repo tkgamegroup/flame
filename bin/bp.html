@@ -1,22 +1,28 @@
 <html>
 <head>
-    <link type="text/css" rel="stylesheet" href="bp.css" />
+    <link type="text/css" rel="stylesheet" href="bp_browser_editor/style.css" />
     
-    <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
-    <script type="text/javascript" src="jquery-ui.min.js"></script>
-    <script type="text/javascript" src="bp.js"></script>
+    <script type="text/javascript" src="bp_browser_editor/lib/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="bp_browser_editor/lib/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="bp_browser_editor/node.js"></script>
+    <script type="text/javascript" src="bp_browser_editor/slot.js"></script>
+    <script type="text/javascript" src="bp_browser_editor/main.js"></script>
 </head>
 <body>
     <svg id="svg">
     </svg>
 
-    type:<input id="add_type">
-    id:<input id="add_id">
-    <button onclick="on_add_clicked()">add</button>
-    <br>
-    id:<input id="remove_id">
-    <button onclick="on_remove_clicked()">remove</button>
+    <button onclick="on_add_dialog_open_clicked()">+</button>
 
     <button onclick="on_save_clicked()" style="float: right">save</button>
+
+    <div id="add_dialog" class="dialog">
+        <ul id="add_dialog_list"></ul>
+        type<input id='add_dialog_type'>id<input id='add_dialog_id'>
+        <br>
+        <button onclick="">add</button>
+        <button onclick="on_add_dialog_close_clicked()">close</button>
+    </div>
+    <div id="overlay" class="overlay"></div>
 </body>
 </html>

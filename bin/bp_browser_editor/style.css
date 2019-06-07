@@ -35,3 +35,28 @@ svg {
 .slot_edit{
     width: 100px;
 }
+
+.overlay{
+    display: none;
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    opacity: 0.8;
+    z-index: 1001;
+}
+
+.dialog{
+    display: none;
+    position: absolute;
+    top: 25%;
+    left: 25%;
+    width: 50%;
+    height: 50%;
+    padding: 20px;
+    background-color: white;
+    overflow: auto;
+    z-index: 1002
+}

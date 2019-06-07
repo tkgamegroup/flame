@@ -112,13 +112,15 @@ namespace flame
 				image_ms_view = Imageview::create(image_ms);
 				FramebufferInfo fb_info;
 				fb_info.rp = rp;
+				std::vector<void*> views;
+				views.resize(2);
+				fb_info.views.count = views.size();
+				fb_info.views.v = views.data();
+				views[0] = image_ms_view;
 				for (auto i = 0; i < sc->image_count(); i++)
 				{
-					auto view = Imageview::create(sc->image(i));
-					fb_info.views.push_back(image_ms_view);
-					fb_info.views.push_back(view);
-					fbs.emplace_back(Framebuffer::create(device, fb_info), view);
-					fb_info.views.clear();
+					views[1] = Imageview::create(sc->image(i));
+					fbs.emplace_back(Framebuffer::create(device, fb_info), (Imageview*)views[1]);
 				}
 
 				cv = Clearvalues::create(rp);
