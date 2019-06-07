@@ -124,7 +124,7 @@ namespace flame
 		return ::send(fd, (char*)buf, int(p - buf) + size, 0) > 0;
 	}
 
-	int websocket_process_recv(ulonglong&len, uchar*& p)
+	int websocket_recv(uchar*& p, ulonglong& len, uint& mask_key)
 	{
 		uchar b1, b2;
 		b1 = *p++;
@@ -154,21 +154,29 @@ namespace flame
 			len += *p++;
 		}
 
-		uint mask_key;
 		if (mask)
 		{
 			mask_key = *(uint*)p;
 			p += sizeof(uint);
 		}
 
-		if (mask)
-		{
-			for (auto i = 0; i < len; i++)
-				p[i] = p[i] ^ ((char*)& mask_key)[i % 4];
-		}
-		p[len] = 0;
-
 		return op;
+	}
+
+	void websocket_recv_all(int fd, uchar* dst, int rest)
+	{
+		while (rest > 0)
+		{
+			auto ret = recv(fd, (char*)dst, rest, 0);
+			dst += ret;
+			rest -= ret;
+		}
+	}
+
+	void websocket_mask(uchar* p, ulonglong len, uint mask_key)
+	{
+		for (auto i = 0; i < len; i++)
+			p[i] ^= ((char*)& mask_key)[i % 4];
 	}
 
 	struct OneClientServerPrivate : OneClientServer
@@ -251,8 +259,12 @@ namespace flame
 					}
 
 					ulonglong len;
+					uint mask_key;
 					auto p = buf;
-					auto op = websocket_process_recv(len, p);
+					auto op = websocket_recv(p, len, mask_key);
+					websocket_recv_all(thiz->fd_c, buf + ret, (p - buf) + len - ret);
+					websocket_mask(p, len, mask_key);
+					p[len] = 0;
 
 					if (op == 1)
 						thiz->message_callback(len, p);
@@ -367,8 +379,12 @@ namespace flame
 								if (ret > 0)
 								{
 									ulonglong len;
+									uint mask_key;
 									auto p = buf;
-									auto op = websocket_process_recv(len, p);
+									auto op = websocket_recv(p, len, mask_key);
+									websocket_recv_all(fd, buf + ret, (p - buf) + len - ret);
+									websocket_mask(p, len, mask_key);
+									p[len] = 0;
 
 									if (op == 1)
 									{

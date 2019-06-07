@@ -452,7 +452,7 @@ namespace flame
 				at_info.clear = true;
 				at_info.sample_count = SampleCount_1;
 				
-				std::vector<int> at_refs = { 0 };
+				std::vector<uint> at_refs = { 0 };
 				SubpassInfo sp_info;
 				sp_info.color_attachments.count = at_refs.size();
 				sp_info.color_attachments.v = at_refs.data();

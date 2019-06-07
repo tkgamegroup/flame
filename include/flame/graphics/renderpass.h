@@ -62,22 +62,22 @@ namespace flame
 
 		struct SubpassInfo
 		{
-			LNA<int> color_attachments;
-			LNA<int> resolve_attachments;
+			LNA<uint> color_attachments;
+			LNA<uint> resolve_attachments;
 			int depth_attachment;
 
 			SubpassInfo() :
 				depth_attachment(-1)
 			{
-				memset(&color_attachments, 0, sizeof(LNA<int>));
-				memset(&resolve_attachments, 0, sizeof(LNA<int>));
+				memset(&color_attachments, 0, sizeof(LNA<uint>));
+				memset(&resolve_attachments, 0, sizeof(LNA<uint>));
 			}
 		};
 
 		struct SubpassInfo$
 		{
-			LNA<int> color_attachments$i;
-			LNA<int> resolve_attachments$i;
+			LNA<uint> color_attachments$i;
+			LNA<uint> resolve_attachments$i;
 			int depth_attachment$i;
 
 			void* out$o;
