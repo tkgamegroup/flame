@@ -50,9 +50,9 @@ namespace flame
 			return nullptr;
 		}
 
-		Array<Component*> get_components(uint type_hash)
+		DynamicArray<Component*> get_components(uint type_hash)
 		{
-			Array<Component*> ret;
+			DynamicArray<Component*> ret;
 			for (auto& c : components)
 			{
 				if (c->type_hash() == type_hash)
@@ -124,7 +124,7 @@ namespace flame
 		return ((EntityPrivate*)this)->get_component(type_hash);
 	}
 
-	Array<Component*> Entity::components(uint type_hash) const
+	DynamicArray<Component*> Entity::components(uint type_hash) const
 	{
 		return ((EntityPrivate*)this)->get_components(type_hash);
 	}

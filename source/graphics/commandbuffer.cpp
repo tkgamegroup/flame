@@ -641,6 +641,62 @@ namespace flame
 			delete (CommandbufferPrivate*)c;
 		}
 
+		struct Commandbuffer$
+		{
+			void* device$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$()
+			{
+				if (device$i)
+				{
+					out$o = Commandbuffer::create(((Device*)device$i)->gcp);
+#if defined(FLAME_D3D12)
+					((Commandbuffer*)out$o)->end();
+#endif
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS void finish$()
+			{
+				Commandbuffer::destroy((Commandbuffer*)out$o);
+			}
+
+		}bp_commandbuffer_unused;
+
+		struct Commandbuffers$
+		{
+			void* device$i;
+			uint size$i;
+
+			Array<void*> out$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$()
+			{
+				if (device$i && size$i > 0)
+				{
+					out$o.size = size$i;
+					out$o.v = new void*[size$i];
+					for (auto i = 0; i < size$i; i++)
+					{
+						out$o.v[i] = Commandbuffer::create(((Device*)device$i)->gcp);
+#if defined(FLAME_D3D12)
+						((Commandbuffer*)out$o)->end();
+#endif
+					}
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS void finish$()
+			{
+				for (auto i = 0; i < out$o.size; i++)
+					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+				delete[]out$o.v;
+			}
+
+		}bp_commandbuffers_unused;
+
 		QueuePrivate::QueuePrivate(Device *_d, int queue_family_idx)
 		{
 			d = (DevicePrivate*)_d;
@@ -740,23 +796,5 @@ namespace flame
 		{
 			delete (QueuePrivate*)q;
 		}
-
-		void Commandbuffer$::initialize$()
-		{
-			if (device$i)
-			{
-				out$o = Commandbuffer::create(((Device*)device$i)->gcp);
-#if defined(FLAME_D3D12)
-				((Commandbuffer*)out$o)->end();
-#endif
-			}
-		}
-
-		void Commandbuffer$::finish$()
-		{
-			Commandbuffer::destroy((Commandbuffer*)out$o);
-		}
-
-		Commandbuffer$ bp_commandbuffer_unused;
 	}
 }

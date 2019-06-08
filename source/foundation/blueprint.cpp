@@ -273,7 +273,10 @@ namespace flame
 		{
 			auto v = input->variable_info;
 			auto type = v->type();
-			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
+			if (type->tag() == TypeTagAny && input->links[0])
+				*((void**)((char*)dummy + v->offset())) = input->links[0]->data;
+			else
+				set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
 		}
 
 		if (initialize_function)

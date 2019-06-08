@@ -299,16 +299,16 @@ namespace flame
 	}
 
 	template<typename T>
-	struct LNA // LengthAndArray
+	struct Array
 	{
-		int count;
+		uint size;
 		T* v;
 	};
 
 	template<typename T>
-	struct Array
+	struct DynamicArray
 	{
-		int size;
+		uint size;
 		T* v;
 
 		void _init(const T* p, int len)
@@ -319,13 +319,13 @@ namespace flame
 				new(&v[i])T(p[i]);
 		}
 
-		Array()
+		DynamicArray()
 		{
 			size = 0;
 			v = nullptr;
 		}
 
-		Array(const Array& rhs)
+		DynamicArray(const DynamicArray& rhs)
 		{
 			size = rhs.size;
 			v = (T*)flame_malloc(sizeof(T) * size);
@@ -333,7 +333,7 @@ namespace flame
 				new(&v[i])T(rhs[i]);
 		}
 
-		Array(Array&& rhs)
+		DynamicArray(DynamicArray&& rhs)
 		{
 			size = rhs.size;
 			v = rhs.v;
@@ -342,19 +342,19 @@ namespace flame
 			rhs.v = nullptr;
 		}
 
-		~Array()
+		~DynamicArray()
 		{
 			for (auto i = 0; i < size; i++)
 				v[i].~T();
 			flame_free(v);
 		}
 
-		Array& operator=(const Array& rhs)
+		DynamicArray& operator=(const DynamicArray& rhs)
 		{
 			assign(rhs.v, rhs.size);
 		}
 
-		Array& operator=(Array&& rhs)
+		DynamicArray& operator=(DynamicArray&& rhs)
 		{
 			std::swap(size, rhs.size);
 			std::swap(v, rhs.v);
@@ -362,7 +362,7 @@ namespace flame
 			return *this;
 		}
 
-		Array& operator=(const std::vector<T>& rhs)
+		DynamicArray& operator=(const std::vector<T>& rhs)
 		{
 			assign(rhs.data(), rhs.size());
 
@@ -1503,7 +1503,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
 	FLAME_FOUNDATION_EXPORTS String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 
-	FLAME_FOUNDATION_EXPORTS Array<String> get_module_dependancies(const wchar_t* module_name);
+	FLAME_FOUNDATION_EXPORTS DynamicArray<String> get_module_dependancies(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
 

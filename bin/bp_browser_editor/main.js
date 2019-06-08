@@ -112,6 +112,14 @@ var remove_node = function(n)
     for (var i = 0; i < n.outputs.length; i++)
         n.outputs[i].un_link();
     document.body.removeChild(n.eMain);
+    for (var i = 0; i < nodes.length; i++)
+    {
+        if (nodes[i] == n)
+        {
+            nodes.splice(i, 1);
+            break;
+        }
+    }
 }
 
 window.onload = function()

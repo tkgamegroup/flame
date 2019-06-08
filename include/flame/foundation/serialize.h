@@ -243,7 +243,8 @@ namespace flame
 		TypeTagEnumSingle,
 		TypeTagEnumMulti,
 		TypeTagVariable,
-		TypeTagPointer
+		TypeTagPointer,
+		TypeTagAny
 	};
 
 	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag$ tag);
@@ -268,10 +269,12 @@ namespace flame
 		// name:
 		//  if has template, name is with template
 		//  template args are separated by ',', with no space char and wrap by '<>'
-		//  e.g. 'LNA<void*>' or Vec<4,float>
+		//  e.g. 'Array<void*>' or Vec<4,float>
 
 		static bool equal(const TypeInfo* lhs, const TypeInfo* rhs)
 		{
+			if (lhs->tag() == TypeTagAny || rhs->tag() == TypeTagAny)
+				return true;
 			return lhs->tag() == rhs->tag() && lhs->hash() == rhs->hash() &&
 				strcmp(lhs->name(), rhs->name()) == 0;
 		}
@@ -427,13 +430,13 @@ namespace flame
 			'c' for function, means to collect the code of the function
 	*/
 
-	FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums(int level = 0);
+	FLAME_FOUNDATION_EXPORTS DynamicArray<EnumInfo*> get_enums(int level = 0);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, int level = -1);
 
-	FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts(int level = 0);
+	FLAME_FOUNDATION_EXPORTS DynamicArray<UdtInfo*> get_udts(int level = 0);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
 
-	FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions(int level = 0);
+	FLAME_FOUNDATION_EXPORTS DynamicArray<FunctionInfo*> get_functions(int level = 0);
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, int level = -1);
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();

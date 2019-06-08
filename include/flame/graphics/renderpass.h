@@ -46,59 +46,31 @@ namespace flame
 			}
 		};
 
-		struct AttachmentInfo$
-		{
-			Format$ format$i;
-			bool clear$i;
-			SampleCount$ sample_count$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS AttachmentInfo$();
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
-			FLAME_GRAPHICS_EXPORTS void update$();
-		};
-
 		struct SubpassInfo
 		{
-			LNA<uint> color_attachments;
-			LNA<uint> resolve_attachments;
+			Array<uint> color_attachments;
+			Array<uint> resolve_attachments;
 			int depth_attachment;
 
 			SubpassInfo() :
 				depth_attachment(-1)
 			{
-				memset(&color_attachments, 0, sizeof(LNA<uint>));
-				memset(&resolve_attachments, 0, sizeof(LNA<uint>));
+				memset(&color_attachments, 0, sizeof(Array<uint>));
+				memset(&resolve_attachments, 0, sizeof(Array<uint>));
 			}
-		};
-
-		struct SubpassInfo$
-		{
-			LNA<uint> color_attachments$i;
-			LNA<uint> resolve_attachments$i;
-			int depth_attachment$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS SubpassInfo$();
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
-			FLAME_GRAPHICS_EXPORTS void update$();
 		};
 
 		struct RenderpassInfo
 		{
-			LNA<void*> attachments;
-			LNA<void*> subpasses;
-			LNA<Vec<2, uint>> dependencies;
+			Array<void*> attachments;
+			Array<void*> subpasses;
+			Array<Vec<2, uint>> dependencies;
 
 			RenderpassInfo()
 			{
-				memset(&attachments, 0, sizeof(LNA<AttachmentInfo*>));
-				memset(&subpasses, 0, sizeof(LNA<SubpassInfo*>));
-				memset(&dependencies, 0, sizeof(LNA<Vec<2, uint>>));
+				memset(&attachments, 0, sizeof(Array<AttachmentInfo*>));
+				memset(&subpasses, 0, sizeof(Array<SubpassInfo*>));
+				memset(&dependencies, 0, sizeof(Array<Vec<2, uint>>));
 			}
 		};
 
@@ -108,19 +80,6 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo& info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
-		};
-
-		struct Renderpass$
-		{
-			void* device$i;
-			LNA<void*> attachments$i;
-			LNA<void*> subpasses$i;
-			LNA<Vec<2, uint>> dependencies$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
 		};
 
 		struct Clearvalues
@@ -133,40 +92,16 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Clearvalues* c);
 		};
 
-		struct Clearvalues$
-		{
-			void* renderpass$i;
-			LNA<Vec4c> colors$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
-			FLAME_GRAPHICS_EXPORTS void update$();
-		};
-
 		struct FramebufferInfo
 		{
 			Renderpass* rp;
-			LNA<void*> views;
+			Array<void*> views;
 		};
 
 		struct Framebuffer
 		{
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, const FramebufferInfo& info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
-		};
-
-		struct Framebuffer$
-		{
-			void* device$i;
-			void* renderpass$i;
-			LNA<void*> views$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
 		};
 	}
 }

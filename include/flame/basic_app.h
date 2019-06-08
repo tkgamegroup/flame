@@ -53,6 +53,7 @@ namespace flame
 
 		void create(const char *title, const Vec2u& res, int style)
 		{
+			typeinfo_check_update();
 			typeinfo_load(L"flame_foundation.typeinfo");
 			typeinfo_load(L"flame_graphics.typeinfo");
 			app = Application::create();

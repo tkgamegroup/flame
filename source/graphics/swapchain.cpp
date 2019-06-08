@@ -242,34 +242,45 @@ namespace flame
 			delete (SwapchainPrivate*)s;
 		}
 
-		void Swapchain$::initialize$()
+		struct Swapchain$
 		{
-			if (in$i)
+			void* in$i;
+
+			void* out$o;
+			void* window$o;
+			Array<void*> images$o;
+			Array<void*> imageviews$o;
+
+			FLAME_GRAPHICS_EXPORTS void initialize$()
 			{
-				out$o = in$i;
-				auto sc = (graphics::Swapchain*)out$o;
-				auto image_count = sc->image_count();
-				if (image_count > 0)
+				if (in$i)
 				{
-					images$o.count = image_count;
-					images$o.v = new void*[image_count];
-					for (auto i = 0; i < image_count; i++)
-						images$o.v[i] = sc->image(i);
-					imageviews$o.count = image_count;
-					imageviews$o.v = new void* [image_count];
-					for (auto i = 0; i < image_count; i++)
-						imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
+					out$o = in$i;
+					auto sc = (graphics::Swapchain*)out$o;
+					auto image_count = sc->image_count();
+					if (image_count > 0)
+					{
+						images$o.size = image_count;
+						images$o.v = new void* [image_count];
+						for (auto i = 0; i < image_count; i++)
+							images$o.v[i] = sc->image(i);
+						imageviews$o.size = image_count;
+						imageviews$o.v = new void* [image_count];
+						for (auto i = 0; i < image_count; i++)
+							imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
+					}
 				}
 			}
-		}
 
-		void Swapchain$::finish$()
-		{
-			delete[]images$o.v;
-			delete[]imageviews$o.v;
-		}
+			FLAME_GRAPHICS_EXPORTS void finish$()
+			{
+				delete[]images$o.v;
+				for (auto i = 0; i < imageviews$o.size; i++)
+					Imageview::destroy((Imageview*)imageviews$o.v[i]);
+				delete[]imageviews$o.v;
+			}
 
-		Swapchain$ bp_swapchain_unused;
+		}bp_swapchain_unused;
 	}
 }
 

@@ -49,19 +49,6 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
-
-		struct Swapchain$
-		{
-			void* in$i;
-
-			void* out$o;
-			void* window$o;
-			LNA<void*> images$o;
-			LNA<void*> imageviews$o;
-
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
-		};
 	}
 }
 

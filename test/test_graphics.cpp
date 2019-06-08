@@ -27,7 +27,7 @@ using namespace graphics;
 
 struct App : BasicApp
 {
-	VoidPtrs cbs;
+	Array<void*> cbs;
 	BP* render_path;
 	//Canvas* canvas;
 	//Font* font;
@@ -43,7 +43,7 @@ struct App : BasicApp
 		render_path->initialize();
 		render_path->update();
 		//render_path->finish();
-		memcpy(&cbs, render_path->find_output("cb.out")->data(), sizeof(VoidPtrs));
+		memcpy(&cbs, render_path->find_output("cbs.out")->data(), sizeof(Array<void*>));
 
 		//Canvas::initialize(d, sc);
 		//canvas = Canvas::create(sc);
@@ -79,9 +79,7 @@ struct App : BasicApp
 
 int main(int argc, char** args)
 {
-	Ivec2 res(1280, 720);
-
-	app.create("Graphics Test", res, WindowFrame, graphics::SampleCount_1);
+	app.create("Graphics Test", Vec2u(800, 600), WindowFrame);
 	app.run();
 
 	return 0;

@@ -8,10 +8,10 @@ namespace flame
 {
 	struct MakeCmd$
 	{
-		LNA<void*> cmdbufs$i;
+		Array<void*> cmdbufs$i;
 		void* renderpass$i;
 		void* clearvalues$i;
-		LNA<void*> framebuffers$i;
+		Array<void*> framebuffers$i;
 		
 		__declspec(dllexport) void initialize$()
 		{
@@ -23,7 +23,7 @@ namespace flame
 		
 		__declspec(dllexport) void update$()
 		{
-			for (auto i = 0; i < cmdbufs$i.count; i++)
+			for (auto i = 0; i < cmdbufs$i.size; i++)
 			{
 				auto cb = (graphics::Commandbuffer*)cmdbufs$i.v[i];
 				cb->begin();

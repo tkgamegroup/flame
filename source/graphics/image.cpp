@@ -282,7 +282,7 @@ namespace flame
 				FramebufferInfo fb_info;
 				fb_info.rp = d->rp_one_rgba32;
 				std::vector<void*> views = { img_v };
-				fb_info.views.count = views.size();
+				fb_info.views.size = views.size();
 				fb_info.views.v = views.data();
 				auto fb = Framebuffer::create(d, fb_info);
 				auto ds = Descriptorset::create(d->dp, d->pl_trans->layout()->dsl(0));

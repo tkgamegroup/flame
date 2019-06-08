@@ -114,7 +114,7 @@ namespace flame
 				fb_info.rp = rp;
 				std::vector<void*> views;
 				views.resize(2);
-				fb_info.views.count = views.size();
+				fb_info.views.size = views.size();
 				fb_info.views.v = views.data();
 				views[0] = image_ms_view;
 				for (auto i = 0; i < sc->image_count(); i++)
@@ -784,9 +784,9 @@ namespace flame
 			std::vector<uint> col_refs = {0};
 			std::vector<uint> res_refs = {1};
 			SubpassInfo sp_info;
-			sp_info.color_attachments.count = col_refs.size();
+			sp_info.color_attachments.size = col_refs.size();
 			sp_info.color_attachments.v = col_refs.data();
-			sp_info.resolve_attachments.count = res_refs.size();
+			sp_info.resolve_attachments.size = res_refs.size();
 			sp_info.resolve_attachments.v = res_refs.data();
 
 			RenderpassInfo rp_info;

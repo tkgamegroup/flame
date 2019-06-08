@@ -149,15 +149,5 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Queue *create(Device *d, int queue_family_idx);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Queue *q);
 		};
-
-		struct Commandbuffer$
-		{
-			void* device$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS void initialize$();
-			FLAME_GRAPHICS_EXPORTS void finish$();
-		};
 	}
 }

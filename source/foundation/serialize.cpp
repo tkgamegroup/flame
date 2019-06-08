@@ -35,7 +35,8 @@ namespace flame
 		"enum_single",
 		"enum_multi",
 		"variable",
-		"pointer"
+		"pointer",
+		"any"
 	};
 
 	const char* get_type_tag_name(TypeTag$ tag)
@@ -163,8 +164,8 @@ namespace flame
 				return;
 			const std::string ignore_types[] = {
 				"void*",
-				"LNA",
 				"Array",
+				"DynamicArray",
 				"String",
 				"Function"
 			};
@@ -1344,7 +1345,7 @@ namespace flame
 			info.name = base_type_name(symbol);
 		}
 			break;
-		case SymTagPointerType: case SymTagArrayType:
+		case SymTagPointerType:
 		{
 			info.tag = TypeTagPointer;
 			IDiaSymbol* pointer_type;
@@ -1363,6 +1364,8 @@ namespace flame
 				info.name = format_name(pwname);
 				break;
 			}
+			if (variable_attribute.find('a') != std::string::npos && info.name == "void")
+				info.tag = TypeTagAny;
 			pointer_type->Release();
 		}
 			break;
@@ -1574,9 +1577,9 @@ namespace flame
 	}
 
 	template<class T, class U>
-	Array<T*> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
+	DynamicArray<T*> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
 	{
-		Array<T*> ret;
+		DynamicArray<T*> ret;
 		ret.resize(map.size());
 		auto i = 0;
 		for (auto it = map.begin(); it != map.end(); it++)
@@ -1596,10 +1599,10 @@ namespace flame
 		return it->second.get();
 	}
 
-	Array<EnumInfo*> get_enums(int level)
+	DynamicArray<EnumInfo*> get_enums(int level)
 	{
 		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<EnumInfo>(db->enums) : Array<EnumInfo*>();
+		return db ? get_typeinfo_objects<EnumInfo>(db->enums) : DynamicArray<EnumInfo*>();
 	}
 
 	EnumInfo* find_enum(uint name_hash, int level)
@@ -1621,10 +1624,10 @@ namespace flame
 		}
 	}
 
-	Array<FunctionInfo*> get_functions(int level)
+	DynamicArray<FunctionInfo*> get_functions(int level)
 	{
 		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<FunctionInfo>(db->functions) : Array<FunctionInfo*>();
+		return db ? get_typeinfo_objects<FunctionInfo>(db->functions) : DynamicArray<FunctionInfo*>();
 	}
 
 	FunctionInfo* find_funcion(uint name_hash, int level)
@@ -1646,10 +1649,10 @@ namespace flame
 		}
 	}
 
-	Array<UdtInfo*> get_udts(int level)
+	DynamicArray<UdtInfo*> get_udts(int level)
 	{
 		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<UdtInfo>(db->udts) : Array<UdtInfo*>();
+		return db ? get_typeinfo_objects<UdtInfo>(db->udts) : DynamicArray<UdtInfo*>();
 	}
 
 	UdtInfo* find_udt(uint name_hash, int level)
@@ -1776,11 +1779,11 @@ namespace flame
 	struct BP_Array
 	{
 		T in[N];
-		LNA<T> out;
+		Array<T> out;
 
 		void initialize()
 		{
-			out.count = N;
+			out.size = N;
 			out.v = new T[N];
 		}
 
@@ -1796,13 +1799,26 @@ namespace flame
 		}
 	};
 
+	struct ArraySize$
+	{
+		void* array$ia;
+		uint size$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (array$ia)
+				size$o = ((Array<int>*)array$ia)->size;
+		}
+
+	}bp_array_size_unused;
+
 	template<uint N, class T>
 	void install_array_udt(const char* name_suffix, const char* type_name)
 	{
 		auto u = new UdtInfoPrivate;
 		u->name = "Array_";
 		u->name += name_suffix;
-		u->size = sizeof(LNA<T>) + sizeof(T) * N;
+		u->size = sizeof(Array<T>) + sizeof(T) * N;
 		u->module_name = L"flame_foundation.dll";
 		
 		auto is_pointer = false;
@@ -1829,13 +1845,13 @@ namespace flame
 		{
 			auto v = new VariableInfoPrivate;
 			v->type.tag = TypeTagVariable;
-			v->type.name = "LNA";
+			v->type.name = "Array";
 			v->type.name += "<" + std::string(type_name) + ">";
 			v->type.hash = H(v->type.name.c_str());
 			v->name = "v";
 			v->attribute = "o";
 			v->offset = sizeof(T) * N;
-			v->size = sizeof(LNA<T>);
+			v->size = sizeof(Array<T>);
 			v->_init_default_value();
 			u->items.emplace_back(v);
 		}

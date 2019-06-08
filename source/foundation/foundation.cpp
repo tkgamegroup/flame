@@ -222,11 +222,11 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	Array<String> get_module_dependancies(const wchar_t* module_name)
+	DynamicArray<String> get_module_dependancies(const wchar_t* module_name)
 	{
 		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::fs::path(module_name).parent_path().string().c_str());
 
-		Array<String> ret;
+		DynamicArray<String> ret;
 		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2) 
 		{
 			PIMAGE_IMPORT_DESCRIPTOR importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
