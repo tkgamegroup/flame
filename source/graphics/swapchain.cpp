@@ -183,6 +183,8 @@ namespace flame
 #endif
 
 			images.resize(image_count);
+			for (auto i = 0; i < image_count; i++)
+				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, native_images[i]);
 		}
 
 		void SwapchainPrivate::destroy()

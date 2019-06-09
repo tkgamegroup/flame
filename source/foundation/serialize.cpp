@@ -1695,6 +1695,8 @@ namespace flame
 		return l;
 	}
 
+	static void* this_module;
+
 	template<class T>
 	void* pf2p(T f)
 	{
@@ -1704,24 +1706,27 @@ namespace flame
 			void* p;
 		}cvt;
 		cvt.f = f;
-		return cvt.p;
+		return (void*)((char*)cvt.p - this_module);
 	}
 
 	template<uint N, class T>
 	struct BP_Vec
 	{
-		Vec<N, T> in;
+		T in[N];
 		Vec<N, T> out;
 
 		void update()
 		{
-			out = in;
+			for (auto i = 0; i < N; i++)
+				out.v_[i] = in[i];
 		}
 	};
 
 	template<uint N, class T>
 	void install_vec_udt(const char* name_suffix, const char* type_name)
 	{
+		typedef BP_Vec<N, T> VecType;
+
 		auto u = new UdtInfoPrivate;
 		u->name = "Vec";
 		u->name += name_suffix;
@@ -1749,8 +1754,8 @@ namespace flame
 			v->type.hash = H(v->type.name.c_str());
 			v->name = "v";
 			v->attribute = "o";
-			v->offset = sizeof(T) * N;
-			v->size = sizeof(T) * N;
+			v->offset = offsetof(VecType, out);
+			v->size = sizeof(VecType::out);
 			v->_init_default_value();
 			u->items.emplace_back(v);
 		}
@@ -1785,6 +1790,7 @@ namespace flame
 		{
 			out.size = N;
 			out.v = new T[N];
+			update();
 		}
 
 		void update()
@@ -1804,6 +1810,11 @@ namespace flame
 		void* array$ia;
 		uint size$o;
 
+		FLAME_FOUNDATION_EXPORTS void initialize$()
+		{
+			update$();
+		}
+
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
 			if (array$ia)
@@ -1815,6 +1826,8 @@ namespace flame
 	template<uint N, class T>
 	void install_array_udt(const char* name_suffix, const char* type_name)
 	{
+		typedef BP_Array<N, T> ArrayType;
+
 		auto u = new UdtInfoPrivate;
 		u->name = "Array_";
 		u->name += name_suffix;
@@ -1838,7 +1851,7 @@ namespace flame
 			v->name = std::to_string(i + 1);
 			v->attribute = "i";
 			v->offset = sizeof(T) * i;
-			v->size = sizeof(T);;
+			v->size = sizeof(T);
 			v->_init_default_value();
 			u->items.emplace_back(v);
 		}
@@ -1850,8 +1863,8 @@ namespace flame
 			v->type.hash = H(v->type.name.c_str());
 			v->name = "v";
 			v->attribute = "o";
-			v->offset = sizeof(T) * N;
-			v->size = sizeof(Array<T>);
+			v->offset = offsetof(ArrayType, out);
+			v->size = sizeof(ArrayType::out);
 			v->_init_default_value();
 			u->items.emplace_back(v);
 		}
@@ -1899,6 +1912,8 @@ namespace flame
 
 	void typeinfo_init_basic_bp_nodes()
 	{
+		this_module = load_module(L"flame_foundation.dll");
+
 		install_vec_udt<1, float>("1f", "float");
 		install_vec_udt<2, float>("2f", "float");
 		install_vec_udt<3, float>("3f", "float");
@@ -1907,6 +1922,8 @@ namespace flame
 		install_array_udt<1, uint>("1_u", "uint");
 		install_array_udt<1, Vec4c>("1_4c", "Vec<4,uchar>");
 		install_array_udt<1, voidptr>("1_vp", "void*");
+
+		free_module(this_module);
 	}
 
 	void typeinfo_collect(const std::wstring & filename, int level)
