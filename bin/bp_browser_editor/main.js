@@ -13,11 +13,26 @@ var sock_s = null;
 var filename = null;
 var filepath = null;
 
+var requests = [];
+
 var add_dialog;
 var add_dialog_list;
 var add_dialog_type;
 var add_dialog_id;
 var overlay;
+
+function request(filename, callback)
+{
+    sock_s.send(JSON.stringify({
+        type: "get",
+        filename: filename
+    }));
+
+    requests.push({
+        filename: filename,
+        callback: callback
+    });
+}
 
 function get_global_offset(element) 
 {
@@ -147,18 +162,18 @@ window.onload = function()
         }
     };
     
-    var wait_typeinfos = 0;
-    var start = function(){
-        sock_s = new WebSocket("ws://localhost:5566/");
-        sock_s.onmessage = function(res){
+    sock_s = new WebSocket("ws://localhost:5566/");
+    sock_s.onmessage = function(res){
+        var data = JSON.parse(res.data);
+        var ext = data.filename.substring(data.filename.indexOf('.'));
+        if (ext == ".bp")
+        {
             for (var i in nodes)
                 remove_node(nodes[i]);
     
             nodes = [];
-    
-            var src = eval('(' + res.data + ')');
 
-            filename = src.file;
+            filename = data.filename;
             filepath = filename;
             for (var i = filepath.length - 1; i > 0; i--)
             {
@@ -169,58 +184,49 @@ window.onload = function()
                 }
             }
     
-            for (var i in src.nodes)
+            for (var i in data.nodes)
             {
-                var sn = src.nodes[i];
+                var sn = data.nodes[i];
                 var n = new Node(sn);
                 add_node(n);
             }
     
-            staging_links = src.links;
-        };
-        sock_s.onclose = function(){
-            setTimeout(function(){
-                var s = new WebSocket("ws://localhost:5566/");
-                s.onmessage = sock_s.onmessage;
-                s.onclose = sock_s.onclose;
-            }, 2000);
-        };
+            staging_links = data.links;
+        }
+        else
+        {
+            for (var i = 0; i < requests.length; i++)
+            {
+                var r = requests[i];
+                if (r.filename == data.filename)
+                {
+                    requests.splice(i, 1);
+                    r.callback(data);
+                    break;
+                }
+            }
+        }
     };
-    wait_typeinfos++;
-	$.getJSON("flame_foundation.typeinfo", function(res, status){
-        load_typeinfo(res);
-        wait_typeinfos--;
-        if (wait_typeinfos == 0)
-            start();
-	});
-    // wait_typeinfos++;
-	// $.getJSON("flame_network.typeinfo", function(res, status){
-    //     load_typeinfo(res);
-    //     wait_typeinfos--;
-    //     if (wait_typeinfos == 0)
-    //         start();
-	// });
-    wait_typeinfos++;
-	$.getJSON("flame_graphics.typeinfo", function(res, status){
-        load_typeinfo(res);
-        wait_typeinfos--;
-        if (wait_typeinfos == 0)
-            start();
-	});
-    // wait_typeinfos++;
-	// $.getJSON("flame_sound.typeinfo", function(res, status){
-    //     load_typeinfo(res);
-    //     wait_typeinfos--;
-    //     if (wait_typeinfos == 0)
-    //         start();
-	// });
-    // wait_typeinfos++;
-	// $.getJSON("flame_universe.typeinfo", function(res, status){
-    //     load_typeinfo(res);
-    //     wait_typeinfos--;
-    //     if (wait_typeinfos == 0)
-    //         start();
-    // });
+    sock_s.onopen = function(){
+        var check_start = function(res) {
+            load_typeinfo(res);
+            if (requests.length == 0)
+                request("bp");
+        };
+    
+        request("flame_foundation.typeinfo", check_start);
+        // request("flame_network.typeinfo", check_start);
+        request("flame_graphics.typeinfo", check_start);
+        // request("flame_sound.typeinfo", check_start);
+        // request("flame_universe.typeinfo", check_start);
+    };
+    sock_s.onclose = function(){
+        setTimeout(function(){
+            var s = new WebSocket("ws://localhost:5566/");
+            s.onmessage = sock_s.onmessage;
+            s.onclose = sock_s.onclose;
+        }, 2000);
+    };
     
     add_dialog = document.getElementById("add_dialog");
     add_dialog_list = document.getElementById("add_dialog_list");
@@ -293,8 +299,8 @@ function on_save_clicked()
     if (!sock_s)
         return;
 
-    var dst = {};
-    dst.nodes = [];
+    var data = {};
+    data.nodes = [];
     for (var i in nodes)
     {
         var sn = nodes[i];
@@ -314,9 +320,9 @@ function on_save_clicked()
                     n.datas.push({name: vi.name, value: input.data});
             }
         }
-        dst.nodes.push(n);
+        data.nodes.push(n);
     }
-    dst.links = [];
+    data.links = [];
     for (var i in nodes)
     {
         var sn = nodes[i];
@@ -328,11 +334,13 @@ function on_save_clicked()
                 var sl = {};
                 sl.out = input.links[0].get_address();
                 sl.in = input.get_address();
-                dst.links.push(sl);
+                data.links.push(sl);
             }
         }
     }
 
-    var json = JSON.stringify(dst);
-    sock_s.send(json);
+    sock_s.send(JSON.stringify({
+        type: "put",
+        data: data
+    }));
 }

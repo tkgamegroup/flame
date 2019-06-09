@@ -90,6 +90,7 @@ struct App
 {
 	std::wstring filename;
 	BP* bp;
+	OneClientServer* server;
 }app;
 auto papp = &app;
 
@@ -435,32 +436,43 @@ int main(int argc, char **args)
 			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
 			printf("waiting for browser on port 5566 ...");
 
-			auto s = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, int, void*)>(
+			app.server = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, int, void*)>(
 				[](void* c, int len, void* data) {
 					auto app = *(App**)c;
-					auto wtf = (char*)data;
-					std::ofstream file(app->filename);
-					file << (char*)data;
-					file.close();
 
-					BP::destroy(app->bp);
-					app->bp = BP::create_from_file(app->filename.c_str());
+					auto req = SerializableNode::create_from_json_string((char*)data);
+					auto type = req->find_node("type")->value();
 
-					printf("browser: bp updated\n");
+					if (type == "get")
+					{
+						auto filename = s2w(req->find_node("filename")->value());
+						if (filename == L"bp")
+							filename = app->filename;
+						auto rep = SerializableNode::create_from_json_file(filename);
+						rep->new_attr("filename", w2s(filename));
+						auto str = rep->to_string_json();
+						app->server->send(str.size, str.v);
+						SerializableNode::destroy(rep);
+					}
+					else if (type == "put")
+					{
+						req->find_node("data")->save_json(app->filename);
+
+						BP::destroy(app->bp);
+						app->bp = BP::create_from_file(app->filename.c_str());
+
+						printf("browser: bp updated\n");
+					}
+
+					SerializableNode::destroy(req);
 				}, sizeof(void*), &papp));
-			if (!s)
+			if (!app.server)
 				printf("  timeout\n");
 			else
 			{
 				printf("  ok\nbrowser: working\n");
 
-				auto json = SerializableNode::create_from_json_file(app.filename);
-				json->new_attr("file", w2s(app.filename));
-				auto str = json->to_string_json();
-				s->send(str.size, str.v);
-				SerializableNode::destroy(json);
-
-				wait_for(s->ev_closed);
+				wait_for(app.server->ev_closed);
 				printf("browser: closed\n");
 			}
 		}

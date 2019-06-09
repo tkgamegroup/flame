@@ -121,7 +121,7 @@ namespace flame
 
 				memset(map, 0, sizeof(map));
 
-				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
 				atlas->init(Vec4c(0));
 
 				max_width = 0;

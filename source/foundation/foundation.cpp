@@ -114,19 +114,19 @@ namespace flame
 		}
 	}
 
-	void exec(const wchar_t *filename, const char *_parameters, bool wait)
+	void exec(const wchar_t *filename, const char *_parameters, bool wait, bool show)
 	{
 		SHELLEXECUTEINFOW info = {};
 		info.cbSize = sizeof(SHELLEXECUTEINFOW);
 		info.fMask = SEE_MASK_NOCLOSEPROCESS;
 		info.lpVerb = L"open";
 		info.lpFile = filename;
+		info.nShow = show ? SW_SHOW : SW_HIDE;
 		auto parameters = s2w(_parameters);
 		info.lpParameters = parameters.c_str();
 		ShellExecuteExW(&info);
 		if (wait)
 			WaitForSingleObject(info.hProcess, INFINITE);
-
 	}
 
 	String exec_and_get_output(const wchar_t *filename, const char *parameters)

@@ -73,7 +73,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, int _level, int _layer, SampleCount$ _sample_count, int _usage, int _mem_prop)
+		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, int _level, int _layer, SampleCount$ _sample_count, int _usage)
 		{
 			format = _format;
 			size = _size;
@@ -84,7 +84,6 @@ namespace flame
 			set_props();
 
 			usage = _usage;
-			mem_prop = _mem_prop;
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
@@ -116,7 +115,7 @@ namespace flame
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.pNext = nullptr;
 			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, Z((MemProp)mem_prop));
+			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, MemPropDevice);
 
 			vk_chk_res(vkAllocateMemory(d->v, &allocInfo, nullptr, &m));
 
@@ -137,7 +136,6 @@ namespace flame
 			set_props();
 
 			usage = 0;
-			mem_prop = 0;
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
@@ -276,7 +274,7 @@ namespace flame
 		{
 			if (bpp_ / channel_ > 8)
 			{
-				auto img = Image::create(d, Format_R8G8B8A8_UNORM, size, 1, 1, SampleCount_1, ImageUsageAttachment | ImageUsageTransferSrc, MemPropDevice);
+				auto img = Image::create(d, Format_R8G8B8A8_UNORM, size, 1, 1, SampleCount_1, ImageUsageAttachment | ImageUsageTransferSrc);
 				auto img_v = Imageview::create(img);
 
 				FramebufferInfo fb_info;
@@ -345,9 +343,9 @@ namespace flame
 			((ImagePrivate*)this)->save_png(filename);
 		}
 
-		Image *Image::create(Device *d, Format$ format, const Vec2u &size, int level, int layer, SampleCount$ sample_count, int usage, int mem_prop, void *data)
+		Image *Image::create(Device *d, Format$ format, const Vec2u &size, int level, int layer, SampleCount$ sample_count, int usage, void *data)
 		{
-			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage, mem_prop);
+			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
 
 			if (data)
 			{
@@ -374,7 +372,7 @@ namespace flame
 
 		Image *Image::create_from_bitmap(Device *d, Bitmap *bmp, int extra_usage)
 		{
-			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage, MemPropDevice);
+			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
 			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 			staging_buffer->map();
@@ -477,8 +475,7 @@ namespace flame
 				buffer_copy_regions.push_back(BufferImageCopy(width, height));
 			}
 
-			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1,
-				ImageUsageSampled | ImageUsageTransferDst | extra_usage, MemPropDevice);
+			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
@@ -504,6 +501,11 @@ namespace flame
 		{
 			delete (ImagePrivate*)i;
 		}
+
+		struct Image$
+		{
+
+		};
 
 		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
 		{

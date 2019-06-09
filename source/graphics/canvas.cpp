@@ -108,7 +108,7 @@ namespace flame
 
 				auto swapchain_format = get_swapchain_format();
 
-				image_ms = Image::create(device, swapchain_format, sc->image(0)->size, 1, 1, sample_count, ImageUsageAttachment, MemPropDevice);
+				image_ms = Image::create(device, swapchain_format, sc->image(0)->size, 1, 1, sample_count, ImageUsageAttachment);
 				image_ms_view = Imageview::create(image_ms);
 				FramebufferInfo fb_info;
 				fb_info.rp = rp;
@@ -792,7 +792,7 @@ namespace flame
 			RenderpassInfo rp_info;
 			rp = Renderpass::create(device, rp_info);
 
-			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, MemPropDevice);
+			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
 			white_image->init(Vec4c(255));
 			white_imageview = Imageview::create(white_image);
 

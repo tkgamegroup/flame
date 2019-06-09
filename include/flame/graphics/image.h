@@ -73,7 +73,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void save_png(const wchar_t* filename);
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, int level, int layer, SampleCount$ sample_count, int usage, int mem_prop, void* data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, int level, int layer, SampleCount$ sample_count, int usage, void* data = nullptr);
 			// default usage: ShaderSampled, TransferDst
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, int extra_usage = 0);
 			// default usage: ShaderSampled, TransferDst

@@ -35,7 +35,6 @@ namespace flame
 		struct ImagePrivate : Image
 		{
 			int usage;
-			int mem_prop;
 
 			DevicePrivate *d;
 #if defined(FLAME_VULKAN)
@@ -44,7 +43,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
-			ImagePrivate(Device *d, Format$ format, const Vec2u &size, int level, int layer, SampleCount$ sample_count, int usage, int mem_prop);
+			ImagePrivate(Device *d, Format$ format, const Vec2u &size, int level, int layer, SampleCount$ sample_count, int usage);
 			ImagePrivate(Device *d, Format$ format, const Vec2u &size, int level, int layer, void *native);
 			~ImagePrivate();
 

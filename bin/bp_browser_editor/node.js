@@ -124,7 +124,7 @@ class Node
             if (!load(sp[1]))
             {
                 var url = filepath + "/" + sp[0] + ".typeinfo";
-                $.getJSON(url, function(res, status){
+                request(url, function(res){
                     if (status == "success")
                     {
                         load_typeinfo(res, sp[0]);

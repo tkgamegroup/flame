@@ -1499,7 +1499,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void sleep(uint time); // a time less than 0 means forever
 	FLAME_FOUNDATION_EXPORTS void wait_for(void* ev);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
-	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const char *parameters, bool wait);
+	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const char *parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
 	FLAME_FOUNDATION_EXPORTS String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 

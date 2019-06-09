@@ -27,7 +27,17 @@
 
 namespace flame
 {
-	bool web_socket_shakehank(int fd_c)
+	void recv_all(int fd, uchar* dst, int rest)
+	{
+		while (rest > 0)
+		{
+			auto ret = recv(fd, (char*)dst, rest, 0);
+			dst += ret;
+			rest -= ret;
+		}
+	}
+
+	bool websocket_shakehank(int fd_c)
 	{
 		int res;
 		fd_set rfds;
@@ -124,53 +134,55 @@ namespace flame
 		return ::send(fd, (char*)buf, int(p - buf) + size, 0) > 0;
 	}
 
-	int websocket_recv(uchar*& p, ulonglong& len, uint& mask_key)
+	struct WebsocketFrame
 	{
+		uint op;
+		ulonglong length;
+		uint mask_key;
+	};
+
+	std::vector<std::string> websocket_recv(int fd)
+	{
+		uchar buf[1024 * 100];
+		auto p = buf;
+
+		auto s = p;
+
 		uchar b1, b2;
 		b1 = *p++;
 		b2 = *p++;
 
-		auto op = b1 & 0xf;
+		h.op = b1 & 0xf;
 		auto mask = (b2 & 128) != 0;
 		auto payload_len = b2 & 127;
 
 		if (payload_len <= 125)
-			len = payload_len;
+			h.length = payload_len;
 		else if (payload_len == 126)
 		{
-			len = (*p++) << 8;
-			len += *p++;
+			h.length = (*p++) << 8;
+			h.length += *p++;
 		}
 		else if (payload_len == 127)
 		{
-			len = (*p++) << 56;
-			len += (*p++) << 48;
-			len += (*p++) << 40;
-			len += (*p++) << 32;
+			h.length = (*p++) << 56;
+			h.length += (*p++) << 48;
+			h.length += (*p++) << 40;
+			h.length += (*p++) << 32;
 
-			len += (*p++) << 24;
-			len += (*p++) << 16;
-			len += (*p++) << 8;
-			len += *p++;
+			h.length += (*p++) << 24;
+			h.length += (*p++) << 16;
+			h.length += (*p++) << 8;
+			h.length += *p++;
 		}
 
 		if (mask)
 		{
-			mask_key = *(uint*)p;
+			h.mask_key = *(uint*)p;
 			p += sizeof(uint);
 		}
 
-		return op;
-	}
-
-	void websocket_recv_all(int fd, uchar* dst, int rest)
-	{
-		while (rest > 0)
-		{
-			auto ret = recv(fd, (char*)dst, rest, 0);
-			dst += ret;
-			rest -= ret;
-		}
+		return p - s;
 	}
 
 	void websocket_mask(uchar* p, ulonglong len, uint mask_key)
@@ -234,7 +246,7 @@ namespace flame
 
 		if (type == SocketWeb)
 		{
-			if (!web_socket_shakehank(fd_c))
+			if (!websocket_shakehank(fd_c))
 				return nullptr;
 		}
 
@@ -324,7 +336,7 @@ namespace flame
 
 			if (type == SocketWeb)
 			{
-				if (!web_socket_shakehank(fd_c))
+				if (!websocket_shakehank(fd_c))
 					continue;
 			}
 
