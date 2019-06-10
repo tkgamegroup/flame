@@ -28,11 +28,39 @@ class Slot
     
             if (vi.default_value)
             {
-                thiz.eEdit = document.createElement("input");
-                thiz.eEdit.classList.add("slot_edit");
-                thiz.eEdit.value = vi.default_value;
+                this.eMain.appendChild(document.createElement("br"));
+
+                let sp = vi.type.split("#");
+                if (sp[0] == "enum_single")
+                {
+                    let select = document.createElement("select");
+                    select.classList.add("slot_edit");
+
+                    var e = find_enum(sp[1]);
+                    for (let i of e.items)
+                    {
+                        let o = document.createElement("option");
+                        o.value = i.name;
+                        o.text = i.name;
+                        select.add(o);
+                    }
+
+                    this.eMain.appendChild(select);
+                    thiz.eSelect = select;
+                }
+                else if (sp[0] == "enum_multi")
+                {
+
+                }
+                else
+                {
+                    let input = document.createElement("input");
+                    input.classList.add("slot_edit");
+                    input.value = vi.default_value;
+                    this.eMain.appendChild(input);
+                    thiz.eInput = input;
+                }
                 
-                this.eMain.appendChild(thiz.eEdit);
             }
     
             this.path = create_path();
@@ -119,6 +147,27 @@ class Slot
     get_address()
     {
         return this.node.id + "." + this.vi.name;
+    }
+
+    set_data(data)
+    {
+        if (io == 0)
+        {
+            this.data = data;
+            if (this.eInput)
+                this.eInput.value = data;
+            else if (this.eSelect)
+                ;
+        }
+    }
+
+    get_data()
+    {
+        if (io == 0)
+        {
+            if (this.eInput)
+                this.data = this.eInput.value;
+        }
     }
 }
 

@@ -62,11 +62,20 @@ function create_path()
     return path;
 }
 
+var find_enum = function(name)
+{
+    for (let e of enums)
+    {
+        if (e.name == name)
+            return e;
+    }
+    return null;
+};
+
 var find_udt = function(name)
 {
-    for (let i in udts)
+    for (let u of udts)
     {
-        var u = udts[i];
         if (u.name == name)
             return u;
     }
@@ -209,11 +218,20 @@ window.onload = function()
             }
             for (let n_node of xml.getElementsByTagName("nodes")[0].children)
             {
+                let datas = [];
+                let n_datas = n_node.getElementsByTagName("datas")[0];
+                for (let d of n_datas.children)
+                {
+                    datas.push({
+                        name: d.getAttribute("name"),
+                        value: d.getAttribute("value")
+                    });
+                }
                 add_node(new Node({
                     id: n_node.getAttribute("id"),
                     type: n_node.getAttribute("type"),
                     pos: n_node.getAttribute("pos"),
-                    datas: n_node.getAttribute("datas"),
+                    datas: datas
                 }));
             }
         }
@@ -339,8 +357,8 @@ function on_save_clicked()
             let vi = input.vi;
             if (vi.default_value)
             {
-                input.data = input.eEdit.value;
-                if (!(vi.default_value && vi.default_value == input.data))
+                input.get_data();
+                if (vi.default_value != input.data)
                     n.datas.push({name: vi.name, value: input.data});
             }
         }

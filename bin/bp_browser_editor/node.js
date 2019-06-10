@@ -50,7 +50,7 @@ class Node
         this.inputs = [];
         this.outputs = [];
     
-        var sp = desc.type.split("#");
+        let sp = desc.type.split("#");
         function load(u_name)
         {
             var udt = find_udt(u_name);
@@ -80,16 +80,10 @@ class Node
                     thiz.eRight.appendChild(s.eMain);
                 }
             }
-            if (desc.datas != "null")
+            for (let i in desc.datas)
             {
-                for (let i in desc.datas)
-                {
-                    var item = desc.datas[i];
-                    var input = thiz.find_input(item.name);
-                    input.data = item.value;
-                    if (input.eEdit)
-                        input.eEdit.value = input.data;
-                }
+                var item = desc.datas[i];
+                thiz.find_input(item.name).set_data(item.value);
             }
             for (let i = 0; i < staging_links.length; i++)
             {

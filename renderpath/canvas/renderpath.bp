@@ -2,7 +2,9 @@
 <BP>
 	<nodes>
 		<node type="graphics::AttachmentInfo" id="col_att" pos="58.00;442.00">
-			<datas />
+			<datas>
+				<data "name"="format" "value"="Format_Swapchain_B8G8R8A8_UNORM">
+			<datas/>
 		</node>
 		<node type="Array_1_vp" id="col_atts" pos="286.00;625.00">
 			<datas />
@@ -17,6 +19,8 @@
 			<datas />
 		</node>
 		<node type="Array_1_4c" id="color" pos="386.00;160.00">
+			<datas>
+				<data "name"="1" "value"="200;100;50;255">
 			<datas />
 		</node>
 		<node type="make_cmd#MakeCmd" id="make_cmd" pos="985.00;224.00">
