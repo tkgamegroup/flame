@@ -108,7 +108,9 @@ namespace flame
 
 		void update();
 
+		void load(SerializableNode* src);
 		void load(const wchar_t *filename);
+		void save(SerializableNode* src);
 		void save(const wchar_t *filename);
 	};
 
@@ -559,21 +561,15 @@ namespace flame
 		for (auto &n : update_list)
 			n->update();
 	}
-	
-	void BPPrivate::load(const wchar_t *_filename)
+
+	void BPPrivate::load(SerializableNode* src)
 	{
-		filename = _filename;
-
-		auto file = SerializableNode::create_from_json_file(filename);
-		if (!file)
-			return;
-
-		auto n_nodes = file->find_node("nodes");
+		auto n_nodes = src->find_node("nodes");
 		for (auto i_n = 0; i_n < n_nodes->node_count(); i_n++)
 		{
 			auto n_node = n_nodes->node(i_n);
-			auto type = n_node->find_node("type")->value();
-			auto id = n_node->find_node("id")->value();
+			auto type = n_node->find_attr("type")->value();
+			auto id = n_node->find_attr("id")->value();
 
 			auto n = add_node(type.c_str(), id.c_str());
 			if (!n)
@@ -581,7 +577,7 @@ namespace flame
 				printf("node \"%s\" with type \"%s\" add failed\n", id.c_str(), type.c_str());
 				continue;
 			}
-			auto a_pos = n_node->find_node("pos");
+			auto a_pos = n_node->find_attr("pos");
 			if (a_pos)
 				n->position = stof2(a_pos->value().c_str());
 
@@ -589,21 +585,21 @@ namespace flame
 			for (auto i_d = 0; i_d < n_datas->node_count(); i_d++)
 			{
 				auto n_data = n_datas->node(i_d);
-				auto input = n->find_input(n_data->find_node("name")->value());
+				auto input = n->find_input(n_data->find_attr("name")->value());
 				auto v = input->variable_info;
 				auto type = v->type();
 				if (v->default_value())
-					unserialize_value(type->tag(), type->hash(), n_data->find_node("value")->value(), input->data);
+					unserialize_value(type->tag(), type->hash(), n_data->find_attr("value")->value(), input->data);
 			}
 		}
 
-		auto n_links = file->find_node("links");
+		auto n_links = src->find_node("links");
 		auto lc = n_links->node_count();
 		for (auto i_l = 0; i_l < n_links->node_count(); i_l++)
 		{
 			auto n_link = n_links->node(i_l);
-			auto o_address = n_link->find_node("out")->value();
-			auto i_address = n_link->find_node("in")->value();
+			auto o_address = n_link->find_attr("out")->value();
+			auto i_address = n_link->find_attr("in")->value();
 			auto o = find_output(o_address);
 			auto i = find_input(i_address);
 			if (o && i)
@@ -614,27 +610,35 @@ namespace flame
 			else
 				printf("unable to link: %s - > %s\n", o_address.c_str(), i_address.c_str());
 		}
+	}
+	
+	void BPPrivate::load(const wchar_t *_filename)
+	{
+		filename = _filename;
+
+		auto file = SerializableNode::create_from_xml_file(filename);
+		if (!file)
+			return;
+
+		load(file);
 
 		SerializableNode::destroy(file);
 	}
 
-	void BPPrivate::save(const wchar_t *_filename)
+	void BPPrivate::save(SerializableNode* dst)
 	{
-		filename = _filename;
 		auto ppath = std::fs::path(filename).parent_path().wstring() + L"\\";
 
-		auto file = SerializableNode::create("BP");
-
-		auto n_nodes = file->new_node("nodes");
-		n_nodes->set_type(SerializableNode::Array);
-		for (auto &n : nodes)
+		auto n_nodes = dst->new_node("nodes");
+		for (auto& n : nodes)
 		{
-			auto n_node = n_nodes->new_node("");
+			auto n_node = n_nodes->new_node("node");
 			auto u = n->udt;
 			auto tn = std::string(u->name());
 			if (!n->udt_from_default_db)
 			{
-				auto src = std::fs::path(u->module_name()).wstring();
+				auto path = std::fs::path(u->module_name());
+				auto src = (path.parent_path() / path.stem()).wstring();
 				if (ppath.size() < src.size() && src.compare(0, ppath.size(), ppath.c_str()) == 0)
 					src.erase(src.begin(), src.begin() + ppath.size());
 				tn = w2s(src) + "#" + tn;
@@ -644,36 +648,43 @@ namespace flame
 			n_node->new_attr("pos", to_string(n->position, 2));
 
 			auto n_datas = n_node->new_node("datas");
-			n_datas->set_type(SerializableNode::Array);
-			for (auto &input : n->inputs)
+			for (auto& input : n->inputs)
 			{
 				auto v = input->variable_info;
 				auto type = v->type();
 				if (v->default_value() && !compare(type->tag(), v->size(), v->default_value(), input->data))
 				{
-					auto n_data = n_datas->new_node("");
+					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
 					n_data->new_attr("value", serialize_value(type->tag(), type->hash(), input->data, 2).v);
 				}
 			}
 		}
 
-		auto n_links = file->new_node("links");
-		n_links->set_type(SerializableNode::Array);
-		for (auto &n : nodes)
+		auto n_links = dst->new_node("links");
+		for (auto& n : nodes)
 		{
-			for (auto &input : n->inputs)
+			for (auto& input : n->inputs)
 			{
 				if (input->links[0])
 				{
-					auto n_link = n_links->new_node("");
+					auto n_link = n_links->new_node("link");
 					n_link->new_attr("out", input->links[0]->get_address().v);
 					n_link->new_attr("in", input->get_address().v);
 				}
 			}
 		}
+	}
 
-		file->save_json(filename);
+	void BPPrivate::save(const wchar_t *_filename)
+	{
+		filename = _filename;
+
+		auto file = SerializableNode::create("BP");
+
+		save(file);
+
+		file->save_xml(filename);
 		SerializableNode::destroy(file);
 	}
 
@@ -837,7 +848,22 @@ namespace flame
 		((BPPrivate*)this)->update();
 	}
 
-	void BP::save(const wchar_t *filename)
+	void BP::load(SerializableNode* src)
+	{
+		((BPPrivate*)this)->load(src);
+	}
+
+	void BP::load(const wchar_t* filename)
+	{
+		((BPPrivate*)this)->load(filename);
+	}
+
+	void BP::save(SerializableNode* dst)
+	{
+		((BPPrivate*)this)->save(dst);
+	}
+
+	void BP::save(const wchar_t* filename)
 	{
 		((BPPrivate*)this)->save(filename);
 	}

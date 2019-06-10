@@ -1153,8 +1153,14 @@ namespace flame
 			dst->set_type(SerializableNode::Object);
 			for (auto it = src.begin(); it != src.end(); ++it)
 			{
-				auto node = dst->new_node(it.key());
-				from_json(it.value(), node);
+				auto c = it.value();
+				if (!c.is_object() && !c.is_array())
+					dst->new_attr(it.key(), c.is_string() ? c.get<std::string>() : c.dump());
+				else
+				{
+					auto node = dst->new_node(it.key());
+					from_json(c, node);
+				}
 			}
 		}
 		else if (src.is_array())
@@ -1165,11 +1171,6 @@ namespace flame
 				auto node = dst->new_node("");
 				from_json(n, node);
 			}
-		}
-		else
-		{
-			dst->set_type(SerializableNode::Value);
-			dst->set_value(src.is_string() ? src.get<std::string>() : src.dump());
 		}
 	}
 
@@ -1809,6 +1810,7 @@ namespace flame
 	struct ArraySize$
 	{
 		void* array$ia;
+
 		uint size$o;
 
 		FLAME_FOUNDATION_EXPORTS void initialize$()
@@ -1823,6 +1825,29 @@ namespace flame
 		}
 
 	}bp_array_size_unused;
+
+	struct ArrayInsertBeforeForEachItems_vp$
+	{
+		Array<void*> array$i;
+		void* v$i;
+
+		Array<void*> array$o;
+
+		FLAME_FOUNDATION_EXPORTS void initialize$()
+		{
+			if (array$i.v)
+			{
+				array$o.size = array$i.size * 2;
+				array$o.v = new void* [array$o.size];
+				for (auto i = 0; i < array$i.size; i++)
+				{
+					array$o.v[i * 2 + 0] = v$i;
+					array$o.v[i * 2 + 1] = array$i.v[i];
+				}
+			}
+		}
+
+	}bp_array_insert_before_for_each_items_unused;
 
 	template<uint N, class T>
 	void install_array_udt(const char* name_suffix, const char* type_name)

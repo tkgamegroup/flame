@@ -64,7 +64,7 @@ function create_path()
 
 var find_udt = function(name)
 {
-    for (var i in udts)
+    for (let i in udts)
     {
         var u = udts[i];
         if (u.name == name)
@@ -73,33 +73,53 @@ var find_udt = function(name)
     return null;
 };
 
-var load_typeinfo = function(json, file)
+var load_typeinfo = function(file, filename)
 {
-    if (!file)
-        file = "";
-    for (var i in json.enums)
+    if (!filename)
+        filename = "";
+    let xml = new DOMParser().parseFromString(file, "text/xml").children[0];
+    
+    for (let n_enum of xml.getElementsByTagName("enums")[0].children)
     {
-        var e = json.enums[i];
-        e.file = file;
+        let e = {};
+        e.filename = filename;
+        e.name = n_enum.getAttribute("name");
+        e.items = [];
+        for (let n_item of n_enum.getElementsByTagName("items")[0].children)
+        {
+            e.items.push({
+                name: n_item.getAttribute("name"),
+                value: parseInt(n_item.getAttribute("value"))
+            });
+        }
         enums.push(e);
     }
-    for (var i in json.udts)
+    for (let n_udt of xml.getElementsByTagName("udts")[0].children)
     {
-        var u = json.udts[i];
-        u.file = file;
+        let u = {};
+        u.filename = filename;
+        u.name = n_udt.getAttribute("name");
+        u.size = parseInt(n_udt.getAttribute("size"));
+        u.module_name = n_udt.getAttribute("module_name");
+        u.items = [];
+        for (let n_item of n_udt.getElementsByTagName("items")[0].children)
+        {
+            u.items.push({
+                type: n_item.getAttribute("type"),
+                name: n_item.getAttribute("name"),
+                attribute: n_item.getAttribute("attribute"),
+                offset: parseInt(n_item.getAttribute("offset")),
+                size: parseInt(n_item.getAttribute("size")),
+                default_value: n_item.getAttribute("default_value")
+            });
+        }
         udts.push(u);
-    }
-    for (var i in json.functions)
-    {
-        var f = json.functions[i];
-        f.file = file;
-        functions.push(f);
     }
 };
 
 function find_node(name) 
 {
-    for (var i in nodes)
+    for (let i in nodes)
     {
         var n = nodes[i];
         if (n.id == name)
@@ -118,16 +138,16 @@ var add_node = function(n)
 
 var remove_node = function(n) 
 {
-    for (var i = 0; i < n.inputs.length; i++)
+    for (let i = 0; i < n.inputs.length; i++)
     {
         var input = n.inputs[i];
         input.un_link();
         svg.removeChild(input.path);
     }
-    for (var i = 0; i < n.outputs.length; i++)
+    for (let i = 0; i < n.outputs.length; i++)
         n.outputs[i].un_link();
     document.body.removeChild(n.eMain);
-    for (var i = 0; i < nodes.length; i++)
+    for (let i = 0; i < nodes.length; i++)
     {
         if (nodes[i] == n)
         {
@@ -164,44 +184,48 @@ window.onload = function()
     
     sock_s = new WebSocket("ws://localhost:5566/");
     sock_s.onmessage = function(res){
-        var data = JSON.parse(res.data);
-        var ext = data.filename.substring(data.filename.lastIndexOf('.'));
+        var rep = JSON.parse(res.data);
+        var ext = rep.filename.substring(rep.filename.lastIndexOf('.'));
+        var file = window.atob(rep.data);
         if (ext == ".bp")
         {
-            for (var i in nodes)
+            for (let i = 0; i < nodes.length; i++)
                 remove_node(nodes[i]);
     
             nodes = [];
+            staging_links = [];
 
-            filename = data.filename;
-            filepath = filename;
-            for (var i = filepath.length - 1; i > 0; i--)
+            filename = rep.filename;
+            filepath = filename.substring(0, rep.filename.lastIndexOf('/'));
+
+            var xml = new DOMParser().parseFromString(file, "text/xml").children[0];
+    
+            for (let n_link of xml.getElementsByTagName("links")[0].children)
             {
-                if (filepath[i] == "/")
-                {
-                    filepath = filepath.slice(0, i);
-                    break;
-                }
+                staging_links.push({
+                    out: n_link.getAttribute("out"),
+                    in: n_link.getAttribute("in")
+                });
             }
-    
-            staging_links = data.links;
-    
-            for (var i in data.nodes)
+            for (let n_node of xml.getElementsByTagName("nodes")[0].children)
             {
-                var sn = data.nodes[i];
-                var n = new Node(sn);
-                add_node(n);
+                add_node(new Node({
+                    id: n_node.getAttribute("id"),
+                    type: n_node.getAttribute("type"),
+                    pos: n_node.getAttribute("pos"),
+                    datas: n_node.getAttribute("datas"),
+                }));
             }
         }
         else
         {
-            for (var i = 0; i < requests.length; i++)
+            for (let i = 0; i < requests.length; i++)
             {
                 var r = requests[i];
-                if (r.filename == data.filename)
+                if (r.filename == rep.filename)
                 {
                     requests.splice(i, 1);
-                    r.callback(data);
+                    r.callback(file);
                     break;
                 }
             }
@@ -260,13 +284,13 @@ function on_add_dialog_open_clicked()
     overlay.style.display = "block";
 
     add_dialog_list.innerHTML = "";
-    for (var i = 0; i < udts.length; i++)
+    for (let i = 0; i < udts.length; i++)
     {
         var item = document.createElement("li");
         var u = udts[i];
         var text = u.name
-        if (u.file != "")
-            text = u.file + "#" + text;
+        if (u.filename != "")
+            text = u.filename + "#" + text;
         item.innerHTML = text;
         item.onclick = (function(text) {
             return function(){
@@ -299,20 +323,20 @@ function on_save_clicked()
     if (!sock_s)
         return;
 
-    var data = {};
-    data.nodes = [];
-    for (var i in nodes)
+    var req = {};
+    req.type = "update_bp";
+
+    req.nodes = [];
+    for (let sn of nodes)
     {
-        var sn = nodes[i];
-        var n = {};
+        let n = {};
         n.type = sn.type;
         n.id = sn.id;
         n.pos = sn.x + ";" + sn.y;
         n.datas = [];
-        for (var j in sn.inputs)
+        for (let input of sn.inputs)
         {
-            var input = sn.inputs[j];
-            var vi = input.vi;
+            let vi = input.vi;
             if (vi.default_value)
             {
                 input.data = input.eEdit.value;
@@ -320,27 +344,22 @@ function on_save_clicked()
                     n.datas.push({name: vi.name, value: input.data});
             }
         }
-        data.nodes.push(n);
+        req.nodes.push(n);
     }
-    data.links = [];
-    for (var i in nodes)
+    req.links = [];
+    for (let sn of nodes)
     {
-        var sn = nodes[i];
-        for (var j in sn.inputs)
+        for (let input of sn.inputs)
         {
-            var input = sn.inputs[j];
             if (input.links[0])
             {
-                var sl = {};
+                let sl = {};
                 sl.out = input.links[0].get_address();
                 sl.in = input.get_address();
-                data.links.push(sl);
+                req.links.push(sl);
             }
         }
     }
 
-    sock_s.send(JSON.stringify({
-        type: "put",
-        data: data
-    }));
+    sock_s.send(JSON.stringify(req));
 }

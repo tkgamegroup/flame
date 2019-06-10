@@ -250,6 +250,7 @@ namespace flame
 
 			void* out$o;
 			void* window$o;
+			Vec2u size$o;
 			Array<void*> images$o;
 			Array<void*> imageviews$o;
 
@@ -270,6 +271,8 @@ namespace flame
 						imageviews$o.v = new void* [image_count];
 						for (auto i = 0; i < image_count; i++)
 							imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
+
+						size$o = ((Image*)images$o.v[0])->size;
 					}
 				}
 			}

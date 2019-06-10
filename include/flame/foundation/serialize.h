@@ -29,7 +29,7 @@ namespace flame
 	inline std::string to_string(float v, int precision = 6)
 	{
 		char buf[20];
-		sprintf(buf, "%.*f", v, precision);
+		sprintf(buf, "%.*f", precision, v);
 		return buf;
 	}
 
@@ -426,6 +426,7 @@ namespace flame
 		the attribute can be one or more chars, and order doesn't matter
 
 		currently, the following attributes are used by typeinfogen, others are free to use:
+			'a' for udt member, means if it is a 'void*' type, it receives the data's address
 			'm' for enum variable, means it can hold combination of the enum
 			'c' for function, means to collect the code of the function
 	*/

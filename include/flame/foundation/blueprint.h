@@ -117,7 +117,10 @@ namespace flame
 		// update the 'bp' using nodes
 		FLAME_FOUNDATION_EXPORTS void update();
 
-		FLAME_FOUNDATION_EXPORTS void save(const wchar_t *filename);
+		FLAME_FOUNDATION_EXPORTS void load(SerializableNode* src);
+		FLAME_FOUNDATION_EXPORTS void load(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS void save(SerializableNode* dst);
+		FLAME_FOUNDATION_EXPORTS void save(const wchar_t* filename);
 
 		FLAME_FOUNDATION_EXPORTS static BP *create();
 		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const wchar_t *filename);

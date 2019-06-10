@@ -416,7 +416,7 @@ namespace flame
 			return vk_usage;
 		}
 
-		inline VkImageUsageFlags Z(ImageUsage u, Format$ fmt, SampleCount$ sc)
+		inline VkImageUsageFlags Z(ImageUsage$ u, Format$ fmt, SampleCount$ sc)
 		{
 			VkImageUsageFlags vk_usage = 0;
 			if (u & ImageUsageTransferSrc)

@@ -100,7 +100,7 @@ namespace flame
 			imageInfo.arrayLayers = layer;
 			imageInfo.samples = Z(sample_count);
 			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-			imageInfo.usage = Z((ImageUsage)usage, format, sample_count);
+			imageInfo.usage = Z((ImageUsage$)usage, format, sample_count);
 			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			imageInfo.queueFamilyIndexCount = 0;
 			imageInfo.pQueueFamilyIndices = nullptr;
@@ -392,7 +392,6 @@ namespace flame
 			Buffer::destroy(staging_buffer);
 
 			return i;
-
 		}
 
 		Image *Image::create_from_file(Device *d, const wchar_t *filename, int extra_usage)
@@ -504,7 +503,34 @@ namespace flame
 
 		struct Image$
 		{
+			void* device$i;
+			Format$ format$i;
+			Vec2u size$i;
+			int level$i;
+			int layer$i;
+			SampleCount$ sample_count$i;
+			ImageUsage$ usage$mi;
 
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS Image$()
+			{
+				size$i = Vec2u(4);
+				level$i = 1;
+				layer$i = 1;
+				usage$mi = ImageUsageSampled;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void initialize$()
+			{
+				if (device$i && size$i > 0U && level$i > 0 && layer$i > 0)
+					out$o = Image::create((Device*)device$i, format$i, size$i, level$i, layer$i, sample_count$i, usage$mi);
+			}
+
+			FLAME_GRAPHICS_EXPORTS void finish$()
+			{
+				Image::destroy((Image*)out$o);
+			}
 		};
 
 		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)

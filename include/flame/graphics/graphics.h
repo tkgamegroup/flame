@@ -135,7 +135,7 @@ namespace flame
 			BufferUsageIndirect = 1 << 6
 		};
 
-		enum ImageUsage
+		enum ImageUsage$
 		{
 			ImageUsageTransferSrc = 1 << 0,
 			ImageUsageTransferDst = 1 << 1,

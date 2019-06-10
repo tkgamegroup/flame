@@ -433,7 +433,7 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "gui-browser")
 		{
-			exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
+			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
 			printf("waiting for browser on port 5566 ...");
 
 			app.server = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, const std::string&)>(
@@ -441,25 +441,26 @@ int main(int argc, char **args)
 					auto app = *(App**)c;
 
 					auto req = SerializableNode::create_from_json_string(str);
-					auto type = req->find_node("type")->value();
+					auto type = req->find_attr("type")->value();
 
 					if (type == "get")
 					{
-						auto filename = s2w(req->find_node("filename")->value());
+						auto filename = s2w(req->find_attr("filename")->value());
 						if (filename == L"bp")
 							filename = app->filename;
-						auto rep = SerializableNode::create_from_json_file(filename);
-						rep->new_attr("filename", w2s(filename));
+						auto file = base64_encode(get_file_string(filename));
+						auto rep = SerializableNode::create("");
+						rep->new_node("filename")->set_value(w2s(filename));
+						rep->new_node("data")->set_value(file);
 						auto str = rep->to_string_json();
 						app->server->send(str.size, str.v);
 						SerializableNode::destroy(rep);
 					}
-					else if (type == "put")
+					else if (type == "update_bp")
 					{
-						req->find_node("data")->save_json(app->filename);
-
-						BP::destroy(app->bp);
-						app->bp = BP::create_from_file(app->filename.c_str());
+						app->bp->clear();
+						app->bp->load(req);
+						app->bp->save(app->filename.c_str());
 
 						printf("browser: bp updated\n");
 					}

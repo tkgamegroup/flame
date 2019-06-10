@@ -79,7 +79,7 @@ class Slot
             {
                 this.path.setAttributeNS(null, "d", "");
                 var o = this.links[0];
-                for (var i = 0; i < o.links.length; i++)
+                for (let i = 0; i < o.links.length; i++)
                 {
                     if (o.links[i] == this)
                     {
@@ -92,7 +92,7 @@ class Slot
         }
         else
         {
-            for (var i = 0; i < this.links.length; i++)
+            for (let i = 0; i < this.links.length; i++)
             {
                 var t = this.links[i];
                 t.path.setAttributeNS(null, "d", "");

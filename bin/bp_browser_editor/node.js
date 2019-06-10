@@ -1,17 +1,17 @@
 class Node
 {
-    constructor(sn)
+    constructor(desc)
     {
         var thiz = this;
 
-        this.id = sn.id;
-        this.type = sn.type;
+        this.id = desc.id;
+        this.type = desc.type;
     
         this.eMain = document.createElement("div");
         this.eMain.classList.add("node");
         this.eMain.setAttribute("title", this.id);
     
-        var pos_sp = sn.pos.split(";");
+        var pos_sp = desc.pos.split(";");
         this.x = parseInt(pos_sp[0]);
         this.y = parseInt(pos_sp[1]);
         this.eMain.style.left = this.x.toString() + "px";
@@ -50,7 +50,7 @@ class Node
         this.inputs = [];
         this.outputs = [];
     
-        var sp = sn.type.split("#");
+        var sp = desc.type.split("#");
         function load(u_name)
         {
             var udt = find_udt(u_name);
@@ -58,7 +58,7 @@ class Node
                 return false;
     
             thiz.udt = udt;
-            for (var i in udt.items)
+            for (let i in udt.items)
             {
                 var item = udt.items[i];
                 if (item.attribute.indexOf("i") >= 0)
@@ -80,18 +80,18 @@ class Node
                     thiz.eRight.appendChild(s.eMain);
                 }
             }
-            if (sn.datas != "null")
+            if (desc.datas != "null")
             {
-                for (var i in sn.datas)
+                for (let i in desc.datas)
                 {
-                    var item = sn.datas[i];
+                    var item = desc.datas[i];
                     var input = thiz.find_input(item.name);
                     input.data = item.value;
                     if (input.eEdit)
                         input.eEdit.value = input.data;
                 }
             }
-            for (var i = 0; i < staging_links.length; i++)
+            for (let i = 0; i < staging_links.length; i++)
             {
                 var sl = staging_links[i];
     
@@ -136,7 +136,7 @@ class Node
 
     find_input(name)
     {
-        for (var i in this.inputs)
+        for (let i in this.inputs)
         {
             var s = this.inputs[i];
             if (s.vi.name == name)
@@ -147,7 +147,7 @@ class Node
 
     find_output(name)
     {
-        for (var i in this.outputs)
+        for (let i in this.outputs)
         {
             var s = this.outputs[i];
             if (s.vi.name == name)
@@ -161,7 +161,7 @@ class Node
         this.x = parseInt(this.eMain.style.left);
         this.y = parseInt(this.eMain.style.top);
     
-        for (var i in this.inputs)
+        for (let i in this.inputs)
         {
             var s = this.inputs[i];
             if (s.links[0])
@@ -172,10 +172,10 @@ class Node
                 s.set_path(a, b);
             }
         }
-        for (var i in this.outputs)
+        for (let i in this.outputs)
         {
             var s = this.outputs[i];
-            for (var j in s.links)
+            for (let j in s.links)
             {
                 var t = s.links[j];
     
