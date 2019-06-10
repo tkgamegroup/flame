@@ -124,7 +124,7 @@ namespace flame
 			PipelineCompute
 		};
 
-		enum BufferUsage
+		enum BufferUsage$
 		{
 			BufferUsageTransferSrc = 1 << 0,
 			BufferUsageTransferDst = 1 << 1,

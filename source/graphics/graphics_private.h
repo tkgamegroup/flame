@@ -249,12 +249,12 @@ namespace flame
 	{
 #if defined(FLAME_VULKAN)
 
-		inline void vk_chk_res(VkResult res)
+		inline void chk_res(VkResult res)
 		{
 			assert(res == VK_SUCCESS);
 		}
 
-		inline VkFormat Z(Format$ f)
+		inline VkFormat to_enum(Format$ f)
 		{
 			switch (f)
 			{
@@ -298,7 +298,7 @@ namespace flame
 			}
 		}
 
-		inline Format$ Z(VkFormat f, bool is_swapchain)
+		inline Format$ to_enum(VkFormat f, bool is_swapchain)
 		{
 			switch (f)
 			{
@@ -306,25 +306,24 @@ namespace flame
 					return is_swapchain ? Format_Swapchain_B8G8R8A8_UNORM : Format_B8G8R8A8_UNORM;
 				case VK_FORMAT_B8G8R8A8_SRGB:
 					return is_swapchain ? Format_Swapchain_B8G8R8A8_SRGB : Format_B8G8R8A8_SRGB;
-
 				default:
 					assert(0);
 			}
 		}
 
-		inline VkMemoryPropertyFlags Z(MemProp p)
+		inline VkMemoryPropertyFlags to_flags(MemProp p)
 		{
-			VkMemoryPropertyFlags vk_mem_prop = 0;
+			VkMemoryPropertyFlags ret = 0;
 			if (p & MemPropDevice)
-				vk_mem_prop |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+				ret |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 			if (p & MemPropHost)
-				vk_mem_prop |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+				ret |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 			if (p & MemPropHostCoherent)
-				vk_mem_prop |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-			return vk_mem_prop;
+				ret |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+			return ret;
 		}
 
-		inline VkSampleCountFlagBits Z(SampleCount$ s)
+		inline VkSampleCountFlagBits to_enum(SampleCount$ s)
 		{
 			switch (s)
 			{
@@ -343,30 +342,44 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlags Z(ShaderType t)
+		inline VkShaderStageFlagBits to_enum(ShaderType t)
 		{
-			VkShaderStageFlags vk_shader_stage = 0;
+			switch (t)
+			{
+			case ShaderVert:
+				return VK_SHADER_STAGE_VERTEX_BIT;
+			case ShaderTesc:
+				return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+			case ShaderTese:
+				return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+			case ShaderGeom:
+				return VK_SHADER_STAGE_GEOMETRY_BIT;
+			case ShaderFrag:
+				return VK_SHADER_STAGE_FRAGMENT_BIT;
+			case ShaderComp:
+				return VK_SHADER_STAGE_COMPUTE_BIT;
+			}
+		}
+
+		inline VkShaderStageFlags to_flags(ShaderType t)
+		{
+			VkShaderStageFlags ret = 0;
 			if (t & ShaderVert)
-				vk_shader_stage |= VK_SHADER_STAGE_VERTEX_BIT;
+				ret |= VK_SHADER_STAGE_VERTEX_BIT;
 			if (t & ShaderTesc)
-				vk_shader_stage |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+				ret |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 			if (t & ShaderTese)
-				vk_shader_stage |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+				ret |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 			if (t & ShaderGeom)
-				vk_shader_stage |= VK_SHADER_STAGE_GEOMETRY_BIT;
+				ret |= VK_SHADER_STAGE_GEOMETRY_BIT;
 			if (t & ShaderFrag)
-				vk_shader_stage |= VK_SHADER_STAGE_FRAGMENT_BIT;
+				ret |= VK_SHADER_STAGE_FRAGMENT_BIT;
 			if (t & ShaderComp)
-				vk_shader_stage |= VK_SHADER_STAGE_COMPUTE_BIT;
-			return vk_shader_stage;
+				ret |= VK_SHADER_STAGE_COMPUTE_BIT;
+			return ret;
 		}
 
-		inline VkShaderStageFlagBits Z(VkShaderStageFlags f)
-		{
-			return VkShaderStageFlagBits(f);
-		}
-
-		inline VkDescriptorType Z(ShaderResourceType t)
+		inline VkDescriptorType to_enum(ShaderResourceType t)
 		{
 			switch (t)
 			{
@@ -383,7 +396,7 @@ namespace flame
 			}
 		}
 
-		inline VkPipelineBindPoint Z(PipelineType t)
+		inline VkPipelineBindPoint to_enum(PipelineType t)
 		{
 			switch (t)
 			{
@@ -396,50 +409,50 @@ namespace flame
 			}
 		}
 
-		inline VkBufferUsageFlags Z(BufferUsage u)
+		inline VkBufferUsageFlags to_flags(BufferUsage$ u)
 		{
-			VkBufferUsageFlags vk_usage = 0;
+			VkBufferUsageFlags ret = 0;
 			if (u & BufferUsageTransferSrc)
-				vk_usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+				ret |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 			if (u & BufferUsageTransferDst)
-				vk_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+				ret |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 			if (u & BufferUsageUniform)
-				vk_usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+				ret |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 			if (u & BufferUsageStorage)
-				vk_usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+				ret |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 			if (u & BufferUsageVertex)
-				vk_usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+				ret |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 			if (u & BufferUsageIndex)
-				vk_usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+				ret |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 			if (u & BufferUsageIndirect)
-				vk_usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-			return vk_usage;
+				ret |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+			return ret;
 		}
 
-		inline VkImageUsageFlags Z(ImageUsage$ u, Format$ fmt, SampleCount$ sc)
+		inline VkImageUsageFlags to_flags(ImageUsage$ u, Format$ fmt, SampleCount$ sc)
 		{
-			VkImageUsageFlags vk_usage = 0;
+			VkImageUsageFlags ret = 0;
 			if (u & ImageUsageTransferSrc)
-				vk_usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+				ret |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 			if (u & ImageUsageTransferDst)
-				vk_usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+				ret |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 			if (u & ImageUsageSampled)
-				vk_usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+				ret |= VK_IMAGE_USAGE_SAMPLED_BIT;
 			if (u & ImageUsageStorage)
-				vk_usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+				ret |= VK_IMAGE_USAGE_STORAGE_BIT;
 			if (u & ImageUsageAttachment)
 			{
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
-					vk_usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+					ret |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 				else
-					vk_usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+					ret |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 				if (sc != SampleCount_1)
-					vk_usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+					ret |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
 			}
-			return vk_usage;
+			return ret;
 		}
 
-		inline VkImageLayout Z(ImageLayout l, Format$ fmt)
+		inline VkImageLayout to_enum(ImageLayout l, Format$ fmt)
 		{
 			switch (l)
 			{
@@ -464,19 +477,19 @@ namespace flame
 			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 
-		inline VkImageAspectFlags Z(ImageAspect a)
+		inline VkImageAspectFlags to_flags(ImageAspect a)
 		{
-			VkImageAspectFlags vk_aspect = 0;
+			VkImageAspectFlags ret = 0;
 			if (a & ImageAspectColor)
-				vk_aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
+				ret |= VK_IMAGE_ASPECT_COLOR_BIT;
 			if (a & ImageAspectDepth)
-				vk_aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+				ret |= VK_IMAGE_ASPECT_DEPTH_BIT;
 			if (a & ImageAspectStencil)
-				vk_aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
-			return vk_aspect;
+				ret |= VK_IMAGE_ASPECT_STENCIL_BIT;
+			return ret;
 		}
 
-		inline VkImageViewType Z(ImageviewType$ t)
+		inline VkImageViewType to_enum(ImageviewType$ t)
 		{
 			switch (t)
 			{
@@ -497,7 +510,7 @@ namespace flame
 			}
 		}
 
-		inline VkComponentSwizzle Z(Swizzle$ s)
+		inline VkComponentSwizzle to_enum(Swizzle$ s)
 		{
 			switch (s)
 			{
@@ -518,7 +531,7 @@ namespace flame
 			}
 		}
 
-		inline VkFilter Z(Filter f)
+		inline VkFilter to_enum(Filter f)
 		{
 			switch (f)
 			{
@@ -531,7 +544,7 @@ namespace flame
 
 #elif defined(FLAME_D3D12)
 
-		inline DXGI_FORMAT Z(Format f)
+		inline DXGI_FORMAT to_enum(Format f)
 		{
 			switch (f)
 			{
@@ -573,7 +586,7 @@ namespace flame
 			}
 		}
 
-		inline D3D12_RESOURCE_STATES Z(ImageLayout l)
+		inline D3D12_RESOURCE_STATES to_enum(ImageLayout l)
 		{
 			switch (l)
 			{

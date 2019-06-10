@@ -42,10 +42,10 @@ namespace flame
 			ID3D12Resource* v;
 #endif
 
-			BufferPrivate(Device *d, int size, int usage, int mem_prop, bool sharing = false);
+			BufferPrivate(Device *d, uint size, int usage, int mem_prop, bool sharing = false);
 			~BufferPrivate();
 
-			void map(int offset = 0, int _size = 0);
+			void map(uint offset = 0, uint _size = 0);
 			void unmap();
 			void flush();
 

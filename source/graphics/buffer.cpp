@@ -28,7 +28,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(Device *_d, int _size, int _usage, int _mem_prop, bool sharing)
+		BufferPrivate::BufferPrivate(Device *_d, uint _size, int _usage, int _mem_prop, bool sharing)
 		{
 			size = _size;
 			mapped = nullptr;
@@ -43,7 +43,7 @@ namespace flame
 			buffer_info.flags = 0;
 			buffer_info.pNext = nullptr;
 			buffer_info.size = size;
-			buffer_info.usage = Z((BufferUsage)usage);
+			buffer_info.usage = Z((BufferUsage$)usage);
 			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
 			uint queue_family_idx[] = {
@@ -87,7 +87,7 @@ namespace flame
 #endif
 		}
 
-		void BufferPrivate::map(int offset, int _size)
+		void BufferPrivate::map(uint offset, uint _size)
 		{
 			if (_size == 0)
 				_size = size;
@@ -145,7 +145,7 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void Buffer::map(int offset, int _size)
+		void Buffer::map(uint offset, uint _size)
 		{
 			((BufferPrivate*)this)->map(offset, _size);
 		}
@@ -165,7 +165,7 @@ namespace flame
 			((BufferPrivate*)this)->copy_from_data(data);
 		}
 
-		Buffer *Buffer::create(Device *d, int size, int usage, int mem_prop, bool sharing, void *data)
+		Buffer *Buffer::create(Device *d, uint size, int usage, int mem_prop, bool sharing, void *data)
 		{
 			auto b = new BufferPrivate(d, size, usage, mem_prop, sharing);
 
@@ -179,6 +179,13 @@ namespace flame
 		{
 			delete (BufferPrivate*)b;
 		}
+
+		struct Buffer$
+		{
+			void* device$i;
+			uint size$i;
+
+		};
 	}
 }
 
