@@ -1525,23 +1525,24 @@ namespace flame
 		if (!src->parameter_types.empty())
 		{
 			auto n_parameters = dst->new_node("parameters");
-			n_parameters->set_type(SerializableNode::Array);
 			for (auto& p : src->parameter_types)
 			{
-				auto n = n_parameters->new_node("");
-				n->set_type(SerializableNode::Value);
-				n->new_attr("", serialize_typeinfo(p));
+				auto n = n_parameters->new_node("parameter");
+				n->set_value(serialize_typeinfo(p));
 			}
 		}
 		if (src->code.length() > 0)
-			dst->new_attr("code", src->code);
+		{
+			auto n_code = dst->new_node("code");
+			n_code->set_value(src->code);
+		}
 	}
 
 	void unserialize_function(SerializableNode * src, FunctionInfoPrivate * dst)
 	{
-		dst->name = src->find_node("name")->value();
-		dst->rva = (void*)std::stoul(src->find_node("rva")->value().c_str());
-		dst->return_type = unserialize_typeinfo(src->find_node("return_type")->value());
+		dst->name = src->find_attr("name")->value();
+		dst->rva = (void*)std::stoul(src->find_attr("rva")->value().c_str());
+		dst->return_type = unserialize_typeinfo(src->find_attr("return_type")->value());
 		auto n_parameters = src->find_node("parameters");
 		if (n_parameters)
 		{
@@ -2213,7 +2214,7 @@ namespace flame
 
 	void typeinfo_load(const std::wstring& filename, int level)
 	{
-		auto file = SerializableNode::create_from_json_file(filename);
+		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file)
 		{
 			assert(0);
@@ -2233,15 +2234,15 @@ namespace flame
 		{
 			auto n_enum = n_enums->node(i);
 			auto e = new EnumInfoPrivate;
-			e->name = n_enum->find_node("name")->value();
+			e->name = n_enum->find_attr("name")->value();
 
 			auto n_items = n_enum->find_node("items");
 			for (auto j = 0; j < n_items->node_count(); j++)
 			{
 				auto n_item = n_items->node(j);
 				auto i = new EnumItemPrivate;
-				i->name = n_item->find_node("name")->value();
-				i->value = std::stoi(n_item->find_node("value")->value());
+				i->name = n_item->find_attr("name")->value();
+				i->value = std::stoi(n_item->find_attr("value")->value());
 				e->items.emplace_back(i);
 			}
 
@@ -2253,24 +2254,24 @@ namespace flame
 		{
 			auto n_udt = n_udts->node(i);
 			auto u = new UdtInfoPrivate;
-			u->name = n_udt->find_node("name")->value();
-			u->size = std::stoi(n_udt->find_node("size")->value());
-			u->module_name = s2w(n_udt->find_node("module_name")->value());
+			u->name = n_udt->find_attr("name")->value();
+			u->size = std::stoi(n_udt->find_attr("size")->value());
+			u->module_name = s2w(n_udt->find_attr("module_name")->value());
 
 			auto n_items = n_udt->find_node("items");
 			for (auto j = 0; j < n_items->node_count(); j++)
 			{
 				auto n_item = n_items->node(j);
 				auto i = new VariableInfoPrivate;
-				i->type = unserialize_typeinfo(n_item->find_node("type")->value());
-				i->name = n_item->find_node("name")->value();
-				i->attribute = n_item->find_node("attribute")->value();
-				i->offset = std::stoi(n_item->find_node("offset")->value());
-				i->size = std::stoi(n_item->find_node("size")->value());
+				i->type = unserialize_typeinfo(n_item->find_attr("type")->value());
+				i->name = n_item->find_attr("name")->value();
+				i->attribute = n_item->find_attr("attribute")->value();
+				i->offset = std::stoi(n_item->find_attr("offset")->value());
+				i->size = std::stoi(n_item->find_attr("size")->value());
 				i->_init_default_value();
 				if (i->default_value)
 				{
-					auto a_default_value = n_item->find_node("default_value");
+					auto a_default_value = n_item->find_attr("default_value");
 					if (a_default_value)
 						unserialize_value(i->type.tag, i->type.hash, a_default_value->value(), i->default_value);
 				}
@@ -2318,7 +2319,6 @@ namespace flame
 		}
 
 		auto n_enums = file->new_node("enums");
-		n_enums->set_type(SerializableNode::Array);
 		{
 			std::vector<EnumInfoPrivate*> sorted_enums;
 			if (db)
@@ -2339,14 +2339,13 @@ namespace flame
 			});
 			for (auto& e : sorted_enums)
 			{
-				auto n_enum = n_enums->new_node("");
+				auto n_enum = n_enums->new_node("enum");
 				n_enum->new_attr("name", e->name);
 
 				auto n_items = n_enum->new_node("items");
-				n_items->set_type(SerializableNode::Array);
 				for (auto& i : e->items)
 				{
-					auto n_item = n_items->new_node("");
+					auto n_item = n_items->new_node("item");
 					n_item->new_attr("name", i->name);
 					n_item->new_attr("value", std::to_string(i->value));
 				}
@@ -2354,7 +2353,6 @@ namespace flame
 		}
 
 		auto n_udts = file->new_node("udts");
-		n_udts->set_type(SerializableNode::Array);
 		{
 			std::vector<UdtInfoPrivate*> sorted_udts;
 			if (db)
@@ -2375,16 +2373,15 @@ namespace flame
 			});
 			for (auto& u : sorted_udts)
 			{
-				auto n_udt = n_udts->new_node("");
+				auto n_udt = n_udts->new_node("udt");
 				n_udt->new_attr("name", u->name);
 				n_udt->new_attr("size", std::to_string(u->size));
 				n_udt->new_attr("module_name", w2s(u->module_name));
 
 				auto n_items = n_udt->new_node("items");
-				n_items->set_type(SerializableNode::Array);
 				for (auto& i : u->items)
 				{
-					auto n_item = n_items->new_node("");
+					auto n_item = n_items->new_node("item");
 					const auto& type = i->type;
 					n_item->new_attr("type", serialize_typeinfo(type));
 					n_item->new_attr("name", i->name);
@@ -2400,17 +2397,15 @@ namespace flame
 				}
 
 				auto n_functions = n_udt->new_node("functions");
-				n_functions->set_type(SerializableNode::Array);
 				for (auto& f : u->functions)
 				{
-					auto n_function = n_functions->new_node("");
+					auto n_function = n_functions->new_node("function");
 					serialize_function(f.get(), n_function);
 				}
 			}
 		}
 
 		auto n_functions = file->new_node("functions");
-		n_functions->set_type(SerializableNode::Array);
 		{
 			std::vector<FunctionInfoPrivate*> sorted_functions;
 			if (db)
@@ -2431,12 +2426,12 @@ namespace flame
 			});
 			for (auto& f : sorted_functions)
 			{
-				auto n_function = n_functions->new_node("");
+				auto n_function = n_functions->new_node("function");
 				serialize_function(f, n_function);
 			}
 		}
 
-		file->save_json(filename);
+		file->save_xml(filename);
 		SerializableNode::destroy(file);
 	}
 
