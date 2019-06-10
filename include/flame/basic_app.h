@@ -46,16 +46,13 @@ namespace flame
 		graphics::Swapchain *sc;
 		graphics::Semaphore *image_avalible;
 		graphics::Semaphore *render_finished;
-		graphics::Fence* fences[3];
+		std::pair<graphics::Fence*, int> fences[3];
 		int frame;
 
 		virtual void on_create() = 0;
 
 		void create(const char *title, const Vec2u& res, int style)
 		{
-			typeinfo_check_update();
-			typeinfo_load(L"flame_foundation.typeinfo");
-			typeinfo_load(L"flame_graphics.typeinfo");
 			app = Application::create();
 			w = Window::create(app, title, res, style);
 			d = graphics::Device::/*get_shared*/create(true);
@@ -63,7 +60,10 @@ namespace flame
 			image_avalible = graphics::Semaphore::create(d);
 			render_finished = graphics::Semaphore::create(d);
 			for (auto i = 0; i < FLAME_ARRAYSIZE(fences); i++)
-				fences[i] = graphics::Fence::create(d);
+			{
+				fences[i].first = graphics::Fence::create(d);
+				fences[i].second = 1;
+			}
 			frame = 0;
 
 			on_create();

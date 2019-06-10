@@ -27,8 +27,11 @@ using namespace graphics;
 
 struct App : BasicApp
 {
+	std::wstring rp_filename;
+	std::fs::file_time_type rp_lwt;
+	BP* rp;
 	Array<void*> cbs;
-	BP* render_path;
+
 	//Canvas* canvas;
 	//Font* font;
 	//int font_index;
@@ -37,13 +40,9 @@ struct App : BasicApp
 
 	virtual void on_create() override
 	{
-		render_path = BP::create_from_file(L"../renderpath/test/renderpath.bp");
-		render_path->find_input("d.in")->set_data(&d);
-		render_path->find_input("sc.in")->set_data(&sc);
-		render_path->initialize();
-		render_path->update();
-		//render_path->finish();
-		memcpy(&cbs, render_path->find_output("cbs.out")->data(), sizeof(Array<void*>));
+		rp_filename = L"../renderpath/test/renderpath.bp";
+		rp = nullptr;
+		memset(&cbs, 0, sizeof(cbs));
 
 		//Canvas::initialize(d, sc);
 		//canvas = Canvas::create(sc);
@@ -58,13 +57,22 @@ struct App : BasicApp
 	{
 		auto idx = frame % FLAME_ARRAYSIZE(fences);
 
-		sc->acquire_image(image_avalible);
+		if (cbs.v)
+			sc->acquire_image(image_avalible);
 
-		fences[idx]->wait();
+		if (fences[idx].second > 0)
+		{
+			fences[idx].first->wait();
+			fences[idx].second = 0;
+		}
 
-		d->gq->submit((graphics::Commandbuffer*)cbs.v[sc->image_index()], image_avalible, render_finished, fences[idx]);
+		if (cbs.v)
+		{
+			d->gq->submit((graphics::Commandbuffer*)cbs.v[sc->image_index()], image_avalible, render_finished, fences[idx].first);
+			fences[idx].second = 1;
 
-		d->gq->present(sc, render_finished);
+			d->gq->present(sc, render_finished);
+		}
 
 		frame++;
 
@@ -73,6 +81,37 @@ struct App : BasicApp
 		{
 			last_time -= 1.f;
 			printf("%d\n", (int)app->fps);
+
+			if (std::fs::exists(rp_filename))
+			{
+				if (!rp || rp_lwt < std::fs::last_write_time(rp_filename))
+				{
+					typeinfo_clear();
+					typeinfo_check_update();
+					typeinfo_load(L"flame_foundation.typeinfo");
+					typeinfo_load(L"flame_graphics.typeinfo");
+
+					rp_lwt = std::fs::last_write_time(rp_filename);
+
+					rp = BP::create_from_file(rp_filename.c_str());
+					rp->find_input("d.in")->set_data(&d);
+					rp->find_input("sc.in")->set_data(&sc);
+					rp->initialize();
+					rp->update();
+					memcpy(&cbs, rp->find_output("cbs.out")->data(), sizeof(Array<void*>));
+				}
+			}
+			else
+			{
+				if (rp)
+				{
+					rp->finish();
+					BP::destroy(rp);
+				}
+
+				rp = nullptr;
+				memset(&cbs, 0, sizeof(cbs));
+			}
 		}
 	}
 }app;

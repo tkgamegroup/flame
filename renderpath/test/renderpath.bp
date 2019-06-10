@@ -1,1 +1,176 @@
-{"nodes":[{"type":"graphics::AttachmentInfo","id":"col_att","pos":"58;442","datas":[{"name":"format","value":"Format_Swapchain_B8G8R8A8_UNORM"}]},{"type":"Array_1_vp","id":"col_atts","pos":"286;625","datas":[]},{"type":"graphics::Clearvalues","id":"cv","pos":"726;232","datas":[]},{"type":"graphics::Swapchain","id":"sc","pos":"61;208","datas":[]},{"type":"graphics::Device","id":"d","pos":"176;131","datas":[]},{"type":"Array_1_4c","id":"color","pos":"386;160","datas":[{"name":"1","value":"128;100;64;255"}]},{"type":"make_cmd#MakeCmd","id":"make_cmd","pos":"985;224","datas":[]},{"type":"graphics::SubpassInfo","id":"sp","pos":"89;724","datas":[]},{"type":"graphics::Renderpass","id":"rp","pos":"431;465","datas":[]},{"type":"Array_1_vp","id":"sps","pos":"472;765","datas":[]},{"type":"Array_1_u","id":"col_refs","pos":"16;606","datas":[]},{"type":"graphics::Framebuffers","id":"fbs","pos":"808;468","datas":[]},{"type":"graphics::Commandbuffers","id":"cbs","pos":"633;98","datas":[]},{"type":"ArraySize","id":"img_size","pos":"328;58","datas":[]}],"links":[{"out":"col_att.out","in":"col_atts.1"},{"out":"rp.out","in":"cv.renderpass"},{"out":"color.v","in":"cv.colors"},{"out":"cbs.out","in":"make_cmd.cmdbufs"},{"out":"rp.out","in":"make_cmd.renderpass"},{"out":"cv.out","in":"make_cmd.clearvalues"},{"out":"fbs.out","in":"make_cmd.framebuffers"},{"out":"col_refs.v","in":"sp.color_attachments"},{"out":"d.out","in":"rp.device"},{"out":"col_atts.v","in":"rp.attachments"},{"out":"sps.v","in":"rp.subpasses"},{"out":"sp.out","in":"sps.1"},{"out":"d.out","in":"fbs.device"},{"out":"rp.out","in":"fbs.renderpass"},{"out":"sc.imageviews","in":"fbs.views"},{"out":"img_size.size","in":"fbs.size"},{"out":"d.out","in":"cbs.device"},{"out":"img_size.size","in":"cbs.size"},{"out":"sc.images","in":"img_size.array"}]}
+{
+  "links": [
+    {
+      "in": "col_atts.1",
+      "out": "col_att.out"
+    },
+    {
+      "in": "cv.renderpass",
+      "out": "rp.out"
+    },
+    {
+      "in": "cv.colors",
+      "out": "color.v"
+    },
+    {
+      "in": "make_cmd.cmdbufs",
+      "out": "cbs.out"
+    },
+    {
+      "in": "make_cmd.renderpass",
+      "out": "rp.out"
+    },
+    {
+      "in": "make_cmd.clearvalues",
+      "out": "cv.out"
+    },
+    {
+      "in": "make_cmd.framebuffers",
+      "out": "fbs.out"
+    },
+    {
+      "in": "sp.color_attachments",
+      "out": "col_refs.v"
+    },
+    {
+      "in": "rp.device",
+      "out": "d.out"
+    },
+    {
+      "in": "rp.attachments",
+      "out": "col_atts.v"
+    },
+    {
+      "in": "rp.subpasses",
+      "out": "sps.v"
+    },
+    {
+      "in": "sps.1",
+      "out": "sp.out"
+    },
+    {
+      "in": "fbs.device",
+      "out": "d.out"
+    },
+    {
+      "in": "fbs.renderpass",
+      "out": "rp.out"
+    },
+    {
+      "in": "fbs.views",
+      "out": "sc.imageviews"
+    },
+    {
+      "in": "fbs.size",
+      "out": "img_size.size"
+    },
+    {
+      "in": "cbs.device",
+      "out": "d.out"
+    },
+    {
+      "in": "cbs.size",
+      "out": "img_size.size"
+    },
+    {
+      "in": "img_size.array",
+      "out": "sc.images"
+    }
+  ],
+  "nodes": [
+    {
+      "datas": [
+        {
+          "name": "format",
+          "value": "Format_Swapchain_B8G8R8A8_UNORM"
+        }
+      ],
+      "id": "col_att",
+      "pos": "58;442",
+      "type": "graphics::AttachmentInfo"
+    },
+    {
+      "datas": null,
+      "id": "col_atts",
+      "pos": "286;625",
+      "type": "Array_1_vp"
+    },
+    {
+      "datas": null,
+      "id": "cv",
+      "pos": "726;232",
+      "type": "graphics::Clearvalues"
+    },
+    {
+      "datas": null,
+      "id": "sc",
+      "pos": "61;208",
+      "type": "graphics::Swapchain"
+    },
+    {
+      "datas": null,
+      "id": "d",
+      "pos": "176;131",
+      "type": "graphics::Device"
+    },
+    {
+      "datas": [
+        {
+          "name": "1",
+          "value": "200;100;50;255"
+        }
+      ],
+      "id": "color",
+      "pos": "386;160",
+      "type": "Array_1_4c"
+    },
+    {
+      "datas": null,
+      "id": "make_cmd",
+      "pos": "985;224",
+      "type": "make_cmd#MakeCmd"
+    },
+    {
+      "datas": null,
+      "id": "sp",
+      "pos": "89;724",
+      "type": "graphics::SubpassInfo"
+    },
+    {
+      "datas": null,
+      "id": "rp",
+      "pos": "431;465",
+      "type": "graphics::Renderpass"
+    },
+    {
+      "datas": null,
+      "id": "sps",
+      "pos": "472;765",
+      "type": "Array_1_vp"
+    },
+    {
+      "datas": null,
+      "id": "col_refs",
+      "pos": "16;606",
+      "type": "Array_1_u"
+    },
+    {
+      "datas": null,
+      "id": "fbs",
+      "pos": "808;468",
+      "type": "graphics::Framebuffers"
+    },
+    {
+      "datas": null,
+      "id": "cbs",
+      "pos": "633;98",
+      "type": "graphics::Commandbuffers"
+    },
+    {
+      "datas": null,
+      "id": "img_size",
+      "pos": "328;58",
+      "type": "ArraySize"
+    }
+  ]
+}
