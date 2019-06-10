@@ -20,7 +20,7 @@ class Node
         var thiz = this;
         $(this.eMain).draggable({
             containment: "window",
-            cancel: ".slot, .slot_edit",
+            cancel: ".slot, .slot_edit1, .slot_edit2",
             drag: function (event, ui) {
                 thiz.update_links_positions();
             }
@@ -66,7 +66,7 @@ class Node
                     var s = new Slot(item, 0);
                     s.node = thiz;
                     if (item.default_value)
-                        s.data = item.default_value;
+                        s.set_data(item.default_value);
                     else
                         s.data = "";
                     thiz.inputs.push(s);

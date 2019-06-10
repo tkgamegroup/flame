@@ -73,7 +73,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, int _level, int _layer, SampleCount$ _sample_count, int _usage)
+		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, SampleCount$ _sample_count, int _usage)
 		{
 			format = _format;
 			size = _size;
@@ -125,7 +125,7 @@ namespace flame
 #endif
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, int _level, int _layer, void *native)
+		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, void *native)
 		{
 			format = _format;
 			size = _size;
@@ -343,7 +343,7 @@ namespace flame
 			((ImagePrivate*)this)->save_png(filename);
 		}
 
-		Image *Image::create(Device *d, Format$ format, const Vec2u &size, int level, int layer, SampleCount$ sample_count, int usage, void *data)
+		Image *Image::create(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, int usage, void *data)
 		{
 			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
 
@@ -491,7 +491,7 @@ namespace flame
 			return i;
 		}
 
-		Image *Image::create_from_native(Device *d, Format$ format, const Vec2u &size, int level, int layer, void *native)
+		Image *Image::create_from_native(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, void *native)
 		{
 			return new ImagePrivate(d, format, size, level, layer, native);
 		}
@@ -506,19 +506,21 @@ namespace flame
 			void* device$i;
 			Format$ format$i;
 			Vec2u size$i;
-			int level$i;
-			int layer$i;
+			uint level$i;
+			uint layer$i;
 			SampleCount$ sample_count$i;
 			ImageUsage$ usage$mi;
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS Image$()
+			FLAME_GRAPHICS_EXPORTS Image$() :
+				format$i(Format_R8G8B8A8_UNORM),
+				size$i(4),
+				level$i(1),
+				layer$i(1),
+				sample_count$i(SampleCount_1),
+				usage$mi(ImageUsageSampled)
 			{
-				size$i = Vec2u(4);
-				level$i = 1;
-				layer$i = 1;
-				usage$mi = ImageUsageSampled;
 			}
 
 			FLAME_GRAPHICS_EXPORTS void initialize$()
@@ -531,9 +533,10 @@ namespace flame
 			{
 				Image::destroy((Image*)out$o);
 			}
-		};
 
-		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType _type, int _base_level, int _level_count, int _base_layer, int _layer_count, ComponentMapping *_mapping)
+		}bp_image_unused;
+
+		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a)
 		{
 			image = (ImagePrivate*)_image;
 			type = _type;
@@ -542,20 +545,20 @@ namespace flame
 			base_layer = _base_layer;
 			layer_count = _layer_count;
 
-			if (_mapping)
-				mapping = *_mapping;
-			else
-				mapping.r = mapping.g = mapping.b = mapping.a = SwizzleIdentity;
+			swizzle_r = _swizzle_r;
+			swizzle_g = _swizzle_g;
+			swizzle_b = _swizzle_b;
+			swizzle_a = _swizzle_a;
 
 #if defined(FLAME_VULKAN)
 			VkImageViewCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			info.flags = 0;
 			info.pNext = nullptr;
-			info.components.r = Z(mapping.r);
-			info.components.g = Z(mapping.g);
-			info.components.b = Z(mapping.b);
-			info.components.a = Z(mapping.a);
+			info.components.r = Z(swizzle_r);
+			info.components.g = Z(swizzle_g);
+			info.components.b = Z(swizzle_b);
+			info.components.a = Z(swizzle_a);
 			info.image = image->v;
 			info.viewType = Z(type);
 			info.format = Z(image->format);
@@ -596,15 +599,56 @@ namespace flame
 			return ((ImageviewPrivate*)this)->image;
 		}
 
-		Imageview* Imageview::create(Image *_i, ImageviewType type, int base_level, int level_count, int base_layer, int layer_count, ComponentMapping *mapping)
+		Imageview* Imageview::create(Image *image, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a)
 		{
-			return new ImageviewPrivate(_i, type, base_level, level_count, base_layer, layer_count, mapping);
+			return new ImageviewPrivate(image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
 		}
 
 		void Imageview::destroy(Imageview *v)
 		{
 			delete (ImageviewPrivate*)v;
 		}
+
+		struct Imageview$
+		{
+			void* image$i;
+			ImageviewType$ type$i;
+			uint base_level$i;
+			uint level_count$i;
+			uint base_layer$i;
+			uint layer_count$i;
+			Swizzle$ swizzle_r$i;
+			Swizzle$ swizzle_g$i;
+			Swizzle$ swizzle_b$i;
+			Swizzle$ swizzle_a$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS Imageview$() :
+				type$i(Imageview2D),
+				base_level$i(0),
+				level_count$i(1),
+				base_layer$i(0),
+				layer_count$i(1),
+				swizzle_r$i(SwizzleIdentity),
+				swizzle_g$i(SwizzleIdentity),
+				swizzle_b$i(SwizzleIdentity),
+				swizzle_a$i(SwizzleIdentity)
+			{
+			}
+
+			FLAME_GRAPHICS_EXPORTS void initialize$()
+			{
+				if (image$i)
+					out$o = Imageview::create((Image*)image$i, type$i, base_level$i, level_count$i, base_layer$i, layer_count$i, swizzle_r$i, swizzle_g$i, swizzle_b$i, swizzle_a$i);
+			}
+
+			FLAME_GRAPHICS_EXPORTS void finish$()
+			{
+				Imageview::destroy((Imageview*)out$o);
+			}
+
+		}bp_imageview_unused;
 
 		SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{

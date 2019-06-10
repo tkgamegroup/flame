@@ -45,9 +45,9 @@ namespace flame
 		- A BP file is basically a XML file
 	*/
 
-	struct EnumInfo;
 	struct VariableInfo;
 	struct UdtInfo;
+	struct SerializableNode;
 
 	struct BP
 	{

@@ -40,7 +40,7 @@ struct App : BasicApp
 
 	virtual void on_create() override
 	{
-		rp_filename = L"../renderpath/test/renderpath.bp";
+		rp_filename = L"../renderpath/canvas/renderpath.bp";
 		rp = nullptr;
 		memset(&cbs, 0, sizeof(cbs));
 

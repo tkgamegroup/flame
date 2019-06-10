@@ -43,8 +43,8 @@ namespace flame
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
-			ImagePrivate(Device *d, Format$ format, const Vec2u &size, int level, int layer, SampleCount$ sample_count, int usage);
-			ImagePrivate(Device *d, Format$ format, const Vec2u &size, int level, int layer, void *native);
+			ImagePrivate(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, int usage);
+			ImagePrivate(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, void *native);
 			~ImagePrivate();
 
 			void set_props();
@@ -66,7 +66,7 @@ namespace flame
 #endif
 			int ref_count;
 
-			ImageviewPrivate(Image *i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping *mapping = nullptr);
+			ImageviewPrivate(Image *i, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a);
 			~ImageviewPrivate();
 		};
 

@@ -284,6 +284,14 @@ namespace flame
 				return to_string(*(Vec3f*)src, precision);
 			case cH("Vec<4,float>"):
 				return to_string(*(Vec4f*)src, precision);
+			case cH("Vec<1,uint>"):
+				return to_string(*(Vec1u*)src);
+			case cH("Vec<2,uint>"):
+				return to_string(*(Vec2u*)src);
+			case cH("Vec<3,uint>"):
+				return to_string(*(Vec3u*)src);
+			case cH("Vec<4,uint>"):
+				return to_string(*(Vec4u*)src);
 				//case cH("Ivec2"): case cH("i2"):
 				//	return to_string(*(Ivec2*)src);
 				//case cH("Ivec3"): case cH("i3"):
@@ -355,6 +363,18 @@ namespace flame
 				break;
 			case cH("Vec<4,float>"):
 				*(Vec4f*)dst = stof4(src.c_str());
+				break;
+			case cH("Vec<1,uint>"):
+				*(Vec1u*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec<2,uint>"):
+				*(Vec2u*)dst = stou2(src.c_str());
+				break;
+			case cH("Vec<3,uint>"):
+				*(Vec3u*)dst = stou3(src.c_str());
+				break;
+			case cH("Vec<4,uint>"):
+				*(Vec4u*)dst = stou4(src.c_str());
 				break;
 				//case cH("Ivec2"): case cH("i2"):
 				//	*(Ivec2*)dst = stoi2(src.c_str());
@@ -1847,6 +1867,11 @@ namespace flame
 			}
 		}
 
+		FLAME_FOUNDATION_EXPORTS void finish$()
+		{
+			delete[]array$o.v;
+		}
+
 	}bp_array_insert_before_for_each_items_unused;
 
 	template<uint N, class T>
@@ -1948,6 +1973,10 @@ namespace flame
 		install_array_udt<1, uint>("1_u", "uint");
 		install_array_udt<1, Vec4c>("1_4c", "Vec<4,uchar>");
 		install_array_udt<1, voidptr>("1_vp", "void*");
+
+		install_array_udt<2, uint>("2_u", "uint");
+		install_array_udt<2, Vec4c>("2_4c", "Vec<4,uchar>");
+		install_array_udt<2, voidptr>("2_vp", "void*");
 
 		free_module(this_module);
 	}

@@ -34,7 +34,7 @@ class Slot
                 if (sp[0] == "enum_single")
                 {
                     let select = document.createElement("select");
-                    select.classList.add("slot_edit");
+                    select.classList.add("slot_edit1");
 
                     var e = find_enum(sp[1]);
                     for (let i of e.items)
@@ -50,12 +50,32 @@ class Slot
                 }
                 else if (sp[0] == "enum_multi")
                 {
+                    let checks = [];
+                    
+                    var e = find_enum(sp[1]);
+                    let first = true;
+                    for (let i of e.items)
+                    {
+                        let c = document.createElement("input");
+                        c.type = "checkbox";
+                        c.value = i.value;
+                        c.my_name = i.name;
+                        checks.push(c);
+                        
+                        c.classList.add("slot_edit2");
+                        if (!first)
+                            this.eMain.appendChild(document.createElement("br"));
+                        first = false;
+                        this.eMain.appendChild(c);
+                        this.eMain.appendChild(document.createTextNode(i.name));
+                    }
 
+                    thiz.eChecks = checks;
                 }
                 else
                 {
                     let input = document.createElement("input");
-                    input.classList.add("slot_edit");
+                    input.classList.add("slot_edit1");
                     input.value = vi.default_value;
                     this.eMain.appendChild(input);
                     thiz.eInput = input;
@@ -151,22 +171,64 @@ class Slot
 
     set_data(data)
     {
-        if (io == 0)
+        if (this.io == 0)
         {
             this.data = data;
             if (this.eInput)
                 this.eInput.value = data;
             else if (this.eSelect)
-                ;
+            {
+                for (let o of this.eSelect.options)
+                {
+                    if (o.text == data)
+                    {
+                        o.selected = true;
+                        break;
+                    }
+                }
+            }
+            else if (this.eChecks)
+            {
+                for (let c of this.eChecks)
+                {
+                    c.checked = false;
+                    if (data.indexOf(c.my_name) != -1)
+                        c.checked = true;
+                }
+            }
         }
     }
 
     get_data()
     {
-        if (io == 0)
+        if (this.io == 0)
         {
             if (this.eInput)
                 this.data = this.eInput.value;
+            else if (this.eSelect)
+            {
+                for (let o of this.eSelect.options)
+                {
+                    if (o.selected)
+                    {
+                        this.data = o.text;
+                        break;
+                    }
+                }
+            }
+            else if (this.eChecks)
+            {
+                this.data = "";
+                for (let c of this.eChecks)
+                {
+                    if (c.checked)
+                    {
+                        if (this.data != "")
+                            this.data += ";";
+                        this.data += c.my_name;
+                    }
+                }
+            }
         }
     }
 }

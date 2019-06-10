@@ -32,9 +32,13 @@ svg {
     background: #dbc04677;
 }
 
-.slot_edit{
+.slot_edit1{
     width: 100px;
-    margin: 0px, 0px, 0px, 20px
+    margin-left: 20px;
+}
+
+.slot_edit2{
+    margin-left: 20px;
 }
 
 .overlay{

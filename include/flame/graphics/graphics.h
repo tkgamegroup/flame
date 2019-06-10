@@ -162,7 +162,7 @@ namespace flame
 			ImageAspectStencil = 1 << 2
 		};
 
-		enum ImageviewType
+		enum ImageviewType$
 		{
 			Imageview1D,
 			Imageview2D,
@@ -173,7 +173,7 @@ namespace flame
 			ImageViewCubeArray
 		};
 
-		enum Swizzle
+		enum Swizzle$
 		{
 			SwizzleIdentity,
 			SwizzleZero,

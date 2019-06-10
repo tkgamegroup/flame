@@ -449,12 +449,12 @@ int main(int argc, char **args)
 						if (filename == L"bp")
 							filename = app->filename;
 						auto file = base64_encode(get_file_string(filename));
-						auto rep = SerializableNode::create("");
-						rep->new_node("filename")->set_value(w2s(filename));
-						rep->new_node("data")->set_value(file);
-						auto str = rep->to_string_json();
+						auto res = SerializableNode::create("");
+						res->new_node("filename")->set_value(w2s(filename));
+						res->new_node("data")->set_value(file);
+						auto str = res->to_string_json();
 						app->server->send(str.size, str.v);
-						SerializableNode::destroy(rep);
+						SerializableNode::destroy(res);
 					}
 					else if (type == "update_bp")
 					{

@@ -32,30 +32,12 @@ namespace flame
 	{
 		struct Device;
 
-		struct ComponentMapping
-		{
-			Swizzle r;
-			Swizzle g;
-			Swizzle b;
-			Swizzle a;
-
-			ComponentMapping() {}
-
-			ComponentMapping(Swizzle _r, Swizzle _g, Swizzle _b, Swizzle _a) :
-				r(_r),
-				g(_g),
-				b(_b),
-				a(_a)
-			{
-			}
-		};
-
 		struct Image
 		{
 			Format$ format;
 			Vec2u size;
-			int level;
-			int layer;
+			uint level;
+			uint layer;
 			SampleCount$ sample_count;
 
 			int channel_, bpp_;
@@ -73,28 +55,32 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void save_png(const wchar_t* filename);
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, int level, int layer, SampleCount$ sample_count, int usage, void* data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, int usage, void* data = nullptr);
 			// default usage: ShaderSampled, TransferDst
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, int extra_usage = 0);
 			// default usage: ShaderSampled, TransferDst
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const wchar_t* filename, int extra_usage = 0);
-			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format$ format, const Vec2u& size, int level, int layer, void* native);
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native);
 
 			FLAME_GRAPHICS_EXPORTS static void destroy(Image* i);
 		};
 
 		struct Imageview
 		{
-			ImageviewType type;
-			int base_level;
-			int level_count;
-			int base_layer;
-			int layer_count;
-			ComponentMapping mapping;
+			ImageviewType$ type;
+			uint base_level;
+			uint level_count;
+			uint base_layer;
+			uint layer_count;
+			Swizzle$ swizzle_r;
+			Swizzle$ swizzle_g;
+			Swizzle$ swizzle_b;
+			Swizzle$ swizzle_a;
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 
-			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image* i, ImageviewType type = Imageview2D, int base_level = 0, int level_count = 1, int base_layer = 0, int layer_count = 1, ComponentMapping * mapping = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image* i, ImageviewType$ type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1, 
+				Swizzle$ swizzle_r = SwizzleIdentity, Swizzle$ swizzle_g = SwizzleIdentity, Swizzle$ swizzle_b = SwizzleIdentity, Swizzle$ swizzle_a = SwizzleIdentity);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Imageview* v);
 		};
 

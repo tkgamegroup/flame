@@ -476,7 +476,7 @@ namespace flame
 			return vk_aspect;
 		}
 
-		inline VkImageViewType Z(ImageviewType t)
+		inline VkImageViewType Z(ImageviewType$ t)
 		{
 			switch (t)
 			{
@@ -497,7 +497,7 @@ namespace flame
 			}
 		}
 
-		inline VkComponentSwizzle Z(Swizzle s)
+		inline VkComponentSwizzle Z(Swizzle$ s)
 		{
 			switch (s)
 			{

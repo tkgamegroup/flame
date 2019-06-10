@@ -193,9 +193,9 @@ window.onload = function()
     
     sock_s = new WebSocket("ws://localhost:5566/");
     sock_s.onmessage = function(res){
-        var rep = JSON.parse(res.data);
-        var ext = rep.filename.substring(rep.filename.lastIndexOf('.'));
-        var file = window.atob(rep.data);
+        var res = JSON.parse(res.data);
+        var ext = res.filename.substring(res.filename.lastIndexOf('.'));
+        var file = window.atob(res.data);
         if (ext == ".bp")
         {
             for (let i = 0; i < nodes.length; i++)
@@ -204,8 +204,8 @@ window.onload = function()
             nodes = [];
             staging_links = [];
 
-            filename = rep.filename;
-            filepath = filename.substring(0, rep.filename.lastIndexOf('/'));
+            filename = res.filename;
+            filepath = filename.substring(0, res.filename.lastIndexOf('/'));
 
             var xml = new DOMParser().parseFromString(file, "text/xml").children[0];
     
@@ -240,7 +240,7 @@ window.onload = function()
             for (let i = 0; i < requests.length; i++)
             {
                 var r = requests[i];
-                if (r.filename == rep.filename)
+                if (r.filename == res.filename)
                 {
                     requests.splice(i, 1);
                     r.callback(file);

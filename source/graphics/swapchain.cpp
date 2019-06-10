@@ -251,6 +251,7 @@ namespace flame
 			void* out$o;
 			void* window$o;
 			Vec2u size$o;
+			Format$ format$o;
 			Array<void*> images$o;
 			Array<void*> imageviews$o;
 
@@ -272,7 +273,9 @@ namespace flame
 						for (auto i = 0; i < image_count; i++)
 							imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
 
-						size$o = ((Image*)images$o.v[0])->size;
+						auto i = (Image*)images$o.v[0];
+						size$o = i->size;
+						format$o = i->format;
 					}
 				}
 			}
