@@ -52,7 +52,7 @@ namespace flame
 		FLAME_NETWORK_EXPORTS bool send(int size, void* data);
 
 		FLAME_NETWORK_EXPORTS static OneClientServer* create(SocketType type, ushort port, int timeout/* second */, 
-			const Function<void(void* c, int size, void* data)>& on_message);
+			const Function<void(void* c, const std::string& str)>& on_message);
 		FLAME_NETWORK_EXPORTS static void destroy(OneClientServer* sock);
 	};
 

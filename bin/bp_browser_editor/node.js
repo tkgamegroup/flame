@@ -100,6 +100,8 @@ class Node
     
                 var n1 = find_node(addr_out[0]);
                 var n2 = find_node(addr_in[0]);
+                if (!n1 || !n2)
+                    continue;
                 var output = n1.find_output(addr_out[1]);
                 var input = n2.find_input(addr_in[1]);
     
@@ -125,13 +127,8 @@ class Node
             {
                 var url = filepath + "/" + sp[0] + ".typeinfo";
                 request(url, function(res){
-                    if (status == "success")
-                    {
-                        load_typeinfo(res, sp[0]);
-                        console.assert(load(sp[1]));
-                    }
-                    else
-                        console.log("load failed: " + url);
+                    load_typeinfo(res, sp[0]);
+                    console.assert(load(sp[1]));
                 });
             }
         }

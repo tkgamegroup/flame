@@ -6,7 +6,7 @@
 			"request": "launch",
 			"name": "bp",
 			"url": "file:///${workspaceFolder}/bp.html",
-			"runtimeArgs": ["--disable-web-security"],
+			"runtimeArgs": [],
 			"webRoot": "${workspaceFolder}"
 		}
 	]

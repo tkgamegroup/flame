@@ -53,7 +53,7 @@ namespace flame
 			return false;
 		}
 
-		uchar buf[1024 * 10];
+		uchar buf[1024 * 16];
 		auto ret = recv(fd_c, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
 
 		auto p = buf;
@@ -80,7 +80,7 @@ namespace flame
 				sha1.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 				key = base64_encode(sha1.final_bin());
 
-				char reply[1024 * 10], time_str[100];
+				char reply[1024 * 16], time_str[128];
 				auto time = std::time(nullptr);
 				std::strftime(time_str, FLAME_ARRAYSIZE(time_str), "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
 				sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
@@ -101,7 +101,7 @@ namespace flame
 
 	bool websocket_send(int fd, int size, void* data)
 	{
-		uchar buf[1024 * 100];
+		uchar buf[1024 * 64];
 		auto p = buf;
 
 		*p++ = 129;
@@ -134,61 +134,109 @@ namespace flame
 		return ::send(fd, (char*)buf, int(p - buf) + size, 0) > 0;
 	}
 
-	struct WebsocketFrame
+	std::vector<std::string> websocket_recv(int fd, bool& closed)
 	{
-		uint op;
-		ulonglong length;
-		uint mask_key;
-	};
+		uchar buf[1024 * 64];
 
-	std::vector<std::string> websocket_recv(int fd)
-	{
-		uchar buf[1024 * 100];
+		auto bytes = recv(fd, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
+		if (bytes <= 0)
+		{
+			closed = true;
+			return std::vector<std::string>();
+		}
+
+		std::vector<std::string> ret;
+
 		auto p = buf;
-
-		auto s = p;
-
-		uchar b1, b2;
-		b1 = *p++;
-		b2 = *p++;
-
-		h.op = b1 & 0xf;
-		auto mask = (b2 & 128) != 0;
-		auto payload_len = b2 & 127;
-
-		if (payload_len <= 125)
-			h.length = payload_len;
-		else if (payload_len == 126)
+		while (bytes > 0)
 		{
-			h.length = (*p++) << 8;
-			h.length += *p++;
+			if (bytes < 2)
+			{
+				auto new_bytes = recv(fd, (char*)p + bytes, 2 - bytes, 0);
+				if (new_bytes <= 0)
+					break;
+				bytes += new_bytes;
+			}
+
+			uchar b1, b2;
+			b1 = *p++;
+			b2 = *p++;
+			bytes -= 2;
+
+			auto op = b1 & 0xf;
+			auto mask = (b2 & 128) != 0;
+			auto payload_length = b2 & 127;
+
+			auto need_bytes = 0;
+			if (payload_length == 126)
+				need_bytes = 2;
+			else if (payload_length == 127)
+				need_bytes = 8;
+			if (mask)
+				need_bytes += 4;
+
+			if (bytes < need_bytes)
+			{
+				auto new_bytes = recv(fd, (char*)p + bytes, need_bytes - bytes, 0);
+				if (new_bytes <= 0)
+					break;
+				bytes += new_bytes;
+			}
+
+			ulonglong length;
+
+			if (payload_length <= 125)
+				length = payload_length;
+			else if (payload_length == 126)
+			{
+				length = (*p++) << 8;
+				length += *p++;
+				
+				bytes -= 2;
+			}
+			else if (payload_length == 127)
+			{
+				length = (*p++) << 56;
+				length += (*p++) << 48;
+				length += (*p++) << 40;
+				length += (*p++) << 32;
+
+				length += (*p++) << 24;
+				length += (*p++) << 16;
+				length += (*p++) << 8;
+				length += *p++;
+
+				bytes -= 8;
+			}
+
+			uint mask_key;
+			if (mask)
+			{
+				mask_key = *(uint*)p;
+
+				p += 4;
+				bytes -= 4;
+			}
+
+			if (bytes < length)
+			{
+				auto new_bytes = recv(fd, (char*)p + bytes, length - bytes, 0);
+				if (new_bytes <= 0)
+					break;
+				bytes += new_bytes;
+			}
+
+			for (auto i = 0; i < length; i++)
+				p[i] ^= ((char*)&mask_key)[i % 4];
+
+			if (op == 1)
+				ret.push_back(std::string(p, p + length));
+
+			p += length;
+			bytes -= length;
 		}
-		else if (payload_len == 127)
-		{
-			h.length = (*p++) << 56;
-			h.length += (*p++) << 48;
-			h.length += (*p++) << 40;
-			h.length += (*p++) << 32;
 
-			h.length += (*p++) << 24;
-			h.length += (*p++) << 16;
-			h.length += (*p++) << 8;
-			h.length += *p++;
-		}
-
-		if (mask)
-		{
-			h.mask_key = *(uint*)p;
-			p += sizeof(uint);
-		}
-
-		return p - s;
-	}
-
-	void websocket_mask(uchar* p, ulonglong len, uint mask_key)
-	{
-		for (auto i = 0; i < len; i++)
-			p[i] ^= ((char*)& mask_key)[i % 4];
+		return ret;
 	}
 
 	struct OneClientServerPrivate : OneClientServer
@@ -197,7 +245,7 @@ namespace flame
 
 		int fd_c;
 
-		Function<void(void* c, int size, void* data)> message_callback;
+		Function<void(void* c, const std::string& str)> message_callback;
 
 		bool send(int size, void* data)
 		{
@@ -213,7 +261,7 @@ namespace flame
 		return ((OneClientServerPrivate*)this)->send(size, data);
 	}
 
-	OneClientServer* OneClientServer::create(SocketType type, ushort port, int _timeout, const Function<void(void* c, int size, void* data)>& on_message)
+	OneClientServer* OneClientServer::create(SocketType type, ushort port, int _timeout, const Function<void(void* c, const std::string& str)>& on_message)
 	{
 		int res;
 
@@ -262,24 +310,15 @@ namespace flame
 				auto thiz = *((OneClientServerPrivate * *)c);
 				while (true)
 				{
-					uchar buf[1024 * 100];
-					auto ret = recv(thiz->fd_c, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
-					if (ret <= 0)
+					bool closed = false;
+					auto reqs = websocket_recv(thiz->fd_c, closed);
+					for (auto& r : reqs)
+						thiz->message_callback(r);
+					if (closed)
 					{
 						SetEvent(thiz->ev_closed);
 						return;
 					}
-
-					ulonglong len;
-					uint mask_key;
-					auto p = buf;
-					auto op = websocket_recv(p, len, mask_key);
-					websocket_recv_all(thiz->fd_c, buf + ret, (p - buf) + len - ret);
-					websocket_mask(p, len, mask_key);
-					p[len] = 0;
-
-					if (op == 1)
-						thiz->message_callback(len, p);
 				}
 			}, sizeof(void*), & thiz));
 
@@ -386,52 +425,46 @@ namespace flame
 						{
 							if (FD_ISSET(fd, &rfds))
 							{
-								uchar buf[1024 * 100];
-								auto ret = recv(fd, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
-								if (ret > 0)
+								bool closed = false;
+								auto reqs = websocket_recv(fd, closed);
+								if (reqs.size() > 0)
 								{
-									ulonglong len;
-									uint mask_key;
-									auto p = buf;
-									auto op = websocket_recv(p, len, mask_key);
-									websocket_recv_all(fd, buf + ret, (p - buf) + len - ret);
-									websocket_mask(p, len, mask_key);
-									p[len] = 0;
-
-									if (op == 1)
+									auto json = SerializableNode::create_from_json_string(reqs[0]);
+									auto n_frame = json->find_node("frame");
+									if (n_frame && n_frame->type() == SerializableNode::Value)
 									{
-										auto json = SerializableNode::create_from_json_string((char*)p);
-										auto n_frame = json->find_node("frame");
-										if (n_frame && n_frame->type() == SerializableNode::Value)
+										auto frame = std::stoi(n_frame->value().c_str());
+										if (frame == thiz->frame)
 										{
-											auto frame = std::stoi(n_frame->value().c_str());
-											if (frame == thiz->frame)
+											thiz->semaphore++;
+											auto n_data = json->find_node("data");
+											auto dst = thiz->frame_advance_data->new_node(std::to_string(client_idx + 1));
+											for (auto i = 0; i < n_data->node_count(); i++)
 											{
-												thiz->semaphore++;
-												auto n_data = json->find_node("data");
-												auto dst = thiz->frame_advance_data->new_node(std::to_string(client_idx + 1));
-												for (auto i = 0; i < n_data->node_count(); i++)
-												{
-													auto n = json->node(i);
-													dst->new_attr(n->name(), n->value());
-												}
+												auto n = json->node(i);
+												dst->new_attr(n->name(), n->value());
+											}
 
-												if (thiz->semaphore >= thiz->fd_cs.size())
-												{
-													thiz->frame++;
-													thiz->semaphore = 0;
+											if (thiz->semaphore >= thiz->fd_cs.size())
+											{
+												thiz->frame++;
+												thiz->semaphore = 0;
 
-													auto str = thiz->frame_advance_data->to_string_json();
-													for (auto i = 0; i < 2; i++)
-														thiz->send(i, str.size, str.v);
-													SerializableNode::destroy(thiz->frame_advance_data);
-													thiz->frame_advance_data = SerializableNode::create("");
-													thiz->frame_advance_data->new_attr("action", "frame");
-												}
+												auto str = thiz->frame_advance_data->to_string_json();
+												for (auto i = 0; i < 2; i++)
+													thiz->send(i, str.size, str.v);
+												SerializableNode::destroy(thiz->frame_advance_data);
+												thiz->frame_advance_data = SerializableNode::create("");
+												thiz->frame_advance_data->new_attr("action", "frame");
 											}
 										}
-										SerializableNode::destroy(json);
 									}
+									SerializableNode::destroy(json);
+								}
+								if (closed)
+								{
+									// TODO
+									/* do something! */
 								}
 							}
 							client_idx++;

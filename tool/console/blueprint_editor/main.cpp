@@ -433,14 +433,14 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "gui-browser")
 		{
-			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
+			exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
 			printf("waiting for browser on port 5566 ...");
 
-			app.server = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, int, void*)>(
-				[](void* c, int len, void* data) {
+			app.server = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, const std::string&)>(
+				[](void* c, const std::string& str) {
 					auto app = *(App**)c;
 
-					auto req = SerializableNode::create_from_json_string((char*)data);
+					auto req = SerializableNode::create_from_json_string(str);
 					auto type = req->find_node("type")->value();
 
 					if (type == "get")

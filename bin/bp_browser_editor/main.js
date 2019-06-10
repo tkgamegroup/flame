@@ -165,7 +165,7 @@ window.onload = function()
     sock_s = new WebSocket("ws://localhost:5566/");
     sock_s.onmessage = function(res){
         var data = JSON.parse(res.data);
-        var ext = data.filename.substring(data.filename.indexOf('.'));
+        var ext = data.filename.substring(data.filename.lastIndexOf('.'));
         if (ext == ".bp")
         {
             for (var i in nodes)
@@ -184,14 +184,14 @@ window.onload = function()
                 }
             }
     
+            staging_links = data.links;
+    
             for (var i in data.nodes)
             {
                 var sn = data.nodes[i];
                 var n = new Node(sn);
                 add_node(n);
             }
-    
-            staging_links = data.links;
         }
         else
         {
