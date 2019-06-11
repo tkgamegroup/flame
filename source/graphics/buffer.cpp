@@ -28,7 +28,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(Device *_d, uint _size, int _usage, int _mem_prop, bool sharing)
+		BufferPrivate::BufferPrivate(Device *_d, uint _size, BufferUsage$ _usage, MemProp$ _mem_prop, bool sharing)
 		{
 			size = _size;
 			mapped = nullptr;
@@ -43,7 +43,7 @@ namespace flame
 			buffer_info.flags = 0;
 			buffer_info.pNext = nullptr;
 			buffer_info.size = size;
-			buffer_info.usage = Z((BufferUsage$)usage);
+			buffer_info.usage = to_flags(usage);
 			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
 			uint queue_family_idx[] = {
@@ -64,11 +64,11 @@ namespace flame
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			alloc_info.pNext = nullptr;
 			alloc_info.allocationSize = mem_requirements.size;
-			alloc_info.memoryTypeIndex = d->find_memory_type(mem_requirements.memoryTypeBits, Z((MemProp)mem_prop));
+			alloc_info.memoryTypeIndex = d->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
-			vk_chk_res(vkAllocateMemory(d->v, &alloc_info, nullptr, &m));
+			chk_res(vkAllocateMemory(d->v, &alloc_info, nullptr, &m));
 
-			vk_chk_res(vkBindBufferMemory(d->v, v, m, 0));
+			chk_res(vkBindBufferMemory(d->v, v, m, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -92,7 +92,7 @@ namespace flame
 			if (_size == 0)
 				_size = size;
 #if defined(FLAME_VULKAN)
-			vk_chk_res(vkMapMemory(d->v, m, offset, _size, 0, &mapped));
+			chk_res(vkMapMemory(d->v, m, offset, _size, 0, &mapped));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -120,7 +120,7 @@ namespace flame
 			range.memory = m;
 			range.offset = 0;
 			range.size = VK_WHOLE_SIZE;
-			vk_chk_res(vkFlushMappedMemoryRanges(d->v, 1, &range));
+			chk_res(vkFlushMappedMemoryRanges(d->v, 1, &range));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -165,7 +165,7 @@ namespace flame
 			((BufferPrivate*)this)->copy_from_data(data);
 		}
 
-		Buffer *Buffer::create(Device *d, uint size, int usage, int mem_prop, bool sharing, void *data)
+		Buffer *Buffer::create(Device *d, uint size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing, void *data)
 		{
 			auto b = new BufferPrivate(d, size, usage, mem_prop, sharing);
 

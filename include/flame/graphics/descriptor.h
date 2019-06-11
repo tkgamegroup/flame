@@ -45,9 +45,9 @@ namespace flame
 		{
 			struct Binding
 			{
-				int binding;
+				uint binding;
 				ShaderResourceType type;
-				int count;
+				uint count;
 			};
 
 			FLAME_GRAPHICS_EXPORTS static Descriptorsetlayout *create(Device *d, const std::vector<Binding> &bindings);
@@ -56,10 +56,10 @@ namespace flame
 
 		struct Descriptorset
 		{
-			FLAME_GRAPHICS_EXPORTS void set_uniformbuffer(int binding, int index, Buffer *b, int offset = 0, int range = 0);
-			FLAME_GRAPHICS_EXPORTS void set_storagebuffer(int binding, int index, Buffer *b, int offset = 0, int range = 0);
-			FLAME_GRAPHICS_EXPORTS void set_imageview(int binding, int index, Imageview *v, Sampler *sampler);
-			FLAME_GRAPHICS_EXPORTS void set_storageimage(int binding, int index, Imageview *v);
+			FLAME_GRAPHICS_EXPORTS void set_uniformbuffer(uint binding, uint index, Buffer *b, uint offset = 0, uint range = 0);
+			FLAME_GRAPHICS_EXPORTS void set_storagebuffer(uint binding, uint index, Buffer *b, uint offset = 0, uint range = 0);
+			FLAME_GRAPHICS_EXPORTS void set_imageview(uint binding, uint index, Imageview *v, Sampler *sampler);
+			FLAME_GRAPHICS_EXPORTS void set_storageimage(uint binding, uint index, Imageview *v);
 
 			FLAME_GRAPHICS_EXPORTS static Descriptorset *create(Descriptorpool *p, Descriptorsetlayout *l);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorset *s);

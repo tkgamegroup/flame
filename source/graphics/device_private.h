@@ -49,7 +49,7 @@ namespace flame
 			DevicePrivate(bool debug);
 			~DevicePrivate();
 
-			int find_memory_type(uint type_filter, int properties /* MemProp */);
+			uint find_memory_type(uint type_filter, MemProp$ properties);
 			bool has_feature(Feature f);
 		};
 	}

@@ -100,7 +100,7 @@ namespace flame
 
 			Imageview* image_views[MaxImageviewCount];
 
-			std::vector<std::tuple<FontAtlas*, int, Imageview*>> font_atlases;
+			std::vector<std::tuple<FontAtlas*, uint, Imageview*>> font_atlases;
 
 			CanvasPrivate(Swapchain* _sc)
 			{
@@ -128,10 +128,8 @@ namespace flame
 
 				ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
 
-				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690,
-					BufferUsageVertex, MemPropHost | MemPropHostCoherent);
-				idx_buffer = Buffer::create(device, sizeof(int) * 65536,
-					BufferUsageIndex, MemPropHost | MemPropHostCoherent);
+				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
+				idx_buffer = Buffer::create(device, sizeof(int) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
@@ -389,7 +387,7 @@ namespace flame
 				}
 			}
 
-			void add_text(int font_atlas_index, const Vec2f& pos, const Vec4c& col, const wchar_t* text, float scale)
+			void add_text(uint font_atlas_index, const Vec2f& pos, const Vec4c& col, const wchar_t* text, float scale)
 			{
 				if (text[0] == 0 || font_atlas_index >= font_atlases.size())
 					return;
@@ -510,7 +508,7 @@ namespace flame
 				clear_path();
 			}
 
-			void add_image(const Vec2f& pos, const Vec2f& size, int id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255))
+			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255))
 			{
 				auto _pos = Vec2f(Vec2i(pos));
 
@@ -534,7 +532,7 @@ namespace flame
 				idx_cnt += 6;
 			}
 
-			void add_image_stretch(const Vec2f& pos, const Vec2f& size, int id, const Vec4f& border, const Vec4c& tint_col = Vec4c(255))
+			void add_image_stretch(const Vec2f& pos, const Vec2f& size, uint id, const Vec4f& border, const Vec4c& tint_col = Vec4c(255))
 			{
 				//auto image_size = share_data.image_views[id]->image()->size;
 
@@ -626,27 +624,27 @@ namespace flame
 			((CanvasPrivate*)this)->cv->set(0, col);
 		}
 
-		Imageview* Canvas::get_imageview(int index)
+		Imageview* Canvas::get_imageview(uint index)
 		{
 			return ((CanvasPrivate*)this)->image_views[index];
 		}
 
-		void Canvas::set_imageview(int index, Imageview* v)
+		void Canvas::set_imageview(uint index, Imageview* v)
 		{
 			((CanvasPrivate*)this)->set_imageview(index, v);
 		}
 
-		int Canvas::add_font_atlas(FontAtlas* font_atlas)
+		uint Canvas::add_font_atlas(FontAtlas* font_atlas)
 		{
 			return ((CanvasPrivate*)this)->add_font_atlas(font_atlas);
 		}
 
-		FontAtlas* Canvas::get_font_atlas(int idx)
+		FontAtlas* Canvas::get_font_atlas(uint idx)
 		{
 			return std::get<0>(((CanvasPrivate*)this)->font_atlases[idx]);
 		}
 
-		void Canvas::start_cmd(DrawCmdType type, int id)
+		void Canvas::start_cmd(DrawCmdType type, uint id)
 		{
 			((CanvasPrivate*)this)->start_cmd(type, id);
 		}
@@ -656,7 +654,7 @@ namespace flame
 			((CanvasPrivate*)this)->path_line_to(p);
 		}
 
-		void Canvas::path_rect(const Vec2f& pos, const Vec2f& size, float round_radius, int round_flags)
+		void Canvas::path_rect(const Vec2f& pos, const Vec2f& size, float round_radius, Side round_flags)
 		{
 			((CanvasPrivate*)this)->path_rect(pos, size, round_radius, round_flags);
 		}
@@ -666,7 +664,7 @@ namespace flame
 			((CanvasPrivate*)this)->path_arc_to(center, radius, a_min, a_max);
 		}
 
-		void Canvas::path_bezier(const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, int level)
+		void Canvas::path_bezier(const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, uint level)
 		{
 			((CanvasPrivate*)this)->path_bezier(p1, p2, p3, p4, level);
 		}
@@ -691,7 +689,7 @@ namespace flame
 			((CanvasPrivate*)this)->fill(col);
 		}
 
-		void Canvas::add_text(int font_index, const Vec2f& pos, const Vec4c& col, const wchar_t* text, float scale)
+		void Canvas::add_text(uint font_index, const Vec2f& pos, const Vec4c& col, const wchar_t* text, float scale)
 		{
 			((CanvasPrivate*)this)->add_text(font_index, pos, col, text, scale);
 		}
@@ -706,12 +704,12 @@ namespace flame
 			((CanvasPrivate*)this)->add_triangle_filled(p0, p1, p2, col);
 		}
 
-		void Canvas::add_rect(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float thickness, float round_radius, int round_flags)
+		void Canvas::add_rect(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float thickness, float round_radius, Side round_flags)
 		{
 			((CanvasPrivate*)this)->add_rect(pos, size, col, thickness, round_radius, round_flags);
 		}
 
-		void Canvas::add_rect_col2(const Vec2f& pos, const Vec2f& size, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, float round_radius, int round_flags)
+		void Canvas::add_rect_col2(const Vec2f& pos, const Vec2f& size, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, float round_radius, Side round_flags)
 		{
 			((CanvasPrivate*)this)->add_rect_col2(pos, size, inner_col, outter_col, thickness, round_radius, round_flags);
 		}
@@ -721,7 +719,7 @@ namespace flame
 			((CanvasPrivate*)this)->add_rect_rotate(pos, size, col, thickness, rotate_center, angle);
 		}
 
-		void Canvas::add_rect_filled(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float round_radius, int round_flags)
+		void Canvas::add_rect_filled(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float round_radius, Side round_flags)
 		{
 			((CanvasPrivate*)this)->add_rect_filled(pos, size, col, round_radius, round_flags);
 		}
@@ -741,12 +739,12 @@ namespace flame
 			((CanvasPrivate*)this)->add_bezier(p1, p2, p3, p4, col, thickness);
 		}
 
-		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, int id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
+		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 		{
 			((CanvasPrivate*)this)->add_image(pos, size, id, uv0, uv1, tint_col);
 		}
 
-		void Canvas::add_image_stretch(const Vec2f& pos, const Vec2f& size, int id, const Vec4f& border, const Vec4c& tint_col)
+		void Canvas::add_image_stretch(const Vec2f& pos, const Vec2f& size, uint id, const Vec4f& border, const Vec4c& tint_col)
 		{
 			((CanvasPrivate*)this)->add_image_stretch(pos, size, id, border, tint_col);
 		}
@@ -792,7 +790,7 @@ namespace flame
 			RenderpassInfo rp_info;
 			rp = Renderpass::create(device, rp_info);
 
-			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
+			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
 			white_image->init(Vec4c(255));
 			white_imageview = Imageview::create(white_image);
 

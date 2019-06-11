@@ -129,8 +129,8 @@ namespace flame
 				auto at_info = (AttachmentInfo*)info.attachments.v[i];
 
 				vk_attachments[i].flags = 0;
-				vk_attachments[i].format = Z(at_info->format);
-				vk_attachments[i].samples = Z(at_info->sample_count);
+				vk_attachments[i].format = to_enum(at_info->format);
+				vk_attachments[i].samples = to_enum(at_info->sample_count);
 				vk_attachments[i].loadOp = at_info->clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				vk_attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				vk_attachments[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -222,7 +222,7 @@ namespace flame
 			create_info.dependencyCount = vk_dependencies.size();
 			create_info.pDependencies = vk_dependencies.data();
 
-			vk_chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
+			chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
 
 			attachments.resize(info.attachments.size);
 			for (auto i = 0; i < info.attachments.size; i++)
@@ -278,7 +278,7 @@ namespace flame
 		{
 		}
 
-		void ClearvaluesPrivate::set(int idx, const Vec4c& col)
+		void ClearvaluesPrivate::set(uint idx, const Vec4c& col)
 		{
 #if defined(FLAME_VULKAN)
 			v[idx].color.float32[0] = col.x() / 255.f;
@@ -377,7 +377,7 @@ namespace flame
 			create_info.attachmentCount = info.views.size;
 			create_info.pAttachments = vk_views.data();
 
-			vk_chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
+			chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
 #endif
 		}
 

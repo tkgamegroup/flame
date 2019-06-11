@@ -50,7 +50,7 @@ namespace flame
 			{
 				vk_pushconstants[i].offset = pcs[i].offset;
 				vk_pushconstants[i].size = pcs[i].size;
-				vk_pushconstants[i].stageFlags = Z(ShaderType(ShaderAll));
+				vk_pushconstants[i].stageFlags = to_flags(ShaderAll);
 			}
 
 			VkPipelineLayoutCreateInfo info;
@@ -62,7 +62,7 @@ namespace flame
 			info.pushConstantRangeCount = vk_pushconstants.size();
 			info.pPushConstantRanges = vk_pushconstants.data();
 
-			vk_chk_res(vkCreatePipelineLayout(d->v, &info, nullptr, &v));
+			chk_res(vkCreatePipelineLayout(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -77,7 +77,7 @@ namespace flame
 #endif
 		}
 
-		Descriptorsetlayout *Pipelinelayout::dsl(int index) const
+		Descriptorsetlayout *Pipelinelayout::dsl(uint index) const
 		{
 			return ((PipelinelayoutPrivate*)this)->dsls[index];
 		}
@@ -126,7 +126,7 @@ namespace flame
 				VkVertexInputBindingDescription binding;
 				binding.binding = vi_binding;
 				binding.stride = 0;
-				binding.inputRate = Z(b.rate);
+				binding.inputRate = to_enum(b.rate);
 
 				for (auto &a : b.attributes)
 				{
@@ -134,7 +134,7 @@ namespace flame
 					attribute.location = vi_location;
 					attribute.binding = vi_binding;
 					attribute.offset = binding.stride;
-					attribute.format = Z(a);
+					attribute.format = to_enum(a);
 
 					switch (a)
 					{
@@ -178,7 +178,7 @@ namespace flame
 			assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 			assembly_state.flags = 0;
 			assembly_state.pNext = nullptr;
-			assembly_state.topology = Z(info.primitive_topology);
+			assembly_state.topology = to_enum(info.primitive_topology);
 			assembly_state.primitiveRestartEnable = VK_FALSE;
 
 			VkPipelineTessellationStateCreateInfo tess_state;
@@ -216,8 +216,8 @@ namespace flame
 			raster_state.flags = 0;
 			raster_state.depthClampEnable = info.depth_clamp;
 			raster_state.rasterizerDiscardEnable = VK_FALSE;
-			raster_state.polygonMode = Z(info.polygon_mode);
-			raster_state.cullMode = Z(info.cull_mode);
+			raster_state.polygonMode = to_enum(info.polygon_mode);
+			raster_state.cullMode = to_enum(info.cull_mode);
 			raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 			raster_state.depthBiasEnable = VK_FALSE;
 			raster_state.depthBiasConstantFactor = 0.f;
@@ -229,7 +229,7 @@ namespace flame
 			multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
-			multisample_state.rasterizationSamples = Z(info.sample_count);
+			multisample_state.rasterizationSamples = to_enum(info.sample_count);
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
 			multisample_state.pSampleMask = nullptr;
@@ -242,7 +242,7 @@ namespace flame
 			depth_stencil_state.pNext = nullptr;
 			depth_stencil_state.depthTestEnable = info.depth_test;
 			depth_stencil_state.depthWriteEnable = info.depth_write;
-			depth_stencil_state.depthCompareOp = Z(info.depth_compare_op);
+			depth_stencil_state.depthCompareOp = to_enum(info.depth_compare_op);
 			depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 			depth_stencil_state.minDepthBounds = 0;
 			depth_stencil_state.maxDepthBounds = 0;
@@ -254,11 +254,11 @@ namespace flame
 			{
 				VkPipelineColorBlendAttachmentState s;
 				s.blendEnable = a.blend_enable;
-				s.srcColorBlendFactor = Z(a.blend_src_color);
-				s.dstColorBlendFactor = Z(a.blend_dst_color);
+				s.srcColorBlendFactor = to_enum(a.blend_src_color);
+				s.dstColorBlendFactor = to_enum(a.blend_dst_color);
 				s.colorBlendOp = VK_BLEND_OP_ADD;
-				s.srcAlphaBlendFactor = Z(a.blend_src_alpha);
-				s.dstAlphaBlendFactor = Z(a.blend_dst_alpha);
+				s.srcAlphaBlendFactor = to_enum(a.blend_src_alpha);
+				s.dstAlphaBlendFactor = to_enum(a.blend_dst_alpha);
 				s.alphaBlendOp = VK_BLEND_OP_ADD;
 				s.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				vk_blend_attachment_states.push_back(s);
@@ -278,7 +278,7 @@ namespace flame
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
 			for (auto &s : info.dynamic_states)
-				vk_dynamic_states.push_back(Z(s));
+				vk_dynamic_states.push_back(to_enum(s));
 			if (info.viewport_size.x() == 0 && info.viewport_size.y() == 0)
 			{
 				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
@@ -315,7 +315,7 @@ namespace flame
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 
-			vk_chk_res(vkCreateGraphicsPipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
+			chk_res(vkCreateGraphicsPipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -344,7 +344,7 @@ namespace flame
 			pipeline_info.layout = layout->v;
 			pipeline_info.stage = vk_stage_infos[0];
 
-			vk_chk_res(vkCreateComputePipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
+			chk_res(vkCreateComputePipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -413,7 +413,7 @@ namespace flame
 			info.pNext = nullptr;
 			info.pSpecializationInfo = nullptr;
 			info.pName = "main";
-			info.stage = Z(Z(s->type));
+			info.stage = to_enum(s->type);
 			info.module = s->v;
 			stage_infos.push_back(info);
 

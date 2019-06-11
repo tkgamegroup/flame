@@ -48,7 +48,7 @@ namespace flame
 		struct GlyphPrivate : Glyph
 		{
 			ushort unicode;
-			int grid_x, grid_y;
+			uint grid_x, grid_y;
 			GlyphPrivate* next;
 		};
 
@@ -61,7 +61,7 @@ namespace flame
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
 
-			FontPrivate(const wchar_t* filename, int _pixel_height)
+			FontPrivate(const wchar_t* filename, uint _pixel_height)
 			{
 				pixel_height = _pixel_height;
 
@@ -87,7 +87,7 @@ namespace flame
 			}
 		};
 
-		Font* Font::create(const wchar_t* filename, int pixel_height)
+		Font* Font::create(const wchar_t* filename, uint pixel_height)
 		{
 			return new FontPrivate(filename, pixel_height);
 		}
@@ -106,14 +106,14 @@ namespace flame
 			Glyph* map[65536];
 			GlyphPrivate* glyph_head;
 			GlyphPrivate* glyph_tail;
-			int grid_cx;
-			int grid_cy;
-			int grid_curr_x;
-			int grid_curr_y;
+			uint grid_cx;
+			uint grid_cy;
+			uint grid_curr_x;
+			uint grid_curr_y;
 
 			Image* atlas;
 
-			FontAtlasPrivate(Device* _d, int _pixel_height, bool _sdf, const std::vector<Font*>& _fonts) :
+			FontAtlasPrivate(Device* _d, uint _pixel_height, bool _sdf, const std::vector<Font*>& _fonts) :
 				d(_d)
 			{
 				sdf = _sdf;
@@ -121,7 +121,7 @@ namespace flame
 
 				memset(map, 0, sizeof(map));
 
-				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
+				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
 				atlas->init(Vec4c(0));
 
 				max_width = 0;
@@ -309,7 +309,7 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, int pixel_height, bool sdf, const std::vector<Font*>& fonts)
+		FontAtlas* FontAtlas::create(Device* d, uint pixel_height, bool sdf, const std::vector<Font*>& fonts)
 		{
 			return new FontAtlasPrivate(d, pixel_height, sdf, fonts);
 		}

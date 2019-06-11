@@ -34,7 +34,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		Format$ Image::find_format(int channel, int bpp)
+		Format$ Image::find_format(uint channel, uint bpp)
 		{
 			switch (channel)
 			{
@@ -73,7 +73,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, SampleCount$ _sample_count, int _usage)
+		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsage$ _usage)
 		{
 			format = _format;
 			size = _size;
@@ -92,21 +92,21 @@ namespace flame
 			imageInfo.flags = 0;
 			imageInfo.pNext = nullptr;
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
-			imageInfo.format = Z(format);
+			imageInfo.format = to_enum(format);
 			imageInfo.extent.width = size.x();
 			imageInfo.extent.height = size.y();
 			imageInfo.extent.depth = 1;
 			imageInfo.mipLevels = level;
 			imageInfo.arrayLayers = layer;
-			imageInfo.samples = Z(sample_count);
+			imageInfo.samples = to_enum(sample_count);
 			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-			imageInfo.usage = Z((ImageUsage$)usage, format, sample_count);
+			imageInfo.usage = to_flags(usage, format, sample_count);
 			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			imageInfo.queueFamilyIndexCount = 0;
 			imageInfo.pQueueFamilyIndices = nullptr;
 			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-			vk_chk_res(vkCreateImage(d->v, &imageInfo, nullptr, &v));
+			chk_res(vkCreateImage(d->v, &imageInfo, nullptr, &v));
 
 			VkMemoryRequirements memRequirements;
 			vkGetImageMemoryRequirements(d->v, v, &memRequirements);
@@ -117,9 +117,9 @@ namespace flame
 			allocInfo.allocationSize = memRequirements.size;
 			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, MemPropDevice);
 
-			vk_chk_res(vkAllocateMemory(d->v, &allocInfo, nullptr, &m));
+			chk_res(vkAllocateMemory(d->v, &allocInfo, nullptr, &m));
 
-			vk_chk_res(vkBindImageMemory(d->v, v, m, 0));
+			chk_res(vkBindImageMemory(d->v, v, m, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -135,7 +135,7 @@ namespace flame
 
 			set_props();
 
-			usage = 0;
+			usage = ImageUsage$(0);
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
@@ -213,7 +213,7 @@ namespace flame
 			Commandbuffer::destroy(cb);
 		}
 
-		void ImagePrivate::get_pixels(int x, int y, int cx, int cy, void *dst)
+		void ImagePrivate::get_pixels(uint x, uint y, int cx, int cy, void *dst)
 		{
 			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 			if (cx == -1)
@@ -242,7 +242,7 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void ImagePrivate::set_pixels(int x, int y, int cx, int cy, const void *src)
+		void ImagePrivate::set_pixels(uint x, uint y, int cx, int cy, const void *src)
 		{
 			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 			if (cx == -1)
@@ -274,7 +274,7 @@ namespace flame
 		{
 			if (bpp_ / channel_ > 8)
 			{
-				auto img = Image::create(d, Format_R8G8B8A8_UNORM, size, 1, 1, SampleCount_1, ImageUsageAttachment | ImageUsageTransferSrc);
+				auto img = Image::create(d, Format_R8G8B8A8_UNORM, size, 1, 1, SampleCount_1, ImageUsage$(ImageUsageAttachment | ImageUsageTransferSrc));
 				auto img_v = Imageview::create(img);
 
 				FramebufferInfo fb_info;
@@ -328,12 +328,12 @@ namespace flame
 			((ImagePrivate*)this)->init(col);
 		}
 
-		void Image::get_pixels(int x, int y, int cx, int cy, void *dst)
+		void Image::get_pixels(uint x, uint y, int cx, int cy, void *dst)
 		{
 			((ImagePrivate*)this)->get_pixels(x, y, cx, cy, dst);
 		}
 
-		void Image::set_pixels(int x, int y, int cx, int cy, const void *src)
+		void Image::set_pixels(uint x, uint y, int cx, int cy, const void *src)
 		{
 			((ImagePrivate*)this)->set_pixels(x, y, cx, cy, src);
 		}
@@ -343,13 +343,13 @@ namespace flame
 			((ImagePrivate*)this)->save_png(filename);
 		}
 
-		Image *Image::create(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, int usage, void *data)
+		Image *Image::create(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void *data)
 		{
 			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
 
 			if (data)
 			{
-				auto staging_buffer = Buffer::create(d, i->data_size_, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				auto staging_buffer = Buffer::create(d, i->data_size_, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -370,11 +370,11 @@ namespace flame
 			return i;
 		}
 
-		Image *Image::create_from_bitmap(Device *d, Bitmap *bmp, int extra_usage)
+		Image *Image::create_from_bitmap(Device *d, Bitmap *bmp, ImageUsage$ extra_usage)
 		{
-			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
+			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst | extra_usage));
 
-			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
 			staging_buffer->map();
 			memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
 			staging_buffer->unmap();
@@ -394,7 +394,7 @@ namespace flame
 			return i;
 		}
 
-		Image *Image::create_from_file(Device *d, const wchar_t *filename, int extra_usage)
+		Image *Image::create_from_file(Device *d, const wchar_t *filename, ImageUsage$ extra_usage)
 		{
 			std::fs::path path(filename);
 			if (!std::fs::exists(path))
@@ -464,7 +464,7 @@ namespace flame
 
 				fmt = find_format(bmp->channel, bmp->bpp);
 
-				staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -474,7 +474,7 @@ namespace flame
 				buffer_copy_regions.push_back(BufferImageCopy(width, height));
 			}
 
-			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
+			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst | extra_usage));
 
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
@@ -555,20 +555,20 @@ namespace flame
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			info.flags = 0;
 			info.pNext = nullptr;
-			info.components.r = Z(swizzle_r);
-			info.components.g = Z(swizzle_g);
-			info.components.b = Z(swizzle_b);
-			info.components.a = Z(swizzle_a);
+			info.components.r = to_enum(swizzle_r);
+			info.components.g = to_enum(swizzle_g);
+			info.components.b = to_enum(swizzle_b);
+			info.components.a = to_enum(swizzle_a);
 			info.image = image->v;
-			info.viewType = Z(type);
-			info.format = Z(image->format);
-			info.subresourceRange.aspectMask = Z(aspect_from_format(image->format));
+			info.viewType = to_enum(type);
+			info.format = to_enum(image->format);
+			info.subresourceRange.aspectMask = to_flags(aspect_from_format(image->format));
 			info.subresourceRange.baseMipLevel = base_level;
 			info.subresourceRange.levelCount = level_count;
 			info.subresourceRange.baseArrayLayer = base_layer;
 			info.subresourceRange.layerCount = layer_count;
 
-			vk_chk_res(vkCreateImageView(image->d->v, &info, nullptr, &v));
+			chk_res(vkCreateImageView(image->d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -658,8 +658,8 @@ namespace flame
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 			info.flags = 0;
 			info.pNext = nullptr;
-			info.magFilter = Z(mag_filter);
-			info.minFilter = Z(min_filter);
+			info.magFilter = to_enum(mag_filter);
+			info.minFilter = to_enum(min_filter);
 			info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -674,7 +674,7 @@ namespace flame
 			info.minLod = 0.0f;
 			info.maxLod = 0.0f;
 
-			vk_chk_res(vkCreateSampler(d->v, &info, nullptr, &v));
+			chk_res(vkCreateSampler(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
 #endif

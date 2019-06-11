@@ -72,7 +72,7 @@ namespace flame
 			Format_Depth_End = Format_Depth24Stencil8,
 		};
 
-		enum MemProp
+		enum MemProp$
 		{
 			MemPropDevice = 1 << 0,
 			MemPropHost = 1 << 1,
@@ -96,7 +96,7 @@ namespace flame
 			SampleCount_32
 		};
 
-		enum ShaderType
+		enum ShaderType$
 		{
 			ShaderNone,
 			ShaderVert = 1 << 0,

@@ -48,7 +48,7 @@ namespace flame
 			d = (DevicePrivate*)_d;
 			w = _w;
 
-			image_index = -1;
+			image_index = 0;
 
 			create();
 
@@ -80,7 +80,7 @@ namespace flame
 			surface_info.pNext = nullptr;
 			surface_info.hinstance = (HINSTANCE)get_hinst();
 			surface_info.hwnd = (HWND)w->get_native();
-			vk_chk_res(vkCreateWin32SurfaceKHR(d->ins, &surface_info, nullptr, &s));
+			chk_res(vkCreateWin32SurfaceKHR(d->ins, &surface_info, nullptr, &s));
 #else
 			VkAndroidSurfaceCreateInfoKHR surface_info;
 			surface_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
@@ -116,7 +116,7 @@ namespace flame
 			surface_formats.resize(surface_format_count);
 			vkGetPhysicalDeviceSurfaceFormatsKHR(d->pd, s, &surface_format_count, surface_formats.data());
 
-			swapchain_format = Z(surface_formats[0].format, true);
+			swapchain_format = to_enum(surface_formats[0].format, true);
 
 			VkSwapchainCreateInfoKHR swapchain_info;
 			swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -124,7 +124,7 @@ namespace flame
 			swapchain_info.pNext = nullptr;
 			swapchain_info.surface = s;
 			swapchain_info.minImageCount = image_count;
-			swapchain_info.imageFormat = Z(swapchain_format);
+			swapchain_info.imageFormat = to_enum(swapchain_format);
 			swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
 			swapchain_info.imageExtent.width = size.x();
 			swapchain_info.imageExtent.height = size.y();
@@ -138,7 +138,7 @@ namespace flame
 			swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 			swapchain_info.clipped = true;
 			swapchain_info.oldSwapchain = 0;
-			vk_chk_res(vkCreateSwapchainKHR(d->v, &swapchain_info, nullptr, &v));
+			chk_res(vkCreateSwapchainKHR(d->v, &swapchain_info, nullptr, &v));
 
 			std::vector<VkImage> native_images;
 			vkGetSwapchainImagesKHR(d->v, v, &image_count, nullptr);
@@ -203,7 +203,7 @@ namespace flame
 		void SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
 		{
 #if defined(FLAME_VULKAN)
-			vk_chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, signal_semaphore ? ((SemaphorePrivate*)signal_semaphore)->v : nullptr, VK_NULL_HANDLE, &image_index));
+			chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, signal_semaphore ? ((SemaphorePrivate*)signal_semaphore)->v : nullptr, VK_NULL_HANDLE, &image_index));
 #elif defined(FLAME_D3D12)
 			image_index = v->GetCurrentBackBufferIndex();
 #endif
@@ -219,7 +219,7 @@ namespace flame
 			return ((SwapchainPrivate*)this)->images.size();
 		}
 
-		Image *Swapchain::image(int idx) const
+		Image *Swapchain::image(uint idx) const
 		{
 			return ((SwapchainPrivate*)this)->images[idx];
 		}

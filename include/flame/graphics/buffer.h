@@ -32,7 +32,7 @@ namespace flame
 
 		struct Buffer
 		{
-			int size;
+			uint size;
 
 			void *mapped;
 
@@ -42,7 +42,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void copy_from_data(void *data);
 
-			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, int usage, int mem_prop, bool sharing = false, void *data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing = false, void *data = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Buffer *b);
 
 		};

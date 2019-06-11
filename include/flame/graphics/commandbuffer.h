@@ -58,7 +58,7 @@ namespace flame
 			{
 			}
 
-			BufferCopy(int _src_off, int _dst_off, int _size) :
+			BufferCopy(uint _src_off, uint _dst_off, uint _size) :
 				src_off(_src_off),
 				dst_off(_dst_off),
 				size(_size)
@@ -117,20 +117,19 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void set_viewport(const Vec4f& rect);
 			FLAME_GRAPHICS_EXPORTS void set_scissor(const Vec4f& rect);
 			FLAME_GRAPHICS_EXPORTS void bind_pipeline(Pipeline *p);
-			FLAME_GRAPHICS_EXPORTS void bind_descriptorset(Descriptorset *s, int idx);
-			FLAME_GRAPHICS_EXPORTS void bind_vertexbuffer(Buffer *b, int id);
+			FLAME_GRAPHICS_EXPORTS void bind_descriptorset(Descriptorset *s, uint idx);
+			FLAME_GRAPHICS_EXPORTS void bind_vertexbuffer(Buffer *b, uint id);
 			FLAME_GRAPHICS_EXPORTS void bind_indexbuffer(Buffer *b, IndiceType t);
-			FLAME_GRAPHICS_EXPORTS void push_constant(int offset, int size, const void *data, Pipelinelayout *layout = nullptr);
-			FLAME_GRAPHICS_EXPORTS void draw(int count, int instance_count, int first_vertex, int first_instance);
-			FLAME_GRAPHICS_EXPORTS void draw_indexed(int count, int first_index, int vertex_offset, int instance_count, int first_instance);
+			FLAME_GRAPHICS_EXPORTS void push_constant(uint offset, uint size, const void *data, Pipelinelayout *layout = nullptr);
+			FLAME_GRAPHICS_EXPORTS void draw(uint count, uint instance_count, uint first_vertex, uint first_instance);
+			FLAME_GRAPHICS_EXPORTS void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance);
 			FLAME_GRAPHICS_EXPORTS void dispatch(const Vec3u& v);
 
-			FLAME_GRAPHICS_EXPORTS void copy_buffer(Buffer *src, Buffer *dst, int copy_count, BufferCopy *copies);
-			FLAME_GRAPHICS_EXPORTS void copy_image(Image *src, Image *dst, int copy_count, ImageCopy *copies);
-			FLAME_GRAPHICS_EXPORTS void copy_buffer_to_image(Buffer *src, Image *dst, int copy_count, BufferImageCopy *copies);
-			FLAME_GRAPHICS_EXPORTS void copy_image_to_buffer(Image *src, Buffer *dst, int copy_count, BufferImageCopy *copies);
-			FLAME_GRAPHICS_EXPORTS void change_image_layout(Image *t, ImageLayout from, ImageLayout to,
-				int base_level = 0, int level_count = 0, int base_layer = 0, int layer_count = 0);
+			FLAME_GRAPHICS_EXPORTS void copy_buffer(Buffer *src, Buffer *dst, uint copy_count, BufferCopy *copies);
+			FLAME_GRAPHICS_EXPORTS void copy_image(Image *src, Image *dst, uint copy_count, ImageCopy *copies);
+			FLAME_GRAPHICS_EXPORTS void copy_buffer_to_image(Buffer *src, Image *dst, uint copy_count, BufferImageCopy *copies);
+			FLAME_GRAPHICS_EXPORTS void copy_image_to_buffer(Image *src, Buffer *dst, uint copy_count, BufferImageCopy *copies);
+			FLAME_GRAPHICS_EXPORTS void change_image_layout(Image *t, ImageLayout from, ImageLayout to, uint base_level = 0, uint level_count = 0, uint base_layer = 0, uint layer_count = 0);
 
 			FLAME_GRAPHICS_EXPORTS void clear_image(Image *i, const Vec4c& col);
 
@@ -146,7 +145,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence);
 			FLAME_GRAPHICS_EXPORTS void present(Swapchain *s, Semaphore *wait_semaphore);
 
-			FLAME_GRAPHICS_EXPORTS static Queue *create(Device *d, int queue_family_idx);
+			FLAME_GRAPHICS_EXPORTS static Queue *create(Device *d, uint queue_family_idx);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Queue *q);
 		};
 	}

@@ -311,7 +311,7 @@ namespace flame
 			}
 		}
 
-		inline VkMemoryPropertyFlags to_flags(MemProp p)
+		inline VkMemoryPropertyFlags to_flags(MemProp$ p)
 		{
 			VkMemoryPropertyFlags ret = 0;
 			if (p & MemPropDevice)
@@ -342,7 +342,7 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlagBits to_enum(ShaderType t)
+		inline VkShaderStageFlagBits to_enum(ShaderType$ t)
 		{
 			switch (t)
 			{
@@ -361,7 +361,7 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlags to_flags(ShaderType t)
+		inline VkShaderStageFlags to_flags(ShaderType$ t)
 		{
 			VkShaderStageFlags ret = 0;
 			if (t & ShaderVert)

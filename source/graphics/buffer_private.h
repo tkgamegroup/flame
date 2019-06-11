@@ -31,8 +31,8 @@ namespace flame
 
 		struct BufferPrivate : Buffer
 		{
-			int usage;
-			int mem_prop;
+			BufferUsage$ usage;
+			MemProp$ mem_prop;
 
 			DevicePrivate *d;
 #if defined(FLAME_VULKAN)
@@ -42,7 +42,7 @@ namespace flame
 			ID3D12Resource* v;
 #endif
 
-			BufferPrivate(Device *d, uint size, int usage, int mem_prop, bool sharing = false);
+			BufferPrivate(Device *d, uint size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing = false);
 			~BufferPrivate();
 
 			void map(uint offset = 0, uint _size = 0);

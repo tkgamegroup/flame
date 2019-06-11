@@ -37,10 +37,10 @@ namespace flame
 		struct ShaderVariableInfo
 		{
 			String name;
-			int offset;
-			int size;
-			int count;
-			int array_stride;
+			uint offset;
+			uint size;
+			uint count;
+			uint array_stride;
 
 			std::vector<std::unique_ptr<ShaderVariableInfo>> members;
 		};
@@ -48,8 +48,8 @@ namespace flame
 		struct ShaderResource
 		{
 			ShaderResourceType type;
-			int set;
-			int binding;
+			uint set;
+			uint binding;
 			ShaderVariableInfo var;
 		};
 

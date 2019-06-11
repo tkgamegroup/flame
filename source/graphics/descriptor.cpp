@@ -49,7 +49,7 @@ namespace flame
 			descriptorPoolInfo.poolSizeCount = FLAME_ARRAYSIZE(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 			descriptorPoolInfo.maxSets = 64;
-			vk_chk_res(vkCreateDescriptorPool(((DevicePrivate*)d)->v, &descriptorPoolInfo, nullptr, &v));
+			chk_res(vkCreateDescriptorPool(((DevicePrivate*)d)->v, &descriptorPoolInfo, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -86,9 +86,9 @@ namespace flame
 			for (auto i = 0; i < bindings.size(); i++)
 			{
 				vk_bindings[i].binding = bindings[i].binding;
-				vk_bindings[i].descriptorType = Z(bindings[i].type);
+				vk_bindings[i].descriptorType = to_enum(bindings[i].type);
 				vk_bindings[i].descriptorCount = bindings[i].count;
-				vk_bindings[i].stageFlags = Z(ShaderAll);
+				vk_bindings[i].stageFlags = to_flags(ShaderAll);
 				vk_bindings[i].pImmutableSamplers = nullptr;
 			}
 
@@ -99,7 +99,7 @@ namespace flame
 			info.bindingCount = vk_bindings.size();
 			info.pBindings = vk_bindings.data();
 
-			vk_chk_res(vkCreateDescriptorSetLayout(((DevicePrivate*)d)->v,
+			chk_res(vkCreateDescriptorSetLayout(((DevicePrivate*)d)->v,
 				&info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
@@ -137,7 +137,7 @@ namespace flame
 			info.descriptorSetCount = 1;
 			info.pSetLayouts = &((DescriptorsetlayoutPrivate*)l)->v;
 
-			vk_chk_res(vkAllocateDescriptorSets(p->d->v, &info, &v));
+			chk_res(vkAllocateDescriptorSets(p->d->v, &info, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -146,13 +146,13 @@ namespace flame
 		DescriptorsetPrivate::~DescriptorsetPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vk_chk_res(vkFreeDescriptorSets(p->d->v, p->v, 1, &v));
+			chk_res(vkFreeDescriptorSets(p->d->v, p->v, 1, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void DescriptorsetPrivate::set_uniformbuffer(int binding, int index, Buffer *b, int offset, int range)
+		void DescriptorsetPrivate::set_uniformbuffer(uint binding, uint index, Buffer *b, uint offset, uint range)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
@@ -178,7 +178,7 @@ namespace flame
 #endif
 		}
 
-		void DescriptorsetPrivate::set_storagebuffer(int binding, int index, Buffer *b, int offset, int range)
+		void DescriptorsetPrivate::set_storagebuffer(uint binding, uint index, Buffer *b, uint offset, uint range)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
@@ -204,7 +204,7 @@ namespace flame
 #endif
 		}
 
-		void DescriptorsetPrivate::set_imageview(int binding, int index, Imageview *iv, Sampler *sampler)
+		void DescriptorsetPrivate::set_imageview(uint binding, uint index, Imageview *iv, Sampler *sampler)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
@@ -230,7 +230,7 @@ namespace flame
 #endif
 		}
 
-		void DescriptorsetPrivate::set_storageimage(int binding, int index, Imageview *iv)
+		void DescriptorsetPrivate::set_storageimage(uint binding, uint index, Imageview *iv)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
@@ -256,22 +256,22 @@ namespace flame
 #endif
 		}
 
-		void Descriptorset::set_uniformbuffer(int binding, int index, Buffer *b, int offset, int range)
+		void Descriptorset::set_uniformbuffer(uint binding, uint index, Buffer *b, uint offset, uint range)
 		{
 			((DescriptorsetPrivate*)this)->set_uniformbuffer(binding, index, b, offset, range);
 		}
 
-		void Descriptorset::set_storagebuffer(int binding, int index, Buffer *b, int offset, int range)
+		void Descriptorset::set_storagebuffer(uint binding, uint index, Buffer *b, uint offset, uint range)
 		{
 			((DescriptorsetPrivate*)this)->set_storagebuffer(binding, index, b, offset, range);
 		}
 
-		void Descriptorset::set_imageview(int binding, int index, Imageview *v, Sampler *sampler)
+		void Descriptorset::set_imageview(uint binding, uint index, Imageview *v, Sampler *sampler)
 		{
 			((DescriptorsetPrivate*)this)->set_imageview(binding, index, v, sampler);
 		}
 
-		void Descriptorset::set_storageimage(int binding, int index, Imageview *v)
+		void Descriptorset::set_storageimage(uint binding, uint index, Imageview *v)
 		{
 			((DescriptorsetPrivate*)this)->set_storageimage(binding, index, v);
 		}

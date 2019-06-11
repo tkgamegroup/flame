@@ -70,10 +70,10 @@ namespace flame
 			DescriptorsetPrivate(Descriptorpool *p, Descriptorsetlayout *l);
 			~DescriptorsetPrivate();
 
-			void set_uniformbuffer(int binding, int index, Buffer *b, int offset = 0, int range = 0);
-			void set_storagebuffer(int binding, int index, Buffer *b, int offset = 0, int range = 0);
-			void set_imageview(int binding, int index, Imageview *iv, Sampler *sampler);
-			void set_storageimage(int binding, int index, Imageview *iv);
+			void set_uniformbuffer(uint binding, uint index, Buffer *b, uint offset = 0, uint range = 0);
+			void set_storagebuffer(uint binding, uint index, Buffer *b, uint offset = 0, uint range = 0);
+			void set_imageview(uint binding, uint index, Imageview *iv, Sampler *sampler);
+			void set_storageimage(uint binding, uint index, Imageview *iv);
 		};
 	}
 }

@@ -34,7 +34,7 @@ namespace flame
 		struct ShaderPrivate;
 
 #if defined(FLAME_VULKAN)
-		inline VkVertexInputRate Z(VertexInputRate r)
+		inline VkVertexInputRate to_enum(VertexInputRate r)
 		{
 			switch (r)
 			{
@@ -45,7 +45,7 @@ namespace flame
 			}
 		}
 
-		inline VkPrimitiveTopology Z(PrimitiveTopology t)
+		inline VkPrimitiveTopology to_enum(PrimitiveTopology t)
 		{
 			switch (t)
 			{
@@ -74,7 +74,7 @@ namespace flame
 			}
 		}
 
-		inline VkPolygonMode Z(PolygonMode m)
+		inline VkPolygonMode to_enum(PolygonMode m)
 		{
 			switch (m)
 			{
@@ -87,7 +87,7 @@ namespace flame
 			}
 		}
 
-		inline VkCompareOp Z(CompareOp o)
+		inline VkCompareOp to_enum(CompareOp o)
 		{
 			switch (o)
 			{
@@ -108,7 +108,7 @@ namespace flame
 			}
 		}
 
-		inline VkCullModeFlagBits Z(CullMode m)
+		inline VkCullModeFlagBits to_enum(CullMode m)
 		{
 			switch (m)
 			{
@@ -123,7 +123,7 @@ namespace flame
 			}
 		}
 
-		inline VkBlendFactor Z(BlendFactor f)
+		inline VkBlendFactor to_enum(BlendFactor f)
 		{
 			switch (f)
 			{
@@ -168,7 +168,7 @@ namespace flame
 			}
 		}
 
-		inline VkDynamicState Z(DynamicState s)
+		inline VkDynamicState to_enum(DynamicState s)
 		{
 			switch (s)
 			{

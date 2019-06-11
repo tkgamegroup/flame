@@ -357,7 +357,7 @@ namespace flame
 			instInfo.ppEnabledExtensionNames = instExtensions.data();
 			instInfo.enabledLayerCount = instLayers.size();
 			instInfo.ppEnabledLayerNames = instLayers.data();
-			vk_chk_res(vkCreateInstance(&instInfo, nullptr, &ins));
+			chk_res(vkCreateInstance(&instInfo, nullptr, &ins));
 
 			LOGI("vulkan instance created");
 
@@ -373,15 +373,15 @@ namespace flame
 				callbackCreateInfo.pUserData = nullptr;
 
 				VkDebugReportCallbackEXT callback;
-				vk_chk_res(_vkCreateDebugReportCallbackEXT(ins, &callbackCreateInfo, nullptr, &callback));
+				chk_res(_vkCreateDebugReportCallbackEXT(ins, &callbackCreateInfo, nullptr, &callback));
 			}
 
 			uint32_t gpuCount = 0;
 			std::vector<VkPhysicalDevice> physical_devices;
-			vk_chk_res(vkEnumeratePhysicalDevices(ins, &gpuCount, nullptr));
+			chk_res(vkEnumeratePhysicalDevices(ins, &gpuCount, nullptr));
 			LOGI("gpu count:%d", gpuCount);
 			physical_devices.resize(gpuCount);
-			vk_chk_res(vkEnumeratePhysicalDevices(ins, &gpuCount, physical_devices.data()));
+			chk_res(vkEnumeratePhysicalDevices(ins, &gpuCount, physical_devices.data()));
 			pd = physical_devices[0];
 			if (pd == 0)
 				LOGI("physical device not found");
@@ -442,7 +442,7 @@ namespace flame
 			device_info.enabledExtensionCount = device_extensions.size();
 			device_info.ppEnabledExtensionNames = device_extensions.data();
 			device_info.pEnabledFeatures = &features;
-			vk_chk_res(vkCreateDevice(pd, &device_info, nullptr, &v));
+			chk_res(vkCreateDevice(pd, &device_info, nullptr, &v));
 
 			LOGI("vulkan device created");
 
@@ -533,12 +533,13 @@ namespace flame
 		{
 		}
 
-		int DevicePrivate::find_memory_type(uint type_filter, int properties /* MemProp */)
+		uint DevicePrivate::find_memory_type(uint type_filter, MemProp$ properties)
 		{
+			auto p = to_flags(properties);
 #if defined(FLAME_VULKAN)
 			for (uint i = 0; i < mem_props.memoryTypeCount; i++)
 			{
-				if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & properties) == properties)
+				if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & p) == p)
 					return i;
 			}
 #elif defined(FLAME_D3D12)

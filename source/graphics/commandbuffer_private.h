@@ -70,20 +70,19 @@ namespace flame
 			void set_viewport(const Vec4f& rect);
 			void set_scissor(const Vec4f& rect);
 			void bind_pipeline(Pipeline *p);
-			void bind_descriptorset(Descriptorset *s, int idx);
-			void bind_vertexbuffer(Buffer *b, int id);
+			void bind_descriptorset(Descriptorset *s, uint idx);
+			void bind_vertexbuffer(Buffer *b, uint id);
 			void bind_indexbuffer(Buffer *b, IndiceType t);
-			void push_constant(int offset, int size, const void *data, Pipelinelayout *layout = nullptr);
-			void draw(int count, int instance_count, int first_vertex, int first_instance);
-			void draw_indexed(int count, int first_index, int vertex_offset, int instance_count, int first_instance);
+			void push_constant(uint offset, uint size, const void *data, Pipelinelayout *layout);
+			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance);
+			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance);
 			void dispatch(const Vec3u& v);
 
-			void copy_buffer(Buffer *src, Buffer *dst, int copy_count, BufferCopy *copies);
-			void copy_image(Image *src, Image *dst, int copy_count, ImageCopy *copies);
-			void copy_buffer_to_image(Buffer *src, Image *dst, int copy_count, BufferImageCopy *copies);
-			void copy_image_to_buffer(Image *src, Buffer *dst, int copy_count, BufferImageCopy *copies);
-			void change_image_layout(Image *i, ImageLayout from, ImageLayout to,
-				int base_level = 0, int level_count = 0, int base_layer = 0, int layer_count = 0);
+			void copy_buffer(Buffer *src, Buffer *dst, uint copy_count, BufferCopy *copies);
+			void copy_image(Image *src, Image *dst, uint copy_count, ImageCopy *copies);
+			void copy_buffer_to_image(Buffer *src, Image *dst, uint copy_count, BufferImageCopy *copies);
+			void copy_image_to_buffer(Image *src, Buffer *dst, uint copy_count, BufferImageCopy *copies);
+			void change_image_layout(Image *i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count);
 
 			void clear_image(ImagePrivate *i, const Vec4c& col);
 
@@ -99,7 +98,7 @@ namespace flame
 			ID3D12CommandQueue* v;
 #endif
 
-			QueuePrivate(Device *d, int queue_family_idx);
+			QueuePrivate(Device *d, uint queue_family_idx);
 			~QueuePrivate();
 
 			void wait_idle();

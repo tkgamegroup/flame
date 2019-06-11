@@ -239,7 +239,7 @@ namespace flame
 			shader_info.pNext = nullptr;
 			shader_info.codeSize = spv_file.second;
 			shader_info.pCode = (uint32_t*)spv_file.first.get();
-			vk_chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &v));
+			chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &v));
 
 			auto res_filename = spv_filename + L".xml";
 			if (!std::fs::exists(res_filename) ||
@@ -262,11 +262,11 @@ namespace flame
 						{
 							auto a = n->attr(j);
 							if (a->name() == "set")
-								r->set = std::stoi(a->value());
+								r->set = std::stoul(a->value());
 							else if (a->name() == "binding")
-								r->binding = std::stoi(a->value());
+								r->binding = std::stoul(a->value());
 							else if (a->name() == "size")
-								r->var.size = std::stoi(a->value());
+								r->var.size = std::stoul(a->value());
 							else if (a->name() == "name")
 								r->var.name = a->value().c_str();
 						}
@@ -288,11 +288,11 @@ namespace flame
 						{
 							auto a = n->attr(j);
 							if (a->name() == "set")
-								r->set = std::stoi(a->value());
+								r->set = std::stoul(a->value());
 							else if (a->name() == "binding")
-								r->binding = std::stoi(a->value());
+								r->binding = std::stoul(a->value());
 							else if (a->name() == "size")
-								r->var.size = std::stoi(a->value());
+								r->var.size = std::stoul(a->value());
 							else if (a->name() == "name")
 								r->var.name = a->value().c_str();
 						}
@@ -314,11 +314,11 @@ namespace flame
 						{
 							auto a = n->attr(j);
 							if (a->name() == "set")
-								r->set = std::stoi(a->value());
+								r->set = std::stoul(a->value());
 							else if (a->name() == "binding")
-								r->binding = std::stoi(a->value());
+								r->binding = std::stoul(a->value());
 							else if (a->name() == "count")
-								r->var.count = std::stoi(a->value());
+								r->var.count = std::stoul(a->value());
 							else if (a->name() == "name")
 								r->var.name = a->value().c_str();
 						}
@@ -337,11 +337,11 @@ namespace flame
 						{
 							auto a = n->attr(j);
 							if (a->name() == "set")
-								r->set = std::stoi(a->value());
+								r->set = std::stoul(a->value());
 							else if (a->name() == "binding")
-								r->binding = std::stoi(a->value());
+								r->binding = std::stoul(a->value());
 							else if (a->name() == "count")
-								r->var.count = std::stoi(a->value());
+								r->var.count = std::stoul(a->value());
 							else if (a->name() == "name")
 								r->var.name = a->value().c_str();
 						}
@@ -362,9 +362,9 @@ namespace flame
 						{
 							auto a = n->attr(j);
 							if (a->name() == "offset")
-								r->var.offset = std::stoi(a->value());
+								r->var.offset = std::stoul(a->value());
 							else if (a->name() == "size")
-								r->var.size = std::stoi(a->value());
+								r->var.size = std::stoul(a->value());
 							else if (a->name() == "name")
 								r->var.name = a->value().c_str();
 						}
@@ -397,13 +397,13 @@ namespace flame
 				{
 					auto a = n->attr(j);
 					if (a->name() == "offset")
-						vt->offset = std::stoi(a->value());
+						vt->offset = std::stoul(a->value());
 					else if (a->name() == "size")
-						vt->size = std::stoi(a->value());
+						vt->size = std::stoul(a->value());
 					else if (a->name() == "count")
-						vt->count = std::stoi(a->value());
+						vt->count = std::stoul(a->value());
 					else if (a->name() == "array_stride")
-						vt->array_stride = std::stoi(a->value());
+						vt->array_stride = std::stoul(a->value());
 				}
 
 				load_members(n, vt);
