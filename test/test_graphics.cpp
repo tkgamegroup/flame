@@ -93,7 +93,7 @@ struct App : BasicApp
 
 					rp_lwt = std::fs::last_write_time(rp_filename);
 
-					rp = BP::create_from_file(rp_filename.c_str());
+					rp = BP::create_from_file(rp_filename);
 					rp->find_input("d.in")->set_data(&d);
 					rp->find_input("sc.in")->set_data(&sc);
 					rp->initialize();

@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "shader_private.h"
 #include "device_private.h"
+#include "shader_private.h"
 
 #include <flame/foundation/foundation.h>
 #include <flame/foundation/serialize.h>
@@ -65,7 +65,7 @@ namespace flame
 		{
 			auto spv_file = get_file_content(spv_file_in);
 
-			std::vector<unsigned int> spv_vec(spv_file.second / sizeof(unsigned int));
+			std::vector<uint> spv_vec(spv_file.second / sizeof(uint));
 			memcpy(spv_vec.data(), spv_file.first.get(), spv_file.second);
 
 			spirv_cross::CompilerGLSL glsl(std::move(spv_vec));
@@ -180,15 +180,10 @@ namespace flame
 
 			std::fs::remove(L"temp.spv"); // glslc cannot write to an existed file (well we did delete it when we finish compiling, but there can be one somehow)
 
-			auto conf_path_abs = conf_path;
-
 			auto glsl_path = std::fs::path(shader_path + L"src/" + filename);
 
-			std::wstring spv_filename(filename);
 			auto hash = H(prefix.c_str());
-			spv_filename += L".";
-			spv_filename += std::to_wstring(hash);
-			spv_filename += L".spv";
+			std::wstring spv_filename(filename + L"." + std::to_wstring(hash) + L".spv");
 			spv_filename = shader_path + L"bin/" + spv_filename;
 
 			if (!std::fs::exists(spv_filename) || std::fs::last_write_time(spv_filename) <= std::fs::last_write_time(glsl_path))
@@ -199,7 +194,7 @@ namespace flame
 				std::string pfx;
 				pfx += "#version 450 core\n";
 				pfx += "#extension GL_ARB_shading_language_420pack : enable\n";  // Allows the setting of uniform buffer object and sampler binding points directly from GLSL
-				if (glsl_path.extension().string() != ".comp")
+				if (type != ShaderComp)
 					pfx += "#extension GL_ARB_separate_shader_objects : enable\n";
 				pfx += "\n" + prefix;
 				auto temp_filename = glsl_path.parent_path().wstring() + L"/temp." + glsl_path.filename().wstring();
@@ -210,10 +205,7 @@ namespace flame
 					ofile.write(file.first.get(), file.second);
 					ofile.close();
 				}
-				std::wstring command_line(L" " + temp_filename + L" ");
-				command_line += L" -flimit-file ";
-				command_line += conf_path_abs;
-				command_line += L" -o temp.spv";
+				std::wstring command_line(L" " + temp_filename + L" -flimit-file " + conf_path + L" -o temp.spv");
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), w2s(command_line).c_str());
 				std::fs::remove(temp_filename);
 				if (!std::fs::exists("temp.spv"))
@@ -242,174 +234,12 @@ namespace flame
 			chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &v));
 
 			auto res_filename = spv_filename + L".xml";
-			if (!std::fs::exists(res_filename) ||
-				std::fs::last_write_time(res_filename) <= std::fs::last_write_time(spv_filename))
+			if (!std::fs::exists(res_filename) || std::fs::last_write_time(res_filename) <= std::fs::last_write_time(spv_filename))
 				produce_shader_resource_file(spv_filename.c_str(), res_filename.c_str());
 
-			auto res_file = SerializableNode::create_from_xml_file(res_filename);
-			if (res_file)
-			{
-				for (auto i = 0; i < res_file->node_count(); i++)
-				{
-					auto n = res_file->node(i);
-
-					if (n->name() == "uniform_buffer")
-					{
-						auto r = new ShaderResource;
-						r->type = ShaderResourceUniformBuffer;
-
-						for (auto j = 0; j < n->attr_count(); j++)
-						{
-							auto a = n->attr(j);
-							if (a->name() == "set")
-								r->set = std::stoul(a->value());
-							else if (a->name() == "binding")
-								r->binding = std::stoul(a->value());
-							else if (a->name() == "size")
-								r->var.size = std::stoul(a->value());
-							else if (a->name() == "name")
-								r->var.name = a->value().c_str();
-						}
-						r->var.offset = 0;
-						r->var.count = 1;
-						r->var.array_stride = 0;
-
-						auto mn = n->find_node("members");
-						load_members(mn, &r->var);
-
-						resources.emplace_back(r);
-					}
-					else if (n->name() == "storage_buffer")
-					{
-						auto r = new ShaderResource;
-						r->type = ShaderResourceStorageBuffer;
-
-						for (auto j = 0; j < n->attr_count(); j++)
-						{
-							auto a = n->attr(j);
-							if (a->name() == "set")
-								r->set = std::stoul(a->value());
-							else if (a->name() == "binding")
-								r->binding = std::stoul(a->value());
-							else if (a->name() == "size")
-								r->var.size = std::stoul(a->value());
-							else if (a->name() == "name")
-								r->var.name = a->value().c_str();
-						}
-						r->var.offset = 0;
-						r->var.count = 1;
-						r->var.array_stride = 0;
-
-						auto mn = n->find_node("members");
-						load_members(mn, &r->var);
-
-						resources.emplace_back(r);
-					}
-					else if (n->name() == "sampled_image")
-					{
-						auto r = new ShaderResource;
-						r->type = ShaderResourceSampledImage;
-
-						for (auto j = 0; j < n->attr_count(); j++)
-						{
-							auto a = n->attr(j);
-							if (a->name() == "set")
-								r->set = std::stoul(a->value());
-							else if (a->name() == "binding")
-								r->binding = std::stoul(a->value());
-							else if (a->name() == "count")
-								r->var.count = std::stoul(a->value());
-							else if (a->name() == "name")
-								r->var.name = a->value().c_str();
-						}
-						r->var.offset = 0;
-						r->var.size = 0;
-						r->var.array_stride = 0;
-
-						resources.emplace_back(r);
-					}
-					else if (n->name() == "storage_image")
-					{
-						auto r = new ShaderResource;
-						r->type = ShaderResourceStorageImage;
-
-						for (auto j = 0; j < n->attr_count(); j++)
-						{
-							auto a = n->attr(j);
-							if (a->name() == "set")
-								r->set = std::stoul(a->value());
-							else if (a->name() == "binding")
-								r->binding = std::stoul(a->value());
-							else if (a->name() == "count")
-								r->var.count = std::stoul(a->value());
-							else if (a->name() == "name")
-								r->var.name = a->value().c_str();
-						}
-						r->var.offset = 0;
-						r->var.size = 0;
-						r->var.array_stride = 0;
-
-						resources.emplace_back(r);
-					}
-					else if (n->name() == "push_constant")
-					{
-						auto r = new ShaderResource;
-						r->type = ShaderResourcePushConstant;
-						r->set = -1;
-						r->binding = -1;
-
-						for (auto j = 0; j < n->attr_count(); j++)
-						{
-							auto a = n->attr(j);
-							if (a->name() == "offset")
-								r->var.offset = std::stoul(a->value());
-							else if (a->name() == "size")
-								r->var.size = std::stoul(a->value());
-							else if (a->name() == "name")
-								r->var.name = a->value().c_str();
-						}
-						r->var.count = 0;
-						r->var.array_stride = 0;
-
-						auto mn = n->find_node("members");
-						load_members(mn, &r->var);
-
-						resources.emplace_back(r);
-					}
-				}
-
-				SerializableNode::destroy(res_file);
-			}
 #elif defined(FLAME_D3D12)
 
 #endif
-		}
-
-		void ShaderPrivate::load_members(SerializableNode *src, ShaderVariableInfo *dst)
-		{
-			for (auto i = 0; i < src->node_count(); i++)
-			{
-				auto vt = new ShaderVariableInfo;
-
-				auto n = src->node(i);
-				vt->name = n->name().c_str();
-				for (auto j = 0; j < n->attr_count(); j++)
-				{
-					auto a = n->attr(j);
-					if (a->name() == "offset")
-						vt->offset = std::stoul(a->value());
-					else if (a->name() == "size")
-						vt->size = std::stoul(a->value());
-					else if (a->name() == "count")
-						vt->count = std::stoul(a->value());
-					else if (a->name() == "array_stride")
-						vt->array_stride = std::stoul(a->value());
-				}
-
-				load_members(n, vt);
-
-				dst->members.emplace_back(vt);
-			}
 		}
 
 		ShaderPrivate::~ShaderPrivate()

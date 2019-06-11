@@ -66,82 +66,30 @@ namespace flame
 		return ((TypeInfoPrivate*)this)->hash;
 	}
 
-	struct EnumItemPrivate : EnumItem
+	std::string serialize_typeinfo(const TypeInfoPrivate& src)
 	{
-		std::string name;
-		int value;
-	};
-
-	const char* EnumItem::name() const
-	{
-		return ((EnumItemPrivate*)this)->name.c_str();
+		return std::string(get_type_tag_name(src.tag)) + "#" + src.name;
 	}
 
-	int EnumItem::value() const
+	TypeInfoPrivate unserialize_typeinfo(const std::string& src)
 	{
-		return ((EnumItemPrivate*)this)->value;
-	}
+		TypeInfoPrivate info;
 
-	struct EnumInfoPrivate : EnumInfo
-	{
-		std::wstring module_name;
+		auto sp = string_split(src, '#');
 
-		std::string name;
-		std::vector<std::unique_ptr<EnumItemPrivate>> items;
-	};
-
-	const wchar_t* EnumInfo::module_name() const
-	{
-		return ((EnumInfoPrivate*)this)->module_name.c_str();
-	}
-
-	const char* EnumInfo::name() const
-	{
-		return ((EnumInfoPrivate*)this)->name.c_str();
-	}
-
-	int EnumInfo::item_count() const
-	{
-		return ((EnumInfoPrivate*)this)->items.size();
-	}
-
-	EnumItem* EnumInfo::item(int idx) const
-	{
-		return ((EnumInfoPrivate*)this)->items[idx].get();
-	}
-
-	EnumItem* EnumInfo::find_item(const char* name, int* out_idx) const
-	{
-		auto& items = ((EnumInfoPrivate*)this)->items;
-		for (auto i = 0; i < items.size(); i++)
+		auto e_tag = 0;
+		for (auto s : tag_names)
 		{
-			if (items[i]->name == name)
-			{
-				if (out_idx)
-					* out_idx = i;
-				return items[i].get();
-			}
+			if (sp[0] == s)
+				break;
+			e_tag++;
 		}
-		if (out_idx)
-			* out_idx = -1;
-		return nullptr;
-	}
 
-	EnumItem* EnumInfo::find_item(int value, int* out_idx) const
-	{
-		auto& items = ((EnumInfoPrivate*)this)->items;
-		for (auto i = 0; i < items.size(); i++)
-		{
-			if (items[i]->value == value)
-			{
-				if (out_idx)
-					* out_idx = i;
-				return items[i].get();
-			}
-		}
-		if (out_idx)
-			* out_idx = -1;
-		return nullptr;
+		info.tag = (TypeTag$)e_tag;
+		info.name = sp[1];
+		info.hash = H(info.name.c_str());
+
+		return info;
 	}
 
 	struct VariableInfoPrivate : VariableInfo
@@ -149,7 +97,7 @@ namespace flame
 		TypeInfoPrivate type;
 		std::string name;
 		std::string attribute;
-		int offset, size;
+		uint offset, size;
 		void* default_value;
 
 		~VariableInfoPrivate()
@@ -192,12 +140,12 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->name.c_str();
 	}
 
-	int VariableInfo::offset() const
+	uint VariableInfo::offset() const
 	{
 		return ((VariableInfoPrivate*)this)->offset;
 	}
 
-	int VariableInfo::size() const
+	uint VariableInfo::size() const
 	{
 		return ((VariableInfoPrivate*)this)->size;
 	}
@@ -210,6 +158,270 @@ namespace flame
 	const void* VariableInfo::default_value() const
 	{
 		return ((VariableInfoPrivate*)this)->default_value;
+	}
+
+	struct EnumItemPrivate : EnumItem
+	{
+		std::string name;
+		int value;
+	};
+
+	const char* EnumItem::name() const
+	{
+		return ((EnumItemPrivate*)this)->name.c_str();
+	}
+
+	int EnumItem::value() const
+	{
+		return ((EnumItemPrivate*)this)->value;
+	}
+
+	struct EnumInfoPrivate : EnumInfo
+	{
+		std::wstring module_name;
+
+		std::string name;
+		std::vector<std::unique_ptr<EnumItemPrivate>> items;
+	};
+
+	const wchar_t* EnumInfo::module_name() const
+	{
+		return ((EnumInfoPrivate*)this)->module_name.c_str();
+	}
+
+	const char* EnumInfo::name() const
+	{
+		return ((EnumInfoPrivate*)this)->name.c_str();
+	}
+
+	uint EnumInfo::item_count() const
+	{
+		return ((EnumInfoPrivate*)this)->items.size();
+	}
+
+	EnumItem* EnumInfo::item(int idx) const
+	{
+		return ((EnumInfoPrivate*)this)->items[idx].get();
+	}
+
+	EnumItem* EnumInfo::find_item(const std::string& name, int* out_idx) const
+	{
+		auto& items = ((EnumInfoPrivate*)this)->items;
+		for (auto i = 0; i < items.size(); i++)
+		{
+			if (items[i]->name == name)
+			{
+				if (out_idx)
+					* out_idx = i;
+				return items[i].get();
+			}
+		}
+		if (out_idx)
+			* out_idx = -1;
+		return nullptr;
+	}
+
+	EnumItem* EnumInfo::find_item(int value, int* out_idx) const
+	{
+		auto& items = ((EnumInfoPrivate*)this)->items;
+		for (auto i = 0; i < items.size(); i++)
+		{
+			if (items[i]->value == value)
+			{
+				if (out_idx)
+					* out_idx = i;
+				return items[i].get();
+			}
+		}
+		if (out_idx)
+			* out_idx = -1;
+		return nullptr;
+	}
+
+	struct FunctionInfoPrivate : FunctionInfo
+	{
+		std::wstring module_name;
+
+		std::string name;
+		void* rva;
+		TypeInfoPrivate return_type;
+		std::vector<TypeInfoPrivate> parameter_types;
+		std::string code;
+	};
+
+	const wchar_t* FunctionInfo::module_name() const
+	{
+		return ((FunctionInfoPrivate*)this)->module_name.c_str();
+	}
+
+	const char* FunctionInfo::name() const
+	{
+		return ((FunctionInfoPrivate*)this)->name.c_str();
+	}
+
+	void* FunctionInfo::rva() const
+	{
+		return ((FunctionInfoPrivate*)this)->rva;
+	}
+
+	const TypeInfo* FunctionInfo::return_type() const
+	{
+		return &(((FunctionInfoPrivate*)this)->return_type);
+	}
+
+	uint FunctionInfo::parameter_count() const
+	{
+		return ((FunctionInfoPrivate*)this)->parameter_types.size();
+	}
+
+	const TypeInfo* FunctionInfo::parameter_type(uint idx) const
+	{
+		return &(((FunctionInfoPrivate*)this)->parameter_types[idx]);
+	}
+
+	const char* FunctionInfo::code() const
+	{
+		return ((FunctionInfoPrivate*)this)->code.c_str();
+	}
+
+	struct UdtInfoPrivate : UdtInfo
+	{
+		std::wstring module_name;
+
+		std::string name;
+		int size;
+		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
+		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
+
+		int item_find_pos;
+		int func_find_pos;
+
+		UdtInfoPrivate()
+		{
+			item_find_pos = 0;
+			func_find_pos = 0;
+		}
+
+		VariableInfoPrivate* find_vari(const std::string& name, int *out_idx)
+		{
+			if (items.empty())
+			{
+				if (out_idx)
+					* out_idx = -1;
+				return nullptr;
+			}
+
+			auto p = item_find_pos;
+			while (true)
+			{
+				auto item = items[item_find_pos].get();
+				if (item->name == name)
+				{
+					auto t = item_find_pos;
+					item_find_pos++;
+					if (item_find_pos >= items.size())
+						item_find_pos = 0;
+					if (out_idx)
+						* out_idx = t;
+					return item;
+				}
+				item_find_pos++;
+				if (item_find_pos >= items.size())
+					item_find_pos = 0;
+				if (item_find_pos == p)
+				{
+					if (out_idx)
+						* out_idx = -1;
+					return nullptr;
+				}
+			}
+			if (out_idx)
+				* out_idx = -1;
+			return nullptr;
+		}
+
+		FunctionInfoPrivate* find_func(const std::string& name, int* out_idx)
+		{
+			if (functions.empty())
+			{
+				if (out_idx)
+					* out_idx = -1;
+				return nullptr;
+			}
+
+			auto p = func_find_pos;
+			while (true)
+			{
+				auto func = functions[func_find_pos].get();
+				if (func->name == name)
+				{
+					auto t = func_find_pos;
+					func_find_pos++;
+					if (func_find_pos >= functions.size())
+						func_find_pos = 0;
+					if (out_idx)
+						* out_idx = t;
+					return func;
+				}
+				func_find_pos++;
+				if (func_find_pos >= functions.size())
+					func_find_pos = 0;
+				if (func_find_pos == p)
+				{
+					if (out_idx)
+						* out_idx = -1;
+					return nullptr;
+				}
+			}
+			if (out_idx)
+				* out_idx = -1;
+			return nullptr;
+		}
+	};
+
+	const wchar_t* UdtInfo::module_name() const
+	{
+		return ((UdtInfoPrivate*)this)->module_name.c_str();
+	}
+
+	const char* UdtInfo::name() const
+	{
+		return ((UdtInfoPrivate*)this)->name.c_str();
+	}
+
+	uint UdtInfo::size() const
+	{
+		return ((UdtInfoPrivate*)this)->size;
+	}
+
+	uint UdtInfo::variable_count() const
+	{
+		return ((UdtInfoPrivate*)this)->items.size();
+	}
+
+	VariableInfo* UdtInfo::variable(uint idx) const
+	{
+		return ((UdtInfoPrivate*)this)->items[idx].get();
+	}
+
+	VariableInfo* UdtInfo::find_variable(const std::string& name, int *out_idx) const
+	{
+		return ((UdtInfoPrivate*)this)->find_vari(name, out_idx);
+	}
+
+	uint UdtInfo::function_count() const
+	{
+		return ((UdtInfoPrivate*)this)->functions.size();
+	}
+
+	FunctionInfo* UdtInfo::function(uint idx) const
+	{
+		return ((UdtInfoPrivate*)this)->functions[idx].get();
+	}
+
+	FunctionInfo* UdtInfo::find_function(const std::string& name, int* out_idx) const
+	{
+		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
 	}
 
 	void set(void* dst, TypeTag$ tag, int size, const void* src)
@@ -264,7 +476,7 @@ namespace flame
 			}
 			return ret;
 		}
-			break;
+		break;
 		case TypeTagVariable:
 			switch (hash)
 			{
@@ -325,7 +537,7 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			find_enum(hash)->find_item(src.c_str(), (int*)dst);
+			find_enum(hash)->find_item(src, (int*)dst);
 			break;
 		case TypeTagEnumMulti:
 		{
@@ -333,10 +545,10 @@ namespace flame
 			auto e = (EnumInfoPrivate*)find_enum(hash);
 			auto sp = string_split(src, ';');
 			for (auto& t : sp)
-				v |= e->find_item(t.c_str())->value();
+				v |= e->find_item(t)->value();
 			*(int*)dst = v;
 		}
-			break;
+		break;
 		case TypeTagVariable:
 			switch (hash)
 			{
@@ -420,192 +632,6 @@ namespace flame
 			}
 			break;
 		}
-	}
-
-	struct FunctionInfoPrivate : FunctionInfo
-	{
-		std::wstring module_name;
-
-		std::string name;
-		void* rva;
-		TypeInfoPrivate return_type;
-		std::vector<TypeInfoPrivate> parameter_types;
-		std::string code;
-	};
-
-	const wchar_t* FunctionInfo::module_name() const
-	{
-		return ((FunctionInfoPrivate*)this)->module_name.c_str();
-	}
-
-	const char* FunctionInfo::name() const
-	{
-		return ((FunctionInfoPrivate*)this)->name.c_str();
-	}
-
-	void* FunctionInfo::rva() const
-	{
-		return ((FunctionInfoPrivate*)this)->rva;
-	}
-
-	const TypeInfo* FunctionInfo::return_type() const
-	{
-		return &(((FunctionInfoPrivate*)this)->return_type);
-	}
-
-	int FunctionInfo::parameter_count() const
-	{
-		return ((FunctionInfoPrivate*)this)->parameter_types.size();
-	}
-
-	const TypeInfo* FunctionInfo::parameter_type(int idx) const
-	{
-		return &(((FunctionInfoPrivate*)this)->parameter_types[idx]);
-	}
-
-	const char* FunctionInfo::code() const
-	{
-		return ((FunctionInfoPrivate*)this)->code.c_str();
-	}
-
-	struct UdtInfoPrivate : UdtInfo
-	{
-		std::wstring module_name;
-
-		std::string name;
-		int size;
-		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
-		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
-
-		int item_find_pos;
-		int func_find_pos;
-
-		UdtInfoPrivate()
-		{
-			item_find_pos = 0;
-			func_find_pos = 0;
-		}
-
-		VariableInfoPrivate* find_item(const char* name, int *out_idx)
-		{
-			if (items.empty())
-			{
-				if (out_idx)
-					* out_idx = -1;
-				return nullptr;
-			}
-
-			auto p = item_find_pos;
-			while (true)
-			{
-				auto item = items[item_find_pos].get();
-				if (item->name == name)
-				{
-					auto t = item_find_pos;
-					item_find_pos++;
-					if (item_find_pos >= items.size())
-						item_find_pos = 0;
-					if (out_idx)
-						* out_idx = t;
-					return item;
-				}
-				item_find_pos++;
-				if (item_find_pos >= items.size())
-					item_find_pos = 0;
-				if (item_find_pos == p)
-				{
-					if (out_idx)
-						* out_idx = -1;
-					return nullptr;
-				}
-			}
-			if (out_idx)
-				* out_idx = -1;
-			return nullptr;
-		}
-
-		FunctionInfoPrivate* find_func(const char* name, int* out_idx)
-		{
-			if (functions.empty())
-			{
-				if (out_idx)
-					* out_idx = -1;
-				return nullptr;
-			}
-
-			auto p = func_find_pos;
-			while (true)
-			{
-				auto func = functions[func_find_pos].get();
-				if (func->name == name)
-				{
-					auto t = func_find_pos;
-					func_find_pos++;
-					if (func_find_pos >= functions.size())
-						func_find_pos = 0;
-					if (out_idx)
-						* out_idx = t;
-					return func;
-				}
-				func_find_pos++;
-				if (func_find_pos >= functions.size())
-					func_find_pos = 0;
-				if (func_find_pos == p)
-				{
-					if (out_idx)
-						* out_idx = -1;
-					return nullptr;
-				}
-			}
-			if (out_idx)
-				* out_idx = -1;
-			return nullptr;
-		}
-	};
-
-	const wchar_t* UdtInfo::module_name() const
-	{
-		return ((UdtInfoPrivate*)this)->module_name.c_str();
-	}
-
-	const char* UdtInfo::name() const
-	{
-		return ((UdtInfoPrivate*)this)->name.c_str();
-	}
-
-	int UdtInfo::size() const
-	{
-		return ((UdtInfoPrivate*)this)->size;
-	}
-
-	int UdtInfo::item_count() const
-	{
-		return ((UdtInfoPrivate*)this)->items.size();
-	}
-
-	VariableInfo* UdtInfo::item(int idx) const
-	{
-		return ((UdtInfoPrivate*)this)->items[idx].get();
-	}
-
-	VariableInfo* UdtInfo::find_item(const char* name, int *out_idx) const
-	{
-		return ((UdtInfoPrivate*)this)->find_item(name, out_idx);
-	}
-
-	int UdtInfo::function_count() const
-	{
-		return ((UdtInfoPrivate*)this)->functions.size();
-	}
-
-	FunctionInfo* UdtInfo::function(int idx) const
-	{
-		return ((UdtInfoPrivate*)this)->functions[idx].get();
-	}
-
-	FunctionInfo* UdtInfo::find_function(const char* name, int* out_idx) const
-	{
-		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
 	}
 
 	struct SerializableAttributePrivate : SerializableAttribute
@@ -824,28 +850,24 @@ namespace flame
 
 		void serialize(UdtInfo* u, void* src, int precision)
 		{
-			for (auto i = 0; i < u->item_count(); i++)
+			for (auto i = 0; i < u->variable_count(); i++)
 			{
-				auto item = u->item(i);
-				auto type = item->type();
+				auto vari = u->variable(i);
+				auto type = vari->type();
 
-				switch (type->tag())
+				if (type->tag() == TypeTagVariable)
 				{
-				case TypeTagVariable:
-					switch (type->hash())
+					if (type->hash() == cH("Function"))
+						;
+					else
 					{
-					case cH("Function"):
-
-						break;
-					default:
-						if (item->default_value() && !compare(type->tag(), item->size(), src, item->default_value()))
+						if (vari->default_value() && !compare(type->tag(), vari->size(), src, vari->default_value()))
 						{
 							auto n_item = new_node("item");
-							n_item->new_attr("name", item->name());
+							n_item->new_attr("name", vari->name());
 							n_item->new_attr("value", serialize_value(type->tag(), type->hash(), src, precision).v);
 						}
 					}
-					break;
 				}
 			}
 		}
@@ -857,21 +879,15 @@ namespace flame
 				if (n_item->name != "item")
 					continue;
 
-				auto item = u->find_item(n_item->find_attr("name")->value().c_str());
-				auto type = item->type();
+				auto vari = u->find_variable(n_item->find_attr("name")->value());
+				auto type = vari->type();
 
-				switch (type->tag())
+				if (type->tag() == TypeTagVariable)
 				{
-				case TypeTagVariable:
-					switch (type->hash())
-					{
-					case cH("Function"):
-
-						break;
-					default:
+					if (type->hash() == cH("Function"))
+						;
+					else
 						unserialize_value(type->tag(), type->hash(), n_item->find_attr("value")->value(), dst);
-					}
-					break;
 				}
 			}
 		}
@@ -1412,32 +1428,6 @@ namespace flame
 		return info;
 	}
 
-	std::string serialize_typeinfo(const TypeInfoPrivate & src)
-	{
-		return std::string(get_type_tag_name(src.tag)) + "#" + src.name;
-	}
-
-	TypeInfoPrivate unserialize_typeinfo(const std::string& src)
-	{
-		TypeInfoPrivate info;
-
-		auto sp = string_split(src, '#');
-
-		auto e_tag = 0;
-		for (auto s : tag_names)
-		{
-			if (sp[0] == s)
-				break;
-			e_tag++;
-		}
-
-		info.tag = (TypeTag$)e_tag;
-		info.name = sp[1];
-		info.hash = H(info.name.c_str());
-
-		return info;
-	}
-
 	void symbol_to_function(IDiaSymbol* symbol, FunctionInfoPrivate* f, const std::string& attribute, CComPtr<IDiaSession> & session, std::map<DWORD, std::vector<std::string>>& source_files)
 	{
 		ULONG ul;
@@ -1449,15 +1439,15 @@ namespace flame
 
 		IDiaSymbol* function_type;
 		symbol->get_type(&function_type);
-
-		IDiaEnumSymbols* parameters;
-		function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+		function_type->Release();
 
 		IDiaSymbol* return_type;
 		function_type->get_type(&return_type);
-
 		f->return_type = symbol_to_typeinfo(return_type, "");
+		return_type->Release();
 
+		IDiaEnumSymbols* parameters;
+		function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
 		IDiaSymbol* parameter;
 		while (SUCCEEDED(parameters->Next(1, &parameter, &ul)) && (ul == 1))
 		{
@@ -1465,6 +1455,7 @@ namespace flame
 
 			parameter->Release();
 		}
+		parameters->Release();
 
 		if (f->rva && attribute.find('c') != std::string::npos)
 		{
@@ -1532,10 +1523,6 @@ namespace flame
 				}
 			}
 		}
-
-		return_type->Release();
-		parameters->Release();
-		function_type->Release();
 	}
 
 	void serialize_function(FunctionInfoPrivate * src, SerializableNode * dst)
@@ -1644,6 +1631,17 @@ namespace flame
 			}
 			return nullptr;
 		}
+	}
+
+	EnumInfo* add_enum(const std::wstring& module_name, const std::string& name, int level)
+	{
+		auto db = find_typeinfo_db(level);
+		assert(db);
+		auto e = new EnumInfoPrivate;
+		e->module_name = module_name;
+		e->name = name;
+		db->enums.emplace(H(name.c_str()), e);
+		return e;
 	}
 
 	DynamicArray<FunctionInfo*> get_functions(int level)
@@ -2013,7 +2011,6 @@ namespace flame
 			assert(0);
 			return;
 		}
-
 		CComPtr<IDiaSymbol> global;
 		if (FAILED(session->get_globalScope(&global)))
 		{
@@ -2312,20 +2309,20 @@ namespace flame
 			u->size = std::stoi(n_udt->find_attr("size")->value());
 			u->module_name = s2w(n_udt->find_attr("module_name")->value());
 
-			auto n_items = n_udt->find_node("items");
+			auto n_items = n_udt->find_node("variables");
 			for (auto j = 0; j < n_items->node_count(); j++)
 			{
-				auto n_item = n_items->node(j);
+				auto n_vari = n_items->node(j);
 				auto i = new VariableInfoPrivate;
-				i->type = unserialize_typeinfo(n_item->find_attr("type")->value());
-				i->name = n_item->find_attr("name")->value();
-				i->attribute = n_item->find_attr("attribute")->value();
-				i->offset = std::stoi(n_item->find_attr("offset")->value());
-				i->size = std::stoi(n_item->find_attr("size")->value());
+				i->type = unserialize_typeinfo(n_vari->find_attr("type")->value());
+				i->name = n_vari->find_attr("name")->value();
+				i->attribute = n_vari->find_attr("attribute")->value();
+				i->offset = std::stoi(n_vari->find_attr("offset")->value());
+				i->size = std::stoi(n_vari->find_attr("size")->value());
 				i->_init_default_value();
 				if (i->default_value)
 				{
-					auto a_default_value = n_item->find_attr("default_value");
+					auto a_default_value = n_vari->find_attr("default_value");
 					if (a_default_value)
 						unserialize_value(i->type.tag, i->type.hash, a_default_value->value(), i->default_value);
 				}
@@ -2432,21 +2429,21 @@ namespace flame
 				n_udt->new_attr("size", std::to_string(u->size));
 				n_udt->new_attr("module_name", w2s(u->module_name));
 
-				auto n_items = n_udt->new_node("items");
+				auto n_items = n_udt->new_node("variables");
 				for (auto& i : u->items)
 				{
-					auto n_item = n_items->new_node("item");
+					auto n_vari = n_items->new_node("variable");
 					const auto& type = i->type;
-					n_item->new_attr("type", serialize_typeinfo(type));
-					n_item->new_attr("name", i->name);
-					n_item->new_attr("attribute", i->attribute);
-					n_item->new_attr("offset", std::to_string(i->offset));
-					n_item->new_attr("size", std::to_string(i->size));
+					n_vari->new_attr("type", serialize_typeinfo(type));
+					n_vari->new_attr("name", i->name);
+					n_vari->new_attr("attribute", i->attribute);
+					n_vari->new_attr("offset", std::to_string(i->offset));
+					n_vari->new_attr("size", std::to_string(i->size));
 					if (i->default_value)
 					{
 						auto default_value_str = serialize_value(type.tag, type.hash, i->default_value, 1);
 						if (default_value_str.size > 0)
-							n_item->new_attr("default_value", default_value_str.v);
+							n_vari->new_attr("default_value", default_value_str.v);
 					}
 				}
 

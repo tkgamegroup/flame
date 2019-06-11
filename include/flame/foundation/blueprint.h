@@ -118,16 +118,16 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS void load(SerializableNode* src);
-		FLAME_FOUNDATION_EXPORTS void load(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS void load(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void save(SerializableNode* dst);
-		FLAME_FOUNDATION_EXPORTS void save(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
 
 		FLAME_FOUNDATION_EXPORTS static BP *create();
-		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const wchar_t *filename);
+		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
 	};
 
-	// basic nodes are available after creating the first BP
+	// basic nodes are available after calling typeinfo_init_basic_bp_nodes or loading from file
 	// they are:
 	//  Vec<[1-4], [float, uint, int, uchar, bool] (as Vec<*>)
 	//  Mat<[2-4], [2-4], [float, double]> (as Mat<*>)

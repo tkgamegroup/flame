@@ -36,7 +36,7 @@ namespace flame
 
 		struct ShaderVariableInfo
 		{
-			String name;
+			std::string name;
 			uint offset;
 			uint size;
 			uint count;
@@ -65,10 +65,9 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+
 			ShaderPrivate(Device *d, const std::wstring &filename, const std::string &prefix);
 			~ShaderPrivate();
-
-			void load_members(SerializableNode*, ShaderVariableInfo*);
 		};
 	}
 }

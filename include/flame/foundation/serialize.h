@@ -256,8 +256,8 @@ namespace flame
 	struct FunctionInfo;
 
 	typedef TypeInfo* TypeInfoPtr;
-	typedef EnumInfo* EnumInfoPtr;
 	typedef VariableInfo* VariableInfoPtr;
+	typedef EnumInfo* EnumInfoPtr;
 	typedef FunctionInfo* FunctionInfoPtr;
 	typedef UdtInfo* UdtInfoPtr;
 
@@ -280,6 +280,16 @@ namespace flame
 		}
 	};
 
+	struct VariableInfo
+	{
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		FLAME_FOUNDATION_EXPORTS const char* attribute() const;
+		FLAME_FOUNDATION_EXPORTS uint offset() const;
+		FLAME_FOUNDATION_EXPORTS uint size() const;
+		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
+	};
+
 	struct EnumItem
 	{
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
@@ -292,26 +302,12 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
-		FLAME_FOUNDATION_EXPORTS int item_count() const;
+		FLAME_FOUNDATION_EXPORTS uint item_count() const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* item(int idx) const;
-		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(const char* name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(const std::string& name, int *out_idx = nullptr) const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(int value, int* out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS EnumItem* add_item(const std::string& name, int value);
 	};
-
-	struct VariableInfo
-	{
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS const char* attribute() const;
-		FLAME_FOUNDATION_EXPORTS int offset() const;
-		FLAME_FOUNDATION_EXPORTS int size() const;
-		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
-	};
-
-	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
-	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
-	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst);
 
 	struct FunctionInfo
 	{
@@ -321,9 +317,11 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
-		FLAME_FOUNDATION_EXPORTS int parameter_count() const;
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(int idx) const;
 		FLAME_FOUNDATION_EXPORTS const char* code() const;
+
+		FLAME_FOUNDATION_EXPORTS uint parameter_count() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS void add_parameter(TypeTag$ tag, const std::string& type_name);
 
 	};
 
@@ -333,16 +331,23 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
-		FLAME_FOUNDATION_EXPORTS int size() const;
+		FLAME_FOUNDATION_EXPORTS uint size() const;
 
-		FLAME_FOUNDATION_EXPORTS int item_count() const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* item(int idx) const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* find_item(const char* name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
+		FLAME_FOUNDATION_EXPORTS VariableInfo* variable(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS VariableInfo* find_variable(const std::string& name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS VariableInfo* add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& attribute, uint offset, uint size);
 
-		FLAME_FOUNDATION_EXPORTS int function_count() const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(int idx) const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const char* name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS uint function_count() const;
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const std::string& name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code);
 	};
+
+	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
+	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
+	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst);
 
 	struct SerializableAttribute
 	{
@@ -406,10 +411,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
-
-		/*
-			for from json action, no attrs will be used, all represented by nodes
-		*/
 	};
 
 	/*
@@ -433,12 +434,15 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<EnumInfo*> get_enums(int level = 0);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, int level = -1);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const std::string& name, int level);
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<UdtInfo*> get_udts(int level = 0);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::string& name, uint size, int level);
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<FunctionInfo*> get_functions(int level = 0);
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, int level = -1);
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code, int level);
 
 	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_init_basic_bp_nodes();

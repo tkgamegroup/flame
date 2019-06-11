@@ -108,7 +108,7 @@ int main(int argc, char **args)
 	if (argc > 1)
 	{
 		app.filename = s2w(args[1]);
-		app.bp = BP::create_from_file(app.filename.c_str());
+		app.bp = BP::create_from_file(app.filename);
 		if (!app.bp)
 			app.filename = L"";
 	}
@@ -180,14 +180,14 @@ int main(int argc, char **args)
 					printf("%s:\n", udt->name());
 					std::vector<VariableInfo*> inputs;
 					std::vector<VariableInfo*> outputs;
-					for (auto i_i = 0; i_i < udt->item_count(); i_i++)
+					for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
 					{
-						auto item = udt->item(i_i);
-						auto attribute = std::string(item->attribute());
+						auto vari = udt->variable(i_i);
+						auto attribute = std::string(vari->attribute());
 						if (attribute.find('i') != std::string::npos)
-							inputs.push_back(item);
+							inputs.push_back(vari);
 						if (attribute.find('o') != std::string::npos)
-							outputs.push_back(item);
+							outputs.push_back(vari);
 					}
 					printf("[In]\n");
 					for (auto &i : inputs)
@@ -372,14 +372,15 @@ int main(int argc, char **args)
 				printf("you need to save first\n");
 			else
 			{
-
+				app.bp->clear();
+				app.bp->load(app.filename);
 			}
 		}
 		else if (s_command_line == "save")
 		{
 			if (!app.filename.empty())
 			{
-				app.bp->save(app.filename.c_str());
+				app.bp->save(app.filename);
 				printf("file saved\n");
 			}
 			else
@@ -390,7 +391,7 @@ int main(int argc, char **args)
 				if (!std::fs::exists(s_filename))
 				{
 					app.filename = s2w(s_filename);
-					app.bp->save(app.filename.c_str());
+					app.bp->save(app.filename);
 					printf("file saved\n");
 					printf("%s:\n", s_filename.c_str());
 				}
@@ -403,7 +404,7 @@ int main(int argc, char **args)
 			if (!app.filename.empty())
 			{
 				BP::destroy(app.bp);
-				app.bp = BP::create_from_file(app.filename.c_str());
+				app.bp = BP::create_from_file(app.filename);
 				printf("reloaded\n");
 			}
 			else
@@ -460,7 +461,7 @@ int main(int argc, char **args)
 					{
 						app->bp->clear();
 						app->bp->load(req);
-						app->bp->save(app->filename.c_str());
+						app->bp->save(app->filename);
 
 						printf("browser: bp updated\n");
 					}

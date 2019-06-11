@@ -109,9 +109,9 @@ namespace flame
 		void update();
 
 		void load(SerializableNode* src);
-		void load(const wchar_t *filename);
+		void load(const std::wstring& filename);
 		void save(SerializableNode* src);
-		void save(const wchar_t *filename);
+		void save(const std::wstring& filename);
 	};
 
 	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
@@ -190,9 +190,9 @@ namespace flame
 		finish_function = udt->find_function("finish");
 		update_function = udt->find_function("update");
 
-		for (auto i = 0; i < udt->item_count(); i++)
+		for (auto i = 0; i < udt->variable_count(); i++)
 		{
-			auto v = udt->item(i);
+			auto v = udt->variable(i);
 			auto attr = std::string(v->attribute());
 			if (attr.find('i') != std::string::npos)
 				inputs.emplace_back(new SlotPrivate(SlotPrivate::Input, this, v));
@@ -612,7 +612,7 @@ namespace flame
 		}
 	}
 	
-	void BPPrivate::load(const wchar_t *_filename)
+	void BPPrivate::load(const std::wstring& _filename)
 	{
 		filename = _filename;
 
@@ -676,7 +676,7 @@ namespace flame
 		}
 	}
 
-	void BPPrivate::save(const wchar_t *_filename)
+	void BPPrivate::save(const std::wstring& _filename)
 	{
 		filename = _filename;
 
@@ -853,7 +853,7 @@ namespace flame
 		((BPPrivate*)this)->load(src);
 	}
 
-	void BP::load(const wchar_t* filename)
+	void BP::load(const std::wstring& filename)
 	{
 		((BPPrivate*)this)->load(filename);
 	}
@@ -863,7 +863,7 @@ namespace flame
 		((BPPrivate*)this)->save(dst);
 	}
 
-	void BP::save(const wchar_t* filename)
+	void BP::save(const std::wstring& filename)
 	{
 		((BPPrivate*)this)->save(filename);
 	}
@@ -873,7 +873,7 @@ namespace flame
 		return new BPPrivate();
 	}
 
-	BP *BP::create_from_file(const wchar_t *filename)
+	BP *BP::create_from_file(const std::wstring& filename)
 	{
 		if (!std::fs::exists(filename))
 			return nullptr;
