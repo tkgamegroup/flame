@@ -39,7 +39,7 @@ namespace flame
 		"any"
 	};
 
-	const char* get_type_tag_name(TypeTag$ tag)
+	const char* get_name(TypeTag$ tag)
 	{
 		return tag_names[tag];
 	}
@@ -49,6 +49,18 @@ namespace flame
 		TypeTag$ tag;
 		std::string name;
 		uint hash;
+
+		void set(TypeTag$ _tag, const std::string& _name)
+		{
+			tag = _tag;
+			name = _name;
+			hash = H(name.c_str());
+		}
+
+		std::string serialize() const
+		{
+			return std::string(get_name(tag)) + "#" + name;
+		}
 	};
 
 	TypeTag$ TypeInfo::tag() const
@@ -66,15 +78,8 @@ namespace flame
 		return ((TypeInfoPrivate*)this)->hash;
 	}
 
-	std::string serialize_typeinfo(const TypeInfoPrivate& src)
+	void unserialize_typeinfo(const std::string& src, TypeTag$& tag, std::string& name)
 	{
-		return std::string(get_type_tag_name(src.tag)) + "#" + src.name;
-	}
-
-	TypeInfoPrivate unserialize_typeinfo(const std::string& src)
-	{
-		TypeInfoPrivate info;
-
 		auto sp = string_split(src, '#');
 
 		auto e_tag = 0;
@@ -85,12 +90,11 @@ namespace flame
 			e_tag++;
 		}
 
-		info.tag = (TypeTag$)e_tag;
-		info.name = sp[1];
-		info.hash = H(info.name.c_str());
-
-		return info;
+		tag = (TypeTag$)e_tag;
+		name = sp[1];
 	}
+
+	struct TypeinfoDB;
 
 	struct VariableInfoPrivate : VariableInfo
 	{
@@ -103,30 +107,6 @@ namespace flame
 		~VariableInfoPrivate()
 		{
 			delete default_value;
-		}
-
-		void _init_default_value()
-		{
-			default_value = nullptr;
-			if (type.tag != TypeTagEnumSingle && type.tag != TypeTagEnumMulti && type.tag != TypeTagVariable)
-				return;
-			const std::string ignore_types[] = {
-				"void*",
-				"Array",
-				"DynamicArray",
-				"String",
-				"Function"
-			};
-			if (type.tag == TypeTagVariable)
-			{
-				for (auto& t : ignore_types)
-				{
-					if (type.name.compare(0, t.size(), t) == 0)
-						return;
-				}
-			}
-			default_value = new char[size];
-			memset(default_value, 0, size);
 		}
 	};
 
@@ -178,16 +158,9 @@ namespace flame
 
 	struct EnumInfoPrivate : EnumInfo
 	{
-		std::wstring module_name;
-
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 	};
-
-	const wchar_t* EnumInfo::module_name() const
-	{
-		return ((EnumInfoPrivate*)this)->module_name.c_str();
-	}
 
 	const char* EnumInfo::name() const
 	{
@@ -238,21 +211,22 @@ namespace flame
 		return nullptr;
 	}
 
+	EnumItem* EnumInfo::add_item(const std::string& name, int value)
+	{
+		auto i = new EnumItemPrivate;
+		i->name = name;
+		i->value = value;
+		((EnumInfoPrivate*)this)->items.emplace_back(i);
+	}
+
 	struct FunctionInfoPrivate : FunctionInfo
 	{
-		std::wstring module_name;
-
 		std::string name;
 		void* rva;
 		TypeInfoPrivate return_type;
 		std::vector<TypeInfoPrivate> parameter_types;
 		std::string code;
 	};
-
-	const wchar_t* FunctionInfo::module_name() const
-	{
-		return ((FunctionInfoPrivate*)this)->module_name.c_str();
-	}
 
 	const char* FunctionInfo::name() const
 	{
@@ -279,6 +253,13 @@ namespace flame
 		return &(((FunctionInfoPrivate*)this)->parameter_types[idx]);
 	}
 
+	void FunctionInfo::add_parameter(TypeTag$ tag, const std::string& type_name)
+	{
+		TypeInfoPrivate t;
+		t.set(tag, type_name);
+		((FunctionInfoPrivate*)this)->parameter_types.push_back(t);
+	}
+
 	const char* FunctionInfo::code() const
 	{
 		return ((FunctionInfoPrivate*)this)->code.c_str();
@@ -286,15 +267,14 @@ namespace flame
 
 	struct UdtInfoPrivate : UdtInfo
 	{
-		std::wstring module_name;
-
 		std::string name;
-		int size;
-		std::vector<std::unique_ptr<VariableInfoPrivate>> items;
+		uint size;
+		std::wstring module_name;
+		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
-		int item_find_pos;
-		int func_find_pos;
+		uint item_find_pos;
+		uint func_find_pos;
 
 		UdtInfoPrivate()
 		{
@@ -304,7 +284,7 @@ namespace flame
 
 		VariableInfoPrivate* find_vari(const std::string& name, int *out_idx)
 		{
-			if (items.empty())
+			if (variables.empty())
 			{
 				if (out_idx)
 					* out_idx = -1;
@@ -314,19 +294,19 @@ namespace flame
 			auto p = item_find_pos;
 			while (true)
 			{
-				auto item = items[item_find_pos].get();
+				auto item = variables[item_find_pos].get();
 				if (item->name == name)
 				{
 					auto t = item_find_pos;
 					item_find_pos++;
-					if (item_find_pos >= items.size())
+					if (item_find_pos >= variables.size())
 						item_find_pos = 0;
 					if (out_idx)
 						* out_idx = t;
 					return item;
 				}
 				item_find_pos++;
-				if (item_find_pos >= items.size())
+				if (item_find_pos >= variables.size())
 					item_find_pos = 0;
 				if (item_find_pos == p)
 				{
@@ -379,11 +359,6 @@ namespace flame
 		}
 	};
 
-	const wchar_t* UdtInfo::module_name() const
-	{
-		return ((UdtInfoPrivate*)this)->module_name.c_str();
-	}
-
 	const char* UdtInfo::name() const
 	{
 		return ((UdtInfoPrivate*)this)->name.c_str();
@@ -394,19 +369,64 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->size;
 	}
 
+	const wchar_t* UdtInfo::module_name() const
+	{
+		return ((UdtInfoPrivate*)this)->module_name.c_str();
+	}
+
 	uint UdtInfo::variable_count() const
 	{
-		return ((UdtInfoPrivate*)this)->items.size();
+		return ((UdtInfoPrivate*)this)->variables.size();
 	}
 
 	VariableInfo* UdtInfo::variable(uint idx) const
 	{
-		return ((UdtInfoPrivate*)this)->items[idx].get();
+		return ((UdtInfoPrivate*)this)->variables[idx].get();
 	}
 
 	VariableInfo* UdtInfo::find_variable(const std::string& name, int *out_idx) const
 	{
 		return ((UdtInfoPrivate*)this)->find_vari(name, out_idx);
+	}
+
+	VariableInfo* UdtInfo::add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& attribute, uint offset, uint size)
+	{
+		auto v = new VariableInfoPrivate;
+		v->type.set(tag, type_name);
+		v->name = name;
+		v->attribute = attribute;
+		v->offset = offset;
+		v->size = size;
+		v->default_value = nullptr;
+		if (tag == TypeTagEnumSingle || tag == TypeTagEnumMulti || tag == TypeTagVariable)
+		{
+			const std::string ignore_types[] = {
+				"void*",
+				"Array",
+				"DynamicArray",
+				"String",
+				"Function"
+			};
+			auto skip = false;
+			if (tag == TypeTagVariable)
+			{
+				for (auto& t : ignore_types)
+				{
+					if (type_name.compare(0, t.size(), t) == 0)
+					{
+						skip = true;
+						break;
+					}
+				}
+			}
+			if (!skip)
+			{
+				v->default_value = new char[size];
+				memset(v->default_value, 0, size);
+			}
+		}
+		((UdtInfoPrivate*)this)->variables.emplace_back(v);
+		return v;
 	}
 
 	uint UdtInfo::function_count() const
@@ -422,6 +442,17 @@ namespace flame
 	FunctionInfo* UdtInfo::find_function(const std::string& name, int* out_idx) const
 	{
 		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
+	}
+
+	FunctionInfo* UdtInfo::add_function(const std::string& name, const std::wstring& module_name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code)
+	{
+		auto f = new FunctionInfoPrivate;
+		f->name = name;
+		f->rva = rva;
+		f->return_type.set(return_type_tag, return_type_name);
+		f->code = code;
+		((UdtInfoPrivate*)this)->functions.emplace_back(f);
+		return f;
 	}
 
 	void set(void* dst, TypeTag$ tag, int size, const void* src)
@@ -1359,215 +1390,72 @@ namespace flame
 		return name;
 	}
 
-	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */)
+	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */, TypeTag$& tag, std::string& name)
 	{
 		DWORD dw;
 		wchar_t* pwname;
-
-		TypeInfoPrivate info;
 
 		symbol->get_symTag(&dw);
 		switch (dw)
 		{
 		case SymTagEnum:
 		{
-			info.tag = variable_attribute.find('m') != std::string::npos ? TypeTagEnumMulti : TypeTagEnumSingle;
+			tag = variable_attribute.find('m') != std::string::npos ? TypeTagEnumMulti : TypeTagEnumSingle;
 			symbol->get_name(&pwname);
-			info.name = format_name(pwname);
+			name = format_name(pwname);
 		}
 			break;
 		case SymTagBaseType:
 		{
-			info.tag = TypeTagVariable;
-			info.name = base_type_name(symbol);
+			tag = TypeTagVariable;
+			name = base_type_name(symbol);
 		}
 			break;
 		case SymTagPointerType:
 		{
-			info.tag = TypeTagPointer;
+			tag = TypeTagPointer;
 			IDiaSymbol* pointer_type;
 			symbol->get_type(&pointer_type);
 			pointer_type->get_symTag(&dw);
 			switch (dw)
 			{
 			case SymTagBaseType:
-				info.name = base_type_name(pointer_type);
+				name = base_type_name(pointer_type);
 				break;
 			case SymTagPointerType:
 				assert(0);
 				break;
 			case SymTagUDT:
 				pointer_type->get_name(&pwname);
-				info.name = format_name(pwname);
+				name = format_name(pwname);
 				break;
 			}
-			if (variable_attribute.find('a') != std::string::npos && info.name == "void")
-				info.tag = TypeTagAny;
+			if (variable_attribute.find('a') != std::string::npos && name == "void")
+				tag = TypeTagAny;
 			pointer_type->Release();
 		}
 			break;
 		case SymTagUDT:
 		{
 			symbol->get_name(&pwname);
-			info.tag = TypeTagVariable;
-			info.name = format_name(pwname);
+			tag = TypeTagVariable;
+			name = format_name(pwname);
 		}
 			break;
 		case SymTagFunctionArgType:
 		{
 			IDiaSymbol* type;
 			symbol->get_type(&type);
-			info = symbol_to_typeinfo(type, "");
+			symbol_to_typeinfo(type, "", tag, name);
 			type->Release();
 		}
 			break;
 		}
-
-		info.hash = H(info.name.c_str());
-
-		return info;
-	}
-
-	void symbol_to_function(IDiaSymbol* symbol, FunctionInfoPrivate* f, const std::string& attribute, CComPtr<IDiaSession> & session, std::map<DWORD, std::vector<std::string>>& source_files)
-	{
-		ULONG ul;
-		ULONGLONG ull;
-		DWORD dw;
-
-		symbol->get_relativeVirtualAddress(&dw);
-		f->rva = (void*)dw;
-
-		IDiaSymbol* function_type;
-		symbol->get_type(&function_type);
-		function_type->Release();
-
-		IDiaSymbol* return_type;
-		function_type->get_type(&return_type);
-		f->return_type = symbol_to_typeinfo(return_type, "");
-		return_type->Release();
-
-		IDiaEnumSymbols* parameters;
-		function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-		IDiaSymbol* parameter;
-		while (SUCCEEDED(parameters->Next(1, &parameter, &ul)) && (ul == 1))
-		{
-			f->parameter_types.push_back(symbol_to_typeinfo(parameter, ""));
-
-			parameter->Release();
-		}
-		parameters->Release();
-
-		if (f->rva && attribute.find('c') != std::string::npos)
-		{
-			symbol->get_length(&ull);
-			IDiaEnumLineNumbers* lines;
-
-			if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
-			{
-				IDiaLineNumber* line;
-				DWORD src_file_id = -1;
-				DWORD line_num;
-
-				int min_line = 1000000;
-				int max_line = 0;
-
-				while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
-				{
-					if (src_file_id == -1)
-					{
-						line->get_sourceFileId(&src_file_id);
-
-						if (source_files.find(src_file_id) == source_files.end())
-						{
-							BSTR filename;
-							IDiaSourceFile* source_file;
-							line->get_sourceFile(&source_file);
-							source_file->get_fileName(&filename);
-							source_file->Release();
-
-							auto& vec = (source_files[src_file_id] = std::vector<std::string>());
-							vec.push_back("\n");
-
-							std::ifstream file(filename);
-							if (file.good())
-							{
-								while (!file.eof())
-								{
-									std::string line;
-									std::getline(file, line);
-
-									vec.push_back(line + "\n");
-								}
-								file.close();
-							}
-						}
-					}
-
-					line->get_lineNumber(&line_num);
-					if (min_line > line_num)
-						min_line = line_num;
-					if (max_line < line_num)
-						max_line = line_num;
-
-					line->Release();
-				}
-
-				lines->Release();
-
-				if (max_line > min_line)
-				{
-					f->code = "\n";
-
-					for (auto i = min_line; i <= max_line; i++)
-						f->code += source_files[src_file_id][i];
-				}
-			}
-		}
-	}
-
-	void serialize_function(FunctionInfoPrivate * src, SerializableNode * dst)
-	{
-		dst->new_attr("name", src->name);
-		dst->new_attr("rva", std::to_string((uint)src->rva));
-		dst->new_attr("return_type", serialize_typeinfo(src->return_type));
-		if (!src->parameter_types.empty())
-		{
-			auto n_parameters = dst->new_node("parameters");
-			for (auto& p : src->parameter_types)
-			{
-				auto n = n_parameters->new_node("parameter");
-				n->set_value(serialize_typeinfo(p));
-			}
-		}
-		if (src->code.length() > 0)
-		{
-			auto n_code = dst->new_node("code");
-			n_code->set_value(src->code);
-		}
-	}
-
-	void unserialize_function(SerializableNode * src, FunctionInfoPrivate * dst)
-	{
-		dst->name = src->find_attr("name")->value();
-		dst->rva = (void*)std::stoul(src->find_attr("rva")->value().c_str());
-		dst->return_type = unserialize_typeinfo(src->find_attr("return_type")->value());
-		auto n_parameters = src->find_node("parameters");
-		if (n_parameters)
-		{
-			for (auto k = 0; k < n_parameters->node_count(); k++)
-			{
-				auto n = n_parameters->node(k);
-				dst->parameter_types.push_back(unserialize_typeinfo(n->value()));
-			}
-		}
-		auto n_code = src->find_node("code");
-		if (n_code)
-			dst->code = n_code->value();
 	}
 
 	struct TypeinfoDB
 	{
-		int level;
+		uint level;
 		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
 		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
 		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
@@ -1583,6 +1471,18 @@ namespace flame
 				return db.get();
 		}
 		return nullptr;
+	}
+
+	TypeinfoDB* find_or_create_typeinfo_db(int level)
+	{
+		auto db = find_typeinfo_db(level);
+		if (!db)
+		{
+			db = new TypeinfoDB;
+			db->level = level;
+			typeinfo_dbs.emplace_back(db);
+		}
+		return db;
 	}
 
 	template<class T, class U>
@@ -1633,12 +1533,10 @@ namespace flame
 		}
 	}
 
-	EnumInfo* add_enum(const std::wstring& module_name, const std::string& name, int level)
+	EnumInfo* add_enum(uint level, const std::string& name)
 	{
-		auto db = find_typeinfo_db(level);
-		assert(db);
+		auto db = find_or_create_typeinfo_db(level);
 		auto e = new EnumInfoPrivate;
-		e->module_name = module_name;
 		e->name = name;
 		db->enums.emplace(H(name.c_str()), e);
 		return e;
@@ -1669,6 +1567,18 @@ namespace flame
 		}
 	}
 
+	FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code)
+	{
+		auto db = find_or_create_typeinfo_db(level);
+		auto f = new FunctionInfoPrivate;
+		f->name = name;
+		f->rva = rva;
+		f->return_type.set(return_type_tag, return_type_name);
+		f->code = code;
+		db->functions.emplace(H(name.c_str()), f);
+		return f;
+	}
+
 	DynamicArray<UdtInfo*> get_udts(int level)
 	{
 		auto db = find_typeinfo_db(level);
@@ -1694,9 +1604,20 @@ namespace flame
 		}
 	}
 
-	int typeinfo_free_level()
+	UdtInfo* add_udt(uint level, const std::string& name, uint size, const std::wstring& module_name)
 	{
-		auto l = 0;
+		auto db = find_or_create_typeinfo_db(level);
+		auto u = new UdtInfoPrivate;
+		u->name = name;
+		u->size = size;
+		u->module_name = module_name;
+		db->udts.emplace(H(name.c_str()), u);
+		return u;
+	}
+
+	uint typeinfo_free_level()
+	{
+		auto l = 0U;
 		while (true)
 		{
 			auto ok = true;
@@ -1743,15 +1664,11 @@ namespace flame
 	};
 
 	template<uint N, class T>
-	void install_vec_udt(const char* name_suffix, const char* type_name)
+	void install_vec_udt(const std::string& name_suffix, const std::string& type_name)
 	{
 		typedef BP_Vec<N, T> VecType;
 
-		auto u = new UdtInfoPrivate;
-		u->name = "Vec";
-		u->name += name_suffix;
-		u->size = sizeof(T) * N * 2 /* both in and out */;
-		u->module_name = L"flame_foundation.dll";
+		auto u = add_udt(0, "Vec" + name_suffix, sizeof(T) * N * 2 /* both in and out */, L"flame_foundation.dll";
 
 		for (auto i = 0; i < N; i++)
 		{
@@ -1797,7 +1714,6 @@ namespace flame
 			typeinfo_dbs.emplace_back(db0);
 		}
 		db0->udts.emplace(H(u->name.c_str()), u);
-		
 	}
 
 	template<uint N, class T>
@@ -1979,7 +1895,7 @@ namespace flame
 		free_module(this_module);
 	}
 
-	void typeinfo_collect(const std::wstring & filename, int level)
+	void typeinfo_collect(const std::wstring& filename, int level)
 	{
 		auto db = find_typeinfo_db(level);
 		if (!db)
@@ -2027,6 +1943,108 @@ namespace flame
 
 		std::map<DWORD, std::vector<std::string>> source_files;
 
+		auto symbol_to_function = [&](IDiaSymbol* symbol, const std::string& attribute, voidptr& rva, TypeTag$& return_type_tag, std::string& return_type_name, std::string& code) {
+			symbol->get_relativeVirtualAddress(&dw);
+			rva = (void*)dw;
+
+			IDiaSymbol* function_type;
+			symbol->get_type(&function_type);
+
+			IDiaSymbol* return_type;
+			function_type->get_type(&return_type);
+			symbol_to_typeinfo(return_type, "", return_type_tag, return_type_name);
+			return_type->Release();
+
+			function_type->Release();
+
+			if (rva && attribute.find('c') != std::string::npos)
+			{
+				symbol->get_length(&ull);
+				IDiaEnumLineNumbers* lines;
+
+				if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
+				{
+					IDiaLineNumber* line;
+					DWORD src_file_id = -1;
+					DWORD line_num;
+
+					int min_line = 1000000;
+					int max_line = 0;
+
+					while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
+					{
+						if (src_file_id == -1)
+						{
+							line->get_sourceFileId(&src_file_id);
+
+							if (source_files.find(src_file_id) == source_files.end())
+							{
+								BSTR filename;
+								IDiaSourceFile* source_file;
+								line->get_sourceFile(&source_file);
+								source_file->get_fileName(&filename);
+								source_file->Release();
+
+								auto& vec = (source_files[src_file_id] = std::vector<std::string>());
+								vec.push_back("\n");
+
+								std::ifstream file(filename);
+								if (file.good())
+								{
+									while (!file.eof())
+									{
+										std::string line;
+										std::getline(file, line);
+
+										vec.push_back(line + "\n");
+									}
+									file.close();
+								}
+							}
+						}
+
+						line->get_lineNumber(&line_num);
+						if (min_line > line_num)
+							min_line = line_num;
+						if (max_line < line_num)
+							max_line = line_num;
+
+						line->Release();
+					}
+
+					lines->Release();
+
+					if (max_line > min_line)
+					{
+						code = "\n";
+
+						for (auto i = min_line; i <= max_line; i++)
+							code += source_files[src_file_id][i];
+					}
+				}
+			}
+		};
+
+		auto symbol_to_parameters = [&](IDiaSymbol* symbol, FunctionInfo* f) {
+			IDiaSymbol* function_type;
+			symbol->get_type(&function_type);
+
+			IDiaEnumSymbols* parameters;
+			function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
+			IDiaSymbol* parameter;
+			while (SUCCEEDED(parameters->Next(1, &parameter, &ul)) && (ul == 1))
+			{
+				TypeTag$ tag; std::string name;
+				symbol_to_typeinfo(parameter, "", tag, name);
+				f->add_parameter(tag, name);
+
+				parameter->Release();
+			}
+			parameters->Release();
+
+			function_type->Release();
+		};
+
 		// enums
 		IDiaEnumSymbols* _enums;
 		global->findChildren(SymTagEnum, NULL, nsNone, &_enums);
@@ -2039,20 +2057,9 @@ namespace flame
 			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
 			{
 				auto hash = H(name.c_str());
-				auto found = false;
-				for (auto& db : typeinfo_dbs)
+				if (!find_enum(hash))
 				{
-					auto it = db->enums.find(hash);
-					if (it != db->enums.end())
-					{
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-				{
-					auto e = new EnumInfoPrivate;
-					e->name = name;
+					auto e = add_enum(level, name);
 
 					IDiaEnumSymbols* items;
 					_enum->findChildren(SymTagNull, NULL, nsNone, &items);
@@ -2064,22 +2071,42 @@ namespace flame
 						item->get_name(&pwname);
 						item->get_value(&v);
 
-						auto i = new EnumItemPrivate;
-						i->name = w2s(pwname);
-						i->value = v.lVal;
-						e->items.emplace_back(i);
+						e->add_item(w2s(pwname), v.lVal);
 
 						item->Release();
 					}
 					items->Release();
-
-					e->module_name = filename;
-					db->enums.emplace(hash, e);
 				}
 			}
 			_enum->Release();
 		}
 		_enums->Release();
+
+		// functions
+		IDiaEnumSymbols* _functions;
+		global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+		IDiaSymbol* _function;
+		while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+		{
+			_function->get_name(&pwname);
+			bool pass_prefix, pass_$;
+			std::string attribute;
+			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
+			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
+			{
+				auto hash = H(name.c_str());
+				if (!find_function(hash))
+				{
+					void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
+					symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
+					auto f = add_function(level, name, rva, return_type_tag, return_type_name, code);
+					symbol_to_parameters(_function, f);
+				}
+			}
+
+			_function->Release();
+		}
+		_functions->Release();
 
 		// udts
 		IDiaEnumSymbols* _udts;
@@ -2093,54 +2120,36 @@ namespace flame
 			if (pass_prefix && pass_$)
 			{
 				auto udt_hash = H(udt_name.c_str());
-				auto found = false;
-				for (auto& db : typeinfo_dbs)
-				{
-					auto it = db->udts.find(udt_hash);
-					if (it != db->udts.end())
-					{
-						found = true;
-						break;
-					}
-				}
-				if (!found)
+				if (!find_udt(udt_hash))
 				{
 					_udt->get_length(&ull);
-					auto u = new UdtInfoPrivate;
-					u->name = udt_name;
-					u->size = (int)ull;
-					u->module_name = filename;
+					auto u = (UdtInfoPrivate*)add_udt(level, udt_name, ull, filename);
 
-					IDiaEnumSymbols* members;
-					_udt->findChildren(SymTagData, NULL, nsNone, &members);
-					IDiaSymbol* member;
-					while (SUCCEEDED(members->Next(1, &member, &ul)) && (ul == 1))
+					IDiaEnumSymbols* _variables;
+					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
+					IDiaSymbol* _variable;
+					while (SUCCEEDED(_variables->Next(1, &_variable, &ul)) && (ul == 1))
 					{
-						member->get_name(&pwname);
+						_variable->get_name(&pwname);
 						std::string attribute;
 						auto name = format_name(pwname, nullptr, &pass_$, &attribute);
 						if (pass_$)
 						{
 							IDiaSymbol* type;
-							member->get_type(&type);
+							_variable->get_type(&type);
 
-							auto i = new VariableInfoPrivate;
-							i->type = symbol_to_typeinfo(type, attribute);
-							i->name = name;
-							i->attribute = attribute;
-							member->get_offset(&l);
-							i->offset = l;
+							TypeTag$ tag; std::string type_name; 
+							symbol_to_typeinfo(type, attribute, tag, type_name);
+							_variable->get_offset(&l);
 							type->get_length(&ull);
-							i->size = (int)ull;
-							i->_init_default_value();
+
+							u->add_variable(tag, type_name, name, attribute, l, ull);
 
 							type->Release();
-
-							u->items.emplace_back(i);
 						}
-						member->Release();
+						_variable->Release();
 					}
-					members->Release();
+					_variables->Release();
 
 					IDiaEnumSymbols* _functions;
 					_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
@@ -2189,7 +2198,7 @@ namespace flame
 											cvt.p = (char*)library + (uint)dw;
 											(*((Dummy*)new_obj).*cvt.f)();
 
-											for (auto& i : u->items)
+											for (auto& i : u->variables)
 											{
 												if (i->default_value)
 													memcpy(i->default_value, (char*)new_obj + i->offset, i->size);
@@ -2204,63 +2213,20 @@ namespace flame
 								}
 								else
 								{
-									auto f = new FunctionInfoPrivate;
-									f->name = name;
-									symbol_to_function(_function, f, attribute, session, source_files);
-
-									u->functions.emplace_back(f);
+									void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
+									symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
+									u->add_function(name, filename, rva, return_type_tag, return_type_name, code);
 								}
 							}
 						}
 						_function->Release();
 					}
 					_functions->Release();
-
-					u->module_name = filename;
-					db->udts.emplace(udt_hash, u);
 				}
 			}
 			_udt->Release();
 		}
 		_udts->Release();
-
-		// functions
-		IDiaEnumSymbols* _functions;
-		global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-		IDiaSymbol* _function;
-		while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
-		{
-			_function->get_name(&pwname);
-			bool pass_prefix, pass_$;
-			std::string attribute;
-			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
-			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */ )
-			{
-				auto hash = H(name.c_str());
-				auto found = false;
-				for (auto& db : typeinfo_dbs)
-				{
-					auto it = db->functions.find(hash);
-					if (it != db->functions.end())
-					{
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-				{
-					auto f = new FunctionInfoPrivate;
-					f->name = name;
-					symbol_to_function(_function, f, attribute, session, source_files);
-
-					f->module_name = filename;
-					db->functions.emplace(hash, f);
-				}
-			}
-
-			_function->Release();
-		}
-		_functions->Release();
 	}
 
 	void typeinfo_load(const std::wstring& filename, int level)
@@ -2280,53 +2246,71 @@ namespace flame
 			typeinfo_dbs.emplace_back(db);
 		}
 
+		auto unserialize_function = [](SerializableNode* src, std::string& name, voidptr& rva, TypeTag$& return_type_tag, std::string& return_type_name, std::string& code) {
+			name = src->find_attr("name")->value();
+			rva = (void*)std::stoul(src->find_attr("rva")->value().c_str());
+			unserialize_typeinfo(src->find_attr("return_type")->value(), return_type_tag, return_type_name);
+			auto n_code = src->find_node("code");
+			if (n_code)
+				code = n_code->value();
+		};
+
+		auto unserialize_parameters = [](SerializableNode* src, FunctionInfo* f) {
+			auto n_parameters = src->find_node("parameters");
+			if (n_parameters)
+			{
+				for (auto i = 0; i < n_parameters->node_count(); i++)
+				{
+					auto n = n_parameters->node(i);
+					TypeTag$ tag; std::string name;
+					unserialize_typeinfo(n->value(), tag, name);
+					f->add_parameter(tag, name);
+				}
+			}
+		};
+
 		auto n_enums = file->find_node("enums");
 		for (auto i = 0; i < n_enums->node_count(); i++)
 		{
 			auto n_enum = n_enums->node(i);
-			auto e = new EnumInfoPrivate;
-			e->name = n_enum->find_attr("name")->value();
+			auto e = add_enum(level, n_enum->find_attr("name")->value());
 
 			auto n_items = n_enum->find_node("items");
 			for (auto j = 0; j < n_items->node_count(); j++)
 			{
 				auto n_item = n_items->node(j);
-				auto i = new EnumItemPrivate;
-				i->name = n_item->find_attr("name")->value();
-				i->value = std::stoi(n_item->find_attr("value")->value());
-				e->items.emplace_back(i);
+				e->add_item(n_item->find_attr("name")->value(), std::stoi(n_item->find_attr("value")->value()));
 			}
+		}
 
-			db->enums.emplace(H(e->name.c_str()), e);
+		auto n_functions = file->find_node("functions");
+		for (auto i = 0; i < n_functions->node_count(); i++)
+		{
+			auto n_function = n_functions->node(i);
+			std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
+			unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code);
+			unserialize_parameters(n_function, add_function(level, name, rva, return_type_tag, return_type_name, code));
 		}
 
 		auto n_udts = file->find_node("udts");
 		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
 			auto n_udt = n_udts->node(i);
-			auto u = new UdtInfoPrivate;
-			u->name = n_udt->find_attr("name")->value();
-			u->size = std::stoi(n_udt->find_attr("size")->value());
-			u->module_name = s2w(n_udt->find_attr("module_name")->value());
+			auto u = add_udt(level, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()), filename);
 
 			auto n_items = n_udt->find_node("variables");
 			for (auto j = 0; j < n_items->node_count(); j++)
 			{
 				auto n_vari = n_items->node(j);
-				auto i = new VariableInfoPrivate;
-				i->type = unserialize_typeinfo(n_vari->find_attr("type")->value());
-				i->name = n_vari->find_attr("name")->value();
-				i->attribute = n_vari->find_attr("attribute")->value();
-				i->offset = std::stoi(n_vari->find_attr("offset")->value());
-				i->size = std::stoi(n_vari->find_attr("size")->value());
-				i->_init_default_value();
-				if (i->default_value)
+				TypeTag$ tag; std::string type_name;
+				unserialize_typeinfo(n_vari->find_attr("type")->value(), tag, type_name);
+				auto v = (VariableInfoPrivate*)u->add_variable(tag, type_name, n_vari->find_attr("name")->value(), n_vari->find_attr("attribute")->value(), std::stoi(n_vari->find_attr("offset")->value()), std::stoi(n_vari->find_attr("size")->value()));
+				if (v->default_value)
 				{
 					auto a_default_value = n_vari->find_attr("default_value");
 					if (a_default_value)
-						unserialize_value(i->type.tag, i->type.hash, a_default_value->value(), i->default_value);
+						unserialize_value(tag, v->type.hash, a_default_value->value(), v->default_value);
 				}
-				u->items.emplace_back(i);
 			}
 
 			auto n_functions = n_udt->find_node("functions");
@@ -2335,24 +2319,11 @@ namespace flame
 				for (auto j = 0; j < n_functions->node_count(); j++)
 				{
 					auto n_function = n_functions->node(j);
-					auto f = new FunctionInfoPrivate;
-					unserialize_function(n_function, f);
-
-					u->functions.emplace_back(f);
+					std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
+					unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code);
+					unserialize_parameters(n_function, u->add_function(name, filename, rva, return_type_tag, return_type_name, code));
 				}
 			}
-
-			db->udts.emplace(H(u->name.c_str()), u);
-		}
-
-		auto n_functions = file->find_node("functions");
-		for (auto i = 0; i < n_functions->node_count(); i++)
-		{
-			auto n_function = n_functions->node(i);
-			auto f = new FunctionInfoPrivate;
-			unserialize_function(n_function, f);
-
-			db->functions.emplace(H(f->name.c_str()), f);
 		}
 
 		SerializableNode::destroy(file);
@@ -2368,6 +2339,26 @@ namespace flame
 			db = find_typeinfo_db(level);
 			assert(db);
 		}
+
+		auto serialize_function = [](FunctionInfoPrivate * src, SerializableNode * dst) {
+			dst->new_attr("name", src->name);
+			dst->new_attr("rva", std::to_string((uint)src->rva));
+			dst->new_attr("return_type", src->return_type.serialize());
+			if (!src->parameter_types.empty())
+			{
+				auto n_parameters = dst->new_node("parameters");
+				for (auto& p : src->parameter_types)
+				{
+					auto n = n_parameters->new_node("parameter");
+					n->set_value(p.serialize());
+				}
+			}
+			if (src->code.length() > 0)
+			{
+				auto n_code = dst->new_node("code");
+				n_code->set_value(src->code);
+			}
+		};
 
 		auto n_enums = file->new_node("enums");
 		{
@@ -2403,6 +2394,32 @@ namespace flame
 			}
 		}
 
+		auto n_functions = file->new_node("functions");
+		{
+			std::vector<FunctionInfoPrivate*> sorted_functions;
+			if (db)
+			{
+				for (auto& f : db->functions)
+					sorted_functions.push_back(f.second.get());
+			}
+			else
+			{
+				for (auto& db : typeinfo_dbs)
+				{
+					for (auto& f : db->functions)
+						sorted_functions.push_back(f.second.get());
+				}
+			}
+			std::sort(sorted_functions.begin(), sorted_functions.end(), [](FunctionInfoPrivate* a, FunctionInfoPrivate* b) {
+				return a->name < b->name;
+				});
+			for (auto& f : sorted_functions)
+			{
+				auto n_function = n_functions->new_node("function");
+				serialize_function(f, n_function);
+			}
+		}
+
 		auto n_udts = file->new_node("udts");
 		{
 			std::vector<UdtInfoPrivate*> sorted_udts;
@@ -2427,21 +2444,20 @@ namespace flame
 				auto n_udt = n_udts->new_node("udt");
 				n_udt->new_attr("name", u->name);
 				n_udt->new_attr("size", std::to_string(u->size));
-				n_udt->new_attr("module_name", w2s(u->module_name));
 
 				auto n_items = n_udt->new_node("variables");
-				for (auto& i : u->items)
+				for (auto& v : u->variables)
 				{
 					auto n_vari = n_items->new_node("variable");
-					const auto& type = i->type;
-					n_vari->new_attr("type", serialize_typeinfo(type));
-					n_vari->new_attr("name", i->name);
-					n_vari->new_attr("attribute", i->attribute);
-					n_vari->new_attr("offset", std::to_string(i->offset));
-					n_vari->new_attr("size", std::to_string(i->size));
-					if (i->default_value)
+					const auto& type = v->type;
+					n_vari->new_attr("type", type.serialize());
+					n_vari->new_attr("name", v->name);
+					n_vari->new_attr("attribute", v->attribute);
+					n_vari->new_attr("offset", std::to_string(v->offset));
+					n_vari->new_attr("size", std::to_string(v->size));
+					if (v->default_value)
 					{
-						auto default_value_str = serialize_value(type.tag, type.hash, i->default_value, 1);
+						auto default_value_str = serialize_value(type.tag, type.hash, v->default_value, 1);
 						if (default_value_str.size > 0)
 							n_vari->new_attr("default_value", default_value_str.v);
 					}
@@ -2453,32 +2469,6 @@ namespace flame
 					auto n_function = n_functions->new_node("function");
 					serialize_function(f.get(), n_function);
 				}
-			}
-		}
-
-		auto n_functions = file->new_node("functions");
-		{
-			std::vector<FunctionInfoPrivate*> sorted_functions;
-			if (db)
-			{
-				for (auto& f : db->functions)
-					sorted_functions.push_back(f.second.get());
-			}
-			else
-			{
-				for (auto& db : typeinfo_dbs)
-				{
-					for (auto& f : db->functions)
-						sorted_functions.push_back(f.second.get());
-				}
-			}
-			std::sort(sorted_functions.begin(), sorted_functions.end(), [](FunctionInfoPrivate * a, FunctionInfoPrivate * b) {
-				return a->name < b->name;
-			});
-			for (auto& f : sorted_functions)
-			{
-				auto n_function = n_functions->new_node("function");
-				serialize_function(f, n_function);
 			}
 		}
 

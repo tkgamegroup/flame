@@ -247,7 +247,7 @@ namespace flame
 		TypeTagAny
 	};
 
-	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag$ tag);
+	FLAME_FOUNDATION_EXPORTS const char* get_name(TypeTag$ tag);
 
 	struct TypeInfo;
 	struct EnumInfo;
@@ -298,8 +298,6 @@ namespace flame
 
 	struct EnumInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
-
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint item_count() const;
@@ -311,17 +309,16 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
-
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
-		FLAME_FOUNDATION_EXPORTS const char* code() const;
 
 		FLAME_FOUNDATION_EXPORTS uint parameter_count() const;
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS void add_parameter(TypeTag$ tag, const std::string& type_name);
+
+		FLAME_FOUNDATION_EXPORTS const char* code() const;
 
 	};
 
@@ -341,7 +338,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS uint function_count() const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const std::string& name, int *out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code);
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, const std::wstring& module_name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code);
 	};
 
 	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
@@ -434,17 +431,17 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<EnumInfo*> get_enums(int level = 0);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const std::string& name, int level);
-
-	FLAME_FOUNDATION_EXPORTS DynamicArray<UdtInfo*> get_udts(int level = 0);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::string& name, uint size, int level);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(uint level, const std::string& name);
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<FunctionInfo*> get_functions(int level = 0);
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code, int level);
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code);
 
-	FLAME_FOUNDATION_EXPORTS int typeinfo_free_level();
+	FLAME_FOUNDATION_EXPORTS DynamicArray<UdtInfo*> get_udts(int level = 0);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(uint level, const std::string& name, uint size, const std::wstring& module_name);
+
+	FLAME_FOUNDATION_EXPORTS uint typeinfo_free_level();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_init_basic_bp_nodes();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename, int level = 0);
