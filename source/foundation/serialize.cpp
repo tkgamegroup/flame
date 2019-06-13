@@ -1865,6 +1865,7 @@ namespace flame
 				{
 					IDiaLineNumber* line;
 					DWORD src_file_id = -1;
+					std::wstring filename;
 					DWORD line_num;
 
 					uint min_line = 1000000;
@@ -1876,30 +1877,13 @@ namespace flame
 						{
 							line->get_sourceFileId(&src_file_id);
 
-							if (source_files.find(src_file_id) == source_files.end())
-							{
-								BSTR filename;
-								IDiaSourceFile* source_file;
-								line->get_sourceFile(&source_file);
-								source_file->get_fileName(&filename);
-								source_file->Release();
+							BSTR fn;
+							IDiaSourceFile* source_file;
+							line->get_sourceFile(&source_file);
+							source_file->get_fileName(&fn);
+							source_file->Release();
 
-								auto& vec = (source_files[src_file_id] = std::vector<std::string>());
-								vec.push_back("\n");
-
-								std::ifstream file(filename);
-								if (file.good())
-								{
-									while (!file.eof())
-									{
-										std::string line;
-										std::getline(file, line);
-
-										vec.push_back(line + "\n");
-									}
-									file.close();
-								}
-							}
+							filename = fn;
 						}
 
 						line->get_lineNumber(&line_num);
@@ -1914,12 +1898,7 @@ namespace flame
 					lines->Release();
 
 					if (max_line > min_line)
-					{
-						code = "\n";
-
-						for (auto i = min_line; i <= max_line; i++)
-							code += source_files[src_file_id][i];
-					}
+						code = w2s(filename) + "#" + std::to_string(min_line) + ":" + std::to_string(max_line);
 				}
 			}
 		};
