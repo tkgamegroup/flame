@@ -217,6 +217,7 @@ namespace flame
 		i->name = name;
 		i->value = value;
 		((EnumInfoPrivate*)this)->items.emplace_back(i);
+		return i;
 	}
 
 	struct FunctionInfoPrivate : FunctionInfo
@@ -225,7 +226,7 @@ namespace flame
 		void* rva;
 		TypeInfoPrivate return_type;
 		std::vector<TypeInfoPrivate> parameter_types;
-		std::string code;
+		std::string code_pos;
 	};
 
 	const char* FunctionInfo::name() const
@@ -260,9 +261,9 @@ namespace flame
 		((FunctionInfoPrivate*)this)->parameter_types.push_back(t);
 	}
 
-	const char* FunctionInfo::code() const
+	const char* FunctionInfo::code_pos() const
 	{
-		return ((FunctionInfoPrivate*)this)->code.c_str();
+		return ((FunctionInfoPrivate*)this)->code_pos.c_str();
 	}
 
 	struct UdtInfoPrivate : UdtInfo
@@ -444,13 +445,13 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
 	}
 
-	FunctionInfo* UdtInfo::add_function(const std::string& name, const std::wstring& module_name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code)
+	FunctionInfo* UdtInfo::add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
 	{
 		auto f = new FunctionInfoPrivate;
 		f->name = name;
 		f->rva = rva;
 		f->return_type.set(return_type_tag, return_type_name);
-		f->code = code;
+		f->code_pos = code_pos;
 		((UdtInfoPrivate*)this)->functions.emplace_back(f);
 		return f;
 	}
@@ -1390,7 +1391,7 @@ namespace flame
 		return name;
 	}
 
-	TypeInfoPrivate symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */, TypeTag$& tag, std::string& name)
+	void symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */, TypeTag$& tag, std::string& name)
 	{
 		DWORD dw;
 		wchar_t* pwname;
@@ -1548,7 +1549,7 @@ namespace flame
 		return db ? get_typeinfo_objects<FunctionInfo>(db->functions) : DynamicArray<FunctionInfo*>();
 	}
 
-	FunctionInfo* find_funcion(uint name_hash, int level)
+	FunctionInfo* find_function(uint name_hash, int level)
 	{
 		if (level != -1)
 		{
@@ -1567,14 +1568,14 @@ namespace flame
 		}
 	}
 
-	FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code)
+	FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
 	{
 		auto db = find_or_create_typeinfo_db(level);
 		auto f = new FunctionInfoPrivate;
 		f->name = name;
 		f->rva = rva;
 		f->return_type.set(return_type_tag, return_type_name);
-		f->code = code;
+		f->code_pos = code_pos;
 		db->functions.emplace(H(name.c_str()), f);
 		return f;
 	}
@@ -1668,52 +1669,13 @@ namespace flame
 	{
 		typedef BP_Vec<N, T> VecType;
 
-		auto u = add_udt(0, "Vec" + name_suffix, sizeof(T) * N * 2 /* both in and out */, L"flame_foundation.dll";
+		auto u = add_udt(0, "Vec" + name_suffix, sizeof(T) * N * 2 /* both in and out */, L"flame_foundation.dll");
 
 		for (auto i = 0; i < N; i++)
-		{
-			auto v = new VariableInfoPrivate;
-			v->type.tag = TypeTagVariable;
-			v->type.name = type_name;
-			v->type.hash = H(v->type.name.c_str());
-			v->name = "xyzw"[i];
-			v->attribute = "i";
-			v->offset = sizeof(T) * i;
-			v->size = sizeof(T);
-			v->_init_default_value();
-			u->items.emplace_back(v);
-		}
-		{
-			auto v = new VariableInfoPrivate;
-			v->type.tag = TypeTagVariable;
-			v->type.name = "Vec";
-			v->type.name += "<" + std::to_string(N) + "," + std::string(type_name) + ">";
-			v->type.hash = H(v->type.name.c_str());
-			v->name = "v";
-			v->attribute = "o";
-			v->offset = offsetof(VecType, out);
-			v->size = sizeof(VecType::out);
-			v->_init_default_value();
-			u->items.emplace_back(v);
-		}
+			u->add_variable(TypeTagVariable, type_name, std::string(1, "xyzw"[i]), "i", sizeof(T) * i, sizeof(T));
+		u->add_variable(TypeTagVariable, "Vec<" + std::to_string(N) + "," + std::string(type_name) + ">", "v", "o", offsetof(VecType, out), sizeof(VecType::out));
 
-		auto f = new FunctionInfoPrivate;
-		f->name = "update";
-		f->rva = pf2p(&BP_Vec<N, T>::update);
-		f->return_type.tag = TypeTagVariable;
-		f->return_type.name = "void";
-		f->return_type.hash = H(f->return_type.name.c_str());
-
-		u->functions.emplace_back(f);
-
-		auto db0 = find_typeinfo_db(0);
-		if (!db0)
-		{
-			db0 = new TypeinfoDB;
-			db0->level = 0;
-			typeinfo_dbs.emplace_back(db0);
-		}
-		db0->udts.emplace(H(u->name.c_str()), u);
+		u->add_function("update", pf2p(&BP_Vec<N, T>::update), TypeTagVariable, "void", "");
 	}
 
 	template<uint N, class T>
@@ -1760,7 +1722,7 @@ namespace flame
 
 	}bp_array_size_unused;
 
-	struct ArrayInsertBeforeForEachItems_vp$
+	struct ArrayInsertBeforeForEachItem_vp$
 	{
 		Array<void*> array$i;
 		void* v$i;
@@ -1786,21 +1748,17 @@ namespace flame
 			delete[]array$o.v;
 		}
 
-	}bp_array_insert_before_for_each_items_unused;
+	}bp_array_insert_before_for_each_item_unused;
 
 	template<uint N, class T>
-	void install_array_udt(const char* name_suffix, const char* type_name)
+	void install_array_udt(const std::string& name_suffix, const std::string& type_name)
 	{
 		typedef BP_Array<N, T> ArrayType;
 
-		auto u = new UdtInfoPrivate;
-		u->name = "Array_";
-		u->name += name_suffix;
-		u->size = sizeof(Array<T>) + sizeof(T) * N;
-		u->module_name = L"flame_foundation.dll";
+		auto u = add_udt(0, "Array_" + name_suffix, sizeof(Array<T>) + sizeof(T) * N, L"flame_foundation.dll");
 		
 		auto is_pointer = false;
-		auto s_type_name = std::string(type_name);
+		auto s_type_name = type_name;
 		if (*s_type_name.rbegin() == '*')
 		{
 			s_type_name.erase(s_type_name.end() - 1);
@@ -1808,71 +1766,12 @@ namespace flame
 		}
 
 		for (auto i = 0; i < N; i++)
-		{
-			auto v = new VariableInfoPrivate;
-			v->type.tag = is_pointer ? TypeTagPointer : TypeTagVariable;
-			v->type.name = s_type_name;
-			v->type.hash = H(v->type.name.c_str());
-			v->name = std::to_string(i + 1);
-			v->attribute = "i";
-			v->offset = sizeof(T) * i;
-			v->size = sizeof(T);
-			v->_init_default_value();
-			u->items.emplace_back(v);
-		}
-		{
-			auto v = new VariableInfoPrivate;
-			v->type.tag = TypeTagVariable;
-			v->type.name = "Array";
-			v->type.name += "<" + std::string(type_name) + ">";
-			v->type.hash = H(v->type.name.c_str());
-			v->name = "v";
-			v->attribute = "o";
-			v->offset = offsetof(ArrayType, out);
-			v->size = sizeof(ArrayType::out);
-			v->_init_default_value();
-			u->items.emplace_back(v);
-		}
+			u->add_variable(is_pointer ? TypeTagPointer : TypeTagVariable, s_type_name, std::to_string(i + 1), "i", sizeof(T) * i, sizeof(T));
+		u->add_variable(TypeTagVariable, "Array<" + type_name + ">", "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
 
-		{
-			auto f = new FunctionInfoPrivate;
-			f->name = "initialize";
-			f->rva = pf2p(&BP_Array<N, T>::initialize);
-			f->return_type.tag = TypeTagVariable;
-			f->return_type.name = "void";
-			f->return_type.hash = H(f->return_type.name.c_str());
-
-			u->functions.emplace_back(f);
-		}
-		{
-			auto f = new FunctionInfoPrivate;
-			f->name = "update";
-			f->rva = pf2p(&BP_Array<N, T>::update);
-			f->return_type.tag = TypeTagVariable;
-			f->return_type.name = "void";
-			f->return_type.hash = H(f->return_type.name.c_str());
-
-			u->functions.emplace_back(f);
-		}
-		{
-			auto f = new FunctionInfoPrivate;
-			f->name = "finish";
-			f->rva = pf2p(&BP_Array<N, T>::finish);
-			f->return_type.tag = TypeTagVariable;
-			f->return_type.name = "void";
-			f->return_type.hash = H(f->return_type.name.c_str());
-
-			u->functions.emplace_back(f);
-		}
-
-		auto db0 = find_typeinfo_db(0);
-		if (!db0)
-		{
-			db0 = new TypeinfoDB;
-			db0->level = 0;
-			typeinfo_dbs.emplace_back(db0);
-		}
-		db0->udts.emplace(H(u->name.c_str()), u);
+		u->add_function("initialize", pf2p(&BP_Array<N, T>::initialize), TypeTagVariable, "void", "");
+		u->add_function("update", pf2p(&BP_Array<N, T>::update), TypeTagVariable, "void", "");
+		u->add_function("finish", pf2p(&BP_Array<N, T>::finish), TypeTagVariable, "void", "");
 	}
 
 	void typeinfo_init_basic_bp_nodes()
@@ -1968,8 +1867,8 @@ namespace flame
 					DWORD src_file_id = -1;
 					DWORD line_num;
 
-					int min_line = 1000000;
-					int max_line = 0;
+					uint min_line = 1000000;
+					uint max_line = 0;
 
 					while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
 					{
@@ -2215,7 +2114,7 @@ namespace flame
 								{
 									void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
 									symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
-									u->add_function(name, filename, rva, return_type_tag, return_type_name, code);
+									u->add_function(name, rva, return_type_tag, return_type_name, code);
 								}
 							}
 						}
@@ -2250,7 +2149,7 @@ namespace flame
 			name = src->find_attr("name")->value();
 			rva = (void*)std::stoul(src->find_attr("rva")->value().c_str());
 			unserialize_typeinfo(src->find_attr("return_type")->value(), return_type_tag, return_type_name);
-			auto n_code = src->find_node("code");
+			auto n_code = src->find_node("code_pos");
 			if (n_code)
 				code = n_code->value();
 		};
@@ -2287,16 +2186,16 @@ namespace flame
 		for (auto i = 0; i < n_functions->node_count(); i++)
 		{
 			auto n_function = n_functions->node(i);
-			std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
-			unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code);
-			unserialize_parameters(n_function, add_function(level, name, rva, return_type_tag, return_type_name, code));
+			std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code_pos;
+			unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code_pos);
+			unserialize_parameters(n_function, add_function(level, name, rva, return_type_tag, return_type_name, code_pos));
 		}
 
 		auto n_udts = file->find_node("udts");
 		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
 			auto n_udt = n_udts->node(i);
-			auto u = add_udt(level, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()), filename);
+			auto u = add_udt(level, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()), s2w(n_udt->find_attr("module_name")->value()));
 
 			auto n_items = n_udt->find_node("variables");
 			for (auto j = 0; j < n_items->node_count(); j++)
@@ -2319,9 +2218,9 @@ namespace flame
 				for (auto j = 0; j < n_functions->node_count(); j++)
 				{
 					auto n_function = n_functions->node(j);
-					std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
-					unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code);
-					unserialize_parameters(n_function, u->add_function(name, filename, rva, return_type_tag, return_type_name, code));
+					std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code_pos;
+					unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code_pos);
+					unserialize_parameters(n_function, u->add_function(name, rva, return_type_tag, return_type_name, code_pos));
 				}
 			}
 		}
@@ -2348,16 +2247,10 @@ namespace flame
 			{
 				auto n_parameters = dst->new_node("parameters");
 				for (auto& p : src->parameter_types)
-				{
-					auto n = n_parameters->new_node("parameter");
-					n->set_value(p.serialize());
-				}
+					n_parameters->new_node("parameter")->set_value(p.serialize());
 			}
-			if (src->code.length() > 0)
-			{
-				auto n_code = dst->new_node("code");
-				n_code->set_value(src->code);
-			}
+			if (src->code_pos.length() > 0)
+				dst->new_node("code_pos")->set_value(src->code_pos);
 		};
 
 		auto n_enums = file->new_node("enums");
@@ -2444,6 +2337,7 @@ namespace flame
 				auto n_udt = n_udts->new_node("udt");
 				n_udt->new_attr("name", u->name);
 				n_udt->new_attr("size", std::to_string(u->size));
+				n_udt->new_attr("module_name", w2s(u->module_name));
 
 				auto n_items = n_udt->new_node("variables");
 				for (auto& v : u->variables)

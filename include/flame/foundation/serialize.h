@@ -318,7 +318,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS void add_parameter(TypeTag$ tag, const std::string& type_name);
 
-		FLAME_FOUNDATION_EXPORTS const char* code() const;
+		FLAME_FOUNDATION_EXPORTS const char* code_pos() const; // source_file_name#line_begin:line_end
 
 	};
 
@@ -338,7 +338,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS uint function_count() const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const std::string& name, int *out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, const std::wstring& module_name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code);
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
 	};
 
 	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
@@ -435,7 +435,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<FunctionInfo*> get_functions(int level = 0);
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code);
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<UdtInfo*> get_udts(int level = 0);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
