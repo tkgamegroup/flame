@@ -36,9 +36,7 @@ namespace flame
 		  'a'     for node
 		  'a.b'   for node input or output
 		- An available udt should:
-			have all data types being one of these:
-			 float, uint, int, uchar, bool, voidptr
-			 String or StringW
+			all of its data types must be pods
 			have an nonparametric void function called 'update'
 			have an nonparametric void function called 'initialize' (optional)
 			have an nonparametric void function called 'finish' (optional)

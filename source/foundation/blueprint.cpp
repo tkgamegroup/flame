@@ -66,7 +66,7 @@ namespace flame
 
 		bool enable;
 
-		bool updated;
+		bool need_update;
 		void* dummy; // represents the object
 
 		NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
