@@ -183,7 +183,7 @@ namespace flame
 		udt(_udt),
 		position(0.f),
 		enable(true),
-		updated(false),
+		need_update(true),
 		dummy(nullptr)
 	{
 		initialize_function = udt->find_function("initialize");
@@ -250,23 +250,19 @@ namespace flame
 
 	void NodePrivate::report_order()
 	{
-		if (updated)
+		if (!need_update)
 			return;
 
 		for (auto &input : inputs)
 		{
 			auto o = input->links[0];
 			if (o)
-			{
-				auto n = o->node;
-				if (!n->updated)
-					n->report_order();
-			}
+				o->node->report_order();
 		}
 
 		bp->update_list.push_back(this);
 
-		updated = true;
+		need_update = false;
 	}
 
 	void NodePrivate::initialize()
@@ -332,7 +328,7 @@ namespace flame
 
 	void NodePrivate::update()
 	{
-		if (updated)
+		if (!need_update)
 			return;
 
 		for (auto& input : inputs)
@@ -522,9 +518,11 @@ namespace flame
 
 		update_list.clear();
 		for (auto &n : nodes)
-			n->updated = false;
+			n->need_update = true;
 		for (auto &n : nodes)
 			n->report_order();
+		for (auto& n : nodes)
+			n->need_update = true;
 
 		for (auto& n : update_list)
 			n->initialize();
@@ -554,9 +552,6 @@ namespace flame
 			printf("no nodes or didn't call 'prepare'\n");
 			return;
 		}
-
-		for (auto &n : update_list)
-			n->updated = false;
 
 		for (auto &n : update_list)
 			n->update();
