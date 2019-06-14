@@ -100,7 +100,7 @@ namespace flame
 		inited = true;
 	}
 
-	void read_process_memory(void* process, void* address, int size, void* dst)
+	void read_process_memory(void* process, void* address, uint size, void* dst)
 	{
 		SIZE_T ret_byte;
 		assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
@@ -317,7 +317,7 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
-	void get_thumbnai(int width, const std::wstring& _filename, int* out_width, int* out_height, char** out_data)
+	void get_thumbnai(uint width, const std::wstring& _filename, uint* out_width, uint* out_height, char** out_data)
 	{
 		std::fs::path path(_filename);
 		path.make_preferred();

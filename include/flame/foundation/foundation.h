@@ -214,7 +214,7 @@ namespace flame
 		uint size;
 		T* v;
 
-		void _init(const T* p, int len)
+		void _init(const T* p, uint len)
 		{
 			size = len;
 			v = (T*)flame_malloc(sizeof(T) * size);
@@ -272,17 +272,17 @@ namespace flame
 			return *this;
 		}
 
-		T &operator[](int idx)
+		T &operator[](uint idx)
 		{
 			return v[idx];
 		}
 
-		const T &operator[](int idx) const
+		const T &operator[](uint idx) const
 		{
 			return v[idx];
 		}
 
-		void assign(const T* p, int len)
+		void assign(const T* p, uint len)
 		{
 			for (auto i = 0; i < size; i++)
 				v[i].~T();
@@ -295,7 +295,7 @@ namespace flame
 				new(&p[i])T();
 		}
 
-		void resize(int new_size, int type_size = 0 /* for pod that is not T type */)
+		void resize(uint new_size, uint type_size = 0 /* for pod that is not T type */)
 		{
 			if (size == new_size)
 				return;
@@ -325,7 +325,7 @@ namespace flame
 			size = new_size;
 		}
 
-		void insert(int pos, const T &_v)
+		void insert(uint pos, const T &_v)
 		{
 			resize(size + 1);
 			for (auto i = size - 1; i > pos; i--)
@@ -338,7 +338,7 @@ namespace flame
 			insert(size, _v);
 		}
 
-		void remove(int idx, int count = 1)
+		void remove(uint idx, uint count = 1)
 		{
 			auto new_size = size - count;
 			for (auto i = idx; i < new_size; i++)
@@ -360,10 +360,10 @@ namespace flame
 	template<typename CH>
 	struct BasicString
 	{
-		int size;
+		uint size;
 		CH *v;
 
-		void _init(const CH* s, int len = 0)
+		void _init(const CH* s, uint len = 0)
 		{
 			if (len == 0)
 				len = std::char_traits<CH>::length(s);
@@ -439,7 +439,7 @@ namespace flame
 			return *this;
 		}
 
-		void assign(const CH* s, int len = 0)
+		void assign(const CH* s, uint len = 0)
 		{
 			if (len == 0)
 				len = std::char_traits<CH>::length(s);
@@ -448,7 +448,7 @@ namespace flame
 			memcpy(v, s, sizeof(CH) * size);
 		}
 
-		void resize(int new_size)
+		void resize(uint new_size)
 		{
 			if (size == new_size)
 				return;
@@ -458,7 +458,7 @@ namespace flame
 			v[size] = (CH)0;
 		}
 
-		void insert(int pos, CH _v)
+		void insert(uint pos, CH _v)
 		{
 			resize(size + 1);
 			for (auto i = size - 1; i > pos; i--)
@@ -466,7 +466,7 @@ namespace flame
 			v[pos] = _v;
 		}
 
-		void remove(int idx, int count = 1)
+		void remove(uint idx, uint count = 1)
 		{
 			auto new_size = size - count;
 			for (auto i = idx; i < new_size; i++)
@@ -474,7 +474,7 @@ namespace flame
 			resize(new_size);
 		}
 
-		int find(CH _v)
+		uint find(CH _v)
 		{
 			for (auto i = 0; i < size; i++)
 			{
@@ -530,7 +530,7 @@ namespace flame
 	{
 		uint hash;
 
-		void assign(const char *s, int len = 0)
+		void assign(const char *s, uint len = 0)
 		{
 			String::assign(s, len);
 			hash = v ? H(v) : 0;
@@ -602,9 +602,9 @@ namespace flame
 		return ch == '\\' || ch == '/';
 	}
 
-	inline int get_str_line_number(const char *str)
+	inline uint get_str_line_number(const char *str)
 	{
-		int lineNumber = 0;
+		auto lineNumber = 0u;
 		while (*str)
 		{
 			if (*str == '\n')
@@ -615,7 +615,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::basic_string<CH> string_cut(const std::basic_string<CH> &str, int length)
+	inline std::basic_string<CH> string_cut(const std::basic_string<CH> &str, int length) // < 0 means from end
 	{
 		if (length < 0)
 			length = str.size() + length;
@@ -623,13 +623,13 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline void string_to_lower$(std::basic_string<CH> &str)
+	inline void string_to_lower(std::basic_string<CH> &str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 	}
 
 	template<typename CH>
-	inline void string_to_upper$(std::basic_string<CH> &str)
+	inline void string_to_upper(std::basic_string<CH> &str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), ::toupper);
 	}
@@ -671,7 +671,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> string_regex_split(const std::basic_string<CH> &str, const std::basic_string<CH> &regex, int req_idx = 0)
+	inline std::vector<std::basic_string<CH>> string_regex_split(const std::basic_string<CH> &str, const std::basic_string<CH> &regex, uint req_idx = 0)
 	{
 		std::vector<std::basic_string<CH>> ret;
 
@@ -729,7 +729,7 @@ namespace flame
 
 	// baseXX encoding is from https://github.com/r-lyeh-archived/base
 
-	inline std::string base85_encode(const uchar* data, int length)
+	inline std::string base85_encode(const uchar* data, uint length)
 	{
 		assert(length % 4 == 0);
 
@@ -743,7 +743,7 @@ namespace flame
 
 		for (auto i = 0; i < length; i += 4)
 		{
-			unsigned int d = *(uint*)(data + i);
+			auto d = *(uint*)(data + i);
 			for (auto j = 0; j < 5; j++)
 			{
 				*dst = encoder[d];
@@ -1153,11 +1153,11 @@ namespace flame
 	struct Function
 	{
 		F* f;
-		int c_size;
+		uint c_size;
 		void* c;
 		uint c_hash;
 
-		void _init(F _f, int _c_size, void* _c, uint _c_hash = 0)
+		void _init(F _f, uint _c_size, void* _c, uint _c_hash = 0)
 		{
 			f = _f;
 			c_size = _c_size;
@@ -1171,7 +1171,7 @@ namespace flame
 			c_hash = _c_hash;
 		}
 
-		void assign(F _f, int _c_size, void* _c, uint _c_hash = 0)
+		void assign(F _f, uint _c_size, void* _c, uint _c_hash = 0)
 		{
 			flame_free(c);
 			f = _f;
@@ -1194,7 +1194,7 @@ namespace flame
 			c_hash = 0;
 		}
 
-		Function(F f, int c_size = 0, void* c = 0, uint c_hash = 0)
+		Function(F f, uint c_size = 0, void* c = 0, uint c_hash = 0)
 		{
 			_init(f, c_size, c, c_hash);
 		}
@@ -1252,9 +1252,9 @@ namespace flame
 
 	inline std::string read_string(std::ifstream &file)
 	{
-		int size = 0;
-		int q = 1;
-		for (int i = 0; i < 4; i++)
+		uint size = 0;
+		uint q = 1;
+		for (auto i = 0; i < 4; i++)
 		{
 			unsigned char byte;
 			file.read((char*)&byte, 1);
@@ -1279,8 +1279,8 @@ namespace flame
 
 	inline void write_string(std::ofstream &file, const std::string &v)
 	{
-		int size = v.size();
-		for (int i = 0; i < 4; i++)
+		uint size = v.size();
+		for (auto i = 0; i < 4; i++)
 		{
 			unsigned char byte = size % 128;
 			size /= 128;
@@ -1398,7 +1398,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_curr_path();
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_app_path();
 	FLAME_FOUNDATION_EXPORTS void com_init();
-	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, int size, void *dst);
+	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, uint size, void *dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(uint time); // a time less than 0 means forever
 	FLAME_FOUNDATION_EXPORTS void wait_for(void* ev);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
@@ -1415,7 +1415,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void get_thumbnai(int width, const std::wstring& filename, int *out_width, int *out_height, char **out_data);
+	FLAME_FOUNDATION_EXPORTS void get_thumbnai(uint width, const std::wstring& filename, uint* out_width, uint* out_height, char **out_data);
 
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
