@@ -86,40 +86,6 @@ struct EnsureConst
 
 namespace flame
 {
-	enum Err
-	{
-		NoErr,
-		ErrInvalidEnum,
-		ErrInvalidValue,
-		ErrInvalidOperation,
-		ErrOutOfMemory,
-		ErrContextLost,
-		ErrResourceLost
-	};
-
-	inline const char* get_error_string(Err errNum)
-	{
-		switch (errNum)
-		{
-		case NoErr:
-			return "No error.";
-		case ErrInvalidEnum:
-			return "Invalid enum.";
-		case ErrInvalidValue:
-			return "Invalid value.";
-		case ErrInvalidOperation:
-			return "Invalid operation.";
-		case ErrOutOfMemory:
-			return "Out of memory.";
-		case ErrContextLost:
-			return "Context lost.";
-		case ErrResourceLost:
-			return "Resource lost.";
-		default:
-			return "Unknow error.";
-		}
-	}
-
 	enum KeyState
 	{
 		KeyStateNull,
@@ -142,81 +108,20 @@ namespace flame
 		Key_CapsLock,
 		Key_Esc,
 		Key_Space,
-		Key_PgUp,
-		Key_PgDn,
+		Key_PgUp, Key_PgDn,
 		Key_End,
 		Key_Home,
-		Key_Left,
-		Key_Up,
-		Key_Right,
-		Key_Down,
+		Key_Left, Key_Up, Key_Right, Key_Down,
 		Key_PrtSc,
 		Key_Ins,
 		Key_Del,
-		Key_0,
-		Key_1,
-		Key_2,
-		Key_3,
-		Key_4,
-		Key_5,
-		Key_6,
-		Key_7,
-		Key_8,
-		Key_9,
-		Key_A,
-		Key_B,
-		Key_C,
-		Key_D,
-		Key_E,
-		Key_F,
-		Key_G,
-		Key_H,
-		Key_I,
-		Key_J,
-		Key_K,
-		Key_L,
-		Key_M,
-		Key_N,
-		Key_O,
-		Key_P,
-		Key_Q,
-		Key_R,
-		Key_S,
-		Key_T,
-		Key_U,
-		Key_V,
-		Key_W,
-		Key_X,
-		Key_Y,
-		Key_Z,
-		Key_Numpad0,
-		Key_Numpad1,
-		Key_Numpad2,
-		Key_Numpad3,
-		Key_Numpad4,
-		Key_Numpad5,
-		Key_Numpad6,
-		Key_Numpad7,
-		Key_Numpad8,
-		Key_Numpad9,
-		Key_Add,
-		Key_Subtract,
-		Key_Multiply,
-		Key_Divide,
+		Key_0, Key_1, Key_2, Key_3, Key_4, Key_5, Key_6, Key_7, Key_8, Key_9,
+		Key_A, Key_B, Key_C, Key_D, Key_E, Key_F, Key_G, Key_H, Key_I, Key_J, Key_K, Key_L, Key_M, Key_N, Key_O, Key_P, Key_Q, Key_R, Key_S, Key_T, Key_U, Key_V, Key_W, Key_X, Key_Y, Key_Z,
+		Key_Numpad0, Key_Numpad1, Key_Numpad2, Key_Numpad3, Key_Numpad4, Key_Numpad5, Key_Numpad6, Key_Numpad7, Key_Numpad8, Key_Numpad9,
+		Key_Add, Key_Subtract, Key_Multiply, Key_Divide,
 		Key_Separator,
 		Key_Decimal,
-		Key_F1,
-		Key_F2,
-		Key_F3,
-		Key_F4,
-		Key_F5,
-		Key_F6,
-		Key_F7,
-		Key_F8,
-		Key_F9,
-		Key_F10,
-		Key_F11,
-		Key_F12,
+		Key_F1, Key_F2, Key_F3, Key_F4, Key_F5, Key_F6, Key_F7, Key_F8, Key_F9, Key_F10, Key_F11, Key_F12,
 		Key_NumLock,
 		Key_ScrollLock,
 
@@ -293,9 +198,7 @@ namespace flame
 
 	inline ulonglong get_now_ns()
 	{
-		return std::chrono::time_point_cast<std::chrono::nanoseconds>(
-			std::chrono::system_clock::now()
-			).time_since_epoch().count();
+		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
 	template<typename T>
@@ -1499,20 +1402,20 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void sleep(uint time); // a time less than 0 means forever
 	FLAME_FOUNDATION_EXPORTS void wait_for(void* ev);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
-	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t *filename, const char *parameters, bool wait, bool show = false);
-	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const wchar_t *filename, const char *parameters);
+	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
+	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
 	FLAME_FOUNDATION_EXPORTS String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 
-	FLAME_FOUNDATION_EXPORTS DynamicArray<String> get_module_dependancies(const wchar_t* module_name);
-	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
+	FLAME_FOUNDATION_EXPORTS DynamicArray<String> get_module_dependancies(const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS void* load_module(const std::wstring& module_name);
 	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
 
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
-	FLAME_FOUNDATION_EXPORTS void set_clipboard(const StringW &s);
+	FLAME_FOUNDATION_EXPORTS void set_clipboard(const std::wstring& s);
 
-	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const wchar_t *filename);
-	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const wchar_t *filename);
-	FLAME_FOUNDATION_EXPORTS void get_thumbnai(int width, const wchar_t *filename, int *out_width, int *out_height, char **out_data);
+	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const std::wstring& filename);
+	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const std::wstring& filename);
+	FLAME_FOUNDATION_EXPORTS void get_thumbnai(int width, const std::wstring& filename, int *out_width, int *out_height, char **out_data);
 
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
@@ -1539,7 +1442,7 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const wchar_t* path, const Function<void(void* c, FileChangeType type, const wchar_t* filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const std::wstring& path, const Function<void(void* c, FileChangeType type, const std::wstring& filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
 	FLAME_FOUNDATION_EXPORTS void add_work(const Function<void(void* c)>& fun);

@@ -206,7 +206,7 @@ namespace flame
 					ofile.close();
 				}
 				std::wstring command_line(L" " + temp_filename + L" -flimit-file " + conf_path + L" -o temp.spv");
-				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), w2s(command_line).c_str());
+				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
 				std::fs::remove(temp_filename);
 				if (!std::fs::exists("temp.spv"))
 					printf("shader \"%s\" compile error:\n\n%s\n\n", glsl_path.string().c_str(), output.v);

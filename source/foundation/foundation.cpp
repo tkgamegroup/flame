@@ -91,6 +91,21 @@ namespace flame
 		return buf;
 	}
 
+	void com_init()
+	{
+		static bool inited = false;
+		if (inited)
+			return;
+		assert(SUCCEEDED(CoInitialize(NULL)));
+		inited = true;
+	}
+
+	void read_process_memory(void* process, void* address, int size, void* dst)
+	{
+		SIZE_T ret_byte;
+		assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
+	}
+
 	void sleep(uint time)
 	{
 		Sleep(time < 0 ? INFINITE : time);
@@ -114,22 +129,21 @@ namespace flame
 		}
 	}
 
-	void exec(const wchar_t *filename, const char *_parameters, bool wait, bool show)
+	void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show)
 	{
 		SHELLEXECUTEINFOW info = {};
 		info.cbSize = sizeof(SHELLEXECUTEINFOW);
 		info.fMask = SEE_MASK_NOCLOSEPROCESS;
 		info.lpVerb = L"open";
-		info.lpFile = filename;
+		info.lpFile = filename.c_str();
 		info.nShow = show ? SW_SHOW : SW_HIDE;
-		auto parameters = s2w(_parameters);
 		info.lpParameters = parameters.c_str();
 		ShellExecuteExW(&info);
 		if (wait)
 			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	String exec_and_get_output(const wchar_t *filename, const char *parameters)
+	String exec_and_get_output(const std::wstring& filename, const std::wstring& parameters)
 	{
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
@@ -143,17 +157,13 @@ namespace flame
 
 		assert(SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0));
 
-		wchar_t cl_buf[1024 * 8];
-		wcscpy(cl_buf, s2w(parameters).c_str());
-		cl_buf[FLAME_ARRAYSIZE(cl_buf) - 1] = 0;
-
 		STARTUPINFOW start_info = {};
 		start_info.cb = sizeof(STARTUPINFOW);
 		start_info.hStdError = hChildStd_OUT_Wr;
 		start_info.hStdOutput = hChildStd_OUT_Wr;
 		start_info.dwFlags |= STARTF_USESTDHANDLES;
 		PROCESS_INFORMATION proc_info = {};
-		if (!CreateProcessW(filename[0] == 0 ? nullptr : filename, cl_buf, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
+		if (!CreateProcessW(filename[0] == 0 ? nullptr : filename.c_str(), (wchar_t*)parameters.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
 		{
 			auto e = GetLastError();
 			assert(0);
@@ -174,18 +184,18 @@ namespace flame
 
 	String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
 	{
-		std::string cl("\"");
-		cl += VS_LOCATION;
-		cl += "/VC/Auxiliary/Build/vcvars64.bat\"";
+		std::wstring cl(L"\"");
+		cl += s2w(VS_LOCATION);
+		cl += L"/VC/Auxiliary/Build/vcvars64.bat\"";
 
-		cl += " & cl ";
+		cl += L" & cl ";
 		for (auto& s : sources)
-			cl += w2s(s) + " ";
-		cl += "-LD -MD -EHsc -Zi -std:c++17 -I ../include -link -DEBUG ";
+			cl += s + L" ";
+		cl += L"-LD -MD -EHsc -Zi -std:c++17 -I ../include -link -DEBUG ";
 		for (auto& l : libraries)
-			cl += w2s(l) + " ";
+			cl += l + L" ";
 
-		cl += " -out:" + w2s(out);
+		cl += L" -out:" + out;
 
 		//printf("exec:\n%s\n\n", cl.c_str());
 
@@ -222,7 +232,7 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	DynamicArray<String> get_module_dependancies(const wchar_t* module_name)
+	DynamicArray<String> get_module_dependancies(const std::wstring& module_name)
 	{
 		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::fs::path(module_name).parent_path().string().c_str());
 
@@ -247,9 +257,9 @@ namespace flame
 		return ret;
 	}
 
-	void* load_module(const wchar_t* module_name)
+	void* load_module(const std::wstring& module_name)
 	{
-		return LoadLibraryW(module_name);
+		return LoadLibraryW(module_name.c_str());
 	}
 
 	void free_module(void* library)
@@ -269,11 +279,11 @@ namespace flame
 		return output;
 	}
 
-	void set_clipboard(const StringW &s)
+	void set_clipboard(const std::wstring& s)
 	{
-		auto size = sizeof(wchar_t) * (s.size + 1);
+		auto size = sizeof(wchar_t) * (s.size() + 1);
 		auto hGlobalMemory = GlobalAlloc(GHND, size);
-		memcpy(GlobalLock(hGlobalMemory), s.v, size);
+		memcpy(GlobalLock(hGlobalMemory), s.data(), size);
 		GlobalUnlock(hGlobalMemory);
 		OpenClipboard(NULL);
 		EmptyClipboard();
@@ -281,9 +291,9 @@ namespace flame
 		CloseClipboard();
 	}
 
-	void open_explorer_and_select(const wchar_t *filename)
+	void open_explorer_and_select(const std::wstring& filename)
 	{
-		auto pidl = ILCreateFromPathW(filename);
+		auto pidl = ILCreateFromPathW(filename.c_str());
 		if (pidl)
 		{
 			SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
@@ -291,7 +301,7 @@ namespace flame
 		}
 	}
 
-	void move_to_trashbin(const wchar_t *filename)
+	void move_to_trashbin(const std::wstring& filename)
 	{
 		SHFILEOPSTRUCTW sh_op;
 		sh_op.hwnd = 0;
@@ -307,19 +317,39 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
-	void com_init()
+	void get_thumbnai(int width, const std::wstring& _filename, int* out_width, int* out_height, char** out_data)
 	{
-		static bool inited = false;
-		if (inited)
-			return;
-		assert(SUCCEEDED(CoInitialize(NULL)));
-		inited = true;
-	}
+		std::fs::path path(_filename);
+		path.make_preferred();
+		auto filename = path.wstring();
 
-	void read_process_memory(void *process, void *address, int size, void *dst)
-	{
-		SIZE_T ret_byte;
-		assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
+		HRESULT hr;
+
+		IShellFolder* desktop_folder, * shell_folder;
+		SHGetDesktopFolder(&desktop_folder);
+
+		LPITEMIDLIST pidl;
+		hr = desktop_folder->ParseDisplayName(NULL, NULL, (wchar_t*)filename.c_str(), NULL, &pidl, NULL);
+		SHBindToParent(pidl, IID_PPV_ARGS(&shell_folder), NULL);
+		auto pidl_child = ILFindLastID(pidl);
+
+		IThumbnailProvider* thumbnail_provider;
+		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)& pidl_child, IID_IThumbnailProvider, NULL, (void**)& thumbnail_provider);
+		HBITMAP hbmp;
+		WTS_ALPHATYPE alpha_type;
+		thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type);
+		thumbnail_provider->Release();
+
+		BITMAP bmp;
+		GetObject(hbmp, sizeof(bmp), &bmp);
+		*out_width = bmp.bmWidth;
+		*out_height = bmp.bmHeight;
+		*out_data = new char[bmp.bmWidth * bmp.bmHeight * 4];
+		GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, *out_data);
+		DeleteObject(hbmp);
+
+		desktop_folder->Release();
+		shell_folder->Release();
 	}
 
 	Key vk_code_to_key(int vkCode)
@@ -628,7 +658,7 @@ namespace flame
 		}
 	};
 
-	void do_file_watch(FileWatcher *filewatcher, bool only_content, const wchar_t *_path, Function<void(void* c, FileChangeType type, const wchar_t* filename)> &callback)
+	void do_file_watch(FileWatcher *filewatcher, bool only_content, const std::wstring& _path, Function<void(void* c, FileChangeType type, const std::wstring& filename)> &callback)
 	{
 		auto path = std::wstring(_path);
 
@@ -704,7 +734,7 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	FileWatcher *add_file_watcher(const wchar_t* path, const Function<void(void* c, FileChangeType type, const wchar_t* filename)>& callback, int options)
+	FileWatcher *add_file_watcher(const std::wstring& path, const Function<void(void* c, FileChangeType type, const std::wstring& filename)>& callback, int options)
 	{
 		if (options & FileWatcherAsynchronous)
 		{
@@ -712,17 +742,17 @@ namespace flame
 			w->options = options;
 			w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
-			auto pcallback = new Function<void(void* c, FileChangeType type, const wchar_t* filename)>;
+			auto pcallback = new Function<void(void* c, FileChangeType type, const std::wstring & filename)>;
 			*pcallback = callback;
 
 			struct Capture
 			{
 				const wchar_t* path;
 				FileWatcher* w;
-				Function<void(void* c, FileChangeType type, const wchar_t* filename)>* pcallback;
+				Function<void(void* c, FileChangeType type, const std::wstring& filename)>* pcallback;
 			};
 			Capture capture;
-			capture.path = path;
+			capture.path = path.c_str();
 			capture.w = w;
 			capture.pcallback = pcallback;
 
@@ -749,41 +779,6 @@ namespace flame
 	void remove_file_watcher(FileWatcher *w)
 	{
 		SetEvent(w->hEventExpired);
-	}
-
-	void get_thumbnai(int width, const wchar_t *_filename, int *out_width, int *out_height, char **out_data)
-	{
-		std::fs::path path(_filename);
-		path.make_preferred();
-		auto filename = path.wstring();
-
-		HRESULT hr;
-
-		IShellFolder *desktop_folder, *shell_folder;
-		SHGetDesktopFolder(&desktop_folder);
-
-		LPITEMIDLIST pidl;
-		hr = desktop_folder->ParseDisplayName(NULL, NULL, (wchar_t*)filename.c_str(), NULL, &pidl, NULL);
-		SHBindToParent(pidl, IID_PPV_ARGS(&shell_folder), NULL);
-		auto pidl_child = ILFindLastID(pidl);
-
-		IThumbnailProvider *thumbnail_provider;
-		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST *)&pidl_child, IID_IThumbnailProvider, NULL, (void **)&thumbnail_provider);
-		HBITMAP hbmp;
-		WTS_ALPHATYPE alpha_type;
-		thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type);
-		thumbnail_provider->Release();
-
-		BITMAP bmp;
-		GetObject(hbmp, sizeof(bmp), &bmp);
-		*out_width = bmp.bmWidth;
-		*out_height = bmp.bmHeight;
-		*out_data = new char[bmp.bmWidth * bmp.bmHeight * 4];
-		GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, *out_data);
-		DeleteObject(hbmp);
-
-		desktop_folder->Release();
-		shell_folder->Release();
 	}
 
 	/*
