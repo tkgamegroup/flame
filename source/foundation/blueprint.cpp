@@ -1,25 +1,3 @@
-// MIT License
-// 
-// Copyright (c) 2019 wjs
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
 #include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
 
@@ -57,16 +35,14 @@ namespace flame
 
 		Vec2f position;
 
-		FunctionInfo* initialize_function;
-		FunctionInfo* finish_function;
 		FunctionInfo* update_function;
+		void* module;
 
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
-		bool enable;
-
 		bool need_update;
+
 		void* dummy; // represents the object
 
 		NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
@@ -75,10 +51,9 @@ namespace flame
 		SlotPrivate* find_input(const std::string &name) const;
 		SlotPrivate* find_output(const std::string &name) const;
 
-		void report_order(); // use by BP's prepare update, report update order from dependencies
-		void initialize();
-		void finish();
-		void update();
+		void prepare(); // in initialize, build update list and load libraries
+
+		void update(bool delta_time);
 	};
 
 	struct BPPrivate : BP
@@ -106,7 +81,7 @@ namespace flame
 		void initialize();
 		void finish();
 
-		void update();
+		void update(float delta_time);
 
 		void load(SerializableNode* src);
 		void load(const std::wstring& filename);
@@ -138,6 +113,7 @@ namespace flame
 	void SlotPrivate::set_data(const void* d)
 	{
 		memcpy(data, d, variable_info->size());
+		node->need_update = true;
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -161,6 +137,7 @@ namespace flame
 				if (*it == this)
 				{
 					o->links.erase(it);
+					o->node->need_update = true;
 					break;
 				}
 			}
@@ -168,6 +145,7 @@ namespace flame
 
 		links[0] = target;
 		target->links.push_back(this);
+		target->node->need_update = true;
 
 		return true;
 	}
@@ -182,13 +160,21 @@ namespace flame
 		id(_id),
 		udt(_udt),
 		position(0.f),
-		enable(true),
+		module(nullptr),
 		need_update(true),
 		dummy(nullptr)
 	{
-		initialize_function = udt->find_function("initialize");
-		finish_function = udt->find_function("finish");
-		update_function = udt->find_function("update");
+		
+		update_function = nullptr;
+		{
+			auto f = udt->find_function("update");
+			if (f && f->parameter_count() == 1)
+			{
+				auto t = f->parameter_type(0);
+				if (t->tag() == TypeTagVariable && t->hash() == cH("bool"))
+					update_function = f;
+			}
+		}
 
 		for (auto i = 0; i < udt->variable_count(); i++)
 		{
@@ -213,6 +199,7 @@ namespace flame
 					if (*it == i.get())
 					{
 						o->links.erase(it);
+						o->node->need_update = true;
 						break;
 					}
 				}
@@ -221,7 +208,10 @@ namespace flame
 		for (auto& o : outputs)
 		{
 			for (auto& l : o->links)
+			{
 				l->links[0] = nullptr;
+				l->node->need_update = true;
+			}
 		}
 
 		if (dummy)
@@ -248,7 +238,7 @@ namespace flame
 		return nullptr;
 	}
 
-	void NodePrivate::report_order()
+	void NodePrivate::prepare()
 	{
 		if (!need_update)
 			return;
@@ -257,79 +247,22 @@ namespace flame
 		{
 			auto o = input->links[0];
 			if (o)
-				o->node->report_order();
+				o->node->prepare();
 		}
 
 		bp->update_list.push_back(this);
 
+		if (update_function)
+			module = load_module(udt->module_name());
+
 		need_update = false;
 	}
 
-	void NodePrivate::initialize()
-	{
-		for (auto& input : inputs)
-		{
-			auto v = input->variable_info;
-			auto type = v->type();
-			if (type->tag() == TypeTagAny && input->links[0])
-				*((void**)((char*)dummy + v->offset())) = input->links[0]->data;
-			else
-				set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
-		}
-
-		if (initialize_function)
-		{
-			auto library = load_module(udt->module_name());
-			if (library)
-			{
-				struct Dummy { };
-				typedef void (Dummy:: * F)();
-				union
-				{
-					void* p;
-					F f;
-				}cvt;
-				cvt.p = (char*)library + (uint)initialize_function->rva();
-				(*((Dummy*)dummy).*cvt.f)();
-
-				free_module(library);
-			}
-		}
-
-		for (auto& output : outputs)
-		{
-			auto v = output->variable_info;
-			auto type = v->type();
-			set(output->data, type->tag(), v->size(), (char*)dummy + v->offset());
-		}
-	}
-
-	void NodePrivate::finish()
-	{
-		if (finish_function)
-		{
-			auto library = load_module(udt->module_name());
-			if (library)
-			{
-				struct Dummy { };
-				typedef void (Dummy:: * F)();
-				union
-				{
-					void* p;
-					F f;
-				}cvt;
-				cvt.p = (char*)library + (uint)finish_function->rva();
-				(*((Dummy*)dummy).*cvt.f)();
-
-				free_module(library);
-			}
-		}
-	}
-
-	void NodePrivate::update()
+	void NodePrivate::update(bool delta_time)
 	{
 		if (!need_update)
 			return;
+		need_update = false;
 
 		for (auto& input : inputs)
 		{
@@ -340,21 +273,15 @@ namespace flame
 
 		if (update_function)
 		{
-			auto library = load_module(udt->module_name());
-			if (library)
+			struct Dummy { };
+			typedef bool (Dummy:: * F)(float);
+			union
 			{
-				struct Dummy { };
-				typedef void (Dummy:: * F)();
-				union
-				{
-					void* p;
-					F f;
-				}cvt;
-				cvt.p = (char*)library + (uint)update_function->rva();
-				(*((Dummy*)dummy).*cvt.f)();
-
-				free_module(library);
-			}
+				void* p;
+				F f;
+			}cvt;
+			cvt.p = (char*)module + (uint)update_function->rva();
+			need_update = (*((Dummy*)dummy).*cvt.f)(delta_time);
 		}
 
 		for (auto& output : outputs)
@@ -363,8 +290,6 @@ namespace flame
 			auto type = v->type();
 			set(output->data, type->tag(), v->size(), (char*)dummy + v->offset());
 		}
-
-		updated = true;
 	}
 
 	BPPrivate::~BPPrivate()
@@ -507,45 +432,52 @@ namespace flame
 	{
 		for (auto &n : nodes)
 		{
-			if (!n->dummy)
-			{
-				auto udt = n->udt;
-				auto size = udt->size();
-				n->dummy = malloc(size);
-				memset(n->dummy, 0, size);
-			}
+			auto udt = n->udt;
+			auto size = udt->size();
+			n->dummy = malloc(size);
+			memset(n->dummy, 0, size);
 		}
 
 		update_list.clear();
 		for (auto &n : nodes)
 			n->need_update = true;
 		for (auto &n : nodes)
-			n->report_order();
+			n->prepare();
 		for (auto& n : nodes)
 			n->need_update = true;
-
-		for (auto& n : update_list)
-			n->initialize();
 	}
 
 	void BPPrivate::finish()
 	{
-		for (auto &n : nodes)
+		for (auto& n : nodes)
 		{
-			auto dummy = n->dummy;
-			if (dummy)
+			for (auto& input : n->inputs)
 			{
-				n->finish();
-
-				free(dummy);
-				n->dummy = nullptr;
+				auto o = input->links[0];
+				if (o)
+					o->link_to(nullptr);
 			}
+		}
+
+		for (auto& n : nodes)
+		{
+			n->need_update = true;
+			n->update(-1.f);
+
+			if (n->module)
+			{
+				free_module(n->module);
+				n->module = nullptr;
+			}
+
+			free(n->dummy);
+			n->dummy = nullptr;
 		}
 
 		update_list.clear();
 	}
 
-	void BPPrivate::update()
+	void BPPrivate::update(float delta_time)
 	{
 		if (update_list.empty())
 		{
@@ -554,7 +486,7 @@ namespace flame
 		}
 
 		for (auto &n : update_list)
-			n->update();
+			n->update(delta_time);
 	}
 
 	void BPPrivate::load(SerializableNode* src)
@@ -778,16 +710,6 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
-	bool BP::Node::enable() const
-	{
-		return ((NodePrivate*)this)->enable;
-	}
-
-	void BP::Node::set_enable(bool enable) const
-	{
-		((NodePrivate*)this)->enable = enable;
-	}
-
 	int BP::node_count() const
 	{
 		return ((BPPrivate*)this)->nodes.size();
@@ -838,9 +760,9 @@ namespace flame
 		((BPPrivate*)this)->finish();
 	}
 
-	void BP::update()
+	void BP::update(float delta_time)
 	{
-		((BPPrivate*)this)->update();
+		((BPPrivate*)this)->update(delta_time);
 	}
 
 	void BP::load(SerializableNode* src)

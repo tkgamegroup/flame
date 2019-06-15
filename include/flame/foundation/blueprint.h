@@ -1,25 +1,3 @@
-// MIT License
-// 
-// Copyright (c) 2018 wjs
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
 #pragma once
 
 #include <flame/foundation/foundation.h>
@@ -37,9 +15,7 @@ namespace flame
 		  'a.b'   for node input or output
 		- An available udt should:
 			all of its data types must be pods
-			have an nonparametric void function called 'update'
-			have an nonparametric void function called 'initialize' (optional)
-			have an nonparametric void function called 'finish' (optional)
+			have a bool function that takes one float parameter and its name is 'update' (it returns if it needs update in next frame)
 		- A BP file is basically a XML file
 	*/
 
@@ -88,9 +64,6 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
-
-			FLAME_FOUNDATION_EXPORTS bool enable() const;
-			FLAME_FOUNDATION_EXPORTS void set_enable(bool enable) const;
 		};
 
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
@@ -113,7 +86,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void finish();
 
 		// update the 'bp' using nodes
-		FLAME_FOUNDATION_EXPORTS void update();
+		FLAME_FOUNDATION_EXPORTS void update(float delta_time);
 
 		FLAME_FOUNDATION_EXPORTS void load(SerializableNode* src);
 		FLAME_FOUNDATION_EXPORTS void load(const std::wstring& filename);
