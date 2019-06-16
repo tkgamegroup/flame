@@ -60,8 +60,8 @@ void generate_graph_and_layout(BP *bp)
 	file << gv;
 	file.close();
 
-	exec(dot_path.c_str(), "-Tpng bp.gv -o bp.png", true);
-	exec(dot_path.c_str(), "-Tplain bp.gv -y -o bp.graph.txt", true);
+	exec(dot_path, L"-Tpng bp.gv -o bp.png", true);
+	exec(dot_path, L"-Tplain bp.gv -y -o bp.graph.txt", true);
 }
 
 struct App
@@ -231,7 +231,7 @@ int main(int argc, char **args)
 					generate_graph_and_layout(app.bp);
 				if (std::fs::exists(L"bp.png"))
 				{
-					exec(L"bp.png", "", false);
+					exec(L"bp.png", L"", false);
 					printf("ok\n");
 				}
 				else
@@ -340,7 +340,7 @@ int main(int argc, char **args)
 		else if (s_command_line == "update")
 		{
 			app.bp->initialize();
-			app.bp->update();
+			app.bp->update(0.1f);
 			app.bp->finish();
 			printf("BP updated\n");
 		}

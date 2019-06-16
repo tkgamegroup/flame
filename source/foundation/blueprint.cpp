@@ -168,13 +168,21 @@ namespace flame
 		update_function = nullptr;
 		{
 			auto f = udt->find_function("update");
-			if (f && f->parameter_count() == 1)
+			if(f)
 			{
-				auto t = f->parameter_type(0);
-				if (t->tag() == TypeTagVariable && t->hash() == cH("bool"))
-					update_function = f;
+				auto ret_t = f->return_type();
+				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("bool"))
+				{
+					if (f->parameter_count() == 1)
+					{
+						auto t = f->parameter_type(0);
+						if (t->tag() == TypeTagVariable && t->hash() == cH("float"))
+							update_function = f;
+					}
+				}
 			}
 		}
+		assert(update_function);
 
 		for (auto i = 0; i < udt->variable_count(); i++)
 		{
@@ -214,8 +222,7 @@ namespace flame
 			}
 		}
 
-		if (dummy)
-			free(dummy);
+		free(dummy);
 	}
 
 	SlotPrivate* NodePrivate::find_input(const std::string &name) const
@@ -252,8 +259,7 @@ namespace flame
 
 		bp->update_list.push_back(this);
 
-		if (update_function)
-			module = load_module(udt->module_name());
+		module = load_module(udt->module_name());
 
 		need_update = false;
 	}
@@ -271,18 +277,15 @@ namespace flame
 			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
 		}
 
-		if (update_function)
+		struct Dummy { };
+		typedef bool (Dummy:: * F)(float);
+		union
 		{
-			struct Dummy { };
-			typedef bool (Dummy:: * F)(float);
-			union
-			{
-				void* p;
-				F f;
-			}cvt;
-			cvt.p = (char*)module + (uint)update_function->rva();
-			need_update = (*((Dummy*)dummy).*cvt.f)(delta_time);
-		}
+			void* p;
+			F f;
+		}cvt;
+		cvt.p = (char*)module + (uint)update_function->rva();
+		need_update = (*((Dummy*)dummy).*cvt.f)(delta_time);
 
 		for (auto& output : outputs)
 		{

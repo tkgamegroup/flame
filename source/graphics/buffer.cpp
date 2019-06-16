@@ -157,13 +157,6 @@ namespace flame
 		{
 			delete (BufferPrivate*)b;
 		}
-
-		struct Buffer$
-		{
-			void* device$i;
-			uint size$i;
-
-		};
 	}
 }
 

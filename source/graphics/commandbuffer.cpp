@@ -70,6 +70,7 @@ namespace flame
 			auto res = p->d->v->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, p->v, nullptr, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
 			recording = true;
+			end();
 #endif
 		}
 
@@ -623,20 +624,20 @@ namespace flame
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$()
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
 			{
-				if (device$i)
+				if (out$o)
 				{
-					out$o = Commandbuffer::create(((Device*)device$i)->gcp);
-#if defined(FLAME_D3D12)
-					((Commandbuffer*)out$o)->end();
-#endif
+					Commandbuffer::destroy((Commandbuffer*)out$o);
+					out$o = nullptr;
 				}
-			}
+				if (delta_time > 0.f)
+				{
+					if (device$i)
+						out$o = Commandbuffer::create(((Device*)device$i)->gcp);
+				}
 
-			FLAME_GRAPHICS_EXPORTS void finish$()
-			{
-				Commandbuffer::destroy((Commandbuffer*)out$o);
+				return false;
 			}
 
 		}bp_commandbuffer_unused;
@@ -648,27 +649,25 @@ namespace flame
 
 			Array<void*> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$()
-			{
-				if (device$i && size$i > 0)
-				{
-					out$o.size = size$i;
-					out$o.v = new void*[size$i];
-					for (auto i = 0; i < size$i; i++)
-					{
-						out$o.v[i] = Commandbuffer::create(((Device*)device$i)->gcp);
-#if defined(FLAME_D3D12)
-						((Commandbuffer*)out$o)->end();
-#endif
-					}
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS void finish$()
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
 			{
 				for (auto i = 0; i < out$o.size; i++)
 					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
 				delete[]out$o.v;
+				out$o.size = 0;
+				out$o.v = nullptr;
+				if (delta_time > 0.f)
+				{
+					if (device$i && size$i > 0)
+					{
+						out$o.size = size$i;
+						out$o.v = new void* [size$i];
+						for (auto i = 0; i < size$i; i++)
+							out$o.v[i] = Commandbuffer::create(((Device*)device$i)->gcp);
+					}
+				}
+
+				return false;
 			}
 
 		}bp_commandbuffers_unused;

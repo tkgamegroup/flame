@@ -233,37 +233,43 @@ namespace flame
 			Array<void*> images$o;
 			Array<void*> imageviews$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$()
-			{
-				if (in$i)
-				{
-					out$o = in$i;
-					auto sc = (graphics::Swapchain*)out$o;
-					auto image_count = sc->image_count();
-					if (image_count > 0)
-					{
-						images$o.size = image_count;
-						images$o.v = new void* [image_count];
-						for (auto i = 0; i < image_count; i++)
-							images$o.v[i] = sc->image(i);
-						imageviews$o.size = image_count;
-						imageviews$o.v = new void* [image_count];
-						for (auto i = 0; i < image_count; i++)
-							imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
-
-						auto i = (Image*)images$o.v[0];
-						size$o = i->size;
-						format$o = i->format;
-					}
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS void finish$()
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
 			{
 				delete[]images$o.v;
+				images$o.size = 0;
+				images$o.v = nullptr;
 				for (auto i = 0; i < imageviews$o.size; i++)
 					Imageview::destroy((Imageview*)imageviews$o.v[i]);
 				delete[]imageviews$o.v;
+				imageviews$o.size = 0;
+				imageviews$o.v = nullptr;
+
+				if (delta_time > 0.f)
+				{
+					if (in$i)
+					{
+						out$o = in$i;
+						auto sc = (graphics::Swapchain*)out$o;
+						auto image_count = sc->image_count();
+						if (image_count > 0)
+						{
+							images$o.size = image_count;
+							images$o.v = new void* [image_count];
+							for (auto i = 0; i < image_count; i++)
+								images$o.v[i] = sc->image(i);
+							imageviews$o.size = image_count;
+							imageviews$o.v = new void* [image_count];
+							for (auto i = 0; i < image_count; i++)
+								imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
+
+							auto i = (Image*)images$o.v[0];
+							size$o = i->size;
+							format$o = i->format;
+						}
+					}
+				}
+
+				return false;
 			}
 
 		}bp_swapchain_unused;

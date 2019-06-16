@@ -1635,10 +1635,12 @@ namespace flame
 		T in[N];
 		Vec<N, T> out;
 
-		void update()
+		bool update(float delta_time)
 		{
 			for (auto i = 0; i < N; i++)
 				out.v_[i] = in[i];
+
+			return false;
 		}
 	};
 
@@ -1653,7 +1655,7 @@ namespace flame
 			u->add_variable(TypeTagVariable, type_name, std::string(1, "xyzw"[i]), "i", sizeof(T) * i, sizeof(T));
 		u->add_variable(TypeTagVariable, "Vec<" + std::to_string(N) + "," + std::string(type_name) + ">", "v", "o", offsetof(VecType, out), sizeof(VecType::out));
 
-		u->add_function("update", pf2p(&BP_Vec<N, T>::update), TypeTagVariable, "void", "");
+		u->add_function("update", pf2p(&BP_Vec<N, T>::update), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
 	}
 
 	template<uint N, class T>
@@ -1662,22 +1664,23 @@ namespace flame
 		T in[N];
 		Array<T> out;
 
-		void initialize()
+		bool update(float delta_time)
 		{
-			out.size = N;
-			out.v = new T[N];
-			update();
-		}
+			if (delta_time > 0.f)
+			{
+				if (out.size != N)
+				{
+					delete[]out.v;
+					out.size = N;
+					out.v = new T[N];
+				}
+				for (auto i = 0; i < N; i++)
+					out.v[i] = in[i];
+			}
+			else
+				delete[]out.v;
 
-		void update()
-		{
-			for (auto i = 0; i < N; i++)
-				out.v[i] = in[i];
-		}
-
-		void finish()
-		{
-			delete[]out.v;
+			return false;
 		}
 	};
 
@@ -1687,15 +1690,12 @@ namespace flame
 
 		uint size$o;
 
-		FLAME_FOUNDATION_EXPORTS void initialize$()
-		{
-			update$();
-		}
-
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
 		{
 			if (array$ia)
 				size$o = ((Array<int>*)array$ia)->size;
+
+			return false;
 		}
 
 	}bp_array_size_unused;
@@ -1707,23 +1707,29 @@ namespace flame
 
 		Array<void*> array$o;
 
-		FLAME_FOUNDATION_EXPORTS void initialize$()
+		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
 		{
-			if (array$i.v)
+			if (delta_time > 0.f)
 			{
-				array$o.size = array$i.size * 2;
-				array$o.v = new void* [array$o.size];
-				for (auto i = 0; i < array$i.size; i++)
+				if (array$o.size != array$i.size * 2)
 				{
-					array$o.v[i * 2 + 0] = v$i;
-					array$o.v[i * 2 + 1] = array$i.v[i];
+					delete[]array$o.v;
+					array$o.size = array$i.size * 2;
+					array$o.v = array$o.size > 0 ? new void* [array$o.size] : nullptr;
+				}
+				if (array$i.v)
+				{
+					for (auto i = 0; i < array$i.size; i++)
+					{
+						array$o.v[i * 2 + 0] = v$i;
+						array$o.v[i * 2 + 1] = array$i.v[i];
+					}
 				}
 			}
-		}
+			else
+				delete[]array$o.v;
 
-		FLAME_FOUNDATION_EXPORTS void finish$()
-		{
-			delete[]array$o.v;
+			return false;
 		}
 
 	}bp_array_insert_before_for_each_item_unused;
@@ -1747,9 +1753,7 @@ namespace flame
 			u->add_variable(is_pointer ? TypeTagPointer : TypeTagVariable, s_type_name, std::to_string(i + 1), "i", sizeof(T) * i, sizeof(T));
 		u->add_variable(TypeTagVariable, "Array<" + type_name + ">", "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
 
-		u->add_function("initialize", pf2p(&BP_Array<N, T>::initialize), TypeTagVariable, "void", "");
-		u->add_function("update", pf2p(&BP_Array<N, T>::update), TypeTagVariable, "void", "");
-		u->add_function("finish", pf2p(&BP_Array<N, T>::finish), TypeTagVariable, "void", "");
+		u->add_function("update", pf2p(&BP_Array<N, T>::update), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
 	}
 
 	void typeinfo_init_basic_bp_nodes()
@@ -2071,7 +2075,8 @@ namespace flame
 								{
 									void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
 									symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
-									u->add_function(name, rva, return_type_tag, return_type_name, code);
+									auto f = (FunctionInfoPrivate*)u->add_function(name, rva, return_type_tag, return_type_name, code);
+									symbol_to_parameters(_function, f);
 								}
 							}
 						}
@@ -2119,7 +2124,7 @@ namespace flame
 				{
 					auto n = n_parameters->node(i);
 					TypeTag$ tag; std::string name;
-					unserialize_typeinfo(n->value(), tag, name);
+					unserialize_typeinfo(n->find_attr("type")->value(), tag, name);
 					f->add_parameter(tag, name);
 				}
 			}
@@ -2204,7 +2209,7 @@ namespace flame
 			{
 				auto n_parameters = dst->new_node("parameters");
 				for (auto& p : src->parameter_types)
-					n_parameters->new_node("parameter")->set_value(p.serialize());
+					n_parameters->new_node("parameter")->new_attr("type", p.serialize());
 			}
 			if (src->code_pos.length() > 0)
 				dst->new_node("code_pos")->set_value(src->code_pos);
@@ -2352,8 +2357,8 @@ namespace flame
 			L"flame_foundation.dll",
 			L"flame_network.dll",
 			L"flame_graphics.dll",
-			L"flame_sound.dll",
-			L"flame_universe.dll",
+			//L"flame_sound.dll",
+			//L"flame_universe.dll",
 		};
 
 		printf("typeinfo update begin\n");

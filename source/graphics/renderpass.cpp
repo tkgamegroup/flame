@@ -7,94 +7,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct AttachmentInfo$
-		{
-			Format$ format$i;
-			bool clear$i;
-			SampleCount$ sample_count$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS AttachmentInfo$() :
-				format$i(Format_R8G8B8A8_UNORM),
-				clear$i(true),
-				sample_count$i(SampleCount_1)
-			{
-			}
-
-			FLAME_GRAPHICS_EXPORTS void initialize$()
-			{
-				auto info = new AttachmentInfo;
-				info->format = format$i;
-				info->clear = clear$i;
-				info->sample_count = sample_count$i;
-				out$o = info;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void finish$()
-			{
-				delete (AttachmentInfo*)out$o;
-			}
-
-		}bp_attachmentinfo_unused;
-
-		struct SubpassInfo$
-		{
-			Array<uint> color_attachments$i;
-			Array<uint> resolve_attachments$i;
-			int depth_attachment$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS SubpassInfo$() :
-				depth_attachment$i(-1)
-			{
-			}
-
-			FLAME_GRAPHICS_EXPORTS void initialize$()
-			{
-				auto info = new SubpassInfo;
-				info->color_attachments = color_attachments$i;
-				info->resolve_attachments = resolve_attachments$i;
-				info->depth_attachment = depth_attachment$i;
-				out$o = info;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void finish$()
-			{
-				delete (SubpassInfo*)out$o;
-			}
-
-		}bp_subpassinfo_unused;
-
-		struct Renderpass$
-		{
-			void* device$i;
-			Array<void*> attachments$i;
-			Array<void*> subpasses$i;
-			Array<Vec<2, uint>> dependencies$i;
-
-			void* out$o;
-
-			FLAME_GRAPHICS_EXPORTS void initialize$()
-			{
-				if (device$i)
-				{
-					RenderpassInfo info;
-					info.attachments = attachments$i;
-					info.subpasses = subpasses$i;
-					info.dependencies = dependencies$i;
-					out$o = Renderpass::create((Device*)device$i, info);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS void finish$()
-			{
-				delete (SubpassInfo*)out$o;
-			}
-
-		}bp_renderpass_unused;
-
 		RenderpassPrivate::RenderpassPrivate(Device *_d, const RenderpassInfo& info)
 		{
 			d = (DevicePrivate*)_d;
@@ -229,6 +141,112 @@ namespace flame
 			delete (RenderpassPrivate*)r;
 		}
 
+		struct AttachmentInfo$
+		{
+			Format$ format$i;
+			bool clear$i;
+			SampleCount$ sample_count$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS AttachmentInfo$() :
+				format$i(Format_R8G8B8A8_UNORM),
+				clear$i(true),
+				sample_count$i(SampleCount_1)
+			{
+			}
+
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			{
+				if (out$o)
+				{
+					delete (AttachmentInfo*)out$o;
+					out$o = nullptr;
+				}
+
+				if (delta_time > 0.f)
+				{
+					auto info = new AttachmentInfo;
+					info->format = format$i;
+					info->clear = clear$i;
+					info->sample_count = sample_count$i;
+					out$o = info;
+				}
+
+				return false;
+			}
+
+		}bp_attachmentinfo_unused;
+
+		struct SubpassInfo$
+		{
+			Array<uint> color_attachments$i;
+			Array<uint> resolve_attachments$i;
+			int depth_attachment$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS SubpassInfo$() :
+				depth_attachment$i(-1)
+			{
+			}
+
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			{
+				if (out$o)
+				{
+					delete (SubpassInfo*)out$o;
+					out$o = nullptr;
+				}
+
+				if (delta_time > 0.f)
+				{
+					auto info = new SubpassInfo;
+					info->color_attachments = color_attachments$i;
+					info->resolve_attachments = resolve_attachments$i;
+					info->depth_attachment = depth_attachment$i;
+					out$o = info;
+				}
+
+				return false;
+			}
+
+		}bp_subpassinfo_unused;
+
+		struct Renderpass$
+		{
+			void* device$i;
+			Array<void*> attachments$i;
+			Array<void*> subpasses$i;
+			Array<Vec<2, uint>> dependencies$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			{
+				if (out$o)
+				{
+					Renderpass::destroy((Renderpass*)out$o);
+					out$o = nullptr;
+				}
+
+				if (delta_time > 0.f)
+				{
+					if (device$i && attachments$i.v && subpasses$i.v)
+					{
+						RenderpassInfo info;
+						info.attachments = attachments$i;
+						info.subpasses = subpasses$i;
+						info.dependencies = dependencies$i;
+						out$o = Renderpass::create((Device*)device$i, info);
+					}
+				}
+
+				return false;
+			}
+
+		}bp_renderpass_unused;
+
 		ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
 		{
 			renderpass = (RenderpassPrivate*)r;
@@ -297,26 +315,27 @@ namespace flame
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$()
-			{
-				if (renderpass$i)
-					out$o = Clearvalues::create((Renderpass*)renderpass$i);
-			}
-
-			FLAME_GRAPHICS_EXPORTS void finish$()
-			{
-				Clearvalues::destroy((Clearvalues*)out$o);
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
 			{
 				if (out$o)
 				{
-					auto cv = (Clearvalues*)out$o;
-					auto count = cv->renderpass()->attachment_count();
-					for (auto i = 0; i < count; i++)
-						cv->set(i, colors$i.v[i]);
+					Clearvalues::destroy((Clearvalues*)out$o);
+					out$o = nullptr;
 				}
+
+				if (delta_time > 0.f)
+				{
+					if (renderpass$i)
+					{
+						auto cv = Clearvalues::create((Renderpass*)renderpass$i);
+						auto count = cv->renderpass()->attachment_count();
+						for (auto i = 0; i < count; i++)
+							cv->set(i, colors$i.v[i]);
+						out$o = cv;
+					}
+				}
+
+				return false;
 			}
 
 		}bp_clearvalues_unused;
@@ -383,17 +402,25 @@ namespace flame
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$()
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
 			{
-				FramebufferInfo info;
-				info.rp = (Renderpass*)renderpass$i;
-				info.views = views$i;
-				out$o = Framebuffer::create((Device*)device$i, info);
-			}
+				if (out$o)
+				{
+					Framebuffer::destroy((Framebuffer*)out$o);
+					out$o = nullptr;
+				}
+				if (delta_time > 0.f)
+				{
+					if (device$i && renderpass$i && views$i.v)
+					{
+						FramebufferInfo info;
+						info.rp = (Renderpass*)renderpass$i;
+						info.views = views$i;
+						out$o = Framebuffer::create((Device*)device$i, info);
+					}
+				}
 
-			FLAME_GRAPHICS_EXPORTS void finish$()
-			{
-				Framebuffer::destroy((Framebuffer*)out$o);
+				return false;
 			}
 
 		}bp_framebuffer_unused;
@@ -407,30 +434,34 @@ namespace flame
 
 			Array<void*> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void initialize$()
-			{
-				if (device$i && renderpass$i && size$i > 0)
-				{
-					out$o.size = size$i;
-					out$o.v = new void* [size$i];
-					assert(views$i.size >= size$i && views$i.size % size$i == 0);
-					auto n = views$i.size / size$i;
-					for (auto i = 0; i < size$i; i++)
-					{
-						FramebufferInfo info;
-						info.rp = (Renderpass*)renderpass$i;
-						info.views.size = n;
-						info.views.v = views$i.v + i * n;
-						out$o.v[i] = Framebuffer::create((Device*)device$i, info);
-					}
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS void finish$()
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
 			{
 				for (auto i = 0; i < out$o.size; i++)
 					Framebuffer::destroy((Framebuffer*)out$o.v[i]);
 				delete[]out$o.v;
+				out$o.size = 0;
+				out$o.v = nullptr;
+
+				if (delta_time > 0.f)
+				{
+					if (device$i && renderpass$i && size$i > 0)
+					{
+						out$o.size = size$i;
+						out$o.v = new void* [size$i];
+						assert(views$i.size >= size$i && views$i.size % size$i == 0);
+						auto n = views$i.size / size$i;
+						for (auto i = 0; i < size$i; i++)
+						{
+							FramebufferInfo info;
+							info.rp = (Renderpass*)renderpass$i;
+							info.views.size = n;
+							info.views.v = views$i.v + i * n;
+							out$o.v[i] = Framebuffer::create((Device*)device$i, info);
+						}
+					}
+				}
+
+				return false;
 			}
 
 		}bp_framebuffers_unused;

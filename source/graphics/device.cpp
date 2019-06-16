@@ -571,10 +571,19 @@ namespace flame
 			delete (DevicePrivate*)d;
 		}
 
-		void Device$::initialize$()
+		struct Device$
 		{
-			out$o = in$i;
-		}
+			void* in$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			{
+				out$o = in$i;
+
+				return false;
+			}
+		};
 
 		Device$ bp_device_unused;
 

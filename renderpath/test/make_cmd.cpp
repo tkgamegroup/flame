@@ -13,24 +13,24 @@ namespace flame
 		void* clearvalues$i;
 		Array<void*> framebuffers$i;
 		
-		__declspec(dllexport) void initialize$()
+		__declspec(dllexport) bool update$(float delta_time)
 		{
-		}
-		
-		__declspec(dllexport) void finish$()
-		{
-		}
-		
-		__declspec(dllexport) void update$()
-		{
-			for (auto i = 0; i < cmdbufs$i.size; i++)
+			if (delta_time > 0.f)
 			{
-				auto cb = (graphics::Commandbuffer*)cmdbufs$i.v[i];
-				cb->begin();
-				cb->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffers$i.v[i], (graphics::Clearvalues*)clearvalues$i);
-				cb->end_renderpass();
-				cb->end();
+				if (cmdbufs$i.v && renderpass$i && clearvalues$i && framebuffers$i.v)
+				{
+					for (auto i = 0; i < cmdbufs$i.size; i++)
+					{
+						auto cb = (graphics::Commandbuffer*)cmdbufs$i.v[i];
+						cb->begin();
+						cb->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffers$i.v[i], (graphics::Clearvalues*)clearvalues$i);
+						cb->end_renderpass();
+						cb->end();
+					}
+				}
 			}
+
+			return false;
 		}
 	};
 
