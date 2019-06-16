@@ -1,5 +1,4 @@
-#include <flame/foundation/serialize.h>
-#include <flame/foundation/blueprint.h>
+#include <flame/basic_app.h>
 #include <flame/network/network.h>
 
 using namespace flame;
@@ -64,7 +63,7 @@ void generate_graph_and_layout(BP *bp)
 	exec(dot_path, L"-Tplain bp.gv -y -o bp.graph.txt", true);
 }
 
-struct App
+struct App : BasicApp
 {
 	std::wstring filename;
 	BP* bp;
@@ -81,6 +80,8 @@ int main(int argc, char **args)
 	typeinfo_load(L"flame_graphics.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
+
+	app.create("", Vec2u(800, 600), WindowFrame);
 
 	app.bp = nullptr;
 	if (argc > 1)

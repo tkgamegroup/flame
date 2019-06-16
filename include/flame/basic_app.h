@@ -27,7 +27,7 @@ namespace flame
 		std::pair<graphics::Fence*, int> fences[3];
 		int frame;
 
-		virtual void on_create() = 0;
+		virtual void on_create() {};
 
 		void create(const char *title, const Vec2u& res, int style)
 		{
@@ -47,7 +47,7 @@ namespace flame
 			on_create();
 		}
 
-		virtual void do_run() = 0;
+		virtual void do_run() {};
 
 		void run()
 		{
