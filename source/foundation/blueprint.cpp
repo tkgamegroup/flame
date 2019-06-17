@@ -42,7 +42,7 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
 		bool in_list;
-		bool need_update;
+		bool changed;
 
 		void* dummy; // represents the object
 
@@ -53,6 +53,8 @@ namespace flame
 		SlotPrivate* find_output(const std::string &name) const;
 
 		void add_to_update_list();
+
+		void pass_change();
 
 		void update(bool delta_time);
 	};
@@ -113,7 +115,7 @@ namespace flame
 	void SlotPrivate::set_data(const void* d)
 	{
 		memcpy(data, d, variable_info->size());
-		node->need_update = true;
+		node->pass_change();
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -137,7 +139,6 @@ namespace flame
 				if (*it == this)
 				{
 					o->links.erase(it);
-					o->node->need_update = true;
 					break;
 				}
 			}
@@ -145,7 +146,8 @@ namespace flame
 
 		links[0] = target;
 		target->links.push_back(this);
-		target->node->need_update = true;
+
+		node->pass_change();
 
 		node->bp->build_update_list();
 
@@ -164,7 +166,7 @@ namespace flame
 		position(0.f),
 		module(nullptr),
 		in_list(false),
-		need_update(true)
+		changed(true)
 	{
 		module = load_module(udt->module_name());
 		
@@ -216,7 +218,6 @@ namespace flame
 					if (*it == i.get())
 					{
 						o->links.erase(it);
-						o->node->need_update = true;
 						break;
 					}
 				}
@@ -225,15 +226,12 @@ namespace flame
 		for (auto& o : outputs)
 		{
 			for (auto& l : o->links)
-			{
 				l->links[0] = nullptr;
-				l->node->need_update = true;
-			}
 		}
 
 		free(dummy);
 
-		need_update = true;
+		changed = true;
 		update(-1.f);
 	}
 
@@ -274,17 +272,20 @@ namespace flame
 		in_list = true;
 	}
 
+	void NodePrivate::pass_change()
+	{
+		changed = true;
+		for (auto& o : outputs)
+		{
+			for (auto& l : o->links)
+				l->node->pass_change();
+		}
+	}
+
 	void NodePrivate::update(bool delta_time)
 	{
-		if (!need_update)
+		if (!changed)
 			return;
-
-		if (id == "sc")
-			int cut = 1;
-		if (id == "col_att1")
-			int cut = 1;
-		if (id == "img_size")
-			int cut = 1;
 
 		for (auto& input : inputs)
 		{
@@ -300,7 +301,7 @@ namespace flame
 			F f;
 		}cvt;
 		cvt.p = (char*)module + (uint)update_function->rva();
-		need_update = (*((Dummy*)dummy).*cvt.f)(delta_time);
+		changed = (*((Dummy*)dummy).*cvt.f)(delta_time);
 
 		for (auto& output : outputs)
 		{
@@ -410,6 +411,7 @@ namespace flame
 		{
 			if ((*it).get() == n)
 			{
+				(*it)->pass_change();
 				nodes.erase(it);
 				break;
 			}

@@ -69,8 +69,10 @@ struct App : BasicApp
 	BP* bp;
 	Array<void*> cbs;
 
+	void* ev_pause;
+	void* ev_paused;
+	void* ev_change;
 	void* ev_changed;
-	void* ev_accepted;
 
 	OneClientServer* server;
 
@@ -95,20 +97,18 @@ struct App : BasicApp
 			d->gq->present(sc, render_finished);
 		}
 
-		//bp->update(app->elapsed_time);
+		bp->update(app->elapsed_time);
 
 		frame++;
 
-		if (wait_event(ev_changed, 0))
+		if (wait_event(ev_pause, 0))
 		{
 			d->gq->wait_idle();
 
-			bp->find_input("d.in")->set_data(&d);
-			bp->find_input("sc.in")->set_data(&sc);
-			bp->update(app->elapsed_time);
-			memcpy(&cbs, bp->find_output("cbs.out")->data(), sizeof(Array<void*>));
+			set_event(ev_paused);
+			wait_event(ev_changed, 0);
 
-			set_event(ev_accepted);
+			set_event(ev_changed);
 		}
 	}
 
@@ -137,17 +137,28 @@ int main(int argc, char **args)
 	if (!app.bp)
 		app.bp = BP::create();
 
-	app.ev_changed = create_event(true);
-	app.ev_accepted = create_event(false);
+	app.ev_pause = create_event(false);
+	app.ev_paused = create_event(false);
+	app.ev_change = create_event(true);
+	app.ev_changed = create_event(false);
 
 	thread(Function<void(void* c)>(
 		[](void* c) {
 			auto app = *(App * *)c;
 			app->create("", Vec2u(800, 600), WindowFrame);
+			set_event(app->ev_changed);
+			wait_event(app->ev_pause, -1);
 			app->run();
 		}, sizeof(void*), &papp));
 
-	wait_event(app.ev_accepted, -1);
+	wait_event(app.ev_changed, -1);
+
+	app.bp->find_input("d.in")->set_data(&app.d);
+	app.bp->find_input("sc.in")->set_data(&app.sc);
+	app.bp->update(0.f);
+	memcpy(&app.cbs, app.bp->find_output("cbs.out")->data(), sizeof(Array<void*>));
+
+	set_event(app.ev_pause);
 
 	if (!app.filename.empty())
 		printf("\"%s\":\n", w2s(app.filename).c_str());
@@ -383,12 +394,20 @@ int main(int argc, char **args)
 			auto i = app.bp->find_input(s_address.c_str());
 			if (i)
 			{
+				set_event(app.ev_pause);
+				wait_event(app.ev_paused, -1);
+
 				auto v = i->variable_info();
 				auto type = v->type();
 				auto value_before = serialize_value(type->tag(), type->hash(), i->data(), 2);
-				unserialize_value(type->tag(), type->hash(), s_value, i->data());
+				Vec4c color;
+				unserialize_value(type->tag(), type->hash(), s_value, &color);
+				i->set_data(&color);
 				auto value_after = serialize_value(type->tag(), type->hash(), i->data(), 2);
 				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
+
+				set_event(app.ev_change);
+				wait_event(app.ev_changed, -1);
 			}
 			else
 				printf("input not found\n");
