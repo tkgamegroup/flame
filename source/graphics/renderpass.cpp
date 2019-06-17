@@ -164,7 +164,7 @@ namespace flame
 					out$o = nullptr;
 				}
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					auto info = new AttachmentInfo;
 					info->format = format$i;
@@ -199,7 +199,7 @@ namespace flame
 					out$o = nullptr;
 				}
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					auto info = new SubpassInfo;
 					info->color_attachments = color_attachments$i;
@@ -230,7 +230,7 @@ namespace flame
 					out$o = nullptr;
 				}
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (device$i && attachments$i.v && subpasses$i.v)
 					{
@@ -323,7 +323,7 @@ namespace flame
 					out$o = nullptr;
 				}
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (renderpass$i)
 					{
@@ -409,7 +409,7 @@ namespace flame
 					Framebuffer::destroy((Framebuffer*)out$o);
 					out$o = nullptr;
 				}
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (device$i && renderpass$i && views$i.v)
 					{
@@ -442,7 +442,7 @@ namespace flame
 				out$o.size = 0;
 				out$o.v = nullptr;
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (device$i && renderpass$i && size$i > 0)
 					{

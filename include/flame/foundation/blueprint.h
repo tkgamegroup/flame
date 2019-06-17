@@ -77,15 +77,6 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 
-		// build data for 'update'
-		// let all notes create a piece of memory to represent the 'true' object and
-		// determines update order
-		FLAME_FOUNDATION_EXPORTS void initialize();
-
-		// release the data that built by 'initialize'
-		FLAME_FOUNDATION_EXPORTS void finish();
-
-		// update the 'bp' using nodes
 		FLAME_FOUNDATION_EXPORTS void update(float delta_time);
 
 		FLAME_FOUNDATION_EXPORTS void load(SerializableNode* src);

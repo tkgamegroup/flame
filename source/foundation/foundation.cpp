@@ -84,14 +84,29 @@ namespace flame
 		assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
 	}
 
-	void sleep(uint time)
+	void sleep(int time)
 	{
 		Sleep(time < 0 ? INFINITE : time);
 	}
 
-	void wait_for(void* ev)
+	void* create_event(bool signaled)
 	{
-		WaitForSingleObject(ev, INFINITE);
+		return CreateEvent(NULL, false, signaled, NULL);
+	}
+
+	void set_event(void* ev)
+	{
+		SetEvent(ev);
+	}
+
+	void reset_event(void* ev)
+	{
+		ResetEvent(ev);
+	}
+
+	bool wait_event(void* ev, int timeout)
+	{
+		return WaitForSingleObject(ev, timeout < 0 ? INFINITE : timeout) == 0;
 	}
 
 	void do_simple_dispatch_loop()
@@ -646,7 +661,7 @@ namespace flame
 		BYTE notify_buf[1024];
 
 		OVERLAPPED overlapped;
-		auto hEvent = CreateEvent(NULL, false, false, NULL);
+		auto hEvent = create_event(false);
 
 		auto flags = (only_content ? 0 : FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_CREATION) | FILE_NOTIFY_CHANGE_LAST_WRITE;
 
@@ -756,7 +771,7 @@ namespace flame
 
 	void remove_file_watcher(FileWatcher *w)
 	{
-		SetEvent(w->hEventExpired);
+		set_event(w->hEventExpired);
 	}
 
 	/*

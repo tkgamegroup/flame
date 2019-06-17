@@ -1377,8 +1377,11 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS const wchar_t *get_app_path();
 	FLAME_FOUNDATION_EXPORTS void com_init();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, uint size, void *dst);
-	FLAME_FOUNDATION_EXPORTS void sleep(uint time); // a time less than 0 means forever
-	FLAME_FOUNDATION_EXPORTS void wait_for(void* ev);
+	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever
+	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled);
+	FLAME_FOUNDATION_EXPORTS void set_event(void* ev);
+	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
+	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);

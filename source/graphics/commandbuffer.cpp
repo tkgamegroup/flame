@@ -631,7 +631,7 @@ namespace flame
 					Commandbuffer::destroy((Commandbuffer*)out$o);
 					out$o = nullptr;
 				}
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (device$i)
 						out$o = Commandbuffer::create(((Device*)device$i)->gcp);
@@ -656,7 +656,7 @@ namespace flame
 				delete[]out$o.v;
 				out$o.size = 0;
 				out$o.v = nullptr;
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (device$i && size$i > 0)
 					{

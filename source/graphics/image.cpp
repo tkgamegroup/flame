@@ -509,7 +509,7 @@ namespace flame
 					out$o = nullptr;
 				}
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (device$i && size$i > 0U && level$i > 0 && layer$i > 0)
 						out$o = Image::create((Device*)device$i, format$i, size$i, level$i, layer$i, sample_count$i, usage$mi);
@@ -629,7 +629,7 @@ namespace flame
 					out$o = nullptr;
 				}
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (image$i)
 						out$o = Imageview::create((Image*)image$i, type$i, base_level$i, level_count$i, base_layer$i, layer_count$i, swizzle_r$i, swizzle_g$i, swizzle_b$i, swizzle_a$i);

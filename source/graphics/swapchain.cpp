@@ -244,7 +244,7 @@ namespace flame
 				imageviews$o.size = 0;
 				imageviews$o.v = nullptr;
 
-				if (delta_time > 0.f)
+				if (delta_time >= 0.f)
 				{
 					if (in$i)
 					{

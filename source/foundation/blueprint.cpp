@@ -35,8 +35,8 @@ namespace flame
 
 		Vec2f position;
 
-		FunctionInfo* update_function;
 		void* module;
+		FunctionInfo* update_function;
 
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
@@ -79,8 +79,7 @@ namespace flame
 
 		void clear();
 
-		void initialize();
-		void finish();
+		void build_update_list();
 
 		void update(float delta_time);
 
@@ -148,6 +147,8 @@ namespace flame
 		target->links.push_back(this);
 		target->node->need_update = true;
 
+		node->bp->build_update_list();
+
 		return true;
 	}
 
@@ -162,9 +163,10 @@ namespace flame
 		udt(_udt),
 		position(0.f),
 		module(nullptr),
-		need_update(true),
-		dummy(nullptr)
+		in_list(false),
+		need_update(true)
 	{
+		module = load_module(udt->module_name());
 		
 		update_function = nullptr;
 		{
@@ -194,10 +196,16 @@ namespace flame
 			if (attr.find('o') != std::string::npos)
 				outputs.emplace_back(new SlotPrivate(SlotPrivate::Output, this, v));
 		}
+
+		auto size = udt->size();
+		dummy = malloc(size);
+		memset(dummy, 0, size);
 	}
 
 	NodePrivate::~NodePrivate()
 	{
+		free_module(module);
+
 		for (auto& i : inputs)
 		{
 			auto o = i->links[0];
@@ -224,6 +232,9 @@ namespace flame
 		}
 
 		free(dummy);
+
+		need_update = true;
+		update(-1.f);
 	}
 
 	SlotPrivate* NodePrivate::find_input(const std::string &name) const
@@ -246,36 +257,32 @@ namespace flame
 		return nullptr;
 	}
 
-	void NodePrivate::prepare()
+	void NodePrivate::add_to_update_list()
 	{
-		if (!need_update)
+		if (in_list)
 			return;
 
-		for (auto &input : inputs)
+		for (auto& input : inputs)
 		{
 			auto o = input->links[0];
 			if (o)
-				o->node->prepare();
+				o->node->add_to_update_list();
 		}
 
 		bp->update_list.push_back(this);
 
-		module = load_module(udt->module_name());
-
-		need_update = false;
+		in_list = true;
 	}
 
 	void NodePrivate::update(bool delta_time)
 	{
 		if (!need_update)
 			return;
-		need_update = false;
 
 		for (auto& input : inputs)
 		{
 			auto v = input->variable_info;
-			auto type = v->type();
-			set((char*)dummy + v->offset(), type->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
+			set((char*)dummy + v->offset(), v->type()->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
 		}
 
 		struct Dummy { };
@@ -291,8 +298,7 @@ namespace flame
 		for (auto& output : outputs)
 		{
 			auto v = output->variable_info;
-			auto type = v->type();
-			set(output->data, type->tag(), v->size(), (char*)dummy + v->offset());
+			set(output->data, v->type()->tag(), v->size(), (char*)dummy + v->offset());
 		}
 	}
 
@@ -381,9 +387,13 @@ namespace flame
 					continue;
 			}
 		}
+
 		auto n = new NodePrivate(this, s_id, udt);
 		n->udt_from_default_db = udt_from_default_db;
 		nodes.emplace_back(n);
+
+		build_update_list();
+
 		return n;
 	}
 
@@ -394,9 +404,11 @@ namespace flame
 			if ((*it).get() == n)
 			{
 				nodes.erase(it);
-				return;
+				break;
 			}
 		}
+
+		build_update_list();
 	}
 
 	NodePrivate *BPPrivate::find_node(const std::string &id) const
@@ -430,55 +442,16 @@ namespace flame
 	void BPPrivate::clear()
 	{
 		nodes.clear();
+		update_list.clear();
 	}
 
-	void BPPrivate::initialize()
+	void BPPrivate::build_update_list()
 	{
-		for (auto &n : nodes)
-		{
-			auto udt = n->udt;
-			auto size = udt->size();
-			n->dummy = malloc(size);
-			memset(n->dummy, 0, size);
-		}
-
 		update_list.clear();
 		for (auto &n : nodes)
-			n->need_update = true;
+			n->in_list = false;
 		for (auto &n : nodes)
-			n->prepare();
-		for (auto& n : nodes)
-			n->need_update = true;
-	}
-
-	void BPPrivate::finish()
-	{
-		for (auto& n : nodes)
-		{
-			for (auto& input : n->inputs)
-			{
-				auto o = input->links[0];
-				if (o)
-					o->link_to(nullptr);
-			}
-		}
-
-		for (auto& n : nodes)
-		{
-			n->need_update = true;
-			n->update(-1.f);
-
-			if (n->module)
-			{
-				free_module(n->module);
-				n->module = nullptr;
-			}
-
-			free(n->dummy);
-			n->dummy = nullptr;
-		}
-
-		update_list.clear();
+			n->add_to_update_list();
 	}
 
 	void BPPrivate::update(float delta_time)
@@ -752,16 +725,6 @@ namespace flame
 	void BP::clear()
 	{
 		((BPPrivate*)this)->clear();
-	}
-
-	void BP::initialize()
-	{
-		((BPPrivate*)this)->initialize();
-	}
-
-	void BP::finish()
-	{
-		((BPPrivate*)this)->finish();
 	}
 
 	void BP::update(float delta_time)

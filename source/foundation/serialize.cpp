@@ -1649,7 +1649,7 @@ namespace flame
 	{
 		typedef BP_Vec<N, T> VecType;
 
-		auto u = add_udt(0, "Vec" + name_suffix, sizeof(T) * N * 2 /* both in and out */, L"flame_foundation.dll");
+		auto u = add_udt(0, "Vec" + name_suffix, sizeof(BP_Vec<N, T>), L"flame_foundation.dll");
 
 		for (auto i = 0; i < N; i++)
 			u->add_variable(TypeTagVariable, type_name, std::string(1, "xyzw"[i]), "i", sizeof(T) * i, sizeof(T));
@@ -1666,7 +1666,7 @@ namespace flame
 
 		bool update(float delta_time)
 		{
-			if (delta_time > 0.f)
+			if (delta_time >= 0.f)
 			{
 				if (out.size != N)
 				{
@@ -1709,7 +1709,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
 		{
-			if (delta_time > 0.f)
+			if (delta_time >= 0.f)
 			{
 				if (array$o.size != array$i.size * 2)
 				{
@@ -1739,7 +1739,7 @@ namespace flame
 	{
 		typedef BP_Array<N, T> ArrayType;
 
-		auto u = add_udt(0, "Array_" + name_suffix, sizeof(Array<T>) + sizeof(T) * N, L"flame_foundation.dll");
+		auto u = add_udt(0, "Array_" + name_suffix, sizeof(BP_Array<N, T>), L"flame_foundation.dll");
 		
 		auto is_pointer = false;
 		auto s_type_name = type_name;

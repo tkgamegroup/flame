@@ -74,7 +74,6 @@ struct App : BasicApp
 					rp = BP::create_from_file(rp_filename);
 					rp->find_input("d.in")->set_data(&d);
 					rp->find_input("sc.in")->set_data(&sc);
-					rp->initialize();
 					rp->update();
 					memcpy(&cbs, rp->find_output("cbs.out")->data(), sizeof(Array<void*>));
 				}
@@ -82,10 +81,7 @@ struct App : BasicApp
 			else
 			{
 				if (rp)
-				{
-					rp->finish();
 					BP::destroy(rp);
-				}
 
 				rp = nullptr;
 				memset(&cbs, 0, sizeof(cbs));

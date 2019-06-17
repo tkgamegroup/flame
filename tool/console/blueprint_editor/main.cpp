@@ -67,14 +67,15 @@ struct App : BasicApp
 {
 	std::wstring filename;
 	BP* bp;
-	OneClientServer* server;
 	Array<void*> cbs;
-	std::mutex mtx;
+
+	void* ev_changed;
+	void* ev_accepted;
+
+	OneClientServer* server;
 
 	virtual void do_run() override
 	{
-		mtx.lock();
-
 		auto idx = frame % FLAME_ARRAYSIZE(fences);
 
 		if (cbs.v)
@@ -94,9 +95,21 @@ struct App : BasicApp
 			d->gq->present(sc, render_finished);
 		}
 
+		//bp->update(app->elapsed_time);
+
 		frame++;
 
-		mtx.unlock();
+		if (wait_event(ev_changed, 0))
+		{
+			d->gq->wait_idle();
+
+			bp->find_input("d.in")->set_data(&d);
+			bp->find_input("sc.in")->set_data(&sc);
+			bp->update(app->elapsed_time);
+			memcpy(&cbs, bp->find_output("cbs.out")->data(), sizeof(Array<void*>));
+
+			set_event(ev_accepted);
+		}
 	}
 
 }app;
@@ -123,6 +136,19 @@ int main(int argc, char **args)
 
 	if (!app.bp)
 		app.bp = BP::create();
+
+	app.ev_changed = create_event(true);
+	app.ev_accepted = create_event(false);
+
+	thread(Function<void(void* c)>(
+		[](void* c) {
+			auto app = *(App * *)c;
+			app->create("", Vec2u(800, 600), WindowFrame);
+			app->run();
+		}, sizeof(void*), &papp));
+
+	wait_event(app.ev_accepted, -1);
+
 	if (!app.filename.empty())
 		printf("\"%s\":\n", w2s(app.filename).c_str());
 	else
@@ -139,13 +165,6 @@ int main(int argc, char **args)
 			return std::string(a->name()) < std::string(b->name());
 		});
 	}
-
-	thread(Function<void(void* c)>(
-		[](void* c) {
-			auto app = *(App * *)c;
-			app->create("", Vec2u(800, 600), WindowFrame);
-			app->run();
-		}, sizeof(void*), & papp));
 
 	while (true)
 	{
@@ -376,9 +395,7 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "update")
 		{
-			app.bp->initialize();
 			app.bp->update(0.1f);
-			app.bp->finish();
 			printf("BP updated\n");
 		}
 		else if (s_command_line == "refresh")
@@ -489,7 +506,7 @@ int main(int argc, char **args)
 			{
 				printf("  ok\nbrowser: working\n");
 
-				wait_for(app.server->ev_closed);
+				wait_event(app.server->ev_closed, -1);
 				printf("browser: closed\n");
 			}
 		}
