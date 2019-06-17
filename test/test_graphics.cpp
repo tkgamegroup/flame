@@ -18,7 +18,7 @@ struct App : BasicApp
 
 	virtual void on_create() override
 	{
-		rp_filename = L"../renderpath/canvas/renderpath.bp";
+		rp_filename = L"../renderpath/test/renderpath.bp";
 		rp = nullptr;
 		memset(&cbs, 0, sizeof(cbs));
 
@@ -74,7 +74,7 @@ struct App : BasicApp
 					rp = BP::create_from_file(rp_filename);
 					rp->find_input("d.in")->set_data(&d);
 					rp->find_input("sc.in")->set_data(&sc);
-					rp->update();
+					rp->update(0.f);
 					memcpy(&cbs, rp->find_output("cbs.out")->data(), sizeof(Array<void*>));
 				}
 			}

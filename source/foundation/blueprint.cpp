@@ -279,6 +279,13 @@ namespace flame
 		if (!need_update)
 			return;
 
+		if (id == "sc")
+			int cut = 1;
+		if (id == "col_att1")
+			int cut = 1;
+		if (id == "img_size")
+			int cut = 1;
+
 		for (auto& input : inputs)
 		{
 			auto v = input->variable_info;

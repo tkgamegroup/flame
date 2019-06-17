@@ -447,6 +447,9 @@ namespace flame
 		case TypeTagPointer:
 			*(void**)dst = *(void**)src;
 			break;
+		case TypeTagAny:
+			*(void**)dst = (void*)src;
+			break;
 		}
 	}
 

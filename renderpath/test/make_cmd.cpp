@@ -15,7 +15,7 @@ namespace flame
 		
 		__declspec(dllexport) bool update$(float delta_time)
 		{
-			if (delta_time > 0.f)
+			if (delta_time >= 0.f)
 			{
 				if (cmdbufs$i.v && renderpass$i && clearvalues$i && framebuffers$i.v)
 				{
