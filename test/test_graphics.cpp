@@ -92,6 +92,7 @@ struct App : BasicApp
 			}
 		}
 	}
+
 }app;
 
 int main(int argc, char** args)

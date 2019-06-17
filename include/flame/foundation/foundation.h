@@ -1143,7 +1143,6 @@ namespace flame
 			{
 				c = flame_malloc(c_size);
 				memcpy(c, _c, c_size);
-				memset(_c, 0, c_size);
 			}
 			else
 				c = nullptr;

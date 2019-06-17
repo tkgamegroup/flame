@@ -41,6 +41,7 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
+		bool in_list;
 		bool need_update;
 
 		void* dummy; // represents the object
@@ -51,7 +52,7 @@ namespace flame
 		SlotPrivate* find_input(const std::string &name) const;
 		SlotPrivate* find_output(const std::string &name) const;
 
-		void prepare(); // in initialize, build update list and load libraries
+		void add_to_update_list();
 
 		void update(bool delta_time);
 	};

@@ -68,6 +68,37 @@ struct App : BasicApp
 	std::wstring filename;
 	BP* bp;
 	OneClientServer* server;
+	Array<void*> cbs;
+	std::mutex mtx;
+
+	virtual void do_run() override
+	{
+		mtx.lock();
+
+		auto idx = frame % FLAME_ARRAYSIZE(fences);
+
+		if (cbs.v)
+			sc->acquire_image(image_avalible);
+
+		if (fences[idx].second > 0)
+		{
+			fences[idx].first->wait();
+			fences[idx].second = 0;
+		}
+
+		if (cbs.v)
+		{
+			d->gq->submit((graphics::Commandbuffer*)cbs.v[sc->image_index()], image_avalible, render_finished, fences[idx].first);
+			fences[idx].second = 1;
+
+			d->gq->present(sc, render_finished);
+		}
+
+		frame++;
+
+		mtx.unlock();
+	}
+
 }app;
 auto papp = &app;
 
@@ -80,8 +111,6 @@ int main(int argc, char **args)
 	typeinfo_load(L"flame_graphics.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
 	//typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
-
-	app.create("", Vec2u(800, 600), WindowFrame);
 
 	app.bp = nullptr;
 	if (argc > 1)
@@ -110,6 +139,13 @@ int main(int argc, char **args)
 			return std::string(a->name()) < std::string(b->name());
 		});
 	}
+
+	thread(Function<void(void* c)>(
+		[](void* c) {
+			auto app = *(App * *)c;
+			app->create("", Vec2u(800, 600), WindowFrame);
+			app->run();
+		}, sizeof(void*), & papp));
 
 	while (true)
 	{
