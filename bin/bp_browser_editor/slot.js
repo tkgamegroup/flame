@@ -46,7 +46,7 @@ class Slot
                     }
 
                     this.eMain.appendChild(select);
-                    thiz.eSelect = select;
+                    this.eSelect = select;
                 }
                 else if (sp[0] == "enum_multi")
                 {
@@ -70,15 +70,37 @@ class Slot
                         this.eMain.appendChild(document.createTextNode(i.name));
                     }
 
-                    thiz.eChecks = checks;
+                    this.eChecks = checks;
                 }
                 else
                 {
-                    let input = document.createElement("input");
-                    input.classList.add("slot_edit1");
-                    input.value = vi.default_value;
-                    this.eMain.appendChild(input);
-                    thiz.eInput = input;
+                    if (sp[1] == "Vec<4,uchar>")
+                    {
+                        let color = document.createElement("input");
+                        color.type = "color";
+                        color.onchange = function() {
+                            thiz.get_data();
+
+                            if (!sock_s || sock_s.readyState != 1)
+                                return;
+
+                            var req = {};
+                            req.type = "update";
+                            req.what = "set_data";
+                            req.address = thiz.get_address();
+                            req.value = thiz.data;
+                            sock_s.send(JSON.stringify(req));
+                        };
+                        this.eMain.appendChild(color);
+                        this.eColor = color;
+                    }
+                    else
+                    {
+                        let input = document.createElement("input");
+                        input.classList.add("slot_edit1");
+                        this.eMain.appendChild(input);
+                        this.eInput = input;
+                    }
                 }
                 
             }
@@ -176,6 +198,14 @@ class Slot
             this.data = data;
             if (this.eInput)
                 this.eInput.value = data;
+            else if (this.eColor)
+            {
+                let sp = data.split(';');
+                let str = "#";
+                for (let i = 0; i < 3; i++)
+                    str += parseInt(sp[i]).toString(16);
+                this.eColor.value = str;
+            }
             else if (this.eSelect)
             {
                 for (let o of this.eSelect.options)
@@ -205,6 +235,15 @@ class Slot
         {
             if (this.eInput)
                 this.data = this.eInput.value;
+            else if (this.eColor)
+            {
+                let color = this.eColor.value;
+                let str = "";
+                for (let i = 0; i < 3; i++)
+                    str += parseInt(color.substr(1 + i * 2, 2), 16).toString() + ";";
+                str += "255";
+                this.data = str;
+            }
             else if (this.eSelect)
             {
                 for (let o of this.eSelect.options)

@@ -111,7 +111,7 @@ var load_typeinfo = function(file, filename)
         u.size = parseInt(n_udt.getAttribute("size"));
         u.module_name = n_udt.getAttribute("module_name");
         u.items = [];
-        for (let n_item of n_udt.getElementsByTagName("items")[0].children)
+        for (let n_item of n_udt.getElementsByTagName("variables")[0].children)
         {
             u.items.push({
                 type: n_item.getAttribute("type"),
@@ -338,11 +338,11 @@ function on_add_dialog_add_clicked()
 
 function on_save_clicked()
 {
-    if (!sock_s)
+    if (!sock_s || sock_s.readyState != 1)
         return;
 
     var req = {};
-    req.type = "update_bp";
+    req.type = "update";
 
     req.nodes = [];
     for (let sn of nodes)

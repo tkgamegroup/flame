@@ -3,66 +3,6 @@
 
 using namespace flame;
 
-void generate_graph_and_layout(BP *bp)
-{
-	if (GRAPHVIZ_PATH == std::string(""))
-		assert(0);
-	auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
-
-	std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
-	for (auto i = 0; i < bp->node_count(); i++)
-	{
-		auto src = bp->node(i);
-		auto name = std::string(src->id());
-
-		auto n = "\t" + name + " [label = \"" + name + "|{{";
-		for (auto j = 0; j < src->input_count(); j++)
-		{
-			auto input = src->input(j);
-			auto name = std::string(input->variable_info()->name());
-			n += "<" + name + ">" + name;
-			if (j != src->input_count() - 1)
-				n += "|";
-		}
-		n += "}|{";
-		for (auto j = 0; j < src->output_count(); j++)
-		{
-			auto output = src->output(j);
-			auto name = std::string(output->variable_info()->name());
-			n += "<" + name + ">" + name;
-			if (j != src->output_count() - 1)
-				n += "|";
-		}
-		n += "}}\"];\n";
-
-		gv += n;
-	}
-	for (auto i = 0; i < bp->node_count(); i++)
-	{
-		auto src = bp->node(i);
-
-		for (auto j = 0; j < src->input_count(); j++)
-		{
-			auto input = src->input(j);
-			if (input->link())
-			{
-				auto in_sp = string_split(std::string(input->get_address().v), '.');
-				auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
-
-				gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
-			}
-		}
-	}
-	gv += "}\n";
-
-	std::ofstream file("bp.gv");
-	file << gv;
-	file.close();
-
-	exec(dot_path, L"-Tpng bp.gv -o bp.png", true);
-	exec(dot_path, L"-Tplain bp.gv -y -o bp.graph.txt", true);
-}
-
 struct App : BasicApp
 {
 	std::wstring filename;
@@ -116,6 +56,90 @@ struct App : BasicApp
 
 			bp->update(app->elapsed_time);
 		}
+	}
+
+	void set_data(const std::string& address, const std::string& value)
+	{
+		auto i = bp->find_input(address.c_str());
+		if (i)
+		{
+			set_event(ev_1);
+			wait_event(ev_2, -1);
+
+			auto v = i->variable_info();
+			auto type = v->type();
+			auto value_before = serialize_value(type->tag(), type->hash(), i->data(), 2);
+			auto data = new char[v->size()];
+			unserialize_value(type->tag(), type->hash(), value, data);
+			i->set_data(data);
+			delete data;
+			auto value_after = serialize_value(type->tag(), type->hash(), i->data(), 2);
+			printf("set value: %s, %s -> %s\n", address.c_str(), value_before.v, value_after.v);
+
+			set_event(ev_3);
+		}
+		else
+			printf("input not found\n");
+	}
+
+	void generate_graph_and_layout()
+	{
+		if (GRAPHVIZ_PATH == std::string(""))
+			assert(0);
+		auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
+
+		std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
+		for (auto i = 0; i < bp->node_count(); i++)
+		{
+			auto src = bp->node(i);
+			auto name = std::string(src->id());
+
+			auto n = "\t" + name + " [label = \"" + name + "|{{";
+			for (auto j = 0; j < src->input_count(); j++)
+			{
+				auto input = src->input(j);
+				auto name = std::string(input->variable_info()->name());
+				n += "<" + name + ">" + name;
+				if (j != src->input_count() - 1)
+					n += "|";
+			}
+			n += "}|{";
+			for (auto j = 0; j < src->output_count(); j++)
+			{
+				auto output = src->output(j);
+				auto name = std::string(output->variable_info()->name());
+				n += "<" + name + ">" + name;
+				if (j != src->output_count() - 1)
+					n += "|";
+			}
+			n += "}}\"];\n";
+
+			gv += n;
+		}
+		for (auto i = 0; i < bp->node_count(); i++)
+		{
+			auto src = bp->node(i);
+
+			for (auto j = 0; j < src->input_count(); j++)
+			{
+				auto input = src->input(j);
+				if (input->link())
+				{
+					auto in_sp = string_split(std::string(input->get_address().v), '.');
+					auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
+
+					gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+				}
+			}
+		}
+		gv += "}\n";
+
+		std::ofstream file("bp.gv");
+		file << gv;
+		file.close();
+
+		exec(dot_path, L"-Tpng bp.gv -o bp.png", true);
+		exec(dot_path, L"-Tplain bp.gv -y -o bp.graph.txt", true);
 	}
 
 }app;
@@ -300,7 +324,7 @@ int main(int argc, char **args)
 			else if (s_what == "graph")
 			{
 				if (!std::fs::exists(L"bp.png") || std::fs::last_write_time(L"bp.png") < std::fs::last_write_time(app.filename))
-					generate_graph_and_layout(app.bp);
+					app.generate_graph_and_layout();
 				if (std::fs::exists(L"bp.png"))
 				{
 					exec(L"bp.png", L"", false);
@@ -396,25 +420,7 @@ int main(int argc, char **args)
 			scanf("%s", command_line);
 			auto s_value = std::string(command_line);
 
-			auto i = app.bp->find_input(s_address.c_str());
-			if (i)
-			{
-				set_event(app.ev_1);
-				wait_event(app.ev_2, -1);
-
-				auto v = i->variable_info();
-				auto type = v->type();
-				auto value_before = serialize_value(type->tag(), type->hash(), i->data(), 2);
-				Vec4c color;
-				unserialize_value(type->tag(), type->hash(), s_value, &color);
-				i->set_data(&color);
-				auto value_after = serialize_value(type->tag(), type->hash(), i->data(), 2);
-				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
-
-				set_event(app.ev_3);
-			}
-			else
-				printf("input not found\n");
+			app.set_data(s_address, s_value);
 		}
 		else if (s_command_line == "update")
 		{
@@ -468,7 +474,7 @@ int main(int argc, char **args)
 		else if (s_command_line == "set-layout")
 		{
 			if (!std::fs::exists(L"bp.graph.txt") || std::fs::last_write_time(L"bp.graph.txt") < std::fs::last_write_time(app.filename))
-				generate_graph_and_layout(app.bp);
+				app.generate_graph_and_layout();
 			if (std::fs::exists(L"bp.graph.txt"))
 			{
 				auto str = get_file_string(L"bp.graph.txt");
@@ -512,13 +518,12 @@ int main(int argc, char **args)
 						app->server->send(str.size, str.v);
 						SerializableNode::destroy(res);
 					}
-					else if (type == "update_bp")
+					else if (type == "update")
 					{
-						app->bp->clear();
-						app->bp->load(req);
-						app->bp->save(app->filename);
-
-						printf("browser: bp updated\n");
+						auto what = req->find_attr("what")->value();
+						
+						if (what == "set_data")
+							app->set_data(req->find_attr("address")->value(), req->find_attr("value")->value());
 					}
 
 					SerializableNode::destroy(req);
