@@ -34,8 +34,9 @@ namespace flame
 
 			w->add_resize_listener(Function<void(void* c, const Vec2u & size)>(
 				[](void* c, const Vec2u & size) {
-					(*((SwapchainPrivatePtr*)c))->destroy();
-					(*((SwapchainPrivatePtr*)c))->create();
+					auto sc = (*((SwapchainPrivatePtr*)c));
+					sc->destroy();
+					sc->create();
 				}, sizeof(void*), &thiz));
 		}
 

@@ -495,7 +495,7 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "gui-browser")
 		{
-			//exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), "", false);
+			exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), L"", false);
 			printf("waiting for browser on port 5566 ...");
 
 			app.server = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, const std::string&)>(
