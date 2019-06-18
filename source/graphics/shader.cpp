@@ -239,5 +239,28 @@ namespace flame
 		{
 			delete (ShaderPrivate*)s;
 		}
+
+		struct Shader$
+		{
+			void* device$i;
+			StringW filename$i;
+			String prefix$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			{
+				if (out$o)
+				{
+					Shader::destroy((Shader*)out$o);
+					out$o = nullptr;
+				}
+
+				if (delta_time >= 0.f)
+					out$o = Shader::create((Device*)device$i, filename$i.v, prefix$i.v);
+
+				return false;
+			}
+		};
 	}
 }
