@@ -274,6 +274,9 @@ namespace flame
 
 	void NodePrivate::pass_change()
 	{
+		if (id == "make_cmd")
+			int cut = 1;
+
 		changed = true;
 		for (auto& o : outputs)
 		{

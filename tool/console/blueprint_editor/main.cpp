@@ -69,10 +69,9 @@ struct App : BasicApp
 	BP* bp;
 	Array<void*> cbs;
 
-	void* ev_pause;
-	void* ev_paused;
-	void* ev_change;
-	void* ev_changed;
+	void* ev_1;
+	void* ev_2;
+	void* ev_3;
 
 	OneClientServer* server;
 
@@ -101,14 +100,21 @@ struct App : BasicApp
 
 		frame++;
 
-		if (wait_event(ev_pause, 0))
+		if (wait_event(ev_1, 0))
 		{
-			d->gq->wait_idle();
+			for (auto i = 0; i < FLAME_ARRAYSIZE(fences); i++)
+			{
+				if (fences[i].second > 0)
+				{
+					fences[i].first->wait();
+					fences[i].second = 0;
+				}
+			}
 
-			set_event(ev_paused);
-			wait_event(ev_changed, 0);
+			set_event(ev_2);
+			wait_event(ev_3, -1);
 
-			set_event(ev_changed);
+			bp->update(app->elapsed_time);
 		}
 	}
 
@@ -137,28 +143,27 @@ int main(int argc, char **args)
 	if (!app.bp)
 		app.bp = BP::create();
 
-	app.ev_pause = create_event(false);
-	app.ev_paused = create_event(false);
-	app.ev_change = create_event(true);
-	app.ev_changed = create_event(false);
+	app.ev_1 = create_event(false);
+	app.ev_2 = create_event(false);
+	app.ev_3 = create_event(false);
 
 	thread(Function<void(void* c)>(
 		[](void* c) {
 			auto app = *(App * *)c;
-			app->create("", Vec2u(800, 600), WindowFrame);
-			set_event(app->ev_changed);
-			wait_event(app->ev_pause, -1);
+			app->create("", Vec2u(400, 300), WindowFrame);
+			set_event(app->ev_1);
+			wait_event(app->ev_2, -1);
 			app->run();
 		}, sizeof(void*), &papp));
 
-	wait_event(app.ev_changed, -1);
+	wait_event(app.ev_1, -1);
 
 	app.bp->find_input("d.in")->set_data(&app.d);
 	app.bp->find_input("sc.in")->set_data(&app.sc);
 	app.bp->update(0.f);
 	memcpy(&app.cbs, app.bp->find_output("cbs.out")->data(), sizeof(Array<void*>));
 
-	set_event(app.ev_pause);
+	set_event(app.ev_2);
 
 	if (!app.filename.empty())
 		printf("\"%s\":\n", w2s(app.filename).c_str());
@@ -394,8 +399,8 @@ int main(int argc, char **args)
 			auto i = app.bp->find_input(s_address.c_str());
 			if (i)
 			{
-				set_event(app.ev_pause);
-				wait_event(app.ev_paused, -1);
+				set_event(app.ev_1);
+				wait_event(app.ev_2, -1);
 
 				auto v = i->variable_info();
 				auto type = v->type();
@@ -406,8 +411,7 @@ int main(int argc, char **args)
 				auto value_after = serialize_value(type->tag(), type->hash(), i->data(), 2);
 				printf("set value: %s, %s -> %s\n", s_address.c_str(), value_before.v, value_after.v);
 
-				set_event(app.ev_change);
-				wait_event(app.ev_changed, -1);
+				set_event(app.ev_3);
 			}
 			else
 				printf("input not found\n");
