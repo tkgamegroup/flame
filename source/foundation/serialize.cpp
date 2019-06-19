@@ -1326,7 +1326,7 @@ namespace flame
 		return name_base_type[baseType];
 	}
 
-	std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
+	static std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
 		static std::string prefix("flame::");
 		static std::regex reg_token(R"([\w\s\_\$\:\*]+)");
@@ -1337,27 +1337,33 @@ namespace flame
 		if (pass_$)
 			* pass_$ = false;
 
-		//auto tokens = string_regex_split(std::string("flame::Array<flame::Vec<4, unsigned char>>"), reg_token);
-		auto tokens = string_regex_split(w2s(in), reg_token);
+		auto str = w2s(in);
+
+		if (pass_prefix)
+		{
+			if (str.compare(0, prefix.size(), prefix) == 0)
+				* pass_prefix = true;
+			else
+				return str;
+		}
+
+		auto tokens = string_regex_split(str, reg_token);
 		if (tokens.empty())
 			return "";
 
-		if (tokens[0].compare(0, prefix.size(), prefix) == 0)
-		{
-			if (pass_prefix)
-				* pass_prefix = true;
-		}
 		if (tokens[0] == "Function")
 			return tokens[0];
 		auto pos_$ = tokens[0].find('$');
 		if (pos_$ != std::string::npos)
 		{
+			if (pass_$)
+				* pass_$ = true;
+			else
+				return str;
+
 			if (attribute)
 				* attribute = std::string(tokens[0].c_str() + pos_$ + 1);
 			tokens[0].resize(pos_$);
-
-			if (pass_$)
-				* pass_$ = true;
 		}
 
 		for (auto& t : tokens)
@@ -1386,7 +1392,7 @@ namespace flame
 		return name;
 	}
 
-	void symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */, TypeTag$& tag, std::string& name)
+	static void symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */, TypeTag$& tag, std::string& name)
 	{
 		DWORD dw;
 		wchar_t* pwname;
