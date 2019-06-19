@@ -180,6 +180,13 @@ namespace flame
 	}
 
 	template<typename T>
+	struct Attribute
+	{
+		T v;
+		int frame;
+	};
+
+	template<typename T>
 	struct Array
 	{
 		uint size;

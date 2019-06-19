@@ -221,8 +221,9 @@ namespace flame
 		TypeTagEnumSingle,
 		TypeTagEnumMulti,
 		TypeTagVariable,
+		TypeTagAttribute, // Attribute<Variable>
 		TypeTagPointer,
-		TypeTagAny
+		TypeTagAny // void* that takes variable's address
 	};
 
 	FLAME_FOUNDATION_EXPORTS const char* get_name(TypeTag$ tag);

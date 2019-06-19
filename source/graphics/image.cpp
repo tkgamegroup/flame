@@ -640,6 +640,54 @@ namespace flame
 
 		}bp_imageview_unused;
 
+		struct ImageviewGeneral$
+		{
+			void* image$i;
+
+			void* out$o;
+
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			{
+				if (out$o)
+				{
+					Imageview::destroy((Imageview*)out$o);
+					out$o = nullptr;
+				}
+
+				if (delta_time >= 0.f)
+				{
+					if (image$i)
+						out$o = Imageview::create((Image*)image$i);
+				}
+
+				return false;
+			}
+		};
+
+		struct ImageviewsGeneral$
+		{
+			Array<void*> images$i;
+
+			Array<void*> out$o;
+
+			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			{
+				//if (out$o)
+				//{
+				//	Imageview::destroy((Imageview*)out$o);
+				//	out$o = nullptr;
+				//}
+
+				//if (delta_time >= 0.f)
+				//{
+				//	if (image$i)
+				//		out$o = Imageview::create((Image*)image$i);
+				//}
+
+				return false;
+			}
+		};
+
 		SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{
 			d = (DevicePrivate*)_d;

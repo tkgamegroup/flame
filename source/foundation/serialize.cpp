@@ -13,6 +13,7 @@ namespace flame
 		"enum_single",
 		"enum_multi",
 		"variable",
+		"attribute",
 		"pointer",
 		"any"
 	};
@@ -1329,7 +1330,7 @@ namespace flame
 	static std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
 		static std::string prefix("flame::");
-		static std::regex reg_token(R"([\w\s\_\$\:\*]+)");
+		static std::regex reg_token(R"([\~\w\s\_\$\:\*]+)");
 		static std::string str_unsigned("unsigned");
 
 		if (pass_prefix)
@@ -1358,13 +1359,13 @@ namespace flame
 		{
 			if (pass_$)
 				* pass_$ = true;
-			else
-				return str;
 
 			if (attribute)
 				* attribute = std::string(tokens[0].c_str() + pos_$ + 1);
 			tokens[0].resize(pos_$);
 		}
+		else if (pass_$)
+			return str;
 
 		for (auto& t : tokens)
 		{
