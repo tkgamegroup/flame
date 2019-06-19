@@ -13,12 +13,9 @@ namespace flame
 		NodePrivate* node;
 		VariableInfo* variable_info;
 
-		void* data;
-
 		std::vector<SlotPrivate*> links;
 
 		SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info);
-		~SlotPrivate();
 
 		void set_data(const void* data);
 		bool link_to(SlotPrivate*target);
@@ -35,6 +32,8 @@ namespace flame
 
 		Vec2f position;
 
+		void* dummy; // represents the object
+
 		void* module;
 		FunctionInfo* update_function;
 
@@ -43,8 +42,6 @@ namespace flame
 
 		bool in_list;
 		bool changed;
-
-		void* dummy; // represents the object
 
 		NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
 		~NodePrivate();
@@ -94,27 +91,18 @@ namespace flame
 	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
 		type(_type),
 		node(_node),
-		variable_info(_variable_info),
-		data(nullptr)
+		variable_info(_variable_info)
 	{
-		auto size = variable_info->size();
-		data = new char[size];
-		memset(data, 0, size);
 		if (variable_info->default_value())
-			set(data, variable_info->type()->tag(), size, variable_info->default_value());
+			set((char*)node->dummy + variable_info->offset(), variable_info->type()->tag(), variable_info->size(), variable_info->default_value());
 
 		if (type == Input)
 			links.push_back(nullptr);
 	}
 
-	SlotPrivate::~SlotPrivate()
-	{
-		delete[]data;
-	}
-
 	void SlotPrivate::set_data(const void* d)
 	{
-		memcpy(data, d, variable_info->size());
+		memcpy((char*)node->dummy + variable_info->offset(), d, variable_info->size());
 		node->pass_change();
 	}
 
@@ -168,6 +156,10 @@ namespace flame
 		in_list(false),
 		changed(true)
 	{
+		auto size = udt->size();
+		dummy = malloc(size);
+		memset(dummy, 0, size);
+
 		module = load_module(udt->module_name());
 		
 		update_function = nullptr;
@@ -198,10 +190,6 @@ namespace flame
 			if (attr.find('o') != std::string::npos)
 				outputs.emplace_back(new SlotPrivate(SlotPrivate::Output, this, v));
 		}
-
-		auto size = udt->size();
-		dummy = malloc(size);
-		memset(dummy, 0, size);
 	}
 
 	NodePrivate::~NodePrivate()
@@ -293,7 +281,8 @@ namespace flame
 		for (auto& input : inputs)
 		{
 			auto v = input->variable_info;
-			set((char*)dummy + v->offset(), v->type()->tag(), v->size(), input->links[0] ? input->links[0]->data : input->data);
+			if (input->links[0])
+				set(input->data(), v->type()->tag(), v->size(), input->links[0]->data());
 		}
 
 		struct Dummy { };
@@ -305,12 +294,6 @@ namespace flame
 		}cvt;
 		cvt.p = (char*)module + (uint)update_function->rva();
 		changed = (*((Dummy*)dummy).*cvt.f)(delta_time);
-
-		for (auto& output : outputs)
-		{
-			auto v = output->variable_info;
-			set(output->data, v->type()->tag(), v->size(), (char*)dummy + v->offset());
-		}
 	}
 
 	BPPrivate::~BPPrivate()
@@ -505,7 +488,7 @@ namespace flame
 				auto v = input->variable_info;
 				auto type = v->type();
 				if (v->default_value())
-					unserialize_value(type->tag(), type->hash(), n_data->find_attr("value")->value(), input->data);
+					unserialize_value(type->tag(), type->hash(), n_data->find_attr("value")->value(), input->data());
 			}
 		}
 
@@ -568,11 +551,11 @@ namespace flame
 			{
 				auto v = input->variable_info;
 				auto type = v->type();
-				if (v->default_value() && !compare(type->tag(), v->size(), v->default_value(), input->data))
+				if (v->default_value() && !compare(type->tag(), v->size(), v->default_value(), input->data()))
 				{
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					n_data->new_attr("value", serialize_value(type->tag(), type->hash(), input->data, 2).v);
+					n_data->new_attr("value", serialize_value(type->tag(), type->hash(), input->data(), 2).v);
 				}
 			}
 		}
@@ -606,7 +589,8 @@ namespace flame
 
 	void* BP::Slot::data()
 	{
-		return ((SlotPrivate*)this)->data;
+		auto thiz = ((SlotPrivate*)this);
+		return (char*)thiz->node->dummy + thiz->variable_info->offset();
 	}
 
 	void BP::Slot::set_data(const void* d)
