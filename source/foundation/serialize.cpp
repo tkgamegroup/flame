@@ -501,21 +501,21 @@ namespace flame
 				return std::to_string(*(int*)src);
 			case cH("bool"):
 				return *(bool*)src ? "1" : "0";
-			case cH("Vec<1,float>"):
+			case cH("Vec~1~float"):
 				return to_string(*(Vec1f*)src, precision);
-			case cH("Vec<2,float>"):
+			case cH("Vec~2~float"):
 				return to_string(*(Vec2f*)src, precision);
-			case cH("Vec<3,float>"):
+			case cH("Vec~3~float"):
 				return to_string(*(Vec3f*)src, precision);
-			case cH("Vec<4,float>"):
+			case cH("Vec~4~float"):
 				return to_string(*(Vec4f*)src, precision);
-			case cH("Vec<1,uint>"):
+			case cH("Vec~1~uint"):
 				return to_string(*(Vec1u*)src);
-			case cH("Vec<2,uint>"):
+			case cH("Vec~2~uint"):
 				return to_string(*(Vec2u*)src);
-			case cH("Vec<3,uint>"):
+			case cH("Vec~3~uint"):
 				return to_string(*(Vec3u*)src);
-			case cH("Vec<4,uint>"):
+			case cH("Vec~4~uint"):
 				return to_string(*(Vec4u*)src);
 				//case cH("Ivec2"): case cH("i2"):
 				//	return to_string(*(Ivec2*)src);
@@ -529,7 +529,7 @@ namespace flame
 				//	return to_string(*(Vec2c*)src);
 				//case cH("Vec3c"): case cH("b3"):
 				//	return to_string(*(Vec3c*)src);
-			case cH("Vec<4,uchar>"):
+			case cH("Vec~4~uchar"):
 				return to_string(*(Vec4c*)src);
 			case cH("String"):
 				return ((String*)src)->v;
@@ -577,28 +577,28 @@ namespace flame
 			case cH("bool"):
 				*(bool*)dst = (src != "0");
 				break;
-			case cH("Vec<1,float>"):
+			case cH("Vec~1~float"):
 				*(Vec1f*)dst = std::stof(src.c_str());
 				break;
-			case cH("Vec<2,float>"):
+			case cH("Vec~2~float"):
 				*(Vec2f*)dst = stof2(src.c_str());
 				break;
-			case cH("Vec<3,float>"):
+			case cH("Vec~3~float"):
 				*(Vec3f*)dst = stof3(src.c_str());
 				break;
-			case cH("Vec<4,float>"):
+			case cH("Vec~4~float"):
 				*(Vec4f*)dst = stof4(src.c_str());
 				break;
-			case cH("Vec<1,uint>"):
+			case cH("Vec~1~uint"):
 				*(Vec1u*)dst = std::stof(src.c_str());
 				break;
-			case cH("Vec<2,uint>"):
+			case cH("Vec~2~uint"):
 				*(Vec2u*)dst = stou2(src.c_str());
 				break;
-			case cH("Vec<3,uint>"):
+			case cH("Vec~3~uint"):
 				*(Vec3u*)dst = stou3(src.c_str());
 				break;
-			case cH("Vec<4,uint>"):
+			case cH("Vec~4~uint"):
 				*(Vec4u*)dst = stou4(src.c_str());
 				break;
 				//case cH("Ivec2"): case cH("i2"):
@@ -628,7 +628,7 @@ namespace flame
 				//case cH("Vec3c"): case cH("b3"):
 				//	*(Vec3c*)dst = stob3(src.c_str());
 				//	break;
-			case cH("Vec<4,uchar>"):
+			case cH("Vec~4~uchar"):
 				*(Vec4c*)dst = stoi4(src.c_str());
 				break;
 			case cH("String"):
@@ -1326,48 +1326,62 @@ namespace flame
 		return name_base_type[baseType];
 	}
 
-	static std::string prefix("flame::");
-	static std::regex reg_temp(R"((\w)+\<(.)+\>)");
-	static std::regex reg_pref(prefix);
-	static std::regex reg_usig(R"(\bunsigned\b)");
-	static std::string str_func("Function");
-
 	std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
+		static std::string prefix("flame::");
+		static std::regex reg_token(R"([\w\s\_\$\:\*]+)");
+		static std::string str_unsigned("unsigned");
+
 		if (pass_prefix)
 			* pass_prefix = false;
 		if (pass_$)
 			* pass_$ = false;
 
-		auto name = w2s(in);
-		if (name.compare(0, prefix.size(), prefix) == 0)
-		{
-			name.erase(0, prefix.size());
+		//auto tokens = string_regex_split(std::string("flame::Array<flame::Vec<4, unsigned char>>"), reg_token);
+		auto tokens = string_regex_split(w2s(in), reg_token);
+		if (tokens.empty())
+			return "";
 
+		if (tokens[0].compare(0, prefix.size(), prefix) == 0)
+		{
 			if (pass_prefix)
 				* pass_prefix = true;
 		}
-
-		auto pos_lt = name.find('<');
-
-		auto pos_$ = name.find('$');
-		if (pos_$ != std::string::npos && pos_$ < pos_lt)
+		if (tokens[0] == "Function")
+			return tokens[0];
+		auto pos_$ = tokens[0].find('$');
+		if (pos_$ != std::string::npos)
 		{
 			if (attribute)
-				* attribute = std::string(name.c_str() + pos_$ + 1);
-			name.resize(pos_$);
+				* attribute = std::string(tokens[0].c_str() + pos_$ + 1);
+			tokens[0].resize(pos_$);
 
 			if (pass_$)
 				* pass_$ = true;
 		}
-		if (name.compare(0, str_func.size(), str_func) == 0)
-			name = "Function";
-		if (((pass_prefix && *pass_prefix) || !pass_prefix) && pos_lt != std::string::npos)
+
+		for (auto& t : tokens)
 		{
-			name = std::regex_replace(name, reg_pref, "");
-			name = std::regex_replace(name, reg_usig, "u");
-			name.erase(std::remove(name.begin(), name.end(), ' '), name.end());
-			name.erase(std::remove(name.begin(), name.end(), '$'), name.end());
+			{
+				auto pos = t.find(prefix);
+				if (pos != std::string::npos)
+					t = t.replace(pos, prefix.size(), "");
+			}
+			{
+				auto pos = t.find(str_unsigned);
+				if (pos != std::string::npos)
+					t = t.replace(pos, str_unsigned.size(), "u");
+			}
+
+			t.erase(std::remove(t.begin(), t.end(), ' '), t.end());
+			t.erase(std::remove(t.begin(), t.end(), '$'), t.end());
+		}
+
+		auto name = tokens[0];
+		for (auto i = 1; i < tokens.size(); i++)
+		{
+			if (!tokens[i].empty())
+				name += "~" + tokens[i];
 		}
 		return name;
 	}
@@ -1648,7 +1662,7 @@ namespace flame
 	};
 
 	template<uint N, class T>
-	void install_vec_udt(const std::string& name_suffix, const std::string& type_name)
+	void add_vec_udt(const std::string& name_suffix, const std::string& type_name)
 	{
 		typedef BP_Vec<N, T> VecType;
 
@@ -1656,7 +1670,7 @@ namespace flame
 
 		for (auto i = 0; i < N; i++)
 			u->add_variable(TypeTagVariable, type_name, std::string(1, "xyzw"[i]), "i", sizeof(T) * i, sizeof(T));
-		u->add_variable(TypeTagVariable, "Vec<" + std::to_string(N) + "," + std::string(type_name) + ">", "v", "o", offsetof(VecType, out), sizeof(VecType::out));
+		u->add_variable(TypeTagVariable, "Vec~" + std::to_string(N) + "~" + std::string(type_name), "v", "o", offsetof(VecType, out), sizeof(VecType::out));
 
 		u->add_function("update", pf2p(&BP_Vec<N, T>::update), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
 	}
@@ -1738,7 +1752,7 @@ namespace flame
 	}bp_array_insert_before_for_each_item_unused;
 
 	template<uint N, class T>
-	void install_array_udt(const std::string& name_suffix, const std::string& type_name)
+	void add_array_udt(const std::string& name_suffix, const std::string& type_name)
 	{
 		typedef BP_Array<N, T> ArrayType;
 
@@ -1754,7 +1768,7 @@ namespace flame
 
 		for (auto i = 0; i < N; i++)
 			u->add_variable(is_pointer ? TypeTagPointer : TypeTagVariable, s_type_name, std::to_string(i + 1), "i", sizeof(T) * i, sizeof(T));
-		u->add_variable(TypeTagVariable, "Array<" + type_name + ">", "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
+		u->add_variable(TypeTagVariable, "Array~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
 
 		u->add_function("update", pf2p(&BP_Array<N, T>::update), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
 	}
@@ -1763,18 +1777,18 @@ namespace flame
 	{
 		this_module = load_module(L"flame_foundation.dll");
 
-		install_vec_udt<1, float>("1f", "float");
-		install_vec_udt<2, float>("2f", "float");
-		install_vec_udt<3, float>("3f", "float");
-		install_vec_udt<4, float>("4f", "float");
+		add_vec_udt<1, float>("1f", "float");
+		add_vec_udt<2, float>("2f", "float");
+		add_vec_udt<3, float>("3f", "float");
+		add_vec_udt<4, float>("4f", "float");
 
-		install_array_udt<1, uint>("1_u", "uint");
-		install_array_udt<1, Vec4c>("1_4c", "Vec<4,uchar>");
-		install_array_udt<1, voidptr>("1_vp", "void*");
+		add_array_udt<1, uint>("1_u", "uint");
+		add_array_udt<1, Vec4c>("1_4c", "Vec~4~uchar");
+		add_array_udt<1, voidptr>("1_vp", "void*");
 
-		install_array_udt<2, uint>("2_u", "uint");
-		install_array_udt<2, Vec4c>("2_4c", "Vec<4,uchar>");
-		install_array_udt<2, voidptr>("2_vp", "void*");
+		add_array_udt<2, uint>("2_u", "uint");
+		add_array_udt<2, Vec4c>("2_4c", "Vec~4~uchar");
+		add_array_udt<2, voidptr>("2_vp", "void*");
 
 		free_module(this_module);
 	}
@@ -2366,8 +2380,6 @@ namespace flame
 
 		printf("typeinfo update begin\n");
 
-		typeinfo_init_basic_bp_nodes();
-
 		auto id = 0;
 		for (auto& fn : pdbs)
 		{
@@ -2378,6 +2390,9 @@ namespace flame
 			auto dst = w2s(w_dst);
 			if (!std::fs::exists(w_dst) || std::fs::last_write_time(w_dst) < std::fs::last_write_time(fn))
 			{
+				if (fn == L"flame_foundation.dll")
+					typeinfo_init_basic_bp_nodes();
+
 				printf("generating: %s\n", dst.c_str());
 
 				typeinfo_collect(fn, id);
@@ -2386,9 +2401,15 @@ namespace flame
 				printf("ok\n");
 			}
 			else
+			{
+				typeinfo_load(w_dst, id);
+
 				printf("up-to-data: %s\n", dst.c_str());
+			}
 			id++;
 		}
+
+		typeinfo_clear();
 
 		printf("typeinfo update end\n");
 	}

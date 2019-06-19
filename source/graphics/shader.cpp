@@ -243,8 +243,8 @@ namespace flame
 		struct Shader$
 		{
 			void* device$i;
-			StringW filename$i;
-			String prefix$i;
+			//StringW filename$i;
+			//String prefix$i;
 
 			void* out$o;
 
@@ -257,7 +257,7 @@ namespace flame
 				}
 
 				if (delta_time >= 0.f)
-					out$o = Shader::create((Device*)device$i, filename$i.v, prefix$i.v);
+					out$o = Shader::create((Device*)device$i, L"", "");
 
 				return false;
 			}

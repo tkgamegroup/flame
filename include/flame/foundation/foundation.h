@@ -43,11 +43,11 @@ namespace std
 	namespace fs = std::experimental::filesystem;
 }
 
-FLAME_FOUNDATION_EXPORTS void *flame_malloc(int size);
-FLAME_FOUNDATION_EXPORTS void *flame_realloc(void *p, int size);
-FLAME_FOUNDATION_EXPORTS void flame_free(void *p);
+FLAME_FOUNDATION_EXPORTS void* flame_malloc(int size);
+FLAME_FOUNDATION_EXPORTS void* flame_realloc(void* p, int size);
+FLAME_FOUNDATION_EXPORTS void flame_free(void* p);
 
-inline constexpr unsigned int _HASH(char const * str, unsigned int seed)
+inline constexpr unsigned int _HASH(char const* str, unsigned int seed)
 {
 	return 0 == *str ? seed : _HASH(str + 1, seed ^ (*str + 0x9e3779b9 + (seed << 6) + (seed >> 2)));
 }
@@ -140,37 +140,37 @@ namespace flame
 	}
 
 	inline bool is_mouse_enter(KeyState action, MouseKey key)
-	{ 
-		return action == KeyStateDown && key == Mouse_Null; 
+	{
+		return action == KeyStateDown && key == Mouse_Null;
 	}
 
 	inline bool is_mouse_leave(KeyState action, MouseKey key)
-	{ 
-		return action == KeyStateUp && key == Mouse_Null; 
+	{
+		return action == KeyStateUp && key == Mouse_Null;
 	}
 
 	inline bool is_mouse_down(KeyState action, MouseKey key, bool just = false) // value is pos
-	{ 
-		return action == (KeyStateDown | (just ? KeyStateJust : 0)) && key != Mouse_Null; 
+	{
+		return action == (KeyStateDown | (just ? KeyStateJust : 0)) && key != Mouse_Null;
 	}
 
 	inline bool is_mouse_up(KeyState action, MouseKey key, bool just = false) // value is pos
-	{ 
+	{
 		return action == (KeyStateUp | (just ? KeyStateJust : 0)) && key != Mouse_Null;
 	}
 
 	inline bool is_mouse_move(KeyState action, MouseKey key) // value is disp
-	{ 
-		return action == KeyStateNull && key == Mouse_Null; 
+	{
+		return action == KeyStateNull && key == Mouse_Null;
 	}
 
 	inline bool is_mouse_scroll(KeyState action, MouseKey key) // value.x() is scroll value
-	{ 
-		return action == KeyStateNull && key == Mouse_Middle; 
+	{
+		return action == KeyStateNull && key == Mouse_Middle;
 	}
 
 	inline bool is_mouse_clicked(KeyState action, MouseKey key, bool db = false)
-	{ 
+	{
 		return action == (KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0)) && key == Mouse_Null;
 	}
 
@@ -250,12 +250,12 @@ namespace flame
 			return *this;
 		}
 
-		T &operator[](uint idx)
+		T& operator[](uint idx)
 		{
 			return v[idx];
 		}
 
-		const T &operator[](uint idx) const
+		const T& operator[](uint idx) const
 		{
 			return v[idx];
 		}
@@ -303,7 +303,7 @@ namespace flame
 			size = new_size;
 		}
 
-		void insert(uint pos, const T &_v)
+		void insert(uint pos, const T& _v)
 		{
 			resize(size + 1);
 			for (auto i = size - 1; i > pos; i--)
@@ -311,7 +311,7 @@ namespace flame
 			v[pos] = _v;
 		}
 
-		void push_back(const T &_v)
+		void push_back(const T& _v)
 		{
 			insert(size, _v);
 		}
@@ -324,7 +324,7 @@ namespace flame
 			resize(new_size);
 		}
 
-		int find(const T &_v)
+		int find(const T& _v)
 		{
 			for (auto i = 0; i < size; i++)
 			{
@@ -339,7 +339,7 @@ namespace flame
 	struct BasicString
 	{
 		uint size;
-		CH *v;
+		CH* v;
 
 		void _init(const CH* s, uint len = 0)
 		{
@@ -403,7 +403,7 @@ namespace flame
 			return *this;
 		}
 
-		BasicString& operator=(const CH *str)
+		BasicString& operator=(const CH* str)
 		{
 			assign(str);
 
@@ -464,39 +464,39 @@ namespace flame
 	};
 
 	template<typename CH>
-	inline bool operator==(const BasicString<CH> &lhs, const char *rhs)
+	inline bool operator==(const BasicString<CH>& lhs, const char* rhs)
 	{
 		auto len = std::char_traits<CH>::length(rhs);
 		return len == lhs.size && std::char_traits<CH>::compare(lhs.v, rhs, len) == 0;
 	}
 
 	template<typename CH>
-	inline bool operator==(const char *lhs, const BasicString<CH> &rhs)
+	inline bool operator==(const char* lhs, const BasicString<CH>& rhs)
 	{
 		auto len = std::char_traits<CH>::length(lhs);
 		return len == rhs.size && std::char_traits<CH>::compare(lhs, rhs.v, len) == 0;
 	}
 
 	template<typename CH>
-	inline bool operator!=(const BasicString<CH> &lhs, const char *rhs)
+	inline bool operator!=(const BasicString<CH>& lhs, const char* rhs)
 	{
 		return !(lhs == rhs);
 	}
 
 	template<typename CH>
-	inline bool operator!=(const char *lhs, const BasicString<CH> &rhs)
+	inline bool operator!=(const char* lhs, const BasicString<CH>& rhs)
 	{
 		return !(lhs == rhs);
 	}
 
 	template<typename CH>
-	inline bool operator==(const BasicString<CH> &lhs, const BasicString<CH> &rhs)
+	inline bool operator==(const BasicString<CH>& lhs, const BasicString<CH>& rhs)
 	{
 		return lhs.size == rhs.size && std::char_traits<CH>::compare(lhs.v, rhs.v, lhs.size) == 0;
 	}
 
 	template<typename CH>
-	inline bool operator!=(const BasicString<CH> &lhs, const BasicString<CH> &rhs)
+	inline bool operator!=(const BasicString<CH>& lhs, const BasicString<CH>& rhs)
 	{
 		return !(lhs == rhs);
 	}
@@ -508,7 +508,7 @@ namespace flame
 	{
 		uint hash;
 
-		void assign(const char *s, uint len = 0)
+		void assign(const char* s, uint len = 0)
 		{
 			String::assign(s, len);
 			hash = v ? H(v) : 0;
@@ -519,13 +519,13 @@ namespace flame
 			hash = 0;
 		}
 
-		StringAndHash(const StringAndHash &rhs) :
+		StringAndHash(const StringAndHash& rhs) :
 			StringAndHash()
 		{
 			assign(rhs.v, rhs.size);
 		}
 
-		StringAndHash(StringAndHash &&rhs) :
+		StringAndHash(StringAndHash&& rhs) :
 			StringAndHash()
 		{
 			std::swap(size, rhs.size);
@@ -533,20 +533,20 @@ namespace flame
 			std::swap(hash, rhs.hash);
 		}
 
-		StringAndHash(const std::string &rhs) :
+		StringAndHash(const std::string& rhs) :
 			StringAndHash()
 		{
 			assign(rhs.c_str(), rhs.size());
 		}
 
-		StringAndHash &operator=(const StringAndHash &rhs)
+		StringAndHash& operator=(const StringAndHash& rhs)
 		{
 			assign(rhs.v, rhs.size);
 
 			return *this;
 		}
 
-		StringAndHash &operator=(StringAndHash &&rhs)
+		StringAndHash& operator=(StringAndHash&& rhs)
 		{
 			std::swap(size, rhs.size);
 			std::swap(v, rhs.v);
@@ -555,14 +555,14 @@ namespace flame
 			return *this;
 		}
 
-		StringAndHash &operator=(const char *str)
+		StringAndHash& operator=(const char* str)
 		{
 			assign(str);
 
 			return *this;
 		}
 
-		StringAndHash &operator=(const std::string &rhs)
+		StringAndHash& operator=(const std::string& rhs)
 		{
 			assign(rhs.c_str(), rhs.size());
 
@@ -580,7 +580,7 @@ namespace flame
 		return ch == '\\' || ch == '/';
 	}
 
-	inline uint get_str_line_number(const char *str)
+	inline uint get_str_line_number(const char* str)
 	{
 		auto lineNumber = 0u;
 		while (*str)
@@ -593,7 +593,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::basic_string<CH> string_cut(const std::basic_string<CH> &str, int length) // < 0 means from end
+	inline std::basic_string<CH> string_cut(const std::basic_string<CH>& str, int length) // < 0 means from end
 	{
 		if (length < 0)
 			length = str.size() + length;
@@ -601,19 +601,19 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline void string_to_lower(std::basic_string<CH> &str)
+	inline void string_to_lower(std::basic_string<CH>& str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 	}
 
 	template<typename CH>
-	inline void string_to_upper(std::basic_string<CH> &str)
+	inline void string_to_upper(std::basic_string<CH>& str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), ::toupper);
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> string_split(const std::basic_string<CH> &str, CH delimiter = ' ')
+	inline std::vector<std::basic_string<CH>> string_split(const std::basic_string<CH>& str, CH delimiter = ' ')
 	{
 		std::basic_istringstream<CH> iss(str);
 		std::vector<std::basic_string<CH>> ret;
@@ -626,7 +626,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> doublenull_string_split(const CH *str)
+	inline std::vector<std::basic_string<CH>> doublenull_string_split(const CH* str)
 	{
 		std::vector<std::basic_string<CH>> ret;
 
@@ -649,11 +649,10 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> string_regex_split(const std::basic_string<CH> &str, const std::basic_string<CH> &regex, uint req_idx = 0)
+	inline std::vector<std::basic_string<CH>> string_regex_split(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
 	{
 		std::vector<std::basic_string<CH>> ret;
 
-		std::basic_regex<CH> reg(regex);
 		std::match_results<typename std::basic_string<CH>::const_iterator> match;
 		auto s = str;
 
@@ -666,7 +665,7 @@ namespace flame
 		return ret;
 	}
 
-	inline std::wstring a2w(const std::string &str)
+	inline std::wstring a2w(const std::string& str)
 	{
 		setlocale(LC_ALL, "chs");
 		auto len = mbstowcs(nullptr, str.c_str(), 0) + 1;
@@ -677,20 +676,20 @@ namespace flame
 		return wstr;
 	}
 
-	inline std::wstring s2w(const std::string &str)
+	inline std::wstring s2w(const std::string& str)
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.from_bytes(str);
 	}
 
-	inline std::string w2s(const std::wstring &wstr)
+	inline std::string w2s(const std::wstring& wstr)
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.to_bytes(wstr);
 	}
 
 #ifdef FLAME_WINDOWS
-	inline std::string translate(const char *src_locale, const char *dst_locale, const std::string &src)
+	inline std::string translate(const char* src_locale, const char* dst_locale, const std::string& src)
 	{
 		std::wstring_convert<std::codecvt_byname<wchar_t, char, mbstate_t>>
 			cv1(new std::codecvt_byname<wchar_t, char, mbstate_t>(src_locale));
@@ -699,7 +698,7 @@ namespace flame
 		return cv2.to_bytes(cv1.from_bytes(src));
 	}
 
-	inline std::string japanese_to_chinese(const std::string &src)
+	inline std::string japanese_to_chinese(const std::string& src)
 	{
 		return translate(".932", ".936", src);
 	}
@@ -733,7 +732,7 @@ namespace flame
 		return ret;
 	}
 
-	inline void base85_decode(const std::string& str, uchar *dst) // dst length is str length * 4 / 5
+	inline void base85_decode(const std::string& str, uchar* dst) // dst length is str length * 4 / 5
 	{
 		assert(str.length() == 5);
 
@@ -873,11 +872,11 @@ namespace flame
 	{
 		uint digest[5];
 		std::string buffer;
-		ulonglong transforms; 
+		ulonglong transforms;
 
 		enum { BLOCK_INTS = 16, BLOCK_BYTES = BLOCK_INTS * 4 };
 
-		SHA1() 
+		SHA1()
 		{
 			reset();
 		}
@@ -1010,7 +1009,7 @@ namespace flame
 			w = rol(w, 30);
 		}
 
-		static void R4(uint block[BLOCK_INTS], const uint v, uint & w, const uint x, const uint y, uint & z, const size_t i)
+		static void R4(uint block[BLOCK_INTS], const uint v, uint& w, const uint x, const uint y, uint& z, const size_t i)
 		{
 			block[i] = blk(block, i);
 			z += (w ^ x ^ y) + block[i] + 0xca62c1d6 + rol(v, 5);
@@ -1221,21 +1220,21 @@ namespace flame
 	}
 
 	template<class T>
-	inline T read(std::ifstream &file)
+	inline T read(std::ifstream& file)
 	{
 		T v;
-		file.read((char*)&v, sizeof(T));
+		file.read((char*)& v, sizeof(T));
 		return v;
 	}
 
-	inline std::string read_string(std::ifstream &file)
+	inline std::string read_string(std::ifstream& file)
 	{
 		uint size = 0;
 		uint q = 1;
 		for (auto i = 0; i < 4; i++)
 		{
 			unsigned char byte;
-			file.read((char*)&byte, 1);
+			file.read((char*)& byte, 1);
 			if (byte >= 128)
 				byte -= 128;
 			else
@@ -1250,12 +1249,12 @@ namespace flame
 	}
 
 	template<class T>
-	inline void write(std::ofstream &file, const T &v)
+	inline void write(std::ofstream& file, const T& v)
 	{
-		file.write((char*)&v, sizeof(T));
+		file.write((char*)& v, sizeof(T));
 	}
 
-	inline void write_string(std::ofstream &file, const std::string &v)
+	inline void write_string(std::ofstream& file, const std::string& v)
 	{
 		uint size = v.size();
 		for (auto i = 0; i < 4; i++)
@@ -1266,13 +1265,13 @@ namespace flame
 				byte += 128;
 			else
 				i = 4;
-			file.write((char*)&byte, 1);
+			file.write((char*)& byte, 1);
 
 		}
 		file.write((char*)v.data(), v.size());
 	}
 
-	inline void write_fmt(std::ofstream &file, const char *fmt, ...)
+	inline void write_fmt(std::ofstream& file, const char* fmt, ...)
 	{
 		static char buffer[1024];
 
@@ -1293,7 +1292,7 @@ namespace flame
 		FileTypeModel
 	};
 
-	inline bool is_text_file(const std::wstring &_ext)
+	inline bool is_text_file(const std::wstring& _ext)
 	{
 		auto ext = _ext;
 		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
@@ -1307,7 +1306,7 @@ namespace flame
 		return false;
 	}
 
-	inline bool is_image_file(const std::wstring &_ext)
+	inline bool is_image_file(const std::wstring& _ext)
 	{
 		auto ext = _ext;
 		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
@@ -1317,7 +1316,7 @@ namespace flame
 		return false;
 	}
 
-	inline bool is_model_file(const std::wstring &_ext)
+	inline bool is_model_file(const std::wstring& _ext)
 	{
 		auto ext = _ext;
 		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
@@ -1326,7 +1325,7 @@ namespace flame
 		return false;
 	}
 
-	inline FileType get_file_type(const std::wstring &ext)
+	inline FileType get_file_type(const std::wstring& ext)
 	{
 		if (is_text_file(ext))
 			return FileTypeText;
@@ -1337,7 +1336,7 @@ namespace flame
 		return FileTypeUnknown;
 	}
 
-	inline long long get_file_length(std::ifstream &f)
+	inline long long get_file_length(std::ifstream& f)
 	{
 		f.seekg(0, std::ios::end);
 		auto s = f.tellg();
@@ -1345,7 +1344,7 @@ namespace flame
 		return s;
 	}
 
-	inline std::pair<std::unique_ptr<char[]>, long long> get_file_content(const std::wstring &filename)
+	inline std::pair<std::unique_ptr<char[]>, long long> get_file_content(const std::wstring& filename)
 	{
 #ifdef FLAME_WINDOWS
 		std::ifstream file(filename, std::ios::binary);
@@ -1363,7 +1362,7 @@ namespace flame
 		return std::make_pair(std::unique_ptr<char[]>(data), length);
 	}
 
-	inline std::string get_file_string(const std::wstring &filename)
+	inline std::string get_file_string(const std::wstring& filename)
 	{
 		auto content = get_file_content(filename);
 		if (content.first)
@@ -1371,12 +1370,12 @@ namespace flame
 		return std::string();
 	}
 
-	FLAME_FOUNDATION_EXPORTS void *get_hinst();
+	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
-	FLAME_FOUNDATION_EXPORTS const wchar_t *get_curr_path();
-	FLAME_FOUNDATION_EXPORTS const wchar_t *get_app_path();
+	FLAME_FOUNDATION_EXPORTS const wchar_t* get_curr_path();
+	FLAME_FOUNDATION_EXPORTS const wchar_t* get_app_path();
 	FLAME_FOUNDATION_EXPORTS void com_init();
-	FLAME_FOUNDATION_EXPORTS void read_process_memory(void *process, void *address, uint size, void *dst);
+	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever
 	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled);
 	FLAME_FOUNDATION_EXPORTS void set_event(void* ev);
@@ -1396,13 +1395,13 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void get_thumbnai(uint width, const std::wstring& filename, uint* out_width, uint* out_height, char **out_data);
+	FLAME_FOUNDATION_EXPORTS void get_thumbnai(uint width, const std::wstring& filename, uint* out_width, uint* out_height, char** out_data);
 
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(void* c, KeyState action)>& callback);
-	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void *handle/* return by add_global_key_listener */);
+	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
 	struct FileWatcher;
 	typedef FileWatcher* FileWatcherPtr;
@@ -1423,7 +1422,7 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher *add_file_watcher(const std::wstring& path, const Function<void(void* c, FileChangeType type, const std::wstring& filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, const Function<void(void* c, FileChangeType type, const std::wstring& filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
 	FLAME_FOUNDATION_EXPORTS void add_work(const Function<void(void* c)>& fun);
