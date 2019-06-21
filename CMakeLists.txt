@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.4)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_definitions(-W0 -std:c++17)
+add_definitions(-W0 -std:c++latest)
 
 foreach(c ${CMAKE_CONFIGURATION_TYPES})
 	string(TOUPPER ${c} c )
