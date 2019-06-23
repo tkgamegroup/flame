@@ -55,15 +55,15 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		FLAME_FOUNDATION_EXPORTS int add_key_listener(Function<void(void* c, KeyState action, Key key)>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_resize_listener(Function<void(void* c, const Vec2u& size)>& listener);
-		FLAME_FOUNDATION_EXPORTS int add_destroy_listener(Function<void(void* c)>& listener);
+		FLAME_FOUNDATION_EXPORTS void add_key_listener(Function<void(void* c, KeyState action, Key key)>* listener);
+		FLAME_FOUNDATION_EXPORTS void add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener);
+		FLAME_FOUNDATION_EXPORTS void add_resize_listener(Function<void(void* c, const Vec2u& size)>* listener);
+		FLAME_FOUNDATION_EXPORTS void add_destroy_listener(Function<void(void* c)>* listener);
 
-		FLAME_FOUNDATION_EXPORTS void remove_key_listener(int id);
-		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(int id);
-		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(int id);
-		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(int id);
+		FLAME_FOUNDATION_EXPORTS void remove_key_listener(Function<void(void* c, KeyState action, Key key)>* listener);
+		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener);
+		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(Function<void(void* c, const Vec2u& size)>* listener);
+		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(Function<void(void* c)>* listener);
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
