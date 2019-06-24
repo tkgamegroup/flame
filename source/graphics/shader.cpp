@@ -262,7 +262,6 @@ namespace flame
 				return false;
 			}
 
-		}
-		bp_shader_unused;
+		}bp_shader_unused;
 	}
 }

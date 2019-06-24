@@ -53,11 +53,10 @@ namespace flame
 		android_app* android_state_;
 #endif
 
-		int listener_magic;
-		std::vector<std::pair<int, Function<void(void* c, KeyState action, Key key)>>> key_listeners;
-		std::vector<std::pair<int, Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>>> mouse_listeners;
-		std::vector<std::pair<int, Function<void(void* c, const Vec2u& size)>>> resize_listeners;
-		std::vector<std::pair<int, Function<void(void* c)>>> destroy_listeners;
+		std::vector<Function<void(void* c, KeyState action, Key key)>*> key_listeners;
+		std::vector<Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>*> mouse_listeners;
+		std::vector<Function<void(void* c, const Vec2u& size)>*> resize_listeners;
+		std::vector<Function<void(void* c)>*> destroy_listeners;
 
 		bool dead;
 
@@ -136,7 +135,10 @@ namespace flame
 		~WindowPrivate()
 		{
 			for (auto& f : destroy_listeners)
-				f.second();
+			{
+				(*f)();
+				f->destroy();
+			}
 		}
 
 #ifdef FLAME_WINDOWS
@@ -213,40 +215,9 @@ namespace flame
 			ShowWindow(hWnd, v ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
 		}
 #endif
-		int add_key_listener(Function<void(void* c, KeyState action, Key key)>& listener)
-		{
-			key_listeners.emplace_back(listener_magic, listener);
-			return listener_magic++;
-		}
-
-		int add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>& listener)
-		{
-			mouse_listeners.emplace_back(listener_magic, listener);
-			return listener_magic++;
-		}
-
-		int add_resize_listener(Function<void(void* c, const Vec2u& size)>& listener)
-		{
-			resize_listeners.emplace_back(listener_magic, listener);
-			return listener_magic++;
-		}
-
-		int add_destroy_listener(Function<void(void* c)>& listener)
-		{
-			destroy_listeners.emplace_back(listener_magic, listener);
-			return listener_magic++;
-		}
 
 		void remove_key_listener(int id)
 		{
-			for (auto it = key_listeners.begin(); it != key_listeners.end(); it++)
-			{
-				if (it->first == id)
-				{
-					key_listeners.erase(it);
-					return;
-				}
-			}
 		}
 
 		void remove_mouse_listener(int id)
@@ -312,42 +283,50 @@ namespace flame
 	}
 #endif
 
-	int Window::add_key_listener(Function<void(void* c, KeyState action, Key key)>& listener)
+	void Window::add_key_listener(Function<void(void* c, KeyState action, Key key)>* listener)
 	{
-		return ((WindowPrivate*)this)->add_key_listener(listener);
+		((WindowPrivate*)this)->key_listeners.push_back(listener);
 	}
 
-	int Window::add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>& listener)
+	void Window::add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener)
 	{
-		return ((WindowPrivate*)this)->add_mouse_listener(listener);
+		((WindowPrivate*)this)->mouse_listeners.push_back(listener);
 	}
 
-	int Window::add_resize_listener(Function<void(void* c, const Vec2u& size)>& listener)
+	void Window::add_resize_listener(Function<void(void* c, const Vec2u& size)>* listener)
 	{
-		return ((WindowPrivate*)this)->add_resize_listener(listener);
+		((WindowPrivate*)this)->resize_listeners.push_back(listener);
 	}
 
-	int Window::add_destroy_listener(Function<void(void* c)>& listener)
+	void Window::add_destroy_listener(Function<void(void* c)>* listener)
 	{
-		return ((WindowPrivate*)this)->add_destroy_listener(listener);
+		((WindowPrivate*)this)->destroy_listeners.push_back(listener);
 	}
 
-	void Window::remove_key_listener(int id)
+	void Window::remove_key_listener(Function<void(void* c, KeyState action, Key key)>* listener)
 	{
-		((WindowPrivate*)this)->remove_key_listener(id);
+		auto& listeners = ((WindowPrivate*)this)->key_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->first == id)
+			{
+				key_listeners.erase(it);
+				return;
+			}
+		}
 	}
 
-	void Window::remove_mouse_listener(int id)
+	void Window::remove_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener)
 	{
 		((WindowPrivate*)this)->remove_mouse_listener(id);
 	}
 
-	void Window::remove_resize_listener(int id)
+	void Window::remove_resize_listener(Function<void(void* c, const Vec2u& size)>* listener)
 	{
 		((WindowPrivate*)this)->remove_resize_listener(id);
 	}
 
-	void Window::remove_destroy_listener(int id)
+	void Window::remove_destroy_listener(Function<void(void* c)>* listener)
 	{
 		((WindowPrivate*)this)->remove_destroy_listener(id);
 	}
@@ -370,74 +349,74 @@ namespace flame
 			{
 				auto v = vk_code_to_key(wParam);
 				for (auto& f : w->key_listeners)
-					f.second(KeyStateDown, v);
+					(*f)(KeyStateDown, v);
 			}
 				break;
 			case WM_KEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
 				for (auto& f : w->key_listeners)
-					f.second(KeyStateUp, v);
+					(*f)(KeyStateUp, v);
 			}
 				break;
 			case WM_CHAR:
 				for (auto& f : w->key_listeners)
-					f.second(KeyStateNull, (Key)wParam);
+					(*f)(KeyStateNull, (Key)wParam);
 				break;
 			case WM_LBUTTONDOWN:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateDown, Mouse_Left, pos);
+					(*f)(KeyStateDown, Mouse_Left, pos);
 			}
 				break;
 			case WM_LBUTTONUP:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateUp, Mouse_Left, pos);
+					(*f)(KeyStateUp, Mouse_Left, pos);
 			}
 				break;
 			case WM_MBUTTONDOWN:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateDown, Mouse_Middle, pos);
+					(*f)(KeyStateDown, Mouse_Middle, pos);
 			}
 				break;
 			case WM_MBUTTONUP:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateUp, Mouse_Middle, pos);
+					(*f)(KeyStateUp, Mouse_Middle, pos);
 			}
 				break;
 			case WM_RBUTTONDOWN:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateDown, Mouse_Right, pos);
+					(*f)(KeyStateDown, Mouse_Right, pos);
 			}
 				break;
 			case WM_RBUTTONUP:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateUp, Mouse_Right, pos);
+					(*f)(KeyStateUp, Mouse_Right, pos);
 			}
 				break;
 			case WM_MOUSEMOVE:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateNull, Mouse_Null, pos);
+					(*f)(KeyStateNull, Mouse_Null, pos);
 			}
 				break;
 			case WM_MOUSEWHEEL:
 			{
 				auto v = Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0);
 				for (auto& f : w->mouse_listeners)
-					f.second(KeyStateNull, Mouse_Middle, v);
+					(*f)(KeyStateNull, Mouse_Middle, v);
 			}
 				break;
 			case WM_DESTROY:
@@ -450,7 +429,7 @@ namespace flame
 				{
 					w->size = size;
 					for (auto& f : w->resize_listeners)
-						f.second(size);
+						(*f)(size);
 				}
 			}
 				break;

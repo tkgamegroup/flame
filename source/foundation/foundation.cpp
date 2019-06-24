@@ -27,19 +27,6 @@ void flame_free(void *p)
 
 namespace flame
 {
-	static void do_thread(void *p)
-	{
-		auto pf = (Function<void(void* c)>*)p;
-		(*pf)();
-		delete pf;
-	}
-
-	void thread(const Function<void(void* c)>& _f)
-	{
-		auto f = new Function<void(void* c)>(_f);
-		_beginthread(do_thread, 0, f);
-	}
-
 	void *get_hinst()
 	{
 		return GetModuleHandle(nullptr);
@@ -560,7 +547,7 @@ namespace flame
 		bool use_modifier_shift;
 		bool use_modifier_ctrl;
 		bool use_modifier_alt;
-		Function<void(void* c, KeyState action)> callback;
+		Function<void(void* c, KeyState action)>* callback;
 	};
 
 	static HHOOK global_key_hook = 0;
@@ -586,14 +573,14 @@ namespace flame
 					action = KeyStateDown;
 				else if (wParam == WM_KEYUP)
 					action = KeyStateUp;
-				l->callback(action);
+				(*l->callback)(action);
 			}
 		}
 
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(void* c, KeyState action)>& callback)
+	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<void(void* c, KeyState action)>* callback)
 	{
 		auto l = new GlobalKeyListener;
 		l->callback = callback;
@@ -622,6 +609,7 @@ namespace flame
 		{
 			if ((*_it).get() == handle)
 			{
+				(*_it)->callback->destroy();
 				it->second.erase(_it);
 				break;
 			}
@@ -651,7 +639,7 @@ namespace flame
 		}
 	};
 
-	void do_file_watch(FileWatcher *filewatcher, bool only_content, const std::wstring& _path, Function<void(void* c, FileChangeType type, const std::wstring& filename)> &callback)
+	void do_file_watch(FileWatcher *filewatcher, bool only_content, const std::wstring& _path, Function<void(void* c, FileChangeType type, const std::wstring& filename)>* callback)
 	{
 		auto path = std::wstring(_path);
 
@@ -714,7 +702,7 @@ namespace flame
 				}
 
 				if (!(only_content && (type != FileModified)))
-					callback(type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
+					(*callback)(type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
 
 				if (p->NextEntryOffset <= 0)
 					break;
@@ -727,7 +715,7 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	FileWatcher *add_file_watcher(const std::wstring& path, const Function<void(void* c, FileChangeType type, const std::wstring& filename)>& callback, int options)
+	FileWatcher *add_file_watcher(const std::wstring& path, Function<void(void* c, FileChangeType type, const std::wstring& filename)>* callback, int options)
 	{
 		if (options & FileWatcherAsynchronous)
 		{
@@ -735,33 +723,18 @@ namespace flame
 			w->options = options;
 			w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
-			auto pcallback = new Function<void(void* c, FileChangeType type, const std::wstring & filename)>;
-			*pcallback = callback;
-
-			struct Capture
-			{
-				const wchar_t* path;
-				FileWatcher* w;
-				Function<void(void* c, FileChangeType type, const std::wstring& filename)>* pcallback;
-			};
-			Capture capture;
-			capture.path = path.c_str();
-			capture.w = w;
-			capture.pcallback = pcallback;
-
-			thread(Function<void(void* c)>([](void *_c) {
-				auto c = (Capture*)_c;
-				do_file_watch(c->w, c->w->options & FileWatcherMonitorOnlyContentChanged, c->path, *(c->pcallback));
-				delete c->w;
-				delete c->pcallback;
-			}, sizeof(Capture), &capture));
+			std::thread([=]() {
+				do_file_watch(w, w->options & FileWatcherMonitorOnlyContentChanged, path, callback);
+				delete w;
+				callback->destroy();
+			});
 
 			return w;
 		}
 		else
 		{
-			auto callback_cpy = callback;
-			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback_cpy);
+			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback);
+			callback->destroy();
 
 			return nullptr;
 		}

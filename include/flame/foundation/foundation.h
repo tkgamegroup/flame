@@ -25,6 +25,7 @@
 #include <regex>
 #include <fstream>
 #include <experimental/filesystem>
+#include <thread>
 #include <mutex>
 #include <stdarg.h>
 #include <assert.h>
@@ -1137,72 +1138,56 @@ namespace flame
 	struct Function
 	{
 		F* f;
-		uint c_size;
 		void* c;
+		void* c_dtor;
 		uint c_hash;
 
-		void _init(F _f, uint _c_size, void* _c, uint _c_hash = 0) // each of the captures must be pod or BasicString<char|wchar_t> or Array<POD>
+		template<class C>
+		static Function* create(F* _f, const C* _c = 0, uint _c_hash = 0)
 		{
-			f = _f;
-			c_size = _c_size;
-			if (c_size > 0)
+			auto f = (Function*)flame_malloc(sizeof(Function));
+			f->c = nullptr;
+			f->c_dtor = nullptr;
+
+			f->f = _f;
+			if (_c > 0)
 			{
-				c = flame_malloc(c_size);
-				memcpy(c, _c, c_size);
+				f->c = flame_malloc(sizeof(C));
+				new(f->c) C(*_c);
+				if (!std::is_pod<C>::value)
+				{
+					struct Warp : C
+					{
+						void dtor()
+						{
+							~C();
+						}
+					};
+					f->c_dtor = &Warp::dtor;
+				}
 			}
-			else
-				c = nullptr;
-			c_hash = _c_hash;
+			f->c_hash = _c_hash;
+
+			return f;
 		}
 
-		void assign(F _f, uint _c_size, void* _c, uint _c_hash = 0)
+		void destroy()
 		{
-			flame_free(c);
-			f = _f;
-			c_size = _c_size;
-			if (c_size > 0)
+			if (c)
 			{
-				c = flame_malloc(c_size);
-				memcpy(c, _c, c_size);
+				struct Dummy { };
+				typedef void (Dummy:: * F)();
+				union
+				{
+					void* p;
+					F f;
+				}cvt;
+				cvt.p = c_dtor;
+				(*((Dummy*)c).*cvt.f)();
+				flame_free(c);
 			}
-			else
-				c = nullptr;
-			c_hash = _c_hash;
-		}
 
-		Function()
-		{
-			f = nullptr;
-			c_size = 0;
-			c = nullptr;
-			c_hash = 0;
-		}
-
-		Function(F f, uint c_size = 0, void* c = 0, uint c_hash = 0)
-		{
-			_init(f, c_size, c, c_hash);
-		}
-
-		Function(const Function<F>& rhs)
-		{
-			_init(rhs.f, rhs.c_size, rhs.c, rhs.c_hash);
-		}
-
-		Function& operator=(const Function& rhs)
-		{
-			assign(rhs.f, rhs.c_size, rhs.c, rhs.c_hash);
-
-			return *this;
-		}
-
-		Function& operator=(Function&& rhs)
-		{
-			std::swap(f, rhs.f);
-			std::swap(c_size, rhs.c_size);
-			std::swap(c, rhs.c);
-			std::swap(c_hash, rhs.c_hash);
-
-			return *this;
+			flame_free(this);
 		}
 
 		template<class ...Args>
@@ -1211,8 +1196,6 @@ namespace flame
 			return f(c, args...);
 		}
 	};
-
-	FLAME_FOUNDATION_EXPORTS void thread(const Function<void(void* c)>& f);
 
 	inline std::fs::path ext_replace(const std::fs::path& path, const std::wstring& ext)
 	{
@@ -1407,7 +1390,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, const Function<void(void* c, KeyState action)>& callback);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<void(void* c, KeyState action)>* callback);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
 	struct FileWatcher;
@@ -1429,9 +1412,9 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, const Function<void(void* c, FileChangeType type, const std::wstring& filename)>& callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, Function<void(void* c, FileChangeType type, const std::wstring& filename)>* callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
-	FLAME_FOUNDATION_EXPORTS void add_work(const Function<void(void* c)>& fun);
+	FLAME_FOUNDATION_EXPORTS void add_work(Function<void(void* c)>* fun);
 	FLAME_FOUNDATION_EXPORTS void clear_works();
 }
