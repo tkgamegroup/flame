@@ -44,8 +44,8 @@ namespace std
 	namespace fs = std::experimental::filesystem;
 }
 
-FLAME_FOUNDATION_EXPORTS void* flame_malloc(int size);
-FLAME_FOUNDATION_EXPORTS void* flame_realloc(void* p, int size);
+FLAME_FOUNDATION_EXPORTS void* flame_malloc(unsigned int size);
+FLAME_FOUNDATION_EXPORTS void* flame_realloc(void* p, unsigned int size);
 FLAME_FOUNDATION_EXPORTS void flame_free(void* p);
 
 inline constexpr unsigned int _HASH(char const* str, unsigned int seed)
@@ -1134,38 +1134,63 @@ namespace flame
 		}
 	};
 
+	struct Mail
+	{
+		void* p;
+		void* dtor;
+		uint hash;
+	};
+
 	template<class F>
 	struct Function
 	{
 		F* f;
 		void* c;
-		void* c_dtor;
 		uint c_hash;
 
+		static Function* create(F* _f)
+		{
+			auto f = (Function*)flame_malloc(sizeof(Function));
+			f->f = _f;
+			f->c = nullptr;
+			f->c_dtor = nullptr;
+			f->c_hash = 0;
+			return f;
+		}
+
 		template<class C>
-		static Function* create(F* _f, const C* _c = 0, uint _c_hash = 0)
+		static Function* create(F* _f, const std::enable_if<!std::is_pod<C>::value, C>::type& _c, uint _c_hash = 0)
 		{
 			auto f = (Function*)flame_malloc(sizeof(Function));
 			f->c = nullptr;
 			f->c_dtor = nullptr;
 
 			f->f = _f;
-			if (_c > 0)
+			f->c = flame_malloc(sizeof(C));
+			new(f->c) C(_c);
+			struct Warp : C
 			{
-				f->c = flame_malloc(sizeof(C));
-				new(f->c) C(*_c);
-				if (!std::is_pod<C>::value)
+				void dtor()
 				{
-					struct Warp : C
-					{
-						void dtor()
-						{
-							~C();
-						}
-					};
-					f->c_dtor = &Warp::dtor;
+					~C();
 				}
-			}
+			};
+			f->c_dtor = &Warp::dtor;
+			f->c_hash = _c_hash;
+
+			return f;
+		}
+
+		template<class C>
+		static Function* create(F* _f, const C& _c, uint _c_hash = 0)
+		{
+			auto f = (Function*)flame_malloc(sizeof(Function));
+			f->c = nullptr;
+			f->c_dtor = nullptr;
+
+			f->f = _f;
+			f->c = flame_malloc(sizeof(C));
+			new(f->c) C(*_c);
 			f->c_hash = _c_hash;
 
 			return f;
@@ -1175,15 +1200,15 @@ namespace flame
 		{
 			if (c)
 			{
-				struct Dummy { };
-				typedef void (Dummy:: * F)();
+				struct Wrap { };
+				typedef void (Wrap:: * Dtor)();
 				union
 				{
 					void* p;
-					F f;
+					Dtor dtor;
 				}cvt;
 				cvt.p = c_dtor;
-				(*((Dummy*)c).*cvt.f)();
+				(*((Wrap*)c).*cvt.dtor)();
 				flame_free(c);
 			}
 

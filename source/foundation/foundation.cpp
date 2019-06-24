@@ -10,12 +10,12 @@
 #include <CommCtrl.h>
 #include <thumbcache.h>
 
-void *flame_malloc(int size)
+void* flame_malloc(unsigned int size)
 {
 	return malloc(size);
 }
 
-void *flame_realloc(void *p, int size)
+void* flame_realloc(void* p, unsigned int size)
 {
 	return realloc(p, size);
 }
