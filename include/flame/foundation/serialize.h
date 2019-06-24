@@ -406,7 +406,7 @@ namespace flame
 			'a' for udt member, means if it is a 'void*' type, it receives the data's address
 			'm' for enum variable, means it can hold combination of the enum
 			'c' for function, means to collect the code of the function
-			'f' for String variable, means this is a filename
+			'f' for std::[w]string variable, means this is a filename
 	*/
 
 	FLAME_FOUNDATION_EXPORTS DynamicArray<EnumInfo*> get_enums(int level = 0);

@@ -123,7 +123,7 @@ namespace flame
 			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	String exec_and_get_output(const std::wstring& filename, const std::wstring& parameters)
+	Mail<std::string> exec_and_get_output(const std::wstring& filename, const std::wstring& parameters)
 	{
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
@@ -162,7 +162,7 @@ namespace flame
 		return output;
 	}
 
-	String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
+	Mail<std::string> compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
 	{
 		std::wstring cl(L"\"");
 		cl += s2w(VS_LOCATION);
@@ -212,7 +212,7 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	DynamicArray<String> get_module_dependancies(const std::wstring& module_name)
+	Mail<std::vector<std::string>> get_module_dependancies(const std::wstring& module_name)
 	{
 		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::fs::path(module_name).parent_path().string().c_str());
 

@@ -180,404 +180,6 @@ namespace flame
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
-	template<typename T>
-	struct Attribute
-	{
-		T v;
-		int frame;
-	};
-
-	template<typename T>
-	struct Array
-	{
-		uint size;
-		T* v;
-	};
-
-	template<typename T>
-	struct DynamicArray
-	{
-		uint size;
-		T* v;
-
-		void _init(const T* p, uint len)
-		{
-			size = len;
-			v = (T*)flame_malloc(sizeof(T) * size);
-			for (auto i = 0; i < size; i++)
-				new(&v[i])T(p[i]);
-		}
-
-		DynamicArray()
-		{
-			size = 0;
-			v = nullptr;
-		}
-
-		DynamicArray(const DynamicArray& rhs)
-		{
-			size = rhs.size;
-			v = (T*)flame_malloc(sizeof(T) * size);
-			for (auto i = 0; i < size; i++)
-				new(&v[i])T(rhs[i]);
-		}
-
-		DynamicArray(DynamicArray&& rhs)
-		{
-			size = rhs.size;
-			v = rhs.v;
-
-			rhs.size = 0;
-			rhs.v = nullptr;
-		}
-
-		~DynamicArray()
-		{
-			for (auto i = 0; i < size; i++)
-				v[i].~T();
-			flame_free(v);
-		}
-
-		DynamicArray& operator=(const DynamicArray& rhs)
-		{
-			assign(rhs.v, rhs.size);
-		}
-
-		DynamicArray& operator=(DynamicArray&& rhs)
-		{
-			std::swap(size, rhs.size);
-			std::swap(v, rhs.v);
-
-			return *this;
-		}
-
-		DynamicArray& operator=(const std::vector<T>& rhs)
-		{
-			assign(rhs.data(), rhs.size());
-
-			return *this;
-		}
-
-		T& operator[](uint idx)
-		{
-			return v[idx];
-		}
-
-		const T& operator[](uint idx) const
-		{
-			return v[idx];
-		}
-
-		void assign(const T* p, uint len)
-		{
-			for (auto i = 0; i < size; i++)
-				v[i].~T();
-
-			size = len;
-
-			v = (T*)flame_realloc(v, sizeof(T) * size);
-
-			for (auto i = 0; i < size; i++)
-				new(&p[i])T();
-		}
-
-		void resize(uint new_size, uint type_size = 0 /* for pod that is not T type */)
-		{
-			if (size == new_size)
-				return;
-			if (type_size == 0)
-				type_size = sizeof(T);
-
-			if (size > new_size)
-			{
-				for (auto i = new_size; i < size; i++)
-					v[i].~T();
-			}
-
-			if (new_size == 0)
-			{
-				flame_free(v);
-				v = nullptr;
-			}
-			else
-				v = (T*)flame_realloc(v, type_size * new_size);
-
-			if (new_size > size)
-			{
-				for (auto i = size; i < new_size; i++)
-					new(&v[i])T();
-			}
-
-			size = new_size;
-		}
-
-		void insert(uint pos, const T& _v)
-		{
-			resize(size + 1);
-			for (auto i = size - 1; i > pos; i--)
-				v[i] = std::move(v[i - 1]);
-			v[pos] = _v;
-		}
-
-		void push_back(const T& _v)
-		{
-			insert(size, _v);
-		}
-
-		void remove(uint idx, uint count = 1)
-		{
-			auto new_size = size - count;
-			for (auto i = idx; i < new_size; i++)
-				v[i] = std::move(v[i + count]);
-			resize(new_size);
-		}
-
-		int find(const T& _v)
-		{
-			for (auto i = 0; i < size; i++)
-			{
-				if (v[i] == _v)
-					return i;
-			}
-			return -1;
-		}
-	};
-
-	template<typename CH>
-	struct BasicString
-	{
-		uint size;
-		CH* v;
-
-		void _init(const CH* s, uint len = 0)
-		{
-			if (len == 0)
-				len = std::char_traits<CH>::length(s);
-
-			size = len;
-			v = (CH*)flame_malloc(sizeof(CH) * (size + 1));
-			memcpy(v, s, size);
-			v[size] = (CH)0;
-		}
-
-		BasicString()
-		{
-			size = 0;
-			v = (CH*)flame_malloc(sizeof(CH));
-			v[size] = (CH)0;
-		}
-
-		BasicString(const BasicString& rhs)
-		{
-			_init(rhs.v, rhs.size);
-		}
-
-		BasicString(BasicString&& rhs)
-		{
-			size = rhs.size;
-			v = rhs.v;
-
-			rhs.size = 0;
-			rhs.v = nullptr;
-		}
-
-		BasicString(const CH* rhs)
-		{
-			_init(rhs);
-		}
-
-		BasicString(const std::basic_string<CH>& rhs)
-		{
-			_init(rhs.c_str(), rhs.size());
-		}
-
-		~BasicString()
-		{
-			flame_free(v);
-		}
-
-		BasicString& operator=(const BasicString& rhs)
-		{
-			assign(rhs.v, rhs.size);
-
-			return *this;
-		}
-
-		BasicString& operator=(BasicString&& rhs)
-		{
-			std::swap(size, rhs.size);
-			std::swap(v, rhs.v);
-
-			return *this;
-		}
-
-		BasicString& operator=(const CH* str)
-		{
-			assign(str);
-
-			return *this;
-		}
-
-		BasicString& operator=(const std::basic_string<CH>& rhs)
-		{
-			assign(rhs.c_str(), rhs.size());
-
-			return *this;
-		}
-
-		void assign(const CH* s, uint len = 0)
-		{
-			if (len == 0)
-				len = std::char_traits<CH>::length(s);
-
-			resize(len);
-			memcpy(v, s, sizeof(CH) * size);
-		}
-
-		void resize(uint new_size)
-		{
-			if (size == new_size)
-				return;
-
-			size = new_size;
-			v = (CH*)flame_realloc(v, sizeof(CH) * (size + 1));
-			v[size] = (CH)0;
-		}
-
-		void insert(uint pos, CH _v)
-		{
-			resize(size + 1);
-			for (auto i = size - 1; i > pos; i--)
-				v[i] = v[i - 1];
-			v[pos] = _v;
-		}
-
-		void remove(uint idx, uint count = 1)
-		{
-			auto new_size = size - count;
-			for (auto i = idx; i < new_size; i++)
-				v[i] = v[i + count];
-			resize(new_size);
-		}
-
-		uint find(CH _v)
-		{
-			for (auto i = 0; i < size; i++)
-			{
-				if (v[i] == _v)
-					return i;
-			}
-			return -1;
-		}
-	};
-
-	template<typename CH>
-	inline bool operator==(const BasicString<CH>& lhs, const char* rhs)
-	{
-		auto len = std::char_traits<CH>::length(rhs);
-		return len == lhs.size && std::char_traits<CH>::compare(lhs.v, rhs, len) == 0;
-	}
-
-	template<typename CH>
-	inline bool operator==(const char* lhs, const BasicString<CH>& rhs)
-	{
-		auto len = std::char_traits<CH>::length(lhs);
-		return len == rhs.size && std::char_traits<CH>::compare(lhs, rhs.v, len) == 0;
-	}
-
-	template<typename CH>
-	inline bool operator!=(const BasicString<CH>& lhs, const char* rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	template<typename CH>
-	inline bool operator!=(const char* lhs, const BasicString<CH>& rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	template<typename CH>
-	inline bool operator==(const BasicString<CH>& lhs, const BasicString<CH>& rhs)
-	{
-		return lhs.size == rhs.size && std::char_traits<CH>::compare(lhs.v, rhs.v, lhs.size) == 0;
-	}
-
-	template<typename CH>
-	inline bool operator!=(const BasicString<CH>& lhs, const BasicString<CH>& rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	using String = BasicString<char>;
-	using StringW = BasicString<wchar_t>;
-
-	struct StringAndHash : String
-	{
-		uint hash;
-
-		void assign(const char* s, uint len = 0)
-		{
-			String::assign(s, len);
-			hash = v ? H(v) : 0;
-		}
-
-		StringAndHash()
-		{
-			hash = 0;
-		}
-
-		StringAndHash(const StringAndHash& rhs) :
-			StringAndHash()
-		{
-			assign(rhs.v, rhs.size);
-		}
-
-		StringAndHash(StringAndHash&& rhs) :
-			StringAndHash()
-		{
-			std::swap(size, rhs.size);
-			std::swap(v, rhs.v);
-			std::swap(hash, rhs.hash);
-		}
-
-		StringAndHash(const std::string& rhs) :
-			StringAndHash()
-		{
-			assign(rhs.c_str(), rhs.size());
-		}
-
-		StringAndHash& operator=(const StringAndHash& rhs)
-		{
-			assign(rhs.v, rhs.size);
-
-			return *this;
-		}
-
-		StringAndHash& operator=(StringAndHash&& rhs)
-		{
-			std::swap(size, rhs.size);
-			std::swap(v, rhs.v);
-			std::swap(hash, rhs.hash);
-
-			return *this;
-		}
-
-		StringAndHash& operator=(const char* str)
-		{
-			assign(str);
-
-			return *this;
-		}
-
-		StringAndHash& operator=(const std::string& rhs)
-		{
-			assign(rhs.c_str(), rhs.size());
-
-			return *this;
-		}
-	};
-
 	inline bool is_space_chr(int ch)
 	{
 		return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
@@ -1134,94 +736,6 @@ namespace flame
 		}
 	};
 
-	struct Mail
-	{
-		void* p;
-		void* dtor;
-		uint hash;
-	};
-
-	template<class F>
-	struct Function
-	{
-		F* f;
-		void* c;
-		uint c_hash;
-
-		static Function* create(F* _f)
-		{
-			auto f = (Function*)flame_malloc(sizeof(Function));
-			f->f = _f;
-			f->c = nullptr;
-			f->c_dtor = nullptr;
-			f->c_hash = 0;
-			return f;
-		}
-
-		template<class C>
-		static Function* create(F* _f, const std::enable_if<!std::is_pod<C>::value, C>::type& _c, uint _c_hash = 0)
-		{
-			auto f = (Function*)flame_malloc(sizeof(Function));
-			f->c = nullptr;
-			f->c_dtor = nullptr;
-
-			f->f = _f;
-			f->c = flame_malloc(sizeof(C));
-			new(f->c) C(_c);
-			struct Warp : C
-			{
-				void dtor()
-				{
-					~C();
-				}
-			};
-			f->c_dtor = &Warp::dtor;
-			f->c_hash = _c_hash;
-
-			return f;
-		}
-
-		template<class C>
-		static Function* create(F* _f, const C& _c, uint _c_hash = 0)
-		{
-			auto f = (Function*)flame_malloc(sizeof(Function));
-			f->c = nullptr;
-			f->c_dtor = nullptr;
-
-			f->f = _f;
-			f->c = flame_malloc(sizeof(C));
-			new(f->c) C(*_c);
-			f->c_hash = _c_hash;
-
-			return f;
-		}
-
-		void destroy()
-		{
-			if (c)
-			{
-				struct Wrap { };
-				typedef void (Wrap:: * Dtor)();
-				union
-				{
-					void* p;
-					Dtor dtor;
-				}cvt;
-				cvt.p = c_dtor;
-				(*((Wrap*)c).*cvt.dtor)();
-				flame_free(c);
-			}
-
-			flame_free(this);
-		}
-
-		template<class ...Args>
-		auto operator()(Args... args)
-		{
-			return f(c, args...);
-		}
-	};
-
 	inline std::fs::path ext_replace(const std::fs::path& path, const std::wstring& ext)
 	{
 		if (path.extension().wstring() != ext)
@@ -1385,6 +899,65 @@ namespace flame
 		return std::string();
 	}
 
+	template<typename T>
+	struct Attribute
+	{
+		T v;
+		int frame;
+	};
+
+	template<class T>
+	struct Mail
+	{
+		T* p;
+		void* dtor;
+		uint hash;
+	};
+
+	template<class T>
+	Mail<T> new_mail(const std::enable_if<!std::is_pod<T>::value, T>::type& v, uint hash = 0)
+	{
+		auto p = flame_malloc(sizeof(T));
+		new(p) T(v);
+
+		struct Warp : C
+		{
+			void dtor()
+			{
+				~C();
+			}
+		};
+
+		return { p, &Warp::dtor, hash };
+	}
+
+	template<class T>
+	Mail<T> new_mail(const T& v, uint hash = 0)
+	{
+		auto p = flame_malloc(sizeof(T));
+		memcpy(p, &v, sizeof(T));
+
+		return { p, nullptr, hash };
+	}
+
+	template<class T>
+	void delete_mail(const Mail<T>& m)
+	{
+		if (m.dtor)
+		{
+			struct Wrap { };
+			typedef void (Wrap:: * Dtor)();
+			union
+			{
+				void* p;
+				Dtor dtor;
+			}cvt;
+			cvt.p = m.dtor;
+			(*((Wrap*)m.p).*cvt.dtor)();
+		}
+		flame_free(m.p);
+	}
+
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS const wchar_t* get_curr_path();
@@ -1398,14 +971,14 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
-	FLAME_FOUNDATION_EXPORTS String exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
-	FLAME_FOUNDATION_EXPORTS String compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
+	FLAME_FOUNDATION_EXPORTS Mail<std::string> exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
+	FLAME_FOUNDATION_EXPORTS Mail<std::string> compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 
-	FLAME_FOUNDATION_EXPORTS DynamicArray<String> get_module_dependancies(const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS Mail<std::vector<std::string>> get_module_dependancies(const std::wstring& module_name);
 	FLAME_FOUNDATION_EXPORTS void* load_module(const std::wstring& module_name);
 	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
 
-	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
+	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const std::wstring& s);
 
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const std::wstring& filename);

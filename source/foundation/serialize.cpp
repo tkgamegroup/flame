@@ -380,30 +380,8 @@ namespace flame
 		v->default_value = nullptr;
 		if (tag == TypeTagEnumSingle || tag == TypeTagEnumMulti || tag == TypeTagVariable)
 		{
-			const std::string ignore_types[] = {
-				"void*",
-				"Array",
-				"DynamicArray",
-				"String",
-				"Function"
-			};
-			auto skip = false;
-			if (tag == TypeTagVariable)
-			{
-				for (auto& t : ignore_types)
-				{
-					if (type_name.compare(0, t.size(), t) == 0)
-					{
-						skip = true;
-						break;
-					}
-				}
-			}
-			if (!skip)
-			{
-				v->default_value = new char[size];
-				memset(v->default_value, 0, size);
-			}
+			v->default_value = new char[size];
+			memset(v->default_value, 0, size);
 		}
 		((UdtInfoPrivate*)this)->variables.emplace_back(v);
 		return v;
@@ -532,12 +510,6 @@ namespace flame
 				//	return to_string(*(Vec3c*)src);
 			case cH("Vec~4~uchar"):
 				return to_string(*(Vec4c*)src);
-			case cH("String"):
-				return ((String*)src)->v;
-			case cH("StringW"):
-				return w2s(((StringW*)src)->v);
-			case cH("StringAndHash"):
-				return ((StringAndHash*)src)->v;
 			default:
 				assert(0);
 			}
@@ -631,15 +603,6 @@ namespace flame
 				//	break;
 			case cH("Vec~4~uchar"):
 				*(Vec4c*)dst = stoi4(src.c_str());
-				break;
-			case cH("String"):
-				*(String*)dst = src;
-				break;
-			case cH("StringW"):
-				*(StringW*)dst = s2w(src);
-				break;
-			case cH("StringAndHash"):
-				*(StringAndHash*)dst = src;
 				break;
 			default:
 				assert(0);
