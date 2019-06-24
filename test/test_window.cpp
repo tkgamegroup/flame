@@ -36,10 +36,25 @@ struct D
 	}
 };
 
-// TODO: use enable_if and is_pod
+template <class T>
+struct A
+{
+	operator A<void>()
+	{
+
+	}
+};
+
+void a(A<void>)
+{
+
+}
 
 int main(int argc, char** args)
 {
+	A<int> b;
+	a(b);
+
 	auto app = Application::create();
 	auto w = Window::create(app, "Window Test", Vec2u(1280, 720), WindowFrame);
 

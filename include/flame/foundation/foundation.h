@@ -906,13 +906,36 @@ namespace flame
 		int frame;
 	};
 
-	template<class T>
+	template<class T = void>
 	struct Mail
 	{
 		T* p;
 		void* dtor;
 		uint hash;
 	};
+
+	template<class T>
+	Mail<T> new_mail(uint hash = 0)
+	{
+		auto p = flame_malloc(sizeof(T));
+		new(p) T;
+
+		struct Warp : C
+		{
+			void dtor()
+			{
+				~C();
+			}
+		};
+
+		return { p, &Warp::dtor, hash };
+	}
+
+	template<class T>
+	Mail<T> new_mail(uint hash = 0)
+	{
+		return { flame_malloc(sizeof(T)), nullptr, hash };
+	}
 
 	template<class T>
 	Mail<T> new_mail(const std::enable_if<!std::is_pod<T>::value, T>::type& v, uint hash = 0)
@@ -1010,9 +1033,9 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, Function<void(void* c, FileChangeType type, const std::wstring& filename)>* callback, int options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous); // when you're using FileWatcherSynchronous, this func will not return untill something wrong, and return value is always nullptr
+	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, void callback(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, uint options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous);
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
-	FLAME_FOUNDATION_EXPORTS void add_work(Function<void(void* c)>* fun);
+	FLAME_FOUNDATION_EXPORTS void add_work(void callback(void* c), const Mail<>& capture);
 	FLAME_FOUNDATION_EXPORTS void clear_works();
 }
