@@ -155,10 +155,10 @@ namespace flame
 		CloseHandle(proc_info.hThread);
 
 		DWORD output_size;
-		String output;
+		auto output = new_mail<std::string>();
 		PeekNamedPipe(hChildStd_OUT_Rd, NULL, NULL, NULL, &output_size, NULL);
-		output.resize(output_size);
-		PeekNamedPipe(hChildStd_OUT_Rd, (void*)output.v, output_size, NULL, NULL, NULL);
+		output.p->resize(output_size);
+		PeekNamedPipe(hChildStd_OUT_Rd, (void*)output.p->data(), output_size, NULL, NULL, NULL);
 		return output;
 	}
 
@@ -216,7 +216,7 @@ namespace flame
 	{
 		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::fs::path(module_name).parent_path().string().c_str());
 
-		DynamicArray<String> ret;
+		auto ret = new_mail<std::vector<std::string>>();
 		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2) 
 		{
 			PIMAGE_IMPORT_DESCRIPTOR importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
@@ -227,7 +227,7 @@ namespace flame
 				if ((importDesc->TimeDateStamp == 0) && (importDesc->Name == 0))
 					break;
 
-				ret.push_back((char*)get_ptr_from_rva(importDesc->Name,
+				ret.p->push_back((char*)get_ptr_from_rva(importDesc->Name,
 					image->FileHeader,
 					image->MappedAddress));
 				importDesc++;
@@ -247,13 +247,13 @@ namespace flame
 		FreeLibrary((HMODULE)library);
 	}
 
-	StringW get_clipboard()
+	Mail<std::wstring> get_clipboard()
 	{
 		OpenClipboard(NULL);
 		auto hMemory = GetClipboardData(CF_UNICODETEXT);
-		StringW output;
-		output.resize(GlobalSize(hMemory) / sizeof(wchar_t) - 1);
-		memcpy(output.v, GlobalLock(hMemory), sizeof(wchar_t) * output.size);
+		auto output = new_mail<std::wstring>();
+		output.p->resize(GlobalSize(hMemory) / sizeof(wchar_t) - 1);
+		memcpy(output.p->data(), GlobalLock(hMemory), sizeof(wchar_t)*output.p->size());
 		GlobalUnlock(hMemory);
 		CloseClipboard();
 		return output;
@@ -544,14 +544,16 @@ namespace flame
 
 	struct GlobalKeyListener
 	{
-		bool use_modifier_shift;
-		bool use_modifier_ctrl;
-		bool use_modifier_alt;
-		Function<void(void* c, KeyState action)>* callback;
+		uint code;
+		bool modifier_shift;
+		bool modifier_ctrl;
+		bool modifier_alt;
+		void (*callback)(void* c, KeyState action);
+		Mail<> capture;
 	};
 
 	static HHOOK global_key_hook = 0;
-	static std::map<int, std::vector<std::unique_ptr<GlobalKeyListener>>> global_key_listeners;
+	static std::vector<std::unique_ptr<GlobalKeyListener>> global_key_listeners;
 
 	LRESULT CALLBACK global_key_callback(int nCode, WPARAM wParam, LPARAM lParam)
 	{

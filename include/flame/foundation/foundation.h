@@ -912,33 +912,15 @@ namespace flame
 		T* p;
 		void* dtor;
 		uint hash;
+
+		operator Mail<void>()
+		{
+			return { p, dtor, hash };
+		}
 	};
 
 	template<class T>
-	Mail<T> new_mail(uint hash = 0)
-	{
-		auto p = flame_malloc(sizeof(T));
-		new(p) T;
-
-		struct Warp : C
-		{
-			void dtor()
-			{
-				~C();
-			}
-		};
-
-		return { p, &Warp::dtor, hash };
-	}
-
-	template<class T>
-	Mail<T> new_mail(uint hash = 0)
-	{
-		return { flame_malloc(sizeof(T)), nullptr, hash };
-	}
-
-	template<class T>
-	Mail<T> new_mail(const std::enable_if<!std::is_pod<T>::value, T>::type& v, uint hash = 0)
+	Mail<T> new_mail(const T& v = T(), uint hash = 0)
 	{
 		auto p = flame_malloc(sizeof(T));
 		new(p) T(v);
@@ -952,15 +934,6 @@ namespace flame
 		};
 
 		return { p, &Warp::dtor, hash };
-	}
-
-	template<class T>
-	Mail<T> new_mail(const T& v, uint hash = 0)
-	{
-		auto p = flame_malloc(sizeof(T));
-		memcpy(p, &v, sizeof(T));
-
-		return { p, nullptr, hash };
 	}
 
 	template<class T>
@@ -1011,7 +984,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<void(void* c, KeyState action)>* callback);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyState action), const Mail<>& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
 	struct FileWatcher;
@@ -1033,9 +1006,9 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, void callback(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, uint options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous);
+	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, uint options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous);
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
-	FLAME_FOUNDATION_EXPORTS void add_work(void callback(void* c), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void add_work(void (*callback)(void* c), const Mail<>& capture);
 	FLAME_FOUNDATION_EXPORTS void clear_works();
 }
