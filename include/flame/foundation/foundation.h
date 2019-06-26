@@ -915,7 +915,11 @@ namespace flame
 
 		operator Mail<void>()
 		{
-			return { p, dtor, hash };
+			Mail<void> ret;
+			ret.p = p;
+			ret.dtor = dtor;
+			ret.hash = hash;
+			return ret;
 		}
 	};
 
@@ -925,15 +929,29 @@ namespace flame
 		auto p = flame_malloc(sizeof(T));
 		new(p) T(v);
 
-		struct Warp : C
+		struct Wrap
 		{
+			T t;
+
 			void dtor()
 			{
-				~C();
+				t.~T();
 			}
 		};
 
-		return { p, &Warp::dtor, hash };
+		union
+		{
+			void* p;
+			void (Wrap::*pdtor)();
+		}cvt;
+		cvt.pdtor = &Wrap::dtor;
+
+		Mail<T> ret;
+		ret.p = (T*)p;
+		ret.dtor = cvt.p;
+		ret.hash = hash;
+
+		return ret;
 	}
 
 	template<class T>
@@ -941,14 +959,17 @@ namespace flame
 	{
 		if (m.dtor)
 		{
-			struct Wrap { };
-			typedef void (Wrap:: * Dtor)();
+			struct Wrap
+			{
+			};
+
 			union
 			{
 				void* p;
-				Dtor dtor;
+				void (Wrap::*dtor)();
 			}cvt;
 			cvt.p = m.dtor;
+
 			(*((Wrap*)m.p).*cvt.dtor)();
 		}
 		flame_free(m.p);

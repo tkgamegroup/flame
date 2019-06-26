@@ -42,11 +42,12 @@ namespace flame
 		Vec2i pos;
 		Vec2u size;
 		int style;
-		String title;
 
 		bool minimized;
 
 		FLAME_FOUNDATION_EXPORTS void *get_native();
+
+		FLAME_FOUNDATION_EXPORTS const char* title();
 
 #ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
@@ -55,15 +56,15 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		FLAME_FOUNDATION_EXPORTS void add_key_listener(Function<void(void* c, KeyState action, Key key)>* listener);
-		FLAME_FOUNDATION_EXPORTS void add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener);
-		FLAME_FOUNDATION_EXPORTS void add_resize_listener(Function<void(void* c, const Vec2u& size)>* listener);
-		FLAME_FOUNDATION_EXPORTS void add_destroy_listener(Function<void(void* c)>* listener);
+		FLAME_FOUNDATION_EXPORTS void add_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void add_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void add_destroy_listener(void (*listener)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void remove_key_listener(Function<void(void* c, KeyState action, Key key)>* listener);
-		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener);
-		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(Function<void(void* c, const Vec2u& size)>* listener);
-		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(Function<void(void* c)>* listener);
+		FLAME_FOUNDATION_EXPORTS void remove_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(void (*listener)(void* c), const Mail<>& capture);
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
@@ -77,10 +78,10 @@ namespace flame
 		long long fps;
 		float elapsed_time; // second
 
-		FLAME_FOUNDATION_EXPORTS int run(Function<void(void* c)> &idle_func);
+		FLAME_FOUNDATION_EXPORTS int run(void (*idle_func)(void* c), const Mail<>& capture);
 
 		FLAME_FOUNDATION_EXPORTS void clear_delay_events();
-		FLAME_FOUNDATION_EXPORTS void add_delay_event(Function<void(void* c)> &event);
+		FLAME_FOUNDATION_EXPORTS void add_delay_event(void (*event)(void* c), const Mail<>& capture);
 
 		FLAME_FOUNDATION_EXPORTS static Application *create();
 		FLAME_FOUNDATION_EXPORTS static void destroy(Application *m);

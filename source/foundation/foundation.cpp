@@ -544,7 +544,7 @@ namespace flame
 
 	struct GlobalKeyListener
 	{
-		uint code;
+		Key key;
 		bool modifier_shift;
 		bool modifier_ctrl;
 		bool modifier_alt;
@@ -559,66 +559,58 @@ namespace flame
 	{
 		auto kbhook = (KBDLLHOOKSTRUCT*)lParam;
 
-		auto it = global_key_listeners.find(vk_code_to_key(kbhook->vkCode));
-		if (it != global_key_listeners.end())
+		auto key = vk_code_to_key(kbhook->vkCode);
+
+		for (auto& l : global_key_listeners)
 		{
-			for (auto &l : it->second)
-			{
-				if (l->use_modifier_shift && !(GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)))
-					continue;
-				if (l->use_modifier_ctrl && !(GetAsyncKeyState(VK_LCONTROL) || GetAsyncKeyState(VK_RCONTROL)))
-					continue;
-				if (l->use_modifier_alt && !(GetAsyncKeyState(VK_LMENU) || GetAsyncKeyState(VK_RMENU)))
-					continue;
-				auto action = KeyStateNull;
-				if (wParam == WM_KEYDOWN)
-					action = KeyStateDown;
-				else if (wParam == WM_KEYUP)
-					action = KeyStateUp;
-				(*l->callback)(action);
-			}
+			if (l->key != key)
+				continue;
+			if (l->modifier_shift && !(GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)))
+				continue;
+			if (l->modifier_ctrl && !(GetAsyncKeyState(VK_LCONTROL) || GetAsyncKeyState(VK_RCONTROL)))
+				continue;
+			if (l->modifier_alt && !(GetAsyncKeyState(VK_LMENU) || GetAsyncKeyState(VK_RMENU)))
+				continue;
+			auto action = KeyStateNull;
+			if (wParam == WM_KEYDOWN)
+				action = KeyStateDown;
+			else if (wParam == WM_KEYUP)
+				action = KeyStateUp;
+			l->callback(l->capture.p, action);
 		}
 
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, Function<void(void* c, KeyState action)>* callback)
+	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyState action), const Mail<>& capture)
 	{
 		auto l = new GlobalKeyListener;
+		l->key = key;
+		l->modifier_shift = modifier_shift;
+		l->modifier_ctrl = modifier_ctrl;
+		l->modifier_alt = modifier_alt;
 		l->callback = callback;
-		l->use_modifier_shift = modifier_shift;
-		l->use_modifier_ctrl = modifier_ctrl;
-		l->use_modifier_alt = modifier_alt;
+		l->capture = capture;
 
-		auto it = global_key_listeners.find(key);
-		if (it == global_key_listeners.end())
-			it = global_key_listeners.emplace(key, std::vector<std::unique_ptr<GlobalKeyListener>>()).first;
-		it->second.emplace_back(l);
+		global_key_listeners.emplace_back(l);
 
-		if (global_key_hook == 0)
+		if (!global_key_hook)
 			global_key_hook = SetWindowsHookEx(WH_KEYBOARD_LL, global_key_callback, (HINSTANCE)get_hinst(), 0);
 
 		return l;
 	}
 
-	void remove_global_key_listener(int key, void *handle)
+	void remove_global_key_listener(void *handle)
 	{
-		auto it = global_key_listeners.find(key);
-		if (it == global_key_listeners.end())
-			return;
-
-		for (auto _it = it->second.begin(); _it != it->second.end(); _it++)
+		for (auto it = global_key_listeners.begin(); it != global_key_listeners.end(); it++)
 		{
-			if ((*_it).get() == handle)
+			if ((*it).get() == handle)
 			{
-				(*_it)->callback->destroy();
-				it->second.erase(_it);
+				delete_mail((*it)->capture);
+				global_key_listeners.erase(it);
 				break;
 			}
 		}
-
-		if (it->second.empty())
-			global_key_listeners.erase(it);
 
 		if (global_key_listeners.empty())
 		{
@@ -641,7 +633,7 @@ namespace flame
 		}
 	};
 
-	void do_file_watch(FileWatcher *filewatcher, bool only_content, const std::wstring& _path, Function<void(void* c, FileChangeType type, const std::wstring& filename)>* callback)
+	void do_file_watch(FileWatcher *filewatcher, bool only_content, const std::wstring& _path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture)
 	{
 		auto path = std::wstring(_path);
 
@@ -704,7 +696,7 @@ namespace flame
 				}
 
 				if (!(only_content && (type != FileModified)))
-					(*callback)(type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
+					callback(capture.p, type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
 
 				if (p->NextEntryOffset <= 0)
 					break;
@@ -713,11 +705,13 @@ namespace flame
 			}
 		}
 
+		delete_mail(capture);
+
 		CloseHandle(hEvent);
 		CloseHandle(dir_handle);
 	}
 
-	FileWatcher *add_file_watcher(const std::wstring& path, Function<void(void* c, FileChangeType type, const std::wstring& filename)>* callback, int options)
+	FileWatcher *add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, int options)
 	{
 		if (options & FileWatcherAsynchronous)
 		{
@@ -726,17 +720,15 @@ namespace flame
 			w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
 			std::thread([=]() {
-				do_file_watch(w, w->options & FileWatcherMonitorOnlyContentChanged, path, callback);
+				do_file_watch(w, w->options & FileWatcherMonitorOnlyContentChanged, path, callback, capture);
 				delete w;
-				callback->destroy();
 			});
 
 			return w;
 		}
 		else
 		{
-			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback);
-			callback->destroy();
+			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback, capture);
 
 			return nullptr;
 		}
