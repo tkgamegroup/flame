@@ -25,7 +25,7 @@ namespace flame
 			uint max_width;
 			int ascender;
 
-			FLAME_GRAPHICS_EXPORTS static Font* create(const wchar_t* filename, uint pixel_height);
+			FLAME_GRAPHICS_EXPORTS static Font* create(const std::wstring& filename, uint pixel_height);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Font* f);
 		};
 
@@ -36,7 +36,7 @@ namespace flame
 			uint max_width;
 
 			FLAME_GRAPHICS_EXPORTS const Glyph* get_glyph(wchar_t unicode);
-			FLAME_GRAPHICS_EXPORTS int get_text_width(const wchar_t* text_beg, const wchar_t* text_end = nullptr);
+			FLAME_GRAPHICS_EXPORTS int get_text_width(const std::wstring& text);
 
 			FLAME_GRAPHICS_EXPORTS Image* atlas() const;
 

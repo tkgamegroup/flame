@@ -39,7 +39,7 @@ namespace flame
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
 
-			FontPrivate(const wchar_t* filename, uint _pixel_height)
+			FontPrivate(const std::wstring& filename, uint _pixel_height)
 			{
 				pixel_height = _pixel_height;
 
@@ -65,7 +65,7 @@ namespace flame
 			}
 		};
 
-		Font* Font::create(const wchar_t* filename, uint pixel_height)
+		Font* Font::create(const std::wstring& filename, uint pixel_height)
 		{
 			return new FontPrivate(filename, pixel_height);
 		}
@@ -261,28 +261,11 @@ namespace flame
 				return map[unicode];
 			}
 
-			int get_text_width(const wchar_t* text_beg, const wchar_t* text_end)
+			int get_text_width(const std::wstring& text)
 			{
 				auto w = 0;
-				auto s = text_beg;
-				if (text_end == nullptr)
-				{
-					while (*s)
-					{
-						auto g = get_glyph(*s);
-						w += g->advance;
-						s++;
-					}
-				}
-				else
-				{
-					while (s != text_end)
-					{
-						auto g = get_glyph(*s);
-						w += g->advance;
-						s++;
-					}
-				}
+				for (auto c : text)
+					w += get_glyph(c)->advance;
 				return w;
 			}
 		};
@@ -302,9 +285,9 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->get_glyph(unicode);
 		}
 
-		int FontAtlas::get_text_width(const wchar_t* text_beg, const wchar_t* text_end)
+		int FontAtlas::get_text_width(const std::wstring& text)
 		{
-			return ((FontAtlasPrivate*)this)->get_text_width(text_beg, text_end);
+			return ((FontAtlasPrivate*)this)->get_text_width(text);
 		}
 
 		Image* FontAtlas::atlas() const

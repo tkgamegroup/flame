@@ -82,12 +82,12 @@ namespace flame
 		}
 	};
 
-	const char* Entity::name() const
+	const std::string& Entity::name() const
 	{
-		return ((EntityPrivate*)this)->name.c_str();
+		return ((EntityPrivate*)this)->name;
 	}
 
-	void Entity::set_name(const char* name) const
+	void Entity::set_name(const std::string& name) const
 	{
 		((EntityPrivate*)this)->name = name;
 	}
@@ -102,7 +102,7 @@ namespace flame
 		return ((EntityPrivate*)this)->get_component(type_hash);
 	}
 
-	DynamicArray<Component*> Entity::components(uint type_hash) const
+	Mail<std::vector<Component*>> Entity::components(uint type_hash) const
 	{
 		return ((EntityPrivate*)this)->get_components(type_hash);
 	}
@@ -161,7 +161,7 @@ namespace flame
 
 	}
 
-	void Entity::load(const wchar_t* filename)
+	void Entity::load(const std::wstring& filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file || file->name() != "node")
@@ -170,7 +170,7 @@ namespace flame
 
 	}
 
-	void Entity::save(const wchar_t* filename)
+	void Entity::save(const std::wstring& filename)
 	{
 
 	}

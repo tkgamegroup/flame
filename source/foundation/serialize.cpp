@@ -47,9 +47,9 @@ namespace flame
 		return ((TypeInfoPrivate*)this)->tag;
 	}
 
-	const char* TypeInfo::name() const
+	const std::string& TypeInfo::name() const
 	{
-		return ((TypeInfoPrivate*)this)->name.c_str();
+		return ((TypeInfoPrivate*)this)->name;
 	}
 
 	uint TypeInfo::hash() const
@@ -94,9 +94,9 @@ namespace flame
 		return &(((VariableInfoPrivate*)this)->type);
 	}
 
-	const char* VariableInfo::name() const
+	const std::string& VariableInfo::name() const
 	{
-		return ((VariableInfoPrivate*)this)->name.c_str();
+		return ((VariableInfoPrivate*)this)->name;
 	}
 
 	uint VariableInfo::offset() const
@@ -109,9 +109,9 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->size;
 	}
 
-	const char* VariableInfo::attribute() const
+	const std::string& VariableInfo::attribute() const
 	{
-		return ((VariableInfoPrivate*)this)->attribute.c_str();
+		return ((VariableInfoPrivate*)this)->attribute;
 	}
 
 	const void* VariableInfo::default_value() const
@@ -125,9 +125,9 @@ namespace flame
 		int value;
 	};
 
-	const char* EnumItem::name() const
+	const std::string& EnumItem::name() const
 	{
-		return ((EnumItemPrivate*)this)->name.c_str();
+		return ((EnumItemPrivate*)this)->name;
 	}
 
 	int EnumItem::value() const
@@ -141,9 +141,9 @@ namespace flame
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 	};
 
-	const char* EnumInfo::name() const
+	const std::string& EnumInfo::name() const
 	{
-		return ((EnumInfoPrivate*)this)->name.c_str();
+		return ((EnumInfoPrivate*)this)->name;
 	}
 
 	uint EnumInfo::item_count() const
@@ -208,9 +208,9 @@ namespace flame
 		std::string code_pos;
 	};
 
-	const char* FunctionInfo::name() const
+	const std::string& FunctionInfo::name() const
 	{
-		return ((FunctionInfoPrivate*)this)->name.c_str();
+		return ((FunctionInfoPrivate*)this)->name;
 	}
 
 	void* FunctionInfo::rva() const
@@ -240,9 +240,9 @@ namespace flame
 		((FunctionInfoPrivate*)this)->parameter_types.push_back(t);
 	}
 
-	const char* FunctionInfo::code_pos() const
+	const std::string& FunctionInfo::code_pos() const
 	{
-		return ((FunctionInfoPrivate*)this)->code_pos.c_str();
+		return ((FunctionInfoPrivate*)this)->code_pos;
 	}
 
 	struct UdtInfoPrivate : UdtInfo
@@ -339,9 +339,9 @@ namespace flame
 		}
 	};
 
-	const char* UdtInfo::name() const
+	const std::string& UdtInfo::name() const
 	{
-		return ((UdtInfoPrivate*)this)->name.c_str();
+		return ((UdtInfoPrivate*)this)->name;
 	}
 
 	uint UdtInfo::size() const
@@ -349,9 +349,9 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->size;
 	}
 
-	const wchar_t* UdtInfo::module_name() const
+	const std::wstring& UdtInfo::module_name() const
 	{
-		return ((UdtInfoPrivate*)this)->module_name.c_str();
+		return ((UdtInfoPrivate*)this)->module_name;
 	}
 
 	uint UdtInfo::variable_count() const
@@ -445,57 +445,72 @@ namespace flame
 		return false;
 	}
 
-	String serialize_value(TypeTag$ tag, uint hash, const void* src, int precision)
+	Mail<std::string> serialize_value(TypeTag$ tag, uint hash, const void* src, int precision)
 	{
+		auto ret = new_mail<std::string>();
+
 		switch (tag)
 		{
 		case TypeTagEnumSingle:
-			return find_enum(hash)->find_item(*(int*)src)->name();
+			*(ret.p) = find_enum(hash)->find_item(*(int*)src)->name();
+			break;
 		case TypeTagEnumMulti:
 		{
-			std::string ret;
+			std::string str;
 			auto e = (EnumInfoPrivate*)find_enum(hash);
 			auto v = *(int*)src;
 			for (auto i = 0; i < e->items.size(); i++)
 			{
 				if ((v & 1) == 1)
 				{
-					if (!ret.empty())
-						ret += ";";
-					ret += e->find_item(1 << i)->name();
+					if (!str.empty())
+						str += ";";
+					str += e->find_item(1 << i)->name();
 				}
 				v >>= 1;
 			}
-			return ret;
+			(*ret.p) = str;
 		}
-		break;
+			break;
 		case TypeTagVariable:
 			switch (hash)
 			{
 			case cH("float"):
-				return to_string(*(float*)src, precision);
+				(*ret.p) = to_string(*(float*)src, precision);
+				break;
 			case cH("uint"):
-				return std::to_string(*(uint*)src);
+				(*ret.p) = std::to_string(*(uint*)src);
+				break;
 			case cH("int"):
-				return std::to_string(*(int*)src);
+				(*ret.p) = std::to_string(*(int*)src);
+				break;
 			case cH("bool"):
-				return *(bool*)src ? "1" : "0";
+				(*ret.p) = *(bool*)src ? "1" : "0";
+				break;
 			case cH("Vec~1~float"):
-				return to_string(*(Vec1f*)src, precision);
+				(*ret.p) = to_string(*(Vec1f*)src, precision);
+				break;
 			case cH("Vec~2~float"):
-				return to_string(*(Vec2f*)src, precision);
+				(*ret.p) = to_string(*(Vec2f*)src, precision);
+				break;
 			case cH("Vec~3~float"):
-				return to_string(*(Vec3f*)src, precision);
+				(*ret.p) = to_string(*(Vec3f*)src, precision);
+				break;
 			case cH("Vec~4~float"):
-				return to_string(*(Vec4f*)src, precision);
+				(*ret.p) = to_string(*(Vec4f*)src, precision);
+				break;
 			case cH("Vec~1~uint"):
-				return to_string(*(Vec1u*)src);
+				(*ret.p) = to_string(*(Vec1u*)src);
+				break;
 			case cH("Vec~2~uint"):
-				return to_string(*(Vec2u*)src);
+				(*ret.p) = to_string(*(Vec2u*)src);
+				break;
 			case cH("Vec~3~uint"):
-				return to_string(*(Vec3u*)src);
+				(*ret.p) = to_string(*(Vec3u*)src);
+				break;
 			case cH("Vec~4~uint"):
-				return to_string(*(Vec4u*)src);
+				(*ret.p) = to_string(*(Vec4u*)src);
+				break;
 				//case cH("Ivec2"): case cH("i2"):
 				//	return to_string(*(Ivec2*)src);
 				//case cH("Ivec3"): case cH("i3"):
@@ -509,13 +524,15 @@ namespace flame
 				//case cH("Vec3c"): case cH("b3"):
 				//	return to_string(*(Vec3c*)src);
 			case cH("Vec~4~uchar"):
-				return to_string(*(Vec4c*)src);
+				(*ret.p) = to_string(*(Vec4c*)src);
+				break;
 			default:
 				assert(0);
 			}
+			break;
 		}
 
-		return "";
+		return ret;
 	}
 
 	void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst)
@@ -842,7 +859,9 @@ namespace flame
 						{
 							auto n_item = new_node("item");
 							n_item->new_attr("name", vari->name());
-							n_item->new_attr("value", serialize_value(type->tag(), type->hash(), src, precision).v);
+							auto str = serialize_value(type->tag(), type->hash(), src, precision);
+							n_item->new_attr("value", *str.p);
+							delete_mail(str);
 						}
 					}
 				}
@@ -1010,7 +1029,7 @@ namespace flame
 		}
 	}
 
-	String SerializableNode::to_string_xml() const
+	Mail<std::string> SerializableNode::to_string_xml() const
 	{
 		pugi::xml_document doc;
 		auto rn = doc.append_child(name().c_str());
@@ -1029,7 +1048,7 @@ namespace flame
 		xml_string_writer writer;
 		doc.print(writer);
 
-		return writer.result;
+		return new_mail(&writer.result);
 	}
 
 	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
@@ -1056,13 +1075,13 @@ namespace flame
 		}
 	}
 
-	String SerializableNode::to_string_json() const
+	Mail<std::string> SerializableNode::to_string_json() const
 	{
 		nlohmann::json doc;
 
 		to_json(doc, (SerializableNodePrivate*)this);
 
- 		return doc.dump();
+ 		return new_mail(&doc.dump());
 	}
 
 	void SerializableNode::save_xml(const std::wstring & filename) const
@@ -1452,14 +1471,14 @@ namespace flame
 	}
 
 	template<class T, class U>
-	DynamicArray<T*> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
+	 Mail<std::vector<T*>> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
 	{
-		DynamicArray<T*> ret;
-		ret.resize(map.size());
+		auto ret = new_mail<std::vector<T*>>();
+		ret.p->resize(map.size());
 		auto i = 0;
 		for (auto it = map.begin(); it != map.end(); it++)
 		{
-			ret[i] = it->second.get();
+			(*ret.p)[i] = it->second.get();
 			i++;
 		}
 		return ret;
@@ -1474,10 +1493,10 @@ namespace flame
 		return it->second.get();
 	}
 
-	DynamicArray<EnumInfo*> get_enums(int level)
+	Mail<std::vector<EnumInfo*>> get_enums(int level)
 	{
 		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<EnumInfo>(db->enums) : DynamicArray<EnumInfo*>();
+		return db ? get_typeinfo_objects<EnumInfo>(db->enums) : new_mail<std::vector<EnumInfo*>>();
 	}
 
 	EnumInfo* find_enum(uint name_hash, int level)
@@ -1508,10 +1527,10 @@ namespace flame
 		return e;
 	}
 
-	DynamicArray<FunctionInfo*> get_functions(int level)
+	Mail<std::vector<FunctionInfo*>> get_functions(int level)
 	{
 		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<FunctionInfo>(db->functions) : DynamicArray<FunctionInfo*>();
+		return db ? get_typeinfo_objects<FunctionInfo>(db->functions) : new_mail<std::vector<FunctionInfo*>>();
 	}
 
 	FunctionInfo* find_function(uint name_hash, int level)
@@ -1545,10 +1564,10 @@ namespace flame
 		return f;
 	}
 
-	DynamicArray<UdtInfo*> get_udts(int level)
+	Mail<std::vector<UdtInfo*>> get_udts(int level)
 	{
 		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<UdtInfo>(db->udts) : DynamicArray<UdtInfo*>();
+		return db ? get_typeinfo_objects<UdtInfo>(db->udts) : new_mail<std::vector<UdtInfo*>>();
 	}
 
 	UdtInfo* find_udt(uint name_hash, int level)
@@ -1602,18 +1621,9 @@ namespace flame
 		return l;
 	}
 
-	static void* this_module;
-
-	template<class T>
-	void* pf2p(T f)
+	void* calc_rva(void* p, void* module)
 	{
-		union
-		{
-			T f;
-			void* p;
-		}cvt;
-		cvt.f = f;
-		return (void*)((char*)cvt.p - this_module);
+		return (void*)((char*)p - module);
 	}
 
 	template<uint N, class T>
@@ -1632,7 +1642,7 @@ namespace flame
 	};
 
 	template<uint N, class T>
-	void add_vec_udt(const std::string& name_suffix, const std::string& type_name)
+	void add_vec_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
 	{
 		typedef BP_Vec<N, T> VecType;
 
@@ -1642,30 +1652,33 @@ namespace flame
 			u->add_variable(TypeTagVariable, type_name, std::string(1, "xyzw"[i]), "i", sizeof(T) * i, sizeof(T));
 		u->add_variable(TypeTagVariable, "Vec~" + std::to_string(N) + "~" + std::string(type_name), "v", "o", offsetof(VecType, out), sizeof(VecType::out));
 
-		u->add_function("update", pf2p(&BP_Vec<N, T>::update), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
+		u->add_function("update", calc_rva(f2v(&BP_Vec<N, T>::update), this_module), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
 	}
 
 	template<uint N, class T>
 	struct BP_Array
 	{
 		T in[N];
-		Array<T> out;
+		std::vector<T> out;
+
+		void ctor()
+		{
+			new (this) BP_Array;
+		}
+
+		void dtor()
+		{
+			(*this).~BP_Array();
+		}
 
 		bool update(float delta_time)
 		{
 			if (delta_time >= 0.f)
 			{
-				if (out.size != N)
-				{
-					delete[]out.v;
-					out.size = N;
-					out.v = new T[N];
-				}
+				out.resize(N);
 				for (auto i = 0; i < N; i++)
-					out.v[i] = in[i];
+					out[i] = in[i];
 			}
-			else
-				delete[]out.v;
 
 			return false;
 		}
@@ -1673,14 +1686,14 @@ namespace flame
 
 	struct ArraySize$
 	{
-		void* array$ia;
+		void* array$i;
 
 		uint size$o;
 
 		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
 		{
-			if (array$ia)
-				size$o = ((Array<int>*)array$ia)->size;
+			if (array$i)
+				size$o = ((std::vector<int>*)array$i)->size();
 
 			return false;
 		}
@@ -1689,32 +1702,27 @@ namespace flame
 
 	struct ArrayInsertBeforeForEachItem_vp$
 	{
-		Array<void*> array$i;
+		std::vector<void*>* array$i;
 		void* v$i;
 
-		Array<void*> array$o;
+		std::vector<void*> array$o;
 
 		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
 		{
 			if (delta_time >= 0.f)
 			{
-				if (array$o.size != array$i.size * 2)
+				if (!array$i)
+					array$o.clear();
+				else
 				{
-					delete[]array$o.v;
-					array$o.size = array$i.size * 2;
-					array$o.v = array$o.size > 0 ? new void* [array$o.size] : nullptr;
-				}
-				if (array$i.v)
-				{
-					for (auto i = 0; i < array$i.size; i++)
+					array$o.resize(array$i->size() * 2);
+					for (auto i = 0; i < array$o.size(); i++)
 					{
-						array$o.v[i * 2 + 0] = v$i;
-						array$o.v[i * 2 + 1] = array$i.v[i];
+						array$o[i * 2 + 0] = v$i;
+						array$o[i * 2 + 1] = (*array$i)[i];
 					}
 				}
 			}
-			else
-				delete[]array$o.v;
 
 			return false;
 		}
@@ -1722,7 +1730,7 @@ namespace flame
 	}bp_array_insert_before_for_each_item_unused;
 
 	template<uint N, class T>
-	void add_array_udt(const std::string& name_suffix, const std::string& type_name)
+	void add_array_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
 	{
 		typedef BP_Array<N, T> ArrayType;
 
@@ -1740,25 +1748,27 @@ namespace flame
 			u->add_variable(is_pointer ? TypeTagPointer : TypeTagVariable, s_type_name, std::to_string(i + 1), "i", sizeof(T) * i, sizeof(T));
 		u->add_variable(TypeTagVariable, "Array~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
 
-		u->add_function("update", pf2p(&BP_Array<N, T>::update), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
+		u->add_function("ctor", calc_rva(f2v(&BP_Array<N, T>::ctor), this_module), TypeTagVariable, "void", "");
+		u->add_function("dtor", calc_rva(f2v(&BP_Array<N, T>::dtor), this_module), TypeTagVariable, "void", "");
+		u->add_function("update", calc_rva(f2v(&BP_Array<N, T>::update), this_module), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
 	}
 
 	void typeinfo_init_basic_bp_nodes()
 	{
-		this_module = load_module(L"flame_foundation.dll");
+		auto this_module = load_module(L"flame_foundation.dll");
 
-		add_vec_udt<1, float>("1f", "float");
-		add_vec_udt<2, float>("2f", "float");
-		add_vec_udt<3, float>("3f", "float");
-		add_vec_udt<4, float>("4f", "float");
+		add_vec_udt<1, float>("1f", "float", this_module);
+		add_vec_udt<2, float>("2f", "float", this_module);
+		add_vec_udt<3, float>("3f", "float", this_module);
+		add_vec_udt<4, float>("4f", "float", this_module);
 
-		add_array_udt<1, uint>("1_u", "uint");
-		add_array_udt<1, Vec4c>("1_4c", "Vec~4~uchar");
-		add_array_udt<1, voidptr>("1_vp", "void*");
+		add_array_udt<1, uint>("1_u", "uint", this_module);
+		add_array_udt<1, Vec4c>("1_4c", "Vec~4~uchar", this_module);
+		add_array_udt<1, voidptr>("1_vp", "void*", this_module);
 
-		add_array_udt<2, uint>("2_u", "uint");
-		add_array_udt<2, Vec4c>("2_4c", "Vec~4~uchar");
-		add_array_udt<2, voidptr>("2_vp", "void*");
+		add_array_udt<2, uint>("2_u", "uint", this_module);
+		add_array_udt<2, Vec4c>("2_4c", "Vec~4~uchar", this_module);
+		add_array_udt<2, voidptr>("2_vp", "void*", this_module);
 
 		free_module(this_module);
 	}
@@ -2301,8 +2311,9 @@ namespace flame
 					if (v->default_value)
 					{
 						auto default_value_str = serialize_value(type.tag, type.hash, v->default_value, 1);
-						if (default_value_str.size > 0)
-							n_vari->new_attr("default_value", default_value_str.v);
+						if (!default_value_str.p->empty())
+							n_vari->new_attr("default_value", *default_value_str.p);
+						delete_mail(default_value_str);
 					}
 				}
 

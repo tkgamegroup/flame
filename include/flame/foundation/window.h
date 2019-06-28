@@ -47,7 +47,8 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void *get_native();
 
-		FLAME_FOUNDATION_EXPORTS const char* title();
+		FLAME_FOUNDATION_EXPORTS const std::string& title();
+		FLAME_FOUNDATION_EXPORTS const void set_title(std::string& _title);
 
 #ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
@@ -56,19 +57,19 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		FLAME_FOUNDATION_EXPORTS void add_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void add_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void add_destroy_listener(void (*listener)(void* c), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void* add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void* add_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void* add_destroy_listener(void (*listener)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void remove_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(void (*listener)(void* c), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void remove_key_listener(void *ret_by_add);
+		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(void* ret_by_add);
+		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(void* ret_by_add);
+		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(void* ret_by_add);
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
-		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const char *_title, const Vec2u& _size, int _style);
+		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const std::string& _title, const Vec2u& _size, int _style);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Window *s);
 	};
 

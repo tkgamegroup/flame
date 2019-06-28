@@ -243,27 +243,23 @@ namespace flame
 	struct TypeInfo
 	{
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const; // templates, template wraps and template parameters are all separated by '~'
 		FLAME_FOUNDATION_EXPORTS uint hash() const;
-		// name:
-		//  if has template, name is with template
-		//  template args are separated by ',', with no space char and wrap by '<>'
-		//  e.g. 'Array<void*>' or Vec<4,float>
 
 		static bool equal(const TypeInfo* lhs, const TypeInfo* rhs)
 		{
 			if (lhs->tag() == TypeTagAny || rhs->tag() == TypeTagAny)
 				return true;
 			return lhs->tag() == rhs->tag() && lhs->hash() == rhs->hash() &&
-				strcmp(lhs->name(), rhs->name()) == 0;
+				lhs->name() == rhs->name();
 		}
 	};
 
 	struct VariableInfo
 	{
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS const char* attribute() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& attribute() const;
 		FLAME_FOUNDATION_EXPORTS uint offset() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;
 		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
@@ -271,13 +267,13 @@ namespace flame
 
 	struct EnumItem
 	{
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 		FLAME_FOUNDATION_EXPORTS int value() const;
 	};
 
 	struct EnumInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint item_count() const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* item(int idx) const;
@@ -288,7 +284,7 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
@@ -297,15 +293,15 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS void add_parameter(TypeTag$ tag, const std::string& type_name);
 
-		FLAME_FOUNDATION_EXPORTS const char* code_pos() const; // source_file_name#line_begin:line_end
+		FLAME_FOUNDATION_EXPORTS const std::string& code_pos() const; // source_file_name#line_begin:line_end
 
 	};
 
 	struct UdtInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
+		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
 
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint size() const;
 
@@ -322,7 +318,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
 	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
-	FLAME_FOUNDATION_EXPORTS String serialize_value(TypeTag$ tag, uint hash, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(TypeTag$ tag, uint hash, const void* src, int precision = 6);
 	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst);
 
 	struct SerializableAttribute
@@ -373,8 +369,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS SerializableNode* node(int idx) const;
 		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name);
 
-		FLAME_FOUNDATION_EXPORTS String to_string_xml() const;
-		FLAME_FOUNDATION_EXPORTS String to_string_json() const;
+		FLAME_FOUNDATION_EXPORTS Mail<std::string> to_string_xml() const;
+		FLAME_FOUNDATION_EXPORTS Mail<std::string> to_string_json() const;
 		FLAME_FOUNDATION_EXPORTS void save_xml(const std::wstring& filename) const;
 		FLAME_FOUNDATION_EXPORTS void save_json(const std::wstring& filename) const;
 
@@ -409,15 +405,15 @@ namespace flame
 			'f' for std::[w]string variable, means this is a filename
 	*/
 
-	FLAME_FOUNDATION_EXPORTS DynamicArray<EnumInfo*> get_enums(int level = 0);
+	FLAME_FOUNDATION_EXPORTS Mail<std::vector<EnumInfo*>> get_enums(int level = 0);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, int level = -1);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(uint level, const std::string& name);
 
-	FLAME_FOUNDATION_EXPORTS DynamicArray<FunctionInfo*> get_functions(int level = 0);
+	FLAME_FOUNDATION_EXPORTS Mail<std::vector<FunctionInfo*>> get_functions(int level = 0);
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, int level = -1);
 	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
 
-	FLAME_FOUNDATION_EXPORTS DynamicArray<UdtInfo*> get_udts(int level = 0);
+	FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts(int level = 0);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(uint level, const std::string& name, uint size, const std::wstring& module_name);
 

@@ -29,7 +29,7 @@ namespace flame
 
 		virtual void on_create() {};
 
-		void create(const char *title, const Vec2u& res, int style)
+		void create(const std::string& title, const Vec2u& res, int style)
 		{
 			app = Application::create();
 			w = Window::create(app, title, res, style);

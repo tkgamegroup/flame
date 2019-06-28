@@ -103,9 +103,9 @@ namespace flame
 			return new BufferPrivate(size, data);
 		}
 
-		Buffer* Buffer::create_from_file(const wchar_t *filename, bool reverse)
+		Buffer* Buffer::create_from_file(const std::wstring& filename, bool reverse)
 		{
-			auto file = _wfopen(filename, L"rb");
+			auto file = _wfopen(filename.c_str(), L"rb");
 			if (!file)
 				return nullptr;
 

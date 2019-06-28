@@ -20,7 +20,7 @@ namespace flame
 		void set_data(const void* data);
 		bool link_to(SlotPrivate*target);
 
-		String get_address() const;
+		Mail<std::string> get_address() const;
 	};
 
 	struct NodePrivate : BP::Node
@@ -69,7 +69,7 @@ namespace flame
 
 		~BPPrivate();
 
-		NodePrivate *add_node(const char* id, const char* type_name);
+		NodePrivate *add_node(const std::string& id, const std::string& type_name);
 		void remove_node(NodePrivate *n);
 
 		NodePrivate* find_node(const std::string &id) const;
@@ -142,9 +142,11 @@ namespace flame
 		return true;
 	}
 
-	String SlotPrivate::get_address() const
+	Mail<std::string> SlotPrivate::get_address() const
 	{
-		return node->id + "." + variable_info->name();
+		auto ret = new_mail<std::string>();
+		(*ret.p) = node->id + "." + variable_info->name();
+		return ret;
 	}
 
 	NodePrivate::NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt) :
@@ -302,9 +304,9 @@ namespace flame
 			typeinfo_clear(t.first);
 	}
 
-	NodePrivate *BPPrivate::add_node(const char* type_name, const char *id)
+	NodePrivate *BPPrivate::add_node(const std::string& type_name, const std::string& id)
 	{
-		auto type_name_sp = string_split(std::string(type_name), '#');
+		auto type_name_sp = string_split(type_name, '#');
 		UdtInfo* udt = nullptr;
 		auto udt_from_default_db = true;
 		if (type_name_sp.size() == 1)
@@ -338,10 +340,11 @@ namespace flame
 					auto compile_output = compile_to_dll({ fn_cpp }, { }, fn_dll);
 					if (!std::fs::exists(fn_dll) || std::fs::last_write_time(fn_dll) < std::fs::last_write_time(fn_cpp))
 					{
-						printf("compile error:\n%s\n", compile_output.v);
+						printf("compile error:\n%s\n", compile_output.p->c_str());
 						assert(0);
 						return nullptr;
 					}
+					delete_mail(compile_output);
 					if (std::fs::exists(fn_ti))
 						std::fs::remove(fn_ti);
 				}
@@ -366,7 +369,7 @@ namespace flame
 			return nullptr;
 
 		std::string s_id;
-		if (id)
+		if (!id.empty())
 		{
 			s_id = id;
 			if (find_node(s_id))
@@ -555,7 +558,9 @@ namespace flame
 				{
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					n_data->new_attr("value", serialize_value(type->tag(), type->hash(), input->data(), 2).v);
+					auto value = serialize_value(type->tag(), type->hash(), input->data(), 2);
+					n_data->new_attr("value", *value.p);
+					delete_mail(value);
 				}
 			}
 		}
@@ -568,8 +573,12 @@ namespace flame
 				if (input->links[0])
 				{
 					auto n_link = n_links->new_node("link");
-					n_link->new_attr("out", input->links[0]->get_address().v);
-					n_link->new_attr("in", input->get_address().v);
+					auto out_addr = input->links[0]->get_address();
+					auto in_addr = input->get_address();
+					n_link->new_attr("out", *out_addr.p);
+					n_link->new_attr("in", *in_addr.p);
+					delete_mail(out_addr);
+					delete_mail(in_addr);
 				}
 			}
 		}
@@ -613,7 +622,7 @@ namespace flame
 		return ((SlotPrivate*)this)->link_to((SlotPrivate*)target);
 	}
 
-	String BP::Slot::get_address() const
+	Mail<std::string> BP::Slot::get_address() const
 	{
 		return ((SlotPrivate*)this)->get_address();
 	}
@@ -633,9 +642,9 @@ namespace flame
 		return ((NodePrivate*)this)->bp;
 	}
 
-	const char *BP::Node::id() const
+	const std::string& BP::Node::id() const
 	{
-		return ((NodePrivate*)this)->id.c_str();
+		return ((NodePrivate*)this)->id;
 	}
 
 	UdtInfo *BP::Node::udt() const
@@ -673,12 +682,12 @@ namespace flame
 		return ((NodePrivate*)this)->outputs[idx].get();
 	}
 
-	BP::Slot*BP::Node::find_input(const char *name) const
+	BP::Slot*BP::Node::find_input(const std::string& name) const
 	{
 		return ((NodePrivate*)this)->find_input(name);
 	}
 
-	BP::Slot*BP::Node::find_output(const char *name) const
+	BP::Slot*BP::Node::find_output(const std::string& name) const
 	{
 		return ((NodePrivate*)this)->find_output(name);
 	}
@@ -693,7 +702,7 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(const char* type_name, const char *id)
+	BP::Node *BP::add_node(const std::string& type_name, const std::string& id)
 	{
 		return ((BPPrivate*)this)->add_node(type_name, id);
 	}
@@ -703,17 +712,17 @@ namespace flame
 		((BPPrivate*)this)->remove_node((NodePrivate*)n);
 	}
 
-	BP::Node *BP::find_node(const char *id) const
+	BP::Node *BP::find_node(const std::string& id) const
 	{
 		return ((BPPrivate*)this)->find_node(id);
 	}
 
-	BP::Slot*BP::find_input(const char *address) const
+	BP::Slot*BP::find_input(const std::string& address) const
 	{
 		return ((BPPrivate*)this)->find_input(address);
 	}
 
-	BP::Slot*BP::find_output(const char *address) const
+	BP::Slot*BP::find_output(const std::string& address) const
 	{
 		return ((BPPrivate*)this)->find_output(address);
 	}

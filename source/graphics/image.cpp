@@ -248,7 +248,7 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void ImagePrivate::save_png(const wchar_t *filename)
+		void ImagePrivate::save_png(const std::wstring& filename)
 		{
 			if (bpp_ / channel_ > 8)
 			{
@@ -316,7 +316,7 @@ namespace flame
 			((ImagePrivate*)this)->set_pixels(x, y, cx, cy, src);
 		}
 
-		void Image::save_png(const wchar_t *filename)
+		void Image::save_png(const std::wstring& filename)
 		{
 			((ImagePrivate*)this)->save_png(filename);
 		}
@@ -372,7 +372,7 @@ namespace flame
 			return i;
 		}
 
-		Image *Image::create_from_file(Device *d, const wchar_t *filename, ImageUsage$ extra_usage)
+		Image *Image::create_from_file(Device *d, const std::wstring& filename, ImageUsage$ extra_usage)
 		{
 			std::fs::path path(filename);
 			if (!std::fs::exists(path))

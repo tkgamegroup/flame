@@ -40,20 +40,22 @@ namespace flame
 		return ret;
 	}
 
-	const wchar_t *get_curr_path()
+	Mail<std::wstring> get_curr_path()
 	{
-		static wchar_t buf[260];
+		wchar_t buf[260];
 		GetCurrentDirectoryW(sizeof(buf), buf);
-		return buf;
+		auto ret = new_mail<std::wstring>();
+		(*ret.p) = buf;
+		return ret;
 	}
 
-	const wchar_t *get_app_path()
+	Mail<std::wstring> get_app_path()
 	{
-		static wchar_t buf[260];
+		wchar_t buf[260];
 		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		auto path = std::fs::path(buf).parent_path().generic_wstring();
-		wcscpy(buf, path.data());
-		return buf;
+		auto ret = new_mail<std::wstring>();
+		(*ret.p) = std::fs::path(buf).parent_path().generic_wstring();
+		return ret;
 	}
 
 	void com_init()
@@ -176,8 +178,6 @@ namespace flame
 			cl += l + L" ";
 
 		cl += L" -out:" + out;
-
-		//printf("exec:\n%s\n\n", cl.c_str());
 
 		return exec_and_get_output(L"", cl.c_str());
 	}
@@ -512,10 +512,10 @@ namespace flame
 		case VK_SCROLL:
 			return Key_ScrollLock;
 		default:
-			return Key_Null;
+			return KeyNull;
 		}
 #endif
-		return Key_Null;
+		return KeyNull;
 	}
 
 	bool is_modifier_pressing(Key k, int left_or_right)
@@ -637,7 +637,13 @@ namespace flame
 	{
 		auto path = std::wstring(_path);
 
-		auto dir_handle = CreateFileW(!path.empty() ? path.c_str() : get_curr_path(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+		if (path.empty())
+		{
+			auto curr_path = get_curr_path();
+			path = *curr_path.p;
+			delete_mail(curr_path);
+		}
+		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];

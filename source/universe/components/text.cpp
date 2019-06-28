@@ -67,12 +67,12 @@ namespace flame
 		((cText$Private*)this)->update(delta_time);
 	}
 
-	const wchar_t* cText$::text() const
+	const std::wstring& cText$::text() const
 	{
-		return ((cText$Private*)this)->text.c_str();
+		return ((cText$Private*)this)->text;
 	}
 
-	void cText$::set_text(const wchar_t* text)
+	void cText$::set_text(const std::wstring& text)
 	{
 		((cText$Private*)this)->text = text;
 	}

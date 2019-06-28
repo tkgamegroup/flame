@@ -20,29 +20,43 @@ namespace flame
 		KeyEventUp
 	};
 
+	template<class F>
+	struct Closure
+	{
+		F* function;
+		Mail<> capture;
+
+		~Closure()
+		{
+			delete_mail(capture);
+		}
+	};
+
 	struct WindowPrivate;
 
 	struct ApplicationPrivate : Application
 	{
 		std::vector<WindowPrivate*> windows;
 
-		long long last_time;
-		long long last_frame_time;
-		long long counting_frame;
+		ulonglong last_time;
+		ulonglong last_frame_time;
+		uint counting_frame;
 
-		std::vector<Function<void(void* c)>> delay_events;
+		std::vector<std::unique_ptr<Closure<void(void* c)>>> delay_events;
 
 		ApplicationPrivate();
 		~ApplicationPrivate();
 
-		int run(Function<void(void* c)>& idle_func);
-		void add_delay_event(Function<void(void* c)>& event);
+		int run(void (*idle_func)(void* c), const Mail<>& capture);
+		void add_delay_event(void (*event)(void* c), const Mail<>& capture);
 		void clear_delay_events();
 	};
 
 	struct WindowPrivate : Window
 	{
 		ApplicationPrivate* app;
+
+		std::string title;
 
 #ifdef FLAME_WINDOWS
 		HWND hWnd;
@@ -53,15 +67,15 @@ namespace flame
 		android_app* android_state_;
 #endif
 
-		std::vector<Function<void(void* c, KeyState action, Key key)>*> key_listeners;
-		std::vector<Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>*> mouse_listeners;
-		std::vector<Function<void(void* c, const Vec2u& size)>*> resize_listeners;
-		std::vector<Function<void(void* c)>*> destroy_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, Key key)>>> key_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>>> mouse_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c, const Vec2u& size)>>> resize_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c)>>> destroy_listeners;
 
 		bool dead;
 
 #ifdef FLAME_WINDOWS
-		WindowPrivate(const char* _title, const Vec2u& _size, int _style)
+		WindowPrivate(const std::string& _title, const Vec2u& _size, int _style)
 		{
 			title = _title;
 
@@ -136,8 +150,8 @@ namespace flame
 		{
 			for (auto& f : destroy_listeners)
 			{
-				(*f)();
-				f->destroy();
+				(*f->function)(f->capture.p);
+				delete_mail(f->capture);
 			}
 		}
 
@@ -181,11 +195,11 @@ namespace flame
 				win32_style |= WS_POPUP | WS_BORDER;
 			else
 			{
-				if (style& WindowFullscreen)
+				if (style & WindowFullscreen)
 					final_size = screen_size;
-				if (style& WindowFrame)
+				if (style & WindowFrame)
 					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-				if (style& WindowResizable)
+				if (style & WindowResizable)
 					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
 			}
 
@@ -199,7 +213,7 @@ namespace flame
 
 			if (!hWnd)
 			{
-				hWnd = CreateWindowA("flame_wnd", title.v, win32_style,
+				hWnd = CreateWindowA("flame_wnd", title.c_str(), win32_style,
 					pos.x(), pos.y(), final_size.x(), final_size.y(), NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 			}
 			else
@@ -216,45 +230,6 @@ namespace flame
 		}
 #endif
 
-		void remove_key_listener(int id)
-		{
-		}
-
-		void remove_mouse_listener(int id)
-		{
-			for (auto it = mouse_listeners.begin(); it != mouse_listeners.end(); it++)
-			{
-				if (it->first == id)
-				{
-					mouse_listeners.erase(it);
-					return;
-				}
-			}
-		}
-
-		void remove_resize_listener(int id)
-		{
-			for (auto it = resize_listeners.begin(); it != resize_listeners.end(); it++)
-			{
-				if (it->first == id)
-				{
-					resize_listeners.erase(it);
-					return;
-				}
-			}
-		}
-
-		void remove_destroy_listener(int id)
-		{
-			for (auto it = destroy_listeners.begin(); it != destroy_listeners.end(); it++)
-			{
-				if (it->first == id)
-				{
-					destroy_listeners.erase(it);
-					return;
-				}
-			}
-		}
 	};
 
 	void* Window::get_native()
@@ -264,6 +239,16 @@ namespace flame
 #elif FLAME_ANDROID
 		return reinterpret_cast<WindowPrivate*>(this)->android_state_;
 #endif
+	}
+
+	const std::string& Window::title()
+	{
+		return ((WindowPrivate*)this)->title;
+	}
+
+	const void Window::set_title(std::string& _title)
+	{
+		((WindowPrivate*)this)->title = _title;
 	}
 
 #ifdef FLAME_WINDOWS
@@ -283,52 +268,92 @@ namespace flame
 	}
 #endif
 
-	void Window::add_key_listener(Function<void(void* c, KeyState action, Key key)>* listener)
+	void* Window::add_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture)
 	{
-		((WindowPrivate*)this)->key_listeners.push_back(listener);
+		auto c = new Closure<void (void* c, KeyState action, Key key)>;
+		c->function = listener;
+		c->capture = capture;
+		((WindowPrivate*)this)->key_listeners.emplace_back(c);
+		return c;
 	}
 
-	void Window::add_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener)
+	void* Window::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture)
 	{
-		((WindowPrivate*)this)->mouse_listeners.push_back(listener);
+		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>;
+		c->function = listener;
+		c->capture = capture;
+		((WindowPrivate*)this)->mouse_listeners.emplace_back(c);
+		return c;
 	}
 
-	void Window::add_resize_listener(Function<void(void* c, const Vec2u& size)>* listener)
+	void* Window::add_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture)
 	{
-		((WindowPrivate*)this)->resize_listeners.push_back(listener);
+		auto c = new Closure<void(void* c, const Vec2u& size)>;
+		c->function = listener;
+		c->capture = capture;
+		((WindowPrivate*)this)->resize_listeners.emplace_back(c);
+		return c;
 	}
 
-	void Window::add_destroy_listener(Function<void(void* c)>* listener)
+	void* Window::add_destroy_listener(void (*listener)(void* c), const Mail<>& capture)
 	{
-		((WindowPrivate*)this)->destroy_listeners.push_back(listener);
+		auto c = new Closure<void(void* c)>;
+		c->function = listener;
+		c->capture = capture;
+		((WindowPrivate*)this)->destroy_listeners.emplace_back(c);
+		return c;
 	}
 
-	void Window::remove_key_listener(Function<void(void* c, KeyState action, Key key)>* listener)
+	void Window::remove_key_listener(void* ret_by_add)
 	{
 		auto& listeners = ((WindowPrivate*)this)->key_listeners;
 		for (auto it = listeners.begin(); it != listeners.end(); it++)
 		{
-			if (it->first == id)
+			if (it->get() == ret_by_add)
 			{
-				key_listeners.erase(it);
+				listeners.erase(it);
 				return;
 			}
 		}
 	}
 
-	void Window::remove_mouse_listener(Function<void(void* c, KeyState action, MouseKey key, const Vec2i& pos)>* listener)
+	void Window::remove_mouse_listener(void* ret_by_add)
 	{
-		((WindowPrivate*)this)->remove_mouse_listener(id);
+		auto& listeners = ((WindowPrivate*)this)->mouse_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
 	}
 
-	void Window::remove_resize_listener(Function<void(void* c, const Vec2u& size)>* listener)
+	void Window::remove_resize_listener(void* ret_by_add)
 	{
-		((WindowPrivate*)this)->remove_resize_listener(id);
+		auto& listeners = ((WindowPrivate*)this)->resize_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
 	}
 
-	void Window::remove_destroy_listener(Function<void(void* c)>* listener)
+	void Window::remove_destroy_listener(void* ret_by_add)
 	{
-		((WindowPrivate*)this)->remove_destroy_listener(id);
+		auto& listeners = ((WindowPrivate*)this)->destroy_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
 	}
 
 	void Window::close()
@@ -349,74 +374,74 @@ namespace flame
 			{
 				auto v = vk_code_to_key(wParam);
 				for (auto& f : w->key_listeners)
-					(*f)(KeyStateDown, v);
+					f->function(f->capture.p, KeyStateDown, v);
 			}
 				break;
 			case WM_KEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
 				for (auto& f : w->key_listeners)
-					(*f)(KeyStateUp, v);
+					f->function(f->capture.p, KeyStateUp, v);
 			}
 				break;
 			case WM_CHAR:
 				for (auto& f : w->key_listeners)
-					(*f)(KeyStateNull, (Key)wParam);
+					f->function(f->capture.p, KeyStateNull, (Key)wParam);
 				break;
 			case WM_LBUTTONDOWN:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateDown, Mouse_Left, pos);
+					f->function(f->capture.p, KeyStateDown, Mouse_Left, pos);
 			}
 				break;
 			case WM_LBUTTONUP:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateUp, Mouse_Left, pos);
+					f->function(f->capture.p, KeyStateUp, Mouse_Left, pos);
 			}
 				break;
 			case WM_MBUTTONDOWN:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateDown, Mouse_Middle, pos);
+					f->function(f->capture.p, KeyStateDown, Mouse_Middle, pos);
 			}
 				break;
 			case WM_MBUTTONUP:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateUp, Mouse_Middle, pos);
+					f->function(f->capture.p, KeyStateUp, Mouse_Middle, pos);
 			}
 				break;
 			case WM_RBUTTONDOWN:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateDown, Mouse_Right, pos);
+					f->function(f->capture.p, KeyStateDown, Mouse_Right, pos);
 			}
 				break;
 			case WM_RBUTTONUP:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateUp, Mouse_Right, pos);
+					f->function(f->capture.p, KeyStateUp, Mouse_Right, pos);
 			}
 				break;
 			case WM_MOUSEMOVE:
 			{
 				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateNull, Mouse_Null, pos);
+					f->function(f->capture.p, KeyStateNull, Mouse_Null, pos);
 			}
 				break;
 			case WM_MOUSEWHEEL:
 			{
 				auto v = Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0);
 				for (auto& f : w->mouse_listeners)
-					(*f)(KeyStateNull, Mouse_Middle, v);
+					f->function(f->capture.p, KeyStateNull, Mouse_Middle, v);
 			}
 				break;
 			case WM_DESTROY:
@@ -429,7 +454,7 @@ namespace flame
 				{
 					w->size = size;
 					for (auto& f : w->resize_listeners)
-						(*f)(size);
+						f->function(f->capture.p, size);
 				}
 			}
 				break;
@@ -440,7 +465,7 @@ namespace flame
 	}
 #endif
 
-	Window* Window::create(Application * app, const char* _title, const Vec2u& _size, int _style)
+	Window* Window::create(Application * app, const std::string& _title, const Vec2u& _size, int _style)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -562,7 +587,7 @@ namespace flame
 		}
 	}
 
-	int ApplicationPrivate::run(Function<void(void* c)> & idle_func)
+	int ApplicationPrivate::run(void (*idle_func)(void* c), const Mail<>& capture)
 	{
 		if (windows.size() == 0)
 			return 1;
@@ -612,7 +637,10 @@ namespace flame
 			}
 
 			if (windows.empty())
+			{
+				delete_mail(capture);
 				return 0;
+			}
 
 			if (last_time - last_frame_time >= 1000000000)
 			{
@@ -621,12 +649,12 @@ namespace flame
 				last_frame_time = last_time;
 			}
 
-			idle_func();
+			idle_func(capture.p);
 
 			if (!delay_events.empty())
 			{
 				for (auto& f : delay_events)
-					f();
+					f->function(f->capture.p);
 				delay_events.clear();
 			}
 
@@ -639,9 +667,12 @@ namespace flame
 		}
 	}
 
-	void ApplicationPrivate::add_delay_event(Function<void(void* c)> & event)
+	void ApplicationPrivate::add_delay_event(void (*event)(void* c), const Mail<>& capture)
 	{
-		delay_events.emplace_back(event);
+		auto c = new Closure<void (void* c)>;
+		c->function = event;
+		c->capture = capture;
+		delay_events.emplace_back(c);
 	}
 
 	void ApplicationPrivate::clear_delay_events()
@@ -649,9 +680,9 @@ namespace flame
 		delay_events.clear();
 	}
 
-	int Application::run(Function<void(void* c)> & idle_func)
+	int Application::run(void (*idle_func)(void* c), const Mail<>& capture)
 	{
-		return ((ApplicationPrivate*)this)->run(idle_func);
+		return ((ApplicationPrivate*)this)->run(idle_func, capture);
 	}
 
 	void Application::clear_delay_events()
@@ -659,9 +690,9 @@ namespace flame
 		((ApplicationPrivate*)this)->clear_delay_events();
 	}
 
-	void Application::add_delay_event(Function<void(void* c)> & event)
+	void Application::add_delay_event(void (*event)(void* c), const Mail<>& capture)
 	{
-		((ApplicationPrivate*)this)->add_delay_event(event);
+		((ApplicationPrivate*)this)->add_delay_event(event, capture);
 	}
 
 	Application* Application::create()

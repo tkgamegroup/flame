@@ -65,6 +65,60 @@ struct EnsureConst
 
 namespace flame
 {
+	template<class F>
+	void* f2v(F f) // function to void pointer
+	{
+		union
+		{
+			F f;
+			void* p;
+		}cvt;
+		cvt.f = f;
+		return cvt.p;
+	}
+
+	struct Dummy
+	{
+	};
+	typedef void(Dummy::*MF)();
+
+	inline MF p2mf(void* p) // void pointer to member function
+	{
+		union
+		{
+			void* p;
+			MF f;
+		}cvt;
+		cvt.p = p;
+		return cvt.f;
+	}
+
+	template<class T>
+	void* cf2v() // ctor function to void pointer
+	{
+		struct Wrap : T
+		{
+			void ctor()
+			{
+				new(this) T;
+			}
+		};
+		return f2v(&Wrap::ctor);
+	}
+
+	template<class T>
+	void* df2v() // dtor function to void pointer
+	{
+		struct Wrap : T
+		{
+			void dtor()
+			{
+				(*this).~Wrap();
+			}
+		};
+		return f2v(&Wrap::dtor);
+	}
+
 	enum KeyState
 	{
 		KeyStateNull,
@@ -76,7 +130,8 @@ namespace flame
 
 	enum Key
 	{
-		Key_Null = -1,
+		KeyNull = -1,
+
 		Key_Backspace,
 		Key_Tab,
 		Key_Enter,
@@ -104,7 +159,7 @@ namespace flame
 		Key_NumLock,
 		Key_ScrollLock,
 
-		Key_count,
+		KeyCount,
 
 		KeyMax = 0xffffffff
 	};
@@ -192,14 +247,14 @@ namespace flame
 
 	inline uint get_str_line_number(const char* str)
 	{
-		auto lineNumber = 0u;
+		auto lines = 0u;
 		while (*str)
 		{
 			if (*str == '\n')
-				lineNumber++;
+				lines++;
 			str++;
 		}
-		return lineNumber;
+		return lines;
 	}
 
 	template<typename CH>
@@ -924,31 +979,17 @@ namespace flame
 	};
 
 	template<class T>
-	Mail<T> new_mail(const T& v = T(), uint hash = 0)
+	Mail<T> new_mail(const T* v = nullptr, uint hash = 0)
 	{
 		auto p = flame_malloc(sizeof(T));
-		new(p) T(v);
-
-		struct Wrap
-		{
-			T t;
-
-			void dtor()
-			{
-				t.~T();
-			}
-		};
-
-		union
-		{
-			void* p;
-			void (Wrap::*pdtor)();
-		}cvt;
-		cvt.pdtor = &Wrap::dtor;
+		if (v)
+			new(p) T(*v);
+		else
+			new(p) T;
 
 		Mail<T> ret;
 		ret.p = (T*)p;
-		ret.dtor = cvt.p;
+		ret.dtor = df2v<T>();
 		ret.hash = hash;
 
 		return ret;
@@ -958,27 +999,14 @@ namespace flame
 	void delete_mail(const Mail<T>& m)
 	{
 		if (m.dtor)
-		{
-			struct Wrap
-			{
-			};
-
-			union
-			{
-				void* p;
-				void (Wrap::*dtor)();
-			}cvt;
-			cvt.p = m.dtor;
-
-			(*((Wrap*)m.p).*cvt.dtor)();
-		}
+			(*((Dummy*)m.p).*p2mf(m.dtor))();
 		flame_free(m.p);
 	}
 
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
-	FLAME_FOUNDATION_EXPORTS const wchar_t* get_curr_path();
-	FLAME_FOUNDATION_EXPORTS const wchar_t* get_app_path();
+	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_curr_path();
+	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_app_path();
 	FLAME_FOUNDATION_EXPORTS void com_init();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever

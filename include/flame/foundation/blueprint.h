@@ -15,7 +15,7 @@ namespace flame
 		  'a.b'   for node input or output
 		- An available udt should:
 			all of its data types must be pods
-			have a bool function that takes one float parameter and its name is 'update' (it returns if it needs update in next frame)
+			have a bool function that takes one float parameter (the delta_time, delta_time < 0 means the end of the node) and its name is 'update' (it returns if it needs update in next frame)
 		- A BP file is basically a XML file
 	*/
 
@@ -46,13 +46,13 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* link(int idx = 0) const;
 			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);
 
-			FLAME_FOUNDATION_EXPORTS String get_address() const;
+			FLAME_FOUNDATION_EXPORTS Mail<std::string> get_address() const;
 		};
 
 		struct Node
 		{
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
-			FLAME_FOUNDATION_EXPORTS const char* id() const;
+			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
 			FLAME_FOUNDATION_EXPORTS Vec2f position() const;
 			FLAME_FOUNDATION_EXPORTS void set_position(const Vec2f& p);
@@ -62,18 +62,18 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS int output_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* output(int idx) const;
 
-			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
-			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
+			FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& name) const;
+			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
 		};
 
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;
-		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* type_name, const char* id);
+		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type_name, const std::string& id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 
-		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* id) const;
-		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address) const;
-		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address) const;
+		FLAME_FOUNDATION_EXPORTS Node* find_node(const std::string& id) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& address) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& address) const;
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 

@@ -20,8 +20,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual void update(float delta_time) override;
 
-		FLAME_UNIVERSE_EXPORTS const wchar_t* text() const;
-		FLAME_UNIVERSE_EXPORTS void set_text(const wchar_t* text);
+		FLAME_UNIVERSE_EXPORTS const std::wstring& text() const;
+		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);
 
 		FLAME_UNIVERSE_EXPORTS static cText$* create$(void* data);
 	};

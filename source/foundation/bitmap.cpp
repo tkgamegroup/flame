@@ -45,7 +45,7 @@ namespace flame
 		}
 	}
 
-	void Bitmap::copy_to(Bitmap *b, const Vec2u &src_off, const Vec2u &cpy_size, const Vec2u &dst_off)
+	void Bitmap::copy_to(Bitmap* b, const Vec2u& src_off, const Vec2u& cpy_size, const Vec2u& dst_off)
 	{
 		assert(channel == b->channel);
 		assert(src_off + cpy_size < size);
@@ -58,7 +58,7 @@ namespace flame
 		}
 	}
 
-	void Bitmap::save(const std::wstring &wfilename)
+	void Bitmap::save(const std::wstring& wfilename)
 	{
 		auto filename = w2s(wfilename);
 		auto ext = std::fs::path(filename).extension();
@@ -69,7 +69,7 @@ namespace flame
 			stbi_write_bmp(filename.c_str(), size.x(), size.y(), channel, data);
 	}
 
-	Bitmap *Bitmap::create(const Vec2u &size, int channel, int bpp, unsigned char *data, bool data_owner)
+	Bitmap* Bitmap::create(const Vec2u& size, int channel, int bpp, unsigned char* data, bool data_owner)
 	{
 		auto b = new Bitmap;
 		b->size = size;
@@ -96,7 +96,7 @@ namespace flame
 		return b;
 	}
 
-	Bitmap *Bitmap::create_from_file(const std::wstring &filename)
+	Bitmap* Bitmap::create_from_file(const std::wstring& filename)
 	{
 		auto file = _wfopen(filename.c_str(), L"rb");
 		if (!file)
@@ -121,7 +121,7 @@ namespace flame
 		return b;
 	}
 
-	Bitmap *Bitmap::create_from_gif(const std::wstring &filename)
+	Bitmap* Bitmap::create_from_gif(const std::wstring& filename)
 	{
 		auto file = get_file_content(filename);
 
@@ -132,7 +132,7 @@ namespace flame
 		return nullptr;
 	}
 
-	void Bitmap::destroy(Bitmap *b)
+	void Bitmap::destroy(Bitmap* b)
 	{
 		delete[]b->data;
 		delete b;

@@ -365,7 +365,7 @@ namespace flame
 				}
 			}
 
-			void add_text(uint font_atlas_index, const Vec2f& pos, const Vec4c& col, const wchar_t* text, float scale)
+			void add_text(uint font_atlas_index, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 			{
 				if (text[0] == 0 || font_atlas_index >= font_atlases.size())
 					return;
@@ -667,7 +667,7 @@ namespace flame
 			((CanvasPrivate*)this)->fill(col);
 		}
 
-		void Canvas::add_text(uint font_index, const Vec2f& pos, const Vec4c& col, const wchar_t* text, float scale)
+		void Canvas::add_text(uint font_index, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 		{
 			((CanvasPrivate*)this)->add_text(font_index, pos, col, text, scale);
 		}

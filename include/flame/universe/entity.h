@@ -17,7 +17,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS int component_count() const;
 		FLAME_UNIVERSE_EXPORTS Component* component(uint type_hash) const;
-		FLAME_UNIVERSE_EXPORTS Array<Component*> components(uint type_hash /* 0 to get all components */ ) const;
+		FLAME_UNIVERSE_EXPORTS Mail<std::vector<Component*>> components(uint type_hash /* 0 to get all components */ ) const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 
 		FLAME_UNIVERSE_EXPORTS Entity* parent() const;
@@ -27,8 +27,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void update(float delta_time);
 
-		FLAME_UNIVERSE_EXPORTS void load(const wchar_t* filename);
-		FLAME_UNIVERSE_EXPORTS void save(const wchar_t* filename);
+		FLAME_UNIVERSE_EXPORTS void load(const std::wstring& filename);
+		FLAME_UNIVERSE_EXPORTS void save(const std::wstring& filename);
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
