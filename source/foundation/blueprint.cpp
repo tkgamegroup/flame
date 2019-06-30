@@ -35,6 +35,8 @@ namespace flame
 		void* dummy; // represents the object
 
 		void* module;
+		FunctionInfo* ctor_function;
+		FunctionInfo* dtor_function;
 		FunctionInfo* update_function;
 
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
@@ -94,7 +96,7 @@ namespace flame
 		variable_info(_variable_info)
 	{
 		if (variable_info->default_value())
-			set((char*)node->dummy + variable_info->offset(), variable_info->type()->tag(), variable_info->size(), variable_info->default_value());
+			memcpy(data(), variable_info->default_value() , variable_info->size());
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -114,8 +116,22 @@ namespace flame
 			return false;
 		}
 
-		if (target && (target->type == Input || !TypeInfo::equal(variable_info->type(), target->variable_info->type())))
+		if (target && target->type == Input)
 			return false;
+
+		if (target)
+		{
+			auto in_type = variable_info->type();
+			auto out_type = target->variable_info->type();
+			auto in_tag = in_type->tag();
+			auto out_tag = out_type->tag();
+			auto in_hash = in_type->hash();
+			auto out_hash = out_type->hash();
+
+			if (!(in_tag == out_tag && in_hash == out_hash) || !(out_tag == TypeTagVariable && in_tag == TypeTagPointer && (out_hash == in_hash || in_hash == cH("void"))))
+				return false;
+		}
+
 		if (links[0] == target)
 			return true;
 
@@ -163,6 +179,21 @@ namespace flame
 		memset(dummy, 0, size);
 
 		module = load_module(udt->module_name());
+
+		ctor_function = nullptr;
+		{
+			auto f = udt->find_function("ctor");
+			if (f)
+			{
+				auto ret_t = f->return_type();
+				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("void") && f->parameter_count() == 0)
+					ctor_function = f;
+			}
+		}
+
+		dtor_function = udt->find_function("dtor");;
+
+		assert((ctor_function && dtor_function) || (!ctor_function && !dtor_function));
 		
 		update_function = nullptr;
 		{
@@ -170,18 +201,18 @@ namespace flame
 			if(f)
 			{
 				auto ret_t = f->return_type();
-				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("bool"))
+				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("bool") && f->parameter_count() == 1)
 				{
-					if (f->parameter_count() == 1)
-					{
-						auto t = f->parameter_type(0);
-						if (t->tag() == TypeTagVariable && t->hash() == cH("float"))
-							update_function = f;
-					}
+					auto t = f->parameter_type(0);
+					if (t->tag() == TypeTagVariable && t->hash() == cH("float"))
+						update_function = f;
 				}
 			}
 		}
 		assert(update_function);
+
+		if (ctor_function)
+			cmf(p2f<MF_b_f>(ctor_function->rva()), dummy);
 
 		for (auto i = 0; i < udt->variable_count(); i++)
 		{
@@ -196,8 +227,6 @@ namespace flame
 
 	NodePrivate::~NodePrivate()
 	{
-		free_module(module);
-
 		for (auto& i : inputs)
 		{
 			auto o = i->links[0];
@@ -219,7 +248,12 @@ namespace flame
 				l->links[0] = nullptr;
 		}
 
+		if (dtor_function)
+			cmf(p2f<MF_b_f>(dtor_function->rva()), dummy);
+
 		free(dummy);
+
+		free_module(module);
 
 		changed = true;
 		update(-1.f);
@@ -283,19 +317,20 @@ namespace flame
 		for (auto& input : inputs)
 		{
 			auto v = input->variable_info;
-			if (input->links[0])
-				set(input->data(), v->type()->tag(), v->size(), input->links[0]->data());
+			auto out = input->links[0];
+			if (out)
+			{
+				if (out->variable_info->type()->tag() == TypeTagVariable && v->type()->tag() == TypeTagPointer)
+				{
+					auto p = out->data();
+					memcpy(input->data(), &p, sizeof(void*));
+				}
+				else
+					memcpy(input->data(), out->data(), v->size());
+			}
 		}
 
-		struct Dummy { };
-		typedef bool (Dummy:: * F)(float);
-		union
-		{
-			void* p;
-			F f;
-		}cvt;
-		cvt.p = (char*)module + (uint)update_function->rva();
-		changed = (*((Dummy*)dummy).*cvt.f)(delta_time);
+		changed = cmf(p2f<MF_b_f>(update_function->rva()), dummy, delta_time);
 	}
 
 	BPPrivate::~BPPrivate()
@@ -554,7 +589,7 @@ namespace flame
 			{
 				auto v = input->variable_info;
 				auto type = v->type();
-				if (v->default_value() && !compare(type->tag(), v->size(), v->default_value(), input->data()))
+				if (v->default_value() && !memcpy(input->data(), v->default_value(), v->size()) != 0)
 				{
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());

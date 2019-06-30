@@ -34,28 +34,10 @@ namespace flame
 
 	struct WindowPrivate;
 
-	struct ApplicationPrivate : Application
-	{
-		std::vector<WindowPrivate*> windows;
-
-		ulonglong last_time;
-		ulonglong last_frame_time;
-		uint counting_frame;
-
-		std::vector<std::unique_ptr<Closure<void(void* c)>>> delay_events;
-
-		ApplicationPrivate();
-		~ApplicationPrivate();
-
-		int run(void (*idle_func)(void* c), const Mail<>& capture);
-		void add_delay_event(void (*event)(void* c), const Mail<>& capture);
-		void clear_delay_events();
-	};
+	static std::vector<std::unique_ptr<Closure<void(void* c)>>> delay_events;
 
 	struct WindowPrivate : Window
 	{
-		ApplicationPrivate* app;
-
 		std::string title;
 
 #ifdef FLAME_WINDOWS
@@ -465,7 +447,9 @@ namespace flame
 	}
 #endif
 
-	Window* Window::create(Application * app, const std::string& _title, const Vec2u& _size, int _style)
+	static std::vector<WindowPrivate*> windows;
+
+	Window* Window::create(const std::string& _title, const Vec2u& _size, int _style)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -498,8 +482,7 @@ namespace flame
 		}
 
 		auto w = new WindowPrivate(_title, _size, _style);
-		w->app = reinterpret_cast<ApplicationPrivate*>(app);
-		(reinterpret_cast<ApplicationPrivate*>(app))->windows.push_back(w);
+		windows.push_back(w);
 		return w;
 	}
 
@@ -554,7 +537,6 @@ namespace flame
 
 	void Window::destroy(Window * w)
 	{
-		auto& windows = reinterpret_cast<WindowPrivate*>(w)->app->windows;
 		for (auto it = windows.begin(); it != windows.end(); it++)
 		{
 			if ((*it) == w)
@@ -569,25 +551,29 @@ namespace flame
 		delete reinterpret_cast<WindowPrivate*>(w);
 	}
 
-	ApplicationPrivate::ApplicationPrivate()
+	static ulonglong last_time;
+	static ulonglong last_frame_time;
+	static uint counting_frame;
+	static uint total_frame;
+	static uint fps;
+	static float delta_time; // second
+
+	uint app_total_frame()
 	{
-		total_frame = 0;
-		fps = 0;
-		elapsed_time = 0.f;
+		return total_frame;
 	}
 
-	ApplicationPrivate::~ApplicationPrivate()
+	uint app_fps()
 	{
-		for (auto& w : windows)
-		{
-#ifdef FLAME_WINDOWS
-			DestroyWindow(w->hWnd);
-#endif
-			delete w;
-		}
+		return fps;
 	}
 
-	int ApplicationPrivate::run(void (*idle_func)(void* c), const Mail<>& capture)
+	float app_delta_time()
+	{
+		return delta_time;
+	}
+
+	int app_run(void (*idle_func)(void* c), const Mail<>& capture)
 	{
 		if (windows.size() == 0)
 			return 1;
@@ -663,11 +649,11 @@ namespace flame
 			auto et = last_time;
 			last_time = get_now_ns();
 			et = last_time - et;
-			elapsed_time = et / 1000000000.f;
+			delta_time = et / 1000000000.f;
 		}
 	}
 
-	void ApplicationPrivate::add_delay_event(void (*event)(void* c), const Mail<>& capture)
+	void app_add_delay_event(void (*event)(void* c), const Mail<>& capture)
 	{
 		auto c = new Closure<void (void* c)>;
 		c->function = event;
@@ -675,33 +661,8 @@ namespace flame
 		delay_events.emplace_back(c);
 	}
 
-	void ApplicationPrivate::clear_delay_events()
+	void app_clear_delay_events()
 	{
 		delay_events.clear();
-	}
-
-	int Application::run(void (*idle_func)(void* c), const Mail<>& capture)
-	{
-		return ((ApplicationPrivate*)this)->run(idle_func, capture);
-	}
-
-	void Application::clear_delay_events()
-	{
-		((ApplicationPrivate*)this)->clear_delay_events();
-	}
-
-	void Application::add_delay_event(void (*event)(void* c), const Mail<>& capture)
-	{
-		((ApplicationPrivate*)this)->add_delay_event(event, capture);
-	}
-
-	Application* Application::create()
-	{
-		return new ApplicationPrivate;
-	}
-
-	void Application::destroy(Application * app)
-	{
-		delete (ApplicationPrivate*)app;
 	}
 }

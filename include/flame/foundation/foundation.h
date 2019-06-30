@@ -80,21 +80,35 @@ namespace flame
 	struct Dummy
 	{
 	};
-	typedef void(Dummy::*MF)();
+	typedef void(Dummy::*MF_v_v)();
+	typedef bool(Dummy::* MF_b_f)(float);
 
-	inline MF p2mf(void* p) // void pointer to member function
+	template<class F>
+	F p2f(void* p) // void pointer to function
 	{
 		union
 		{
 			void* p;
-			MF f;
+			F f;
 		}cvt;
 		cvt.p = p;
 		return cvt.f;
 	}
 
+	template<class F, class ...Args>
+	auto cmf(F f, void* p, Args... args) // call member function at an address
+	{
+		return (*((Dummy*)p).*f)(args...);
+	}
+
 	template<class T>
-	void* cf2v() // ctor function to void pointer
+	typename std::enable_if<std::is_pod<T>::value, void*>::type cf2v() // ctor function to void pointer
+	{
+		return nullptr;
+	}
+
+	template<class T>
+	typename std::enable_if<!std::is_pod<T>::value, void*>::type cf2v() // ctor function to void pointer
 	{
 		struct Wrap : T
 		{
@@ -107,7 +121,13 @@ namespace flame
 	}
 
 	template<class T>
-	void* df2v() // dtor function to void pointer
+	typename std::enable_if<std::is_pod<T>::value, void*>::type df2v() // dtor function to void pointer
+	{
+		return nullptr;
+	}
+
+	template<class T>
+	typename std::enable_if<!std::is_pod<T>::value, void*>::type df2v() // dtor function to void pointer
 	{
 		struct Wrap : T
 		{
@@ -968,6 +988,13 @@ namespace flame
 		void* dtor;
 		uint hash;
 
+		Mail() :
+			p(nullptr),
+			dtor(nullptr),
+			hash(0)
+		{
+		}
+
 		operator Mail<void>()
 		{
 			Mail<void> ret;
@@ -998,8 +1025,10 @@ namespace flame
 	template<class T>
 	void delete_mail(const Mail<T>& m)
 	{
+		if (!m.p)
+			return;
 		if (m.dtor)
-			(*((Dummy*)m.p).*p2mf(m.dtor))();
+			cmf(p2f<MF_v_v>(m.dtor), m.p);
 		flame_free(m.p);
 	}
 

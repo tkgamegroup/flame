@@ -4,8 +4,6 @@
 
 namespace flame
 {
-	struct Application;
-
 	enum WindowStyle
 	{
 		WindowFrame = 1 << 0,
@@ -69,22 +67,16 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
-		FLAME_FOUNDATION_EXPORTS static Window *create(Application *app, const std::string& _title, const Vec2u& _size, int _style);
+		FLAME_FOUNDATION_EXPORTS static Window *create(const std::string& _title, const Vec2u& _size, int _style);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Window *s);
 	};
 
-	struct Application
-	{
-		long long total_frame;
-		long long fps;
-		float elapsed_time; // second
+	FLAME_FOUNDATION_EXPORTS uint app_total_frame();
+	FLAME_FOUNDATION_EXPORTS uint app_fps();
+	FLAME_FOUNDATION_EXPORTS float app_delta_time(); // second
 
-		FLAME_FOUNDATION_EXPORTS int run(void (*idle_func)(void* c), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS int app_run(void (*idle_func)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void clear_delay_events();
-		FLAME_FOUNDATION_EXPORTS void add_delay_event(void (*event)(void* c), const Mail<>& capture);
-
-		FLAME_FOUNDATION_EXPORTS static Application *create();
-		FLAME_FOUNDATION_EXPORTS static void destroy(Application *m);
-	};
+	FLAME_FOUNDATION_EXPORTS void app_add_delay_event(void (*event)(void* c), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void app_clear_delay_events();
 }

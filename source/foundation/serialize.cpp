@@ -14,8 +14,7 @@ namespace flame
 		"enum_multi",
 		"variable",
 		"attribute",
-		"pointer",
-		"any"
+		"pointer"
 	};
 
 	const char* get_name(TypeTag$ tag)
@@ -413,37 +412,21 @@ namespace flame
 		return f;
 	}
 
-	void set(void* dst, TypeTag$ tag, int size, const void* src)
-	{
-		switch (tag)
-		{
-		case TypeTagEnumSingle: case TypeTagEnumMulti:
-			*(int*)dst = *(int*)src;
-			break;
-		case TypeTagVariable:
-			memcpy(dst, src, size);
-			break;
-		case TypeTagPointer:
-			*(void**)dst = *(void**)src;
-			break;
-		case TypeTagAny:
-			*(void**)dst = (void*)src;
-			break;
-		}
-	}
-
-	bool compare(TypeTag$ tag, int size, const void* a, const void* b)
-	{
-		switch (tag)
-		{
-		case TypeTagEnumSingle: case TypeTagEnumMulti:
-			return *(int*)a == *(int*)b;
-		case TypeTagVariable:
-			return memcmp(a, b, size) == 0;
-		}
-
-		return false;
-	}
+	//void set(void* dst, TypeTag$ tag, int size, const void* src)
+	//{
+	//	switch (tag)
+	//	{
+	//	case TypeTagEnumSingle: case TypeTagEnumMulti:
+	//		*(int*)dst = *(int*)src;
+	//		break;
+	//	case TypeTagVariable:
+	//		memcpy(dst, src, size);
+	//		break;
+	//	case TypeTagPointer:
+	//		*(void**)dst = *(void**)src;
+	//		break;
+	//	}
+	//}
 
 	Mail<std::string> serialize_value(TypeTag$ tag, uint hash, const void* src, int precision)
 	{
@@ -851,18 +834,13 @@ namespace flame
 
 				if (type->tag() == TypeTagVariable)
 				{
-					if (type->hash() == cH("Function"))
-						;
-					else
+					if (vari->default_value() && memcmp(src, vari->default_value(), vari->size()) != 0)
 					{
-						if (vari->default_value() && !compare(type->tag(), vari->size(), src, vari->default_value()))
-						{
-							auto n_item = new_node("item");
-							n_item->new_attr("name", vari->name());
-							auto str = serialize_value(type->tag(), type->hash(), src, precision);
-							n_item->new_attr("value", *str.p);
-							delete_mail(str);
-						}
+						auto n_item = new_node("item");
+						n_item->new_attr("name", vari->name());
+						auto str = serialize_value(type->tag(), type->hash(), src, precision);
+						n_item->new_attr("value", *str.p);
+						delete_mail(str);
 					}
 				}
 			}
@@ -879,12 +857,7 @@ namespace flame
 				auto type = vari->type();
 
 				if (type->tag() == TypeTagVariable)
-				{
-					if (type->hash() == cH("Function"))
-						;
-					else
-						unserialize_value(type->tag(), type->hash(), n_item->find_attr("value")->value(), dst);
-				}
+					unserialize_value(type->tag(), type->hash(), n_item->find_attr("value")->value(), dst);
 			}
 		}
 	};
@@ -1415,8 +1388,6 @@ namespace flame
 				name = format_name(pwname);
 				break;
 			}
-			if (variable_attribute.find('a') != std::string::npos && name == "void")
-				tag = TypeTagAny;
 			pointer_type->Release();
 		}
 			break;
@@ -1661,16 +1632,6 @@ namespace flame
 		T in[N];
 		std::vector<T> out;
 
-		void ctor()
-		{
-			new (this) BP_Array;
-		}
-
-		void dtor()
-		{
-			(*this).~BP_Array();
-		}
-
 		bool update(float delta_time)
 		{
 			if (delta_time >= 0.f)
@@ -1748,8 +1709,8 @@ namespace flame
 			u->add_variable(is_pointer ? TypeTagPointer : TypeTagVariable, s_type_name, std::to_string(i + 1), "i", sizeof(T) * i, sizeof(T));
 		u->add_variable(TypeTagVariable, "Array~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
 
-		u->add_function("ctor", calc_rva(f2v(&BP_Array<N, T>::ctor), this_module), TypeTagVariable, "void", "");
-		u->add_function("dtor", calc_rva(f2v(&BP_Array<N, T>::dtor), this_module), TypeTagVariable, "void", "");
+		u->add_function("ctor", calc_rva(cf2v<BP_Array<N, T>>(), this_module), TypeTagVariable, "void", "");
+		u->add_function("dtor", calc_rva(df2v<BP_Array<N, T>>(), this_module), TypeTagVariable, "void", "");
 		u->add_function("update", calc_rva(f2v(&BP_Array<N, T>::update), this_module), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
 	}
 
@@ -2024,62 +1985,50 @@ namespace flame
 						auto name = format_name(pwname, nullptr, &pass_$, &attribute);
 						if (pass_$)
 						{
-							if (name[0] != '~')
-							{
-								if (name == udt_name_nns)
-								{
-									IDiaSymbol* function_type;
-									_function->get_type(&function_type);
+							if (name == udt_name_nns)
+								name = "ctor";
+							else if (name[0] == '~')
+								name = "dtor";
 
-									IDiaEnumSymbols* parameters;
-									function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &parameters);
-
-									if (SUCCEEDED(parameters->get_Count(&l)) && l == 0)
-									{
-										// a ctor func is a func that its name equals its class's name and its count of parameters is 0
-										// we get the ctor func and try to run it at a dummy memory to get the default value of the class
-
-										_function->get_relativeVirtualAddress(&dw);
-
-										auto new_obj = malloc(u->size);
-										auto library = load_module(filename.c_str());
-										if (library)
-										{
-											struct Dummy { };
-											typedef void (Dummy:: * F)();
-											union
-											{
-												void* p;
-												F f;
-											}cvt;
-											cvt.p = (char*)library + (uint)dw;
-											(*((Dummy*)new_obj).*cvt.f)();
-
-											for (auto& i : u->variables)
-											{
-												if (i->default_value)
-													memcpy(i->default_value, (char*)new_obj + i->offset, i->size);
-											}
-											free_module(library);
-										}
-										free(new_obj);
-									}
-
-									parameters->Release();
-									function_type->Release();
-								}
-								else
-								{
-									void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
-									symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
-									auto f = (FunctionInfoPrivate*)u->add_function(name, rva, return_type_tag, return_type_name, code);
-									symbol_to_parameters(_function, f);
-								}
-							}
+							void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
+							symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
+							auto f = (FunctionInfoPrivate*)u->add_function(name, rva, return_type_tag, return_type_name, code);
+							symbol_to_parameters(_function, f);
 						}
 						_function->Release();
 					}
 					_functions->Release();
+
+					FunctionInfoPrivate* ctor = nullptr;
+					FunctionInfoPrivate* dtor = nullptr;
+					for (auto& f : u->functions)
+					{
+						if (f->name == "ctor" && f->parameter_types.empty())
+							ctor = f.get();
+						else if (f->name == "dtor")
+							dtor = f.get();
+						if (ctor && dtor)
+							break;
+					}
+					if (ctor && dtor)
+					{
+						auto library = load_module(filename.c_str());
+						if (library)
+						{
+							auto obj = malloc(u->size);
+
+							cmf(p2f<MF_v_v>(ctor), obj);
+							for (auto& i : u->variables)
+							{
+								if (i->default_value)
+									memcpy(i->default_value, (char*)obj + i->offset, i->size);
+							}
+							cmf(p2f<MF_v_v>(dtor), obj);
+
+							free(obj);
+							free_module(library);
+						}
+					}
 				}
 			}
 			_udt->Release();

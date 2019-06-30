@@ -222,8 +222,7 @@ namespace flame
 		TypeTagEnumMulti,
 		TypeTagVariable,
 		TypeTagAttribute, // Attribute<Variable>
-		TypeTagPointer,
-		TypeTagAny // void* that takes variable's address
+		TypeTagPointer
 	};
 
 	FLAME_FOUNDATION_EXPORTS const char* get_name(TypeTag$ tag);
@@ -245,14 +244,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const; // templates, template wraps and template parameters are all separated by '~'
 		FLAME_FOUNDATION_EXPORTS uint hash() const;
-
-		static bool equal(const TypeInfo* lhs, const TypeInfo* rhs)
-		{
-			if (lhs->tag() == TypeTagAny || rhs->tag() == TypeTagAny)
-				return true;
-			return lhs->tag() == rhs->tag() && lhs->hash() == rhs->hash() &&
-				lhs->name() == rhs->name();
-		}
 	};
 
 	struct VariableInfo
@@ -316,8 +307,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
 	};
 
-	FLAME_FOUNDATION_EXPORTS void set(void* dst, TypeTag$ tag, int size, const void* src);
-	FLAME_FOUNDATION_EXPORTS bool compare(TypeTag$ tag, int size, const void* a, const void* b);
 	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(TypeTag$ tag, uint hash, const void* src, int precision = 6);
 	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst);
 
@@ -399,7 +388,6 @@ namespace flame
 		the attribute can be one or more chars, and order doesn't matter
 
 		currently, the following attributes are used by typeinfogen, others are free to use:
-			'a' for udt member, means if it is a 'void*' type, it receives the data's address
 			'm' for enum variable, means it can hold combination of the enum
 			'c' for function, means to collect the code of the function
 			'f' for std::[w]string variable, means this is a filename

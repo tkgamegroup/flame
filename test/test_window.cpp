@@ -1,21 +1,18 @@
-//#include <flame/foundation/window.h>
+#include <flame/foundation/window.h>
 
-//using namespace flame;
+using namespace flame;
 
 int main(int argc, char** args)
 {
-	//auto app = Application::create();
-	//auto w = Window::create(app, "Window Test", Vec2u(1280, 720), WindowFrame);
+	auto w = Window::create("Window Test", Vec2u(1280, 720), WindowFrame);
 
-	//w->add_mouse_listener(Function<void(void*, KeyState, MouseKey, const Vec2i&)>(
-	//	[](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-	//		if (is_mouse_down(action, key))
-	//			(*((WindowPtr*)c))->close();
-	//	}, sizeof(void*), &w));
+	w->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			if (is_mouse_down(action, key))
+				(*((WindowPtr*)c))->close();
+		}, new_mail(&w));
 
-	//app->run(Function<void(void* c)>(
-	//	[](void* c) {
-	//	}));
+	app_run([](void* c) {
+		}, Mail());
 
 	return 0;
 }

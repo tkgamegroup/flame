@@ -18,7 +18,6 @@ namespace flame
 
 	struct BasicApp
 	{
-		Application *app;
 		Window *w;
 		graphics::Device *d;
 		graphics::Swapchain *sc;
@@ -31,8 +30,7 @@ namespace flame
 
 		void create(const std::string& title, const Vec2u& res, int style)
 		{
-			app = Application::create();
-			w = Window::create(app, title, res, style);
+			w = Window::create(title, res, style);
 			d = graphics::Device::/*get_shared*/create(true);
 			sc = graphics::Swapchain::create(d, w);
 			image_avalible = graphics::Semaphore::create(d);
@@ -52,10 +50,9 @@ namespace flame
 		void run()
 		{
 			auto thiz = this;
-			app->run(Function<void(void* c)>(
-			[](void* c) {
+			app_run([](void* c) {
 				(*((BasicAppPtr*)c))->do_run();
-			}, sizeof(void*), &thiz));
+			}, new_mail(&thiz));
 		}
 	};
 }
