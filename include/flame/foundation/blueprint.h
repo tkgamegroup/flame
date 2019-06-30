@@ -6,16 +6,14 @@ namespace flame
 {
 	/*
 		- A blueprint(BP) is a scene that represents relations between objects.
-		- An object is called node in a BP.
-		- The reflected members of the udt will be separated into inputs and outpus.
-		- An input has an attribute 'i', and an output has an attribute 'o'.
+		- An object is called node and associated with an udt.
+		- The reflected members with attribute 'i' or 'o' will be as inputs or outpus.
+		- All inputs and outputs must be Attribute[*]<T> type.
+		- The udt must have a update function, the function return nothing and takes no parameters
 		- Address in BP: [node_id].[varible_name]
 		  you can use address to find an object in BP, e.g.
 		  'a'     for node
 		  'a.b'   for node input or output
-		- An available udt should:
-			all of its data types must be pods
-			have a bool function that takes one float parameter (the delta_time, delta_time < 0 means the end of the node) and its name is 'update' (it returns if it needs update in next frame)
 		- A BP file is basically a XML file
 	*/
 
@@ -77,22 +75,22 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 
-		FLAME_FOUNDATION_EXPORTS void update(float delta_time);
+		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS void load(SerializableNode* src);
 		FLAME_FOUNDATION_EXPORTS void load(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void save(SerializableNode* dst);
 		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
 
-		FLAME_FOUNDATION_EXPORTS static BP *create();
-		FLAME_FOUNDATION_EXPORTS static BP *create_from_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void destroy(BP *bp);
+		FLAME_FOUNDATION_EXPORTS static BP* create();
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
 
 	// basic nodes are available after calling typeinfo_init_basic_bp_nodes or loading from file
 	// they are:
-	//  Vec<[1-4], [float, uint, int, uchar, bool] (as Vec<*>)
-	//  Mat<[2-4], [2-4], [float, double]> (as Mat<*>)
-	//  LNA<[1-16], [float, uint, int, uchar, bool, voidptr, Vec<*>, Mat<*>]>
+	//  Vec<[1-4], [float, uint, int, uchar, bool]
+	//  Mat<[2-4], [2-4], [float, double]>
+	//  Array<[1-16], [float, uint, int, uchar, bool, voidptr, Vec, Mat]>
 }
 

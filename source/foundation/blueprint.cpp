@@ -43,7 +43,6 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
 		bool in_list;
-		bool changed;
 
 		NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt);
 		~NodePrivate();
@@ -53,9 +52,7 @@ namespace flame
 
 		void add_to_update_list();
 
-		void pass_change();
-
-		void update(bool delta_time);
+		void update();
 	};
 
 	struct BPPrivate : BP
@@ -82,7 +79,7 @@ namespace flame
 
 		void build_update_list();
 
-		void update(float delta_time);
+		void update();
 
 		void load(SerializableNode* src);
 		void load(const std::wstring& filename);
@@ -171,8 +168,7 @@ namespace flame
 		udt(_udt),
 		position(0.f),
 		module(nullptr),
-		in_list(false),
-		changed(true)
+		in_list(false)
 	{
 		auto size = udt->size();
 		dummy = malloc(size);
@@ -201,26 +197,28 @@ namespace flame
 			if(f)
 			{
 				auto ret_t = f->return_type();
-				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("bool") && f->parameter_count() == 1)
-				{
-					auto t = f->parameter_type(0);
-					if (t->tag() == TypeTagVariable && t->hash() == cH("float"))
-						update_function = f;
-				}
+				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("void") && f->parameter_count() == 0)
+					update_function = f;
 			}
 		}
 		assert(update_function);
 
 		if (ctor_function)
-			cmf(p2f<MF_b_f>(ctor_function->rva()), dummy);
+			cmf(p2f<MF_v_v>(ctor_function->rva()), dummy);
 
 		for (auto i = 0; i < udt->variable_count(); i++)
 		{
 			auto v = udt->variable(i);
-			auto attr = std::string(v->attribute());
-			if (attr.find('i') != std::string::npos)
+			auto& attr = v->attribute();
+			auto ai = attr.find('i') != std::string::npos, ao = attr.find('o') != std::string::npos;
+			if (!ai && !ao)
+				continue;
+			assert(!(ai && ao));
+			static std::string attr_str("Attribute");
+			assert(v->type()->name().compare(0, attr_str.size(), attr_str) == 0);
+			if (ai)
 				inputs.emplace_back(new SlotPrivate(SlotPrivate::Input, this, v));
-			if (attr.find('o') != std::string::npos)
+			else /* if (ao) */
 				outputs.emplace_back(new SlotPrivate(SlotPrivate::Output, this, v));
 		}
 	}
@@ -249,14 +247,11 @@ namespace flame
 		}
 
 		if (dtor_function)
-			cmf(p2f<MF_b_f>(dtor_function->rva()), dummy);
+			cmf(p2f<MF_v_v>(dtor_function->rva()), dummy);
 
 		free(dummy);
 
 		free_module(module);
-
-		changed = true;
-		update(-1.f);
 	}
 
 	SlotPrivate* NodePrivate::find_input(const std::string &name) const
@@ -296,24 +291,8 @@ namespace flame
 		in_list = true;
 	}
 
-	void NodePrivate::pass_change()
+	void NodePrivate::update()
 	{
-		if (id == "make_cmd")
-			int cut = 1;
-
-		changed = true;
-		for (auto& o : outputs)
-		{
-			for (auto& l : o->links)
-				l->node->pass_change();
-		}
-	}
-
-	void NodePrivate::update(bool delta_time)
-	{
-		if (!changed)
-			return;
-
 		for (auto& input : inputs)
 		{
 			auto v = input->variable_info;
@@ -330,7 +309,7 @@ namespace flame
 			}
 		}
 
-		changed = cmf(p2f<MF_b_f>(update_function->rva()), dummy, delta_time);
+		cmf(p2f<MF_v_v>(update_function->rva()), dummy);
 	}
 
 	BPPrivate::~BPPrivate()
@@ -435,7 +414,7 @@ namespace flame
 		{
 			if ((*it).get() == n)
 			{
-				(*it)->pass_change();
+				n->pass_change();
 				nodes.erase(it);
 				break;
 			}
@@ -487,7 +466,7 @@ namespace flame
 			n->add_to_update_list();
 	}
 
-	void BPPrivate::update(float delta_time)
+	void BPPrivate::update()
 	{
 		if (update_list.empty())
 		{
@@ -496,7 +475,7 @@ namespace flame
 		}
 
 		for (auto &n : update_list)
-			n->update(delta_time);
+			n->update();
 	}
 
 	void BPPrivate::load(SerializableNode* src)
@@ -767,9 +746,9 @@ namespace flame
 		((BPPrivate*)this)->clear();
 	}
 
-	void BP::update(float delta_time)
+	void BP::update()
 	{
-		((BPPrivate*)this)->update(delta_time);
+		((BPPrivate*)this)->update();
 	}
 
 	void BP::load(SerializableNode* src)

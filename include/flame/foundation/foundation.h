@@ -81,7 +81,6 @@ namespace flame
 	{
 	};
 	typedef void(Dummy::*MF_v_v)();
-	typedef bool(Dummy::* MF_b_f)(float);
 
 	template<class F>
 	F p2f(void* p) // void pointer to function
@@ -975,10 +974,24 @@ namespace flame
 	}
 
 	template<typename T>
-	struct Attribute
+	struct AttributeE // enum type attribute
 	{
-		T v;
 		int frame;
+		T v;
+	};
+
+	template<typename T>
+	struct AttributeV // variable type attribute
+	{
+		int frame;
+		T v;
+	};
+
+	template<typename T>
+	struct AttributeP // pointer type attribute
+	{
+		int frame;
+		T* v;
 	};
 
 	template<class T = void>

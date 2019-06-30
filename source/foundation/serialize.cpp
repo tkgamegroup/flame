@@ -1303,12 +1303,30 @@ namespace flame
 				return str;
 		}
 
+		{
+			static std::string find_str("std::allocator");
+			size_t pos;
+			while ((pos = str.find(find_str)) != std::string::npos)
+			{
+				auto v = 0;
+				auto l = find_str.size();
+				do
+				{
+					auto ch = str[pos + l];
+					if (ch == '<')
+						v++;
+					else if (ch == '>')
+						v--;
+					l++;
+				} while (v > 0);
+				str = str.replace(pos, l, "");
+			}
+		}
+
 		auto tokens = string_regex_split(str, reg_token);
 		if (tokens.empty())
 			return "";
 
-		if (tokens[0] == "Function")
-			return tokens[0];
 		auto pos_$ = tokens[0].find('$');
 		if (pos_$ != std::string::npos)
 		{
@@ -1600,8 +1618,8 @@ namespace flame
 	template<uint N, class T>
 	struct BP_Vec
 	{
-		T in[N];
-		Vec<N, T> out;
+		AttributeV<T> in[N];
+		AttributeV<Vec<N, T>> out;
 
 		bool update(float delta_time)
 		{
@@ -1634,12 +1652,9 @@ namespace flame
 
 		bool update(float delta_time)
 		{
-			if (delta_time >= 0.f)
-			{
-				out.resize(N);
-				for (auto i = 0; i < N; i++)
-					out[i] = in[i];
-			}
+			out.resize(N);
+			for (auto i = 0; i < N; i++)
+				out[i] = in[i];
 
 			return false;
 		}
@@ -1670,18 +1685,15 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
 		{
-			if (delta_time >= 0.f)
+			if (!array$i)
+				array$o.clear();
+			else
 			{
-				if (!array$i)
-					array$o.clear();
-				else
+				array$o.resize(array$i->size() * 2);
+				for (auto i = 0; i < array$o.size(); i++)
 				{
-					array$o.resize(array$i->size() * 2);
-					for (auto i = 0; i < array$o.size(); i++)
-					{
-						array$o[i * 2 + 0] = v$i;
-						array$o[i * 2 + 1] = (*array$i)[i];
-					}
+					array$o[i * 2 + 0] = v$i;
+					array$o[i * 2 + 1] = (*array$i)[i];
 				}
 			}
 
