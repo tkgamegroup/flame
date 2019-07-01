@@ -12,11 +12,14 @@ namespace flame
 		Type type;
 		NodePrivate* node;
 		VariableInfo* variable_info;
+		void* data;
+		uint data_size;
 
 		std::vector<SlotPrivate*> links;
 
 		SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info);
 
+		void set_frame(int frame);
 		void set_data(const void* data);
 		bool link_to(SlotPrivate*target);
 
@@ -30,7 +33,7 @@ namespace flame
 		UdtInfo* udt;
 		bool udt_from_default_db;
 
-		Vec2f position;
+		Vec2f pos;
 
 		void* dummy; // represents the object
 
@@ -64,8 +67,9 @@ namespace flame
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
-		Vec2f pos;
+		int frame;
 
+		BPPrivate();
 		~BPPrivate();
 
 		NodePrivate *add_node(const std::string& id, const std::string& type_name);
@@ -92,17 +96,27 @@ namespace flame
 		node(_node),
 		variable_info(_variable_info)
 	{
+		data = (char*)node->dummy + variable_info->offset();
+		data_size = variable_info->size() - sizeof(int);
 		if (variable_info->default_value())
-			memcpy(data(), variable_info->default_value() , variable_info->size());
+			set_data((char*)variable_info->default_value() + sizeof(int));
 
 		if (type == Input)
 			links.push_back(nullptr);
+		else /* if (type == Output) */
+			set_frame(-1);
+	}
+
+	void SlotPrivate::set_frame(int frame)
+	{
+		auto& p = *(AttributeV<int>*)data;
+		p.frame = frame;
 	}
 
 	void SlotPrivate::set_data(const void* d)
 	{
-		memcpy((char*)node->dummy + variable_info->offset(), d, variable_info->size());
-		node->pass_change();
+		set_frame(node->bp->frame);
+		memcpy((char*)data + sizeof(uint), d, data_size);
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -116,6 +130,9 @@ namespace flame
 		if (target && target->type == Input)
 			return false;
 
+		if (links[0] == target)
+			return true;
+
 		if (target)
 		{
 			auto in_type = variable_info->type();
@@ -125,12 +142,9 @@ namespace flame
 			auto in_hash = in_type->hash();
 			auto out_hash = out_type->hash();
 
-			if (!(in_tag == out_tag && in_hash == out_hash) || !(out_tag == TypeTagVariable && in_tag == TypeTagPointer && (out_hash == in_hash || in_hash == cH("void"))))
+			if (!(in_tag == out_tag && in_hash == out_hash) && !(out_tag == TypeTagAttributeV && in_tag == TypeTagAttributeP && (out_hash == in_hash || in_hash == cH("void"))))
 				return false;
 		}
-
-		if (links[0] == target)
-			return true;
 
 		if (links[0])
 		{
@@ -148,9 +162,11 @@ namespace flame
 		links[0] = target;
 		target->links.push_back(this);
 
-		node->pass_change();
+		auto bp = node->bp;
 
-		node->bp->build_update_list();
+		set_frame(bp->frame);
+
+		bp->build_update_list();
 
 		return true;
 	}
@@ -166,7 +182,7 @@ namespace flame
 		bp(_bp),
 		id(_id),
 		udt(_udt),
-		position(0.f),
+		pos(0.f),
 		module(nullptr),
 		in_list(false)
 	{
@@ -187,7 +203,7 @@ namespace flame
 			}
 		}
 
-		dtor_function = udt->find_function("dtor");;
+		dtor_function = udt->find_function("dtor");
 
 		assert((ctor_function && dtor_function) || (!ctor_function && !dtor_function));
 		
@@ -204,18 +220,18 @@ namespace flame
 		assert(update_function);
 
 		if (ctor_function)
-			cmf(p2f<MF_v_v>(ctor_function->rva()), dummy);
+			cmf(p2f<MF_v_v>((char*)module + (uint)ctor_function->rva()), dummy);
 
 		for (auto i = 0; i < udt->variable_count(); i++)
 		{
 			auto v = udt->variable(i);
-			auto& attr = v->attribute();
-			auto ai = attr.find('i') != std::string::npos, ao = attr.find('o') != std::string::npos;
+			auto& deco = v->decoration();
+			auto ai = deco.find('i') != std::string::npos, ao = deco.find('o') != std::string::npos;
 			if (!ai && !ao)
 				continue;
 			assert(!(ai && ao));
-			static std::string attr_str("Attribute");
-			assert(v->type()->name().compare(0, attr_str.size(), attr_str) == 0);
+			auto tag = v->type()->tag();
+			assert(tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV || tag == TypeTagAttributeP);
 			if (ai)
 				inputs.emplace_back(new SlotPrivate(SlotPrivate::Input, this, v));
 			else /* if (ao) */
@@ -243,11 +259,14 @@ namespace flame
 		for (auto& o : outputs)
 		{
 			for (auto& l : o->links)
+			{
+				l->set_frame(bp->frame);
 				l->links[0] = nullptr;
+			}
 		}
 
 		if (dtor_function)
-			cmf(p2f<MF_v_v>(dtor_function->rva()), dummy);
+			cmf(p2f<MF_v_v>((char*)module + (uint)dtor_function->rva()), dummy);
 
 		free(dummy);
 
@@ -299,17 +318,23 @@ namespace flame
 			auto out = input->links[0];
 			if (out)
 			{
-				if (out->variable_info->type()->tag() == TypeTagVariable && v->type()->tag() == TypeTagPointer)
+				if (out->variable_info->type()->tag() == TypeTagAttributeV && v->type()->tag() == TypeTagAttributeP)
 				{
-					auto p = out->data();
-					memcpy(input->data(), &p, sizeof(void*));
+					memcpy(input->data, out->data, sizeof(int));
+					auto p = (char*)out->data + sizeof(int);
+					memcpy((char*)input->data + sizeof(int), &p, sizeof(void*));
 				}
 				else
-					memcpy(input->data(), out->data(), v->size());
+					memcpy(input->data, out->data, v->size());
 			}
 		}
 
-		cmf(p2f<MF_v_v>(update_function->rva()), dummy);
+		cmf(p2f<MF_v_v>((char*)module + (uint)update_function->rva()), dummy);
+	}
+
+	BPPrivate::BPPrivate() :
+		frame(0)
+	{
 	}
 
 	BPPrivate::~BPPrivate()
@@ -414,7 +439,6 @@ namespace flame
 		{
 			if ((*it).get() == n)
 			{
-				n->pass_change();
 				nodes.erase(it);
 				break;
 			}
@@ -476,6 +500,8 @@ namespace flame
 
 		for (auto &n : update_list)
 			n->update();
+
+		frame++;
 	}
 
 	void BPPrivate::load(SerializableNode* src)
@@ -495,7 +521,7 @@ namespace flame
 			}
 			auto a_pos = n_node->find_attr("pos");
 			if (a_pos)
-				n->position = stof2(a_pos->value().c_str());
+				n->pos = stof2(a_pos->value().c_str());
 
 			auto n_datas = n_node->find_node("datas");
 			for (auto i_d = 0; i_d < n_datas->node_count(); i_d++)
@@ -505,7 +531,7 @@ namespace flame
 				auto v = input->variable_info;
 				auto type = v->type();
 				if (v->default_value())
-					unserialize_value(type->tag(), type->hash(), n_data->find_attr("value")->value(), input->data());
+					unserialize_value(type->tag(), type->hash(), n_data->find_attr("value")->value(), input->data);
 			}
 		}
 
@@ -561,18 +587,18 @@ namespace flame
 			}
 			n_node->new_attr("type", tn);
 			n_node->new_attr("id", n->id);
-			n_node->new_attr("pos", to_string(n->position, 2));
+			n_node->new_attr("pos", to_string(n->pos, 2));
 
 			auto n_datas = n_node->new_node("datas");
 			for (auto& input : n->inputs)
 			{
 				auto v = input->variable_info;
 				auto type = v->type();
-				if (v->default_value() && !memcpy(input->data(), v->default_value(), v->size()) != 0)
+				if (v->default_value() && !memcpy((char*)input->data + sizeof(int), (char*)v->default_value() + sizeof(int), input->data_size) != 0)
 				{
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(type->tag(), type->hash(), input->data(), 2);
+					auto value = serialize_value(type->tag(), type->hash(), input->data, 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}
@@ -612,8 +638,7 @@ namespace flame
 
 	void* BP::Slot::data()
 	{
-		auto thiz = ((SlotPrivate*)this);
-		return (char*)thiz->node->dummy + thiz->variable_info->offset();
+		return ((SlotPrivate*)this)->data;
 	}
 
 	void BP::Slot::set_data(const void* d)
@@ -666,14 +691,14 @@ namespace flame
 		return ((NodePrivate*)this)->udt;
 	}
 
-	Vec2f BP::Node::position() const
+	Vec2f BP::Node::pos() const
 	{
-		return ((NodePrivate*)this)->position;
+		return ((NodePrivate*)this)->pos;
 	}
 
-	void BP::Node::set_position(const Vec2f& p)
+	void BP::Node::set_pos(const Vec2f& p)
 	{
-		((NodePrivate*)this)->position = p;
+		((NodePrivate*)this)->pos = p;
 	}
 
 	int BP::Node::input_count() const

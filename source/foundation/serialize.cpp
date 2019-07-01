@@ -13,8 +13,11 @@ namespace flame
 		"enum_single",
 		"enum_multi",
 		"variable",
-		"attribute",
-		"pointer"
+		"pointer",
+		"attributeES",
+		"attributeEM",
+		"attributeV",
+		"attributeP"
 	};
 
 	const char* get_name(TypeTag$ tag)
@@ -78,7 +81,7 @@ namespace flame
 	{
 		TypeInfoPrivate type;
 		std::string name;
-		std::string attribute;
+		std::string decoration;
 		uint offset, size;
 		void* default_value;
 
@@ -108,9 +111,9 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->size;
 	}
 
-	const std::string& VariableInfo::attribute() const
+	const std::string& VariableInfo::decoration() const
 	{
-		return ((VariableInfoPrivate*)this)->attribute;
+		return ((VariableInfoPrivate*)this)->decoration;
 	}
 
 	const void* VariableInfo::default_value() const
@@ -368,19 +371,26 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->find_vari(name, out_idx);
 	}
 
-	VariableInfo* UdtInfo::add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& attribute, uint offset, uint size)
+	VariableInfo* UdtInfo::add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& decoration, uint offset, uint size)
 	{
 		auto v = new VariableInfoPrivate;
 		v->type.set(tag, type_name);
 		v->name = name;
-		v->attribute = attribute;
+		v->decoration = decoration;
 		v->offset = offset;
 		v->size = size;
 		v->default_value = nullptr;
-		if (tag == TypeTagEnumSingle || tag == TypeTagEnumMulti || tag == TypeTagVariable)
+		if (tag == TypeTagEnumSingle || tag == TypeTagEnumMulti || tag == TypeTagVariable ||
+			tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV)
 		{
-			v->default_value = new char[size];
-			memset(v->default_value, 0, size);
+			static std::string vector_str("std::vector");
+			static std::string string_str("std::string");
+			if (type_name.compare(0, vector_str.size(), vector_str) != 0 &&
+				type_name.compare(0, string_str.size(), string_str) != 0)
+			{
+				v->default_value = new char[size];
+				memset(v->default_value, 0, size);
+			}
 		}
 		((UdtInfoPrivate*)this)->variables.emplace_back(v);
 		return v;
@@ -434,9 +444,13 @@ namespace flame
 
 		switch (tag)
 		{
+		case TypeTagAttributeES:
+			src = (char*)src + sizeof(int);
 		case TypeTagEnumSingle:
 			*(ret.p) = find_enum(hash)->find_item(*(int*)src)->name();
 			break;
+		case TypeTagAttributeEM:
+			src = (char*)src + sizeof(int);
 		case TypeTagEnumMulti:
 		{
 			std::string str;
@@ -455,6 +469,8 @@ namespace flame
 			(*ret.p) = str;
 		}
 			break;
+		case TypeTagAttributeV:
+			src = (char*)src + sizeof(int);
 		case TypeTagVariable:
 			switch (hash)
 			{
@@ -522,9 +538,13 @@ namespace flame
 	{
 		switch (tag)
 		{
+		case TypeTagAttributeES:
+			dst = (char*)dst + sizeof(int);
 		case TypeTagEnumSingle:
 			find_enum(hash)->find_item(src, (int*)dst);
 			break;
+		case TypeTagAttributeEM:
+			dst = (char*)dst + sizeof(int);
 		case TypeTagEnumMulti:
 		{
 			auto v = 0;
@@ -534,7 +554,9 @@ namespace flame
 				v |= e->find_item(t)->value();
 			*(int*)dst = v;
 		}
-		break;
+			break;
+		case TypeTagAttributeV:
+			dst = (char*)dst + sizeof(int);
 		case TypeTagVariable:
 			switch (hash)
 			{
@@ -832,9 +854,15 @@ namespace flame
 				auto vari = u->variable(i);
 				auto type = vari->type();
 
-				if (type->tag() == TypeTagVariable)
+				auto tag = type->tag();
+				if (vari->default_value())
 				{
-					if (vari->default_value() && memcmp(src, vari->default_value(), vari->size()) != 0)
+					auto equal = false;
+					if (tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV)
+						equal = memcmp((char*)src + sizeof(int), (char*)vari->default_value() + sizeof(int), vari->size() - sizeof(int)) != 0;
+					else
+						equal = memcmp(src, vari->default_value(), vari->size()) != 0;
+					if (!equal)
 					{
 						auto n_item = new_node("item");
 						n_item->new_attr("name", vari->name());
@@ -856,7 +884,7 @@ namespace flame
 				auto vari = u->find_variable(n_item->find_attr("name")->value());
 				auto type = vari->type();
 
-				if (type->tag() == TypeTagVariable)
+				if (vari->default_value())
 					unserialize_value(type->tag(), type->hash(), n_item->find_attr("value")->value(), dst);
 			}
 		}
@@ -1414,6 +1442,27 @@ namespace flame
 			symbol->get_name(&pwname);
 			tag = TypeTagVariable;
 			name = format_name(pwname);
+
+			static std::string attr_str("Attribute");
+			if (name.compare(0, attr_str.size(), attr_str) == 0 && name.size() > attr_str.size() + 2)
+			{
+				auto ch = name[attr_str.size()];
+				if (ch == 'E')
+				{
+					tag = variable_attribute.find('m') != std::string::npos ? TypeTagAttributeEM : TypeTagAttributeES;
+					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
+				}
+				else if (ch == 'V')
+				{
+					tag = TypeTagAttributeV;
+					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
+				}
+				else if (ch == 'P')
+				{
+					tag = TypeTagAttributeP;
+					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
+				}
+			}
 		}
 			break;
 		case SymTagFunctionArgType:
@@ -1619,14 +1668,19 @@ namespace flame
 	struct BP_Vec
 	{
 		AttributeV<T> in[N];
+
 		AttributeV<Vec<N, T>> out;
 
-		bool update(float delta_time)
+		void update()
 		{
 			for (auto i = 0; i < N; i++)
-				out.v_[i] = in[i];
-
-			return false;
+			{
+				if (in[i].frame > out.frame)
+				{
+					out.v.v_[i] = in[i].v;
+					out.frame = in[i].frame;
+				}
+			}
 		}
 	};
 
@@ -1638,95 +1692,136 @@ namespace flame
 		auto u = add_udt(0, "Vec" + name_suffix, sizeof(BP_Vec<N, T>), L"flame_foundation.dll");
 
 		for (auto i = 0; i < N; i++)
-			u->add_variable(TypeTagVariable, type_name, std::string(1, "xyzw"[i]), "i", sizeof(T) * i, sizeof(T));
-		u->add_variable(TypeTagVariable, "Vec~" + std::to_string(N) + "~" + std::string(type_name), "v", "o", offsetof(VecType, out), sizeof(VecType::out));
+			u->add_variable(TypeTagAttributeV, type_name, std::string(1, "xyzw"[i]), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
+		u->add_variable(TypeTagAttributeV, "Vec~" + std::to_string(N) + "~" + std::string(type_name), "v", "o", offsetof(VecType, out), sizeof(VecType::out));
 
-		u->add_function("update", calc_rva(f2v(&BP_Vec<N, T>::update), this_module), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
+		u->add_function("update", calc_rva(f2v(&BP_Vec<N, T>::update), this_module), TypeTagVariable, "void", "");
 	}
 
 	template<uint N, class T>
-	struct BP_Array
+	struct BP_ArrayV
 	{
-		T in[N];
-		std::vector<T> out;
+		AttributeV<T> in[N];
 
-		bool update(float delta_time)
+		AttributeV<std::vector<T>> out;
+
+		void update()
 		{
-			out.resize(N);
+			out.v.resize(N);
 			for (auto i = 0; i < N; i++)
-				out[i] = in[i];
+			{
+				if (in[i].frame > out.frame)
+				{
+					out.v[i] = in[i].v;
+					out.frame = in[i].frame;
+				}
+			}
+		}
+	};
 
-			return false;
+	template<uint N, class T>
+	struct BP_ArrayP
+	{
+		AttributeP<T> in[N];
+
+		AttributeV<std::vector<T*>> out;
+
+		void update()
+		{
+			out.v.resize(N);
+			for (auto i = 0; i < N; i++)
+			{
+				if (in[i].frame > out.frame)
+				{
+					out.v[i] = in[i].v;
+					out.frame = in[i].frame;
+				}
+			}
 		}
 	};
 
 	struct ArraySize$
 	{
-		void* array$i;
+		AttributeP<void> array$i;
 
-		uint size$o;
+		AttributeV<uint> size$o;
 
-		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
+		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (array$i)
-				size$o = ((std::vector<int>*)array$i)->size();
-
-			return false;
+			if (array$i.frame > size$o.frame)
+			{
+				if (array$i.v)
+					size$o.v = ((std::vector<int>*)array$i.v)->size();
+				else
+					size$o.v = 0;
+				size$o.frame = array$i.frame;
+			}
 		}
 
 	}bp_array_size_unused;
 
 	struct ArrayInsertBeforeForEachItem_vp$
 	{
-		std::vector<void*>* array$i;
-		void* v$i;
+		AttributeP<std::vector<void*>> array$i;
+		AttributeP<void> v$i;
 
-		std::vector<void*> array$o;
+		AttributeV<std::vector<void*>> array$o;
 
-		FLAME_FOUNDATION_EXPORTS bool update$(float delta_time)
+		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (!array$i)
-				array$o.clear();
-			else
+			if (array$i.frame > array$o.frame)
 			{
-				array$o.resize(array$i->size() * 2);
-				for (auto i = 0; i < array$o.size(); i++)
+				if (array$i.v)
+					array$o.v.resize(array$i.v->size() * 2);
+				else
+					array$o.v.clear();
+			}
+			if (array$i.frame > array$o.frame || v$i.frame > array$o.frame)
+			{
+				array$o.frame = max(array$i.frame, v$i.frame);
+				for (auto i = 0; i < array$o.v.size(); i++)
 				{
-					array$o[i * 2 + 0] = v$i;
-					array$o[i * 2 + 1] = (*array$i)[i];
+					array$o.v[i * 2 + 0] = v$i.v;
+					array$o.v[i * 2 + 1] = (*array$i.v)[i];
 				}
 			}
-
-			return false;
 		}
 
 	}bp_array_insert_before_for_each_item_unused;
 
 	template<uint N, class T>
-	void add_array_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
+	void add_arrayv_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
 	{
-		typedef BP_Array<N, T> ArrayType;
+		typedef BP_ArrayV<N, T> ArrayType;
 
-		auto u = add_udt(0, "Array_" + name_suffix, sizeof(BP_Array<N, T>), L"flame_foundation.dll");
+		auto u = add_udt(0, "ArrayV_" + name_suffix, sizeof(ArrayType), L"flame_foundation.dll");
 		
-		auto is_pointer = false;
-		auto s_type_name = type_name;
-		if (*s_type_name.rbegin() == '*')
-		{
-			s_type_name.erase(s_type_name.end() - 1);
-			is_pointer = true;
-		}
-
 		for (auto i = 0; i < N; i++)
-			u->add_variable(is_pointer ? TypeTagPointer : TypeTagVariable, s_type_name, std::to_string(i + 1), "i", sizeof(T) * i, sizeof(T));
-		u->add_variable(TypeTagVariable, "Array~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
+			u->add_variable(TypeTagAttributeV, type_name, std::to_string(i + 1), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
+		u->add_variable(TypeTagAttributeV, "std::vector~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
 
-		u->add_function("ctor", calc_rva(cf2v<BP_Array<N, T>>(), this_module), TypeTagVariable, "void", "");
-		u->add_function("dtor", calc_rva(df2v<BP_Array<N, T>>(), this_module), TypeTagVariable, "void", "");
-		u->add_function("update", calc_rva(f2v(&BP_Array<N, T>::update), this_module), TypeTagVariable, "bool", "")->add_parameter(TypeTagVariable, "float");
+		u->add_function("ctor", calc_rva(cf2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
+		u->add_function("dtor", calc_rva(df2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
+		u->add_function("update", calc_rva(f2v(&ArrayType::update), this_module), TypeTagVariable, "void", "");
 	}
 
-	void typeinfo_init_basic_bp_nodes()
+	template<uint N, class T>
+	void add_arrayp_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
+	{
+		typedef BP_ArrayP<N, T> ArrayType;
+
+		auto u = add_udt(0, "ArrayP_" + name_suffix, sizeof(ArrayType), L"flame_foundation.dll");
+
+		for (auto i = 0; i < N; i++)
+			u->add_variable(TypeTagAttributeP, type_name, std::to_string(i + 1), "i", sizeof(AttributeP<T>) * i, sizeof(AttributeP<T>));
+		u->add_variable(TypeTagAttributeV, "std::vector~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
+
+		u->add_function("ctor", calc_rva(cf2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
+		u->add_function("dtor", calc_rva(df2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
+		u->add_function("update", calc_rva(f2v(&ArrayType::update), this_module), TypeTagVariable, "void", "");
+	}
+
+	void typeinfo_add_basic_bp_nodes()
 	{
 		auto this_module = load_module(L"flame_foundation.dll");
 
@@ -1735,13 +1830,13 @@ namespace flame
 		add_vec_udt<3, float>("3f", "float", this_module);
 		add_vec_udt<4, float>("4f", "float", this_module);
 
-		add_array_udt<1, uint>("1_u", "uint", this_module);
-		add_array_udt<1, Vec4c>("1_4c", "Vec~4~uchar", this_module);
-		add_array_udt<1, voidptr>("1_vp", "void*", this_module);
+		add_arrayv_udt<1, uint>("1_u", "uint", this_module);
+		add_arrayv_udt<1, Vec4c>("1_4c", "Vec~4~uchar", this_module);
+		add_arrayp_udt<1, voidptr>("1_v", "void", this_module);
 
-		add_array_udt<2, uint>("2_u", "uint", this_module);
-		add_array_udt<2, Vec4c>("2_4c", "Vec~4~uchar", this_module);
-		add_array_udt<2, voidptr>("2_vp", "void*", this_module);
+		add_arrayv_udt<2, uint>("2_u", "uint", this_module);
+		add_arrayv_udt<2, Vec4c>("2_4c", "Vec~4~uchar", this_module);
+		add_arrayp_udt<2, voidptr>("2_v", "void", this_module);
 
 		free_module(this_module);
 	}
@@ -1929,8 +2024,11 @@ namespace flame
 				{
 					void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
 					symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
-					auto f = add_function(level, name, rva, return_type_tag, return_type_name, code);
-					symbol_to_parameters(_function, f);
+					if (rva)
+					{
+						auto f = add_function(level, name, rva, return_type_tag, return_type_name, code);
+						symbol_to_parameters(_function, f);
+					}
 				}
 			}
 
@@ -2004,8 +2102,11 @@ namespace flame
 
 							void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
 							symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
-							auto f = (FunctionInfoPrivate*)u->add_function(name, rva, return_type_tag, return_type_name, code);
-							symbol_to_parameters(_function, f);
+							if (rva)
+							{
+								auto f = (FunctionInfoPrivate*)u->add_function(name, rva, return_type_tag, return_type_name, code);
+								symbol_to_parameters(_function, f);
+							}
 						}
 						_function->Release();
 					}
@@ -2029,13 +2130,13 @@ namespace flame
 						{
 							auto obj = malloc(u->size);
 
-							cmf(p2f<MF_v_v>(ctor), obj);
+							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->rva)), obj);
 							for (auto& i : u->variables)
 							{
 								if (i->default_value)
 									memcpy(i->default_value, (char*)obj + i->offset, i->size);
 							}
-							cmf(p2f<MF_v_v>(dtor), obj);
+							cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
 
 							free(obj);
 							free_module(library);
@@ -2123,7 +2224,7 @@ namespace flame
 				auto n_vari = n_items->node(j);
 				TypeTag$ tag; std::string type_name;
 				unserialize_typeinfo(n_vari->find_attr("type")->value(), tag, type_name);
-				auto v = (VariableInfoPrivate*)u->add_variable(tag, type_name, n_vari->find_attr("name")->value(), n_vari->find_attr("attribute")->value(), std::stoi(n_vari->find_attr("offset")->value()), std::stoi(n_vari->find_attr("size")->value()));
+				auto v = (VariableInfoPrivate*)u->add_variable(tag, type_name, n_vari->find_attr("name")->value(), n_vari->find_attr("decoration")->value(), std::stoi(n_vari->find_attr("offset")->value()), std::stoi(n_vari->find_attr("size")->value()));
 				if (v->default_value)
 				{
 					auto a_default_value = n_vari->find_attr("default_value");
@@ -2266,7 +2367,7 @@ namespace flame
 					const auto& type = v->type;
 					n_vari->new_attr("type", type.serialize());
 					n_vari->new_attr("name", v->name);
-					n_vari->new_attr("attribute", v->attribute);
+					n_vari->new_attr("decoration", v->decoration);
 					n_vari->new_attr("offset", std::to_string(v->offset));
 					n_vari->new_attr("size", std::to_string(v->size));
 					if (v->default_value)
@@ -2314,8 +2415,8 @@ namespace flame
 		// typeinfo collect must do by order, because it only record the first entry
 		std::vector<std::wstring> pdbs = {
 			L"flame_foundation.dll",
-			L"flame_network.dll",
-			L"flame_graphics.dll",
+			//L"flame_network.dll",
+			//L"flame_graphics.dll",
 			//L"flame_sound.dll",
 			//L"flame_universe.dll",
 		};
@@ -2333,7 +2434,7 @@ namespace flame
 			if (!std::fs::exists(w_dst) || std::fs::last_write_time(w_dst) < std::fs::last_write_time(fn))
 			{
 				if (fn == L"flame_foundation.dll")
-					typeinfo_init_basic_bp_nodes();
+					typeinfo_add_basic_bp_nodes();
 
 				printf("generating: %s\n", dst.c_str());
 

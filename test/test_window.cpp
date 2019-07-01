@@ -1,11 +1,16 @@
 #include <flame/foundation/window.h>
 #include <flame/foundation/serialize.h>
+#include <flame/foundation/blueprint.h>
 
 using namespace flame;
 
 int main(int argc, char** args)
 {
 	typeinfo_check_update();
+	auto typeinfo_lv = typeinfo_free_level();
+	typeinfo_load(L"flame_foundation.typeinfo", typeinfo_lv);
+	auto bp = BP::create_from_file(L"test.bp");
+	bp->update();
 
 	auto w = Window::create("Window Test", Vec2u(1280, 720), WindowFrame);
 

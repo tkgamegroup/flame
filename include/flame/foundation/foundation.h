@@ -973,6 +973,8 @@ namespace flame
 		return std::string();
 	}
 
+#pragma pack(1)
+
 	template<typename T>
 	struct AttributeE // enum type attribute
 	{
@@ -993,6 +995,8 @@ namespace flame
 		int frame;
 		T* v;
 	};
+
+#pragma pack()
 
 	template<class T = void>
 	struct Mail

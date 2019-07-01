@@ -221,8 +221,11 @@ namespace flame
 		TypeTagEnumSingle,
 		TypeTagEnumMulti,
 		TypeTagVariable,
-		TypeTagAttribute, // Attribute<Variable>
-		TypeTagPointer
+		TypeTagPointer,
+		TypeTagAttributeES, // AttributeE<T>, single
+		TypeTagAttributeEM, // AttributeE<T>, multi
+		TypeTagAttributeV,  // AttributeV<T>
+		TypeTagAttributeP   // AttributeP<T>
 	};
 
 	FLAME_FOUNDATION_EXPORTS const char* get_name(TypeTag$ tag);
@@ -250,7 +253,7 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& attribute() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& decoration() const;
 		FLAME_FOUNDATION_EXPORTS uint offset() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;
 		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
@@ -299,7 +302,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* variable(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* find_variable(const std::string& name, int *out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& attribute, uint offset, uint size);
+		FLAME_FOUNDATION_EXPORTS VariableInfo* add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& decoration, uint offset, uint size);
 
 		FLAME_FOUNDATION_EXPORTS uint function_count() const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
@@ -376,16 +379,16 @@ namespace flame
 
 	/*
 		something end with '$[a]' means it is reflectable
-		the 'a' is called attribute, and it is optional
+		the 'a' is called decoration, and is optional
 
 		such as:
 			struct Apple$ // mark this will be collected by typeinfogen
 			{
 				float size$; // mark this member will be collected
-				Vec3f color$i; // mark this member will be collected, and its attribute is 'i'
+				Vec3f color$i; // mark this member will be collected, and its decoration is 'i'
 			};
 
-		the attribute can be one or more chars, and order doesn't matter
+		the decoration can be one or more chars, and order doesn't matter
 
 		currently, the following attributes are used by typeinfogen, others are free to use:
 			'm' for enum variable, means it can hold combination of the enum
@@ -406,7 +409,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(uint level, const std::string& name, uint size, const std::wstring& module_name);
 
 	FLAME_FOUNDATION_EXPORTS uint typeinfo_free_level();
-	FLAME_FOUNDATION_EXPORTS void typeinfo_init_basic_bp_nodes();
+	FLAME_FOUNDATION_EXPORTS void typeinfo_add_basic_bp_nodes();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename, int level = 0);
 	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, int level = -1);
