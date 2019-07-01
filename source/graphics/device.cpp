@@ -573,15 +573,17 @@ namespace flame
 
 		struct Device$
 		{
-			void* in$i;
+			AttributeP<void> in$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				out$o = in$i;
-
-				return false;
+				if (in$i.frame > out$o.frame)
+				{
+					out$o.v = in$i.v;
+					out$o.frame = in$i.frame;
+				}
 			}
 		};
 

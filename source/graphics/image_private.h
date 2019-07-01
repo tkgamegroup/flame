@@ -31,7 +31,7 @@ namespace flame
 			void get_pixels(uint x, uint y, int cx, int cy, void *dst);
 			void set_pixels(uint x, uint y, int cx, int cy, const void *src);
 
-			void save_png(const wchar_t *filename);
+			void save_png(const std::wstring& filename);
 		};
 
 		struct ImageviewPrivate : Imageview

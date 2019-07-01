@@ -26,30 +26,21 @@ namespace flame
 
 		struct SubpassInfo
 		{
-			Array<uint> color_attachments;
-			Array<uint> resolve_attachments;
+			std::vector<uint> color_attachments;
+			std::vector<uint> resolve_attachments;
 			int depth_attachment;
 
 			SubpassInfo() :
 				depth_attachment(-1)
 			{
-				memset(&color_attachments, 0, sizeof(Array<uint>));
-				memset(&resolve_attachments, 0, sizeof(Array<uint>));
 			}
 		};
 
 		struct RenderpassInfo
 		{
-			Array<void*> attachments;
-			Array<void*> subpasses;
-			Array<Vec<2, uint>> dependencies;
-
-			RenderpassInfo()
-			{
-				memset(&attachments, 0, sizeof(Array<AttachmentInfo*>));
-				memset(&subpasses, 0, sizeof(Array<SubpassInfo*>));
-				memset(&dependencies, 0, sizeof(Array<Vec<2, uint>>));
-			}
+			std::vector<void*> attachments;
+			std::vector<void*> subpasses;
+			std::vector<Vec<2, uint>> dependencies;
 		};
 
 		struct Renderpass
@@ -73,7 +64,7 @@ namespace flame
 		struct FramebufferInfo
 		{
 			Renderpass* rp;
-			Array<void*> views;
+			std::vector<void*> views;
 		};
 
 		struct Framebuffer

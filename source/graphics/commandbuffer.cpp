@@ -620,54 +620,61 @@ namespace flame
 
 		struct Commandbuffer$
 		{
-			void* device$i;
+			AttributeP<void> device$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
+				if (device$i.frame > out$o.frame)
 				{
-					Commandbuffer::destroy((Commandbuffer*)out$o);
-					out$o = nullptr;
+					if (out$o.v)
+						Commandbuffer::destroy((Commandbuffer*)out$o.v);
+					if (device$i.v)
+						out$o.v = Commandbuffer::create(((Device*)device$i.v)->gcp);
+					else
+						out$o.v = nullptr;
+					out$o.frame = device$i.frame;
 				}
-				if (delta_time >= 0.f)
-				{
-					if (device$i)
-						out$o = Commandbuffer::create(((Device*)device$i)->gcp);
-				}
+			}
 
-				return false;
+			FLAME_GRAPHICS_EXPORTS ~Commandbuffer$()
+			{
+				if (out$o.v)
+					Commandbuffer::destroy((Commandbuffer*)out$o.v);
 			}
 
 		}bp_commandbuffer_unused;
 
 		struct Commandbuffers$
 		{
-			void* device$i;
-			uint size$i;
+			AttributeP<void> device$i;
+			AttributeV<uint> size$i;
 
-			Array<void*> out$o;
+			AttributeV<std::vector<void*>> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				for (auto i = 0; i < out$o.size; i++)
-					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
-				delete[]out$o.v;
-				out$o.size = 0;
-				out$o.v = nullptr;
-				if (delta_time >= 0.f)
+				if (device$i.frame > out$o.frame || size$i.frame > out$o.frame)
 				{
-					if (device$i && size$i > 0)
+					for (auto i = 0; i < out$o.v.size(); i++)
+						Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+					if (device$i.v && size$i.v > 0)
 					{
-						out$o.size = size$i;
-						out$o.v = new void* [size$i];
-						for (auto i = 0; i < size$i; i++)
-							out$o.v[i] = Commandbuffer::create(((Device*)device$i)->gcp);
+						out$o.v.resize(size$i.v);
+						for (auto i = 0; i < size$i.v; i++)
+							out$o.v[i] = Commandbuffer::create(((Device*)device$i.v)->gcp);
 					}
+					else
+						out$o.v.clear();
+					out$o.frame = max(device$i.frame, size$i.frame);
 				}
+			}
 
-				return false;
+			FLAME_GRAPHICS_EXPORTS ~Commandbuffers$()
+			{
+				for (auto i = 0; i < out$o.v.size(); i++)
+					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
 			}
 
 		}bp_commandbuffers_unused;

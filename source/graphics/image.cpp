@@ -481,41 +481,43 @@ namespace flame
 
 		struct Image$
 		{
-			void* device$i;
-			Format$ format$i;
-			Vec2u size$i;
-			uint level$i;
-			uint layer$i;
-			SampleCount$ sample_count$i;
-			ImageUsage$ usage$mi;
+			AttributeP<void> device$i;
+			AttributeE<Format$> format$i;
+			AttributeV<Vec2u> size$i;
+			AttributeV<uint> level$i;
+			AttributeV<uint> layer$i;
+			AttributeE<SampleCount$> sample_count$i;
+			AttributeE<ImageUsage$> usage$mi;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS Image$() :
-				format$i(Format_R8G8B8A8_UNORM),
-				size$i(4),
-				level$i(1),
-				layer$i(1),
-				sample_count$i(SampleCount_1),
-				usage$mi(ImageUsageSampled)
+			FLAME_GRAPHICS_EXPORTS Image$()
 			{
+				format$i.v = Format_R8G8B8A8_UNORM;
+				size$i.v = 4;
+				level$i.v = 1;
+				layer$i.v = 1;
+				usage$mi.v = ImageUsageSampled;
 			}
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
+				if (device$i.frame > out$o.frame || format$i.frame > out$o.frame || size$i.frame > out$o.frame || level$i.frame > out$o.frame || layer$i.frame > out$o.frame || sample_count$i.frame > out$o.frame || usage$mi.frame > out$o.frame)
 				{
-					Image::destroy((Image*)out$o);
-					out$o = nullptr;
+					if (out$o.v)
+						Image::destroy((Image*)out$o.v);
+					if (device$i.v && format$i.v != Format_Undefined && size$i.v.x > 0 && size$i.v.y > 0 && level$i.v > 0 && layer$i.v > 0)
+						out$o.v = Image::create((Device*)device$i.v, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);
+					else
+						out$o.v = nullptr;
+					out$o.frame = maxN(device$i.frame, format$i.frame, size$i.frame, level$i.frame, layer$i.frame, sample_count$i.frame, usage$mi.frame);
 				}
+			}
 
-				if (delta_time >= 0.f)
-				{
-					if (device$i && size$i > 0U && level$i > 0 && layer$i > 0)
-						out$o = Image::create((Device*)device$i, format$i, size$i, level$i, layer$i, sample_count$i, usage$mi);
-				}
-
-				return false;
+			FLAME_GRAPHICS_EXPORTS ~Image$()
+			{
+				if (out$o.v)
+					Image::destroy((Image*)out$o.v);
 			}
 
 		}bp_image_unused;
@@ -595,96 +597,104 @@ namespace flame
 
 		struct Imageview$
 		{
-			void* image$i;
-			ImageviewType$ type$i;
-			uint base_level$i;
-			uint level_count$i;
-			uint base_layer$i;
-			uint layer_count$i;
-			Swizzle$ swizzle_r$i;
-			Swizzle$ swizzle_g$i;
-			Swizzle$ swizzle_b$i;
-			Swizzle$ swizzle_a$i;
+			AttributeP<void> image$i;
+			AttributeE<ImageviewType$> type$i;
+			AttributeV<uint> base_level$i;
+			AttributeV<uint> level_count$i;
+			AttributeV<uint> base_layer$i;
+			AttributeV<uint> layer_count$i;
+			AttributeE<Swizzle$> swizzle_r$i;
+			AttributeE<Swizzle$> swizzle_g$i;
+			AttributeE<Swizzle$> swizzle_b$i;
+			AttributeE<Swizzle$> swizzle_a$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS Imageview$() :
-				type$i(Imageview2D),
-				base_level$i(0),
-				level_count$i(1),
-				base_layer$i(0),
-				layer_count$i(1),
-				swizzle_r$i(SwizzleIdentity),
-				swizzle_g$i(SwizzleIdentity),
-				swizzle_b$i(SwizzleIdentity),
-				swizzle_a$i(SwizzleIdentity)
+			FLAME_GRAPHICS_EXPORTS Imageview$()
 			{
+				type$i.v = Imageview2D;
+				level_count$i.v = 1;
+				layer_count$i.v = 1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
+				if (image$i.frame > out$o.frame || type$i.frame > out$o.frame || base_level$i.frame > out$o.frame || base_layer$i.frame > out$o.frame || layer_count$i.frame > out$o.frame || swizzle_r$i.frame > out$o.frame || swizzle_g$i.frame > out$o.frame || swizzle_b$i.frame > out$o.frame || swizzle_a$i.frame > out$o.frame)
 				{
-					Imageview::destroy((Imageview*)out$o);
-					out$o = nullptr;
+					if (out$o.v)
+						Imageview::destroy((Imageview*)out$o.v);
+					if (image$i.v && level_count$i.v > 0 && layer_count$i.v > 0)
+					{
+					}
+					else
+						out$o.v = nullptr;
+					out$o.frame = maxN(image$i.frame, type$i.frame, base_level$i.frame, level_count$i.frame, base_layer$i.frame, layer_count$i.frame, swizzle_r$i.frame, swizzle_g$i.frame, swizzle_b$i.frame, swizzle_a$i.frame);
 				}
+			}
 
-				if (delta_time >= 0.f)
-				{
-					if (image$i)
-						out$o = Imageview::create((Image*)image$i, type$i, base_level$i, level_count$i, base_layer$i, layer_count$i, swizzle_r$i, swizzle_g$i, swizzle_b$i, swizzle_a$i);
-				}
-
-				return false;
+			FLAME_GRAPHICS_EXPORTS ~Imageview$()
+			{
+				if (out$o.v)
+					Imageview::destroy((Imageview*)out$o.v);
 			}
 
 		}bp_imageview_unused;
 
 		struct ImageviewGeneral$
 		{
-			void* image$i;
+			AttributeP<void> image$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
+				if (image$i.frame > out$o.frame)
 				{
-					Imageview::destroy((Imageview*)out$o);
-					out$o = nullptr;
+					if (out$o.v)
+						Imageview::destroy((Imageview*)out$o.v);
+					if (image$i.v)
+						out$o.v = Imageview::create((Image*)image$i.v);
+					else
+						out$o.v = nullptr;
+					out$o.frame = image$i.frame;
 				}
+			}
 
-				if (delta_time >= 0.f)
-				{
-					if (image$i)
-						out$o = Imageview::create((Image*)image$i);
-				}
-
-				return false;
+			FLAME_GRAPHICS_EXPORTS ~ImageviewGeneral$()
+			{
+				if (out$o.v)
+					Imageview::destroy((Imageview*)out$o.v);
 			}
 		};
 
 		struct ImageviewsGeneral$
 		{
-			Array<void*> images$i;
+			AttributeP<std::vector<void*>> images$i;
 
-			Array<void*> out$o;
+			AttributeV<std::vector<void*>> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				//if (out$o)
-				//{
-				//	Imageview::destroy((Imageview*)out$o);
-				//	out$o = nullptr;
-				//}
+				if (images$i.frame > out$o.frame)
+				{
+					for (auto i = 0; i < out$o.v.size(); i++)
+						Imageview::destroy((Imageview*)out$o.v[i]);
+					if (images$i.v)
+					{
+						out$o.v.resize(images$i.v->size());
+						for (auto i = 0; i < out$o.v.size(); i++)
+							out$o.v[i] = Imageview::create((Image*)(*images$i.v)[i]);
+					}
+					else
+						out$o.v.clear();
+					out$o.frame = images$i.frame;
+				}
+			}
 
-				//if (delta_time >= 0.f)
-				//{
-				//	if (image$i)
-				//		out$o = Imageview::create((Image*)image$i);
-				//}
-
-				return false;
+			FLAME_GRAPHICS_EXPORTS ~ImageviewsGeneral$()
+			{
+				for (auto i = 0; i < out$o.v.size(); i++)
+					Imageview::destroy((Imageview*)out$o.v[i]);
 			}
 		};
 

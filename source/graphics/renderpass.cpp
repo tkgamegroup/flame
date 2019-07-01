@@ -15,7 +15,7 @@ namespace flame
 			std::vector<VkAttachmentDescription> vk_attachments(info.attachments.size);
 			for (auto i = 0; i < vk_attachments.size(); i++)
 			{
-				auto at_info = (AttachmentInfo*)info.attachments.v[i];
+				auto at_info = (AttachmentInfo*)info.attachments[i];
 
 				vk_attachments[i].flags = 0;
 				vk_attachments[i].format = to_enum(at_info->format);
@@ -44,7 +44,7 @@ namespace flame
 			std::vector<VkSubpassDescription> vk_subpasses(info.subpasses.size);
 			for (auto i = 0; i < vk_subpasses.size(); i++)
 			{
-				auto sp_info = (SubpassInfo*)info.subpasses.v[i];
+				auto sp_info = (SubpassInfo*)info.subpasses[i];
 
 				vk_subpasses[i].flags = 0;
 				vk_subpasses[i].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -61,7 +61,7 @@ namespace flame
 					vk_color_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size]);
 					for (auto j = 0; j < sp_info->color_attachments.size; j++)
 					{
-						vk_color_refs[i][j].attachment = sp_info->color_attachments.v[j];
+						vk_color_refs[i][j].attachment = sp_info->color_attachments[j];
 						vk_color_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
 					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachments.size;
@@ -72,7 +72,7 @@ namespace flame
 					vk_resolve_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size]);
 					for (auto j = 0; j < sp_info->color_attachments.size; j++)
 					{
-						vk_resolve_refs[i][j].attachment = sp_info->resolve_attachments.v[j];
+						vk_resolve_refs[i][j].attachment = sp_info->resolve_attachments[j];
 						vk_resolve_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
 					vk_subpasses[i].pResolveAttachments = vk_resolve_refs[i].get();
@@ -89,7 +89,7 @@ namespace flame
 			std::vector<VkSubpassDependency> vk_dependencies(info.dependencies.size);
 			for (auto i = 0; i < info.dependencies.size; i++)
 			{
-				auto& dp_info = info.dependencies.v[i];
+				auto& dp_info = info.dependencies[i];
 
 				vk_dependencies[i].srcSubpass = dp_info.x();
 				vk_dependencies[i].dstSubpass = dp_info.y();
@@ -115,7 +115,7 @@ namespace flame
 
 			attachments.resize(info.attachments.size);
 			for (auto i = 0; i < info.attachments.size; i++)
-				attachments[i] = ((AttachmentInfo*)(info.attachments.v[i]))->format;
+				attachments[i] = ((AttachmentInfo*)(info.attachments[i]))->format;
 #endif
 		}
 
@@ -143,86 +143,67 @@ namespace flame
 
 		struct AttachmentInfo$
 		{
-			Format$ format$i;
-			bool clear$i;
-			SampleCount$ sample_count$i;
+			AttributeE<Format$> format$i;
+			AttributeV<bool> clear$i;
+			AttributeE<SampleCount$> sample_count$i;
 
-			void* out$o;
+			AttributeV<AttachmentInfo> out$o;
 
-			FLAME_GRAPHICS_EXPORTS AttachmentInfo$() :
-				format$i(Format_R8G8B8A8_UNORM),
-				clear$i(true),
-				sample_count$i(SampleCount_1)
+			FLAME_GRAPHICS_EXPORTS AttachmentInfo$()
 			{
+				format$i.v = Format_R8G8B8A8_UNORM;
+				clear$i.v = true;
 			}
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
-				{
-					delete (AttachmentInfo*)out$o;
-					out$o = nullptr;
-				}
-
-				if (delta_time >= 0.f)
-				{
-					auto info = new AttachmentInfo;
-					info->format = format$i;
-					info->clear = clear$i;
-					info->sample_count = sample_count$i;
-					out$o = info;
-				}
-
-				return false;
+				if (format$i.frame > out$o.frame)
+					out$o.v.format = format$i.v;
+				if (clear$i.frame > out$o.frame)
+					out$o.v.clear = clear$i.v;
+				if (sample_count$i.frame > out$o.frame)
+					out$o.v.sample_count = sample_count$i.v;
+				out$o.frame = maxN(format$i.frame, clear$i.frame, sample_count$i.frame);
 			}
 
 		}bp_attachmentinfo_unused;
 
 		struct SubpassInfo$
 		{
-			Array<uint> color_attachments$i;
-			Array<uint> resolve_attachments$i;
-			int depth_attachment$i;
+			AttributeV<std::vector<uint>> color_attachments$i;
+			AttributeV<std::vector<uint>> resolve_attachments$i;
+			AttributeV<int> depth_attachment$i;
 
-			void* out$o;
+			AttributeV<SubpassInfo> out$o;
 
-			FLAME_GRAPHICS_EXPORTS SubpassInfo$() :
-				depth_attachment$i(-1)
+			FLAME_GRAPHICS_EXPORTS SubpassInfo$()
 			{
+				depth_attachment$i.v = -1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
-				{
-					delete (SubpassInfo*)out$o;
-					out$o = nullptr;
-				}
-
-				if (delta_time >= 0.f)
-				{
-					auto info = new SubpassInfo;
-					info->color_attachments = color_attachments$i;
-					info->resolve_attachments = resolve_attachments$i;
-					info->depth_attachment = depth_attachment$i;
-					out$o = info;
-				}
-
-				return false;
+				if (color_attachments$i.frame > out$o.frame)
+					out$o.v.color_attachments = color_attachments$i.v;
+				if (resolve_attachments$i.frame > out$o.frame)
+					out$o.v.resolve_attachments = resolve_attachments$i.v;
+				if (depth_attachment$i.frame > out$o.frame)
+					out$o.v.depth_attachment = depth_attachment$i.v;
+				out$o.frame = maxN(color_attachments$i.frame, resolve_attachments$i.frame, depth_attachment$i.frame);
 			}
 
 		}bp_subpassinfo_unused;
 
 		struct Renderpass$
 		{
-			void* device$i;
-			Array<void*> attachments$i;
-			Array<void*> subpasses$i;
-			Array<Vec<2, uint>> dependencies$i;
+			AttributeP<void> device$i;
+			AttributeV<std::vector<void*>> attachments$i;
+			AttributeV<std::vector<void*>> subpasses$i;
+			AttributeV<std::vector<Vec<2, uint>>> dependencies$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (out$o)
 				{
@@ -241,8 +222,6 @@ namespace flame
 						out$o = Renderpass::create((Device*)device$i, info);
 					}
 				}
-
-				return false;
 			}
 
 		}bp_renderpass_unused;
@@ -315,7 +294,7 @@ namespace flame
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (out$o)
 				{
@@ -334,8 +313,6 @@ namespace flame
 						out$o = cv;
 					}
 				}
-
-				return false;
 			}
 
 		}bp_clearvalues_unused;
@@ -402,7 +379,7 @@ namespace flame
 
 			void* out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (out$o)
 				{
@@ -419,8 +396,6 @@ namespace flame
 						out$o = Framebuffer::create((Device*)device$i, info);
 					}
 				}
-
-				return false;
 			}
 
 		}bp_framebuffer_unused;
@@ -434,7 +409,7 @@ namespace flame
 
 			Array<void*> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				for (auto i = 0; i < out$o.size; i++)
 					Framebuffer::destroy((Framebuffer*)out$o.v[i]);
@@ -460,8 +435,6 @@ namespace flame
 						}
 					}
 				}
-
-				return false;
 			}
 
 		}bp_framebuffers_unused;

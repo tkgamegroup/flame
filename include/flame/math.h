@@ -1030,25 +1030,25 @@ namespace flame
 	using Mat4x4f = Mat<4, 4, float>;
 
 	template<class T>
-	inline Vec<3, T> x_axis()
+	Vec<3, T> x_axis()
 	{
 		return Vec<3, T>(1, 0, 0);
 	}
 
 	template<class T>
-	inline Vec<3, T> y_axis()
+	Vec<3, T> y_axis()
 	{
 		return Vec<3, T>(0, 1, 0);
 	}
 
 	template<class T>
-	inline Vec<3, T> z_axis()
+	Vec<3, T> z_axis()
 	{
 		return Vec<3, T>(0, 0, 1);
 	}
 
 	template<class T>
-	inline Vec<3, T> axis(int idx)
+	Vec<3, T> axis(int idx)
 	{
 		static Vec<3, T> axes[] = {
 			x_axis(),
@@ -1059,7 +1059,7 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	inline T length(const Vec<N, T>& v)
+	T length(const Vec<N, T>& v)
 	{
 		T s = 0;
 		for (auto i = 0; i < N; i++)
@@ -1076,13 +1076,13 @@ namespace flame
 	}
 
 	template<class T>
-	inline T min(const T& a, const T& b)
+	T min(const T& a, const T& b)
 	{
 		return a < b ? a : b;
 	}
 
 	template<uint N, class T>
-	inline Vec<N, T> min(const Vec<N, T>& a, const Vec<N, T>& b)
+	Vec<N, T> min(const Vec<N, T>& a, const Vec<N, T>& b)
 	{
 		Vec<N, T> ret;
 		for (auto i = 0; i < N; i++)
@@ -1091,13 +1091,25 @@ namespace flame
 	}
 
 	template<class T>
-	inline T max(const T& a, const T& b)
+	T minN(T a, T b, T c)
+	{
+		return min(min(a, b), c);
+	}
+
+	template<class T, class ...Args>
+	T minN(T a, T b, T c, Args... args)
+	{
+		return minN(min(a, b), c, args);
+	}
+
+	template<class T>
+	T max(const T& a, const T& b)
 	{
 		return a > b ? a : b;
 	}
 
 	template<uint N, class T>
-	inline Vec<N, T> max(const Vec<N, T>& a, const Vec<N, T>& b)
+	Vec<N, T> max(const Vec<N, T>& a, const Vec<N, T>& b)
 	{
 		Vec<N, T> ret;
 		for (auto i = 0; i < N; i++)
@@ -1106,7 +1118,19 @@ namespace flame
 	}
 
 	template<class T>
-	inline T clamp(const T& v, const T& a, const T& b)
+	T maxN(T a, T b, T c)
+	{
+		return max(max(a, b), c);
+	}
+
+	template<class T, class ...Args>
+	T maxN(T a, T b, T c, Args... args)
+	{
+		return maxN(max(a, b), c, args);
+	}
+
+	template<class T>
+	T clamp(const T& v, const T& a, const T& b)
 	{
 		if (v < a)
 			return a;
@@ -1116,7 +1140,7 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	inline Vec<N, T> clamp(const Vec<N, T>& v, const Vec<N, T>& a, const Vec<N, T>& b)
+	Vec<N, T> clamp(const Vec<N, T>& v, const Vec<N, T>& a, const Vec<N, T>& b)
 	{
 		Vec<N, T> ret;
 		for (auto i = 0; i < N; i++)
@@ -1125,13 +1149,13 @@ namespace flame
 	}
 
 	template<class T>
-	inline T fract(T v)
+	T fract(T v)
 	{
 		return v - floor(v);
 	}
 
 	template<uint N, class T>
-	inline Vec<N, T> fract(const Vec<N, T>& v)
+	Vec<N, T> fract(const Vec<N, T>& v)
 	{
 		Vec<N, T> ret;
 		for (auto i = 0; i < N; i++)
@@ -1140,19 +1164,19 @@ namespace flame
 	}
 
 	template<class T>
-	inline Vec<2, T> mod(T a, T b)
+	Vec<2, T> mod(T a, T b)
 	{
 		return Vec<2, T>(a / b, a % b);
 	}
 
 	template<class T>
-	inline T mix(T v0, T v1, T q)
+	T mix(T v0, T v1, T q)
 	{
 		return v0 + q * (v1 - v0);
 	}
 
 	template<uint N, class T>
-	inline Vec<N, T> mix(const Vec<N, T>& v0, const Vec<N, T>& v1, T q)
+	Vec<N, T> mix(const Vec<N, T>& v0, const Vec<N, T>& v1, T q)
 	{
 		Vec<N, T> ret;
 		for (auto i = 0; i < N; i++)
@@ -1161,7 +1185,7 @@ namespace flame
 	}
 	
 	template<uint N, class T>
-	inline T dot(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
+	T dot(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
 	{
 		T ret = 0;
 		for (auto i = 0; i < N; i++)
@@ -1170,7 +1194,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Vec<3, T> cross(const Vec<3, T>& lhs, const Vec<3, T>& rhs)
+	Vec<3, T> cross(const Vec<3, T>& lhs, const Vec<3, T>& rhs)
 	{
 		return Vec<3, T>(
 			lhs.v_[1] * rhs.v_[2] - rhs.v_[1] * lhs.v_[2],
@@ -1179,14 +1203,14 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	inline T distance(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
+	T distance(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
 	{
 		auto d = lhs - rhs;
 		return dot(d, d);
 	}
 
 	template<uint N, class T>
-	inline Mat<N, N, T> transpose(const Mat<N, N, T>& m)
+	Mat<N, N, T> transpose(const Mat<N, N, T>& m)
 	{
 		Mat<N, N, T> ret;
 		for (auto i = 0; i < N; i++)
@@ -1197,7 +1221,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<2, 2, T> inverse(const Mat<2, 2, T>& m)
+	Mat<2, 2, T> inverse(const Mat<2, 2, T>& m)
 	{
 		auto det_inv = T(1) / (
 			m[0][0] * m[1][1] -
@@ -1209,7 +1233,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<3, 3, T> inverse(const Mat<3, 3, T>& m)
+	Mat<3, 3, T> inverse(const Mat<3, 3, T>& m)
 	{
 		auto det_inv = T(1) / (
 			m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2])
@@ -1231,7 +1255,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<4, 4, T> inverse(const Mat<4, 4, T>& m)
+	Mat<4, 4, T> inverse(const Mat<4, 4, T>& m)
 	{
 		auto coef00 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
 		auto coef02 = m[1][2] * m[3][3] - m[3][2] * m[1][3];
@@ -1285,7 +1309,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<2, 2, T> rotation(T rad)
+	Mat<2, 2, T> rotation(T rad)
 	{
 		const auto c = cos(rad);
 		const auto s = sin(rad);
@@ -1294,7 +1318,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<3, 3, T> rotation(const Vec<3, T>& axis, T rad)
+	Mat<3, 3, T> rotation(const Vec<3, T>& axis, T rad)
 	{
 		const auto c = cos(rad);
 		const auto s = sin(rad);
@@ -1319,7 +1343,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<4, 4, T> view_mat(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
+	Mat<4, 4, T> view_mat(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
 	{
 		auto f = normalize(center - eye);
 		auto s = normalize(cross(f, up));
@@ -1342,7 +1366,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<4, 4, T> proj_mat(float fovy, float aspect, float zNear, float zFar)
+	Mat<4, 4, T> proj_mat(float fovy, float aspect, float zNear, float zFar)
 	{
 		auto tanHalfFovy = tan(fovy / 2.f);
 
@@ -1369,7 +1393,7 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	inline T bezier_closest(int iters, const Vec<N, T>& pos, float start, float end, int slices,
+	T bezier_closest(int iters, const Vec<N, T>& pos, float start, float end, int slices,
 		const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3)
 	{
 		if (iters <= 0)
@@ -1397,7 +1421,7 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	inline Vec<N, T> bezier_closest_point(const Vec<N, T>& pos, 
+	Vec<N, T> bezier_closest_point(const Vec<N, T>& pos, 
 		const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3,
 		int slices, int iters)
 	{
@@ -1405,13 +1429,13 @@ namespace flame
 	}
 
 	template<class T>
-	inline T rand(const Vec<2, T>& v)
+	T rand(const Vec<2, T>& v)
 	{
 		return fract(cos(v.x() * (12.9898) + v.y() * (4.1414)) * 43758.5453);
 	}
 
 	template<class T>
-	inline T noise(const Vec<2, T>& v)
+	T noise(const Vec<2, T>& v)
 	{
 		const auto SC = 250;
 
@@ -1433,7 +1457,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline T fbm(const Vec<2, T>& v)
+	T fbm(const Vec<2, T>& v)
 	{
 		auto v = _v;
 		auto r = T(0);
@@ -1452,13 +1476,13 @@ namespace flame
 	// Vec4f as Rect
 	// (x, y) - min, (z, w) - max
 	template<class T>
-	inline Vec<4, T> rect(const Vec<2, T>& base, const Vec<2, T>& ext)
+	Vec<4, T> rect(const Vec<2, T>& base, const Vec<2, T>& ext)
 	{
 		return Vec<4, T>(base, base + ext);
 	}
 
 	template<class T>
-	inline Vec<4, T> rect_expand(const Vec<4, T>& rect, T length)
+	Vec<4, T> rect_expand(const Vec<4, T>& rect, T length)
 	{
 		Vec<4, T> ret(*this);
 		ret.x() -= length;
@@ -1469,21 +1493,21 @@ namespace flame
 	}
 
 	template<class T>
-	inline bool rect_contains(const Vec<4, T>& rect, const Vec<2, T>& p)
+	bool rect_contains(const Vec<4, T>& rect, const Vec<2, T>& p)
 	{
 		return p.x() > rect.x() && p.x() < rect.z() &&
 			p.y() > rect.y() && p.y() < rect.w();
 	}
 
 	template<class T>
-	inline bool rect_overlapping(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
+	bool rect_overlapping(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
 	{
 		return lhs.x() <= rhs.z() && lhs.z() >= rhs.x() &&
 			lhs.y() <= rhs.w() && lhs.w() >= rhs.y();
 	}
 
 	template<class T>
-	inline Side rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
+	Side rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
 	{
 		if (p.x() < rect.z() && p.x() > rect.z() - threshold &&
 			p.y() > rect.y() && p.y() < rect.y() + threshold)
@@ -1515,7 +1539,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Vec<2, T> side_dir(Side s)
+	Vec<2, T> side_dir(Side s)
 	{
 		switch (s)
 		{
@@ -1543,7 +1567,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Vec<4, T> fited_rect(const Vec<2, T>& desired_size, float xy_aspect)
+	Vec<4, T> fited_rect(const Vec<2, T>& desired_size, float xy_aspect)
 	{
 		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
 			return Vec<4, T>(T(0), T(0), T(1), T(1));
@@ -1568,7 +1592,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Vec<4, T> fited_rect_no_zoom_in(const Vec<2, T>& desired_size, const Vec<2, T>& size)
+	Vec<4, T> fited_rect_no_zoom_in(const Vec<2, T>& desired_size, const Vec<2, T>& size)
 	{
 		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
 			return Vec4f<4, T>(T(0), T(0), T(1), T(1));
@@ -1587,7 +1611,7 @@ namespace flame
 			return fited_rect(desired_size, size.x() / size.y());
 	}
 
-	inline Vec<3, uchar> color(const Vec<3, float>& hsv)
+	Vec<3, uchar> color(const Vec<3, float>& hsv)
 	{
 		auto h = hsv.x();
 		auto s = hsv.y();
@@ -1623,7 +1647,7 @@ namespace flame
 		}
 	}
 
-	inline Vec<3, float> hsv(const Vec<3, uchar>& rgb)
+	Vec<3, float> hsv(const Vec<3, uchar>& rgb)
 	{
 		auto r = rgb.x() / 255.f;
 		auto g = rgb.y() / 255.f;
@@ -1653,7 +1677,7 @@ namespace flame
 	// (x, y, z) - vector, (w) - scalar
 
 	template<class T>
-	inline Vec<4, T> quat(const Mat<3, 3, T>& m)
+	Vec<4, T> quat(const Mat<3, 3, T>& m)
 	{
 		T s;
 		T tq[4];
@@ -1704,7 +1728,7 @@ namespace flame
 	}
 	
 	template<class T>
-	inline Vec<4, T> quat_mul(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
+	Vec<4, T> quat_mul(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
 	{
 		Vec<4, T> ret;
 		ret.x() = lhs.w() * rhs.x() + lhs.x() * rhs.w() + lhs.y() * rhs.z() - lhs.z() * rhs.y();
@@ -1715,7 +1739,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Vec<3, T> quat_mul(const Vec<4, T>& lhs, const Vec<3, T>& rhs)
+	Vec<3, T> quat_mul(const Vec<4, T>& lhs, const Vec<3, T>& rhs)
 	{
 		Vec<4, T> ret;
 		ret.x() = lhs.w() * rhs.x() + lhs.y() * rhs.z() - lhs.z() * rhs.y();
@@ -1726,7 +1750,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<3, 3, T> rotation(const Vec<4, T>& q)
+	Mat<3, 3, T> rotation(const Vec<4, T>& q)
 	{
 		T wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
 
@@ -1767,7 +1791,7 @@ namespace flame
 	// (x, y z) - (yaw pitch roll)
 
 	template<class T>
-	inline Vec<3, T> eulerYPR(const Vec<4, T>& quat)
+	Vec<3, T> eulerYPR(const Vec<4, T>& quat)
 	{
 		auto sqw = quat.w() * quat.w();
 		auto sqx = quat.x() * quat.x();
@@ -1792,7 +1816,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline Mat<3, 3, T> rotation(const Vec<3, T>& euler_ypr)
+	Mat<3, 3, T> rotation(const Vec<3, T>& euler_ypr)
 	{
 		Mat<3, 3, T> ret(T(1));
 
@@ -1813,7 +1837,7 @@ namespace flame
 	// (x, y, z) - normal, w - d
 
 	template<class T>
-	inline T plane_intersect(const Vec<4, T>& plane, const Vec<3, T>& origin, const Vec<3, T>& dir)
+	T plane_intersect(const Vec<4, T>& plane, const Vec<3, T>& origin, const Vec<3, T>& dir)
 	{
 		auto normal = Vec<3, T>(plane);
 		auto numer = dot(normal, origin) - plane.w();
@@ -1829,14 +1853,14 @@ namespace flame
 	// v_[0] - min, v_[1] - max
 
 	template<class T>
-	inline void AABB_offset(Mat<2, 3, T>& AABB, const Vec<3, T>& off)
+	void AABB_offset(Mat<2, 3, T>& AABB, const Vec<3, T>& off)
 	{
 		AABB.v_[0] += off;
 		AABB.v_[1] += off;
 	}
 
 	template<class T>
-	inline void AABB_merge(Mat<2, 3, T>& AABB, const Vec<3, T>& p)
+	void AABB_merge(Mat<2, 3, T>& AABB, const Vec<3, T>& p)
 	{
 		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
 		v1.x() = min(v1.x(), p.x());
@@ -1848,7 +1872,7 @@ namespace flame
 	}
 
 	template<class T>
-	inline void AABB_points(const Mat<2, 3, T>& AABB, Vec<3, T>* dst)
+	void AABB_points(const Mat<2, 3, T>& AABB, Vec<3, T>* dst)
 	{
 		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
 		dst[0] = v1;
