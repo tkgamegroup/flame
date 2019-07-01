@@ -44,21 +44,7 @@ A lightweight and powerful 3D Game Engine.
 
 - download & install Graphviz (optional)
   
-- cmake flame & configure
-  
-- set path to pugixml
-
-- set path to STB
-
-- set path to freetype
-
-- set path to msdfgen
-
-- set path to OpenAL
-
-- set path to Graphviz (optional)
-  
-- cmake flame generate
+- cmake flame
   
 - enjoy
 
