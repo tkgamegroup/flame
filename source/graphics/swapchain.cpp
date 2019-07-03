@@ -28,25 +28,6 @@ namespace flame
 
 			image_index = 0;
 
-			create();
-
-			auto thiz = this;
-
-			w->add_resize_listener(Function<void(void* c, const Vec2u & size)>(
-				[](void* c, const Vec2u & size) {
-					auto sc = (*((SwapchainPrivatePtr*)c));
-					sc->destroy();
-					sc->create();
-				}, sizeof(void*), &thiz));
-		}
-
-		SwapchainPrivate::~SwapchainPrivate()
-		{
-			destroy();
-		}
-
-		void SwapchainPrivate::create()
-		{
 			auto size = w->size;
 			uint image_count = 3;
 
@@ -166,7 +147,7 @@ namespace flame
 				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, native_images[i]);
 		}
 
-		void SwapchainPrivate::destroy()
+		SwapchainPrivate::~SwapchainPrivate()
 		{
 			for (auto i : images)
 				Image::destroy(i);
@@ -225,52 +206,76 @@ namespace flame
 
 		struct Swapchain$
 		{
-			void* in$i;
+			AttributeP<void> device$i;
+			AttributeP<void> window$i;
 
-			void* out$o;
-			void* window$o;
-			Vec2u size$o;
-			Format$ format$o;
-			Array<void*> images$o;
-			Array<void*> imageviews$o;
+			AttributeP<void> out$o;
+			AttributeV<Vec2u> size$o;
+			AttributeE<Format$> format$o;
+			AttributeV<std::vector<void*>> images$o;
+			Window* last_window;
+			void* resize_listener;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				delete[]images$o.v;
-				images$o.size = 0;
-				images$o.v = nullptr;
-				for (auto i = 0; i < imageviews$o.size; i++)
-					Imageview::destroy((Imageview*)imageviews$o.v[i]);
-				delete[]imageviews$o.v;
-				imageviews$o.size = 0;
-				imageviews$o.v = nullptr;
-
-				if (delta_time >= 0.f)
+				if (device$i.frame > out$o.frame || window$i.frame > out$o.frame)
 				{
-					if (in$i)
+					if (out$o.v)
+						Swapchain::destroy((Swapchain*)out$o.v);
+					if (window$i.frame > out$o.frame)
 					{
-						out$o = in$i;
-						auto sc = (graphics::Swapchain*)out$o;
-						auto image_count = sc->image_count();
-						if (image_count > 0)
-						{
-							images$o.size = image_count;
-							images$o.v = new void* [image_count];
-							for (auto i = 0; i < image_count; i++)
-								images$o.v[i] = sc->image(i);
-							imageviews$o.size = image_count;
-							imageviews$o.v = new void* [image_count];
-							for (auto i = 0; i < image_count; i++)
-								imageviews$o.v[i] = Imageview::create((Image*)images$o.v[i]);
-
-							auto i = (Image*)images$o.v[0];
-							size$o = i->size;
-							format$o = i->format;
-						}
+						if (resize_listener)
+							last_window->remove_resize_listener(resize_listener);
 					}
-				}
+					if (device$i.v && window$i.v)
+					{
+						auto sc = Swapchain::create((Device*)device$i.v, (Window*)window$i.v);
+						out$o.v = sc;
 
-				return false;
+						auto i = sc->image(0);
+						size$o.v = i->size;
+						format$o.v = i->format;
+						images$o.v.resize(sc->image_count());
+						for (auto i = 0; i < images$o.v.size(); i++)
+							images$o.v[i] = sc->image(i);
+
+						last_window = (Window*)window$i.v;
+						auto thiz = this;
+						resize_listener = last_window->add_resize_listener([](void* c, const Vec2u& size) {
+							auto thiz = *(Swapchain$ **)c;
+
+							if (thiz->out$o.v)
+								Swapchain::destroy((Swapchain*)thiz->out$o.v);
+							auto sc = Swapchain::create((Device*)thiz->device$i.v, (Window*)thiz->window$i.v);
+							auto i = sc->image(0);
+							thiz->size$o.v = i->size;
+							thiz->format$o.v = i->format;
+							thiz->images$o.v.resize(sc->image_count());
+							for (auto i = 0; i < thiz->images$o.v.size(); i++)
+								thiz->images$o.v[i] = sc->image(i);
+							auto frame = app_frame();
+							thiz->out$o.frame = frame;
+							thiz->size$o.frame = frame;
+							thiz->format$o.frame = frame;
+							thiz->images$o.frame = frame;
+
+						}, new_mail(&thiz));
+					}
+					else
+					{
+						out$o.v = nullptr;
+						size$o.v = 0;
+						format$o.v = Format_Undefined;
+						images$o.v.clear();
+						last_window = nullptr;
+						resize_listener = nullptr;
+					}
+					auto frame = max(device$i.frame, window$i.frame);
+					out$o.frame = frame;
+					size$o.frame = frame;
+					format$o.frame = frame;
+					images$o.frame = frame;
+				}
 			}
 
 		}bp_swapchain_unused;

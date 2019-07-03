@@ -1099,7 +1099,7 @@ namespace flame
 	template<class T, class ...Args>
 	T minN(T a, T b, T c, Args... args)
 	{
-		return minN(min(a, b), c, args);
+		return minN(min(a, b), c, args...);
 	}
 
 	template<class T>
@@ -1126,7 +1126,7 @@ namespace flame
 	template<class T, class ...Args>
 	T maxN(T a, T b, T c, Args... args)
 	{
-		return maxN(max(a, b), c, args);
+		return maxN(max(a, b), c, args...);
 	}
 
 	template<class T>
@@ -1611,7 +1611,7 @@ namespace flame
 			return fited_rect(desired_size, size.x() / size.y());
 	}
 
-	Vec<3, uchar> color(const Vec<3, float>& hsv)
+	inline Vec<3, uchar> color(const Vec<3, float>& hsv)
 	{
 		auto h = hsv.x();
 		auto s = hsv.y();
@@ -1647,7 +1647,7 @@ namespace flame
 		}
 	}
 
-	Vec<3, float> hsv(const Vec<3, uchar>& rgb)
+	inline Vec<3, float> hsv(const Vec<3, uchar>& rgb)
 	{
 		auto r = rgb.x() / 255.f;
 		auto g = rgb.y() / 255.f;

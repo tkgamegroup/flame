@@ -480,13 +480,5 @@ namespace flame
 		{
 			delete (PipelinePrivate*)p;
 		}
-
-		struct GraphicsPipeline$
-		{
-			void* device$i;
-			Array<void*> shaders$i;
-
-			void* out$o;
-		};
 	}
 }

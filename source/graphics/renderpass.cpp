@@ -12,7 +12,7 @@ namespace flame
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
-			std::vector<VkAttachmentDescription> vk_attachments(info.attachments.size);
+			std::vector<VkAttachmentDescription> vk_attachments(info.attachments.size());
 			for (auto i = 0; i < vk_attachments.size(); i++)
 			{
 				auto at_info = (AttachmentInfo*)info.attachments[i];
@@ -38,10 +38,10 @@ namespace flame
 					vk_attachments[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			}
 
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(info.subpasses.size);
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(info.subpasses.size);
-			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(info.subpasses.size);
-			std::vector<VkSubpassDescription> vk_subpasses(info.subpasses.size);
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(info.subpasses.size());
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(info.subpasses.size());
+			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(info.subpasses.size());
+			std::vector<VkSubpassDescription> vk_subpasses(info.subpasses.size());
 			for (auto i = 0; i < vk_subpasses.size(); i++)
 			{
 				auto sp_info = (SubpassInfo*)info.subpasses[i];
@@ -56,21 +56,21 @@ namespace flame
 				vk_subpasses[i].pDepthStencilAttachment = nullptr;
 				vk_subpasses[i].preserveAttachmentCount = 0;
 				vk_subpasses[i].pPreserveAttachments = nullptr;
-				if (sp_info->color_attachments.size > 0)
+				if (sp_info->color_attachments.size() > 0)
 				{
-					vk_color_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size]);
-					for (auto j = 0; j < sp_info->color_attachments.size; j++)
+					vk_color_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size()]);
+					for (auto j = 0; j < sp_info->color_attachments.size(); j++)
 					{
 						vk_color_refs[i][j].attachment = sp_info->color_attachments[j];
 						vk_color_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
-					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachments.size;
+					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachments.size();
 					vk_subpasses[i].pColorAttachments = vk_color_refs[i].get();
 				}
-				if (sp_info->resolve_attachments.size != 0)
+				if (sp_info->resolve_attachments.size() != 0)
 				{
-					vk_resolve_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size]);
-					for (auto j = 0; j < sp_info->color_attachments.size; j++)
+					vk_resolve_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size()]);
+					for (auto j = 0; j < sp_info->color_attachments.size(); j++)
 					{
 						vk_resolve_refs[i][j].attachment = sp_info->resolve_attachments[j];
 						vk_resolve_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -86,8 +86,8 @@ namespace flame
 				}
 			}
 
-			std::vector<VkSubpassDependency> vk_dependencies(info.dependencies.size);
-			for (auto i = 0; i < info.dependencies.size; i++)
+			std::vector<VkSubpassDependency> vk_dependencies(info.dependencies.size());
+			for (auto i = 0; i < info.dependencies.size(); i++)
 			{
 				auto& dp_info = info.dependencies[i];
 
@@ -113,8 +113,8 @@ namespace flame
 
 			chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
 
-			attachments.resize(info.attachments.size);
-			for (auto i = 0; i < info.attachments.size; i++)
+			attachments.resize(info.attachments.size());
+			for (auto i = 0; i < info.attachments.size(); i++)
 				attachments[i] = ((AttachmentInfo*)(info.attachments[i]))->format;
 #endif
 		}

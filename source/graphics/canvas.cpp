@@ -90,15 +90,12 @@ namespace flame
 				image_ms_view = Imageview::create(image_ms);
 				FramebufferInfo fb_info;
 				fb_info.rp = rp;
-				std::vector<void*> views;
-				views.resize(2);
-				fb_info.views.size = views.size();
-				fb_info.views.v = views.data();
-				views[0] = image_ms_view;
+				fb_info.views.resize(2);
+				fb_info.views[0] = image_ms_view;
 				for (auto i = 0; i < sc->image_count(); i++)
 				{
-					views[1] = Imageview::create(sc->image(i));
-					fbs.emplace_back(Framebuffer::create(device, fb_info), (Imageview*)views[1]);
+					fb_info.views[1] = Imageview::create(sc->image(i));
+					fbs.emplace_back(Framebuffer::create(device, fb_info), (Imageview*)fb_info.views[1]);
 				}
 
 				cv = Clearvalues::create(rp);
@@ -382,24 +379,23 @@ namespace flame
 				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
 				auto& idx_cnt = draw_cmds.back().idx_cnt;
 
-				auto s = text;
-				while (*s != 0)
+				for (auto ch : text)
 				{
-					if (*s == '\n')
+					if (ch == '\n')
 					{
 						_pos.y() += pixel_height;
 						_pos.x() = pos.x();
 					}
 					else
 					{
-						auto g = font_atlas->get_glyph(*s);
+						auto g = font_atlas->get_glyph(ch);
 						auto size = Vec2f(g->size) * scale;
 
 						auto p = _pos + Vec2f(g->off) * scale;
-						vtx_end->pos = p;						  vtx_end->uv = g->uv0;						vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(0.f, -size.y());	  vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());   vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), -size.y()); vtx_end->uv = g->uv1;						vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), 0.f);	  vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());   vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p;						       vtx_end->uv = g->uv0;						  vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());   vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(size.x(), -size.y()); vtx_end->uv = g->uv1;						  vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(size.x(), 0.f);	   vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());   vtx_end->col = col; vtx_end++;
 
 						*idx_end = vtx_cnt + 0; idx_end++;
 						*idx_end = vtx_cnt + 2; idx_end++;
@@ -413,7 +409,6 @@ namespace flame
 
 						_pos.x() += g->advance * scale;
 					}
-					s++;
 				}
 			}
 
@@ -757,15 +752,14 @@ namespace flame
 			at_info2.clear = false;
 			at_info2.sample_count = SampleCount_1;
 
-			std::vector<uint> col_refs = {0};
-			std::vector<uint> res_refs = {1};
 			SubpassInfo sp_info;
-			sp_info.color_attachments.size = col_refs.size();
-			sp_info.color_attachments.v = col_refs.data();
-			sp_info.resolve_attachments.size = res_refs.size();
-			sp_info.resolve_attachments.v = res_refs.data();
+			sp_info.color_attachments.push_back(0);
+			sp_info.resolve_attachments.push_back(1);
 
 			RenderpassInfo rp_info;
+			rp_info.attachments.push_back(&at_info1);
+			rp_info.attachments.push_back(&at_info2);
+			rp_info.subpasses.push_back(&sp_info);
 			rp = Renderpass::create(device, rp_info);
 
 			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));

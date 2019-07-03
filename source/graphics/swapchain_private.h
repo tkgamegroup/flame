@@ -29,8 +29,6 @@ namespace flame
 			SwapchainPrivate(Device *d, Window *w);
 			~SwapchainPrivate();
 
-			void create();
-			void destroy();
 			void acquire_image(Semaphore *signal_semaphore);
 		};
 

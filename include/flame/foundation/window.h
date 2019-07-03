@@ -71,7 +71,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(Window *s);
 	};
 
-	FLAME_FOUNDATION_EXPORTS uint app_total_frame();
+	FLAME_FOUNDATION_EXPORTS uint app_frame();
 	FLAME_FOUNDATION_EXPORTS uint app_fps();
 	FLAME_FOUNDATION_EXPORTS float app_delta_time(); // second
 

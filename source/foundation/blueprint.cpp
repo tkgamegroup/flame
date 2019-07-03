@@ -1,5 +1,6 @@
 #include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
+#include <flame/foundation/window.h>
 
 namespace flame
 {
@@ -67,9 +68,6 @@ namespace flame
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
-		int frame;
-
-		BPPrivate();
 		~BPPrivate();
 
 		NodePrivate *add_node(const std::string& id, const std::string& type_name);
@@ -115,7 +113,7 @@ namespace flame
 
 	void SlotPrivate::set_data(const void* d)
 	{
-		set_frame(node->bp->frame);
+		set_frame(app_frame());
 		memcpy((char*)data + sizeof(uint), d, data_size);
 	}
 
@@ -162,11 +160,9 @@ namespace flame
 		links[0] = target;
 		target->links.push_back(this);
 
-		auto bp = node->bp;
+		set_frame(app_frame());
 
-		set_frame(bp->frame);
-
-		bp->build_update_list();
+		node->bp->build_update_list();
 
 		return true;
 	}
@@ -260,7 +256,7 @@ namespace flame
 		{
 			for (auto& l : o->links)
 			{
-				l->set_frame(bp->frame);
+				l->set_frame(app_frame());
 				l->links[0] = nullptr;
 			}
 		}
@@ -330,11 +326,6 @@ namespace flame
 		}
 
 		cmf(p2f<MF_v_v>((char*)module + (uint)update_function->rva()), dummy);
-	}
-
-	BPPrivate::BPPrivate() :
-		frame(0)
-	{
 	}
 
 	BPPrivate::~BPPrivate()
@@ -500,8 +491,6 @@ namespace flame
 
 		for (auto &n : update_list)
 			n->update();
-
-		frame++;
 	}
 
 	void BPPrivate::load(SerializableNode* src)

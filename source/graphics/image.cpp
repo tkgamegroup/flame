@@ -257,9 +257,7 @@ namespace flame
 
 				FramebufferInfo fb_info;
 				fb_info.rp = d->rp_one_rgba32;
-				std::vector<void*> views = { img_v };
-				fb_info.views.size = views.size();
-				fb_info.views.v = views.data();
+				fb_info.views.push_back(img_v);
 				auto fb = Framebuffer::create(d, fb_info);
 				auto ds = Descriptorset::create(d->dp, d->pl_trans->layout()->dsl(0));
 				auto cb = Commandbuffer::create(d->gcp);
@@ -506,7 +504,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Image::destroy((Image*)out$o.v);
-					if (device$i.v && format$i.v != Format_Undefined && size$i.v.x > 0 && size$i.v.y > 0 && level$i.v > 0 && layer$i.v > 0)
+					if (device$i.v && format$i.v != Format_Undefined && size$i.v.x() > 0 && size$i.v.y() > 0 && level$i.v > 0 && layer$i.v > 0)
 						out$o.v = Image::create((Device*)device$i.v, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);
 					else
 						out$o.v = nullptr;

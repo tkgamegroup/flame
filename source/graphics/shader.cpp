@@ -187,7 +187,7 @@ namespace flame
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
 				std::fs::remove(temp_filename);
 				if (!std::fs::exists("temp.spv"))
-					printf("shader \"%s\" compile error:\n\n%s\n\n", glsl_path.string().c_str(), output.v);
+					printf("shader \"%s\" compile error:\n\n%s\n\n", glsl_path.string().c_str(), *output.p);
 				else
 				{
 					auto spv_dir = std::fs::path(spv_filename).parent_path();
@@ -196,6 +196,7 @@ namespace flame
 					std::fs::copy_file("temp.spv", spv_filename, std::fs::copy_options::overwrite_existing);
 					std::fs::remove("temp.spv");
 				}
+				delete_mail(output);
 			}
 
 			auto spv_file = get_file_content(spv_filename);

@@ -430,18 +430,12 @@ namespace flame
 				at_info.clear = true;
 				at_info.sample_count = SampleCount_1;
 				
-				std::vector<uint> at_refs = { 0 };
 				SubpassInfo sp_info;
-				sp_info.color_attachments.size = at_refs.size();
-				sp_info.color_attachments.v = at_refs.data();
+				sp_info.color_attachments.push_back(0);
 
-				std::vector<void*> ats = { &at_info };
-				std::vector<void*> sps = { &sp_info };
 				RenderpassInfo info;
-				info.attachments.size = ats.size();
-				info.attachments.v = ats.data();
-				info.subpasses.size = sps.size();
-				info.subpasses.v = sps.data();
+				info.attachments.push_back(&at_info);
+				info.subpasses.push_back(&sp_info);
 
 				rp_one_rgba32 = Renderpass::create(this, info);
 			}

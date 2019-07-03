@@ -554,13 +554,13 @@ namespace flame
 	static ulonglong last_time;
 	static ulonglong last_frame_time;
 	static uint counting_frame;
-	static uint total_frame;
+	static uint frame;
 	static uint fps;
 	static float delta_time; // second
 
-	uint app_total_frame()
+	uint app_frame()
 	{
-		return total_frame;
+		return frame;
 	}
 
 	uint app_fps()
@@ -581,7 +581,7 @@ namespace flame
 		last_time = get_now_ns();
 		last_frame_time = last_time;
 		counting_frame = 0;
-		total_frame = 0;
+		frame = 0;
 
 		for (;;)
 		{
@@ -644,7 +644,7 @@ namespace flame
 				delay_events.clear();
 			}
 
-			total_frame++;
+			frame++;
 			counting_frame++;
 			auto et = last_time;
 			last_time = get_now_ns();
