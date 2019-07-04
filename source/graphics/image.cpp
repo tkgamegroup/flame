@@ -677,7 +677,7 @@ namespace flame
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Imageview::destroy((Imageview*)out$o.v[i]);
-					if (images$i.v)
+					if (images$i.v && !images$i.v->empty())
 					{
 						out$o.v.resize(images$i.v->size());
 						for (auto i = 0; i < out$o.v.size(); i++)

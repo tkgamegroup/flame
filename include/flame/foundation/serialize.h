@@ -297,7 +297,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
-		FLAME_FOUNDATION_EXPORTS uint size() const;
+		FLAME_FOUNDATION_EXPORTS uint size() const; // if 0, then this is a template
 
 		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* variable(uint idx) const;

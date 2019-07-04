@@ -197,31 +197,37 @@ namespace flame
 		struct Renderpass$
 		{
 			AttributeP<void> device$i;
-			AttributeV<std::vector<void*>> attachments$i;
-			AttributeV<std::vector<void*>> subpasses$i;
-			AttributeV<std::vector<Vec<2, uint>>> dependencies$i;
+			AttributeP<std::vector<void*>> attachments$i;
+			AttributeP<std::vector<void*>> subpasses$i;
+			AttributeP<std::vector<Vec<2, uint>>> dependencies$i;
 
 			AttributeP<void> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
+				if (device$i.frame > out$o.frame || attachments$i.frame > out$o.frame || subpasses$i.frame > out$o.frame || dependencies$i.frame > out$o.frame)
 				{
-					Renderpass::destroy((Renderpass*)out$o);
-					out$o = nullptr;
-				}
-
-				if (delta_time >= 0.f)
-				{
-					if (device$i && attachments$i.v && subpasses$i.v)
+					if (out$o.v)
+						Renderpass::destroy((Renderpass*)out$o.v);
+					if (device$i.v && attachments$i.v && !attachments$i.v->empty() && subpasses$i.v && !subpasses$i.v->empty())
 					{
 						RenderpassInfo info;
-						info.attachments = attachments$i;
-						info.subpasses = subpasses$i;
-						info.dependencies = dependencies$i;
-						out$o = Renderpass::create((Device*)device$i, info);
+						info.attachments = *attachments$i.v;
+						info.subpasses = *subpasses$i.v;
+						if (dependencies$i.v)
+							info.dependencies = *dependencies$i.v;
+						out$o.v = Renderpass::create((Device*)device$i.v, info);
 					}
+					else
+						out$o.v = nullptr;
+					out$o.frame = maxN(device$i.frame, attachments$i.frame, subpasses$i.frame, dependencies$i.frame);
 				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Renderpass$()
+			{
+				if (out$o.v)
+					Renderpass::destroy((Renderpass*)out$o.v);
 			}
 
 		}bp_renderpass_unused;
@@ -289,30 +295,38 @@ namespace flame
 
 		struct Clearvalues$
 		{
-			void* renderpass$i;
-			Array<Vec4c> colors$i;
+			AttributeP<void> renderpass$i;
+			AttributeP<std::vector<Vec4c>> colors$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
+				auto last_out_frame = out$o.frame;
+				if (renderpass$i.frame > last_out_frame)
 				{
-					Clearvalues::destroy((Clearvalues*)out$o);
-					out$o = nullptr;
+					if (out$o.v)
+						Clearvalues::destroy((Clearvalues*)out$o.v);
+					if (renderpass$i.v)
+						out$o.v = Clearvalues::create((Renderpass*)renderpass$i.v);
+					else
+						out$o.v = nullptr;
+					out$o.frame = max(out$o.frame, renderpass$i.frame);
 				}
+				if (colors$i.frame > last_out_frame || renderpass$i.frame > last_out_frame)
+				{
+					auto cv = (Clearvalues*)out$o.v;
+					auto count = cv->renderpass()->attachment_count();
+					for (auto i = 0; i < count; i++)
+						cv->set(i, (*colors$i.v)[i]);
+					out$o.frame = max(out$o.frame, colors$i.frame);
+				}
+			}
 
-				if (delta_time >= 0.f)
-				{
-					if (renderpass$i)
-					{
-						auto cv = Clearvalues::create((Renderpass*)renderpass$i);
-						auto count = cv->renderpass()->attachment_count();
-						for (auto i = 0; i < count; i++)
-							cv->set(i, colors$i.v[i]);
-						out$o = cv;
-					}
-				}
+			FLAME_GRAPHICS_EXPORTS ~Clearvalues$()
+			{
+				if (out$o.v)
+					Clearvalues::destroy((Clearvalues*)out$o.v);
 			}
 
 		}bp_clearvalues_unused;
@@ -321,9 +335,9 @@ namespace flame
 		{
 			d = (DevicePrivate*)_d;
 			renderpass = (RenderpassPrivate*)info.rp;
-			views.resize(info.views.size);
-			for (auto i = 0; i < info.views.size; i++)
-				views[i] = (ImageviewPrivate*)info.views.v[i];
+			views.resize(info.views.size());
+			for (auto i = 0; i < info.views.size(); i++)
+				views[i] = (ImageviewPrivate*)info.views[i];
 
 			Vec2i size(0);
 
@@ -347,7 +361,7 @@ namespace flame
 			create_info.height = size.y();
 			create_info.layers = 1;
 			create_info.renderPass = renderpass->v;
-			create_info.attachmentCount = info.views.size;
+			create_info.attachmentCount = info.views.size();
 			create_info.pAttachments = vk_views.data();
 
 			chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
@@ -373,68 +387,78 @@ namespace flame
 
 		struct Framebuffer$
 		{
-			void* device$i;
-			void* renderpass$i;
-			Array<void*> views$i;
+			AttributeP<void> device$i;
+			AttributeP<void> renderpass$i;
+			AttributeP<std::vector<void*>> views$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o)
+				if (device$i.frame > out$o.frame || renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame)
 				{
-					Framebuffer::destroy((Framebuffer*)out$o);
-					out$o = nullptr;
-				}
-				if (delta_time >= 0.f)
-				{
-					if (device$i && renderpass$i && views$i.v)
+					if (out$o.v)
+						Framebuffer::destroy((Framebuffer*)out$o.v);
+					if (device$i.v && renderpass$i.v && views$i.v && !views$i.v->empty())
 					{
 						FramebufferInfo info;
-						info.rp = (Renderpass*)renderpass$i;
-						info.views = views$i;
-						out$o = Framebuffer::create((Device*)device$i, info);
+						info.rp = (Renderpass*)renderpass$i.v;
+						info.views = *views$i.v;
+						out$o.v = Framebuffer::create((Device*)device$i.v, info);
 					}
+					else
+						out$o.v = nullptr;
+					out$o.frame = maxN(device$i.frame, renderpass$i.frame, views$i.frame);
 				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Framebuffer$()
+			{
+				if (out$o.v)
+					Framebuffer::destroy((Framebuffer*)out$o.v);
 			}
 
 		}bp_framebuffer_unused;
 
 		struct Framebuffers$
 		{
-			void* device$i;
-			void* renderpass$i;
-			Array<void*> views$i;
-			uint size$i;
+			AttributeP<void> device$i;
+			AttributeP<void> renderpass$i;
+			AttributeP<std::vector<void*>> views$i;
+			AttributeV<uint> size$i;
 
-			Array<void*> out$o;
+			AttributeV<std::vector<void*>> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				for (auto i = 0; i < out$o.size; i++)
-					Framebuffer::destroy((Framebuffer*)out$o.v[i]);
-				delete[]out$o.v;
-				out$o.size = 0;
-				out$o.v = nullptr;
-
-				if (delta_time >= 0.f)
+				if (device$i.frame > out$o.frame || renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame || size$i.frame > out$o.frame)
 				{
-					if (device$i && renderpass$i && size$i > 0)
+					for (auto i = 0; i < out$o.v.size(); i++)
+						Framebuffer::destroy((Framebuffer*)out$o.v[i]);
+					if (device$i.v && renderpass$i.v && views$i.v && !views$i.v->empty() && size$i.v > 0 && views$i.v->size() >= size$i.v && views$i.v->size() % size$i.v == 0)
 					{
-						out$o.size = size$i;
-						out$o.v = new void* [size$i];
-						assert(views$i.size >= size$i && views$i.size % size$i == 0);
-						auto n = views$i.size / size$i;
-						for (auto i = 0; i < size$i; i++)
+						out$o.v.resize(size$i.v);
+						auto n = views$i.v->size() / size$i.v;
+						for (auto i = 0; i < size$i.v; i++)
 						{
 							FramebufferInfo info;
-							info.rp = (Renderpass*)renderpass$i;
-							info.views.size = n;
-							info.views.v = views$i.v + i * n;
-							out$o.v[i] = Framebuffer::create((Device*)device$i, info);
+							info.rp = (Renderpass*)renderpass$i.v;
+							info.views.resize(n);
+							for (auto j = 0; j < n; j++)
+								info.views[j] = (*views$i.v)[i * n + j];
+							out$o.v[i] = Framebuffer::create((Device*)device$i.v, info);
 						}
 					}
+					else
+						out$o.v.clear();
+					out$o.frame = maxN(device$i.frame, renderpass$i.frame, views$i.frame, size$i.frame);
 				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Framebuffers$()
+			{
+				for (auto i = 0; i < out$o.v.size(); i++)
+					Framebuffer::destroy((Framebuffer*)out$o.v[i]);
 			}
 
 		}bp_framebuffers_unused;
