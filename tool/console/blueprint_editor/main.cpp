@@ -7,7 +7,7 @@ struct App : BasicApp
 {
 	std::wstring filename;
 	BP* bp;
-	Array<void*> cbs;
+	AttributeV<std::vector<void*>>* cbs;
 
 	void* ev_1;
 	void* ev_2;
@@ -19,7 +19,7 @@ struct App : BasicApp
 	{
 		auto idx = frame % FLAME_ARRAYSIZE(fences);
 
-		if (cbs.v)
+		if (!cbs->v.empty())
 			sc->acquire_image(image_avalible);
 
 		if (fences[idx].second > 0)
@@ -28,15 +28,15 @@ struct App : BasicApp
 			fences[idx].second = 0;
 		}
 
-		if (cbs.v)
+		if (!cbs->v.empty())
 		{
-			d->gq->submit((graphics::Commandbuffer*)cbs.v[sc->image_index()], image_avalible, render_finished, fences[idx].first);
+			d->gq->submit((graphics::Commandbuffer*)(cbs->v[sc->image_index()]), image_avalible, render_finished, fences[idx].first);
 			fences[idx].second = 1;
 
 			d->gq->present(sc, render_finished);
 		}
 
-		bp->update(app->elapsed_time);
+		bp->update();
 
 		frame++;
 
@@ -54,7 +54,7 @@ struct App : BasicApp
 			set_event(ev_2);
 			wait_event(ev_3, -1);
 
-			bp->update(app->elapsed_time);
+			bp->update();
 		}
 	}
 
@@ -74,7 +74,9 @@ struct App : BasicApp
 			i->set_data(data);
 			delete data;
 			auto value_after = serialize_value(type->tag(), type->hash(), i->data(), 2);
-			printf("set value: %s, %s -> %s\n", address.c_str(), value_before.v, value_after.v);
+			printf("set value: %s, %s -> %s\n", address.c_str(), *value_before.p, *value_after.p);
+			delete_mail(value_before);
+			delete_mail(value_after);
 
 			set_event(ev_3);
 		}
@@ -125,8 +127,12 @@ struct App : BasicApp
 				auto input = src->input(j);
 				if (input->link())
 				{
-					auto in_sp = string_split(std::string(input->get_address().v), '.');
-					auto out_sp = string_split(std::string(input->link()->get_address().v), '.');
+					auto in_addr = input->get_address();
+					auto out_addr = input->link()->get_address();
+					auto in_sp = string_split(*in_addr.p, '.');
+					auto out_sp = string_split(*out_addr.p, '.');
+					delete_mail(in_addr);
+					delete_mail(out_addr);
 
 					gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
 				}
@@ -171,21 +177,19 @@ int main(int argc, char **args)
 	app.ev_2 = create_event(false);
 	app.ev_3 = create_event(false);
 
-	thread(Function<void(void* c)>(
-		[](void* c) {
-			auto app = *(App * *)c;
-			app->create("", Vec2u(400, 300), WindowFrame);
-			set_event(app->ev_1);
-			wait_event(app->ev_2, -1);
-			app->run();
-		}, sizeof(void*), &papp));
+	std::thread([&]() {
+		app.create("", Vec2u(400, 300), WindowFrame);
+		set_event(app.ev_1);
+		wait_event(app.ev_2, -1);
+		app.run();
+	});
 
 	wait_event(app.ev_1, -1);
 
 	app.bp->find_input("d.in")->set_data(&app.d);
 	app.bp->find_input("sc.in")->set_data(&app.sc);
-	app.bp->update(0.f);
-	memcpy(&app.cbs, app.bp->find_output("cbs.out")->data(), sizeof(Array<void*>));
+	app.bp->update();
+	app.cbs = (AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data();
 
 	set_event(app.ev_2);
 
@@ -199,8 +203,9 @@ int main(int argc, char **args)
 	std::vector<UdtInfo*> available_udts;
 	{
 		auto udts = get_udts();
-		for (auto i = 0; i < udts.size; i++)
-			available_udts.push_back(udts[i]);
+		for (auto i = 0; i < udts.p->size(); i++)
+			available_udts.push_back((*udts.p)[i]);
+		delete_mail(udts);
 		std::sort(available_udts.begin(), available_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return std::string(a->name()) < std::string(b->name());
 		});
@@ -257,7 +262,7 @@ int main(int argc, char **args)
 					for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
 					{
 						auto vari = udt->variable(i_i);
-						auto attribute = std::string(vari->attribute());
+						auto attribute = std::string(vari->decoration());
 						if (attribute.find('i') != std::string::npos)
 							inputs.push_back(vari);
 						if (attribute.find('o') != std::string::npos)
@@ -265,10 +270,10 @@ int main(int argc, char **args)
 					}
 					printf("[In]\n");
 					for (auto &i : inputs)
-						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_name(i->type()->tag()), i->type()->name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->decoration(), get_name(i->type()->tag()), i->type()->name());
 					printf("[Out]\n");
 					for (auto &i : outputs)
-						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->attribute(), get_name(i->type()->tag()), i->type()->name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->decoration(), get_name(i->type()->tag()), i->type()->name());
 				}
 				else
 					printf("udt not found\n");
@@ -296,14 +301,14 @@ int main(int argc, char **args)
 						auto v = input->variable_info();
 						auto type = v->type();
 						printf(" %s\n", v->name());
-						std::string link_address;
+						Mail<std::string> link_address;
 						if (input->link())
-							link_address = input->link()->get_address().v;
-						printf("   [%s]->\n", link_address.c_str());
+							link_address = input->link()->get_address();
+						printf("   [%s]->\n", link_address.p ? link_address.p->c_str() : "");
+						delete_mail(link_address);
 						auto str = serialize_value(type->tag(), type->hash(), input->data(), 2);
-						if (str.size == 0)
-							str = "-";
-						printf("   %s\n", str.v);
+						printf("   %s\n", str.p->empty() ? "-" : str.p->c_str());
+						delete_mail(str);
 					}
 					printf("[Out]\n");
 					for (auto i = 0; i < n->output_count(); i++)
@@ -313,9 +318,8 @@ int main(int argc, char **args)
 						auto type = v->type();
 						printf(" %s\n", output->variable_info()->name());
 						auto str = serialize_value(type->tag(), type->hash(), output->data(), 2);
-						if (str.size == 0)
-							str = "-";
-						printf("   %s\n", str.v);
+						printf("   %s\n", str.p->empty() ? "-" : str.p->c_str());
+						delete_mail(str);
 					}
 				}
 				else
@@ -368,7 +372,11 @@ int main(int argc, char **args)
 				if (out && in)
 				{
 					in->link_to(out);
-					printf("link added: %s - %s\n", in->link()->get_address().v, in->get_address().v);
+					auto out_addr = in->link()->get_address();
+					auto in_addr = in->get_address();
+					printf("link added: %s -> %s\n", out_addr.p->c_str(), in_addr.p->c_str());
+					delete_mail(out_addr);
+					delete_mail(in_addr);
 				}
 				else
 					printf("wrong address\n");
@@ -424,7 +432,7 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "update")
 		{
-			app.bp->update(0.1f);
+			app.bp->update();
 			printf("BP updated\n");
 		}
 		else if (s_command_line == "refresh")
@@ -484,7 +492,7 @@ int main(int argc, char **args)
 				{
 					auto n = app.bp->find_node(match[1].str().c_str());
 					if (n)
-						n->set_position(Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f);
+						n->set_pos(Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f);
 
 					str = match.suffix();
 				}
@@ -495,39 +503,41 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "gui-browser")
 		{
-			exec((std::wstring(L"file:///") + get_curr_path() + L"/bp.html").c_str(), L"", false);
+			auto curr_path = get_curr_path();
+			exec(L"file:///" + *get_curr_path().p + L"/bp.html", L"", false);
+			delete_mail(curr_path);
 			printf("waiting for browser on port 5566 ...");
 
-			app.server = OneClientServer::create(SocketWeb, 5566, 100, Function<void(void*, const std::string&)>(
-				[](void* c, const std::string& str) {
-					auto app = *(App**)c;
+			app.server = OneClientServer::create(SocketWeb, 5566, 100, [](void* c, const std::string& str) {
+				auto app = *(App * *)c;
 
-					auto req = SerializableNode::create_from_json_string(str);
-					auto type = req->find_attr("type")->value();
+				auto req = SerializableNode::create_from_json_string(str);
+				auto type = req->find_attr("type")->value();
 
-					if (type == "get")
-					{
-						auto filename = s2w(req->find_attr("filename")->value());
-						if (filename == L"bp")
-							filename = app->filename;
-						auto file = base64_encode(get_file_string(filename));
-						auto res = SerializableNode::create("");
-						res->new_node("filename")->set_value(w2s(filename));
-						res->new_node("data")->set_value(file);
-						auto str = res->to_string_json();
-						app->server->send(str.size, str.v);
-						SerializableNode::destroy(res);
-					}
-					else if (type == "update")
-					{
-						auto what = req->find_attr("what")->value();
-						
-						if (what == "set_data")
-							app->set_data(req->find_attr("address")->value(), req->find_attr("value")->value());
-					}
+				if (type == "get")
+				{
+					auto filename = s2w(req->find_attr("filename")->value());
+					if (filename == L"bp")
+						filename = app->filename;
+					auto file = base64_encode(get_file_string(filename));
+					auto res = SerializableNode::create("");
+					res->new_node("filename")->set_value(w2s(filename));
+					res->new_node("data")->set_value(file);
+					auto str = res->to_string_json();
+					app->server->send(str.p->size(), str.p->data());
+					delete_mail(str);
+					SerializableNode::destroy(res);
+				}
+				else if (type == "update")
+				{
+					auto what = req->find_attr("what")->value();
 
-					SerializableNode::destroy(req);
-				}, sizeof(void*), &papp));
+					if (what == "set_data")
+						app->set_data(req->find_attr("address")->value(), req->find_attr("value")->value());
+				}
+
+				SerializableNode::destroy(req);
+			}, &papp);
 			if (!app.server)
 				printf("  timeout\n");
 			else

@@ -239,7 +239,7 @@ namespace flame
 		return ((OneClientServerPrivate*)this)->send(size, data);
 	}
 
-	OneClientServer* OneClientServer::create(SocketType type, ushort port, int _timeout, const Function<void(void* c, const std::string& str)>& on_message)
+	OneClientServer* OneClientServer::create(SocketType type, ushort port, int _timeout, void on_message(void* c, const std::string& str), const Mail<>& capture)
 	{
 		int res;
 
