@@ -8,29 +8,24 @@ namespace flame
 {
 	struct MakeCmd$
 	{
-		Array<void*> cmdbufs$i;
-		void* renderpass$i;
-		void* clearvalues$i;
-		Array<void*> framebuffers$i;
+		AttributeP<std::vector<void*>> cmdbufs$i;
+		AttributeP<void> renderpass$i;
+		AttributeP<void> clearvalues$i;
+		AttributeP<std::vector<void*>> framebuffers$i;
 		
-		__declspec(dllexport) bool update$(float delta_time)
+		__declspec(dllexport) void update$()
 		{
-			if (delta_time >= 0.f)
+			if (cmdbufs$i.v && !cmdbufs$i.v->empty() && renderpass$i.v && clearvalues$i.v && framebuffers$i.v && !framebuffers$i.v->empty())
 			{
-				if (cmdbufs$i.v && renderpass$i && clearvalues$i && framebuffers$i.v)
+				for (auto i = 0; i < cmdbufs$i.v->size(); i++)
 				{
-					for (auto i = 0; i < cmdbufs$i.size; i++)
-					{
-						auto cb = (graphics::Commandbuffer*)cmdbufs$i.v[i];
-						cb->begin();
-						cb->begin_renderpass((graphics::Renderpass*)renderpass$i, (graphics::Framebuffer*)framebuffers$i.v[i], (graphics::Clearvalues*)clearvalues$i);
-						cb->end_renderpass();
-						cb->end();
-					}
+					auto cb = (graphics::Commandbuffer*)(*cmdbufs$i.v)[i];
+					cb->begin();
+					cb->begin_renderpass((graphics::Renderpass*)renderpass$i.v, (graphics::Framebuffer*)(*framebuffers$i.v)[i], (graphics::Clearvalues*)clearvalues$i.v);
+					cb->end_renderpass();
+					cb->end();
 				}
 			}
-
-			return false;
 		}
 	};
 

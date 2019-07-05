@@ -10,7 +10,7 @@
 		<node type="graphics::Device" id="d" pos="123.00;34.00">
 			<datas />
 		</node>
-		<node type="Array_1_4c" id="color" pos="386.00;160.00">
+		<node type="ArrayV_1_4c" id="color" pos="386.00;160.00">
 			<datas>
 				<data name="1" value="200;100;50;255" />
 			</datas>
@@ -24,10 +24,10 @@
 		<node type="graphics::Renderpass" id="rp" pos="414.00;489.00">
 			<datas />
 		</node>
-		<node type="Array_1_vp" id="sps" pos="472.00;765.00">
+		<node type="ArrayP_1_v" id="sps" pos="472.00;765.00">
 			<datas />
 		</node>
-		<node type="Array_1_u" id="col_refs" pos="100.00;606.00">
+		<node type="ArrayV_1_u" id="col_refs" pos="100.00;606.00">
 			<datas />
 		</node>
 		<node type="graphics::Framebuffers" id="fbs" pos="1405.00;334.00">
@@ -61,10 +61,10 @@
 				<data name="clear" value="0" />
 			</datas>
 		</node>
-		<node type="Array_2_vp" id="atts" pos="322.00;510.00">
+		<node type="ArrayP_2_v" id="atts" pos="322.00;510.00">
 			<datas />
 		</node>
-		<node type="Array_1_u" id="res_refs" pos="32.00;694.00">
+		<node type="ArrayV_1_u" id="res_refs" pos="32.00;694.00">
 			<datas>
 				<data name="1" value="1" />
 			</datas>
@@ -90,7 +90,6 @@
 		<link out="d.out" in="cbs.device" />
 		<link out="img_size.size" in="cbs.size" />
 		<link out="sc.images" in="img_size.array" />
-		<link out="sc.imageviews" in="arr_ins.array" />
 		<link out="img_ms_view.out" in="arr_ins.v" />
 		<link out="d.out" in="img_ms.device" />
 		<link out="sc.format" in="img_ms.format" />

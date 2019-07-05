@@ -386,7 +386,8 @@ namespace flame
 			static std::string vector_str("std::vector");
 			static std::string string_str("std::string");
 			if (type_name.compare(0, vector_str.size(), vector_str) != 0 &&
-				type_name.compare(0, string_str.size(), string_str) != 0)
+				type_name.compare(0, string_str.size(), string_str) != 0 &&
+				decoration.find('o') == std::string::npos)
 			{
 				v->default_value = new char[size];
 				memset(v->default_value, 0, size);
@@ -1314,7 +1315,8 @@ namespace flame
 	{
 		static std::string prefix("flame::");
 		static std::regex reg_token(R"([\~\w\s\_\$\:\*]+)");
-		static std::string str_unsigned("unsigned");
+		static std::string str_unsigned("unsigned ");
+		static std::string str_enum("enum ");
 
 		if (pass_prefix)
 			* pass_prefix = false;
@@ -1379,6 +1381,11 @@ namespace flame
 				auto pos = t.find(str_unsigned);
 				if (pos != std::string::npos)
 					t = t.replace(pos, str_unsigned.size(), "u");
+			}
+			{
+				auto pos = t.find(str_enum);
+				if (pos != std::string::npos)
+					t = t.replace(pos, str_enum.size(), "");
 			}
 
 			t.erase(std::remove(t.begin(), t.end(), ' '), t.end());
@@ -1814,7 +1821,7 @@ namespace flame
 
 		for (auto i = 0; i < N; i++)
 			u->add_variable(TypeTagAttributeP, type_name, std::to_string(i + 1), "i", sizeof(AttributeP<T>) * i, sizeof(AttributeP<T>));
-		u->add_variable(TypeTagAttributeV, "std::vector~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
+		u->add_variable(TypeTagAttributeV, "std::vector~" + type_name + "*", "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
 
 		u->add_function("ctor", calc_rva(cf2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
 		u->add_function("dtor", calc_rva(df2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
@@ -2129,6 +2136,7 @@ namespace flame
 						if (library)
 						{
 							auto obj = malloc(u->size);
+							memset(obj, 0, u->size);
 
 							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->rva)), obj);
 							for (auto& i : u->variables)
@@ -2415,8 +2423,8 @@ namespace flame
 		// typeinfo collect must do by order, because it only record the first entry
 		std::vector<std::wstring> pdbs = {
 			L"flame_foundation.dll",
-			//L"flame_network.dll",
-			//L"flame_graphics.dll",
+			L"flame_network.dll",
+			L"flame_graphics.dll",
 			//L"flame_sound.dll",
 			//L"flame_universe.dll",
 		};

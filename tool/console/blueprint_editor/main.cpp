@@ -182,12 +182,12 @@ int main(int argc, char **args)
 		set_event(app.ev_1);
 		wait_event(app.ev_2, -1);
 		app.run();
-	});
+	}).detach();
 
 	wait_event(app.ev_1, -1);
 
 	app.bp->find_input("d.in")->set_data(&app.d);
-	app.bp->find_input("sc.in")->set_data(&app.sc);
+	app.bp->find_input("sc.window")->set_data(&app.w);
 	app.bp->update();
 	app.cbs = (AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data();
 
@@ -537,7 +537,7 @@ int main(int argc, char **args)
 				}
 
 				SerializableNode::destroy(req);
-			}, &papp);
+			}, new_mail(&papp));
 			if (!app.server)
 				printf("  timeout\n");
 			else

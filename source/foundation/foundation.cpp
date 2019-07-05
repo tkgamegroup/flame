@@ -728,7 +728,7 @@ namespace flame
 			std::thread([=]() {
 				do_file_watch(w, w->options & FileWatcherMonitorOnlyContentChanged, path, callback, capture);
 				delete w;
-			});
+			}).detach();
 
 			return w;
 		}

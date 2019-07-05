@@ -223,8 +223,6 @@ namespace flame
 
 		int fd_c;
 
-		Function<void(void* c, const std::string& str)> message_callback;
-
 		bool send(int size, void* data)
 		{
 			if (type == SocketWeb)
@@ -279,26 +277,23 @@ namespace flame
 		auto s = new OneClientServerPrivate;
 		s->type = type;
 		s->fd_c = fd_c;
-		s->message_callback = on_message;
 		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
 
-		auto thiz = s;
-
-		thread(Function<void(void*)>([](void* c) {
-				auto thiz = *((OneClientServerPrivate * *)c);
-				while (true)
+		std::thread([=]() {
+			while (true)
+			{
+				bool closed = false;
+				auto reqs = websocket_recv(fd_c, closed);
+				for (auto& r : reqs)
+					on_message(capture.p, r);
+				if (closed)
 				{
-					bool closed = false;
-					auto reqs = websocket_recv(thiz->fd_c, closed);
-					for (auto& r : reqs)
-						thiz->message_callback(r);
-					if (closed)
-					{
-						SetEvent(thiz->ev_closed);
-						return;
-					}
+					SetEvent(s->ev_closed);
+					delete_mail(capture);
+					return;
 				}
-			}, sizeof(void*), & thiz));
+			}
+		}).detach();
 
 		return s;
 	}
@@ -380,76 +375,74 @@ namespace flame
 			json->new_attr("seed", std::to_string(seed));
 			auto str = json->to_string_json();
 			for (auto i = 0; i < client_count; i++)
-				s->send(i, str.size, str.v);
+				s->send(i, str.p->size(), str.p->data());
+			delete_mail(str);
 			SerializableNode::destroy(json);
 		}
 
-		auto thiz = s;
+		std::thread([s]() {
+			fd_set rfds;
 
-		thread(Function<void(void*)>([](void* c) {
-				auto thiz = *((FrameSyncServerPrivate * *)c);
-
-				fd_set rfds;
-
-				while (true)
+			while (true)
+			{
+				FD_ZERO(&rfds);
+				for (auto fd : s->fd_cs)
+					FD_SET(fd, &rfds);
+				if (select(-1, &rfds, nullptr, nullptr, nullptr) > 0)
 				{
-					FD_ZERO(&rfds);
-					for (auto fd : thiz->fd_cs)
-						FD_SET(fd, &rfds);
-					if (select(-1, &rfds, nullptr, nullptr, nullptr) > 0)
+					auto client_idx = 0;
+					for (auto fd : s->fd_cs)
 					{
-						auto client_idx = 0;
-						for (auto fd : thiz->fd_cs)
+						if (FD_ISSET(fd, &rfds))
 						{
-							if (FD_ISSET(fd, &rfds))
+							bool closed = false;
+							auto reqs = websocket_recv(fd, closed);
+							if (reqs.size() > 0)
 							{
-								bool closed = false;
-								auto reqs = websocket_recv(fd, closed);
-								if (reqs.size() > 0)
+								auto json = SerializableNode::create_from_json_string(reqs[0]);
+								auto n_frame = json->find_node("frame");
+								if (n_frame && n_frame->type() == SerializableNode::Value)
 								{
-									auto json = SerializableNode::create_from_json_string(reqs[0]);
-									auto n_frame = json->find_node("frame");
-									if (n_frame && n_frame->type() == SerializableNode::Value)
+									auto frame = std::stoi(n_frame->value().c_str());
+									if (frame == s->frame)
 									{
-										auto frame = std::stoi(n_frame->value().c_str());
-										if (frame == thiz->frame)
+										s->semaphore++;
+										auto n_data = json->find_node("data");
+										auto dst = s->frame_advance_data->new_node(std::to_string(client_idx + 1));
+										for (auto i = 0; i < n_data->node_count(); i++)
 										{
-											thiz->semaphore++;
-											auto n_data = json->find_node("data");
-											auto dst = thiz->frame_advance_data->new_node(std::to_string(client_idx + 1));
-											for (auto i = 0; i < n_data->node_count(); i++)
-											{
-												auto n = json->node(i);
-												dst->new_attr(n->name(), n->value());
-											}
+											auto n = json->node(i);
+											dst->new_attr(n->name(), n->value());
+										}
 
-											if (thiz->semaphore >= thiz->fd_cs.size())
-											{
-												thiz->frame++;
-												thiz->semaphore = 0;
+										if (s->semaphore >= s->fd_cs.size())
+										{
+											s->frame++;
+											s->semaphore = 0;
 
-												auto str = thiz->frame_advance_data->to_string_json();
-												for (auto i = 0; i < 2; i++)
-													thiz->send(i, str.size, str.v);
-												SerializableNode::destroy(thiz->frame_advance_data);
-												thiz->frame_advance_data = SerializableNode::create("");
-												thiz->frame_advance_data->new_attr("action", "frame");
-											}
+											auto str = s->frame_advance_data->to_string_json();
+											for (auto i = 0; i < 2; i++)
+												s->send(i, str.p->size(), str.p->data());
+											delete_mail(str);
+											SerializableNode::destroy(s->frame_advance_data);
+											s->frame_advance_data = SerializableNode::create("");
+											s->frame_advance_data->new_attr("action", "frame");
 										}
 									}
-									SerializableNode::destroy(json);
 								}
-								if (closed)
-								{
-									// TODO
-									/* do something! */
-								}
+								SerializableNode::destroy(json);
 							}
-							client_idx++;
+							if (closed)
+							{
+								// TODO
+								/* do something! */
+							}
 						}
+						client_idx++;
 					}
 				}
-			}, sizeof(void*), & thiz));
+			}
+		}).detach();
 
 		return s;
 	}

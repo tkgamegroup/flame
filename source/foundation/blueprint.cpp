@@ -200,8 +200,6 @@ namespace flame
 		}
 
 		dtor_function = udt->find_function("dtor");
-
-		assert((ctor_function && dtor_function) || (!ctor_function && !dtor_function));
 		
 		update_function = nullptr;
 		{
