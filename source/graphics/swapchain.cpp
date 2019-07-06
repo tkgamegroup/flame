@@ -263,6 +263,8 @@ namespace flame
 					}
 					else
 					{
+						printf("cannot create swapchain\n");
+
 						out$o.v = nullptr;
 						size$o.v = 0;
 						format$o.v = Format_Undefined;

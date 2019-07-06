@@ -1714,13 +1714,14 @@ namespace flame
 
 		void update()
 		{
+			auto last_out_frame = out.frame;
 			out.v.resize(N);
 			for (auto i = 0; i < N; i++)
 			{
-				if (in[i].frame > out.frame)
+				if (in[i].frame > last_out_frame)
 				{
 					out.v[i] = in[i].v;
-					out.frame = in[i].frame;
+					out.frame = max(out.frame, in[i].frame);
 				}
 			}
 		}
@@ -1735,13 +1736,14 @@ namespace flame
 
 		void update()
 		{
+			auto last_out_frame = out.frame;
 			out.v.resize(N);
 			for (auto i = 0; i < N; i++)
 			{
-				if (in[i].frame > out.frame)
+				if (in[i].frame > last_out_frame)
 				{
 					out.v[i] = in[i].v;
-					out.frame = in[i].frame;
+					out.frame = max(out.frame, in[i].frame);
 				}
 			}
 		}
@@ -1758,7 +1760,7 @@ namespace flame
 			if (array$i.frame > size$o.frame)
 			{
 				if (array$i.v)
-					size$o.v = ((std::vector<int>*)array$i.v)->size();
+					size$o.v = ((std::vector<void*>*)array$i.v)->size();
 				else
 					size$o.v = 0;
 				size$o.frame = array$i.frame;
@@ -1772,24 +1774,24 @@ namespace flame
 		AttributeP<std::vector<void*>> array$i;
 		AttributeP<void> v$i;
 
-		AttributeV<std::vector<void*>> array$o;
+		AttributeV<std::vector<void*>> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (array$i.frame > array$o.frame)
+			if (array$i.frame > out$o.frame)
 			{
 				if (array$i.v)
-					array$o.v.resize(array$i.v->size() * 2);
+					out$o.v.resize(array$i.v->size() * 2);
 				else
-					array$o.v.clear();
+					out$o.v.clear();
 			}
-			if (array$i.frame > array$o.frame || v$i.frame > array$o.frame)
+			if (array$i.frame > out$o.frame || v$i.frame > out$o.frame)
 			{
-				array$o.frame = max(array$i.frame, v$i.frame);
-				for (auto i = 0; i < array$o.v.size(); i++)
+				out$o.frame = max(array$i.frame, v$i.frame);
+				for (auto i = 0; i < array$i.v->size(); i++)
 				{
-					array$o.v[i * 2 + 0] = v$i.v;
-					array$o.v[i * 2 + 1] = (*array$i.v)[i];
+					out$o.v[i * 2 + 0] = v$i.v;
+					out$o.v[i * 2 + 1] = (*array$i.v)[i];
 				}
 			}
 		}

@@ -10,7 +10,7 @@
 		<node type="graphics::Device" id="d" pos="123.00;34.00">
 			<datas />
 		</node>
-		<node type="ArrayV_1_4c" id="color" pos="386.00;160.00">
+		<node type="ArrayV_2_4c" id="color" pos="386.00;160.00">
 			<datas>
 				<data name="1" value="200;100;50;255" />
 			</datas>
@@ -48,7 +48,7 @@
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="graphics::Imageview" id="img_ms_view" pos="1009.00;472.00">
+		<node type="graphics::ImageviewGeneral" id="img_ms_view" pos="1009.00;472.00">
 			<datas />
 		</node>
 		<node type="graphics::AttachmentInfo" id="col_att1" pos="74.00;276.00">
@@ -69,6 +69,9 @@
 				<data name="1" value="1" />
 			</datas>
 		</node>
+    <node type="graphics::ImageviewsGeneral" id="img_views" pos="0.00;0.00">
+      <datas />
+    </node>
 	</nodes>
 	<links>
 		<link out="rp.out" in="cv.renderpass" />
@@ -85,13 +88,16 @@
 		<link out="sp.out" in="sps.1" />
 		<link out="d.out" in="fbs.device" />
 		<link out="rp.out" in="fbs.renderpass" />
-		<link out="arr_ins.array" in="fbs.views" />
+		<link out="arr_ins.out" in="fbs.views" />
 		<link out="img_size.size" in="fbs.size" />
 		<link out="d.out" in="cbs.device" />
 		<link out="img_size.size" in="cbs.size" />
 		<link out="sc.images" in="img_size.array" />
-		<link out="img_ms_view.out" in="arr_ins.v" />
+    <link out="sc.images" in="img_views.images" />
+    <link out="img_views.out" in="arr_ins.array" />
+    <link out="img_ms_view.out" in="arr_ins.v" />
 		<link out="d.out" in="img_ms.device" />
+    <link out="d.out" in="sc.device" />
 		<link out="sc.format" in="img_ms.format" />
 		<link out="sc.size" in="img_ms.size" />
 		<link out="img_ms.out" in="img_ms_view.image" />

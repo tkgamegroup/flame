@@ -167,14 +167,14 @@ int main(int argc, char **args)
 
 	auto curr_path = get_curr_path();
 
-	for (auto &i : special_ignores)
+	for (auto& i : special_ignores)
 	{
 		if (i.size() > 0 && !is_slash_chr(i[0]))
 			i = L"\\" + i;
-		i = curr_path + i;
+		i = *curr_path.p + i;
 	}
 
-	iter(curr_path);
+	iter(*curr_path.p);
 
 	printf("total:%d\n", total_lines);
 	printf("empty:%d\n", empty_lines);

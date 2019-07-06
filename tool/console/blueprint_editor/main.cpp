@@ -7,7 +7,7 @@ struct App : BasicApp
 {
 	std::wstring filename;
 	BP* bp;
-	AttributeV<std::vector<void*>>* cbs;
+	std::vector<void*>* cbs;
 
 	void* ev_1;
 	void* ev_2;
@@ -19,7 +19,7 @@ struct App : BasicApp
 	{
 		auto idx = frame % FLAME_ARRAYSIZE(fences);
 
-		if (!cbs->v.empty())
+		if (!cbs->empty())
 			sc->acquire_image(image_avalible);
 
 		if (fences[idx].second > 0)
@@ -28,9 +28,9 @@ struct App : BasicApp
 			fences[idx].second = 0;
 		}
 
-		if (!cbs->v.empty())
+		if (!cbs->empty())
 		{
-			d->gq->submit((graphics::Commandbuffer*)(cbs->v[sc->image_index()]), image_avalible, render_finished, fences[idx].first);
+			d->gq->submit((graphics::Commandbuffer*)((*cbs)[sc->image_index()]), image_avalible, render_finished, fences[idx].first);
 			fences[idx].second = 1;
 
 			d->gq->present(sc, render_finished);
@@ -189,7 +189,9 @@ int main(int argc, char **args)
 	app.bp->find_input("d.in")->set_data(&app.d);
 	app.bp->find_input("sc.window")->set_data(&app.w);
 	app.bp->update();
-	app.cbs = (AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data();
+
+	app.sc = (graphics::Swapchain*)((AttributeV<void*>*)app.bp->find_input("sc.out")->data())->v;
+	app.cbs = &((AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data())->v;
 
 	set_event(app.ev_2);
 

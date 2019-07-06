@@ -633,7 +633,11 @@ namespace flame
 					if (device$i.v)
 						out$o.v = Commandbuffer::create(((Device*)device$i.v)->gcp);
 					else
+					{
+						printf("cannot create commandbuffer\n");
+
 						out$o.v = nullptr;
+					}
 					out$o.frame = device$i.frame;
 				}
 			}
@@ -666,7 +670,11 @@ namespace flame
 							out$o.v[i] = Commandbuffer::create(((Device*)device$i.v)->gcp);
 					}
 					else
+					{
+						printf("cannot create commandbuffers\n");
+
 						out$o.v.clear();
+					}
 					out$o.frame = max(device$i.frame, size$i.frame);
 				}
 			}

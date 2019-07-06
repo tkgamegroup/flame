@@ -219,7 +219,11 @@ namespace flame
 						out$o.v = Renderpass::create((Device*)device$i.v, info);
 					}
 					else
+					{
+						printf("cannot create renderpass\n");
+
 						out$o.v = nullptr;
+					}
 					out$o.frame = maxN(device$i.frame, attachments$i.frame, subpasses$i.frame, dependencies$i.frame);
 				}
 			}
@@ -310,7 +314,11 @@ namespace flame
 					if (renderpass$i.v)
 						out$o.v = Clearvalues::create((Renderpass*)renderpass$i.v);
 					else
+					{
+						printf("cannot create clearvalues\n");
+
 						out$o.v = nullptr;
+					}
 					out$o.frame = max(out$o.frame, renderpass$i.frame);
 				}
 				if (colors$i.frame > last_out_frame || renderpass$i.frame > last_out_frame)
@@ -407,7 +415,11 @@ namespace flame
 						out$o.v = Framebuffer::create((Device*)device$i.v, info);
 					}
 					else
+					{
+						printf("cannot create framebuffer\n");
+
 						out$o.v = nullptr;
+					}
 					out$o.frame = maxN(device$i.frame, renderpass$i.frame, views$i.frame);
 				}
 			}
@@ -450,7 +462,11 @@ namespace flame
 						}
 					}
 					else
+					{
+						printf("cannot create framebuffers\n");
+
 						out$o.v.clear();
+					}
 					out$o.frame = maxN(device$i.frame, renderpass$i.frame, views$i.frame, size$i.frame);
 				}
 			}

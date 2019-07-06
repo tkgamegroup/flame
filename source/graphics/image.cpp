@@ -622,10 +622,13 @@ namespace flame
 					if (out$o.v)
 						Imageview::destroy((Imageview*)out$o.v);
 					if (image$i.v && level_count$i.v > 0 && layer_count$i.v > 0)
-					{
-					}
+						out$o.v = Imageview::create((Image*)image$i.v, type$i.v, base_level$i.v, level_count$i.v, base_layer$i.v, layer_count$i.v, swizzle_r$i.v, swizzle_g$i.v, swizzle_b$i.v, swizzle_a$i.v);
 					else
+					{
+						printf("cannot create imageview\n");
+
 						out$o.v = nullptr;
+					}
 					out$o.frame = maxN(image$i.frame, type$i.frame, base_level$i.frame, level_count$i.frame, base_layer$i.frame, layer_count$i.frame, swizzle_r$i.frame, swizzle_g$i.frame, swizzle_b$i.frame, swizzle_a$i.frame);
 				}
 			}
@@ -653,7 +656,11 @@ namespace flame
 					if (image$i.v)
 						out$o.v = Imageview::create((Image*)image$i.v);
 					else
+					{
+						printf("cannot create imageview general\n");
+
 						out$o.v = nullptr;
+					}
 					out$o.frame = image$i.frame;
 				}
 			}
@@ -684,7 +691,11 @@ namespace flame
 							out$o.v[i] = Imageview::create((Image*)(*images$i.v)[i]);
 					}
 					else
+					{
+						printf("cannot create imageviews general\n");
+
 						out$o.v.clear();
+					}
 					out$o.frame = images$i.frame;
 				}
 			}

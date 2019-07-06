@@ -32,7 +32,6 @@ namespace flame
 		{
 			w = Window::create(title, res, style);
 			d = graphics::Device::/*get_shared*/create(true);
-			sc = graphics::Swapchain::create(d, w);
 			image_avalible = graphics::Semaphore::create(d);
 			render_finished = graphics::Semaphore::create(d);
 			for (auto i = 0; i < FLAME_ARRAYSIZE(fences); i++)
