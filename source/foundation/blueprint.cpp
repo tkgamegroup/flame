@@ -96,8 +96,6 @@ namespace flame
 	{
 		data = (char*)node->dummy + variable_info->offset();
 		data_size = variable_info->size() - sizeof(int);
-		if (variable_info->default_value())
-			set_data((char*)variable_info->default_value() + sizeof(int));
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -355,27 +353,8 @@ namespace flame
 			if (!udt)
 			{
 				auto abs_fn = std::fs::path(filename).parent_path().wstring() + L"\\" + fn;
-				auto fn_cpp = abs_fn + L".cpp";
-				if (!std::fs::exists(fn_cpp))
-				{
-					assert(0);
-					return nullptr;
-				}
 				auto fn_dll = abs_fn + L".dll";
 				auto fn_ti = abs_fn + L".typeinfo";
-				if (!std::fs::exists(fn_dll) || std::fs::last_write_time(fn_dll) < std::fs::last_write_time(fn_cpp))
-				{
-					auto compile_output = compile_to_dll({ fn_cpp }, { }, fn_dll);
-					if (!std::fs::exists(fn_dll) || std::fs::last_write_time(fn_dll) < std::fs::last_write_time(fn_cpp))
-					{
-						printf("compile error:\n%s\n", compile_output.p->c_str());
-						assert(0);
-						return nullptr;
-					}
-					delete_mail(compile_output);
-					if (std::fs::exists(fn_ti))
-						std::fs::remove(fn_ti);
-				}
 				if (!std::fs::exists(fn_ti) || std::fs::last_write_time(fn_ti) < std::fs::last_write_time(fn_dll))
 				{
 					typeinfo_collect(fn_dll, 99);

@@ -15,7 +15,7 @@
 				<data name="1" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="make_cmd#MakeCmd" id="make_cmd" pos="1456.00;90.00">
+		<node type="bp#MakeCmd" id="make_cmd" pos="1456.00;90.00">
 			<datas />
 		</node>
 		<node type="graphics::SubpassInfo" id="sp" pos="226.00;767.00">

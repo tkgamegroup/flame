@@ -190,7 +190,7 @@ int main(int argc, char **args)
 	app.bp->find_input("sc.window")->set_data(&app.w);
 	app.bp->update();
 
-	app.sc = (graphics::Swapchain*)((AttributeV<void*>*)app.bp->find_input("sc.out")->data())->v;
+	app.sc = (graphics::Swapchain*)((AttributeV<void*>*)app.bp->find_output("sc.out")->data())->v;
 	app.cbs = &((AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data())->v;
 
 	set_event(app.ev_2);

@@ -2132,7 +2132,7 @@ namespace flame
 						if (ctor && dtor)
 							break;
 					}
-					if (ctor && dtor)
+					if (ctor)
 					{
 						auto library = load_module(filename.c_str());
 						if (library)
@@ -2146,7 +2146,8 @@ namespace flame
 								if (i->default_value)
 									memcpy(i->default_value, (char*)obj + i->offset, i->size);
 							}
-							cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
+							if (dtor)
+								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
 
 							free(obj);
 							free_module(library);
