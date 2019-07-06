@@ -1,0 +1,6 @@
+file(GLOB_RECURSE SOURCE_LIST "*.c*")
+add_exe(editor "${SOURCE_LIST}" "tool")
+target_compile_definitions(editor PRIVATE GRAPHVIZ_PATH="${GRAPHVIZ_PATH}")
+target_link_libraries(editor flame_foundation)
+target_link_libraries(editor flame_network)
+target_link_libraries(editor flame_graphics)
