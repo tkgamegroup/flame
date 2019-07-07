@@ -1,6 +1,3 @@
-#pragma comment(lib, "flame_foundation.lib")
-#pragma comment(lib, "flame_graphics.lib")
-
 #include <flame/foundation/foundation.h>
 #include <flame/graphics/all.h>
 

@@ -1666,89 +1666,6 @@ namespace flame
 		return l;
 	}
 
-	void* calc_rva(void* p, void* module)
-	{
-		return (void*)((char*)p - module);
-	}
-
-	template<uint N, class T>
-	struct BP_Vec
-	{
-		AttributeV<T> in[N];
-
-		AttributeV<Vec<N, T>> out;
-
-		void update()
-		{
-			for (auto i = 0; i < N; i++)
-			{
-				if (in[i].frame > out.frame)
-				{
-					out.v.v_[i] = in[i].v;
-					out.frame = in[i].frame;
-				}
-			}
-		}
-	};
-
-	template<uint N, class T>
-	void add_vec_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
-	{
-		typedef BP_Vec<N, T> VecType;
-
-		auto u = add_udt(0, "Vec" + name_suffix, sizeof(BP_Vec<N, T>), L"flame_foundation.dll");
-
-		for (auto i = 0; i < N; i++)
-			u->add_variable(TypeTagAttributeV, type_name, std::string(1, "xyzw"[i]), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
-		u->add_variable(TypeTagAttributeV, "Vec~" + std::to_string(N) + "~" + std::string(type_name), "v", "o", offsetof(VecType, out), sizeof(VecType::out));
-
-		u->add_function("update", calc_rva(f2v(&BP_Vec<N, T>::update), this_module), TypeTagVariable, "void", "");
-	}
-
-	template<uint N, class T>
-	struct BP_ArrayV
-	{
-		AttributeV<T> in[N];
-
-		AttributeV<std::vector<T>> out;
-
-		void update()
-		{
-			auto last_out_frame = out.frame;
-			out.v.resize(N);
-			for (auto i = 0; i < N; i++)
-			{
-				if (in[i].frame > last_out_frame)
-				{
-					out.v[i] = in[i].v;
-					out.frame = max(out.frame, in[i].frame);
-				}
-			}
-		}
-	};
-
-	template<uint N, class T>
-	struct BP_ArrayP
-	{
-		AttributeP<T> in[N];
-
-		AttributeV<std::vector<T*>> out;
-
-		void update()
-		{
-			auto last_out_frame = out.frame;
-			out.v.resize(N);
-			for (auto i = 0; i < N; i++)
-			{
-				if (in[i].frame > last_out_frame)
-				{
-					out.v[i] = in[i].v;
-					out.frame = max(out.frame, in[i].frame);
-				}
-			}
-		}
-	};
-
 	struct ArraySize$
 	{
 		AttributeP<void> array$i;
@@ -1798,58 +1715,6 @@ namespace flame
 
 	}bp_array_insert_before_for_each_item_unused;
 
-	template<uint N, class T>
-	void add_arrayv_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
-	{
-		typedef BP_ArrayV<N, T> ArrayType;
-
-		auto u = add_udt(0, "ArrayV_" + name_suffix, sizeof(ArrayType), L"flame_foundation.dll");
-		
-		for (auto i = 0; i < N; i++)
-			u->add_variable(TypeTagAttributeV, type_name, std::to_string(i + 1), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
-		u->add_variable(TypeTagAttributeV, "std::vector~" + type_name, "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
-
-		u->add_function("ctor", calc_rva(cf2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
-		u->add_function("dtor", calc_rva(df2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
-		u->add_function("update", calc_rva(f2v(&ArrayType::update), this_module), TypeTagVariable, "void", "");
-	}
-
-	template<uint N, class T>
-	void add_arrayp_udt(const std::string& name_suffix, const std::string& type_name, void* this_module)
-	{
-		typedef BP_ArrayP<N, T> ArrayType;
-
-		auto u = add_udt(0, "ArrayP_" + name_suffix, sizeof(ArrayType), L"flame_foundation.dll");
-
-		for (auto i = 0; i < N; i++)
-			u->add_variable(TypeTagAttributeP, type_name, std::to_string(i + 1), "i", sizeof(AttributeP<T>) * i, sizeof(AttributeP<T>));
-		u->add_variable(TypeTagAttributeV, "std::vector~" + type_name + "*", "v", "o", offsetof(ArrayType, out), sizeof(ArrayType::out));
-
-		u->add_function("ctor", calc_rva(cf2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
-		u->add_function("dtor", calc_rva(df2v<ArrayType>(), this_module), TypeTagVariable, "void", "");
-		u->add_function("update", calc_rva(f2v(&ArrayType::update), this_module), TypeTagVariable, "void", "");
-	}
-
-	void typeinfo_add_basic_bp_nodes()
-	{
-		auto this_module = load_module(L"flame_foundation.dll");
-
-		add_vec_udt<1, float>("1f", "float", this_module);
-		add_vec_udt<2, float>("2f", "float", this_module);
-		add_vec_udt<3, float>("3f", "float", this_module);
-		add_vec_udt<4, float>("4f", "float", this_module);
-
-		add_arrayv_udt<1, uint>("1_u", "uint", this_module);
-		add_arrayv_udt<1, Vec4c>("1_4c", "Vec~4~uchar", this_module);
-		add_arrayp_udt<1, voidptr>("1_v", "void", this_module);
-
-		add_arrayv_udt<2, uint>("2_u", "uint", this_module);
-		add_arrayv_udt<2, Vec4c>("2_4c", "Vec~4~uchar", this_module);
-		add_arrayp_udt<2, voidptr>("2_v", "void", this_module);
-
-		free_module(this_module);
-	}
-
 	void typeinfo_collect(const std::wstring& filename, int level)
 	{
 		auto db = find_typeinfo_db(level);
@@ -1888,6 +1753,19 @@ namespace flame
 			printf("failed to get global\n");
 			assert(0);
 			return;
+		}
+
+		{
+			auto library = load_module(filename.c_str());
+			if (library)
+			{
+				typedef void (*add_templates_func)(int level);
+				auto add_templates = (add_templates_func)GetProcAddress((HMODULE)library, "add_templates");
+				if (add_templates)
+					add_templates(level);
+
+				free_module(library);
+			}
 		}
 
 		LONG l;
@@ -2444,9 +2322,6 @@ namespace flame
 			auto dst = w2s(w_dst);
 			if (!std::fs::exists(w_dst) || std::fs::last_write_time(w_dst) < std::fs::last_write_time(fn))
 			{
-				if (fn == L"flame_foundation.dll")
-					typeinfo_add_basic_bp_nodes();
-
 				printf("generating: %s\n", dst.c_str());
 
 				typeinfo_collect(fn, id);

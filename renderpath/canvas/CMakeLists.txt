@@ -11,7 +11,7 @@ project(bp)
 
 add_definitions(-W0 -std:c++latest)
 
-add_library(bp SHARED make_cmd.cpp)
+add_library(bp SHARED template.cpp make_cmd.cpp)
 target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)
 target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/flame_foundation.lib)
 target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/flame_graphics.lib)
