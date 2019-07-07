@@ -29,9 +29,9 @@ namespace flame
 			}
 		}
 
-		static void add_udt_info(int level, const std::string& template_parameters, void* module)
+		static void add_udt_info(int level, const std::string& template_parameters, void* module, const std::wstring& module_name)
 		{
-			auto u = add_udt(level, "Vec~" + template_parameters, sizeof(BP_Vec), L"bp.dll");
+			auto u = add_udt(level, "Vec~" + template_parameters, sizeof(BP_Vec), module_name);
 
 			for (auto i = 0; i < N; i++)
 				u->add_variable(TypeTagAttributeV, string_split(template_parameters, '~')[1], std::string(1, "xyzw"[i]), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
@@ -62,7 +62,7 @@ namespace flame
 			}
 		}
 
-		static void add_udt_info(int level, const std::string& template_parameters, void* module)
+		static void add_udt_info(int level, const std::string& template_parameters, void* module, const std::wstring& module_name)
 		{
 			auto sp = string_split(template_parameters, '~');
 			{
@@ -78,7 +78,7 @@ namespace flame
 				}
 			}
 
-			auto u = add_udt(level, "Array~" + sp[0] + "~" + sp[1], sizeof(BP_Array), L"bp.dll");
+			auto u = add_udt(level, "Array~" + sp[0] + "~" + sp[1], sizeof(BP_Array), module_name);
 
 			auto tag = TypeTagAttributeV;
 			auto in_type_name = sp[1];

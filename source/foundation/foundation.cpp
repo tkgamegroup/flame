@@ -237,6 +237,22 @@ namespace flame
 		return ret;
 	}
 
+	void* get_module_from_address(void* addr)
+	{
+		HMODULE module = NULL;
+		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &module);
+		return module;
+	}
+
+	Mail<std::wstring> get_module_name(void* module)
+	{
+		wchar_t buf[260];
+		GetModuleFileNameW((HMODULE)module, buf, sizeof(buf));
+		auto ret = new_mail<std::wstring>();
+		(*ret.p) = buf;
+		return ret;
+	}
+
 	void* load_module(const std::wstring& module_name)
 	{
 		return LoadLibraryW(module_name.c_str());
