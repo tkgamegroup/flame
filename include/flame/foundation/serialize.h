@@ -406,7 +406,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts(int level = 0);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(uint level, const std::string& name, uint size, const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(uint level, const std::string& name, uint size);
 
 	FLAME_FOUNDATION_EXPORTS uint typeinfo_free_level();
 	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);

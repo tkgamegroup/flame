@@ -1634,13 +1634,12 @@ namespace flame
 		}
 	}
 
-	UdtInfo* add_udt(uint level, const std::string& name, uint size, const std::wstring& module_name)
+	UdtInfo* add_udt(uint level, const std::string& name, uint size)
 	{
 		auto db = find_or_create_typeinfo_db(level);
 		auto u = new UdtInfoPrivate;
 		u->name = name;
 		u->size = size;
-		u->module_name = module_name;
 		db->udts.emplace(H(name.c_str()), u);
 		return u;
 	}
@@ -1938,7 +1937,7 @@ namespace flame
 				if (!find_udt(udt_hash))
 				{
 					_udt->get_length(&ull);
-					auto u = (UdtInfoPrivate*)add_udt(level, udt_name, ull, filename);
+					auto u = (UdtInfoPrivate*)add_udt(level, udt_name, ull);
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -2101,11 +2100,13 @@ namespace flame
 			unserialize_parameters(n_function, add_function(level, name, rva, return_type_tag, return_type_name, code_pos));
 		}
 
+		auto module_name = ext_replace(filename, L".dll");
 		auto n_udts = file->find_node("udts");
 		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
 			auto n_udt = n_udts->node(i);
-			auto u = add_udt(level, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()), s2w(n_udt->find_attr("module_name")->value()));
+			auto u = (UdtInfoPrivate*)add_udt(level, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()));
+			u->module_name = module_name;
 
 			auto n_items = n_udt->find_node("variables");
 			for (auto j = 0; j < n_items->node_count(); j++)
@@ -2247,7 +2248,6 @@ namespace flame
 				auto n_udt = n_udts->new_node("udt");
 				n_udt->new_attr("name", u->name);
 				n_udt->new_attr("size", std::to_string(u->size));
-				n_udt->new_attr("module_name", w2s(u->module_name));
 
 				auto n_items = n_udt->new_node("variables");
 				for (auto& v : u->variables)
