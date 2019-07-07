@@ -185,6 +185,12 @@ namespace flame
 		memset(dummy, 0, size);
 
 		module = load_module(udt->module_name());
+		if (!module)
+		{
+			std::fs::path path(bp->filename);
+			module = load_module(path.parent_path().wstring() + L"/" + udt->module_name());
+		}
+		assert(module);
 
 		ctor_function = nullptr;
 		{
