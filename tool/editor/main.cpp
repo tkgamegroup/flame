@@ -506,7 +506,7 @@ int main(int argc, char **args)
 		else if (s_command_line == "gui-browser")
 		{
 			auto curr_path = get_curr_path();
-			exec(L"file:///" + *get_curr_path().p + L"/bp.html", L"", false);
+			//exec(L"file:///" + *get_curr_path().p + L"/bp.html", L"", false);
 			delete_mail(curr_path);
 			printf("waiting for browser on port 5566 ...");
 

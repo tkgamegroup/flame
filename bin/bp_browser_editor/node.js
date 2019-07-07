@@ -61,7 +61,7 @@ class Node
             for (let i in udt.items)
             {
                 var item = udt.items[i];
-                if (item.attribute.indexOf("i") >= 0)
+                if (item.decoration.indexOf("i") >= 0)
                 {
                     var s = new Slot(item, 0);
                     s.node = thiz;
@@ -72,7 +72,7 @@ class Node
                     thiz.inputs.push(s);
                     thiz.eLeft.appendChild(s.eMain);
                 }
-                else if (item.attribute.indexOf("o") >= 0)
+                else if (item.decoration.indexOf("o") >= 0)
                 {
                     var s = new Slot(item, 1);
                     s.node = thiz;

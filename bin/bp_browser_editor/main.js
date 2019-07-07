@@ -116,7 +116,7 @@ var load_typeinfo = function(file, filename)
             u.items.push({
                 type: n_item.getAttribute("type"),
                 name: n_item.getAttribute("name"),
-                attribute: n_item.getAttribute("attribute"),
+                decoration: n_item.getAttribute("decoration"),
                 offset: parseInt(n_item.getAttribute("offset")),
                 size: parseInt(n_item.getAttribute("size")),
                 default_value: n_item.getAttribute("default_value")
