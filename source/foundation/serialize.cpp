@@ -139,9 +139,16 @@ namespace flame
 
 	struct EnumInfoPrivate : EnumInfo
 	{
+		std::wstring module_name;
+
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 	};
+
+	const std::wstring& EnumInfo::module_name() const
+	{
+		return ((EnumInfoPrivate*)this)->module_name;
+	}
 
 	const std::string& EnumInfo::name() const
 	{
@@ -203,12 +210,19 @@ namespace flame
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
+		std::wstring module_name;
+
 		std::string name;
 		void* rva;
 		TypeInfoPrivate return_type;
 		std::vector<TypeInfoPrivate> parameter_types;
 		std::string code_pos;
 	};
+
+	const std::wstring& FunctionInfo::module_name() const
+	{
+		return ((FunctionInfoPrivate*)this)->module_name;
+	}
 
 	const std::string& FunctionInfo::name() const
 	{
@@ -249,9 +263,10 @@ namespace flame
 
 	struct UdtInfoPrivate : UdtInfo
 	{
+		std::wstring module_name;
+
 		std::string name;
 		uint size;
-		std::wstring module_name;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
@@ -341,6 +356,11 @@ namespace flame
 		}
 	};
 
+	const std::wstring& UdtInfo::module_name() const
+	{
+		return ((UdtInfoPrivate*)this)->module_name;
+	}
+
 	const std::string& UdtInfo::name() const
 	{
 		return ((UdtInfoPrivate*)this)->name;
@@ -349,11 +369,6 @@ namespace flame
 	uint UdtInfo::size() const
 	{
 		return ((UdtInfoPrivate*)this)->size;
-	}
-
-	const std::wstring& UdtInfo::module_name() const
-	{
-		return ((UdtInfoPrivate*)this)->module_name;
 	}
 
 	uint UdtInfo::variable_count() const
@@ -1483,37 +1498,9 @@ namespace flame
 		}
 	}
 
-	struct TypeinfoDB
-	{
-		uint level;
-		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
-		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
-		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
-	};
-
-	static std::vector<std::unique_ptr<TypeinfoDB>> typeinfo_dbs;
-
-	TypeinfoDB* find_typeinfo_db(int level)
-	{
-		for (auto& db : typeinfo_dbs)
-		{
-			if (db->level == level)
-				return db.get();
-		}
-		return nullptr;
-	}
-
-	TypeinfoDB* find_or_create_typeinfo_db(int level)
-	{
-		auto db = find_typeinfo_db(level);
-		if (!db)
-		{
-			db = new TypeinfoDB;
-			db->level = level;
-			typeinfo_dbs.emplace_back(db);
-		}
-		return db;
-	}
+	static std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
+	static std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
+	static std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
 
 	template<class T, class U>
 	 Mail<std::vector<T*>> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
@@ -1538,131 +1525,65 @@ namespace flame
 		return it->second.get();
 	}
 
-	Mail<std::vector<EnumInfo*>> get_enums(int level)
+	Mail<std::vector<EnumInfo*>> get_enums()
 	{
-		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<EnumInfo>(db->enums) : new_mail<std::vector<EnumInfo*>>();
+		return get_typeinfo_objects<EnumInfo>(enums);
 	}
 
-	EnumInfo* find_enum(uint name_hash, int level)
+	EnumInfo* find_enum(uint name_hash)
 	{
-		if (level != -1)
-		{
-			auto db = find_typeinfo_db(level);
-			return db ? find_typeinfo_object(db->enums, name_hash) : nullptr;
-		}
-		else
-		{
-			for (auto& db : typeinfo_dbs)
-			{
-				auto ret = find_typeinfo_object(db->enums, name_hash);
-				if (ret)
-					return ret;
-			}
-			return nullptr;
-		}
+		return find_typeinfo_object(enums, name_hash);
 	}
 
-	EnumInfo* add_enum(uint level, const std::string& name)
+	EnumInfo* add_enum(const std::wstring& module_name, const std::string& name)
 	{
-		auto db = find_or_create_typeinfo_db(level);
 		auto e = new EnumInfoPrivate;
+		e->module_name = module_name;
 		e->name = name;
-		db->enums.emplace(H(name.c_str()), e);
+		enums.emplace(H(name.c_str()), e);
 		return e;
 	}
 
-	Mail<std::vector<FunctionInfo*>> get_functions(int level)
+	Mail<std::vector<FunctionInfo*>> get_functions()
 	{
-		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<FunctionInfo>(db->functions) : new_mail<std::vector<FunctionInfo*>>();
+		return get_typeinfo_objects<FunctionInfo>(functions);
 	}
 
-	FunctionInfo* find_function(uint name_hash, int level)
+	FunctionInfo* find_function(uint name_hash)
 	{
-		if (level != -1)
-		{
-			auto db = find_typeinfo_db(level);
-			return db ? find_typeinfo_object(db->functions, name_hash) : nullptr;
-		}
-		else
-		{
-			for (auto& db : typeinfo_dbs)
-			{
-				auto ret = find_typeinfo_object(db->functions, name_hash);
-				if (ret)
-					return ret;
-			}
-			return nullptr;
-		}
+		return find_typeinfo_object(functions, name_hash);
 	}
 
-	FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
+	FunctionInfo* add_function(const std::wstring& module_name, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
 	{
-		auto db = find_or_create_typeinfo_db(level);
 		auto f = new FunctionInfoPrivate;
+		f->module_name = module_name;
 		f->name = name;
 		f->rva = rva;
 		f->return_type.set(return_type_tag, return_type_name);
 		f->code_pos = code_pos;
-		db->functions.emplace(H(name.c_str()), f);
+		functions.emplace(H(name.c_str()), f);
 		return f;
 	}
 
-	Mail<std::vector<UdtInfo*>> get_udts(int level)
+	Mail<std::vector<UdtInfo*>> get_udts()
 	{
-		auto db = find_typeinfo_db(level);
-		return db ? get_typeinfo_objects<UdtInfo>(db->udts) : new_mail<std::vector<UdtInfo*>>();
+		return get_typeinfo_objects<UdtInfo>(udts);
 	}
 
-	UdtInfo* find_udt(uint name_hash, int level)
+	UdtInfo* find_udt(uint name_hash)
 	{
-		if (level != -1)
-		{
-			auto db = find_typeinfo_db(level);
-			return db ? find_typeinfo_object(db->udts, name_hash) : nullptr;
-		}
-		else
-		{
-			for (auto& db : typeinfo_dbs)
-			{
-				auto ret = find_typeinfo_object(db->udts, name_hash);
-				if (ret)
-					return ret;
-			}
-			return nullptr;
-		}
+		return find_typeinfo_object(udts, name_hash);
 	}
 
-	UdtInfo* add_udt(uint level, const std::string& name, uint size)
+	UdtInfo* add_udt(const std::wstring& module_name, const std::string& name, uint size)
 	{
-		auto db = find_or_create_typeinfo_db(level);
 		auto u = new UdtInfoPrivate;
+		u->module_name = module_name;
 		u->name = name;
 		u->size = size;
-		db->udts.emplace(H(name.c_str()), u);
+		udts.emplace(H(name.c_str()), u);
 		return u;
-	}
-
-	uint typeinfo_free_level()
-	{
-		auto l = 0U;
-		while (true)
-		{
-			auto ok = true;
-			for (auto& db : typeinfo_dbs)
-			{
-				if (db->level == l)
-				{
-					ok = false;
-					break;
-				}
-			}
-			if (ok)
-				break;
-			l++;
-		}
-		return l;
 	}
 
 	struct ArraySize$
@@ -1714,16 +1635,8 @@ namespace flame
 
 	}bp_array_insert_before_for_each_item_unused;
 
-	void typeinfo_collect(const std::wstring& filename, int level)
+	void typeinfo_collect(const std::wstring& filename)
 	{
-		auto db = find_typeinfo_db(level);
-		if (!db)
-		{
-			db = new TypeinfoDB;
-			db->level = level;
-			typeinfo_dbs.emplace_back(db);
-		}
-
 		com_init();
 
 		CComPtr<IDiaDataSource> dia_source;
@@ -1758,10 +1671,10 @@ namespace flame
 			auto library = load_module(filename.c_str());
 			if (library)
 			{
-				typedef void (*add_templates_func)(int level);
+				typedef void (*add_templates_func)();
 				auto add_templates = (add_templates_func)GetProcAddress((HMODULE)library, "add_templates");
 				if (add_templates)
-					add_templates(level);
+					add_templates();
 
 				free_module(library);
 			}
@@ -1798,7 +1711,7 @@ namespace flame
 				{
 					IDiaLineNumber* line;
 					DWORD src_file_id = -1;
-					std::wstring filename;
+					std::wstring source_file_name;
 					DWORD line_num;
 
 					uint min_line = 1000000;
@@ -1816,7 +1729,7 @@ namespace flame
 							source_file->get_fileName(&fn);
 							source_file->Release();
 
-							filename = fn;
+							source_file_name = fn;
 						}
 
 						line->get_lineNumber(&line_num);
@@ -1831,7 +1744,7 @@ namespace flame
 					lines->Release();
 
 					if (max_line > min_line)
-						code = w2s(filename) + "#" + std::to_string(min_line) + ":" + std::to_string(max_line);
+						code = w2s(source_file_name) + "#" + std::to_string(min_line) + ":" + std::to_string(max_line);
 				}
 			}
 		};
@@ -1870,7 +1783,7 @@ namespace flame
 				auto hash = H(name.c_str());
 				if (!find_enum(hash))
 				{
-					auto e = add_enum(level, name);
+					auto e = add_enum(filename, name);
 
 					IDiaEnumSymbols* items;
 					_enum->findChildren(SymTagNull, NULL, nsNone, &items);
@@ -1912,7 +1825,7 @@ namespace flame
 					symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
 					if (rva)
 					{
-						auto f = add_function(level, name, rva, return_type_tag, return_type_name, code);
+						auto f = add_function(filename, name, rva, return_type_tag, return_type_name, code);
 						symbol_to_parameters(_function, f);
 					}
 				}
@@ -1931,13 +1844,13 @@ namespace flame
 			_udt->get_name(&pwname);
 			bool pass_prefix, pass_$;
 			auto udt_name = format_name(pwname, &pass_prefix, &pass_$);
-			if (pass_prefix && pass_$)
+			if (pass_prefix && pass_$ && udt_name.find("~lambda_") == std::string::npos)
 			{
 				auto udt_hash = H(udt_name.c_str());
 				if (!find_udt(udt_hash))
 				{
 					_udt->get_length(&ull);
-					auto u = (UdtInfoPrivate*)add_udt(level, udt_name, ull);
+					auto u = (UdtInfoPrivate*)add_udt(filename, udt_name, ull);
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -2037,21 +1950,13 @@ namespace flame
 		_udts->Release();
 	}
 
-	void typeinfo_load(const std::wstring& filename, int level)
+	void typeinfo_load(const std::wstring& filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file)
 		{
 			assert(0);
 			return;
-		}
-
-		auto db = find_typeinfo_db(level);
-		if (!db)
-		{
-			db = new TypeinfoDB;
-			db->level = level;
-			typeinfo_dbs.emplace_back(db);
 		}
 
 		auto unserialize_function = [](SerializableNode* src, std::string& name, voidptr& rva, TypeTag$& return_type_tag, std::string& return_type_name, std::string& code) {
@@ -2077,11 +1982,13 @@ namespace flame
 			}
 		};
 
+		auto module_name = ext_replace(filename, L".dll");
+
 		auto n_enums = file->find_node("enums");
 		for (auto i = 0; i < n_enums->node_count(); i++)
 		{
 			auto n_enum = n_enums->node(i);
-			auto e = add_enum(level, n_enum->find_attr("name")->value());
+			auto e = add_enum(module_name, n_enum->find_attr("name")->value());
 
 			auto n_items = n_enum->find_node("items");
 			for (auto j = 0; j < n_items->node_count(); j++)
@@ -2097,16 +2004,14 @@ namespace flame
 			auto n_function = n_functions->node(i);
 			std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code_pos;
 			unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code_pos);
-			unserialize_parameters(n_function, add_function(level, name, rva, return_type_tag, return_type_name, code_pos));
+			unserialize_parameters(n_function, add_function(module_name, name, rva, return_type_tag, return_type_name, code_pos));
 		}
 
-		auto module_name = ext_replace(filename, L".dll");
 		auto n_udts = file->find_node("udts");
 		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
 			auto n_udt = n_udts->node(i);
-			auto u = (UdtInfoPrivate*)add_udt(level, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()));
-			u->module_name = module_name;
+			auto u = (UdtInfoPrivate*)add_udt(module_name, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()));
 
 			auto n_items = n_udt->find_node("variables");
 			for (auto j = 0; j < n_items->node_count(); j++)
@@ -2139,16 +2044,9 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void typeinfo_save(const std::wstring & filename, int level)
+	void typeinfo_save(const std::wstring& filename, const std::wstring& module_name)
 	{
 		auto file = SerializableNode::create("typeinfo");
-
-		TypeinfoDB* db = nullptr;
-		if (level != -1)
-		{
-			db = find_typeinfo_db(level);
-			assert(db);
-		}
 
 		auto serialize_function = [](FunctionInfoPrivate * src, SerializableNode * dst) {
 			dst->new_attr("name", src->name);
@@ -2167,18 +2065,10 @@ namespace flame
 		auto n_enums = file->new_node("enums");
 		{
 			std::vector<EnumInfoPrivate*> sorted_enums;
-			if (db)
+			for (auto& e : enums)
 			{
-				for (auto& e : db->enums)
+				if (e.second->module_name == module_name)
 					sorted_enums.push_back(e.second.get());
-			}
-			else
-			{
-				for (auto& db : typeinfo_dbs)
-				{
-					for (auto& e : db->enums)
-						sorted_enums.push_back(e.second.get());
-				}
 			}
 			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfoPrivate * a, EnumInfoPrivate * b) {
 				return a->name < b->name;
@@ -2201,18 +2091,10 @@ namespace flame
 		auto n_functions = file->new_node("functions");
 		{
 			std::vector<FunctionInfoPrivate*> sorted_functions;
-			if (db)
+			for (auto& f : functions)
 			{
-				for (auto& f : db->functions)
+				if (f.second->module_name == module_name)
 					sorted_functions.push_back(f.second.get());
-			}
-			else
-			{
-				for (auto& db : typeinfo_dbs)
-				{
-					for (auto& f : db->functions)
-						sorted_functions.push_back(f.second.get());
-				}
 			}
 			std::sort(sorted_functions.begin(), sorted_functions.end(), [](FunctionInfoPrivate* a, FunctionInfoPrivate* b) {
 				return a->name < b->name;
@@ -2227,18 +2109,10 @@ namespace flame
 		auto n_udts = file->new_node("udts");
 		{
 			std::vector<UdtInfoPrivate*> sorted_udts;
-			if (db)
+			for (auto& u : udts)
 			{
-				for (auto& u : db->udts)
+				if (u.second->module_name == module_name)
 					sorted_udts.push_back(u.second.get());
-			}
-			else
-			{
-				for (auto& db : typeinfo_dbs)
-				{
-					for (auto& u : db->udts)
-						sorted_udts.push_back(u.second.get());
-				}
 			}
 			std::sort(sorted_udts.begin(), sorted_udts.end(), [](UdtInfoPrivate * a, UdtInfoPrivate * b) {
 				return a->name < b->name;
@@ -2281,65 +2155,31 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void typeinfo_clear(int level)
+	void typeinfo_clear(const std::wstring& module_name)
 	{
-		if (level == -1)
-			typeinfo_dbs.clear();
+		if (module_name == L"")
+		{
+			enums.clear();
+			functions.clear();
+			udts.clear();
+		}
 		else
 		{
-			for (auto it = typeinfo_dbs.begin(); it != typeinfo_dbs.end(); it++)
+			for (auto it = enums.begin(); it != enums.end(); it++)
 			{
-				if ((*it)->level == level)
-				{
-					typeinfo_dbs.erase(it);
-					return;
-				}
+				if (it->second->module_name == module_name)
+					enums.erase(it);
 			}
-			assert(0);
+			for (auto it = functions.begin(); it != functions.end(); it++)
+			{
+				if (it->second->module_name == module_name)
+					functions.erase(it);
+			}
+			for (auto it = udts.begin(); it != udts.end(); it++)
+			{
+				if (it->second->module_name == module_name)
+					udts.erase(it);
+			}
 		}
-	}
-
-	void typeinfo_check_update()
-	{
-		// typeinfo collect must do by order, because it only record the first entry
-		std::vector<std::wstring> pdbs = {
-			L"flame_foundation.dll",
-			L"flame_network.dll",
-			L"flame_graphics.dll",
-			//L"flame_sound.dll",
-			//L"flame_universe.dll",
-		};
-
-		printf("typeinfo update begin\n");
-
-		auto id = 0;
-		for (auto& fn : pdbs)
-		{
-			if (!std::fs::exists(fn))
-				continue;
-
-			auto w_dst = ext_replace(fn, L".typeinfo");
-			auto dst = w2s(w_dst);
-			if (!std::fs::exists(w_dst) || std::fs::last_write_time(w_dst) < std::fs::last_write_time(fn))
-			{
-				printf("generating: %s\n", dst.c_str());
-
-				typeinfo_collect(fn, id);
-				typeinfo_save(w_dst, id);
-
-				printf("ok\n");
-			}
-			else
-			{
-				typeinfo_load(w_dst, id);
-
-				printf("up-to-data: %s\n", dst.c_str());
-			}
-			id++;
-		}
-
-		typeinfo_clear();
-
-		printf("typeinfo update end\n");
 	}
 }

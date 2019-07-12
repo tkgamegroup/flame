@@ -267,6 +267,8 @@ namespace flame
 
 	struct EnumInfo
 	{
+		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
+
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint item_count() const;
@@ -278,6 +280,8 @@ namespace flame
 
 	struct FunctionInfo
 	{
+		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
+
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
@@ -396,25 +400,21 @@ namespace flame
 			'f' for std::[w]string variable, means this is a filename
 	*/
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::vector<EnumInfo*>> get_enums(int level = 0);
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(uint level, const std::string& name);
+	FLAME_FOUNDATION_EXPORTS Mail<std::vector<EnumInfo*>> get_enums();
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const std::wstring& module_name, const std::string& name);
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::vector<FunctionInfo*>> get_functions(int level = 0);
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(uint level, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
+	FLAME_FOUNDATION_EXPORTS Mail<std::vector<FunctionInfo*>> get_functions();
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::wstring& module_name, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts(int level = 0);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash, int level = -1);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(uint level, const std::string& name, uint size);
+	FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts();
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::wstring& module_name, const std::string& name, uint size);
 
-	FLAME_FOUNDATION_EXPORTS uint typeinfo_free_level();
-	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename, int level = 0);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename, int level = 0);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, int level = -1);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_clear(int level = -1);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_check_update();
-
-	// level is to separate different sources, such as typeinfos that come from different files, level of -1 means all
+	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS void typeinfo_clear(const std::wstring& module_name); // module_name == "" means all
 }
 

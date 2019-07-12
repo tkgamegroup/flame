@@ -1,5 +1,6 @@
 add_subdirectory(SLOC)
 add_subdirectory(when-key)
 add_subdirectory(when-changed)
+add_subdirectory(typeinfogen)
 add_subdirectory(editor)
 add_subdirectory(frame_sync_server)

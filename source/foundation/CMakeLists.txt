@@ -11,3 +11,4 @@ target_include_directories(flame_foundation PUBLIC "${CMAKE_SOURCE_DIR}/include"
 target_link_libraries(flame_foundation imagehlp.lib)
 target_link_libraries(flame_foundation ${PUGIXML_PATH}/build/Debug/pugixml.lib)
 target_link_libraries(flame_foundation "${VS_PATH}/DIA SDK/lib/amd64/diaguids.lib")
+add_custom_command(TARGET flame_foundation POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/bin/typeinfogen ${CMAKE_SOURCE_DIR}/bin/flame_foundation.dll)

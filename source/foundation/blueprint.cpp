@@ -32,7 +32,6 @@ namespace flame
 		BPPrivate *bp;
 		std::string id;
 		UdtInfo* udt;
-		bool udt_from_default_db;
 
 		Vec2f pos;
 
@@ -63,12 +62,8 @@ namespace flame
 	{
 		std::wstring filename;
 
-		std::vector<std::pair<int, std::wstring>> extra_typeinfos;
-
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
-
-		~BPPrivate();
 
 		NodePrivate *add_node(const std::string& id, const std::string& type_name);
 		void remove_node(NodePrivate *n);
@@ -330,53 +325,9 @@ namespace flame
 		cmf(p2f<MF_v_v>((char*)module + (uint)update_function->rva()), dummy);
 	}
 
-	BPPrivate::~BPPrivate()
-	{
-		for (auto& t : extra_typeinfos)
-			typeinfo_clear(t.first);
-	}
-
 	NodePrivate *BPPrivate::add_node(const std::string& type_name, const std::string& id)
 	{
-		auto type_name_sp = string_split(type_name, '#');
-		UdtInfo* udt = nullptr;
-		auto udt_from_default_db = true;
-		if (type_name_sp.size() == 1)
-			udt = find_udt(H(type_name_sp[0].c_str()));
-		else if (type_name_sp.size() == 2)
-		{
-			udt_from_default_db = false;
-			auto fn = s2w(type_name_sp[0]);
-			for (auto& t : extra_typeinfos)
-			{
-				if (t.second == fn)
-				{
-					udt = find_udt(H(type_name_sp[1].c_str()), t.first);
-					assert(udt);
-					break;
-				}
-			}
-			if (!udt)
-			{
-				auto abs_fn = std::fs::path(filename).parent_path().wstring() + L"\\" + fn;
-				auto fn_dll = abs_fn + L".dll";
-				auto fn_ti = abs_fn + L".typeinfo";
-				if (!std::fs::exists(fn_ti) || std::fs::last_write_time(fn_ti) < std::fs::last_write_time(fn_dll))
-				{
-					typeinfo_collect(fn_dll, 99);
-					typeinfo_save(fn_ti, 99);
-					typeinfo_clear(99);
-				}
-				auto lv = typeinfo_free_level();
-				typeinfo_load(fn_ti, lv);
-				extra_typeinfos.emplace_back(lv, fn);
-				udt = find_udt(H(type_name_sp[1].c_str()), lv);
-			}
-			if (!udt)
-				return nullptr;
-		}
-		else
-			return nullptr;
+		auto udt = find_udt(H(type_name.c_str()));
 
 		if (!udt)
 			return nullptr;
@@ -399,7 +350,6 @@ namespace flame
 		}
 
 		auto n = new NodePrivate(this, s_id, udt);
-		n->udt_from_default_db = udt_from_default_db;
 		nodes.emplace_back(n);
 
 		build_update_list();
@@ -547,17 +497,7 @@ namespace flame
 		for (auto& n : nodes)
 		{
 			auto n_node = n_nodes->new_node("node");
-			auto u = n->udt;
-			auto tn = std::string(u->name());
-			if (!n->udt_from_default_db)
-			{
-				auto path = std::fs::path(u->module_name());
-				auto src = (path.parent_path() / path.stem()).wstring();
-				if (ppath.size() < src.size() && src.compare(0, ppath.size(), ppath.c_str()) == 0)
-					src.erase(src.begin(), src.begin() + ppath.size());
-				tn = w2s(src) + "#" + tn;
-			}
-			n_node->new_attr("type", tn);
+			n_node->new_attr("type", n->udt->name());
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("pos", to_string(n->pos, 2));
 
