@@ -31,11 +31,15 @@ namespace flame
 
 		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
 		{
-			auto u = add_udt(module_name, "Vec~" + template_parameters, sizeof(BP_Vec));
+			auto pos_plus = template_parameters.find('+');
+			assert(pos_plus != std::string::npos);
+			auto type_name = std::string(template_parameters.begin() + pos_plus, template_parameters.end() - 1);
+
+			auto u = add_udt(module_name, "Vec" + template_parameters, sizeof(BP_Vec));
 
 			for (auto i = 0; i < N; i++)
-				u->add_variable(TypeTagAttributeV, string_split(template_parameters, '~')[1], std::string(1, "xyzw"[i]), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
-			u->add_variable(TypeTagAttributeV, "Vec~" + template_parameters, "v", "o", offsetof(BP_Vec, out), sizeof(BP_Vec::out));
+				u->add_variable(TypeTagAttributeV, type_name, std::string(1, "xyzw"[i]), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
+			u->add_variable(TypeTagAttributeV, "Vec" + template_parameters, "v", "o", offsetof(BP_Vec, out), sizeof(BP_Vec::out));
 
 			u->add_function("update", calc_rva(f2v(&BP_Vec::update), module), TypeTagVariable, "void", "");
 		}
@@ -64,32 +68,22 @@ namespace flame
 
 		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
 		{
-			auto sp = string_split(template_parameters, '~');
-			{
-				static std::regex reg_token(R"([\w\s\_\*]+)");
-				auto tokens = string_regex_split(sp[1], reg_token);
-				sp[1] = tokens[0];
-				for (auto i = 1; i < tokens.size(); i++)
-				{
-					auto& t = tokens[i];
-					t.erase(std::remove(t.begin(), t.end(), ' '), t.end());
-					if (!t.empty())
-						sp[1] += "~" + t;
-				}
-			}
+			auto pos_plus = template_parameters.find('+');
+			assert(pos_plus != std::string::npos);
+			auto type_name = std::string(template_parameters.begin() + pos_plus, template_parameters.end() - 1);
 
-			auto u = add_udt(module_name, "Array~" + sp[0] + "~" + sp[1], sizeof(BP_Array));
+			auto u = add_udt(module_name, "Array" + template_parameters, sizeof(BP_Array));
 
 			auto tag = TypeTagAttributeV;
-			auto in_type_name = sp[1];
-			if (sp[1].back() == '*')
+			auto in_type_name = type_name;
+			if (type_name[1].back() == '*')
 			{
 				tag = TypeTagAttributeP;
 				in_type_name.resize(in_type_name.size() - 1);
 			}
 			for (auto i = 0; i < N; i++)
 				u->add_variable(tag, in_type_name, std::to_string(i + 1), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
-			u->add_variable(TypeTagAttributeV, "std::vector~" + sp[1], "v", "o", offsetof(BP_Array, out), sizeof(BP_Array::out));
+			u->add_variable(TypeTagAttributeV, "std::vector(" + type_name + ")", "v", "o", offsetof(BP_Array, out), sizeof(BP_Array::out));
 
 			u->add_function("ctor", calc_rva(cf2v<BP_Array>(), module), TypeTagVariable, "void", "");
 			u->add_function("dtor", calc_rva(df2v<BP_Array>(), module), TypeTagVariable, "void", "");

@@ -153,25 +153,22 @@ auto papp = &app;
 
 int main(int argc, char **args)
 {
-	typeinfo_check_update();
-	auto typeinfo_lv = typeinfo_free_level();
-	typeinfo_load(L"flame_foundation.typeinfo", typeinfo_lv);
-	//typeinfo_load(L"flame_network.typeinfo", typeinfo_lv);
-	typeinfo_load(L"flame_graphics.typeinfo", typeinfo_lv);
-	//typeinfo_load(L"flame_sound.typeinfo", typeinfo_lv);
-	//typeinfo_load(L"flame_universe.typeinfo", typeinfo_lv);
+	typeinfo_load(L"flame_foundation.typeinfo");
+	typeinfo_load(L"flame_graphics.typeinfo");
 
-	app.bp = nullptr;
-	if (argc > 1)
+	if (argc != 2)
 	{
-		app.filename = s2w(args[1]);
-		app.bp = BP::create_from_file(app.filename);
-		if (!app.bp)
-			app.filename = L"";
+		printf("argc is not 2, exit\n");
+		return 0;
 	}
 
+	app.filename = s2w(args[1]);
+	app.bp = BP::create_from_file(app.filename);
 	if (!app.bp)
-		app.bp = BP::create();
+	{
+		printf("bp not found, exit\n");
+		return 0;
+	}
 
 	app.ev_1 = create_event(false);
 	app.ev_2 = create_event(false);
@@ -233,7 +230,6 @@ int main(int argc, char **args)
 				"  remove link [in_adress] - remove a link\n"
 				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
-				"  refresh - reload the bp\n"
 				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having one)\n"
 				"  reload - reload the bp\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
@@ -436,16 +432,6 @@ int main(int argc, char **args)
 		{
 			app.bp->update();
 			printf("BP updated\n");
-		}
-		else if (s_command_line == "refresh")
-		{
-			if (app.filename == L"")
-				printf("you need to save first\n");
-			else
-			{
-				app.bp->clear();
-				app.bp->load(app.filename);
-			}
 		}
 		else if (s_command_line == "save")
 		{

@@ -1,3 +1,5 @@
+*/CMakeLists.txt
+*/template.cpp
 *.dll
 *.lib
 *.typeinfo

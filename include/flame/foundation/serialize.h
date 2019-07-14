@@ -242,10 +242,47 @@ namespace flame
 	typedef FunctionInfo* FunctionInfoPtr;
 	typedef UdtInfo* UdtInfoPtr;
 
+	// type name archive:
+	// ， no space
+	// ， 'unsigned ' will be replaced to 'u'
+	// ， '< ' will be replaced to '('
+	// ， '> ' will be replaced to ')'
+	// ， ', ' will be replaced to '+'
+
+	inline std::string tn_c2a(const std::string& name) // type name code to archive
+	{
+		auto ret = name;
+		for (auto& ch : ret)
+		{
+			if (ch == '<')
+				ch = '(';
+			else if (ch == '>')
+				ch = ')';
+			else if (ch == ',')
+				ch = '+';
+		}
+		return ret;
+	}
+
+	inline std::string tn_a2c(const std::string& name) // type name archive to code
+	{
+		auto ret = name;
+		for (auto& ch : ret)
+		{
+			if (ch == '(')
+				ch = '<';
+			else if (ch == ')')
+				ch = '>';
+			else if (ch == '+')
+				ch = ',';
+		}
+		return ret;
+	}
+
 	struct TypeInfo
 	{
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const; // templates, template wraps and template parameters are all separated by '~'
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const; // type name archive
 		FLAME_FOUNDATION_EXPORTS uint hash() const;
 	};
 

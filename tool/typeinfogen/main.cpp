@@ -24,7 +24,7 @@ int main(int argc, char **args)
 		for (auto& d : dependencies)
 		{
 			if (std::fs::exists(d))
-				typeinfo_load(d);
+				typeinfo_load(ext_replace(d, L".typeinfo"));
 		}
 
 		typeinfo_collect(dll_filename);

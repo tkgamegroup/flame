@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <BP>
+	<dependencies>
+		<dependency v="flame_foundation.dll" />
+		<dependency v="flame_graphics.dll" />
+	</dependencies>
 	<nodes>
 		<node type="graphics::Clearvalues" id="cv" pos="726.00;232.00">
 			<datas />
@@ -10,12 +14,12 @@
 		<node type="graphics::Device" id="d" pos="123.00;34.00">
 			<datas />
 		</node>
-		<node type="bp#Array~2~Vec~4~uchar" id="color" pos="386.00;160.00">
+		<node type="Array(2+Vec(4+uchar))" id="color" pos="386.00;160.00">
 			<datas>
 				<data name="1" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="bp#MakeCmd" id="make_cmd" pos="1456.00;90.00">
+		<node type="MakeCmd" id="make_cmd" pos="1456.00;90.00">
 			<datas />
 		</node>
 		<node type="graphics::SubpassInfo" id="sp" pos="226.00;767.00">
@@ -24,10 +28,10 @@
 		<node type="graphics::Renderpass" id="rp" pos="414.00;489.00">
 			<datas />
 		</node>
-		<node type="bp#Array~1~void*" id="sps" pos="472.00;765.00">
+		<node type="Array(1+void*)" id="sps" pos="472.00;765.00">
 			<datas />
 		</node>
-		<node type="bp#Array~1~uint" id="col_refs" pos="100.00;606.00">
+		<node type="Array(1+uint)" id="col_refs" pos="100.00;606.00">
 			<datas />
 		</node>
 		<node type="graphics::Framebuffers" id="fbs" pos="1405.00;334.00">
@@ -61,10 +65,10 @@
 				<data name="clear" value="0" />
 			</datas>
 		</node>
-		<node type="bp#Array~2~void*" id="atts" pos="322.00;510.00">
+		<node type="Array(2+void*)" id="atts" pos="322.00;510.00">
 			<datas />
 		</node>
-		<node type="bp#Array~1~uint" id="res_refs" pos="32.00;694.00">
+		<node type="Array(1+uint)" id="res_refs" pos="32.00;694.00">
 			<datas>
 				<data name="1" value="1" />
 			</datas>

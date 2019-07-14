@@ -502,28 +502,28 @@ namespace flame
 			case cH("bool"):
 				(*ret.p) = *(bool*)src ? "1" : "0";
 				break;
-			case cH("Vec~1~float"):
+			case cH("Vec(1+float)"):
 				(*ret.p) = to_string(*(Vec1f*)src, precision);
 				break;
-			case cH("Vec~2~float"):
+			case cH("Vec(2+float)"):
 				(*ret.p) = to_string(*(Vec2f*)src, precision);
 				break;
-			case cH("Vec~3~float"):
+			case cH("Vec(3+float)"):
 				(*ret.p) = to_string(*(Vec3f*)src, precision);
 				break;
-			case cH("Vec~4~float"):
+			case cH("Vec(4+float)"):
 				(*ret.p) = to_string(*(Vec4f*)src, precision);
 				break;
-			case cH("Vec~1~uint"):
+			case cH("Vec(1+uint)"):
 				(*ret.p) = to_string(*(Vec1u*)src);
 				break;
-			case cH("Vec~2~uint"):
+			case cH("Vec(2+uint)"):
 				(*ret.p) = to_string(*(Vec2u*)src);
 				break;
-			case cH("Vec~3~uint"):
+			case cH("Vec(3+uint)"):
 				(*ret.p) = to_string(*(Vec3u*)src);
 				break;
-			case cH("Vec~4~uint"):
+			case cH("Vec(4+uint)"):
 				(*ret.p) = to_string(*(Vec4u*)src);
 				break;
 				//case cH("Ivec2"): case cH("i2"):
@@ -538,7 +538,7 @@ namespace flame
 				//	return to_string(*(Vec2c*)src);
 				//case cH("Vec3c"): case cH("b3"):
 				//	return to_string(*(Vec3c*)src);
-			case cH("Vec~4~uchar"):
+			case cH("Vec(4+uchar)"):
 				(*ret.p) = to_string(*(Vec4c*)src);
 				break;
 			default:
@@ -588,28 +588,28 @@ namespace flame
 			case cH("bool"):
 				*(bool*)dst = (src != "0");
 				break;
-			case cH("Vec~1~float"):
+			case cH("Vec(1+float)"):
 				*(Vec1f*)dst = std::stof(src.c_str());
 				break;
-			case cH("Vec~2~float"):
+			case cH("Vec(2+float)"):
 				*(Vec2f*)dst = stof2(src.c_str());
 				break;
-			case cH("Vec~3~float"):
+			case cH("Vec(3+float)"):
 				*(Vec3f*)dst = stof3(src.c_str());
 				break;
-			case cH("Vec~4~float"):
+			case cH("Vec(4+float)"):
 				*(Vec4f*)dst = stof4(src.c_str());
 				break;
-			case cH("Vec~1~uint"):
+			case cH("Vec(1+uint)"):
 				*(Vec1u*)dst = std::stof(src.c_str());
 				break;
-			case cH("Vec~2~uint"):
+			case cH("Vec(2+uint)"):
 				*(Vec2u*)dst = stou2(src.c_str());
 				break;
-			case cH("Vec~3~uint"):
+			case cH("Vec(3+uint)"):
 				*(Vec3u*)dst = stou3(src.c_str());
 				break;
-			case cH("Vec~4~uint"):
+			case cH("Vec(4+uint)"):
 				*(Vec4u*)dst = stou4(src.c_str());
 				break;
 				//case cH("Ivec2"): case cH("i2"):
@@ -639,7 +639,7 @@ namespace flame
 				//case cH("Vec3c"): case cH("b3"):
 				//	*(Vec3c*)dst = stob3(src.c_str());
 				//	break;
-			case cH("Vec~4~uchar"):
+			case cH("Vec(4+uchar)"):
 				*(Vec4c*)dst = stoi4(src.c_str());
 				break;
 			default:
@@ -1329,7 +1329,6 @@ namespace flame
 	static std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
 		static std::string prefix("flame::");
-		static std::regex reg_token(R"([\~\w\s\_\$\:\*]+)");
 		static std::string str_unsigned("unsigned ");
 		static std::string str_enum("enum ");
 
@@ -1345,16 +1344,41 @@ namespace flame
 			if (str.compare(0, prefix.size(), prefix) == 0)
 				* pass_prefix = true;
 			else
-				return str;
+				return "";
 		}
 
 		{
-			static std::string find_str("std::allocator");
+			auto pos = str.find(prefix);
+			while (pos != std::string::npos)
+			{
+				str = str.replace(pos, prefix.size(), "");
+				pos = str.find(prefix);
+			}
+		}
+		{
+			auto pos = str.find(str_unsigned);
+			while (pos != std::string::npos)
+			{
+				str = str.replace(pos, str_unsigned.size(), "u");
+				pos = str.find(str_unsigned);
+			}
+		}
+		{
+			auto pos = str.find(str_enum);
+			while (pos != std::string::npos)
+			{
+				str = str.replace(pos, str_enum.size(), "");
+				pos = str.find(str_enum);
+			}
+		}
+
+		{
+			static std::string allocator_str(",std::allocator");
 			size_t pos;
-			while ((pos = str.find(find_str)) != std::string::npos)
+			while ((pos = str.find(allocator_str)) != std::string::npos)
 			{
 				auto v = 0;
-				auto l = find_str.size();
+				auto l = allocator_str.size();
 				do
 				{
 					auto ch = str[pos + l];
@@ -1368,52 +1392,35 @@ namespace flame
 			}
 		}
 
-		auto tokens = string_regex_split(str, reg_token);
-		if (tokens.empty())
-			return "";
-
-		auto pos_$ = tokens[0].find('$');
+		std::string head;
+		std::string tail;
+		auto pos_t = str.find('<');
+		if (pos_t != std::string::npos)
+		{
+			head = std::string(str.begin(), str.begin() + pos_t);
+			tail = std::string(str.begin() + pos_t, str.end());
+		}
+		else
+			head = str;
+		auto pos_$ = head.find('$');
 		if (pos_$ != std::string::npos)
 		{
 			if (pass_$)
 				* pass_$ = true;
 
 			if (attribute)
-				* attribute = std::string(tokens[0].c_str() + pos_$ + 1);
-			tokens[0].resize(pos_$);
+				* attribute = std::string(head.begin() + pos_$ + 1, head.end());
+			head.resize(pos_$);
 		}
 		else if (pass_$)
-			return str;
+			return "";
 
-		for (auto& t : tokens)
-		{
-			{
-				auto pos = t.find(prefix);
-				if (pos != std::string::npos)
-					t = t.replace(pos, prefix.size(), "");
-			}
-			{
-				auto pos = t.find(str_unsigned);
-				if (pos != std::string::npos)
-					t = t.replace(pos, str_unsigned.size(), "u");
-			}
-			{
-				auto pos = t.find(str_enum);
-				if (pos != std::string::npos)
-					t = t.replace(pos, str_enum.size(), "");
-			}
+		str = head + tail;
 
-			t.erase(std::remove(t.begin(), t.end(), ' '), t.end());
-			t.erase(std::remove(t.begin(), t.end(), '$'), t.end());
-		}
+		str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+		str.erase(std::remove(str.begin(), str.end(), '$'), str.end());
 
-		auto name = tokens[0];
-		for (auto i = 1; i < tokens.size(); i++)
-		{
-			if (!tokens[i].empty())
-				name += "~" + tokens[i];
-		}
-		return name;
+		return tn_c2a(str);
 	}
 
 	static void symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */, TypeTag$& tag, std::string& name)
@@ -1466,23 +1473,26 @@ namespace flame
 			name = format_name(pwname);
 
 			static std::string attr_str("Attribute");
-			if (name.compare(0, attr_str.size(), attr_str) == 0 && name.size() > attr_str.size() + 2)
+			if (name.compare(0, attr_str.size(), attr_str) == 0 && name.size() > attr_str.size() + 1)
 			{
 				auto ch = name[attr_str.size()];
 				if (ch == 'E')
 				{
 					tag = variable_attribute.find('m') != std::string::npos ? TypeTagAttributeEM : TypeTagAttributeES;
 					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
+					name.erase(name.end() - 1);
 				}
 				else if (ch == 'V')
 				{
 					tag = TypeTagAttributeV;
 					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
+					name.erase(name.end() - 1);
 				}
 				else if (ch == 'P')
 				{
 					tag = TypeTagAttributeP;
 					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
+					name.erase(name.end() - 1);
 				}
 			}
 		}
@@ -1635,8 +1645,21 @@ namespace flame
 
 	}bp_array_insert_before_for_each_item_unused;
 
+	struct LoadedTypeinfo
+	{
+		std::wstring filename;
+		uint ref_count;
+	};
+	static std::vector<LoadedTypeinfo> loaded_typeinfos;
+
 	void typeinfo_collect(const std::wstring& filename)
 	{
+		for (auto& t : loaded_typeinfos)
+		{
+			if (t.filename == filename)
+				return;
+		}
+
 		com_init();
 
 		CComPtr<IDiaDataSource> dia_source;
@@ -1666,6 +1689,11 @@ namespace flame
 			assert(0);
 			return;
 		}
+
+		LoadedTypeinfo loaded_typeinfo;
+		loaded_typeinfo.filename = filename;
+		loaded_typeinfo.ref_count = 1;
+		loaded_typeinfos.push_back(loaded_typeinfo);
 
 		{
 			auto library = load_module(filename.c_str());
@@ -1952,12 +1980,26 @@ namespace flame
 
 	void typeinfo_load(const std::wstring& filename)
 	{
+		for (auto& t : loaded_typeinfos)
+		{
+			if (t.filename == filename)
+			{
+				t.ref_count++;
+				return;
+			}
+		}
+
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file)
 		{
 			assert(0);
 			return;
 		}
+
+		LoadedTypeinfo loaded_typeinfo;
+		loaded_typeinfo.filename = filename;
+		loaded_typeinfo.ref_count = 1;
+		loaded_typeinfos.push_back(loaded_typeinfo);
 
 		auto unserialize_function = [](SerializableNode* src, std::string& name, voidptr& rva, TypeTag$& return_type_tag, std::string& return_type_name, std::string& code) {
 			name = src->find_attr("name")->value();
@@ -2162,24 +2204,44 @@ namespace flame
 			enums.clear();
 			functions.clear();
 			udts.clear();
+			loaded_typeinfos.clear();
 		}
 		else
 		{
-			for (auto it = enums.begin(); it != enums.end(); it++)
+			for (auto it = loaded_typeinfos.begin(); it != loaded_typeinfos.end(); it++)
 			{
-				if (it->second->module_name == module_name)
-					enums.erase(it);
+				if (it->filename == module_name)
+				{
+					it->ref_count--;
+					if (it->ref_count == 0)
+					{
+						loaded_typeinfos.erase(it);
+						for (auto it = enums.begin(); it != enums.end(); )
+						{
+							if (it->second->module_name == module_name)
+								it = enums.erase(it);
+							else
+								it++;
+						}
+						for (auto it = functions.begin(); it != functions.end(); )
+						{
+							if (it->second->module_name == module_name)
+								it = functions.erase(it);
+							else
+								it++;
+						}
+						for (auto it = udts.begin(); it != udts.end(); )
+						{
+							if (it->second->module_name == module_name)
+								it = udts.erase(it);
+							else
+								it++;
+						}
+					}
+					return;
+				}
 			}
-			for (auto it = functions.begin(); it != functions.end(); it++)
-			{
-				if (it->second->module_name == module_name)
-					functions.erase(it);
-			}
-			for (auto it = udts.begin(); it != udts.end(); it++)
-			{
-				if (it->second->module_name == module_name)
-					udts.erase(it);
-			}
+			assert(0); // must clear an existed typeinfo
 		}
 	}
 }

@@ -64,6 +64,11 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
 		};
 
+		FLAME_FOUNDATION_EXPORTS int dependency_count() const;
+		FLAME_FOUNDATION_EXPORTS Mail<std::wstring> dependency(int idx) const;
+		FLAME_FOUNDATION_EXPORTS void add_dependency(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS void remove_dependency(const std::wstring& filename);
+
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type_name, const std::string& id);
@@ -73,16 +78,12 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& address) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& address) const;
 
-		FLAME_FOUNDATION_EXPORTS void clear();
+		FLAME_FOUNDATION_EXPORTS void clear(); // all nodes and links
 
 		FLAME_FOUNDATION_EXPORTS void update();
 
-		FLAME_FOUNDATION_EXPORTS void load(SerializableNode* src);
-		FLAME_FOUNDATION_EXPORTS void load(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS void save(SerializableNode* dst);
 		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
 
-		FLAME_FOUNDATION_EXPORTS static BP* create();
 		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
