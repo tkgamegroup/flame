@@ -33,7 +33,7 @@ namespace flame
 		{
 			auto pos_plus = template_parameters.find('+');
 			assert(pos_plus != std::string::npos);
-			auto type_name = std::string(template_parameters.begin() + pos_plus, template_parameters.end() - 1);
+			auto type_name = std::string(template_parameters.begin() + pos_plus + 1, template_parameters.end() - 1);
 
 			auto u = add_udt(module_name, "Vec" + template_parameters, sizeof(BP_Vec));
 
@@ -70,13 +70,13 @@ namespace flame
 		{
 			auto pos_plus = template_parameters.find('+');
 			assert(pos_plus != std::string::npos);
-			auto type_name = std::string(template_parameters.begin() + pos_plus, template_parameters.end() - 1);
+			auto type_name = std::string(template_parameters.begin() + pos_plus + 1, template_parameters.end() - 1);
 
 			auto u = add_udt(module_name, "Array" + template_parameters, sizeof(BP_Array));
 
 			auto tag = TypeTagAttributeV;
 			auto in_type_name = type_name;
-			if (type_name[1].back() == '*')
+			if (type_name.back() == '*')
 			{
 				tag = TypeTagAttributeP;
 				in_type_name.resize(in_type_name.size() - 1);

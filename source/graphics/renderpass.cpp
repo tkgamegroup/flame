@@ -324,9 +324,14 @@ namespace flame
 				if (colors$i.frame > last_out_frame || renderpass$i.frame > last_out_frame)
 				{
 					auto cv = (Clearvalues*)out$o.v;
-					auto count = cv->renderpass()->attachment_count();
-					for (auto i = 0; i < count; i++)
-						cv->set(i, (*colors$i.v)[i]);
+					if (cv && cv->renderpass())
+					{
+						auto count = cv->renderpass()->attachment_count();
+						for (auto i = 0; i < count; i++)
+							cv->set(i, (*colors$i.v)[i]);
+					}
+					else
+						printf("cannot update clearvalues\n");
 					out$o.frame = max(out$o.frame, colors$i.frame);
 				}
 			}

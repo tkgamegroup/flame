@@ -1691,7 +1691,7 @@ namespace flame
 		}
 
 		LoadedTypeinfo loaded_typeinfo;
-		loaded_typeinfo.filename = filename;
+		loaded_typeinfo.filename = ext_replace(filename, L".typeinfo");
 		loaded_typeinfo.ref_count = 1;
 		loaded_typeinfos.push_back(loaded_typeinfo);
 
@@ -2088,6 +2088,8 @@ namespace flame
 
 	void typeinfo_save(const std::wstring& filename, const std::wstring& module_name)
 	{
+		auto p_module_name = std::fs::path(module_name);
+
 		auto file = SerializableNode::create("typeinfo");
 
 		auto serialize_function = [](FunctionInfoPrivate * src, SerializableNode * dst) {
@@ -2109,7 +2111,7 @@ namespace flame
 			std::vector<EnumInfoPrivate*> sorted_enums;
 			for (auto& e : enums)
 			{
-				if (e.second->module_name == module_name)
+				if (e.second->module_name == p_module_name)
 					sorted_enums.push_back(e.second.get());
 			}
 			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfoPrivate * a, EnumInfoPrivate * b) {
@@ -2135,7 +2137,7 @@ namespace flame
 			std::vector<FunctionInfoPrivate*> sorted_functions;
 			for (auto& f : functions)
 			{
-				if (f.second->module_name == module_name)
+				if (f.second->module_name == p_module_name)
 					sorted_functions.push_back(f.second.get());
 			}
 			std::sort(sorted_functions.begin(), sorted_functions.end(), [](FunctionInfoPrivate* a, FunctionInfoPrivate* b) {
@@ -2153,7 +2155,7 @@ namespace flame
 			std::vector<UdtInfoPrivate*> sorted_udts;
 			for (auto& u : udts)
 			{
-				if (u.second->module_name == module_name)
+				if (u.second->module_name == p_module_name)
 					sorted_udts.push_back(u.second.get());
 			}
 			std::sort(sorted_udts.begin(), sorted_udts.end(), [](UdtInfoPrivate * a, UdtInfoPrivate * b) {

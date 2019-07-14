@@ -68,9 +68,15 @@ namespace flame
 	{
 		std::wstring filename;
 		std::vector<Dependency> dependencies;
+		void* bp_module;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
+
+		~BPPrivate();
+
+		void add_dependency(const std::wstring& filename);
+		void remove_dependency(const std::wstring& filename);
 
 		NodePrivate *add_node(const std::string& id, const std::string& type_name);
 		void remove_node(NodePrivate *n);
@@ -193,11 +199,17 @@ namespace flame
 			}
 		}
 
-		dtor_addr = (char*)module + (uint)udt->find_function("dtor")->rva();
+		dtor_addr = nullptr;
+		{
+			auto f = udt->find_function("dtor");
+			if (f)
+					dtor_addr = (char*)module + (uint)f->rva();
+		}
 		
 		update_addr = nullptr;
 		{
 			auto f = udt->find_function("update");
+			assert(f);
 			if(f)
 			{
 				auto ret_t = f->return_type();
@@ -205,7 +217,6 @@ namespace flame
 					update_addr = (char*)module + (uint)f->rva();
 			}
 		}
-		assert(update_addr);
 
 		if (ctor_addr)
 			cmf(p2f<MF_v_v>(ctor_addr), dummy);
@@ -318,7 +329,65 @@ namespace flame
 		cmf(p2f<MF_v_v>(update_addr), dummy);
 	}
 
-	NodePrivate *BPPrivate::add_node(const std::string& type_name, const std::string& id)
+	BPPrivate::~BPPrivate()
+	{
+		for (auto& d : dependencies)
+		{
+			free_module(d.module);
+			typeinfo_clear(ext_replace(d.final_filename, L".typeinfo"));
+		}
+		free_module(bp_module);
+		typeinfo_clear(std::fs::path(filename).parent_path().wstring() + L"/build/debug/bp.typeinfo");
+	}
+
+	void BPPrivate::add_dependency(const std::wstring& filename)
+	{
+		for (auto& d : dependencies)
+		{
+			if (d.filename == filename)
+				return;
+		}
+		Dependency d;
+		d.filename = filename;
+		d.final_filename = filename;
+		d.module = load_module(filename);
+		if (!d.module)
+		{
+			std::fs::path path(this->filename);
+			d.final_filename = path.parent_path().wstring() + L"/" + filename;
+			d.module = load_module(d.final_filename);
+		}
+		assert(d.module);
+		typeinfo_load(ext_replace(d.final_filename, L".typeinfo"));
+		dependencies.push_back(d);
+	}
+
+	void BPPrivate::remove_dependency(const std::wstring& filename)
+	{
+		for (auto it = dependencies.begin(); it != dependencies.end(); it++)
+		{
+			if (it->filename == filename)
+			{
+				auto& nodes = this->nodes;
+				for (auto n_it = nodes.begin(); n_it != nodes.end(); )
+				{
+					if ((*n_it)->udt->module_name() == it->final_filename)
+						n_it = nodes.erase(n_it);
+					else
+						n_it++;
+				}
+
+				free_module(it->module);
+				typeinfo_clear(ext_replace(it->final_filename, L".typeinfo"));
+				dependencies.erase(it);
+
+				((BPPrivate*)this)->build_update_list();
+				return;
+			}
+		}
+	}
+
+	NodePrivate* BPPrivate::add_node(const std::string& type_name, const std::string& id)
 	{
 		auto udt = find_udt(H(type_name.c_str()));
 
@@ -326,13 +395,19 @@ namespace flame
 			return nullptr;
 
 		void* module = nullptr;
+		auto p_udt_module_name = std::fs::path(udt->module_name());
 		for (auto& d : dependencies)
 		{
-			if (d.final_filename == udt->module_name())
+			if (d.final_filename == p_udt_module_name)
 			{
 				module = d.module;
 				break;
 			}
+		}
+		if (!module)
+		{
+			if (p_udt_module_name == std::fs::path(filename).parent_path() / "build/debug/bp.dll")
+				module = bp_module;
 		}
 
 		if (!module)
@@ -600,51 +675,12 @@ namespace flame
 
 	void BP::add_dependency(const std::wstring& filename)
 	{
-		auto& dependencies = ((BPPrivate*)this)->dependencies;
-		for (auto& d : dependencies)
-		{
-			if (d.filename == filename)
-				return;
-		}
-		Dependency d;
-		d.filename = filename;
-		d.final_filename = filename;
-		d.module = load_module(filename);
-		if (!d.module)
-		{
-			std::fs::path path(((BPPrivate*)this)->filename);
-			d.final_filename = path.parent_path().wstring() + L"/" + filename;
-			d.module = load_module(d.final_filename);
-		}
-		assert(d.module);
-		typeinfo_load(ext_replace(d.final_filename, L".typeinfo"));
-		dependencies.push_back(d);
+		((BPPrivate*)this)->add_dependency(filename);
 	}
 
 	void BP::remove_dependency(const std::wstring& filename)
 	{
-		auto& dependencies = ((BPPrivate*)this)->dependencies;
-		for (auto it = dependencies.begin(); it != dependencies.end(); it++)
-		{
-			if (it->filename == filename)
-			{
-				auto& nodes = ((BPPrivate*)this)->nodes;
-				for (auto n_it = nodes.begin(); n_it != nodes.end(); )
-				{
-					if ((*n_it)->udt->module_name() == it->final_filename)
-						n_it = nodes.erase(n_it);
-					else
-						n_it++;
-				}
-
-				free_module(it->module);
-				typeinfo_clear(ext_replace(it->final_filename, L".typeinfo"));
-				dependencies.erase(it);
-
-				((BPPrivate*)this)->build_update_list();
-				return;
-			}
-		}
+		((BPPrivate*)this)->remove_dependency(filename);
 	}
 
 	int BP::node_count() const
@@ -699,18 +735,36 @@ namespace flame
 
 	BP *BP::create_from_file(const std::wstring& filename)
 	{
+		auto s_filename = w2s(filename);
+		auto ppath = std::fs::path(filename).parent_path();
+		auto ppath_str = ppath.wstring();
+
+		printf("begin to load bp: %s\n", s_filename.c_str());
+
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file)
+		{
+			printf("bp file does not exist, abort\n", s_filename.c_str());
+			printf("end loading bp: %s\n", s_filename.c_str());
 			return nullptr;
+		}
 
-		auto bp = new BPPrivate();
-		bp->filename = filename;
+		std::vector<std::pair<std::wstring, std::wstring>> dependencies;
 
 		auto n_dependencies = file->find_node("dependencies");
 		if (n_dependencies)
 		{
 			for (auto i_d = 0; i_d < n_dependencies->node_count(); i_d++)
-				bp->add_dependency(s2w(n_dependencies->node(i_d)->find_attr("v")->value()));
+			{
+				std::pair<std::wstring, std::wstring> d;
+				d.first = s2w(n_dependencies->node(i_d)->find_attr("v")->value());
+				auto final_filename = d;
+				if (!std::fs::exists(d.first))
+					d.second = ppath_str + L"/" + d.first;
+				else
+					d.second = d.first;
+				dependencies.push_back(d);
+			}
 		}
 
 		struct DataDesc
@@ -777,11 +831,11 @@ namespace flame
 
 		SerializableNode::destroy(file);
 
-		auto ppath = std::fs::path(filename).parent_path();
-
 		auto templatecpp_path = ppath / L"template.cpp";
 		if (!std::fs::exists(templatecpp_path) || std::fs::last_write_time(templatecpp_path) < std::fs::last_write_time(filename))
 		{
+			printf("generating template.cpp");
+
 			std::ofstream templatecpp(templatecpp_path);
 			templatecpp << "// THIS FILE IS AUTO GENERATED\n";
 			templatecpp << "#include <flame/foundation/bp_node_template.h>\n";
@@ -819,85 +873,98 @@ namespace flame
 			templatecpp << "\tdelete_mail(module_name);\n";
 			templatecpp << "}\n";
 			templatecpp.close();
+
+			printf(" - done\n");
 		}
+		else
+			printf("template.cpp up to data\n");
 
 		auto cmakelists_path = ppath / L"CMakeLists.txt";
 		if (!std::fs::exists(cmakelists_path) || std::fs::last_write_time(cmakelists_path) < std::fs::last_write_time(filename))
 		{
+			printf("generating cmakelists");
+
 			std::ofstream cmakelists(cmakelists_path);
 			cmakelists << "# THIS FILE IS AUTO GENERATED\n";
 			cmakelists << "cmake_minimum_required(VERSION 3.4)\n";
-			cmakelists << "foreach(c ${CMAKE_CONFIGURATION_TYPES})\n";
-			cmakelists << "\tstring(TOUPPER ${c} c )\n";
-			cmakelists << "\tset(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${c} ${CMAKE_SOURCE_DIR})\n";
-			cmakelists << "\tset(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${c} ${CMAKE_SOURCE_DIR})\n";
-			cmakelists << "\tset(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${c} ${CMAKE_SOURCE_DIR})\n";
-			cmakelists << "endforeach()\n";
 			cmakelists << "project(bp)\n";
 			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
-			cmakelists << "file(GLOB_RECURSE SOURCE_LIST \"*.c*\")\n";
-			cmakelists << "add_library(bp SHARED SOURCE_LIST)\n";
-			for (auto& d : bp->dependencies)
+			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
+			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
+			for (auto& d : dependencies)
 			{
 				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-				cmakelists << w2s(ext_replace(d.final_filename, L".lib"));
+				cmakelists << w2s(ext_replace(d.second, L".lib"));
 				cmakelists << ")\n";
 			}
+			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
+			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
+			for (auto& d : dependencies)
+				cmakelists << "${CMAKE_SOURCE_DIR}/../../bin/" + w2s(d.second) + " ";
+			cmakelists << ")\n";
 			cmakelists.close();
+
+			printf(" - done\n");
+		}
+		else
+			printf("cmakelists up to data\n");
+
+		printf("cmaking:\n");
+		exec_and_redirect_to_std_output(L"", L"cmake -S " + ppath_str + L" -B " + ppath_str + L"/build");
+
+		printf("compiling:\n");
+		{
+			#define OUTPUT_FILE L"compile_log.txt"
+
+			auto curr_path = get_curr_path();
+			exec(s2w(VS_LOCATION) + L"/Common7/IDE/devenv.exe", L"\"" + *curr_path.p + L"/" + ppath_str + L"/build/bp.sln\" /build debug /out " OUTPUT_FILE, true);
+			delete_mail(curr_path);
+
+			auto content = get_file_string(OUTPUT_FILE);
+			printf("%s\n", content.c_str());
+
+			if (!content.empty())
+				std::fs::remove(OUTPUT_FILE);
+
+			#undef OUTPUT_FILE
 		}
 
-		/*
-		auto n_nodes = file->find_node("nodes");
-		for (auto i_n = 0; i_n < n_nodes->node_count(); i_n++)
+		auto bp = new BPPrivate();
+		bp->filename = filename;
+
+		for (auto& d : dependencies)
+			bp->add_dependency(d.first);
+		bp->bp_module = load_module(ppath_str + L"/build/debug/bp.dll");
+		typeinfo_load(ppath_str + L"/build/debug/bp.typeinfo");
+
+		for (auto& n_d : node_descs)
 		{
-			auto n_node = n_nodes->node(i_n);
-			auto type = n_node->find_attr("type")->value();
-			auto id = n_node->find_attr("id")->value();
-
-			auto n = bp->add_node(type.c_str(), id.c_str());
-			if (!n)
+			auto n = bp->add_node(n_d.type, n_d.id);
+			n->set_pos(n_d.pos);
+			for (auto& d_d : n_d.datas)
 			{
-				printf("node \"%s\" with type \"%s\" add failed\n", id.c_str(), type.c_str());
-				continue;
-			}
-			auto a_pos = n_node->find_attr("pos");
-			if (a_pos)
-				n->pos = stof2(a_pos->value().c_str());
-
-			auto n_datas = n_node->find_node("datas");
-			if (n_datas)
-			{
-				for (auto i_d = 0; i_d < n_datas->node_count(); i_d++)
-				{
-					auto n_data = n_datas->node(i_d);
-					auto input = n->find_input(n_data->find_attr("name")->value());
-					auto v = input->variable_info;
-					auto type = v->type();
-					if (v->default_value())
-						unserialize_value(type->tag(), type->hash(), n_data->find_attr("value")->value(), input->data);
-				}
+				auto input = n->find_input(d_d.name);
+				auto v = input->variable_info;
+				auto type = v->type();
+				if (v->default_value())
+					unserialize_value(type->tag(), type->hash(), d_d.value, input->data);
 			}
 		}
 
-		auto n_links = file->find_node("links");
-		auto lc = n_links->node_count();
-		for (auto i_l = 0; i_l < n_links->node_count(); i_l++)
+		for (auto& l_d : link_descs)
 		{
-			auto n_link = n_links->node(i_l);
-			auto o_address = n_link->find_attr("out")->value();
-			auto i_address = n_link->find_attr("in")->value();
-			auto o = bp->find_output(o_address);
-			auto i = bp->find_input(i_address);
+			auto o = bp->find_output(l_d.out_addr);
+			auto i = bp->find_input(l_d.in_addr);
 			if (o && i)
 			{
 				if (!i->link_to(o))
-					printf("link type mismatch: %s - > %s\n", o_address.c_str(), i_address.c_str());
+					printf("link type mismatch: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
 			}
 			else
-				printf("unable to link: %s - > %s\n", o_address.c_str(), i_address.c_str());
+				printf("unable to link: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
 		}
 
-		*/
+		printf("end loading bp: %s\n", s_filename.c_str());
 
 		return bp;
 	}

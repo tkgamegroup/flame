@@ -1063,6 +1063,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS Mail<std::string> exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
+	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const std::wstring& filename, const std::wstring& parameters);
 	FLAME_FOUNDATION_EXPORTS Mail<std::string> compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 
 	FLAME_FOUNDATION_EXPORTS Mail<std::vector<std::string>> get_module_dependancies(const std::wstring& module_name);

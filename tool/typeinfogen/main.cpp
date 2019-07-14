@@ -19,7 +19,7 @@ int main(int argc, char **args)
 
 	if (!std::fs::exists(typeinfo_filename) || std::fs::last_write_time(typeinfo_filename) < std::fs::last_write_time(dll_filename))
 	{
-		printf("typeinfo generating\n");
+		printf("generating typeinfo");
 
 		for (auto& d : dependencies)
 		{
@@ -29,6 +29,8 @@ int main(int argc, char **args)
 
 		typeinfo_collect(dll_filename);
 		typeinfo_save(typeinfo_filename, dll_filename);
+
+		printf(" - done\n");
 	}
 	else
 		printf("typeinfo up to data\n");

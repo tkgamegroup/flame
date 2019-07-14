@@ -164,6 +164,26 @@ namespace flame
 		return output;
 	}
 
+	void exec_and_redirect_to_std_output(const std::wstring& filename, const std::wstring& parameters)
+	{
+		STARTUPINFOW start_info = {};
+		start_info.cb = sizeof(STARTUPINFOW);
+		start_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+		start_info.dwFlags |= STARTF_USESTDHANDLES;
+		PROCESS_INFORMATION proc_info = {};
+		if (!CreateProcessW(filename[0] == 0 ? nullptr : filename.c_str(), (wchar_t*)parameters.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
+		{
+			auto e = GetLastError();
+			assert(0);
+		}
+
+		WaitForSingleObject(proc_info.hProcess, INFINITE);
+
+		CloseHandle(proc_info.hProcess);
+		CloseHandle(proc_info.hThread);
+	}
+
+
 	Mail<std::string> compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
 	{
 		std::wstring cl(L"\"");
