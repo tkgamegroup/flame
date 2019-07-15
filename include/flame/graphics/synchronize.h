@@ -16,6 +16,8 @@ namespace flame
 
 		struct Fence
 		{
+			uint vl;
+
 			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* d);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Fence* s);
 

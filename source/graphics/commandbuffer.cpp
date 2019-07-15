@@ -728,6 +728,7 @@ namespace flame
 			info.pSignalSemaphores = signal_semaphore ? &((SemaphorePrivate*)signal_semaphore)->v : nullptr;
 
 			chk_res(vkQueueSubmit(v, 1, &info, ((FencePrivate*)signal_fence)->v));
+			signal_fence->vl = 1;
 #elif defined(FLAME_D3D12)
 			ID3D12CommandList* list[] = { ((CommandbufferPrivate*)c)->v };
 			v->ExecuteCommandLists(1, list);

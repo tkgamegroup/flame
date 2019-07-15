@@ -8,7 +8,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		PipelinelayoutPrivate::PipelinelayoutPrivate(Device *_d, const std::vector<Descriptorsetlayout*> &_setlayouts, const std::vector<PushconstantInfo> &_pushconstants)
+		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* _d, const std::vector<Descriptorsetlayout*>& _setlayouts, const std::vector<PushconstantInfo>& _pushconstants)
 		{
 			d = (DevicePrivate*)_d;
 			dsls.resize(_setlayouts.size());
@@ -55,17 +55,17 @@ namespace flame
 #endif
 		}
 
-		Descriptorsetlayout *Pipelinelayout::dsl(uint index) const
+		Descriptorsetlayout* Pipelinelayout::dsl(uint index) const
 		{
 			return ((PipelinelayoutPrivate*)this)->dsls[index];
 		}
 
-		Pipelinelayout *Pipelinelayout::create(Device *d, const std::vector<Descriptorsetlayout*> &setlayouts, const std::vector<PushconstantInfo> &pushconstants)
+		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<Descriptorsetlayout*>& setlayouts, const std::vector<PushconstantInfo>& pushconstants)
 		{
 			return new PipelinelayoutPrivate(d, setlayouts, pushconstants);
 		}
 
-		void Pipelinelayout::destroy(Pipelinelayout *l)
+		void Pipelinelayout::destroy(Pipelinelayout* l)
 		{
 			delete (PipelinelayoutPrivate*)l;
 		}
@@ -80,7 +80,7 @@ namespace flame
 			comp_shader = nullptr;
 		}
 
-		PipelinePrivate::PipelinePrivate(Device *_d, const GraphicsPipelineInfo &info)
+		PipelinePrivate::PipelinePrivate(Device* _d, const GraphicsPipelineInfo& info)
 		{
 			init();
 
@@ -92,21 +92,21 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			for (auto &s : info.shaders)
+			for (auto& s : info.shaders)
 				add_shader(s);
 
 			auto vk_stage_infos = process_stages();
 
 			auto vi_binding = 0;
 			auto vi_location = 0;
-			for (auto &b : info.vi_buffers)
+			for (auto& b : info.vi_buffers)
 			{
 				VkVertexInputBindingDescription binding;
 				binding.binding = vi_binding;
 				binding.stride = 0;
 				binding.inputRate = to_enum(b.rate);
 
-				for (auto &a : b.attributes)
+				for (auto& a : b.attributes)
 				{
 					VkVertexInputAttributeDescription attribute;
 					attribute.location = vi_location;
@@ -228,7 +228,7 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			for (auto &a : info.blend_states)
+			for (auto& a : info.blend_states)
 			{
 				VkPipelineColorBlendAttachmentState s;
 				s.blendEnable = a.blend_enable;
@@ -255,7 +255,7 @@ namespace flame
 			blend_state.attachmentCount = vk_blend_attachment_states.size();
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
-			for (auto &s : info.dynamic_states)
+			for (auto& s : info.dynamic_states)
 				vk_dynamic_states.push_back(to_enum(s));
 			if (info.viewport_size.x() == 0 && info.viewport_size.y() == 0)
 			{
@@ -301,7 +301,7 @@ namespace flame
 			type = PipelineGraphics;
 		}
 
-		PipelinePrivate::PipelinePrivate(Device *_d, const ShaderInfo &compute_shader)
+		PipelinePrivate::PipelinePrivate(Device* _d, const ShaderInfo& compute_shader)
 		{
 			init();
 
@@ -344,7 +344,7 @@ namespace flame
 				Shader::destroy(frag_shader);
 			if (comp_shader)
 				Shader::destroy(comp_shader);
-			for (auto &l : dsls)
+			for (auto& l : dsls)
 				Descriptorsetlayout::destroy(l);
 			Pipelinelayout::destroy(layout);
 #if defined(FLAME_VULKAN)
@@ -354,7 +354,7 @@ namespace flame
 #endif
 		}
 
-		void PipelinePrivate::add_shader(const ShaderInfo &info)
+		void PipelinePrivate::add_shader(const ShaderInfo& info)
 		{
 			auto s = Shader::create(d, info.filename, info.prefix);
 			switch (s->type)
@@ -383,7 +383,7 @@ namespace flame
 		}
 
 #if defined(FLAME_VULKAN)
-		static void process_stage(ShaderPrivate *s, std::vector<VkPipelineShaderStageCreateInfo> &stage_infos, std::vector<std::vector<Descriptorsetlayout::Binding>> &sets, std::vector<PushconstantInfo> &pcs)
+		static void process_stage(ShaderPrivate* s, std::vector<VkPipelineShaderStageCreateInfo>& stage_infos, std::vector<std::vector<Descriptorsetlayout::Binding>>& sets, std::vector<PushconstantInfo>& pcs)
 		{
 			VkPipelineShaderStageCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -395,12 +395,12 @@ namespace flame
 			info.module = s->v;
 			stage_infos.push_back(info);
 
-			for (auto &r : s->resources)
+			for (auto& r : s->resources)
 			{
 				if (r->type == ShaderResourcePushConstant)
 				{
 					auto same = false;
-					for (auto &p : pcs)
+					for (auto& p : pcs)
 					{
 						if (p.offset == r->var.offset && p.size == r->var.size)
 						{
@@ -448,12 +448,12 @@ namespace flame
 			if (comp_shader)
 				process_stage(comp_shader, stage_infos, sets, pcs);
 
-			for (auto &g : sets)
+			for (auto& g : sets)
 			{
 				auto l = Descriptorsetlayout::create(d, g);
 				dsls.push_back(l);
 			}
-			layout =  (PipelinelayoutPrivate*)Pipelinelayout::create(d, dsls, pcs);
+			layout = (PipelinelayoutPrivate*)Pipelinelayout::create(d, dsls, pcs);
 
 			return stage_infos;
 		}
@@ -461,24 +461,45 @@ namespace flame
 
 #endif
 
-		Pipelinelayout *Pipeline::layout() const
+		Pipelinelayout* Pipeline::layout() const
 		{
 			return ((PipelinePrivate*)this)->layout;
 		}
 
-		Pipeline *Pipeline::create(Device *d, const GraphicsPipelineInfo &info)
+		Pipeline* Pipeline::create(Device* d, const GraphicsPipelineInfo& info)
 		{
 			return new PipelinePrivate(d, info);
 		}
 
-		Pipeline *Pipeline::create(Device *d, const ShaderInfo &compute_shader)
+		Pipeline* Pipeline::create(Device* d, const ShaderInfo& compute_shader)
 		{
 			return new PipelinePrivate(d, compute_shader);
 		}
 
-		void Pipeline::destroy(Pipeline *p)
+		void Pipeline::destroy(Pipeline* p)
 		{
 			delete (PipelinePrivate*)p;
 		}
+
+		struct Pipeline$
+		{
+			AttributeP<void> device$i;
+			AttributeV<std::string> vert_shader$i;
+			AttributeV<std::string> frag_shader$i;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Pipeline$()
+			{
+				if (out$o.v)
+					Pipeline::destroy((Pipeline*)out$o.v);
+			}
+
+		}bp_pipeline_unused;
 	}
 }

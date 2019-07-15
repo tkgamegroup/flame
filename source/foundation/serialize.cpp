@@ -438,22 +438,6 @@ namespace flame
 		return f;
 	}
 
-	//void set(void* dst, TypeTag$ tag, int size, const void* src)
-	//{
-	//	switch (tag)
-	//	{
-	//	case TypeTagEnumSingle: case TypeTagEnumMulti:
-	//		*(int*)dst = *(int*)src;
-	//		break;
-	//	case TypeTagVariable:
-	//		memcpy(dst, src, size);
-	//		break;
-	//	case TypeTagPointer:
-	//		*(void**)dst = *(void**)src;
-	//		break;
-	//	}
-	//}
-
 	Mail<std::string> serialize_value(TypeTag$ tag, uint hash, const void* src, int precision)
 	{
 		auto ret = new_mail<std::string>();
@@ -540,6 +524,9 @@ namespace flame
 				//	return to_string(*(Vec3c*)src);
 			case cH("Vec(4+uchar)"):
 				(*ret.p) = to_string(*(Vec4c*)src);
+				break;
+			case cH("std::basic_string(char)"):
+				(*ret.p) = *(std::string*)src;
 				break;
 			default:
 				assert(0);
@@ -641,6 +628,9 @@ namespace flame
 				//	break;
 			case cH("Vec(4+uchar)"):
 				*(Vec4c*)dst = stoi4(src.c_str());
+				break;
+			case cH("std::basic_string(char)"):
+				*(std::string*)dst = src;
 				break;
 			default:
 				assert(0);
@@ -1373,22 +1363,28 @@ namespace flame
 		}
 
 		{
-			static std::string allocator_str(",std::allocator");
-			size_t pos;
-			while ((pos = str.find(allocator_str)) != std::string::npos)
+			static std::string eliminated_strs[] = {
+				",std::allocator",
+				",std::char_traits",
+			};
+			for (auto& s : eliminated_strs)
 			{
-				auto v = 0;
-				auto l = allocator_str.size();
-				do
+				size_t pos;
+				while ((pos = str.find(s)) != std::string::npos)
 				{
-					auto ch = str[pos + l];
-					if (ch == '<')
-						v++;
-					else if (ch == '>')
-						v--;
-					l++;
-				} while (v > 0);
-				str = str.replace(pos, l, "");
+					auto v = 0;
+					auto l = s.size();
+					do
+					{
+						auto ch = str[pos + l];
+						if (ch == '<')
+							v++;
+						else if (ch == '>')
+							v--;
+						l++;
+					} while (v > 0);
+					str = str.replace(pos, l, "");
+				}
 			}
 		}
 

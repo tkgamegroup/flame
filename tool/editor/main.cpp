@@ -22,16 +22,11 @@ struct App : BasicApp
 		if (!cbs->empty())
 			sc->acquire_image(image_avalible);
 
-		if (fences[idx].second > 0)
-		{
-			fences[idx].first->wait();
-			fences[idx].second = 0;
-		}
+		fences[idx]->wait();
 
 		if (!cbs->empty())
 		{
-			d->gq->submit((graphics::Commandbuffer*)((*cbs)[sc->image_index()]), image_avalible, render_finished, fences[idx].first);
-			fences[idx].second = 1;
+			d->gq->submit((graphics::Commandbuffer*)((*cbs)[sc->image_index()]), image_avalible, render_finished, fences[idx]);
 
 			d->gq->present(sc, render_finished);
 		}
@@ -43,13 +38,7 @@ struct App : BasicApp
 		if (wait_event(ev_1, 0))
 		{
 			for (auto i = 0; i < FLAME_ARRAYSIZE(fences); i++)
-			{
-				if (fences[i].second > 0)
-				{
-					fences[i].first->wait();
-					fences[i].second = 0;
-				}
-			}
+				fences[i]->wait();
 
 			set_event(ev_2);
 			wait_event(ev_3, -1);

@@ -20,10 +20,10 @@ namespace flame
 
 		struct Pipelinelayout
 		{
-			FLAME_GRAPHICS_EXPORTS Descriptorsetlayout *dsl(uint index) const;
+			FLAME_GRAPHICS_EXPORTS Descriptorsetlayout* dsl(uint index) const;
 
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device *d, const std::vector<Descriptorsetlayout*> &setlayouts, const std::vector<PushconstantInfo> &pushconstants);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout *p);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<Descriptorsetlayout*>& setlayouts, const std::vector<PushconstantInfo>& pushconstants);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
 		};
 
 		struct ShaderInfo
@@ -35,7 +35,7 @@ namespace flame
 			{
 			}
 
-			ShaderInfo(const std::wstring &_filename, const std::string &_prefix) : 
+			ShaderInfo(const std::wstring& _filename, const std::string& _prefix) :
 				filename(_filename),
 				prefix(_prefix)
 			{
@@ -58,7 +58,7 @@ namespace flame
 			{
 			}
 
-			VertexInputBufferInfo(const std::vector<Format$> &_attributes, VertexInputRate _rate = VertexInputRateVertex) :
+			VertexInputBufferInfo(const std::vector<Format$>& _attributes, VertexInputRate _rate = VertexInputRateVertex) :
 				attributes(_attributes),
 				rate(_rate)
 			{
@@ -206,7 +206,7 @@ namespace flame
 			std::vector<DynamicState> dynamic_states;
 
 			// renderpass
-			Renderpass *renderpass;
+			Renderpass* renderpass;
 			int subpass_index;
 
 			GraphicsPipelineInfo() :
@@ -231,11 +231,11 @@ namespace flame
 		{
 			PipelineType type;
 
-			FLAME_GRAPHICS_EXPORTS Pipelinelayout *layout() const;
+			FLAME_GRAPHICS_EXPORTS Pipelinelayout* layout() const;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline *create(Device *d, const GraphicsPipelineInfo &info);
-			FLAME_GRAPHICS_EXPORTS static Pipeline *create(Device *d, const ShaderInfo &compute_shader);
-			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline *p);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const GraphicsPipelineInfo& info);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const ShaderInfo& compute_shader);
+			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline* p);
 		};
 	}
 }
