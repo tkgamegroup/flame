@@ -523,6 +523,7 @@ namespace flame
 		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a)
 		{
 			image = (ImagePrivate*)_image;
+			d = image->d;
 			type = _type;
 			base_level = _base_level;
 			level_count = _level_count;
@@ -552,7 +553,7 @@ namespace flame
 			info.subresourceRange.baseArrayLayer = base_layer;
 			info.subresourceRange.layerCount = layer_count;
 
-			chk_res(vkCreateImageView(image->d->v, &info, nullptr, &v));
+			chk_res(vkCreateImageView(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -572,7 +573,7 @@ namespace flame
 		ImageviewPrivate::~ImageviewPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyImageView(image->d->v, v, nullptr);
+			vkDestroyImageView(d->v, v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif

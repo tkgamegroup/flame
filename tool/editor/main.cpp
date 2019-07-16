@@ -18,13 +18,17 @@ struct App : BasicApp
 	virtual void do_run() override
 	{
 		auto idx = frame % FLAME_ARRAYSIZE(fences);
+		auto sc = *psc;
 
 		if (!cbs->empty())
-			sc->acquire_image(image_avalible);
+		{
+			if (sc)
+				sc->acquire_image(image_avalible);
+		}
 
 		fences[idx]->wait();
 
-		if (!cbs->empty())
+		if (!cbs->empty() && sc)
 		{
 			d->gq->submit((graphics::Commandbuffer*)((*cbs)[sc->image_index()]), image_avalible, render_finished, fences[idx]);
 
@@ -142,6 +146,11 @@ auto papp = &app;
 
 int main(int argc, char **args)
 {
+	std::vector<void*> a;
+	a.resize(3);
+	a.clear();
+	a.resize(3);
+
 	typeinfo_load(L"flame_foundation.typeinfo");
 	typeinfo_load(L"flame_graphics.typeinfo");
 
@@ -176,7 +185,7 @@ int main(int argc, char **args)
 	app.bp->find_input("sc.window")->set_data(&app.w);
 	app.bp->update();
 
-	app.sc = (graphics::Swapchain*)((AttributeV<void*>*)app.bp->find_output("sc.out")->data())->v;
+	app.psc = (graphics::Swapchain**)&(((AttributeV<void*>*)app.bp->find_output("sc.out")->data())->v);
 	app.cbs = &((AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data())->v;
 
 	set_event(app.ev_2);

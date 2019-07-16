@@ -37,6 +37,7 @@ namespace flame
 		struct ImageviewPrivate : Imageview
 		{
 			ImagePrivate *image;
+			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkImageView v;
 #elif defined(FLAME_D3D12)

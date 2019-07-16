@@ -211,12 +211,27 @@ namespace flame
 						Renderpass::destroy((Renderpass*)out$o.v);
 					if (device$i.v && attachments$i.v && !attachments$i.v->empty() && subpasses$i.v && !subpasses$i.v->empty())
 					{
-						RenderpassInfo info;
-						info.attachments = *attachments$i.v;
-						info.subpasses = *subpasses$i.v;
-						if (dependencies$i.v)
-							info.dependencies = *dependencies$i.v;
-						out$o.v = Renderpass::create((Device*)device$i.v, info);
+						auto ok = true;
+						for (auto a : *attachments$i.v)
+						{
+							if (((AttachmentInfo*)a)->format == Format_Undefined)
+							{
+								ok = false;
+								break;
+							}
+						}
+
+						if (ok)
+						{
+							RenderpassInfo info;
+							info.attachments = *attachments$i.v;
+							info.subpasses = *subpasses$i.v;
+							if (dependencies$i.v)
+								info.dependencies = *dependencies$i.v;
+							out$o.v = Renderpass::create((Device*)device$i.v, info);
+						}
+						else
+							out$o.v = nullptr;
 					}
 					else
 					{

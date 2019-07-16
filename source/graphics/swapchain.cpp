@@ -245,14 +245,28 @@ namespace flame
 							auto thiz = *(Swapchain$ **)c;
 
 							if (thiz->out$o.v)
+							{
+								((Device*)thiz->device$i.v)->gq->wait_idle();
 								Swapchain::destroy((Swapchain*)thiz->out$o.v);
-							auto sc = Swapchain::create((Device*)thiz->device$i.v, (Window*)thiz->window$i.v);
-							auto i = sc->image(0);
-							thiz->size$o.v = i->size;
-							thiz->format$o.v = i->format;
-							thiz->images$o.v.resize(sc->image_count());
-							for (auto i = 0; i < thiz->images$o.v.size(); i++)
-								thiz->images$o.v[i] = sc->image(i);
+							}
+							if (size.x() != 0 && size.y() != 0)
+							{
+								auto sc = Swapchain::create((Device*)thiz->device$i.v, (Window*)thiz->window$i.v);
+								thiz->out$o.v = sc;
+								auto i = sc->image(0);
+								thiz->size$o.v = i->size;
+								thiz->format$o.v = i->format;
+								thiz->images$o.v.resize(sc->image_count());
+								for (auto i = 0; i < thiz->images$o.v.size(); i++)
+									thiz->images$o.v[i] = sc->image(i);
+							}
+							else
+							{
+								thiz->out$o.v = nullptr;
+								thiz->size$o.v = Vec2u(0);
+								thiz->format$o.v = Format_Undefined;
+								thiz->images$o.v.clear();
+							}
 							auto frame = app_frame();
 							thiz->out$o.frame = frame;
 							thiz->size$o.frame = frame;
