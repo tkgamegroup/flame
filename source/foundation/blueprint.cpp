@@ -973,5 +973,62 @@ namespace flame
 	{
 		delete(BPPrivate*)bp;
 	}
+
+	struct ArraySize$
+	{
+		AttributeP<void> array$i;
+
+		AttributeV<uint> size$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (array$i.frame > size$o.frame)
+			{
+				if (array$i.v)
+					size$o.v = ((std::vector<void*>*)array$i.v)->size();
+				else
+					size$o.v = 0;
+				size$o.frame = array$i.frame;
+			}
+		}
+
+	}bp_array_size_unused;
+
+	struct ArrayInsertBeforeForEachItem_vp$
+	{
+		AttributeP<std::vector<void*>> array$i;
+		AttributeP<void> v$i;
+
+		AttributeV<std::vector<void*>> out$o;
+
+		FLAME_FOUNDATION_EXPORTS ArrayInsertBeforeForEachItem_vp$()
+		{
+		}
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (array$i.frame > out$o.frame)
+			{
+				if (array$i.v)
+					out$o.v.resize(array$i.v->size() * 2);
+				else
+					out$o.v.clear();
+			}
+			if (array$i.frame > out$o.frame || v$i.frame > out$o.frame)
+			{
+				out$o.frame = max(array$i.frame, v$i.frame);
+				for (auto i = 0; i < array$i.v->size(); i++)
+				{
+					out$o.v[i * 2 + 0] = v$i.v;
+					out$o.v[i * 2 + 1] = (*array$i.v)[i];
+				}
+			}
+		}
+
+		FLAME_FOUNDATION_EXPORTS ~ArrayInsertBeforeForEachItem_vp$()
+		{
+		}
+
+	}bp_array_insert_before_for_each_item_unused;
 }
 

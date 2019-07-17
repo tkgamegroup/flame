@@ -18,7 +18,7 @@ struct App : BasicApp
 	virtual void do_run() override
 	{
 		auto idx = frame % FLAME_ARRAYSIZE(fences);
-		auto sc = *psc;
+		auto sc = (graphics::Swapchain*)psc->v;
 
 		if (!cbs->empty())
 		{
@@ -185,7 +185,7 @@ int main(int argc, char **args)
 	app.bp->find_input("sc.window")->set_data(&app.w);
 	app.bp->update();
 
-	app.psc = (graphics::Swapchain**)&(((AttributeV<void*>*)app.bp->find_output("sc.out")->data())->v);
+	app.psc = (AttributeP<void>*)app.bp->find_output("sc.out")->data();
 	app.cbs = &((AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data())->v;
 
 	set_event(app.ev_2);

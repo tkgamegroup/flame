@@ -216,6 +216,10 @@ namespace flame
 			Window* last_window;
 			void* resize_listener;
 
+			FLAME_GRAPHICS_EXPORTS Swapchain$()
+			{
+			}
+
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (device$i.frame > out$o.frame || window$i.frame > out$o.frame)
@@ -292,6 +296,10 @@ namespace flame
 					format$o.frame = frame;
 					images$o.frame = frame;
 				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Swapchain$()
+			{
 			}
 
 		}bp_swapchain_unused;

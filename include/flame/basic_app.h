@@ -20,7 +20,7 @@ namespace flame
 	{
 		Window *w;
 		graphics::Device *d;
-		graphics::Swapchain **psc;
+		AttributeP<void>* psc;
 		graphics::Semaphore *image_avalible;
 		graphics::Semaphore *render_finished;
 		graphics::Fence* fences[3];

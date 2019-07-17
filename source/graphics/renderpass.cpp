@@ -461,6 +461,10 @@ namespace flame
 
 			AttributeV<std::vector<void*>> out$o;
 
+			FLAME_GRAPHICS_EXPORTS Framebuffers$()
+			{
+			}
+
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (device$i.frame > out$o.frame || renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame || size$i.frame > out$o.frame)
