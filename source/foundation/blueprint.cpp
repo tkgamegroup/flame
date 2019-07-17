@@ -531,9 +531,11 @@ namespace flame
 			SerializableNode* n_datas = nullptr;
 			for (auto& input : n->inputs)
 			{
+				if (input->links[0])
+					continue;
 				auto v = input->variable_info;
 				auto type = v->type();
-				if (v->default_value() && !memcpy((char*)input->data + sizeof(int), (char*)v->default_value() + sizeof(int), input->data_size) != 0)
+				if (v->default_value() && memcmp((char*)input->data + sizeof(int), (char*)v->default_value() + sizeof(int), input->data_size) != 0)
 				{
 					if (!n_datas)
 						n_datas = n_node->new_node("datas");

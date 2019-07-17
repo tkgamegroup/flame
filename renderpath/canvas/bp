@@ -5,56 +5,30 @@
 		<dependency v="flame_graphics.dll" />
 	</dependencies>
 	<nodes>
-		<node type="graphics::Clearvalues" id="cv" pos="726.00;232.00">
-			<datas />
-		</node>
-		<node type="graphics::Swapchain" id="sc" pos="59.00;102.00">
-			<datas />
-		</node>
-		<node type="graphics::Device" id="d" pos="123.00;34.00">
-			<datas />
-		</node>
+		<node type="graphics::Clearvalues" id="cv" pos="726.00;232.00" />
+		<node type="graphics::Swapchain" id="sc" pos="59.00;102.00" />
+		<node type="graphics::Device" id="d" pos="123.00;34.00" />
 		<node type="Array(2+Vec(4+uchar))" id="color" pos="386.00;160.00">
 			<datas>
 				<data name="1" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="MakeCmd" id="make_cmd" pos="1456.00;90.00">
-			<datas />
-		</node>
-		<node type="graphics::SubpassInfo" id="sp" pos="226.00;767.00">
-			<datas />
-		</node>
-		<node type="graphics::Renderpass" id="rp" pos="414.00;489.00">
-			<datas />
-		</node>
-		<node type="Array(1+void*)" id="sps" pos="472.00;765.00">
-			<datas />
-		</node>
-		<node type="Array(1+uint)" id="col_refs" pos="100.00;606.00">
-			<datas />
-		</node>
-		<node type="graphics::Framebuffers" id="fbs" pos="1405.00;334.00">
-			<datas />
-		</node>
-		<node type="graphics::Commandbuffers" id="cbs" pos="633.00;98.00">
-			<datas />
-		</node>
-		<node type="ArraySize" id="img_size" pos="328.00;58.00">
-			<datas />
-		</node>
-		<node type="ArrayInsertBeforeForEachItem_vp" id="arr_ins" pos="1171.00;348.00">
-			<datas />
-		</node>
+		<node type="MakeCmd" id="make_cmd" pos="1456.00;90.00" />
+		<node type="graphics::SubpassInfo" id="sp" pos="226.00;767.00" />
+		<node type="graphics::Renderpass" id="rp" pos="414.00;489.00" />
+		<node type="Array(1+void*)" id="sps" pos="472.00;765.00" />
+		<node type="Array(1+uint)" id="col_refs" pos="100.00;606.00" />
+		<node type="graphics::Framebuffers" id="fbs" pos="1405.00;334.00" />
+		<node type="graphics::Commandbuffers" id="cbs" pos="633.00;98.00" />
+		<node type="ArraySize" id="img_size" pos="328.00;58.00" />
+		<node type="ArrayInsertBeforeForEachItem_vp" id="arr_ins" pos="1171.00;348.00" />
 		<node type="graphics::Image" id="img_ms" pos="670.00;398.00">
 			<datas>
 				<data name="sample_count" value="SampleCount_8" />
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="graphics::ImageviewGeneral" id="img_ms_view" pos="1009.00;472.00">
-			<datas />
-		</node>
+		<node type="graphics::ImageviewGeneral" id="img_ms_view" pos="1009.00;472.00" />
 		<node type="graphics::AttachmentInfo" id="col_att1" pos="74.00;276.00">
 			<datas>
 				<data name="sample_count" value="SampleCount_8" />
@@ -65,25 +39,22 @@
 				<data name="clear" value="0" />
 			</datas>
 		</node>
-		<node type="Array(2+void*)" id="atts" pos="322.00;510.00">
-			<datas />
-		</node>
+		<node type="Array(2+void*)" id="atts" pos="322.00;510.00" />
 		<node type="Array(1+uint)" id="res_refs" pos="32.00;694.00">
 			<datas>
 				<data name="1" value="1" />
 			</datas>
 		</node>
-    <node type="graphics::ImageviewsGeneral" id="img_views" pos="0.00;0.00">
-      <datas />
-    </node>
+		<node type="graphics::ImageviewsGeneral" id="img_views" pos="0.00;0.00" />
 	</nodes>
 	<links>
 		<link out="rp.out" in="cv.renderpass" />
 		<link out="color.v" in="cv.colors" />
+		<link out="d.out" in="sc.device" />
 		<link out="cbs.out" in="make_cmd.cmdbufs" />
 		<link out="rp.out" in="make_cmd.renderpass" />
-		<link out="cv.out" in="make_cmd.clearvalues" />
 		<link out="fbs.out" in="make_cmd.framebuffers" />
+		<link out="cv.out" in="make_cmd.clearvalues" />
 		<link out="col_refs.v" in="sp.color_attachments" />
 		<link out="res_refs.v" in="sp.resolve_attachments" />
 		<link out="d.out" in="rp.device" />
@@ -97,11 +68,9 @@
 		<link out="d.out" in="cbs.device" />
 		<link out="img_size.size" in="cbs.size" />
 		<link out="sc.images" in="img_size.array" />
-    <link out="sc.images" in="img_views.images" />
-    <link out="img_views.out" in="arr_ins.array" />
-    <link out="img_ms_view.out" in="arr_ins.v" />
+		<link out="img_views.out" in="arr_ins.array" />
+		<link out="img_ms_view.out" in="arr_ins.v" />
 		<link out="d.out" in="img_ms.device" />
-    <link out="d.out" in="sc.device" />
 		<link out="sc.format" in="img_ms.format" />
 		<link out="sc.size" in="img_ms.size" />
 		<link out="img_ms.out" in="img_ms_view.image" />
@@ -109,5 +78,6 @@
 		<link out="sc.format" in="col_att2.format" />
 		<link out="col_att1.out" in="atts.1" />
 		<link out="col_att2.out" in="atts.2" />
+		<link out="sc.images" in="img_views.images" />
 	</links>
 </BP>

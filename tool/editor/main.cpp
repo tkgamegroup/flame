@@ -20,19 +20,19 @@ struct App : BasicApp
 		auto idx = frame % FLAME_ARRAYSIZE(fences);
 		auto sc = (graphics::Swapchain*)psc->v;
 
-		if (!cbs->empty())
+		if (sc)
 		{
-			if (sc)
+			if (!cbs->empty())
 				sc->acquire_image(image_avalible);
-		}
 
-		fences[idx]->wait();
+			fences[idx]->wait();
 
-		if (!cbs->empty() && sc)
-		{
-			d->gq->submit((graphics::Commandbuffer*)((*cbs)[sc->image_index()]), image_avalible, render_finished, fences[idx]);
+			if (!cbs->empty())
+			{
+				d->gq->submit((graphics::Commandbuffer*)((*cbs)[sc->image_index()]), image_avalible, render_finished, fences[idx]);
 
-			d->gq->present(sc, render_finished);
+				d->gq->present(sc, render_finished);
+			}
 		}
 
 		bp->update();
@@ -173,7 +173,7 @@ int main(int argc, char **args)
 	app.ev_3 = create_event(false);
 
 	std::thread([&]() {
-		app.create("", Vec2u(400, 300), WindowFrame);
+		app.create("", Vec2u(1280, 720), WindowFrame | WindowResizable);
 		set_event(app.ev_1);
 		wait_event(app.ev_2, -1);
 		app.run();

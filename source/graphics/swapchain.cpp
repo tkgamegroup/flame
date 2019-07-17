@@ -225,13 +225,33 @@ namespace flame
 				if (device$i.frame > out$o.frame || window$i.frame > out$o.frame)
 				{
 					if (out$o.v)
+					{
+						((Device*)device$i.v)->gq->wait_idle();
 						Swapchain::destroy((Swapchain*)out$o.v);
-					if (window$i.frame > out$o.frame)
+					}
+					auto w = (Window*)window$i.v;
+					if (w != last_window)
 					{
 						if (resize_listener)
 							last_window->remove_resize_listener(resize_listener);
+						if (window$i.v)
+						{
+							auto thiz = this;
+							resize_listener = w->add_resize_listener([](void* c, const Vec2u& size) {
+								auto thiz = *(Swapchain$ * *)c;
+								if (thiz->out$o.v)
+								{
+									((Device*)thiz->device$i.v)->gq->wait_idle();
+									Swapchain::destroy((Swapchain*)thiz->out$o.v);
+								}
+								thiz->out$o.v = nullptr;
+								thiz->window$i.frame = app_frame();
+
+							}, new_mail(&thiz));
+						}
+						last_window = w;
 					}
-					if (device$i.v && window$i.v)
+					if (device$i.v && window$i.v && w->size.x() != 0 && w->size.y() != 0)
 					{
 						auto sc = Swapchain::create((Device*)device$i.v, (Window*)window$i.v);
 						out$o.v = sc;
@@ -242,42 +262,6 @@ namespace flame
 						images$o.v.resize(sc->image_count());
 						for (auto i = 0; i < images$o.v.size(); i++)
 							images$o.v[i] = sc->image(i);
-
-						last_window = (Window*)window$i.v;
-						auto thiz = this;
-						resize_listener = last_window->add_resize_listener([](void* c, const Vec2u& size) {
-							auto thiz = *(Swapchain$ **)c;
-
-							if (thiz->out$o.v)
-							{
-								((Device*)thiz->device$i.v)->gq->wait_idle();
-								Swapchain::destroy((Swapchain*)thiz->out$o.v);
-							}
-							if (size.x() != 0 && size.y() != 0)
-							{
-								auto sc = Swapchain::create((Device*)thiz->device$i.v, (Window*)thiz->window$i.v);
-								thiz->out$o.v = sc;
-								auto i = sc->image(0);
-								thiz->size$o.v = i->size;
-								thiz->format$o.v = i->format;
-								thiz->images$o.v.resize(sc->image_count());
-								for (auto i = 0; i < thiz->images$o.v.size(); i++)
-									thiz->images$o.v[i] = sc->image(i);
-							}
-							else
-							{
-								thiz->out$o.v = nullptr;
-								thiz->size$o.v = Vec2u(0);
-								thiz->format$o.v = Format_Undefined;
-								thiz->images$o.v.clear();
-							}
-							auto frame = app_frame();
-							thiz->out$o.frame = frame;
-							thiz->size$o.frame = frame;
-							thiz->format$o.frame = frame;
-							thiz->images$o.frame = frame;
-
-						}, new_mail(&thiz));
 					}
 					else
 					{
@@ -287,8 +271,6 @@ namespace flame
 						size$o.v = 0;
 						format$o.v = Format_Undefined;
 						images$o.v.clear();
-						last_window = nullptr;
-						resize_listener = nullptr;
 					}
 					auto frame = max(device$i.frame, window$i.frame);
 					out$o.frame = frame;
