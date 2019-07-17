@@ -146,11 +146,6 @@ auto papp = &app;
 
 int main(int argc, char **args)
 {
-	std::vector<void*> a;
-	a.resize(3);
-	a.clear();
-	a.resize(3);
-
 	typeinfo_load(L"flame_foundation.typeinfo");
 	typeinfo_load(L"flame_graphics.typeinfo");
 
@@ -190,10 +185,7 @@ int main(int argc, char **args)
 
 	set_event(app.ev_2);
 
-	if (!app.filename.empty())
-		printf("\"%s\":\n", w2s(app.filename).c_str());
-	else
-		printf("\"unnamed\":\n");
+	printf("\"%s\":\n", w2s(app.filename).c_str());
 
 	network_init();
 
@@ -228,8 +220,7 @@ int main(int argc, char **args)
 				"  remove link [in_adress] - remove a link\n"
 				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
-				"  save [filename] - save this blueprint (you don't need filename while this blueprint already having one)\n"
-				"  reload - reload the bp\n"
+				"  save - save this blueprint\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
 				"  gui-browser - use the power of browser to show and edit\n"
 			);
@@ -433,37 +424,8 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "save")
 		{
-			if (!app.filename.empty())
-			{
-				app.bp->save(app.filename);
-				printf("file saved\n");
-			}
-			else
-			{
-				scanf("%s", command_line);
-				auto s_filename = std::string(command_line);
-
-				if (!std::fs::exists(s_filename))
-				{
-					app.filename = s2w(s_filename);
-					app.bp->save(app.filename);
-					printf("file saved\n");
-					printf("%s:\n", s_filename.c_str());
-				}
-				else
-					printf("app.filename taken\n");
-			}
-		}
-		else if (s_command_line == "reload")
-		{
-			if (!app.filename.empty())
-			{
-				BP::destroy(app.bp);
-				app.bp = BP::create_from_file(app.filename);
-				printf("reloaded\n");
-			}
-			else
-				printf("you need to save the bp first\n");
+			app.bp->save(app.filename);
+			printf("file saved\n");
 		}
 		else if (s_command_line == "set-layout")
 		{

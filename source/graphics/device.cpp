@@ -1,9 +1,8 @@
 #include <flame/foundation/foundation.h>
 #include "device_private.h"
 #include "renderpass_private.h"
-#include "pipeline_private.h"
-#include "descriptor_private.h"
 #include "image_private.h"
+#include "shader_private.h"
 #include "commandbuffer_private.h"
 
 #ifdef FLAME_ANDROID

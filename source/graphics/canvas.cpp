@@ -1,12 +1,11 @@
 #include <flame/foundation/window.h>
 #include <flame/graphics/device.h>
+#include <flame/graphics/renderpass.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/image.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/descriptor.h>
 #include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 
