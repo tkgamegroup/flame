@@ -502,35 +502,49 @@ namespace flame
 
 		struct Shader$
 		{
-			void* device$i;
-			//StringW filename$i;
-			//String prefix$i;
+			AttributeP<void> device$i;
+			AttributeV<std::wstring> filename$i;
+			AttributeV<std::string> prefix$i;
 
-			void* out$o;
+			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS bool update$(float delta_time)
+			FLAME_GRAPHICS_EXPORTS Shader$()
 			{
-				if (out$o)
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (device$i.frame > out$o.frame || filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame)
 				{
-					Shader::destroy((Shader*)out$o);
-					out$o = nullptr;
+					if (out$o.v)
+						Shader::destroy((Shader*)out$o.v);
+					if (device$i.v && std::fs::exists(filename$i.v))
+						out$o.v = Shader::create((Device*)device$i.v, filename$i.v, prefix$i.v);
+					else
+					{
+						printf("cannot create shader\n");
+
+						out$o.v = nullptr;
+					}
+					out$o.frame = maxN(device$i.frame, filename$i.frame, prefix$i.frame);
 				}
+			}
 
-				if (delta_time >= 0.f)
-					out$o = Shader::create((Device*)device$i, L"", "");
-
-				return false;
+			FLAME_GRAPHICS_EXPORTS ~Shader$()
+			{
+				if (out$o.v)
+					Shader::destroy((Shader*)out$o.v);
 			}
 
 		}bp_shader_unused;
 
-		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* _d, const std::vector<Descriptorsetlayout*>& _setlayouts, const std::vector<PushconstantInfo>& _pushconstants)
+		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* _d, const std::vector<Descriptorsetlayout*>& _setlayouts, uint _pc_size)
 		{
 			d = (DevicePrivate*)_d;
 			dsls.resize(_setlayouts.size());
 			for (auto i = 0; i < dsls.size(); i++)
 				dsls[i] = (DescriptorsetlayoutPrivate*)_setlayouts[i];
-			pcs = _pushconstants;
+			pc_size = _pc_size;
 
 #if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayout> vk_descriptorsetlayouts;
@@ -538,14 +552,10 @@ namespace flame
 			for (auto i = 0; i < vk_descriptorsetlayouts.size(); i++)
 				vk_descriptorsetlayouts[i] = ((DescriptorsetlayoutPrivate*)dsls[i])->v;
 
-			std::vector<VkPushConstantRange> vk_pushconstants;
-			vk_pushconstants.resize(pcs.size());
-			for (auto i = 0; i < vk_pushconstants.size(); i++)
-			{
-				vk_pushconstants[i].offset = pcs[i].offset;
-				vk_pushconstants[i].size = pcs[i].size;
-				vk_pushconstants[i].stageFlags = to_flags(ShaderAll);
-			}
+			VkPushConstantRange vk_pushconstant;
+			vk_pushconstant.offset = 0;
+			vk_pushconstant.size = pc_size;
+			vk_pushconstant.stageFlags = to_flags(ShaderAll);
 
 			VkPipelineLayoutCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -553,8 +563,8 @@ namespace flame
 			info.pNext = nullptr;
 			info.setLayoutCount = vk_descriptorsetlayouts.size();
 			info.pSetLayouts = vk_descriptorsetlayouts.data();
-			info.pushConstantRangeCount = vk_pushconstants.size();
-			info.pPushConstantRanges = vk_pushconstants.data();
+			info.pushConstantRangeCount = 1;
+			info.pPushConstantRanges = &vk_pushconstant;
 
 			chk_res(vkCreatePipelineLayout(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
@@ -576,9 +586,9 @@ namespace flame
 			return ((PipelinelayoutPrivate*)this)->dsls[index];
 		}
 
-		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<Descriptorsetlayout*>& setlayouts, const std::vector<PushconstantInfo>& pushconstants)
+		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<Descriptorsetlayout*>& setlayouts, uint pc_size)
 		{
-			return new PipelinelayoutPrivate(d, setlayouts, pushconstants);
+			return new PipelinelayoutPrivate(d, setlayouts, pc_size);
 		}
 
 		void Pipelinelayout::destroy(Pipelinelayout* l)
@@ -899,7 +909,7 @@ namespace flame
 		}
 
 #if defined(FLAME_VULKAN)
-		static void process_stage(ShaderPrivate* s, std::vector<VkPipelineShaderStageCreateInfo>& stage_infos, std::vector<std::vector<Descriptorsetlayout::Binding>>& sets, std::vector<PushconstantInfo>& pcs)
+		static void process_stage(ShaderPrivate* s, std::vector<VkPipelineShaderStageCreateInfo>& stage_infos, std::vector<std::vector<Descriptorsetlayout::Binding>>& sets, uint& pc_size)
 		{
 			VkPipelineShaderStageCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -914,24 +924,7 @@ namespace flame
 			for (auto& r : s->resources)
 			{
 				if (r->type == ShaderResourcePushConstant)
-				{
-					auto same = false;
-					for (auto& p : pcs)
-					{
-						if (p.offset == r->var.offset && p.size == r->var.size)
-						{
-							same = true;
-							break;
-						}
-					}
-					if (!same)
-					{
-						PushconstantInfo pc;
-						pc.offset = r->var.offset;
-						pc.size = r->var.size;
-						pcs.push_back(pc);
-					}
-				}
+					pc_size = max(r->var.size, pc_size);
 				else
 				{
 					if (r->set + 1 > sets.size())
@@ -949,27 +942,27 @@ namespace flame
 		{
 			std::vector<VkPipelineShaderStageCreateInfo> stage_infos;
 			std::vector<std::vector<Descriptorsetlayout::Binding>> sets;
-			std::vector<PushconstantInfo> pcs;
+			auto pc_size = 0U;
 
 			if (vert_shader)
-				process_stage(vert_shader, stage_infos, sets, pcs);
+				process_stage(vert_shader, stage_infos, sets, pc_size);
 			if (tesc_shader)
-				process_stage(tesc_shader, stage_infos, sets, pcs);
+				process_stage(tesc_shader, stage_infos, sets, pc_size);
 			if (tese_shader)
-				process_stage(tese_shader, stage_infos, sets, pcs);
+				process_stage(tese_shader, stage_infos, sets, pc_size);
 			if (geom_shader)
-				process_stage(geom_shader, stage_infos, sets, pcs);
+				process_stage(geom_shader, stage_infos, sets, pc_size);
 			if (frag_shader)
-				process_stage(frag_shader, stage_infos, sets, pcs);
+				process_stage(frag_shader, stage_infos, sets, pc_size);
 			if (comp_shader)
-				process_stage(comp_shader, stage_infos, sets, pcs);
+				process_stage(comp_shader, stage_infos, sets, pc_size);
 
 			for (auto& g : sets)
 			{
 				auto l = Descriptorsetlayout::create(d, g);
 				dsls.push_back(l);
 			}
-			layout = (PipelinelayoutPrivate*)Pipelinelayout::create(d, dsls, pcs);
+			layout = (PipelinelayoutPrivate*)Pipelinelayout::create(d, dsls, pc_size);
 
 			return stage_infos;
 		}
@@ -997,11 +990,9 @@ namespace flame
 			delete (PipelinePrivate*)p;
 		}
 
-		struct Pipeline$
+		struct PipelineGeneral2d$
 		{
 			AttributeP<void> device$i;
-			AttributeV<std::string> vert_shader$i;
-			AttributeV<std::string> frag_shader$i;
 
 			AttributeP<void> out$o;
 
@@ -1010,7 +1001,7 @@ namespace flame
 
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Pipeline$()
+			FLAME_GRAPHICS_EXPORTS ~PipelineGeneral2d$()
 			{
 				if (out$o.v)
 					Pipeline::destroy((Pipeline*)out$o.v);

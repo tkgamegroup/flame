@@ -259,13 +259,13 @@ namespace flame
 		{
 			DevicePrivate* d;
 			std::vector<Descriptorsetlayout*> dsls;
-			std::vector<PushconstantInfo> pcs;
+			uint pc_size;
 #if defined(FLAME_VULKAN)
 			VkPipelineLayout v;
 #elif defined(FLAME_D3D12)
 
 #endif
-			PipelinelayoutPrivate(Device* d, const std::vector<Descriptorsetlayout*>& _setlayouts, const std::vector<PushconstantInfo>& _pushconstants);
+			PipelinelayoutPrivate(Device* d, const std::vector<Descriptorsetlayout*>& _setlayouts, uint _pc_size);
 			~PipelinelayoutPrivate();
 		};
 

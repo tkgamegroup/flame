@@ -13,8 +13,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		static Device *shared_device;
-
 #if defined(FLAME_VULKAN)
 		VkBool32 VKAPI_PTR report_callback(
 			VkDebugReportFlagsEXT                       flags,
@@ -543,10 +541,28 @@ namespace flame
 		{
 			return ((DevicePrivate*)this)->has_feature(f);
 		}
+;
+		static std::vector<std::pair<Device*, uint>> global_devices;
 
-		void Device::set_shared()
+		void Device::set_to_global(uint id)
 		{
-			shared_device = this;
+			for (auto it = global_devices.begin(); it != global_devices.end(); it++)
+			{
+				if (it->first == this)
+				{
+					global_devices.erase(it);
+					break;
+				}
+			}
+			for (auto& d : global_devices)
+			{
+				if (d.second == id)
+				{
+					d.first = this;
+					return;
+				}
+			}
+			global_devices.emplace_back(this, id);
 		}
 
 		Device *Device::create(bool debug)
@@ -554,9 +570,14 @@ namespace flame
 			return new DevicePrivate(debug);
 		}
 
-		Device *Device::get_shared()
+		Device *Device::from_global(uint id)
 		{
-			return shared_device;
+			for (auto& d : global_devices)
+			{
+				if (d.second == id)
+					return d.first;
+			}
+			return nullptr;
 		}
 
 		void Device::destroy(Device *d)

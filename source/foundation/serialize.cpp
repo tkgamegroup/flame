@@ -528,6 +528,9 @@ namespace flame
 			case cH("std::basic_string(char)"):
 				(*ret.p) = *(std::string*)src;
 				break;
+			case cH("std::basic_string(wchar_t)"):
+				(*ret.p) = w2s(*(std::wstring*)src);
+				break;
 			default:
 				assert(0);
 			}
@@ -631,6 +634,9 @@ namespace flame
 				break;
 			case cH("std::basic_string(char)"):
 				*(std::string*)dst = src;
+				break;
+			case cH("std::basic_string(wchar_t)"):
+				*(std::wstring*)dst = s2w(src);
 				break;
 			default:
 				assert(0);

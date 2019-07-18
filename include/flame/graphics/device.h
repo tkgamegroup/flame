@@ -24,22 +24,22 @@ namespace flame
 
 		struct Device
 		{
-			Renderpass *rp_one_rgba32;
-			Pipeline *pl_trans;
-			Descriptorpool *dp;
-			Sampler *sp_bi_linear;
-			Commandpool *gcp; // graphics command pool
-			Commandpool *tcp; // transfer command pool
-			Queue *gq; // graphics queue
-			Queue *tq; // transfer queue
+			Renderpass* rp_one_rgba32;
+			Pipeline* pl_trans;
+			Descriptorpool* dp;
+			Sampler* sp_bi_linear;
+			Commandpool* gcp; // graphics command pool
+			Commandpool* tcp; // transfer command pool
+			Queue* gq; // graphics queue
+			Queue* tq; // transfer queue
 
 			FLAME_GRAPHICS_EXPORTS bool has_feature(Feature f);
 
-			FLAME_GRAPHICS_EXPORTS void set_shared();
+			FLAME_GRAPHICS_EXPORTS void set_to_global(uint id);
 
-			FLAME_GRAPHICS_EXPORTS static Device *create(bool debug);
-			FLAME_GRAPHICS_EXPORTS static Device *get_shared();
-			FLAME_GRAPHICS_EXPORTS static void destroy(Device *d);
+			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug);
+			FLAME_GRAPHICS_EXPORTS static Device* from_global(uint id);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Device* d);
 		};
 	}
 }
