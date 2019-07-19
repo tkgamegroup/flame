@@ -563,8 +563,8 @@ namespace flame
 			info.pNext = nullptr;
 			info.setLayoutCount = vk_descriptorsetlayouts.size();
 			info.pSetLayouts = vk_descriptorsetlayouts.data();
-			info.pushConstantRangeCount = 1;
-			info.pPushConstantRanges = &vk_pushconstant;
+			info.pushConstantRangeCount = vk_pushconstant.size > 0 ? 1 : 0;
+			info.pPushConstantRanges = vk_pushconstant.size > 0 ? &vk_pushconstant : nullptr;
 
 			chk_res(vkCreatePipelineLayout(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)

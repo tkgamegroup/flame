@@ -478,7 +478,6 @@ namespace flame
 
 		struct Image$
 		{
-			AttributeP<void> device$i;
 			AttributeE<Format$> format$i;
 			AttributeV<Vec2u> size$i;
 			AttributeV<uint> level$i;
@@ -499,15 +498,16 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame || format$i.frame > out$o.frame || size$i.frame > out$o.frame || level$i.frame > out$o.frame || layer$i.frame > out$o.frame || sample_count$i.frame > out$o.frame || usage$mi.frame > out$o.frame)
+				if (format$i.frame > out$o.frame || size$i.frame > out$o.frame || level$i.frame > out$o.frame || layer$i.frame > out$o.frame || sample_count$i.frame > out$o.frame || usage$mi.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Image::destroy((Image*)out$o.v);
-					if (device$i.v && format$i.v != Format_Undefined && size$i.v.x() > 0 && size$i.v.y() > 0 && level$i.v > 0 && layer$i.v > 0)
-						out$o.v = Image::create((Device*)device$i.v, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);
+					auto d = Device::from_global(0);
+					if (d && format$i.v != Format_Undefined && size$i.v.x() > 0 && size$i.v.y() > 0 && level$i.v > 0 && layer$i.v > 0)
+						out$o.v = Image::create(d, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);
 					else
 						out$o.v = nullptr;
-					out$o.frame = maxN(device$i.frame, format$i.frame, size$i.frame, level$i.frame, layer$i.frame, sample_count$i.frame, usage$mi.frame);
+					out$o.frame = maxN(format$i.frame, size$i.frame, level$i.frame, layer$i.frame, sample_count$i.frame, usage$mi.frame);
 				}
 			}
 

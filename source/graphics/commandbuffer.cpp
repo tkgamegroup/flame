@@ -619,25 +619,22 @@ namespace flame
 
 		struct Commandbuffer$
 		{
-			AttributeP<void> device$i;
-
 			AttributeP<void> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame)
+				if (out$o.frame == -1)
 				{
-					if (out$o.v)
-						Commandbuffer::destroy((Commandbuffer*)out$o.v);
-					if (device$i.v)
-						out$o.v = Commandbuffer::create(((Device*)device$i.v)->gcp);
+					auto d = Device::from_global(0);
+					if (d)
+						out$o.v = Commandbuffer::create(d->gcp);
 					else
 					{
 						printf("cannot create commandbuffer\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = device$i.frame;
+					out$o.frame = app_frame();
 				}
 			}
 
@@ -651,7 +648,6 @@ namespace flame
 
 		struct Commandbuffers$
 		{
-			AttributeP<void> device$i;
 			AttributeV<uint> size$i;
 
 			AttributeV<std::vector<void*>> out$o;
@@ -662,15 +658,16 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame || size$i.frame > out$o.frame)
+				if (size$i.frame > out$o.frame)
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
-					if (device$i.v && size$i.v > 0)
+					auto d = Device::from_global(0);
+					if (d && size$i.v > 0)
 					{
 						out$o.v.resize(size$i.v);
 						for (auto i = 0; i < size$i.v; i++)
-							out$o.v[i] = Commandbuffer::create(((Device*)device$i.v)->gcp);
+							out$o.v[i] = Commandbuffer::create(d->gcp);
 					}
 					else
 					{
@@ -678,7 +675,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.frame = max(device$i.frame, size$i.frame);
+					out$o.frame = size$i.frame;
 				}
 			}
 

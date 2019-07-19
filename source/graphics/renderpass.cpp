@@ -196,7 +196,6 @@ namespace flame
 
 		struct Renderpass$
 		{
-			AttributeP<void> device$i;
 			AttributeP<std::vector<void*>> attachments$i;
 			AttributeP<std::vector<void*>> subpasses$i;
 			AttributeP<std::vector<Vec<2, uint>>> dependencies$i;
@@ -205,11 +204,12 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame || attachments$i.frame > out$o.frame || subpasses$i.frame > out$o.frame || dependencies$i.frame > out$o.frame)
+				if (attachments$i.frame > out$o.frame || subpasses$i.frame > out$o.frame || dependencies$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Renderpass::destroy((Renderpass*)out$o.v);
-					if (device$i.v && attachments$i.v && !attachments$i.v->empty() && subpasses$i.v && !subpasses$i.v->empty())
+					auto d = Device::from_global(0);
+					if (attachments$i.v && !attachments$i.v->empty() && subpasses$i.v && !subpasses$i.v->empty())
 					{
 						auto ok = true;
 						for (auto a : *attachments$i.v)
@@ -228,7 +228,7 @@ namespace flame
 							info.subpasses = *subpasses$i.v;
 							if (dependencies$i.v)
 								info.dependencies = *dependencies$i.v;
-							out$o.v = Renderpass::create((Device*)device$i.v, info);
+							out$o.v = Renderpass::create(d, info);
 						}
 						else
 							out$o.v = nullptr;
@@ -239,7 +239,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(device$i.frame, attachments$i.frame, subpasses$i.frame, dependencies$i.frame);
+					out$o.frame = maxN(attachments$i.frame, subpasses$i.frame, dependencies$i.frame);
 				}
 			}
 
@@ -415,7 +415,6 @@ namespace flame
 
 		struct Framebuffer$
 		{
-			AttributeP<void> device$i;
 			AttributeP<void> renderpass$i;
 			AttributeP<std::vector<void*>> views$i;
 
@@ -423,16 +422,17 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame || renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame)
+				if (renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Framebuffer::destroy((Framebuffer*)out$o.v);
-					if (device$i.v && renderpass$i.v && views$i.v && !views$i.v->empty())
+					auto d = Device::from_global(0);
+					if (d && renderpass$i.v && views$i.v && !views$i.v->empty())
 					{
 						FramebufferInfo info;
 						info.rp = (Renderpass*)renderpass$i.v;
 						info.views = *views$i.v;
-						out$o.v = Framebuffer::create((Device*)device$i.v, info);
+						out$o.v = Framebuffer::create(d, info);
 					}
 					else
 					{
@@ -440,7 +440,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(device$i.frame, renderpass$i.frame, views$i.frame);
+					out$o.frame = max(renderpass$i.frame, views$i.frame);
 				}
 			}
 
@@ -454,7 +454,6 @@ namespace flame
 
 		struct Framebuffers$
 		{
-			AttributeP<void> device$i;
 			AttributeP<void> renderpass$i;
 			AttributeP<std::vector<void*>> views$i;
 			AttributeV<uint> size$i;
@@ -467,11 +466,12 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame || renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame || size$i.frame > out$o.frame)
+				if (renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame || size$i.frame > out$o.frame)
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Framebuffer::destroy((Framebuffer*)out$o.v[i]);
-					if (device$i.v && renderpass$i.v && views$i.v && !views$i.v->empty() && size$i.v > 0 && views$i.v->size() >= size$i.v && views$i.v->size() % size$i.v == 0)
+					auto d = Device::from_global(0);
+					if (d && renderpass$i.v && views$i.v && !views$i.v->empty() && size$i.v > 0 && views$i.v->size() >= size$i.v && views$i.v->size() % size$i.v == 0)
 					{
 						out$o.v.resize(size$i.v);
 						auto n = views$i.v->size() / size$i.v;
@@ -482,7 +482,7 @@ namespace flame
 							info.views.resize(n);
 							for (auto j = 0; j < n; j++)
 								info.views[j] = (*views$i.v)[i * n + j];
-							out$o.v[i] = Framebuffer::create((Device*)device$i.v, info);
+							out$o.v[i] = Framebuffer::create(d, info);
 						}
 					}
 					else
@@ -491,7 +491,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.frame = maxN(device$i.frame, renderpass$i.frame, views$i.frame, size$i.frame);
+					out$o.frame = maxN(renderpass$i.frame, views$i.frame, size$i.frame);
 				}
 			}
 

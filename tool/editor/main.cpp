@@ -176,7 +176,6 @@ int main(int argc, char **args)
 
 	wait_event(app.ev_1, -1);
 
-	app.bp->find_input("d.in")->set_data(&app.d);
 	app.bp->find_input("sc.window")->set_data(&app.w);
 	app.bp->update();
 

@@ -206,7 +206,6 @@ namespace flame
 
 		struct Swapchain$
 		{
-			AttributeP<void> device$i;
 			AttributeP<void> window$i;
 
 			AttributeP<void> out$o;
@@ -222,11 +221,11 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame || window$i.frame > out$o.frame)
+				if (window$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 					{
-						((Device*)device$i.v)->gq->wait_idle();
+						Device::from_global(0)->gq->wait_idle();
 						Swapchain::destroy((Swapchain*)out$o.v);
 					}
 					auto w = (Window*)window$i.v;
@@ -241,7 +240,7 @@ namespace flame
 								auto thiz = *(Swapchain$ * *)c;
 								if (thiz->out$o.v)
 								{
-									((Device*)thiz->device$i.v)->gq->wait_idle();
+									Device::from_global(0)->gq->wait_idle();
 									Swapchain::destroy((Swapchain*)thiz->out$o.v);
 								}
 								thiz->out$o.v = nullptr;
@@ -251,9 +250,10 @@ namespace flame
 						}
 						last_window = w;
 					}
-					if (device$i.v && window$i.v && w->size.x() != 0 && w->size.y() != 0)
+					auto d = Device::from_global(0);
+					if (d && window$i.v && w->size.x() != 0 && w->size.y() != 0)
 					{
-						auto sc = Swapchain::create((Device*)device$i.v, (Window*)window$i.v);
+						auto sc = Swapchain::create(d, (Window*)window$i.v);
 						out$o.v = sc;
 
 						auto i = sc->image(0);
@@ -272,11 +272,10 @@ namespace flame
 						format$o.v = Format_Undefined;
 						images$o.v.clear();
 					}
-					auto frame = max(device$i.frame, window$i.frame);
-					out$o.frame = frame;
-					size$o.frame = frame;
-					format$o.frame = frame;
-					images$o.frame = frame;
+					out$o.frame = window$i.frame;
+					size$o.frame = window$i.frame;
+					format$o.frame = window$i.frame;
+					images$o.frame = window$i.frame;
 				}
 			}
 
