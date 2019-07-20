@@ -640,7 +640,7 @@ namespace flame
 					Commandbuffer::destroy((Commandbuffer*)out$o.v);
 			}
 
-		}bp_commandbuffer_unused;
+		};
 
 		struct Commandbuffers$
 		{
@@ -681,7 +681,7 @@ namespace flame
 					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
 			}
 
-		}bp_commandbuffers_unused;
+		};
 
 		QueuePrivate::QueuePrivate(Device *_d, uint queue_family_idx)
 		{

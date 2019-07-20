@@ -562,25 +562,6 @@ namespace flame
 		{
 			delete (DevicePrivate*)d;
 		}
-
-		struct Device$
-		{
-			AttributeP<void> in$i;
-
-			AttributeP<void> out$o;
-
-			FLAME_GRAPHICS_EXPORTS void update$()
-			{
-				if (in$i.frame > out$o.frame)
-				{
-					out$o.v = in$i.v;
-					out$o.frame = in$i.frame;
-				}
-			}
-		};
-
-		Device$ bp_device_unused;
-
 	}
 }
 

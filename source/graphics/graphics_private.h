@@ -357,7 +357,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkDescriptorType to_enum(DescriptorType t)
+		inline VkDescriptorType to_enum(DescriptorType$ t)
 		{
 			switch (t)
 			{

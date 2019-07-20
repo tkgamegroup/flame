@@ -283,7 +283,7 @@ namespace flame
 			{
 			}
 
-		}bp_swapchain_unused;
+		};
 	}
 }
 

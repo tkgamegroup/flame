@@ -59,7 +59,7 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device* _d, const std::vector<DescriptorsetBinding>& bindings)
+		DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device* _d, const std::vector<void*>& bindings)
 		{
 			d = (DevicePrivate*)_d;
 
@@ -68,9 +68,11 @@ namespace flame
 			vk_bindings.resize(bindings.size());
 			for (auto i = 0; i < bindings.size(); i++)
 			{
-				vk_bindings[i].binding = bindings[i].binding;
-				vk_bindings[i].descriptorType = to_enum(bindings[i].type);
-				vk_bindings[i].descriptorCount = bindings[i].count;
+				auto bd = (DescriptorsetBinding*)bindings[i];
+
+				vk_bindings[i].binding = bd->binding;
+				vk_bindings[i].descriptorType = to_enum(bd->type);
+				vk_bindings[i].descriptorCount = bd->count;
 				vk_bindings[i].stageFlags = to_flags(ShaderAll);
 				vk_bindings[i].pImmutableSamplers = nullptr;
 			}
@@ -98,7 +100,7 @@ namespace flame
 #endif
 		}
 
-		Descriptorsetlayout* Descriptorsetlayout::create(Device* d, const std::vector<DescriptorsetBinding>& bindings)
+		Descriptorsetlayout* Descriptorsetlayout::create(Device* d, const std::vector<void*>& bindings)
 		{
 			return new DescriptorsetlayoutPrivate(d, bindings);
 		}
@@ -107,6 +109,65 @@ namespace flame
 		{
 			delete (DescriptorsetlayoutPrivate*)l;
 		}
+
+		struct DescriptorsetBinding$
+		{
+			AttributeV<uint> binding$i;
+			AttributeE<DescriptorType$> type$i;
+			AttributeV<uint> count$i;
+
+			AttributeV<DescriptorsetBinding> out$o;
+
+			FLAME_GRAPHICS_EXPORTS DescriptorsetBinding$()
+			{
+				count$i.v = 1;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (binding$i.frame > out$o.frame)
+					out$o.v.binding = binding$i.v;
+				if (type$i.frame > out$o.frame)
+					out$o.v.type = type$i.v;
+				if (count$i.frame > out$o.frame)
+					out$o.v.count = count$i.v;
+				out$o.frame = maxN(binding$i.frame, type$i.frame, count$i.frame);
+			}
+
+		};
+
+		struct Descriptorsetlayout$
+		{
+			AttributeP<std::vector<void*>> bindings$i;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (bindings$i.frame > out$o.frame)
+				{
+					if (out$o.v)
+						Descriptorsetlayout::destroy((Descriptorsetlayout*)out$o.v);
+					auto d = Device::from_global(0);
+					if (d)
+						out$o.v = Descriptorsetlayout::create(d, bindings$i.v ? *bindings$i.v : std::vector<void*>());
+					else
+					{
+						printf("cannot create descriptorsetlayout\n");
+
+						out$o.v = nullptr;
+					}
+					out$o.frame = bindings$i.frame;
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Descriptorsetlayout$()
+			{
+				if (out$o.v)
+					Descriptorsetlayout::destroy((Descriptorsetlayout*)out$o.v);
+			}
+
+		};
 
 		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool* _p, Descriptorsetlayout* l)
 		{
@@ -372,7 +433,6 @@ namespace flame
 
 		struct Shader$
 		{
-			AttributeP<void> device$i;
 			AttributeV<std::wstring> filename$i;
 			AttributeV<std::string> prefix$i;
 
@@ -384,19 +444,20 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (device$i.frame > out$o.frame || filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame)
+				if (out$o.frame || filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Shader::destroy((Shader*)out$o.v);
-					if (device$i.v && std::fs::exists(filename$i.v))
-						out$o.v = Shader::create((Device*)device$i.v, filename$i.v, prefix$i.v);
+					auto d = Device::from_global(0);
+					if (d && std::fs::exists(filename$i.v))
+						out$o.v = Shader::create(d, filename$i.v, prefix$i.v);
 					else
 					{
 						printf("cannot create shader\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(device$i.frame, filename$i.frame, prefix$i.frame);
+					out$o.frame = max(filename$i.frame, prefix$i.frame);
 				}
 			}
 
@@ -406,7 +467,7 @@ namespace flame
 					Shader::destroy((Shader*)out$o.v);
 			}
 
-		}bp_shader_unused;
+		};
 
 		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* _d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size)
 		{
@@ -446,6 +507,40 @@ namespace flame
 
 #endif
 		}
+
+		struct Pipelinelayout$
+		{
+			AttributeP<std::vector<void*>> descriptorsetlayouts$i;
+			AttributeV<uint> push_constant_size$i;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (descriptorsetlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame)
+				{
+					if (out$o.v)
+						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
+					auto d = Device::from_global(0);
+					if (d && descriptorsetlayouts$i.v && !descriptorsetlayouts$i.v->empty())
+						out$o.v = Pipelinelayout::create(d, *descriptorsetlayouts$i.v, push_constant_size$i.v);
+					else
+					{
+						printf("cannot create pipelinelayout\n");
+
+						out$o.v = nullptr;
+					}
+					out$o.frame = max(descriptorsetlayouts$i.frame, push_constant_size$i.frame);
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Pipelinelayout$()
+			{
+				if (out$o.v)
+					Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
+			}
+
+		};
 
 		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size)
 		{
@@ -723,13 +818,34 @@ namespace flame
 
 		struct PipelineFullscreen$
 		{
-			AttributeP<void> device$i;
+			AttributeP<void> renderpass$i;
+			AttributeV<uint> subpass_idx$i;
+			AttributeP<std::vector<void*>> shaders$i;
+			AttributeP<void> layout$i;
 
 			AttributeP<void> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
+				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shaders$i.frame > out$o.frame ||layout$i.frame > out$o.frame)
+				{
+					if (out$o.v)
+						Pipeline::destroy((Pipeline*)out$o.v);
+					auto d = Device::from_global(0);
+					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && layout$i.v)
+					{
+						GraphicsPipelineInfo info((Pipelinelayout*)layout$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v);
+						info.shaders = *shaders$i.v;
+						out$o.v = Pipeline::create(d, info);
+					}
+					else
+					{
+						printf("cannot create pipelinefullscreen\n");
 
+						out$o.v = nullptr;
+					}
+					out$o.frame = maxN(renderpass$i.frame, subpass_idx$i.frame, shaders$i.frame, layout$i.frame);
+				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~PipelineFullscreen$()
@@ -738,6 +854,6 @@ namespace flame
 					Pipeline::destroy((Pipeline*)out$o.v);
 			}
 
-		}bp_pipeline_unused;
+		};
 	}
 }

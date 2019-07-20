@@ -23,10 +23,17 @@ namespace flame
 		struct DescriptorsetBinding
 		{
 			uint binding;
-			DescriptorType type;
+			DescriptorType$ type;
 			uint count;
 
-			DescriptorsetBinding(uint binding, DescriptorType type, uint count = 1) :
+			DescriptorsetBinding() :
+				binding(0),
+				type(DescriptorUniformBuffer),
+				count(1)
+			{
+			}
+
+			DescriptorsetBinding(uint binding, DescriptorType$ type, uint count = 1) :
 				binding(binding),
 				type(type),
 				count(count)
@@ -36,7 +43,7 @@ namespace flame
 
 		struct Descriptorsetlayout
 		{
-			FLAME_GRAPHICS_EXPORTS static Descriptorsetlayout* create(Device* d, const std::vector<DescriptorsetBinding>& bindings);
+			FLAME_GRAPHICS_EXPORTS static Descriptorsetlayout* create(Device* d, const std::vector<void*>& bindings);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorsetlayout* l);
 		};
 
@@ -207,7 +214,7 @@ namespace flame
 
 		struct GraphicsPipelineInfo
 		{
-			std::vector<Shader*> shaders;
+			std::vector<void*> shaders;
 			Pipelinelayout* layout;
 			std::vector<VertexInputAttributeInfo> vi_attribs;
 			std::vector<VertexInputBufferInfo> vi_buffers;
@@ -241,7 +248,7 @@ namespace flame
 				renderpass(rp),
 				subpass_idx(subpass_idx)
 			{
-				blend_states.resize(renderpass->subpass_col_ref_count(subpass_idx));
+				blend_states.resize(renderpass->subpass_info(subpass_idx).color_attachments.size());
 			}
 		};
 

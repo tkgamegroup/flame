@@ -115,10 +115,10 @@ namespace flame
 
 			attachments.resize(info.attachments.size());
 			for (auto i = 0; i < info.attachments.size(); i++)
-				attachments[i] = ((AttachmentInfo*)(info.attachments[i]))->format;
-			subpass_col_ref_counts.resize(info.subpasses.size());
+				attachments[i] = *(AttachmentInfo*)(info.attachments[i]);
+			subpasses.resize(info.subpasses.size());
 			for (auto i = 0; i < info.subpasses.size(); i++)
-				subpass_col_ref_counts[i] = ((SubpassInfo*)info.subpasses[i])->color_attachments.size();
+				subpasses[i] = *(SubpassInfo*)(info.subpasses[i]);
 #endif
 		}
 
@@ -134,9 +134,19 @@ namespace flame
 			return ((RenderpassPrivate*)this)->attachments.size();
 		}
 
-		uint Renderpass::subpass_col_ref_count(uint subpass_idx) const
+		const AttachmentInfo& Renderpass::attachment_info(uint idx) const
 		{
-			return ((RenderpassPrivate*)this)->subpass_col_ref_counts[subpass_idx];
+			return ((RenderpassPrivate*)this)->attachments[idx];
+		}
+
+		uint Renderpass::subpass_count() const
+		{
+			return ((RenderpassPrivate*)this)->subpasses.size();
+		}
+
+		const SubpassInfo& Renderpass::subpass_info(uint idx) const
+		{
+			return ((RenderpassPrivate*)this)->subpasses[idx];
 		}
 
 		Renderpass* Renderpass::create(Device *d, const RenderpassInfo& info)
@@ -174,7 +184,7 @@ namespace flame
 				out$o.frame = maxN(format$i.frame, clear$i.frame, sample_count$i.frame);
 			}
 
-		}bp_attachmentinfo_unused;
+		};
 
 		struct SubpassInfo$
 		{
@@ -200,7 +210,7 @@ namespace flame
 				out$o.frame = maxN(color_attachments$i.frame, resolve_attachments$i.frame, depth_attachment$i.frame);
 			}
 
-		}bp_subpassinfo_unused;
+		};
 
 		struct Renderpass$
 		{
@@ -257,7 +267,7 @@ namespace flame
 					Renderpass::destroy((Renderpass*)out$o.v);
 			}
 
-		}bp_renderpass_unused;
+		};
 
 		ClearvaluesPrivate::ClearvaluesPrivate(Renderpass *r)
 		{
@@ -265,7 +275,7 @@ namespace flame
 
 			for (auto i = 0; i < renderpass->attachments.size(); i++)
 			{
-				auto fmt = ((RenderpassPrivate*)r)->attachments[i];
+				auto fmt = renderpass->attachment_info(i).format;
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 #if defined(FLAME_VULKAN)
 					v.push_back({});
@@ -365,7 +375,7 @@ namespace flame
 					Clearvalues::destroy((Clearvalues*)out$o.v);
 			}
 
-		}bp_clearvalues_unused;
+		};
 
 		FramebufferPrivate::FramebufferPrivate(Device* _d, const FramebufferInfo& info)
 		{
@@ -455,7 +465,7 @@ namespace flame
 					Framebuffer::destroy((Framebuffer*)out$o.v);
 			}
 
-		}bp_framebuffer_unused;
+		};
 
 		struct Framebuffers$
 		{
@@ -506,7 +516,7 @@ namespace flame
 					Framebuffer::destroy((Framebuffer*)out$o.v[i]);
 			}
 
-		}bp_framebuffers_unused;
+		};
 	}
 }
 

@@ -34,7 +34,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			DescriptorsetlayoutPrivate(Device* d, const std::vector<DescriptorsetBinding>& _bindings);
+			DescriptorsetlayoutPrivate(Device* d, const std::vector<void*>& _bindings);
 			~DescriptorsetlayoutPrivate();
 		};
 

@@ -13,8 +13,8 @@ namespace flame
 		struct RenderpassPrivate : Renderpass
 		{
 			DevicePrivate *d;
-			std::vector<Format$> attachments;
-			std::vector<uint> subpass_col_ref_counts;
+			std::vector<AttachmentInfo> attachments;
+			std::vector<SubpassInfo> subpasses;
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif

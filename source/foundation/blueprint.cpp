@@ -994,7 +994,7 @@ namespace flame
 			}
 		}
 
-	}bp_array_size_unused;
+	};
 
 	struct ArrayInsertBeforeForEachItem_vp$
 	{
@@ -1031,6 +1031,6 @@ namespace flame
 		{
 		}
 
-	}bp_array_insert_before_for_each_item_unused;
+	};
 }
 

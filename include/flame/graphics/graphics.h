@@ -86,7 +86,7 @@ namespace flame
 			ShaderAll = ShaderVert | ShaderTesc | ShaderTese | ShaderGeom | ShaderFrag
 		};
 
-		enum DescriptorType
+		enum DescriptorType$
 		{
 			DescriptorUniformBuffer,
 			DescriptorStorageBuffer,

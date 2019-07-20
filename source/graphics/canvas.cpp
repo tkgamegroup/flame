@@ -778,7 +778,7 @@ namespace flame
 			std::vector<VertexInputBufferInfo> vib;
 			vib.emplace_back(0, 20);
 
-			dsl = Descriptorsetlayout::create(d, { DescriptorsetBinding(0, DescriptorSampledImage, 64) });
+			dsl = Descriptorsetlayout::create(d, { &DescriptorsetBinding(0, DescriptorSampledImage, 64) });
 			pll = Pipelinelayout::create(d, { dsl }, 16);
 
 			shv_element = Shader::create(d, L"2d/element.vert", "");

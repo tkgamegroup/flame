@@ -476,7 +476,7 @@ namespace flame
 					Image::destroy((Image*)out$o.v);
 			}
 
-		}bp_image_unused;
+		};
 
 		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a)
 		{
@@ -598,7 +598,7 @@ namespace flame
 					Imageview::destroy((Imageview*)out$o.v);
 			}
 
-		}bp_imageview_unused;
+		};
 
 		struct ImageviewGeneral$
 		{
