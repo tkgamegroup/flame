@@ -6,13 +6,11 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(Device *_d, uint _size, BufferUsage$ _usage, MemProp$ _mem_prop, bool sharing)
+		BufferPrivate::BufferPrivate(Device *_d, uint _size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing)
 		{
 			size = _size;
 			mapped = nullptr;
 
-			usage = _usage;
-			mem_prop = _mem_prop;
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)

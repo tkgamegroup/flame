@@ -28,15 +28,13 @@ namespace flame
 
 		struct DescriptorsetlayoutPrivate : Descriptorsetlayout
 		{
-			std::vector<Binding> bindings;
-
 			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkDescriptorSetLayout v;
 #elif defined(FLAME_D3D12)
 
 #endif
-			DescriptorsetlayoutPrivate(Device* d, const std::vector<Binding>& _bindings);
+			DescriptorsetlayoutPrivate(Device* d, const std::vector<DescriptorsetBinding>& _bindings);
 			~DescriptorsetlayoutPrivate();
 		};
 
@@ -58,39 +56,16 @@ namespace flame
 			void set_storageimage(uint binding, uint index, Imageview* iv);
 		};
 
-		struct ShaderVariableInfo
-		{
-			std::string name;
-			uint offset;
-			uint size;
-			uint count;
-			uint array_stride;
-
-			std::vector<std::unique_ptr<ShaderVariableInfo>> members;
-		};
-
-		struct ShaderResource
-		{
-			ShaderResourceType type;
-			uint set;
-			uint binding;
-			ShaderVariableInfo var;
-		};
-
 		struct ShaderPrivate : Shader
 		{
-			std::wstring filename_;
-			std::string prefix_;
-			std::vector<std::unique_ptr<ShaderResource>> resources;
-
-			DevicePrivate *d;
+			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkShaderModule v;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			ShaderPrivate(Device *d, const std::wstring &filename, const std::string &prefix);
+			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix);
 			~ShaderPrivate();
 		};
 
@@ -258,47 +233,29 @@ namespace flame
 		struct PipelinelayoutPrivate : Pipelinelayout
 		{
 			DevicePrivate* d;
-			std::vector<Descriptorsetlayout*> dsls;
-			uint pc_size;
 #if defined(FLAME_VULKAN)
 			VkPipelineLayout v;
 #elif defined(FLAME_D3D12)
 
 #endif
-			PipelinelayoutPrivate(Device* d, const std::vector<Descriptorsetlayout*>& _setlayouts, uint _pc_size);
+			PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();
 		};
 
 		struct PipelinePrivate : Pipeline
 		{
 			DevicePrivate* d;
+			PipelinelayoutPrivate* pll;
 
-			ShaderPrivate* vert_shader;
-			ShaderPrivate* tesc_shader;
-			ShaderPrivate* tese_shader;
-			ShaderPrivate* geom_shader;
-			ShaderPrivate* frag_shader;
-			ShaderPrivate* comp_shader;
-			std::vector<Descriptorsetlayout*> dsls;
-			PipelinelayoutPrivate* layout;
 #if defined(FLAME_VULKAN)
 			VkPipeline v;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			void init();
-
 			PipelinePrivate(Device* d, const GraphicsPipelineInfo& info);
-			PipelinePrivate(Device* d, const ShaderInfo& compute_shader);
+			PipelinePrivate(Device* d, const ComputePipelineInfo& info);
 			~PipelinePrivate();
-
-			void add_shader(const ShaderInfo& info);
-#if defined(FLAME_VULKAN)
-			std::vector<VkPipelineShaderStageCreateInfo> process_stages();
-#elif defined(FLAME_D3D12)
-
-#endif
 		};
 	}
 }

@@ -116,6 +116,9 @@ namespace flame
 			attachments.resize(info.attachments.size());
 			for (auto i = 0; i < info.attachments.size(); i++)
 				attachments[i] = ((AttachmentInfo*)(info.attachments[i]))->format;
+			subpass_col_ref_counts.resize(info.subpasses.size());
+			for (auto i = 0; i < info.subpasses.size(); i++)
+				subpass_col_ref_counts[i] = ((SubpassInfo*)info.subpasses[i])->color_attachments.size();
 #endif
 		}
 
@@ -126,9 +129,14 @@ namespace flame
 #endif
 		}
 
-		int Renderpass::attachment_count() const
+		uint Renderpass::attachment_count() const
 		{
 			return ((RenderpassPrivate*)this)->attachments.size();
+		}
+
+		uint Renderpass::subpass_col_ref_count(uint subpass_idx) const
+		{
+			return ((RenderpassPrivate*)this)->subpass_col_ref_counts[subpass_idx];
 		}
 
 		Renderpass* Renderpass::create(Device *d, const RenderpassInfo& info)
@@ -363,30 +371,27 @@ namespace flame
 		{
 			d = (DevicePrivate*)_d;
 			renderpass = (RenderpassPrivate*)info.rp;
-			views.resize(info.views.size());
-			for (auto i = 0; i < info.views.size(); i++)
-				views[i] = (ImageviewPrivate*)info.views[i];
-
-			Vec2i size(0);
 
 #if defined(FLAME_VULKAN)
-			std::vector<VkImageView> vk_views(views.size());
-			for (auto i = 0; i < views.size(); i++)
+			std::vector<VkImageView> vk_views(info.views.size());
+			for (auto i = 0; i < info.views.size(); i++)
 			{
-				if (i == 0)
-					size = views[i]->image->size;
-				else
-					assert(size == views[i]->image->size);
+				auto v = (ImageviewPrivate*)info.views[i];
 
-				vk_views[i] = views[i]->v;
+				if (i == 0)
+					image_size = v->image->size;
+				else
+					assert(image_size == v->image->size);
+
+				vk_views[i] = v->v;
 			}
 
 			VkFramebufferCreateInfo create_info;
 			create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			create_info.flags = 0;
 			create_info.pNext = nullptr;
-			create_info.width = size.x();
-			create_info.height = size.y();
+			create_info.width = image_size.x();
+			create_info.height = image_size.y();
 			create_info.layers = 1;
 			create_info.renderPass = renderpass->v;
 			create_info.attachmentCount = info.views.size();

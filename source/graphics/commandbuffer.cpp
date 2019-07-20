@@ -115,8 +115,6 @@ namespace flame
 			current_subpass = 0;
 			current_framebuffer = f;
 
-			auto size = f->views[0]->image->size;
-
 #if defined(FLAME_VULKAN)
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -125,8 +123,8 @@ namespace flame
 			info.framebuffer = f->v;
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
-			info.renderArea.extent.width = size.x();
-			info.renderArea.extent.height = size.y();
+			info.renderArea.extent.width = f->image_size.x();
+			info.renderArea.extent.height = f->image_size.y();
 			info.clearValueCount = cv ? cv->v.size() : 0;
 			info.pClearValues = cv ? cv->v.data() : nullptr;
 
@@ -218,7 +216,7 @@ namespace flame
 		void CommandbufferPrivate::bind_descriptorset(Descriptorset *s, uint idx)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdBindDescriptorSets(v, to_enum(current_pipeline->type), current_pipeline->layout->v, idx, 1, &((DescriptorsetPrivate*)s)->v, 0, nullptr);
+			vkCmdBindDescriptorSets(v, to_enum(current_pipeline->type), current_pipeline->pll->v, idx, 1, &((DescriptorsetPrivate*)s)->v, 0, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -243,12 +241,10 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::push_constant(uint offset, uint size,  const void *data, Pipelinelayout *layout)
+		void CommandbufferPrivate::push_constant(Pipelinelayout* pll, uint offset, uint size,  const void *data)
 		{
-			if (layout == nullptr)
-				layout = current_pipeline->layout;
 #if defined(FLAME_VULKAN)
-			vkCmdPushConstants(v, ((PipelinelayoutPrivate*)layout)->v, to_flags(ShaderAll), offset, size, data);
+			vkCmdPushConstants(v, ((PipelinelayoutPrivate*)pll)->v, to_flags(ShaderAll), offset, size, data);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -552,9 +548,9 @@ namespace flame
 			((CommandbufferPrivate*)this)->bind_indexbuffer(b, t);
 		}
 
-		void Commandbuffer::push_constant(uint offset, uint size, const void *data, Pipelinelayout *layout)
+		void Commandbuffer::push_constant(Pipelinelayout* pll, uint offset, uint size, const void *data)
 		{
-			((CommandbufferPrivate*)this)->push_constant(offset, size, data, layout);
+			((CommandbufferPrivate*)this)->push_constant(pll, offset, size, data);
 		}
 
 		void Commandbuffer::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)

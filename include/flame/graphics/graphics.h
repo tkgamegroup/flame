@@ -86,13 +86,12 @@ namespace flame
 			ShaderAll = ShaderVert | ShaderTesc | ShaderTese | ShaderGeom | ShaderFrag
 		};
 
-		enum ShaderResourceType
+		enum DescriptorType
 		{
-			ShaderResourceUniformBuffer,
-			ShaderResourceStorageBuffer,
-			ShaderResourceSampledImage,
-			ShaderResourceStorageImage,
-			ShaderResourcePushConstant
+			DescriptorUniformBuffer,
+			DescriptorStorageBuffer,
+			DescriptorSampledImage,
+			DescriptorStorageImage
 		};
 
 		enum PipelineType

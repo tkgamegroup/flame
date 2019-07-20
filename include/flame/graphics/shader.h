@@ -20,16 +20,23 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorpool* p);
 		};
 
+		struct DescriptorsetBinding
+		{
+			uint binding;
+			DescriptorType type;
+			uint count;
+
+			DescriptorsetBinding(uint binding, DescriptorType type, uint count = 1) :
+				binding(binding),
+				type(type),
+				count(count)
+			{
+			}
+		};
+
 		struct Descriptorsetlayout
 		{
-			struct Binding
-			{
-				uint binding;
-				ShaderResourceType type;
-				uint count;
-			};
-
-			FLAME_GRAPHICS_EXPORTS static Descriptorsetlayout* create(Device* d, const std::vector<Binding>& bindings);
+			FLAME_GRAPHICS_EXPORTS static Descriptorsetlayout* create(Device* d, const std::vector<DescriptorsetBinding>& bindings);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorsetlayout* l);
 		};
 
@@ -54,26 +61,8 @@ namespace flame
 
 		struct Pipelinelayout
 		{
-			FLAME_GRAPHICS_EXPORTS Descriptorsetlayout* dsl(uint index) const;
-
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<Descriptorsetlayout*>& setlayouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
-		};
-
-		struct ShaderInfo
-		{
-			std::wstring filename;
-			std::string prefix;
-
-			ShaderInfo()
-			{
-			}
-
-			ShaderInfo(const std::wstring& _filename, const std::string& _prefix) :
-				filename(_filename),
-				prefix(_prefix)
-			{
-			}
 		};
 
 		enum VertexInputRate
@@ -82,19 +71,32 @@ namespace flame
 			VertexInputRateInstance,
 		};
 
-		struct VertexInputBufferInfo
+		struct VertexInputAttributeInfo
 		{
-			std::vector<Format$> attributes;
-			VertexInputRate rate;
+			uint location;
+			uint buffer_id;
+			uint offset;
+			Format$ format;
 
-			VertexInputBufferInfo() :
-				rate(VertexInputRateVertex)
+			VertexInputAttributeInfo(uint location, uint buffer_id, uint offset, Format$ format) :
+				location(location),
+				buffer_id(buffer_id),
+				offset(offset),
+				format(format)
 			{
 			}
+		};
 
-			VertexInputBufferInfo(const std::vector<Format$>& _attributes, VertexInputRate _rate = VertexInputRateVertex) :
-				attributes(_attributes),
-				rate(_rate)
+		struct VertexInputBufferInfo
+		{
+			uint id;
+			uint stride;
+			VertexInputRate rate;
+
+			VertexInputBufferInfo(uint id, uint stride, VertexInputRate rate = VertexInputRateVertex) :
+				id(id),
+				stride(stride),
+				rate(rate)
 			{
 			}
 		};
@@ -205,45 +207,27 @@ namespace flame
 
 		struct GraphicsPipelineInfo
 		{
-			// stages
-			std::vector<ShaderInfo> shaders;
-
-			// vertex input
+			std::vector<Shader*> shaders;
+			Pipelinelayout* layout;
+			std::vector<VertexInputAttributeInfo> vi_attribs;
 			std::vector<VertexInputBufferInfo> vi_buffers;
-
-			// vertex assembly
 			PrimitiveTopology primitive_topology;
-
-			// tessellation
-			int patch_control_points;
-
-			// viewport
+			uint patch_control_points;
 			Vec2u viewport_size;
-
-			// raster
 			bool depth_clamp;
 			PolygonMode polygon_mode;
 			CullMode cull_mode;
-
-			// multisample
 			SampleCount$ sample_count;
-
-			// depth stencil
 			bool depth_test;
 			bool depth_write;
 			CompareOp depth_compare_op;
-
-			// blend
 			std::vector<BlendInfo> blend_states;
-
-			// dynamic
 			std::vector<DynamicState> dynamic_states;
-
-			// renderpass
 			Renderpass* renderpass;
-			int subpass_index;
+			uint subpass_idx;
 
-			GraphicsPipelineInfo() :
+			GraphicsPipelineInfo(Pipelinelayout* layout, Renderpass* rp, uint subpass_idx) :
+				layout(layout),
 				primitive_topology(PrimitiveTopologyTriangleList),
 				patch_control_points(0),
 				viewport_size(0),
@@ -254,10 +238,22 @@ namespace flame
 				depth_test(false),
 				depth_write(false),
 				depth_compare_op(CompareOpLess),
-				renderpass(nullptr),
-				subpass_index(0)
+				renderpass(rp),
+				subpass_idx(subpass_idx)
 			{
-				blend_states.push_back(BlendInfo());
+				blend_states.resize(renderpass->subpass_col_ref_count(subpass_idx));
+			}
+		};
+
+		struct ComputePipelineInfo
+		{
+			Shader* compute_shader;
+			Pipelinelayout* layout;
+
+			ComputePipelineInfo(Shader* compute_shader, Pipelinelayout* layout) :
+				compute_shader(compute_shader),
+				layout(layout)
+			{
 			}
 		};
 
@@ -265,10 +261,8 @@ namespace flame
 		{
 			PipelineType type;
 
-			FLAME_GRAPHICS_EXPORTS Pipelinelayout* layout() const;
-
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const GraphicsPipelineInfo& info);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const ShaderInfo& compute_shader);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const ComputePipelineInfo& info);
 			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline* p);
 		};
 	}

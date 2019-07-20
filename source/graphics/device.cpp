@@ -421,28 +421,6 @@ namespace flame
 
 			LOGI("vulkan device created");
 
-			{
-				AttachmentInfo at_info;
-				at_info.format = Format_R8G8B8A8_UNORM;
-				at_info.clear = true;
-				at_info.sample_count = SampleCount_1;
-				
-				SubpassInfo sp_info;
-				sp_info.color_attachments.push_back(0);
-
-				RenderpassInfo info;
-				info.attachments.push_back(&at_info);
-				info.subpasses.push_back(&sp_info);
-
-				rp_one_rgba32 = Renderpass::create(this, info);
-			}
-			{
-				GraphicsPipelineInfo info;
-				info.shaders.emplace_back(L"2d/fullscreen.vert", "#define UV\n");
-				info.shaders.emplace_back(L"2d/tex-trans.frag", "");
-				info.renderpass = rp_one_rgba32;
-				pl_trans = Pipeline::create(this, info);
-			}
 			sp_bi_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
 			gcp = Commandpool::create(this, gq_idx);
 			gq = Queue::create(this, gq_idx);

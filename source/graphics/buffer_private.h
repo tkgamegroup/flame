@@ -9,9 +9,6 @@ namespace flame
 
 		struct BufferPrivate : Buffer
 		{
-			BufferUsage$ usage;
-			MemProp$ mem_prop;
-
 			DevicePrivate *d;
 #if defined(FLAME_VULKAN)
 			VkBuffer v;

@@ -14,6 +14,7 @@ namespace flame
 		{
 			DevicePrivate *d;
 			std::vector<Format$> attachments;
+			std::vector<uint> subpass_col_ref_counts;
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
@@ -41,7 +42,7 @@ namespace flame
 		{
 			DevicePrivate* d;
 			RenderpassPrivate* renderpass;
-			std::vector<ImageviewPrivate*> views;
+			Vec2u image_size;
 #if defined(FLAME_VULKAN)
 			VkFramebuffer v;
 #elif defined(FLAME_D3D12)

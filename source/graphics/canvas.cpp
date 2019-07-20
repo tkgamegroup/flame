@@ -21,6 +21,12 @@ namespace flame
 		static Renderpass* rp;
 		static Image* white_image;
 		static Imageview* white_imageview;
+		static Descriptorsetlayout* dsl;
+		static Pipelinelayout* pll;
+		static Shader* shv_element;
+		static Shader* shf_element;
+		static Shader* shf_text_lcd;
+		static Shader* shf_text_sdf;
 		static Pipeline* pl_element;
 		static Pipeline* pl_text_lcd;
 		static Pipeline* pl_text_sdf;
@@ -100,7 +106,7 @@ namespace flame
 				cv = Clearvalues::create(rp);
 				cv->set(0, Vec4c(0));
 
-				ds = Descriptorset::create(device->dp, pl_element->layout()->dsl(0));
+				ds = Descriptorset::create(device->dp, dsl);
 
 				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
 				idx_buffer = Buffer::create(device, sizeof(int) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));
@@ -547,7 +553,7 @@ namespace flame
 					auto sdf_scale = 4.f / 512.f/*sdf_image->size*/;
 					auto pc = Vec4f(2.f / surface_size.x(), 2.f / surface_size.y(), sdf_scale, sdf_scale);
 
-					cb->push_constant(0, sizeof(Vec4f), &pc, pl_element->layout());
+					cb->push_constant(pll, 0, sizeof(Vec4f), &pc);
 
 					auto vtx_off = 0;
 					auto idx_off = 0;
@@ -765,48 +771,55 @@ namespace flame
 			white_image->init(Vec4c(255));
 			white_imageview = Imageview::create(white_image);
 
-			auto vib = VertexInputBufferInfo({
-					Format_R32G32_SFLOAT,
-					Format_R32G32_SFLOAT,
-					Format_R8G8B8A8_UNORM });
+			std::vector<VertexInputAttributeInfo> via;
+			via.emplace_back(0, 0, 0, Format_R32G32_SFLOAT);
+			via.emplace_back(1, 0, 8, Format_R32G32_SFLOAT);
+			via.emplace_back(2, 0, 16, Format_R8G8B8A8_UNORM);
+			std::vector<VertexInputBufferInfo> vib;
+			vib.emplace_back(0, 20);
 
-			GraphicsPipelineInfo pl_element_info;
-			pl_element_info.shaders.resize(2);
-			pl_element_info.shaders[0].filename = L"2d/element.vert";
-			pl_element_info.shaders[1].filename = L"2d/element.frag";
-			pl_element_info.vi_buffers.push_back(vib);
+			dsl = Descriptorsetlayout::create(d, { DescriptorsetBinding(0, DescriptorSampledImage, 64) });
+			pll = Pipelinelayout::create(d, { dsl }, 16);
+
+			shv_element = Shader::create(d, L"2d/element.vert", "");
+			shf_element = Shader::create(d, L"2d/element.frag", "");
+			shf_text_lcd = Shader::create(d, L"2d/text_lcd.frag", "");
+			shf_text_sdf = Shader::create(d, L"2d/text_sdf.frag", "");
+
+			GraphicsPipelineInfo pl_element_info(pll, rp, 0);
+			pl_element_info.shaders.push_back(shv_element);
+			pl_element_info.shaders.push_back(shf_element);
+			pl_element_info.vi_attribs = via;
+			pl_element_info.vi_buffers = vib;
 			pl_element_info.cull_mode = CullModeNone;
 			pl_element_info.sample_count = sample_count;
 			pl_element_info.blend_states[0] = BlendInfo(
 				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
 				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-			pl_element_info.renderpass = rp;
 			pl_element = Pipeline::create(device, pl_element_info);
 
-			GraphicsPipelineInfo pl_info_text_lcd;
-			pl_info_text_lcd.shaders.resize(2);
-			pl_info_text_lcd.shaders[0].filename = L"2d/element.vert";
-			pl_info_text_lcd.shaders[1].filename = L"2d/text_lcd.frag";
-			pl_info_text_lcd.vi_buffers.push_back(vib);
+			GraphicsPipelineInfo pl_info_text_lcd(pll, rp, 0);
+			pl_info_text_lcd.shaders.push_back(shv_element);
+			pl_info_text_lcd.shaders.push_back(shf_text_lcd);
+			pl_info_text_lcd.vi_attribs = via;
+			pl_info_text_lcd.vi_buffers = vib;
 			pl_info_text_lcd.cull_mode = CullModeNone;
 			pl_info_text_lcd.sample_count = sample_count;
 			pl_info_text_lcd.blend_states[0] = BlendInfo(
 				BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color,
 				BlendFactorZero, BlendFactorZero);
-			pl_info_text_lcd.renderpass = rp;
 			pl_text_lcd = Pipeline::create(d, pl_info_text_lcd);
 
-			GraphicsPipelineInfo pl_info_text_sdf;
-			pl_info_text_sdf.shaders.resize(2);
-			pl_info_text_sdf.shaders[0].filename = L"2d/element.vert";
-			pl_info_text_sdf.shaders[1].filename = L"2d/text_sdf.frag";
-			pl_info_text_sdf.vi_buffers.push_back(vib);
+			GraphicsPipelineInfo pl_info_text_sdf(pll, rp, 0);
+			pl_info_text_sdf.shaders.push_back(shv_element);
+			pl_info_text_sdf.shaders.push_back(shf_text_sdf);
+			pl_info_text_sdf.vi_attribs = via;
+			pl_info_text_sdf.vi_buffers = vib;
 			pl_info_text_sdf.cull_mode = CullModeNone;
 			pl_info_text_sdf.sample_count = sample_count;
 			pl_info_text_sdf.blend_states[0] = BlendInfo(
 				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
 				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-			pl_info_text_sdf.renderpass = rp;
 			pl_text_sdf = Pipeline::create(d, pl_info_text_sdf);
 
 			for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)

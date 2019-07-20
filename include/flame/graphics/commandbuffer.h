@@ -98,7 +98,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void bind_descriptorset(Descriptorset *s, uint idx);
 			FLAME_GRAPHICS_EXPORTS void bind_vertexbuffer(Buffer *b, uint id);
 			FLAME_GRAPHICS_EXPORTS void bind_indexbuffer(Buffer *b, IndiceType t);
-			FLAME_GRAPHICS_EXPORTS void push_constant(uint offset, uint size, const void *data, Pipelinelayout *layout = nullptr);
+			FLAME_GRAPHICS_EXPORTS void push_constant(Pipelinelayout* pll, uint offset, uint size, const void *data);
 			FLAME_GRAPHICS_EXPORTS void draw(uint count, uint instance_count, uint first_vertex, uint first_instance);
 			FLAME_GRAPHICS_EXPORTS void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance);
 			FLAME_GRAPHICS_EXPORTS void dispatch(const Vec3u& v);

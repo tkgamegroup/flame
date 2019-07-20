@@ -50,7 +50,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsage$ _usage)
+		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsage$ usage)
 		{
 			format = _format;
 			size = _size;
@@ -60,7 +60,6 @@ namespace flame
 
 			set_props();
 
-			usage = _usage;
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
@@ -112,7 +111,6 @@ namespace flame
 
 			set_props();
 
-			usage = ImageUsage$(0);
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
@@ -249,53 +247,14 @@ namespace flame
 
 		void ImagePrivate::save_png(const std::wstring& filename)
 		{
-			if (bpp_ / channel_ > 8)
-			{
-				auto img = Image::create(d, Format_R8G8B8A8_UNORM, size, 1, 1, SampleCount_1, ImageUsage$(ImageUsageAttachment | ImageUsageTransferSrc));
-				auto img_v = Imageview::create(img);
-
-				FramebufferInfo fb_info;
-				fb_info.rp = d->rp_one_rgba32;
-				fb_info.views.push_back(img_v);
-				auto fb = Framebuffer::create(d, fb_info);
-				auto ds = Descriptorset::create(d->dp, d->pl_trans->layout()->dsl(0));
-				auto cb = Commandbuffer::create(d->gcp);
-
-				auto my_view = Imageview::create(this);
-				ds->set_imageview(0, 0, my_view, d->sp_bi_linear);
-
-				cb->begin(true);
-				cb->begin_renderpass(d->rp_one_rgba32, fb, nullptr);
-
-				auto vp = Vec4f(Vec2f(0.f), Vec2f(size));
-				cb->set_viewport(vp);
-				cb->set_scissor(vp);
-
-				cb->bind_pipeline(d->pl_trans);
-				cb->bind_descriptorset(ds, 0);
-				cb->draw(3, 1, 0, 0);
-
-				cb->end_renderpass();
-				cb->end();
-				d->gq->submit(cb, nullptr, nullptr, nullptr);
-				d->gq->wait_idle();
-
-				Imageview::destroy(my_view);
-
-				Framebuffer::destroy(fb);
-				Commandbuffer::destroy(cb);
-
-				img->save_png(filename);
-
-				Imageview::destroy(img_v);
-				Image::destroy(img);
-			}
-			else
+			if (bpp_ / channel_ <= 8)
 			{
 				auto bmp = Bitmap::create(size, channel_, bpp_);
 				get_pixels(0, 0, -1, -1, bmp->data);
 				bmp->save(filename);
 			}
+			else
+				printf("cannot save png that has more than 8bit per channel\n");
 		}
 
 		void Image::init(const Vec4c &col)

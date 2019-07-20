@@ -24,8 +24,6 @@ namespace flame
 
 		struct Device
 		{
-			Renderpass* rp_one_rgba32;
-			Pipeline* pl_trans;
 			Descriptorpool* dp;
 			Sampler* sp_bi_linear;
 			Commandpool* gcp; // graphics command pool

@@ -357,20 +357,18 @@ namespace flame
 			return ret;
 		}
 
-		inline VkDescriptorType to_enum(ShaderResourceType t)
+		inline VkDescriptorType to_enum(DescriptorType t)
 		{
 			switch (t)
 			{
-			case ShaderResourceUniformBuffer:
+			case DescriptorUniformBuffer:
 				return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			case ShaderResourceStorageBuffer:
+			case DescriptorStorageBuffer:
 				return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			case ShaderResourceSampledImage:
+			case DescriptorSampledImage:
 				return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			case ShaderResourceStorageImage:
+			case DescriptorStorageImage:
 				return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			case ShaderResourcePushConstant:
-			    return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 			}
 		}
 

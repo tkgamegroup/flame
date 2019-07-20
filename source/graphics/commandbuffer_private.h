@@ -51,7 +51,7 @@ namespace flame
 			void bind_descriptorset(Descriptorset *s, uint idx);
 			void bind_vertexbuffer(Buffer *b, uint id);
 			void bind_indexbuffer(Buffer *b, IndiceType t);
-			void push_constant(uint offset, uint size, const void *data, Pipelinelayout *layout);
+			void push_constant(Pipelinelayout* pll, uint offset, uint size, const void *data);
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance);
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance);
 			void dispatch(const Vec3u& v);

@@ -45,7 +45,8 @@ namespace flame
 
 		struct Renderpass
 		{
-			FLAME_GRAPHICS_EXPORTS int attachment_count() const;
+			FLAME_GRAPHICS_EXPORTS uint attachment_count() const;
+			FLAME_GRAPHICS_EXPORTS uint subpass_col_ref_count(uint subpass_idx) const;
 
 			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo& info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);

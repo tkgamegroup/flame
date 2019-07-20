@@ -12,8 +12,6 @@ namespace flame
 
 		struct ImagePrivate : Image
 		{
-			ImageUsage$ usage;
-
 			DevicePrivate *d;
 #if defined(FLAME_VULKAN)
 			VkDeviceMemory m;
