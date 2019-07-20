@@ -42,7 +42,6 @@ namespace flame
 		{
 			DevicePrivate* d;
 			RenderpassPrivate* renderpass;
-			Vec2u image_size;
 #if defined(FLAME_VULKAN)
 			VkFramebuffer v;
 #elif defined(FLAME_D3D12)

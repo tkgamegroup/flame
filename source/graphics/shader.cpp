@@ -449,7 +449,7 @@ namespace flame
 					if (out$o.v)
 						Shader::destroy((Shader*)out$o.v);
 					auto d = Device::from_global(0);
-					if (d && std::fs::exists(filename$i.v))
+					if (d)
 						out$o.v = Shader::create(d, filename$i.v, prefix$i.v);
 					else
 					{
@@ -565,7 +565,7 @@ namespace flame
 			std::vector<VkDynamicState> vk_dynamic_states;
 
 			vk_stage_infos.resize(info.shaders.size());
-			for (auto i = 0; i < info.vi_attribs.size(); i++)
+			for (auto i = 0; i < info.shaders.size(); i++)
 			{
 				auto src = (ShaderPrivate*)info.shaders[i];
 				auto& dst = vk_stage_infos[i];

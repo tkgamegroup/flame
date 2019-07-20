@@ -72,6 +72,8 @@ namespace flame
 
 		struct Framebuffer
 		{
+			Vec2u image_size;
+
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, const FramebufferInfo& info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
 		};
