@@ -1,6 +1,5 @@
 #include <flame/foundation/window.h>
 #include <flame/foundation/serialize.h>
-#include <flame/foundation/blueprint.h>
 
 using namespace flame;
 

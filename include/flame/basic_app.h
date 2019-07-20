@@ -18,11 +18,11 @@ namespace flame
 
 	struct BasicApp
 	{
-		Window *w;
-		graphics::Device *d;
+		Window* w;
+		graphics::Device* d;
 		AttributeP<void>* psc;
-		graphics::Semaphore *image_avalible;
-		graphics::Semaphore *render_finished;
+		graphics::Semaphore* image_avalible;
+		graphics::Semaphore* render_finished;
 		graphics::Fence* fences[3];
 		int frame;
 
@@ -49,7 +49,7 @@ namespace flame
 			auto thiz = this;
 			app_run([](void* c) {
 				(*((BasicAppPtr*)c))->do_run();
-			}, new_mail(&thiz));
+				}, new_mail(&thiz));
 		}
 	};
 }
