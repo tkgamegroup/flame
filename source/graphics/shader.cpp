@@ -4,8 +4,7 @@
 #include "image_private.h"
 #include "shader_private.h"
 
-#include <flame/foundation/foundation.h>
-#include <flame/foundation/serialize.h>
+#include <flame/foundation/blueprint.h>
 
 #if defined(FLAME_VULKAN)
 #include <spirv_glsl.hpp>
@@ -148,7 +147,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Descriptorsetlayout::destroy((Descriptorsetlayout*)out$o.v);
-					auto d = Device::from_global(0);
+					auto d = (Device*)bp_environment().graphics_device;
 					if (d)
 						out$o.v = Descriptorsetlayout::create(d, bindings$i.v ? *bindings$i.v : std::vector<void*>());
 					else
@@ -437,9 +436,9 @@ namespace flame
 				{
 					if (out$o.v)
 						Shader::destroy((Shader*)out$o.v);
-					auto d = Device::from_global(0);
+					auto d = (Device*)bp_environment().graphics_device;
 					if (d)
-						out$o.v = Shader::create(d, filename$i.v, prefix$i.v);
+						out$o.v = Shader::create(d, bp_environment().path + L"/" + filename$i.v, prefix$i.v);
 					else
 					{
 						printf("cannot create shader\n");
@@ -510,7 +509,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
-					auto d = Device::from_global(0);
+					auto d = (Device*)bp_environment().graphics_device;
 					if (d && descriptorsetlayouts$i.v && !descriptorsetlayouts$i.v->empty())
 						out$o.v = Pipelinelayout::create(d, *descriptorsetlayouts$i.v, push_constant_size$i.v);
 					else
@@ -820,7 +819,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
-					auto d = Device::from_global(0);
+					auto d = (Device*)bp_environment().graphics_device;
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && layout$i.v)
 					{
 						GraphicsPipelineInfo info((Pipelinelayout*)layout$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v);

@@ -7,6 +7,8 @@
 #include "image_private.h"
 #include "shader_private.h"
 
+#include <flame/foundation/blueprint.h>
+
 namespace flame
 {
 	namespace graphics
@@ -621,7 +623,7 @@ namespace flame
 			{
 				if (out$o.frame == -1)
 				{
-					auto d = Device::from_global(0);
+					auto d = (Device*)bp_environment().graphics_device;
 					if (d)
 						out$o.v = Commandbuffer::create(d->gcp);
 					else
@@ -658,7 +660,7 @@ namespace flame
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
-					auto d = Device::from_global(0);
+					auto d = (Device*)bp_environment().graphics_device;
 					if (d && size$i.v > 0)
 					{
 						out$o.v.resize(size$i.v);

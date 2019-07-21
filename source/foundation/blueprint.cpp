@@ -8,6 +8,8 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
+	static BP::Environment bp_env;
+
 	struct SlotPrivate : BP::Slot
 	{
 		Type type;
@@ -67,12 +69,16 @@ namespace flame
 	struct BPPrivate : BP
 	{
 		std::wstring filename;
+
+		void* graphics_device;
+
 		std::vector<Dependency> dependencies;
 		void* bp_module;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
 
+		BPPrivate();
 		~BPPrivate();
 
 		void add_dependency(const std::wstring& filename);
@@ -329,6 +335,11 @@ namespace flame
 		cmf(p2f<MF_v_v>(update_addr), dummy);
 	}
 
+	BPPrivate::BPPrivate() :
+		graphics_device(nullptr)
+	{
+	}
+
 	BPPrivate::~BPPrivate()
 	{
 		for (auto& d : dependencies)
@@ -503,8 +514,14 @@ namespace flame
 			return;
 		}
 
+		bp_env.path = std::fs::path(filename).parent_path().wstring();
+		bp_env.graphics_device = graphics_device;
+
 		for (auto &n : update_list)
 			n->update();
+
+		bp_env.path = L"";
+		bp_env.graphics_device = nullptr;
 	}
 
 	void BPPrivate::save(const std::wstring& _filename)
@@ -665,7 +682,12 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
-	int BP::dependency_count() const
+	void BP::set_graphics_device(void* d)
+	{
+		((BPPrivate*)this)->graphics_device = d;
+	}
+
+	uint BP::dependency_count() const
 	{
 		return ((BPPrivate*)this)->dependencies.size();
 	}
@@ -685,7 +707,7 @@ namespace flame
 		((BPPrivate*)this)->remove_dependency(filename);
 	}
 
-	int BP::node_count() const
+	uint BP::node_count() const
 	{
 		return ((BPPrivate*)this)->nodes.size();
 	}
@@ -974,6 +996,11 @@ namespace flame
 	void BP::destroy(BP *bp)
 	{
 		delete(BPPrivate*)bp;
+	}
+
+	const BP::Environment& bp_environment()
+	{
+		return bp_env;
 	}
 
 	struct ArraySize$

@@ -519,43 +519,10 @@ namespace flame
 		{
 			return ((DevicePrivate*)this)->has_feature(f);
 		}
-;
-		static std::vector<std::pair<Device*, uint>> global_devices;
-
-		void Device::set_to_global(uint id)
-		{
-			for (auto it = global_devices.begin(); it != global_devices.end(); it++)
-			{
-				if (it->first == this)
-				{
-					global_devices.erase(it);
-					break;
-				}
-			}
-			for (auto& d : global_devices)
-			{
-				if (d.second == id)
-				{
-					d.first = this;
-					return;
-				}
-			}
-			global_devices.emplace_back(this, id);
-		}
 
 		Device *Device::create(bool debug)
 		{
 			return new DevicePrivate(debug);
-		}
-
-		Device *Device::from_global(uint id)
-		{
-			for (auto& d : global_devices)
-			{
-				if (d.second == id)
-					return d.first;
-			}
-			return nullptr;
 		}
 
 		void Device::destroy(Device *d)

@@ -25,6 +25,12 @@ namespace flame
 	{
 		struct Node;
 
+		struct Environment
+		{
+			std::wstring path;
+			void* graphics_device;
+		};
+
 		struct Slot
 		{
 			enum Type
@@ -64,12 +70,14 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
 		};
 
-		FLAME_FOUNDATION_EXPORTS int dependency_count() const;
+		FLAME_FOUNDATION_EXPORTS void set_graphics_device(void* d);
+
+		FLAME_FOUNDATION_EXPORTS uint dependency_count() const;
 		FLAME_FOUNDATION_EXPORTS Mail<std::wstring> dependency(int idx) const;
 		FLAME_FOUNDATION_EXPORTS void add_dependency(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void remove_dependency(const std::wstring& filename);
 
-		FLAME_FOUNDATION_EXPORTS int node_count() const;
+		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type_name, const std::string& id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
@@ -87,6 +95,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
+
+	FLAME_FOUNDATION_EXPORTS const BP::Environment& bp_environment();
 
 	// basic nodes are available after calling typeinfo_init_basic_bp_nodes or loading from file
 	// they are:

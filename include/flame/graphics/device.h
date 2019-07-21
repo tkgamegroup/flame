@@ -33,10 +33,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS bool has_feature(Feature f);
 
-			FLAME_GRAPHICS_EXPORTS void set_to_global(uint id);
-
 			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug);
-			FLAME_GRAPHICS_EXPORTS static Device* from_global(uint id);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Device* d);
 		};
 	}

@@ -5,7 +5,8 @@
 #include "swapchain_private.h"
 #include "synchronize_private.h"
 
-#include <flame/type.h>
+#include <flame/foundation/blueprint.h>
+
 #ifdef FLAME_ANDROID
 #include <android_native_app_glue.h>
 #endif
@@ -225,7 +226,8 @@ namespace flame
 				{
 					if (out$o.v)
 					{
-						Device::from_global(0)->gq->wait_idle();
+						auto d = (Device*)bp_environment().graphics_device;
+						d->gq->wait_idle();
 						Swapchain::destroy((Swapchain*)out$o.v);
 					}
 					auto w = (Window*)window$i.v;
@@ -240,7 +242,8 @@ namespace flame
 								auto thiz = *(Swapchain$ * *)c;
 								if (thiz->out$o.v)
 								{
-									Device::from_global(0)->gq->wait_idle();
+									auto d = (Device*)bp_environment().graphics_device;
+									d->gq->wait_idle();
 									Swapchain::destroy((Swapchain*)thiz->out$o.v);
 								}
 								thiz->out$o.v = nullptr;
@@ -250,7 +253,7 @@ namespace flame
 						}
 						last_window = w;
 					}
-					auto d = Device::from_global(0);
+					auto d = (Device*)bp_environment().graphics_device;
 					if (d && window$i.v && w->size.x() != 0 && w->size.y() != 0)
 					{
 						auto sc = Swapchain::create(d, (Window*)window$i.v);

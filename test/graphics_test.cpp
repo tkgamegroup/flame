@@ -49,6 +49,7 @@ int main(int argc, char** args)
 
 	app.create("", Vec2u(1280, 720), WindowFrame);
 
+	app.bp->set_graphics_device(app.d);
 	app.bp->find_input("sc.window")->set_data(&app.w);
 	app.bp->update();
 
