@@ -351,18 +351,15 @@ namespace flame
 
 			d = (DevicePrivate*)_d;
 
-			std::fs::remove(L"temp.spv"); // glslc cannot write to an existed file (well we did delete it when we finish compiling, but there can be one somehow)
-
-			auto glsl_path = std::fs::path(shader_path + L"src/" + filename);
-
 			auto hash = H(prefix.c_str());
 			std::wstring spv_filename(filename + L"." + std::to_wstring(hash) + L".spv");
-			spv_filename = shader_path + L"bin/" + spv_filename;
 
-			if (!std::fs::exists(spv_filename) || std::fs::last_write_time(spv_filename) <= std::fs::last_write_time(glsl_path))
+			if (!std::fs::exists(spv_filename) || std::fs::last_write_time(spv_filename) < std::fs::last_write_time(filename))
 			{
 				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
 				assert(vk_sdk_path != L"");
+
+				std::fs::remove(spv_filename);
 
 				std::string pfx;
 				pfx += "#version 450 core\n";
@@ -370,27 +367,19 @@ namespace flame
 				if (type != ShaderComp)
 					pfx += "#extension GL_ARB_separate_shader_objects : enable\n";
 				pfx += "\n" + prefix;
-				auto temp_filename = glsl_path.parent_path().wstring() + L"/temp." + glsl_path.filename().wstring();
+				auto temp_filename = L"temp" + ext.wstring();
 				{
 					std::ofstream ofile(temp_filename);
-					auto file = get_file_content(glsl_path.wstring());
+					auto file = get_file_content(filename);
 					ofile.write(pfx.c_str(), pfx.size());
 					ofile.write(file.first.get(), file.second);
 					ofile.close();
 				}
-				std::wstring command_line(L" " + temp_filename + L" -flimit-file " + conf_path + L" -o temp.spv");
+				std::wstring command_line(L" " + temp_filename + L" -flimit-file shader.conf -o" + spv_filename);
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
 				std::fs::remove(temp_filename);
-				if (!std::fs::exists("temp.spv"))
-					printf("shader \"%s\" compile error:\n\n%s\n\n", glsl_path.string().c_str(), *output.p);
-				else
-				{
-					auto spv_dir = std::fs::path(spv_filename).parent_path();
-					if (!std::fs::exists(spv_dir))
-						std::fs::create_directories(spv_dir);
-					std::fs::copy_file("temp.spv", spv_filename, std::fs::copy_options::overwrite_existing);
-					std::fs::remove("temp.spv");
-				}
+				if (!std::fs::exists(spv_filename))
+					printf("shader \"%s\" compile error:\n\n%s\n\n", w2s(filename).c_str(), output.p->c_str());
 				delete_mail(output);
 			}
 
