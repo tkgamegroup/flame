@@ -3,7 +3,6 @@
 #include <flame/graphics/renderpass.h>
 #include "commandbuffer_private.h"
 #include "swapchain_private.h"
-#include "synchronize_private.h"
 
 #include <flame/foundation/blueprint.h>
 
@@ -22,7 +21,7 @@ namespace flame
 			return swapchain_format;
 		}
 
-		SwapchainPrivate::SwapchainPrivate(Device *_d, Window *_w)
+		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* _w)
 		{
 			d = (DevicePrivate*)_d;
 			w = _w;
@@ -145,13 +144,21 @@ namespace flame
 
 			images.resize(image_count);
 			for (auto i = 0; i < image_count; i++)
-				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, native_images[i]);
+			{
+				images[i].first = Image::create_from_native(d, swapchain_format, size, 1, 1, native_images[i]);
+				images[i].second = Fence::create(d);
+			}
+
+			image_avalible = (SemaphorePrivate*)Semaphore::create(d);
 		}
 
 		SwapchainPrivate::~SwapchainPrivate()
 		{
 			for (auto i : images)
-				Image::destroy(i);
+			{
+				Image::destroy(i.first);
+				Fence::destroy(i.second);
+			}
 
 #if defined(FLAME_VULKAN)
 			vkDestroySwapchainKHR(d->v, v, nullptr);
@@ -159,18 +166,20 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+
+			Semaphore::destroy(image_avalible);
 		}
 
-		void SwapchainPrivate::acquire_image(Semaphore *signal_semaphore)
+		void SwapchainPrivate::acquire_image()
 		{
 #if defined(FLAME_VULKAN)
-			chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, signal_semaphore ? ((SemaphorePrivate*)signal_semaphore)->v : nullptr, VK_NULL_HANDLE, &image_index));
+			chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, image_avalible->v, VK_NULL_HANDLE, &image_index));
 #elif defined(FLAME_D3D12)
 			image_index = v->GetCurrentBackBufferIndex();
 #endif
 		}
 
-		Window *Swapchain::window() const
+		Window* Swapchain::window() const
 		{
 			return ((SwapchainPrivate*)this)->w;
 		}
@@ -180,9 +189,9 @@ namespace flame
 			return ((SwapchainPrivate*)this)->images.size();
 		}
 
-		Image *Swapchain::image(uint idx) const
+		Image* Swapchain::image(uint idx) const
 		{
-			return ((SwapchainPrivate*)this)->images[idx];
+			return ((SwapchainPrivate*)this)->images[idx].first;
 		}
 
 		uint Swapchain::image_index() const
@@ -190,9 +199,19 @@ namespace flame
 			return ((SwapchainPrivate*)this)->image_index;
 		}
 
-		void Swapchain::acquire_image(Semaphore *signal_semaphore)
+		Semaphore* Swapchain::image_avalible() const
 		{
-			((SwapchainPrivate*)this)->acquire_image(signal_semaphore);
+			return ((SwapchainPrivate*)this)->image_avalible;
+		}
+
+		Fence* Swapchain::fence(uint idx) const
+		{
+			return ((SwapchainPrivate*)this)->images[idx].second;
+		}
+
+		void Swapchain::acquire_image()
+		{
+			((SwapchainPrivate*)this)->acquire_image();
 		}
 
 		Swapchain *Swapchain::create(Device *d, Window *w)
@@ -227,7 +246,8 @@ namespace flame
 					if (out$o.v)
 					{
 						auto d = (Device*)bp_environment().graphics_device;
-						d->gq->wait_idle();
+						if (d)
+							d->gq->wait_idle();
 						Swapchain::destroy((Swapchain*)out$o.v);
 					}
 					auto w = (Window*)window$i.v;
@@ -243,7 +263,8 @@ namespace flame
 								if (thiz->out$o.v)
 								{
 									auto d = (Device*)bp_environment().graphics_device;
-									d->gq->wait_idle();
+									if (d)
+										d->gq->wait_idle();
 									Swapchain::destroy((Swapchain*)thiz->out$o.v);
 								}
 								thiz->out$o.v = nullptr;
