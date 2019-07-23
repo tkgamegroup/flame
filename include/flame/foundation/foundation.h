@@ -1003,12 +1003,12 @@ namespace flame
 	{
 		T* p;
 		void* dtor;
-		uint hash;
+		uint udt_name_hash;
 
 		Mail() :
 			p(nullptr),
 			dtor(nullptr),
-			hash(0)
+			udt_name_hash(0)
 		{
 		}
 
@@ -1017,13 +1017,13 @@ namespace flame
 			Mail<void> ret;
 			ret.p = p;
 			ret.dtor = dtor;
-			ret.hash = hash;
+			ret.udt_name_hash = udt_name_hash;
 			return ret;
 		}
 	};
 
 	template<class T>
-	Mail<T> new_mail(const T* v = nullptr, uint hash = 0)
+	Mail<T> new_mail(const T* v = nullptr, uint udt_name_hash = 0)
 	{
 		auto p = flame_malloc(sizeof(T));
 		if (v)
@@ -1034,7 +1034,7 @@ namespace flame
 		Mail<T> ret;
 		ret.p = (T*)p;
 		ret.dtor = df2v<T>();
-		ret.hash = hash;
+		ret.udt_name_hash = udt_name_hash;
 
 		return ret;
 	}
