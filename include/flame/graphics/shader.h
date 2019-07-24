@@ -55,16 +55,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorset* s);
 		};
 
-		struct ShaderStageInfo
-		{
-			ShaderStage$ stage;
-			std::string entry_name;
-		};
-
 		struct Shader
 		{
 			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix);
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::string& content, const std::vector<void*>& stages);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
 		};
 

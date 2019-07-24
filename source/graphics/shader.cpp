@@ -328,21 +328,19 @@ namespace flame
 		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix) :
 			d((DevicePrivate*)d)
 		{
-			stages.resize(1);
 			auto ext = std::fs::path(filename).extension();
 			if (ext == L".vert")
-				stages[0].stage = ShaderStageVert;
+				stage = ShaderStageVert;
 			else if (ext == L".tesc")
-				stages[0].stage = ShaderStageTesc;
+				stage = ShaderStageTesc;
 			else if (ext == L".tese")
-				stages[0].stage = ShaderStageTese;
+				stage = ShaderStageTese;
 			else if (ext == L".geom")
-				stages[0].stage = ShaderStageGeom;
+				stage = ShaderStageGeom;
 			else if (ext == L".frag")
-				stages[0].stage = ShaderStageFrag;
+				stage = ShaderStageFrag;
 			else if (ext == L".comp")
-				stages[0].stage = ShaderStageComp;
-			stages[0].entry_name = "main";
+				stage = ShaderStageComp;
 
 			auto hash = H(prefix.c_str());
 			std::wstring spv_filename(filename + L"." + std::to_wstring(hash) + L".spv");
@@ -357,7 +355,7 @@ namespace flame
 				std::string pfx;
 				pfx += "#version 450 core\n";
 				pfx += "#extension GL_ARB_shading_language_420pack : enable\n";
-				if (stages[0].stage != ShaderStageComp)
+				if (stage != ShaderStageComp)
 					pfx += "#extension GL_ARB_separate_shader_objects : enable\n";
 				pfx += "\n" + prefix;
 				auto temp_filename = L"temp" + ext.wstring();
@@ -393,12 +391,6 @@ namespace flame
 #endif
 		}
 
-		ShaderPrivate::ShaderPrivate(Device* d, const std::string& content, const std::vector<void*>& stages) :
-			d((DevicePrivate*)d)
-		{
-
-		}
-
 		ShaderPrivate::~ShaderPrivate()
 		{
 #if defined(FLAME_VULKAN)
@@ -412,11 +404,6 @@ namespace flame
 		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix)
 		{
 			return new ShaderPrivate(d, filename, prefix);
-		}
-
-		Shader* create(Device* d, const std::string& content, const std::vector<void*>& stages)
-		{
-			return new ShaderPrivate(d, content, stages);
 		}
 
 		void Shader::destroy(Shader* s)
@@ -557,21 +544,18 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			for (auto _sh : info.shaders)
+			vk_stage_infos.resize(info.shaders.size());
+			for (auto i = 0; i < info.shaders.size(); i++)
 			{
-				auto sh = (ShaderPrivate*)_sh;
-				for (auto& st : sh->stages)
-				{
-					VkPipelineShaderStageCreateInfo info;
-					info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-					info.flags = 0;
-					info.pNext = nullptr;
-					info.pSpecializationInfo = nullptr;
-					info.pName = st.entry_name.c_str();
-					info.stage = to_enum(st.stage);
-					info.module = sh->v;
-					vk_stage_infos.push_back(info);
-				}
+				auto src = (ShaderPrivate*)info.shaders[i];
+				auto& dst = vk_stage_infos[i];
+				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				dst.flags = 0;
+				dst.pNext = nullptr;
+				dst.pSpecializationInfo = nullptr;
+				dst.pName = "main";
+				dst.stage = to_enum(src->stage);
+				dst.module = src->v;
 			}
 
 			auto vi_binding = 0;

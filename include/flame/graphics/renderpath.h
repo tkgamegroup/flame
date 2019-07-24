@@ -57,7 +57,6 @@ namespace flame
 		{
 			std::wstring filename;
 			std::string prefix;
-			std::vector<void*> stages;
 		};
 
 		struct RenderpathPushconstantInfo
