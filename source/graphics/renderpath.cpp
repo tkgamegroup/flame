@@ -28,7 +28,9 @@ namespace flame
 				std::vector<std::unique_ptr<SubpassInfo>> sp_infos;
 				for (auto& p : info.passes)
 				{
-					auto find_or_add_att = [&](const RenderpathPassTarget& t) {
+					auto find_or_add_att = [&](void* p) {
+						const auto& t = *(RenderpathPassTarget*)p;
+
 						for (auto i = 0; i < att_infos.size(); i++)
 						{
 							auto& att = att_infos[i];
@@ -70,7 +72,7 @@ namespace flame
 						sp_info->color_attachments.push_back(find_or_add_att(t));
 					for (auto& t : p.resolve_targets)
 						sp_info->resolve_attachments.push_back(find_or_add_att(t));
-					if (p.depth_target.v)
+					if (p.depth_target)
 						sp_info->depth_attachment = find_or_add_att(p.depth_target);
 
 					sp_infos.emplace_back(sp_info);

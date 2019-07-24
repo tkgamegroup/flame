@@ -246,7 +246,7 @@ namespace flame
 		void CommandbufferPrivate::push_constant(Pipelinelayout* pll, uint offset, uint size,  const void *data)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdPushConstants(v, ((PipelinelayoutPrivate*)pll)->v, to_flags(ShaderAll), offset, size, data);
+			vkCmdPushConstants(v, ((PipelinelayoutPrivate*)pll)->v, to_flags(ShaderStageAll), offset, size, data);
 #elif defined(FLAME_D3D12)
 
 #endif

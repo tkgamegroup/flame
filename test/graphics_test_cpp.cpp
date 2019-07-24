@@ -45,7 +45,7 @@ int main(int argc, char** args)
 	{
 		graphics::RenderpathPassTarget target(&swapchain_images, true, Vec4c(130, 100, 200, 255));
 		graphics::RenderpathPassInfo pass_info;
-		pass_info.color_targets.push_back(target);
+		pass_info.color_targets.push_back(&target);
 		rp_info.passes.push_back(pass_info);
 	}
 	auto rp = graphics::Renderpath::create(app.d, rp_info);

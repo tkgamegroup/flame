@@ -74,16 +74,16 @@ namespace flame
 			SampleCount_32
 		};
 
-		enum ShaderType$
+		enum ShaderStage$
 		{
-			ShaderNone,
-			ShaderVert = 1 << 0,
-			ShaderTesc = 1 << 1,
-			ShaderTese = 1 << 2,
-			ShaderGeom = 1 << 3,
-			ShaderFrag = 1 << 4,
-			ShaderComp = 1 << 5,
-			ShaderAll = ShaderVert | ShaderTesc | ShaderTese | ShaderGeom | ShaderFrag
+			ShaderStageNone,
+			ShaderStageVert = 1 << 0,
+			ShaderStageTesc = 1 << 1,
+			ShaderStageTese = 1 << 2,
+			ShaderStageGeom = 1 << 3,
+			ShaderStageFrag = 1 << 4,
+			ShaderStageComp = 1 << 5,
+			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag
 		};
 
 		enum DescriptorType$

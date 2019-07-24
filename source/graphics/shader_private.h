@@ -65,7 +65,10 @@ namespace flame
 
 #endif
 
+			std::vector<ShaderStageInfo> stages;
+
 			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix);
+			ShaderPrivate(Device* d, const std::string& content, const std::vector<void*>& stages);
 			~ShaderPrivate();
 		};
 

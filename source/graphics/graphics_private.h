@@ -320,39 +320,39 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlagBits to_enum(ShaderType$ t)
+		inline VkShaderStageFlagBits to_enum(ShaderStage$ t)
 		{
 			switch (t)
 			{
-			case ShaderVert:
+			case ShaderStageVert:
 				return VK_SHADER_STAGE_VERTEX_BIT;
-			case ShaderTesc:
+			case ShaderStageTesc:
 				return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-			case ShaderTese:
+			case ShaderStageTese:
 				return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-			case ShaderGeom:
+			case ShaderStageGeom:
 				return VK_SHADER_STAGE_GEOMETRY_BIT;
-			case ShaderFrag:
+			case ShaderStageFrag:
 				return VK_SHADER_STAGE_FRAGMENT_BIT;
-			case ShaderComp:
+			case ShaderStageComp:
 				return VK_SHADER_STAGE_COMPUTE_BIT;
 			}
 		}
 
-		inline VkShaderStageFlags to_flags(ShaderType$ t)
+		inline VkShaderStageFlags to_flags(ShaderStage$ t)
 		{
 			VkShaderStageFlags ret = 0;
-			if (t & ShaderVert)
+			if (t & ShaderStageVert)
 				ret |= VK_SHADER_STAGE_VERTEX_BIT;
-			if (t & ShaderTesc)
+			if (t & ShaderStageTesc)
 				ret |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-			if (t & ShaderTese)
+			if (t & ShaderStageTese)
 				ret |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-			if (t & ShaderGeom)
+			if (t & ShaderStageGeom)
 				ret |= VK_SHADER_STAGE_GEOMETRY_BIT;
-			if (t & ShaderFrag)
+			if (t & ShaderStageFrag)
 				ret |= VK_SHADER_STAGE_FRAGMENT_BIT;
-			if (t & ShaderComp)
+			if (t & ShaderStageComp)
 				ret |= VK_SHADER_STAGE_COMPUTE_BIT;
 			return ret;
 		}

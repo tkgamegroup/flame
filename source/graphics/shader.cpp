@@ -68,7 +68,7 @@ namespace flame
 				vk_bindings[i].binding = bd->binding;
 				vk_bindings[i].descriptorType = to_enum(bd->type);
 				vk_bindings[i].descriptorCount = bd->count;
-				vk_bindings[i].stageFlags = to_flags(ShaderAll);
+				vk_bindings[i].stageFlags = to_flags(ShaderStageAll);
 				vk_bindings[i].pImmutableSamplers = nullptr;
 			}
 
@@ -325,26 +325,24 @@ namespace flame
 			delete (DescriptorsetPrivate*)s;
 		}
 
-		static std::wstring shader_path(L"../shader/");
-		static std::wstring conf_path(shader_path + L"src/config.conf");
-
-		ShaderPrivate::ShaderPrivate(Device* _d, const std::wstring& filename, const std::string& prefix)
+		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix) :
+			d((DevicePrivate*)d)
 		{
+			stages.resize(1);
 			auto ext = std::fs::path(filename).extension();
 			if (ext == L".vert")
-				type = ShaderVert;
+				stages[0].stage = ShaderStageVert;
 			else if (ext == L".tesc")
-				type = ShaderTesc;
+				stages[0].stage = ShaderStageTesc;
 			else if (ext == L".tese")
-				type = ShaderTese;
+				stages[0].stage = ShaderStageTese;
 			else if (ext == L".geom")
-				type = ShaderGeom;
+				stages[0].stage = ShaderStageGeom;
 			else if (ext == L".frag")
-				type = ShaderFrag;
+				stages[0].stage = ShaderStageFrag;
 			else if (ext == L".comp")
-				type = ShaderComp;
-
-			d = (DevicePrivate*)_d;
+				stages[0].stage = ShaderStageComp;
+			stages[0].entry_name = "main";
 
 			auto hash = H(prefix.c_str());
 			std::wstring spv_filename(filename + L"." + std::to_wstring(hash) + L".spv");
@@ -358,8 +356,8 @@ namespace flame
 
 				std::string pfx;
 				pfx += "#version 450 core\n";
-				pfx += "#extension GL_ARB_shading_language_420pack : enable\n";  // Allows the setting of uniform buffer object and sampler binding points directly from GLSL
-				if (type != ShaderComp)
+				pfx += "#extension GL_ARB_shading_language_420pack : enable\n";
+				if (stages[0].stage != ShaderStageComp)
 					pfx += "#extension GL_ARB_separate_shader_objects : enable\n";
 				pfx += "\n" + prefix;
 				auto temp_filename = L"temp" + ext.wstring();
@@ -374,7 +372,7 @@ namespace flame
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
 				std::fs::remove(temp_filename);
 				if (!std::fs::exists(spv_filename))
-					printf("shader \"%s\" compile error:\n\n%s\n\n", w2s(filename).c_str(), output.p->c_str());
+					printf("shader \"%s\" compile error:\n%s\n", w2s(filename).c_str(), output.p->c_str());
 				delete_mail(output);
 			}
 
@@ -389,10 +387,16 @@ namespace flame
 			shader_info.pNext = nullptr;
 			shader_info.codeSize = spv_file.second;
 			shader_info.pCode = (uint32_t*)spv_file.first.get();
-			chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &v));
+			chk_res(vkCreateShaderModule(((DevicePrivate*)d)->v, &shader_info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
+		}
+
+		ShaderPrivate::ShaderPrivate(Device* d, const std::string& content, const std::vector<void*>& stages) :
+			d((DevicePrivate*)d)
+		{
+
 		}
 
 		ShaderPrivate::~ShaderPrivate()
@@ -408,6 +412,11 @@ namespace flame
 		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix)
 		{
 			return new ShaderPrivate(d, filename, prefix);
+		}
+
+		Shader* create(Device* d, const std::string& content, const std::vector<void*>& stages)
+		{
+			return new ShaderPrivate(d, content, stages);
 		}
 
 		void Shader::destroy(Shader* s)
@@ -466,7 +475,7 @@ namespace flame
 			VkPushConstantRange vk_pushconstant;
 			vk_pushconstant.offset = 0;
 			vk_pushconstant.size = push_constant_size;
-			vk_pushconstant.stageFlags = to_flags(ShaderAll);
+			vk_pushconstant.stageFlags = to_flags(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -548,18 +557,21 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			vk_stage_infos.resize(info.shaders.size());
-			for (auto i = 0; i < info.shaders.size(); i++)
+			for (auto _sh : info.shaders)
 			{
-				auto src = (ShaderPrivate*)info.shaders[i];
-				auto& dst = vk_stage_infos[i];
-				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-				dst.flags = 0;
-				dst.pNext = nullptr;
-				dst.pSpecializationInfo = nullptr;
-				dst.pName = "main";
-				dst.stage = to_enum(src->type);
-				dst.module = src->v;
+				auto sh = (ShaderPrivate*)_sh;
+				for (auto& st : sh->stages)
+				{
+					VkPipelineShaderStageCreateInfo info;
+					info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+					info.flags = 0;
+					info.pNext = nullptr;
+					info.pSpecializationInfo = nullptr;
+					info.pName = st.entry_name.c_str();
+					info.stage = to_enum(st.stage);
+					info.module = sh->v;
+					vk_stage_infos.push_back(info);
+				}
 			}
 
 			auto vi_binding = 0;
@@ -755,7 +767,7 @@ namespace flame
 				vk_stage_info.pNext = nullptr;
 				vk_stage_info.pSpecializationInfo = nullptr;
 				vk_stage_info.pName = "main";
-				vk_stage_info.stage = to_enum(info.compute_shader->type);
+				vk_stage_info.stage = to_enum(ShaderStageComp);
 				vk_stage_info.module = ((ShaderPrivate*)info.compute_shader)->v;
 			}
 

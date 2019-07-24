@@ -1,18 +1,13 @@
 #pragma once
 
-#include <flame/graphics/graphics.h>
-
-#include <vector>
+#include <flame/graphics/shader.h>
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
-		struct Renderpass;
 		struct Framebuffer;
 		struct Image;
-		struct Imageview;
 		struct Commandbuffer;
 
 		enum RenderpathPassTargetType
@@ -62,6 +57,7 @@ namespace flame
 		{
 			std::wstring filename;
 			std::string prefix;
+			std::vector<void*> stages;
 		};
 
 		struct RenderpathPushconstantInfo
@@ -76,13 +72,13 @@ namespace flame
 
 		struct RenderpathPassInfo
 		{
-			std::vector<RenderpathPassTarget> color_targets;
-			std::vector<RenderpathPassTarget> resolve_targets;
-			RenderpathPassTarget depth_target;
+			std::vector<void*> color_targets;
+			std::vector<void*> resolve_targets;
+			void* depth_target;
 
 			RenderpathPassInfo()
 			{
-				depth_target.v = nullptr;
+				depth_target = nullptr;
 			}
 		};
 
