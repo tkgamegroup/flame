@@ -50,5 +50,16 @@ namespace flame
 			FramebufferPrivate(Device* d, const FramebufferInfo& info);
 			~FramebufferPrivate();
 		};
+
+		struct RenderpassAndFramebufferPrivate : RenderpassAndFramebuffer
+		{
+			RenderpassPrivate* rp;
+			std::vector<Imageview*> created_views;
+			std::vector<void*> fbs;
+			ClearvaluesPrivate* cv;
+
+			RenderpassAndFramebufferPrivate(Device* d, const std::vector<void*>& passes);
+			~RenderpassAndFramebufferPrivate();
+		};
 	}
 }

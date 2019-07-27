@@ -1,14 +1,13 @@
 #pragma once
 
-#include <flame/foundation/window.h>
 #include <flame/graphics/swapchain.h>
-#include "synchronize_private.h"
 
 namespace flame
 {
 	namespace graphics
 	{
 		struct DevicePrivate;
+		struct SemaphorePrivate;
 
 		struct SwapchainPrivate : Swapchain
 		{
@@ -22,11 +21,10 @@ namespace flame
 			IDXGISwapChain3* v;
 #endif
 
-			std::vector<std::pair<Image*, Fence*>> images;
+			std::vector<void*> images;
+			SemaphorePrivate* image_avalible;
 
 			uint image_index;
-
-			SemaphorePrivate* image_avalible;
 
 			SwapchainPrivate(Device *d, Window *w);
 			~SwapchainPrivate();

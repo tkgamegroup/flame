@@ -6,6 +6,10 @@
 
 #include <flame/foundation/blueprint.h>
 
+#if defined(FLAME_VULKAN)
+#include <spirv_glsl.hpp>
+#endif
+
 namespace flame
 {
 	namespace graphics

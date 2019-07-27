@@ -1,4 +1,6 @@
+#include <flame/foundation/window.h>
 #include "device_private.h"
+#include "synchronize_private.h"
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include "commandbuffer_private.h"
@@ -144,10 +146,7 @@ namespace flame
 
 			images.resize(image_count);
 			for (auto i = 0; i < image_count; i++)
-			{
-				images[i].first = Image::create_from_native(d, swapchain_format, size, 1, 1, native_images[i]);
-				images[i].second = Fence::create(d);
-			}
+				images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, native_images[i]);
 
 			image_avalible = (SemaphorePrivate*)Semaphore::create(d);
 		}
@@ -155,10 +154,7 @@ namespace flame
 		SwapchainPrivate::~SwapchainPrivate()
 		{
 			for (auto i : images)
-			{
-				Image::destroy(i.first);
-				Fence::destroy(i.second);
-			}
+				Image::destroy((Image*)i);
 
 #if defined(FLAME_VULKAN)
 			vkDestroySwapchainKHR(d->v, v, nullptr);
@@ -184,19 +180,9 @@ namespace flame
 			return ((SwapchainPrivate*)this)->w;
 		}
 
-		int Swapchain::image_count() const
+		const std::vector<void*>& Swapchain::images() const
 		{
-			return ((SwapchainPrivate*)this)->images.size();
-		}
-
-		Image* Swapchain::image(uint idx) const
-		{
-			return ((SwapchainPrivate*)this)->images[idx].first;
-		}
-
-		uint Swapchain::image_index() const
-		{
-			return ((SwapchainPrivate*)this)->image_index;
+			return ((SwapchainPrivate*)this)->images;
 		}
 
 		Semaphore* Swapchain::image_avalible() const
@@ -204,9 +190,9 @@ namespace flame
 			return ((SwapchainPrivate*)this)->image_avalible;
 		}
 
-		Fence* Swapchain::fence(uint idx) const
+		uint Swapchain::image_index() const
 		{
-			return ((SwapchainPrivate*)this)->images[idx].second;
+			return ((SwapchainPrivate*)this)->image_index;
 		}
 
 		void Swapchain::acquire_image()
@@ -280,12 +266,10 @@ namespace flame
 						auto sc = Swapchain::create(d, (Window*)window$i.v);
 						out$o.v = sc;
 
-						auto i = sc->image(0);
+						images$o.v = sc->images();
+						auto i = (Image*)images$o.v[0];
 						size$o.v = i->size;
 						format$o.v = i->format;
-						images$o.v.resize(sc->image_count());
-						for (auto i = 0; i < images$o.v.size(); i++)
-							images$o.v[i] = sc->image(i);
 					}
 					else
 					{
@@ -305,6 +289,13 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS ~Swapchain$()
 			{
+				if (out$o.v)
+				{
+					auto d = (Device*)bp_environment().graphics_device;
+					if (d)
+						d->gq->wait_idle();
+					Swapchain::destroy((Swapchain*)out$o.v);
+				}
 			}
 
 		};

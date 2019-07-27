@@ -7,6 +7,7 @@
 #include "image_private.h"
 #include "shader_private.h"
 
+#include <flame/foundation/window.h>
 #include <flame/foundation/blueprint.h>
 
 namespace flame

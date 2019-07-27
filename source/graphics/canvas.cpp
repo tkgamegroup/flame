@@ -91,17 +91,17 @@ namespace flame
 
 				auto swapchain_format = get_swapchain_format();
 
-				image_ms = Image::create(device, swapchain_format, sc->image(0)->size, 1, 1, sample_count, ImageUsageAttachment);
-				image_ms_view = Imageview::create(image_ms);
-				FramebufferInfo fb_info;
-				fb_info.rp = rp;
-				fb_info.views.resize(2);
-				fb_info.views[0] = image_ms_view;
-				for (auto i = 0; i < sc->image_count(); i++)
-				{
-					fb_info.views[1] = Imageview::create(sc->image(i));
-					fbs.emplace_back(Framebuffer::create(device, fb_info), (Imageview*)fb_info.views[1]);
-				}
+				//image_ms = Image::create(device, swapchain_format, sc->image(0)->size, 1, 1, sample_count, ImageUsageAttachment);
+				//image_ms_view = Imageview::create(image_ms);
+				//FramebufferInfo fb_info;
+				//fb_info.rp = rp;
+				//fb_info.views.resize(2);
+				//fb_info.views[0] = image_ms_view;
+				//for (auto i = 0; i < sc->image_count(); i++)
+				//{
+				//	fb_info.views[1] = Imageview::create(sc->image(i));
+				//	fbs.emplace_back(Framebuffer::create(device, fb_info), (Imageview*)fb_info.views[1]);
+				//}
 
 				cv = Clearvalues::create(rp);
 				cv->set(0, Vec4c(0));

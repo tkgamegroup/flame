@@ -8,6 +8,7 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
+		struct Image;
 		struct Imageview;
 
 		struct AttachmentInfo
@@ -76,6 +77,71 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, const FramebufferInfo& info);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
+		};
+
+		enum SubpassTargetType
+		{
+			SubpassTargetImage, // v is Image*
+			SubpassTargetImageview, // v is Imageview*
+			SubpassTargetImages // v is std::vector<Image*>*
+		};
+
+		struct SubpassTarget
+		{
+			SubpassTargetType type;
+			void* v;
+			bool clear;
+			Vec4c clear_color;
+
+			SubpassTarget()
+			{
+			}
+
+			SubpassTarget(Image* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
+				type(SubpassTargetImage),
+				v(v),
+				clear(clear),
+				clear_color(clear_color)
+			{
+			}
+
+			SubpassTarget(Imageview* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
+				type(SubpassTargetImageview),
+				v(v),
+				clear(clear),
+				clear_color(clear_color)
+			{
+			}
+
+			SubpassTarget(const std::vector<void*>* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
+				type(SubpassTargetImages),
+				v((void*)v),
+				clear(clear),
+				clear_color(clear_color)
+			{
+			}
+		};
+
+		struct SubpassTargetInfo
+		{
+			std::vector<void*> color_targets;
+			std::vector<void*> resolve_targets;
+			void* depth_target;
+
+			SubpassTargetInfo()
+			{
+				depth_target = nullptr;
+			}
+		};
+
+		struct RenderpassAndFramebuffer
+		{
+			FLAME_GRAPHICS_EXPORTS Renderpass* renderpass() const;
+			FLAME_GRAPHICS_EXPORTS const std::vector<void*>& framebuffers() const;
+			FLAME_GRAPHICS_EXPORTS Clearvalues* clearvalues() const;
+
+			FLAME_GRAPHICS_EXPORTS static RenderpassAndFramebuffer* create(Device* d, const std::vector<void*>& passes);
+			FLAME_GRAPHICS_EXPORTS static void destroy(RenderpassAndFramebuffer* s);
 		};
 	}
 }

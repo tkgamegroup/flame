@@ -517,8 +517,154 @@ namespace flame
 				for (auto i = 0; i < out$o.v.size(); i++)
 					Framebuffer::destroy((Framebuffer*)out$o.v[i]);
 			}
-
 		};
+
+		RenderpassAndFramebufferPrivate::RenderpassAndFramebufferPrivate(Device* d, const std::vector<void*>& passes)
+		{
+			RenderpassInfo rp_info;
+			std::vector<std::tuple<SubpassTargetType, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
+			std::vector<std::unique_ptr<SubpassInfo>> sp_infos;
+			for (auto& _p : passes)
+			{
+				auto find_or_add_att = [&](void* p) {
+					const auto& t = *(SubpassTarget*)p;
+
+					for (auto i = 0; i < att_infos.size(); i++)
+					{
+						auto& att = att_infos[i];
+						if (t.type == std::get<0>(att) && t.v == std::get<1>(att))
+							return i;
+					}
+
+					auto idx = (int)att_infos.size();
+
+					Image* image = nullptr;
+					switch (t.type)
+					{
+					case SubpassTargetImage:
+						image = (Image*)t.v;
+						break;
+					case SubpassTargetImageview:
+						image = ((Imageview*)t.v)->image();
+						break;
+					case SubpassTargetImages:
+						image = (*(std::vector<Image*>*)t.v)[0];
+						break;
+					}
+					assert(image);
+
+					auto att_info = new AttachmentInfo;
+					att_info->format = image->format;
+					att_info->clear = t.clear;
+					att_info->sample_count = image->sample_count;
+					att_infos.emplace_back(t.type, t.v, att_info, t.clear_color);
+
+					rp_info.attachments.push_back(att_info);
+
+					return idx;
+				};
+
+				auto sp_info = new SubpassInfo;
+
+				const auto& p = *(SubpassTargetInfo*)_p;
+
+				for (auto& t : p.color_targets)
+					sp_info->color_attachments.push_back(find_or_add_att(t));
+				for (auto& t : p.resolve_targets)
+					sp_info->resolve_attachments.push_back(find_or_add_att(t));
+				if (p.depth_target)
+					sp_info->depth_attachment = find_or_add_att(p.depth_target);
+
+				sp_infos.emplace_back(sp_info);
+				rp_info.subpasses.push_back(sp_info);
+			}
+			rp = (RenderpassPrivate*)Renderpass::create(d, rp_info);
+
+			cv = (ClearvaluesPrivate*)Clearvalues::create(rp);
+			for (auto i = 0; i < att_infos.size(); i++)
+				cv->set(i, std::get<3>(att_infos[i]));
+
+			auto image_count = 0;
+			for (auto& att_info : att_infos)
+			{
+				auto type = std::get<0>(att_info);
+				if (type == SubpassTargetImages)
+				{
+					auto count = ((std::vector<Image*>*)std::get<1>(att_info))->size();
+					if (image_count == 0)
+						image_count = count;
+					else
+						assert(image_count == count);
+				}
+			}
+
+			for (auto i = 0; i < image_count; i++)
+			{
+				FramebufferInfo fb_info;
+				fb_info.rp = rp;
+				for (auto& att_info : att_infos)
+				{
+					auto type = std::get<0>(att_info);
+					auto v = std::get<1>(att_info);
+					switch (type)
+					{
+					case SubpassTargetImage:
+					{
+						auto view = Imageview::create((Image*)v);
+						created_views.push_back(view);
+						fb_info.views.push_back(view);
+					}
+					break;
+					case SubpassTargetImageview:
+						fb_info.views.push_back(v);
+						break;
+					case SubpassTargetImages:
+					{
+						auto view = Imageview::create((*(std::vector<Image*>*)v)[i]);
+						created_views.push_back(view);
+						fb_info.views.push_back(view);
+					}
+					break;
+					}
+				}
+				fbs.emplace_back(Framebuffer::create(d, fb_info));
+			}
+		}
+
+		RenderpassAndFramebufferPrivate::~RenderpassAndFramebufferPrivate()
+		{
+			Renderpass::destroy(rp);
+			for (auto v : created_views)
+				Imageview::destroy(v);
+			for (auto f : fbs)
+				Framebuffer::destroy((Framebuffer*)f);
+			Clearvalues::destroy(cv);
+		}
+
+		Renderpass* RenderpassAndFramebuffer::renderpass() const
+		{
+			return ((RenderpassAndFramebufferPrivate*)this)->rp;
+		}
+
+		const std::vector<void*>& RenderpassAndFramebuffer::framebuffers() const
+		{
+			return ((RenderpassAndFramebufferPrivate*)this)->fbs;
+		}
+
+		Clearvalues* RenderpassAndFramebuffer::clearvalues() const
+		{
+			return ((RenderpassAndFramebufferPrivate*)this)->cv;
+		}
+
+		RenderpassAndFramebuffer* RenderpassAndFramebuffer::create(Device* d, const std::vector<void*>& passes)
+		{
+			return new RenderpassAndFramebufferPrivate(d, passes);
+		}
+
+		void RenderpassAndFramebuffer::destroy(RenderpassAndFramebuffer* s)
+		{
+			delete (RenderpassAndFramebufferPrivate*)s;
+		}
 	}
 }
 
