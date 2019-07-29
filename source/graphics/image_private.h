@@ -12,29 +12,29 @@ namespace flame
 
 		struct ImagePrivate : Image
 		{
-			DevicePrivate *d;
+			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkDeviceMemory m;
 			VkImage v;
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
-			ImagePrivate(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage);
-			ImagePrivate(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, void *native);
+			ImagePrivate(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage);
+			ImagePrivate(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
 			void set_props();
 
-			void init(const Vec4c &col);
-			void get_pixels(uint x, uint y, int cx, int cy, void *dst);
-			void set_pixels(uint x, uint y, int cx, int cy, const void *src);
+			void init(const Vec4c& col);
+			void get_pixels(uint x, uint y, int cx, int cy, void* dst);
+			void set_pixels(uint x, uint y, int cx, int cy, const void* src);
 
 			void save_png(const std::wstring& filename);
 		};
 
 		struct ImageviewPrivate : Imageview
 		{
-			ImagePrivate *image;
+			ImagePrivate* image;
 			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkImageView v;
@@ -43,7 +43,7 @@ namespace flame
 #endif
 			int ref_count;
 
-			ImageviewPrivate(Image *i, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a);
+			ImageviewPrivate(Image* image, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a);
 			~ImageviewPrivate();
 		};
 
@@ -63,14 +63,14 @@ namespace flame
 
 		struct SamplerPrivate : Sampler
 		{
-			DevicePrivate *d;
+			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkSampler v;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			SamplerPrivate(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
+			SamplerPrivate(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			~SamplerPrivate();
 		};
 	}

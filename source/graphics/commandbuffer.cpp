@@ -14,10 +14,9 @@ namespace flame
 {
 	namespace graphics
 	{
-		CommandpoolPrivate::CommandpoolPrivate(Device *_d, int queue_family_idx)
+		CommandpoolPrivate::CommandpoolPrivate(Device *_d, int queue_family_idx) :
+			d((DevicePrivate*)_d)
 		{
-			d = (DevicePrivate*)_d;
-
 #if defined(FLAME_VULKAN)
 			VkCommandPoolCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -51,9 +50,9 @@ namespace flame
 			delete (CommandpoolPrivate*)p;
 		}
 
-		CommandbufferPrivate::CommandbufferPrivate(Commandpool *_p, bool sub)
+		CommandbufferPrivate::CommandbufferPrivate(Commandpool *_p, bool sub) :
+			p((CommandpoolPrivate*)_p)
 		{
-			p = (CommandpoolPrivate*)_p;
 			current_renderpass = nullptr;
 			current_subpass = 0;
 			current_framebuffer = nullptr;

@@ -11,12 +11,12 @@ namespace flame
 
 		struct SemaphorePrivate : Semaphore
 		{
-			DevicePrivate *d;
+			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkSemaphore v;
 #endif
 
-			SemaphorePrivate(Device *d);
+			SemaphorePrivate(Device* d);
 			~SemaphorePrivate();
 		};
 

@@ -9,7 +9,7 @@ namespace flame
 
 		struct BufferPrivate : Buffer
 		{
-			DevicePrivate *d;
+			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkBuffer v;
 			VkDeviceMemory m;
@@ -17,14 +17,14 @@ namespace flame
 			ID3D12Resource* v;
 #endif
 
-			BufferPrivate(Device *d, uint size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing = false);
+			BufferPrivate(Device* d, uint size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing = false);
 			~BufferPrivate();
 
 			void map(uint offset = 0, uint _size = 0);
 			void unmap();
 			void flush();
 
-			void copy_from_data(void *data);
+			void copy_from_data(void* data);
 		};
 	}
 }

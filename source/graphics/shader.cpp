@@ -17,10 +17,9 @@ namespace flame
 {
 	namespace graphics
 	{
-		DescriptorpoolPrivate::DescriptorpoolPrivate(Device* _d)
+		DescriptorpoolPrivate::DescriptorpoolPrivate(Device* _d) :
+			d((DevicePrivate*)_d)
 		{
-			d = (DevicePrivate*)_d;
-
 #if defined(FLAME_VULKAN)
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
 				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 128},
@@ -61,10 +60,9 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device* _d, const std::vector<void*>& bindings)
+		DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device* _d, const std::vector<void*>& bindings) :
+			d((DevicePrivate*)_d)
 		{
-			d = (DevicePrivate*)_d;
-
 #if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
 			vk_bindings.resize(bindings.size());
@@ -171,10 +169,9 @@ namespace flame
 
 		};
 
-		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool* _p, Descriptorsetlayout* l)
+		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool* _p, Descriptorsetlayout* l) :
+			p((DescriptorpoolPrivate*)_p)
 		{
-			p = (DescriptorpoolPrivate*)_p;
-
 #if defined(FLAME_VULKAN)
 			VkDescriptorSetAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -644,11 +641,10 @@ namespace flame
 
 		};
 
-		PipelinePrivate::PipelinePrivate(Device* _d, const GraphicsPipelineInfo& info)
+		PipelinePrivate::PipelinePrivate(Device* _d, const GraphicsPipelineInfo& info) :
+			d((DevicePrivate*)_d),
+			pll((PipelinelayoutPrivate*)info.layout)
 		{
-			d = (DevicePrivate*)_d;
-			pll = (PipelinelayoutPrivate*)info.layout;
-
 #if defined(FLAME_VULKAN)
 			std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 			std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;

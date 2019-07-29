@@ -23,11 +23,10 @@ namespace flame
 			return swapchain_format;
 		}
 
-		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* _w)
+		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* w) :
+			d((DevicePrivate*)_d),
+			w(w)
 		{
-			d = (DevicePrivate*)_d;
-			w = _w;
-
 			image_index = 0;
 
 			auto size = w->size;

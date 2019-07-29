@@ -5,9 +5,9 @@ namespace flame
 {
 	namespace graphics
 	{
-		SemaphorePrivate::SemaphorePrivate(Device *_d)
+		SemaphorePrivate::SemaphorePrivate(Device *_d) :
+			d((DevicePrivate*)_d)
 		{
-			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
 			VkSemaphoreCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -32,9 +32,9 @@ namespace flame
 			delete (SemaphorePrivate*)s;
 		}
 
-		FencePrivate::FencePrivate(Device* _d)
+		FencePrivate::FencePrivate(Device* _d) :
+			d((DevicePrivate*)_d)
 		{
-			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
 			VkFenceCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;

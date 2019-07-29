@@ -103,7 +103,8 @@ namespace flame
 #endif
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, void *native)
+		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, void *native) :
+			d((DevicePrivate*)_d)
 		{
 			format = _format;
 			size = _size;
@@ -112,8 +113,6 @@ namespace flame
 			sample_count = SampleCount_1;
 
 			set_props();
-
-			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
 			v = (VkImage)native;
@@ -480,9 +479,9 @@ namespace flame
 
 		};
 
-		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a)
+		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a) :
+			image((ImagePrivate*)_image)
 		{
-			image = (ImagePrivate*)_image;
 			d = image->d;
 			type = _type;
 			base_level = _base_level;

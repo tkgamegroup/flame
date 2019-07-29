@@ -24,7 +24,7 @@ namespace flame
 
 		struct ClearvaluesPrivate : Clearvalues
 		{
-			RenderpassPrivate* renderpass;
+			RenderpassPrivate* rp;
 
 #if defined(FLAME_VULKAN)
 			std::vector<VkClearValue> v;
@@ -32,7 +32,7 @@ namespace flame
 			std::vector<Vec4f> v;
 #endif
 
-			ClearvaluesPrivate(Renderpass* r);
+			ClearvaluesPrivate(Renderpass* rp);
 			~ClearvaluesPrivate();
 
 			void set(uint idx, const Vec4c& col);
@@ -41,7 +41,7 @@ namespace flame
 		struct FramebufferPrivate : Framebuffer
 		{
 			DevicePrivate* d;
-			RenderpassPrivate* renderpass;
+			RenderpassPrivate* rp;
 #if defined(FLAME_VULKAN)
 			VkFramebuffer v;
 #elif defined(FLAME_D3D12)
