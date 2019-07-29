@@ -9,15 +9,15 @@ namespace flame
 {
 	namespace graphics
 	{
-		RenderpassPrivate::RenderpassPrivate(Device *_d, const RenderpassInfo& info)
+		RenderpassPrivate::RenderpassPrivate(Device *_d, const std::vector<void*>& attachments, const std::vector<void*>& subpasses, const std::vector<Vec<2, uint>>& dependencies)
 		{
 			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
-			std::vector<VkAttachmentDescription> vk_attachments(info.attachments.size());
+			std::vector<VkAttachmentDescription> vk_attachments(attachments.size());
 			for (auto i = 0; i < vk_attachments.size(); i++)
 			{
-				auto at_info = (AttachmentInfo*)info.attachments[i];
+				auto at_info = (AttachmentInfo*)attachments[i];
 
 				vk_attachments[i].flags = 0;
 				vk_attachments[i].format = to_enum(at_info->format);
@@ -40,13 +40,13 @@ namespace flame
 					vk_attachments[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			}
 
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(info.subpasses.size());
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(info.subpasses.size());
-			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(info.subpasses.size());
-			std::vector<VkSubpassDescription> vk_subpasses(info.subpasses.size());
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(subpasses.size());
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(subpasses.size());
+			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(subpasses.size());
+			std::vector<VkSubpassDescription> vk_subpasses(subpasses.size());
 			for (auto i = 0; i < vk_subpasses.size(); i++)
 			{
-				auto sp_info = (SubpassInfo*)info.subpasses[i];
+				auto sp_info = (SubpassInfo*)subpasses[i];
 
 				vk_subpasses[i].flags = 0;
 				vk_subpasses[i].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -88,10 +88,10 @@ namespace flame
 				}
 			}
 
-			std::vector<VkSubpassDependency> vk_dependencies(info.dependencies.size());
-			for (auto i = 0; i < info.dependencies.size(); i++)
+			std::vector<VkSubpassDependency> vk_dependencies(dependencies.size());
+			for (auto i = 0; i < dependencies.size(); i++)
 			{
-				auto& dp_info = info.dependencies[i];
+				auto& dp_info = dependencies[i];
 
 				vk_dependencies[i].srcSubpass = dp_info.x();
 				vk_dependencies[i].dstSubpass = dp_info.y();
@@ -115,12 +115,12 @@ namespace flame
 
 			chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
 
-			attachments.resize(info.attachments.size());
-			for (auto i = 0; i < info.attachments.size(); i++)
-				attachments[i] = *(AttachmentInfo*)(info.attachments[i]);
-			subpasses.resize(info.subpasses.size());
-			for (auto i = 0; i < info.subpasses.size(); i++)
-				subpasses[i] = *(SubpassInfo*)(info.subpasses[i]);
+			attachments.resize(attachments.size());
+			for (auto i = 0; i < attachments.size(); i++)
+				attachments[i] = *(AttachmentInfo*)(attachments[i]);
+			subpasses.resize(subpasses.size());
+			for (auto i = 0; i < subpasses.size(); i++)
+				subpasses[i] = *(SubpassInfo*)(subpasses[i]);
 #endif
 		}
 
@@ -151,7 +151,7 @@ namespace flame
 			return ((RenderpassPrivate*)this)->subpasses[idx];
 		}
 
-		Renderpass* Renderpass::create(Device *d, const RenderpassInfo& info)
+		Renderpass* Renderpass::create(Device *d, const std::vector<void*>& attachments, const std::vector<void*>& subpasses, const std::vector<Vec<2, uint>>& dependencies)
 		{
 			return new RenderpassPrivate(d, info);
 		}
@@ -244,10 +244,10 @@ namespace flame
 						if (ok)
 						{
 							RenderpassInfo info;
-							info.attachments = *attachments$i.v;
-							info.subpasses = *subpasses$i.v;
+							attachments = *attachments$i.v;
+							subpasses = *subpasses$i.v;
 							if (dependencies$i.v)
-								info.dependencies = *dependencies$i.v;
+								dependencies = *dependencies$i.v;
 							out$o.v = Renderpass::create(d, info);
 						}
 						else
@@ -379,16 +379,16 @@ namespace flame
 
 		};
 
-		FramebufferPrivate::FramebufferPrivate(Device* _d, const FramebufferInfo& info)
+		FramebufferPrivate::FramebufferPrivate(Device* _d, Renderpass* rp, const std::vector<void*>& views)
 		{
 			d = (DevicePrivate*)_d;
-			renderpass = (RenderpassPrivate*)info.rp;
+			renderpass = (RenderpassPrivate*)rp;
 
 #if defined(FLAME_VULKAN)
-			std::vector<VkImageView> vk_views(info.views.size());
-			for (auto i = 0; i < info.views.size(); i++)
+			std::vector<VkImageView> vk_views(views.size());
+			for (auto i = 0; i < views.size(); i++)
 			{
-				auto v = (ImageviewPrivate*)info.views[i];
+				auto v = (ImageviewPrivate*)views[i];
 
 				if (i == 0)
 					image_size = v->image->size;
@@ -406,7 +406,7 @@ namespace flame
 			create_info.height = image_size.y();
 			create_info.layers = 1;
 			create_info.renderPass = renderpass->v;
-			create_info.attachmentCount = info.views.size();
+			create_info.attachmentCount = views.size();
 			create_info.pAttachments = vk_views.data();
 
 			chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
@@ -420,7 +420,7 @@ namespace flame
 #endif
 		}
 
-		Framebuffer* Framebuffer::create(Device * d, const FramebufferInfo & info)
+		Framebuffer* Framebuffer::create(Device * d, Renderpass* rp, const std::vector<void*>& views)
 		{
 			return new FramebufferPrivate(d, info);
 		}
@@ -447,8 +447,8 @@ namespace flame
 					if (d && renderpass$i.v && views$i.v && !views$i.v->empty())
 					{
 						FramebufferInfo info;
-						info.rp = (Renderpass*)renderpass$i.v;
-						info.views = *views$i.v;
+						rp = (Renderpass*)renderpass$i.v;
+						views = *views$i.v;
 						out$o.v = Framebuffer::create(d, info);
 					}
 					else
@@ -495,10 +495,10 @@ namespace flame
 						for (auto i = 0; i < size$i.v; i++)
 						{
 							FramebufferInfo info;
-							info.rp = (Renderpass*)renderpass$i.v;
-							info.views.resize(n);
+							rp = (Renderpass*)renderpass$i.v;
+							views.resize(n);
 							for (auto j = 0; j < n; j++)
-								info.views[j] = (*views$i.v)[i * n + j];
+								views[j] = (*views$i.v)[i * n + j];
 							out$o.v[i] = Framebuffer::create(d, info);
 						}
 					}

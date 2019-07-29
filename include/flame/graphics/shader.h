@@ -55,22 +55,16 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorset* s);
 		};
 
-		struct Shader
-		{
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
-		};
-
 		struct Pipelinelayout
 		{
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, uint push_constant_udt_name_hash = 0);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
 		};
 
-		enum VertexInputRate
+		struct Shader
 		{
-			VertexInputRateVertex,
-			VertexInputRateInstance,
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, Pipelinelayout* pll = nullptr, bool autogen_code = false);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
 		};
 
 		struct VertexInputAttributeInfo
@@ -103,70 +97,6 @@ namespace flame
 			}
 		};
 
-		enum PrimitiveTopology
-		{
-			PrimitiveTopologyPointList,
-			PrimitiveTopologyLineList,
-			PrimitiveTopologyLineStrip,
-			PrimitiveTopologyTriangleList,
-			PrimitiveTopologyTriangleStrip,
-			PrimitiveTopologyTriangleFan,
-			PrimitiveTopologyLineListWithAdjacency,
-			PrimitiveTopologyLineStripWithAdjacency,
-			PrimitiveTopologyTriangleListWithAdjacency,
-			PrimitiveTopologyTriangleStripWithAdjacency,
-			PrimitiveTopologyPatchList,
-		};
-
-		enum PolygonMode
-		{
-			PolygonModeFill,
-			PolygonModeLine,
-			PolygonModePoint
-		};
-
-		enum CompareOp
-		{
-			CompareOpLess,
-			CompareOpLessOrEqual,
-			CompareOpGreater,
-			CompareOpGreaterOrEqual,
-			CompareOpEqual,
-			CompareOpNotEqual,
-			CompareOpAlways,
-		};
-
-		enum CullMode
-		{
-			CullModeNone,
-			CullModeFront,
-			CullModeBack,
-			CullModeFrontAndback,
-		};
-
-		enum BlendFactor
-		{
-			BlendFactorZero,
-			BlendFactorOne,
-			BlendFactorSrcColor,
-			BlendFactorOneMinusSrcColor,
-			BlendFactorDstColor,
-			BlendFactorOneMinusDstColor,
-			BlendFactorSrcAlpha,
-			BlendFactorOneMinusSrcAlpha,
-			BlendFactorDstAlpha,
-			BlendFactorOneMinusDstAlpha,
-			BlendFactorConstantColor,
-			BlendFactorOneMinusConstantColor,
-			BlendFactorConstantAlpha,
-			BlendFactorOneMinusConstantAlpha,
-			BlendFactorSrcAlphaSaturate,
-			BlendFactorSrc1Color,
-			BlendFactorOneMinusSrc1Color,
-			BlendFactorSrc1Alpha,
-			BlendFactorOneMinusSrc1Alpha
-		};
-
 		struct BlendInfo
 		{
 			bool blend_enable;
@@ -192,19 +122,6 @@ namespace flame
 				blend_src_alpha = bsa;
 				blend_dst_alpha = bda;
 			}
-		};
-
-		enum DynamicState
-		{
-			DynamicStateViewport,
-			DynamicStateScissor,
-			DynamicStateLineWidth,
-			DynamicStateDepthBias,
-			DynamicStateBlendConstants,
-			DynamicStateDepthBounds,
-			DynamicStateStencilCompareMask,
-			DynamicStateStencilWriteMask,
-			DynamicStateStencilReference
 		};
 
 		struct GraphicsPipelineInfo

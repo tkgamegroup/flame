@@ -12,13 +12,13 @@ namespace flame
 
 		struct RenderpassPrivate : Renderpass
 		{
-			DevicePrivate *d;
+			DevicePrivate* d;
 			std::vector<AttachmentInfo> attachments;
 			std::vector<SubpassInfo> subpasses;
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
-			RenderpassPrivate(Device *d, const RenderpassInfo& info);
+			RenderpassPrivate(Device* d, const std::vector<void*>& attachments, const std::vector<void*>& subpasses, const std::vector<Vec<2, uint>>& dependencies);
 			~RenderpassPrivate();
 		};
 
@@ -32,7 +32,7 @@ namespace flame
 			std::vector<Vec4f> v;
 #endif
 
-			ClearvaluesPrivate(Renderpass *r);
+			ClearvaluesPrivate(Renderpass* r);
 			~ClearvaluesPrivate();
 
 			void set(uint idx, const Vec4c& col);
@@ -47,7 +47,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			FramebufferPrivate(Device* d, const FramebufferInfo& info);
+			FramebufferPrivate(Device* d, Renderpass* rp, const std::vector<void*>& views);
 			~FramebufferPrivate();
 		};
 

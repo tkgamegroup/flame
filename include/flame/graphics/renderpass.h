@@ -37,13 +37,6 @@ namespace flame
 			}
 		};
 
-		struct RenderpassInfo
-		{
-			std::vector<void*> attachments;
-			std::vector<void*> subpasses;
-			std::vector<Vec<2, uint>> dependencies;
-		};
-
 		struct Renderpass
 		{
 			FLAME_GRAPHICS_EXPORTS uint attachment_count() const;
@@ -51,7 +44,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS uint subpass_count() const;
 			FLAME_GRAPHICS_EXPORTS const SubpassInfo& subpass_info(uint idx) const;
 
-			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const RenderpassInfo& info);
+			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, const std::vector<void*>& attachments, const std::vector<void*>& subpasses, const std::vector<Vec<2, uint>>& dependencies);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
 		};
 
@@ -65,17 +58,11 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Clearvalues* c);
 		};
 
-		struct FramebufferInfo
-		{
-			Renderpass* rp;
-			std::vector<void*> views;
-		};
-
 		struct Framebuffer
 		{
 			Vec2u image_size;
 
-			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, const FramebufferInfo& info);
+			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, Renderpass* rp, const std::vector<void*>& views);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
 		};
 

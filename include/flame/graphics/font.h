@@ -13,7 +13,7 @@ namespace flame
 
 		struct Glyph
 		{
-			Vec2u off;
+			Vec2i off;
 			Vec2u size;
 			Vec2f uv0, uv1;
 			int advance;

@@ -62,13 +62,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void add_image_stretch(const Vec2f& pos, const Vec2f& size, uint id, const Vec4f& border, const Vec4c& tint_col = Vec4c(255));
 			FLAME_GRAPHICS_EXPORTS void set_scissor(const Vec4f& scissor);
 
-			FLAME_GRAPHICS_EXPORTS Commandbuffer* get_cb() const;
-			FLAME_GRAPHICS_EXPORTS void record_cb();
+			FLAME_GRAPHICS_EXPORTS void record(Commandbuffer* cb);
 
-			FLAME_GRAPHICS_EXPORTS static void initialize(Device* d, Swapchain* sc);
-			FLAME_GRAPHICS_EXPORTS static void deinitialize();
-
-			FLAME_GRAPHICS_EXPORTS static Canvas* create(Swapchain* sc); // all swapchains that used to create canvas should have the same sample_count as the one pass to initialize
+			FLAME_GRAPHICS_EXPORTS static Canvas* create(Device* d, Swapchain* sc);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Canvas* c);
 		};
 

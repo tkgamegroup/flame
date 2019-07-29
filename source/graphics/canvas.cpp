@@ -17,20 +17,6 @@ namespace flame
 
 		const auto MaxImageviewCount = 64;
 
-		static Device* device;
-		static Renderpass* rp;
-		static Image* white_image;
-		static Imageview* white_imageview;
-		static Descriptorsetlayout* dsl;
-		static Pipelinelayout* pll;
-		static Shader* shv_element;
-		static Shader* shf_element;
-		static Shader* shf_text_lcd;
-		static Shader* shf_text_sdf;
-		static Pipeline* pl_element;
-		static Pipeline* pl_text_lcd;
-		static Pipeline* pl_text_sdf;
-
 		static SampleCount$ sample_count = SampleCount_8;
 
 		struct Vertex
@@ -65,11 +51,24 @@ namespace flame
 
 		struct CanvasPrivate : Canvas
 		{
+			Device* d;
 			Swapchain* sc;
+
 			Image* image_ms;
-			Imageview* image_ms_view;
-			std::vector<std::pair<Framebuffer*, Imageview*>> fbs;
-			Clearvalues* cv;
+			RenderpassAndFramebuffer* rnf;
+
+			Descriptorsetlayout* dsl;
+			Pipelinelayout* pll;
+			Shader* shv_element;
+			Shader* shf_element;
+			Shader* shf_text_lcd;
+			Shader* shf_text_sdf;
+			Pipeline* pl_element;
+			Pipeline* pl_text_lcd;
+			Pipeline* pl_text_sdf;
+
+			Image* white_image;
+			Imageview* white_imageview;
 			Descriptorset* ds;
 
 			std::vector<Vec2f> points;
@@ -79,43 +78,93 @@ namespace flame
 			Buffer* idx_buffer;
 			Vertex* vtx_end;
 			int* idx_end;
-			Commandbuffer* cb;
 
 			Imageview* image_views[MaxImageviewCount];
 
 			std::vector<std::tuple<FontAtlas*, uint, Imageview*>> font_atlases;
 
-			CanvasPrivate(Swapchain* _sc)
+			CanvasPrivate(Device* d, Swapchain* sc) :
+				d(d),
+				sc(sc)
 			{
-				sc = _sc;
-
 				auto swapchain_format = get_swapchain_format();
 
-				//image_ms = Image::create(device, swapchain_format, sc->image(0)->size, 1, 1, sample_count, ImageUsageAttachment);
-				//image_ms_view = Imageview::create(image_ms);
-				//FramebufferInfo fb_info;
-				//fb_info.rp = rp;
-				//fb_info.views.resize(2);
-				//fb_info.views[0] = image_ms_view;
-				//for (auto i = 0; i < sc->image_count(); i++)
-				//{
-				//	fb_info.views[1] = Imageview::create(sc->image(i));
-				//	fbs.emplace_back(Framebuffer::create(device, fb_info), (Imageview*)fb_info.views[1]);
-				//}
+				image_ms = Image::create(d, swapchain_format, ((Image*)sc->images()[0])->size, 1, 1, sample_count, ImageUsageAttachment);
 
-				cv = Clearvalues::create(rp);
-				cv->set(0, Vec4c(0));
+				SubpassTargetInfo subpass;
+				SubpassTarget target_ms(image_ms, true);
+				SubpassTarget target_sc(&sc->images());
+				subpass.color_targets.emplace_back(&target_ms);
+				subpass.resolve_targets.emplace_back(&target_sc);
+				rnf = graphics::RenderpassAndFramebuffer::create(d, { &subpass });
 
-				ds = Descriptorset::create(device->dp, dsl);
+				white_image = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
+				white_image->init(Vec4c(255));
+				white_imageview = Imageview::create(white_image);
 
-				vtx_buffer = Buffer::create(device, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
-				idx_buffer = Buffer::create(device, sizeof(int) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));
+				std::vector<VertexInputAttributeInfo> via;
+				via.emplace_back(0, 0, 0, Format_R32G32_SFLOAT);
+				via.emplace_back(1, 0, 8, Format_R32G32_SFLOAT);
+				via.emplace_back(2, 0, 16, Format_R8G8B8A8_UNORM);
+				std::vector<VertexInputBufferInfo> vib;
+				vib.emplace_back(0, 20);
+
+				dsl = Descriptorsetlayout::create(d, { &DescriptorsetBinding(0, DescriptorSampledImage, 64) });
+				pll = Pipelinelayout::create(d, { dsl }, 16);
+
+				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "");
+				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "");
+				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "");
+				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "");
+
+				GraphicsPipelineInfo pl_element_info(pll, rnf->renderpass(), 0);
+				pl_element_info.shaders.push_back(shv_element);
+				pl_element_info.shaders.push_back(shf_element);
+				pl_element_info.vi_attribs = via;
+				pl_element_info.vi_buffers = vib;
+				pl_element_info.sample_count = sample_count;
+				pl_element_info.blend_states[0] = BlendInfo(
+					BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
+					BlendFactorZero, BlendFactorOneMinusSrcAlpha);
+				pl_element = Pipeline::create(d, pl_element_info);
+
+				GraphicsPipelineInfo pl_info_text_lcd(pll, rnf->renderpass(), 0);
+				pl_info_text_lcd.shaders.push_back(shv_element);
+				pl_info_text_lcd.shaders.push_back(shf_text_lcd);
+				pl_info_text_lcd.vi_attribs = via;
+				pl_info_text_lcd.vi_buffers = vib;
+				pl_info_text_lcd.sample_count = sample_count;
+				pl_info_text_lcd.blend_states[0] = BlendInfo(
+					BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color,
+					BlendFactorZero, BlendFactorZero);
+				pl_text_lcd = Pipeline::create(d, pl_info_text_lcd);
+
+				GraphicsPipelineInfo pl_info_text_sdf(pll, rnf->renderpass(), 0);
+				pl_info_text_sdf.shaders.push_back(shv_element);
+				pl_info_text_sdf.shaders.push_back(shf_text_sdf);
+				pl_info_text_sdf.vi_attribs = via;
+				pl_info_text_sdf.vi_buffers = vib;
+				pl_info_text_sdf.sample_count = sample_count;
+				pl_info_text_sdf.blend_states[0] = BlendInfo(
+					BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
+					BlendFactorZero, BlendFactorOneMinusSrcAlpha);
+				pl_text_sdf = Pipeline::create(d, pl_info_text_sdf);
+
+				for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
+				{
+					auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
+					circle_subdiv[i].y() = sin(rad);
+					circle_subdiv[i].x() = cos(rad);
+				}
+
+				ds = Descriptorset::create(d->dp, dsl);
+
+				vtx_buffer = Buffer::create(d, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
+				idx_buffer = Buffer::create(d, sizeof(int) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (int*)idx_buffer->mapped;
-
-				cb = Commandbuffer::create(device->gcp);
 
 				for (auto i = 0; i < MaxImageviewCount; i++)
 					set_imageview(i, white_imageview);
@@ -123,18 +172,16 @@ namespace flame
 
 			~CanvasPrivate()
 			{
-				Imageview::destroy(image_ms_view);
-				Image::destroy(image_ms);
-				for (auto& f : fbs)
-				{
-					Imageview::destroy(f.second);
-					Framebuffer::destroy(f.first);
-				}
-				Clearvalues::destroy(cv);
+				RenderpassAndFramebuffer::destroy(rnf);
+				Imageview::destroy(white_imageview);
+				Image::destroy(white_image);
+				Pipeline::destroy(pl_element);
+				Pipeline::destroy(pl_text_lcd);
+				Pipeline::destroy(pl_text_sdf);
+
 				Descriptorset::destroy(ds);
 				Buffer::destroy(vtx_buffer);
 				Buffer::destroy(idx_buffer);
-				Commandbuffer::destroy(cb);
 				for (auto& f : font_atlases)
 					Imageview::destroy(std::get<2>(f));
 			}
@@ -142,7 +189,7 @@ namespace flame
 			void set_imageview(int index, Imageview* v)
 			{
 				image_views[index] = v;
-				ds->set_imageview(0, index, v, device->sp_bi_linear);
+				ds->set_imageview(0, index, v, d->sp_bi_linear);
 			}
 
 			int add_font_atlas(FontAtlas* font_atlas)
@@ -537,10 +584,10 @@ namespace flame
 				draw_cmds.emplace_back(scissor);
 			}
 
-			void record_cb()
+			void record(Commandbuffer* cb)
 			{
 				cb->begin();
-				cb->begin_renderpass(rp, fbs[sc->image_index()].first, cv);
+				cb->begin_renderpass(rnf->renderpass(), (Framebuffer*)rnf->framebuffers()[sc->image_index()], rnf->clearvalues());
 				if (idx_end != idx_buffer->mapped)
 				{
 					auto surface_size = Vec2f(sc->window()->size);
@@ -599,7 +646,7 @@ namespace flame
 
 		void Canvas::set_clear_color(const Vec4c& col)
 		{
-			((CanvasPrivate*)this)->cv->set(0, col);
+			((CanvasPrivate*)this)->rnf->clearvalues()->set(0, col);
 		}
 
 		Imageview* Canvas::get_imageview(uint index)
@@ -732,117 +779,14 @@ namespace flame
 			((CanvasPrivate*)this)->set_scissor(scissor);
 		}
 
-		Commandbuffer* Canvas::get_cb() const
+		void Canvas::record(Commandbuffer* cb)
 		{
-			return ((CanvasPrivate*)this)->cb;
+			((CanvasPrivate*)this)->record(cb);
 		}
 
-		void Canvas::record_cb()
+		Canvas* Canvas::create(Device* d, Swapchain* sc)
 		{
-			((CanvasPrivate*)this)->record_cb();
-		}
-
-		void Canvas::initialize(Device* d, Swapchain* sc)
-		{
-			device = d;
-
-			auto swapchain_format = get_swapchain_format();
-
-			AttachmentInfo at_info1;
-			at_info1.format = swapchain_format;
-			at_info1.clear = true;
-			at_info1.sample_count = sample_count;
-			AttachmentInfo at_info2;
-			at_info2.format = swapchain_format;
-			at_info2.clear = false;
-			at_info2.sample_count = SampleCount_1;
-
-			SubpassInfo sp_info;
-			sp_info.color_attachments.push_back(0);
-			sp_info.resolve_attachments.push_back(1);
-
-			RenderpassInfo rp_info;
-			rp_info.attachments.push_back(&at_info1);
-			rp_info.attachments.push_back(&at_info2);
-			rp_info.subpasses.push_back(&sp_info);
-			rp = Renderpass::create(device, rp_info);
-
-			white_image = Image::create(device, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
-			white_image->init(Vec4c(255));
-			white_imageview = Imageview::create(white_image);
-
-			std::vector<VertexInputAttributeInfo> via;
-			via.emplace_back(0, 0, 0, Format_R32G32_SFLOAT);
-			via.emplace_back(1, 0, 8, Format_R32G32_SFLOAT);
-			via.emplace_back(2, 0, 16, Format_R8G8B8A8_UNORM);
-			std::vector<VertexInputBufferInfo> vib;
-			vib.emplace_back(0, 20);
-
-			dsl = Descriptorsetlayout::create(d, { &DescriptorsetBinding(0, DescriptorSampledImage, 64) });
-			pll = Pipelinelayout::create(d, { dsl }, 16);
-
-			shv_element = Shader::create(d, L"2d/element.vert", "");
-			shf_element = Shader::create(d, L"2d/element.frag", "");
-			shf_text_lcd = Shader::create(d, L"2d/text_lcd.frag", "");
-			shf_text_sdf = Shader::create(d, L"2d/text_sdf.frag", "");
-
-			GraphicsPipelineInfo pl_element_info(pll, rp, 0);
-			pl_element_info.shaders.push_back(shv_element);
-			pl_element_info.shaders.push_back(shf_element);
-			pl_element_info.vi_attribs = via;
-			pl_element_info.vi_buffers = vib;
-			pl_element_info.cull_mode = CullModeNone;
-			pl_element_info.sample_count = sample_count;
-			pl_element_info.blend_states[0] = BlendInfo(
-				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
-				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-			pl_element = Pipeline::create(device, pl_element_info);
-
-			GraphicsPipelineInfo pl_info_text_lcd(pll, rp, 0);
-			pl_info_text_lcd.shaders.push_back(shv_element);
-			pl_info_text_lcd.shaders.push_back(shf_text_lcd);
-			pl_info_text_lcd.vi_attribs = via;
-			pl_info_text_lcd.vi_buffers = vib;
-			pl_info_text_lcd.cull_mode = CullModeNone;
-			pl_info_text_lcd.sample_count = sample_count;
-			pl_info_text_lcd.blend_states[0] = BlendInfo(
-				BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color,
-				BlendFactorZero, BlendFactorZero);
-			pl_text_lcd = Pipeline::create(d, pl_info_text_lcd);
-
-			GraphicsPipelineInfo pl_info_text_sdf(pll, rp, 0);
-			pl_info_text_sdf.shaders.push_back(shv_element);
-			pl_info_text_sdf.shaders.push_back(shf_text_sdf);
-			pl_info_text_sdf.vi_attribs = via;
-			pl_info_text_sdf.vi_buffers = vib;
-			pl_info_text_sdf.cull_mode = CullModeNone;
-			pl_info_text_sdf.sample_count = sample_count;
-			pl_info_text_sdf.blend_states[0] = BlendInfo(
-				BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
-				BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-			pl_text_sdf = Pipeline::create(d, pl_info_text_sdf);
-
-			for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
-			{
-				auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
-				circle_subdiv[i].y() = sin(rad);
-				circle_subdiv[i].x() = cos(rad);
-			}
-		}
-
-		void Canvas::deinitialize()
-		{
-			Renderpass::destroy(rp);
-			Imageview::destroy(white_imageview);
-			Image::destroy(white_image);
-			Pipeline::destroy(pl_element);
-			Pipeline::destroy(pl_text_lcd);
-			Pipeline::destroy(pl_text_sdf);
-		}
-
-		Canvas* Canvas::create(Swapchain* sc)
-		{
-			return new CanvasPrivate(sc);
+			return new CanvasPrivate(d, sc);
 		}
 
 		void Canvas::destroy(Canvas* c)

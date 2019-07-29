@@ -172,5 +172,88 @@ namespace flame
 			FilterNearest,
 			FilterLinear
 		};
+
+		enum VertexInputRate
+		{
+			VertexInputRateVertex,
+			VertexInputRateInstance,
+		};
+
+		enum PrimitiveTopology
+		{
+			PrimitiveTopologyPointList,
+			PrimitiveTopologyLineList,
+			PrimitiveTopologyLineStrip,
+			PrimitiveTopologyTriangleList,
+			PrimitiveTopologyTriangleStrip,
+			PrimitiveTopologyTriangleFan,
+			PrimitiveTopologyLineListWithAdjacency,
+			PrimitiveTopologyLineStripWithAdjacency,
+			PrimitiveTopologyTriangleListWithAdjacency,
+			PrimitiveTopologyTriangleStripWithAdjacency,
+			PrimitiveTopologyPatchList,
+		};
+
+		enum PolygonMode
+		{
+			PolygonModeFill,
+			PolygonModeLine,
+			PolygonModePoint
+		};
+
+		enum CompareOp
+		{
+			CompareOpLess,
+			CompareOpLessOrEqual,
+			CompareOpGreater,
+			CompareOpGreaterOrEqual,
+			CompareOpEqual,
+			CompareOpNotEqual,
+			CompareOpAlways,
+		};
+
+		enum CullMode
+		{
+			CullModeNone,
+			CullModeFront,
+			CullModeBack,
+			CullModeFrontAndback,
+		};
+
+		enum BlendFactor
+		{
+			BlendFactorZero,
+			BlendFactorOne,
+			BlendFactorSrcColor,
+			BlendFactorOneMinusSrcColor,
+			BlendFactorDstColor,
+			BlendFactorOneMinusDstColor,
+			BlendFactorSrcAlpha,
+			BlendFactorOneMinusSrcAlpha,
+			BlendFactorDstAlpha,
+			BlendFactorOneMinusDstAlpha,
+			BlendFactorConstantColor,
+			BlendFactorOneMinusConstantColor,
+			BlendFactorConstantAlpha,
+			BlendFactorOneMinusConstantAlpha,
+			BlendFactorSrcAlphaSaturate,
+			BlendFactorSrc1Color,
+			BlendFactorOneMinusSrc1Color,
+			BlendFactorSrc1Alpha,
+			BlendFactorOneMinusSrc1Alpha
+		};
+
+		enum DynamicState
+		{
+			DynamicStateViewport,
+			DynamicStateScissor,
+			DynamicStateLineWidth,
+			DynamicStateDepthBias,
+			DynamicStateBlendConstants,
+			DynamicStateDepthBounds,
+			DynamicStateStencilCompareMask,
+			DynamicStateStencilWriteMask,
+			DynamicStateStencilReference
+		};
 	}
 }
