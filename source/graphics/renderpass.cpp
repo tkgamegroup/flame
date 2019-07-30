@@ -14,7 +14,7 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkAttachmentDescription> vk_attachments(_attachments.size());
-			for (auto i = 0; i < vk_attachments.size(); i++)
+			for (auto i = 0; i < _attachments.size(); i++)
 			{
 				auto at_info = (AttachmentInfo*)_attachments[i];
 
@@ -43,7 +43,7 @@ namespace flame
 			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(_subpasses.size());
 			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(_subpasses.size());
 			std::vector<VkSubpassDescription> vk_subpasses(_subpasses.size());
-			for (auto i = 0; i < vk_subpasses.size(); i++)
+			for (auto i = 0; i < _subpasses.size(); i++)
 			{
 				auto sp_info = (SubpassInfo*)_subpasses[i];
 
@@ -120,6 +120,28 @@ namespace flame
 			subpasses.resize(_subpasses.size());
 			for (auto i = 0; i < _subpasses.size(); i++)
 				subpasses[i] = *(SubpassInfo*)(_subpasses[i]);
+
+			std::vector<uint> color_attachments;
+			for (auto i = 0; i < _subpasses.size(); i++)
+			{
+				auto sp_info = (SubpassInfo*)_subpasses[i];
+
+				for (auto idx : sp_info->color_attachments)
+				{
+					auto found = false;
+					for (auto existing : color_attachments)
+					{
+						if (idx == existing)
+						{
+							found = true;
+							break;
+						}
+					}
+					if (!found)
+						color_attachments.push_back(idx);
+				}
+			}
+			color_attachment_count = color_attachments.size();
 #endif
 		}
 
@@ -133,6 +155,11 @@ namespace flame
 		uint Renderpass::attachment_count() const
 		{
 			return ((RenderpassPrivate*)this)->attachments.size();
+		}
+
+		uint Renderpass::color_attachment_count() const
+		{
+			return ((RenderpassPrivate*)this)->color_attachment_count;
 		}
 
 		const AttachmentInfo& Renderpass::attachment_info(uint idx) const

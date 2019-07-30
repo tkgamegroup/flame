@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/graphics/renderpass.h>
+#include <flame/graphics/graphics.h>
 
 #include <vector>
 
@@ -63,8 +63,24 @@ namespace flame
 
 		struct Shader
 		{
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, Pipelinelayout* pll = nullptr, bool autogen_code = false);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs = {}, const std::vector<void*>& outputs = {}, Pipelinelayout* pll = nullptr, bool autogen_code = false);
+			// for vertex shader, inputs are the VertexInputAttributeInfos, for fragment shader, outputs are the OutputAttachmentInfos, otherwise, inputs and outputs are StageInOutInfos
+			// if autogen_code, inputs, outputs and pll are used to generate the code, otherwise, just the validation
 			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
+		};
+
+		struct StageInOutInfo
+		{
+			uint location;
+			Format$ format;
+			std::string name;
+
+			StageInOutInfo(uint location, Format$ format, const std::string& name = "") :
+				location(location),
+				format(format),
+				name(name)
+			{
+			}
 		};
 
 		struct VertexInputAttributeInfo
@@ -73,12 +89,14 @@ namespace flame
 			uint buffer_id;
 			uint offset;
 			Format$ format;
+			std::string name;
 
-			VertexInputAttributeInfo(uint location, uint buffer_id, uint offset, Format$ format) :
+			VertexInputAttributeInfo(uint location, uint buffer_id, uint offset, Format$ format, const std::string& name = "") :
 				location(location),
 				buffer_id(buffer_id),
 				offset(offset),
-				format(format)
+				format(format),
+				name(name)
 			{
 			}
 		};
@@ -97,15 +115,62 @@ namespace flame
 			}
 		};
 
-		struct BlendInfo
+		struct VertexInputInfo
 		{
+			std::vector<void*> attribs;
+			std::vector<void*> buffers;
+			PrimitiveTopology primitive_topology;
+			uint patch_control_points;
+
+			VertexInputInfo() :
+				primitive_topology(PrimitiveTopologyTriangleList),
+				patch_control_points(0)
+			{
+			}
+		};
+
+		struct RasterInfo
+		{
+			bool depth_clamp;
+			PolygonMode polygon_mode;
+			CullMode cull_mode;
+
+			RasterInfo() :
+				depth_clamp(false),
+				polygon_mode(PolygonModeFill),
+				cull_mode(CullModeBack)
+			{
+			}
+		};
+
+		struct DepthInfo
+		{
+			bool test;
+			bool write;
+			CompareOp compare_op;
+
+			DepthInfo() :
+				test(false),
+				write(false),
+				compare_op(CompareOpLess)
+			{
+			}
+		};
+
+		struct OutputAttachmentInfo
+		{
+			uint location;
+			Format$ format;
+			std::string name;
 			bool blend_enable;
 			BlendFactor blend_src_color;
 			BlendFactor blend_dst_color;
 			BlendFactor blend_src_alpha;
 			BlendFactor blend_dst_alpha;
 
-			BlendInfo()
+			OutputAttachmentInfo() :
+				location(0),
+				format(Format_R8G8B8A8_UNORM)
 			{
 				blend_enable = false;
 				blend_src_color = BlendFactorOne;
@@ -114,65 +179,28 @@ namespace flame
 				blend_dst_alpha = BlendFactorZero;
 			}
 
-			BlendInfo(BlendFactor bsc, BlendFactor bdc, BlendFactor bsa, BlendFactor bda)
+			OutputAttachmentInfo(uint location, Format$ format, const std::string& name) :
+				location(location),
+				format(format),
+				name(name)
+			{
+				blend_enable = false;
+				blend_src_color = BlendFactorOne;
+				blend_dst_color = BlendFactorZero;
+				blend_src_alpha = BlendFactorOne;
+				blend_dst_alpha = BlendFactorZero;
+			}
+
+			OutputAttachmentInfo(uint location, Format$ format, const std::string& name, BlendFactor sc, BlendFactor dc, BlendFactor sa, BlendFactor da) :
+				location(location),
+				format(format),
+				name(name)
 			{
 				blend_enable = true;
-				blend_src_color = bsc;
-				blend_dst_color = bdc;
-				blend_src_alpha = bsa;
-				blend_dst_alpha = bda;
-			}
-		};
-
-		struct GraphicsPipelineInfo
-		{
-			std::vector<void*> shaders;
-			Pipelinelayout* layout;
-			std::vector<VertexInputAttributeInfo> vi_attribs;
-			std::vector<VertexInputBufferInfo> vi_buffers;
-			PrimitiveTopology primitive_topology;
-			uint patch_control_points;
-			Vec2u viewport_size;
-			bool depth_clamp;
-			PolygonMode polygon_mode;
-			CullMode cull_mode;
-			SampleCount$ sample_count;
-			bool depth_test;
-			bool depth_write;
-			CompareOp depth_compare_op;
-			std::vector<BlendInfo> blend_states;
-			std::vector<DynamicState> dynamic_states;
-			Renderpass* renderpass;
-			uint subpass_idx;
-
-			GraphicsPipelineInfo(Pipelinelayout* layout, Renderpass* rp, uint subpass_idx) :
-				layout(layout),
-				primitive_topology(PrimitiveTopologyTriangleList),
-				patch_control_points(0),
-				viewport_size(0),
-				depth_clamp(false),
-				polygon_mode(PolygonModeFill),
-				cull_mode(CullModeBack),
-				sample_count(SampleCount_1),
-				depth_test(false),
-				depth_write(false),
-				depth_compare_op(CompareOpLess),
-				renderpass(rp),
-				subpass_idx(subpass_idx)
-			{
-				blend_states.resize(renderpass->subpass_info(subpass_idx).color_attachments.size());
-			}
-		};
-
-		struct ComputePipelineInfo
-		{
-			Shader* compute_shader;
-			Pipelinelayout* layout;
-
-			ComputePipelineInfo(Shader* compute_shader, Pipelinelayout* layout) :
-				compute_shader(compute_shader),
-				layout(layout)
-			{
+				blend_src_color = sc;
+				blend_dst_color = dc;
+				blend_src_alpha = sa;
+				blend_dst_alpha = da;
 			}
 		};
 
@@ -180,8 +208,10 @@ namespace flame
 		{
 			PipelineType type;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const GraphicsPipelineInfo& info);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const ComputePipelineInfo& info);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, 
+				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount$ sc = SampleCount_1, DepthInfo* depth = nullptr,
+				const std::vector<void*>& output_states = {}, const std::vector<uint>& dynamic_states = {});
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, Shader* compute_shader, Pipelinelayout* pll);
 			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline* p);
 		};
 	}

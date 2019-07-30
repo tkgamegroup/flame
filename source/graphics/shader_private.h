@@ -126,7 +126,7 @@ namespace flame
 			std::vector<std::unique_ptr<Resource>> vias;
 			std::unique_ptr<Resource> pc;
 
-			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, Pipelinelayout* pll, bool autogen_code);
+			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code);
 			~ShaderPrivate();
 		};
 
@@ -141,8 +141,8 @@ namespace flame
 
 #endif
 
-			PipelinePrivate(Device* d, const GraphicsPipelineInfo& info);
-			PipelinePrivate(Device* d, const ComputePipelineInfo& info);
+			PipelinePrivate(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<void*>& output_states, const std::vector<uint>& dynamic_states);
+			PipelinePrivate(Device* d, Shader* compute_shader, Pipelinelayout* pll);
 			~PipelinePrivate();
 		};
 	}

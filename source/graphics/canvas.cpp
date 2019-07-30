@@ -117,38 +117,22 @@ namespace flame
 				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "");
 				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "");
 
-				GraphicsPipelineInfo pl_element_info(pll, rnf->renderpass(), 0);
-				pl_element_info.shaders.push_back(shv_element);
-				pl_element_info.shaders.push_back(shf_element);
-				pl_element_info.vi_attribs = via;
-				pl_element_info.vi_buffers = vib;
-				pl_element_info.sample_count = sample_count;
-				pl_element_info.blend_states[0] = BlendInfo(
-					BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
-					BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-				pl_element = Pipeline::create(d, pl_element_info);
+				VertexInputInfo vi;
+				VertexInputAttributeInfo via1(0, 0, 0, Format_R32G32_SFLOAT);
+				VertexInputAttributeInfo via2(1, 0, 8, Format_R32G32_SFLOAT);
+				VertexInputAttributeInfo via3(2, 0, 16, Format_R8G8B8A8_UNORM);
+				VertexInputBufferInfo vib1(0, 20);
+				vi.attribs.push_back(&via1);
+				vi.attribs.push_back(&via2);
+				vi.attribs.push_back(&via3);
+				vi.buffers.push_back(&vib1);
 
-				GraphicsPipelineInfo pl_info_text_lcd(pll, rnf->renderpass(), 0);
-				pl_info_text_lcd.shaders.push_back(shv_element);
-				pl_info_text_lcd.shaders.push_back(shf_text_lcd);
-				pl_info_text_lcd.vi_attribs = via;
-				pl_info_text_lcd.vi_buffers = vib;
-				pl_info_text_lcd.sample_count = sample_count;
-				pl_info_text_lcd.blend_states[0] = BlendInfo(
-					BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color,
-					BlendFactorZero, BlendFactorZero);
-				pl_text_lcd = Pipeline::create(d, pl_info_text_lcd);
+				OutputAttachmentInfo output_alpha_blend(0, Format_R8G8B8A8_UNORM, "", BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorZero, BlendFactorOneMinusSrcAlpha);
+				OutputAttachmentInfo output_lcd(0, Format_R8G8B8A8_UNORM, "", BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color, BlendFactorZero, BlendFactorZero);
 
-				GraphicsPipelineInfo pl_info_text_sdf(pll, rnf->renderpass(), 0);
-				pl_info_text_sdf.shaders.push_back(shv_element);
-				pl_info_text_sdf.shaders.push_back(shf_text_sdf);
-				pl_info_text_sdf.vi_attribs = via;
-				pl_info_text_sdf.vi_buffers = vib;
-				pl_info_text_sdf.sample_count = sample_count;
-				pl_info_text_sdf.blend_states[0] = BlendInfo(
-					BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha,
-					BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-				pl_text_sdf = Pipeline::create(d, pl_info_text_sdf);
+				pl_element = Pipeline::create(d, { shv_element, shf_element }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, { &output_alpha_blend });
+				pl_text_lcd = Pipeline::create(d, { shv_element, shf_text_lcd }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, { &output_lcd });
+				pl_text_sdf = Pipeline::create(d, { shv_element, shf_text_sdf }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, { &output_alpha_blend });
 
 				for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
 				{

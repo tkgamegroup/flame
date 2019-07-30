@@ -15,6 +15,7 @@ namespace flame
 			DevicePrivate* d;
 			std::vector<AttachmentInfo> attachments;
 			std::vector<SubpassInfo> subpasses;
+			uint color_attachment_count;
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif

@@ -40,6 +40,7 @@ namespace flame
 		struct Renderpass
 		{
 			FLAME_GRAPHICS_EXPORTS uint attachment_count() const;
+			FLAME_GRAPHICS_EXPORTS uint color_attachment_count() const;
 			FLAME_GRAPHICS_EXPORTS const AttachmentInfo& attachment_info(uint idx) const;
 			FLAME_GRAPHICS_EXPORTS uint subpass_count() const;
 			FLAME_GRAPHICS_EXPORTS const SubpassInfo& subpass_info(uint idx) const;

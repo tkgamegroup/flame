@@ -425,7 +425,7 @@ namespace flame
 
 		};
 
-		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, Pipelinelayout* pll, bool autogen_code) :
+		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& _inputs, const std::vector<void*>& _outputs, Pipelinelayout* _pll, bool autogen_code) :
 			d((DevicePrivate*)d)
 		{
 			assert(std::fs::exists(filename));
@@ -446,7 +446,7 @@ namespace flame
 
 			if (autogen_code)
 			{
-				assert(pll);
+
 			}
 
 			auto hash = H(prefix.c_str());
@@ -559,13 +559,13 @@ namespace flame
 					get_v(src.type_id, &pc->v);
 				}
 
-				if (pll)
+				if (_pll)
 				{
-					auto pllp = (PipelinelayoutPrivate*)pll;
+					auto pll = (PipelinelayoutPrivate*)_pll;
 
 					auto pcv = &pc->v;
-					assert(!pc || pcv->size == pllp->pc_size);
-					auto udt = pllp->pc_udt;
+					assert(!pc || pcv->size == pll->pc_size);
+					auto udt = pll->pc_udt;
 					if (udt)
 					{
 						assert(pcv->members.size() == udt->variable_count());
@@ -593,9 +593,9 @@ namespace flame
 #endif
 		}
 
-		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, Pipelinelayout* pll, bool autogen_code)
+		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code)
 		{
-			return new ShaderPrivate(d, filename, prefix, pll, autogen_code);
+			return new ShaderPrivate(d, filename, prefix, inputs, outputs, pll, autogen_code);
 		}
 
 		void Shader::destroy(Shader* s)
@@ -641,9 +641,9 @@ namespace flame
 
 		};
 
-		PipelinePrivate::PipelinePrivate(Device* _d, const GraphicsPipelineInfo& info) :
+		PipelinePrivate::PipelinePrivate(Device* _d, const std::vector<void*>& shaders, Pipelinelayout* _pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* _vi, const Vec2u& _vp, RasterInfo* _raster, SampleCount$ _sc, DepthInfo* _depth, const std::vector<void*>& _output_states, const std::vector<uint>& _dynamic_states) :
 			d((DevicePrivate*)_d),
-			pll((PipelinelayoutPrivate*)info.layout)
+			pll((PipelinelayoutPrivate*)_pll)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
@@ -652,10 +652,10 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			vk_stage_infos.resize(info.shaders.size());
-			for (auto i = 0; i < info.shaders.size(); i++)
+			vk_stage_infos.resize(shaders.size());
+			for (auto i = 0; i < shaders.size(); i++)
 			{
-				auto src = (ShaderPrivate*)info.shaders[i];
+				auto src = (ShaderPrivate*)shaders[i];
 				auto& dst = vk_stage_infos[i];
 				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				dst.flags = 0;
@@ -666,26 +666,27 @@ namespace flame
 				dst.module = src->v;
 			}
 
-			auto vi_binding = 0;
-			auto vi_location = 0;
-			vk_vi_attributes.resize(info.vi_attribs.size());
-			for (auto i = 0; i < info.vi_attribs.size(); i++)
+			if (_vi)
 			{
-				auto& src = info.vi_attribs[i];
-				auto& dst = vk_vi_attributes[i];
-				dst.location = src.location;
-				dst.binding = src.buffer_id;
-				dst.offset = src.offset;
-				dst.format = to_enum(src.format);
-			}
-			vk_vi_bindings.resize(info.vi_buffers.size());
-			for (auto i = 0; i < info.vi_buffers.size(); i++)
-			{
-				auto& src = info.vi_buffers[i];
-				auto& dst = vk_vi_bindings[i];
-				dst.binding = src.id;
-				dst.stride = src.stride;
-				dst.inputRate = to_enum(src.rate);
+				vk_vi_attributes.resize(_vi->attribs.size());
+				for (auto i = 0; i < _vi->attribs.size(); i++)
+				{
+					const auto& src = *(VertexInputAttributeInfo*)_vi->attribs[i];
+					auto& dst = vk_vi_attributes[i];
+					dst.location = src.location;
+					dst.binding = src.buffer_id;
+					dst.offset = src.offset;
+					dst.format = to_enum(src.format);
+				}
+				vk_vi_bindings.resize(_vi->buffers.size());
+				for (auto i = 0; i < _vi->buffers.size(); i++)
+				{
+					const auto& src = *(VertexInputBufferInfo*)_vi->buffers[i];
+					auto& dst = vk_vi_bindings[i];
+					dst.binding = src.id;
+					dst.stride = src.stride;
+					dst.inputRate = to_enum(src.rate);
+				}
 			}
 
 			VkPipelineVertexInputStateCreateInfo vertex_input_state;
@@ -701,26 +702,26 @@ namespace flame
 			assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 			assembly_state.flags = 0;
 			assembly_state.pNext = nullptr;
-			assembly_state.topology = to_enum(info.primitive_topology);
+			assembly_state.topology = to_enum(_vi ? _vi->primitive_topology : PrimitiveTopologyTriangleList);
 			assembly_state.primitiveRestartEnable = VK_FALSE;
 
 			VkPipelineTessellationStateCreateInfo tess_state;
 			tess_state.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 			tess_state.pNext = nullptr;
 			tess_state.flags = 0;
-			tess_state.patchControlPoints = info.patch_control_points;
+			tess_state.patchControlPoints = _vi ? _vi->patch_control_points : 0;
 
 			VkViewport viewport;
-			viewport.width = (float)info.viewport_size.x();
-			viewport.height = (float)info.viewport_size.y();
+			viewport.width = (float)_vp.x();
+			viewport.height = (float)_vp.y();
 			viewport.minDepth = (float)0.0f;
 			viewport.maxDepth = (float)1.0f;
 			viewport.x = 0;
 			viewport.y = 0;
 
 			VkRect2D scissor;
-			scissor.extent.width = info.viewport_size.x();
-			scissor.extent.height = info.viewport_size.y();
+			scissor.extent.width = _vp.x();
+			scissor.extent.height = _vp.y();
 			scissor.offset.x = 0;
 			scissor.offset.y = 0;
 
@@ -737,10 +738,10 @@ namespace flame
 			raster_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 			raster_state.pNext = nullptr;
 			raster_state.flags = 0;
-			raster_state.depthClampEnable = info.depth_clamp;
+			raster_state.depthClampEnable = _raster ? _raster->depth_clamp : false;
 			raster_state.rasterizerDiscardEnable = VK_FALSE;
-			raster_state.polygonMode = to_enum(info.polygon_mode);
-			raster_state.cullMode = to_enum(info.cull_mode);
+			raster_state.polygonMode = to_enum(_raster ? _raster->polygon_mode : PolygonModeFill);
+			raster_state.cullMode = to_enum(_raster ? _raster->cull_mode : CullModeBack);
 			raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 			raster_state.depthBiasEnable = VK_FALSE;
 			raster_state.depthBiasConstantFactor = 0.f;
@@ -752,7 +753,7 @@ namespace flame
 			multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
-			multisample_state.rasterizationSamples = to_enum(info.sample_count);
+			multisample_state.rasterizationSamples = to_enum(_sc);
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
 			multisample_state.pSampleMask = nullptr;
@@ -763,9 +764,9 @@ namespace flame
 			depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 			depth_stencil_state.flags = 0;
 			depth_stencil_state.pNext = nullptr;
-			depth_stencil_state.depthTestEnable = info.depth_test;
-			depth_stencil_state.depthWriteEnable = info.depth_write;
-			depth_stencil_state.depthCompareOp = to_enum(info.depth_compare_op);
+			depth_stencil_state.depthTestEnable = _depth ? _depth->test : false;
+			depth_stencil_state.depthWriteEnable = _depth ? _depth->write : false;
+			depth_stencil_state.depthCompareOp = to_enum(_depth ? _depth->compare_op : CompareOpLess);
 			depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 			depth_stencil_state.minDepthBounds = 0;
 			depth_stencil_state.maxDepthBounds = 0;
@@ -773,18 +774,19 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			for (auto& a : info.blend_states)
+			vk_blend_attachment_states.resize(rp->color_attachment_count());
+			for (auto i = 0; i < _output_states.size(); i++)
 			{
-				VkPipelineColorBlendAttachmentState s;
-				s.blendEnable = a.blend_enable;
-				s.srcColorBlendFactor = to_enum(a.blend_src_color);
-				s.dstColorBlendFactor = to_enum(a.blend_dst_color);
-				s.colorBlendOp = VK_BLEND_OP_ADD;
-				s.srcAlphaBlendFactor = to_enum(a.blend_src_alpha);
-				s.dstAlphaBlendFactor = to_enum(a.blend_dst_alpha);
-				s.alphaBlendOp = VK_BLEND_OP_ADD;
-				s.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-				vk_blend_attachment_states.push_back(s);
+				const auto& src = *(OutputAttachmentInfo*)_output_states[i];
+				auto& dst = vk_blend_attachment_states[i];
+				dst.blendEnable = src.blend_enable;
+				dst.srcColorBlendFactor = to_enum(src.blend_src_color);
+				dst.dstColorBlendFactor = to_enum(src.blend_dst_color);
+				dst.colorBlendOp = VK_BLEND_OP_ADD;
+				dst.srcAlphaBlendFactor = to_enum(src.blend_src_alpha);
+				dst.dstAlphaBlendFactor = to_enum(src.blend_dst_alpha);
+				dst.alphaBlendOp = VK_BLEND_OP_ADD;
+				dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
 
 			VkPipelineColorBlendStateCreateInfo blend_state;
@@ -800,9 +802,9 @@ namespace flame
 			blend_state.attachmentCount = vk_blend_attachment_states.size();
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
-			for (auto& s : info.dynamic_states)
-				vk_dynamic_states.push_back(to_enum(s));
-			if (info.viewport_size.x() == 0 && info.viewport_size.y() == 0)
+			for (auto& s : _dynamic_states)
+				vk_dynamic_states.push_back(to_enum((DynamicState)s));
+			if (_vp.x() == 0 && _vp.y() == 0)
 			{
 				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
 					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
@@ -825,7 +827,7 @@ namespace flame
 			pipeline_info.pStages = vk_stage_infos.data();
 			pipeline_info.pVertexInputState = &vertex_input_state;
 			pipeline_info.pInputAssemblyState = &assembly_state;
-			pipeline_info.pTessellationState = info.patch_control_points > 0 ? &tess_state : nullptr;
+			pipeline_info.pTessellationState = tess_state.patchControlPoints > 0 ? &tess_state : nullptr;
 			pipeline_info.pViewportState = &viewport_state;
 			pipeline_info.pRasterizationState = &raster_state;
 			pipeline_info.pMultisampleState = &multisample_state;
@@ -833,8 +835,8 @@ namespace flame
 			pipeline_info.pColorBlendState = &blend_state;
 			pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
 			pipeline_info.layout = pll->v;
-			pipeline_info.renderPass = info.renderpass ? ((RenderpassPrivate*)info.renderpass)->v : nullptr;
-			pipeline_info.subpass = info.subpass_idx;
+			pipeline_info.renderPass = rp ? ((RenderpassPrivate*)rp)->v : nullptr;
+			pipeline_info.subpass = subpass_idx;
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 
@@ -846,31 +848,28 @@ namespace flame
 			type = PipelineGraphics;
 		}
 
-		PipelinePrivate::PipelinePrivate(Device* _d, const ComputePipelineInfo& info)
+		PipelinePrivate::PipelinePrivate(Device* _d, Shader* compute_shader, Pipelinelayout* _pll) :
+			d((DevicePrivate*)_d),
+			pll((PipelinelayoutPrivate*)_pll)
 		{
-			d = (DevicePrivate*)_d;
-			pll = (PipelinelayoutPrivate*)info.layout;
-
 #if defined(FLAME_VULKAN)
-			VkPipelineShaderStageCreateInfo vk_stage_info;
-			{
-				vk_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-				vk_stage_info.flags = 0;
-				vk_stage_info.pNext = nullptr;
-				vk_stage_info.pSpecializationInfo = nullptr;
-				vk_stage_info.pName = "main";
-				vk_stage_info.stage = to_enum(ShaderStageComp);
-				vk_stage_info.module = ((ShaderPrivate*)info.compute_shader)->v;
-			}
 
 			VkComputePipelineCreateInfo pipeline_info;
 			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-			pipeline_info.flags = 0;
 			pipeline_info.pNext = nullptr;
+			pipeline_info.flags = 0;
+
+			pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			pipeline_info.stage.flags = 0;
+			pipeline_info.stage.pNext = nullptr;
+			pipeline_info.stage.pSpecializationInfo = nullptr;
+			pipeline_info.stage.pName = "main";
+			pipeline_info.stage.stage = to_enum(ShaderStageComp);
+			pipeline_info.stage.module = ((ShaderPrivate*)compute_shader)->v;
+
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 			pipeline_info.layout = pll->v;
-			pipeline_info.stage = vk_stage_info;
 
 			chk_res(vkCreateComputePipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
 #elif defined(FLAME_D3D12)
@@ -889,14 +888,14 @@ namespace flame
 #endif
 		}
 
-		Pipeline* Pipeline::create(Device* d, const GraphicsPipelineInfo& info)
+		Pipeline* Pipeline::create(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<void*>& output_states, const std::vector<uint>& dynamic_states)
 		{
-			return new PipelinePrivate(d, info);
+			return new PipelinePrivate(d, shaders, pll, rp, subpass_idx, vi, vp, raster, sc, depth, output_states, dynamic_states);
 		}
 
-		Pipeline* Pipeline::create(Device* d, const ComputePipelineInfo& info)
+		Pipeline* Pipeline::create(Device* d, Shader* compute_shader, Pipelinelayout* pll)
 		{
-			return new PipelinePrivate(d, info);
+			return new PipelinePrivate(d, compute_shader, pll);
 		}
 
 		void Pipeline::destroy(Pipeline* p)
@@ -921,11 +920,7 @@ namespace flame
 						Pipeline::destroy((Pipeline*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && layout$i.v)
-					{
-						GraphicsPipelineInfo info((Pipelinelayout*)layout$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v);
-						info.shaders = *shaders$i.v;
-						out$o.v = Pipeline::create(d, info);
-					}
+						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)layout$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v);
 					else
 					{
 						printf("cannot create pipelinefullscreen\n");
