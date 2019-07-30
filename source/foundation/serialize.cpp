@@ -1825,7 +1825,7 @@ namespace flame
 			_udt->get_name(&pwname);
 			bool pass_prefix, pass_$;
 			auto udt_name = format_name(pwname, &pass_prefix, &pass_$);
-			if (pass_prefix && pass_$ && udt_name.find("~lambda_") == std::string::npos)
+			if (pass_prefix && pass_$ && udt_name.find("(lambda_") == std::string::npos)
 			{
 				auto udt_hash = H(udt_name.c_str());
 				if (!find_udt(udt_hash))

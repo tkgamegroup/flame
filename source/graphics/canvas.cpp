@@ -11,6 +11,12 @@
 
 namespace flame
 {
+	struct CanvasShaderPushconstantT$
+	{
+		Vec2f scale$;
+		Vec2f sdf_range$;
+	}unused;
+
 	namespace graphics
 	{
 		static Vec2f circle_subdiv[36];
@@ -110,12 +116,12 @@ namespace flame
 				vib.emplace_back(0, 20);
 
 				dsl = Descriptorsetlayout::create(d, { &DescriptorsetBinding(0, DescriptorSampledImage, 64) });
-				pll = Pipelinelayout::create(d, { dsl }, 16);
+				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
 
-				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "");
-				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "");
-				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "");
-				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "");
+				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", {}, {}, pll);
+				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "", {}, {}, pll);
+				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "", {}, {}, pll);
+				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "", {}, {}, pll);
 
 				VertexInputInfo vi;
 				VertexInputAttributeInfo via1(0, 0, 0, Format_R32G32_SFLOAT);

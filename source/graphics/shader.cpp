@@ -533,7 +533,42 @@ namespace flame
 					else
 					{
 						std::string base_name;
-
+						switch (t->basetype)
+						{
+						case spirv_cross::SPIRType::Boolean:
+							base_name = "bool";
+							break;
+						case spirv_cross::SPIRType::SByte:
+							base_name = "char";
+							break;
+						case spirv_cross::SPIRType::UByte:
+							base_name = "uchar";
+							break;
+						case spirv_cross::SPIRType::Short:
+							base_name = "short";
+							break;
+						case spirv_cross::SPIRType::UShort:
+							base_name = "ushort";
+							break;
+						case spirv_cross::SPIRType::Int:
+							base_name = "int";
+							break;
+						case spirv_cross::SPIRType::UInt:
+							base_name = "uint";
+							break;
+						case spirv_cross::SPIRType::Float:
+							base_name = "float";
+							break;
+						}
+						if (t->columns <= 1)
+						{
+							if (t->vecsize <= 1)
+								v->type_name = base_name;
+							else
+								v->type_name = "Vec(" + std::to_string(t->vecsize) + "+" + base_name + ")";
+						}
+						else
+							v->type_name = "Mat(" + std::to_string(t->vecsize) + "+" + std::to_string(t->columns) + "+" + base_name + ")";
 					}
 				};
 
@@ -563,20 +598,23 @@ namespace flame
 				{
 					auto pll = (PipelinelayoutPrivate*)_pll;
 
-					auto pcv = &pc->v;
-					assert(!pc || pcv->size == pll->pc_size);
-					auto udt = pll->pc_udt;
-					if (udt)
+					if (pc)
 					{
-						assert(pcv->members.size() == udt->variable_count());
-						for (auto i = 0; i < pcv->members.size(); i++)
+						auto pcv = &pc->v;
+						assert(!pc || pcv->size == pll->pc_size);
+						auto udt = pll->pc_udt;
+						if (udt)
 						{
-							auto m = pcv->members[i].get();
-							auto v = udt->variable(i);
-							auto tn = v->type()->name();
-							assert(m->name == v->name());
-							assert(m->offset == v->offset());
-							assert(m->size == v->size());
+							assert(pcv->members.size() == udt->variable_count());
+							for (auto i = 0; i < pcv->members.size(); i++)
+							{
+								auto m = pcv->members[i].get();
+								auto v = udt->variable(i);
+								assert(m->type_name == v->type()->name());
+								assert(m->name == v->name());
+								assert(m->offset == v->offset());
+								assert(m->size == v->size());
+							}
 						}
 					}
 				}

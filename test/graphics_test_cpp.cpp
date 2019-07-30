@@ -9,15 +9,6 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 
-namespace flame
-{
-	struct CanvasShaderPushconstantT$
-	{
-		Vec2f scale$;
-		Vec2f sdf_range$;
-	}unused;
-}
-
 using namespace flame;
 
 struct App
@@ -52,7 +43,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	typeinfo_load(L"graphics_test_cpp.typeinfo");
+	typeinfo_load(L"flame_graphics.typeinfo");
 
 	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
 	app.d = graphics::Device::create(true);
