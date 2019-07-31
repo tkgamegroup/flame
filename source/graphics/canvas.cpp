@@ -108,30 +108,19 @@ namespace flame
 				white_image->init(Vec4c(255));
 				white_imageview = Imageview::create(white_image);
 
-				std::vector<VertexInputAttributeInfo> via;
-				via.emplace_back(0, 0, 0, Format_R32G32_SFLOAT);
-				via.emplace_back(1, 0, 8, Format_R32G32_SFLOAT);
-				via.emplace_back(2, 0, 16, Format_R8G8B8A8_UNORM);
-				std::vector<VertexInputBufferInfo> vib;
-				vib.emplace_back(0, 20);
-
 				dsl = Descriptorsetlayout::create(d, { &DescriptorsetBinding(0, DescriptorSampledImage, 64) });
 				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
 
-				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", {}, {}, pll);
-				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "", {}, {}, pll);
-				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "", {}, {}, pll);
-				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "", {}, {}, pll);
+				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", {}, {}, pll, true);
+				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "", {}, {}, pll, true);
+				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "", {}, {}, pll, true);
+				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "", {}, {}, pll, true);
 
 				VertexInputInfo vi;
-				VertexInputAttributeInfo via1(0, 0, 0, Format_R32G32_SFLOAT);
-				VertexInputAttributeInfo via2(1, 0, 8, Format_R32G32_SFLOAT);
-				VertexInputAttributeInfo via3(2, 0, 16, Format_R8G8B8A8_UNORM);
-				VertexInputBufferInfo vib1(0, 20);
-				vi.attribs.push_back(&via1);
-				vi.attribs.push_back(&via2);
-				vi.attribs.push_back(&via3);
-				vi.buffers.push_back(&vib1);
+				vi.attribs.push_back(&VertexInputAttributeInfo(0, 0, 0, Format_R32G32_SFLOAT));
+				vi.attribs.push_back(&VertexInputAttributeInfo(1, 0, 8, Format_R32G32_SFLOAT));
+				vi.attribs.push_back(&VertexInputAttributeInfo(2, 0, 16, Format_R8G8B8A8_UNORM));
+				vi.buffers.push_back(&VertexInputBufferInfo(0, 20));
 
 				OutputAttachmentInfo output_alpha_blend(0, Format_R8G8B8A8_UNORM, "", BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorZero, BlendFactorOneMinusSrcAlpha);
 				OutputAttachmentInfo output_lcd(0, Format_R8G8B8A8_UNORM, "", BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color, BlendFactorZero, BlendFactorZero);

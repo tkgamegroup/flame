@@ -425,7 +425,7 @@ namespace flame
 
 		};
 
-		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& _inputs, const std::vector<void*>& _outputs, Pipelinelayout* _pll, bool autogen_code) :
+		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>& _inputs, const std::vector<void*>& _outputs, Pipelinelayout* _pll, bool autogen_code) :
 			d((DevicePrivate*)d)
 		{
 			assert(std::fs::exists(filename));
@@ -444,11 +444,59 @@ namespace flame
 			else if (ext == L".comp")
 				stage = ShaderStageComp;
 
+			auto pll = (PipelinelayoutPrivate*)_pll;
+
+			auto prefix = _prefix;
 			if (autogen_code)
 			{
-
+				if (pll)
+				{
+					auto udt = pll->pc_udt;
+					if (udt)
+					{
+						prefix += "\nlayout(push_constant) uniform PushconstantT\n{\n";
+						for (auto i = 0; i < udt->variable_count(); i++)
+						{
+							auto v = udt->variable(i);
+							auto t = v->type();
+							assert(t->tag() == TypeTagVariable);
+							std::string type_name;
+							switch (t->hash())
+							{
+							case cH("int"):
+								type_name = "int";
+								break;
+							case cH("Vec(2+int)"):
+								type_name = "ivec2";
+								break;
+							case cH("Vec(3+int)"):
+								type_name = "ivec3";
+								break;
+							case cH("Vec(4+int)"):
+								type_name = "ivec4";
+								break;
+							case cH("float"):
+								type_name = "float";
+								break;
+							case cH("Vec(2+float)"):
+								type_name = "vec2";
+								break;
+							case cH("Vec(3+float)"):
+								type_name = "vec3";
+								break;
+							case cH("Vec(4+float)"):
+								type_name = "vec4";
+								break;
+							default:
+								assert(0);
+							}
+							prefix += "\t" + type_name + " " + v->name() + ";\n";
+						}
+						prefix += "}pc;\n";
+					}
+				}
 			}
-
+			
 			auto hash = H(prefix.c_str());
 			std::wstring spv_filename(filename + L"." + std::to_wstring(hash) + L".spv");
 
@@ -459,18 +507,16 @@ namespace flame
 
 				std::fs::remove(spv_filename);
 
-				std::string pfx;
-				pfx += "#version 450 core\n";
-				pfx += "#extension GL_ARB_shading_language_420pack : enable\n";
-				if (stage != ShaderStageComp)
-					pfx += "#extension GL_ARB_separate_shader_objects : enable\n";
-				pfx += "\n" + prefix;
 				auto temp_filename = L"temp" + ext.wstring();
 				{
 					std::ofstream ofile(temp_filename);
-					auto file = get_file_content(filename);
-					ofile.write(pfx.c_str(), pfx.size());
-					ofile.write(file.first.get(), file.second);
+					auto file = get_file_string(filename);
+					ofile << "#version 450 core\n";
+					ofile << "#extension GL_ARB_shading_language_420pack : enable\n";
+					if (stage != ShaderStageComp)
+						ofile << "#extension GL_ARB_separate_shader_objects : enable\n";
+					ofile << "\n" << prefix << "\n";
+					ofile << file;
 					ofile.close();
 				}
 				std::wstring command_line(L" " + temp_filename + L" -flimit-file shader.conf -o" + spv_filename);
@@ -535,9 +581,6 @@ namespace flame
 						std::string base_name;
 						switch (t->basetype)
 						{
-						case spirv_cross::SPIRType::Boolean:
-							base_name = "bool";
-							break;
 						case spirv_cross::SPIRType::SByte:
 							base_name = "char";
 							break;
@@ -559,6 +602,8 @@ namespace flame
 						case spirv_cross::SPIRType::Float:
 							base_name = "float";
 							break;
+						default:
+							assert(0);
 						}
 						if (t->columns <= 1)
 						{
@@ -594,10 +639,8 @@ namespace flame
 					get_v(src.type_id, &pc->v);
 				}
 
-				if (_pll)
+				if (pll)
 				{
-					auto pll = (PipelinelayoutPrivate*)_pll;
-
 					if (pc)
 					{
 						auto pcv = &pc->v;
@@ -609,11 +652,14 @@ namespace flame
 							for (auto i = 0; i < pcv->members.size(); i++)
 							{
 								auto m = pcv->members[i].get();
+								assert(m->members.empty()); // nested structs are WIP
+
 								auto v = udt->variable(i);
 								assert(m->type_name == v->type()->name());
 								assert(m->name == v->name());
 								assert(m->offset == v->offset());
 								assert(m->size == v->size());
+								assert(m->count == 1); // count is WIP
 							}
 						}
 					}
