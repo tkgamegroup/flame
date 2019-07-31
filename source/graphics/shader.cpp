@@ -60,21 +60,30 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		DescriptorsetlayoutPrivate::DescriptorsetlayoutPrivate(Device* _d, const std::vector<void*>& bindings) :
+		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, const std::vector<void*>& _bindings) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
-			vk_bindings.resize(bindings.size());
-			for (auto i = 0; i < bindings.size(); i++)
+			for (auto i = 0; i < _bindings.size(); i++)
 			{
-				auto bd = (DescriptorsetBinding*)bindings[i];
+				auto b = (DescriptorBinding*)_bindings[i];
+				auto binding = b->binding;
 
-				vk_bindings[i].binding = bd->binding;
-				vk_bindings[i].descriptorType = to_enum(bd->type);
-				vk_bindings[i].descriptorCount = bd->count;
-				vk_bindings[i].stageFlags = to_flags(ShaderStageAll);
-				vk_bindings[i].pImmutableSamplers = nullptr;
+				assert(binding < 64);
+				assert(bindings_map.size() <= binding || bindings_map[binding].binding >= 64);
+
+				if (bindings_map.size() <= binding)
+					bindings_map.resize(binding + 1);
+				bindings_map[binding] = *b;
+
+				VkDescriptorSetLayoutBinding vk_binding;
+				vk_binding.binding = b->binding;
+				vk_binding.descriptorType = to_enum(b->type);
+				vk_binding.descriptorCount = b->count;
+				vk_binding.stageFlags = to_flags(ShaderStageAll);
+				vk_binding.pImmutableSamplers = nullptr;
+				vk_bindings.push_back(vk_binding);
 			}
 
 			VkDescriptorSetLayoutCreateInfo info;
@@ -91,7 +100,7 @@ namespace flame
 #endif
 		}
 
-		DescriptorsetlayoutPrivate::~DescriptorsetlayoutPrivate()
+		DescriptorlayoutPrivate::~DescriptorlayoutPrivate()
 		{
 #if defined(FLAME_VULKAN)
 			vkDestroyDescriptorSetLayout(((DevicePrivate*)d)->v, v, nullptr);
@@ -100,25 +109,25 @@ namespace flame
 #endif
 		}
 
-		Descriptorsetlayout* Descriptorsetlayout::create(Device* d, const std::vector<void*>& bindings)
+		Descriptorlayout* Descriptorlayout::create(Device* d, const std::vector<void*>& bindings)
 		{
-			return new DescriptorsetlayoutPrivate(d, bindings);
+			return new DescriptorlayoutPrivate(d, bindings);
 		}
 
-		void Descriptorsetlayout::destroy(Descriptorsetlayout* l)
+		void Descriptorlayout::destroy(Descriptorlayout* l)
 		{
-			delete (DescriptorsetlayoutPrivate*)l;
+			delete (DescriptorlayoutPrivate*)l;
 		}
 
-		struct DescriptorsetBinding$
+		struct DescriptorBinding$
 		{
 			AttributeV<uint> binding$i;
 			AttributeE<DescriptorType$> type$i;
 			AttributeV<uint> count$i;
 
-			AttributeV<DescriptorsetBinding> out$o;
+			AttributeV<DescriptorBinding> out$o;
 
-			FLAME_GRAPHICS_EXPORTS DescriptorsetBinding$()
+			FLAME_GRAPHICS_EXPORTS DescriptorBinding$()
 			{
 				count$i.v = 1;
 			}
@@ -136,7 +145,7 @@ namespace flame
 
 		};
 
-		struct Descriptorsetlayout$
+		struct Descriptorlayout$
 		{
 			AttributeP<std::vector<void*>> bindings$i;
 
@@ -147,10 +156,10 @@ namespace flame
 				if (bindings$i.frame > out$o.frame)
 				{
 					if (out$o.v)
-						Descriptorsetlayout::destroy((Descriptorsetlayout*)out$o.v);
+						Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d)
-						out$o.v = Descriptorsetlayout::create(d, bindings$i.v ? *bindings$i.v : std::vector<void*>());
+						out$o.v = Descriptorlayout::create(d, bindings$i.v ? *bindings$i.v : std::vector<void*>());
 					else
 					{
 						printf("cannot create descriptorsetlayout\n");
@@ -161,16 +170,17 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Descriptorsetlayout$()
+			FLAME_GRAPHICS_EXPORTS ~Descriptorlayout$()
 			{
 				if (out$o.v)
-					Descriptorsetlayout::destroy((Descriptorsetlayout*)out$o.v);
+					Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
 			}
 
 		};
 
-		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool* _p, Descriptorsetlayout* l) :
-			p((DescriptorpoolPrivate*)_p)
+		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool* _p, Descriptorlayout* _l) :
+			p((DescriptorpoolPrivate*)_p),
+			l((DescriptorlayoutPrivate*)_l)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorSetAllocateInfo info;
@@ -178,7 +188,7 @@ namespace flame
 			info.pNext = nullptr;
 			info.descriptorPool = p->v;
 			info.descriptorSetCount = 1;
-			info.pSetLayouts = &((DescriptorsetlayoutPrivate*)l)->v;
+			info.pSetLayouts = &l->v;
 
 			chk_res(vkAllocateDescriptorSets(p->d->v, &info, &v));
 #elif defined(FLAME_D3D12)
@@ -195,7 +205,7 @@ namespace flame
 #endif
 		}
 
-		void DescriptorsetPrivate::set_uniformbuffer(uint binding, uint index, Buffer* b, uint offset, uint range)
+		void DescriptorsetPrivate::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
@@ -209,7 +219,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.descriptorType = to_enum(l->bindings_map[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
@@ -221,33 +231,7 @@ namespace flame
 #endif
 		}
 
-		void DescriptorsetPrivate::set_storagebuffer(uint binding, uint index, Buffer* b, uint offset, uint range)
-		{
-#if defined(FLAME_VULKAN)
-			VkDescriptorBufferInfo i;
-			i.buffer = ((BufferPrivate*)b)->v;
-			i.offset = offset;
-			i.range = range == 0 ? b->size : range;
-
-			VkWriteDescriptorSet write;
-			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			write.pNext = nullptr;
-			write.dstSet = v;
-			write.dstBinding = binding;
-			write.dstArrayElement = index;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			write.descriptorCount = 1;
-			write.pBufferInfo = &i;
-			write.pImageInfo = nullptr;
-			write.pTexelBufferView = nullptr;
-
-			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
-		}
-
-		void DescriptorsetPrivate::set_imageview(uint binding, uint index, Imageview* iv, Sampler* sampler)
+		void DescriptorsetPrivate::set_image(uint binding, uint index, Imageview* iv, Sampler* sampler)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
@@ -261,7 +245,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			write.descriptorType = to_enum(l->bindings_map[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;
@@ -273,53 +257,17 @@ namespace flame
 #endif
 		}
 
-		void DescriptorsetPrivate::set_storageimage(uint binding, uint index, Imageview* iv)
+		void Descriptorset::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)
 		{
-#if defined(FLAME_VULKAN)
-			VkDescriptorImageInfo i;
-			i.imageView = ((ImageviewPrivate*)iv)->v;
-			i.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-			i.sampler = 0;
-
-			VkWriteDescriptorSet write;
-			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			write.pNext = nullptr;
-			write.dstSet = v;
-			write.dstBinding = binding;
-			write.dstArrayElement = index;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			write.descriptorCount = 1;
-			write.pBufferInfo = nullptr;
-			write.pImageInfo = &i;
-			write.pTexelBufferView = nullptr;
-
-			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
+			((DescriptorsetPrivate*)this)->set_buffer(binding, index, b, offset, range);
 		}
 
-		void Descriptorset::set_uniformbuffer(uint binding, uint index, Buffer* b, uint offset, uint range)
+		void Descriptorset::set_image(uint binding, uint index, Imageview* v, Sampler* sampler)
 		{
-			((DescriptorsetPrivate*)this)->set_uniformbuffer(binding, index, b, offset, range);
+			((DescriptorsetPrivate*)this)->set_image(binding, index, v, sampler);
 		}
 
-		void Descriptorset::set_storagebuffer(uint binding, uint index, Buffer* b, uint offset, uint range)
-		{
-			((DescriptorsetPrivate*)this)->set_storagebuffer(binding, index, b, offset, range);
-		}
-
-		void Descriptorset::set_imageview(uint binding, uint index, Imageview* v, Sampler* sampler)
-		{
-			((DescriptorsetPrivate*)this)->set_imageview(binding, index, v, sampler);
-		}
-
-		void Descriptorset::set_storageimage(uint binding, uint index, Imageview* v)
-		{
-			((DescriptorsetPrivate*)this)->set_storageimage(binding, index, v);
-		}
-
-		Descriptorset* Descriptorset::create(Descriptorpool* p, Descriptorsetlayout* l)
+		Descriptorset* Descriptorset::create(Descriptorpool* p, Descriptorlayout* l)
 		{
 			return new DescriptorsetPrivate(p, l);
 		}
@@ -348,7 +296,7 @@ namespace flame
 			std::vector<VkDescriptorSetLayout> vk_descriptorsetlayouts;
 			vk_descriptorsetlayouts.resize(descriptorsetlayouts.size());
 			for (auto i = 0; i < vk_descriptorsetlayouts.size(); i++)
-				vk_descriptorsetlayouts[i] = ((DescriptorsetlayoutPrivate*)descriptorsetlayouts[i])->v;
+				vk_descriptorsetlayouts[i] = ((DescriptorlayoutPrivate*)descriptorsetlayouts[i])->v;
 
 			VkPushConstantRange vk_pushconstant;
 			vk_pushconstant.offset = 0;
@@ -369,7 +317,9 @@ namespace flame
 
 #endif
 
-
+			dsls.resize(descriptorsetlayouts.size());
+			for (auto i = 0; i < dsls.size(); i++)
+				dsls[i] = (DescriptorlayoutPrivate*)descriptorsetlayouts[i];
 		}
 
 		PipelinelayoutPrivate::~PipelinelayoutPrivate()
@@ -602,6 +552,9 @@ namespace flame
 						case spirv_cross::SPIRType::Float:
 							base_name = "float";
 							break;
+						case spirv_cross::SPIRType::SampledImage:
+							base_name = "SampledImage";
+							break;
 						default:
 							assert(0);
 						}
@@ -617,34 +570,89 @@ namespace flame
 					}
 				};
 
-				if (stage == ShaderStageVert)
+				for (auto& src : resources.stage_inputs)
 				{
-					for (auto& src : resources.stage_inputs)
-					{
-						auto r = new Resource;
-						r->location = compiler.get_decoration(src.id, spv::DecorationLocation);
-						r->name = src.name;
-						get_v(src.type_id, &r->v);
-						vias.emplace_back(r);
-					}
+					auto r = new Resource;
+					r->location = compiler.get_decoration(src.id, spv::DecorationLocation);
+					r->name = src.name;
+					get_v(src.type_id, &r->v);
+					inputs.emplace_back(r);
+				}
+
+				for (auto& src : resources.stage_outputs)
+				{
+					auto r = new Resource;
+					r->location = compiler.get_decoration(src.id, spv::DecorationLocation);
+					r->name = src.name;
+					get_v(src.type_id, &r->v);
+					outputs.emplace_back(r);
+				}
+
+				for (auto& src : resources.uniform_buffers)
+				{
+					auto r = new Resource;
+					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
+					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
+					r->name = src.name;
+					get_v(src.type_id, &r->v);
+					uniform_buffers.emplace_back(r);
+				}
+
+				for (auto& src : resources.storage_buffers)
+				{
+					auto r = new Resource;
+					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
+					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
+					r->name = src.name;
+					get_v(src.type_id, &r->v);
+					storage_buffers.emplace_back(r);
+				}
+
+				for (auto& src : resources.sampled_images)
+				{
+					auto r = new Resource;
+					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
+					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
+					r->name = src.name;
+					get_v(src.type_id, &r->v);
+					sampled_images.emplace_back(r);
+				}
+
+				for (auto& src : resources.storage_images)
+				{
+					auto r = new Resource;
+					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
+					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
+					r->name = src.name;
+					get_v(src.type_id, &r->v);
+					storage_images.emplace_back(r);
 				}
 
 				assert(resources.push_constant_buffers.size() <= 1);
 				if (!resources.push_constant_buffers.empty())
 				{
 					auto& src = resources.push_constant_buffers[0];
-					pc.reset(new Resource);
-					pc->name = src.name;
+					push_constant.reset(new Resource);
+					push_constant->name = src.name;
 
-					get_v(src.type_id, &pc->v);
+					get_v(src.type_id, &push_constant->v);
 				}
+				
+				assert(resources.subpass_inputs.empty()); // subpass inputs are WIP
+				assert(resources.atomic_counters.empty()); // atomic counters are WIP
+				assert(resources.acceleration_structures.empty()); // acceleration structures are WIP
 
-				if (pll)
+				if (pll) // do validate
 				{
-					if (pc)
+					for (auto& r : sampled_images)
 					{
-						auto pcv = &pc->v;
-						assert(!pc || pcv->size == pll->pc_size);
+
+					}
+
+					if (push_constant)
+					{
+						auto pcv = &push_constant->v;
+						assert(!push_constant || pcv->size == pll->pc_size);
 						auto udt = pll->pc_udt;
 						if (udt)
 						{

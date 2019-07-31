@@ -27,7 +27,7 @@ namespace flame
 			~DescriptorpoolPrivate();
 		};
 
-		struct DescriptorsetlayoutPrivate : Descriptorsetlayout
+		struct DescriptorlayoutPrivate : Descriptorlayout
 		{
 			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
@@ -35,26 +35,28 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			DescriptorsetlayoutPrivate(Device* d, const std::vector<void*>& _bindings);
-			~DescriptorsetlayoutPrivate();
+
+			std::vector<DescriptorBinding> bindings_map;
+
+			DescriptorlayoutPrivate(Device* d, const std::vector<void*>& _bindings);
+			~DescriptorlayoutPrivate();
 		};
 
 		struct DescriptorsetPrivate : Descriptorset
 		{
 			DescriptorpoolPrivate* p;
+			DescriptorlayoutPrivate* l;
 #if defined(FLAME_VULKAN)
 			VkDescriptorSet v;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			DescriptorsetPrivate(Descriptorpool* p, Descriptorsetlayout* l);
+			DescriptorsetPrivate(Descriptorpool* p, Descriptorlayout* l);
 			~DescriptorsetPrivate();
 
-			void set_uniformbuffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0);
-			void set_storagebuffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0);
-			void set_imageview(uint binding, uint index, Imageview* iv, Sampler* sampler);
-			void set_storageimage(uint binding, uint index, Imageview* iv);
+			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range);
+			void set_image(uint binding, uint index, Imageview* iv, Sampler* sampler);
 		};
 
 		struct PipelinelayoutPrivate : Pipelinelayout
@@ -66,7 +68,7 @@ namespace flame
 
 #endif
 
-			std::vector<DescriptorsetPrivate*> dsls;
+			std::vector<DescriptorlayoutPrivate*> dsls;
 			uint pc_size;
 			UdtInfo* pc_udt;
 
@@ -101,7 +103,6 @@ namespace flame
 				uint location;
 				uint set;
 				uint binding;
-				uint count;
 				std::string name;
 
 				Variable v;
@@ -109,8 +110,7 @@ namespace flame
 				Resource() :
 					location(0),
 					set(0),
-					binding(0),
-					count(0)
+					binding(0)
 				{
 				}
 			};
@@ -123,8 +123,13 @@ namespace flame
 #endif
 			ShaderStage$ stage;
 
-			std::vector<std::unique_ptr<Resource>> vias;
-			std::unique_ptr<Resource> pc;
+			std::vector<std::unique_ptr<Resource>> inputs;
+			std::vector<std::unique_ptr<Resource>> outputs;
+			std::vector<std::unique_ptr<Resource>> uniform_buffers;
+			std::vector<std::unique_ptr<Resource>> storage_buffers;
+			std::vector<std::unique_ptr<Resource>> sampled_images;
+			std::vector<std::unique_ptr<Resource>> storage_images;
+			std::unique_ptr<Resource> push_constant;
 
 			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code);
 			~ShaderPrivate();

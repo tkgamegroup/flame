@@ -89,7 +89,7 @@ namespace flame
 			uint grid_curr_x;
 			uint grid_curr_y;
 
-			Image* atlas;
+			Image* image;
 
 			FontAtlasPrivate(Device* _d, uint _pixel_height, bool _sdf, const std::vector<Font*>& _fonts) :
 				d(_d)
@@ -99,8 +99,8 @@ namespace flame
 
 				memset(map, 0, sizeof(map));
 
-				atlas = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
-				atlas->init(Vec4c(0));
+				image = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
+				image->init(Vec4c(0));
 
 				max_width = 0;
 				for (auto src : _fonts)
@@ -121,7 +121,7 @@ namespace flame
 
 			~FontAtlasPrivate()
 			{
-				Image::destroy(atlas);
+				Image::destroy(image);
 			}
 
 			const Glyph* get_glyph(wchar_t unicode)
@@ -206,13 +206,13 @@ namespace flame
 									}
 								}
 
-								atlas->set_pixels(x, y, width, height, temp);
+								image->set_pixels(x, y, width, height, temp);
 
 								delete[] temp;
 							}
 
-							g->uv0 = Vec2f(x, y + height) / atlas->size;
-							g->uv1 = Vec2f(x + width, y) / atlas->size;
+							g->uv0 = Vec2f(x, y + height) / image->size;
+							g->uv1 = Vec2f(x + width, y) / image->size;
 						}
 						else
 						{
@@ -246,12 +246,12 @@ namespace flame
 							auto x = g->grid_x * (max_width + sdf_range);
 							auto y = g->grid_y * (pixel_height + sdf_range);
 
-							atlas->set_pixels(x, y, size.x(), size.y(), temp);
+							image->set_pixels(x, y, size.x(), size.y(), temp);
 
 							delete temp;
 
-							g->uv0 = Vec2f(x + sdf_range, y + sdf_range) / atlas->size;
-							g->uv1 = Vec2f(x + size.x() - sdf_range, y + size.y() - sdf_range) / atlas->size;
+							g->uv0 = Vec2f(x + sdf_range, y + sdf_range) / image->size;
+							g->uv1 = Vec2f(x + size.x() - sdf_range, y + size.y() - sdf_range) / image->size;
 						}
 
 						break;
@@ -290,9 +290,9 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->get_text_width(text);
 		}
 
-		Image* FontAtlas::atlas() const
+		Image* FontAtlas::image() const
 		{
-			return ((FontAtlasPrivate*)this)->atlas;
+			return ((FontAtlasPrivate*)this)->image;
 		}
 	}
 }

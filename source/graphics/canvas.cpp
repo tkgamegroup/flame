@@ -21,7 +21,7 @@ namespace flame
 	{
 		static Vec2f circle_subdiv[36];
 
-		const auto MaxImageviewCount = 64;
+		const auto MaxImageCount = 64U;
 
 		static SampleCount$ sample_count = SampleCount_8;
 
@@ -63,7 +63,7 @@ namespace flame
 			Image* image_ms;
 			RenderpassAndFramebuffer* rnf;
 
-			Descriptorsetlayout* dsl;
+			Descriptorlayout* dsl;
 			Pipelinelayout* pll;
 			Shader* shv_element;
 			Shader* shf_element;
@@ -83,9 +83,9 @@ namespace flame
 			Buffer* vtx_buffer;
 			Buffer* idx_buffer;
 			Vertex* vtx_end;
-			int* idx_end;
+			uint* idx_end;
 
-			Imageview* image_views[MaxImageviewCount];
+			Imageview* images[MaxImageCount];
 
 			std::vector<std::tuple<FontAtlas*, uint, Imageview*>> font_atlases;
 
@@ -108,7 +108,7 @@ namespace flame
 				white_image->init(Vec4c(255));
 				white_imageview = Imageview::create(white_image);
 
-				dsl = Descriptorsetlayout::create(d, { &DescriptorsetBinding(0, DescriptorSampledImage, 64) });
+				dsl = Descriptorlayout::create(d, { &DescriptorBinding(0, DescriptorSampledImage, 64) });
 				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
 
 				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", {}, {}, pll, true);
@@ -143,10 +143,10 @@ namespace flame
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
-				idx_end = (int*)idx_buffer->mapped;
+				idx_end = (uint*)idx_buffer->mapped;
 
-				for (auto i = 0; i < MaxImageviewCount; i++)
-					set_imageview(i, white_imageview);
+				for (auto i = 0; i < MaxImageCount; i++)
+					set_image(i, white_imageview);
 			}
 
 			~CanvasPrivate()
@@ -165,27 +165,10 @@ namespace flame
 					Imageview::destroy(std::get<2>(f));
 			}
 
-			void set_imageview(int index, Imageview* v)
+			void set_image(int index, Imageview* v)
 			{
-				image_views[index] = v;
-				ds->set_imageview(0, index, v, d->sp_bi_linear);
-			}
-
-			int add_font_atlas(FontAtlas* font_atlas)
-			{
-				for (auto i = 1; i < MaxImageviewCount; i++)
-				{
-					if (image_views[i] == white_imageview)
-					{
-						auto view = Imageview::create(font_atlas->atlas());
-						set_imageview(i, view);
-
-						font_atlases.emplace_back(font_atlas, i, view);
-
-						return font_atlases.size() - 1;
-					}
-				}
-				return -1;
+				images[index] = v;
+				ds->set_image(0, index, v, d->sp_bi_linear);
 			}
 
 			void start_cmd(DrawCmdType type, int id)
@@ -393,20 +376,15 @@ namespace flame
 				}
 			}
 
-			void add_text(uint font_atlas_index, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+			void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 			{
-				if (text[0] == 0 || font_atlas_index >= font_atlases.size())
-					return;
-
-				const auto& f = font_atlases[font_atlas_index];
-				auto font_atlas = std::get<0>(f);
-				auto pixel_height = font_atlas->pixel_height;
-				if (!font_atlas->sdf)
+				auto pixel_height = f->pixel_height;
+				if (!f->sdf)
 					scale = 1.f;
 
 				auto _pos = Vec2f(Vec2i(pos));
 
-				start_cmd(font_atlas->sdf ? DrawCmdTextSdf : DrawCmdTextLcd, std::get<1>(f));
+				start_cmd(f->sdf ? DrawCmdTextSdf : DrawCmdTextLcd, f->index);
 				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
 				auto& idx_cnt = draw_cmds.back().idx_cnt;
 
@@ -419,7 +397,7 @@ namespace flame
 					}
 					else
 					{
-						auto g = font_atlas->get_glyph(ch);
+						auto g = f->get_glyph(ch);
 						auto size = Vec2f(g->size) * scale;
 
 						auto p = _pos + Vec2f(g->off) * scale;
@@ -618,7 +596,7 @@ namespace flame
 				cb->end();
 
 				vtx_end = (Vertex*)vtx_buffer->mapped;
-				idx_end = (int*)idx_buffer->mapped;
+				idx_end = (uint*)idx_buffer->mapped;
 				draw_cmds.clear();
 			}
 		};
@@ -628,24 +606,14 @@ namespace flame
 			((CanvasPrivate*)this)->rnf->clearvalues()->set(0, col);
 		}
 
-		Imageview* Canvas::get_imageview(uint index)
+		Imageview* Canvas::get_image(uint index)
 		{
-			return ((CanvasPrivate*)this)->image_views[index];
+			return ((CanvasPrivate*)this)->images[index];
 		}
 
-		void Canvas::set_imageview(uint index, Imageview* v)
+		void Canvas::set_image(uint index, Imageview* v)
 		{
-			((CanvasPrivate*)this)->set_imageview(index, v);
-		}
-
-		uint Canvas::add_font_atlas(FontAtlas* font_atlas)
-		{
-			return ((CanvasPrivate*)this)->add_font_atlas(font_atlas);
-		}
-
-		FontAtlas* Canvas::get_font_atlas(uint idx)
-		{
-			return std::get<0>(((CanvasPrivate*)this)->font_atlases[idx]);
+			((CanvasPrivate*)this)->set_image(index, v);
 		}
 
 		void Canvas::start_cmd(DrawCmdType type, uint id)
@@ -693,9 +661,9 @@ namespace flame
 			((CanvasPrivate*)this)->fill(col);
 		}
 
-		void Canvas::add_text(uint font_index, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+		void Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 		{
-			((CanvasPrivate*)this)->add_text(font_index, pos, col, text, scale);
+			((CanvasPrivate*)this)->add_text(f, pos, col, text, scale);
 		}
 
 		void Canvas::add_line(const Vec2f& p0, const Vec2f& p1, const Vec4c& col, float thickness)

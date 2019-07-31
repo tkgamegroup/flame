@@ -35,10 +35,12 @@ namespace flame
 			uint pixel_height;
 			uint max_width;
 
+			uint index;
+
 			FLAME_GRAPHICS_EXPORTS const Glyph* get_glyph(wchar_t unicode);
 			FLAME_GRAPHICS_EXPORTS int get_text_width(const std::wstring& text);
 
-			FLAME_GRAPHICS_EXPORTS Image* atlas() const;
+			FLAME_GRAPHICS_EXPORTS Image* image() const;
 
 			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint pixel_height, bool sdf, const std::vector<Font*>& fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);

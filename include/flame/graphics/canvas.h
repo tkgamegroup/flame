@@ -24,11 +24,8 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS void set_clear_color(const Vec4c& col);
 
-			FLAME_GRAPHICS_EXPORTS Imageview* get_imageview(uint index);
-			FLAME_GRAPHICS_EXPORTS void set_imageview(uint index, Imageview* v);
-
-			FLAME_GRAPHICS_EXPORTS uint add_font_atlas(FontAtlas* font_atlas);
-			FLAME_GRAPHICS_EXPORTS FontAtlas* get_font_atlas(uint idx);
+			FLAME_GRAPHICS_EXPORTS Imageview* get_image(uint index);
+			FLAME_GRAPHICS_EXPORTS void set_image(uint index, Imageview* v);
 
 			FLAME_GRAPHICS_EXPORTS void start_cmd(DrawCmdType type, uint id);
 			FLAME_GRAPHICS_EXPORTS void path_line_to(const Vec2f& p);
@@ -40,7 +37,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void stroke_col2(const Vec4c& inner_col, const Vec4c& outter_col, float thickness, bool closed);
 			FLAME_GRAPHICS_EXPORTS void fill(const Vec4c& col);
 
-			FLAME_GRAPHICS_EXPORTS void add_text(uint font_atlas_index, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale = 1.f /* for sdf */);
+			FLAME_GRAPHICS_EXPORTS void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale = 1.f /* for sdf */);
 			FLAME_GRAPHICS_EXPORTS void add_line(const Vec2f& p0, const Vec2f& p1, const Vec4c& col, float thickness);
 			FLAME_GRAPHICS_EXPORTS void add_triangle_filled(const Vec2f& p0, const Vec2f& p1, const Vec2f& p2, const Vec4c& col);
 			FLAME_GRAPHICS_EXPORTS void add_rect(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float thickness, float round_radius = 0.f, Side round_flags = Side(SideNW | SideNE | SideSW | SideSE));
