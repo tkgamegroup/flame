@@ -22,6 +22,7 @@ namespace flame
 
 			Format_R8_UNORM,
 			Format_R16_UNORM,
+			Format_R32_UINT,
 			Format_R32_SFLOAT,
 			Format_R32G32_SFLOAT,
 			Format_R32G32B32_SFLOAT,

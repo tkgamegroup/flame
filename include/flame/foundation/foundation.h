@@ -48,21 +48,6 @@ FLAME_FOUNDATION_EXPORTS void* flame_malloc(unsigned int size);
 FLAME_FOUNDATION_EXPORTS void* flame_realloc(void* p, unsigned int size);
 FLAME_FOUNDATION_EXPORTS void flame_free(void* p);
 
-inline constexpr unsigned int _HASH(char const* str, unsigned int seed)
-{
-	return 0 == *str ? seed : _HASH(str + 1, seed ^ (*str + 0x9e3779b9 + (seed << 6) + (seed >> 2)));
-}
-
-#define H(x) (_HASH(x, 0))
-
-template <unsigned int N>
-struct EnsureConst
-{
-	static const unsigned int value = N;
-};
-
-#define cH(x) (EnsureConst<_HASH(x, 0)>::value)
-
 namespace flame
 {
 	template<class F>

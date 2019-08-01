@@ -31,7 +31,7 @@ namespace flame
 			{
 			}
 
-			DescriptorBinding(uint binding, DescriptorType$ type, uint count = 1, const std::string& name = "") :
+			DescriptorBinding(uint binding, DescriptorType$ type, uint count = 1, const std::string& name = "", bool dual_src = false) :
 				binding(binding),
 				type(type),
 				count(count),
@@ -63,7 +63,7 @@ namespace flame
 
 		struct Shader
 		{
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs = {}, const std::vector<void*>& outputs = {}, Pipelinelayout* pll = nullptr, bool autogen_code = false);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs = nullptr, const std::vector<void*>* outputs = nullptr, Pipelinelayout* pll = nullptr, bool autogen_code = false);
 			// for vertex shader, inputs are the VertexInputAttributeInfos, for fragment shader, outputs are the OutputAttachmentInfos, otherwise, inputs and outputs are StageInOutInfos
 			// if autogen_code, inputs, outputs and pll are used to generate the code, otherwise, just the validation
 			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
@@ -167,40 +167,73 @@ namespace flame
 			BlendFactor blend_dst_color;
 			BlendFactor blend_src_alpha;
 			BlendFactor blend_dst_alpha;
+			bool dual_src;
 
 			OutputAttachmentInfo() :
 				location(0),
-				format(Format_R8G8B8A8_UNORM)
+				format(Format_R8G8B8A8_UNORM),
+				blend_enable(false),
+				blend_src_color(BlendFactorOne),
+				blend_dst_color(BlendFactorZero),
+				blend_src_alpha(BlendFactorOne),
+				blend_dst_alpha(BlendFactorZero),
+				dual_src(false)
 			{
-				blend_enable = false;
-				blend_src_color = BlendFactorOne;
-				blend_dst_color = BlendFactorZero;
-				blend_src_alpha = BlendFactorOne;
-				blend_dst_alpha = BlendFactorZero;
 			}
 
 			OutputAttachmentInfo(uint location, Format$ format, const std::string& name) :
 				location(location),
 				format(format),
-				name(name)
+				name(name),
+				blend_enable(false),
+				blend_src_color(BlendFactorOne),
+				blend_dst_color(BlendFactorZero),
+				blend_src_alpha(BlendFactorOne),
+				blend_dst_alpha(BlendFactorZero),
+				dual_src(false)
 			{
-				blend_enable = false;
-				blend_src_color = BlendFactorOne;
-				blend_dst_color = BlendFactorZero;
-				blend_src_alpha = BlendFactorOne;
-				blend_dst_alpha = BlendFactorZero;
 			}
 
 			OutputAttachmentInfo(uint location, Format$ format, const std::string& name, BlendFactor sc, BlendFactor dc, BlendFactor sa, BlendFactor da) :
 				location(location),
 				format(format),
-				name(name)
+				name(name),
+				blend_enable(true),
+				blend_src_color(sc),
+				blend_dst_color(dc),
+				blend_src_alpha(sa),
+				blend_dst_alpha(da)
 			{
-				blend_enable = true;
-				blend_src_color = sc;
-				blend_dst_color = dc;
-				blend_src_alpha = sa;
-				blend_dst_alpha = da;
+				const BlendFactor dual_src_enums[] = {
+					BlendFactorSrc1Color,
+					BlendFactorOneMinusSrc1Color,
+					BlendFactorSrc1Alpha,
+					BlendFactorOneMinusSrc1Alpha
+				};
+				dual_src = false;
+				for (auto i = 0; i < FLAME_ARRAYSIZE(dual_src_enums); i++)
+				{
+					if (sc == dual_src_enums[i])
+					{
+						dual_src = true;
+						break;
+					}
+					if (dc == dual_src_enums[i])
+					{
+						dual_src = true;
+						break;
+					}
+					if (sa == dual_src_enums[i])
+					{
+						dual_src = true;
+						break;
+					}
+					if (da == dual_src_enums[i])
+					{
+						dual_src = true;
+						break;
+					}
+				}
 			}
 		};
 

@@ -111,23 +111,39 @@ namespace flame
 				dsl = Descriptorlayout::create(d, { &DescriptorBinding(0, DescriptorSampledImage, 64, "images") });
 				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
 
-				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", {}, {}, pll, true);
-				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "", {}, {}, pll, true);
-				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "", {}, {}, pll, true);
-				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "", {}, {}, pll, true);
-
+				VertexInputAttributeInfo via1(0, 0, 0, Format_R32G32_SFLOAT, "pos");
+				VertexInputAttributeInfo via2(1, 0, 8, Format_R32G32_SFLOAT, "uv");
+				VertexInputAttributeInfo via3(2, 0, 16, Format_R8G8B8A8_UNORM, "color");
+				VertexInputBufferInfo vib(0, 20);
 				VertexInputInfo vi;
-				vi.attribs.push_back(&VertexInputAttributeInfo(0, 0, 0, Format_R32G32_SFLOAT));
-				vi.attribs.push_back(&VertexInputAttributeInfo(1, 0, 8, Format_R32G32_SFLOAT));
-				vi.attribs.push_back(&VertexInputAttributeInfo(2, 0, 16, Format_R8G8B8A8_UNORM));
-				vi.buffers.push_back(&VertexInputBufferInfo(0, 20));
+				vi.attribs.push_back(&via1);
+				vi.attribs.push_back(&via2);
+				vi.attribs.push_back(&via3);
+				vi.buffers.push_back(&vib);
 
-				OutputAttachmentInfo output_alpha_blend(0, Format_R8G8B8A8_UNORM, "", BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-				OutputAttachmentInfo output_lcd(0, Format_R8G8B8A8_UNORM, "", BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color, BlendFactorZero, BlendFactorZero);
+				StageInOutInfo vert_output1(0, Format_R32G32B32A32_SFLOAT, "color");
+				StageInOutInfo vert_output2(1, Format_R32G32_SFLOAT, "uv");
+				StageInOutInfo vert_output3(2, Format_R32_UINT, "id");
+				std::vector<void*> vert_outputs;
+				vert_outputs.push_back(&vert_output1);
+				vert_outputs.push_back(&vert_output2);
+				vert_outputs.push_back(&vert_output3);
 
-				pl_element = Pipeline::create(d, { shv_element, shf_element }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, { &output_alpha_blend });
-				pl_text_lcd = Pipeline::create(d, { shv_element, shf_text_lcd }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, { &output_lcd });
-				pl_text_sdf = Pipeline::create(d, { shv_element, shf_text_sdf }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, { &output_alpha_blend });
+				OutputAttachmentInfo output_alpha_blend(0, Format_R8G8B8A8_UNORM, "color", BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorZero, BlendFactorOneMinusSrcAlpha);
+				OutputAttachmentInfo output_lcd(0, Format_R8G8B8A8_UNORM, "color", BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color, BlendFactorZero, BlendFactorZero);
+				std::vector<void*> outputs_alpha_blend;
+				std::vector<void*> outputs_lcd;
+				outputs_alpha_blend.push_back(&output_alpha_blend);
+				outputs_lcd.push_back(&output_lcd);
+
+				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", &vi.attribs, &vert_outputs, pll, true);
+				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "", &vert_outputs, &outputs_alpha_blend, pll, true);
+				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "", &vert_outputs, &outputs_lcd, pll, true);
+				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "", &vert_outputs, &outputs_alpha_blend, pll, true);
+
+				pl_element = Pipeline::create(d, { shv_element, shf_element }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_alpha_blend);
+				pl_text_lcd = Pipeline::create(d, { shv_element, shf_text_lcd }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_lcd);
+				pl_text_sdf = Pipeline::create(d, { shv_element, shf_text_sdf }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_alpha_blend);
 
 				for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
 				{

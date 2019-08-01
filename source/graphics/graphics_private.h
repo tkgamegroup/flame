@@ -289,6 +289,69 @@ namespace flame
 			}
 		}
 
+		inline std::string cpp_typehash_to_glsl_typename(uint hash)
+		{
+			switch (hash)
+			{
+			case cH("int"):
+				return "int";
+			case cH("Vec(2+int)"):
+				return "ivec2";
+			case cH("Vec(3+int)"):
+				return"ivec3";
+			case cH("Vec(4+int)"):
+				return"ivec4";
+			case cH("float"):
+				return"float";
+			case cH("Vec(2+float)"):
+				return"vec2";
+			case cH("Vec(3+float)"):
+				return"vec3";
+			case cH("Vec(4+float)"):
+				return"vec4";
+			default:
+				assert(0);
+			}
+		}
+
+		inline std::string format_to_cpp_typename(Format$ f)
+		{
+			switch (f)
+			{
+			case Format_R32_UINT:
+				return "uint";
+			case Format_R8_UNORM: case Format_R32_SFLOAT:
+				return "float";
+			case Format_R32G32_SFLOAT:
+				return "Vec(2+float)";
+			case Format_R32G32B32_SFLOAT:
+				return "Vec(3+float)";
+			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
+				return "Vec(4+float)";
+			default:
+				assert(0);
+			}
+		}
+
+		inline std::string format_to_glsl_typename(Format$ f)
+		{
+			switch (f)
+			{
+			case Format_R32_UINT:
+				return "flat uint";
+			case Format_R8_UNORM: case Format_R32_SFLOAT:
+				return "float";
+			case Format_R32G32_SFLOAT:
+				return "vec2";
+			case Format_R32G32B32_SFLOAT:
+				return "vec3";
+			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
+				return "vec4";
+			default:
+				assert(0);
+			}
+		}
+
 		inline VkMemoryPropertyFlags to_flags(MemProp$ p)
 		{
 			VkMemoryPropertyFlags ret = 0;

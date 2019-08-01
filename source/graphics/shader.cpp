@@ -375,7 +375,7 @@ namespace flame
 
 		};
 
-		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>& _inputs, const std::vector<void*>& _outputs, Pipelinelayout* _pll, bool autogen_code) :
+		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>* _inputs, const std::vector<void*>* _outputs, Pipelinelayout* _pll, bool autogen_code) :
 			d((DevicePrivate*)d)
 		{
 			assert(std::fs::exists(filename));
@@ -399,6 +399,54 @@ namespace flame
 			auto prefix = _prefix;
 			if (autogen_code)
 			{
+				if (_inputs)
+				{
+					prefix += "\n";
+					if (stage == ShaderStageVert)
+					{
+						for (auto _i : *_inputs)
+						{
+							auto i = (VertexInputAttributeInfo*)_i;
+							prefix += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
+						}
+					}
+					else
+					{
+						for (auto _i : *_inputs)
+						{
+							auto i = (StageInOutInfo*)_i;
+							prefix += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
+						}
+					}
+				}
+
+				if (_outputs)
+				{
+					prefix += "\n";
+					if (stage == ShaderStageFrag)
+					{
+						for (auto _o : *_outputs)
+						{
+							auto o = (OutputAttachmentInfo*)_o;
+							if (o->dual_src)
+							{
+								prefix += "layout(location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
+								prefix += "layout(location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
+							}
+							else
+								prefix += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
+						}
+					}
+					else
+					{
+						for (auto _o : *_outputs)
+						{
+							auto o = (StageInOutInfo*)_o;
+							prefix += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
+						}
+					}
+				}
+
 				if (pll)
 				{
 					if (!pll->dsls.empty())
@@ -420,7 +468,6 @@ namespace flame
 								}
 							}
 						}
-						prefix += "\n";
 					}
 
 					auto udt = pll->pc_udt;
@@ -432,37 +479,7 @@ namespace flame
 							auto v = udt->variable(i);
 							auto t = v->type();
 							assert(t->tag() == TypeTagVariable);
-							std::string type_name;
-							switch (t->hash())
-							{
-							case cH("int"):
-								type_name = "int";
-								break;
-							case cH("Vec(2+int)"):
-								type_name = "ivec2";
-								break;
-							case cH("Vec(3+int)"):
-								type_name = "ivec3";
-								break;
-							case cH("Vec(4+int)"):
-								type_name = "ivec4";
-								break;
-							case cH("float"):
-								type_name = "float";
-								break;
-							case cH("Vec(2+float)"):
-								type_name = "vec2";
-								break;
-							case cH("Vec(3+float)"):
-								type_name = "vec3";
-								break;
-							case cH("Vec(4+float)"):
-								type_name = "vec4";
-								break;
-							default:
-								assert(0);
-							}
-							prefix += "\t" + type_name + " " + v->name() + ";\n";
+							prefix += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
 						}
 						prefix += "}pc;\n";
 					}
@@ -609,6 +626,7 @@ namespace flame
 				{
 					auto r = new Resource;
 					r->location = compiler.get_decoration(src.id, spv::DecorationLocation);
+					r->index = compiler.get_decoration(src.id, spv::DecorationIndex);
 					r->name = src.name;
 					get_v(src.type_id, &r->v);
 					outputs.emplace_back(r);
@@ -668,7 +686,86 @@ namespace flame
 				assert(resources.atomic_counters.empty()); // atomic counters are WIP
 				assert(resources.acceleration_structures.empty()); // acceleration structures are WIP
 
-				if (pll) // do validate
+				// do validate
+
+				if (_inputs)
+				{
+					if (stage == ShaderStageVert)
+					{
+						for (auto& r : inputs)
+						{
+							VertexInputAttributeInfo* via = nullptr;
+							for (auto _i : *_inputs)
+							{
+								auto i = (VertexInputAttributeInfo*)_i;
+								if (r->location == i->location)
+								{
+									via = i;
+									break;
+								}
+							}
+							assert(via && r->v.type_name == format_to_cpp_typename(via->format));
+						}
+					}
+					else
+					{
+						for (auto& r : inputs)
+						{
+							StageInOutInfo* io = nullptr;
+							for (auto _i : *_inputs)
+							{
+								auto i = (StageInOutInfo*)_i;
+								if (r->location == i->location)
+								{
+									io = i;
+									break;
+								}
+							}
+							assert(io && r->v.type_name == format_to_cpp_typename(io->format));
+						}
+					}
+				}
+
+				if (_outputs)
+				{
+					if (stage == ShaderStageFrag)
+					{
+						for (auto& r : outputs)
+						{
+							OutputAttachmentInfo* oa = nullptr;
+							for (auto _o : *_outputs)
+							{
+								auto o = (OutputAttachmentInfo*)_o;
+								if (r->location == o->location)  
+								{
+									oa = o;
+									break;
+								}
+							}
+							assert(oa && r->v.type_name == format_to_cpp_typename(oa->format));
+							assert(r->index <= 1 && (r->index != 1 || oa->dual_src));
+						}
+					}
+					else
+					{
+						for (auto& r : outputs)
+						{
+							StageInOutInfo* io = nullptr;
+							for (auto _o : *_outputs)
+							{
+								auto o = (StageInOutInfo*)_o;
+								if (r->location == o->location)
+								{
+									io = o;
+									break;
+								}
+							}
+							assert(io && r->v.type_name == format_to_cpp_typename(io->format));
+						}
+					}
+				}
+
+				if (pll) 
 				{
 					auto validate_resource = [&](DescriptorType$ type, Resource* r) {
 						assert(r->set < pll->dsls.size());
@@ -723,7 +820,7 @@ namespace flame
 #endif
 		}
 
-		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code)
+		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs, const std::vector<void*>* outputs, Pipelinelayout* pll, bool autogen_code)
 		{
 			return new ShaderPrivate(d, filename, prefix, inputs, outputs, pll, autogen_code);
 		}
