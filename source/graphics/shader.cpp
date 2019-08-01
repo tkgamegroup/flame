@@ -401,6 +401,28 @@ namespace flame
 			{
 				if (pll)
 				{
+					if (!pll->dsls.empty())
+					{
+						prefix += "\n";
+						for (auto i = 0; i < pll->dsls.size(); i++)
+						{
+							auto dsl = pll->dsls[i];
+							for (auto j = 0; j < dsl->bindings_map.size(); j++)
+							{
+								auto& b = dsl->bindings_map[j];
+								if (b.binding < 64)
+								{
+									assert(b.type == DescriptorSampledImage); // others are WIP
+									std::string array_count_str;
+									if (b.count > 1)
+										array_count_str = "[" + std::to_string(b.count) + "]";
+									prefix += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + array_count_str + ";\n";
+								}
+							}
+						}
+						prefix += "\n";
+					}
+
 					auto udt = pll->pc_udt;
 					if (udt)
 					{
@@ -461,6 +483,7 @@ namespace flame
 				{
 					std::ofstream ofile(temp_filename);
 					auto file = get_file_string(filename);
+					file.erase(std::remove(file.begin(), file.end(), '\r'), file.end());
 					ofile << "#version 450 core\n";
 					ofile << "#extension GL_ARB_shading_language_420pack : enable\n";
 					if (stage != ShaderStageComp)
@@ -471,9 +494,12 @@ namespace flame
 				}
 				std::wstring command_line(L" " + temp_filename + L" -flimit-file shader.conf -o" + spv_filename);
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
-				std::fs::remove(temp_filename);
 				if (!std::fs::exists(spv_filename))
+				{
+					assert(0);
 					printf("shader \"%s\" compile error:\n%s\n", w2s(filename).c_str(), output.p->c_str());
+				}
+				std::fs::remove(temp_filename);
 				delete_mail(output);
 			}
 
@@ -644,10 +670,22 @@ namespace flame
 
 				if (pll) // do validate
 				{
-					for (auto& r : sampled_images)
-					{
+					auto validate_resource = [&](DescriptorType$ type, Resource* r) {
+						assert(r->set < pll->dsls.size());
+						auto dsl = pll->dsls[r->set];
+						assert(r->binding < dsl->bindings_map.size());
+						auto& dst = dsl->bindings_map[r->binding];
+						assert(dst.binding < 64 && dst.type == type && r->v.count == dst.count);
+					};
 
-					}
+					for (auto& r : uniform_buffers)
+						validate_resource(DescriptorUniformBuffer, r.get());
+					for (auto& r : storage_buffers)
+						validate_resource(DescriptorStorageBuffer, r.get());
+					for (auto& r : sampled_images)
+						validate_resource(DescriptorSampledImage, r.get());
+					for (auto& r : storage_images)
+						validate_resource(DescriptorStorageImage, r.get());
 
 					if (push_constant)
 					{

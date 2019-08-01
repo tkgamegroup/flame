@@ -108,7 +108,7 @@ namespace flame
 				white_image->init(Vec4c(255));
 				white_imageview = Imageview::create(white_image);
 
-				dsl = Descriptorlayout::create(d, { &DescriptorBinding(0, DescriptorSampledImage, 64) });
+				dsl = Descriptorlayout::create(d, { &DescriptorBinding(0, DescriptorSampledImage, 64, "images") });
 				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
 
 				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", {}, {}, pll, true);
