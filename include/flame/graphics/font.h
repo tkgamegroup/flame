@@ -42,7 +42,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint pixel_height, bool sdf, const std::vector<Font*>& fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, bool sdf, const std::vector<Font*>& fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

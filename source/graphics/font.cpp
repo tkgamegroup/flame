@@ -91,11 +91,12 @@ namespace flame
 
 			Image* image;
 
-			FontAtlasPrivate(Device* _d, uint _pixel_height, bool _sdf, const std::vector<Font*>& _fonts) :
-				d(_d)
+			FontAtlasPrivate(Device* d, bool _sdf, const std::vector<Font*>& fonts) :
+				d(d),
+				fonts(fonts)
 			{
 				sdf = _sdf;
-				pixel_height = _pixel_height;
+				pixel_height = fonts[0]->pixel_height;
 
 				memset(map, 0, sizeof(map));
 
@@ -103,13 +104,10 @@ namespace flame
 				image->init(Vec4c(0));
 
 				max_width = 0;
-				for (auto src : _fonts)
+				for (auto f : fonts)
 				{
-					if (src->pixel_height == pixel_height)
-					{
-						fonts.push_back(src);
-						max_width = max(src->max_width, max_width);
-					}
+					assert(f->pixel_height == pixel_height);
+					max_width = max(f->max_width, max_width);
 				}
 
 				glyph_head = glyph_tail = nullptr;
@@ -270,9 +268,9 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, uint pixel_height, bool sdf, const std::vector<Font*>& fonts)
+		FontAtlas* FontAtlas::create(Device* d, bool sdf, const std::vector<Font*>& fonts)
 		{
-			return new FontAtlasPrivate(d, pixel_height, sdf, fonts);
+			return new FontAtlasPrivate(d, sdf, fonts);
 		}
 
 		void FontAtlas::destroy(FontAtlas* f)
