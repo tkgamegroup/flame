@@ -91,11 +91,11 @@ namespace flame
 
 			Image* image;
 
-			FontAtlasPrivate(Device* d, bool _sdf, const std::vector<Font*>& fonts) :
+			FontAtlasPrivate(Device* d, FontDrawType _draw_type, const std::vector<Font*>& fonts) :
 				d(d),
 				fonts(fonts)
 			{
-				sdf = _sdf;
+				draw_type = _draw_type;
 				pixel_height = fonts[0]->pixel_height;
 
 				memset(map, 0, sizeof(map));
@@ -112,8 +112,8 @@ namespace flame
 
 				glyph_head = glyph_tail = nullptr;
 
-				grid_cx = atlas_width / (max_width + (sdf ? sdf_range : 0));
-				grid_cy = atlas_height / (pixel_height + (sdf ? sdf_range : 0));
+				grid_cx = atlas_width / (max_width + (draw_type == FontDrawSdf ? sdf_range : 0));
+				grid_cy = atlas_height / (pixel_height + (draw_type == FontDrawSdf ? sdf_range : 0));
 				grid_curr_x = grid_curr_y = 0;
 			}
 
@@ -181,7 +181,14 @@ namespace flame
 						g->off = Vec2u(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
 						g->advance = ft_glyph->advance.x / 64;
 
-						if (!sdf)
+						switch (draw_type)
+						{
+						case FontDrawPixel:
+						{
+
+						}
+							break;
+						case FontDrawLcd:
 						{
 							FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
 
@@ -212,7 +219,8 @@ namespace flame
 							g->uv0 = Vec2f(x, y + height) / image->size;
 							g->uv1 = Vec2f(x + width, y) / image->size;
 						}
-						else
+							break;
+						case FontDrawSdf:
 						{
 							void* ptr = ft_face;
 
@@ -251,6 +259,8 @@ namespace flame
 							g->uv0 = Vec2f(x + sdf_range, y + sdf_range) / image->size;
 							g->uv1 = Vec2f(x + size.x() - sdf_range, y + size.y() - sdf_range) / image->size;
 						}
+							break;
+						}
 
 						break;
 					}
@@ -268,9 +278,9 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, bool sdf, const std::vector<Font*>& fonts)
+		FontAtlas* FontAtlas::create(Device* d, FontDrawType draw_type, const std::vector<Font*>& fonts)
 		{
-			return new FontAtlasPrivate(d, sdf, fonts);
+			return new FontAtlasPrivate(d, draw_type, fonts);
 		}
 
 		void FontAtlas::destroy(FontAtlas* f)

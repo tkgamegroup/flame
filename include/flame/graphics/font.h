@@ -29,9 +29,16 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Font* f);
 		};
 
+		enum FontDrawType
+		{
+			FontDrawPixel,
+			FontDrawLcd,
+			FontDrawSdf
+		};
+
 		struct FontAtlas
 		{
-			bool sdf;
+			FontDrawType draw_type;
 			uint pixel_height;
 			uint max_width;
 
@@ -42,7 +49,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, bool sdf, const std::vector<Font*>& fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType draw_type, const std::vector<Font*>& fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

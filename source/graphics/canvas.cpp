@@ -395,12 +395,27 @@ namespace flame
 			void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 			{
 				auto pixel_height = f->pixel_height;
-				if (!f->sdf)
+				if (!f->draw_type != FontDrawSdf)
 					scale = 1.f;
 
 				auto _pos = Vec2f(Vec2i(pos));
 
-				start_cmd(f->sdf ? DrawCmdTextSdf : DrawCmdTextLcd, f->index);
+				DrawCmdType dct;
+				switch (f->draw_type)
+				{
+				case FontDrawPixel:
+					dct = DrawCmdElement;
+					break;
+				case FontDrawLcd:
+					dct = DrawCmdTextLcd;
+					break;
+				case FontDrawSdf:
+					dct = DrawCmdTextSdf;
+					break;
+				default:
+					assert(0);
+				}
+				start_cmd(dct, f->index);
 				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
 				auto& idx_cnt = draw_cmds.back().idx_cnt;
 

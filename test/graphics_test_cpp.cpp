@@ -30,8 +30,8 @@ struct App
 		sc->acquire_image();
 		fence->wait();
 
-		//canvas->add_text(font_atlas1, Vec2f(100, 50), Vec4c(0, 0, 0, 255), L"中文");
-		canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
+		canvas->add_text(font_atlas1, Vec2f(0, 0), Vec4c(0, 0, 0, 255), L"分析");
+		//canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
 
 		auto cb = cbs[sc->image_index()];
 		canvas->record(cb);
@@ -54,11 +54,11 @@ int main(int argc, char** args)
 	app.fence = graphics::Fence::create(app.d);
 
 	app.canvas = graphics::Canvas::create(app.d, app.sc);
-	app.canvas->set_clear_color(Vec4c(255));
+	app.canvas->set_clear_color(Vec4c(204, 213, 240, 255));
 
-	auto font_msyh = graphics::Font::create(L"c:/windows/fonts/msyh.ttc", 32);
-	app.font_atlas1 = graphics::FontAtlas::create(app.d, false, { font_msyh });
-	app.font_atlas2 = graphics::FontAtlas::create(app.d, true, { font_msyh });
+	auto font_msyh = graphics::Font::create(L"c:/windows/fonts/msyh.ttc", 18);
+	app.font_atlas1 = graphics::FontAtlas::create(app.d, graphics::FontDrawLcd, { font_msyh });
+	app.font_atlas2 = graphics::FontAtlas::create(app.d, graphics::FontDrawSdf, { font_msyh });
 	auto font_atlas_view1 = graphics::Imageview::create(app.font_atlas1->image());
 	auto font_atlas_view2 = graphics::Imageview::create(app.font_atlas2->image());
 	app.font_atlas1->index = 1;
