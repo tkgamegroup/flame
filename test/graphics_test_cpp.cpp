@@ -31,7 +31,7 @@ struct App
 		fence->wait();
 
 		canvas->add_text(app.font_atlas1, Vec2f(100, 50), Vec4c(200, 160, 230, 255), L"Hello World");
-		canvas->add_text(app.font_atlas2, Vec2f(100, 250), Vec4c(100, 40, 80, 255), L"A", 1.f);
+		canvas->add_text(app.font_atlas2, Vec2f(100, 250), Vec4c(100, 40, 80, 255), L"Hello World", 5.f);
 
 		auto cb = cbs[sc->image_index()];
 		canvas->record(cb);
@@ -55,14 +55,14 @@ int main(int argc, char** args)
 
 	app.canvas = graphics::Canvas::create(app.d, app.sc);
 
-	auto font_msyh = graphics::Font::create(L"c:/windows/fonts/msyh.ttc", 16);
-	//app.font_atlas1 = graphics::FontAtlas::create(app.d, 16, false, { font_msyh });
-	app.font_atlas2 = graphics::FontAtlas::create(app.d, 16, true, { font_msyh });
-	//auto font_atlas_view1 = graphics::Imageview::create(app.font_atlas1->image());
+	auto font_msyh = graphics::Font::create(L"c:/windows/fonts/msyh.ttc", 32);
+	app.font_atlas1 = graphics::FontAtlas::create(app.d, 32, false, { font_msyh });
+	app.font_atlas2 = graphics::FontAtlas::create(app.d, 32, true, { font_msyh });
+	auto font_atlas_view1 = graphics::Imageview::create(app.font_atlas1->image());
 	auto font_atlas_view2 = graphics::Imageview::create(app.font_atlas2->image());
-	//app.font_atlas1->index = 1;
+	app.font_atlas1->index = 1;
 	app.font_atlas2->index = 2;
-	//app.canvas->set_image(app.font_atlas1->index, font_atlas_view1);
+	app.canvas->set_image(app.font_atlas1->index, font_atlas_view1);
 	app.canvas->set_image(app.font_atlas2->index, font_atlas_view2);
 
 	app.cbs.resize(app.sc->images().size());

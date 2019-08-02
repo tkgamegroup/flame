@@ -34,7 +34,7 @@ A lightweight and powerful 3D Game Engine.
 
 - download freetype
 
-- download & build msdfgen
+- download & build msdfgen (must use my forked version, changed a little bit: https://github.com/tkgamegroup/msdfgen)
 
 - download & install VulkanSDK
 
