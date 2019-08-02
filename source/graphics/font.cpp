@@ -100,7 +100,7 @@ namespace flame
 
 				memset(map, 0, sizeof(map));
 
-				image = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
+				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
 				image->init(Vec4c(0));
 
 				max_width = 0;
@@ -172,10 +172,12 @@ namespace flame
 						auto glyph_index = FT_Get_Char_Index(ft_face, unicode);
 						if (glyph_index == 0)
 							continue;
-						FT_Load_Glyph(ft_face, glyph_index, FT_LOAD_TARGET_LCD);
+						FT_Load_Glyph(ft_face, glyph_index, draw_type == FontDrawLcd ? FT_RENDER_MODE_LCD : FT_RENDER_MODE_NORMAL);
 
 						auto ft_glyph = ft_face->glyph;
-						auto width = ft_glyph->bitmap.width / 3;
+						auto width = ft_glyph->bitmap.width;
+						if (FontDrawLcd == FT_RENDER_MODE_LCD)
+							width /= 3;
 						auto height = ft_glyph->bitmap.rows;
 						g->size = Vec2u(width, height);
 						g->off = Vec2u(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
@@ -185,7 +187,29 @@ namespace flame
 						{
 						case FontDrawPixel:
 						{
+							FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_NORMAL);
 
+							auto x = g->grid_x * max_width;
+							auto y = g->grid_y * pixel_height;
+
+							if (width > 0 && height > 0)
+							{
+								auto pitch_ft = ft_glyph->bitmap.pitch;
+								auto pitch_temp = width;
+								auto temp = new uchar[pitch_temp * height];
+								for (auto y = 0; y < height; y++)
+								{
+									for (auto x = 0; x < width; x++)
+										temp[y * pitch_temp + x] = ft_glyph->bitmap.buffer[y * pitch_ft + x];
+								}
+
+								image->set_pixels(x, y, width, height, temp);
+
+								delete[] temp;
+							}
+
+							g->uv0 = Vec2f(x, y + height) / image->size;
+							g->uv1 = Vec2f(x + width, y) / image->size;
 						}
 							break;
 						case FontDrawLcd:
@@ -235,17 +259,17 @@ namespace flame
 							msdfgen::Bitmap<float, 3> bmp(size.x(), size.y());
 							msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x(), g->off.y() - ascender) + sdf_range);
 
-							auto pitch = Bitmap::get_pitch(size.x() * 4);
-							auto temp = new uchar[pitch * size.y()];
+							auto temp_pitch = size.x() * 4;
+							auto temp = new uchar[temp_pitch * size.y()];
 							for (auto y = 0; y < size.y(); y++)
 							{
 								for (auto x = 0; x < size.x(); x++)
 								{
 									auto src = bmp(x, y);
-									temp[y * pitch + x * 4 + 0] = clamp(src[0] * 255.f, 0.f, 255.f);
-									temp[y * pitch + x * 4 + 1] = clamp(src[1] * 255.f, 0.f, 255.f);
-									temp[y * pitch + x * 4 + 2] = clamp(src[2] * 255.f, 0.f, 255.f);
-									temp[y * pitch + x * 4 + 3] = 255.f;
+									temp[y * temp_pitch + x * 4 + 0] = clamp(src[0] * 255.f, 0.f, 255.f);
+									temp[y * temp_pitch + x * 4 + 1] = clamp(src[1] * 255.f, 0.f, 255.f);
+									temp[y * temp_pitch + x * 4 + 2] = clamp(src[2] * 255.f, 0.f, 255.f);
+									temp[y * temp_pitch + x * 4 + 3] = 255.f;
 								}
 							}
 

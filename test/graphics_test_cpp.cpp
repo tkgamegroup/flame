@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+ï»¿#include <flame/foundation/serialize.h>
 #include <flame/foundation/window.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
@@ -30,8 +30,8 @@ struct App
 		sc->acquire_image();
 		fence->wait();
 
-		canvas->add_text(font_atlas1, Vec2f(0, 0), Vec4c(0, 0, 0, 255), L"·ÖÎö");
-		//canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"ÖÐÎÄ", 0.375f);
+		canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World ï†‰ ï…º");
+		canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"ä¸­æ–‡", 0.375f);
 
 		auto cb = cbs[sc->image_index()];
 		canvas->record(cb);
@@ -54,12 +54,14 @@ int main(int argc, char** args)
 	app.fence = graphics::Fence::create(app.d);
 
 	app.canvas = graphics::Canvas::create(app.d, app.sc);
-	app.canvas->set_clear_color(Vec4c(204, 213, 240, 255));
+	//app.canvas->set_clear_color(Vec4c(204, 213, 240, 255));
+	app.canvas->set_clear_color(Vec4c(255));
 
-	auto font_msyh = graphics::Font::create(L"c:/windows/fonts/msyh.ttc", 18);
-	app.font_atlas1 = graphics::FontAtlas::create(app.d, graphics::FontDrawLcd, { font_msyh });
+	auto font_msyh = graphics::Font::create(L"c:/windows/fonts/consola.ttf", 14);
+	auto font_awesome = graphics::Font::create(L"../asset/font_awesome.ttf", 14);
+	app.font_atlas1 = graphics::FontAtlas::create(app.d, graphics::FontDrawPixel, { font_msyh, font_awesome });
 	app.font_atlas2 = graphics::FontAtlas::create(app.d, graphics::FontDrawSdf, { font_msyh });
-	auto font_atlas_view1 = graphics::Imageview::create(app.font_atlas1->image());
+	auto font_atlas_view1 = graphics::Imageview::create(app.font_atlas1->image(), graphics::Imageview2D, 0, 1, 0, 1, graphics::SwizzleOne, graphics::SwizzleOne, graphics::SwizzleOne, graphics::SwizzleR);
 	auto font_atlas_view2 = graphics::Imageview::create(app.font_atlas2->image());
 	app.font_atlas1->index = 1;
 	app.font_atlas2->index = 2;

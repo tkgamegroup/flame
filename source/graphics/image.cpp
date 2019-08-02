@@ -191,7 +191,8 @@ namespace flame
 
 		void ImagePrivate::get_pixels(uint x, uint y, int cx, int cy, void *dst)
 		{
-			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
+			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
+
 			if (cx == -1)
 				cx = size.x();
 			if (cy == -1)
@@ -220,7 +221,8 @@ namespace flame
 
 		void ImagePrivate::set_pixels(uint x, uint y, int cx, int cy, const void *src)
 		{
-			assert(format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
+			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
+
 			if (cx == -1)
 				cx = size.x();
 			if (cy == -1)
