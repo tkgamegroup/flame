@@ -50,7 +50,7 @@ namespace flame
 				}
 
 				font_file = get_file_content(filename);
-				FT_New_Memory_Face(ft_library, (unsigned char*)font_file.first.get(), font_file.second, 0, &ft_face);
+				FT_New_Memory_Face(ft_library, (uchar*)font_file.first.get(), font_file.second, 0, &ft_face);
 				FT_Size_RequestRec ft_req = {};
 				ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
 				ft_req.height = pixel_height * 64;
