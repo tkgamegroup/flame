@@ -61,6 +61,20 @@ namespace flame
 				e->on_attach();
 		}
 
+		void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
+		{
+			callback(capture.p, this);
+			for (auto& c : children)
+				c->traverse_forward(callback, capture);
+		}
+
+		void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
+		{
+			for (auto& c : children)
+				c->traverse_backward(callback, capture);
+			callback(capture.p, this);
+		}
+
 		void update(float delta_time)
 		{
 			if (!parent)
@@ -117,7 +131,7 @@ namespace flame
 		return ((EntityPrivate*)this)->parent;
 	}
 
-	int Entity::children_count() const
+	uint Entity::child_count() const
 	{
 		return ((EntityPrivate*)this)->children.size();
 	}
@@ -140,7 +154,7 @@ namespace flame
 	static void serialize(EntityPrivate* src, SerializableNode* dst)
 	{
 		dst->new_attr("name", src->name);
-		dst->new_attr("visible", to_stdstring(src->visible));
+		dst->new_attr("visible", std::to_string((int)src->visible.v));
 		auto n_components = dst->new_node("components");
 		for (auto& c : src->components)
 		{

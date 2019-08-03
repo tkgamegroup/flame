@@ -9,21 +9,25 @@ namespace flame
 
 	struct Entity
 	{
-		ATTRIBUTE_BOOL visible;
-		ATTRIBUTE_BOOL global_visible;
+		AttributeV<bool> visible;
+		AttributeV<bool> global_visible;
 
-		FLAME_UNIVERSE_EXPORTS const char* name() const;
-		FLAME_UNIVERSE_EXPORTS void set_name(const char* name) const;
+		FLAME_UNIVERSE_EXPORTS const std::string& name() const;
+		FLAME_UNIVERSE_EXPORTS void set_name(const std::string& name) const;
 
-		FLAME_UNIVERSE_EXPORTS int component_count() const;
-		FLAME_UNIVERSE_EXPORTS Component* component(uint type_hash) const;
-		FLAME_UNIVERSE_EXPORTS Mail<std::vector<Component*>> components(uint type_hash /* 0 to get all components */ ) const;
+		FLAME_UNIVERSE_EXPORTS uint component_count() const;
+		FLAME_UNIVERSE_EXPORTS Component* component(uint index) const;
+		FLAME_UNIVERSE_EXPORTS Component* find_component(uint type_hash) const;
+		FLAME_UNIVERSE_EXPORTS Mail<std::vector<Component*>> find_components(uint type_hash /* 0 to get all components */ ) const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 
 		FLAME_UNIVERSE_EXPORTS Entity* parent() const;
-		FLAME_UNIVERSE_EXPORTS int children_count() const;
+		FLAME_UNIVERSE_EXPORTS uint child_count() const;
 		FLAME_UNIVERSE_EXPORTS Entity* child(int index) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e);
+
+		FLAME_UNIVERSE_EXPORTS void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
+		FLAME_UNIVERSE_EXPORTS void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 
 		FLAME_UNIVERSE_EXPORTS void update(float delta_time);
 

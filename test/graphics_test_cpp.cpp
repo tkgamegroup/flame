@@ -11,19 +11,20 @@
 #include <flame/graphics/canvas.h>
 
 using namespace flame;
+using namespace graphics;
 
 struct App
 {
 	Window* w;
-	graphics::Device* d;
-	graphics::Semaphore* render_finished;
-	graphics::Swapchain* sc;
-	graphics::Fence* fence;
-	std::vector<graphics::Commandbuffer*> cbs;
+	Device* d;
+	Semaphore* render_finished;
+	Swapchain* sc;
+	Fence* fence;
+	std::vector<Commandbuffer*> cbs;
 
-	graphics::FontAtlas* font_atlas1;
-	graphics::FontAtlas* font_atlas2;
-	graphics::Canvas* canvas;
+	FontAtlas* font_atlas1;
+	FontAtlas* font_atlas2;
+	Canvas* canvas;
 
 	void run()
 	{
@@ -47,22 +48,22 @@ int main(int argc, char** args)
 {
 	typeinfo_load(L"flame_graphics.typeinfo");
 
-	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
-	app.d = graphics::Device::create(true);
-	app.render_finished = graphics::Semaphore::create(app.d);
-	app.sc = graphics::Swapchain::create(app.d, app.w);
-	app.fence = graphics::Fence::create(app.d);
+	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
+	app.d = Device::create(true);
+	app.render_finished = Semaphore::create(app.d);
+	app.sc = Swapchain::create(app.d, app.w);
+	app.fence = Fence::create(app.d);
 
-	app.canvas = graphics::Canvas::create(app.d, app.sc);
+	app.canvas = Canvas::create(app.d, app.sc);
 	//app.canvas->set_clear_color(Vec4c(204, 213, 240, 255));
 	app.canvas->set_clear_color(Vec4c(255));
 
-	auto font_msyh = graphics::Font::create(L"c:/windows/fonts/consola.ttf", 14);
-	auto font_awesome = graphics::Font::create(L"../asset/font_awesome.ttf", 14);
-	app.font_atlas1 = graphics::FontAtlas::create(app.d, graphics::FontDrawPixel, { font_msyh, font_awesome });
-	app.font_atlas2 = graphics::FontAtlas::create(app.d, graphics::FontDrawSdf, { font_msyh });
-	auto font_atlas_view1 = graphics::Imageview::create(app.font_atlas1->image(), graphics::Imageview2D, 0, 1, 0, 1, graphics::SwizzleOne, graphics::SwizzleOne, graphics::SwizzleOne, graphics::SwizzleR);
-	auto font_atlas_view2 = graphics::Imageview::create(app.font_atlas2->image());
+	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
+	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
+	app.font_atlas1 = FontAtlas::create(app.d, FontDrawPixel, { font_msyh, font_awesome });
+	app.font_atlas2 = FontAtlas::create(app.d, FontDrawSdf, { font_msyh });
+	auto font_atlas_view1 = Imageview::create(app.font_atlas1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
+	auto font_atlas_view2 = Imageview::create(app.font_atlas2->image());
 	app.font_atlas1->index = 1;
 	app.font_atlas2->index = 2;
 	app.canvas->set_image(app.font_atlas1->index, font_atlas_view1);
@@ -70,7 +71,7 @@ int main(int argc, char** args)
 
 	app.cbs.resize(app.sc->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
-		app.cbs[i] = graphics::Commandbuffer::create(app.d->gcp);
+		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	auto thiz = &app;
 	app_run([](void* c) {

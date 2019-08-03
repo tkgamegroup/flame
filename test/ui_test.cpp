@@ -1,10 +1,18 @@
-#include <flame/basic_app.h>
-
+#include <flame/foundation/serialize.h>
+#include <flame/foundation/window.h>
+#include <flame/graphics/device.h>
+#include <flame/graphics/synchronize.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/swapchain.h>
+#include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/entity.h>
-#include <flame/universe/components/ui.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
+#include <flame/graphics/shader.h>
+#include <flame/graphics/font.h>
+#include <flame/graphics/canvas.h>
+//#include <flame/universe/entity.h>
+//#include <flame/universe/components/ui.h>
+//#include <flame/universe/components/element.h>
+//#include <flame/universe/components/text.h>
 
 using namespace flame;
 using namespace graphics;
@@ -12,18 +20,20 @@ using namespace graphics;
 const auto img_id = 59;
 //wLayout* layout;
 
-struct App;
-typedef App* AppPtr;
-
-struct App : BasicApp
+struct App
 {
-	Canvas* canvas;
-	Font* font_msyh;
-	Font* font_awesome;
-	FontAtlas* font_atlas;
-	int font_atlas_index;
+	Window* w;
+	Device* d;
+	Semaphore* render_finished;
+	Swapchain* sc;
+	Fence* fence;
+	std::vector<Commandbuffer*> cbs;
 
-	Entity* root;
+	FontAtlas* font_atlas1;
+	FontAtlas* font_atlas2;
+	Canvas* canvas;
+
+	//Entity* root;
 
 	//wText* t_fps;
 
@@ -139,101 +149,114 @@ struct App : BasicApp
 	//		t_fps->text_col() = Vec4c(0, 0, 0, 255);
 	//}
 
-	virtual void on_create() override
+	void run()
 	{
-		Canvas::initialize(d, sc);
-		canvas = Canvas::create(sc);
+		sc->acquire_image();
+		fence->wait();
 
-		font_msyh = Font::create(L"c:/windows/fonts/msyh.ttc", 16);
-		font_awesome = Font::create(L"../asset/font_awesome.ttf", 16);
-		font_atlas = FontAtlas::create(d, 16, false, { font_msyh, font_awesome });
-		font_atlas_index = canvas->add_font_atlas(font_atlas);
+		//root->update(app->elapsed_time);
 
-		root = Entity::create();
-		auto ui = cUI$::create$(nullptr);
-		ui->set_canvas(canvas);
-		root->add_component(ui);
+		auto cb = cbs[sc->image_index()];
+		canvas->record(cb);
 
-		auto bg = Entity::create();
-		auto wBackground = cElement$::create$(nullptr);
-		wBackground->size = Vec2f(100.f);
-		wBackground->background_color = Vec4c(255, 128, 128, 255);
-		bg->add_component(wBackground);
-
-		auto wFps = cText$::create$(nullptr);
-		wFps->font_atlas_index = font_atlas_index;
-		wFps->set_text(L"QAQ");
-		bg->add_component(wFps);
-
-		root->add_child(bg);
-
-		//t_fps = Element::createT<wText>(ui, font_atlas_index);
-		//t_fps->align$ = AlignLeftBottom;
-		//ui->root()->add_child(t_fps, 1);
-
-		//auto img = Image::create_from_file(d, L"../asset/ui/imgs/9.png");
-		//canvas->set_imageview(img_id, Imageview::get(img));
-
-		//auto layout_top = Element::createT<wLayout>(ui, LayoutHorizontal);
-		//layout_top->align$ = AlignTop;
-
-		//auto w_btn_dark = Element::createT<wButton>(ui, font_atlas_index, L"dark");
-		//w_btn_dark->align$ = AlignLittleEnd;
-		//w_btn_dark->text_col() = Vec4c(255);
-		//w_btn_dark->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm &p) {
-		//	auto app = p.get_capture<AppData>().app();
-		//	if (!p.is_clicked())
-		//		return;
-
-		//	layout->clear_children(1, 0, -1, true);
-		//	app->create_elements(DefaultStyleDark);
-		//}, { this }));
-		//layout_top->add_child(w_btn_dark);
-
-		//auto w_btn_light = Element::createT<wButton>(ui, font_atlas_index, L"light");
-		//w_btn_light->align$ = AlignLittleEnd;
-		//w_btn_light->text_col() = Vec4c(255);
-		//w_btn_light->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm & p) {
-		//	auto app = p.get_capture<AppData>().app();
-		//	if (!p.is_clicked())
-		//		return;
-
-		//	layout->clear_children(1, 0, -1, true);
-		//	app->create_elements(DefaultStyleLight);
-		//}, { this }));
-		//layout_top->add_child(w_btn_light);
-
-		//ui->root()->add_child(layout_top, 1);
-
-		//layout = Element::createT<wLayout>(ui);
-		//ui->root()->add_child(layout, 1);
-		//create_elements(DefaultStyleDark);
-	}
-
-	virtual void do_run() override
-	{
-		sc->acquire_image(image_avalible);
-
-		//t_fps->text$ = L"FPS:" + std::to_wstring(app->fps);
-		//t_fps->set_size_auto();
-
-		root->update(app->elapsed_time);
-
-		canvas->record_cb();
-
-		d->gq->submit(canvas->get_cb(), image_avalible, render_finished);
-		d->gq->wait_idle();
-
+		d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
 		d->gq->present(sc, render_finished);
 	}
 }app;
+auto papp = &app;
 
 int main(int argc, char** args)
 {
-	Ivec2 res(1280, 720);
+	typeinfo_load(L"flame_graphics.typeinfo");
+	
+	app.w = Window::create("UI Test", Vec2u(1280, 720), WindowFrame);
+	app.d = Device::create(true);
+	app.render_finished = Semaphore::create(app.d);
+	app.sc = Swapchain::create(app.d, app.w);
+	app.fence = Fence::create(app.d);
 
-	app.create("UI Test", res, WindowFrame);
-	app.run();
+	app.canvas = Canvas::create(app.d, app.sc);
+
+	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
+	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
+	app.font_atlas1 = FontAtlas::create(app.d, FontDrawPixel, { font_msyh, font_awesome });
+	app.font_atlas2 = FontAtlas::create(app.d, FontDrawSdf, { font_msyh });
+	auto font_atlas_view1 = Imageview::create(app.font_atlas1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
+	auto font_atlas_view2 = Imageview::create(app.font_atlas2->image());
+	app.font_atlas1->index = 1;
+	app.font_atlas2->index = 2;
+	app.canvas->set_image(app.font_atlas1->index, font_atlas_view1);
+	app.canvas->set_image(app.font_atlas2->index, font_atlas_view2);
+
+	//root = Entity::create();
+	//auto ui = cUI$::create$(nullptr);
+	//ui->set_canvas(canvas);
+	//root->add_component(ui);
+
+	//auto bg = Entity::create();
+	//auto wBackground = cElement$::create$(nullptr);
+	//wBackground->size = Vec2f(100.f);
+	//wBackground->background_color = Vec4c(255, 128, 128, 255);
+	//bg->add_component(wBackground);
+
+	//auto wFps = cText$::create$(nullptr);
+	//wFps->font_atlas_index = font_atlas_index;
+	//wFps->set_text(L"QAQ");
+	//bg->add_component(wFps);
+
+	//root->add_child(bg);
+
+	//t_fps = Element::createT<wText>(ui, font_atlas_index);
+	//t_fps->align$ = AlignLeftBottom;
+	//ui->root()->add_child(t_fps, 1);
+
+	//auto img = Image::create_from_file(d, L"../asset/ui/imgs/9.png");
+	//canvas->set_imageview(img_id, Imageview::get(img));
+
+	//auto layout_top = Element::createT<wLayout>(ui, LayoutHorizontal);
+	//layout_top->align$ = AlignTop;
+
+	//auto w_btn_dark = Element::createT<wButton>(ui, font_atlas_index, L"dark");
+	//w_btn_dark->align$ = AlignLittleEnd;
+	//w_btn_dark->text_col() = Vec4c(255);
+	//w_btn_dark->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm &p) {
+	//	auto app = p.get_capture<AppData>().app();
+	//	if (!p.is_clicked())
+	//		return;
+
+	//	layout->clear_children(1, 0, -1, true);
+	//	app->create_elements(DefaultStyleDark);
+	//}, { this }));
+	//layout_top->add_child(w_btn_dark);
+
+	//auto w_btn_light = Element::createT<wButton>(ui, font_atlas_index, L"light");
+	//w_btn_light->align$ = AlignLittleEnd;
+	//w_btn_light->text_col() = Vec4c(255);
+	//w_btn_light->mouse_listeners$.push_back(Function<Element::MouseListenerParm>([](Element::MouseListenerParm & p) {
+	//	auto app = p.get_capture<AppData>().app();
+	//	if (!p.is_clicked())
+	//		return;
+
+	//	layout->clear_children(1, 0, -1, true);
+	//	app->create_elements(DefaultStyleLight);
+	//}, { this }));
+	//layout_top->add_child(w_btn_light);
+
+	//ui->root()->add_child(layout_top, 1);
+
+	//layout = Element::createT<wLayout>(ui);
+	//ui->root()->add_child(layout, 1);
+	//create_elements(DefaultStyleDark);
+
+	app.cbs.resize(app.sc->images().size());
+	for (auto i = 0; i < app.cbs.size(); i++)
+		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+
+	auto thiz = &app;
+	app_run([](void* c) {
+		auto app = (*(App * *)c);
+		app->run();
+	}, new_mail(&thiz));
 
 	return 0;
 }
