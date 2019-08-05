@@ -343,27 +343,27 @@ namespace flame
 
 		struct Pipelinelayout$
 		{
-			AttributeP<std::vector<void*>> descriptorsetlayouts$i;
+			AttributeP<std::vector<void*>> descriptorlayouts$i;
 			AttributeV<uint> push_constant_size$i;
 
 			AttributeP<void> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (descriptorsetlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame)
+				if (descriptorlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
-					if (d && descriptorsetlayouts$i.v && !descriptorsetlayouts$i.v->empty())
-						out$o.v = Pipelinelayout::create(d, *descriptorsetlayouts$i.v, push_constant_size$i.v);
+					if (d && descriptorlayouts$i.v && !descriptorlayouts$i.v->empty())
+						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v);
 					else
 					{
 						printf("cannot create pipelinelayout\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = max(descriptorsetlayouts$i.frame, push_constant_size$i.frame);
+					out$o.frame = max(descriptorlayouts$i.frame, push_constant_size$i.frame);
 				}
 			}
 

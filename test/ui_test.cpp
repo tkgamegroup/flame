@@ -25,7 +25,7 @@ struct App
 	Window* w;
 	Device* d;
 	Semaphore* render_finished;
-	Swapchain* sc;
+	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
 
@@ -151,16 +151,20 @@ struct App
 
 	void run()
 	{
-		sc->acquire_image();
-		fence->wait();
+		auto sc = scr->sc();
+		if (sc)
+		{
+			sc->acquire_image();
+			fence->wait();
 
-		//root->update(app->elapsed_time);
+			//root->update(app->elapsed_time);
 
-		auto cb = cbs[sc->image_index()];
-		canvas->record(cb);
+			auto cb = cbs[sc->image_index()];
+			canvas->record(cb);
 
-		d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
-		d->gq->present(sc, render_finished);
+			d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
+			d->gq->present(sc, render_finished);
+		}
 	}
 }app;
 auto papp = &app;
@@ -172,10 +176,12 @@ int main(int argc, char** args)
 	app.w = Window::create("UI Test", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
-	app.sc = Swapchain::create(app.d, app.w);
+	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 
-	app.canvas = Canvas::create(app.d, app.sc);
+	auto sc = app.scr->sc();
+
+	app.canvas = Canvas::create(app.d, sc);
 
 	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
 	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
@@ -248,7 +254,7 @@ int main(int argc, char** args)
 	//ui->root()->add_child(layout, 1);
 	//create_elements(DefaultStyleDark);
 
-	app.cbs.resize(app.sc->images().size());
+	app.cbs.resize(sc->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 

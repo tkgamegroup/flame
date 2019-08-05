@@ -23,9 +23,9 @@
     <node type="graphics::SubpassTargetInfo" id="sp" pos="0.00;0.00" />
     <node type="Array(1+void*)" id="sps" pos="0.00;0.00" />
     <node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="0.00;0.00" />
-    <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
-    <node type="graphics::Commandbuffers" id="cbs" pos="0.00;0.00" />
     <node type="ArraySize" id="img_size" pos="0.00;0.00" />
+    <node type="graphics::Commandbuffers" id="cbs" pos="0.00;0.00" />
+    <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
   </nodes>
   <links>
     <link out="scr.sc" in="sc.in" />
