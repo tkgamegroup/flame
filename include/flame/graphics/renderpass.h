@@ -67,25 +67,25 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
 		};
 
-		enum SubpassTargetType
+		enum RenderTargetType$
 		{
 			SubpassTargetImage, // v is Image*
 			SubpassTargetImageview, // v is Imageview*
 			SubpassTargetImages // v is std::vector<Image*>*
 		};
 
-		struct SubpassTarget
+		struct RenderTarget
 		{
-			SubpassTargetType type;
+			RenderTargetType$ type;
 			void* v;
 			bool clear;
 			Vec4c clear_color;
 
-			SubpassTarget()
+			RenderTarget()
 			{
 			}
 
-			SubpassTarget(Image* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
+			RenderTarget(Image* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
 				type(SubpassTargetImage),
 				v(v),
 				clear(clear),
@@ -93,7 +93,7 @@ namespace flame
 			{
 			}
 
-			SubpassTarget(Imageview* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
+			RenderTarget(Imageview* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
 				type(SubpassTargetImageview),
 				v(v),
 				clear(clear),
@@ -101,7 +101,7 @@ namespace flame
 			{
 			}
 
-			SubpassTarget(const std::vector<void*>* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
+			RenderTarget(const std::vector<void*>* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
 				type(SubpassTargetImages),
 				v((void*)v),
 				clear(clear),

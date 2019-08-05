@@ -98,8 +98,8 @@ namespace flame
 				image_ms = Image::create(d, swapchain_format, ((Image*)sc->images()[0])->size, 1, 1, sample_count, ImageUsageAttachment);
 
 				SubpassTargetInfo subpass;
-				SubpassTarget target_ms(image_ms, true);
-				SubpassTarget target_sc(&sc->images());
+				RenderTarget target_ms(image_ms, true);
+				RenderTarget target_sc(&sc->images());
 				subpass.color_targets.emplace_back(&target_ms);
 				subpass.resolve_targets.emplace_back(&target_sc);
 				rnf = graphics::RenderpassAndFramebuffer::create(d, { &subpass });

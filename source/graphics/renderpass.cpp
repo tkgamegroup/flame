@@ -485,12 +485,12 @@ namespace flame
 		{
 			std::vector<void*> rp_attachments;
 			std::vector<void*> rp_subpasses;
-			std::vector<std::tuple<SubpassTargetType, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
+			std::vector<std::tuple<RenderTargetType$, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
 			std::vector<std::unique_ptr<SubpassInfo>> sp_infos;
 			for (auto& _p : passes)
 			{
 				auto find_or_add_att = [&](void* p) {
-					const auto& t = *(SubpassTarget*)p;
+					const auto& t = *(RenderTarget*)p;
 
 					for (auto i = 0; i < att_infos.size(); i++)
 					{
@@ -628,6 +628,108 @@ namespace flame
 		{
 			delete (RenderpassAndFramebufferPrivate*)s;
 		}
+
+		struct RenderTarget$
+		{
+			AttributeE<RenderTargetType$> type$i;
+			AttributeV<bool> clear$i;
+			AttributeP<void> v$i;
+			AttributeV<Vec4c> clear_color$i;
+
+			AttributeV<RenderTarget> out$o;
+
+			FLAME_GRAPHICS_EXPORTS RenderTarget$()
+			{
+				clear$i.v = false;
+				clear_color$i.v = Vec4c(0);
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (type$i.frame > out$o.frame)
+					out$o.v.type = type$i.v;
+				if (v$i.frame > out$o.frame)
+					out$o.v.v = v$i.v;
+				if (clear$i.frame > out$o.frame)
+					out$o.v.clear = clear$i.v;
+				if (clear_color$i.frame > out$o.frame)
+					out$o.v.clear_color = clear_color$i.v;
+				out$o.frame = maxN(type$i.frame, v$i.frame, clear$i.frame, clear_color$i.frame);
+			}
+		};
+
+		struct SubpassTargetInfo$
+		{
+			AttributeV<std::vector<void*>> color_targets$i;
+			AttributeV<std::vector<void*>> resolve_targets$i;
+			AttributeP<void> depth_target$i;
+
+			AttributeV<SubpassTargetInfo> out$o;
+
+			FLAME_GRAPHICS_EXPORTS SubpassTargetInfo$()
+			{
+				depth_target$i.v = nullptr;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (color_targets$i.frame > out$o.frame)
+					out$o.v.color_targets = color_targets$i.v;
+				if (resolve_targets$i.frame > out$o.frame)
+					out$o.v.resolve_targets = resolve_targets$i.v;
+				if (depth_target$i.frame > out$o.frame)
+					out$o.v.depth_target = depth_target$i.v;
+				out$o.frame = maxN(color_targets$i.frame, resolve_targets$i.frame, depth_target$i.frame);
+			}
+		};
+
+		struct RenderpassAndFramebuffer$
+		{
+			AttributeP<std::vector<void*>> passes$i;
+
+			AttributeP<void> out$o;
+			AttributeP<void> rp$o;
+			AttributeV<std::vector<void*>> fbs$o;
+			AttributeP<void> cv$o;
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (passes$i.frame > out$o.frame)
+				{
+					if (out$o.v)
+						RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
+					auto d = (Device*)bp_environment().graphics_device;
+					if (passes$i.v && !passes$i.v->empty())
+					{
+						auto rnf = RenderpassAndFramebuffer::create(d, *passes$i.v);
+						out$o.v = rnf;
+						rp$o.v = rnf->renderpass();
+						fbs$o.v = rnf->framebuffers();
+						cv$o.v = rnf->clearvalues();
+					}
+					else
+					{
+						printf("cannot create renderpassandframebuffer\n");
+
+						out$o.v = nullptr;
+						rp$o.v = nullptr;
+						fbs$o.v.clear();
+						cv$o.v = nullptr;
+					}
+					out$o.frame = passes$i.frame;
+					rp$o.frame = passes$i.frame;
+					fbs$o.frame = passes$i.frame;
+					cv$o.frame = passes$i.frame;
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~RenderpassAndFramebuffer$()
+			{
+				if (out$o.v)
+					RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
+			}
+
+		};
 	}
 }
 
