@@ -211,18 +211,101 @@ namespace flame
 
 		struct Swapchain$
 		{
-			AttributeP<void> window$i;
+			AttributeP<void> in$i;
 
 			AttributeP<void> out$o;
 			AttributeV<Vec2u> size$o;
 			AttributeE<Format$> format$o;
 			AttributeV<std::vector<void*>> images$o;
-			Window* last_window;
-			void* resize_listener;
 
 			FLAME_GRAPHICS_EXPORTS Swapchain$()
 			{
 			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (in$i.frame > out$o.frame)
+				{
+					out$o.v = in$i.v;
+					auto sc = (Swapchain*)out$o.v;
+					if (sc)
+					{
+						images$o.v = sc->images();
+						auto i = (Image*)images$o.v[0];
+						size$o.v = i->size;
+						format$o.v = i->format;
+					}
+					else
+					{
+						out$o.v = nullptr;
+						size$o.v = 0;
+						format$o.v = Format_Undefined;
+						images$o.v.clear();
+					}
+					out$o.frame = in$i.frame;
+					size$o.frame = in$i.frame;
+					format$o.frame = in$i.frame;
+					images$o.frame = in$i.frame;
+				}
+			}
+
+		};
+
+		SwapchainResizablePrivate::SwapchainResizablePrivate(Device* d, Window* w, AttributeP<void>* notify_attr) :
+			d(d),
+			w(w),
+			notify_attr(notify_attr)
+		{
+			sc = Swapchain::create(d, w);
+			auto thiz = this;
+			resize_listener = w->add_resize_listener([](void* c, const Vec2u& size) {
+				auto thiz = *(SwapchainResizablePrivate**)c;
+				if (thiz->sc)
+				{
+					thiz->d->gq->wait_idle();
+					Swapchain::destroy(thiz->sc);
+				}
+				if (size.x() != 0 && size.y() != 0)
+					thiz->sc = Swapchain::create(thiz->d, thiz->w);
+				else
+					thiz->sc = nullptr;
+				if (thiz->notify_attr)
+				{
+					thiz->notify_attr->v = nullptr;
+					thiz->notify_attr->frame = app_frame();
+				}
+
+			}, new_mail(&thiz));
+		}
+		
+		SwapchainResizablePrivate::~SwapchainResizablePrivate()
+		{
+			w->remove_resize_listener(resize_listener);
+			if (sc)
+				Swapchain::destroy(sc);
+		}
+
+		Swapchain* SwapchainResizable::sc() const
+		{
+			return ((SwapchainResizablePrivate*)this)->sc;
+		}
+
+		SwapchainResizable* SwapchainResizable::create(Device* d, Window* w, AttributeP<void>* notify_attr)
+		{
+			return new SwapchainResizablePrivate(d, w, notify_attr);
+		}
+
+		void SwapchainResizable::destroy(SwapchainResizable* s)
+		{
+			delete (SwapchainResizablePrivate*)s;
+		}
+
+		struct SwapchainResizable$
+		{
+			AttributeP<void> window$i;
+
+			AttributeP<void> out$o;
+			AttributeP<void> sc$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
@@ -233,67 +316,36 @@ namespace flame
 						auto d = (Device*)bp_environment().graphics_device;
 						if (d)
 							d->gq->wait_idle();
-						Swapchain::destroy((Swapchain*)out$o.v);
+						SwapchainResizable::destroy((SwapchainResizable*)out$o.v);
 					}
 					auto w = (Window*)window$i.v;
-					if (w != last_window)
-					{
-						if (resize_listener)
-							last_window->remove_resize_listener(resize_listener);
-						if (window$i.v)
-						{
-							auto thiz = this;
-							resize_listener = w->add_resize_listener([](void* c, const Vec2u& size) {
-								auto thiz = *(Swapchain$ * *)c;
-								if (thiz->out$o.v)
-								{
-									auto d = (Device*)bp_environment().graphics_device;
-									if (d)
-										d->gq->wait_idle();
-									Swapchain::destroy((Swapchain*)thiz->out$o.v);
-								}
-								thiz->out$o.v = nullptr;
-								thiz->window$i.frame = app_frame();
-
-							}, new_mail(&thiz));
-						}
-						last_window = w;
-					}
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d && window$i.v && w->size.x() != 0 && w->size.y() != 0)
 					{
-						auto sc = Swapchain::create(d, (Window*)window$i.v);
-						out$o.v = sc;
-
-						images$o.v = sc->images();
-						auto i = (Image*)images$o.v[0];
-						size$o.v = i->size;
-						format$o.v = i->format;
+						auto scr = SwapchainResizable::create(d, (Window*)window$i.v, &sc$o);
+						out$o.v = scr;
+						sc$o.v = scr->sc();
 					}
 					else
 					{
-						printf("cannot create swapchain\n");
+						printf("cannot create swapchainresizable\n");
 
 						out$o.v = nullptr;
-						size$o.v = 0;
-						format$o.v = Format_Undefined;
-						images$o.v.clear();
+						sc$o.v = nullptr;
 					}
 					out$o.frame = window$i.frame;
-					size$o.frame = window$i.frame;
-					format$o.frame = window$i.frame;
-					images$o.frame = window$i.frame;
+					sc$o.frame = window$i.frame;
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Swapchain$()
+			FLAME_GRAPHICS_EXPORTS ~SwapchainResizable$()
 			{
 				if (out$o.v)
 				{
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d)
 						d->gq->wait_idle();
-					Swapchain::destroy((Swapchain*)out$o.v);
+					SwapchainResizable::destroy((SwapchainResizable*)out$o.v);
 				}
 			}
 

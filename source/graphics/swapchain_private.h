@@ -13,7 +13,7 @@ namespace flame
 		{
 			Window *w;
 
-			DevicePrivate *d;
+			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
 			VkSurfaceKHR s;
 			VkSwapchainKHR v;
@@ -32,6 +32,17 @@ namespace flame
 			void acquire_image();
 		};
 
-		typedef SwapchainPrivate* SwapchainPrivatePtr;
+		struct SwapchainResizablePrivate : SwapchainResizable
+		{
+			Window* w;
+
+			Device* d;
+			Swapchain* sc;
+			void* resize_listener;
+			AttributeP<void>* notify_attr;
+
+			SwapchainResizablePrivate(Device* d, Window* w, AttributeP<void>* notify_attr);
+			~SwapchainResizablePrivate();
+		};
 	}
 }

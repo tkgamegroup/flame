@@ -56,10 +56,10 @@ int main(int argc, char** args)
 	app.render_finished = graphics::Semaphore::create(app.d);
 
 	app.bp->set_graphics_device(app.d);
-	app.bp->find_input("sc.window")->set_data(&app.w);
+	app.bp->find_input("scr.window")->set_data(&app.w);
 	app.bp->update();
 
-	app.psc = (AttributeP<void>*)app.bp->find_output("sc.out")->data();
+	app.psc = (AttributeP<void>*)app.bp->find_output("scr.sc")->data();
 	app.cbs = (AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data();
 
 	auto sc = (graphics::Swapchain*)app.psc->v;

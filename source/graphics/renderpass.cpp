@@ -699,7 +699,54 @@ namespace flame
 					if (out$o.v)
 						RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
+					auto ok = false;
 					if (passes$i.v && !passes$i.v->empty())
+					{
+						ok = true;
+
+						for (auto& _p : *passes$i.v)
+						{
+							auto check_target = [&](void* p) {
+								const auto& t = *(RenderTarget*)p;
+
+								switch (t.type)
+								{
+								case SubpassTargetImage: case SubpassTargetImageview:
+									return t.v != nullptr;
+								case SubpassTargetImages:
+									return !(((std::vector<Image*>*)t.v)->empty());
+								}
+							};
+
+							const auto& p = *(SubpassTargetInfo*)_p;
+
+							for (auto& t : p.color_targets)
+							{
+								if (!check_target(t))
+								{
+									ok = false;
+									break;
+								}
+							}
+							for (auto& t : p.resolve_targets)
+							{
+								if (!check_target(t))
+								{
+									ok = false;
+									break;
+								}
+							}
+							if (p.depth_target)
+							{
+								if (!check_target(p.depth_target))
+								{
+									ok = false;
+									break;
+								}
+							}
+						}
+					}
+					if (ok)
 					{
 						auto rnf = RenderpassAndFramebuffer::create(d, *passes$i.v);
 						out$o.v = rnf;

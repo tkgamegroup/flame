@@ -29,6 +29,14 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
+
+		struct SwapchainResizable
+		{
+			FLAME_GRAPHICS_EXPORTS Swapchain* sc() const;
+
+			FLAME_GRAPHICS_EXPORTS static SwapchainResizable* create(Device* d, Window* w, AttributeP<void>* notify_attr = nullptr);
+			FLAME_GRAPHICS_EXPORTS static void destroy(SwapchainResizable* s);
+		};
 	}
 }
 
