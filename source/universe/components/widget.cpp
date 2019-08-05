@@ -21,9 +21,12 @@ namespace flame
 			blackhole = false;
 			want_key = false;
 
-			hovering = false;
-			dragging = false;
-			focusing = false;
+			hovering.v = false;
+			hovering.frame = 0;
+			dragging.v = false;
+			dragging.frame = 0;
+			focusing.v = false;
+			focusing.frame = 0;
 		}
 
 		void on_attach()
@@ -38,7 +41,7 @@ namespace flame
 
 		bool contains(const Vec2f& pos) const
 		{
-			return Rect::b(Vec2f(element->global_x, element->global_y), Vec2f(element->global_width, element->global_height)).contains(pos);
+			return rect_contains(Vec4f(element->global_x.v, element->global_y.v, element->global_width.v, element->global_height.v), pos);
 		}
 	};
 
@@ -53,7 +56,7 @@ namespace flame
 
 	uint cWidget$::type_hash() const
 	{
-		return cH("Event");
+		return cH("Widget");
 	}
 
 	void cWidget$::on_attach()

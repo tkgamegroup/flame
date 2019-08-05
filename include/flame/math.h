@@ -389,7 +389,7 @@ namespace flame
 			x() = v1.x();
 			y() = v1.y();
 			z() = v1.z();
-			w() = w;
+			w() = _w;
 		}
 
 		template<class U>

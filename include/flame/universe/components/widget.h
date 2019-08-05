@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -9,9 +10,9 @@ namespace flame
 		bool blackhole;
 		bool want_key;
 
-		ATTRIBUTE_BOOL hovering;
-		ATTRIBUTE_BOOL dragging;
-		ATTRIBUTE_BOOL focusing;
+		AttributeV<bool> hovering;
+		AttributeV<bool> dragging;
+		AttributeV<bool> focusing;
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cWidget$() override;
 

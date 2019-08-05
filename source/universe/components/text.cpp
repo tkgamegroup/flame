@@ -6,6 +6,13 @@
 
 namespace flame
 {
+	struct cTextArchive$
+	{
+		int font_atlas_index$;
+		Vec4c color$;
+		float sdf_scale$;
+	};
+
 	struct cText$Private : cText$
 	{
 		cElement$* element;
@@ -16,14 +23,14 @@ namespace flame
 		{
 			if (!data)
 			{
-				font_atlas_index = -1;
+				font_atlas = nullptr;
 				color = default_style.text_color_normal;
 				sdf_scale = default_style.sdf_scale;
 			}
 			else
 			{
 				auto src = (cTextArchive$*)data;
-				font_atlas_index = src->font_atlas_index$;
+				font_atlas = nullptr; // TODO
 				color = src->color$;
 				sdf_scale = src->sdf_scale$;
 			}
@@ -37,9 +44,9 @@ namespace flame
 
 		void update(float delta_time)
 		{
-			element->canvas()->add_text(font_atlas_index, Vec2f(element->global_x, element->global_y) + 
-				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
-				Vec4c(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+			element->canvas()->add_text(font_atlas, Vec2f(element->global_x.v, element->global_y.v) + 
+				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale.v, 
+				Vec4c(Vec3c(color), color.w() * element->alpha), text.c_str(), sdf_scale * element->global_scale.v);
 		}
 	};
 

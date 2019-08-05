@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/math.h>
+#include <flame/foundation/foundation.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -24,17 +24,17 @@ namespace flame
 
 	struct cElement$ : Component
 	{
-		ATTRIBUTE_NUMBER<float> x;
-		ATTRIBUTE_NUMBER<float> y;
-		ATTRIBUTE_NUMBER<float> scale;
-		ATTRIBUTE_NUMBER<float> width;
-		ATTRIBUTE_NUMBER<float> height;
+		AttributeV<float> x;
+		AttributeV<float> y;
+		AttributeV<float> scale;
+		AttributeV<float> width;
+		AttributeV<float> height;
 
-		ATTRIBUTE_NUMBER<float> global_x;
-		ATTRIBUTE_NUMBER<float> global_y;
-		ATTRIBUTE_NUMBER<float> global_scale;
-		ATTRIBUTE_NUMBER<float> global_width;
-		ATTRIBUTE_NUMBER<float> global_height;
+		AttributeV<float> global_x;
+		AttributeV<float> global_y;
+		AttributeV<float> global_scale;
+		AttributeV<float> global_width;
+		AttributeV<float> global_height;
 
 		Vec4f inner_padding; // L T R B
 		float layout_padding;
@@ -43,7 +43,7 @@ namespace flame
 
 		Vec4f background_offset; // L T R B
 		float background_round_radius;
-		int background_round_flags;
+		uint background_round_flags;
 		float background_frame_thickness;
 		Vec4c background_color;
 		Vec4c background_frame_color;

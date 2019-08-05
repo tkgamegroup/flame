@@ -15,10 +15,13 @@ namespace flame
 		EntityPrivate() :
 			parent(nullptr)
 		{
-			visible = true;
+			visible.v = true;
+			visible.frame = 0;
+			global_visible.v = false;
+			global_visible.frame = -1;
 		}
 
-		Component* get_component(uint type_hash)
+		Component* find_component(uint type_hash)
 		{
 			for (auto& c : components)
 			{
@@ -28,13 +31,13 @@ namespace flame
 			return nullptr;
 		}
 
-		DynamicArray<Component*> get_components(uint type_hash)
+		Mail<std::vector<Component*>> find_components(uint type_hash)
 		{
-			DynamicArray<Component*> ret;
+			auto ret = new_mail<std::vector<Component*>>();
 			for (auto& c : components)
 			{
 				if (c->type_hash() == type_hash)
-					ret.push_back(c.get());
+					ret.p->push_back(c.get());
 			}
 			return ret;
 		}
@@ -85,9 +88,12 @@ namespace flame
 			else
 			{
 				if (visible.frame > global_visible.frame || parent->global_visible.frame > global_visible.frame)
-					global_visible = visible && parent->global_visible;
+				{
+					global_visible.v = visible.v && parent->global_visible.v;
+					global_visible.frame = max(visible.frame, parent->global_visible.frame);
+				}
 			}
-			if (!global_visible)
+			if (!global_visible.v)
 				return;
 			for (auto& c : components)
 				c->update(delta_time);
@@ -106,19 +112,24 @@ namespace flame
 		((EntityPrivate*)this)->name = name;
 	}
 
-	int Entity::component_count() const
+	uint Entity::component_count() const
 	{
 		return ((EntityPrivate*)this)->components.size();
 	}
 
-	Component* Entity::component(uint type_hash) const
+	Component* Entity::component(uint index) const
 	{
-		return ((EntityPrivate*)this)->get_component(type_hash);
+		return ((EntityPrivate*)this)->components[index].get();
 	}
 
-	Mail<std::vector<Component*>> Entity::components(uint type_hash) const
+	Component* Entity::find_component(uint type_hash) const
 	{
-		return ((EntityPrivate*)this)->get_components(type_hash);
+		return ((EntityPrivate*)this)->find_component(type_hash);
+	}
+
+	Mail<std::vector<Component*>> Entity::find_components(uint type_hash) const
+	{
+		return ((EntityPrivate*)this)->find_components(type_hash);
 	}
 
 	void Entity::add_component(Component* c)
@@ -144,6 +155,18 @@ namespace flame
 	void Entity::add_child(Entity* e)
 	{
 		((EntityPrivate*)this)->add_child((EntityPrivate*)e);
+	}
+
+	void Entity::traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
+	{
+		((EntityPrivate*)this)->traverse_forward(callback, capture);
+		delete_mail(capture);
+	}
+
+	void Entity::traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
+	{
+		((EntityPrivate*)this)->traverse_backward(callback, capture);
+		delete_mail(capture);
 	}
 
 	void Entity::update(float delta_time)

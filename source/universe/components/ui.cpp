@@ -41,57 +41,66 @@ namespace flame
 
 			if (focusing)
 			{
-				if (!focusing->entity->global_visible)
+				if (!focusing->entity->global_visible.v)
 				{
-					focusing->focusing = false;
-					focusing->dragging = false;
+					focusing->focusing.v = false;
+					focusing->focusing.frame = app_frame();
+					focusing->dragging.v = false;
+					focusing->dragging.frame = app_frame();
 					focusing = nullptr;
 				}
 				else if (!is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left))
-					focusing->dragging = false;
-				else if (focusing->dragging && f_mdisp != 0)
 				{
-					f_mdisp = Vec2i(0);
+					focusing->dragging.v = false;
+					focusing->dragging.frame = app_frame();
 				}
+				else if (focusing->dragging.v && f_mdisp != 0)
+					f_mdisp = Vec2i(0);
 			}
 
 			f_all_done = !f_mljustdown && !f_mljustup && !f_mrjustdown && !f_mrjustup && f_mdisp == 0 && f_mscroll == 0;
 
-			traverse_backward(entity, Function<void(void*, Entity*)>(
-				[](void* c, Entity* e) {
-					auto thiz = *((cUIPrivate**)c);
-					if (thiz->f_all_done)
-						return;
+			auto thiz = this;
+			entity->traverse_backward([](void* c, Entity* e) {
+				auto thiz = *((cUIPrivate**)c);
+				if (thiz->f_all_done)
+					return;
 
-					auto ev = (cWidget$*)e->component(cH("Event"));
-					if (ev)
+				auto w = (cWidget$*)e->find_component(cH("Widget"));
+				if (w)
+				{
+					auto mhover = w->contains(thiz->f_mpos);
+					if (w->blackhole || mhover)
 					{
-						auto mhover = ev->contains(thiz->f_mpos);
-						if (ev->blackhole || mhover)
+						if (thiz->f_mljustdown)
 						{
-							if (thiz->f_mljustdown)
+							thiz->f_mljustdown = false;
+							thiz->focusing = w;
+							w->focusing.v = true;
+							w->focusing.frame = app_frame();
+							if (mhover)
 							{
-								thiz->f_mljustdown = false;
-								thiz->focusing = ev;
-								ev->focusing = true;
-								if (mhover)
-									ev->dragging = true;
-							}
-							if (thiz->f_mljustup)
-							{
-								thiz->f_mljustdown = false;
+								w->dragging.v = true;
+								w->dragging.frame = app_frame();
 							}
 						}
-
-						thiz->f_all_done = !thiz->f_mljustdown && !thiz->f_mljustup && 
-							!thiz->f_mrjustdown && !thiz->f_mrjustup && thiz->f_mdisp == 0 && thiz->f_mscroll == 0;
+						if (thiz->f_mljustup)
+						{
+							thiz->f_mljustdown = false;
+						}
 					}
-				}));
+
+					thiz->f_all_done = !thiz->f_mljustdown && !thiz->f_mljustup && 
+						!thiz->f_mrjustdown && !thiz->f_mrjustup && thiz->f_mdisp == 0 && thiz->f_mscroll == 0;
+				}
+			}, new_mail(&thiz));
 
 			if (f_mljustdown)
 			{
-				focusing->focusing = false;
-				focusing->dragging = false;
+				focusing->focusing.v = false;
+				focusing->focusing.frame = app_frame();
+				focusing->dragging.v = false;
+				focusing->dragging.frame = app_frame();
 				focusing = nullptr;
 			}
 
@@ -115,27 +124,25 @@ namespace flame
 			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
 				mouse_buttons[i] = KeyStateUp;
 
-			auto thiz = this;
-
 			if (window)
 			{
-				window->add_mouse_listener(Function<void(void*, KeyState, MouseKey, const Vec2i&)>(
-					[](void* c, KeyState action, MouseKey key, const Vec2i & pos) {
-						auto thiz = *((cUIPrivate**)c);
+				auto thiz = this;
+				window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i & pos) {
+					auto thiz = *((cUIPrivate**)c);
 
-						if (action == KeyStateNull)
-						{
-							if (key == Mouse_Middle)
-								thiz->mouse_scroll = pos.x();
-							else if (key == Mouse_Null)
-								thiz->mouse_pos = pos;
-						}
-						else
-						{
-							thiz->mouse_buttons[key] = action | KeyStateJust;
+					if (action == KeyStateNull)
+					{
+						if (key == Mouse_Middle)
+							thiz->mouse_scroll = pos.x();
+						else if (key == Mouse_Null)
 							thiz->mouse_pos = pos;
-						}
-					}, sizeof(void*), &thiz));
+					}
+					else
+					{
+						thiz->mouse_buttons[key] = action | KeyStateJust;
+						thiz->mouse_pos = pos;
+					}
+				}, new_mail(&thiz));
 			}
 		}
 	};

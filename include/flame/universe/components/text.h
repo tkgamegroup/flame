@@ -5,9 +5,14 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct FontAtlas;
+	}
+
 	struct cText$ : Component // requires: Element
 	{
-		int font_atlas_index;
+		graphics::FontAtlas* font_atlas;
 		Vec4c color;
 		float sdf_scale;
 
@@ -24,12 +29,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);
 
 		FLAME_UNIVERSE_EXPORTS static cText$* create$(void* data);
-	};
-
-	struct cTextArchive$
-	{
-		int font_atlas_index$;
-		Vec4c color$;
-		float sdf_scale$;
 	};
 }
