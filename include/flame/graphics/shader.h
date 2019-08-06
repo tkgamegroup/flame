@@ -61,29 +61,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
 		};
 
-		struct Shader
-		{
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs = nullptr, const std::vector<void*>* outputs = nullptr, Pipelinelayout* pll = nullptr, bool autogen_code = false);
-			// for vertex shader, inputs are the VertexInputAttributeInfos, for fragment shader, outputs are the OutputAttachmentInfos, otherwise, inputs and outputs are StageInOutInfos
-			// if autogen_code, inputs, outputs and pll are used to generate the code, otherwise, just the validation
-			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
-		};
-
-		struct StageInOutInfo
-		{
-			uint location;
-			Format$ format;
-			std::string name;
-
-			StageInOutInfo(uint location, Format$ format, const std::string& name = "") :
-				location(location),
-				format(format),
-				name(name)
-			{
-			}
-		};
-
-		struct VertexInputAttributeInfo
+		struct VertexInputAttribute
 		{
 			uint location;
 			uint buffer_id;
@@ -91,7 +69,15 @@ namespace flame
 			Format$ format;
 			std::string name;
 
-			VertexInputAttributeInfo(uint location, uint buffer_id, uint offset, Format$ format, const std::string& name = "") :
+			VertexInputAttribute() :
+				location(0),
+				buffer_id(0),
+				offset(0),
+				format(Format_Undefined)
+			{
+			}
+
+			VertexInputAttribute(uint location, uint buffer_id, uint offset, Format$ format, const std::string& name = "") :
 				location(location),
 				buffer_id(buffer_id),
 				offset(offset),
@@ -101,13 +87,20 @@ namespace flame
 			}
 		};
 
-		struct VertexInputBufferInfo
+		struct VertexInputBuffer
 		{
 			uint id;
 			uint stride;
-			VertexInputRate rate;
+			VertexInputRate$ rate;
 
-			VertexInputBufferInfo(uint id, uint stride, VertexInputRate rate = VertexInputRateVertex) :
+			VertexInputBuffer() :
+				id(0),
+				stride(0),
+				rate(VertexInputRateVertex)
+			{
+			}
+
+			VertexInputBuffer(uint id, uint stride, VertexInputRate$ rate = VertexInputRateVertex) :
 				id(id),
 				stride(stride),
 				rate(rate)
@@ -119,12 +112,32 @@ namespace flame
 		{
 			std::vector<void*> attribs;
 			std::vector<void*> buffers;
-			PrimitiveTopology primitive_topology;
+			PrimitiveTopology$ primitive_topology;
 			uint patch_control_points;
 
 			VertexInputInfo() :
 				primitive_topology(PrimitiveTopologyTriangleList),
 				patch_control_points(0)
+			{
+			}
+		};
+
+		struct StageInOut
+		{
+			uint location;
+			Format$ format;
+			std::string name;
+
+			StageInOut() :
+				location(0),
+				format(Format_Undefined)
+			{
+			}
+
+			StageInOut(uint location, Format$ format, const std::string& name = "") :
+				location(location),
+				format(format),
+				name(name)
 			{
 			}
 		};
@@ -163,10 +176,10 @@ namespace flame
 			Format$ format;
 			std::string name;
 			bool blend_enable;
-			BlendFactor blend_src_color;
-			BlendFactor blend_dst_color;
-			BlendFactor blend_src_alpha;
-			BlendFactor blend_dst_alpha;
+			BlendFactor$ blend_src_color;
+			BlendFactor$ blend_dst_color;
+			BlendFactor$ blend_src_alpha;
+			BlendFactor$ blend_dst_alpha;
 			bool dual_src;
 
 			OutputAttachmentInfo() :
@@ -194,7 +207,7 @@ namespace flame
 			{
 			}
 
-			OutputAttachmentInfo(uint location, Format$ format, const std::string& name, BlendFactor sc, BlendFactor dc, BlendFactor sa, BlendFactor da) :
+			OutputAttachmentInfo(uint location, Format$ format, const std::string& name, BlendFactor$ sc, BlendFactor$ dc, BlendFactor$ sa, BlendFactor$ da) :
 				location(location),
 				format(format),
 				name(name),
@@ -204,37 +217,24 @@ namespace flame
 				blend_src_alpha(sa),
 				blend_dst_alpha(da)
 			{
-				const BlendFactor dual_src_enums[] = {
-					BlendFactorSrc1Color,
-					BlendFactorOneMinusSrc1Color,
-					BlendFactorSrc1Alpha,
-					BlendFactorOneMinusSrc1Alpha
-				};
-				dual_src = false;
-				for (auto i = 0; i < FLAME_ARRAYSIZE(dual_src_enums); i++)
-				{
-					if (sc == dual_src_enums[i])
-					{
-						dual_src = true;
-						break;
-					}
-					if (dc == dual_src_enums[i])
-					{
-						dual_src = true;
-						break;
-					}
-					if (sa == dual_src_enums[i])
-					{
-						dual_src = true;
-						break;
-					}
-					if (da == dual_src_enums[i])
-					{
-						dual_src = true;
-						break;
-					}
-				}
+				judge_dual();
 			}
+
+			void judge_dual()
+			{
+				dual_src = is_blend_factor_dual(blend_src_color) || 
+					is_blend_factor_dual(blend_dst_color) ||
+					is_blend_factor_dual(blend_src_alpha) ||
+					is_blend_factor_dual(blend_dst_alpha);
+			}
+		};
+
+		struct Shader
+		{
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs = nullptr, const std::vector<void*>* outputs = nullptr, Pipelinelayout* pll = nullptr, bool autogen_code = false);
+			// for vertex shader, inputs are the VertexInputAttributeInfos, for fragment shader, outputs are the OutputAttachmentInfos, otherwise, inputs and outputs are StageInOutInfos
+			// if autogen_code, inputs, outputs and pll are used to generate the code, otherwise, just the validation
+			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
 		};
 
 		struct Pipeline

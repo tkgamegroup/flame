@@ -174,13 +174,13 @@ namespace flame
 			FilterLinear
 		};
 
-		enum VertexInputRate
+		enum VertexInputRate$
 		{
 			VertexInputRateVertex,
 			VertexInputRateInstance,
 		};
 
-		enum PrimitiveTopology
+		enum PrimitiveTopology$
 		{
 			PrimitiveTopologyPointList,
 			PrimitiveTopologyLineList,
@@ -221,7 +221,7 @@ namespace flame
 			CullModeFrontAndback,
 		};
 
-		enum BlendFactor
+		enum BlendFactor$
 		{
 			BlendFactorZero,
 			BlendFactorOne,
@@ -243,6 +243,22 @@ namespace flame
 			BlendFactorSrc1Alpha,
 			BlendFactorOneMinusSrc1Alpha
 		};
+
+		inline bool is_blend_factor_dual(BlendFactor$ f)
+		{
+			const BlendFactor$ dual_src_enums[] = {
+				BlendFactorSrc1Color,
+				BlendFactorOneMinusSrc1Color,
+				BlendFactorSrc1Alpha,
+				BlendFactorOneMinusSrc1Alpha
+			};
+			for (auto i = 0; i < FLAME_ARRAYSIZE(dual_src_enums); i++)
+			{
+				if (f == dual_src_enums[i])
+					return true;
+			}
+			return false;
+		}
 
 		enum DynamicState
 		{

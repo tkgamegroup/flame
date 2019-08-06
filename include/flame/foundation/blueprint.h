@@ -47,6 +47,11 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
 
+			void set_data_p(const void* p)
+			{
+				set_data(&p);
+			}
+
 			FLAME_FOUNDATION_EXPORTS int link_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* link(int idx = 0) const;
 			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);

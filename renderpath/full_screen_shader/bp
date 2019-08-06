@@ -5,7 +5,6 @@
     <dependency v="flame_graphics.dll" />
   </dependencies>
 	<nodes>
-    <node type="Pointer(std::vector(void*))" id="images" pos="0.00;0.00" />
     <node type="graphics::RenderTarget" id="rt" pos="0.00;0.00">
       <datas>
         <data name="type" value="SubpassTargetImages" />
@@ -34,7 +33,6 @@
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
 	</nodes>
 	<links>
-    <link out="images.out" in="rt.v" />
     <link out="rt.out" in="rts.1" />
     <link out="rts.v" in="sp.color_targets" />
     <link out="sp.out" in="sps.1" />
@@ -43,9 +41,9 @@
     <link out="dsls.v" in="pll.descriptorlayouts" />
     <link out="shv.out" in="shs.1" />
     <link out="shf.out" in="shs.2" />
-    <link out="rnf.rp" in="pl.renderpass" />
     <link out="shs.v" in="pl.shaders" />
-    <link out="pll.out" in="pl.layout" />
+    <link out="pll.out" in="pl.pll" />
+    <link out="rnf.rp" in="pl.renderpass" />
     <link out="rnf.rp" in="make_cmd.renderpass" />
     <link out="rnf.fbs" in="make_cmd.framebuffers" />
     <link out="pl.out" in="make_cmd.pipeline" />

@@ -581,7 +581,7 @@ namespace flame
 			}
 		}
 
-		inline VkVertexInputRate to_enum(VertexInputRate r)
+		inline VkVertexInputRate to_enum(VertexInputRate$ r)
 		{
 			switch (r)
 			{
@@ -592,7 +592,7 @@ namespace flame
 			}
 		}
 
-		inline VkPrimitiveTopology to_enum(PrimitiveTopology t)
+		inline VkPrimitiveTopology to_enum(PrimitiveTopology$ t)
 		{
 			switch (t)
 			{
@@ -670,7 +670,7 @@ namespace flame
 			}
 		}
 
-		inline VkBlendFactor to_enum(BlendFactor f)
+		inline VkBlendFactor to_enum(BlendFactor$ f)
 		{
 			switch (f)
 			{

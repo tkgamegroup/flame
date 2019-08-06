@@ -5,7 +5,6 @@
     <dependency v="flame_graphics.dll" />
   </dependencies>
   <nodes>
-    <node type="Pointer(std::vector(void*))" id="images" pos="0.00;0.00" />
     <node type="graphics::RenderTarget" id="rt" pos="0.00;0.00">
       <datas>
         <data name="type" value="SubpassTargetImages" />
@@ -22,16 +21,153 @@
         <data name="binding" value="0" />
         <data name="type" value="DescriptorSampledImage" />
         <data name="count" value="64" />
+        <data name="name" value="images" />
+      </datas>
+    </node>
+    <node type="Array(1+void*)" id="desc_bindings" pos="0.00;0.00" />
+    <node type="graphics::Descriptorlayout" id="dsl" pos="0.00;0.00" />
+    <node type="Array(1+void*)" id="dsls" pos="0.00;0.00" />
+    <node type="graphics::Pipelinelayout" id="pll" pos="0.00;0.00">
+      <datas>
+        <data name="push_constant_udt_name" value="PushconstantT" />
+      </datas>
+    </node>
+    <node type="graphics::VertexInputAttribute" id="via1" pos="0.00;0.00">
+      <datas>
+        <data name="location" value="0" />
+        <data name="offset" value="0" />
+        <data name="format" value="Format_R32G32_SFLOAT" />
+        <data name="name" value="pos" />
+      </datas>
+    </node>
+    <node type="graphics::VertexInputAttribute" id="via2" pos="0.00;0.00">
+      <datas>
+        <data name="location" value="1" />
+        <data name="offset" value="8" />
+        <data name="format" value="Format_R32G32_SFLOAT" />
+        <data name="name" value="uv" />
+      </datas>
+    </node>
+    <node type="graphics::VertexInputAttribute" id="via3" pos="0.00;0.00">
+      <datas>
+        <data name="location" value="2" />
+        <data name="offset" value="16" />
+        <data name="format" value="Format_R8G8B8A8_UNORM" />
+        <data name="name" value="color" />
+      </datas>
+    </node>
+    <node type="Array(3+void*)" id="vias" pos="0.00;0.00" />
+    <node type="graphics::VertexInputBuffer" id="vib" pos="0.00;0.00">
+      <datas>
+        <data name="stride" value="20" />
+      </datas>
+    </node>
+    <node type="Array(1+void*)" id="vibs" pos="0.00;0.00" />
+    <node type="graphics::VertexInputInfo" id="vi" pos="0.00;0.00" />
+    <node type="graphics::StageInOut" id="vert_out1" pos="0.00;0.00">
+      <datas>
+        <data name="location" value="0" />
+        <data name="format" value="Format_R32G32B32A32_SFLOAT" />
+        <data name="name" value="color" />
+      </datas>
+    </node>
+    <node type="graphics::StageInOut" id="vert_out2" pos="0.00;0.00">
+      <datas>
+        <data name="location" value="1" />
+        <data name="format" value="Format_R32G32_SFLOAT" />
+        <data name="name" value="uv" />
+      </datas>
+    </node>
+    <node type="graphics::StageInOut" id="vert_out3" pos="0.00;0.00">
+      <datas>
+        <data name="location" value="2" />
+        <data name="format" value="Format_R32_UINT" />
+        <data name="name" value="id" />
+      </datas>
+    </node>
+    <node type="Array(3+void*)" id="vert_outs" pos="0.00;0.00" />
+    <node type="graphics::OutputAttachmentInfo" id="out_alpha_blend" pos="0.00;0.00">
+      <datas>
+        <data name="format" value="Format_R8G8B8A8_UNORM" />
+        <data name="name" value="color" />
+        <data name="blend_enable" value="1" />
+        <data name="blend_src_color" value="BlendFactorSrcAlpha" />
+        <data name="blend_dst_color" value="BlendFactorOneMinusSrcAlpha" />
+        <data name="blend_src_alpha" value="BlendFactorZero" />
+        <data name="blend_dst_alpha" value="BlendFactorOneMinusSrcAlpha" />
+      </datas>
+    </node>
+    <node type="Array(1+void*)" id="outs_alpha_blend" pos="0.00;0.00" />
+    <node type="graphics::OutputAttachmentInfo" id="out_lcd" pos="0.00;0.00">
+      <datas>
+        <data name="format" value="Format_R8G8B8A8_UNORM" />
+        <data name="name" value="color" />
+        <data name="blend_enable" value="1" />
+        <data name="blend_src_color" value="BlendFactorSrc1Color" />
+        <data name="blend_dst_color" value="BlendFactorOneMinusSrc1Color" />
+        <data name="blend_src_alpha" value="BlendFactorZero" />
+        <data name="blend_dst_alpha" value="BlendFactorZero" />
+      </datas>
+    </node>
+    <node type="Array(1+void*)" id="outs_lcd" pos="0.00;0.00" />
+    <node type="graphics::Shader" id="shv_element" pos="0.00;0.00">
+      <datas>
+        <data name="filename" value="../renderpath/canvas/element.vert" />
+        <data name="autogen_code" value="1" />
+      </datas>
+    </node>
+    <node type="graphics::Shader" id="shf_element" pos="0.00;0.00">
+      <datas>
+        <data name="filename" value="../renderpath/canvas/element.frag" />
+        <data name="autogen_code" value="1" />
+      </datas>
+    </node>
+    <node type="graphics::Shader" id="shf_text_lcd" pos="0.00;0.00">
+      <datas>
+        <data name="filename" value="../renderpath/canvas/text_lcd.frag" />
+        <data name="autogen_code" value="1" />
+      </datas>
+    </node>
+    <node type="graphics::Shader" id="shf_text_sdf" pos="0.00;0.00">
+      <datas>
+        <data name="filename" value="../renderpath/canvas/text_sdf.frag" />
+        <data name="autogen_code" value="1" />
       </datas>
     </node>
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
   </nodes>
   <links>
-    <link out="images.out" in="rt.v" />
     <link out="rt.out" in="rts.1" />
     <link out="rts.v" in="sp.color_targets" />
     <link out="sp.out" in="sps.1" />
     <link out="sps.v" in="rnf.passes" />
+    <link out="desc_binding.out" in="desc_bindings.1" />
+    <link out="desc_bindings.v" in="dsl.bindings" />
+    <link out="dsl.out" in="dsls.1" />
+    <link out="dsls.v" in="pll.descriptorlayouts" />
+    <link out="via1.out" in="vias.1" />
+    <link out="via2.out" in="vias.2" />
+    <link out="via3.out" in="vias.3" />
+    <link out="vib.out" in="vibs.1" />
+    <link out="vias.out" in="vi.attribs" />
+    <link out="vibs.out" in="vi.buffers" />
+    <link out="vert_out1.out" in="vert_outs.1" />
+    <link out="vert_out2.out" in="vert_outs.2" />
+    <link out="vert_out3.out" in="vert_outs.3" />
+    <link out="out_alpha_blend.out" in="outs_alpha_blend.1" />
+    <link out="out_lcd.out" in="outs_lcd.1" />
+    <link out="vias.out" in="shv_element.inputs" />
+    <link out="vert_outs.out" in="shv_element.outputs" />
+    <link out="pll.out" in="shv_element.pll" />
+    <link out="vert_outs.out" in="shf_element.inputs" />
+    <link out="outs_alpha_blend.out" in="shf_element.outputs" />
+    <link out="pll.out" in="shf_element.pll" />
+    <link out="vert_outs.out" in="shf_text_lcd.inputs" />
+    <link out="outs_lcd.out" in="shf_text_lcd.outputs" />
+    <link out="pll.out" in="shf_text_lcd.pll" />
+    <link out="vert_outs.out" in="shf_text_sdf.inputs" />
+    <link out="outs_alpha_blend.out" in="shf_text_sdf.outputs" />
+    <link out="pll.out" in="shf_text_sdf.pll" />
     <link out="rnf.rp" in="make_cmd.renderpass" />
     <link out="rnf.fbs" in="make_cmd.framebuffers" />
     <link out="rnf.cv" in="make_cmd.clearvalues" />

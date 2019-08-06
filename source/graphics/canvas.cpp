@@ -111,19 +111,19 @@ namespace flame
 				dsl = Descriptorlayout::create(d, { &DescriptorBinding(0, DescriptorSampledImage, 64, "images") });
 				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
 
-				VertexInputAttributeInfo via1(0, 0, 0, Format_R32G32_SFLOAT, "pos");
-				VertexInputAttributeInfo via2(1, 0, 8, Format_R32G32_SFLOAT, "uv");
-				VertexInputAttributeInfo via3(2, 0, 16, Format_R8G8B8A8_UNORM, "color");
-				VertexInputBufferInfo vib(0, 20);
+				VertexInputAttribute via1(0, 0, 0, Format_R32G32_SFLOAT, "pos");
+				VertexInputAttribute via2(1, 0, 8, Format_R32G32_SFLOAT, "uv");
+				VertexInputAttribute via3(2, 0, 16, Format_R8G8B8A8_UNORM, "color");
+				VertexInputBuffer vib(0, 20);
 				VertexInputInfo vi;
 				vi.attribs.push_back(&via1);
 				vi.attribs.push_back(&via2);
 				vi.attribs.push_back(&via3);
 				vi.buffers.push_back(&vib);
 
-				StageInOutInfo vert_output1(0, Format_R32G32B32A32_SFLOAT, "color");
-				StageInOutInfo vert_output2(1, Format_R32G32_SFLOAT, "uv");
-				StageInOutInfo vert_output3(2, Format_R32_UINT, "id");
+				StageInOut vert_output1(0, Format_R32G32B32A32_SFLOAT, "color");
+				StageInOut vert_output2(1, Format_R32G32_SFLOAT, "uv");
+				StageInOut vert_output3(2, Format_R32_UINT, "id");
 				std::vector<void*> vert_outputs;
 				vert_outputs.push_back(&vert_output1);
 				vert_outputs.push_back(&vert_output2);

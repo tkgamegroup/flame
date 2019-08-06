@@ -72,17 +72,10 @@ int main(int argc, char** args)
 	}
 
 	app.bp->set_graphics_device(app.d);
-
-	app.images_slot = app.bp->find_input("images.in");
-	{
-		auto p = &app.cbs;
-		app.bp->find_input("make_cmd.cmdbufs")->set_data(&p);
-	}
-
-	{
-		auto p = &app.scr->sc()->images();
-		app.images_slot->set_data(&p);
-	}
+	
+	app.images_slot = app.bp->find_input("rt.v");
+	app.images_slot->set_data_p(&app.scr->sc()->images());
+	app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.cbs);
 
 	auto thiz = &app;
 	app_run([](void* c) {

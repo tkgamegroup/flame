@@ -124,6 +124,7 @@ namespace flame
 			AttributeV<uint> binding$i;
 			AttributeE<DescriptorType$> type$i;
 			AttributeV<uint> count$i;
+			AttributeV<std::string> name$i;
 
 			AttributeV<DescriptorBinding> out$o;
 
@@ -140,9 +141,14 @@ namespace flame
 					out$o.v.type = type$i.v;
 				if (count$i.frame > out$o.frame)
 					out$o.v.count = count$i.v;
+				if (name$i.frame > out$o.frame)
+					out$o.v.name = name$i.v;
 				out$o.frame = maxN(binding$i.frame, type$i.frame, count$i.frame);
 			}
 
+			FLAME_GRAPHICS_EXPORTS ~DescriptorBinding$()
+			{
+			}
 		};
 
 		struct Descriptorlayout$
@@ -345,25 +351,30 @@ namespace flame
 		{
 			AttributeP<std::vector<void*>> descriptorlayouts$i;
 			AttributeV<uint> push_constant_size$i;
+			AttributeV<std::string> push_constant_udt_name$i;
 
 			AttributeP<void> out$o;
 
+			FLAME_GRAPHICS_EXPORTS Pipelinelayout$()
+			{
+			}
+
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (descriptorlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame)
+				if (descriptorlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame || push_constant_udt_name$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d && descriptorlayouts$i.v && !descriptorlayouts$i.v->empty())
-						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v);
+						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v, H(push_constant_udt_name$i.v.c_str()));
 					else
 					{
 						printf("cannot create pipelinelayout\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = max(descriptorlayouts$i.frame, push_constant_size$i.frame);
+					out$o.frame = maxN(descriptorlayouts$i.frame, push_constant_size$i.frame, push_constant_udt_name$i.frame);
 				}
 			}
 
@@ -372,7 +383,180 @@ namespace flame
 				if (out$o.v)
 					Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
 			}
+		};
 
+		struct VertexInputAttribute$
+		{
+			AttributeV<uint> location$i;
+			AttributeV<uint> buffer_id$i;
+			AttributeV<uint> offset$i;
+			AttributeE<Format$> format$i;
+			AttributeV<std::string> name$i;
+
+			AttributeV<VertexInputAttribute> out$o;
+
+			FLAME_GRAPHICS_EXPORTS VertexInputAttribute$()
+			{
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (location$i.frame > out$o.frame)
+					out$o.v.location = location$i.v;
+				if (buffer_id$i.frame > out$o.frame)
+					out$o.v.buffer_id = buffer_id$i.v;
+				if (offset$i.frame > out$o.frame)
+					out$o.v.offset = offset$i.v;
+				if (format$i.frame > out$o.frame)
+					out$o.v.format = format$i.v;
+				if (name$i.frame > out$o.frame)
+					out$o.v.name = name$i.v;
+				out$o.frame = maxN(location$i.frame, buffer_id$i.frame, offset$i.frame, format$i.frame, name$i.frame);
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~VertexInputAttribute$()
+			{
+			}
+		};
+
+		struct VertexInputBuffer$
+		{
+			AttributeV<uint> id$i;
+			AttributeV<uint> stride$i;
+			AttributeE<VertexInputRate$> rate$i;
+
+			AttributeV<VertexInputBuffer> out$o;
+
+			FLAME_GRAPHICS_EXPORTS VertexInputBuffer$()
+			{
+				rate$i.v = VertexInputRateVertex;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (id$i.frame > out$o.frame)
+					out$o.v.id = id$i.v;
+				if (stride$i.frame > out$o.frame)
+					out$o.v.stride = stride$i.v;
+				if (rate$i.frame > out$o.frame)
+					out$o.v.rate = rate$i.v;
+				out$o.frame = maxN(id$i.frame, stride$i.frame, rate$i.frame);
+			}
+		};
+
+		struct VertexInputInfo$
+		{
+			AttributeP<std::vector<void*>> attribs$i;
+			AttributeP<std::vector<void*>> buffers$i;
+			AttributeE<PrimitiveTopology$> primitive_topology$i;
+			AttributeV<uint> patch_control_points$i;
+
+			AttributeV<VertexInputInfo> out$o;
+
+			FLAME_GRAPHICS_EXPORTS VertexInputInfo$()
+			{
+				primitive_topology$i.v = PrimitiveTopologyTriangleList;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (attribs$i.frame > out$o.frame)
+					out$o.v.attribs = *attribs$i.v;
+				if (buffers$i.frame > out$o.frame)
+					out$o.v.buffers = *buffers$i.v;
+				if (primitive_topology$i.frame > out$o.frame)
+					out$o.v.primitive_topology = primitive_topology$i.v;
+				if (patch_control_points$i.frame > out$o.frame)
+					out$o.v.patch_control_points = patch_control_points$i.v;
+				out$o.frame = maxN(attribs$i.frame, buffers$i.frame, primitive_topology$i.frame, patch_control_points$i.frame);
+			}
+		};
+
+		struct StageInOut$
+		{
+			AttributeV<uint> location$i;
+			AttributeE<Format$> format$i;
+			AttributeV<std::string> name$i;
+
+			AttributeV<StageInOut> out$o;
+
+			FLAME_GRAPHICS_EXPORTS StageInOut$()
+			{
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (location$i.frame > out$o.frame)
+					out$o.v.location = location$i.v;
+				if (format$i.frame > out$o.frame)
+					out$o.v.format = format$i.v;
+				if (name$i.frame > out$o.frame)
+					out$o.v.name = name$i.v;
+				out$o.frame = maxN(location$i.frame, format$i.frame, name$i.frame);
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~StageInOut$()
+			{
+			}
+		};
+
+		struct OutputAttachmentInfo$
+		{
+			AttributeV<uint> location$i;
+			AttributeE<Format$> format$i;
+			AttributeV<std::string> name$i;
+			AttributeV<bool> blend_enable$i;
+			AttributeE<BlendFactor$> blend_src_color$i;
+			AttributeE<BlendFactor$> blend_dst_color$i;
+			AttributeE<BlendFactor$> blend_src_alpha$i;
+			AttributeE<BlendFactor$> blend_dst_alpha$i;
+
+			AttributeV<OutputAttachmentInfo> out$o;
+
+			FLAME_GRAPHICS_EXPORTS OutputAttachmentInfo$()
+			{
+				format$i.v = Format_R8G8B8A8_UNORM;
+				blend_src_color$i.v = BlendFactorOne;
+				blend_src_alpha$i.v = BlendFactorOne;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (location$i.frame > out$o.frame)
+					out$o.v.location = location$i.v;
+				if (format$i.frame > out$o.frame)
+					out$o.v.format = format$i.v;
+				if (name$i.frame > out$o.frame)
+					out$o.v.name = name$i.v;
+				if (blend_enable$i.frame > out$o.frame)
+					out$o.v.blend_enable = blend_enable$i.v;
+				if (blend_src_color$i.frame > out$o.frame)
+				{
+					out$o.v.blend_src_color = blend_src_color$i.v;
+					out$o.v.judge_dual();
+				}
+				if (blend_dst_color$i.frame > out$o.frame)
+				{
+					out$o.v.blend_dst_color = blend_dst_color$i.v;
+					out$o.v.judge_dual();
+				}
+				if (blend_src_alpha$i.frame > out$o.frame)
+				{
+					out$o.v.blend_src_alpha = blend_src_alpha$i.v;
+					out$o.v.judge_dual();
+				}
+				if (blend_dst_alpha$i.frame > out$o.frame)
+				{
+					out$o.v.blend_dst_alpha = blend_dst_alpha$i.v;
+					out$o.v.judge_dual();
+				}
+				out$o.frame = maxN(location$i.frame, format$i.frame, name$i.frame, blend_enable$i.frame, 
+					blend_src_color$i.frame, blend_dst_color$i.frame, blend_src_alpha$i.frame, blend_dst_alpha$i.frame);
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~OutputAttachmentInfo$()
+			{
+			}
 		};
 
 		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>* _inputs, const std::vector<void*>* _outputs, Pipelinelayout* _pll, bool autogen_code) :
@@ -406,7 +590,7 @@ namespace flame
 					{
 						for (auto _i : *_inputs)
 						{
-							auto i = (VertexInputAttributeInfo*)_i;
+							auto i = (VertexInputAttribute*)_i;
 							prefix += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
 						}
 					}
@@ -414,7 +598,7 @@ namespace flame
 					{
 						for (auto _i : *_inputs)
 						{
-							auto i = (StageInOutInfo*)_i;
+							auto i = (StageInOut*)_i;
 							prefix += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
 						}
 					}
@@ -441,7 +625,7 @@ namespace flame
 					{
 						for (auto _o : *_outputs)
 						{
-							auto o = (StageInOutInfo*)_o;
+							auto o = (StageInOut*)_o;
 							prefix += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
 						}
 					}
@@ -694,10 +878,10 @@ namespace flame
 					{
 						for (auto& r : inputs)
 						{
-							VertexInputAttributeInfo* via = nullptr;
+							VertexInputAttribute* via = nullptr;
 							for (auto _i : *_inputs)
 							{
-								auto i = (VertexInputAttributeInfo*)_i;
+								auto i = (VertexInputAttribute*)_i;
 								if (r->location == i->location)
 								{
 									via = i;
@@ -711,10 +895,10 @@ namespace flame
 					{
 						for (auto& r : inputs)
 						{
-							StageInOutInfo* io = nullptr;
+							StageInOut* io = nullptr;
 							for (auto _i : *_inputs)
 							{
-								auto i = (StageInOutInfo*)_i;
+								auto i = (StageInOut*)_i;
 								if (r->location == i->location)
 								{
 									io = i;
@@ -750,10 +934,10 @@ namespace flame
 					{
 						for (auto& r : outputs)
 						{
-							StageInOutInfo* io = nullptr;
+							StageInOut* io = nullptr;
 							for (auto _o : *_outputs)
 							{
-								auto o = (StageInOutInfo*)_o;
+								auto o = (StageInOut*)_o;
 								if (r->location == o->location)
 								{
 									io = o;
@@ -834,6 +1018,10 @@ namespace flame
 		{
 			AttributeV<std::wstring> filename$i;
 			AttributeV<std::string> prefix$i;
+			AttributeP<std::vector<void*>> inputs$i;
+			AttributeP<std::vector<void*>> outputs$i;
+			AttributeP<void> pll$i;
+			AttributeV<bool> autogen_code$i;
 
 			AttributeP<void> out$o;
 
@@ -843,13 +1031,13 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o.frame || filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame)
+				if (out$o.frame || filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame || inputs$i.frame > out$o.frame || outputs$i.frame > out$o.frame || pll$i.frame > out$o.frame || autogen_code$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Shader::destroy((Shader*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d)
-						out$o.v = Shader::create(d, bp_environment().path + L"/" + filename$i.v, prefix$i.v);
+						out$o.v = Shader::create(d, bp_environment().path + L"/" + filename$i.v, prefix$i.v, inputs$i.v, outputs$i.v, (Pipelinelayout*)pll$i.v, autogen_code$i.v);
 					else
 					{
 						printf("cannot create shader\n");
@@ -865,7 +1053,6 @@ namespace flame
 				if (out$o.v)
 					Shader::destroy((Shader*)out$o.v);
 			}
-
 		};
 
 		PipelinePrivate::PipelinePrivate(Device* _d, const std::vector<void*>& shaders, Pipelinelayout* _pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* _vi, const Vec2u& _vp, RasterInfo* _raster, SampleCount$ _sc, DepthInfo* _depth, const std::vector<void*>& _output_states, const std::vector<uint>& _dynamic_states) :
@@ -898,7 +1085,7 @@ namespace flame
 				vk_vi_attributes.resize(_vi->attribs.size());
 				for (auto i = 0; i < _vi->attribs.size(); i++)
 				{
-					const auto& src = *(VertexInputAttributeInfo*)_vi->attribs[i];
+					const auto& src = *(VertexInputAttribute*)_vi->attribs[i];
 					auto& dst = vk_vi_attributes[i];
 					dst.location = src.location;
 					dst.binding = src.buffer_id;
@@ -908,7 +1095,7 @@ namespace flame
 				vk_vi_bindings.resize(_vi->buffers.size());
 				for (auto i = 0; i < _vi->buffers.size(); i++)
 				{
-					const auto& src = *(VertexInputBufferInfo*)_vi->buffers[i];
+					const auto& src = *(VertexInputBuffer*)_vi->buffers[i];
 					auto& dst = vk_vi_bindings[i];
 					dst.binding = src.id;
 					dst.stride = src.stride;
@@ -1003,7 +1190,10 @@ namespace flame
 
 			vk_blend_attachment_states.resize(rp->color_attachment_count());
 			for (auto& a : vk_blend_attachment_states)
+			{
+				memset(&a, 0, sizeof(a));
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			}
 			for (auto i = 0; i < _output_states.size(); i++)
 			{
 				const auto& src = *(OutputAttachmentInfo*)_output_states[i];
@@ -1134,29 +1324,29 @@ namespace flame
 
 		struct PipelineFullscreen$
 		{
+			AttributeP<std::vector<void*>> shaders$i;
+			AttributeP<void> pll$i;
 			AttributeP<void> renderpass$i;
 			AttributeV<uint> subpass_idx$i;
-			AttributeP<std::vector<void*>> shaders$i;
-			AttributeP<void> layout$i;
 
 			AttributeP<void> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shaders$i.frame > out$o.frame ||layout$i.frame > out$o.frame)
+				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shaders$i.frame > out$o.frame || pll$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
-					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && layout$i.v)
-						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)layout$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v);
+					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && pll$i.v)
+						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v);
 					else
 					{
 						printf("cannot create pipelinefullscreen\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(renderpass$i.frame, subpass_idx$i.frame, shaders$i.frame, layout$i.frame);
+					out$o.frame = maxN(renderpass$i.frame, subpass_idx$i.frame, shaders$i.frame, pll$i.frame);
 				}
 			}
 
