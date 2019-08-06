@@ -17,6 +17,13 @@
     <node type="graphics::SubpassTargetInfo" id="sp" pos="0.00;0.00" />
     <node type="Array(1+void*)" id="sps" pos="0.00;0.00" />
     <node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="0.00;0.00" />
+    <node type="graphics::DescriptorBinding" id="desc_binding" pos="0.00;0.00">
+      <datas>
+        <data name="binding" value="0" />
+        <data name="type" value="DescriptorSampledImage" />
+        <data name="count" value="64" />
+      </datas>
+    </node>
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
   </nodes>
   <links>

@@ -138,7 +138,7 @@ namespace flame
 			RasterInfo() :
 				depth_clamp(false),
 				polygon_mode(PolygonModeFill),
-				cull_mode(CullModeBack)
+				cull_mode(CullModeNone)
 			{
 			}
 		};

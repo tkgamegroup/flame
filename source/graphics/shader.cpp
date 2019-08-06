@@ -968,7 +968,7 @@ namespace flame
 			raster_state.depthClampEnable = _raster ? _raster->depth_clamp : false;
 			raster_state.rasterizerDiscardEnable = VK_FALSE;
 			raster_state.polygonMode = to_enum(_raster ? _raster->polygon_mode : PolygonModeFill);
-			raster_state.cullMode = to_enum(_raster ? _raster->cull_mode : CullModeBack);
+			raster_state.cullMode = to_enum(_raster ? _raster->cull_mode : CullModeNone);
 			raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 			raster_state.depthBiasEnable = VK_FALSE;
 			raster_state.depthBiasConstantFactor = 0.f;
@@ -1002,6 +1002,8 @@ namespace flame
 			depth_stencil_state.back = {};
 
 			vk_blend_attachment_states.resize(rp->color_attachment_count());
+			for (auto& a : vk_blend_attachment_states)
+				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			for (auto i = 0; i < _output_states.size(); i++)
 			{
 				const auto& src = *(OutputAttachmentInfo*)_output_states[i];
