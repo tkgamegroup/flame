@@ -714,7 +714,7 @@ namespace flame
 								case SubpassTargetImage: case SubpassTargetImageview:
 									return t.v != nullptr;
 								case SubpassTargetImages:
-									return !(((std::vector<Image*>*)t.v)->empty());
+									return t.v != nullptr && !(((std::vector<Image*>*)t.v)->empty());
 								}
 							};
 

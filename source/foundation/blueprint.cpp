@@ -15,8 +15,7 @@ namespace flame
 		Type type;
 		NodePrivate* node;
 		VariableInfo* variable_info;
-		void* data;
-		uint data_size;
+		void* raw_data;
 
 		std::vector<SlotPrivate*> links;
 
@@ -105,8 +104,7 @@ namespace flame
 		node(_node),
 		variable_info(_variable_info)
 	{
-		data = (char*)node->dummy + variable_info->offset();
-		data_size = variable_info->size() - sizeof(int);
+		raw_data = (char*)node->dummy + variable_info->offset();
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -116,14 +114,14 @@ namespace flame
 
 	void SlotPrivate::set_frame(int frame)
 	{
-		auto& p = *(AttributeV<int>*)data;
+		auto& p = *(AttributeV<int>*)raw_data;
 		p.frame = frame;
 	}
 
 	void SlotPrivate::set_data(const void* d)
 	{
 		set_frame(app_frame());
-		memcpy((char*)data + sizeof(uint), d, data_size);
+		memcpy((char*)raw_data + sizeof(uint), d, variable_info->size() - sizeof(int));
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -149,7 +147,7 @@ namespace flame
 			auto in_hash = in_type->hash();
 			auto out_hash = out_type->hash();
 
-			if (!(in_tag == out_tag && in_hash == out_hash) && !(out_tag == TypeTagAttributeV && in_tag == TypeTagAttributeP && (out_hash == in_hash || in_hash == cH("void"))))
+			if (!(in_tag == out_tag && in_hash == out_hash) && !((out_tag == TypeTagAttributeV || out_tag == TypeTagAttributeP) && in_tag == TypeTagAttributeP && (out_hash == in_hash || in_hash == cH("void"))))
 				return false;
 		}
 
@@ -323,12 +321,12 @@ namespace flame
 			{
 				if (out->variable_info->type()->tag() == TypeTagAttributeV && v->type()->tag() == TypeTagAttributeP)
 				{
-					memcpy(input->data, out->data, sizeof(int));
-					auto p = (char*)out->data + sizeof(int);
-					memcpy((char*)input->data + sizeof(int), &p, sizeof(void*));
+					memcpy(input->raw_data, out->raw_data, sizeof(int));
+					auto p = (char*)out->raw_data + sizeof(int);
+					memcpy((char*)input->raw_data + sizeof(int), &p, sizeof(void*));
 				}
 				else
-					memcpy(input->data, out->data, v->size());
+					memcpy(input->raw_data, out->raw_data, v->size());
 			}
 		}
 
@@ -552,13 +550,13 @@ namespace flame
 					continue;
 				auto v = input->variable_info;
 				auto type = v->type();
-				if (v->default_value() && memcmp((char*)input->data + sizeof(int), (char*)v->default_value() + sizeof(int), input->data_size) != 0)
+				if (v->default_value() && memcmp((char*)input->raw_data + sizeof(int), (char*)v->default_value() + sizeof(int), v->size() - sizeof(int)) != 0)
 				{
 					if (!n_datas)
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(type->tag(), type->hash(), input->data, 2);
+					auto value = serialize_value(type->tag(), type->hash(), input->raw_data, 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}
@@ -587,9 +585,14 @@ namespace flame
 		SerializableNode::destroy(file);
 	}
 
-	void* BP::Slot::data()
+	int BP::Slot::frame() const
 	{
-		return ((SlotPrivate*)this)->data;
+		return *(int*)((SlotPrivate*)this)->raw_data;
+	}
+
+	void* BP::Slot::data() const
+	{
+		return (char*)((SlotPrivate*)this)->raw_data + sizeof(int);
 	}
 
 	void BP::Slot::set_data(const void* d)
@@ -971,7 +974,7 @@ namespace flame
 				auto v = input->variable_info;
 				auto type = v->type();
 				if (v->default_value())
-					unserialize_value(type->tag(), type->hash(), d_d.value, input->data);
+					unserialize_value(type->tag(), type->hash(), d_d.value, input->raw_data);
 			}
 		}
 

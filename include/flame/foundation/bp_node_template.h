@@ -10,6 +10,35 @@ namespace flame
 		return (void*)((char*)p - module);
 	}
 
+	template<class T>
+	struct BP_Pointer
+	{
+		AttributeP<T> in;
+
+		AttributeP<T> out;
+
+		void update()
+		{
+			if (in.frame > out.frame)
+			{
+				out.v = in.v;
+				out.frame = in.frame;
+			}
+		}
+
+		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		{
+			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
+
+			auto u = add_udt(module_name, "Pointer" + template_parameters, sizeof(BP_Pointer));
+
+			u->add_variable(TypeTagAttributeP, type_name, "in", "i", offsetof(BP_Pointer, in), sizeof(AttributeP<T>));
+			u->add_variable(TypeTagAttributeP, type_name, "out", "o", offsetof(BP_Pointer, out), sizeof(AttributeP<T>));
+
+			u->add_function("update", calc_rva(f2v(&BP_Pointer::update), module), TypeTagVariable, "void", "");
+		}
+	};
+
 	template<uint N, class T>
 	struct BP_Vec
 	{
@@ -88,6 +117,35 @@ namespace flame
 			u->add_function("ctor", calc_rva(cf2v<BP_Array>(), module), TypeTagVariable, "void", "");
 			u->add_function("dtor", calc_rva(df2v<BP_Array>(), module), TypeTagVariable, "void", "");
 			u->add_function("update", calc_rva(f2v(&BP_Array::update), module), TypeTagVariable, "void", "");
+		}
+	};
+
+	template<class T>
+	struct BP_ArraySize
+	{
+		AttributeP<std::vector<T>> in;
+
+		AttributeV<uint> out;
+
+		void update()
+		{
+			if (in.frame > out.frame)
+			{
+				out.v = in.v.size();
+				out.frame = in.frame;
+			}
+		}
+
+		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		{
+			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
+
+			auto u = add_udt(module_name, "Pointer" + template_parameters, sizeof(BP_Pointer));
+
+			u->add_variable(TypeTagAttributeP, "std::vector(" + type_name + ")", "in", "i", offsetof(BP_ArraySize, in), sizeof(AttributeP<std::vector<T>>));
+			u->add_variable(TypeTagAttributeV, "uint", "out", "o", offsetof(BP_ArraySize, out), sizeof(AttributeV<uint>));
+
+			u->add_function("update", calc_rva(f2v(&BP_ArraySize::update), module), TypeTagVariable, "void", "");
 		}
 	};
 }

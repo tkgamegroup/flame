@@ -5,13 +5,7 @@
     <dependency v="flame_graphics.dll" />
   </dependencies>
   <nodes>
-    <node type="graphics::SwapchainResizable" id="scr" pos="0.00;0.00" />
-    <node type="graphics::Swapchain" id="sc" pos="0.00;0.00" />
-    <node type="Array(1+Vec(4+uchar))" id="color" pos="0.00;0.00">
-      <datas>
-        <data name="1" value="200;100;50;255" />
-      </datas>
-    </node>
+    <node type="Pointer(std::vector(void*))" id="images" pos="0.00;0.00" />
     <node type="graphics::RenderTarget" id="rt" pos="0.00;0.00">
       <datas>
         <data name="type" value="SubpassTargetImages" />
@@ -24,19 +18,13 @@
     <node type="Array(1+void*)" id="sps" pos="0.00;0.00" />
     <node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="0.00;0.00" />
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
-    <node type="graphics::Commandbuffers" id="cbs" pos="0.00;0.00" />
-    <node type="ArraySize" id="img_size" pos="0.00;0.00" />
   </nodes>
   <links>
-    <link out="scr.sc" in="sc.in" />
-    <link out="sc.images" in="rt.v" />
+    <link out="images.out" in="rt.v" />
     <link out="rt.out" in="rts.1" />
     <link out="rts.v" in="sp.color_targets" />
     <link out="sp.out" in="sps.1" />
     <link out="sps.v" in="rnf.passes" />
-    <link out="sc.images" in="img_size.array" />
-    <link out="img_size.size" in="cbs.size" />
-    <link out="cbs.out" in="make_cmd.cmdbufs" />
     <link out="rnf.rp" in="make_cmd.renderpass" />
     <link out="rnf.fbs" in="make_cmd.framebuffers" />
     <link out="rnf.cv" in="make_cmd.clearvalues" />

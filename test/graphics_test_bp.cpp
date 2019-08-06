@@ -7,33 +7,38 @@
 #include <flame/graphics/commandbuffer.h>
 
 using namespace flame;
+using namespace graphics;
 
 struct App
 {
 	Window* w;
-	graphics::Device* d;
-	graphics::Semaphore* render_finished;
+	Device* d;
+	Semaphore* render_finished;
+	SwapchainResizable* scr;
+	std::vector<Fence*> fences;
+	std::vector<void*> cbs;
 	BP* bp;
-	AttributeP<void>* psc;
-	std::vector<graphics::Fence*> fences;
-	AttributeV<std::vector<void*>>* cbs;
+	BP::Slot* images_slot;
 
 	void run()
 	{
-		auto sc = (graphics::Swapchain*)psc->v;
+		auto sc = scr->sc();
+
+		if (scr->sc_frame() > images_slot->frame())
+		{
+			auto p = sc ? &sc->images() : nullptr;
+			images_slot->set_data(&p);
+		}
+		bp->update();
+
 		if (sc)
 		{
 			auto idx = app_frame() % fences.size();
-			if (!cbs->v.empty())
-			{
-				sc->acquire_image();
-				fences[idx]->wait();
-				d->gq->submit((graphics::Commandbuffer*)((cbs->v)[sc->image_index()]), sc->image_avalible(), render_finished, fences[idx]);
-				d->gq->present(sc, render_finished);
-			}
+			sc->acquire_image();
+			fences[idx]->wait();
+			d->gq->submit((Commandbuffer*)cbs[sc->image_index()], sc->image_avalible(), render_finished, fences[idx]);
+			d->gq->present(sc, render_finished);
 		}
-
-		bp->update();
 	}
 
 }app;
@@ -44,7 +49,7 @@ int main(int argc, char** args)
 	typeinfo_load(L"flame_foundation.typeinfo");
 	typeinfo_load(L"flame_graphics.typeinfo");
 
-	app.bp = BP::create_from_file(L"../renderpath/canvas/bp");
+	app.bp = BP::create_from_file(L"../renderpath/clear_screen/bp");
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -52,21 +57,32 @@ int main(int argc, char** args)
 	}
 
 	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
-	app.d = graphics::Device::create(true);
-	app.render_finished = graphics::Semaphore::create(app.d);
+	app.d = Device::create(true);
+	app.scr = SwapchainResizable::create(app.d, app.w);
+	app.render_finished = Semaphore::create(app.d);
+
+	auto& images = app.scr->sc()->images();
+
+	app.fences.resize(images.size());
+	app.cbs.resize(images.size());
+	for (auto i = 0; i < images.size(); i++)
+	{
+		app.fences[i] = Fence::create(app.d);
+		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	}
 
 	app.bp->set_graphics_device(app.d);
-	app.bp->find_input("scr.window")->set_data(&app.w);
-	app.bp->update();
 
-	app.psc = (AttributeP<void>*)app.bp->find_output("scr.sc")->data();
-	app.cbs = (AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data();
+	app.images_slot = app.bp->find_input("images.in");
+	{
+		auto p = &app.cbs;
+		app.bp->find_input("make_cmd.cmdbufs")->set_data(&p);
+	}
 
-	auto sc = (graphics::Swapchain*)app.psc->v;
-	assert(sc);
-	app.fences.resize(sc->images().size());
-	for (auto i = 0; i < app.fences.size(); i++)
-		app.fences[i] = graphics::Fence::create(app.d);
+	{
+		auto p = &app.scr->sc()->images();
+		app.images_slot->set_data(&p);
+	}
 
 	auto thiz = &app;
 	app_run([](void* c) {

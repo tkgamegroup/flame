@@ -43,7 +43,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Node* node() const;
 			FLAME_FOUNDATION_EXPORTS VariableInfo* variable_info() const;
 
-			FLAME_FOUNDATION_EXPORTS void* data();
+			FLAME_FOUNDATION_EXPORTS int frame() const;
+			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
 
 			FLAME_FOUNDATION_EXPORTS int link_count() const;
