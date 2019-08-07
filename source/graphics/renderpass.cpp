@@ -652,19 +652,22 @@ namespace flame
 					out$o.v.type = type$i.v;
 					out$o.v.v = v$i.v;
 					Image* image = nullptr;
-					switch (type$i.v)
+					if (v$i.v)
 					{
-					case RenderTargetImage:
-						image = (Image*)v$i.v;
-						break;
-					case RenderTargetImageview:
-						image = ((Imageview*)v$i.v)->image();
-						break;
-					case RenderTargetImages:
-						image = (*(std::vector<Image*>*)v$i.v)[0];
-						break;
+						switch (type$i.v)
+						{
+						case RenderTargetImage:
+							image = (Image*)v$i.v;
+							break;
+						case RenderTargetImageview:
+							image = ((Imageview*)v$i.v)->image();
+							break;
+						case RenderTargetImages:
+							image = (*(std::vector<Image*>*)v$i.v)[0];
+							break;
+						}
+						assert(image);
 					}
-					assert(image);
 					first_image$o.v = image;
 					first_image$o.frame = max(type$i.frame, v$i.frame);
 				}
