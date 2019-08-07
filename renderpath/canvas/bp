@@ -206,20 +206,22 @@
     <link out="shf_text_sdf.out" in="pl_text_sdf_shs.2" />
     <link out="pl_element_shs.v" in="pl_element.shaders" />
     <link out="pll.out" in="pl_element.pll" />
+    <link out="rnf.rp" in="pl_element.renderpass" />
     <link out="vi.out" in="pl_element.vi" />
     <link out="sc.out" in="pl_element.sc" />
     <link out="outs_alpha_blend.v" in="pl_element.outputs" />
     <link out="pl_text_lcd_shs.v" in="pl_text_lcd.shaders" />
     <link out="pll.out" in="pl_text_lcd.pll" />
+    <link out="rnf.rp" in="pl_text_lcd.renderpass" />
     <link out="vi.out" in="pl_text_lcd.vi" />
     <link out="sc.out" in="pl_text_lcd.sc" />
     <link out="outs_lcd.v" in="pl_text_lcd.outputs" />
     <link out="pl_text_sdf_shs.v" in="pl_text_sdf.shaders" />
     <link out="pll.out" in="pl_text_sdf.pll" />
+    <link out="rnf.rp" in="pl_text_sdf.renderpass" />
     <link out="vi.out" in="pl_text_sdf.vi" />
     <link out="sc.out" in="pl_text_sdf.sc" />
     <link out="outs_alpha_blend.v" in="pl_text_sdf.outputs" />
-    <link out="rnf.rp" in="pl_element.renderpass" />
     <link out="rnf.rp" in="make_cmd.renderpass" />
     <link out="rnf.fbs" in="make_cmd.framebuffers" />
     <link out="rnf.cv" in="make_cmd.clearvalues" />
