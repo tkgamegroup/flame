@@ -891,7 +891,10 @@ namespace flame
 					all_templates.push_back(n.type);
 
 					templatecpp << "\tBP_";
-					templatecpp << tn_a2c(n.type);
+					if (n.type[pos_t - 1] == 'N')
+						templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t);
+					else
+						templatecpp << tn_a2c(n.type);
 					templatecpp << "::add_udt_info(*module_name.p, \"";
 					templatecpp << std::string(n.type.begin() + pos_t, n.type.end());
 					templatecpp << "\", module);\n";

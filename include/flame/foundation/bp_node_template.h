@@ -3,6 +3,8 @@
 #include <flame/foundation/foundation.h>
 #include <flame/foundation/serialize.h>
 
+// when a type followed by a 'N', means it is not a template type, and bp will not put "<>" on it
+
 namespace flame
 {
 	void* calc_rva(void* p, void* module)
@@ -10,12 +12,11 @@ namespace flame
 		return (void*)((char*)p - module);
 	}
 
-	template<class T>
-	struct BP_Pointer
+	struct BP_EnumSN
 	{
-		AttributeP<T> in;
+		AttributeV<int> in;
 
-		AttributeP<T> out;
+		AttributeV<int> out;
 
 		void update()
 		{
@@ -30,12 +31,12 @@ namespace flame
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = add_udt(module_name, "Pointer" + template_parameters, sizeof(BP_Pointer));
+			auto u = add_udt(module_name, "EnumSN" + template_parameters, sizeof(BP_EnumSN));
 
-			u->add_variable(TypeTagAttributeP, type_name, "in", "i", offsetof(BP_Pointer, in), sizeof(AttributeP<T>));
-			u->add_variable(TypeTagAttributeP, type_name, "out", "o", offsetof(BP_Pointer, out), sizeof(AttributeP<T>));
+			u->add_variable(TypeTagAttributeES, type_name, "in", "i", offsetof(BP_EnumSN, in), sizeof(AttributeV<int>));
+			u->add_variable(TypeTagAttributeES, type_name, "out", "o", offsetof(BP_EnumSN, out), sizeof(AttributeV<int>));
 
-			u->add_function("update", calc_rva(f2v(&BP_Pointer::update), module), TypeTagVariable, "void", "");
+			u->add_function("update", calc_rva(f2v(&BP_EnumSN::update), module), TypeTagVariable, "void", "");
 		}
 	};
 

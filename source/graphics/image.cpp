@@ -480,7 +480,7 @@ namespace flame
 			}
 		};
 
-		struct ImageInspector
+		struct ImageInspector$
 		{
 			AttributeP<void> in$i;
 

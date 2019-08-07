@@ -28,7 +28,7 @@ struct App
 
 		if (sc_frame > bp_rt_frame)
 		{
-			bp->find_input("rt.v")->set_data_p(sc ? &sc->images() : nullptr);
+			bp->find_input("rt_dst.v")->set_data_p(sc ? &sc->images() : nullptr);
 			bp_rt_frame = sc_frame;
 		}
 		bp->update();
@@ -51,7 +51,7 @@ int main(int argc, char** args)
 	typeinfo_load(L"flame_foundation.typeinfo");
 	typeinfo_load(L"flame_graphics.typeinfo");
 
-	app.bp = BP::create_from_file(L"../renderpath/full_screen_shader/bp");
+	app.bp = BP::create_from_file(L"../renderpath/canvas/bp");
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -75,7 +75,7 @@ int main(int argc, char** args)
 	}
 
 	app.bp->set_graphics_device(app.d);
-	app.bp->find_input("rt.type")->set_data_i(RenderTargetImages);
+	app.bp->find_input("rt_dst.type")->set_data_i(RenderTargetImages);
 	app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.cbs);
 
 	auto thiz = &app;

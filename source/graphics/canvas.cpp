@@ -104,10 +104,6 @@ namespace flame
 				subpass.resolve_targets.emplace_back(&target_sc);
 				rnf = graphics::RenderpassAndFramebuffer::create(d, { &subpass });
 
-				white_image = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
-				white_image->init(Vec4c(255));
-				white_imageview = Imageview::create(white_image);
-
 				dsl = Descriptorlayout::create(d, { &DescriptorBinding(0, DescriptorSampledImage, 64, "images") });
 				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
 
@@ -146,6 +142,10 @@ namespace flame
 				pl_text_sdf = Pipeline::create(d, { shv_element, shf_text_sdf }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_alpha_blend);
 
 				ds = Descriptorset::create(d->dp, dsl);
+
+				white_image = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
+				white_image->init(Vec4c(255));
+				white_imageview = Imageview::create(white_image);
 
 				vtx_buffer = Buffer::create(d, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
 				idx_buffer = Buffer::create(d, sizeof(int) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));

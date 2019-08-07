@@ -1352,7 +1352,7 @@ namespace flame
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && pll$i.v)
 						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v, 
-						(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, *outputs$i.v, *dynamic_states$i.v);
+						(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, outputs$i.v  ? *outputs$i.v : std::vector<void*>(), dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
 					else
 					{
 						printf("cannot create pipeline\n");

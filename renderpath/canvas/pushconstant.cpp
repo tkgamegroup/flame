@@ -1,3 +1,5 @@
+#include <flame/math.h>
+
 namespace flame
 {
 	struct PushconstantT$

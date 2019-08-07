@@ -173,7 +173,7 @@ namespace flame
 			if (items[i]->name == name)
 			{
 				if (out_idx)
-					* out_idx = i;
+					* out_idx = items[i]->value;
 				return items[i].get();
 			}
 		}
