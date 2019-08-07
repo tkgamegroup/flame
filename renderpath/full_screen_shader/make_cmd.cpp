@@ -33,6 +33,7 @@ namespace flame
 						cb->set_viewport(Vec4f(Vec2f(0.f), size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), size));
 						cb->bind_pipeline((graphics::Pipeline*)pipeline$i.v);
+						cb->push_constant(nullptr, 0, sizeof(Vec2f), &size);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 						cb->end();

@@ -1,3 +1,4 @@
+#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "buffer_private.h"
 #include "commandbuffer_private.h"
@@ -154,6 +155,41 @@ namespace flame
 		{
 			delete (BufferPrivate*)b;
 		}
+
+		struct Buffer$
+		{
+			AttributeV<uint> size$i;
+			AttributeE<BufferUsage$> usage$im;
+			AttributeE<MemProp$> mem_prop$im;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS Buffer$()
+			{
+				mem_prop$im.v = MemPropDevice;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (size$i.frame > out$o.frame || usage$im.frame > out$o.frame || mem_prop$im.frame > out$o.frame)
+				{
+					if (out$o.v)
+						Buffer::destroy((Buffer*)out$o.v);
+					auto d = (Device*)bp_environment().graphics_device;
+					if (d && size$i.v > 0 && usage$im.v > 0 && mem_prop$im.v > 0)
+						out$o.v = Buffer::create(d, size$i.v, usage$im.v, mem_prop$im.v);
+					else
+						out$o.v = nullptr;
+					out$o.frame = maxN(size$i.frame, usage$im.frame, mem_prop$im.frame);
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Buffer$()
+			{
+				if (out$o.v)
+					Buffer::destroy((Buffer*)out$o.v);
+			}
+		};
 	}
 }
 

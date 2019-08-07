@@ -51,7 +51,7 @@ int main(int argc, char** args)
 	typeinfo_load(L"flame_foundation.typeinfo");
 	typeinfo_load(L"flame_graphics.typeinfo");
 
-	app.bp = BP::create_from_file(L"../renderpath/canvas/bp");
+	app.bp = BP::create_from_file(L"../renderpath/full_screen_shader/bp");
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");

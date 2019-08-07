@@ -5,7 +5,7 @@
     <dependency v="flame_graphics.dll" />
   </dependencies>
 	<nodes>
-    <node type="graphics::RenderTarget" id="rt" pos="0.00;0.00">
+    <node type="graphics::RenderTarget" id="rt_dst" pos="0.00;0.00">
       <datas>
         <data name="clear" value="0" />
       </datas>
@@ -16,7 +16,11 @@
     <node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="0.00;0.00" />
     <node type="graphics::Descriptorlayout" id="dsl" pos="0.00;0.00" />
     <node type="Array(1+void*)" id="dsls" pos="0.00;0.00" />
-    <node type="graphics::Pipelinelayout" id="pll" pos="0.00;0.00" />
+    <node type="graphics::Pipelinelayout" id="pll" pos="0.00;0.00">
+      <datas>
+        <data name="push_constant_size" value="8" />
+      </datas>
+    </node>
     <node type="graphics::Shader" id="shv" pos="0.00;0.00">
       <datas>
         <data name="filename" value="test.vert" />
@@ -28,11 +32,11 @@
       </datas>
     </node>
     <node type="Array(2+void*)" id="shs" pos="0.00;0.00" />
-    <node type="graphics::PipelineFullscreen" id="pl" pos="0.00;0.00" />
+    <node type="graphics::Pipeline" id="pl" pos="0.00;0.00" />
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
 	</nodes>
 	<links>
-    <link out="rt.out" in="rts.1" />
+    <link out="rt_dst.out" in="rts.1" />
     <link out="rts.v" in="sp.color_targets" />
     <link out="sp.out" in="sps.1" />
     <link out="sps.v" in="rnf.passes" />

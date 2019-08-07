@@ -87,8 +87,6 @@ namespace flame
 
 			Imageview* images[MaxImageCount];
 
-			std::vector<std::tuple<FontAtlas*, uint, Imageview*>> font_atlases;
-
 			CanvasPrivate(Device* d, Swapchain* sc) :
 				d(d),
 				sc(sc)
@@ -148,7 +146,7 @@ namespace flame
 				white_imageview = Imageview::create(white_image);
 
 				vtx_buffer = Buffer::create(d, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
-				idx_buffer = Buffer::create(d, sizeof(int) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));
+				idx_buffer = Buffer::create(d, sizeof(uint) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
@@ -177,8 +175,6 @@ namespace flame
 				Descriptorset::destroy(ds);
 				Buffer::destroy(vtx_buffer);
 				Buffer::destroy(idx_buffer);
-				for (auto& f : font_atlases)
-					Imageview::destroy(std::get<2>(f));
 			}
 
 			void set_image(int index, Imageview* v)

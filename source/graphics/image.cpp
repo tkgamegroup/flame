@@ -1,4 +1,5 @@
 #include <flame/foundation/foundation.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
 #include "device_private.h"
 #include "renderpass_private.h"
@@ -6,8 +7,6 @@
 #include "image_private.h"
 #include "commandbuffer_private.h"
 #include "shader_private.h"
-
-#include <flame/foundation/blueprint.h>
 
 namespace flame
 {

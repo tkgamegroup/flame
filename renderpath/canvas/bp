@@ -157,6 +157,8 @@
     <node type="graphics::Pipeline" id="pl_element" pos="0.00;0.00" />
     <node type="graphics::Pipeline" id="pl_text_lcd" pos="0.00;0.00" />
     <node type="graphics::Pipeline" id="pl_text_sdf" pos="0.00;0.00" />
+    <node type="graphics::Buffer" id="vtx_buf" pos="0.00;0.00" />
+    <node type="graphics::Buffer" id="idx_buf" pos="0.00;0.00" />
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
   </nodes>
   <links>
