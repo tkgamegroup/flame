@@ -478,7 +478,34 @@ namespace flame
 				if (out$o.v)
 					Image::destroy((Image*)out$o.v);
 			}
+		};
 
+		struct ImageInspector
+		{
+			AttributeP<void> in$i;
+
+			AttributeE<Format$> format$o;
+			AttributeV<Vec2u> size$o;
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (in$i.frame > format$o.frame || in$i.frame > size$o.frame)
+				{
+					auto image = (Image*)in$i.v;
+					if (image)
+					{
+						format$o.v = image->format;
+						size$o.v = image->size;
+					}
+					else
+					{
+						format$o.v = Format_Undefined;
+						size$o.v = Vec2u(0);
+					}
+					format$o.frame = in$i.frame;
+					size$o.frame = in$i.frame;
+				}
+			}
 		};
 
 		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a) :

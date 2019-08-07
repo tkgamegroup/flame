@@ -7,7 +7,6 @@
 	<nodes>
     <node type="graphics::RenderTarget" id="rt" pos="0.00;0.00">
       <datas>
-        <data name="type" value="SubpassTargetImages" />
         <data name="clear" value="0" />
       </datas>
     </node>

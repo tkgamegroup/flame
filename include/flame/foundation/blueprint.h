@@ -47,6 +47,11 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
 
+			void set_data_i(int i)
+			{
+				set_data(&i);
+			}
+
 			void set_data_p(const void* p)
 			{
 				set_data(&p);

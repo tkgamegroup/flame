@@ -243,7 +243,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, 
 				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount$ sc = SampleCount_1, DepthInfo* depth = nullptr,
-				const std::vector<void*>& output_states = {}, const std::vector<uint>& dynamic_states = {});
+				const std::vector<void*>& outputs = {}, const std::vector<uint>& dynamic_states = {});
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, Shader* compute_shader, Pipelinelayout* pll);
 			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline* p);
 		};

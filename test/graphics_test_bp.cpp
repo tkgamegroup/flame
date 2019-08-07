@@ -2,6 +2,7 @@
 #include <flame/foundation/window.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
+#include <flame/graphics/renderpass.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/commandbuffer.h>
@@ -18,16 +19,17 @@ struct App
 	std::vector<Fence*> fences;
 	std::vector<void*> cbs;
 	BP* bp;
-	BP::Slot* images_slot;
+	int bp_rt_frame;
 
 	void run()
 	{
 		auto sc = scr->sc();
+		auto sc_frame = scr->sc_frame();
 
-		if (scr->sc_frame() > images_slot->frame())
+		if (sc_frame > bp_rt_frame)
 		{
-			auto p = sc ? &sc->images() : nullptr;
-			images_slot->set_data(&p);
+			bp->find_input("rt.v")->set_data_p(sc ? &sc->images() : nullptr);
+			bp_rt_frame = sc_frame;
 		}
 		bp->update();
 
@@ -55,6 +57,7 @@ int main(int argc, char** args)
 		printf("bp not found, exit\n");
 		return 0;
 	}
+	app.bp_rt_frame = -1;
 
 	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
@@ -72,9 +75,7 @@ int main(int argc, char** args)
 	}
 
 	app.bp->set_graphics_device(app.d);
-	
-	app.images_slot = app.bp->find_input("rt.v");
-	app.images_slot->set_data_p(&app.scr->sc()->images());
+	app.bp->find_input("rt.type")->set_data_i(RenderTargetImages);
 	app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.cbs);
 
 	auto thiz = &app;

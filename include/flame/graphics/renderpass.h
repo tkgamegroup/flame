@@ -69,9 +69,9 @@ namespace flame
 
 		enum RenderTargetType$
 		{
-			SubpassTargetImage, // v is Image*
-			SubpassTargetImageview, // v is Imageview*
-			SubpassTargetImages // v is std::vector<Image*>*
+			RenderTargetImage, // v is Image*
+			RenderTargetImageview, // v is Imageview*
+			RenderTargetImages // v is std::vector<Image*>*
 		};
 
 		struct RenderTarget
@@ -86,7 +86,7 @@ namespace flame
 			}
 
 			RenderTarget(Image* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
-				type(SubpassTargetImage),
+				type(RenderTargetImage),
 				v(v),
 				clear(clear),
 				clear_color(clear_color)
@@ -94,7 +94,7 @@ namespace flame
 			}
 
 			RenderTarget(Imageview* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
-				type(SubpassTargetImageview),
+				type(RenderTargetImageview),
 				v(v),
 				clear(clear),
 				clear_color(clear_color)
@@ -102,7 +102,7 @@ namespace flame
 			}
 
 			RenderTarget(const std::vector<void*>* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
-				type(SubpassTargetImages),
+				type(RenderTargetImages),
 				v((void*)v),
 				clear(clear),
 				clear_color(clear_color)

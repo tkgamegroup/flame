@@ -145,13 +145,6 @@ namespace flame
 				pl_text_lcd = Pipeline::create(d, { shv_element, shf_text_lcd }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_lcd);
 				pl_text_sdf = Pipeline::create(d, { shv_element, shf_text_sdf }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_alpha_blend);
 
-				for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
-				{
-					auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
-					circle_subdiv[i].y() = sin(rad);
-					circle_subdiv[i].x() = cos(rad);
-				}
-
 				ds = Descriptorset::create(d->dp, dsl);
 
 				vtx_buffer = Buffer::create(d, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
@@ -163,6 +156,13 @@ namespace flame
 
 				for (auto i = 0; i < MaxImageCount; i++)
 					set_image(i, white_imageview);
+
+				for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
+				{
+					auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
+					circle_subdiv[i].y() = sin(rad);
+					circle_subdiv[i].x() = cos(rad);
+				}
 			}
 
 			~CanvasPrivate()

@@ -1055,7 +1055,7 @@ namespace flame
 			}
 		};
 
-		PipelinePrivate::PipelinePrivate(Device* _d, const std::vector<void*>& shaders, Pipelinelayout* _pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* _vi, const Vec2u& _vp, RasterInfo* _raster, SampleCount$ _sc, DepthInfo* _depth, const std::vector<void*>& _output_states, const std::vector<uint>& _dynamic_states) :
+		PipelinePrivate::PipelinePrivate(Device* _d, const std::vector<void*>& shaders, Pipelinelayout* _pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* _vi, const Vec2u& _vp, RasterInfo* _raster, SampleCount$ _sc, DepthInfo* _depth, const std::vector<void*>& _outputs, const std::vector<uint>& _dynamic_states) :
 			d((DevicePrivate*)_d),
 			pll((PipelinelayoutPrivate*)_pll)
 		{
@@ -1194,9 +1194,9 @@ namespace flame
 				memset(&a, 0, sizeof(a));
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
-			for (auto i = 0; i < _output_states.size(); i++)
+			for (auto i = 0; i < _outputs.size(); i++)
 			{
-				const auto& src = *(OutputAttachmentInfo*)_output_states[i];
+				const auto& src = *(OutputAttachmentInfo*)_outputs[i];
 				auto& dst = vk_blend_attachment_states[i];
 				dst.blendEnable = src.blend_enable;
 				dst.srcColorBlendFactor = to_enum(src.blend_src_color);
@@ -1307,9 +1307,9 @@ namespace flame
 #endif
 		}
 
-		Pipeline* Pipeline::create(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<void*>& output_states, const std::vector<uint>& dynamic_states)
+		Pipeline* Pipeline::create(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<void*>& outputs, const std::vector<uint>& dynamic_states)
 		{
-			return new PipelinePrivate(d, shaders, pll, rp, subpass_idx, vi, vp, raster, sc, depth, output_states, dynamic_states);
+			return new PipelinePrivate(d, shaders, pll, rp, subpass_idx, vi, vp, raster, sc, depth, outputs, dynamic_states);
 		}
 
 		Pipeline* Pipeline::create(Device* d, Shader* compute_shader, Pipelinelayout* pll)
@@ -1322,35 +1322,49 @@ namespace flame
 			delete (PipelinePrivate*)p;
 		}
 
-		struct PipelineFullscreen$
+		struct Pipeline$
 		{
 			AttributeP<std::vector<void*>> shaders$i;
 			AttributeP<void> pll$i;
 			AttributeP<void> renderpass$i;
 			AttributeV<uint> subpass_idx$i;
+			AttributeP<void> vi$i;
+			AttributeV<Vec2u> vp$i;
+			AttributeP<void> raster$i;
+			AttributeE<SampleCount$> sc$i;
+			AttributeP<void> depth$i;
+			AttributeP<std::vector<void*>> outputs$i;
+			AttributeP<std::vector<uint>> dynamic_states$i;
 
 			AttributeP<void> out$o;
 
+			FLAME_GRAPHICS_EXPORTS Pipeline$()
+			{
+			}
+
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shaders$i.frame > out$o.frame || pll$i.frame > out$o.frame)
+				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shaders$i.frame > out$o.frame || pll$i.frame > out$o.frame ||
+					vi$i.frame > out$o.frame || vp$i.frame > out$o.frame || raster$i.frame > out$o.frame || sc$i.frame > out$o.frame || depth$i.frame > out$o.frame || outputs$i.frame > out$o.frame || dynamic_states$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && pll$i.v)
-						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v);
+						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v, 
+						(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, *outputs$i.v, *dynamic_states$i.v);
 					else
 					{
-						printf("cannot create pipelinefullscreen\n");
+						printf("cannot create pipeline\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(renderpass$i.frame, subpass_idx$i.frame, shaders$i.frame, pll$i.frame);
+					out$o.frame = maxN(shaders$i.frame, pll$i.frame, renderpass$i.frame, subpass_idx$i.frame, 
+						vi$i.frame, vp$i.frame, raster$i.frame, sc$i.frame, depth$i.frame, outputs$i.frame, dynamic_states$i.frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~PipelineFullscreen$()
+			FLAME_GRAPHICS_EXPORTS ~Pipeline$()
 			{
 				if (out$o.v)
 					Pipeline::destroy((Pipeline*)out$o.v);

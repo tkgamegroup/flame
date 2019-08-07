@@ -5,14 +5,26 @@
     <dependency v="flame_graphics.dll" />
   </dependencies>
   <nodes>
-    <node type="graphics::RenderTarget" id="rt" pos="0.00;0.00">
+    <node type="graphics::RenderTarget" id="rt_dst" pos="0.00;0.00">
       <datas>
-        <data name="type" value="SubpassTargetImages" />
+        <data name="clear" value="0" />
+      </datas>
+    </node>
+    <node type="graphics::ImageInspector" id="dst_props" pos="0.00;0.00" />
+    <node type="graphics::Image" id="img_ms" pos="0.00;0.00">
+      <datas>
+        <data name="sample_count" value="8" />
+        <data name="usage" value="ImageUsageSampled;ImageUsageAttachment" />
+      </datas>
+    </node>
+    <node type="graphics::RenderTarget" id="rt_ms" pos="0.00;0.00">
+      <datas>
         <data name="clear" value="1" />
         <data name="clear_color" value="200;100;50;255" />
       </datas>
     </node>
-    <node type="Array(1+void*)" id="rts" pos="0.00;0.00" />
+    <node type="Array(1+void*)" id="col_rts" pos="0.00;0.00" />
+    <node type="Array(1+void*)" id="rsl_rts" pos="0.00;0.00" />
     <node type="graphics::SubpassTargetInfo" id="sp" pos="0.00;0.00" />
     <node type="Array(1+void*)" id="sps" pos="0.00;0.00" />
     <node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="0.00;0.00" />
@@ -137,8 +149,13 @@
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
   </nodes>
   <links>
-    <link out="rt.out" in="rts.1" />
-    <link out="rts.v" in="sp.color_targets" />
+    <link out="rt_dst.first_image" in="dst_props.in" />
+    <link out="dst_props.format" in="img_ms.format" />
+    <link out="dst_props.size" in="img_ms.size" />
+    <link out="rt_ms.out" in="col_rts.1" />
+    <link out="rt_dst.out" in="rsl_rts.1" />
+    <link out="col_rts.v" in="sp.color_targets" />
+    <link out="rsl_rts.v" in="sp.resolve_targets" />
     <link out="sp.out" in="sps.1" />
     <link out="sps.v" in="rnf.passes" />
     <link out="desc_binding.out" in="desc_bindings.1" />
