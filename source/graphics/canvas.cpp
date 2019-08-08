@@ -1,4 +1,5 @@
 #include <flame/foundation/window.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/swapchain.h>
@@ -15,7 +16,7 @@ namespace flame
 	{
 		Vec2f scale$;
 		Vec2f sdf_range$;
-	}unused;
+	};
 
 	namespace graphics
 	{
@@ -582,10 +583,11 @@ namespace flame
 					cb->bind_vertexbuffer(vtx_buffer, 0);
 					cb->bind_indexbuffer(idx_buffer, IndiceTypeUint);
 
-					auto sdf_scale = 4.f / 512.f/*sdf_image->size*/;
-					auto pc = Vec4f(2.f / surface_size.x(), 2.f / surface_size.y(), sdf_scale, sdf_scale);
+					CanvasShaderPushconstantT$ pc;
+					pc.scale$ = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
+					pc.sdf_range$ = Vec2f(4.f / 512.f); /* sdf_image->size */
 
-					cb->push_constant(pll, 0, sizeof(Vec4f), &pc);
+					cb->push_constant(pll, 0, sizeof(CanvasShaderPushconstantT$), &pc);
 
 					auto vtx_off = 0;
 					auto idx_off = 0;

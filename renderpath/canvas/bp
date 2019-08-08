@@ -50,7 +50,7 @@
     <node type="Array(1+void*)" id="dsls" pos="0.00;0.00" />
     <node type="graphics::Pipelinelayout" id="pll" pos="0.00;0.00">
       <datas>
-        <data name="push_constant_udt_name" value="PushconstantT" />
+        <data name="push_constant_udt_name" value="CanvasShaderPushconstantT" />
       </datas>
     </node>
     <node type="graphics::VertexInputAttribute" id="via1" pos="0.00;0.00">

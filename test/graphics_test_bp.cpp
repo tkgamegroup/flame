@@ -57,7 +57,7 @@ int main(int argc, char** args)
 		printf("bp not found, exit\n");
 		return 0;
 	}
-	app.bp_rt_frame = -1;
+	app.bp_rt_frame = -1; // let render target pass to bp at 0 frame
 
 	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
