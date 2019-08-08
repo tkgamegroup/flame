@@ -445,6 +445,8 @@ namespace flame
 			AttributeV<uint> layer$i;
 			AttributeE<SampleCount$> sample_count$i;
 			AttributeE<ImageUsage$> usage$mi;
+			AttributeV<bool> init_with_color$i;
+			AttributeV<Vec4c> init_color$i;
 
 			AttributeP<void> out$o;
 
@@ -465,7 +467,11 @@ namespace flame
 						Image::destroy((Image*)out$o.v);
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d && format$i.v != Format_Undefined && size$i.v.x() > 0 && size$i.v.y() > 0 && level$i.v > 0 && layer$i.v > 0)
+					{
 						out$o.v = Image::create(d, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);
+						if (init_with_color$i.v)
+							((Image*)out$o.v)->init(init_color$i.v);
+					}
 					else
 						out$o.v = nullptr;
 					out$o.frame = maxN(format$i.frame, size$i.frame, level$i.frame, layer$i.frame, sample_count$i.frame, usage$mi.frame);

@@ -5,6 +5,11 @@
     <dependency v="flame_graphics.dll" />
   </dependencies>
   <nodes>
+    <node type="Var(uint)" id="img_count" pos="0.00;0.00">
+      <datas>
+        <data name="in" value="64" />
+      </datas>
+    </node>
     <node type="EnumSN(graphics::SampleCount)" id="sc" pos="0.00;0.00">
       <datas>
         <data name="in" value="SampleCount_8" />
@@ -23,7 +28,7 @@
     </node>
     <node type="graphics::RenderTarget" id="rt_ms" pos="0.00;0.00">
       <datas>
-        <data name="type" value="RenderTargetImage" />
+        <data name="type" value="TargetImage" />
         <data name="clear" value="1" />
         <data name="clear_color" value="200;100;50;255" />
       </datas>
@@ -37,7 +42,6 @@
       <datas>
         <data name="binding" value="0" />
         <data name="type" value="DescriptorSampledImage" />
-        <data name="count" value="64" />
         <data name="name" value="images" />
       </datas>
     </node>
@@ -157,8 +161,35 @@
     <node type="graphics::Pipeline" id="pl_element" pos="0.00;0.00" />
     <node type="graphics::Pipeline" id="pl_text_lcd" pos="0.00;0.00" />
     <node type="graphics::Pipeline" id="pl_text_sdf" pos="0.00;0.00" />
-    <node type="graphics::Buffer" id="vtx_buf" pos="0.00;0.00" />
-    <node type="graphics::Buffer" id="idx_buf" pos="0.00;0.00" />
+    <node type="graphics::Image" id="img_white" pos="0.00;0.00">
+      <datas>
+        <data name="format" value="Format_R8G8B8A8_UNORM" />
+        <data name="size" value="4;4" />
+        <data name="usage" value="ImageUsageSampled;ImageUsageTransferDst" />
+        <data name="init_with_color" value="1" />
+        <data name="init_color" value="255;255;255;255" />
+      </datas>
+    </node>
+    <node type="graphics::Descriptorset" id="ds" pos="0.00;0.00" />
+    <node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="0.00;0.00">
+      <datas>
+        <data name="type" value="TargetImage" />
+      </datas>
+    </node>
+    <node type="graphics::Buffer" id="vtx_buf" pos="0.00;0.00">
+      <datas>
+        <data name="size" value="873800" />
+        <data name="usage" value="BufferUsageVertex" />
+        <data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
+      </datas>
+    </node>
+    <node type="graphics::Buffer" id="idx_buf" pos="0.00;0.00">
+      <datas>
+        <data name="size" value="262144" />
+        <data name="usage" value="BufferUsageIndex" />
+        <data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
+      </datas>
+    </node>
     <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
   </nodes>
   <links>
@@ -173,6 +204,7 @@
     <link out="rsl_rts.v" in="sp.resolve_targets" />
     <link out="sp.out" in="sps.1" />
     <link out="sps.v" in="rnf.passes" />
+    <link out="img_count.out" in="desc_binding.count" />
     <link out="desc_binding.out" in="desc_bindings.1" />
     <link out="desc_bindings.v" in="dsl.bindings" />
     <link out="dsl.out" in="dsls.1" />
@@ -224,6 +256,10 @@
     <link out="vi.out" in="pl_text_sdf.vi" />
     <link out="sc.out" in="pl_text_sdf.sc" />
     <link out="outs_alpha_blend.v" in="pl_text_sdf.outputs" />
+    <link out="dsl.out" in="ds.dsl" />
+    <link out="ds.out" in="ds_wrt.set" />
+    <link out="img_white.out" in="ds_wrt.v" />
+    <link out="img_count.out" in="ds_wrt.count" />
     <link out="rnf.rp" in="make_cmd.renderpass" />
     <link out="rnf.fbs" in="make_cmd.framebuffers" />
     <link out="rnf.cv" in="make_cmd.clearvalues" />

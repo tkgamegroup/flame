@@ -485,7 +485,7 @@ namespace flame
 		{
 			std::vector<void*> rp_attachments;
 			std::vector<void*> rp_subpasses;
-			std::vector<std::tuple<RenderTargetType$, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
+			std::vector<std::tuple<TargetType$, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
 			std::vector<std::unique_ptr<SubpassInfo>> sp_infos;
 			for (auto& _p : passes)
 			{
@@ -501,19 +501,7 @@ namespace flame
 
 					auto idx = (int)att_infos.size();
 
-					Image* image = nullptr;
-					switch (t.type)
-					{
-					case RenderTargetImage:
-						image = (Image*)t.v;
-						break;
-					case RenderTargetImageview:
-						image = ((Imageview*)t.v)->image();
-						break;
-					case RenderTargetImages:
-						image = (*(std::vector<Image*>*)t.v)[0];
-						break;
-					}
+					auto image = image_from_target(t.type, t.v);
 					assert(image);
 
 					auto att_info = new AttachmentInfo;
@@ -552,7 +540,7 @@ namespace flame
 			for (auto& att_info : att_infos)
 			{
 				auto type = std::get<0>(att_info);
-				if (type == RenderTargetImages)
+				if (type == TargetImages)
 				{
 					auto count = ((std::vector<Image*>*)std::get<1>(att_info))->size();
 					if (image_count == 0)
@@ -571,17 +559,17 @@ namespace flame
 					auto v = std::get<1>(att_info);
 					switch (type)
 					{
-					case RenderTargetImage:
+					case TargetImage:
 					{
 						auto view = Imageview::create((Image*)v);
 						created_views.push_back(view);
 						fb_views.push_back(view);
 					}
 						break;
-					case RenderTargetImageview:
+					case TargetImageview:
 						fb_views.push_back(v);
 						break;
-					case RenderTargetImages:
+					case TargetImages:
 					{
 						auto view = Imageview::create((*(std::vector<Image*>*)v)[i]);
 						created_views.push_back(view);
@@ -631,7 +619,7 @@ namespace flame
 
 		struct RenderTarget$
 		{
-			AttributeE<RenderTargetType$> type$i;
+			AttributeE<TargetType$> type$i;
 			AttributeP<void> v$i;
 			AttributeV<bool> clear$i;
 			AttributeV<Vec4c> clear_color$i;
@@ -651,24 +639,7 @@ namespace flame
 				{
 					out$o.v.type = type$i.v;
 					out$o.v.v = v$i.v;
-					Image* image = nullptr;
-					if (v$i.v)
-					{
-						switch (type$i.v)
-						{
-						case RenderTargetImage:
-							image = (Image*)v$i.v;
-							break;
-						case RenderTargetImageview:
-							image = ((Imageview*)v$i.v)->image();
-							break;
-						case RenderTargetImages:
-							image = (*(std::vector<Image*>*)v$i.v)[0];
-							break;
-						}
-						assert(image);
-					}
-					first_image$o.v = image;
+					first_image$o.v = image_from_target(type$i.v, v$i.v);
 					first_image$o.frame = max(type$i.frame, v$i.frame);
 				}
 				if (clear$i.frame > out$o.frame)
@@ -732,9 +703,9 @@ namespace flame
 
 								switch (t.type)
 								{
-								case RenderTargetImage: case RenderTargetImageview:
+								case TargetImage: case TargetImageview:
 									return t.v != nullptr;
-								case RenderTargetImages:
+								case TargetImages:
 									return t.v != nullptr && !(((std::vector<Image*>*)t.v)->empty());
 								}
 							};

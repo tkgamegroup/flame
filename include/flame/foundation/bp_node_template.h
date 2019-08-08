@@ -12,6 +12,35 @@ namespace flame
 		return (void*)((char*)p - module);
 	}
 
+	template<class T>
+	struct BP_Var
+	{
+		AttributeV<T> in;
+
+		AttributeV<T> out;
+
+		void update()
+		{
+			if (in.frame > out.frame)
+			{
+				out.v = in.v;
+				out.frame = in.frame;
+			}
+		}
+
+		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		{
+			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
+
+			auto u = add_udt(module_name, "Var" + template_parameters, sizeof(BP_Var));
+
+			u->add_variable(TypeTagAttributeV, type_name, "in", "i", offsetof(BP_Var, in), sizeof(AttributeV<T>));
+			u->add_variable(TypeTagAttributeV, type_name, "out", "o", offsetof(BP_Var, out), sizeof(AttributeV<T>));
+
+			u->add_function("update", calc_rva(f2v(&BP_Var::update), module), TypeTagVariable, "void", "");
+		}
+	};
+
 	struct BP_EnumSN
 	{
 		AttributeV<int> in;

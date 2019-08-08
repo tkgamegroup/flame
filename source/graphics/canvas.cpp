@@ -165,6 +165,7 @@ namespace flame
 
 			~CanvasPrivate()
 			{
+				Image::destroy(image_ms);
 				RenderpassAndFramebuffer::destroy(rnf);
 				Imageview::destroy(white_imageview);
 				Image::destroy(white_image);

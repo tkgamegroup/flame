@@ -162,6 +162,13 @@ namespace flame
 			SwizzleA
 		};
 
+		enum TargetType$
+		{
+			TargetImage, // Image*
+			TargetImageview, // Imageview*
+			TargetImages // std::vector<Image*>*
+		};
+
 		enum IndiceType
 		{
 			IndiceTypeUint,

@@ -2,6 +2,8 @@
 
 #include <flame/graphics/graphics.h>
 
+#include <vector>
+
 namespace flame
 {
 	struct Bitmap;
@@ -61,6 +63,23 @@ namespace flame
 				Swizzle$ swizzle_r = SwizzleIdentity, Swizzle$ swizzle_g = SwizzleIdentity, Swizzle$ swizzle_b = SwizzleIdentity, Swizzle$ swizzle_a = SwizzleIdentity);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Imageview* v);
 		};
+
+		inline Image* image_from_target(TargetType$ t, void* v)
+		{
+			if (!v)
+				return nullptr;
+
+			switch (t)
+			{
+			case TargetImage:
+				return (Image*)v;
+			case TargetImageview:
+				return ((Imageview*)v)->image();
+			case TargetImages:
+				return (*(std::vector<Image*>*)v)[0];
+			}
+			return nullptr;
+		}
 
 		struct Sampler
 		{

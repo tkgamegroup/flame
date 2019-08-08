@@ -67,16 +67,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
 		};
 
-		enum RenderTargetType$
-		{
-			RenderTargetImage, // v is Image*
-			RenderTargetImageview, // v is Imageview*
-			RenderTargetImages // v is std::vector<Image*>*
-		};
-
 		struct RenderTarget
 		{
-			RenderTargetType$ type;
+			TargetType$ type;
 			void* v;
 			bool clear;
 			Vec4c clear_color;
@@ -86,7 +79,7 @@ namespace flame
 			}
 
 			RenderTarget(Image* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
-				type(RenderTargetImage),
+				type(TargetImage),
 				v(v),
 				clear(clear),
 				clear_color(clear_color)
@@ -94,7 +87,7 @@ namespace flame
 			}
 
 			RenderTarget(Imageview* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
-				type(RenderTargetImageview),
+				type(TargetImageview),
 				v(v),
 				clear(clear),
 				clear_color(clear_color)
@@ -102,7 +95,7 @@ namespace flame
 			}
 
 			RenderTarget(const std::vector<void*>* v, bool clear = false, const Vec4c& clear_color = Vec4c(0)) :
-				type(RenderTargetImages),
+				type(TargetImages),
 				v((void*)v),
 				clear(clear),
 				clear_color(clear_color)

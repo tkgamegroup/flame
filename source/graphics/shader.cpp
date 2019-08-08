@@ -181,7 +181,6 @@ namespace flame
 				if (out$o.v)
 					Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
 			}
-
 		};
 
 		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool* _p, Descriptorlayout* _l) :
@@ -282,6 +281,93 @@ namespace flame
 		{
 			delete (DescriptorsetPrivate*)s;
 		}
+
+		struct Descriptorset$
+		{
+			AttributeP<void> dsl$i;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (dsl$i.frame > out$o.frame)
+				{
+					if (out$o.v)
+						Descriptorset::destroy((Descriptorset*)out$o.v);
+					auto d = (Device*)bp_environment().graphics_device;
+					if (d && dsl$i.v)
+						out$o.v = Descriptorset::create(d->dp, (Descriptorlayout*)dsl$i.v);
+					else
+					{
+						printf("cannot create descriptorsetset\n");
+
+						out$o.v = nullptr;
+					}
+					out$o.frame = dsl$i.frame;
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Descriptorset$()
+			{
+				if (out$o.v)
+					Descriptorset::destroy((Descriptorset*)out$o.v);
+			}
+		};
+
+		struct ImageDescriptorWrite$
+		{
+			AttributeP<void> set$i;
+			AttributeE<TargetType$> type$i;
+			AttributeP<void> v$i;
+			AttributeV<uint> binding$i;
+			AttributeV<uint> index$i;
+			AttributeV<uint> count$i;
+
+			int frame;
+			void* created_view;
+
+			FLAME_GRAPHICS_EXPORTS ImageDescriptorWrite$() :
+				frame(-1)
+			{
+				count$i.v = 1;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (set$i.frame > frame)
+				{
+					if (created_view)
+					{
+						Imageview::destroy((Imageview*)created_view);
+						created_view = nullptr;
+					}
+					auto d = (Device*)bp_environment().graphics_device;
+					if (d && set$i.v && v$i.v)
+					{
+						Imageview* iv = nullptr;
+						assert(type$i.v != TargetImages);
+						if (type$i.v == TargetImageview)
+							iv = (Imageview*)v$i.v;
+						else
+						{
+							iv = Imageview::create((Image*)v$i.v);
+							created_view = iv;
+						}
+						for (auto i = 0; i < count$i.v; i++)
+							((Descriptorset*)set$i.v)->set_image(binding$i.v, index$i.v + i, iv, d->sp_bi_linear);
+					}
+					else
+						printf("cannot write image descriptor\n");
+					frame = set$i.frame;
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~ImageDescriptorWrite$()
+			{
+				if (created_view)
+					Imageview::destroy((Imageview*)created_view);
+			}
+		};
 
 		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, uint push_constant_udt_name_hash) :
 			d((DevicePrivate*)d)
