@@ -38,7 +38,7 @@ namespace flame
 
 		void on_attach()
 		{
-			element = (cElement$*)(entity->component(cH("Element")));
+			element = (cElement$*)(entity->find_component(cH("Element")));
 			assert(element);
 		}
 

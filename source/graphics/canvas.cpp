@@ -82,7 +82,7 @@ namespace flame
 			CanvasPrivate(Device* d, TargetType$ type, const void* v) :
 				d(d)
 			{
-				renderpath = BP::create_from_file(L"../renderpath/canvas/bp");
+				renderpath = BP::create_from_file(L"../renderpath/canvas/bp", true);
 				renderpath->set_graphics_device(d);
 
 				set_render_target(type, v);

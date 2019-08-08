@@ -9,10 +9,10 @@
 #include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
-//#include <flame/universe/entity.h>
-//#include <flame/universe/components/ui.h>
-//#include <flame/universe/components/element.h>
-//#include <flame/universe/components/text.h>
+#include <flame/universe/entity.h>
+#include <flame/universe/components/ui.h>
+#include <flame/universe/components/element.h>
+#include <flame/universe/components/text.h>
 
 using namespace flame;
 using namespace graphics;
@@ -34,9 +34,7 @@ struct App
 	Canvas* canvas;
 	int rt_frame;
 
-	//Entity* root;
-
-	//wText* t_fps;
+	Entity* root;
 
 	//void create_elements(DefaultStyle style)
 	//{
@@ -166,7 +164,7 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
-			//root->update(app->elapsed_time);
+			root->update(app_delta_time());
 
 			auto img_idx = sc->image_index();
 			auto cb = cbs[img_idx];
@@ -204,23 +202,25 @@ int main(int argc, char** args)
 	app.canvas->set_image(app.font_atlas1->index, font_atlas_view1);
 	app.canvas->set_image(app.font_atlas2->index, font_atlas_view2);
 
-	//root = Entity::create();
-	//auto ui = cUI$::create$(nullptr);
-	//ui->set_canvas(canvas);
-	//root->add_component(ui);
+	app.root = Entity::create();
+	auto ui = cUI$::create$(nullptr);
+	ui->setup(app.canvas, app.w);
+	app.root->add_component(ui);
 
-	//auto bg = Entity::create();
-	//auto wBackground = cElement$::create$(nullptr);
-	//wBackground->size = Vec2f(100.f);
-	//wBackground->background_color = Vec4c(255, 128, 128, 255);
-	//bg->add_component(wBackground);
+	auto bg = Entity::create();
+	auto wBackground = cElement$::create$(nullptr);
+	wBackground->width.v = 100.f;
+	wBackground->height.v = 100.f;
+	wBackground->background_color = Vec4c(255, 128, 128, 255);
+	bg->add_component(wBackground);
 
-	//auto wFps = cText$::create$(nullptr);
-	//wFps->font_atlas_index = font_atlas_index;
-	//wFps->set_text(L"QAQ");
-	//bg->add_component(wFps);
+	auto wFps = cText$::create$(nullptr);
+	wFps->font_atlas = app.font_atlas1;
+	wFps->color = Vec4c(0, 0, 0, 255);
+	wFps->set_text(L"QAQ");
+	bg->add_component(wFps);
 
-	//root->add_child(bg);
+	app.root->add_child(bg);
 
 	//t_fps = Element::createT<wText>(ui, font_atlas_index);
 	//t_fps->align$ = AlignLeftBottom;

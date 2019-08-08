@@ -108,7 +108,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
 
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename, bool no_compile = false);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
 

@@ -1024,7 +1024,7 @@ namespace flame
 		return ret;
 	}
 
-	Mail<void*> new_mail_p(void* p)
+	inline Mail<void*> new_mail_p(void* p)
 	{
 		return new_mail(&p);
 	}

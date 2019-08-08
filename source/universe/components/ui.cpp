@@ -60,7 +60,6 @@ namespace flame
 
 			f_all_done = !f_mljustdown && !f_mljustup && !f_mrjustdown && !f_mrjustup && f_mdisp == 0 && f_mscroll == 0;
 
-			auto thiz = this;
 			entity->traverse_backward([](void* c, Entity* e) {
 				auto thiz = *((cUIPrivate**)c);
 				if (thiz->f_all_done)
@@ -93,9 +92,9 @@ namespace flame
 					thiz->f_all_done = !thiz->f_mljustdown && !thiz->f_mljustup && 
 						!thiz->f_mrjustdown && !thiz->f_mrjustup && thiz->f_mdisp == 0 && thiz->f_mscroll == 0;
 				}
-			}, new_mail(&thiz));
+			}, new_mail_p(this));
 
-			if (f_mljustdown)
+			if (focusing && f_mljustdown)
 			{
 				focusing->focusing.v = false;
 				focusing->focusing.frame = app_frame();
@@ -111,10 +110,10 @@ namespace flame
 			mouse_scroll = 0;
 		}
 
-		void setup(graphics::Canvas* canvas, Window* window)
+		void setup(graphics::Canvas* _canvas, Window* _window)
 		{
-			canvas = canvas;
-			window = window;
+			canvas = _canvas;
+			window = _window;
 
 			mouse_pos = Vec2i(0);
 			mouse_pos_prev = Vec2i(0);

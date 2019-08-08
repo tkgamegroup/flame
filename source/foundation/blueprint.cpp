@@ -760,7 +760,7 @@ namespace flame
 		((BPPrivate*)this)->save(filename);
 	}
 
-	BP *BP::create_from_file(const std::wstring& filename)
+	BP *BP::create_from_file(const std::wstring& filename, bool no_compile)
 	{
 		auto s_filename = w2s(filename);
 		auto ppath = std::fs::path(filename).parent_path();
@@ -858,105 +858,108 @@ namespace flame
 
 		SerializableNode::destroy(file);
 
-		auto templatecpp_path = ppath / L"template.cpp";
-		if (!std::fs::exists(templatecpp_path) || std::fs::last_write_time(templatecpp_path) < std::fs::last_write_time(filename))
+		if (!no_compile)
 		{
-			printf("generating template.cpp");
-
-			std::ofstream templatecpp(templatecpp_path);
-			templatecpp << "// THIS FILE IS AUTO GENERATED\n";
-			templatecpp << "#include <flame/foundation/bp_node_template.h>\n";
-			templatecpp << "using namespace flame;\n";
-			templatecpp << "extern \"C\" __declspec(dllexport) void add_templates()\n";
-			templatecpp << "{\n";
-			templatecpp << "\tauto module = get_module_from_address(f2v(add_templates));\n";
-			templatecpp << "\tauto module_name = get_module_name(module);\n";
-			std::vector<std::string> all_templates;
-			for (auto& n : node_descs)
+			auto templatecpp_path = ppath / L"template.cpp";
+			if (!std::fs::exists(templatecpp_path) || std::fs::last_write_time(templatecpp_path) < std::fs::last_write_time(filename))
 			{
-				auto pos_t = n.type.find('(');
-				if (pos_t != std::string::npos)
+				printf("generating template.cpp");
+
+				std::ofstream templatecpp(templatecpp_path);
+				templatecpp << "// THIS FILE IS AUTO GENERATED\n";
+				templatecpp << "#include <flame/foundation/bp_node_template.h>\n";
+				templatecpp << "using namespace flame;\n";
+				templatecpp << "extern \"C\" __declspec(dllexport) void add_templates()\n";
+				templatecpp << "{\n";
+				templatecpp << "\tauto module = get_module_from_address(f2v(add_templates));\n";
+				templatecpp << "\tauto module_name = get_module_name(module);\n";
+				std::vector<std::string> all_templates;
+				for (auto& n : node_descs)
 				{
-					auto found = false;
-					for (auto& t : all_templates)
+					auto pos_t = n.type.find('(');
+					if (pos_t != std::string::npos)
 					{
-						if (t == n.type)
+						auto found = false;
+						for (auto& t : all_templates)
 						{
-							found = true;
-							break;
+							if (t == n.type)
+							{
+								found = true;
+								break;
+							}
 						}
+						if (found)
+							continue;
+						all_templates.push_back(n.type);
+
+						templatecpp << "\tBP_";
+						if (n.type[pos_t - 1] == 'N')
+							templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t);
+						else
+							templatecpp << tn_a2c(n.type);
+						templatecpp << "::add_udt_info(*module_name.p, \"";
+						templatecpp << std::string(n.type.begin() + pos_t, n.type.end());
+						templatecpp << "\", module);\n";
 					}
-					if (found)
-						continue;
-					all_templates.push_back(n.type);
-
-					templatecpp << "\tBP_";
-					if (n.type[pos_t - 1] == 'N')
-						templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t);
-					else
-						templatecpp << tn_a2c(n.type);
-					templatecpp << "::add_udt_info(*module_name.p, \"";
-					templatecpp << std::string(n.type.begin() + pos_t, n.type.end());
-					templatecpp << "\", module);\n";
 				}
+				templatecpp << "\tdelete_mail(module_name);\n";
+				templatecpp << "}\n";
+				templatecpp.close();
+
+				printf(" - done\n");
 			}
-			templatecpp << "\tdelete_mail(module_name);\n";
-			templatecpp << "}\n";
-			templatecpp.close();
+			else
+				printf("template.cpp up to data\n");
 
-			printf(" - done\n");
-		}
-		else
-			printf("template.cpp up to data\n");
-
-		auto cmakelists_path = ppath / L"CMakeLists.txt";
-		if (!std::fs::exists(cmakelists_path) || std::fs::last_write_time(cmakelists_path) < std::fs::last_write_time(filename))
-		{
-			printf("generating cmakelists");
-
-			std::ofstream cmakelists(cmakelists_path);
-			cmakelists << "# THIS FILE IS AUTO GENERATED\n";
-			cmakelists << "cmake_minimum_required(VERSION 3.4)\n";
-			cmakelists << "project(bp)\n";
-			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
-			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
-			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
-			for (auto& d : dependencies)
+			auto cmakelists_path = ppath / L"CMakeLists.txt";
+			if (!std::fs::exists(cmakelists_path) || std::fs::last_write_time(cmakelists_path) < std::fs::last_write_time(filename))
 			{
-				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-				cmakelists << w2s(ext_replace(d.second, L".lib"));
+				printf("generating cmakelists");
+
+				std::ofstream cmakelists(cmakelists_path);
+				cmakelists << "# THIS FILE IS AUTO GENERATED\n";
+				cmakelists << "cmake_minimum_required(VERSION 3.4)\n";
+				cmakelists << "project(bp)\n";
+				cmakelists << "add_definitions(-W0 -std:c++latest)\n";
+				cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
+				cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
+				for (auto& d : dependencies)
+				{
+					cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
+					cmakelists << w2s(ext_replace(d.second, L".lib"));
+					cmakelists << ")\n";
+				}
+				cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
+				cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
+				for (auto& d : dependencies)
+					cmakelists << "${CMAKE_SOURCE_DIR}/../../bin/" + w2s(d.second) + " ";
 				cmakelists << ")\n";
+				cmakelists.close();
+
+				printf(" - done\n");
 			}
-			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
-			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
-			for (auto& d : dependencies)
-				cmakelists << "${CMAKE_SOURCE_DIR}/../../bin/" + w2s(d.second) + " ";
-			cmakelists << ")\n";
-			cmakelists.close();
+			else
+				printf("cmakelists up to data\n");
 
-			printf(" - done\n");
-		}
-		else
-			printf("cmakelists up to data\n");
+			printf("cmaking:\n");
+			exec_and_redirect_to_std_output(L"", L"cmake -S " + ppath_str + L" -B " + ppath_str + L"/build");
 
-		printf("cmaking:\n");
-		exec_and_redirect_to_std_output(L"", L"cmake -S " + ppath_str + L" -B " + ppath_str + L"/build");
+			printf("compiling:\n");
+			{
+#define OUTPUT_FILE L"compile_log.txt"
 
-		printf("compiling:\n");
-		{
-			#define OUTPUT_FILE L"compile_log.txt"
+				auto curr_path = get_curr_path();
+				exec(s2w(VS_LOCATION) + L"/Common7/IDE/devenv.exe", L"\"" + *curr_path.p + L"/" + ppath_str + L"/build/bp.sln\" /build debug /out " OUTPUT_FILE, true);
+				delete_mail(curr_path);
 
-			auto curr_path = get_curr_path();
-			exec(s2w(VS_LOCATION) + L"/Common7/IDE/devenv.exe", L"\"" + *curr_path.p + L"/" + ppath_str + L"/build/bp.sln\" /build debug /out " OUTPUT_FILE, true);
-			delete_mail(curr_path);
+				auto content = get_file_string(OUTPUT_FILE);
+				printf("%s\n", content.c_str());
 
-			auto content = get_file_string(OUTPUT_FILE);
-			printf("%s\n", content.c_str());
+				if (!content.empty())
+					std::fs::remove(OUTPUT_FILE);
 
-			if (!content.empty())
-				std::fs::remove(OUTPUT_FILE);
-
-			#undef OUTPUT_FILE
+#undef OUTPUT_FILE
+			}
 		}
 
 		auto bp = new BPPrivate();
@@ -1008,25 +1011,5 @@ namespace flame
 	{
 		return bp_env;
 	}
-
-	struct ArraySize$
-	{
-		AttributeP<void> array$i;
-
-		AttributeV<uint> size$o;
-
-		FLAME_FOUNDATION_EXPORTS void update$()
-		{
-			if (array$i.frame > size$o.frame)
-			{
-				if (array$i.v)
-					size$o.v = ((std::vector<void*>*)array$i.v)->size();
-				else
-					size$o.v = 0;
-				size$o.frame = array$i.frame;
-			}
-		}
-
-	};
 }
 
