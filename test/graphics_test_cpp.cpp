@@ -89,9 +89,8 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-	auto thiz = &app;
 	app_run([](void* c) {
-		auto app = (*(App * *)c);
+		auto app = *(App**)c;
 		app->run();
-	}, new_mail(&thiz));
+	}, new_mail_p(&app));
 }

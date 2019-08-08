@@ -78,9 +78,8 @@ int main(int argc, char** args)
 	app.bp->find_input("rt_dst.type")->set_data_i(TargetImages);
 	app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.cbs);
 
-	auto thiz = &app;
 	app_run([](void* c) {
 		auto app = (*(App * *)c);
 		app->run();
-	}, new_mail(&thiz));
+	}, new_mail_p(&app));
 }

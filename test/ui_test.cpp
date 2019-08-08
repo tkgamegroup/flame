@@ -32,6 +32,7 @@ struct App
 	FontAtlas* font_atlas1;
 	FontAtlas* font_atlas2;
 	Canvas* canvas;
+	int rt_frame;
 
 	//Entity* root;
 
@@ -152,6 +153,14 @@ struct App
 	void run()
 	{
 		auto sc = scr->sc();
+		auto sc_frame = scr->sc_frame();
+
+		if (sc_frame > rt_frame)
+		{
+			canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
+			rt_frame = sc_frame;
+		}
+
 		if (sc)
 		{
 			sc->acquire_image();
@@ -159,8 +168,9 @@ struct App
 
 			//root->update(app->elapsed_time);
 
-			auto cb = cbs[sc->image_index()];
-			canvas->record(cb);
+			auto img_idx = sc->image_index();
+			auto cb = cbs[img_idx];
+			canvas->record(cb, img_idx);
 
 			d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
@@ -181,7 +191,7 @@ int main(int argc, char** args)
 
 	auto sc = app.scr->sc();
 
-	app.canvas = Canvas::create(app.d, sc);
+	app.canvas = Canvas::create(app.d, TargetImages, &sc->images());
 
 	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
 	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
@@ -258,11 +268,10 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-	auto thiz = &app;
 	app_run([](void* c) {
 		auto app = (*(App * *)c);
 		app->run();
-	}, new_mail(&thiz));
+	}, new_mail_p(&app));
 
 	return 0;
 }

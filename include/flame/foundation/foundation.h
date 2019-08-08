@@ -1024,6 +1024,11 @@ namespace flame
 		return ret;
 	}
 
+	Mail<void*> new_mail_p(void* p)
+	{
+		return new_mail(&p);
+	}
+
 	template<class T>
 	void delete_mail(const Mail<T>& m)
 	{
