@@ -59,102 +59,44 @@ namespace flame
 		struct CanvasPrivate : Canvas
 		{
 			Device* d;
-			Swapchain* sc;
+			BP* renderpath;
 
-			Image* image_ms;
 			RenderpassAndFramebuffer* rnf;
 
-			Descriptorlayout* dsl;
 			Pipelinelayout* pll;
-			Shader* shv_element;
-			Shader* shf_element;
-			Shader* shf_text_lcd;
-			Shader* shf_text_sdf;
 			Pipeline* pl_element;
 			Pipeline* pl_text_lcd;
 			Pipeline* pl_text_sdf;
 
-			Image* white_image;
-			Imageview* white_imageview;
 			Descriptorset* ds;
-
-			std::vector<Vec2f> points;
-			std::vector<DrawCmd> draw_cmds;
+			Imageview* white_iv;
 
 			Buffer* vtx_buffer;
 			Buffer* idx_buffer;
 			Vertex* vtx_end;
 			uint* idx_end;
 
-			Imageview* images[MaxImageCount];
+			std::vector<Vec2f> points;
+			std::vector<DrawCmd> draw_cmds;
 
-			CanvasPrivate(Device* d, Swapchain* sc) :
-				d(d),
-				sc(sc)
+			CanvasPrivate(Device* d, TargetType$ type, const void* v) :
+				d(d)
 			{
-				auto swapchain_format = get_swapchain_format();
+				renderpath = BP::create_from_file(L"../renderpath/canvas/bp");
+				renderpath->set_graphics_device(d);
 
-				image_ms = Image::create(d, swapchain_format, ((Image*)sc->images()[0])->size, 1, 1, sample_count, ImageUsageAttachment);
+				set_render_target(type, v);
 
-				SubpassTargetInfo subpass;
-				RenderTarget target_ms(image_ms, true);
-				RenderTarget target_sc(&sc->images());
-				subpass.color_targets.emplace_back(&target_ms);
-				subpass.resolve_targets.emplace_back(&target_sc);
-				rnf = graphics::RenderpassAndFramebuffer::create(d, { &subpass });
+				pll = (Pipelinelayout*)renderpath->find_output("pll.out")->data_p();
+				ds = (Descriptorset*)renderpath->find_output("ds.out")->data_p();
+				white_iv = (Imageview*)renderpath->find_output("ds_wrt.iv")->data_p();
+				vtx_buffer = (Buffer*)renderpath->find_output("vtx_buf.out")->data_p();
+				idx_buffer = (Buffer*)renderpath->find_output("idx_buf.out")->data_p();
 
-				dsl = Descriptorlayout::create(d, { &DescriptorBinding(0, DescriptorSampledImage, 64, "images") });
-				pll = Pipelinelayout::create(d, { dsl }, 0, cH("CanvasShaderPushconstantT"));
-
-				VertexInputAttribute via1(0, 0, 0, Format_R32G32_SFLOAT, "pos");
-				VertexInputAttribute via2(1, 0, 8, Format_R32G32_SFLOAT, "uv");
-				VertexInputAttribute via3(2, 0, 16, Format_R8G8B8A8_UNORM, "color");
-				VertexInputBuffer vib(0, 20);
-				VertexInputInfo vi;
-				vi.attribs.push_back(&via1);
-				vi.attribs.push_back(&via2);
-				vi.attribs.push_back(&via3);
-				vi.buffers.push_back(&vib);
-
-				StageInOut vert_output1(0, Format_R32G32B32A32_SFLOAT, "color");
-				StageInOut vert_output2(1, Format_R32G32_SFLOAT, "uv");
-				StageInOut vert_output3(2, Format_R32_UINT, "id");
-				std::vector<void*> vert_outputs;
-				vert_outputs.push_back(&vert_output1);
-				vert_outputs.push_back(&vert_output2);
-				vert_outputs.push_back(&vert_output3);
-
-				OutputAttachmentInfo output_alpha_blend(0, Format_R8G8B8A8_UNORM, "color", BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorZero, BlendFactorOneMinusSrcAlpha);
-				OutputAttachmentInfo output_lcd(0, Format_R8G8B8A8_UNORM, "color", BlendFactorSrc1Color, BlendFactorOneMinusSrc1Color, BlendFactorZero, BlendFactorZero);
-				std::vector<void*> outputs_alpha_blend;
-				std::vector<void*> outputs_lcd;
-				outputs_alpha_blend.push_back(&output_alpha_blend);
-				outputs_lcd.push_back(&output_lcd);
-
-				shv_element = Shader::create(d, L"../renderpath/canvas/element.vert", "", &vi.attribs, &vert_outputs, pll, true);
-				shf_element = Shader::create(d, L"../renderpath/canvas/element.frag", "", &vert_outputs, &outputs_alpha_blend, pll, true);
-				shf_text_lcd = Shader::create(d, L"../renderpath/canvas/text_lcd.frag", "", &vert_outputs, &outputs_lcd, pll, true);
-				shf_text_sdf = Shader::create(d, L"../renderpath/canvas/text_sdf.frag", "", &vert_outputs, &outputs_alpha_blend, pll, true);
-
-				pl_element = Pipeline::create(d, { shv_element, shf_element }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_alpha_blend);
-				pl_text_lcd = Pipeline::create(d, { shv_element, shf_text_lcd }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_lcd);
-				pl_text_sdf = Pipeline::create(d, { shv_element, shf_text_sdf }, pll, rnf->renderpass(), 0, &vi, Vec2u(0), nullptr, sample_count, nullptr, outputs_alpha_blend);
-
-				ds = Descriptorset::create(d->dp, dsl);
-
-				white_image = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
-				white_image->init(Vec4c(255));
-				white_imageview = Imageview::create(white_image);
-
-				vtx_buffer = Buffer::create(d, sizeof(Vertex) * 43690, BufferUsageVertex, MemProp$(MemPropHost | MemPropHostCoherent));
-				idx_buffer = Buffer::create(d, sizeof(uint) * 65536, BufferUsageIndex, MemProp$(MemPropHost | MemPropHostCoherent));
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (uint*)idx_buffer->mapped;
-
-				for (auto i = 0; i < MaxImageCount; i++)
-					set_image(i, white_imageview);
 
 				for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
 				{
@@ -164,25 +106,20 @@ namespace flame
 				}
 			}
 
-			~CanvasPrivate()
+			void set_render_target(TargetType$ type, const void* v)
 			{
-				Image::destroy(image_ms);
-				RenderpassAndFramebuffer::destroy(rnf);
-				Imageview::destroy(white_imageview);
-				Image::destroy(white_image);
-				Pipeline::destroy(pl_element);
-				Pipeline::destroy(pl_text_lcd);
-				Pipeline::destroy(pl_text_sdf);
-
-				Descriptorset::destroy(ds);
-				Buffer::destroy(vtx_buffer);
-				Buffer::destroy(idx_buffer);
+				renderpath->find_input("rt_dst.type")->set_data_i(type);
+				renderpath->find_input("rt_dst.v")->set_data_p(v);
+				renderpath->update();
+				rnf = (RenderpassAndFramebuffer*)renderpath->find_output("rnf.out")->data_p();
+				pl_element = (Pipeline*)renderpath->find_output("pl_element.out")->data_p();
+				pl_text_lcd = (Pipeline*)renderpath->find_output("pl_text_lcd.out")->data_p();
+				pl_text_sdf = (Pipeline*)renderpath->find_output("pl_text_sdf.out")->data_p();
 			}
 
 			void set_image(int index, Imageview* v)
 			{
-				images[index] = v;
-				ds->set_image(0, index, v, d->sp_bi_linear);
+				ds->set_image(0, index, v ? v : white_iv, d->sp_bi_linear);
 			}
 
 			void start_cmd(DrawCmdType type, int id)
@@ -570,13 +507,15 @@ namespace flame
 				draw_cmds.emplace_back(scissor);
 			}
 
-			void record(Commandbuffer* cb)
+			void record(Commandbuffer* cb, uint image_idx)
 			{
+				auto fb = (Framebuffer*)rnf->framebuffers()[image_idx];
+
 				cb->begin();
-				cb->begin_renderpass(rnf->renderpass(), (Framebuffer*)rnf->framebuffers()[sc->image_index()], rnf->clearvalues());
+				cb->begin_renderpass(rnf->renderpass(), fb, rnf->clearvalues());
 				if (idx_end != idx_buffer->mapped)
 				{
-					auto surface_size = Vec2f(sc->window()->size);
+					auto surface_size = Vec2f(fb->image_size);
 
 					cb->set_viewport(Vec4f(Vec2f(0.f), surface_size));
 					cb->set_scissor(Vec4f(Vec2f(0.f), surface_size));
@@ -631,14 +570,14 @@ namespace flame
 			}
 		};
 
+		void Canvas::set_render_target(TargetType$ type, const void* v)
+		{
+			((CanvasPrivate*)this)->set_render_target(type, v);
+		}
+
 		void Canvas::set_clear_color(const Vec4c& col)
 		{
 			((CanvasPrivate*)this)->rnf->clearvalues()->set(0, col);
-		}
-
-		Imageview* Canvas::get_image(uint index)
-		{
-			return ((CanvasPrivate*)this)->images[index];
 		}
 
 		void Canvas::set_image(uint index, Imageview* v)
@@ -756,14 +695,14 @@ namespace flame
 			((CanvasPrivate*)this)->set_scissor(scissor);
 		}
 
-		void Canvas::record(Commandbuffer* cb)
+		void Canvas::record(Commandbuffer* cb, uint image_idx)
 		{
-			((CanvasPrivate*)this)->record(cb);
+			((CanvasPrivate*)this)->record(cb, image_idx);
 		}
 
-		Canvas* Canvas::create(Device* d, Swapchain* sc)
+		Canvas* Canvas::create(Device* d, TargetType$ type, const void* v)
 		{
-			return new CanvasPrivate(d, sc);
+			return new CanvasPrivate(d, type, v);
 		}
 
 		void Canvas::destroy(Canvas* c)

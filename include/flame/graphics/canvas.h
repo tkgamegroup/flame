@@ -8,7 +8,6 @@ namespace flame
 	{
 		struct Device;
 		struct Imageview;
-		struct Swapchain;
 		struct Commandbuffer;
 		struct FontAtlas;
 
@@ -22,9 +21,10 @@ namespace flame
 
 		struct Canvas
 		{
+			FLAME_GRAPHICS_EXPORTS void set_render_target(TargetType$ type, const void* v);
+
 			FLAME_GRAPHICS_EXPORTS void set_clear_color(const Vec4c& col);
 
-			FLAME_GRAPHICS_EXPORTS Imageview* get_image(uint index);
 			FLAME_GRAPHICS_EXPORTS void set_image(uint index, Imageview* v);
 
 			FLAME_GRAPHICS_EXPORTS void start_cmd(DrawCmdType type, uint id);
@@ -59,9 +59,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void add_image_stretch(const Vec2f& pos, const Vec2f& size, uint id, const Vec4f& border, const Vec4c& tint_col = Vec4c(255));
 			FLAME_GRAPHICS_EXPORTS void set_scissor(const Vec4f& scissor);
 
-			FLAME_GRAPHICS_EXPORTS void record(Commandbuffer* cb);
+			FLAME_GRAPHICS_EXPORTS void record(Commandbuffer* cb, uint image_idx);
 
-			FLAME_GRAPHICS_EXPORTS static Canvas* create(Device* d, Swapchain* sc);
+			FLAME_GRAPHICS_EXPORTS static Canvas* create(Device* d, TargetType$ type, const void* v);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Canvas* c);
 		};
 

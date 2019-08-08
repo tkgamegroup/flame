@@ -25,10 +25,19 @@ struct App
 	FontAtlas* font_atlas1;
 	FontAtlas* font_atlas2;
 	Canvas* canvas;
+	int rt_frame;
 
 	void run()
 	{
 		auto sc = scr->sc();
+		auto sc_frame = scr->sc_frame();
+
+		if (sc_frame > rt_frame)
+		{
+			canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
+			rt_frame = sc_frame;
+		}
+
 		if (sc)
 		{
 			sc->acquire_image();
@@ -37,8 +46,9 @@ struct App
 			canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World  ");
 			canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
 
-			auto cb = cbs[sc->image_index()];
-			canvas->record(cb);
+			auto img_idx = sc->image_index();
+			auto cb = cbs[img_idx];
+			canvas->record(cb, img_idx);
 
 			d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
@@ -51,6 +61,8 @@ auto papp = &app;
 int main(int argc, char** args)
 {
 	typeinfo_load(L"flame_graphics.typeinfo");
+	
+	app.rt_frame = 0;
 
 	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
@@ -60,9 +72,7 @@ int main(int argc, char** args)
 
 	auto sc = app.scr->sc();
 
-	app.canvas = Canvas::create(app.d, sc);
-	//app.canvas->set_clear_color(Vec4c(204, 213, 240, 255));
-	app.canvas->set_clear_color(Vec4c(255));
+	app.canvas = Canvas::create(app.d, TargetImages, &sc->images());
 
 	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
 	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);

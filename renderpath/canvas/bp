@@ -30,7 +30,7 @@
       <datas>
         <data name="type" value="TargetImage" />
         <data name="clear" value="1" />
-        <data name="clear_color" value="200;100;50;255" />
+        <data name="clear_color" value="255;255;255;255" />
       </datas>
     </node>
     <node type="Array(1+void*)" id="col_rts" pos="0.00;0.00" />
@@ -190,7 +190,6 @@
         <data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
       </datas>
     </node>
-    <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
   </nodes>
   <links>
     <link out="rt_dst.first_image" in="dst_props.in" />
@@ -260,8 +259,5 @@
     <link out="ds.out" in="ds_wrt.set" />
     <link out="img_white.out" in="ds_wrt.v" />
     <link out="img_count.out" in="ds_wrt.count" />
-    <link out="rnf.rp" in="make_cmd.renderpass" />
-    <link out="rnf.fbs" in="make_cmd.framebuffers" />
-    <link out="rnf.cv" in="make_cmd.clearvalues" />
   </links>
 </BP>

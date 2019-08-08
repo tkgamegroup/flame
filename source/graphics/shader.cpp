@@ -324,7 +324,7 @@ namespace flame
 			AttributeV<uint> count$i;
 
 			int frame;
-			void* created_view;
+			AttributeP<void> iv$o;
 
 			FLAME_GRAPHICS_EXPORTS ImageDescriptorWrite$() :
 				frame(-1)
@@ -336,10 +336,10 @@ namespace flame
 			{
 				if (set$i.frame > frame)
 				{
-					if (created_view)
+					if (iv$o.v)
 					{
-						Imageview::destroy((Imageview*)created_view);
-						created_view = nullptr;
+						Imageview::destroy((Imageview*)iv$o.v);
+						iv$o.v = nullptr;
 					}
 					auto d = (Device*)bp_environment().graphics_device;
 					if (d && set$i.v && v$i.v)
@@ -351,7 +351,7 @@ namespace flame
 						else
 						{
 							iv = Imageview::create((Image*)v$i.v);
-							created_view = iv;
+							iv$o.v = iv;
 						}
 						for (auto i = 0; i < count$i.v; i++)
 							((Descriptorset*)set$i.v)->set_image(binding$i.v, index$i.v + i, iv, d->sp_bi_linear);
@@ -359,13 +359,14 @@ namespace flame
 					else
 						printf("cannot write image descriptor\n");
 					frame = set$i.frame;
+					iv$o.frame = set$i.frame;
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~ImageDescriptorWrite$()
 			{
-				if (created_view)
-					Imageview::destroy((Imageview*)created_view);
+				if (iv$o.v)
+					Imageview::destroy((Imageview*)iv$o.v);
 			}
 		};
 

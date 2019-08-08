@@ -19,17 +19,17 @@ struct App
 	std::vector<Fence*> fences;
 	std::vector<void*> cbs;
 	BP* bp;
-	int bp_rt_frame;
+	int rt_frame;
 
 	void run()
 	{
 		auto sc = scr->sc();
 		auto sc_frame = scr->sc_frame();
 
-		if (sc_frame > bp_rt_frame)
+		if (sc_frame > rt_frame)
 		{
 			bp->find_input("rt_dst.v")->set_data_p(sc ? &sc->images() : nullptr);
-			bp_rt_frame = sc_frame;
+			rt_frame = sc_frame;
 		}
 		bp->update();
 
@@ -57,7 +57,7 @@ int main(int argc, char** args)
 		printf("bp not found, exit\n");
 		return 0;
 	}
-	app.bp_rt_frame = -1; // let render target pass to bp at 0 frame
+	app.rt_frame = -1; // let render target pass to bp at 0 frame
 
 	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
