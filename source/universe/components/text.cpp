@@ -6,43 +6,26 @@
 
 namespace flame
 {
-	struct cTextArchive$
+	struct cTextPrivate : cText
 	{
-		int font_atlas_index$;
-		Vec4c color$;
-		float sdf_scale$;
-	};
-
-	struct cText$Private : cText$
-	{
-		cElement$* element;
+		cElement* element;
 		std::wstring text;
 
-		cText$Private(void* data) :
+		cTextPrivate() :
 			element(nullptr)
 		{
-			if (!data)
-			{
-				font_atlas = nullptr;
-				color = default_style.text_color_normal;
-				sdf_scale = default_style.sdf_scale;
-			}
-			else
-			{
-				auto src = (cTextArchive$*)data;
-				font_atlas = nullptr; // TODO
-				color = src->color$;
-				sdf_scale = src->sdf_scale$;
-			}
+			font_atlas = nullptr;
+			color = default_style.text_color_normal;
+			sdf_scale = default_style.sdf_scale;
 		}
 
 		void on_attach()
 		{
-			element = (cElement$*)(entity->find_component(cH("Element")));
+			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
 		}
 
-		void update(float delta_time)
+		void update()
 		{
 			element->canvas()->add_text(font_atlas, Vec2f(element->global_x.v, element->global_y.v) + 
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale.v, 
@@ -50,42 +33,64 @@ namespace flame
 		}
 	};
 
-	cText$::~cText$()
+	cText::~cText()
 	{
 	}
 
-	const char* cText$::type_name() const
+#define NAME "Text"
+	const char* cText::type_name() const
 	{
-		return "Text";
+		return NAME;
 	}
 
-	uint cText$::type_hash() const
+	uint cText::type_hash() const
 	{
-		return cH("Text");
+		return cH(NAME);
+	}
+#undef NAME
+
+	void cText::on_attach()
+	{
+		((cTextPrivate*)this)->on_attach();
 	}
 
-	void cText$::on_attach()
+	void cText::update()
 	{
-		((cText$Private*)this)->on_attach();
+		((cTextPrivate*)this)->update();
 	}
 
-	void cText$::update(float delta_time)
+	const std::wstring& cText::text() const
 	{
-		((cText$Private*)this)->update(delta_time);
+		return ((cTextPrivate*)this)->text;
 	}
 
-	const std::wstring& cText$::text() const
+	void cText::set_text(const std::wstring& text)
 	{
-		return ((cText$Private*)this)->text;
+		((cTextPrivate*)this)->text = text;
 	}
 
-	void cText$::set_text(const std::wstring& text)
+	cText* cText::create()
 	{
-		((cText$Private*)this)->text = text;
+		return new cTextPrivate();
 	}
 
-	cText$* cText$::create$(void* data)
+	struct cTextA$
 	{
-		return new cText$Private(data);
-	}
+		uint font_atlas_index$;
+		Vec4c color$;
+		float sdf_scale$;
+
+		FLAME_UNIVERSE_EXPORTS static cText* create()
+		{
+			//font_atlas = nullptr; // TODO
+			//color = src->color$;
+			//sdf_scale = src->sdf_scale$;
+			return nullptr;
+		}
+
+		FLAME_UNIVERSE_EXPORTS static void save(cText* t)
+		{
+
+		}
+	};
 }

@@ -625,7 +625,7 @@ namespace flame
 			{
 				if (out$o.frame == -1)
 				{
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d)
 						out$o.v = Commandbuffer::create(d->gcp);
 					else
@@ -662,7 +662,7 @@ namespace flame
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && size$i.v > 0)
 					{
 						out$o.v.resize(size$i.v);

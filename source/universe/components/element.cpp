@@ -5,51 +5,48 @@
 
 namespace flame
 {
-	struct cElementPrivate : cElement$
+	struct cElementPrivate : cElement
 	{
 		cElementPrivate* p_element;
 		graphics::Canvas* canvas;
 
-		cElementPrivate(void* data) :
+		cElementPrivate() :
 			p_element(nullptr),
 			canvas(nullptr)
 		{
-			if (!data)
-			{
-				x.v = 0.f;
-				x.frame = 0;
-				y.v = 0.f;
-				y.frame = 0;
-				scale.v = 1.f;
-				scale.frame = 0;
-				width.v = 0.f;
-				width.frame = 0;
-				height.v = 0.f;
-				height.frame = 0;
-				global_x.v = 0.f;
-				global_x.frame = -1;
-				global_y.v = 0.f;
-				global_y.frame = -1;
-				global_scale.v = 0.f;
-				global_scale.frame = -1;
-				global_width.v = 0.f;
-				global_width.frame = -1;
-				global_height.v = 0.f;
-				global_height.frame = -1;
+			x.v = 0.f;
+			x.frame = 0;
+			y.v = 0.f;
+			y.frame = 0;
+			scale.v = 1.f;
+			scale.frame = 0;
+			width.v = 0.f;
+			width.frame = 0;
+			height.v = 0.f;
+			height.frame = 0;
+			global_x.v = 0.f;
+			global_x.frame = -1;
+			global_y.v = 0.f;
+			global_y.frame = -1;
+			global_scale.v = 0.f;
+			global_scale.frame = -1;
+			global_width.v = 0.f;
+			global_width.frame = -1;
+			global_height.v = 0.f;
+			global_height.frame = -1;
 
-				inner_padding = Vec4f(0.f);
-				layout_padding = 0.f;
+			inner_padding = Vec4f(0.f);
+			layout_padding = 0.f;
 
-				alpha = 1.f;
+			alpha = 1.f;
 
-				background_offset = Vec4f(0.f);
-				background_round_radius = 0.f;
-				background_round_flags = 0;
-				background_frame_thickness = 0.f;
-				background_color = Vec4c(0);
-				background_frame_color = Vec4c(255);
-				background_shadow_thickness = 0.f;
-			}
+			background_offset = Vec4f(0.f);
+			background_round_radius = 0.f;
+			background_round_flags = 0;
+			background_frame_thickness = 0.f;
+			background_color = Vec4c(0);
+			background_frame_color = Vec4c(255);
+			background_shadow_thickness = 0.f;
 		}
 
 		void on_attach()
@@ -67,7 +64,7 @@ namespace flame
 
 			while (e)
 			{
-				auto c = (cUI$*)(e->find_component(cH("UI")));
+				auto c = (cUI*)(e->find_component(cH("UI")));
 				if (c)
 				{
 					canvas = c->canvas();
@@ -77,7 +74,7 @@ namespace flame
 			}
 		}
 
-		void update(float delta_time)
+		void update()
 		{
 			if (!p_element)
 			{
@@ -139,37 +136,39 @@ namespace flame
 		}
 	};
 
-	cElement$::~cElement$()
+	cElement::~cElement()
 	{
 	}
 
-	const char* cElement$::type_name() const
+#define NAME "Element"
+	const char* cElement::type_name() const
 	{
-		return "Element";
+		return NAME;
 	}
 
-	uint cElement$::type_hash() const
+	uint cElement::type_hash() const
 	{
-		return cH("Element");
+		return cH(NAME);
 	}
+#undef NAME
 
-	void cElement$::on_attach()
+	void cElement::on_attach()
 	{
 		((cElementPrivate*)this)->on_attach();
 	}
 
-	void cElement$::update(float delta_time)
+	void cElement::update()
 	{
-		((cElementPrivate*)this)->update(delta_time);
+		((cElementPrivate*)this)->update();
 	}
 
-	graphics::Canvas* cElement$::canvas() const
+	graphics::Canvas* cElement::canvas() const
 	{
 		return ((cElementPrivate*)this)->canvas;
 	}
 
-	cElement$* cElement$::create$(void* data)
+	cElement* cElement::create()
 	{
-		return new cElementPrivate(data);
+		return new cElementPrivate();
 	}
 }

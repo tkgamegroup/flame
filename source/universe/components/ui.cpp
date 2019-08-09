@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	struct cUIPrivate : cUI$
+	struct cUIPrivate : cUI
 	{
 		graphics::Canvas* canvas;
 		Window* window;
@@ -20,14 +20,43 @@ namespace flame
 		Vec2i f_mdisp;
 		int f_mscroll;
 
-		cUIPrivate(void* data) :
-			canvas(nullptr)
+		cUIPrivate(graphics::Canvas* canvas, Window* window) :
+			canvas(canvas),
+			window(window)
 		{
 			hovering = nullptr;
 			focusing = nullptr;
+
+			mouse_pos = Vec2i(0);
+			mouse_pos_prev = Vec2i(0);
+			mouse_disp = Vec2i(0);
+			mouse_scroll = 0;
+
+			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
+				mouse_buttons[i] = KeyStateUp;
+
+			if (window)
+			{
+				window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = *(cUIPrivate * *)c;
+
+					if (action == KeyStateNull)
+					{
+						if (key == Mouse_Middle)
+							thiz->mouse_scroll = pos.x();
+						else if (key == Mouse_Null)
+							thiz->mouse_pos = pos;
+					}
+					else
+					{
+						thiz->mouse_buttons[key] = action | KeyStateJust;
+						thiz->mouse_pos = pos;
+					}
+				}, new_mail_p(this));
+			}
 		}
 
-		void update(float delta_time)
+		void update()
 		{
 			mouse_disp = mouse_pos - mouse_pos_prev;
 
@@ -65,7 +94,7 @@ namespace flame
 				if (thiz->f_all_done)
 					return;
 
-				auto w = (cWidget$*)e->find_component(cH("Widget"));
+				auto w = (cWidget*)e->find_component(cH("Widget"));
 				if (w)
 				{
 					auto mhover = w->contains(thiz->f_mpos);
@@ -109,74 +138,36 @@ namespace flame
 			mouse_pos_prev = mouse_pos;
 			mouse_scroll = 0;
 		}
-
-		void setup(graphics::Canvas* _canvas, Window* _window)
-		{
-			canvas = _canvas;
-			window = _window;
-
-			mouse_pos = Vec2i(0);
-			mouse_pos_prev = Vec2i(0);
-			mouse_disp = Vec2i(0);
-			mouse_scroll = 0;
-
-			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
-				mouse_buttons[i] = KeyStateUp;
-
-			if (window)
-			{
-				auto thiz = this;
-				window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i & pos) {
-					auto thiz = *((cUIPrivate**)c);
-
-					if (action == KeyStateNull)
-					{
-						if (key == Mouse_Middle)
-							thiz->mouse_scroll = pos.x();
-						else if (key == Mouse_Null)
-							thiz->mouse_pos = pos;
-					}
-					else
-					{
-						thiz->mouse_buttons[key] = action | KeyStateJust;
-						thiz->mouse_pos = pos;
-					}
-				}, new_mail(&thiz));
-			}
-		}
 	};
 
-	cUI$::~cUI$()
+	cUI::~cUI()
 	{
 	}
 
-	const char* cUI$::type_name() const
+#define NAME "UI"
+	const char* cUI::type_name() const
 	{
-		return "UI";
+		return NAME;
 	}
 
-	uint cUI$::type_hash() const
+	uint cUI::type_hash() const
 	{
-		return cH("UI");
+		return cH(NAME);
+	}
+#undef NAME
+
+	void cUI::update()
+	{
+		((cUIPrivate*)this)->update();
 	}
 
-	void cUI$::update(float delta_time)
-	{
-		((cUIPrivate*)this)->update(delta_time);
-	}
-
-	graphics::Canvas* cUI$::canvas() const
+	graphics::Canvas* cUI::canvas() const
 	{
 		return ((cUIPrivate*)this)->canvas;
 	}
 
-	void cUI$::setup(graphics::Canvas* canvas, Window* window)
+	cUI* cUI::create(graphics::Canvas* canvas, Window* window)
 	{
-		((cUIPrivate*)this)->setup(canvas, window);
-	}
-
-	cUI$* cUI$::create$(void* data)
-	{
-		return new cUIPrivate(data);
+		return new cUIPrivate(canvas, window);
 	}
 }

@@ -402,19 +402,15 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS SerializableNode* node(int idx) const;
 		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name);
 
-		FLAME_FOUNDATION_EXPORTS Mail<std::string> to_string_xml() const;
-		FLAME_FOUNDATION_EXPORTS Mail<std::string> to_string_json() const;
-		FLAME_FOUNDATION_EXPORTS void save_xml(const std::wstring& filename) const;
-		FLAME_FOUNDATION_EXPORTS void save_json(const std::wstring& filename) const;
-
-		FLAME_FOUNDATION_EXPORTS void serialize(UdtInfo* u, void* src, int precision = 6);
-		FLAME_FOUNDATION_EXPORTS void unserialize(UdtInfo* u, void* dst);
-
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create(const std::string& name);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_string(const std::string& str);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_xml_string(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_json_string(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS static void save_to_xml_file(SerializableNode* n, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void save_to_json_file(SerializableNode* n, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
 	};
 

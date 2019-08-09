@@ -247,18 +247,6 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void ImagePrivate::save_png(const std::wstring& filename)
-		{
-			if (bpp_ / channel_ <= 8)
-			{
-				auto bmp = Bitmap::create(size, channel_, bpp_);
-				get_pixels(0, 0, -1, -1, bmp->data);
-				bmp->save(filename);
-			}
-			else
-				printf("cannot save png that has more than 8bit per channel\n");
-		}
-
 		void Image::init(const Vec4c &col)
 		{
 			((ImagePrivate*)this)->init(col);
@@ -272,11 +260,6 @@ namespace flame
 		void Image::set_pixels(uint x, uint y, int cx, int cy, const void *src)
 		{
 			((ImagePrivate*)this)->set_pixels(x, y, cx, cy, src);
-		}
-
-		void Image::save_png(const std::wstring& filename)
-		{
-			((ImagePrivate*)this)->save_png(filename);
 		}
 
 		Image *Image::create(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void *data)
@@ -427,6 +410,18 @@ namespace flame
 			return i;
 		}
 
+		void Image::save_to_png(Image* i, const std::wstring& filename)
+		{
+			if (i->bpp_ / i->channel_ <= 8)
+			{
+				auto bmp = Bitmap::create(i->size, i->channel_, i->bpp_);
+				i->get_pixels(0, 0, -1, -1, bmp->data);
+				bmp->save(filename);
+			}
+			else
+				printf("cannot save png that has more than 8bit per channel\n");
+		}
+
 		Image *Image::create_from_native(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, void *native)
 		{
 			return new ImagePrivate(d, format, size, level, layer, native);
@@ -465,7 +460,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Image::destroy((Image*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && format$i.v != Format_Undefined && size$i.v.x() > 0 && size$i.v.y() > 0 && level$i.v > 0 && layer$i.v > 0)
 					{
 						out$o.v = Image::create(d, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);

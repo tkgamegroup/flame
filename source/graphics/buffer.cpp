@@ -175,7 +175,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Buffer::destroy((Buffer*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && size$i.v > 0 && usage$im.v > 0 && mem_prop$im.v > 0)
 						out$o.v = Buffer::create(d, size$i.v, usage$im.v, mem_prop$im.v);
 					else

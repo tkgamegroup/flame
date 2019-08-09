@@ -254,7 +254,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Renderpass::destroy((Renderpass*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (attachments$i.v && !attachments$i.v->empty() && subpasses$i.v && !subpasses$i.v->empty())
 					{
 						auto ok = true;
@@ -460,7 +460,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Framebuffer::destroy((Framebuffer*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && renderpass$i.v && views$i.v && !views$i.v->empty())
 						out$o.v = Framebuffer::create(d, (Renderpass*)renderpass$i.v, *views$i.v);
 					else
@@ -690,7 +690,7 @@ namespace flame
 				{
 					if (out$o.v)
 						RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					auto ok = false;
 					if (passes$i.v && !passes$i.v->empty())
 					{

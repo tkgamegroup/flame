@@ -78,7 +78,7 @@ namespace flame
 			callback(capture.p, this);
 		}
 
-		void update(float delta_time)
+		void update()
 		{
 			if (!parent)
 			{
@@ -96,9 +96,9 @@ namespace flame
 			if (!global_visible.v)
 				return;
 			for (auto& c : components)
-				c->update(delta_time);
+				c->update();
 			for (auto& e : children)
-				e->update(delta_time);
+				e->update();
 		}
 	};
 
@@ -169,9 +169,9 @@ namespace flame
 		delete_mail(capture);
 	}
 
-	void Entity::update(float delta_time)
+	void Entity::update()
 	{
-		((EntityPrivate*)this)->update(delta_time);
+		((EntityPrivate*)this)->update();
 	}
 
 	static void serialize(EntityPrivate* src, SerializableNode* dst)
@@ -182,11 +182,10 @@ namespace flame
 		for (auto& c : src->components)
 		{
 			std::string type_name = c->type_name();
-			auto u_c = find_udt(H(type_name.c_str()));
-			auto u_a = find_udt(H((type_name + "Archive").c_str()));
-			if (u_c)
+			auto udt = find_udt(H((type_name + "A").c_str()));
+			if (udt)
 			{
-				auto create_func = u_c->find_function("create");
+				auto create_func = udt->find_function("create");
 				if (create_func)
 					int cut = 1;
 			}
@@ -198,23 +197,22 @@ namespace flame
 
 	}
 
-	void Entity::load(const std::wstring& filename)
-	{
-		auto file = SerializableNode::create_from_xml_file(filename);
-		if (!file || file->name() != "node")
-			return;
-
-
-	}
-
-	void Entity::save(const std::wstring& filename)
-	{
-
-	}
-
 	Entity* Entity::create()
 	{
 		return new EntityPrivate;
+	}
+
+	Entity* Entity::create_from_file(const std::wstring& filename)
+	{
+		auto file = SerializableNode::create_from_xml_file(filename);
+		if (!file || file->name() != "node")
+			return nullptr;
+		return nullptr;
+	}
+
+	void Entity::save_to_file(Entity* e, const std::wstring& filename)
+	{
+
 	}
 
 	void Entity::destroy(Entity* w)

@@ -4,9 +4,9 @@
 
 namespace flame
 {
-	struct cWidgetPrivate : cWidget$
+	struct cWidgetPrivate : cWidget
 	{
-		cElement$* element;
+		cElement* element;
 
 		//Array<Function<FoucusListenerParm>> focus_listeners$;
 		//Array<Function<KeyListenerParm>> key_listeners$;
@@ -15,7 +15,7 @@ namespace flame
 		//Array<Function<ChangedListenerParm>> changed_listeners$;
 		//Array<Function<ChildListenerParm>> child_listeners$;
 
-		cWidgetPrivate(void* data) :
+		cWidgetPrivate() :
 			element(nullptr)
 		{
 			blackhole = false;
@@ -31,11 +31,11 @@ namespace flame
 
 		void on_attach()
 		{
-			element = (cElement$*)(entity->component(cH("Element")));
+			element = (cElement*)(entity->component(cH("Element")));
 			assert(element);
 		}
 
-		void update(float delta_time)
+		void update()
 		{
 		}
 
@@ -45,37 +45,39 @@ namespace flame
 		}
 	};
 
-	cWidget$::~cWidget$()
+	cWidget::~cWidget()
 	{
 	}
 
-	const char* cWidget$::type_name() const
+#define NAME "Widget"
+	const char* cWidget::type_name() const
 	{
-		return "Widget";
+		return NAME;
 	}
 
-	uint cWidget$::type_hash() const
+	uint cWidget::type_hash() const
 	{
-		return cH("Widget");
+		return cH(NAME);
 	}
+#undef NAME
 
-	void cWidget$::on_attach()
+	void cWidget::on_attach()
 	{
 		((cWidgetPrivate*)this)->on_attach();
 	}
 
-	void cWidget$::update(float delta_time)
+	void cWidget::update()
 	{
-		((cWidgetPrivate*)this)->update(delta_time);
+		((cWidgetPrivate*)this)->update();
 	}
 
-	bool cWidget$::contains(const Vec2f& pos) const
+	bool cWidget::contains(const Vec2f& pos) const
 	{
 		return ((cWidgetPrivate*)this)->contains(pos);
 	}
 
-	cWidget$* cWidget$::create$(void* data)
+	cWidget* cWidget::create()
 	{
-		return new cWidgetPrivate(data);
+		return new cWidgetPrivate();
 	}
 }

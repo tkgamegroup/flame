@@ -106,13 +106,12 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update();
 
-		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
-
 		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename, bool no_compile = false);
+		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
 
-	FLAME_FOUNDATION_EXPORTS const BP::Environment& bp_environment();
+	FLAME_FOUNDATION_EXPORTS const BP::Environment& bp_env();
 
 	// basic nodes are available after calling typeinfo_init_basic_bp_nodes or loading from file
 	// they are:

@@ -29,12 +29,11 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 		FLAME_UNIVERSE_EXPORTS void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 
-		FLAME_UNIVERSE_EXPORTS void update(float delta_time);
-
-		FLAME_UNIVERSE_EXPORTS void load(const std::wstring& filename);
-		FLAME_UNIVERSE_EXPORTS void save(const std::wstring& filename);
+		FLAME_UNIVERSE_EXPORTS void update();
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
+		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(const std::wstring& filename);
+		FLAME_UNIVERSE_EXPORTS static void save_to_file(Entity* e, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};
 }

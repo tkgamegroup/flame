@@ -163,7 +163,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d)
 						out$o.v = Descriptorlayout::create(d, bindings$i.v ? *bindings$i.v : std::vector<void*>());
 					else
@@ -294,7 +294,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Descriptorset::destroy((Descriptorset*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && dsl$i.v)
 						out$o.v = Descriptorset::create(d->dp, (Descriptorlayout*)dsl$i.v);
 					else
@@ -341,7 +341,7 @@ namespace flame
 						Imageview::destroy((Imageview*)iv$o.v);
 						iv$o.v = nullptr;
 					}
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && set$i.v && v$i.v)
 					{
 						Imageview* iv = nullptr;
@@ -452,7 +452,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && descriptorlayouts$i.v && !descriptorlayouts$i.v->empty())
 						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v, H(push_constant_udt_name$i.v.c_str()));
 					else
@@ -1122,9 +1122,9 @@ namespace flame
 				{
 					if (out$o.v)
 						Shader::destroy((Shader*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d)
-						out$o.v = Shader::create(d, bp_environment().path + L"/" + filename$i.v, prefix$i.v, inputs$i.v, outputs$i.v, (Pipelinelayout*)pll$i.v, autogen_code$i.v);
+						out$o.v = Shader::create(d, bp_env().path + L"/" + filename$i.v, prefix$i.v, inputs$i.v, outputs$i.v, (Pipelinelayout*)pll$i.v, autogen_code$i.v);
 					else
 					{
 						printf("cannot create shader\n");
@@ -1436,7 +1436,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
-					auto d = (Device*)bp_environment().graphics_device;
+					auto d = (Device*)bp_env().graphics_device;
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && pll$i.v)
 						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v, 
 						(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, outputs$i.v  ? *outputs$i.v : std::vector<void*>(), dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());

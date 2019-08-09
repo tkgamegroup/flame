@@ -33,13 +33,10 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void get_pixels(uint x, uint y, int cx/* -1 means whole */, int cy/* -1 means whole */, void* dst);
 			FLAME_GRAPHICS_EXPORTS void set_pixels(uint x, uint y, int cx/* -1 means whole */, int cy/* -1 means whole */, const void* src);
 
-			FLAME_GRAPHICS_EXPORTS void save_png(const std::wstring& filename);
-
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void* data = nullptr);
-			// default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, ImageUsage$ extra_usage = ImageUsage$(0));
-			// default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const std::wstring& filename, ImageUsage$ extra_usage = ImageUsage$(0));
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, ImageUsage$ extra_usage = ImageUsage$(0)); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const std::wstring& filename, ImageUsage$ extra_usage = ImageUsage$(0)); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static void save_to_png(Image *i, const std::wstring& filename);
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native);
 
 			FLAME_GRAPHICS_EXPORTS static void destroy(Image* i);

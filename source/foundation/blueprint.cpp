@@ -8,7 +8,7 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
-	static BP::Environment bp_env;
+	static BP::Environment _bp_env;
 
 	struct SlotPrivate : BP::Slot
 	{
@@ -95,8 +95,6 @@ namespace flame
 		void build_update_list();
 
 		void update();
-
-		void save(const std::wstring& filename);
 	};
 
 	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
@@ -512,77 +510,14 @@ namespace flame
 			return;
 		}
 
-		bp_env.path = std::fs::path(filename).parent_path().wstring();
-		bp_env.graphics_device = graphics_device;
+		_bp_env.path = std::fs::path(filename).parent_path().wstring();
+		_bp_env.graphics_device = graphics_device;
 
 		for (auto &n : update_list)
 			n->update();
 
-		bp_env.path = L"";
-		bp_env.graphics_device = nullptr;
-	}
-
-	void BPPrivate::save(const std::wstring& _filename)
-	{
-		filename = _filename;
-
-		auto file = SerializableNode::create("BP");
-
-		if (!dependencies.empty())
-		{
-			auto n_dependencies = file->new_node("dependencies");
-			for (auto& d : dependencies)
-				n_dependencies->new_node("dependency")->new_attr("v", (w2s(d.filename)));
-		}
-
-		auto n_nodes = file->new_node("nodes");
-		for (auto& n : nodes)
-		{
-			auto n_node = n_nodes->new_node("node");
-			n_node->new_attr("type", n->udt->name());
-			n_node->new_attr("id", n->id);
-			n_node->new_attr("pos", to_string(n->pos, 2));
-
-			SerializableNode* n_datas = nullptr;
-			for (auto& input : n->inputs)
-			{
-				if (input->links[0])
-					continue;
-				auto v = input->variable_info;
-				auto type = v->type();
-				if (v->default_value() && memcmp((char*)input->raw_data + sizeof(int), (char*)v->default_value() + sizeof(int), v->size() - sizeof(int)) != 0)
-				{
-					if (!n_datas)
-						n_datas = n_node->new_node("datas");
-					auto n_data = n_datas->new_node("data");
-					n_data->new_attr("name", v->name());
-					auto value = serialize_value(type->tag(), type->hash(), input->raw_data, 2);
-					n_data->new_attr("value", *value.p);
-					delete_mail(value);
-				}
-			}
-		}
-
-		auto n_links = file->new_node("links");
-		for (auto& n : nodes)
-		{
-			for (auto& input : n->inputs)
-			{
-				if (input->links[0])
-				{
-					auto n_link = n_links->new_node("link");
-					auto out_addr = input->links[0]->get_address();
-					auto in_addr = input->get_address();
-					n_link->new_attr("out", *out_addr.p);
-					n_link->new_attr("in", *in_addr.p);
-					delete_mail(out_addr);
-					delete_mail(in_addr);
-				}
-			}
-		}
-
-		file->save_xml(filename);
-		SerializableNode::destroy(file);
+		_bp_env.path = L"";
+		_bp_env.graphics_device = nullptr;
 	}
 
 	int BP::Slot::frame() const
@@ -753,11 +688,6 @@ namespace flame
 	void BP::update()
 	{
 		((BPPrivate*)this)->update();
-	}
-
-	void BP::save(const std::wstring& filename)
-	{
-		((BPPrivate*)this)->save(filename);
 	}
 
 	BP *BP::create_from_file(const std::wstring& filename, bool no_compile)
@@ -1002,14 +932,79 @@ namespace flame
 		return bp;
 	}
 
+	void BP::save_to_file(BP* _bp, const std::wstring& filename)
+	{
+		auto bp = (BPPrivate*)_bp;
+
+		bp->filename = filename;
+
+		auto file = SerializableNode::create("BP");
+
+		if (!bp->dependencies.empty())
+		{
+			auto n_dependencies = file->new_node("dependencies");
+			for (auto& d : bp->dependencies)
+				n_dependencies->new_node("dependency")->new_attr("v", (w2s(d.filename)));
+		}
+
+		auto n_nodes = file->new_node("nodes");
+		for (auto& n : bp->nodes)
+		{
+			auto n_node = n_nodes->new_node("node");
+			n_node->new_attr("type", n->udt->name());
+			n_node->new_attr("id", n->id);
+			n_node->new_attr("pos", to_string(n->pos, 2));
+
+			SerializableNode* n_datas = nullptr;
+			for (auto& input : n->inputs)
+			{
+				if (input->links[0])
+					continue;
+				auto v = input->variable_info;
+				auto type = v->type();
+				if (v->default_value() && memcmp((char*)input->raw_data + sizeof(int), (char*)v->default_value() + sizeof(int), v->size() - sizeof(int)) != 0)
+				{
+					if (!n_datas)
+						n_datas = n_node->new_node("datas");
+					auto n_data = n_datas->new_node("data");
+					n_data->new_attr("name", v->name());
+					auto value = serialize_value(type->tag(), type->hash(), input->raw_data, 2);
+					n_data->new_attr("value", *value.p);
+					delete_mail(value);
+				}
+			}
+		}
+
+		auto n_links = file->new_node("links");
+		for (auto& n : bp->nodes)
+		{
+			for (auto& input : n->inputs)
+			{
+				if (input->links[0])
+				{
+					auto n_link = n_links->new_node("link");
+					auto out_addr = input->links[0]->get_address();
+					auto in_addr = input->get_address();
+					n_link->new_attr("out", *out_addr.p);
+					n_link->new_attr("in", *in_addr.p);
+					delete_mail(out_addr);
+					delete_mail(in_addr);
+				}
+			}
+		}
+
+		SerializableNode::save_to_xml_file(file, filename);
+		SerializableNode::destroy(file);
+	}
+
 	void BP::destroy(BP *bp)
 	{
 		delete(BPPrivate*)bp;
 	}
 
-	const BP::Environment& bp_environment()
+	const BP::Environment& bp_env()
 	{
-		return bp_env;
+		return _bp_env;
 	}
 }
 

@@ -164,7 +164,7 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
-			root->update(app_delta_time());
+			root->update();
 
 			auto img_idx = sc->image_index();
 			auto cb = cbs[img_idx];
@@ -203,24 +203,18 @@ int main(int argc, char** args)
 	app.canvas->set_image(app.font_atlas2->index, font_atlas_view2);
 
 	app.root = Entity::create();
-	auto ui = cUI$::create$(nullptr);
-	ui->setup(app.canvas, app.w);
-	app.root->add_component(ui);
+	auto c_ui = cUI::create(app.canvas, app.w);
+	app.root->add_component(c_ui);
 
-	auto bg = Entity::create();
-	auto wBackground = cElement$::create$(nullptr);
-	wBackground->width.v = 100.f;
-	wBackground->height.v = 100.f;
-	wBackground->background_color = Vec4c(255, 128, 128, 255);
-	bg->add_component(wBackground);
-
-	auto wFps = cText$::create$(nullptr);
-	wFps->font_atlas = app.font_atlas1;
-	wFps->color = Vec4c(0, 0, 0, 255);
-	wFps->set_text(L"QAQ");
-	bg->add_component(wFps);
-
-	app.root->add_child(bg);
+	auto e_fps = Entity::create();
+	app.root->add_child(e_fps);
+	auto c_element = cElement::create();
+	e_fps->add_component(c_element);
+	auto c_text = cText::create();
+	c_text->font_atlas = app.font_atlas1;
+	c_text->color = Vec4c(0, 0, 0, 255);
+	c_text->set_text(L"QAQ");
+	e_fps->add_component(c_text);
 
 	//t_fps = Element::createT<wText>(ui, font_atlas_index);
 	//t_fps->align$ = AlignLeftBottom;

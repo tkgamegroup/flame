@@ -858,48 +858,6 @@ namespace flame
 			}
 			return nullptr;
 		}
-
-		void serialize(UdtInfo* u, void* src, int precision)
-		{
-			for (auto i = 0; i < u->variable_count(); i++)
-			{
-				auto vari = u->variable(i);
-				auto type = vari->type();
-
-				auto tag = type->tag();
-				if (vari->default_value())
-				{
-					auto equal = false;
-					if (tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV)
-						equal = memcmp((char*)src + sizeof(int), (char*)vari->default_value() + sizeof(int), vari->size() - sizeof(int)) != 0;
-					else
-						equal = memcmp(src, vari->default_value(), vari->size()) != 0;
-					if (!equal)
-					{
-						auto n_item = new_node("item");
-						n_item->new_attr("name", vari->name());
-						auto str = serialize_value(type->tag(), type->hash(), src, precision);
-						n_item->new_attr("value", *str.p);
-						delete_mail(str);
-					}
-				}
-			}
-		}
-
-		void unserialize(UdtInfo* u, void* dst)
-		{
-			for (auto& n_item : nodes)
-			{
-				if (n_item->name != "item")
-					continue;
-
-				auto vari = u->find_variable(n_item->find_attr("name")->value());
-				auto type = vari->type();
-
-				if (vari->default_value())
-					unserialize_value(type->tag(), type->hash(), n_item->find_attr("value")->value(), dst);
-			}
-		}
 	};
 
 	const std::string& SerializableNode::name() const
@@ -1017,7 +975,51 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->find_node(name);
 	}
 
-	void to_xml(pugi::xml_node dst, SerializableNodePrivate * src)
+	static void from_xml(pugi::xml_node src, SerializableNode* dst)
+	{
+		for (auto& a : src.attributes())
+			dst->new_attr(a.name(), a.value());
+
+		dst->set_value(src.value());
+
+		for (auto& n : src.children())
+		{
+			auto node = dst->new_node(n.name());
+			if (n.type() == pugi::node_cdata)
+				node->set_type(SerializableNode::Cdata);
+			from_xml(n, node);
+		}
+	}
+
+	static void from_json(nlohmann::json::reference src, SerializableNode* dst)
+	{
+		if (src.is_object())
+		{
+			dst->set_type(SerializableNode::Object);
+			for (auto it = src.begin(); it != src.end(); ++it)
+			{
+				auto c = it.value();
+				if (!c.is_object() && !c.is_array())
+					dst->new_attr(it.key(), c.is_string() ? c.get<std::string>() : c.dump());
+				else
+				{
+					auto node = dst->new_node(it.key());
+					from_json(c, node);
+				}
+			}
+		}
+		else if (src.is_array())
+		{
+			dst->set_type(SerializableNode::Array);
+			for (auto& n : src)
+			{
+				auto node = dst->new_node("");
+				from_json(n, node);
+			}
+		}
+	}
+
+	static void to_xml(pugi::xml_node dst, SerializableNodePrivate* src)
 	{
 		for (auto& sa : src->attrs)
 			dst.append_attribute(sa->name.c_str()).set_value(sa->value.c_str());
@@ -1040,28 +1042,6 @@ namespace flame
 			}
 			to_xml(n, sn.get());
 		}
-	}
-
-	Mail<std::string> SerializableNode::to_string_xml() const
-	{
-		pugi::xml_document doc;
-		auto rn = doc.append_child(name().c_str());
-
-		to_xml(rn, (SerializableNodePrivate*)this);
-
-		struct xml_string_writer : pugi::xml_writer
-		{
-			std::string result;
-
-			virtual void write(const void* data, size_t size)
-			{
-				result.append(static_cast<const char*>(data), size);
-			}
-		};
-		xml_string_writer writer;
-		doc.print(writer);
-
-		return new_mail(&writer.result);
 	}
 
 	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
@@ -1088,75 +1068,12 @@ namespace flame
 		}
 	}
 
-	Mail<std::string> SerializableNode::to_string_json() const
-	{
-		nlohmann::json doc;
-
-		to_json(doc, (SerializableNodePrivate*)this);
-
- 		return new_mail(&doc.dump());
-	}
-
-	void SerializableNode::save_xml(const std::wstring & filename) const
-	{
-		pugi::xml_document doc;
-		auto rn = doc.append_child(name().c_str());
-
-		to_xml(rn, (SerializableNodePrivate*)this);
-
-		doc.save_file(filename.c_str());
-	}
-
-	void SerializableNode::save_json(const std::wstring& filename) const
-	{
-		std::ofstream file(filename);
-		nlohmann::json doc;
-
-		to_json(doc, (SerializableNodePrivate*)this);
-
-		file << doc.dump(2);
-		file.close();
-	}
-
-	static void save_file_string(std::ofstream & dst, const std::string & src)
-	{
-		int len = src.size();
-		dst.write((char*)& len, sizeof(int));
-		dst.write((char*)src.c_str(), len);
-	}
-
-	void SerializableNode::serialize(UdtInfo* u, void* src, int precision)
-	{
-		((SerializableNodePrivate*)this)->serialize(u, src, precision);
-	}
-
-	void SerializableNode::unserialize(UdtInfo * u, void* dst)
-	{
-		((SerializableNodePrivate*)this)->unserialize(u, dst);
-	}
-
 	SerializableNode* SerializableNode::create(const std::string & name)
 	{
 		auto n = new SerializableNodePrivate;
 		n->name = name;
 
 		return n;
-	}
-
-	static void from_xml(pugi::xml_node src, SerializableNode * dst)
-	{
-		for (auto& a : src.attributes())
-			dst->new_attr(a.name(), a.value());
-
-		dst->set_value(src.value());
-
-		for (auto& n : src.children())
-		{
-			auto node = dst->new_node(n.name());
-			if (n.type() == pugi::node_cdata)
-				node->set_type(SerializableNode::Cdata);
-			from_xml(n, node);
-		}
 	}
 
 	SerializableNode* SerializableNode::create_from_xml_string(const std::string & str)
@@ -1191,34 +1108,6 @@ namespace flame
 		return n;
 	}
 
-	static void from_json(nlohmann::json::reference src, SerializableNode* dst)
-	{
-		if (src.is_object())
-		{
-			dst->set_type(SerializableNode::Object);
-			for (auto it = src.begin(); it != src.end(); ++it)
-			{
-				auto c = it.value();
-				if (!c.is_object() && !c.is_array())
-					dst->new_attr(it.key(), c.is_string() ? c.get<std::string>() : c.dump());
-				else
-				{
-					auto node = dst->new_node(it.key());
-					from_json(c, node);
-				}
-			}
-		}
-		else if (src.is_array())
-		{
-			dst->set_type(SerializableNode::Array);
-			for (auto& n : src)
-			{
-				auto node = dst->new_node("");
-				from_json(n, node);
-			}
-		}
-	}
-
 	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)
 	{
 		auto doc = nlohmann::json::parse(str);
@@ -1237,6 +1126,58 @@ namespace flame
 			return nullptr;
 
 		return create_from_json_string(str);
+	}
+
+	Mail<std::string> SerializableNode::to_xml_string(SerializableNode* n)
+	{
+		pugi::xml_document doc;
+		auto rn = doc.append_child(n->name().c_str());
+
+		to_xml(rn, (SerializableNodePrivate*)n);
+
+		struct xml_string_writer : pugi::xml_writer
+		{
+			std::string result;
+
+			virtual void write(const void* data, size_t size)
+			{
+				result.append(static_cast<const char*>(data), size);
+			}
+		};
+		xml_string_writer writer;
+		doc.print(writer);
+
+		return new_mail(&writer.result);
+	}
+
+	Mail<std::string> SerializableNode::to_json_string(SerializableNode* n)
+	{
+		nlohmann::json doc;
+
+		to_json(doc, (SerializableNodePrivate*)n);
+
+		return new_mail(&doc.dump());
+	}
+
+	void SerializableNode::save_to_xml_file(SerializableNode* n, const std::wstring& filename)
+	{
+		pugi::xml_document doc;
+		auto rn = doc.append_child(n->name().c_str());
+
+		to_xml(rn, (SerializableNodePrivate*)n);
+
+		doc.save_file(filename.c_str());
+	}
+
+	void SerializableNode::save_to_json_file(SerializableNode* n, const std::wstring& filename)
+	{
+		std::ofstream file(filename);
+		nlohmann::json doc;
+
+		to_json(doc, (SerializableNodePrivate*)n);
+
+		file << doc.dump(2);
+		file.close();
 	}
 
 	void SerializableNode::destroy(SerializableNode * n)
@@ -2148,7 +2089,7 @@ namespace flame
 			}
 		}
 
-		file->save_xml(filename);
+		SerializableNode::save_to_xml_file(file, filename);
 		SerializableNode::destroy(file);
 	}
 
