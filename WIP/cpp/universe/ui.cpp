@@ -516,30 +516,5 @@ namespace flame
 	//		add_text_stroke(Vec2(4.f, i.y) + wnd_off, Vec4(1.f), "%d", i.x * -100);
 	//	}
 	//}
-
-	graphics::Canvas* UI::canvas()
-	{
-		return ((UIPrivate*)this)->canvas;
-	}
-
-	Ivec2 UI::size() const
-	{
-		return Ivec2(((UIPrivate*)this)->root_->size$);
-	}
-
-	void UI::on_key(KeyState action, int value)
-	{
-		((UIPrivate*)this)->on_key(action, value);
-	}
-
-	void UI::on_mouse(KeyState action, MouseKey key, const Ivec2 & pos)
-	{
-		((UIPrivate*)this)->on_mouse(action, key, pos);
-	}
-
-	void UI::on_resize(const Ivec2 & size)
-	{
-		((UIPrivate*)this)->on_resize(size);
-	}
 }
 

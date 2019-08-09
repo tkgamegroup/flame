@@ -203,18 +203,24 @@ int main(int argc, char** args)
 	app.canvas->set_image(app.font_atlas2->index, font_atlas_view2);
 
 	app.root = Entity::create();
-	auto c_ui = cUI::create(app.canvas, app.w);
-	app.root->add_component(c_ui);
+	{
+		auto c_ui = cUI::create(app.canvas, app.w);
+		app.root->add_component(c_ui);
+	}
 
 	auto e_fps = Entity::create();
-	app.root->add_child(e_fps);
-	auto c_element = cElement::create();
-	e_fps->add_component(c_element);
-	auto c_text = cText::create();
-	c_text->font_atlas = app.font_atlas1;
-	c_text->color = Vec4c(0, 0, 0, 255);
-	c_text->set_text(L"QAQ");
-	e_fps->add_component(c_text);
+	{
+		auto c_element = cElement::create();
+		e_fps->add_component(c_element);
+
+		auto c_text = cText::create();
+		c_text->font_atlas = app.font_atlas1;
+		c_text->color = Vec4c(0, 0, 0, 255);
+		c_text->set_text(L"QAQ");
+		e_fps->add_component(c_text);
+
+		app.root->add_child(e_fps);
+	}
 
 	//t_fps = Element::createT<wText>(ui, font_atlas_index);
 	//t_fps->align$ = AlignLeftBottom;
