@@ -1,13 +1,12 @@
 #include <flame/foundation/window.h>
 #include <flame/universe/entity.h>
-#include <flame/universe/components/widget.h>
+#include <flame/universe/components/event.h>
 #include <flame/universe/components/ui.h>
 
 namespace flame
 {
 	struct cUIPrivate : cUI
 	{
-		graphics::Canvas* canvas;
 		Window* window;
 
 		Vec2i mouse_pos, mouse_pos_prev, mouse_disp;
@@ -20,8 +19,8 @@ namespace flame
 		Vec2i f_mdisp;
 		int f_mscroll;
 
-		cUIPrivate(graphics::Canvas* canvas, Window* window) :
-			canvas(canvas),
+		cUIPrivate(Entity* e, Window* window) :
+			cUI(e),
 			window(window)
 		{
 			hovering = nullptr;
@@ -70,20 +69,15 @@ namespace flame
 
 			if (focusing)
 			{
-				if (!focusing->entity->global_visible.v)
+				if (!focusing->entity->global_visible)
 				{
-					focusing->focusing.v = false;
-					focusing->focusing.frame = app_frame();
-					focusing->dragging.v = false;
-					focusing->dragging.frame = app_frame();
+					focusing->focusing = false;
+					focusing->dragging = false;
 					focusing = nullptr;
 				}
 				else if (!is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left))
-				{
-					focusing->dragging.v = false;
-					focusing->dragging.frame = app_frame();
-				}
-				else if (focusing->dragging.v && f_mdisp != 0)
+					focusing->dragging = false;
+				else if (focusing->dragging && f_mdisp != 0)
 					f_mdisp = Vec2i(0);
 			}
 
@@ -94,7 +88,7 @@ namespace flame
 				if (thiz->f_all_done)
 					return;
 
-				auto w = (cWidget*)e->find_component(cH("Widget"));
+				auto w = (cEvent*)e->find_component(cH("Event"));
 				if (w)
 				{
 					auto mhover = w->contains(thiz->f_mpos);
@@ -104,18 +98,12 @@ namespace flame
 						{
 							thiz->f_mljustdown = false;
 							thiz->focusing = w;
-							w->focusing.v = true;
-							w->focusing.frame = app_frame();
+							w->focusing = true;
 							if (mhover)
-							{
-								w->dragging.v = true;
-								w->dragging.frame = app_frame();
-							}
+								w->dragging = true;
 						}
 						if (thiz->f_mljustup)
-						{
 							thiz->f_mljustdown = false;
-						}
 					}
 
 					thiz->f_all_done = !thiz->f_mljustdown && !thiz->f_mljustup && 
@@ -125,10 +113,8 @@ namespace flame
 
 			if (focusing && f_mljustdown)
 			{
-				focusing->focusing.v = false;
-				focusing->focusing.frame = app_frame();
-				focusing->dragging.v = false;
-				focusing->dragging.frame = app_frame();
+				focusing->focusing = false;
+				focusing->dragging = false;
 				focusing = nullptr;
 			}
 
@@ -140,34 +126,22 @@ namespace flame
 		}
 	};
 
+	cUI::cUI(Entity* e) :
+		Component("UI", e)
+	{
+	}
+
 	cUI::~cUI()
 	{
 	}
-
-#define NAME "UI"
-	const char* cUI::type_name() const
-	{
-		return NAME;
-	}
-
-	uint cUI::type_hash() const
-	{
-		return cH(NAME);
-	}
-#undef NAME
 
 	void cUI::update()
 	{
 		((cUIPrivate*)this)->update();
 	}
 
-	graphics::Canvas* cUI::canvas() const
+	cUI* cUI::create(Entity* e, Window* window)
 	{
-		return ((cUIPrivate*)this)->canvas;
-	}
-
-	cUI* cUI::create(graphics::Canvas* canvas, Window* window)
-	{
-		return new cUIPrivate(canvas, window);
+		return new cUIPrivate(e, window);
 	}
 }

@@ -15,17 +15,15 @@ namespace flame
 		EntityPrivate() :
 			parent(nullptr)
 		{
-			visible.v = true;
-			visible.frame = 0;
-			global_visible.v = false;
-			global_visible.frame = -1;
+			visible = true;
+			global_visible = false;
 		}
 
 		Component* find_component(uint type_hash)
 		{
 			for (auto& c : components)
 			{
-				if (c->type_hash() == type_hash)
+				if (c->type_hash == type_hash)
 					return c.get();
 			}
 			return nullptr;
@@ -36,7 +34,7 @@ namespace flame
 			auto ret = new_mail<std::vector<Component*>>();
 			for (auto& c : components)
 			{
-				if (c->type_hash() == type_hash)
+				if (c->type_hash == type_hash)
 					ret.p->push_back(c.get());
 			}
 			return ret;
@@ -46,22 +44,21 @@ namespace flame
 		{
 			components.emplace_back(c);
 			c->entity = this;
-			c->on_attach();
 		}
 
 		void add_child(EntityPrivate* e)
 		{
 			children.emplace_back(e);
 			e->parent = this;
-			e->on_attach();
+			e->on_add_to_parent();
 		}
 
-		void on_attach()
+		void on_add_to_parent()
 		{
 			for (auto& c : components)
-				c->on_attach();
+				c->on_add_to_parent();
 			for (auto& e : children)
-				e->on_attach();
+				e->on_add_to_parent();
 		}
 
 		void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
@@ -81,19 +78,10 @@ namespace flame
 		void update()
 		{
 			if (!parent)
-			{
-				if (visible.frame > global_visible.frame)
-					global_visible = visible;
-			}
+				global_visible = visible;
 			else
-			{
-				if (visible.frame > global_visible.frame || parent->global_visible.frame > global_visible.frame)
-				{
-					global_visible.v = visible.v && parent->global_visible.v;
-					global_visible.frame = max(visible.frame, parent->global_visible.frame);
-				}
-			}
-			if (!global_visible.v)
+				global_visible = visible && parent->global_visible;
+			if (!global_visible)
 				return;
 			for (auto& c : components)
 				c->update();
@@ -177,11 +165,11 @@ namespace flame
 	static void serialize(EntityPrivate* src, SerializableNode* dst)
 	{
 		dst->new_attr("name", src->name);
-		dst->new_attr("visible", std::to_string((int)src->visible.v));
+		dst->new_attr("visible", std::to_string((int)src->visible));
 		auto n_components = dst->new_node("components");
 		for (auto& c : src->components)
 		{
-			std::string type_name = c->type_name();
+			std::string type_name = c->type_name;
 			auto udt = find_udt(H((type_name + "A").c_str()));
 			if (udt)
 			{

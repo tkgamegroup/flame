@@ -91,11 +91,6 @@ namespace flame
 
 		bool want_key_focus$;
 
-		bool visible$;
-
-		Vec2 global_pos; // vaild after instance processing
-		float global_scale; // vaild after instance processing
-
 		bool cliped; // valid after arranging by parent
 		int content_size; // valid after arranging
 		bool showed; // vaild after processing
@@ -106,9 +101,6 @@ namespace flame
 		int layer;
 		Flag flag;
 		bool need_arrange;
-
-		Array<Element*> children_1$;
-		Array<Element*> children_2$;
 
 		bool draw_default$;
 		FLAME_PACKAGE_BEGIN_4(ExtraDrawParm, ElementPtr, thiz, p, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1)

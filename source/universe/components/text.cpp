@@ -1,5 +1,4 @@
 #include <flame/graphics/canvas.h>
-#include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/default_style.h>
@@ -11,52 +10,33 @@ namespace flame
 		cElement* element;
 		std::wstring text;
 
-		cTextPrivate() :
+		cTextPrivate(Entity* e) :
+			cText(e),
 			element(nullptr)
 		{
 			font_atlas = nullptr;
 			color = default_style.text_color_normal;
 			sdf_scale = default_style.sdf_scale;
-		}
 
-		void on_attach()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
+			element = (cElement*)(e->find_component(cH("Element")));
 			assert(element);
 		}
 
 		void update()
 		{
-			element->canvas()->add_text(font_atlas, Vec2f(element->global_x.v, element->global_y.v) + 
-				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale.v, 
-				Vec4c(Vec3c(color), color.w() * element->alpha), text.c_str(), sdf_scale * element->global_scale.v);
+			element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) + 
+				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
+				Vec4c(Vec3c(color), color.w() * element->alpha), text.c_str(), sdf_scale * element->global_scale);
 		}
 	};
 
+	cText::cText(Entity* e) :
+		Component("Text", e)
+	{
+	}
+
 	cText::~cText()
 	{
-	}
-
-#define NAME "Text"
-	const char* cText::type_name() const
-	{
-		return NAME;
-	}
-
-	uint cText::type_hash() const
-	{
-		return cH(NAME);
-	}
-#undef NAME
-
-	void cText::on_attach()
-	{
-		((cTextPrivate*)this)->on_attach();
-	}
-
-	void cText::update()
-	{
-		((cTextPrivate*)this)->update();
 	}
 
 	const std::wstring& cText::text() const
@@ -69,9 +49,14 @@ namespace flame
 		((cTextPrivate*)this)->text = text;
 	}
 
-	cText* cText::create()
+	void cText::update()
 	{
-		return new cTextPrivate();
+		((cTextPrivate*)this)->update();
+	}
+
+	cText* cText::create(Entity* e)
+	{
+		return new cTextPrivate(e);
 	}
 
 	struct cTextA$

@@ -9,8 +9,8 @@ namespace flame
 
 	struct Entity
 	{
-		AttributeV<bool> visible;
-		AttributeV<bool> global_visible;
+		bool visible;
+		bool global_visible;
 
 		FLAME_UNIVERSE_EXPORTS const std::string& name() const;
 		FLAME_UNIVERSE_EXPORTS void set_name(const std::string& name) const;

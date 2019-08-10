@@ -1,7 +1,6 @@
 #pragma once
 
-#include <flame/type.h>
-#include <flame/universe/universe.h>
+#include <flame/universe/entity.h>
 
 namespace flame
 {
@@ -9,16 +8,21 @@ namespace flame
 
 	struct Component
 	{
+		const char* type_name;
+		const uint type_hash;
+
 		Entity* entity;
 
+		Component(const char* name, Entity* e) :
+			type_name(name),
+			type_hash(H(name))
+		{
+			e->add_component(this);
+		}
+
 		virtual ~Component() {};
-
-		virtual const char* type_name() const = 0;
-		virtual uint type_hash() const = 0;
-
-		virtual void on_attach() {}
-
-		virtual void update() = 0;
+		virtual void on_add_to_parent() {}
+		virtual void update() {};
 	};
 
 	// each component type should has a type for serialization

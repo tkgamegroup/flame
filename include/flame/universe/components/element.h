@@ -1,6 +1,5 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -16,7 +15,7 @@ namespace flame
 				   |	              top inner padding
 				   |			****************************
 				   |	 left   *                          *  right
-			size.y() |	 inner  *          content         *  inner
+		  size.y() |	 inner  *          content         *  inner
 				   |	padding *                          * padding
 				   |	        ****************************
 				   |			     bottom inner padding
@@ -24,17 +23,17 @@ namespace flame
 
 	struct cElement : Component
 	{
-		AttributeV<float> x;
-		AttributeV<float> y;
-		AttributeV<float> scale;
-		AttributeV<float> width;
-		AttributeV<float> height;
+		float x;
+		float y;
+		float scale;
+		float width;
+		float height;
 
-		AttributeV<float> global_x;
-		AttributeV<float> global_y;
-		AttributeV<float> global_scale;
-		AttributeV<float> global_width;
-		AttributeV<float> global_height;
+		float global_x;
+		float global_y;
+		float global_scale;
+		float global_width;
+		float global_height;
 
 		Vec4f inner_padding; // L T R B
 		float layout_padding;
@@ -49,17 +48,15 @@ namespace flame
 		Vec4c background_frame_color;
 		float background_shadow_thickness;
 
+		graphics::Canvas* canvas;
+
+		FLAME_UNIVERSE_EXPORTS cElement(Entity* e);
 		FLAME_UNIVERSE_EXPORTS virtual ~cElement() override;
 
-		FLAME_UNIVERSE_EXPORTS virtual const char* type_name() const override;
-		FLAME_UNIVERSE_EXPORTS virtual uint type_hash() const override;
-
-		FLAME_UNIVERSE_EXPORTS virtual void on_attach() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS graphics::Canvas* canvas() const;
-
-		FLAME_UNIVERSE_EXPORTS static cElement* create();
+		FLAME_UNIVERSE_EXPORTS static cElement* create(Entity* e, graphics::Canvas* canvas = nullptr);
 	};
 }

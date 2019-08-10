@@ -273,10 +273,6 @@ namespace flame
 			cb = graphics::Commandbuffer::create(share_data.d->gcp);
 		}
 
-		inline ScenePrivate::~ScenePrivate()
-		{
-		}
-
 		inline void ScenePrivate::register_model(ModelPrivate *m)
 		{
 			RegisteredModel r;
@@ -728,77 +724,6 @@ namespace flame
 			graphics::Image::destroy(img_col);
 			graphics::Image::destroy(img_dep);
 			graphics::Commandbuffer::destroy(cb);
-		}
-
-		void Scene::set_show_mode(ShowMode mode)
-		{
-			((ScenePrivate*)this)->show_mode = mode;
-		}
-
-		void Scene::set_show_frame(bool show_frame)
-		{
-			((ScenePrivate*)this)->show_frame = show_frame;
-		}
-
-		void Scene::register_model(Model *m)
-		{
-			((ScenePrivate*)this)->register_model((ModelPrivate*)m);
-		}
-
-		void Scene::set_bake_props(float ratio, const Ivec2 &imgsize)
-		{
-			((ScenePrivate*)this)->set_bake_props(ratio, imgsize);
-		}
-
-		Ivec2 Scene::get_bake_pen_pos() const
-		{
-			return ((ScenePrivate*)this)->bk_pen_pos;
-		}
-
-		void Scene::set_camera(Camera *c)
-		{
-			((ScenePrivate*)this)->c = c;
-		}
-
-		graphics::Image *Scene::get_col_image() const
-		{
-			return ((ScenePrivate*)this)->col_image;
-		}
-
-		graphics::Image *Scene::get_dep_image() const
-		{
-			return ((ScenePrivate*)this)->dep_image;
-		}
-
-		graphics::Commandbuffer *Scene::get_cb() const
-		{
-			return ((ScenePrivate*)this)->cb;
-		}
-
-		void Scene::begin(float elp_time)
-		{
-			((ScenePrivate*)this)->begin(elp_time);
-		}
-
-		void Scene::end()
-		{
-			((ScenePrivate*)this)->end();
-		}
-
-		void Scene::record_cb()
-		{
-			((ScenePrivate*)this)->record_cb();
-		}
-
-		void Scene::bake(int pass)
-		{
-			((ScenePrivate*)this)->bake(pass);
-		}
-
-		Scene *Scene::create(const Ivec2 &resolution)
-		{
-			auto s = new ScenePrivate(resolution);
-			return s;
 		}
 	}
 }

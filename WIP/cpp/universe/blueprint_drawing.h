@@ -6,9 +6,6 @@ namespace flame
 {
 	namespace ui
 	{
-		struct Instance;
-		struct wLayout;
-
 		//struct BP_Scene_Draw
 		//{
 		//	enum SelType
