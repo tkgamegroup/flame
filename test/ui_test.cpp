@@ -10,7 +10,7 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/entity.h>
-#include <flame/universe/components/ui.h>
+#include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 
@@ -206,7 +206,7 @@ int main(int argc, char** args)
 
 	app.root = Entity::create();
 	cElement::create(app.root, app.canvas);
-	cUI::create(app.root, app.w);
+	cEventDispatcher::create(app.root, app.w);
 
 	auto e_fps = Entity::create();
 	{

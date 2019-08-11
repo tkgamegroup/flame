@@ -1,10 +1,10 @@
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/event.h>
+#include <flame/universe/components/event_receiver.h>
 
 namespace flame
 {
-	struct cEventPrivate : cEvent
+	struct cEventReceiverPrivate : cEventReceiver
 	{
 		cElement* element;
 
@@ -15,8 +15,8 @@ namespace flame
 		//Array<Function<ChangedListenerParm>> changed_listeners$;
 		//Array<Function<ChildListenerParm>> child_listeners$;
 
-		cEventPrivate(Entity* e) :
-			cEvent(e),
+		cEventReceiverPrivate(Entity* e) :
+			cEventReceiver(e),
 			element(nullptr)
 		{
 			blackhole = false;
@@ -40,27 +40,27 @@ namespace flame
 		}
 	};
 
-	cEvent::cEvent(Entity* e) :
-		Component("Event", e)
+	cEventReceiver::cEventReceiver(Entity* e) :
+		Component("EventReceiver", e)
 	{
 	}
 
-	cEvent::~cEvent()
+	cEventReceiver::~cEventReceiver()
 	{
 	}
 
-	void cEvent::update()
+	void cEventReceiver::update()
 	{
-		((cEventPrivate*)this)->update();
+		((cEventReceiverPrivate*)this)->update();
 	}
 
-	bool cEvent::contains(const Vec2f& pos) const
+	bool cEventReceiver::contains(const Vec2f& pos) const
 	{
-		return ((cEventPrivate*)this)->contains(pos);
+		return ((cEventReceiverPrivate*)this)->contains(pos);
 	}
 
-	cEvent* cEvent::create(Entity* e)
+	cEventReceiver* cEventReceiver::create(Entity* e)
 	{
-		return new cEventPrivate(e);
+		return new cEventReceiverPrivate(e);
 	}
 }
