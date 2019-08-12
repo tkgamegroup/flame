@@ -75,15 +75,19 @@ namespace flame
 
 				if (background_shadow_thickness > 0.f)
 				{
-					canvas->add_rect_col2(p - Vec2f(background_shadow_thickness * 0.5f), s + Vec2f(background_shadow_thickness), Vec4c(0, 0, 0, 128), Vec4c(0),
-						background_shadow_thickness, rr, (Side)background_round_flags);
+					std::vector<Vec2f> points;
+					path_rect(points, p - Vec2f(background_shadow_thickness * 0.5f), s + Vec2f(background_shadow_thickness), rr, (Side)background_round_flags);
+					points.push_back(points[0]);
+					canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), background_shadow_thickness, true);
 				}
 				if (alpha > 0.f)
 				{
+					std::vector<Vec2f> points;
+					path_rect(points, p, s, rr, (Side)background_round_flags);
 					if (background_color.w() > 0)
-						canvas->add_rect_filled(p, s, alpha_mul(background_color, alpha), rr, (Side)background_round_flags);
+						canvas->fill(points, alpha_mul(background_color, alpha));
 					if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
-						canvas->add_rect(p, s, alpha_mul(background_frame_color, alpha), background_frame_thickness, rr, (Side)background_round_flags);
+						canvas->fill(points, alpha_mul(background_frame_color, alpha));
 				}
 			}
 		}

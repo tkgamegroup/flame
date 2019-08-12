@@ -120,18 +120,16 @@ namespace flame
 				draw_cmds.emplace_back(type, id);
 			}
 
-			void stroke(std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, bool closed)
+			void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)
 			{
 				if (points.size() < 2)
-					return;
-
-				if (closed)
-					points.push_back(points[0]);
 
 				start_cmd(DrawCmdElement, 0);
 				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
 				auto& idx_cnt = draw_cmds.back().idx_cnt;
 				auto first_vtx_cnt = vtx_cnt;
+
+				auto closed = points.front() == points.back();
 
 				std::vector<Vec2f> normals(points.size());
 				for (auto i = 0; i < points.size() - 1; i++)
@@ -208,7 +206,7 @@ namespace flame
 				}
 			}
 
-			void fill(std::vector<Vec2f>& points, const Vec4c& col)
+			void fill(const std::vector<Vec2f>& points, const Vec4c& col)
 			{
 				if (points.size() < 3)
 					return;
@@ -232,7 +230,7 @@ namespace flame
 				}
 			}
 
-			void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+			Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 			{
 				auto pixel_height = f->pixel_height;
 				if (!f->draw_type != FontDrawSdf)
@@ -259,12 +257,18 @@ namespace flame
 				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
 				auto& idx_cnt = draw_cmds.back().idx_cnt;
 
+				Vec2f rect(0.f, pixel_height);
+				auto line_width = 0.f;
+
 				for (auto ch : text)
 				{
 					if (ch == '\n')
 					{
 						_pos.y() += pixel_height;
 						_pos.x() = pos.x();
+
+						rect.y() += pixel_height;
+						line_width = 0.f;
 					}
 					else
 					{
@@ -287,9 +291,15 @@ namespace flame
 						vtx_cnt += 4;
 						idx_cnt += 6;
 
-						_pos.x() += g->advance * scale;
+						auto w = g->advance * scale;
+						_pos.x() += w;
+						line_width += w;
+						if (line_width > rect.x())
+							rect.x() = line_width;
 					}
 				}
+
+				return rect;
 			}
 
 			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255))
@@ -421,14 +431,19 @@ namespace flame
 			((CanvasPrivate*)this)->set_image(index, v);
 		}
 
-		void Canvas::stroke(std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, bool closed)
+		void Canvas::stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)
 		{
-			((CanvasPrivate*)this)->stroke(points, inner_col, outter_col, thickness, closed);
+			((CanvasPrivate*)this)->stroke(points, inner_col, outter_col, thickness);
 		}
 
-		void Canvas::fill(std::vector<Vec2f>& points, const Vec4c& col)
+		void Canvas::fill(const std::vector<Vec2f>& points, const Vec4c& col)
 		{
 			((CanvasPrivate*)this)->fill(points, col);
+		}
+
+		Vec2f Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+		{
+			return ((CanvasPrivate*)this)->add_text(f, pos, col, text, scale);
 		}
 
 		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

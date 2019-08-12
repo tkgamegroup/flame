@@ -11,51 +11,6 @@ namespace flame
 
 	struct UI;
 
-	enum SizePolicy
-	{
-		SizeFixed,
-		SizeFitChildren,
-		SizeFitLayout,
-		SizeGreedy
-	};
-
-	enum Align
-	{
-		AlignFree,
-		AlignLittleEnd,
-		AlignLargeEnd,
-		AlignMiddle,
-		AlignLeft,
-		AlignRight,
-		AlignTop,
-		AlignBottom,
-		AlignLeftTop,
-		AlignLeftBottom,
-		AlignRightTop,
-		AlignRightBottom,
-		AlignLeftNoPadding,
-		AlignRightNoPadding,
-		AlignTopNoPadding,
-		AlignBottomNoPadding,
-		AlignLeftTopNoPadding,
-		AlignLeftBottomNoPadding,
-		AlignRightTopNoPadding,
-		AlignRightBottomNoPadding,
-		AlignCenter,
-		AlignLeftOutside,
-		AlignRightOutside,
-		AlignTopOutside,
-		AlignBottomOutside
-	};
-
-	enum LayoutType
-	{
-		LayoutFree,
-		LayoutVertical,
-		LayoutHorizontal,
-		LayoutGrid
-	};
-
 	enum State
 	{
 		StateNormal,
@@ -76,20 +31,6 @@ namespace flame
 			FlagNeedToRemoveFromParent,
 			FlagNeedToTakeFromParent
 		};
-
-		SizePolicy size_policy_hori$;
-		SizePolicy size_policy_vert$;
-
-		Align align$;
-
-		LayoutType layout_type$;
-		float item_padding$;
-		int grid_hori_count$;
-		bool clip$;
-
-		float scroll_offset$;
-
-		bool want_key_focus$;
 
 		bool cliped; // valid after arranging by parent
 		int content_size; // valid after arranging

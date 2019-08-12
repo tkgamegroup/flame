@@ -11,6 +11,9 @@ target_link_libraries(graphics_test_bp flame_graphics)
 add_exe(sound_test "sound_test.cpp" "test")
 target_link_libraries(sound_test flame_sound)
 
-add_exe(ui_test "ui_test.cpp" "test")
-target_link_libraries(ui_test flame_universe)
+add_exe(ui_test_cpp "ui_test_cpp.cpp" "test")
+target_link_libraries(ui_test_cpp flame_universe)
+
+add_exe(ui_test_file "ui_test_file.cpp" "test")
+target_link_libraries(ui_test_file flame_universe)
 

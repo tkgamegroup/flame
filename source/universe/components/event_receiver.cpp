@@ -17,22 +17,17 @@ namespace flame
 		cEventReceiverPrivate(Entity* e) :
 			cEventReceiver(e)
 		{
-			blackhole = false;
+			element = (cElement*)(entity->component(cH("Element")));
+			assert(element);
+
 			want_key = false;
 
 			hovering = false;
 			dragging = false;
 			focusing = false;
-
-			element = (cElement*)(entity->component(cH("Element")));
-			assert(element);
 		}
 
 		void update()
-		{
-		}
-
-		bool contains() const
 		{
 		}
 	};
@@ -49,6 +44,11 @@ namespace flame
 	void cEventReceiver::update()
 	{
 		((cEventReceiverPrivate*)this)->update();
+	}
+
+	void cEventReceiver::on_mouse(KeyState action, MouseKey key, const Vec2f& value)
+	{
+
 	}
 
 	cEventReceiver* cEventReceiver::create(Entity* e)

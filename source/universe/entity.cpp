@@ -65,13 +65,19 @@ namespace flame
 		{
 			callback(capture.p, this);
 			for (auto& c : children)
-				c->traverse_forward(callback, capture);
+			{
+				if (c->global_visible)
+					c->traverse_forward(callback, capture);
+			}
 		}
 
 		void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
 		{
 			for (auto& c : children)
-				c->traverse_backward(callback, capture);
+			{
+				if (c->global_visible)
+					c->traverse_backward(callback, capture);
+			}
 			callback(capture.p, this);
 		}
 

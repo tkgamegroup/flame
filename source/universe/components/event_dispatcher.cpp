@@ -75,8 +75,11 @@ namespace flame
 
 			if (!focusing || !focusing->dragging)
 			{
-				hovering->hovering = false;
-				hovering = nullptr;
+				if (hovering)
+				{
+					hovering->hovering = false;
+					hovering = nullptr;
+				}
 				entity->traverse_backward([](void* c, Entity* e) {
 					auto thiz = *(cEventDispatcherPrivate * *)c;
 					if (thiz->hovering)
@@ -95,8 +98,11 @@ namespace flame
 			}
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 			{
-				focusing->focusing = false;
-				focusing = nullptr;
+				if (focusing)
+				{
+					focusing->focusing = false;
+					focusing = nullptr;
+				}
 				if (hovering)
 				{
 					focusing = hovering;

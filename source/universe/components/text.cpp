@@ -12,19 +12,21 @@ namespace flame
 		cTextPrivate(Entity* e) :
 			cText(e)
 		{
+			element = (cElement*)(e->find_component(cH("Element")));
+			assert(element);
+
 			font_atlas = nullptr;
 			color = default_style.text_color_normal;
 			sdf_scale = default_style.sdf_scale;
-
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
 		}
 
 		void update()
 		{
-			element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) + 
+			auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) + 
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
 				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+			element->width = rect.x();
+			element->height = rect.y();
 		}
 	};
 
