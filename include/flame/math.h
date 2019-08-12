@@ -5,14 +5,15 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <string>
+#include <vector>
 
 #undef min
 #undef max
 
 namespace flame
 {
-	const float RAD_ANG     = 180.f / M_PI;  // rad to angle
-	const float ANG_RAD     = M_PI / 180.f;  // angle to rad
+	constexpr float RAD_ANG     = 180.f / M_PI;  // rad to angle
+	constexpr float ANG_RAD     = M_PI / 180.f;  // angle to rad
 
 	const float EPS = 0.000001f;
 
@@ -1611,7 +1612,12 @@ namespace flame
 			return fited_rect(desired_size, size.x() / size.y());
 	}
 
-	inline Vec<3, uchar> color(const Vec<3, float>& hsv)
+	inline Vec4c alpha_mul(const Vec4c& col, float a)
+	{
+		return Vec4c(Vec3c(col), col.w() * a);
+	}
+
+	inline Vec3c color(const Vec3f& hsv)
 	{
 		auto h = hsv.x();
 		auto s = hsv.y();
@@ -1626,28 +1632,28 @@ namespace flame
 		{
 		case 0:
 			t = v * (1.f - (1.f - f) * s);
-			return Vec<3, uchar>(v * 255.f, t * 255.f, p * 255.f);
+			return Vec3c(v * 255.f, t * 255.f, p * 255.f);
 		case 1:
 			q = v * (1.f - f * s);
-			return Vec<3, uchar>(q * 255.f, v * 255.f, p * 255.f);
+			return Vec3c(q * 255.f, v * 255.f, p * 255.f);
 		case 2:
 			t = v * (1.f - (1.f - f) * s);
-			return Vec<3, uchar>(p * 255.f, v * 255.f, t * 255.f);
+			return Vec3c(p * 255.f, v * 255.f, t * 255.f);
 		case 3:
 			q = v * (1.f - f * s);
-			return Vec<3, uchar>(p * 255.f, q * 255.f, v * 255.f);
+			return Vec3c(p * 255.f, q * 255.f, v * 255.f);
 		case 4:
 			t = v * (1.f - (1.f - f) * s);
-			return Vec<3, uchar>(t * 255.f, p * 255.f, v * 255.f);
+			return Vec3c(t * 255.f, p * 255.f, v * 255.f);
 		case 5:
 			q = v * (1.f - f * s);
-			return Vec<3, uchar>(v * 255.f, p * 255.f, q * 255.f);
+			return Vec3c(v * 255.f, p * 255.f, q * 255.f);
 		default:
-			return Vec<3, uchar>(0.f);
+			return Vec3c(0.f);
 		}
 	}
 
-	inline Vec<3, float> hsv(const Vec<3, uchar>& rgb)
+	inline Vec3f hsv(const Vec3c& rgb)
 	{
 		auto r = rgb.x() / 255.f;
 		auto g = rgb.y() / 255.f;
@@ -1670,7 +1676,7 @@ namespace flame
 		else
 			h = 0.f;
 
-		return Vec<3, float>(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
+		return Vec3f(h, cmax == 0.f ? 0.f : delta / cmax, cmax);
 	}
 
 	// Vec4f as Quat
@@ -1883,6 +1889,94 @@ namespace flame
 		dst[5] = Vec<3, T>(v2.x(), v2.y(), v1.z());
 		dst[6] = v2;
 		dst[7] = Vec<3, T>(v1.x(), v2.y(), v2.z());
+	}
+
+	inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, int a_min, int a_max)
+	{
+		const uint pieces_num = 36;
+		const Vec2f pieces[] = {
+			Vec2f(0.000000f, 1.000000f), Vec2f(0.173648f, 0.984807f), Vec2f(0.342020f, 0.939692f), Vec2f(0.500000f, 0.866025f), Vec2f(0.642787f, 0.766044f), Vec2f(0.766044f, 0.642787f),
+			Vec2f(0.866025f, 0.500000f), Vec2f(0.939692f, 0.342020f), Vec2f(0.984807f, 0.173648f), Vec2f(1.000000f, 0.000000f), Vec2f(0.984807f, -0.173648f), Vec2f(0.939692f, -0.342020f),
+			Vec2f(0.866025f, -0.500000f), Vec2f(0.766044f, -0.642787f), Vec2f(0.642787f, -0.766044f), Vec2f(0.500000f, -0.866025f), Vec2f(0.342020f, -0.939692f), Vec2f(0.173648f, -0.984807f),
+			Vec2f(0.000000f, -1.000000f), Vec2f(-0.173648f, -0.984807f), Vec2f(-0.342020f, -0.939692f), Vec2f(-0.500000f, -0.866025f), Vec2f(-0.642787f, -0.766044f), Vec2f(-0.766044f, -0.642787f),
+			Vec2f(-0.866025f, -0.500000f), Vec2f(-0.939692f, -0.342020f), Vec2f(-0.984807f, -0.173648f), Vec2f(-1.000000f, 0.000000f), Vec2f(-0.984807f, 0.173648f), Vec2f(-0.939692f, 0.342020f),
+			Vec2f(-0.866025f, 0.500000f), Vec2f(-0.766044f, 0.642787f), Vec2f(-0.642787f, 0.766044f), Vec2f(-0.500000f, 0.866025f), Vec2f(-0.342020f, 0.939692f), Vec2f(-0.173648f, 0.984807f)
+		};
+		static_assert(FLAME_ARRAYSIZE(pieces) == pieces_num);
+
+		if (a_max == -1)
+			a_max = pieces_num - 1;
+		for (auto a = a_min; a <= a_max; a++)
+			points.push_back(center + pieces[a % pieces_num] * radius);
+	}
+
+	inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, float round_radius = 0.f, Side round_flags = Side(SideNW | SideNE | SideSW | SideSE))
+	{
+		if (round_radius == 0.f || round_flags == 0)
+		{
+			points.push_back(pos);
+			points.push_back(pos + Vec2f(size.x(), 0.f));
+			points.push_back(pos + size);
+			points.push_back(pos + Vec2f(0.f, size.y()));
+		}
+		else
+		{
+			if (round_flags & SideNW)
+				path_arc(points, pos + Vec2f(round_radius), round_radius, 18, 27);
+			else
+				points.push_back(pos);
+			if (round_flags & SideNE)
+				path_arc(points, pos + Vec2f(size.x() - round_radius, round_radius), round_radius, 27, 35);
+			else
+				points.push_back(pos + Vec2f(size.x(), 0.f));
+			if (round_flags & SideSE)
+				path_arc(points, pos + size - Vec2f(round_radius), round_radius, 0, 9);
+			else
+				points.push_back(pos + size);
+			if (round_flags & SideSW)
+				path_arc(points, pos + Vec2f(round_radius, size.y() - round_radius), round_radius, 9, 17);
+			else
+				points.push_back(pos + Vec2f(0.f, size.y()));
+		}
+	}
+
+	inline void path_circle(std::vector<Vec2f>& points, const Vec2f& center, float radius)
+	{
+		path_arc(points, center, radius, 0, -1);
+	}
+
+	inline void path_bezier(std::vector<Vec2f>& points, const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, uint level = 0)
+	{
+		auto dx = p4.x() - p1.x();
+		auto dy = p4.y() - p1.y();
+		auto d2 = ((p2.x() - p4.x()) * dy - (p2.y() - p4.y()) * dx);
+		auto d3 = ((p3.x() - p4.x()) * dy - (p3.y() - p4.y()) * dx);
+		d2 = (d2 >= 0) ? d2 : -d2;
+		d3 = (d3 >= 0) ? d3 : -d3;
+		if ((d2 + d3) * (d2 + d3) < 1.25f * (dx * dx + dy * dy))
+		{
+			if (points.empty())
+				points.push_back(p1);
+			points.push_back(p4);
+		}
+		else if (level < 10)
+		{
+			auto p12 = (p1 + p2) * 0.5f;
+			auto p23 = (p2 + p3) * 0.5f;
+			auto p34 = (p3 + p4) * 0.5f;
+			auto p123 = (p12 + p23) * 0.5f;
+			auto p234 = (p23 + p34) * 0.5f;
+			auto p1234 = (p123 + p234) * 0.5f;
+
+			path_bezier(points, p1, p12, p123, p1234, level + 1);
+			path_bezier(points, p1234, p234, p34, p4, level + 1);
+		}
+	}
+
+	inline void path_rotate(std::vector<Vec2f>& points, const Vec2f& center, float angle)
+	{
+		for (auto& p : points)
+			p = rotation(angle * ANG_RAD) * (p - center) + p;
 	}
 }
 

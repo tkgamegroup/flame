@@ -1,4 +1,3 @@
-#include <flame/foundation/window.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/renderpass.h>
@@ -20,10 +19,6 @@ namespace flame
 
 	namespace graphics
 	{
-		static Vec2f circle_subdiv[36];
-
-		const auto MaxImageCount = 64U;
-
 		static SampleCount$ sample_count = SampleCount_8;
 
 		struct Vertex
@@ -76,7 +71,6 @@ namespace flame
 			Vertex* vtx_end;
 			uint* idx_end;
 
-			std::vector<Vec2f> points;
 			std::vector<DrawCmd> draw_cmds;
 
 			CanvasPrivate(Device* d, TargetType$ type, const void* v) :
@@ -97,13 +91,6 @@ namespace flame
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (uint*)idx_buffer->mapped;
-
-				for (auto i = 0; i < FLAME_ARRAYSIZE(circle_subdiv); i++)
-				{
-					auto rad = ANG_RAD * ((360.f / FLAME_ARRAYSIZE(circle_subdiv)) * i);
-					circle_subdiv[i].y() = sin(rad);
-					circle_subdiv[i].x() = cos(rad);
-				}
 			}
 
 			void set_render_target(TargetType$ type, const void* v)
@@ -133,86 +120,7 @@ namespace flame
 				draw_cmds.emplace_back(type, id);
 			}
 
-			void path_line_to(const Vec2f& p)
-			{
-				points.push_back(p);
-			}
-
-			void path_rect(const Vec2f& pos, const Vec2f& size, float round_radius, int round_flags)
-			{
-				if (round_radius == 0.f || round_flags == 0)
-				{
-					points.push_back(pos);
-					points.push_back(pos + Vec2f(size.x(), 0.f));
-					points.push_back(pos + size);
-					points.push_back(pos + Vec2f(0.f, size.y()));
-				}
-				else
-				{
-					if (round_flags & SideNW)
-						path_arc_to(pos + Vec2f(round_radius), round_radius, 18, 27);
-					else
-						path_line_to(pos);
-					if (round_flags & SideNE)
-						path_arc_to(pos + Vec2f(size.x() - round_radius, round_radius), round_radius, 27, 35);
-					else
-						path_line_to(pos + Vec2f(size.x(), 0.f));
-					if (round_flags & SideSE)
-						path_arc_to(pos + size - Vec2f(round_radius), round_radius, 0, 9);
-					else
-						path_line_to(pos + size);
-					if (round_flags & SideSW)
-						path_arc_to(pos + Vec2f(round_radius, size.y() - round_radius), round_radius, 9, 17);
-					else
-						path_line_to(pos + Vec2f(0.f, size.y()));
-				}
-			}
-
-			void path_arc_to(const Vec2f& center, float radius, int a_min, int a_max)
-			{
-				for (auto a = a_min; a <= a_max; a++)
-					points.push_back(center + circle_subdiv[a % FLAME_ARRAYSIZE(circle_subdiv)] * radius);
-			}
-
-			void path_bezier(const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, int level = 0)
-			{
-				auto dx = p4.x() - p1.x();
-				auto dy = p4.y() - p1.y();
-				auto d2 = ((p2.x() - p4.x()) * dy - (p2.y() - p4.y()) * dx);
-				auto d3 = ((p3.x() - p4.x()) * dy - (p3.y() - p4.y()) * dx);
-				d2 = (d2 >= 0) ? d2 : -d2;
-				d3 = (d3 >= 0) ? d3 : -d3;
-				if ((d2 + d3) * (d2 + d3) < 1.25f * (dx * dx + dy * dy))
-				{
-					if (points.empty())
-						points.push_back(p1);
-					points.push_back(p4);
-				}
-				else if (level < 10)
-				{
-					auto p12 = (p1 + p2) * 0.5f;
-					auto p23 = (p2 + p3) * 0.5f;
-					auto p34 = (p3 + p4) * 0.5f;
-					auto p123 = (p12 + p23) * 0.5f;
-					auto p234 = (p23 + p34) * 0.5f;
-					auto p1234 = (p123 + p234) * 0.5f;
-
-					path_bezier(p1, p12, p123, p1234, level + 1);
-					path_bezier(p1234, p234, p34, p4, level + 1);
-				}
-			}
-
-			void clear_path()
-			{
-				points.clear();
-			}
-
-			void stroke(const Vec4c& col, float thickness, bool closed)
-			{
-				stroke_col2(col, col, thickness, closed);
-			}
-
-			void stroke_col2(const Vec4c& inner_col, const Vec4c& outter_col, float thickness, bool closed)
+			void stroke(std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, bool closed)
 			{
 				if (points.size() < 2)
 					return;
@@ -237,10 +145,7 @@ namespace flame
 						normals[i] = normal;
 
 					if (closed && i + 1 == points.size() - 1)
-					{
-						normals[0] = (normal + normals[0]) * 0.5f;
-						normals[i + 1] = normals[0];
-					}
+						normals.front() = normals.back() = (normal + normals[0]) * 0.5f;
 					else
 						normals[i + 1] = normal;
 				}
@@ -303,7 +208,7 @@ namespace flame
 				}
 			}
 
-			void fill(const Vec4c& col)
+			void fill(std::vector<Vec2f>& points, const Vec4c& col)
 			{
 				if (points.size() < 3)
 					return;
@@ -385,75 +290,6 @@ namespace flame
 						_pos.x() += g->advance * scale;
 					}
 				}
-			}
-
-			void add_line(const Vec2f& p0, const Vec2f& p1, const Vec4c& col, float thickness)
-			{
-				if (distance(p0, p1) < 0.5f)
-					return;
-
-				path_line_to(p0);
-				path_line_to(p1);
-				stroke(col, thickness, false);
-				clear_path();
-			}
-
-			void add_triangle_filled(const Vec2f& p0, const Vec2f& p1, const Vec2f& p2, const Vec4c& col)
-			{
-				path_line_to(p0);
-				path_line_to(p1);
-				path_line_to(p2);
-				fill(col);
-				clear_path();
-			}
-
-			void add_rect(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float thickness, float round_radius = 0.f, int round_flags = SideNW | SideNE | SideSW | SideSE)
-			{
-				add_rect_col2(pos, size, col, col, thickness, round_radius, round_flags);
-			}
-
-			void add_rect_col2(const Vec2f& pos, const Vec2f& size, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, float round_radius = 0.f, int round_flags = SideNW | SideNE | SideSW | SideSE)
-			{
-				path_rect(pos, size, round_radius, round_flags);
-				stroke_col2(inner_col, outter_col, thickness, true);
-				clear_path();
-			}
-
-			void add_rect_rotate(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float thickness, const Vec2f& rotate_center, float angle)
-			{
-				path_rect(pos, size, 0.f, 0);
-				for (auto& p : points)
-					p = rotation(angle * ANG_RAD) * (p - rotate_center) + p;
-				stroke(col, thickness, true);
-				clear_path();
-			}
-
-			void add_rect_filled(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float round_radius = 0.f, int round_flags = 0)
-			{
-				path_rect(pos, size, round_radius, round_flags);
-				fill(col);
-				clear_path();
-			}
-
-			void add_circle(const Vec2f& center, float radius, const Vec4c& col, float thickness)
-			{
-				path_arc_to(center, radius, 0, FLAME_ARRAYSIZE(circle_subdiv) - 1);
-				stroke(col, thickness, true);
-				clear_path();
-			}
-
-			void add_circle_filled(const Vec2f& center, float radius, const Vec4c& col)
-			{
-				path_arc_to(center, radius, 0, FLAME_ARRAYSIZE(circle_subdiv) - 1);
-				fill(col);
-				clear_path();
-			}
-
-			void add_bezier(const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, const Vec4c& col, float thickness)
-			{
-				path_bezier(p1, p2, p3, p4);
-				stroke(col, thickness, false);
-				clear_path();
 			}
 
 			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255))
@@ -585,99 +421,14 @@ namespace flame
 			((CanvasPrivate*)this)->set_image(index, v);
 		}
 
-		void Canvas::start_cmd(DrawCmdType type, uint id)
+		void Canvas::stroke(std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, bool closed)
 		{
-			((CanvasPrivate*)this)->start_cmd(type, id);
+			((CanvasPrivate*)this)->stroke(points, inner_col, outter_col, thickness, closed);
 		}
 
-		void Canvas::path_line_to(const Vec2f& p)
+		void Canvas::fill(std::vector<Vec2f>& points, const Vec4c& col)
 		{
-			((CanvasPrivate*)this)->path_line_to(p);
-		}
-
-		void Canvas::path_rect(const Vec2f& pos, const Vec2f& size, float round_radius, Side round_flags)
-		{
-			((CanvasPrivate*)this)->path_rect(pos, size, round_radius, round_flags);
-		}
-
-		void Canvas::path_arc_to(const Vec2f& center, float radius, int a_min, int a_max)
-		{
-			((CanvasPrivate*)this)->path_arc_to(center, radius, a_min, a_max);
-		}
-
-		void Canvas::path_bezier(const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, uint level)
-		{
-			((CanvasPrivate*)this)->path_bezier(p1, p2, p3, p4, level);
-		}
-
-		void Canvas::clear_path()
-		{
-			((CanvasPrivate*)this)->clear_path();
-		}
-
-		void Canvas::stroke(const Vec4c& col, float thickness, bool closed)
-		{
-			((CanvasPrivate*)this)->stroke(col, thickness, closed);
-		}
-
-		void Canvas::stroke_col2(const Vec4c& inner_col, const Vec4c& outter_col, float thickness, bool closed)
-		{
-			((CanvasPrivate*)this)->stroke_col2(inner_col, outter_col, thickness, closed);
-		}
-
-		void Canvas::fill(const Vec4c& col)
-		{
-			((CanvasPrivate*)this)->fill(col);
-		}
-
-		void Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
-		{
-			((CanvasPrivate*)this)->add_text(f, pos, col, text, scale);
-		}
-
-		void Canvas::add_line(const Vec2f& p0, const Vec2f& p1, const Vec4c& col, float thickness)
-		{
-			((CanvasPrivate*)this)->add_line(p0, p1, col, thickness);
-		}
-
-		void Canvas::add_triangle_filled(const Vec2f& p0, const Vec2f& p1, const Vec2f& p2, const Vec4c& col)
-		{
-			((CanvasPrivate*)this)->add_triangle_filled(p0, p1, p2, col);
-		}
-
-		void Canvas::add_rect(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float thickness, float round_radius, Side round_flags)
-		{
-			((CanvasPrivate*)this)->add_rect(pos, size, col, thickness, round_radius, round_flags);
-		}
-
-		void Canvas::add_rect_col2(const Vec2f& pos, const Vec2f& size, const Vec4c& inner_col, const Vec4c& outter_col, float thickness, float round_radius, Side round_flags)
-		{
-			((CanvasPrivate*)this)->add_rect_col2(pos, size, inner_col, outter_col, thickness, round_radius, round_flags);
-		}
-
-		void Canvas::add_rect_rotate(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float thickness, const Vec2f& rotate_center, float angle)
-		{
-			((CanvasPrivate*)this)->add_rect_rotate(pos, size, col, thickness, rotate_center, angle);
-		}
-
-		void Canvas::add_rect_filled(const Vec2f& pos, const Vec2f& size, const Vec4c& col, float round_radius, Side round_flags)
-		{
-			((CanvasPrivate*)this)->add_rect_filled(pos, size, col, round_radius, round_flags);
-		}
-
-		void Canvas::add_circle(const Vec2f& center, float radius, const Vec4c& col, float thickness)
-		{
-			((CanvasPrivate*)this)->add_circle(center, radius, col, thickness);
-		}
-
-		void Canvas::add_circle_filled(const Vec2f& center, float radius, const Vec4c& col)
-		{
-			((CanvasPrivate*)this)->add_circle_filled(center, radius, col);
-		}
-
-		void Canvas::add_bezier(const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, const Vec4c& col, float thickness)
-		{
-			((CanvasPrivate*)this)->add_bezier(p1, p2, p3, p4, col, thickness);
+			((CanvasPrivate*)this)->fill(points, col);
 		}
 
 		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

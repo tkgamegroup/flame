@@ -13,11 +13,9 @@
 #include <flame/math.h>
 
 #include <memory>
-#include <vector>
 #include <list>
 #include <map>
 #include <chrono>
-#include <string>
 #include <sstream>
 #include <iomanip>
 #include <locale>

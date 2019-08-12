@@ -7,12 +7,10 @@ namespace flame
 {
 	struct cTextPrivate : cText
 	{
-		cElement* element;
 		std::wstring text;
 
 		cTextPrivate(Entity* e) :
-			cText(e),
-			element(nullptr)
+			cText(e)
 		{
 			font_atlas = nullptr;
 			color = default_style.text_color_normal;
@@ -26,7 +24,7 @@ namespace flame
 		{
 			element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) + 
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
-				Vec4c(Vec3c(color), color.w() * element->alpha), text.c_str(), sdf_scale * element->global_scale);
+				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 		}
 	};
 

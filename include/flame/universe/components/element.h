@@ -50,6 +50,11 @@ namespace flame
 
 		graphics::Canvas* canvas;
 
+		bool contains(const Vec2f& pos) const
+		{
+			return rect_contains(Vec4f(global_x, global_y, global_width, global_height), pos);
+		}
+
 		FLAME_UNIVERSE_EXPORTS cElement(Entity* e);
 		FLAME_UNIVERSE_EXPORTS virtual ~cElement() override;
 

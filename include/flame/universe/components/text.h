@@ -9,8 +9,12 @@ namespace flame
 		struct FontAtlas;
 	}
 
-	struct cText : Component // requires: Element
+	struct cElement;
+
+	struct cText : Component
 	{
+		cElement* element;
+
 		graphics::FontAtlas* font_atlas;
 		Vec4c color;
 		float sdf_scale;

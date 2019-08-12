@@ -81,9 +81,9 @@ namespace flame
 				if (alpha > 0.f)
 				{
 					if (background_color.w() > 0)
-						canvas->add_rect_filled(p, s, Vec4c(Vec3c(background_color), background_color.w() * alpha), rr, (Side)background_round_flags);
+						canvas->add_rect_filled(p, s, alpha_mul(background_color, alpha), rr, (Side)background_round_flags);
 					if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
-						canvas->add_rect(p, s, Vec4c(Vec3c(background_frame_color), background_frame_color.w() * alpha), background_frame_thickness, rr, (Side)background_round_flags);
+						canvas->add_rect(p, s, alpha_mul(background_frame_color, alpha), background_frame_thickness, rr, (Side)background_round_flags);
 				}
 			}
 		}

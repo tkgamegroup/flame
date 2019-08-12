@@ -6,7 +6,6 @@ namespace flame
 {
 	struct cEventReceiverPrivate : cEventReceiver
 	{
-		cElement* element;
 
 		//Array<Function<FoucusListenerParm>> focus_listeners$;
 		//Array<Function<KeyListenerParm>> key_listeners$;
@@ -16,8 +15,7 @@ namespace flame
 		//Array<Function<ChildListenerParm>> child_listeners$;
 
 		cEventReceiverPrivate(Entity* e) :
-			cEventReceiver(e),
-			element(nullptr)
+			cEventReceiver(e)
 		{
 			blackhole = false;
 			want_key = false;
@@ -34,9 +32,8 @@ namespace flame
 		{
 		}
 
-		bool contains(const Vec2f& pos) const
+		bool contains() const
 		{
-			return rect_contains(Vec4f(element->global_x, element->global_y, element->global_width, element->global_height), pos);
 		}
 	};
 
@@ -52,11 +49,6 @@ namespace flame
 	void cEventReceiver::update()
 	{
 		((cEventReceiverPrivate*)this)->update();
-	}
-
-	bool cEventReceiver::contains(const Vec2f& pos) const
-	{
-		return ((cEventReceiverPrivate*)this)->contains(pos);
 	}
 
 	cEventReceiver* cEventReceiver::create(Entity* e)
