@@ -1,11 +1,9 @@
-#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/framebuffer.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/pipeline.h>
 #include <flame/graphics/descriptor.h>
-#include <flame/graphics/swapchain.h>
 #include "ui_private.h"
 
 namespace flame
@@ -15,16 +13,8 @@ namespace flame
 		p.get_capture<UIEventData>().ui()->on_key(p.action(), p.value());
 	}
 
-	void ui_resize_event$(Window::ResizeListenerParm& p)
-	{
-		p.get_capture<UIEventData>().ui()->on_resize(p.size());
-	}
-
 	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
 	{
-		root_->size_policy_hori$ = SizeFitLayout;
-		root_->size_policy_vert$ = SizeFitLayout;
-
 		hovering_element_ = nullptr;
 		focus_element_ = nullptr;
 		key_focus_element_ = root_.get();
@@ -38,14 +28,9 @@ namespace flame
 		for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
 			key_states[i] = KeyStateUp;
 
-		total_time_ = 0.f;
-
 		if (w)
 		{
-			root_->size$ = w->size;
-
 			w->add_key_listener(Function<Window::KeyListenerParm>(ui_key_event$, { this }));
-			w->add_resize_listener(Function<Window::ResizeListenerParm>(ui_resize_event$, { this }));
 		}
 
 		auto w_debug = Element::createT<wDebug>(this);
@@ -80,11 +65,6 @@ namespace flame
 			else if (action == KeyStateUp)
 				keyup_inputs_.push_back(value);
 		}
-	}
-
-	inline void UIPrivate::on_resize(const Ivec2 & size)
-	{
-		root_->set_size(Vec2(size));
 	}
 
 	inline void UIPrivate::set_hovering_element(Element * w)
@@ -168,7 +148,6 @@ namespace flame
 		Element* temp_dragging_element;
 		Rect curr_scissor;
 		Vec2 surface_size;
-		bool hovering_any_element;
 		Vec2 popup_off;
 		float popup_scl;
 		bool meet_popup_first;
@@ -223,8 +202,6 @@ namespace flame
 
 		p.surface_size = root_->size$;
 		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-		p.hovering_any_element = false;
-		p.clicking_nothing = p.mljustdown;
 		p.popup_off = popup_element_ ? popup_element_->pos$ : Vec2(0.f);
 		p.popup_scl = 1.f;
 		p.meet_popup_first = true;
@@ -235,8 +212,6 @@ namespace flame
 		p.ban_event = false;
 		if (popup_element_)
 			preprocessing(&p, popup_element_, true, p.popup_off, p.popup_scl);
-		if (!p.hovering_any_element)
-			set_hovering_element(nullptr);
 		if (p.clicking_nothing && popup_element_)
 			close_popup();
 
@@ -316,11 +291,6 @@ namespace flame
 			auto mhover = (Rect(w->pos$ * scl, (w->pos$ + w->size$) * scl * w->scale$) + off).contains(p.mpos);
 			if (w->event_attitude$ == EventBlackHole || mhover)
 			{
-				if (!p.hovering_any_element)
-				{
-					set_hovering_element(w);
-					p.hovering_any_element = true;
-				}
 				if (p.mdisp.x != 0 || p.mdisp.y != 0)
 				{
 					w->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
@@ -328,7 +298,6 @@ namespace flame
 				}
 				if (p.mljustdown)
 				{
-					p.clicking_nothing = false;
 					set_focus_element(w);
 					if (mhover)
 						dragging_element_ = w;
@@ -461,20 +430,8 @@ namespace flame
 		show_children(__p, e, e->children_2$, visible, off, scl);
 	}
 
-	void UIPrivate::postprocessing_children(const Array<Element*> & children)
-	{
-		if (children.size == 0)
-			return;
-
-		for (auto i_c = children.size - 1; i_c >= 0; i_c--)
-			postprocessing(children[i_c]);
-	}
-
 	void UIPrivate::postprocessing(Element * w)
 	{
-		postprocessing_children(w->children_2$);
-		postprocessing_children(w->children_1$);
-
 		w->state = StateNormal;
 		if (dragging_element_)
 		{

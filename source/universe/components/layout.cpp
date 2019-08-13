@@ -219,27 +219,27 @@ namespace flame
 						else if (al->height_policy == SizeGreedy)
 							ale->height = al->min_height + h;
 					}
+				}
 
-					auto y = element->inner_padding[1];
-					for (auto al : als)
+				auto y = element->inner_padding[1];
+				for (auto al : als)
+				{
+					auto ale = al->element;
+					switch (al->x_align)
 					{
-						auto ale = al->element;
-						switch (al->x_align)
-						{
-						case AlignxLeft:
-							ale->x = element->inner_padding[0];
-							break;
-						case AlignxMiddle:
-							ale->x = (element->width - element->inner_padding[0] - element->inner_padding[2] - ale->width) * 0.5f;
-							break;
-						case AlignxRight:
-							ale->x = element->width - element->inner_padding[2] - ale->width;
-							break;
-						}
-						assert(al->y_align == AlignyFree);
-						ale->y = y;
-						y += ale->height;
+					case AlignxLeft:
+						ale->x = element->inner_padding[0];
+						break;
+					case AlignxMiddle:
+						ale->x = (element->width - element->inner_padding[0] - element->inner_padding[2] - ale->width) * 0.5f;
+						break;
+					case AlignxRight:
+						ale->x = element->width - element->inner_padding[2] - ale->width;
+						break;
 					}
+					assert(al->y_align == AlignyFree);
+					ale->y = y;
+					y += ale->height;
 				}
 			}
 				break;

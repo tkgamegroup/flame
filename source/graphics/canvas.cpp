@@ -57,6 +57,7 @@ namespace flame
 			BP* renderpath;
 
 			RenderpassAndFramebuffer* rnf;
+			Vec4c clear_color;
 
 			Pipelinelayout* pll;
 			Pipeline* pl_element;
@@ -76,6 +77,8 @@ namespace flame
 			CanvasPrivate(Device* d, TargetType$ type, const void* v) :
 				d(d)
 			{
+				clear_color = Vec4c(0, 0, 0, 255);
+
 				renderpath = BP::create_from_file(L"../renderpath/canvas/bp", true);
 				renderpath->set_graphics_device(d);
 
@@ -99,6 +102,8 @@ namespace flame
 				renderpath->find_input("rt_dst.v")->set_data_p(v);
 				renderpath->update();
 				rnf = (RenderpassAndFramebuffer*)renderpath->find_output("rnf.out")->data_p();
+				if (rnf)
+					rnf->clearvalues()->set(0, clear_color);
 				pl_element = (Pipeline*)renderpath->find_output("pl_element.out")->data_p();
 				pl_text_lcd = (Pipeline*)renderpath->find_output("pl_text_lcd.out")->data_p();
 				pl_text_sdf = (Pipeline*)renderpath->find_output("pl_text_sdf.out")->data_p();
@@ -423,7 +428,9 @@ namespace flame
 
 		void Canvas::set_clear_color(const Vec4c& col)
 		{
-			((CanvasPrivate*)this)->rnf->clearvalues()->set(0, col);
+			auto thiz = (CanvasPrivate*)this;
+			thiz->clear_color = col;
+			thiz->rnf->clearvalues()->set(0, col);
 		}
 
 		void Canvas::set_image(uint index, Imageview* v)

@@ -172,11 +172,11 @@ namespace flame
 						auto glyph_index = FT_Get_Char_Index(ft_face, unicode);
 						if (glyph_index == 0)
 							continue;
-						FT_Load_Glyph(ft_face, glyph_index, draw_type == FontDrawLcd ? FT_RENDER_MODE_LCD : FT_RENDER_MODE_NORMAL);
+						FT_Load_Glyph(ft_face, glyph_index, draw_type == FontDrawLcd ? FT_LOAD_TARGET_LCD : FT_LOAD_DEFAULT);
 
 						auto ft_glyph = ft_face->glyph;
 						auto width = ft_glyph->bitmap.width;
-						if (FontDrawLcd == FT_RENDER_MODE_LCD)
+						if (draw_type == FontDrawLcd)
 							width /= 3;
 						auto height = ft_glyph->bitmap.rows;
 						g->size = Vec2u(width, height);

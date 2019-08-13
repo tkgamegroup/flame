@@ -455,9 +455,6 @@ namespace flame
 
 	void wButton::init(int font_atlas_index, const wchar_t* title)
 	{
-		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
-		event_attitude$ = EventAccept;
-
 		styles$.push_back({ 0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active) });
 
 		if (title)
@@ -1823,7 +1820,7 @@ namespace flame
 
 	//	w_ok() = wButton::create(instance());
 	//	w_ok()->set_classic(io == 0 ? L"Open" : L"Save");
-	//	w_ok()->align = AlignLittleEnd;
+	//	w_ok()->align = AlignLittleEnd;wbu
 	//	w_buttons()->add_child(w_ok());
 
 	//	w_cancel() = wButton::create(instance());

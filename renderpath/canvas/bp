@@ -30,7 +30,7 @@
       <datas>
         <data name="type" value="TargetImage" />
         <data name="clear" value="1" />
-        <data name="clear_color" value="255;255;255;255" />
+        <data name="clear_color" value="0;0;0;255" />
       </datas>
     </node>
     <node type="Array(1+void*)" id="col_rts" pos="0.00;0.00" />

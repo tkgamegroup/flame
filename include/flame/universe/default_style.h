@@ -23,5 +23,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_to_dark();
 	};
 
-	extern DefaultStyle default_style;
+	FLAME_UNIVERSE_EXPORTS extern DefaultStyle default_style;
 }
