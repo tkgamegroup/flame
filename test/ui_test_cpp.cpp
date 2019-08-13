@@ -19,6 +19,7 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/checkbox.h>
+#include <flame/universe/components/toggle.h>
 
 using namespace flame;
 using namespace graphics;
@@ -218,12 +219,25 @@ int main(int argc, char** args)
 	}
 	e_layout_left->add_child(e_checkbox);
 
-	//auto w_toggle = Element::createT<wToggle>(ui, font_atlas_index);
-	//w_toggle->align$ = AlignLittleEnd;
-	//w_toggle->text$ = L"toggle";
-	//w_toggle->set_size_auto();
-	//w_toggle->set_toggle(true);
-	//layout1->add_child(w_toggle);
+	auto e_toggle = Entity::create();
+	{
+		auto c_element = cElement::create(e_toggle);
+		c_element->background_round_flags = SideNW | SideNE | SideSW | SideSE;
+		c_element->background_round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
+		c_element->background_offset = Vec4f(c_element->background_round_radius, 0.f, c_element->background_round_radius, 0.f);
+
+		auto c_text = cText::create(e_toggle, app.font_atlas_pixel);
+		c_text->set_text(L"Toggle");
+
+		cAligner::create(e_toggle);
+
+		auto c_event_receiver = cEventReceiver::create(e_toggle);
+
+		cStyleBgCol::create(e_toggle, Vec4c(0), Vec4c(0), Vec4c(0));
+
+		cToggle::create(e_toggle);
+	}
+	e_layout_left->add_child(e_toggle);
 
 	//auto w_menubar = Element::createT<wMenuBar>(ui);
 	//w_menubar->align$ = AlignLittleEnd;

@@ -350,40 +350,6 @@ namespace flame
 		}, { ui }));
 	}
 
-	void toggle_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		auto thiz = (wTogglePtr)p.thiz();
-		thiz->set_toggle(!thiz->toggled());
-	}
-
-	void wToggle::init(int font_atlas_index)
-	{
-		background_round_radius$ = font_atlas->pixel_height * 0.5f : 0.f;
-		background_offset$ = Vec4(background_round_radius$, 0.f, background_round_radius$, 0.f);
-
-		event_attitude$ = EventAccept;
-
-		toggled() = 0;
-
-		styles$.push_back({ 0, 0, Style::background_color(HSV(52.f, 0.23f, 0.97f, 0.40f), HSV(52.f, 0.23f, 0.97f, 1.00f), HSV(49.f, 0.43f, 0.97f, 1.00f)) });
-		styles$.push_back({ 1, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active) });
-		mouse_listeners$.push_back(Function<MouseListenerParm>(toggle_mouse_event$, {}));
-	}
-
-	void wToggle::set_toggle(bool v)
-	{
-		toggled() = v;
-		if (!v)
-			closet_id$ = 0;
-		else
-			closet_id$ = 1;
-
-		on_changed();
-	}
-
 	static void menu_add_rarrow(wMenu * w)
 	{
 		if (w->w_rarrow())

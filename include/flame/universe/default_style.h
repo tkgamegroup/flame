@@ -1,5 +1,7 @@
 #pragma once
 
+#include <flame/universe/universe.h>
+
 namespace flame
 {
 	struct DefaultStyle
