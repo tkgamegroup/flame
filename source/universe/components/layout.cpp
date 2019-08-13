@@ -146,7 +146,7 @@ namespace flame
 					auto ale = al->element;
 					assert(al->x_align == AlignxFree);
 					ale->x = x;
-					x += ale->width;
+					x += ale->width + item_padding;
 					switch (al->y_align)
 					{
 					case AlignyTop:
@@ -239,7 +239,7 @@ namespace flame
 					}
 					assert(al->y_align == AlignyFree);
 					ale->y = y;
-					y += ale->height;
+					y += ale->height + item_padding;
 				}
 			}
 				break;

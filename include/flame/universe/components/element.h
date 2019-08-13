@@ -40,6 +40,7 @@ namespace flame
 
 		float alpha;
 
+		bool draw;
 		Vec4f background_offset; // L T R B
 		float background_round_radius;
 		uint background_round_flags;

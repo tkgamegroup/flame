@@ -18,6 +18,7 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/checkbox.h>
 
 using namespace flame;
 using namespace graphics;
@@ -167,16 +168,11 @@ int main(int argc, char** args)
 
 		auto c_text = cText::create(e_text_sdf, app.font_atlas_sdf);
 		c_text->set_text(L"Text Sdf");
+		c_text->sdf_scale = 14.f / 32.f;
 
 		cAligner::create(e_text_sdf);
 	}
 	e_layout_left->add_child(e_text_sdf);
-
-	//auto w_text = Element::createT<wText>(ui, font_atlas_index);
-	//w_text->align$ = AlignLittleEnd;
-	//w_text->text$ = L"some text";
-	//w_text->set_size_auto();
-	//layout1->add_child(w_text);
 
 	auto e_button = Entity::create();
 	{
@@ -193,8 +189,7 @@ int main(int argc, char** args)
 			if (is_mouse_clicked(action, key))
 			{
 				auto thiz = *(App * *)c;
-				//	layout->clear_children(1, 0, -1, true);
-				//	app->create_elements(DefaultStyleDark);
+				printf("thank you for clicking me\n");
 			}
 		}, new_mail_p(&app));
 
@@ -202,13 +197,26 @@ int main(int argc, char** args)
 	}
 	e_layout_left->add_child(e_button);
 
-	//auto w_button = Element::createT<wButton>(ui, font_atlas_index, L"button");
-	//w_button->align$ = AlignLittleEnd;
-	//layout1->add_child(w_button);
+	auto e_checkbox = Entity::create();
+	{
+		auto c_element = cElement::create(e_checkbox);
+		c_element->width = 16.f;
+		c_element->height = 16.f;
+		c_element->inner_padding = Vec4f(20.f, 1.f, 1.f, 1.f);
+		c_element->draw = false;
 
-	//auto w_checkbox = Element::createT<wCheckbox>(ui);
-	//w_checkbox->align$ = AlignLittleEnd;
-	//layout1->add_child(w_checkbox);
+		auto c_text = cText::create(e_checkbox, app.font_atlas_pixel);
+		c_text->set_text(L"Checkbox");
+
+		cAligner::create(e_checkbox);
+
+		auto c_event_receiver = cEventReceiver::create(e_checkbox);
+
+		cStyleBgCol::create(e_checkbox, default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active);
+
+		cCheckbox::create(e_checkbox);
+	}
+	e_layout_left->add_child(e_checkbox);
 
 	//auto w_toggle = Element::createT<wToggle>(ui, font_atlas_index);
 	//w_toggle->align$ = AlignLittleEnd;

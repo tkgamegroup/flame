@@ -27,6 +27,7 @@ namespace flame
 
 			alpha = 1.f;
 
+			draw = true;
 			background_offset = Vec4f(0.f);
 			background_round_radius = 0.f;
 			background_round_flags = 0;
@@ -67,7 +68,7 @@ namespace flame
 			global_width = width * global_scale;
 			global_height = height * global_scale;
 
-			if (canvas)
+			if (draw)
 			{
 				auto p = Vec2f(global_x, global_y) - (Vec2f(background_offset[0], background_offset[1])) * global_scale;
 				auto s = Vec2f(global_width, global_height) + (Vec2f(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * global_scale;

@@ -128,6 +128,7 @@ namespace flame
 			void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)
 			{
 				if (points.size() < 2)
+					return;
 
 				start_cmd(DrawCmdElement, 0);
 				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
@@ -237,9 +238,9 @@ namespace flame
 
 			Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 			{
-				auto pixel_height = f->pixel_height;
-				if (!f->draw_type != FontDrawSdf)
+				if (f->draw_type != FontDrawSdf)
 					scale = 1.f;
+				auto pixel_height = f->pixel_height * scale;
 
 				auto _pos = Vec2f(Vec2i(pos));
 

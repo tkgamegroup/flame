@@ -11,13 +11,6 @@ namespace flame
 
 	struct UI;
 
-	enum State
-	{
-		StateNormal,
-		StateHovering,
-		StateActive
-	};
-
 	struct Element;
 	typedef Element* ElementPtr;
 
@@ -35,22 +28,8 @@ namespace flame
 		bool cliped; // valid after arranging by parent
 		int content_size; // valid after arranging
 		bool showed; // vaild after processing
-		State state; // vaild after processing
-
-		UI* ui;
-		Element* parent;
-		int layer;
-		Flag flag;
-		bool need_arrange;
-
-		bool draw_default$;
-		FLAME_PACKAGE_BEGIN_4(ExtraDrawParm, ElementPtr, thiz, p, graphics::CanvasPtr, canvas, p, Vec2, off, f2, float, scl, f1)
-		FLAME_PACKAGE_END_4
-		Array<Function<ExtraDrawParm>> extra_draws$;
 
 		int closet_id$;
-		int style_level;
-		Array<Style> styles$;
 
 		Array<Animation> animations$;
 
@@ -59,9 +38,6 @@ namespace flame
 
 		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, ElementPtr, thiz, p, KeyState, action, i1, int, value, i1)
 		FLAME_PACKAGE_END_3
-
-		FLAME_PACKAGE_BEGIN_4(MouseListenerParm, ElementPtr, thiz, p, KeyState, action, i1, MouseKey, key, i1, Vec2, value, f2)
-		FLAME_PACKAGE_END_4
 
 		FLAME_PACKAGE_BEGIN_2(DropListenerParm, ElementPtr, thiz, p, ElementPtr, src, p)
 		FLAME_PACKAGE_END_2
@@ -99,36 +75,11 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS SerializableNode* save();
 
-		enum { DATA_SIZE = 0 };
-
-		FLAME_UNIVERSE_EXPORTS static Element* create(UI* ui);
-		template<typename T, typename ... Args>
-		inline static T* createT(UI* ui, Args ... args)
-		{
-			auto w = (T*)create(ui);
-			w->init(args...);
-			return w;
-		}
 		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VariableInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
-		FLAME_UNIVERSE_EXPORTS static Element* create_from_file(UI* ui, SerializableNode* src);
-		FLAME_UNIVERSE_EXPORTS static void destroy(Element* w);
 	};
-
-	FLAME_ELEMENT_BEGIN_0(wLayout, Element)
-		FLAME_UNIVERSE_EXPORTS void init(LayoutType type = LayoutFree, float item_padding = 0.f);
-	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wCheckbox, Element, int, checked, i1, voidptr, target, p)
 		FLAME_UNIVERSE_EXPORTS void init(void* target = nullptr);
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_3(wText, Element, int, font_atlas_index, i1, Bvec4, text_col, b4, float, sdf_scale, f1)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index);
-		FLAME_UNIVERSE_EXPORTS void set_size_auto();
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_0(wButton, wText)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wToggle, wText, int, toggled, i1)

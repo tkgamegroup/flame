@@ -404,66 +404,6 @@ namespace flame
 		}, { ui }));
 	}
 
-	void wLayout::init(LayoutType type, float item_padding)
-	{
-		layout_type$ = type;
-		item_padding$ = item_padding;
-		event_attitude$ = EventIgnore;
-		size_policy_hori$ = SizeFitChildren;
-		size_policy_vert$ = SizeFitChildren;
-	}
-
-	void checkbox_mouse_event$(Element::MouseListenerParm &p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		auto thiz = (wCheckboxPtr)p.thiz();
-
-		thiz->checked() = !thiz->checked();
-
-		if (thiz->target())
-			* (bool*)(thiz->target()) = thiz->checked();
-
-		thiz->on_changed();
-	}
-
-	void checkbox_extra_draw$(Element::ExtraDrawParm &p)
-	{
-		auto thiz = (wCheckboxPtr)p.thiz();
-
-		p.canvas()->add_rect(thiz->pos$ * p.scl() + p.off(), thiz->size$ * p.scl(), thiz->background_col$, 2.f * p.scl());
-		if (thiz->checked())
-			p.canvas()->add_rect_filled((thiz->pos$ + 3.f) * p.scl() + p.off(), (thiz->size$ - 6.f) * p.scl(), thiz->background_col$);
-	}
-
-	void wCheckbox::init(void* _target)
-	{
-		size$ = Vec2(16.f);
-		background_col$ = Bvec4(255);
-
-		checked() = 0;
-		target() = _target;
-
-		if (target())
-			checked() = *(bool*)target();
-
-		extra_draws$.push_back(Function<ExtraDrawParm>(checkbox_extra_draw$, {}));
-		styles$.push_back({ 0, 0, Style::background_color(ui->default_frame_col, ui->default_frame_col_hovering, ui->default_frame_col_active)});
-		mouse_listeners$.push_back(Function<MouseListenerParm>(checkbox_mouse_event$, {}));
-	}
-
-	void wButton::init(int font_atlas_index, const wchar_t* title)
-	{
-		styles$.push_back({ 0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active) });
-
-		if (title)
-		{
-			text$ = title;
-			set_size_auto();
-		}
-	}
-
 	void toggle_mouse_event$(Element::MouseListenerParm& p)
 	{
 		if (!p.is_clicked())

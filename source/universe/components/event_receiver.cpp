@@ -46,7 +46,8 @@ namespace flame
 	void* cEventReceiver::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& pos), const Mail<>& capture)
 	{
 		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & pos)>;
-		c->function = listener;
+		c->function 
+		= listener;
 		c->capture = capture;
 		((cEventReceiverPrivate*)this)->mouse_listeners.emplace_back(c);
 		return c;
