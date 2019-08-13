@@ -1,23 +1,7 @@
 namespace flame
 {
-	namespace graphics
-	{
-		struct Buffer;
-		struct Image;
-		struct Imageview;
-		struct Renderpass;
-		struct Framebuffer;
-		struct ClearValues;
-		struct Shader;
-		struct Pipeline;
-		struct Sampler;
-		struct Descriptorset;
-	}
-
 	namespace _3d
 	{
-		struct ModelPrivate;
-
 		struct ShareData
 		{
 			graphics::Device *d;

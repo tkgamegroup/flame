@@ -15,10 +15,7 @@ namespace flame
 
 	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
 	{
-		hovering_element_ = nullptr;
-		focus_element_ = nullptr;
 		key_focus_element_ = root_.get();
-		dragging_element_ = nullptr;
 		popup_element_ = nullptr;
 		popup_element_modual_ = false;
 		potential_doubleclick_element_ = nullptr;
@@ -29,9 +26,7 @@ namespace flame
 			key_states[i] = KeyStateUp;
 
 		if (w)
-		{
 			w->add_key_listener(Function<Window::KeyListenerParm>(ui_key_event$, { this }));
-		}
 
 		auto w_debug = Element::createT<wDebug>(this);
 		root_->add_child(w_debug, 1);
@@ -104,11 +99,6 @@ namespace flame
 		if (focus_element_)
 			focus_element_->on_focus(Focus_Gain, 0);
 		set_key_focus_element(w);
-	}
-
-	inline void UIPrivate::set_dragging_element(Element * w)
-	{
-		dragging_element_ = w;
 	}
 
 	inline void UIPrivate::set_popup_element(Element * w, bool modual)
@@ -194,21 +184,12 @@ namespace flame
 		keyup_inputs_.clear();
 		char_inputs_.clear();
 
-		if (p.mljustdown)
-		{
-			set_key_focus_element(nullptr);
-			set_focus_element(nullptr);
-		}
-
-		p.surface_size = root_->size$;
 		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
 		p.popup_off = popup_element_ ? popup_element_->pos$ : Vec2(0.f);
 		p.popup_scl = 1.f;
 		p.meet_popup_first = true;
 		p.ban_event = popup_element_;
-		p.show_off = show_off;
 
-		preprocessing(&p, root_.get(), true, Vec2(0.f), 1.f);
 		p.ban_event = false;
 		if (popup_element_)
 			preprocessing(&p, popup_element_, true, p.popup_off, p.popup_scl);
@@ -248,24 +229,8 @@ namespace flame
 			key_states[i] &= ~KeyStateJust;
 	}
 
-	void UIPrivate::preprocessing_children(void* __p, Element * w, const Array<Element*> & children, const Vec2 & off, float scl)
-	{
-		auto& p = *(_Package*)__p;
-
-		if (children.size == 0)
-			return;
-
-		auto _off = w->pos$ * scl + off;
-		auto _scl = w->scale$ * scl;
-
-		for (auto i_c = children.size - 1; i_c >= 0; i_c--)
-			preprocessing(&p, children[i_c], w->showed, _off, _scl);
-	}
-
 	void UIPrivate::preprocessing(void* __p, Element * w, bool visible, const Vec2 & off, float scl)
 	{
-		auto& p = *(_Package*)__p;
-
 		switch (w->flag)
 		{
 		case Element::FlagJustCreatedNeedModual:
@@ -283,37 +248,15 @@ namespace flame
 			return;
 		}
 
-		preprocessing_children(__p, w, w->children_2$, off, scl);
-		preprocessing_children(__p, w, w->children_1$, off, scl);
-
 		if (!p.ban_event && visible && w->event_attitude$ != EventIgnore)
 		{
 			auto mhover = (Rect(w->pos$ * scl, (w->pos$ + w->size$) * scl * w->scale$) + off).contains(p.mpos);
 			if (w->event_attitude$ == EventBlackHole || mhover)
 			{
-				if (p.mdisp.x != 0 || p.mdisp.y != 0)
-				{
-					w->on_mouse(KeyStateNull, Mouse_Null, Vec2(p.mdisp));
-					p.mdisp = Ivec2(0);
-				}
-				if (p.mljustdown)
-				{
-					set_focus_element(w);
-					if (mhover)
-						dragging_element_ = w;
-					w->on_mouse(KeyStateDown, Mouse_Left, p.mpos);
-					p.mljustdown = false;
-				}
-				if (p.mrjustdown)
-				{
-					w->on_mouse(KeyStateDown, Mouse_Right, p.mpos);
-					p.mrjustdown = false;
-				}
 				if (p.mljustup)
 				{
 					if (focus_element_ == w)
 					{
-						w->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
 						if (potential_doubleclick_element_ == w)
 						{
 							w->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2(0.f));
@@ -327,35 +270,16 @@ namespace flame
 						w->on_drop(p.temp_dragging_element);
 					p.mljustup = false;
 				}
-				if (p.mscroll)
-				{
-					w->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.mscroll, 0.f));
-					p.mscroll = 0;
-				}
 			}
 		}
 	}
 
 	void UIPrivate::show_children(void* __p, Element * w, const Array<Element*> & children, bool visible, const Vec2 & off, float scl)
 	{
-		auto& p = *(_Package*)__p;
-
-		if (children.size == 0)
-			return;
-
 		if (w->clip$)
 		{
 			p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
 			canvas->set_scissor(p.curr_scissor);
-		}
-
-		auto _off = w->pos$ * scl + off;
-		auto _scl = w->scale$ * scl;
-
-		for (auto i_c = 0; i_c < children.size; i_c++)
-		{
-			auto c = (Element*)children[i_c];
-			show(&p, c, c->visible$ && visible, _off, _scl);
 		}
 
 		if (w->clip$)
@@ -367,32 +291,6 @@ namespace flame
 
 	void UIPrivate::show(void* __p, Element * e, bool visible, const Vec2 & off, float scl)
 	{
-		auto& p = *(_Package*)__p;
-
-		if (e->need_arrange)
-		{
-			e->do_arrange();
-			e->need_arrange = false;
-		}
-
-		e->style_level = -1;
-		for (auto i_s = 0; i_s < e->styles$.size; i_s++)
-		{
-			auto& s = e->styles$[i_s];
-			if (e->closet_id$ != s.closet_id$)
-				continue;
-			if (e->style_level > s.level$)
-				continue;
-
-			s.f$.p.thiz() = &s;
-			s.f$.p.e() = e;
-			s.f$.p.out_active() = 0;
-			s.f$.exec();
-
-			if (s.f$.p.out_active())
-				e->style_level = s.level$;
-		}
-
 		for (auto i_a = 0; i_a < e->animations$.size; )
 		{
 			auto& a = e->animations$[i_a];
@@ -425,9 +323,6 @@ namespace flame
 			else
 				e->on_draw(canvas, off + p.show_off, scl);
 		}
-
-		show_children(__p, e, e->children_1$, visible, off, scl);
-		show_children(__p, e, e->children_2$, visible, off, scl);
 	}
 
 	void UIPrivate::postprocessing(Element * w)

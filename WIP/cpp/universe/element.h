@@ -29,8 +29,6 @@ namespace flame
 		int content_size; // valid after arranging
 		bool showed; // vaild after processing
 
-		int closet_id$;
-
 		Array<Animation> animations$;
 
 		FLAME_PACKAGE_BEGIN_3(FoucusListenerParm, ElementPtr, thiz, p, FocusType, type, i1, int, is_keyfocus, i1)
@@ -77,10 +75,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VariableInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
 	};
-
-	FLAME_ELEMENT_BEGIN_2(wCheckbox, Element, int, checked, i1, voidptr, target, p)
-		FLAME_UNIVERSE_EXPORTS void init(void* target = nullptr);
-	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_1(wToggle, wText, int, toggled, i1)
 		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index);

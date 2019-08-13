@@ -1,20 +1,7 @@
 namespace flame
 {
-	namespace graphics
-	{
-		struct Device;
-		struct Image;
-		struct Commandbuffer;
-	}
-
 	namespace _3d
 	{
-		FLAME_3D_EXPORTS void init(graphics::Device *d);
-		FLAME_3D_EXPORTS void deinit();
-
-		struct Model;
-		struct Camera;
-
 		enum ShowMode
 		{
 			ShowModeLightmap,

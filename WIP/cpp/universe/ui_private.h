@@ -6,11 +6,7 @@ namespace flame
 {
 	struct UIPrivate : UI
 	{
-		std::unique_ptr<Element> root_;
-		Element* hovering_element_;
-		Element* focus_element_;
 		Element* key_focus_element_;
-		Element* dragging_element_;
 		Element* popup_element_;
 		bool popup_element_modual_;
 		Ivec2 mouse_prev_pos_;
@@ -20,34 +16,6 @@ namespace flame
 		std::vector<int> keyup_inputs_;
 		std::vector<wchar_t> char_inputs_;
 		bool char_input_compelete_;
-
-		float elp_time_; // second
-		float total_time_;
-
-		UIPrivate(graphics::Canvas* canvas, Window* w);
-
-		void set_default_style(DefaultStyle s);
-
-		void on_key(KeyState action, int value);
-		void on_mouse(KeyState action, MouseKey key, const Ivec2& pos);
-		void on_resize(const Ivec2& size);
-
-		void set_hovering_element(Element* w);
-		void set_key_focus_element(Element* w);
-		void set_focus_element(Element* w);
-		void set_dragging_element(Element* w);
-		void set_popup_element(Element* w, bool modual = false);
-		void close_popup();
-
-		void step(float elp_time, const Vec2& show_off = Vec2(0.f));
-		void preprocessing_children(void* __p, Element* w, const Array<Element*>& children, const Vec2& off, float scl);
-		void preprocessing(void* __p, Element* w, bool visible, const Vec2& off, float scl);
-		void show_children(void* __p, Element* w, const Array<Element*>& children, bool visible, const Vec2& off, float scl);
-		void show(void* __p, Element* w, bool visible, const Vec2& off, float scl);
-		void postprocessing_children(const Array<Element*>& children);
-		void postprocessing(Element* w);
 	};
-
-	typedef UIPrivate* UIPrivatePtr;
 }
 

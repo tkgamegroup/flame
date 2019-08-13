@@ -11,26 +11,16 @@ namespace flame
 	Element::Element(UI* ui) :
 		ui(ui)
 	{
-		size_policy_hori$ = SizeFixed;
-		size_policy_vert$ = SizeFixed;
-
-		align$ = AlignFree;
-
-		layout_type$ = LayoutFree;
-		item_padding$ = 0.f;
 		grid_hori_count$ = 1;
 		clip$ = false;
 
 		scroll_offset$ = 0.f;
 
-		event_attitude$ = EventAccept;
 		want_key_focus$ = false;
 
 		cliped = false;
 		content_size = 0.f;
 		state = StateNormal;
-
-		closet_id$ = 0;
 
 		flag = FlagNull;
 	}
@@ -168,12 +158,6 @@ namespace flame
 			parent->take_child(layer, parent->find_child(layer, this));
 	}
 
-	int Element::find_child(int layer, Element * w)
-	{
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		return children.find(w);
-	}
-
 	void Element::set_to_foreground()
 	{
 		auto& list = layer == 0 ? parent->children_1$ : parent->children_2$;
@@ -246,20 +230,6 @@ namespace flame
 		}
 	}
 
-	void Element::on_mouse(KeyState action, MouseKey key, const Vec2 & pos)
-	{
-		for (auto i = 0; i < mouse_listeners$.size; i++)
-		{
-			auto& f = mouse_listeners$[i];
-			auto& p = (MouseListenerParm&)f.p;
-			p.thiz() = this;
-			p.action() = action;
-			p.key() = key;
-			p.value() = pos;
-			f.exec();
-		}
-	}
-
 	void Element::on_drop(Element * src)
 	{
 		for (auto i = 0; i < drop_listeners$.size; i++)
@@ -286,11 +256,6 @@ namespace flame
 	SerializableNode* Element::save()
 	{
 		return SerializableNode::serialize(find_udt(cH("Element")), this, 1);
-	}
-
-	Element* Element::create(UI * ui)
-	{
-		return new Element(ui);
 	}
 
 	void Element::create_from_typeinfo(UI * ui, int font_atlas_index, VariableInfo * info, void* p, Element * dst)
@@ -361,25 +326,6 @@ namespace flame
 			}
 		}
 			break;
-		case VariableTagArrayOfVariable:
-		{
-		}
-			break;
-		case VariableTagArrayOfPointer:
-		{
-			auto& arr = *(Array<void*>*)((char*)p + info->offset());
-
-			switch (info->type_hash())
-			{
-			case cH("Function"):
-				for (auto i_i = 0; i_i < arr.size; i_i++)
-				{
-					arr[i_i];
-				}
-				break;
-			}
-		}
-			break;
 		}
 	}
 
@@ -415,10 +361,8 @@ namespace flame
 
 	void wToggle::init(int font_atlas_index)
 	{
-		background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
-		background_round_radius$ = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.5f : 0.f;
+		background_round_radius$ = font_atlas->pixel_height * 0.5f : 0.f;
 		background_offset$ = Vec4(background_round_radius$, 0.f, background_round_radius$, 0.f);
-		background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
 
 		event_attitude$ = EventAccept;
 
@@ -483,9 +427,6 @@ namespace flame
 
 		styles$.push_back({ 0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active) });
 		mouse_listeners$.push_back(Function<MouseListenerParm>(menuitem_mouse_event$, {}));
-
-		text$ = title;
-		set_size_auto();
 	}
 
 	void menu_title_mouse_event$(Element::MouseListenerParm& p)
