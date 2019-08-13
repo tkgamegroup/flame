@@ -9,6 +9,7 @@ namespace flame
 	struct cEventDispatcherPrivate : cEventDispatcher
 	{
 		Window* window;
+		void* mouse_listener;
 
 		Vec2i mouse_pos, mouse_pos_prev, mouse_disp;
 		int mouse_scroll;
@@ -29,25 +30,27 @@ namespace flame
 			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
 				mouse_buttons[i] = KeyStateUp;
 
-			if (window)
-			{
-				window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cEventDispatcherPrivate **)c;
+			mouse_listener = window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto thiz = *(cEventDispatcherPrivate * *)c;
 
-					if (action == KeyStateNull)
-					{
-						if (key == Mouse_Middle)
-							thiz->mouse_scroll = pos.x();
-						else if (key == Mouse_Null)
-							thiz->mouse_pos = pos;
-					}
-					else
-					{
-						thiz->mouse_buttons[key] = action | KeyStateJust;
+				if (action == KeyStateNull)
+				{
+					if (key == Mouse_Middle)
+						thiz->mouse_scroll = pos.x();
+					else if (key == Mouse_Null)
 						thiz->mouse_pos = pos;
-					}
-				}, new_mail_p(this));
-			}
+				}
+				else
+				{
+					thiz->mouse_buttons[key] = action | KeyStateJust;
+					thiz->mouse_pos = pos;
+				}
+			}, new_mail_p(this));
+		}
+
+		~cEventDispatcherPrivate() 
+		{
+			window->remove_mouse_listener(mouse_listener);
 		}
 
 		void update()
@@ -120,6 +123,14 @@ namespace flame
 					if (s & KeyStateJust)
 						hovering->on_mouse((KeyState)s, (MouseKey)i, Vec2f(0.f));
 				}
+
+				if (is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
+				{
+					if (hovering == focusing)
+					{
+						hovering->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2f(0.f));
+					}
+				}
 			}
 
 			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
@@ -137,6 +148,7 @@ namespace flame
 
 	cEventDispatcher::~cEventDispatcher()
 	{
+		((cEventDispatcherPrivate*)this)->~cEventDispatcherPrivate();
 	}
 
 	void cEventDispatcher::update()

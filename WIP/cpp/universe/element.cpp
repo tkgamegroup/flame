@@ -406,8 +406,6 @@ namespace flame
 
 	void wLayout::init(LayoutType type, float item_padding)
 	{
-		init_data_types();
-
 		layout_type$ = type;
 		item_padding$ = item_padding;
 		event_attitude$ = EventIgnore;
@@ -441,8 +439,6 @@ namespace flame
 
 	void wCheckbox::init(void* _target)
 	{
-		init_data_types();
-
 		size$ = Vec2(16.f);
 		background_col$ = Bvec4(255);
 
@@ -457,25 +453,8 @@ namespace flame
 		mouse_listeners$.push_back(Function<MouseListenerParm>(checkbox_mouse_event$, {}));
 	}
 
-	void wText::set_size_auto()
-	{
-		Vec2 v(0.f);
-
-		if (font_atlas_index() >= 0)
-		{
-			auto font_atlas = ui->canvas()->get_font_atlas(font_atlas_index());
-			v = Vec2(font_atlas->get_text_width(text$.v), font_atlas->pixel_height) * sdf_scale();
-		}
-		v.x += inner_padding$[0] + inner_padding$[2];
-		v.y += inner_padding$[1] + inner_padding$[3];
-		set_size(v);
-	}
-
 	void wButton::init(int font_atlas_index, const wchar_t* title)
 	{
-		wText::init(font_atlas_index);
-		init_data_types();
-
 		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		event_attitude$ = EventAccept;
 
@@ -499,9 +478,6 @@ namespace flame
 
 	void wToggle::init(int font_atlas_index)
 	{
-		wText::init(font_atlas_index);
-		init_data_types();
-
 		background_col$ = Bvec4(255, 255, 255, 255 * 0.7f);
 		background_round_radius$ = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.5f : 0.f;
 		background_offset$ = Vec4(background_round_radius$, 0.f, background_round_radius$, 0.f);
@@ -563,9 +539,6 @@ namespace flame
 
 	void wMenuItem::init(int font_atlas_index, const wchar_t* title)
 	{
-		wText::init(font_atlas_index);
-		init_data_types();
-
 		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		size_policy_hori$ = SizeFitLayout;
 		align$ = AlignLittleEnd;
@@ -614,9 +587,6 @@ namespace flame
 
 	void wMenu::init(int font_atlas_index, const wchar_t* title, bool only_for_context_menu)
 	{
-		wLayout::init();
-		init_data_types();
-
 		align$ = AlignLittleEnd;
 		layout_type$ = LayoutVertical;
 
@@ -743,7 +713,6 @@ namespace flame
 	void wMenuBar::init()
 	{
 		wLayout::init();
-		init_data_types();
 
 		layout_type$ = LayoutHorizontal;
 
@@ -817,7 +786,6 @@ namespace flame
 	void wCombo::init(int font_atlas_index, void* _enum_info, void* _target)
 	{
 		((wMenu*)this)->init(font_atlas_index, L"");
-		init_data_types();
 
 		sel() = -1;
 		enum_info() = _enum_info;
@@ -1061,9 +1029,6 @@ namespace flame
 
 	void wEdit::init(int font_atlas_index, void* _info, void* _target)
 	{
-		wText::init(font_atlas_index);
-		init_data_types();
-
 		info() = _info;
 		target() = _target;
 
@@ -1137,8 +1102,6 @@ namespace flame
 
 	void wImage::init()
 	{
-		init_data_types();
-
 		id() = 0;
 		uv0() = Vec2(0.f);
 		uv1() = Vec2(1.f);
@@ -1205,7 +1168,6 @@ namespace flame
 	void wScrollbar::init(Element * target)
 	{
 		wLayout::init();
-		init_data_types();
 
 		size$ = Vec2(10.f);
 		size_policy_vert$ = SizeFitLayout;
@@ -1273,8 +1235,6 @@ namespace flame
 
 	void wSizeDrag::init(Element * target)
 	{
-		init_data_types();
-
 		w_target() = target;
 		min_size() = Vec2(0.f);
 
@@ -1314,8 +1274,6 @@ namespace flame
 
 	void wSplitter::init(int _dir, Element* target1, Element* target2)
 	{
-		init_data_types();
-
 		dir() = _dir;
 		w_target1() = target1;
 		w_target2() = target2;
@@ -1345,7 +1303,6 @@ namespace flame
 	void wListItem::init(int font_atlas_index, const wchar_t* title)
 	{
 		wLayout::init();
-		init_data_types();
 
 		size_policy_hori$ = SizeFitLayout;
 		align$ = AlignLittleEnd;
@@ -1414,7 +1371,6 @@ namespace flame
 	void wList::init()
 	{
 		wLayout::init();
-		init_data_types();
 
 		inner_padding$ = Vec4(4.f);
 		background_col$ = ui->default_frame_col;
@@ -1475,7 +1431,6 @@ namespace flame
 	void wTreeNode::init(int font_atlas_index, const wchar_t* title, wTree * tree)
 	{
 		wLayout::init();
-		init_data_types();
 
 		layout_type$ = LayoutVertical;
 		align$ = AlignLittleEnd;
@@ -1516,7 +1471,6 @@ namespace flame
 	void wTree::init()
 	{
 		wLayout::init();
-		init_data_types();
 
 		w_sel() = nullptr;
 
@@ -1538,7 +1492,6 @@ namespace flame
 	void wDialog::init(bool resize, bool modual)
 	{
 		wLayout::init();
-		init_data_types();
 
 		auto radius = 8.f;
 
@@ -1591,7 +1544,6 @@ namespace flame
 	void wMessageDialog::init(int font_atlas_index, const wchar_t* text)
 	{
 		((wDialog*)this)->init(false, true);
-		init_data_types();
 
 		want_key_focus$ = true;
 

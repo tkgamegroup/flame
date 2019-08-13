@@ -52,7 +52,7 @@ namespace flame
 
 		bool contains(const Vec2f& pos) const
 		{
-			return rect_contains(Vec4f(global_x, global_y, global_width, global_height), pos);
+			return rect_contains(Vec4f(global_x, global_y, global_x + global_width, global_y + global_height), pos);
 		}
 
 		FLAME_UNIVERSE_EXPORTS cElement(Entity* e);

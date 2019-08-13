@@ -12,6 +12,7 @@
 #include <flame/universe/entity.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/event_dispatcher.h>
+#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/aligner.h>
@@ -21,7 +22,6 @@ using namespace flame;
 using namespace graphics;
 
 const auto img_id = 9;
-//wLayout* layout;
 
 struct App
 {
@@ -40,8 +40,9 @@ struct App
 	Entity* root;
 	cElement* c_element_root;
 	cText* c_text_fps;
+	//wLayout* layout;
 
-	void create_elements(DefaultStyle style)
+	void create_elements()
 	{
 		//ui->set_default_style(style);
 		//if (style == DefaultStyleDark)
@@ -184,7 +185,6 @@ struct App
 		}
 	}
 }app;
-auto papp = &app;
 
 int main(int argc, char** args)
 {
@@ -258,6 +258,16 @@ int main(int argc, char** args)
 		c_text->set_text(L"Dark");
 
 		cAligner::create(e_btn_dark);
+
+		auto c_event_receiver = cEventReceiver::create(e_btn_dark);
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			if (is_mouse_clicked(action, key))
+			{
+				auto thiz = *(App * *)c;
+				//	layout->clear_children(1, 0, -1, true);
+				//	app->create_elements(DefaultStyleDark);
+			}
+		}, new_mail_p(&app));
 	}
 	e_layout_top->add_child(e_btn_dark);
 
@@ -270,31 +280,23 @@ int main(int argc, char** args)
 		c_text->set_text(L"Light");
 
 		cAligner::create(e_btn_light);
+
+		auto c_event_receiver = cEventReceiver::create(e_btn_light);
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			if (is_mouse_clicked(action, key))
+			{
+				auto thiz = *(App * *)c;
+				//	layout->clear_children(1, 0, -1, true);
+				//	app->create_elements(DefaultStyleLight);
+			}
+		}, new_mail_p(&app));
 	}
 	e_layout_top->add_child(e_btn_light);
 
-	//w_btn_dark->mouse_listeners$.push_back([](Element::MouseListenerParm &p) {
-	//	auto app = p.get_capture<AppData>().app();
-	//	if (!p.is_clicked())
-	//		return;
-
-	//	layout->clear_children(1, 0, -1, true);
-	//	app->create_elements(DefaultStyleDark);
-	//}, { this }));
-
-
-	//w_btn_light->mouse_listeners$.push_back([](Element::MouseListenerParm & p) {
-	//	auto app = p.get_capture<AppData>().app();
-	//	if (!p.is_clicked())
-	//		return;
-
-	//	layout->clear_children(1, 0, -1, true);
-	//	app->create_elements(DefaultStyleLight);
-	//}, { this }));
-
 	//layout = Element::createT<wLayout>(ui);
 	//ui->root()->add_child(layout, 1);
-	//create_elements(DefaultStyleDark);
+
+	app.create_elements();
 
 	app.cbs.resize(sc->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)

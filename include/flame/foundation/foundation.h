@@ -1037,6 +1037,18 @@ namespace flame
 		flame_free(m.p);
 	}
 
+	template<class F>
+	struct Closure
+	{
+		F* function;
+		Mail<> capture;
+
+		~Closure()
+		{
+			delete_mail(capture);
+		}
+	};
+
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_curr_path();

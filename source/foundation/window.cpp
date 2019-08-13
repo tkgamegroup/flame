@@ -20,18 +20,6 @@ namespace flame
 		KeyEventUp
 	};
 
-	template<class F>
-	struct Closure
-	{
-		F* function;
-		Mail<> capture;
-
-		~Closure()
-		{
-			delete_mail(capture);
-		}
-	};
-
 	struct WindowPrivate;
 
 	static std::vector<std::unique_ptr<Closure<void(void* c)>>> delay_events;
