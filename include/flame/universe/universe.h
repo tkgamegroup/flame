@@ -24,6 +24,13 @@ namespace flame
 		AlignyBottom
 	};
 
+	enum SizePolicy$
+	{
+		SizeFixed,
+		SizeFitLayout,
+		SizeGreedy
+	};
+
 	enum LayoutType$
 	{
 		LayoutFree,

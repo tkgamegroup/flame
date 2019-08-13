@@ -4,7 +4,6 @@
 
 namespace flame
 {
-	struct Window;
 	struct cElement;
 
 	struct cLayout : Component
@@ -23,6 +22,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cLayout* create(Entity* e, Window* w = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cLayout* create(Entity* e);
 	};
 }

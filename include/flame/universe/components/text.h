@@ -27,6 +27,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cText* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cText* create(Entity* e, graphics::FontAtlas* font_atlas);
 	};
 }

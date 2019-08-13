@@ -9,13 +9,13 @@ namespace flame
 	{
 		std::wstring text;
 
-		cTextPrivate(Entity* e) :
+		cTextPrivate(Entity* e, graphics::FontAtlas* _font_atlas) :
 			cText(e)
 		{
 			element = (cElement*)(e->find_component(cH("Element")));
 			assert(element);
 
-			font_atlas = nullptr;
+			font_atlas = _font_atlas;
 			color = default_style.text_color_normal;
 			sdf_scale = default_style.sdf_scale;
 		}
@@ -54,9 +54,9 @@ namespace flame
 		((cTextPrivate*)this)->update();
 	}
 
-	cText* cText::create(Entity* e)
+	cText* cText::create(Entity* e, graphics::FontAtlas* font_atlas)
 	{
-		return new cTextPrivate(e);
+		return new cTextPrivate(e, font_atlas);
 	}
 
 	struct cTextA$

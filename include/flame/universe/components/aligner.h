@@ -13,8 +13,10 @@ namespace flame
 		Alignx$ x_align;
 		Aligny$ y_align;
 
-		bool width_greedy;
-		bool height_greedy;
+		float min_width;
+		float min_height;
+		SizePolicy$ width_policy;
+		SizePolicy$ height_policy;
 
 		FLAME_UNIVERSE_EXPORTS cAligner(Entity* e);
 		FLAME_UNIVERSE_EXPORTS virtual ~cAligner() override;

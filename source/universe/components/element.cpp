@@ -78,7 +78,7 @@ namespace flame
 					std::vector<Vec2f> points;
 					path_rect(points, p - Vec2f(background_shadow_thickness * 0.5f), s + Vec2f(background_shadow_thickness), rr, (Side)background_round_flags);
 					points.push_back(points[0]);
-					canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), background_shadow_thickness, true);
+					canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), background_shadow_thickness);
 				}
 				if (alpha > 0.f)
 				{

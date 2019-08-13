@@ -20,7 +20,7 @@
 using namespace flame;
 using namespace graphics;
 
-const auto img_id = 69;
+const auto img_id = 9;
 //wLayout* layout;
 
 struct App
@@ -38,6 +38,7 @@ struct App
 	int rt_frame;
 
 	Entity* root;
+	cElement* c_element_root;
 	cText* c_text_fps;
 
 	void create_elements(DefaultStyle style)
@@ -168,6 +169,9 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
+			c_element_root->width = w->size.x();
+			c_element_root->height = w->size.y();
+
 			c_text_fps->set_text(std::to_wstring(app_fps()));
 			root->update();
 
@@ -209,19 +213,18 @@ int main(int argc, char** args)
 
 	app.root = Entity::create();
 	{
-		cElement::create(app.root, app.canvas);
+		app.c_element_root = cElement::create(app.root, app.canvas);
 
 		cEventDispatcher::create(app.root, app.w);
 
-		cLayout::create(app.root, app.w);
+		cLayout::create(app.root);
 	}
 
 	auto e_fps = Entity::create();
 	{
 		cElement::create(e_fps);
 
-		auto c_text = cText::create(e_fps);
-		c_text->font_atlas = app.font_atlas1;
+		auto c_text = cText::create(e_fps, app.font_atlas1);
 		c_text->color = Vec4c(0, 0, 0, 255);
 		app.c_text_fps = c_text;
 
@@ -233,12 +236,43 @@ int main(int argc, char** args)
 
 	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
 
-	//auto layout_top = Element::createT<wLayout>(ui, LayoutHorizontal);
-	//layout_top->align$ = AlignTop;
+	auto e_layout_top = Entity::create();
+	{
+		cElement::create(e_layout_top);
 
-	//auto w_btn_dark = Element::createT<wButton>(ui, font_atlas_index, L"dark");
-	//w_btn_dark->align$ = AlignLittleEnd;
-	//w_btn_dark->text_col() = Vec4c(255);
+		auto c_layout = cLayout::create(e_layout_top);
+		c_layout->type = LayoutHorizontal;
+
+		auto c_aligner = cAligner::create(e_layout_top);
+		c_aligner->x_align = AlignxMiddle;
+		c_aligner->y_align = AlignyTop;
+	}
+	app.root->add_child(e_layout_top);
+
+	auto e_btn_dark = Entity::create();
+	{
+		cElement::create(e_btn_dark);
+
+		auto c_text = cText::create(e_btn_dark, app.font_atlas1);
+		c_text->color = Vec4c(0, 0, 0, 255);
+		c_text->set_text(L"Dark");
+
+		cAligner::create(e_btn_dark);
+	}
+	e_layout_top->add_child(e_btn_dark);
+
+	auto e_btn_light = Entity::create();
+	{
+		cElement::create(e_btn_light);
+
+		auto c_text = cText::create(e_btn_light, app.font_atlas1);
+		c_text->color = Vec4c(0, 0, 0, 255);
+		c_text->set_text(L"Light");
+
+		cAligner::create(e_btn_light);
+	}
+	e_layout_top->add_child(e_btn_light);
+
 	//w_btn_dark->mouse_listeners$.push_back([](Element::MouseListenerParm &p) {
 	//	auto app = p.get_capture<AppData>().app();
 	//	if (!p.is_clicked())
@@ -247,11 +281,8 @@ int main(int argc, char** args)
 	//	layout->clear_children(1, 0, -1, true);
 	//	app->create_elements(DefaultStyleDark);
 	//}, { this }));
-	//layout_top->add_child(w_btn_dark);
 
-	//auto w_btn_light = Element::createT<wButton>(ui, font_atlas_index, L"light");
-	//w_btn_light->align$ = AlignLittleEnd;
-	//w_btn_light->text_col() = Vec4c(255);
+
 	//w_btn_light->mouse_listeners$.push_back([](Element::MouseListenerParm & p) {
 	//	auto app = p.get_capture<AppData>().app();
 	//	if (!p.is_clicked())
@@ -260,9 +291,6 @@ int main(int argc, char** args)
 	//	layout->clear_children(1, 0, -1, true);
 	//	app->create_elements(DefaultStyleLight);
 	//}, { this }));
-	//layout_top->add_child(w_btn_light);
-
-	//ui->root()->add_child(layout_top, 1);
 
 	//layout = Element::createT<wLayout>(ui);
 	//ui->root()->add_child(layout, 1);

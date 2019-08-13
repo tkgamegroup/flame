@@ -14,8 +14,18 @@ namespace flame
 			x_align = AlignxFree;
 			y_align = AlignyFree;
 
-			width_greedy = false;
-			height_greedy = false;
+			min_width = -1.f;
+			min_height = -1.f;
+			width_policy = SizeFixed;
+			height_policy = SizeFixed;
+		}
+
+		void update()
+		{
+			if (min_width < 0.f && width_policy == SizeGreedy)
+				min_width = element->width;
+			if (min_height < 0.f && height_policy == SizeGreedy)
+				min_height = element->height;
 		}
 	};
 
@@ -30,6 +40,7 @@ namespace flame
 
 	void cAligner::update()
 	{
+		((cAlignerPrivate*)this)->update();
 	}
 
 	cAligner* cAligner::create(Entity* e)
