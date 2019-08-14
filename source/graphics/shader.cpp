@@ -649,9 +649,9 @@ namespace flame
 		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>* _inputs, const std::vector<void*>* _outputs, Pipelinelayout* _pll, bool autogen_code) :
 			d((DevicePrivate*)d)
 		{
-			assert(std::fs::exists(filename));
+			assert(std::filesystem::exists(filename));
 
-			auto ext = std::fs::path(filename).extension();
+			auto ext = std::filesystem::path(filename).extension();
 			if (ext == L".vert")
 				stage = ShaderStageVert;
 			else if (ext == L".tesc")
@@ -760,12 +760,12 @@ namespace flame
 			auto hash = H(prefix.c_str());
 			std::wstring spv_filename(filename + L"." + std::to_wstring(hash) + L".spv");
 
-			if (!std::fs::exists(spv_filename) || std::fs::last_write_time(spv_filename) < std::fs::last_write_time(filename))
+			if (!std::filesystem::exists(spv_filename) || std::filesystem::last_write_time(spv_filename) < std::filesystem::last_write_time(filename))
 			{
 				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
 				assert(vk_sdk_path != L"");
 
-				std::fs::remove(spv_filename);
+				std::filesystem::remove(spv_filename);
 
 				auto temp_filename = L"temp" + ext.wstring();
 				{
@@ -782,12 +782,12 @@ namespace flame
 				}
 				std::wstring command_line(L" " + temp_filename + L" -flimit-file shader.conf -o" + spv_filename);
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
-				if (!std::fs::exists(spv_filename))
+				if (!std::filesystem::exists(spv_filename))
 				{
 					assert(0);
 					printf("shader \"%s\" compile error:\n%s\n", w2s(filename).c_str(), output.p->c_str());
 				}
-				std::fs::remove(temp_filename);
+				std::filesystem::remove(temp_filename);
 				delete_mail(output);
 			}
 

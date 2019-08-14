@@ -22,7 +22,7 @@
 #include <codecvt>
 #include <regex>
 #include <fstream>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <thread>
 #include <mutex>
 #include <stdarg.h>
@@ -36,11 +36,6 @@
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "flame", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "flame", __VA_ARGS__))
 #endif
-
-namespace std
-{
-	namespace fs = std::experimental::filesystem;
-}
 
 FLAME_FOUNDATION_EXPORTS void* flame_malloc(unsigned int size);
 FLAME_FOUNDATION_EXPORTS void* flame_realloc(void* p, unsigned int size);
@@ -793,7 +788,7 @@ namespace flame
 		}
 	};
 
-	inline std::fs::path ext_replace(const std::fs::path& path, const std::wstring& ext)
+	inline std::filesystem::path ext_replace(const std::filesystem::path& path, const std::wstring& ext)
 	{
 		if (path.extension().wstring() != ext)
 		{

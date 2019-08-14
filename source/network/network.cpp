@@ -373,7 +373,7 @@ namespace flame
 			auto json = SerializableNode::create("");
 			json->new_attr("action", "start");
 			json->new_attr("seed", std::to_string(seed));
-			auto str = json->to_string_json();
+			auto str = SerializableNode::to_json_string(json);
 			for (auto i = 0; i < client_count; i++)
 				s->send(i, str.p->size(), str.p->data());
 			delete_mail(str);
@@ -420,7 +420,7 @@ namespace flame
 											s->frame++;
 											s->semaphore = 0;
 
-											auto str = s->frame_advance_data->to_string_json();
+											auto str = SerializableNode::to_json_string(s->frame_advance_data);
 											for (auto i = 0; i < 2; i++)
 												s->send(i, str.p->size(), str.p->data());
 											delete_mail(str);

@@ -1565,7 +1565,7 @@ namespace flame
 		}
 		if (FAILED(dia_source->loadDataFromPdb(ext_replace(filename, L".pdb").c_str())))
 		{
-			printf("pdb failed to open: %s\n", std::fs::path(filename).stem().string().c_str());
+			printf("pdb failed to open: %s\n", std::filesystem::path(filename).stem().string().c_str());
 			assert(0);
 			return;
 		}
@@ -1982,7 +1982,7 @@ namespace flame
 
 	void typeinfo_save(const std::wstring& filename, const std::wstring& module_name)
 	{
-		auto p_module_name = std::fs::path(module_name);
+		auto p_module_name = std::filesystem::path(module_name);
 
 		auto file = SerializableNode::create("typeinfo");
 

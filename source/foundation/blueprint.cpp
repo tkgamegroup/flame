@@ -344,7 +344,7 @@ namespace flame
 			typeinfo_clear(ext_replace(d.final_filename, L".typeinfo"));
 		}
 		free_module(bp_module);
-		typeinfo_clear(std::fs::path(filename).parent_path().wstring() + L"/build/debug/bp.typeinfo");
+		typeinfo_clear(std::filesystem::path(filename).parent_path().wstring() + L"/build/debug/bp.typeinfo");
 	}
 
 	void BPPrivate::add_dependency(const std::wstring& filename)
@@ -360,7 +360,7 @@ namespace flame
 		d.module = load_module(filename);
 		if (!d.module)
 		{
-			std::fs::path path(this->filename);
+			std::filesystem::path path(this->filename);
 			d.final_filename = path.parent_path().wstring() + L"/" + filename;
 			d.module = load_module(d.final_filename);
 		}
@@ -402,7 +402,7 @@ namespace flame
 			return nullptr;
 
 		void* module = nullptr;
-		auto p_udt_module_name = std::fs::path(udt->module_name());
+		auto p_udt_module_name = std::filesystem::path(udt->module_name());
 		for (auto& d : dependencies)
 		{
 			if (d.final_filename == p_udt_module_name)
@@ -413,7 +413,7 @@ namespace flame
 		}
 		if (!module)
 		{
-			if (p_udt_module_name == std::fs::path(filename).parent_path() / "build/debug/bp.dll")
+			if (p_udt_module_name == std::filesystem::path(filename).parent_path() / "build/debug/bp.dll")
 				module = bp_module;
 		}
 
@@ -510,7 +510,7 @@ namespace flame
 			return;
 		}
 
-		_bp_env.path = std::fs::path(filename).parent_path().wstring();
+		_bp_env.path = std::filesystem::path(filename).parent_path().wstring();
 		_bp_env.graphics_device = graphics_device;
 
 		for (auto &n : update_list)
@@ -693,7 +693,7 @@ namespace flame
 	BP *BP::create_from_file(const std::wstring& filename, bool no_compile)
 	{
 		auto s_filename = w2s(filename);
-		auto ppath = std::fs::path(filename).parent_path();
+		auto ppath = std::filesystem::path(filename).parent_path();
 		auto ppath_str = ppath.wstring();
 
 		printf("begin to load bp: %s\n", s_filename.c_str());
@@ -716,7 +716,7 @@ namespace flame
 				std::pair<std::wstring, std::wstring> d;
 				d.first = s2w(n_dependencies->node(i_d)->find_attr("v")->value());
 				auto final_filename = d;
-				if (!std::fs::exists(d.first))
+				if (!std::filesystem::exists(d.first))
 					d.second = ppath_str + L"/" + d.first;
 				else
 					d.second = d.first;
@@ -791,7 +791,7 @@ namespace flame
 		if (!no_compile)
 		{
 			auto templatecpp_path = ppath / L"template.cpp";
-			if (!std::fs::exists(templatecpp_path) || std::fs::last_write_time(templatecpp_path) < std::fs::last_write_time(filename))
+			if (!std::filesystem::exists(templatecpp_path) || std::filesystem::last_write_time(templatecpp_path) < std::filesystem::last_write_time(filename))
 			{
 				printf("generating template.cpp");
 
@@ -842,7 +842,7 @@ namespace flame
 				printf("template.cpp up to data\n");
 
 			auto cmakelists_path = ppath / L"CMakeLists.txt";
-			if (!std::fs::exists(cmakelists_path) || std::fs::last_write_time(cmakelists_path) < std::fs::last_write_time(filename))
+			if (!std::filesystem::exists(cmakelists_path) || std::filesystem::last_write_time(cmakelists_path) < std::filesystem::last_write_time(filename))
 			{
 				printf("generating cmakelists");
 
@@ -886,7 +886,7 @@ namespace flame
 				printf("%s\n", content.c_str());
 
 				if (!content.empty())
-					std::fs::remove(OUTPUT_FILE);
+					std::filesystem::remove(OUTPUT_FILE);
 
 #undef OUTPUT_FILE
 			}

@@ -54,7 +54,7 @@ namespace flame
 		wchar_t buf[260];
 		GetModuleFileNameW(nullptr, buf, sizeof(buf));
 		auto ret = new_mail<std::wstring>();
-		(*ret.p) = std::fs::path(buf).parent_path().generic_wstring();
+		(*ret.p) = std::filesystem::path(buf).parent_path().generic_wstring();
 		return ret;
 	}
 
@@ -234,7 +234,7 @@ namespace flame
 
 	Mail<std::vector<std::string>> get_module_dependancies(const std::wstring& module_name)
 	{
-		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::fs::path(module_name).parent_path().string().c_str());
+		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::filesystem::path(module_name).parent_path().string().c_str());
 
 		auto ret = new_mail<std::vector<std::string>>();
 		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2) 
@@ -335,7 +335,7 @@ namespace flame
 
 	void get_thumbnai(uint width, const std::wstring& _filename, uint* out_width, uint* out_height, char** out_data)
 	{
-		std::fs::path path(_filename);
+		std::filesystem::path path(_filename);
 		path.make_preferred();
 		auto filename = path.wstring();
 

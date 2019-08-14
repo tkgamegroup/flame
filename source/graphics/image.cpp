@@ -315,8 +315,8 @@ namespace flame
 
 		Image *Image::create_from_file(Device *d, const std::wstring& filename, ImageUsage$ extra_usage)
 		{
-			std::fs::path path(filename);
-			if (!std::fs::exists(path))
+			std::filesystem::path path(filename);
+			if (!std::filesystem::exists(path))
 				return nullptr;
 
 			int width, height, level, layer;
