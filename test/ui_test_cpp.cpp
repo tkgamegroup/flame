@@ -20,6 +20,7 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/toggle.h>
+#include <flame/universe/components/image.h>
 
 using namespace flame;
 using namespace graphics;
@@ -239,6 +240,60 @@ int main(int argc, char** args)
 	}
 	e_layout_left->add_child(e_toggle);
 
+	auto e_image = Entity::create();
+	{
+		auto c_element = cElement::create(e_image);
+		c_element->width = 254.f;
+		c_element->height = 254.f;
+		c_element->inner_padding = Vec4f(4.f);
+		c_element->background_frame_color = Vec4c(10, 200, 10, 255);
+		c_element->background_frame_thickness = 2.f;
+
+		auto c_image = cImage::create(e_image);
+		c_image->id = img_id;
+
+		cAligner::create(e_image);
+	}
+	e_layout_left->add_child(e_image);
+	//auto w_image = Element::createT<wImage>(ui);
+	//w_image->size$ = Vec2f(250.f);
+	//w_image->id() = img_id;
+	//w_image->align$ = AlignLittleEnd;
+	//layout1->add_child(w_image);
+
+	//auto w_edit = Element::createT<wEdit>(ui, font_atlas_index);
+	//w_edit->align$ = AlignLittleEnd;
+	//w_edit->set_size_by_width(100.f);
+	//layout1->add_child(w_edit);
+
+	//auto w_list = Element::createT<wList>(ui);
+	//w_list->pos$ = Vec2f(800.f, 8.f);
+	//w_list->size$ = Vec2f(300.f);
+
+	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
+	//w_sizedrag->min_size() = Vec2f(100.f);
+
+	//w_list->add_child(w_sizedrag, 1);
+
+	//for (auto i = 0; i < 20; i++)
+	//{
+	//	auto item = Element::createT<wListItem>(ui, font_atlas_index, (L"item " + to_stdwstring(i)).c_str());
+	//	w_list->add_child(item);
+	//}
+
+	auto e_layout_menus = Entity::create();
+	{
+		cElement::create(e_layout_menus);
+
+		auto c_layout = cLayout::create(e_layout_menus);
+		c_layout->type = LayoutVertical;
+
+		cAligner::create(e_layout_menus);
+	}
+	e_layout_left->add_child(e_layout_menus);
+
+	//layout->add_child(w_list, 1);
+
 	//auto w_menubar = Element::createT<wMenuBar>(ui);
 	//w_menubar->align$ = AlignLittleEnd;
 
@@ -269,35 +324,7 @@ int main(int argc, char** args)
 
 	//layout1->add_child(w_combo);
 
-	//auto w_edit = Element::createT<wEdit>(ui, font_atlas_index);
-	//w_edit->align$ = AlignLittleEnd;
-	//w_edit->set_size_by_width(100.f);
-	//layout1->add_child(w_edit);
-
-	//auto w_image = Element::createT<wImage>(ui);
-	//w_image->size$ = Vec2f(250.f);
-	//w_image->id() = img_id;
-	//w_image->align$ = AlignLittleEnd;
-	//layout1->add_child(w_image);
-
 	//layout->add_child(layout1, 1);
-
-	//auto w_list = Element::createT<wList>(ui);
-	//w_list->pos$ = Vec2f(800.f, 8.f);
-	//w_list->size$ = Vec2f(300.f);
-
-	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
-	//w_sizedrag->min_size() = Vec2f(100.f);
-
-	//w_list->add_child(w_sizedrag, 1);
-
-	//for (auto i = 0; i < 20; i++)
-	//{
-	//	auto item = Element::createT<wListItem>(ui, font_atlas_index, (L"item " + to_stdwstring(i)).c_str());
-	//	w_list->add_child(item);
-	//}
-
-	//layout->add_child(w_list, 1);
 
 	//auto w_treenode1 = Element::createT<wTreeNode>(ui, font_atlas_index, L"A");
 	//w_treenode1->pos$ = Vec2f(800.f, 400.f);

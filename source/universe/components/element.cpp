@@ -88,7 +88,10 @@ namespace flame
 					if (background_color.w() > 0)
 						canvas->fill(points, alpha_mul(background_color, alpha));
 					if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
-						canvas->fill(points, alpha_mul(background_frame_color, alpha));
+					{
+						points.push_back(points[0]);
+						canvas->stroke(points, alpha_mul(background_frame_color, alpha), background_frame_thickness);
+					}
 				}
 			}
 		}

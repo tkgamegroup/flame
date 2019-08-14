@@ -156,14 +156,6 @@ namespace flame
 			parent->take_child(layer, parent->find_child(layer, this));
 	}
 
-	void Element::set_to_foreground()
-	{
-		auto& list = layer == 0 ? parent->children_1$ : parent->children_2$;
-		for (auto i = list.find(this); i < list.size - 1; i++)
-			list[i] = list[i + 1];
-		list[list.size - 1] = this;
-	}
-
 	const auto scroll_spare_spacing = 20.f;
 
 	float Element::get_content_size() const
@@ -186,20 +178,6 @@ namespace flame
 			children_1$[i]->remove_animations();
 		for (auto i = 0; i < children_2$.size; i++)
 			children_2$[i]->remove_animations();
-	}
-
-	void Element::on_draw(graphics::Canvas * c, const Vec2 & off, float scl)
-	{
-		for (auto i = 0; i < extra_draws$.size; i++)
-		{
-			auto& f = extra_draws$[i];
-			auto& p = (ExtraDrawParm&)f.p;
-			p.thiz() = this;
-			p.canvas() = c;
-			p.off() = off;
-			p.scl() = scl;
-			f.exec();
-		}
 	}
 
 	void Element::on_focus(FocusType type, int is_keyfocus)
@@ -929,28 +907,6 @@ namespace flame
 	{
 		set_size(Vec2(width + inner_padding$[0] + inner_padding$[2], 
 			(font_atlas_index() >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index())->pixel_height * sdf_scale() : 0.f) + inner_padding$[1] + inner_padding$[3]));
-	}
-
-	void image_extra_draw$(Element::ExtraDrawParm& p)
-	{
-		auto thiz = (wImagePtr)p.thiz();
-		auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[1])) * p.scl() + p.off();
-		auto size = (thiz->size$ - Vec2(thiz->inner_padding$[0] + thiz->inner_padding$[2], thiz->inner_padding$[1] + thiz->inner_padding$[3])) * p.scl() * thiz->scale$;
-		if (!thiz->stretch())
-			p.canvas()->add_image(pos, size, thiz->id(), thiz->uv0(), thiz->uv1());
-		else
-			p.canvas()->add_image_stretch(pos, size, thiz->id(), thiz->border());
-	}
-
-	void wImage::init()
-	{
-		id() = 0;
-		uv0() = Vec2(0.f);
-		uv1() = Vec2(1.f);
-		stretch() = 0;
-		border() = Vec4(0.f);
-
-		extra_draws$.push_back(Function<ExtraDrawParm>(image_extra_draw$, {}));
 	}
 
 	void scrollbar_btn_mouse_event$(Element::MouseListenerParm& p)

@@ -26,7 +26,6 @@ namespace flame
 
 		bool cliped; // valid after arranging by parent
 		int content_size; // valid after arranging
-		bool showed; // vaild after processing
 
 		Array<Animation> animations$;
 
@@ -60,8 +59,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void remove_from_parent(bool delay = false);
 		FLAME_UNIVERSE_EXPORTS void take_from_parent(bool delay = false);
-		FLAME_UNIVERSE_EXPORTS int find_child(int layer, Element* w);
-		FLAME_UNIVERSE_EXPORTS void set_to_foreground();
 
 		FLAME_UNIVERSE_EXPORTS float get_content_size() const;
 
@@ -70,15 +67,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void on_draw(graphics::Canvas* c, const Vec2& off, float scl);
 		FLAME_UNIVERSE_EXPORTS void on_focus(FocusType type, int is_keyfocus);
 
-		FLAME_UNIVERSE_EXPORTS SerializableNode* save();
-
 		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VariableInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
 	};
-
-	FLAME_ELEMENT_BEGIN_1(wToggle, wText, int, toggled, i1)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index);
-		FLAME_UNIVERSE_EXPORTS void set_toggle(bool v);
-	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_0(wMenuItem, wText)
 		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title);
@@ -102,10 +92,6 @@ namespace flame
 	FLAME_ELEMENT_BEGIN_3(wEdit, wText, int, cursor, i1, voidptr, info, p, voidptr, target, p)
 		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, void* info = nullptr, void* target = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_size_by_width(float width);
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_5(wImage, Element, int, id, i1, Vec2, uv0, f2, Vec2, uv1, f2, int, stretch, i1, Vec4, border/* L R T B */, f4)
-		FLAME_UNIVERSE_EXPORTS void init();
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wScrollbar, wLayout, wButtonPtr, w_btn, p, ElementPtr, w_target, p)
