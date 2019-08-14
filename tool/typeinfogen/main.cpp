@@ -17,13 +17,13 @@ int main(int argc, char **args)
 	for (auto i = 2; i < argc; i++)
 		dependencies.push_back(s2w(args[i]));
 
-	if (!std::fs::exists(typeinfo_filename) || std::fs::last_write_time(typeinfo_filename) < std::fs::last_write_time(dll_filename))
+	if (!std::filesystem::exists(typeinfo_filename) || std::filesystem::last_write_time(typeinfo_filename) < std::filesystem::last_write_time(dll_filename))
 	{
 		printf("generating typeinfo");
 
 		for (auto& d : dependencies)
 		{
-			if (std::fs::exists(d))
+			if (std::filesystem::exists(d))
 				typeinfo_load(ext_replace(d, L".typeinfo"));
 		}
 

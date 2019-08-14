@@ -20,7 +20,6 @@ namespace flame
 		{
 			FlagNull,
 			FlagJustCreated,
-			FlagJustCreatedNeedModual,
 			FlagNeedToRemoveFromParent,
 			FlagNeedToTakeFromParent
 		};
@@ -88,7 +87,6 @@ namespace flame
 	FLAME_ELEMENT_BEGIN_5(wMenu, wLayout, bool, sub, i1, bool, opened, i1, wTextPtr, w_title, p, wTextPtr, w_rarrow, p, wLayoutPtr, w_items, p)
 		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title, bool only_for_context_menu = false);
 		FLAME_UNIVERSE_EXPORTS void open();
-		FLAME_UNIVERSE_EXPORTS void popup(const Vec2& pos);
 		FLAME_UNIVERSE_EXPORTS void close();
 	FLAME_ELEMENT_END
 

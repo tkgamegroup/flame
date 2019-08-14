@@ -7,7 +7,7 @@ int main(int argc, char **args)
 	network_init();
 
 	auto s = FrameSyncServer::create(SocketWeb, 5567, 2);
-	wait_for(s->ev_closed);
+	wait_event(s->ev_closed, -1);
 
 	return 0;
 }

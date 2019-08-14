@@ -35,8 +35,6 @@ namespace flame
 			ui->set_key_focus_element(nullptr);
 		if (this == ui->dragging_element())
 			ui->set_dragging_element(nullptr);
-		if (this == ui->popup_element())
-			ui->set_popup_element(nullptr);
 	}
 
 	void Element::add_child(Element * w, int layer, int pos, bool modual)

@@ -7,9 +7,6 @@ namespace flame
 	struct UIPrivate : UI
 	{
 		Element* key_focus_element_;
-		Element* popup_element_;
-		bool popup_element_modual_;
-		Ivec2 mouse_prev_pos_;
 		Element* potential_doubleclick_element_;
 		float doubleclick_timer_;
 		std::vector<int> keydown_inputs_;

@@ -16,8 +16,6 @@ namespace flame
 	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
 	{
 		key_focus_element_ = root_.get();
-		popup_element_ = nullptr;
-		popup_element_modual_ = false;
 		potential_doubleclick_element_ = nullptr;
 		doubleclick_timer_ = 0.f;
 		char_input_compelete_ = true;
@@ -101,46 +99,9 @@ namespace flame
 		set_key_focus_element(w);
 	}
 
-	inline void UIPrivate::set_popup_element(Element * w, bool modual)
-	{
-		popup_element_ = w;
-		popup_element_modual_ = modual;
-	}
-
-	inline void UIPrivate::close_popup()
-	{
-		if (popup_element_ && !popup_element_modual_)
-		{
-			switch (popup_element_->class$.hash)
-			{
-			case cH("wMenuBar"):
-				for (auto i_c = 0; i_c < popup_element_->children_1$.size; i_c++)
-				{
-					auto c = popup_element_->children_1$[i_c];
-
-					if (c->class$.hash == cH("wMenu"))
-						((wMenu*)c)->close();
-				}
-				break;
-			case cH("menu items"):
-				((wMenu*)popup_element_->parent)->close();
-				break;
-			case cH("wCombo"):
-				((wMenu*)popup_element_)->close();
-				break;
-			}
-			popup_element_ = nullptr;
-		}
-	}
-
 	struct _Package
 	{
-		Element* temp_dragging_element;
 		Rect curr_scissor;
-		Vec2 surface_size;
-		Vec2 popup_off;
-		float popup_scl;
-		bool meet_popup_first;
 		bool ban_event;
 	};
 
@@ -185,16 +146,8 @@ namespace flame
 		char_inputs_.clear();
 
 		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-		p.popup_off = popup_element_ ? popup_element_->pos$ : Vec2(0.f);
-		p.popup_scl = 1.f;
-		p.meet_popup_first = true;
-		p.ban_event = popup_element_;
 
 		p.ban_event = false;
-		if (popup_element_)
-			preprocessing(&p, popup_element_, true, p.popup_off, p.popup_scl);
-		if (p.clicking_nothing && popup_element_)
-			close_popup();
 
 		if (dragging_element_)
 		{
@@ -214,15 +167,6 @@ namespace flame
 
 		p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
 
-		p.meet_popup_first = true;
-		show(&p, root_.get(), true, Vec2(0.f), 1.f);
-		if (popup_element_)
-		{
-			if (popup_element_modual_)
-				canvas->add_rect_filled(Vec2(0.f), p.surface_size, Bvec4(0, 0, 0, 100));
-			show(&p, popup_element_, true, p.popup_off, p.popup_scl);
-		}
-
 		postprocessing(root_.get());
 
 		for (int i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
@@ -233,19 +177,9 @@ namespace flame
 	{
 		switch (w->flag)
 		{
-		case Element::FlagJustCreatedNeedModual:
-			set_popup_element(w, true);
 		case Element::FlagJustCreated:
 			w->flag = Element::FlagNull;
 			break;
-		}
-
-		if (w == popup_element_ && p.meet_popup_first)
-		{
-			p.popup_off = off;
-			p.popup_scl = scl;
-			p.meet_popup_first = false;
-			return;
 		}
 
 		if (!p.ban_event && visible && w->event_attitude$ != EventIgnore)
@@ -312,17 +246,7 @@ namespace flame
 		}
 
 		if (visible && ((e->size$.x == 0.f && e->size$.y == 0.f) || (Rect(Vec2(0.f), e->size$ * e->global_scale) + e->global_pos).overlapping(p.curr_scissor)))
-		{
-			if (e == popup_element_ && p.meet_popup_first)
-			{
-				p.popup_off = off;
-				p.popup_scl = scl;
-				p.meet_popup_first = false;
-				return;
-			}
-			else
-				e->on_draw(canvas, off + p.show_off, scl);
-		}
+			e->on_draw(canvas, off + p.show_off, scl);
 	}
 
 	void UIPrivate::postprocessing(Element * w)
