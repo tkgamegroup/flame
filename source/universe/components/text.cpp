@@ -1,34 +1,37 @@
 #include <flame/graphics/canvas.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
+#include "text_private.h"
 #include <flame/universe/default_style.h>
 
 namespace flame
 {
-	struct cTextPrivate : cText
+	cTextPrivate::cTextPrivate(Entity* e, graphics::FontAtlas* _font_atlas) :
+		cText(e)
 	{
-		std::wstring text;
+		element = (cElement*)(e->find_component(cH("Element")));
+		assert(element);
 
-		cTextPrivate(Entity* e, graphics::FontAtlas* _font_atlas) :
-			cText(e)
+		font_atlas = _font_atlas;
+		color = default_style.text_color_normal;
+		sdf_scale = default_style.sdf_scale;
+		auto_size = true;
+	}
+
+	cTextPrivate::~cTextPrivate()
+	{
+	}
+
+	void cTextPrivate::update()
+	{
+		auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
+			Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
+			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+		if (auto_size)
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
-
-			font_atlas = _font_atlas;
-			color = default_style.text_color_normal;
-			sdf_scale = default_style.sdf_scale;
-		}
-
-		void update()
-		{
-			auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) + 
-				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale, 
-				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 			element->width = rect.x() + element->inner_padding[0] + element->inner_padding[2];
 			element->height = rect.y() + element->inner_padding[1] + element->inner_padding[3];
 		}
-	};
+	}
 
 	cText::cText(Entity* e) :
 		Component("Text", e)
@@ -37,6 +40,7 @@ namespace flame
 
 	cText::~cText()
 	{
+		((cTextPrivate*)this)->~cTextPrivate();
 	}
 
 	const std::wstring& cText::text() const

@@ -19,11 +19,13 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
+		FLAME_UNIVERSE_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture);
 		FLAME_UNIVERSE_EXPORTS void* add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& pos), const Mail<>& capture);
 
+		FLAME_UNIVERSE_EXPORTS void remove_key_listener(void* ret_by_add);
 		FLAME_UNIVERSE_EXPORTS void remove_mouse_listener(void* ret_by_add);
 
-		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, int value);
+		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, uint value);
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2f& value);
 		FLAME_UNIVERSE_EXPORTS void on_drop(cEventReceiver* src);
 

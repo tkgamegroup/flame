@@ -74,6 +74,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS uint app_frame();
 	FLAME_FOUNDATION_EXPORTS uint app_fps();
 	FLAME_FOUNDATION_EXPORTS float app_delta_time(); // second
+	FLAME_FOUNDATION_EXPORTS float app_total_time(); // second
 
 	FLAME_FOUNDATION_EXPORTS int app_run(void (*idle_func)(void* c), const Mail<>& capture);
 

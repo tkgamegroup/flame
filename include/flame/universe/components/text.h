@@ -18,6 +18,7 @@ namespace flame
 		graphics::FontAtlas* font_atlas;
 		Vec4c color;
 		float sdf_scale;
+		bool auto_size;
 
 		FLAME_UNIVERSE_EXPORTS cText(Entity* e);
 		FLAME_UNIVERSE_EXPORTS virtual ~cText() override;

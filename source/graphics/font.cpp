@@ -293,11 +293,15 @@ namespace flame
 				return map[unicode];
 			}
 
-			int get_text_width(const std::wstring& text)
+			uint get_text_width(const std::wstring_view& text)
 			{
 				auto w = 0;
 				for (auto c : text)
+				{
+					if (!c)
+						break;
 					w += get_glyph(c)->advance;
+				}
 				return w;
 			}
 		};
@@ -317,7 +321,7 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->get_glyph(unicode);
 		}
 
-		int FontAtlas::get_text_width(const std::wstring& text)
+		uint FontAtlas::get_text_width(const std::wstring_view& text)
 		{
 			return ((FontAtlasPrivate*)this)->get_text_width(text);
 		}

@@ -545,6 +545,7 @@ namespace flame
 	static uint frame;
 	static uint fps;
 	static float delta_time; // second
+	static float total_time; // second
 
 	uint app_frame()
 	{
@@ -559,6 +560,11 @@ namespace flame
 	float app_delta_time()
 	{
 		return delta_time;
+	}
+
+	float app_total_time()
+	{
+		return total_time;
 	}
 
 	int app_run(void (*idle_func)(void* c), const Mail<>& capture)
@@ -638,6 +644,7 @@ namespace flame
 			last_time = get_now_ns();
 			et = last_time - et;
 			delta_time = et / 1000000000.f;
+			total_time += delta_time;
 		}
 	}
 

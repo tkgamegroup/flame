@@ -45,7 +45,7 @@ namespace flame
 			uint index;
 
 			FLAME_GRAPHICS_EXPORTS const Glyph* get_glyph(wchar_t unicode);
-			FLAME_GRAPHICS_EXPORTS int get_text_width(const std::wstring& text);
+			FLAME_GRAPHICS_EXPORTS uint get_text_width(const std::wstring_view& text);
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 

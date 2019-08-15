@@ -193,19 +193,6 @@ namespace flame
 		}
 	}
 
-	void Element::on_key(KeyState action, int value)
-	{
-		for (auto i = 0; i < key_listeners$.size; i++)
-		{
-			auto& f = key_listeners$[i];
-			auto& p = (KeyListenerParm&)f.p;
-			p.thiz() = this;
-			p.action() = action;
-			p.value() = value;
-			f.exec();
-		}
-	}
-
 	void Element::on_drop(Element * src)
 	{
 		for (auto i = 0; i < drop_listeners$.size; i++)
@@ -665,23 +652,6 @@ namespace flame
 		on_changed();
 	}
 
-	void edit_extra_draw$(Element::ExtraDrawParm &p)
-	{
-		auto thiz = (wEditPtr)p.thiz();
-		auto font_atlas_index = thiz->font_atlas_index();
-		if (font_atlas_index < 0)
-			return;
-		auto ui = thiz->ui;
-		if (ui->key_focus_element() == thiz && int(ui->total_time() * 2) % 2 == 0)
-		{
-			auto font_atlas = ui->canvas()->get_font_atlas(font_atlas_index);
-			auto len = font_atlas->get_text_width(thiz->text$.v, thiz->text$.v + thiz->cursor());
-			auto pos = (thiz->pos$ + Vec2(thiz->inner_padding$[0], thiz->inner_padding$[1])) * p.scl() + p.off();
-			auto scl = p.scl() * thiz->sdf_scale();
-			p.canvas()->add_text(font_atlas_index, pos + Vec2(len - 1.f, 0.f) * scl, thiz->text_col(), L"|", scl);
-		}
-	}
-
 	void edit_key_event$(Element::KeyListenerParm &p)
 	{
 		auto thiz = (wEditPtr)p.thiz();
@@ -725,60 +695,6 @@ namespace flame
 						return;
 					break;
 				}
-			}
-
-			switch (p.value())
-			{
-			case L'\b':
-				if (thiz->cursor() > 0)
-				{
-					thiz->cursor()--;
-					thiz->text$.remove(thiz->cursor());
-					thiz->on_changed();
-				}
-				break;
-			case 22:
-			{
-				auto str = get_clipboard();
-
-				thiz->cursor() = 0;
-				thiz->text$ = str.v;
-				thiz->on_changed();
-			}
-				break;
-			case 27:
-				break;
-			default:
-				thiz->text$.insert(thiz->cursor(), p.value());
-				thiz->cursor()++;
-				thiz->on_changed();
-			}
-		}
-		else if (p.action() == KeyStateDown)
-		{
-			switch (p.value())
-			{
-			case Key_Left:
-				if (thiz->cursor() > 0)
-					thiz->cursor()--;
-				break;
-			case Key_Right:
-				if (thiz->cursor() < thiz->text$.size)
-					thiz->cursor()++;
-				break;
-			case Key_Home:
-				thiz->cursor() = 0;
-				break;
-			case Key_End:
-				thiz->cursor() = thiz->text$.size;
-				break;
-			case Key_Del:
-				if (thiz->cursor() < thiz->text$.size)
-				{
-					thiz->text$.remove(thiz->cursor());
-					thiz->on_changed();
-				}
-				break;
 			}
 		}
 	}
@@ -849,15 +765,6 @@ namespace flame
 
 	void wEdit::init(int font_atlas_index, void* _info, void* _target)
 	{
-		info() = _info;
-		target() = _target;
-
-		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
-		background_col$ = ui->default_frame_col;
-		event_attitude$ = EventAccept;
-		want_key_focus$ = true;
-
-		extra_draws$.push_back(Function<ExtraDrawParm>(edit_extra_draw$, {}));
 		key_listeners$.push_back(Function<KeyListenerParm>(edit_key_event$, {}));
 		focus_listeners$.push_back(Function<FoucusListenerParm>(edit_focus_event$, {}));
 

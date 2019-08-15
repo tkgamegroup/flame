@@ -7,7 +7,7 @@ namespace flame
 	struct cEventReceiverPrivate : cEventReceiver
 	{
 		//Array<Function<FoucusListenerParm>> focus_listeners$;
-		//Array<Function<KeyListenerParm>> key_listeners$;
+		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, uint value)>>> key_listeners;
 		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, MouseKey key, const Vec2f& pos)>>> mouse_listeners;
 		//Array<Function<DropListenerParm>> drop_listeners$;
 		//Array<Function<ChangedListenerParm>> changed_listeners$;
@@ -43,6 +43,15 @@ namespace flame
 		((cEventReceiverPrivate*)this)->update();
 	}
 
+	void* cEventReceiver::add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, KeyState action, uint value)>;
+		c->function = listener;
+		c->capture = capture;
+		((cEventReceiverPrivate*)this)->key_listeners.emplace_back(c);
+		return c;
+	}
+
 	void* cEventReceiver::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& pos), const Mail<>& capture)
 	{
 		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & pos)>;
@@ -51,6 +60,19 @@ namespace flame
 		c->capture = capture;
 		((cEventReceiverPrivate*)this)->mouse_listeners.emplace_back(c);
 		return c;
+	}
+
+	void cEventReceiver::remove_key_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->key_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
 	}
 
 	void cEventReceiver::remove_mouse_listener(void* ret_by_add)
@@ -64,6 +86,13 @@ namespace flame
 				return;
 			}
 		}
+	}
+
+	void cEventReceiver::on_key(KeyState action, uint value)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->key_listeners;
+		for (auto& l : listeners)
+			l->function(l->capture.p, action, value);
 	}
 
 	void cEventReceiver::on_mouse(KeyState action, MouseKey key, const Vec2f& value)

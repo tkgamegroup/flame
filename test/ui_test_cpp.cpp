@@ -21,6 +21,7 @@
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/toggle.h>
 #include <flame/universe/components/image.h>
+#include <flame/universe/components/edit.h>
 
 using namespace flame;
 using namespace graphics;
@@ -184,8 +185,6 @@ int main(int argc, char** args)
 		auto c_text = cText::create(e_button, app.font_atlas_pixel);
 		c_text->set_text(L"Click Me!");
 
-		cAligner::create(e_button);
-
 		auto c_event_receiver = cEventReceiver::create(e_button);
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			if (is_mouse_clicked(action, key))
@@ -196,6 +195,8 @@ int main(int argc, char** args)
 		}, new_mail_p(&app));
 
 		cStyleBgCol::create(e_button, default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active);
+
+		cAligner::create(e_button);
 	}
 	e_layout_left->add_child(e_button);
 
@@ -210,13 +211,13 @@ int main(int argc, char** args)
 		auto c_text = cText::create(e_checkbox, app.font_atlas_pixel);
 		c_text->set_text(L"Checkbox");
 
-		cAligner::create(e_checkbox);
-
 		auto c_event_receiver = cEventReceiver::create(e_checkbox);
 
 		cStyleBgCol::create(e_checkbox, default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active);
 
 		cCheckbox::create(e_checkbox);
+
+		cAligner::create(e_checkbox);
 	}
 	e_layout_left->add_child(e_checkbox);
 
@@ -230,21 +231,21 @@ int main(int argc, char** args)
 		auto c_text = cText::create(e_toggle, app.font_atlas_pixel);
 		c_text->set_text(L"Toggle");
 
-		cAligner::create(e_toggle);
-
-		auto c_event_receiver = cEventReceiver::create(e_toggle);
+		cEventReceiver::create(e_toggle);
 
 		cStyleBgCol::create(e_toggle, Vec4c(0), Vec4c(0), Vec4c(0));
 
 		cToggle::create(e_toggle);
+
+		cAligner::create(e_toggle);
 	}
 	e_layout_left->add_child(e_toggle);
 
 	auto e_image = Entity::create();
 	{
 		auto c_element = cElement::create(e_image);
-		c_element->width = 254.f;
-		c_element->height = 254.f;
+		c_element->width = 258.f;
+		c_element->height = 258.f;
 		c_element->inner_padding = Vec4f(4.f);
 		c_element->background_frame_color = Vec4c(10, 200, 10, 255);
 		c_element->background_frame_thickness = 2.f;
@@ -255,11 +256,27 @@ int main(int argc, char** args)
 		cAligner::create(e_image);
 	}
 	e_layout_left->add_child(e_image);
-	//auto w_image = Element::createT<wImage>(ui);
-	//w_image->size$ = Vec2f(250.f);
-	//w_image->id() = img_id;
-	//w_image->align$ = AlignLittleEnd;
-	//layout1->add_child(w_image);
+
+	auto e_edit = Entity::create();
+	{
+		auto c_element = cElement::create(e_edit);
+		c_element->width = 108.f;
+		c_element->height = app.font_atlas_pixel->pixel_height + 4;
+		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+		c_element->background_color = default_style.frame_color_normal;
+
+		auto c_text = cText::create(e_edit, app.font_atlas_pixel);
+		c_text->set_text(L"ÎÄ×Ö±à¼­");
+		c_text->auto_size = false;
+
+		cEventReceiver::create(e_edit);
+
+		auto c_edit = cEdit::create(e_edit);
+		c_edit->cursor = 2;
+
+		cAligner::create(e_edit);
+	}
+	e_layout_left->add_child(e_edit);
 
 	//auto w_edit = Element::createT<wEdit>(ui, font_atlas_index);
 	//w_edit->align$ = AlignLittleEnd;
