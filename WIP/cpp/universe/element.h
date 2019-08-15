@@ -89,11 +89,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
 	FLAME_ELEMENT_END
 
-	FLAME_ELEMENT_BEGIN_3(wEdit, wText, int, cursor, i1, voidptr, info, p, voidptr, target, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, void* info = nullptr, void* target = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_size_by_width(float width);
-	FLAME_ELEMENT_END
-
 	FLAME_ELEMENT_BEGIN_2(wScrollbar, wLayout, wButtonPtr, w_btn, p, ElementPtr, w_target, p)
 		FLAME_UNIVERSE_EXPORTS void init(Element* target);
 		FLAME_UNIVERSE_EXPORTS void scroll(int v);
@@ -105,10 +100,6 @@ namespace flame
 
 	FLAME_ELEMENT_BEGIN_3(wSplitter, Element, int, dir /* 0, else = hori, vert */, i1, ElementPtr, w_target1, p, ElementPtr, w_target2, p)
 		FLAME_UNIVERSE_EXPORTS void init(int dir, Element* target1, Element* target2);
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_1(wListItem, wLayout, wTextPtr, w_title, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title);
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wList, wLayout, wListItemPtr, w_sel, p, wScrollbarPtr, w_scrollbar, p)

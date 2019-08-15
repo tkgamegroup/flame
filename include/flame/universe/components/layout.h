@@ -13,7 +13,8 @@ namespace flame
 		LayoutType$ type;
 		float item_padding;
 		bool clip;
-		bool fit_children;
+		bool width_fit_children;
+		bool height_fit_children;
 
 		float scroll_offset;
 

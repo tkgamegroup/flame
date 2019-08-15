@@ -278,6 +278,56 @@ int main(int argc, char** args)
 	}
 	e_layout_left->add_child(e_edit);
 
+	auto e_layout_right = Entity::create();
+	{
+		auto c_element = cElement::create(e_layout_right);
+		c_element->x = 416.f;
+		c_element->y = 8.f;
+
+		auto c_layout = cLayout::create(e_layout_right);
+		c_layout->type = LayoutVertical;
+		c_layout->item_padding = 8.f;
+
+		cAligner::create(e_layout_right);
+	}
+	app.root->add_child(e_layout_right);
+
+	auto e_list = Entity::create();
+	{
+		auto c_element = cElement::create(e_list);
+		c_element->width = 108.f;
+		c_element->inner_padding = Vec4f(4.f);
+		c_element->background_frame_color = Vec4c(1255);
+		c_element->background_frame_thickness = 2.f;
+
+		auto c_layout = cLayout::create(e_list);
+		c_layout->type = LayoutVertical;
+		c_layout->item_padding = 4.f;
+		c_layout->width_fit_children = false;
+
+		cAligner::create(e_list);
+	}
+	e_layout_right->add_child(e_list);
+
+	for (auto i = 0; i < 3; i++)
+	{
+		auto e_item = Entity::create();
+		{
+			cElement::create(e_item);
+
+			auto c_text = cText::create(e_item, app.font_atlas_pixel);
+			c_text->set_text(L"item" + std::to_wstring(i));
+
+			cEventReceiver::create(e_item);
+
+			cStyleBgCol::create(e_item, default_style.header_color_normal, default_style.header_color_hovering, default_style.header_color_active);
+
+			auto c_aligner = cAligner::create(e_item);
+			c_aligner->width_policy = SizeGreedy;
+		}
+		e_list->add_child(e_item);
+	}
+
 	//auto w_edit = Element::createT<wEdit>(ui, font_atlas_index);
 	//w_edit->align$ = AlignLittleEnd;
 	//w_edit->set_size_by_width(100.f);
@@ -307,7 +357,7 @@ int main(int argc, char** args)
 
 		cAligner::create(e_layout_menus);
 	}
-	e_layout_left->add_child(e_layout_menus);
+	e_layout_right->add_child(e_layout_menus);
 
 	//layout->add_child(w_list, 1);
 

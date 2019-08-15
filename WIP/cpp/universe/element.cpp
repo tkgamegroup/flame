@@ -765,7 +765,6 @@ namespace flame
 
 	void wEdit::init(int font_atlas_index, void* _info, void* _target)
 	{
-		key_listeners$.push_back(Function<KeyListenerParm>(edit_key_event$, {}));
 		focus_listeners$.push_back(Function<FoucusListenerParm>(edit_focus_event$, {}));
 
 		if (info() && target())
@@ -808,12 +807,6 @@ namespace flame
 				break;
 			}
 		}
-	}
-
-	void wEdit::set_size_by_width(float width)
-	{
-		set_size(Vec2(width + inner_padding$[0] + inner_padding$[2], 
-			(font_atlas_index() >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index())->pixel_height * sdf_scale() : 0.f) + inner_padding$[1] + inner_padding$[3]));
 	}
 
 	void scrollbar_btn_mouse_event$(Element::MouseListenerParm& p)
@@ -1009,18 +1002,8 @@ namespace flame
 	{
 		wLayout::init();
 
-		size_policy_hori$ = SizeFitLayout;
-		align$ = AlignLittleEnd;
-		layout_type$ = LayoutHorizontal;
-
 		w_title() = createT<wText>(ui, font_atlas_index);
 		w_title()->inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
-		w_title()->size_policy_hori$ = SizeFitLayout;
-		w_title()->align$ = AlignLittleEnd;
-		w_title()->event_attitude$ = EventAccept;
-		w_title()->text$ = title;
-		w_title()->set_size_auto();
-		w_title()->styles$.push_back(Style(0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active)));
 		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(listitem_title_mouse_event$, {}));
 		add_child(w_title());
 
