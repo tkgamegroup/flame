@@ -11,10 +11,10 @@
 #include <flame/graphics/canvas.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/default_style.h>
-#include <flame/universe/components/event_dispatcher.h>
-#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
+#include <flame/universe/components/event_dispatcher.h>
+#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/style.h>
@@ -65,7 +65,6 @@ struct App
 
 			c_element_root->width = w->size.x();
 			c_element_root->height = w->size.y();
-
 			c_text_fps->set_text(std::to_wstring(app_fps()));
 			root->update();
 
@@ -88,10 +87,11 @@ int main(int argc, char** args)
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-
 	auto sc = app.scr->sc();
-
 	app.canvas = Canvas::create(app.d, TargetImages, &sc->images());
+	app.cbs.resize(sc->images().size());
+	for (auto i = 0; i < app.cbs.size(); i++)
+		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	auto font2 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
@@ -226,7 +226,7 @@ int main(int argc, char** args)
 		auto c_element = cElement::create(e_toggle);
 		c_element->background_round_flags = SideNW | SideNE | SideSW | SideSE;
 		c_element->background_round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
-		c_element->background_offset = Vec4f(c_element->background_round_radius, 0.f, c_element->background_round_radius, 0.f);
+		c_element->background_offset = Vec4f(c_element->background_round_radius, 2.f, c_element->background_round_radius, 2.f);
 
 		auto c_text = cText::create(e_toggle, app.font_atlas_pixel);
 		c_text->set_text(L"Toggle");
@@ -328,11 +328,6 @@ int main(int argc, char** args)
 		e_list->add_child(e_item);
 	}
 
-	//auto w_edit = Element::createT<wEdit>(ui, font_atlas_index);
-	//w_edit->align$ = AlignLittleEnd;
-	//w_edit->set_size_by_width(100.f);
-	//layout1->add_child(w_edit);
-
 	//auto w_list = Element::createT<wList>(ui);
 	//w_list->pos$ = Vec2f(800.f, 8.f);
 	//w_list->size$ = Vec2f(300.f);
@@ -408,10 +403,6 @@ int main(int argc, char** args)
 
 	//layout = Element::createT<wLayout>(ui);
 	//ui->root()->add_child(layout, 1);
-
-	app.cbs.resize(sc->images().size());
-	for (auto i = 0; i < app.cbs.size(); i++)
-		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	app_run([](void* c) {
 		auto app = (*(App * *)c);

@@ -139,16 +139,9 @@ namespace flame
 
 	struct EnumInfoPrivate : EnumInfo
 	{
-		std::wstring module_name;
-
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 	};
-
-	const std::wstring& EnumInfo::module_name() const
-	{
-		return ((EnumInfoPrivate*)this)->module_name;
-	}
 
 	const std::string& EnumInfo::name() const
 	{
@@ -210,19 +203,12 @@ namespace flame
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
-		std::wstring module_name;
-
 		std::string name;
 		void* rva;
 		TypeInfoPrivate return_type;
 		std::vector<TypeInfoPrivate> parameter_types;
 		std::string code_pos;
 	};
-
-	const std::wstring& FunctionInfo::module_name() const
-	{
-		return ((FunctionInfoPrivate*)this)->module_name;
-	}
 
 	const std::string& FunctionInfo::name() const
 	{
@@ -263,8 +249,6 @@ namespace flame
 
 	struct UdtInfoPrivate : UdtInfo
 	{
-		std::wstring module_name;
-
 		std::string name;
 		uint size;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
@@ -355,11 +339,6 @@ namespace flame
 			return nullptr;
 		}
 	};
-
-	const std::wstring& UdtInfo::module_name() const
-	{
-		return ((UdtInfoPrivate*)this)->module_name;
-	}
 
 	const std::string& UdtInfo::name() const
 	{
@@ -1451,9 +1430,12 @@ namespace flame
 		}
 	}
 
-	static std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
-	static std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
-	static std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
+	struct TypeinfoDatabasePrivate
+	{
+		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
+		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
+		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
+	};
 
 	template<class T, class U>
 	 Mail<std::vector<T*>> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
@@ -1488,10 +1470,9 @@ namespace flame
 		return find_typeinfo_object(enums, name_hash);
 	}
 
-	EnumInfo* add_enum(const std::wstring& module_name, const std::string& name)
+	EnumInfo* add_enum(const std::string& name)
 	{
 		auto e = new EnumInfoPrivate;
-		e->module_name = module_name;
 		e->name = name;
 		enums.emplace(H(name.c_str()), e);
 		return e;
@@ -1507,10 +1488,9 @@ namespace flame
 		return find_typeinfo_object(functions, name_hash);
 	}
 
-	FunctionInfo* add_function(const std::wstring& module_name, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
+	FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
 	{
 		auto f = new FunctionInfoPrivate;
-		f->module_name = module_name;
 		f->name = name;
 		f->rva = rva;
 		f->return_type.set(return_type_tag, return_type_name);
@@ -1529,10 +1509,9 @@ namespace flame
 		return find_typeinfo_object(udts, name_hash);
 	}
 
-	UdtInfo* add_udt(const std::wstring& module_name, const std::string& name, uint size)
+	UdtInfo* add_udt(const std::string& name, uint size)
 	{
 		auto u = new UdtInfoPrivate;
-		u->module_name = module_name;
 		u->name = name;
 		u->size = size;
 		udts.emplace(H(name.c_str()), u);

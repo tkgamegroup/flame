@@ -304,8 +304,6 @@ namespace flame
 
 	struct EnumInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
-
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint item_count() const;
@@ -317,8 +315,6 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
-
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
@@ -334,8 +330,6 @@ namespace flame
 
 	struct UdtInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
-
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint size() const; // if 0, then this is a template
@@ -433,21 +427,26 @@ namespace flame
 			'f' for std::[w]string variable, means this is a filename
 	*/
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::vector<EnumInfo*>> get_enums();
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
-	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const std::wstring& module_name, const std::string& name);
+	struct TypeinfoDatabase
+	{
+		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::vector<FunctionInfo*>> get_functions();
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
-	FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::wstring& module_name, const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
+		FLAME_FOUNDATION_EXPORTS Mail<std::vector<EnumInfo*>> get_enums();
+		FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
+		FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const std::string& name);
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts();
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::wstring& module_name, const std::string& name, uint size);
+		FLAME_FOUNDATION_EXPORTS Mail<std::vector<FunctionInfo*>> get_functions();
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
 
-	FLAME_FOUNDATION_EXPORTS void typeinfo_collect(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_load(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_save(const std::wstring& filename, const std::wstring& module_name);
-	FLAME_FOUNDATION_EXPORTS void typeinfo_clear(const std::wstring& module_name); // module_name == "" means all
+		FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts();
+		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
+		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::string& name, uint size);
+
+		FLAME_FOUNDATION_EXPORTS static void collect(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void load(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void save();
+		FLAME_FOUNDATION_EXPORTS static void destroy(TypeinfoDatabase* db);
+	};
 }
 

@@ -1,13 +1,46 @@
-#include <flame/basic_app.h>
+#include <flame/foundation/serialize.h>
+#include <flame/foundation/blueprint.h>
+#include <flame/foundation/window.h>
 #include <flame/network/network.h>
+#include <flame/graphics/device.h>
+#include <flame/graphics/synchronize.h>
+#include <flame/graphics/swapchain.h>
+#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/font.h>
+#include <flame/graphics/canvas.h>
+#include <flame/universe/entity.h>
+#include <flame/universe/components/element.h>
+#include <flame/universe/components/text.h>
+#include <flame/universe/components/event_dispatcher.h>
+#include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/aligner.h>
+#include <flame/universe/components/layout.h>
+#include <flame/universe/components/style.h>
+#include <flame/universe/components/checkbox.h>
+#include <flame/universe/components/toggle.h>
 
 using namespace flame;
+using namespace graphics;
 
-struct App : BasicApp
+struct App
 {
+	Window* w;
+	Device* d;
+	Semaphore* render_finished;
+	SwapchainResizable* scr;
+	Fence* fence;
+	std::vector<Commandbuffer*> cbs;
+
+	FontAtlas* font_atlas;
+	Canvas* canvas;
+	int rt_frame;
+
+	Entity* root;
+	cElement* c_element_root;
+	cText* c_text_fps;
+
 	std::wstring filename;
 	BP* bp;
-	std::vector<void*>* cbs;
 
 	void* ev_1;
 	void* ev_2;
@@ -15,39 +48,42 @@ struct App : BasicApp
 
 	OneClientServer* server;
 
-	virtual void do_run() override
+	void run()
 	{
-		auto idx = frame % FLAME_ARRAYSIZE(fences);
-		auto sc = (graphics::Swapchain*)psc->v;
+		auto sc = scr->sc();
+		auto sc_frame = scr->sc_frame();
+
+		if (sc_frame > rt_frame)
+		{
+			canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
+			rt_frame = sc_frame;
+		}
 
 		if (sc)
 		{
-			if (!cbs->empty())
-				sc->acquire_image(image_avalible);
+			sc->acquire_image();
+			fence->wait();
 
-			fences[idx]->wait();
+			c_element_root->width = w->size.x();
+			c_element_root->height = w->size.y();
+			c_text_fps->set_text(std::to_wstring(app_fps()));
+			root->update();
+			//bp->update();
 
-			if (!cbs->empty())
-			{
-				d->gq->submit((graphics::Commandbuffer*)((*cbs)[sc->image_index()]), image_avalible, render_finished, fences[idx]);
+			auto img_idx = sc->image_index();
+			auto cb = cbs[img_idx];
+			canvas->record(cb, img_idx);
 
-				d->gq->present(sc, render_finished);
-			}
+			d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
+			d->gq->present(sc, render_finished);
 		}
-
-		bp->update();
-
-		frame++;
 
 		if (wait_event(ev_1, 0))
 		{
-			for (auto i = 0; i < FLAME_ARRAYSIZE(fences); i++)
-				fences[i]->wait();
+			fence->wait();
 
 			set_event(ev_2);
 			wait_event(ev_3, -1);
-
-			bp->update();
 		}
 	}
 
@@ -168,19 +204,51 @@ int main(int argc, char **args)
 	app.ev_3 = create_event(false);
 
 	std::thread([&]() {
-		app.create("", Vec2u(1280, 720), WindowFrame | WindowResizable);
+		app.w = Window::create("Editor", Vec2u(1280, 720), WindowFrame | WindowResizable);
+		app.d = Device::create(true);
+		app.render_finished = Semaphore::create(app.d);
+		app.scr = SwapchainResizable::create(app.d, app.w);
+		app.fence = Fence::create(app.d);
+		auto sc = app.scr->sc();
+		app.canvas = Canvas::create(app.d, TargetImages, &sc->images());
+		app.cbs.resize(sc->images().size());
+		for (auto i = 0; i < app.cbs.size(); i++)
+			app.cbs[i] = Commandbuffer::create(app.d->gcp);
+
+		auto font = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
+		app.font_atlas = FontAtlas::create(app.d, FontDrawPixel, { font });
+
+		app.root = Entity::create();
+		{
+			app.c_element_root = cElement::create(app.root, app.canvas);
+
+			cEventDispatcher::create(app.root, app.w);
+
+			cLayout::create(app.root);
+		}
+
+		auto e_fps = Entity::create();
+		{
+			cElement::create(e_fps);
+
+			auto c_text = cText::create(e_fps, app.font_atlas);
+			app.c_text_fps = c_text;
+
+			auto c_aligner = cAligner::create(e_fps);
+			c_aligner->x_align = AlignxLeft;
+			c_aligner->y_align = AlignyBottom;
+		}
+		app.root->add_child(e_fps);
+
 		set_event(app.ev_1);
 		wait_event(app.ev_2, -1);
-		app.run();
+		app_run([](void* c) {
+			auto app = (*(App**)c);
+			app->run();
+		}, new_mail_p(&app));
 	}).detach();
 
 	wait_event(app.ev_1, -1);
-
-	app.bp->find_input("sc.window")->set_data(&app.w);
-	app.bp->update();
-
-	app.psc = (AttributeP<void>*)app.bp->find_output("sc.out")->data();
-	app.cbs = &((AttributeV<std::vector<void*>>*)app.bp->find_output("cbs.out")->data())->v;
 
 	set_event(app.ev_2);
 
@@ -313,9 +381,9 @@ int main(int argc, char **args)
 			}
 			else if (s_what == "graph")
 			{
-				if (!std::fs::exists(L"bp.png") || std::fs::last_write_time(L"bp.png") < std::fs::last_write_time(app.filename))
+				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(app.filename))
 					app.generate_graph_and_layout();
-				if (std::fs::exists(L"bp.png"))
+				if (std::filesystem::exists(L"bp.png"))
 				{
 					exec(L"bp.png", L"", false);
 					printf("ok\n");
@@ -423,14 +491,14 @@ int main(int argc, char **args)
 		}
 		else if (s_command_line == "save")
 		{
-			app.bp->save(app.filename);
+		BP::save_to_file(app.bp, app.filename);
 			printf("file saved\n");
 		}
 		else if (s_command_line == "set-layout")
 		{
-			if (!std::fs::exists(L"bp.graph.txt") || std::fs::last_write_time(L"bp.graph.txt") < std::fs::last_write_time(app.filename))
+			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(app.filename))
 				app.generate_graph_and_layout();
-			if (std::fs::exists(L"bp.graph.txt"))
+			if (std::filesystem::exists(L"bp.graph.txt"))
 			{
 				auto str = get_file_string(L"bp.graph.txt");
 				std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
@@ -470,7 +538,7 @@ int main(int argc, char **args)
 					auto res = SerializableNode::create("");
 					res->new_node("filename")->set_value(w2s(filename));
 					res->new_node("data")->set_value(file);
-					auto str = res->to_string_json();
+					auto str = SerializableNode::to_json_string(res);
 					app->server->send(str.p->size(), str.p->data());
 					delete_mail(str);
 					SerializableNode::destroy(res);
@@ -503,75 +571,24 @@ int main(int argc, char **args)
 }
 
 /*
+	auto layout = Element::createT<wLayout>(ui, LayoutHorizontal);
 
-#include <flame/basic_app.h>
+	auto image1 = Element::createT<wImage>(ui);
+	image1->size$ = Vec2f(250.f);
+	image1->id() = 0;
+	image1->align$ = AlignLittleEnd;
 
-#include <flame/universe/element.h>
-#include <flame/universe/ui.h>
+	auto image2 = Element::createT<wImage>(ui);
+	image2->size$ = Vec2f(250.f);
+	image2->id() = 0;
+	image2->align$ = AlignLittleEnd;
 
-using namespace flame;
-using namespace graphics;
+	auto splitter = Element::createT<wSplitter>(ui, 0, image1, image2);
+	root->add_child(splitter);
 
-struct App : BasicApp
-{
-	Canvas* canvas;
-	Font* font_msyh;
-	Font* font_awesome;
-	FontAtlas* font_atlas;
-	int font_atlas_index;
-
-	UI* ui;
-	wText* t_fps;
-
-	virtual void on_create() override
-	{
-		Canvas::initialize(d, sc);
-		canvas = Canvas::create(sc);
-
-		font_msyh = Font::create(L"c:/windows/fonts/msyh.ttc", 16);
-		font_awesome = Font::create(L"../asset/font_awesome.ttf", 16);
-		font_atlas = FontAtlas::create(d, 16, false, { font_msyh, font_awesome });
-		font_atlas_index = canvas->add_font_atlas(font_atlas);
-
-		ui = UI::create(canvas, w);
-		auto root = ui->root();
-
-		t_fps = Element::createT<wText>(ui, font_atlas_index);
-		t_fps->align$ = AlignLeftBottom;
-		root->add_child(t_fps, 1);
-
-		auto layout = Element::createT<wLayout>(ui, LayoutHorizontal);
-
-		auto image1 = Element::createT<wImage>(ui);
-		image1->size$ = Vec2f(250.f);
-		image1->id() = 0;
-		image1->align$ = AlignLittleEnd;
-
-		auto image2 = Element::createT<wImage>(ui);
-		image2->size$ = Vec2f(250.f);
-		image2->id() = 0;
-		image2->align$ = AlignLittleEnd;
-
-		auto splitter = Element::createT<wSplitter>(ui, 0, image1, image2);
-		root->add_child(splitter);
-
-		layout->add_child(image1);
-		layout->add_child(splitter);
-		layout->add_child(image2);
-		root->add_child(layout);
-	}
-
-	virtual void do_run() override
-	{
-		t_fps->text$ = L"FPS:" + std::to_wstring(app->fps);
-		t_fps->set_size_auto();
-
-		ui->step(app->elapsed_time);
-
-		canvas->record_cb();
-
-		d->gq->submit(canvas->get_cb(), image_avalible, render_finished);
-	}
-}app;
+	layout->add_child(image1);
+	layout->add_child(splitter);
+	layout->add_child(image2);
+	root->add_child(layout);
 
 */
