@@ -17,9 +17,15 @@ namespace flame
 		- A BP file is basically a XML file
 	*/
 
+	struct SerializableNode;
 	struct VariableInfo;
 	struct UdtInfo;
-	struct SerializableNode;
+	struct TypeinfoDatabase;
+
+	namespace graphics
+	{
+		struct Device;
+	}
 
 	struct BP
 	{
@@ -28,7 +34,8 @@ namespace flame
 		struct Environment
 		{
 			std::wstring path;
-			void* graphics_device;
+			std::vector<TypeinfoDatabase*> dbs;
+			graphics::Device* graphics_device;
 		};
 
 		struct Slot
@@ -86,7 +93,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
 		};
 
-		FLAME_FOUNDATION_EXPORTS void set_graphics_device(void* d);
+		FLAME_FOUNDATION_EXPORTS void set_graphics_device(graphics::Device* d);
 
 		FLAME_FOUNDATION_EXPORTS uint dependency_count() const;
 		FLAME_FOUNDATION_EXPORTS Mail<std::wstring> dependency(int idx) const;

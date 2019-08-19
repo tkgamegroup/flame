@@ -63,16 +63,18 @@ namespace flame
 		std::wstring filename;
 		std::wstring final_filename;
 		void* module;
+		TypeinfoDatabase* db;
 	};
 
 	struct BPPrivate : BP
 	{
 		std::wstring filename;
 
-		void* graphics_device;
+		graphics::Device* graphics_device;
 
 		std::vector<Dependency> dependencies;
 		void* bp_module;
+		TypeinfoDatabase* bp_db;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
@@ -341,10 +343,10 @@ namespace flame
 		for (auto& d : dependencies)
 		{
 			free_module(d.module);
-			typeinfo_clear(ext_replace(d.final_filename, L".typeinfo"));
+			TypeinfoDatabase::destroy(d.db);
 		}
 		free_module(bp_module);
-		typeinfo_clear(std::filesystem::path(filename).parent_path().wstring() + L"/build/debug/bp.typeinfo");
+		TypeinfoDatabase::destroy(bp_db);
 	}
 
 	void BPPrivate::add_dependency(const std::wstring& filename)
@@ -365,7 +367,10 @@ namespace flame
 			d.module = load_module(d.final_filename);
 		}
 		assert(d.module);
-		typeinfo_load(ext_replace(d.final_filename, L".typeinfo"));
+		std::vector<TypeinfoDatabase*> dbs;
+		for (auto& d : dependencies)
+			dbs.push_back(d.db);
+		d.db = TypeinfoDatabase::load(dbs, ext_replace(d.final_filename, L".typeinfo"));
 		dependencies.push_back(d);
 	}
 
@@ -378,14 +383,14 @@ namespace flame
 				auto& nodes = this->nodes;
 				for (auto n_it = nodes.begin(); n_it != nodes.end(); )
 				{
-					if ((*n_it)->udt->module_name() == it->final_filename)
+					if ((*n_it)->udt->db() == it->db)
 						n_it = nodes.erase(n_it);
 					else
 						n_it++;
 				}
 
 				free_module(it->module);
-				typeinfo_clear(ext_replace(it->final_filename, L".typeinfo"));
+				TypeinfoDatabase::destroy(it->db);
 				dependencies.erase(it);
 
 				((BPPrivate*)this)->build_update_list();
@@ -396,28 +401,28 @@ namespace flame
 
 	NodePrivate* BPPrivate::add_node(const std::string& type_name, const std::string& id)
 	{
-		auto udt = find_udt(H(type_name.c_str()));
-
-		if (!udt)
-			return nullptr;
-
+		UdtInfo* udt = nullptr;
 		void* module = nullptr;
-		auto p_udt_module_name = std::filesystem::path(udt->module_name());
-		for (auto& d : dependencies)
 		{
-			if (d.final_filename == p_udt_module_name)
+			auto hash = H(type_name.c_str());
+			for (auto& d : dependencies)
 			{
-				module = d.module;
-				break;
+				udt = d.db->find_udt(hash);
+				if (udt)
+				{
+					module = d.module;
+					break;
+				}
+			}
+			if (!udt)
+			{
+				udt = bp_db->find_udt(hash);
+				if (udt)
+					module = bp_module;
 			}
 		}
-		if (!module)
-		{
-			if (p_udt_module_name == std::filesystem::path(filename).parent_path() / "build/debug/bp.dll")
-				module = bp_module;
-		}
 
-		if (!module)
+		if (!udt)
 			return nullptr;
 
 		std::string s_id;
@@ -512,12 +517,16 @@ namespace flame
 
 		_bp_env.path = std::filesystem::path(filename).parent_path().wstring();
 		_bp_env.graphics_device = graphics_device;
+		_bp_env.dbs.clear();
+		for (auto& d : dependencies)
+			_bp_env.dbs.push_back(d.db);
 
 		for (auto &n : update_list)
 			n->update();
 
 		_bp_env.path = L"";
 		_bp_env.graphics_device = nullptr;
+		_bp_env.dbs.clear();
 	}
 
 	int BP::Slot::frame() const
@@ -620,7 +629,7 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
-	void BP::set_graphics_device(void* d)
+	void BP::set_graphics_device(graphics::Device* d)
 	{
 		((BPPrivate*)this)->graphics_device = d;
 	}
@@ -799,10 +808,9 @@ namespace flame
 				templatecpp << "// THIS FILE IS AUTO GENERATED\n";
 				templatecpp << "#include <flame/foundation/bp_node_template.h>\n";
 				templatecpp << "using namespace flame;\n";
-				templatecpp << "extern \"C\" __declspec(dllexport) void add_templates()\n";
+				templatecpp << "extern \"C\" __declspec(dllexport) void add_templates(TypeinfoDatabase* db)\n";
 				templatecpp << "{\n";
 				templatecpp << "\tauto module = get_module_from_address(f2v(add_templates));\n";
-				templatecpp << "\tauto module_name = get_module_name(module);\n";
 				std::vector<std::string> all_templates;
 				for (auto& n : node_descs)
 				{
@@ -827,12 +835,11 @@ namespace flame
 							templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t);
 						else
 							templatecpp << tn_a2c(n.type);
-						templatecpp << "::add_udt_info(*module_name.p, \"";
+						templatecpp << "::add_udt_info(db, \"";
 						templatecpp << std::string(n.type.begin() + pos_t, n.type.end());
 						templatecpp << "\", module);\n";
 					}
 				}
-				templatecpp << "\tdelete_mail(module_name);\n";
 				templatecpp << "}\n";
 				templatecpp.close();
 
@@ -897,8 +904,12 @@ namespace flame
 
 		for (auto& d : dependencies)
 			bp->add_dependency(d.first);
+		std::vector< TypeinfoDatabase*> dbs;
+		for (auto& d : bp->dependencies)
+			dbs.push_back(d.db);
 		bp->bp_module = load_module(ppath_str + L"/build/debug/bp.dll");
-		typeinfo_load(ppath_str + L"/build/debug/bp.typeinfo");
+		bp->bp_db = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
+		dbs.push_back(bp->bp_db);
 
 		for (auto& n_d : node_descs)
 		{
@@ -910,7 +921,7 @@ namespace flame
 				auto v = input->variable_info;
 				auto type = v->type();
 				if (v->default_value())
-					unserialize_value(type->tag(), type->hash(), d_d.value, input->raw_data);
+					unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->raw_data);
 			}
 		}
 
@@ -947,6 +958,11 @@ namespace flame
 				n_dependencies->new_node("dependency")->new_attr("v", (w2s(d.filename)));
 		}
 
+		std::vector< TypeinfoDatabase*> dbs;
+		for (auto& d : bp->dependencies)
+			dbs.push_back(d.db);
+		dbs.push_back(bp->bp_db);
+
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)
 		{
@@ -968,7 +984,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(type->tag(), type->hash(), input->raw_data, 2);
+					auto value = serialize_value(dbs, type->tag(), type->hash(), input->raw_data, 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}

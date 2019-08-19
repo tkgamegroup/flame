@@ -216,6 +216,66 @@ namespace flame
 		return ret;
 	}
 
+	struct SerializableAttribute
+	{
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
+
+		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
+		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
+	};
+
+	struct SerializableNode
+	{
+		enum Type
+		{
+			Value,
+			Object,
+			Array,
+			Cdata,
+			Pcdata
+		};
+
+		FLAME_FOUNDATION_EXPORTS Type type() const;
+		FLAME_FOUNDATION_EXPORTS void set_type(Type type);
+
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
+
+		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
+		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
+
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute* new_attr(const std::string& name, const std::string& value);
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value);
+		FLAME_FOUNDATION_EXPORTS void remove_attr(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_attr(SerializableAttribute* a);
+		FLAME_FOUNDATION_EXPORTS void clear_attrs();
+		FLAME_FOUNDATION_EXPORTS int attr_count() const;
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute* attr(int idx) const;
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute* find_attr(const std::string& name);
+
+		FLAME_FOUNDATION_EXPORTS void add_node(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS SerializableNode* new_node(const std::string& name);
+		FLAME_FOUNDATION_EXPORTS SerializableNode* insert_node(int idx, const std::string& name);
+		FLAME_FOUNDATION_EXPORTS void remove_node(int idx);
+		FLAME_FOUNDATION_EXPORTS void remove_node(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS void clear_nodes();
+		FLAME_FOUNDATION_EXPORTS int node_count() const;
+		FLAME_FOUNDATION_EXPORTS SerializableNode* node(int idx) const;
+		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name);
+
+		FLAME_FOUNDATION_EXPORTS static SerializableNode* create(const std::string& name);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_string(const std::string& str);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_file(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_xml_string(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_json_string(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS static void save_to_xml_file(SerializableNode* n, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void save_to_json_file(SerializableNode* n, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
+	};
+
 	enum TypeTag$
 	{
 		TypeTagEnumSingle,
@@ -233,14 +293,16 @@ namespace flame
 	struct TypeInfo;
 	struct EnumInfo;
 	struct VariableInfo;
-	struct UdtInfo;
 	struct FunctionInfo;
+	struct UdtInfo;
+	struct TypeinfoDatabase;
 
 	typedef TypeInfo* TypeInfoPtr;
-	typedef VariableInfo* VariableInfoPtr;
 	typedef EnumInfo* EnumInfoPtr;
+	typedef VariableInfo* VariableInfoPtr;
 	typedef FunctionInfo* FunctionInfoPtr;
 	typedef UdtInfo* UdtInfoPtr;
+	typedef TypeinfoDatabase* TypeinfoDatabasePtr;
 
 	// type name archive:
 	// ¡¤ no space
@@ -304,6 +366,8 @@ namespace flame
 
 	struct EnumInfo
 	{
+		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
+
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint item_count() const;
@@ -315,8 +379,9 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
 
@@ -330,8 +395,9 @@ namespace flame
 
 	struct UdtInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 
+		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const; // if 0, then this is a template
 
 		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
@@ -343,69 +409,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const std::string& name, int *out_idx = nullptr) const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
-	};
-
-	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(TypeTag$ tag, uint hash, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst);
-
-	struct SerializableAttribute
-	{
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
-
-		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
-	};
-
-	struct SerializableNode
-	{
-		enum Type
-		{
-			Value,
-			Object,
-			Array,
-			Cdata,
-			Pcdata
-		};
-
-		FLAME_FOUNDATION_EXPORTS Type type() const;
-		FLAME_FOUNDATION_EXPORTS void set_type(Type type);
-
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
-
-		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
-
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* new_attr(const std::string& name, const std::string& value);
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value);
-		FLAME_FOUNDATION_EXPORTS void remove_attr(int idx);
-		FLAME_FOUNDATION_EXPORTS void remove_attr(SerializableAttribute* a);
-		FLAME_FOUNDATION_EXPORTS void clear_attrs();
-		FLAME_FOUNDATION_EXPORTS int attr_count() const;
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* attr(int idx) const;
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* find_attr(const std::string& name);
-
-		FLAME_FOUNDATION_EXPORTS void add_node(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS SerializableNode* new_node(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS SerializableNode* insert_node(int idx, const std::string& name);
-		FLAME_FOUNDATION_EXPORTS void remove_node(int idx);
-		FLAME_FOUNDATION_EXPORTS void remove_node(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS void clear_nodes();
-		FLAME_FOUNDATION_EXPORTS int node_count() const;
-		FLAME_FOUNDATION_EXPORTS SerializableNode* node(int idx) const;
-		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name);
-
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_string(const std::string& str);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_xml_string(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_json_string(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS static void save_to_xml_file(SerializableNode* n, const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void save_to_json_file(SerializableNode* n, const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
 	};
 
 	/*
@@ -443,10 +446,13 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
 		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::string& name, uint size);
 
-		FLAME_FOUNDATION_EXPORTS static void collect(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void load(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void save();
+		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* collect(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void save(const std::vector<TypeinfoDatabase*>& dbs, TypeinfoDatabase* db);
 		FLAME_FOUNDATION_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};
+
+	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const std::string& src, void* dst);
 }
 

@@ -21,14 +21,12 @@ int main(int argc, char **args)
 	{
 		printf("generating typeinfo");
 
+		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& d : dependencies)
-		{
-			if (std::filesystem::exists(d))
-				typeinfo_load(ext_replace(d, L".typeinfo"));
-		}
+			dbs.push_back(TypeinfoDatabase::load(dbs, ext_replace(d, L".typeinfo")));
 
-		typeinfo_collect(dll_filename);
-		typeinfo_save(typeinfo_filename, dll_filename);
+		auto db = TypeinfoDatabase::collect(dbs, dll_filename);
+		TypeinfoDatabase::save(dbs, db);
 
 		printf(" - done\n");
 	}

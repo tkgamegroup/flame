@@ -370,13 +370,12 @@ namespace flame
 			}
 		};
 
-		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, uint push_constant_udt_name_hash) :
+		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt) :
 			d((DevicePrivate*)d)
 		{
-			if (push_constant_udt_name_hash)
+			if (push_constant_udt)
 			{
-				pc_udt = find_udt(push_constant_udt_name_hash);
-				assert(pc_udt);
+				pc_udt = push_constant_udt;
 				pc_size = pc_udt->size();
 			}
 			else
@@ -424,9 +423,9 @@ namespace flame
 #endif
 		}
 
-		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, uint push_constant_udt_name_hash)
+		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt)
 		{
-			return new PipelinelayoutPrivate(d, descriptorsetlayouts, push_constant_size, push_constant_udt_name_hash);
+			return new PipelinelayoutPrivate(d, descriptorsetlayouts, push_constant_size, push_constant_udt);
 		}
 
 		void Pipelinelayout::destroy(Pipelinelayout* l)
@@ -452,9 +451,24 @@ namespace flame
 				{
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto& env = bp_env();
+					auto d = env.graphics_device;
 					if (d && descriptorlayouts$i.v && !descriptorlayouts$i.v->empty())
-						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v, H(push_constant_udt_name$i.v.c_str()));
+					{
+						UdtInfo* pc_udt = nullptr;
+						if (!push_constant_udt_name$i.v.empty())
+						{
+							auto pc_hash = H(push_constant_udt_name$i.v.c_str());
+							for (auto db : env.dbs)
+							{
+								pc_udt = db->find_udt(pc_hash);
+								if (pc_udt)
+									break;
+							}
+							assert(pc_udt);
+						}
+						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v, pc_udt);
+					}
 					else
 					{
 						printf("cannot create pipelinelayout\n");

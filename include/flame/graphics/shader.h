@@ -6,6 +6,8 @@
 
 namespace flame
 {
+	struct UdtInfo;
+
 	namespace graphics
 	{
 		struct Buffer;
@@ -57,7 +59,7 @@ namespace flame
 
 		struct Pipelinelayout
 		{
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, uint push_constant_udt_name_hash = 0);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
 		};
 

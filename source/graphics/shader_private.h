@@ -6,7 +6,6 @@
 
 namespace flame
 {
-	struct UdtInfo;
 	struct SerializableNode;
 
 	namespace graphics
@@ -72,7 +71,7 @@ namespace flame
 			uint pc_size;
 			UdtInfo* pc_udt;
 
-			PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, uint push_constant_udt_name_hash);
+			PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt);
 			~PipelinelayoutPrivate();
 		};
 

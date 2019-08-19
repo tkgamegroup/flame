@@ -28,11 +28,11 @@ namespace flame
 			}
 		}
 
-		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		static void add_udt_info(TypeinfoDatabase* db, const std::string& template_parameters, void* module)
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = add_udt(module_name, "Var" + template_parameters, sizeof(BP_Var));
+			auto u = db->add_udt("Var" + template_parameters, sizeof(BP_Var));
 
 			u->add_variable(TypeTagAttributeV, type_name, "in", "i", offsetof(BP_Var, in), sizeof(AttributeV<T>));
 			u->add_variable(TypeTagAttributeV, type_name, "out", "o", offsetof(BP_Var, out), sizeof(AttributeV<T>));
@@ -56,11 +56,11 @@ namespace flame
 			}
 		}
 
-		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		static void add_udt_info(TypeinfoDatabase* db, const std::string& template_parameters, void* module)
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = add_udt(module_name, "EnumSN" + template_parameters, sizeof(BP_EnumSN));
+			auto u = db->add_udt("EnumSN" + template_parameters, sizeof(BP_EnumSN));
 
 			u->add_variable(TypeTagAttributeES, type_name, "in", "i", offsetof(BP_EnumSN, in), sizeof(AttributeV<int>));
 			u->add_variable(TypeTagAttributeES, type_name, "out", "o", offsetof(BP_EnumSN, out), sizeof(AttributeV<int>));
@@ -88,13 +88,13 @@ namespace flame
 			}
 		}
 
-		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		static void add_udt_info(TypeinfoDatabase* db, const std::string& template_parameters, void* module)
 		{
 			auto pos_plus = template_parameters.find('+');
 			assert(pos_plus != std::string::npos);
 			auto type_name = std::string(template_parameters.begin() + pos_plus + 1, template_parameters.end() - 1);
 
-			auto u = add_udt(module_name, "Vec" + template_parameters, sizeof(BP_Vec));
+			auto u = db->add_udt("Vec" + template_parameters, sizeof(BP_Vec));
 
 			for (auto i = 0; i < N; i++)
 				u->add_variable(TypeTagAttributeV, type_name, std::string(1, "xyzw"[i]), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
@@ -125,13 +125,13 @@ namespace flame
 			}
 		}
 
-		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		static void add_udt_info(TypeinfoDatabase* db, const std::string& template_parameters, void* module)
 		{
 			auto pos_plus = template_parameters.find('+');
 			assert(pos_plus != std::string::npos);
 			auto type_name = std::string(template_parameters.begin() + pos_plus + 1, template_parameters.end() - 1);
 
-			auto u = add_udt(module_name, "Array" + template_parameters, sizeof(BP_Array));
+			auto u = db->add_udt("Array" + template_parameters, sizeof(BP_Array));
 
 			auto tag = TypeTagAttributeV;
 			auto in_type_name = type_name;
@@ -166,11 +166,11 @@ namespace flame
 			}
 		}
 
-		static void add_udt_info(const std::wstring& module_name, const std::string& template_parameters, void* module)
+		static void add_udt_info(TypeinfoDatabase* db, const std::string& template_parameters, void* module)
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = add_udt(module_name, "Pointer" + template_parameters, sizeof(BP_Pointer));
+			auto u = db->add_udt("Pointer" + template_parameters, sizeof(BP_Pointer));
 
 			u->add_variable(TypeTagAttributeP, "std::vector(" + type_name + ")", "in", "i", offsetof(BP_ArraySize, in), sizeof(AttributeP<std::vector<T>>));
 			u->add_variable(TypeTagAttributeV, "uint", "out", "o", offsetof(BP_ArraySize, out), sizeof(AttributeV<uint>));

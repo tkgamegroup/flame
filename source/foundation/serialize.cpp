@@ -9,6 +9,515 @@
 
 namespace flame
 {
+
+	struct SerializableAttributePrivate : SerializableAttribute
+	{
+		std::string name;
+		std::string value;
+	};
+
+	const std::string& SerializableAttribute::name() const
+	{
+		return ((SerializableAttributePrivate*)this)->name;
+	}
+
+	const std::string& SerializableAttribute::value() const
+	{
+		return ((SerializableAttributePrivate*)this)->value;
+	}
+
+	void SerializableAttribute::set_name(const std::string& name)
+	{
+		((SerializableAttributePrivate*)this)->name = name;
+	}
+
+	void SerializableAttribute::set_value(const std::string& value)
+	{
+		((SerializableAttributePrivate*)this)->value = value;
+	}
+
+	struct SerializableNodePrivate : SerializableNode
+	{
+		Type type;
+
+		std::string name;
+		std::string value;
+
+		std::vector<std::unique_ptr<SerializableAttributePrivate>> attrs;
+		std::vector<std::unique_ptr<SerializableNodePrivate>> nodes;
+		SerializableNodePrivate* parent;
+
+		int attr_find_pos;
+		int node_find_pos;
+
+		SerializableNodePrivate() :
+			type(Object),
+			parent(nullptr),
+			attr_find_pos(0),
+			node_find_pos(0)
+		{
+		}
+
+		SerializableAttribute* new_attr(const std::string& name, const std::string& value)
+		{
+			return insert_attr(-1, name, value);
+		}
+
+		SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value)
+		{
+			if (idx == -1)
+				idx = attrs.size();
+			auto a = new SerializableAttributePrivate;
+			a->name = name;
+			a->value = value;
+			attrs.emplace(attrs.begin() + idx, a);
+			return a;
+		}
+
+		void remove_attr(int idx)
+		{
+			attrs.erase(attrs.begin() + idx);
+		}
+
+		void remove_attr(SerializableAttribute* a)
+		{
+			for (auto it = attrs.begin(); it != attrs.end(); it++)
+			{
+				if (it->get() == a)
+				{
+					attrs.erase(it);
+					return;
+				}
+			}
+		}
+
+		void clear_attrs()
+		{
+			attrs.clear();
+		}
+
+		SerializableAttribute* find_attr(const std::string& name)
+		{
+			if (attrs.empty())
+				return nullptr;
+
+			auto p = attr_find_pos;
+			while (true)
+			{
+				auto attr = attrs[attr_find_pos].get();
+				if (attr->name == name)
+				{
+					auto t = attr_find_pos;
+					attr_find_pos++;
+					if (attr_find_pos >= attrs.size())
+						attr_find_pos = 0;
+					return attr;
+				}
+				attr_find_pos++;
+				if (attr_find_pos >= attrs.size())
+					attr_find_pos = 0;
+				if (attr_find_pos == p)
+					return nullptr;
+			}
+			return nullptr;
+		}
+
+		void add_node(SerializableNodePrivate* n)
+		{
+			n->parent = this;
+			nodes.emplace_back((SerializableNodePrivate*)n);
+		}
+
+		SerializableNode* new_node(const std::string& name)
+		{
+			return insert_node(-1, name);
+		}
+
+		SerializableNode* insert_node(int idx, const std::string& name)
+		{
+			if (idx == -1)
+				idx = nodes.size();
+			auto n = new SerializableNodePrivate;
+			n->name = name;
+			n->parent = this;
+			nodes.emplace(nodes.begin() + idx, n);
+			return n;
+		}
+
+		void remove_node(int idx)
+		{
+			nodes.erase(nodes.begin() + idx);
+		}
+
+		void remove_node(SerializableNode* n)
+		{
+			for (auto it = nodes.begin(); it != nodes.end(); it++)
+			{
+				if (it->get() == n)
+				{
+					nodes.erase(it);
+					return;
+				}
+			}
+		}
+
+		void clear_nodes()
+		{
+			nodes.clear();
+		}
+
+		SerializableNode* find_node(const std::string& name)
+		{
+			if (nodes.empty())
+				return nullptr;
+
+			auto p = node_find_pos;
+			while (true)
+			{
+				auto node = nodes[node_find_pos].get();
+				if (node->name == name)
+				{
+					auto t = node_find_pos;
+					node_find_pos++;
+					if (node_find_pos >= nodes.size())
+						node_find_pos = 0;
+					return node;
+				}
+				node_find_pos++;
+				if (node_find_pos >= nodes.size())
+					node_find_pos = 0;
+				if (node_find_pos == p)
+					return nullptr;
+			}
+			return nullptr;
+		}
+	};
+
+	const std::string& SerializableNode::name() const
+	{
+		return ((SerializableNodePrivate*)this)->name;
+	}
+
+	const std::string& SerializableNode::value() const
+	{
+		return ((SerializableNodePrivate*)this)->value;
+	}
+
+	SerializableNode::Type SerializableNode::type() const
+	{
+		return ((SerializableNodePrivate*)this)->type;
+	}
+
+	void SerializableNode::set_type(Type type)
+	{
+		((SerializableNodePrivate*)this)->type = type;
+	}
+
+	void SerializableNode::set_name(const std::string& name)
+	{
+		((SerializableNodePrivate*)this)->name = name;
+	}
+
+	void SerializableNode::set_value(const std::string& value)
+	{
+		((SerializableNodePrivate*)this)->value = value;
+	}
+
+	SerializableAttribute* SerializableNode::new_attr(const std::string& name, const std::string& value)
+	{
+		return ((SerializableNodePrivate*)this)->new_attr(name, value);
+	}
+
+	SerializableAttribute* SerializableNode::insert_attr(int idx, const std::string& name, const std::string& value)
+	{
+		return ((SerializableNodePrivate*)this)->insert_attr(idx, name, value);
+	}
+
+	void SerializableNode::remove_attr(int idx)
+	{
+		((SerializableNodePrivate*)this)->remove_attr(idx);
+	}
+
+	void SerializableNode::remove_attr(SerializableAttribute* a)
+	{
+		((SerializableNodePrivate*)this)->remove_attr(a);
+	}
+
+	void SerializableNode::clear_attrs()
+	{
+		((SerializableNodePrivate*)this)->clear_attrs();
+	}
+
+	int SerializableNode::attr_count() const
+	{
+		return ((SerializableNodePrivate*)this)->attrs.size();
+	}
+
+	SerializableAttribute* SerializableNode::attr(int idx) const
+	{
+		return ((SerializableNodePrivate*)this)->attrs[idx].get();
+	}
+
+	SerializableAttribute* SerializableNode::find_attr(const std::string& name)
+	{
+		return ((SerializableNodePrivate*)this)->find_attr(name);
+	}
+
+	void SerializableNode::add_node(SerializableNode* n)
+	{
+		((SerializableNodePrivate*)this)->add_node((SerializableNodePrivate*)n);
+	}
+
+	SerializableNode* SerializableNode::new_node(const std::string& name)
+	{
+		return ((SerializableNodePrivate*)this)->new_node(name);
+	}
+
+	SerializableNode* SerializableNode::insert_node(int idx, const std::string& name)
+	{
+		return ((SerializableNodePrivate*)this)->insert_node(idx, name);
+	}
+
+	void SerializableNode::remove_node(int idx)
+	{
+		((SerializableNodePrivate*)this)->remove_node(idx);
+	}
+
+	void SerializableNode::remove_node(SerializableNode* n)
+	{
+		((SerializableNodePrivate*)this)->remove_node(n);
+	}
+
+	void SerializableNode::clear_nodes()
+	{
+		((SerializableNodePrivate*)this)->clear_nodes();
+	}
+
+	int SerializableNode::node_count() const
+	{
+		return ((SerializableNodePrivate*)this)->nodes.size();
+	}
+
+	SerializableNode* SerializableNode::node(int idx) const
+	{
+		return ((SerializableNodePrivate*)this)->nodes[idx].get();
+	}
+
+	SerializableNode* SerializableNode::find_node(const std::string& name)
+	{
+		return ((SerializableNodePrivate*)this)->find_node(name);
+	}
+
+	static void from_xml(pugi::xml_node src, SerializableNode* dst)
+	{
+		for (auto& a : src.attributes())
+			dst->new_attr(a.name(), a.value());
+
+		dst->set_value(src.value());
+
+		for (auto& n : src.children())
+		{
+			auto node = dst->new_node(n.name());
+			if (n.type() == pugi::node_cdata)
+				node->set_type(SerializableNode::Cdata);
+			from_xml(n, node);
+		}
+	}
+
+	static void from_json(nlohmann::json::reference src, SerializableNode* dst)
+	{
+		if (src.is_object())
+		{
+			dst->set_type(SerializableNode::Object);
+			for (auto it = src.begin(); it != src.end(); ++it)
+			{
+				auto c = it.value();
+				if (!c.is_object() && !c.is_array())
+					dst->new_attr(it.key(), c.is_string() ? c.get<std::string>() : c.dump());
+				else
+				{
+					auto node = dst->new_node(it.key());
+					from_json(c, node);
+				}
+			}
+		}
+		else if (src.is_array())
+		{
+			dst->set_type(SerializableNode::Array);
+			for (auto& n : src)
+			{
+				auto node = dst->new_node("");
+				from_json(n, node);
+			}
+		}
+	}
+
+	static void to_xml(pugi::xml_node dst, SerializableNodePrivate* src)
+	{
+		for (auto& sa : src->attrs)
+			dst.append_attribute(sa->name.c_str()).set_value(sa->value.c_str());
+
+		for (auto& sn : src->nodes)
+		{
+			pugi::xml_node n;
+			switch (sn->type)
+			{
+			case SerializableNode::Cdata:
+				n = dst.append_child(pugi::node_cdata);
+				n.set_value(sn->value.c_str());
+				break;
+			case SerializableNode::Pcdata:
+				n = dst.append_child(pugi::node_pcdata);
+				n.set_value(sn->value.c_str());
+				break;
+			default:
+				n = dst.append_child(sn->name.c_str());
+			}
+			to_xml(n, sn.get());
+		}
+	}
+
+	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
+	{
+		if (src->type != SerializableNode::Array)
+		{
+			if (src->type == SerializableNode::Value && !src->attrs.empty())
+				dst = src->attrs[0]->value;
+			else if (!src->value.empty())
+				dst = src->value;
+			else
+			{
+				for (auto& sa : src->attrs)
+					dst[sa->name] = sa->value;
+			}
+
+			for (auto& sn : src->nodes)
+				to_json(dst[sn->name], sn.get());
+		}
+		else
+		{
+			for (auto i = 0; i < src->nodes.size(); i++)
+				to_json(dst[i], src->nodes[i].get());
+		}
+	}
+
+	SerializableNode* SerializableNode::create(const std::string& name)
+	{
+		auto n = new SerializableNodePrivate;
+		n->name = name;
+
+		return n;
+	}
+
+	SerializableNode* SerializableNode::create_from_xml_string(const std::string& str)
+	{
+		pugi::xml_document doc;
+		auto result = doc.load_string(str.c_str());
+		if (!result)
+			return nullptr;
+
+		auto n = new SerializableNodePrivate;
+
+		auto rn = doc.first_child();
+		n->name = rn.name();
+		from_xml(rn, n);
+
+		return n;
+	}
+
+	SerializableNode* SerializableNode::create_from_xml_file(const std::wstring& filename)
+	{
+		pugi::xml_document doc;
+		auto result = doc.load_file(filename.c_str());
+		if (!result)
+			return nullptr;
+
+		auto n = new SerializableNodePrivate;
+
+		auto rn = doc.first_child();
+		n->name = rn.name();
+		from_xml(rn, n);
+
+		return n;
+	}
+
+	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)
+	{
+		auto doc = nlohmann::json::parse(str);
+
+		auto n = new SerializableNodePrivate;
+
+		from_json(doc, n);
+
+		return n;
+	}
+
+	SerializableNode* SerializableNode::create_from_json_file(const std::wstring& filename)
+	{
+		auto str = get_file_string(filename);
+		if (str.empty())
+			return nullptr;
+
+		return create_from_json_string(str);
+	}
+
+	Mail<std::string> SerializableNode::to_xml_string(SerializableNode* n)
+	{
+		pugi::xml_document doc;
+		auto rn = doc.append_child(n->name().c_str());
+
+		to_xml(rn, (SerializableNodePrivate*)n);
+
+		struct xml_string_writer : pugi::xml_writer
+		{
+			std::string result;
+
+			virtual void write(const void* data, size_t size)
+			{
+				result.append(static_cast<const char*>(data), size);
+			}
+		};
+		xml_string_writer writer;
+		doc.print(writer);
+
+		return new_mail(&writer.result);
+	}
+
+	Mail<std::string> SerializableNode::to_json_string(SerializableNode* n)
+	{
+		nlohmann::json doc;
+
+		to_json(doc, (SerializableNodePrivate*)n);
+
+		return new_mail(&doc.dump());
+	}
+
+	void SerializableNode::save_to_xml_file(SerializableNode* n, const std::wstring& filename)
+	{
+		pugi::xml_document doc;
+		auto rn = doc.append_child(n->name().c_str());
+
+		to_xml(rn, (SerializableNodePrivate*)n);
+
+		doc.save_file(filename.c_str());
+	}
+
+	void SerializableNode::save_to_json_file(SerializableNode* n, const std::wstring& filename)
+	{
+		std::ofstream file(filename);
+		nlohmann::json doc;
+
+		to_json(doc, (SerializableNodePrivate*)n);
+
+		file << doc.dump(2);
+		file.close();
+	}
+
+	void SerializableNode::destroy(SerializableNode* n)
+	{
+		delete (SerializableNodePrivate*)n;
+	}
+
 	static const char* tag_names[] = {
 		"enum_single",
 		"enum_multi",
@@ -139,9 +648,16 @@ namespace flame
 
 	struct EnumInfoPrivate : EnumInfo
 	{
+		TypeinfoDatabase* db;
+
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 	};
+
+	TypeinfoDatabase* EnumInfo::db() const
+	{
+		return ((EnumInfoPrivate*)this)->db;
+	}
 
 	const std::string& EnumInfo::name() const
 	{
@@ -203,12 +719,19 @@ namespace flame
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
+		TypeinfoDatabase* db;
+
 		std::string name;
 		void* rva;
 		TypeInfoPrivate return_type;
 		std::vector<TypeInfoPrivate> parameter_types;
 		std::string code_pos;
 	};
+
+	TypeinfoDatabase* FunctionInfo::db() const
+	{
+		return ((FunctionInfoPrivate*)this)->db;
+	}
 
 	const std::string& FunctionInfo::name() const
 	{
@@ -249,6 +772,8 @@ namespace flame
 
 	struct UdtInfoPrivate : UdtInfo
 	{
+		TypeinfoDatabase* db;
+
 		std::string name;
 		uint size;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
@@ -340,6 +865,11 @@ namespace flame
 		}
 	};
 
+	TypeinfoDatabase* UdtInfo::db() const
+	{
+		return ((UdtInfoPrivate*)this)->db;
+	}
+
 	const std::string& UdtInfo::name() const
 	{
 		return ((UdtInfoPrivate*)this)->name;
@@ -409,759 +939,13 @@ namespace flame
 	FunctionInfo* UdtInfo::add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
 	{
 		auto f = new FunctionInfoPrivate;
+		f->db = db();
 		f->name = name;
 		f->rva = rva;
 		f->return_type.set(return_type_tag, return_type_name);
 		f->code_pos = code_pos;
 		((UdtInfoPrivate*)this)->functions.emplace_back(f);
 		return f;
-	}
-
-	Mail<std::string> serialize_value(TypeTag$ tag, uint hash, const void* src, int precision)
-	{
-		auto ret = new_mail<std::string>();
-
-		switch (tag)
-		{
-		case TypeTagAttributeES:
-			src = (char*)src + sizeof(int);
-		case TypeTagEnumSingle:
-			*(ret.p) = find_enum(hash)->find_item(*(int*)src)->name();
-			break;
-		case TypeTagAttributeEM:
-			src = (char*)src + sizeof(int);
-		case TypeTagEnumMulti:
-		{
-			std::string str;
-			auto e = (EnumInfoPrivate*)find_enum(hash);
-			auto v = *(int*)src;
-			for (auto i = 0; i < e->items.size(); i++)
-			{
-				if ((v & 1) == 1)
-				{
-					if (!str.empty())
-						str += ";";
-					str += e->find_item(1 << i)->name();
-				}
-				v >>= 1;
-			}
-			(*ret.p) = str;
-		}
-			break;
-		case TypeTagAttributeV:
-			src = (char*)src + sizeof(int);
-		case TypeTagVariable:
-			switch (hash)
-			{
-			case cH("float"):
-				(*ret.p) = to_string(*(float*)src, precision);
-				break;
-			case cH("uint"):
-				(*ret.p) = std::to_string(*(uint*)src);
-				break;
-			case cH("int"):
-				(*ret.p) = std::to_string(*(int*)src);
-				break;
-			case cH("bool"):
-				(*ret.p) = *(bool*)src ? "1" : "0";
-				break;
-			case cH("Vec(1+float)"):
-				(*ret.p) = to_string(*(Vec1f*)src, precision);
-				break;
-			case cH("Vec(2+float)"):
-				(*ret.p) = to_string(*(Vec2f*)src, precision);
-				break;
-			case cH("Vec(3+float)"):
-				(*ret.p) = to_string(*(Vec3f*)src, precision);
-				break;
-			case cH("Vec(4+float)"):
-				(*ret.p) = to_string(*(Vec4f*)src, precision);
-				break;
-			case cH("Vec(1+uint)"):
-				(*ret.p) = to_string(*(Vec1u*)src);
-				break;
-			case cH("Vec(2+uint)"):
-				(*ret.p) = to_string(*(Vec2u*)src);
-				break;
-			case cH("Vec(3+uint)"):
-				(*ret.p) = to_string(*(Vec3u*)src);
-				break;
-			case cH("Vec(4+uint)"):
-				(*ret.p) = to_string(*(Vec4u*)src);
-				break;
-				//case cH("Ivec2"): case cH("i2"):
-				//	return to_string(*(Ivec2*)src);
-				//case cH("Ivec3"): case cH("i3"):
-				//	return to_string(*(Ivec3*)src);
-				//case cH("Ivec4"): case cH("i4"):
-				//	return to_string(*(Ivec4*)src);
-				//case cH("uchar"): case cH("b"):
-				//	return to_string(*(uchar*)src);
-				//case cH("Vec2c"): case cH("b2"):
-				//	return to_string(*(Vec2c*)src);
-				//case cH("Vec3c"): case cH("b3"):
-				//	return to_string(*(Vec3c*)src);
-			case cH("Vec(4+uchar)"):
-				(*ret.p) = to_string(*(Vec4c*)src);
-				break;
-			case cH("std::basic_string(char)"):
-				(*ret.p) = *(std::string*)src;
-				break;
-			case cH("std::basic_string(wchar_t)"):
-				(*ret.p) = w2s(*(std::wstring*)src);
-				break;
-			default:
-				assert(0);
-			}
-			break;
-		}
-
-		return ret;
-	}
-
-	void unserialize_value(TypeTag$ tag, uint hash, const std::string& src, void* dst)
-	{
-		switch (tag)
-		{
-		case TypeTagAttributeES:
-			dst = (char*)dst + sizeof(int);
-		case TypeTagEnumSingle:
-			find_enum(hash)->find_item(src, (int*)dst);
-			break;
-		case TypeTagAttributeEM:
-			dst = (char*)dst + sizeof(int);
-		case TypeTagEnumMulti:
-		{
-			auto v = 0;
-			auto e = (EnumInfoPrivate*)find_enum(hash);
-			auto sp = string_split(src, ';');
-			for (auto& t : sp)
-				v |= e->find_item(t)->value();
-			*(int*)dst = v;
-		}
-			break;
-		case TypeTagAttributeV:
-			dst = (char*)dst + sizeof(int);
-		case TypeTagVariable:
-			switch (hash)
-			{
-			case cH("float"):
-				*(float*)dst = std::stof(src.c_str());
-				break;
-			case cH("uint"):
-				*(uint*)dst = std::stoul(src);
-				break;
-			case cH("int"):
-				*(int*)dst = std::stoi(src);
-				break;
-			case cH("bool"):
-				*(bool*)dst = (src != "0");
-				break;
-			case cH("Vec(1+float)"):
-				*(Vec1f*)dst = std::stof(src.c_str());
-				break;
-			case cH("Vec(2+float)"):
-				*(Vec2f*)dst = stof2(src.c_str());
-				break;
-			case cH("Vec(3+float)"):
-				*(Vec3f*)dst = stof3(src.c_str());
-				break;
-			case cH("Vec(4+float)"):
-				*(Vec4f*)dst = stof4(src.c_str());
-				break;
-			case cH("Vec(1+uint)"):
-				*(Vec1u*)dst = std::stof(src.c_str());
-				break;
-			case cH("Vec(2+uint)"):
-				*(Vec2u*)dst = stou2(src.c_str());
-				break;
-			case cH("Vec(3+uint)"):
-				*(Vec3u*)dst = stou3(src.c_str());
-				break;
-			case cH("Vec(4+uint)"):
-				*(Vec4u*)dst = stou4(src.c_str());
-				break;
-				//case cH("Ivec2"): case cH("i2"):
-				//	*(Ivec2*)dst = stoi2(src.c_str());
-				//	break;
-				//case cH("Ivec3"): case cH("i3"):
-				//	*(Ivec3*)dst = stoi3(src.c_str());
-				//	break;
-				//case cH("Ivec4"): case cH("i4"):
-				//	*(Ivec4*)dst = stoi4(src.c_str());
-				//	break;
-				//case cH("Vec2f"): case cH("f2"):
-				//	*(Vec2f*)dst = stof2(src.c_str());
-				//	break;
-				//case cH("Vec3f"): case cH("f3"):
-				//	*(Vec3f*)dst = stof3(src.c_str());
-				//	break;
-				//case cH("Vec4f"): case cH("f4"):
-				//	*(Vec4f*)dst = stof4(src.c_str());
-				//	break;
-				//case cH("uchar"): case cH("b"):
-				//	*(uchar*)dst = stob1(src.c_str());
-				//	break;
-				//case cH("Vec2c"): case cH("b2"):
-				//	*(Vec2c*)dst = stob2(src.c_str());
-				//	break;
-				//case cH("Vec3c"): case cH("b3"):
-				//	*(Vec3c*)dst = stob3(src.c_str());
-				//	break;
-			case cH("Vec(4+uchar)"):
-				*(Vec4c*)dst = stoi4(src.c_str());
-				break;
-			case cH("std::basic_string(char)"):
-				*(std::string*)dst = src;
-				break;
-			case cH("std::basic_string(wchar_t)"):
-				*(std::wstring*)dst = s2w(src);
-				break;
-			default:
-				assert(0);
-			}
-			break;
-		}
-	}
-
-	struct SerializableAttributePrivate : SerializableAttribute
-	{
-		std::string name;
-		std::string value;
-	};
-
-	const std::string& SerializableAttribute::name() const
-	{
-		return ((SerializableAttributePrivate*)this)->name;
-	}
-
-	const std::string& SerializableAttribute::value() const
-	{
-		return ((SerializableAttributePrivate*)this)->value;
-	}
-
-	void SerializableAttribute::set_name(const std::string & name)
-	{
-		((SerializableAttributePrivate*)this)->name = name;
-	}
-
-	void SerializableAttribute::set_value(const std::string & value)
-	{
-		((SerializableAttributePrivate*)this)->value = value;
-	}
-
-	static bool has_id(const std::vector<std::pair<void*, uint>> & obj_table, uint id)
-	{
-		for (auto& o : obj_table)
-		{
-			if (o.second == id)
-				return true;
-		}
-		return false;
-	}
-
-	static uint generate_id(const std::vector<std::pair<void*, uint>> & obj_table)
-	{
-		while (true)
-		{
-			auto id = ::rand() % 1000000;
-			if (!has_id(obj_table, id))
-				return id;
-		}
-		return 0;
-	}
-
-	struct SerializableNodePrivate;
-
-	static SerializableNodePrivate* create_obj_node(std::vector<std::pair<void*, uint>> & table, void* obj)
-	{
-		auto n = SerializableNode::create("obj");
-		auto id = generate_id(table);
-		table.emplace_back(obj, id);
-		n->new_attr("id", std::to_string(id));
-		return (SerializableNodePrivate*)n;
-	}
-
-	struct SerializableNodePrivate : SerializableNode
-	{
-		Type type;
-
-		std::string name;
-		std::string value;
-
-		std::vector<std::unique_ptr<SerializableAttributePrivate>> attrs;
-		std::vector<std::unique_ptr<SerializableNodePrivate>> nodes;
-		SerializableNodePrivate* parent;
-
-		int attr_find_pos;
-		int node_find_pos;
-
-		SerializableNodePrivate() :
-			type(Object),
-			parent(nullptr),
-			attr_find_pos(0),
-			node_find_pos(0)
-		{
-		}
-
-		SerializableAttribute* new_attr(const std::string& name, const std::string& value)
-		{
-			return insert_attr(-1, name, value);
-		}
-
-		SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value)
-		{
-			if (idx == -1)
-				idx = attrs.size();
-			auto a = new SerializableAttributePrivate;
-			a->name = name;
-			a->value = value;
-			attrs.emplace(attrs.begin() + idx, a);
-			return a;
-		}
-
-		void remove_attr(int idx)
-		{
-			attrs.erase(attrs.begin() + idx);
-		}
-
-		void remove_attr(SerializableAttribute * a)
-		{
-			for (auto it = attrs.begin(); it != attrs.end(); it++)
-			{
-				if (it->get() == a)
-				{
-					attrs.erase(it);
-					return;
-				}
-			}
-		}
-
-		void clear_attrs()
-		{
-			attrs.clear();
-		}
-
-		SerializableAttribute* find_attr(const std::string & name)
-		{
-			if (attrs.empty())
-				return nullptr;
-
-			auto p = attr_find_pos;
-			while (true)
-			{
-				auto attr = attrs[attr_find_pos].get();
-				if (attr->name == name)
-				{
-					auto t = attr_find_pos;
-					attr_find_pos++;
-					if (attr_find_pos >= attrs.size())
-						attr_find_pos = 0;
-					return attr;
-				}
-				attr_find_pos++;
-				if (attr_find_pos >= attrs.size())
-					attr_find_pos = 0;
-				if (attr_find_pos == p)
-					return nullptr;
-			}
-			return nullptr;
-		}
-
-		void add_node(SerializableNodePrivate* n)
-		{
-			n->parent = this;
-			nodes.emplace_back((SerializableNodePrivate*)n);
-		}
-
-		SerializableNode* new_node(const std::string & name)
-		{
-			return insert_node(-1, name);
-		}
-
-		SerializableNode* insert_node(int idx, const std::string & name)
-		{
-			if (idx == -1)
-				idx = nodes.size();
-			auto n = new SerializableNodePrivate;
-			n->name = name;
-			n->parent = this;
-			nodes.emplace(nodes.begin() + idx, n);
-			return n;
-		}
-
-		void remove_node(int idx)
-		{
-			nodes.erase(nodes.begin() + idx);
-		}
-
-		void remove_node(SerializableNode * n)
-		{
-			for (auto it = nodes.begin(); it != nodes.end(); it++)
-			{
-				if (it->get() == n)
-				{
-					nodes.erase(it);
-					return;
-				}
-			}
-		}
-
-		void clear_nodes()
-		{
-			nodes.clear();
-		}
-
-		SerializableNode* find_node(const std::string & name)
-		{
-			if (nodes.empty())
-				return nullptr;
-
-			auto p = node_find_pos;
-			while (true)
-			{
-				auto node = nodes[node_find_pos].get();
-				if (node->name == name)
-				{
-					auto t = node_find_pos;
-					node_find_pos++;
-					if (node_find_pos >= nodes.size())
-						node_find_pos = 0;
-					return node;
-				}
-				node_find_pos++;
-				if (node_find_pos >= nodes.size())
-					node_find_pos = 0;
-				if (node_find_pos == p)
-					return nullptr;
-			}
-			return nullptr;
-		}
-	};
-
-	const std::string& SerializableNode::name() const
-	{
-		return ((SerializableNodePrivate*)this)->name;
-	}
-
-	const std::string& SerializableNode::value() const
-	{
-		return ((SerializableNodePrivate*)this)->value;
-	}
-
-	SerializableNode::Type SerializableNode::type() const
-	{
-		return ((SerializableNodePrivate*)this)->type;
-	}
-
-	void SerializableNode::set_type(Type type)
-	{
-		((SerializableNodePrivate*)this)->type = type;
-	}
-
-	void SerializableNode::set_name(const std::string & name)
-	{
-		((SerializableNodePrivate*)this)->name = name;
-	}
-
-	void SerializableNode::set_value(const std::string & value)
-	{
-		((SerializableNodePrivate*)this)->value = value;
-	}
-
-	SerializableAttribute* SerializableNode::new_attr(const std::string & name, const std::string & value)
-	{
-		return ((SerializableNodePrivate*)this)->new_attr(name, value);
-	}
-
-	SerializableAttribute* SerializableNode::insert_attr(int idx, const std::string & name, const std::string & value)
-	{
-		return ((SerializableNodePrivate*)this)->insert_attr(idx, name, value);
-	}
-
-	void SerializableNode::remove_attr(int idx)
-	{
-		((SerializableNodePrivate*)this)->remove_attr(idx);
-	}
-
-	void SerializableNode::remove_attr(SerializableAttribute * a)
-	{
-		((SerializableNodePrivate*)this)->remove_attr(a);
-	}
-
-	void SerializableNode::clear_attrs()
-	{
-		((SerializableNodePrivate*)this)->clear_attrs();
-	}
-
-	int SerializableNode::attr_count() const
-	{
-		return ((SerializableNodePrivate*)this)->attrs.size();
-	}
-
-	SerializableAttribute* SerializableNode::attr(int idx) const
-	{
-		return ((SerializableNodePrivate*)this)->attrs[idx].get();
-	}
-
-	SerializableAttribute* SerializableNode::find_attr(const std::string & name)
-	{
-		return ((SerializableNodePrivate*)this)->find_attr(name);
-	}
-
-	void SerializableNode::add_node(SerializableNode * n)
-	{
-		((SerializableNodePrivate*)this)->add_node((SerializableNodePrivate*)n);
-	}
-
-	SerializableNode* SerializableNode::new_node(const std::string & name)
-	{
-		return ((SerializableNodePrivate*)this)->new_node(name);
-	}
-
-	SerializableNode* SerializableNode::insert_node(int idx, const std::string & name)
-	{
-		return ((SerializableNodePrivate*)this)->insert_node(idx, name);
-	}
-
-	void SerializableNode::remove_node(int idx)
-	{
-		((SerializableNodePrivate*)this)->remove_node(idx);
-	}
-
-	void SerializableNode::remove_node(SerializableNode * n)
-	{
-		((SerializableNodePrivate*)this)->remove_node(n);
-	}
-
-	void SerializableNode::clear_nodes()
-	{
-		((SerializableNodePrivate*)this)->clear_nodes();
-	}
-
-	int SerializableNode::node_count() const
-	{
-		return ((SerializableNodePrivate*)this)->nodes.size();
-	}
-
-	SerializableNode* SerializableNode::node(int idx) const
-	{
-		return ((SerializableNodePrivate*)this)->nodes[idx].get();
-	}
-
-	SerializableNode* SerializableNode::find_node(const std::string & name)
-	{
-		return ((SerializableNodePrivate*)this)->find_node(name);
-	}
-
-	static void from_xml(pugi::xml_node src, SerializableNode* dst)
-	{
-		for (auto& a : src.attributes())
-			dst->new_attr(a.name(), a.value());
-
-		dst->set_value(src.value());
-
-		for (auto& n : src.children())
-		{
-			auto node = dst->new_node(n.name());
-			if (n.type() == pugi::node_cdata)
-				node->set_type(SerializableNode::Cdata);
-			from_xml(n, node);
-		}
-	}
-
-	static void from_json(nlohmann::json::reference src, SerializableNode* dst)
-	{
-		if (src.is_object())
-		{
-			dst->set_type(SerializableNode::Object);
-			for (auto it = src.begin(); it != src.end(); ++it)
-			{
-				auto c = it.value();
-				if (!c.is_object() && !c.is_array())
-					dst->new_attr(it.key(), c.is_string() ? c.get<std::string>() : c.dump());
-				else
-				{
-					auto node = dst->new_node(it.key());
-					from_json(c, node);
-				}
-			}
-		}
-		else if (src.is_array())
-		{
-			dst->set_type(SerializableNode::Array);
-			for (auto& n : src)
-			{
-				auto node = dst->new_node("");
-				from_json(n, node);
-			}
-		}
-	}
-
-	static void to_xml(pugi::xml_node dst, SerializableNodePrivate* src)
-	{
-		for (auto& sa : src->attrs)
-			dst.append_attribute(sa->name.c_str()).set_value(sa->value.c_str());
-
-		for (auto& sn : src->nodes)
-		{
-			pugi::xml_node n;
-			switch (sn->type)
-			{
-			case SerializableNode::Cdata:
-				n = dst.append_child(pugi::node_cdata);
-				n.set_value(sn->value.c_str());
-				break;
-			case SerializableNode::Pcdata:
-				n = dst.append_child(pugi::node_pcdata);
-				n.set_value(sn->value.c_str());
-				break;
-			default:
-				n = dst.append_child(sn->name.c_str());
-			}
-			to_xml(n, sn.get());
-		}
-	}
-
-	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
-	{
-		if (src->type != SerializableNode::Array)
-		{
-			if (src->type == SerializableNode::Value && !src->attrs.empty())
-				dst = src->attrs[0]->value;
-			else if (!src->value.empty())
-				dst = src->value;
-			else
-			{
-				for (auto& sa : src->attrs)
-					dst[sa->name] = sa->value;
-			}
-
-			for (auto& sn : src->nodes)
-				to_json(dst[sn->name], sn.get());
-		}
-		else
-		{
-			for (auto i = 0; i < src->nodes.size(); i++)
-				to_json(dst[i], src->nodes[i].get());
-		}
-	}
-
-	SerializableNode* SerializableNode::create(const std::string & name)
-	{
-		auto n = new SerializableNodePrivate;
-		n->name = name;
-
-		return n;
-	}
-
-	SerializableNode* SerializableNode::create_from_xml_string(const std::string & str)
-	{
-		pugi::xml_document doc;
-		auto result = doc.load_string(str.c_str());
-		if (!result)
-			return nullptr;
-
-		auto n = new SerializableNodePrivate;
-
-		auto rn = doc.first_child();
-		n->name = rn.name();
-		from_xml(rn, n);
-
-		return n;
-	}
-
-	SerializableNode* SerializableNode::create_from_xml_file(const std::wstring & filename)
-	{
-		pugi::xml_document doc;
-		auto result = doc.load_file(filename.c_str());
-		if (!result)
-			return nullptr;
-
-		auto n = new SerializableNodePrivate;
-
-		auto rn = doc.first_child();
-		n->name = rn.name();
-		from_xml(rn, n);
-
-		return n;
-	}
-
-	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)
-	{
-		auto doc = nlohmann::json::parse(str);
-
-		auto n = new SerializableNodePrivate;
-
-		from_json(doc, n);
-
-		return n;
-	}
-
-	SerializableNode* SerializableNode::create_from_json_file(const std::wstring& filename)
-	{
-		auto str = get_file_string(filename);
-		if (str.empty())
-			return nullptr;
-
-		return create_from_json_string(str);
-	}
-
-	Mail<std::string> SerializableNode::to_xml_string(SerializableNode* n)
-	{
-		pugi::xml_document doc;
-		auto rn = doc.append_child(n->name().c_str());
-
-		to_xml(rn, (SerializableNodePrivate*)n);
-
-		struct xml_string_writer : pugi::xml_writer
-		{
-			std::string result;
-
-			virtual void write(const void* data, size_t size)
-			{
-				result.append(static_cast<const char*>(data), size);
-			}
-		};
-		xml_string_writer writer;
-		doc.print(writer);
-
-		return new_mail(&writer.result);
-	}
-
-	Mail<std::string> SerializableNode::to_json_string(SerializableNode* n)
-	{
-		nlohmann::json doc;
-
-		to_json(doc, (SerializableNodePrivate*)n);
-
-		return new_mail(&doc.dump());
-	}
-
-	void SerializableNode::save_to_xml_file(SerializableNode* n, const std::wstring& filename)
-	{
-		pugi::xml_document doc;
-		auto rn = doc.append_child(n->name().c_str());
-
-		to_xml(rn, (SerializableNodePrivate*)n);
-
-		doc.save_file(filename.c_str());
-	}
-
-	void SerializableNode::save_to_json_file(SerializableNode* n, const std::wstring& filename)
-	{
-		std::ofstream file(filename);
-		nlohmann::json doc;
-
-		to_json(doc, (SerializableNodePrivate*)n);
-
-		file << doc.dump(2);
-		file.close();
-	}
-
-	void SerializableNode::destroy(SerializableNode * n)
-	{
-		delete (SerializableNodePrivate*)n;
 	}
 
 	static const char* name_base_type[] = {
@@ -1430,12 +1214,19 @@ namespace flame
 		}
 	}
 
-	struct TypeinfoDatabasePrivate
+	struct TypeinfoDatabasePrivate : TypeinfoDatabase
 	{
+		std::wstring module_name;
+
 		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
 		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
 		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
 	};
+
+	const std::wstring& TypeinfoDatabase::module_name() const
+	{
+		return ((TypeinfoDatabasePrivate*)this)->module_name;
+	}
 
 	template<class T, class U>
 	 Mail<std::vector<T*>> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
@@ -1460,79 +1251,69 @@ namespace flame
 		return it->second.get();
 	}
 
-	Mail<std::vector<EnumInfo*>> get_enums()
+	Mail<std::vector<EnumInfo*>> TypeinfoDatabase::get_enums()
 	{
-		return get_typeinfo_objects<EnumInfo>(enums);
+		return get_typeinfo_objects<EnumInfo>(((TypeinfoDatabasePrivate*)this)->enums);
 	}
 
-	EnumInfo* find_enum(uint name_hash)
+	EnumInfo* TypeinfoDatabase::find_enum(uint name_hash)
 	{
-		return find_typeinfo_object(enums, name_hash);
+		return find_typeinfo_object(((TypeinfoDatabasePrivate*)this)->enums, name_hash);
 	}
 
-	EnumInfo* add_enum(const std::string& name)
+	EnumInfo* TypeinfoDatabase::add_enum(const std::string& name)
 	{
 		auto e = new EnumInfoPrivate;
+		e->db = this;
 		e->name = name;
-		enums.emplace(H(name.c_str()), e);
+		((TypeinfoDatabasePrivate*)this)->enums.emplace(H(name.c_str()), e);
 		return e;
 	}
 
-	Mail<std::vector<FunctionInfo*>> get_functions()
+	Mail<std::vector<FunctionInfo*>> TypeinfoDatabase::get_functions()
 	{
-		return get_typeinfo_objects<FunctionInfo>(functions);
+		return get_typeinfo_objects<FunctionInfo>(((TypeinfoDatabasePrivate*)this)->functions);
 	}
 
-	FunctionInfo* find_function(uint name_hash)
+	FunctionInfo* TypeinfoDatabase::find_function(uint name_hash)
 	{
-		return find_typeinfo_object(functions, name_hash);
+		return find_typeinfo_object(((TypeinfoDatabasePrivate*)this)->functions, name_hash);
 	}
 
-	FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
+	FunctionInfo* TypeinfoDatabase::add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos)
 	{
 		auto f = new FunctionInfoPrivate;
+		f->db = this;
 		f->name = name;
 		f->rva = rva;
 		f->return_type.set(return_type_tag, return_type_name);
 		f->code_pos = code_pos;
-		functions.emplace(H(name.c_str()), f);
+		((TypeinfoDatabasePrivate*)this)->functions.emplace(H(name.c_str()), f);
 		return f;
 	}
 
-	Mail<std::vector<UdtInfo*>> get_udts()
+	Mail<std::vector<UdtInfo*>> TypeinfoDatabase::get_udts()
 	{
-		return get_typeinfo_objects<UdtInfo>(udts);
+		return get_typeinfo_objects<UdtInfo>(((TypeinfoDatabasePrivate*)this)->udts);
 	}
 
-	UdtInfo* find_udt(uint name_hash)
+	UdtInfo* TypeinfoDatabase::find_udt(uint name_hash)
 	{
-		return find_typeinfo_object(udts, name_hash);
+		return find_typeinfo_object(((TypeinfoDatabasePrivate*)this)->udts, name_hash);
 	}
 
-	UdtInfo* add_udt(const std::string& name, uint size)
+	UdtInfo* TypeinfoDatabase::add_udt(const std::string& name, uint size)
 	{
 		auto u = new UdtInfoPrivate;
+		u->db = this;
 		u->name = name;
 		u->size = size;
-		udts.emplace(H(name.c_str()), u);
+		((TypeinfoDatabasePrivate*)this)->udts.emplace(H(name.c_str()), u);
 		return u;
 	}
 
-	struct LoadedTypeinfo
+	TypeinfoDatabase* TypeinfoDatabase::collect(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
 	{
-		std::wstring filename;
-		uint ref_count;
-	};
-	static std::vector<LoadedTypeinfo> loaded_typeinfos;
-
-	void typeinfo_collect(const std::wstring& filename)
-	{
-		for (auto& t : loaded_typeinfos)
-		{
-			if (t.filename == filename)
-				return;
-		}
-
 		com_init();
 
 		CComPtr<IDiaDataSource> dia_source;
@@ -1540,42 +1321,40 @@ namespace flame
 		{
 			printf("dia not found\n");
 			assert(0);
-			return;
+			return nullptr;
 		}
 		if (FAILED(dia_source->loadDataFromPdb(ext_replace(filename, L".pdb").c_str())))
 		{
 			printf("pdb failed to open: %s\n", std::filesystem::path(filename).stem().string().c_str());
 			assert(0);
-			return;
+			return nullptr;
 		}
 		CComPtr<IDiaSession> session;
 		if (FAILED(dia_source->openSession(&session)))
 		{
 			printf("session failed to open\n");
 			assert(0);
-			return;
+			return nullptr;
 		}
 		CComPtr<IDiaSymbol> global;
 		if (FAILED(session->get_globalScope(&global)))
 		{
 			printf("failed to get global\n");
 			assert(0);
-			return;
+			return nullptr;
 		}
 
-		LoadedTypeinfo loaded_typeinfo;
-		loaded_typeinfo.filename = ext_replace(filename, L".typeinfo");
-		loaded_typeinfo.ref_count = 1;
-		loaded_typeinfos.push_back(loaded_typeinfo);
+		auto db = new TypeinfoDatabasePrivate;
+		db->module_name = filename;
 
 		{
 			auto library = load_module(filename.c_str());
 			if (library)
 			{
-				typedef void (*add_templates_func)();
+				typedef void (*add_templates_func)(TypeinfoDatabase*);
 				auto add_templates = (add_templates_func)GetProcAddress((HMODULE)library, "add_templates");
 				if (add_templates)
-					add_templates();
+					add_templates(db);
 
 				free_module(library);
 			}
@@ -1682,9 +1461,20 @@ namespace flame
 			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
 			{
 				auto hash = H(name.c_str());
-				if (!find_enum(hash))
+				auto existed = false;
+				for (auto db : dbs)
 				{
-					auto e = add_enum(filename, name);
+					if (db->find_enum(hash))
+					{
+						existed = true;
+						break;
+					}
+				}
+				if (!existed && db->find_enum(hash))
+					existed = true;
+				if (!existed)
+				{
+					auto e = db->add_enum(name);
 
 					IDiaEnumSymbols* items;
 					_enum->findChildren(SymTagNull, NULL, nsNone, &items);
@@ -1720,13 +1510,24 @@ namespace flame
 			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
 			{
 				auto hash = H(name.c_str());
-				if (!find_function(hash))
+				auto existed = false;
+				for (auto db : dbs)
+				{
+					if (db->find_function(hash))
+					{
+						existed = true;
+						break;
+					}
+				}
+				if (!existed && db->find_function(hash))
+					existed = true;
+				if (!existed)
 				{
 					void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
 					symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
 					if (rva)
 					{
-						auto f = add_function(filename, name, rva, return_type_tag, return_type_name, code);
+						auto f = db->add_function(name, rva, return_type_tag, return_type_name, code);
 						symbol_to_parameters(_function, f);
 					}
 				}
@@ -1748,10 +1549,21 @@ namespace flame
 			if (pass_prefix && pass_$ && udt_name.find("(lambda_") == std::string::npos)
 			{
 				auto udt_hash = H(udt_name.c_str());
-				if (!find_udt(udt_hash))
+				auto existed = false;
+				for (auto db : dbs)
+				{
+					if (db->find_udt(udt_hash))
+					{
+						existed = true;
+						break;
+					}
+				}
+				if (!existed && db->find_udt(udt_hash))
+					existed = true;
+				if (!existed)
 				{
 					_udt->get_length(&ull);
-					auto u = (UdtInfoPrivate*)add_udt(filename, udt_name, ull);
+					auto u = (UdtInfoPrivate*)db->add_udt(udt_name, ull);
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -1849,30 +1661,18 @@ namespace flame
 			_udt->Release();
 		}
 		_udts->Release();
+
+		return db;
 	}
 
-	void typeinfo_load(const std::wstring& filename)
+	TypeinfoDatabase* TypeinfoDatabase::load(const std::vector<TypeinfoDatabase*>& _dbs, const std::wstring& filename)
 	{
-		for (auto& t : loaded_typeinfos)
-		{
-			if (t.filename == filename)
-			{
-				t.ref_count++;
-				return;
-			}
-		}
-
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file)
 		{
 			assert(0);
-			return;
+			return nullptr;
 		}
-
-		LoadedTypeinfo loaded_typeinfo;
-		loaded_typeinfo.filename = filename;
-		loaded_typeinfo.ref_count = 1;
-		loaded_typeinfos.push_back(loaded_typeinfo);
 
 		auto unserialize_function = [](SerializableNode* src, std::string& name, voidptr& rva, TypeTag$& return_type_tag, std::string& return_type_name, std::string& code) {
 			name = src->find_attr("name")->value();
@@ -1897,13 +1697,16 @@ namespace flame
 			}
 		};
 
-		auto module_name = ext_replace(filename, L".dll");
+		auto db = new TypeinfoDatabasePrivate;
+		db->module_name = ext_replace(filename, L".dll");
+		auto dbs = _dbs;
+		dbs.push_back(db);
 
 		auto n_enums = file->find_node("enums");
 		for (auto i = 0; i < n_enums->node_count(); i++)
 		{
 			auto n_enum = n_enums->node(i);
-			auto e = add_enum(module_name, n_enum->find_attr("name")->value());
+			auto e = db->add_enum(n_enum->find_attr("name")->value());
 
 			auto n_items = n_enum->find_node("items");
 			for (auto j = 0; j < n_items->node_count(); j++)
@@ -1919,14 +1722,14 @@ namespace flame
 			auto n_function = n_functions->node(i);
 			std::string name; void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code_pos;
 			unserialize_function(n_function, name, rva, return_type_tag, return_type_name, code_pos);
-			unserialize_parameters(n_function, add_function(module_name, name, rva, return_type_tag, return_type_name, code_pos));
+			unserialize_parameters(n_function, db->add_function(name, rva, return_type_tag, return_type_name, code_pos));
 		}
 
 		auto n_udts = file->find_node("udts");
 		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
 			auto n_udt = n_udts->node(i);
-			auto u = (UdtInfoPrivate*)add_udt(module_name, n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()));
+			auto u = (UdtInfoPrivate*)db->add_udt(n_udt->find_attr("name")->value(), std::stoi(n_udt->find_attr("size")->value()));
 
 			auto n_items = n_udt->find_node("variables");
 			for (auto j = 0; j < n_items->node_count(); j++)
@@ -1939,7 +1742,7 @@ namespace flame
 				{
 					auto a_default_value = n_vari->find_attr("default_value");
 					if (a_default_value)
-						unserialize_value(tag, v->type.hash, a_default_value->value(), v->default_value);
+						unserialize_value(dbs, tag, v->type.hash, a_default_value->value(), v->default_value);
 				}
 			}
 
@@ -1957,12 +1760,12 @@ namespace flame
 		}
 
 		SerializableNode::destroy(file);
+
+		return db;
 	}
 
-	void typeinfo_save(const std::wstring& filename, const std::wstring& module_name)
+	void TypeinfoDatabase::save(const std::vector<TypeinfoDatabase*>& _dbs, TypeinfoDatabase* _db)
 	{
-		auto p_module_name = std::filesystem::path(module_name);
-
 		auto file = SerializableNode::create("typeinfo");
 
 		auto serialize_function = [](FunctionInfoPrivate * src, SerializableNode * dst) {
@@ -1979,19 +1782,16 @@ namespace flame
 				dst->new_node("code_pos")->set_value(src->code_pos);
 		};
 
+		auto db = (TypeinfoDatabasePrivate*)_db;
+		auto dbs = _dbs;
+		dbs.push_back(db);
+
 		auto n_enums = file->new_node("enums");
 		{
-			std::vector<EnumInfoPrivate*> sorted_enums;
-			for (auto& e : enums)
+			for (auto& _e : db->enums)
 			{
-				if (e.second->module_name == p_module_name)
-					sorted_enums.push_back(e.second.get());
-			}
-			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfoPrivate * a, EnumInfoPrivate * b) {
-				return a->name < b->name;
-			});
-			for (auto& e : sorted_enums)
-			{
+				auto e = _e.second.get();
+
 				auto n_enum = n_enums->new_node("enum");
 				n_enum->new_attr("name", e->name);
 
@@ -2007,35 +1807,19 @@ namespace flame
 
 		auto n_functions = file->new_node("functions");
 		{
-			std::vector<FunctionInfoPrivate*> sorted_functions;
-			for (auto& f : functions)
-			{
-				if (f.second->module_name == p_module_name)
-					sorted_functions.push_back(f.second.get());
-			}
-			std::sort(sorted_functions.begin(), sorted_functions.end(), [](FunctionInfoPrivate* a, FunctionInfoPrivate* b) {
-				return a->name < b->name;
-				});
-			for (auto& f : sorted_functions)
+			for (auto& f : db->functions)
 			{
 				auto n_function = n_functions->new_node("function");
-				serialize_function(f, n_function);
+				serialize_function(f.second.get(), n_function);
 			}
 		}
 
 		auto n_udts = file->new_node("udts");
 		{
-			std::vector<UdtInfoPrivate*> sorted_udts;
-			for (auto& u : udts)
+			for (auto& _u : db->udts)
 			{
-				if (u.second->module_name == p_module_name)
-					sorted_udts.push_back(u.second.get());
-			}
-			std::sort(sorted_udts.begin(), sorted_udts.end(), [](UdtInfoPrivate * a, UdtInfoPrivate * b) {
-				return a->name < b->name;
-			});
-			for (auto& u : sorted_udts)
-			{
+				auto u = _u.second.get();
+
 				auto n_udt = n_udts->new_node("udt");
 				n_udt->new_attr("name", u->name);
 				n_udt->new_attr("size", std::to_string(u->size));
@@ -2052,7 +1836,7 @@ namespace flame
 					n_vari->new_attr("size", std::to_string(v->size));
 					if (v->default_value)
 					{
-						auto default_value_str = serialize_value(type.tag, type.hash, v->default_value, 1);
+						auto default_value_str = serialize_value(dbs, type.tag, type.hash, v->default_value, 1);
 						if (!default_value_str.p->empty())
 							n_vari->new_attr("default_value", *default_value_str.p);
 						delete_mail(default_value_str);
@@ -2068,55 +1852,253 @@ namespace flame
 			}
 		}
 
-		SerializableNode::save_to_xml_file(file, filename);
+		SerializableNode::save_to_xml_file(file, ext_replace(db->module_name, L".typeinfo"));
 		SerializableNode::destroy(file);
 	}
 
-	void typeinfo_clear(const std::wstring& module_name)
+	void TypeinfoDatabase::destroy(TypeinfoDatabase* db)
 	{
-		if (module_name == L"")
+		delete (TypeinfoDatabasePrivate*)db;
+	}
+
+	Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const void* src, int precision)
+	{
+		auto ret = new_mail<std::string>();
+
+		switch (tag)
 		{
-			enums.clear();
-			functions.clear();
-			udts.clear();
-			loaded_typeinfos.clear();
-		}
-		else
+		case TypeTagAttributeES:
+			src = (char*)src + sizeof(int);
+		case TypeTagEnumSingle:
 		{
-			for (auto it = loaded_typeinfos.begin(); it != loaded_typeinfos.end(); it++)
+			EnumInfo* e = nullptr;
+			for (auto db : dbs)
 			{
-				if (it->filename == module_name)
-				{
-					it->ref_count--;
-					if (it->ref_count == 0)
-					{
-						loaded_typeinfos.erase(it);
-						for (auto it = enums.begin(); it != enums.end(); )
-						{
-							if (it->second->module_name == module_name)
-								it = enums.erase(it);
-							else
-								it++;
-						}
-						for (auto it = functions.begin(); it != functions.end(); )
-						{
-							if (it->second->module_name == module_name)
-								it = functions.erase(it);
-							else
-								it++;
-						}
-						for (auto it = udts.begin(); it != udts.end(); )
-						{
-							if (it->second->module_name == module_name)
-								it = udts.erase(it);
-							else
-								it++;
-						}
-					}
-					return;
-				}
+				e = db->find_enum(hash);
+				if (e)
+					break;
 			}
-			assert(0); // must clear an existed typeinfo
+			assert(e);
+			*(ret.p) = e->find_item(*(int*)src)->name();
+		}
+			break;
+		case TypeTagAttributeEM:
+			src = (char*)src + sizeof(int);
+		case TypeTagEnumMulti:
+		{
+			std::string str;
+			EnumInfoPrivate* e = nullptr;
+			for (auto db : dbs)
+			{
+				e = (EnumInfoPrivate*)db->find_enum(hash);
+				if (e)
+					break;
+			}
+			assert(e);
+			auto v = *(int*)src;
+			for (auto i = 0; i < e->items.size(); i++)
+			{
+				if ((v & 1) == 1)
+				{
+					if (!str.empty())
+						str += ";";
+					str += e->find_item(1 << i)->name();
+				}
+				v >>= 1;
+			}
+			(*ret.p) = str;
+		}
+		break;
+		case TypeTagAttributeV:
+			src = (char*)src + sizeof(int);
+		case TypeTagVariable:
+			switch (hash)
+			{
+			case cH("float"):
+				(*ret.p) = to_string(*(float*)src, precision);
+				break;
+			case cH("uint"):
+				(*ret.p) = std::to_string(*(uint*)src);
+				break;
+			case cH("int"):
+				(*ret.p) = std::to_string(*(int*)src);
+				break;
+			case cH("bool"):
+				(*ret.p) = *(bool*)src ? "1" : "0";
+				break;
+			case cH("Vec(1+float)"):
+				(*ret.p) = to_string(*(Vec1f*)src, precision);
+				break;
+			case cH("Vec(2+float)"):
+				(*ret.p) = to_string(*(Vec2f*)src, precision);
+				break;
+			case cH("Vec(3+float)"):
+				(*ret.p) = to_string(*(Vec3f*)src, precision);
+				break;
+			case cH("Vec(4+float)"):
+				(*ret.p) = to_string(*(Vec4f*)src, precision);
+				break;
+			case cH("Vec(1+uint)"):
+				(*ret.p) = to_string(*(Vec1u*)src);
+				break;
+			case cH("Vec(2+uint)"):
+				(*ret.p) = to_string(*(Vec2u*)src);
+				break;
+			case cH("Vec(3+uint)"):
+				(*ret.p) = to_string(*(Vec3u*)src);
+				break;
+			case cH("Vec(4+uint)"):
+				(*ret.p) = to_string(*(Vec4u*)src);
+				break;
+				//case cH("Ivec2"): case cH("i2"):
+				//	return to_string(*(Ivec2*)src);
+				//case cH("Ivec3"): case cH("i3"):
+				//	return to_string(*(Ivec3*)src);
+				//case cH("Ivec4"): case cH("i4"):
+				//	return to_string(*(Ivec4*)src);
+				//case cH("uchar"): case cH("b"):
+				//	return to_string(*(uchar*)src);
+				//case cH("Vec2c"): case cH("b2"):
+				//	return to_string(*(Vec2c*)src);
+				//case cH("Vec3c"): case cH("b3"):
+				//	return to_string(*(Vec3c*)src);
+			case cH("Vec(4+uchar)"):
+				(*ret.p) = to_string(*(Vec4c*)src);
+				break;
+			case cH("std::basic_string(char)"):
+				(*ret.p) = *(std::string*)src;
+				break;
+			case cH("std::basic_string(wchar_t)"):
+				(*ret.p) = w2s(*(std::wstring*)src);
+				break;
+			default:
+				assert(0);
+			}
+			break;
+		}
+
+		return ret;
+	}
+
+	void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const std::string& src, void* dst)
+	{
+		switch (tag)
+		{
+		case TypeTagAttributeES:
+			dst = (char*)dst + sizeof(int);
+		case TypeTagEnumSingle:
+		{
+			EnumInfo* e = nullptr;
+			for (auto db : dbs)
+			{
+				e = db->find_enum(hash);
+				if (e)
+					break;
+			}
+			assert(e);
+			e->find_item(src, (int*)dst);
+		}
+			break;
+		case TypeTagAttributeEM:
+			dst = (char*)dst + sizeof(int);
+		case TypeTagEnumMulti:
+		{
+			auto v = 0;
+			EnumInfoPrivate* e = nullptr;
+			for (auto db : dbs)
+			{
+				e = (EnumInfoPrivate*)db->find_enum(hash);
+				if (e)
+					break;
+			}
+			assert(e);
+			auto sp = string_split(src, ';');
+			for (auto& t : sp)
+				v |= e->find_item(t)->value();
+			*(int*)dst = v;
+		}
+		break;
+		case TypeTagAttributeV:
+			dst = (char*)dst + sizeof(int);
+		case TypeTagVariable:
+			switch (hash)
+			{
+			case cH("float"):
+				*(float*)dst = std::stof(src.c_str());
+				break;
+			case cH("uint"):
+				*(uint*)dst = std::stoul(src);
+				break;
+			case cH("int"):
+				*(int*)dst = std::stoi(src);
+				break;
+			case cH("bool"):
+				*(bool*)dst = (src != "0");
+				break;
+			case cH("Vec(1+float)"):
+				*(Vec1f*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec(2+float)"):
+				*(Vec2f*)dst = stof2(src.c_str());
+				break;
+			case cH("Vec(3+float)"):
+				*(Vec3f*)dst = stof3(src.c_str());
+				break;
+			case cH("Vec(4+float)"):
+				*(Vec4f*)dst = stof4(src.c_str());
+				break;
+			case cH("Vec(1+uint)"):
+				*(Vec1u*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec(2+uint)"):
+				*(Vec2u*)dst = stou2(src.c_str());
+				break;
+			case cH("Vec(3+uint)"):
+				*(Vec3u*)dst = stou3(src.c_str());
+				break;
+			case cH("Vec(4+uint)"):
+				*(Vec4u*)dst = stou4(src.c_str());
+				break;
+				//case cH("Ivec2"): case cH("i2"):
+				//	*(Ivec2*)dst = stoi2(src.c_str());
+				//	break;
+				//case cH("Ivec3"): case cH("i3"):
+				//	*(Ivec3*)dst = stoi3(src.c_str());
+				//	break;
+				//case cH("Ivec4"): case cH("i4"):
+				//	*(Ivec4*)dst = stoi4(src.c_str());
+				//	break;
+				//case cH("Vec2f"): case cH("f2"):
+				//	*(Vec2f*)dst = stof2(src.c_str());
+				//	break;
+				//case cH("Vec3f"): case cH("f3"):
+				//	*(Vec3f*)dst = stof3(src.c_str());
+				//	break;
+				//case cH("Vec4f"): case cH("f4"):
+				//	*(Vec4f*)dst = stof4(src.c_str());
+				//	break;
+				//case cH("uchar"): case cH("b"):
+				//	*(uchar*)dst = stob1(src.c_str());
+				//	break;
+				//case cH("Vec2c"): case cH("b2"):
+				//	*(Vec2c*)dst = stob2(src.c_str());
+				//	break;
+				//case cH("Vec3c"): case cH("b3"):
+				//	*(Vec3c*)dst = stob3(src.c_str());
+				//	break;
+			case cH("Vec(4+uchar)"):
+				*(Vec4c*)dst = stoi4(src.c_str());
+				break;
+			case cH("std::basic_string(char)"):
+				*(std::string*)dst = src;
+				break;
+			case cH("std::basic_string(wchar_t)"):
+				*(std::wstring*)dst = s2w(src);
+				break;
+			default:
+				assert(0);
+			}
+			break;
 		}
 	}
 }
