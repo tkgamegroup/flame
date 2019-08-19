@@ -6,17 +6,21 @@ namespace flame
 {
 	struct cImagePrivate : cImage
 	{
-		cImagePrivate(Entity* e) :
-			cImage(e)
+		cImagePrivate()
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
+			element = nullptr;
 
 			id = 0;
 			uv0 = Vec2f(0.f);
 			uv1 = Vec2f(1.f);
 			stretch = false;
 			border = Vec4f(0.f);
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
 		}
 
 		void update()
@@ -31,13 +35,13 @@ namespace flame
 		}
 	};
 
-	cImage::cImage(Entity* e) :
-		Component("Image", e)
+	cImage::~cImage()
 	{
 	}
 
-	cImage::~cImage()
+	void cImage::on_add_to_parent()
 	{
+		((cImagePrivate*)this)->on_add_to_parent();
 	}
 
 	void cImage::update()
@@ -45,8 +49,8 @@ namespace flame
 		((cImagePrivate*)this)->update();
 	}
 
-	cImage* cImage::create(Entity* e)
+	cImage* cImage::create()
 	{
-		return new cImagePrivate(e);
+		return new cImagePrivate();
 	}
 }

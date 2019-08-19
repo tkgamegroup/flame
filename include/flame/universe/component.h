@@ -13,11 +13,10 @@ namespace flame
 
 		Entity* entity;
 
-		Component(const char* name, Entity* e) :
+		Component(const char* name) :
 			type_name(name),
 			type_hash(H(name))
 		{
-			e->add_component(this);
 		}
 
 		virtual ~Component() {};

@@ -18,11 +18,17 @@ namespace flame
 		SizePolicy$ width_policy;
 		SizePolicy$ height_policy;
 
-		FLAME_UNIVERSE_EXPORTS cAligner(Entity* e);
+		cAligner() :
+			Component("Aligner")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cAligner() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cAligner* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cAligner* create();
 	};
 }

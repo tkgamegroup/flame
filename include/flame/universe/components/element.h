@@ -56,13 +56,17 @@ namespace flame
 			return rect_contains(Vec4f(global_x, global_y, global_x + global_width, global_y + global_height), pos);
 		}
 
-		FLAME_UNIVERSE_EXPORTS cElement(Entity* e);
+		cElement() :
+			Component("Element")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cElement() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cElement* create(Entity* e, graphics::Canvas* canvas = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cElement* create(graphics::Canvas* canvas = nullptr);
 	};
 }

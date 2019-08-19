@@ -6,6 +6,7 @@
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/entity.h>
@@ -31,7 +32,8 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
 
-	FontAtlas* font_atlas;
+	FontAtlas* font_atlas_pixel;
+	FontAtlas* font_atlas_sdf;
 	Canvas* canvas;
 	int rt_frame;
 
@@ -217,30 +219,144 @@ int main(int argc, char **args)
 		for (auto i = 0; i < app.cbs.size(); i++)
 			app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-		auto font = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
-		app.font_atlas = FontAtlas::create(app.d, FontDrawPixel, { font });
+		auto font14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
+		auto font32 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
+		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font14 });
+		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font32 });
+		app.font_atlas_pixel->index = 1;
+		app.font_atlas_sdf->index = 2;
+		app.canvas->set_image(app.font_atlas_pixel->index, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+		app.canvas->set_image(app.font_atlas_sdf->index, Imageview::create(app.font_atlas_sdf->image()));
 
 		app.root = Entity::create();
 		{
-			app.c_element_root = cElement::create(app.root, app.canvas);
+			app.c_element_root = cElement::create(app.canvas);
+			app.root->add_component(app.c_element_root);
 
-			cEventDispatcher::create(app.root, app.w);
+			app.root->add_component(cEventDispatcher::create(app.w));
 
-			cLayout::create(app.root);
+			app.root->add_component(cLayout::create());
 		}
 
 		auto e_fps = Entity::create();
+		app.root->add_child(e_fps);
 		{
-			cElement::create(e_fps);
+			e_fps->add_component(cElement::create());
 
-			auto c_text = cText::create(e_fps, app.font_atlas);
+			auto c_text = cText::create(app.font_atlas_pixel);
 			app.c_text_fps = c_text;
+			e_fps->add_component(c_text);
 
-			auto c_aligner = cAligner::create(e_fps);
+			auto c_aligner = cAligner::create();
 			c_aligner->x_align = AlignxLeft;
 			c_aligner->y_align = AlignyBottom;
+			e_fps->add_component(c_aligner);
 		}
-		app.root->add_child(e_fps);
+
+		for (auto i = 0; i < app.bp->node_count(); i++)
+		{
+			auto n = app.bp->node(i);
+			auto n_pos = n->pos();
+
+			auto e_node = Entity::create();
+			app.root->add_child(e_node);
+			{
+				auto c_element = cElement::create();
+				c_element->x = n_pos.x();
+				c_element->y = n_pos.y();
+				e_node->add_component(c_element);
+
+				auto c_text = cText::create(app.font_atlas_sdf);
+				c_text->set_text(s2w(n->id()));
+				e_node->add_component(c_text);
+
+				e_node->add_component(cAligner::create());
+
+				auto e_layout = Entity::create();
+				e_node->add_child(e_layout);
+				{
+					auto c_element = cElement::create();
+					c_element->y = 50.f;
+					c_element->inner_padding = Vec4f(4.f, 50.f, 4.f, 4.f);
+					c_element->background_frame_color = Vec4c(255, 255, 255, 255);
+					c_element->background_frame_thickness = 2.f;
+					e_layout->add_component(c_element);
+
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutHorizontal;
+					c_layout->item_padding = 16.f;
+					c_layout->width_fit_children = true;
+					c_layout->height_fit_children = true;
+					e_layout->add_component(c_layout);
+
+					auto e_left = Entity::create();
+					e_layout->add_child(e_left);
+					{
+						e_left->add_component(cElement::create());
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutVertical;
+						c_layout->width_fit_children = true;
+						c_layout->height_fit_children = true;
+						e_left->add_component(c_layout);
+
+						auto c_aligner = cAligner::create();
+						//c_aligner->width_policy = SizeGreedy;
+						e_left->add_component(c_aligner);
+
+						for (auto j = 0; j < n->input_count(); j++)
+						{
+							auto input = n->input(j);
+
+							auto e_item = Entity::create();
+							e_left->add_child(e_item);
+							{
+								e_item->add_component(cElement::create());
+
+								auto c_text = cText::create(app.font_atlas_sdf);
+								c_text->sdf_scale = 0.5f;
+								c_text->set_text(s2w(input->variable_info()->name()));
+								e_item->add_component(c_text);
+
+								e_item->add_component(cAligner::create());
+							}
+						}
+					}
+
+					auto e_right = Entity::create();
+					e_layout->add_child(e_right);
+					{
+						e_right->add_component(cElement::create());
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutVertical;
+						c_layout->width_fit_children = true;
+						c_layout->height_fit_children = true;
+						e_right->add_component(c_layout);
+
+						e_right->add_component(cAligner::create());
+
+						for (auto j = 0; j < n->output_count(); j++)
+						{
+							auto outout = n->output(j);
+
+							auto e_item = Entity::create();
+							e_right->add_child(e_item);
+							{
+								e_item->add_component(cElement::create());
+
+								auto c_text = cText::create(app.font_atlas_sdf);
+								c_text->sdf_scale = 0.5f;
+								c_text->set_text(s2w(outout->variable_info()->name()));
+								e_item->add_component(c_text);
+
+								e_item->add_component(cAligner::create());
+							}
+						}
+					}
+				}
+			}
+		}
 
 		set_event(app.ev_1);
 		wait_event(app.ev_2, -1);

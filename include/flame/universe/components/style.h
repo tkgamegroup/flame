@@ -16,11 +16,18 @@ namespace flame
 		Vec4c col_hovering;
 		Vec4c col_active;
 
-		FLAME_UNIVERSE_EXPORTS cStyleBgCol(Entity* e);
+
+		cStyleBgCol() :
+			Component("StyleBgCol")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cStyleBgCol() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cStyleBgCol* create(Entity* e, const Vec4c& col_normal, const Vec4c& col_hovering, const Vec4c& col_active);
+		FLAME_UNIVERSE_EXPORTS static cStyleBgCol* create(const Vec4c& col_normal, const Vec4c& col_hovering, const Vec4c& col_active);
 	};
 }

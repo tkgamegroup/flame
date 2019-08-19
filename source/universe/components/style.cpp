@@ -6,17 +6,22 @@ namespace flame
 {
 	struct cStyleBgColPrivate : cStyleBgCol
 	{
-		cStyleBgColPrivate(Entity* e, const Vec4c& _col_normal, const Vec4c& _col_hovering, const Vec4c& _col_active) :
-			cStyleBgCol(e)
+		cStyleBgColPrivate(const Vec4c& _col_normal, const Vec4c& _col_hovering, const Vec4c& _col_active)
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
-			event_receiver = (cEventReceiver*)(e->find_component(cH("EventReceiver")));
-			assert(event_receiver);
+			element = nullptr;
+			event_receiver = nullptr;
 
 			col_normal = _col_normal;
 			col_hovering = _col_hovering;
 			col_active = _col_active;
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
 		}
 
 		void update()
@@ -30,13 +35,13 @@ namespace flame
 		}
 	};
 
-	cStyleBgCol::cStyleBgCol(Entity* e) :
-		Component("StyleBgCol", e)
+	cStyleBgCol::~cStyleBgCol()
 	{
 	}
 
-	cStyleBgCol::~cStyleBgCol()
+	void cStyleBgCol::on_add_to_parent()
 	{
+		((cStyleBgColPrivate*)this)->on_add_to_parent();
 	}
 
 	void cStyleBgCol::update()
@@ -44,8 +49,8 @@ namespace flame
 		((cStyleBgColPrivate*)this)->update();
 	}
 
-	cStyleBgCol* cStyleBgCol::create(Entity* e, const Vec4c& col_normal, const Vec4c& col_hovering, const Vec4c& col_active)
+	cStyleBgCol* cStyleBgCol::create(const Vec4c& col_normal, const Vec4c& col_hovering, const Vec4c& col_active)
 	{
-		return new cStyleBgColPrivate(e, col_normal, col_hovering, col_active);
+		return new cStyleBgColPrivate(col_normal, col_hovering, col_active);
 	}
 }

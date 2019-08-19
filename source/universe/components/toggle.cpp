@@ -11,14 +11,11 @@ namespace flame
 	{
 		void* mouse_listener;
 
-		cTogglePrivate(Entity* e) :
-			cToggle(e)
+		cTogglePrivate()
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
-			event_receiver = (cEventReceiver*)(e->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-			style = (cStyleBgCol*)(e->find_component(cH("StyleBgCol")));
+			element = nullptr;
+			event_receiver = nullptr;
+			style = nullptr;
 
 			toggled = false;
 
@@ -28,20 +25,29 @@ namespace flame
 			toggled_color_normal = default_style.button_color_normal;
 			toggled_color_hovering = default_style.button_color_hovering;
 			toggled_color_active = default_style.button_color_active;
-
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_clicked(action, key))
-				{
-					auto thiz = *(cTogglePrivate * *)c;
-					thiz->toggled = !thiz->toggled;
-				}
-
-			}, new_mail_p(this));
 		}
 
 		~cTogglePrivate()
 		{
 			event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+			style = (cStyleBgCol*)(entity->find_component(cH("StyleBgCol")));
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+				{
+					auto thiz = *(cTogglePrivate**)c;
+					thiz->toggled = !thiz->toggled;
+				}
+
+			}, new_mail_p(this));
 		}
 
 		void update()
@@ -64,14 +70,14 @@ namespace flame
 		}
 	};
 
-	cToggle::cToggle(Entity* e) :
-		Component("Toggle", e)
-	{
-	}
-
 	cToggle::~cToggle()
 	{
 		((cTogglePrivate*)this)->~cTogglePrivate();
+	}
+
+	void cToggle::on_add_to_parent()
+	{
+		((cTogglePrivate*)this)->on_add_to_parent();
 	}
 
 	void cToggle::update()
@@ -79,8 +85,8 @@ namespace flame
 		((cTogglePrivate*)this)->update();
 	}
 
-	cToggle* cToggle::create(Entity* e)
+	cToggle* cToggle::create()
 	{
-		return new cTogglePrivate(e);
+		return new cTogglePrivate();
 	}
 }

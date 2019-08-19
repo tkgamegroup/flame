@@ -16,11 +16,18 @@ namespace flame
 		bool stretch;
 		Vec4f border;
 
-		FLAME_UNIVERSE_EXPORTS cImage(Entity* e);
+
+		cImage() :
+			Component("Image")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cImage() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cImage* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cImage* create();
 	};
 }

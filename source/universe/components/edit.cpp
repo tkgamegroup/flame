@@ -12,17 +12,28 @@ namespace flame
 	{
 		void* key_listener;
 
-		cEditPrivate(Entity* e) :
-			cEdit(e)
+		cEditPrivate()
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
-			text = (cText*)(e->find_component(cH("Text")));
-			assert(text);
-			event_receiver = (cEventReceiver*)(e->find_component(cH("EventReceiver")));
-			assert(event_receiver);
+			element = nullptr;
+			text = nullptr;
+			event_receiver = nullptr;
 
 			cursor = 0;
+		}
+
+		~cEditPrivate()
+		{
+			event_receiver->remove_key_listener(key_listener);
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			text = (cText*)(entity->find_component(cH("Text")));
+			assert(text);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
 
 			key_listener = event_receiver->add_key_listener([](void* c, KeyState action, uint value) {
 				auto thiz = *(cEditPrivate**)c;
@@ -46,7 +57,7 @@ namespace flame
 						str = *copied.p;
 						delete_mail(copied);
 					}
-						break;
+					break;
 					case 27:
 						break;
 					default:
@@ -81,14 +92,9 @@ namespace flame
 			}, new_mail_p(this));
 		}
 
-		~cEditPrivate()
-		{
-			event_receiver->remove_key_listener(key_listener);
-		}
-
 		void update()
 		{
-			if (event_receiver->focusing && (int(app_total_time()) % 2 == 0))
+			if (event_receiver->focusing && (int(app_total_time() * 2.f) % 2 == 0))
 			{
 				auto text_scale = text->sdf_scale * element->global_scale;
 				element->canvas->add_text(text->font_atlas, Vec2f(element->global_x, element->global_y) +
@@ -99,13 +105,13 @@ namespace flame
 		}
 	};
 
-	cEdit::cEdit(Entity* e) :
-		Component("Edit", e)
+	cEdit::~cEdit()
 	{
 	}
 
-	cEdit::~cEdit()
+	void cEdit::on_add_to_parent()
 	{
+		((cEditPrivate*)this)->on_add_to_parent();
 	}
 
 	void cEdit::update()
@@ -113,8 +119,8 @@ namespace flame
 		((cEditPrivate*)this)->update();
 	}
 
-	cEdit* cEdit::create(Entity* e)
+	cEdit* cEdit::create()
 	{
-		return new cEditPrivate(e);
+		return new cEditPrivate();
 	}
 }

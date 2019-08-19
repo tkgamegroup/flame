@@ -9,29 +9,34 @@ namespace flame
 	{
 		void* mouse_listener;
 
-		cCheckboxPrivate(Entity* e) :
-			cCheckbox(e)
+		cCheckboxPrivate()
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
-			event_receiver = (cEventReceiver*)(e->find_component(cH("EventReceiver")));
-			assert(event_receiver);
+			element = nullptr;
+			event_receiver = nullptr;
 
 			checked = false;
-
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_clicked(action, key))
-				{
-					auto thiz = *(cCheckboxPrivate * *)c;
-					thiz->checked = !thiz->checked;
-				}
-
-			}, new_mail_p(this));
 		}
 
 		~cCheckboxPrivate()
 		{
 			event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+				{
+					auto thiz = *(cCheckboxPrivate**)c;
+					thiz->checked = !thiz->checked;
+				}
+
+			}, new_mail_p(this));
 		}
 
 		void update()
@@ -49,14 +54,14 @@ namespace flame
 		}
 	};
 
-	cCheckbox::cCheckbox(Entity* e) :
-		Component("Checkbox", e)
-	{
-	}
-
 	cCheckbox::~cCheckbox()
 	{
 		((cCheckboxPrivate*)this)->~cCheckboxPrivate();
+	}
+
+	void cCheckbox::on_add_to_parent()
+	{
+		((cCheckboxPrivate*)this)->on_add_to_parent();
 	}
 
 	void cCheckbox::update()
@@ -64,8 +69,8 @@ namespace flame
 		((cCheckboxPrivate*)this)->update();
 	}
 
-	cCheckbox* cCheckbox::create(Entity* e)
+	cCheckbox* cCheckbox::create()
 	{
-		return new cCheckboxPrivate(e);
+		return new cCheckboxPrivate();
 	}
 }

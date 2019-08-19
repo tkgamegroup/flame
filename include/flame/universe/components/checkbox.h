@@ -14,11 +14,17 @@ namespace flame
 
 		bool checked;
 
-		FLAME_UNIVERSE_EXPORTS cCheckbox(Entity* e);
+		cCheckbox() :
+			Component("Checkbox")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cCheckbox() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cCheckbox* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();
 	};
 }

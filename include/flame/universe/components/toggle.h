@@ -23,11 +23,18 @@ namespace flame
 		Vec4c toggled_color_hovering;
 		Vec4c toggled_color_active;
 
-		FLAME_UNIVERSE_EXPORTS cToggle(Entity* e);
+
+		cToggle() :
+			Component("Toggle")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cToggle() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cToggle* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cToggle* create();
 	};
 }

@@ -8,8 +8,9 @@ namespace flame
 	{
 		std::wstring text;
 
-		cTextPrivate(Entity* e, graphics::FontAtlas* font_atlas);
+		cTextPrivate(graphics::FontAtlas* font_atlas);
 		~cTextPrivate();
+		void on_add_to_parent();
 		void update();
 	};
 }

@@ -13,11 +13,15 @@ namespace flame
 		cEventReceiver* hovering;
 		cEventReceiver* focusing;
 
-		FLAME_UNIVERSE_EXPORTS cEventDispatcher(Entity* e);
+		cEventDispatcher() :
+			Component("EventDispatcher")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cEventDispatcher() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cEventDispatcher* create(Entity* e, Window* window = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cEventDispatcher* create(Window* window = nullptr);
 	};
 }

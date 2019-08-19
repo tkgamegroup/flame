@@ -14,8 +14,14 @@ namespace flame
 		bool dragging;
 		bool focusing;
 
-		FLAME_UNIVERSE_EXPORTS cEventReceiver(Entity* e);
+		cEventReceiver() :
+			Component("EventReceiver")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cEventReceiver() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
@@ -29,6 +35,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2f& value);
 		FLAME_UNIVERSE_EXPORTS void on_drop(cEventReceiver* src);
 
-		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
 	};
 }

@@ -16,11 +16,17 @@ namespace flame
 
 		uint cursor;
 
-		FLAME_UNIVERSE_EXPORTS cEdit(Entity* e);
+		cEdit() :
+			Component("Edit")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cEdit() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cEdit* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cEdit* create();
 	};
 }

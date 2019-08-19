@@ -24,8 +24,7 @@ namespace flame
 		cEventReceiver* potential_dbclick_er;
 		float potential_dbclick_time;
 
-		cEventDispatcherPrivate(Entity* e, Window* window) :
-			cEventDispatcher(e),
+		cEventDispatcherPrivate(Window* window) :
 			window(window)
 		{
 			hovering = nullptr;
@@ -220,11 +219,6 @@ namespace flame
 		}
 	};
 
-	cEventDispatcher::cEventDispatcher(Entity* e) :
-		Component("EventDispatcher", e)
-	{
-	}
-
 	cEventDispatcher::~cEventDispatcher()
 	{
 		((cEventDispatcherPrivate*)this)->~cEventDispatcherPrivate();
@@ -235,8 +229,8 @@ namespace flame
 		((cEventDispatcherPrivate*)this)->update();
 	}
 
-	cEventDispatcher* cEventDispatcher::create(Entity* e, Window* window)
+	cEventDispatcher* cEventDispatcher::create(Window* window)
 	{
-		return new cEventDispatcherPrivate(e, window);
+		return new cEventDispatcherPrivate(window);
 	}
 }

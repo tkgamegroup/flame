@@ -20,14 +20,21 @@ namespace flame
 		float sdf_scale;
 		bool auto_size;
 
-		FLAME_UNIVERSE_EXPORTS cText(Entity* e);
+
+		cText() :
+			Component("Text")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cText() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS const std::wstring& text() const;
 		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cText* create(Entity* e, graphics::FontAtlas* font_atlas);
+		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
 	};
 }

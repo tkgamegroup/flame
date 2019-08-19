@@ -5,11 +5,9 @@ namespace flame
 {
 	struct cAlignerPrivate: cAligner
 	{
-		cAlignerPrivate(Entity* e) :
-			cAligner(e)
+		cAlignerPrivate()
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
+			element = nullptr;
 
 			x_align = AlignxFree;
 			y_align = AlignyFree;
@@ -18,6 +16,12 @@ namespace flame
 			min_height = -1.f;
 			width_policy = SizeFixed;
 			height_policy = SizeFixed;
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
 		}
 
 		void update()
@@ -29,13 +33,13 @@ namespace flame
 		}
 	};
 
-	cAligner::cAligner(Entity* e) :
-		Component("Aligner", e)
+	cAligner::~cAligner()
 	{
 	}
 
-	cAligner::~cAligner()
+	void cAligner::on_add_to_parent()
 	{
+		((cAlignerPrivate*)this)->on_add_to_parent();
 	}
 
 	void cAligner::update()
@@ -43,8 +47,8 @@ namespace flame
 		((cAlignerPrivate*)this)->update();
 	}
 
-	cAligner* cAligner::create(Entity* e)
+	cAligner* cAligner::create()
 	{
-		return new cAlignerPrivate(e);
+		return new cAlignerPrivate();
 	}
 }

@@ -18,11 +18,18 @@ namespace flame
 
 		float scroll_offset;
 
-		FLAME_UNIVERSE_EXPORTS cLayout(Entity* e);
+
+		cLayout() :
+			Component("Layout")
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual ~cLayout() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cLayout* create(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static cLayout* create();
 	};
 }

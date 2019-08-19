@@ -6,17 +6,21 @@ namespace flame
 {
 	struct cLayoutPrivate : cLayout
 	{
-		cLayoutPrivate(Entity* e) :
-			cLayout(e)
+		cLayoutPrivate()
 		{
-			element = (cElement*)(e->find_component(cH("Element")));
-			assert(element);
+			element = nullptr;
 
 			type = LayoutFree;
 			item_padding = 0.f;
 			clip = false;
 			width_fit_children = true;
 			height_fit_children = true;
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
 		}
 
 		void update()
@@ -254,13 +258,13 @@ namespace flame
 		}
 	};
 
-	cLayout::cLayout(Entity* e) :
-		Component("Layout", e)
+	cLayout::~cLayout()
 	{
 	}
 
-	cLayout::~cLayout()
+	void cLayout::on_add_to_parent()
 	{
+		((cLayoutPrivate*)this)->on_add_to_parent();
 	}
 
 	void cLayout::update()
@@ -268,8 +272,8 @@ namespace flame
 		((cLayoutPrivate*)this)->update();
 	}
 
-	cLayout* cLayout::create(Entity* e)
+	cLayout* cLayout::create()
 	{
-		return new cLayoutPrivate(e);
+		return new cLayoutPrivate();
 	}
 }

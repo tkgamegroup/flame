@@ -103,87 +103,97 @@ int main(int argc, char** args)
 	app.canvas->set_image(app.font_atlas_lcd->index, Imageview::create(app.font_atlas_lcd->image()));
 	app.canvas->set_image(app.font_atlas_sdf->index, Imageview::create(app.font_atlas_sdf->image()));
 
+	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
+
 	app.root = Entity::create();
 	{
-		app.c_element_root = cElement::create(app.root, app.canvas);
+		app.c_element_root = cElement::create(app.canvas);
+		app.root->add_component(app.c_element_root);
 
-		cEventDispatcher::create(app.root, app.w);
+		app.root->add_component(cEventDispatcher::create(app.w));
 
-		cLayout::create(app.root);
+		app.root->add_component(cLayout::create());
 	}
 
 	auto e_fps = Entity::create();
+	app.root->add_child(e_fps);
 	{
-		cElement::create(e_fps);
+		e_fps->add_component(cElement::create());
 
-		auto c_text = cText::create(e_fps, app.font_atlas_pixel);
-		app.c_text_fps = c_text;
+		app.c_text_fps = cText::create(app.font_atlas_pixel);
+		e_fps->add_component(app.c_text_fps);
 
-		auto c_aligner = cAligner::create(e_fps);
+		auto c_aligner = cAligner::create();
 		c_aligner->x_align = AlignxLeft;
 		c_aligner->y_align = AlignyBottom;
+		e_fps->add_component(c_aligner);
 	}
-	app.root->add_child(e_fps);
-
-	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
 
 	auto e_layout_left = Entity::create();
+	app.root->add_child(e_layout_left);
 	{
-		auto c_element = cElement::create(e_layout_left);
+		auto c_element = cElement::create();
 		c_element->x = 16.f;
 		c_element->y = 8.f;
+		e_layout_left->add_component(c_element);
 
-		auto c_layout = cLayout::create(e_layout_left);
+		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 8.f;
+		e_layout_left->add_component(c_layout);
 
-		cAligner::create(e_layout_left);
+		e_layout_left->add_component(cAligner::create());
 	}
-	app.root->add_child(e_layout_left);
 
 	auto e_text_pixel = Entity::create();
-	{
-		cElement::create(e_text_pixel);
-
-		auto c_text = cText::create(e_text_pixel, app.font_atlas_pixel);
-		c_text->set_text(L"Text Pixel");
-
-		cAligner::create(e_text_pixel);
-	}
 	e_layout_left->add_child(e_text_pixel);
+	{
+		e_text_pixel->add_component(cElement::create());
+
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->set_text(L"Text Pixel");
+		e_text_pixel->add_component(c_text);
+
+		e_text_pixel->add_component(cAligner::create());
+	}
 
 	auto e_text_lcd = Entity::create();
-	{
-		cElement::create(e_text_lcd);
-
-		auto c_text = cText::create(e_text_lcd, app.font_atlas_lcd);
-		c_text->set_text(L"Text Lcd");
-
-		cAligner::create(e_text_lcd);
-	}
 	e_layout_left->add_child(e_text_lcd);
+	{
+		e_text_lcd->add_component(cElement::create());
+
+		auto c_text = cText::create(app.font_atlas_lcd);
+		c_text->set_text(L"Text Lcd");
+		e_text_lcd->add_component(c_text);
+
+		e_text_lcd->add_component(cAligner::create());
+	}
 
 	auto e_text_sdf = Entity::create();
+	e_layout_left->add_child(e_text_sdf);
 	{
-		cElement::create(e_text_sdf);
+		e_text_sdf->add_component(cElement::create());
 
-		auto c_text = cText::create(e_text_sdf, app.font_atlas_sdf);
+		auto c_text = cText::create(app.font_atlas_sdf);
 		c_text->set_text(L"Text Sdf");
 		c_text->sdf_scale = 14.f / 32.f;
+		e_text_sdf->add_component(c_text);
 
-		cAligner::create(e_text_sdf);
+		e_text_sdf->add_component(cAligner::create());
 	}
-	e_layout_left->add_child(e_text_sdf);
 
 	auto e_button = Entity::create();
+	e_layout_left->add_child(e_button);
 	{
-		auto c_element = cElement::create(e_button);
+		auto c_element = cElement::create();
 		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+		e_button->add_component(c_element);
 
-		auto c_text = cText::create(e_button, app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_pixel);
 		c_text->set_text(L"Click Me!");
+		e_button->add_component(c_text);
 
-		auto c_event_receiver = cEventReceiver::create(e_button);
+		auto c_event_receiver = cEventReceiver::create();
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			if (is_mouse_clicked(action, key))
 			{
@@ -191,139 +201,154 @@ int main(int argc, char** args)
 				printf("thank you for clicking me\n");
 			}
 		}, new_mail_p(&app));
+		e_button->add_component(c_event_receiver);
 
-		cStyleBgCol::create(e_button, default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active);
+		e_button->add_component(cStyleBgCol::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
 
-		cAligner::create(e_button);
+		e_button->add_component(cAligner::create());
 	}
-	e_layout_left->add_child(e_button);
 
 	auto e_checkbox = Entity::create();
+	e_layout_left->add_child(e_checkbox);
 	{
-		auto c_element = cElement::create(e_checkbox);
+		auto c_element = cElement::create();
 		c_element->width = 16.f;
 		c_element->height = 16.f;
 		c_element->inner_padding = Vec4f(20.f, 1.f, 1.f, 1.f);
 		c_element->draw = false;
+		e_checkbox->add_component(c_element);
 
-		auto c_text = cText::create(e_checkbox, app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_pixel);
 		c_text->set_text(L"Checkbox");
+		e_checkbox->add_component(c_text);
 
-		auto c_event_receiver = cEventReceiver::create(e_checkbox);
+		e_checkbox->add_component(cEventReceiver::create());
 
-		cStyleBgCol::create(e_checkbox, default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active);
+		e_checkbox->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
-		cCheckbox::create(e_checkbox);
+		e_checkbox->add_component(cCheckbox::create());
 
-		cAligner::create(e_checkbox);
+		e_checkbox->add_component(cAligner::create());
 	}
-	e_layout_left->add_child(e_checkbox);
 
 	auto e_toggle = Entity::create();
+	e_layout_left->add_child(e_toggle);
 	{
-		auto c_element = cElement::create(e_toggle);
+		auto c_element = cElement::create();
 		c_element->background_round_flags = SideNW | SideNE | SideSW | SideSE;
 		c_element->background_round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
 		c_element->background_offset = Vec4f(c_element->background_round_radius, 2.f, c_element->background_round_radius, 2.f);
+		e_toggle->add_component(c_element);
 
-		auto c_text = cText::create(e_toggle, app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_pixel);
 		c_text->set_text(L"Toggle");
+		e_toggle->add_component(c_text);
 
-		cEventReceiver::create(e_toggle);
+		e_toggle->add_component(cEventReceiver::create());
 
-		cStyleBgCol::create(e_toggle, Vec4c(0), Vec4c(0), Vec4c(0));
+		e_toggle->add_component(cStyleBgCol::create(Vec4c(0), Vec4c(0), Vec4c(0)));
 
-		cToggle::create(e_toggle);
+		e_toggle->add_component(cToggle::create());
 
-		cAligner::create(e_toggle);
+		e_toggle->add_component(cAligner::create());
 	}
-	e_layout_left->add_child(e_toggle);
 
 	auto e_image = Entity::create();
+	e_layout_left->add_child(e_image);
 	{
-		auto c_element = cElement::create(e_image);
+		auto c_element = cElement::create();
 		c_element->width = 258.f;
 		c_element->height = 258.f;
 		c_element->inner_padding = Vec4f(4.f);
 		c_element->background_frame_color = Vec4c(10, 200, 10, 255);
 		c_element->background_frame_thickness = 2.f;
+		e_image->add_component(c_element);
 
-		auto c_image = cImage::create(e_image);
+		auto c_image = cImage::create();
 		c_image->id = img_id;
+		e_image->add_component(c_image);
 
-		cAligner::create(e_image);
+		e_image->add_component(cAligner::create());
 	}
-	e_layout_left->add_child(e_image);
 
 	auto e_edit = Entity::create();
+	e_layout_left->add_child(e_edit);
 	{
-		auto c_element = cElement::create(e_edit);
+		auto c_element = cElement::create();
 		c_element->width = 108.f;
 		c_element->height = app.font_atlas_pixel->pixel_height + 4;
 		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 		c_element->background_color = default_style.frame_color_normal;
+		e_edit->add_component(c_element);
 
-		auto c_text = cText::create(e_edit, app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_pixel);
 		c_text->set_text(L"ÎÄ×Ö±à¼­");
 		c_text->auto_size = false;
+		e_edit->add_component(c_text);
 
-		cEventReceiver::create(e_edit);
+		e_edit->add_component(cEventReceiver::create());
 
-		auto c_edit = cEdit::create(e_edit);
+		auto c_edit = cEdit::create();
 		c_edit->cursor = 2;
+		e_edit->add_component(c_edit);
 
-		cAligner::create(e_edit);
+		e_edit->add_component(cAligner::create());
 	}
-	e_layout_left->add_child(e_edit);
 
 	auto e_layout_right = Entity::create();
+	app.root->add_child(e_layout_right);
 	{
-		auto c_element = cElement::create(e_layout_right);
+		auto c_element = cElement::create();
 		c_element->x = 416.f;
 		c_element->y = 8.f;
+		e_layout_right->add_component(c_element);
 
-		auto c_layout = cLayout::create(e_layout_right);
+		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 8.f;
+		e_layout_right->add_component(c_layout);
 
-		cAligner::create(e_layout_right);
+		e_layout_right->add_component(cAligner::create());
 	}
-	app.root->add_child(e_layout_right);
 
 	auto e_list = Entity::create();
+	e_layout_right->add_child(e_list);
 	{
-		auto c_element = cElement::create(e_list);
+		auto c_element = cElement::create();
 		c_element->width = 108.f;
 		c_element->inner_padding = Vec4f(4.f);
 		c_element->background_frame_color = Vec4c(1255);
 		c_element->background_frame_thickness = 2.f;
+		e_list->add_component(c_element);
 
-		auto c_layout = cLayout::create(e_list);
+		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
+		e_list->add_component(c_layout);
 
-		cAligner::create(e_list);
+		e_list->add_component(cAligner::create());
 	}
-	e_layout_right->add_child(e_list);
 
 	for (auto i = 0; i < 3; i++)
 	{
 		auto e_item = Entity::create();
-		{
-			cElement::create(e_item);
-
-			auto c_text = cText::create(e_item, app.font_atlas_pixel);
-			c_text->set_text(L"item" + std::to_wstring(i));
-
-			cEventReceiver::create(e_item);
-
-			cStyleBgCol::create(e_item, default_style.header_color_normal, default_style.header_color_hovering, default_style.header_color_active);
-
-			auto c_aligner = cAligner::create(e_item);
-			c_aligner->width_policy = SizeGreedy;
-		}
 		e_list->add_child(e_item);
+		{
+			e_item->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_pixel);
+			c_text->set_text(L"item" + std::to_wstring(i));
+			e_item->add_component(c_text);
+
+			e_item->add_component(cEventReceiver::create());
+
+			e_item->add_component(cStyleBgCol::create(default_style.header_color_normal, default_style.header_color_hovering, default_style.header_color_active));
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeGreedy;
+			e_item->add_component(c_aligner);
+		}
 	}
 
 	//auto w_list = Element::createT<wList>(ui);
@@ -342,15 +367,16 @@ int main(int argc, char** args)
 	//}
 
 	auto e_layout_menus = Entity::create();
-	{
-		cElement::create(e_layout_menus);
-
-		auto c_layout = cLayout::create(e_layout_menus);
-		c_layout->type = LayoutVertical;
-
-		cAligner::create(e_layout_menus);
-	}
 	e_layout_right->add_child(e_layout_menus);
+	{
+		e_layout_menus->add_component(cElement::create());
+
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutVertical;
+		e_layout_menus->add_component(c_layout);
+
+		e_layout_menus->add_component(cAligner::create());
+	}
 
 	//layout->add_child(w_list, 1);
 

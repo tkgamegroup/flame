@@ -5,11 +5,9 @@
 
 namespace flame
 {
-	cTextPrivate::cTextPrivate(Entity* e, graphics::FontAtlas* _font_atlas) :
-		cText(e)
+	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
 	{
-		element = (cElement*)(e->find_component(cH("Element")));
-		assert(element);
+		element = nullptr;
 
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
@@ -19,6 +17,12 @@ namespace flame
 
 	cTextPrivate::~cTextPrivate()
 	{
+	}
+
+	void cTextPrivate::on_add_to_parent()
+	{
+		element = (cElement*)(entity->find_component(cH("Element")));
+		assert(element);
 	}
 
 	void cTextPrivate::update()
@@ -33,14 +37,14 @@ namespace flame
 		}
 	}
 
-	cText::cText(Entity* e) :
-		Component("Text", e)
-	{
-	}
-
 	cText::~cText()
 	{
 		((cTextPrivate*)this)->~cTextPrivate();
+	}
+
+	void cText::on_add_to_parent()
+	{
+		((cTextPrivate*)this)->on_add_to_parent();
 	}
 
 	const std::wstring& cText::text() const
@@ -58,9 +62,9 @@ namespace flame
 		((cTextPrivate*)this)->update();
 	}
 
-	cText* cText::create(Entity* e, graphics::FontAtlas* font_atlas)
+	cText* cText::create(graphics::FontAtlas* font_atlas)
 	{
-		return new cTextPrivate(e, font_atlas);
+		return new cTextPrivate(font_atlas);
 	}
 
 	struct cTextA$

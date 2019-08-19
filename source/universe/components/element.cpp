@@ -7,8 +7,7 @@ namespace flame
 	{
 		cElementPrivate* p_element;
 
-		cElementPrivate(Entity* e, graphics::Canvas* _canvas) :
-			cElement(e),
+		cElementPrivate(graphics::Canvas* _canvas) :
 			p_element(nullptr)
 		{
 			x = 0.f;
@@ -97,11 +96,6 @@ namespace flame
 		}
 	};
 
-	cElement::cElement(Entity* e) :
-		Component("Element", e)
-	{
-	}
-
 	cElement::~cElement()
 	{
 	}
@@ -116,8 +110,8 @@ namespace flame
 		((cElementPrivate*)this)->update();
 	}
 
-	cElement* cElement::create(Entity* e, graphics::Canvas* canvas)
+	cElement* cElement::create(graphics::Canvas* canvas)
 	{
-		return new cElementPrivate(e, canvas);
+		return new cElementPrivate(canvas);
 	}
 }

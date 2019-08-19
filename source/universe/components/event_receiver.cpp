@@ -13,15 +13,19 @@ namespace flame
 		//Array<Function<ChangedListenerParm>> changed_listeners$;
 		//Array<Function<ChildListenerParm>> child_listeners$;
 
-		cEventReceiverPrivate(Entity* e) :
-			cEventReceiver(e)
+		cEventReceiverPrivate()
 		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
+			element = nullptr;
 
 			hovering = false;
 			dragging = false;
 			focusing = false;
+		}
+
+		void on_add_to_parent()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
 		}
 
 		void update()
@@ -29,13 +33,13 @@ namespace flame
 		}
 	};
 
-	cEventReceiver::cEventReceiver(Entity* e) :
-		Component("EventReceiver", e)
+	cEventReceiver::~cEventReceiver()
 	{
 	}
 
-	cEventReceiver::~cEventReceiver()
+	void cEventReceiver::on_add_to_parent()
 	{
+		((cEventReceiverPrivate*)this)->on_add_to_parent();
 	}
 
 	void cEventReceiver::update()
@@ -102,8 +106,8 @@ namespace flame
 			l->function(l->capture.p, action, key, value);
 	}
 
-	cEventReceiver* cEventReceiver::create(Entity* e)
+	cEventReceiver* cEventReceiver::create()
 	{
-		return new cEventReceiverPrivate(e);
+		return new cEventReceiverPrivate();
 	}
 }
