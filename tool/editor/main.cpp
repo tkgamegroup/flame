@@ -264,6 +264,7 @@ int main(int argc, char **args)
 				auto c_element = cElement::create();
 				c_element->x = n_pos.x();
 				c_element->y = n_pos.y();
+				c_element->inner_padding = Vec4f(4.f, 4.f, 4.f, 4.f);
 				e_node->add_component(c_element);
 
 				auto c_text = cText::create(app.font_atlas_sdf);
@@ -277,7 +278,6 @@ int main(int argc, char **args)
 				{
 					auto c_element = cElement::create();
 					c_element->y = 50.f;
-					c_element->inner_padding = Vec4f(4.f, 50.f, 4.f, 4.f);
 					c_element->background_frame_color = Vec4c(255, 255, 255, 255);
 					c_element->background_frame_thickness = 2.f;
 					e_layout->add_component(c_element);
@@ -350,7 +350,9 @@ int main(int argc, char **args)
 								c_text->set_text(s2w(outout->variable_info()->name()));
 								e_item->add_component(c_text);
 
-								e_item->add_component(cAligner::create());
+								auto c_aligner = cAligner::create();
+								c_aligner->x_align = AlignxRight;
+								e_item->add_component(c_aligner);
 							}
 						}
 					}

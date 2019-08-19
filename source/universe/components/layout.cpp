@@ -113,6 +113,8 @@ namespace flame
 						h = max(ale->height, h);
 					w += item_padding;
 				}
+				if (!als.empty())
+					w -= item_padding;
 				w += element->inner_padding[2];
 				h += element->inner_padding[3];
 
@@ -197,6 +199,8 @@ namespace flame
 						h += ale->height;
 					h += item_padding;
 				}
+				if (!als.empty())
+					h -= item_padding;
 				w += element->inner_padding[2];
 				h += element->inner_padding[3];
 
