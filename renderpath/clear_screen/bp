@@ -1,29 +1,29 @@
 <?xml version="1.0"?>
 <BP>
-  <dependencies>
-    <dependency v="flame_foundation.dll" />
-    <dependency v="flame_graphics.dll" />
-  </dependencies>
-  <nodes>
-    <node type="graphics::RenderTarget" id="rt_dst" pos="0.00;0.00">
-      <datas>
-        <data name="clear" value="1" />
-        <data name="clear_color" value="200;100;50;255" />
-      </datas>
-    </node>
-    <node type="Array(1+void*)" id="rts" pos="0.00;0.00" />
-    <node type="graphics::SubpassTargetInfo" id="sp" pos="0.00;0.00" />
-    <node type="Array(1+void*)" id="sps" pos="0.00;0.00" />
-    <node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="0.00;0.00" />
-    <node type="MakeCmd" id="make_cmd" pos="0.00;0.00" />
-  </nodes>
-  <links>
-    <link out="rt_dst.out" in="rts.1" />
-    <link out="rts.v" in="sp.color_targets" />
-    <link out="sp.out" in="sps.1" />
-    <link out="sps.v" in="rnf.passes" />
-    <link out="rnf.rp" in="make_cmd.renderpass" />
-    <link out="rnf.fbs" in="make_cmd.framebuffers" />
-    <link out="rnf.cv" in="make_cmd.clearvalues" />
-  </links>
+	<dependencies>
+		<dependency v="flame_foundation.dll" />
+		<dependency v="flame_graphics.dll" />
+	</dependencies>
+	<nodes>
+		<node type="graphics::RenderTarget" id="rt_dst" pos="109.72;80.56">
+			<datas>
+				<data name="clear" value="1" />
+				<data name="clear_color" value="200;100;50;255" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="rts" pos="306.94;47.22" />
+		<node type="graphics::SubpassTargetInfo" id="sp" pos="488.89;80.56" />
+		<node type="Array(1+void*)" id="sps" pos="670.83;80.56" />
+		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="820.14;80.56" />
+		<node type="MakeCmd" id="make_cmd" pos="1006.90;80.56" />
+	</nodes>
+	<links>
+		<link out="rt_dst.out" in="rts.1" />
+		<link out="rts.v" in="sp.color_targets" />
+		<link out="sp.out" in="sps.1" />
+		<link out="sps.v" in="rnf.passes" />
+		<link out="rnf.rp" in="make_cmd.renderpass" />
+		<link out="rnf.fbs" in="make_cmd.framebuffers" />
+		<link out="rnf.cv" in="make_cmd.clearvalues" />
+	</links>
 </BP>
