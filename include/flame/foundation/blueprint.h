@@ -96,9 +96,12 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_graphics_device(graphics::Device* d);
 
 		FLAME_FOUNDATION_EXPORTS uint dependency_count() const;
-		FLAME_FOUNDATION_EXPORTS Mail<std::wstring> dependency(int idx) const;
+		FLAME_FOUNDATION_EXPORTS Mail<std::wstring> dependency_filename(int idx) const;
+		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* dependency_typeinfodatabase(int idx) const;
 		FLAME_FOUNDATION_EXPORTS void add_dependency(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void remove_dependency(const std::wstring& filename);
+
+		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* typeinfodatabase() const;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;

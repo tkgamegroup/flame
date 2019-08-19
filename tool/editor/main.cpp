@@ -41,6 +41,7 @@ struct App
 
 	std::wstring filename;
 	BP* bp;
+	std::vector<TypeinfoDatabase*> dbs;
 
 	void* ev_1;
 	void* ev_2;
@@ -97,12 +98,12 @@ struct App
 
 			auto v = i->variable_info();
 			auto type = v->type();
-			auto value_before = serialize_value(type->tag(), type->hash(), i->data(), 2);
+			auto value_before = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
 			auto data = new char[v->size()];
-			unserialize_value(type->tag(), type->hash(), value, data);
+			unserialize_value(dbs, type->tag(), type->hash(), value, data);
 			i->set_data(data);
 			delete data;
-			auto value_after = serialize_value(type->tag(), type->hash(), i->data(), 2);
+			auto value_after = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
 			printf("set value: %s, %s -> %s\n", address.c_str(), *value_before.p, *value_after.p);
 			delete_mail(value_before);
 			delete_mail(value_after);
@@ -182,9 +183,6 @@ auto papp = &app;
 
 int main(int argc, char **args)
 {
-	typeinfo_load(L"flame_foundation.typeinfo");
-	typeinfo_load(L"flame_graphics.typeinfo");
-
 	if (argc != 2)
 	{
 		printf("argc is not 2, exit\n");
@@ -198,6 +196,10 @@ int main(int argc, char **args)
 		printf("bp not found, exit\n");
 		return 0;
 	}
+
+	for (auto i = 0; i < app.bp->dependency_count(); i++)
+		app.dbs.push_back(app.bp->dependency_typeinfodatabase(i));
+	app.dbs.push_back(app.bp->typeinfodatabase());
 
 	app.ev_1 = create_event(false);
 	app.ev_2 = create_event(false);
@@ -258,10 +260,13 @@ int main(int argc, char **args)
 
 	std::vector<UdtInfo*> available_udts;
 	{
-		auto udts = get_udts();
-		for (auto i = 0; i < udts.p->size(); i++)
-			available_udts.push_back((*udts.p)[i]);
-		delete_mail(udts);
+		for (auto db : app.dbs)
+		{
+			auto udts = db->get_udts();
+			for (auto i = 0; i < udts.p->size(); i++)
+				available_udts.push_back((*udts.p)[i]);
+			delete_mail(udts);
+		}
 		std::sort(available_udts.begin(), available_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return std::string(a->name()) < std::string(b->name());
 		});
@@ -300,17 +305,26 @@ int main(int argc, char **args)
 			if (s_what == "udts")
 			{
 				for (auto u : available_udts)
-					printf("%s\n", u->name());
+					printf("%s\n", u->name().c_str());
 			}
 			else if (s_what == "udt")
 			{
 				scanf("%s", command_line);
 				auto s_name = std::string(command_line);
 
-				auto udt = find_udt(H(s_name.c_str()));
+				UdtInfo* udt = nullptr;
+				{
+					auto hash = H(s_name.c_str());
+					for (auto db : app.dbs)
+					{
+						udt = db->find_udt(hash);
+						if (udt)
+							break;
+					}
+				}
 				if (udt)
 				{
-					printf("%s:\n", udt->name());
+					printf("%s:\n", udt->name().c_str());
 					std::vector<VariableInfo*> inputs;
 					std::vector<VariableInfo*> outputs;
 					for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
@@ -324,10 +338,10 @@ int main(int argc, char **args)
 					}
 					printf("[In]\n");
 					for (auto &i : inputs)
-						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->decoration(), get_name(i->type()->tag()), i->type()->name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name().c_str(), i->decoration(), get_name(i->type()->tag()), i->type()->name().c_str());
 					printf("[Out]\n");
 					for (auto &i : outputs)
-						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name(), i->decoration(), get_name(i->type()->tag()), i->type()->name());
+						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name().c_str(), i->decoration(), get_name(i->type()->tag()), i->type()->name().c_str());
 				}
 				else
 					printf("udt not found\n");
@@ -337,7 +351,7 @@ int main(int argc, char **args)
 				for (auto i = 0; i < app.bp->node_count(); i++)
 				{
 					auto n = app.bp->node(i);
-					printf("id:%s type:%s\n", n->id(), n->udt()->name());
+					printf("id:%s type:%s\n", n->id().c_str(), n->udt()->name());
 				}
 			}
 			else if (s_what == "node")
@@ -354,13 +368,13 @@ int main(int argc, char **args)
 						auto input = n->input(i);
 						auto v = input->variable_info();
 						auto type = v->type();
-						printf(" %s\n", v->name());
+						printf(" %s\n", v->name().c_str());
 						Mail<std::string> link_address;
 						if (input->link())
 							link_address = input->link()->get_address();
 						printf("   [%s]->\n", link_address.p ? link_address.p->c_str() : "");
 						delete_mail(link_address);
-						auto str = serialize_value(type->tag(), type->hash(), input->data(), 2);
+						auto str = serialize_value(app.dbs, type->tag(), type->hash(), input->data(), 2);
 						printf("   %s\n", str.p->empty() ? "-" : str.p->c_str());
 						delete_mail(str);
 					}
@@ -370,8 +384,8 @@ int main(int argc, char **args)
 						auto output = n->output(i);
 						auto v = output->variable_info();
 						auto type = v->type();
-						printf(" %s\n", output->variable_info()->name());
-						auto str = serialize_value(type->tag(), type->hash(), output->data(), 2);
+						printf(" %s\n", output->variable_info()->name().c_str());
+						auto str = serialize_value(app.dbs, type->tag(), type->hash(), output->data(), 2);
 						printf("   %s\n", str.p->empty() ? "-" : str.p->c_str());
 						delete_mail(str);
 					}
@@ -411,7 +425,7 @@ int main(int argc, char **args)
 				if (!n)
 					printf("bad udt name or id already exist\n");
 				else
-					printf("node added: %s\n", n->id());
+					printf("node added: %s\n", n->id().c_str());
 			}
 			else if (s_what == "link")
 			{

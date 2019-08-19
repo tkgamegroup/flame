@@ -168,28 +168,28 @@ namespace flame
 		((EntityPrivate*)this)->update();
 	}
 
-	static void serialize(EntityPrivate* src, SerializableNode* dst)
-	{
-		dst->new_attr("name", src->name);
-		dst->new_attr("visible", std::to_string((int)src->visible));
-		auto n_components = dst->new_node("components");
-		for (auto& c : src->components)
-		{
-			std::string type_name = c->type_name;
-			auto udt = find_udt(H((type_name + "A").c_str()));
-			if (udt)
-			{
-				auto create_func = udt->find_function("create");
-				if (create_func)
-					int cut = 1;
-			}
-		}
-	}
+	//static void serialize(EntityPrivate* src, SerializableNode* dst)
+	//{
+	//	dst->new_attr("name", src->name);
+	//	dst->new_attr("visible", std::to_string((int)src->visible));
+	//	auto n_components = dst->new_node("components");
+	//	for (auto& c : src->components)
+	//	{
+	//		std::string type_name = c->type_name;
+	//		auto udt = find_udt(H((type_name + "A").c_str()));
+	//		if (udt)
+	//		{
+	//			auto create_func = udt->find_function("create");
+	//			if (create_func)
+	//				int cut = 1;
+	//		}
+	//	}
+	//}
 
-	static void unserialize(EntityPrivate* dst, SerializableNode* src)
-	{
+	//static void unserialize(EntityPrivate* dst, SerializableNode* src)
+	//{
 
-	}
+	//}
 
 	Entity* Entity::create()
 	{

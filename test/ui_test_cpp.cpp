@@ -80,8 +80,6 @@ struct App
 
 int main(int argc, char** args)
 {
-	typeinfo_load(L"flame_graphics.typeinfo");
-	
 	app.w = Window::create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);

@@ -639,9 +639,14 @@ namespace flame
 		return ((BPPrivate*)this)->dependencies.size();
 	}
 
-	Mail<std::wstring> BP::dependency(int idx) const
+	Mail<std::wstring> BP::dependency_filename(int idx) const
 	{
 		return new_mail(&(((BPPrivate*)this)->dependencies[idx].filename));
+	}
+
+	TypeinfoDatabase* BP::dependency_typeinfodatabase(int idx) const
+	{
+		return ((BPPrivate*)this)->dependencies[idx].db;
 	}
 
 	void BP::add_dependency(const std::wstring& filename)
@@ -652,6 +657,11 @@ namespace flame
 	void BP::remove_dependency(const std::wstring& filename)
 	{
 		((BPPrivate*)this)->remove_dependency(filename);
+	}
+
+	TypeinfoDatabase* BP::typeinfodatabase() const
+	{
+		return ((BPPrivate*)this)->bp_db;
 	}
 
 	uint BP::node_count() const
