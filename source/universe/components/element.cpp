@@ -29,7 +29,7 @@ namespace flame
 			draw = true;
 			background_offset = Vec4f(0.f);
 			background_round_radius = 0.f;
-			background_round_flags = 0;
+			background_round_flags = SideNW | SideNE | SideSE | SideSW;
 			background_frame_thickness = 0.f;
 			background_color = Vec4c(0);
 			background_frame_color = Vec4c(255);

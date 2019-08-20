@@ -264,23 +264,37 @@ int main(int argc, char **args)
 				auto c_element = cElement::create();
 				c_element->x = n_pos.x();
 				c_element->y = n_pos.y();
-				c_element->inner_padding = Vec4f(4.f, 4.f, 4.f, 4.f);
+				c_element->inner_padding = Vec4f(8.f);
+				c_element->background_frame_color = Vec4c(255);
+				c_element->background_frame_thickness = 2.f;
+				c_element->background_round_radius = 8.f;
 				e_node->add_component(c_element);
 
-				auto c_text = cText::create(app.font_atlas_sdf);
-				c_text->set_text(s2w(n->id()));
-				e_node->add_component(c_text);
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutVertical;
+				c_layout->width_fit_children = true;
+				c_layout->height_fit_children = true;
+				e_node->add_component(c_layout);
 
 				e_node->add_component(cAligner::create());
+
+				auto e_text = Entity::create();
+				e_node->add_child(e_text);
+				{
+					e_text->add_component(cElement::create());
+
+					auto c_text = cText::create(app.font_atlas_sdf);
+					c_text->set_text(s2w(n->id()));
+					c_text->sdf_scale = 0.8f;
+					e_text->add_component(c_text);
+
+					e_text->add_component(cAligner::create());
+				}
 
 				auto e_layout = Entity::create();
 				e_node->add_child(e_layout);
 				{
-					auto c_element = cElement::create();
-					c_element->y = 50.f;
-					c_element->background_frame_color = Vec4c(255, 255, 255, 255);
-					c_element->background_frame_thickness = 2.f;
-					e_layout->add_component(c_element);
+					e_layout->add_component(cElement::create());
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutHorizontal;
@@ -356,6 +370,8 @@ int main(int argc, char **args)
 							}
 						}
 					}
+
+					e_layout->add_component(cAligner::create());
 				}
 			}
 		}

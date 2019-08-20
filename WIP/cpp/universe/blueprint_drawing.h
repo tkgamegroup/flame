@@ -15,13 +15,8 @@ namespace flame
 		//		SelTypeLink
 		//	};
 
-		//	wLayout *w_scene;
-
 		//	FLAME_UI_EXPORTS void get_sel(SelType &type, void **v) const;
 		//	FLAME_UI_EXPORTS void set_sel(SelType type, void *v);
-
-		//	FLAME_UI_EXPORTS static BP_Scene_Draw *create(blueprint::Scene *s, Instance *ui);
-		//	FLAME_UI_EXPORTS static void destroy(BP_Scene_Draw *d);
 		//};
 	}
 }

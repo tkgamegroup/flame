@@ -89,7 +89,7 @@ namespace flame
 			case LayoutHorizontal:
 			{
 				auto w = element->inner_padding[0];
-				auto h = element->inner_padding[1];
+				auto h = 0.f;
 				auto div_num = 0U;
 				for (auto al : als)
 				{
@@ -116,7 +116,7 @@ namespace flame
 				if (!als.empty())
 					w -= item_padding;
 				w += element->inner_padding[2];
-				h += element->inner_padding[3];
+				h += element->inner_padding[1] + element->inner_padding[3];
 
 				if (width_fit_children)
 					element->width = w;
@@ -174,7 +174,7 @@ namespace flame
 				break;
 			case LayoutVertical:
 			{
-				auto w = element->inner_padding[0];
+				auto w = 0.f;
 				auto h = element->inner_padding[1];
 				auto div_num = 0U;
 				for (auto al : als)
@@ -201,7 +201,7 @@ namespace flame
 				}
 				if (!als.empty())
 					h -= item_padding;
-				w += element->inner_padding[2];
+				w += element->inner_padding[0] + element->inner_padding[2];
 				h += element->inner_padding[3];
 
 				if (width_fit_children)

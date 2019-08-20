@@ -52,10 +52,6 @@ namespace flame
 
 		//struct BP_Scene_Draw_Private : BP_Scene_Draw
 		//{
-		//	Instance *ui;
-
-		//	blueprint::Scene *s;
-
 		//	Sel sel;
 
 		//	BP_Scene_Draw_Private(Instance *_ui, blueprint::Scene *_s);
@@ -77,18 +73,8 @@ namespace flame
 		//{
 		//	void init(int _io, blueprint::Slot *_slot)
 		//	{
-		//		class_hash = cH("SLOT");
-
-		//		resize_data_storage(2);
-
 		//		size = Vec2(share_data.font_atlas->pixel_height);
 
-		//		align = AlignLittleEnd;
-
-		//		io() = _io;
-		//		slot() = _slot;
-
-		//		remove_draw_command(0);
 		//		add_draw_command([](CommonData *d) {
 		//			auto c = (Canvas*)d[0].p;
 		//			auto off = Vec2::from(d[1].f);
@@ -98,25 +84,6 @@ namespace flame
 		//			c->add_circle_filled_LT(thiz->pos * scl + off, thiz->size.x * scl, Colorf(1.f, 1.f, 0.f));
 		//		}, "p", this);
 		//	}
-
-		//	int &io()
-		//	{
-		//		return data_storage(0).i[0];
-		//	}
-
-		//	blueprint::SlotPtr &slot()
-		//	{
-		//		return *((blueprint::SlotPtr*)&data_storage(1).p);
-		//	}
-
-		//	static wSlot* create(Instance *ui, int _io, blueprint::Slot *_slot)
-		//	{
-		//		auto w = (wSlot*)Widget::create(ui);
-		//		w->init(_io, _slot);
-
-		//		return w;
-		//	}
-		//};
 
 		//struct BP_Node_Drawdata : Dtor
 		//{
@@ -372,11 +339,6 @@ namespace flame
 
 		//			w_right->add_child(l);
 		//		}
-		//		
-		//		w_dialog->w_content()->layout_type = LayoutHorizontal;
-		//		w_dialog->w_content()->item_padding = 16.f;
-		//		w_dialog->w_content()->add_child(w_left);
-		//		w_dialog->w_content()->add_child(w_right);
 
 		//		w_collapse = wButton::create(ui);
 		//		w_collapse->inner_padding = Vec4(8.f, 8.f, 1.f, 3.f);
