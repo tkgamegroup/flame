@@ -656,6 +656,27 @@ int main(int argc, char **args)
 			if (std::filesystem::exists(L"bp.graph.txt"))
 			{
 				auto str = get_file_string(L"bp.graph.txt");
+				for (auto it = str.begin(); it != str.end(); )
+				{
+					if (*it == '\\')
+					{
+						it = str.erase(it);
+						if (it != str.end())
+						{
+							if (*it == '\r') 
+							{
+								it = str.erase(it);
+								if (it != str.end() && *it == '\n')
+									it = str.erase(it);
+							}
+							else if (*it == '\n')
+								it = str.erase(it);
+						}
+					}
+					else
+						it++;
+				}
+
 				std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
 				std::smatch match;
 				while (std::regex_search(str, match, reg_node))

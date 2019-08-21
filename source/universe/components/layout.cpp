@@ -125,35 +125,45 @@ namespace flame
 				h += element->inner_padding[1] + element->inner_padding[3];
 
 				if (width_fit_children)
-					element->width = w;
-				else
 				{
-					w -= element->width;
-					if (w > 0.f && div_num > 0)
-						w /= div_num;
-					else
-						w = 0.f;
-					for (auto al : als)
+					if (aligner && aligner->width_policy == SizeGreedy)
 					{
-						auto ale = al->element;
-						if (al->width_policy == SizeFitLayout)
-							ale->width = w;
-						else if (al->width_policy == SizeGreedy)
-							ale->width = al->min_width + w;
+						aligner->min_width = w;
+						element->width = max(element->width, w);
 					}
+					else
+						element->width = w;
+				}
+				w -= element->width;
+				if (w > 0.f && div_num > 0)
+					w /= div_num;
+				else
+					w = 0.f;
+				for (auto al : als)
+				{
+					auto ale = al->element;
+					if (al->width_policy == SizeFitLayout)
+						ale->width = w;
+					else if (al->width_policy == SizeGreedy)
+						ale->width = al->min_width + w;
 				}
 				if (height_fit_children)
-					element->height = h;
-				else
 				{
-					for (auto al : als)
+					if (aligner && aligner->height_policy == SizeGreedy)
 					{
-						auto ale = al->element;
-						if (al->height_policy == SizeFitLayout)
-							ale->height = element->height - element->inner_padding[1] - element->inner_padding[3];
-						else if (al->height_policy == SizeGreedy)
-							ale->height = max(al->min_height, element->height - element->inner_padding[1] - element->inner_padding[3]);
+						aligner->min_height = h;
+						element->height = max(element->height, h);
 					}
+					else
+						element->height = h;
+				}
+				for (auto al : als)
+				{
+					auto ale = al->element;
+					if (al->height_policy == SizeFitLayout)
+						ale->height = element->height - element->inner_padding[1] - element->inner_padding[3];
+					else if (al->height_policy == SizeGreedy)
+						ale->height = max(al->min_height, element->height - element->inner_padding[1] - element->inner_padding[3]);
 				}
 
 				auto x = element->inner_padding[0];
@@ -216,35 +226,45 @@ namespace flame
 				h += element->inner_padding[3];
 
 				if (width_fit_children)
-					element->width = w;
-				else
 				{
-					for (auto al : als)
+					if (aligner && aligner->width_policy == SizeGreedy)
 					{
-						auto ale = al->element;
-						if (al->width_policy == SizeFitLayout)
-							ale->width = element->width - element->inner_padding[0] - element->inner_padding[2];
-						else if (al->width_policy == SizeGreedy)
-							ale->width = max(al->min_width, element->width - element->inner_padding[0] - element->inner_padding[2]);
+						aligner->min_width = w;
+						element->width = max(element->width, w);
 					}
+					else
+						element->width = w;
+				}
+				for (auto al : als)
+				{
+					auto ale = al->element;
+					if (al->width_policy == SizeFitLayout)
+						ale->width = element->width - element->inner_padding[0] - element->inner_padding[2];
+					else if (al->width_policy == SizeGreedy)
+						ale->width = max(al->min_width, element->width - element->inner_padding[0] - element->inner_padding[2]);
 				}
 				if (height_fit_children)
-					element->height = h;
-				else
 				{
-					h -= element->height;
-					if (h > 0.f && div_num > 0)
-						h /= div_num;
-					else
-						h = 0.f;
-					for (auto al : als)
+					if (aligner && aligner->height_policy == SizeGreedy)
 					{
-						auto ale = al->element;
-						if (al->height_policy == SizeFitLayout)
-							ale->height = h;
-						else if (al->height_policy == SizeGreedy)
-							ale->height = al->min_height + h;
+						aligner->min_height = h;
+						element->height = max(element->height, h);
 					}
+					else
+						element->height = h;
+				}
+				h -= element->height;
+				if (h > 0.f && div_num > 0)
+					h /= div_num;
+				else
+					h = 0.f;
+				for (auto al : als)
+				{
+					auto ale = al->element;
+					if (al->height_policy == SizeFitLayout)
+						ale->height = h;
+					else if (al->height_policy == SizeGreedy)
+						ale->height = al->min_height + h;
 				}
 
 				auto y = element->inner_padding[1];
