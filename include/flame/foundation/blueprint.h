@@ -46,9 +46,9 @@ namespace flame
 				Output
 			};
 
-			FLAME_FOUNDATION_EXPORTS Type type() const;
+			Type type;
 			FLAME_FOUNDATION_EXPORTS Node* node() const;
-			FLAME_FOUNDATION_EXPORTS VariableInfo* variable_info() const;
+			VariableInfo* variable_info;
 
 			FLAME_FOUNDATION_EXPORTS int frame() const;
 			FLAME_FOUNDATION_EXPORTS void* data() const;
@@ -80,9 +80,8 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
-			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
-			FLAME_FOUNDATION_EXPORTS Vec2f pos() const;
-			FLAME_FOUNDATION_EXPORTS void set_pos(const Vec2f& p);
+			UdtInfo* udt;
+			Vec2f pos;
 
 			FLAME_FOUNDATION_EXPORTS int input_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* input(int idx) const;
@@ -93,7 +92,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
 		};
 
-		FLAME_FOUNDATION_EXPORTS void set_graphics_device(graphics::Device* d);
+		graphics::Device* graphics_device;
 
 		FLAME_FOUNDATION_EXPORTS uint dependency_count() const;
 		FLAME_FOUNDATION_EXPORTS Mail<std::wstring> dependency_filename(int idx) const;
@@ -101,7 +100,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void add_dependency(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void remove_dependency(const std::wstring& filename);
 
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* typeinfodatabase() const;
+		TypeinfoDatabase* typeinfodatabase;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;

@@ -142,9 +142,19 @@ namespace flame
 		return ((EntityPrivate*)this)->children.size();
 	}
 
-	Entity* Entity::child(int index) const
+	Entity* Entity::child(uint index) const
 	{
 		return ((EntityPrivate*)this)->children[index].get();
+	}
+
+	Entity* Entity::find_child(const std::string& name) const
+	{
+		for (auto& c : ((EntityPrivate*)this)->children)
+		{
+			if (c->name == name)
+				return c.get();
+		}
+		return nullptr;
 	}
 
 	void Entity::add_child(Entity* e)

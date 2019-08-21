@@ -12,9 +12,7 @@ namespace flame
 
 	struct SlotPrivate : BP::Slot
 	{
-		Type type;
 		NodePrivate* node;
-		VariableInfo* variable_info;
 		void* raw_data;
 
 		std::vector<SlotPrivate*> links;
@@ -32,9 +30,6 @@ namespace flame
 	{
 		BPPrivate *bp;
 		std::string id;
-		UdtInfo* udt;
-
-		Vec2f pos;
 
 		void* dummy; // represents the object
 
@@ -70,11 +65,8 @@ namespace flame
 	{
 		std::wstring filename;
 
-		graphics::Device* graphics_device;
-
 		std::vector<Dependency> dependencies;
-		void* bp_module;
-		TypeinfoDatabase* bp_db;
+		void* module;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
@@ -100,10 +92,10 @@ namespace flame
 	};
 
 	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
-		type(_type),
-		node(_node),
-		variable_info(_variable_info)
+		node(_node)
 	{
+		type = _type;
+		variable_info = _variable_info;
 		raw_data = (char*)node->dummy + variable_info->offset();
 
 		if (type == Input)
@@ -184,10 +176,11 @@ namespace flame
 	NodePrivate::NodePrivate(BPPrivate *_bp, const std::string& _id, UdtInfo *_udt, void* module) :
 		bp(_bp),
 		id(_id),
-		udt(_udt),
-		pos(0.f),
 		in_list(false)
 	{
+		udt = _udt;
+		pos = Vec2f(0.f);
+
 		auto size = udt->size();
 		dummy = malloc(size);
 		memset(dummy, 0, size);
@@ -333,9 +326,9 @@ namespace flame
 		cmf(p2f<MF_v_v>(update_addr), dummy);
 	}
 
-	BPPrivate::BPPrivate() :
-		graphics_device(nullptr)
+	BPPrivate::BPPrivate()
 	{
+		graphics_device = nullptr;
 	}
 
 	BPPrivate::~BPPrivate()
@@ -345,8 +338,8 @@ namespace flame
 			free_module(d.module);
 			TypeinfoDatabase::destroy(d.db);
 		}
-		free_module(bp_module);
-		TypeinfoDatabase::destroy(bp_db);
+		free_module(module);
+		TypeinfoDatabase::destroy(typeinfodatabase);
 	}
 
 	void BPPrivate::add_dependency(const std::wstring& filename)
@@ -402,7 +395,7 @@ namespace flame
 	NodePrivate* BPPrivate::add_node(const std::string& type_name, const std::string& id)
 	{
 		UdtInfo* udt = nullptr;
-		void* module = nullptr;
+		void* m = nullptr;
 		{
 			auto hash = H(type_name.c_str());
 			for (auto& d : dependencies)
@@ -410,15 +403,15 @@ namespace flame
 				udt = d.db->find_udt(hash);
 				if (udt)
 				{
-					module = d.module;
+					m = d.module;
 					break;
 				}
 			}
 			if (!udt)
 			{
-				udt = bp_db->find_udt(hash);
+				udt = typeinfodatabase->find_udt(hash);
 				if (udt)
-					module = bp_module;
+					m = module;
 			}
 		}
 
@@ -442,7 +435,7 @@ namespace flame
 			}
 		}
 
-		auto n = new NodePrivate(this, s_id, udt, module);
+		auto n = new NodePrivate(this, s_id, udt, m);
 		nodes.emplace_back(n);
 
 		build_update_list();
@@ -529,6 +522,11 @@ namespace flame
 		_bp_env.dbs.clear();
 	}
 
+	BP::Node* BP::Slot::node() const
+	{
+		return ((SlotPrivate*)this)->node;
+	}
+
 	int BP::Slot::frame() const
 	{
 		return *(int*)((SlotPrivate*)this)->raw_data;
@@ -564,16 +562,6 @@ namespace flame
 		return ((SlotPrivate*)this)->get_address();
 	}
 
-	BP::Node *BP::Slot::node() const
-	{
-		return ((SlotPrivate*)this)->node;
-	}
-
-	VariableInfo *BP::Slot::variable_info() const
-	{
-		return ((SlotPrivate*)this)->variable_info;
-	}
-
 	BP *BP::Node::bp() const
 	{
 		return ((NodePrivate*)this)->bp;
@@ -582,21 +570,6 @@ namespace flame
 	const std::string& BP::Node::id() const
 	{
 		return ((NodePrivate*)this)->id;
-	}
-
-	UdtInfo *BP::Node::udt() const
-	{
-		return ((NodePrivate*)this)->udt;
-	}
-
-	Vec2f BP::Node::pos() const
-	{
-		return ((NodePrivate*)this)->pos;
-	}
-
-	void BP::Node::set_pos(const Vec2f& p)
-	{
-		((NodePrivate*)this)->pos = p;
 	}
 
 	int BP::Node::input_count() const
@@ -629,11 +602,6 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
-	void BP::set_graphics_device(graphics::Device* d)
-	{
-		((BPPrivate*)this)->graphics_device = d;
-	}
-
 	uint BP::dependency_count() const
 	{
 		return ((BPPrivate*)this)->dependencies.size();
@@ -657,11 +625,6 @@ namespace flame
 	void BP::remove_dependency(const std::wstring& filename)
 	{
 		((BPPrivate*)this)->remove_dependency(filename);
-	}
-
-	TypeinfoDatabase* BP::typeinfodatabase() const
-	{
-		return ((BPPrivate*)this)->bp_db;
 	}
 
 	uint BP::node_count() const
@@ -917,14 +880,14 @@ namespace flame
 		std::vector< TypeinfoDatabase*> dbs;
 		for (auto& d : bp->dependencies)
 			dbs.push_back(d.db);
-		bp->bp_module = load_module(ppath_str + L"/build/debug/bp.dll");
-		bp->bp_db = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
-		dbs.push_back(bp->bp_db);
+		bp->module = load_module(ppath_str + L"/build/debug/bp.dll");
+		bp->typeinfodatabase = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
+		dbs.push_back(bp->typeinfodatabase);
 
 		for (auto& n_d : node_descs)
 		{
 			auto n = bp->add_node(n_d.type, n_d.id);
-			n->set_pos(n_d.pos);
+			n->pos = n_d.pos;
 			for (auto& d_d : n_d.datas)
 			{
 				auto input = n->find_input(d_d.name);
@@ -971,7 +934,7 @@ namespace flame
 		std::vector< TypeinfoDatabase*> dbs;
 		for (auto& d : bp->dependencies)
 			dbs.push_back(d.db);
-		dbs.push_back(bp->bp_db);
+		dbs.push_back(bp->typeinfodatabase);
 
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)

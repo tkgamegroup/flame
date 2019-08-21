@@ -48,7 +48,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/clear_screen/bp");
+	app.bp = BP::create_from_file(L"../renderpath/canvas/bp");
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -71,7 +71,7 @@ int main(int argc, char** args)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 	}
 
-	app.bp->set_graphics_device(app.d);
+	app.bp->graphics_device = app.d;
 	app.bp->find_input("rt_dst.type")->set_data_i(TargetImages);
 	app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.cbs);
 

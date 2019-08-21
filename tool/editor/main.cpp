@@ -9,6 +9,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
+#include <flame/universe/default_style.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -22,38 +23,6 @@
 
 using namespace flame;
 using namespace graphics;
-
-struct cInputSlot : Component
-{
-	cElement* element;
-	std::vector<cElement*> link_elements;
-
-	Entity* root;
-	BP::Slot* sl;
-
-	cInputSlot() :
-		Component("InputSlot")
-	{
-	}
-
-	~cInputSlot()
-	{
-	}
-
-	virtual void on_add_to_parent() override
-	{
-		element = (cElement*)(entity->find_component(cH("Element")));
-		assert(element);
-	}
-
-	virtual void update() override
-	{
-		if (root && sl)
-		{
-			
-		}
-	}
-};
 
 struct App
 {
@@ -130,7 +99,7 @@ struct App
 			set_event(ev_1);
 			wait_event(ev_2, -1);
 
-			auto v = i->variable_info();
+			auto v = i->variable_info;
 			auto type = v->type();
 			auto value_before = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
 			auto data = new char[v->size()];
@@ -160,11 +129,11 @@ struct App
 			auto src = bp->node(i);
 			auto& name = src->id();
 
-			auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->name() + "|{{";
+			auto str = "\t" + name + " [label = \"" + name + "|" + src->udt->name() + "|{{";
 			for (auto j = 0; j < src->input_count(); j++)
 			{
 				auto input = src->input(j);
-				auto& name = input->variable_info()->name();
+				auto& name = input->variable_info->name();
 				str += "<" + name + ">" + name;
 				if (j != src->input_count() - 1)
 					str += "|";
@@ -173,7 +142,7 @@ struct App
 			for (auto j = 0; j < src->output_count(); j++)
 			{
 				auto output = src->output(j);
-				auto& name = output->variable_info()->name();
+				auto& name = output->variable_info->name();
 				str += "<" + name + ">" + name;
 				if (j != src->output_count() - 1)
 					str += "|";
@@ -233,7 +202,7 @@ int main(int argc, char **args)
 
 	for (auto i = 0; i < app.bp->dependency_count(); i++)
 		app.dbs.push_back(app.bp->dependency_typeinfodatabase(i));
-	app.dbs.push_back(app.bp->typeinfodatabase());
+	app.dbs.push_back(app.bp->typeinfodatabase);
 
 	app.ev_1 = create_event(false);
 	app.ev_2 = create_event(false);
@@ -259,6 +228,8 @@ int main(int argc, char **args)
 		app.font_atlas_sdf->index = 2;
 		app.canvas->set_image(app.font_atlas_pixel->index, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 		app.canvas->set_image(app.font_atlas_sdf->index, Imageview::create(app.font_atlas_sdf->image()));
+		app.canvas->set_clear_color(Vec4c(200, 200, 200, 255));
+		default_style.set_to_light();
 
 		app.root = Entity::create();
 		{
@@ -288,10 +259,9 @@ int main(int argc, char **args)
 		for (auto i = 0; i < app.bp->node_count(); i++)
 		{
 			auto n = app.bp->node(i);
-			auto n_pos = n->pos();
+			auto& n_pos = n->pos;
 
 			auto e_node = Entity::create();
-			e_node->set_name(n->id());
 			app.root->add_child(e_node);
 			{
 				auto c_element = cElement::create();
@@ -301,6 +271,7 @@ int main(int argc, char **args)
 				c_element->background_frame_color = Vec4c(255);
 				c_element->background_frame_thickness = 2.f;
 				c_element->background_round_radius = 8.f;
+				c_element->background_shadow_thickness = 8.f;
 				e_node->add_component(c_element);
 
 				e_node->add_component(cAligner::create());
@@ -330,8 +301,8 @@ int main(int argc, char **args)
 					e_text_type->add_component(cElement::create());
 
 					auto c_text = cText::create(app.font_atlas_sdf);
-					c_text->set_text(s2w(n->udt()->name()));
-					c_text->color = Vec4c(200, 200, 200, 255);
+					c_text->set_text(s2w(n->udt->name()));
+					c_text->color = Vec4c(50, 50, 50, 255);
 					c_text->sdf_scale = 0.5f;
 					e_text_type->add_component(c_text);
 
@@ -404,7 +375,7 @@ int main(int argc, char **args)
 
 								auto c_text = cText::create(app.font_atlas_sdf);
 								c_text->sdf_scale = 0.6f;
-								c_text->set_text(s2w(input->variable_info()->name()));
+								c_text->set_text(s2w(input->variable_info->name()));
 								e_text->add_component(c_text);
 
 								e_text->add_component(cAligner::create());
@@ -448,7 +419,7 @@ int main(int argc, char **args)
 
 								auto c_text = cText::create(app.font_atlas_sdf);
 								c_text->sdf_scale = 0.6f;
-								c_text->set_text(s2w(outout->variable_info()->name()));
+								c_text->set_text(s2w(outout->variable_info->name()));
 								e_text->add_component(c_text);
 
 								e_text->add_component(cAligner::create());
@@ -583,7 +554,7 @@ int main(int argc, char **args)
 				for (auto i = 0; i < app.bp->node_count(); i++)
 				{
 					auto n = app.bp->node(i);
-					printf("id:%s type:%s\n", n->id().c_str(), n->udt()->name());
+					printf("id:%s type:%s\n", n->id().c_str(), n->udt->name());
 				}
 			}
 			else if (s_what == "node")
@@ -598,7 +569,7 @@ int main(int argc, char **args)
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
-						auto v = input->variable_info();
+						auto v = input->variable_info;
 						auto type = v->type();
 						printf(" %s\n", v->name().c_str());
 						Mail<std::string> link_address;
@@ -614,9 +585,9 @@ int main(int argc, char **args)
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
-						auto v = output->variable_info();
+						auto v = output->variable_info;
 						auto type = v->type();
-						printf(" %s\n", output->variable_info()->name().c_str());
+						printf(" %s\n", output->variable_info->name().c_str());
 						auto str = serialize_value(app.dbs, type->tag(), type->hash(), output->data(), 2);
 						printf("   %s\n", str.p->empty() ? "-" : str.p->c_str());
 						delete_mail(str);
@@ -774,7 +745,7 @@ int main(int argc, char **args)
 				{
 					auto n = app.bp->find_node(match[1].str().c_str());
 					if (n)
-						n->set_pos(Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f);
+						n->pos = Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f;
 
 					str = match.suffix();
 				}

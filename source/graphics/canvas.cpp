@@ -80,7 +80,7 @@ namespace flame
 				clear_color = Vec4c(0, 0, 0, 255);
 
 				renderpath = BP::create_from_file(L"../renderpath/canvas/bp", true);
-				renderpath->set_graphics_device(d);
+				renderpath->graphics_device = d;
 
 				set_render_target(type, v);
 
