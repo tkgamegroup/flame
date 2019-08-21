@@ -95,28 +95,30 @@ namespace flame
 				for (auto al : als)
 				{
 					auto ale = al->element;
-					if (al->width_policy == SizeFitLayout)
+					switch (al->width_policy)
 					{
-						assert(!width_fit_children);
+					case SizeFixed:
+						w += ale->width;
+						break;
+					case SizeFitLayout:
 						div_num++;
-					}
-					else if (al->width_policy == SizeGreedy)
-					{
-						assert(!width_fit_children);
+						break;
+					case SizeGreedy:
 						div_num++;
 						w += al->min_width;
+						break;
 					}
-					else
-						w += ale->width;
-					if (al->height_policy == SizeFitLayout)
-						assert(!height_fit_children);
-					else if (al->height_policy == SizeGreedy)
+					switch (al->height_policy)
 					{
-						assert(!height_fit_children);
-						h = max(al->min_height, h);
-					}
-					else
+					case SizeFixed:
 						h = max(ale->height, h);
+						break;
+					case SizeFitLayout:
+						break;
+					case SizeGreedy:
+						h = max(al->min_height, h);
+						break;
+					}
 					w += item_padding;
 				}
 				if (!als.empty())
@@ -134,7 +136,7 @@ namespace flame
 					else
 						element->width = w;
 				}
-				w -= element->width;
+				w = element->width - w;
 				if (w > 0.f && div_num > 0)
 					w /= div_num;
 				else
@@ -196,28 +198,30 @@ namespace flame
 				for (auto al : als)
 				{
 					auto ale = al->element;
-					if (al->width_policy == SizeFitLayout)
-						assert(!width_fit_children);
-					else if (al->width_policy == SizeGreedy)
+					switch (al->width_policy)
 					{
-						assert(!width_fit_children);
-						w = max(al->min_width, w);
-					}
-					else
+					case SizeFixed:
 						w = max(ale->width, w);
-					if (al->height_policy == SizeFitLayout)
-					{
-						assert(!height_fit_children);
-						div_num++;
+						break;
+					case SizeFitLayout:
+						break;
+					case SizeGreedy:
+						w = max(al->min_width, w);
+						break;
 					}
-					else if (al->height_policy == SizeGreedy)
+					switch (al->height_policy)
 					{
-						assert(!height_fit_children);
+					case SizeFixed:
+						h += ale->height;
+						break;
+					case SizeFitLayout:
+						div_num++;
+						break;
+					case SizeGreedy:
 						div_num++;
 						h += al->min_height;
+						break;
 					}
-					else
-						h += ale->height;
 					h += item_padding;
 				}
 				if (!als.empty())
@@ -253,7 +257,7 @@ namespace flame
 					else
 						element->height = h;
 				}
-				h -= element->height;
+				h = element->height - h;
 				if (h > 0.f && div_num > 0)
 					h /= div_num;
 				else

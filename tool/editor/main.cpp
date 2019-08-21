@@ -311,7 +311,9 @@ int main(int argc, char **args)
 				{
 					e_layout->add_component(cElement::create());
 
-					e_layout->add_component(cAligner::create());
+					auto c_aligner = cAligner::create();
+					c_aligner->width_policy = SizeGreedy;
+					e_layout->add_component(c_aligner);
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutHorizontal;
@@ -323,7 +325,9 @@ int main(int argc, char **args)
 					{
 						e_left->add_component(cElement::create());
 
-						e_left->add_component(cAligner::create());
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeGreedy;
+						e_left->add_component(c_aligner);
 
 						auto c_layout = cLayout::create();
 						c_layout->type = LayoutVertical;
