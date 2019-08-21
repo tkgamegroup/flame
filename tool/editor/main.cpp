@@ -24,6 +24,52 @@
 using namespace flame;
 using namespace graphics;
 
+struct cLinksDrawer : Component
+{
+	cElement* element;
+
+	BP* bp;
+
+	cLinksDrawer() :
+		Component("ListDrawer")
+	{
+	}
+
+	virtual ~cLinksDrawer() override
+	{
+	}
+
+	virtual void on_add_to_parent() override
+	{
+		element = (cElement*)(entity->find_component(cH("Element")));
+		assert(element);
+	}
+
+	virtual void update() override
+	{
+		for (auto i = 0; i < bp->node_count(); i++)
+		{
+			auto n = bp->node(i);
+			for (auto j = 0; j < n->input_count(); j++)
+			{
+				auto input = n->input(j);
+				auto output = input->link(0);
+				if (output)
+				{
+					auto e1 = ((cElement*)output->user_data);
+					auto e2 = ((cElement*)input->user_data);
+					auto p1 = Vec2f(e1->global_x + e1->global_width * 0.5f, e1->global_y + e1->global_height * 0.5f);
+					auto p2 = Vec2f(e2->global_x + e2->global_width * 0.5f, e2->global_y + e2->global_height * 0.5f);
+						
+					std::vector<Vec2f> points;
+					path_bezier(points, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2);
+					element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f);
+				}
+			}
+		}
+	}
+};
+
 struct App
 {
 	Window* w;
@@ -238,6 +284,10 @@ int main(int argc, char **args)
 
 			app.root->add_component(cEventDispatcher::create(app.w));
 
+			auto c_linksdrawer = new cLinksDrawer;
+			c_linksdrawer->bp = app.bp;
+			app.root->add_component(c_linksdrawer);
+
 			app.root->add_component(cLayout::create());
 		}
 
@@ -364,6 +414,7 @@ int main(int argc, char **args)
 								c_element->background_round_radius = r * 0.25f;
 								c_element->background_color = Vec4c(255);
 								e_slot->add_component(c_element);
+								input->user_data = c_element;
 
 								e_slot->add_component(cAligner::create());
 							}
@@ -436,6 +487,7 @@ int main(int argc, char **args)
 								c_element->background_round_radius = r * 0.25f;
 								c_element->background_color = Vec4c(255);
 								e_slot->add_component(c_element);
+								outout->user_data = c_element;
 
 								e_slot->add_component(cAligner::create());
 							}

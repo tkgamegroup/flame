@@ -16,7 +16,6 @@ namespace flame
 		bool stretch;
 		Vec4f border;
 
-
 		cImage() :
 			Component("Image")
 		{
