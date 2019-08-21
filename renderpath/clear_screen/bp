@@ -5,17 +5,17 @@
 		<dependency v="flame_graphics.dll" />
 	</dependencies>
 	<nodes>
-		<node type="graphics::RenderTarget" id="rt_dst" pos="109.72;80.56">
+		<node type="graphics::RenderTarget" id="rt_dst" pos="109.72;96.53">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="Array(1+void*)" id="rts" pos="306.94;47.22" />
-		<node type="graphics::SubpassTargetInfo" id="sp" pos="488.89;80.56" />
-		<node type="Array(1+void*)" id="sps" pos="670.83;80.56" />
-		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="820.14;80.56" />
-		<node type="MakeCmd" id="make_cmd" pos="1006.90;80.56" />
+		<node type="Array(1+void*)" id="rts" pos="341.67;64.58" />
+		<node type="graphics::SubpassTargetInfo" id="sp" pos="586.81;96.53" />
+		<node type="Array(1+void*)" id="sps" pos="831.94;96.53" />
+		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="1113.20;96.53" />
+		<node type="MakeCmd" id="make_cmd" pos="1397.20;96.53" />
 	</nodes>
 	<links>
 		<link out="rt_dst.out" in="rts.1" />

@@ -126,29 +126,29 @@ struct App
 		for (auto i = 0; i < bp->node_count(); i++)
 		{
 			auto src = bp->node(i);
-			auto name = std::string(src->id());
+			auto& name = src->id();
 
-			auto n = "\t" + name + " [label = \"" + name + "|{{";
+			auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->name() + "|{{";
 			for (auto j = 0; j < src->input_count(); j++)
 			{
 				auto input = src->input(j);
-				auto name = std::string(input->variable_info()->name());
-				n += "<" + name + ">" + name;
+				auto& name = input->variable_info()->name();
+				str += "<" + name + ">" + name;
 				if (j != src->input_count() - 1)
-					n += "|";
+					str += "|";
 			}
-			n += "}|{";
+			str += "}|{";
 			for (auto j = 0; j < src->output_count(); j++)
 			{
 				auto output = src->output(j);
-				auto name = std::string(output->variable_info()->name());
-				n += "<" + name + ">" + name;
+				auto& name = output->variable_info()->name();
+				str += "<" + name + ">" + name;
 				if (j != src->output_count() - 1)
-					n += "|";
+					str += "|";
 			}
-			n += "}}\"];\n";
+			str += "}}\"];\n";
 
-			gv += n;
+			gv += str;
 		}
 		for (auto i = 0; i < bp->node_count(); i++)
 		{
@@ -270,25 +270,40 @@ int main(int argc, char **args)
 				c_element->background_round_radius = 8.f;
 				e_node->add_component(c_element);
 
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutVertical;
-				c_layout->width_fit_children = true;
-				c_layout->height_fit_children = true;
-				e_node->add_component(c_layout);
-
 				e_node->add_component(cAligner::create());
 
-				auto e_text = Entity::create();
-				e_node->add_child(e_text);
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutVertical;
+				c_layout->item_padding = 4.f;
+				e_node->add_component(c_layout);
+
+				auto e_text_id = Entity::create();
+				e_node->add_child(e_text_id);
 				{
-					e_text->add_component(cElement::create());
+					e_text_id->add_component(cElement::create());
 
 					auto c_text = cText::create(app.font_atlas_sdf);
 					c_text->set_text(s2w(n->id()));
 					c_text->sdf_scale = 0.8f;
-					e_text->add_component(c_text);
+					e_text_id->add_component(c_text);
 
-					e_text->add_component(cAligner::create());
+					auto c_aligner = cAligner::create();
+					e_text_id->add_component(c_aligner);
+				}
+
+				auto e_text_type = Entity::create();
+				e_node->add_child(e_text_type);
+				{
+					e_text_type->add_component(cElement::create());
+
+					auto c_text = cText::create(app.font_atlas_sdf);
+					c_text->set_text(s2w(n->udt()->name()));
+					c_text->color = Vec4c(200, 200, 200, 255);
+					c_text->sdf_scale = 0.5f;
+					e_text_type->add_component(c_text);
+
+					auto c_aligner = cAligner::create();
+					e_text_type->add_component(c_aligner);
 				}
 
 				auto e_layout = Entity::create();
@@ -296,11 +311,11 @@ int main(int argc, char **args)
 				{
 					e_layout->add_component(cElement::create());
 
+					e_layout->add_component(cAligner::create());
+
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutHorizontal;
 					c_layout->item_padding = 16.f;
-					c_layout->width_fit_children = true;
-					c_layout->height_fit_children = true;
 					e_layout->add_component(c_layout);
 
 					auto e_left = Entity::create();
@@ -308,15 +323,11 @@ int main(int argc, char **args)
 					{
 						e_left->add_component(cElement::create());
 
+						e_left->add_component(cAligner::create());
+
 						auto c_layout = cLayout::create();
 						c_layout->type = LayoutVertical;
-						c_layout->width_fit_children = true;
-						c_layout->height_fit_children = true;
 						e_left->add_component(c_layout);
-
-						auto c_aligner = cAligner::create();
-						//c_aligner->width_policy = SizeGreedy;
-						e_left->add_component(c_aligner);
 
 						for (auto j = 0; j < n->input_count(); j++)
 						{
@@ -328,7 +339,7 @@ int main(int argc, char **args)
 								e_item->add_component(cElement::create());
 
 								auto c_text = cText::create(app.font_atlas_sdf);
-								c_text->sdf_scale = 0.5f;
+								c_text->sdf_scale = 0.6f;
 								c_text->set_text(s2w(input->variable_info()->name()));
 								e_item->add_component(c_text);
 
@@ -342,13 +353,11 @@ int main(int argc, char **args)
 					{
 						e_right->add_component(cElement::create());
 
+						e_right->add_component(cAligner::create());
+
 						auto c_layout = cLayout::create();
 						c_layout->type = LayoutVertical;
-						c_layout->width_fit_children = true;
-						c_layout->height_fit_children = true;
 						e_right->add_component(c_layout);
-
-						e_right->add_component(cAligner::create());
 
 						for (auto j = 0; j < n->output_count(); j++)
 						{
@@ -360,7 +369,7 @@ int main(int argc, char **args)
 								e_item->add_component(cElement::create());
 
 								auto c_text = cText::create(app.font_atlas_sdf);
-								c_text->sdf_scale = 0.5f;
+								c_text->sdf_scale = 0.6f;
 								c_text->set_text(s2w(outout->variable_info()->name()));
 								e_item->add_component(c_text);
 
@@ -370,8 +379,6 @@ int main(int argc, char **args)
 							}
 						}
 					}
-
-					e_layout->add_component(cAligner::create());
 				}
 			}
 		}

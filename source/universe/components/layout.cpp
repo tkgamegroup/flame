@@ -21,6 +21,7 @@ namespace flame
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
+			aligner = (cAligner*)(entity->find_component(cH("Aligner")));
 		}
 
 		void update()
@@ -94,20 +95,25 @@ namespace flame
 				for (auto al : als)
 				{
 					auto ale = al->element;
-					if (al->width_policy == SizeFitLayout || al->width_policy == SizeGreedy)
+					if (al->width_policy == SizeFitLayout)
 					{
 						assert(!width_fit_children);
 						div_num++;
-						if (al->width_policy == SizeGreedy)
-							w += al->min_width;
+					}
+					else if (al->width_policy == SizeGreedy)
+					{
+						assert(!width_fit_children);
+						div_num++;
+						w += al->min_width;
 					}
 					else
 						w += ale->width;
-					if (al->height_policy == SizeFitLayout || al->height_policy == SizeGreedy)
+					if (al->height_policy == SizeFitLayout)
+						assert(!height_fit_children);
+					else if (al->height_policy == SizeGreedy)
 					{
 						assert(!height_fit_children);
-						if (al->height_policy == SizeGreedy)
-							h = max(al->min_height, h);
+						h = max(al->min_height, h);
 					}
 					else
 						h = max(ale->height, h);
@@ -180,20 +186,25 @@ namespace flame
 				for (auto al : als)
 				{
 					auto ale = al->element;
-					if (al->width_policy == SizeFitLayout || al->width_policy == SizeGreedy)
+					if (al->width_policy == SizeFitLayout)
+						assert(!width_fit_children);
+					else if (al->width_policy == SizeGreedy)
 					{
 						assert(!width_fit_children);
-						if (al->width_policy == SizeGreedy)
-							w = max(al->min_width, w);
+						w = max(al->min_width, w);
 					}
 					else
 						w = max(ale->width, w);
-					if (al->height_policy == SizeFitLayout || al->height_policy == SizeGreedy)
+					if (al->height_policy == SizeFitLayout)
 					{
 						assert(!height_fit_children);
 						div_num++;
-						if (al->height_policy == SizeGreedy)
-							h += al->min_height;
+					}
+					else if (al->height_policy == SizeGreedy)
+					{
+						assert(!height_fit_children);
+						div_num++;
+						h += al->min_height;
 					}
 					else
 						h += ale->height;

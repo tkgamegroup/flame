@@ -137,12 +137,12 @@ int main(int argc, char** args)
 		c_element->y = 8.f;
 		e_layout_left->add_component(c_element);
 
+		e_layout_left->add_component(cAligner::create());
+
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 8.f;
 		e_layout_left->add_component(c_layout);
-
-		e_layout_left->add_component(cAligner::create());
 	}
 
 	auto e_text_pixel = Entity::create();
@@ -303,12 +303,12 @@ int main(int argc, char** args)
 		c_element->y = 8.f;
 		e_layout_right->add_component(c_element);
 
+		e_layout_right->add_component(cAligner::create());
+
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 8.f;
 		e_layout_right->add_component(c_layout);
-
-		e_layout_right->add_component(cAligner::create());
 	}
 
 	auto e_list = Entity::create();
@@ -321,13 +321,13 @@ int main(int argc, char** args)
 		c_element->background_frame_thickness = 2.f;
 		e_list->add_component(c_element);
 
+		e_list->add_component(cAligner::create());
+
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		e_list->add_component(c_layout);
-
-		e_list->add_component(cAligner::create());
 	}
 
 	for (auto i = 0; i < 3; i++)
@@ -371,11 +371,11 @@ int main(int argc, char** args)
 	{
 		e_layout_menus->add_component(cElement::create());
 
+		e_layout_menus->add_component(cAligner::create());
+
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		e_layout_menus->add_component(c_layout);
-
-		e_layout_menus->add_component(cAligner::create());
 	}
 
 	//layout->add_child(w_list, 1);

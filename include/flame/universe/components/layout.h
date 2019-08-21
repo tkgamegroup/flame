@@ -5,10 +5,12 @@
 namespace flame
 {
 	struct cElement;
+	struct cAligner;
 
 	struct cLayout : Component
 	{
 		cElement* element;
+		cAligner* aligner;
 
 		LayoutType$ type;
 		float item_padding;
