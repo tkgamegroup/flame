@@ -342,12 +342,39 @@ int main(int argc, char **args)
 							{
 								e_item->add_component(cElement::create());
 
+								e_item->add_component(cAligner::create());
+
+								auto c_layout = cLayout::create();
+								c_layout->type = LayoutHorizontal;
+								e_item->add_component(c_layout);
+							}
+
+							auto e_slot = Entity::create();
+							e_item->add_child(e_slot);
+							{
+								auto c_element = cElement::create();
+								auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+								c_element->background_offset = Vec4f(-r * 0.25f);
+								c_element->width = r;
+								c_element->height = r;
+								c_element->background_round_radius = r * 0.25f;
+								c_element->background_color = Vec4c(255);
+								e_slot->add_component(c_element);
+
+								e_slot->add_component(cAligner::create());
+							}
+
+							auto e_text = Entity::create();
+							e_item->add_child(e_text);
+							{
+								e_text->add_component(cElement::create());
+
 								auto c_text = cText::create(app.font_atlas_sdf);
 								c_text->sdf_scale = 0.6f;
 								c_text->set_text(s2w(input->variable_info()->name()));
-								e_item->add_component(c_text);
+								e_text->add_component(c_text);
 
-								e_item->add_component(cAligner::create());
+								e_text->add_component(cAligner::create());
 							}
 						}
 					}
@@ -372,14 +399,41 @@ int main(int argc, char **args)
 							{
 								e_item->add_component(cElement::create());
 
-								auto c_text = cText::create(app.font_atlas_sdf);
-								c_text->sdf_scale = 0.6f;
-								c_text->set_text(s2w(outout->variable_info()->name()));
-								e_item->add_component(c_text);
-
 								auto c_aligner = cAligner::create();
 								c_aligner->x_align = AlignxRight;
 								e_item->add_component(c_aligner);
+
+								auto c_layout = cLayout::create();
+								c_layout->type = LayoutHorizontal;
+								e_item->add_component(c_layout);
+							}
+
+							auto e_text = Entity::create();
+							e_item->add_child(e_text);
+							{
+								e_text->add_component(cElement::create());
+
+								auto c_text = cText::create(app.font_atlas_sdf);
+								c_text->sdf_scale = 0.6f;
+								c_text->set_text(s2w(outout->variable_info()->name()));
+								e_text->add_component(c_text);
+
+								e_text->add_component(cAligner::create());
+							}
+
+							auto e_slot = Entity::create();
+							e_item->add_child(e_slot);
+							{
+								auto c_element = cElement::create();
+								auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+								c_element->background_offset = Vec4f(-r * 0.25f);
+								c_element->width = r;
+								c_element->height = r;
+								c_element->background_round_radius = r * 0.25f;
+								c_element->background_color = Vec4c(255);
+								e_slot->add_component(c_element);
+
+								e_slot->add_component(cAligner::create());
 							}
 						}
 					}
