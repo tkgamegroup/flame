@@ -37,4 +37,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static void save_to_file(Entity* e, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};
+
+	FLAME_UNIVERSE_EXPORTS void* component_alloc(uint size); // for user-define component
 }

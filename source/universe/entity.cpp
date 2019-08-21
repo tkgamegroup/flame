@@ -224,4 +224,9 @@ namespace flame
 	{
 		delete (EntityPrivate*)w;
 	}
+
+	void* component_alloc(uint size)
+	{
+		return malloc(size);
+	}
 }

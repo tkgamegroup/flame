@@ -92,6 +92,8 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
+
+			void* user_data;
 		};
 
 		graphics::Device* graphics_device;

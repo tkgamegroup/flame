@@ -24,18 +24,43 @@
 using namespace flame;
 using namespace graphics;
 
-struct cLinksDrawer : Component
+struct cBPNode : Component
+{
+	cEventReceiver* event_receiver;
+
+	cBPNode() :
+		Component("BPNode")
+	{
+	}
+
+	virtual ~cBPNode() override
+	{
+	}
+
+	virtual void on_add_to_parent() override
+	{
+		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+		assert(event_receiver);
+	}
+
+	virtual void update() override
+	{
+
+	}
+};
+
+struct cBP : Component
 {
 	cElement* element;
 
 	BP* bp;
 
-	cLinksDrawer() :
-		Component("ListDrawer")
+	cBP() :
+		Component("BP")
 	{
 	}
 
-	virtual ~cLinksDrawer() override
+	virtual ~cBP() override
 	{
 	}
 
@@ -284,7 +309,8 @@ int main(int argc, char **args)
 
 			app.root->add_component(cEventDispatcher::create(app.w));
 
-			auto c_linksdrawer = new cLinksDrawer;
+			auto c_linksdrawer = (cBP*)component_alloc(sizeof(cBP));
+			new (c_linksdrawer) cBP;
 			c_linksdrawer->bp = app.bp;
 			app.root->add_component(c_linksdrawer);
 
