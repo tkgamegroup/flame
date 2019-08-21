@@ -30,21 +30,11 @@ namespace flame
 	{
 	}
 
-	const glm::vec3 &Node::get_coord() const
-	{
-		return coord;
-	}
-
 	const glm::mat3 &Node::get_axis()
 	{
 		if (axis_dirty)
 			update_axis();
 		return axis;
-	}
-
-	const glm::vec3 &Node::get_scale() const
-	{
-		return scale;
 	}
 
 	const glm::vec3 &Node::get_euler()
@@ -483,26 +473,6 @@ namespace flame
 		for (auto &c : components)
 			c->on_update();
 		on_update();
-	}
-
-	NodeType Node::get_type() const
-	{
-		return type;
-	}
-
-	Node *Node::get_parent() const
-	{
-		return parent;
-	}
-
-	const std::vector<std::unique_ptr<Node>> &Node::get_children() const
-	{
-		return children;
-	}
-
-	const std::vector<std::unique_ptr<Component>> &Node::get_components() const
-	{
-		return components;
 	}
 
 	void Node::add_child(Node *n)

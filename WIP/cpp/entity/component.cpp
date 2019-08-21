@@ -7,16 +7,4 @@ namespace flame
 		type(_type)
 	{
 	}
-
-	Component::~Component() {}
-
-	ComponentType Component::get_type() const
-	{
-		return type;
-	}
-
-	Node *Component::get_parent() const
-	{
-		return parent;
-	}
 }

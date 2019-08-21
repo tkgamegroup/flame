@@ -84,42 +84,6 @@ namespace flame
 		index(-1)
 	{
 	}
-
-	std::string Material::get_name() const
-	{
-		return name;
-	}
-
-	glm::vec4 Material::get_albedo_alpha() const
-	{
-		return albedo_alpha;
-	}
-
-	float Material::get_spec() const
-	{
-		return spec_roughness.x;
-	}
-
-	float Material::get_roughness() const
-	{
-		return spec_roughness.y;
-	}
-
-	Texture *Material::get_albedo_alpha_map() const
-	{
-		return albedo_alpha_map.get();
-	}
-
-	Texture *Material::get_spec_roughness_map() const
-	{
-		return spec_roughness_map.get();
-	}
-
-	Texture *Material::get_normal_height_map() const
-	{
-		return normal_height_map.get();
-	}
-
 	std::string Material::get_albedo_alpha_map_name() const
 	{
 		if (albedo_alpha_map)
@@ -140,17 +104,6 @@ namespace flame
 			return normal_height_map->filename;
 		return "";
 	}
-
-	int Material::get_index() const
-	{
-		return index;
-	}
-
-	void Material::set_name(const std::string &v)
-	{
-		name = v;
-	}
-
 	void Material::set_albedo_alpha(const glm::vec4 &v)
 	{
 		albedo_alpha = v;

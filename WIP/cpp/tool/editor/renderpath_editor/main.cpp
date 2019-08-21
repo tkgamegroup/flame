@@ -15,24 +15,6 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	Ivec2 res(1280, 720);
-
-	auto app = Application::create();
-	auto w = Window::create(app, "Render Path Editor", res, WindowFrame | WindowResizable);
-
-	auto d = graphics::Device::create(true);
-
-	auto sc = graphics::Swapchain::create(d, w);
-
-	auto image_avalible = graphics::Semaphore::create(d);
-	auto ui_finished = graphics::Semaphore::create(d);
-
-	UI::init(d, graphics::SampleCount_8);
-	auto sd = UI::SwapchainData::create(sc);
-	auto ui = UI::Instance::create(w);
-	auto canvas = UI::Canvas::create(sd);
-	canvas->clear_values->set(0, Bvec4(200, 200, 200, 0));
-
 	auto bp_scene = blueprint::Scene::create();
 	auto bp_scene_draw = UI::BP_Scene_Draw::create(bp_scene, ui);
 	std::vector<std::pair<std::string, std::wstring>> math_nodes;
@@ -172,10 +154,6 @@ int main(int argc, char **args)
 			break;
 		}
 	});
-
-	auto t_fps = UI::wText::create(ui);
-	t_fps->align = UI::AlignRightBottomNoPadding;
-	ui->root()->add_child(t_fps, 1);
 	
 	auto t_status = UI::wText::create(ui);
 	t_status->align = UI::AlignLeftBottomNoPadding;
@@ -184,21 +162,7 @@ int main(int argc, char **args)
 	app->run([&](){
 		if (!w->minimized)
 		{
-			auto index = sc->acquire_image(image_avalible);
-
-			ui->begin(app->elapsed_time);
-			ui->end(canvas);
-			canvas->record_cb(index);
-
-			d->gq->submit(canvas->get_cb(), image_avalible, ui_finished);
-			d->gq->wait_idle();
-			d->gq->present(index, sc, ui_finished);
-
-			static wchar_t buf[16];
-			swprintf(buf, L"%lld", app->fps);
-			t_fps->set_text_and_size(buf);
-			swprintf(buf, L"%d%% %d,%d", int(bp_scene_draw->w_scene->scale * 100.f),
-				int(bp_scene_draw->w_scene->pos.x), int(bp_scene_draw->w_scene->pos.y));
+			swprintf(buf, L"%d%% %d,%d", int(bp_scene_draw->w_scene->scale * 100.f), int(bp_scene_draw->w_scene->pos.x), int(bp_scene_draw->w_scene->pos.y));
 			t_status->set_text_and_size(buf);
 		}
 	});

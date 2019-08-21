@@ -39,13 +39,6 @@ namespace flame
 
 	void Element::add_child(Element * w, int layer, int pos, bool modual)
 	{
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		if (pos < 0)
-			pos = children.size + pos + 1;
-		children.insert(pos, w);
-
-		w->parent = this;
-		w->layer = layer;
 		w->flag = modual ? FlagJustCreatedNeedModual : FlagJustCreated;
 
 		need_arrange = true;
@@ -214,11 +207,6 @@ namespace flame
 			p.thiz() = this;
 			f.exec();
 		}
-	}
-
-	SerializableNode* Element::save()
-	{
-		return SerializableNode::serialize(find_udt(cH("Element")), this, 1);
 	}
 
 	void Element::create_from_typeinfo(UI * ui, int font_atlas_index, VariableInfo * info, void* p, Element * dst)

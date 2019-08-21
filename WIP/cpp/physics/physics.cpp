@@ -43,25 +43,6 @@ namespace flame
 		return 0.f;
 	}
 
-	Shape *Rigidbody::new_shape()
-	{
-		auto s = new Shape;
-		shapes.emplace_back(s);
-		return s;
-	}
-
-	void Rigidbody::remove_shape(Shape *s)
-	{
-		for (auto it = shapes.begin(); it != shapes.end(); it++)
-		{
-			if (it->get() == s)
-			{
-				shapes.erase(it);
-				return;
-			}
-		}
-	}
-
 	physx::PxMaterial *pxDefaultMaterial = nullptr;
 
 	void createPhysicsScene()

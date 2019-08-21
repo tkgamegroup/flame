@@ -140,11 +140,6 @@ namespace flame
 		//pxScene->release();
 	}
 
-	std::string Scene::get_filename() const
-	{
-		return filename;
-	}
-
 	SkyType Scene::get_sky_type() const
 	{
 		return sky ? sky->type : SkyTypeNull;

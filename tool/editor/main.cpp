@@ -23,6 +23,38 @@
 using namespace flame;
 using namespace graphics;
 
+struct cInputSlot : Component
+{
+	cElement* element;
+	std::vector<cElement*> link_elements;
+
+	Entity* root;
+	BP::Slot* sl;
+
+	cInputSlot() :
+		Component("InputSlot")
+	{
+	}
+
+	~cInputSlot()
+	{
+	}
+
+	virtual void on_add_to_parent() override
+	{
+		element = (cElement*)(entity->find_component(cH("Element")));
+		assert(element);
+	}
+
+	virtual void update() override
+	{
+		if (root && sl)
+		{
+			
+		}
+	}
+};
+
 struct App
 {
 	Window* w;
@@ -259,6 +291,7 @@ int main(int argc, char **args)
 			auto n_pos = n->pos();
 
 			auto e_node = Entity::create();
+			e_node->set_name(n->id());
 			app.root->add_child(e_node);
 			{
 				auto c_element = cElement::create();

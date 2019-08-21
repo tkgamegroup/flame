@@ -10,26 +10,6 @@ namespace flame
 	{
 	}
 
-	ControllerState ControllerComponent::get_state() const
-	{
-		return state;
-	}
-
-	float ControllerComponent::get_ang_offset() const
-	{
-		return ang_offset;
-	}
-
-	float ControllerComponent::get_speed() const
-	{
-		return speed;
-	}
-
-	float ControllerComponent::get_turn_speed() const
-	{
-		return turn_speed;
-	}
-
 	bool ControllerComponent::set_state(ControllerState _s, bool enable)
 	{
 		if (_s == ControllerStateStand)
@@ -60,21 +40,6 @@ namespace flame
 			}
 			return false;
 		}
-	}
-
-	void ControllerComponent::set_ang_offset(float v)
-	{
-		ang_offset = v;
-	}
-
-	void ControllerComponent::set_speed(float v)
-	{
-		speed = v;
-	}
-
-	void ControllerComponent::set_turn_speed(float v)
-	{
-		turn_speed = v;
 	}
 
 	void ControllerComponent::reset()

@@ -87,55 +87,20 @@ namespace flame
 
 		//struct BP_Node_Drawdata : Dtor
 		//{
-		//	blueprint::Node *n;
-		//	Instance *ui;
-		//	BP_Scene_Draw_Private *scene_priv;
 
-		//	wDialog *w_dialog;
-		//	wLayout *w_left;
-		//	wLayout *w_right;
 		//	wButton *w_collapse;
 
 		//	bool collapsed;
 
 		//	BP_Node_Drawdata(blueprint::Node *_n, Instance *_ui, BP_Scene_Draw_Private *_scene_priv)
 		//	{
-		//		n = _n;
-		//		ui = _ui;
-		//		scene_priv = _scene_priv;
-
-		//		w_dialog = wDialog::create(ui, s2w(n->type_name.data).c_str(), 1.f);
-		//		w_dialog->w_title()->background_col = n->col;
-
 		//		w_dialog->add_listener(ListenerLeftMouseDown, [this](const Vec2 &) {
 		//			scene_priv->sel = n;
 		//		});
 
-		//		w_left = wLayout::create(ui);
-		//		w_left->align = AlignLittleEnd;
-		//		w_left->layout_type = LayoutVertical;
-		//		w_left->item_padding = 4.f;
-
 		//		for (auto i = 0; i < n->inputslot_count(); i++)
 		//		{
 		//			auto slot = n->inputslot(i);
-
-		//			auto l = wLayout::create(ui);
-		//			l->align = AlignLittleEnd;
-		//			l->layout_type = LayoutVertical;
-		//			l->item_padding = 4.f;
-		//			auto lh = wLayout::create(ui);
-		//			lh->align = AlignLittleEnd;
-		//			lh->layout_type = LayoutHorizontal;
-		//			lh->item_padding = 4.f;
-		//			auto w_s = wSlot::create(ui, 0, slot);
-		//			lh->add_child(w_s);
-		//			auto t = wText::create(ui);
-		//			t->align = AlignLittleEnd;
-		//			t->sdf_scale() = 1.f;
-		//			t->set_text_and_size(s2w(slot->name.data).c_str());
-		//			lh->add_child(t);
-		//			l->add_child(lh);
 
 		//			w_s->add_listener(ListenerDrop, [this, slot](Widget *src) {
 		//				if (src->class_hash == cH("SLOT"))
@@ -145,14 +110,6 @@ namespace flame
 		//						scene_priv->s->add_link(wslot->slot(), slot);
 		//				}
 		//			});
-
-		//			slot->user_data = w_s;
-
-		//			auto lv = wLayout::create(ui);
-		//			lv->align = AlignLittleEnd;
-		//			lv->layout_type = LayoutVertical;
-		//			lv->inner_padding = Vec4(t->pos.x, 0.f, 0.f, 0.f);
-		//			lv->item_padding = 2.f;
 
 		//			switch (slot->type)
 		//			{
@@ -305,26 +262,9 @@ namespace flame
 		//			w_left->add_child(l);
 		//		}
 
-		//		w_right = wLayout::create(ui);
-		//		w_right->align = AlignLittleEnd;
-		//		w_right->layout_type = LayoutVertical;
-		//		w_right->item_padding = 4.f;
-
 		//		for (auto i = 0; i < n->outputslot_count(); i++)
 		//		{
 		//			auto slot = n->outputslot(i);
-
-		//			auto l = wLayout::create(ui);
-		//			l->align = AlignLittleEnd;
-		//			l->layout_type = LayoutHorizontal;
-		//			l->item_padding = 4.f;
-		//			auto t = wText::create(ui);
-		//			t->align = AlignLittleEnd;
-		//			t->sdf_scale() = 1.f;
-		//			t->set_text_and_size(s2w(slot->name.data).c_str());
-		//			l->add_child(t);
-		//			auto w_s = wSlot::create(ui, 1, slot);
-		//			l->add_child(w_s);
 
 		//			w_s->add_listener(ListenerDrop, [this, slot](Widget *src) {
 		//				if (src->class_hash == cH("SLOT"))
@@ -334,10 +274,6 @@ namespace flame
 		//						scene_priv->s->add_link(slot, wslot->slot());
 		//				}
 		//			});
-
-		//			slot->user_data = w_s;
-
-		//			w_right->add_child(l);
 		//		}
 
 		//		w_collapse = wButton::create(ui);
@@ -537,16 +473,6 @@ namespace flame
 		//void BP_Scene_Draw::set_sel(SelType type, void *v)
 		//{
 		//	((BP_Scene_Draw_Private*)this)->set_sel(type, v);
-		//}
-
-		//BP_Scene_Draw *BP_Scene_Draw::create(blueprint::Scene *s, Instance *ui)
-		//{
-		//	return new BP_Scene_Draw_Private(ui, s);
-		//}
-
-		//void BP_Scene_Draw::destroy(BP_Scene_Draw *d)
-		//{
-		//	delete(BP_Scene_Draw_Private*)d;
 		//}
 	}
 }
