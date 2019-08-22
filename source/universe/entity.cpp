@@ -47,11 +47,58 @@ namespace flame
 			c->on_add_to_parent();
 		}
 
+		EntityPrivate* find_child(const std::string& name) const
+		{
+			for (auto& e : children)
+			{
+				if (e->name == name)
+					return e.get();
+			}
+			return nullptr;
+		}
+
 		void add_child(EntityPrivate* e)
 		{
 			children.emplace_back(e);
 			e->parent = this;
 			e->on_add_to_parent();
+		}
+
+		void remove_child(EntityPrivate* e)
+		{
+			for (auto it = children.begin(); it != children.end(); it++)
+			{
+				if (it->get() == e)
+				{
+					children.erase(it);
+					return;
+				}
+			}
+		}
+
+		void take_child(EntityPrivate* e)
+		{
+			for (auto it = children.begin(); it != children.end(); it++)
+			{
+				if (it->get() == e)
+				{
+					it->release();
+					children.erase(it);
+					return;
+				}
+			}
+		}
+
+		void remove_all_children()
+		{
+			children.clear();
+		}
+
+		void take_all_children()
+		{
+			for (auto& e : children)
+				e.release();
+			children.clear();
 		}
 
 		void on_add_to_parent()
@@ -74,8 +121,9 @@ namespace flame
 
 		void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
 		{
-			for (auto& c : children)
+			for (auto it = children.rbegin(); it != children.rend(); it++)
 			{
+				auto c = it->get();
 				if (c->global_visible)
 					c->traverse_backward(callback, capture);
 			}
@@ -149,17 +197,32 @@ namespace flame
 
 	Entity* Entity::find_child(const std::string& name) const
 	{
-		for (auto& c : ((EntityPrivate*)this)->children)
-		{
-			if (c->name == name)
-				return c.get();
-		}
-		return nullptr;
+		return ((EntityPrivate*)this)->find_child(name);
 	}
 
 	void Entity::add_child(Entity* e)
 	{
 		((EntityPrivate*)this)->add_child((EntityPrivate*)e);
+	}
+
+	void Entity::remove_child(Entity* e)
+	{
+		((EntityPrivate*)this)->remove_child((EntityPrivate*)e);
+	}
+
+	void Entity::take_child(Entity* e)
+	{
+		((EntityPrivate*)this)->take_child((EntityPrivate*)e);
+	}
+
+	void Entity::remove_all_children()
+	{
+		((EntityPrivate*)this)->remove_all_children();
+	}
+
+	void Entity::take_all_children()
+	{
+		((EntityPrivate*)this)->take_all_children();
 	}
 
 	void Entity::traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)

@@ -26,13 +26,13 @@ namespace flame
 
 		void update()
 		{
-			std::vector<cAligner*> als;
+			std::vector<std::pair<cElement*, cAligner*>> als;
 			als.resize(entity->child_count());
 			for (auto i = 0; i < entity->child_count(); i++)
 			{
 				auto al = (cAligner*)entity->child(i)->find_component(cH("Aligner"));
-				assert(al);
-				als[i] = al;
+				als[i].first = al ? al->element : (cElement*)entity->child(i)->find_component(cH("Element"));
+				als[i].second = al;
 			}
 
 			switch (type)
@@ -40,49 +40,48 @@ namespace flame
 			case LayoutFree:
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					switch (al->width_policy)
+					switch (al.second ? al.second->width_policy : SizeFixed)
 					{
 					case SizeFitLayout:
-						ale->width = element->width;
+						al.first->width = element->width;
 						break;
 					case SizeGreedy:
-						if (element->width > al->min_width)
-							ale->width = element->width;
+						if (element->width > al.second->min_width)
+							al.first->width = element->width;
 						break;
 					}
-					switch (al->height_policy)
+					switch (al.second ? al.second->height_policy : SizeFixed)
 					{
 					case SizeFitLayout:
-						ale->height = element->height;
+						al.first->height = element->height;
 						break;
 					case SizeGreedy:
-						if (element->height > al->min_height)
-							ale->height = element->height;
+						if (element->height > al.second->min_height)
+							al.first->height = element->height;
 						break;
 					}
-					switch (al->x_align)
+					switch (al.second ? al.second->x_align : AlignxFree)
 					{
 					case AlignxLeft:
-						ale->x = 0;
+						al.first->x = 0;
 						break;
 					case AlignxMiddle:
-						ale->x = (element->width - ale->width) * 0.5f;
+						al.first->x = (element->width - al.first->width) * 0.5f;
 						break;
 					case AlignxRight:
-						ale->x = element->width - ale->width;
+						al.first->x = element->width - al.first->width;
 						break;
 					}
-					switch (al->y_align)
+					switch (al.second ? al.second->y_align : AlignyFree)
 					{
 					case AlignyTop:
-						ale->y = 0;
+						al.first->y = 0;
 						break;
 					case AlignyMiddle:
-						ale->y = (element->height - ale->height) * 0.5f;
+						al.first->y = (element->height - al.first->height) * 0.5f;
 						break;
 					case AlignyBottom:
-						ale->y = element->height - ale->height;
+						al.first->y = element->height - al.first->height;
 						break;
 					}
 				}
@@ -94,29 +93,28 @@ namespace flame
 				auto div_num = 0U;
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					switch (al->width_policy)
+					switch (al.second ? al.second->width_policy : SizeFixed)
 					{
 					case SizeFixed:
-						w += ale->width;
+						w += al.first->width;
 						break;
 					case SizeFitLayout:
 						div_num++;
 						break;
 					case SizeGreedy:
 						div_num++;
-						w += al->min_width;
+						w += al.second->min_width;
 						break;
 					}
-					switch (al->height_policy)
+					switch (al.second ? al.second->height_policy : SizeFixed)
 					{
 					case SizeFixed:
-						h = max(ale->height, h);
+						h = max(al.first->height, h);
 						break;
 					case SizeFitLayout:
 						break;
 					case SizeGreedy:
-						h = max(al->min_height, h);
+						h = max(al.second->min_height, h);
 						break;
 					}
 					w += item_padding;
@@ -143,11 +141,13 @@ namespace flame
 					w = 0.f;
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					if (al->width_policy == SizeFitLayout)
-						ale->width = w;
-					else if (al->width_policy == SizeGreedy)
-						ale->width = al->min_width + w;
+					if (al.second)
+					{
+						if (al.second->width_policy == SizeFitLayout)
+							al.first->width = w;
+						else if (al.second->width_policy == SizeGreedy)
+							al.first->width = al.second->min_width + w;
+					}
 				}
 				if (height_fit_children)
 				{
@@ -161,30 +161,31 @@ namespace flame
 				}
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					if (al->height_policy == SizeFitLayout)
-						ale->height = element->height - element->inner_padding[1] - element->inner_padding[3];
-					else if (al->height_policy == SizeGreedy)
-						ale->height = max(al->min_height, element->height - element->inner_padding[1] - element->inner_padding[3]);
+					if (al.second)
+					{
+						if (al.second->height_policy == SizeFitLayout)
+							al.first->height = element->height - element->inner_padding[1] - element->inner_padding[3];
+						else if (al.second->height_policy == SizeGreedy)
+							al.first->height = max(al.second->min_height, element->height - element->inner_padding[1] - element->inner_padding[3]);
+					}
 				}
 
 				auto x = element->inner_padding[0];
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					assert(al->x_align == AlignxFree);
-					ale->x = x;
-					x += ale->width + item_padding;
-					switch (al->y_align)
+					assert(!al.second || al.second->x_align == AlignxFree);
+					al.first->x = x;
+					x += al.first->width + item_padding;
+					switch (al.second ? al.second->y_align : AlignyFree)
 					{
 					case AlignyFree: case AlignyTop:
-						ale->y = element->inner_padding[1];
+						al.first->y = element->inner_padding[1];
 						break;
 					case AlignyMiddle:
-						ale->y = (element->height - element->inner_padding[1] - element->inner_padding[3] - ale->height) * 0.5f;
+						al.first->y = (element->height - element->inner_padding[1] - element->inner_padding[3] - al.first->height) * 0.5f;
 						break;
 					case AlignyBottom:
-						ale->y = element->height - element->inner_padding[3] - ale->height;
+						al.first->y = element->height - element->inner_padding[3] - al.first->height;
 						break;
 					}
 				}
@@ -197,29 +198,28 @@ namespace flame
 				auto div_num = 0U;
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					switch (al->width_policy)
+					switch (al.second ? al.second->width_policy : SizeFixed)
 					{
 					case SizeFixed:
-						w = max(ale->width, w);
+						w = max(al.first->width, w);
 						break;
 					case SizeFitLayout:
 						break;
 					case SizeGreedy:
-						w = max(al->min_width, w);
+						w = max(al.second->min_width, w);
 						break;
 					}
-					switch (al->height_policy)
+					switch (al.second ? al.second->height_policy : SizeFixed)
 					{
 					case SizeFixed:
-						h += ale->height;
+						h += al.first->height;
 						break;
 					case SizeFitLayout:
 						div_num++;
 						break;
 					case SizeGreedy:
 						div_num++;
-						h += al->min_height;
+						h += al.second->min_height;
 						break;
 					}
 					h += item_padding;
@@ -241,11 +241,13 @@ namespace flame
 				}
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					if (al->width_policy == SizeFitLayout)
-						ale->width = element->width - element->inner_padding[0] - element->inner_padding[2];
-					else if (al->width_policy == SizeGreedy)
-						ale->width = max(al->min_width, element->width - element->inner_padding[0] - element->inner_padding[2]);
+					if (al.second)
+					{
+						if (al.second->width_policy == SizeFitLayout)
+							al.first->width = element->width - element->inner_padding[0] - element->inner_padding[2];
+						else if (al.second->width_policy == SizeGreedy)
+							al.first->width = max(al.second->min_width, element->width - element->inner_padding[0] - element->inner_padding[2]);
+					}
 				}
 				if (height_fit_children)
 				{
@@ -264,32 +266,33 @@ namespace flame
 					h = 0.f;
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					if (al->height_policy == SizeFitLayout)
-						ale->height = h;
-					else if (al->height_policy == SizeGreedy)
-						ale->height = al->min_height + h;
+					if (al.second)
+					{
+						if (al.second->height_policy == SizeFitLayout)
+							al.first->height = h;
+						else if (al.second->height_policy == SizeGreedy)
+							al.first->height = al.second->min_height + h;
+					}
 				}
 
 				auto y = element->inner_padding[1];
 				for (auto al : als)
 				{
-					auto ale = al->element;
-					switch (al->x_align)
+					switch (al.second ? al.second->x_align : AlignxFree)
 					{
 					case AlignxFree: case AlignxLeft:
-						ale->x = element->inner_padding[0];
+						al.first->x = element->inner_padding[0];
 						break;
 					case AlignxMiddle:
-						ale->x = (element->width - element->inner_padding[0] - element->inner_padding[2] - ale->width) * 0.5f;
+						al.first->x = (element->width - element->inner_padding[0] - element->inner_padding[2] - al.first->width) * 0.5f;
 						break;
 					case AlignxRight:
-						ale->x = element->width - element->inner_padding[2] - ale->width;
+						al.first->x = element->width - element->inner_padding[2] - al.first->width;
 						break;
 					}
-					assert(al->y_align == AlignyFree);
-					ale->y = y;
-					y += ale->height + item_padding;
+					assert(!al.second || al.second->y_align == AlignyFree);
+					al.first->y = y;
+					y += al.first->height + item_padding;
 				}
 			}
 				break;

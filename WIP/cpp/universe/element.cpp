@@ -25,23 +25,9 @@ namespace flame
 		flag = FlagNull;
 	}
 
-	Element::~Element()
-	{
-		if (this == ui->hovering_element())
-			ui->set_hovering_element(nullptr);
-		if (this == ui->focus_element())
-			ui->set_focus_element(nullptr);
-		if (this == ui->key_focus_element())
-			ui->set_key_focus_element(nullptr);
-		if (this == ui->dragging_element())
-			ui->set_dragging_element(nullptr);
-	}
-
 	void Element::add_child(Element * w, int layer, int pos, bool modual)
 	{
 		w->flag = modual ? FlagJustCreatedNeedModual : FlagJustCreated;
-
-		need_arrange = true;
 
 		for (auto i = 0; i < child_listeners$.size; i++)
 		{
@@ -65,8 +51,6 @@ namespace flame
 		}
 		Element::destroy(w);
 		children.remove(idx);
-
-		need_arrange = true;
 	}
 
 	void Element::take_child(int layer, int idx, bool delay)
@@ -81,8 +65,6 @@ namespace flame
 		children.remove(idx);
 
 		remove_animations();
-
-		need_arrange = true;
 	}
 
 	void Element::clear_children(int layer, int begin, int end, bool delay)
@@ -95,8 +77,6 @@ namespace flame
 			for (auto i = begin; i < end; i++)
 				Element::destroy(children[i]);
 			children.remove(begin, end - begin);
-
-			need_arrange = true;
 		}
 		else
 		{
@@ -115,38 +95,12 @@ namespace flame
 			for (auto i = begin; i < end; i++)
 				children[i]->remove_animations();
 			children.remove(begin, end - begin);
-
-			need_arrange = true;
 		}
 		else
 		{
 			for (auto i = begin; i < end; i++)
 				children[i]->flag = FlagNeedToTakeFromParent;
 		}
-	}
-
-	void Element::remove_from_parent(bool delay)
-	{
-		if (delay)
-		{
-			flag = FlagNeedToRemoveFromParent;
-			return;
-		}
-
-		if (parent)
-			parent->remove_child(layer, parent->find_child(layer, this));
-	}
-
-	void Element::take_from_parent(bool delay)
-	{
-		if (delay)
-		{
-			flag = FlagNeedToTakeFromParent;
-			return;
-		}
-
-		if (parent)
-			parent->take_child(layer, parent->find_child(layer, this));
 	}
 
 	const auto scroll_spare_spacing = 20.f;
@@ -216,7 +170,6 @@ namespace flame
 		case VariableTagEnumSingle:
 		{
 			auto c = createT<wCombo>(ui, font_atlas_index, find_enum(info->type_hash()), (char*)p + info->offset());
-			c->align$ = AlignLittleEnd;
 			dst->add_child(c, 0, -1, true);
 		}
 			break;
@@ -229,7 +182,6 @@ namespace flame
 			case cH("bool"):
 			{
 				auto c = createT<wCheckbox>(ui, (char*)p + info->offset());
-				c->align$ = AlignLittleEnd;
 				dst->add_child(c, 0, -1, true);
 			}
 				break;
@@ -250,7 +202,6 @@ namespace flame
 				{
 					auto e = createT<wEdit>(ui, font_atlas_index, info, &((*pp)[i]));
 					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
 					dst->add_child(e, 0, -1, true);
 				}
@@ -268,7 +219,6 @@ namespace flame
 				{
 					auto e = createT<wEdit>(ui, font_atlas_index, info, &((*pp)[i]));
 					e->size_policy_hori$ = SizeFitLayout;
-					e->align$ = AlignLittleEnd;
 					e->set_size_by_width(10.f);
 					dst->add_child(e, 0, -1, true);
 				}
@@ -301,31 +251,6 @@ namespace flame
 		}, { ui }));
 	}
 
-	static void menu_add_rarrow(wMenu * w)
-	{
-		if (w->w_rarrow())
-			return;
-
-		if (w->parent && w->parent->class$.hash == cH("wMenuBar"))
-			return;
-		if (!w->sub() && w->class$.hash != cH("wCombo"))
-			return;
-
-		auto title = w->w_title();
-
-		title->inner_padding$[2] += title->size$.y * 0.6f;
-		title->set_size_auto();
-
-		auto rarrow = Element::createT<wText>(w->ui, title->font_atlas_index());
-
-		w->w_rarrow() = rarrow;
-		rarrow->align$ = AlignRightNoPadding;
-		rarrow->sdf_scale() = w->w_title()->sdf_scale();
-		rarrow->text$ = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
-		rarrow->set_size_auto();
-		w->add_child(rarrow, 1);
-	}
-
 	void menuitem_mouse_event$(Element::MouseListenerParm& p)
 	{
 		if (!p.is_clicked())
@@ -337,12 +262,6 @@ namespace flame
 
 	void wMenuItem::init(int font_atlas_index, const wchar_t* title)
 	{
-		inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
-		size_policy_hori$ = SizeFitLayout;
-		align$ = AlignLittleEnd;
-		event_attitude$ = EventAccept;
-
-		styles$.push_back({ 0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active) });
 		mouse_listeners$.push_back(Function<MouseListenerParm>(menuitem_mouse_event$, {}));
 	}
 
@@ -356,50 +275,17 @@ namespace flame
 			menu->open();
 	}
 
-	void menu_items_child_event$(Element::ChildListenerParm& p)
+	static void menu_add_rarrow(wMenu* w)
 	{
-		if (p.op() != Element::ChildAdd)
-			return;
-
-		auto menu = (wMenuPtr)p.thiz()->parent;
-		switch (p.src()->class$.hash)
-		{
-		case cH("wMenuItem"):
-			menu_add_rarrow(menu);
-			break;
-		case cH("wMenu"):
-		{
-			auto src = (wMenu*)p.src();
-			src->sub() = 1;
-			src->size_policy_hori$ = SizeGreedy;
-			src->w_items()->align$ = AlignRightOutside;
-
-			menu_add_rarrow(menu);
-		}
-			break;
-		}
+		rarrow->text$ = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
 	}
 
 	void wMenu::init(int font_atlas_index, const wchar_t* title, bool only_for_context_menu)
 	{
-		align$ = AlignLittleEnd;
-		layout_type$ = LayoutVertical;
-
-		sub() = 0;
-		opened() = 0;
-
-		w_title() = createT<wText>(ui, font_atlas_index);
-		w_title()->inner_padding$ = Vec4(4.f, 2.f, 4.f, 2.f);
 		w_title()->size_policy_hori$ = SizeGreedy;
-		w_title()->align$ = AlignLittleEnd;
-		w_title()->event_attitude$ = EventAccept;
 		w_title()->text$ = title;
-		w_title()->set_size_auto();
-		w_title()->styles$.push_back({ 0, 0, Style::background_color(Bvec4(0), ui->default_header_col_hovering, ui->default_header_col_active) });
 		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(menu_title_mouse_event$, { this }));
 		add_child(w_title());
-
-		w_rarrow() = nullptr;
 
 		w_items() = createT<wLayout>(ui, LayoutVertical);
 		w_items()->class$ = "menu items";
@@ -407,16 +293,6 @@ namespace flame
 		w_items()->align$ = AlignBottomOutside;
 		w_items()->visible$ = false;
 		add_child(w_items(), 1);
-
-		w_items()->child_listeners$.push_back(Function<ChildListenerParm>(menu_items_child_event$, { this }));
-
-		if (only_for_context_menu)
-		{
-			pos$ = hidden_pos;
-			sub() = 1;
-			w_items()->align$ = AlignFree;
-			ui->root()->add_child(this, 1);
-		}
 	}
 
 	void wMenu::open()
@@ -808,10 +684,7 @@ namespace flame
 		else
 		{
 			if (scrollbar->w_btn() == scrollbar->ui->dragging_element())
-			{
 				scrollbar->w_target()->scroll_offset$ -= (p.value().y / scrollbar->size$.y) * scrollbar->w_target()->get_content_size();
-				scrollbar->w_target()->need_arrange = true;
-			}
 		}
 	}
 
@@ -858,7 +731,6 @@ namespace flame
 		size$ = Vec2(10.f);
 		size_policy_vert$ = SizeFitLayout;
 		align$ = AlignRight;
-		event_attitude$ = EventAccept;
 
 		w_btn() = createT<wButton>(ui, -1, nullptr);
 		w_btn()->size$ = size$;
@@ -877,7 +749,6 @@ namespace flame
 	void wScrollbar::scroll(int v)
 	{
 		w_target()->scroll_offset$ += v * 20.f;
-		w_target()->need_arrange = true;
 	}
 
 	void sizedrag_extra_draw$(Element::ExtraDrawParm& p)
@@ -966,7 +837,6 @@ namespace flame
 
 		size$ = Vec2(10.f);
 		background_col$ = Bvec4(255, 225, 255, 255);
-		align$ = AlignLittleEnd;
 
 		if (dir() == 0)
 			size_policy_vert$ = SizeFitLayout;
@@ -1022,15 +892,11 @@ namespace flame
 		wLayout::init();
 
 		layout_type$ = LayoutVertical;
-		align$ = AlignLittleEnd;
 
 		w_title() = createT<wText>(ui, font_atlas_index);
 		w_title()->inner_padding$[0] = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.8f : 0.f;
 		w_title()->inner_padding$ += Vec4(4.f, 2.f, 4.f, 2.f);
-		w_title()->align$ = AlignLittleEnd;
-		w_title()->event_attitude$ = EventAccept;
 		w_title()->text$ = title;
-		w_title()->set_size_auto();
 		w_title()->styles$.push_back(Style(0, 0, Style::text_color(ui->default_text_col, ui->default_text_col_hovering_or_active)));
 		if (tree)
 		{
@@ -1041,7 +907,6 @@ namespace flame
 
 		w_items() = createT<wLayout>(ui, LayoutVertical);
 		w_items()->layout_padding$ = w_title()->inner_padding$[0];
-		w_items()->align$ = AlignLittleEnd;
 		w_items()->visible$ = false;
 		add_child(w_items());
 
@@ -1049,7 +914,6 @@ namespace flame
 		w_larrow()->inner_padding$ = Vec4(4.f, 4.f, 0.f, 0.f);
 		w_larrow()->background_col$ = Bvec4(255, 255, 255, 0);
 		w_larrow()->align$ = AlignLeftTopNoPadding;
-		w_larrow()->event_attitude$ = EventAccept;
 		w_larrow()->set_size(Vec2(w_title()->inner_padding$[0], w_title()->size$.y));
 		w_larrow()->text$ = Icon_CARET_RIGHT;
 		w_larrow()->styles$.push_back(Style(0, 0, Style::text_color(ui->default_text_col, ui->default_text_col_hovering_or_active)));
@@ -1086,7 +950,6 @@ namespace flame
 
 		inner_padding$ = Vec4(radius);
 		background_col$ = Colorf(0.5f, 0.5f, 0.5f, 0.9f);
-		event_attitude$ = EventAccept;
 		item_padding$ = radius;
 		if (resize)
 		{
@@ -1140,9 +1003,7 @@ namespace flame
 		item_padding$ = 8.f;
 
 		w_text() = createT<wText>(ui, font_atlas_index);
-		w_text()->align$ = AlignLittleEnd;
 		w_text()->text$ = text;
-		w_text()->set_size_auto();
 		add_child(w_text());
 
 		w_ok() = createT<wButton>(ui, font_atlas_index, L"OK");
@@ -1200,12 +1061,10 @@ namespace flame
 
 	//	w_yes() = wButton::create(instance());
 	//	w_yes()->set_classic(yes_text, sdf_scale);
-	//	w_yes()->align = AlignLittleEnd;
 	//	w_buttons()->add_child(w_yes());
 
 	//	w_no() = wButton::create(instance());
 	//	w_no()->set_classic(no_text, sdf_scale);
-	//	w_no()->align = AlignLittleEnd;
 	//	w_buttons()->add_child(w_no());
 
 	//	w_yes()->add_listener(ListenerClicked, [this, callback]() {
@@ -1268,7 +1127,6 @@ namespace flame
 	//		w_content()->item_padding *= sdf_scale;
 
 	//	w_input() = wEdit::create(instance());
-	//	w_input()->align = AlignLittleEnd;
 	//	w_input()->sdf_scale() = sdf_scale;
 	//	w_input()->set_size_by_width(100.f);
 	//	w_content()->add_child(w_input());
@@ -1282,12 +1140,10 @@ namespace flame
 
 	//	w_ok() = wButton::create(instance());
 	//	w_ok()->set_classic(L"OK", sdf_scale);
-	//	w_ok()->align = AlignLittleEnd;
 	//	w_buttons()->add_child(w_ok());
 
 	//	w_cancel() = wButton::create(instance());
 	//	w_cancel()->set_classic(L"Cancel", sdf_scale);
-	//	w_cancel()->align = AlignLittleEnd;
 	//	w_buttons()->add_child(w_cancel());
 
 	//	w_content()->add_child(w_buttons());
@@ -1358,12 +1214,10 @@ namespace flame
 	//	w_content()->item_padding = 8.f;
 
 	//	w_pathstems() = wMenuBar::create(instance());
-	//	w_pathstems()->align = AlignLittleEnd;
 	//	w_pathstems()->layout_type = LayoutHorizontal;
 	//	w_content()->add_child(w_pathstems());
 
 	//	w_list() = wList::create(instance());
-	//	w_list()->align = AlignLittleEnd;
 
 	//	auto upward_item = wListItem::create(instance());
 	//	upward_item->w_btn()->set_text_and_size(L"..");
@@ -1379,13 +1233,11 @@ namespace flame
 
 	//	w_input() = wEdit::create(instance());
 	//	w_input()->size_policy_hori = SizeFitLayout;
-	//	w_input()->align = AlignLittleEnd;
 	//	w_input()->set_size_by_width(100.f);
 	//	w_content()->add_child(w_input());
 
 	//	w_ext() = wCombo::create(instance());
 	//	w_ext()->size_policy_hori = SizeFitLayout;
-	//	w_ext()->align = AlignLittleEnd;
 	//	add_style_buttoncolor(w_ext(), 0, Vec3(0.f, 0.f, 0.7f));
 	//	{
 	//		if (exts == nullptr)
@@ -1412,12 +1264,10 @@ namespace flame
 
 	//	w_ok() = wButton::create(instance());
 	//	w_ok()->set_classic(io == 0 ? L"Open" : L"Save");
-	//	w_ok()->align = AlignLittleEnd;wbu
 	//	w_buttons()->add_child(w_ok());
 
 	//	w_cancel() = wButton::create(instance());
 	//	w_cancel()->set_classic(L"Cancel");
-	//	w_cancel()->align = AlignLittleEnd;
 	//	w_buttons()->add_child(w_cancel());
 
 	//	w_ok()->add_listener(ListenerClicked, [this, io, callback]() {

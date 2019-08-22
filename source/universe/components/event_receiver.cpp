@@ -1,6 +1,7 @@
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/event_dispatcher.h>
 
 namespace flame
 {
@@ -16,6 +17,7 @@ namespace flame
 		cEventReceiverPrivate()
 		{
 			element = nullptr;
+			event_dispatcher = nullptr;
 
 			hovering = false;
 			dragging = false;
@@ -35,6 +37,10 @@ namespace flame
 
 	cEventReceiver::~cEventReceiver()
 	{
+		if (focusing)
+			event_dispatcher->focusing = nullptr;
+		if (hovering)
+			event_dispatcher->hovering = nullptr;
 	}
 
 	void cEventReceiver::on_add_to_parent()

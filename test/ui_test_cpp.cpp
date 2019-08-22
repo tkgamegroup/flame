@@ -24,6 +24,7 @@
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/list_item.h>
+#include <flame/universe/utils.h>
 
 using namespace flame;
 using namespace graphics;
@@ -47,6 +48,7 @@ struct App
 
 	Entity* root;
 	cElement* c_element_root;
+	cEventReceiver* c_event_receiver_root;
 	cText* c_text_fps;
 
 	void run()
@@ -114,6 +116,9 @@ int main(int argc, char** args)
 
 		app.root->add_component(cEventDispatcher::create(app.w));
 
+		app.c_event_receiver_root = cEventReceiver::create();
+		app.root->add_component(app.c_event_receiver_root);
+
 		app.root->add_component(cLayout::create());
 	}
 
@@ -139,8 +144,6 @@ int main(int argc, char** args)
 		c_element->y = 8.f;
 		e_layout_left->add_component(c_element);
 
-		e_layout_left->add_component(cAligner::create());
-
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 8.f;
@@ -155,8 +158,6 @@ int main(int argc, char** args)
 		auto c_text = cText::create(app.font_atlas_pixel);
 		c_text->set_text(L"Text Pixel");
 		e_text_pixel->add_component(c_text);
-
-		e_text_pixel->add_component(cAligner::create());
 	}
 
 	auto e_text_lcd = Entity::create();
@@ -167,8 +168,6 @@ int main(int argc, char** args)
 		auto c_text = cText::create(app.font_atlas_lcd);
 		c_text->set_text(L"Text Lcd");
 		e_text_lcd->add_component(c_text);
-
-		e_text_lcd->add_component(cAligner::create());
 	}
 
 	auto e_text_sdf = Entity::create();
@@ -180,8 +179,6 @@ int main(int argc, char** args)
 		c_text->set_text(L"Text Sdf");
 		c_text->sdf_scale = 14.f / 32.f;
 		e_text_sdf->add_component(c_text);
-
-		e_text_sdf->add_component(cAligner::create());
 	}
 
 	auto e_button = Entity::create();
@@ -206,8 +203,6 @@ int main(int argc, char** args)
 		e_button->add_component(c_event_receiver);
 
 		e_button->add_component(cStyleBgCol::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
-
-		e_button->add_component(cAligner::create());
 	}
 
 	auto e_checkbox = Entity::create();
@@ -229,8 +224,6 @@ int main(int argc, char** args)
 		e_checkbox->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 		e_checkbox->add_component(cCheckbox::create());
-
-		e_checkbox->add_component(cAligner::create());
 	}
 
 	auto e_toggle = Entity::create();
@@ -251,8 +244,6 @@ int main(int argc, char** args)
 		e_toggle->add_component(cStyleBgCol::create(Vec4c(0), Vec4c(0), Vec4c(0)));
 
 		e_toggle->add_component(cToggle::create());
-
-		e_toggle->add_component(cAligner::create());
 	}
 
 	auto e_image = Entity::create();
@@ -269,8 +260,6 @@ int main(int argc, char** args)
 		auto c_image = cImage::create();
 		c_image->id = img_id;
 		e_image->add_component(c_image);
-
-		e_image->add_component(cAligner::create());
 	}
 
 	auto e_edit = Entity::create();
@@ -293,8 +282,6 @@ int main(int argc, char** args)
 		auto c_edit = cEdit::create();
 		c_edit->cursor = 2;
 		e_edit->add_component(c_edit);
-
-		e_edit->add_component(cAligner::create());
 	}
 
 	auto e_layout_right = Entity::create();
@@ -304,8 +291,6 @@ int main(int argc, char** args)
 		c_element->x = 416.f;
 		c_element->y = 8.f;
 		e_layout_right->add_component(c_element);
-
-		e_layout_right->add_component(cAligner::create());
 
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
@@ -319,11 +304,9 @@ int main(int argc, char** args)
 		auto c_element = cElement::create();
 		c_element->width = 108.f;
 		c_element->inner_padding = Vec4f(4.f);
-		c_element->background_frame_color = Vec4c(1255);
+		c_element->background_frame_color = Vec4c(255);
 		c_element->background_frame_thickness = 2.f;
 		e_list->add_component(c_element);
-
-		e_list->add_component(cAligner::create());
 
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
@@ -349,7 +332,11 @@ int main(int argc, char** args)
 
 			e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
-			e_item->add_component(cListItem::create());
+			auto c_list_item = cListItem::create();
+			c_list_item->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
+			c_list_item->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
+			c_list_item->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
+			e_item->add_component(c_list_item);
 
 			auto c_aligner = cAligner::create();
 			c_aligner->width_policy = SizeGreedy;
@@ -357,49 +344,80 @@ int main(int argc, char** args)
 		}
 	}
 
-	//auto w_list = Element::createT<wList>(ui);
-	//w_list->pos$ = Vec2f(800.f, 8.f);
-	//w_list->size$ = Vec2f(300.f);
+	auto e_menus = Entity::create();
+	{
+		e_menus->add_component(cElement::create(app.canvas));
+
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutVertical;
+		e_menus->add_component(c_layout);
+	}
+
+	for (auto i = 0; i < 3; i++)
+	{
+		auto e_item = Entity::create();
+		e_menus->add_child(e_item);
+		{
+			e_item->add_component(cElement::create());
+
+			static const char* names[] = {
+				"Refresh",
+				"Save",
+				"Help"
+			};
+			auto c_text = cText::create(app.font_atlas_pixel);
+			c_text->set_text(s2w(names[i]));
+			e_item->add_component(c_text);
+
+			auto c_event_receiver = cEventReceiver::create();
+			{
+
+				struct Data
+				{
+					Entity* e;
+					const char* n;
+				}data;
+				data.e = app.root;
+				data.n = names[i];
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						auto& data = *(Data*)c;
+						printf("%s!\n", data.n);
+						destroy_topmost(data.e);
+					}
+				}, new_mail(&data));
+			}
+			e_item->add_component(c_event_receiver);
+
+			e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeGreedy;
+			e_item->add_component(c_aligner);
+		}
+	}
+
+	app.c_event_receiver_root->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		if (is_mouse_down(action, key, true) && key == Mouse_Right)
+		{
+			auto topmost = create_topmost(app.root);
+
+			auto menu = *(Entity**)c;
+
+			auto c_element = (cElement*)menu->find_component(cH("Element"));
+			c_element->x = pos.x();
+			c_element->y = pos.y();
+
+			topmost->add_child(menu);
+		}
+	}, new_mail_p(e_menus));
 
 	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
 	//w_sizedrag->min_size() = Vec2f(100.f);
 
-	//w_list->add_child(w_sizedrag, 1);
-
-	//for (auto i = 0; i < 20; i++)
-	//{
-	//	auto item = Element::createT<wListItem>(ui, font_atlas_index, (L"item " + to_stdwstring(i)).c_str());
-	//	w_list->add_child(item);
-	//}
-
-	auto e_layout_menus = Entity::create();
-	e_layout_right->add_child(e_layout_menus);
-	{
-		e_layout_menus->add_component(cElement::create());
-
-		e_layout_menus->add_component(cAligner::create());
-
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		e_layout_menus->add_component(c_layout);
-	}
-
-	//layout->add_child(w_list, 1);
-
 	//auto w_menubar = Element::createT<wMenuBar>(ui);
 	//w_menubar->align$ = AlignLittleEnd;
-
-	//auto w_menu = Element::createT<wMenu>(ui, font_atlas_index, L"menu");
-
-	//auto w_menuitem1 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 1");
-	//auto w_menuitem2 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 2");
-	//auto w_menuitem3 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 3");
-
-	//w_menu->w_items()->add_child(w_menuitem1);
-	//w_menu->w_items()->add_child(w_menuitem2);
-	//w_menu->w_items()->add_child(w_menuitem3);
-
-	//w_menubar->add_child(w_menu);
 
 	//layout1->add_child(w_menubar);
 

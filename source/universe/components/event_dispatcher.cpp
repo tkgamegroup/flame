@@ -147,6 +147,7 @@ namespace flame
 					auto er = (cEventReceiver*)e->find_component(cH("EventReceiver"));
 					if (er)
 					{
+						er->event_dispatcher = thiz;
 						if (er->element->contains(Vec2f(thiz->mouse_pos)))
 						{
 							er->hovering = true;
@@ -186,17 +187,17 @@ namespace flame
 				{
 					auto s = mouse_buttons[i];
 					if (s & KeyStateJust)
-						hovering->on_mouse((KeyState)s, (MouseKey)i, Vec2f(0.f));
+						hovering->on_mouse((KeyState)s, (MouseKey)i, Vec2f(mouse_pos));
 				}
 
 				if (is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 				{
 					if (hovering == focusing)
 					{
-						hovering->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2f(0.f));
+						hovering->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2f(mouse_pos));
 						if (potential_dbclick_er == focusing)
 						{
-							hovering->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2f(0.f));
+							hovering->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2f(mouse_pos));
 							potential_dbclick_er = nullptr;
 							potential_dbclick_time = 0.f;
 						}

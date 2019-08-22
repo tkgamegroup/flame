@@ -379,8 +379,6 @@ int main(int argc, char **args)
 				c_bp_node->n = n;
 				e_node->add_component(c_bp_node);
 
-				e_node->add_component(cAligner::create());
-
 				auto c_layout = cLayout::create();
 				c_layout->type = LayoutVertical;
 				c_layout->item_padding = 4.f;
@@ -395,9 +393,6 @@ int main(int argc, char **args)
 					c_text->set_text(s2w(n->id()));
 					c_text->sdf_scale = 0.8f;
 					e_text_id->add_component(c_text);
-
-					auto c_aligner = cAligner::create();
-					e_text_id->add_component(c_aligner);
 				}
 
 				auto e_text_type = Entity::create();
@@ -410,9 +405,6 @@ int main(int argc, char **args)
 					c_text->color = Vec4c(50, 50, 50, 255);
 					c_text->sdf_scale = 0.5f;
 					e_text_type->add_component(c_text);
-
-					auto c_aligner = cAligner::create();
-					e_text_type->add_component(c_aligner);
 				}
 
 				auto e_layout = Entity::create();
@@ -451,8 +443,6 @@ int main(int argc, char **args)
 							{
 								e_item->add_component(cElement::create());
 
-								e_item->add_component(cAligner::create());
-
 								auto c_layout = cLayout::create();
 								c_layout->type = LayoutHorizontal;
 								e_item->add_component(c_layout);
@@ -470,8 +460,6 @@ int main(int argc, char **args)
 								c_element->background_color = Vec4c(255);
 								e_slot->add_component(c_element);
 								input->user_data = c_element;
-
-								e_slot->add_component(cAligner::create());
 							}
 
 							auto e_text = Entity::create();
@@ -483,8 +471,6 @@ int main(int argc, char **args)
 								c_text->sdf_scale = 0.6f;
 								c_text->set_text(s2w(input->variable_info->name()));
 								e_text->add_component(c_text);
-
-								e_text->add_component(cAligner::create());
 							}
 						}
 					}
@@ -493,8 +479,6 @@ int main(int argc, char **args)
 					e_layout->add_child(e_right);
 					{
 						e_right->add_component(cElement::create());
-
-						e_right->add_component(cAligner::create());
 
 						auto c_layout = cLayout::create();
 						c_layout->type = LayoutVertical;
@@ -527,8 +511,6 @@ int main(int argc, char **args)
 								c_text->sdf_scale = 0.6f;
 								c_text->set_text(s2w(outout->variable_info->name()));
 								e_text->add_component(c_text);
-
-								e_text->add_component(cAligner::create());
 							}
 
 							auto e_slot = Entity::create();
@@ -543,8 +525,6 @@ int main(int argc, char **args)
 								c_element->background_color = Vec4c(255);
 								e_slot->add_component(c_element);
 								outout->user_data = c_element;
-
-								e_slot->add_component(cAligner::create());
 							}
 						}
 					}

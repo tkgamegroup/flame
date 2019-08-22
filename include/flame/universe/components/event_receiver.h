@@ -5,10 +5,12 @@
 namespace flame
 {
 	struct cElement;
+	struct cEventDispatcher;
 
 	struct cEventReceiver : Component
 	{
 		cElement* element;
+		cEventDispatcher* event_dispatcher;
 
 		bool hovering;
 		bool dragging;

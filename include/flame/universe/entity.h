@@ -26,6 +26,10 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* child(uint index) const;
 		FLAME_UNIVERSE_EXPORTS Entity* find_child(const std::string& name) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e);
+		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e);
+		FLAME_UNIVERSE_EXPORTS void take_child(Entity* e); // no destroy
+		FLAME_UNIVERSE_EXPORTS void remove_all_children();
+		FLAME_UNIVERSE_EXPORTS void take_all_children();
 
 		FLAME_UNIVERSE_EXPORTS void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 		FLAME_UNIVERSE_EXPORTS void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
