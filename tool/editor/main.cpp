@@ -27,16 +27,19 @@ using namespace graphics;
 struct cBPNode : Component
 {
 	cEventReceiver* event_receiver;
+	void* mouse_listener;
 
 	BP::Node* n;
 
 	cBPNode() :
 		Component("BPNode")
 	{
+		mouse_listener = nullptr;
 	}
 
 	virtual ~cBPNode() override
 	{
+		event_receiver->remove_mouse_listener(mouse_listener);
 	}
 
 	virtual void on_add_to_parent() override
@@ -44,7 +47,7 @@ struct cBPNode : Component
 		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 		assert(event_receiver);
 
-		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			auto thiz = (*(cBPNode**)c);
 			if (is_mouse_move(action, key))
 			{
@@ -647,8 +650,8 @@ int main(int argc, char **args)
 					for (auto &i : inputs)
 						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name().c_str(), i->decoration(), get_name(i->type()->tag()), i->type()->name().c_str());
 					printf("[Out]\n");
-					for (auto &i : outputs)
-						printf(" name:%s attribute:%s tag:%s type:%s\n", i->name().c_str(), i->decoration(), get_name(i->type()->tag()), i->type()->name().c_str());
+					for (auto &o : outputs)
+						printf(" name:%s attribute:%s tag:%s type:%s\n", o->name().c_str(), o->decoration(), get_name(o->type()->tag()), o->type()->name().c_str());
 				}
 				else
 					printf("udt not found\n");

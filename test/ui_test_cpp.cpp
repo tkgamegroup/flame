@@ -22,6 +22,8 @@
 #include <flame/universe/components/toggle.h>
 #include <flame/universe/components/image.h>
 #include <flame/universe/components/edit.h>
+#include <flame/universe/components/list.h>
+#include <flame/universe/components/list_item.h>
 
 using namespace flame;
 using namespace graphics;
@@ -328,6 +330,8 @@ int main(int argc, char** args)
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		e_list->add_component(c_layout);
+
+		e_list->add_component(cList::create());
 	}
 
 	for (auto i = 0; i < 3; i++)
@@ -343,7 +347,9 @@ int main(int argc, char** args)
 
 			e_item->add_component(cEventReceiver::create());
 
-			e_item->add_component(cStyleBgCol::create(default_style.header_color_normal, default_style.header_color_hovering, default_style.header_color_active));
+			e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+			e_item->add_component(cListItem::create());
 
 			auto c_aligner = cAligner::create();
 			c_aligner->width_policy = SizeGreedy;
