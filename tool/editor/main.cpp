@@ -28,6 +28,8 @@ struct cBPNode : Component
 {
 	cEventReceiver* event_receiver;
 
+	BP::Node* n;
+
 	cBPNode() :
 		Component("BPNode")
 	{
@@ -41,11 +43,28 @@ struct cBPNode : Component
 	{
 		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 		assert(event_receiver);
+
+		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto thiz = (*(cBPNode**)c);
+			if (is_mouse_move(action, key))
+			{
+				if (thiz->event_receiver->dragging)
+				{
+					auto e = thiz->event_receiver->element;
+					auto x = pos.x() / e->global_scale;
+					auto y = pos.y() / e->global_scale;
+					thiz->n->pos.x() += x;
+					thiz->n->pos.y() += y;
+					e->x += x;
+					e->y += y;
+				}
+			}
+
+		}, new_mail_p(this));
 	}
 
 	virtual void update() override
 	{
-
 	}
 };
 
@@ -309,10 +328,10 @@ int main(int argc, char **args)
 
 			app.root->add_component(cEventDispatcher::create(app.w));
 
-			auto c_linksdrawer = (cBP*)component_alloc(sizeof(cBP));
-			new (c_linksdrawer) cBP;
-			c_linksdrawer->bp = app.bp;
-			app.root->add_component(c_linksdrawer);
+			auto c_bp = (cBP*)component_alloc(sizeof(cBP));
+			new (c_bp) cBP;
+			c_bp->bp = app.bp;
+			app.root->add_component(c_bp);
 
 			app.root->add_component(cLayout::create());
 		}
@@ -349,6 +368,13 @@ int main(int argc, char **args)
 				c_element->background_round_radius = 8.f;
 				c_element->background_shadow_thickness = 8.f;
 				e_node->add_component(c_element);
+
+				e_node->add_component(cEventReceiver::create());
+
+				auto c_bp_node = (cBPNode*)component_alloc(sizeof(cBPNode));
+				new (c_bp_node) cBPNode;
+				c_bp_node->n = n;
+				e_node->add_component(c_bp_node);
 
 				e_node->add_component(cAligner::create());
 
