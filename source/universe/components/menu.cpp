@@ -5,14 +5,17 @@
 
 namespace flame
 {
-	struct cSubMenuButtonPrivate : cSubMenuButton
+	struct cMenuButtonPrivate : cMenuButton
 	{
-		cSubMenuButtonPrivate()
+		cMenuButtonPrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
 
+			root = nullptr;
 			menu = nullptr;
+			popup_side = SideE;
+			topmost_penetrable = false;
 
 			opened = false;
 		}
@@ -27,7 +30,7 @@ namespace flame
 			{
 				event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						(*(cSubMenuButtonPrivate**)c)->open();
+						(*(cMenuButtonPrivate**)c)->open();
 
 				}, new_mail_p(this));
 			}
@@ -37,30 +40,31 @@ namespace flame
 		{
 			if (!opened)
 			{
+				if (entity->parent())
+					close_menu(entity->parent());
+
 				opened = true;
 
 				auto topmost = get_topmost();
+				if (!topmost)
+					topmost = create_topmost(root, topmost_penetrable);
 
+				auto c_menu = (cMenu*)menu->find_component(cH("Menu"));
+				if (c_menu)
+					c_menu->popuped_by = this;
 				auto menu_element = (cElement*)menu->find_component(cH("Element"));
-				menu_element->x = element->global_x + element->global_width;
-				menu_element->y = element->global_y;
+				if (popup_side == SideE)
+				{
+					menu_element->x = element->global_x + element->global_width;
+					menu_element->y = element->global_y;
+				}
+				else if (popup_side == SideS)
+				{
+					menu_element->x = element->global_x;
+					menu_element->y = element->global_y + element->global_height;
+				}
 
 				topmost->add_child(menu);
-
-				auto parent = entity->parent();
-				if (parent)
-				{
-					for (auto i = 0; i < parent->child_count(); i++)
-					{
-						auto e = parent->child(i);
-						if (e != entity)
-						{
-							auto menu = (cSubMenuButton*)e->find_component(cH("SubMenuButton"));
-							if (menu)
-								menu->close();
-						}
-					}
-				}
 			}
 		}
 
@@ -70,46 +74,71 @@ namespace flame
 			{
 				opened = false;
 
+				close_menu(menu);
+
 				auto topmost = get_topmost();
 				topmost->take_child(menu);
-
-				for (auto i = 0; i < menu->child_count(); i++)
-				{
-					auto e = menu->child(i);
-					auto menu = (cSubMenuButton*)e->find_component(cH("SubMenuButton"));
-					if (menu)
-						menu->close();
-				}
 			}
 		}
 	};
 
-	cSubMenuButton::~cSubMenuButton()
+	cMenuButton::~cMenuButton()
 	{
 	}
 
-	void cSubMenuButton::on_add_to_parent()
+	void cMenuButton::on_add_to_parent()
 	{
-		((cSubMenuButtonPrivate*)this)->on_add_to_parent();
+		((cMenuButtonPrivate*)this)->on_add_to_parent();
 	}
 
-	void cSubMenuButton::update()
+	void cMenuButton::update()
 	{
 	}
 
-	void cSubMenuButton::open()
+	void cMenuButton::open()
 	{
-		((cSubMenuButtonPrivate*)this)->open();
+		((cMenuButtonPrivate*)this)->open();
 	}
 
-	void cSubMenuButton::close()
+	void cMenuButton::close()
 	{
-		((cSubMenuButtonPrivate*)this)->close();
+		((cMenuButtonPrivate*)this)->close();
 	}
 
-	cSubMenuButton* cSubMenuButton::create()
+	cMenuButton* cMenuButton::create()
 	{
-		return new cSubMenuButtonPrivate();
+		return new cMenuButtonPrivate();
+	}
+
+	struct cMenuPrivate : cMenu
+	{
+		cMenuPrivate()
+		{
+			popuped_by = nullptr;
+		}
+	};
+
+	cMenu::~cMenu()
+	{
+	}
+
+	void cMenu::update()
+	{
+	}
+
+	cMenu* cMenu::create()
+	{
+		return new cMenuPrivate();
+	}
+
+	void close_menu(Entity* menu)
+	{
+		for (auto i = 0; i < menu->child_count(); i++)
+		{
+			auto menu_btn = (cMenuButton*)menu->child(i)->find_component(cH("MenuButton"));
+			if (menu_btn)
+				menu_btn->close();
+		}
 	}
 
 	void popup_menu(Entity* menu, Entity* root, const Vec2f& pos)

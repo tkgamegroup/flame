@@ -354,6 +354,8 @@ int main(int argc, char** args)
 		c_layout->type = LayoutVertical;
 		e_popup_menu->add_component(c_layout);
 
+		e_popup_menu->add_component(cMenu::create());
+
 		for (auto i = 0; i < 3; i++)
 		{
 			auto e_item = Entity::create();
@@ -389,16 +391,16 @@ int main(int argc, char** args)
 		}
 
 		{
-			auto e_sub_menu_btn = Entity::create();
-			e_popup_menu->add_child(e_sub_menu_btn);
+			auto e_menu_btn = Entity::create();
+			e_popup_menu->add_child(e_menu_btn);
 			{
-				e_sub_menu_btn->add_component(cElement::create());
+				e_menu_btn->add_component(cElement::create());
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(std::wstring(L"Add ") + Icon_CARET_RIGHT);
-				e_sub_menu_btn->add_component(c_text);
+				e_menu_btn->add_component(c_text);
 
-				e_sub_menu_btn->add_component(cEventReceiver::create());
+				e_menu_btn->add_component(cEventReceiver::create());
 
 				auto e_menu = Entity::create();
 				{
@@ -441,29 +443,29 @@ int main(int argc, char** args)
 						e_item->add_component(c_aligner);
 					}
 				}
-				auto c_sub_menu_btn = cSubMenuButton::create();
-				c_sub_menu_btn->menu = e_menu;
-				e_sub_menu_btn->add_component(c_sub_menu_btn);
+				auto c_menu_btn = cMenuButton::create();
+				c_menu_btn->menu = e_menu;
+				e_menu_btn->add_component(c_menu_btn);
 
-				e_sub_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeGreedy;
-				e_sub_menu_btn->add_component(c_aligner);
+				e_menu_btn->add_component(c_aligner);
 			}
 		}
 
 		{
-			auto e_sub_menu_btn = Entity::create();
-			e_popup_menu->add_child(e_sub_menu_btn);
+			auto e_menu_btn = Entity::create();
+			e_popup_menu->add_child(e_menu_btn);
 			{
-				e_sub_menu_btn->add_component(cElement::create());
+				e_menu_btn->add_component(cElement::create());
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(std::wstring(L"Remove ") + Icon_CARET_RIGHT);
-				e_sub_menu_btn->add_component(c_text);
+				e_menu_btn->add_component(c_text);
 
-				e_sub_menu_btn->add_component(cEventReceiver::create());
+				e_menu_btn->add_component(cEventReceiver::create());
 
 				auto e_menu = Entity::create();
 				{
@@ -506,15 +508,15 @@ int main(int argc, char** args)
 						e_item->add_component(c_aligner);
 					}
 				}
-				auto c_sub_menu_btn = cSubMenuButton::create();
-				c_sub_menu_btn->menu = e_menu;
-				e_sub_menu_btn->add_component(c_sub_menu_btn);
+				auto c_menu_btn = cMenuButton::create();
+				c_menu_btn->menu = e_menu;
+				e_menu_btn->add_component(c_menu_btn);
 
-				e_sub_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeGreedy;
-				e_sub_menu_btn->add_component(c_aligner);
+				e_menu_btn->add_component(c_aligner);
 			}
 		}
 	}
@@ -536,7 +538,7 @@ int main(int argc, char** args)
 		}, new_mail(&data));
 	}
 
-	/*
+	
 	auto e_menubar = Entity::create();
 	{
 		auto c_element = cElement::create();
@@ -557,29 +559,31 @@ int main(int argc, char** args)
 
 	{
 		{
-			auto e_menu = Entity::create();
-			e_menubar->add_child(e_menu);
+			auto e_menu_btn = Entity::create();
+			e_menubar->add_child(e_menu_btn);
 			{
-				e_menu->add_component(cElement::create());
+				e_menu_btn->add_component(cElement::create());
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(L"File");
-				e_menu->add_component(c_text);
+				e_menu_btn->add_component(c_text);
 
-				e_menu->add_component(cEventReceiver::create());
+				e_menu_btn->add_component(cEventReceiver::create());
 
-				auto e_items = Entity::create();
+				auto e_menu = Entity::create();
 				{
-					e_items->add_component(cElement::create(app.canvas));
+					e_menu->add_component(cElement::create(app.canvas));
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
-					e_items->add_component(c_layout);
+					e_menu->add_component(c_layout);
+
+					e_menu->add_component(cMenu::create());
 				}
 				for (auto i = 0; i < 2; i++)
 				{
 					auto e_item = Entity::create();
-					e_items->add_child(e_item);
+					e_menu->add_child(e_item);
 					{
 						e_item->add_component(cElement::create());
 
@@ -608,47 +612,101 @@ int main(int argc, char** args)
 						e_item->add_component(c_aligner);
 					}
 				}
-				auto c_menu = cSubMenu::create();
-				c_menu->root = app.root;
-				c_menu->items = e_items;
-				c_menu->popup_dir = SideS;
-				e_menu->add_component(c_menu);
+				auto c_menu_btn = cMenuButton::create();
+				c_menu_btn->root = app.root;
+				c_menu_btn->menu = e_menu;
+				c_menu_btn->popup_side = SideS;
+				c_menu_btn->topmost_penetrable = true;
+				e_menu_btn->add_component(c_menu_btn);
 
-				e_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 			}
 		}
 		{
-			auto e_menu = Entity::create();
-			e_menubar->add_child(e_menu);
+			auto e_menu_btn = Entity::create();
+			e_menubar->add_child(e_menu_btn);
 			{
-				e_menu->add_component(cElement::create());
+				e_menu_btn->add_component(cElement::create());
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(L"Edit");
-				e_menu->add_component(c_text);
+				e_menu_btn->add_component(c_text);
 
-				e_menu->add_component(cEventReceiver::create());
+				e_menu_btn->add_component(cEventReceiver::create());
 
-				e_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				auto e_menu = Entity::create();
+				{
+					e_menu->add_component(cElement::create(app.canvas));
+
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					e_menu->add_component(c_layout);
+
+					e_menu->add_component(cMenu::create());
+				}
+				for (auto i = 0; i < 6; i++)
+				{
+					auto e_item = Entity::create();
+					e_menu->add_child(e_item);
+					{
+						e_item->add_component(cElement::create());
+
+						static const char* names[] = {
+							"Undo",
+							"Redo",
+							"Cut",
+							"Copy",
+							"Paste",
+							"Delete"
+						};
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(s2w(names[i]));
+						e_item->add_component(c_text);
+
+						auto c_event_receiver = cEventReceiver::create();
+						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							{
+								printf("%s!\n", *(char**)c);
+								destroy_topmost();
+							}
+						}, new_mail_p((char*)names[i]));
+						e_item->add_component(c_event_receiver);
+
+						e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeGreedy;
+						e_item->add_component(c_aligner);
+					}
+				}
+				auto c_menu_btn = cMenuButton::create();
+				c_menu_btn->root = app.root;
+				c_menu_btn->menu = e_menu;
+				c_menu_btn->popup_side = SideS;
+				c_menu_btn->topmost_penetrable = true;
+				e_menu_btn->add_component(c_menu_btn);
+
+				e_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 			}
 		}
 		{
-			auto e_menu = Entity::create();
-			e_menubar->add_child(e_menu);
+			auto e_menu_btn = Entity::create();
+			e_menubar->add_child(e_menu_btn);
 			{
-				e_menu->add_component(cElement::create());
+				e_menu_btn->add_component(cElement::create());
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(L"Tool");
-				e_menu->add_component(c_text);
+				e_menu_btn->add_component(c_text);
 
-				e_menu->add_component(cEventReceiver::create());
+				e_menu_btn->add_component(cEventReceiver::create());
 
-				e_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 			}
 		}
 	}
-	*/
+	
 
 	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
 	//w_sizedrag->min_size() = Vec2f(100.f);

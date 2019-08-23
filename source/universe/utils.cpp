@@ -43,13 +43,14 @@ namespace flame
 	{
 		for (auto i = 0; i < topmost->child_count(); i++)
 		{
-			auto e = topmost->child(i); // that may be a menu
-			for (auto i = 0; i < e->child_count(); i++)
+			auto e = topmost->child(i);
+			auto menu = (cMenu*)e->find_component(cH("Menu"));
+			if (menu)
 			{
-				auto _e = e->child(i);
-				auto menu = (cSubMenuButton*)_e->find_component(cH("SubMenuButton"));
-				if (menu)
-					menu->close();
+				if (menu->popuped_by)
+					menu->popuped_by->close();
+				else
+					close_menu(e);
 			}
 		}
 
