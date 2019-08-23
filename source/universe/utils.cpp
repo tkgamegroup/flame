@@ -44,9 +44,17 @@ namespace flame
 		for (auto i = 0; i < topmost->child_count(); i++)
 		{
 			auto e = topmost->child(i);
-			auto menu = (cMenu*)e->find_component(cH("Menu"));
+			auto menu = e->find_component(cH("PopupMenu"));
 			if (menu)
-				menu->close();
+			{
+				for (auto i = 0; i < e->child_count(); i++)
+				{
+					auto _e = e->child(i);
+					auto menu = (cSubMenu*)_e->find_component(cH("SubMenu"));
+					if (menu)
+						menu->close();
+				}
+			}
 		}
 
 		topmost->take_all_children();

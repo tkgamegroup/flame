@@ -23,7 +23,6 @@
 #include <flame/universe/components/image.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/list.h>
-#include <flame/universe/components/list_item.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/utils.h>
 
@@ -143,7 +142,7 @@ int main(int argc, char** args)
 	{
 		auto c_element = cElement::create();
 		c_element->x = 16.f;
-		c_element->y = 8.f;
+		c_element->y = 28.f;
 		e_layout_left->add_component(c_element);
 
 		auto c_layout = cLayout::create();
@@ -198,7 +197,7 @@ int main(int argc, char** args)
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			if (is_mouse_clicked(action, key))
 			{
-				auto thiz = *(App * *)c;
+				auto thiz = *(App**)c;
 				printf("thank you for clicking me\n");
 			}
 		}, new_mail_p(&app));
@@ -291,7 +290,7 @@ int main(int argc, char** args)
 	{
 		auto c_element = cElement::create();
 		c_element->x = 416.f;
-		c_element->y = 8.f;
+		c_element->y = 28.f;
 		e_layout_right->add_component(c_element);
 
 		auto c_layout = cLayout::create();
@@ -347,25 +346,20 @@ int main(int argc, char** args)
 	}
 
 	auto e_popup_menu = Entity::create();
-	e_popup_menu->add_component(cElement::create());
-
-	auto c_menu = cMenu::create();
-	c_menu->root = app.root;
-	e_popup_menu->add_component(c_menu);
 
 	{
-		auto e_items = Entity::create();
-		{
-			e_items->add_component(cElement::create(app.canvas));
+		e_popup_menu->add_component(cElement::create(app.canvas));
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
-			e_items->add_component(c_layout);
-		}
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutVertical;
+		e_popup_menu->add_component(c_layout);
+
+		e_popup_menu->add_component(cPopupMenu::create());
+
 		for (auto i = 0; i < 3; i++)
 		{
 			auto e_item = Entity::create();
-			e_items->add_child(e_item);
+			e_popup_menu->add_child(e_item);
 			{
 				e_item->add_component(cElement::create());
 
@@ -379,15 +373,13 @@ int main(int argc, char** args)
 				e_item->add_component(c_text);
 
 				auto c_event_receiver = cEventReceiver::create();
-				{
-					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-						if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						{
-							printf("%s!\n", *(char**)c);
-							destroy_topmost();
-						}
-					}, new_mail_p((char*)names[i]));
-				}
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						printf("%s!\n", *(char**)c);
+						destroy_topmost();
+					}
+				}, new_mail_p((char*)names[i]));
 				e_item->add_component(c_event_receiver);
 
 				e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
@@ -400,7 +392,7 @@ int main(int argc, char** args)
 
 		{
 			auto e_sub_menu = Entity::create();
-			e_items->add_child(e_sub_menu);
+			e_popup_menu->add_child(e_sub_menu);
 			{
 				e_sub_menu->add_component(cElement::create());
 
@@ -408,8 +400,7 @@ int main(int argc, char** args)
 				c_text->set_text(std::wstring(L"Add ") + Icon_CARET_RIGHT);
 				e_sub_menu->add_component(c_text);
 
-				auto c_event_receiver = cEventReceiver::create();
-				e_sub_menu->add_component(c_event_receiver);
+				e_sub_menu->add_component(cEventReceiver::create());
 
 				auto e_items = Entity::create();
 				{
@@ -436,15 +427,13 @@ int main(int argc, char** args)
 						e_item->add_component(c_text);
 
 						auto c_event_receiver = cEventReceiver::create();
-						{
-							c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-								if (is_mouse_down(action, key, true) && key == Mouse_Left)
-								{
-									printf("Add %s!\n", *(char**)c);
-									destroy_topmost();
-								}
-							}, new_mail_p((char*)names[i]));
-						}
+						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							{
+								printf("Add %s!\n", *(char**)c);
+								destroy_topmost();
+							}
+						}, new_mail_p((char*)names[i]));
 						e_item->add_component(c_event_receiver);
 
 						e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
@@ -454,8 +443,7 @@ int main(int argc, char** args)
 						e_item->add_component(c_aligner);
 					}
 				}
-				auto c_menu = cMenu::create();
-				c_menu->root = app.root;
+				auto c_menu = cSubMenu::create();
 				c_menu->items = e_items;
 				e_sub_menu->add_component(c_menu);
 
@@ -469,7 +457,7 @@ int main(int argc, char** args)
 
 		{
 			auto e_sub_menu = Entity::create();
-			e_items->add_child(e_sub_menu);
+			e_popup_menu->add_child(e_sub_menu);
 			{
 				e_sub_menu->add_component(cElement::create());
 
@@ -477,8 +465,7 @@ int main(int argc, char** args)
 				c_text->set_text(std::wstring(L"Remove ") + Icon_CARET_RIGHT);
 				e_sub_menu->add_component(c_text);
 
-				auto c_event_receiver = cEventReceiver::create();
-				e_sub_menu->add_component(c_event_receiver);
+				e_sub_menu->add_component(cEventReceiver::create());
 
 				auto e_items = Entity::create();
 				{
@@ -505,15 +492,13 @@ int main(int argc, char** args)
 						e_item->add_component(c_text);
 
 						auto c_event_receiver = cEventReceiver::create();
-						{
-							c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-								if (is_mouse_down(action, key, true) && key == Mouse_Left)
-								{
-									printf("Remove %s!\n", *(char**)c);
-									destroy_topmost();
-								}
-							}, new_mail_p((char*)names[i]));
-						}
+						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							{
+								printf("Remove %s!\n", *(char**)c);
+								destroy_topmost();
+							}
+						}, new_mail_p((char*)names[i]));
 						e_item->add_component(c_event_receiver);
 
 						e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
@@ -523,8 +508,7 @@ int main(int argc, char** args)
 						e_item->add_component(c_aligner);
 					}
 				}
-				auto c_menu = cMenu::create();
-				c_menu->root = app.root;
+				auto c_menu = cSubMenu::create();
 				c_menu->items = e_items;
 				e_sub_menu->add_component(c_menu);
 
@@ -535,24 +519,141 @@ int main(int argc, char** args)
 				e_sub_menu->add_component(c_aligner);
 			}
 		}
-
-		c_menu->items = e_items;
 	}
 
-	app.c_event_receiver_root->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-		if (is_mouse_down(action, key, true) && key == Mouse_Right)
+	{
+		struct Data
 		{
-			auto e = (*(Entity**)c);
-			((cMenu*)e->find_component(cH("Menu")))->open(pos);
-			get_topmost()->add_child(e);
+			Entity* popup_menu;
+			Entity* root;
+		}data;
+		data.popup_menu = e_popup_menu;
+		data.root = app.root;
+		app.c_event_receiver_root->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			if (is_mouse_down(action, key, true) && key == Mouse_Right)
+			{
+				auto data = (Data*)c;
+				((cPopupMenu*)data->popup_menu->find_component(cH("PopupMenu")))->open(data->root, pos);
+			}
+		}, new_mail(&data));
+	}
+
+	/*
+	auto e_menubar = Entity::create();
+	{
+		auto c_element = cElement::create();
+		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+		c_element->background_color = default_style.frame_color_normal;
+		e_menubar->add_component(c_element);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitLayout;
+		e_menubar->add_component(c_aligner);
+
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutHorizontal;
+		c_layout->item_padding = 4.f;
+		e_menubar->add_component(c_layout);
+	}
+	app.root->add_child(e_menubar);
+
+	{
+		{
+			auto e_menu = Entity::create();
+			e_menubar->add_child(e_menu);
+			{
+				e_menu->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"File");
+				e_menu->add_component(c_text);
+
+				e_menu->add_component(cEventReceiver::create());
+
+				auto e_items = Entity::create();
+				{
+					e_items->add_component(cElement::create(app.canvas));
+
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					e_items->add_component(c_layout);
+				}
+				for (auto i = 0; i < 2; i++)
+				{
+					auto e_item = Entity::create();
+					e_items->add_child(e_item);
+					{
+						e_item->add_component(cElement::create());
+
+						static const char* names[] = {
+							"New",
+							"Open"
+						};
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(s2w(names[i]));
+						e_item->add_component(c_text);
+
+						auto c_event_receiver = cEventReceiver::create();
+						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							{
+								printf("%s!\n", *(char**)c);
+								destroy_topmost();
+							}
+						}, new_mail_p((char*)names[i]));
+						e_item->add_component(c_event_receiver);
+
+						e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeGreedy;
+						e_item->add_component(c_aligner);
+					}
+				}
+				auto c_menu = cSubMenu::create();
+				c_menu->root = app.root;
+				c_menu->items = e_items;
+				c_menu->popup_dir = SideS;
+				e_menu->add_component(c_menu);
+
+				e_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			}
 		}
-	}, new_mail_p(e_popup_menu));
+		{
+			auto e_menu = Entity::create();
+			e_menubar->add_child(e_menu);
+			{
+				e_menu->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"Edit");
+				e_menu->add_component(c_text);
+
+				e_menu->add_component(cEventReceiver::create());
+
+				e_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			}
+		}
+		{
+			auto e_menu = Entity::create();
+			e_menubar->add_child(e_menu);
+			{
+				e_menu->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"Tool");
+				e_menu->add_component(c_text);
+
+				e_menu->add_component(cEventReceiver::create());
+
+				e_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			}
+		}
+	}
+	*/
 
 	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
 	//w_sizedrag->min_size() = Vec2f(100.f);
-
-	//auto w_menubar = Element::createT<wMenuBar>(ui);
-	//w_menubar->align$ = AlignLittleEnd;
 
 	//layout1->add_child(w_menubar);
 
@@ -572,11 +673,8 @@ int main(int argc, char** args)
 
 	//layout->add_child(w_treenode1, 1);
 
-	//layout = Element::createT<wLayout>(ui);
-	//ui->root()->add_child(layout, 1);
-
 	app_run([](void* c) {
-		auto app = (*(App * *)c);
+		auto app = (*(App**)c);
 		app->run();
 	}, new_mail_p(&app));
 
