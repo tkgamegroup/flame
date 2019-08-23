@@ -354,8 +354,6 @@ int main(int argc, char** args)
 		c_layout->type = LayoutVertical;
 		e_popup_menu->add_component(c_layout);
 
-		e_popup_menu->add_component(cPopupMenu::create());
-
 		for (auto i = 0; i < 3; i++)
 		{
 			auto e_item = Entity::create();
@@ -391,29 +389,29 @@ int main(int argc, char** args)
 		}
 
 		{
-			auto e_sub_menu = Entity::create();
-			e_popup_menu->add_child(e_sub_menu);
+			auto e_sub_menu_btn = Entity::create();
+			e_popup_menu->add_child(e_sub_menu_btn);
 			{
-				e_sub_menu->add_component(cElement::create());
+				e_sub_menu_btn->add_component(cElement::create());
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(std::wstring(L"Add ") + Icon_CARET_RIGHT);
-				e_sub_menu->add_component(c_text);
+				e_sub_menu_btn->add_component(c_text);
 
-				e_sub_menu->add_component(cEventReceiver::create());
+				e_sub_menu_btn->add_component(cEventReceiver::create());
 
-				auto e_items = Entity::create();
+				auto e_menu = Entity::create();
 				{
-					e_items->add_component(cElement::create(app.canvas));
+					e_menu->add_component(cElement::create(app.canvas));
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
-					e_items->add_component(c_layout);
+					e_menu->add_component(c_layout);
 				}
 				for (auto i = 0; i < 3; i++)
 				{
 					auto e_item = Entity::create();
-					e_items->add_child(e_item);
+					e_menu->add_child(e_item);
 					{
 						e_item->add_component(cElement::create());
 
@@ -443,42 +441,42 @@ int main(int argc, char** args)
 						e_item->add_component(c_aligner);
 					}
 				}
-				auto c_menu = cSubMenu::create();
-				c_menu->items = e_items;
-				e_sub_menu->add_component(c_menu);
+				auto c_sub_menu_btn = cSubMenuButton::create();
+				c_sub_menu_btn->menu = e_menu;
+				e_sub_menu_btn->add_component(c_sub_menu_btn);
 
-				e_sub_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_sub_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeGreedy;
-				e_sub_menu->add_component(c_aligner);
+				e_sub_menu_btn->add_component(c_aligner);
 			}
 		}
 
 		{
-			auto e_sub_menu = Entity::create();
-			e_popup_menu->add_child(e_sub_menu);
+			auto e_sub_menu_btn = Entity::create();
+			e_popup_menu->add_child(e_sub_menu_btn);
 			{
-				e_sub_menu->add_component(cElement::create());
+				e_sub_menu_btn->add_component(cElement::create());
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(std::wstring(L"Remove ") + Icon_CARET_RIGHT);
-				e_sub_menu->add_component(c_text);
+				e_sub_menu_btn->add_component(c_text);
 
-				e_sub_menu->add_component(cEventReceiver::create());
+				e_sub_menu_btn->add_component(cEventReceiver::create());
 
-				auto e_items = Entity::create();
+				auto e_menu = Entity::create();
 				{
-					e_items->add_component(cElement::create(app.canvas));
+					e_menu->add_component(cElement::create(app.canvas));
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
-					e_items->add_component(c_layout);
+					e_menu->add_component(c_layout);
 				}
 				for (auto i = 0; i < 3; i++)
 				{
 					auto e_item = Entity::create();
-					e_items->add_child(e_item);
+					e_menu->add_child(e_item);
 					{
 						e_item->add_component(cElement::create());
 
@@ -508,15 +506,15 @@ int main(int argc, char** args)
 						e_item->add_component(c_aligner);
 					}
 				}
-				auto c_menu = cSubMenu::create();
-				c_menu->items = e_items;
-				e_sub_menu->add_component(c_menu);
+				auto c_sub_menu_btn = cSubMenuButton::create();
+				c_sub_menu_btn->menu = e_menu;
+				e_sub_menu_btn->add_component(c_sub_menu_btn);
 
-				e_sub_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_sub_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeGreedy;
-				e_sub_menu->add_component(c_aligner);
+				e_sub_menu_btn->add_component(c_aligner);
 			}
 		}
 	}
@@ -524,16 +522,16 @@ int main(int argc, char** args)
 	{
 		struct Data
 		{
-			Entity* popup_menu;
+			Entity* menu;
 			Entity* root;
 		}data;
-		data.popup_menu = e_popup_menu;
+		data.menu = e_popup_menu;
 		data.root = app.root;
 		app.c_event_receiver_root->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			if (is_mouse_down(action, key, true) && key == Mouse_Right)
 			{
 				auto data = (Data*)c;
-				((cPopupMenu*)data->popup_menu->find_component(cH("PopupMenu")))->open(data->root, pos);
+				popup_menu(data->menu, data->root, pos);
 			}
 		}, new_mail(&data));
 	}
