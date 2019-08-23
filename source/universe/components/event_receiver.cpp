@@ -19,6 +19,8 @@ namespace flame
 			element = nullptr;
 			event_dispatcher = nullptr;
 
+			penetrable = false;
+
 			hovering = false;
 			dragging = false;
 			focusing = false;

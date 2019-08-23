@@ -24,6 +24,9 @@ namespace flame
 		cEventReceiver* potential_dbclick_er;
 		float potential_dbclick_time;
 
+		bool done_collecting_ers;
+		std::vector<cEventReceiver*> ers;
+
 		cEventDispatcherPrivate(Window* window) :
 			window(window)
 		{
@@ -139,9 +142,11 @@ namespace flame
 					hovering->hovering = false;
 					hovering = nullptr;
 				}
+				done_collecting_ers = false;
+				ers.clear();
 				entity->traverse_backward([](void* c, Entity* e) {
 					auto thiz = *(cEventDispatcherPrivate**)c;
-					if (thiz->hovering)
+					if (thiz->done_collecting_ers)
 						return;
 
 					auto er = (cEventReceiver*)e->find_component(cH("EventReceiver"));
@@ -150,8 +155,13 @@ namespace flame
 						er->event_dispatcher = thiz;
 						if (er->element->contains(Vec2f(thiz->mouse_pos)))
 						{
-							er->hovering = true;
-							thiz->hovering = er;
+							thiz->ers.push_back(er);
+							if (!er->penetrable)
+							{
+								er->hovering = true;
+								thiz->hovering = er;
+								thiz->done_collecting_ers = true;
+							}
 						}
 					}
 				}, new_mail_p(this));
@@ -179,17 +189,19 @@ namespace flame
 				for (auto& ch : char_inputs)
 					focusing->on_key(KeyStateNull, ch);
 			}
-			if (hovering)
+			for (auto er : ers)
 			{
 				if (mouse_disp != 0)
-					hovering->on_mouse(KeyStateNull, Mouse_Null, Vec2f(mouse_disp));
+					er->on_mouse(KeyStateNull, Mouse_Null, Vec2f(mouse_disp));
 				for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
 				{
 					auto s = mouse_buttons[i];
 					if (s & KeyStateJust)
-						hovering->on_mouse((KeyState)s, (MouseKey)i, Vec2f(mouse_pos));
+						er->on_mouse((KeyState)s, (MouseKey)i, Vec2f(mouse_pos));
 				}
-
+			}
+			if (hovering)
+			{
 				if (is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 				{
 					if (hovering == focusing)

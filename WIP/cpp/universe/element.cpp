@@ -25,84 +25,6 @@ namespace flame
 		flag = FlagNull;
 	}
 
-	void Element::add_child(Element * w, int layer, int pos, bool modual)
-	{
-		w->flag = modual ? FlagJustCreatedNeedModual : FlagJustCreated;
-
-		for (auto i = 0; i < child_listeners$.size; i++)
-		{
-			auto& f = child_listeners$[i];
-			auto& p = (ChildListenerParm&)f.p;
-			p.thiz() = this;
-			p.op() = ChildAdd;
-			p.src() = w;
-			f.exec();
-		}
-	}
-
-	void Element::remove_child(int layer, int idx, bool delay)
-	{
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		auto w = children[idx];
-		if (delay)
-		{
-			w->flag = FlagNeedToRemoveFromParent;
-			return;
-		}
-		Element::destroy(w);
-		children.remove(idx);
-	}
-
-	void Element::take_child(int layer, int idx, bool delay)
-	{
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		auto w = children[idx];
-		if (delay)
-		{
-			w->flag = FlagNeedToTakeFromParent;
-			return;
-		}
-		children.remove(idx);
-
-		remove_animations();
-	}
-
-	void Element::clear_children(int layer, int begin, int end, bool delay)
-	{
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		if (end < 0)
-			end = children.size + end + 1;
-		if (!delay)
-		{
-			for (auto i = begin; i < end; i++)
-				Element::destroy(children[i]);
-			children.remove(begin, end - begin);
-		}
-		else
-		{
-			for (auto i = begin; i < end; i++)
-				children[i]->flag = FlagNeedToRemoveFromParent;
-		}
-	}
-
-	void Element::take_children(int layer, int begin, int end, bool delay)
-	{
-		auto& children = layer == 0 ? children_1$ : children_2$;
-		if (end == -1)
-			end = children.size;
-		if (!delay)
-		{
-			for (auto i = begin; i < end; i++)
-				children[i]->remove_animations();
-			children.remove(begin, end - begin);
-		}
-		else
-		{
-			for (auto i = begin; i < end; i++)
-				children[i]->flag = FlagNeedToTakeFromParent;
-		}
-	}
-
 	const auto scroll_spare_spacing = 20.f;
 
 	float Element::get_content_size() const
@@ -148,17 +70,6 @@ namespace flame
 			auto& p = (DropListenerParm&)f.p;
 			p.thiz() = this;
 			p.src() = src;
-			f.exec();
-		}
-	}
-
-	void Element::on_changed()
-	{
-		for (auto i = 0; i < changed_listeners$.size; i++)
-		{
-			auto& f = changed_listeners$[i];
-			auto& p = (DropListenerParm&)f.p;
-			p.thiz() = this;
 			f.exec();
 		}
 	}
@@ -251,144 +162,22 @@ namespace flame
 		}, { ui }));
 	}
 
-	void menuitem_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		auto thiz = (wMenuItemPtr)p.thiz();
-		thiz->ui->close_popup();
-	}
-
-	void wMenuItem::init(int font_atlas_index, const wchar_t* title)
-	{
-		mouse_listeners$.push_back(Function<MouseListenerParm>(menuitem_mouse_event$, {}));
-	}
-
-	void menu_title_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_move())
-			return;
-
-		auto menu = (wMenuPtr)p.thiz()->parent;
-		if (menu->ui->popup_element())
-			menu->open();
-	}
-
 	static void menu_add_rarrow(wMenu* w)
 	{
 		rarrow->text$ = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
 	}
 
-	void wMenu::init(int font_atlas_index, const wchar_t* title, bool only_for_context_menu)
-	{
-		w_title()->size_policy_hori$ = SizeGreedy;
-		w_title()->text$ = title;
-		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(menu_title_mouse_event$, { this }));
-		add_child(w_title());
-
-		w_items() = createT<wLayout>(ui, LayoutVertical);
-		w_items()->class$ = "menu items";
-		w_items()->background_col$ = ui->default_window_col;
-		w_items()->align$ = AlignBottomOutside;
-		w_items()->visible$ = false;
-		add_child(w_items(), 1);
-	}
-
 	void wMenu::open()
 	{
-		if (opened())
-			return;
-
-		if (parent && (parent->class$.hash == cH("wMenuBar") || parent->class$.hash == cH("menu items")))
-		{
-			for (auto i = 0; i < parent->children_1$.size; i++)
-			{
-				auto c = parent->children_1$[i];
-				if (c->class$.hash == cH("wMenu"))
-					((wMenu*)c)->close();
-			}
-		}
-
-		w_items()->set_visibility(true);
 		for (auto i = 0; i < w_items()->children_1$.size; i++)
 		{
 			auto w = w_items()->children_1$[i];
 			w->animations$.push_back(Animation(0.2f, false, Animation::fade(0.f, w->alpha$)));
 		}
-
-		opened() = 1;
-	}
-
-	void wMenu::popup(const Vec2 & pos)
-	{
-		if (opened() || ui->popup_element())
-			return;
-
-		open();
-
-		ui->set_popup_element(w_items());
-		w_items()->pos$ = pos - hidden_pos;
-	}
-
-	void wMenu::close()
-	{
-		if (!opened())
-			return;
-
-		for (auto i = 0; i < w_items()->children_1$.size; i++)
-		{
-			auto c = w_items()->children_1$[i];
-			if (c->class$.hash == cH("wMenu"))
-				((wMenu*)c)->close();
-		}
-
-		w_items()->set_visibility(false);
-
-		opened() = 0;
 	}
 
 	FLAME_PACKAGE_BEGIN_2(MenuTextMouseInMenubarEventData, ElementPtr, thiz, p, wMenuPtr, menu, p)
 	FLAME_PACKAGE_END_2
-
-	void menu_title_mouse_event_in_menubar$(Element::MouseListenerParm &p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		auto& c = p.get_capture<MenuTextMouseInMenubarEventData>();
-		auto thiz = c.thiz();
-		auto menu = c.menu();
-		if (!menu->opened())
-		{
-			if (!thiz->ui->popup_element())
-			{
-				menu->open();
-
-				thiz->ui->set_popup_element(thiz);
-			}
-		}
-		else
-			thiz->ui->close_popup();
-	}
-
-	void menubar_child_event$(Element::ChildListenerParm &p)
-	{
-		if (p.op() != Element::ChildAdd)
-			return;
-
-		if (p.src()->class$.hash == cH("wMenu"))
-			((wMenu*)p.src())->w_title()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(menu_title_mouse_event_in_menubar$, { p.thiz(), p.src() }));
-	}
-
-	void wMenuBar::init()
-	{
-		wLayout::init();
-
-		layout_type$ = LayoutHorizontal;
-
-		child_listeners$.push_back(Function<ChildListenerParm>(menubar_child_event$, { this }));
-	}
 
 	void combo_title_mouse_event$(Element::MouseListenerParm &p)
 	{
@@ -512,8 +301,6 @@ namespace flame
 			else
 				*p = sel();
 		}
-
-		on_changed();
 	}
 
 	void edit_key_event$(Element::KeyListenerParm &p)
@@ -868,10 +655,7 @@ namespace flame
 		auto treenode = (wTreeNodePtr)(p.thiz()->parent);
 		auto tree = p.get_capture<TreenodeTitleMouseEventData>().tree();
 		if (p.is_down() && p.key() == Mouse_Left)
-		{
 			tree->w_sel() = treenode;
-			tree->on_changed();
-		}
 		else if (p.is_double_clicked())
 			treenode->w_larrow()->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
 	}

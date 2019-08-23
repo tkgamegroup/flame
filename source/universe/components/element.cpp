@@ -43,11 +43,8 @@ namespace flame
 			auto e = entity->parent();
 			if (e)
 				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
-			if (!canvas)
-			{
+			if (!canvas && p_element)
 				canvas = p_element->canvas;
-				assert(canvas);
-			}
 		}
 
 		void update()
@@ -67,7 +64,7 @@ namespace flame
 			global_width = width * global_scale;
 			global_height = height * global_scale;
 
-			if (draw)
+			if (draw && canvas)
 			{
 				auto p = Vec2f(global_x, global_y) - (Vec2f(background_offset[0], background_offset[1])) * global_scale;
 				auto s = Vec2f(global_width, global_height) + (Vec2f(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * global_scale;

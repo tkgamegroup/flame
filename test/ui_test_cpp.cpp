@@ -24,6 +24,7 @@
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/list_item.h>
+#include <flame/universe/components/menu.h>
 #include <flame/universe/utils.h>
 
 using namespace flame;
@@ -95,11 +96,12 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
-	auto font2 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
-	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font1 });
-	app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { font1 });
-	app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font2 });
+	auto font_msyh14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
+	auto font_awesome14 = Font::create(L"../asset/font_awesome.ttf", 14);
+	auto font_msyh32 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
+	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font_msyh14, font_awesome14 });
+	app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { font_msyh14 });
+	app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font_msyh32 });
 	app.font_atlas_pixel->index = 1;
 	app.font_atlas_lcd->index = 2;
 	app.font_atlas_sdf->index = 3;
@@ -344,74 +346,207 @@ int main(int argc, char** args)
 		}
 	}
 
-	auto e_menus = Entity::create();
-	{
-		e_menus->add_component(cElement::create(app.canvas));
+	auto e_popup_menu = Entity::create();
+	e_popup_menu->add_component(cElement::create());
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		e_menus->add_component(c_layout);
-	}
+	auto c_menu = cMenu::create();
+	c_menu->root = app.root;
+	e_popup_menu->add_component(c_menu);
 
-	for (auto i = 0; i < 3; i++)
 	{
-		auto e_item = Entity::create();
-		e_menus->add_child(e_item);
+		auto e_items = Entity::create();
 		{
-			e_item->add_component(cElement::create());
+			e_items->add_component(cElement::create(app.canvas));
 
-			static const char* names[] = {
-				"Refresh",
-				"Save",
-				"Help"
-			};
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(s2w(names[i]));
-			e_item->add_component(c_text);
-
-			auto c_event_receiver = cEventReceiver::create();
-			{
-
-				struct Data
-				{
-					Entity* e;
-					const char* n;
-				}data;
-				data.e = app.root;
-				data.n = names[i];
-				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					{
-						auto& data = *(Data*)c;
-						printf("%s!\n", data.n);
-						destroy_topmost(data.e);
-					}
-				}, new_mail(&data));
-			}
-			e_item->add_component(c_event_receiver);
-
-			e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
-			e_item->add_component(c_aligner);
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			e_items->add_component(c_layout);
 		}
+		for (auto i = 0; i < 3; i++)
+		{
+			auto e_item = Entity::create();
+			e_items->add_child(e_item);
+			{
+				e_item->add_component(cElement::create());
+
+				static const char* names[] = {
+					"Refresh",
+					"Save",
+					"Help"
+				};
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(s2w(names[i]));
+				e_item->add_component(c_text);
+
+				auto c_event_receiver = cEventReceiver::create();
+				{
+					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+						if (is_mouse_down(action, key, true) && key == Mouse_Left)
+						{
+							printf("%s!\n", *(char**)c);
+							destroy_topmost();
+						}
+					}, new_mail_p((char*)names[i]));
+				}
+				e_item->add_component(c_event_receiver);
+
+				e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeGreedy;
+				e_item->add_component(c_aligner);
+			}
+		}
+
+		{
+			auto e_sub_menu = Entity::create();
+			e_items->add_child(e_sub_menu);
+			{
+				e_sub_menu->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(std::wstring(L"Add ") + Icon_CARET_RIGHT);
+				e_sub_menu->add_component(c_text);
+
+				auto c_event_receiver = cEventReceiver::create();
+				e_sub_menu->add_component(c_event_receiver);
+
+				auto e_items = Entity::create();
+				{
+					e_items->add_component(cElement::create(app.canvas));
+
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					e_items->add_component(c_layout);
+				}
+				for (auto i = 0; i < 3; i++)
+				{
+					auto e_item = Entity::create();
+					e_items->add_child(e_item);
+					{
+						e_item->add_component(cElement::create());
+
+						static const char* names[] = {
+							"Tree",
+							"Car",
+							"House"
+						};
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(s2w(names[i]));
+						e_item->add_component(c_text);
+
+						auto c_event_receiver = cEventReceiver::create();
+						{
+							c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+								if (is_mouse_down(action, key, true) && key == Mouse_Left)
+								{
+									printf("Add %s!\n", *(char**)c);
+									destroy_topmost();
+								}
+							}, new_mail_p((char*)names[i]));
+						}
+						e_item->add_component(c_event_receiver);
+
+						e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeGreedy;
+						e_item->add_component(c_aligner);
+					}
+				}
+				auto c_menu = cMenu::create();
+				c_menu->root = app.root;
+				c_menu->items = e_items;
+				e_sub_menu->add_component(c_menu);
+
+				e_sub_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeGreedy;
+				e_sub_menu->add_component(c_aligner);
+			}
+		}
+
+		{
+			auto e_sub_menu = Entity::create();
+			e_items->add_child(e_sub_menu);
+			{
+				e_sub_menu->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(std::wstring(L"Remove ") + Icon_CARET_RIGHT);
+				e_sub_menu->add_component(c_text);
+
+				auto c_event_receiver = cEventReceiver::create();
+				e_sub_menu->add_component(c_event_receiver);
+
+				auto e_items = Entity::create();
+				{
+					e_items->add_component(cElement::create(app.canvas));
+
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					e_items->add_component(c_layout);
+				}
+				for (auto i = 0; i < 3; i++)
+				{
+					auto e_item = Entity::create();
+					e_items->add_child(e_item);
+					{
+						e_item->add_component(cElement::create());
+
+						static const char* names[] = {
+							"Tree",
+							"Car",
+							"House"
+						};
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(s2w(names[i]));
+						e_item->add_component(c_text);
+
+						auto c_event_receiver = cEventReceiver::create();
+						{
+							c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+								if (is_mouse_down(action, key, true) && key == Mouse_Left)
+								{
+									printf("Remove %s!\n", *(char**)c);
+									destroy_topmost();
+								}
+							}, new_mail_p((char*)names[i]));
+						}
+						e_item->add_component(c_event_receiver);
+
+						e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeGreedy;
+						e_item->add_component(c_aligner);
+					}
+				}
+				auto c_menu = cMenu::create();
+				c_menu->root = app.root;
+				c_menu->items = e_items;
+				e_sub_menu->add_component(c_menu);
+
+				e_sub_menu->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeGreedy;
+				e_sub_menu->add_component(c_aligner);
+			}
+		}
+
+		c_menu->items = e_items;
 	}
 
 	app.c_event_receiver_root->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 		if (is_mouse_down(action, key, true) && key == Mouse_Right)
 		{
-			auto topmost = create_topmost(app.root);
-
-			auto menu = *(Entity**)c;
-
-			auto c_element = (cElement*)menu->find_component(cH("Element"));
-			c_element->x = pos.x();
-			c_element->y = pos.y();
-
-			topmost->add_child(menu);
+			auto e = (*(Entity**)c);
+			((cMenu*)e->find_component(cH("Menu")))->open(pos);
+			get_topmost()->add_child(e);
 		}
-	}, new_mail_p(e_menus));
+	}, new_mail_p(e_popup_menu));
 
 	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
 	//w_sizedrag->min_size() = Vec2f(100.f);
@@ -423,18 +558,6 @@ int main(int argc, char** args)
 
 	//auto w_combo = Element::createT<wCombo>(ui, font_atlas_index);
 	//w_combo->align$ = AlignLittleEnd;
-
-	//auto w_comboitem1 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 1");
-	//auto w_comboitem2 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 2");
-	//auto w_comboitem3 = Element::createT<wMenuItem>(ui, font_atlas_index, L"item 3");
-
-	//w_combo->w_items()->add_child(w_comboitem1);
-	//w_combo->w_items()->add_child(w_comboitem2);
-	//w_combo->w_items()->add_child(w_comboitem3);
-
-	//layout1->add_child(w_combo);
-
-	//layout->add_child(layout1, 1);
 
 	//auto w_treenode1 = Element::createT<wTreeNode>(ui, font_atlas_index, L"A");
 	//w_treenode1->pos$ = Vec2f(800.f, 400.f);

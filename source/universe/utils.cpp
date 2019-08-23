@@ -1,13 +1,20 @@
 #include <flame/universe/utils.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/menu.h>
 
 namespace flame
 {
+	static Entity* topmost;
 
-	Entity* create_topmost(Entity* e, bool close_when_clicked)
+	Entity* get_topmost()
 	{
-		auto topmost = Entity::create();
+		return topmost;
+	}
+
+	Entity* create_topmost(Entity* e, bool penetrable, bool close_when_clicked)
+	{
+		topmost = Entity::create();
 		topmost->set_name("topmost");
 		e->add_child(topmost);
 
@@ -20,24 +27,30 @@ namespace flame
 			c_element->height = e_c_element->height;
 			topmost->add_component(c_element);
 
-			if (close_when_clicked)
-			{
-				auto c_event_receiver = cEventReceiver::create();
-				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						destroy_topmost(*(Entity**)c);
-				}, new_mail_p(e));
-				topmost->add_component(c_event_receiver);
-			}
+			auto c_event_receiver = cEventReceiver::create();
+			c_event_receiver->penetrable = penetrable;
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					destroy_topmost();
+			}, Mail<>());
+			topmost->add_component(c_event_receiver);
 		}
 
 		return topmost;
 	}
 
-	void destroy_topmost(Entity* e)
+	void destroy_topmost()
 	{
-		auto topmost = e->find_child("topmost");
+		for (auto i = 0; i < topmost->child_count(); i++)
+		{
+			auto e = topmost->child(i);
+			auto menu = (cMenu*)e->find_component(cH("Menu"));
+			if (menu)
+				menu->close();
+		}
+
 		topmost->take_all_children();
-		e->remove_child(topmost);
+		topmost->parent()->remove_child(topmost);
+		topmost = nullptr;
 	}
 }

@@ -12,6 +12,8 @@ namespace flame
 		cElement* element;
 		cEventDispatcher* event_dispatcher;
 
+		bool penetrable;
+
 		bool hovering;
 		bool dragging;
 		bool focusing;

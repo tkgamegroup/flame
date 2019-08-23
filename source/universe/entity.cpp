@@ -82,6 +82,7 @@ namespace flame
 			{
 				if (it->get() == e)
 				{
+					e->parent = nullptr;
 					it->release();
 					children.erase(it);
 					return;
@@ -97,7 +98,10 @@ namespace flame
 		void take_all_children()
 		{
 			for (auto& e : children)
+			{
+				e->parent = nullptr;
 				e.release();
+			}
 			children.clear();
 		}
 
