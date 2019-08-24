@@ -348,7 +348,9 @@ int main(int argc, char** args)
 	auto e_popup_menu = Entity::create();
 
 	{
-		e_popup_menu->add_component(cElement::create(app.canvas));
+		auto c_element = cElement::create(app.canvas);
+		c_element->background_color = Vec4c(0, 0, 0, 255);
+		e_popup_menu->add_component(c_element);
 
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
@@ -572,7 +574,9 @@ int main(int argc, char** args)
 
 				auto e_menu = Entity::create();
 				{
-					e_menu->add_component(cElement::create(app.canvas));
+					auto c_element = cElement::create(app.canvas);
+					c_element->background_color = Vec4c(0, 0, 0, 255);
+					e_menu->add_component(c_element);
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
@@ -636,7 +640,9 @@ int main(int argc, char** args)
 
 				auto e_menu = Entity::create();
 				{
-					e_menu->add_component(cElement::create(app.canvas));
+					auto c_element = cElement::create(app.canvas);
+					c_element->background_color = Vec4c(0, 0, 0, 255);
+					e_menu->add_component(c_element);
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
@@ -701,6 +707,57 @@ int main(int argc, char** args)
 				e_menu_btn->add_component(c_text);
 
 				e_menu_btn->add_component(cEventReceiver::create());
+
+				auto e_menu = Entity::create();
+				{
+					auto c_element = cElement::create(app.canvas);
+					c_element->background_color = Vec4c(0, 0, 0, 255);
+					e_menu->add_component(c_element);
+
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					e_menu->add_component(c_layout);
+
+					e_menu->add_component(cMenu::create());
+				}
+				for (auto i = 0; i < 2; i++)
+				{
+					auto e_item = Entity::create();
+					e_menu->add_child(e_item);
+					{
+						e_item->add_component(cElement::create());
+
+						static const char* names[] = {
+							"Monitor",
+							"Console"
+						};
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(s2w(names[i]));
+						e_item->add_component(c_text);
+
+						auto c_event_receiver = cEventReceiver::create();
+						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							{
+								printf("%s!\n", *(char**)c);
+								destroy_topmost();
+							}
+						}, new_mail_p((char*)names[i]));
+						e_item->add_component(c_event_receiver);
+
+						e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeGreedy;
+						e_item->add_component(c_aligner);
+					}
+				}
+				auto c_menu_btn = cMenuButton::create();
+				c_menu_btn->root = app.root;
+				c_menu_btn->menu = e_menu;
+				c_menu_btn->popup_side = SideS;
+				c_menu_btn->topmost_penetrable = true;
+				e_menu_btn->add_component(c_menu_btn);
 
 				e_menu_btn->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 			}

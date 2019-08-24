@@ -24,8 +24,8 @@ namespace flame
 		cEventReceiver* potential_dbclick_er;
 		float potential_dbclick_time;
 
-		bool done_collecting_ers;
-		std::vector<cEventReceiver*> ers;
+		bool done_collecting_hovers;
+		std::vector<cEventReceiver*> hovers;
 
 		cEventDispatcherPrivate(Window* window) :
 			window(window)
@@ -142,11 +142,11 @@ namespace flame
 					hovering->hovering = false;
 					hovering = nullptr;
 				}
-				done_collecting_ers = false;
-				ers.clear();
+				done_collecting_hovers = false;
+				hovers.clear();
 				entity->traverse_backward([](void* c, Entity* e) {
 					auto thiz = *(cEventDispatcherPrivate**)c;
-					if (thiz->done_collecting_ers)
+					if (thiz->done_collecting_hovers)
 						return;
 
 					auto er = (cEventReceiver*)e->find_component(cH("EventReceiver"));
@@ -155,12 +155,12 @@ namespace flame
 						er->event_dispatcher = thiz;
 						if (er->element->contains(Vec2f(thiz->mouse_pos)))
 						{
-							thiz->ers.push_back(er);
+							thiz->hovers.push_back(er);
 							if (!er->penetrable)
 							{
 								er->hovering = true;
 								thiz->hovering = er;
-								thiz->done_collecting_ers = true;
+								thiz->done_collecting_hovers = true;
 							}
 						}
 					}
@@ -189,8 +189,9 @@ namespace flame
 				for (auto& ch : char_inputs)
 					focusing->on_key(KeyStateNull, ch);
 			}
-			for (auto er : ers)
+			for (auto it = hovers.rbegin(); it != hovers.rend(); it++)
 			{
+				auto er = *it;
 				if (mouse_disp != 0)
 					er->on_mouse(KeyStateNull, Mouse_Null, Vec2f(mouse_disp));
 				for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)

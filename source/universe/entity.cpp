@@ -1,4 +1,4 @@
-#include <flame/foundation/foundation.h>
+#include <flame/foundation/window.h>
 #include <flame/foundation/serialize.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/component.h>
@@ -16,6 +16,8 @@ namespace flame
 		EntityPrivate() :
 			parent(nullptr)
 		{
+			created_frame = app_frame();
+
 			visible = true;
 			global_visible = false;
 		}

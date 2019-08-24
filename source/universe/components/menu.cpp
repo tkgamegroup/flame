@@ -1,3 +1,4 @@
+#include <flame/foundation/window.h>
 #include <flame/universe/utils.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
@@ -48,6 +49,8 @@ namespace flame
 				auto topmost = get_topmost();
 				if (!topmost)
 					topmost = create_topmost(root, topmost_penetrable);
+				else
+					topmost->created_frame = app_frame();
 
 				auto c_menu = (cMenu*)menu->find_component(cH("Menu"));
 				if (c_menu)

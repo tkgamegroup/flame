@@ -9,6 +9,8 @@ namespace flame
 
 	struct Entity
 	{
+		int created_frame;
+
 		bool visible;
 		bool global_visible;
 
