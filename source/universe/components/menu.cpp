@@ -29,7 +29,7 @@ namespace flame
 			if (event_receiver)
 			{
 				event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					if ((is_mouse_down(action, key, true) && key == Mouse_Left) || (is_mouse_move(action, key) && get_topmost()))
 						(*(cMenuButtonPrivate**)c)->open();
 
 				}, new_mail_p(this));

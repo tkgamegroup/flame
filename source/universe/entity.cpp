@@ -11,6 +11,7 @@ namespace flame
 		std::vector<std::unique_ptr<Component>> components;
 		EntityPrivate* parent;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
+		std::vector<std::pair<Entity*, bool>> trashbin;
 
 		EntityPrivate() :
 			parent(nullptr)
@@ -136,6 +137,14 @@ namespace flame
 
 		void update()
 		{
+			for (auto& e : trashbin)
+			{
+				if (!e.second)
+					e.first->parent()->remove_child(e.first);
+				else
+					e.first->parent()->take_child(e.first);
+			}
+			trashbin.clear();
 			if (!parent)
 				global_visible = visible;
 			else
@@ -227,6 +236,11 @@ namespace flame
 	void Entity::take_all_children()
 	{
 		((EntityPrivate*)this)->take_all_children();
+	}
+
+	void Entity::add_to_trashbin(Entity* root, bool is_take)
+	{
+		((EntityPrivate*)root)->trashbin.emplace_back(this, is_take);
 	}
 
 	void Entity::traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)

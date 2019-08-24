@@ -55,7 +55,7 @@ namespace flame
 		}
 
 		topmost->take_all_children();
-		topmost->parent()->remove_child(topmost);
+		topmost->add_to_trashbin(topmost->parent());
 		topmost = nullptr;
 	}
 }
