@@ -28,27 +28,27 @@ namespace flame
 			Vec4c col;
 		};
 
-		struct DrawCmd
+		enum CmdType
 		{
-			DrawCmdType type;
-			int id;
-			int vtx_cnt;
-			int idx_cnt;
-			Vec4f scissor;
+			CmdDrawElement,
+			CmdDrawTextLcd,
+			CmdDrawTextSdf,
+			CmdSetScissor
+		};
 
-			DrawCmd(DrawCmdType _type, int _id) :
-				type(_type),
-				id(_id)
+		struct Cmd
+		{
+			CmdType type;
+			union
 			{
-				vtx_cnt = 0;
-				idx_cnt = 0;
-			}
-
-			DrawCmd(const Vec4f& _scissor) :
-				type(DrawCmdScissor),
-				scissor(_scissor)
-			{
-			}
+				struct
+				{
+					uint id;
+					uint vtx_cnt;
+					uint idx_cnt;
+				}draw_data;
+				Vec4f scissor;
+			}v;
 		};
 
 		struct CanvasPrivate : Canvas
@@ -72,7 +72,8 @@ namespace flame
 			Vertex* vtx_end;
 			uint* idx_end;
 
-			std::vector<DrawCmd> draw_cmds;
+			std::vector<Cmd> cmds;
+			Vec4f curr_scissor;
 
 			CanvasPrivate(Device* d, TargetType$ type, const void* v) :
 				d(d)
@@ -114,15 +115,20 @@ namespace flame
 				ds->set_image(0, index, v ? v : white_iv, d->sp_bi_linear);
 			}
 
-			void start_cmd(DrawCmdType type, int id)
+			void begin_draw(CmdType type, uint id)
 			{
-				if (!draw_cmds.empty())
+				if (!cmds.empty())
 				{
-					auto& last = draw_cmds.back();
-					if (last.type == type && last.id == id)
+					auto& last = cmds.back();
+					if (last.type == type && last.v.draw_data.id == id)
 						return;
 				}
-				draw_cmds.emplace_back(type, id);
+				Cmd cmd;
+				cmd.type = type;
+				cmd.v.draw_data.id = id;
+				cmd.v.draw_data.vtx_cnt = 0;
+				cmd.v.draw_data.idx_cnt = 0;
+				cmds.push_back(cmd);
 			}
 
 			void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)
@@ -130,9 +136,9 @@ namespace flame
 				if (points.size() < 2)
 					return;
 
-				start_cmd(DrawCmdElement, 0);
-				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
-				auto& idx_cnt = draw_cmds.back().idx_cnt;
+				begin_draw(CmdDrawElement, 0);
+				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
+				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 				auto first_vtx_cnt = vtx_cnt;
 
 				auto closed = points.front() == points.back();
@@ -217,9 +223,9 @@ namespace flame
 				if (points.size() < 3)
 					return;
 
-				start_cmd(DrawCmdElement, 0);
-				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
-				auto& idx_cnt = draw_cmds.back().idx_cnt;
+				begin_draw(CmdDrawElement, 0);
+				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
+				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
 				for (auto i = 0; i < points.size() - 2; i++)
 				{
@@ -244,24 +250,24 @@ namespace flame
 
 				auto _pos = Vec2f(Vec2i(pos));
 
-				DrawCmdType dct;
+				CmdType cmd_type;
 				switch (f->draw_type)
 				{
 				case FontDrawPixel:
-					dct = DrawCmdElement;
+					cmd_type = CmdDrawElement;
 					break;
 				case FontDrawLcd:
-					dct = DrawCmdTextLcd;
+					cmd_type = CmdDrawTextLcd;
 					break;
 				case FontDrawSdf:
-					dct = DrawCmdTextSdf;
+					cmd_type = CmdDrawTextSdf;
 					break;
 				default:
 					assert(0);
 				}
-				start_cmd(dct, f->index);
-				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
-				auto& idx_cnt = draw_cmds.back().idx_cnt;
+				begin_draw(cmd_type, f->index);
+				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
+				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
 				Vec2f rect(0.f, pixel_height);
 				auto line_width = 0.f;
@@ -312,9 +318,9 @@ namespace flame
 			{
 				auto _pos = Vec2f(Vec2i(pos));
 
-				start_cmd(DrawCmdElement, id);
-				auto& vtx_cnt = draw_cmds.back().vtx_cnt;
-				auto& idx_cnt = draw_cmds.back().idx_cnt;
+				begin_draw(CmdDrawElement, id);
+				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
+				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
 				vtx_end->pos = _pos;						vtx_end->uv = uv0;				  vtx_end->col = tint_col; vtx_end++;
 				vtx_end->pos = _pos + Vec2f(0.f, size.y());	vtx_end->uv = Vec2f(uv0.x(), uv1.y()); vtx_end->col = tint_col; vtx_end++;
@@ -354,21 +360,20 @@ namespace flame
 				//add_image(pos + Vec2f(border[0], border[2]), Vec2f(size.x() - border[0] - border[1], size.y() - border[2] - border[3]), id, Vec2f(b_uv[0], b_uv[2]), Vec2f(1.f - b_uv[1], 1.f - b_uv[3]));
 			}
 
-			void set_scissor(const Vec4f& scissor)
-			{
-				draw_cmds.emplace_back(scissor);
-			}
+			//void set_scissor(const Vec4f& scissor)
+			//{
+			//	draw_cmds.emplace_back(scissor);
+			//}
 
 			void record(Commandbuffer* cb, uint image_idx)
 			{
 				auto fb = (Framebuffer*)rnf->framebuffers()[image_idx];
+				auto surface_size = Vec2f(fb->image_size);
 
 				cb->begin();
 				cb->begin_renderpass(rnf->renderpass(), fb, rnf->clearvalues());
 				if (idx_end != idx_buffer->mapped)
 				{
-					auto surface_size = Vec2f(fb->image_size);
-
 					cb->set_viewport(Vec4f(Vec2f(0.f), surface_size));
 					cb->set_scissor(Vec4f(Vec2f(0.f), surface_size));
 					cb->bind_vertexbuffer(vtx_buffer, 0);
@@ -382,33 +387,33 @@ namespace flame
 
 					auto vtx_off = 0;
 					auto idx_off = 0;
-					for (auto& dc : draw_cmds)
+					for (auto& cmd : cmds)
 					{
-						switch (dc.type)
+						switch (cmd.type)
 						{
-						case DrawCmdElement:
+						case CmdDrawElement:
 							cb->bind_pipeline(pl_element);
 							cb->bind_descriptorset(ds, 0);
-							cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, dc.id);
-							vtx_off += dc.vtx_cnt;
-							idx_off += dc.idx_cnt;
+							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+							vtx_off += cmd.v.draw_data.vtx_cnt;
+							idx_off += cmd.v.draw_data.idx_cnt;
 							break;
-						case DrawCmdTextLcd:
+						case CmdDrawTextLcd:
 							cb->bind_pipeline(pl_text_lcd);
 							cb->bind_descriptorset(ds, 0);
-							cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, dc.id);
-							vtx_off += dc.vtx_cnt;
-							idx_off += dc.idx_cnt;
+							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+							vtx_off += cmd.v.draw_data.vtx_cnt;
+							idx_off += cmd.v.draw_data.idx_cnt;
 							break;
-						case DrawCmdTextSdf:
+						case CmdDrawTextSdf:
 							cb->bind_pipeline(pl_text_sdf);
 							cb->bind_descriptorset(ds, 0);
-							cb->draw_indexed(dc.idx_cnt, idx_off, vtx_off, 1, dc.id);
-							vtx_off += dc.vtx_cnt;
-							idx_off += dc.idx_cnt;
+							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+							vtx_off += cmd.v.draw_data.vtx_cnt;
+							idx_off += cmd.v.draw_data.idx_cnt;
 							break;
-						case DrawCmdScissor:
-							cb->set_scissor(dc.scissor);
+						case CmdSetScissor:
+							cb->set_scissor(cmd.v.scissor);
 							break;
 						}
 					}
@@ -418,7 +423,8 @@ namespace flame
 
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (uint*)idx_buffer->mapped;
-				draw_cmds.clear();
+				cmds.clear();
+				curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 			}
 		};
 
@@ -466,7 +472,14 @@ namespace flame
 
 		void Canvas::set_scissor(const Vec4f& scissor)
 		{
-			((CanvasPrivate*)this)->set_scissor(scissor);
+			auto thiz = (CanvasPrivate*)this;
+			if (scissor == thiz->curr_scissor)
+				return;
+			thiz->curr_scissor = scissor;
+			Cmd cmd;
+			cmd.type = CmdSetScissor;
+			cmd.v.scissor = scissor;
+			thiz->cmds.push_back(cmd);
 		}
 
 		void Canvas::record(Commandbuffer* cb, uint image_idx)

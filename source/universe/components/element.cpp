@@ -15,19 +15,12 @@ namespace flame
 			scale = 1.f;
 			width = 0.f;
 			height = 0.f;
-			global_x = 0.f;
-			global_y = 0.f;
-			global_scale = 0.f;
-			global_width = 0.f;
-			global_height = 0.f;
 
 			inner_padding = Vec4f(0.f);
-			layout_padding = 0.f;
 
 			alpha = 1.f;
 
 			draw = true;
-			background_offset = Vec4f(0.f);
 			background_round_radius = 0.f;
 			background_round_flags = SideNW | SideNE | SideSE | SideSW;
 			background_frame_thickness = 0.f;
@@ -35,7 +28,15 @@ namespace flame
 			background_frame_color = Vec4c(255);
 			background_shadow_thickness = 0.f;
 
+			clip_children = false;
+
 			canvas = _canvas;
+
+			global_x = 0.f;
+			global_y = 0.f;
+			global_scale = 0.f;
+			global_width = 0.f;
+			global_height = 0.f;
 		}
 
 		void on_add_to_parent()
@@ -66,30 +67,45 @@ namespace flame
 
 			if (draw && canvas)
 			{
-				auto p = Vec2f(global_x, global_y) - (Vec2f(background_offset[0], background_offset[1])) * global_scale;
-				auto s = Vec2f(global_width, global_height) + (Vec2f(background_offset[0] + background_offset[2], background_offset[1] + background_offset[3])) * global_scale;
-				auto rr = background_round_radius * global_scale;
+				auto p = Vec2f(global_x, global_y);
+				auto s = Vec2f(global_width, global_height);
 
-				if (background_shadow_thickness > 0.f)
+				if (!p_element || rect_overlapping(p_element->scissor, Vec4f(p, p + s)))
 				{
-					std::vector<Vec2f> points;
-					path_rect(points, p - Vec2f(background_shadow_thickness * 0.5f), s + Vec2f(background_shadow_thickness), rr, (Side)background_round_flags);
-					points.push_back(points[0]);
-					canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), background_shadow_thickness);
-				}
-				if (alpha > 0.f)
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, p, s, rr, (Side)background_round_flags);
-					if (background_color.w() > 0)
-						canvas->fill(points, alpha_mul(background_color, alpha));
-					if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
+					auto rr = background_round_radius * global_scale;
+
+					if (background_shadow_thickness > 0.f)
 					{
+						std::vector<Vec2f> points;
+						path_rect(points, p - Vec2f(background_shadow_thickness * 0.5f), s + Vec2f(background_shadow_thickness), rr, (Side)background_round_flags);
 						points.push_back(points[0]);
-						canvas->stroke(points, alpha_mul(background_frame_color, alpha), background_frame_thickness);
+						canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), background_shadow_thickness);
+					}
+					if (alpha > 0.f)
+					{
+						std::vector<Vec2f> points;
+						path_rect(points, p, s, rr, (Side)background_round_flags);
+						if (background_color.w() > 0)
+							canvas->fill(points, alpha_mul(background_color, alpha));
+						if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
+						{
+							points.push_back(points[0]);
+							canvas->stroke(points, alpha_mul(background_frame_color, alpha), background_frame_thickness);
+						}
 					}
 				}
 			}
+
+			if (clip_children || !p_element)
+			{
+				auto cp = Vec2f(global_x, global_y) + Vec2f(inner_padding[0], inner_padding[1]) * global_scale;
+				auto cs = Vec2f(global_width, global_height) + Vec2f(inner_padding[0] + inner_padding[2], inner_padding[1] + inner_padding[3]) * global_scale;
+				scissor = Vec4f(cp, cp + cs);
+			}
+			else
+				scissor = p_element->scissor;
+			if (canvas)
+				canvas->set_scissor(scissor);
 		}
 	};
 

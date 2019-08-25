@@ -233,7 +233,7 @@ int main(int argc, char** args)
 		auto c_element = cElement::create();
 		c_element->background_round_flags = SideNW | SideNE | SideSW | SideSE;
 		c_element->background_round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
-		c_element->background_offset = Vec4f(c_element->background_round_radius, 2.f, c_element->background_round_radius, 2.f);
+		c_element->inner_padding = Vec4f(c_element->background_round_radius, 2.f, c_element->background_round_radius, 2.f);
 		e_toggle->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_pixel);

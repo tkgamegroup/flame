@@ -14,12 +14,10 @@ namespace flame
 
 		LayoutType$ type;
 		float item_padding;
-		bool clip;
 		bool width_fit_children;
 		bool height_fit_children;
 
 		float scroll_offset;
-
 
 		cLayout() :
 			Component("Layout")

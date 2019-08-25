@@ -321,7 +321,7 @@ int main(int argc, char **args)
 		app.font_atlas_sdf->index = 2;
 		app.canvas->set_image(app.font_atlas_pixel->index, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 		app.canvas->set_image(app.font_atlas_sdf->index, Imageview::create(app.font_atlas_sdf->image()));
-		app.canvas->set_clear_color(Vec4c(200, 200, 200, 255));
+		app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 		default_style.set_to_light();
 
 		app.root = Entity::create();
@@ -330,11 +330,6 @@ int main(int argc, char **args)
 			app.root->add_component(app.c_element_root);
 
 			app.root->add_component(cEventDispatcher::create(app.w));
-
-			auto c_bp = (cBP*)component_alloc(sizeof(cBP));
-			new (c_bp) cBP;
-			c_bp->bp = app.bp;
-			app.root->add_component(c_bp);
 
 			app.root->add_component(cLayout::create());
 		}
@@ -354,13 +349,47 @@ int main(int argc, char **args)
 			e_fps->add_component(c_aligner);
 		}
 
+		auto e_window = Entity::create();
+		app.root->add_child(e_window);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 300.f;
+			c_element->height = 200.f;
+			c_element->background_color = Vec4c(200, 200, 200, 255);
+			c_element->clip_children = true;
+			e_window->add_component(c_element);
+
+			auto c_bp = (cBP*)component_alloc(sizeof(cBP));
+			new (c_bp) cBP;
+			c_bp->bp = app.bp;
+			e_window->add_component(c_bp);
+
+			e_window->add_component(cLayout::create());
+
+			auto e_title = Entity::create();
+			e_window->add_child(e_title);
+			{
+				auto c_element = cElement::create();
+				c_element->background_color = Vec4c(200, 100, 100, 255);
+				e_title->add_component(c_element);
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"Window");
+				e_title->add_component(c_text);
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				e_title->add_component(c_aligner);
+			}
+		}
+
 		for (auto i = 0; i < app.bp->node_count(); i++)
 		{
 			auto n = app.bp->node(i);
 			auto& n_pos = n->pos;
 
 			auto e_node = Entity::create();
-			app.root->add_child(e_node);
+			e_window->add_child(e_node);
 			{
 				auto c_element = cElement::create();
 				c_element->x = n_pos.x();
@@ -453,10 +482,9 @@ int main(int argc, char **args)
 							{
 								auto c_element = cElement::create();
 								auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-								c_element->background_offset = Vec4f(-r * 0.25f);
 								c_element->width = r;
 								c_element->height = r;
-								c_element->background_round_radius = r * 0.25f;
+								c_element->background_round_radius = r * 0.5f;
 								c_element->background_color = Vec4c(255);
 								e_slot->add_component(c_element);
 								input->user_data = c_element;
@@ -518,10 +546,9 @@ int main(int argc, char **args)
 							{
 								auto c_element = cElement::create();
 								auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-								c_element->background_offset = Vec4f(-r * 0.25f);
 								c_element->width = r;
 								c_element->height = r;
-								c_element->background_round_radius = r * 0.25f;
+								c_element->background_round_radius = r * 0.5f;
 								c_element->background_color = Vec4c(255);
 								e_slot->add_component(c_element);
 								outout->user_data = c_element;

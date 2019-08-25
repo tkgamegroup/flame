@@ -29,19 +29,11 @@ namespace flame
 		float width;
 		float height;
 
-		float global_x;
-		float global_y;
-		float global_scale;
-		float global_width;
-		float global_height;
-
 		Vec4f inner_padding; // L T R B
-		float layout_padding;
 
 		float alpha;
 
 		bool draw;
-		Vec4f background_offset; // L T R B
 		float background_round_radius;
 		uint background_round_flags;
 		float background_frame_thickness;
@@ -49,7 +41,16 @@ namespace flame
 		Vec4c background_frame_color;
 		float background_shadow_thickness;
 
+		bool clip_children;
+
 		graphics::Canvas* canvas;
+
+		float global_x;
+		float global_y;
+		float global_scale;
+		float global_width;
+		float global_height;
+		Vec4f scissor;
 
 		bool contains(const Vec2f& pos) const
 		{

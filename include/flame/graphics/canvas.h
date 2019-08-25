@@ -11,14 +11,6 @@ namespace flame
 		struct Commandbuffer;
 		struct FontAtlas;
 
-		enum DrawCmdType
-		{
-			DrawCmdElement,
-			DrawCmdTextLcd,
-			DrawCmdTextSdf,
-			DrawCmdScissor
-		};
-
 		struct Canvas
 		{
 			FLAME_GRAPHICS_EXPORTS void set_render_target(TargetType$ type, const void* v);

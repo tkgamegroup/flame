@@ -12,7 +12,6 @@ namespace flame
 
 			type = LayoutFree;
 			item_padding = 0.f;
-			clip = false;
 			width_fit_children = true;
 			height_fit_children = true;
 		}
