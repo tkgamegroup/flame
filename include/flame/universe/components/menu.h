@@ -13,6 +13,7 @@ namespace flame
 
 		Entity* root;
 		Entity* menu;
+		bool move_to_open;
 		Side popup_side;
 		bool topmost_penetrable;
 

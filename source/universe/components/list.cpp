@@ -11,7 +11,6 @@ namespace flame
 
 		cListItemPrivate()
 		{
-			element = nullptr;
 			event_receiver = nullptr;
 			style = nullptr;
 			list = nullptr;
@@ -26,8 +25,6 @@ namespace flame
 
 		void on_added()
 		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 			style = (cStyleBgCol*)(entity->find_component(cH("StyleBgCol")));
@@ -92,9 +89,6 @@ namespace flame
 
 	struct cListPrivate : cList
 	{
-		void update()
-		{
-		}
 	};
 
 	cList::~cList()
@@ -104,7 +98,6 @@ namespace flame
 
 	void cList::update()
 	{
-		((cListPrivate*)this)->update();
 	}
 
 	cList* cList::create()

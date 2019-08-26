@@ -5,15 +5,18 @@
 namespace flame
 {
 	struct cElement;
+	struct cText;
 	struct cEventReceiver;
 	struct cStyleBgCol;
-	struct cList;
+	struct cMenuButton;
+	struct cCombobox;
 
-	struct cListItem : Component
+	struct cComboboxItem : Component
 	{
+		cText* text;
 		cEventReceiver* event_receiver;
 		cStyleBgCol* style;
-		cList* list;
+		cCombobox* combobox;
 
 		Vec4c unselected_color_normal;
 		Vec4c unselected_color_hovering;
@@ -22,33 +25,38 @@ namespace flame
 		Vec4c selected_color_hovering;
 		Vec4c selected_color_active;
 
-		cListItem() :
-			Component("ListItem")
+		cComboboxItem() :
+			Component("ComboboxItem")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cListItem() override;
+		FLAME_UNIVERSE_EXPORTS virtual ~cComboboxItem() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cListItem* create();
+		FLAME_UNIVERSE_EXPORTS static cComboboxItem* create();
 	};
 
-	struct cList : Component
+	struct cCombobox : Component
 	{
+		cText* text;
+		cMenuButton* menu_button;
+
 		Entity* select;
 
-		cList() :
-			Component("List")
+		cCombobox() :
+			Component("Combobox")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cList() override;
+		FLAME_UNIVERSE_EXPORTS virtual ~cCombobox() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cList* create();
+		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};
 }

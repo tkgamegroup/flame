@@ -42,9 +42,11 @@ namespace flame
 
 	void destroy_topmost()
 	{
+		std::vector<Entity*> children;
 		for (auto i = 0; i < topmost->child_count(); i++)
+			children.push_back(topmost->child(i));
+		for (auto e : children)
 		{
-			auto e = topmost->child(i);
 			auto menu = (cMenu*)e->find_component(cH("Menu"));
 			if (menu)
 			{

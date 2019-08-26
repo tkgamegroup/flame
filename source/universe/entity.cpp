@@ -45,8 +45,10 @@ namespace flame
 
 		void add_component(Component* c)
 		{
-			components.emplace_back(c);
 			c->entity = this;
+			for (auto& _c : components)
+				_c->on_other_added(c);
+			components.emplace_back(c);
 			c->on_added();
 		}
 

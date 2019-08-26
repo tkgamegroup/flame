@@ -37,4 +37,11 @@ namespace flame
 		LayoutVertical,
 		LayoutHorizontal
 	};
+
+	enum Message
+	{
+		StandardMessageWindowPosChanged,
+
+		MessageUser
+	};
 }

@@ -24,6 +24,7 @@
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/menu.h>
+#include <flame/universe/components/combobox.h>
 #include <flame/universe/utils.h>
 
 using namespace flame;
@@ -147,7 +148,7 @@ int main(int argc, char** args)
 
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
-		c_layout->item_padding = 8.f;
+		c_layout->item_padding = 16.f;
 		e_layout_left->add_component(c_layout);
 	}
 
@@ -295,7 +296,7 @@ int main(int argc, char** args)
 
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
-		c_layout->item_padding = 8.f;
+		c_layout->item_padding = 16.f;
 		e_layout_right->add_component(c_layout);
 	}
 
@@ -363,7 +364,9 @@ int main(int argc, char** args)
 			auto e_item = Entity::create();
 			e_popup_menu->add_child(e_item);
 			{
-				e_item->add_component(cElement::create());
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_item->add_component(c_element);
 
 				static const char* names[] = {
 					"Refresh",
@@ -396,10 +399,12 @@ int main(int argc, char** args)
 			auto e_menu_btn = Entity::create();
 			e_popup_menu->add_child(e_menu_btn);
 			{
-				e_menu_btn->add_component(cElement::create());
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
+				e_menu_btn->add_component(c_element);
 
 				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(std::wstring(L"Add ") + Icon_CARET_RIGHT);
+				c_text->set_text(L"Add");
 				e_menu_btn->add_component(c_text);
 
 				e_menu_btn->add_component(cEventReceiver::create());
@@ -417,7 +422,9 @@ int main(int argc, char** args)
 					auto e_item = Entity::create();
 					e_menu->add_child(e_item);
 					{
-						e_item->add_component(cElement::create());
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_item->add_component(c_element);
 
 						static const char* names[] = {
 							"Tree",
@@ -454,6 +461,24 @@ int main(int argc, char** args)
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeGreedy;
 				e_menu_btn->add_component(c_aligner);
+
+				e_menu_btn->add_component(cLayout::create());
+
+				auto e_arrow = Entity::create();
+				e_menu_btn->add_child(e_arrow);
+				{
+					auto c_element = cElement::create();
+					c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
+					e_arrow->add_component(c_element);
+
+					auto c_text = cText::create(app.font_atlas_pixel);
+					c_text->set_text(Icon_CARET_RIGHT);
+					e_arrow->add_component(c_text);
+
+					auto c_aligner = cAligner::create();
+					c_aligner->x_align = AlignxRight;
+					e_arrow->add_component(c_aligner);
+				}
 			}
 		}
 
@@ -461,10 +486,12 @@ int main(int argc, char** args)
 			auto e_menu_btn = Entity::create();
 			e_popup_menu->add_child(e_menu_btn);
 			{
-				e_menu_btn->add_component(cElement::create());
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
+				e_menu_btn->add_component(c_element);
 
 				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(std::wstring(L"Remove ") + Icon_CARET_RIGHT);
+				c_text->set_text(L"Remove");
 				e_menu_btn->add_component(c_text);
 
 				e_menu_btn->add_component(cEventReceiver::create());
@@ -482,7 +509,9 @@ int main(int argc, char** args)
 					auto e_item = Entity::create();
 					e_menu->add_child(e_item);
 					{
-						e_item->add_component(cElement::create());
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_item->add_component(c_element);
 
 						static const char* names[] = {
 							"Tree",
@@ -519,6 +548,24 @@ int main(int argc, char** args)
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeGreedy;
 				e_menu_btn->add_component(c_aligner);
+
+				e_menu_btn->add_component(cLayout::create());
+
+				auto e_arrow = Entity::create();
+				e_menu_btn->add_child(e_arrow);
+				{
+					auto c_element = cElement::create();
+					c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
+					e_arrow->add_component(c_element);
+
+					auto c_text = cText::create(app.font_atlas_pixel);
+					c_text->set_text(Icon_CARET_RIGHT);
+					e_arrow->add_component(c_text);
+
+					auto c_aligner = cAligner::create();
+					c_aligner->x_align = AlignxRight;
+					e_arrow->add_component(c_aligner);
+				}
 			}
 		}
 	}
@@ -539,7 +586,6 @@ int main(int argc, char** args)
 			}
 		}, new_mail(&data));
 	}
-
 	
 	auto e_menubar = Entity::create();
 	app.root->add_child(e_menubar);
@@ -564,7 +610,9 @@ int main(int argc, char** args)
 			auto e_menu_btn = Entity::create();
 			e_menubar->add_child(e_menu_btn);
 			{
-				e_menu_btn->add_component(cElement::create());
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_menu_btn->add_component(c_element);
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(L"File");
@@ -589,7 +637,9 @@ int main(int argc, char** args)
 					auto e_item = Entity::create();
 					e_menu->add_child(e_item);
 					{
-						e_item->add_component(cElement::create());
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_item->add_component(c_element);
 
 						static const char* names[] = {
 							"New",
@@ -630,7 +680,9 @@ int main(int argc, char** args)
 			auto e_menu_btn = Entity::create();
 			e_menubar->add_child(e_menu_btn);
 			{
-				e_menu_btn->add_component(cElement::create());
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_menu_btn->add_component(c_element);
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(L"Edit");
@@ -655,7 +707,9 @@ int main(int argc, char** args)
 					auto e_item = Entity::create();
 					e_menu->add_child(e_item);
 					{
-						e_item->add_component(cElement::create());
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_item->add_component(c_element);
 
 						static const char* names[] = {
 							"Undo",
@@ -700,7 +754,9 @@ int main(int argc, char** args)
 			auto e_menu_btn = Entity::create();
 			e_menubar->add_child(e_menu_btn);
 			{
-				e_menu_btn->add_component(cElement::create());
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_menu_btn->add_component(c_element);
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->set_text(L"Tool");
@@ -725,7 +781,9 @@ int main(int argc, char** args)
 					auto e_item = Entity::create();
 					e_menu->add_child(e_item);
 					{
-						e_item->add_component(cElement::create());
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_item->add_component(c_element);
 
 						static const char* names[] = {
 							"Monitor",
@@ -763,15 +821,103 @@ int main(int argc, char** args)
 			}
 		}
 	}
-	
+
+	auto e_combobox = Entity::create();
+	e_layout_right->add_child(e_combobox);
+	{
+		auto c_element = cElement::create();
+		c_element->width = 108.f;
+		c_element->height = app.font_atlas_pixel->pixel_height + 4.f;
+		c_element->background_frame_color = Vec4c(255);
+		c_element->background_frame_thickness = 2.f;
+		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
+
+		e_combobox->add_component(c_element);
+
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->auto_size = false;
+		e_combobox->add_component(c_text);
+
+		e_combobox->add_component(cEventReceiver::create());
+
+		auto e_menu = Entity::create();
+		{
+			auto c_element = cElement::create(app.canvas);
+			c_element->background_color = Vec4c(0, 0, 0, 255);
+			e_menu->add_component(c_element);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			e_menu->add_component(c_layout);
+
+			e_menu->add_component(cMenu::create());
+		}
+		for (auto i = 0; i < 3; i++)
+		{
+			auto e_item = Entity::create();
+			e_menu->add_child(e_item);
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_item->add_component(c_element);
+
+				static const char* names[] = {
+					"Apple",
+					"Boy",
+					"Cat"
+				};
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(s2w(names[i]));
+				e_item->add_component(c_text);
+
+				e_item->add_component(cEventReceiver::create());
+
+				e_item->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+				auto c_combobox_item = cComboboxItem::create();
+				c_combobox_item->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
+				c_combobox_item->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
+				c_combobox_item->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
+				e_item->add_component(c_combobox_item);
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeGreedy;
+				e_item->add_component(c_aligner);
+			}
+		}
+		auto c_menu_btn = cMenuButton::create();
+		c_menu_btn->root = app.root;
+		c_menu_btn->menu = e_menu;
+		c_menu_btn->move_to_open = false;
+		c_menu_btn->popup_side = SideS;
+		c_menu_btn->topmost_penetrable = true;
+		e_combobox->add_component(c_menu_btn);
+
+		e_combobox->add_component(cStyleBgCol::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+		e_combobox->add_component(cCombobox::create());
+
+		e_combobox->add_component(cLayout::create());
+
+		auto e_arrow = Entity::create();
+		e_combobox->add_child(e_arrow);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
+			e_arrow->add_component(c_element);
+
+			auto c_text = cText::create(app.font_atlas_pixel);
+			c_text->set_text(Icon_ANGLE_DOWN);
+			e_arrow->add_component(c_text);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->x_align = AlignxRight;
+			e_arrow->add_component(c_aligner);
+		}
+	}
 
 	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
 	//w_sizedrag->min_size() = Vec2f(100.f);
-
-	//layout1->add_child(w_menubar);
-
-	//auto w_combo = Element::createT<wCombo>(ui, font_atlas_index);
-	//w_combo->align$ = AlignLittleEnd;
 
 	//auto w_treenode1 = Element::createT<wTreeNode>(ui, font_atlas_index, L"A");
 	//w_treenode1->pos$ = Vec2f(800.f, 400.f);

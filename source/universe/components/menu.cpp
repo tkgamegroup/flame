@@ -15,6 +15,7 @@ namespace flame
 
 			root = nullptr;
 			menu = nullptr;
+			move_to_open = true;
 			popup_side = SideE;
 			topmost_penetrable = false;
 
@@ -30,8 +31,9 @@ namespace flame
 			if (event_receiver)
 			{
 				event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					if ((is_mouse_down(action, key, true) && key == Mouse_Left) || (is_mouse_move(action, key) && get_topmost()))
-						(*(cMenuButtonPrivate**)c)->open();
+					auto thiz = *(cMenuButtonPrivate**)c;
+					if ((is_mouse_down(action, key, true) && key == Mouse_Left) || (thiz->move_to_open && is_mouse_move(action, key) && get_topmost()))
+						thiz->open();
 
 				}, new_mail_p(this));
 			}
@@ -79,8 +81,7 @@ namespace flame
 
 				close_menu(menu);
 
-				auto topmost = get_topmost();
-				topmost->take_child(menu);
+				get_topmost()->take_child(menu);
 			}
 		}
 	};

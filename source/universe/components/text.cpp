@@ -1,6 +1,7 @@
 #include <flame/graphics/canvas.h>
 #include <flame/universe/components/element.h>
 #include "text_private.h"
+#include <flame/universe/components/aligner.h>
 #include <flame/universe/default_style.h>
 
 namespace flame
@@ -8,6 +9,7 @@ namespace flame
 	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
 	{
 		element = nullptr;
+		aligner = nullptr;
 
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
@@ -26,6 +28,12 @@ namespace flame
 		assert(element->p_element);
 	}
 
+	void cTextPrivate::on_other_added(Component* c)
+	{
+		if (c->type_hash == cH("Aligner"))
+			aligner = (cAligner*)c;
+	}
+
 	void cTextPrivate::update()
 	{
 		auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
@@ -33,8 +41,12 @@ namespace flame
 			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale, element->p_element->scissor);
 		if (auto_size)
 		{
-			element->width = rect.x() + element->inner_padding[0] + element->inner_padding[2];
-			element->height = rect.y() + element->inner_padding[1] + element->inner_padding[3];
+			auto w = rect.x() + element->inner_padding[0] + element->inner_padding[2];
+			if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_width)
+				element->width = w;
+			auto h = rect.y() + element->inner_padding[1] + element->inner_padding[3];
+			if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_height)
+				element->height = h;
 		}
 	}
 
@@ -46,6 +58,11 @@ namespace flame
 	void cText::on_added()
 	{
 		((cTextPrivate*)this)->on_added();
+	}
+
+	void cText::on_other_added(Component* c)
+	{
+		((cTextPrivate*)this)->on_other_added(c);
 	}
 
 	const std::wstring& cText::text() const

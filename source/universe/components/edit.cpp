@@ -31,7 +31,7 @@ namespace flame
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
 			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text);
+			assert(text && !text->auto_size);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 

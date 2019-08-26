@@ -20,53 +20,10 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/toggle.h>
+#include <flame/universe/components/window.h>
 
 using namespace flame;
 using namespace graphics;
-
-struct cBPNode : Component
-{
-	cEventReceiver* event_receiver;
-	void* mouse_listener;
-
-	BP::Node* n;
-
-	cBPNode() :
-		Component("BPNode")
-	{
-		mouse_listener = nullptr;
-	}
-
-	virtual ~cBPNode() override
-	{
-		event_receiver->remove_mouse_listener(mouse_listener);
-	}
-
-	virtual void on_add_to_parent() override
-	{
-		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-		assert(event_receiver);
-
-		mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto thiz = (*(cBPNode**)c);
-			if (thiz->event_receiver->dragging && is_mouse_move(action, key))
-			{
-				auto e = thiz->event_receiver->element;
-				auto x = pos.x() / e->global_scale;
-				auto y = pos.y() / e->global_scale;
-				thiz->n->pos.x() += x;
-				thiz->n->pos.y() += y;
-				e->x += x;
-				e->y += y;
-			}
-
-		}, new_mail_p(this));
-	}
-
-	virtual void update() override
-	{
-	}
-};
 
 struct cBP : Component
 {
@@ -83,7 +40,7 @@ struct cBP : Component
 	{
 	}
 
-	virtual void on_add_to_parent() override
+	virtual void on_added() override
 	{
 		element = (cElement*)(entity->find_component(cH("Element")));
 		assert(element);
@@ -383,14 +340,14 @@ int main(int argc, char **args)
 		for (auto i = 0; i < app.bp->node_count(); i++)
 		{
 			auto n = app.bp->node(i);
-			auto& n_pos = n->pos;
 
 			auto e_node = Entity::create();
 			e_window->add_child(e_node);
+			n->user_data = e_node;
 			{
 				auto c_element = cElement::create();
-				c_element->x = n_pos.x();
-				c_element->y = n_pos.y();
+				c_element->x = n->pos.x();
+				c_element->y = n->pos.y();
 				c_element->inner_padding = Vec4f(8.f);
 				c_element->background_frame_color = Vec4c(255);
 				c_element->background_frame_thickness = 2.f;
@@ -400,10 +357,14 @@ int main(int argc, char **args)
 
 				e_node->add_component(cEventReceiver::create());
 
-				auto c_bp_node = (cBPNode*)component_alloc(sizeof(cBPNode));
-				new (c_bp_node) cBPNode;
-				c_bp_node->n = n;
-				e_node->add_component(c_bp_node);
+				auto e_window = cWindow::create();
+				e_window->add_pos_listener([](void* c) {
+					auto n = *(BP::Node**)c;
+					auto element = (cElement*)(((Entity*)n->user_data)->find_component(cH("Element")));
+					n->pos.x() = element->x;
+					n->pos.y() = element->y;
+				}, new_mail_p(n));
+				e_node->add_component(e_window);
 
 				auto c_layout = cLayout::create();
 				c_layout->type = LayoutVertical;

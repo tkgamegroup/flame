@@ -162,11 +162,6 @@ namespace flame
 		}, { ui }));
 	}
 
-	static void menu_add_rarrow(wMenu* w)
-	{
-		rarrow->text$ = w->sub() ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN;
-	}
-
 	void wMenu::open()
 	{
 		for (auto i = 0; i < w_items()->children_1$.size; i++)
@@ -176,90 +171,8 @@ namespace flame
 		}
 	}
 
-	FLAME_PACKAGE_BEGIN_2(MenuTextMouseInMenubarEventData, ElementPtr, thiz, p, wMenuPtr, menu, p)
-	FLAME_PACKAGE_END_2
-
-	void combo_title_mouse_event$(Element::MouseListenerParm &p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		auto combo = (wComboPtr)(p.thiz()->parent);
-		if (!combo->opened())
-		{
-			if (!combo->ui->popup_element())
-			{
-				combo->open();
-
-				combo->ui->set_popup_element(combo);
-			}
-		}
-		else
-			combo->ui->close_popup();
-	}
-
-	FLAME_PACKAGE_BEGIN_1(ComboItemStyleData, wComboPtr, combo, p)
-	FLAME_PACKAGE_END_1
-
-	void combo_item_style$(StyleParm& p)
-	{
-		auto combo = p.get_capture<ComboItemStyleData>().combo();
-		auto sel = combo->sel();
-		auto e = p.e();
-		if (sel != -1 && combo->w_items()->children_1$[sel] == e)
-		{
-			if (e->state == StateNormal)
-			{
-				e->background_col$ = e->ui->default_header_col;
-				p.out_active() = 1;
-			}
-		}
-	}
-
-	FLAME_PACKAGE_BEGIN_2(ComboItemsMouseEventData, wComboPtr, combo, p, int, idx, i1)
-	FLAME_PACKAGE_END_2
-
-	void combo_item_mouse_event$(Element::MouseListenerParm &p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		auto c = p.get_capture<ComboItemsMouseEventData>();
-		c.combo()->set_sel(c.idx());
-	}
-
-	void combo_items_child_event$(Element::ChildListenerParm& p)
-	{
-		if (p.op() != Element::ChildAdd)
-			return;
-
-		auto combo = (wComboPtr)(p.thiz()->parent);
-		if (p.src()->class$.hash == cH("wMenuItem"))
-		{
-			combo->set_width(combo->inner_padding$[0] + combo->inner_padding$[2] + combo->w_title()->inner_padding$[0] + combo->w_title()->inner_padding$[2] + p.src()->size$.x);
-			auto idx = combo->w_items()->children_1$.size - 1;
-			p.src()->styles$.push_back(Style(0, 1, Function<StyleParm>(combo_item_style$, { combo })));
-			p.src()->mouse_listeners$.push_back(Function<Element::MouseListenerParm>(combo_item_mouse_event$, { combo, idx }));
-		}
-	}
-
 	void wCombo::init(int font_atlas_index, void* _enum_info, void* _target)
 	{
-		((wMenu*)this)->init(font_atlas_index, L"");
-
-		sel() = -1;
-		enum_info() = _enum_info;
-		target() = _target;
-
-		background_frame_thickness$ = 1.f;
-
-		size_policy_hori$ = SizeFixed;
-
-		w_title()->size_policy_hori$ = SizeFitLayout;
-		w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(combo_title_mouse_event$, {}));
-
-		w_items()->child_listeners$.push_back(Function<ChildListenerParm>(combo_items_child_event$, {}));
-
 		if (enum_info())
 		{
 			auto e = (EnumInfo*)enum_info();
@@ -283,13 +196,6 @@ namespace flame
 
 	void wCombo::set_sel(int idx, bool from_inner)
 	{
-		sel() = idx;
-		auto i = (wMenuItem*)w_items()->children_1$[idx];
-		w_title()->text$ = i->text$;
-
-		if (from_inner)
-			return;
-
 		if (target())
 		{
 			auto p = (int*)target();
