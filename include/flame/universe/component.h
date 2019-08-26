@@ -20,7 +20,7 @@ namespace flame
 		}
 
 		virtual ~Component() {};
-		virtual void on_add_to_parent() {}
+		virtual void on_added() {}
 		virtual void update() {};
 	};
 

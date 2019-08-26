@@ -22,7 +22,7 @@ namespace flame
 			event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -41,15 +41,18 @@ namespace flame
 
 		void update()
 		{
-			std::vector<Vec2f> points;
-			path_rect(points, Vec2f(element->global_x, element->global_y), Vec2f(element->global_height, element->global_height));
-			points.push_back(points[0]);
-			element->canvas->stroke(points, element->background_color, 2.f * element->global_scale);
-			if (checked)
+			if (!element->cliped)
 			{
 				std::vector<Vec2f> points;
-				path_rect(points, Vec2f(element->global_x, element->global_y) + 3.f * element->global_scale, Vec2f(element->global_height, element->global_height) - 6.f * element->global_scale);
-				element->canvas->fill(points, element->background_color);
+				path_rect(points, Vec2f(element->global_x, element->global_y), Vec2f(element->global_height, element->global_height));
+				points.push_back(points[0]);
+				element->canvas->stroke(points, element->background_color, 2.f * element->global_scale);
+				if (checked)
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, Vec2f(element->global_x, element->global_y) + 3.f * element->global_scale, Vec2f(element->global_height, element->global_height) - 6.f * element->global_scale);
+					element->canvas->fill(points, element->background_color);
+				}
 			}
 		}
 	};
@@ -59,9 +62,9 @@ namespace flame
 		((cCheckboxPrivate*)this)->~cCheckboxPrivate();
 	}
 
-	void cCheckbox::on_add_to_parent()
+	void cCheckbox::on_added()
 	{
-		((cCheckboxPrivate*)this)->on_add_to_parent();
+		((cCheckboxPrivate*)this)->on_added();
 	}
 
 	void cCheckbox::update()

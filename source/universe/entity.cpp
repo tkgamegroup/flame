@@ -47,7 +47,7 @@ namespace flame
 		{
 			components.emplace_back(c);
 			c->entity = this;
-			c->on_add_to_parent();
+			c->on_added();
 		}
 
 		EntityPrivate* find_child(const std::string& name) const
@@ -64,7 +64,6 @@ namespace flame
 		{
 			children.emplace_back(e);
 			e->parent = this;
-			e->on_add_to_parent();
 		}
 
 		void remove_child(EntityPrivate* e)
@@ -106,14 +105,6 @@ namespace flame
 				e.release();
 			}
 			children.clear();
-		}
-
-		void on_add_to_parent()
-		{
-			for (auto& c : components)
-				c->on_add_to_parent();
-			for (auto& e : children)
-				e->on_add_to_parent();
 		}
 
 		void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)

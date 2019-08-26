@@ -24,7 +24,7 @@ namespace flame
 			selected_color_active = default_style.header_color_active;
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -75,9 +75,9 @@ namespace flame
 		((cListItemPrivate*)this)->~cListItemPrivate();
 	}
 
-	void cListItem::on_add_to_parent()
+	void cListItem::on_added()
 	{
-		((cListItemPrivate*)this)->on_add_to_parent();
+		((cListItemPrivate*)this)->on_added();
 	}
 
 	void cListItem::update()

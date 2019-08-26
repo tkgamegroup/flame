@@ -16,7 +16,7 @@ namespace flame
 			col_active = _col_active;
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -39,9 +39,9 @@ namespace flame
 	{
 	}
 
-	void cStyleBgCol::on_add_to_parent()
+	void cStyleBgCol::on_added()
 	{
-		((cStyleBgColPrivate*)this)->on_add_to_parent();
+		((cStyleBgColPrivate*)this)->on_added();
 	}
 
 	void cStyleBgCol::update()

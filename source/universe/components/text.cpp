@@ -19,17 +19,18 @@ namespace flame
 	{
 	}
 
-	void cTextPrivate::on_add_to_parent()
+	void cTextPrivate::on_added()
 	{
 		element = (cElement*)(entity->find_component(cH("Element")));
 		assert(element);
+		assert(element->p_element);
 	}
 
 	void cTextPrivate::update()
 	{
 		auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
 			Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
-			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale, element->p_element->scissor);
 		if (auto_size)
 		{
 			element->width = rect.x() + element->inner_padding[0] + element->inner_padding[2];
@@ -42,9 +43,9 @@ namespace flame
 		((cTextPrivate*)this)->~cTextPrivate();
 	}
 
-	void cText::on_add_to_parent()
+	void cText::on_added()
 	{
-		((cTextPrivate*)this)->on_add_to_parent();
+		((cTextPrivate*)this)->on_added();
 	}
 
 	const std::wstring& cText::text() const

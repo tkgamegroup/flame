@@ -5,11 +5,11 @@ namespace flame
 {
 	struct cElementPrivate : cElement
 	{
-		cElementPrivate* p_element;
 
-		cElementPrivate(graphics::Canvas* _canvas) :
-			p_element(nullptr)
+		cElementPrivate(graphics::Canvas* _canvas)
 		{
+			p_element = nullptr;
+
 			x = 0.f;
 			y = 0.f;
 			scale = 1.f;
@@ -39,7 +39,7 @@ namespace flame
 			global_height = 0.f;
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			auto e = entity->parent();
 			if (e)
@@ -65,6 +65,7 @@ namespace flame
 			global_width = width * global_scale;
 			global_height = height * global_scale;
 
+			cliped = false;
 			if (draw && canvas)
 			{
 				auto p = Vec2f(global_x, global_y);
@@ -94,6 +95,8 @@ namespace flame
 						}
 					}
 				}
+				else
+					cliped = true;
 			}
 
 			if (clip_children || !p_element)
@@ -113,9 +116,9 @@ namespace flame
 	{
 	}
 
-	void cElement::on_add_to_parent()
+	void cElement::on_added()
 	{
-		((cElementPrivate*)this)->on_add_to_parent();
+		((cElementPrivate*)this)->on_added();
 	}
 
 	void cElement::update()

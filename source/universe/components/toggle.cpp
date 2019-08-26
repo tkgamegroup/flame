@@ -32,7 +32,7 @@ namespace flame
 			event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -75,9 +75,9 @@ namespace flame
 		((cTogglePrivate*)this)->~cTogglePrivate();
 	}
 
-	void cToggle::on_add_to_parent()
+	void cToggle::on_added()
 	{
-		((cTogglePrivate*)this)->on_add_to_parent();
+		((cTogglePrivate*)this)->on_added();
 	}
 
 	void cToggle::update()

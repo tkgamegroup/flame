@@ -242,7 +242,7 @@ namespace flame
 				}
 			}
 
-			Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+			Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
 			{
 				if (f->draw_type != FontDrawSdf)
 					scale = 1.f;
@@ -250,28 +250,11 @@ namespace flame
 
 				auto _pos = Vec2f(Vec2i(pos));
 
-				CmdType cmd_type;
-				switch (f->draw_type)
-				{
-				case FontDrawPixel:
-					cmd_type = CmdDrawElement;
-					break;
-				case FontDrawLcd:
-					cmd_type = CmdDrawTextLcd;
-					break;
-				case FontDrawSdf:
-					cmd_type = CmdDrawTextSdf;
-					break;
-				default:
-					assert(0);
-				}
-				begin_draw(cmd_type, f->index);
+				begin_draw((CmdType)f->draw_type, f->index);
 				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-
 				Vec2f rect(0.f, pixel_height);
 				auto line_width = 0.f;
-
 				for (auto ch : text)
 				{
 					if (ch == '\n')
@@ -285,23 +268,26 @@ namespace flame
 					else
 					{
 						auto g = f->get_glyph(ch);
-						auto size = Vec2f(g->size) * scale;
 
 						auto p = _pos + Vec2f(g->off) * scale;
-						vtx_end->pos = p;						       vtx_end->uv = g->uv0;						  vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());   vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), -size.y()); vtx_end->uv = g->uv1;						  vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), 0.f);	   vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());   vtx_end->col = col; vtx_end++;
+						auto size = Vec2f(g->size) * scale;
+						if (rect_overlapping(Vec4f(p, p + size), scissor))
+						{
+							vtx_end->pos = p;						       vtx_end->uv = g->uv0;						  vtx_end->col = col; vtx_end++;
+							vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());   vtx_end->col = col; vtx_end++;
+							vtx_end->pos = p + Vec2f(size.x(), -size.y()); vtx_end->uv = g->uv1;						  vtx_end->col = col; vtx_end++;
+							vtx_end->pos = p + Vec2f(size.x(), 0.f);	   vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());   vtx_end->col = col; vtx_end++;
 
-						*idx_end = vtx_cnt + 0; idx_end++;
-						*idx_end = vtx_cnt + 2; idx_end++;
-						*idx_end = vtx_cnt + 1; idx_end++;
-						*idx_end = vtx_cnt + 0; idx_end++;
-						*idx_end = vtx_cnt + 3; idx_end++;
-						*idx_end = vtx_cnt + 2; idx_end++;
+							*idx_end = vtx_cnt + 0; idx_end++;
+							*idx_end = vtx_cnt + 2; idx_end++;
+							*idx_end = vtx_cnt + 1; idx_end++;
+							*idx_end = vtx_cnt + 0; idx_end++;
+							*idx_end = vtx_cnt + 3; idx_end++;
+							*idx_end = vtx_cnt + 2; idx_end++;
 
-						vtx_cnt += 4;
-						idx_cnt += 6;
+							vtx_cnt += 4;
+							idx_cnt += 6;
+						}
 
 						auto w = g->advance * scale;
 						_pos.x() += w;
@@ -314,7 +300,7 @@ namespace flame
 				return rect;
 			}
 
-			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255))
+			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 			{
 				auto _pos = Vec2f(Vec2i(pos));
 
@@ -338,7 +324,7 @@ namespace flame
 				idx_cnt += 6;
 			}
 
-			void add_image_stretch(const Vec2f& pos, const Vec2f& size, uint id, const Vec4f& border, const Vec4c& tint_col = Vec4c(255))
+			void add_image_stretch(const Vec2f& pos, const Vec2f& size, uint id, const Vec4f& border, const Vec4c& tint_col)
 			{
 				//auto image_size = share_data.image_views[id]->image()->size;
 
@@ -392,25 +378,34 @@ namespace flame
 						switch (cmd.type)
 						{
 						case CmdDrawElement:
-							cb->bind_pipeline(pl_element);
-							cb->bind_descriptorset(ds, 0);
-							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-							vtx_off += cmd.v.draw_data.vtx_cnt;
-							idx_off += cmd.v.draw_data.idx_cnt;
+							if (cmd.v.draw_data.idx_cnt > 0)
+							{
+								cb->bind_pipeline(pl_element);
+								cb->bind_descriptorset(ds, 0);
+								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+								vtx_off += cmd.v.draw_data.vtx_cnt;
+								idx_off += cmd.v.draw_data.idx_cnt;
+							}
 							break;
 						case CmdDrawTextLcd:
-							cb->bind_pipeline(pl_text_lcd);
-							cb->bind_descriptorset(ds, 0);
-							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-							vtx_off += cmd.v.draw_data.vtx_cnt;
-							idx_off += cmd.v.draw_data.idx_cnt;
+							if (cmd.v.draw_data.idx_cnt > 0)
+							{
+								cb->bind_pipeline(pl_text_lcd);
+								cb->bind_descriptorset(ds, 0);
+								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+								vtx_off += cmd.v.draw_data.vtx_cnt;
+								idx_off += cmd.v.draw_data.idx_cnt;
+							}
 							break;
 						case CmdDrawTextSdf:
-							cb->bind_pipeline(pl_text_sdf);
-							cb->bind_descriptorset(ds, 0);
-							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-							vtx_off += cmd.v.draw_data.vtx_cnt;
-							idx_off += cmd.v.draw_data.idx_cnt;
+							if (cmd.v.draw_data.idx_cnt > 0)
+							{
+								cb->bind_pipeline(pl_text_sdf);
+								cb->bind_descriptorset(ds, 0);
+								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+								vtx_off += cmd.v.draw_data.vtx_cnt;
+								idx_off += cmd.v.draw_data.idx_cnt;
+							}
 							break;
 						case CmdSetScissor:
 							cb->set_scissor(cmd.v.scissor);
@@ -455,9 +450,9 @@ namespace flame
 			((CanvasPrivate*)this)->fill(points, col);
 		}
 
-		Vec2f Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+		Vec2f Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
 		{
-			return ((CanvasPrivate*)this)->add_text(f, pos, col, text, scale);
+			return ((CanvasPrivate*)this)->add_text(f, pos, col, text, scale, scissor);
 		}
 
 		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

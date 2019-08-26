@@ -23,6 +23,8 @@ namespace flame
 
 	struct cElement : Component
 	{
+		cElement* p_element;
+
 		float x;
 		float y;
 		float scale;
@@ -51,6 +53,7 @@ namespace flame
 		float global_width;
 		float global_height;
 		Vec4f scissor;
+		bool cliped;
 
 		bool contains(const Vec2f& pos) const
 		{
@@ -64,7 +67,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cElement() override;
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 

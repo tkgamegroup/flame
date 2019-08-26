@@ -49,18 +49,15 @@ struct cBPNode : Component
 
 		mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			auto thiz = (*(cBPNode**)c);
-			if (is_mouse_move(action, key))
+			if (thiz->event_receiver->dragging && is_mouse_move(action, key))
 			{
-				if (thiz->event_receiver->dragging)
-				{
-					auto e = thiz->event_receiver->element;
-					auto x = pos.x() / e->global_scale;
-					auto y = pos.y() / e->global_scale;
-					thiz->n->pos.x() += x;
-					thiz->n->pos.y() += y;
-					e->x += x;
-					e->y += y;
-				}
+				auto e = thiz->event_receiver->element;
+				auto x = pos.x() / e->global_scale;
+				auto y = pos.y() / e->global_scale;
+				thiz->n->pos.x() += x;
+				thiz->n->pos.y() += y;
+				e->x += x;
+				e->y += y;
 			}
 
 		}, new_mail_p(this));
@@ -436,22 +433,22 @@ int main(int argc, char **args)
 					e_text_type->add_component(c_text);
 				}
 
-				auto e_layout = Entity::create();
-				e_node->add_child(e_layout);
+				auto e_content = Entity::create();
+				e_node->add_child(e_content);
 				{
-					e_layout->add_component(cElement::create());
+					e_content->add_component(cElement::create());
 
 					auto c_aligner = cAligner::create();
 					c_aligner->width_policy = SizeGreedy;
-					e_layout->add_component(c_aligner);
+					e_content->add_component(c_aligner);
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutHorizontal;
 					c_layout->item_padding = 16.f;
-					e_layout->add_component(c_layout);
+					e_content->add_component(c_layout);
 
 					auto e_left = Entity::create();
-					e_layout->add_child(e_left);
+					e_content->add_child(e_left);
 					{
 						e_left->add_component(cElement::create());
 
@@ -504,7 +501,7 @@ int main(int argc, char **args)
 					}
 
 					auto e_right = Entity::create();
-					e_layout->add_child(e_right);
+					e_content->add_child(e_right);
 					{
 						e_right->add_component(cElement::create());
 

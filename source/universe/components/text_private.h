@@ -10,7 +10,7 @@ namespace flame
 
 		cTextPrivate(graphics::FontAtlas* font_atlas);
 		~cTextPrivate();
-		void on_add_to_parent();
+		void on_added();
 		void update();
 	};
 }

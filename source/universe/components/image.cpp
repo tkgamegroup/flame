@@ -17,7 +17,7 @@ namespace flame
 			border = Vec4f(0.f);
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -25,13 +25,16 @@ namespace flame
 
 		void update()
 		{
-			auto padding = element->inner_padding * element->global_scale;
-			auto pos = Vec2f(element->global_x, element->global_y) + Vec2f(padding[0], padding[1]);
-			auto size = Vec2f(element->global_width - padding[0] - padding[2], element->global_height - padding[1] - padding[3]);
-			if (!stretch)
-				element->canvas->add_image(pos, size, id, uv0, uv1);
-			else
-				element->canvas->add_image_stretch(pos, size, id, border);
+			if (!element->cliped)
+			{
+				auto padding = element->inner_padding * element->global_scale;
+				auto pos = Vec2f(element->global_x, element->global_y) + Vec2f(padding[0], padding[1]);
+				auto size = Vec2f(element->global_width - padding[0] - padding[2], element->global_height - padding[1] - padding[3]);
+				if (!stretch)
+					element->canvas->add_image(pos, size, id, uv0, uv1);
+				else
+					element->canvas->add_image_stretch(pos, size, id, border);
+			}
 		}
 	};
 
@@ -39,9 +42,9 @@ namespace flame
 	{
 	}
 
-	void cImage::on_add_to_parent()
+	void cImage::on_added()
 	{
-		((cImagePrivate*)this)->on_add_to_parent();
+		((cImagePrivate*)this)->on_added();
 	}
 
 	void cImage::update()

@@ -26,7 +26,7 @@ namespace flame
 			focusing = false;
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -45,9 +45,9 @@ namespace flame
 			event_dispatcher->hovering = nullptr;
 	}
 
-	void cEventReceiver::on_add_to_parent()
+	void cEventReceiver::on_added()
 	{
-		((cEventReceiverPrivate*)this)->on_add_to_parent();
+		((cEventReceiverPrivate*)this)->on_added();
 	}
 
 	void cEventReceiver::update()

@@ -28,7 +28,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cText() override;
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_add_to_parent() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
 
 		FLAME_UNIVERSE_EXPORTS const std::wstring& text() const;
 		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);

@@ -542,6 +542,7 @@ int main(int argc, char** args)
 
 	
 	auto e_menubar = Entity::create();
+	app.root->add_child(e_menubar);
 	{
 		auto c_element = cElement::create();
 		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -557,7 +558,6 @@ int main(int argc, char** args)
 		c_layout->item_padding = 4.f;
 		e_menubar->add_component(c_layout);
 	}
-	app.root->add_child(e_menubar);
 
 	{
 		{

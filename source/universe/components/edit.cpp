@@ -26,7 +26,7 @@ namespace flame
 			event_receiver->remove_key_listener(key_listener);
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -94,13 +94,13 @@ namespace flame
 
 		void update()
 		{
-			if (event_receiver->focusing && (int(app_total_time() * 2.f) % 2 == 0))
+			if (!element->cliped && event_receiver->focusing && (int(app_total_time() * 2.f) % 2 == 0))
 			{
 				auto text_scale = text->sdf_scale * element->global_scale;
 				element->canvas->add_text(text->font_atlas, Vec2f(element->global_x, element->global_y) +
 					Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
 					Vec2f(text->font_atlas->get_text_width(std::wstring_view(text->text().c_str(), cursor)) * text_scale, 0.f),
-					alpha_mul(text->color, element->alpha), L"|", text_scale);
+					alpha_mul(text->color, element->alpha), L"|", text_scale, element->p_element->scissor);
 			}
 		}
 	};
@@ -109,9 +109,9 @@ namespace flame
 	{
 	}
 
-	void cEdit::on_add_to_parent()
+	void cEdit::on_added()
 	{
-		((cEditPrivate*)this)->on_add_to_parent();
+		((cEditPrivate*)this)->on_added();
 	}
 
 	void cEdit::update()

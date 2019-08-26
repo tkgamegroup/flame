@@ -16,7 +16,7 @@ namespace flame
 			height_fit_children = true;
 		}
 
-		void on_add_to_parent()
+		void on_added()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -303,9 +303,9 @@ namespace flame
 	{
 	}
 
-	void cLayout::on_add_to_parent()
+	void cLayout::on_added()
 	{
-		((cLayoutPrivate*)this)->on_add_to_parent();
+		((cLayoutPrivate*)this)->on_added();
 	}
 
 	void cLayout::update()
