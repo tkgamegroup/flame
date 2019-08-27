@@ -419,60 +419,6 @@ namespace flame
 		w_target()->scroll_offset$ += v * 20.f;
 	}
 
-	void sizedrag_extra_draw$(Element::ExtraDrawParm& p)
-	{
-		auto thiz = (wSizeDragPtr)p.thiz();
-		p.canvas()->add_triangle_filled(
-			(thiz->pos$ + Vec2(thiz->size$.x, 0.f)) * p.scl() + p.off(),
-			(thiz->pos$ + Vec2(0.f, thiz->size$.y)) * p.scl() + p.off(),
-			(thiz->pos$ + Vec2(thiz->size$)) * p.scl() + p.off(),
-			thiz->background_col$);
-	}
-
-	void sizedrag_mouse_event$(Element::MouseListenerParm & p)
-	{
-		if (!p.is_move())
-			return;
-
-		auto thiz = (wSizeDragPtr)p.thiz();
-		if (thiz == thiz->ui->dragging_element())
-		{
-			auto changed = false;
-			auto target = thiz->w_target();
-			auto d = p.value() / thiz->parent->scale$;
-			auto new_size = target->size$;
-
-			if (new_size.x + d.x > thiz->min_size().x)
-			{
-				new_size.x += d.x;
-				changed = true;
-			}
-			if (new_size.y + d.y > thiz->min_size().y)
-			{
-				new_size.y += d.y;
-				changed = true;
-			}
-
-			if (changed)
-				target->set_size(new_size);
-		}
-	}
-
-	void wSizeDrag::init(Element * target)
-	{
-		w_target() = target;
-		min_size() = Vec2(0.f);
-
-		size$ = Vec2(10.f);
-		background_col$ = Bvec4(140, 225, 15, 128);
-		align$ = AlignRightBottomNoPadding;
-
-		draw_default$ = false;
-		extra_draws$.push_back(Function<ExtraDrawParm>(sizedrag_extra_draw$, {}));
-		styles$.push_back(Style(0, 0, Style::background_color(ui->default_button_col, ui->default_button_col_hovering, ui->default_button_col_active)));
-		mouse_listeners$.push_back(Function<MouseListenerParm>(sizedrag_mouse_event$, {}));
-	}
-
 	void splitter_mouse_event$(Element::MouseListenerParm& p)
 	{
 		if (!p.is_move())

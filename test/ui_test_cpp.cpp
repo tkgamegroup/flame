@@ -937,13 +937,24 @@ int main(int argc, char** args)
 		{
 			e_tree_node->add_component(cElement::create());
 
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->item_padding = 4.f;
+			e_tree_node->add_component(c_layout);
+		}
+
+		auto e_btn = Entity::create();
+		e_tree_node->add_child(e_btn);
+		{
+			e_btn->add_component(cElement::create());
+
 			auto c_text = cText::create(app.font_atlas_pixel);
 			c_text->set_text(L"A");
-			e_tree_node->add_component(c_text);
+			e_btn->add_component(c_text);
 		}
 
 		auto e_sub_tree = Entity::create();
-		e_tree->add_child(e_sub_tree);
+		e_tree_node->add_child(e_sub_tree);
 		{
 			auto c_element = cElement::create();
 			c_element->inner_padding = Vec4f(18.f, 0.f, 0.f, 0.f);
@@ -963,7 +974,7 @@ int main(int argc, char** args)
 				e->visible = !e->visible;
 			}
 		}, new_mail_p(e_sub_tree));
-		e_tree_node->add_component(c_event_receiver);
+		e_btn->add_component(c_event_receiver);
 
 		{
 			auto e_tree_node = Entity::create();

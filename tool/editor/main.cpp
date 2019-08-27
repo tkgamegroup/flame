@@ -340,6 +340,42 @@ int main(int argc, char **args)
 				c_aligner->width_policy = SizeFitLayout;
 				e_title->add_component(c_aligner);
 			}
+
+			auto e_size_dragger = Entity::create();
+			e_window->add_child(e_size_dragger);
+			{
+				auto c_element = cElement::create();
+				c_element->width = 10.f;
+				c_element->height = 10.f;
+				c_element->background_color = Vec4c(200, 100, 100, 255);
+				e_size_dragger->add_component(c_element);
+
+				auto c_aligner = cAligner::create();
+				c_aligner->x_align = AlignxRight;
+				c_aligner->y_align = AlignyBottom;
+				e_size_dragger->add_component(c_aligner);
+
+				auto c_event_receiver = cEventReceiver::create();
+				{
+					struct Data
+					{
+						cEventReceiver* er;
+						Entity* w;
+					}data;
+					data.er = c_event_receiver;
+					data.w = e_window;
+					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+						auto data = (Data*)c;
+						if (is_mouse_move(action, key) && data->er->dragging)
+						{
+							auto element = (cElement*)data->w->find_component(cH("Element"));
+							element->width += pos.x();
+							element->height += pos.y();
+						}
+					}, new_mail(&data));
+				}
+				e_size_dragger->add_component(c_event_receiver);
+			}
 		}
 
 		for (auto i = 0; i < app.bp->node_count(); i++)
