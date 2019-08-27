@@ -15,6 +15,8 @@ namespace flame
 			event_receiver = nullptr;
 
 			checked = false;
+
+			mouse_listener = nullptr;
 		}
 
 		~cCheckboxPrivate()

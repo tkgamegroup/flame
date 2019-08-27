@@ -19,6 +19,8 @@ namespace flame
 			event_receiver = nullptr;
 
 			cursor = 0;
+
+			key_listener = nullptr;
 		}
 
 		~cEditPrivate()

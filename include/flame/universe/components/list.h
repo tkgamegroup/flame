@@ -6,13 +6,13 @@ namespace flame
 {
 	struct cElement;
 	struct cEventReceiver;
-	struct cStyleBgCol;
+	struct cStyleBackgroundColor;
 	struct cList;
 
 	struct cListItem : Component
 	{
 		cEventReceiver* event_receiver;
-		cStyleBgCol* style;
+		cStyleBackgroundColor* style;
 		cList* list;
 
 		Vec4c unselected_color_normal;

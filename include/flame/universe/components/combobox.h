@@ -7,7 +7,7 @@ namespace flame
 	struct cElement;
 	struct cText;
 	struct cEventReceiver;
-	struct cStyleBgCol;
+	struct cStyleBackgroundColor;
 	struct cMenuButton;
 	struct cCombobox;
 
@@ -15,7 +15,7 @@ namespace flame
 	{
 		cText* text;
 		cEventReceiver* event_receiver;
-		cStyleBgCol* style;
+		cStyleBackgroundColor* style;
 		cCombobox* combobox;
 
 		Vec4c unselected_color_normal;

@@ -25,6 +25,8 @@ namespace flame
 			toggled_color_normal = default_style.button_color_normal;
 			toggled_color_hovering = default_style.button_color_hovering;
 			toggled_color_active = default_style.button_color_active;
+
+			mouse_listener = nullptr;
 		}
 
 		~cTogglePrivate()
@@ -38,7 +40,7 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			style = (cStyleBgCol*)(entity->find_component(cH("StyleBgCol")));
+			style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_clicked(action, key))
@@ -56,15 +58,15 @@ namespace flame
 			{
 				if (!toggled)
 				{
-					style->col_normal = untoggled_color_normal;
-					style->col_hovering = untoggled_color_hovering;
-					style->col_active = untoggled_color_active;
+					style->color_normal = untoggled_color_normal;
+					style->color_hovering = untoggled_color_hovering;
+					style->color_active = untoggled_color_active;
 				}
 				else
 				{
-					style->col_normal = toggled_color_normal;
-					style->col_hovering = toggled_color_hovering;
-					style->col_active = toggled_color_active;
+					style->color_normal = toggled_color_normal;
+					style->color_hovering = toggled_color_hovering;
+					style->color_active = toggled_color_active;
 				}
 			}
 		}

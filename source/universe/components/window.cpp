@@ -10,10 +10,11 @@ namespace flame
 
 		std::vector<std::unique_ptr<Closure<void(void* c)>>> pos_listeners;
 
-		cWindowPrivate() :
-			mouse_listener(nullptr)
+		cWindowPrivate()
 		{
 			event_receiver = nullptr;
+
+			mouse_listener = nullptr;
 		}
 
 		~cWindowPrivate()

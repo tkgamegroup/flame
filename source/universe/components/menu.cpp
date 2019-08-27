@@ -8,6 +8,8 @@ namespace flame
 {
 	struct cMenuButtonPrivate : cMenuButton
 	{
+		void* mouse_listener;
+
 		cMenuButtonPrivate()
 		{
 			element = nullptr;
@@ -20,6 +22,13 @@ namespace flame
 			topmost_penetrable = false;
 
 			opened = false;
+
+			mouse_listener = nullptr;
+		}
+
+		~cMenuButtonPrivate()
+		{
+			event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -30,7 +39,7 @@ namespace flame
 
 			if (event_receiver)
 			{
-				event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					auto thiz = *(cMenuButtonPrivate**)c;
 					if ((is_mouse_down(action, key, true) && key == Mouse_Left) || (thiz->move_to_open && is_mouse_move(action, key) && get_topmost()))
 						thiz->open();

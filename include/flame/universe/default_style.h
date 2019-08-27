@@ -8,7 +8,7 @@ namespace flame
 	struct DefaultStyle
 	{
 		Vec4c text_color_normal;
-		Vec4c text_color_hovering_or_active;
+		Vec4c text_color_else;
 		Vec4c window_color;
 		Vec4c frame_color_normal;
 		Vec4c frame_color_hovering;

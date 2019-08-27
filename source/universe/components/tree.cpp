@@ -1,6 +1,8 @@
 #include <flame/universe/default_style.h>
 #include <flame/universe/utils.h>
 #include <flame/universe/components/element.h>
+#include <flame/graphics/font.h>
+#include <flame/universe/components/text.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/event_receiver.h>
@@ -9,16 +11,15 @@
 
 namespace flame
 {
-	struct cTreeNodePrivate : cTreeNode
+	struct cTreeLeafPrivate : cTreeLeaf
 	{
 		void* mouse_listener;
 
-		cTreeNodePrivate()
+		cTreeLeafPrivate()
 		{
-			text = nullptr;
-			event_receiver = nullptr;
 			style = nullptr;
-			combobox = nullptr;
+			event_receiver = nullptr;
+			tree = nullptr;
 
 			unselected_color_normal = default_style.frame_color_normal;
 			unselected_color_hovering = default_style.frame_color_hovering;
@@ -26,31 +27,42 @@ namespace flame
 			selected_color_normal = default_style.header_color_normal;
 			selected_color_hovering = default_style.header_color_hovering;
 			selected_color_active = default_style.header_color_active;
+
+			mouse_listener = nullptr;
 		}
 
-		void on_added()
+		~cTreeLeafPrivate()
 		{
-			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text);
+			event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void start()
+		{
+			style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			style = (cStyleBgCol*)(entity->find_component(cH("StyleBgCol")));
+			auto p = entity->parent();
+			while (p)
+			{
+				tree = (cTree*)p->find_component(cH("Tree"));
+				if (tree)
+					break;
+				p = p->parent();
+			}
+			assert(tree);
 
 			if (style)
 			{
-				unselected_color_normal = style->col_normal;
-				unselected_color_hovering = style->col_hovering;
-				unselected_color_active = style->col_active;
+				unselected_color_normal = style->color_normal;
+				unselected_color_hovering = style->color_hovering;
+				unselected_color_active = style->color_active;
 			}
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					auto thiz = *(cComboboxItemPrivate**)c;
-					auto combobox = thiz->combobox;
-					combobox->select = thiz->entity;
-					combobox->text->set_text(thiz->text->text());
-					destroy_topmost();
+					auto thiz = *(cTreeLeafPrivate**)c;
+					thiz->tree->select = thiz->entity;
 				}
 			}, new_mail_p(this));
 		}
@@ -59,17 +71,135 @@ namespace flame
 		{
 			if (style)
 			{
-				if (combobox->select == entity)
+				if (tree->select == entity)
 				{
-					style->col_normal = selected_color_normal;
-					style->col_hovering = selected_color_hovering;
-					style->col_active = selected_color_active;
+					style->color_normal = selected_color_normal;
+					style->color_hovering = selected_color_hovering;
+					style->color_active = selected_color_active;
 				}
 				else
 				{
-					style->col_normal = unselected_color_normal;
-					style->col_hovering = unselected_color_hovering;
-					style->col_active = unselected_color_active;
+					style->color_normal = unselected_color_normal;
+					style->color_hovering = unselected_color_hovering;
+					style->color_active = unselected_color_active;
+				}
+			}
+		}
+	};
+
+	cTreeLeaf::~cTreeLeaf()
+	{
+		((cTreeLeafPrivate*)this)->~cTreeLeafPrivate();
+	}
+
+	void cTreeLeaf::start()
+	{
+		((cTreeLeafPrivate*)this)->start();
+	}
+
+	void cTreeLeaf::update()
+	{
+		((cTreeLeafPrivate*)this)->update();
+	}
+
+	cTreeLeaf* cTreeLeaf::create()
+	{
+		return new cTreeLeafPrivate();
+	}
+
+	struct cTreeNodePrivate : cTreeNode
+	{
+		void* title_mouse_listener;
+		void* arrow_mouse_listener;
+
+		cTreeNodePrivate()
+		{
+			title_style = nullptr;
+			title_event_receiver = nullptr;
+			arrow_text = nullptr;
+			arrow_event_receiver = nullptr;
+			tree = nullptr;
+
+			unselected_color_normal = default_style.frame_color_normal;
+			unselected_color_hovering = default_style.frame_color_hovering;
+			unselected_color_active = default_style.frame_color_active;
+			selected_color_normal = default_style.header_color_normal;
+			selected_color_hovering = default_style.header_color_hovering;
+			selected_color_active = default_style.header_color_active;
+
+			title_mouse_listener = nullptr;
+			arrow_mouse_listener = nullptr;
+		}
+
+		~cTreeNodePrivate()
+		{
+			title_event_receiver->remove_mouse_listener(title_mouse_listener);
+			arrow_event_receiver->remove_mouse_listener(arrow_mouse_listener);
+		}
+
+		void start()
+		{
+			auto e_title = entity->child(0);
+			auto e_arrow = e_title->child(0);
+
+			title_style = (cStyleBackgroundColor*)(e_title->find_component(cH("StyleBackgroundColor")));
+			title_event_receiver = (cEventReceiver*)(e_title->find_component(cH("EventReceiver")));
+			assert(title_event_receiver);
+			arrow_text = (cText*)(e_arrow->find_component(cH("Text")));
+			assert(arrow_text);
+			arrow_event_receiver = (cEventReceiver*)(e_arrow->find_component(cH("EventReceiver")));
+			assert(arrow_event_receiver);
+			auto p = entity->parent();
+			while (p)
+			{
+				tree = (cTree*)p->find_component(cH("Tree"));
+				if (tree)
+					break;
+				p = p->parent();
+			}
+			assert(tree);
+
+			if (title_style)
+			{
+				unselected_color_normal = title_style->color_normal;
+				unselected_color_hovering = title_style->color_hovering;
+				unselected_color_active = title_style->color_active;
+			}
+
+			title_mouse_listener = title_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					auto thiz = *(cTreeNodePrivate**)c;
+					thiz->tree->select = thiz->entity;
+				}
+			}, new_mail_p(this));
+
+			arrow_mouse_listener = arrow_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					auto thiz = *(cTreeNodePrivate**)c;
+					auto e = thiz->entity->child(1);
+					e->visible = !e->visible;
+					thiz->arrow_text->set_text(e->visible ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
+				}
+			}, new_mail_p(this));
+		}
+
+		void update()
+		{
+			if (title_style)
+			{
+				if (tree->select == entity)
+				{
+					title_style->color_normal = selected_color_normal;
+					title_style->color_hovering = selected_color_hovering;
+					title_style->color_active = selected_color_active;
+				}
+				else
+				{
+					title_style->color_normal = unselected_color_normal;
+					title_style->color_hovering = unselected_color_hovering;
+					title_style->color_active = unselected_color_active;
 				}
 			}
 		}
@@ -77,12 +207,12 @@ namespace flame
 
 	cTreeNode::~cTreeNode()
 	{
-		((cTreeNodePrivate*)this)->~cComboboxItemPrivate();
+		((cTreeNodePrivate*)this)->~cTreeNodePrivate();
 	}
 
-	void cTreeNode::on_added()
+	void cTreeNode::start()
 	{
-		((cTreeNodePrivate*)this)->on_added();
+		((cTreeNodePrivate*)this)->start();
 	}
 
 	void cTreeNode::update()
@@ -105,16 +235,8 @@ namespace flame
 		{
 		}
 
-		void on_added()
+		void start()
 		{
-			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text && !text->auto_size);
-			menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
-			assert(menu_button);
-
-			auto menu = menu_button->menu;
-			for (auto i = 0; i < menu->child_count(); i++)
-				((cComboboxItem*)(menu->child(i)->find_component(cH("ComboboxItem"))))->combobox = this;
 		}
 	};
 
@@ -123,9 +245,9 @@ namespace flame
 		((cTreePrivate*)this)->~cTreePrivate();
 	}
 
-	void cTree::on_added()
+	void cTree::start()
 	{
-		((cTreePrivate*)this)->on_added();
+		((cTreePrivate*)this)->start();
 	}
 
 	void cTree::update()

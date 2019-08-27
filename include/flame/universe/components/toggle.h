@@ -6,13 +6,13 @@ namespace flame
 {
 	struct cElement;
 	struct cEventReceiver;
-	struct cStyleBgCol;
+	struct cStyleBackgroundColor;
 
 	struct cToggle : Component
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
-		cStyleBgCol* style;
+		cStyleBackgroundColor* style;
 
 		bool toggled;
 
