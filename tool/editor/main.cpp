@@ -610,7 +610,6 @@ int main(int argc, char **args)
 				"  update - update this blueprint\n"
 				"  save - save this blueprint\n"
 				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first\n"
-				"  gui-browser - use the power of browser to show and edit\n"
 			);
 		}
 		else if (s_command_line == "show")
@@ -866,53 +865,6 @@ int main(int argc, char **args)
 			}
 			else
 				printf("bp.graph.txt not found\n");
-		}
-		else if (s_command_line == "gui-browser")
-		{
-			auto curr_path = get_curr_path();
-			//exec(L"file:///" + *get_curr_path().p + L"/bp.html", L"", false);
-			delete_mail(curr_path);
-			printf("waiting for browser on port 5566 ...");
-
-			app.server = OneClientServer::create(SocketWeb, 5566, 100, [](void* c, const std::string& str) {
-				auto app = *(App * *)c;
-
-				auto req = SerializableNode::create_from_json_string(str);
-				auto type = req->find_attr("type")->value();
-
-				if (type == "get")
-				{
-					auto filename = s2w(req->find_attr("filename")->value());
-					if (filename == L"bp")
-						filename = app->filename;
-					auto file = base64_encode(get_file_string(filename));
-					auto res = SerializableNode::create("");
-					res->new_node("filename")->set_value(w2s(filename));
-					res->new_node("data")->set_value(file);
-					auto str = SerializableNode::to_json_string(res);
-					app->server->send(str.p->size(), str.p->data());
-					delete_mail(str);
-					SerializableNode::destroy(res);
-				}
-				else if (type == "update")
-				{
-					auto what = req->find_attr("what")->value();
-
-					if (what == "set_data")
-						app->set_data(req->find_attr("address")->value(), req->find_attr("value")->value());
-				}
-
-				SerializableNode::destroy(req);
-			}, new_mail(&papp));
-			if (!app.server)
-				printf("  timeout\n");
-			else
-			{
-				printf("  ok\nbrowser: working\n");
-
-				wait_event(app.server->ev_closed, -1);
-				printf("browser: closed\n");
-			}
 		}
 		else
 			printf("unknow command\n");

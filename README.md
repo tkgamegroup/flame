@@ -47,5 +47,3 @@ A lightweight and powerful 3D Game Engine.
 - cmake flame
   
 - enjoy
-
-![image](https://github.com/tkgamegroup/flame/blob/master/screenshots/bp.gif)

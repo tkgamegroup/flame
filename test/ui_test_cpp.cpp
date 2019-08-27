@@ -1011,9 +1011,6 @@ int main(int argc, char** args)
 		}
 	}
 
-	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
-	//w_sizedrag->min_size() = Vec2f(100.f);
-
 	app_run([](void* c) {
 		auto app = (*(App**)c);
 		app->run();
