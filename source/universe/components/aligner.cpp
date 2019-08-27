@@ -18,7 +18,7 @@ namespace flame
 			height_policy = SizeFixed;
 		}
 
-		void on_added()
+		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -37,9 +37,9 @@ namespace flame
 	{
 	}
 
-	void cAligner::on_added()
+	void cAligner::start()
 	{
-		((cAlignerPrivate*)this)->on_added();
+		((cAlignerPrivate*)this)->start();
 	}
 
 	void cAligner::update()

@@ -22,7 +22,7 @@ namespace flame
 			opened = false;
 		}
 
-		void on_added()
+		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -90,9 +90,9 @@ namespace flame
 	{
 	}
 
-	void cMenuButton::on_added()
+	void cMenuButton::start()
 	{
-		((cMenuButtonPrivate*)this)->on_added();
+		((cMenuButtonPrivate*)this)->start();
 	}
 
 	void cMenuButton::update()

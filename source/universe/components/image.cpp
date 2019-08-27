@@ -17,7 +17,7 @@ namespace flame
 			border = Vec4f(0.f);
 		}
 
-		void on_added()
+		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -42,9 +42,9 @@ namespace flame
 	{
 	}
 
-	void cImage::on_added()
+	void cImage::start()
 	{
-		((cImagePrivate*)this)->on_added();
+		((cImagePrivate*)this)->start();
 	}
 
 	void cImage::update()

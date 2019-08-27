@@ -39,12 +39,21 @@ namespace flame
 			global_height = 0.f;
 		}
 
-		void on_added()
+		void on_entity_added_to_parent()
 		{
 			auto e = entity->parent();
 			if (e)
 				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
-			if (!canvas && p_element)
+			else
+				p_element = nullptr;
+		}
+
+		void start()
+		{
+			auto e = entity->parent();
+			if (e)
+				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
+			if (p_element)
 				canvas = p_element->canvas;
 		}
 
@@ -66,7 +75,7 @@ namespace flame
 			global_height = height * global_scale;
 
 			cliped = false;
-			if (draw && canvas)
+			if (draw)
 			{
 				auto p = Vec2f(global_x, global_y);
 				auto s = Vec2f(global_width, global_height);
@@ -107,8 +116,7 @@ namespace flame
 			}
 			else
 				scissor = p_element->scissor;
-			if (canvas)
-				canvas->set_scissor(scissor);
+			canvas->set_scissor(scissor);
 		}
 	};
 
@@ -116,9 +124,14 @@ namespace flame
 	{
 	}
 
-	void cElement::on_added()
+	void cElement::on_entity_added_to_parent()
 	{
-		((cElementPrivate*)this)->on_added();
+		((cElementPrivate*)this)->on_entity_added_to_parent();
+	}
+
+	void cElement::start()
+	{
+		((cElementPrivate*)this)->start();
 	}
 
 	void cElement::update()

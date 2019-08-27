@@ -5,15 +5,15 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
-#include <flame/universe/components/combobox.h>
+#include <flame/universe/components/tree.h>
 
 namespace flame
 {
-	struct cComboboxItemPrivate : cComboboxItem
+	struct cTreeNodePrivate : cTreeNode
 	{
 		void* mouse_listener;
 
-		cComboboxItemPrivate()
+		cTreeNodePrivate()
 		{
 			text = nullptr;
 			event_receiver = nullptr;
@@ -28,7 +28,7 @@ namespace flame
 			selected_color_active = default_style.header_color_active;
 		}
 
-		void start()
+		void on_added()
 		{
 			text = (cText*)(entity->find_component(cH("Text")));
 			assert(text);
@@ -75,37 +75,37 @@ namespace flame
 		}
 	};
 
-	cComboboxItem::~cComboboxItem()
+	cTreeNode::~cTreeNode()
 	{
-		((cComboboxItemPrivate*)this)->~cComboboxItemPrivate();
+		((cTreeNodePrivate*)this)->~cComboboxItemPrivate();
 	}
 
-	void cComboboxItem::start()
+	void cTreeNode::on_added()
 	{
-		((cComboboxItemPrivate*)this)->start();
+		((cTreeNodePrivate*)this)->on_added();
 	}
 
-	void cComboboxItem::update()
+	void cTreeNode::update()
 	{
-		((cComboboxItemPrivate*)this)->update();
+		((cTreeNodePrivate*)this)->update();
 	}
 
-	cComboboxItem* cComboboxItem::create()
+	cTreeNode* cTreeNode::create()
 	{
-		return new cComboboxItemPrivate();
+		return new cTreeNodePrivate();
 	}
 
-	struct cComboboxPrivate : cCombobox
+	struct cTreePrivate : cTree
 	{
-		cComboboxPrivate()
+		cTreePrivate()
 		{
 		}
 
-		~cComboboxPrivate()
+		~cTreePrivate()
 		{
 		}
 
-		void start()
+		void on_added()
 		{
 			text = (cText*)(entity->find_component(cH("Text")));
 			assert(text && !text->auto_size);
@@ -118,22 +118,22 @@ namespace flame
 		}
 	};
 
-	cCombobox::~cCombobox()
+	cTree::~cTree()
 	{
-		((cComboboxPrivate*)this)->~cComboboxPrivate();
+		((cTreePrivate*)this)->~cTreePrivate();
 	}
 
-	void cCombobox::start()
+	void cTree::on_added()
 	{
-		((cComboboxPrivate*)this)->start();
+		((cTreePrivate*)this)->on_added();
 	}
 
-	void cCombobox::update()
+	void cTree::update()
 	{
 	}
 
-	cCombobox* cCombobox::create()
+	cTree* cTree::create()
 	{
-		return new cComboboxPrivate;
+		return new cTreePrivate;
 	}
 }

@@ -21,17 +21,11 @@ namespace flame
 	{
 	}
 
-	void cTextPrivate::on_added()
+	void cTextPrivate::start()
 	{
 		element = (cElement*)(entity->find_component(cH("Element")));
 		assert(element);
-		assert(element->p_element);
-	}
-
-	void cTextPrivate::on_other_added(Component* c)
-	{
-		if (c->type_hash == cH("Aligner"))
-			aligner = (cAligner*)c;
+		aligner = (cAligner*)(entity->find_component(cH("Aligner")));
 	}
 
 	void cTextPrivate::update()
@@ -55,14 +49,9 @@ namespace flame
 		((cTextPrivate*)this)->~cTextPrivate();
 	}
 
-	void cText::on_added()
+	void cText::start()
 	{
-		((cTextPrivate*)this)->on_added();
-	}
-
-	void cText::on_other_added(Component* c)
-	{
-		((cTextPrivate*)this)->on_other_added(c);
+		((cTextPrivate*)this)->start();
 	}
 
 	const std::wstring& cText::text() const

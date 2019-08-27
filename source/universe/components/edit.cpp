@@ -26,7 +26,7 @@ namespace flame
 			event_receiver->remove_key_listener(key_listener);
 		}
 
-		void on_added()
+		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -109,9 +109,9 @@ namespace flame
 	{
 	}
 
-	void cEdit::on_added()
+	void cEdit::start()
 	{
-		((cEditPrivate*)this)->on_added();
+		((cEditPrivate*)this)->start();
 	}
 
 	void cEdit::update()

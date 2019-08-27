@@ -349,7 +349,7 @@ int main(int argc, char** args)
 	auto e_popup_menu = Entity::create();
 
 	{
-		auto c_element = cElement::create(app.canvas);
+		auto c_element = cElement::create();
 		c_element->background_color = Vec4c(0, 0, 0, 255);
 		e_popup_menu->add_component(c_element);
 
@@ -411,7 +411,7 @@ int main(int argc, char** args)
 
 				auto e_menu = Entity::create();
 				{
-					e_menu->add_component(cElement::create(app.canvas));
+					e_menu->add_component(cElement::create());
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
@@ -498,7 +498,7 @@ int main(int argc, char** args)
 
 				auto e_menu = Entity::create();
 				{
-					e_menu->add_component(cElement::create(app.canvas));
+					e_menu->add_component(cElement::create());
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
@@ -622,7 +622,7 @@ int main(int argc, char** args)
 
 				auto e_menu = Entity::create();
 				{
-					auto c_element = cElement::create(app.canvas);
+					auto c_element = cElement::create();
 					c_element->background_color = Vec4c(0, 0, 0, 255);
 					e_menu->add_component(c_element);
 
@@ -692,7 +692,7 @@ int main(int argc, char** args)
 
 				auto e_menu = Entity::create();
 				{
-					auto c_element = cElement::create(app.canvas);
+					auto c_element = cElement::create();
 					c_element->background_color = Vec4c(0, 0, 0, 255);
 					e_menu->add_component(c_element);
 
@@ -766,7 +766,7 @@ int main(int argc, char** args)
 
 				auto e_menu = Entity::create();
 				{
-					auto c_element = cElement::create(app.canvas);
+					auto c_element = cElement::create();
 					c_element->background_color = Vec4c(0, 0, 0, 255);
 					e_menu->add_component(c_element);
 
@@ -831,7 +831,6 @@ int main(int argc, char** args)
 		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
 		c_element->background_frame_color = Vec4c(255);
 		c_element->background_frame_thickness = 2.f;
-
 		e_combobox->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_pixel);
@@ -842,7 +841,7 @@ int main(int argc, char** args)
 
 		auto e_menu = Entity::create();
 		{
-			auto c_element = cElement::create(app.canvas);
+			auto c_element = cElement::create();
 			c_element->background_color = Vec4c(0, 0, 0, 255);
 			e_menu->add_component(c_element);
 
@@ -946,11 +945,25 @@ int main(int argc, char** args)
 		auto e_btn = Entity::create();
 		e_tree_node->add_child(e_btn);
 		{
-			e_btn->add_component(cElement::create());
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(4.f + app.font_atlas_pixel->pixel_height, 2.f, 4.f, 2.f);
+			e_btn->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_pixel);
 			c_text->set_text(L"A");
 			e_btn->add_component(c_text);
+
+			auto e_arrow = Entity::create();
+			e_btn->add_child(e_arrow);
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
+				e_arrow->add_component(c_element);
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(Icon_ANGLE_DOWN);
+				e_arrow->add_component(c_text);
+			}
 		}
 
 		auto e_sub_tree = Entity::create();

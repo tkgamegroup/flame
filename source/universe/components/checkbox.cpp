@@ -22,7 +22,7 @@ namespace flame
 			event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
-		void on_added()
+		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -62,9 +62,9 @@ namespace flame
 		((cCheckboxPrivate*)this)->~cCheckboxPrivate();
 	}
 
-	void cCheckbox::on_added()
+	void cCheckbox::start()
 	{
-		((cCheckboxPrivate*)this)->on_added();
+		((cCheckboxPrivate*)this)->start();
 	}
 
 	void cCheckbox::update()

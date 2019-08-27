@@ -21,7 +21,7 @@ namespace flame
 			event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
-		void on_added() 
+		void start()
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
@@ -48,9 +48,9 @@ namespace flame
 		((cWindowPrivate*)this)->~cWindowPrivate();
 	}
 
-	void cWindow::on_added()
+	void cWindow::start()
 	{
-		((cWindowPrivate*)this)->on_added();
+		((cWindowPrivate*)this)->start();
 	}
 
 	void cWindow::update() 

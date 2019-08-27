@@ -20,6 +20,8 @@ namespace flame
 
 			visible = true;
 			global_visible = false;
+
+			first_update = true;
 		}
 
 		Component* find_component(uint type_hash)
@@ -46,10 +48,7 @@ namespace flame
 		void add_component(Component* c)
 		{
 			c->entity = this;
-			for (auto& _c : components)
-				_c->on_other_added(c);
 			components.emplace_back(c);
-			c->on_added();
 		}
 
 		EntityPrivate* find_child(const std::string& name) const
@@ -66,6 +65,8 @@ namespace flame
 		{
 			children.emplace_back(e);
 			e->parent = this;
+			for (auto& c : e->components)
+				c->on_entity_added_to_parent();
 		}
 
 		void remove_child(EntityPrivate* e)
@@ -146,6 +147,12 @@ namespace flame
 				global_visible = visible && parent->global_visible;
 			if (!global_visible)
 				return;
+			if (first_update)
+			{
+				first_update = false;
+				for (auto& c : components)
+					c->start();
+			}
 			for (auto& c : components)
 				c->update();
 			for (auto& e : children)

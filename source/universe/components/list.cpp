@@ -23,7 +23,7 @@ namespace flame
 			selected_color_active = default_style.header_color_active;
 		}
 
-		void on_added()
+		void start()
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
@@ -72,9 +72,9 @@ namespace flame
 		((cListItemPrivate*)this)->~cListItemPrivate();
 	}
 
-	void cListItem::on_added()
+	void cListItem::start()
 	{
-		((cListItemPrivate*)this)->on_added();
+		((cListItemPrivate*)this)->start();
 	}
 
 	void cListItem::update()

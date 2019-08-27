@@ -26,7 +26,7 @@ namespace flame
 			focusing = false;
 		}
 
-		void on_added()
+		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -45,9 +45,9 @@ namespace flame
 			event_dispatcher->hovering = nullptr;
 	}
 
-	void cEventReceiver::on_added()
+	void cEventReceiver::start()
 	{
-		((cEventReceiverPrivate*)this)->on_added();
+		((cEventReceiverPrivate*)this)->start();
 	}
 
 	void cEventReceiver::update()

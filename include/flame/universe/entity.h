@@ -14,6 +14,8 @@ namespace flame
 		bool visible;
 		bool global_visible;
 
+		bool first_update;
+
 		FLAME_UNIVERSE_EXPORTS const std::string& name() const;
 		FLAME_UNIVERSE_EXPORTS void set_name(const std::string& name) const;
 
