@@ -49,31 +49,6 @@ namespace flame
 			children_2$[i]->remove_animations();
 	}
 
-	void Element::on_focus(FocusType type, int is_keyfocus)
-	{
-		for (auto i = 0; i < focus_listeners$.size; i++)
-		{
-			auto& f = focus_listeners$[i];
-			auto& p = (FoucusListenerParm&)f.p;
-			p.thiz() = this;
-			p.type() = type;
-			p.is_keyfocus() = is_keyfocus;
-			f.exec();
-		}
-	}
-
-	void Element::on_drop(Element * src)
-	{
-		for (auto i = 0; i < drop_listeners$.size; i++)
-		{
-			auto& f = drop_listeners$[i];
-			auto& p = (DropListenerParm&)f.p;
-			p.thiz() = this;
-			p.src() = src;
-			f.exec();
-		}
-	}
-
 	void Element::create_from_typeinfo(UI * ui, int font_atlas_index, VariableInfo * info, void* p, Element * dst)
 	{
 		switch (info->tag())
@@ -539,9 +514,6 @@ namespace flame
 		mouse_listeners$.push_back(Function<MouseListenerParm>(splitter_mouse_event$, {}));
 	}
 
-	FLAME_PACKAGE_BEGIN_1(TreenodeTitleStyleData, wTreePtr, tree, p)
-	FLAME_PACKAGE_END_1
-
 	void treenode_title_style$(StyleParm& p)
 	{
 		auto e = p.e();
@@ -552,9 +524,6 @@ namespace flame
 			e->background_col$ = Bvec4(0);
 		p.out_active() = 1;
 	}
-
-	FLAME_PACKAGE_BEGIN_1(TreenodeTitleMouseEventData, wTreePtr, tree, p)
-	FLAME_PACKAGE_END_1
 
 	void treenode_title_mouse_event$(Element::MouseListenerParm& p)
 	{
@@ -571,18 +540,11 @@ namespace flame
 		if (!p.is_clicked())
 			return;
 
-		auto treenode = (wTreeNodePtr)(p.thiz()->parent);
-		auto v = !treenode->w_items()->visible$;
-		treenode->w_items()->set_visibility(v);
 		treenode->w_larrow()->text$ = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
 	}
 
 	void wTreeNode::init(int font_atlas_index, const wchar_t* title, wTree * tree)
 	{
-		wLayout::init();
-
-		layout_type$ = LayoutVertical;
-
 		w_title() = createT<wText>(ui, font_atlas_index);
 		w_title()->inner_padding$[0] = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.8f : 0.f;
 		w_title()->inner_padding$ += Vec4(4.f, 2.f, 4.f, 2.f);
@@ -611,25 +573,11 @@ namespace flame
 		add_child(w_larrow(), 1);
 	}
 
-	void wTree::init()
-	{
-		wLayout::init();
-
-		w_sel() = nullptr;
-
-		layout_type$ = LayoutVertical;
-	}
-
 	void dialog_mouse_event$(Element::MouseListenerParm& p)
 	{
 		auto thiz = (wDialogPtr)p.thiz();
 		if (p.is_down() && p.key() == Mouse_Left)
 			thiz->set_to_foreground();
-		else if (p.action() == KeyStateNull && p.key() == Mouse_Null)
-		{
-			if (thiz == thiz->ui->dragging_element())
-				thiz->pos$ += p.value() / thiz->parent->scale$;
-		}
 	}
 
 	void wDialog::init(bool resize, bool modual)

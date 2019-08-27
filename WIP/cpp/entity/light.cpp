@@ -69,9 +69,4 @@ namespace flame
 		attribute_dirty_frame = total_frame_count;
 		broadcast(this, MessageToggleShaodw);
 	}
-
-	long long LightComponent::get_attribute_dirty_frame() const
-	{
-		return attribute_dirty_frame;
-	}
 }

@@ -318,12 +318,17 @@ int main(int argc, char **args)
 			c_bp->bp = app.bp;
 			e_window->add_component(c_bp);
 
+			e_window->add_component(cEventReceiver::create());
+
+			e_window->add_component(cWindow::create());
+
 			e_window->add_component(cLayout::create());
 
 			auto e_title = Entity::create();
 			e_window->add_child(e_title);
 			{
 				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f);
 				c_element->background_color = Vec4c(200, 100, 100, 255);
 				e_title->add_component(c_element);
 

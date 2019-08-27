@@ -461,11 +461,6 @@ namespace flame
 		quat_dirty = false;
 	}
 
-	long long Node::get_transform_dirty_frame()
-	{
-		return transform_dirty_frame;
-	}
-
 	void Node::update()
 	{
 		for (auto &c : children)

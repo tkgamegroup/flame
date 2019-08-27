@@ -20,9 +20,6 @@ namespace flame
 	struct Sky
 	{
 		SkyType type;
-
-		Sky(SkyType _type);
-		virtual ~Sky() {}
 	};
 
 	struct SkyAtmosphereScattering : Sky
@@ -38,15 +35,10 @@ namespace flame
 		Node *node;
 		LightComponent *sun_light;
 		float sun_power = 1.f;
-
-		SkyAtmosphereScattering(Scene *_scene);
-		virtual ~SkyAtmosphereScattering();
 	};
 
 	struct SkyPanorama : Sky
 	{
 		std::shared_ptr<Texture> panoImage;
-
-		SkyPanorama();
 	};
 }

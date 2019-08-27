@@ -69,22 +69,6 @@ namespace flame
 		//	}
 		//};
 
-		//struct wSlot : Widget
-		//{
-		//	void init(int _io, blueprint::Slot *_slot)
-		//	{
-		//		size = Vec2(share_data.font_atlas->pixel_height);
-
-		//		add_draw_command([](CommonData *d) {
-		//			auto c = (Canvas*)d[0].p;
-		//			auto off = Vec2::from(d[1].f);
-		//			auto scl = d[2].f[0];
-		//			auto thiz = (wSlot*)d[3].p;
-
-		//			c->add_circle_filled_LT(thiz->pos * scl + off, thiz->size.x * scl, Colorf(1.f, 1.f, 0.f));
-		//		}, "p", this);
-		//	}
-
 		//struct BP_Node_Drawdata : Dtor
 		//{
 
@@ -308,28 +292,12 @@ namespace flame
 		//	}
 		//};
 
-		//static Vec2 get_slot_pos(wSlot *ws)
-		//{
-		//	if (ws->showed)
-		//		return ws->global_pos + ws->size * 0.5f * ws->global_scale;
-		//	auto dialog = ((BP_Node_Drawdata*)ws->slot()->node()->user_data)->w_dialog;
-		//	if (ws->io() == 0)
-		//		return dialog->global_pos + Vec2(0.f, dialog->w_title()->size.y) * dialog->global_scale;
-		//	else
-		//		return dialog->global_pos + Vec2(dialog->w_title()->size) * dialog->global_scale;
-		//	return Vec2(0.f);
-		//}
-
 		//inline BP_Scene_Draw_Private::BP_Scene_Draw_Private(Instance *_ui, blueprint::Scene *_s) :
 		//	ui(_ui),
 		//	s(_s)
 		//{
 		//	sel = 0;
 
-		//	w_scene = wLayout::create(ui);
-		//	w_scene->event_attitude = EventBlackHole;
-
-		//	w_scene->remove_draw_command(0);
 		//	w_scene->add_draw_command([](CommonData *d) {
 		//		auto c = (Canvas*)d[0].p;
 		//		auto off = Vec2::from(d[1].f);
@@ -351,19 +319,6 @@ namespace flame
 		//			auto p4 = Vec2(thiz->w_scene->instance()->mouse_pos);
 		//			c->add_bezier(p1, p1 +
 		//				Vec2(50.f * ((dw->io() == 0) ? -1.f : 1.f), 0.f) * thiz->w_scene->global_scale, p4, p4, Colorf(1.f, 1.f, 0.f), 3.f * thiz->w_scene->global_scale);
-		//		}
-
-		//		for (auto i = 0; i < thiz->s->link_count(); i++)
-		//		{
-		//			auto l = thiz->s->link(i);
-
-		//			auto w_o = (wSlot*)l->out_slot->user_data;
-		//			auto w_i = (wSlot*)l->in_slot->user_data;
-		//			auto po = get_slot_pos(w_o);
-		//			auto pi = get_slot_pos(w_i);
-
-		//			c->add_bezier(pi, pi + Vec2(-50.f, 0.f) * thiz->w_scene->global_scale, po + Vec2(50.f, 0.f) * thiz->w_scene->global_scale, po,
-		//				Colorf(1.f, 1.f, thiz->sel == l ? 0.f : 1.f), 3.f * thiz->w_scene->global_scale);
 		//		}
 		//	}, "p", this);
 
@@ -463,16 +418,6 @@ namespace flame
 		//			break;
 		//		}
 		//	}, "p", this);
-		//}
-
-		//void BP_Scene_Draw::get_sel(SelType &type, void **v) const
-		//{
-		//	((BP_Scene_Draw_Private*)this)->get_sel(type, v);
-		//}
-
-		//void BP_Scene_Draw::set_sel(SelType type, void *v)
-		//{
-		//	((BP_Scene_Draw_Private*)this)->set_sel(type, v);
 		//}
 	}
 }

@@ -828,9 +828,9 @@ int main(int argc, char** args)
 		auto c_element = cElement::create();
 		c_element->width = 108.f;
 		c_element->height = app.font_atlas_pixel->pixel_height + 4.f;
+		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
 		c_element->background_frame_color = Vec4c(255);
 		c_element->background_frame_thickness = 2.f;
-		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
 
 		e_combobox->add_component(c_element);
 
@@ -916,21 +916,92 @@ int main(int argc, char** args)
 		}
 	}
 
+	auto e_tree = Entity::create();
+	e_layout_right->add_child(e_tree);
+	{
+		auto c_element = cElement::create();
+		c_element->inner_padding = Vec4f(4.f);
+		c_element->background_frame_color = Vec4c(255);
+		c_element->background_frame_thickness = 2.f;
+		e_tree->add_component(c_element);
+
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutVertical;
+		c_layout->item_padding = 4.f;
+		e_tree->add_component(c_layout);
+	}
+
+	{
+		auto e_tree_node = Entity::create();
+		e_tree->add_child(e_tree_node);
+		{
+			e_tree_node->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_pixel);
+			c_text->set_text(L"A");
+			e_tree_node->add_component(c_text);
+		}
+
+		auto e_sub_tree = Entity::create();
+		e_tree->add_child(e_sub_tree);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(18.f, 0.f, 0.f, 0.f);
+			e_sub_tree->add_component(c_element);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->item_padding = 4.f;
+			e_sub_tree->add_component(c_layout);
+		}
+
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			{
+				auto e = *(Entity**)c;
+				e->visible = !e->visible;
+			}
+		}, new_mail_p(e_sub_tree));
+		e_tree_node->add_component(c_event_receiver);
+
+		{
+			auto e_tree_node = Entity::create();
+			e_sub_tree->add_child(e_tree_node);
+			{
+				e_tree_node->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"C");
+				e_tree_node->add_component(c_text);
+			}
+		}
+		{
+			auto e_tree_node = Entity::create();
+			e_sub_tree->add_child(e_tree_node);
+			{
+				e_tree_node->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"D");
+				e_tree_node->add_component(c_text);
+			}
+		}
+	}
+	{
+		auto e_tree_node = Entity::create();
+		e_tree->add_child(e_tree_node);
+		{
+			e_tree_node->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_pixel);
+			c_text->set_text(L"B");
+			e_tree_node->add_component(c_text);
+		}
+	}
+
 	//auto w_sizedrag = Element::createT<wSizeDrag>(ui, w_list);
 	//w_sizedrag->min_size() = Vec2f(100.f);
-
-	//auto w_treenode1 = Element::createT<wTreeNode>(ui, font_atlas_index, L"A");
-	//w_treenode1->pos$ = Vec2f(800.f, 400.f);
-
-	//auto w_treenode2 = Element::createT<wTreeNode>(ui, font_atlas_index, L"B");
-	//auto w_treenode3 = Element::createT<wTreeNode>(ui, font_atlas_index, L"C");
-	//auto w_treenode4 = Element::createT<wTreeNode>(ui, font_atlas_index, L"D");
-
-	//w_treenode1->w_items()->add_child(w_treenode2);
-	//w_treenode1->w_items()->add_child(w_treenode3);
-	//w_treenode3->w_items()->add_child(w_treenode4);
-
-	//layout->add_child(w_treenode1, 1);
 
 	app_run([](void* c) {
 		auto app = (*(App**)c);

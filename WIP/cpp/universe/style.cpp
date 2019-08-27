@@ -5,17 +5,6 @@ using namespace flame;
 
 namespace flame
 {
-	Style::Style() :
-		closet_id$(0)
-	{
-	}
-
-	Style::Style(int closet_id, const Function<StyleParm>& f) :
-		closet_id$(closet_id)
-		f$(f)
-	{
-	}
-
 	FLAME_PACKAGE_BEGIN_2(StyleBackgroundOffsetData, Vec4, active_offset, f4, Vec4, else_offset, f4)
 	FLAME_PACKAGE_END_2
 

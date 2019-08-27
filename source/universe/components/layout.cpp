@@ -26,12 +26,14 @@ namespace flame
 		void update()
 		{
 			std::vector<std::pair<cElement*, cAligner*>> als;
-			als.resize(entity->child_count());
 			for (auto i = 0; i < entity->child_count(); i++)
 			{
-				auto al = (cAligner*)entity->child(i)->find_component(cH("Aligner"));
-				als[i].first = al ? al->element : (cElement*)entity->child(i)->find_component(cH("Element"));
-				als[i].second = al;
+				auto e = entity->child(i);
+				if (e->global_visible)
+				{
+					auto al = (cAligner*)e->find_component(cH("Aligner"));
+					als.emplace_back(al ? al->element : (cElement*)entity->child(i)->find_component(cH("Element")), al);
+				}
 			}
 
 			switch (type)

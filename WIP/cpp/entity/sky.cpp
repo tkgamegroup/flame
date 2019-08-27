@@ -20,11 +20,6 @@ namespace flame
 		}
 	}
 
-	Sky::Sky(SkyType _type)
-		:type(_type)
-	{
-	}
-
 	SkyAtmosphereScattering::SkyAtmosphereScattering(Scene *_scene) :
 		Sky(SkyTypeAtmosphereScattering), 
 		scene(_scene)
@@ -40,10 +35,5 @@ namespace flame
 	SkyAtmosphereScattering::~SkyAtmosphereScattering()
 	{
 		scene->remove_child(node);
-	}
-
-	SkyPanorama::SkyPanorama() :
-		Sky(SkyTypePanorama)
-	{
 	}
 }

@@ -32,8 +32,5 @@ namespace flame
 		//float floatingTime = 0.f;
 
 		int instance_index;
-	public:
-		virtual void serialize(XMLNode *dst) override;
-		virtual void unserialize(XMLNode *src) override;
 	};
 }

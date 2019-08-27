@@ -1,19 +1,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
-#include <flame/graphics/framebuffer.h>
-#include <flame/graphics/shader.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/descriptor.h>
-#include "ui_private.h"
-
 namespace flame
 {
-	UIPrivate::UIPrivate(graphics::Canvas* _canvas, Window * w)
-	{
-		auto w_debug = Element::createT<wDebug>(this);
-		root_->add_child(w_debug, 1);
-	}
-
 	inline void UIPrivate::set_hovering_element(Element * w)
 	{
 		if (w == hovering_element_)
@@ -35,11 +23,6 @@ namespace flame
 			focus_element_->on_focus(Focus_Gain, 0);
 		set_key_focus_element(w);
 	}
-
-	struct _Package
-	{
-		Rect curr_scissor;
-	};
 
 	void UIPrivate::preprocessing(void* __p, Element * w, bool visible, const Vec2 & off, float scl)
 	{
@@ -64,21 +47,6 @@ namespace flame
 		}
 	}
 
-	void UIPrivate::show_children(void* __p, Element * w, const Array<Element*> & children, bool visible, const Vec2 & off, float scl)
-	{
-		if (w->clip$)
-		{
-			p.curr_scissor = Rect(Vec2(0.f), w->size$ * w->global_scale) + w->global_pos;
-			canvas->set_scissor(p.curr_scissor);
-		}
-
-		if (w->clip$)
-		{
-			p.curr_scissor = Rect(Vec2(0.f), p.surface_size);
-			canvas->set_scissor(p.curr_scissor);
-		}
-	}
-
 	void UIPrivate::show(void* __p, Element * e, bool visible, const Vec2 & off, float scl)
 	{
 		for (auto i_a = 0; i_a < e->animations$.size; )
@@ -99,23 +67,6 @@ namespace flame
 				a.f$.exec();
 				i_a++;
 			}
-		}
-
-		if (visible && ((e->size$.x == 0.f && e->size$.y == 0.f) || (Rect(Vec2(0.f), e->size$ * e->global_scale) + e->global_pos).overlapping(p.curr_scissor)))
-			e->on_draw(canvas, off + p.show_off, scl);
-	}
-
-	void UIPrivate::postprocessing(Element * w)
-	{
-		if (w->flag == Element::FlagNeedToRemoveFromParent)
-		{
-			w->remove_from_parent();
-			return;
-		}
-		if (w->flag == Element::FlagNeedToTakeFromParent)
-		{
-			w->take_from_parent();
-			w->flag = Element::FlagNull;
 		}
 	}
 

@@ -499,22 +499,6 @@ namespace flame
 		}
 	}
 
-	Scene*create_scene(const std::string &filename)
-	{
-		std::filesystem::path path(filename);
-		if (!std::filesystem::exists(filename))
-			return nullptr;
-
-		auto s = new Scene;
-		s->set_filename(filename);
-
-		auto xml = flame::load_xml("scene", filename);
-		_load_node(xml, s);
-		flame::release_xml(xml);
-
-		return s;
-	}
-
 	static void _save_node(XMLNode *dst, Node *src)
 	{
 		for (auto &c : src->get_components())
@@ -556,12 +540,5 @@ namespace flame
 			dst->children.emplace_back(n);
 			_save_node(n, c.get());
 		}
-	}
-
-	void save_scene(Scene *src)
-	{
-		XMLDoc xml("scene");
-		_save_node(&xml, src);
-		save_xml(&xml, src->get_filename());
 	}
 }

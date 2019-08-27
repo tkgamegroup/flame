@@ -4,10 +4,6 @@ namespace flame
 {
 	namespace _3d
 	{
-		inline ModelPrivate::ModelPrivate()
-		{
-		}
-
 		inline void ModelPrivate::add_plane(const Vec3 &pos, const Vec3 &vx, const Vec3 &vz)
 		{
 			Primitive p;
@@ -36,26 +32,6 @@ namespace flame
 				add_plane(pos + vy + vz, vx, -vy);
 			if (side & AxisNegativeZ)
 				add_plane(pos + vx + vy, -vx, -vy);
-		}
-
-		void Model::add_plane(const Vec3 &pos, const Vec3 &vx, const Vec3 &vz)
-		{
-			((ModelPrivate*)this)->add_plane(pos, vx, vz);
-		}
-
-		void Model::add_cube(const Vec3 &pos, const Vec3 &vx, const Vec3 &vz, float height, int side)
-		{
-			((ModelPrivate*)this)->add_cube(pos, vx, vz, height, side);
-		}
-
-		Model *Model::create()
-		{
-			return new ModelPrivate;
-		}
-
-		void Model::destroy(Model *m)
-		{
-
 		}
 	}
 }

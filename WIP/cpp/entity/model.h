@@ -103,23 +103,6 @@ namespace flame
 
 		glm::vec3 eye_position = glm::vec3(0.f);
 
-		void add_vertex_position_normal(const glm::vec3 &position, const glm::vec3 &normal);
-
-		const char *get_uv_use_name(UV *uv) const;
-		void create_geometry_aux();
-		void create_uv();
-		void remove_uv(UV *uv);
-		void assign_uv_to_geometry(UV *uv);
-		void assign_uv_to_bake(UV *uv);
-
-		void set_state_animation(ModelStateAnimationKind kind, std::shared_ptr<AnimationBinding> b);
-
-		Bone *new_bone();
-		void remove_bone(Bone *b);
-
-		BoneIK *new_bone_ik();
-		void remove_bone_ik(BoneIK *b);
-
 #if FLAME_ENABLE_PHYSICS != 0
 		Rigidbody *new_rigidbody();
 		void remove_rigidbody(Rigidbody *r);
