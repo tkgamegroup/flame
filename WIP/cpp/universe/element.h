@@ -1,38 +1,10 @@
-#include <flame/foundation/foundation.h>
-#include <flame/graphics/canvas.h>
-#include <flame/universe/universe.h>
-#include <flame/universe/style.h>
-#include <flame/universe/animation.h>
-
 namespace flame
 {
-	struct VariableInfo;
-	struct SerializableNode;
-
-	struct UI;
-
-	struct Element;
-	typedef Element* ElementPtr;
-
 	struct Element
 	{
-		enum Flag
-		{
-			FlagNull,
-			FlagJustCreated,
-			FlagNeedToRemoveFromParent,
-			FlagNeedToTakeFromParent
-		};
-
-		bool cliped; // valid after arranging by parent
-		int content_size; // valid after arranging
-
 		Array<Animation> animations$;
 
 		FLAME_PACKAGE_BEGIN_3(FoucusListenerParm, ElementPtr, thiz, p, FocusType, type, i1, int, is_keyfocus, i1)
-		FLAME_PACKAGE_END_3
-
-		FLAME_PACKAGE_BEGIN_3(KeyListenerParm, ElementPtr, thiz, p, KeyState, action, i1, int, value, i1)
 		FLAME_PACKAGE_END_3
 
 		FLAME_PACKAGE_BEGIN_2(DropListenerParm, ElementPtr, thiz, p, ElementPtr, src, p)
@@ -41,53 +13,8 @@ namespace flame
 		FLAME_PACKAGE_BEGIN_1(ChangedListenerParm, ElementPtr, thiz, p)
 		FLAME_PACKAGE_END_1
 
-		enum ChildOp
-		{
-			ChildAdd,
-			ChildRemove
-		};
-		FLAME_PACKAGE_BEGIN_3(ChildListenerParm, ElementPtr, thiz, p, ChildOp, op, i1, ElementPtr, src, p)
-		FLAME_PACKAGE_END_3
-
-		FLAME_UNIVERSE_EXPORTS Element(UI* ui);
-		FLAME_UNIVERSE_EXPORTS ~Element();
-
-		FLAME_UNIVERSE_EXPORTS void add_child(Element* w, int layer = 0, int pos = -1, bool modual = false);
-		FLAME_UNIVERSE_EXPORTS void remove_child(int layer, int idx, bool delay = false);
-		FLAME_UNIVERSE_EXPORTS void take_child(int layer, int idx, bool delay = false);
-		FLAME_UNIVERSE_EXPORTS void clear_children(int layer, int begin, int end, bool delay = false);
-		FLAME_UNIVERSE_EXPORTS void take_children(int layer, int begin, int end, bool delay = false);
-		FLAME_UNIVERSE_EXPORTS void remove_from_parent(bool delay = false);
-		FLAME_UNIVERSE_EXPORTS void take_from_parent(bool delay = false);
-
-		FLAME_UNIVERSE_EXPORTS float get_content_size() const;
-
-		FLAME_UNIVERSE_EXPORTS void remove_animations();
-
-		FLAME_UNIVERSE_EXPORTS void on_draw(graphics::Canvas* c, const Vec2& off, float scl);
-		FLAME_UNIVERSE_EXPORTS void on_focus(FocusType type, int is_keyfocus);
-
 		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VariableInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
 	};
-
-	FLAME_ELEMENT_BEGIN_0(wMenuItem, wText)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title);
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_5(wMenu, wLayout, bool, sub, i1, bool, opened, i1, wTextPtr, w_title, p, wTextPtr, w_rarrow, p, wLayoutPtr, w_items, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title, bool only_for_context_menu = false);
-		FLAME_UNIVERSE_EXPORTS void open();
-		FLAME_UNIVERSE_EXPORTS void close();
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_0(wMenuBar, wLayout)
-		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_3(wCombo, wMenu, int, sel, i1, voidptr, enum_info, p, voidptr, target, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, void* enum_info = nullptr, void* target = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_sel(int idx, bool from_inner = false);
-	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wScrollbar, wLayout, wButtonPtr, w_btn, p, ElementPtr, w_target, p)
 		FLAME_UNIVERSE_EXPORTS void init(Element* target);
@@ -100,19 +27,6 @@ namespace flame
 
 	FLAME_ELEMENT_BEGIN_3(wSplitter, Element, int, dir /* 0, else = hori, vert */, i1, ElementPtr, w_target1, p, ElementPtr, w_target2, p)
 		FLAME_UNIVERSE_EXPORTS void init(int dir, Element* target1, Element* target2);
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_2(wList, wLayout, wListItemPtr, w_sel, p, wScrollbarPtr, w_scrollbar, p)
-		FLAME_UNIVERSE_EXPORTS void init();
-	FLAME_ELEMENT_END
-
-	struct wTree;
-	FLAME_ELEMENT_BEGIN_3(wTreeNode, wLayout, wTextPtr, w_title, p, wLayoutPtr, w_items, p, wTextPtr, w_larrow, p)
-		FLAME_UNIVERSE_EXPORTS void init(int font_atlas_index, const wchar_t* title, wTree* tree = nullptr);
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_1(wTree, wLayout, wTreeNodePtr, w_sel, p)
-		FLAME_UNIVERSE_EXPORTS void init();
 	FLAME_ELEMENT_END
 
 	FLAME_ELEMENT_BEGIN_2(wDialog, wLayout, wScrollbarPtr, w_scrollbar, p, wSizeDragPtr, w_sizedrag, p)

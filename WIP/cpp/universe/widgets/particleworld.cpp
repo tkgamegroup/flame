@@ -27,11 +27,6 @@ struct ParticleWorld : UI::Widget
 		ui->set_cursor_pos(off + pos);
 		ui->image(img_idx, size);
 	}
-
-	virtual void show_in_editor() override
-	{
-
-	}
 };
 
 UI::Widget *create(graphics::Device *d, UI::Instance *ui)
@@ -45,21 +40,6 @@ UI::Widget *create(graphics::Device *d, UI::Instance *ui)
 	return w;
 }
 
-void destroy(UI::Widget *w)
-{
-	delete w;
-}
-
-str get_name()
-{
-	return t_name;
-}
-
-int get_BP_inputslot_count()
-{
-	return 1;
-}
-
 void get_BP_inputslot_data(int index, str &name, blueprint::InputslotType &type)
 {
 	switch (index)
@@ -69,23 +49,6 @@ void get_BP_inputslot_data(int index, str &name, blueprint::InputslotType &type)
 		type = blueprint::InputslotLink;
 		break;
 	}
-}
-
-int get_BP_outputslot_count()
-{
-	return 0;
-}
-
-void get_BP_outputslot_data(int index, str &name)
-{
-	switch (index)
-	{
-	}
-}
-
-void bp_update(float elapsed_time, void *ptr, blueprint::Node *n)
-{
-
 }
 
 extern "C" _declspec(dllexport) UI::WidgetTypeInfo *init()

@@ -18,9 +18,8 @@ namespace flame
 		ControllerStateTurnRight = 1 << 7
 	};
 
-	class ControllerComponent : public Component
+	class ControllerComponent
 	{
-	private:
 		ControllerState state = ControllerStateStand;
 		float ang_offset = 0.f;
 		float speed = 1.f;

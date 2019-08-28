@@ -1,35 +1,10 @@
-#include <flame/foundation/serialize.h>
-#include <flame/graphics/font.h>
-#include <flame/universe/icon.h>
-#include <flame/universe/element.h>
-#include "ui_private.h"
-
 namespace flame
 {
-	const Vec2 hidden_pos(9999.f);
-
-	Element::Element(UI* ui) :
-		ui(ui)
+	Element::Element(UI* ui)
 	{
 		grid_hori_count$ = 1;
-		clip$ = false;
 
 		scroll_offset$ = 0.f;
-
-		want_key_focus$ = false;
-
-		cliped = false;
-		content_size = 0.f;
-		state = StateNormal;
-
-		flag = FlagNull;
-	}
-
-	const auto scroll_spare_spacing = 20.f;
-
-	float Element::get_content_size() const
-	{
-		return content_size + scroll_spare_spacing;
 	}
 
 	void Element::remove_animations()
@@ -458,65 +433,6 @@ namespace flame
 			size_policy_hori$ = SizeFitLayout;
 
 		mouse_listeners$.push_back(Function<MouseListenerParm>(splitter_mouse_event$, {}));
-	}
-
-	void treenode_title_style$(StyleParm& p)
-	{
-		auto e = p.e();
-		auto tree = p.get_capture<TreenodeTitleStyleData>().tree();
-		if (tree->w_sel() && tree->w_sel()->w_title() == e)
-			e->background_col$ = e->ui->default_header_col;
-		else
-			e->background_col$ = Bvec4(0);
-		p.out_active() = 1;
-	}
-
-	void treenode_title_mouse_event$(Element::MouseListenerParm& p)
-	{
-		auto treenode = (wTreeNodePtr)(p.thiz()->parent);
-		auto tree = p.get_capture<TreenodeTitleMouseEventData>().tree();
-		if (p.is_down() && p.key() == Mouse_Left)
-			tree->w_sel() = treenode;
-		else if (p.is_double_clicked())
-			treenode->w_larrow()->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2(0.f));
-	}
-
-	void treenode_larrow_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		treenode->w_larrow()->text$ = v ? Icon_CARET_DOWN : Icon_CARET_RIGHT;
-	}
-
-	void wTreeNode::init(int font_atlas_index, const wchar_t* title, wTree * tree)
-	{
-		w_title() = createT<wText>(ui, font_atlas_index);
-		w_title()->inner_padding$[0] = font_atlas_index >= 0 ? ui->canvas()->get_font_atlas(font_atlas_index)->pixel_height * 0.8f : 0.f;
-		w_title()->inner_padding$ += Vec4(4.f, 2.f, 4.f, 2.f);
-		w_title()->text$ = title;
-		w_title()->styles$.push_back(Style(0, 0, Style::text_color(ui->default_text_col, ui->default_text_col_hovering_or_active)));
-		if (tree)
-		{
-			w_title()->styles$.push_back(Style(0, 1, Function<StyleParm>(treenode_title_style$, { tree })));
-			w_title()->mouse_listeners$.push_back(Function<MouseListenerParm>(treenode_title_mouse_event$, { tree }));
-		}
-		add_child(w_title());
-
-		w_items() = createT<wLayout>(ui, LayoutVertical);
-		w_items()->layout_padding$ = w_title()->inner_padding$[0];
-		w_items()->visible$ = false;
-		add_child(w_items());
-
-		w_larrow() = createT<wText>(ui, font_atlas_index);
-		w_larrow()->inner_padding$ = Vec4(4.f, 4.f, 0.f, 0.f);
-		w_larrow()->background_col$ = Bvec4(255, 255, 255, 0);
-		w_larrow()->align$ = AlignLeftTopNoPadding;
-		w_larrow()->set_size(Vec2(w_title()->inner_padding$[0], w_title()->size$.y));
-		w_larrow()->text$ = Icon_CARET_RIGHT;
-		w_larrow()->styles$.push_back(Style(0, 0, Style::text_color(ui->default_text_col, ui->default_text_col_hovering_or_active)));
-		w_larrow()->mouse_listeners$.push_back(Function<MouseListenerParm>(treenode_larrow_mouse_event$, {}));
-		add_child(w_larrow(), 1);
 	}
 
 	void dialog_mouse_event$(Element::MouseListenerParm& p)

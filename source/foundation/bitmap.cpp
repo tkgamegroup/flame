@@ -126,7 +126,7 @@ namespace flame
 		auto file = get_file_content(filename);
 
 		int cx, cy, cz, channel;
-		auto data = stbi_load_gif_from_memory((unsigned char*)file.first.get(), file.second, nullptr, &cx, &cy, &cz, &channel, 4);
+		auto data = stbi_load_gif_from_memory((uchar*)file.first.get(), file.second, nullptr, &cx, &cy, &cz, &channel, 4);
 		stbi_image_free(data);
 
 		return nullptr;
@@ -136,5 +136,43 @@ namespace flame
 	{
 		delete[]b->data;
 		delete b;
+	}
+
+	Bitmap* texture_bin_pack(const std::vector<Bitmap*>& textures)
+	{
+		struct Element
+		{
+			Vec2i pos;
+			Bitmap* b;
+		};
+		std::vector<Element> elements;
+		for (auto& t : textures)
+		{
+			Element e;
+			e.pos = Vec2u(-1);
+			e.b = t;
+			elements.push_back(e);
+		}
+		std::sort(elements.begin(), elements.end(), [](const Element& a, const Element& b) {
+			return max(a.b->size.x(), a.b->size.y()) > max(b.b->size.x(), b.b->size.y());
+		});
+
+		auto w = 512, h = 512;
+		struct Node
+		{
+			Vec2u size;
+			std::unique_ptr<Node> right;
+			std::unique_ptr<Node> bottom;
+		};
+		auto tree = new Node;
+		tree->size.x() = w;
+		tree->size.y() = h;
+
+		for (auto& e : elements)
+		{
+
+		}
+
+		return nullptr;
 	}
 }

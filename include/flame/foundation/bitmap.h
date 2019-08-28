@@ -43,4 +43,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_gif(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Bitmap* b);
 	};
+
+	FLAME_FOUNDATION_EXPORTS Bitmap* texture_bin_pack(const std::vector<Bitmap*>& textures);
 }
