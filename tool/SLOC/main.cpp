@@ -1,7 +1,6 @@
-#include <vector>
-#include <iterator>
-
 #include <flame/foundation/foundation.h>
+
+#include <iterator>
 
 using namespace flame;
 

@@ -7,14 +7,14 @@ namespace flame
 	struct Bitmap
 	{
 		Vec2u size;
-		int channel;
-		int bpp;
-		bool sRGB;
-		int pitch;
-		unsigned char* data;
-		int data_size;
+		uint channel;
+		uint bpp;
+		bool srgb;
+		uint pitch;
+		uchar* data;
+		uint data_size;
 
-		static int get_pitch(int line_bytes)
+		static uint get_pitch(uint line_bytes)
 		{
 			auto p = line_bytes;
 			if (p % 4 == 0)
@@ -22,7 +22,7 @@ namespace flame
 			return p + 4 - p % 4;
 		}
 
-		static int get_pitch(int cx, int bpp)
+		static uint get_pitch(uint cx, uint bpp)
 		{
 			return get_pitch(cx * (bpp / 8));
 		}
@@ -33,16 +33,15 @@ namespace flame
 		}
 
 		FLAME_FOUNDATION_EXPORTS void add_alpha_channel();
-		FLAME_FOUNDATION_EXPORTS void swap_channel(int ch1, int ch2);
-		FLAME_FOUNDATION_EXPORTS void copy_to(Bitmap* b, const Vec2u& src_off, const Vec2u& cpy_size, const Vec2u& dst_off);
-
-		FLAME_FOUNDATION_EXPORTS void save(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS void swap_channel(uint ch1, uint ch2);
+		FLAME_FOUNDATION_EXPORTS void copy_to(Bitmap* b, const Vec2u& src_off, const Vec2u& cpy_size, const Vec2u& dst_off, bool border = false);
 
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const Vec2u& size, int channel, int bpp, unsigned char* data = nullptr, bool data_owner = false);
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_gif(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static void save_to_file(Bitmap* b, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Bitmap* b);
 	};
 
-	FLAME_FOUNDATION_EXPORTS Bitmap* texture_bin_pack(const std::vector<Bitmap*>& textures);
+	FLAME_FOUNDATION_EXPORTS Mail<std::pair<Bitmap*, std::vector<std::pair<std::string, Vec4u>>>> bin_pack(const std::vector<std::pair<Bitmap*, std::string>>& textures);
 }

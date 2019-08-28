@@ -56,11 +56,6 @@ namespace flame
 
 			std::vector<ObjData> obj_data;
 		};
-
-		PlainRenderer();
-		void render(Framebuffer *framebuffer, bool clear, CameraComponent *camera, DrawData *data);
-		void do_render(CommandBuffer *cb, CameraComponent *camera, DrawData *data);
-		void add_to_drawlist();
 	};
 
 	struct LinesRenderer
@@ -82,10 +77,6 @@ namespace flame
 			Buffer *vertex_buffer;
 			int vertex_count;
 		};
-
-		LinesRenderer();
-		void render(Framebuffer *framebuffer, bool clear, CameraComponent *camera, DrawData *data);
-		void add_to_drawlist();
 	};
 
 	enum { MaxLightCount = 256 };
@@ -161,13 +152,6 @@ namespace flame
 		Resource resource;
 
 		std::shared_ptr<Framebuffer> framebuffer;
-
-		virtual bool on_message(Object *sender, Message msg) override;
-
-		DeferredRenderer(bool _enable_shadow, DisplayLayer *_dst);
-		~DeferredRenderer();
-		void render(Scene *scene, CameraComponent *camera);
-		void add_to_drawlist();
 
 	private:
 		void create_resolution_related();

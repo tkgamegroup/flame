@@ -631,6 +631,39 @@ namespace flame
 	}
 
 	template<uint N, class T>
+	bool operator<=(T lhs, const Vec<N, T>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs > rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator<=(const Vec<N, T>& lhs, T rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] > rhs)
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T, class U>
+	bool operator<=(const Vec<N, T>& lhs, const Vec<N, U>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] > rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
 	bool operator>(T lhs, const Vec<N, T>& rhs)
 	{
 		for (auto i = 0; i < N; i++)
@@ -658,6 +691,39 @@ namespace flame
 		for (auto i = 0; i < N; i++)
 		{
 			if (lhs[i] <= rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator>=(T lhs, const Vec<N, T>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs < rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T>
+	bool operator>=(const Vec<N, T>& lhs, T rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] < rhs)
+				return false;
+		}
+		return true;
+	}
+
+	template<uint N, class T, class U>
+	bool operator>=(const Vec<N, T>& lhs, const Vec<N, U>& rhs)
+	{
+		for (auto i = 0; i < N; i++)
+		{
+			if (lhs[i] < rhs[i])
 				return false;
 		}
 		return true;
