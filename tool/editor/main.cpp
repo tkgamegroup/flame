@@ -10,7 +10,6 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/default_style.h>
-#include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_dispatcher.h>
@@ -40,7 +39,7 @@ struct cBP : Component
 	{
 	}
 
-	virtual void on_added() override
+	virtual void start() override
 	{
 		element = (cElement*)(entity->find_component(cH("Element")));
 		assert(element);
@@ -229,7 +228,6 @@ struct App
 	}
 
 }app;
-auto papp = &app;
 
 int main(int argc, char **args)
 {
