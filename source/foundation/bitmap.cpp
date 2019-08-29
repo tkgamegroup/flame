@@ -53,29 +53,30 @@ namespace flame
 	{
 		assert(bpp / channel == 8);
 		assert(channel == b->channel && bpp == b->bpp);
-		assert(src_off + cpy_size < size + (border ? 2U : 0U));
+		assert(src_off + cpy_size <= size);
+		assert(_dst_off + cpy_size <= b->size + (border ? 2U : 0U));
 
 		auto dst_off = _dst_off + (border ? 1U : 0U);
 		for (auto i = 0; i < cpy_size.y(); i++)
 		{
 			auto src_line = data + (src_off.y() + i) * pitch + src_off.x() * channel;
-			auto dst_line = b->data + (dst_off.y() + i) * pitch + dst_off.x() * channel;
+			auto dst_line = b->data + (dst_off.y() + i) * b->pitch + dst_off.x() * channel;
 			memcpy(dst_line, src_line, cpy_size.x() * channel);
 		}
 
 		if (border)
 		{
-			memcpy(b->data + (dst_off.y() - 1) * pitch + dst_off.x() * channel, data + src_off.y() * pitch + src_off.x() * channel, cpy_size.x() * channel); // top line
-			memcpy(b->data + (dst_off.y() + cpy_size.y()) * pitch + dst_off.x() * channel, data + (src_off.y() + cpy_size.y() - 1) * pitch + src_off.x() * channel, cpy_size.x() * channel); // bottom line
+			memcpy(b->data + (dst_off.y() - 1) * b->pitch + dst_off.x() * channel, data + src_off.y() * pitch + src_off.x() * channel, cpy_size.x() * channel); // top line
+			memcpy(b->data + (dst_off.y() + cpy_size.y()) * b->pitch + dst_off.x() * channel, data + (src_off.y() + cpy_size.y() - 1) * pitch + src_off.x() * channel, cpy_size.x() * channel); // bottom line
 			for (auto i = 0; i < cpy_size.y(); i++)
-				memcpy(b->data + (dst_off.y() + i) * pitch + (dst_off.x() - 1) * channel, data + (src_off.y() + i) * pitch + src_off.x() * channel, channel); // left line
+				memcpy(b->data + (dst_off.y() + i) * b->pitch + (dst_off.x() - 1) * channel, data + (src_off.y() + i) * pitch + src_off.x() * channel, channel); // left line
 			for (auto i = 0; i < cpy_size.y(); i++)
-				memcpy(b->data + (dst_off.y() + i) * pitch + (dst_off.x() + cpy_size.x()) * channel, data + (src_off.y() + i) * pitch + (src_off.x() + cpy_size.x() - 1) * channel, channel); // left line
+				memcpy(b->data + (dst_off.y() + i) * b->pitch + (dst_off.x() + cpy_size.x()) * channel, data + (src_off.y() + i) * pitch + (src_off.x() + cpy_size.x() - 1) * channel, channel); // left line
 
-			memcpy(b->data + (dst_off.y() - 1) * pitch + (dst_off.x() - 1) * channel, data + src_off.y() * pitch + src_off.x() * channel, channel); // left top corner
-			memcpy(b->data + (dst_off.y() - 1) * pitch + (dst_off.x() + cpy_size.x()) * channel, data + src_off.y() * pitch + (src_off.x() + cpy_size.x() - 1) * channel, channel); // right top corner
-			memcpy(b->data + (dst_off.y() + cpy_size.y()) * pitch + (dst_off.x() - 1) * channel, data + (src_off.y() + cpy_size.y() - 1) * pitch + src_off.x() * channel, channel); // left bottom corner
-			memcpy(b->data + (dst_off.y() + cpy_size.y()) * pitch + (dst_off.x() + cpy_size.x()) * channel, data + (src_off.y() + cpy_size.y() - 1) * pitch + (src_off.x() + cpy_size.x() - 1) * channel, channel); // right bottom corner
+			memcpy(b->data + (dst_off.y() - 1) * b->pitch + (dst_off.x() - 1) * channel, data + src_off.y() * pitch + src_off.x() * channel, channel); // left top corner
+			memcpy(b->data + (dst_off.y() - 1) * b->pitch + (dst_off.x() + cpy_size.x()) * channel, data + src_off.y() * pitch + (src_off.x() + cpy_size.x() - 1) * channel, channel); // right top corner
+			memcpy(b->data + (dst_off.y() + cpy_size.y()) * b->pitch + (dst_off.x() - 1) * channel, data + (src_off.y() + cpy_size.y() - 1) * pitch + src_off.x() * channel, channel); // left bottom corner
+			memcpy(b->data + (dst_off.y() + cpy_size.y()) * b->pitch + (dst_off.x() + cpy_size.x()) * channel, data + (src_off.y() + cpy_size.y() - 1) * pitch + (src_off.x() + cpy_size.x() - 1) * channel, channel); // right bottom corner
 		}
 	}
 
