@@ -20,9 +20,10 @@ namespace flame
 			uint layer;
 			SampleCount$ sample_count;
 
-			uint channel_, bpp_;
-			uint pitch_;
-			uint data_size_;
+			uint channel;
+			uint bpp;
+			uint pitch;
+			uint data_size;
 
 			FLAME_GRAPHICS_EXPORTS static Format$ find_format(uint channel, uint bpp);
 

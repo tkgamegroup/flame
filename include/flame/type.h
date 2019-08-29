@@ -7,6 +7,7 @@
 #define FLAME_LOW(I) ((I) & 0xffff)
 #define FLAME_HIGH(I) ((I) >> 16)
 #define FLAME_MAKEINT(H, L) ((L) | ((H) << 16))
+#define FLAME_INVALID_POINTER ((void*)0x7fffffffffffffff)
 
 inline constexpr unsigned int _HASH(char const* str, unsigned int seed)
 {

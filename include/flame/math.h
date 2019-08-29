@@ -89,6 +89,11 @@ namespace flame
 		}
 	};
 
+	inline uint get_pitch(uint b)
+	{
+		return (uint)ceil((b / 4.f)) * 4U;
+	}
+
 	inline float linear_depth_ortho(float z, float depth_near, float depth_far)
 	{
 		z = z * 0.5 + 0.5;

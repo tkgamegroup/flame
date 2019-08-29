@@ -139,40 +139,40 @@ namespace flame
 			switch (format)
 			{
 			case Format_R8_UNORM:
-				channel_ = 1;
-				bpp_ = 8;
+				channel = 1;
+				bpp = 8;
 				break;
 			case Format_R16_UNORM:
-				channel_ = 1;
-				bpp_ = 16;
+				channel = 1;
+				bpp = 16;
 				break;
 			case Format_R32_SFLOAT:
-				channel_ = 1;
-				bpp_ = 32;
+				channel = 1;
+				bpp = 32;
 				break;
 			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
-				channel_ = 4;
-				bpp_ = 32;
+				channel = 4;
+				bpp = 32;
 				break;
 			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
-				channel_ = 4;
-				bpp_ = 64;
+				channel = 4;
+				bpp = 64;
 				break;
 			case Format_R32G32B32A32_SFLOAT:
-				channel_ = 4;
-				bpp_ = 128;
+				channel = 4;
+				bpp = 128;
 				break;
 			case Format_Depth16:
-				channel_ = 1;
-				bpp_ = 16;
+				channel = 1;
+				bpp = 16;
 				break;
 			default:
-				channel_ = 0;
-				bpp_ = 0;
+				channel = 0;
+				bpp = 0;
 				assert(0);
 			}
-			pitch_ = Bitmap::get_pitch(size.x(), bpp_);
-			data_size_ = pitch_ * size.y();
+			pitch = get_pitch(size.x() * bpp / 8);
+			data_size = pitch * size.y();
 		}
 
 		void ImagePrivate::init(const Vec4c &col)
@@ -197,7 +197,7 @@ namespace flame
 			if (cy == -1)
 				cy = size.y();
 
-			auto data_size = (bpp_ / 8) * cx * cy;
+			auto data_size = (bpp / 8) * cx * cy;
 
 			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferDst, MemPropHost);
 
@@ -227,7 +227,7 @@ namespace flame
 			if (cy == -1)
 				cy = size.y();
 
-			auto data_size = (bpp_ / 8) * cx * cy;
+			auto data_size = (bpp / 8) * cx * cy;
 
 			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferSrc, MemPropHost);
 			stag_buf->map();
@@ -268,7 +268,7 @@ namespace flame
 
 			if (data)
 			{
-				auto staging_buffer = Buffer::create(d, i->data_size_, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
+				auto staging_buffer = Buffer::create(d, i->data_size, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -412,9 +412,9 @@ namespace flame
 
 		void Image::save_to_png(Image* i, const std::wstring& filename)
 		{
-			if (i->bpp_ / i->channel_ <= 8)
+			if (i->bpp / i->channel <= 8)
 			{
-				auto bmp = Bitmap::create(i->size, i->channel_, i->bpp_);
+				auto bmp = Bitmap::create(i->size, i->channel, i->bpp);
 				i->get_pixels(0, 0, -1, -1, bmp->data);
 				Bitmap::save_to_file(bmp, filename);
 			}

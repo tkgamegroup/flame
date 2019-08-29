@@ -11,6 +11,7 @@
 #include <flame/graphics/canvas.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/default_style.h>
+#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_dispatcher.h>
@@ -26,7 +27,6 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/tree.h>
-#include <flame/universe/utils.h>
 
 using namespace flame;
 using namespace graphics;
