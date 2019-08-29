@@ -153,6 +153,27 @@ namespace flame
 		return ret;
 	}
 
+	inline Vec2c stoc2(const char* s)
+	{
+		Vec2i ret;
+		sscanf(s, "%d;%d", &ret.x(), &ret.y());
+		return Vec2c(ret);
+	}
+
+	inline Vec3c stoc3(const char* s)
+	{
+		Vec3i ret;
+		sscanf(s, "%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		return Vec3c(ret);
+	}
+
+	inline Vec4c stoc4(const char* s)
+	{
+		Vec4i ret;
+		sscanf(s, "%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return Vec4c(ret);
+	}
+
 	inline Vec2f stof2(const wchar_t* s)
 	{
 		Vec2f ret;
@@ -214,6 +235,27 @@ namespace flame
 		Vec4i ret;
 		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
+	}
+
+	inline Vec2c stoc2(const wchar_t* s)
+	{
+		Vec2i ret;
+		swscanf(s, L"%d;%d", &ret.x(), &ret.y());
+		return Vec2c(ret);
+	}
+
+	inline Vec3c stoc3(const wchar_t* s)
+	{
+		Vec3i ret;
+		swscanf(s, L"%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		return Vec3c(ret);
+	}
+
+	inline Vec4c stoc4(const wchar_t* s)
+	{
+		Vec4i ret;
+		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return Vec4c(ret);
 	}
 
 	struct SerializableAttribute

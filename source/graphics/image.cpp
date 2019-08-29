@@ -416,7 +416,7 @@ namespace flame
 			{
 				auto bmp = Bitmap::create(i->size, i->channel_, i->bpp_);
 				i->get_pixels(0, 0, -1, -1, bmp->data);
-				bmp->save(filename);
+				Bitmap::save_to_file(bmp, filename);
 			}
 			else
 				printf("cannot save png that has more than 8bit per channel\n");

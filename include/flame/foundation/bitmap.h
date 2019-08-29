@@ -36,7 +36,11 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void swap_channel(uint ch1, uint ch2);
 		FLAME_FOUNDATION_EXPORTS void copy_to(Bitmap* b, const Vec2u& src_off, const Vec2u& cpy_size, const Vec2u& dst_off, bool border = false);
 
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const Vec2u& size, int channel, int bpp, unsigned char* data = nullptr, bool data_owner = false);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const Vec2u& size, uint channel, uint bpp, uchar* data = nullptr);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create_with_plaincolor(const Vec2u& size, const Vec4c& color);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create_with_horizontalstripes_pattern(const Vec2u& size, uint offset, uint line_width, uint spacing, const Vec4c& foreground_color, const Vec4c& background_color);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create_with_verticalstripes_pattern(const Vec2u& size, uint offset, uint line_width, uint spacing, const Vec4c& foreground_color, const Vec4c& background_color);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create_with_brickwall_pattern(const Vec2u& size, const Vec2u& offset, uint line_width, uint half_brick_width, uint brick_height, const Vec4c& foreground_color, const Vec4c& background_color);
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_gif(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(Bitmap* b, const std::wstring& filename);

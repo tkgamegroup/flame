@@ -7,7 +7,7 @@ int main(int argc, char **args)
 {
 	std::vector<std::string> inputs;
 	std::wstring output;
-	for (auto i = 0; i < argc; i++)
+	for (auto i = 1; i < argc; i++)
 	{
 		if (args[i] == std::string("-o"))
 		{

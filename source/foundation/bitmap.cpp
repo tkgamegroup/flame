@@ -79,7 +79,7 @@ namespace flame
 		}
 	}
 
-	Bitmap* Bitmap::create(const Vec2u& size, int channel, int bpp, unsigned char* data, bool data_owner)
+	Bitmap* Bitmap::create(const Vec2u& size, uint channel, uint bpp, uchar* data)
 	{
 		auto b = new Bitmap;
 		b->size = size;
@@ -88,19 +88,106 @@ namespace flame
 		b->srgb = false;
 		b->calc_pitch();
 		b->data_size = b->pitch * b->size.y();
+		b->data = new uchar[b->data_size];
 		if (!data)
-		{
-			b->data = new unsigned char[b->data_size];
 			memset(b->data, 0, b->data_size);
-		}
 		else
+			memcpy(b->data, data, b->data_size);
+		return b;
+	}
+
+	Bitmap* Bitmap::create_with_plaincolor(const Vec2u& size, const Vec4c& color)
+	{
+		auto b = new Bitmap;
+		b->size = size;
+		b->channel = 4;
+		b->bpp = 32;
+		b->srgb = false;
+		b->calc_pitch();
+		b->data_size = b->pitch * b->size.y();
+		b->data = new uchar[b->data_size];
+		for (auto i = 0; i < size.y(); i++)
 		{
-			if (data_owner)
-				b->data = data;
-			else
+			for (auto j = 0; j < size.x(); j++)
+				memcpy(b->data + i * b->pitch + j * 4, &color, sizeof(Vec4c));
+		}
+		return b;
+	}
+
+	Bitmap* Bitmap::create_with_horizontalstripes_pattern(const Vec2u& size, uint offset, uint line_width, uint spacing, const Vec4c& foreground_color, const Vec4c& background_color)
+	{
+		auto b = new Bitmap;
+		b->size = size;
+		b->channel = 4;
+		b->bpp = 32;
+		b->srgb = false;
+		b->calc_pitch();
+		b->data_size = b->pitch * b->size.y();
+		b->data = new uchar[b->data_size];
+		for (auto i = 0; i < size.y(); i++)
+		{
+			for (auto j = 0; j < size.x(); j++)
 			{
-				b->data = new unsigned char[b->data_size];
-				memcpy(b->data, data, b->data_size);
+				if ((i + offset) % spacing < line_width)
+					memcpy(b->data + i * b->pitch + j * 4, &foreground_color, sizeof(Vec4c));
+				else
+					memcpy(b->data + i * b->pitch + j * 4, &background_color, sizeof(Vec4c));
+			}
+		}
+		return b;
+	}
+
+	Bitmap* Bitmap::create_with_verticalstripes_pattern(const Vec2u& size, uint offset, uint line_width, uint spacing, const Vec4c& foreground_color, const Vec4c& background_color)
+	{
+		auto b = new Bitmap;
+		b->size = size;
+		b->channel = 4;
+		b->bpp = 32;
+		b->srgb = false;
+		b->calc_pitch();
+		b->data_size = b->pitch * b->size.y();
+		b->data = new uchar[b->data_size];
+		for (auto i = 0; i < size.y(); i++)
+		{
+			for (auto j = 0; j < size.x(); j++)
+			{
+				if ((j + offset) % spacing < line_width)
+					memcpy(b->data + i * b->pitch + j * 4, &foreground_color, sizeof(Vec4c));
+				else
+					memcpy(b->data + i * b->pitch + j * 4, &background_color, sizeof(Vec4c));
+			}
+		}
+		return b;
+	}
+
+	Bitmap* Bitmap::create_with_brickwall_pattern(const Vec2u& size, const Vec2u& offset, uint line_width, uint half_brick_width, uint brick_height, const Vec4c& foreground_color, const Vec4c& background_color)
+	{
+		auto b = new Bitmap;
+		b->size = size;
+		b->channel = 4;
+		b->bpp = 32;
+		b->srgb = false;
+		b->calc_pitch();
+		b->data_size = b->pitch * b->size.y();
+		b->data = new uchar[b->data_size];
+		for (auto i = 0; i < size.y(); i++)
+		{
+			for (auto j = 0; j < size.x(); j++)
+			{
+				if ((i + offset.y()) % brick_height < line_width)
+					memcpy(b->data + i * b->pitch + j * 4, &foreground_color, sizeof(Vec4c));
+				else
+					memcpy(b->data + i * b->pitch + j * 4, &background_color, sizeof(Vec4c));
+			}
+		}
+		for (auto i = 0; i < size.y(); i++)
+		{
+			for (auto j = 0; j < size.x(); j++)
+			{
+				auto ii = i + offset.x();
+				auto jj = j + offset.y();
+				if ((ii / brick_height) % 2 == (jj / half_brick_width) % 2 && ii % brick_height >= line_width && jj % half_brick_width < line_width)
+					memcpy(b->data + i * b->pitch + j * 4, &foreground_color, sizeof(Vec4c));
 			}
 		}
 		return b;
