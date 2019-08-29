@@ -10,6 +10,8 @@
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/aligner.h>
+#include <flame/universe/components/layout.h>
 
 using namespace flame;
 using namespace graphics;
@@ -199,6 +201,7 @@ uint styles[][4][16] = {
 	}
 };
 
+/*
 struct Piece
 {
 	Vec2i pos;
@@ -595,6 +598,7 @@ void create_game_frame()
 
 	start_game();
 }
+*/
 
 struct App
 {
@@ -605,15 +609,14 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
 
-	FontAtlas* font_atlas_pixel;
+	FontAtlas* font_atlas_1;
+	FontAtlas* font_atlas_2;
 	Canvas* canvas;
 	int rt_frame;
 
 	Entity* root;
 	cElement* c_element_root;
 	cText* c_text_fps;
-
-	std::vector<TypeinfoDatabase*> dbs;
 
 	void run()
 	{
@@ -659,11 +662,83 @@ int main(int argc, char **args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
+	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
+	auto font2 = Font::create(L"../game/tetris/joystix monospace.ttf", 32);
+	app.font_atlas_1 = FontAtlas::create(app.d, FontDrawPixel, { font1 });
+	app.font_atlas_1->index = 1;
+	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { font2 });
+	app.font_atlas_2->index = 2;
+	app.canvas->set_image(app.font_atlas_1->index, Imageview::create(app.font_atlas_1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+	app.canvas->set_image(app.font_atlas_2->index, Imageview::create(app.font_atlas_2->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 
-	auto t_fps = new UI::Text(ui);
-	t_fps->align = UI::AlignFloatRightBottomNoPadding;
-	ui->root()->add_widget(-1, t_fps);
+	app.root = Entity::create();
+	{
+		app.c_element_root = cElement::create(app.canvas);
+		app.root->add_component(app.c_element_root);
 
+		app.root->add_component(cEventDispatcher::create(app.w));
+
+		app.root->add_component(cLayout::create());
+	}
+
+	auto e_fps = Entity::create();
+	app.root->add_child(e_fps);
+	{
+		e_fps->add_component(cElement::create());
+
+		auto c_text = cText::create(app.font_atlas_1);
+		app.c_text_fps = c_text;
+		e_fps->add_component(c_text);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->x_align = AlignxLeft;
+		c_aligner->y_align = AlignyBottom;
+		e_fps->add_component(c_aligner);
+	}
+
+	auto e_score = Entity::create();
+	app.root->add_child(e_score);
+	{
+		auto c_element = cElement::create();
+		c_element->x = 13 * 32;
+		c_element->y = 1 * 32;
+		e_score->add_component(c_element);
+
+		auto c_text = cText::create(app.font_atlas_2);
+		c_text->set_text(L"SCORE");
+		e_score->add_component(c_text);
+	}
+
+	auto e_level = Entity::create();
+	app.root->add_child(e_level);
+	{
+		auto c_element = cElement::create();
+		c_element->x = 13 * 32;
+		c_element->y = 3 * 32;
+		e_level->add_component(c_element);
+
+		auto c_text = cText::create(app.font_atlas_2);
+		c_text->set_text(L"LEVEL");
+		e_level->add_component(c_text);
+	}
+
+	auto e_lines = Entity::create();
+	app.root->add_child(e_lines);
+	{
+		auto c_element = cElement::create();
+		c_element->x = 13 * 32;
+		c_element->y = 5 * 32;
+		e_lines->add_component(c_element);
+
+		auto c_text = cText::create(app.font_atlas_2);
+		c_text->set_text(L"LINES");
+		e_lines->add_component(c_text);
+	}
+
+	app_run([](void* c) {
+		auto app = (*(App**)c);
+		app->run();
+	}, new_mail_p(&app));
 
 	return 0;
 }

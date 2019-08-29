@@ -330,7 +330,7 @@ namespace flame
 		auto ret = new_mail<std::pair<Bitmap*, std::vector<std::pair<std::string, Vec4u>>>>();
 		ret.p->first = b;
 		for (auto& p : packages)
-			ret.p->second.emplace_back(p.id, Vec4u(Vec2u(p.pos), p.b->size));
+			ret.p->second.emplace_back(p.id, Vec4u(Vec2u(p.pos) + 1U, p.b->size));
 
 		return ret;
 	}
