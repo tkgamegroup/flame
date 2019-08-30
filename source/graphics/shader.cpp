@@ -354,7 +354,7 @@ namespace flame
 							iv$o.v = iv;
 						}
 						for (auto i = 0; i < count$i.v; i++)
-							((Descriptorset*)set$i.v)->set_image(binding$i.v, index$i.v + i, iv, d->sp_bi_linear);
+							((Descriptorset*)set$i.v)->set_image(binding$i.v, index$i.v + i, iv, d->sp_linear);
 					}
 					else
 						printf("cannot write image descriptor\n");

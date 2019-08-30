@@ -110,9 +110,9 @@ namespace flame
 				pl_text_sdf = (Pipeline*)renderpath->find_output("pl_text_sdf.out")->data_p();
 			}
 
-			void set_image(int index, Imageview* v)
+			void set_image(int index, Imageview* v, Filter filter)
 			{
-				ds->set_image(0, index, v ? v : white_iv, d->sp_bi_linear);
+				ds->set_image(0, index, v ? v : white_iv, (filter == FilterLinear ? d->sp_linear : d->sp_nearest));
 			}
 
 			void begin_draw(CmdType type, uint id)
@@ -435,9 +435,9 @@ namespace flame
 			thiz->rnf->clearvalues()->set(0, col);
 		}
 
-		void Canvas::set_image(uint index, Imageview* v)
+		void Canvas::set_image(uint index, Imageview* v, Filter filter)
 		{
-			((CanvasPrivate*)this)->set_image(index, v);
+			((CanvasPrivate*)this)->set_image(index, v, filter);
 		}
 
 		void Canvas::stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)

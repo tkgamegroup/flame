@@ -258,6 +258,30 @@ namespace flame
 		return Vec4c(ret);
 	}
 
+	inline std::vector<std::pair<std::string, Vec4u>> load_texture_pack(const std::wstring& filename)
+	{
+		std::vector<std::pair<std::string, Vec4u>> ret;
+		std::ifstream file(filename);
+
+		while (!file.eof())
+		{
+			std::string line;
+			std::getline(file, line);
+			if (line.empty())
+				break;
+			std::stringstream ss(line);
+			std::pair<std::string, Vec4u> v;
+			ss >> v.first;
+			std::string t;
+			ss >> t;
+			v.second = stou4(t.c_str());
+			ret.push_back(v);
+		}
+
+		file.close();
+		return ret;
+	}
+
 	struct SerializableAttribute
 	{
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;

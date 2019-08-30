@@ -25,7 +25,8 @@ namespace flame
 		struct Device
 		{
 			Descriptorpool* dp;
-			Sampler* sp_bi_linear;
+			Sampler* sp_nearest;
+			Sampler* sp_linear;
 			Commandpool* gcp; // graphics command pool
 			Commandpool* tcp; // transfer command pool
 			Queue* gq; // graphics queue

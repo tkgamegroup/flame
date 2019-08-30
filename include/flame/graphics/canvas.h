@@ -15,7 +15,7 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS void set_render_target(TargetType$ type, const void* v);
 			FLAME_GRAPHICS_EXPORTS void set_clear_color(const Vec4c& col);
-			FLAME_GRAPHICS_EXPORTS void set_image(uint index, Imageview* v);
+			FLAME_GRAPHICS_EXPORTS void set_image(uint index, Imageview* v, Filter filter = FilterLinear);
 
 			void stroke(std::vector<Vec2f>& points, const Vec4c& col, float thickness)
 			{

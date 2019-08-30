@@ -1,4 +1,5 @@
 #include <flame/foundation/window.h>
+#include <flame/foundation/serialize.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/swapchain.h>
@@ -12,6 +13,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
+#include <flame/universe/components/image.h>
 
 using namespace flame;
 using namespace graphics;
@@ -210,7 +212,6 @@ struct Piece
 	int x_move, y_move;
 	bool transform;
 	bool down;
-	int gear;
 
 	void reset();
 	void spawn();
@@ -238,7 +239,6 @@ void Tetris::reset()
 	y_move = false;
 	transform = false;
 	down = false;
-	gear = 0;
 }
 
 static int next_id;
@@ -651,7 +651,7 @@ struct App
 
 int main(int argc, char **args)
 {
-	app.w = Window::create("Tetris", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	app.w = Window::create("Tetris", Vec2u(1280, 20 * 32), WindowFrame);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
@@ -670,6 +670,12 @@ int main(int argc, char **args)
 	app.font_atlas_2->index = 2;
 	app.canvas->set_image(app.font_atlas_1->index, Imageview::create(app.font_atlas_1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 	app.canvas->set_image(app.font_atlas_2->index, Imageview::create(app.font_atlas_2->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+
+	const auto atlas_id = 3U;
+	auto atlas_image = Image::create_from_file(app.d, L"../game/tetris/images/atlas.png");
+	app.canvas->set_image(atlas_id, Imageview::create(atlas_image), FilterNearest);
+
+	auto texture_pack = load_texture_pack(L"../game/tetris/images/atlas.png.pack");
 
 	app.root = Entity::create();
 	{
@@ -691,48 +697,143 @@ int main(int argc, char **args)
 		e_fps->add_component(c_text);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxLeft;
+		c_aligner->x_align = AlignxRight;
 		c_aligner->y_align = AlignyBottom;
 		e_fps->add_component(c_aligner);
 	}
 
-	auto e_score = Entity::create();
-	app.root->add_child(e_score);
+	{
+		Vec2f uv0 = Vec2f(0.f);
+		Vec2f uv1 = Vec2f(0.f);
+		for (auto& t : texture_pack)
+		{
+			if (t.first == "brick.png")
+			{
+				uv0.x() = (float)t.second.x() / atlas_image->size.x();
+				uv0.y() = (float)t.second.y() / atlas_image->size.y();
+				uv1.x() = (float)(t.second.x() + t.second.z()) / atlas_image->size.x();
+				uv1.y() = (float)(t.second.y() + t.second.w()) / atlas_image->size.y();
+				break;
+			}
+		}
+
+		for (auto i = 0; i < 20; i++)
+		{
+			auto e_image = Entity::create();
+			app.root->add_child(e_image);
+			{
+				auto c_element = cElement::create();
+				c_element->x = 0;
+				c_element->y = i * 32;
+				c_element->width = 32;
+				c_element->height = 32;
+				e_image->add_component(c_element);
+
+				auto c_image = cImage::create();
+				c_image->id = atlas_id;
+				c_image->uv0 = uv0;
+				c_image->uv1 = uv1;
+				e_image->add_component(c_image);
+			}
+		}
+
+		for (auto i = 0; i < 20; i++)
+		{
+			auto e_image = Entity::create();
+			app.root->add_child(e_image);
+			{
+				auto c_element = cElement::create();
+				c_element->x = 11 * 32;
+				c_element->y = i * 32;
+				c_element->width = 32;
+				c_element->height = 32;
+				e_image->add_component(c_element);
+
+				auto c_image = cImage::create();
+				c_image->id = atlas_id;
+				c_image->uv0 = uv0;
+				c_image->uv1 = uv1;
+				e_image->add_component(c_image);
+			}
+		}
+	}
+
+	{
+		Vec2f uv0 = Vec2f(0.f);
+		Vec2f uv1 = Vec2f(0.f);
+		for (auto& t : texture_pack)
+		{
+			if (t.first == "block.png")
+			{
+				uv0.x() = (float)t.second.x() / atlas_image->size.x();
+				uv0.y() = (float)t.second.y() / atlas_image->size.y();
+				uv1.x() = (float)(t.second.x() + t.second.z()) / atlas_image->size.x();
+				uv1.y() = (float)(t.second.y() + t.second.w()) / atlas_image->size.y();
+				break;
+			}
+		}
+
+		for (auto i = 0; i < 20; i++)
+		{
+			for (auto j = 0; j < 10; j++)
+			{
+				auto e_image = Entity::create();
+				app.root->add_child(e_image);
+				{
+					auto c_element = cElement::create();
+					c_element->x = 32 + j * 32;
+					c_element->y = i * 32;
+					c_element->width = 32;
+					c_element->height = 32;
+					e_image->add_component(c_element);
+
+					auto c_image = cImage::create();
+					c_image->id = atlas_id;
+					c_image->uv0 = uv0;
+					c_image->uv1 = uv1;
+					e_image->add_component(c_image);
+				}
+			}
+		}
+	}
+
+	auto e_score_title = Entity::create();
+	app.root->add_child(e_score_title);
 	{
 		auto c_element = cElement::create();
 		c_element->x = 13 * 32;
 		c_element->y = 1 * 32;
-		e_score->add_component(c_element);
+		e_score_title->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_2);
 		c_text->set_text(L"SCORE");
-		e_score->add_component(c_text);
+		e_score_title->add_component(c_text);
 	}
 
-	auto e_level = Entity::create();
-	app.root->add_child(e_level);
-	{
-		auto c_element = cElement::create();
-		c_element->x = 13 * 32;
-		c_element->y = 3 * 32;
-		e_level->add_component(c_element);
-
-		auto c_text = cText::create(app.font_atlas_2);
-		c_text->set_text(L"LEVEL");
-		e_level->add_component(c_text);
-	}
-
-	auto e_lines = Entity::create();
-	app.root->add_child(e_lines);
+	auto e_level_title = Entity::create();
+	app.root->add_child(e_level_title);
 	{
 		auto c_element = cElement::create();
 		c_element->x = 13 * 32;
 		c_element->y = 5 * 32;
-		e_lines->add_component(c_element);
+		e_level_title->add_component(c_element);
+
+		auto c_text = cText::create(app.font_atlas_2);
+		c_text->set_text(L"LEVEL");
+		e_level_title->add_component(c_text);
+	}
+
+	auto e_lines_title = Entity::create();
+	app.root->add_child(e_lines_title);
+	{
+		auto c_element = cElement::create();
+		c_element->x = 13 * 32;
+		c_element->y = 7 * 32;
+		e_lines_title->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_2);
 		c_text->set_text(L"LINES");
-		e_lines->add_component(c_text);
+		e_lines_title->add_component(c_text);
 	}
 
 	app_run([](void* c) {

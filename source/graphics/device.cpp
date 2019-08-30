@@ -421,7 +421,8 @@ namespace flame
 
 			LOGI("vulkan device created");
 
-			sp_bi_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
+			sp_nearest = Sampler::create(this, FilterNearest, FilterNearest, false);
+			sp_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
 			gcp = Commandpool::create(this, gq_idx);
 			gq = Queue::create(this, gq_idx);
 			if (tq_idx > 0)

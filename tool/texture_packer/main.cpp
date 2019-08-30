@@ -9,6 +9,7 @@ int main(int argc, char **args)
 {
 	std::vector<std::string> inputs;
 	std::wstring output;
+	auto border = false;
 	for (auto i = 1; i < argc; i++)
 	{
 		if (args[i] == std::string("-o"))
@@ -17,6 +18,8 @@ int main(int argc, char **args)
 			if (i < argc)
 				output = s2w(args[i]);
 		}
+		else if (args[i] == std::string("-border"))
+			border = true;
 		else
 			inputs.push_back(args[i]);
 	}
@@ -33,7 +36,7 @@ int main(int argc, char **args)
 		Package p;
 		p.pos = Vec2i(-1);
 		p.b = Bitmap::create_from_file(s2w(i));
-		p.id = i;
+		p.id = std::filesystem::path(i).filename().string();
 		packages.push_back(p);
 	}
 	std::sort(packages.begin(), packages.end(), [](const Package& a, const Package& b) {
@@ -83,7 +86,7 @@ int main(int argc, char **args)
 
 	for (auto& p : packages)
 	{
-		auto n = find_node(tree.get(), p.b->size + Vec2i(2));
+		auto n = find_node(tree.get(), p.b->size + Vec2i(border ? 2 : 0));
 		if (n)
 			p.pos = n->pos;
 	}
@@ -92,7 +95,7 @@ int main(int argc, char **args)
 	for (auto& e : packages)
 	{
 		if (e.pos >= 0)
-			e.b->copy_to(b, Vec2u(0), e.b->size, Vec2u(e.pos), true);
+			e.b->copy_to(b, Vec2u(0), e.b->size, Vec2u(e.pos), border);
 	}
 
 
@@ -100,7 +103,7 @@ int main(int argc, char **args)
 	std::ofstream pack_file(output + L".pack");
 	for (auto& p : packages)
 	{
-		pack_file << p.id + " " + to_string(Vec4u(Vec2u(p.pos) + 1U, b->size)) + "\n";
+		pack_file << p.id + " " + to_string(Vec4u(Vec2u(p.pos) + (border ? 1U : 0U), p.b->size)) + "\n";
 		Bitmap::destroy(p.b);
 	}
 	pack_file.close();
