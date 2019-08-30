@@ -24,9 +24,9 @@ namespace flame
 			unselected_color_normal = default_style.frame_color_normal;
 			unselected_color_hovering = default_style.frame_color_hovering;
 			unselected_color_active = default_style.frame_color_active;
-			selected_color_normal = default_style.header_color_normal;
-			selected_color_hovering = default_style.header_color_hovering;
-			selected_color_active = default_style.header_color_active;
+			selected_color_normal = default_style.selected_color_normal;
+			selected_color_hovering = default_style.selected_color_hovering;
+			selected_color_active = default_style.selected_color_active;
 
 			mouse_listener = nullptr;
 		}
@@ -62,7 +62,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cTreeLeafPrivate**)c;
-					thiz->tree->select = thiz->entity;
+					thiz->tree->selected = thiz->entity;
 				}
 			}, new_mail_p(this));
 		}
@@ -71,7 +71,7 @@ namespace flame
 		{
 			if (style)
 			{
-				if (tree->select == entity)
+				if (tree->selected == entity)
 				{
 					style->color_normal = selected_color_normal;
 					style->color_hovering = selected_color_hovering;
@@ -170,7 +170,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cTreeNodePrivate**)c;
-					thiz->tree->select = thiz->entity;
+					thiz->tree->selected = thiz->entity;
 				}
 			}, new_mail_p(this));
 
@@ -189,7 +189,7 @@ namespace flame
 		{
 			if (title_style)
 			{
-				if (tree->select == entity)
+				if (tree->selected == entity)
 				{
 					title_style->color_normal = selected_color_normal;
 					title_style->color_hovering = selected_color_hovering;

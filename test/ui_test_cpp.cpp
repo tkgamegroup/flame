@@ -9,7 +9,6 @@
 #include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
-#include <flame/universe/entity.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
@@ -335,11 +334,7 @@ int main(int argc, char** args)
 
 			e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
-			auto c_list_item = cListItem::create();
-			c_list_item->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
-			c_list_item->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
-			c_list_item->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
-			e_item->add_component(c_list_item);
+			e_item->add_component(cListItem::create());
 
 			auto c_aligner = cAligner::create();
 			c_aligner->width_policy = SizeGreedy;
@@ -592,7 +587,6 @@ int main(int argc, char** args)
 	app.root->add_child(e_menubar);
 	{
 		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 		c_element->background_color = default_style.frame_color_normal;
 		e_menubar->add_component(c_element);
 
@@ -674,7 +668,7 @@ int main(int argc, char** args)
 				c_menu_btn->topmost_penetrable = true;
 				e_menu_btn->add_component(c_menu_btn);
 
-				e_menu_btn->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_menu_btn->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 			}
 		}
 		{
@@ -748,7 +742,7 @@ int main(int argc, char** args)
 				c_menu_btn->topmost_penetrable = true;
 				e_menu_btn->add_component(c_menu_btn);
 
-				e_menu_btn->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_menu_btn->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 			}
 		}
 		{
@@ -818,7 +812,7 @@ int main(int argc, char** args)
 				c_menu_btn->topmost_penetrable = true;
 				e_menu_btn->add_component(c_menu_btn);
 
-				e_menu_btn->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+				e_menu_btn->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 			}
 		}
 	}
@@ -874,11 +868,7 @@ int main(int argc, char** args)
 
 				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
-				auto c_combobox_item = cComboboxItem::create();
-				c_combobox_item->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
-				c_combobox_item->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
-				c_combobox_item->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
-				e_item->add_component(c_combobox_item);
+				e_item->add_component(cComboboxItem::create());
 
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeGreedy;
@@ -944,11 +934,7 @@ int main(int argc, char** args)
 			c_layout->item_padding = 4.f;
 			e_tree_node->add_component(c_layout);
 
-			auto c_tree_node = cTreeNode::create();
-			c_tree_node->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
-			c_tree_node->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
-			c_tree_node->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
-			e_tree_node->add_component(c_tree_node);
+			e_tree_node->add_component(cTreeNode::create());
 		}
 
 		auto e_title = Entity::create();
@@ -1012,11 +998,7 @@ int main(int argc, char** args)
 
 				e_tree_node->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 
-				auto c_tree_leaf = cTreeLeaf::create();
-				c_tree_leaf->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
-				c_tree_leaf->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
-				c_tree_leaf->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
-				e_tree_node->add_component(c_tree_leaf);
+				e_tree_node->add_component(cTreeLeaf::create());
 			}
 		}
 		{
@@ -1035,11 +1017,7 @@ int main(int argc, char** args)
 
 				e_tree_node->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 
-				auto c_tree_leaf = cTreeLeaf::create();
-				c_tree_leaf->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
-				c_tree_leaf->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
-				c_tree_leaf->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
-				e_tree_node->add_component(c_tree_leaf);
+				e_tree_node->add_component(cTreeLeaf::create());
 			}
 		}
 	}
@@ -1059,11 +1037,7 @@ int main(int argc, char** args)
 
 			e_tree_node->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 
-			auto c_tree_leaf = cTreeLeaf::create();
-			c_tree_leaf->selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
-			c_tree_leaf->selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
-			c_tree_leaf->selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
-			e_tree_node->add_component(c_tree_leaf);
+			e_tree_node->add_component(cTreeLeaf::create());
 		}
 	}
 

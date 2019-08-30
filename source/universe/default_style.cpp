@@ -23,6 +23,9 @@ namespace flame
 		header_color_normal = Vec4c(color(Vec3f(52.f, 0.73f, 0.97f)), 0.31f * 255.f);
 		header_color_hovering = Vec4c(color(Vec3f(52.f, 0.73f, 0.97f)), 0.80f * 255.f);
 		header_color_active = Vec4c(color(Vec3f(52.f, 0.73f, 0.97f)), 1.00f * 255.f);
+		selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
+		selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
+		selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
 		sdf_scale = 1.f;
 	}
 
@@ -40,6 +43,9 @@ namespace flame
 		header_color_normal = Vec4c(color(Vec3f(52.f, 0.73f, 0.97f)), 0.31f * 255.f);
 		header_color_hovering = Vec4c(color(Vec3f(52.f, 0.73f, 0.97f)), 0.80f * 255.f);
 		header_color_active = Vec4c(color(Vec3f(52.f, 0.73f, 0.97f)), 1.00f * 255.f);
+		selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
+		selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
+		selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
 		sdf_scale = 1.f;
 	}
 

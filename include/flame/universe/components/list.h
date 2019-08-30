@@ -38,7 +38,7 @@ namespace flame
 
 	struct cList : Component
 	{
-		Entity* select;
+		Entity* selected;
 
 		cList() :
 			Component("List")

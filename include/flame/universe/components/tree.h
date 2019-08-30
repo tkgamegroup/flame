@@ -68,7 +68,7 @@ namespace flame
 
 	struct cTree : Component
 	{
-		Entity* select;
+		Entity* selected;
 
 		cTree() :
 			Component("Tree")

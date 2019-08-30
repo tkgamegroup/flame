@@ -44,7 +44,7 @@ namespace flame
 		cText* text;
 		cMenuButton* menu_button;
 
-		Entity* select;
+		Entity* selected;
 
 		cCombobox() :
 			Component("Combobox")

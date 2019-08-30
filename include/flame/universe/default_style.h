@@ -19,6 +19,9 @@ namespace flame
 		Vec4c header_color_normal;
 		Vec4c header_color_hovering;
 		Vec4c header_color_active;
+		Vec4c selected_color_normal;
+		Vec4c selected_color_hovering;
+		Vec4c selected_color_active;
 		float sdf_scale;
 
 		FLAME_UNIVERSE_EXPORTS DefaultStyle();

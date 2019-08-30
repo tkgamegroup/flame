@@ -18,9 +18,9 @@ namespace flame
 			unselected_color_normal = default_style.frame_color_normal;
 			unselected_color_hovering = default_style.frame_color_hovering;
 			unselected_color_active = default_style.frame_color_active;
-			selected_color_normal = default_style.header_color_normal;
-			selected_color_hovering = default_style.header_color_hovering;
-			selected_color_active = default_style.header_color_active;
+			selected_color_normal = default_style.selected_color_normal;
+			selected_color_hovering = default_style.selected_color_hovering;
+			selected_color_active = default_style.selected_color_active;
 
 			mouse_listener = nullptr;
 		}
@@ -49,7 +49,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cListItemPrivate**)c;
-					thiz->list->select = thiz->entity;
+					thiz->list->selected = thiz->entity;
 				}
 			}, new_mail_p(this));
 		}
@@ -58,7 +58,7 @@ namespace flame
 		{
 			if (style)
 			{
-				if (list->select == entity)
+				if (list->selected == entity)
 				{
 					style->color_normal = selected_color_normal;
 					style->color_hovering = selected_color_hovering;
