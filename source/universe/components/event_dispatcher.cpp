@@ -16,11 +16,9 @@ namespace flame
 		std::vector<Key> keyup_inputs;
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete;
-		uint key_states[KeyCount];
 
 		Vec2i mouse_pos, mouse_pos_prev, mouse_disp;
 		int mouse_scroll;
-		uint mouse_buttons[3];
 		cEventReceiver* potential_dbclick_er;
 		float potential_dbclick_time;
 

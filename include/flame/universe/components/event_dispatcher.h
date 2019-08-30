@@ -10,6 +10,9 @@ namespace flame
 
 	struct cEventDispatcher : Component
 	{
+		uint key_states[KeyCount];
+		uint mouse_buttons[3];
+
 		cEventReceiver* hovering;
 		cEventReceiver* focusing;
 

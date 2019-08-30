@@ -31,7 +31,7 @@ namespace flame
 				auto pos = Vec2f(element->global_x, element->global_y) + Vec2f(padding[0], padding[1]);
 				auto size = Vec2f(element->global_width - padding[0] - padding[2], element->global_height - padding[1] - padding[3]);
 				if (!stretch)
-					element->canvas->add_image(pos, size, id, uv0, uv1);
+					element->canvas->add_image(pos, size, id, uv0, uv1, Vec4c(255, 255, 255, element->alpha * 255));
 				else
 					element->canvas->add_image_stretch(pos, size, id, border);
 			}

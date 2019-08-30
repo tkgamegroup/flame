@@ -20,8 +20,8 @@ namespace flame
 		graphics::FontAtlas* font_atlas;
 		Vec4c color;
 		float sdf_scale;
+		Alignx$ align;
 		bool auto_size;
-
 
 		cText() :
 			Component("Text")

@@ -14,6 +14,7 @@ namespace flame
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
 		sdf_scale = default_style.sdf_scale;
+		align = AlignxLeft;
 		auto_size = true;
 	}
 
@@ -30,17 +31,26 @@ namespace flame
 
 	void cTextPrivate::update()
 	{
-		auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
-			Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
-			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale, element->p_element->scissor);
-		if (auto_size)
+		if (align != AlignxRight)
 		{
-			auto w = rect.x() + element->inner_padding[0] + element->inner_padding[2];
-			if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_width)
-				element->width = w;
-			auto h = rect.y() + element->inner_padding[1] + element->inner_padding[3];
-			if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_height)
-				element->height = h;
+			auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
+				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
+				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale, element->p_element->scissor);
+			if (auto_size)
+			{
+				auto w = rect.x() + element->inner_padding[0] + element->inner_padding[2];
+				if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_width)
+					element->width = w;
+				auto h = rect.y() + element->inner_padding[1] + element->inner_padding[3];
+				if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_height)
+					element->height = h;
+			}
+		}
+		else
+		{
+			element->canvas->add_text_rightalign(font_atlas, Vec2f(element->global_x, element->global_y) +
+				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
+				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale, element->p_element->scissor);
 		}
 	}
 

@@ -300,6 +300,55 @@ namespace flame
 				return rect;
 			}
 
+			void add_text_rightalign(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+			{
+				if (f->draw_type != FontDrawSdf)
+					scale = 1.f;
+				auto pixel_height = f->pixel_height * scale;
+
+				auto _pos = Vec2f(Vec2i(pos));
+
+				begin_draw((CmdType)f->draw_type, f->index);
+				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
+				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
+				for (auto it = text.rbegin(); it != text.rend(); it++)
+				{
+					auto ch = *it;
+					if (ch == '\n')
+					{
+						_pos.y() += pixel_height;
+						_pos.x() = pos.x();
+					}
+					else
+					{
+						auto g = f->get_glyph(ch);
+
+						auto p = _pos + Vec2f(-g->off.x(), g->off.y()) * scale;
+						auto size = Vec2f(g->size) * scale;
+						if (rect_overlapping(Vec4f(p, p + size), scissor))
+						{
+							vtx_end->pos = p + Vec2f(-size.x(), 0.f);			vtx_end->uv = g->uv0;							vtx_end->col = col; vtx_end++;
+							vtx_end->pos = p + Vec2f(-size.x(), -size.y());		vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());	vtx_end->col = col; vtx_end++;
+							vtx_end->pos = p + Vec2f(0.f, -size.y());			vtx_end->uv = g->uv1;							vtx_end->col = col; vtx_end++;
+							vtx_end->pos = p + Vec2f(0.f, 0.f);					vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());	vtx_end->col = col; vtx_end++;
+
+							*idx_end = vtx_cnt + 0; idx_end++;
+							*idx_end = vtx_cnt + 2; idx_end++;
+							*idx_end = vtx_cnt + 1; idx_end++;
+							*idx_end = vtx_cnt + 0; idx_end++;
+							*idx_end = vtx_cnt + 3; idx_end++;
+							*idx_end = vtx_cnt + 2; idx_end++;
+
+							vtx_cnt += 4;
+							idx_cnt += 6;
+						}
+
+						auto w = g->advance * scale;
+						_pos.x() -= w;
+					}
+				}
+			}
+
 			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 			{
 				auto _pos = Vec2f(Vec2i(pos));
@@ -453,6 +502,11 @@ namespace flame
 		Vec2f Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
 		{
 			return ((CanvasPrivate*)this)->add_text(f, pos, col, text, scale, scissor);
+		}
+
+		void Canvas::add_text_rightalign(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+		{
+			((CanvasPrivate*)this)->add_text_rightalign(f, pos, col, text, scale, scissor);
 		}
 
 		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
