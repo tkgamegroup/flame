@@ -15,50 +15,6 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	auto bp_scene = blueprint::Scene::create();
-	auto bp_scene_draw = UI::BP_Scene_Draw::create(bp_scene, ui);
-	std::vector<std::pair<std::string, std::wstring>> math_nodes;
-	for (std::filesystem::directory_iterator end, it(L"blueprint_nodes/math"); it != end; it++)
-	{
-		if (!std::filesystem::is_directory(it->status()))
-		{
-			auto name = bp_scene->register_type(it->path().wstring().c_str());
-			math_nodes.emplace_back(name, s2w(name));
-		}
-	}
-	std::vector<std::pair<std::string, std::wstring>> socket_nodes;
-	for (std::filesystem::directory_iterator end, it(L"blueprint_nodes/sockets"); it != end; it++)
-	{
-		if (!std::filesystem::is_directory(it->status()))
-		{
-			auto name = bp_scene->register_type(it->path().wstring().c_str());
-			socket_nodes.emplace_back(name, s2w(name));
-		}
-	}
-	std::vector<std::pair<std::string, std::wstring>> graphics_nodes;
-	for (std::filesystem::directory_iterator end, it(L"blueprint_nodes/graphics"); it != end; it++)
-	{
-		if (!std::filesystem::is_directory(it->status()))
-		{
-			auto name = bp_scene->register_type(it->path().wstring().c_str());
-			graphics_nodes.emplace_back(name, s2w(name));
-		}
-	}
-
-	auto do_open = [&]() {
-		UI::wFileDialog::create(ui, L"File Name", 0, [&](bool ok, const wchar_t *filename) {
-			if (ok)
-				bp_scene->load(filename);
-		}, L"Render Path (*.xml)\0All Files (*.*)\0");
-	};
-
-	auto do_save = [&]() {
-		UI::wFileDialog::create(ui, L"File Name", 1, [&](bool ok, const wchar_t *filename) {
-			if (ok)
-				bp_scene->save(filename);
-		}, L"Render Path (*.xml)\0All Files (*.*)\0");
-	};
-
 	auto do_delete = [&](){
 		UI::BP_Scene_Draw::SelType st;
 		void *sel;
@@ -131,12 +87,6 @@ int main(int argc, char **args)
 		do_delete();
 	});
 	menu_edit->w_items()->add_child(mi_delete);
-
-	ui->root()->add_child(menubar);
-
-	bp_scene_draw->w_scene->add_listener(UI::ListenerRightMouseDown, [&](const Vec2 &pos) {
-		menu_add->popup(pos);
-	});
 
 	ui->root()->add_listener(UI::ListenerKeyDown, [&](int key) {
 		switch (key)

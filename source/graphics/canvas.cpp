@@ -300,7 +300,7 @@ namespace flame
 				return rect;
 			}
 
-			void add_text_rightalign(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+			void add_text_right_align(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
 			{
 				if (f->draw_type != FontDrawSdf)
 					scale = 1.f;
@@ -504,9 +504,9 @@ namespace flame
 			return ((CanvasPrivate*)this)->add_text(f, pos, col, text, scale, scissor);
 		}
 
-		void Canvas::add_text_rightalign(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+		void Canvas::add_text_right_align(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
 		{
-			((CanvasPrivate*)this)->add_text_rightalign(f, pos, col, text, scale, scissor);
+			((CanvasPrivate*)this)->add_text_right_align(f, pos, col, text, scale, scissor);
 		}
 
 		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
