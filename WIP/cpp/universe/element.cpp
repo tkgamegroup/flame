@@ -3,8 +3,6 @@ namespace flame
 	Element::Element(UI* ui)
 	{
 		grid_hori_count$ = 1;
-
-		scroll_offset$ = 0.f;
 	}
 
 	void Element::remove_animations()

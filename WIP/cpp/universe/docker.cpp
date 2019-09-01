@@ -2,6 +2,23 @@ namespace flame
 {
 	namespace ui
 	{
+		struct Layout
+		{
+			Layout* parent;
+			int idx;
+
+			LayoutType type;
+
+			float width;
+			float height;
+			float size_radio;
+			ImGui::Splitter splitter;
+
+			std::unique_ptr<Layout> children[2];
+			std::list<Window*> windows[2];
+			Window* curr_tab[2];
+		};
+
 		float get_layout_padding(bool horizontal)
 		{
 			if (horizontal)

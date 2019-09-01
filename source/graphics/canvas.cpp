@@ -242,7 +242,7 @@ namespace flame
 				}
 			}
 
-			Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+			Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 			{
 				if (f->draw_type != FontDrawSdf)
 					scale = 1.f;
@@ -271,7 +271,7 @@ namespace flame
 
 						auto p = _pos + Vec2f(g->off) * scale;
 						auto size = Vec2f(g->size) * scale;
-						if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), scissor))
+						if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), curr_scissor))
 						{
 							vtx_end->pos = p;						       vtx_end->uv = g->uv0;						  vtx_end->col = col; vtx_end++;
 							vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());   vtx_end->col = col; vtx_end++;
@@ -288,8 +288,6 @@ namespace flame
 							vtx_cnt += 4;
 							idx_cnt += 6;
 						}
-						else
-							int cut = 1;
 
 						auto w = g->advance * scale;
 						_pos.x() += w;
@@ -302,7 +300,7 @@ namespace flame
 				return rect;
 			}
 
-			void add_text_right_align(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+			void add_text_right_align(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 			{
 				if (f->draw_type != FontDrawSdf)
 					scale = 1.f;
@@ -327,7 +325,7 @@ namespace flame
 
 						auto p = _pos + Vec2f(-g->off.x(), g->off.y()) * scale;
 						auto size = Vec2f(g->size) * scale;
-						if (rect_overlapping(Vec4f(p - size, p), scissor))
+						if (rect_overlapping(Vec4f(p - size, p), curr_scissor))
 						{
 							vtx_end->pos = p + Vec2f(-size.x(), 0.f);			vtx_end->uv = g->uv0;							vtx_end->col = col; vtx_end++;
 							vtx_end->pos = p + Vec2f(-size.x(), -size.y());		vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());	vtx_end->col = col; vtx_end++;
@@ -407,6 +405,8 @@ namespace flame
 				auto fb = (Framebuffer*)rnf->framebuffers()[image_idx];
 				auto surface_size = Vec2f(fb->image_size);
 
+				set_scissor(Vec4f(Vec2f(0.f), surface_size));
+
 				cb->begin();
 				cb->begin_renderpass(rnf->renderpass(), fb, rnf->clearvalues());
 				if (idx_end != idx_buffer->mapped)
@@ -470,7 +470,6 @@ namespace flame
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (uint*)idx_buffer->mapped;
 				cmds.clear();
-				curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 			}
 		};
 
@@ -501,14 +500,14 @@ namespace flame
 			((CanvasPrivate*)this)->fill(points, col);
 		}
 
-		Vec2f Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+		Vec2f Canvas::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 		{
-			return ((CanvasPrivate*)this)->add_text(f, pos, col, text, scale, scissor);
+			return ((CanvasPrivate*)this)->add_text(f, pos, col, text, scale);
 		}
 
-		void Canvas::add_text_right_align(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale, const Vec4f& scissor)
+		void Canvas::add_text_right_align(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 		{
-			((CanvasPrivate*)this)->add_text_right_align(f, pos, col, text, scale, scissor);
+			((CanvasPrivate*)this)->add_text_right_align(f, pos, col, text, scale);
 		}
 
 		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

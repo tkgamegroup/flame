@@ -1096,6 +1096,8 @@ int main(int argc, char** args)
 		}
 	}
 
+
+
 	looper().loop([](void* c) {
 		auto app = (*(App**)c);
 		app->run();

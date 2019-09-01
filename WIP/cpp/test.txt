@@ -214,29 +214,6 @@ OLD GRAPHICS TEST:
 
 TERRAIN_TEST:
 
-
-#include <flame/time.h>
-#include <flame/system.h>
-#include <flame/surface.h>
-#include <flame/image.h>
-#include <flame/math.h>
-#include <flame/model/model.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/shader.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/descriptor.h>
-#include <flame/graphics/buffer.h>
-#include <flame/graphics/texture.h>
-#include <flame/graphics/sampler.h>
-#include <flame/graphics/framebuffer.h>
-#include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/semaphore.h>
-#include <flame/graphics/queue.h>
-
-#include <algorithm>
-
 int main(int argc, char **args)
 {
 	using namespace flame;
@@ -471,28 +448,6 @@ int main(int argc, char **args)
 }
 
 SKELETON_TEST:
-
-
-#include <flame/time.h>
-#include <flame/system.h>
-#include <flame/surface.h>
-#include <flame/image.h>
-#include <flame/math.h>
-#include <flame/model/model.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/descriptor.h>
-#include <flame/graphics/buffer.h>
-#include <flame/graphics/texture.h>
-#include <flame/graphics/sampler.h>
-#include <flame/graphics/framebuffer.h>
-#include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/semaphore.h>
-#include <flame/graphics/queue.h>
-
-#include <algorithm>
 
 int main(int argc, char **args)
 {
@@ -872,16 +827,6 @@ int main(int argc, char **args)
 
 SCENE_TEST:
 
-#include <flame/serialize.h>
-#include <flame/graphics/image.h>
-#include <flame/ui/style.h>
-#include <flame/3d/model.h>
-#include <flame/3d/camera.h>
-
-using namespace flame;
-
-BasicApp app;
-
 void add_wall(const Vec3 &pos, const Vec3 &vx, float height)
 {
 	auto m = _3d::Model::create();
@@ -1006,36 +951,6 @@ extern "C" __declspec(dllexport) int main()
 }
 
 PHYSICS_TEST:
-
-#include <flame/time.h>
-#include <flame/filesystem.h>
-#include <flame/system.h>
-#include <flame/surface.h>
-#include <flame/image.h>
-#include <flame/math.h>
-#include <flame/model/model.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/shader.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/descriptor.h>
-#include <flame/graphics/buffer.h>
-#include <flame/graphics/texture.h>
-#include <flame/graphics/sampler.h>
-#include <flame/graphics/framebuffer.h>
-#include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/semaphore.h>
-#include <flame/graphics/queue.h>
-#include <flame/physics/device.h>
-#include <flame/physics/material.h>
-#include <flame/physics/scene.h>
-#include <flame/physics/rigid.h>
-#include <flame/physics/shape.h>
-#include <flame/UI/UI.h>
-
-#include <algorithm>
-#include <Windows.h>
 
 int main(int argc, char **args)
 {

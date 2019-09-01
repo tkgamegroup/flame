@@ -16,15 +16,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static void create_from_typeinfo(UI* ui, int font_atlas_index, VariableInfo* info, void* p, Element* dst); // use variable to create element, e.g. string->edit, bool->checkbox
 	};
 
-	FLAME_ELEMENT_BEGIN_2(wScrollbar, wLayout, wButtonPtr, w_btn, p, ElementPtr, w_target, p)
-		FLAME_UNIVERSE_EXPORTS void init(Element* target);
-		FLAME_UNIVERSE_EXPORTS void scroll(int v);
-	FLAME_ELEMENT_END
-
-	FLAME_ELEMENT_BEGIN_2(wSizeDrag, Element, ElementPtr, w_target, p, Vec2, min_size, f2)
-		FLAME_UNIVERSE_EXPORTS void init(Element* target);
-	FLAME_ELEMENT_END
-
 	FLAME_ELEMENT_BEGIN_3(wSplitter, Element, int, dir /* 0, else = hori, vert */, i1, ElementPtr, w_target1, p, ElementPtr, w_target2, p)
 		FLAME_UNIVERSE_EXPORTS void init(int dir, Element* target1, Element* target2);
 	FLAME_ELEMENT_END

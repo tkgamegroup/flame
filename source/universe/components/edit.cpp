@@ -101,7 +101,7 @@ namespace flame
 				element->canvas->add_text(text->font_atlas, Vec2f(element->global_x, element->global_y) +
 					Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
 					Vec2f(text->font_atlas->get_text_width(std::wstring_view(text->text().c_str(), cursor)) * text_scale, 0.f),
-					alpha_mul(text->color, element->alpha), L"|", text_scale, element->p_element->scissor);
+					alpha_mul(text->color, element->alpha), L"|", text_scale);
 			}
 		}
 	};

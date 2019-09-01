@@ -35,7 +35,7 @@ namespace flame
 		{
 			auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
-				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale, element->p_element->scissor);
+				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 			if (auto_size)
 			{
 				auto w = rect.x() + element->inner_padding[0] + element->inner_padding[2];
@@ -50,7 +50,7 @@ namespace flame
 		{
 			element->canvas->add_text_right_align(font_atlas, Vec2f(element->global_x, element->global_y) +
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
-				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale, element->p_element->scissor);
+				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 		}
 	}
 

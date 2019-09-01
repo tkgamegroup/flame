@@ -1,5 +1,4 @@
 ﻿#include <flame/foundation/serialize.h>
-#include <flame/foundation/window.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/renderpass.h>
@@ -60,8 +59,6 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	typeinfo_load(L"flame_graphics.typeinfo");
-	
 	app.rt_frame = 0;
 
 	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
@@ -89,7 +86,7 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-	app_run([](void* c) {
+	looper().loop([](void* c) {
 		auto app = *(App**)c;
 		app->run();
 	}, new_mail_p(&app));

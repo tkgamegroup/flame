@@ -232,10 +232,6 @@ void wSandBox::init()
 
 extern "C" __declspec(dllexport) int main()
 {
-	app.create("UI Editor", Ivec2(1280, 720), WindowFrame | WindowResizable);
-
-	app.canvas->set_clear_color(Bvec4(200, 200, 200, 255));
-
 	ui_ins_sandbox = Instance::create();
 	ui_ins_sandbox->root()->background_col$ = Bvec4(0, 0, 0, 255);
 	ui_ins_sandbox->on_resize(Ivec2(200));
