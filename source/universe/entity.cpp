@@ -59,12 +59,31 @@ namespace flame
 			return nullptr;
 		}
 
-		void add_child(EntityPrivate* e)
+		void add_child(EntityPrivate* e, int position)
 		{
-			children.emplace_back(e);
+			if (position == -1)
+				position = children.size();
+			children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
 			e->parent = this;
 			for (auto& c : e->components)
 				c->on_entity_added_to_parent();
+		}
+
+		void reposition_child(EntityPrivate* e, int position)
+		{
+			if (position == -1)
+				position = children.size() - 1;
+			assert(position < children.size());
+			if (children[position].get() == e)
+				return;
+			for (auto& _e : children)
+			{
+				if (_e.get() == e)
+				{
+					std::swap(_e, children[position]);
+					break;
+				}
+			}
 		}
 
 		void remove_child(EntityPrivate* e)
@@ -205,9 +224,14 @@ namespace flame
 		return ((EntityPrivate*)this)->find_child(name);
 	}
 
-	void Entity::add_child(Entity* e)
+	void Entity::add_child(Entity* e, int position)
 	{
-		((EntityPrivate*)this)->add_child((EntityPrivate*)e);
+		((EntityPrivate*)this)->add_child((EntityPrivate*)e, position);
+	}
+
+	void Entity::reposition_child(Entity* e, int position)
+	{
+		((EntityPrivate*)this)->reposition_child((EntityPrivate*)e, position);
 	}
 
 	void Entity::remove_child(Entity* e)

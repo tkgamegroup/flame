@@ -435,13 +435,6 @@ namespace flame
 		mouse_listeners$.push_back(Function<MouseListenerParm>(splitter_mouse_event$, {}));
 	}
 
-	void dialog_mouse_event$(Element::MouseListenerParm& p)
-	{
-		auto thiz = (wDialogPtr)p.thiz();
-		if (p.is_down() && p.key() == Mouse_Left)
-			thiz->set_to_foreground();
-	}
-
 	void wDialog::init(bool resize, bool modual)
 	{
 		wLayout::init();
@@ -457,12 +450,6 @@ namespace flame
 			size_policy_vert$ = SizeFitLayout;
 			clip$ = true;
 		}
-
-		background_offset$[1] = 0.f;
-		background_round_radius$ = radius;
-		background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
-
-		mouse_listeners$.push_back(Function<MouseListenerParm>(dialog_mouse_event$, {}));
 
 		if (resize)
 		{

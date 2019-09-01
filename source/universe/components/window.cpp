@@ -29,7 +29,14 @@ namespace flame
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cWindowPrivate**)c);
-				if (thiz->event_receiver->dragging && is_mouse_move(action, key))
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					looper().add_delay_event([](void* c) {
+						auto e = *(Entity**)c;
+						e->parent()->reposition_child(e, -1);
+					}, new_mail_p(thiz->entity));
+				}
+				else if (thiz->event_receiver->dragging && is_mouse_move(action, key))
 				{
 					auto e = thiz->event_receiver->element;
 					auto x = pos.x() / e->global_scale;

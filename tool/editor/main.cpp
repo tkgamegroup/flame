@@ -1,6 +1,5 @@
 #include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
-#include <flame/foundation/window.h>
 #include <flame/network/network.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
@@ -116,7 +115,7 @@ struct App
 
 			c_element_root->width = w->size.x();
 			c_element_root->height = w->size.y();
-			c_text_fps->set_text(std::to_wstring(app_fps()));
+			c_text_fps->set_text(std::to_wstring(looper().frame));
 			root->update();
 			//bp->update();
 
@@ -311,16 +310,22 @@ int main(int argc, char **args)
 			c_element->clip_children = true;
 			e_window->add_component(c_element);
 
-			auto c_bp = (cBP*)component_alloc(sizeof(cBP));
-			new (c_bp) cBP;
-			c_bp->bp = app.bp;
-			e_window->add_component(c_bp);
-
 			e_window->add_component(cEventReceiver::create());
 
 			e_window->add_component(cWindow::create());
 
 			e_window->add_component(cLayout::create());
+
+			auto e_bp = Entity::create();
+			e_window->add_child(e_bp);
+			{
+				e_bp->add_component(cElement::create());
+
+				auto c_bp = (cBP*)component_alloc(sizeof(cBP));
+				new (c_bp) cBP;
+				c_bp->bp = app.bp;
+				e_bp->add_component(c_bp);
+			}
 
 			auto e_title = Entity::create();
 			e_window->add_child(e_title);
@@ -388,6 +393,7 @@ int main(int argc, char **args)
 				c_element->x = n->pos.x();
 				c_element->y = n->pos.y();
 				c_element->inner_padding = Vec4f(8.f);
+				c_element->background_color = Vec4c(255, 255, 255, 200);
 				c_element->background_frame_color = Vec4c(255);
 				c_element->background_frame_thickness = 2.f;
 				c_element->background_round_radius = 8.f;
@@ -482,7 +488,7 @@ int main(int argc, char **args)
 								c_element->width = r;
 								c_element->height = r;
 								c_element->background_round_radius = r * 0.5f;
-								c_element->background_color = Vec4c(255);
+								c_element->background_color = Vec4c(200, 200, 200, 255);
 								e_slot->add_component(c_element);
 								input->user_data = c_element;
 							}
@@ -546,7 +552,7 @@ int main(int argc, char **args)
 								c_element->width = r;
 								c_element->height = r;
 								c_element->background_round_radius = r * 0.5f;
-								c_element->background_color = Vec4c(255);
+								c_element->background_color = Vec4c(200, 200, 200, 255);
 								e_slot->add_component(c_element);
 								outout->user_data = c_element;
 							}
@@ -558,7 +564,7 @@ int main(int argc, char **args)
 
 		set_event(app.ev_1);
 		wait_event(app.ev_2, -1);
-		app_run([](void* c) {
+		looper().loop([](void* c) {
 			auto app = (*(App**)c);
 			app->run();
 		}, new_mail_p(&app));
