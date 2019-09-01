@@ -1615,25 +1615,25 @@ namespace flame
 	{
 		switch (s)
 		{
-		case ::SideN:
+		case SideN:
 			return Vec<2, T>(T(0), T(-1));
-		case ::SideS:
+		case SideS:
 			return Vec<2, T>(T(0), T(1));
-		case ::SideW:
+		case SideW:
 			return Vec<2, T>(T(-1), T(0));
-		case ::SideE:
+		case SideE:
 			return Vec<2, T>(T(1), T(0));
-		case ::SideNW:
+		case SideNW:
 			return Vec<2, T>(T(-1), T(-1));
-		case ::SideNE:
+		case SideNE:
 			return Vec<2, T>(T(1), T(-1));
-		case ::SideSW:
+		case SideSW:
 			return Vec<2, T>(T(-1), T(1));
-		case ::SideSE:
+		case SideSE:
 			return Vec<2, T>(T(1), T(1));
-		case ::Outside:
+		case Outside:
 			return Vec<2, T>(T(2));
-		case ::Inside:
+		case Inside:
 			return Vec<2, T>(T(0));
 		}
 	}

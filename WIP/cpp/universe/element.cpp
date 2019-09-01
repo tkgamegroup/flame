@@ -112,15 +112,6 @@ namespace flame
 		}, { ui }));
 	}
 
-	void wMenu::open()
-	{
-		for (auto i = 0; i < w_items()->children_1$.size; i++)
-		{
-			auto w = w_items()->children_1$[i];
-			w->animations$.push_back(Animation(0.2f, false, Animation::fade(0.f, w->alpha$)));
-		}
-	}
-
 	void wCombo::init(int font_atlas_index, void* _enum_info, void* _target)
 	{
 		if (enum_info())
@@ -314,84 +305,6 @@ namespace flame
 				break;
 			}
 		}
-	}
-
-	void scrollbar_btn_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (p.action() != KeyStateNull)
-			return;
-
-		auto scrollbar = (wScrollbarPtr)(p.thiz()->parent);
-		if (p.key() == Mouse_Middle)
-			scrollbar->on_mouse(KeyStateNull, Mouse_Middle, Vec2(p.value().x, 0.f));
-		else
-		{
-			if (scrollbar->w_btn() == scrollbar->ui->dragging_element())
-				scrollbar->w_target()->scroll_offset$ -= (p.value().y / scrollbar->size$.y) * scrollbar->w_target()->get_content_size();
-		}
-	}
-
-	FLAME_PACKAGE_BEGIN_1(ScrollbarTargetMouseEventData, wScrollbarPtr, scrollbar, p)
-	FLAME_PACKAGE_END_1
-
-	void scrollbar_target_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_scroll())
-			return;
-
-		auto scrollbar = p.get_capture<ScrollbarTargetMouseEventData>().scrollbar();
-		scrollbar->scroll(p.value().x);
-	}
-
-	void scrollbar_style$(StyleParm& p)
-	{
-		auto thiz = (wScrollbarPtr)p.e();
-		auto s = thiz->w_target()->size$.y - thiz->w_target()->inner_padding$[1] - thiz->w_target()->inner_padding$[3];
-		auto content_size = thiz->w_target()->get_content_size();
-		if (content_size > s)
-		{
-			thiz->w_btn()->set_visibility(true);
-			thiz->w_btn()->pos$.y = thiz->size$.y * (-thiz->w_target()->scroll_offset$ / content_size);
-			thiz->w_btn()->size$.y = thiz->size$.y * (s / content_size);
-		}
-		else
-			thiz->w_btn()->set_visibility(false);
-	}
-
-	void scrollbar_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_scroll())
-			return;
-
-		auto thiz = (wScrollbarPtr)p.thiz();
-		thiz->scroll(p.value().x);
-	}
-
-	void wScrollbar::init(Element * target)
-	{
-		wLayout::init();
-
-		size$ = Vec2(10.f);
-		size_policy_vert$ = SizeFitLayout;
-		align$ = AlignRight;
-
-		w_btn() = createT<wButton>(ui, -1, nullptr);
-		w_btn()->size$ = size$;
-		w_btn()->background_round_radius$ = 5.f;
-		w_btn()->background_round_flags$ = Rect::SideNW | Rect::SideNE | Rect::SideSW | Rect::SideSE;
-		w_btn()->mouse_listeners$.push_back(Function<MouseListenerParm>(scrollbar_btn_mouse_event$, {}));
-		add_child(w_btn());
-
-		w_target() = target;
-		w_target()->mouse_listeners$.push_back(Function<MouseListenerParm>(scrollbar_target_mouse_event$, { this }));
-
-		styles$.push_back(Style(0, 0, Function<StyleParm>(scrollbar_style$, {})));
-		mouse_listeners$.push_back(Function<MouseListenerParm>(scrollbar_mouse_event$, {}));
-	}
-
-	void wScrollbar::scroll(int v)
-	{
-		w_target()->scroll_offset$ += v * 20.f;
 	}
 
 	void splitter_mouse_event$(Element::MouseListenerParm& p)

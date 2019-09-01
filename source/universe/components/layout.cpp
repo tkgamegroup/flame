@@ -14,6 +14,9 @@ namespace flame
 			item_padding = 0.f;
 			width_fit_children = true;
 			height_fit_children = true;
+			scroll_offset = Vec2f(0.f);
+
+			content_size = Vec2f(0.f);
 		}
 
 		void start()
@@ -64,32 +67,32 @@ namespace flame
 					switch (al.second ? al.second->x_align : AlignxFree)
 					{
 					case AlignxLeft:
-						al.first->x = 0;
+						al.first->x = scroll_offset.x();
 						break;
 					case AlignxMiddle:
-						al.first->x = (element->width - al.first->width) * 0.5f;
+						al.first->x = scroll_offset.x() + (element->width - al.first->width) * 0.5f;
 						break;
 					case AlignxRight:
-						al.first->x = element->width - al.first->width;
+						al.first->x = scroll_offset.x() + element->width - al.first->width;
 						break;
 					}
 					switch (al.second ? al.second->y_align : AlignyFree)
 					{
 					case AlignyTop:
-						al.first->y = 0;
+						al.first->y = scroll_offset.y();
 						break;
 					case AlignyMiddle:
-						al.first->y = (element->height - al.first->height) * 0.5f;
+						al.first->y = scroll_offset.y() + (element->height - al.first->height) * 0.5f;
 						break;
 					case AlignyBottom:
-						al.first->y = element->height - al.first->height;
+						al.first->y = scroll_offset.y() + element->height - al.first->height;
 						break;
 					}
 				}
 				break;
 			case LayoutHorizontal:
 			{
-				auto w = element->inner_padding[0];
+				auto w = 0.f;
 				auto h = 0.f;
 				auto div_num = 0U;
 				for (auto al : als)
@@ -122,7 +125,8 @@ namespace flame
 				}
 				if (!als.empty())
 					w -= item_padding;
-				w += element->inner_padding[2];
+				content_size = Vec2f(w, h);
+				w += element->inner_padding[0] + element->inner_padding[2];
 				h += element->inner_padding[1] + element->inner_padding[3];
 
 				if (width_fit_children)
@@ -175,18 +179,18 @@ namespace flame
 				for (auto al : als)
 				{
 					assert(!al.second || al.second->x_align == AlignxFree);
-					al.first->x = x;
+					al.first->x = scroll_offset.x() + x;
 					x += al.first->width + item_padding;
 					switch (al.second ? al.second->y_align : AlignyFree)
 					{
 					case AlignyFree: case AlignyTop:
-						al.first->y = element->inner_padding[1];
+						al.first->y = scroll_offset.y() + element->inner_padding[1];
 						break;
 					case AlignyMiddle:
-						al.first->y = (element->height - element->inner_padding[1] - element->inner_padding[3] - al.first->height) * 0.5f;
+						al.first->y = scroll_offset.y() + (element->height - element->inner_padding[1] - element->inner_padding[3] - al.first->height) * 0.5f;
 						break;
 					case AlignyBottom:
-						al.first->y = element->height - element->inner_padding[3] - al.first->height;
+						al.first->y = scroll_offset.y() + element->height - element->inner_padding[3] - al.first->height;
 						break;
 					}
 				}
@@ -195,7 +199,7 @@ namespace flame
 			case LayoutVertical:
 			{
 				auto w = 0.f;
-				auto h = element->inner_padding[1];
+				auto h = 0.f;
 				auto div_num = 0U;
 				for (auto al : als)
 				{
@@ -227,8 +231,9 @@ namespace flame
 				}
 				if (!als.empty())
 					h -= item_padding;
+				content_size = Vec2f(w, h);
 				w += element->inner_padding[0] + element->inner_padding[2];
-				h += element->inner_padding[3];
+				h += element->inner_padding[1] + element->inner_padding[3];
 
 				if (width_fit_children)
 				{
@@ -282,17 +287,17 @@ namespace flame
 					switch (al.second ? al.second->x_align : AlignxFree)
 					{
 					case AlignxFree: case AlignxLeft:
-						al.first->x = element->inner_padding[0];
+						al.first->x = scroll_offset.x() + element->inner_padding[0];
 						break;
 					case AlignxMiddle:
-						al.first->x = (element->width - element->inner_padding[0] - element->inner_padding[2] - al.first->width) * 0.5f;
+						al.first->x = scroll_offset.x() + (element->width - element->inner_padding[0] - element->inner_padding[2] - al.first->width) * 0.5f;
 						break;
 					case AlignxRight:
-						al.first->x = element->width - element->inner_padding[2] - al.first->width;
+						al.first->x = scroll_offset.x() + element->width - element->inner_padding[2] - al.first->width;
 						break;
 					}
 					assert(!al.second || al.second->y_align == AlignyFree);
-					al.first->y = y;
+					al.first->y = scroll_offset.y() + y;
 					y += al.first->height + item_padding;
 				}
 			}

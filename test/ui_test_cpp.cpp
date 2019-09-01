@@ -22,6 +22,7 @@
 #include <flame/universe/components/image.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/list.h>
+#include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/tree.h>
@@ -374,6 +375,25 @@ int main(int argc, char** args)
 			auto c_aligner = cAligner::create();
 			c_aligner->height_policy = SizeFitLayout;
 			e_scrollbar->add_component(c_aligner);
+
+			e_scrollbar->add_component(cEventReceiver::create());
+
+			e_scrollbar->add_component(cScrollbar::create());
+		}
+
+		auto e_scrollbar_thumb = Entity::create();
+		e_scrollbar->add_child(e_scrollbar_thumb);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 10.f;
+			c_element->height = 10.f;
+			e_scrollbar_thumb->add_component(c_element);
+
+			e_scrollbar_thumb->add_component(cEventReceiver::create());
+
+			e_scrollbar_thumb->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+
+			e_scrollbar_thumb->add_component(cScrollbarThumb::create());
 		}
 	}
 

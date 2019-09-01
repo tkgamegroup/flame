@@ -38,10 +38,9 @@ namespace flame
 		LayoutHorizontal
 	};
 
-	enum Message
+	enum ScrollbarType
 	{
-		StandardMessageWindowPosChanged,
-
-		MessageUser
+		ScrollbarVertical,
+		ScrollbarHorizontal
 	};
 }

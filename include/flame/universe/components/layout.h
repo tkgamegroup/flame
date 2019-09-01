@@ -16,8 +16,9 @@ namespace flame
 		float item_padding;
 		bool width_fit_children;
 		bool height_fit_children;
+		Vec2f scroll_offset;
 
-		float scroll_offset;
+		Vec2f content_size;
 
 		cLayout() :
 			Component("Layout")
