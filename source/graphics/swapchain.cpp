@@ -1,4 +1,3 @@
-#include <flame/foundation/window.h>
 #include "device_private.h"
 #include "synchronize_private.h"
 #include <flame/graphics/image.h>
@@ -214,7 +213,7 @@ namespace flame
 			w(w)
 		{
 			sc = Swapchain::create(d, w);
-			sc_frame = app_frame();
+			sc_frame = looper().frame;
 			auto thiz = this;
 			resize_listener = w->add_resize_listener([](void* c, const Vec2u& size) {
 				auto thiz = *(SwapchainResizablePrivate**)c;
@@ -227,7 +226,7 @@ namespace flame
 					thiz->sc = Swapchain::create(thiz->d, thiz->w);
 				else
 					thiz->sc = nullptr;
-				thiz->sc_frame = app_frame();
+				thiz->sc_frame = looper().frame;
 
 			}, new_mail(&thiz));
 		}

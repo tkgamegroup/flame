@@ -1,6 +1,5 @@
 #include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
-#include <flame/foundation/window.h>
 
 namespace flame
 {
@@ -112,7 +111,7 @@ namespace flame
 
 	void SlotPrivate::set_data(const void* d)
 	{
-		set_frame(app_frame());
+		set_frame(looper().frame);
 		memcpy((char*)raw_data + sizeof(uint), d, variable_info->size() - sizeof(int));
 	}
 
@@ -159,7 +158,7 @@ namespace flame
 		links[0] = target;
 		target->links.push_back(this);
 
-		set_frame(app_frame());
+		set_frame(looper().frame);
 
 		node->bp->build_update_list();
 
@@ -256,7 +255,7 @@ namespace flame
 		{
 			for (auto& l : o->links)
 			{
-				l->set_frame(app_frame());
+				l->set_frame(looper().frame);
 				l->links[0] = nullptr;
 			}
 		}

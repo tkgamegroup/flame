@@ -7,7 +7,6 @@
 #include "image_private.h"
 #include "shader_private.h"
 
-#include <flame/foundation/window.h>
 #include <flame/foundation/blueprint.h>
 
 namespace flame
@@ -634,7 +633,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = app_frame();
+					out$o.frame = looper().frame;
 				}
 			}
 

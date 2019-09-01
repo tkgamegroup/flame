@@ -1,4 +1,3 @@
-#include <flame/foundation/window.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
@@ -31,7 +30,7 @@ namespace flame
 			auto c_event_receiver = cEventReceiver::create();
 			c_event_receiver->penetrable = penetrable;
 			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Left && topmost->created_frame != app_frame())
+				if (is_mouse_down(action, key, true) && key == Mouse_Left && topmost->created_frame != looper().frame)
 					destroy_topmost();
 			}, Mail<>());
 			topmost->add_component(c_event_receiver);
@@ -58,7 +57,10 @@ namespace flame
 		}
 
 		topmost->take_all_children();
-		topmost->add_to_trashbin(topmost->parent());
+		looper().add_delay_event([](void* c) {
+			auto e = *(Entity**)c;
+			e->parent()->take_child(e);
+		}, new_mail_p(topmost));
 		topmost = nullptr;
 	}
 }

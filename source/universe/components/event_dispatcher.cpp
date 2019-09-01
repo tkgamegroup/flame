@@ -1,4 +1,3 @@
-#include <flame/foundation/window.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_dispatcher.h>
@@ -106,7 +105,7 @@ namespace flame
 			mouse_disp = mouse_pos - mouse_pos_prev;
 			if (potential_dbclick_er)
 			{
-				potential_dbclick_time += app_delta_time();
+				potential_dbclick_time += looper().delta_time;
 				if (potential_dbclick_time > 0.5f)
 				{
 					potential_dbclick_er = nullptr;

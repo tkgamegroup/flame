@@ -1,4 +1,3 @@
-#include <flame/foundation/window.h>
 #include <flame/graphics/canvas.h>
 #include <flame/graphics/font.h>
 #include <flame/universe/components/element.h>
@@ -96,7 +95,7 @@ namespace flame
 
 		void update()
 		{
-			if (!element->cliped && event_receiver->focusing && (int(app_total_time() * 2.f) % 2 == 0))
+			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
 				auto text_scale = text->sdf_scale * element->global_scale;
 				element->canvas->add_text(text->font_atlas, Vec2f(element->global_x, element->global_y) +
