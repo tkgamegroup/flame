@@ -123,9 +123,9 @@ namespace flame
 			unselected_color_normal = default_style.frame_color_normal;
 			unselected_color_hovering = default_style.frame_color_hovering;
 			unselected_color_active = default_style.frame_color_active;
-			selected_color_normal = default_style.header_color_normal;
-			selected_color_hovering = default_style.header_color_hovering;
-			selected_color_active = default_style.header_color_active;
+			selected_color_normal = default_style.selected_color_normal;
+			selected_color_hovering = default_style.selected_color_hovering;
+			selected_color_active = default_style.selected_color_active;
 
 			title_mouse_listener = nullptr;
 			arrow_mouse_listener = nullptr;

@@ -137,6 +137,10 @@ namespace flame
 
 	void cCombobox::update()
 	{
+		auto element = (cElement*)(entity->find_component(cH("Element")));
+		if (element->cliped)
+			int cut = 1;
+
 	}
 
 	cCombobox* cCombobox::create()

@@ -299,45 +299,81 @@ int main(int argc, char** args)
 		e_layout_right->add_component(c_layout);
 	}
 
-	auto e_list = Entity::create();
-	e_layout_right->add_child(e_list);
 	{
-		auto c_element = cElement::create();
-		c_element->width = 108.f;
-		c_element->inner_padding = Vec4f(4.f);
-		c_element->background_frame_color = Vec4c(255);
-		c_element->background_frame_thickness = 2.f;
-		e_list->add_component(c_element);
-
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		c_layout->item_padding = 4.f;
-		c_layout->width_fit_children = false;
-		e_list->add_component(c_layout);
-
-		e_list->add_component(cList::create());
-	}
-
-	for (auto i = 0; i < 3; i++)
-	{
-		auto e_item = Entity::create();
-		e_list->add_child(e_item);
+		auto e_container = Entity::create();
+		e_layout_right->add_child(e_container);
 		{
-			e_item->add_component(cElement::create());
+			auto c_element = cElement::create();
+			c_element->width = 208.f;
+			c_element->height = 108.f;
+			c_element->inner_padding = Vec4f(4.f);
+			c_element->background_frame_color = Vec4c(255);
+			c_element->background_frame_thickness = 2.f;
+			c_element->clip_children = true;
+			e_container->add_component(c_element);
 
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(L"item" + std::to_wstring(i));
-			e_item->add_component(c_text);
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutHorizontal;
+			c_layout->item_padding = 4.f;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			e_container->add_component(c_layout);
+		}
 
-			e_item->add_component(cEventReceiver::create());
-
-			e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-			e_item->add_component(cListItem::create());
+		auto e_list = Entity::create();
+		e_container->add_child(e_list);
+		{
+			e_list->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
-			e_item->add_component(c_aligner);
+			c_aligner->width_policy = SizeFitLayout;
+			c_aligner->height_policy = SizeFitLayout;
+			e_list->add_component(c_aligner);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->item_padding = 4.f;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			e_list->add_component(c_layout);
+
+			e_list->add_component(cList::create());
+		}
+
+		for (auto i = 0; i < 10; i++)
+		{
+			auto e_item = Entity::create();
+			e_list->add_child(e_item);
+			{
+				e_item->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"item" + std::to_wstring(i));
+				e_item->add_component(c_text);
+
+				e_item->add_component(cEventReceiver::create());
+
+				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+				e_item->add_component(cListItem::create());
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				e_item->add_component(c_aligner);
+			}
+		}
+
+		auto e_scrollbar = Entity::create();
+		e_container->add_child(e_scrollbar);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 10.f;
+			c_element->background_color = Vec4c(100);
+			e_scrollbar->add_component(c_element);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->height_policy = SizeFitLayout;
+			e_scrollbar->add_component(c_aligner);
 		}
 	}
 

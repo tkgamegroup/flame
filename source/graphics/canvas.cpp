@@ -271,7 +271,7 @@ namespace flame
 
 						auto p = _pos + Vec2f(g->off) * scale;
 						auto size = Vec2f(g->size) * scale;
-						if (rect_overlapping(Vec4f(p, p + size), scissor))
+						if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), scissor))
 						{
 							vtx_end->pos = p;						       vtx_end->uv = g->uv0;						  vtx_end->col = col; vtx_end++;
 							vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());   vtx_end->col = col; vtx_end++;
@@ -288,6 +288,8 @@ namespace flame
 							vtx_cnt += 4;
 							idx_cnt += 6;
 						}
+						else
+							int cut = 1;
 
 						auto w = g->advance * scale;
 						_pos.x() += w;
@@ -325,7 +327,7 @@ namespace flame
 
 						auto p = _pos + Vec2f(-g->off.x(), g->off.y()) * scale;
 						auto size = Vec2f(g->size) * scale;
-						if (rect_overlapping(Vec4f(p, p + size), scissor))
+						if (rect_overlapping(Vec4f(p - size, p), scissor))
 						{
 							vtx_end->pos = p + Vec2f(-size.x(), 0.f);			vtx_end->uv = g->uv0;							vtx_end->col = col; vtx_end++;
 							vtx_end->pos = p + Vec2f(-size.x(), -size.y());		vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());	vtx_end->col = col; vtx_end++;

@@ -150,7 +150,7 @@ namespace flame
 					if (er)
 					{
 						er->event_dispatcher = thiz;
-						if (er->element->contains(Vec2f(thiz->mouse_pos)))
+						if (!er->element->cliped && er->element->contains(Vec2f(thiz->mouse_pos)))
 						{
 							thiz->hovers.push_back(er);
 							if (!er->penetrable)
