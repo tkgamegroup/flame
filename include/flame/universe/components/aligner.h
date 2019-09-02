@@ -12,13 +12,13 @@ namespace flame
 
 		Alignx$ x_align;
 		Aligny$ y_align;
-
 		float min_width;
 		float min_height;
 		SizePolicy$ width_policy;
 		float width_factor;
 		SizePolicy$ height_policy;
 		float height_factor;
+		bool using_padding_in_free_layout;
 
 		cAligner() :
 			Component("Aligner")

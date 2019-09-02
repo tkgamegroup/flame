@@ -11,13 +11,13 @@ namespace flame
 
 			x_align = AlignxFree;
 			y_align = AlignyFree;
-
 			min_width = -1.f;
 			min_height = -1.f;
 			width_policy = SizeFixed;
 			width_factor = 1.f;
 			height_policy = SizeFixed;
 			height_factor = 1.f;
+			using_padding_in_free_layout = false;
 		}
 
 		void start()

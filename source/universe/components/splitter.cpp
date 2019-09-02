@@ -66,6 +66,10 @@ namespace flame
 							thiz->left_element->width += v;
 							thiz->right_element->width -= v;
 						}
+						if (thiz->left_aligner)
+							thiz->left_aligner->width_factor = thiz->left_element->width;
+						if (thiz->right_aligner)
+							thiz->right_aligner->width_factor = thiz->right_element->width;
 					}
 					else
 					{
@@ -81,29 +85,13 @@ namespace flame
 							thiz->left_element->height += v;
 							thiz->right_element->height -= v;
 						}
+						if (thiz->left_aligner)
+							thiz->left_aligner->height_factor = thiz->left_element->height;
+						if (thiz->right_aligner)
+							thiz->right_aligner->height_factor = thiz->right_element->height;
 					}
 				}
 			}, new_mail_p(this));
-		}
-
-		void update()
-		{
-			if (type == SplitterHorizontal)
-			{
-				auto r = left_element->width / right_element->width;
-				if (left_aligner)
-					left_aligner->width_factor = r;
-				if (right_aligner)
-					right_aligner->width_factor = 1 / r;
-			}
-			else
-			{
-				auto r = left_element->height / right_element->height;
-				if (left_aligner)
-					left_aligner->height_factor = r;
-				if (right_aligner)
-					right_aligner->height_factor = 1 / r;
-			}
 		}
 	};
 
@@ -119,7 +107,6 @@ namespace flame
 
 	void cSplitter::update()
 	{
-		((cSplitterPrivate*)this)->update();
 	}
 
 	cSplitter* cSplitter::create()

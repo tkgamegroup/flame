@@ -27,6 +27,7 @@
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/splitter.h>
+#include <flame/universe/components/window.h>
 
 using namespace flame;
 using namespace graphics;
@@ -1098,8 +1099,25 @@ int main(int argc, char** args)
 	}
 
 	{
+		auto e_container = Entity::create();
+		e_layout_right->add_child(e_container);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 240.f;
+			c_element->height = 132.f;
+			c_element->inner_padding = Vec4f(16.f);
+			c_element->background_frame_color = Vec4c(255);
+			c_element->background_frame_thickness = 2.f;
+			e_container->add_component(c_element);
+
+			auto c_layout = cLayout::create();
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			e_container->add_component(c_layout);
+		}
+
 		auto e_layout = Entity::create();
-		e_layout_right->add_child(e_layout);
+		e_container->add_child(e_layout);
 		{
 			e_layout->add_component(cElement::create());
 
@@ -1108,18 +1126,28 @@ int main(int argc, char** args)
 			c_layout->width_fit_children = false;
 			c_layout->height_fit_children = false;
 			e_layout->add_component(c_layout);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->x_align = AlignxLeft;
+			c_aligner->y_align = AlignyTop;
+			c_aligner->width_policy = SizeFitLayout;
+			c_aligner->height_policy = SizeFitLayout;
+			c_aligner->using_padding_in_free_layout = true;
+			e_layout->add_component(c_aligner);
 		}
 
 		auto e_box_left = Entity::create();
 		e_layout->add_child(e_box_left);
 		{
 			auto c_element = cElement::create();
-			c_element->width = 108.f;
-			c_element->height = 108.f;
-			c_element->inner_padding = Vec4f(4.f);
 			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
 			e_box_left->add_component(c_element);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitLayout;
+			c_aligner->height_policy = SizeFitLayout;
+			e_box_left->add_component(c_aligner);
 		}
 
 		auto e_spliter = Entity::create();
@@ -1127,7 +1155,6 @@ int main(int argc, char** args)
 		{
 			auto c_element = cElement::create();
 			c_element->width = 8.f;
-			c_element->height = 108.f;
 			e_spliter->add_component(c_element);
 
 			e_spliter->add_component(cEventReceiver::create());
@@ -1135,18 +1162,43 @@ int main(int argc, char** args)
 			e_spliter->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 
 			e_spliter->add_component(cSplitter::create());
+
+			auto c_aligner = cAligner::create();
+			c_aligner->height_policy = SizeFitLayout;
+			e_spliter->add_component(c_aligner);
 		}
 
 		auto e_box_right = Entity::create();
 		e_layout->add_child(e_box_right);
 		{
 			auto c_element = cElement::create();
-			c_element->width = 108.f;
-			c_element->height = 108.f;
-			c_element->inner_padding = Vec4f(4.f);
 			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
 			e_box_right->add_component(c_element);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitLayout;
+			c_aligner->height_policy = SizeFitLayout;
+			e_box_right->add_component(c_aligner);
+		}
+
+		auto e_size_dragger = Entity::create();
+		e_container->add_child(e_size_dragger);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 10.f;
+			c_element->height = 10.f;
+			c_element->background_color = Vec4c(200, 100, 100, 255);
+			e_size_dragger->add_component(c_element);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->x_align = AlignxRight;
+			c_aligner->y_align = AlignyBottom;
+			e_size_dragger->add_component(c_aligner);
+
+			e_size_dragger->add_component(cEventReceiver::create());
+
+			e_size_dragger->add_component(cSizeDragger::create());
 		}
 	}
 

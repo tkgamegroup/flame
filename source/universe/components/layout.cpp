@@ -42,53 +42,60 @@ namespace flame
 			switch (type)
 			{
 			case LayoutFree:
+			{
 				for (auto al : als)
 				{
+					auto upifl = al.second ? al.second->using_padding_in_free_layout : false;
+					auto w = element->width - (upifl ? element->inner_padding_horizontal() : 0.f);
+					auto h = element->height - (upifl ? element->inner_padding_vertical() : 0.f);
+					if (upifl)
+						int cut = 1;
 					switch (al.second ? al.second->width_policy : SizeFixed)
 					{
 					case SizeFitLayout:
-						al.first->width = element->width;
+						al.first->width = w;
 						break;
 					case SizeGreedy:
-						if (element->width > al.second->min_width)
-							al.first->width = element->width;
+						if (w > al.second->min_width)
+							al.first->width = w;
 						break;
 					}
 					switch (al.second ? al.second->height_policy : SizeFixed)
 					{
 					case SizeFitLayout:
-						al.first->height = element->height;
+						al.first->height = h;
 						break;
 					case SizeGreedy:
-						if (element->height > al.second->min_height)
-							al.first->height = element->height;
+						if (h > al.second->min_height)
+							al.first->height = h;
 						break;
 					}
 					switch (al.second ? al.second->x_align : AlignxFree)
 					{
 					case AlignxLeft:
-						al.first->x = scroll_offset.x();
+						al.first->x = scroll_offset.x() + (upifl ? element->inner_padding[0] : 0.f);
 						break;
 					case AlignxMiddle:
-						al.first->x = scroll_offset.x() + (element->width - al.first->width) * 0.5f;
+						al.first->x = scroll_offset.x() + (w - al.first->width) * 0.5f;
 						break;
 					case AlignxRight:
-						al.first->x = scroll_offset.x() + element->width - al.first->width;
+						al.first->x = scroll_offset.x() + element->width - (upifl ? element->inner_padding[2] : 0.f) - al.first->width;
 						break;
 					}
 					switch (al.second ? al.second->y_align : AlignyFree)
 					{
 					case AlignyTop:
-						al.first->y = scroll_offset.y();
+						al.first->y = scroll_offset.y() + (upifl ? element->inner_padding[1] : 0.f);
 						break;
 					case AlignyMiddle:
-						al.first->y = scroll_offset.y() + (element->height - al.first->height) * 0.5f;
+						al.first->y = scroll_offset.y() + (h - al.first->height) * 0.5f;
 						break;
 					case AlignyBottom:
-						al.first->y = scroll_offset.y() + element->height - al.first->height;
+						al.first->y = scroll_offset.y() + element->height - (upifl ? element->inner_padding[3] : 0.f) - al.first->height;
 						break;
 					}
 				}
+			}
 				break;
 			case LayoutHorizontal:
 			{
