@@ -56,13 +56,13 @@ namespace flame
 					{
 						if (pos.x() < 0.f)
 						{
-							auto v = min(thiz->left_element->width - (thiz->left_aligner ? thiz->left_aligner->min_width : thiz->left_element->inner_padding_horizontal()), -pos.x());
+							auto v = min(thiz->left_element->width - max(1.f, thiz->left_aligner ? thiz->left_aligner->min_width : thiz->left_element->inner_padding_horizontal()), -pos.x());
 							thiz->left_element->width -= v;
 							thiz->right_element->width += v;
 						}
 						else if (pos.x() > 0.f)
 						{
-							auto v = min(thiz->right_element->width - (thiz->right_aligner ? thiz->right_aligner->min_width : thiz->right_element->inner_padding_horizontal()), pos.x());
+							auto v = min(thiz->right_element->width - max(1.f, thiz->right_aligner ? thiz->right_aligner->min_width : thiz->right_element->inner_padding_horizontal()), pos.x());
 							thiz->left_element->width += v;
 							thiz->right_element->width -= v;
 						}
@@ -71,19 +71,39 @@ namespace flame
 					{
 						if (pos.y() < 0.f)
 						{
-							auto v = min(thiz->left_element->height - (thiz->left_aligner ? thiz->left_aligner->min_height : thiz->left_element->inner_padding_vertical()), -pos.y());
+							auto v = min(thiz->left_element->height - max(1.f, thiz->left_aligner ? thiz->left_aligner->min_height : thiz->left_element->inner_padding_vertical()), -pos.y());
 							thiz->left_element->height -= v;
 							thiz->right_element->height += v;
 						}
 						else if (pos.y() > 0.f)
 						{
-							auto v = min(thiz->right_element->height - (thiz->right_aligner ? thiz->right_aligner->min_height : thiz->right_element->inner_padding_vertical()), pos.y());
+							auto v = min(thiz->right_element->height - max(1.f, thiz->right_aligner ? thiz->right_aligner->min_height : thiz->right_element->inner_padding_vertical()), pos.y());
 							thiz->left_element->height += v;
 							thiz->right_element->height -= v;
 						}
 					}
 				}
 			}, new_mail_p(this));
+		}
+
+		void update()
+		{
+			if (type == SplitterHorizontal)
+			{
+				auto r = left_element->width / right_element->width;
+				if (left_aligner)
+					left_aligner->width_factor = r;
+				if (right_aligner)
+					right_aligner->width_factor = 1 / r;
+			}
+			else
+			{
+				auto r = left_element->height / right_element->height;
+				if (left_aligner)
+					left_aligner->height_factor = r;
+				if (right_aligner)
+					right_aligner->height_factor = 1 / r;
+			}
 		}
 	};
 
@@ -95,6 +115,11 @@ namespace flame
 	void cSplitter::start()
 	{
 		((cSplitterPrivate*)this)->start();
+	}
+
+	void cSplitter::update()
+	{
+		((cSplitterPrivate*)this)->update();
 	}
 
 	cSplitter* cSplitter::create()

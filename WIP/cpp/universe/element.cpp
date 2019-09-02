@@ -305,47 +305,6 @@ namespace flame
 		}
 	}
 
-	void splitter_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_move())
-			return;
-
-		auto thiz = (wSplitterPtr)p.thiz();
-		if (thiz == thiz->ui->dragging_element())
-		{
-			auto target1 = thiz->w_target1();
-			auto target2 = thiz->w_target2();
-			auto d = p.value() / thiz->parent->scale$;
-			if (thiz->dir() == 0)
-			{
-				target1->set_width(target1->size$.x + d.x);
-				target2->set_width(target2->size$.x - d.x);
-			}
-			else
-			{
-				target1->set_height(target1->size$.y + d.y);
-				target2->set_height(target2->size$.y - d.y);
-			}
-		}
-	}
-
-	void wSplitter::init(int _dir, Element* target1, Element* target2)
-	{
-		dir() = _dir;
-		w_target1() = target1;
-		w_target2() = target2;
-
-		size$ = Vec2(10.f);
-		background_col$ = Bvec4(255, 225, 255, 255);
-
-		if (dir() == 0)
-			size_policy_vert$ = SizeFitLayout;
-		else
-			size_policy_hori$ = SizeFitLayout;
-
-		mouse_listeners$.push_back(Function<MouseListenerParm>(splitter_mouse_event$, {}));
-	}
-
 	void wDialog::init(bool resize, bool modual)
 	{
 		wLayout::init();

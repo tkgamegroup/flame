@@ -327,6 +327,187 @@ int main(int argc, char **args)
 				e_bp->add_component(c_bp);
 			}
 
+			for (auto i = 0; i < app.bp->node_count(); i++)
+			{
+				auto n = app.bp->node(i);
+
+				auto e_node = Entity::create();
+				e_window->add_child(e_node);
+				n->user_data = e_node;
+				{
+					auto c_element = cElement::create();
+					c_element->x = n->pos.x();
+					c_element->y = n->pos.y();
+					c_element->inner_padding = Vec4f(8.f);
+					c_element->background_color = Vec4c(255, 255, 255, 200);
+					c_element->background_frame_color = Vec4c(255);
+					c_element->background_frame_thickness = 2.f;
+					c_element->background_round_radius = 8.f;
+					c_element->background_shadow_thickness = 8.f;
+					e_node->add_component(c_element);
+
+					e_node->add_component(cEventReceiver::create());
+
+					auto e_window = cWindow::create();
+					e_window->add_pos_listener([](void* c) {
+						auto n = *(BP::Node**)c;
+						auto element = (cElement*)(((Entity*)n->user_data)->find_component(cH("Element")));
+						n->pos.x() = element->x;
+						n->pos.y() = element->y;
+					}, new_mail_p(n));
+					e_node->add_component(e_window);
+
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					c_layout->item_padding = 4.f;
+					e_node->add_component(c_layout);
+
+					auto e_text_id = Entity::create();
+					e_node->add_child(e_text_id);
+					{
+						e_text_id->add_component(cElement::create());
+
+						auto c_text = cText::create(app.font_atlas_sdf);
+						c_text->set_text(s2w(n->id()));
+						c_text->sdf_scale = 0.8f;
+						e_text_id->add_component(c_text);
+					}
+
+					auto e_text_type = Entity::create();
+					e_node->add_child(e_text_type);
+					{
+						e_text_type->add_component(cElement::create());
+
+						auto c_text = cText::create(app.font_atlas_sdf);
+						c_text->set_text(s2w(n->udt->name()));
+						c_text->color = Vec4c(50, 50, 50, 255);
+						c_text->sdf_scale = 0.5f;
+						e_text_type->add_component(c_text);
+					}
+
+					auto e_content = Entity::create();
+					e_node->add_child(e_content);
+					{
+						e_content->add_component(cElement::create());
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeGreedy;
+						e_content->add_component(c_aligner);
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutHorizontal;
+						c_layout->item_padding = 16.f;
+						e_content->add_component(c_layout);
+
+						auto e_left = Entity::create();
+						e_content->add_child(e_left);
+						{
+							e_left->add_component(cElement::create());
+
+							auto c_aligner = cAligner::create();
+							c_aligner->width_policy = SizeGreedy;
+							e_left->add_component(c_aligner);
+
+							auto c_layout = cLayout::create();
+							c_layout->type = LayoutVertical;
+							e_left->add_component(c_layout);
+
+							for (auto j = 0; j < n->input_count(); j++)
+							{
+								auto input = n->input(j);
+
+								auto e_item = Entity::create();
+								e_left->add_child(e_item);
+								{
+									e_item->add_component(cElement::create());
+
+									auto c_layout = cLayout::create();
+									c_layout->type = LayoutHorizontal;
+									e_item->add_component(c_layout);
+								}
+
+								auto e_slot = Entity::create();
+								e_item->add_child(e_slot);
+								{
+									auto c_element = cElement::create();
+									auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+									c_element->width = r;
+									c_element->height = r;
+									c_element->background_round_radius = r * 0.5f;
+									c_element->background_color = Vec4c(200, 200, 200, 255);
+									e_slot->add_component(c_element);
+									input->user_data = c_element;
+								}
+
+								auto e_text = Entity::create();
+								e_item->add_child(e_text);
+								{
+									e_text->add_component(cElement::create());
+
+									auto c_text = cText::create(app.font_atlas_sdf);
+									c_text->sdf_scale = 0.6f;
+									c_text->set_text(s2w(input->variable_info->name()));
+									e_text->add_component(c_text);
+								}
+							}
+						}
+
+						auto e_right = Entity::create();
+						e_content->add_child(e_right);
+						{
+							e_right->add_component(cElement::create());
+
+							auto c_layout = cLayout::create();
+							c_layout->type = LayoutVertical;
+							e_right->add_component(c_layout);
+
+							for (auto j = 0; j < n->output_count(); j++)
+							{
+								auto outout = n->output(j);
+
+								auto e_item = Entity::create();
+								e_right->add_child(e_item);
+								{
+									e_item->add_component(cElement::create());
+
+									auto c_aligner = cAligner::create();
+									c_aligner->x_align = AlignxRight;
+									e_item->add_component(c_aligner);
+
+									auto c_layout = cLayout::create();
+									c_layout->type = LayoutHorizontal;
+									e_item->add_component(c_layout);
+								}
+
+								auto e_text = Entity::create();
+								e_item->add_child(e_text);
+								{
+									e_text->add_component(cElement::create());
+
+									auto c_text = cText::create(app.font_atlas_sdf);
+									c_text->sdf_scale = 0.6f;
+									c_text->set_text(s2w(outout->variable_info->name()));
+									e_text->add_component(c_text);
+								}
+
+								auto e_slot = Entity::create();
+								e_item->add_child(e_slot);
+								{
+									auto c_element = cElement::create();
+									auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+									c_element->width = r;
+									c_element->height = r;
+									c_element->background_round_radius = r * 0.5f;
+									c_element->background_color = Vec4c(200, 200, 200, 255);
+									e_slot->add_component(c_element);
+									outout->user_data = c_element;
+								}
+							}
+						}
+					}
+				}
+			}
+
 			auto e_title = Entity::create();
 			e_window->add_child(e_title);
 			{
@@ -358,207 +539,9 @@ int main(int argc, char **args)
 				c_aligner->y_align = AlignyBottom;
 				e_size_dragger->add_component(c_aligner);
 
-				auto c_event_receiver = cEventReceiver::create();
-				{
-					struct Data
-					{
-						cEventReceiver* er;
-						Entity* w;
-					}data;
-					data.er = c_event_receiver;
-					data.w = e_window;
-					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-						auto data = (Data*)c;
-						if (is_mouse_move(action, key) && data->er->dragging)
-						{
-							auto element = (cElement*)data->w->find_component(cH("Element"));
-							element->width += pos.x();
-							element->height += pos.y();
-						}
-					}, new_mail(&data));
-				}
-				e_size_dragger->add_component(c_event_receiver);
-			}
-		}
+				e_size_dragger->add_component(cEventReceiver::create());
 
-		for (auto i = 0; i < app.bp->node_count(); i++)
-		{
-			auto n = app.bp->node(i);
-
-			auto e_node = Entity::create();
-			e_window->add_child(e_node);
-			n->user_data = e_node;
-			{
-				auto c_element = cElement::create();
-				c_element->x = n->pos.x();
-				c_element->y = n->pos.y();
-				c_element->inner_padding = Vec4f(8.f);
-				c_element->background_color = Vec4c(255, 255, 255, 200);
-				c_element->background_frame_color = Vec4c(255);
-				c_element->background_frame_thickness = 2.f;
-				c_element->background_round_radius = 8.f;
-				c_element->background_shadow_thickness = 8.f;
-				e_node->add_component(c_element);
-
-				e_node->add_component(cEventReceiver::create());
-
-				auto e_window = cWindow::create();
-				e_window->add_pos_listener([](void* c) {
-					auto n = *(BP::Node**)c;
-					auto element = (cElement*)(((Entity*)n->user_data)->find_component(cH("Element")));
-					n->pos.x() = element->x;
-					n->pos.y() = element->y;
-				}, new_mail_p(n));
-				e_node->add_component(e_window);
-
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutVertical;
-				c_layout->item_padding = 4.f;
-				e_node->add_component(c_layout);
-
-				auto e_text_id = Entity::create();
-				e_node->add_child(e_text_id);
-				{
-					e_text_id->add_component(cElement::create());
-
-					auto c_text = cText::create(app.font_atlas_sdf);
-					c_text->set_text(s2w(n->id()));
-					c_text->sdf_scale = 0.8f;
-					e_text_id->add_component(c_text);
-				}
-
-				auto e_text_type = Entity::create();
-				e_node->add_child(e_text_type);
-				{
-					e_text_type->add_component(cElement::create());
-
-					auto c_text = cText::create(app.font_atlas_sdf);
-					c_text->set_text(s2w(n->udt->name()));
-					c_text->color = Vec4c(50, 50, 50, 255);
-					c_text->sdf_scale = 0.5f;
-					e_text_type->add_component(c_text);
-				}
-
-				auto e_content = Entity::create();
-				e_node->add_child(e_content);
-				{
-					e_content->add_component(cElement::create());
-
-					auto c_aligner = cAligner::create();
-					c_aligner->width_policy = SizeGreedy;
-					e_content->add_component(c_aligner);
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutHorizontal;
-					c_layout->item_padding = 16.f;
-					e_content->add_component(c_layout);
-
-					auto e_left = Entity::create();
-					e_content->add_child(e_left);
-					{
-						e_left->add_component(cElement::create());
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeGreedy;
-						e_left->add_component(c_aligner);
-
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
-						e_left->add_component(c_layout);
-
-						for (auto j = 0; j < n->input_count(); j++)
-						{
-							auto input = n->input(j);
-
-							auto e_item = Entity::create();
-							e_left->add_child(e_item);
-							{
-								e_item->add_component(cElement::create());
-
-								auto c_layout = cLayout::create();
-								c_layout->type = LayoutHorizontal;
-								e_item->add_component(c_layout);
-							}
-
-							auto e_slot = Entity::create();
-							e_item->add_child(e_slot);
-							{
-								auto c_element = cElement::create();
-								auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-								c_element->width = r;
-								c_element->height = r;
-								c_element->background_round_radius = r * 0.5f;
-								c_element->background_color = Vec4c(200, 200, 200, 255);
-								e_slot->add_component(c_element);
-								input->user_data = c_element;
-							}
-
-							auto e_text = Entity::create();
-							e_item->add_child(e_text);
-							{
-								e_text->add_component(cElement::create());
-
-								auto c_text = cText::create(app.font_atlas_sdf);
-								c_text->sdf_scale = 0.6f;
-								c_text->set_text(s2w(input->variable_info->name()));
-								e_text->add_component(c_text);
-							}
-						}
-					}
-
-					auto e_right = Entity::create();
-					e_content->add_child(e_right);
-					{
-						e_right->add_component(cElement::create());
-
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
-						e_right->add_component(c_layout);
-
-						for (auto j = 0; j < n->output_count(); j++)
-						{
-							auto outout = n->output(j);
-
-							auto e_item = Entity::create();
-							e_right->add_child(e_item);
-							{
-								e_item->add_component(cElement::create());
-
-								auto c_aligner = cAligner::create();
-								c_aligner->x_align = AlignxRight;
-								e_item->add_component(c_aligner);
-
-								auto c_layout = cLayout::create();
-								c_layout->type = LayoutHorizontal;
-								e_item->add_component(c_layout);
-							}
-
-							auto e_text = Entity::create();
-							e_item->add_child(e_text);
-							{
-								e_text->add_component(cElement::create());
-
-								auto c_text = cText::create(app.font_atlas_sdf);
-								c_text->sdf_scale = 0.6f;
-								c_text->set_text(s2w(outout->variable_info->name()));
-								e_text->add_component(c_text);
-							}
-
-							auto e_slot = Entity::create();
-							e_item->add_child(e_slot);
-							{
-								auto c_element = cElement::create();
-								auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-								c_element->width = r;
-								c_element->height = r;
-								c_element->background_round_radius = r * 0.5f;
-								c_element->background_color = Vec4c(200, 200, 200, 255);
-								e_slot->add_component(c_element);
-								outout->user_data = c_element;
-							}
-						}
-					}
-				}
+				e_size_dragger->add_component(cSizeDragger::create());
 			}
 		}
 

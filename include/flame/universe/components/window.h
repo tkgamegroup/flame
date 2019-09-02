@@ -27,4 +27,22 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cWindow* create();
 	};
+
+	struct cSizeDragger : Component 
+	{
+		cEventReceiver* event_receiver;
+
+		cSizeDragger() :
+			Component("SizeDragger")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual ~cSizeDragger() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+
+		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
+	};
 }

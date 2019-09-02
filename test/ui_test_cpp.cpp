@@ -1105,6 +1105,8 @@ int main(int argc, char** args)
 
 			auto c_layout = cLayout::create();
 			c_layout->type = LayoutHorizontal;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
 			e_layout->add_component(c_layout);
 		}
 

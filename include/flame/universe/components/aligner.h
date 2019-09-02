@@ -16,7 +16,9 @@ namespace flame
 		float min_width;
 		float min_height;
 		SizePolicy$ width_policy;
+		float width_factor;
 		SizePolicy$ height_policy;
+		float height_factor;
 
 		cAligner() :
 			Component("Aligner")

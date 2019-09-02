@@ -55,6 +55,7 @@ namespace flame
 				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
 			if (p_element)
 				canvas = p_element->canvas;
+			assert(canvas);
 		}
 
 		void update()

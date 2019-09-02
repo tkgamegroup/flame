@@ -46,7 +46,6 @@ namespace flame
 					for (auto& l : thiz->pos_listeners)
 						l->function(l->capture.p);
 				}
-
 			}, new_mail_p(this));
 		}
 	};
@@ -90,5 +89,58 @@ namespace flame
 	cWindow* cWindow::create()
 	{
 		return new cWindowPrivate;
+	}
+
+	struct cSizeDraggerPrivate : cSizeDragger
+	{
+		void* mouse_listener;
+
+		cSizeDraggerPrivate()
+		{
+			event_receiver = nullptr;
+
+			mouse_listener = nullptr;
+		}
+
+		~cSizeDraggerPrivate()
+		{
+			event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void start()
+		{
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = (*(cSizeDraggerPrivate**)c);
+				if (is_mouse_move(action, key) && thiz->event_receiver->dragging)
+				{
+					auto w = thiz->entity->parent();
+					auto element = (cElement*)w->find_component(cH("Element"));
+					element->width += pos.x();
+					element->height += pos.y();
+				}
+			}, new_mail_p(this));
+		}
+	};
+
+	cSizeDragger::~cSizeDragger()
+	{
+		((cSizeDraggerPrivate*)this)->~cSizeDraggerPrivate();
+	}
+
+	void cSizeDragger::start()
+	{
+		((cSizeDraggerPrivate*)this)->start();
+	}
+
+	void cSizeDragger::update()
+	{
+	}
+
+	cSizeDragger* cSizeDragger::create()
+	{
+		return new cSizeDraggerPrivate;
 	}
 }
