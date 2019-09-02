@@ -126,8 +126,8 @@ namespace flame
 				if (!als.empty())
 					w -= item_padding;
 				content_size = Vec2f(w, h);
-				w += element->inner_padding[0] + element->inner_padding[2];
-				h += element->inner_padding[1] + element->inner_padding[3];
+				w += element->inner_padding_horizontal();
+				h += element->inner_padding_vertical();
 
 				if (width_fit_children)
 				{
@@ -169,9 +169,9 @@ namespace flame
 					if (al.second)
 					{
 						if (al.second->height_policy == SizeFitLayout)
-							al.first->height = element->height - element->inner_padding[1] - element->inner_padding[3];
+							al.first->height = element->height - element->inner_padding_vertical();
 						else if (al.second->height_policy == SizeGreedy)
-							al.first->height = max(al.second->min_height, element->height - element->inner_padding[1] - element->inner_padding[3]);
+							al.first->height = max(al.second->min_height, element->height - element->inner_padding_vertical());
 					}
 				}
 
@@ -187,7 +187,7 @@ namespace flame
 						al.first->y = scroll_offset.y() + element->inner_padding[1];
 						break;
 					case AlignyMiddle:
-						al.first->y = scroll_offset.y() + (element->height - element->inner_padding[1] - element->inner_padding[3] - al.first->height) * 0.5f;
+						al.first->y = scroll_offset.y() + (element->height - element->inner_padding_vertical() - al.first->height) * 0.5f;
 						break;
 					case AlignyBottom:
 						al.first->y = scroll_offset.y() + element->height - element->inner_padding[3] - al.first->height;
@@ -232,8 +232,8 @@ namespace flame
 				if (!als.empty())
 					h -= item_padding;
 				content_size = Vec2f(w, h);
-				w += element->inner_padding[0] + element->inner_padding[2];
-				h += element->inner_padding[1] + element->inner_padding[3];
+				w += element->inner_padding_horizontal();
+				h += element->inner_padding_vertical();
 
 				if (width_fit_children)
 				{
@@ -250,9 +250,9 @@ namespace flame
 					if (al.second)
 					{
 						if (al.second->width_policy == SizeFitLayout)
-							al.first->width = element->width - element->inner_padding[0] - element->inner_padding[2];
+							al.first->width = element->width - element->inner_padding_horizontal();
 						else if (al.second->width_policy == SizeGreedy)
-							al.first->width = max(al.second->min_width, element->width - element->inner_padding[0] - element->inner_padding[2]);
+							al.first->width = max(al.second->min_width, element->width - element->inner_padding_horizontal());
 					}
 				}
 				if (height_fit_children)
@@ -290,7 +290,7 @@ namespace flame
 						al.first->x = scroll_offset.x() + element->inner_padding[0];
 						break;
 					case AlignxMiddle:
-						al.first->x = scroll_offset.x() + (element->width - element->inner_padding[0] - element->inner_padding[2] - al.first->width) * 0.5f;
+						al.first->x = scroll_offset.x() + (element->width - element->inner_padding_horizontal() - al.first->width) * 0.5f;
 						break;
 					case AlignxRight:
 						al.first->x = scroll_offset.x() + element->width - element->inner_padding[2] - al.first->width;

@@ -77,7 +77,7 @@ namespace flame
 			if (clip_children || !p_element)
 			{
 				auto cp = Vec2f(global_x, global_y) + Vec2f(inner_padding[0], inner_padding[1]) * global_scale;
-				auto cs = Vec2f(global_width, global_height) - Vec2f(inner_padding[0] + inner_padding[2], inner_padding[1] + inner_padding[3]) * global_scale;
+				auto cs = Vec2f(global_width, global_height) - Vec2f(inner_padding_horizontal(), inner_padding_vertical()) * global_scale;
 				scissor = Vec4f(cp, cp + cs);
 			}
 			else

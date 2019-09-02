@@ -43,4 +43,10 @@ namespace flame
 		ScrollbarVertical,
 		ScrollbarHorizontal
 	};
+
+	enum SplitterType
+	{
+		SplitterHorizontal,
+		SplitterVertical
+	};
 }

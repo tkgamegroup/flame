@@ -55,6 +55,16 @@ namespace flame
 		Vec4f scissor;
 		bool cliped;
 
+		float inner_padding_horizontal() const
+		{
+			return inner_padding[0] + inner_padding[2];
+		}
+
+		float inner_padding_vertical() const
+		{
+			return inner_padding[1] + inner_padding[3];
+		}
+
 		bool contains(const Vec2f& pos) const
 		{
 			return rect_contains(Vec4f(global_x, global_y, global_x + global_width, global_y + global_height), pos);

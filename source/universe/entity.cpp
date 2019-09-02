@@ -214,6 +214,17 @@ namespace flame
 		return ((EntityPrivate*)this)->children.size();
 	}
 
+	int Entity::child_position(Entity* e) const
+	{
+		auto& children = ((EntityPrivate*)this)->children;
+		for (auto i = 0; i < children.size(); i++)
+		{
+			if (children[i].get() == e)
+				return i;
+		}
+		return -1;
+	}
+
 	Entity* Entity::child(uint index) const
 	{
 		return ((EntityPrivate*)this)->children[index].get();

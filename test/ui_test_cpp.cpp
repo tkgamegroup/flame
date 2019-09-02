@@ -26,6 +26,7 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/tree.h>
+#include <flame/universe/components/splitter.h>
 
 using namespace flame;
 using namespace graphics;
@@ -1096,7 +1097,56 @@ int main(int argc, char** args)
 		}
 	}
 
+	{
+		auto e_layout = Entity::create();
+		e_layout_right->add_child(e_layout);
+		{
+			e_layout->add_component(cElement::create());
 
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutHorizontal;
+			e_layout->add_component(c_layout);
+		}
+
+		auto e_box_left = Entity::create();
+		e_layout->add_child(e_box_left);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 108.f;
+			c_element->height = 108.f;
+			c_element->inner_padding = Vec4f(4.f);
+			c_element->background_frame_color = Vec4c(255);
+			c_element->background_frame_thickness = 2.f;
+			e_box_left->add_component(c_element);
+		}
+
+		auto e_spliter = Entity::create();
+		e_layout->add_child(e_spliter);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 8.f;
+			c_element->height = 108.f;
+			e_spliter->add_component(c_element);
+
+			e_spliter->add_component(cEventReceiver::create());
+
+			e_spliter->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+
+			e_spliter->add_component(cSplitter::create());
+		}
+
+		auto e_box_right = Entity::create();
+		e_layout->add_child(e_box_right);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 108.f;
+			c_element->height = 108.f;
+			c_element->inner_padding = Vec4f(4.f);
+			c_element->background_frame_color = Vec4c(255);
+			c_element->background_frame_thickness = 2.f;
+			e_box_right->add_component(c_element);
+		}
+	}
 
 	looper().loop([](void* c) {
 		auto app = (*(App**)c);
