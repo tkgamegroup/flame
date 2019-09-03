@@ -232,19 +232,49 @@ namespace flame
 	struct cDockerTabbarPrivate : cDockerTabbar
 	{
 		void* drag_and_drop_listener;
+		cEventReceiver* drop_er;
+		uint drop_er_pos;
 
 		cDockerTabbarPrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
-			layout = nullptr;
 
 			drag_and_drop_listener = nullptr;
+			drop_er = nullptr;
+			drop_er_pos = 0;
 		}
 
 		~cDockerTabbarPrivate()
 		{
 			event_receiver->remove_mouse_listener(drag_and_drop_listener);
+		}
+
+		uint calc_pos(float x, float* out)
+		{
+			for (auto i = 0; i < entity->child_count(); i++)
+			{
+				auto element = (cElement*)entity->child(i)->find_component(cH("Element"));
+				auto half = element->global_x + element->width * 0.5f;
+				if (x >= element->global_x && x < half)
+				{
+					if (out)
+						*out = element->global_x;
+					return i;
+				}
+				if (x >= half && x < element->global_x + element->width)
+				{
+					if (out)
+						*out = element->global_x + element->width;
+					return i + 1;
+				}
+			}
+			if (out)
+			{
+				auto element = (cElement*)entity->child(entity->child_count() - 1)->find_component(cH("Element"));
+				*out = element->global_x + element->global_width;
+			}
+			return entity->child_count();
 		}
 
 		void start()
@@ -254,21 +284,31 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 			event_receiver->set_acceptable_drops({ cH("DockerTitle") });
-			layout = (cLayout*)(entity->find_component(cH("Layout")));
-			assert(layout);
 
 			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
-				auto thiz = (*(cDockerTitlePrivate**)c);
+				auto thiz = (*(cDockerTabbarPrivate**)c);
 				if (action == DragOvering)
 				{
+					float x;
+					thiz->calc_pos(pos.x(), &x);
 					auto element = thiz->element;
 					std::vector<Vec2f> points;
-					path_rect(points, Vec2f(element->global_x, element->global_y), Vec2f(10.f, element->global_height));
+					path_rect(points, Vec2f(x - 5.f, element->global_y), Vec2f(10.f, element->global_height));
 					element->canvas->fill(points, Vec4c(50, 80, 200, 128));
 				}
 				else if (action == Dropped)
 				{
+					thiz->drop_er = er;
+					thiz->drop_er_pos = thiz->calc_pos(pos.x(), nullptr);
+					auto thiz = (*(cDockerTitlePrivate**)c);
+					looper().add_delay_event([](void* c) {
+						auto thiz = *(cDockerTabbarPrivate**)c;
 
+						auto e = thiz->drop_er->entity;
+						e->parent()->take_child(e);
+
+						thiz->entity->add_child(e, thiz->drop_er_pos);
+					}, new_mail_p(thiz));
 				}
 			}, new_mail_p(this));
 		}

@@ -74,7 +74,6 @@ namespace flame
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
-		cLayout* layout;
 
 		cDockerTabbar() :
 			Component("DockerTabbar")
