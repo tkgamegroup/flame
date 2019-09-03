@@ -27,7 +27,7 @@ namespace flame
 
 		void update()
 		{
-			if (event_receiver->dragging)
+			if (event_receiver->active)
 				element->background_color = color_active;
 			else if (event_receiver->hovering)
 				element->background_color = color_hovering;
@@ -76,7 +76,7 @@ namespace flame
 
 		void update()
 		{
-			if (event_receiver->dragging || event_receiver->hovering)
+			if (event_receiver->active || event_receiver->hovering)
 				text->color = color_else;
 			else
 				text->color = color_normal;

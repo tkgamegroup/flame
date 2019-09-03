@@ -47,26 +47,24 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
 	};
 
-	struct cDockableTitle : Component
+	struct cDockerTitle : Component
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
 
 		Entity* root;
 
-		bool flying;
-
-		cDockableTitle() :
-			Component("DockableTitle")
+		cDockerTitle() :
+			Component("cDockerTitle")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cDockableTitle() override;
+		FLAME_UNIVERSE_EXPORTS virtual ~cDockerTitle() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cDockableTitle* create();
+		FLAME_UNIVERSE_EXPORTS static cDockerTitle* create();
 	};
 }

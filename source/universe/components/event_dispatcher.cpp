@@ -19,6 +19,8 @@ namespace flame
 		cEventReceiver* potential_dbclick_er;
 		float potential_dbclick_time;
 
+		Vec2i active_pos;
+
 		std::vector<cEventReceiver*> hovers;
 
 		cEventDispatcherPrivate(Window* window) :
@@ -40,6 +42,8 @@ namespace flame
 				mouse_buttons[i] = KeyStateUp;
 			potential_dbclick_er = nullptr;
 			potential_dbclick_time = 0.f;
+
+			active_pos = Vec2i(0);
 
 			key_listener = window->add_key_listener([](void* c, KeyState action, Key key) {
 				auto thiz = *(cEventDispatcherPrivate**)c;
@@ -111,24 +115,36 @@ namespace flame
 				}
 			}
 
+			auto prev_focusing = focusing;
+			auto prev_dragging = focusing ? focusing->dragging : false;
+			auto prev_drag_overing = drag_overing;
+			drag_overing = nullptr;
+
 			if (focusing)
 			{
 				if (!focusing->entity->global_visible)
 				{
 					focusing->hovering = false;
 					focusing->focusing = false;
+					focusing->active = false;
 					focusing->dragging = false;
 					focusing = nullptr;
 				}
-				else if (focusing->dragging && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left))
+				else if (focusing->active && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left))
+				{
+					focusing->active = false;
 					focusing->dragging = false;
+				}
 			}
 
-			auto prev_drag_overing = drag_overing;
-			drag_overing = nullptr;
-			if (focusing && focusing->dragging)
+			if (focusing && focusing->active)
 			{
-				if (focusing->drag_hash != 0)
+				if (focusing->drag_hash != 0 && !focusing->dragging)
+				{
+					if (mouse_disp != 0 && (abs(mouse_pos.x() - active_pos.x()) > 4.f || abs(mouse_pos.y() - active_pos.y()) > 4.f))
+						focusing->dragging = true;
+				}
+				if (focusing->dragging)
 				{
 					entity->traverse_backward([](void* c, Entity* e) {
 						auto thiz = *(cEventDispatcherPrivate**)c;
@@ -195,7 +211,8 @@ namespace flame
 				{
 					focusing = hovering;
 					hovering->focusing = true;
-					hovering->dragging = true;
+					hovering->active = true;
+					active_pos = mouse_pos;
 				}
 			}
 			if (focusing)
@@ -237,6 +254,9 @@ namespace flame
 					}
 				}
 			}
+
+			if (!prev_dragging && focusing && focusing->dragging)
+				focusing->on_drag_and_drop(DragStart, nullptr, Vec2f(0.f));
 
 			keydown_inputs.clear();
 			keyup_inputs.clear();

@@ -50,7 +50,7 @@ namespace flame
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cSplitterPrivate**)c);
-				if (thiz->event_receiver->dragging && is_mouse_move(action, key))
+				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
 					if (thiz->type == SplitterHorizontal)
 					{

@@ -41,7 +41,7 @@ namespace flame
 						e->parent()->reposition_child(e, -1);
 					}, new_mail_p(thiz->entity));
 				}
-				else if (thiz->event_receiver->dragging && is_mouse_move(action, key))
+				else if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
 					auto e = thiz->element;
 					auto x = pos.x() / e->global_scale;
@@ -119,7 +119,7 @@ namespace flame
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cSizeDraggerPrivate**)c);
-				if (is_mouse_move(action, key) && thiz->event_receiver->dragging)
+				if (is_mouse_move(action, key) && thiz->event_receiver->active)
 				{
 					auto w = thiz->entity->parent();
 					auto element = (cElement*)w->find_component(cH("Element"));
@@ -149,23 +149,24 @@ namespace flame
 		return new cSizeDraggerPrivate;
 	}
 
-	struct cDockableTitlePrivate : cDockableTitle
+	struct cDockerTitlePrivate : cDockerTitle
 	{
 		void* mouse_listener;
+		void* drag_and_drop_listener;
 
-		cDockableTitlePrivate()
+		cDockerTitlePrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
 
-			flying = false;
-
 			mouse_listener = nullptr;
+			drag_and_drop_listener = nullptr;
 		}
 
-		~cDockableTitlePrivate()
+		~cDockerTitlePrivate()
 		{
 			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver->remove_mouse_listener(drag_and_drop_listener);
 		}
 
 		void start()
@@ -174,62 +175,56 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			event_receiver->drag_hash = cH("DockableTitle");
+			event_receiver->drag_hash = cH("DockerTitle");
+			event_receiver->set_acceptable_drops({ cH("DockerTitle") });
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = (*(cDockableTitle**)c);
+				auto thiz = (*(cDockerTitlePrivate**)c);
 				if (is_mouse_move(action, key) && thiz->event_receiver->dragging)
 				{
-					if (!thiz->flying && !thiz->element->contains(Vec2f(thiz->event_receiver->event_dispatcher->mouse_pos)))
-					{
-						thiz->flying = true;
-
-						looper().add_delay_event([](void* c) {
-							auto thiz = *(cDockableTitle**)c;
-
-							auto e = thiz->entity;
-							e->parent()->take_child(e);
-
-							thiz->element->x = thiz->element->global_x;
-							thiz->element->y = thiz->element->global_y;
-							thiz->root->add_child(e);
-						}, new_mail_p(thiz));
-					}
-
-					if (thiz->flying)
-					{
-						auto e = thiz->element;
-						auto x = pos.x() / e->global_scale;
-						auto y = pos.y() / e->global_scale;
-						e->x += x;
-						e->y += y;
-					}
+					auto e = thiz->element;
+					auto x = pos.x() / e->global_scale;
+					auto y = pos.y() / e->global_scale;
+					e->x += x;
+					e->y += y;
 				}
-				else if (is_mouse_up(action, key, true) && key == Mouse_Left)
+			}, new_mail_p(this));
+
+			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+				if (action == DragStart)
 				{
-					if (thiz->flying)
-						thiz->flying = false;
+					auto thiz = (*(cDockerTitlePrivate**)c);
+					looper().add_delay_event([](void* c) {
+						auto thiz = *(cDockerTitlePrivate**)c;
+
+						auto e = thiz->entity;
+						e->parent()->take_child(e);
+
+						thiz->element->x = thiz->element->global_x;
+						thiz->element->y = thiz->element->global_y;
+						thiz->root->add_child(e);
+					}, new_mail_p(thiz));
 				}
 			}, new_mail_p(this));
 		}
 	};
 
-	cDockableTitle::~cDockableTitle()
+	cDockerTitle::~cDockerTitle()
 	{
-		((cDockableTitlePrivate*)this)->~cDockableTitlePrivate();
+		((cDockerTitlePrivate*)this)->~cDockerTitlePrivate();
 	}
 
-	void cDockableTitle::start()
+	void cDockerTitle::start()
 	{
-		((cDockableTitlePrivate*)this)->start();
+		((cDockerTitlePrivate*)this)->start();
 	}
 
-	void cDockableTitle::update()
+	void cDockerTitle::update()
 	{
 	}
 
-	cDockableTitle* cDockableTitle::create()
+	cDockerTitle* cDockerTitle::create()
 	{
-		return new cDockableTitlePrivate;
+		return new cDockerTitlePrivate;
 	}
 }

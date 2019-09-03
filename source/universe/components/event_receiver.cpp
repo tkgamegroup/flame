@@ -12,8 +12,9 @@ namespace flame
 		penetrable = false;
 
 		hovering = false;
-		dragging = false;
 		focusing = false;
+		active = false;
+		dragging = false;
 
 		drag_hash = 0;
 	}
@@ -60,13 +61,21 @@ namespace flame
 		return c;
 	}
 
-	void* cEventReceiver::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& pos), const Mail<>& capture)
+	void* cEventReceiver::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& value), const Mail<>& capture)
 	{
-		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & pos)>;
-		c->function 
-		= listener;
+		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & value)>;
+		c->function = listener;
 		c->capture = capture;
 		((cEventReceiverPrivate*)this)->mouse_listeners.emplace_back(c);
+		return c;
+	}
+
+	void* cEventReceiver::add_drag_and_drop_listener(void (*listener)(void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2f & pos)>;
+		c->function = listener;
+		c->capture = capture;
+		((cEventReceiverPrivate*)this)->drag_and_drop_listeners.emplace_back(c);
 		return c;
 	}
 
@@ -96,6 +105,19 @@ namespace flame
 		}
 	}
 
+	void cEventReceiver::remove_drag_and_drop_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->drag_and_drop_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
+	}
+
 	void cEventReceiver::on_key(KeyState action, uint value)
 	{
 		auto& listeners = ((cEventReceiverPrivate*)this)->key_listeners;
@@ -108,6 +130,13 @@ namespace flame
 		auto& listeners = ((cEventReceiverPrivate*)this)->mouse_listeners;
 		for (auto& l : listeners)
 			l->function(l->capture.p, action, key, value);
+	}
+
+	void cEventReceiver::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2f& pos)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->drag_and_drop_listeners;
+		for (auto& l : listeners)
+			l->function(l->capture.p, action, er, pos);
 	}
 
 	cEventReceiver* cEventReceiver::create()

@@ -1130,7 +1130,7 @@ int main(int argc, char** args)
 
 				e_item->add_component(cEventReceiver::create());
 
-				auto c_dockable_title = cDockableTitle::create();
+				auto c_dockable_title = cDockerTitle::create();
 				c_dockable_title->root = app.root;
 				e_item->add_component(c_dockable_title);
 

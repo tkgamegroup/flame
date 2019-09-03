@@ -8,10 +8,8 @@ namespace flame
 
 		//Array<Function<FoucusListenerParm>> focus_listeners$;
 		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, uint value)>>> key_listeners;
-		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & pos)>>> mouse_listeners;
-		//Array<Function<DropListenerParm>> drop_listeners$;
-		//Array<Function<ChangedListenerParm>> changed_listeners$;
-		//Array<Function<ChildListenerParm>> child_listeners$;
+		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & value)>>> mouse_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2f & pos)>>> drag_and_drop_listeners;
 
 		cEventReceiverPrivate();
 		~cEventReceiverPrivate();
