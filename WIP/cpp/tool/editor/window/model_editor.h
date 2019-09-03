@@ -1,11 +1,3 @@
-#pragma once
-
-#include <flame/engine/graphics/display_layer.h>
-#include <flame/engine/graphics/renderer.h>
-#include <flame/engine/entity/model.h>
-#include <flame/engine/entity/camera.h>
-#include <flame/engine/ui/window.h>
-
 struct ModelEditor : flame::ui::Window
 {
 	std::shared_ptr<flame::Model> model;

@@ -1,7 +1,3 @@
-#pragma once
-
-#include <memory>
-
 namespace flame
 {
 	struct Texture;

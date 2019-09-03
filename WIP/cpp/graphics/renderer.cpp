@@ -1,25 +1,3 @@
-#include <flame/engine/core/core.h>
-#include <flame/engine/graphics/synchronization.h>
-#include <flame/engine/graphics/buffer.h>
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/graphics/material.h>
-#include <flame/engine/graphics/renderpass.h>
-#include <flame/engine/graphics/framebuffer.h>
-#include <flame/engine/graphics/descriptor.h>
-#include <flame/engine/graphics/pipeline.h>
-#include <flame/engine/graphics/sampler.h>
-#include <flame/engine/graphics/command_buffer.h>
-#include <flame/engine/graphics/renderer.h>
-#include <flame/engine/entity/node.h>
-#include <flame/engine/entity/camera.h>
-#include <flame/engine/entity/light.h>
-#include <flame/engine/entity/model_instance.h>
-#include <flame/engine/entity/terrain.h>
-#include <flame/engine/entity/water.h>
-#include <flame/engine/entity/model.h>
-#include <flame/engine/entity/animation.h>
-#include <flame/engine/entity/scene.h>
-
 namespace flame
 {
 	void PlainRenderer::DrawData::ObjData::fill_with_model(Model *m)

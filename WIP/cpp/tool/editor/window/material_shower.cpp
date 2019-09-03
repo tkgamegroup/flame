@@ -1,9 +1,3 @@
-#include <flame/filesystem.h>
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/graphics/material.h>
-#include <flame/engine/ui/ui.h>
-#include "material_shower.h"
-
 MaterialShower::MaterialShower(flame::Material *_m) :
 	m(_m)
 {

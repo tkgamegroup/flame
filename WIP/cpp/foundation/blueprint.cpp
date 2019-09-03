@@ -1,9 +1,6 @@
-
-
 // generate cpp codes that do the 'update' job and save to a file
 // then use that file to compile a dll
 // note: need filename first and all nodes need to have code
-FLAME_FOUNDATION_EXPORTS void tobin();
 
 void BPPrivate::tobin()
 {

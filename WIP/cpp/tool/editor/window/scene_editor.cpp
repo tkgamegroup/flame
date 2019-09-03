@@ -1,23 +1,3 @@
-#include <flame/global.h>
-#include <flame/filesystem.h>
-#include <flame/engine/core/core.h>
-#include <flame/engine/core/input.h>
-#include <flame/engine/graphics/buffer.h>
-#include <flame/engine/graphics/descriptor.h>
-#include <flame/engine/graphics/command_buffer.h>
-#include <flame/engine/graphics/pick_up.h>
-#include <flame/engine/entity/model.h>
-#include <flame/engine/entity/animation.h>
-#include <flame/engine/entity/light.h>
-#include <flame/engine/entity/model_instance.h>
-#include <flame/engine/entity/terrain.h>
-#include <flame/engine/entity/water.h>
-#include <flame/engine/physics/physics.h>
-#include "../select.h"
-#include "resource_explorer.h"
-#include "hierarchy.h"
-#include "scene_editor.h"
-
 void SceneEditor::on_delete()
 {
 	auto n = selected.get_node();

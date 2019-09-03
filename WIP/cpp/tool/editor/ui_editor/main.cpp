@@ -1,10 +1,3 @@
-#include <flame/serialize.h>
-#include <flame/ui/icon.h>
-
-BasicApp app;
-UDT *widget_info;
-Instance *ui_ins_sandbox;
-
 FLAME_WIDGET_BEGIN(wInspector, wDialog)
 	void init();
 	void refresh();

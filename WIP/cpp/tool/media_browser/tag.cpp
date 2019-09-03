@@ -1,12 +1,3 @@
-#include "share.h"
-#include "tag.h"
-#include "pic.h"
-
-#include <flame/file.h>
-#include <flame/string.h>
-
-using namespace flame;
-
 void delete_tag(Tag *t)
 {
 	for (auto &p : t->pics)

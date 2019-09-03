@@ -1,10 +1,3 @@
-#pragma once
-
-#include <flame/graphics/image.h>
-#include <flame/UI/widget.h>
-
-struct Tag;
-
 struct Pic
 {
 	std::wstring filename;

@@ -1,7 +1,3 @@
-#pragma once
-
-#include <flame/engine/ui/window.h>
-
 struct HierarchyWindow : flame::ui::Window
 {
 	HierarchyWindow();

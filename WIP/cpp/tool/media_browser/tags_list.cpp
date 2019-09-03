@@ -1,18 +1,3 @@
-#include "share.h"
-#include "tags_list.h"
-#include "grid.h"
-
-#include <flame/file.h>
-#include <flame/UI/icon.h>
-#include <flame/UI/widgets/combo.h>
-#include <flame/UI/widgets/sizedrag.h>
-#include <flame/UI/dialogs/message_dialog.h>
-#include <flame/UI/dialogs/yesno_dialog.h>
-#include <flame/UI/dialogs/input_dialog.h>
-#include <flame/UI/styles/button_style_color.h>
-
-using namespace flame;
-
 TagsListLayout::TagsListLayout(UI::Instance *ui) :
 	UI::Layout(ui)
 {

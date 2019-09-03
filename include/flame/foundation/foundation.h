@@ -177,6 +177,12 @@ namespace flame
 		Focus_Lost
 	};
 
+	enum DropAction
+	{
+		DropOvering,
+		DropDropped
+	};
+
 	inline bool is_key_down(KeyState action) // value is Key
 	{
 		return action == KeyStateDown;

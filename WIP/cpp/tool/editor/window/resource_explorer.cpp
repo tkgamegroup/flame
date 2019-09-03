@@ -1,15 +1,3 @@
-#include <filesystem>
-
-#include <flame/global.h>
-#include <flame/engine/graphics/descriptor.h>
-
-#include "../select.h"
-#include "resource_explorer.h"
-#include "inspector.h"
-#include "image_editor.h"
-#include "model_editor.h"
-#include "scene_editor.h"
-
 ResourceExplorer *resourceExplorer = nullptr;
 
 ResourceExplorer::ResourceExplorer() :

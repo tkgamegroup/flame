@@ -1,18 +1,3 @@
-#include <flame/window.h>
-#include <flame/blueprint.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/semaphore.h>
-#include <flame/graphics/queue.h>
-#include <flame/UI/instance.h>
-#include <flame/UI/canvas.h>
-#include <flame/UI/widget.h>
-#include <flame/UI/blueprint_drawing.h>
-
-using namespace flame;
-
 int main(int argc, char **args)
 {
 	auto do_delete = [&](){

@@ -1,7 +1,3 @@
-#pragma once
-
-#include <flame/engine/ui/ui.h>
-
 struct LogDog : flame::ui::Window
 {
 	struct Column

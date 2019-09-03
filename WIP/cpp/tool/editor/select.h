@@ -1,11 +1,3 @@
-#pragma once
-
-#include <memory>
-#include <string>
-
-#include <flame/engine/core/object.h>
-#include <flame/engine/entity/node.h>
-
 enum SelectType
 {
 	SelectTypeNull,

@@ -1,11 +1,3 @@
-#include "share.h"
-#include "pic.h"
-#include "tag.h"
-
-#include <flame/file.h>
-
-using namespace flame;
-
 Pic::Pic()
 {
 	img_thumbnail = nullptr;

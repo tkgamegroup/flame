@@ -1,23 +1,3 @@
-#include "share.h"
-#include "tag.h"
-#include "pic.h"
-#include "tags_list.h"
-#include "grid.h"
-#include "detail.h"
-
-#include <flame/img.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/semaphore.h>
-#include <flame/graphics/queue.h>
-#include <flame/UI/instance.h>
-#include <flame/UI/canvas.h>
-#include <flame/UI/widgets/text.h>
-
-#include <fstream>
-
-using namespace flame;
-
 int main(int argc, char **args)
 {
 	Ivec2 res(1280, 720);

@@ -1,13 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/core/core.h>
-#include <flame/engine/graphics/buffer.h>
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/graphics/command_buffer.h>
-#include <flame/engine/graphics/framebuffer.h>
-#include <flame/engine/graphics/renderpass.h>
-#include <flame/engine/graphics/renderer.h>
-#include <flame/engine/graphics/pick_up.h>
-
 namespace flame
 {
 	Texture *pick_up_image = nullptr;

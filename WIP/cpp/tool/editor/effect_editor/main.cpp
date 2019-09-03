@@ -1,25 +1,3 @@
-#include <flame/surface.h>
-#include <flame/system.h>
-#include <flame/filesystem.h>
-#include <flame/math.h>
-#include <flame/string.h>
-#include <flame/select.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/shader.h>
-#include <flame/graphics/pipeline.h>
-#include <flame/graphics/buffer.h>
-#include <flame/graphics/texture.h>
-#include <flame/graphics/descriptor.h>
-#include <flame/graphics/framebuffer.h>
-#include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/semaphore.h>
-#include <flame/graphics/queue.h>
-#include <flame/UI/instance.h>
-
-using namespace flame;
-
 const float BP_node_titlebar_height = 18.f;
 
 bool running = false;

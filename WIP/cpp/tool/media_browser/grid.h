@@ -1,12 +1,3 @@
-#pragma once
-
-#include "pic.h"
-
-#include <flame/UI/layout.h>
-#include <flame/UI/widgets/button.h>
-
-#include <vector>
-
 const auto grid_hori_pic_cnt = 16;
 const auto grid_vert_pic_cnt = 7;
 extern std::vector<Pic*> grid_pic_candidates;

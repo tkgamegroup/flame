@@ -1,5 +1,3 @@
-#include <flame/engine/core/object.h>
-
 namespace flame
 {
 	struct Texture;

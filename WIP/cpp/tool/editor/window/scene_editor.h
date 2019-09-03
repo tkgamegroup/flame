@@ -1,13 +1,3 @@
-#pragma once
-
-#include <flame/engine/entity/scene.h>
-#include <flame/engine/entity/camera.h>
-#include <flame/engine/entity/controller.h>
-#include <flame/engine/graphics/display_layer.h>
-#include <flame/engine/graphics/renderer.h>
-#include <flame/engine/ui/window.h>
-#include "../tool/transformer_tool.h"
-
 struct SceneEditor : flame::ui::Window
 {
 	flame::Node *camera_node;

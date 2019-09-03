@@ -1,8 +1,3 @@
-#include "../select.h"
-#include "scene_editor.h"
-#include "hierarchy.h"
-#include "resource_explorer.h"
-
 HierarchyWindow *hierarchy_window = nullptr;
 
 HierarchyWindow::HierarchyWindow() :

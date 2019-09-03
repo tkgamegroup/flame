@@ -1,9 +1,3 @@
-#pragma once
-
-#include "tag.h"
-
-#include <flame/UI/widget.h>
-
 struct TagsListLayout : flame::UI::Layout
 {
 	flame::UI::Layout *top;

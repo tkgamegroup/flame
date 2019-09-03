@@ -1,11 +1,3 @@
-#pragma once
-
-#include <vector>
-#include <memory>
-
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/ui/fileselector.h>
-
 struct ResourceExplorer : flame::ui::FileSelector
 {
 	ResourceExplorer();

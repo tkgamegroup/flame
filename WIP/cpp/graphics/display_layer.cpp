@@ -1,11 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/graphics/renderpass.h>
-#include <flame/engine/graphics/renderpass.h>
-#include <flame/engine/graphics/framebuffer.h>
-#include <flame/engine/graphics/display_layer.h>
-#include <flame/engine/ui/ui.h>
-
 namespace flame
 {
 	bool DisplayLayer::on_message(Object *sender, Message msg)

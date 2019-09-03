@@ -1,13 +1,3 @@
-#pragma once
-
-#include <flame/graphics/image.h>
-#include <flame/UI/layout.h>
-#include <flame/UI/widgets/text.h>
-#include <flame/UI/widgets/button.h>
-#include <flame/UI/widgets/image.h>
-
-#include "pic.h"
-
 extern Pic *detail_curr_pic;
 extern flame::graphics::Image *detail_curr_image;
 extern flame::UI::Layout *w_detail_bg;

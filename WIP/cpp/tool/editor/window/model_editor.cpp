@@ -1,12 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/core/input.h>
-#include <flame/engine/entity/node.h>
-#include <flame/engine/entity/camera_third_person.h>
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/graphics/command_buffer.h>
-
-#include "model_editor.h"
-
 ModelEditor::ModelEditor(std::shared_ptr<flame::Model> _model) :
 	Window(model->filename, flame::ui::WindowHasMenu | flame::ui::WindowNoSavedSettings),
 	model(_model), 

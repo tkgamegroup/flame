@@ -1,10 +1,3 @@
-#pragma once
-
-#include <string>
-#include <vector>
-
-struct Pic;
-
 struct Tag
 {
 	int id;

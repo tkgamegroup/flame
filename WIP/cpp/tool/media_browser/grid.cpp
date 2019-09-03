@@ -1,18 +1,3 @@
-#include "share.h"
-#include "grid.h"
-#include "detail.h"
-
-#include <flame/img.h>
-#include <flame/system.h>
-#include <flame/worker.h>
-#include <flame/UI/icon.h>
-#include <flame/UI/dialogs/input_dialog.h>
-#include <flame/UI/styles/button_style_color.h>
-
-#include <mutex>
-
-using namespace flame;
-
 std::vector<Pic*> grid_pic_candidates;
 Pic *grid_slots[grid_hori_pic_cnt * grid_vert_pic_cnt];
 UI::Layout *w_grids;

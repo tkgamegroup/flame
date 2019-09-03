@@ -1,5 +1,3 @@
-#include "select.h"
-
 static std::string select_filename;
 
 Select selected;

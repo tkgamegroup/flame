@@ -1,19 +1,3 @@
-#include "share.h"
-#include "tag.h"
-#include "tags_list.h"
-#include "grid.h"
-#include "detail.h"
-
-#include <flame/file.h>
-#include <flame/system.h>
-#include <flame/window.h>
-#include <flame/UI/icon.h>
-#include <flame/UI/dialog.h>
-#include <flame/UI/widgets/sizedrag.h>
-#include <flame/UI/styles/button_style_color.h>
-
-using namespace flame;
-
 Pic *detail_curr_pic;
 flame::graphics::Image *detail_curr_image;
 flame::UI::Layout *w_detail_bg;

@@ -1,9 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/core/input.h>
-#include <flame/engine/graphics/command_buffer.h>
-
-#include "image_editor.h"
-
 static int _magic_number = 0;
 
 ImageEditor::ImageEditor(std::shared_ptr<flame::Texture> _texture) :
