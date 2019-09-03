@@ -40,9 +40,14 @@ namespace flame
 			{
 				mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					auto thiz = *(cMenuButtonPrivate**)c;
-					if ((is_mouse_down(action, key, true) && key == Mouse_Left) || (thiz->move_to_open && is_mouse_move(action, key) && get_topmost()))
+					if ((is_mouse_down(action, key, true) && key == Mouse_Left))
 						thiz->open();
-
+					else if (thiz->move_to_open && is_mouse_move(action, key))
+					{
+						auto t = get_topmost(thiz->root);
+						if (t && t->name_hash() == cH("topmost"))
+							thiz->open();
+					}
 				}, new_mail_p(this));
 			}
 		}
@@ -56,7 +61,7 @@ namespace flame
 
 				opened = true;
 
-				auto topmost = get_topmost();
+				auto topmost = get_topmost(root);
 				if (!topmost)
 					topmost = create_topmost(root, topmost_penetrable);
 				else
@@ -89,7 +94,7 @@ namespace flame
 
 				close_menu(menu);
 
-				get_topmost()->take_child(menu);
+				get_topmost(root)->take_child(menu);
 			}
 		}
 	};
@@ -156,7 +161,7 @@ namespace flame
 
 	void popup_menu(Entity* menu, Entity* root, const Vec2f& pos)
 	{
-		auto topmost = get_topmost();
+		auto topmost = get_topmost(root);
 		if (!topmost)
 			topmost = create_topmost(root);
 

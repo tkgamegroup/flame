@@ -435,7 +435,7 @@ int main(int argc, char** args)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
-						destroy_topmost();
+						destroy_topmost(app.root);
 					}
 				}, new_mail_p((char*)names[i]));
 				e_item->add_component(c_event_receiver);
@@ -493,7 +493,7 @@ int main(int argc, char** args)
 							if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							{
 								printf("Add %s!\n", *(char**)c);
-								destroy_topmost();
+								destroy_topmost(app.root);
 							}
 						}, new_mail_p((char*)names[i]));
 						e_item->add_component(c_event_receiver);
@@ -580,7 +580,7 @@ int main(int argc, char** args)
 							if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							{
 								printf("Remove %s!\n", *(char**)c);
-								destroy_topmost();
+								destroy_topmost(app.root);
 							}
 						}, new_mail_p((char*)names[i]));
 						e_item->add_component(c_event_receiver);
@@ -706,7 +706,7 @@ int main(int argc, char** args)
 							if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							{
 								printf("%s!\n", *(char**)c);
-								destroy_topmost();
+								destroy_topmost(app.root);
 							}
 						}, new_mail_p((char*)names[i]));
 						e_item->add_component(c_event_receiver);
@@ -780,7 +780,7 @@ int main(int argc, char** args)
 							if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							{
 								printf("%s!\n", *(char**)c);
-								destroy_topmost();
+								destroy_topmost(app.root);
 							}
 						}, new_mail_p((char*)names[i]));
 						e_item->add_component(c_event_receiver);
@@ -850,7 +850,7 @@ int main(int argc, char** args)
 							if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							{
 								printf("%s!\n", *(char**)c);
-								destroy_topmost();
+								destroy_topmost(app.root);
 							}
 						}, new_mail_p((char*)names[i]));
 						e_item->add_component(c_event_receiver);
@@ -1103,12 +1103,11 @@ int main(int argc, char** args)
 	{
 		e_tabbar->add_component(cElement::create());
 
+		e_tabbar->add_component(cEventReceiver::create());
+
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutHorizontal;
 		e_tabbar->add_component(c_layout);
-		
-		auto c_list = cList::create();
-		e_tabbar->add_component(c_list);
 
 		for (auto i = 0; i < 3; i++)
 		{
@@ -1139,8 +1138,12 @@ int main(int argc, char** args)
 				e_item->add_component(cListItem::create());
 			}
 		}
-
+		
+		auto c_list = cList::create();
+		e_tabbar->add_component(c_list);
 		c_list->selected = e_tabbar->child(0);
+
+		e_tabbar->add_component(cDockerTabbar::create());
 	}
 
 	{

@@ -57,7 +57,7 @@ namespace flame
 					auto combobox = thiz->combobox;
 					combobox->selected = thiz->entity;
 					combobox->text->set_text(thiz->text->text());
-					destroy_topmost();
+					destroy_topmost(thiz->combobox->menu_button->root);
 				}
 			}, new_mail_p(this));
 		}
@@ -137,10 +137,6 @@ namespace flame
 
 	void cCombobox::update()
 	{
-		auto element = (cElement*)(entity->find_component(cH("Element")));
-		if (element->cliped)
-			int cut = 1;
-
 	}
 
 	cCombobox* cCombobox::create()

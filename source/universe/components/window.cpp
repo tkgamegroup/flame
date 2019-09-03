@@ -1,7 +1,9 @@
+#include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/layout.h>
 #include <flame/universe/components/window.h>
 
 namespace flame
@@ -176,7 +178,6 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 			event_receiver->drag_hash = cH("DockerTitle");
-			event_receiver->set_acceptable_drops({ cH("DockerTitle") });
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cDockerTitlePrivate**)c);
@@ -226,5 +227,69 @@ namespace flame
 	cDockerTitle* cDockerTitle::create()
 	{
 		return new cDockerTitlePrivate;
+	}
+
+	struct cDockerTabbarPrivate : cDockerTabbar
+	{
+		void* drag_and_drop_listener;
+
+		cDockerTabbarPrivate()
+		{
+			element = nullptr;
+			event_receiver = nullptr;
+			layout = nullptr;
+
+			drag_and_drop_listener = nullptr;
+		}
+
+		~cDockerTabbarPrivate()
+		{
+			event_receiver->remove_mouse_listener(drag_and_drop_listener);
+		}
+
+		void start()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+			event_receiver->set_acceptable_drops({ cH("DockerTitle") });
+			layout = (cLayout*)(entity->find_component(cH("Layout")));
+			assert(layout);
+
+			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+				auto thiz = (*(cDockerTitlePrivate**)c);
+				if (action == DragOvering)
+				{
+					auto element = thiz->element;
+					std::vector<Vec2f> points;
+					path_rect(points, Vec2f(element->global_x, element->global_y), Vec2f(10.f, element->global_height));
+					element->canvas->fill(points, Vec4c(50, 80, 200, 128));
+				}
+				else if (action == Dropped)
+				{
+
+				}
+			}, new_mail_p(this));
+		}
+	};
+
+	cDockerTabbar::~cDockerTabbar()
+	{
+		((cDockerTabbarPrivate*)this)->~cDockerTabbarPrivate();
+	}
+
+	void cDockerTabbar::start()
+	{
+		((cDockerTabbarPrivate*)this)->start();
+	}
+
+	void cDockerTabbar::update()
+	{
+	}
+
+	cDockerTabbar* cDockerTabbar::create()
+	{
+		return new cDockerTabbarPrivate;
 	}
 }

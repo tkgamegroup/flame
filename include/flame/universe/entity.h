@@ -17,6 +17,7 @@ namespace flame
 		bool first_update;
 
 		FLAME_UNIVERSE_EXPORTS const std::string& name() const;
+		FLAME_UNIVERSE_EXPORTS uint name_hash() const;
 		FLAME_UNIVERSE_EXPORTS void set_name(const std::string& name) const;
 
 		FLAME_UNIVERSE_EXPORTS uint component_count() const;

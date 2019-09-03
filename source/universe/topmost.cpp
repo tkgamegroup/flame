@@ -5,18 +5,23 @@
 
 namespace flame
 {
-	static Entity* topmost;
-
-	Entity* get_topmost()
+	Entity* get_topmost(Entity* e)
 	{
-		return topmost;
+		if (e->child_count() == 0)
+			return nullptr;
+		auto t = e->child(e->child_count() - 1);
+		if (t->name_hash() == cH("topmost") || t->name_hash() == cH("topmost_no_mousemove_to_open_menu"))
+			return t;
+		return nullptr;
 	}
 
-	Entity* create_topmost(Entity* e, bool penetrable, bool close_when_clicked)
+	Entity* create_topmost(Entity* e, bool penetrable, bool close_when_clicked, bool no_mousemove_to_open_menu)
 	{
-		topmost = Entity::create();
-		topmost->set_name("topmost");
-		e->add_child(topmost);
+		assert(!get_topmost(e));
+
+		auto t = Entity::create();
+		t->set_name(!no_mousemove_to_open_menu ? "topmost" : "topmost_no_mousemove_to_open_menu");
+		e->add_child(t);
 
 		{
 			auto e_c_element = (cElement*)e->find_component(cH("Element"));
@@ -25,25 +30,28 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->width = e_c_element->width;
 			c_element->height = e_c_element->height;
-			topmost->add_component(c_element);
+			t->add_component(c_element);
 
 			auto c_event_receiver = cEventReceiver::create();
 			c_event_receiver->penetrable = penetrable;
 			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Left && topmost->created_frame != looper().frame)
-					destroy_topmost();
-			}, Mail<>());
-			topmost->add_component(c_event_receiver);
+				auto e = *(Entity**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left && get_topmost(e)->created_frame != looper().frame)
+					destroy_topmost(e);
+			}, new_mail_p(e));
+			t->add_component(c_event_receiver);
 		}
 
-		return topmost;
+		return t;
 	}
 
-	void destroy_topmost()
+	void destroy_topmost(Entity* e)
 	{
+		auto t = get_topmost(e);
+
 		std::vector<Entity*> children;
-		for (auto i = 0; i < topmost->child_count(); i++)
-			children.push_back(topmost->child(i));
+		for (auto i = 0; i < t->child_count(); i++)
+			children.push_back(t->child(i));
 		for (auto e : children)
 		{
 			auto menu = (cMenu*)e->find_component(cH("Menu"));
@@ -56,11 +64,10 @@ namespace flame
 			}
 		}
 
-		topmost->take_all_children();
+		t->take_all_children();
 		looper().add_delay_event([](void* c) {
 			auto e = *(Entity**)c;
-			e->parent()->take_child(e);
-		}, new_mail_p(topmost));
-		topmost = nullptr;
+			e->take_child(get_topmost(e));
+		}, new_mail_p(e));
 	}
 }

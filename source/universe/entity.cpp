@@ -7,6 +7,7 @@ namespace flame
 	struct EntityPrivate : Entity
 	{
 		std::string name;
+		uint name_hash;
 		std::vector<std::unique_ptr<Component>> components;
 		EntityPrivate* parent;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
@@ -20,6 +21,8 @@ namespace flame
 			global_visible = false;
 
 			first_update = true;
+
+			name_hash = 0;
 		}
 
 		Component* find_component(uint type_hash)
@@ -174,9 +177,16 @@ namespace flame
 		return ((EntityPrivate*)this)->name;
 	}
 
+	uint Entity::name_hash() const
+	{
+		return ((EntityPrivate*)this)->name_hash;
+	}
+
 	void Entity::set_name(const std::string& name) const
 	{
-		((EntityPrivate*)this)->name = name;
+		auto thiz = ((EntityPrivate*)this);
+		thiz->name = name;
+		thiz->name_hash = H(name.c_str());
 	}
 
 	uint Entity::component_count() const

@@ -4,7 +4,9 @@
 
 namespace flame
 {
+	struct cElement;
 	struct cEventReceiver;
+	struct cLayout;
 
 	struct cWindow : Component
 	{
@@ -55,7 +57,7 @@ namespace flame
 		Entity* root;
 
 		cDockerTitle() :
-			Component("cDockerTitle")
+			Component("DockerTitle")
 		{
 		}
 
@@ -66,5 +68,25 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cDockerTitle* create();
+	};
+
+	struct cDockerTabbar : Component
+	{
+		cElement* element;
+		cEventReceiver* event_receiver;
+		cLayout* layout;
+
+		cDockerTabbar() :
+			Component("DockerTabbar")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual ~cDockerTabbar() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+
+		FLAME_UNIVERSE_EXPORTS static cDockerTabbar* create();
 	};
 }

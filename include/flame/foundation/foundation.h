@@ -181,8 +181,6 @@ namespace flame
 	{
 		DragStart,
 		DragEnd,
-		DragEnter,
-		DragLeave,
 		DragOvering,
 		Dropped
 	};

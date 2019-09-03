@@ -116,7 +116,9 @@ namespace flame
 			}
 
 			auto prev_focusing = focusing;
-			auto prev_dragging = focusing ? focusing->dragging : false;
+			auto prev_dragging = focusing;
+			if (!focusing || !focusing->dragging)
+				prev_dragging = nullptr;
 			auto prev_drag_overing = drag_overing;
 			drag_overing = nullptr;
 
@@ -256,7 +258,15 @@ namespace flame
 			}
 
 			if (!prev_dragging && focusing && focusing->dragging)
-				focusing->on_drag_and_drop(DragStart, nullptr, Vec2f(0.f));
+				focusing->on_drag_and_drop(DragStart, nullptr, Vec2f(mouse_pos));
+			else if (prev_dragging && (!focusing || !focusing->dragging))
+			{
+				prev_dragging->on_drag_and_drop(DragEnd, drag_overing, Vec2f(mouse_pos));
+				if (drag_overing)
+					drag_overing->on_drag_and_drop(Dropped, focusing, Vec2f(mouse_pos));
+			}
+			if (drag_overing)
+				drag_overing->on_drag_and_drop(DragOvering, focusing, Vec2f(mouse_pos));
 
 			keydown_inputs.clear();
 			keyup_inputs.clear();
