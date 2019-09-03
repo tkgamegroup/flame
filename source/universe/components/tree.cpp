@@ -227,27 +227,14 @@ namespace flame
 
 	struct cTreePrivate : cTree
 	{
-		cTreePrivate()
-		{
-		}
-
-		~cTreePrivate()
-		{
-		}
-
-		void start()
-		{
-		}
 	};
 
 	cTree::~cTree()
 	{
-		((cTreePrivate*)this)->~cTreePrivate();
 	}
 
 	void cTree::start()
 	{
-		((cTreePrivate*)this)->start();
 	}
 
 	void cTree::update()

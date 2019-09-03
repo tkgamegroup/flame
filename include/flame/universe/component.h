@@ -24,7 +24,7 @@ namespace flame
 		virtual void on_entity_added_to_parent() {}
 
 		virtual void start() {}
-		virtual void update() {};
+		virtual void update() {}
 	};
 
 	// each component type should has a type for serialization

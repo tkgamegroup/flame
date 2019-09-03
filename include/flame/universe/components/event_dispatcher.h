@@ -17,6 +17,7 @@ namespace flame
 
 		cEventReceiver* hovering;
 		cEventReceiver* focusing;
+		cEventReceiver* drag_overing;
 
 		cEventDispatcher() :
 			Component("EventDispatcher")

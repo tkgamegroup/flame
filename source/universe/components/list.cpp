@@ -100,7 +100,6 @@ namespace flame
 
 	cList::~cList()
 	{
-		((cListPrivate*)this)->~cListPrivate();
 	}
 
 	void cList::update()

@@ -15,8 +15,10 @@ namespace flame
 		bool penetrable;
 
 		bool hovering;
-		bool dragging;
 		bool focusing;
+		bool dragging;
+
+		uint drag_hash; // non-zero means it can drag to drop
 
 		cEventReceiver() :
 			Component("EventReceiver")
@@ -28,6 +30,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+
+		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(const std::vector<uint>& hashes);
 
 		FLAME_UNIVERSE_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture);
 		FLAME_UNIVERSE_EXPORTS void* add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& pos), const Mail<>& capture);

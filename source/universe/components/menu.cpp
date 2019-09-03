@@ -96,6 +96,7 @@ namespace flame
 
 	cMenuButton::~cMenuButton()
 	{
+		((cMenuButtonPrivate*)this)->~cMenuButtonPrivate();
 	}
 
 	void cMenuButton::start()

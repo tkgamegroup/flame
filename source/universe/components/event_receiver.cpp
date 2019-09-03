@@ -1,48 +1,40 @@
-#include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/event_receiver.h>
+#include "event_receiver_private.h"
 #include <flame/universe/components/event_dispatcher.h>
 
 namespace flame
 {
-	struct cEventReceiverPrivate : cEventReceiver
+	cEventReceiverPrivate::cEventReceiverPrivate()
 	{
-		//Array<Function<FoucusListenerParm>> focus_listeners$;
-		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, uint value)>>> key_listeners;
-		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, MouseKey key, const Vec2f& pos)>>> mouse_listeners;
-		//Array<Function<DropListenerParm>> drop_listeners$;
-		//Array<Function<ChangedListenerParm>> changed_listeners$;
-		//Array<Function<ChildListenerParm>> child_listeners$;
+		element = nullptr;
+		event_dispatcher = nullptr;
 
-		cEventReceiverPrivate()
-		{
-			element = nullptr;
-			event_dispatcher = nullptr;
+		penetrable = false;
 
-			penetrable = false;
+		hovering = false;
+		dragging = false;
+		focusing = false;
 
-			hovering = false;
-			dragging = false;
-			focusing = false;
-		}
+		drag_hash = 0;
+	}
 
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-		}
-
-		void update()
-		{
-		}
-	};
-
-	cEventReceiver::~cEventReceiver()
+	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
 		if (focusing)
 			event_dispatcher->focusing = nullptr;
 		if (hovering)
 			event_dispatcher->hovering = nullptr;
+	}
+
+	void cEventReceiverPrivate::start()
+	{
+		element = (cElement*)(entity->find_component(cH("Element")));
+		assert(element);
+	}
+
+	cEventReceiver::~cEventReceiver()
+	{
+		((cEventReceiverPrivate*)this)->~cEventReceiverPrivate();
 	}
 
 	void cEventReceiver::start()
@@ -52,7 +44,11 @@ namespace flame
 
 	void cEventReceiver::update()
 	{
-		((cEventReceiverPrivate*)this)->update();
+	}
+
+	void cEventReceiver::set_acceptable_drops(const std::vector<uint>& hashes)
+	{
+		((cEventReceiverPrivate*)this)->acceptable_drops = hashes;
 	}
 
 	void* cEventReceiver::add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture)

@@ -1,7 +1,7 @@
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
+#include "event_receiver_private.h"
 #include <flame/universe/components/event_dispatcher.h>
-#include <flame/universe/components/event_receiver.h>
 
 namespace flame
 {
@@ -19,7 +19,6 @@ namespace flame
 		cEventReceiver* potential_dbclick_er;
 		float potential_dbclick_time;
 
-		bool done_collecting_hovers;
 		std::vector<cEventReceiver*> hovers;
 
 		cEventDispatcherPrivate(Window* window) :
@@ -27,6 +26,7 @@ namespace flame
 		{
 			hovering = nullptr;
 			focusing = nullptr;
+			drag_overing = nullptr;
 
 			char_input_compelete = true;
 			for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
@@ -124,18 +124,48 @@ namespace flame
 					focusing->dragging = false;
 			}
 
-			if (!focusing || !focusing->dragging)
+			auto prev_drag_overing = drag_overing;
+			drag_overing = nullptr;
+			if (focusing && focusing->dragging)
+			{
+				if (focusing->drag_hash != 0)
+				{
+					entity->traverse_backward([](void* c, Entity* e) {
+						auto thiz = *(cEventDispatcherPrivate**)c;
+						if (thiz->drag_overing)
+							return;
+
+						auto er = (cEventReceiverPrivate*)e->find_component(cH("EventReceiver"));
+						if (er)
+						{
+							er->event_dispatcher = thiz;
+							if (!er->element->cliped && !er->penetrable && er != thiz->focusing && er->element->contains(Vec2f(thiz->mouse_pos)) && !er->acceptable_drops.empty())
+							{
+								auto h = thiz->focusing->drag_hash;
+								for (auto _h : er->acceptable_drops)
+								{
+									if (_h == h)
+									{
+										thiz->drag_overing = er;
+										break;
+									}
+								}
+							}
+						}
+					}, new_mail_p(this));
+				}
+			}
+			else
 			{
 				if (hovering)
 				{
 					hovering->hovering = false;
 					hovering = nullptr;
 				}
-				done_collecting_hovers = false;
 				hovers.clear();
 				entity->traverse_backward([](void* c, Entity* e) {
 					auto thiz = *(cEventDispatcherPrivate**)c;
-					if (thiz->done_collecting_hovers)
+					if (thiz->hovering)
 						return;
 
 					auto er = (cEventReceiver*)e->find_component(cH("EventReceiver"));
@@ -149,7 +179,6 @@ namespace flame
 							{
 								er->hovering = true;
 								thiz->hovering = er;
-								thiz->done_collecting_hovers = true;
 							}
 						}
 					}

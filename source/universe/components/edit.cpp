@@ -108,6 +108,7 @@ namespace flame
 
 	cEdit::~cEdit()
 	{
+		((cEditPrivate*)this)->~cEditPrivate();
 	}
 
 	void cEdit::start()

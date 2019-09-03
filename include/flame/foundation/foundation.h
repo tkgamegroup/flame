@@ -177,10 +177,14 @@ namespace flame
 		Focus_Lost
 	};
 
-	enum DropAction
+	enum DragAndDrop
 	{
-		DropOvering,
-		DropDropped
+		DragStart,
+		DragEnd,
+		DragEnter,
+		DragLeave,
+		DragOvering,
+		Dropped
 	};
 
 	inline bool is_key_down(KeyState action) // value is Key

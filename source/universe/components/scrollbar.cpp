@@ -24,7 +24,6 @@ namespace flame
 
 	cScrollbar::~cScrollbar()
 	{
-		((cScrollbarPrivate*)this)->~cScrollbarPrivate();
 	}
 
 	void cScrollbar::start()

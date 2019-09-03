@@ -5,7 +5,6 @@ namespace flame
 {
 	struct cElementPrivate : cElement
 	{
-
 		cElementPrivate(graphics::Canvas* _canvas)
 		{
 			p_element = nullptr;
