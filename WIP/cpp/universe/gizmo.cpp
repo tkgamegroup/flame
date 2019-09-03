@@ -1,6 +1,3 @@
-#include "gizmo.h"
-#include "instance.h"
-
 namespace flame
 {
 	namespace ui

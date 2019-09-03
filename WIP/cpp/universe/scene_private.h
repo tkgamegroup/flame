@@ -19,9 +19,6 @@ namespace flame
 			float *bk_fix_right;
 			float *bk_fix_top;
 			float *bk_fix_bottom;
-
-			void create(graphics::Device *_d);
-			void destroy();
 		};
 
 		extern ShareData share_data;
@@ -76,24 +73,6 @@ namespace flame
 			graphics::Descriptorset *ds_cameralight;
 			graphics::Descriptorset *ds_frame;
 			graphics::Commandbuffer *cb;
-
-			float elp_time_;
-
-			ScenePrivate(const Ivec2 &resolution);
-			~ScenePrivate();
-
-			void register_model(ModelPrivate *m);
-
-			void set_bake_props(float ratio, const Ivec2 &imgsize);
-
-			void begin(float elp_time);
-			void end();
-
-			void draw_scene(graphics::Commandbuffer *cb, const Vec2 &camera_props);
-
-			void record_cb();
-
-			void bake(int pass);
 		};
 	}
 }

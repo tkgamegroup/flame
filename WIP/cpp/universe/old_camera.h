@@ -1,4 +1,3 @@
-
 struct Camera
 {
 	Vec3 view_dir;

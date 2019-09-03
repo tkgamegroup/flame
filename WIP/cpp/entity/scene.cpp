@@ -1,18 +1,3 @@
-#include <map>
-
-#include <flame/global.h>
-#include <flame/string.h>
-#include <flame/filesystem.h>
-#include <flame/serialize_math.h>
-#include <flame/math.h>
-#include <flame/engine/physics/physics.h>
-#include <flame/engine/entity/camera.h>
-#include <flame/engine/entity/light.h>
-#include <flame/engine/entity/model_instance.h>
-#include <flame/engine/entity/terrain.h>
-#include <flame/engine/entity/water.h>
-#include <flame/engine/entity/scene.h>
-
 namespace flame
 {
 	static const float gravity = 9.81f;

@@ -1,11 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/core/core.h>
-#include <flame/engine/graphics/buffer.h>
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/graphics/material.h>
-#include <flame/engine/graphics/pipeline.h>
-#include <flame/engine/entity/terrain.h>
-
 namespace flame
 {
 	TerrainComponent::TerrainComponent() :

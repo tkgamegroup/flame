@@ -1,8 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/core/core.h>
-#include <flame/engine/entity/node.h>
-#include <flame/engine/entity/controller.h>
-
 namespace flame
 {
 	ControllerComponent::ControllerComponent() :

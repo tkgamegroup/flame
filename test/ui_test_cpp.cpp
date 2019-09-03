@@ -1098,6 +1098,51 @@ int main(int argc, char** args)
 		}
 	}
 
+	auto e_tabbar = Entity::create();
+	e_layout_right->add_child(e_tabbar);
+	{
+		e_tabbar->add_component(cElement::create());
+
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutHorizontal;
+		e_tabbar->add_component(c_layout);
+		
+		auto c_list = cList::create();
+		e_tabbar->add_component(c_list);
+
+		for (auto i = 0; i < 3; i++)
+		{
+			auto e_item = Entity::create();
+			e_tabbar->add_child(e_item);
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_item->add_component(c_element);
+
+				static const wchar_t* names[] = {
+					L"Hierarchy",
+					L"Inspector",
+					L"ResourceExplorer"
+				};
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(names[i]);
+				e_item->add_component(c_text);
+
+				e_item->add_component(cEventReceiver::create());
+
+				auto c_dockable_title = cDockableTitle::create();
+				c_dockable_title->root = app.root;
+				e_item->add_component(c_dockable_title);
+
+				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+				e_item->add_component(cListItem::create());
+			}
+		}
+
+		c_list->selected = e_tabbar->child(0);
+	}
+
 	{
 		auto e_container = Entity::create();
 		e_layout_right->add_child(e_container);

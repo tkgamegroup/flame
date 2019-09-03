@@ -1,13 +1,3 @@
-#include "model.h"
-
-#include <flame/type.h>
-#include <flame/file.h>
-
-#include <assert.h>
-//#include <assimp/Importer.hpp>
-//#include <assimp/scene.h>
-//#include <assimp/postprocess.h>
-
 namespace flame
 {
 	Vec2 from(const aiVector2D &v)

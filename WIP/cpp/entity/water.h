@@ -1,7 +1,3 @@
-#pragma once
-
-#include <flame/engine/entity/component.h>
-
 namespace flame
 {
 	class WaterComponent : public Component

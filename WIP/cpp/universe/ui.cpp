@@ -1,5 +1,3 @@
-#include <flame/graphics/image.h>
-#include <flame/graphics/renderpass.h>
 namespace flame
 {
 	inline void UIPrivate::set_hovering_element(Element * w)
@@ -22,29 +20,6 @@ namespace flame
 		if (focus_element_)
 			focus_element_->on_focus(Focus_Gain, 0);
 		set_key_focus_element(w);
-	}
-
-	void UIPrivate::preprocessing(void* __p, Element * w, bool visible, const Vec2 & off, float scl)
-	{
-		switch (w->flag)
-		{
-		case Element::FlagJustCreated:
-			w->flag = Element::FlagNull;
-			break;
-		}
-
-		if (visible && w->event_attitude$ != EventIgnore)
-		{
-			auto mhover = (Rect(w->pos$ * scl, (w->pos$ + w->size$) * scl * w->scale$) + off).contains(p.mpos);
-			if (w->event_attitude$ == EventBlackHole || mhover)
-			{
-				if (p.mljustup)
-				{
-					if (p.temp_dragging_element&& w != p.temp_dragging_element)
-						w->on_drop(p.temp_dragging_element);
-				}
-			}
-		}
 	}
 
 	void UIPrivate::show(void* __p, Element * e, bool visible, const Vec2 & off, float scl)

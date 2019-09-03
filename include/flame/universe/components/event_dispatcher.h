@@ -12,6 +12,8 @@ namespace flame
 	{
 		uint key_states[KeyCount];
 		uint mouse_buttons[3];
+		Vec2i mouse_pos, mouse_pos_prev, mouse_disp;
+		int mouse_scroll;
 
 		cEventReceiver* hovering;
 		cEventReceiver* focusing;

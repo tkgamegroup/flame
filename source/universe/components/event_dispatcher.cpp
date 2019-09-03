@@ -16,8 +16,6 @@ namespace flame
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete;
 
-		Vec2i mouse_pos, mouse_pos_prev, mouse_disp;
-		int mouse_scroll;
 		cEventReceiver* potential_dbclick_er;
 		float potential_dbclick_time;
 
@@ -122,14 +120,8 @@ namespace flame
 					focusing->dragging = false;
 					focusing = nullptr;
 				}
-				else
-				{
-					if (focusing->dragging)
-					{
-						if (is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left))
-							focusing->dragging = false;
-					}
-				}
+				else if (focusing->dragging && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left))
+					focusing->dragging = false;
 			}
 
 			if (!focusing || !focusing->dragging)

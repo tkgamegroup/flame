@@ -1,4 +1,6 @@
+#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
+#include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/window.h>
 
@@ -12,6 +14,7 @@ namespace flame
 
 		cWindowPrivate()
 		{
+			element = nullptr;
 			event_receiver = nullptr;
 
 			mouse_listener = nullptr;
@@ -24,6 +27,8 @@ namespace flame
 
 		void start()
 		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
@@ -38,7 +43,7 @@ namespace flame
 				}
 				else if (thiz->event_receiver->dragging && is_mouse_move(action, key))
 				{
-					auto e = thiz->event_receiver->element;
+					auto e = thiz->element;
 					auto x = pos.x() / e->global_scale;
 					auto y = pos.y() / e->global_scale;
 					e->x += x;
@@ -142,5 +147,88 @@ namespace flame
 	cSizeDragger* cSizeDragger::create()
 	{
 		return new cSizeDraggerPrivate;
+	}
+
+	struct cDockableTitlePrivate : cDockableTitle
+	{
+		void* mouse_listener;
+
+		cDockableTitlePrivate()
+		{
+			element = nullptr;
+			event_receiver = nullptr;
+
+			flying = false;
+
+			mouse_listener = nullptr;
+		}
+
+		~cDockableTitlePrivate()
+		{
+			event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void start()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = (*(cDockableTitle**)c);
+				if (is_mouse_move(action, key) && thiz->event_receiver->dragging)
+				{
+					if (!thiz->flying && !thiz->element->contains(Vec2f(thiz->event_receiver->event_dispatcher->mouse_pos)))
+					{
+						thiz->flying = true;
+
+						looper().add_delay_event([](void* c) {
+							auto thiz = *(cDockableTitle**)c;
+
+							auto e = thiz->entity;
+							e->parent()->take_child(e);
+
+							thiz->element->x = thiz->element->global_x;
+							thiz->element->y = thiz->element->global_y;
+							thiz->root->add_child(e);
+						}, new_mail_p(thiz));
+					}
+
+					if (thiz->flying)
+					{
+						auto e = thiz->element;
+						auto x = pos.x() / e->global_scale;
+						auto y = pos.y() / e->global_scale;
+						e->x += x;
+						e->y += y;
+					}
+				}
+				else if (is_mouse_up(action, key, true) && key == Mouse_Left)
+				{
+					if (thiz->flying)
+						thiz->flying = false;
+				}
+			}, new_mail_p(this));
+		}
+	};
+
+	cDockableTitle::~cDockableTitle()
+	{
+		((cDockableTitlePrivate*)this)->~cDockableTitlePrivate();
+	}
+
+	void cDockableTitle::start()
+	{
+		((cDockableTitlePrivate*)this)->start();
+	}
+
+	void cDockableTitle::update()
+	{
+	}
+
+	cDockableTitle* cDockableTitle::create()
+	{
+		return new cDockableTitlePrivate;
 	}
 }

@@ -17,11 +17,6 @@ namespace flame
 
 	const char *get_sky_type_name(SkyType type);
 
-	struct Sky
-	{
-		SkyType type;
-	};
-
 	struct SkyAtmosphereScattering : Sky
 	{
 		float atmosphereSunE = 20.f;

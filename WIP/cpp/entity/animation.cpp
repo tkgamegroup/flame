@@ -1,15 +1,3 @@
-#include <iostream>
-#include <map>
-
-#include <flame/global.h>
-#include <flame/string.h>
-#include <flame/math.h>
-#include <flame/filesystem.h>
-#include <flame/engine/core/core.h>
-#include <flame/engine/graphics/buffer.h>
-#include <flame/engine/entity/model.h>
-#include <flame/engine/entity/animation.h>
-
 namespace flame
 {
 	KeyFrame *AnimationTrack::new_keyframe()

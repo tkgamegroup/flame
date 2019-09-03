@@ -1,12 +1,3 @@
-#pragma once
-
-#include <vector>
-#include <memory>
-
-#include <flame/math.h>
-#include <flame/engine/core/object.h>
-#include <flame/engine/entity/component.h>
-
 namespace flame
 {
 	enum NodeType

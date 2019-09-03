@@ -1,5 +1,3 @@
-#include "instance.h"
-
 namespace flame
 {
 	namespace ui

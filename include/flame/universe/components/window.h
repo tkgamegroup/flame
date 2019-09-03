@@ -8,6 +8,7 @@ namespace flame
 
 	struct cWindow : Component
 	{
+		cElement* element;
 		cEventReceiver* event_receiver;
 
 		cWindow() :
@@ -44,5 +45,28 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
+	};
+
+	struct cDockableTitle : Component
+	{
+		cElement* element;
+		cEventReceiver* event_receiver;
+
+		Entity* root;
+
+		bool flying;
+
+		cDockableTitle() :
+			Component("DockableTitle")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual ~cDockableTitle() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+
+		FLAME_UNIVERSE_EXPORTS static cDockableTitle* create();
 	};
 }

@@ -1,5 +1,3 @@
-#include "model_private.h"
-
 namespace flame
 {
 	namespace _3d

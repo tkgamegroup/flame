@@ -1,7 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/core/core.h>
-#include <flame/engine/entity/node.h>
-
 namespace flame
 {
 	bool Node::broadcast_upward(Object *src, Message msg)

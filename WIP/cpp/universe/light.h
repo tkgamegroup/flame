@@ -1,4 +1,3 @@
-#include <flame/math.h>
 namespace flame
 {
 	namespace ThreeDWorld
