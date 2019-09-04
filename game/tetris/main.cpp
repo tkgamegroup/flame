@@ -1,4 +1,3 @@
-#include <flame/foundation/window.h>
 #include <flame/foundation/serialize.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
@@ -437,7 +436,7 @@ struct App
 
 			c_element_root->width = w->size.x();
 			c_element_root->height = w->size.y();
-			c_text_fps->set_text(std::to_wstring(app_fps()));
+			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
 
 			auto img_idx = sc->image_index();
@@ -714,7 +713,7 @@ int main(int argc, char **args)
 		e_lines->add_component(app.text_lines);
 	}
 
-	app_run([](void* c) {
+	looper().loop([](void* c) {
 		(*(App**)c)->run();
 	}, new_mail_p(&app));
 
