@@ -151,12 +151,12 @@ namespace flame
 		return new cSizeDraggerPrivate;
 	}
 
-	struct cDockerTitlePrivate : cDockerTitle
+	struct cDockerTabPrivate : cDockerTab
 	{
 		void* mouse_listener;
 		void* drag_and_drop_listener;
 
-		cDockerTitlePrivate()
+		cDockerTabPrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
@@ -165,7 +165,7 @@ namespace flame
 			drag_and_drop_listener = nullptr;
 		}
 
-		~cDockerTitlePrivate()
+		~cDockerTabPrivate()
 		{
 			event_receiver->remove_mouse_listener(mouse_listener);
 			event_receiver->remove_mouse_listener(drag_and_drop_listener);
@@ -177,10 +177,10 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			event_receiver->drag_hash = cH("DockerTitle");
+			event_receiver->drag_hash = cH("cDockerTab");
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = (*(cDockerTitlePrivate**)c);
+				auto thiz = (*(cDockerTabPrivate**)c);
 				if (is_mouse_move(action, key) && thiz->event_receiver->dragging)
 				{
 					auto e = thiz->element;
@@ -194,9 +194,9 @@ namespace flame
 			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
 				if (action == DragStart)
 				{
-					auto thiz = (*(cDockerTitlePrivate**)c);
+					auto thiz = (*(cDockerTabPrivate**)c);
 					looper().add_delay_event([](void* c) {
-						auto thiz = *(cDockerTitlePrivate**)c;
+						auto thiz = *(cDockerTabPrivate**)c;
 
 						auto e = thiz->entity;
 						e->parent()->take_child(e);
@@ -210,23 +210,23 @@ namespace flame
 		}
 	};
 
-	cDockerTitle::~cDockerTitle()
+	cDockerTab::~cDockerTab()
 	{
-		((cDockerTitlePrivate*)this)->~cDockerTitlePrivate();
+		((cDockerTabPrivate*)this)->~cDockerTabPrivate();
 	}
 
-	void cDockerTitle::start()
+	void cDockerTab::start()
 	{
-		((cDockerTitlePrivate*)this)->start();
+		((cDockerTabPrivate*)this)->start();
 	}
 
-	void cDockerTitle::update()
+	void cDockerTab::update()
 	{
 	}
 
-	cDockerTitle* cDockerTitle::create()
+	cDockerTab* cDockerTab::create()
 	{
-		return new cDockerTitlePrivate;
+		return new cDockerTabPrivate;
 	}
 
 	struct cDockerTabbarPrivate : cDockerTabbar
@@ -234,6 +234,8 @@ namespace flame
 		void* drag_and_drop_listener;
 		cEventReceiver* drop_er;
 		uint drop_er_pos;
+		bool show_drop_tip;
+		float show_drop_pos;
 
 		cDockerTabbarPrivate()
 		{
@@ -243,6 +245,7 @@ namespace flame
 			drag_and_drop_listener = nullptr;
 			drop_er = nullptr;
 			drop_er_pos = 0;
+			show_drop_tip = false;
 		}
 
 		~cDockerTabbarPrivate()
@@ -289,18 +292,17 @@ namespace flame
 				auto thiz = (*(cDockerTabbarPrivate**)c);
 				if (action == DragOvering)
 				{
-					float x;
-					thiz->calc_pos(pos.x(), &x);
-					auto element = thiz->element;
-					std::vector<Vec2f> points;
-					path_rect(points, Vec2f(x - 5.f, element->global_y), Vec2f(10.f, element->global_height));
-					element->canvas->fill(points, Vec4c(50, 80, 200, 128));
+					auto idx = thiz->calc_pos(pos.x(), &thiz->show_drop_pos);
+					if (idx == thiz->entity->child_count())
+						thiz->show_drop_pos -= 10.f;
+					else if (idx != 0)
+						thiz->show_drop_pos -= 5.f;
+					thiz->show_drop_tip = true;
 				}
 				else if (action == Dropped)
 				{
 					thiz->drop_er = er;
 					thiz->drop_er_pos = thiz->calc_pos(pos.x(), nullptr);
-					auto thiz = (*(cDockerTitlePrivate**)c);
 					looper().add_delay_event([](void* c) {
 						auto thiz = *(cDockerTabbarPrivate**)c;
 
@@ -311,6 +313,17 @@ namespace flame
 					}, new_mail_p(thiz));
 				}
 			}, new_mail_p(this));
+		}
+
+		void update()
+		{
+			if (show_drop_tip)
+			{
+				show_drop_tip = false;
+				std::vector<Vec2f> points;
+				path_rect(points, Vec2f(show_drop_pos, element->global_y), Vec2f(10.f, element->global_height));
+				element->canvas->fill(points, Vec4c(50, 80, 200, 128));
+			}
 		}
 	};
 
@@ -326,6 +339,7 @@ namespace flame
 
 	void cDockerTabbar::update()
 	{
+		((cDockerTabbarPrivate*)this)->update();
 	}
 
 	cDockerTabbar* cDockerTabbar::create()

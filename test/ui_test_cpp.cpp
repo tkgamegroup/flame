@@ -1108,7 +1108,7 @@ int main(int argc, char** args)
 			c_element->width = 400.f;
 			c_element->height = 300.f;
 			c_element->inner_padding = Vec4f(8.f);
-			c_element->background_color = Vec4c(40, 100, 200, 255);
+			c_element->background_color = Vec4c(200, 200, 200, 255);
 			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
 			e_container->add_component(c_element);
@@ -1123,10 +1123,10 @@ int main(int argc, char** args)
 			e_container->add_component(cWindow::create());
 		}
 
-		auto e_main = Entity::create();
-		e_container->add_child(e_main);
+		auto e_docker = Entity::create();
+		e_container->add_child(e_docker);
 		{
-			e_main->add_component(cElement::create());
+			e_docker->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
 			c_aligner->x_align = AlignxLeft;
@@ -1134,20 +1134,20 @@ int main(int argc, char** args)
 			c_aligner->width_policy = SizeFitLayout;
 			c_aligner->height_policy = SizeFitLayout;
 			c_aligner->using_padding_in_free_layout = true;
-			e_main->add_component(c_aligner);
+			e_docker->add_component(c_aligner);
 
 			auto c_layout = cLayout::create();
 			c_layout->type = LayoutVertical;
 			c_layout->width_fit_children = false;
 			c_layout->height_fit_children = false;
-			e_main->add_component(c_layout);
+			e_docker->add_component(c_layout);
 		}
 
 		auto e_tabbar = Entity::create();
-		e_main->add_child(e_tabbar);
+		e_docker->add_child(e_tabbar);
 		{
 			auto c_element = cElement::create();
-			c_element->background_color = Vec4c(200);
+			c_element->background_color = Vec4c(0, 0, 0, 255);
 			c_element->clip_children = true;
 			e_tabbar->add_component(c_element);
 
@@ -1161,54 +1161,86 @@ int main(int argc, char** args)
 			c_layout->type = LayoutHorizontal;
 			e_tabbar->add_component(c_layout);
 
-			for (auto i = 0; i < 1; i++)
-			{
-				auto e_item = Entity::create();
-				e_tabbar->add_child(e_item);
-				{
-					auto c_element = cElement::create();
-					c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-					e_item->add_component(c_element);
-
-					static const wchar_t* names[] = {
-						L"Hierarchy",
-					};
-					auto c_text = cText::create(app.font_atlas_pixel);
-					c_text->set_text(names[i]);
-					e_item->add_component(c_text);
-
-					e_item->add_component(cEventReceiver::create());
-
-					auto c_dockable_title = cDockerTitle::create();
-					c_dockable_title->root = app.root;
-					e_item->add_component(c_dockable_title);
-
-					e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-					e_item->add_component(cListItem::create());
-				}
-			}
-
 			auto c_list = cList::create();
+			c_list->add_selected_changed_listener([](void* c, Entity* selected) {
+				auto tabbar = selected->parent();
+				auto docker = tabbar->parent();
+				auto pages = docker->child(1);
+				auto idx = tabbar->child_position(selected);
+				for (auto i = 0; i < pages->child_count(); i++)
+					pages->child(i)->visible = false;
+				pages->child(idx)->visible = true;
+			}, Mail<>());
 			e_tabbar->add_component(c_list);
-			c_list->selected = e_tabbar->child(0);
 
 			e_tabbar->add_component(cDockerTabbar::create());
 		}
 
-		auto e_window = Entity::create();
-		e_main->add_child(e_window);
+		auto e_pages = Entity::create();
+		e_docker->add_child(e_pages);
 		{
-			auto c_element = cElement::create();
-			c_element->background_frame_color = Vec4c(255);
-			c_element->background_frame_thickness = 2.f;
-			e_window->add_component(c_element);
+			e_pages->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
 			c_aligner->width_policy = SizeFitLayout;
 			c_aligner->height_policy = SizeFitLayout;
-			e_window->add_component(c_aligner);
+			e_pages->add_component(c_aligner);
+
+			auto c_layout = cLayout::create();
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			e_pages->add_component(c_layout);
 		}
+
+		for (auto i = 0; i < 1; i++)
+		{
+			static const wchar_t* names[] = {
+				L"Hierarchy",
+			};
+
+			auto e_item = Entity::create();
+			e_tabbar->add_child(e_item);
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_item->add_component(c_element);
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(names[i]);
+				e_item->add_component(c_text);
+
+				e_item->add_component(cEventReceiver::create());
+
+				auto c_docker_tab = cDockerTab::create();
+				c_docker_tab->root = app.root;
+				e_item->add_component(c_docker_tab);
+
+				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+				e_item->add_component(cListItem::create());
+			}
+
+			auto e_page = Entity::create();
+			e_pages->add_child(e_page);
+			{
+				auto c_element = cElement::create();
+				c_element->background_frame_color = Vec4c(255);
+				c_element->background_frame_thickness = 2.f;
+				e_page->add_component(c_element);
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->auto_size = false;
+				c_text->set_text(names[i]);
+				e_page->add_component(c_text);
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				c_aligner->height_policy = SizeFitLayout;
+				e_page->add_component(c_aligner);
+			}
+		}
+
+		((cList*)e_tabbar->find_component(cH("List")))->set_selected(e_tabbar->child(0));
 
 		auto e_size_dragger = Entity::create();
 		e_container->add_child(e_size_dragger);
@@ -1230,7 +1262,6 @@ int main(int argc, char** args)
 		}
 	}
 
-
 	{
 		auto e_container = Entity::create();
 		app.root->add_child(e_container);
@@ -1241,7 +1272,7 @@ int main(int argc, char** args)
 			c_element->width = 400.f;
 			c_element->height = 300.f;
 			c_element->inner_padding = Vec4f(8.f);
-			c_element->background_color = Vec4c(40, 100, 200, 255);
+			c_element->background_color = Vec4c(200, 200, 200, 255);
 			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
 			e_container->add_component(c_element);
@@ -1256,10 +1287,10 @@ int main(int argc, char** args)
 			e_container->add_component(cWindow::create());
 		}
 
-		auto e_main = Entity::create();
-		e_container->add_child(e_main);
+		auto e_docker_layout = Entity::create();
+		e_container->add_child(e_docker_layout);
 		{
-			e_main->add_component(cElement::create());
+			e_docker_layout->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
 			c_aligner->x_align = AlignxLeft;
@@ -1267,39 +1298,39 @@ int main(int argc, char** args)
 			c_aligner->width_policy = SizeFitLayout;
 			c_aligner->height_policy = SizeFitLayout;
 			c_aligner->using_padding_in_free_layout = true;
-			e_main->add_component(c_aligner);
+			e_docker_layout->add_component(c_aligner);
 
 			auto c_layout = cLayout::create();
 			c_layout->type = LayoutHorizontal;
 			c_layout->width_fit_children = false;
 			c_layout->height_fit_children = false;
-			e_main->add_component(c_layout);
+			e_docker_layout->add_component(c_layout);
 		}
 
 		{
-			auto e_box_left = Entity::create();
-			e_main->add_child(e_box_left);
 			{
-				e_box_left->add_component(cElement::create());
+				auto e_docker = Entity::create();
+				e_docker_layout->add_child(e_docker);
+				{
+					e_docker->add_component(cElement::create());
 
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
-				c_aligner->height_policy = SizeFitLayout;
-				e_box_left->add_component(c_aligner);
+					auto c_aligner = cAligner::create();
+					c_aligner->width_policy = SizeFitLayout;
+					c_aligner->height_policy = SizeFitLayout;
+					e_docker->add_component(c_aligner);
 
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutVertical;
-				c_layout->width_fit_children = false;
-				c_layout->height_fit_children = false;
-				e_box_left->add_component(c_layout);
-			}
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					c_layout->width_fit_children = false;
+					c_layout->height_fit_children = false;
+					e_docker->add_component(c_layout);
+				}
 
-			{
 				auto e_tabbar = Entity::create();
-				e_box_left->add_child(e_tabbar);
+				e_docker->add_child(e_tabbar);
 				{
 					auto c_element = cElement::create();
-					c_element->background_color = Vec4c(200);
+					c_element->background_color = Vec4c(0, 0, 0, 255);
 					c_element->clip_children = true;
 					e_tabbar->add_component(c_element);
 
@@ -1313,59 +1344,91 @@ int main(int argc, char** args)
 					c_layout->type = LayoutHorizontal;
 					e_tabbar->add_component(c_layout);
 
-					for (auto i = 0; i < 2; i++)
-					{
-						auto e_item = Entity::create();
-						e_tabbar->add_child(e_item);
-						{
-							auto c_element = cElement::create();
-							c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-							e_item->add_component(c_element);
-
-							static const wchar_t* names[] = {
-								L"Inspector",
-								L"ResourceExplorer"
-							};
-							auto c_text = cText::create(app.font_atlas_pixel);
-							c_text->set_text(names[i]);
-							e_item->add_component(c_text);
-
-							e_item->add_component(cEventReceiver::create());
-
-							auto c_dockable_title = cDockerTitle::create();
-							c_dockable_title->root = app.root;
-							e_item->add_component(c_dockable_title);
-
-							e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-							e_item->add_component(cListItem::create());
-						}
-					}
-
 					auto c_list = cList::create();
+					c_list->add_selected_changed_listener([](void* c, Entity* selected) {
+						auto tabbar = selected->parent();
+						auto docker = tabbar->parent();
+						auto pages = docker->child(1);
+						auto idx = tabbar->child_position(selected);
+						for (auto i = 0; i < pages->child_count(); i++)
+							pages->child(i)->visible = false;
+						pages->child(idx)->visible = true;
+					}, Mail<>());
 					e_tabbar->add_component(c_list);
-					c_list->selected = e_tabbar->child(0);
 
 					e_tabbar->add_component(cDockerTabbar::create());
 				}
 
-				auto e_window = Entity::create();
-				e_box_left->add_child(e_window);
+				auto e_pages = Entity::create();
+				e_docker->add_child(e_pages);
 				{
-					auto c_element = cElement::create();
-					c_element->background_frame_color = Vec4c(255);
-					c_element->background_frame_thickness = 2.f;
-					e_window->add_component(c_element);
+					e_pages->add_component(cElement::create());
 
 					auto c_aligner = cAligner::create();
 					c_aligner->width_policy = SizeFitLayout;
 					c_aligner->height_policy = SizeFitLayout;
-					e_window->add_component(c_aligner);
+					e_pages->add_component(c_aligner);
+
+					auto c_layout = cLayout::create();
+					c_layout->width_fit_children = false;
+					c_layout->height_fit_children = false;
+					e_pages->add_component(c_layout);
 				}
+
+				for (auto i = 0; i < 2; i++)
+				{
+					static const wchar_t* names[] = {
+						L"Inspector",
+						L"ResourceExplorer"
+					};
+
+					auto e_item = Entity::create();
+					e_tabbar->add_child(e_item);
+					{
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_item->add_component(c_element);
+
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(names[i]);
+						e_item->add_component(c_text);
+
+						e_item->add_component(cEventReceiver::create());
+
+						auto c_docker_tab = cDockerTab::create();
+						c_docker_tab->root = app.root;
+						e_item->add_component(c_docker_tab);
+
+						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+						e_item->add_component(cListItem::create());
+					}
+
+					auto e_page = Entity::create();
+					e_pages->add_child(e_page);
+					{
+						auto c_element = cElement::create();
+						c_element->background_frame_color = Vec4c(255);
+						c_element->background_frame_thickness = 2.f;
+						e_page->add_component(c_element);
+
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->auto_size = false;
+						c_text->set_text(names[i]);
+						e_page->add_component(c_text);
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeFitLayout;
+						c_aligner->height_policy = SizeFitLayout;
+						e_page->add_component(c_aligner);
+					}
+				}
+
+				((cList*)e_tabbar->find_component(cH("List")))->set_selected(e_tabbar->child(0));
 			}
 
 			auto e_spliter = Entity::create();
-			e_main->add_child(e_spliter);
+			e_docker_layout->add_child(e_spliter);
 			{
 				auto c_element = cElement::create();
 				c_element->width = 8.f;
@@ -1382,32 +1445,29 @@ int main(int argc, char** args)
 				e_spliter->add_component(c_aligner);
 			}
 
-			auto e_box_right = Entity::create();
-			e_main->add_child(e_box_right);
 			{
-				auto c_element = cElement::create();
-				c_element->background_frame_color = Vec4c(255);
-				c_element->background_frame_thickness = 2.f;
-				e_box_right->add_component(c_element);
+				auto e_docker = Entity::create();
+				e_docker_layout->add_child(e_docker);
+				{
+					e_docker->add_component(cElement::create());
 
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
-				c_aligner->height_policy = SizeFitLayout;
-				e_box_right->add_component(c_aligner);
+					auto c_aligner = cAligner::create();
+					c_aligner->width_policy = SizeFitLayout;
+					c_aligner->height_policy = SizeFitLayout;
+					e_docker->add_component(c_aligner);
 
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutVertical;
-				c_layout->width_fit_children = false;
-				c_layout->height_fit_children = false;
-				e_box_right->add_component(c_layout);
-			}
+					auto c_layout = cLayout::create();
+					c_layout->type = LayoutVertical;
+					c_layout->width_fit_children = false;
+					c_layout->height_fit_children = false;
+					e_docker->add_component(c_layout);
+				}
 
-			{
 				auto e_tabbar = Entity::create();
-				e_box_right->add_child(e_tabbar);
+				e_docker->add_child(e_tabbar);
 				{
 					auto c_element = cElement::create();
-					c_element->background_color = Vec4c(200);
+					c_element->background_color = Vec4c(0, 0, 0, 255);
 					c_element->clip_children = true;
 					e_tabbar->add_component(c_element);
 
@@ -1421,55 +1481,87 @@ int main(int argc, char** args)
 					c_layout->type = LayoutHorizontal;
 					e_tabbar->add_component(c_layout);
 
-					for (auto i = 0; i < 2; i++)
-					{
-						auto e_item = Entity::create();
-						e_tabbar->add_child(e_item);
-						{
-							auto c_element = cElement::create();
-							c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-							e_item->add_component(c_element);
-
-							static const wchar_t* names[] = {
-								L"TextEditor",
-								L"ShaderEditor"
-							};
-							auto c_text = cText::create(app.font_atlas_pixel);
-							c_text->set_text(names[i]);
-							e_item->add_component(c_text);
-
-							e_item->add_component(cEventReceiver::create());
-
-							auto c_dockable_title = cDockerTitle::create();
-							c_dockable_title->root = app.root;
-							e_item->add_component(c_dockable_title);
-
-							e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-							e_item->add_component(cListItem::create());
-						}
-					}
-
 					auto c_list = cList::create();
+					c_list->add_selected_changed_listener([](void* c, Entity* selected) {
+						auto tabbar = selected->parent();
+						auto docker = tabbar->parent();
+						auto pages = docker->child(1);
+						auto idx = tabbar->child_position(selected);
+						for (auto i = 0; i < pages->child_count(); i++)
+							pages->child(i)->visible = false;
+						pages->child(idx)->visible = true;
+					}, Mail<>());
 					e_tabbar->add_component(c_list);
-					c_list->selected = e_tabbar->child(0);
 
 					e_tabbar->add_component(cDockerTabbar::create());
 				}
 
-				auto e_window = Entity::create();
-				e_box_right->add_child(e_window);
+				auto e_pages = Entity::create();
+				e_docker->add_child(e_pages);
 				{
-					auto c_element = cElement::create();
-					c_element->background_frame_color = Vec4c(255);
-					c_element->background_frame_thickness = 2.f;
-					e_window->add_component(c_element);
+					e_pages->add_component(cElement::create());
 
 					auto c_aligner = cAligner::create();
 					c_aligner->width_policy = SizeFitLayout;
 					c_aligner->height_policy = SizeFitLayout;
-					e_window->add_component(c_aligner);
+					e_pages->add_component(c_aligner);
+
+					auto c_layout = cLayout::create();
+					c_layout->width_fit_children = false;
+					c_layout->height_fit_children = false;
+					e_pages->add_component(c_layout);
 				}
+
+				for (auto i = 0; i < 2; i++)
+				{
+					static const wchar_t* names[] = {
+						L"TextEditor",
+						L"ShaderEditor"
+					};
+
+					auto e_item = Entity::create();
+					e_tabbar->add_child(e_item);
+					{
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_item->add_component(c_element);
+
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(names[i]);
+						e_item->add_component(c_text);
+
+						e_item->add_component(cEventReceiver::create());
+
+						auto c_docker_tab = cDockerTab::create();
+						c_docker_tab->root = app.root;
+						e_item->add_component(c_docker_tab);
+
+						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+						e_item->add_component(cListItem::create());
+					}
+
+					auto e_page = Entity::create();
+					e_pages->add_child(e_page);
+					{
+						auto c_element = cElement::create();
+						c_element->background_frame_color = Vec4c(255);
+						c_element->background_frame_thickness = 2.f;
+						e_page->add_component(c_element);
+
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->auto_size = false;
+						c_text->set_text(names[i]);
+						e_page->add_component(c_text);
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeFitLayout;
+						c_aligner->height_policy = SizeFitLayout;
+						e_page->add_component(c_aligner);
+					}
+				}
+
+				((cList*)e_tabbar->find_component(cH("List")))->set_selected(e_tabbar->child(0));
 			}
 		}
 

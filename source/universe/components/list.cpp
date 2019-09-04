@@ -49,7 +49,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cListItemPrivate**)c;
-					thiz->list->selected = thiz->entity;
+					thiz->list->set_selected(thiz->entity);
 				}
 			}, new_mail_p(this));
 		}
@@ -96,14 +96,50 @@ namespace flame
 
 	struct cListPrivate : cList
 	{
+		std::vector<std::unique_ptr<Closure<void(void* c, Entity* selected)>>> selected_changed_listeners;
+
+		~cListPrivate()
+		{
+		}
 	};
 
 	cList::~cList()
 	{
+		((cListPrivate*)this)->~cListPrivate();
 	}
 
 	void cList::update()
 	{
+	}
+
+	void* cList::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, Entity * selected)>;
+		c->function = listener;
+		c->capture = capture;
+		((cListPrivate*)this)->selected_changed_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cList::remove_selected_changed_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cListPrivate*)this)->selected_changed_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
+	}
+
+	void cList::set_selected(Entity* e)
+	{
+		selected = e;
+		auto& listeners = ((cListPrivate*)this)->selected_changed_listeners;
+		for (auto& l : listeners)
+			l->function(l->capture.p, selected);
 	}
 
 	cList* cList::create()
