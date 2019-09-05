@@ -32,7 +32,9 @@ namespace flame
 
 		~cComboboxItemPrivate()
 		{
-			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -82,11 +84,6 @@ namespace flame
 		}
 	};
 
-	cComboboxItem::~cComboboxItem()
-	{
-		((cComboboxItemPrivate*)this)->~cComboboxItemPrivate();
-	}
-
 	void cComboboxItem::start()
 	{
 		((cComboboxItemPrivate*)this)->start();
@@ -104,14 +101,6 @@ namespace flame
 
 	struct cComboboxPrivate : cCombobox
 	{
-		cComboboxPrivate()
-		{
-		}
-
-		~cComboboxPrivate()
-		{
-		}
-
 		void start()
 		{
 			text = (cText*)(entity->find_component(cH("Text")));
@@ -124,11 +113,6 @@ namespace flame
 				((cComboboxItem*)(menu->child(i)->find_component(cH("ComboboxItem"))))->combobox = this;
 		}
 	};
-
-	cCombobox::~cCombobox()
-	{
-		((cComboboxPrivate*)this)->~cComboboxPrivate();
-	}
 
 	void cCombobox::start()
 	{

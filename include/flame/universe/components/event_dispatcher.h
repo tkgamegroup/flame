@@ -24,8 +24,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cEventDispatcher() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cEventDispatcher* create(Window* window = nullptr);

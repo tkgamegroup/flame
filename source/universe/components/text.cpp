@@ -14,12 +14,8 @@ namespace flame
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
 		sdf_scale = default_style.sdf_scale;
-		align = AlignxLeft;
+		right_align = false;
 		auto_size = true;
-	}
-
-	cTextPrivate::~cTextPrivate()
-	{
 	}
 
 	void cTextPrivate::start()
@@ -31,7 +27,7 @@ namespace flame
 
 	void cTextPrivate::update()
 	{
-		if (align != AlignxRight)
+		if (!right_align)
 		{
 			auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
@@ -54,9 +50,17 @@ namespace flame
 		}
 	}
 
-	cText::~cText()
+	Component* cTextPrivate::copy()
 	{
-		((cTextPrivate*)this)->~cTextPrivate();
+		auto copy = new cTextPrivate(font_atlas);
+
+		copy->color = color;
+		copy->sdf_scale = sdf_scale;
+		copy->right_align = right_align;
+		copy->auto_size = auto_size;
+		copy->text = text;
+
+		return copy;
 	}
 
 	const std::wstring& cText::text() const
@@ -77,6 +81,11 @@ namespace flame
 	void cText::update()
 	{
 		((cTextPrivate*)this)->update();
+	}
+
+	Component* cText::copy()
+	{
+		return ((cTextPrivate*)this)->copy();
 	}
 
 	cText* cText::create(graphics::FontAtlas* font_atlas)

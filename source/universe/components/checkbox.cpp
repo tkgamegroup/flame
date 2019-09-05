@@ -21,7 +21,9 @@ namespace flame
 
 		~cCheckboxPrivate()
 		{
-			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -58,11 +60,6 @@ namespace flame
 			}
 		}
 	};
-
-	cCheckbox::~cCheckbox()
-	{
-		((cCheckboxPrivate*)this)->~cCheckboxPrivate();
-	}
 
 	void cCheckbox::start()
 	{

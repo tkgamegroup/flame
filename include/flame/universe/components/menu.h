@@ -24,8 +24,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cMenuButton() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
@@ -43,8 +41,6 @@ namespace flame
 			Component("Menu")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cMenu() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 

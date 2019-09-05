@@ -26,8 +26,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cEventReceiver() override;
-
 		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(const std::vector<uint>& hashes);
 
 		FLAME_UNIVERSE_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture);

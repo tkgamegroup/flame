@@ -27,7 +27,9 @@ namespace flame
 
 		~cMenuButtonPrivate()
 		{
-			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -99,11 +101,6 @@ namespace flame
 		}
 	};
 
-	cMenuButton::~cMenuButton()
-	{
-		((cMenuButtonPrivate*)this)->~cMenuButtonPrivate();
-	}
-
 	void cMenuButton::start()
 	{
 		((cMenuButtonPrivate*)this)->start();
@@ -135,10 +132,6 @@ namespace flame
 			popuped_by = nullptr;
 		}
 	};
-
-	cMenu::~cMenu()
-	{
-	}
 
 	void cMenu::update()
 	{

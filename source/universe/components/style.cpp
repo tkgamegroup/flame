@@ -41,10 +41,6 @@ namespace flame
 		}
 	};
 
-	cStyleBackgroundColor::~cStyleBackgroundColor()
-	{
-	}
-
 	void cStyleBackgroundColor::start()
 	{
 		((cStyleBackgroundColorPrivate*)this)->start();
@@ -97,10 +93,6 @@ namespace flame
 			return new cStyleTextColorPrivate(color_normal, color_else);
 		}
 	};
-
-	cStyleTextColor::~cStyleTextColor()
-	{
-	}
 
 	void cStyleTextColor::start()
 	{

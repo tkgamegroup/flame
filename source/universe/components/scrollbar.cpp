@@ -22,10 +22,6 @@ namespace flame
 		}
 	};
 
-	cScrollbar::~cScrollbar()
-	{
-	}
-
 	void cScrollbar::start()
 	{
 		((cScrollbarPrivate*)this)->start();
@@ -58,7 +54,9 @@ namespace flame
 
 		~cScrollbarThumbPrivate()
 		{
-			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -134,11 +132,6 @@ namespace flame
 			}
 		}
 	};
-
-	cScrollbarThumb::~cScrollbarThumb()
-	{
-		((cScrollbarThumbPrivate*)this)->~cScrollbarThumbPrivate();
-	}
 
 	void cScrollbarThumb::start()
 	{

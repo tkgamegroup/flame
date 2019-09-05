@@ -33,7 +33,9 @@ namespace flame
 
 		~cTreeLeafPrivate()
 		{
-			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -87,11 +89,6 @@ namespace flame
 		}
 	};
 
-	cTreeLeaf::~cTreeLeaf()
-	{
-		((cTreeLeafPrivate*)this)->~cTreeLeafPrivate();
-	}
-
 	void cTreeLeaf::start()
 	{
 		((cTreeLeafPrivate*)this)->start();
@@ -133,8 +130,22 @@ namespace flame
 
 		~cTreeNodePrivate()
 		{
-			title_event_receiver->remove_mouse_listener(title_mouse_listener);
-			arrow_event_receiver->remove_mouse_listener(arrow_mouse_listener);
+			if (entity->child_count() == 0)
+				return;
+
+			auto e_title = entity->child(0);
+
+			title_event_receiver = (cEventReceiver*)(e_title->find_component(cH("EventReceiver")));
+			if (title_event_receiver)
+				title_event_receiver->remove_mouse_listener(title_mouse_listener);
+
+			if (e_title->child_count() == 0)
+				return;
+
+			auto e_arrow = e_title->child(0);
+			arrow_event_receiver = (cEventReceiver*)(e_arrow->find_component(cH("EventReceiver")));
+			if (arrow_event_receiver)
+				arrow_event_receiver->remove_mouse_listener(arrow_mouse_listener);
 		}
 
 		void start()
@@ -205,11 +216,6 @@ namespace flame
 		}
 	};
 
-	cTreeNode::~cTreeNode()
-	{
-		((cTreeNodePrivate*)this)->~cTreeNodePrivate();
-	}
-
 	void cTreeNode::start()
 	{
 		((cTreeNodePrivate*)this)->start();
@@ -228,10 +234,6 @@ namespace flame
 	struct cTreePrivate : cTree
 	{
 	};
-
-	cTree::~cTree()
-	{
-	}
 
 	void cTree::start()
 	{

@@ -38,10 +38,6 @@ namespace flame
 		}
 	};
 
-	cImage::~cImage()
-	{
-	}
-
 	void cImage::start()
 	{
 		((cImagePrivate*)this)->start();

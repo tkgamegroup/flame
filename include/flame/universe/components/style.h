@@ -22,8 +22,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cStyleBackgroundColor() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
@@ -43,8 +41,6 @@ namespace flame
 			Component("StyleTextColor")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cStyleTextColor() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;

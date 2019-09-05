@@ -145,10 +145,6 @@ namespace flame
 		}
 	};
 
-	cElement::~cElement()
-	{
-	}
-
 	void cElement::on_entity_added_to_parent()
 	{
 		((cElementPrivate*)this)->on_entity_added_to_parent();

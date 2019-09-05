@@ -75,8 +75,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cElement() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void on_entity_added_to_parent() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;

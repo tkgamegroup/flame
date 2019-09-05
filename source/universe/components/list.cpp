@@ -27,7 +27,9 @@ namespace flame
 
 		~cListItemPrivate()
 		{
-			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -89,11 +91,6 @@ namespace flame
 		}
 	};
 
-	cListItem::~cListItem()
-	{
-		((cListItemPrivate*)this)->~cListItemPrivate();
-	}
-
 	void cListItem::start()
 	{
 		((cListItemPrivate*)this)->start();
@@ -117,16 +114,7 @@ namespace flame
 	struct cListPrivate : cList
 	{
 		std::vector<std::unique_ptr<Closure<void(void* c, Entity* selected)>>> selected_changed_listeners;
-
-		~cListPrivate()
-		{
-		}
 	};
-
-	cList::~cList()
-	{
-		((cListPrivate*)this)->~cListPrivate();
-	}
 
 	void* cList::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
 	{

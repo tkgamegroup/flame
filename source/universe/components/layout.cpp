@@ -324,10 +324,6 @@ namespace flame
 		}
 	};
 
-	cLayout::~cLayout()
-	{
-	}
-
 	void cLayout::start()
 	{
 		((cLayoutPrivate*)this)->start();

@@ -8,6 +8,7 @@ namespace flame
 	struct cEventReceiver;
 	struct cLayout;
 	struct cListItem;
+	struct cList;
 
 	struct cWindow : Component
 	{
@@ -18,8 +19,6 @@ namespace flame
 			Component("Window")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cWindow() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
@@ -41,8 +40,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cSizeDragger() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
@@ -58,12 +55,12 @@ namespace flame
 
 		Entity* root;
 
+		Entity* page;
+
 		cDockerTab() :
 			Component("DockerTab")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cDockerTab() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
@@ -76,13 +73,12 @@ namespace flame
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
+		cList* list;
 
 		cDockerTabbar() :
 			Component("DockerTabbar")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cDockerTabbar() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
@@ -92,4 +88,7 @@ namespace flame
 	};
 
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_tab_model();
+	FLAME_UNIVERSE_EXPORTS Entity* get_docker_model();
+	FLAME_UNIVERSE_EXPORTS Entity* get_docker_layout_model();
+	FLAME_UNIVERSE_EXPORTS Entity* get_docker_container_model();
 }

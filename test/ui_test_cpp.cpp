@@ -1099,7 +1099,14 @@ int main(int argc, char** args)
 	}
 
 	{
+		auto e_tab = get_docker_tab_model();
+		((cText*)e_tab->find_component(cH("Text")))->font_atlas = app.font_atlas_pixel;
+		((cDockerTab*)e_tab->find_component(cH("DockerTab")))->root = app.root;
+	}
+
+	{
 		auto e_container = Entity::create();
+		e_container->set_name("docker_container");
 		app.root->add_child(e_container);
 		{
 			auto c_element = cElement::create();
@@ -1108,7 +1115,7 @@ int main(int argc, char** args)
 			c_element->width = 400.f;
 			c_element->height = 300.f;
 			c_element->inner_padding = Vec4f(8.f);
-			c_element->background_color = Vec4c(200, 200, 200, 255);
+			c_element->background_color = Vec4c(100, 100, 100, 255);
 			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
 			e_container->add_component(c_element);
@@ -1124,6 +1131,7 @@ int main(int argc, char** args)
 		}
 
 		auto e_docker = Entity::create();
+		e_docker->set_name("docker");
 		e_container->add_child(e_docker);
 		{
 			e_docker->add_component(cElement::create());
@@ -1144,6 +1152,7 @@ int main(int argc, char** args)
 		}
 
 		auto e_tabbar = Entity::create();
+		e_tabbar->set_name("docker_tabbar");
 		e_docker->add_child(e_tabbar);
 		{
 			auto c_element = cElement::create();
@@ -1161,17 +1170,7 @@ int main(int argc, char** args)
 			c_layout->type = LayoutHorizontal;
 			e_tabbar->add_component(c_layout);
 
-			auto c_list = cList::create();
-			c_list->add_selected_changed_listener([](void* c, Entity* selected) {
-				auto tabbar = selected->parent();
-				auto docker = tabbar->parent();
-				auto pages = docker->child(1);
-				auto idx = tabbar->child_position(selected);
-				for (auto i = 0; i < pages->child_count(); i++)
-					pages->child(i)->visible = false;
-				pages->child(idx)->visible = true;
-			}, Mail<>());
-			e_tabbar->add_component(c_list);
+			e_tabbar->add_component(cList::create());
 
 			e_tabbar->add_component(cDockerTabbar::create());
 		}
@@ -1198,27 +1197,9 @@ int main(int argc, char** args)
 				L"Hierarchy",
 			};
 
-			auto e_item = Entity::create();
-			e_tabbar->add_child(e_item);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				e_item->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(names[i]);
-				e_item->add_component(c_text);
-
-				e_item->add_component(cEventReceiver::create());
-
-				auto c_docker_tab = cDockerTab::create();
-				c_docker_tab->root = app.root;
-				e_item->add_component(c_docker_tab);
-
-				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-				e_item->add_component(cListItem::create());
-			}
+			auto e_tab = get_docker_tab_model()->copy();
+			((cText*)e_tab->find_component(cH("Text")))->set_text(names[i]);
+			e_tabbar->add_child(e_tab);
 
 			auto e_page = Entity::create();
 			e_pages->add_child(e_page);
@@ -1264,6 +1245,7 @@ int main(int argc, char** args)
 
 	{
 		auto e_container = Entity::create();
+		e_container->set_name("docker_container");
 		app.root->add_child(e_container);
 		{
 			auto c_element = cElement::create();
@@ -1272,7 +1254,7 @@ int main(int argc, char** args)
 			c_element->width = 400.f;
 			c_element->height = 300.f;
 			c_element->inner_padding = Vec4f(8.f);
-			c_element->background_color = Vec4c(200, 200, 200, 255);
+			c_element->background_color = Vec4c(100, 100, 100, 255);
 			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
 			e_container->add_component(c_element);
@@ -1310,6 +1292,7 @@ int main(int argc, char** args)
 		{
 			{
 				auto e_docker = Entity::create();
+				e_docker->set_name("docker");
 				e_docker_layout->add_child(e_docker);
 				{
 					e_docker->add_component(cElement::create());
@@ -1327,6 +1310,7 @@ int main(int argc, char** args)
 				}
 
 				auto e_tabbar = Entity::create();
+				e_tabbar->set_name("docker_tabbar");
 				e_docker->add_child(e_tabbar);
 				{
 					auto c_element = cElement::create();
@@ -1344,17 +1328,7 @@ int main(int argc, char** args)
 					c_layout->type = LayoutHorizontal;
 					e_tabbar->add_component(c_layout);
 
-					auto c_list = cList::create();
-					c_list->add_selected_changed_listener([](void* c, Entity* selected) {
-						auto tabbar = selected->parent();
-						auto docker = tabbar->parent();
-						auto pages = docker->child(1);
-						auto idx = tabbar->child_position(selected);
-						for (auto i = 0; i < pages->child_count(); i++)
-							pages->child(i)->visible = false;
-						pages->child(idx)->visible = true;
-					}, Mail<>());
-					e_tabbar->add_component(c_list);
+					e_tabbar->add_component(cList::create());
 
 					e_tabbar->add_component(cDockerTabbar::create());
 				}
@@ -1382,27 +1356,9 @@ int main(int argc, char** args)
 						L"ResourceExplorer"
 					};
 
-					auto e_item = Entity::create();
-					e_tabbar->add_child(e_item);
-					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_item->add_component(c_element);
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(names[i]);
-						e_item->add_component(c_text);
-
-						e_item->add_component(cEventReceiver::create());
-
-						auto c_docker_tab = cDockerTab::create();
-						c_docker_tab->root = app.root;
-						e_item->add_component(c_docker_tab);
-
-						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-						e_item->add_component(cListItem::create());
-					}
+					auto e_tab = get_docker_tab_model()->copy();
+					((cText*)e_tab->find_component(cH("Text")))->set_text(names[i]);
+					e_tabbar->add_child(e_tab);
 
 					auto e_page = Entity::create();
 					e_pages->add_child(e_page);
@@ -1447,6 +1403,7 @@ int main(int argc, char** args)
 
 			{
 				auto e_docker = Entity::create();
+				e_docker->set_name("docker");
 				e_docker_layout->add_child(e_docker);
 				{
 					e_docker->add_component(cElement::create());
@@ -1464,6 +1421,7 @@ int main(int argc, char** args)
 				}
 
 				auto e_tabbar = Entity::create();
+				e_tabbar->set_name("docker_tabbar");
 				e_docker->add_child(e_tabbar);
 				{
 					auto c_element = cElement::create();
@@ -1481,17 +1439,7 @@ int main(int argc, char** args)
 					c_layout->type = LayoutHorizontal;
 					e_tabbar->add_component(c_layout);
 
-					auto c_list = cList::create();
-					c_list->add_selected_changed_listener([](void* c, Entity* selected) {
-						auto tabbar = selected->parent();
-						auto docker = tabbar->parent();
-						auto pages = docker->child(1);
-						auto idx = tabbar->child_position(selected);
-						for (auto i = 0; i < pages->child_count(); i++)
-							pages->child(i)->visible = false;
-						pages->child(idx)->visible = true;
-					}, Mail<>());
-					e_tabbar->add_component(c_list);
+					e_tabbar->add_component(cList::create());
 
 					e_tabbar->add_component(cDockerTabbar::create());
 				}
@@ -1519,27 +1467,9 @@ int main(int argc, char** args)
 						L"ShaderEditor"
 					};
 
-					auto e_item = Entity::create();
-					e_tabbar->add_child(e_item);
-					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_item->add_component(c_element);
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(names[i]);
-						e_item->add_component(c_text);
-
-						e_item->add_component(cEventReceiver::create());
-
-						auto c_docker_tab = cDockerTab::create();
-						c_docker_tab->root = app.root;
-						e_item->add_component(c_docker_tab);
-
-						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-						e_item->add_component(cListItem::create());
-					}
+					auto e_tab = get_docker_tab_model()->copy();
+					((cText*)e_tab->find_component(cH("Text")))->set_text(names[i]);
+					e_tabbar->add_child(e_tab);
 
 					auto e_page = Entity::create();
 					e_pages->add_child(e_page);

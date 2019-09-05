@@ -281,11 +281,6 @@ namespace flame
 		}
 	};
 
-	cEventDispatcher::~cEventDispatcher()
-	{
-		((cEventDispatcherPrivate*)this)->~cEventDispatcherPrivate();
-	}
-
 	void cEventDispatcher::update()
 	{
 		((cEventDispatcherPrivate*)this)->update();

@@ -18,8 +18,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cScrollbar() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
@@ -39,8 +37,6 @@ namespace flame
 			Component("ScrollbarThumb")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cScrollbarThumb() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;

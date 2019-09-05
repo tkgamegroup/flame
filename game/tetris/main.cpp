@@ -657,7 +657,7 @@ int main(int argc, char **args)
 		e_score->add_component(c_element);
 
 		app.text_score = cText::create(app.font_atlas_2);
-		app.text_score->align = AlignxRight;
+		app.text_score->right_align = true;
 		e_score->add_component(app.text_score);
 	}
 
@@ -683,7 +683,7 @@ int main(int argc, char **args)
 		e_level->add_component(c_element);
 
 		app.text_level = cText::create(app.font_atlas_2);
-		app.text_level->align = AlignxRight;
+		app.text_score->right_align = true;
 		e_level->add_component(app.text_level);
 	}
 
@@ -709,7 +709,7 @@ int main(int argc, char **args)
 		e_lines->add_component(c_element);
 
 		app.text_lines = cText::create(app.font_atlas_2);
-		app.text_lines->align = AlignxRight;
+		app.text_score->right_align = true;
 		e_lines->add_component(app.text_lines);
 	}
 

@@ -52,10 +52,6 @@ namespace flame
 		}
 	};
 
-	cAligner::~cAligner()
-	{
-	}
-
 	void cAligner::start()
 	{
 		((cAlignerPrivate*)this)->start();

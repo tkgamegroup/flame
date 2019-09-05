@@ -24,7 +24,9 @@ namespace flame
 
 		~cEditPrivate()
 		{
-			event_receiver->remove_key_listener(key_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(key_listener);
 		}
 
 		void start()
@@ -105,11 +107,6 @@ namespace flame
 			}
 		}
 	};
-
-	cEdit::~cEdit()
-	{
-		((cEditPrivate*)this)->~cEditPrivate();
-	}
 
 	void cEdit::start()
 	{

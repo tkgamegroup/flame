@@ -27,8 +27,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual ~cListItem() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
@@ -44,8 +42,6 @@ namespace flame
 			Component("List")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual ~cList() override;
 
 		FLAME_UNIVERSE_EXPORTS void* add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture);
 

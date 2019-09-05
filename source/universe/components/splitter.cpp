@@ -25,7 +25,9 @@ namespace flame
 
 		~cSplitterPrivate()
 		{
-			event_receiver->remove_mouse_listener(mouse_listener);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -103,11 +105,6 @@ namespace flame
 			return copy;
 		}
 	};
-
-	cSplitter::~cSplitter()
-	{
-		((cSplitterPrivate*)this)->~cSplitterPrivate();
-	}
 
 	void cSplitter::start()
 	{

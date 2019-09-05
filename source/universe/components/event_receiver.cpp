@@ -43,11 +43,6 @@ namespace flame
 		return copy;
 	}
 
-	cEventReceiver::~cEventReceiver()
-	{
-		((cEventReceiverPrivate*)this)->~cEventReceiverPrivate();
-	}
-
 	void cEventReceiver::set_acceptable_drops(const std::vector<uint>& hashes)
 	{
 		((cEventReceiverPrivate*)this)->acceptable_drops = hashes;
