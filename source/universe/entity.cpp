@@ -130,6 +130,26 @@ namespace flame
 			children.clear();
 		}
 
+		EntityPrivate* copy()
+		{
+			auto e = new EntityPrivate;
+
+			e->visible = visible;
+			e->set_name(name);
+			for (auto& c : components)
+			{
+				auto copy = c->copy();
+				e->add_component(copy);
+			}
+			for (auto& e : children)
+			{
+				auto copy = e->copy();
+				e->add_child(copy, -1);
+			}
+
+			return e;
+		}
+
 		void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
 		{
 			callback(capture.p, this);
@@ -273,6 +293,11 @@ namespace flame
 	void Entity::take_all_children()
 	{
 		((EntityPrivate*)this)->take_all_children();
+	}
+
+	Entity* Entity::copy()
+	{
+		return ((EntityPrivate*)this)->copy();
 	}
 
 	void Entity::traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)

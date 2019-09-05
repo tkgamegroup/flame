@@ -28,10 +28,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cEventReceiver() override;
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
-
 		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(const std::vector<uint>& hashes);
 
 		FLAME_UNIVERSE_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture);
@@ -45,6 +41,10 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void on_key(KeyState action, uint value);
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyState action, MouseKey key, const Vec2f& value);
 		FLAME_UNIVERSE_EXPORTS void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2f& pos);
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
 	};

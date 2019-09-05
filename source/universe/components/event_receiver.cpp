@@ -33,18 +33,19 @@ namespace flame
 		assert(element);
 	}
 
+	Component* cEventReceiverPrivate::copy()
+	{
+		auto copy = new cEventReceiverPrivate();
+
+		copy->penetrable = penetrable;
+		copy->drag_hash = drag_hash;
+
+		return copy;
+	}
+
 	cEventReceiver::~cEventReceiver()
 	{
 		((cEventReceiverPrivate*)this)->~cEventReceiverPrivate();
-	}
-
-	void cEventReceiver::start()
-	{
-		((cEventReceiverPrivate*)this)->start();
-	}
-
-	void cEventReceiver::update()
-	{
 	}
 
 	void cEventReceiver::set_acceptable_drops(const std::vector<uint>& hashes)
@@ -137,6 +138,20 @@ namespace flame
 		auto& listeners = ((cEventReceiverPrivate*)this)->drag_and_drop_listeners;
 		for (auto& l : listeners)
 			l->function(l->capture.p, action, er, pos);
+	}
+
+	void cEventReceiver::start()
+	{
+		((cEventReceiverPrivate*)this)->start();
+	}
+
+	void cEventReceiver::update()
+	{
+	}
+
+	Component* cEventReceiver::copy()
+	{
+		return ((cEventReceiverPrivate*)this)->copy();
 	}
 
 	cEventReceiver* cEventReceiver::create()

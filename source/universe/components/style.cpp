@@ -34,6 +34,11 @@ namespace flame
 			else
 				element->background_color = color_normal;
 		}
+
+		Component* copy()
+		{
+			return new cStyleBackgroundColorPrivate(color_normal, color_hovering, color_active);
+		}
 	};
 
 	cStyleBackgroundColor::~cStyleBackgroundColor()
@@ -48,6 +53,11 @@ namespace flame
 	void cStyleBackgroundColor::update()
 	{
 		((cStyleBackgroundColorPrivate*)this)->update();
+	}
+
+	Component* cStyleBackgroundColor::copy()
+	{
+		return ((cStyleBackgroundColorPrivate*)this)->copy();
 	}
 
 	cStyleBackgroundColor* cStyleBackgroundColor::create(const Vec4c& color_normal, const Vec4c& color_hovering, const Vec4c& color_active)
@@ -81,6 +91,11 @@ namespace flame
 			else
 				text->color = color_normal;
 		}
+
+		Component* copy()
+		{
+			return new cStyleTextColorPrivate(color_normal, color_else);
+		}
 	};
 
 	cStyleTextColor::~cStyleTextColor()
@@ -95,6 +110,11 @@ namespace flame
 	void cStyleTextColor::update()
 	{
 		((cStyleTextColorPrivate*)this)->update();
+	}
+
+	Component* cStyleTextColor::copy()
+	{
+		return ((cStyleTextColorPrivate*)this)->copy();
 	}
 
 	cStyleTextColor* cStyleTextColor::create(const Vec4c& color_normal, const Vec4c& color_else)

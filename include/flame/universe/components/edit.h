@@ -24,7 +24,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cEdit() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cEdit* create();

@@ -38,6 +38,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void remove_all_children();
 		FLAME_UNIVERSE_EXPORTS void take_all_children();
 
+		FLAME_UNIVERSE_EXPORTS Entity* copy();
+
 		FLAME_UNIVERSE_EXPORTS void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 		FLAME_UNIVERSE_EXPORTS void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 

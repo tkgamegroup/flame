@@ -22,7 +22,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cCheckbox() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();

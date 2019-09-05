@@ -33,6 +33,23 @@ namespace flame
 			if (min_height < 0.f && height_policy == SizeGreedy)
 				min_height = element->height;
 		}
+
+		Component* copy()
+		{
+			auto copy = new cAlignerPrivate();
+
+			copy->x_align = x_align;
+			copy->y_align = y_align;
+			copy->min_width = min_width;
+			copy->min_height = min_height;
+			copy->width_policy = width_policy;
+			copy->width_factor = width_factor;
+			copy->height_policy = height_policy;
+			copy->height_factor = height_factor;
+			copy->using_padding_in_free_layout = using_padding_in_free_layout;
+
+			return copy;
+		}
 	};
 
 	cAligner::~cAligner()
@@ -47,6 +64,11 @@ namespace flame
 	void cAligner::update()
 	{
 		((cAlignerPrivate*)this)->update();
+	}
+
+	Component* cAligner::copy()
+	{
+		return ((cAlignerPrivate*)this)->copy();
 	}
 
 	cAligner* cAligner::create()

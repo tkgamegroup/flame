@@ -59,11 +59,6 @@ namespace flame
 		((cTextPrivate*)this)->~cTextPrivate();
 	}
 
-	void cText::start()
-	{
-		((cTextPrivate*)this)->start();
-	}
-
 	const std::wstring& cText::text() const
 	{
 		return ((cTextPrivate*)this)->text;
@@ -72,6 +67,11 @@ namespace flame
 	void cText::set_text(const std::wstring& text)
 	{
 		((cTextPrivate*)this)->text = text;
+	}
+
+	void cText::start()
+	{
+		((cTextPrivate*)this)->start();
 	}
 
 	void cText::update()

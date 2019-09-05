@@ -120,6 +120,29 @@ namespace flame
 					cliped = true;
 			}
 		}
+
+		Component* copy()
+		{
+			auto copy = new cElementPrivate(canvas);
+
+			copy->x = x;
+			copy->y = y;
+			copy->scale = scale;
+			copy->width = width;
+			copy->height = height;
+			copy->inner_padding = inner_padding;
+			copy->alpha = alpha;
+			copy->draw = draw;
+			copy->background_round_radius = background_round_radius;
+			copy->background_round_flags = background_round_flags;
+			copy->background_frame_thickness = background_frame_thickness;
+			copy->background_color = background_color;
+			copy->background_frame_color = background_frame_color;
+			copy->background_shadow_thickness = background_shadow_thickness;
+			copy->clip_children = clip_children;
+
+			return copy;
+		}
 	};
 
 	cElement::~cElement()
@@ -139,6 +162,11 @@ namespace flame
 	void cElement::update()
 	{
 		((cElementPrivate*)this)->update();
+	}
+
+	Component* cElement::copy()
+	{
+		return ((cElementPrivate*)this)->copy();
 	}
 
 	cElement* cElement::create(graphics::Canvas* canvas)

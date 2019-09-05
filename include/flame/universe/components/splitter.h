@@ -12,12 +12,12 @@ namespace flame
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
-
-		SplitterType type;
 		cElement* left_element;
 		cAligner* left_aligner;
 		cElement* right_element;
 		cAligner* right_aligner;
+
+		SplitterType type;
 
 		cSplitter() :
 			Component("Splitter")
@@ -27,8 +27,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cSplitter() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cSplitter* create();
 	};

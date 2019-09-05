@@ -30,11 +30,10 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS virtual ~cText() override;
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS const std::wstring& text() const;
 		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);
 
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);

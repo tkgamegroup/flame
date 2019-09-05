@@ -49,7 +49,8 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cListItemPrivate**)c;
-					thiz->list->set_selected(thiz->entity);
+					if (thiz->list)
+						thiz->list->set_selected(thiz->entity);
 				}
 			}, new_mail_p(this));
 		}
@@ -58,7 +59,7 @@ namespace flame
 		{
 			if (style)
 			{
-				if (list->selected == entity)
+				if (list && list->selected == entity)
 				{
 					style->color_normal = selected_color_normal;
 					style->color_hovering = selected_color_hovering;
@@ -71,6 +72,20 @@ namespace flame
 					style->color_active = unselected_color_active;
 				}
 			}
+		}
+
+		Component* copy()
+		{
+			auto copy = new cListItemPrivate();
+
+			copy->unselected_color_normal = unselected_color_normal;
+			copy->unselected_color_hovering = unselected_color_hovering;
+			copy->unselected_color_active = unselected_color_active;
+			copy->selected_color_normal = selected_color_normal;
+			copy->selected_color_hovering = selected_color_hovering;
+			copy->selected_color_active = selected_color_active;
+
+			return copy;
 		}
 	};
 
@@ -87,6 +102,11 @@ namespace flame
 	void cListItem::update()
 	{
 		((cListItemPrivate*)this)->update();
+	}
+
+	Component* cListItem::copy()
+	{
+		return ((cListItemPrivate*)this)->copy();
 	}
 
 	cListItem* cListItem::create()
@@ -106,10 +126,6 @@ namespace flame
 	cList::~cList()
 	{
 		((cListPrivate*)this)->~cListPrivate();
-	}
-
-	void cList::update()
-	{
 	}
 
 	void* cList::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
@@ -140,6 +156,15 @@ namespace flame
 		auto& listeners = ((cListPrivate*)this)->selected_changed_listeners;
 		for (auto& l : listeners)
 			l->function(l->capture.p, selected);
+	}
+
+	void cList::update()
+	{
+	}
+
+	Component* cList::copy()
+	{
+		return new cListPrivate();
 	}
 
 	cList* cList::create()

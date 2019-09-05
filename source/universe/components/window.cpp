@@ -4,6 +4,7 @@
 #include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/layout.h>
+#include <flame/universe/components/list.h>
 #include <flame/universe/components/window.h>
 
 namespace flame
@@ -69,6 +70,11 @@ namespace flame
 
 	void cWindow::update() 
 	{
+	}
+
+	Component* cWindow::copy()
+	{
+		return new cWindowPrivate;
 	}
 
 	void* cWindow::add_pos_listener(void (*listener)(void* c), const Mail<>& capture)
@@ -146,6 +152,11 @@ namespace flame
 	{
 	}
 
+	Component* cSizeDragger::copy()
+	{
+		return new cSizeDraggerPrivate;
+	}
+
 	cSizeDragger* cSizeDragger::create()
 	{
 		return new cSizeDraggerPrivate;
@@ -178,6 +189,8 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 			event_receiver->drag_hash = cH("cDockerTab");
+			list_item = (cListItem*)(entity->find_component(cH("ListItem")));
+			assert(list_item);
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cDockerTabPrivate**)c);
@@ -195,6 +208,7 @@ namespace flame
 				if (action == DragStart)
 				{
 					auto thiz = (*(cDockerTabPrivate**)c);
+					thiz->list_item->list = nullptr;
 					looper().add_delay_event([](void* c) {
 						auto thiz = *(cDockerTabPrivate**)c;
 
@@ -207,6 +221,15 @@ namespace flame
 					}, new_mail_p(thiz));
 				}
 			}, new_mail_p(this));
+		}
+
+		Component* copy()
+		{
+			auto copy = new cDockerTabPrivate();
+
+			copy->root = root;
+
+			return copy;
 		}
 	};
 
@@ -222,6 +245,11 @@ namespace flame
 
 	void cDockerTab::update()
 	{
+	}
+
+	Component* cDockerTab::copy()
+	{
+		((cDockerTabPrivate*)this)->copy();
 	}
 
 	cDockerTab* cDockerTab::create()
@@ -290,27 +318,30 @@ namespace flame
 
 			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
 				auto thiz = (*(cDockerTabbarPrivate**)c);
-				if (action == DragOvering)
+				if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
 				{
-					auto idx = thiz->calc_pos(pos.x(), &thiz->show_drop_pos);
-					if (idx == thiz->entity->child_count())
-						thiz->show_drop_pos -= 10.f;
-					else if (idx != 0)
-						thiz->show_drop_pos -= 5.f;
-					thiz->show_drop_tip = true;
-				}
-				else if (action == Dropped)
-				{
-					thiz->drop_er = er;
-					thiz->drop_er_pos = thiz->calc_pos(pos.x(), nullptr);
-					looper().add_delay_event([](void* c) {
-						auto thiz = *(cDockerTabbarPrivate**)c;
+					if (action == DragOvering)
+					{
+						auto idx = thiz->calc_pos(pos.x(), &thiz->show_drop_pos);
+						if (idx == thiz->entity->child_count())
+							thiz->show_drop_pos -= 10.f;
+						else if (idx != 0)
+							thiz->show_drop_pos -= 5.f;
+						thiz->show_drop_tip = true;
+					}
+					else if (action == Dropped)
+					{
+						thiz->drop_er = er;
+						thiz->drop_er_pos = thiz->calc_pos(pos.x(), nullptr);
+						looper().add_delay_event([](void* c) {
+							auto thiz = *(cDockerTabbarPrivate**)c;
 
-						auto e = thiz->drop_er->entity;
-						e->parent()->take_child(e);
+							auto e = thiz->drop_er->entity;
+							e->parent()->take_child(e);
 
-						thiz->entity->add_child(e, thiz->drop_er_pos);
-					}, new_mail_p(thiz));
+							thiz->entity->add_child(e, thiz->drop_er_pos);
+						}, new_mail_p(thiz));
+					}
 				}
 			}, new_mail_p(this));
 		}
@@ -340,6 +371,11 @@ namespace flame
 	void cDockerTabbar::update()
 	{
 		((cDockerTabbarPrivate*)this)->update();
+	}
+
+	Component* cDockerTabbar::copy()
+	{
+		return new cDockerTabbarPrivate;
 	}
 
 	cDockerTabbar* cDockerTabbar::create()

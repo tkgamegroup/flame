@@ -25,6 +25,7 @@ namespace flame
 
 		virtual void start() {}
 		virtual void update() {}
+		virtual Component* copy() { return nullptr; }
 	};
 
 	// each component type should has a type for serialization

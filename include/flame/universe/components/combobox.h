@@ -33,7 +33,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cComboboxItem() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cComboboxItem* create();
@@ -54,7 +53,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cCombobox() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();

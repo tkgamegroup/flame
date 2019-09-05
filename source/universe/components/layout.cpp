@@ -310,6 +310,18 @@ namespace flame
 				break;
 			}
 		}
+
+		Component* copy()
+		{
+			auto copy = new cLayoutPrivate();
+
+			copy->type = type;
+			copy->item_padding = item_padding;
+			copy->width_fit_children = width_fit_children;
+			copy->height_fit_children = height_fit_children;
+
+			return copy;
+		}
 	};
 
 	cLayout::~cLayout()
@@ -324,6 +336,11 @@ namespace flame
 	void cLayout::update()
 	{
 		((cLayoutPrivate*)this)->update();
+	}
+
+	Component* cLayout::copy()
+	{
+		return ((cLayoutPrivate*)this)->copy();
 	}
 
 	cLayout* cLayout::create()

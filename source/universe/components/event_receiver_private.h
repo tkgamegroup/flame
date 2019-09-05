@@ -14,5 +14,6 @@ namespace flame
 		cEventReceiverPrivate();
 		~cEventReceiverPrivate();
 		void start();
+		Component* copy();
 	};
 }

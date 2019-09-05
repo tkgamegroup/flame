@@ -31,7 +31,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cTreeLeaf() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cTreeLeaf* create();
@@ -60,7 +59,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cTreeNode() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
@@ -78,7 +76,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~cTree() override;
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cTree* create();

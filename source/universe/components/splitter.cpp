@@ -13,12 +13,12 @@ namespace flame
 		{
 			element = nullptr;
 			event_receiver = nullptr;
-
-			type = SplitterHorizontal;
 			left_element = nullptr;
 			left_aligner = nullptr;
 			right_element = nullptr;
 			right_aligner = nullptr;
+
+			type = SplitterHorizontal;
 
 			mouse_listener = nullptr;
 		}
@@ -93,6 +93,15 @@ namespace flame
 				}
 			}, new_mail_p(this));
 		}
+
+		Component* copy()
+		{
+			auto copy = new cSplitterPrivate();
+
+			copy->type = type;
+
+			return copy;
+		}
 	};
 
 	cSplitter::~cSplitter()
@@ -107,6 +116,11 @@ namespace flame
 
 	void cSplitter::update()
 	{
+	}
+
+	Component* cSplitter::copy()
+	{
+		return ((cSplitterPrivate*)this)->copy();
 	}
 
 	cSplitter* cSplitter::create()
