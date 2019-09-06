@@ -1110,10 +1110,10 @@ int main(int argc, char** args)
 		app.root->add_child(e_container);
 		{
 			auto c_element = cElement::create();
-			c_element->x = 50.f;
-			c_element->y = 50.f;
-			c_element->width = 400.f;
-			c_element->height = 300.f;
+			c_element->x = 414.f;
+			c_element->y = 297.f;
+			c_element->width = 221.f;
+			c_element->height = 214.f;
 			c_element->inner_padding = Vec4f(8.f);
 			c_element->background_color = Vec4c(100, 100, 100, 255);
 			c_element->background_frame_color = Vec4c(255);
@@ -1218,10 +1218,10 @@ int main(int argc, char** args)
 				c_aligner->width_policy = SizeFitLayout;
 				c_aligner->height_policy = SizeFitLayout;
 				e_page->add_component(c_aligner);
+
+				e_page->add_component(cDockerPage::create());
 			}
 		}
-
-		((cList*)e_tabbar->find_component(cH("List")))->set_selected(e_tabbar->child(0));
 
 		auto e_size_dragger = Entity::create();
 		e_container->add_child(e_size_dragger);
@@ -1249,10 +1249,10 @@ int main(int argc, char** args)
 		app.root->add_child(e_container);
 		{
 			auto c_element = cElement::create();
-			c_element->x = 500.f;
-			c_element->y = 50.f;
-			c_element->width = 400.f;
-			c_element->height = 300.f;
+			c_element->x = 667.f;
+			c_element->y = 302.f;
+			c_element->width = 403.f;
+			c_element->height = 215.f;
 			c_element->inner_padding = Vec4f(8.f);
 			c_element->background_color = Vec4c(100, 100, 100, 255);
 			c_element->background_frame_color = Vec4c(255);
@@ -1270,6 +1270,7 @@ int main(int argc, char** args)
 		}
 
 		auto e_docker_layout = Entity::create();
+		e_docker_layout->set_name("docker_layout");
 		e_container->add_child(e_docker_layout);
 		{
 			e_docker_layout->add_component(cElement::create());
@@ -1377,10 +1378,10 @@ int main(int argc, char** args)
 						c_aligner->width_policy = SizeFitLayout;
 						c_aligner->height_policy = SizeFitLayout;
 						e_page->add_component(c_aligner);
+
+						e_page->add_component(cDockerPage::create());
 					}
 				}
-
-				((cList*)e_tabbar->find_component(cH("List")))->set_selected(e_tabbar->child(0));
 			}
 
 			auto e_spliter = Entity::create();
@@ -1488,10 +1489,10 @@ int main(int argc, char** args)
 						c_aligner->width_policy = SizeFitLayout;
 						c_aligner->height_policy = SizeFitLayout;
 						e_page->add_component(c_aligner);
+
+						e_page->add_component(cDockerPage::create());
 					}
 				}
-
-				((cList*)e_tabbar->find_component(cH("List")))->set_selected(e_tabbar->child(0));
 			}
 		}
 

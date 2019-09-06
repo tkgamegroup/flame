@@ -5,6 +5,7 @@
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/style.h>
@@ -111,6 +112,7 @@ namespace flame
 		cSizeDraggerPrivate()
 		{
 			event_receiver = nullptr;
+			p_element = nullptr;
 
 			mouse_listener = nullptr;
 		}
@@ -126,15 +128,15 @@ namespace flame
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
+			p_element = (cElement*)(entity->parent()->find_component(cH("Element")));
+			assert(p_element);
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cSizeDraggerPrivate**)c);
 				if (is_mouse_move(action, key) && thiz->event_receiver->active)
 				{
-					auto w = thiz->entity->parent();
-					auto element = (cElement*)w->find_component(cH("Element"));
-					element->width += pos.x();
-					element->height += pos.y();
+					thiz->p_element->width += pos.x();
+					thiz->p_element->height += pos.y();
 				}
 			}, new_mail_p(this));
 		}
@@ -157,6 +159,37 @@ namespace flame
 	cSizeDragger* cSizeDragger::create()
 	{
 		return new cSizeDraggerPrivate;
+	}
+
+	struct cDockerPagePrivate : cDockerPage
+	{
+		cDockerPagePrivate()
+		{
+			element = nullptr;
+			aligner = nullptr;
+		}
+
+		void start()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			aligner = (cAligner*)(entity->find_component(cH("Aligner")));
+			assert(aligner);
+		}
+	};
+
+	void cDockerPage::start()
+	{
+		((cDockerPagePrivate*)this)->start();
+	}
+
+	void cDockerPage::update()
+	{
+	}
+
+	cDockerPage* cDockerPage::create()
+	{
+		return new cDockerPagePrivate;
 	}
 
 	struct cDockerTabPrivate : cDockerTab
@@ -194,20 +227,19 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			event_receiver->drag_hash = cH("cDockerTab");
+			event_receiver->drag_hash = cH("DockerTab");
 			list_item = (cListItem*)(entity->find_component(cH("ListItem")));
 			assert(list_item);
 			assert(entity->parent()->name_hash() == cH("docker_tabbar"));
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cDockerTabPrivate**)c);
-				if (is_mouse_move(action, key) && thiz->event_receiver->dragging)
+				if (is_mouse_move(action, key) && thiz->event_receiver->dragging && thiz->page)
 				{
-					auto e = thiz->element;
-					auto x = pos.x() / e->global_scale;
-					auto y = pos.y() / e->global_scale;
-					e->x += x;
-					e->y += y;
+					thiz->element->x += pos.x();
+					thiz->element->y += pos.y();
+					thiz->page->element->x += pos.x();
+					thiz->page->element->y += pos.y();
 				}
 			}, new_mail_p(this));
 
@@ -215,28 +247,62 @@ namespace flame
 				if (action == DragStart)
 				{
 					auto thiz = (*(cDockerTabPrivate**)c);
+					auto list = thiz->list_item->list;
+					if (list && list->selected == thiz->entity)
+						list->set_selected(list->entity->child(0));
 					thiz->list_item->list = nullptr;
 					looper().add_delay_event([](void* c) {
 						auto thiz = *(cDockerTabPrivate**)c;
 
 						auto e = thiz->entity;
 						auto tabbar = e->parent();
+						if (tabbar->name_hash() != cH("docker_tabbar"))
+							return;
+
+						auto docker = tabbar->parent();
+						auto pages = docker->child(1);
+						auto idx = tabbar->child_position(e);
+						auto e_page = pages->child(idx);
+						thiz->page = (cDockerPage*)e_page->find_component(cH("DockerPage"));
+
 						tabbar->take_child(e);
+						pages->take_child(e_page);
+						e_page->visible = true;
 
 						if (tabbar->child_count() == 0)
 						{
-							auto docker = tabbar->parent();
 							auto p = docker->parent();
 							if (p)
 							{
 								if (p->name_hash() == cH("docker_container"))
 									p->parent()->remove_child(p);
+								else if (p->name_hash() == cH("docker_layout"))
+								{
+									auto idx = p->child_position(docker);
+									auto oth_docker = p->child(idx == 0 ? 2 : 0);
+									p->take_child(oth_docker);
+									auto pp = p->parent();
+									pp->remove_child(p);
+									pp->add_child(oth_docker);
+									if (pp->name_hash() == cH("docker_container"))
+									{
+										auto aligner = (cAligner*)oth_docker->find_component(cH("Aligner"));
+										aligner->x_align = AlignxLeft;
+										aligner->y_align = AlignyTop;
+										aligner->using_padding_in_free_layout = true;
+									}
+								}
 							}
 						}
 
 						thiz->element->x = thiz->element->global_x;
 						thiz->element->y = thiz->element->global_y;
 						thiz->root->add_child(e);
+						thiz->page->element->x = thiz->element->x;
+						thiz->page->element->y = thiz->element->y + thiz->element->global_height + 8.f;
+						thiz->page->aligner->width_policy = SizeFixed;
+						thiz->page->aligner->height_policy = SizeFixed;
+						thiz->root->add_child(e_page);
 					}, new_mail_p(thiz));
 				}
 			}, new_mail_p(this));
@@ -274,8 +340,8 @@ namespace flame
 	struct cDockerTabbarPrivate : cDockerTabbar
 	{
 		void* drag_and_drop_listener;
-		cEventReceiver* drop_er;
-		uint drop_er_pos;
+		cDockerTab* drop_tab;
+		uint drop_idx;
 		bool show_drop_tip;
 		float show_drop_pos;
 		void* selected_changed_listener;
@@ -287,9 +353,10 @@ namespace flame
 			list = nullptr;
 
 			drag_and_drop_listener = nullptr;
-			drop_er = nullptr;
-			drop_er_pos = 0;
+			drop_tab = nullptr;
+			drop_idx = 0;
 			show_drop_tip = false;
+			show_drop_pos = 0.f;
 		}
 
 		~cDockerTabbarPrivate()
@@ -335,7 +402,7 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			event_receiver->set_acceptable_drops({ cH("DockerTitle") });
+			event_receiver->set_acceptable_drops({ cH("DockerTab") });
 			list = (cList*)(entity->find_component(cH("List")));
 			assert(list);
 			assert(entity->parent()->name_hash() == cH("docker"));
@@ -355,15 +422,29 @@ namespace flame
 					}
 					else if (action == Dropped)
 					{
-						thiz->drop_er = er;
-						thiz->drop_er_pos = thiz->calc_pos(pos.x(), nullptr);
+						thiz->drop_tab = (cDockerTab*)(er->entity->find_component(cH("DockerTab")));
+						thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
 						looper().add_delay_event([](void* c) {
 							auto thiz = *(cDockerTabbarPrivate**)c;
+							auto tabbar = thiz->entity;
+							auto docker = tabbar->parent();
+							auto pages = docker->child(1);
+							auto e_tab = thiz->drop_tab->entity;
+							auto page = thiz->drop_tab->page;
+							auto e_page = page->entity;
+							auto root = thiz->drop_tab->root;
 
-							auto e = thiz->drop_er->entity;
-							e->parent()->take_child(e);
-
-							thiz->entity->add_child(e, thiz->drop_er_pos);
+							root->take_child(e_tab);
+							root->take_child(e_page);
+							thiz->drop_tab->list_item->list = thiz->list;
+							tabbar->add_child(e_tab, thiz->drop_idx);
+							pages->add_child(e_page);
+							e_page->visible = false;
+							page->element->x = 0;
+							page->element->y = 0;
+							page->aligner->width_policy = SizeFitLayout;
+							page->aligner->height_policy = SizeFitLayout;
+							thiz->drop_tab->page = nullptr;
 						}, new_mail_p(thiz));
 					}
 				}
@@ -379,6 +460,7 @@ namespace flame
 					pages->child(i)->visible = false;
 				pages->child(idx)->visible = true;
 			}, new_mail_p(this));
+			list->set_selected(entity->child(0));
 		}
 
 		void update()

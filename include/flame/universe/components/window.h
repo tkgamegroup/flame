@@ -6,6 +6,7 @@ namespace flame
 {
 	struct cElement;
 	struct cEventReceiver;
+	struct cAligner;
 	struct cLayout;
 	struct cListItem;
 	struct cList;
@@ -34,6 +35,7 @@ namespace flame
 	struct cSizeDragger : Component 
 	{
 		cEventReceiver* event_receiver;
+		cElement* p_element;
 
 		cSizeDragger() :
 			Component("SizeDragger")
@@ -47,6 +49,22 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
 	};
 
+	struct cDockerPage : Component
+	{
+		cElement* element;
+		cAligner* aligner;
+
+		cDockerPage() :
+			Component("DockerPage")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+
+		FLAME_UNIVERSE_EXPORTS static cDockerPage* create();
+	};
+
 	struct cDockerTab : Component
 	{
 		cElement* element;
@@ -55,7 +73,7 @@ namespace flame
 
 		Entity* root;
 
-		Entity* page;
+		cDockerPage* page;
 
 		cDockerTab() :
 			Component("DockerTab")
@@ -89,6 +107,5 @@ namespace flame
 
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_tab_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_model();
-	FLAME_UNIVERSE_EXPORTS Entity* get_docker_layout_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_container_model();
 }
