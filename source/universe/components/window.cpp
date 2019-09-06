@@ -166,6 +166,7 @@ namespace flame
 	{
 		void* mouse_listener;
 		void* drag_and_drop_listener;
+		Vec2f drop_pos;
 
 		cDockerTabPrivate()
 		{
@@ -179,6 +180,7 @@ namespace flame
 
 			mouse_listener = nullptr;
 			drag_and_drop_listener = nullptr;
+			drop_pos = Vec2f(0.f);
 		}
 
 		~cDockerTabPrivate()
@@ -214,9 +216,9 @@ namespace flame
 			}, new_mail_p(this));
 
 			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+				auto thiz = (*(cDockerTabPrivate**)c);
 				if (action == DragStart)
 				{
-					auto thiz = (*(cDockerTabPrivate**)c);
 					auto list = thiz->list_item->list;
 					if (list && list->selected == thiz->entity)
 						list->set_selected(list->entity->child(0));
@@ -278,6 +280,46 @@ namespace flame
 						page_aligner->height_policy = SizeFixed;
 						thiz->root->add_child(e_page);
 					}, new_mail_p(thiz));
+				}
+				else if (action == DragEnd)
+				{
+					if (!er)
+					{
+						thiz->drop_pos = pos;
+						looper().add_delay_event([](void* c) {
+							auto thiz = (*(cDockerTabPrivate**)c);
+
+							auto e_container = get_docker_container_model()->copy();
+							thiz->root->add_child(e_container);
+							{
+								auto c_element = (cElement*)e_container->find_component(cH("Element"));
+								c_element->x = thiz->drop_pos.x();
+								c_element->y = thiz->drop_pos.y();
+							}
+
+							auto e_docker = get_docker_model()->copy();
+							e_container->add_child(e_docker);
+							auto e_tabbar = e_docker->child(0);
+							auto e_pages = e_docker->child(1);
+
+							auto e_tab = thiz->entity;
+							auto e_page = thiz->page;
+							auto page_element = thiz->page_element;
+							auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
+
+							thiz->root->take_child(e_tab);
+							thiz->root->take_child(e_page);
+							thiz->list_item->list = (cList*)e_tabbar->find_component(cH("List"));
+							e_tabbar->add_child(e_tab);
+							e_pages->add_child(e_page);
+							page_element->x = 0;
+							page_element->y = 0;
+							page_aligner->width_policy = SizeFitLayout;
+							page_aligner->height_policy = SizeFitLayout;
+							thiz->page = nullptr;
+							thiz->page_element = nullptr;
+						}, new_mail_p(thiz));
+					}
 				}
 			}, new_mail_p(this));
 		}
@@ -401,20 +443,17 @@ namespace flame
 						looper().add_delay_event([](void* c) {
 							auto thiz = *(cDockerTabbarPrivate**)c;
 							auto tabbar = thiz->entity;
-							auto docker = tabbar->parent();
-							auto pages = docker->child(1);
 							auto tab = thiz->drop_tab;
 							auto e_tab = tab->entity;
 							auto e_page = tab->page;
 							auto page_element = tab->page_element;
 							auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
-							auto root = tab->root;
 
-							root->take_child(e_tab);
-							root->take_child(e_page);
+							tab->root->take_child(e_tab);
+							tab->root->take_child(e_page);
 							tab->list_item->list = thiz->list;
 							tabbar->add_child(e_tab, thiz->drop_idx);
-							pages->add_child(e_page);
+							tabbar->parent()->child(1)->add_child(e_page);
 							e_page->visible = false;
 							page_element->x = 0;
 							page_element->y = 0;

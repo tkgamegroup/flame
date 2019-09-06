@@ -1106,7 +1106,6 @@ int main(int argc, char** args)
 
 	{
 		auto e_container = get_docker_container_model()->copy();
-		e_container->set_name("docker_container");
 		app.root->add_child(e_container);
 		{
 			auto c_element = (cElement*)e_container->find_component(cH("Element"));
@@ -1144,7 +1143,6 @@ int main(int argc, char** args)
 
 	{
 		auto e_container = get_docker_container_model()->copy();
-		e_container->set_name("docker_container");
 		app.root->add_child(e_container);
 		{
 			auto c_element = (cElement*)e_container->find_component(cH("Element"));
