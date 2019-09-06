@@ -9,6 +9,7 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
 
 namespace flame
@@ -161,37 +162,6 @@ namespace flame
 		return new cSizeDraggerPrivate;
 	}
 
-	struct cDockerPagePrivate : cDockerPage
-	{
-		cDockerPagePrivate()
-		{
-			element = nullptr;
-			aligner = nullptr;
-		}
-
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-			aligner = (cAligner*)(entity->find_component(cH("Aligner")));
-			assert(aligner);
-		}
-	};
-
-	void cDockerPage::start()
-	{
-		((cDockerPagePrivate*)this)->start();
-	}
-
-	void cDockerPage::update()
-	{
-	}
-
-	cDockerPage* cDockerPage::create()
-	{
-		return new cDockerPagePrivate;
-	}
-
 	struct cDockerTabPrivate : cDockerTab
 	{
 		void* mouse_listener;
@@ -238,8 +208,8 @@ namespace flame
 				{
 					thiz->element->x += pos.x();
 					thiz->element->y += pos.y();
-					thiz->page->element->x += pos.x();
-					thiz->page->element->y += pos.y();
+					thiz->page_element->x += pos.x();
+					thiz->page_element->y += pos.y();
 				}
 			}, new_mail_p(this));
 
@@ -263,7 +233,10 @@ namespace flame
 						auto pages = docker->child(1);
 						auto idx = tabbar->child_position(e);
 						auto e_page = pages->child(idx);
-						thiz->page = (cDockerPage*)e_page->find_component(cH("DockerPage"));
+						auto page_element = (cElement*)e_page->find_component(cH("Element"));
+						auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
+						thiz->page = e_page;
+						thiz->page_element = page_element;
 
 						tabbar->take_child(e);
 						pages->take_child(e_page);
@@ -295,13 +268,14 @@ namespace flame
 							}
 						}
 
-						thiz->element->x = thiz->element->global_x;
-						thiz->element->y = thiz->element->global_y;
+						auto element = thiz->element;
+						element->x = element->global_x;
+						element->y = element->global_y;
 						thiz->root->add_child(e);
-						thiz->page->element->x = thiz->element->x;
-						thiz->page->element->y = thiz->element->y + thiz->element->global_height + 8.f;
-						thiz->page->aligner->width_policy = SizeFixed;
-						thiz->page->aligner->height_policy = SizeFixed;
+						page_element->x = element->x;
+						page_element->y = element->y + element->global_height + 8.f;
+						page_aligner->width_policy = SizeFixed;
+						page_aligner->height_policy = SizeFixed;
 						thiz->root->add_child(e_page);
 					}, new_mail_p(thiz));
 				}
@@ -429,22 +403,25 @@ namespace flame
 							auto tabbar = thiz->entity;
 							auto docker = tabbar->parent();
 							auto pages = docker->child(1);
-							auto e_tab = thiz->drop_tab->entity;
-							auto page = thiz->drop_tab->page;
-							auto e_page = page->entity;
-							auto root = thiz->drop_tab->root;
+							auto tab = thiz->drop_tab;
+							auto e_tab = tab->entity;
+							auto e_page = tab->page;
+							auto page_element = tab->page_element;
+							auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
+							auto root = tab->root;
 
 							root->take_child(e_tab);
 							root->take_child(e_page);
-							thiz->drop_tab->list_item->list = thiz->list;
+							tab->list_item->list = thiz->list;
 							tabbar->add_child(e_tab, thiz->drop_idx);
 							pages->add_child(e_page);
 							e_page->visible = false;
-							page->element->x = 0;
-							page->element->y = 0;
-							page->aligner->width_policy = SizeFitLayout;
-							page->aligner->height_policy = SizeFitLayout;
+							page_element->x = 0;
+							page_element->y = 0;
+							page_aligner->width_policy = SizeFitLayout;
+							page_aligner->height_policy = SizeFitLayout;
 							thiz->drop_tab->page = nullptr;
+							thiz->drop_tab->page_element = nullptr;
 						}, new_mail_p(thiz));
 					}
 				}
@@ -501,6 +478,7 @@ namespace flame
 		if (!docker_tab_model)
 		{
 			docker_tab_model = Entity::create();
+			docker_tab_model->set_name("docker_tab");
 
 			auto c_element = cElement::create();
 			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -517,5 +495,188 @@ namespace flame
 			docker_tab_model->add_component(cListItem::create());
 		}
 		return docker_tab_model;
+	}
+
+	static Entity* docker_page_model;
+	Entity* get_docker_page_model()
+	{
+		if (!docker_page_model)
+		{
+			docker_page_model = Entity::create();
+			docker_page_model->set_name("docker_page");
+
+			auto c_element = cElement::create();
+			c_element->background_frame_color = Vec4c(255);
+			c_element->background_frame_thickness = 2.f;
+			docker_page_model->add_component(c_element);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitLayout;
+			c_aligner->height_policy = SizeFitLayout;
+			docker_page_model->add_component(c_aligner);
+		}
+		return docker_page_model;
+	}
+
+	static Entity* docker_model;
+	Entity* get_docker_model()
+	{
+		if (!docker_model)
+		{
+			docker_model = Entity::create();
+			docker_model->set_name("docker");
+
+			docker_model->add_component(cElement::create());
+
+			auto c_aligner = cAligner::create();
+			c_aligner->x_align = AlignxLeft;
+			c_aligner->y_align = AlignyTop;
+			c_aligner->width_policy = SizeFitLayout;
+			c_aligner->height_policy = SizeFitLayout;
+			c_aligner->using_padding_in_free_layout = true;
+			docker_model->add_component(c_aligner);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			docker_model->add_component(c_layout);
+
+			auto e_tabbar = Entity::create();
+			e_tabbar->set_name("docker_tabbar");
+			docker_model->add_child(e_tabbar);
+			{
+				auto c_element = cElement::create();
+				c_element->background_color = Vec4c(0, 0, 0, 255);
+				c_element->clip_children = true;
+				e_tabbar->add_component(c_element);
+
+				e_tabbar->add_component(cEventReceiver::create());
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				e_tabbar->add_component(c_aligner);
+
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutHorizontal;
+				e_tabbar->add_component(c_layout);
+
+				e_tabbar->add_component(cList::create());
+
+				e_tabbar->add_component(cDockerTabbar::create());
+			}
+
+			auto e_pages = Entity::create();
+			e_pages->set_name("docker_pages");
+			docker_model->add_child(e_pages);
+			{
+				e_pages->add_component(cElement::create());
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				c_aligner->height_policy = SizeFitLayout;
+				e_pages->add_component(c_aligner);
+
+				auto c_layout = cLayout::create();
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
+				e_pages->add_component(c_layout);
+			}
+		}
+		return docker_model;
+	}
+
+	static Entity* docker_layout_model;
+	Entity* get_docker_layout_model()
+	{
+		if (!docker_layout_model)
+		{
+			docker_layout_model = Entity::create();
+			docker_layout_model->set_name("docker_layout");
+
+			docker_layout_model->add_component(cElement::create());
+
+			auto c_aligner = cAligner::create();
+			c_aligner->x_align = AlignxLeft;
+			c_aligner->y_align = AlignyTop;
+			c_aligner->width_policy = SizeFitLayout;
+			c_aligner->height_policy = SizeFitLayout;
+			c_aligner->using_padding_in_free_layout = true;
+			docker_layout_model->add_component(c_aligner);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutHorizontal;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			docker_layout_model->add_component(c_layout);
+
+			auto e_spliter = Entity::create();
+			docker_layout_model->add_child(e_spliter);
+			{
+				auto c_element = cElement::create();
+				c_element->width = 8.f;
+				e_spliter->add_component(c_element);
+
+				e_spliter->add_component(cEventReceiver::create());
+
+				e_spliter->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+
+				e_spliter->add_component(cSplitter::create());
+
+				auto c_aligner = cAligner::create();
+				c_aligner->height_policy = SizeFitLayout;
+				e_spliter->add_component(c_aligner);
+			}
+
+		}
+		return docker_layout_model;
+	}
+
+	static Entity* docker_container_model;
+	Entity* get_docker_container_model()
+	{
+		if (!docker_container_model)
+		{
+			docker_container_model = Entity::create();
+			docker_container_model->set_name("docker_container");
+
+			auto c_element = cElement::create();
+			c_element->width = 200.f;
+			c_element->height = 200.f;
+			c_element->inner_padding = Vec4f(8.f);
+			c_element->background_color = Vec4c(100, 100, 100, 255);
+			c_element->background_frame_color = Vec4c(255);
+			c_element->background_frame_thickness = 2.f;
+			docker_container_model->add_component(c_element);
+
+			docker_container_model->add_component(cEventReceiver::create());
+
+			auto c_layout = cLayout::create();
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			docker_container_model->add_component(c_layout);
+
+			docker_container_model->add_component(cWindow::create());
+
+			auto e_size_dragger = Entity::create();
+			docker_container_model->add_child(e_size_dragger);
+			{
+				auto c_element = cElement::create();
+				c_element->width = 8.f;
+				c_element->height = 8.f;
+				c_element->background_color = Vec4c(200, 100, 100, 255);
+				e_size_dragger->add_component(c_element);
+
+				auto c_aligner = cAligner::create();
+				c_aligner->x_align = AlignxRight;
+				c_aligner->y_align = AlignyBottom;
+				e_size_dragger->add_component(c_aligner);
+
+				e_size_dragger->add_component(cEventReceiver::create());
+
+				e_size_dragger->add_component(cSizeDragger::create());
+			}
+		}
+		return docker_container_model;
 	}
 }

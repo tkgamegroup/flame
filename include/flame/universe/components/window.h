@@ -49,22 +49,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
 	};
 
-	struct cDockerPage : Component
-	{
-		cElement* element;
-		cAligner* aligner;
-
-		cDockerPage() :
-			Component("DockerPage")
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
-
-		FLAME_UNIVERSE_EXPORTS static cDockerPage* create();
-	};
-
 	struct cDockerTab : Component
 	{
 		cElement* element;
@@ -73,7 +57,8 @@ namespace flame
 
 		Entity* root;
 
-		cDockerPage* page;
+		Entity* page;
+		cElement* page_element;
 
 		cDockerTab() :
 			Component("DockerTab")
@@ -106,6 +91,8 @@ namespace flame
 	};
 
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_tab_model();
+	FLAME_UNIVERSE_EXPORTS Entity* get_docker_page_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_model();
+	FLAME_UNIVERSE_EXPORTS Entity* get_docker_layout_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_container_model();
 }

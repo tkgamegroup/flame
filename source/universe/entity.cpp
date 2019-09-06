@@ -132,22 +132,22 @@ namespace flame
 
 		EntityPrivate* copy()
 		{
-			auto e = new EntityPrivate;
+			auto ret = new EntityPrivate;
 
-			e->visible = visible;
-			e->set_name(name);
+			ret->visible = visible;
+			ret->set_name(name);
 			for (auto& c : components)
 			{
 				auto copy = c->copy();
-				e->add_component(copy);
+				ret->add_component(copy);
 			}
 			for (auto& e : children)
 			{
 				auto copy = e->copy();
-				e->add_child(copy, -1);
+				ret->add_child(copy, -1);
 			}
 
-			return e;
+			return ret;
 		}
 
 		void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
