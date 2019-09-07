@@ -90,6 +90,23 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cDockerTabbar* create();
 	};
 
+	struct cDockerPages : Component
+	{
+		cElement* element;
+		cEventReceiver* event_receiver;
+
+		cDockerPages() :
+			Component("DockerPages")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
+
+		FLAME_UNIVERSE_EXPORTS static cDockerPages* create();
+	};
+
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_tab_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_page_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_model();

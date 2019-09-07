@@ -1160,8 +1160,6 @@ int main(int argc, char** args)
 				auto e_docker = get_docker_model()->copy();
 				e_docker_layout->add_child(e_docker, 0);
 				{
-					e_docker->add_component(cElement::create());
-
 					auto c_aligner = (cAligner*)e_docker->find_component(cH("Aligner"));
 					c_aligner->x_align = AlignxFree;
 					c_aligner->y_align = AlignyFree;
@@ -1197,8 +1195,6 @@ int main(int argc, char** args)
 				auto e_docker = get_docker_model()->copy();
 				e_docker_layout->add_child(e_docker, 2);
 				{
-					e_docker->add_component(cElement::create());
-
 					auto c_aligner = (cAligner*)e_docker->find_component(cH("Aligner"));
 					c_aligner->x_align = AlignxFree;
 					c_aligner->y_align = AlignyFree;

@@ -273,9 +273,11 @@ namespace flame
 						auto element = thiz->element;
 						element->x = element->global_x;
 						element->y = element->global_y;
+						element->alpha = 0.5f;
 						thiz->root->add_child(e);
 						page_element->x = element->x;
 						page_element->y = element->y + element->global_height + 8.f;
+						page_element->alpha = 0.5f;
 						page_aligner->width_policy = SizeFixed;
 						page_aligner->height_policy = SizeFixed;
 						thiz->root->add_child(e_page);
@@ -311,9 +313,14 @@ namespace flame
 							thiz->root->take_child(e_page);
 							thiz->list_item->list = (cList*)e_tabbar->find_component(cH("List"));
 							e_tabbar->add_child(e_tab);
+							auto element = thiz->element;
+							element->x = 0;
+							element->y = 0;
+							element->alpha = 1.f;
 							e_pages->add_child(e_page);
 							page_element->x = 0;
 							page_element->y = 0;
+							page_element->alpha = 1.f;
 							page_aligner->width_policy = SizeFitLayout;
 							page_aligner->height_policy = SizeFitLayout;
 							thiz->page = nullptr;
@@ -454,13 +461,19 @@ namespace flame
 							tab->list_item->list = thiz->list;
 							tabbar->add_child(e_tab, thiz->drop_idx);
 							tabbar->parent()->child(1)->add_child(e_page);
+
+							tab->element->alpha = 1.f;
 							e_page->visible = false;
 							page_element->x = 0;
 							page_element->y = 0;
+							page_element->alpha = 1.f;
 							page_aligner->width_policy = SizeFitLayout;
 							page_aligner->height_policy = SizeFitLayout;
+
 							thiz->drop_tab->page = nullptr;
 							thiz->drop_tab->page_element = nullptr;
+							thiz->drop_tab = nullptr;
+							thiz->drop_idx = 0;
 						}, new_mail_p(thiz));
 					}
 				}
@@ -486,7 +499,7 @@ namespace flame
 				show_drop_tip = false;
 				std::vector<Vec2f> points;
 				path_rect(points, Vec2f(show_drop_pos, element->global_y), Vec2f(10.f, element->global_height));
-				element->canvas->fill(points, Vec4c(50, 80, 200, 128));
+				element->canvas->fill(points, Vec4c(50, 80, 200, 200));
 			}
 		}
 	};
@@ -509,6 +522,220 @@ namespace flame
 	cDockerTabbar* cDockerTabbar::create()
 	{
 		return new cDockerTabbarPrivate;
+	}
+
+	struct cDockerPagesPrivate : cDockerPages 
+	{
+		void* drag_and_drop_listener;
+		cDockerTab* drop_tab;
+		Side dock_side;
+		bool show_drop_tip;
+
+		cDockerPagesPrivate()
+		{
+			element = nullptr;
+			event_receiver = nullptr;
+
+			drag_and_drop_listener = nullptr;
+			drop_tab = nullptr;
+			dock_side = Outside;
+			show_drop_tip = false;
+		}
+
+		~cDockerPagesPrivate()
+		{
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_drag_and_drop_listener(drag_and_drop_listener);
+		}
+
+		void start()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+			event_receiver->set_acceptable_drops({ cH("DockerTab") });
+
+			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+				auto thiz = (*(cDockerPagesPrivate**)c);
+				if (action == DragOvering)
+				{
+					auto element = thiz->element;
+					thiz->dock_side = Outside;
+					auto center = Vec2f(element->global_x + element->global_width * 0.5f, element->global_y + element->global_height * 0.5f);
+					if (rect_contains(Vec4f(center + Vec2f(-25.f), center + Vec2f(25.f)), pos))
+						thiz->dock_side = SideCenter;
+					else if (rect_contains(Vec4f(center + Vec2f(-55.f, -25.f), center + Vec2f(-30.f, 25.f)), pos))
+						thiz->dock_side = SideW;
+					else if (rect_contains(Vec4f(center + Vec2f(30.f, -25.f), center + Vec2f(55.f, 25.f)), pos))
+						thiz->dock_side = SideE;
+					else if (rect_contains(Vec4f(center + Vec2f(-25.f, -55.f), center + Vec2f(25.f, -30.f)), pos))
+						thiz->dock_side = SideN;
+					else if (rect_contains(Vec4f(center + Vec2f(-25.f, 30.f), center + Vec2f(25.f, 55.f)), pos))
+						thiz->dock_side = SideS;
+					thiz->show_drop_tip = true;
+				}
+				else if (action == Dropped)
+				{
+					if (thiz->dock_side != Outside)
+					{
+						if (thiz->dock_side == SideCenter)
+						{
+							auto tabbar_er = (cEventReceiver*)thiz->entity->parent()->child(0)->find_component(cH("EventReceiver"));
+							tabbar_er->on_drag_and_drop(Dropped, er, Vec2f(0.f, 99999.f));
+						}
+						else
+						{
+							thiz->drop_tab = (cDockerTab*)(er->entity->find_component(cH("DockerTab")));
+							looper().add_delay_event([](void* c) {
+								auto thiz = (*(cDockerPagesPrivate**)c);
+								auto tab = thiz->drop_tab;
+								auto e_tab = tab->entity;
+								auto e_page = tab->page;
+								auto page_element = tab->page_element;
+								auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
+								auto docker = thiz->entity->parent();
+								auto p = docker->parent();
+								auto layout = get_docker_layout_model()->copy();
+
+								if (p->name_hash() == cH("docker_container"))
+								{
+									auto aligner = (cAligner*)docker->find_component(cH("Aligner"));
+									aligner->x_align = AlignxFree;
+									aligner->y_align = AlignyFree;
+									aligner->using_padding_in_free_layout = false;
+								}
+								else
+								{
+									auto aligner = (cAligner*)layout->find_component(cH("Aligner"));
+									aligner->x_align = AlignxFree;
+									aligner->y_align = AlignyFree;
+									aligner->using_padding_in_free_layout = false;
+								}
+								{
+									auto pos = p->child_position(docker);
+									p->take_child(docker);
+									p->add_child(layout, pos);
+								}
+
+								auto new_docker = get_docker_model()->copy();
+								{
+									auto c_aligner = (cAligner*)new_docker->find_component(cH("Aligner"));
+									c_aligner->x_align = AlignxFree;
+									c_aligner->y_align = AlignyFree;
+									c_aligner->using_padding_in_free_layout = false;
+								}
+								auto new_tabbar = new_docker->child(0);
+								auto new_pages = new_docker->child(1);
+
+								tab->root->take_child(e_tab);
+								tab->root->take_child(e_page);
+								tab->list_item->list = (cList*)new_tabbar->find_component(cH("List"));
+								new_tabbar->add_child(e_tab);
+								new_pages->add_child(e_page);
+
+								tab->element->alpha = 1.f;
+								e_page->visible = false;
+								page_element->x = 0;
+								page_element->y = 0;
+								page_element->alpha = 1.f;
+								page_aligner->width_policy = SizeFitLayout;
+								page_aligner->height_policy = SizeFitLayout;
+
+								if (thiz->dock_side == SideN || thiz->dock_side == SideS)
+								{
+									((cLayout*)layout->find_component(cH("Layout")))->type = LayoutVertical;
+									auto e_splitter = layout->child(0);
+									auto splitter_element = (cElement*)e_splitter->find_component(cH("Element"));
+									splitter_element->width = 0.f;
+									splitter_element->height = 8.f;
+									((cSplitter*)e_splitter->find_component(cH("Splitter")))->type = SplitterVertical;
+									auto splitter_aligner = (cAligner*)e_splitter->find_component(cH("Aligner"));
+									splitter_aligner->width_policy = SizeFitLayout;
+									splitter_aligner->height_policy = SizeFixed;
+								}
+
+								if (thiz->dock_side == SideW)
+								{
+									layout->add_child(new_docker, 0);
+									layout->add_child(docker, 2);
+								}
+								else if (thiz->dock_side == SideE)
+								{
+									layout->add_child(docker, 0);
+									layout->add_child(new_docker, 2);
+								}
+								else if (thiz->dock_side == SideN)
+								{
+									layout->add_child(new_docker, 0);
+									layout->add_child(docker, 2);
+								}
+								else if (thiz->dock_side == SideS)
+								{
+									layout->add_child(docker, 0);
+									layout->add_child(new_docker, 2);
+								}
+							}, new_mail_p(thiz));
+						}
+					}
+				}
+			}, new_mail_p(this));
+		}
+
+		void update()
+		{
+			if (show_drop_tip)
+			{
+				show_drop_tip = false;
+				auto center = Vec2f(element->global_x + element->global_width * 0.5f, element->global_y + element->global_height * 0.5f);
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, center + Vec2f(-25.f), Vec2f(50.f));
+					element->canvas->fill(points, dock_side == SideCenter ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+				}
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, center + Vec2f(-55.f, -25.f), Vec2f(25, 50.f));
+					element->canvas->fill(points, dock_side == SideW ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+				}
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, center + Vec2f(30.f, -25.f), Vec2f(25, 50.f));
+					element->canvas->fill(points, dock_side == SideE ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+				}
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, center + Vec2f(-25.f, -55.f), Vec2f(50, 25.f));
+					element->canvas->fill(points, dock_side == SideN ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+				}
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, center + Vec2f(-25.f, 30.f), Vec2f(50, 25.f));
+					element->canvas->fill(points, dock_side == SideS ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+				}
+			}
+		}
+	};
+
+	void cDockerPages::start()
+	{
+		((cDockerPagesPrivate*)this)->start();
+	}
+
+	void cDockerPages::update()
+	{
+		((cDockerPagesPrivate*)this)->update();
+	}
+
+	Component* cDockerPages::copy()
+	{
+		return new cDockerPagesPrivate;
+	}
+
+	cDockerPages* cDockerPages::create()
+	{
+		return new cDockerPagesPrivate;
 	}
 
 	static Entity* docker_tab_model;
@@ -611,6 +838,8 @@ namespace flame
 			{
 				e_pages->add_component(cElement::create());
 
+				e_pages->add_component(cEventReceiver::create());
+
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy = SizeFitLayout;
 				c_aligner->height_policy = SizeFitLayout;
@@ -620,6 +849,8 @@ namespace flame
 				c_layout->width_fit_children = false;
 				c_layout->height_fit_children = false;
 				e_pages->add_component(c_layout);
+
+				e_pages->add_component(cDockerPages::create());
 			}
 		}
 		return docker_model;

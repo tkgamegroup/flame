@@ -128,6 +128,7 @@ namespace flame
 		SideNE = 1 << 5,
 		SideSW = 1 << 6,
 		SideSE = 1 << 7,
+		SideCenter = 1 << 8,
 		Inside
 	};
 
