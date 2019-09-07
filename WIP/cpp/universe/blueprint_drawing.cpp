@@ -20,53 +20,12 @@ namespace flame
 		//{
 		//	BP_Scene_Draw::SelType t;
 		//	void *s;
-
-		//	void operator=(int v)
-		//	{
-		//		t = BP_Scene_Draw::SelTypeNone;
-		//		s = nullptr;
-		//	}
-
-		//	void operator=(blueprint::Node *v)
-		//	{
-		//		t = BP_Scene_Draw::SelTypeNode;
-		//		s = v;
-		//	}
-
-		//	void operator=(blueprint::Link *v)
-		//	{
-		//		t = BP_Scene_Draw::SelTypeLink;
-		//		s = v;
-		//	}
-
-		//	bool operator==(blueprint::Node *v)
-		//	{
-		//		return t == BP_Scene_Draw::SelTypeNode && s == v;
-		//	}
-
-		//	bool operator==(blueprint::Link *v)
-		//	{
-		//		return t == BP_Scene_Draw::SelTypeLink && s == v;
-		//	}
 		//};
 
 		//struct BP_Scene_Draw_Private : BP_Scene_Draw
 		//{
 		//	Sel sel;
 
-		//	BP_Scene_Draw_Private(Instance *_ui, blueprint::Scene *_s);
-
-		//	inline void get_sel(SelType &type, void **v) const
-		//	{
-		//		type = sel.t;
-		//		*v = sel.s;
-		//	}
-
-		//	inline void set_sel(SelType type, void *v)
-		//	{
-		//		sel.t = type;
-		//		sel.s = v;
-		//	}
 		//};
 
 		//struct BP_Node_Drawdata : Dtor
@@ -367,58 +326,6 @@ namespace flame
 		//		}
 		//		w_scene->pos -= p * (w_scene->scale - old_scale);
 		//	});
-
-		//	ui->root()->add_child(w_scene);
-
-		//	s->set_callback([](CommonData *d) {
-		//		auto hash = (unsigned int)d[0].i[0];
-		//		auto thiz = (BP_Scene_Draw_Private*)d[4].p;
-		//		switch (hash)
-		//		{
-		//		case cH("ncreate"):
-		//		{
-		//			auto n = (blueprint::Node*)d[1].p;
-		//			auto dd = new BP_Node_Drawdata(n, thiz->ui, thiz);
-		//			dd->w_dialog->pos = (thiz->ui->root()->size - thiz->w_scene->pos) * 0.5f / thiz->w_scene->scale;
-		//			thiz->w_scene->add_child(dd->w_dialog, true);
-		//			d[3].p = dd;
-		//		}
-		//			break;
-		//		case cH("sload"):
-		//		{
-		//			auto n = (XmlNode*)d[2].p;
-		//			thiz->w_scene->pos = std::stof2(n->find_attr("off")->value());
-		//			thiz->w_scene->scale = std::stof(n->find_attr("scale")->value());
-		//		}
-		//			break;
-		//		case cH("ssave"):
-		//		{
-		//			auto n = (XmlNode*)d[2].p;
-		//			n->new_attr("off", std::to_string(thiz->w_scene->pos));
-		//			n->new_attr("scale", std::to_string(thiz->w_scene->scale));
-		//		}
-		//			break;
-		//		case cH("nload"):
-		//		{
-		//			auto dst = (blueprint::Node*)d[1].p;
-		//			auto n = (XmlNode*)d[2].p;
-		//			auto d = (BP_Node_Drawdata*)dst->user_data;
-		//			auto value = n->find_attr("ui_pos")->value();
-		//			d->w_dialog->pos = std::stof2(value);
-		//		}
-		//			break;
-		//		case cH("nsave"):
-		//		{
-		//			auto src = (blueprint::Node*)d[1].p;
-		//			auto n = (XmlNode*)d[2].p;
-		//			auto d = (BP_Node_Drawdata*)src->user_data;
-		//			auto pos = d->w_dialog->pos;
-		//			n->new_attr("ui_pos", std::to_string(pos));
-		//		}
-		//			break;
-		//		}
-		//	}, "p", this);
-		//}
 	}
 }
 

@@ -157,7 +157,7 @@ namespace flame
 						if (er)
 						{
 							er->event_dispatcher = thiz;
-							if (!er->element->cliped && !er->penetrable && er != thiz->focusing && er->element->contains(Vec2f(thiz->mouse_pos)) && !er->acceptable_drops.empty())
+							if (!er->penetrable && !er->element->cliped && er != thiz->focusing && er->element->contains(Vec2f(thiz->mouse_pos)) && !er->acceptable_drops.empty())
 							{
 								auto h = thiz->focusing->drag_hash;
 								for (auto _h : er->acceptable_drops)

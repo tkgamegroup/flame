@@ -115,7 +115,7 @@ struct App
 
 			c_element_root->width = w->size.x();
 			c_element_root->height = w->size.y();
-			c_text_fps->set_text(std::to_wstring(looper().frame));
+			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
 			//bp->update();
 
@@ -300,31 +300,43 @@ int main(int argc, char **args)
 			e_fps->add_component(c_aligner);
 		}
 
-		auto e_window = Entity::create();
-		app.root->add_child(e_window);
 		{
-			auto c_element = cElement::create();
-			c_element->width = 300.f;
-			c_element->height = 200.f;
-			c_element->background_color = Vec4c(200, 200, 200, 255);
-			c_element->clip_children = true;
-			e_window->add_component(c_element);
+			auto e_tab = get_docker_tab_model();
+			((cText*)e_tab->find_component(cH("Text")))->font_atlas = app.font_atlas_pixel;
+			((cDockerTab*)e_tab->find_component(cH("DockerTab")))->root = app.root;
+		}
 
-			e_window->add_component(cEventReceiver::create());
-
-			e_window->add_component(cWindow::create());
-
-			e_window->add_component(cLayout::create());
-
-			auto e_bp = Entity::create();
-			e_window->add_child(e_bp);
+		{
+			auto e_container = get_docker_container_model()->copy();
+			app.root->add_child(e_container);
 			{
-				e_bp->add_component(cElement::create());
+				auto c_element = (cElement*)e_container->find_component(cH("Element"));
+				c_element->width = 800.f;
+				c_element->height = 600.f;
+			}
 
-				auto c_bp = (cBP*)component_alloc(sizeof(cBP));
-				new (c_bp) cBP;
-				c_bp->bp = app.bp;
-				e_bp->add_component(c_bp);
+			auto e_docker = get_docker_model()->copy();
+			e_container->add_child(e_docker);
+			auto e_tabbar = e_docker->child(0);
+			auto e_pages = e_docker->child(1);
+
+			auto e_tab = get_docker_tab_model()->copy();
+			((cText*)e_tab->find_component(cH("Text")))->set_text(L"Blueprint Editor");
+			e_tabbar->add_child(e_tab);
+
+			auto e_page = get_docker_page_model()->copy();
+			e_pages->add_child(e_page);
+			{
+				auto e_bp = Entity::create();
+				e_page->add_child(e_bp);
+				{
+					e_bp->add_component(cElement::create());
+
+					auto c_bp = (cBP*)component_alloc(sizeof(cBP));
+					new (c_bp) cBP;
+					c_bp->bp = app.bp;
+					e_bp->add_component(c_bp);
+				}
 			}
 
 			for (auto i = 0; i < app.bp->node_count(); i++)
@@ -332,7 +344,7 @@ int main(int argc, char **args)
 				auto n = app.bp->node(i);
 
 				auto e_node = Entity::create();
-				e_window->add_child(e_node);
+				e_page->add_child(e_node);
 				n->user_data = e_node;
 				{
 					auto c_element = cElement::create();
@@ -506,42 +518,6 @@ int main(int argc, char **args)
 						}
 					}
 				}
-			}
-
-			auto e_title = Entity::create();
-			e_window->add_child(e_title);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f);
-				c_element->background_color = Vec4c(200, 100, 100, 255);
-				e_title->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"Window");
-				e_title->add_component(c_text);
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
-				e_title->add_component(c_aligner);
-			}
-
-			auto e_size_dragger = Entity::create();
-			e_window->add_child(e_size_dragger);
-			{
-				auto c_element = cElement::create();
-				c_element->width = 10.f;
-				c_element->height = 10.f;
-				c_element->background_color = Vec4c(200, 100, 100, 255);
-				e_size_dragger->add_component(c_element);
-
-				auto c_aligner = cAligner::create();
-				c_aligner->x_align = AlignxRight;
-				c_aligner->y_align = AlignyBottom;
-				e_size_dragger->add_component(c_aligner);
-
-				e_size_dragger->add_component(cEventReceiver::create());
-
-				e_size_dragger->add_component(cSizeDragger::create());
 			}
 		}
 

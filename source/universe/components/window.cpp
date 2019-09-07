@@ -875,7 +875,9 @@ namespace flame
 			e_pages->set_name("docker_pages");
 			docker_model->add_child(e_pages);
 			{
-				e_pages->add_component(cElement::create());
+				auto c_element = cElement::create();
+				c_element->clip_children = true;
+				e_pages->add_component(c_element);
 
 				e_pages->add_component(cEventReceiver::create());
 
