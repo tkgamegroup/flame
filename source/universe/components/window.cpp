@@ -596,6 +596,8 @@ namespace flame
 								auto page_element = tab->page_element;
 								auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
 								auto docker = thiz->entity->parent();
+								auto docker_element = (cElement*)docker->find_component(cH("Element"));
+								auto docker_aligner = (cAligner*)docker->find_component(cH("Aligner"));
 								auto p = docker->parent();
 								auto layout = get_docker_layout_model()->copy();
 
@@ -608,9 +610,17 @@ namespace flame
 								}
 								else
 								{
+									auto p_element = (cElement*)p->find_component(cH("Element"));
+									auto layout_element = (cElement*)layout->find_component(cH("Element"));
+
+									layout_element->width = p_element->width;
+									layout_element->height = p_element->height;
+
 									auto aligner = (cAligner*)layout->find_component(cH("Aligner"));
 									aligner->x_align = AlignxFree;
 									aligner->y_align = AlignyFree;
+									aligner->width_factor = p_element->width;
+									aligner->height_factor = p_element->height;
 									aligner->using_padding_in_free_layout = false;
 								}
 								{
@@ -620,6 +630,8 @@ namespace flame
 								}
 
 								auto new_docker = get_docker_model()->copy();
+								auto new_docker_element = (cElement*)new_docker->find_component(cH("Element"));
+								auto new_docker_aligner = (cAligner*)new_docker->find_component(cH("Aligner"));
 								{
 									auto c_aligner = (cAligner*)new_docker->find_component(cH("Aligner"));
 									c_aligner->x_align = AlignxFree;
@@ -643,17 +655,44 @@ namespace flame
 								page_aligner->width_policy = SizeFitLayout;
 								page_aligner->height_policy = SizeFitLayout;
 
-								if (thiz->dock_side == SideN || thiz->dock_side == SideS)
+								auto e_splitter = layout->child(0);
+								auto splitter_element = (cElement*)e_splitter->find_component(cH("Element"));
+								auto splitter = (cSplitter*)e_splitter->find_component(cH("Splitter"));
+								if (thiz->dock_side == SideW || thiz->dock_side == SideE)
+								{
+									auto w = (docker_element->width - splitter_element->width) * 0.5f;
+									docker_element->width = w;
+									new_docker_element->width = w;
+									docker_aligner->width_factor = w;
+									new_docker_aligner->width_factor = w;
+
+									auto h = docker_element->height * 0.5f;
+									docker_element->height = h;
+									new_docker_element->height = h;
+									docker_aligner->height_factor = h;
+									new_docker_aligner->height_factor = h;
+								}
+								else
 								{
 									((cLayout*)layout->find_component(cH("Layout")))->type = LayoutVertical;
-									auto e_splitter = layout->child(0);
-									auto splitter_element = (cElement*)e_splitter->find_component(cH("Element"));
+									splitter_element->height = splitter_element->width;
 									splitter_element->width = 0.f;
-									splitter_element->height = 8.f;
-									((cSplitter*)e_splitter->find_component(cH("Splitter")))->type = SplitterVertical;
+									splitter->type = SplitterVertical;
 									auto splitter_aligner = (cAligner*)e_splitter->find_component(cH("Aligner"));
 									splitter_aligner->width_policy = SizeFitLayout;
 									splitter_aligner->height_policy = SizeFixed;
+
+									auto w = docker_element->width;
+									docker_element->width = w;
+									new_docker_element->width = w;
+									docker_aligner->width_factor = w;
+									new_docker_aligner->width_factor = w;
+
+									auto h = (docker_element->height - splitter_element->height) * 0.5f;
+									docker_element->height = h;
+									new_docker_element->height = h;
+									docker_aligner->height_factor = h;
+									new_docker_aligner->height_factor = h;
 								}
 
 								if (thiz->dock_side == SideW)
