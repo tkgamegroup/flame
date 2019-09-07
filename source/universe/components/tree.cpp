@@ -1,12 +1,12 @@
+#include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
-#include <flame/graphics/font.h>
-#include <flame/universe/components/text.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/layout.h>
 #include <flame/universe/components/tree.h>
 
 namespace flame
@@ -163,13 +163,6 @@ namespace flame
 			}
 			assert(tree);
 
-			if (title_style)
-			{
-				unselected_color_normal = title_style->color_normal;
-				unselected_color_hovering = title_style->color_hovering;
-				unselected_color_active = title_style->color_active;
-			}
-
 			title_mouse_listener = title_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
@@ -239,5 +232,93 @@ namespace flame
 	cTree* cTree::create()
 	{
 		return new cTreePrivate;
+	}
+
+	Entity* create_standard_tree_node(graphics::FontAtlas* font_atlas, const std::wstring& name)
+	{
+		auto e_tree_node = Entity::create();
+		{
+			e_tree_node->add_component(cElement::create());
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->item_padding = 4.f;
+			e_tree_node->add_component(c_layout);
+
+			auto c_tree_node = cTreeNode::create();
+			c_tree_node->unselected_color_normal = Vec4c(0);
+			e_tree_node->add_component(c_tree_node);
+		}
+
+		auto e_title = Entity::create();
+		e_tree_node->add_child(e_title);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(4.f + font_atlas->pixel_height, 2.f, 4.f, 2.f);
+			e_title->add_component(c_element);
+
+			auto c_text = cText::create(font_atlas);
+			c_text->set_text(name);
+			e_title->add_component(c_text);
+
+			e_title->add_component(cEventReceiver::create());
+
+			e_title->add_component(cStyleBackgroundColor::create());
+
+			auto e_arrow = Entity::create();
+			e_title->add_child(e_arrow);
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
+				e_arrow->add_component(c_element);
+
+				auto c_text = cText::create(font_atlas);
+				c_text->set_text(Icon_ANGLE_DOWN);
+				e_arrow->add_component(c_text);
+
+				e_arrow->add_component(cEventReceiver::create());
+
+				e_arrow->add_component(cStyleTextColor::create(default_style.text_color_normal, default_style.text_color_else));
+			}
+		}
+
+		auto e_sub_tree = Entity::create();
+		e_tree_node->add_child(e_sub_tree);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(font_atlas->pixel_height * 0.5f, 0.f, 0.f, 0.f);
+			e_sub_tree->add_component(c_element);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->item_padding = 4.f;
+			e_sub_tree->add_component(c_layout);
+		}
+
+		return e_tree_node;
+	}
+
+	Entity* create_standard_tree_leaf(graphics::FontAtlas* font_atlas, const std::wstring& name)
+	{
+		auto e_tree_leaf = Entity::create();
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(4.f + font_atlas->pixel_height, 2.f, 4.f, 2.f);
+			e_tree_leaf->add_component(c_element);
+
+			auto c_text = cText::create(font_atlas);
+			c_text->set_text(name);
+			e_tree_leaf->add_component(c_text);
+
+			e_tree_leaf->add_component(cEventReceiver::create());
+
+			e_tree_leaf->add_component(cStyleBackgroundColor::create());
+
+			auto c_tree_leaf = cTreeLeaf::create();
+			c_tree_leaf->unselected_color_normal = Vec4c(0);
+			e_tree_leaf->add_component(c_tree_leaf);
+		}
+
+		return e_tree_leaf;
 	}
 }

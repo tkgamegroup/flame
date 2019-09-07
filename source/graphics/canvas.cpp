@@ -520,9 +520,16 @@ namespace flame
 			((CanvasPrivate*)this)->add_image_stretch(pos, size, id, border, tint_col);
 		}
 
-		void Canvas::set_scissor(const Vec4f& scissor)
+		void Canvas::set_scissor(const Vec4f& _scissor)
 		{
 			auto thiz = (CanvasPrivate*)this;
+			auto fb = (Framebuffer*)thiz->rnf->framebuffers()[0];
+			auto surface_size = Vec2f(fb->image_size);
+			auto scissor = _scissor;
+			scissor.x() = max(scissor.x(), 0.f);
+			scissor.y() = max(scissor.y(), 0.f);
+			scissor.z() = min(scissor.z(), surface_size.x());
+			scissor.w() = min(scissor.w(), surface_size.y());
 			if (scissor == thiz->curr_scissor)
 				return;
 			thiz->curr_scissor = scissor;

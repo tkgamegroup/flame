@@ -981,121 +981,22 @@ int main(int argc, char** args)
 	}
 
 	{
-		auto e_tree_node = Entity::create();
+		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, L"A");
 		e_tree->add_child(e_tree_node);
-		{
-			e_tree_node->add_component(cElement::create());
-
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
-			c_layout->item_padding = 4.f;
-			e_tree_node->add_component(c_layout);
-
-			e_tree_node->add_component(cTreeNode::create());
-		}
-
-		auto e_title = Entity::create();
-		e_tree_node->add_child(e_title);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f + app.font_atlas_pixel->pixel_height, 2.f, 4.f, 2.f);
-			e_title->add_component(c_element);
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(L"A");
-			e_title->add_component(c_text);
-
-			e_title->add_component(cEventReceiver::create());
-
-			e_title->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
-
-			auto e_arrow = Entity::create();
-			e_title->add_child(e_arrow);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
-				e_arrow->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(Icon_ANGLE_DOWN);
-				e_arrow->add_component(c_text);
-
-				e_arrow->add_component(cEventReceiver::create());
-
-				e_arrow->add_component(cStyleTextColor::create(default_style.text_color_normal, default_style.text_color_else));
-			}
-		}
-
-		auto e_sub_tree = Entity::create();
-		e_tree_node->add_child(e_sub_tree);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(app.font_atlas_pixel->pixel_height * 0.5f, 0.f, 0.f, 0.f);
-			e_sub_tree->add_component(c_element);
-
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
-			c_layout->item_padding = 4.f;
-			e_sub_tree->add_component(c_layout);
-		}
+		auto e_sub_tree = e_tree_node->child(1);
 
 		{
-			auto e_tree_node = Entity::create();
-			e_sub_tree->add_child(e_tree_node);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f + app.font_atlas_pixel->pixel_height, 2.f, 4.f, 2.f);
-				e_tree_node->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"C");
-				e_tree_node->add_component(c_text);
-
-				e_tree_node->add_component(cEventReceiver::create());
-
-				e_tree_node->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
-
-				e_tree_node->add_component(cTreeLeaf::create());
-			}
+			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, L"C");
+			e_sub_tree->add_child(e_tree_leaf);
 		}
 		{
-			auto e_tree_node = Entity::create();
-			e_sub_tree->add_child(e_tree_node);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f + app.font_atlas_pixel->pixel_height, 2.f, 4.f, 2.f);
-				e_tree_node->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"D");
-				e_tree_node->add_component(c_text);
-
-				e_tree_node->add_component(cEventReceiver::create());
-
-				e_tree_node->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
-
-				e_tree_node->add_component(cTreeLeaf::create());
-			}
+			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, L"D");
+			e_sub_tree->add_child(e_tree_leaf);
 		}
 	}
 	{
-		auto e_tree_node = Entity::create();
-		e_tree->add_child(e_tree_node);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f + app.font_atlas_pixel->pixel_height, 2.f, 4.f, 2.f);
-			e_tree_node->add_component(c_element);
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(L"B");
-			e_tree_node->add_component(c_text);
-
-			e_tree_node->add_component(cEventReceiver::create());
-
-			e_tree_node->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
-
-			e_tree_node->add_component(cTreeLeaf::create());
-		}
+		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, L"B");
+		e_tree->add_child(e_tree_leaf);
 	}
 
 	{

@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct FontAtlas;
+	}
+
 	struct cElement;
 	struct cText;
 	struct cEventReceiver;
@@ -74,4 +79,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cTree* create();
 	};
+
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_tree_node(graphics::FontAtlas* font_atlas, const std::wstring& name);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_tree_leaf(graphics::FontAtlas* font_atlas, const std::wstring& name);
 }

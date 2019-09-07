@@ -18,6 +18,7 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/toggle.h>
+#include <flame/universe/components/tree.h>
 #include <flame/universe/components/window.h>
 
 using namespace flame;
@@ -228,6 +229,26 @@ struct App
 
 }app;
 
+void create_directory_tree_node(const std::filesystem::path& path, Entity* parent)
+{
+	auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, path.filename().wstring());
+	parent->add_child(e_tree_node);
+	auto e_sub_tree = e_tree_node->child(1);
+	for (std::filesystem::directory_iterator end, it(path); it != end; it++)
+	{
+		if (std::filesystem::is_directory(it->status()))
+		{
+			if (it->path().filename().wstring() != L"build")
+				create_directory_tree_node(it->path(), e_sub_tree);
+		}
+		else
+		{
+			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, it->path().filename().wstring());
+			e_sub_tree->add_child(e_tree_leaf);
+		}
+	}
+}
+
 int main(int argc, char **args)
 {
 	if (argc != 2)
@@ -265,8 +286,9 @@ int main(int argc, char **args)
 			app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 		auto font14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
+		auto font_awesome14 = Font::create(L"../asset/font_awesome.ttf", 14);
 		auto font32 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
-		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font14 });
+		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font14, font_awesome14 });
 		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font32 });
 		app.font_atlas_pixel->index = 1;
 		app.font_atlas_sdf->index = 2;
@@ -327,7 +349,30 @@ int main(int argc, char **args)
 			e_tabbar->add_child(e_tab);
 
 			auto e_page = get_docker_page_model()->copy();
+			{
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutVertical;
+				c_layout->item_padding = 4.f;
+				e_page->add_component(c_layout);
+			}
 			e_pages->add_child(e_page);
+
+			auto e_tree = Entity::create();
+			e_page->add_child(e_tree);
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f);
+				e_tree->add_component(c_element);
+
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutVertical;
+				c_layout->item_padding = 4.f;
+				e_tree->add_component(c_layout);
+
+				e_tree->add_component(cTree::create());
+			}
+
+			create_directory_tree_node(L"../renderpath", e_tree);
 		}
 
 		{
