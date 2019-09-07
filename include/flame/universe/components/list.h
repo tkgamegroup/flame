@@ -7,20 +7,26 @@ namespace flame
 	struct cElement;
 	struct cEventReceiver;
 	struct cStyleBackgroundColor;
+	struct cStyleTextColor;
 	struct cList;
 
 	struct cListItem : Component
 	{
 		cEventReceiver* event_receiver;
-		cStyleBackgroundColor* style;
+		cStyleBackgroundColor* background_style;
+		cStyleTextColor* text_style;
 		cList* list;
 
 		Vec4c unselected_color_normal;
 		Vec4c unselected_color_hovering;
 		Vec4c unselected_color_active;
+		Vec4c unselected_text_color_normal;
+		Vec4c unselected_text_color_else;
 		Vec4c selected_color_normal;
 		Vec4c selected_color_hovering;
 		Vec4c selected_color_active;
+		Vec4c selected_text_color_normal;
+		Vec4c selected_text_color_else;
 
 		cListItem() :
 			Component("ListItem")

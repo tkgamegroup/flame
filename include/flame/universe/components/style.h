@@ -26,7 +26,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
-		FLAME_UNIVERSE_EXPORTS static cStyleBackgroundColor* create(const Vec4c& color_normal, const Vec4c& color_hovering, const Vec4c& color_active);
+		FLAME_UNIVERSE_EXPORTS static cStyleBackgroundColor* create(const Vec4c& color_normal = Vec4c(0), const Vec4c& color_hovering = Vec4c(0), const Vec4c& color_active = Vec4c(0));
 	};
 
 	struct cStyleTextColor : Component
@@ -46,6 +46,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
-		FLAME_UNIVERSE_EXPORTS static cStyleTextColor* create(const Vec4c& color_normal, const Vec4c& color_else);
+		FLAME_UNIVERSE_EXPORTS static cStyleTextColor* create(const Vec4c& color_normal = Vec4c(0), const Vec4c& color_else = Vec4c(0));
 	};
 }

@@ -53,13 +53,6 @@ namespace flame
 			}
 			assert(tree);
 
-			if (style)
-			{
-				unselected_color_normal = style->color_normal;
-				unselected_color_hovering = style->color_hovering;
-				unselected_color_active = style->color_active;
-			}
-
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{

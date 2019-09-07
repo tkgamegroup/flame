@@ -12,15 +12,20 @@ namespace flame
 		cListItemPrivate()
 		{
 			event_receiver = nullptr;
-			style = nullptr;
+			background_style = nullptr;
+			text_style = nullptr;
 			list = nullptr;
 
 			unselected_color_normal = default_style.frame_color_normal;
 			unselected_color_hovering = default_style.frame_color_hovering;
 			unselected_color_active = default_style.frame_color_active;
+			unselected_text_color_normal = default_style.text_color_normal;
+			unselected_text_color_else = default_style.text_color_else;
 			selected_color_normal = default_style.selected_color_normal;
 			selected_color_hovering = default_style.selected_color_hovering;
 			selected_color_active = default_style.selected_color_active;
+			selected_text_color_normal = default_style.text_color_normal;
+			selected_text_color_normal = default_style.text_color_else;
 
 			mouse_listener = nullptr;
 		}
@@ -36,16 +41,9 @@ namespace flame
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
+			background_style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
+			text_style = (cStyleTextColor*)(entity->find_component(cH("StyleTextColor")));
 			list = (cList*)(entity->parent()->find_component(cH("List")));
-			assert(list);
-
-			if (style)
-			{
-				unselected_color_normal = style->color_normal;
-				unselected_color_hovering = style->color_hovering;
-				unselected_color_active = style->color_active;
-			}
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -59,19 +57,32 @@ namespace flame
 
 		void update()
 		{
-			if (style)
+			if (background_style)
 			{
 				if (list && list->selected == entity)
 				{
-					style->color_normal = selected_color_normal;
-					style->color_hovering = selected_color_hovering;
-					style->color_active = selected_color_active;
+					background_style->color_normal = selected_color_normal;
+					background_style->color_hovering = selected_color_hovering;
+					background_style->color_active = selected_color_active;
 				}
 				else
 				{
-					style->color_normal = unselected_color_normal;
-					style->color_hovering = unselected_color_hovering;
-					style->color_active = unselected_color_active;
+					background_style->color_normal = unselected_color_normal;
+					background_style->color_hovering = unselected_color_hovering;
+					background_style->color_active = unselected_color_active;
+				}
+			}
+			if (text_style)
+			{
+				if (list && list->selected == entity)
+				{
+					text_style->color_normal = selected_text_color_normal;
+					text_style->color_else = selected_text_color_else;
+				}
+				else
+				{
+					text_style->color_normal = unselected_text_color_normal;
+					text_style->color_else = unselected_text_color_else;
 				}
 			}
 		}
@@ -83,9 +94,13 @@ namespace flame
 			copy->unselected_color_normal = unselected_color_normal;
 			copy->unselected_color_hovering = unselected_color_hovering;
 			copy->unselected_color_active = unselected_color_active;
+			copy->unselected_text_color_normal = unselected_text_color_normal;
+			copy->unselected_text_color_else = unselected_text_color_else;
 			copy->selected_color_normal = selected_color_normal;
 			copy->selected_color_hovering = selected_color_hovering;
 			copy->selected_color_active = selected_color_active;
+			copy->selected_text_color_normal = selected_text_color_normal;
+			copy->selected_text_color_else = selected_text_color_else;
 
 			return copy;
 		}

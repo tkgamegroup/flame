@@ -291,23 +291,25 @@ namespace flame
 						looper().add_delay_event([](void* c) {
 							auto thiz = (*(cDockerTabPrivate**)c);
 
+							auto e_tab = thiz->entity;
+							auto e_page = thiz->page;
+							auto page_element = thiz->page_element;
+							auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
+
 							auto e_container = get_docker_container_model()->copy();
 							thiz->root->add_child(e_container);
 							{
 								auto c_element = (cElement*)e_container->find_component(cH("Element"));
 								c_element->x = thiz->drop_pos.x();
 								c_element->y = thiz->drop_pos.y();
+								c_element->width = page_element->width;
+								c_element->height = page_element->height;
 							}
 
 							auto e_docker = get_docker_model()->copy();
 							e_container->add_child(e_docker);
 							auto e_tabbar = e_docker->child(0);
 							auto e_pages = e_docker->child(1);
-
-							auto e_tab = thiz->entity;
-							auto e_page = thiz->page;
-							auto page_element = thiz->page_element;
-							auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
 
 							thiz->root->take_child(e_tab);
 							thiz->root->take_child(e_page);
@@ -795,9 +797,13 @@ namespace flame
 
 			docker_tab_model->add_component(cDockerTab::create());
 
-			docker_tab_model->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			docker_tab_model->add_component(cStyleBackgroundColor::create());
+			docker_tab_model->add_component(cStyleTextColor::create());
 
-			docker_tab_model->add_component(cListItem::create());
+			auto list_item = cListItem::create();
+			list_item->selected_text_color_normal = Vec4c(255, 255, 255, 255);
+			list_item->selected_text_color_else = Vec4c(0, 0, 0, 255);
+			docker_tab_model->add_component(list_item);
 		}
 		return docker_tab_model;
 	}
@@ -813,6 +819,7 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
+			c_element->clip_children = true;
 			docker_page_model->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
@@ -875,9 +882,7 @@ namespace flame
 			e_pages->set_name("docker_pages");
 			docker_model->add_child(e_pages);
 			{
-				auto c_element = cElement::create();
-				c_element->clip_children = true;
-				e_pages->add_component(c_element);
+				e_pages->add_component(cElement::create());
 
 				e_pages->add_component(cEventReceiver::create());
 

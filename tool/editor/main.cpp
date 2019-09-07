@@ -237,7 +237,7 @@ int main(int argc, char **args)
 	}
 
 	app.filename = s2w(args[1]);
-	app.bp = BP::create_from_file(app.filename);
+	app.bp = BP::create_from_file(app.filename, true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -311,6 +311,32 @@ int main(int argc, char **args)
 			app.root->add_child(e_container);
 			{
 				auto c_element = (cElement*)e_container->find_component(cH("Element"));
+				c_element->x = 20.f;
+				c_element->y = 20.f;
+				c_element->width = 300.f;
+				c_element->height = 600.f;
+			}
+
+			auto e_docker = get_docker_model()->copy();
+			e_container->add_child(e_docker);
+			auto e_tabbar = e_docker->child(0);
+			auto e_pages = e_docker->child(1);
+
+			auto e_tab = get_docker_tab_model()->copy();
+			((cText*)e_tab->find_component(cH("Text")))->set_text(L"Resource Explorer");
+			e_tabbar->add_child(e_tab);
+
+			auto e_page = get_docker_page_model()->copy();
+			e_pages->add_child(e_page);
+		}
+
+		{
+			auto e_container = get_docker_container_model()->copy();
+			app.root->add_child(e_container);
+			{
+				auto c_element = (cElement*)e_container->find_component(cH("Element"));
+				c_element->x = 350.f;
+				c_element->y = 20.f;
 				c_element->width = 800.f;
 				c_element->height = 600.f;
 			}
