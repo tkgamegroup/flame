@@ -366,37 +366,8 @@ int main(int argc, char** args)
 			}
 		}
 
-		auto e_scrollbar = Entity::create();
+		auto e_scrollbar = create_standard_scrollbar(ScrollbarVertical);
 		e_container->add_child(e_scrollbar);
-		{
-			auto c_element = cElement::create();
-			c_element->width = 10.f;
-			c_element->background_color = Vec4c(100);
-			e_scrollbar->add_component(c_element);
-
-			auto c_aligner = cAligner::create();
-			c_aligner->height_policy = SizeFitLayout;
-			e_scrollbar->add_component(c_aligner);
-
-			e_scrollbar->add_component(cEventReceiver::create());
-
-			e_scrollbar->add_component(cScrollbar::create());
-		}
-
-		auto e_scrollbar_thumb = Entity::create();
-		e_scrollbar->add_child(e_scrollbar_thumb);
-		{
-			auto c_element = cElement::create();
-			c_element->width = 10.f;
-			c_element->height = 10.f;
-			e_scrollbar_thumb->add_component(c_element);
-
-			e_scrollbar_thumb->add_component(cEventReceiver::create());
-
-			e_scrollbar_thumb->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
-
-			e_scrollbar_thumb->add_component(cScrollbarThumb::create());
-		}
 	}
 
 	auto e_popup_menu = Entity::create();

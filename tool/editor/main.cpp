@@ -19,6 +19,7 @@
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/toggle.h>
 #include <flame/universe/components/tree.h>
+#include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
 
 using namespace flame;
@@ -353,31 +354,61 @@ int main(int argc, char **args)
 				auto c_layout = cLayout::create();
 				c_layout->type = LayoutVertical;
 				c_layout->item_padding = 4.f;
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
 				e_page->add_component(c_layout);
 			}
 			e_pages->add_child(e_page);
 
+			auto e_tree_container = Entity::create();
+			e_page->add_child(e_tree_container);
+			{
+				e_tree_container->add_component(cElement::create());
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				c_aligner->height_policy = SizeFitLayout;
+				e_tree_container->add_component(c_aligner);
+
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutHorizontal;
+				c_layout->item_padding = 4.f;
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
+				e_tree_container->add_component(c_layout);
+			}
+
 			auto e_tree = Entity::create();
-			e_page->add_child(e_tree);
+			e_tree_container->add_child(e_tree);
 			{
 				auto c_element = cElement::create();
 				c_element->inner_padding = Vec4f(4.f);
 				e_tree->add_component(c_element);
 
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				c_aligner->height_policy = SizeFitLayout;
+				e_tree->add_component(c_aligner);
+
 				auto c_layout = cLayout::create();
 				c_layout->type = LayoutVertical;
 				c_layout->item_padding = 4.f;
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
 				e_tree->add_component(c_layout);
 
 				e_tree->add_component(cTree::create());
 			}
 
 			create_directory_tree_node(L"../renderpath", e_tree);
+
+			auto e_scrollbar = create_standard_scrollbar(ScrollbarVertical);
+			e_tree_container->add_child(e_scrollbar);
 		}
 
 		{
 			auto e_container = get_docker_container_model()->copy();
-			app.root->add_child(e_container);
+			//app.root->add_child(e_container);
 			{
 				auto c_element = (cElement*)e_container->find_component(cH("Element"));
 				c_element->x = 350.f;

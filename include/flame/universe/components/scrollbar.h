@@ -41,6 +41,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
-		FLAME_UNIVERSE_EXPORTS static cScrollbarThumb* create();
+		FLAME_UNIVERSE_EXPORTS static cScrollbarThumb* create(ScrollbarType type);
 	};
+
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_scrollbar(ScrollbarType type);
 }

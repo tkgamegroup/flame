@@ -1,5 +1,8 @@
+#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/aligner.h>
+#include <flame/universe/components/style.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
 
@@ -40,13 +43,13 @@ namespace flame
 	{
 		void* mouse_listener;
 
-		cScrollbarThumbPrivate()
+		cScrollbarThumbPrivate(ScrollbarType _type)
 		{
 			element = nullptr;
 			event_receiver = nullptr;
 			scrollbar = nullptr;
 
-			type = ScrollbarVertical;
+			type = _type;
 			target_layout = nullptr;
 
 			mouse_listener = nullptr;
@@ -104,13 +107,11 @@ namespace flame
 			{
 				if (target_element->height > 0.f)
 				{
-					if (target_layout->content_size.y() > target_element->height)
-					{
-						entity->visible = true;
-						element->height = target_element->height / target_layout->content_size.y() * scrollbar->element->height;
-					}
+					auto content_size = target_layout->content_size.y() + 20.f;
+					if (content_size > target_element->height)
+						element->height = target_element->height / content_size * scrollbar->element->height;
 					else
-						entity->visible = false;
+						element->height = 0.f;
 				}
 				else
 					element->height = 0.f;
@@ -119,13 +120,11 @@ namespace flame
 			{
 				if (target_element->width > 0.f)
 				{
-					if (target_layout->content_size.x() > target_element->width)
-					{
-						entity->visible = true;
-						element->width = target_element->width / target_layout->content_size.x() * scrollbar->element->width;
-					}
+					auto content_size = target_layout->content_size.x() + 20.f;
+					if (content_size > target_element->width)
+						element->width = target_element->width / content_size * scrollbar->element->width;
 					else
-						entity->visible = false;
+						element->width = 0.f;
 				}
 				else
 					element->width = 0.f;
@@ -143,8 +142,44 @@ namespace flame
 		((cScrollbarThumbPrivate*)this)->update();
 	}
 
-	cScrollbarThumb* cScrollbarThumb::create()
+	cScrollbarThumb* cScrollbarThumb::create(ScrollbarType type)
 	{
-		return new cScrollbarThumbPrivate;
+		return new cScrollbarThumbPrivate(type);
+	}
+
+	Entity* create_standard_scrollbar(ScrollbarType type)
+	{
+		auto e_scrollbar = Entity::create();
+		{
+			auto c_element = cElement::create();
+			c_element->width = 10.f;
+			c_element->background_color = default_style.scrollbar_color;
+			e_scrollbar->add_component(c_element);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->height_policy = SizeFitLayout;
+			e_scrollbar->add_component(c_aligner);
+
+			e_scrollbar->add_component(cEventReceiver::create());
+
+			e_scrollbar->add_component(cScrollbar::create());
+		}
+
+		auto e_scrollbar_thumb = Entity::create();
+		e_scrollbar->add_child(e_scrollbar_thumb);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 10.f;
+			c_element->height = 10.f;
+			e_scrollbar_thumb->add_component(c_element);
+
+			e_scrollbar_thumb->add_component(cEventReceiver::create());
+
+			e_scrollbar_thumb->add_component(cStyleBackgroundColor::create(default_style.scrollbar_thumb_color_normal, default_style.scrollbar_thumb_color_hovering, default_style.scrollbar_thumb_color_active));
+
+			e_scrollbar_thumb->add_component(cScrollbarThumb::create(type));
+		}
+
+		return e_scrollbar;
 	}
 }

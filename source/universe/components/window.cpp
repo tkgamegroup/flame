@@ -801,8 +801,16 @@ namespace flame
 			docker_tab_model->add_component(cStyleTextColor::create());
 
 			auto list_item = cListItem::create();
-			list_item->selected_text_color_normal = Vec4c(255, 255, 255, 255);
-			list_item->selected_text_color_else = Vec4c(0, 0, 0, 255);
+			list_item->unselected_color_normal = default_style.tab_color_normal;
+			list_item->unselected_color_hovering = default_style.tab_color_else;
+			list_item->unselected_color_active = default_style.tab_color_else;
+			list_item->unselected_text_color_normal = default_style.tab_text_color_normal;
+			list_item->unselected_text_color_else = default_style.tab_text_color_else;
+			list_item->selected_color_normal = default_style.selected_tab_color_normal;
+			list_item->selected_color_hovering = default_style.selected_tab_color_else;
+			list_item->selected_color_active = default_style.selected_tab_color_else;
+			list_item->selected_text_color_normal = default_style.selected_tab_text_color_normal;
+			list_item->selected_text_color_else = default_style.selected_tab_text_color_else;
 			docker_tab_model->add_component(list_item);
 		}
 		return docker_tab_model;
@@ -817,8 +825,7 @@ namespace flame
 			docker_page_model->set_name("docker_page");
 
 			auto c_element = cElement::create();
-			c_element->background_frame_color = Vec4c(255);
-			c_element->background_frame_thickness = 2.f;
+			c_element->background_color = default_style.window_color;
 			c_element->clip_children = true;
 			docker_page_model->add_component(c_element);
 
@@ -859,7 +866,6 @@ namespace flame
 			docker_model->add_child(e_tabbar);
 			{
 				auto c_element = cElement::create();
-				c_element->background_color = Vec4c(0, 0, 0, 255);
 				c_element->clip_children = true;
 				e_tabbar->add_component(c_element);
 
@@ -960,9 +966,7 @@ namespace flame
 			c_element->width = 200.f;
 			c_element->height = 200.f;
 			c_element->inner_padding = Vec4f(8.f);
-			c_element->background_color = Vec4c(100, 100, 100, 255);
-			c_element->background_frame_color = Vec4c(255);
-			c_element->background_frame_thickness = 2.f;
+			c_element->background_color = default_style.docker_color;
 			docker_container_model->add_component(c_element);
 
 			docker_container_model->add_component(cEventReceiver::create());

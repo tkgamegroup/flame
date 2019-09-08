@@ -73,6 +73,7 @@ namespace flame
 			uint* idx_end;
 
 			std::vector<Cmd> cmds;
+			Vec2f surface_size;
 			Vec4f curr_scissor;
 
 			CanvasPrivate(Device* d, TargetType$ type, const void* v) :
@@ -403,7 +404,7 @@ namespace flame
 			void record(Commandbuffer* cb, uint image_idx)
 			{
 				auto fb = (Framebuffer*)rnf->framebuffers()[image_idx];
-				auto surface_size = Vec2f(fb->image_size);
+				surface_size = Vec2f(fb->image_size);
 
 				set_scissor(Vec4f(Vec2f(0.f), surface_size));
 
@@ -523,13 +524,11 @@ namespace flame
 		void Canvas::set_scissor(const Vec4f& _scissor)
 		{
 			auto thiz = (CanvasPrivate*)this;
-			auto fb = (Framebuffer*)thiz->rnf->framebuffers()[0];
-			auto surface_size = Vec2f(fb->image_size);
 			auto scissor = _scissor;
 			scissor.x() = max(scissor.x(), 0.f);
 			scissor.y() = max(scissor.y(), 0.f);
-			scissor.z() = min(scissor.z(), surface_size.x());
-			scissor.w() = min(scissor.w(), surface_size.y());
+			scissor.z() = min(scissor.z(), thiz->surface_size.x());
+			scissor.w() = min(scissor.w(), thiz->surface_size.y());
 			if (scissor == thiz->curr_scissor)
 				return;
 			thiz->curr_scissor = scissor;

@@ -22,6 +22,20 @@ namespace flame
 		Vec4c selected_color_normal;
 		Vec4c selected_color_hovering;
 		Vec4c selected_color_active;
+		Vec4c scrollbar_color;
+		Vec4c scrollbar_thumb_color_normal;
+		Vec4c scrollbar_thumb_color_hovering;
+		Vec4c scrollbar_thumb_color_active;
+		Vec4c tab_color_normal;
+		Vec4c tab_color_else;
+		Vec4c tab_text_color_normal;
+		Vec4c tab_text_color_else;
+		Vec4c selected_tab_color_normal;
+		Vec4c selected_tab_color_else;
+		Vec4c selected_tab_text_color_normal;
+		Vec4c selected_tab_text_color_else;
+		Vec4c docker_color;
+
 		float sdf_scale;
 
 		FLAME_UNIVERSE_EXPORTS DefaultStyle();
