@@ -11,6 +11,7 @@
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
+#include <flame/universe/components/image.h>
 #include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
@@ -25,9 +26,25 @@
 using namespace flame;
 using namespace graphics;
 
+template<class T> 
+T* new_component()
+{
+	auto c = (T*)component_alloc(sizeof(T));
+	new (c) T;
+	return c;
+}
+
+union
+{
+	BP::Node* n;
+	BP::Slot* l;
+}bp_selected;
+
 struct cBP : Component
 {
 	cElement* element;
+	cEventReceiver* event_receiver;
+	cElement* base_element;
 
 	BP* bp;
 
@@ -36,14 +53,27 @@ struct cBP : Component
 	{
 	}
 
-	virtual ~cBP() override
-	{
-	}
-
 	virtual void start() override
 	{
 		element = (cElement*)(entity->find_component(cH("Element")));
-		assert(element);
+		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+		base_element = (cElement*)(entity->child(0)->find_component(cH("Element")));
+
+		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto thiz = *(cBP**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				bp_selected.n = nullptr;
+			else if (is_mouse_scroll(action, key))
+			{
+				thiz->base_element->scale += pos.x() < 0.f ? 0.1f : -0.1f;
+				thiz->base_element->scale = clamp(thiz->base_element->scale, 0.1f, 2.f);
+			}
+			else if (is_mouse_move(action, key) && (thiz->event_receiver->event_dispatcher->mouse_buttons[Mouse_Middle] & KeyStateDown))
+			{
+				thiz->base_element->x += pos.x();
+				thiz->base_element->y += pos.y();
+			}
+		}, new_mail_p(this));
 	}
 
 	virtual void update() override
@@ -71,6 +101,60 @@ struct cBP : Component
 	}
 };
 
+struct cBPNode : Component
+{
+	cElement* element;
+	cEventReceiver* event_receiver;
+	cWindow* window;
+
+	BP::Node* n;
+
+	cBPNode() :
+		Component("BPNode")
+	{
+	}
+
+	virtual void start() override
+	{
+		element = (cElement*)(entity->find_component(cH("Element")));
+		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+		window = (cWindow*)(entity->find_component(cH("Window")));
+
+		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto thiz = *(cBPNode**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				bp_selected.n = thiz->n;
+		}, new_mail_p(this));
+
+		window->add_pos_listener([](void* c) {
+			auto n = *(BP::Node**)c;
+			auto element = (cElement*)(((Entity*)n->user_data)->find_component(cH("Element")));
+			n->pos.x() = element->x;
+			n->pos.y() = element->y;
+		}, new_mail_p(n));
+	}
+
+	virtual void update() override
+	{
+		if (n == bp_selected.n)
+			element->background_frame_thickness = 4.f;
+		else
+			element->background_frame_thickness = 0.f;
+	}
+};
+
+struct cBPSlot : Component
+{
+	cEventReceiver* event_receiver;
+
+	BP::Slot* n;
+
+	cBPSlot() :
+		Component("BPSlot")
+	{
+	}
+};
+
 struct App
 {
 	Window* w;
@@ -89,15 +173,14 @@ struct App
 	cElement* c_element_root;
 	cText* c_text_fps;
 
-	std::vector<TypeinfoDatabase*> dbs;
-
 	std::wstring filename;
 	BP* bp;
-	union
-	{
-		BP::Node* n;
-		BP::Slot* s;
-	}bp_selected;
+
+	std::vector<TypeinfoDatabase*> dbs;
+
+	Image* bp_rt;
+	Imageview* bp_rt_v;
+	std::vector<void*> bp_cbs;
 
 	void* ev_1;
 	void* ev_2;
@@ -119,17 +202,18 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
+			bp->update();
+
 			c_element_root->width = w->size.x();
 			c_element_root->height = w->size.y();
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
-			//bp->update();
 
 			auto img_idx = sc->image_index();
 			auto cb = cbs[img_idx];
 			canvas->record(cb, img_idx);
 
-			d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
+			d->gq->submit({ cb, (Commandbuffer*)bp_cbs[0]}, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 
@@ -269,6 +353,7 @@ int main(int argc, char **args)
 		printf("bp not found, exit\n");
 		return 0;
 	}
+	bp_selected.n = nullptr;
 
 	for (auto i = 0; i < app.bp->dependency_count(); i++)
 		app.dbs.push_back(app.bp->dependency_typeinfodatabase(i));
@@ -290,6 +375,16 @@ int main(int argc, char **args)
 		for (auto i = 0; i < app.cbs.size(); i++)
 			app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
+		app.bp_rt = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageAttachment | ImageUsageSampled));
+		app.bp_rt_v = Imageview::create(app.bp_rt);
+		app.bp_cbs.resize(1);
+		app.bp_cbs[0] = Commandbuffer::create(app.d->gcp);
+
+		app.bp->graphics_device = app.d;
+		app.bp->find_input("rt_dst.type")->set_data_i(TargetImageview);
+		app.bp->find_input("rt_dst.v")->set_data_p(app.bp_rt_v);
+		app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.bp_cbs);
+
 		auto font14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 		auto font_awesome14 = Font::create(L"../asset/font_awesome.ttf", 14);
 		auto font32 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
@@ -299,6 +394,7 @@ int main(int argc, char **args)
 		app.font_atlas_sdf->index = 2;
 		app.canvas->set_image(app.font_atlas_pixel->index, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 		app.canvas->set_image(app.font_atlas_sdf->index, Imageview::create(app.font_atlas_sdf->image()));
+		app.canvas->set_image(3, app.bp_rt_v);
 		app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 		default_style.set_to_light();
 
@@ -412,7 +508,7 @@ int main(int argc, char **args)
 
 		{
 			auto e_container = get_docker_container_model()->copy();
-			//app.root->add_child(e_container);
+			app.root->add_child(e_container);
 			{
 				auto c_element = (cElement*)e_container->find_component(cH("Element"));
 				c_element->x = 350.f;
@@ -431,18 +527,37 @@ int main(int argc, char **args)
 			e_tabbar->add_child(e_tab);
 
 			auto e_page = get_docker_page_model()->copy();
-			e_pages->add_child(e_page);
 			{
-				auto e_bp = Entity::create();
-				e_page->add_child(e_bp);
-				{
-					e_bp->add_component(cElement::create());
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutVertical;
+				c_layout->item_padding = 4.f;
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
+				e_page->add_component(c_layout);
+			}
+			e_pages->add_child(e_page);
 
-					auto c_bp = (cBP*)component_alloc(sizeof(cBP));
-					new (c_bp) cBP;
-					c_bp->bp = app.bp;
-					e_bp->add_component(c_bp);
-				}
+			auto e_scene = Entity::create();
+			e_page->add_child(e_scene);
+			{
+				e_scene->add_component(cElement::create());
+
+				e_scene->add_component(cEventReceiver::create());
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitLayout;
+				c_aligner->height_policy = SizeFitLayout;
+				e_scene->add_component(c_aligner);
+
+				auto c_bp = new_component<cBP>();
+				c_bp->bp = app.bp;
+				e_scene->add_component(c_bp);
+			}
+
+			auto e_base = Entity::create();
+			e_scene->add_child(e_base);
+			{
+				e_base->add_component(cElement::create());
 			}
 
 			for (auto i = 0; i < app.bp->node_count(); i++)
@@ -450,7 +565,7 @@ int main(int argc, char **args)
 				auto n = app.bp->node(i);
 
 				auto e_node = Entity::create();
-				e_page->add_child(e_node);
+				e_base->add_child(e_node);
 				n->user_data = e_node;
 				{
 					auto c_element = cElement::create();
@@ -458,27 +573,23 @@ int main(int argc, char **args)
 					c_element->y = n->pos.y();
 					c_element->inner_padding = Vec4f(8.f);
 					c_element->background_color = Vec4c(255, 255, 255, 200);
-					c_element->background_frame_color = Vec4c(255);
-					c_element->background_frame_thickness = 2.f;
+					c_element->background_frame_color = Vec4c(252, 252, 50, 200);
 					c_element->background_round_radius = 8.f;
 					c_element->background_shadow_thickness = 8.f;
 					e_node->add_component(c_element);
 
 					e_node->add_component(cEventReceiver::create());
 
-					auto e_window = cWindow::create();
-					e_window->add_pos_listener([](void* c) {
-						auto n = *(BP::Node**)c;
-						auto element = (cElement*)(((Entity*)n->user_data)->find_component(cH("Element")));
-						n->pos.x() = element->x;
-						n->pos.y() = element->y;
-					}, new_mail_p(n));
-					e_node->add_component(e_window);
+					e_node->add_component(cWindow::create());
 
 					auto c_layout = cLayout::create();
 					c_layout->type = LayoutVertical;
 					c_layout->item_padding = 4.f;
 					e_node->add_component(c_layout);
+
+					auto c_node = new_component<cBPNode>();
+					c_node->n = n;
+					e_node->add_component(c_node);
 
 					auto e_text_id = Entity::create();
 					e_node->add_child(e_text_id);
@@ -624,6 +735,49 @@ int main(int argc, char **args)
 						}
 					}
 				}
+			}
+		}
+
+		{
+			auto e_container = get_docker_container_model()->copy();
+			app.root->add_child(e_container);
+			{
+				auto c_element = (cElement*)e_container->find_component(cH("Element"));
+				c_element->x = 350.f;
+				c_element->y = 420.f;
+				c_element->width = 800.f;
+				c_element->height = 600.f;
+			}
+
+			auto e_docker = get_docker_model()->copy();
+			e_container->add_child(e_docker);
+			auto e_tabbar = e_docker->child(0);
+			auto e_pages = e_docker->child(1);
+
+			auto e_tab = get_docker_tab_model()->copy();
+			((cText*)e_tab->find_component(cH("Text")))->set_text(L"Render Target");
+			e_tabbar->add_child(e_tab);
+
+			auto e_page = get_docker_page_model()->copy();
+			{
+				auto c_layout = cLayout::create();
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
+				e_page->add_component(c_layout);
+			}
+			e_pages->add_child(e_page);
+
+			auto e_image = Entity::create();
+			e_page->add_child(e_image);
+			{
+				auto c_element = cElement::create();
+				c_element->width = 400;
+				c_element->height = 300;
+				e_image->add_component(c_element);
+
+				auto c_image = cImage::create();
+				c_image->id = 3;
+				e_image->add_component(c_image);
 			}
 		}
 

@@ -1,17 +1,3 @@
-#include <flame/ui/widget.h>
-#include <flame/ui/canvas.h>
-#include <flame/ui/widget.h>
-#include <flame/ui/style.h>
-#include <flame/ui/icon.h>
-#include <flame/ui/blueprint_drawing.h>
-#include "instance_private.h"
-
-#include <flame/serialize.h>
-#include <flame/file.h>
-#include <flame/font.h>
-
-#include <vector>
-
 namespace flame
 {
 	namespace ui
@@ -20,10 +6,6 @@ namespace flame
 		//{
 		//	BP_Node_Drawdata(blueprint::Node *_n, Instance *_ui, BP_Scene_Draw_Private *_scene_priv)
 		//	{
-		//		w_dialog->add_listener(ListenerLeftMouseDown, [this](const Vec2 &) {
-		//			scene_priv->sel = n;
-		//		});
-
 		//		for (auto i = 0; i < n->inputslot_count(); i++)
 		//		{
 		//			auto slot = n->inputslot(i);
@@ -182,10 +164,6 @@ namespace flame
 		//			}
 		//				break;
 		//			}
-
-		//			l->add_child(lv);
-
-		//			w_left->add_child(l);
 		//		}
 
 		//		for (auto i = 0; i < n->outputslot_count(); i++)
@@ -201,36 +179,6 @@ namespace flame
 		//				}
 		//			});
 		//		}
-
-		//		w_collapse = wButton::create(ui);
-		//		w_collapse->inner_padding = Vec4(8.f, 8.f, 1.f, 3.f);
-		//		w_collapse->background_col.w = 0.f;
-		//		w_collapse->align = AlignMiddle;
-		//		w_collapse->sdf_scale() = 1.f;
-		//		w_collapse->set_text_and_size(Icon_ANGLE_UP);
-		//		add_style_buttoncolor(w_collapse, 0.f, Vec3(0.f, 0.f, 0.7f));
-		//		w_dialog->add_child(w_collapse);
-
-		//		w_collapse->add_listener(ListenerClicked, [this]() {
-		//			collapsed = !collapsed;
-		//			if (!collapsed)
-		//			{
-		//				w_dialog->w_content()->set_visibility(true);
-		//				w_collapse->set_text_and_size(Icon_ANGLE_UP);
-		//			}
-		//			else
-		//			{
-		//				w_dialog->w_content()->set_visibility(false);
-		//				w_collapse->set_text_and_size(Icon_ANGLE_DOWN);
-		//			}
-		//		});
-
-		//		collapsed = false;
-		//	}
-
-		//	~BP_Node_Drawdata() override
-		//	{
-		//		scene_priv->w_scene->remove_child(w_dialog, true);
 		//	}
 		//};
 
@@ -246,14 +194,6 @@ namespace flame
 		//		auto scl = d[2].f[0];
 		//		auto thiz = (BP_Scene_Draw_Private*)d[3].p;
 
-		//		if (thiz->sel.t == BP_Scene_Draw::SelTypeNode)
-		//		{
-		//			auto n = (blueprint::Node*)thiz->sel.s;
-		//			auto d = (BP_Node_Drawdata*)n->user_data;
-		//			auto col = Colorf(1.f, 1.f, 0.f);
-		//			c->add_rect((d->w_dialog->global_pos - Vec2(4.f) * d->w_dialog->global_scale),
-		//				(d->w_dialog->size + Vec2(8.f)) * d->w_dialog->global_scale, col, 2.f);
-		//		}
 		//		auto dw = (wSlot*)thiz->w_scene->instance()->dragging_widget();
 		//		if (dw && dw->class_hash == cH("SLOT"))
 		//		{
@@ -284,30 +224,6 @@ namespace flame
 		//				return;
 		//			}
 		//		}
-		//	});
-
-		//	w_scene->add_listener(ListenerMouseMove, [this](const Vec2 &disp) {
-		//		auto ui = w_scene->instance();
-		//		if (ui->hovering_widget() == w_scene &&
-		//			ui->pressing_K(Key_Ctrl) &&
-		//			ui->pressing_M(0))
-		//			w_scene->pos += disp;
-		//	});
-
-		//	w_scene->add_listener(ListenerMouseScroll, [this](int scroll) {
-		//		auto old_scale = w_scene->scale;
-		//		auto p = (Vec2(w_scene->instance()->mouse_pos) - w_scene->pos) / old_scale;
-		//		if (scroll > 0)
-		//		{
-		//			w_scene->scale += 0.1f;
-		//			w_scene->scale = min(10.f, w_scene->scale);
-		//		}
-		//		else
-		//		{
-		//			w_scene->scale -= 0.1f;
-		//			w_scene->scale = max(0.1f, w_scene->scale);
-		//		}
-		//		w_scene->pos -= p * (w_scene->scale - old_scale);
 		//	});
 	}
 }

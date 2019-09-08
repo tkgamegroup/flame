@@ -549,6 +549,8 @@ namespace flame
 						assert(image_count == count);
 				}
 			}
+			if (image_count == 0)
+				image_count = 1;
 
 			for (auto i = 0; i < image_count; i++)
 			{

@@ -37,7 +37,7 @@ struct App
 			auto idx = looper().frame % fences.size();
 			sc->acquire_image();
 			fences[idx]->wait();
-			d->gq->submit((Commandbuffer*)cbs[sc->image_index()], sc->image_avalible(), render_finished, fences[idx]);
+			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fences[idx]);
 			d->gq->present(sc, render_finished);
 		}
 	}

@@ -114,7 +114,7 @@ namespace flame
 			cb->begin(true);
 			cb->copy_buffer(stag_buf, this, 1, &BufferCopy(0, 0, size));
 			cb->end();
-			d->gq->submit(cb, nullptr, nullptr, nullptr);
+			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 

@@ -358,10 +358,10 @@ namespace flame
 				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
-				vtx_end->pos = _pos;						vtx_end->uv = uv0;				  vtx_end->col = tint_col; vtx_end++;
-				vtx_end->pos = _pos + Vec2f(0.f, size.y());	vtx_end->uv = Vec2f(uv0.x(), uv1.y()); vtx_end->col = tint_col; vtx_end++;
-				vtx_end->pos = _pos + Vec2f(size.x(), size.y()); vtx_end->uv = uv1;				  vtx_end->col = tint_col; vtx_end++;
-				vtx_end->pos = _pos + Vec2f(size.x(), 0.f);	vtx_end->uv = Vec2f(uv1.x(), uv0.y()); vtx_end->col = tint_col; vtx_end++;
+				vtx_end->pos = _pos;								vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
+				vtx_end->pos = _pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
+				vtx_end->pos = _pos + Vec2f(size.x(), size.y());	vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
+				vtx_end->pos = _pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
 
 				*idx_end = vtx_cnt + 0; idx_end++;
 				*idx_end = vtx_cnt + 2; idx_end++;

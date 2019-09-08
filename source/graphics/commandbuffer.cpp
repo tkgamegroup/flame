@@ -711,7 +711,7 @@ namespace flame
 #endif
 		}
 
-		void QueuePrivate::submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence)
+		void QueuePrivate::submit(const std::vector<Commandbuffer*> cbs, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence)
 		{
 #if defined(FLAME_VULKAN)
 			VkSubmitInfo info;
@@ -721,8 +721,12 @@ namespace flame
 			info.pWaitDstStageMask = &wait_stage;
 			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
 			info.pWaitSemaphores = wait_semaphore ? &((SemaphorePrivate*)wait_semaphore)->v : nullptr;
-			info.commandBufferCount = 1;
-			info.pCommandBuffers = &((CommandbufferPrivate*)c)->v;
+			info.commandBufferCount = cbs.size();
+			std::vector<VkCommandBuffer> vk_cbs;
+			vk_cbs.resize(cbs.size());
+			for (auto i = 0; i < cbs.size(); i++)
+				vk_cbs[i] = ((CommandbufferPrivate*)cbs[i])->v;
+			info.pCommandBuffers = vk_cbs.data();
 			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
 			info.pSignalSemaphores = signal_semaphore ? &((SemaphorePrivate*)signal_semaphore)->v : nullptr;
 
@@ -768,9 +772,9 @@ namespace flame
 			((QueuePrivate*)this)->wait_idle();
 		}
 
-		void Queue::submit(Commandbuffer *c, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence)
+		void Queue::submit(const std::vector<Commandbuffer*> cbs, Semaphore *wait_semaphore, Semaphore *signal_semaphore, Fence* signal_fence)
 		{
-			((QueuePrivate*)this)->submit(c, wait_semaphore, signal_semaphore, signal_fence);
+			((QueuePrivate*)this)->submit(cbs, wait_semaphore, signal_semaphore, signal_fence);
 		}
 
 		void Queue::present(Swapchain *s, Semaphore *wait_semaphore)

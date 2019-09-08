@@ -231,6 +231,8 @@ namespace flame
 				auto er = *it;
 				if (mouse_disp != 0)
 					er->on_mouse(KeyStateNull, Mouse_Null, Vec2f(mouse_disp));
+				if (mouse_scroll != 0)
+					er->on_mouse(KeyStateNull, Mouse_Middle, Vec2f(mouse_scroll, 0.f));
 				for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
 				{
 					auto s = mouse_buttons[i];
