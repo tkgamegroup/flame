@@ -1,18 +1,3 @@
-static int _magic_number = 0;
-
-ImageEditor::ImageEditor(std::shared_ptr<flame::Texture> _texture) :
-	ImageViewer(_texture->filename != "" ? _texture->filename : "Image - " + std::to_string(_magic_number++), _texture),
-	penID(-1)
-{
-}
-
-void ImageEditor::on_menu_bar()
-{
-	if (ImGui::BeginMenu("Filter"))
-	{
-		ImGui::EndMenu();
-	}
-}
 
 void ImageEditor::on_top_area()
 {

@@ -305,60 +305,8 @@ namespace flame
 		}
 	}
 
-	void wDialog::init(bool resize, bool modual)
-	{
-		wLayout::init();
-
-		auto radius = 8.f;
-
-		inner_padding$ = Vec4(radius);
-		background_col$ = Colorf(0.5f, 0.5f, 0.5f, 0.9f);
-		item_padding$ = radius;
-		if (resize)
-		{
-			size_policy_hori$ = SizeFitLayout;
-			size_policy_vert$ = SizeFitLayout;
-			clip$ = true;
-		}
-
-		if (resize)
-		{
-			w_scrollbar() = createT<wScrollbar>(ui, this);
-			add_child(w_scrollbar(), 1);
-
-			w_sizedrag() = createT<wSizeDrag>(ui, this);
-			w_sizedrag()->min_size() = Vec2(10.f);
-			set_size(Vec2(100.f));
-			add_child(w_sizedrag(), 1);
-		}
-		else
-			w_sizedrag() = nullptr;
-
-		if (modual)
-		{
-			pos$ = (Vec2(ui->root()->size$) - size$) * 0.5f;
-
-			ui->root()->add_child(this, 0, -1, true);
-		}
-	}
-
-	void message_dialog_ok_mouse_event$(Element::MouseListenerParm& p)
-	{
-		if (!p.is_clicked())
-			return;
-
-		p.thiz()->remove_from_parent(true);
-	}
-
 	void wMessageDialog::init(int font_atlas_index, const wchar_t* text)
 	{
-		((wDialog*)this)->init(false, true);
-
-		want_key_focus$ = true;
-
-		layout_type$ = LayoutVertical;
-		item_padding$ = 8.f;
-
 		w_text() = createT<wText>(ui, font_atlas_index);
 		w_text()->text$ = text;
 		add_child(w_text());
@@ -371,13 +319,6 @@ namespace flame
 
 	//void wYesNoDialog::init(const wchar_t *title, float sdf_scale, const wchar_t *text, const wchar_t *yes_text, const wchar_t *no_text, const std::function<void(bool)> &callback)
 	//{
-	//	((wDialog*)this)->init(title, sdf_scale, false);
-
-	//	resize_data_storage(7);
-
-	//	event_attitude = EventBlackHole;
-	//	want_key_focus = true;
-
 	//	add_listener(ListenerKeyDown, [this](int key) {
 	//		switch (key)
 	//		{
@@ -446,26 +387,6 @@ namespace flame
 	//	}, "p", this);
 	//}
 
-	//wTextPtr &wYesNoDialog::w_text()
-	//{
-	//	return *((wTextPtr*)&data_storage(3).p);
-	//}
-
-	//wLayoutPtr &wYesNoDialog::w_buttons()
-	//{
-	//	return *((wLayoutPtr*)&data_storage(4).p);
-	//}
-
-	//wButtonPtr &wYesNoDialog::w_yes()
-	//{
-	//	return *((wButtonPtr*)&data_storage(5).p);
-	//}
-
-	//wButtonPtr &wYesNoDialog::w_no()
-	//{
-	//	return *((wButtonPtr*)&data_storage(6).p);
-	//}
-
 	//void wInputDialog::init(const wchar_t *title, float sdf_scale, const std::function<void(bool ok, const wchar_t *input)> &callback)
 	//{
 	//	((wDialog*)this)->init(title, sdf_scale, false);
@@ -525,51 +446,8 @@ namespace flame
 	//	}, "p", this);
 	//}
 
-	//wEditPtr &wInputDialog::w_input()
-	//{
-	//	return *((wEditPtr*)&data_storage(3).p);
-	//}
-
-	//wLayoutPtr &wInputDialog::w_buttons()
-	//{
-	//	return *((wLayoutPtr*)&data_storage(4).p);
-	//}
-
-	//wButtonPtr &wInputDialog::w_ok()
-	//{
-	//	return *((wButtonPtr*)&data_storage(5).p);
-	//}
-
-	//wButtonPtr &wInputDialog::w_cancel()
-	//{
-	//	return *((wButtonPtr*)&data_storage(6).p);
-	//}
-
 	//void wFileDialog::init(const wchar_t *title, int io, const std::function<void(bool ok, const wchar_t *filename)> &callback, const wchar_t *exts)
 	//{
-	//	((wDialog*)this)->init(title, -1.f, true);
-
-	//	resize_data_storage(10);
-	//	resize_string_storage(2);
-
-	//	event_attitude = EventBlackHole;
-	//	want_key_focus = true;
-
-	//	if (w_title())
-	//		w_title()->background_col = Bvec4(200, 40, 20, 255);
-
-	//	set_string_storage(0, get_curr_path());
-	//	set_string_storage(1, L"");
-
-	//	w_sizedrag()->min_size() = Vec2(300.f, 400.f);
-	//	set_size(w_sizedrag()->min_size());
-	//	event_attitude = EventBlackHole;
-
-	//	w_content()->size_policy_hori = SizeFitLayout;
-	//	w_content()->size_policy_vert = SizeFitLayout;
-	//	w_content()->layout_type = LayoutVertical;
-	//	w_content()->item_padding = 8.f;
-
 	//	w_pathstems() = wMenuBar::create(instance());
 	//	w_pathstems()->layout_type = LayoutHorizontal;
 	//	w_content()->add_child(w_pathstems());
@@ -684,7 +562,6 @@ namespace flame
 	//	w_list()->clear_children(0, 1, -1, true);
 	//	w_list()->w_sel() = nullptr;
 
-	//	set_string_storage(0, path);
 	//	std::filesystem::path fs_path(path);
 	//	{
 	//		std::vector<std::wstring> stems;
@@ -778,7 +655,6 @@ namespace flame
 
 	//		if (std::filesystem::is_directory(it->status()))
 	//		{
-	//			item->w_btn()->set_text_and_size((Icon_FOLDER_O + std::wstring(L" ") + filename).c_str());
 	//			dir_list.push_back(item);
 
 	//			item->w_btn()->add_listener(ListenerDoubleClicked, [this, filename]() {
@@ -799,7 +675,6 @@ namespace flame
 	//			if (!found_ext)
 	//				continue;
 
-	//			item->w_btn()->set_text_and_size((Icon_FILE_O + std::wstring(L" ") + filename).c_str());
 	//			file_list.push_back(item);
 
 	//			item->w_btn()->add_listener(ListenerClicked, [this, filename]() {

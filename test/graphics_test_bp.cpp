@@ -1,5 +1,4 @@
 #include <flame/foundation/serialize.h>
-#include <flame/foundation/window.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/renderpass.h>
@@ -35,7 +34,7 @@ struct App
 
 		if (sc)
 		{
-			auto idx = app_frame() % fences.size();
+			auto idx = looper().frame % fences.size();
 			sc->acquire_image();
 			fences[idx]->wait();
 			d->gq->submit((Commandbuffer*)cbs[sc->image_index()], sc->image_avalible(), render_finished, fences[idx]);
@@ -48,7 +47,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/canvas/bp");
+	app.bp = BP::create_from_file(L"../renderpath/clear_screen/bp");
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -75,7 +74,7 @@ int main(int argc, char** args)
 	app.bp->find_input("rt_dst.type")->set_data_i(TargetImages);
 	app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.cbs);
 
-	app_run([](void* c) {
+	looper().loop([](void* c) {
 		auto app = (*(App * *)c);
 		app->run();
 	}, new_mail_p(&app));

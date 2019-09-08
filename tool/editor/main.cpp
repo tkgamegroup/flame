@@ -89,15 +89,19 @@ struct App
 	cElement* c_element_root;
 	cText* c_text_fps;
 
+	std::vector<TypeinfoDatabase*> dbs;
+
 	std::wstring filename;
 	BP* bp;
-	std::vector<TypeinfoDatabase*> dbs;
+	union
+	{
+		BP::Node* n;
+		BP::Slot* s;
+	}bp_selected;
 
 	void* ev_1;
 	void* ev_2;
 	void* ev_3;
-
-	OneClientServer* server;
 
 	void run()
 	{
@@ -232,7 +236,7 @@ struct App
 
 void create_directory_tree_node(const std::filesystem::path& path, Entity* parent)
 {
-	auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, path.filename().wstring());
+	auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, Icon_FOLDER_O + std::wstring(L" ") + path.filename().wstring());
 	parent->add_child(e_tree_node);
 	auto e_sub_tree = e_tree_node->child(1);
 	for (std::filesystem::directory_iterator end, it(path); it != end; it++)
@@ -244,7 +248,7 @@ void create_directory_tree_node(const std::filesystem::path& path, Entity* paren
 		}
 		else
 		{
-			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, it->path().filename().wstring());
+			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, Icon_FILE_O + std::wstring(L" ") + it->path().filename().wstring());
 			e_sub_tree->add_child(e_tree_leaf);
 		}
 	}
@@ -937,26 +941,3 @@ int main(int argc, char **args)
 
 	return 0;
 }
-
-/*
-	auto layout = Element::createT<wLayout>(ui, LayoutHorizontal);
-
-	auto image1 = Element::createT<wImage>(ui);
-	image1->size$ = Vec2f(250.f);
-	image1->id() = 0;
-	image1->align$ = AlignLittleEnd;
-
-	auto image2 = Element::createT<wImage>(ui);
-	image2->size$ = Vec2f(250.f);
-	image2->id() = 0;
-	image2->align$ = AlignLittleEnd;
-
-	auto splitter = Element::createT<wSplitter>(ui, 0, image1, image2);
-	root->add_child(splitter);
-
-	layout->add_child(image1);
-	layout->add_child(splitter);
-	layout->add_child(image2);
-	root->add_child(layout);
-
-*/

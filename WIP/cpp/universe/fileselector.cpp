@@ -1,24 +1,8 @@
 
-		FileSelector::FileItem::FileItem(FileSelector *_parent) :
-			parent(_parent),
-			file_type(FileTypeUnknown)
-		{
-		}
-
-		FileSelector::FileItem::~FileItem()
-		{
-			if (preview_image && preview_image != parent->empty_image)
-				decrease_texture_ref(preview_image.get());
-		}
-
-		FileSelector::FileSelector(const std::string &_title, FileSelectorIo io, const std::string &_default_dir,
-			unsigned int window_flags, unsigned int flags) :
-			Window(_title, window_flags),
-			splitter(true)
+		FileSelector::FileSelector(const std::string &_title, FileSelectorIo io, const std::string &_default_dir, unsigned int window_flags, unsigned int flags)
 		{
 			file_watcher = nullptr;
 
-			splitter.size[0] = 300;
 			if (_default_dir != "")
 			{
 				default_dir = _default_dir;
@@ -47,7 +31,6 @@
 				std::filesystem::path path(s);
 				auto str = path.filename().string();
 				curr_dir.value = str;
-				curr_dir.name = ICON_FA_FOLDER_O" " + str;
 			}
 
 			if (file_watcher)
@@ -135,14 +118,6 @@
 				need_refresh = true;
 			}
 
-			const float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
-
-			if (enable_right_area)
-			{
-				splitter.set_size_greedily();
-				splitter.do_split();
-			}
-
 			if (!tree_mode)
 			{
 				on_top_area_show();
@@ -188,14 +163,3 @@
 				on_right_area_show();
 		}
 
-		DirSelectorDialog::DirSelectorDialog() :
-			FileSelector("Dir Selector", FileSelectorOpen, "", WindowModal | WindowNoSavedSettings, FileSelectorNoFiles | FileSelectorNoRightArea)
-		{
-		}
-
-		void DirSelectorDialog::open(const std::string &default_dir, const std::function<bool(std::string)> &_callback)
-		{
-			auto w = new DirSelectorDialog;
-			w->set_current_path(default_dir);
-			w->callback = _callback;
-		}

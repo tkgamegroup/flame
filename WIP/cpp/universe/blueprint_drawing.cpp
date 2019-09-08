@@ -16,25 +16,8 @@ namespace flame
 {
 	namespace ui
 	{
-		//struct Sel
-		//{
-		//	BP_Scene_Draw::SelType t;
-		//	void *s;
-		//};
-
-		//struct BP_Scene_Draw_Private : BP_Scene_Draw
-		//{
-		//	Sel sel;
-
-		//};
-
 		//struct BP_Node_Drawdata : Dtor
 		//{
-
-		//	wButton *w_collapse;
-
-		//	bool collapsed;
-
 		//	BP_Node_Drawdata(blueprint::Node *_n, Instance *_ui, BP_Scene_Draw_Private *_scene_priv)
 		//	{
 		//		w_dialog->add_listener(ListenerLeftMouseDown, [this](const Vec2 &) {

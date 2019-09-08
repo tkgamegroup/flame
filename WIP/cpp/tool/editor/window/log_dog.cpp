@@ -91,15 +91,6 @@ void LogDog::on_show()
 	}
 	if (ImGui::TabItem("Columns"))
 	{
-		if (ImGui::IsItemActive())
-		{
-			auto mouseY = ImGui::GetMousePos().y;
-			if (mouseY < ImGui::GetItemRectMin().y || mouseY > ImGui::GetItemRectMax().y)
-			{
-				int cut = 1;
-			}
-		}
-
 		if (ImGui::InputText("Match Regex", match_regex, TK_ARRAYSIZE(match_regex)))
 		{
 

@@ -1,5 +1,3 @@
-const float BP_node_titlebar_height = 18.f;
-
 bool running = false;
 
 struct Particle
@@ -297,19 +295,6 @@ int main(int argc, char **args)
 		ui->begin(res.x, res.y, sm->elapsed_time);
 
 		ui->begin_mainmenu();
-		if (ui->begin_menu("File"))
-		{
-			if (ui->menuitem("New", "Ctrl+N"))
-			{
-			}
-			if (ui->menuitem("Open", "Ctrl+O"))
-			{
-			}
-			if (ui->menuitem("Save", "Ctrl+S"))
-			{
-			}
-			ui->end_menu();
-		}
 		if (ui->begin_menu("Add"))
 		{
 			switch (curr_tab)
@@ -345,16 +330,6 @@ int main(int argc, char **args)
 		}
 		if (ui->begin_menu("Edit"))
 		{
-			if (ui->menuitem("Undo", "Ctrl+Z"))
-				;
-			if (ui->menuitem("Redo", "Ctrl+Y"))
-				;
-			if (ui->menuitem("Cut", "Ctrl+X"))
-				;
-			if (ui->menuitem("Copy", "Ctrl+C"))
-				;
-			if (ui->menuitem("Paste", "Ctrl+V"))
-				;
 			if (ui->menuitem("Delete", "Del"))
 			{
 				switch (curr_tab)
@@ -378,15 +353,6 @@ int main(int argc, char **args)
 					break;
 				}
 			}
-			ui->end_menu();
-		}
-		if (ui->begin_menu("Setting"))
-		{
-			if (ui->menuitem("Scene Options"))
-			{
-
-			}
-
 			ui->end_menu();
 		}
 		auto menu_rect = ui->get_curr_window_rect();
@@ -663,22 +629,6 @@ int main(int argc, char **args)
 			update_ubo();
 			need_update_ubo = false;
 		}
-
-		auto index = sc->acquire_image(image_avalible);
-
-		cb_ui->begin();
-		ui->record_commandbuffer(cb_ui, rp_ui, fbs_ui[index]);
-		cb_ui->end();
-
-		d->q->submit(cb_effect, image_avalible, effect_finished);
-		d->q->submit(cb_ui, effect_finished, ui_finished);
-		d->q->wait_idle();
-		d->q->present(index, sc, ui_finished);
-
-		static long long last_fps = 0;
-		if (last_fps != sm->fps)
-			printf("%lld\n", sm->fps);
-		last_fps = sm->fps;
 	});
 
 	return 0;

@@ -965,7 +965,7 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->width = 200.f;
 			c_element->height = 200.f;
-			c_element->inner_padding = Vec4f(8.f);
+			c_element->inner_padding = Vec4f(8.f, 16.f, 8.f, 8.f);
 			c_element->background_color = default_style.docker_color;
 			docker_container_model->add_component(c_element);
 
