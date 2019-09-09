@@ -210,10 +210,18 @@ struct cBPSlot : Component
 			if (action == DragStart)
 			{
 				dragging_slot = thiz->s;
+				if (thiz->s->type == BP::Slot::Input)
+					thiz->s->link_to(nullptr);
 			}
 			else if (action == DragEnd)
-			{
 				dragging_slot = nullptr;
+			else if (action == Dropped)
+			{
+				auto oth = ((cBPSlot*)er->entity->find_component(cH("BPSlot")))->s;
+				if (thiz->s->type == BP::Slot::Input)
+					thiz->s->link_to(oth);
+				else
+					oth->link_to(thiz->s);
 			}
 		}, new_mail_p(this));
 	}

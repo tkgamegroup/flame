@@ -156,7 +156,8 @@ namespace flame
 		}
 
 		links[0] = target;
-		target->links.push_back(this);
+		if (target)
+			target->links.push_back(this);
 
 		set_frame(looper().frame);
 
