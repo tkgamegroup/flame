@@ -2087,16 +2087,16 @@ namespace flame
 				*(uchar*)dst = std::stoul(src);
 				break;
 			case cH("Vec(1+uchar)"):
-				*(Vec1u*)dst = std::stoul(src.c_str());
+				*(Vec1c*)dst = std::stoul(src.c_str());
 				break;
 			case cH("Vec(2+uchar)"):
-				*(Vec2u*)dst = stoc2(src.c_str());
+				*(Vec2c*)dst = stoc2(src.c_str());
 				break;
 			case cH("Vec(3+uchar)"):
-				*(Vec3u*)dst = stoc3(src.c_str());
+				*(Vec3c*)dst = stoc3(src.c_str());
 				break;
 			case cH("Vec(4+uchar)"):
-				*(Vec4u*)dst = stoc4(src.c_str());
+				*(Vec4c*)dst = stoc4(src.c_str());
 				break;
 			case cH("std::basic_string(char)"):
 				*(std::string*)dst = src;

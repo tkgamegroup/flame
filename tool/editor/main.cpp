@@ -504,7 +504,7 @@ int main(int argc, char **args)
 	}
 
 	app.filename = s2w(args[1]);
-	app.bp = BP::create_from_file(app.filename, false);
+	app.bp = BP::create_from_file(app.filename, true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -1027,10 +1027,10 @@ int main(int argc, char **args)
 										{
 											((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(str));
 
-											//((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-											//	auto data = text[0] ? sto<T>(text) : 0;
-											//	(*(BP::Slot**)c)->set_data(&data);
-											//}, new_mail_p(input));
+											((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+												auto str = w2s(text);
+												(*(BP::Slot**)c)->set_data(&str);
+											}, new_mail_p(input));
 										}
 									}
 										break;
@@ -1043,10 +1043,10 @@ int main(int argc, char **args)
 										{
 											((cText*)e_edit->find_component(cH("Text")))->set_text(str);
 
-											//((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-											//	auto data = text[0] ? sto<T>(text) : 0;
-											//	(*(BP::Slot**)c)->set_data(&data);
-											//}, new_mail_p(input));
+											((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+												auto str = std::wstring(text);
+												(*(BP::Slot**)c)->set_data(&str);
+											}, new_mail_p(input));
 										}
 									}
 										break;

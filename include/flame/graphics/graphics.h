@@ -166,7 +166,9 @@ namespace flame
 		{
 			TargetImage, // Image*
 			TargetImageview, // Imageview*
-			TargetImages // std::vector<Image*>*
+			TargetImages, // std::vector<Image*>*
+
+			TargetTypeMax = 0xffffffff
 		};
 
 		enum IndiceType
