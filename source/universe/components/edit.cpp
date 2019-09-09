@@ -9,6 +9,7 @@ namespace flame
 {
 	struct cEditPrivate : cEdit
 	{
+		void* focus_listener;
 		void* key_listener;
 
 		cEditPrivate()
@@ -16,6 +17,9 @@ namespace flame
 			element = nullptr;
 			text = nullptr;
 			event_receiver = nullptr;
+
+			target = nullptr;
+			target_type_hash = 0;
 
 			cursor = 0;
 
@@ -26,7 +30,11 @@ namespace flame
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			if (event_receiver)
+			{
+				if (focus_listener)
+					event_receiver->remove_focus_listener(focus_listener);
 				event_receiver->remove_mouse_listener(key_listener);
+			}
 		}
 
 		void start()
@@ -37,6 +45,24 @@ namespace flame
 			assert(text && !text->auto_size);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
+
+			if (target && target_type_hash != 0)
+			{
+				focus_listener = event_receiver->add_focus_listener([](void* c, FocusType type) {
+					auto thiz = *(cEditPrivate**)c;
+					auto& str = ((cTextPrivate*)thiz->text)->text;
+					if (type == Focus_Lost)
+					{
+						switch (thiz->target_type_hash)
+						{
+						case cH("uchar"):
+							str = std::to_wstring(*((uchar*)thiz->target));
+							thiz->cursor = 0;
+							break;
+						}
+					}
+				}, new_mail_p(this));
+			}
 
 			key_listener = event_receiver->add_key_listener([](void* c, KeyState action, uint value) {
 				auto thiz = *(cEditPrivate**)c;
@@ -60,7 +86,7 @@ namespace flame
 						str = *copied.p;
 						delete_mail(copied);
 					}
-					break;
+						break;
 					case 27:
 						break;
 					default:

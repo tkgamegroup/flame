@@ -277,8 +277,8 @@ int main(int argc, char** args)
 		e_edit->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(L"ÎÄ×Ö±à¼­");
 		c_text->auto_size = false;
+		c_text->set_text(L"ÎÄ×Ö±à¼­");
 		e_edit->add_component(c_text);
 
 		e_edit->add_component(cEventReceiver::create());

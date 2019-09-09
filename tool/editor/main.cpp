@@ -11,6 +11,7 @@
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
+#include <flame/universe/components/edit.h>
 #include <flame/universe/components/image.h>
 #include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
@@ -39,6 +40,7 @@ union
 	BP::Node* n;
 	BP::Slot* l;
 }bp_selected;
+BP::Slot* dragging_slot;
 
 struct cBP : Component
 {
@@ -62,13 +64,36 @@ struct cBP : Component
 		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			auto thiz = *(cBP**)c;
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			{
 				bp_selected.n = nullptr;
+				auto bp = thiz->bp;
+
+				for (auto i = 0; i < bp->node_count(); i++)
+				{
+					auto n = bp->node(i);
+					for (auto j = 0; j < n->input_count(); j++)
+					{
+						auto input = n->input(j);
+						auto output = input->link(0);
+						if (output)
+						{
+							auto e1 = ((cElement*)output->user_data);
+							auto e2 = ((cElement*)input->user_data);
+							auto p1 = Vec2f(e1->global_x + e1->global_width * 0.5f, e1->global_y + e1->global_height * 0.5f);
+							auto p2 = Vec2f(e2->global_x + e2->global_width * 0.5f, e2->global_y + e2->global_height * 0.5f);
+
+							if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
+								bp_selected.l = input;
+						}
+					}
+				}
+			}
 			else if (is_mouse_scroll(action, key))
 			{
 				thiz->base_element->scale += pos.x() < 0.f ? 0.1f : -0.1f;
 				thiz->base_element->scale = clamp(thiz->base_element->scale, 0.1f, 2.f);
 			}
-			else if (is_mouse_move(action, key) && (thiz->event_receiver->event_dispatcher->mouse_buttons[Mouse_Middle] & KeyStateDown))
+			else if (is_mouse_move(action, key) && (thiz->event_receiver->event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown))
 			{
 				thiz->base_element->x += pos.x();
 				thiz->base_element->y += pos.y();
@@ -94,9 +119,19 @@ struct cBP : Component
 						
 					std::vector<Vec2f> points;
 					path_bezier(points, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2);
-					element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f);
+					element->canvas->stroke(points, bp_selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * element->global_scale);
 				}
 			}
+		}
+		if (dragging_slot)
+		{
+			auto e = ((cElement*)dragging_slot->user_data);
+			auto p1 = Vec2f(e->global_x + e->global_width * 0.5f, e->global_y + e->global_height * 0.5f);
+			auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
+
+			std::vector<Vec2f> points;
+			path_bezier(points, p1, p1 + Vec2f(dragging_slot->type == BP::Slot::Output ? 50.f : -50.f, 0.f), p2, p2);
+			element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * element->global_scale);
 		}
 	}
 };
@@ -147,11 +182,38 @@ struct cBPSlot : Component
 {
 	cEventReceiver* event_receiver;
 
-	BP::Slot* n;
+	BP::Slot* s;
 
 	cBPSlot() :
 		Component("BPSlot")
 	{
+	}
+
+	virtual void start() override
+	{
+		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+		if (s->type == BP::Slot::Input)
+		{
+			event_receiver->drag_hash = cH("input_slot");
+			event_receiver->set_acceptable_drops({ cH("output_slot") });
+		}
+		else
+		{
+			event_receiver->drag_hash = cH("output_slot");
+			event_receiver->set_acceptable_drops({ cH("input_slot") });
+		}
+
+		event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+			auto thiz = *(cBPSlot**)c;
+			if (action == DragStart)
+			{
+				dragging_slot = thiz->s;
+			}
+			else if (action == DragEnd)
+			{
+				dragging_slot = nullptr;
+			}
+		}, new_mail_p(this));
 	}
 };
 
@@ -354,6 +416,7 @@ int main(int argc, char **args)
 		return 0;
 	}
 	bp_selected.n = nullptr;
+	dragging_slot = nullptr;
 
 	for (auto i = 0; i < app.bp->dependency_count(); i++)
 		app.dbs.push_back(app.bp->dependency_typeinfodatabase(i));
@@ -645,18 +708,28 @@ int main(int argc, char **args)
 							{
 								auto input = n->input(j);
 
-								auto e_item = Entity::create();
-								e_left->add_child(e_item);
+								auto e_input = Entity::create();
+								e_left->add_child(e_input);
 								{
-									e_item->add_component(cElement::create());
+									e_input->add_component(cElement::create());
+
+									auto c_layout = cLayout::create();
+									c_layout->type = LayoutVertical;
+									e_input->add_component(c_layout);
+								}
+
+								auto e_title = Entity::create();
+								e_input->add_child(e_title);
+								{
+									e_title->add_component(cElement::create());
 
 									auto c_layout = cLayout::create();
 									c_layout->type = LayoutHorizontal;
-									e_item->add_component(c_layout);
+									e_title->add_component(c_layout);
 								}
 
 								auto e_slot = Entity::create();
-								e_item->add_child(e_slot);
+								e_title->add_child(e_slot);
 								{
 									auto c_element = cElement::create();
 									auto r = app.font_atlas_sdf->pixel_height * 0.6f;
@@ -666,10 +739,16 @@ int main(int argc, char **args)
 									c_element->background_color = Vec4c(200, 200, 200, 255);
 									e_slot->add_component(c_element);
 									input->user_data = c_element;
+
+									e_slot->add_component(cEventReceiver::create());
+
+									auto c_slot = new_component<cBPSlot>();
+									c_slot->s = input;
+									e_slot->add_component(c_slot);
 								}
 
 								auto e_text = Entity::create();
-								e_item->add_child(e_text);
+								e_title->add_child(e_text);
 								{
 									e_text->add_component(cElement::create());
 
@@ -677,6 +756,87 @@ int main(int argc, char **args)
 									c_text->sdf_scale = 0.6f;
 									c_text->set_text(s2w(input->variable_info->name()));
 									e_text->add_component(c_text);
+								}
+
+								auto e_data = Entity::create();
+								e_input->add_child(e_data);
+								{
+									auto c_element = cElement::create();
+									c_element->inner_padding = Vec4f(app.font_atlas_sdf->pixel_height, 0.f, 0.f, 0.f);
+									e_data->add_component(c_element);
+
+									auto c_layout = cLayout::create();
+									c_layout->type = LayoutVertical;
+									c_layout->item_padding = 2.f;
+									e_data->add_component(c_layout);
+								}
+
+								auto type = input->variable_info->type();
+								switch (type->tag())
+								{
+								case TypeTagAttributeV:
+									switch (type->hash())
+									{
+									case cH("Vec(4+uchar)"):
+									{
+										auto& data = *(Vec4c*)input->data();
+
+										for (auto k = 0; k < 4; k++)
+										{
+											static const wchar_t* names[] = {
+												L"x",
+												L"y",
+												L"z",
+												L"w"
+											};
+
+											auto e_item = Entity::create();
+											e_data->add_child(e_item);
+											{
+												e_item->add_component(cElement::create());
+
+												auto c_layout = cLayout::create();
+												c_layout->type = LayoutHorizontal;
+												c_layout->item_padding = 2.f;
+												e_item->add_component(c_layout);
+											}
+
+											auto e_edit = Entity::create();
+											e_item->add_child(e_edit);
+											{
+												auto c_element = cElement::create();
+												c_element->width = 50.f;
+												c_element->height = app.font_atlas_sdf->pixel_height * 0.4f;
+												c_element->background_frame_color = Vec4c(0, 0, 0, 255);
+												c_element->background_frame_thickness = 1.f;
+												e_edit->add_component(c_element);
+
+												auto c_text = cText::create(app.font_atlas_sdf);
+												c_text->sdf_scale = 0.4f;
+												c_text->auto_size = false;
+												c_text->set_text(std::to_wstring((int)data[k]));
+												e_edit->add_component(c_text);
+
+												e_edit->add_component(cEventReceiver::create());
+
+												e_edit->add_component(cEdit::create());
+											}
+
+											auto e_name = Entity::create();
+											e_item->add_child(e_name);
+											{
+												e_name->add_component(cElement::create());
+
+												auto c_text = cText::create(app.font_atlas_sdf);
+												c_text->sdf_scale = 0.4f;
+												c_text->set_text(names[k]);
+												e_name->add_component(c_text);
+											}
+										}
+									}
+										break;
+									}
+									break;
 								}
 							}
 						}
@@ -692,35 +852,35 @@ int main(int argc, char **args)
 
 							for (auto j = 0; j < n->output_count(); j++)
 							{
-								auto outout = n->output(j);
+								auto output = n->output(j);
 
-								auto e_item = Entity::create();
-								e_right->add_child(e_item);
+								auto e_title = Entity::create();
+								e_right->add_child(e_title);
 								{
-									e_item->add_component(cElement::create());
+									e_title->add_component(cElement::create());
 
 									auto c_aligner = cAligner::create();
 									c_aligner->x_align = AlignxRight;
-									e_item->add_component(c_aligner);
+									e_title->add_component(c_aligner);
 
 									auto c_layout = cLayout::create();
 									c_layout->type = LayoutHorizontal;
-									e_item->add_component(c_layout);
+									e_title->add_component(c_layout);
 								}
 
 								auto e_text = Entity::create();
-								e_item->add_child(e_text);
+								e_title->add_child(e_text);
 								{
 									e_text->add_component(cElement::create());
 
 									auto c_text = cText::create(app.font_atlas_sdf);
 									c_text->sdf_scale = 0.6f;
-									c_text->set_text(s2w(outout->variable_info->name()));
+									c_text->set_text(s2w(output->variable_info->name()));
 									e_text->add_component(c_text);
 								}
 
 								auto e_slot = Entity::create();
-								e_item->add_child(e_slot);
+								e_title->add_child(e_slot);
 								{
 									auto c_element = cElement::create();
 									auto r = app.font_atlas_sdf->pixel_height * 0.6f;
@@ -729,7 +889,13 @@ int main(int argc, char **args)
 									c_element->background_round_radius = r * 0.5f;
 									c_element->background_color = Vec4c(200, 200, 200, 255);
 									e_slot->add_component(c_element);
-									outout->user_data = c_element;
+									output->user_data = c_element;
+
+									e_slot->add_component(cEventReceiver::create());
+
+									auto c_slot = new_component<cBPSlot>();
+									c_slot->s = output;
+									e_slot->add_component(c_slot);
 								}
 							}
 						}
@@ -794,8 +960,6 @@ int main(int argc, char **args)
 	set_event(app.ev_2);
 
 	printf("\"%s\":\n", w2s(app.filename).c_str());
-
-	network_init();
 
 	std::vector<UdtInfo*> available_udts;
 	{

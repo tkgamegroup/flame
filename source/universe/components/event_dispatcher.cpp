@@ -217,6 +217,15 @@ namespace flame
 					active_pos = mouse_pos;
 				}
 			}
+
+			if (prev_focusing != focusing)
+			{
+				if (prev_focusing)
+					prev_focusing->on_focus(Focus_Lost);
+				if (focusing)
+					focusing->on_focus(Focus_Gain);
+			}
+
 			if (focusing)
 			{
 				for (auto& code : keydown_inputs)

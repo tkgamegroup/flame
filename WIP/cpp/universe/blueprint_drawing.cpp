@@ -181,50 +181,6 @@ namespace flame
 		//		}
 		//	}
 		//};
-
-		//inline BP_Scene_Draw_Private::BP_Scene_Draw_Private(Instance *_ui, blueprint::Scene *_s) :
-		//	ui(_ui),
-		//	s(_s)
-		//{
-		//	sel = 0;
-
-		//	w_scene->add_draw_command([](CommonData *d) {
-		//		auto c = (Canvas*)d[0].p;
-		//		auto off = Vec2::from(d[1].f);
-		//		auto scl = d[2].f[0];
-		//		auto thiz = (BP_Scene_Draw_Private*)d[3].p;
-
-		//		auto dw = (wSlot*)thiz->w_scene->instance()->dragging_widget();
-		//		if (dw && dw->class_hash == cH("SLOT"))
-		//		{
-		//			auto p1 = get_slot_pos(dw);
-		//			auto p4 = Vec2(thiz->w_scene->instance()->mouse_pos);
-		//			c->add_bezier(p1, p1 +
-		//				Vec2(50.f * ((dw->io() == 0) ? -1.f : 1.f), 0.f) * thiz->w_scene->global_scale, p4, p4, Colorf(1.f, 1.f, 0.f), 3.f * thiz->w_scene->global_scale);
-		//		}
-		//	}, "p", this);
-
-		//	w_scene->add_listener(ListenerLeftMouseDown, [this](const Vec2 &mpos) {
-		//		sel = 0;
-
-		//		for (auto i = 0; i < s->link_count(); i++)
-		//		{
-		//			auto l = s->link(i);
-
-		//			auto w_o = (Widget*)l->out_slot->user_data;
-		//			auto w_i = (Widget*)l->in_slot->user_data;
-		//			auto po = w_o->global_pos + w_o->size * 0.5f * w_o->global_scale;
-		//			auto pi = w_i->global_pos + w_i->size * 0.5f * w_i->global_scale;
-
-		//			auto pos = closet_point_to_bezier(mpos, pi, pi + Vec2(-50.f, 0.f) * w_scene->global_scale,
-		//				po + Vec2(50.f, 0.f) * w_scene->global_scale, po, 4, 7);
-		//			if (distance(mpos, pos) <= 3.f * w_scene->global_scale)
-		//			{
-		//				sel = l;
-		//				return;
-		//			}
-		//		}
-		//	});
 	}
 }
 

@@ -14,6 +14,9 @@ namespace flame
 		cText* text;
 		cEventReceiver* event_receiver;
 
+		void* target;
+		uint target_type_hash;
+
 		uint cursor;
 
 		cEdit() :

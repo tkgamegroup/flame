@@ -48,6 +48,15 @@ namespace flame
 		((cEventReceiverPrivate*)this)->acceptable_drops = hashes;
 	}
 
+	void* cEventReceiver::add_focus_listener(void (*listener)(void* c, FocusType type), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, FocusType type)>;
+		c->function = listener;
+		c->capture = capture;
+		((cEventReceiverPrivate*)this)->focus_listeners.emplace_back(c);
+		return c;
+	}
+
 	void* cEventReceiver::add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture)
 	{
 		auto c = new Closure<void(void* c, KeyState action, uint value)>;
@@ -73,6 +82,19 @@ namespace flame
 		c->capture = capture;
 		((cEventReceiverPrivate*)this)->drag_and_drop_listeners.emplace_back(c);
 		return c;
+	}
+
+	void cEventReceiver::remove_focus_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->focus_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
 	}
 
 	void cEventReceiver::remove_key_listener(void* ret_by_add)
@@ -112,6 +134,13 @@ namespace flame
 				return;
 			}
 		}
+	}
+
+	void cEventReceiver::on_focus(FocusType type)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->focus_listeners;
+		for (auto& l : listeners)
+			l->function(l->capture.p, type);
 	}
 
 	void cEventReceiver::on_key(KeyState action, uint value)
