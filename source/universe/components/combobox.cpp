@@ -194,13 +194,13 @@ namespace flame
 
 			auto c_text = (cText*)e_combobox->find_component(cH("Text"));
 			c_text->auto_size = false;
-			if (init_item > 0)
+			if (init_item >= 0)
 				c_text->set_text(items[init_item]);
 
 			((cAligner*)e_combobox->find_component(cH("Aligner")))->width_policy = SizeFixed;
 			
 			auto c_combobox = cCombobox::create();
-			if (init_item > 0)
+			if (init_item >= 0)
 				c_combobox->selected = e_menu->child(init_item);
 			e_combobox->add_component(c_combobox);
 		}

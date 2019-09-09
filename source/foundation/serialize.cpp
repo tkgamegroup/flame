@@ -1908,35 +1908,32 @@ namespace flame
 			}
 			(*ret.p) = str;
 		}
-		break;
+			break;
 		case TypeTagAttributeV:
 			src = (char*)src + sizeof(int);
 		case TypeTagVariable:
 			switch (hash)
 			{
-			case cH("float"):
-				(*ret.p) = to_string(*(float*)src, precision);
-				break;
-			case cH("uint"):
-				(*ret.p) = std::to_string(*(uint*)src);
+			case cH("bool"):
+				(*ret.p) = *(bool*)src ? "1" : "0";
 				break;
 			case cH("int"):
 				(*ret.p) = std::to_string(*(int*)src);
 				break;
-			case cH("bool"):
-				(*ret.p) = *(bool*)src ? "1" : "0";
+			case cH("Vec(1+int)"):
+				(*ret.p) = to_string(*(Vec1i*)src);
 				break;
-			case cH("Vec(1+float)"):
-				(*ret.p) = to_string(*(Vec1f*)src, precision);
+			case cH("Vec(2+int)"):
+				(*ret.p) = to_string(*(Vec2i*)src);
 				break;
-			case cH("Vec(2+float)"):
-				(*ret.p) = to_string(*(Vec2f*)src, precision);
+			case cH("Vec(3+int)"):
+				(*ret.p) = to_string(*(Vec3i*)src);
 				break;
-			case cH("Vec(3+float)"):
-				(*ret.p) = to_string(*(Vec3f*)src, precision);
+			case cH("Vec(4+int)"):
+				(*ret.p) = to_string(*(Vec4i*)src);
 				break;
-			case cH("Vec(4+float)"):
-				(*ret.p) = to_string(*(Vec4f*)src, precision);
+			case cH("uint"):
+				(*ret.p) = std::to_string(*(uint*)src);
 				break;
 			case cH("Vec(1+uint)"):
 				(*ret.p) = to_string(*(Vec1u*)src);
@@ -1950,18 +1947,33 @@ namespace flame
 			case cH("Vec(4+uint)"):
 				(*ret.p) = to_string(*(Vec4u*)src);
 				break;
-				//case cH("Ivec2"): case cH("i2"):
-				//	return to_string(*(Ivec2*)src);
-				//case cH("Ivec3"): case cH("i3"):
-				//	return to_string(*(Ivec3*)src);
-				//case cH("Ivec4"): case cH("i4"):
-				//	return to_string(*(Ivec4*)src);
-				//case cH("uchar"): case cH("b"):
-				//	return to_string(*(uchar*)src);
-				//case cH("Vec2c"): case cH("b2"):
-				//	return to_string(*(Vec2c*)src);
-				//case cH("Vec3c"): case cH("b3"):
-				//	return to_string(*(Vec3c*)src);
+			case cH("float"):
+				(*ret.p) = to_string(*(float*)src, precision);
+				break;
+			case cH("Vec(1+float)"):
+				(*ret.p) = to_string(*(Vec1f*)src, precision);
+				break;
+			case cH("Vec(2+float)"):
+				(*ret.p) = to_string(*(Vec2f*)src, precision);
+				break;
+			case cH("Vec(3+float)"):
+				(*ret.p) = to_string(*(Vec3f*)src, precision);
+				break;
+			case cH("Vec(4+float)"):
+				(*ret.p) = to_string(*(Vec4f*)src, precision);
+				break;
+			case cH("uchar"):
+				(*ret.p) = std::to_string(*(uchar*)src);
+				break;
+			case cH("Vec(1+uchar)"):
+				(*ret.p) = to_string(*(Vec1c*)src);
+				break;
+			case cH("Vec(2+uchar)"):
+				(*ret.p) = to_string(*(Vec2c*)src);
+				break;
+			case cH("Vec(3+uchar)"):
+				(*ret.p) = to_string(*(Vec3c*)src);
+				break;
 			case cH("Vec(4+uchar)"):
 				(*ret.p) = to_string(*(Vec4c*)src);
 				break;
@@ -2017,23 +2029,47 @@ namespace flame
 				v |= e->find_item(t)->value();
 			*(int*)dst = v;
 		}
-		break;
+			break;
 		case TypeTagAttributeV:
 			dst = (char*)dst + sizeof(int);
 		case TypeTagVariable:
 			switch (hash)
 			{
-			case cH("float"):
-				*(float*)dst = std::stof(src.c_str());
-				break;
-			case cH("uint"):
-				*(uint*)dst = std::stoul(src);
+			case cH("bool"):
+				*(bool*)dst = (src != "0");
 				break;
 			case cH("int"):
 				*(int*)dst = std::stoi(src);
 				break;
-			case cH("bool"):
-				*(bool*)dst = (src != "0");
+			case cH("Vec(1+int)"):
+				*(Vec1u*)dst = std::stoi(src.c_str());
+				break;
+			case cH("Vec(2+int)"):
+				*(Vec2u*)dst = stoi2(src.c_str());
+				break;
+			case cH("Vec(3+int)"):
+				*(Vec3u*)dst = stoi3(src.c_str());
+				break;
+			case cH("Vec(4+int)"):
+				*(Vec4u*)dst = stoi4(src.c_str());
+				break;
+			case cH("uint"):
+				*(uint*)dst = std::stoul(src);
+				break;
+			case cH("Vec(1+uint)"):
+				*(Vec1u*)dst = std::stoul(src.c_str());
+				break;
+			case cH("Vec(2+uint)"):
+				*(Vec2u*)dst = stou2(src.c_str());
+				break;
+			case cH("Vec(3+uint)"):
+				*(Vec3u*)dst = stou3(src.c_str());
+				break;
+			case cH("Vec(4+uint)"):
+				*(Vec4u*)dst = stou4(src.c_str());
+				break;
+			case cH("float"):
+				*(float*)dst = std::stof(src.c_str());
 				break;
 			case cH("Vec(1+float)"):
 				*(Vec1f*)dst = std::stof(src.c_str());
@@ -2047,47 +2083,20 @@ namespace flame
 			case cH("Vec(4+float)"):
 				*(Vec4f*)dst = stof4(src.c_str());
 				break;
-			case cH("Vec(1+uint)"):
-				*(Vec1u*)dst = std::stof(src.c_str());
+			case cH("uchar"):
+				*(uchar*)dst = std::stoul(src);
 				break;
-			case cH("Vec(2+uint)"):
-				*(Vec2u*)dst = stou2(src.c_str());
+			case cH("Vec(1+uchar)"):
+				*(Vec1u*)dst = std::stoul(src.c_str());
 				break;
-			case cH("Vec(3+uint)"):
-				*(Vec3u*)dst = stou3(src.c_str());
+			case cH("Vec(2+uchar)"):
+				*(Vec2u*)dst = stoc2(src.c_str());
 				break;
-			case cH("Vec(4+uint)"):
-				*(Vec4u*)dst = stou4(src.c_str());
+			case cH("Vec(3+uchar)"):
+				*(Vec3u*)dst = stoc3(src.c_str());
 				break;
-				//case cH("Ivec2"): case cH("i2"):
-				//	*(Ivec2*)dst = stoi2(src.c_str());
-				//	break;
-				//case cH("Ivec3"): case cH("i3"):
-				//	*(Ivec3*)dst = stoi3(src.c_str());
-				//	break;
-				//case cH("Ivec4"): case cH("i4"):
-				//	*(Ivec4*)dst = stoi4(src.c_str());
-				//	break;
-				//case cH("Vec2f"): case cH("f2"):
-				//	*(Vec2f*)dst = stof2(src.c_str());
-				//	break;
-				//case cH("Vec3f"): case cH("f3"):
-				//	*(Vec3f*)dst = stof3(src.c_str());
-				//	break;
-				//case cH("Vec4f"): case cH("f4"):
-				//	*(Vec4f*)dst = stof4(src.c_str());
-				//	break;
-				//case cH("uchar"): case cH("b"):
-				//	*(uchar*)dst = stob1(src.c_str());
-				//	break;
-				//case cH("Vec2c"): case cH("b2"):
-				//	*(Vec2c*)dst = stob2(src.c_str());
-				//	break;
-				//case cH("Vec3c"): case cH("b3"):
-				//	*(Vec3c*)dst = stob3(src.c_str());
-				//	break;
 			case cH("Vec(4+uchar)"):
-				*(Vec4c*)dst = stoi4(src.c_str());
+				*(Vec4u*)dst = stoc4(src.c_str());
 				break;
 			case cH("std::basic_string(char)"):
 				*(std::string*)dst = src;

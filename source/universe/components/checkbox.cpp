@@ -128,7 +128,7 @@ namespace flame
 
 			e_checkbox->add_component(cEventReceiver::create());
 
-			e_checkbox->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+			e_checkbox->add_component(cStyleBackgroundColor::create(default_style.checkbox_color_normal, default_style.checkbox_color_hovering, default_style.checkbox_color_active));
 
 			auto c_checkbox = cCheckbox::create();
 			c_checkbox->checked = checked;

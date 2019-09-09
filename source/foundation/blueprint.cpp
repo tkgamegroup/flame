@@ -112,6 +112,19 @@ namespace flame
 	void SlotPrivate::set_data(const void* d)
 	{
 		set_frame(looper().frame);
+		auto type = variable_info->type();
+		if (type->tag() == TypeTagAttributeV)
+		{
+			switch (type->hash())
+			{
+			case cH("std::basic_string(char)"):
+				*(std::string*)((char*)raw_data + sizeof(uint)) = *(std::string*)d;
+				return;
+			case cH("std::basic_string(wchar_t)"):
+				*(std::wstring*)((char*)raw_data + sizeof(uint)) = *(std::wstring*)d;
+				return;
+			}
+		}
 		memcpy((char*)raw_data + sizeof(uint), d, variable_info->size() - sizeof(int));
 	}
 

@@ -26,6 +26,9 @@ namespace flame
 		selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
 		selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
 		selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
+		checkbox_color_normal = Vec4c(0, 0, 0, 255);
+		checkbox_color_hovering = Vec4c(40, 40, 40, 255);
+		checkbox_color_active = Vec4c(20, 20, 20, 255);
 		scrollbar_color = Vec4c(232, 232, 236, 255);
 		scrollbar_thumb_color_normal = Vec4c(194, 195, 201, 255);
 		scrollbar_thumb_color_hovering = Vec4c(104, 104, 104, 255);
@@ -59,6 +62,9 @@ namespace flame
 		selected_color_normal = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.31f * 255.f);
 		selected_color_hovering = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 0.80f * 255.f);
 		selected_color_active = Vec4c(color(Vec3f(22.f, 0.73f, 0.97f)), 1.00f * 255.f);
+		checkbox_color_normal = Vec4c(255, 255, 255, 255);
+		checkbox_color_hovering = Vec4c(220, 220, 220, 255);
+		checkbox_color_active = Vec4c(240, 240, 240, 255);
 		scrollbar_color = Vec4c(62, 62, 66, 255);
 		scrollbar_thumb_color_normal = Vec4c(104, 104, 104, 255);
 		scrollbar_thumb_color_hovering = Vec4c(158, 158, 158, 255);

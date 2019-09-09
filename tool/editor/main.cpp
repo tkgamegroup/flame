@@ -420,7 +420,6 @@ void create_directory_tree_node(const std::filesystem::path& path, Entity* paren
 	}
 }
 
-
 template<class T>
 void create_edit(Entity* parent, BP::Slot* input)
 {
@@ -505,7 +504,7 @@ int main(int argc, char **args)
 	}
 
 	app.filename = s2w(args[1]);
-	app.bp = BP::create_from_file(app.filename, true);
+	app.bp = BP::create_from_file(app.filename, false);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -690,6 +689,8 @@ int main(int argc, char **args)
 
 			auto e_page = get_docker_page_model()->copy();
 			{
+				((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
+
 				auto c_layout = cLayout::create();
 				c_layout->type = LayoutVertical;
 				c_layout->item_padding = 4.f;
@@ -1017,6 +1018,38 @@ int main(int argc, char **args)
 									case cH("Vec(4+uchar)"):
 										create_vec_edit<4, uchar>(e_data, input);
 										break;
+									case cH("std::basic_string(char)"):
+									{
+										auto& str = *(std::string*)input->data();
+
+										auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+										e_data->add_child(e_edit);
+										{
+											((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(str));
+
+											//((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+											//	auto data = text[0] ? sto<T>(text) : 0;
+											//	(*(BP::Slot**)c)->set_data(&data);
+											//}, new_mail_p(input));
+										}
+									}
+										break;
+									case cH("std::basic_string(wchar_t)"):
+									{
+										auto& str = *(std::wstring*)input->data();
+
+										auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+										e_data->add_child(e_edit);
+										{
+											((cText*)e_edit->find_component(cH("Text")))->set_text(str);
+
+											//((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+											//	auto data = text[0] ? sto<T>(text) : 0;
+											//	(*(BP::Slot**)c)->set_data(&data);
+											//}, new_mail_p(input));
+										}
+									}
+										break;
 									}
 									break;
 								}
@@ -1108,6 +1141,8 @@ int main(int argc, char **args)
 
 			auto e_page = get_docker_page_model()->copy();
 			{
+				((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
+
 				auto c_layout = cLayout::create();
 				c_layout->width_fit_children = false;
 				c_layout->height_fit_children = false;
