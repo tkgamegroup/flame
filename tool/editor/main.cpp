@@ -636,8 +636,7 @@ int main(int argc, char **args)
 
 			create_directory_tree_node(L"../renderpath", e_tree);
 
-			auto e_container = wrap_standard_scrollbar(e_tree, ScrollbarVertical, true);
-			e_page->add_child(e_container);
+			e_page->add_child(wrap_standard_scrollbar(e_tree, ScrollbarVertical, true));
 		}
 
 		{
