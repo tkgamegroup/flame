@@ -761,6 +761,7 @@ int main(int argc, char **args)
 
 									auto c_layout = cLayout::create();
 									c_layout->type = LayoutVertical;
+									c_layout->item_padding = 2.f;
 									e_input->add_component(c_layout);
 								}
 
@@ -820,6 +821,17 @@ int main(int argc, char **args)
 								auto type = input->variable_info->type();
 								switch (type->tag())
 								{
+								case TypeTagAttributeES:
+								{
+									std::vector<std::wstring> items;
+
+								}
+									break;
+								case TypeTagAttributeEM:
+								{
+
+								}
+									break;
 								case TypeTagAttributeV:
 									switch (type->hash())
 									{
@@ -843,29 +855,15 @@ int main(int argc, char **args)
 
 												auto c_layout = cLayout::create();
 												c_layout->type = LayoutHorizontal;
-												c_layout->item_padding = 2.f;
+												c_layout->item_padding = 4.f;
 												e_item->add_component(c_layout);
 											}
 
-											auto e_edit = Entity::create();
+											auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 											e_item->add_child(e_edit);
 											{
-												auto c_element = cElement::create();
-												c_element->width = 50.f;
-												c_element->height = app.font_atlas_sdf->pixel_height * 0.4f;
-												c_element->background_frame_color = Vec4c(0, 0, 0, 255);
-												c_element->background_frame_thickness = 1.f;
-												e_edit->add_component(c_element);
+												((cText*)e_edit->find_component(cH("Text")))->set_text(std::to_wstring((int)data[k]));
 
-												auto c_text = cText::create(app.font_atlas_sdf);
-												c_text->sdf_scale = 0.4f;
-												c_text->auto_size = false;
-												c_text->set_text(std::to_wstring((int)data[k]));
-												e_edit->add_component(c_text);
-												
-												e_edit->add_component(cEventReceiver::create());
-
-												auto c_edit = cEdit::create();
 												struct Capture
 												{
 													BP::Slot* input;
@@ -873,13 +871,12 @@ int main(int argc, char **args)
 												}capture;
 												capture.input = input;
 												capture.i = k;
-												c_edit->add_changed_listener([](void* c, const wchar_t* text) {
+												((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 													auto& capture = *(Capture*)c;
 													auto data = *(Vec4c*)capture.input->data();
 													data[capture.i] = text[0] ? std::stoi(text) : 0;
 													capture.input->set_data(&data);
 												}, new_mail(&capture));
-												e_edit->add_component(c_edit);
 											}
 
 											auto e_name = Entity::create();
@@ -888,7 +885,7 @@ int main(int argc, char **args)
 												e_name->add_component(cElement::create());
 
 												auto c_text = cText::create(app.font_atlas_sdf);
-												c_text->sdf_scale = 0.4f;
+												c_text->sdf_scale = 0.5f;
 												c_text->set_text(names[k]);
 												e_name->add_component(c_text);
 											}

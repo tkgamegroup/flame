@@ -1,3 +1,4 @@
+#include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
@@ -5,6 +6,7 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/aligner.h>
 #include <flame/universe/components/combobox.h>
 
 namespace flame
@@ -126,5 +128,34 @@ namespace flame
 	cCombobox* cCombobox::create()
 	{
 		return new cComboboxPrivate;
+	}
+
+	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, Entity* root, const std::vector<std::wstring>& items)
+	{
+		auto e_menu = create_standard_menu();
+		for (auto& i : items)
+		{
+			auto e_item = create_standard_menu_item(font_atlas, i);
+			e_menu->add_child(e_item);
+			e_item->add_component(cComboboxItem::create());
+		}
+
+		auto e_combobox = create_standard_menu_button(font_atlas, L"", root, e_menu, false, SideS, true, Icon_ANGLE_DOWN);
+		{
+			auto c_element = (cElement*)e_combobox->find_component(cH("Element"));
+			c_element->width = width + 8.f;
+			c_element->height = font_atlas->pixel_height + 4.f;
+			c_element->background_frame_color = default_style.text_color_normal;
+			c_element->background_frame_thickness = 2.f;
+			e_combobox->add_component(c_element);
+
+			((cText*)e_combobox->find_component(cH("Text")))->auto_size = false;
+
+			((cAligner*)e_combobox->find_component(cH("Aligner")))->width_policy = SizeFixed;
+
+			e_combobox->add_component(cCombobox::create());
+		}
+
+		return e_combobox;
 	}
 }

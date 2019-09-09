@@ -53,4 +53,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};
+
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, Entity* root, const std::vector<std::wstring>& items);
 }

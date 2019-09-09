@@ -266,27 +266,8 @@ int main(int argc, char** args)
 		e_image->add_component(c_image);
 	}
 
-	auto e_edit = Entity::create();
+	auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel);
 	e_layout_left->add_child(e_edit);
-	{
-		auto c_element = cElement::create();
-		c_element->width = 108.f;
-		c_element->height = app.font_atlas_pixel->pixel_height + 4;
-		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-		c_element->background_color = default_style.frame_color_normal;
-		e_edit->add_component(c_element);
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->auto_size = false;
-		c_text->set_text(L"ÎÄ×Ö±à¼­");
-		e_edit->add_component(c_text);
-
-		e_edit->add_component(cEventReceiver::create());
-
-		auto c_edit = cEdit::create();
-		c_edit->cursor = 2;
-		e_edit->add_component(c_edit);
-	}
 
 	auto e_layout_right = Entity::create();
 	app.root->add_child(e_layout_right);
@@ -370,227 +351,70 @@ int main(int argc, char** args)
 		e_container->add_child(e_scrollbar);
 	}
 
-	auto e_popup_menu = Entity::create();
-
+	auto e_popup_menu = create_standard_menu();
 	{
-		auto c_element = cElement::create();
-		c_element->background_color = Vec4c(0, 0, 0, 255);
-		e_popup_menu->add_component(c_element);
-
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		e_popup_menu->add_component(c_layout);
-
-		e_popup_menu->add_component(cMenu::create());
-
 		for (auto i = 0; i < 3; i++)
 		{
-			auto e_item = Entity::create();
+			static const char* names[] = {
+				"Refresh",
+				"Save",
+				"Help"
+			};
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
 			e_popup_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					printf("%s!\n", *(char**)c);
+					destroy_topmost(app.root);
+				}
+			}, new_mail_p((char*)names[i]));
+		}
+
+		{
+			auto e_menu = create_standard_menu();
+			for (auto i = 0; i < 3; i++)
 			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				e_item->add_component(c_element);
-
 				static const char* names[] = {
-					"Refresh",
-					"Save",
-					"Help"
+					"Tree",
+					"Car",
+					"House"
 				};
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(s2w(names[i]));
-				e_item->add_component(c_text);
-
-				auto c_event_receiver = cEventReceiver::create();
-				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				e_menu->add_child(e_item);
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						printf("%s!\n", *(char**)c);
+						printf("Add %s!\n", *(char**)c);
 						destroy_topmost(app.root);
 					}
 				}, new_mail_p((char*)names[i]));
-				e_item->add_component(c_event_receiver);
-
-				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
-				e_item->add_component(c_aligner);
 			}
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Add", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
+			e_popup_menu->add_child(e_menu_btn);
 		}
 
 		{
-			auto e_menu_btn = Entity::create();
-			e_popup_menu->add_child(e_menu_btn);
+			auto e_menu = create_standard_menu();
+			for (auto i = 0; i < 3; i++)
 			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
-				e_menu_btn->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"Add");
-				e_menu_btn->add_component(c_text);
-
-				e_menu_btn->add_component(cEventReceiver::create());
-
-				auto e_menu = Entity::create();
-				{
-					e_menu->add_component(cElement::create());
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutVertical;
-					e_menu->add_component(c_layout);
-				}
-				for (auto i = 0; i < 3; i++)
-				{
-					auto e_item = Entity::create();
-					e_menu->add_child(e_item);
+				static const char* names[] = {
+					"Tree",
+					"Car",
+					"House"
+				};
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				e_menu->add_child(e_item);
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_item->add_component(c_element);
-
-						static const char* names[] = {
-							"Tree",
-							"Car",
-							"House"
-						};
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(names[i]));
-						e_item->add_component(c_text);
-
-						auto c_event_receiver = cEventReceiver::create();
-						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							{
-								printf("Add %s!\n", *(char**)c);
-								destroy_topmost(app.root);
-							}
-						}, new_mail_p((char*)names[i]));
-						e_item->add_component(c_event_receiver);
-
-						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeGreedy;
-						e_item->add_component(c_aligner);
+						printf("Remove %s!\n", *(char**)c);
+						destroy_topmost(app.root);
 					}
-				}
-				auto c_menu_btn = cMenuButton::create();
-				c_menu_btn->menu = e_menu;
-				e_menu_btn->add_component(c_menu_btn);
-
-				e_menu_btn->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
-				e_menu_btn->add_component(c_aligner);
-
-				e_menu_btn->add_component(cLayout::create());
-
-				auto e_arrow = Entity::create();
-				e_menu_btn->add_child(e_arrow);
-				{
-					auto c_element = cElement::create();
-					c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
-					e_arrow->add_component(c_element);
-
-					auto c_text = cText::create(app.font_atlas_pixel);
-					c_text->set_text(Icon_CARET_RIGHT);
-					e_arrow->add_component(c_text);
-
-					auto c_aligner = cAligner::create();
-					c_aligner->x_align = AlignxRight;
-					e_arrow->add_component(c_aligner);
-				}
+				}, new_mail_p((char*)names[i]));
 			}
-		}
-
-		{
-			auto e_menu_btn = Entity::create();
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Remove", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
-				e_menu_btn->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"Remove");
-				e_menu_btn->add_component(c_text);
-
-				e_menu_btn->add_component(cEventReceiver::create());
-
-				auto e_menu = Entity::create();
-				{
-					e_menu->add_component(cElement::create());
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutVertical;
-					e_menu->add_component(c_layout);
-				}
-				for (auto i = 0; i < 3; i++)
-				{
-					auto e_item = Entity::create();
-					e_menu->add_child(e_item);
-					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_item->add_component(c_element);
-
-						static const char* names[] = {
-							"Tree",
-							"Car",
-							"House"
-						};
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(names[i]));
-						e_item->add_component(c_text);
-
-						auto c_event_receiver = cEventReceiver::create();
-						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							{
-								printf("Remove %s!\n", *(char**)c);
-								destroy_topmost(app.root);
-							}
-						}, new_mail_p((char*)names[i]));
-						e_item->add_component(c_event_receiver);
-
-						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeGreedy;
-						e_item->add_component(c_aligner);
-					}
-				}
-				auto c_menu_btn = cMenuButton::create();
-				c_menu_btn->menu = e_menu;
-				e_menu_btn->add_component(c_menu_btn);
-
-				e_menu_btn->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
-				e_menu_btn->add_component(c_aligner);
-
-				e_menu_btn->add_component(cLayout::create());
-
-				auto e_arrow = Entity::create();
-				e_menu_btn->add_child(e_arrow);
-				{
-					auto c_element = cElement::create();
-					c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
-					e_arrow->add_component(c_element);
-
-					auto c_text = cText::create(app.font_atlas_pixel);
-					c_text->set_text(Icon_CARET_RIGHT);
-					e_arrow->add_component(c_text);
-
-					auto c_aligner = cAligner::create();
-					c_aligner->x_align = AlignxRight;
-					e_arrow->add_component(c_aligner);
-				}
-			}
 		}
 	}
 
@@ -630,308 +454,95 @@ int main(int argc, char** args)
 
 	{
 		{
-			auto e_menu_btn = Entity::create();
-			e_menubar->add_child(e_menu_btn);
+			auto e_menu = create_standard_menu();
+			for (auto i = 0; i < 2; i++)
 			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				e_menu_btn->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"File");
-				e_menu_btn->add_component(c_text);
-
-				e_menu_btn->add_component(cEventReceiver::create());
-
-				auto e_menu = Entity::create();
-				{
-					auto c_element = cElement::create();
-					c_element->background_color = Vec4c(0, 0, 0, 255);
-					e_menu->add_component(c_element);
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutVertical;
-					e_menu->add_component(c_layout);
-
-					e_menu->add_component(cMenu::create());
-				}
-				for (auto i = 0; i < 2; i++)
-				{
-					auto e_item = Entity::create();
-					e_menu->add_child(e_item);
+				static const char* names[] = {
+					"New",
+					"Open"
+				};
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				e_menu->add_child(e_item);
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_item->add_component(c_element);
-
-						static const char* names[] = {
-							"New",
-							"Open"
-						};
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(names[i]));
-						e_item->add_component(c_text);
-
-						auto c_event_receiver = cEventReceiver::create();
-						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							{
-								printf("%s!\n", *(char**)c);
-								destroy_topmost(app.root);
-							}
-						}, new_mail_p((char*)names[i]));
-						e_item->add_component(c_event_receiver);
-
-						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeGreedy;
-						e_item->add_component(c_aligner);
+						printf("%s!\n", *(char**)c);
+						destroy_topmost(app.root);
 					}
-				}
-				auto c_menu_btn = cMenuButton::create();
-				c_menu_btn->root = app.root;
-				c_menu_btn->menu = e_menu;
-				c_menu_btn->popup_side = SideS;
-				c_menu_btn->topmost_penetrable = true;
-				e_menu_btn->add_component(c_menu_btn);
-
-				e_menu_btn->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+				}, new_mail_p((char*)names[i]));
 			}
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"File", app.root, e_menu, true, SideS, true, nullptr);
+			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
+			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
+			e_menubar->add_child(e_menu_btn);
 		}
 		{
-			auto e_menu_btn = Entity::create();
-			e_menubar->add_child(e_menu_btn);
+			auto e_menu = create_standard_menu();
+			for (auto i = 0; i < 6; i++)
 			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				e_menu_btn->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"Edit");
-				e_menu_btn->add_component(c_text);
-
-				e_menu_btn->add_component(cEventReceiver::create());
-
-				auto e_menu = Entity::create();
-				{
-					auto c_element = cElement::create();
-					c_element->background_color = Vec4c(0, 0, 0, 255);
-					e_menu->add_component(c_element);
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutVertical;
-					e_menu->add_component(c_layout);
-
-					e_menu->add_component(cMenu::create());
-				}
-				for (auto i = 0; i < 6; i++)
-				{
-					auto e_item = Entity::create();
-					e_menu->add_child(e_item);
+				static const char* names[] = {
+					"Undo",
+					"Redo",
+					"Cut",
+					"Copy",
+					"Paste",
+					"Delete"
+				};
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				e_menu->add_child(e_item);
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_item->add_component(c_element);
-
-						static const char* names[] = {
-							"Undo",
-							"Redo",
-							"Cut",
-							"Copy",
-							"Paste",
-							"Delete"
-						};
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(names[i]));
-						e_item->add_component(c_text);
-
-						auto c_event_receiver = cEventReceiver::create();
-						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							{
-								printf("%s!\n", *(char**)c);
-								destroy_topmost(app.root);
-							}
-						}, new_mail_p((char*)names[i]));
-						e_item->add_component(c_event_receiver);
-
-						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeGreedy;
-						e_item->add_component(c_aligner);
+						printf("%s!\n", *(char**)c);
+						destroy_topmost(app.root);
 					}
-				}
-				auto c_menu_btn = cMenuButton::create();
-				c_menu_btn->root = app.root;
-				c_menu_btn->menu = e_menu;
-				c_menu_btn->popup_side = SideS;
-				c_menu_btn->topmost_penetrable = true;
-				e_menu_btn->add_component(c_menu_btn);
-
-				e_menu_btn->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+				}, new_mail_p((char*)names[i]));
 			}
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Edit", app.root, e_menu, true, SideS, true, nullptr);
+			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
+			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
+			e_menubar->add_child(e_menu_btn);
 		}
 		{
-			auto e_menu_btn = Entity::create();
-			e_menubar->add_child(e_menu_btn);
+			auto e_menu = create_standard_menu();
+			for (auto i = 0; i < 2; i++)
 			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				e_menu_btn->add_component(c_element);
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"Tool");
-				e_menu_btn->add_component(c_text);
-
-				e_menu_btn->add_component(cEventReceiver::create());
-
-				auto e_menu = Entity::create();
-				{
-					auto c_element = cElement::create();
-					c_element->background_color = Vec4c(0, 0, 0, 255);
-					e_menu->add_component(c_element);
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutVertical;
-					e_menu->add_component(c_layout);
-
-					e_menu->add_component(cMenu::create());
-				}
-				for (auto i = 0; i < 2; i++)
-				{
-					auto e_item = Entity::create();
-					e_menu->add_child(e_item);
+				static const char* names[] = {
+					"Monitor",
+					"Console"
+				};
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				e_menu->add_child(e_item);
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_item->add_component(c_element);
-
-						static const char* names[] = {
-							"Monitor",
-							"Console"
-						};
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(names[i]));
-						e_item->add_component(c_text);
-
-						auto c_event_receiver = cEventReceiver::create();
-						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							{
-								printf("%s!\n", *(char**)c);
-								destroy_topmost(app.root);
-							}
-						}, new_mail_p((char*)names[i]));
-						e_item->add_component(c_event_receiver);
-
-						e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeGreedy;
-						e_item->add_component(c_aligner);
+						printf("%s!\n", *(char**)c);
+						destroy_topmost(app.root);
 					}
-				}
-				auto c_menu_btn = cMenuButton::create();
-				c_menu_btn->root = app.root;
-				c_menu_btn->menu = e_menu;
-				c_menu_btn->popup_side = SideS;
-				c_menu_btn->topmost_penetrable = true;
-				e_menu_btn->add_component(c_menu_btn);
-
-				e_menu_btn->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+				}, new_mail_p((char*)names[i]));
 			}
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Tool", app.root, e_menu, true, SideS, true, nullptr);
+			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
+			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
+			e_menubar->add_child(e_menu_btn);
 		}
 	}
 
-	auto e_combobox = Entity::create();
-	e_layout_right->add_child(e_combobox);
 	{
-		auto c_element = cElement::create();
-		c_element->width = 108.f;
-		c_element->height = app.font_atlas_pixel->pixel_height + 4.f;
-		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + app.font_atlas_pixel->pixel_height, 2.f);
-		c_element->background_frame_color = Vec4c(255);
-		c_element->background_frame_thickness = 2.f;
-		e_combobox->add_component(c_element);
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->auto_size = false;
-		e_combobox->add_component(c_text);
-
-		e_combobox->add_component(cEventReceiver::create());
-
-		auto e_menu = Entity::create();
-		{
-			auto c_element = cElement::create();
-			c_element->background_color = Vec4c(0, 0, 0, 255);
-			e_menu->add_component(c_element);
-
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
-			e_menu->add_component(c_layout);
-
-			e_menu->add_component(cMenu::create());
-		}
+		auto e_menu = create_standard_menu();
 		for (auto i = 0; i < 3; i++)
 		{
-			auto e_item = Entity::create();
+			static const char* names[] = {
+				"Apple",
+				"Boy",
+				"Cat"
+			};
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
 			e_menu->add_child(e_item);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				e_item->add_component(c_element);
-
-				static const char* names[] = {
-					"Apple",
-					"Boy",
-					"Cat"
-				};
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(s2w(names[i]));
-				e_item->add_component(c_text);
-
-				e_item->add_component(cEventReceiver::create());
-
-				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-				e_item->add_component(cComboboxItem::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
-				e_item->add_component(c_aligner);
-			}
+			e_item->add_component(cComboboxItem::create());
 		}
-		auto c_menu_btn = cMenuButton::create();
-		c_menu_btn->root = app.root;
-		c_menu_btn->menu = e_menu;
-		c_menu_btn->move_to_open = false;
-		c_menu_btn->popup_side = SideS;
-		c_menu_btn->topmost_penetrable = true;
-		e_combobox->add_component(c_menu_btn);
-
-		e_combobox->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-		e_combobox->add_component(cCombobox::create());
-
-		e_combobox->add_component(cLayout::create());
-
-		auto e_arrow = Entity::create();
-		e_combobox->add_child(e_arrow);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
-			e_arrow->add_component(c_element);
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(Icon_ANGLE_DOWN);
-			e_arrow->add_component(c_text);
-
-			auto c_aligner = cAligner::create();
-			c_aligner->x_align = AlignxRight;
-			e_arrow->add_component(c_aligner);
-		}
+		auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, app.root, { L"Apple", L"Boy", L"Cat" });
+		e_layout_right->add_child(e_combobox);
 	}
 
 	auto e_tree = Entity::create();

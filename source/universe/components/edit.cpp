@@ -1,5 +1,6 @@
 #include <flame/graphics/canvas.h>
 #include <flame/graphics/font.h>
+#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include "text_private.h"
 #include <flame/universe/components/event_receiver.h>
@@ -156,5 +157,31 @@ namespace flame
 	cEdit* cEdit::create()
 	{
 		return new cEditPrivate();
+	}
+
+	Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, float sdf_scale)
+	{
+		auto e_edit = Entity::create();
+		{
+			auto c_element = cElement::create();
+			c_element->width = width + 8.f;
+			c_element->height = font_atlas->pixel_height * sdf_scale + 4;
+			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element->background_color = default_style.frame_color_normal;
+			c_element->background_frame_color = default_style.text_color_normal;
+			c_element->background_frame_thickness = 2.f;
+			e_edit->add_component(c_element);
+
+			auto c_text = cText::create(font_atlas);
+			c_text->sdf_scale = sdf_scale;
+			c_text->auto_size = false;
+			e_edit->add_component(c_text);
+
+			e_edit->add_component(cEventReceiver::create());
+
+			e_edit->add_component(cEdit::create());
+		}
+
+		return e_edit;
 	}
 }
