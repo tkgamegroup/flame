@@ -52,4 +52,12 @@ namespace flame
 	};
 
 	FLAME_UNIVERSE_EXPORTS void* component_alloc(uint size); // for user-define component
+
+	template<class T>
+	T* new_component()
+	{
+		auto c = (T*)component_alloc(sizeof(T));
+		new (c) T;
+		return c;
+	}
 }

@@ -28,14 +28,6 @@
 using namespace flame;
 using namespace graphics;
 
-template<class T> 
-T* new_component()
-{
-	auto c = (T*)component_alloc(sizeof(T));
-	new (c) T;
-	return c;
-}
-
 bool bp_running;
 
 union
@@ -621,34 +613,15 @@ int main(int argc, char **args)
 			}
 			e_pages->add_child(e_page);
 
-			auto e_tree_container = Entity::create();
-			e_page->add_child(e_tree_container);
-			{
-				e_tree_container->add_component(cElement::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
-				c_aligner->height_policy = SizeFitLayout;
-				e_tree_container->add_component(c_aligner);
-
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutHorizontal;
-				c_layout->item_padding = 4.f;
-				c_layout->width_fit_children = false;
-				c_layout->height_fit_children = false;
-				e_tree_container->add_component(c_layout);
-			}
-
 			auto e_tree = Entity::create();
-			e_tree_container->add_child(e_tree);
 			{
 				auto c_element = cElement::create();
 				c_element->inner_padding = Vec4f(4.f);
 				e_tree->add_component(c_element);
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
-				c_aligner->height_policy = SizeFitLayout;
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
 				e_tree->add_component(c_aligner);
 
 				auto c_layout = cLayout::create();
@@ -663,8 +636,8 @@ int main(int argc, char **args)
 
 			create_directory_tree_node(L"../renderpath", e_tree);
 
-			auto e_scrollbar = create_standard_scrollbar(ScrollbarVertical);
-			e_tree_container->add_child(e_scrollbar);
+			auto e_container = wrap_standard_scrollbar(e_tree, ScrollbarVertical, true);
+			e_page->add_child(e_container);
 		}
 
 		{
@@ -688,6 +661,7 @@ int main(int argc, char **args)
 			e_tabbar->add_child(e_tab);
 
 			auto e_page = get_docker_page_model()->copy();
+			e_pages->add_child(e_page);
 			{
 				((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
 
@@ -698,7 +672,6 @@ int main(int argc, char **args)
 				c_layout->height_fit_children = false;
 				e_page->add_component(c_layout);
 			}
-			e_pages->add_child(e_page);
 
 			auto e_btn_run = Entity::create();
 			e_page->add_child(e_btn_run);
@@ -733,8 +706,8 @@ int main(int argc, char **args)
 				e_scene->add_component(cEventReceiver::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
-				c_aligner->height_policy = SizeFitLayout;
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
 				e_scene->add_component(c_aligner);
 
 				auto c_bp = new_component<cBP>();
@@ -1126,8 +1099,8 @@ int main(int argc, char **args)
 				auto c_element = (cElement*)e_container->find_component(cH("Element"));
 				c_element->x = 350.f;
 				c_element->y = 420.f;
-				c_element->width = 800.f;
-				c_element->height = 600.f;
+				c_element->width = 400.f;
+				c_element->height = 340.f;
 			}
 
 			auto e_docker = get_docker_model()->copy();
@@ -1140,6 +1113,7 @@ int main(int argc, char **args)
 			e_tabbar->add_child(e_tab);
 
 			auto e_page = get_docker_page_model()->copy();
+			e_pages->add_child(e_page);
 			{
 				((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
 
@@ -1148,7 +1122,6 @@ int main(int argc, char **args)
 				c_layout->height_fit_children = false;
 				e_page->add_component(c_layout);
 			}
-			e_pages->add_child(e_page);
 
 			auto e_image = Entity::create();
 			e_page->add_child(e_image);
@@ -1164,6 +1137,41 @@ int main(int argc, char **args)
 			}
 		}
 
+		{
+			auto e_container = get_docker_container_model()->copy();
+			app.root->add_child(e_container);
+			{
+				auto c_element = (cElement*)e_container->find_component(cH("Element"));
+				c_element->x = 850.f;
+				c_element->y = 420.f;
+				c_element->width = 400.f;
+				c_element->height = 300.f;
+			}
+
+			auto e_docker = get_docker_model()->copy();
+			e_container->add_child(e_docker);
+			auto e_tabbar = e_docker->child(0);
+			auto e_pages = e_docker->child(1);
+
+			auto e_tab = get_docker_tab_model()->copy();
+			((cText*)e_tab->find_component(cH("Text")))->set_text(L"Console");
+			e_tabbar->add_child(e_tab);
+
+			auto e_page = get_docker_page_model()->copy();
+			e_pages->add_child(e_page);
+			{
+				((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
+
+				auto c_layout = cLayout::create();
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
+				e_page->add_component(c_layout);
+			}
+
+			auto e_log = Entity::create();
+			e_page->add_child(e_log);
+		}
+
 		set_event(app.ev_1);
 		wait_event(app.ev_2, -1);
 		looper().loop([](void* c) {
@@ -1177,20 +1185,6 @@ int main(int argc, char **args)
 	set_event(app.ev_2);
 
 	printf("\"%s\":\n", w2s(app.filename).c_str());
-
-	std::vector<UdtInfo*> available_udts;
-	{
-		for (auto db : app.dbs)
-		{
-			auto udts = db->get_udts();
-			for (auto i = 0; i < udts.p->size(); i++)
-				available_udts.push_back((*udts.p)[i]);
-			delete_mail(udts);
-		}
-		std::sort(available_udts.begin(), available_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-			return std::string(a->name()) < std::string(b->name());
-		});
-	}
 
 	while (true)
 	{
@@ -1223,6 +1217,19 @@ int main(int argc, char **args)
 
 			if (s_what == "udts")
 			{
+				std::vector<UdtInfo*> available_udts;
+				{
+					for (auto db : app.dbs)
+					{
+						auto udts = db->get_udts();
+						for (auto i = 0; i < udts.p->size(); i++)
+							available_udts.push_back((*udts.p)[i]);
+						delete_mail(udts);
+					}
+					std::sort(available_udts.begin(), available_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+						return std::string(a->name()) < std::string(b->name());
+					});
+				}
 				for (auto u : available_udts)
 					printf("%s\n", u->name().c_str());
 			}

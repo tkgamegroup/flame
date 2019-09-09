@@ -323,8 +323,8 @@ namespace flame
 							page_element->x = 0;
 							page_element->y = 0;
 							page_element->alpha = 1.f;
-							page_aligner->width_policy = SizeFitLayout;
-							page_aligner->height_policy = SizeFitLayout;
+							page_aligner->width_policy = SizeFitParent;
+							page_aligner->height_policy = SizeFitParent;
 							thiz->page = nullptr;
 							thiz->page_element = nullptr;
 						}, new_mail_p(thiz));
@@ -469,8 +469,8 @@ namespace flame
 							page_element->x = 0;
 							page_element->y = 0;
 							page_element->alpha = 1.f;
-							page_aligner->width_policy = SizeFitLayout;
-							page_aligner->height_policy = SizeFitLayout;
+							page_aligner->width_policy = SizeFitParent;
+							page_aligner->height_policy = SizeFitParent;
 
 							thiz->drop_tab->page = nullptr;
 							thiz->drop_tab->page_element = nullptr;
@@ -654,8 +654,8 @@ namespace flame
 								page_element->x = 0;
 								page_element->y = 0;
 								page_element->alpha = 1.f;
-								page_aligner->width_policy = SizeFitLayout;
-								page_aligner->height_policy = SizeFitLayout;
+								page_aligner->width_policy = SizeFitParent;
+								page_aligner->height_policy = SizeFitParent;
 
 								auto e_splitter = layout->child(0);
 								auto splitter_element = (cElement*)e_splitter->find_component(cH("Element"));
@@ -681,7 +681,7 @@ namespace flame
 									splitter_element->width = 0.f;
 									splitter->type = SplitterVertical;
 									auto splitter_aligner = (cAligner*)e_splitter->find_component(cH("Aligner"));
-									splitter_aligner->width_policy = SizeFitLayout;
+									splitter_aligner->width_policy = SizeFitParent;
 									splitter_aligner->height_policy = SizeFixed;
 
 									auto w = docker_element->width;
@@ -830,8 +830,8 @@ namespace flame
 			docker_page_model->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitLayout;
-			c_aligner->height_policy = SizeFitLayout;
+			c_aligner->width_policy = SizeFitParent;
+			c_aligner->height_policy = SizeFitParent;
 			docker_page_model->add_component(c_aligner);
 		}
 		return docker_page_model;
@@ -850,8 +850,8 @@ namespace flame
 			auto c_aligner = cAligner::create();
 			c_aligner->x_align = AlignxLeft;
 			c_aligner->y_align = AlignyTop;
-			c_aligner->width_policy = SizeFitLayout;
-			c_aligner->height_policy = SizeFitLayout;
+			c_aligner->width_policy = SizeFitParent;
+			c_aligner->height_policy = SizeFitParent;
 			c_aligner->using_padding_in_free_layout = true;
 			docker_model->add_component(c_aligner);
 
@@ -872,7 +872,7 @@ namespace flame
 				e_tabbar->add_component(cEventReceiver::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
+				c_aligner->width_policy = SizeFitParent;
 				e_tabbar->add_component(c_aligner);
 
 				auto c_layout = cLayout::create();
@@ -893,8 +893,8 @@ namespace flame
 				e_pages->add_component(cEventReceiver::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
-				c_aligner->height_policy = SizeFitLayout;
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
 				e_pages->add_component(c_aligner);
 
 				auto c_layout = cLayout::create();
@@ -921,8 +921,8 @@ namespace flame
 			auto c_aligner = cAligner::create();
 			c_aligner->x_align = AlignxLeft;
 			c_aligner->y_align = AlignyTop;
-			c_aligner->width_policy = SizeFitLayout;
-			c_aligner->height_policy = SizeFitLayout;
+			c_aligner->width_policy = SizeFitParent;
+			c_aligner->height_policy = SizeFitParent;
 			c_aligner->using_padding_in_free_layout = true;
 			docker_layout_model->add_component(c_aligner);
 
@@ -946,7 +946,7 @@ namespace flame
 				e_spliter->add_component(cSplitter::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->height_policy = SizeFitLayout;
+				c_aligner->height_policy = SizeFitParent;
 				e_spliter->add_component(c_aligner);
 			}
 

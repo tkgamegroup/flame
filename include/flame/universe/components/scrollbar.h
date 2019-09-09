@@ -8,10 +8,14 @@ namespace flame
 	struct cEventReceiver;
 	struct cLayout;
 
+	struct cScrollbarThumb;
+
 	struct cScrollbar : Component
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
+
+		cScrollbarThumb* thumb;
 
 		cScrollbar() :
 			Component("Scrollbar")
@@ -32,6 +36,10 @@ namespace flame
 
 		ScrollbarType type;
 		cLayout* target_layout;
+		float step;
+
+		float content_size;
+		float v;
 
 		cScrollbarThumb() :
 			Component("ScrollbarThumb")
@@ -44,5 +52,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cScrollbarThumb* create(ScrollbarType type);
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_scrollbar(ScrollbarType type);
+	FLAME_UNIVERSE_EXPORTS Entity* wrap_standard_scrollbar(Entity* e, ScrollbarType type, bool container_fit_parent);
 }

@@ -266,34 +266,13 @@ int main(int argc, char** args)
 	}
 
 	{
-		auto e_container = Entity::create();
-		e_layout_right->add_child(e_container);
-		{
-			auto c_element = cElement::create();
-			c_element->width = 208.f;
-			c_element->height = 108.f;
-			c_element->inner_padding = Vec4f(4.f);
-			c_element->background_frame_color = Vec4c(255);
-			c_element->background_frame_thickness = 2.f;
-			c_element->clip_children = true;
-			e_container->add_component(c_element);
-
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutHorizontal;
-			c_layout->item_padding = 4.f;
-			c_layout->width_fit_children = false;
-			c_layout->height_fit_children = false;
-			e_container->add_component(c_layout);
-		}
-
 		auto e_list = Entity::create();
-		e_container->add_child(e_list);
 		{
 			e_list->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitLayout;
-			c_aligner->height_policy = SizeFitLayout;
+			c_aligner->width_policy = SizeFitParent;
+			c_aligner->height_policy = SizeFitParent;
 			e_list->add_component(c_aligner);
 
 			auto c_layout = cLayout::create();
@@ -324,13 +303,22 @@ int main(int argc, char** args)
 				e_item->add_component(cListItem::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitLayout;
+				c_aligner->width_policy = SizeFitParent;
 				e_item->add_component(c_aligner);
 			}
 		}
 
-		auto e_scrollbar = create_standard_scrollbar(ScrollbarVertical);
-		e_container->add_child(e_scrollbar);
+		auto e_container = wrap_standard_scrollbar(e_list, ScrollbarVertical, false);
+		e_layout_right->add_child(e_container);
+		{
+			auto c_element = (cElement*)e_container->find_component(cH("Element"));
+			c_element->width = 200.f;
+			c_element->height = 100.f;
+			c_element->inner_padding = Vec4f(4.f);
+			c_element->background_frame_color = Vec4c(255);
+			c_element->background_frame_thickness = 2.f;
+			c_element->clip_children = true;
+		}
 	}
 
 	auto e_popup_menu = create_standard_menu();
@@ -425,7 +413,7 @@ int main(int argc, char** args)
 		e_menubar->add_component(c_element);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitLayout;
+		c_aligner->width_policy = SizeFitParent;
 		e_menubar->add_component(c_aligner);
 
 		auto c_layout = cLayout::create();

@@ -10,10 +10,21 @@ namespace flame
 {
 	struct cScrollbarPrivate : cScrollbar
 	{
+		void* mouse_listener;
+
 		cScrollbarPrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
+
+			mouse_listener = nullptr;
+		}
+
+		~cScrollbarPrivate()
+		{
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -22,6 +33,14 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
+			thumb = (cScrollbarThumb*)(entity->child(0)->find_component(cH("ScrollbarThumb")));
+			assert(thumb);
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = (*(cScrollbarPrivate**)c);
+				if (is_mouse_scroll(action, key))
+					thiz->thumb->v -= pos.x() * 5.f;
+			}, new_mail_p(this));
 		}
 	};
 
@@ -51,6 +70,9 @@ namespace flame
 
 			type = _type;
 			target_layout = nullptr;
+			step = 1.f;
+
+			content_size = 0.f;
 
 			mouse_listener = nullptr;
 		}
@@ -79,24 +101,12 @@ namespace flame
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
 					if (thiz->type == ScrollbarVertical)
-					{
-						thiz->element->y += pos.y();
-						if (thiz->element->y < 0.f)
-							thiz->element->y = 0.f;
-						if (thiz->element->y + thiz->element->height > thiz->scrollbar->element->height)
-							thiz->element->y = thiz->scrollbar->element->height - thiz->element->height;
-						thiz->target_layout->scroll_offset.y() = -thiz->element->y / thiz->scrollbar->element->height * thiz->target_layout->content_size.y();
-					}
+						thiz->v = pos.y();
 					else
-					{
-						thiz->element->x += pos.x();
-						if (thiz->element->x < 0.f)
-							thiz->element->x = 0.f;
-						if (thiz->element->x + thiz->element->width > thiz->scrollbar->element->width)
-							thiz->element->x = thiz->scrollbar->element->width - thiz->element->width;
-						thiz->target_layout->scroll_offset.x() = -thiz->element->x / thiz->scrollbar->element->width * thiz->target_layout->content_size.x();
-					}
+						thiz->v = pos.x();
 				}
+				else if (is_mouse_scroll(action, key))
+					thiz->v -= pos.x() * 5.f;
 			}, new_mail_p(this));
 		}
 
@@ -107,7 +117,7 @@ namespace flame
 			{
 				if (target_element->height > 0.f)
 				{
-					auto content_size = target_layout->content_size.y() + 20.f;
+					content_size = target_layout->content_size.y() + 20.f;
 					if (content_size > target_element->height)
 						element->height = target_element->height / content_size * scrollbar->element->height;
 					else
@@ -115,12 +125,15 @@ namespace flame
 				}
 				else
 					element->height = 0.f;
+				element->y += v;
+				element->y = clamp(element->y, 0.f, scrollbar->element->height - element->height);
+				target_layout->scroll_offset.y() = -int(element->y / scrollbar->element->height * content_size / step) * step;
 			}
 			else
 			{
 				if (target_element->width > 0.f)
 				{
-					auto content_size = target_layout->content_size.x() + 20.f;
+					content_size = target_layout->content_size.x() + 20.f;
 					if (content_size > target_element->width)
 						element->width = target_element->width / content_size * scrollbar->element->width;
 					else
@@ -128,7 +141,11 @@ namespace flame
 				}
 				else
 					element->width = 0.f;
+				element->x += v;
+				element->x = clamp(element->x, 0.f, scrollbar->element->width - element->width);
+				target_layout->scroll_offset.x() = -int(element->x / scrollbar->element->width * content_size / step) * step;
 			}
+			v = 0.f;
 		}
 	};
 
@@ -147,17 +164,46 @@ namespace flame
 		return new cScrollbarThumbPrivate(type);
 	}
 
-	Entity* create_standard_scrollbar(ScrollbarType type)
+	Entity* wrap_standard_scrollbar(Entity* e, ScrollbarType type, bool container_fit_parent)
 	{
+		auto e_container = Entity::create();
+		{
+			e_container->add_component(cElement::create());
+
+			if (container_fit_parent)
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
+				e_container->add_component(c_aligner);
+			}
+
+			auto c_layout = cLayout::create();
+			c_layout->type = type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical;
+			c_layout->item_padding = 4.f;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			e_container->add_component(c_layout);
+		}
+
+		e_container->add_child(e);
+
 		auto e_scrollbar = Entity::create();
+		e_container->add_child(e_scrollbar);
 		{
 			auto c_element = cElement::create();
-			c_element->width = 10.f;
+			if (type == ScrollbarVertical)
+				c_element->width = 10.f;
+			else
+				c_element->height = 10.f;
 			c_element->background_color = default_style.scrollbar_color;
 			e_scrollbar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
-			c_aligner->height_policy = SizeFitLayout;
+			if (type == ScrollbarVertical)
+				c_aligner->height_policy = SizeFitParent;
+			else
+				c_aligner->width_policy = SizeFitParent;
 			e_scrollbar->add_component(c_aligner);
 
 			e_scrollbar->add_component(cEventReceiver::create());
@@ -180,6 +226,6 @@ namespace flame
 			e_scrollbar_thumb->add_component(cScrollbarThumb::create(type));
 		}
 
-		return e_scrollbar;
+		return e_container;
 	}
 }

@@ -52,7 +52,7 @@ namespace flame
 						int cut = 1;
 					switch (al.second ? al.second->width_policy : SizeFixed)
 					{
-					case SizeFitLayout:
+					case SizeFitParent:
 						al.first->width = w;
 						break;
 					case SizeGreedy:
@@ -62,7 +62,7 @@ namespace flame
 					}
 					switch (al.second ? al.second->height_policy : SizeFixed)
 					{
-					case SizeFitLayout:
+					case SizeFitParent:
 						al.first->height = h;
 						break;
 					case SizeGreedy:
@@ -109,7 +109,7 @@ namespace flame
 					case SizeFixed:
 						w += al.first->width;
 						break;
-					case SizeFitLayout:
+					case SizeFitParent:
 						factor += al.second->width_factor;
 						break;
 					case SizeGreedy:
@@ -122,7 +122,7 @@ namespace flame
 					case SizeFixed:
 						h = max(al.first->height, h);
 						break;
-					case SizeFitLayout:
+					case SizeFitParent:
 						break;
 					case SizeGreedy:
 						h = max(al.second->min_height, h);
@@ -155,7 +155,7 @@ namespace flame
 				{
 					if (al.second)
 					{
-						if (al.second->width_policy == SizeFitLayout)
+						if (al.second->width_policy == SizeFitParent)
 							al.first->width = w * al.second->width_factor;
 						else if (al.second->width_policy == SizeGreedy)
 							al.first->width = al.second->min_width + w * al.second->width_factor;
@@ -175,7 +175,7 @@ namespace flame
 				{
 					if (al.second)
 					{
-						if (al.second->height_policy == SizeFitLayout)
+						if (al.second->height_policy == SizeFitParent)
 							al.first->height = element->height - element->inner_padding_vertical();
 						else if (al.second->height_policy == SizeGreedy)
 							al.first->height = max(al.second->min_height, element->height - element->inner_padding_vertical());
@@ -215,7 +215,7 @@ namespace flame
 					case SizeFixed:
 						w = max(al.first->width, w);
 						break;
-					case SizeFitLayout:
+					case SizeFitParent:
 						break;
 					case SizeGreedy:
 						w = max(al.second->min_width, w);
@@ -226,7 +226,7 @@ namespace flame
 					case SizeFixed:
 						h += al.first->height;
 						break;
-					case SizeFitLayout:
+					case SizeFitParent:
 						factor += al.second->height_factor;
 						break;
 					case SizeGreedy:
@@ -256,7 +256,7 @@ namespace flame
 				{
 					if (al.second)
 					{
-						if (al.second->width_policy == SizeFitLayout)
+						if (al.second->width_policy == SizeFitParent)
 							al.first->width = element->width - element->inner_padding_horizontal();
 						else if (al.second->width_policy == SizeGreedy)
 							al.first->width = max(al.second->min_width, element->width - element->inner_padding_horizontal());
@@ -281,7 +281,7 @@ namespace flame
 				{
 					if (al.second)
 					{
-						if (al.second->height_policy == SizeFitLayout)
+						if (al.second->height_policy == SizeFitParent)
 							al.first->height = h * al.second->height_factor;
 						else if (al.second->height_policy == SizeGreedy)
 							al.first->height = al.second->min_height + h * al.second->height_factor;

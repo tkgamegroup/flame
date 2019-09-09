@@ -27,7 +27,7 @@ namespace flame
 	enum SizePolicy$
 	{
 		SizeFixed,
-		SizeFitLayout,
+		SizeFitParent,
 		SizeGreedy
 	};
 
