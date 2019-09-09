@@ -9,17 +9,15 @@ namespace flame
 {
 	struct cEditPrivate : cEdit
 	{
-		void* focus_listener;
 		void* key_listener;
+
+		std::vector<std::unique_ptr<Closure<void(void* c, const wchar_t* text)>>> changed_listeners;
 
 		cEditPrivate()
 		{
 			element = nullptr;
 			text = nullptr;
 			event_receiver = nullptr;
-
-			target = nullptr;
-			target_type_hash = 0;
 
 			cursor = 0;
 
@@ -30,11 +28,13 @@ namespace flame
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			if (event_receiver)
-			{
-				if (focus_listener)
-					event_receiver->remove_focus_listener(focus_listener);
 				event_receiver->remove_mouse_listener(key_listener);
-			}
+		}
+
+		void on_change()
+		{
+			for (auto& l : changed_listeners)
+				l->function(l->capture.p, ((cTextPrivate*)text)->text.c_str());
 		}
 
 		void start()
@@ -45,24 +45,6 @@ namespace flame
 			assert(text && !text->auto_size);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-
-			if (target && target_type_hash != 0)
-			{
-				focus_listener = event_receiver->add_focus_listener([](void* c, FocusType type) {
-					auto thiz = *(cEditPrivate**)c;
-					auto& str = ((cTextPrivate*)thiz->text)->text;
-					if (type == Focus_Lost)
-					{
-						switch (thiz->target_type_hash)
-						{
-						case cH("uchar"):
-							str = std::to_wstring(*((uchar*)thiz->target));
-							thiz->cursor = 0;
-							break;
-						}
-					}
-				}, new_mail_p(this));
-			}
 
 			key_listener = event_receiver->add_key_listener([](void* c, KeyState action, uint value) {
 				auto thiz = *(cEditPrivate**)c;
@@ -77,6 +59,7 @@ namespace flame
 						{
 							thiz->cursor--;
 							str.erase(str.begin() + thiz->cursor);
+							thiz->on_change();
 						}
 						break;
 					case 22:
@@ -92,6 +75,7 @@ namespace flame
 					default:
 						str.insert(str.begin() + thiz->cursor, value);
 						thiz->cursor++;
+						thiz->on_change();
 					}
 				}
 				else if (action == KeyStateDown)
@@ -114,7 +98,10 @@ namespace flame
 						break;
 					case Key_Del:
 						if (thiz->cursor < str.size())
+						{
 							str.erase(str.begin() + thiz->cursor);
+							thiz->on_change();
+						}
 						break;
 					}
 				}
@@ -133,6 +120,28 @@ namespace flame
 			}
 		}
 	};
+
+	void* cEdit::add_changed_listener(void (*listener)(void* c, const wchar_t* text), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, const wchar_t* text)>;
+		c->function = listener;
+		c->capture = capture;
+		((cEditPrivate*)this)->changed_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEdit::remove_changed_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cEditPrivate*)this)->changed_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
+	}
 
 	void cEdit::start()
 	{

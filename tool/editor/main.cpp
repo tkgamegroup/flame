@@ -35,6 +35,8 @@ T* new_component()
 	return c;
 }
 
+bool bp_running;
+
 union
 {
 	BP::Node* n;
@@ -264,18 +266,27 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
-			bp->update();
-
 			c_element_root->width = w->size.x();
 			c_element_root->height = w->size.y();
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
 
-			auto img_idx = sc->image_index();
-			auto cb = cbs[img_idx];
-			canvas->record(cb, img_idx);
+			if (bp_running)
+				bp->update();
 
-			d->gq->submit({ cb, (Commandbuffer*)bp_cbs[0]}, sc->image_avalible(), render_finished, fence);
+			std::vector<Commandbuffer*> _cbs;
+
+			{
+				auto img_idx = sc->image_index();
+				auto cb = cbs[img_idx];
+				canvas->record(cb, img_idx);
+				_cbs.push_back(cb);
+			}
+
+			if (bp_running)
+				_cbs.push_back((Commandbuffer*)bp_cbs[0]);
+
+			d->gq->submit(_cbs, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 
@@ -415,6 +426,7 @@ int main(int argc, char **args)
 		printf("bp not found, exit\n");
 		return 0;
 	}
+	bp_running = false;
 	bp_selected.n = nullptr;
 	dragging_slot = nullptr;
 
@@ -438,7 +450,8 @@ int main(int argc, char **args)
 		for (auto i = 0; i < app.cbs.size(); i++)
 			app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-		app.bp_rt = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageAttachment | ImageUsageSampled));
+		app.bp_rt = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
+		app.bp_rt->init(Vec4c(0, 0, 0, 255));
 		app.bp_rt_v = Imageview::create(app.bp_rt);
 		app.bp_cbs.resize(1);
 		app.bp_cbs[0] = Commandbuffer::create(app.d->gcp);
@@ -577,7 +590,7 @@ int main(int argc, char **args)
 				c_element->x = 350.f;
 				c_element->y = 20.f;
 				c_element->width = 800.f;
-				c_element->height = 600.f;
+				c_element->height = 400.f;
 			}
 
 			auto e_docker = get_docker_model()->copy();
@@ -599,6 +612,31 @@ int main(int argc, char **args)
 				e_page->add_component(c_layout);
 			}
 			e_pages->add_child(e_page);
+
+			auto e_btn_run = Entity::create();
+			e_page->add_child(e_btn_run);
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_btn_run->add_component(c_element);
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"Run");
+				e_btn_run->add_component(c_text);
+
+				auto c_event_receiver = cEventReceiver::create();
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_clicked(action, key))
+					{
+						auto c_text = *(cText**)c;
+						bp_running = !bp_running;
+						c_text->set_text(bp_running ? L"Pause" : L"Run");
+					}
+				}, new_mail_p(c_text));
+				e_btn_run->add_component(c_event_receiver);
+
+				e_btn_run->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+			}
 
 			auto e_scene = Entity::create();
 			e_page->add_child(e_scene);
@@ -816,10 +854,24 @@ int main(int argc, char **args)
 												c_text->auto_size = false;
 												c_text->set_text(std::to_wstring((int)data[k]));
 												e_edit->add_component(c_text);
-
+												
 												e_edit->add_component(cEventReceiver::create());
 
-												e_edit->add_component(cEdit::create());
+												auto c_edit = cEdit::create();
+												struct Capture
+												{
+													BP::Slot* input;
+													uint i;
+												}capture;
+												capture.input = input;
+												capture.i = k;
+												c_edit->add_changed_listener([](void* c, const wchar_t* text) {
+													auto& capture = *(Capture*)c;
+													auto data = *(Vec4c*)capture.input->data();
+													data[capture.i] = text[0] ? std::stoi(text) : 0;
+													capture.input->set_data(&data);
+												}, new_mail(&capture));
+												e_edit->add_component(c_edit);
 											}
 
 											auto e_name = Entity::create();
