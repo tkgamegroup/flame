@@ -20,6 +20,7 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/toggle.h>
+#include <flame/universe/components/combobox.h>
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
@@ -472,8 +473,9 @@ int main(int argc, char **args)
 		auto font14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 		auto font_awesome14 = Font::create(L"../asset/font_awesome.ttf", 14);
 		auto font32 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
+		auto font_awesome32 = Font::create(L"../asset/font_awesome.ttf", 32);
 		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font14, font_awesome14 });
-		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font32 });
+		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font32, font_awesome32 });
 		app.font_atlas_pixel->index = 1;
 		app.font_atlas_sdf->index = 2;
 		app.canvas->set_image(app.font_atlas_pixel->index, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
@@ -823,8 +825,12 @@ int main(int argc, char **args)
 								{
 								case TypeTagAttributeES:
 								{
+									auto info = find_enum(app.dbs, type->hash());
 									std::vector<std::wstring> items;
-
+									for (auto i = 0; i < info->item_count(); i++)
+										items.push_back(s2w(info->item(i)->name()));
+									auto e_combobox = create_standard_combobox(120.f, app.font_atlas_sdf, 0.5f, app.root, items);
+									e_data->add_child(e_combobox);
 								}
 									break;
 								case TypeTagAttributeEM:
@@ -1071,16 +1077,7 @@ int main(int argc, char **args)
 				scanf("%s", command_line);
 				auto s_name = std::string(command_line);
 
-				UdtInfo* udt = nullptr;
-				{
-					auto hash = H(s_name.c_str());
-					for (auto db : app.dbs)
-					{
-						udt = db->find_udt(hash);
-						if (udt)
-							break;
-					}
-				}
+				auto udt = find_udt(app.dbs, H(s_name.c_str()));
 				if (udt)
 				{
 					printf("%s:\n", udt->name().c_str());

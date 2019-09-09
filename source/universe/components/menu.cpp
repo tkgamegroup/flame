@@ -189,7 +189,7 @@ namespace flame
 		return e_menu;
 	}
 
-	Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, const std::wstring& text)
+	Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
 	{
 		auto e_item = Entity::create();
 		{
@@ -197,6 +197,7 @@ namespace flame
 			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 			e_item->add_component(c_element);
 			auto c_text = cText::create(font_atlas);
+			c_text->sdf_scale = sdf_scale;
 			c_text->set_text(text);
 			e_item->add_component(c_text);
 
@@ -212,15 +213,16 @@ namespace flame
 		return e_item;
 	}
 
-	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, const wchar_t* arrow_text)
+	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, const wchar_t* arrow_text)
 	{
 		auto e_menu_btn = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + (arrow_text ? font_atlas->pixel_height : 0.f), 2.f);
+			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + (arrow_text ? font_atlas->pixel_height * sdf_scale : 0.f), 2.f);
 			e_menu_btn->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
+			c_text->sdf_scale = sdf_scale;
 			if (text[0])
 				c_text->set_text(text);
 			e_menu_btn->add_component(c_text);
@@ -253,6 +255,7 @@ namespace flame
 					e_arrow->add_component(c_element);
 
 					auto c_text = cText::create(font_atlas);
+					c_text->sdf_scale = sdf_scale;
 					c_text->set_text(arrow_text);
 					e_arrow->add_component(c_text);
 

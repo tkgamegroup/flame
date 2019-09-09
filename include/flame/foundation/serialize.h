@@ -518,6 +518,39 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};
 
+	inline EnumInfo* find_enum(const std::vector<TypeinfoDatabase*>& dbs, uint name_hash)
+	{
+		for (auto db : dbs)
+		{
+			auto info = db->find_enum(name_hash);
+			if (info)
+				return info;
+		}
+		return nullptr;
+	}
+
+	inline UdtInfo* find_udt(const std::vector<TypeinfoDatabase*>& dbs, uint name_hash)
+	{
+		for (auto db : dbs)
+		{
+			auto info = db->find_udt(name_hash);
+			if (info)
+				return info;
+		}
+		return nullptr;
+	}
+
+	inline FunctionInfo* find_function(const std::vector<TypeinfoDatabase*>& dbs, uint name_hash)
+	{
+		for (auto db : dbs)
+		{
+			auto info = db->find_function(name_hash);
+			if (info)
+				return info;
+		}
+		return nullptr;
+	}
+
 	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const void* src, int precision = 6);
 	FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const std::string& src, void* dst);
 }

@@ -31,5 +31,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cEdit* create();
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, float sdf_scale = 1.f);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, float sdf_scale);
 }

@@ -266,7 +266,7 @@ int main(int argc, char** args)
 		e_image->add_component(c_image);
 	}
 
-	auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel);
+	auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 	e_layout_left->add_child(e_edit);
 
 	auto e_layout_right = Entity::create();
@@ -360,7 +360,7 @@ int main(int argc, char** args)
 				"Save",
 				"Help"
 			};
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 			e_popup_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -380,7 +380,7 @@ int main(int argc, char** args)
 					"Car",
 					"House"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
 				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -390,7 +390,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Add", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
 		}
 
@@ -403,7 +403,7 @@ int main(int argc, char** args)
 					"Car",
 					"House"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
 				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -413,7 +413,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Remove", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Remove", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
 		}
 	}
@@ -461,7 +461,7 @@ int main(int argc, char** args)
 					"New",
 					"Open"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
 				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -471,7 +471,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"File", app.root, e_menu, true, SideS, true, nullptr);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", app.root, e_menu, true, SideS, true, nullptr);
 			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
 			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
 			e_menubar->add_child(e_menu_btn);
@@ -488,7 +488,7 @@ int main(int argc, char** args)
 					"Paste",
 					"Delete"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
 				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -498,7 +498,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Edit", app.root, e_menu, true, SideS, true, nullptr);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, nullptr);
 			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
 			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
 			e_menubar->add_child(e_menu_btn);
@@ -511,7 +511,7 @@ int main(int argc, char** args)
 					"Monitor",
 					"Console"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
 				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -521,29 +521,15 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, L"Tool", app.root, e_menu, true, SideS, true, nullptr);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tool", app.root, e_menu, true, SideS, true, nullptr);
 			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
 			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
 			e_menubar->add_child(e_menu_btn);
 		}
 	}
 
-	{
-		auto e_menu = create_standard_menu();
-		for (auto i = 0; i < 3; i++)
-		{
-			static const char* names[] = {
-				"Apple",
-				"Boy",
-				"Cat"
-			};
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, s2w(names[i]));
-			e_menu->add_child(e_item);
-			e_item->add_component(cComboboxItem::create());
-		}
-		auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, app.root, { L"Apple", L"Boy", L"Cat" });
-		e_layout_right->add_child(e_combobox);
-	}
+	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, app.root, { L"Apple", L"Boy", L"Cat" });
+	e_layout_right->add_child(e_combobox);
 
 	auto e_tree = Entity::create();
 	e_layout_right->add_child(e_tree);

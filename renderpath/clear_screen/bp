@@ -7,15 +7,16 @@
 	<nodes>
 		<node type="graphics::RenderTarget" id="rt_dst" pos="21.72;35.53">
 			<datas>
+				<data name="type" value="TargetImageview" />
 				<data name="clear" value="1" />
 				<data name="clear_color" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="Array(1+void*)" id="rts" pos="289.67;23.58" />
-		<node type="graphics::SubpassTargetInfo" id="sp" pos="427.81;67.53" />
-		<node type="Array(1+void*)" id="sps" pos="688.94;102.53" />
-		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="842.20;66.53" />
-		<node type="MakeCmd" id="make_cmd" pos="1121.20;117.53" />
+		<node type="Array(1+void*)" id="rts" pos="360.67;6.58" />
+		<node type="graphics::SubpassTargetInfo" id="sp" pos="485.81;118.53" />
+		<node type="Array(1+void*)" id="sps" pos="734.94;42.53" />
+		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="879.20;82.53" />
+		<node type="MakeCmd" id="make_cmd" pos="1168.20;111.53" />
 	</nodes>
 	<links>
 		<link out="rt_dst.out" in="rts.1" />
