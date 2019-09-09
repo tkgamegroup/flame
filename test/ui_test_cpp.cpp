@@ -209,26 +209,8 @@ int main(int argc, char** args)
 		e_button->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
 	}
 
-	auto e_checkbox = Entity::create();
+	auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"Checkbox", true);
 	e_layout_left->add_child(e_checkbox);
-	{
-		auto c_element = cElement::create();
-		c_element->width = 16.f;
-		c_element->height = 16.f;
-		c_element->inner_padding = Vec4f(20.f, 1.f, 1.f, 1.f);
-		c_element->draw = false;
-		e_checkbox->add_component(c_element);
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(L"Checkbox");
-		e_checkbox->add_component(c_text);
-
-		e_checkbox->add_component(cEventReceiver::create());
-
-		e_checkbox->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-		e_checkbox->add_component(cCheckbox::create());
-	}
 
 	auto e_toggle = Entity::create();
 	e_layout_left->add_child(e_toggle);
@@ -528,7 +510,7 @@ int main(int argc, char** args)
 		}
 	}
 
-	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, app.root, { L"Apple", L"Boy", L"Cat" });
+	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, app.root, { L"Apple", L"Boy", L"Cat" }, -1);
 	e_layout_right->add_child(e_combobox);
 
 	auto e_tree = Entity::create();

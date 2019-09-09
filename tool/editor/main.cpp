@@ -420,6 +420,82 @@ void create_directory_tree_node(const std::filesystem::path& path, Entity* paren
 	}
 }
 
+
+template<class T>
+void create_edit(Entity* parent, BP::Slot* input)
+{
+	auto& data = *(T*)input->data();
+
+	auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+	parent->add_child(e_edit);
+	{
+		((cText*)e_edit->find_component(cH("Text")))->set_text(std::to_wstring(data));
+
+		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+			auto data = text[0] ? sto<T>(text) : 0;
+			(*(BP::Slot**)c)->set_data(&data);
+		}, new_mail_p(input));
+	}
+}
+
+template<uint N, class T>
+void create_vec_edit(Entity* parent, BP::Slot* input)
+{
+	static const wchar_t* part_names[] = {
+		L"x",
+		L"y",
+		L"z",
+		L"w"
+	};
+
+	auto& data = *(Vec<N, T>*)input->data();
+
+	for (auto k = 0; k < 4; k++)
+	{
+		auto e_item = Entity::create();
+		parent->add_child(e_item);
+		{
+			e_item->add_component(cElement::create());
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutHorizontal;
+			c_layout->item_padding = 4.f;
+			e_item->add_component(c_layout);
+		}
+
+		auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+		e_item->add_child(e_edit);
+		{
+			((cText*)e_edit->find_component(cH("Text")))->set_text(std::to_wstring((int)data[k]));
+
+			struct Capture
+			{
+				BP::Slot* input;
+				uint i;
+			}capture;
+			capture.input = input;
+			capture.i = k;
+			((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+				auto& capture = *(Capture*)c;
+				auto data = *(Vec4c*)capture.input->data();
+				data[capture.i] = text[0] ? std::stoi(text) : 0;
+				capture.input->set_data(&data);
+			}, new_mail(&capture));
+		}
+
+		auto e_name = Entity::create();
+		e_item->add_child(e_name);
+		{
+			e_name->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_sdf);
+			c_text->sdf_scale = 0.5f;
+			c_text->set_text(part_names[k]);
+			e_name->add_component(c_text);
+		}
+	}
+}
+
 int main(int argc, char **args)
 {
 	if (argc != 2)
@@ -827,76 +903,119 @@ int main(int argc, char **args)
 								{
 									auto info = find_enum(app.dbs, type->hash());
 									std::vector<std::wstring> items;
-									for (auto i = 0; i < info->item_count(); i++)
-										items.push_back(s2w(info->item(i)->name()));
-									auto e_combobox = create_standard_combobox(120.f, app.font_atlas_sdf, 0.5f, app.root, items);
+									for (auto k = 0; k < info->item_count(); k++)
+										items.push_back(s2w(info->item(k)->name()));
+									int init_idx;
+									info->find_item(*(int*)input->data(), &init_idx);
+									auto e_combobox = create_standard_combobox(120.f, app.font_atlas_sdf, 0.5f, app.root, items, init_idx);
 									e_data->add_child(e_combobox);
+
+									struct Capture
+									{
+										BP::Slot* input;
+										EnumInfo* e;
+									}capture;
+									capture.input = input;
+									capture.e = info;
+									((cCombobox*)e_combobox->find_component(cH("Combobox")))->add_changed_listener([](void* c, uint idx) {
+										auto& capture = *(Capture*)c;
+										auto v = capture.e->item(idx)->value();
+										capture.input->set_data(&v);
+									}, new_mail(&capture));
 								}
 									break;
 								case TypeTagAttributeEM:
 								{
+									auto v = *(int*)input->data();
 
+									auto info = find_enum(app.dbs, type->hash());
+									for (auto k = 0; k < info->item_count(); k++)
+									{
+										auto item = info->item(k);
+										auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, s2w(item->name()), (v & item->value()) != 0);
+										e_data->add_child(e_checkbox);
+
+										struct Capture
+										{
+											BP::Slot* input;
+											int v;
+										}capture;
+										capture.input = input;
+										capture.v = item->value();
+										((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+											auto& capture = *(Capture*)c;
+											auto v = *(int*)capture.input->data();
+											if (checked)
+												v |= capture.v;
+											else
+												v &= ~capture.v;
+											capture.input->set_data(&v);
+										}, new_mail(&capture));
+									}
 								}
 									break;
 								case TypeTagAttributeV:
 									switch (type->hash())
 									{
-									case cH("Vec(4+uchar)"):
+									case cH("bool"):
 									{
-										auto& data = *(Vec4c*)input->data();
+										auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, L"", (*(int*)input->data()) != 0);
+										e_data->add_child(e_checkbox);
 
-										for (auto k = 0; k < 4; k++)
-										{
-											static const wchar_t* names[] = {
-												L"x",
-												L"y",
-												L"z",
-												L"w"
-											};
-
-											auto e_item = Entity::create();
-											e_data->add_child(e_item);
-											{
-												e_item->add_component(cElement::create());
-
-												auto c_layout = cLayout::create();
-												c_layout->type = LayoutHorizontal;
-												c_layout->item_padding = 4.f;
-												e_item->add_component(c_layout);
-											}
-
-											auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
-											e_item->add_child(e_edit);
-											{
-												((cText*)e_edit->find_component(cH("Text")))->set_text(std::to_wstring((int)data[k]));
-
-												struct Capture
-												{
-													BP::Slot* input;
-													uint i;
-												}capture;
-												capture.input = input;
-												capture.i = k;
-												((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-													auto& capture = *(Capture*)c;
-													auto data = *(Vec4c*)capture.input->data();
-													data[capture.i] = text[0] ? std::stoi(text) : 0;
-													capture.input->set_data(&data);
-												}, new_mail(&capture));
-											}
-
-											auto e_name = Entity::create();
-											e_item->add_child(e_name);
-											{
-												e_name->add_component(cElement::create());
-
-												auto c_text = cText::create(app.font_atlas_sdf);
-												c_text->sdf_scale = 0.5f;
-												c_text->set_text(names[k]);
-												e_name->add_component(c_text);
-											}
-										}
+										((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+											auto input = *(BP::Slot**)c;
+											auto v = checked ? 1 : 0;
+											input->set_data(&v);
+										}, new_mail_p(input));
 									}
+										break;
+									case cH("int"):
+										create_edit<int>(e_data, input);
+										break;
+									case cH("Vec(2+int)"):
+										create_vec_edit<2, int>(e_data, input);
+										break;
+									case cH("Vec(3+int)"):
+										create_vec_edit<3, int>(e_data, input);
+										break;
+									case cH("Vec(4+int)"):
+										create_vec_edit<4, int>(e_data, input);
+										break;
+									case cH("uint"):
+										create_edit<uint>(e_data, input);
+										break;
+									case cH("Vec(2+uint)"):
+										create_vec_edit<2, uint>(e_data, input);
+										break;
+									case cH("Vec(3+uint)"):
+										create_vec_edit<3, uint>(e_data, input);
+										break;
+									case cH("Vec(4+uint)"):
+										create_vec_edit<4, uint>(e_data, input);
+										break;
+									case cH("float"):
+										create_edit<float>(e_data, input);
+										break;
+									case cH("Vec(2+float)"):
+										create_vec_edit<2, float>(e_data, input);
+										break;
+									case cH("Vec(3+float)"):
+										create_vec_edit<3, float>(e_data, input);
+										break;
+									case cH("Vec(4+float)"):
+										create_vec_edit<4, float>(e_data, input);
+										break;
+									case cH("uchar"):
+										create_edit<uchar>(e_data, input);
+										break;
+									case cH("Vec(2+uchar)"):
+										create_vec_edit<2, uchar>(e_data, input);
+										break;
+									case cH("Vec(3+uchar)"):
+										create_vec_edit<3, uchar>(e_data, input);
+										break;
+									case cH("Vec(4+uchar)"):
+										create_vec_edit<4, uchar>(e_data, input);
 										break;
 									}
 									break;

@@ -17,7 +17,6 @@ namespace flame
 
 		cComboboxItemPrivate()
 		{
-			text = nullptr;
 			event_receiver = nullptr;
 			style = nullptr;
 			combobox = nullptr;
@@ -41,8 +40,6 @@ namespace flame
 
 		void start()
 		{
-			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 			style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
@@ -58,9 +55,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cComboboxItemPrivate**)c;
-					auto combobox = thiz->combobox;
-					combobox->selected = thiz->entity;
-					combobox->text->set_text(thiz->text->text());
+					thiz->combobox->set_index(thiz->idx);
 					destroy_topmost(thiz->combobox->menu_button->root);
 				}
 			}, new_mail_p(this));
@@ -103,6 +98,14 @@ namespace flame
 
 	struct cComboboxPrivate : cCombobox
 	{
+		std::vector<std::unique_ptr<Closure<void(void* c, uint idx)>>> changed_listeners;
+
+		void on_changed(int idx)
+		{
+			for (auto& l : changed_listeners)
+				l->function(l->capture.p, idx);
+		}
+
 		void start()
 		{
 			text = (cText*)(entity->find_component(cH("Text")));
@@ -115,6 +118,44 @@ namespace flame
 				((cComboboxItem*)(menu->child(i)->find_component(cH("ComboboxItem"))))->combobox = this;
 		}
 	};
+
+	void* cCombobox::add_changed_listener(void (*listener)(void* c, uint idx), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, uint idx)>;
+		c->function = listener;
+		c->capture = capture;
+		((cComboboxPrivate*)this)->changed_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cCombobox::remove_changed_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cComboboxPrivate*)this)->changed_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
+	}
+
+	void cCombobox::set_index(int idx)
+	{
+		if (idx < 0)
+		{
+			selected = nullptr;
+			text->set_text(L"");
+			((cComboboxPrivate*)this)->on_changed(-1);
+			return;
+		}
+
+		auto menu = menu_button->menu;
+		selected = menu->child(idx);
+		text->set_text(((cText*)(selected->find_component(cH("Text"))))->text());
+		((cComboboxPrivate*)this)->on_changed(idx);
+	}
 
 	void cCombobox::start()
 	{
@@ -130,14 +171,17 @@ namespace flame
 		return new cComboboxPrivate;
 	}
 
-	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items)
+	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items, int init_item)
 	{
 		auto e_menu = create_standard_menu();
-		for (auto& i : items)
+		for (auto i = 0; i < items.size(); i++)
 		{
-			auto e_item = create_standard_menu_item(font_atlas, sdf_scale, i);
+			auto e_item = create_standard_menu_item(font_atlas, sdf_scale, items[i]);
 			e_menu->add_child(e_item);
-			e_item->add_component(cComboboxItem::create());
+
+			auto c_combobox_item = cComboboxItem::create();
+			c_combobox_item->idx = i;
+			e_item->add_component(c_combobox_item);
 		}
 
 		auto e_combobox = create_standard_menu_button(font_atlas, sdf_scale, L"", root, e_menu, false, SideS, true, Icon_ANGLE_DOWN);
@@ -148,11 +192,17 @@ namespace flame
 			c_element->background_frame_color = default_style.text_color_normal;
 			c_element->background_frame_thickness = 2.f;
 
-			((cText*)e_combobox->find_component(cH("Text")))->auto_size = false;
+			auto c_text = (cText*)e_combobox->find_component(cH("Text"));
+			c_text->auto_size = false;
+			if (init_item > 0)
+				c_text->set_text(items[init_item]);
 
 			((cAligner*)e_combobox->find_component(cH("Aligner")))->width_policy = SizeFixed;
-
-			e_combobox->add_component(cCombobox::create());
+			
+			auto c_combobox = cCombobox::create();
+			if (init_item > 0)
+				c_combobox->selected = e_menu->child(init_item);
+			e_combobox->add_component(c_combobox);
 		}
 
 		return e_combobox;

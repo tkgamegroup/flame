@@ -174,6 +174,33 @@ namespace flame
 		return Vec4c(ret);
 	}
 
+	template<class T>
+	T sto(const char* s); 
+
+	template<>
+	inline int sto<int>(const char* s)
+	{
+		return std::stoi(s);
+	}
+
+	template<>
+	inline uint sto<uint>(const char* s)
+	{
+		return std::stoul(s);
+	}
+
+	template<>
+	inline float sto<float>(const char* s)
+	{
+		return std::stof(s);
+	}
+
+	template<>
+	inline uchar sto<uchar>(const char* s)
+	{
+		return std::stoul(s);
+	}
+
 	inline Vec2f stof2(const wchar_t* s)
 	{
 		Vec2f ret;
@@ -256,6 +283,33 @@ namespace flame
 		Vec4i ret;
 		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return Vec4c(ret);
+	}
+
+	template<class T>
+	T sto(const wchar_t* s);
+
+	template<>
+	inline int sto<int>(const wchar_t* s)
+	{
+		return std::stoi(s);
+	}
+
+	template<>
+	inline uint sto<uint>(const wchar_t* s)
+	{
+		return std::stoul(s);
+	}
+
+	template<>
+	inline float sto<float>(const wchar_t* s)
+	{
+		return std::stof(s);
+	}
+
+	template<>
+	inline uchar sto<uchar>(const wchar_t* s)
+	{
+		return std::stoul(s);
 	}
 
 	inline std::vector<std::pair<std::string, Vec4u>> load_texture_pack(const std::wstring& filename)

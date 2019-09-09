@@ -13,7 +13,6 @@ namespace flame
 
 	struct cComboboxItem : Component
 	{
-		cText* text;
 		cEventReceiver* event_receiver;
 		cStyleBackgroundColor* style;
 		cCombobox* combobox;
@@ -24,6 +23,8 @@ namespace flame
 		Vec4c selected_color_normal;
 		Vec4c selected_color_hovering;
 		Vec4c selected_color_active;
+
+		uint idx;
 
 		cComboboxItem() :
 			Component("ComboboxItem")
@@ -48,11 +49,17 @@ namespace flame
 		{
 		}
 
+		FLAME_UNIVERSE_EXPORTS void* add_changed_listener(void (*listener)(void* c, uint idx), const Mail<>& capture);
+
+		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
+
+		FLAME_UNIVERSE_EXPORTS void set_index(int idx);
+
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items, int init_item);
 }
