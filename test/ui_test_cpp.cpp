@@ -185,18 +185,10 @@ int main(int argc, char** args)
 		e_text_sdf->add_component(c_text);
 	}
 
-	auto e_button = Entity::create();
+	auto e_button = create_standard_button(app.font_atlas_pixel, 1.f, L"Click Me!");
 	e_layout_left->add_child(e_button);
 	{
-		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-		e_button->add_component(c_element);
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(L"Click Me!");
-		e_button->add_component(c_text);
-
-		auto c_event_receiver = cEventReceiver::create();
+		auto c_event_receiver = (cEventReceiver*)e_button->find_component(cH("EventReceiver"));
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			if (is_mouse_clicked(action, key))
 			{
@@ -204,9 +196,6 @@ int main(int argc, char** args)
 				printf("thank you for clicking me\n");
 			}
 		}, new_mail_p(&app));
-		e_button->add_component(c_event_receiver);
-
-		e_button->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
 	}
 
 	auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"Checkbox", true);
@@ -308,7 +297,7 @@ int main(int argc, char** args)
 			}
 		}
 
-		auto e_container = wrap_standard_scrollbar(e_list, ScrollbarVertical, false);
+		auto e_container = wrap_standard_scrollbar(e_list, ScrollbarVertical, false, 1.f);
 		e_layout_right->add_child(e_container);
 		{
 			auto c_element = (cElement*)e_container->find_component(cH("Element"));

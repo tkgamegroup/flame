@@ -164,7 +164,7 @@ namespace flame
 		return new cScrollbarThumbPrivate(type);
 	}
 
-	Entity* wrap_standard_scrollbar(Entity* e, ScrollbarType type, bool container_fit_parent)
+	Entity* wrap_standard_scrollbar(Entity* e, ScrollbarType type, bool container_fit_parent, float scrollbar_step)
 	{
 		auto e_container = Entity::create();
 		{
@@ -223,7 +223,9 @@ namespace flame
 
 			e_scrollbar_thumb->add_component(cStyleBackgroundColor::create(default_style.scrollbar_thumb_color_normal, default_style.scrollbar_thumb_color_hovering, default_style.scrollbar_thumb_color_active));
 
-			e_scrollbar_thumb->add_component(cScrollbarThumb::create(type));
+			auto c_scrollbar_thumb = cScrollbarThumb::create(type);
+			c_scrollbar_thumb->step = scrollbar_step;
+			e_scrollbar_thumb->add_component(c_scrollbar_thumb);
 		}
 
 		return e_container;

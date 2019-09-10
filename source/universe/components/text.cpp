@@ -1,8 +1,10 @@
 #include <flame/graphics/canvas.h>
+#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include "text_private.h"
+#include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
-#include <flame/universe/default_style.h>
 
 namespace flame
 {
@@ -112,4 +114,25 @@ namespace flame
 
 		}
 	};
+
+	Entity* create_standard_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
+	{
+		auto e_button = Entity::create();
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			e_button->add_component(c_element);
+
+			auto c_text = cText::create(font_atlas);
+			c_text->sdf_scale = sdf_scale;
+			c_text->set_text(text);
+			e_button->add_component(c_text);
+
+			e_button->add_component(cEventReceiver::create());
+
+			e_button->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+		}
+
+		return e_button;
+	}
 }

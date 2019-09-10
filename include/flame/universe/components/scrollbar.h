@@ -52,5 +52,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cScrollbarThumb* create(ScrollbarType type);
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* wrap_standard_scrollbar(Entity* e, ScrollbarType type, bool container_fit_parent);
+	FLAME_UNIVERSE_EXPORTS Entity* wrap_standard_scrollbar(Entity* e, ScrollbarType type, bool container_fit_parent, float scrollbar_step);
 }

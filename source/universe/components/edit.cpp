@@ -4,6 +4,7 @@
 #include <flame/universe/components/element.h>
 #include "text_private.h"
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
 
 namespace flame
@@ -176,6 +177,13 @@ namespace flame
 			c_text->sdf_scale = sdf_scale;
 			c_text->auto_size = false;
 			e_edit->add_component(c_text);
+
+			if (width == 0.f)
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitParent;
+				e_edit->add_component(c_aligner);
+			}
 
 			e_edit->add_component(cEventReceiver::create());
 
