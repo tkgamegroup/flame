@@ -800,15 +800,16 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		std::vector<TypeinfoDatabase*> dbs;
 	};
 	open_console([](void* c, const std::wstring& cmd, cConsole* console) {
+		auto editor = *(cBPEditor**)c;
+		auto& filename = editor->filename;
+		auto bp = editor->bp;
+		auto& dbs = editor->dbs;
 		auto tokens = string_split(cmd);
 
-		/*auto set_data = [](const std::string& address, const std::string& value) {
+		auto set_data = [&](const std::string& address, const std::string& value) {
 			auto i = bp->find_input(address.c_str());
 			if (i)
 			{
-				set_event(ev_1);
-				wait_event(ev_2, -1);
-
 				auto v = i->variable_info;
 				auto type = v->type();
 				auto value_before = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
@@ -817,17 +818,15 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				i->set_data(data);
 				delete data;
 				auto value_after = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
-				printf("set value: %s, %s -> %s\n", address.c_str(), *value_before.p, *value_after.p);
+				console->print(L"set value: " + s2w(address) + L", " + s2w(*value_before.p) + L" -> " + s2w(*value_after.p));
 				delete_mail(value_before);
 				delete_mail(value_after);
-
-				set_event(ev_3);
 			}
 			else
-				printf("input not found\n");
+				console->print(L"input not found");
 		};
 
-		auto generate_graph_and_layout = []() {
+		auto generate_graph_and_layout = [&]() {
 			if (GRAPHVIZ_PATH == std::string(""))
 				assert(0);
 			auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
@@ -915,7 +914,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			{
 				std::vector<UdtInfo*> available_udts;
 				{
-					for (auto db : emm.dbs)
+					for (auto db : dbs)
 					{
 						auto udts = db->get_udts();
 						for (auto i = 0; i < udts.p->size(); i++)
@@ -927,14 +926,14 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					});
 				}
 				for (auto u : available_udts)
-					console->print(s2w(u->name));
+					console->print(s2w(u->name()));
 			}
 			else if (tokens[1] == L"udt")
 			{
-				auto udt = find_udt(emm.dbs, H(w2s(tokens[2]).c_str()));
+				auto udt = find_udt(dbs, H(w2s(tokens[2]).c_str()));
 				if (udt)
 				{
-					console->print(s2w(udt->name));
+					console->print(s2w(udt->name()));
 					std::vector<VariableInfo*> inputs;
 					std::vector<VariableInfo*> outputs;
 					for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
@@ -958,162 +957,135 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}
 			else if (tokens[1] == L"nodes")
 			{
-				for (auto i = 0; i < emm.bp->node_count(); i++)
+				for (auto i = 0; i < bp->node_count(); i++)
 				{
-					auto n = emm.bp->node(i);
-					console->print("id:%s type:%s\n", n->id().c_str(), n->udt->name());
+					auto n = bp->node(i);
+					console->print(L"id:" + s2w(n->id()) + L" type:" + s2w(n->udt->name()));
 				}
 			}
 			else if (tokens[1] == L"node")
 			{
-				scanf("%s", command_line);
-				auto s_id = std::string(command_line);
-
-				auto n = emm.bp->find_node(s_id.c_str());
+				auto n = bp->find_node(w2s(tokens[2]).c_str());
 				if (n)
 				{
-					console->print("[In]\n");
+					console->print(L"[In]");
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
 						auto v = input->variable_info;
 						auto type = v->type();
-						console->print(" %s\n", v->name().c_str());
+						console->print(s2w(v->name()));
 						Mail<std::string> link_address;
 						if (input->link())
 							link_address = input->link()->get_address();
-						console->print("   [%s]->\n", link_address.p ? link_address.p->c_str() : "");
+						console->print(L"[" + (link_address.p ? s2w(*link_address.p) : L"") + L"]");
 						delete_mail(link_address);
-						auto str = serialize_value(emm.dbs, type->tag(), type->hash(), input->data(), 2);
-						console->print("   %s\n", str.p->empty() ? "-" : str.p->c_str());
+						auto str = serialize_value(dbs, type->tag(), type->hash(), input->data(), 2);
+						console->print(std::wstring(L"   ") + (str.p->empty() ? L"-" : s2w(*str.p)));
 						delete_mail(str);
 					}
-					console->print("[Out]\n");
+					console->print(L"[Out]");
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
 						auto v = output->variable_info;
 						auto type = v->type();
-						console->print(" %s\n", output->variable_info->name().c_str());
-						auto str = serialize_value(emm.dbs, type->tag(), type->hash(), output->data(), 2);
-						console->print("   %s\n", str.p->empty() ? "-" : str.p->c_str());
+						console->print(s2w(v->name()));
+						auto str = serialize_value(dbs, type->tag(), type->hash(), output->data(), 2);
+						console->print(std::wstring(L"   ") + (str.p->empty() ? L"-" : s2w(*str.p)));
 						delete_mail(str);
 					}
 				}
 				else
-					console->print("node not found\n");
+					console->print(L"node not found");
 			}
 			else if (tokens[1] == L"graph")
 			{
-				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(emm.filename))
-					emm.generate_graph_and_layout();
+				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(filename))
+					generate_graph_and_layout();
 				if (std::filesystem::exists(L"bp.png"))
 				{
 					exec(L"bp.png", L"", false);
-					console->print("ok\n");
+					console->print(L"ok");
 				}
 				else
-					console->print("bp.png not found, perhaps Graphviz is not available\n");
+					console->print(L"bp.png not found, perhaps Graphviz is not available");
 			}
 			else
-				console->print("unknow object to show\n");
+				console->print(L"unknow object to show");
 		}
 		else if (tokens[0] == L"add")
 		{
-			scanf("%s", command_line);
-			auto s_what = std::string(command_line);
-
-			if (s_what == "node")
+			if (tokens[1] == L"node")
 			{
-				scanf("%s", command_line);
-				auto s_tn = std::string(command_line);
-
-				scanf("%s", command_line);
-				auto s_id = std::string(command_line);
-
-				auto n = emm.bp->add_node(s_tn.c_str(), s_id == "-" ? nullptr : s_id.c_str());
-				if (!n)
-					console->print("bad udt name or id already exist\n");
+				auto n = bp->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]));
+				if (n)
+					console->print(L"node added: " + s2w(n->id()));
 				else
-					console->print("node added: %s\n", n->id().c_str());
+					console->print(L"bad udt name or id already exist");
 			}
-			else if (s_what == "link")
+			else if (tokens[1] == L"link")
 			{
-				scanf("%s", command_line);
-				auto s_out_address = std::string(command_line);
-
-				scanf("%s", command_line);
-				auto s_in_address = std::string(command_line);
-
-				auto out = emm.bp->find_output(s_out_address.c_str());
-				auto in = emm.bp->find_input(s_in_address.c_str());
+				auto out = bp->find_output(w2s(tokens[2]));
+				auto in = bp->find_input(w2s(tokens[3]));
 				if (out && in)
 				{
 					in->link_to(out);
 					auto out_addr = in->link()->get_address();
 					auto in_addr = in->get_address();
-					console->print("link added: %s -> %s\n", out_addr.p->c_str(), in_addr.p->c_str());
+					console->print(L"link added: " + s2w(*out_addr.p) + L" -> " + s2w(*in_addr.p));
 					delete_mail(out_addr);
 					delete_mail(in_addr);
 				}
 				else
-					console->print("wrong address\n");
+					console->print(L"wrong address");
 			}
 			else
-				console->print("unknow object to add\n");
+				console->print(L"unknow object to add");
 		}
 		else if (tokens[0] == L"remove")
 		{
-			scanf("%s", command_line);
-			auto s_what = std::string(command_line);
-
-			if (s_what == "node")
+			if (tokens[1] == L"node")
 			{
-				scanf("%s", command_line);
-				auto s_id = std::string(command_line);
-
-				auto n = emm.bp->find_node(s_id.c_str());
+				auto n = bp->find_node(w2s(tokens[2]));
 				if (n)
 				{
-					emm.bp->remove_node(n);
-					console->print("node removed: %s\n", s_id.c_str());
+					bp->remove_node(n);
+					console->print(L"node removed: " + tokens[2]);
 				}
 				else
-					console->print("node not found\n");
+					console->print(L"node not found");
 			}
-			else if (s_what == "link")
+			else if (tokens[1] == L"link")
 			{
-				scanf("%s", command_line);
-				auto s_in_address = std::string(command_line);
-
-				auto i = emm.bp->find_input(s_in_address.c_str());
+				auto i = bp->find_input(w2s(tokens[3]));
 				if (i)
 				{
 					i->link_to(nullptr);
-					console->print("link removed: %s\n", s_in_address.c_str());
+					console->print(L"link removed: " + tokens[2]);
 				}
 				else
-					console->print("input not found\n");
+					console->print(L"input not found");
 			}
 			else
-				console->print("unknow object to remove\n");
+				console->print(L"unknow object to remove");
 		}
 		else if (tokens[0] == L"set")
-			emm.set_data(w2s(tokens[1]), w2s(tokens[2]));
+			set_data(w2s(tokens[1]), w2s(tokens[2]));
 		else if (tokens[0] == L"update")
 		{
-			emm.bp->update();
+			bp->update();
 			console->print(L"BP updated");
 		}
 		else if (tokens[0] == L"save")
 		{
-			BP::save_to_file(emm.bp, emm.filename);
+			BP::save_to_file(bp, filename);
 			console->print(L"file saved");
 		}
 		else if (tokens[0] == L"set-layout")
 		{
-			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(emm.filename))
-				emm.generate_graph_and_layout();
+			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(filename))
+				generate_graph_and_layout();
 			if (std::filesystem::exists(L"bp.graph.txt"))
 			{
 				auto str = get_file_string(L"bp.graph.txt");
@@ -1142,7 +1114,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				std::smatch match;
 				while (std::regex_search(str, match, reg_node))
 				{
-					auto n = emm.bp->find_node(match[1].str().c_str());
+					auto n = bp->find_node(match[1].str().c_str());
 					if (n)
 						n->pos = Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f;
 
@@ -1154,8 +1126,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				console->print(L"bp.graph.txt not found");
 		}
 		else
-			console->print(L"unknow command");*/
-	}, new_mail_p(nullptr), filename + L":", Vec2f(850.f, 420.f));
+			console->print(L"unknow command");
+	}, new_mail_p(c_editor), filename + L":", Vec2f(850.f, 420.f));
 
 	open_image_viewer(3, Vec2f(350.f, 300.f));
 }
