@@ -66,8 +66,8 @@ namespace flame
 
 		t->take_all_children();
 		looper().add_delay_event([](void* c) {
-			auto e = *(Entity**)c;
-			e->take_child(get_topmost(e));
-		}, new_mail_p(e));
+			auto t = *(Entity**)c;
+			t->parent()->take_child(t);
+		}, new_mail_p(t));
 	}
 }

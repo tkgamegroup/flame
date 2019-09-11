@@ -20,6 +20,7 @@
 #include "../app.h"
 #include "blueprint_editor.h"
 #include "console.h"
+#include "image_viewer.h"
 
 template<class T>
 void create_edit(Entity* parent, BP::Slot* input)
@@ -120,10 +121,10 @@ struct cBPEditor : Component
 	{
 	}
 
-	void init(const std::wstring& _filename)
+	void init(const std::wstring& _filename, bool no_compile)
 	{
 		filename = _filename;
-		bp = BP::create_from_file(filename, true);
+		bp = BP::create_from_file(filename, no_compile);
 		for (auto i = 0; i < bp->dependency_count(); i++)
 			dbs.push_back(bp->dependency_typeinfodatabase(i));
 		dbs.push_back(bp->typeinfodatabase);
@@ -340,7 +341,7 @@ struct cBPSlot : Component
 	}
 };
 
-void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
+void open_blueprint_editor(const std::wstring& filename, bool no_compile, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
@@ -371,7 +372,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 	}
 
 	auto c_editor = new_component<cBPEditor>();
-	c_editor->init(filename);
+	c_editor->init(filename, no_compile);
 	e_page->add_component(c_editor);
 
 	auto e_btn_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
@@ -447,6 +448,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 			e_node->add_component(c_layout);
 
 			auto c_node = new_component<cBPNode>();
+			c_node->editor = c_editor;
 			c_node->n = n;
 			e_node->add_component(c_node);
 
@@ -540,6 +542,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 							e_slot->add_component(cEventReceiver::create());
 
 							auto c_slot = new_component<cBPSlot>();
+							c_slot->editor = c_editor;
 							c_slot->s = input;
 							e_slot->add_component(c_slot);
 						}
@@ -780,6 +783,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 							e_slot->add_component(cEventReceiver::create());
 
 							auto c_slot = new_component<cBPSlot>();
+							c_slot->editor = c_editor;
 							c_slot->s = output;
 							e_slot->add_component(c_slot);
 						}
@@ -1152,4 +1156,6 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 		else
 			console->print(L"unknow command");*/
 	}, new_mail_p(nullptr), filename + L":", Vec2f(850.f, 420.f));
+
+	open_image_viewer(3, Vec2f(350.f, 300.f));
 }

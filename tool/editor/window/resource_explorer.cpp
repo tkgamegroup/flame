@@ -1,16 +1,37 @@
 #include <flame/graphics/font.h>
+#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
+#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/tree.h>
+#include <flame/universe/components/menu.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
 #include "resource_explorer.h"
+#include "blueprint_editor.h"
 
-void create_directory_tree_node(const std::filesystem::path& path, Entity* parent)
+struct cResourceExplorer : Component
+{
+	Entity* root;
+
+	std::wstring selected_filename;
+	Entity* bp_menu;
+
+	cResourceExplorer() :
+		Component("ResourceExplorer")
+	{
+	}
+
+	virtual void update() override
+	{
+	}
+};
+
+void create_directory_tree_node(cResourceExplorer* explorer, const std::filesystem::path& path, Entity* parent)
 {
 	auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, Icon_FOLDER_O + std::wstring(L" ") + path.filename().wstring());
 	parent->add_child(e_tree_node);
@@ -20,12 +41,29 @@ void create_directory_tree_node(const std::filesystem::path& path, Entity* paren
 		if (std::filesystem::is_directory(it->status()))
 		{
 			if (it->path().filename().wstring() != L"build")
-				create_directory_tree_node(it->path(), e_sub_tree);
+				create_directory_tree_node(explorer, it->path(), e_sub_tree);
 		}
 		else
 		{
 			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, Icon_FILE_O + std::wstring(L" ") + it->path().filename().wstring());
 			e_sub_tree->add_child(e_tree_leaf);
+			struct Capture
+			{
+				std::wstring fn;
+				cResourceExplorer* e;
+			}capture;
+			capture.fn = it->path().wstring();
+			capture.e = explorer;
+			((cEventReceiver*)e_tree_leaf->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto& capture = *(Capture*)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					capture.e->selected_filename = capture.fn;
+				else if (is_mouse_down(action, key, true) && key == Mouse_Right)
+				{
+					capture.e->selected_filename = capture.fn;
+					popup_menu(capture.e->bp_menu, capture.e->root, pos);
+				}
+			}, new_mail(&capture));
 		}
 	}
 }
@@ -56,6 +94,32 @@ void open_resource_explorer(const Vec2f& pos)
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);
 	}
+	auto c_explorer = new_component<cResourceExplorer>();
+	{
+		c_explorer->root = app.root;
+		c_explorer->bp_menu = create_standard_menu();
+		auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
+		c_explorer->bp_menu->add_child(mi_open);
+		((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto c_explorer = *(cResourceExplorer**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			{
+				destroy_topmost(c_explorer->root);
+				open_blueprint_editor(c_explorer->selected_filename, false, Vec2f(350.f, 20.f));
+			}
+		}, new_mail_p(c_explorer));
+		auto mi_open_no_compile = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
+		c_explorer->bp_menu->add_child(mi_open_no_compile);
+		((cEventReceiver*)mi_open_no_compile->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto c_explorer = *(cResourceExplorer**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			{
+				destroy_topmost(c_explorer->root);
+				open_blueprint_editor(c_explorer->selected_filename, true, Vec2f(350.f, 20.f));
+			}
+		}, new_mail_p(c_explorer));
+	}
+	e_page->add_component(c_explorer);
 	e_docker->child(1)->add_child(e_page);
 
 	auto e_tree = Entity::create();
@@ -79,7 +143,7 @@ void open_resource_explorer(const Vec2f& pos)
 		e_tree->add_component(cTree::create());
 	}
 
-	create_directory_tree_node(L"../renderpath", e_tree);
+	create_directory_tree_node(c_explorer, L"../renderpath", e_tree);
 
 	e_page->add_child(wrap_standard_scrollbar(e_tree, ScrollbarVertical, true, 1.f));
 }

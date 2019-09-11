@@ -4,4 +4,4 @@
 
 using namespace flame;
 
-void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos);
+void open_blueprint_editor(const std::wstring& filename, bool no_compile, const Vec2f& pos);

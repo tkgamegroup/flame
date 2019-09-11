@@ -25,8 +25,7 @@
 #include <flame/universe/components/window.h>
 
 #include "app.h"
-#include "window/console.h"
-#include "window/blueprint_editor.h"
+#include "window/resource_explorer.h"
 
 void App::create()
 {
@@ -78,6 +77,8 @@ void App::create()
 		c_aligner->y_align = AlignyBottom;
 		e_fps->add_component(c_aligner);
 	}
+
+	open_resource_explorer(Vec2f(20.f));
 }
 
 void App::run()
