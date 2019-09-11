@@ -35,7 +35,7 @@ namespace flame
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
-		void start()
+		void start() 
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
@@ -264,12 +264,12 @@ namespace flame
 									p->parent()->remove_child(p);
 								else if (p->name_hash() == cH("docker_layout"))
 								{
-									auto idx = p->child_position(docker);
-									auto oth_docker = p->child(idx == 0 ? 2 : 0);
+									auto oth_docker = p->child(p->child_position(docker) == 0 ? 2 : 0);
 									p->take_child(oth_docker);
 									auto pp = p->parent();
+									auto idx = pp->child_position(p);
 									pp->remove_child(p);
-									pp->add_child(oth_docker);
+									pp->add_child(oth_docker, idx);
 									if (pp->name_hash() == cH("docker_container"))
 									{
 										auto aligner = (cAligner*)oth_docker->find_component(cH("Aligner"));

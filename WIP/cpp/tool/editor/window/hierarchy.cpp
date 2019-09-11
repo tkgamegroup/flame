@@ -1,15 +1,3 @@
-HierarchyWindow *hierarchy_window = nullptr;
-
-HierarchyWindow::HierarchyWindow() :
-	Window("Hierarchy")
-{
-}
-
-HierarchyWindow::~HierarchyWindow()
-{
-	hierarchy_window = nullptr;
-}
-
 static void show_nodes(flame::Node *n)
 {
 	auto node_style = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -25,14 +13,5 @@ static void show_nodes(flame::Node *n)
 		for (auto &c : n->get_children())
 			show_nodes(c.get());
 		ImGui::TreePop();
-	}
-}
-
-void HierarchyWindow::on_show()
-{
-	if (scene_editor)
-	{
-		auto scene = scene_editor->scene;
-		show_nodes(scene);
 	}
 }

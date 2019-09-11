@@ -529,86 +529,14 @@ static flame::ui::Window *test_window;
 
 int main(int argc, char** argv)
 {
-	flame::init(1280, 720, 1, 1280, 720, flame::SurfaceStyleFrame | flame::SurfaceStyleResizable, "Flame Engine Editor");
 	flame::setup_shader_file_watcher();
-
-	{
-		for (auto &f : std::filesystem::directory_iterator("ui/windows"))
-		{
-			auto p = f.path();
-			auto ext = p.extension().string();
-			if (ext == ".dll")
-			{
-				auto mod = LoadLibrary(p.string().c_str());
-				auto create_func = (PF_FLAME_CREATE_UI_WINDOW)(GetProcAddress(mod, "flame_create_ui_window"));
-				auto destroy_func = (PF_FLAME_DESTROY_UI_WINDOW)(GetProcAddress(mod, "flame_destroy_ui_window"));
-
-				test_window = create_func();
-			}
-		}
-	}
-
-	{
-		auto xml = flame::load_xml("ui", "ui.xml");
-		if (xml)
-		{
-			for (auto &n : xml->children)
-			{
-				if (n->name == "resource_explorer")
-					resourceExplorer = new ResourceExplorer;
-				else if (n->name == "hierarchy_window")
-					hierarchy_window = new HierarchyWindow;
-				else if (n->name == "inspector_window")
-					inspector_window = new InspectorWindow;
-				else if (n->name == "scene_editor")
-				{
-					auto s = flame::create_scene(n->find_attribute("filename")->value);
-					if (s)
-					{
-						s->name = "scene";
-						if (!scene_editor)
-							scene_editor = new SceneEditor(s);
-					}
-				}
-			}
-			flame::release_xml(xml);
-		}
-	}
-
-	flame::add_destroy_listener([]() {
-		flame::XMLDoc xml("ui");
-		if (resourceExplorer)
-			xml.children.emplace_back(new flame::XMLNode("resource_explorer"));
-		if (hierarchy_window)
-			xml.children.emplace_back(new flame::XMLNode("hierarchy_window"));
-		if (inspector_window)
-			xml.children.emplace_back(new flame::XMLNode("inspector_window"));
-		if (scene_editor)
-		{
-			auto n = new flame::XMLNode("scene_editor");
-			n->attributes.emplace_back(new flame::XMLAttribute("filename", scene_editor->scene->get_filename()));
-			xml.children.emplace_back(n);
-
-			flame::save_scene(scene_editor->scene);
-		}
-		if (SelectObject)
-			xml.children.emplace_back(new flame::XMLNode("select"));
-		flame::save_xml(&xml, "ui.xml");
-
-		flame::ui::save_layout();
-	});
-
-	//flame::app->set_window_maximized(true);
+	
 	flame::run([]() {
-		//flame::ui::draw_text("Hello 2018", 100, 400, 150); // test for sdf
 		show_menu();
 		show_toolbar();
 
-		//test_window->show();
-
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
 		ImGui::Begin("Profile");
-		ImGui::Text("FPS:%d", flame::FPS);
 		ImGui::Text("total:%dk", int(flame::p_total_time / 1000));
 		ImGui::Text("head:%dk %d%%", int(flame::p_head_time / 1000), 100 * flame::p_head_time / flame::p_total_time);
 		ImGui::Text("ui begin:%dk %d%%", int(flame::p_ui_begin_time / 1000), 100 * flame::p_ui_begin_time / flame::p_total_time);
@@ -617,10 +545,6 @@ int main(int argc, char** argv)
 		ImGui::Text("tail:%dk %d%%", int(flame::p_tail_time / 1000), 100 * flame::p_tail_time / flame::p_total_time);
 		ImGui::End();
 		ImGui::PopStyleVar();
-
-		ImGui::BeginStatusBar();
-		ImGui::Text("FPS:%d", flame::FPS);
-		ImGui::EndStatusBar();
 	});
 
 	return 0;
