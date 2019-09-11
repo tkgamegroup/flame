@@ -66,6 +66,7 @@ namespace flame
 
 			Descriptorset* ds;
 			Imageview* white_iv;
+			std::vector<Imageview*> ivs;
 
 			Buffer* vtx_buffer;
 			Buffer* idx_buffer;
@@ -92,6 +93,8 @@ namespace flame
 				vtx_buffer = (Buffer*)renderpath->find_output("vtx_buf.out")->data_p();
 				idx_buffer = (Buffer*)renderpath->find_output("idx_buf.out")->data_p();
 
+				ivs.resize(ds->layout()->get_binding(0).count, white_iv);
+
 				vtx_buffer->map();
 				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
@@ -109,11 +112,6 @@ namespace flame
 				pl_element = (Pipeline*)renderpath->find_output("pl_element.out")->data_p();
 				pl_text_lcd = (Pipeline*)renderpath->find_output("pl_text_lcd.out")->data_p();
 				pl_text_sdf = (Pipeline*)renderpath->find_output("pl_text_sdf.out")->data_p();
-			}
-
-			void set_image(int index, Imageview* v, Filter filter)
-			{
-				ds->set_image(0, index, v ? v : white_iv, (filter == FilterLinear ? d->sp_linear : d->sp_nearest));
 			}
 
 			void begin_draw(CmdType type, uint id)
@@ -488,7 +486,22 @@ namespace flame
 
 		void Canvas::set_image(uint index, Imageview* v, Filter filter)
 		{
-			((CanvasPrivate*)this)->set_image(index, v, filter);
+			auto thiz = (CanvasPrivate*)this;
+			if (!v)
+				v = thiz->white_iv;
+			thiz->ds->set_image(0, index, v, (filter == FilterLinear ? thiz->d->sp_linear : thiz->d->sp_nearest));
+			thiz->ivs[index] = v;
+		}
+
+		uint Canvas::find_free_image() const
+		{
+			auto thiz = (CanvasPrivate*)this;
+			for (auto i = 1; i < thiz->ivs.size(); i++)
+			{
+				if (thiz->ivs[i] == thiz->white_iv)
+					return i;
+			}
+			return 0;
 		}
 
 		void Canvas::stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)

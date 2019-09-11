@@ -121,6 +121,11 @@ struct cBPEditor : Component
 	{
 	}
 
+	~cBPEditor()
+	{
+		app.canvas->set_image(rt_id, nullptr);
+	}
+
 	void init(const std::wstring& _filename, bool no_compile)
 	{
 		filename = _filename;
@@ -131,6 +136,7 @@ struct cBPEditor : Component
 		rt = graphics::Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
 		rt->init(Vec4c(0, 0, 0, 255));
 		rt_v = Imageview::create(rt);
+		rt_id = app.canvas->find_free_image();
 		rt_cbs.resize(1);
 		rt_cbs[0] = Commandbuffer::create(app.d->gcp);
 
@@ -139,7 +145,7 @@ struct cBPEditor : Component
 		bp->find_input("rt_dst.v")->set_data_p(rt_v);
 		bp->find_input("make_cmd.cmdbufs")->set_data_p(&rt_cbs);
 
-		app.canvas->set_image(3, rt_v);
+		app.canvas->set_image(rt_id, rt_v);
 
 		selected.n = nullptr;
 		dragging_slot = nullptr;

@@ -109,6 +109,11 @@ namespace flame
 #endif
 		}
 
+		DescriptorBinding Descriptorlayout::get_binding(uint binding)
+		{
+			return ((DescriptorlayoutPrivate*)this)->bindings_map[binding];
+		}
+
 		Descriptorlayout* Descriptorlayout::create(Device* d, const std::vector<void*>& bindings)
 		{
 			return new DescriptorlayoutPrivate(d, bindings);
@@ -260,6 +265,11 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+		}
+
+		Descriptorlayout* Descriptorset::layout()
+		{
+			return ((DescriptorsetPrivate*)this)->l;
 		}
 
 		void Descriptorset::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)

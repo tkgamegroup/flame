@@ -44,12 +44,16 @@ namespace flame
 
 		struct Descriptorlayout
 		{
+			DescriptorBinding get_binding(uint binding);
+
 			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, const std::vector<void*>& bindings);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 
 		struct Descriptorset
 		{
+			FLAME_GRAPHICS_EXPORTS Descriptorlayout* layout();
+
 			FLAME_GRAPHICS_EXPORTS void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0);
 			FLAME_GRAPHICS_EXPORTS void set_image(uint binding, uint index, Imageview* v, Sampler* sampler);
 
