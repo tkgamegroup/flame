@@ -272,9 +272,9 @@ namespace flame
 				focusing->on_drag_and_drop(DragStart, nullptr, Vec2f(mouse_pos));
 			else if (prev_dragging && (!focusing || !focusing->dragging))
 			{
-				prev_dragging->on_drag_and_drop(DragEnd, prev_drag_overing, Vec2f(mouse_pos));
 				if (prev_drag_overing)
 					prev_drag_overing->on_drag_and_drop(Dropped, prev_dragging, Vec2f(mouse_pos));
+				prev_dragging->on_drag_and_drop(DragEnd, prev_drag_overing, Vec2f(mouse_pos));
 			}
 			if (drag_overing)
 				drag_overing->on_drag_and_drop(DragOvering, focusing, Vec2f(mouse_pos));

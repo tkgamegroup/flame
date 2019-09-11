@@ -168,6 +168,14 @@ namespace flame
 		void* drag_and_drop_listener;
 		Vec2f drop_pos;
 
+		struct Primitive
+		{
+			Vec4c col;
+			Vec2f pos;
+			Vec2f size;
+		};
+		std::vector<Primitive> drop_tips;
+
 		cDockerTabPrivate()
 		{
 			element = nullptr;
@@ -176,7 +184,9 @@ namespace flame
 
 			root = nullptr;
 
+			floating = false;
 			page = nullptr;
+			page_element = nullptr;
 
 			mouse_listener = nullptr;
 			drag_and_drop_listener = nullptr;
@@ -219,6 +229,7 @@ namespace flame
 				auto thiz = (*(cDockerTabPrivate**)c);
 				if (action == DragStart)
 				{
+					thiz->floating = true;
 					auto list = thiz->list_item->list;
 					if (list && list->selected == thiz->entity)
 						list->set_selected(list->entity->child(0));
@@ -274,18 +285,18 @@ namespace flame
 						element->x = element->global_x;
 						element->y = element->global_y;
 						element->alpha = 0.5f;
-						thiz->root->add_child(e);
 						page_element->x = element->x;
 						page_element->y = element->y + element->global_height + 8.f;
 						page_element->alpha = 0.5f;
 						page_aligner->width_policy = SizeFixed;
 						page_aligner->height_policy = SizeFixed;
 						thiz->root->add_child(e_page);
+						thiz->root->add_child(e);
 					}, new_mail_p(thiz));
 				}
 				else if (action == DragEnd)
 				{
-					if (!er)
+					if (!er || thiz->floating)
 					{
 						thiz->drop_pos = pos;
 						looper().add_delay_event([](void* c) {
@@ -333,6 +344,21 @@ namespace flame
 			}, new_mail_p(this));
 		}
 
+		void update()
+		{
+			if (!drop_tips.empty())
+			{
+				for (auto p : drop_tips)
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, p.pos, p.size);
+					element->canvas->fill(points, p.col);
+				}
+
+				drop_tips.clear();
+			}
+		}
+
 		Component* copy()
 		{
 			auto copy = new cDockerTabPrivate();
@@ -350,6 +376,7 @@ namespace flame
 
 	void cDockerTab::update()
 	{
+		((cDockerTabPrivate*)this)->update();
 	}
 
 	Component* cDockerTab::copy()
@@ -367,8 +394,6 @@ namespace flame
 		void* drag_and_drop_listener;
 		cDockerTab* drop_tab;
 		uint drop_idx;
-		bool show_drop_tip;
-		float show_drop_pos;
 		void* selected_changed_listener;
 
 		cDockerTabbarPrivate()
@@ -380,8 +405,6 @@ namespace flame
 			drag_and_drop_listener = nullptr;
 			drop_tab = nullptr;
 			drop_idx = 0;
-			show_drop_tip = false;
-			show_drop_pos = 0.f;
 		}
 
 		~cDockerTabbarPrivate()
@@ -438,17 +461,24 @@ namespace flame
 				{
 					if (action == DragOvering)
 					{
-						auto idx = thiz->calc_pos(pos.x(), &thiz->show_drop_pos);
+						float show_drop_pos;
+						auto idx = thiz->calc_pos(pos.x(), &show_drop_pos);
 						if (idx == thiz->entity->child_count())
-							thiz->show_drop_pos -= 10.f;
+							show_drop_pos -= 10.f;
 						else if (idx != 0)
-							thiz->show_drop_pos -= 5.f;
-						thiz->show_drop_tip = true;
+							show_drop_pos -= 5.f;
+						auto drop_tab = (cDockerTabPrivate*)(er->entity->find_component(cH("DockerTab")));
+						cDockerTabPrivate::Primitive primitive;
+						primitive.col = Vec4c(50, 80, 200, 200);
+						primitive.pos = Vec2f(show_drop_pos, thiz->element->global_y);
+						primitive.size = Vec2f(10.f, thiz->element->global_height);
+						drop_tab->drop_tips.push_back(primitive);
 					}
 					else if (action == Dropped)
 					{
 						thiz->drop_tab = (cDockerTab*)(er->entity->find_component(cH("DockerTab")));
 						thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
+						thiz->drop_tab->floating = false;
 						looper().add_delay_event([](void* c) {
 							auto thiz = *(cDockerTabbarPrivate**)c;
 							auto tabbar = thiz->entity;
@@ -493,17 +523,6 @@ namespace flame
 			}, new_mail_p(this));
 			list->set_selected(entity->child(0));
 		}
-
-		void update()
-		{
-			if (show_drop_tip)
-			{
-				show_drop_tip = false;
-				std::vector<Vec2f> points;
-				path_rect(points, Vec2f(show_drop_pos, element->global_y), Vec2f(10.f, element->global_height));
-				element->canvas->fill(points, Vec4c(50, 80, 200, 200));
-			}
-		}
 	};
 
 	void cDockerTabbar::start()
@@ -513,7 +532,6 @@ namespace flame
 
 	void cDockerTabbar::update()
 	{
-		((cDockerTabbarPrivate*)this)->update();
 	}
 
 	Component* cDockerTabbar::copy()
@@ -531,7 +549,6 @@ namespace flame
 		void* drag_and_drop_listener;
 		cDockerTab* drop_tab;
 		Side dock_side;
-		bool show_drop_tip;
 
 		cDockerPagesPrivate()
 		{
@@ -541,7 +558,6 @@ namespace flame
 			drag_and_drop_listener = nullptr;
 			drop_tab = nullptr;
 			dock_side = Outside;
-			show_drop_tip = false;
 		}
 
 		~cDockerPagesPrivate()
@@ -576,7 +592,48 @@ namespace flame
 						thiz->dock_side = SideN;
 					else if (rect_contains(Vec4f(center + Vec2f(-25.f, 30.f), center + Vec2f(25.f, 55.f)), pos))
 						thiz->dock_side = SideS;
-					thiz->show_drop_tip = true;
+
+					auto drop_tab = (cDockerTabPrivate*)(er->entity->find_component(cH("DockerTab")));
+					{
+						cDockerTabPrivate::Primitive primitive;
+						primitive.col = (thiz->dock_side == SideCenter ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+						primitive.pos = center + Vec2f(-25.f);
+						primitive.size = Vec2f(50.f);
+						std::vector<Vec2f> points;
+						drop_tab->drop_tips.push_back(primitive);
+					}
+					{
+						cDockerTabPrivate::Primitive primitive;
+						primitive.col = (thiz->dock_side == SideW ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+						primitive.pos = center + Vec2f(-55.f, -25.f);
+						primitive.size = Vec2f(25.f, 50.f);
+						std::vector<Vec2f> points;
+						drop_tab->drop_tips.push_back(primitive);
+					}
+					{
+						cDockerTabPrivate::Primitive primitive;
+						primitive.col = (thiz->dock_side == SideE ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+						primitive.pos = center + Vec2f(30.f, -25.f);
+						primitive.size = Vec2f(25.f, 50.f);
+						std::vector<Vec2f> points;
+						drop_tab->drop_tips.push_back(primitive);
+					}
+					{
+						cDockerTabPrivate::Primitive primitive;
+						primitive.col = (thiz->dock_side == SideN ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+						primitive.pos = center + Vec2f(-25.f, -55.f);
+						primitive.size = Vec2f(50.f, 25.f);
+						std::vector<Vec2f> points;
+						drop_tab->drop_tips.push_back(primitive);
+					}
+					{
+						cDockerTabPrivate::Primitive primitive;
+						primitive.col = (thiz->dock_side == SideS ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+						primitive.pos = center + Vec2f(-25.f, 30.f);
+						primitive.size = Vec2f(50.f, 25.f);
+						std::vector<Vec2f> points;
+						drop_tab->drop_tips.push_back(primitive);
+					}
 				}
 				else if (action == Dropped)
 				{
@@ -590,6 +647,7 @@ namespace flame
 						else
 						{
 							thiz->drop_tab = (cDockerTab*)(er->entity->find_component(cH("DockerTab")));
+							thiz->drop_tab->floating = false;
 							looper().add_delay_event([](void* c) {
 								auto thiz = (*(cDockerPagesPrivate**)c);
 								auto tab = thiz->drop_tab;
@@ -723,40 +781,6 @@ namespace flame
 				}
 			}, new_mail_p(this));
 		}
-
-		void update()
-		{
-			if (show_drop_tip)
-			{
-				show_drop_tip = false;
-				auto center = Vec2f(element->global_x + element->global_width * 0.5f, element->global_y + element->global_height * 0.5f);
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, center + Vec2f(-25.f), Vec2f(50.f));
-					element->canvas->fill(points, dock_side == SideCenter ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
-				}
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, center + Vec2f(-55.f, -25.f), Vec2f(25, 50.f));
-					element->canvas->fill(points, dock_side == SideW ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
-				}
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, center + Vec2f(30.f, -25.f), Vec2f(25, 50.f));
-					element->canvas->fill(points, dock_side == SideE ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
-				}
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, center + Vec2f(-25.f, -55.f), Vec2f(50, 25.f));
-					element->canvas->fill(points, dock_side == SideN ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
-				}
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, center + Vec2f(-25.f, 30.f), Vec2f(50, 25.f));
-					element->canvas->fill(points, dock_side == SideS ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
-				}
-			}
-		}
 	};
 
 	void cDockerPages::start()
@@ -766,7 +790,6 @@ namespace flame
 
 	void cDockerPages::update()
 	{
-		((cDockerPagesPrivate*)this)->update();
 	}
 
 	Component* cDockerPages::copy()

@@ -62,6 +62,7 @@ namespace flame
 
 		Entity* root;
 
+		bool floating;
 		Entity* page;
 		cElement* page_element;
 

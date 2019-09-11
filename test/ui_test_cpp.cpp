@@ -527,12 +527,6 @@ int main(int argc, char** args)
 	}
 
 	{
-		auto e_tab = get_docker_tab_model();
-		((cText*)e_tab->find_component(cH("Text")))->font_atlas = app.font_atlas_pixel;
-		((cDockerTab*)e_tab->find_component(cH("DockerTab")))->root = app.root;
-	}
-
-	{
 		auto e_container = get_docker_container_model()->copy();
 		app.root->add_child(e_container);
 		{
@@ -554,9 +548,7 @@ int main(int argc, char** args)
 				L"Hierarchy",
 			};
 
-			auto e_tab = get_docker_tab_model()->copy();
-			((cText*)e_tab->find_component(cH("Text")))->set_text(names[i]);
-			e_tabbar->add_child(e_tab);
+			e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], app.root));
 
 			auto e_page = get_docker_page_model()->copy();
 			e_pages->add_child(e_page);
@@ -604,9 +596,7 @@ int main(int argc, char** args)
 						L"ResourceExplorer"
 					};
 
-					auto e_tab = get_docker_tab_model()->copy();
-					((cText*)e_tab->find_component(cH("Text")))->set_text(names[i]);
-					e_tabbar->add_child(e_tab);
+					e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], app.root));
 
 					auto e_page = get_docker_page_model()->copy();
 					e_pages->add_child(e_page);
@@ -639,9 +629,7 @@ int main(int argc, char** args)
 						L"ShaderEditor"
 					};
 
-					auto e_tab = get_docker_tab_model()->copy();
-					((cText*)e_tab->find_component(cH("Text")))->set_text(names[i]);
-					e_tabbar->add_child(e_tab);
+					e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], app.root));
 
 					auto e_page = get_docker_page_model()->copy();
 					e_pages->add_child(e_page);
