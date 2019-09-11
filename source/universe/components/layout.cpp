@@ -110,10 +110,10 @@ namespace flame
 						w += al.first->width;
 						break;
 					case SizeFitParent:
-						factor += 1.f/*al.second->width_factor*/;
+						factor += al.second->width_factor;
 						break;
 					case SizeGreedy:
-						factor += 1.f/*al.second->width_factor*/;
+						factor += al.second->width_factor;
 						w += al.second->min_width;
 						break;
 					}
@@ -156,9 +156,9 @@ namespace flame
 					if (al.second)
 					{
 						if (al.second->width_policy == SizeFitParent)
-							al.first->width = w/* * al.second->width_factor*/;
+							al.first->width = w * al.second->width_factor;
 						else if (al.second->width_policy == SizeGreedy)
-							al.first->width = al.second->min_width + w/* * al.second->width_factor*/;
+							al.first->width = al.second->min_width + w * al.second->width_factor;
 					}
 				}
 				if (height_fit_children)
@@ -227,10 +227,10 @@ namespace flame
 						h += al.first->height;
 						break;
 					case SizeFitParent:
-						factor += 1.f/*al.second->height_factor*/;
+						factor += al.second->height_factor;
 						break;
 					case SizeGreedy:
-						factor += 1.f/*al.second->height_factor*/;
+						factor += al.second->height_factor;
 						h += al.second->min_height;
 						break;
 					}
@@ -282,9 +282,9 @@ namespace flame
 					if (al.second)
 					{
 						if (al.second->height_policy == SizeFitParent)
-							al.first->height = h/* * al.second->height_factor*/;
+							al.first->height = h * al.second->height_factor;
 						else if (al.second->height_policy == SizeGreedy)
-							al.first->height = al.second->min_height + h/* * al.second->height_factor*/;
+							al.first->height = al.second->min_height + h * al.second->height_factor;
 					}
 				}
 				auto y = element->inner_padding[1];
