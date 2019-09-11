@@ -8,6 +8,7 @@
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
 
+#include "../app.h"
 #include "console.h"
 
 struct cConsolePrivate : cConsole
@@ -24,9 +25,10 @@ void cConsole::update()
 {
 }
 
-Entity* open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& capture, const Vec2f& pos, graphics::FontAtlas* font_atlas)
+void open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& capture, const std::wstring& init_str, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
+	app.root->add_child(e_container);
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
 		c_element->x = pos.x();
@@ -37,15 +39,11 @@ Entity* open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole
 
 	auto e_docker = get_docker_model()->copy();
 	e_container->add_child(e_docker);
-	auto e_tabbar = e_docker->child(0);
-	auto e_pages = e_docker->child(1);
 
-	auto e_tab = get_docker_tab_model()->copy();
-	((cText*)e_tab->find_component(cH("Text")))->set_text(L"Console");
-	e_tabbar->add_child(e_tab);
+	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, L"Console", app.root));
 
 	auto e_page = get_docker_page_model()->copy();
-	e_pages->add_child(e_page);
+	e_docker->child(1)->add_child(e_page);
 	{
 		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
 
@@ -80,12 +78,14 @@ Entity* open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole
 	{
 		e_log->add_component(cElement::create());
 
-		e_log->add_component(cText::create(font_atlas));
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->set_text(init_str);
+		e_log->add_component(c_text);
 	}
 
-	e_page->add_child(wrap_standard_scrollbar(e_log_view, ScrollbarVertical, true, font_atlas->pixel_height));
+	e_page->add_child(wrap_standard_scrollbar(e_log_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
 
-	auto e_btn_clear = create_standard_button(font_atlas, 1.f, L"Clear");
+	auto e_btn_clear = create_standard_button(app.font_atlas_pixel, 1.f, L"Clear");
 	e_page->add_child(e_btn_clear);
 	((cEventReceiver*)e_btn_clear->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 		if (is_mouse_clicked(action, key))
@@ -111,10 +111,10 @@ Entity* open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole
 		e_input->add_component(c_layout);
 	}
 
-	auto e_input_edit = create_standard_edit(0.f, font_atlas, 1.f);
+	auto e_input_edit = create_standard_edit(0.f, app.font_atlas_pixel, 1.f);
 	e_input->add_child(e_input_edit);
 
-	auto e_btn_exec = create_standard_button(font_atlas, 1.f, L"Exec");
+	auto e_btn_exec = create_standard_button(app.font_atlas_pixel, 1.f, L"Exec");
 	e_input->add_child(e_btn_exec);
 
 	auto c_console = new_component<cConsolePrivate>();
@@ -140,6 +140,4 @@ Entity* open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole
 		}
 	}, new_mail_p(c_console));
 	e_container->add_component(c_console);
-
-	return e_container;
 }

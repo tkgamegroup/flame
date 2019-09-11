@@ -779,41 +779,42 @@ namespace flame
 		return new cDockerPagesPrivate;
 	}
 
-	static Entity* docker_tab_model;
-	Entity* get_docker_tab_model()
+	Entity* create_standard_docker_tab(graphics::FontAtlas* font_atlas, const std::wstring& title, Entity* root)
 	{
-		if (!docker_tab_model)
-		{
-			docker_tab_model = Entity::create();
-			docker_tab_model->set_name("docker_tab");
+		auto tab = Entity::create();
+		tab->set_name("docker_tab");
 
-			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			docker_tab_model->add_component(c_element);
+		auto c_element = cElement::create();
+		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+		tab->add_component(c_element);
 
-			docker_tab_model->add_component(cText::create(nullptr));
+		auto c_text = cText::create(font_atlas);
+		c_text->set_text(title);
+		tab->add_component(c_text);
 
-			docker_tab_model->add_component(cEventReceiver::create());
+		tab->add_component(cEventReceiver::create());
 
-			docker_tab_model->add_component(cDockerTab::create());
+		auto c_docker_tab = cDockerTab::create();
+		c_docker_tab->root = root;
+		tab->add_component(c_docker_tab);
 
-			docker_tab_model->add_component(cStyleBackgroundColor::create());
-			docker_tab_model->add_component(cStyleTextColor::create());
+		tab->add_component(cStyleBackgroundColor::create());
+		tab->add_component(cStyleTextColor::create());
 
-			auto list_item = cListItem::create();
-			list_item->unselected_color_normal = default_style.tab_color_normal;
-			list_item->unselected_color_hovering = default_style.tab_color_else;
-			list_item->unselected_color_active = default_style.tab_color_else;
-			list_item->unselected_text_color_normal = default_style.tab_text_color_normal;
-			list_item->unselected_text_color_else = default_style.tab_text_color_else;
-			list_item->selected_color_normal = default_style.selected_tab_color_normal;
-			list_item->selected_color_hovering = default_style.selected_tab_color_else;
-			list_item->selected_color_active = default_style.selected_tab_color_else;
-			list_item->selected_text_color_normal = default_style.selected_tab_text_color_normal;
-			list_item->selected_text_color_else = default_style.selected_tab_text_color_else;
-			docker_tab_model->add_component(list_item);
-		}
-		return docker_tab_model;
+		auto list_item = cListItem::create();
+		list_item->unselected_color_normal = default_style.tab_color_normal;
+		list_item->unselected_color_hovering = default_style.tab_color_else;
+		list_item->unselected_color_active = default_style.tab_color_else;
+		list_item->unselected_text_color_normal = default_style.tab_text_color_normal;
+		list_item->unselected_text_color_else = default_style.tab_text_color_else;
+		list_item->selected_color_normal = default_style.selected_tab_color_normal;
+		list_item->selected_color_hovering = default_style.selected_tab_color_else;
+		list_item->selected_color_active = default_style.selected_tab_color_else;
+		list_item->selected_text_color_normal = default_style.selected_tab_text_color_normal;
+		list_item->selected_text_color_else = default_style.selected_tab_text_color_else;
+		tab->add_component(list_item);
+
+		return tab;
 	}
 
 	static Entity* docker_page_model;
