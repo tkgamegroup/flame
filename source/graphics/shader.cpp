@@ -71,7 +71,7 @@ namespace flame
 				auto binding = b->binding;
 
 				assert(binding < 64);
-				assert(bindings_map.size() <= binding || bindings_map[binding].binding >= 64);
+				assert(bindings_map.size() <= binding || bindings_map[binding].binding >= 64); // if the slot is empty?
 
 				if (bindings_map.size() <= binding)
 					bindings_map.resize(binding + 1);
@@ -109,7 +109,7 @@ namespace flame
 #endif
 		}
 
-		DescriptorBinding Descriptorlayout::get_binding(uint binding)
+		const DescriptorBinding& Descriptorlayout::get_binding(uint binding)
 		{
 			return ((DescriptorlayoutPrivate*)this)->bindings_map[binding];
 		}
@@ -755,11 +755,19 @@ namespace flame
 								auto& b = dsl->bindings_map[j];
 								if (b.binding < 64)
 								{
-									assert(b.type == DescriptorSampledImage); // others are WIP
-									std::string array_count_str;
-									if (b.count > 1)
-										array_count_str = "[" + std::to_string(b.count) + "]";
-									prefix += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + array_count_str + ";\n";
+									switch (b.type)
+									{
+									case DescriptorSampledImage:
+									{
+										std::string array_count_str;
+										if (b.count > 1)
+											array_count_str = "[" + std::to_string(b.count) + "]";
+										prefix += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + array_count_str + ";\n";
+									}
+									break;
+									default:
+										assert(0); // others are WIP
+									}
 								}
 							}
 						}

@@ -15,6 +15,8 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
+#include <flame/universe/components/menu.h>
+#include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
@@ -107,6 +109,12 @@ struct cBPEditor : Component
 	uint rt_id;
 	std::vector<void*> rt_cbs;
 
+	enum SelType
+	{
+		SelAir,
+		SelNode,
+		SelLink
+	}sel_type;
 	union
 	{
 		BP::Node* n;
@@ -147,9 +155,25 @@ struct cBPEditor : Component
 
 		app.canvas->set_image(rt_id, rt_v);
 
+		sel_type = SelAir;
 		selected.n = nullptr;
 		dragging_slot = nullptr;
 		running = false;
+	}
+
+	void delete_selected()
+	{
+		switch (sel_type)
+		{
+		case SelNode:
+			bp->remove_node(selected.n);
+			break;
+		case SelLink:
+			selected.l->link_to(nullptr);
+			break;
+		}
+		sel_type = SelAir;
+		selected.n = nullptr;
 	}
 
 	virtual void update() override
@@ -185,6 +209,7 @@ struct cBP : Component
 			auto thiz = *(cBP**)c;
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
+				thiz->editor->sel_type = cBPEditor::SelAir;
 				thiz->editor->selected.n = nullptr;
 				auto bp = thiz->editor->bp;
 
@@ -203,7 +228,10 @@ struct cBP : Component
 							auto p2 = Vec2f(e2->global_x + e2->global_width * 0.5f, e2->global_y + e2->global_height * 0.5f);
 
 							if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
+							{
+								thiz->editor->sel_type = cBPEditor::SelLink;
 								thiz->editor->selected.l = input;
+							}
 						}
 					}
 				}
@@ -279,7 +307,10 @@ struct cBPNode : Component
 		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			auto thiz = *(cBPNode**)c;
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			{
+				thiz->editor->sel_type = cBPEditor::SelAir;
 				thiz->editor->selected.n = thiz->n;
+			}
 		}, new_mail_p(this));
 
 		window->add_pos_listener([](void* c) {
@@ -367,11 +398,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto e_page = get_docker_page_model()->copy();
 	e_docker->child(1)->add_child(e_page);
 	{
-		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
-
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
-		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);
@@ -380,6 +408,57 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto c_editor = new_component<cBPEditor>();
 	c_editor->init(filename, no_compile);
 	e_page->add_component(c_editor);
+
+	auto e_menubar = create_standard_menubar();
+	e_page->add_child(e_menubar);
+
+	{
+		auto e_menu = create_standard_menu();
+		for (auto db : c_editor->dbs)
+		{
+			auto udts = db->get_udts();
+			for (auto i = 0; i < udts.p->size(); i++)
+			{
+				auto udt = udts.p->at(i);
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
+				e_menu->add_child(e_item);
+				struct Capture
+				{
+					cBPEditor* e;
+					UdtInfo* u;
+				}capture;
+				capture.e = c_editor;
+				capture.u = udt;
+				((cEventReceiver*)e_item->find_component(cH("EventReciver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					if (is_mouse_clicked(action, key))
+					{
+						auto& capture = *(Capture*)c;
+						capture.e->bp->add_node(capture.u->name(), "");
+					}
+				}, new_mail(&capture));
+			}
+			delete_mail(udts);
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		e_menubar->add_child(e_menu_btn);
+	}
+
+	{
+		auto e_menu = create_standard_menu();
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReciver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+				{
+					auto editor = *(cBPEditor**)c;
+					editor->delete_selected();
+				}
+			}, new_mail_p(c_editor));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		e_menubar->add_child(e_menu_btn);
+	}
 
 	auto e_btn_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
 	e_page->add_child(e_btn_run);
@@ -405,7 +484,9 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto e_scene = Entity::create();
 	e_page->add_child(e_scene);
 	{
-		e_scene->add_component(cElement::create());
+		auto c_element = cElement::create();
+		c_element->clip_children = true;
+		e_scene->add_component(c_element);
 
 		e_scene->add_component(cEventReceiver::create());
 
@@ -918,21 +999,13 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			if (tokens[1] == L"udts")
 			{
-				std::vector<UdtInfo*> available_udts;
+				for (auto db : dbs)
 				{
-					for (auto db : dbs)
-					{
-						auto udts = db->get_udts();
-						for (auto i = 0; i < udts.p->size(); i++)
-							available_udts.push_back((*udts.p)[i]);
-						delete_mail(udts);
-					}
-					std::sort(available_udts.begin(), available_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-						return std::string(a->name()) < std::string(b->name());
-					});
+					auto udts = db->get_udts();
+					for (auto i = 0; i < udts.p->size(); i++)
+						console->print(s2w(udts.p->at(i)->name()));
+					delete_mail(udts);
 				}
-				for (auto u : available_udts)
-					console->print(s2w(u->name()));
 			}
 			else if (tokens[1] == L"udt")
 			{

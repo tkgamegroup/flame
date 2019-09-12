@@ -213,7 +213,7 @@ namespace flame
 		return e_item;
 	}
 
-	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, const wchar_t* arrow_text)
+	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text)
 	{
 		auto e_menu_btn = Entity::create();
 		{
@@ -237,11 +237,14 @@ namespace flame
 			c_menu_btn->topmost_penetrable = topmost_penetrable;
 			e_menu_btn->add_component(c_menu_btn);
 
-			e_menu_btn->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			e_menu_btn->add_component(cStyleBackgroundColor::create(background_transparent ? Vec4c(0) : default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
-			e_menu_btn->add_component(c_aligner);
+			if (width_greedy)
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeGreedy;
+				e_menu_btn->add_component(c_aligner);
+			}
 
 			if (arrow_text)
 			{
@@ -267,5 +270,26 @@ namespace flame
 		}
 
 		return e_menu_btn;
+	}
+
+	Entity* create_standard_menubar()
+	{
+		auto e_menubar = Entity::create();
+		{
+			auto c_element = cElement::create();
+			c_element->background_color = default_style.frame_color_normal;
+			e_menubar->add_component(c_element);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitParent;
+			e_menubar->add_component(c_aligner);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutHorizontal;
+			c_layout->item_padding = 4.f;
+			e_menubar->add_component(c_layout);
+		}
+
+		return e_menubar;
 	}
 }

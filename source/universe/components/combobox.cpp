@@ -184,7 +184,7 @@ namespace flame
 			e_item->add_component(c_combobox_item);
 		}
 
-		auto e_combobox = create_standard_menu_button(font_atlas, sdf_scale, L"", root, e_menu, false, SideS, true, Icon_ANGLE_DOWN);
+		auto e_combobox = create_standard_menu_button(font_atlas, sdf_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
 		{
 			auto c_element = (cElement*)e_combobox->find_component(cH("Element"));
 			c_element->width = width + 8.f;
@@ -196,8 +196,6 @@ namespace flame
 			c_text->auto_size = false;
 			if (init_item >= 0)
 				c_text->set_text(items[init_item]);
-
-			((cAligner*)e_combobox->find_component(cH("Aligner")))->width_policy = SizeFixed;
 			
 			auto c_combobox = cCombobox::create();
 			if (init_item >= 0)

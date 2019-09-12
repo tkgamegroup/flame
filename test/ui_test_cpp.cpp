@@ -349,7 +349,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
 		}
 
@@ -372,7 +372,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Remove", app.root, e_menu, true, SideE, false, Icon_CARET_RIGHT);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Remove", app.root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
 		}
 	}
@@ -394,22 +394,8 @@ int main(int argc, char** args)
 		}, new_mail(&data));
 	}
 	
-	auto e_menubar = Entity::create();
+	auto e_menubar = create_standard_menubar();
 	app.root->add_child(e_menubar);
-	{
-		auto c_element = cElement::create();
-		c_element->background_color = default_style.frame_color_normal;
-		e_menubar->add_component(c_element);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		e_menubar->add_component(c_aligner);
-
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutHorizontal;
-		c_layout->item_padding = 4.f;
-		e_menubar->add_component(c_layout);
-	}
 
 	{
 		{
@@ -430,9 +416,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", app.root, e_menu, true, SideS, true, nullptr);
-			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
-			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", app.root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
 		}
 		{
@@ -457,9 +441,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, nullptr);
-			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
-			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
 		}
 		{
@@ -480,9 +462,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tool", app.root, e_menu, true, SideS, true, nullptr);
-			((cAligner*)e_menu_btn->find_component(cH("Aligner")))->width_policy = SizeFixed;
-			((cStyleBackgroundColor*)e_menu_btn->find_component(cH("StyleBackgroundColor")))->color_normal.w() = 0;
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tool", app.root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
 		}
 	}
