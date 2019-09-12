@@ -256,7 +256,7 @@ namespace flame
 					if (hovering == focusing)
 					{
 						hovering->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2f(mouse_pos));
-						if (potential_dbclick_er && potential_dbclick_er == focusing)
+						if (potential_dbclick_er == focusing)
 						{
 							hovering->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2f(mouse_pos));
 							potential_dbclick_er = nullptr;

@@ -866,9 +866,14 @@ namespace flame
 
 			auto c_event_receiver = cEventReceiver::create();
 			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = (*(cDockerTabPrivate**)c);
 				if (is_mouse_clicked(action, key))
-					thiz->take_away(true);
+				{
+					auto thiz = (*(cDockerTabPrivate**)c);
+					looper().add_delay_event([](void* c) {
+						auto thiz = (*(cDockerTabPrivate**)c);
+						thiz->take_away(true);
+					}, new_mail_p(thiz));
+				}
 			}, new_mail_p(c_docker_tab));
 			e_close->add_component(c_event_receiver);
 
