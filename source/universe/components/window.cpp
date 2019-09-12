@@ -1,3 +1,4 @@
+#include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/default_style.h>
@@ -203,6 +204,68 @@ namespace flame
 			}
 		}
 
+		void take_away(bool close)
+		{
+			auto tabbar = entity->parent();
+			if (tabbar->name_hash() != cH("docker_tabbar"))
+				return;
+
+			auto docker = tabbar->parent();
+			auto pages = docker->child(1);
+			auto idx = tabbar->child_position(entity);
+			page = pages->child(idx);
+			page_element = (cElement*)page->find_component(cH("Element"));
+			auto page_aligner = (cAligner*)page->find_component(cH("Aligner"));
+
+			if (close)
+			{
+				tabbar->remove_child(entity);
+				pages->remove_child(page);
+			}
+			else
+			{
+				tabbar->take_child(entity);
+				pages->take_child(page);
+				page->visible = true;
+				element->x = element->global_x;
+				element->y = element->global_y;
+				element->alpha = 0.5f;
+				page_element->x = element->x;
+				page_element->y = element->y + element->global_height + 8.f;
+				page_element->alpha = 0.5f;
+				page_aligner->width_policy = SizeFixed;
+				page_aligner->height_policy = SizeFixed;
+				root->add_child(page);
+				root->add_child(entity);
+			}
+
+			if (tabbar->child_count() == 0)
+			{
+				auto p = docker->parent();
+				if (p)
+				{
+					if (p->name_hash() == cH("docker_container"))
+						p->parent()->remove_child(p);
+					else if (p->name_hash() == cH("docker_layout"))
+					{
+						auto oth_docker = p->child(p->child_position(docker) == 0 ? 2 : 0);
+						p->take_child(oth_docker);
+						auto pp = p->parent();
+						auto idx = pp->child_position(p);
+						pp->remove_child(p);
+						pp->add_child(oth_docker, idx);
+						if (pp->name_hash() == cH("docker_container"))
+						{
+							auto aligner = (cAligner*)oth_docker->find_component(cH("Aligner"));
+							aligner->x_align = AlignxLeft;
+							aligner->y_align = AlignyTop;
+							aligner->using_padding_in_free_layout = true;
+						}
+					}
+				}
+			}
+		}
+
 		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
@@ -236,62 +299,7 @@ namespace flame
 					thiz->list_item->list = nullptr;
 					looper().add_delay_event([](void* c) {
 						auto thiz = *(cDockerTabPrivate**)c;
-
-						auto e = thiz->entity;
-						auto tabbar = e->parent();
-						if (tabbar->name_hash() != cH("docker_tabbar"))
-							return;
-
-						auto docker = tabbar->parent();
-						auto pages = docker->child(1);
-						auto idx = tabbar->child_position(e);
-						auto e_page = pages->child(idx);
-						auto page_element = (cElement*)e_page->find_component(cH("Element"));
-						auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
-						thiz->page = e_page;
-						thiz->page_element = page_element;
-
-						tabbar->take_child(e);
-						pages->take_child(e_page);
-						e_page->visible = true;
-
-						if (tabbar->child_count() == 0)
-						{
-							auto p = docker->parent();
-							if (p)
-							{
-								if (p->name_hash() == cH("docker_container"))
-									p->parent()->remove_child(p);
-								else if (p->name_hash() == cH("docker_layout"))
-								{
-									auto oth_docker = p->child(p->child_position(docker) == 0 ? 2 : 0);
-									p->take_child(oth_docker);
-									auto pp = p->parent();
-									auto idx = pp->child_position(p);
-									pp->remove_child(p);
-									pp->add_child(oth_docker, idx);
-									if (pp->name_hash() == cH("docker_container"))
-									{
-										auto aligner = (cAligner*)oth_docker->find_component(cH("Aligner"));
-										aligner->x_align = AlignxLeft;
-										aligner->y_align = AlignyTop;
-										aligner->using_padding_in_free_layout = true;
-									}
-								}
-							}
-						}
-
-						auto element = thiz->element;
-						element->x = element->global_x;
-						element->y = element->global_y;
-						element->alpha = 0.5f;
-						page_element->x = element->x;
-						page_element->y = element->y + element->global_height + 8.f;
-						page_element->alpha = 0.5f;
-						page_aligner->width_policy = SizeFixed;
-						page_aligner->height_policy = SizeFixed;
-						thiz->root->add_child(e_page);
-						thiz->root->add_child(e);
+						thiz->take_away(false);
 					}, new_mail_p(thiz));
 				}
 				else if (action == DragEnd)
@@ -814,7 +822,7 @@ namespace flame
 		tab->set_name("docker_tab");
 
 		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+		c_element->inner_padding = Vec4f(4.f, 2.f, 6.f + font_atlas->pixel_height, 2.f);
 		tab->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);
@@ -842,6 +850,32 @@ namespace flame
 		list_item->selected_text_color_normal = default_style.selected_tab_text_color_normal;
 		list_item->selected_text_color_else = default_style.selected_tab_text_color_else;
 		tab->add_component(list_item);
+
+		tab->add_component(cLayout::create());
+
+		auto e_close = Entity::create();
+		tab->add_child(e_close);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(2.f, 2.f, 4.f, 2.f);
+			e_close->add_component(c_element);
+
+			auto c_text = cText::create(font_atlas);
+			c_text->set_text(Icon_WINDOW_CLOSE);
+			e_close->add_component(c_text);
+
+			auto c_event_receiver = cEventReceiver::create();
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = (*(cDockerTabPrivate**)c);
+				if (is_mouse_clicked(action, key))
+					thiz->take_away(true);
+			}, new_mail_p(c_docker_tab));
+			e_close->add_component(c_event_receiver);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->x_align = AlignxRight;
+			e_close->add_component(c_aligner);
+		}
 
 		return tab;
 	}

@@ -443,7 +443,7 @@ struct App
 			auto cb = cbs[img_idx];
 			canvas->record(cb, img_idx);
 
-			d->gq->submit(cb, sc->image_avalible(), render_finished, fence);
+			d->gq->submit({ cb }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 	}
