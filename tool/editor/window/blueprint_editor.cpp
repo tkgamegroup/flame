@@ -5,6 +5,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
+#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
@@ -418,30 +419,36 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 	{
 		auto e_menu = create_standard_menu();
+		std::vector<UdtInfo*> all_udts;
 		for (auto db : c_editor->dbs)
 		{
 			auto udts = db->get_udts();
 			for (auto i = 0; i < udts.p->size(); i++)
-			{
-				auto udt = udts.p->at(i);
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
-				e_menu->add_child(e_item);
-				struct Capture
-				{
-					cBPEditor* e;
-					UdtInfo* u;
-				}capture;
-				capture.e = c_editor;
-				capture.u = udt;
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					if (is_mouse_clicked(action, key))
-					{
-						auto& capture = *(Capture*)c;
-						capture.e->bp->add_node(capture.u->name(), "");
-					}
-				}, new_mail(&capture));
-			}
+				all_udts.push_back(udts.p->at(i));
 			delete_mail(udts);
+		}
+		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+			return a->name() < b->name();
+		});
+		for (auto udt : all_udts)
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
+			e_menu->add_child(e_item);
+			struct Capture
+			{
+				cBPEditor* e;
+				UdtInfo* u;
+			}capture;
+			capture.e = c_editor;
+			capture.u = udt;
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+					auto& capture = *(Capture*)c;
+					capture.e->bp->add_node(capture.u->name(), "");
+				}
+			}, new_mail(&capture));
 		}
 		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
@@ -455,6 +462,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_clicked(action, key))
 				{
+					destroy_topmost(app.root);
 					auto editor = *(cBPEditor**)c;
 					editor->delete_selected();
 				}
@@ -1020,13 +1028,19 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			if (tokens[1] == L"udts")
 			{
+				std::vector<UdtInfo*> all_udts;
 				for (auto db : dbs)
 				{
 					auto udts = db->get_udts();
 					for (auto i = 0; i < udts.p->size(); i++)
-						console->print(s2w(udts.p->at(i)->name()));
+						all_udts.push_back(udts.p->at(i));
 					delete_mail(udts);
 				}
+				std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+					return a->name() < b->name();
+				});
+				for (auto udt : all_udts)
+					console->print(s2w(udt->name()));
 			}
 			else if (tokens[1] == L"udt")
 			{

@@ -443,8 +443,8 @@ namespace flame
 			for (auto i = 0; i < nodes.size() + 1; i++)
 			{
 				s_id = "node_" + std::to_string(i);
-				if (find_node(s_id))
-					continue;
+				if (!find_node(s_id))
+					break;
 			}
 		}
 

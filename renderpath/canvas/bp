@@ -17,7 +17,7 @@
 		</node>
 		<node type="graphics::RenderTarget" id="rt_dst" pos="109.72;469.44" />
 		<node type="graphics::ImageInspector" id="dst_props" pos="411.81;537.50" />
-		<node type="graphics::Image" id="img_ms" pos="698.61;634.72">
+		<node type="graphics::Image" id="img_ms" pos="634.61;623.72">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
@@ -47,7 +47,7 @@
 				<data name="push_constant_udt_name" value="CanvasShaderPushconstantT" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via1" pos="1255.60;1575.00">
+		<node type="graphics::VertexInputAttribute" id="via1" pos="1252.60;1556.00">
 			<datas>
 				<data name="format" value="Format_R32G32_SFLOAT" />
 				<data name="name" value="pos" />
@@ -160,9 +160,9 @@
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="graphics::Descriptorset" id="ds" pos="1155.60;2766.75" />
+		<node type="graphics::Descriptorset" id="ds" pos="1138.60;2781.75" />
 		<node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="1627.80;2977.23" />
-		<node type="graphics::Buffer" id="vtx_buf" pos="63.88;920.00">
+		<node type="graphics::Buffer" id="vtx_buf" pos="88.88;835.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
@@ -174,6 +174,11 @@
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
+			</datas>
+		</node>
+		<node type="graphics::DescriptorBinding" id="node_46" pos="-33.33;40.00">
+			<datas>
+				<data name="name" value="" />
 			</datas>
 		</node>
 	</nodes>
