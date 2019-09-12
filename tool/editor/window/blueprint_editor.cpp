@@ -104,6 +104,9 @@ struct cBPEditor : Component
 	std::wstring filename;
 	BP* bp;
 	std::vector<TypeinfoDatabase*> dbs;
+
+	cDockerTab* console_tab;
+
 	graphics::Image* rt;
 	graphics::Imageview* rt_v;
 	uint rt_id;
@@ -131,6 +134,9 @@ struct cBPEditor : Component
 
 	~cBPEditor()
 	{
+		if (console_tab)
+			console_tab->take_away(true);
+
 		app.canvas->set_image(rt_id, nullptr);
 	}
 
@@ -141,6 +147,9 @@ struct cBPEditor : Component
 		for (auto i = 0; i < bp->dependency_count(); i++)
 			dbs.push_back(bp->dependency_typeinfodatabase(i));
 		dbs.push_back(bp->typeinfodatabase);
+
+		console_tab = nullptr;
+
 		rt = graphics::Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
 		rt->init(Vec4c(0, 0, 0, 255));
 		rt_v = Imageview::create(rt);
@@ -429,7 +438,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				}capture;
 				capture.e = c_editor;
 				capture.u = udt;
-				((cEventReceiver*)e_item->find_component(cH("EventReciver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					if (is_mouse_clicked(action, key))
 					{
 						auto& capture = *(Capture*)c;
@@ -448,7 +457,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReciver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_clicked(action, key))
 				{
 					auto editor = *(cBPEditor**)c;
@@ -880,13 +889,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		}
 	}
 
-	struct Capture
-	{
-		BP* bp;
-		std::wstring filename;
-		std::vector<TypeinfoDatabase*> dbs;
-	};
-	open_console([](void* c, const std::wstring& cmd, cConsole* console) {
+	auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
 		auto editor = *(cBPEditor**)c;
 		auto& filename = editor->filename;
 		auto bp = editor->bp;
@@ -1206,7 +1209,11 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		}
 		else
 			console->print(L"unknow command");
+	}, new_mail_p(c_editor), [](void* c) {
+		auto editor = *(cBPEditor**)c;
+		editor->console_tab = nullptr;
 	}, new_mail_p(c_editor), filename + L":", Vec2f(850.f, 420.f));
+	c_editor->console_tab = (cDockerTab*)console_page->parent()->parent()->child(0)->child(0)->find_component(cH("DockerTab"));
 
-	open_image_viewer(3, Vec2f(350.f, 300.f));
+	open_image_viewer(c_editor->rt_id, Vec2f(350.f, 300.f));
 }

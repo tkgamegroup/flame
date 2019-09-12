@@ -26,13 +26,13 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
-		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
-
 		FLAME_UNIVERSE_EXPORTS void* add_pos_listener(void (*listener)(void* c), const Mail<>& capture);
 
 		FLAME_UNIVERSE_EXPORTS void remove_pos_listener(void* ret_by_add);
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cWindow* create();
 	};
@@ -69,7 +69,10 @@ namespace flame
 		cDockerTab() :
 			Component("DockerTab")
 		{
+
 		}
+
+		FLAME_UNIVERSE_EXPORTS void take_away(bool close);
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;

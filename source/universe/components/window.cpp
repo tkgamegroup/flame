@@ -66,20 +66,6 @@ namespace flame
 		}
 	};
 
-	void cWindow::start()
-	{
-		((cWindowPrivate*)this)->start();
-	}
-
-	void cWindow::update() 
-	{
-	}
-
-	Component* cWindow::copy()
-	{
-		return new cWindowPrivate;
-	}
-
 	void* cWindow::add_pos_listener(void (*listener)(void* c), const Mail<>& capture)
 	{
 		auto c = new Closure<void(void* c)>;
@@ -100,6 +86,20 @@ namespace flame
 				return;
 			}
 		}
+	}
+
+	void cWindow::start()
+	{
+		((cWindowPrivate*)this)->start();
+	}
+
+	void cWindow::update() 
+	{
+	}
+
+	Component* cWindow::copy()
+	{
+		return new cWindowPrivate;
 	}
 
 	cWindow* cWindow::create()
@@ -219,8 +219,8 @@ namespace flame
 
 			if (close)
 			{
+				pages->remove_child(page); // remove tab first will lead variable 'page' to be trash data
 				tabbar->remove_child(entity);
-				pages->remove_child(page);
 			}
 			else
 			{
@@ -376,6 +376,11 @@ namespace flame
 			return copy;
 		}
 	};
+
+	void cDockerTab::take_away(bool close)
+	{
+		((cDockerTabPrivate*)this)->take_away(close);
+	}
 
 	void cDockerTab::start()
 	{

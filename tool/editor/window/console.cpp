@@ -13,7 +13,14 @@
 
 struct cConsolePrivate : cConsole
 {
-	std::unique_ptr<Closure<void(void* c, const std::wstring & cmd, cConsole * console)>> processor;
+	std::unique_ptr<Closure<void(void* c, const std::wstring & cmd, cConsole * console)>> cmd_callback;
+	std::unique_ptr<Closure<void(void* c)>> close_callback;
+
+	~cConsolePrivate()
+	{
+		auto p = close_callback.get();
+		p->function(p->capture.p);
+	}
 };
 
 void cConsole::print(const std::wstring& str)
@@ -25,7 +32,7 @@ void cConsole::update()
 {
 }
 
-void open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& capture, const std::wstring& init_str, const Vec2f& pos)
+Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& cmd_callback_capture, void (*close_callback)(void* c), const Mail<>& close_callback_capture, const std::wstring& init_str, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
@@ -55,6 +62,21 @@ void open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole* c
 		e_page->add_component(c_layout);
 	}
 
+	auto c_console = new_component<cConsolePrivate>();
+	{
+		auto c = new Closure<void(void* c, const std::wstring & cmd, cConsole * console)>;
+		c->function = cmd_callback;
+		c->capture = cmd_callback_capture;
+		c_console->cmd_callback.reset(c);
+	}
+	{
+		auto c = new Closure<void(void* c)>;
+		c->function = close_callback;
+		c->capture = close_callback_capture;
+		c_console->close_callback.reset(c);
+	}
+	e_page->add_component(c_console);
+
 	auto e_log_view = Entity::create();
 	{
 		auto c_element = cElement::create();
@@ -82,6 +104,7 @@ void open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole* c
 		c_text->set_text(init_str);
 		e_log->add_component(c_text);
 	}
+	c_console->c_text_log = (cText*)e_log->find_component(cH("Text"));
 
 	e_page->add_child(wrap_standard_scrollbar(e_log_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
 
@@ -113,31 +136,23 @@ void open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole* c
 
 	auto e_input_edit = create_standard_edit(0.f, app.font_atlas_pixel, 1.f);
 	e_input->add_child(e_input_edit);
+	c_console->c_edit_input = (cEdit*)e_input_edit->find_component(cH("Edit"));
 
 	auto e_btn_exec = create_standard_button(app.font_atlas_pixel, 1.f, L"Exec");
 	e_input->add_child(e_btn_exec);
-
-	auto c_console = new_component<cConsolePrivate>();
-	c_console->c_text_log = (cText*)e_log->find_component(cH("Text"));
-	c_console->c_edit_input = (cEdit*)e_input_edit->find_component(cH("Edit"));
-	{
-		auto c = new Closure<void(void* c, const std::wstring & cmd, cConsole * console)>;
-		c->function = callback;
-		c->capture = capture;
-		c_console->processor.reset(c);
-	}
 	((cEventReceiver*)e_btn_exec->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 		if (is_mouse_clicked(action, key))
 		{
 			auto c_console = *(cConsolePrivate**)c;
 			auto input_text = c_console->c_edit_input->text;
 			c_console->print(input_text->text());
-			auto p = c_console->processor.get();
+			auto p = c_console->cmd_callback.get();
 			p->function(p->capture.p, input_text->text(), c_console);
 
 			input_text->set_text(L"");
 			c_console->c_edit_input->cursor = 0;
 		}
 	}, new_mail_p(c_console));
-	e_container->add_component(c_console);
+
+	return e_page;
 }

@@ -25,4 +25,4 @@ struct cConsole : Component
 	virtual void update() override;
 };
 
-void open_console(void (*callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& capture, const std::wstring& init_str, const Vec2f& pos);
+Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& cmd_callback_capture, void (*close_callback)(void* c), const Mail<>& close_callback_capture, const std::wstring& init_str, const Vec2f& pos);
