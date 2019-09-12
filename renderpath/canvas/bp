@@ -1,263 +1,249 @@
 <?xml version="1.0"?>
 <BP>
-  <dependencies>
-    <dependency v="flame_foundation.dll" />
-    <dependency v="flame_graphics.dll" />
-  </dependencies>
-  <nodes>
-    <node type="Var(uint)" id="img_count" pos="0.00;0.00">
-      <datas>
-        <data name="in" value="64" />
-      </datas>
-    </node>
-    <node type="EnumSN(graphics::SampleCount)" id="sc" pos="0.00;0.00">
-      <datas>
-        <data name="in" value="SampleCount_8" />
-      </datas>
-    </node>
-    <node type="graphics::RenderTarget" id="rt_dst" pos="0.00;0.00">
-      <datas>
-        <data name="clear" value="0" />
-      </datas>
-    </node>
-    <node type="graphics::ImageInspector" id="dst_props" pos="0.00;0.00" />
-    <node type="graphics::Image" id="img_ms" pos="0.00;0.00">
-      <datas>
-        <data name="usage" value="ImageUsageAttachment" />
-      </datas>
-    </node>
-    <node type="graphics::RenderTarget" id="rt_ms" pos="0.00;0.00">
-      <datas>
-        <data name="type" value="TargetImage" />
-        <data name="clear" value="1" />
-        <data name="clear_color" value="0;0;0;255" />
-      </datas>
-    </node>
-    <node type="Array(1+void*)" id="col_rts" pos="0.00;0.00" />
-    <node type="Array(1+void*)" id="rsl_rts" pos="0.00;0.00" />
-    <node type="graphics::SubpassTargetInfo" id="sp" pos="0.00;0.00" />
-    <node type="Array(1+void*)" id="sps" pos="0.00;0.00" />
-    <node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="0.00;0.00" />
-    <node type="graphics::DescriptorBinding" id="desc_binding" pos="0.00;0.00">
-      <datas>
-        <data name="binding" value="0" />
-        <data name="type" value="DescriptorSampledImage" />
-        <data name="name" value="images" />
-      </datas>
-    </node>
-    <node type="Array(1+void*)" id="desc_bindings" pos="0.00;0.00" />
-    <node type="graphics::Descriptorlayout" id="dsl" pos="0.00;0.00" />
-    <node type="Array(1+void*)" id="dsls" pos="0.00;0.00" />
-    <node type="graphics::Pipelinelayout" id="pll" pos="0.00;0.00">
-      <datas>
-        <data name="push_constant_udt_name" value="CanvasShaderPushconstantT" />
-      </datas>
-    </node>
-    <node type="graphics::VertexInputAttribute" id="via1" pos="0.00;0.00">
-      <datas>
-        <data name="location" value="0" />
-        <data name="offset" value="0" />
-        <data name="format" value="Format_R32G32_SFLOAT" />
-        <data name="name" value="pos" />
-      </datas>
-    </node>
-    <node type="graphics::VertexInputAttribute" id="via2" pos="0.00;0.00">
-      <datas>
-        <data name="location" value="1" />
-        <data name="offset" value="8" />
-        <data name="format" value="Format_R32G32_SFLOAT" />
-        <data name="name" value="uv" />
-      </datas>
-    </node>
-    <node type="graphics::VertexInputAttribute" id="via3" pos="0.00;0.00">
-      <datas>
-        <data name="location" value="2" />
-        <data name="offset" value="16" />
-        <data name="format" value="Format_R8G8B8A8_UNORM" />
-        <data name="name" value="color" />
-      </datas>
-    </node>
-    <node type="Array(3+void*)" id="vias" pos="0.00;0.00" />
-    <node type="graphics::VertexInputBuffer" id="vib" pos="0.00;0.00">
-      <datas>
-        <data name="stride" value="20" />
-      </datas>
-    </node>
-    <node type="Array(1+void*)" id="vibs" pos="0.00;0.00" />
-    <node type="graphics::VertexInputInfo" id="vi" pos="0.00;0.00" />
-    <node type="graphics::StageInOut" id="vert_out1" pos="0.00;0.00">
-      <datas>
-        <data name="location" value="0" />
-        <data name="format" value="Format_R32G32B32A32_SFLOAT" />
-        <data name="name" value="color" />
-      </datas>
-    </node>
-    <node type="graphics::StageInOut" id="vert_out2" pos="0.00;0.00">
-      <datas>
-        <data name="location" value="1" />
-        <data name="format" value="Format_R32G32_SFLOAT" />
-        <data name="name" value="uv" />
-      </datas>
-    </node>
-    <node type="graphics::StageInOut" id="vert_out3" pos="0.00;0.00">
-      <datas>
-        <data name="location" value="2" />
-        <data name="format" value="Format_R32_UINT" />
-        <data name="name" value="id" />
-      </datas>
-    </node>
-    <node type="Array(3+void*)" id="vert_outs" pos="0.00;0.00" />
-    <node type="graphics::OutputAttachmentInfo" id="out_alpha_blend" pos="0.00;0.00">
-      <datas>
-        <data name="format" value="Format_R8G8B8A8_UNORM" />
-        <data name="name" value="color" />
-        <data name="blend_enable" value="1" />
-        <data name="blend_src_color" value="BlendFactorSrcAlpha" />
-        <data name="blend_dst_color" value="BlendFactorOneMinusSrcAlpha" />
-        <data name="blend_src_alpha" value="BlendFactorZero" />
-        <data name="blend_dst_alpha" value="BlendFactorOneMinusSrcAlpha" />
-      </datas>
-    </node>
-    <node type="Array(1+void*)" id="outs_alpha_blend" pos="0.00;0.00" />
-    <node type="graphics::OutputAttachmentInfo" id="out_lcd" pos="0.00;0.00">
-      <datas>
-        <data name="format" value="Format_R8G8B8A8_UNORM" />
-        <data name="name" value="color" />
-        <data name="blend_enable" value="1" />
-        <data name="blend_src_color" value="BlendFactorSrc1Color" />
-        <data name="blend_dst_color" value="BlendFactorOneMinusSrc1Color" />
-        <data name="blend_src_alpha" value="BlendFactorZero" />
-        <data name="blend_dst_alpha" value="BlendFactorZero" />
-      </datas>
-    </node>
-    <node type="Array(1+void*)" id="outs_lcd" pos="0.00;0.00" />
-    <node type="graphics::Shader" id="shv_element" pos="0.00;0.00">
-      <datas>
-        <data name="filename" value="element.vert" />
-        <data name="autogen_code" value="1" />
-      </datas>
-    </node>
-    <node type="graphics::Shader" id="shf_element" pos="0.00;0.00">
-      <datas>
-        <data name="filename" value="element.frag" />
-        <data name="autogen_code" value="1" />
-      </datas>
-    </node>
-    <node type="graphics::Shader" id="shf_text_lcd" pos="0.00;0.00">
-      <datas>
-        <data name="filename" value="text_lcd.frag" />
-        <data name="autogen_code" value="1" />
-      </datas>
-    </node>
-    <node type="graphics::Shader" id="shf_text_sdf" pos="0.00;0.00">
-      <datas>
-        <data name="filename" value="text_sdf.frag" />
-        <data name="autogen_code" value="1" />
-      </datas>
-    </node>
-    <node type="Array(2+void*)" id="pl_element_shs" pos="0.00;0.00" />
-    <node type="Array(2+void*)" id="pl_text_lcd_shs" pos="0.00;0.00" />
-    <node type="Array(2+void*)" id="pl_text_sdf_shs" pos="0.00;0.00" />
-    <node type="graphics::Pipeline" id="pl_element" pos="0.00;0.00" />
-    <node type="graphics::Pipeline" id="pl_text_lcd" pos="0.00;0.00" />
-    <node type="graphics::Pipeline" id="pl_text_sdf" pos="0.00;0.00" />
-    <node type="graphics::Image" id="img_white" pos="0.00;0.00">
-      <datas>
-        <data name="format" value="Format_R8G8B8A8_UNORM" />
-        <data name="size" value="4;4" />
-        <data name="usage" value="ImageUsageSampled;ImageUsageTransferDst" />
-        <data name="init_with_color" value="1" />
-        <data name="init_color" value="255;255;255;255" />
-      </datas>
-    </node>
-    <node type="graphics::Descriptorset" id="ds" pos="0.00;0.00" />
-    <node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="0.00;0.00">
-      <datas>
-        <data name="type" value="TargetImage" />
-      </datas>
-    </node>
-    <node type="graphics::Buffer" id="vtx_buf" pos="0.00;0.00">
-      <datas>
-        <data name="size" value="873800" />
-        <data name="usage" value="BufferUsageVertex" />
-        <data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
-      </datas>
-    </node>
-    <node type="graphics::Buffer" id="idx_buf" pos="0.00;0.00">
-      <datas>
-        <data name="size" value="262144" />
-        <data name="usage" value="BufferUsageIndex" />
-        <data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
-      </datas>
-    </node>
-  </nodes>
-  <links>
-    <link out="rt_dst.first_image" in="dst_props.in" />
-    <link out="dst_props.format" in="img_ms.format" />
-    <link out="dst_props.size" in="img_ms.size" />
-    <link out="sc.out" in="img_ms.sample_count" />
-    <link out="img_ms.out" in="rt_ms.v" />
-    <link out="rt_ms.out" in="col_rts.1" />
-    <link out="rt_dst.out" in="rsl_rts.1" />
-    <link out="col_rts.v" in="sp.color_targets" />
-    <link out="rsl_rts.v" in="sp.resolve_targets" />
-    <link out="sp.out" in="sps.1" />
-    <link out="sps.v" in="rnf.passes" />
-    <link out="img_count.out" in="desc_binding.count" />
-    <link out="desc_binding.out" in="desc_bindings.1" />
-    <link out="desc_bindings.v" in="dsl.bindings" />
-    <link out="dsl.out" in="dsls.1" />
-    <link out="dsls.v" in="pll.descriptorlayouts" />
-    <link out="via1.out" in="vias.1" />
-    <link out="via2.out" in="vias.2" />
-    <link out="via3.out" in="vias.3" />
-    <link out="vib.out" in="vibs.1" />
-    <link out="vias.v" in="vi.attribs" />
-    <link out="vibs.v" in="vi.buffers" />
-    <link out="vert_out1.out" in="vert_outs.1" />
-    <link out="vert_out2.out" in="vert_outs.2" />
-    <link out="vert_out3.out" in="vert_outs.3" />
-    <link out="out_alpha_blend.out" in="outs_alpha_blend.1" />
-    <link out="out_lcd.out" in="outs_lcd.1" />
-    <link out="vias.v" in="shv_element.inputs" />
-    <link out="vert_outs.v" in="shv_element.outputs" />
-    <link out="pll.out" in="shv_element.pll" />
-    <link out="vert_outs.v" in="shf_element.inputs" />
-    <link out="outs_alpha_blend.v" in="shf_element.outputs" />
-    <link out="pll.out" in="shf_element.pll" />
-    <link out="vert_outs.v" in="shf_text_lcd.inputs" />
-    <link out="outs_lcd.v" in="shf_text_lcd.outputs" />
-    <link out="pll.out" in="shf_text_lcd.pll" />
-    <link out="vert_outs.v" in="shf_text_sdf.inputs" />
-    <link out="outs_alpha_blend.v" in="shf_text_sdf.outputs" />
-    <link out="pll.out" in="shf_text_sdf.pll" />
-    <link out="shv_element.out" in="pl_element_shs.1" />
-    <link out="shf_element.out" in="pl_element_shs.2" />
-    <link out="shv_element.out" in="pl_text_lcd_shs.1" />
-    <link out="shf_text_lcd.out" in="pl_text_lcd_shs.2" />
-    <link out="shv_element.out" in="pl_text_sdf_shs.1" />
-    <link out="shf_text_sdf.out" in="pl_text_sdf_shs.2" />
-    <link out="pl_element_shs.v" in="pl_element.shaders" />
-    <link out="pll.out" in="pl_element.pll" />
-    <link out="rnf.rp" in="pl_element.renderpass" />
-    <link out="vi.out" in="pl_element.vi" />
-    <link out="sc.out" in="pl_element.sc" />
-    <link out="outs_alpha_blend.v" in="pl_element.outputs" />
-    <link out="pl_text_lcd_shs.v" in="pl_text_lcd.shaders" />
-    <link out="pll.out" in="pl_text_lcd.pll" />
-    <link out="rnf.rp" in="pl_text_lcd.renderpass" />
-    <link out="vi.out" in="pl_text_lcd.vi" />
-    <link out="sc.out" in="pl_text_lcd.sc" />
-    <link out="outs_lcd.v" in="pl_text_lcd.outputs" />
-    <link out="pl_text_sdf_shs.v" in="pl_text_sdf.shaders" />
-    <link out="pll.out" in="pl_text_sdf.pll" />
-    <link out="rnf.rp" in="pl_text_sdf.renderpass" />
-    <link out="vi.out" in="pl_text_sdf.vi" />
-    <link out="sc.out" in="pl_text_sdf.sc" />
-    <link out="outs_alpha_blend.v" in="pl_text_sdf.outputs" />
-    <link out="dsl.out" in="ds.dsl" />
-    <link out="ds.out" in="ds_wrt.set" />
-    <link out="img_white.out" in="ds_wrt.v" />
-    <link out="img_count.out" in="ds_wrt.count" />
-  </links>
+	<dependencies>
+		<dependency v="flame_foundation.dll" />
+		<dependency v="flame_graphics.dll" />
+	</dependencies>
+	<nodes>
+		<node type="Var(uint)" id="img_count" pos="109.72;3034.70">
+			<datas>
+				<data name="in" value="64" />
+			</datas>
+		</node>
+		<node type="EnumSN(graphics::SampleCount)" id="sc" pos="411.81;1498.60">
+			<datas>
+				<data name="in" value="SampleCount_8" />
+			</datas>
+		</node>
+		<node type="graphics::RenderTarget" id="rt_dst" pos="109.72;469.44" />
+		<node type="graphics::ImageInspector" id="dst_props" pos="411.81;537.50" />
+		<node type="graphics::Image" id="img_ms" pos="698.61;634.72">
+			<datas>
+				<data name="usage" value="ImageUsageAttachment" />
+			</datas>
+		</node>
+		<node type="graphics::RenderTarget" id="rt_ms" pos="956.25;809.72">
+			<datas>
+				<data name="clear" value="1" />
+				<data name="clear_color" value="0;0;0;255" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="col_rts" pos="1255.60;708.33" />
+		<node type="Array(1+void*)" id="rsl_rts" pos="698.61;400.00" />
+		<node type="graphics::SubpassTargetInfo" id="sp" pos="1577.80;752.78" />
+		<node type="Array(1+void*)" id="sps" pos="1854.20;734.72" />
+		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="2153.50;1075.00" />
+		<node type="graphics::DescriptorBinding" id="desc_binding" pos="411.81;2937.50">
+			<datas>
+				<data name="type" value="DescriptorSampledImage" />
+				<data name="name" value="images" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="desc_bindings" pos="698.61;2862.50" />
+		<node type="graphics::Descriptorlayout" id="dsl" pos="956.25;2713.90" />
+		<node type="Array(1+void*)" id="dsls" pos="1255.60;830.56" />
+		<node type="graphics::Pipelinelayout" id="pll" pos="1577.80;1177.80">
+			<datas>
+				<data name="push_constant_udt_name" value="CanvasShaderPushconstantT" />
+			</datas>
+		</node>
+		<node type="graphics::VertexInputAttribute" id="via1" pos="1255.60;1575.00">
+			<datas>
+				<data name="format" value="Format_R32G32_SFLOAT" />
+				<data name="name" value="pos" />
+			</datas>
+		</node>
+		<node type="graphics::VertexInputAttribute" id="via2" pos="1255.60;1825.00">
+			<datas>
+				<data name="location" value="1" />
+				<data name="offset" value="8" />
+				<data name="format" value="Format_R32G32_SFLOAT" />
+				<data name="name" value="uv" />
+			</datas>
+		</node>
+		<node type="graphics::VertexInputAttribute" id="via3" pos="1255.60;2075.00">
+			<datas>
+				<data name="location" value="2" />
+				<data name="offset" value="16" />
+				<data name="format" value="Format_R8G8B8A8_UNORM" />
+				<data name="name" value="color" />
+			</datas>
+		</node>
+		<node type="Array(3+void*)" id="vias" pos="1577.80;1825.00" />
+		<node type="graphics::VertexInputBuffer" id="vib" pos="1577.80;2500.00">
+			<datas>
+				<data name="stride" value="20" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="vibs" pos="1854.20;2394.40" />
+		<node type="graphics::VertexInputInfo" id="vi" pos="2153.50;2291.70" />
+		<node type="graphics::StageInOut" id="vert_out1" pos="1255.60;984.72">
+			<datas>
+				<data name="format" value="Format_R32G32B32A32_SFLOAT" />
+				<data name="name" value="color" />
+			</datas>
+		</node>
+		<node type="graphics::StageInOut" id="vert_out2" pos="1255.60;1170.80">
+			<datas>
+				<data name="location" value="1" />
+				<data name="format" value="Format_R32G32_SFLOAT" />
+				<data name="name" value="uv" />
+			</datas>
+		</node>
+		<node type="graphics::StageInOut" id="vert_out3" pos="1255.60;1356.90">
+			<datas>
+				<data name="location" value="2" />
+				<data name="format" value="Format_R32_UINT" />
+				<data name="name" value="id" />
+			</datas>
+		</node>
+		<node type="Array(3+void*)" id="vert_outs" pos="1577.80;1363.90" />
+		<node type="graphics::OutputAttachmentInfo" id="out_alpha_blend" pos="1255.60;420.83">
+			<datas>
+				<data name="name" value="color" />
+				<data name="blend_enable" value="1" />
+				<data name="blend_src_color" value="BlendFactorSrcAlpha" />
+				<data name="blend_dst_color" value="BlendFactorOneMinusSrcAlpha" />
+				<data name="blend_src_alpha" value="BlendFactorZero" />
+				<data name="blend_dst_alpha" value="BlendFactorOneMinusSrcAlpha" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="outs_alpha_blend" pos="1577.80;598.61" />
+		<node type="graphics::OutputAttachmentInfo" id="out_lcd" pos="1255.60;2426.40">
+			<datas>
+				<data name="name" value="color" />
+				<data name="blend_enable" value="1" />
+				<data name="blend_src_color" value="BlendFactorSrc1Color" />
+				<data name="blend_dst_color" value="BlendFactorOneMinusSrc1Color" />
+				<data name="blend_src_alpha" value="BlendFactorZero" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="outs_lcd" pos="1577.80;2345.80" />
+		<node type="graphics::Shader" id="shv_element" pos="1854.20;1661.10">
+			<datas>
+				<data name="filename" value="element.vert" />
+				<data name="prefix" value="" />
+				<data name="autogen_code" value="1" />
+			</datas>
+		</node>
+		<node type="graphics::Shader" id="shf_element" pos="1854.20;1379.20">
+			<datas>
+				<data name="filename" value="element.frag" />
+				<data name="prefix" value="" />
+				<data name="autogen_code" value="1" />
+			</datas>
+		</node>
+		<node type="graphics::Shader" id="shf_text_lcd" pos="1854.20;1997.20">
+			<datas>
+				<data name="filename" value="text_lcd.frag" />
+				<data name="prefix" value="" />
+				<data name="autogen_code" value="1" />
+			</datas>
+		</node>
+		<node type="graphics::Shader" id="shf_text_sdf" pos="1854.20;1043.10">
+			<datas>
+				<data name="filename" value="text_sdf.frag" />
+				<data name="prefix" value="" />
+				<data name="autogen_code" value="1" />
+			</datas>
+		</node>
+		<node type="Array(2+void*)" id="pl_element_shs" pos="2153.50;1368.10" />
+		<node type="Array(2+void*)" id="pl_text_lcd_shs" pos="2153.50;1725.00" />
+		<node type="Array(2+void*)" id="pl_text_sdf_shs" pos="2153.50;888.89" />
+		<node type="graphics::Pipeline" id="pl_element" pos="2458.30;1506.90" />
+		<node type="graphics::Pipeline" id="pl_text_lcd" pos="2458.30;2145.80" />
+		<node type="graphics::Pipeline" id="pl_text_sdf" pos="2458.30;1045.80" />
+		<node type="graphics::Image" id="img_white" pos="1255.60;2948.60">
+			<datas>
+				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
+				<data name="init_with_color" value="1" />
+				<data name="init_color" value="255;255;255;255" />
+			</datas>
+		</node>
+		<node type="graphics::Descriptorset" id="ds" pos="1255.60;2713.90" />
+		<node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="1577.80;2963.90" />
+		<node type="graphics::Buffer" id="vtx_buf" pos="113.05;70.00">
+			<datas>
+				<data name="size" value="3495200" />
+				<data name="usage" value="BufferUsageVertex" />
+				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
+			</datas>
+		</node>
+		<node type="graphics::Buffer" id="idx_buf" pos="368.05;63.89">
+			<datas>
+				<data name="size" value="1048576" />
+				<data name="usage" value="BufferUsageIndex" />
+				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
+			</datas>
+		</node>
+	</nodes>
+	<links>
+		<link out="rt_dst.first_image" in="dst_props.in" />
+		<link out="dst_props.format" in="img_ms.format" />
+		<link out="dst_props.size" in="img_ms.size" />
+		<link out="sc.out" in="img_ms.sample_count" />
+		<link out="img_ms.out" in="rt_ms.v" />
+		<link out="rt_ms.out" in="col_rts.1" />
+		<link out="rt_dst.out" in="rsl_rts.1" />
+		<link out="col_rts.v" in="sp.color_targets" />
+		<link out="rsl_rts.v" in="sp.resolve_targets" />
+		<link out="sp.out" in="sps.1" />
+		<link out="sps.v" in="rnf.passes" />
+		<link out="img_count.out" in="desc_binding.count" />
+		<link out="desc_binding.out" in="desc_bindings.1" />
+		<link out="desc_bindings.v" in="dsl.bindings" />
+		<link out="dsl.out" in="dsls.1" />
+		<link out="dsls.v" in="pll.descriptorlayouts" />
+		<link out="via1.out" in="vias.1" />
+		<link out="via2.out" in="vias.2" />
+		<link out="via3.out" in="vias.3" />
+		<link out="vib.out" in="vibs.1" />
+		<link out="vias.v" in="vi.attribs" />
+		<link out="vibs.v" in="vi.buffers" />
+		<link out="vert_out1.out" in="vert_outs.1" />
+		<link out="vert_out2.out" in="vert_outs.2" />
+		<link out="vert_out3.out" in="vert_outs.3" />
+		<link out="out_alpha_blend.out" in="outs_alpha_blend.1" />
+		<link out="out_lcd.out" in="outs_lcd.1" />
+		<link out="vias.v" in="shv_element.inputs" />
+		<link out="vert_outs.v" in="shv_element.outputs" />
+		<link out="pll.out" in="shv_element.pll" />
+		<link out="vert_outs.v" in="shf_element.inputs" />
+		<link out="outs_alpha_blend.v" in="shf_element.outputs" />
+		<link out="pll.out" in="shf_element.pll" />
+		<link out="vert_outs.v" in="shf_text_lcd.inputs" />
+		<link out="outs_lcd.v" in="shf_text_lcd.outputs" />
+		<link out="pll.out" in="shf_text_lcd.pll" />
+		<link out="vert_outs.v" in="shf_text_sdf.inputs" />
+		<link out="outs_alpha_blend.v" in="shf_text_sdf.outputs" />
+		<link out="pll.out" in="shf_text_sdf.pll" />
+		<link out="shv_element.out" in="pl_element_shs.1" />
+		<link out="shf_element.out" in="pl_element_shs.2" />
+		<link out="shv_element.out" in="pl_text_lcd_shs.1" />
+		<link out="shf_text_lcd.out" in="pl_text_lcd_shs.2" />
+		<link out="shv_element.out" in="pl_text_sdf_shs.1" />
+		<link out="shf_text_sdf.out" in="pl_text_sdf_shs.2" />
+		<link out="pl_element_shs.v" in="pl_element.shaders" />
+		<link out="pll.out" in="pl_element.pll" />
+		<link out="rnf.rp" in="pl_element.renderpass" />
+		<link out="vi.out" in="pl_element.vi" />
+		<link out="sc.out" in="pl_element.sc" />
+		<link out="outs_alpha_blend.v" in="pl_element.outputs" />
+		<link out="pl_text_lcd_shs.v" in="pl_text_lcd.shaders" />
+		<link out="pll.out" in="pl_text_lcd.pll" />
+		<link out="rnf.rp" in="pl_text_lcd.renderpass" />
+		<link out="vi.out" in="pl_text_lcd.vi" />
+		<link out="sc.out" in="pl_text_lcd.sc" />
+		<link out="outs_lcd.v" in="pl_text_lcd.outputs" />
+		<link out="pl_text_sdf_shs.v" in="pl_text_sdf.shaders" />
+		<link out="pll.out" in="pl_text_sdf.pll" />
+		<link out="rnf.rp" in="pl_text_sdf.renderpass" />
+		<link out="vi.out" in="pl_text_sdf.vi" />
+		<link out="sc.out" in="pl_text_sdf.sc" />
+		<link out="outs_alpha_blend.v" in="pl_text_sdf.outputs" />
+		<link out="dsl.out" in="ds.dsl" />
+		<link out="ds.out" in="ds_wrt.set" />
+		<link out="img_white.out" in="ds_wrt.v" />
+		<link out="img_count.out" in="ds_wrt.count" />
+	</links>
 </BP>

@@ -45,12 +45,11 @@ namespace flame
 
 			active_pos = Vec2i(0);
 
-			key_listener = window->add_key_listener([](void* c, KeyState action, Key key) {
+			key_listener = window->add_key_listener([](void* c, KeyState action, int value) {
 				auto thiz = *(cEventDispatcherPrivate**)c;
 
 				if (action == KeyStateNull)
 				{
-					auto value = (int)key;
 					if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
 					{
 						std::string ansi;
@@ -69,11 +68,11 @@ namespace flame
 				}
 				else
 				{
-					thiz->key_states[key] = action | KeyStateJust;
+					thiz->key_states[value] = action | KeyStateJust;
 					if (action == KeyStateDown)
-						thiz->keydown_inputs.push_back(key);
+						thiz->keydown_inputs.push_back((Key)value);
 					else if (action == KeyStateUp)
-						thiz->keyup_inputs.push_back(key);
+						thiz->keyup_inputs.push_back((Key)value);
 				}
 				
 			}, new_mail_p(this));

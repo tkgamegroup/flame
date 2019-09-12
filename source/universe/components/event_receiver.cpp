@@ -57,9 +57,9 @@ namespace flame
 		return c;
 	}
 
-	void* cEventReceiver::add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture)
+	void* cEventReceiver::add_key_listener(void (*listener)(void* c, KeyState action, int value), const Mail<>& capture)
 	{
-		auto c = new Closure<void(void* c, KeyState action, uint value)>;
+		auto c = new Closure<void(void* c, KeyState action, int value)>;
 		c->function = listener;
 		c->capture = capture;
 		((cEventReceiverPrivate*)this)->key_listeners.emplace_back(c);

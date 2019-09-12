@@ -157,11 +157,6 @@ struct cBPEditor : Component
 		rt_cbs.resize(1);
 		rt_cbs[0] = Commandbuffer::create(app.d->gcp);
 
-		bp->graphics_device = app.d;
-		bp->find_input("rt_dst.type")->set_data_i(TargetImageview);
-		bp->find_input("rt_dst.v")->set_data_p(rt_v);
-		bp->find_input("make_cmd.cmdbufs")->set_data_p(&rt_cbs);
-
 		app.canvas->set_image(rt_id, rt_v);
 
 		sel_type = SelAir;
@@ -486,6 +481,15 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				auto& capture = *(Capture*)c;
 				capture.e->running = !capture.e->running;
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
+
+				if (capture.e->running)
+				{
+					auto bp = capture.e->bp;
+					bp->graphics_device = app.d;
+					bp->find_input("rt_dst.type")->set_data_i(TargetImageview);
+					bp->find_input("rt_dst.v")->set_data_p(capture.e->rt_v);
+					bp->find_input("make_cmd.cmdbufs")->set_data_p(&capture.e->rt_cbs);
+				}
 			}
 		}, new_mail(&capture));
 	}
@@ -530,8 +534,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			c_element->inner_padding = Vec4f(8.f);
 			c_element->background_color = Vec4c(255, 255, 255, 200);
 			c_element->background_frame_color = Vec4c(252, 252, 50, 200);
-			c_element->background_round_radius = 8.f;
-			c_element->background_shadow_thickness = 8.f;
 			e_node->add_component(c_element);
 
 			e_node->add_component(cEventReceiver::create());

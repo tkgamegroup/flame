@@ -394,11 +394,6 @@ namespace flame
 				//add_image(pos + Vec2f(border[0], border[2]), Vec2f(size.x() - border[0] - border[1], size.y() - border[2] - border[3]), id, Vec2f(b_uv[0], b_uv[2]), Vec2f(1.f - b_uv[1], 1.f - b_uv[3]));
 			}
 
-			//void set_scissor(const Vec4f& scissor)
-			//{
-			//	draw_cmds.emplace_back(scissor);
-			//}
-
 			void record(Commandbuffer* cb, uint image_idx)
 			{
 				auto fb = (Framebuffer*)rnf->framebuffers()[image_idx];

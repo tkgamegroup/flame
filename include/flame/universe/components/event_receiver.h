@@ -29,7 +29,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(const std::vector<uint>& hashes);
 
 		FLAME_UNIVERSE_EXPORTS void* add_focus_listener(void (*listener)(void* c, FocusType type), const Mail<>& capture);
-		FLAME_UNIVERSE_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, uint value), const Mail<>& capture);
+		FLAME_UNIVERSE_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, int value), const Mail<>& capture);
 		FLAME_UNIVERSE_EXPORTS void* add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& pos), const Mail<>& capture);
 		FLAME_UNIVERSE_EXPORTS void* add_drag_and_drop_listener(void (*listener)(void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos), const Mail<>& capture);
 

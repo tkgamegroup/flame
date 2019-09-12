@@ -48,7 +48,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			key_listener = event_receiver->add_key_listener([](void* c, KeyState action, uint value) {
+			key_listener = event_receiver->add_key_listener([](void* c, KeyState action, int value) {
 				auto thiz = *(cEditPrivate**)c;
 				auto& str = ((cTextPrivate*)thiz->text)->text;
 

@@ -1164,7 +1164,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		FLAME_FOUNDATION_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, int value), const Mail<>& capture);
 		FLAME_FOUNDATION_EXPORTS void* add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture);
 		FLAME_FOUNDATION_EXPORTS void* add_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture);
 		FLAME_FOUNDATION_EXPORTS void* add_destroy_listener(void (*listener)(void* c), const Mail<>& capture);

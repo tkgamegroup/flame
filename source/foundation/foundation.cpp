@@ -878,7 +878,7 @@ namespace flame
 		android_app* android_state;
 #endif
 
-		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, Key key)>>> key_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, int value)>>> key_listeners;
 		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>>> mouse_listeners;
 		std::vector<std::unique_ptr<Closure<void(void* c, const Vec2u & size)>>> resize_listeners;
 		std::vector<std::unique_ptr<Closure<void(void* c)>>> destroy_listeners;
@@ -1079,9 +1079,9 @@ namespace flame
 	}
 #endif
 
-	void* Window::add_key_listener(void (*listener)(void* c, KeyState action, Key key), const Mail<>& capture)
+	void* Window::add_key_listener(void (*listener)(void* c, KeyState action, int value), const Mail<>& capture)
 	{
-		auto c = new Closure<void(void* c, KeyState action, Key key)>;
+		auto c = new Closure<void(void* c, KeyState action, int value)>;
 		c->function = listener;
 		c->capture = capture;
 		((WindowPrivate*)this)->key_listeners.emplace_back(c);
@@ -1184,15 +1184,21 @@ namespace flame
 			case WM_KEYDOWN:
 			{
 				auto v = vk_code_to_key(wParam);
-				for (auto& f : w->key_listeners)
-					f->function(f->capture.p, KeyStateDown, v);
+				if (v > 0)
+				{
+					for (auto& f : w->key_listeners)
+						f->function(f->capture.p, KeyStateDown, v);
+				}
 			}
 			break;
 			case WM_KEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
-				for (auto& f : w->key_listeners)
-					f->function(f->capture.p, KeyStateUp, v);
+				if (v > 0)
+				{
+					for (auto& f : w->key_listeners)
+						f->function(f->capture.p, KeyStateUp, v);
+				}
 			}
 			break;
 			case WM_CHAR:
