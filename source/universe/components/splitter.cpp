@@ -13,10 +13,6 @@ namespace flame
 		{
 			element = nullptr;
 			event_receiver = nullptr;
-			left_element = nullptr;
-			left_aligner = nullptr;
-			right_element = nullptr;
-			right_aligner = nullptr;
 
 			type = SplitterHorizontal;
 
@@ -36,61 +32,62 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			auto parent = entity->parent();
-			auto pos = parent->child_position(entity);
-			if (pos > 0 && pos < parent->child_count() - 1)
-			{
-				auto left = parent->child(pos - 1);
-				left_element = (cElement*)(left->find_component(cH("Element")));
-				assert(left_element);
-				left_aligner = (cAligner*)(left->find_component(cH("Aligner")));
-				auto right = parent->child(pos + 1);
-				right_element = (cElement*)(right->find_component(cH("Element")));
-				assert(right_element);
-				right_aligner = (cAligner*)(right->find_component(cH("Aligner")));
-			}
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cSplitterPrivate**)c);
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
-					if (thiz->type == SplitterHorizontal)
+					auto parent = thiz->entity->parent();
+					auto idx = parent->child_position(thiz->entity);
+					if (idx > 0 && idx < parent->child_count() - 1)
 					{
-						if (pos.x() < 0.f)
+						auto left = parent->child(idx - 1);
+						auto left_element = (cElement*)(left->find_component(cH("Element")));
+						assert(left_element);
+						auto left_aligner = (cAligner*)(left->find_component(cH("Aligner")));
+						auto right = parent->child(idx + 1);
+						auto right_element = (cElement*)(right->find_component(cH("Element")));
+						assert(right_element);
+						auto right_aligner = (cAligner*)(right->find_component(cH("Aligner")));
+
+						if (thiz->type == SplitterHorizontal)
 						{
-							auto v = min(thiz->left_element->width - max(1.f, thiz->left_aligner ? thiz->left_aligner->min_width : thiz->left_element->inner_padding_horizontal()), -pos.x());
-							thiz->left_element->width -= v;
-							thiz->right_element->width += v;
+							if (pos.x() < 0.f)
+							{
+								auto v = min(left_element->width - max(1.f, left_aligner ? left_aligner->min_width : left_element->inner_padding_horizontal()), -pos.x());
+								left_element->width -= v;
+								right_element->width += v;
+							}
+							else if (pos.x() > 0.f)
+							{
+								auto v = min(right_element->width - max(1.f, right_aligner ? right_aligner->min_width : right_element->inner_padding_horizontal()), pos.x());
+								left_element->width += v;
+								right_element->width -= v;
+							}
+							if (left_aligner)
+								left_aligner->width_factor = left_element->width;
+							if (right_aligner)
+								right_aligner->width_factor = right_element->width;
 						}
-						else if (pos.x() > 0.f)
+						else
 						{
-							auto v = min(thiz->right_element->width - max(1.f, thiz->right_aligner ? thiz->right_aligner->min_width : thiz->right_element->inner_padding_horizontal()), pos.x());
-							thiz->left_element->width += v;
-							thiz->right_element->width -= v;
+							if (pos.y() < 0.f)
+							{
+								auto v = min(left_element->height - max(1.f, left_aligner ? left_aligner->min_height : left_element->inner_padding_vertical()), -pos.y());
+								left_element->height -= v;
+								right_element->height += v;
+							}
+							else if (pos.y() > 0.f)
+							{
+								auto v = min(right_element->height - max(1.f, right_aligner ? right_aligner->min_height : right_element->inner_padding_vertical()), pos.y());
+								left_element->height += v;
+								right_element->height -= v;
+							}
+							if (left_aligner)
+								left_aligner->height_factor = left_element->height;
+							if (right_aligner)
+								right_aligner->height_factor = right_element->height;
 						}
-						if (thiz->left_aligner)
-							thiz->left_aligner->width_factor = thiz->left_element->width;
-						if (thiz->right_aligner)
-							thiz->right_aligner->width_factor = thiz->right_element->width;
-					}
-					else
-					{
-						if (pos.y() < 0.f)
-						{
-							auto v = min(thiz->left_element->height - max(1.f, thiz->left_aligner ? thiz->left_aligner->min_height : thiz->left_element->inner_padding_vertical()), -pos.y());
-							thiz->left_element->height -= v;
-							thiz->right_element->height += v;
-						}
-						else if (pos.y() > 0.f)
-						{
-							auto v = min(thiz->right_element->height - max(1.f, thiz->right_aligner ? thiz->right_aligner->min_height : thiz->right_element->inner_padding_vertical()), pos.y());
-							thiz->left_element->height += v;
-							thiz->right_element->height -= v;
-						}
-						if (thiz->left_aligner)
-							thiz->left_aligner->height_factor = thiz->left_element->height;
-						if (thiz->right_aligner)
-							thiz->right_aligner->height_factor = thiz->right_element->height;
 					}
 				}
 			}, new_mail_p(this));

@@ -1,3 +1,5 @@
+#include <flame/graphics/image.h>
+#include <flame/graphics/canvas.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
@@ -9,14 +11,16 @@
 
 void open_image_viewer(uint id, const Vec2f& pos)
 {
+	auto image_size = app.canvas->get_image(id)->image()->size;
+
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
 		c_element->x = pos.x();
 		c_element->y = pos.y();
-		c_element->width = 400.f;
-		c_element->height = 340.f;
+		c_element->width = image_size.x() + 20.f;
+		c_element->height = image_size.y() + 20.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -38,8 +42,8 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	e_page->add_child(e_image);
 	{
 		auto c_element = cElement::create();
-		c_element->width = 400;
-		c_element->height = 300;
+		c_element->width = image_size.x();
+		c_element->height = image_size.y();
 		e_image->add_component(c_element);
 
 		auto c_image = cImage::create();

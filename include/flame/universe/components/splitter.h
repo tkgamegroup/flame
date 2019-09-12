@@ -12,10 +12,6 @@ namespace flame
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
-		cElement* left_element;
-		cAligner* left_aligner;
-		cElement* right_element;
-		cAligner* right_aligner;
 
 		SplitterType type;
 

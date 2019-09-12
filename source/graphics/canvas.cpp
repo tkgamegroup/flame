@@ -484,6 +484,11 @@ namespace flame
 			thiz->rnf->clearvalues()->set(0, col);
 		}
 
+		Imageview* Canvas::get_image(uint index)
+		{
+			return ((CanvasPrivate*)this)->ivs[index];
+		}
+
 		void Canvas::set_image(uint index, Imageview* v, Filter filter)
 		{
 			auto thiz = (CanvasPrivate*)this;

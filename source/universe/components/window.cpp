@@ -659,6 +659,7 @@ namespace flame
 								auto docker_element = (cElement*)docker->find_component(cH("Element"));
 								auto docker_aligner = (cAligner*)docker->find_component(cH("Aligner"));
 								auto p = docker->parent();
+								auto docker_idx = p->child_position(docker);
 								auto layout = get_docker_layout_model()->copy();
 
 								if (p->name_hash() == cH("docker_container"))
@@ -682,12 +683,17 @@ namespace flame
 									aligner->width_factor = p_element->width;
 									aligner->height_factor = p_element->height;
 									aligner->using_padding_in_free_layout = false;
+
+									{
+										auto oth = p->child(docker_idx == 0 ? 2 : 0);
+										auto element = (cElement*)oth->find_component(cH("Element"));
+										auto aligner = (cAligner*)oth->find_component(cH("Aligner"));
+										aligner->width_factor = element->width;
+										aligner->height_factor = element->height;
+									}
 								}
-								{
-									auto pos = p->child_position(docker);
-									p->take_child(docker);
-									p->add_child(layout, pos);
-								}
+								p->take_child(docker);
+								p->add_child(layout, docker_idx);
 
 								auto new_docker = get_docker_model()->copy();
 								auto new_docker_element = (cElement*)new_docker->find_component(cH("Element"));

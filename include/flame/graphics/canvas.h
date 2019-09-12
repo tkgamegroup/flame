@@ -15,6 +15,7 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS void set_render_target(TargetType$ type, const void* v);
 			FLAME_GRAPHICS_EXPORTS void set_clear_color(const Vec4c& col);
+			FLAME_GRAPHICS_EXPORTS Imageview* get_image(uint index);
 			FLAME_GRAPHICS_EXPORTS void set_image(uint index, Imageview* v, Filter filter = FilterLinear);
 			FLAME_GRAPHICS_EXPORTS uint find_free_image() const;
 
