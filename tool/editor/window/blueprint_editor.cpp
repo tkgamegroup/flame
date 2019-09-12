@@ -242,7 +242,7 @@ struct cBP : Component
 			}
 			else if (is_mouse_scroll(action, key))
 			{
-				thiz->base_element->scale += pos.x() < 0.f ? 0.1f : -0.1f;
+				thiz->base_element->scale += pos.x() > 0.f ? 0.1f : -0.1f;
 				thiz->base_element->scale = clamp(thiz->base_element->scale, 0.1f, 2.f);
 			}
 			else if (is_mouse_move(action, key) && (thiz->event_receiver->event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown))
@@ -494,12 +494,28 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		}, new_mail(&capture));
 	}
 
-	auto e_scene = Entity::create();
-	e_page->add_child(e_scene);
+	auto e_clipper = Entity::create();
+	e_page->add_child(e_clipper);
 	{
 		auto c_element = cElement::create();
 		c_element->clip_children = true;
-		e_scene->add_component(c_element);
+		e_clipper->add_component(c_element);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitParent;
+		c_aligner->height_policy = SizeFitParent;
+		e_clipper->add_component(c_aligner);
+
+		auto c_layout = cLayout::create();
+		c_layout->width_fit_children = false;
+		c_layout->height_fit_children = false;
+		e_clipper->add_component(c_layout);
+	}
+
+	auto e_scene = Entity::create();
+	e_clipper->add_child(e_scene);
+	{
+		e_scene->add_component(cElement::create());
 
 		e_scene->add_component(cEventReceiver::create());
 

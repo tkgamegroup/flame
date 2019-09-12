@@ -40,7 +40,7 @@
 			</datas>
 		</node>
 		<node type="Array(1+void*)" id="desc_bindings" pos="698.61;2862.50" />
-		<node type="graphics::Descriptorlayout" id="dsl" pos="956.25;2713.90" />
+		<node type="graphics::Descriptorlayout" id="dsl" pos="939.11;2705.33" />
 		<node type="Array(1+void*)" id="dsls" pos="1255.60;830.56" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="1577.80;1177.80">
 			<datas>
@@ -109,7 +109,7 @@
 			</datas>
 		</node>
 		<node type="Array(1+void*)" id="outs_alpha_blend" pos="1577.80;598.61" />
-		<node type="graphics::OutputAttachmentInfo" id="out_lcd" pos="1255.60;2426.40">
+		<node type="graphics::OutputAttachmentInfo" id="out_lcd" pos="1294.17;2446.40">
 			<datas>
 				<data name="name" value="color" />
 				<data name="blend_enable" value="1" />
@@ -153,23 +153,23 @@
 		<node type="graphics::Pipeline" id="pl_element" pos="2458.30;1506.90" />
 		<node type="graphics::Pipeline" id="pl_text_lcd" pos="2458.30;2145.80" />
 		<node type="graphics::Pipeline" id="pl_text_sdf" pos="2458.30;1045.80" />
-		<node type="graphics::Image" id="img_white" pos="1255.60;2948.60">
+		<node type="graphics::Image" id="img_white" pos="1223.93;2926.93">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="graphics::Descriptorset" id="ds" pos="1255.60;2713.90" />
-		<node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="1577.80;2963.90" />
-		<node type="graphics::Buffer" id="vtx_buf" pos="113.05;70.00">
+		<node type="graphics::Descriptorset" id="ds" pos="1155.60;2766.75" />
+		<node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="1627.80;2977.23" />
+		<node type="graphics::Buffer" id="vtx_buf" pos="63.88;920.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="graphics::Buffer" id="idx_buf" pos="368.05;63.89">
+		<node type="graphics::Buffer" id="idx_buf" pos="93.05;1227.72">
 			<datas>
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
