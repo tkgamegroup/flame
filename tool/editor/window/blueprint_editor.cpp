@@ -106,6 +106,7 @@ struct cBPEditor : Component
 	BP* bp;
 	std::vector<TypeinfoDatabase*> dbs;
 
+	Entity* e_base;
 	cDockerTab* console_tab;
 
 	graphics::Image* rt;
@@ -166,12 +167,30 @@ struct cBPEditor : Component
 		running = false;
 	}
 
+	Entity* create_node_entity(BP::Node* n);
+
+	BP::Node* add_node(const std::string& type_name, const std::string& id)
+	{
+		auto n = bp->add_node(type_name, id);
+		create_node_entity(n);
+		return n;
+	}
+
+	void remove_node(BP::Node* n)
+	{
+		looper().add_delay_event([](void* c) {
+			auto e = *(Entity**)c;
+			e->parent()->remove_child(e);
+		}, new_mail_p(n->user_data));
+		bp->remove_node(n);
+	}
+
 	void delete_selected()
 	{
 		switch (sel_type)
 		{
 		case SelNode:
-			bp->remove_node(selected.n);
+			remove_node(selected.n);
 			break;
 		case SelLink:
 			selected.l->link_to(nullptr);
@@ -179,6 +198,11 @@ struct cBPEditor : Component
 		}
 		sel_type = SelAir;
 		selected.n = nullptr;
+	}
+
+	bool auto_set_layout()
+	{
+
 	}
 
 	virtual void update() override
@@ -272,7 +296,7 @@ struct cBP : Component
 
 					std::vector<Vec2f> points;
 					path_bezier(points, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2);
-					element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * element->global_scale);
+					element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
 				}
 			}
 		}
@@ -284,7 +308,7 @@ struct cBP : Component
 
 			std::vector<Vec2f> points;
 			path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type == BP::Slot::Output ? 50.f : -50.f, 0.f), p2, p2);
-			element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * element->global_scale);
+			element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
 		}
 	}
 };
@@ -313,7 +337,7 @@ struct cBPNode : Component
 			auto thiz = *(cBPNode**)c;
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
-				thiz->editor->sel_type = cBPEditor::SelAir;
+				thiz->editor->sel_type = cBPEditor::SelNode;
 				thiz->editor->selected.n = thiz->n;
 			}
 		}, new_mail_p(this));
@@ -383,6 +407,377 @@ struct cBPSlot : Component
 	}
 };
 
+Entity* cBPEditor::create_node_entity(BP::Node* n)
+{
+	auto e_node = Entity::create();
+	e_base->add_child(e_node);
+	n->user_data = e_node;
+	{
+		auto c_element = cElement::create();
+		c_element->x = n->pos.x();
+		c_element->y = n->pos.y();
+		c_element->inner_padding = Vec4f(8.f);
+		c_element->background_color = Vec4c(255, 255, 255, 200);
+		c_element->background_frame_color = Vec4c(252, 252, 50, 200);
+		e_node->add_component(c_element);
+
+		e_node->add_component(cEventReceiver::create());
+
+		e_node->add_component(cWindow::create());
+
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutVertical;
+		c_layout->item_padding = 4.f;
+		e_node->add_component(c_layout);
+
+		auto c_node = new_component<cBPNode>();
+		c_node->editor = this;
+		c_node->n = n;
+		e_node->add_component(c_node);
+
+		auto e_text_id = Entity::create();
+		e_node->add_child(e_text_id);
+		{
+			e_text_id->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_sdf);
+			c_text->set_text(s2w(n->id()));
+			c_text->sdf_scale = 0.8f;
+			e_text_id->add_component(c_text);
+		}
+
+		auto e_text_type = Entity::create();
+		e_node->add_child(e_text_type);
+		{
+			e_text_type->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_sdf);
+			c_text->set_text(s2w(n->udt->name()));
+			c_text->color = Vec4c(50, 50, 50, 255);
+			c_text->sdf_scale = 0.5f;
+			e_text_type->add_component(c_text);
+		}
+
+		auto e_content = Entity::create();
+		e_node->add_child(e_content);
+		{
+			e_content->add_component(cElement::create());
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeGreedy;
+			e_content->add_component(c_aligner);
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutHorizontal;
+			c_layout->item_padding = 16.f;
+			e_content->add_component(c_layout);
+
+			auto e_left = Entity::create();
+			e_content->add_child(e_left);
+			{
+				e_left->add_component(cElement::create());
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeGreedy;
+				e_left->add_component(c_aligner);
+
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutVertical;
+				e_left->add_component(c_layout);
+
+				for (auto j = 0; j < n->input_count(); j++)
+				{
+					auto input = n->input(j);
+
+					auto e_input = Entity::create();
+					e_left->add_child(e_input);
+					{
+						e_input->add_component(cElement::create());
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutVertical;
+						c_layout->item_padding = 2.f;
+						e_input->add_component(c_layout);
+					}
+
+					auto e_title = Entity::create();
+					e_input->add_child(e_title);
+					{
+						e_title->add_component(cElement::create());
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutHorizontal;
+						e_title->add_component(c_layout);
+					}
+
+					auto e_slot = Entity::create();
+					e_title->add_child(e_slot);
+					{
+						auto c_element = cElement::create();
+						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						c_element->width = r;
+						c_element->height = r;
+						c_element->background_round_radius = r * 0.5f;
+						c_element->background_color = Vec4c(200, 200, 200, 255);
+						e_slot->add_component(c_element);
+						input->user_data = c_element;
+
+						e_slot->add_component(cEventReceiver::create());
+
+						auto c_slot = new_component<cBPSlot>();
+						c_slot->editor = this;
+						c_slot->s = input;
+						e_slot->add_component(c_slot);
+					}
+
+					auto e_text = Entity::create();
+					e_title->add_child(e_text);
+					{
+						e_text->add_component(cElement::create());
+
+						auto c_text = cText::create(app.font_atlas_sdf);
+						c_text->sdf_scale = 0.6f;
+						c_text->set_text(s2w(input->variable_info->name()));
+						e_text->add_component(c_text);
+					}
+
+					auto e_data = Entity::create();
+					e_input->add_child(e_data);
+					{
+						auto c_element = cElement::create();
+						c_element->inner_padding = Vec4f(app.font_atlas_sdf->pixel_height, 0.f, 0.f, 0.f);
+						e_data->add_component(c_element);
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutVertical;
+						c_layout->item_padding = 2.f;
+						e_data->add_component(c_layout);
+					}
+
+					auto type = input->variable_info->type();
+					switch (type->tag())
+					{
+					case TypeTagAttributeES:
+					{
+						auto info = find_enum(dbs, type->hash());
+						std::vector<std::wstring> items;
+						for (auto k = 0; k < info->item_count(); k++)
+							items.push_back(s2w(info->item(k)->name()));
+						int init_idx;
+						info->find_item(*(int*)input->data(), &init_idx);
+						auto e_combobox = create_standard_combobox(120.f, app.font_atlas_sdf, 0.5f, app.root, items, init_idx);
+						e_data->add_child(e_combobox);
+
+						struct Capture
+						{
+							BP::Slot* input;
+							EnumInfo* e;
+						}capture;
+						capture.input = input;
+						capture.e = info;
+						((cCombobox*)e_combobox->find_component(cH("Combobox")))->add_changed_listener([](void* c, uint idx) {
+							auto& capture = *(Capture*)c;
+							auto v = capture.e->item(idx)->value();
+							capture.input->set_data(&v);
+						}, new_mail(&capture));
+					}
+					break;
+					case TypeTagAttributeEM:
+					{
+						auto v = *(int*)input->data();
+
+						auto info = find_enum(dbs, type->hash());
+						for (auto k = 0; k < info->item_count(); k++)
+						{
+							auto item = info->item(k);
+							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, s2w(item->name()), (v & item->value()) != 0);
+							e_data->add_child(e_checkbox);
+
+							struct Capture
+							{
+								BP::Slot* input;
+								int v;
+							}capture;
+							capture.input = input;
+							capture.v = item->value();
+							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+								auto& capture = *(Capture*)c;
+								auto v = *(int*)capture.input->data();
+								if (checked)
+									v |= capture.v;
+								else
+									v &= ~capture.v;
+								capture.input->set_data(&v);
+							}, new_mail(&capture));
+						}
+					}
+					break;
+					case TypeTagAttributeV:
+						switch (type->hash())
+						{
+						case cH("bool"):
+						{
+							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, L"", (*(int*)input->data()) != 0);
+							e_data->add_child(e_checkbox);
+
+							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+								auto input = *(BP::Slot**)c;
+								auto v = checked ? 1 : 0;
+								input->set_data(&v);
+							}, new_mail_p(input));
+						}
+						break;
+						case cH("int"):
+							create_edit<int>(e_data, input);
+							break;
+						case cH("Vec(2+int)"):
+							create_vec_edit<2, int>(e_data, input);
+							break;
+						case cH("Vec(3+int)"):
+							create_vec_edit<3, int>(e_data, input);
+							break;
+						case cH("Vec(4+int)"):
+							create_vec_edit<4, int>(e_data, input);
+							break;
+						case cH("uint"):
+							create_edit<uint>(e_data, input);
+							break;
+						case cH("Vec(2+uint)"):
+							create_vec_edit<2, uint>(e_data, input);
+							break;
+						case cH("Vec(3+uint)"):
+							create_vec_edit<3, uint>(e_data, input);
+							break;
+						case cH("Vec(4+uint)"):
+							create_vec_edit<4, uint>(e_data, input);
+							break;
+						case cH("float"):
+							create_edit<float>(e_data, input);
+							break;
+						case cH("Vec(2+float)"):
+							create_vec_edit<2, float>(e_data, input);
+							break;
+						case cH("Vec(3+float)"):
+							create_vec_edit<3, float>(e_data, input);
+							break;
+						case cH("Vec(4+float)"):
+							create_vec_edit<4, float>(e_data, input);
+							break;
+						case cH("uchar"):
+							create_edit<uchar>(e_data, input);
+							break;
+						case cH("Vec(2+uchar)"):
+							create_vec_edit<2, uchar>(e_data, input);
+							break;
+						case cH("Vec(3+uchar)"):
+							create_vec_edit<3, uchar>(e_data, input);
+							break;
+						case cH("Vec(4+uchar)"):
+							create_vec_edit<4, uchar>(e_data, input);
+							break;
+						case cH("std::basic_string(char)"):
+						{
+							auto& str = *(std::string*)input->data();
+
+							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+							e_data->add_child(e_edit);
+							{
+								((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(str));
+
+								((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+									auto str = w2s(text);
+									(*(BP::Slot**)c)->set_data(&str);
+								}, new_mail_p(input));
+							}
+						}
+						break;
+						case cH("std::basic_string(wchar_t)"):
+						{
+							auto& str = *(std::wstring*)input->data();
+
+							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+							e_data->add_child(e_edit);
+							{
+								((cText*)e_edit->find_component(cH("Text")))->set_text(str);
+
+								((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+									auto str = std::wstring(text);
+									(*(BP::Slot**)c)->set_data(&str);
+								}, new_mail_p(input));
+							}
+						}
+						break;
+						}
+						break;
+					}
+				}
+			}
+
+			auto e_right = Entity::create();
+			e_content->add_child(e_right);
+			{
+				e_right->add_component(cElement::create());
+
+				auto c_layout = cLayout::create();
+				c_layout->type = LayoutVertical;
+				e_right->add_component(c_layout);
+
+				for (auto j = 0; j < n->output_count(); j++)
+				{
+					auto output = n->output(j);
+
+					auto e_title = Entity::create();
+					e_right->add_child(e_title);
+					{
+						e_title->add_component(cElement::create());
+
+						auto c_aligner = cAligner::create();
+						c_aligner->x_align = AlignxRight;
+						e_title->add_component(c_aligner);
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutHorizontal;
+						e_title->add_component(c_layout);
+					}
+
+					auto e_text = Entity::create();
+					e_title->add_child(e_text);
+					{
+						e_text->add_component(cElement::create());
+
+						auto c_text = cText::create(app.font_atlas_sdf);
+						c_text->sdf_scale = 0.6f;
+						c_text->set_text(s2w(output->variable_info->name()));
+						e_text->add_component(c_text);
+					}
+
+					auto e_slot = Entity::create();
+					e_title->add_child(e_slot);
+					{
+						auto c_element = cElement::create();
+						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						c_element->width = r;
+						c_element->height = r;
+						c_element->background_round_radius = r * 0.5f;
+						c_element->background_color = Vec4c(200, 200, 200, 255);
+						e_slot->add_component(c_element);
+						output->user_data = c_element;
+
+						e_slot->add_component(cEventReceiver::create());
+
+						auto c_slot = new_component<cBPSlot>();
+						c_slot->editor = this;
+						c_slot->s = output;
+						e_slot->add_component(c_slot);
+					}
+				}
+			}
+		}
+	}
+
+	return e_node;
+}
+
 void open_blueprint_editor(const std::wstring& filename, bool no_compile, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
@@ -446,7 +841,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 					auto& capture = *(Capture*)c;
-					capture.e->bp->add_node(capture.u->name(), "");
+					capture.e->add_node(capture.u->name(), "");
 				}
 			}, new_mail(&capture));
 		}
@@ -469,6 +864,23 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}, new_mail_p(c_editor));
 		}
 		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		e_menubar->add_child(e_menu_btn);
+	}
+
+	{
+		auto e_menu = create_standard_menu();
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Auto Set Layout");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+				}
+			}, new_mail_p(c_editor));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Layout", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 	}
 
@@ -542,378 +954,11 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	{
 		e_base->add_component(cElement::create());
 	}
+	c_editor->e_base = e_base;
 
 	auto bp = c_editor->bp;
 	for (auto i = 0; i < bp->node_count(); i++)
-	{
-		auto n = bp->node(i);
-
-		auto e_node = Entity::create();
-		e_base->add_child(e_node);
-		n->user_data = e_node;
-		{
-			auto c_element = cElement::create();
-			c_element->x = n->pos.x();
-			c_element->y = n->pos.y();
-			c_element->inner_padding = Vec4f(8.f);
-			c_element->background_color = Vec4c(255, 255, 255, 200);
-			c_element->background_frame_color = Vec4c(252, 252, 50, 200);
-			e_node->add_component(c_element);
-
-			e_node->add_component(cEventReceiver::create());
-
-			e_node->add_component(cWindow::create());
-
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
-			c_layout->item_padding = 4.f;
-			e_node->add_component(c_layout);
-
-			auto c_node = new_component<cBPNode>();
-			c_node->editor = c_editor;
-			c_node->n = n;
-			e_node->add_component(c_node);
-
-			auto e_text_id = Entity::create();
-			e_node->add_child(e_text_id);
-			{
-				e_text_id->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_sdf);
-				c_text->set_text(s2w(n->id()));
-				c_text->sdf_scale = 0.8f;
-				e_text_id->add_component(c_text);
-			}
-
-			auto e_text_type = Entity::create();
-			e_node->add_child(e_text_type);
-			{
-				e_text_type->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_sdf);
-				c_text->set_text(s2w(n->udt->name()));
-				c_text->color = Vec4c(50, 50, 50, 255);
-				c_text->sdf_scale = 0.5f;
-				e_text_type->add_component(c_text);
-			}
-
-			auto e_content = Entity::create();
-			e_node->add_child(e_content);
-			{
-				e_content->add_component(cElement::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
-				e_content->add_component(c_aligner);
-
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutHorizontal;
-				c_layout->item_padding = 16.f;
-				e_content->add_component(c_layout);
-
-				auto e_left = Entity::create();
-				e_content->add_child(e_left);
-				{
-					e_left->add_component(cElement::create());
-
-					auto c_aligner = cAligner::create();
-					c_aligner->width_policy = SizeGreedy;
-					e_left->add_component(c_aligner);
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutVertical;
-					e_left->add_component(c_layout);
-
-					for (auto j = 0; j < n->input_count(); j++)
-					{
-						auto input = n->input(j);
-
-						auto e_input = Entity::create();
-						e_left->add_child(e_input);
-						{
-							e_input->add_component(cElement::create());
-
-							auto c_layout = cLayout::create();
-							c_layout->type = LayoutVertical;
-							c_layout->item_padding = 2.f;
-							e_input->add_component(c_layout);
-						}
-
-						auto e_title = Entity::create();
-						e_input->add_child(e_title);
-						{
-							e_title->add_component(cElement::create());
-
-							auto c_layout = cLayout::create();
-							c_layout->type = LayoutHorizontal;
-							e_title->add_component(c_layout);
-						}
-
-						auto e_slot = Entity::create();
-						e_title->add_child(e_slot);
-						{
-							auto c_element = cElement::create();
-							auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-							c_element->width = r;
-							c_element->height = r;
-							c_element->background_round_radius = r * 0.5f;
-							c_element->background_color = Vec4c(200, 200, 200, 255);
-							e_slot->add_component(c_element);
-							input->user_data = c_element;
-
-							e_slot->add_component(cEventReceiver::create());
-
-							auto c_slot = new_component<cBPSlot>();
-							c_slot->editor = c_editor;
-							c_slot->s = input;
-							e_slot->add_component(c_slot);
-						}
-
-						auto e_text = Entity::create();
-						e_title->add_child(e_text);
-						{
-							e_text->add_component(cElement::create());
-
-							auto c_text = cText::create(app.font_atlas_sdf);
-							c_text->sdf_scale = 0.6f;
-							c_text->set_text(s2w(input->variable_info->name()));
-							e_text->add_component(c_text);
-						}
-
-						auto e_data = Entity::create();
-						e_input->add_child(e_data);
-						{
-							auto c_element = cElement::create();
-							c_element->inner_padding = Vec4f(app.font_atlas_sdf->pixel_height, 0.f, 0.f, 0.f);
-							e_data->add_component(c_element);
-
-							auto c_layout = cLayout::create();
-							c_layout->type = LayoutVertical;
-							c_layout->item_padding = 2.f;
-							e_data->add_component(c_layout);
-						}
-
-						auto type = input->variable_info->type();
-						switch (type->tag())
-						{
-						case TypeTagAttributeES:
-						{
-							auto info = find_enum(c_editor->dbs, type->hash());
-							std::vector<std::wstring> items;
-							for (auto k = 0; k < info->item_count(); k++)
-								items.push_back(s2w(info->item(k)->name()));
-							int init_idx;
-							info->find_item(*(int*)input->data(), &init_idx);
-							auto e_combobox = create_standard_combobox(120.f, app.font_atlas_sdf, 0.5f, app.root, items, init_idx);
-							e_data->add_child(e_combobox);
-
-							struct Capture
-							{
-								BP::Slot* input;
-								EnumInfo* e;
-							}capture;
-							capture.input = input;
-							capture.e = info;
-							((cCombobox*)e_combobox->find_component(cH("Combobox")))->add_changed_listener([](void* c, uint idx) {
-								auto& capture = *(Capture*)c;
-								auto v = capture.e->item(idx)->value();
-								capture.input->set_data(&v);
-							}, new_mail(&capture));
-						}
-						break;
-						case TypeTagAttributeEM:
-						{
-							auto v = *(int*)input->data();
-
-							auto info = find_enum(c_editor->dbs, type->hash());
-							for (auto k = 0; k < info->item_count(); k++)
-							{
-								auto item = info->item(k);
-								auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, s2w(item->name()), (v & item->value()) != 0);
-								e_data->add_child(e_checkbox);
-
-								struct Capture
-								{
-									BP::Slot* input;
-									int v;
-								}capture;
-								capture.input = input;
-								capture.v = item->value();
-								((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
-									auto& capture = *(Capture*)c;
-									auto v = *(int*)capture.input->data();
-									if (checked)
-										v |= capture.v;
-									else
-										v &= ~capture.v;
-									capture.input->set_data(&v);
-								}, new_mail(&capture));
-							}
-						}
-						break;
-						case TypeTagAttributeV:
-							switch (type->hash())
-							{
-							case cH("bool"):
-							{
-								auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, L"", (*(int*)input->data()) != 0);
-								e_data->add_child(e_checkbox);
-
-								((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
-									auto input = *(BP::Slot**)c;
-									auto v = checked ? 1 : 0;
-									input->set_data(&v);
-								}, new_mail_p(input));
-							}
-							break;
-							case cH("int"):
-								create_edit<int>(e_data, input);
-								break;
-							case cH("Vec(2+int)"):
-								create_vec_edit<2, int>(e_data, input);
-								break;
-							case cH("Vec(3+int)"):
-								create_vec_edit<3, int>(e_data, input);
-								break;
-							case cH("Vec(4+int)"):
-								create_vec_edit<4, int>(e_data, input);
-								break;
-							case cH("uint"):
-								create_edit<uint>(e_data, input);
-								break;
-							case cH("Vec(2+uint)"):
-								create_vec_edit<2, uint>(e_data, input);
-								break;
-							case cH("Vec(3+uint)"):
-								create_vec_edit<3, uint>(e_data, input);
-								break;
-							case cH("Vec(4+uint)"):
-								create_vec_edit<4, uint>(e_data, input);
-								break;
-							case cH("float"):
-								create_edit<float>(e_data, input);
-								break;
-							case cH("Vec(2+float)"):
-								create_vec_edit<2, float>(e_data, input);
-								break;
-							case cH("Vec(3+float)"):
-								create_vec_edit<3, float>(e_data, input);
-								break;
-							case cH("Vec(4+float)"):
-								create_vec_edit<4, float>(e_data, input);
-								break;
-							case cH("uchar"):
-								create_edit<uchar>(e_data, input);
-								break;
-							case cH("Vec(2+uchar)"):
-								create_vec_edit<2, uchar>(e_data, input);
-								break;
-							case cH("Vec(3+uchar)"):
-								create_vec_edit<3, uchar>(e_data, input);
-								break;
-							case cH("Vec(4+uchar)"):
-								create_vec_edit<4, uchar>(e_data, input);
-								break;
-							case cH("std::basic_string(char)"):
-							{
-								auto& str = *(std::string*)input->data();
-
-								auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
-								e_data->add_child(e_edit);
-								{
-									((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(str));
-
-									((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-										auto str = w2s(text);
-										(*(BP::Slot**)c)->set_data(&str);
-									}, new_mail_p(input));
-								}
-							}
-							break;
-							case cH("std::basic_string(wchar_t)"):
-							{
-								auto& str = *(std::wstring*)input->data();
-
-								auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
-								e_data->add_child(e_edit);
-								{
-									((cText*)e_edit->find_component(cH("Text")))->set_text(str);
-
-									((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-										auto str = std::wstring(text);
-										(*(BP::Slot**)c)->set_data(&str);
-									}, new_mail_p(input));
-								}
-							}
-							break;
-							}
-							break;
-						}
-					}
-				}
-
-				auto e_right = Entity::create();
-				e_content->add_child(e_right);
-				{
-					e_right->add_component(cElement::create());
-
-					auto c_layout = cLayout::create();
-					c_layout->type = LayoutVertical;
-					e_right->add_component(c_layout);
-
-					for (auto j = 0; j < n->output_count(); j++)
-					{
-						auto output = n->output(j);
-
-						auto e_title = Entity::create();
-						e_right->add_child(e_title);
-						{
-							e_title->add_component(cElement::create());
-
-							auto c_aligner = cAligner::create();
-							c_aligner->x_align = AlignxRight;
-							e_title->add_component(c_aligner);
-
-							auto c_layout = cLayout::create();
-							c_layout->type = LayoutHorizontal;
-							e_title->add_component(c_layout);
-						}
-
-						auto e_text = Entity::create();
-						e_title->add_child(e_text);
-						{
-							e_text->add_component(cElement::create());
-
-							auto c_text = cText::create(app.font_atlas_sdf);
-							c_text->sdf_scale = 0.6f;
-							c_text->set_text(s2w(output->variable_info->name()));
-							e_text->add_component(c_text);
-						}
-
-						auto e_slot = Entity::create();
-						e_title->add_child(e_slot);
-						{
-							auto c_element = cElement::create();
-							auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-							c_element->width = r;
-							c_element->height = r;
-							c_element->background_round_radius = r * 0.5f;
-							c_element->background_color = Vec4c(200, 200, 200, 255);
-							e_slot->add_component(c_element);
-							output->user_data = c_element;
-
-							e_slot->add_component(cEventReceiver::create());
-
-							auto c_slot = new_component<cBPSlot>();
-							c_slot->editor = c_editor;
-							c_slot->s = output;
-							e_slot->add_component(c_slot);
-						}
-					}
-				}
-			}
-		}
-	}
+		c_editor->create_node_entity(bp->node(i));
 
 	auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
 		auto editor = *(cBPEditor**)c;
@@ -1021,7 +1066,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				"  set [in_adress] [value] - set value for input\n"
 				"  update - update this blueprint\n"
 				"  save - save this blueprint\n"
-				"  set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first"
+				"  auto-set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first"
 			);
 		}
 		else if (tokens[0] == L"show")
@@ -1132,7 +1177,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			if (tokens[1] == L"node")
 			{
-				auto n = bp->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]));
+				auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]));
 				if (n)
 					console->print(L"node added: " + s2w(n->id()));
 				else
@@ -1164,7 +1209,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				auto n = bp->find_node(w2s(tokens[2]));
 				if (n)
 				{
-					bp->remove_node(n);
+					editor->remove_node(n);
 					console->print(L"node removed: " + tokens[2]);
 				}
 				else
@@ -1196,7 +1241,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			BP::save_to_file(bp, filename);
 			console->print(L"file saved");
 		}
-		else if (tokens[0] == L"set-layout")
+		else if (tokens[0] == L"auto-set-layout")
 		{
 			if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(filename))
 				generate_graph_and_layout();
@@ -1230,7 +1275,12 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					auto n = bp->find_node(match[1].str().c_str());
 					if (n)
+					{
 						n->pos = Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f;
+						auto element = (cElement*)((Entity*)n->user_data)->find_component(cH("Element"));
+						element->x = n->pos.x();
+						element->y = n->pos.y();
+					}
 
 					str = match.suffix();
 				}

@@ -176,11 +176,6 @@
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="graphics::DescriptorBinding" id="node_46" pos="-33.33;40.00">
-			<datas>
-				<data name="name" value="" />
-			</datas>
-		</node>
 	</nodes>
 	<links>
 		<link out="rt_dst.first_image" in="dst_props.in" />
