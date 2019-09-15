@@ -36,10 +36,10 @@ namespace flame
 				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 			if (auto_size)
 			{
-				auto w = rect.x() + element->inner_padding[0] + element->inner_padding[2];
+				auto w = rect.x() + element->inner_padding_horizontal() * element->global_scale;
 				if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_width)
 					element->width = w;
-				auto h = rect.y() + element->inner_padding[1] + element->inner_padding[3];
+				auto h = rect.y() + element->inner_padding_vertical() * element->global_scale;
 				if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_height)
 					element->height = h;
 			}

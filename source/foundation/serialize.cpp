@@ -1867,9 +1867,7 @@ namespace flame
 
 		switch (tag)
 		{
-		case TypeTagAttributeES:
-			src = (char*)src + sizeof(int);
-		case TypeTagEnumSingle:
+		case TypeTagEnumSingle: case TypeTagAttributeES:
 		{
 			EnumInfo* e = nullptr;
 			for (auto db : dbs)
@@ -1882,9 +1880,7 @@ namespace flame
 			*(ret.p) = e->find_item(*(int*)src)->name();
 		}
 			break;
-		case TypeTagAttributeEM:
-			src = (char*)src + sizeof(int);
-		case TypeTagEnumMulti:
+		case TypeTagEnumMulti: case TypeTagAttributeEM:
 		{
 			std::string str;
 			EnumInfoPrivate* e = nullptr;
@@ -1909,9 +1905,7 @@ namespace flame
 			(*ret.p) = str;
 		}
 			break;
-		case TypeTagAttributeV:
-			src = (char*)src + sizeof(int);
-		case TypeTagVariable:
+		case TypeTagVariable: case TypeTagAttributeV:
 			switch (hash)
 			{
 			case cH("bool"):
@@ -1996,9 +1990,7 @@ namespace flame
 	{
 		switch (tag)
 		{
-		case TypeTagAttributeES:
-			dst = (char*)dst + sizeof(int);
-		case TypeTagEnumSingle:
+		case TypeTagEnumSingle: case TypeTagAttributeES:
 		{
 			EnumInfo* e = nullptr;
 			for (auto db : dbs)
@@ -2011,9 +2003,7 @@ namespace flame
 			e->find_item(src, (int*)dst);
 		}
 			break;
-		case TypeTagAttributeEM:
-			dst = (char*)dst + sizeof(int);
-		case TypeTagEnumMulti:
+		case TypeTagEnumMulti: case TypeTagAttributeEM:
 		{
 			auto v = 0;
 			EnumInfoPrivate* e = nullptr;
@@ -2030,9 +2020,7 @@ namespace flame
 			*(int*)dst = v;
 		}
 			break;
-		case TypeTagAttributeV:
-			dst = (char*)dst + sizeof(int);
-		case TypeTagVariable:
+		case TypeTagVariable: case TypeTagAttributeV:
 			switch (hash)
 			{
 			case cH("bool"):

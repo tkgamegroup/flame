@@ -907,7 +907,7 @@ namespace flame
 				auto v = input->variable_info;
 				auto type = v->type();
 				if (v->default_value())
-					unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->raw_data);
+					unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->data());
 			}
 		}
 
@@ -970,7 +970,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(dbs, type->tag(), type->hash(), input->raw_data, 2);
+					auto value = serialize_value(dbs, type->tag(), type->hash(), input->data(), 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}

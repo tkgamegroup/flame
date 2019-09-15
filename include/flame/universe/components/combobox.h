@@ -53,7 +53,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
 
-		FLAME_UNIVERSE_EXPORTS void set_index(int idx);
+		FLAME_UNIVERSE_EXPORTS void set_index(int idx, bool trigger_changed = true);
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
@@ -61,5 +61,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items, int init_item);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items);
 }

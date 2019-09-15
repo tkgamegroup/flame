@@ -98,7 +98,19 @@ namespace flame
 
 	struct cComboboxPrivate : cCombobox
 	{
+		int init_idx;
+
 		std::vector<std::unique_ptr<Closure<void(void* c, uint idx)>>> changed_listeners;
+
+		cComboboxPrivate()
+		{
+			text = nullptr;
+			menu_button = nullptr;
+
+			selected = nullptr;
+
+			init_idx = -1;
+		}
 
 		void on_changed(int idx)
 		{
@@ -112,6 +124,9 @@ namespace flame
 			assert(text && !text->auto_size);
 			menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
 			assert(menu_button);
+
+			if (init_idx > 0)
+				set_index(init_idx);
 
 			auto menu = menu_button->menu;
 			for (auto i = 0; i < menu->child_count(); i++)
@@ -141,20 +156,28 @@ namespace flame
 		}
 	}
 
-	void cCombobox::set_index(int idx)
+	void cCombobox::set_index(int idx, bool trigger_changed)
 	{
+		if (!menu_button)
+		{
+			((cComboboxPrivate*)this)->init_idx = idx;
+			return;
+		}
+
 		if (idx < 0)
 		{
 			selected = nullptr;
 			text->set_text(L"");
-			((cComboboxPrivate*)this)->on_changed(-1);
+			if (trigger_changed)
+				((cComboboxPrivate*)this)->on_changed(-1);
 			return;
 		}
 
 		auto menu = menu_button->menu;
 		selected = menu->child(idx);
 		text->set_text(((cText*)(selected->find_component(cH("Text"))))->text());
-		((cComboboxPrivate*)this)->on_changed(idx);
+		if (trigger_changed)
+			((cComboboxPrivate*)this)->on_changed(idx);
 	}
 
 	void cCombobox::start()
@@ -171,7 +194,7 @@ namespace flame
 		return new cComboboxPrivate;
 	}
 
-	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items, int init_item)
+	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items)
 	{
 		auto e_menu = create_standard_menu();
 		for (auto i = 0; i < items.size(); i++)
@@ -194,13 +217,8 @@ namespace flame
 
 			auto c_text = (cText*)e_combobox->find_component(cH("Text"));
 			c_text->auto_size = false;
-			if (init_item >= 0)
-				c_text->set_text(items[init_item]);
 			
-			auto c_combobox = cCombobox::create();
-			if (init_item >= 0)
-				c_combobox->selected = e_menu->child(init_item);
-			e_combobox->add_component(c_combobox);
+			e_combobox->add_component(cCombobox::create());
 		}
 
 		return e_combobox;

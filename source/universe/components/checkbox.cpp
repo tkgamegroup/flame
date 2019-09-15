@@ -103,11 +103,14 @@ namespace flame
 		}
 	}
 
-	void cCheckbox::set_checked(bool _checked)
+	void cCheckbox::set_checked(bool _checked, bool trigger_changed)
 	{
 		checked = _checked;
-		for (auto& l : ((cCheckboxPrivate*)this)->changed_listeners)
-			l->function(l->capture.p, checked);
+		if (trigger_changed)
+		{
+			for (auto& l : ((cCheckboxPrivate*)this)->changed_listeners)
+				l->function(l->capture.p, checked);
+		}
 	}
 
 	Entity* create_standard_checkbox(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, bool checked)

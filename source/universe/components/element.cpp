@@ -95,13 +95,14 @@ namespace flame
 				if (!p_element || rect_overlapping(p_element->scissor, Vec4f(p, p + s)))
 				{
 					auto rr = background_round_radius * global_scale;
+					auto st = background_shadow_thickness * global_scale;
 
-					if (background_shadow_thickness > 0.f)
+					if (st > 0.f)
 					{
 						std::vector<Vec2f> points;
-						path_rect(points, p - Vec2f(background_shadow_thickness * 0.5f), s + Vec2f(background_shadow_thickness), rr, (Side)background_round_flags);
+						path_rect(points, p - Vec2f(st * 0.5f), s + Vec2f(st), rr, (Side)background_round_flags);
 						points.push_back(points[0]);
-						canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), background_shadow_thickness);
+						canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
 					}
 					if (alpha > 0.f)
 					{
@@ -109,10 +110,11 @@ namespace flame
 						path_rect(points, p, s, rr, (Side)background_round_flags);
 						if (background_color.w() > 0)
 							canvas->fill(points, alpha_mul(background_color, alpha));
-						if (background_frame_thickness > 0.f && background_frame_color.w() > 0)
+						auto ft = background_frame_thickness * global_scale;
+						if (ft > 0.f && background_frame_color.w() > 0)
 						{
 							points.push_back(points[0]);
-							canvas->stroke(points, alpha_mul(background_frame_color, alpha), background_frame_thickness);
+							canvas->stroke(points, alpha_mul(background_frame_color, alpha), ft);
 						}
 					}
 				}

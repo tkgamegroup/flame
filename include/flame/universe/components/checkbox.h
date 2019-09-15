@@ -28,7 +28,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
 
-		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked);
+		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked, bool trigg_changed = true);
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
