@@ -25,19 +25,22 @@ namespace flame
 			DescriptorType$ type;
 			uint count;
 			std::string name;
+			UdtInfo* buffer_udt;
 
 			DescriptorBinding() :
 				binding(-1),
 				type(DescriptorUniformBuffer),
-				count(1)
+				count(1),
+				buffer_udt(nullptr)
 			{
 			}
 
-			DescriptorBinding(uint binding, DescriptorType$ type, uint count = 1, const std::string& name = "", bool dual_src = false) :
+			DescriptorBinding(uint binding, DescriptorType$ type, uint count = 1, const std::string& name = "", UdtInfo* buffer_udt = nullptr) :
 				binding(binding),
 				type(type),
 				count(count),
-				name(name)
+				name(name),
+				buffer_udt(buffer_udt)
 			{
 			}
 		};

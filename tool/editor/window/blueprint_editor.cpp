@@ -275,6 +275,8 @@ struct cBPEditor : Component
 	bool running;
 	bool cb_recorded;
 
+	std::vector<Entity*> tips;
+
 	cBPEditor() :
 		Component("BPEditor")
 	{
@@ -464,6 +466,11 @@ struct cBPEditor : Component
 		}
 
 		return true;
+	}
+
+	void show_tip(const std::wstring& text)
+	{
+
 	}
 
 	virtual void update() override
@@ -1347,11 +1354,22 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					auto editor = *(cBPEditor**)c;
 					editor->bp->save_to_file(editor->bp, editor->filename);
+				}
+			}, new_mail_p(c_editor));
+		}
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Recompile");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1359,10 +1377,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Dependency Manager");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					auto editor = *(cBPEditor**)c;
 				}
 			}, new_mail_p(c_editor));
 		}

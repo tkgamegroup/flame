@@ -23,7 +23,7 @@
 		</node>
 		<node type="graphics::Shader" id="shv" pos="676.00;277.00">
 			<datas>
-				<data name="filename" value="test.vert" />
+				<data name="filename" value="fullscreen.vert" />
 				<data name="prefix" value="" />
 				<data name="autogen_code" value="1" />
 			</datas>

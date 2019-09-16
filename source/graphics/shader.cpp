@@ -130,6 +130,7 @@ namespace flame
 			AttributeE<DescriptorType$> type$i;
 			AttributeV<uint> count$i;
 			AttributeV<std::string> name$i;
+			AttributeV<std::string> buffer_udt_name$i;
 
 			AttributeV<DescriptorBinding> out$o;
 
@@ -148,7 +149,15 @@ namespace flame
 					out$o.v.count = count$i.v;
 				if (name$i.frame > out$o.frame)
 					out$o.v.name = name$i.v;
-				out$o.frame = maxN(binding$i.frame, type$i.frame, count$i.frame);
+				if (buffer_udt_name$i.frame > out$o.frame)
+				{
+					if (!buffer_udt_name$i.v.empty())
+					{
+						out$o.v.buffer_udt = find_udt(bp_env().dbs, H(buffer_udt_name$i.v.c_str()));
+						assert(out$o.v.buffer_udt);
+					}
+				}
+				out$o.frame = maxN(binding$i.frame, type$i.frame, count$i.frame, name$i.frame, buffer_udt_name$i.frame);
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~DescriptorBinding$()
@@ -468,13 +477,7 @@ namespace flame
 						UdtInfo* pc_udt = nullptr;
 						if (!push_constant_udt_name$i.v.empty())
 						{
-							auto pc_hash = H(push_constant_udt_name$i.v.c_str());
-							for (auto db : env.dbs)
-							{
-								pc_udt = db->find_udt(pc_hash);
-								if (pc_udt)
-									break;
-							}
+							pc_udt = find_udt(env.dbs, H(push_constant_udt_name$i.v.c_str()));
 							assert(pc_udt);
 						}
 						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v, pc_udt);
@@ -970,44 +973,48 @@ namespace flame
 
 				if (pll) 
 				{
-					auto validate_resource = [&](DescriptorType$ type, Resource* r) {
+					auto validate_binding = [&](DescriptorType$ type, Resource* r) -> DescriptorBinding& {
 						assert(r->set < pll->dsls.size());
 						auto dsl = pll->dsls[r->set];
 						assert(r->binding < dsl->bindings_map.size());
-						auto& dst = dsl->bindings_map[r->binding];
-						assert(dst.binding < 64 && dst.type == type && r->v.count == dst.count);
+						auto& binding = dsl->bindings_map[r->binding];
+						assert(binding.binding < 64 && binding.type == type && r->v.count == binding.count);
+						return binding;
+					};
+					auto validate_variable = [&](UdtInfo* u, Variable* v) {
+						assert(v->members.size() == u->variable_count());
+						for (auto i = 0; i < v->members.size(); i++)
+						{
+							auto m = v->members[i].get();
+							assert(m->members.empty()); // nested structs are WIP
+
+							auto v = u->variable(i);
+							assert(m->type_name == v->type()->name());
+							assert(m->name == v->name());
+							assert(m->offset == v->offset());
+							assert(m->size == v->size());
+							assert(m->count == 1); // count is WIP
+						}
 					};
 
 					for (auto& r : uniform_buffers)
-						validate_resource(DescriptorUniformBuffer, r.get());
+					{
+						auto& binding = validate_binding(DescriptorUniformBuffer, r.get());
+						if (binding.buffer_udt)
+							validate_variable(binding.buffer_udt, &r->v);
+					}
 					for (auto& r : storage_buffers)
-						validate_resource(DescriptorStorageBuffer, r.get());
+						validate_binding(DescriptorStorageBuffer, r.get());
 					for (auto& r : sampled_images)
-						validate_resource(DescriptorSampledImage, r.get());
+						validate_binding(DescriptorSampledImage, r.get());
 					for (auto& r : storage_images)
-						validate_resource(DescriptorStorageImage, r.get());
+						validate_binding(DescriptorStorageImage, r.get());
 
 					if (push_constant)
 					{
-						auto pcv = &push_constant->v;
-						assert(!push_constant || pcv->size == pll->pc_size);
-						auto udt = pll->pc_udt;
-						if (udt)
-						{
-							assert(pcv->members.size() == udt->variable_count());
-							for (auto i = 0; i < pcv->members.size(); i++)
-							{
-								auto m = pcv->members[i].get();
-								assert(m->members.empty()); // nested structs are WIP
-
-								auto v = udt->variable(i);
-								assert(m->type_name == v->type()->name());
-								assert(m->name == v->name());
-								assert(m->offset == v->offset());
-								assert(m->size == v->size());
-								assert(m->count == 1); // count is WIP
-							}
-						}
+						assert(!pll->pc_udt || push_constant->v.size == pll->pc_size);
+						if (pll->pc_udt)
+							validate_variable(pll->pc_udt, &push_constant->v);
 					}
 				}
 			}
@@ -1079,6 +1086,16 @@ namespace flame
 			{
 				auto pll = (PipelinelayoutPrivate*)_pll;
 
+				auto print_udt = [](UdtInfo* udt, std::string& out) {
+					for (auto i = 0; i < udt->variable_count(); i++)
+					{
+						auto v = udt->variable(i);
+						auto t = v->type();
+						assert(t->tag() == TypeTagVariable);
+						out += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
+					}
+				};
+
 				if (!pll->dsls.empty())
 				{
 					*ret.p += "\n";
@@ -1092,14 +1109,17 @@ namespace flame
 							{
 								switch (b.type)
 								{
-								case DescriptorSampledImage:
+								case DescriptorUniformBuffer:
 								{
-									std::string array_count_str;
-									if (b.count > 1)
-										array_count_str = "[" + std::to_string(b.count) + "]";
-									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + array_count_str + ";\n";
+									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform " + b.name + "T\n{\n";
+									assert(b.buffer_udt);
+									print_udt(b.buffer_udt, *ret.p);
+									*ret.p += "}" + b.name;
 								}
 								break;
+								case DescriptorSampledImage:
+									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + (b.count > 1 ? ("[" + std::to_string(b.count) + "]") : "") + ";\n";
+									break;
 								default:
 									assert(0); // others are WIP
 								}
@@ -1108,17 +1128,10 @@ namespace flame
 					}
 				}
 
-				auto udt = pll->pc_udt;
-				if (udt)
+				if (pll->pc_udt)
 				{
 					*ret.p += "\nlayout(push_constant) uniform PushconstantT\n{\n";
-					for (auto i = 0; i < udt->variable_count(); i++)
-					{
-						auto v = udt->variable(i);
-						auto t = v->type();
-						assert(t->tag() == TypeTagVariable);
-						*ret.p += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
-					}
+					print_udt(pll->pc_udt, *ret.p);
 					*ret.p += "}pc;\n";
 				}
 			}
