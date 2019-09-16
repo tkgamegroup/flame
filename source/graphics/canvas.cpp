@@ -264,7 +264,7 @@ namespace flame
 						rect.y() += pixel_height;
 						line_width = 0.f;
 					}
-					else
+					else if (ch != '\r')
 					{
 						if (ch == '\t')
 							ch = ' ';
@@ -320,7 +320,7 @@ namespace flame
 						_pos.y() += pixel_height;
 						_pos.x() = pos.x();
 					}
-					else
+					else if (ch != '\r')
 					{
 						if (ch == '\t')
 							ch = ' ';

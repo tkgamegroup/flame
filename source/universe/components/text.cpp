@@ -17,7 +17,8 @@ namespace flame
 		color = default_style.text_color_normal;
 		sdf_scale = default_style.sdf_scale;
 		right_align = false;
-		auto_size = true;
+		auto_width = true;
+		auto_height = true;
 	}
 
 	void cTextPrivate::start()
@@ -34,11 +35,14 @@ namespace flame
 			auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
 				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
-			if (auto_size)
+			if (auto_width)
 			{
 				auto w = rect.x() + element->inner_padding_horizontal() * element->global_scale;
 				if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_width)
 					element->width = w;
+			}
+			if (auto_height)
+			{
 				auto h = rect.y() + element->inner_padding_vertical() * element->global_scale;
 				if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_height)
 					element->height = h;
@@ -59,7 +63,8 @@ namespace flame
 		copy->color = color;
 		copy->sdf_scale = sdf_scale;
 		copy->right_align = right_align;
-		copy->auto_size = auto_size;
+		copy->auto_width = auto_width;
+		copy->auto_height = auto_height;
 		copy->text = text;
 
 		return copy;

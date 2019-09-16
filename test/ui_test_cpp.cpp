@@ -467,7 +467,7 @@ int main(int argc, char** args)
 		}
 	}
 
-	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, app.root, { L"Apple", L"Boy", L"Cat" }, -1);
+	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, app.root, { L"Apple", L"Boy", L"Cat" });
 	e_layout_right->add_child(e_combobox);
 
 	auto e_tree = Entity::create();
@@ -534,7 +534,7 @@ int main(int argc, char** args)
 			e_pages->add_child(e_page);
 			{
 				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->auto_size = false;
+				c_text->auto_width = false;
 				c_text->set_text(names[i]);
 				e_page->add_component(c_text);
 			}
@@ -582,7 +582,7 @@ int main(int argc, char** args)
 					e_pages->add_child(e_page);
 					{
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->auto_size = false;
+						c_text->auto_width = false;
 						c_text->set_text(names[i]);
 						e_page->add_component(c_text);
 					}
@@ -615,7 +615,7 @@ int main(int argc, char** args)
 					e_pages->add_child(e_page);
 					{
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->auto_size = false;
+						c_text->auto_width = false;
 						c_text->set_text(names[i]);
 						e_page->add_component(c_text);
 					}

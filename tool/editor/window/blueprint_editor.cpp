@@ -859,6 +859,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								delete_mail(code);
 							}
 							c_text->set_text(_prefix);
+							c_text->auto_width = false;
 							e_text->add_component(c_text);
 						}
 
@@ -912,7 +913,16 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto c_text = cText::create(app.font_atlas_pixel);
 							auto file = get_file_string(capture.e->filepath + L"/" + filename);
 							c_text->set_text(s2w(file));
+							c_text->auto_width = false;
 							e_text->add_component(c_text);
+
+							e_text->add_component(cEventReceiver::create());
+
+							e_text->add_component(cEdit::create());
+
+							auto c_aligner = cAligner::create();
+							c_aligner->width_policy = SizeFitParent;
+							e_text->add_component(c_aligner);
 						}
 
 						e_main->add_child(wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));

@@ -12,6 +12,7 @@ namespace flame
 	struct cEditPrivate : cEdit
 	{
 		void* key_listener;
+		void* mouse_listener;
 
 		std::vector<std::unique_ptr<Closure<void(void* c, const wchar_t* text)>>> changed_listeners;
 
@@ -24,13 +25,17 @@ namespace flame
 			cursor = 0;
 
 			key_listener = nullptr;
+			mouse_listener = nullptr;
 		}
 
 		~cEditPrivate()
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			if (event_receiver)
+			{
 				event_receiver->remove_mouse_listener(key_listener);
+				event_receiver->remove_mouse_listener(mouse_listener);
+			}
 		}
 
 		void on_change()
@@ -44,7 +49,7 @@ namespace flame
 			element = (cElement*)(entity->find_component(cH("Element")));
 			assert(element);
 			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text && !text->auto_size);
+			assert(text && !text->auto_width);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
@@ -74,6 +79,8 @@ namespace flame
 						break;
 					case 27:
 						break;
+					case 13:
+						value = '\n';
 					default:
 						str.insert(str.begin() + thiz->cursor, value);
 						thiz->cursor++;
@@ -108,6 +115,43 @@ namespace flame
 					}
 				}
 			}, new_mail_p(this));
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = *(cEditPrivate**)c;
+				auto text = thiz->text;
+				auto& str = ((cTextPrivate*)text)->text;
+
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					auto lh = text->font_atlas->pixel_height * text->sdf_scale;
+					auto y = thiz->element->global_y;
+					for (auto p = str.c_str(); ; p++)
+					{
+						if (y < pos.y() && pos.y() < y + lh)
+						{
+							auto x = thiz->element->global_x;
+							for (;; p++)
+							{
+								if (!*p)
+									break;
+								if (*p == '\n' || *p == '\r')
+									break;
+								auto w = text->font_atlas->get_glyph(*p)->advance * text->sdf_scale;
+								if (x < pos.x() && pos.x() < x + w)
+									break;
+								x += w;
+							}
+							thiz->cursor = p - str.c_str();
+							break;
+						}
+
+						if (!*p)
+							break;
+						if (*p == '\n')
+							y += lh;
+					}
+				}
+			}, new_mail_p(this));
 		}
 
 		void update()
@@ -117,7 +161,7 @@ namespace flame
 				auto text_scale = text->sdf_scale * element->global_scale;
 				element->canvas->add_text(text->font_atlas, Vec2f(element->global_x, element->global_y) +
 					Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
-					Vec2f(text->font_atlas->get_text_width(std::wstring_view(text->text().c_str(), cursor)) * text_scale, 0.f),
+					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
 					alpha_mul(text->color, element->alpha), L"|", text_scale);
 			}
 		}
@@ -166,7 +210,6 @@ namespace flame
 		{
 			auto c_element = cElement::create();
 			c_element->width = width + 8.f;
-			c_element->height = font_atlas->pixel_height * sdf_scale + 4;
 			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_element->background_color = default_style.frame_color_normal;
 			c_element->background_frame_color = default_style.text_color_normal;
@@ -175,7 +218,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->sdf_scale = sdf_scale;
-			c_text->auto_size = false;
+			c_text->auto_width = false;
 			e_edit->add_component(c_text);
 
 			if (width == 0.f)

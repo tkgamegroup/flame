@@ -121,7 +121,7 @@ namespace flame
 		void start()
 		{
 			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text && !text->auto_size);
+			assert(text && !text->auto_width);
 			menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
 			assert(menu_button);
 
@@ -216,7 +216,7 @@ namespace flame
 			c_element->background_frame_thickness = 2.f;
 
 			auto c_text = (cText*)e_combobox->find_component(cH("Text"));
-			c_text->auto_size = false;
+			c_text->auto_width = false;
 			
 			e_combobox->add_component(cCombobox::create());
 		}

@@ -293,16 +293,23 @@ namespace flame
 				return map[unicode];
 			}
 
-			uint get_text_width(const std::wstring_view& text)
+			Vec2i get_text_offset(const std::wstring_view& text)
 			{
 				auto w = 0;
+				auto h = 0;
 				for (auto c : text)
 				{
 					if (!c)
 						break;
-					w += get_glyph(c)->advance;
+					if (c == '\n')
+					{
+						w = 0;
+						h += pixel_height;
+					}
+					else if (c != '\r')
+						w += get_glyph(c)->advance;
 				}
-				return w;
+				return Vec2i(w, h);
 			}
 		};
 
@@ -321,9 +328,9 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->get_glyph(unicode);
 		}
 
-		uint FontAtlas::get_text_width(const std::wstring_view& text)
+		Vec2i FontAtlas::get_text_offset(const std::wstring_view& text)
 		{
-			return ((FontAtlasPrivate*)this)->get_text_width(text);
+			return ((FontAtlasPrivate*)this)->get_text_offset(text);
 		}
 
 		Image* FontAtlas::image() const
