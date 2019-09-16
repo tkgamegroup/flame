@@ -42,7 +42,7 @@ namespace flame
 				if (is_mouse_clicked(action, key))
 				{
 					auto thiz = *(cCheckboxPrivate**)c;
-					thiz->checked = !thiz->checked;
+					thiz->set_checked(!thiz->checked);
 				}
 
 			}, new_mail_p(this));

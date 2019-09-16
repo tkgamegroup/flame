@@ -19,6 +19,7 @@ struct cResourceExplorer : Component
 	Entity* root;
 
 	std::wstring selected_filename;
+	Entity* dir_menu;
 	Entity* bp_menu;
 
 	cResourceExplorer() :
@@ -35,6 +36,23 @@ void create_directory_tree_node(cResourceExplorer* explorer, const std::filesyst
 {
 	auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, Icon_FOLDER_O + std::wstring(L" ") + path.filename().wstring());
 	parent->add_child(e_tree_node);
+	{
+		struct Capture
+		{
+			std::wstring fn;
+			cResourceExplorer* e;
+		}capture;
+		capture.fn = path.wstring();
+		capture.e = explorer;
+		((cEventReceiver*)e_tree_node->child(0)->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto& capture = *(Capture*)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Right)
+			{
+				capture.e->selected_filename = capture.fn;
+			}
+		}, new_mail(&capture));
+	}
+
 	auto e_sub_tree = e_tree_node->child(1);
 	for (std::filesystem::directory_iterator end, it(path); it != end; it++)
 	{
@@ -56,12 +74,12 @@ void create_directory_tree_node(cResourceExplorer* explorer, const std::filesyst
 			capture.e = explorer;
 			((cEventReceiver*)e_tree_leaf->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto& capture = *(Capture*)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					capture.e->selected_filename = capture.fn;
-				else if (is_mouse_down(action, key, true) && key == Mouse_Right)
+				if (is_mouse_down(action, key, true) && key == Mouse_Right)
 				{
 					capture.e->selected_filename = capture.fn;
-					popup_menu(capture.e->bp_menu, capture.e->root, pos);
+					auto fn = std::filesystem::path(capture.fn).filename().wstring();
+					if (fn == L"bp")
+						popup_menu(capture.e->bp_menu, capture.e->root, pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -97,27 +115,35 @@ void open_resource_explorer(const Vec2f& pos)
 	auto c_explorer = new_component<cResourceExplorer>();
 	{
 		c_explorer->root = app.root;
+
+		c_explorer->dir_menu = create_standard_menu();
+		{
+
+		}
+
 		c_explorer->bp_menu = create_standard_menu();
-		auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
-		c_explorer->bp_menu->add_child(mi_open);
-		((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto c_explorer = *(cResourceExplorer**)c;
-			if (is_mouse_down(action, key, true) && key == Mouse_Left)
-			{
-				destroy_topmost(c_explorer->root);
-				open_blueprint_editor(c_explorer->selected_filename, false, Vec2f(350.f, 20.f));
-			}
-		}, new_mail_p(c_explorer));
-		auto mi_open_no_compile = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
-		c_explorer->bp_menu->add_child(mi_open_no_compile);
-		((cEventReceiver*)mi_open_no_compile->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto c_explorer = *(cResourceExplorer**)c;
-			if (is_mouse_down(action, key, true) && key == Mouse_Left)
-			{
-				destroy_topmost(c_explorer->root);
-				open_blueprint_editor(c_explorer->selected_filename, true, Vec2f(350.f, 20.f));
-			}
-		}, new_mail_p(c_explorer));
+		{
+			auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
+			c_explorer->bp_menu->add_child(mi_open);
+			((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto c_explorer = *(cResourceExplorer**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					destroy_topmost(c_explorer->root);
+					open_blueprint_editor(c_explorer->selected_filename, false, Vec2f(350.f, 20.f));
+				}
+			}, new_mail_p(c_explorer));
+			auto mi_open_no_compile = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
+			c_explorer->bp_menu->add_child(mi_open_no_compile);
+			((cEventReceiver*)mi_open_no_compile->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto c_explorer = *(cResourceExplorer**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					destroy_topmost(c_explorer->root);
+					open_blueprint_editor(c_explorer->selected_filename, true, Vec2f(350.f, 20.f));
+				}
+			}, new_mail_p(c_explorer));
+		}
 	}
 	e_page->add_component(c_explorer);
 	e_docker->child(1)->add_child(e_page);

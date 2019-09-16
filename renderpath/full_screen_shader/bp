@@ -14,27 +14,29 @@
 		<node type="graphics::SubpassTargetInfo" id="sp" pos="489.00;21.00" />
 		<node type="Array(1+void*)" id="sps" pos="745.00;96.00" />
 		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="913.00;32.00" />
-		<node type="graphics::Descriptorlayout" id="dsl" pos="404.00;207.00" />
-		<node type="Array(1+void*)" id="dsls" pos="650.00;264.00" />
-		<node type="graphics::Pipelinelayout" id="pll" pos="791.00;363.00">
+		<node type="graphics::Descriptorlayout" id="dsl" pos="18.00;288.00" />
+		<node type="Array(1+void*)" id="dsls" pos="250.00;315.00" />
+		<node type="graphics::Pipelinelayout" id="pll" pos="380.00;291.00">
 			<datas>
 				<data name="push_constant_size" value="8" />
-				<data name="push_constant_udt_name" value="" />
+				<data name="push_constant_udt_name" value="PushconstantT" />
 			</datas>
 		</node>
-		<node type="graphics::Shader" id="shv" pos="416.00;356.00">
+		<node type="graphics::Shader" id="shv" pos="676.00;277.00">
 			<datas>
 				<data name="filename" value="test.vert" />
 				<data name="prefix" value="" />
+				<data name="autogen_code" value="1" />
 			</datas>
 		</node>
-		<node type="graphics::Shader" id="shf" pos="420.00;636.00">
+		<node type="graphics::Shader" id="shf" pos="674.00;566.00">
 			<datas>
 				<data name="filename" value="test.frag" />
 				<data name="prefix" value="" />
+				<data name="autogen_code" value="1" />
 			</datas>
 		</node>
-		<node type="Array(2+void*)" id="shs" pos="756.00;627.00" />
+		<node type="Array(2+void*)" id="shs" pos="936.00;561.00" />
 		<node type="graphics::Pipeline" id="pl" pos="1111.00;352.00" />
 		<node type="MakeCmd" id="make_cmd" pos="1230.00;16.00" />
 	</nodes>
@@ -45,6 +47,8 @@
 		<link out="sps.v" in="rnf.passes" />
 		<link out="dsl.out" in="dsls.1" />
 		<link out="dsls.v" in="pll.descriptorlayouts" />
+		<link out="pll.out" in="shv.pll" />
+		<link out="pll.out" in="shf.pll" />
 		<link out="shv.out" in="shs.1" />
 		<link out="shf.out" in="shs.2" />
 		<link out="shs.v" in="pl.shaders" />

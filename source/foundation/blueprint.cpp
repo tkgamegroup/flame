@@ -526,6 +526,7 @@ namespace flame
 		_bp_env.dbs.clear();
 		for (auto& d : dependencies)
 			_bp_env.dbs.push_back(d.db);
+		_bp_env.dbs.push_back(typeinfodatabase);
 
 		for (auto &n : update_list)
 			n->update();

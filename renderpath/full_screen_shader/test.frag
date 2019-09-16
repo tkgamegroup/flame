@@ -1,8 +1,3 @@
-layout(push_constant) uniform PushconstantT
-{
-	vec2 screen_size;
-}pc;
-
 layout(location = 0) out vec4 out_olor;
 
 void main()

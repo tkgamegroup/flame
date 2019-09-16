@@ -3,6 +3,11 @@
 
 namespace flame
 {
+	struct PushconstantT$
+	{
+		Vec2f screen_size$;
+	};
+
 	struct MakeCmd$
 	{
 		AttributeP<std::vector<void*>> cmdbufs$i;
@@ -33,7 +38,9 @@ namespace flame
 						cb->set_viewport(Vec4f(Vec2f(0.f), size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), size));
 						cb->bind_pipeline((graphics::Pipeline*)pipeline$i.v);
-						cb->push_constant(nullptr, 0, sizeof(Vec2f), &size);
+						PushconstantT$ pc;
+						pc.screen_size$ = size;
+						cb->push_constant(nullptr, 0, sizeof(PushconstantT$), &pc);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 						cb->end();
