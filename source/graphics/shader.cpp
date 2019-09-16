@@ -1153,7 +1153,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o.frame || filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame || inputs$i.frame > out$o.frame || outputs$i.frame > out$o.frame || pll$i.frame > out$o.frame || autogen_code$i.frame > out$o.frame)
+				if (filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame || inputs$i.frame > out$o.frame || outputs$i.frame > out$o.frame || pll$i.frame > out$o.frame || autogen_code$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Shader::destroy((Shader*)out$o.v);
@@ -1166,7 +1166,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = max(filename$i.frame, prefix$i.frame);
+					out$o.frame = maxN(filename$i.frame, prefix$i.frame, inputs$i.frame, outputs$i.frame, pll$i.frame, autogen_code$i.frame);
 				}
 			}
 

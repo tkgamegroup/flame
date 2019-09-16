@@ -306,7 +306,7 @@ namespace flame
 						w = 0;
 						h += pixel_height;
 					}
-					else if (c != '\r')
+					else if (c != '\r' && c != '\t')
 						w += get_glyph(c)->advance;
 				}
 				return Vec2i(w, h);

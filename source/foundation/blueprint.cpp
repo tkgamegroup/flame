@@ -546,6 +546,11 @@ namespace flame
 		return *(int*)((SlotPrivate*)this)->raw_data;
 	}
 
+	void BP::Slot::set_frame(int frame)
+	{
+		((SlotPrivate*)this)->set_frame(frame);
+	}
+
 	void* BP::Slot::data() const
 	{
 		return (char*)((SlotPrivate*)this)->raw_data + sizeof(int);

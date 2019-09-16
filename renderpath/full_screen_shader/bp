@@ -39,6 +39,15 @@
 		<node type="Array(2+void*)" id="shs" pos="936.00;561.00" />
 		<node type="graphics::Pipeline" id="pl" pos="1111.00;352.00" />
 		<node type="MakeCmd" id="make_cmd" pos="1230.00;16.00" />
+		<node type="graphics::OutputAttachmentInfo" id="out" pos="54.00;447.00">
+			<datas>
+				<data name="format" value="Format_R8G8B8A8_UNORM" />
+				<data name="name" value="color" />
+				<data name="blend_src_color" value="BlendFactorOne" />
+				<data name="blend_src_alpha" value="BlendFactorOne" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="outs" pos="380.00;516.00" />
 	</nodes>
 	<links>
 		<link out="rt_dst.out" in="rts.1" />
@@ -48,14 +57,17 @@
 		<link out="dsl.out" in="dsls.1" />
 		<link out="dsls.v" in="pll.descriptorlayouts" />
 		<link out="pll.out" in="shv.pll" />
+		<link out="outs.v" in="shf.outputs" />
 		<link out="pll.out" in="shf.pll" />
 		<link out="shv.out" in="shs.1" />
 		<link out="shf.out" in="shs.2" />
 		<link out="shs.v" in="pl.shaders" />
 		<link out="pll.out" in="pl.pll" />
 		<link out="rnf.rp" in="pl.renderpass" />
+		<link out="outs.v" in="pl.outputs" />
 		<link out="rnf.rp" in="make_cmd.renderpass" />
 		<link out="rnf.fbs" in="make_cmd.framebuffers" />
 		<link out="pl.out" in="make_cmd.pipeline" />
+		<link out="out.out" in="outs.1" />
 	</links>
 </BP>

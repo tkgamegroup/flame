@@ -472,10 +472,7 @@ struct cBPEditor : Component
 		{
 			bp->update();
 			if (cb_recorded)
-			{
 				app.extra_cbs.push_back((Commandbuffer*)rt_cbs[0]);
-				cb_recorded = false;
-			}
 		}
 	}
 };
@@ -937,6 +934,31 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto c_aligner = cAligner::create();
 							c_aligner->width_policy = SizeFitParent;
 							e_text->add_component(c_aligner);
+
+							{
+								struct _Capture
+								{
+									cBPEditor* e;
+									BP::Node* n;
+									cText* t;
+								}_capture;
+								_capture.e = capture.e;
+								_capture.n = capture.n;
+								_capture.t = c_text;
+								((cEventReceiver*)e_btn_compile->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+									auto& capture = *(_Capture*)c;
+									if (is_mouse_clicked(action, key))
+									{
+										auto i_filename = capture.n->find_input("filename");
+										std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
+										auto str = w2s(capture.t->text());
+										str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+										file.write(str.c_str(), str.size());
+										file.close();
+										i_filename->set_frame(looper().frame);
+									}
+								}, new_mail(&_capture));
+							}
 						}
 
 						e_main->add_child(wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
@@ -1434,6 +1456,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						capture.e->cb_recorded = true;
 					}
 				}
+				else
+					capture.e->cb_recorded = false;
 			}
 		}, new_mail(&capture));
 	}
