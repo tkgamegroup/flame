@@ -700,30 +700,65 @@ namespace flame
 				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
 				assert(vk_sdk_path != L"");
 
-				std::filesystem::remove(spv_filename);
+				prefix = std::string(
+					"#version 450 core\n"
+					"#extension GL_ARB_shading_language_420pack : enable\n") + 
+					(stage != ShaderStageComp ? "#extension GL_ARB_separate_shader_objects : enable\n" : "")
+					+ prefix;
 
+				std::filesystem::remove(spv_filename);
 				auto temp_filename = L"temp" + ext.wstring();
-				{
-					std::ofstream ofile(temp_filename);
-					auto file = get_file_string(filename);
-					file.erase(std::remove(file.begin(), file.end(), '\r'), file.end());
-					ofile << "#version 450 core\n";
-					ofile << "#extension GL_ARB_shading_language_420pack : enable\n";
-					if (stage != ShaderStageComp)
-						ofile << "#extension GL_ARB_separate_shader_objects : enable\n";
-					ofile << prefix << "\n";
-					ofile << file;
-					ofile.close();
-				}
 				std::wstring command_line(L" " + temp_filename + L" -flimit-file shader.conf -o" + spv_filename);
-				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
+
+				std::ofstream temp_file(temp_filename);
+				auto content = get_file_string(filename);
+				content.erase(std::remove(content.begin(), content.end(), '\r'), content.end());
+				temp_file << prefix << "\n";
+				temp_file << content;
+				temp_file.close();
+
+				auto output1 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
+				std::filesystem::remove(temp_filename);
 				if (!std::filesystem::exists(spv_filename))
 				{
-					assert(0);
-					printf("shader \"%s\" compile error:\n%s\n", w2s(filename).c_str(), output.p->c_str());
+					printf("shader \"%s\" compile error:\n%s\n", w2s(filename).c_str(), output1.p->c_str());
+					printf("trying to use fallback");
+
+					std::ofstream temp_file(temp_filename);
+					temp_file << prefix << "\n";
+
+					switch (stage)
+					{
+					case ShaderStageVert:
+						temp_file << "void main()\n"
+							"{\n"
+							"\tgl_Position = vec4(0, 0, 0, 1);"
+							"}\n";
+						break;
+					case ShaderStageFrag:
+						temp_file << 
+							"void main()\n"
+							"{\n"
+							"}\n";
+						break;
+					default:
+						assert(0); // WIP
+					}
+
+					temp_file.close();
+
+					auto output2 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
+					std::filesystem::remove(temp_filename);
+					if (!std::filesystem::exists(spv_filename))
+					{
+						printf(" - failed\n error:\n%s", output2.p->c_str());
+						assert(0);
+					}
+					delete_mail(output2);
+
+					printf(" - ok\n");
 				}
-				std::filesystem::remove(temp_filename);
-				delete_mail(output);
+				delete_mail(output1);
 			}
 
 			auto spv_file = get_file_content(spv_filename);
