@@ -275,7 +275,7 @@ struct cBPEditor : Component
 	bool running;
 	bool cb_recorded;
 
-	std::vector<Entity*> tips;
+	std::vector<std::pair<cElement*, uint>> tips;
 
 	cBPEditor() :
 		Component("BPEditor")
@@ -470,7 +470,21 @@ struct cBPEditor : Component
 
 	void show_tip(const std::wstring& text)
 	{
+		auto e_tip = Entity::create();
+		entity->add_child(e_tip);
+		{
+			auto c_element = cElement::create();
+			c_element->y = tips.size() * (app.font_atlas_sdf->pixel_height + 20.f);
+			c_element->inner_padding = Vec4f(8.f);
+			c_element->background_color = Vec4c(0, 0, 0, 255);
+			e_tip->add_component(c_element);
+			tips.emplace_back(c_element, 180);
 
+			auto c_text = cText::create(app.font_atlas_sdf);
+			c_text->color = Vec4c(255);
+			c_text->set_text(text);
+			e_tip->add_component(c_text);
+		}
 	}
 
 	virtual void update() override
@@ -480,6 +494,24 @@ struct cBPEditor : Component
 			bp->update();
 			if (cb_recorded)
 				app.extra_cbs.push_back((Commandbuffer*)rt_cbs[0]);
+		}
+
+		for (auto it = tips.begin(); it != tips.end(); )
+		{
+			it->second--;
+			if (it->second == 0)
+			{
+				for (auto _it = it + 1; _it != tips.end(); _it++)
+					_it->first->y = it->first->y;
+				entity->remove_child(it->first->entity);
+				it = tips.erase(it);
+			}
+			else
+			{
+				if (it->second < 60)
+					it->first->alpha = it->second / 60.f;
+				it++;
+			}
 		}
 	}
 };
@@ -1370,6 +1402,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
+					if (editor->running)
+						editor->show_tip(L"Cannot Recompile While Running");
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1489,7 +1523,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 									capture.e->add_node(name, "");
 								else
 								{
-
+									if (capture.e->running)
+										capture.e->show_tip(L"Cannot Add New Template Node While Running");
 								}
 							}
 						}, new_mail(&capture));
