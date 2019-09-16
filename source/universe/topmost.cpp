@@ -1,6 +1,7 @@
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/aligner.h>
 #include <flame/universe/components/menu.h>
 
 namespace flame
@@ -15,7 +16,7 @@ namespace flame
 		return nullptr;
 	}
 
-	Entity* create_topmost(Entity* e, bool penetrable, bool close_when_clicked, bool no_mousemove_to_open_menu)
+	Entity* create_topmost(Entity* e, bool penetrable, bool close_when_clicked, bool no_mousemove_to_open_menu, const Vec4c& col, bool size_fit_parent)
 	{
 		assert(!get_topmost(e));
 
@@ -30,6 +31,7 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->width = e_c_element->width;
 			c_element->height = e_c_element->height;
+			c_element->background_color = col;
 			t->add_component(c_element);
 
 			auto c_event_receiver = cEventReceiver::create();
@@ -43,6 +45,14 @@ namespace flame
 				}, new_mail_p(e));
 			}
 			t->add_component(c_event_receiver);
+
+			if (size_fit_parent)
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
+				t->add_component(c_aligner);
+			}
 		}
 
 		return t;

@@ -136,7 +136,7 @@ namespace flame
 									break;
 								if (*p == '\n' || *p == '\r')
 									break;
-								auto w = text->font_atlas->get_glyph(*p)->advance * text->sdf_scale;
+								auto w = text->font_atlas->get_glyph(*p == '\t' ? ' ' : *p)->advance * text->sdf_scale;
 								if (x < pos.x() && pos.x() < x + w)
 									break;
 								x += w;
