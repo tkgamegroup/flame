@@ -1146,8 +1146,8 @@ namespace flame
 								{
 								case DescriptorUniformBuffer:
 								{
-									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform " + b.name + "T\n{\n";
 									assert(b.buffer_udt);
+									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform " + b.buffer_udt->name() + "\n{\n";
 									print_udt(b.buffer_udt, *ret.p);
 									*ret.p += "}" + b.name;
 								}

@@ -3,6 +3,11 @@
 
 namespace flame
 {
+	struct Ubo$
+	{
+		float time$;
+	}unused1;
+
 	struct PushconstantT$
 	{
 		Vec2f screen_size$;

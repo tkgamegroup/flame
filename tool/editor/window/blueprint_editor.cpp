@@ -280,10 +280,25 @@ struct cBPEditor : Component
 	cBPEditor() :
 		Component("BPEditor")
 	{
+		locked = false;
+
+		console_tab = nullptr;
+
+		rt = graphics::Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
+		rt->init(Vec4c(0, 0, 0, 255));
+		rt_v = Imageview::create(rt);
+		rt_id = app.canvas->find_free_image();
+		rt_cbs.resize(1);
+		rt_cbs[0] = Commandbuffer::create(app.d->gcp);
+
+		app.canvas->set_image(rt_id, rt_v);
 	}
 
 	~cBPEditor()
 	{
+		if (bp)
+			BP::destroy(bp);
+
 		if (console_tab)
 		{
 			looper().add_delay_event([](void* c) {
@@ -303,18 +318,6 @@ struct cBPEditor : Component
 		for (auto i = 0; i < bp->dependency_count(); i++)
 			dbs.push_back(bp->dependency_typeinfodatabase(i));
 		dbs.push_back(bp->typeinfodatabase);
-		locked = false;
-
-		console_tab = nullptr;
-
-		rt = graphics::Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
-		rt->init(Vec4c(0, 0, 0, 255));
-		rt_v = Imageview::create(rt);
-		rt_id = app.canvas->find_free_image();
-		rt_cbs.resize(1);
-		rt_cbs[0] = Commandbuffer::create(app.d->gcp);
-
-		app.canvas->set_image(rt_id, rt_v);
 
 		sel_type = SelAir;
 		selected.n = nullptr;
@@ -1395,19 +1398,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}, new_mail_p(c_editor));
 		}
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Recompile");
-			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-					if (editor->running)
-						editor->show_tip(L"Cannot Recompile While Running");
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Dependency Manager");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
@@ -1418,7 +1408,53 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				}
 			}, new_mail_p(c_editor));
 		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Reload");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+					if (editor->running)
+						editor->show_tip(L"Cannot Reload While Running");
+					else
+					{
+						BP::destroy(editor->bp);
+						editor->e_base->remove_all_children();
+						editor->dbs.clear();
+						editor->init(editor->filename, false);
+						auto bp = editor->bp;
+						for (auto i = 0; i < bp->node_count(); i++)
+							editor->create_node_entity(bp->node(i));
+					}
+				}
+			}, new_mail_p(c_editor));
+		}
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Reload (No Compile)");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+					if (editor->running)
+						editor->show_tip(L"Cannot Reload While Running");
+					else
+					{
+						BP::destroy(editor->bp);
+						editor->e_base->remove_all_children();
+						editor->dbs.clear();
+						editor->init(editor->filename, true);
+						auto bp = editor->bp;
+						for (auto i = 0; i < bp->node_count(); i++)
+							editor->create_node_entity(bp->node(i));
+					}
+				}
+			}, new_mail_p(c_editor));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Blueprint", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 	}
 	{

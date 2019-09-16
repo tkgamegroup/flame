@@ -353,6 +353,9 @@ namespace flame
 		}
 		free_module(module);
 		TypeinfoDatabase::destroy(typeinfodatabase);
+
+		for (auto& n : nodes) // since module has been removed, dtor is not valid
+			n->dtor_addr = nullptr;
 	}
 
 	void BPPrivate::add_dependency(const std::wstring& filename)
