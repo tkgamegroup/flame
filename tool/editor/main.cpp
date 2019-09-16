@@ -29,7 +29,8 @@
 
 void App::create()
 {
-	w = Window::create("Editor", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	w = Window::create("Editor", Vec2u(1024, 720), WindowFrame | WindowResizable);
+	w->set_maximized(true);
 	d = Device::create(true);
 	render_finished = Semaphore::create(d);
 	scr = SwapchainResizable::create(d, w);

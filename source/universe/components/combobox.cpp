@@ -121,7 +121,7 @@ namespace flame
 		void start()
 		{
 			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text && !text->auto_width);
+			assert(text);
 			menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
 			assert(menu_button);
 

@@ -130,7 +130,7 @@ void open_resource_explorer(const Vec2f& pos)
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					destroy_topmost(c_explorer->root);
-					open_blueprint_editor(c_explorer->selected_filename, false, Vec2f(350.f, 20.f));
+					open_blueprint_editor(c_explorer->selected_filename, false, Vec2f(450.f, 20.f));
 				}
 			}, new_mail_p(c_explorer));
 			auto mi_open_no_compile = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
@@ -140,7 +140,7 @@ void open_resource_explorer(const Vec2f& pos)
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					destroy_topmost(c_explorer->root);
-					open_blueprint_editor(c_explorer->selected_filename, true, Vec2f(350.f, 20.f));
+					open_blueprint_editor(c_explorer->selected_filename, true, Vec2f(450.f, 20.f));
 				}
 			}, new_mail_p(c_explorer));
 		}

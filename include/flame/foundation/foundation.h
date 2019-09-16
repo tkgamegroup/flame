@@ -1160,6 +1160,7 @@ namespace flame
 #ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
 
+		FLAME_FOUNDATION_EXPORTS void set_pos(const Vec2i& pos);
 		FLAME_FOUNDATION_EXPORTS void set_size(const Vec2i& _pos, const Vec2u& _size, int _style);
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif

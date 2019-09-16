@@ -586,6 +586,11 @@ namespace flame
 		return ((NodePrivate*)this)->id;
 	}
 
+	void BP::Node::set_id(const std::string& id)
+	{
+		((NodePrivate*)this)->id = id;
+	}
+
 	int BP::Node::input_count() const
 	{
 		return ((NodePrivate*)this)->inputs.size();

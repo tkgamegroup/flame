@@ -1068,6 +1068,12 @@ namespace flame
 		reinterpret_cast<WindowPrivate*>(this)->set_cursor(type);
 	}
 
+	void Window::set_pos(const Vec2i& _pos)
+	{
+		pos = _pos;
+		SetWindowPos(reinterpret_cast<WindowPrivate*>(this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	}
+
 	void Window::set_size(const Vec2i& _pos, const Vec2u& _size, int _style)
 	{
 		reinterpret_cast<WindowPrivate*>(this)->set_size(_pos, _size, _style);

@@ -719,6 +719,15 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			c_text->set_text(s2w(n->id()));
 			c_text->sdf_scale = 0.8f;
 			e_text_id->add_component(c_text);
+
+			e_text_id->add_component(cEventReceiver::create());
+
+			auto c_edit = cEdit::create();
+			c_edit->add_changed_listener([](void* c, const wchar_t* text) {
+				auto n = *(BP::Node**)c;
+				n->set_id(w2s(text));
+			}, new_mail_p(n));
+			e_text_id->add_component(c_edit);
 		}
 
 		auto e_text_type = Entity::create();
@@ -735,7 +744,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		if (n->udt->name() == "graphics::Shader")
 		{
-			auto e_btn_edit = create_standard_button(app.font_atlas_sdf, 0.5f, L"Edit");
+			auto e_btn_edit = create_standard_button(app.font_atlas_sdf, 0.5f, L"Edit Shader");
 			e_node->add_child(e_btn_edit);
 
 			struct Capture
@@ -1271,8 +1280,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
 		c_element->x = pos.x();
 		c_element->y = pos.y();
-		c_element->width = 800.f;
-		c_element->height = 400.f;
+		c_element->width = 1052.f;
+		c_element->height = 963.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -1707,8 +1716,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}, new_mail_p(c_editor), [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		editor->console_tab = nullptr;
-	}, new_mail_p(c_editor), filename + L":", Vec2f(850.f, 420.f));
+	}, new_mail_p(c_editor), filename + L":", Vec2f(1505.f, 20.f));
 	c_editor->console_tab = (cDockerTab*)console_page->parent()->parent()->child(0)->child(0)->find_component(cH("DockerTab"));
 
-	open_image_viewer(c_editor->rt_id, Vec2f(350.f, 300.f));
+	open_image_viewer(c_editor->rt_id, Vec2f(20.f, 655.f));
 }

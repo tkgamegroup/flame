@@ -82,6 +82,7 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
+			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
 			UdtInfo* udt;
 			Vec2f pos;
 
