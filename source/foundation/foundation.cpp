@@ -1464,9 +1464,13 @@ namespace flame
 
 			if (!delay_events.empty())
 			{
-				for (auto& f : delay_events)
-					f->function(f->capture.p);
+				std::vector<std::unique_ptr<Closure<void(void*)>>> events;
+				for (auto& e : delay_events)
+					events.push_back(std::move(e));
 				delay_events.clear();
+
+				for (auto& f : events)
+					f->function(f->capture.p);
 			}
 
 			frame++;

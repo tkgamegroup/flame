@@ -283,7 +283,12 @@ struct cBPEditor : Component
 	~cBPEditor()
 	{
 		if (console_tab)
-			console_tab->take_away(true);
+		{
+			looper().add_delay_event([](void* c) {
+				auto tab = *(cDockerTab**)c;
+				tab->take_away(true);
+			}, new_mail_p(console_tab));
+		}
 
 		app.canvas->set_image(rt_id, nullptr);
 	}
