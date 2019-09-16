@@ -266,6 +266,8 @@ namespace flame
 					}
 					else
 					{
+						if (ch == '\t')
+							ch = ' ';
 						auto g = f->get_glyph(ch);
 
 						auto p = _pos + Vec2f(g->off) * scale;
@@ -320,6 +322,8 @@ namespace flame
 					}
 					else
 					{
+						if (ch == '\t')
+							ch = ' ';
 						auto g = f->get_glyph(ch);
 
 						auto p = _pos + Vec2f(-g->off.x(), g->off.y()) * scale;

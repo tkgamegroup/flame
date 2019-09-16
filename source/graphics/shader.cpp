@@ -676,117 +676,17 @@ namespace flame
 			assert(std::filesystem::exists(filename));
 
 			auto ext = std::filesystem::path(filename).extension();
-			if (ext == L".vert")
-				stage = ShaderStageVert;
-			else if (ext == L".tesc")
-				stage = ShaderStageTesc;
-			else if (ext == L".tese")
-				stage = ShaderStageTese;
-			else if (ext == L".geom")
-				stage = ShaderStageGeom;
-			else if (ext == L".frag")
-				stage = ShaderStageFrag;
-			else if (ext == L".comp")
-				stage = ShaderStageComp;
+
+			stage = shader_stage_from_filename(filename);
 
 			auto pll = (PipelinelayoutPrivate*)_pll;
 
 			auto prefix = _prefix;
 			if (autogen_code)
 			{
-				if (_inputs)
-				{
-					prefix += "\n";
-					if (stage == ShaderStageVert)
-					{
-						for (auto _i : *_inputs)
-						{
-							auto i = (VertexInputAttribute*)_i;
-							prefix += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
-						}
-					}
-					else
-					{
-						for (auto _i : *_inputs)
-						{
-							auto i = (StageInOut*)_i;
-							prefix += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
-						}
-					}
-				}
-
-				if (_outputs)
-				{
-					prefix += "\n";
-					if (stage == ShaderStageFrag)
-					{
-						for (auto _o : *_outputs)
-						{
-							auto o = (OutputAttachmentInfo*)_o;
-							if (o->dual_src)
-							{
-								prefix += "layout(location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
-								prefix += "layout(location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
-							}
-							else
-								prefix += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
-						}
-					}
-					else
-					{
-						for (auto _o : *_outputs)
-						{
-							auto o = (StageInOut*)_o;
-							prefix += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
-						}
-					}
-				}
-
-				if (pll)
-				{
-					if (!pll->dsls.empty())
-					{
-						prefix += "\n";
-						for (auto i = 0; i < pll->dsls.size(); i++)
-						{
-							auto dsl = pll->dsls[i];
-							for (auto j = 0; j < dsl->bindings_map.size(); j++)
-							{
-								auto& b = dsl->bindings_map[j];
-								if (b.binding < 64)
-								{
-									switch (b.type)
-									{
-									case DescriptorSampledImage:
-									{
-										std::string array_count_str;
-										if (b.count > 1)
-											array_count_str = "[" + std::to_string(b.count) + "]";
-										prefix += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + array_count_str + ";\n";
-									}
-									break;
-									default:
-										assert(0); // others are WIP
-									}
-								}
-							}
-						}
-					}
-
-					auto udt = pll->pc_udt;
-					if (udt)
-					{
-						prefix += "\nlayout(push_constant) uniform PushconstantT\n{\n";
-						for (auto i = 0; i < udt->variable_count(); i++)
-						{
-							auto v = udt->variable(i);
-							auto t = v->type();
-							assert(t->tag() == TypeTagVariable);
-							prefix += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
-						}
-						prefix += "}pc;\n";
-					}
-				}
+				auto code = get_shader_autogen_code(stage, _inputs, _outputs, _pll);
+				prefix += *code.p;
+				delete_mail(code);
 			}
 			
 			auto hash = H(prefix.c_str());
@@ -1121,6 +1021,109 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+		}
+
+		Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>* inputs, const std::vector<void*>* outputs, Pipelinelayout* _pll)
+		{
+			auto ret = new_mail<std::string>();
+
+			if (inputs)
+			{
+				*ret.p += "\n";
+				if (stage == ShaderStageVert)
+				{
+					for (auto _i : *inputs)
+					{
+						auto i = (VertexInputAttribute*)_i;
+						*ret.p += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
+					}
+				}
+				else
+				{
+					for (auto _i : *inputs)
+					{
+						auto i = (StageInOut*)_i;
+						*ret.p += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
+					}
+				}
+			}
+
+			if (outputs)
+			{
+				*ret.p += "\n";
+				if (stage == ShaderStageFrag)
+				{
+					for (auto _o : *outputs)
+					{
+						auto o = (OutputAttachmentInfo*)_o;
+						if (o->dual_src)
+						{
+							*ret.p += "layout(location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
+							*ret.p += "layout(location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
+						}
+						else
+							*ret.p += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
+					}
+				}
+				else
+				{
+					for (auto _o : *outputs)
+					{
+						auto o = (StageInOut*)_o;
+						*ret.p += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
+					}
+				}
+			}
+
+			if (_pll)
+			{
+				auto pll = (PipelinelayoutPrivate*)_pll;
+
+				if (!pll->dsls.empty())
+				{
+					*ret.p += "\n";
+					for (auto i = 0; i < pll->dsls.size(); i++)
+					{
+						auto dsl = pll->dsls[i];
+						for (auto j = 0; j < dsl->bindings_map.size(); j++)
+						{
+							auto& b = dsl->bindings_map[j];
+							if (b.binding < 64)
+							{
+								switch (b.type)
+								{
+								case DescriptorSampledImage:
+								{
+									std::string array_count_str;
+									if (b.count > 1)
+										array_count_str = "[" + std::to_string(b.count) + "]";
+									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + array_count_str + ";\n";
+								}
+								break;
+								default:
+									assert(0); // others are WIP
+								}
+							}
+						}
+					}
+				}
+
+				auto udt = pll->pc_udt;
+				if (udt)
+				{
+					*ret.p += "\nlayout(push_constant) uniform PushconstantT\n{\n";
+					for (auto i = 0; i < udt->variable_count(); i++)
+					{
+						auto v = udt->variable(i);
+						auto t = v->type();
+						assert(t->tag() == TypeTagVariable);
+						*ret.p += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
+					}
+					*ret.p += "}pc;\n";
+				}
+			}
+
+			return ret;
 		}
 
 		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs, const std::vector<void*>* outputs, Pipelinelayout* pll, bool autogen_code)

@@ -3,8 +3,10 @@
 #include <flame/graphics/device.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
+#include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
+#include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -18,6 +20,7 @@
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
@@ -88,11 +91,11 @@ struct cSlotBoolDataTracker : cSlotDataTracker
 {
 	cCheckbox* checkbox;
 
-	int* data;
+	bool* data;
 
 	virtual void update_view() override
 	{
-		checkbox->set_checked(*data == 1, !first_time);
+		checkbox->set_checked(*data, !first_time);
 
 		first_time = false;
 	}
@@ -243,8 +246,10 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 struct cBPEditor : Component
 {
 	std::wstring filename;
+	std::wstring filepath;
 	BP* bp;
 	std::vector<TypeinfoDatabase*> dbs;
+	bool locked;
 
 	Entity* e_base;
 	cDockerTab* console_tab;
@@ -268,6 +273,7 @@ struct cBPEditor : Component
 	BP::Slot* dragging_slot;
 
 	bool running;
+	bool cb_recorded;
 
 	cBPEditor() :
 		Component("BPEditor")
@@ -285,10 +291,12 @@ struct cBPEditor : Component
 	void init(const std::wstring& _filename, bool no_compile)
 	{
 		filename = _filename;
+		filepath = std::filesystem::path(filename).parent_path().wstring();
 		bp = BP::create_from_file(filename, no_compile);
 		for (auto i = 0; i < bp->dependency_count(); i++)
 			dbs.push_back(bp->dependency_typeinfodatabase(i));
 		dbs.push_back(bp->typeinfodatabase);
+		locked = false;
 
 		console_tab = nullptr;
 
@@ -305,6 +313,7 @@ struct cBPEditor : Component
 		selected.n = nullptr;
 		dragging_slot = nullptr;
 		running = false;
+		cb_recorded = false;
 	}
 
 	Entity* create_node_entity(BP::Node* n);
@@ -457,7 +466,11 @@ struct cBPEditor : Component
 		if (running)
 		{
 			bp->update();
-			app.extra_cbs.push_back((Commandbuffer*)rt_cbs[0]);
+			if (cb_recorded)
+			{
+				app.extra_cbs.push_back((Commandbuffer*)rt_cbs[0]);
+				cb_recorded = false;
+			}
 		}
 	}
 };
@@ -720,6 +733,194 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_type->add_component(c_text);
 		}
 
+		if (n->udt->name() == "graphics::Shader")
+		{
+			auto e_btn_edit = create_standard_button(app.font_atlas_sdf, 0.5f, L"Edit");
+			e_node->add_child(e_btn_edit);
+
+			struct Capture
+			{
+				cBPEditor* e;
+				BP::Node* n;
+			}capture;
+			capture.e = this;
+			capture.n = n;
+			((cEventReceiver*)e_btn_edit->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto& capture = *(Capture*)c;
+				if (is_mouse_clicked(action, key))
+				{
+					capture.e->locked = true;
+					auto t = create_topmost(capture.e->entity, false, false);
+					{
+						auto c_element = (cElement*)t->find_component(cH("Element"));
+						c_element->inner_padding = Vec4f(4.f);
+						c_element->background_color = Vec4c(255, 255, 255, 235);
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeFitParent;
+						c_aligner->height_policy = SizeFitParent;
+						t->add_component(c_aligner);
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutVertical;
+						c_layout->width_fit_children = false;
+						c_layout->height_fit_children = false;
+						t->add_component(c_layout);
+					}
+
+					auto e_buttons = Entity::create();
+					t->add_child(e_buttons);
+					{
+						e_buttons->add_component(cElement::create());
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutHorizontal;
+						c_layout->item_padding = 4.f;
+						e_buttons->add_component(c_layout);
+					}
+
+					auto e_btn_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
+					e_buttons->add_child(e_btn_back);
+					{
+						((cEventReceiver*)e_btn_back->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							if (is_mouse_clicked(action, key))
+								destroy_topmost(*(Entity**)c, false);
+						}, new_mail_p(capture.e->entity));
+					}
+
+					auto e_btn_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
+					e_buttons->add_child(e_btn_compile);
+
+					auto e_text_tip = Entity::create();
+					e_buttons->add_child(e_text_tip);
+					{
+						e_text_tip->add_component(cElement::create());
+
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->set_text(L"(Do update first to get popper result)");
+						e_text_tip->add_component(c_text);
+					}
+
+					auto e_main = Entity::create();
+					t->add_child(e_main);
+					{
+						e_main->add_component(cElement::create());
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeFitParent;
+						c_aligner->height_policy = SizeFitParent;
+						e_main->add_component(c_aligner);
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutVertical;
+						c_layout->width_fit_children = false;
+						c_layout->height_fit_children = false;
+						e_main->add_component(c_layout);
+					}
+
+
+					auto filename = *(std::wstring*)capture.n->find_input("filename")->data();
+					auto prefix = *(std::string*)capture.n->find_input("prefix")->data();
+					auto inputs = (std::vector<void*>*)capture.n->find_input("inputs")->data_p();
+					auto outputs = (std::vector<void*>*)capture.n->find_input("outputs")->data_p();
+					auto pll = (Pipelinelayout*)capture.n->find_input("pll")->data_p();
+					auto autogen_code = *(bool*)capture.n->find_input("autogen_code")->data();
+
+					{
+						auto e_text_view = Entity::create();
+						{
+							auto c_element = cElement::create();
+							c_element->clip_children = true;
+							e_text_view->add_component(c_element);
+
+							auto c_aligner = cAligner::create();
+							c_aligner->width_policy = SizeFitParent;
+							c_aligner->height_policy = SizeFitParent;
+							e_text_view->add_component(c_aligner);
+
+							auto c_layout = cLayout::create();
+							c_layout->type = LayoutVertical;
+							c_layout->width_fit_children = false;
+							c_layout->height_fit_children = false;
+							e_text_view->add_component(c_layout);
+						}
+
+						auto e_text = Entity::create();
+						e_text_view->add_child(e_text);
+						{
+							e_text->add_component(cElement::create());
+
+							auto c_text = cText::create(app.font_atlas_pixel);
+							auto _prefix = s2w(prefix);
+							if (autogen_code)
+							{
+								auto code = get_shader_autogen_code(shader_stage_from_filename(filename), inputs, outputs, pll);
+								_prefix += s2w(*code.p);
+								delete_mail(code);
+							}
+							c_text->set_text(_prefix);
+							e_text->add_component(c_text);
+						}
+
+						e_main->add_child(wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
+					}
+
+					auto e_spliter = Entity::create();
+					e_main->add_child(e_spliter);
+					{
+						auto c_element = cElement::create();
+						c_element->height = 8.f;
+						e_spliter->add_component(c_element);
+
+						e_spliter->add_component(cEventReceiver::create());
+
+						e_spliter->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+
+						auto c_splitter = cSplitter::create();
+						c_splitter->type = SplitterVertical;
+						e_spliter->add_component(c_splitter);
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeFitParent;
+						e_spliter->add_component(c_aligner);
+					}
+
+					{
+						auto e_text_view = Entity::create();
+						{
+							auto c_element = cElement::create();
+							c_element->clip_children = true;
+							e_text_view->add_component(c_element);
+
+							auto c_aligner = cAligner::create();
+							c_aligner->width_policy = SizeFitParent;
+							c_aligner->height_policy = SizeFitParent;
+							e_text_view->add_component(c_aligner);
+
+							auto c_layout = cLayout::create();
+							c_layout->type = LayoutVertical;
+							c_layout->width_fit_children = false;
+							c_layout->height_fit_children = false;
+							e_text_view->add_component(c_layout);
+						}
+
+						auto e_text = Entity::create();
+						e_text_view->add_child(e_text);
+						{
+							e_text->add_component(cElement::create());
+
+							auto c_text = cText::create(app.font_atlas_pixel);
+							auto file = get_file_string(capture.e->filepath + L"/" + filename);
+							c_text->set_text(s2w(file));
+							e_text->add_component(c_text);
+						}
+
+						e_main->add_child(wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
+					}
+				}
+			}, new_mail(&capture));
+		}
+
 		auto e_content = Entity::create();
 		e_node->add_child(e_content);
 		{
@@ -897,7 +1098,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}, new_mail_p(input));
 
 							auto c_tracker = new_component<cSlotBoolDataTracker>();
-							c_tracker->data = (int*)input->data();
+							c_tracker->data = (bool*)input->data();
 							e_data->add_component(c_tracker);
 						}
 						break;
@@ -1070,22 +1271,37 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, L"Blueprint Editor", app.root));
 
 	auto e_page = get_docker_page_model()->copy();
-	e_docker->child(1)->add_child(e_page);
 	{
 		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);
 	}
+	e_docker->child(1)->add_child(e_page);
 
 	auto c_editor = new_component<cBPEditor>();
 	c_editor->init(filename, no_compile);
 	e_page->add_component(c_editor);
 
-	auto e_menubar = create_standard_menubar();
-	e_page->add_child(e_menubar);
+	auto e_main = Entity::create();
+	e_page->add_child(e_main);
+	{
+		e_main->add_component(cElement::create());
 
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitParent;
+		c_aligner->height_policy = SizeFitParent;
+		e_main->add_component(c_aligner);
+
+		auto c_layout = cLayout::create();
+		c_layout->type = LayoutVertical;
+		c_layout->width_fit_children = false;
+		c_layout->height_fit_children = false;
+		e_main->add_component(c_layout);
+	}
+
+	auto e_menubar = create_standard_menubar();
+	e_main->add_child(e_menubar);
 	{
 		auto e_menu = create_standard_menu();
 		std::vector<UdtInfo*> all_udts;
@@ -1160,7 +1376,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 
 	auto e_btn_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
-	e_page->add_child(e_btn_run);
+	e_main->add_child(e_btn_run);
 	{
 		auto c_event_receiver = (cEventReceiver*)e_btn_run->find_component(cH("EventReceiver"));
 		struct Capture
@@ -1181,16 +1397,25 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					auto bp = capture.e->bp;
 					bp->graphics_device = app.d;
-					bp->find_input("rt_dst.type")->set_data_i(TargetImageview);
-					bp->find_input("rt_dst.v")->set_data_p(capture.e->rt_v);
-					bp->find_input("make_cmd.cmdbufs")->set_data_p(&capture.e->rt_cbs);
+					auto rt_dst = bp->find_node("rt_dst");
+					if (rt_dst)
+					{
+						rt_dst->find_input("type")->set_data_i(TargetImageview);
+						rt_dst->find_input("v")->set_data_p(capture.e->rt_v);
+					}
+					auto make_cmd = bp->find_node("make_cmd");
+					if (make_cmd)
+					{
+						make_cmd->find_input("cmdbufs")->set_data_p(&capture.e->rt_cbs);
+						capture.e->cb_recorded = true;
+					}
 				}
 			}
 		}, new_mail(&capture));
 	}
 
 	auto e_clipper = Entity::create();
-	e_page->add_child(e_clipper);
+	e_main->add_child(e_clipper);
 	{
 		auto c_element = cElement::create();
 		c_element->clip_children = true;
@@ -1241,6 +1466,12 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto bp = editor->bp;
 		auto& dbs = editor->dbs;
 		auto tokens = string_split(cmd);
+
+		if (editor->locked)
+		{
+			console->print(L"bp is locked");
+			return;
+		}
 
 		auto set_data = [&](const std::string& address, const std::string& value) {
 			auto i = bp->find_input(address.c_str());

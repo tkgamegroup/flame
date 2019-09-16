@@ -1,5 +1,4 @@
-#include <flame/foundation/window.h>
-#include <flame/foundation/serialize.h>
+#include <flame/foundation/foundation.h>
 
 using namespace flame;
 
@@ -12,7 +11,7 @@ int main(int argc, char** args)
 			(*((WindowPtr*)c))->close();
 	}, new_mail(&w));
 
-	app_run([](void* c) {
+	looper().loop([](void* c) {
 	}, Mail());
 
 	return 0;

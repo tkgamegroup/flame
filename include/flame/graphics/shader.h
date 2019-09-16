@@ -235,6 +235,26 @@ namespace flame
 			}
 		};
 
+		inline ShaderStage$ shader_stage_from_filename(const std::wstring& filename)
+		{
+			auto ext = std::filesystem::path(filename).extension();
+			if (ext == L".vert")
+				return ShaderStageVert;
+			else if (ext == L".tesc")
+				return ShaderStageTesc;
+			else if (ext == L".tese")
+				return ShaderStageTese;
+			else if (ext == L".geom")
+				return ShaderStageGeom;
+			else if (ext == L".frag")
+				return ShaderStageFrag;
+			else if (ext == L".comp")
+				return ShaderStageComp;
+			return ShaderStageNone;
+		}
+
+		FLAME_GRAPHICS_EXPORTS Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>* inputs = nullptr, const std::vector<void*>* outputs = nullptr, Pipelinelayout* pll = nullptr);
+
 		struct Shader
 		{
 			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs = nullptr, const std::vector<void*>* outputs = nullptr, Pipelinelayout* pll = nullptr, bool autogen_code = false);

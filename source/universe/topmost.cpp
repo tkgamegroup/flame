@@ -34,18 +34,21 @@ namespace flame
 
 			auto c_event_receiver = cEventReceiver::create();
 			c_event_receiver->penetrable = penetrable;
-			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto e = *(Entity**)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left && get_topmost(e)->created_frame != looper().frame)
-					destroy_topmost(e);
-			}, new_mail_p(e));
+			if (close_when_clicked)
+			{
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto e = *(Entity**)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Left && get_topmost(e)->created_frame != looper().frame)
+						destroy_topmost(e);
+				}, new_mail_p(e));
+			}
 			t->add_component(c_event_receiver);
 		}
 
 		return t;
 	}
 
-	void destroy_topmost(Entity* e)
+	void destroy_topmost(Entity* e, bool take)
 	{
 		auto t = get_topmost(e);
 
@@ -64,7 +67,8 @@ namespace flame
 			}
 		}
 
-		t->take_all_children();
+		if (take)
+			t->take_all_children();
 		looper().add_delay_event([](void* c) {
 			auto t = *(Entity**)c;
 			t->parent()->take_child(t);

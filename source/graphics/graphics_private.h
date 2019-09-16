@@ -229,7 +229,7 @@ namespace flame
 
 		inline void chk_res(VkResult res)
 		{
-			assert(res == VK_SUCCESS);
+			assert(res == VK_SUCCESS || res == VK_ERROR_OUT_OF_DATE_KHR);
 		}
 
 		inline VkFormat to_enum(Format$ f)
