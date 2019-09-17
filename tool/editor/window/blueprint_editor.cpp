@@ -251,6 +251,7 @@ struct cBPEditor : Component
 	std::vector<TypeinfoDatabase*> dbs;
 	bool locked;
 
+	Entity* e_add_node_menu;
 	Entity* e_base;
 	cDockerTab* console_tab;
 
@@ -326,6 +327,150 @@ struct cBPEditor : Component
 		e_base->remove_all_children();
 		for (auto i = 0; i < bp->node_count(); i++)
 			create_node_entity(bp->node(i));
+
+		e_add_node_menu->remove_all_children();
+
+		std::vector<UdtInfo*> all_udts;
+		for (auto db : dbs)
+		{
+			auto udts = db->get_udts();
+			for (auto i = 0; i < udts.p->size(); i++)
+			{
+				auto u = udts.p->at(i);
+				if (u->name().find('(') == std::string::npos)
+					all_udts.push_back(u);
+			}
+			delete_mail(udts);
+		}
+		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+			return a->name() < b->name();
+		});
+		for (auto udt : all_udts)
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
+			e_add_node_menu->add_child(e_item);
+			struct Capture
+			{
+				cBPEditor* e;
+				UdtInfo* u;
+			}capture;
+			capture.e = this;
+			capture.u = udt;
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+					auto& capture = *(Capture*)c;
+					capture.e->add_node(capture.u->name(), "");
+				}
+			}, new_mail(&capture));
+		}
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"template..");
+			e_add_node_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+					auto editor = *(cBPEditor**)c;
+
+					auto t = create_topmost(editor->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
+					{
+						t->add_component(cLayout::create());
+					}
+
+					auto e_dialog = Entity::create();
+					t->add_child(e_dialog);
+					{
+						e_dialog->add_component(cElement::create());
+
+						auto c_aligner = cAligner::create();
+						c_aligner->x_align = AlignxMiddle;
+						c_aligner->y_align = AlignyMiddle;
+						e_dialog->add_component(c_aligner);
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutVertical;
+						c_layout->item_padding = 4.f;
+						e_dialog->add_component(c_layout);
+					}
+
+					auto e_name = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
+					e_dialog->add_child(e_name);
+
+					auto e_buttons = Entity::create();
+					e_dialog->add_child(e_buttons);
+					{
+						e_buttons->add_component(cElement::create());
+
+						auto c_layout = cLayout::create();
+						c_layout->type = LayoutHorizontal;
+						c_layout->item_padding = 4.f;
+						e_buttons->add_component(c_layout);
+					}
+
+					auto e_btn_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
+					e_buttons->add_child(e_btn_ok);
+					{
+						struct Capture
+						{
+							cBPEditor* e;
+							cText* t;
+						}capture;
+						capture.e = editor;
+						capture.t = (cText*)e_name->find_component(cH("Text"));
+						((cEventReceiver*)e_btn_ok->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							auto& capture = *(Capture*)c;
+							if (is_mouse_clicked(action, key))
+							{
+								destroy_topmost(capture.e->entity, false);
+								auto name = w2s(capture.t->text());
+								auto db = capture.e->bp->typeinfodatabase;
+								if (db->find_udt(H(name.c_str())))
+									capture.e->add_node(name, "");
+								else
+								{
+									if (capture.e->running)
+										capture.e->show_tip(L"Cannot Add New Template Node While Running");
+									else
+									{
+										auto file = SerializableNode::create_from_xml_file(capture.e->filename);
+										auto n_nodes = file->find_node("nodes");
+										auto n_node = n_nodes->new_node("node");
+										n_node->new_attr("type", name);
+										{
+											std::string id;
+											auto bp = capture.e->bp;
+											for (auto i = 0; i < bp->node_count() + 1; i++)
+											{
+												id = "node_" + std::to_string(i);
+												if (!bp->find_node(id))
+													break;
+											}
+											n_node->new_attr("id", id);
+										}
+										n_node->new_attr("pos", "0.0;0.0");
+										SerializableNode::save_to_xml_file(file, capture.e->filename);
+										SerializableNode::destroy(file);
+
+										capture.e->load(capture.e->filename, false);
+									}
+								}
+							}
+						}, new_mail(&capture));
+					}
+
+					auto e_btn_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
+					e_buttons->add_child(e_btn_cancel);
+					{
+						((cEventReceiver*)e_btn_cancel->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							if (is_mouse_clicked(action, key))
+								destroy_topmost(*(Entity**)c, false);
+						}, new_mail_p(editor->entity));
+					}
+				}
+			}, new_mail_p(this));
+		}
 
 		sel_type = SelAir;
 		selected.n = nullptr;
@@ -765,7 +910,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		auto e_text_id = Entity::create();
 		e_node->add_child(e_text_id);
 		{
-			e_text_id->add_component(cElement::create());
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
 			c_text->set_text(s2w(n->id()));
@@ -1450,124 +1597,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 	{
 		auto e_menu = create_standard_menu();
-		std::vector<UdtInfo*> all_udts;
-		for (auto db : c_editor->dbs)
-		{
-			auto udts = db->get_udts();
-			for (auto i = 0; i < udts.p->size(); i++)
-			{
-				auto u = udts.p->at(i);
-				if (u->name().find('(') == std::string::npos)
-					all_udts.push_back(u);
-			}
-			delete_mail(udts);
-		}
-		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-			return a->name() < b->name();
-		});
-		for (auto udt : all_udts)
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
-			e_menu->add_child(e_item);
-			struct Capture
-			{
-				cBPEditor* e;
-				UdtInfo* u;
-			}capture;
-			capture.e = c_editor;
-			capture.u = udt;
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-					auto& capture = *(Capture*)c;
-					capture.e->add_node(capture.u->name(), "");
-				}
-			}, new_mail(&capture));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"template..");
-			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-					auto editor = *(cBPEditor**)c;
-
-					auto t = create_topmost(editor->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
-					{
-						t->add_component(cLayout::create());
-					}
-
-					auto e_dialog = Entity::create();
-					t->add_child(e_dialog);
-					{
-						e_dialog->add_component(cElement::create());
-
-						auto c_aligner = cAligner::create();
-						c_aligner->x_align = AlignxMiddle;
-						c_aligner->y_align = AlignyMiddle;
-						e_dialog->add_component(c_aligner);
-
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
-						c_layout->item_padding = 4.f;
-						e_dialog->add_component(c_layout);
-					}
-
-					auto e_name = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-					e_dialog->add_child(e_name);
-
-					auto e_buttons = Entity::create();
-					e_dialog->add_child(e_buttons);
-					{
-						e_buttons->add_component(cElement::create());
-
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutHorizontal;
-						c_layout->item_padding = 4.f;
-						e_buttons->add_component(c_layout);
-					}
-
-					auto e_btn_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
-					e_buttons->add_child(e_btn_ok);
-					{
-						struct Capture
-						{
-							cBPEditor* e;
-							cText* t;
-						}capture;
-						capture.e = editor;
-						capture.t = (cText*)e_name->find_component(cH("Text"));
-						((cEventReceiver*)e_btn_ok->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							auto& capture = *(Capture*)c;
-							if (is_mouse_clicked(action, key))
-							{
-								destroy_topmost(capture.e->entity, false);
-								auto name = w2s(capture.t->text());
-								auto db = capture.e->bp->typeinfodatabase;
-								if (db->find_udt(H(name.c_str())))
-									capture.e->add_node(name, "");
-								else
-								{
-									if (capture.e->running)
-										capture.e->show_tip(L"Cannot Add New Template Node While Running");
-								}
-							}
-						}, new_mail(&capture));
-					}
-
-					auto e_btn_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
-					e_buttons->add_child(e_btn_cancel);
-					{
-						((cEventReceiver*)e_btn_cancel->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							if (is_mouse_clicked(action, key))
-								destroy_topmost(*(Entity**)c, false);
-						}, new_mail_p(editor->entity));
-					}
-				}
-			}, new_mail_p(c_editor));
-		}
+		c_editor->e_add_node_menu = e_menu;
 		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 	}

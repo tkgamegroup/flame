@@ -718,17 +718,18 @@ namespace flame
 			return nullptr;
 		}
 
+		auto loaded_before = false;
+		for (auto& l : loaded_bps)
+		{
+			if (l == path)
+			{
+				loaded_before = true;
+				break;
+			}
+		}
+		loaded_bps.push_back(path);
 		if (!no_compile)
 		{
-			auto loaded_before = false;
-			for (auto& l : loaded_bps)
-			{
-				if (l == path)
-				{
-					loaded_before = true;
-					break;
-				}
-			}
 			if (!loaded_before) // delete pervious created random pdbs
 			{
 				std::vector<std::filesystem::path> pdbs;
@@ -743,8 +744,6 @@ namespace flame
 				}
 				for (auto& p : pdbs)
 					std::filesystem::remove(p);
-
-				loaded_bps.push_back(path);
 			}
 		}
 
