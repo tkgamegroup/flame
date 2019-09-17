@@ -1068,7 +1068,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_text->add_component(c_text);
 						}
 
-						e_main->add_child(wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
+						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height);
+						((cAligner*)e_scrollbar_container->find_component(cH("Aligner")))->height_factor = 1.f / 3.f;
+						e_main->add_child(e_scrollbar_container);
 					}
 
 					auto e_spliter = Entity::create();
@@ -1155,7 +1157,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}
 						}
 
-						e_main->add_child(wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
+						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height);
+						((cAligner*)e_scrollbar_container->find_component(cH("Aligner")))->height_factor = 2.f / 3.f;
+						e_main->add_child(e_scrollbar_container);
 					}
 				}
 			}, new_mail(&capture));
