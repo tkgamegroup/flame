@@ -609,8 +609,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
 		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::string& name, uint size);
 
-		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* collect(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* collect(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& dll_filename, const std::wstring& pdb_filename = L"");
+		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& typeinfo_filename);
 		FLAME_FOUNDATION_EXPORTS static void save(const std::vector<TypeinfoDatabase*>& dbs, TypeinfoDatabase* db);
 		FLAME_FOUNDATION_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};

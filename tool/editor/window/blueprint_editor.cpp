@@ -280,6 +280,7 @@ struct cBPEditor : Component
 	cBPEditor() :
 		Component("BPEditor")
 	{
+		bp = nullptr;
 		locked = false;
 
 		console_tab = nullptr;
@@ -310,14 +311,21 @@ struct cBPEditor : Component
 		app.canvas->set_image(rt_id, nullptr);
 	}
 
-	void init(const std::wstring& _filename, bool no_compile)
+	void load(const std::wstring& _filename, bool no_compile)
 	{
 		filename = _filename;
 		filepath = std::filesystem::path(filename).parent_path().wstring();
+		if (bp)
+			BP::destroy(bp);
 		bp = BP::create_from_file(filename, no_compile);
+		dbs.clear();
 		for (auto i = 0; i < bp->dependency_count(); i++)
 			dbs.push_back(bp->dependency_typeinfodatabase(i));
 		dbs.push_back(bp->typeinfodatabase);
+
+		e_base->remove_all_children();
+		for (auto i = 0; i < bp->node_count(); i++)
+			create_node_entity(bp->node(i));
 
 		sel_type = SelAir;
 		selected.n = nullptr;
@@ -1361,7 +1369,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	e_docker->child(1)->add_child(e_page);
 
 	auto c_editor = new_component<cBPEditor>();
-	c_editor->init(filename, no_compile);
 	e_page->add_component(c_editor);
 
 	auto e_main = Entity::create();
@@ -1419,15 +1426,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					if (editor->running)
 						editor->show_tip(L"Cannot Reload While Running");
 					else
-					{
-						BP::destroy(editor->bp);
-						editor->e_base->remove_all_children();
-						editor->dbs.clear();
-						editor->init(editor->filename, false);
-						auto bp = editor->bp;
-						for (auto i = 0; i < bp->node_count(); i++)
-							editor->create_node_entity(bp->node(i));
-					}
+						editor->load(editor->filename, false);
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1442,15 +1441,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					if (editor->running)
 						editor->show_tip(L"Cannot Reload While Running");
 					else
-					{
-						BP::destroy(editor->bp);
-						editor->e_base->remove_all_children();
-						editor->dbs.clear();
-						editor->init(editor->filename, true);
-						auto bp = editor->bp;
-						for (auto i = 0; i < bp->node_count(); i++)
-							editor->create_node_entity(bp->node(i));
-					}
+						editor->load(editor->filename, true);
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1698,9 +1689,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 	c_editor->e_base = e_base;
 
-	auto bp = c_editor->bp;
-	for (auto i = 0; i < bp->node_count(); i++)
-		c_editor->create_node_entity(bp->node(i));
+	c_editor->load(filename, no_compile);
 
 	auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
 		auto editor = *(cBPEditor**)c;

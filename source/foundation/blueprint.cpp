@@ -699,10 +699,13 @@ namespace flame
 		((BPPrivate*)this)->update();
 	}
 
+	static std::vector<std::filesystem::path> loaded_bps; // track locked pdbs
+
 	BP *BP::create_from_file(const std::wstring& filename, bool no_compile)
 	{
 		auto s_filename = w2s(filename);
-		auto ppath = std::filesystem::path(filename).parent_path();
+		auto path = std::filesystem::path(filename);
+		auto ppath = path.parent_path();
 		auto ppath_str = ppath.wstring();
 
 		printf("begin to load bp: %s\n", s_filename.c_str());
@@ -713,6 +716,36 @@ namespace flame
 			printf("bp file does not exist, abort\n", s_filename.c_str());
 			printf("end loading bp: %s\n", s_filename.c_str());
 			return nullptr;
+		}
+
+		if (!no_compile)
+		{
+			auto loaded_before = false;
+			for (auto& l : loaded_bps)
+			{
+				if (l == path)
+				{
+					loaded_before = true;
+					break;
+				}
+			}
+			if (!loaded_before) // delete pervious created random pdbs
+			{
+				std::vector<std::filesystem::path> pdbs;
+				for (std::filesystem::directory_iterator end, it(ppath / L"build/Debug"); it != end; it++)
+				{
+					if (!std::filesystem::is_directory(it->status()))
+					{
+						auto ext = it->path().extension().wstring();
+						if (ext == L".pdb")
+							pdbs.push_back(it->path());
+					}
+				}
+				for (auto& p : pdbs)
+					std::filesystem::remove(p);
+
+				loaded_bps.push_back(path);
+			}
 		}
 
 		std::vector<std::pair<std::wstring, std::wstring>> dependencies;
@@ -849,34 +882,32 @@ namespace flame
 				printf("template.cpp up to data\n");
 
 			auto cmakelists_path = ppath / L"CMakeLists.txt";
-			if (!std::filesystem::exists(cmakelists_path) || std::filesystem::last_write_time(cmakelists_path) < std::filesystem::last_write_time(filename))
+			printf("generating cmakelists");
+
+			std::ofstream cmakelists(cmakelists_path);
+			cmakelists << "# THIS FILE IS AUTO GENERATED\n";
+			cmakelists << "cmake_minimum_required(VERSION 3.4)\n";
+			cmakelists << "project(bp)\n";
+			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
+			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
+			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
+			for (auto& d : dependencies)
 			{
-				printf("generating cmakelists");
-
-				std::ofstream cmakelists(cmakelists_path);
-				cmakelists << "# THIS FILE IS AUTO GENERATED\n";
-				cmakelists << "cmake_minimum_required(VERSION 3.4)\n";
-				cmakelists << "project(bp)\n";
-				cmakelists << "add_definitions(-W0 -std:c++latest)\n";
-				cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
-				cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
-				for (auto& d : dependencies)
-				{
-					cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-					cmakelists << w2s(ext_replace(d.second, L".lib"));
-					cmakelists << ")\n";
-				}
-				cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
-				cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
-				for (auto& d : dependencies)
-					cmakelists << "${CMAKE_SOURCE_DIR}/../../bin/" + w2s(d.second) + " ";
+				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
+				cmakelists << w2s(ext_replace(d.second, L".lib"));
 				cmakelists << ")\n";
-				cmakelists.close();
-
-				printf(" - done\n");
 			}
-			else
-				printf("cmakelists up to data\n");
+			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
+			srand(time(0));
+			auto pdb_filename = std::to_string(::rand() % 100000);
+			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " + pdb_filename + ")\n";
+			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
+			for (auto& d : dependencies)
+				cmakelists << "-d${CMAKE_SOURCE_DIR}/../../bin/" + w2s(d.second) + " ";
+			cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" + pdb_filename + ".pdb)\n";
+			cmakelists.close();
+
+			printf(" - done\n");
 
 			printf("cmaking:\n");
 			exec_and_redirect_to_std_output(L"", L"cmake -S " + ppath_str + L" -B " + ppath_str + L"/build");

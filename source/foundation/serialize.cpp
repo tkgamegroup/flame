@@ -1312,7 +1312,7 @@ namespace flame
 		return u;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::collect(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
+	TypeinfoDatabase* TypeinfoDatabase::collect(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& dll_filename, const std::wstring& _pdb_filename)
 	{
 		com_init();
 
@@ -1323,9 +1323,12 @@ namespace flame
 			assert(0);
 			return nullptr;
 		}
-		if (FAILED(dia_source->loadDataFromPdb(ext_replace(filename, L".pdb").c_str())))
+		auto pdb_filename = _pdb_filename;
+		if (pdb_filename.empty())
+			pdb_filename = ext_replace(dll_filename, L".pdb").wstring();
+		if (FAILED(dia_source->loadDataFromPdb(pdb_filename.c_str())))
 		{
-			printf("pdb failed to open: %s\n", std::filesystem::path(filename).stem().string().c_str());
+			printf("pdb failed to open: %s\n", w2s(pdb_filename).c_str());
 			assert(0);
 			return nullptr;
 		}
@@ -1345,10 +1348,12 @@ namespace flame
 		}
 
 		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = filename;
+		db->module_name = dll_filename;
+		auto dbs = existed_dbs;
+		dbs.push_back(db);
 
 		{
-			auto library = load_module(filename.c_str());
+			auto library = load_module(dll_filename.c_str());
 			if (library)
 			{
 				typedef void (*add_templates_func)(TypeinfoDatabase*);
@@ -1461,18 +1466,7 @@ namespace flame
 			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
 			{
 				auto hash = H(name.c_str());
-				auto existed = false;
-				for (auto db : dbs)
-				{
-					if (db->find_enum(hash))
-					{
-						existed = true;
-						break;
-					}
-				}
-				if (!existed && db->find_enum(hash))
-					existed = true;
-				if (!existed)
+				if (!::flame::find_enum(dbs, hash))
 				{
 					auto e = db->add_enum(name);
 
@@ -1497,46 +1491,6 @@ namespace flame
 		}
 		_enums->Release();
 
-		// functions
-		IDiaEnumSymbols* _functions;
-		global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-		IDiaSymbol* _function;
-		while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
-		{
-			_function->get_name(&pwname);
-			bool pass_prefix, pass_$;
-			std::string attribute;
-			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
-			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
-			{
-				auto hash = H(name.c_str());
-				auto existed = false;
-				for (auto db : dbs)
-				{
-					if (db->find_function(hash))
-					{
-						existed = true;
-						break;
-					}
-				}
-				if (!existed && db->find_function(hash))
-					existed = true;
-				if (!existed)
-				{
-					void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
-					symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
-					if (rva)
-					{
-						auto f = db->add_function(name, rva, return_type_tag, return_type_name, code);
-						symbol_to_parameters(_function, f);
-					}
-				}
-			}
-
-			_function->Release();
-		}
-		_functions->Release();
-
 		// udts
 		IDiaEnumSymbols* _udts;
 		global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
@@ -1549,18 +1503,7 @@ namespace flame
 			if (pass_prefix && pass_$ && udt_name.find("(lambda_") == std::string::npos)
 			{
 				auto udt_hash = H(udt_name.c_str());
-				auto existed = false;
-				for (auto db : dbs)
-				{
-					if (db->find_udt(udt_hash))
-					{
-						existed = true;
-						break;
-					}
-				}
-				if (!existed && db->find_udt(udt_hash))
-					existed = true;
-				if (!existed)
+				if (!::flame::find_udt(dbs, udt_hash))
 				{
 					_udt->get_length(&ull);
 					auto u = (UdtInfoPrivate*)db->add_udt(udt_name, ull);
@@ -1637,7 +1580,7 @@ namespace flame
 					}
 					if (ctor)
 					{
-						auto library = load_module(filename.c_str());
+						auto library = load_module(dll_filename.c_str());
 						if (library)
 						{
 							auto obj = malloc(u->size);
@@ -1662,12 +1605,41 @@ namespace flame
 		}
 		_udts->Release();
 
+		// functions
+		IDiaEnumSymbols* _functions;
+		global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+		IDiaSymbol* _function;
+		while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+		{
+			_function->get_name(&pwname);
+			bool pass_prefix, pass_$;
+			std::string attribute;
+			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
+			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
+			{
+				auto hash = H(name.c_str());
+				if (!::flame::find_function(dbs, hash))
+				{
+					void* rva; TypeTag$ return_type_tag; std::string return_type_name; std::string code;
+					symbol_to_function(_function, attribute, rva, return_type_tag, return_type_name, code);
+					if (rva)
+					{
+						auto f = db->add_function(name, rva, return_type_tag, return_type_name, code);
+						symbol_to_parameters(_function, f);
+					}
+				}
+			}
+
+			_function->Release();
+		}
+		_functions->Release();
+
 		return db;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::load(const std::vector<TypeinfoDatabase*>& _dbs, const std::wstring& filename)
+	TypeinfoDatabase* TypeinfoDatabase::load(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& typeinfo_filename)
 	{
-		auto file = SerializableNode::create_from_xml_file(filename);
+		auto file = SerializableNode::create_from_xml_file(typeinfo_filename);
 		if (!file)
 		{
 			assert(0);
@@ -1698,8 +1670,8 @@ namespace flame
 		};
 
 		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = ext_replace(filename, L".dll");
-		auto dbs = _dbs;
+		db->module_name = ext_replace(typeinfo_filename, L".dll");
+		auto dbs = existed_dbs;
 		dbs.push_back(db);
 
 		auto n_enums = file->find_node("enums");
@@ -1869,13 +1841,7 @@ namespace flame
 		{
 		case TypeTagEnumSingle: case TypeTagAttributeES:
 		{
-			EnumInfo* e = nullptr;
-			for (auto db : dbs)
-			{
-				e = db->find_enum(hash);
-				if (e)
-					break;
-			}
+			auto e = find_enum(dbs, hash);
 			assert(e);
 			*(ret.p) = e->find_item(*(int*)src)->name();
 		}
@@ -1883,16 +1849,10 @@ namespace flame
 		case TypeTagEnumMulti: case TypeTagAttributeEM:
 		{
 			std::string str;
-			EnumInfoPrivate* e = nullptr;
-			for (auto db : dbs)
-			{
-				e = (EnumInfoPrivate*)db->find_enum(hash);
-				if (e)
-					break;
-			}
+			auto e = find_enum(dbs, hash);
 			assert(e);
 			auto v = *(int*)src;
-			for (auto i = 0; i < e->items.size(); i++)
+			for (auto i = 0; i < e->item_count(); i++)
 			{
 				if ((v & 1) == 1)
 				{
@@ -1992,13 +1952,7 @@ namespace flame
 		{
 		case TypeTagEnumSingle: case TypeTagAttributeES:
 		{
-			EnumInfo* e = nullptr;
-			for (auto db : dbs)
-			{
-				e = db->find_enum(hash);
-				if (e)
-					break;
-			}
+			auto e = find_enum(dbs, hash);
 			assert(e);
 			e->find_item(src, (int*)dst);
 		}
@@ -2006,13 +1960,7 @@ namespace flame
 		case TypeTagEnumMulti: case TypeTagAttributeEM:
 		{
 			auto v = 0;
-			EnumInfoPrivate* e = nullptr;
-			for (auto db : dbs)
-			{
-				e = (EnumInfoPrivate*)db->find_enum(hash);
-				if (e)
-					break;
-			}
+			auto e = find_enum(dbs, hash);
 			assert(e);
 			auto sp = string_split(src, ';');
 			for (auto& t : sp)
