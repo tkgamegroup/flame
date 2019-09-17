@@ -5,10 +5,10 @@ namespace flame
 {
 	struct MakeCmd$
 	{
-		AttributeP<std::vector<void*>> cmdbufs$i;
-		AttributeP<void> renderpass$i;
-		AttributeP<std::vector<void*>> framebuffers$i;
-		AttributeP<void> clearvalues$i;
+		AttributeP<std::vector<void*>> cbs$i;
+		AttributeP<void> rp$i;
+		AttributeP<std::vector<void*>> fbs$i;
+		AttributeP<void> cv$i;
 
 		int frame;
 
@@ -19,29 +19,29 @@ namespace flame
 
 		__declspec(dllexport) void update$()
 		{
-			if (cmdbufs$i.frame > frame || renderpass$i.frame > frame || framebuffers$i.frame > frame || clearvalues$i.frame > frame)
+			if (cbs$i.frame > frame || rp$i.frame > frame || fbs$i.frame > frame || cv$i.frame > frame)
 			{
-				if (cmdbufs$i.v && !cmdbufs$i.v->empty() && renderpass$i.v && framebuffers$i.v && !framebuffers$i.v->empty() && clearvalues$i.v)
+				if (cbs$i.v && !cbs$i.v->empty() && rp$i.v && fbs$i.v && !fbs$i.v->empty() && cv$i.v)
 				{
-					for (auto i = 0; i < cmdbufs$i.v->size(); i++)
+					for (auto i = 0; i < cbs$i.v->size(); i++)
 					{
-						auto cb = (graphics::Commandbuffer*)(*cmdbufs$i.v)[i];
+						auto cb = (graphics::Commandbuffer*)(*cbs$i.v)[i];
 						cb->begin();
-						cb->begin_renderpass((graphics::Renderpass*)renderpass$i.v, (graphics::Framebuffer*)(*framebuffers$i.v)[i], (graphics::Clearvalues*)clearvalues$i.v);
+						cb->begin_renderpass((graphics::Renderpass*)rp$i.v, (graphics::Framebuffer*)(*fbs$i.v)[i], (graphics::Clearvalues*)cv$i.v);
 						cb->end_renderpass();
 						cb->end();
 					}
 				}
 				else
 				{
-					for (auto i = 0; i < cmdbufs$i.v->size(); i++)
+					for (auto i = 0; i < cbs$i.v->size(); i++)
 					{
-						auto cb = (graphics::Commandbuffer*)(*cmdbufs$i.v)[i];
+						auto cb = (graphics::Commandbuffer*)(*cbs$i.v)[i];
 						cb->begin();
 						cb->end();
 					}
 				}
-				frame = maxN(cmdbufs$i.frame, renderpass$i.frame, framebuffers$i.frame, clearvalues$i.frame);
+				frame = maxN(cbs$i.frame, rp$i.frame, fbs$i.frame, cv$i.frame);
 			}
 		}
 	};

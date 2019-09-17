@@ -728,23 +728,20 @@ namespace flame
 			}
 		}
 		loaded_bps.push_back(path);
-		if (!no_compile)
+		if (!no_compile && !loaded_before) // delete pervious created random pdbs
 		{
-			if (!loaded_before) // delete pervious created random pdbs
+			std::vector<std::filesystem::path> pdbs;
+			for (std::filesystem::directory_iterator end, it(ppath / L"build/Debug"); it != end; it++)
 			{
-				std::vector<std::filesystem::path> pdbs;
-				for (std::filesystem::directory_iterator end, it(ppath / L"build/Debug"); it != end; it++)
+				if (!std::filesystem::is_directory(it->status()))
 				{
-					if (!std::filesystem::is_directory(it->status()))
-					{
-						auto ext = it->path().extension().wstring();
-						if (ext == L".pdb")
-							pdbs.push_back(it->path());
-					}
+					auto ext = it->path().extension().wstring();
+					if (ext == L".pdb")
+						pdbs.push_back(it->path());
 				}
-				for (auto& p : pdbs)
-					std::filesystem::remove(p);
 			}
+			for (auto& p : pdbs)
+				std::filesystem::remove(p);
 		}
 
 		std::vector<std::pair<std::wstring, std::wstring>> dependencies;

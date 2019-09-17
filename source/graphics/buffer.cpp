@@ -65,6 +65,8 @@ namespace flame
 
 		void BufferPrivate::map(uint offset, uint _size)
 		{
+			if (mapped)
+				return;
 			if (_size == 0)
 				_size = size;
 #if defined(FLAME_VULKAN)

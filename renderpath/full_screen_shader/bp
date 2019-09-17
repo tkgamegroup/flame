@@ -14,7 +14,7 @@
 		<node type="graphics::SubpassTargetInfo" id="sp" pos="489.00;21.00" />
 		<node type="Array(1+void*)" id="sps" pos="745.00;96.00" />
 		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="913.00;32.00" />
-		<node type="graphics::Descriptorlayout" id="dsl" pos="18.00;288.00" />
+		<node type="graphics::Descriptorlayout" id="dsl" pos="12.00;325.00" />
 		<node type="Array(1+void*)" id="dsls" pos="250.00;315.00" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="380.00;291.00">
 			<datas>
@@ -28,17 +28,17 @@
 				<data name="autogen_code" value="1" />
 			</datas>
 		</node>
-		<node type="graphics::Shader" id="shf" pos="674.00;566.00">
+		<node type="graphics::Shader" id="shf" pos="687.00;651.00">
 			<datas>
-				<data name="filename" value="test.frag" />
+				<data name="filename" value="protean_clouds.frag" />
 				<data name="prefix" value="" />
 				<data name="autogen_code" value="1" />
 			</datas>
 		</node>
 		<node type="Array(2+void*)" id="shs" pos="936.00;561.00" />
-		<node type="graphics::Pipeline" id="pl" pos="1111.00;352.00" />
+		<node type="graphics::Pipeline" id="pl" pos="1120.00;353.00" />
 		<node type="MakeCmd" id="make_cmd" pos="1230.00;16.00" />
-		<node type="graphics::OutputAttachmentInfo" id="out" pos="54.00;447.00">
+		<node type="graphics::OutputAttachmentInfo" id="out" pos="243.00;520.00">
 			<datas>
 				<data name="format" value="Format_R8G8B8A8_UNORM" />
 				<data name="name" value="color" />
@@ -46,13 +46,35 @@
 				<data name="blend_src_alpha" value="BlendFactorOne" />
 			</datas>
 		</node>
-		<node type="Array(1+void*)" id="outs" pos="380.00;516.00" />
+		<node type="Array(1+void*)" id="outs" pos="546.00;642.00" />
+		<node type="graphics::DescriptorBinding" id="bd0" pos="-401.00;279.00">
+			<datas>
+				<data name="count" value="1" />
+				<data name="name" value="data" />
+				<data name="buffer_udt_name" value="Ubo" />
+			</datas>
+		</node>
+		<node type="Array(1+void*)" id="bds" pos="-139.00;292.00" />
+		<node type="graphics::Descriptorset" id="ds" pos="38.00;558.00" />
+		<node type="graphics::Buffer" id="ubo" pos="-376.00;619.00">
+			<datas>
+				<data name="size" value="4" />
+				<data name="usage" value="BufferUsageUniform" />
+				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
+			</datas>
+		</node>
+		<node type="graphics::BufferDescriptorWrite" id="ds_wrt" pos="-72.00;691.00">
+			<datas>
+				<data name="count" value="1" />
+			</datas>
+		</node>
 	</nodes>
 	<links>
 		<link out="rt_dst.out" in="rts.1" />
 		<link out="rts.v" in="sp.color_targets" />
 		<link out="sp.out" in="sps.1" />
 		<link out="sps.v" in="rnf.passes" />
+		<link out="bds.v" in="dsl.bindings" />
 		<link out="dsl.out" in="dsls.1" />
 		<link out="dsls.v" in="pll.descriptorlayouts" />
 		<link out="pll.out" in="shv.pll" />
@@ -64,9 +86,16 @@
 		<link out="pll.out" in="pl.pll" />
 		<link out="rnf.rp" in="pl.renderpass" />
 		<link out="outs.v" in="pl.outputs" />
-		<link out="rnf.rp" in="make_cmd.renderpass" />
-		<link out="rnf.fbs" in="make_cmd.framebuffers" />
-		<link out="pl.out" in="make_cmd.pipeline" />
+		<link out="rnf.rp" in="make_cmd.rp" />
+		<link out="rnf.fbs" in="make_cmd.fbs" />
+		<link out="pl.out" in="make_cmd.pl" />
+		<link out="ds.out" in="make_cmd.ds" />
+		<link out="ds_wrt.out" in="make_cmd.ds_wrt" />
+		<link out="ubo.out" in="make_cmd.ubo" />
 		<link out="out.out" in="outs.1" />
+		<link out="bd0.out" in="bds.1" />
+		<link out="dsl.out" in="ds.dsl" />
+		<link out="ds.out" in="ds_wrt.set" />
+		<link out="ubo.out" in="ds_wrt.v" />
 	</links>
 </BP>

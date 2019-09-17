@@ -197,7 +197,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 	c_tracker->data = &data;
 	parent->add_component(c_tracker);
 
-	for (auto i = 0; i < 4; i++)
+	for (auto i = 0; i < N; i++)
 	{
 		auto e_item = Entity::create();
 		parent->add_child(e_item);
@@ -225,7 +225,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		}
 	}
 
-	for (auto i = 0; i < 4; i++)
+	for (auto i = 0; i < N; i++)
 	{
 		struct Capture
 		{
@@ -236,7 +236,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		capture.i = i;
 		((cEdit*)parent->child(i)->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
-			auto data = *(Vec4c*)capture.input->data();
+			auto data = *(Vec<N, T>*)capture.input->data();
 			data[capture.i] = text[0] ? std::stoi(text) : 0;
 			capture.input->set_data(&data);
 		}, new_mail(&capture));
@@ -985,8 +985,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						((cEventReceiver*)e_btn_back->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 							if (is_mouse_clicked(action, key))
-								destroy_topmost(*(Entity**)c, false);
-						}, new_mail_p(capture.e->entity));
+							{
+								auto editor = *(cBPEditor**)c;
+								destroy_topmost(editor->entity, false);
+								editor->locked = false;
+							}
+						}, new_mail_p(capture.e));
 					}
 
 					auto e_btn_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
@@ -1667,7 +1671,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					auto make_cmd = bp->find_node("make_cmd");
 					if (make_cmd)
 					{
-						make_cmd->find_input("cmdbufs")->set_data_p(&capture.e->rt_cbs);
+						make_cmd->find_input("cbs")->set_data_p(&capture.e->rt_cbs);
 						capture.e->cb_recorded = true;
 					}
 				}

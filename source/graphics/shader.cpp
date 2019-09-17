@@ -333,6 +333,38 @@ namespace flame
 			}
 		};
 
+		struct BufferDescriptorWrite$
+		{
+			AttributeP<void> set$i;
+			AttributeP<void> v$i;
+			AttributeV<uint> binding$i;
+			AttributeV<uint> index$i;
+			AttributeV<uint> count$i;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS BufferDescriptorWrite$()
+			{
+				count$i.v = 1;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (set$i.frame > out$o.frame)
+				{
+					auto d = (Device*)bp_env().graphics_device;
+					if (d && set$i.v && v$i.v)
+					{
+						for (auto i = 0; i < count$i.v; i++)
+							((Descriptorset*)set$i.v)->set_buffer(binding$i.v, index$i.v + i, (Buffer*)v$i.v);
+					}
+					else
+						printf("cannot write buffer descriptor\n");
+					out$o.frame = set$i.frame;
+				}
+			}
+		};
+
 		struct ImageDescriptorWrite$
 		{
 			AttributeP<void> set$i;
@@ -342,18 +374,17 @@ namespace flame
 			AttributeV<uint> index$i;
 			AttributeV<uint> count$i;
 
-			int frame;
+			AttributeP<void> out$o;
 			AttributeP<void> iv$o;
 
-			FLAME_GRAPHICS_EXPORTS ImageDescriptorWrite$() :
-				frame(-1)
+			FLAME_GRAPHICS_EXPORTS ImageDescriptorWrite$()
 			{
 				count$i.v = 1;
 			}
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (set$i.frame > frame)
+				if (set$i.frame > out$o.frame)
 				{
 					if (iv$o.v)
 					{
@@ -377,7 +408,7 @@ namespace flame
 					}
 					else
 						printf("cannot write image descriptor\n");
-					frame = set$i.frame;
+					out$o.frame = set$i.frame;
 					iv$o.frame = set$i.frame;
 				}
 			}
@@ -1077,7 +1108,7 @@ namespace flame
 					for (auto _i : *inputs)
 					{
 						auto i = (VertexInputAttribute*)_i;
-						*ret.p += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
+						*ret.p += "layout (location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
 					}
 				}
 				else
@@ -1085,7 +1116,7 @@ namespace flame
 					for (auto _i : *inputs)
 					{
 						auto i = (StageInOut*)_i;
-						*ret.p += "layout(location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
+						*ret.p += "layout (location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
 					}
 				}
 			}
@@ -1100,11 +1131,11 @@ namespace flame
 						auto o = (OutputAttachmentInfo*)_o;
 						if (o->dual_src)
 						{
-							*ret.p += "layout(location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
-							*ret.p += "layout(location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
+							*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
+							*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
 						}
 						else
-							*ret.p += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
+							*ret.p += "layout (location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
 					}
 				}
 				else
@@ -1112,7 +1143,7 @@ namespace flame
 					for (auto _o : *outputs)
 					{
 						auto o = (StageInOut*)_o;
-						*ret.p += "layout(location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
+						*ret.p += "layout (location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
 					}
 				}
 			}
@@ -1147,13 +1178,13 @@ namespace flame
 								case DescriptorUniformBuffer:
 								{
 									assert(b.buffer_udt);
-									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform " + b.buffer_udt->name() + "\n{\n";
+									*ret.p += "layout (binding = " + std::to_string(j) + ") uniform " + b.buffer_udt->name() + "\n{\n";
 									print_udt(b.buffer_udt, *ret.p);
-									*ret.p += "}" + b.name;
+									*ret.p += "}" + b.name + ";\n";
 								}
 								break;
 								case DescriptorSampledImage:
-									*ret.p += "layout(binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + (b.count > 1 ? ("[" + std::to_string(b.count) + "]") : "") + ";\n";
+									*ret.p += "layout (binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + (b.count > 1 ? ("[" + std::to_string(b.count) + "]") : "") + ";\n";
 									break;
 								default:
 									assert(0); // others are WIP

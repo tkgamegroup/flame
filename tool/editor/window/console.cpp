@@ -101,7 +101,8 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 		e_log->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(init_str);
+		if (!init_str.empty())
+			c_text->set_text(init_str + L"\n");
 		e_log->add_component(c_text);
 	}
 	c_console->c_text_log = (cText*)e_log->find_component(cH("Text"));

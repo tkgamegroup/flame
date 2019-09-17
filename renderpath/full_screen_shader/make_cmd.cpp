@@ -6,7 +6,7 @@ namespace flame
 	struct Ubo$
 	{
 		float time$;
-	}unused1;
+	};
 
 	struct PushconstantT$
 	{
@@ -15,10 +15,14 @@ namespace flame
 
 	struct MakeCmd$
 	{
-		AttributeP<std::vector<void*>> cmdbufs$i;
-		AttributeP<void> renderpass$i;
-		AttributeP<std::vector<void*>> framebuffers$i;
-		AttributeP<void> pipeline$i;
+		AttributeP<std::vector<void*>> cbs$i;
+		AttributeP<void> rp$i;
+		AttributeP<std::vector<void*>> fbs$i;
+		AttributeP<void> pl$i;
+		AttributeP<void> ds$i;
+		AttributeP<void> ds_wrt$i;
+
+		AttributeP<void> ubo$i;
 
 		int frame;
 
@@ -29,20 +33,21 @@ namespace flame
 
 		__declspec(dllexport) void update$()
 		{
-			if (cmdbufs$i.frame > frame || renderpass$i.frame > frame || framebuffers$i.frame > frame || pipeline$i.frame > frame)
+			if (cbs$i.frame > frame || rp$i.frame > frame || fbs$i.frame > frame || pl$i.frame > frame)
 			{
-				if (cmdbufs$i.v && !cmdbufs$i.v->empty() && renderpass$i.v && framebuffers$i.v && !framebuffers$i.v->empty() && pipeline$i.v)
+				if (cbs$i.v && !cbs$i.v->empty() && rp$i.v && fbs$i.v && !fbs$i.v->empty() && pl$i.v)
 				{
-					for (auto i = 0; i < cmdbufs$i.v->size(); i++)
+					for (auto i = 0; i < cbs$i.v->size(); i++)
 					{
-						auto cb = (graphics::Commandbuffer*)(*cmdbufs$i.v)[i];
+						auto cb = (graphics::Commandbuffer*)(*cbs$i.v)[i];
 						cb->begin();
-						auto fb = (graphics::Framebuffer*)(*framebuffers$i.v)[i];
-						cb->begin_renderpass((graphics::Renderpass*)renderpass$i.v, fb, nullptr);
+						auto fb = (graphics::Framebuffer*)(*fbs$i.v)[i];
+						cb->begin_renderpass((graphics::Renderpass*)rp$i.v, fb, nullptr);
 						auto size = Vec2f(fb->image_size);
 						cb->set_viewport(Vec4f(Vec2f(0.f), size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), size));
-						cb->bind_pipeline((graphics::Pipeline*)pipeline$i.v);
+						cb->bind_pipeline((graphics::Pipeline*)pl$i.v);
+						cb->bind_descriptorset((graphics::Descriptorset*)ds$i.v, 0);
 						PushconstantT$ pc;
 						pc.screen_size$ = size;
 						cb->push_constant(nullptr, 0, sizeof(PushconstantT$), &pc);
@@ -53,15 +58,21 @@ namespace flame
 				}
 				else
 				{
-					for (auto i = 0; i < cmdbufs$i.v->size(); i++)
+					for (auto i = 0; i < cbs$i.v->size(); i++)
 					{
-						auto cb = (graphics::Commandbuffer*)(*cmdbufs$i.v)[i];
+						auto cb = (graphics::Commandbuffer*)(*cbs$i.v)[i];
 						cb->begin();
 						cb->end();
 					}
 				}
-				frame = maxN(cmdbufs$i.frame, renderpass$i.frame, framebuffers$i.frame, pipeline$i.frame);
+				frame = maxN(cbs$i.frame, rp$i.frame, fbs$i.frame, pl$i.frame);
 			}
+
+			auto ubo = (graphics::Buffer*)ubo$i.v;
+			ubo->map();
+			Ubo$ data;
+			data.time$ = looper().frame / 60.f;
+			memcpy(ubo->mapped, &data, sizeof(Ubo$));
 		}
 	};
 

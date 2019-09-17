@@ -125,7 +125,7 @@ namespace flame
 			menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
 			assert(menu_button);
 
-			if (init_idx > 0)
+			if (init_idx >= 0)
 				set_index(init_idx);
 
 			auto menu = menu_button->menu;

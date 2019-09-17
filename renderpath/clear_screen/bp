@@ -23,8 +23,8 @@
 		<link out="rts.v" in="sp.color_targets" />
 		<link out="sp.out" in="sps.1" />
 		<link out="sps.v" in="rnf.passes" />
-		<link out="rnf.rp" in="make_cmd.renderpass" />
-		<link out="rnf.fbs" in="make_cmd.framebuffers" />
-		<link out="rnf.cv" in="make_cmd.clearvalues" />
+		<link out="rnf.rp" in="make_cmd.rp" />
+		<link out="rnf.fbs" in="make_cmd.fbs" />
+		<link out="rnf.cv" in="make_cmd.cv" />
 	</links>
 </BP>
