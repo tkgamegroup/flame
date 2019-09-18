@@ -100,26 +100,6 @@ namespace flame
 		return new cTextPrivate(font_atlas);
 	}
 
-	struct cTextA$
-	{
-		uint font_atlas_index$;
-		Vec4c color$;
-		float sdf_scale$;
-
-		FLAME_UNIVERSE_EXPORTS static cText* create()
-		{
-			//font_atlas = nullptr; // TODO
-			//color = src->color$;
-			//sdf_scale = src->sdf_scale$;
-			return nullptr;
-		}
-
-		FLAME_UNIVERSE_EXPORTS static void save(cText* t)
-		{
-
-		}
-	};
-
 	Entity* create_standard_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
 	{
 		auto e_button = Entity::create();
@@ -140,4 +120,58 @@ namespace flame
 
 		return e_button;
 	}
+
+	struct cText$
+	{
+		uint font_atlas_index$;
+		Vec4c color$;
+		float sdf_scale$;
+		bool right_align$;
+		bool auto_width$;
+		bool auto_height$;
+		std::wstring text$;
+
+		FLAME_UNIVERSE_EXPORTS cText$()
+		{
+			font_atlas_index$ = 1;
+			color$ = default_style.text_color_normal;
+			sdf_scale$ = default_style.sdf_scale;
+			right_align$ = false;
+			auto_width$ = true;
+			auto_height$ = true;
+		}
+
+		FLAME_UNIVERSE_EXPORTS ~cText$()
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS cText* create$()
+		{
+			auto c = new cTextPrivate((graphics::FontAtlas*)universe_serialization_get_data("font_atlas" + std::to_string(font_atlas_index$)));
+
+			c->color = color$;
+			c->sdf_scale = sdf_scale$;
+			c->right_align = right_align$;
+			c->auto_width = auto_width$;
+			c->auto_height = auto_height$;
+			c->set_text(text$);
+
+			return c;
+		}
+
+		FLAME_UNIVERSE_EXPORTS void save$(cText* c)
+		{
+			{
+				auto& name = universe_serialization_find_data(c->font_atlas);
+				assert(name.compare(0, 10, "font_atlas") == 0);
+				font_atlas_index$ = std::stoul(name.c_str() + 10);
+			}
+			color$ = c->color;
+			sdf_scale$ = c->sdf_scale;
+			right_align$ = c->right_align;
+			auto_width$ = c->auto_width;
+			auto_height$ = c->auto_height;
+			text$ = c->text();
+		}
+	};
 }

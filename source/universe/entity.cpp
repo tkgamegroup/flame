@@ -345,17 +345,69 @@ namespace flame
 		return new EntityPrivate;
 	}
 
-	Entity* Entity::create_from_file(const std::wstring& filename)
+	Entity* Entity::create_from_file(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(filename);
-		if (!file || file->name() != "node")
+		if (!file || file->name() != "prefab")
 			return nullptr;
+
+
+
 		return nullptr;
 	}
 
-	void Entity::save_to_file(Entity* e, const std::wstring& filename)
+	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* dst, EntityPrivate* src)
 	{
+		auto n = dst->new_node("entity");
+		n->new_attr("name", src->name);
+		n->new_attr("visible", src->visible ? "1" : "0");
 
+		auto n_cs = n->new_node("components");
+		for (auto& c : src->components)
+		{
+			auto n_c = n_cs->new_node(c->type_name);
+
+			auto udt = find_udt(dbs, H((std::string("c") + c->type_name).c_str()));
+			assert(udt);
+			auto dummy = malloc(udt->size());
+			auto module = load_module(L"flame_universe.dll");
+			cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("ctor")->rva()), dummy);
+			cmf(p2f<MF_v_vp>((char*)module + (uint)udt->find_function("save")->rva()), dummy, c.get());
+			for (auto i = 0; i < udt->variable_count(); i++)
+			{
+				auto v = udt->variable(i);
+				auto type = v->type();
+				auto tag = type->tag();
+				auto hash = type->hash();
+				auto p = (char*)dummy + v->offset();
+				if ((tag == TypeTagVariable && (hash == cH("std::basic_string(char)") || hash == cH("std::basic_string(wchar_t)"))) || memcmp(p, v->default_value(), v->size()) != 0)
+				{
+					auto n = n_c->new_node(v->name());
+					auto value = serialize_value(dbs, tag, hash, p, 2);
+					n->new_attr("v", *value.p);
+					delete_mail(value);
+				}
+			}
+			cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("dtor")->rva()), dummy);
+			free_module(module);
+			free(dummy);
+		}
+
+		if (!src->children.empty())
+		{
+			auto n_es = n->new_node("children");
+			for (auto& e : src->children)
+				save_prefab(dbs, n_es, e.get());
+		}
+	}
+
+	void Entity::save_to_file(const std::vector<TypeinfoDatabase*>& dbs, Entity* e, const std::wstring& filename)
+	{
+		auto file = SerializableNode::create("prefab");
+
+		save_prefab(dbs, file, (EntityPrivate*)e);
+
+		SerializableNode::save_to_xml_file(file, filename);
 	}
 
 	void Entity::destroy(Entity* w)
@@ -366,5 +418,34 @@ namespace flame
 	void* component_alloc(uint size)
 	{
 		return malloc(size);
+	}
+
+	
+	static std::map<std::string, void*> serialization_datas;
+
+	void universe_serialization_initialize()
+	{
+		serialization_datas.clear();
+	}
+
+	void universe_serialization_set_data(const std::string& name, void* data)
+	{
+		serialization_datas[name] = data;
+	}
+
+	void* universe_serialization_get_data(const std::string& name)
+	{
+		return serialization_datas[name];
+	}
+
+	const std::string& universe_serialization_find_data(void* data)
+	{
+		for (auto it = serialization_datas.begin(); it != serialization_datas.end(); it++)
+		{
+			if (it->second == data)
+				return it->first;
+		}
+
+		return "";
 	}
 }

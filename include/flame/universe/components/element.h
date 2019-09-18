@@ -23,18 +23,13 @@ namespace flame
 
 	struct cElement : Component
 	{
-		cElement* p_element;
-
 		float x;
 		float y;
 		float scale;
 		float width;
 		float height;
-
 		Vec4f inner_padding; // L T R B
-
 		float alpha;
-
 		bool draw;
 		float background_round_radius;
 		uint background_round_flags;
@@ -42,11 +37,10 @@ namespace flame
 		Vec4c background_color;
 		Vec4c background_frame_color;
 		float background_shadow_thickness;
-
 		bool clip_children;
 
+		cElement* p_element;
 		graphics::Canvas* canvas;
-
 		float global_x;
 		float global_y;
 		float global_scale;

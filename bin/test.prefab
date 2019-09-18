@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<prefab>
+	<entity name="" visible="1">
+		<components>
+			<Element>
+				<x v="50.00" />
+				<y v="50.00" />
+				<width v="400.00" />
+				<height v="400.00" />
+				<background_color v="255;0;0;255" />
+			</Element>
+		</components>
+		<children>
+			<entity name="" visible="1">
+				<components>
+					<Element>
+						<x v="50.00" />
+						<y v="50.00" />
+						<width v="300.00" />
+						<height v="300.00" />
+						<background_color v="255;255;0;255" />
+					</Element>
+				</components>
+				<children>
+					<entity name="" visible="1">
+						<components>
+							<Element>
+								<x v="12.00" />
+								<y v="8.00" />
+								<width v="66.00" />
+								<height v="14.00" />
+							</Element>
+							<Text>
+								<color v="0;0;0;255" />
+								<text v="Hello World!" />
+							</Text>
+						</components>
+					</entity>
+				</children>
+			</entity>
+		</children>
+	</entity>
+</prefab>

@@ -7,18 +7,13 @@ namespace flame
 	{
 		cElementPrivate(graphics::Canvas* _canvas)
 		{
-			p_element = nullptr;
-
 			x = 0.f;
 			y = 0.f;
 			scale = 1.f;
 			width = 0.f;
 			height = 0.f;
-
 			inner_padding = Vec4f(0.f);
-
 			alpha = 1.f;
-
 			draw = true;
 			background_round_radius = 0.f;
 			background_round_flags = SideNW | SideNE | SideSE | SideSW;
@@ -26,11 +21,10 @@ namespace flame
 			background_color = Vec4c(0);
 			background_frame_color = Vec4c(255);
 			background_shadow_thickness = 0.f;
-
 			clip_children = false;
 
+			p_element = nullptr;
 			canvas = _canvas;
-
 			global_x = 0.f;
 			global_y = 0.f;
 			global_scale = 0.f;
@@ -171,4 +165,88 @@ namespace flame
 	{
 		return new cElementPrivate(canvas);
 	}
+
+	struct cElement$
+	{
+		float x$;
+		float y$;
+		float scale$;
+		float width$;
+		float height$;
+		Vec4f inner_padding$;
+		float alpha$;
+		bool draw$;
+		float background_round_radius$;
+		uint background_round_flags$m;
+		float background_frame_thickness$;
+		Vec4c background_color$;
+		Vec4c background_frame_color$;
+		float background_shadow_thickness$;
+		bool clip_children$;
+
+		FLAME_UNIVERSE_EXPORTS cElement$()
+		{
+			x$ = 0.f;
+			y$ = 0.f;
+			scale$ = 1.f;
+			width$ = 0.f;
+			height$ = 0.f;
+			inner_padding$ = Vec4f(0.f);
+			alpha$ = 1.f;
+			draw$ = true;
+			background_round_radius$ = 0.f;
+			background_round_flags$m = SideNW | SideNE | SideSE | SideSW;
+			background_frame_thickness$ = 0.f;
+			background_color$ = Vec4c(0);
+			background_frame_color$ = Vec4c(255);
+			background_shadow_thickness$ = 0.f;
+			clip_children$ = false;
+		}
+
+		FLAME_UNIVERSE_EXPORTS ~cElement$()
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS cElement* create$()
+		{
+			auto c = new cElementPrivate(nullptr);
+
+			c->x = x$;
+			c->y = y$;
+			c->scale = scale$;
+			c->width = width$;
+			c->height = height$;
+			c->inner_padding = inner_padding$;
+			c->alpha = alpha$;
+			c->draw = draw$;
+			c->background_round_radius = background_round_radius$;
+			c->background_round_flags = background_round_flags$m;
+			c->background_frame_thickness = background_frame_thickness$;
+			c->background_color = background_color$;
+			c->background_frame_color = background_frame_color$;
+			c->background_shadow_thickness = background_shadow_thickness$;
+			c->clip_children = clip_children$;
+
+			return c;
+		}
+
+		FLAME_UNIVERSE_EXPORTS void save$(cElement* c)
+		{
+			x$ = c->x;
+			y$ = c->y;
+			scale$ = c->scale;
+			width$ = c->width;
+			height$ = c->height;
+			inner_padding$ = c->inner_padding;
+			alpha$ = c->alpha;
+			draw$ = c->draw;
+			background_round_radius$ = c->background_round_radius;
+			background_round_flags$m = c->background_round_flags;
+			background_frame_thickness$ = c->background_frame_thickness;
+			background_color$ = c->background_color;
+			background_frame_color$ = c->background_frame_color;
+			background_shadow_thickness$ = c->background_shadow_thickness;
+			clip_children$ = c->clip_children;
+		}
+	};
 }

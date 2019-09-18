@@ -32,7 +32,6 @@ namespace flame
 
 		void* dummy; // represents the object
 
-		void* ctor_addr;
 		void* dtor_addr;
 		void* update_addr;
 
@@ -198,7 +197,7 @@ namespace flame
 		dummy = malloc(size);
 		memset(dummy, 0, size);
 
-		ctor_addr = nullptr;
+		void* ctor_addr = nullptr;
 		{
 			auto f = udt->find_function("ctor");
 			if (f)
@@ -213,7 +212,7 @@ namespace flame
 		{
 			auto f = udt->find_function("dtor");
 			if (f)
-					dtor_addr = (char*)module + (uint)f->rva();
+				dtor_addr = (char*)module + (uint)f->rva();
 		}
 		
 		update_addr = nullptr;

@@ -5,6 +5,8 @@
 
 namespace flame
 {
+	struct TypeinfoDatabase;
+
 	struct Component;
 
 	struct Entity
@@ -46,8 +48,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void update();
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
-		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(const std::wstring& filename);
-		FLAME_UNIVERSE_EXPORTS static void save_to_file(Entity* e, const std::wstring& filename);
+		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
+		FLAME_UNIVERSE_EXPORTS static void save_to_file(const std::vector<TypeinfoDatabase*>& dbs, Entity* e, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};
 
@@ -60,4 +62,9 @@ namespace flame
 		new (c) T;
 		return c;
 	}
+
+	FLAME_UNIVERSE_EXPORTS void universe_serialization_initialize();
+	FLAME_UNIVERSE_EXPORTS void universe_serialization_set_data(const std::string& name, void* data);
+	FLAME_UNIVERSE_EXPORTS void* universe_serialization_get_data(const std::string& name);
+	FLAME_UNIVERSE_EXPORTS const std::string& universe_serialization_find_data(void* data);
 }

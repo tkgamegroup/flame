@@ -188,8 +188,7 @@ int main(int argc, char** args)
 	auto e_button = create_standard_button(app.font_atlas_pixel, 1.f, L"Click Me!");
 	e_layout_left->add_child(e_button);
 	{
-		auto c_event_receiver = (cEventReceiver*)e_button->find_component(cH("EventReceiver"));
-		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		((cEventReceiver*)e_button->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			if (is_mouse_clicked(action, key))
 			{
 				auto thiz = *(App**)c;
@@ -304,7 +303,6 @@ int main(int argc, char** args)
 			c_element->width = 200.f;
 			c_element->height = 100.f;
 			c_element->inner_padding = Vec4f(4.f);
-			c_element->background_frame_color = Vec4c(255);
 			c_element->background_frame_thickness = 2.f;
 			c_element->clip_children = true;
 		}
@@ -475,7 +473,6 @@ int main(int argc, char** args)
 	{
 		auto c_element = cElement::create();
 		c_element->inner_padding = Vec4f(4.f);
-		c_element->background_frame_color = Vec4c(255);
 		c_element->background_frame_thickness = 2.f;
 		e_tree->add_component(c_element);
 
