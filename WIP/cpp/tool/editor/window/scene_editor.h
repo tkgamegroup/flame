@@ -26,16 +26,6 @@ struct SceneEditor : flame::ui::Window
 	std::shared_ptr<flame::Texture> move_image;
 	std::shared_ptr<flame::Texture> rotate_image;
 	std::shared_ptr<flame::Texture> scale_image;
-
-	SceneEditor(flame::Scene *_scene);
-	~SceneEditor();
-	void on_file_menu();
-	void on_menu_bar();
-	void on_toolbar();
-	virtual void on_show() override;
-	void save(flame::XMLNode *);
-
-	void on_delete();
 };
 
 extern SceneEditor *scene_editor;

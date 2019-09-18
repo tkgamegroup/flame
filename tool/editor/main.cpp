@@ -54,6 +54,8 @@ void App::create()
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();
 
+	universe_serialization_set_data("font_atlas1", app.font_atlas_pixel);
+
 	root = Entity::create();
 	{
 		c_element_root = cElement::create(canvas);

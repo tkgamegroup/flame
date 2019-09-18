@@ -1517,6 +1517,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto e_page = get_docker_page_model()->copy();
 	{
 		auto c_layout = cLayout::create();
+		c_layout->type = LayoutVertical;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);
@@ -1526,25 +1527,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto c_editor = new_component<cBPEditor>();
 	e_page->add_component(c_editor);
 
-	auto e_main = Entity::create();
-	e_page->add_child(e_main);
-	{
-		e_main->add_component(cElement::create());
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
-		e_main->add_component(c_aligner);
-
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-		e_main->add_component(c_layout);
-	}
-
 	auto e_menubar = create_standard_menubar();
-	e_main->add_child(e_menubar);
+	e_page->add_child(e_menubar);
 	{
 		auto e_menu = create_standard_menu();
 		{
@@ -1645,7 +1629,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 
 	auto e_btn_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
-	e_main->add_child(e_btn_run);
+	e_page->add_child(e_btn_run);
 	{
 		auto c_event_receiver = (cEventReceiver*)e_btn_run->find_component(cH("EventReceiver"));
 		struct Capture
@@ -1686,7 +1670,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 
 	auto e_clipper = Entity::create();
-	e_main->add_child(e_clipper);
+	e_page->add_child(e_clipper);
 	{
 		auto c_element = cElement::create();
 		c_element->clip_children = true;

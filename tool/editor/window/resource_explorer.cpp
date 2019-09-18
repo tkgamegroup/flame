@@ -13,6 +13,7 @@
 #include "../app.h"
 #include "resource_explorer.h"
 #include "blueprint_editor.h"
+#include "scene_editor.h"
 
 struct cResourceExplorer : Component
 {
@@ -21,6 +22,7 @@ struct cResourceExplorer : Component
 	std::wstring selected_filename;
 	Entity* dir_menu;
 	Entity* bp_menu;
+	Entity* pf_menu;
 
 	cResourceExplorer() :
 		Component("ResourceExplorer")
@@ -77,9 +79,13 @@ void create_directory_tree_node(cResourceExplorer* explorer, const std::filesyst
 				if (is_mouse_down(action, key, true) && key == Mouse_Right)
 				{
 					capture.e->selected_filename = capture.fn;
-					auto fn = std::filesystem::path(capture.fn).filename().wstring();
+					auto path = std::filesystem::path(capture.fn);
+					auto fn = path.filename().wstring();
+					auto ext = path.extension().wstring();
 					if (fn == L"bp")
 						popup_menu(capture.e->bp_menu, capture.e->root, pos);
+					else if (ext == L".prefab")
+						popup_menu(capture.e->pf_menu, capture.e->root, pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -144,6 +150,20 @@ void open_resource_explorer(const Vec2f& pos)
 				}
 			}, new_mail_p(c_explorer));
 		}
+
+		c_explorer->pf_menu = create_standard_menu();
+		{
+			auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
+			c_explorer->pf_menu->add_child(mi_open);
+			((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto c_explorer = *(cResourceExplorer**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					destroy_topmost(c_explorer->root);
+					open_scene_editor(c_explorer->selected_filename, Vec2f(450.f, 20.f));
+				}
+			}, new_mail_p(c_explorer));
+		}
 	}
 	e_page->add_component(c_explorer);
 	e_docker->child(1)->add_child(e_page);
@@ -169,7 +189,7 @@ void open_resource_explorer(const Vec2f& pos)
 		e_tree->add_component(cTree::create());
 	}
 
-	create_directory_tree_node(c_explorer, L"../renderpath", e_tree);
+	create_directory_tree_node(c_explorer, L"", e_tree);
 
 	e_page->add_child(wrap_standard_scrollbar(e_tree, ScrollbarVertical, true, 1.f));
 }
