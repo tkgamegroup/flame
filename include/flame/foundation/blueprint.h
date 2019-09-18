@@ -46,9 +46,9 @@ namespace flame
 				Output
 			};
 
-			Type type;
+			FLAME_FOUNDATION_EXPORTS Type type() const;
 			FLAME_FOUNDATION_EXPORTS Node* node() const;
-			VariableInfo* variable_info;
+			FLAME_FOUNDATION_EXPORTS VariableInfo* vi() const;
 
 			FLAME_FOUNDATION_EXPORTS int frame() const;
 			FLAME_FOUNDATION_EXPORTS void set_frame(int frame);
@@ -84,7 +84,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
 			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
-			UdtInfo* udt;
+			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
 			Vec2f pos;
 
 			FLAME_FOUNDATION_EXPORTS int input_count() const;
@@ -106,7 +106,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void add_dependency(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void remove_dependency(const std::wstring& filename);
 
-		TypeinfoDatabase* typeinfodatabase;
+		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;

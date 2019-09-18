@@ -60,6 +60,7 @@ namespace flame
 	};
 	typedef void(Dummy::*MF_v_v)();
 	typedef void(Dummy::* MF_v_vp)(void*);
+	typedef void*(Dummy::* MF_vp_v)();
 
 	template<class F>
 	F p2f(void* p) // void pointer to function

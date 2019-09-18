@@ -317,32 +317,49 @@ namespace flame
 		((EntityPrivate*)this)->update();
 	}
 
-	//static void serialize(EntityPrivate* src, SerializableNode* dst)
-	//{
-	//	dst->new_attr("name", src->name);
-	//	dst->new_attr("visible", std::to_string((int)src->visible));
-	//	auto n_components = dst->new_node("components");
-	//	for (auto& c : src->components)
-	//	{
-	//		std::string type_name = c->type_name;
-	//		auto udt = find_udt(H((type_name + "A").c_str()));
-	//		if (udt)
-	//		{
-	//			auto create_func = udt->find_function("create");
-	//			if (create_func)
-	//				int cut = 1;
-	//		}
-	//	}
-	//}
-
-	//static void unserialize(EntityPrivate* dst, SerializableNode* src)
-	//{
-
-	//}
-
 	Entity* Entity::create()
 	{
 		return new EntityPrivate;
+	}
+
+	static Entity* load_prefab(const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* src)
+	{
+		auto e = Entity::create();
+		e->set_name(src->find_attr("name")->value());
+
+		auto n_cs = src->find_node("components");
+		if (n_cs)
+		{
+			for (auto i_c = 0; i_c < n_cs->node_count(); i_c++)
+			{
+				auto n_c = n_cs->node(i_c);
+
+				auto udt = find_udt(dbs, H((std::string("c") + n_c->name()).c_str()));
+				assert(udt);
+				auto dummy = malloc(udt->size());
+				auto module = load_module(L"flame_universe.dll");
+				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("ctor")->rva()), dummy);
+				for (auto i = 0; i < n_c->node_count(); i++)
+				{
+					auto n = n_c->node(i);
+
+					auto v = udt->find_variable(n->name());
+					auto type = v->type();
+					unserialize_value(dbs, type->tag(), type->hash(), n->find_attr("v")->value(), (char*)dummy + v->offset());
+				}
+				auto c = cmf(p2f<MF_vp_v>((char*)module + (uint)udt->find_function("create")->rva()), dummy);
+				e->add_component((Component*)c);
+			}
+		}
+
+		auto n_es = src->find_node("children");
+		if (n_es)
+		{
+			for (auto i_e = 0; i_e < n_es->node_count(); i_e++)
+				e->add_child(load_prefab(dbs, n_es->node(i_e)));
+		}
+
+		return e;
 	}
 
 	Entity* Entity::create_from_file(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
@@ -351,9 +368,7 @@ namespace flame
 		if (!file || file->name() != "prefab")
 			return nullptr;
 
-
-
-		return nullptr;
+		return load_prefab(dbs, file->node(0));
 	}
 
 	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* dst, EntityPrivate* src)
@@ -362,35 +377,38 @@ namespace flame
 		n->new_attr("name", src->name);
 		n->new_attr("visible", src->visible ? "1" : "0");
 
-		auto n_cs = n->new_node("components");
-		for (auto& c : src->components)
+		if (!src->components.empty())
 		{
-			auto n_c = n_cs->new_node(c->type_name);
-
-			auto udt = find_udt(dbs, H((std::string("c") + c->type_name).c_str()));
-			assert(udt);
-			auto dummy = malloc(udt->size());
-			auto module = load_module(L"flame_universe.dll");
-			cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("ctor")->rva()), dummy);
-			cmf(p2f<MF_v_vp>((char*)module + (uint)udt->find_function("save")->rva()), dummy, c.get());
-			for (auto i = 0; i < udt->variable_count(); i++)
+			auto n_cs = n->new_node("components");
+			for (auto& c : src->components)
 			{
-				auto v = udt->variable(i);
-				auto type = v->type();
-				auto tag = type->tag();
-				auto hash = type->hash();
-				auto p = (char*)dummy + v->offset();
-				if ((tag == TypeTagVariable && (hash == cH("std::basic_string(char)") || hash == cH("std::basic_string(wchar_t)"))) || memcmp(p, v->default_value(), v->size()) != 0)
+				auto n_c = n_cs->new_node(c->type_name);
+
+				auto udt = find_udt(dbs, H((std::string("c") + c->type_name).c_str()));
+				assert(udt);
+				auto dummy = malloc(udt->size());
+				auto module = load_module(L"flame_universe.dll");
+				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("ctor")->rva()), dummy);
+				cmf(p2f<MF_v_vp>((char*)module + (uint)udt->find_function("save")->rva()), dummy, c.get());
+				for (auto i = 0; i < udt->variable_count(); i++)
 				{
-					auto n = n_c->new_node(v->name());
-					auto value = serialize_value(dbs, tag, hash, p, 2);
-					n->new_attr("v", *value.p);
-					delete_mail(value);
+					auto v = udt->variable(i);
+					auto type = v->type();
+					auto tag = type->tag();
+					auto hash = type->hash();
+					auto p = (char*)dummy + v->offset();
+					if ((tag == TypeTagVariable && (hash == cH("std::basic_string(char)") || hash == cH("std::basic_string(wchar_t)"))) || memcmp(p, v->default_value(), v->size()) != 0)
+					{
+						auto n = n_c->new_node(v->name());
+						auto value = serialize_value(dbs, tag, hash, p, 2);
+						n->new_attr("v", *value.p);
+						delete_mail(value);
+					}
 				}
+				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("dtor")->rva()), dummy);
+				free_module(module);
+				free(dummy);
 			}
-			cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("dtor")->rva()), dummy);
-			free_module(module);
-			free(dummy);
 		}
 
 		if (!src->children.empty())
@@ -420,7 +438,6 @@ namespace flame
 		return malloc(size);
 	}
 
-	
 	static std::map<std::string, void*> serialization_datas;
 
 	void universe_serialization_initialize()

@@ -322,7 +322,7 @@ struct cBPEditor : Component
 		dbs.clear();
 		for (auto i = 0; i < bp->dependency_count(); i++)
 			dbs.push_back(bp->dependency_typeinfodatabase(i));
-		dbs.push_back(bp->typeinfodatabase);
+		dbs.push_back(bp->db());
 
 		e_base->remove_all_children();
 		for (auto i = 0; i < bp->node_count(); i++)
@@ -425,7 +425,7 @@ struct cBPEditor : Component
 							{
 								destroy_topmost(capture.e->entity, false);
 								auto name = w2s(capture.t->text());
-								auto db = capture.e->bp->typeinfodatabase;
+								auto db = capture.e->bp->db();
 								if (db->find_udt(H(name.c_str())))
 									capture.e->add_node(name, "");
 								else
@@ -524,11 +524,11 @@ struct cBPEditor : Component
 			auto src = bp->node(i);
 			auto& name = src->id();
 
-			auto str = "\t" + name + " [label = \"" + name + "|" + src->udt->name() + "|{{";
+			auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->name() + "|{{";
 			for (auto j = 0; j < src->input_count(); j++)
 			{
 				auto input = src->input(j);
-				auto& name = input->variable_info->name();
+				auto& name = input->vi()->name();
 				str += "<" + name + ">" + name;
 				if (j != src->input_count() - 1)
 					str += "|";
@@ -537,7 +537,7 @@ struct cBPEditor : Component
 			for (auto j = 0; j < src->output_count(); j++)
 			{
 				auto output = src->output(j);
-				auto& name = output->variable_info->name();
+				auto& name = output->vi()->name();
 				str += "<" + name + ">" + name;
 				if (j != src->output_count() - 1)
 					str += "|";
@@ -758,7 +758,7 @@ struct cBPSlot : Component
 		element = (cElement*)entity->find_component(cH("Element"));
 		event_receiver = (cEventReceiver*)entity->find_component(cH("EventReceiver"));
 
-		if (s->type == BP::Slot::Input)
+		if (s->type() == BP::Slot::Input)
 		{
 			event_receiver->drag_hash = cH("input_slot");
 			event_receiver->set_acceptable_drops({ cH("output_slot") });
@@ -775,7 +775,7 @@ struct cBPSlot : Component
 			if (action == DragStart)
 			{
 				thiz->editor->dragging_slot = thiz->s;
-				if (thiz->s->type == BP::Slot::Input)
+				if (thiz->s->type() == BP::Slot::Input)
 					thiz->s->link_to(nullptr);
 			}
 			else if (action == DragEnd)
@@ -783,7 +783,7 @@ struct cBPSlot : Component
 			else if (action == Dropped)
 			{
 				auto oth = ((cBPSlot*)er->entity->find_component(cH("BPSlot")))->s;
-				if (thiz->s->type == BP::Slot::Input)
+				if (thiz->s->type() == BP::Slot::Input)
 					thiz->s->link_to(oth);
 				else
 					oth->link_to(thiz->s);
@@ -874,7 +874,7 @@ void cBP::update()
 		auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
 
 		std::vector<Vec2f> points;
-		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type == BP::Slot::Output ? 50.f : -50.f, 0.f), p2, p2);
+		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? 50.f : -50.f, 0.f), p2, p2);
 		element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
 	}
 }
@@ -935,13 +935,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_type->add_component(cElement::create());
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->set_text(s2w(n->udt->name()));
+			c_text->set_text(s2w(n->udt()->name()));
 			c_text->color = Vec4c(50, 50, 50, 255);
 			c_text->sdf_scale = 0.5f;
 			e_text_type->add_component(c_text);
 		}
 
-		if (n->udt->name() == "graphics::Shader")
+		if (n->udt()->name() == "graphics::Shader")
 		{
 			auto e_btn_edit = create_standard_button(app.font_atlas_sdf, 0.5f, L"Edit Shader");
 			e_node->add_child(e_btn_edit);
@@ -1244,7 +1244,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 						auto c_text = cText::create(app.font_atlas_sdf);
 						c_text->sdf_scale = 0.6f;
-						c_text->set_text(s2w(input->variable_info->name()));
+						c_text->set_text(s2w(input->vi()->name()));
 						e_text->add_component(c_text);
 					}
 
@@ -1261,7 +1261,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_data->add_component(c_layout);
 					}
 
-					auto type = input->variable_info->type();
+					auto type = input->vi()->type();
 					switch (type->tag())
 					{
 					case TypeTagAttributeES:
@@ -1466,7 +1466,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 						auto c_text = cText::create(app.font_atlas_sdf);
 						c_text->sdf_scale = 0.6f;
-						c_text->set_text(s2w(output->variable_info->name()));
+						c_text->set_text(s2w(output->vi()->name()));
 						e_text->add_component(c_text);
 					}
 
@@ -1746,7 +1746,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto i = bp->find_input(address.c_str());
 			if (i)
 			{
-				auto v = i->variable_info;
+				auto v = i->vi();
 				auto type = v->type();
 				auto value_before = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
 				auto data = new char[v->size()];
@@ -1832,7 +1832,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto n = bp->node(i);
-					console->print(L"id:" + s2w(n->id()) + L" type:" + s2w(n->udt->name()));
+					console->print(L"id:" + s2w(n->id()) + L" type:" + s2w(n->udt()->name()));
 				}
 			}
 			else if (tokens[1] == L"node")
@@ -1844,7 +1844,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
-						auto v = input->variable_info;
+						auto v = input->vi();
 						auto type = v->type();
 						console->print(s2w(v->name()));
 						Mail<std::string> link_address;
@@ -1860,7 +1860,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
-						auto v = output->variable_info;
+						auto v = output->vi();
 						auto type = v->type();
 						console->print(s2w(v->name()));
 						auto str = serialize_value(dbs, type->tag(), type->hash(), output->data(), 2);

@@ -246,6 +246,8 @@ int main(int argc, char** args)
 					auto e_scene = *(Entity**)c;
 
 					e_scene->remove_all_children();
+					if (std::filesystem::exists(L"test.prefab"))
+						e_scene->add_child(Entity::create_from_file(app.dbs, L"test.prefab"));
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));

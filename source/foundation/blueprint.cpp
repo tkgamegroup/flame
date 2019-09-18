@@ -11,8 +11,10 @@ namespace flame
 
 	struct SlotPrivate : BP::Slot
 	{
+		Type type;
 		NodePrivate* node;
 		void* raw_data;
+		VariableInfo* vi;
 
 		std::vector<SlotPrivate*> links;
 
@@ -29,6 +31,7 @@ namespace flame
 	{
 		BPPrivate *bp;
 		std::string id;
+		UdtInfo* udt;
 
 		void* dummy; // represents the object
 
@@ -65,6 +68,7 @@ namespace flame
 
 		std::vector<Dependency> dependencies;
 		void* module;
+		TypeinfoDatabase* db;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
@@ -93,8 +97,8 @@ namespace flame
 		node(_node)
 	{
 		type = _type;
-		variable_info = _variable_info;
-		raw_data = (char*)node->dummy + variable_info->offset();
+		vi = _variable_info;
+		raw_data = (char*)node->dummy + vi->offset();
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -111,7 +115,7 @@ namespace flame
 	void SlotPrivate::set_data(const void* d)
 	{
 		set_frame(looper().frame);
-		auto type = variable_info->type();
+		auto type = vi->type();
 		if (type->tag() == TypeTagAttributeV)
 		{
 			switch (type->hash())
@@ -124,7 +128,7 @@ namespace flame
 				return;
 			}
 		}
-		memcpy((char*)raw_data + sizeof(uint), d, variable_info->size() - sizeof(int));
+		memcpy((char*)raw_data + sizeof(uint), d, vi->size() - sizeof(int));
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -143,8 +147,8 @@ namespace flame
 
 		if (target)
 		{
-			auto in_type = variable_info->type();
-			auto out_type = target->variable_info->type();
+			auto in_type = vi->type();
+			auto out_type = target->vi->type();
 			auto in_tag = in_type->tag();
 			auto out_tag = out_type->tag();
 			auto in_hash = in_type->hash();
@@ -181,7 +185,7 @@ namespace flame
 	Mail<std::string> SlotPrivate::get_address() const
 	{
 		auto ret = new_mail<std::string>();
-		(*ret.p) = node->id + "." + variable_info->name();
+		(*ret.p) = node->id + "." + vi->name();
 		return ret;
 	}
 
@@ -283,7 +287,7 @@ namespace flame
 	{
 		for (auto& input : inputs)
 		{
-			if (name == input->variable_info->name())
+			if (name == input->vi->name())
 				return input.get();
 		}
 		return nullptr;
@@ -293,7 +297,7 @@ namespace flame
 	{
 		for (auto& output : outputs)
 		{
-			if (name == output->variable_info->name())
+			if (name == output->vi->name())
 				return output.get();
 		}
 		return nullptr;
@@ -320,11 +324,11 @@ namespace flame
 	{
 		for (auto& input : inputs)
 		{
-			auto v = input->variable_info;
+			auto v = input->vi;
 			auto out = input->links[0];
 			if (out)
 			{
-				if (out->variable_info->type()->tag() == TypeTagAttributeV && v->type()->tag() == TypeTagAttributeP)
+				if (out->vi->type()->tag() == TypeTagAttributeV && v->type()->tag() == TypeTagAttributeP)
 				{
 					memcpy(input->raw_data, out->raw_data, sizeof(int));
 					auto p = (char*)out->raw_data + sizeof(int);
@@ -351,7 +355,7 @@ namespace flame
 			TypeinfoDatabase::destroy(d.db);
 		}
 		free_module(module);
-		TypeinfoDatabase::destroy(typeinfodatabase);
+		TypeinfoDatabase::destroy(db);
 
 		for (auto& n : nodes) // since module has been removed, dtor is not valid
 			n->dtor_addr = nullptr;
@@ -424,7 +428,7 @@ namespace flame
 			}
 			if (!udt)
 			{
-				udt = typeinfodatabase->find_udt(hash);
+				udt = db->find_udt(hash);
 				if (udt)
 					m = module;
 			}
@@ -528,7 +532,7 @@ namespace flame
 		_bp_env.dbs.clear();
 		for (auto& d : dependencies)
 			_bp_env.dbs.push_back(d.db);
-		_bp_env.dbs.push_back(typeinfodatabase);
+		_bp_env.dbs.push_back(db);
 
 		for (auto &n : update_list)
 			n->update();
@@ -538,9 +542,19 @@ namespace flame
 		_bp_env.dbs.clear();
 	}
 
+	BP::Slot::Type BP::Slot::type() const
+	{
+		return ((SlotPrivate*)this)->type;
+	}
+
 	BP::Node* BP::Slot::node() const
 	{
 		return ((SlotPrivate*)this)->node;
+	}
+
+	VariableInfo* BP::Slot::vi() const
+	{
+		return ((SlotPrivate*)this)->vi;
 	}
 
 	int BP::Slot::frame() const
@@ -598,6 +612,11 @@ namespace flame
 		((NodePrivate*)this)->id = id;
 	}
 
+	UdtInfo* BP::Node::udt() const
+	{
+		return ((NodePrivate*)this)->udt;
+	}
+
 	int BP::Node::input_count() const
 	{
 		return ((NodePrivate*)this)->inputs.size();
@@ -651,6 +670,11 @@ namespace flame
 	void BP::remove_dependency(const std::wstring& filename)
 	{
 		((BPPrivate*)this)->remove_dependency(filename);
+	}
+
+	TypeinfoDatabase* BP::db() const
+	{
+		return ((BPPrivate*)this)->db;
 	}
 
 	uint BP::node_count() const
@@ -934,8 +958,8 @@ namespace flame
 		for (auto& d : bp->dependencies)
 			dbs.push_back(d.db);
 		bp->module = load_module(ppath_str + L"/build/debug/bp.dll");
-		bp->typeinfodatabase = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
-		dbs.push_back(bp->typeinfodatabase);
+		bp->db = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
+		dbs.push_back(bp->db);
 
 		for (auto& n_d : node_descs)
 		{
@@ -944,7 +968,7 @@ namespace flame
 			for (auto& d_d : n_d.datas)
 			{
 				auto input = n->find_input(d_d.name);
-				auto v = input->variable_info;
+				auto v = input->vi;
 				auto type = v->type();
 				if (v->default_value())
 					unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->data());
@@ -987,7 +1011,7 @@ namespace flame
 		std::vector< TypeinfoDatabase*> dbs;
 		for (auto& d : bp->dependencies)
 			dbs.push_back(d.db);
-		dbs.push_back(bp->typeinfodatabase);
+		dbs.push_back(bp->db);
 
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)
@@ -1002,7 +1026,7 @@ namespace flame
 			{
 				if (input->links[0])
 					continue;
-				auto v = input->variable_info;
+				auto v = input->vi;
 				auto type = v->type();
 				if (v->default_value() && memcmp((char*)input->raw_data + sizeof(int), (char*)v->default_value() + sizeof(int), v->size() - sizeof(int)) != 0)
 				{
