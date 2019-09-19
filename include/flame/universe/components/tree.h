@@ -74,7 +74,12 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS void* add_selected_changed_listener(void (*listener)(void* c, Entity* e), const Mail<>& capture);
+
+		FLAME_UNIVERSE_EXPORTS void remove_selected_changed_listener(void* ret_by_add);
+
+		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
+
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cTree* create();

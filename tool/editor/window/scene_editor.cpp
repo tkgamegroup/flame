@@ -6,26 +6,42 @@
 
 #include "../app.h"
 #include "scene_editor.h"
+#include "hierarchy.h"
+#include "inspector.h"
 
-struct cSceneEditor : Component
+struct cSceneEditorPrivate : cSceneEditor
 {
 	std::wstring filename;
-	Entity* prefab;
 	std::vector<TypeinfoDatabase*> dbs;
 
-	Entity* e_scene;
-
-	cSceneEditor() :
-		Component("SceneEditor")
+	cSceneEditorPrivate()
 	{
 		prefab = nullptr;
+
+		hierarchy_tab = nullptr;
+		inspector = nullptr;
+
+		selected = nullptr;
+
 		dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_foundation.typeinfo"));
 		dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_graphics.typeinfo"));
 		dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_universe.typeinfo"));
 	}
 
-	~cSceneEditor()
+	~cSceneEditorPrivate()
 	{
+		if (hierarchy_tab || inspector)
+		{
+			looper().add_delay_event([](void* c) {
+				auto thiz = *(cSceneEditorPrivate**)c;
+
+				if (thiz->hierarchy_tab)
+					thiz->hierarchy_tab->take_away(true);
+				if (thiz->inspector)
+					thiz->inspector->tab->take_away(true);
+			}, new_mail_p(this));
+		}
+
 		for (auto db : dbs)
 			TypeinfoDatabase::destroy(db);
 	}
@@ -38,11 +54,19 @@ struct cSceneEditor : Component
 		prefab = Entity::create_from_file(dbs, filename);
 		e_scene->add_child(prefab);
 	}
-
-	virtual void update() override
-	{
-	}
 };
+
+void cSceneEditor::on_selected_changed(Entity* e)
+{
+	auto update_inspector = selected != e;
+	selected = e;
+	if (inspector && update_inspector)
+		inspector->on_selected_changed();
+}
+
+void cSceneEditor::update()
+{
+}
 
 void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 {
@@ -71,7 +95,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	}
 	e_docker->child(1)->add_child(e_page);
 
-	auto c_editor = new_component<cSceneEditor>();
+	auto c_editor = new_component<cSceneEditorPrivate>();
 	e_page->add_component(c_editor);
 
 	auto e_scene = Entity::create();
@@ -89,4 +113,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 
 	c_editor->e_scene = e_scene;
 	c_editor->load(filename);
+
+	open_hierachy(c_editor, Vec2f(20.f));
+	open_inspector(c_editor, Vec2f(1480, 20.f));
 }

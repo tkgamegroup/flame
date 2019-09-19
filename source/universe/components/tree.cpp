@@ -57,7 +57,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cTreeLeafPrivate**)c;
-					thiz->tree->selected = thiz->entity;
+					thiz->tree->set_selected(thiz->entity);
 				}
 			}, new_mail_p(this));
 		}
@@ -167,7 +167,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cTreeNodePrivate**)c;
-					thiz->tree->selected = thiz->entity;
+					thiz->tree->set_selected(thiz->entity);
 				}
 			}, new_mail_p(this));
 
@@ -219,10 +219,40 @@ namespace flame
 
 	struct cTreePrivate : cTree
 	{
+		std::vector<std::unique_ptr<Closure<void(void* c, Entity * selected)>>> selected_changed_listeners;
 	};
 
-	void cTree::start()
+	void* cTree::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
 	{
+		auto c = new Closure<void(void* c, Entity * selected)>;
+		c->function = listener;
+		c->capture = capture;
+		((cTreePrivate*)this)->selected_changed_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cTree::remove_selected_changed_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cTreePrivate*)this)->selected_changed_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
+	}
+
+	void cTree::set_selected(Entity* e, bool trigger_changed)
+	{
+		selected = e;
+		if (trigger_changed)
+		{
+			auto& listeners = ((cTreePrivate*)this)->selected_changed_listeners;
+			for (auto& l : listeners)
+				l->function(l->capture.p, selected);
+		}
 	}
 
 	void cTree::update()

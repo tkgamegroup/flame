@@ -374,7 +374,7 @@ namespace flame
 	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* dst, EntityPrivate* src)
 	{
 		auto n = dst->new_node("entity");
-		n->new_attr("name", src->name);
+		n->new_attr("name", src->name.empty() ? "unnamed" : src->name);
 		n->new_attr("visible", src->visible ? "1" : "0");
 
 		if (!src->components.empty())

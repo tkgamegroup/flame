@@ -53,7 +53,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void remove_selected_changed_listener(void* ret_by_add);
 
-		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e);
+		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
 
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;

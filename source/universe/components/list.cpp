@@ -153,12 +153,15 @@ namespace flame
 		}
 	}
 
-	void cList::set_selected(Entity* e)
+	void cList::set_selected(Entity* e, bool trigger_changed)
 	{
 		selected = e;
-		auto& listeners = ((cListPrivate*)this)->selected_changed_listeners;
-		for (auto& l : listeners)
-			l->function(l->capture.p, selected);
+		if (trigger_changed)
+		{
+			auto& listeners = ((cListPrivate*)this)->selected_changed_listeners;
+			for (auto& l : listeners)
+				l->function(l->capture.p, selected);
+		}
 	}
 
 	void cList::update()
