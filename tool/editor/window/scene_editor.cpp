@@ -56,6 +56,11 @@ struct cSceneEditorPrivate : cSceneEditor
 	}
 };
 
+const std::vector<TypeinfoDatabase*> cSceneEditor::dbs()
+{
+	return ((cSceneEditorPrivate*)this)->dbs;
+}
+
 void cSceneEditor::on_selected_changed(Entity* e)
 {
 	auto update_inspector = selected != e;

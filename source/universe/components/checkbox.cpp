@@ -113,7 +113,7 @@ namespace flame
 		}
 	}
 
-	Entity* create_standard_checkbox(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, bool checked)
+	Entity* create_standard_checkbox(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
 	{
 		auto e_checkbox = Entity::create();
 		{
@@ -124,18 +124,19 @@ namespace flame
 			c_element->draw = false;
 			e_checkbox->add_component(c_element);
 
-			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale = sdf_scale;
-			c_text->set_text(text);
-			e_checkbox->add_component(c_text);
+			if (!text.empty())
+			{
+				auto c_text = cText::create(font_atlas);
+				c_text->sdf_scale = sdf_scale;
+				c_text->set_text(text);
+				e_checkbox->add_component(c_text);
+			}
 
 			e_checkbox->add_component(cEventReceiver::create());
 
 			e_checkbox->add_component(cStyleBackgroundColor::create(default_style.checkbox_color_normal, default_style.checkbox_color_hovering, default_style.checkbox_color_active));
 
-			auto c_checkbox = cCheckbox::create();
-			c_checkbox->checked = checked;
-			e_checkbox->add_component(c_checkbox);
+			e_checkbox->add_component(cCheckbox::create());
 		}
 
 		return e_checkbox;

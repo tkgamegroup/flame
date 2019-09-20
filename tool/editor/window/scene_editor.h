@@ -21,6 +21,8 @@ struct cSceneEditor : Component
 	{
 	}
 
+	const std::vector<TypeinfoDatabase*> dbs();
+
 	void on_selected_changed(Entity* e);
 
 	virtual void update() override;

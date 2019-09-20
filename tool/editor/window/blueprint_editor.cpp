@@ -1267,10 +1267,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					case TypeTagAttributeES:
 					{
 						auto info = find_enum(dbs, type->hash());
-						std::vector<std::wstring> items;
-						for (auto k = 0; k < info->item_count(); k++)
-							items.push_back(s2w(info->item(k)->name()));
-						auto e_combobox = create_standard_combobox(120.f, app.font_atlas_sdf, 0.5f, app.root, items);
+						auto e_combobox = create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.5f);
 						e_data->add_child(e_combobox);
 
 						struct Capture
@@ -1300,7 +1297,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						for (auto k = 0; k < info->item_count(); k++)
 						{
 							auto item = info->item(k);
-							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, s2w(item->name()), (v & item->value()) != 0);
+							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, s2w(item->name()));
 							e_data->add_child(e_checkbox);
 
 							struct Capture
@@ -1332,7 +1329,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						{
 						case cH("bool"):
 						{
-							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, L"", (*(int*)input->data()) != 0);
+							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, L"");
 							e_data->add_child(e_checkbox);
 
 							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {

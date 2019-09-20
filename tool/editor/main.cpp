@@ -122,6 +122,15 @@ void App::run()
 
 App app;
 
+Entity* create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale)
+{
+	std::vector<std::wstring> items;
+	for (auto k = 0; k < info->item_count(); k++)
+		items.push_back(s2w(info->item(k)->name()));
+
+	return create_standard_combobox(120.f, app.font_atlas_sdf, 0.5f, app.root, items);
+}
+
 int main(int argc, char **args)
 {
 	app.create();

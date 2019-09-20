@@ -1,4 +1,5 @@
 #include <flame/universe/components/element.h>
+#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/tree.h>
@@ -126,6 +127,14 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 			auto editor = *(cSceneEditor**)c;
 			editor->on_selected_changed(e ? ((cHierarchyItem*)e->find_component(cH("HierarchyItem")))->e : nullptr);
 		}, new_mail_p(editor));
+
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto tree = *(cTree**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				tree->set_selected(nullptr);
+		}, new_mail_p(c_tree));
+		e_tree->add_component(c_event_receiver);
 	}
 
 	create_tree_node(editor->prefab, e_tree);

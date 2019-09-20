@@ -334,7 +334,7 @@ namespace flame
 			{
 				auto n_c = n_cs->node(i_c);
 
-				auto udt = find_udt(dbs, H((std::string("c") + n_c->name()).c_str()));
+				auto udt = find_udt(dbs, H(("c" + n_c->name()).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");

@@ -49,3 +49,6 @@ struct App
 };
 
 extern App app;
+
+Entity* create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale);
+
