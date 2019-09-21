@@ -338,7 +338,11 @@ namespace flame
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");
-				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("ctor")->rva()), dummy);
+				{
+					auto f = udt->find_function("ctor");
+					if (f && f->parameter_count() == 0)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
 				for (auto i = 0; i < n_c->node_count(); i++)
 				{
 					auto n = n_c->node(i);
@@ -347,9 +351,18 @@ namespace flame
 					auto type = v->type();
 					unserialize_value(dbs, type->tag(), type->hash(), n->find_attr("v")->value(), (char*)dummy + v->offset());
 				}
-				auto c = cmf(p2f<MF_vp_v>((char*)module + (uint)udt->find_function("create")->rva()), dummy);
+				void* c;
+				{
+					auto f = udt->find_function("create");
+					assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
+					c = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
+				}
 				e->add_component((Component*)c);
-				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("dtor")->rva()), dummy);
+				{
+					auto f = udt->find_function("dtor");
+					if (f)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
 				free_module(module);
 				free(dummy);
 			}
@@ -391,8 +404,16 @@ namespace flame
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");
-				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("ctor")->rva()), dummy);
-				cmf(p2f<MF_v_vp>((char*)module + (uint)udt->find_function("save")->rva()), dummy, c.get());
+				{
+					auto f = udt->find_function("ctor");
+					if (f && f->parameter_count() == 0)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
+				{
+					auto f = udt->find_function("save");
+					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")));
+					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), dummy, c.get());
+				}
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
@@ -408,7 +429,11 @@ namespace flame
 						delete_mail(value);
 					}
 				}
-				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("dtor")->rva()), dummy);
+				{
+					auto f = udt->find_function("dtor");
+					if (f)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
 				free_module(module);
 				free(dummy);
 			}

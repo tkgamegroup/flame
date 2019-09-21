@@ -205,7 +205,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		((cEdit*)parent->child(i)->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			auto data = *(Vec<N, T>*)capture.input->data();
-			data[capture.i] = text[0] ? std::stoi(text) : 0;
+			data[capture.i] = text[0] ? sto<T>(text) : 0;
 			capture.input->set_data(&data);
 		}, new_mail(&capture));
 	}
@@ -1244,7 +1244,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						}capture;
 						capture.input = input;
 						capture.e = info;
-						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->add_changed_listener([](void* c, uint idx) {
+						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->add_changed_listener([](void* c, int idx) {
 							auto& capture = *(Capture*)c;
 							auto v = capture.e->item(idx)->value();
 							capture.input->set_data(&v);

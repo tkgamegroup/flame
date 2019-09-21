@@ -506,6 +506,11 @@ namespace flame
 
 	struct TypeInfo
 	{
+		bool equal(TypeTag$ t, uint h) const
+		{
+			return t == tag() && h == hash();
+		}
+
 		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const; // type name archive
 		FLAME_FOUNDATION_EXPORTS uint hash() const;
@@ -515,6 +520,7 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& decoration() const;
 		FLAME_FOUNDATION_EXPORTS uint offset() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;

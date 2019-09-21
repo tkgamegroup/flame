@@ -203,11 +203,7 @@ namespace flame
 			clip_children$ = false;
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~cElement$()
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS cElement* create$()
+		FLAME_UNIVERSE_EXPORTS Component* create$()
 		{
 			auto c = new cElementPrivate(nullptr);
 
@@ -230,8 +226,10 @@ namespace flame
 			return c;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void save$(cElement* c)
+		FLAME_UNIVERSE_EXPORTS void save$(Component* _c)
 		{
+			auto c = (cElement*)_c;
+
 			x$ = c->x;
 			y$ = c->y;
 			scale$ = c->scale;
@@ -247,6 +245,18 @@ namespace flame
 			background_frame_color$ = c->background_frame_color;
 			background_shadow_thickness$ = c->background_shadow_thickness;
 			clip_children$ = c->clip_children;
+		}
+
+		FLAME_UNIVERSE_EXPORTS void data_changed$(Component* _c, uint name_hash)
+		{
+			auto c = (cElement*)_c;
+
+			switch (name_hash)
+			{
+			case cH("x"):
+				c->x = x$;
+				break;
+			}
 		}
 	};
 }

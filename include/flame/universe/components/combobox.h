@@ -54,7 +54,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void* add_changed_listener(void (*listener)(void* c, uint idx), const Mail<>& capture);
+		FLAME_UNIVERSE_EXPORTS void* add_changed_listener(void (*listener)(void* c, int idx), const Mail<>& capture);
 
 		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
 

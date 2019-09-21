@@ -100,7 +100,7 @@ namespace flame
 	{
 		int init_idx;
 
-		std::vector<std::unique_ptr<Closure<void(void* c, uint idx)>>> changed_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c, int idx)>>> changed_listeners;
 
 		cComboboxPrivate()
 		{
@@ -134,9 +134,9 @@ namespace flame
 		}
 	};
 
-	void* cCombobox::add_changed_listener(void (*listener)(void* c, uint idx), const Mail<>& capture)
+	void* cCombobox::add_changed_listener(void (*listener)(void* c, int idx), const Mail<>& capture)
 	{
-		auto c = new Closure<void(void* c, uint idx)>;
+		auto c = new Closure<void(void* c, int idx)>;
 		c->function = listener;
 		c->capture = capture;
 		((cComboboxPrivate*)this)->changed_listeners.emplace_back(c);

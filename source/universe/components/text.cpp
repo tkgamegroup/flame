@@ -178,7 +178,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS cText* create$()
+		FLAME_UNIVERSE_EXPORTS Component* create$()
 		{
 			auto c = new cTextPrivate((graphics::FontAtlas*)universe_serialization_get_data("font_atlas" + std::to_string(font_atlas_index$)));
 
@@ -192,8 +192,10 @@ namespace flame
 			return c;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void save$(cText* c)
+		FLAME_UNIVERSE_EXPORTS void save$(Component* _c)
 		{
+			auto c = (cText*)_c;
+
 			{
 				auto& name = universe_serialization_find_data(c->font_atlas);
 				assert(name.compare(0, 10, "font_atlas") == 0);
@@ -205,6 +207,14 @@ namespace flame
 			auto_width$ = c->auto_width;
 			auto_height$ = c->auto_height;
 			text$ = c->text();
+		}
+
+		FLAME_UNIVERSE_EXPORTS void data_changed$(Component* c, uint name_hash)
+		{
+			switch (name_hash)
+			{
+
+			}
 		}
 	};
 }

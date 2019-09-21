@@ -590,6 +590,7 @@ namespace flame
 	{
 		TypeInfoPrivate type;
 		std::string name;
+		uint name_hash;
 		std::string decoration;
 		uint offset, size;
 		void* default_value;
@@ -608,6 +609,11 @@ namespace flame
 	const std::string& VariableInfo::name() const
 	{
 		return ((VariableInfoPrivate*)this)->name;
+	}
+
+	uint VariableInfo::name_hash() const
+	{
+		return ((VariableInfoPrivate*)this)->name_hash;
 	}
 
 	uint VariableInfo::offset() const
@@ -900,6 +906,7 @@ namespace flame
 		auto v = new VariableInfoPrivate;
 		v->type.set(tag, type_name);
 		v->name = name;
+		v->name_hash = H(name.c_str());
 		v->decoration = decoration;
 		v->offset = offset;
 		v->size = size;

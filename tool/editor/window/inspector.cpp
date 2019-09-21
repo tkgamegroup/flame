@@ -69,8 +69,10 @@ void create_vec_edit(Entity* parent)
 
 struct cComponentDealer : Component
 {
+	Component* component;
 	void* dummy;
-	void* dtor;
+	void* dtor_addr;
+	void* data_changed_addr;
 
 	cComponentDealer() :
 		Component("ComponentDealer")
@@ -79,8 +81,8 @@ struct cComponentDealer : Component
 
 	~cComponentDealer()
 	{
-		if (dtor)
-			cmf(p2f<MF_v_v>(dtor), dummy);
+		if (dtor_addr)
+			cmf(p2f<MF_v_v>(dtor_addr), dummy);
 		free(dummy);
 	}
 };
@@ -162,19 +164,29 @@ struct cInspectorPrivate : cInspector
 					auto udt = find_udt(dbs, H((std::string("c") + component->type_name).c_str()));
 
 					auto c_dealer = new_component<cComponentDealer>();
+					c_dealer->component = component;
 					c_dealer->dummy = malloc(udt->size());
 					{
 						auto f = udt->find_function("ctor");
 						if (f && f->parameter_count() == 0)
 							cmf(p2f<MF_v_v>((char*)thiz->module + (uint)f->rva()), c_dealer->dummy);
 					}
-					c_dealer->dtor = nullptr;
+					c_dealer->dtor_addr = nullptr;
 					{
 						auto f = udt->find_function("dtor");
 						if (f)
-							c_dealer->dtor = (char*)thiz->module + (uint)f->rva();
+							c_dealer->dtor_addr = (char*)thiz->module + (uint)f->rva();
 					}
-					cmf(p2f<MF_v_vp>((char*)thiz->module + (uint)udt->find_function("save")->rva()), c_dealer->dummy, component);
+					{
+						auto f = udt->find_function("save");
+						assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")));
+						cmf(p2f<MF_v_vp>((char*)thiz->module + (uint)f->rva()), c_dealer->dummy, component);
+					}
+					{
+						auto f = udt->find_function("data_changed");
+						assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("uint")));
+						c_dealer->data_changed_addr = (char*)thiz->module + (uint)f->rva();
+					}
 					e_component->add_component(c_dealer);
 
 					auto e_name = Entity::create();
@@ -224,7 +236,8 @@ struct cInspectorPrivate : cInspector
 							create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
 							int idx;
 							info->find_item(*(int*)pdata, &idx);
-							((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->set_index(idx, false);
+							auto combobox = (cCombobox*)e_data->child(0)->find_component(cH("Combobox"));
+							combobox->set_index(idx, false);
 						}
 							break;
 						case TypeTagEnumMulti:
@@ -284,8 +297,23 @@ struct cInspectorPrivate : cInspector
 									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, uint>*)pdata)[k]));
 								break;
 							case cH("float"):
+							{
 								create_edit<float>(e_data);
-								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(float*)pdata));
+								auto edit = e_data->child(0);
+								((cText*)edit->find_component(cH("Text")))->set_text(to_wstring(*(float*)pdata));
+								struct Capture
+								{
+									cComponentDealer* d;
+									VariableInfo* v;
+								}capture;
+								capture.d = c_dealer;
+								capture.v = v;
+								((cEdit*)edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+									auto& capture = *(Capture*)c;
+									*(float*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<float>(text) : 0;
+									cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+								}, new_mail(&capture));
+							}
 								break;
 							case cH("Vec(2+float)"):
 								create_vec_edit<2, float>(e_data);
