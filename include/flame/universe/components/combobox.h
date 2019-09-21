@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct FontAtlas;
+	}
+
 	struct cElement;
 	struct cText;
 	struct cEventReceiver;

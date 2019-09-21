@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct FontAtlas;
+	}
+
 	struct cElement;
 	struct cEventReceiver;
 	struct cStyleBackgroundColor;
@@ -60,4 +65,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cList* create();
 	};
+
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_list(bool size_fit_parent);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_listitem(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text);
 }

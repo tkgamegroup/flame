@@ -254,46 +254,12 @@ int main(int argc, char** args)
 	}
 
 	{
-		auto e_list = Entity::create();
-		{
-			e_list->add_component(cElement::create());
-
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitParent;
-			c_aligner->height_policy = SizeFitParent;
-			e_list->add_component(c_aligner);
-
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
-			c_layout->item_padding = 4.f;
-			c_layout->width_fit_children = false;
-			c_layout->height_fit_children = false;
-			e_list->add_component(c_layout);
-
-			e_list->add_component(cList::create());
-		}
+		auto e_list = create_standard_list(true);
 
 		for (auto i = 0; i < 10; i++)
 		{
-			auto e_item = Entity::create();
+			auto e_item = create_standard_listitem(app.font_atlas_pixel, 1.f, L"item" + std::to_wstring(i));
 			e_list->add_child(e_item);
-			{
-				e_item->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"item" + std::to_wstring(i));
-				e_item->add_component(c_text);
-
-				e_item->add_component(cEventReceiver::create());
-
-				e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-				e_item->add_component(cListItem::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				e_item->add_component(c_aligner);
-			}
 		}
 
 		auto e_container = wrap_standard_scrollbar(e_list, ScrollbarVertical, false, 1.f);
@@ -468,20 +434,12 @@ int main(int argc, char** args)
 	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, app.root, { L"Apple", L"Boy", L"Cat" });
 	e_layout_right->add_child(e_combobox);
 
-	auto e_tree = Entity::create();
+	auto e_tree = create_standard_tree(false);
 	e_layout_right->add_child(e_tree);
 	{
-		auto c_element = cElement::create();
+		auto c_element = (cElement*)e_tree->find_component(cH("Element"));
 		c_element->inner_padding = Vec4f(4.f);
 		c_element->background_frame_thickness = 2.f;
-		e_tree->add_component(c_element);
-
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		c_layout->item_padding = 4.f;
-		e_tree->add_component(c_layout);
-
-		e_tree->add_component(cTree::create());
 	}
 
 	{

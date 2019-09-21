@@ -4,4 +4,4 @@
 
 using namespace flame;
 
-void open_resource_explorer(const Vec2f& pos);
+void open_resource_explorer(const std::wstring& path, const Vec2f& pos);

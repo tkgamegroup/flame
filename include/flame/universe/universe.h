@@ -35,7 +35,8 @@ namespace flame
 	{
 		LayoutFree,
 		LayoutVertical,
-		LayoutHorizontal
+		LayoutHorizontal,
+		LayoutGrid
 	};
 
 	enum ScrollbarType

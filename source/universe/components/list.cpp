@@ -1,5 +1,9 @@
 #include <flame/universe/default_style.h>
+#include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/text.h>
+#include <flame/universe/components/aligner.h>
+#include <flame/universe/components/layout.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/list.h>
 
@@ -176,5 +180,57 @@ namespace flame
 	cList* cList::create()
 	{
 		return new cListPrivate();
+	}
+
+	Entity* create_standard_list(bool size_fit_parent)
+	{
+		auto e_list = Entity::create();
+		{
+			e_list->add_component(cElement::create());
+
+			if (size_fit_parent)
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
+				e_list->add_component(c_aligner);
+			}
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->item_padding = 4.f;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			e_list->add_component(c_layout);
+
+			e_list->add_component(cList::create());
+		}
+
+		return e_list;
+	}
+
+	Entity* create_standard_listitem(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
+	{
+		auto e_item = Entity::create();
+		{
+			e_item->add_component(cElement::create());
+
+			auto c_text = cText::create(font_atlas);
+			c_text->sdf_scale = sdf_scale;
+			c_text->set_text(text);
+			e_item->add_component(c_text);
+
+			e_item->add_component(cEventReceiver::create());
+
+			e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+
+			e_item->add_component(cListItem::create());
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitParent;
+			e_item->add_component(c_aligner);
+		}
+
+		return e_item;
 	}
 }

@@ -5,6 +5,7 @@
 namespace flame
 {
 	struct Window;
+	struct EnumInfo;
 
 	namespace graphics
 	{

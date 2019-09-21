@@ -81,7 +81,7 @@ void App::create()
 		e_fps->add_component(c_aligner);
 	}
 
-	open_resource_explorer(Vec2f(20.f));
+	open_resource_explorer(L"..", Vec2f(20.f));
 }
 
 void App::run()

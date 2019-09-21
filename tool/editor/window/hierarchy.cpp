@@ -103,26 +103,11 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 	auto c_hierarchy = new_component<cHierarchy>();
 	e_page->add_component(c_hierarchy);
 
-	auto e_tree = Entity::create();
+	auto e_tree = create_standard_tree(true);
 	{
-		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(4.f);
-		e_tree->add_component(c_element);
+		((cElement*)e_tree->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
 
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
-		e_tree->add_component(c_aligner);
-
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		c_layout->item_padding = 4.f;
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-		e_tree->add_component(c_layout);
-
-		auto c_tree = cTree::create();
-		e_tree->add_component(c_tree);
+		auto c_tree = (cTree*)e_tree->find_component(cH("Tree"));
 		c_tree->add_selected_changed_listener([](void* c, Entity* e) {
 			auto editor = *(cSceneEditor**)c;
 			editor->on_selected_changed(e ? ((cHierarchyItem*)e->find_component(cH("HierarchyItem")))->e : nullptr);

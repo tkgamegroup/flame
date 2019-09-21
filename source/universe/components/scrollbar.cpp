@@ -168,7 +168,9 @@ namespace flame
 	{
 		auto e_container = Entity::create();
 		{
-			e_container->add_component(cElement::create());
+			auto c_element = cElement::create();
+			c_element->clip_children = true;
+			e_container->add_component(c_element);
 
 			if (container_fit_parent)
 			{

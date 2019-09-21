@@ -8,6 +8,8 @@
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/menu.h>
+#include <flame/universe/components/list.h>
+#include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
@@ -17,9 +19,13 @@
 
 struct cResourceExplorer : Component
 {
-	Entity* root;
+	std::filesystem::path base_path;
+	std::filesystem::path curr_path;
 
-	std::wstring selected_filename;
+	Entity* address_bar;
+	Entity* list;
+
+	std::filesystem::path selected;
 	Entity* dir_menu;
 	Entity* bp_menu;
 	Entity* pf_menu;
@@ -29,70 +35,165 @@ struct cResourceExplorer : Component
 	{
 	}
 
+	void navigate(const std::filesystem::path& path)
+	{
+		curr_path = path;
+
+		looper().add_delay_event([](void* c) {
+			auto thiz = *(cResourceExplorer**)c;
+			auto& base_path = thiz->base_path;
+			auto& curr_path = thiz->curr_path;
+			auto address_bar = thiz->address_bar;
+			auto list = thiz->list;
+
+			address_bar->remove_all_children();
+
+			std::vector<std::filesystem::path> stems;
+			for (auto p = curr_path; ; p = p.parent_path())
+			{
+				stems.push_back(p);
+				if (p == base_path)
+					break;
+			}
+			std::reverse(stems.begin(), stems.end());
+
+			for (auto& s : stems)
+			{
+				auto e_stem = create_standard_button(app.font_atlas_pixel, 1.f, s.filename().wstring());
+				address_bar->add_child(e_stem);
+				{
+					((cStyleBackgroundColor*)e_stem->find_component(cH("StyleBackgroundColor")))->color_normal.a() = 0;
+
+					struct Capture
+					{
+						cResourceExplorer* e;
+						std::wstring p;
+					}capture;
+					capture.e = thiz;
+					capture.p = s.wstring();
+					((cEventReceiver*)e_stem->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+						auto& capture = *(Capture*)c;
+						if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							capture.e->navigate(capture.p);
+					}, new_mail(&capture));
+				}
+
+				std::vector<std::filesystem::path> sub_dirs;
+				for (std::filesystem::directory_iterator end, it(s); it != end; it++)
+				{
+					if (std::filesystem::is_directory(it->status()))
+						sub_dirs.push_back(it->path());
+				}
+				if (!sub_dirs.empty())
+				{
+					auto e_stem_popup = create_standard_menu();
+					for (auto& p : sub_dirs)
+					{
+						auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, p.filename().wstring());
+						e_stem_popup->add_child(e_item);
+						struct Capture
+						{
+							cResourceExplorer* e;
+							std::wstring p;
+						}capture;
+						capture.e = thiz;
+						capture.p = p.wstring();
+						((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							auto& capture = *(Capture*)c;
+							if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							{
+								destroy_topmost(app.root);
+								capture.e->navigate(capture.p);
+							}
+						}, new_mail(&capture));
+					}
+					auto e_stem_popup_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, Icon_CARET_RIGHT, app.root, e_stem_popup, false, SideS, false, false, true, nullptr);
+					address_bar->add_child(e_stem_popup_btn);
+				}
+			}
+
+			list->remove_all_children();
+			((cList*)list->find_component(cH("List")))->selected = nullptr;
+
+			std::vector<std::filesystem::path> dirs;
+			std::vector<std::filesystem::path> files;
+			for (std::filesystem::directory_iterator end, it(curr_path); it != end; it++)
+			{
+				if (std::filesystem::is_directory(it->status()))
+				{
+					if (it->path().filename().wstring()[0] != L'.')
+						dirs.push_back(it->path());
+				}
+				else
+					files.push_back(it->path());
+			}
+			auto upward_item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" .."));
+			list->add_child(upward_item);
+			((cEventReceiver*)upward_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = *(cResourceExplorer**)c;
+				if (is_mouse_clicked(action, key, true))
+				{
+					if (thiz->curr_path != thiz->base_path)
+						thiz->navigate(thiz->curr_path.parent_path());
+				}
+			}, new_mail_p(thiz));
+			for (auto& p : dirs)
+			{
+				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" ") + p.filename().wstring());
+				list->add_child(item);
+				struct Capture
+				{
+					cResourceExplorer* e;
+					std::filesystem::path p;
+				}capture;
+				capture.e = thiz;
+				capture.p = p;
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto& capture = *(Capture*)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Right)
+					{
+						capture.e->selected = capture.p;
+						popup_menu(capture.e->dir_menu, app.root, pos);
+					}
+					else if (is_mouse_clicked(action, key, true))
+						capture.e->navigate(capture.p);
+				}, new_mail(&capture));
+			}
+			for (auto& p : files)
+			{
+				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FILE_O + std::wstring(L" ") + p.filename().wstring());
+				list->add_child(item);
+				struct Capture
+				{
+					cResourceExplorer* e;
+					std::filesystem::path p;
+				}capture;
+				capture.e = thiz;
+				capture.p = p;
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto& capture = *(Capture*)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Right)
+					{
+						capture.e->selected = capture.p;
+						auto fn = capture.p.filename().wstring();
+						auto ext = capture.p.extension().wstring();
+						if (fn == L"bp")
+							popup_menu(capture.e->bp_menu, app.root, pos);
+						else if (ext == L".prefab")
+							popup_menu(capture.e->pf_menu, app.root, pos);
+					}
+				}, new_mail(&capture));
+			}
+
+		}, new_mail_p(this));
+	}
+
 	virtual void update() override
 	{
 	}
 };
 
-void create_directory_tree_node(cResourceExplorer* explorer, const std::filesystem::path& path, Entity* parent)
-{
-	auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, Icon_FOLDER_O + std::wstring(L" ") + path.filename().wstring());
-	parent->add_child(e_tree_node);
-	{
-		struct Capture
-		{
-			std::wstring fn;
-			cResourceExplorer* e;
-		}capture;
-		capture.fn = path.wstring();
-		capture.e = explorer;
-		((cEventReceiver*)e_tree_node->child(0)->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto& capture = *(Capture*)c;
-			if (is_mouse_down(action, key, true) && key == Mouse_Right)
-			{
-				capture.e->selected_filename = capture.fn;
-			}
-		}, new_mail(&capture));
-	}
-
-	auto e_sub_tree = e_tree_node->child(1);
-	for (std::filesystem::directory_iterator end, it(path); it != end; it++)
-	{
-		if (std::filesystem::is_directory(it->status()))
-		{
-			if (it->path().filename().wstring() != L"build")
-				create_directory_tree_node(explorer, it->path(), e_sub_tree);
-		}
-		else
-		{
-			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, Icon_FILE_O + std::wstring(L" ") + it->path().filename().wstring());
-			e_sub_tree->add_child(e_tree_leaf);
-			struct Capture
-			{
-				std::wstring fn;
-				cResourceExplorer* e;
-			}capture;
-			capture.fn = it->path().wstring();
-			capture.e = explorer;
-			((cEventReceiver*)e_tree_leaf->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto& capture = *(Capture*)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Right)
-				{
-					capture.e->selected_filename = capture.fn;
-					auto path = std::filesystem::path(capture.fn);
-					auto fn = path.filename().wstring();
-					auto ext = path.extension().wstring();
-					if (fn == L"bp")
-						popup_menu(capture.e->bp_menu, capture.e->root, pos);
-					else if (ext == L".prefab")
-						popup_menu(capture.e->pf_menu, capture.e->root, pos);
-				}
-			}, new_mail(&capture));
-		}
-	}
-}
-
-void open_resource_explorer(const Vec2f& pos)
+void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
@@ -111,6 +212,8 @@ void open_resource_explorer(const Vec2f& pos)
 
 	auto e_page = get_docker_page_model()->copy();
 	{
+		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
+
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 4.f;
@@ -120,7 +223,7 @@ void open_resource_explorer(const Vec2f& pos)
 	}
 	auto c_explorer = new_component<cResourceExplorer>();
 	{
-		c_explorer->root = app.root;
+		c_explorer->base_path = path;
 
 		c_explorer->dir_menu = create_standard_menu();
 		{
@@ -135,8 +238,8 @@ void open_resource_explorer(const Vec2f& pos)
 				auto c_explorer = *(cResourceExplorer**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					destroy_topmost(c_explorer->root);
-					open_blueprint_editor(c_explorer->selected_filename, false, Vec2f(450.f, 20.f));
+					destroy_topmost(app.root);
+					open_blueprint_editor(c_explorer->selected, false, Vec2f(450.f, 20.f));
 				}
 			}, new_mail_p(c_explorer));
 			auto mi_open_no_compile = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
@@ -145,8 +248,8 @@ void open_resource_explorer(const Vec2f& pos)
 				auto c_explorer = *(cResourceExplorer**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					destroy_topmost(c_explorer->root);
-					open_blueprint_editor(c_explorer->selected_filename, true, Vec2f(450.f, 20.f));
+					destroy_topmost(app.root);
+					open_blueprint_editor(c_explorer->selected, true, Vec2f(450.f, 20.f));
 				}
 			}, new_mail_p(c_explorer));
 		}
@@ -159,8 +262,8 @@ void open_resource_explorer(const Vec2f& pos)
 				auto c_explorer = *(cResourceExplorer**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					destroy_topmost(c_explorer->root);
-					open_scene_editor(c_explorer->selected_filename, Vec2f(450.f, 20.f));
+					destroy_topmost(app.root);
+					open_scene_editor(c_explorer->selected, Vec2f(450.f, 20.f));
 				}
 			}, new_mail_p(c_explorer));
 		}
@@ -168,28 +271,30 @@ void open_resource_explorer(const Vec2f& pos)
 	e_page->add_component(c_explorer);
 	e_docker->child(1)->add_child(e_page);
 
-	auto e_tree = Entity::create();
+	auto e_address_bar = Entity::create();
+	e_page->add_child(e_address_bar);
 	{
-		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(4.f);
-		e_tree->add_component(c_element);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
-		e_tree->add_component(c_aligner);
+		e_address_bar->add_component(cElement::create());
 
 		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
-		c_layout->item_padding = 4.f;
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-		e_tree->add_component(c_layout);
-
-		e_tree->add_component(cTree::create());
+		c_layout->type = LayoutHorizontal;
+		e_address_bar->add_component(c_layout);
 	}
+	c_explorer->address_bar = e_address_bar;
 
-	create_directory_tree_node(c_explorer, L"", e_tree);
+	auto e_list = create_standard_list(true);
+	{
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto list = *(cList**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				list->selected = nullptr;
+		}, new_mail_p(e_list->find_component(cH("List"))));
+		e_list->add_component(c_event_receiver);
+	}
+	c_explorer->list = e_list;
 
-	e_page->add_child(wrap_standard_scrollbar(e_tree, ScrollbarVertical, true, 1.f));
+	e_page->add_child(wrap_standard_scrollbar(e_list, ScrollbarVertical, true, 1.f));
+
+	c_explorer->navigate(path);
 }

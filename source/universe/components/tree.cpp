@@ -2,10 +2,11 @@
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
+#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/menu.h>
-#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/tree.h>
 
@@ -262,6 +263,33 @@ namespace flame
 	cTree* cTree::create()
 	{
 		return new cTreePrivate;
+	}
+
+	Entity* create_standard_tree(bool size_fit_parent)
+	{
+		auto e_tree = Entity::create();
+		{
+			e_tree->add_component(cElement::create());
+
+			if (size_fit_parent)
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
+				e_tree->add_component(c_aligner);
+			}
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutVertical;
+			c_layout->item_padding = 4.f;
+			c_layout->width_fit_children = false;
+			c_layout->height_fit_children = false;
+			e_tree->add_component(c_layout);
+
+			e_tree->add_component(cTree::create());
+		}
+
+		return e_tree;
 	}
 
 	Entity* create_standard_tree_node(graphics::FontAtlas* font_atlas, const std::wstring& name)

@@ -4,6 +4,7 @@
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/checkbox.h>
+#include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/window.h>
 
@@ -62,6 +63,7 @@ struct cInspectorPrivate : cInspector
 		looper().add_delay_event([](void* c) {
 			auto thiz = *(cInspectorPrivate**)c;
 			auto editor = thiz->editor;
+			auto& dbs = editor->dbs();
 			auto selected = editor->selected;
 
 			auto e_page = thiz->e_page;
@@ -98,25 +100,29 @@ struct cInspectorPrivate : cInspector
 
 				for (auto i = 0; i < selected->component_count(); i++)
 				{
-					auto c = selected->component(i);
+					auto component = selected->component(i);
 
-					auto e_c = Entity::create();
-					e_page->add_child(e_c);
+					auto e_component = Entity::create();
+					e_page->add_child(e_component);
 					{
 						auto c_element = cElement::create();
 						c_element->inner_padding = Vec4f(4.f);
 						c_element->background_frame_thickness = 2.f;
 						c_element->background_frame_color = Vec4f(0, 0, 0, 255);
-						e_c->add_component(c_element);
+						e_component->add_component(c_element);
+
+						auto c_aligner = cAligner::create();
+						c_aligner->width_policy = SizeFitParent;
+						e_component->add_component(c_aligner);
 
 						auto c_layout = cLayout::create();
 						c_layout->type = LayoutVertical;
 						c_layout->item_padding = 2.f;
-						e_c->add_component(c_layout);
+						e_component->add_component(c_layout);
 					}
 
 					auto e_name = Entity::create();
-					e_c->add_child(e_name);
+					e_component->add_child(e_name);
 					{
 						e_name->add_component(cElement::create());
 
@@ -132,7 +138,8 @@ struct cInspectorPrivate : cInspector
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(c->type_name));
+						c_text->color = Vec4c(30, 40, 160, 255);
+						c_text->set_text(s2w(component->type_name));
 						e_text->add_component(c_text);
 					}
 
@@ -146,25 +153,35 @@ struct cInspectorPrivate : cInspector
 						e_close->add_component(c_text);
 					}
 
-					auto udt = find_udt(editor->dbs(), H((std::string("c") + c->type_name).c_str()));
+					auto udt = find_udt(dbs, H((std::string("c") + component->type_name).c_str()));
 					for (auto j = 0; j < udt->variable_count(); j++)
 					{
 						auto v = udt->variable(j);
 						auto t = v->type();
+						auto hash = t->hash();
 
 						auto e_item = thiz->create_data_item(s2w(v->name()));
-						e_c->add_child(e_item);
+						e_component->add_child(e_item);
 						auto e_data = e_item->child(1);
 						switch (t->tag())
 						{
 						case TypeTagEnumSingle:
+						{
+							auto e_combobox = create_enum_combobox(find_enum(dbs, hash), 120.f, app.font_atlas_pixel, 1.f);
+							e_data->add_child(e_combobox);
+						}
 							break;
 						case TypeTagEnumMulti:
 							break;
 						case TypeTagVariable:
-							switch (t->hash())
+							switch (hash)
 							{
-
+							case cH("float"):
+							{
+								auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+								e_data->add_child(e_edit);
+							}
+								break;
 							}
 							break;
 						}
