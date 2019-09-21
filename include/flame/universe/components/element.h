@@ -32,7 +32,7 @@ namespace flame
 		float alpha;
 		bool draw;
 		float background_round_radius;
-		uint background_round_flags;
+		Side$ background_round_flags;
 		float background_frame_thickness;
 		Vec4c background_color;
 		Vec4c background_frame_color;

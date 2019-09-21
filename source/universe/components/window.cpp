@@ -561,7 +561,7 @@ namespace flame
 	{
 		void* drag_and_drop_listener;
 		cDockerTab* drop_tab;
-		Side dock_side;
+		Side$ dock_side;
 
 		cDockerPagesPrivate()
 		{

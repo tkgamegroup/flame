@@ -117,7 +117,7 @@ namespace flame
 		AxisNegZ = 1 << 5
 	};
 
-	enum Side
+	enum Side$
 	{
 		Outside = 0,
 		SideN = 1 << 0,
@@ -138,6 +138,17 @@ namespace flame
 		T v_[N];
 
 		Vec() = default;
+
+		static const char* coord_name(uint idx)
+		{
+			const char* names[] = {
+				"x",
+				"y",
+				"z",
+				"w"
+			};
+			return names[idx];
+		}
 
 		T& x()
 		{
@@ -1580,7 +1591,7 @@ namespace flame
 	}
 
 	template<class T>
-	Side rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
+	Side$ rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
 	{
 		if (p.x() < rect.z() && p.x() > rect.z() - threshold &&
 			p.y() > rect.y() && p.y() < rect.y() + threshold)
@@ -1612,7 +1623,7 @@ namespace flame
 	}
 
 	template<class T>
-	Vec<2, T> side_dir(Side s)
+	Vec<2, T> side_dir(Side$ s)
 	{
 		switch (s)
 		{
@@ -1985,7 +1996,7 @@ namespace flame
 		}
 	}
 
-	inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, float round_radius = 0.f, Side round_flags = Side(SideNW | SideNE | SideSW | SideSE))
+	inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, float round_radius = 0.f, Side$ round_flags = Side$(SideNW | SideNE | SideSW | SideSE))
 	{
 		if (round_radius == 0.f || round_flags == 0)
 		{

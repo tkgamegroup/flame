@@ -1,7 +1,10 @@
 #include <flame/foundation/serialize.h>
+#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
+#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
+#include <flame/universe/components/menu.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
@@ -30,16 +33,17 @@ struct cSceneEditorPrivate : cSceneEditor
 
 	~cSceneEditorPrivate()
 	{
-		if (hierarchy_tab || inspector)
+		if (hierarchy_tab)
 		{
 			looper().add_delay_event([](void* c) {
-				auto thiz = *(cSceneEditorPrivate**)c;
-
-				if (thiz->hierarchy_tab)
-					thiz->hierarchy_tab->take_away(true);
-				if (thiz->inspector)
-					thiz->inspector->tab->take_away(true);
-			}, new_mail_p(this));
+				(*(cDockerTab**)c)->take_away(true);
+			}, new_mail_p(hierarchy_tab));
+		}
+		if (inspector)
+		{
+			looper().add_delay_event([](void* c) {
+				(*(cDockerTab**)c)->take_away(true);
+			}, new_mail_p(inspector->tab));
 		}
 
 		for (auto db : dbs)
@@ -102,6 +106,26 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 
 	auto c_editor = new_component<cSceneEditorPrivate>();
 	e_page->add_component(c_editor);
+
+	auto e_menubar = create_standard_menubar();
+	e_page->add_child(e_menubar);
+	{
+		auto e_menu = create_standard_menu();
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cSceneEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+				}
+			}, new_mail_p(c_editor));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		e_menubar->add_child(e_menu_btn);
+	}
 
 	auto e_scene = Entity::create();
 	e_page->add_child(e_scene);

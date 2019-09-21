@@ -5,6 +5,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
+#include <flame/universe/components/layout.h>
 
 namespace flame
 {
@@ -119,6 +120,38 @@ namespace flame
 		}
 
 		return e_button;
+	}
+
+	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
+	{
+		auto e_layout = Entity::create();
+		{
+			e_layout->add_component(cElement::create());
+
+			auto c_layout = cLayout::create();
+			c_layout->type = LayoutHorizontal;
+			c_layout->item_padding = 4.f;
+			e_layout->add_component(c_layout);
+		}
+
+		if (!before)
+			e_layout->add_child(e);
+
+		auto e_name = Entity::create();
+		e_layout->add_child(e_name);
+		{
+			e_name->add_component(cElement::create());
+
+			auto c_text = cText::create(font_atlas);
+			c_text->sdf_scale = sdf_scale;
+			c_text->set_text(text);
+			e_name->add_component(c_text);
+		}
+
+		if (before)
+			e_layout->add_child(e);
+
+		return e_layout;
 	}
 
 	struct cText$

@@ -16,7 +16,7 @@ namespace flame
 			alpha = 1.f;
 			draw = true;
 			background_round_radius = 0.f;
-			background_round_flags = SideNW | SideNE | SideSE | SideSW;
+			background_round_flags = Side$(SideNW | SideNE | SideSE | SideSW);
 			background_frame_thickness = 0.f;
 			background_color = Vec4c(0);
 			background_frame_color = Vec4c(255);
@@ -94,14 +94,14 @@ namespace flame
 					if (st > 0.f)
 					{
 						std::vector<Vec2f> points;
-						path_rect(points, p - Vec2f(st * 0.5f), s + Vec2f(st), rr, (Side)background_round_flags);
+						path_rect(points, p - Vec2f(st * 0.5f), s + Vec2f(st), rr, (Side$)background_round_flags);
 						points.push_back(points[0]);
 						canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
 					}
 					if (alpha > 0.f)
 					{
 						std::vector<Vec2f> points;
-						path_rect(points, p, s, rr, (Side)background_round_flags);
+						path_rect(points, p, s, rr, (Side$)background_round_flags);
 						if (background_color.w() > 0)
 							canvas->fill(points, alpha_mul(background_color, alpha));
 						auto ft = background_frame_thickness * global_scale;
@@ -177,7 +177,7 @@ namespace flame
 		float alpha$;
 		bool draw$;
 		float background_round_radius$;
-		uint background_round_flags$m;
+		Side$ background_round_flags$m;
 		float background_frame_thickness$;
 		Vec4c background_color$;
 		Vec4c background_frame_color$;
@@ -195,7 +195,7 @@ namespace flame
 			alpha$ = 1.f;
 			draw$ = true;
 			background_round_radius$ = 0.f;
-			background_round_flags$m = SideNW | SideNE | SideSE | SideSW;
+			background_round_flags$m = Side$(SideNW | SideNE | SideSE | SideSW);
 			background_frame_thickness$ = 0.f;
 			background_color$ = Vec4c(0);
 			background_frame_color$ = Vec4c(255);

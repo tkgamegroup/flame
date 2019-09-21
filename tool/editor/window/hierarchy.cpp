@@ -88,7 +88,6 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 
 	auto tab = create_standard_docker_tab(app.font_atlas_pixel, L"Hierarchy", app.root);
 	e_docker->child(0)->add_child(tab);
-	editor->hierarchy_tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
 
 	auto e_page = get_docker_page_model()->copy();
 	{
@@ -102,6 +101,8 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_hierarchy = new_component<cHierarchy>();
 	e_page->add_component(c_hierarchy);
+	c_hierarchy->editor = editor;
+	editor->hierarchy_tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
 
 	auto e_tree = create_standard_tree(true);
 	{

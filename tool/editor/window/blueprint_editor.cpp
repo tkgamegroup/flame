@@ -184,13 +184,6 @@ void create_edit(Entity* parent, BP::Slot* input)
 template<uint N, class T>
 void create_vec_edit(Entity* parent, BP::Slot* input)
 {
-	static const wchar_t* part_names[] = {
-		L"x",
-		L"y",
-		L"z",
-		L"w"
-	};
-
 	auto& data = *(Vec<N, T>*)input->data();
 
 	auto c_tracker = new_component<cSlotDigitalDataTracker<N, T>>();
@@ -198,32 +191,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 	parent->add_component(c_tracker);
 
 	for (auto i = 0; i < N; i++)
-	{
-		auto e_item = Entity::create();
-		parent->add_child(e_item);
-		{
-			e_item->add_component(cElement::create());
-
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutHorizontal;
-			c_layout->item_padding = 4.f;
-			e_item->add_component(c_layout);
-		}
-
-		auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
-		e_item->add_child(e_edit);
-
-		auto e_name = Entity::create();
-		e_item->add_child(e_name);
-		{
-			e_name->add_component(cElement::create());
-
-			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->sdf_scale = 0.5f;
-			c_text->set_text(part_names[i]);
-			e_name->add_component(c_text);
-		}
-	}
+		parent->add_child(wrap_standard_text(create_standard_edit(50.f, app.font_atlas_sdf, 0.5f), false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
 
 	for (auto i = 0; i < N; i++)
 	{
@@ -1267,8 +1235,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					case TypeTagAttributeES:
 					{
 						auto info = find_enum(dbs, type->hash());
-						auto e_combobox = create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.5f);
-						e_data->add_child(e_combobox);
+						create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.5f, e_data);
 
 						struct Capture
 						{
@@ -1277,7 +1244,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						}capture;
 						capture.input = input;
 						capture.e = info;
-						((cCombobox*)e_combobox->find_component(cH("Combobox")))->add_changed_listener([](void* c, uint idx) {
+						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->add_changed_listener([](void* c, uint idx) {
 							auto& capture = *(Capture*)c;
 							auto v = capture.e->item(idx)->value();
 							capture.input->set_data(&v);
@@ -1299,6 +1266,10 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto item = info->item(k);
 							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, s2w(item->name()));
 							e_data->add_child(e_checkbox);
+						}
+						for (auto k = 0; k < info->item_count(); k++)
+						{
+							auto item = info->item(k);
 
 							struct Capture
 							{
@@ -1307,7 +1278,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}capture;
 							capture.input = input;
 							capture.v = item->value();
-							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+							((cCheckbox*)e_data->child(k)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
 								auto v = *(int*)capture.input->data();
 								if (checked)
@@ -1406,7 +1377,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							c_tracker->data = (std::string*)input->data();
 							e_data->add_component(c_tracker);
 						}
-						break;
+							break;
 						case cH("std::basic_string(wchar_t)"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
@@ -1422,7 +1393,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							c_tracker->data = (std::wstring*)input->data();
 							e_data->add_component(c_tracker);
 						}
-						break;
+							break;
 						}
 						break;
 					}

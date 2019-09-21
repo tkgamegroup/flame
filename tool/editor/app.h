@@ -51,5 +51,6 @@ struct App
 
 extern App app;
 
-Entity* create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale);
+void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale, Entity* parent);
+void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scale, Entity* parent);
 

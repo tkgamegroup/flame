@@ -128,6 +128,7 @@ struct cResourceExplorer : Component
 					files.push_back(it->path());
 			}
 			auto upward_item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" .."));
+			((cListItem*)upward_item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
 			list->add_child(upward_item);
 			((cEventReceiver*)upward_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = *(cResourceExplorer**)c;
@@ -140,6 +141,7 @@ struct cResourceExplorer : Component
 			for (auto& p : dirs)
 			{
 				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" ") + p.filename().wstring());
+				((cListItem*)item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
 				list->add_child(item);
 				struct Capture
 				{
@@ -162,6 +164,7 @@ struct cResourceExplorer : Component
 			for (auto& p : files)
 			{
 				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FILE_O + std::wstring(L" ") + p.filename().wstring());
+				((cListItem*)item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
 				list->add_child(item);
 				struct Capture
 				{

@@ -12,7 +12,7 @@ struct cInspector : Component
 
 	cSceneEditor* editor;
 
-	Entity* e_page;
+	Entity* e_layout;
 
 	cInspector() :
 		Component("Inspector")

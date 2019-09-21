@@ -2,24 +2,6 @@ namespace flame
 {
 	void wFileDialog::init(const wchar_t *title, int io, const std::function<void(bool ok, const wchar_t *filename)> &callback, const wchar_t *exts)
 	{
-		w_pathstems() = wMenuBar::create(instance());
-		w_pathstems()->layout_type = LayoutHorizontal;
-		w_content()->add_child(w_pathstems());
-
-		w_list() = wList::create(instance());
-
-		auto upward_item = wListItem::create(instance());
-		upward_item->w_btn()->set_text_and_size(L"..");
-		w_list()->add_child(upward_item);
-
-		upward_item->w_btn()->add_listener(ListenerDoubleClicked, [this]() {
-			std::filesystem::path fs_path(string_storage(0));
-			if (fs_path.root_path() != fs_path)
-				set_path(fs_path.parent_path().generic_wstring().c_str());
-		});
-
-		w_content()->add_child(w_list());
-
 		w_input() = wEdit::create(instance());
 		w_input()->size_policy_hori = SizeFitLayout;
 		w_input()->set_size_by_width(100.f);
@@ -126,9 +108,6 @@ namespace flame
 			};
 		}
 
-		std::vector<wListItem*> dir_list;
-		std::vector<wListItem*> file_list;
-
 		std::vector<std::wstring> exts_sp;
 		auto sp = string_regex_split(std::wstring(string_storage(1)), std::wstring(LR"(\(*(\.\w+)\))"), 1);
 		for (auto &e : sp)
@@ -141,11 +120,6 @@ namespace flame
 
 			if (std::filesystem::is_directory(it->status()))
 			{
-				dir_list.push_back(item);
-
-				item->w_btn()->add_listener(ListenerDoubleClicked, [this, filename]() {
-					set_path((std::wstring(string_storage(0)) + L"/" + filename).c_str());
-				});
 			}
 			else
 			{
@@ -161,22 +135,14 @@ namespace flame
 				if (!found_ext)
 					continue;
 
-				file_list.push_back(item);
-
 				item->w_btn()->add_listener(ListenerClicked, [this, filename]() {
 					w_input()->set_text(filename.c_str());
 				});
-
 				item->w_btn()->add_listener(ListenerDoubleClicked, [this]() {
 					w_ok()->on_clicked();
 				});
 			}
 		}
-
-		for (auto &i : dir_list)
-			w_list()->add_child(i, 0, -1, true);
-		for (auto &i : file_list)
-			w_list()->add_child(i, 0, -1, true);
 	}
 }
 

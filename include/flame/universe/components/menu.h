@@ -9,6 +9,7 @@ namespace flame
 		struct FontAtlas;
 	}
 
+	struct cElement;
 	struct cEventReceiver;
 
 	struct cMenuButton : Component // popup a menu when clik
@@ -19,7 +20,7 @@ namespace flame
 		Entity* root;
 		Entity* menu;
 		bool move_to_open;
-		Side popup_side;
+		Side$ popup_side;
 		bool topmost_penetrable;
 
 		bool opened;
@@ -57,6 +58,6 @@ namespace flame
 
 	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu();
 	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side$ popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text);
 	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menubar();
 }
