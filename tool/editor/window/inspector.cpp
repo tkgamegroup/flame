@@ -4,6 +4,7 @@
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/checkbox.h>
+#include <flame/universe/components/combobox.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
@@ -66,10 +67,32 @@ void create_vec_edit(Entity* parent)
 		parent->add_child(wrap_standard_text(create_standard_edit(50.f, app.font_atlas_sdf, 0.5f), false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
 }
 
+struct cComponentDealer : Component
+{
+	void* dummy;
+	void* dtor;
+
+	cComponentDealer() :
+		Component("ComponentDealer")
+	{
+	}
+
+	~cComponentDealer()
+	{
+		if (dtor)
+			cmf(p2f<MF_v_v>(dtor), dummy);
+		free(dummy);
+	}
+};
+
 struct cInspectorPrivate : cInspector
 {
+	void* module;
+
 	~cInspectorPrivate()
 	{
+		free_module(module);
+
 		editor->inspector = nullptr;
 	}
 
@@ -136,6 +159,24 @@ struct cInspectorPrivate : cInspector
 						e_component->add_component(c_layout);
 					}
 
+					auto udt = find_udt(dbs, H((std::string("c") + component->type_name).c_str()));
+
+					auto c_dealer = new_component<cComponentDealer>();
+					c_dealer->dummy = malloc(udt->size());
+					{
+						auto f = udt->find_function("ctor");
+						if (f && f->parameter_count() == 0)
+							cmf(p2f<MF_v_v>((char*)thiz->module + (uint)f->rva()), c_dealer->dummy);
+					}
+					c_dealer->dtor = nullptr;
+					{
+						auto f = udt->find_function("dtor");
+						if (f)
+							c_dealer->dtor = (char*)thiz->module + (uint)f->rva();
+					}
+					cmf(p2f<MF_v_vp>((char*)thiz->module + (uint)udt->find_function("save")->rva()), c_dealer->dummy, component);
+					e_component->add_component(c_dealer);
+
 					auto e_name = Entity::create();
 					e_component->add_child(e_name);
 					{
@@ -165,12 +206,12 @@ struct cInspectorPrivate : cInspector
 						e_close->add_component(c_aligner);
 					}
 
-					auto udt = find_udt(dbs, H((std::string("c") + component->type_name).c_str()));
 					for (auto j = 0; j < udt->variable_count(); j++)
 					{
 						auto v = udt->variable(j);
 						auto t = v->type();
 						auto hash = t->hash();
+						auto pdata = (char*)c_dealer->dummy + v->offset();
 
 						auto e_item = create_item(s2w(v->name()));
 						e_component->add_child(e_item);
@@ -178,10 +219,21 @@ struct cInspectorPrivate : cInspector
 						switch (t->tag())
 						{
 						case TypeTagEnumSingle:
-							create_enum_combobox(find_enum(dbs, hash), 120.f, app.font_atlas_pixel, 1.f, e_data);
+						{
+							auto info = find_enum(dbs, hash);
+							create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
+							int idx;
+							info->find_item(*(int*)pdata, &idx);
+							((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->set_index(idx, false);
+						}
 							break;
 						case TypeTagEnumMulti:
-							create_enum_checkboxs(find_enum(dbs, hash), app.font_atlas_pixel, 1.f, e_data);
+						{
+							auto info = find_enum(dbs, hash);
+							create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
+							for (auto k = 0; k < info->item_count(); k++)
+								((cCheckbox*)e_data->child(k)->find_component(cH("Checkbox")))->set_checked(*(int*)pdata & info->item(k)->value(), false);
+						}
 							break;
 						case TypeTagVariable:
 							switch (hash)
@@ -190,61 +242,92 @@ struct cInspectorPrivate : cInspector
 							{
 								auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
 								e_data->add_child(e_checkbox);
+								((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->set_checked(*(bool*)pdata, false);
 							}
 								break;
 							case cH("int"):
 								create_edit<int>(e_data);
+								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(int*)pdata));
 								break;
 							case cH("Vec(2+int)"):
 								create_vec_edit<2, int>(e_data);
+								for (auto k = 0; k < 2; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, int>*)pdata)[k]));
 								break;
 							case cH("Vec(3+int)"):
 								create_vec_edit<3, int>(e_data);
+								for (auto k = 0; k < 3; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, int>*)pdata)[k]));
 								break;
 							case cH("Vec(4+int)"):
 								create_vec_edit<4, int>(e_data);
+								for (auto k = 0; k < 4; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, int>*)pdata)[k]));
 								break;
 							case cH("uint"):
 								create_edit<uint>(e_data);
+								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(uint*)pdata));
 								break;
 							case cH("Vec(2+uint)"):
 								create_vec_edit<2, uint>(e_data);
+								for (auto k = 0; k < 2; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, uint>*)pdata)[k]));
 								break;
 							case cH("Vec(3+uint)"):
 								create_vec_edit<3, uint>(e_data);
+								for (auto k = 0; k < 3; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, uint>*)pdata)[k]));
 								break;
 							case cH("Vec(4+uint)"):
 								create_vec_edit<4, uint>(e_data);
+								for (auto k = 0; k < 4; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, uint>*)pdata)[k]));
 								break;
 							case cH("float"):
 								create_edit<float>(e_data);
+								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(float*)pdata));
 								break;
 							case cH("Vec(2+float)"):
 								create_vec_edit<2, float>(e_data);
+								for (auto k = 0; k < 2; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, float>*)pdata)[k]));
 								break;
 							case cH("Vec(3+float)"):
 								create_vec_edit<3, float>(e_data);
+								for (auto k = 0; k < 3; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, float>*)pdata)[k]));
 								break;
 							case cH("Vec(4+float)"):
 								create_vec_edit<4, float>(e_data);
+								for (auto k = 0; k < 4; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, float>*)pdata)[k]));
 								break;
 							case cH("uchar"):
 								create_edit<uchar>(e_data);
+								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(uchar*)pdata));
 								break;
 							case cH("Vec(2+uchar)"):
 								create_vec_edit<2, uchar>(e_data);
+								for (auto k = 0; k < 2; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, uchar>*)pdata)[k]));
 								break;
 							case cH("Vec(3+uchar)"):
 								create_vec_edit<3, uchar>(e_data);
+								for (auto k = 0; k < 3; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, uchar>*)pdata)[k]));
 								break;
 							case cH("Vec(4+uchar)"):
 								create_vec_edit<4, uchar>(e_data);
+								for (auto k = 0; k < 4; k++)
+									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, uchar>*)pdata)[k]));
 								break;
 							case cH("std::basic_string(char)"):
 								e_data->add_child(create_standard_edit(50.f, app.font_atlas_pixel, 1.f));
+								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(s2w(*(std::string*)pdata));
 								break;
 							case cH("std::basic_string(wchar_t)"):
 								e_data->add_child(create_standard_edit(50.f, app.font_atlas_pixel, 1.f));
+								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(*(std::wstring*)pdata);
 								break;
 							}
 							break;
@@ -297,6 +380,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_inspector = new_component<cInspectorPrivate>();
 	e_page->add_component(c_inspector);
+	c_inspector->module = load_module(L"flame_universe.dll");
 	c_inspector->tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
 	c_inspector->editor = editor;
 	editor->inspector = c_inspector;

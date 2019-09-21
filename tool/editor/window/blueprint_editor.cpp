@@ -74,7 +74,7 @@ struct cSlotEnumMultiDataTracker : cSlotDataTracker
 	virtual void update_view() override
 	{
 		for (auto i = 0; i < checkboxs.size(); i++)
-			checkboxs[i]->set_checked((*data & info->item(i)->value()) != 0, !first_time);
+			checkboxs[i]->set_checked(*data & info->item(i)->value(), !first_time);
 
 		first_time = false;
 	}

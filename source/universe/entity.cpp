@@ -349,6 +349,9 @@ namespace flame
 				}
 				auto c = cmf(p2f<MF_vp_v>((char*)module + (uint)udt->find_function("create")->rva()), dummy);
 				e->add_component((Component*)c);
+				cmf(p2f<MF_v_v>((char*)module + (uint)udt->find_function("dtor")->rva()), dummy);
+				free_module(module);
+				free(dummy);
 			}
 		}
 

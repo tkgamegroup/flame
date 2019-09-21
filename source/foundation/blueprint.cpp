@@ -201,15 +201,10 @@ namespace flame
 		dummy = malloc(size);
 		memset(dummy, 0, size);
 
-		void* ctor_addr = nullptr;
 		{
 			auto f = udt->find_function("ctor");
-			if (f)
-			{
-				auto ret_t = f->return_type();
-				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("void") && f->parameter_count() == 0)
-					ctor_addr = (char*)module + (uint)f->rva();
-			}
+			if (f && f->parameter_count() == 0)
+				cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
 		}
 
 		dtor_addr = nullptr;
@@ -230,9 +225,6 @@ namespace flame
 					update_addr = (char*)module + (uint)f->rva();
 			}
 		}
-
-		if (ctor_addr)
-			cmf(p2f<MF_v_v>(ctor_addr), dummy);
 
 		for (auto i = 0; i < udt->variable_count(); i++)
 		{
@@ -279,7 +271,6 @@ namespace flame
 
 		if (dtor_addr)
 			cmf(p2f<MF_v_v>(dtor_addr), dummy);
-
 		free(dummy);
 	}
 

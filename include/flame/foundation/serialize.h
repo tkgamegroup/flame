@@ -86,7 +86,7 @@ namespace flame
 	inline std::wstring to_wstring(float v, int precision = 6)
 	{
 		wchar_t buf[20];
-		swprintf(buf, L"%.*f", v, precision);
+		swprintf(buf, L"%.*f", precision, v);
 		return buf;
 	}
 
