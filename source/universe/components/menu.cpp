@@ -179,9 +179,7 @@ namespace flame
 			c_element->background_color = default_style.window_color;
 			e_menu->add_component(c_element);
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
-			e_menu->add_component(c_layout);
+			e_menu->add_component(cLayout::create(LayoutVertical));
 
 			e_menu->add_component(cMenu::create());
 		}
@@ -248,7 +246,7 @@ namespace flame
 
 			if (arrow_text)
 			{
-				e_menu_btn->add_component(cLayout::create());
+				e_menu_btn->add_component(cLayout::create(LayoutFree));
 
 				auto e_arrow = Entity::create();
 				e_menu_btn->add_child(e_arrow);
@@ -284,8 +282,7 @@ namespace flame
 			c_aligner->width_policy = SizeFitParent;
 			e_menubar->add_component(c_aligner);
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutHorizontal;
+			auto c_layout = cLayout::create(LayoutHorizontal);
 			c_layout->item_padding = 4.f;
 			e_menubar->add_component(c_layout);
 		}

@@ -1,28 +1,3 @@
-#include <flame/global.h>
-#include <flame/string.h>
-#include <flame/filesystem.h>
-#include <flame/engine/graphics/texture.h>
-#include <flame/engine/graphics/material.h>
-#include <flame/engine/entity/model.h>
-#include <flame/engine/entity/scene.h>
-#include <flame/engine/entity/model_instance.h>
-#include <flame/engine/entity/terrain.h>
-#include <flame/engine/ui/window.h>
-#include "../select.h"
-#include "inspector.h"
-
-InspectorWindow *inspector_window = nullptr;
-
-InspectorWindow::InspectorWindow() :
-	Window("Inspector")
-{
-}
-
-InspectorWindow::~InspectorWindow()
-{
-	inspector_window = nullptr;
-}
-
 void InspectorWindow::on_show()
 {
 	switch (selected.type)

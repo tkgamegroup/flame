@@ -344,7 +344,7 @@ struct cBPEditor : Component
 
 					auto t = create_topmost(editor->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
 					{
-						t->add_component(cLayout::create());
+						t->add_component(cLayout::create(LayoutFree));
 					}
 
 					auto e_dialog = Entity::create();
@@ -357,8 +357,7 @@ struct cBPEditor : Component
 						c_aligner->y_align = AlignyMiddle;
 						e_dialog->add_component(c_aligner);
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
+						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->item_padding = 4.f;
 						e_dialog->add_component(c_layout);
 					}
@@ -371,8 +370,7 @@ struct cBPEditor : Component
 					{
 						e_buttons->add_component(cElement::create());
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutHorizontal;
+						auto c_layout = cLayout::create(LayoutHorizontal);
 						c_layout->item_padding = 4.f;
 						e_buttons->add_component(c_layout);
 					}
@@ -857,8 +855,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		e_node->add_component(cEventReceiver::create());
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		e_node->add_component(c_layout);
 
@@ -924,8 +921,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						((cElement*)t->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
+						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->width_fit_children = false;
 						c_layout->height_fit_children = false;
 						t->add_component(c_layout);
@@ -936,8 +932,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						e_buttons->add_component(cElement::create());
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutHorizontal;
+						auto c_layout = cLayout::create(LayoutHorizontal);
 						c_layout->item_padding = 4.f;
 						e_buttons->add_component(c_layout);
 					}
@@ -978,8 +973,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_aligner->height_policy = SizeFitParent;
 						e_main->add_component(c_aligner);
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
+						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->width_fit_children = false;
 						c_layout->height_fit_children = false;
 						e_main->add_component(c_layout);
@@ -1005,8 +999,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							c_aligner->height_policy = SizeFitParent;
 							e_text_view->add_component(c_aligner);
 
-							auto c_layout = cLayout::create();
-							c_layout->type = LayoutVertical;
+							auto c_layout = cLayout::create(LayoutVertical);
 							c_layout->width_fit_children = false;
 							c_layout->height_fit_children = false;
 							e_text_view->add_component(c_layout);
@@ -1067,8 +1060,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							c_aligner->height_policy = SizeFitParent;
 							e_text_view->add_component(c_aligner);
 
-							auto c_layout = cLayout::create();
-							c_layout->type = LayoutVertical;
+							auto c_layout = cLayout::create(LayoutVertical);
 							c_layout->width_fit_children = false;
 							c_layout->height_fit_children = false;
 							e_text_view->add_component(c_layout);
@@ -1136,8 +1128,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			c_aligner->width_policy = SizeGreedy;
 			e_content->add_component(c_aligner);
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutHorizontal;
+			auto c_layout = cLayout::create(LayoutHorizontal);
 			c_layout->item_padding = 16.f;
 			e_content->add_component(c_layout);
 
@@ -1150,9 +1141,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				c_aligner->width_policy = SizeGreedy;
 				e_left->add_component(c_aligner);
 
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutVertical;
-				e_left->add_component(c_layout);
+				e_left->add_component(cLayout::create(LayoutVertical));
 
 				for (auto j = 0; j < n->input_count(); j++)
 				{
@@ -1163,8 +1152,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						e_input->add_component(cElement::create());
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
+						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->item_padding = 2.f;
 						e_input->add_component(c_layout);
 					}
@@ -1174,9 +1162,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						e_title->add_component(cElement::create());
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutHorizontal;
-						e_title->add_component(c_layout);
+						e_title->add_component(cLayout::create(LayoutHorizontal));
 					}
 
 					auto e_slot = Entity::create();
@@ -1217,8 +1203,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_element->inner_padding = Vec4f(app.font_atlas_sdf->pixel_height, 0.f, 0.f, 0.f);
 						e_data->add_component(c_element);
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
+						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->item_padding = 2.f;
 						e_data->add_component(c_layout);
 					}
@@ -1399,9 +1384,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			{
 				e_right->add_component(cElement::create());
 
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutVertical;
-				e_right->add_component(c_layout);
+				e_right->add_component(cLayout::create(LayoutVertical));
 
 				for (auto j = 0; j < n->output_count(); j++)
 				{
@@ -1416,9 +1399,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_aligner->x_align = AlignxRight;
 						e_title->add_component(c_aligner);
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutHorizontal;
-						e_title->add_component(c_layout);
+						e_title->add_component(cLayout::create(LayoutHorizontal));
 					}
 
 					auto e_text = Entity::create();
@@ -1472,14 +1453,13 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 
 	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker);
+	e_container->add_child(e_docker, 0);
 
 	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, L"Blueprint Editor", app.root));
 
 	auto e_page = get_docker_page_model()->copy();
 	{
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);
@@ -1643,10 +1623,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		c_aligner->height_policy = SizeFitParent;
 		e_clipper->add_component(c_aligner);
 
-		auto c_layout = cLayout::create();
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-		e_clipper->add_component(c_layout);
+		e_clipper->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_scene = Entity::create();

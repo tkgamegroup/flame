@@ -45,7 +45,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 	}
 
 	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker);
+	e_container->add_child(e_docker, 0);
 
 	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, L"Console", app.root));
 
@@ -54,8 +54,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 	{
 		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -88,8 +87,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 		c_aligner->height_policy = SizeFitParent;
 		e_log_view->add_component(c_aligner);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_log_view->add_component(c_layout);
@@ -128,8 +126,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 		c_aligner->width_policy = SizeFitParent;
 		e_input->add_component(c_aligner);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutHorizontal;
+		auto c_layout = cLayout::create(LayoutHorizontal);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		e_input->add_component(c_layout);

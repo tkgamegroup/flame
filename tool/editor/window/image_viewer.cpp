@@ -24,7 +24,8 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	}
 
 	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker);
+	e_container->add_child(e_docker, 0);
+
 	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, L"Image Viewer", app.root));
 
 	auto e_page = get_docker_page_model()->copy();
@@ -32,10 +33,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	{
 		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(8.f);
 
-		auto c_layout = cLayout::create();
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-		e_page->add_component(c_layout);
+		e_page->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_image = Entity::create();

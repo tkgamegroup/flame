@@ -12,8 +12,4 @@ struct MaterialShower
 	std::shared_ptr<flame::Texture> normal_height_image;
 
 	flame::Material *m;
-
-	MaterialShower(flame::Material *_m);
-	~MaterialShower();
-	void show();
 };

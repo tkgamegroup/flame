@@ -279,8 +279,7 @@ namespace flame
 				e_tree->add_component(c_aligner);
 			}
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
+			auto c_layout = cLayout::create(LayoutVertical);
 			c_layout->item_padding = 4.f;
 			c_layout->width_fit_children = !size_fit_parent;
 			c_layout->height_fit_children = !size_fit_parent;
@@ -298,8 +297,7 @@ namespace flame
 		{
 			e_tree_node->add_component(cElement::create());
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
+			auto c_layout = cLayout::create(LayoutVertical);
 			c_layout->item_padding = 4.f;
 			e_tree_node->add_component(c_layout);
 
@@ -347,8 +345,7 @@ namespace flame
 			c_element->inner_padding = Vec4f(font_atlas->pixel_height * 0.5f, 0.f, 0.f, 0.f);
 			e_sub_tree->add_component(c_element);
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
+			auto c_layout = cLayout::create(LayoutVertical);
 			c_layout->item_padding = 4.f;
 			e_sub_tree->add_component(c_layout);
 		}

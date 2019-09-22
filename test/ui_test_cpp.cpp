@@ -123,7 +123,7 @@ int main(int argc, char** args)
 		app.c_event_receiver_root = cEventReceiver::create();
 		app.root->add_component(app.c_event_receiver_root);
 
-		app.root->add_component(cLayout::create());
+		app.root->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_fps = Entity::create();
@@ -148,8 +148,7 @@ int main(int argc, char** args)
 		c_element->y = 28.f;
 		e_layout_left->add_component(c_element);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 16.f;
 		e_layout_left->add_component(c_layout);
 	}
@@ -247,8 +246,7 @@ int main(int argc, char** args)
 		c_element->y = 28.f;
 		e_layout_right->add_component(c_element);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 16.f;
 		e_layout_right->add_component(c_layout);
 	}

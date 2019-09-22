@@ -6,14 +6,14 @@ namespace flame
 {
 	struct cLayoutPrivate : cLayout
 	{
-		cLayoutPrivate()
+		cLayoutPrivate(LayoutType$ _type)
 		{
 			element = nullptr;
 
-			type = LayoutFree;
+			type = _type;
 			item_padding = 0.f;
-			width_fit_children = true;
-			height_fit_children = true;
+			width_fit_children = type != LayoutFree;
+			height_fit_children = type != LayoutFree;
 			scroll_offset = Vec2f(0.f);
 
 			content_size = Vec2f(0.f);
@@ -93,13 +93,17 @@ namespace flame
 						break;
 					}
 				}
-				if (width_fit_children)
+				if (width_fit_children && !als.empty())
 				{
-					int cut = 1;
+					auto& al = als[0];
+					auto upifl = al.second ? al.second->using_padding_in_free_layout : false;
+					element->width = al.first->width + (upifl ? element->inner_padding_horizontal() : 0.f);
 				}
-				if (height_fit_children)
+				if (height_fit_children && !als.empty())
 				{
-					int cut = 1;
+					auto& al = als[0];
+					auto upifl = al.second ? al.second->using_padding_in_free_layout : false;
+					element->height = al.first->height + (upifl ? element->inner_padding_vertical() : 0.f);
 				}
 			}
 				break;
@@ -319,9 +323,8 @@ namespace flame
 
 		Component* copy()
 		{
-			auto copy = new cLayoutPrivate();
+			auto copy = new cLayoutPrivate(type);
 
-			copy->type = type;
 			copy->item_padding = item_padding;
 			copy->width_fit_children = width_fit_children;
 			copy->height_fit_children = height_fit_children;
@@ -345,8 +348,8 @@ namespace flame
 		return ((cLayoutPrivate*)this)->copy();
 	}
 
-	cLayout* cLayout::create()
+	cLayout* cLayout::create(LayoutType$ type)
 	{
-		return new cLayoutPrivate();
+		return new cLayoutPrivate(type);
 	}
 }

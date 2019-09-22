@@ -881,7 +881,7 @@ namespace flame
 		list_item->selected_text_color_else = default_style.selected_tab_text_color_else;
 		tab->add_component(list_item);
 
-		tab->add_component(cLayout::create());
+		tab->add_component(cLayout::create(LayoutFree));
 
 		auto e_close = Entity::create();
 		tab->add_child(e_close);
@@ -954,8 +954,7 @@ namespace flame
 			c_aligner->using_padding_in_free_layout = true;
 			docker_model->add_component(c_aligner);
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutVertical;
+			auto c_layout = cLayout::create(LayoutVertical);
 			c_layout->width_fit_children = false;
 			c_layout->height_fit_children = false;
 			docker_model->add_component(c_layout);
@@ -974,9 +973,7 @@ namespace flame
 				c_aligner->width_policy = SizeFitParent;
 				e_tabbar->add_component(c_aligner);
 
-				auto c_layout = cLayout::create();
-				c_layout->type = LayoutHorizontal;
-				e_tabbar->add_component(c_layout);
+				e_tabbar->add_component(cLayout::create(LayoutHorizontal));
 
 				e_tabbar->add_component(cList::create());
 
@@ -996,10 +993,7 @@ namespace flame
 				c_aligner->height_policy = SizeFitParent;
 				e_pages->add_component(c_aligner);
 
-				auto c_layout = cLayout::create();
-				c_layout->width_fit_children = false;
-				c_layout->height_fit_children = false;
-				e_pages->add_component(c_layout);
+				e_pages->add_component(cLayout::create(LayoutFree));
 
 				e_pages->add_component(cDockerPages::create());
 			}
@@ -1025,8 +1019,7 @@ namespace flame
 			c_aligner->using_padding_in_free_layout = true;
 			docker_layout_model->add_component(c_aligner);
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutHorizontal;
+			auto c_layout = cLayout::create(LayoutHorizontal);
 			c_layout->width_fit_children = false;
 			c_layout->height_fit_children = false;
 			docker_layout_model->add_component(c_layout);
@@ -1070,10 +1063,7 @@ namespace flame
 
 			docker_container_model->add_component(cEventReceiver::create());
 
-			auto c_layout = cLayout::create();
-			c_layout->width_fit_children = false;
-			c_layout->height_fit_children = false;
-			docker_container_model->add_component(c_layout);
+			docker_container_model->add_component(cLayout::create(LayoutFree));
 
 			docker_container_model->add_component(cMoveable::create());
 

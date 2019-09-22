@@ -20,8 +20,7 @@ Entity* create_item(const std::wstring& title)
 	{
 		e_item->add_component(cElement::create());
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 2.f;
 		e_item->add_component(c_layout);
 	}
@@ -43,8 +42,7 @@ Entity* create_item(const std::wstring& title)
 		c_element->inner_padding = Vec4f(app.font_atlas_pixel->pixel_height, 0.f, 0.f, 0.f);
 		e_data->add_component(c_element);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 2.f;
 		e_data->add_component(c_layout);
 	}
@@ -185,8 +183,7 @@ struct cInspectorPrivate : cInspector
 						c_aligner->width_policy = SizeFitParent;
 						e_component->add_component(c_aligner);
 
-						auto c_layout = cLayout::create();
-						c_layout->type = LayoutVertical;
+						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->item_padding = 2.f;
 						e_component->add_component(c_layout);
 					}
@@ -231,7 +228,7 @@ struct cInspectorPrivate : cInspector
 						c_text->set_text(s2w(component->type_name));
 						e_name->add_component(c_text);
 
-						e_name->add_component(cLayout::create());
+						e_name->add_component(cLayout::create(LayoutFree));
 					}
 
 					auto e_close = Entity::create();
@@ -425,7 +422,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 	}
 
 	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker);
+	e_container->add_child(e_docker, 0);
 
 	auto tab = create_standard_docker_tab(app.font_atlas_pixel, L"Inspector", app.root);
 	e_docker->child(0)->add_child(tab);
@@ -434,8 +431,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 	{
 		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);
@@ -460,8 +456,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 		c_aligner->height_policy = SizeFitParent;
 		e_layout->add_component(c_aligner);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;

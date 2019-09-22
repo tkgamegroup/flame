@@ -90,14 +90,13 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	}
 
 	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker);
+	e_container->add_child(e_docker, 0);
 
 	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, L"Scene Editor", app.root));
 
 	auto e_page = get_docker_page_model()->copy();
 	{
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);

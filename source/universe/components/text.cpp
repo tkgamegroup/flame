@@ -128,8 +128,7 @@ namespace flame
 		{
 			e_layout->add_component(cElement::create());
 
-			auto c_layout = cLayout::create();
-			c_layout->type = LayoutHorizontal;
+			auto c_layout = cLayout::create(LayoutHorizontal);
 			c_layout->item_padding = 4.f;
 			e_layout->add_component(c_layout);
 		}
@@ -182,7 +181,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Component* create$()
 		{
-			auto c = new cTextPrivate((graphics::FontAtlas*)universe_serialization_get_data("font_atlas" + std::to_string(font_atlas_index$)));
+			auto c = new cTextPrivate((graphics::FontAtlas*)universe_serialization_get_data(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$)));
 
 			c->color = color$;
 			c->sdf_scale = sdf_scale$;
@@ -200,8 +199,8 @@ namespace flame
 
 			{
 				auto& name = universe_serialization_find_data(c->font_atlas);
-				assert(name.compare(0, FLAME_ARRAYSIZE(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
-				font_atlas_index$ = std::stoul(name.c_str() + FLAME_ARRAYSIZE(FONT_ATLAS_PREFIX));
+				assert(name.compare(0, strlen(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
+				font_atlas_index$ = std::stoul(name.c_str() + strlen(FONT_ATLAS_PREFIX));
 			}
 			color$ = c->color;
 			sdf_scale$ = c->sdf_scale;

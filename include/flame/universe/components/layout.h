@@ -29,6 +29,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
-		FLAME_UNIVERSE_EXPORTS static cLayout* create();
+		FLAME_UNIVERSE_EXPORTS static cLayout* create(LayoutType$ type);
 	};
 }

@@ -63,7 +63,7 @@ void App::create()
 
 		root->add_component(cEventDispatcher::create(w));
 
-		root->add_component(cLayout::create());
+		root->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_fps = Entity::create();
