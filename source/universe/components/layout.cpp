@@ -48,8 +48,6 @@ namespace flame
 					auto upifl = al.second ? al.second->using_padding_in_free_layout : false;
 					auto w = element->width - (upifl ? element->inner_padding_horizontal() : 0.f);
 					auto h = element->height - (upifl ? element->inner_padding_vertical() : 0.f);
-					if (upifl)
-						int cut = 1;
 					switch (al.second ? al.second->width_policy : SizeFixed)
 					{
 					case SizeFitParent:
@@ -94,6 +92,14 @@ namespace flame
 						al.first->y = scroll_offset.y() + element->height - (upifl ? element->inner_padding[3] : 0.f) - al.first->height;
 						break;
 					}
+				}
+				if (width_fit_children)
+				{
+					int cut = 1;
+				}
+				if (height_fit_children)
+				{
+					int cut = 1;
 				}
 			}
 				break;

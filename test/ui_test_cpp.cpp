@@ -204,7 +204,7 @@ int main(int argc, char** args)
 	e_layout_left->add_child(e_toggle);
 	{
 		auto c_element = cElement::create();
-		c_element->background_round_flags = SideNW | SideNE | SideSW | SideSE;
+		c_element->background_round_flags = Side$(SideNW | SideNE | SideSW | SideSE);
 		c_element->background_round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
 		c_element->inner_padding = Vec4f(c_element->background_round_radius, 2.f, c_element->background_round_radius, 2.f);
 		e_toggle->add_component(c_element);
@@ -441,12 +441,10 @@ int main(int argc, char** args)
 		c_element->inner_padding = Vec4f(4.f);
 		c_element->background_frame_thickness = 2.f;
 	}
-
 	{
 		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, L"A");
 		e_tree->add_child(e_tree_node);
 		auto e_sub_tree = e_tree_node->child(1);
-
 		{
 			auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, L"C");
 			e_sub_tree->add_child(e_tree_leaf);
@@ -473,7 +471,7 @@ int main(int argc, char** args)
 		}
 
 		auto e_docker = get_docker_model()->copy();
-		e_container->add_child(e_docker);
+		e_container->add_child(e_docker, 0);
 		auto e_tabbar = e_docker->child(0);
 		auto e_pages = e_docker->child(1);
 
@@ -490,6 +488,7 @@ int main(int argc, char** args)
 			{
 				auto c_text = cText::create(app.font_atlas_pixel);
 				c_text->auto_width = false;
+				c_text->auto_height = false;
 				c_text->set_text(names[i]);
 				e_page->add_component(c_text);
 			}
@@ -508,7 +507,7 @@ int main(int argc, char** args)
 		}
 
 		auto e_docker_layout = get_docker_layout_model()->copy();
-		e_container->add_child(e_docker_layout);
+		e_container->add_child(e_docker_layout, 0);
 
 		{
 			{
@@ -538,6 +537,7 @@ int main(int argc, char** args)
 					{
 						auto c_text = cText::create(app.font_atlas_pixel);
 						c_text->auto_width = false;
+						c_text->auto_height = false;
 						c_text->set_text(names[i]);
 						e_page->add_component(c_text);
 					}
@@ -571,6 +571,7 @@ int main(int argc, char** args)
 					{
 						auto c_text = cText::create(app.font_atlas_pixel);
 						c_text->auto_width = false;
+						c_text->auto_height = false;
 						c_text->set_text(names[i]);
 						e_page->add_component(c_text);
 					}

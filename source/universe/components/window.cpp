@@ -15,13 +15,11 @@
 
 namespace flame
 {
-	struct cWindowPrivate : cWindow
+	struct cMoveablePrivate : cMoveable
 	{
 		void* mouse_listener;
 
-		std::vector<std::unique_ptr<Closure<void(void* c)>>> pos_listeners;
-
-		cWindowPrivate()
+		cMoveablePrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
@@ -29,7 +27,7 @@ namespace flame
 			mouse_listener = nullptr;
 		}
 
-		~cWindowPrivate()
+		~cMoveablePrivate()
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			if (event_receiver)
@@ -44,67 +42,94 @@ namespace flame
 			assert(event_receiver);
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = (*(cWindowPrivate**)c);
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					looper().add_delay_event([](void* c) {
-						auto e = *(Entity**)c;
-						e->parent()->reposition_child(e, -1);
-					}, new_mail_p(thiz->entity));
-				}
-				else if (thiz->event_receiver->active && is_mouse_move(action, key))
+				auto thiz = (*(cMoveablePrivate**)c);
+				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
 					auto e = thiz->element;
 					auto x = pos.x() / e->global_scale;
 					auto y = pos.y() / e->global_scale;
 					e->x += x;
 					e->y += y;
-					for (auto& l : thiz->pos_listeners)
-						l->function(l->capture.p);
 				}
 			}, new_mail_p(this));
 		}
 	};
 
-	void* cWindow::add_pos_listener(void (*listener)(void* c), const Mail<>& capture)
+	void cMoveable::start()
 	{
-		auto c = new Closure<void(void* c)>;
-		c->function = listener;
-		c->capture = capture;
-		((cWindowPrivate*)this)->pos_listeners.emplace_back(c);
-		return c;
+		((cMoveablePrivate*)this)->start();
 	}
 
-	void cWindow::remove_pos_listener(void* ret_by_add)
+	void cMoveable::update()
 	{
-		auto& listeners = ((cWindowPrivate*)this)->pos_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
+	}
+
+	Component* cMoveable::copy()
+	{
+		return new cMoveablePrivate;
+	}
+
+	cMoveable* cMoveable::create()
+	{
+		return new cMoveablePrivate;
+	}
+	struct cBringToFrontPrivate : cBringToFront
+	{
+		void* mouse_listener;
+
+		cBringToFrontPrivate()
 		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
+			element = nullptr;
+			event_receiver = nullptr;
+
+			mouse_listener = nullptr;
 		}
+
+		~cBringToFrontPrivate()
+		{
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			if (event_receiver)
+				event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void start()
+		{
+			element = (cElement*)(entity->find_component(cH("Element")));
+			assert(element);
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = (*(cBringToFrontPrivate**)c);
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					looper().add_delay_event([](void* c) {
+						auto e = *(Entity**)c;
+						auto p = e->parent();
+						p->parent()->reposition_child(p, -1);
+					}, new_mail_p(thiz->entity));
+				}
+			}, new_mail_p(this));
+		}
+	};
+
+	void cBringToFront::start()
+	{
+		((cBringToFrontPrivate*)this)->start();
 	}
 
-	void cWindow::start()
-	{
-		((cWindowPrivate*)this)->start();
-	}
-
-	void cWindow::update() 
+	void cBringToFront::update()
 	{
 	}
 
-	Component* cWindow::copy()
+	Component* cBringToFront::copy()
 	{
-		return new cWindowPrivate;
+		return new cBringToFrontPrivate;
 	}
 
-	cWindow* cWindow::create()
+	cBringToFront* cBringToFront::create()
 	{
-		return new cWindowPrivate;
+		return new cBringToFrontPrivate;
 	}
 
 	struct cSizeDraggerPrivate : cSizeDragger
@@ -326,7 +351,7 @@ namespace flame
 							}
 
 							auto e_docker = get_docker_model()->copy();
-							e_container->add_child(e_docker);
+							e_container->add_child(e_docker, 0);
 							auto e_tabbar = e_docker->child(0);
 							auto e_pages = e_docker->child(1);
 
@@ -1050,7 +1075,24 @@ namespace flame
 			c_layout->height_fit_children = false;
 			docker_container_model->add_component(c_layout);
 
-			docker_container_model->add_component(cWindow::create());
+			docker_container_model->add_component(cMoveable::create());
+
+			auto e_bring_to_front = Entity::create();
+			docker_container_model->add_child(e_bring_to_front);
+			{
+				e_bring_to_front->add_component(cElement::create());
+
+				auto c_event_receiver = cEventReceiver::create();
+				c_event_receiver->penetrable = true;
+				e_bring_to_front->add_component(c_event_receiver);
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitParent;
+				c_aligner->height_policy = SizeFitParent;
+				e_bring_to_front->add_component(c_aligner);
+
+				e_bring_to_front->add_component(cBringToFront::create());
+			}
 
 			auto e_size_dragger = Entity::create();
 			docker_container_model->add_child(e_size_dragger);
@@ -1061,12 +1103,12 @@ namespace flame
 				c_element->background_color = Vec4c(200, 100, 100, 255);
 				e_size_dragger->add_component(c_element);
 
+				e_size_dragger->add_component(cEventReceiver::create());
+
 				auto c_aligner = cAligner::create();
 				c_aligner->x_align = AlignxRight;
 				c_aligner->y_align = AlignyBottom;
 				e_size_dragger->add_component(c_aligner);
-
-				e_size_dragger->add_component(cEventReceiver::create());
 
 				e_size_dragger->add_component(cSizeDragger::create());
 			}

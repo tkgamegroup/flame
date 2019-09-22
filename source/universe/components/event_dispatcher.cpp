@@ -197,6 +197,8 @@ namespace flame
 								er->hovering = true;
 								thiz->hovering = er;
 							}
+							else
+								int cut = 1;
 						}
 					}
 				}, new_mail_p(this));

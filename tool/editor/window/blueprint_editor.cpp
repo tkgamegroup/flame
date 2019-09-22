@@ -662,7 +662,6 @@ struct cBPNode : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
-	cWindow* window;
 
 	cBPEditor* editor;
 	BP::Node* n;
@@ -676,7 +675,6 @@ struct cBPNode : Component
 	{
 		element = (cElement*)(entity->find_component(cH("Element")));
 		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-		window = (cWindow*)(entity->find_component(cH("Window")));
 
 		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			auto thiz = *(cBPNode**)c;
@@ -686,13 +684,6 @@ struct cBPNode : Component
 				thiz->editor->selected.n = thiz->n;
 			}
 		}, new_mail_p(this));
-
-		window->add_pos_listener([](void* c) {
-			auto n = *(BP::Node**)c;
-			auto element = (cElement*)(((Entity*)n->user_data)->find_component(cH("Element")));
-			n->pos.x() = element->x;
-			n->pos.y() = element->y;
-		}, new_mail_p(n));
 	}
 
 	virtual void update() override
@@ -701,6 +692,9 @@ struct cBPNode : Component
 			element->background_frame_thickness = 4.f;
 		else
 			element->background_frame_thickness = 0.f;
+
+		n->pos.x() = element->x;
+		n->pos.y() = element->y;
 	}
 };
 
@@ -863,12 +857,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		e_node->add_component(cEventReceiver::create());
 
-		e_node->add_component(cWindow::create());
-
 		auto c_layout = cLayout::create();
 		c_layout->type = LayoutVertical;
 		c_layout->item_padding = 4.f;
 		e_node->add_component(c_layout);
+
+		e_node->add_component(cMoveable::create());
 
 		auto c_node = new_component<cBPNode>();
 		c_node->editor = this;

@@ -19,7 +19,7 @@ namespace flame
 		bool active;
 		bool dragging;
 
-		uint drag_hash; // non-zero means it can drag to drop
+		uint drag_hash; // non-zero means it can be draged to drop
 
 		cEventReceiver() :
 			Component("EventReceiver")

@@ -282,8 +282,8 @@ namespace flame
 			auto c_layout = cLayout::create();
 			c_layout->type = LayoutVertical;
 			c_layout->item_padding = 4.f;
-			c_layout->width_fit_children = false;
-			c_layout->height_fit_children = false;
+			c_layout->width_fit_children = !size_fit_parent;
+			c_layout->height_fit_children = !size_fit_parent;
 			e_tree->add_component(c_layout);
 
 			e_tree->add_component(cTree::create());

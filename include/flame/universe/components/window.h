@@ -16,25 +16,38 @@ namespace flame
 	struct cListItem;
 	struct cList;
 
-	struct cWindow : Component
+	struct cMoveable : Component
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
 
-		cWindow() :
-			Component("Window")
+		cMoveable() :
+			Component("Moveable")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS void* add_pos_listener(void (*listener)(void* c), const Mail<>& capture);
-
-		FLAME_UNIVERSE_EXPORTS void remove_pos_listener(void* ret_by_add);
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
-		FLAME_UNIVERSE_EXPORTS static cWindow* create();
+		FLAME_UNIVERSE_EXPORTS static cMoveable* create();
+	};
+
+	struct cBringToFront : Component
+	{
+		cElement* element;
+		cEventReceiver* event_receiver;
+
+		cBringToFront() :
+			Component("BringToFront")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
+
+		FLAME_UNIVERSE_EXPORTS static cBringToFront* create();
 	};
 
 	struct cSizeDragger : Component 
