@@ -164,6 +164,8 @@ namespace flame
 		bool auto_height$;
 		std::wstring text$;
 
+#define FONT_ATLAS_PREFIX "font_atlas"
+
 		FLAME_UNIVERSE_EXPORTS cText$()
 		{
 			font_atlas_index$ = 1;
@@ -198,8 +200,8 @@ namespace flame
 
 			{
 				auto& name = universe_serialization_find_data(c->font_atlas);
-				assert(name.compare(0, 10, "font_atlas") == 0);
-				font_atlas_index$ = std::stoul(name.c_str() + 10);
+				assert(name.compare(0, FLAME_ARRAYSIZE(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
+				font_atlas_index$ = std::stoul(name.c_str() + FLAME_ARRAYSIZE(FONT_ATLAS_PREFIX));
 			}
 			color$ = c->color;
 			sdf_scale$ = c->sdf_scale;
@@ -209,12 +211,33 @@ namespace flame
 			text$ = c->text();
 		}
 
-		FLAME_UNIVERSE_EXPORTS void data_changed$(Component* c, uint name_hash)
+		FLAME_UNIVERSE_EXPORTS void data_changed$(Component* _c, uint name_hash)
 		{
+			auto c = (cText*)_c;
+
 			switch (name_hash)
 			{
-
+			case cH("font_atlas_index"):
+				c->font_atlas = (graphics::FontAtlas*)universe_serialization_get_data("font_atlas" + std::to_string(font_atlas_index$));
+				break;
+			case cH("sdf_scale"):
+				c->sdf_scale = sdf_scale$;
+				break;
+			case cH("right_align"):
+				c->right_align = right_align$;
+				break;
+			case cH("auto_width"):
+				c->auto_width = auto_width$;
+				break;
+			case cH("auto_height"):
+				c->auto_height = auto_height$;
+				break;
+			case cH("text"):
+				c->set_text(text$);
+				break;
 			}
 		}
+
+#undef FONT_ATLAS_PREFIX
 	};
 }
