@@ -848,15 +848,15 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		auto c_element = cElement::create();
 		c_element->x = n->pos.x();
 		c_element->y = n->pos.y();
-		c_element->inner_padding = Vec4f(8.f);
 		c_element->background_color = Vec4c(255, 255, 255, 200);
 		c_element->background_frame_color = Vec4c(252, 252, 50, 200);
 		e_node->add_component(c_element);
 
 		e_node->add_component(cEventReceiver::create());
 
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 4.f;
+		auto c_layout = cLayout::create(LayoutFree);
+		c_layout->width_fit_children = true;
+		c_layout->height_fit_children = true;
 		e_node->add_component(c_layout);
 
 		e_node->add_component(cMoveable::create());
@@ -865,9 +865,22 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		c_node->editor = this;
 		c_node->n = n;
 		e_node->add_component(c_node);
+	}
+	{
+		auto e_content = Entity::create();
+		e_node->add_child(e_content);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(8.f);
+			e_content->add_component(c_element);
+
+			auto c_layout = cLayout::create(LayoutVertical);
+			c_layout->item_padding = 4.f;
+			e_content->add_component(c_layout);
+		}
 
 		auto e_text_id = Entity::create();
-		e_node->add_child(e_text_id);
+		e_content->add_child(e_text_id);
 		{
 			auto c_element = cElement::create();
 			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -889,7 +902,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		}
 
 		auto e_text_type = Entity::create();
-		e_node->add_child(e_text_type);
+		e_content->add_child(e_text_type);
 		{
 			e_text_type->add_component(cElement::create());
 
@@ -903,7 +916,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		if (n->udt()->name() == "graphics::Shader")
 		{
 			auto e_btn_edit = create_standard_button(app.font_atlas_sdf, 0.5f, L"Edit Shader");
-			e_node->add_child(e_btn_edit);
+			e_content->add_child(e_btn_edit);
 
 			struct Capture
 			{
@@ -1119,21 +1132,21 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			}, new_mail(&capture));
 		}
 
-		auto e_content = Entity::create();
-		e_node->add_child(e_content);
+		auto e_main = Entity::create();
+		e_content->add_child(e_main);
 		{
-			e_content->add_component(cElement::create());
+			e_main->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
 			c_aligner->width_policy = SizeGreedy;
-			e_content->add_component(c_aligner);
+			e_main->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutHorizontal);
 			c_layout->item_padding = 16.f;
-			e_content->add_component(c_layout);
+			e_main->add_component(c_layout);
 
 			auto e_left = Entity::create();
-			e_content->add_child(e_left);
+			e_main->add_child(e_left);
 			{
 				e_left->add_component(cElement::create());
 
@@ -1380,7 +1393,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			}
 
 			auto e_right = Entity::create();
-			e_content->add_child(e_right);
+			e_main->add_child(e_right);
 			{
 				e_right->add_component(cElement::create());
 
@@ -1434,6 +1447,23 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					}
 				}
 			}
+		}
+
+		auto e_bring_to_front = Entity::create();
+		e_node->add_child(e_bring_to_front);
+		{
+			e_bring_to_front->add_component(cElement::create());
+
+			auto c_event_receiver = cEventReceiver::create();
+			c_event_receiver->penetrable = true;
+			e_bring_to_front->add_component(c_event_receiver);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitParent;
+			c_aligner->height_policy = SizeFitParent;
+			e_bring_to_front->add_component(c_aligner);
+
+			e_bring_to_front->add_component(cBringToFront::create());
 		}
 	}
 
