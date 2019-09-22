@@ -256,6 +256,48 @@ namespace flame
 			case cH("x"):
 				c->x = x$;
 				break;
+			case cH("y"):
+				c->y = y$;
+				break;
+			case cH("scale"):
+				c->scale = scale$;
+				break;
+			case cH("width"):
+				c->width = width$;
+				break;
+			case cH("height"):
+				c->height = height$;
+				break;
+			case cH("inner_padding"):
+				c->inner_padding = inner_padding$;
+				break;
+			case cH("alpha"):
+				c->alpha = alpha$;
+				break;
+			case cH("draw"):
+				c->draw = draw$;
+				break;
+			case cH("background_round_radius"):
+				c->background_round_radius = background_round_radius$;
+				break;
+			case cH("background_round_flags"):
+				c->background_round_flags = background_round_flags$m;
+				break;
+			case cH("background_frame_thickness"):
+				c->background_frame_thickness = background_frame_thickness$;
+				break;
+			case cH("background_color"):
+				c->background_color = background_color$;
+				break;
+			case cH("background_frame_color"):
+				c->background_frame_color = background_frame_color$;
+				break;
+			case cH("background_shadow_thickness"):
+				c->background_shadow_thickness = background_shadow_thickness$;
+				break;
+			case cH("clip_children"):
+				c->clip_children = clip_children$;
+				break;
 			}
 		}
 	};

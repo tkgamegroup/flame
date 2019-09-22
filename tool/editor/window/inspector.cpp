@@ -32,7 +32,6 @@ Entity* create_item(const std::wstring& title)
 		e_title->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->sdf_scale = 0.6f;
 		c_text->set_text(title);
 		e_title->add_component(c_text);
 	}
@@ -51,20 +50,6 @@ Entity* create_item(const std::wstring& title)
 	}
 
 	return e_item;
-}
-
-template<class T>
-void create_edit(Entity* parent)
-{
-	auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
-	parent->add_child(e_edit);
-}
-
-template<uint N, class T>
-void create_vec_edit(Entity* parent)
-{
-	for (auto i = 0; i < N; i++)
-		parent->add_child(wrap_standard_text(create_standard_edit(50.f, app.font_atlas_sdf, 0.5f), false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
 }
 
 struct cComponentDealer : Component
@@ -86,6 +71,51 @@ struct cComponentDealer : Component
 		free(dummy);
 	}
 };
+
+template<class T>
+void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
+{
+	auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+	parent->add_child(e_edit);
+	((cText*)e_edit->find_component(cH("Text")))->set_text(to_wstring(*(T*)pdata));
+	struct Capture
+	{
+		cComponentDealer* d;
+		VariableInfo* v;
+	}capture;
+	capture.d = d;
+	capture.v = v;
+	((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+		auto& capture = *(Capture*)c;
+		*(T*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<T>(text) : 0;
+		cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+	}, new_mail(&capture));
+}
+
+template<uint N, class T>
+void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
+{
+	for (auto i = 0; i < N; i++)
+	{
+		auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
+		((cText*)e_edit->find_component(cH("Text")))->set_text(to_wstring((*(Vec<N, T>*)pdata)[i]));
+		struct Capture
+		{
+			cComponentDealer* d;
+			VariableInfo* v;
+			int i;
+		}capture;
+		capture.d = d;
+		capture.v = v;
+		capture.i = i;
+		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+			auto& capture = *(Capture*)c;
+			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = text[0] ? sto<T>(text) : 0;
+			cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+		}, new_mail(&capture));
+	}
+}
 
 struct cInspectorPrivate : cInspector
 {
@@ -238,6 +268,20 @@ struct cInspectorPrivate : cInspector
 							info->find_item(*(int*)pdata, &idx);
 							auto combobox = (cCombobox*)e_data->child(0)->find_component(cH("Combobox"));
 							combobox->set_index(idx, false);
+							struct Capture
+							{
+								cComponentDealer* d;
+								VariableInfo* v;
+								EnumInfo* info;
+							}capture;
+							capture.d = c_dealer;
+							capture.v = v;
+							capture.info = info;
+							combobox->add_changed_listener([](void* c, int idx) {
+								auto& capture = *(Capture*)c;
+								*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(idx)->value();
+								cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+							}, new_mail(&capture));
 						}
 							break;
 						case TypeTagEnumMulti:
@@ -245,7 +289,29 @@ struct cInspectorPrivate : cInspector
 							auto info = find_enum(dbs, hash);
 							create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
 							for (auto k = 0; k < info->item_count(); k++)
-								((cCheckbox*)e_data->child(k)->find_component(cH("Checkbox")))->set_checked(*(int*)pdata & info->item(k)->value(), false);
+							{
+								auto vl = info->item(k)->value();
+								auto checkbox = (cCheckbox*)e_data->child(k)->find_component(cH("Checkbox"));
+								checkbox->set_checked(*(int*)pdata & vl, false);
+								struct Capture
+								{
+									cComponentDealer* d;
+									VariableInfo* v;
+									int vl;
+								}capture;
+								capture.d = c_dealer;
+								capture.v = v;
+								capture.vl = vl;
+								checkbox->add_changed_listener([](void* c, bool checked) {
+									auto& capture = *(Capture*)c;
+									auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
+									if (checked)
+										(*pv) |= capture.vl;
+									else
+										(*pv) &= ~capture.vl;
+									cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+								}, new_mail(&capture));
+							}
 						}
 							break;
 						case TypeTagVariable:
@@ -255,52 +321,8 @@ struct cInspectorPrivate : cInspector
 							{
 								auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
 								e_data->add_child(e_checkbox);
-								((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->set_checked(*(bool*)pdata, false);
-							}
-								break;
-							case cH("int"):
-								create_edit<int>(e_data);
-								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(int*)pdata));
-								break;
-							case cH("Vec(2+int)"):
-								create_vec_edit<2, int>(e_data);
-								for (auto k = 0; k < 2; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, int>*)pdata)[k]));
-								break;
-							case cH("Vec(3+int)"):
-								create_vec_edit<3, int>(e_data);
-								for (auto k = 0; k < 3; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, int>*)pdata)[k]));
-								break;
-							case cH("Vec(4+int)"):
-								create_vec_edit<4, int>(e_data);
-								for (auto k = 0; k < 4; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, int>*)pdata)[k]));
-								break;
-							case cH("uint"):
-								create_edit<uint>(e_data);
-								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(uint*)pdata));
-								break;
-							case cH("Vec(2+uint)"):
-								create_vec_edit<2, uint>(e_data);
-								for (auto k = 0; k < 2; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, uint>*)pdata)[k]));
-								break;
-							case cH("Vec(3+uint)"):
-								create_vec_edit<3, uint>(e_data);
-								for (auto k = 0; k < 3; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, uint>*)pdata)[k]));
-								break;
-							case cH("Vec(4+uint)"):
-								create_vec_edit<4, uint>(e_data);
-								for (auto k = 0; k < 4; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, uint>*)pdata)[k]));
-								break;
-							case cH("float"):
-							{
-								create_edit<float>(e_data);
-								auto edit = e_data->child(0);
-								((cText*)edit->find_component(cH("Text")))->set_text(to_wstring(*(float*)pdata));
+								auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
+								checkbox->set_checked(*(bool*)pdata, false);
 								struct Capture
 								{
 									cComponentDealer* d;
@@ -308,46 +330,60 @@ struct cInspectorPrivate : cInspector
 								}capture;
 								capture.d = c_dealer;
 								capture.v = v;
-								((cEdit*)edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+								checkbox->add_changed_listener([](void* c, bool checked) {
 									auto& capture = *(Capture*)c;
-									*(float*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<float>(text) : 0;
+									*(bool*)((char*)capture.d->dummy + capture.v->offset()) = checked;
 									cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
 								}, new_mail(&capture));
 							}
 								break;
+							case cH("int"):
+								create_edit<int>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("Vec(2+int)"):
+								create_vec_edit<2, int>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("Vec(3+int)"):
+								create_vec_edit<3, int>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("Vec(4+int)"):
+								create_vec_edit<4, int>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("uint"):
+								create_edit<uint>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("Vec(2+uint)"):
+								create_vec_edit<2, uint>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("Vec(3+uint)"):
+								create_vec_edit<3, uint>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("Vec(4+uint)"):
+								create_vec_edit<4, uint>(e_data, pdata, c_dealer, v);
+								break;
+							case cH("float"):
+								create_edit<float>(e_data, pdata, c_dealer, v);
+								break;
 							case cH("Vec(2+float)"):
-								create_vec_edit<2, float>(e_data);
-								for (auto k = 0; k < 2; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, float>*)pdata)[k]));
+								create_vec_edit<2, float>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("Vec(3+float)"):
-								create_vec_edit<3, float>(e_data);
-								for (auto k = 0; k < 3; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, float>*)pdata)[k]));
+								create_vec_edit<3, float>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("Vec(4+float)"):
-								create_vec_edit<4, float>(e_data);
-								for (auto k = 0; k < 4; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, float>*)pdata)[k]));
+								create_vec_edit<4, float>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("uchar"):
-								create_edit<uchar>(e_data);
-								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(to_wstring(*(uchar*)pdata));
+								create_edit<uchar>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("Vec(2+uchar)"):
-								create_vec_edit<2, uchar>(e_data);
-								for (auto k = 0; k < 2; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<2, uchar>*)pdata)[k]));
+								create_vec_edit<2, uchar>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("Vec(3+uchar)"):
-								create_vec_edit<3, uchar>(e_data);
-								for (auto k = 0; k < 3; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<3, uchar>*)pdata)[k]));
+								create_vec_edit<3, uchar>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("Vec(4+uchar)"):
-								create_vec_edit<4, uchar>(e_data);
-								for (auto k = 0; k < 4; k++)
-									((cText*)e_data->child(k)->child(0)->find_component(cH("Text")))->set_text(to_wstring((*(Vec<4, uchar>*)pdata)[k]));
+								create_vec_edit<4, uchar>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("std::basic_string(char)"):
 								e_data->add_child(create_standard_edit(50.f, app.font_atlas_pixel, 1.f));

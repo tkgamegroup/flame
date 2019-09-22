@@ -1255,7 +1255,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
 					}
-					break;
+						break;
 					case TypeTagAttributeEM:
 					{
 						auto v = *(int*)input->data();
@@ -1294,7 +1294,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
 					}
-					break;
+						break;
 					case TypeTagAttributeV:
 						switch (type->hash())
 						{
