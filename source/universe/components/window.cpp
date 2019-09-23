@@ -46,10 +46,8 @@ namespace flame
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
 					auto e = thiz->element;
-					auto x = pos.x() / e->global_scale;
-					auto y = pos.y() / e->global_scale;
-					e->x += x;
-					e->y += y;
+					e->x += pos.x() / e->global_scale;
+					e->y += pos.y() / e->global_scale;
 				}
 			}, new_mail_p(this));
 		}

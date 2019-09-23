@@ -1,12 +1,14 @@
 #include <flame/foundation/serialize.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
+#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/tree.h>
+#include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
@@ -76,6 +78,7 @@ struct cSceneOverlayer : Component
 	cElement* element;
 
 	cSceneEditorPrivate* editor;
+	cElement* move_tool_element;
 
 	cSceneOverlayer() :
 		Component("SceneOverlayer")
@@ -89,15 +92,23 @@ struct cSceneOverlayer : Component
 
 	virtual void update() override
 	{
+		move_tool_element->x = -200.f;
+		move_tool_element->y = -200.f;
 		if (editor->selected)
 		{
 			auto se = (cElement*)editor->selected->find_component(cH("Element"));
 			if (se)
 			{
+				auto p = Vec2f(se->global_x, se->global_y);
+				auto s = Vec2f(se->global_width, se->global_height);
+				auto c = p + s * 0.5f;
 				std::vector<Vec2f> points;
-				path_rect(points, Vec2f(se->global_x, se->global_y), Vec2f(se->global_width, se->global_height));
+				path_rect(points, p, s);
 				points.push_back(points[0]);
-				element->canvas->stroke(points, Vec4c(0, 0, 0, 255), 6.f);
+				element->canvas->stroke(points, Vec4c(0, 0, 0, 255), Vec4c(255, 255, 255, 255), 6.f);
+
+				move_tool_element->x = c.x() - element->global_x - move_tool_element->width * 0.5f;
+				move_tool_element->y = c.y() - element->global_y - move_tool_element->height * 0.5f;
 			}
 		}
 	}
@@ -137,6 +148,18 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	{
 		auto e_menu = create_standard_menu();
 		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Entity");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cSceneEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+				}
+			}, new_mail_p(c_editor));
+		}
+		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
@@ -148,7 +171,36 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				}
 			}, new_mail_p(c_editor));
 		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Scene", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		e_menubar->add_child(e_menu_btn);
+	}
+	{
+		auto e_menu = create_standard_menu();
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cSceneEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+				}
+			}, new_mail_p(c_editor));
+		}
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cSceneEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+				}
+			}, new_mail_p(c_editor));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 	}
 
@@ -224,6 +276,41 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		auto c_overlayer = new_component<cSceneOverlayer>();
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
+
+		auto e_move_tool = Entity::create();
+		e_overlayer->add_child(e_move_tool);
+		{
+			auto c_element = cElement::create();
+			c_element->width = 50.f;
+			c_element->height = 50.f;
+			c_element->background_frame_thickness = 2.f;
+			e_move_tool->add_component(c_element);
+			c_overlayer->move_tool_element = c_element;
+
+			auto c_event_receiver = cEventReceiver::create();
+			struct Capture
+			{
+				cSceneEditorPrivate* e;
+				cEventReceiver* er;
+			}capture;
+			capture.e = c_editor;
+			capture.er = c_event_receiver;
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto& capture = *(Capture*)c;
+				if (capture.e->selected)
+				{
+					auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
+					if (e && capture.er->active && is_mouse_move(action, key))
+					{
+						e->x += pos.x();
+						e->y += pos.y();
+					}
+				}
+			}, new_mail(&capture));
+			e_move_tool->add_component(c_event_receiver);
+
+			e_move_tool->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+		}
 	}
 
 	open_hierachy(c_editor, Vec2f(20.f));

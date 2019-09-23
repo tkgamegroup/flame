@@ -54,6 +54,7 @@ struct cComponentDealer : Component
 {
 	Component* component;
 	void* dummy;
+	void* save_addr;
 	void* dtor_addr;
 	void* data_changed_addr;
 
@@ -68,11 +69,48 @@ struct cComponentDealer : Component
 			cmf(p2f<MF_v_v>(dtor_addr), dummy);
 		free(dummy);
 	}
+
+	void data_changed(uint name_hash)
+	{
+		cmf(p2f<MF_v_vp_u>(data_changed_addr), dummy, component, name_hash);
+	}
+
+	virtual void update() override
+	{
+		cmf(p2f<MF_v_vp>(save_addr), dummy, component);
+	}
+};
+
+template<class T>
+struct cDigitalDataTracker1 : Component
+{
+	cText* text;
+
+	T* data;
+
+	cDigitalDataTracker1() :
+		Component("DataTracker")
+	{
+	}
+
+	virtual void start() override
+	{
+		text = (cText*)entity->child(0)->find_component(cH("Text"));
+	}
+
+	virtual void update() override
+	{
+		text->set_text(to_wstring(*data));
+	}
 };
 
 template<class T>
 void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
 {
+	auto c_tracker = new_component<cDigitalDataTracker1<T>>();
+	c_tracker->data = (T*)pdata;
+	parent->add_component(c_tracker);
+
 	auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 	parent->add_child(e_edit);
 	((cText*)e_edit->find_component(cH("Text")))->set_text(to_wstring(*(T*)pdata));
@@ -83,34 +121,36 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	}capture;
 	capture.d = d;
 	capture.v = v;
-	((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+	auto c_edit = (cEdit*)e_edit->find_component(cH("Edit"));
+	c_edit->add_changed_listener([](void* c, const wchar_t* text) {
 		auto& capture = *(Capture*)c;
 		*(T*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<T>(text) : 0;
-		cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+		capture.d->data_changed(capture.v->name_hash());
 	}, new_mail(&capture));
+
 }
 
 template<uint N, class T>
 void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
 {
+	struct Capture
+	{
+		cComponentDealer* d;
+		VariableInfo* v;
+		int i;
+	}capture;
+	capture.d = d;
+	capture.v = v;
 	for (auto i = 0; i < N; i++)
 	{
 		auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
 		((cText*)e_edit->find_component(cH("Text")))->set_text(to_wstring((*(Vec<N, T>*)pdata)[i]));
-		struct Capture
-		{
-			cComponentDealer* d;
-			VariableInfo* v;
-			int i;
-		}capture;
-		capture.d = d;
-		capture.v = v;
 		capture.i = i;
 		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = text[0] ? sto<T>(text) : 0;
-			cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+			capture.d->data_changed(capture.v->name_hash());
 		}, new_mail(&capture));
 	}
 }
@@ -208,6 +248,7 @@ struct cInspectorPrivate : cInspector
 						auto f = udt->find_function("save");
 						assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")));
 						cmf(p2f<MF_v_vp>((char*)thiz->module + (uint)f->rva()), c_dealer->dummy, component);
+						c_dealer->save_addr = (char*)thiz->module + (uint)f->rva();
 					}
 					{
 						auto f = udt->find_function("data_changed");
@@ -277,7 +318,7 @@ struct cInspectorPrivate : cInspector
 							combobox->add_changed_listener([](void* c, int idx) {
 								auto& capture = *(Capture*)c;
 								*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(idx)->value();
-								cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+								capture.d->data_changed(capture.v->name_hash());
 							}, new_mail(&capture));
 						}
 							break;
@@ -306,7 +347,7 @@ struct cInspectorPrivate : cInspector
 										(*pv) |= capture.vl;
 									else
 										(*pv) &= ~capture.vl;
-									cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+									capture.d->data_changed(capture.v->name_hash());
 								}, new_mail(&capture));
 							}
 						}
@@ -330,7 +371,7 @@ struct cInspectorPrivate : cInspector
 								checkbox->add_changed_listener([](void* c, bool checked) {
 									auto& capture = *(Capture*)c;
 									*(bool*)((char*)capture.d->dummy + capture.v->offset()) = checked;
-									cmf(p2f<MF_v_vp_u>(capture.d->data_changed_addr), capture.d->dummy, capture.d->component, capture.v->name_hash());
+									capture.d->data_changed(capture.v->name_hash());
 								}, new_mail(&capture));
 							}
 								break;
@@ -383,12 +424,44 @@ struct cInspectorPrivate : cInspector
 								create_vec_edit<4, uchar>(e_data, pdata, c_dealer, v);
 								break;
 							case cH("std::basic_string(char)"):
-								e_data->add_child(create_standard_edit(50.f, app.font_atlas_pixel, 1.f));
-								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(s2w(*(std::string*)pdata));
+							{
+								auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+								e_data->add_child(e_edit);
+								((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(*(std::string*)pdata));
+								struct Capture
+								{
+									cComponentDealer* d;
+									VariableInfo* v;
+								}capture;
+								capture.d = c_dealer;
+								capture.v = v;
+								((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+									auto& capture = *(Capture*)c;
+									*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
+									capture.d->data_changed(capture.v->name_hash());
+									auto str = w2s(text);
+								}, new_mail(&capture));
+							}
 								break;
 							case cH("std::basic_string(wchar_t)"):
-								e_data->add_child(create_standard_edit(50.f, app.font_atlas_pixel, 1.f));
-								((cText*)e_data->child(0)->find_component(cH("Text")))->set_text(*(std::wstring*)pdata);
+							{
+								auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+								e_data->add_child(e_edit);
+								((cText*)e_edit->find_component(cH("Text")))->set_text(*(std::wstring*)pdata);
+								struct Capture
+								{
+									cComponentDealer* d;
+									VariableInfo* v;
+								}capture;
+								capture.d = c_dealer;
+								capture.v = v;
+								((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+									auto& capture = *(Capture*)c;
+									*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
+									capture.d->data_changed(capture.v->name_hash());
+									auto str = w2s(text);
+								}, new_mail(&capture));
+							}
 								break;
 							}
 							break;

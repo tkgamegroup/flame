@@ -1974,6 +1974,14 @@ namespace flame
 		dst[7] = Vec<3, T>(v1.x(), v2.y(), v2.z());
 	}
 
+	inline void path_move(std::vector<Vec2f>& points, float x, float y)
+	{
+		auto p = points.back();
+		p.x() += x;
+		p.y() += y;
+		points.push_back(p);
+	}
+
 	inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, int a_min, int a_max)
 	{
 		const uint pieces_num = 36;

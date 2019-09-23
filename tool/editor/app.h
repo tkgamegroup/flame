@@ -21,6 +21,7 @@ namespace flame
 	struct Entity;
 	struct cElement;
 	struct cText;
+	struct cCombobox;
 }
 
 using namespace flame;
@@ -53,4 +54,3 @@ extern App app;
 
 void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale, Entity* parent);
 void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scale, Entity* parent);
-
