@@ -24,162 +24,10 @@
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
+#include "../data_tracker.h"
 #include "blueprint_editor.h"
 #include "console.h"
 #include "image_viewer.h"
-
-struct cDataTracker : Component
-{
-	cDataTracker() :
-		Component("DataTracker")
-	{
-	}
-
-	virtual void update_view() = 0;
-};
-
-struct cEnumSingleDataTracker : cDataTracker
-{
-	cCombobox* combobox;
-
-	int* data;
-	EnumInfo* info;
-
-	virtual void update_view() override
-	{
-		int idx;
-		info->find_item(*data, &idx);
-		combobox->set_index(idx, false);
-	}
-
-	virtual void start() override
-	{
-		combobox = (cCombobox*)entity->child(0)->find_component(cH("Combobox"));
-
-		update_view();
-	}
-};
-
-struct cEnumMultiDataTracker : cDataTracker
-{
-	std::vector<cCheckbox*> checkboxs;
-
-	int* data;
-	EnumInfo* info;
-
-	virtual void update_view() override
-	{
-		for (auto i = 0; i < checkboxs.size(); i++)
-			checkboxs[i]->set_checked(*data & info->item(i)->value(), false);
-	}
-
-	virtual void start() override
-	{
-		for (auto i = 0; i < entity->child_count(); i++)
-			checkboxs.push_back((cCheckbox*)entity->child(i)->find_component(cH("Checkbox")));
-
-		update_view();
-	}
-};
-
-struct cBoolDataTracker : cDataTracker
-{
-	cCheckbox* checkbox;
-
-	bool* data;
-
-	virtual void update_view() override
-	{
-		checkbox->set_checked(*data, false);
-	}
-
-	virtual void start() override
-	{
-		checkbox = (cCheckbox*)entity->child(0)->find_component(cH("Checkbox"));
-
-		update_view();
-	}
-};
-
-template<class T>
-struct cDigitalDataTracker : cDataTracker
-{
-	cText* text;
-
-	T* data;
-
-	virtual void update_view() override
-	{
-		text->set_text(to_wstring(*data));
-	}
-
-	virtual void start() override
-	{
-		text = (cText*)entity->child(0)->find_component(cH("Text"));
-
-		update_view();
-	}
-};
-
-template<uint N, class T>
-struct cDigitalVecDataTracker : cDataTracker
-{
-	cText* texts[N];
-
-	Vec<N, T>* data;
-
-	virtual void update_view() override
-	{
-		for (auto i = 0; i < N; i++)
-			texts[i]->set_text(to_wstring((*data)[i]));
-	}
-
-	virtual void start() override
-	{
-		for (auto i = 0; i < N; i++)
-			texts[i] = (cText*)entity->child(i)->child(0)->find_component(cH("Text"));
-
-		update_view();
-	}
-};
-
-struct cStringDataTracker : cDataTracker
-{
-	cText* text;
-
-	std::string* data;
-
-	virtual void update_view() override
-	{
-		text->set_text(s2w(*data));
-	}
-
-	virtual void start() override
-	{
-		text = (cText*)entity->child(0)->find_component(cH("Text"));
-
-		update_view();
-	}
-};
-
-struct cWStringDataTracker : cDataTracker
-{
-	cText* text;
-
-	std::wstring* data;
-
-	virtual void update_view() override
-	{
-		text->set_text(*data);
-	}
-
-	virtual void start() override
-	{
-		text = (cText*)entity->child(0)->find_component(cH("Text"));
-
-		update_view();
-	}
-};
 
 template<class T>
 void create_edit(Entity* parent, BP::Slot* input)
@@ -1249,6 +1097,11 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto info = find_enum(dbs, type->hash());
 						create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.5f, e_data);
 
+						auto c_tracker = new_component<cEnumSingleDataTracker>();
+						c_tracker->data = (int*)input->data();
+						c_tracker->info = info;
+						e_data->add_component(c_tracker);
+
 						struct Capture
 						{
 							BP::Slot* input;
@@ -1261,11 +1114,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto v = capture.e->item(idx)->value();
 							capture.input->set_data(&v);
 						}, new_mail(&capture));
-
-						auto c_tracker = new_component<cEnumSingleDataTracker>();
-						c_tracker->data = (int*)input->data();
-						c_tracker->info = info;
-						e_data->add_component(c_tracker);
 					}
 						break;
 					case TypeTagAttributeEM:
@@ -1273,6 +1121,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto v = *(int*)input->data();
 
 						auto info = find_enum(dbs, type->hash());
+
+						auto c_tracker = new_component<cEnumMultiDataTracker>();
+						c_tracker->data = (int*)input->data();
+						c_tracker->info = info;
+						e_data->add_component(c_tracker);
+
 						for (auto k = 0; k < info->item_count(); k++)
 						{
 							auto item = info->item(k);
@@ -1300,11 +1154,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								capture.input->set_data(&v);
 							}, new_mail(&capture));
 						}
-
-						auto c_tracker = new_component<cEnumMultiDataTracker>();
-						c_tracker->data = (int*)input->data();
-						c_tracker->info = info;
-						e_data->add_component(c_tracker);
 					}
 						break;
 					case TypeTagAttributeV:
@@ -1312,6 +1161,10 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						{
 						case cH("bool"):
 						{
+							auto c_tracker = new_component<cBoolDataTracker>();
+							c_tracker->data = (bool*)input->data();
+							e_data->add_component(c_tracker);
+
 							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, L"");
 							e_data->add_child(e_checkbox);
 
@@ -1320,10 +1173,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								auto v = checked ? 1 : 0;
 								input->set_data(&v);
 							}, new_mail_p(input));
-
-							auto c_tracker = new_component<cBoolDataTracker>();
-							c_tracker->data = (bool*)input->data();
-							e_data->add_component(c_tracker);
 						}
 							break;
 						case cH("int"):
@@ -1376,30 +1225,30 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							break;
 						case cH("std::basic_string(char)"):
 						{
+							auto c_tracker = new_component<cStringDataTracker>();
+							c_tracker->data = (std::string*)input->data();
+							e_data->add_component(c_tracker);
+
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 							e_data->add_child(e_edit);
 							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto str = w2s(text);
 								(*(BP::Slot**)c)->set_data(&str);
 							}, new_mail_p(input));
-
-							auto c_tracker = new_component<cStringDataTracker>();
-							c_tracker->data = (std::string*)input->data();
-							e_data->add_component(c_tracker);
 						}
 							break;
 						case cH("std::basic_string(wchar_t)"):
 						{
+							auto c_tracker = new_component<cWStringDataTracker>();
+							c_tracker->data = (std::wstring*)input->data();
+							e_data->add_component(c_tracker);
+
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 							e_data->add_child(e_edit);
 							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto str = std::wstring(text);
 								(*(BP::Slot**)c)->set_data(&str);
 							}, new_mail_p(input));
-
-							auto c_tracker = new_component<cWStringDataTracker>();
-							c_tracker->data = (std::wstring*)input->data();
-							e_data->add_component(c_tracker);
 						}
 							break;
 						}
