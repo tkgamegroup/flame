@@ -104,7 +104,13 @@ namespace flame
 					looper().add_delay_event([](void* c) {
 						auto e = *(Entity**)c;
 						auto p = e->parent();
-						p->parent()->reposition_child(p, -1);
+						auto pp = p->parent();
+						auto idx = pp->child_count() - 1;
+						if (idx == 0)
+							return;
+						if (get_topmost(pp))
+							idx -= 1;
+						pp->reposition_child(p, idx);
 					}, new_mail_p(thiz->entity));
 				}
 			}, new_mail_p(this));

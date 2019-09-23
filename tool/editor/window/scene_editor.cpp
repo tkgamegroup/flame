@@ -281,8 +281,8 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		e_overlayer->add_child(e_move_tool);
 		{
 			auto c_element = cElement::create();
-			c_element->width = 50.f;
-			c_element->height = 50.f;
+			c_element->width = 20.f;
+			c_element->height = 20.f;
 			c_element->background_frame_thickness = 2.f;
 			e_move_tool->add_component(c_element);
 			c_overlayer->move_tool_element = c_element;
@@ -309,7 +309,73 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			}, new_mail(&capture));
 			e_move_tool->add_component(c_event_receiver);
 
-			e_move_tool->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+			e_move_tool->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+
+			auto e_h_wing = Entity::create();
+			e_move_tool->add_child(e_h_wing);
+			{
+				auto c_element = cElement::create();
+				c_element->x = 25.f;
+				c_element->y = 5.f;
+				c_element->width = 20.f;
+				c_element->height = 10.f;
+				c_element->background_frame_thickness = 2.f;
+				e_h_wing->add_component(c_element);
+
+				auto c_event_receiver = cEventReceiver::create();
+				struct Capture
+				{
+					cSceneEditorPrivate* e;
+					cEventReceiver* er;
+				}capture;
+				capture.e = c_editor;
+				capture.er = c_event_receiver;
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto& capture = *(Capture*)c;
+					if (capture.e->selected)
+					{
+						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
+						if (e && capture.er->active && is_mouse_move(action, key))
+							e->x += pos.x();
+					}
+				}, new_mail(&capture));
+				e_h_wing->add_component(c_event_receiver);
+
+				e_h_wing->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+			}
+
+			auto e_v_wing = Entity::create();
+			e_move_tool->add_child(e_v_wing);
+			{
+				auto c_element = cElement::create();
+				c_element->x = 5.f;
+				c_element->y = 25.f;
+				c_element->width = 10.f;
+				c_element->height = 20.f;
+				c_element->background_frame_thickness = 2.f;
+				e_v_wing->add_component(c_element);
+
+				auto c_event_receiver = cEventReceiver::create();
+				struct Capture
+				{
+					cSceneEditorPrivate* e;
+					cEventReceiver* er;
+				}capture;
+				capture.e = c_editor;
+				capture.er = c_event_receiver;
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto& capture = *(Capture*)c;
+					if (capture.e->selected)
+					{
+						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
+						if (e && capture.er->active && is_mouse_move(action, key))
+							e->y += pos.y();
+					}
+				}, new_mail(&capture));
+				e_v_wing->add_component(c_event_receiver);
+
+				e_v_wing->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+			}
 		}
 	}
 
