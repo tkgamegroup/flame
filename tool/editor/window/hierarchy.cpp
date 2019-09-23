@@ -9,6 +9,7 @@
 #include "../app.h"
 #include "hierarchy.h"
 #include "scene_editor.h"
+#include "inspector.h"
 
 struct cHierarchyItem : Component
 {
@@ -24,24 +25,36 @@ struct cHierarchyItem : Component
 	}
 };
 
-struct cHierarchy : Component
+cHierarchy::~cHierarchy()
 {
-	cSceneEditor* editor;
+	editor->hierarchy = nullptr;
+}
 
-	cHierarchy() :
-		Component("Hierarchy")
+static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
+{
+	for (auto i = 0; i < sub_tree->child_count(); i++)
 	{
+		auto item = sub_tree->child(i);
+		if (((cHierarchyItem*)item->find_component(cH("HierarchyItem")))->e == e)
+			return item;
+		if (item->find_component(cH("TreeNode")))
+		{
+			auto res = find_item_in_tree(item->child(1), e);
+			if (res)
+				return res;
+		}
 	}
+	return nullptr;
+}
 
-	~cHierarchy()
-	{
-		editor->hierarchy_tab = nullptr;
-	}
+Entity* cHierarchy::find_item(Entity* e) const
+{
+	return find_item_in_tree(e_tree, e);
+}
 
-	virtual void update() override
-	{
-	}
-};
+void cHierarchy::update()
+{
+}
 
 void create_tree_node(Entity* e, Entity* parent)
 {
@@ -50,7 +63,7 @@ void create_tree_node(Entity* e, Entity* parent)
 		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_node);
 		{
-			auto e_item = new_component< cHierarchyItem>();
+			auto e_item = new_component<cHierarchyItem>();
 			e_item->e = e;
 			e_tree_node->add_component(e_item);
 		}
@@ -64,7 +77,7 @@ void create_tree_node(Entity* e, Entity* parent)
 		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_leaf);
 		{
-			auto e_item = new_component< cHierarchyItem>();
+			auto e_item = new_component<cHierarchyItem>();
 			e_item->e = e;
 			e_tree_leaf->add_component(e_item);
 		}
@@ -100,8 +113,9 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_hierarchy = new_component<cHierarchy>();
 	e_page->add_component(c_hierarchy);
+	c_hierarchy->tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
 	c_hierarchy->editor = editor;
-	editor->hierarchy_tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
+	editor->hierarchy = c_hierarchy;
 
 	auto e_tree = create_standard_tree(true);
 	{
@@ -110,7 +124,11 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 		auto c_tree = (cTree*)e_tree->find_component(cH("Tree"));
 		c_tree->add_selected_changed_listener([](void* c, Entity* e) {
 			auto editor = *(cSceneEditor**)c;
-			editor->on_selected_changed(e ? ((cHierarchyItem*)e->find_component(cH("HierarchyItem")))->e : nullptr);
+			auto selected = e ? ((cHierarchyItem*)e->find_component(cH("HierarchyItem")))->e : nullptr;
+			auto different = selected != editor->selected;
+			editor->selected = selected;
+			if (editor->inspector && different)
+				editor->inspector->on_selected_changed();
 		}, new_mail_p(editor));
 
 		auto c_event_receiver = cEventReceiver::create();
@@ -123,6 +141,8 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 	}
 
 	create_tree_node(editor->prefab, e_tree);
+
+	c_hierarchy->e_tree = e_tree;
 
 	e_page->add_child(wrap_standard_scrollbar(e_tree, ScrollbarVertical, true, 1.f));
 }

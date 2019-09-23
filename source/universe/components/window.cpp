@@ -42,7 +42,7 @@ namespace flame
 			assert(event_receiver);
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = (*(cMoveablePrivate**)c);
+				auto thiz = *(cMoveablePrivate**)c;
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
 					auto e = thiz->element;
@@ -100,7 +100,7 @@ namespace flame
 			assert(event_receiver);
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = (*(cBringToFrontPrivate**)c);
+				auto thiz = *(cBringToFrontPrivate**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					looper().add_delay_event([](void* c) {

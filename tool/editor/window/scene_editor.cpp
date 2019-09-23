@@ -1,10 +1,12 @@
 #include <flame/foundation/serialize.h>
+#include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/menu.h>
+#include <flame/universe/components/tree.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
@@ -21,7 +23,7 @@ struct cSceneEditorPrivate : cSceneEditor
 	{
 		prefab = nullptr;
 
-		hierarchy_tab = nullptr;
+		hierarchy = nullptr;
 		inspector = nullptr;
 
 		selected = nullptr;
@@ -33,11 +35,11 @@ struct cSceneEditorPrivate : cSceneEditor
 
 	~cSceneEditorPrivate()
 	{
-		if (hierarchy_tab)
+		if (hierarchy)
 		{
 			looper().add_delay_event([](void* c) {
 				(*(cDockerTab**)c)->take_away(true);
-			}, new_mail_p(hierarchy_tab));
+			}, new_mail_p(hierarchy->tab));
 		}
 		if (inspector)
 		{
@@ -65,17 +67,41 @@ const std::vector<TypeinfoDatabase*> cSceneEditor::dbs()
 	return ((cSceneEditorPrivate*)this)->dbs;
 }
 
-void cSceneEditor::on_selected_changed(Entity* e)
-{
-	auto update_inspector = selected != e;
-	selected = e;
-	if (inspector && update_inspector)
-		inspector->on_selected_changed();
-}
-
 void cSceneEditor::update()
 {
 }
+
+struct cSceneOverlayer : Component
+{
+	cElement* element;
+
+	cSceneEditorPrivate* editor;
+
+	cSceneOverlayer() :
+		Component("SceneOverlayer")
+	{
+	}
+
+	virtual void start() override
+	{
+		element = (cElement*)entity->find_component(cH("Element"));
+	}
+
+	virtual void update() override
+	{
+		if (editor->selected)
+		{
+			auto se = (cElement*)editor->selected->find_component(cH("Element"));
+			if (se)
+			{
+				std::vector<Vec2f> points;
+				path_rect(points, Vec2f(se->global_x, se->global_y), Vec2f(se->global_width, se->global_height));
+				points.push_back(points[0]);
+				element->canvas->stroke(points, Vec4c(0, 0, 0, 255), 6.f);
+			}
+		}
+	}
+};
 
 void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 {
@@ -130,17 +156,75 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	e_page->add_child(e_scene);
 	{
 		auto c_element = cElement::create();
-		c_element->background_frame_thickness = 2.f;
+		c_element->clip_children = true;
 		e_scene->add_component(c_element);
 
 		auto c_aligner = cAligner::create();
 		c_aligner->width_policy = SizeFitParent;
 		c_aligner->height_policy = SizeFitParent;
 		e_scene->add_component(c_aligner);
+
+		e_scene->add_component(cLayout::create(LayoutFree));
 	}
 
 	c_editor->e_scene = e_scene;
 	c_editor->load(filename);
+
+	auto e_overlayer = Entity::create();
+	e_scene->add_child(e_overlayer);
+	{
+		e_overlayer->add_component(cElement::create());
+
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->penetrable = true;
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto thiz = *(cSceneEditorPrivate**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			{
+				auto prev_selected = thiz->selected;
+				thiz->selected = nullptr;
+				struct Capture
+				{
+					cSceneEditorPrivate* thiz;
+					Vec2f pos;
+				}capture;
+				capture.thiz = thiz;
+				capture.pos = pos;
+				thiz->prefab->traverse_backward([](void* c, Entity* e) {
+					auto& capture = *(Capture*)c;
+					if (capture.thiz->selected)
+						return;
+
+					auto element = (cElement*)e->find_component(cH("Element"));
+					if (element && element->contains(capture.pos))
+						capture.thiz->selected = e;
+				}, new_mail(&capture));
+				if (prev_selected != thiz->selected)
+				{
+					if (thiz->hierarchy)
+					{
+						auto tree = (cTree*)thiz->hierarchy->e_tree->find_component(cH("Tree"));
+						if (!thiz->selected)
+							tree->selected = nullptr;
+						else
+							tree->selected = thiz->hierarchy->find_item(thiz->selected);
+					}
+					if (thiz->inspector)
+						thiz->inspector->on_selected_changed();
+				}
+			}
+		}, new_mail_p(c_editor));
+		e_overlayer->add_component(c_event_receiver);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitParent;
+		c_aligner->height_policy = SizeFitParent;
+		e_overlayer->add_component(c_aligner);
+
+		auto c_overlayer = new_component<cSceneOverlayer>();
+		c_overlayer->editor = c_editor;
+		e_overlayer->add_component(c_overlayer);
+	}
 
 	open_hierachy(c_editor, Vec2f(20.f));
 	open_inspector(c_editor, Vec2f(1480, 20.f));

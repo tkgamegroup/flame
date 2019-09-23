@@ -4,6 +4,7 @@
 
 using namespace flame;
 
+struct cHierarchy;
 struct cInspector;
 
 struct cSceneEditor : Component
@@ -11,7 +12,7 @@ struct cSceneEditor : Component
 	Entity* prefab;
 
 	Entity* e_scene;
-	cDockerTab* hierarchy_tab;
+	cHierarchy* hierarchy;
 	cInspector* inspector;
 
 	Entity* selected;
@@ -22,8 +23,6 @@ struct cSceneEditor : Component
 	}
 
 	const std::vector<TypeinfoDatabase*> dbs();
-
-	void on_selected_changed(Entity* e);
 
 	virtual void update() override;
 };
