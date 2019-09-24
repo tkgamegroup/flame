@@ -165,6 +165,18 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				{
 					destroy_topmost(app.root);
 
+					looper().add_delay_event([](void* c) {
+						auto editor = *(cSceneEditor**)c;
+
+						auto e = Entity::create();
+						e->set_name("unnamed");
+						if (editor->selected)
+							editor->selected->add_child(e);
+						else
+							editor->prefab->add_child(e);
+						if (editor->hierarchy)
+							editor->hierarchy->refresh();
+					}, new_mail_p(editor));
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -194,6 +206,20 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				{
 					destroy_topmost(app.root);
 
+					looper().add_delay_event([](void* c) {
+						auto editor = *(cSceneEditor**)c;
+
+						auto sel = editor->selected;
+						if (sel)
+						{
+							editor->selected = nullptr;
+							if (editor->inspector)
+								editor->inspector->refresh();
+							sel->parent()->remove_child(sel);
+							if (editor->hierarchy)
+								editor->hierarchy->refresh();
+						}
+					}, new_mail_p(editor));
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -242,40 +268,39 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		auto c_event_receiver = cEventReceiver::create();
 		c_event_receiver->penetrable = true;
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto thiz = *(cSceneEditorPrivate**)c;
+			auto editor = *(cSceneEditorPrivate**)c;
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
-				auto prev_selected = thiz->selected;
-				thiz->selected = nullptr;
 				struct Capture
 				{
-					cSceneEditorPrivate* thiz;
+					cSceneEditorPrivate* e;
 					Vec2f pos;
 				}capture;
-				capture.thiz = thiz;
+				capture.e = editor;
 				capture.pos = pos;
-				thiz->prefab->traverse_backward([](void* c, Entity* e) {
+				looper().add_delay_event([](void* c) {
 					auto& capture = *(Capture*)c;
-					if (capture.thiz->selected)
-						return;
+					auto editor = capture.e;
 
-					auto element = (cElement*)e->find_component(cH("Element"));
-					if (element && element->contains(capture.pos))
-						capture.thiz->selected = e;
-				}, new_mail(&capture));
-				if (prev_selected != thiz->selected)
-				{
-					if (thiz->hierarchy)
+					auto prev_selected = editor->selected;
+					editor->selected = nullptr;
+					editor->prefab->traverse_backward([](void* c, Entity* e) {
+						auto& capture = *(Capture*)c;
+						if (capture.e->selected)
+							return;
+
+						auto element = (cElement*)e->find_component(cH("Element"));
+						if (element && element->contains(capture.pos))
+							capture.e->selected = e;
+					}, new_mail(&capture));
+					if (prev_selected != editor->selected)
 					{
-						auto tree = (cTree*)thiz->hierarchy->e_tree->find_component(cH("Tree"));
-						if (!thiz->selected)
-							tree->selected = nullptr;
-						else
-							tree->selected = thiz->hierarchy->find_item(thiz->selected);
+						if (editor->hierarchy)
+							editor->hierarchy->refresh_selected();
+						if (editor->inspector)
+							editor->inspector->refresh();
 					}
-					if (thiz->inspector)
-						thiz->inspector->on_selected_changed();
-				}
+				}, new_mail(&capture));
 			}
 		}, new_mail_p(c_editor));
 		e_overlayer->add_component(c_event_receiver);

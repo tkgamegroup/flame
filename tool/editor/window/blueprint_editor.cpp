@@ -282,7 +282,7 @@ struct cBPEditor : Component
 								else
 								{
 									if (capture.e->running)
-										capture.e->show_tip(L"Cannot Add New Template Node While Running");
+										capture.e->add_tip(L"Cannot Add New Template Node While Running");
 									else
 									{
 										auto file = SerializableNode::create_from_xml_file(capture.e->filename);
@@ -475,7 +475,7 @@ struct cBPEditor : Component
 		return true;
 	}
 
-	void show_tip(const std::wstring& text)
+	void add_tip(const std::wstring& text)
 	{
 		auto e_tip = Entity::create();
 		entity->add_child(e_tip);
@@ -1417,7 +1417,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 					if (editor->running)
-						editor->show_tip(L"Cannot Reload While Running");
+						editor->add_tip(L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, false);
 				}
@@ -1432,7 +1432,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 					if (editor->running)
-						editor->show_tip(L"Cannot Reload While Running");
+						editor->add_tip(L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, true);
 				}

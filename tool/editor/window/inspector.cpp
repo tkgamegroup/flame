@@ -153,376 +153,371 @@ struct cInspectorPrivate : cInspector
 		editor->inspector = nullptr;
 	}
 
-	void on_selected_changed()
+	void refresh()
 	{
-		looper().add_delay_event([](void* c) {
-			auto thiz = *(cInspectorPrivate**)c;
-			auto editor = thiz->editor;
-			auto& dbs = editor->dbs();
-			auto selected = editor->selected;
+		auto& dbs = editor->dbs();
+		auto selected = editor->selected;
 
-			auto e_layout = thiz->e_layout;
-			e_layout->remove_all_children();
-			if (!selected)
+		e_layout->remove_all_children();
+		if (!selected)
+		{
+			auto e_text = Entity::create();
+			e_layout->add_child(e_text);
 			{
-				auto e_text = Entity::create();
-				e_layout->add_child(e_text);
+				e_text->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"Nothing Selected");
+				e_text->add_component(c_text);
+			}
+		}
+		else
+		{
+			{
+				auto e_item = create_item(L"name");
+				e_layout->add_child(e_item);
+
+				auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
+				e_item->child(1)->add_child(e_edit);
+				((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(selected->name()));
+				((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+					auto editor = *(cSceneEditor**)c;
+					editor->selected->set_name(w2s(text));
+					if (editor->hierarchy)
+					{
+						auto item = editor->hierarchy->find_item(editor->selected);
+						if (item->find_component(cH("TreeNode")))
+							((cText*)item->child(0)->find_component(cH("Text")))->set_text(text);
+						else
+							((cText*)item->find_component(cH("Text")))->set_text(text);
+					}
+				}, new_mail_p(editor));
+			}
+			{
+				auto e_item = create_item(L"visible");
+				e_layout->add_child(e_item);
+
+				auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
+				e_item->child(1)->add_child(e_checkbox);
+				auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
+				checkbox->set_checked(selected->visible, false);
+				checkbox->add_changed_listener([](void* c, bool checked) {
+					(*(Entity**)c)->visible = checked;
+				}, new_mail_p(selected));
+			}
+
+			for (auto i = 0; i < selected->component_count(); i++)
+			{
+				auto component = selected->component(i);
+
+				auto e_component = Entity::create();
+				e_layout->add_child(e_component);
 				{
-					e_text->add_component(cElement::create());
+					auto c_element = cElement::create();
+					c_element->inner_padding = Vec4f(4.f);
+					c_element->background_frame_thickness = 2.f;
+					c_element->background_frame_color = Vec4f(0, 0, 0, 255);
+					e_component->add_component(c_element);
+
+					auto c_aligner = cAligner::create();
+					c_aligner->width_policy = SizeFitParent;
+					e_component->add_component(c_aligner);
+
+					auto c_layout = cLayout::create(LayoutVertical);
+					c_layout->item_padding = 2.f;
+					e_component->add_component(c_layout);
+				}
+
+				auto udt = find_udt(dbs, H((std::string("Component") + component->type_name).c_str()));
+
+				auto c_dealer = new_component<cComponentDealer>();
+				c_dealer->component = component;
+				c_dealer->dummy = malloc(udt->size());
+				{
+					auto f = udt->find_function("ctor");
+					if (f && f->parameter_count() == 0)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), c_dealer->dummy);
+				}
+				c_dealer->dtor_addr = nullptr;
+				{
+					auto f = udt->find_function("dtor");
+					if (f)
+						c_dealer->dtor_addr = (char*)module + (uint)f->rva();
+				}
+				{
+					auto f = udt->find_function("save");
+					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")));
+					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), c_dealer->dummy, component);
+					c_dealer->save_addr = (char*)module + (uint)f->rva();
+				}
+				{
+					auto f = udt->find_function("data_changed");
+					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("uint")));
+					c_dealer->data_changed_addr = (char*)module + (uint)f->rva();
+				}
+				e_component->add_component(c_dealer);
+
+				auto e_name = Entity::create();
+				e_component->add_child(e_name);
+				{
+					auto c_element = cElement::create();
+					c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_pixel->pixel_height, 0.f);
+					e_name->add_component(c_element);
 
 					auto c_text = cText::create(app.font_atlas_pixel);
-					c_text->set_text(L"Nothing Selected");
-					e_text->add_component(c_text);
-				}
-			}
-			else
-			{
-				{
-					auto e_item = create_item(L"name");
-					e_layout->add_child(e_item);
+					c_text->color = Vec4c(30, 40, 160, 255);
+					c_text->set_text(s2w(component->type_name));
+					e_name->add_component(c_text);
 
-					auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-					e_item->child(1)->add_child(e_edit);
-					((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(selected->name()));
-					((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-						auto editor = *(cSceneEditor**)c;
-						editor->selected->set_name(w2s(text));
-						if (editor->hierarchy)
+					e_name->add_component(cLayout::create(LayoutFree));
+				}
+
+				auto e_close = Entity::create();
+				e_name->add_child(e_close);
+				{
+					e_close->add_component(cElement::create());
+
+					auto c_text = cText::create(app.font_atlas_pixel);
+					c_text->set_text(Icon_WINDOW_CLOSE);
+					e_close->add_component(c_text);
+
+					auto c_event_receiver = cEventReceiver::create();
+					struct Capture
+					{
+						Entity* e;
+						Component* c;
+					}capture;
+					capture.e = e_component;
+					capture.c = component;
+					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+						auto& capture = *(Capture*)c;
+						if (is_mouse_clicked(action, key))
 						{
-							auto item = editor->hierarchy->find_item(editor->selected);
-							if (item->find_component(cH("TreeNode")))
-								((cText*)item->child(0)->find_component(cH("Text")))->set_text(text);
-							else
-								((cText*)item->find_component(cH("Text")))->set_text(text);
+							Capture _capture;
+							_capture.e = capture.e;
+							_capture.c = capture.c;
+							looper().add_delay_event([](void* c) {
+								auto& capture = *(Capture*)c;
+								capture.e->parent()->remove_child(capture.e);
+								capture.c->entity->remove_component(capture.c);
+							}, new_mail(&_capture));
 						}
-					}, new_mail_p(editor));
-				}
-				{
-					auto e_item = create_item(L"visible");
-					e_layout->add_child(e_item);
+					}, new_mail(&capture));
+					e_close->add_component(c_event_receiver);
 
-					auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
-					e_item->child(1)->add_child(e_checkbox);
-					auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
-					checkbox->set_checked(selected->visible, false);
-					checkbox->add_changed_listener([](void* c, bool checked) {
-						(*(Entity**)c)->visible = checked;
-					}, new_mail_p(selected));
+					auto c_aligner = cAligner::create();
+					c_aligner->x_align = AlignxRight;
+					e_close->add_component(c_aligner);
 				}
 
-				for (auto i = 0; i < selected->component_count(); i++)
+				for (auto j = 0; j < udt->variable_count(); j++)
 				{
-					auto component = selected->component(i);
+					auto v = udt->variable(j);
+					auto t = v->type();
+					auto hash = t->hash();
+					auto pdata = (char*)c_dealer->dummy + v->offset();
 
-					auto e_component = Entity::create();
-					e_layout->add_child(e_component);
+					auto e_item = create_item(s2w(v->name()));
+					e_component->add_child(e_item);
+					auto e_data = e_item->child(1);
+					switch (t->tag())
 					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(4.f);
-						c_element->background_frame_thickness = 2.f;
-						c_element->background_frame_color = Vec4f(0, 0, 0, 255);
-						e_component->add_component(c_element);
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeFitParent;
-						e_component->add_component(c_aligner);
-
-						auto c_layout = cLayout::create(LayoutVertical);
-						c_layout->item_padding = 2.f;
-						e_component->add_component(c_layout);
-					}
-
-					auto udt = find_udt(dbs, H((std::string("Component") + component->type_name).c_str()));
-
-					auto c_dealer = new_component<cComponentDealer>();
-					c_dealer->component = component;
-					c_dealer->dummy = malloc(udt->size());
+					case TypeTagEnumSingle:
 					{
-						auto f = udt->find_function("ctor");
-						if (f && f->parameter_count() == 0)
-							cmf(p2f<MF_v_v>((char*)thiz->module + (uint)f->rva()), c_dealer->dummy);
-					}
-					c_dealer->dtor_addr = nullptr;
-					{
-						auto f = udt->find_function("dtor");
-						if (f)
-							c_dealer->dtor_addr = (char*)thiz->module + (uint)f->rva();
-					}
-					{
-						auto f = udt->find_function("save");
-						assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")));
-						cmf(p2f<MF_v_vp>((char*)thiz->module + (uint)f->rva()), c_dealer->dummy, component);
-						c_dealer->save_addr = (char*)thiz->module + (uint)f->rva();
-					}
-					{
-						auto f = udt->find_function("data_changed");
-						assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("uint")));
-						c_dealer->data_changed_addr = (char*)thiz->module + (uint)f->rva();
-					}
-					e_component->add_component(c_dealer);
+						auto info = find_enum(dbs, hash);
 
-					auto e_name = Entity::create();
-					e_component->add_child(e_name);
-					{
-						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_pixel->pixel_height, 0.f);
-						e_name->add_component(c_element);
+						auto c_tracker = new_component<cEnumSingleDataTracker>();
+						c_tracker->auto_update = true;
+						c_tracker->data = (int*)pdata;
+						c_tracker->info = info;
+						e_data->add_component(c_tracker);
 
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->color = Vec4c(30, 40, 160, 255);
-						c_text->set_text(s2w(component->type_name));
-						e_name->add_component(c_text);
-
-						e_name->add_component(cLayout::create(LayoutFree));
-					}
-
-					auto e_close = Entity::create();
-					e_name->add_child(e_close);
-					{
-						e_close->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(Icon_WINDOW_CLOSE);
-						e_close->add_component(c_text);
-
-						auto c_event_receiver = cEventReceiver::create();
+						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
 						struct Capture
 						{
-							Entity* e;
-							Component* c;
+							cComponentDealer* d;
+							VariableInfo* v;
+							EnumInfo* info;
 						}capture;
-						capture.e = e_component;
-						capture.c = component;
-						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+						capture.d = c_dealer;
+						capture.v = v;
+						capture.info = info;
+						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->add_changed_listener([](void* c, int idx) {
 							auto& capture = *(Capture*)c;
-							if (is_mouse_clicked(action, key))
-							{
-								Capture _capture;
-								_capture.e = capture.e;
-								_capture.c = capture.c;
-								looper().add_delay_event([](void* c) {
-									auto& capture = *(Capture*)c;
-									capture.e->parent()->remove_child(capture.e);
-									capture.c->entity->remove_component(capture.c);
-								}, new_mail(&_capture));
-							}
+							*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(idx)->value();
+							capture.d->data_changed(capture.v->name_hash());
 						}, new_mail(&capture));
-						e_close->add_component(c_event_receiver);
-
-						auto c_aligner = cAligner::create();
-						c_aligner->x_align = AlignxRight;
-						e_close->add_component(c_aligner);
 					}
-
-					for (auto j = 0; j < udt->variable_count(); j++)
+						break;
+					case TypeTagEnumMulti:
 					{
-						auto v = udt->variable(j);
-						auto t = v->type();
-						auto hash = t->hash();
-						auto pdata = (char*)c_dealer->dummy + v->offset();
+						auto info = find_enum(dbs, hash);
 
-						auto e_item = create_item(s2w(v->name()));
-						e_component->add_child(e_item);
-						auto e_data = e_item->child(1);
-						switch (t->tag())
+						auto c_tracker = new_component<cEnumMultiDataTracker>();
+						c_tracker->auto_update = true;
+						c_tracker->data = (int*)pdata;
+						c_tracker->info = info;
+						e_data->add_component(c_tracker);
+
+						create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
+						for (auto k = 0; k < info->item_count(); k++)
 						{
-						case TypeTagEnumSingle:
-						{
-							auto info = find_enum(dbs, hash);
-
-							auto c_tracker = new_component<cEnumSingleDataTracker>();
-							c_tracker->auto_update = true;
-							c_tracker->data = (int*)pdata;
-							c_tracker->info = info;
-							e_data->add_component(c_tracker);
-
-							create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
 							struct Capture
 							{
 								cComponentDealer* d;
 								VariableInfo* v;
-								EnumInfo* info;
+								int vl;
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							capture.info = info;
-							((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->add_changed_listener([](void* c, int idx) {
+							capture.vl = info->item(k)->value();
+							((cCheckbox*)e_data->child(k)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
-								*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(idx)->value();
+								auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
+								if (checked)
+									(*pv) |= capture.vl;
+								else
+									(*pv) &= ~capture.vl;
+								capture.d->data_changed(capture.v->name_hash());
+							}, new_mail(&capture));
+						}
+					}
+						break;
+					case TypeTagVariable:
+						switch (hash)
+						{
+						case cH("bool"):
+						{
+							auto c_tracker = new_component<cBoolDataTracker>();
+							c_tracker->auto_update = true;
+							c_tracker->data = (bool*)pdata;
+							e_data->add_component(c_tracker);
+
+							auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
+							e_data->add_child(e_checkbox);
+							struct Capture
+							{
+								cComponentDealer* d;
+								VariableInfo* v;
+							}capture;
+							capture.d = c_dealer;
+							capture.v = v;
+							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+								auto& capture = *(Capture*)c;
+								*(bool*)((char*)capture.d->dummy + capture.v->offset()) = checked;
 								capture.d->data_changed(capture.v->name_hash());
 							}, new_mail(&capture));
 						}
 							break;
-						case TypeTagEnumMulti:
+						case cH("int"):
+							create_edit<int>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(2+int)"):
+							create_vec_edit<2, int>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(3+int)"):
+							create_vec_edit<3, int>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(4+int)"):
+							create_vec_edit<4, int>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("uint"):
+							create_edit<uint>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(2+uint)"):
+							create_vec_edit<2, uint>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(3+uint)"):
+							create_vec_edit<3, uint>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(4+uint)"):
+							create_vec_edit<4, uint>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("float"):
+							create_edit<float>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(2+float)"):
+							create_vec_edit<2, float>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(3+float)"):
+							create_vec_edit<3, float>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(4+float)"):
+							create_vec_edit<4, float>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("uchar"):
+							create_edit<uchar>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(2+uchar)"):
+							create_vec_edit<2, uchar>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(3+uchar)"):
+							create_vec_edit<3, uchar>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("Vec(4+uchar)"):
+							create_vec_edit<4, uchar>(e_data, pdata, c_dealer, v);
+							break;
+						case cH("std::basic_string(char)"):
 						{
-							auto info = find_enum(dbs, hash);
-
-							auto c_tracker = new_component<cEnumMultiDataTracker>();
+							auto c_tracker = new_component<cStringDataTracker>();
 							c_tracker->auto_update = true;
-							c_tracker->data = (int*)pdata;
-							c_tracker->info = info;
+							c_tracker->data = (std::string*)pdata;
 							e_data->add_component(c_tracker);
 
-							create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
-							for (auto k = 0; k < info->item_count(); k++)
+							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+							e_data->add_child(e_edit);
+							struct Capture
 							{
-								struct Capture
-								{
-									cComponentDealer* d;
-									VariableInfo* v;
-									int vl;
-								}capture;
-								capture.d = c_dealer;
-								capture.v = v;
-								capture.vl = info->item(k)->value();
-								((cCheckbox*)e_data->child(k)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
-									auto& capture = *(Capture*)c;
-									auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
-									if (checked)
-										(*pv) |= capture.vl;
-									else
-										(*pv) &= ~capture.vl;
-									capture.d->data_changed(capture.v->name_hash());
-								}, new_mail(&capture));
-							}
+								cComponentDealer* d;
+								VariableInfo* v;
+							}capture;
+							capture.d = c_dealer;
+							capture.v = v;
+							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+								auto& capture = *(Capture*)c;
+								*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
+								capture.d->data_changed(capture.v->name_hash());
+							}, new_mail(&capture));
 						}
 							break;
-						case TypeTagVariable:
-							switch (hash)
-							{
-							case cH("bool"):
-							{
-								auto c_tracker = new_component<cBoolDataTracker>();
-								c_tracker->auto_update = true;
-								c_tracker->data = (bool*)pdata;
-								e_data->add_component(c_tracker);
+						case cH("std::basic_string(wchar_t)"):
+						{
+							auto c_tracker = new_component<cWStringDataTracker>();
+							c_tracker->auto_update = true;
+							c_tracker->data = (std::wstring*)pdata;
+							e_data->add_component(c_tracker);
 
-								auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
-								e_data->add_child(e_checkbox);
-								struct Capture
-								{
-									cComponentDealer* d;
-									VariableInfo* v;
-								}capture;
-								capture.d = c_dealer;
-								capture.v = v;
-								((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
-									auto& capture = *(Capture*)c;
-									*(bool*)((char*)capture.d->dummy + capture.v->offset()) = checked;
-									capture.d->data_changed(capture.v->name_hash());
-								}, new_mail(&capture));
-							}
-								break;
-							case cH("int"):
-								create_edit<int>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(2+int)"):
-								create_vec_edit<2, int>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(3+int)"):
-								create_vec_edit<3, int>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(4+int)"):
-								create_vec_edit<4, int>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("uint"):
-								create_edit<uint>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(2+uint)"):
-								create_vec_edit<2, uint>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(3+uint)"):
-								create_vec_edit<3, uint>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(4+uint)"):
-								create_vec_edit<4, uint>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("float"):
-								create_edit<float>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(2+float)"):
-								create_vec_edit<2, float>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(3+float)"):
-								create_vec_edit<3, float>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(4+float)"):
-								create_vec_edit<4, float>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("uchar"):
-								create_edit<uchar>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(2+uchar)"):
-								create_vec_edit<2, uchar>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(3+uchar)"):
-								create_vec_edit<3, uchar>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("Vec(4+uchar)"):
-								create_vec_edit<4, uchar>(e_data, pdata, c_dealer, v);
-								break;
-							case cH("std::basic_string(char)"):
+							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+							e_data->add_child(e_edit);
+							struct Capture
 							{
-								auto c_tracker = new_component<cStringDataTracker>();
-								c_tracker->auto_update = true;
-								c_tracker->data = (std::string*)pdata;
-								e_data->add_component(c_tracker);
-
-								auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
-								e_data->add_child(e_edit);
-								struct Capture
-								{
-									cComponentDealer* d;
-									VariableInfo* v;
-								}capture;
-								capture.d = c_dealer;
-								capture.v = v;
-								((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-									auto& capture = *(Capture*)c;
-									*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
-									capture.d->data_changed(capture.v->name_hash());
-								}, new_mail(&capture));
-							}
-								break;
-							case cH("std::basic_string(wchar_t)"):
-							{
-								auto c_tracker = new_component<cWStringDataTracker>();
-								c_tracker->auto_update = true;
-								c_tracker->data = (std::wstring*)pdata;
-								e_data->add_component(c_tracker);
-
-								auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
-								e_data->add_child(e_edit);
-								struct Capture
-								{
-									cComponentDealer* d;
-									VariableInfo* v;
-								}capture;
-								capture.d = c_dealer;
-								capture.v = v;
-								((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
-									auto& capture = *(Capture*)c;
-									*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
-									capture.d->data_changed(capture.v->name_hash());
-								}, new_mail(&capture));
-							}
-								break;
-							}
+								cComponentDealer* d;
+								VariableInfo* v;
+							}capture;
+							capture.d = c_dealer;
+							capture.v = v;
+							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+								auto& capture = *(Capture*)c;
+								*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
+								capture.d->data_changed(capture.v->name_hash());
+							}, new_mail(&capture));
+						}
 							break;
 						}
+						break;
 					}
 				}
-
-				auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, thiz->e_add_component_menu, true, SideS, false, false, false, nullptr);
-				e_layout->add_child(e_menu_btn);
 			}
-		}, new_mail_p(this));
+
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, e_add_component_menu, true, SideS, false, false, false, nullptr);
+			e_layout->add_child(e_menu_btn);
+		}
 	}
 };
 
-void cInspector::on_selected_changed()
+void cInspector::refresh()
 {
-	((cInspectorPrivate*)this)->on_selected_changed();
+	((cInspectorPrivate*)this)->refresh();
 }
 
 void cInspector::update()
@@ -601,29 +596,33 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 				{
 					destroy_topmost(app.root);
 
-					auto dummy = malloc(capture.u->size());
-					auto module = load_module(capture.u->db()->module_name());
-					{
-						auto f = capture.u->find_function("ctor");
-						if (f && f->parameter_count() == 0)
-							cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-					}
-					void* c;
-					{
-						auto f = capture.u->find_function("create");
-						assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
-						c = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
-					}
-					capture.i->editor->selected->add_component((Component*)c);
-					{
-						auto f = capture.u->find_function("dtor");
-						if (f)
-							cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-					}
-					free_module(module);
-					free(dummy);
+					looper().add_delay_event([](void* c) {
+						auto& capture = *(Capture*)c;
 
-					capture.i->on_selected_changed();
+						auto dummy = malloc(capture.u->size());
+						auto module = load_module(capture.u->db()->module_name());
+						{
+							auto f = capture.u->find_function("ctor");
+							if (f && f->parameter_count() == 0)
+								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+						}
+						void* component;
+						{
+							auto f = capture.u->find_function("create");
+							assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
+							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
+						}
+						capture.i->editor->selected->add_component((Component*)component);
+						{
+							auto f = capture.u->find_function("dtor");
+							if (f)
+								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+						}
+						free_module(module);
+						free(dummy);
+
+						capture.i->refresh();
+					}, new_mail(&capture));
 				}
 			}, new_mail(&capture));
 		}
@@ -654,5 +653,5 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	e_page->add_child(wrap_standard_scrollbar(e_layout, ScrollbarVertical, true, 1.f));
 
-	c_inspector->on_selected_changed();
+	c_inspector->refresh();
 }

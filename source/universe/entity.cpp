@@ -346,13 +346,13 @@ namespace flame
 					auto type = v->type();
 					unserialize_value(dbs, type->tag(), type->hash(), n->find_attr("v")->value(), (char*)dummy + v->offset());
 				}
-				void* c;
+				void* component;
 				{
 					auto f = udt->find_function("create");
 					assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
-					c = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
+					component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
 				}
-				e->add_component((Component*)c);
+				e->add_component((Component*)component);
 				{
 					auto f = udt->find_function("dtor");
 					if (f)

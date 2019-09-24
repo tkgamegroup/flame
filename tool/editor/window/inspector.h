@@ -19,7 +19,7 @@ struct cInspector : Component
 	{
 	}
 
-	void on_selected_changed();
+	void refresh();
 
 	virtual void update() override;
 };

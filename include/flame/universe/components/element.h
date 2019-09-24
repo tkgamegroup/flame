@@ -9,18 +9,6 @@ namespace flame
 		struct Canvas;
 	}
 
-	/*
-			   pos                        size.x()
-				   +------------------------------------------------
-				   |	              top inner padding
-				   |			****************************
-				   |	 left   *                          *  right
-		  size.y() |	 inner  *          content         *  inner
-				   |	padding *                          * padding
-				   |	        ****************************
-				   |			     bottom inner padding
-	*/
-
 	struct cElement : Component
 	{
 		float x;

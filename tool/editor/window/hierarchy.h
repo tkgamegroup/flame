@@ -22,6 +22,8 @@ struct cHierarchy : Component
 	~cHierarchy();
 
 	Entity* find_item(Entity* e) const;
+	void refresh_selected();
+	void refresh();
 
 	virtual void update() override;
 };
