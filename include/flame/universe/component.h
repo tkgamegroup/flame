@@ -13,9 +13,12 @@ namespace flame
 
 		Entity* entity;
 
+		bool first_update;
+
 		Component(const char* name) :
 			type_name(name),
-			type_hash(H(name))
+			type_hash(H(name)),
+			first_update(true)
 		{
 		}
 

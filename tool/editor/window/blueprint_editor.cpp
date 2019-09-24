@@ -210,10 +210,10 @@ struct cBPEditor : Component
 			capture.e = this;
 			capture.u = udt;
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					auto& capture = *(Capture*)c;
 					capture.e->add_node(capture.u->name(), "");
 				}
 			}, new_mail(&capture));
@@ -222,10 +222,10 @@ struct cBPEditor : Component
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"template..");
 			e_add_node_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					auto editor = *(cBPEditor**)c;
 
 					auto t = create_topmost(editor->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
 					{

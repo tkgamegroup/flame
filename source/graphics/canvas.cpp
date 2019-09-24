@@ -315,40 +315,32 @@ namespace flame
 				for (auto it = text.rbegin(); it != text.rend(); it++)
 				{
 					auto ch = *it;
-					if (ch == '\n')
+					if (ch == '\t')
+						ch = ' ';
+					auto g = f->get_glyph(ch);
+
+					auto p = _pos + Vec2f(-g->off.x(), g->off.y()) * scale;
+					auto size = Vec2f(g->size) * scale;
+					if (rect_overlapping(Vec4f(p - size, p), curr_scissor))
 					{
-						_pos.y() += pixel_height;
-						_pos.x() = pos.x();
+						vtx_end->pos = p + Vec2f(-size.x(), 0.f);			vtx_end->uv = g->uv0;							vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(-size.x(), -size.y());		vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());	vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(0.f, -size.y());			vtx_end->uv = g->uv1;							vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p;									vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());	vtx_end->col = col; vtx_end++;
+
+						*idx_end = vtx_cnt + 0; idx_end++;
+						*idx_end = vtx_cnt + 2; idx_end++;
+						*idx_end = vtx_cnt + 1; idx_end++;
+						*idx_end = vtx_cnt + 0; idx_end++;
+						*idx_end = vtx_cnt + 3; idx_end++;
+						*idx_end = vtx_cnt + 2; idx_end++;
+
+						vtx_cnt += 4;
+						idx_cnt += 6;
 					}
-					else if (ch != '\r')
-					{
-						if (ch == '\t')
-							ch = ' ';
-						auto g = f->get_glyph(ch);
 
-						auto p = _pos + Vec2f(-g->off.x(), g->off.y()) * scale;
-						auto size = Vec2f(g->size) * scale;
-						if (rect_overlapping(Vec4f(p - size, p), curr_scissor))
-						{
-							vtx_end->pos = p + Vec2f(-size.x(), 0.f);			vtx_end->uv = g->uv0;							vtx_end->col = col; vtx_end++;
-							vtx_end->pos = p + Vec2f(-size.x(), -size.y());		vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());	vtx_end->col = col; vtx_end++;
-							vtx_end->pos = p + Vec2f(0.f, -size.y());			vtx_end->uv = g->uv1;							vtx_end->col = col; vtx_end++;
-							vtx_end->pos = p + Vec2f(0.f, 0.f);					vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());	vtx_end->col = col; vtx_end++;
-
-							*idx_end = vtx_cnt + 0; idx_end++;
-							*idx_end = vtx_cnt + 2; idx_end++;
-							*idx_end = vtx_cnt + 1; idx_end++;
-							*idx_end = vtx_cnt + 0; idx_end++;
-							*idx_end = vtx_cnt + 3; idx_end++;
-							*idx_end = vtx_cnt + 2; idx_end++;
-
-							vtx_cnt += 4;
-							idx_cnt += 6;
-						}
-
-						auto w = g->advance * scale;
-						_pos.x() -= w;
-					}
+					auto w = g->advance * scale;
+					_pos.x() -= w;
 				}
 			}
 

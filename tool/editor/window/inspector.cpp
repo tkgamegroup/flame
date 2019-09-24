@@ -1,5 +1,6 @@
 #include <flame/graphics/font.h>
 #include <flame/foundation/serialize.h>
+#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/text.h>
@@ -567,6 +568,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 		auto e_menu = create_standard_menu();
 		c_inspector->e_add_component_menu = e_menu;
 
+		#define COMPONENT_PREFIX "Component"
 		std::vector<UdtInfo*> all_udts;
 		for (auto db : editor->dbs())
 		{
@@ -574,10 +576,8 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 			for (auto i = 0; i < udts.p->size(); i++)
 			{
 				auto u = udts.p->at(i);
-				#define PREFIX "Component"
-				if (u->name().compare(0, strlen(PREFIX), PREFIX) == 0)
+				if (u->name().compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
 					all_udts.push_back(u);
-				#undef PREFIX
 			}
 			delete_mail(udts);
 		}
@@ -586,9 +586,48 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 		});
 		for (auto udt : all_udts)
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name().c_str() + strlen(COMPONENT_PREFIX)));
 			e_menu->add_child(e_item);
+			struct Capture
+			{
+				cInspectorPrivate* i;
+				UdtInfo* u;
+			}capture;
+			capture.i = c_inspector;
+			capture.u = udt;
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto& capture = *(Capture*)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+					auto dummy = malloc(capture.u->size());
+					auto module = load_module(capture.u->db()->module_name());
+					{
+						auto f = capture.u->find_function("ctor");
+						if (f && f->parameter_count() == 0)
+							cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+					}
+					void* c;
+					{
+						auto f = capture.u->find_function("create");
+						assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
+						c = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
+					}
+					capture.i->editor->selected->add_component((Component*)c);
+					{
+						auto f = capture.u->find_function("dtor");
+						if (f)
+							cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+					}
+					free_module(module);
+					free(dummy);
+
+					capture.i->on_selected_changed();
+				}
+			}, new_mail(&capture));
 		}
+		#undef COMPONENT_PREFIX
 	}
 
 	editor->inspector = c_inspector;

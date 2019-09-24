@@ -20,8 +20,6 @@ namespace flame
 			visible = true;
 			global_visible = false;
 
-			first_update = true;
-
 			name_hash = 0;
 		}
 
@@ -180,14 +178,15 @@ namespace flame
 				global_visible = visible && parent->global_visible;
 			if (!global_visible)
 				return;
-			if (first_update)
-			{
-				first_update = false;
-				for (auto& c : components)
-					c->start();
-			}
 			for (auto& c : components)
+			{
+				if (c->first_update)
+				{
+					c->start();
+					c->first_update = false;
+				}
 				c->update();
+			}
 			for (auto& e : children)
 				e->update();
 		}
@@ -333,7 +332,7 @@ namespace flame
 				auto udt = find_udt(dbs, H(("Component" + n_c->name()).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
-				auto module = load_module(L"flame_universe.dll");
+				auto module = load_module(udt->db()->module_name());
 				{
 					auto f = udt->find_function("ctor");
 					if (f && f->parameter_count() == 0)

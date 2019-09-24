@@ -171,8 +171,8 @@ namespace flame
 			color$ = default_style.text_color_normal;
 			sdf_scale$ = default_style.sdf_scale;
 			right_align$ = false;
-			auto_width$ = true;
-			auto_height$ = true;
+			auto_width$ = false;
+			auto_height$ = false;
 		}
 
 		FLAME_UNIVERSE_EXPORTS ~ComponentText$()
