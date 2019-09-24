@@ -153,7 +153,7 @@ namespace flame
 		return e_layout;
 	}
 
-	struct cText$
+	struct ComponentText$
 	{
 		uint font_atlas_index$;
 		Vec4c color$;
@@ -165,7 +165,7 @@ namespace flame
 
 #define FONT_ATLAS_PREFIX "font_atlas"
 
-		FLAME_UNIVERSE_EXPORTS cText$()
+		FLAME_UNIVERSE_EXPORTS ComponentText$()
 		{
 			font_atlas_index$ = 1;
 			color$ = default_style.text_color_normal;
@@ -175,7 +175,7 @@ namespace flame
 			auto_height$ = true;
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~cText$()
+		FLAME_UNIVERSE_EXPORTS ~ComponentText$()
 		{
 		}
 

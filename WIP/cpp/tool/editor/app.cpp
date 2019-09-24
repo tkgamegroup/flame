@@ -37,25 +37,6 @@ struct NewImageDialog : flame::ui::FileSelector
 	}
 };
 
-struct NewSceneDialog : flame::ui::FileSelector
-{
-	NewSceneDialog() :
-		FileSelector("New Scene", flame::ui::FileSelectorSave, "", flame::ui::WindowModal | flame::ui::WindowNoSavedSettings)
-	{
-		first_cx = 800;
-		first_cy = 600;
-
-		callback = [this](std::string s) {
-			if (std::experimental::filesystem::exists(s))
-				return false;
-
-			flame::XMLDoc xml("scene");
-			flame::save_xml(&xml, s);
-			return true;
-		};
-	}
-};
-
 void show_menu()
 {
 	bool open_windows_popup = false;
@@ -66,21 +47,14 @@ void show_menu()
 	{
 		if (ImGui::BeginMenu("New"))
 		{
-			if (ImGui::MenuItem("Scene"))
-				;
 			if (ImGui::MenuItem("Image"))
 				new NewImageDialog;
 
 			ImGui::EndMenu();
 		}
 
-		if (scene_editor)
-			scene_editor->on_file_menu();
-
 		ImGui::EndMenu();
 	}
-	if (scene_editor)
-		scene_editor->on_menu_bar();
 	if (ImGui::BeginMenu("View"))
 	{
 		static bool fullscreen = false;
@@ -137,135 +111,16 @@ void show_menu()
 
 		ImGui::EndMenu();
 	}
-	if (ImGui::BeginMenu("Window"))
-	{
-		if (ImGui::MenuItem("Close All Windows"))
-			;
-		ImGui::Separator();
-		if (ImGui::MenuItem("Windows"))
-			open_windows_popup = true;
-
-		ImGui::EndMenu();
-	}
-	static bool ui_demo_opened = false;
 	if (ImGui::BeginMenu("Help"))
 	{
 		if (ImGui::MenuItem("Preferences"))
 			open_preferences_popup = true;
 		if (ImGui::MenuItem("Device Properties"))
 			open_device_popup = true;
-		if (ImGui::MenuItem("UI Demo"))
-			ui_demo_opened = true;
 
 		ImGui::EndMenu();
 	}
-	if (ui_demo_opened)
-		ImGui::ShowDemoWindow(&ui_demo_opened);
 	ImGui::EndMainMenuBar();
-
-	static bool windows_popup_opened;
-	static flame::ui::Window *windows_popup_w;
-	if (open_windows_popup)
-	{
-		ImGui::OpenPopup("Windows");
-		ImGui::SetNextWindowSize(ImVec2(400, 300));
-		windows_popup_opened = true;
-		windows_popup_w = nullptr;
-	}
-	if (ImGui::BeginPopupModal("Windows", &windows_popup_opened))
-	{
-		bool need_exit_window_popup = false;
-		ImGui::BeginChild("##list", ImVec2(300, 0), true);
-		for (auto &w : flame::ui::get_windows())
-		{
-			if (ImGui::Selectable(w->title.c_str(), w.get() == windows_popup_w))
-				windows_popup_w = w.get();
-		}
-		ImGui::EndChild();
-		ImGui::SameLine();
-		ImGui::BeginGroup();
-		if (ImGui::Button("Active"))
-			;
-		if (ImGui::Button("Close"))
-			;
-		ImGui::Separator();
-		if (windows_popup_w)
-		{
-			if (windows_popup_w->layout)
-			{
-				if (ImGui::Button("Undock"))
-				{
-					flame::ui::undock(windows_popup_w);
-					need_exit_window_popup = true;
-				}
-			}
-			else
-			{
-				static flame::ui::Window* target;
-				if (ImGui::Button("Dock To..."))
-				{
-					target = nullptr;
-					ImGui::OpenPopup("Dock To...");
-				}
-				if (ImGui::BeginPopupModal("Dock To...", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-				{
-					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1);
-					if (ImGui::BeginCombo("window", target ? target->title.c_str() : ""))
-					{
-						if (flame::ui::main_layout->is_empty(0))
-						{
-							if (ImGui::Selectable("Main Layout", target == nullptr))
-								target = nullptr;
-						}
-						for (auto &w : flame::ui::get_windows())
-						{
-							if (w->layout)
-							{
-								if (ImGui::Selectable(w->title.c_str(), target == w.get()))
-									target = w.get();
-							}
-						}
-						ImGui::EndCombo();
-					}
-					ImGui::PopStyleVar();
-					static flame::ui::DockDirection dir = flame::ui::DockCenter;
-					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1);
-					if (ImGui::BeginCombo("dir", flame::ui::get_dock_dir_name(dir)))
-					{
-						if (ImGui::Selectable(flame::ui::get_dock_dir_name(flame::ui::DockCenter), dir == flame::ui::DockCenter))
-							dir = flame::ui::DockCenter;
-						if (ImGui::Selectable(flame::ui::get_dock_dir_name(flame::ui::DockLeft), dir == flame::ui::DockLeft))
-							dir = flame::ui::DockLeft;
-						if (ImGui::Selectable(flame::ui::get_dock_dir_name(flame::ui::DockRight), dir == flame::ui::DockRight))
-							dir = flame::ui::DockRight;
-						if (ImGui::Selectable(flame::ui::get_dock_dir_name(flame::ui::DockTop), dir == flame::ui::DockTop))
-							dir = flame::ui::DockTop;
-						if (ImGui::Selectable(flame::ui::get_dock_dir_name(flame::ui::DockBottom), dir == flame::ui::DockBottom))
-							dir = flame::ui::DockBottom;
-						ImGui::EndCombo();
-					}
-					ImGui::PopStyleVar();
-					if (ImGui::Button("OK"))
-					{
-						if (target || flame::ui::main_layout->is_empty(0))
-						{
-							flame::ui::dock(windows_popup_w, target, dir);
-							need_exit_window_popup = true;
-						}
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Cancel"))
-						ImGui::CloseCurrentPopup();
-					ImGui::EndPopup();
-				}
-			}
-		}
-		ImGui::EndGroup();
-		if (need_exit_window_popup)
-			ImGui::CloseCurrentPopup();
-		ImGui::EndPopup();
-	}
 
 	static glm::vec4 bg_color;
 	if (open_preferences_popup)
@@ -516,16 +371,6 @@ void show_menu()
 		ImGui::EndPopup();
 	}
 }
-
-void show_toolbar()
-{
-	ImGui::BeginToolBar();
-	if (scene_editor)
-		scene_editor->on_toolbar();
-	ImGui::EndToolBar();
-}
-
-static flame::ui::Window *test_window;
 
 int main(int argc, char** argv)
 {

@@ -166,7 +166,7 @@ namespace flame
 		return new cElementPrivate(canvas);
 	}
 
-	struct cElement$
+	struct ComponentElement$
 	{
 		float x$;
 		float y$;
@@ -184,7 +184,7 @@ namespace flame
 		float background_shadow_thickness$;
 		bool clip_children$;
 
-		FLAME_UNIVERSE_EXPORTS cElement$()
+		FLAME_UNIVERSE_EXPORTS ComponentElement$()
 		{
 			x$ = 0.f;
 			y$ = 0.f;

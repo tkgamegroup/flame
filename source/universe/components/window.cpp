@@ -253,8 +253,8 @@ namespace flame
 			}
 			else
 			{
-				tabbar->take_child(entity);
-				pages->take_child(page);
+				tabbar->remove_child(entity, false);
+				pages->remove_child(page, false);
 				page->visible = true;
 				element->x = element->global_x;
 				element->y = element->global_y;
@@ -278,7 +278,7 @@ namespace flame
 					else if (p->name_hash() == cH("docker_layout"))
 					{
 						auto oth_docker = p->child(p->child_position(docker) == 0 ? 2 : 0);
-						p->take_child(oth_docker);
+						p->remove_child(oth_docker, false);
 						auto pp = p->parent();
 						auto idx = pp->child_position(p);
 						pp->remove_child(p);
@@ -359,8 +359,8 @@ namespace flame
 							auto e_tabbar = e_docker->child(0);
 							auto e_pages = e_docker->child(1);
 
-							thiz->root->take_child(e_tab);
-							thiz->root->take_child(e_page);
+							thiz->root->remove_child(e_tab, false);
+							thiz->root->remove_child(e_page, false);
 							thiz->list_item->list = (cList*)e_tabbar->find_component(cH("List"));
 							e_tabbar->add_child(e_tab);
 							auto element = thiz->element;
@@ -530,8 +530,8 @@ namespace flame
 							auto page_element = tab->page_element;
 							auto page_aligner = (cAligner*)e_page->find_component(cH("Aligner"));
 
-							tab->root->take_child(e_tab);
-							tab->root->take_child(e_page);
+							tab->root->remove_child(e_tab, false);
+							tab->root->remove_child(e_page, false);
 							tab->list_item->list = thiz->list;
 							tabbar->add_child(e_tab, thiz->drop_idx);
 							tabbar->parent()->child(1)->add_child(e_page);
@@ -734,7 +734,7 @@ namespace flame
 										aligner->height_factor = element->height;
 									}
 								}
-								p->take_child(docker);
+								p->remove_child(docker, false);
 								p->add_child(layout, docker_idx);
 
 								auto new_docker = get_docker_model()->copy();
@@ -749,8 +749,8 @@ namespace flame
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);
 
-								tab->root->take_child(e_tab);
-								tab->root->take_child(e_page);
+								tab->root->remove_child(e_tab, false);
+								tab->root->remove_child(e_page, false);
 								tab->list_item->list = (cList*)new_tabbar->find_component(cH("List"));
 								new_tabbar->add_child(e_tab);
 								new_pages->add_child(e_page);

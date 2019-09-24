@@ -27,6 +27,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Component* find_component(uint type_hash) const;
 		FLAME_UNIVERSE_EXPORTS Mail<std::vector<Component*>> find_components(uint type_hash /* 0 to get all components */ ) const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
+		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);
 
 		FLAME_UNIVERSE_EXPORTS Entity* parent() const;
 		FLAME_UNIVERSE_EXPORTS uint child_count() const;
@@ -35,10 +36,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* find_child(const std::string& name) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e, int position = -1); /* -1 is end */
 		FLAME_UNIVERSE_EXPORTS void reposition_child(Entity* e, int position); /* -1 is last */
-		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e);
-		FLAME_UNIVERSE_EXPORTS void take_child(Entity* e); // no destroy
-		FLAME_UNIVERSE_EXPORTS void remove_all_children();
-		FLAME_UNIVERSE_EXPORTS void take_all_children();
+		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true);
+		FLAME_UNIVERSE_EXPORTS void remove_all_children(bool destroy = true);
 
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
 

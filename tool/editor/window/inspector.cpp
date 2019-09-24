@@ -5,6 +5,7 @@
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/checkbox.h>
+#include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
@@ -15,6 +16,7 @@
 #include "../data_tracker.h"
 #include "inspector.h"
 #include "scene_editor.h"
+#include "hierarchy.h"
 
 Entity* create_item(const std::wstring& title)
 {
@@ -23,7 +25,7 @@ Entity* create_item(const std::wstring& title)
 		e_item->add_component(cElement::create());
 
 		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 2.f;
+		c_layout->item_padding = 4.f;
 		e_item->add_component(c_layout);
 	}
 
@@ -141,6 +143,8 @@ struct cInspectorPrivate : cInspector
 {
 	void* module;
 
+	Entity* e_add_component_menu;
+
 	~cInspectorPrivate()
 	{
 		free_module(module);
@@ -179,6 +183,18 @@ struct cInspectorPrivate : cInspector
 					auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 					e_item->child(1)->add_child(e_edit);
 					((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(selected->name()));
+					((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+						auto editor = *(cSceneEditor**)c;
+						editor->selected->set_name(w2s(text));
+						if (editor->hierarchy)
+						{
+							auto item = editor->hierarchy->find_item(editor->selected);
+							if (item->find_component(cH("TreeNode")))
+								((cText*)item->child(0)->find_component(cH("Text")))->set_text(text);
+							else
+								((cText*)item->find_component(cH("Text")))->set_text(text);
+						}
+					}, new_mail_p(editor));
 				}
 				{
 					auto e_item = create_item(L"visible");
@@ -186,6 +202,11 @@ struct cInspectorPrivate : cInspector
 
 					auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
 					e_item->child(1)->add_child(e_checkbox);
+					auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
+					checkbox->set_checked(selected->visible, false);
+					checkbox->add_changed_listener([](void* c, bool checked) {
+						(*(Entity**)c)->visible = checked;
+					}, new_mail_p(selected));
 				}
 
 				for (auto i = 0; i < selected->component_count(); i++)
@@ -210,7 +231,7 @@ struct cInspectorPrivate : cInspector
 						e_component->add_component(c_layout);
 					}
 
-					auto udt = find_udt(dbs, H((std::string("c") + component->type_name).c_str()));
+					auto udt = find_udt(dbs, H((std::string("Component") + component->type_name).c_str()));
 
 					auto c_dealer = new_component<cComponentDealer>();
 					c_dealer->component = component;
@@ -262,6 +283,30 @@ struct cInspectorPrivate : cInspector
 						auto c_text = cText::create(app.font_atlas_pixel);
 						c_text->set_text(Icon_WINDOW_CLOSE);
 						e_close->add_component(c_text);
+
+						auto c_event_receiver = cEventReceiver::create();
+						struct Capture
+						{
+							Entity* e;
+							Component* c;
+						}capture;
+						capture.e = e_component;
+						capture.c = component;
+						c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+							auto& capture = *(Capture*)c;
+							if (is_mouse_clicked(action, key))
+							{
+								Capture _capture;
+								_capture.e = capture.e;
+								_capture.c = capture.c;
+								looper().add_delay_event([](void* c) {
+									auto& capture = *(Capture*)c;
+									capture.e->parent()->remove_child(capture.e);
+									capture.c->entity->remove_component(capture.c);
+								}, new_mail(&_capture));
+							}
+						}, new_mail(&capture));
+						e_close->add_component(c_event_receiver);
 
 						auto c_aligner = cAligner::create();
 						c_aligner->x_align = AlignxRight;
@@ -435,7 +480,6 @@ struct cInspectorPrivate : cInspector
 									auto& capture = *(Capture*)c;
 									*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
 									capture.d->data_changed(capture.v->name_hash());
-									auto str = w2s(text);
 								}, new_mail(&capture));
 							}
 								break;
@@ -459,7 +503,6 @@ struct cInspectorPrivate : cInspector
 									auto& capture = *(Capture*)c;
 									*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
 									capture.d->data_changed(capture.v->name_hash());
-									auto str = w2s(text);
 								}, new_mail(&capture));
 							}
 								break;
@@ -468,6 +511,9 @@ struct cInspectorPrivate : cInspector
 						}
 					}
 				}
+
+				auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, thiz->e_add_component_menu, true, SideS, false, false, false, nullptr);
+				e_layout->add_child(e_menu_btn);
 			}
 		}, new_mail_p(this));
 	}
@@ -513,9 +559,38 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_inspector = new_component<cInspectorPrivate>();
 	e_page->add_component(c_inspector);
-	c_inspector->module = load_module(L"flame_universe.dll");
 	c_inspector->tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
 	c_inspector->editor = editor;
+	c_inspector->module = load_module(L"flame_universe.dll");
+
+	{
+		auto e_menu = create_standard_menu();
+		c_inspector->e_add_component_menu = e_menu;
+
+		std::vector<UdtInfo*> all_udts;
+		for (auto db : editor->dbs())
+		{
+			auto udts = db->get_udts();
+			for (auto i = 0; i < udts.p->size(); i++)
+			{
+				auto u = udts.p->at(i);
+				#define PREFIX "Component"
+				if (u->name().compare(0, strlen(PREFIX), PREFIX) == 0)
+					all_udts.push_back(u);
+				#undef PREFIX
+			}
+			delete_mail(udts);
+		}
+		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+			return a->name() < b->name();
+		});
+		for (auto udt : all_udts)
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
+			e_menu->add_child(e_item);
+		}
+	}
+
 	editor->inspector = c_inspector;
 
 	auto e_layout = Entity::create();

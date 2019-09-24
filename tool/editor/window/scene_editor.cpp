@@ -3,10 +3,12 @@
 #include <flame/universe/topmost.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
+#include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/menu.h>
+#include <flame/universe/components/combobox.h>
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
@@ -78,7 +80,8 @@ struct cSceneOverlayer : Component
 	cElement* element;
 
 	cSceneEditorPrivate* editor;
-	cElement* move_tool_element;
+	int tool_type;
+	cElement* transform_tool_element;
 
 	cSceneOverlayer() :
 		Component("SceneOverlayer")
@@ -88,12 +91,14 @@ struct cSceneOverlayer : Component
 	virtual void start() override
 	{
 		element = (cElement*)entity->find_component(cH("Element"));
+
+		tool_type = 0;
 	}
 
 	virtual void update() override
 	{
-		move_tool_element->x = -200.f;
-		move_tool_element->y = -200.f;
+		transform_tool_element->x = -200.f;
+		transform_tool_element->y = -200.f;
 		if (editor->selected)
 		{
 			auto se = (cElement*)editor->selected->find_component(cH("Element"));
@@ -107,8 +112,11 @@ struct cSceneOverlayer : Component
 				points.push_back(points[0]);
 				element->canvas->stroke(points, Vec4c(0, 0, 0, 255), Vec4c(255, 255, 255, 255), 6.f);
 
-				move_tool_element->x = c.x() - element->global_x - move_tool_element->width * 0.5f;
-				move_tool_element->y = c.y() - element->global_y - move_tool_element->height * 0.5f;
+				if (tool_type > 0)
+				{
+					transform_tool_element->x = c.x() - element->global_x - transform_tool_element->width * 0.5f;
+					transform_tool_element->y = c.y() - element->global_y - transform_tool_element->height * 0.5f;
+				}
 			}
 		}
 	}
@@ -134,6 +142,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	auto e_page = get_docker_page_model()->copy();
 	{
 		auto c_layout = cLayout::create(LayoutVertical);
+		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		e_page->add_component(c_layout);
@@ -203,6 +212,9 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 	}
+
+	auto e_tool = create_standard_combobox(50.f, app.font_atlas_pixel, 1.f, app.root, { L"Null", L"Move", L"Scale" });
+	e_page->add_child(wrap_standard_text(e_tool, true, app.font_atlas_pixel, 1.f, L"Tool"));
 
 	auto e_scene = Entity::create();
 	e_page->add_child(e_scene);
@@ -277,15 +289,15 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
 
-		auto e_move_tool = Entity::create();
-		e_overlayer->add_child(e_move_tool);
+		auto e_transform_tool = Entity::create();
+		e_overlayer->add_child(e_transform_tool);
 		{
 			auto c_element = cElement::create();
 			c_element->width = 20.f;
 			c_element->height = 20.f;
 			c_element->background_frame_thickness = 2.f;
-			e_move_tool->add_component(c_element);
-			c_overlayer->move_tool_element = c_element;
+			e_transform_tool->add_component(c_element);
+			c_overlayer->transform_tool_element = c_element;
 
 			auto c_event_receiver = cEventReceiver::create();
 			struct Capture
@@ -307,12 +319,12 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					}
 				}
 			}, new_mail(&capture));
-			e_move_tool->add_component(c_event_receiver);
+			e_transform_tool->add_component(c_event_receiver);
 
-			e_move_tool->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+			e_transform_tool->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
 
 			auto e_h_wing = Entity::create();
-			e_move_tool->add_child(e_h_wing);
+			e_transform_tool->add_child(e_h_wing);
 			{
 				auto c_element = cElement::create();
 				c_element->x = 25.f;
@@ -345,7 +357,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			}
 
 			auto e_v_wing = Entity::create();
-			e_move_tool->add_child(e_v_wing);
+			e_transform_tool->add_child(e_v_wing);
 			{
 				auto c_element = cElement::create();
 				c_element->x = 5.f;
@@ -376,6 +388,14 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 
 				e_v_wing->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
 			}
+		}
+
+		{
+			auto combobox = (cCombobox*)e_tool->find_component(cH("Combobox"));
+			combobox->set_index(0, false);
+			combobox->add_changed_listener([](void* c, int idx) {
+				(*(cSceneOverlayer**)c)->tool_type = idx;
+			}, new_mail_p(c_overlayer));
 		}
 	}
 

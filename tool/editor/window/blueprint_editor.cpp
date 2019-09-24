@@ -173,7 +173,24 @@ struct cBPEditor : Component
 			for (auto i = 0; i < udts.p->size(); i++)
 			{
 				auto u = udts.p->at(i);
-				if (u->name().find('(') == std::string::npos)
+				if (u->name().find('(') != std::string::npos)
+					continue;
+				{
+					auto f = u->find_function("update");
+					if (!(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 0))
+						continue;
+				}
+				auto no_input_output = true;
+				for (auto i = 0; i < u->variable_count(); i++)
+				{
+					auto v = u->variable(i);
+					if (v->decoration().find('i') != std::string::npos || v->decoration().find('o') != std::string::npos)
+					{
+						no_input_output = false;
+						break;
+					}
+				}
+				if (!no_input_output)
 					all_udts.push_back(u);
 			}
 			delete_mail(udts);

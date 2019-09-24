@@ -79,15 +79,16 @@ namespace flame
 				if (c_menu)
 					c_menu->popuped_by = this;
 				auto menu_element = (cElement*)menu->find_component(cH("Element"));
-				if (popup_side == SideE)
+				switch (popup_side)
 				{
-					menu_element->x = element->global_x + element->global_width;
-					menu_element->y = element->global_y;
-				}
-				else if (popup_side == SideS)
-				{
+				case SideS:
 					menu_element->x = element->global_x;
 					menu_element->y = element->global_y + element->global_height;
+					break;
+				case SideE:
+					menu_element->x = element->global_x + element->global_width;
+					menu_element->y = element->global_y;
+					break;
 				}
 
 				topmost->add_child(menu);
@@ -102,7 +103,7 @@ namespace flame
 
 				close_menu(menu);
 
-				get_topmost(root)->take_child(menu);
+				get_topmost(root)->remove_child(menu, false);
 			}
 		}
 	};

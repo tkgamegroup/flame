@@ -28,11 +28,6 @@ namespace flame
 		w_content()->add_child(w_ext());
 		w_ext()->set_sel(0);
 
-		w_buttons() = wLayout::create(instance());
-		w_buttons()->align = AlignMiddle;
-		w_buttons()->layout_type = LayoutHorizontal;
-		w_buttons()->item_padding = 4.f;
-
 		w_ok() = wButton::create(instance());
 		w_ok()->set_classic(io == 0 ? L"Open" : L"Save");
 		w_buttons()->add_child(w_ok());
@@ -118,10 +113,7 @@ namespace flame
 			auto filename = it->path().filename().generic_wstring();
 			auto item = wListItem::create(instance());
 
-			if (std::filesystem::is_directory(it->status()))
-			{
-			}
-			else
+			if (!std::filesystem::is_directory(it->status()))
 			{
 				auto found_ext = false;
 				for (auto &e : exts_sp)
@@ -134,13 +126,6 @@ namespace flame
 				}
 				if (!found_ext)
 					continue;
-
-				item->w_btn()->add_listener(ListenerClicked, [this, filename]() {
-					w_input()->set_text(filename.c_str());
-				});
-				item->w_btn()->add_listener(ListenerDoubleClicked, [this]() {
-					w_ok()->on_clicked();
-				});
 			}
 		}
 	}

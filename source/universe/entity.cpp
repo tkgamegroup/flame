@@ -52,6 +52,18 @@ namespace flame
 			components.emplace_back(c);
 		}
 
+		void remove_component(Component* c)
+		{
+			for (auto it = components.begin(); it != components.end(); it++)
+			{
+				if (it->get() == c)
+				{
+					components.erase(it);
+					return;
+				}
+			}
+		}
+
 		EntityPrivate* find_child(const std::string& name) const
 		{
 			for (auto& e : children)
@@ -89,43 +101,32 @@ namespace flame
 			}
 		}
 
-		void remove_child(EntityPrivate* e)
+		void remove_child(EntityPrivate* e, bool destroy)
 		{
 			for (auto it = children.begin(); it != children.end(); it++)
 			{
 				if (it->get() == e)
 				{
+					if (!destroy)
+					{
+						e->parent = nullptr;
+						it->release();
+					}
 					children.erase(it);
 					return;
 				}
 			}
 		}
 
-		void take_child(EntityPrivate* e)
+		void remove_all_children(bool destroy)
 		{
-			for (auto it = children.begin(); it != children.end(); it++)
+			if (!destroy)
 			{
-				if (it->get() == e)
+				for (auto& e : children)
 				{
 					e->parent = nullptr;
-					it->release();
-					children.erase(it);
-					return;
+					e.release();
 				}
-			}
-		}
-
-		void remove_all_children()
-		{
-			children.clear();
-		}
-
-		void take_all_children()
-		{
-			for (auto& e : children)
-			{
-				e->parent = nullptr;
-				e.release();
 			}
 			children.clear();
 		}
@@ -234,6 +235,11 @@ namespace flame
 		((EntityPrivate*)this)->add_component(c);
 	}
 
+	void Entity::remove_component(Component* c)
+	{
+		((EntityPrivate*)this)->remove_component(c);
+	}
+
 	Entity* Entity::parent() const
 	{
 		return ((EntityPrivate*)this)->parent;
@@ -275,24 +281,14 @@ namespace flame
 		((EntityPrivate*)this)->reposition_child((EntityPrivate*)e, position);
 	}
 
-	void Entity::remove_child(Entity* e)
+	void Entity::remove_child(Entity* e, bool destroy)
 	{
-		((EntityPrivate*)this)->remove_child((EntityPrivate*)e);
+		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
 	}
 
-	void Entity::take_child(Entity* e)
+	void Entity::remove_all_children(bool destroy)
 	{
-		((EntityPrivate*)this)->take_child((EntityPrivate*)e);
-	}
-
-	void Entity::remove_all_children()
-	{
-		((EntityPrivate*)this)->remove_all_children();
-	}
-
-	void Entity::take_all_children()
-	{
-		((EntityPrivate*)this)->take_all_children();
+		((EntityPrivate*)this)->remove_all_children(destroy);
 	}
 
 	Entity* Entity::copy()
@@ -334,7 +330,7 @@ namespace flame
 			{
 				auto n_c = n_cs->node(i_c);
 
-				auto udt = find_udt(dbs, H(("c" + n_c->name()).c_str()));
+				auto udt = find_udt(dbs, H(("Component" + n_c->name()).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");
@@ -400,7 +396,7 @@ namespace flame
 			{
 				auto n_c = n_cs->new_node(c->type_name);
 
-				auto udt = find_udt(dbs, H((std::string("c") + c->type_name).c_str()));
+				auto udt = find_udt(dbs, H((std::string("Component") + c->type_name).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");

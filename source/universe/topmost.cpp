@@ -78,10 +78,10 @@ namespace flame
 		}
 
 		if (take)
-			t->take_all_children();
+			t->remove_all_children(false);
 		looper().add_delay_event([](void* c) {
 			auto t = *(Entity**)c;
-			t->parent()->take_child(t);
+			t->parent()->remove_child(t, false);
 		}, new_mail_p(t));
 	}
 }
