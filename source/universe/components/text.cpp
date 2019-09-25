@@ -122,7 +122,7 @@ namespace flame
 		return e_button;
 	}
 
-	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
+	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, bool width_fit_parent)
 	{
 		auto e_layout = Entity::create();
 		{
@@ -130,7 +130,16 @@ namespace flame
 
 			auto c_layout = cLayout::create(LayoutHorizontal);
 			c_layout->item_padding = 4.f;
+			if (width_fit_parent)
+				c_layout->width_fit_children = false;
 			e_layout->add_component(c_layout);
+
+			if (width_fit_parent)
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeFitParent;
+				e_layout->add_component(c_aligner);
+			}
 		}
 
 		if (!before)

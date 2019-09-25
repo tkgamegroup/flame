@@ -88,6 +88,7 @@ struct cBPEditor : Component
 	bool locked;
 
 	Entity* e_add_node_menu;
+	cEdit* add_node_menu_filter;
 	Vec2f add_node_pos;
 	Entity* e_base;
 	cDockerTab* console_tab;
@@ -149,6 +150,14 @@ struct cBPEditor : Component
 		app.canvas->set_image(rt_id, nullptr);
 	}
 
+	void reset_add_node_menu_filter()
+	{
+		add_node_menu_filter->text->set_text(L"");
+
+		for (auto i = 1; i < e_add_node_menu->child_count(); i++)
+			e_add_node_menu->child(i)->visible = true;
+	}
+
 	void load(const std::wstring& _filename, bool no_compile)
 	{
 		filename = _filename;
@@ -199,6 +208,24 @@ struct cBPEditor : Component
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return a->name() < b->name();
 		});
+		{
+			auto e_edit = create_standard_edit(0.f, app.font_atlas_pixel, 1.f);
+			((cElement*)e_edit->find_component(cH("Element")))->color.w() = 0;
+			((cAligner*)e_edit->find_component(cH("Aligner")))->width_policy = SizeGreedy;
+			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH, true);
+			((cElement*)item->find_component(cH("Element")))->color = default_style.frame_color_normal;
+			e_add_node_menu->add_child(item);
+
+			add_node_menu_filter = (cEdit*)e_edit->find_component(cH("Edit"));
+			add_node_menu_filter->add_changed_listener([](void* c, const wchar_t* text) {
+				auto menu = *(Entity**)c;
+				for (auto i = 1; i < menu->child_count(); i++)
+				{
+					auto item = menu->child(i);
+					item->visible = text[0] ? (((cText*)item->find_component(cH("Text")))->text().find(text) != std::string::npos) : true;
+				}
+			}, new_mail_p(e_add_node_menu));
+		}
 		for (auto udt : all_udts)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
@@ -215,6 +242,9 @@ struct cBPEditor : Component
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
+
+					capture.e->reset_add_node_menu_filter();
+
 					capture.e->add_node(capture.u->name(), "", capture.e->add_node_pos);
 				}
 			}, new_mail(&capture));
@@ -227,6 +257,8 @@ struct cBPEditor : Component
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
+
+					editor->reset_add_node_menu_filter();
 
 					auto t = create_topmost(editor->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
 					{
@@ -249,7 +281,7 @@ struct cBPEditor : Component
 					}
 
 					auto e_name = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-					e_dialog->add_child(e_name);
+					e_dialog->add_child(wrap_standard_text(e_name, true, app.font_atlas_pixel, 1.f, L"template"));
 
 					auto e_buttons = Entity::create();
 					e_dialog->add_child(e_buttons);
@@ -276,6 +308,7 @@ struct cBPEditor : Component
 							if (is_mouse_clicked(action, key))
 							{
 								destroy_topmost(capture.e->entity, false);
+
 								auto name = w2s(capture.t->text());
 								auto db = capture.e->bp->db();
 								if (db->find_udt(H(name.c_str())))
@@ -1364,6 +1397,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
+		c_layout->fence = 3;
 		e_page->add_component(c_layout);
 	}
 	e_docker->child(1)->add_child(e_page);

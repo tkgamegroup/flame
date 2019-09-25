@@ -188,6 +188,7 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 			e_item->add_component(c_element);
+
 			auto c_text = cText::create(font_atlas);
 			c_text->sdf_scale = sdf_scale;
 			c_text->set_text(text);
