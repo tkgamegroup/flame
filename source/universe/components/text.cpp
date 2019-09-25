@@ -39,14 +39,16 @@ namespace flame
 			if (auto_width)
 			{
 				auto w = rect.x() * sdf_scale + element->inner_padding_horizontal();
-				if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_size.x())
-					element->size.x() = w;
+				element->size.x() = w;
+				if (aligner && aligner->width_policy == SizeGreedy)
+					aligner->min_size.x() = w;
 			}
 			if (auto_height)
 			{
 				auto h = rect.y() * sdf_scale + element->inner_padding_vertical();
-				if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_size.y())
-					element->size.y() = h;
+				element->size.y() = h;
+				if (aligner && aligner->width_policy == SizeGreedy)
+					aligner->min_size.y() = h;
 			}
 		}
 		else

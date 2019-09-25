@@ -210,7 +210,11 @@ struct cBPEditor : Component
 		});
 		{
 			auto e_edit = create_standard_edit(0.f, app.font_atlas_pixel, 1.f);
-			((cElement*)e_edit->find_component(cH("Element")))->color.w() = 0;
+			{
+				auto c_element = (cElement*)e_edit->find_component(cH("Element"));
+				c_element->size.x() = 58.f;
+				c_element->color.w() = 0;
+			}
 			((cAligner*)e_edit->find_component(cH("Aligner")))->width_policy = SizeGreedy;
 			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH);
 			((cElement*)item->find_component(cH("Element")))->color = default_style.frame_color_normal;
