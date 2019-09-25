@@ -732,9 +732,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		e_node->add_component(cEventReceiver::create());
 
-		auto c_layout = cLayout::create(LayoutFree);
-		c_layout->width_fit_children = true;
-		c_layout->height_fit_children = true;
+		auto c_layout = cLayout::create(LayoutVertical);
+		c_layout->fence = 1;
 		e_node->add_component(c_layout);
 
 		e_node->add_component(cMoveable::create());

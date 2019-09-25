@@ -294,6 +294,18 @@ namespace flame
 			return v_[3];
 		}
 
+		Vec<2, T> xz() const
+		{
+			static_assert(N > 2);
+			return Vec<2, T>(v_[0], v_[2]);
+		}
+
+		Vec<2, T> yw() const
+		{
+			static_assert(N > 3);
+			return Vec<2, T>(v_[1], v_[3]);
+		}
+
 		T operator[](uint i) const
 		{
 			return v_[i];
