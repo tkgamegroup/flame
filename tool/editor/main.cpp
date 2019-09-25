@@ -133,10 +133,7 @@ void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, fl
 void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scale, Entity* parent)
 {
 	for (auto i = 0; i < info->item_count(); i++)
-	{
-		auto e_checkbox = create_standard_checkbox(font_atlas, sdf_scale, s2w(info->item(i)->name()));
-		parent->add_child(e_checkbox);
-	}
+		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, sdf_scale, s2w(info->item(i)->name())));
 }
 
 int main(int argc, char **args)

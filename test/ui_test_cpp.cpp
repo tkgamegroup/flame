@@ -195,7 +195,7 @@ int main(int argc, char** args)
 		}, new_mail_p(&app));
 	}
 
-	auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"Checkbox");
+	auto e_checkbox = wrap_standard_text(create_standard_checkbox(), false, app.font_atlas_pixel, 1.f, L"Checkbox");
 	e_layout_left->add_child(e_checkbox);
 
 	auto e_toggle = Entity::create();

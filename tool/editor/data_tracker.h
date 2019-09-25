@@ -58,7 +58,7 @@ struct cEnumMultiDataTracker : cDataTracker
 	virtual void start() override
 	{
 		for (auto i = 0; i < entity->child_count(); i++)
-			checkboxs.push_back((cCheckbox*)entity->child(i)->find_component(cH("Checkbox")));
+			checkboxs.push_back((cCheckbox*)entity->child(i)->child(0)->find_component(cH("Checkbox")));
 
 		if (!auto_update)
 			update_view();

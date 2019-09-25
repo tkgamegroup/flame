@@ -245,24 +245,24 @@ namespace flame
 			{
 				if (f->draw_type != FontDrawSdf)
 					scale = 1.f;
-				auto pixel_height = f->pixel_height * scale;
+				auto lh = f->pixel_height * scale;
 
 				auto _pos = Vec2f(Vec2i(pos));
 
 				begin_draw((CmdType)f->draw_type, f->index);
 				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-				Vec2f rect(0.f, pixel_height);
-				auto line_width = 0.f;
+				Vec2f rect(0.f, lh);
+				auto lw = 0.f;
 				for (auto ch : text)
 				{
 					if (ch == '\n')
 					{
-						_pos.y() += pixel_height;
+						_pos.y() += lh;
 						_pos.x() = pos.x();
 
-						rect.y() += pixel_height;
-						line_width = 0.f;
+						rect.y() += lh;
+						lw = 0.f;
 					}
 					else if (ch != '\r')
 					{
@@ -292,9 +292,9 @@ namespace flame
 
 						auto w = g->advance * scale;
 						_pos.x() += w;
-						line_width += w;
-						if (line_width > rect.x())
-							rect.x() = line_width;
+						lw += w;
+						if (lw > rect.x())
+							rect.x() = lw;
 					}
 				}
 
@@ -305,7 +305,6 @@ namespace flame
 			{
 				if (f->draw_type != FontDrawSdf)
 					scale = 1.f;
-				auto pixel_height = f->pixel_height * scale;
 
 				auto _pos = Vec2f(Vec2i(pos));
 

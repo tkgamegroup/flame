@@ -38,13 +38,13 @@ namespace flame
 				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 			if (auto_width)
 			{
-				auto w = rect.x() + element->inner_padding_horizontal();
+				auto w = rect.x() / element->global_scale + element->inner_padding_horizontal();
 				if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_size.x())
 					element->size.x() = w;
 			}
 			if (auto_height)
 			{
-				auto h = rect.y() + element->inner_padding_vertical();
+				auto h = rect.y() / element->global_scale + element->inner_padding_vertical();
 				if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_size.y())
 					element->size.y() = h;
 			}

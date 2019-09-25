@@ -45,5 +45,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_checkbox(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_checkbox();
 }

@@ -197,7 +197,7 @@ struct cInspectorPrivate : cInspector
 				auto e_item = create_item(L"visible");
 				e_layout->add_child(e_item);
 
-				auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
+				auto e_checkbox = create_standard_checkbox();
 				e_item->child(1)->add_child(e_checkbox);
 				auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
 				checkbox->set_checked(selected->visible, false);
@@ -371,7 +371,7 @@ struct cInspectorPrivate : cInspector
 							capture.d = c_dealer;
 							capture.v = v;
 							capture.vl = info->item(k)->value();
-							((cCheckbox*)e_data->child(k)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+							((cCheckbox*)e_data->child(k)->child(0)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
 								auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
 								if (checked)
@@ -393,7 +393,7 @@ struct cInspectorPrivate : cInspector
 							c_tracker->data = (bool*)pdata;
 							e_data->add_component(c_tracker);
 
-							auto e_checkbox = create_standard_checkbox(app.font_atlas_pixel, 1.f, L"");
+							auto e_checkbox = create_standard_checkbox();
 							e_data->add_child(e_checkbox);
 							struct Capture
 							{

@@ -673,13 +673,6 @@ void cBP::start()
 				}
 			}
 		}
-		else if (is_mouse_scroll(action, key))
-		{
-			thiz->base_element->scale += pos.x() > 0.f ? 0.1f : -0.1f;
-			thiz->base_element->scale = clamp(thiz->base_element->scale, 0.1f, 2.f);
-		}
-		else if (is_mouse_move(action, key) && (thiz->event_receiver->event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown))
-			thiz->base_element->pos += pos;
 	}, new_mail_p(this));
 }
 
@@ -1137,12 +1130,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
 
-						for (auto k = 0; k < info->item_count(); k++)
-						{
-							auto item = info->item(k);
-							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, s2w(item->name()));
-							e_data->add_child(e_checkbox);
-						}
+						create_enum_checkboxs(info, app.font_atlas_sdf, 0.5f, e_data);
 						for (auto k = 0; k < info->item_count(); k++)
 						{
 							auto item = info->item(k);
@@ -1154,7 +1142,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}capture;
 							capture.input = input;
 							capture.v = item->value();
-							((cCheckbox*)e_data->child(k)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+							((cCheckbox*)e_data->child(k)->child(0)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
 								auto v = *(int*)capture.input->data();
 								if (checked)
@@ -1175,7 +1163,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							c_tracker->data = (bool*)input->data();
 							e_data->add_component(c_tracker);
 
-							auto e_checkbox = create_standard_checkbox(app.font_atlas_sdf, 0.5f, L"");
+							auto e_checkbox = create_standard_checkbox();
 							e_data->add_child(e_checkbox);
 
 							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
@@ -1448,7 +1436,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto& capture = *(Capture*)c;
 
 			if (capture.b->can_open(action, key))
-				capture.e->add_node_pos = -((cElement*)capture.e->e_base->find_component(cH("Element")))->pos;
+			{
+				auto base = capture.e->e_base;
+				capture.e->add_node_pos = ((cElement*)base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)base->find_component(cH("Element")))->pos;
+			}
 		}, new_mail(&capture));
 	}
 	{
@@ -1554,10 +1545,11 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		c_aligner->height_policy = SizeFitParent;
 		e_scene->add_component(c_aligner);
 
-		auto c_bp = new_component<cBP>();
-		c_bp->editor = c_editor;
-		e_scene->add_component(c_bp);
+		e_scene->add_component(cLayout::create(LayoutFree));
 	}
+	auto c_bp = new_component<cBP>();
+	c_bp->editor = c_editor;
+	e_scene->add_component(c_bp);
 
 	auto e_base = Entity::create();
 	e_scene->add_child(e_base);
@@ -1565,6 +1557,31 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_base->add_component(cElement::create());
 	}
 	c_editor->e_base = e_base;
+
+	auto e_overlayer = Entity::create();
+	e_scene->add_child(e_overlayer);
+	{
+		e_overlayer->add_component(cElement::create());
+
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->penetrable = true;
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto c_bp = *(cBP**)c;
+			if (is_mouse_scroll(action, key))
+			{
+				c_bp->base_element->scale += pos.x() > 0.f ? 0.1f : -0.1f;
+				c_bp->base_element->scale = clamp(c_bp->base_element->scale, 0.1f, 2.f);
+			}
+			else if (is_mouse_move(action, key) && (c_bp->event_receiver->event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown))
+				c_bp->base_element->pos += pos;
+		}, new_mail_p(c_bp));
+		e_overlayer->add_component(c_event_receiver);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitParent;
+		c_aligner->height_policy = SizeFitParent;
+		e_overlayer->add_component(c_aligner);
+	}
 
 	c_editor->load(filename, no_compile);
 

@@ -118,25 +118,28 @@ namespace flame
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = *(cEditPrivate**)c;
+				auto element = thiz->element;
 				auto text = thiz->text;
 				auto& str = ((cTextPrivate*)text)->text;
 
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					auto lh = text->font_atlas->pixel_height * text->sdf_scale;
-					auto y = thiz->element->global_pos.y();
+					auto scl = text->sdf_scale * element->global_scale;
+
+					auto lh = text->font_atlas->pixel_height * scl;
+					auto y = element->global_pos.y();
 					for (auto p = str.c_str(); ; p++)
 					{
 						if (y < pos.y() && pos.y() < y + lh)
 						{
-							auto x = thiz->element->global_pos.x();
+							auto x = element->global_pos.x();
 							for (;; p++)
 							{
 								if (!*p)
 									break;
 								if (*p == '\n' || *p == '\r')
 									break;
-								auto w = text->font_atlas->get_glyph(*p == '\t' ? ' ' : *p)->advance * text->sdf_scale;
+								auto w = text->font_atlas->get_glyph(*p == '\t' ? ' ' : *p)->advance * scl;
 								if (x <= pos.x() && pos.x() < x + w)
 									break;
 								x += w;
