@@ -29,7 +29,7 @@ namespace flame
 			{
 				auto padding = element->inner_padding * element->global_scale;
 				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
-				auto size = element->global_size - Vec2f(element->inner_padding_horizontal(), element->inner_padding_vertical());
+				auto size = element->global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]);
 				if (!stretch)
 					element->canvas->add_image(pos, size, id, uv0, uv1, Vec4c(255, 255, 255, element->alpha * 255));
 				else
