@@ -17,7 +17,7 @@ namespace flame
 		float width_factor;
 		SizePolicy$ height_policy;
 		float height_factor;
-		bool using_padding_in_free_layout;
+		bool using_padding; // using layout's padding
 
 		cAligner() :
 			Component("Aligner")

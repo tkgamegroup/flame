@@ -39,7 +39,7 @@ namespace flame
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto thiz = (*(cScrollbarPrivate**)c);
 				if (is_mouse_scroll(action, key))
-					thiz->thumb->v -= pos.x() * 5.f;
+					thiz->thumb->v -= pos.x() * 20.f;
 			}, new_mail_p(this));
 		}
 	};
@@ -106,7 +106,7 @@ namespace flame
 						thiz->v = pos.x();
 				}
 				else if (is_mouse_scroll(action, key))
-					thiz->v -= pos.x() * 5.f;
+					thiz->v -= pos.x() * 20.f;
 			}, new_mail_p(this));
 		}
 

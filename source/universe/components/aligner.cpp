@@ -16,7 +16,7 @@ namespace flame
 			width_factor = 1.f;
 			height_policy = SizeFixed;
 			height_factor = 1.f;
-			using_padding_in_free_layout = false;
+			using_padding = false;
 		}
 
 		void start()
@@ -44,7 +44,7 @@ namespace flame
 			copy->width_factor = width_factor;
 			copy->height_policy = height_policy;
 			copy->height_factor = height_factor;
-			copy->using_padding_in_free_layout = using_padding_in_free_layout;
+			copy->using_padding = using_padding;
 
 			return copy;
 		}

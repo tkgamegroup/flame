@@ -283,7 +283,7 @@ namespace flame
 							auto aligner = (cAligner*)oth_docker->find_component(cH("Aligner"));
 							aligner->x_align = AlignxLeft;
 							aligner->y_align = AlignyTop;
-							aligner->using_padding_in_free_layout = true;
+							aligner->using_padding = true;
 						}
 					}
 				}
@@ -611,7 +611,7 @@ namespace flame
 				{
 					auto element = thiz->element;
 					thiz->dock_side = Outside;
-					auto center = (element->global_pos + element->global_size) * 0.5f;
+					auto center = element->global_pos + element->global_size * 0.5f;
 					if (rect_contains(Vec4f(center + Vec2f(-25.f), center + Vec2f(25.f)), pos))
 						thiz->dock_side = SideCenter;
 					else if (rect_contains(Vec4f(center + Vec2f(-55.f, -25.f), center + Vec2f(-30.f, 25.f)), pos))
@@ -697,7 +697,7 @@ namespace flame
 									auto aligner = (cAligner*)docker->find_component(cH("Aligner"));
 									aligner->x_align = AlignxFree;
 									aligner->y_align = AlignyFree;
-									aligner->using_padding_in_free_layout = false;
+									aligner->using_padding = false;
 								}
 								else
 								{
@@ -711,7 +711,7 @@ namespace flame
 									aligner->y_align = AlignyFree;
 									aligner->width_factor = p_element->size.x();
 									aligner->height_factor = p_element->size.y();
-									aligner->using_padding_in_free_layout = false;
+									aligner->using_padding = false;
 
 									{
 										auto oth = p->child(docker_idx == 0 ? 2 : 0);
@@ -731,7 +731,7 @@ namespace flame
 									auto c_aligner = (cAligner*)new_docker->find_component(cH("Aligner"));
 									c_aligner->x_align = AlignxFree;
 									c_aligner->y_align = AlignyFree;
-									c_aligner->using_padding_in_free_layout = false;
+									c_aligner->using_padding = false;
 								}
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);
@@ -941,7 +941,7 @@ namespace flame
 			c_aligner->y_align = AlignyTop;
 			c_aligner->width_policy = SizeFitParent;
 			c_aligner->height_policy = SizeFitParent;
-			c_aligner->using_padding_in_free_layout = true;
+			c_aligner->using_padding = true;
 			docker_model->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutVertical);
@@ -1006,7 +1006,7 @@ namespace flame
 			c_aligner->y_align = AlignyTop;
 			c_aligner->width_policy = SizeFitParent;
 			c_aligner->height_policy = SizeFitParent;
-			c_aligner->using_padding_in_free_layout = true;
+			c_aligner->using_padding = true;
 			docker_layout_model->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutHorizontal);

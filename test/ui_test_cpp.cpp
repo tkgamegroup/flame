@@ -266,7 +266,6 @@ int main(int argc, char** args)
 			c_element->size.y() = 100.f;
 			c_element->inner_padding = Vec4f(4.f);
 			c_element->frame_thickness = 2.f;
-			c_element->clip_children = true;
 		}
 	}
 
@@ -513,7 +512,7 @@ int main(int argc, char** args)
 					auto c_aligner = (cAligner*)e_docker->find_component(cH("Aligner"));
 					c_aligner->x_align = AlignxFree;
 					c_aligner->y_align = AlignyFree;
-					c_aligner->using_padding_in_free_layout = false;
+					c_aligner->using_padding = false;
 				}
 
 				auto e_tabbar = e_docker->child(0);
@@ -547,7 +546,7 @@ int main(int argc, char** args)
 					auto c_aligner = (cAligner*)e_docker->find_component(cH("Aligner"));
 					c_aligner->x_align = AlignxFree;
 					c_aligner->y_align = AlignyFree;
-					c_aligner->using_padding_in_free_layout = false;
+					c_aligner->using_padding = false;
 				}
 
 				auto e_tabbar = e_docker->child(0);
