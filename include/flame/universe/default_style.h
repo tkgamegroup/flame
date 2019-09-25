@@ -22,9 +22,12 @@ namespace flame
 		Vec4c selected_color_normal;
 		Vec4c selected_color_hovering;
 		Vec4c selected_color_active;
-		Vec4c checkbox_color_normal;
-		Vec4c checkbox_color_hovering;
-		Vec4c checkbox_color_active;
+		Vec4c unchecked_color_normal;
+		Vec4c unchecked_color_hovering;
+		Vec4c unchecked_color_active;
+		Vec4c checked_color_normal;
+		Vec4c checked_color_hovering;
+		Vec4c checked_color_active;
 		Vec4c scrollbar_color;
 		Vec4c scrollbar_thumb_color_normal;
 		Vec4c scrollbar_thumb_color_hovering;

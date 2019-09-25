@@ -136,15 +136,15 @@ namespace flame
 		if (!before)
 			e_layout->add_child(e);
 
-		auto e_name = Entity::create();
-		e_layout->add_child(e_name);
+		auto e_text = Entity::create();
+		e_layout->add_child(e_text);
 		{
-			e_name->add_component(cElement::create());
+			e_text->add_component(cElement::create());
 
 			auto c_text = cText::create(font_atlas);
 			c_text->sdf_scale = sdf_scale;
 			c_text->set_text(text);
-			e_name->add_component(c_text);
+			e_text->add_component(c_text);
 		}
 
 		if (before)

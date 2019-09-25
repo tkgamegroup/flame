@@ -11,13 +11,22 @@ namespace flame
 
 	struct cElement;
 	struct cEventReceiver;
+	struct cStyleColor;
 
 	struct cCheckbox : Component
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
+		cStyleColor* style;
 
 		bool checked;
+
+		Vec4c unchecked_color_normal;
+		Vec4c unchecked_color_hovering;
+		Vec4c unchecked_color_active;
+		Vec4c checked_color_normal;
+		Vec4c checked_color_hovering;
+		Vec4c checked_color_active;
 
 		cCheckbox() :
 			Component("Checkbox")

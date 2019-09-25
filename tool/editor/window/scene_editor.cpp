@@ -310,7 +310,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		e_overlayer->add_child(e_transform_tool);
 		{
 			auto c_element = cElement::create();
-			c_element->pos = 20.f;
+			c_element->size = 20.f;
 			c_element->frame_thickness = 2.f;
 			e_transform_tool->add_component(c_element);
 			c_overlayer->transform_tool_element = c_element;

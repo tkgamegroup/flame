@@ -5,6 +5,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/checkbox.h>
+#include <flame/universe/components/layout.h>
 
 namespace flame
 {
@@ -18,8 +19,16 @@ namespace flame
 		{
 			element = nullptr;
 			event_receiver = nullptr;
+			style = nullptr;
 
 			checked = false;
+
+			unchecked_color_normal = default_style.unchecked_color_normal;
+			unchecked_color_hovering = default_style.unchecked_color_hovering;
+			unchecked_color_active = default_style.unchecked_color_active;
+			checked_color_normal = default_style.checked_color_normal;
+			checked_color_hovering = default_style.checked_color_hovering;
+			checked_color_active = default_style.checked_color_active;
 
 			mouse_listener = nullptr;
 		}
@@ -37,6 +46,7 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
+			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_clicked(action, key))
@@ -50,17 +60,19 @@ namespace flame
 
 		void update()
 		{
-			if (!element->cliped)
+			if (style)
 			{
-				std::vector<Vec2f> points;
-				path_rect(points, element->global_pos, Vec2f(element->global_size.y()));
-				points.push_back(points[0]);
-				element->canvas->stroke(points, element->color, 2.f * element->global_scale);
-				if (checked)
+				if (!checked)
 				{
-					std::vector<Vec2f> points;
-					path_rect(points, element->global_pos + 3.f * element->global_scale, Vec2f(element->global_size.y()) - 6.f * element->global_scale);
-					element->canvas->fill(points, element->color);
+					style->color_normal = unchecked_color_normal;
+					style->color_hovering = unchecked_color_hovering;
+					style->color_active = unchecked_color_active;
+				}
+				else
+				{
+					style->color_normal = checked_color_normal;
+					style->color_hovering = checked_color_hovering;
+					style->color_active = checked_color_active;
 				}
 			}
 		}
@@ -120,20 +132,32 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->size = 16.f;
 			c_element->inner_padding = Vec4f(20.f, 1.f, 1.f, 1.f);
-			c_element->draw = false;
+			c_element->frame_thickness = 3.f;
+			c_element->frame_color = default_style.text_color_normal;
 			e_checkbox->add_component(c_element);
 
 			if (!text.empty())
 			{
-				auto c_text = cText::create(font_atlas);
-				c_text->sdf_scale = sdf_scale;
-				c_text->set_text(text);
-				e_checkbox->add_component(c_text);
+				auto c_layout = cLayout::create(LayoutHorizontal);
+				c_layout->width_fit_children = false;
+				c_layout->height_fit_children = false;
+				e_checkbox->add_component(c_layout);
+
+				auto e_text = Entity::create();
+				e_checkbox->add_child(e_text);
+				{
+					e_text->add_component(cElement::create());
+
+					auto c_text = cText::create(font_atlas);
+					c_text->sdf_scale = sdf_scale;
+					c_text->set_text(text);
+					e_text->add_component(c_text);
+				}
 			}
 
 			e_checkbox->add_component(cEventReceiver::create());
 
-			e_checkbox->add_component(cStyleColor::create(default_style.checkbox_color_normal, default_style.checkbox_color_hovering, default_style.checkbox_color_active));
+			e_checkbox->add_component(cStyleColor::create());
 
 			e_checkbox->add_component(cCheckbox::create());
 		}

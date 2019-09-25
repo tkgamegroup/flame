@@ -213,7 +213,7 @@ int main(int argc, char** args)
 
 		e_toggle->add_component(cEventReceiver::create());
 
-		e_toggle->add_component(cStyleColor::create(Vec4c(0), Vec4c(0), Vec4c(0)));
+		e_toggle->add_component(cStyleColor::create());
 
 		e_toggle->add_component(cToggle::create());
 	}
