@@ -209,21 +209,8 @@ struct cBPEditor : Component
 			return a->name() < b->name();
 		});
 		{
-			auto e_edit = create_standard_edit(0.f, app.font_atlas_pixel, 1.f);
-			{
-				auto c_element = (cElement*)e_edit->find_component(cH("Element"));
-				c_element->size.x() = 58.f;
-				c_element->color.w() = 0;
-			}
-			((cAligner*)e_edit->find_component(cH("Aligner")))->width_policy = SizeGreedy;
+			auto e_edit = create_standard_edit(150.f, app.font_atlas_pixel, 1.f);
 			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH);
-			((cElement*)item->find_component(cH("Element")))->color = default_style.frame_color_normal;
-			((cLayout*)item->find_component(cH("Layout")))->width_fit_children = false;
-			{
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
-				item->add_component(c_aligner);
-			}
 			e_add_node_menu->add_child(item);
 
 			add_node_menu_filter = (cEdit*)e_edit->find_component(cH("Edit"));
