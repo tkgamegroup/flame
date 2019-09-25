@@ -531,6 +531,8 @@ struct cBP : Component
 
 	cBPEditor* editor;
 
+	float bezier_extent;
+
 	cBP() :
 		Component("BP")
 	{
@@ -664,7 +666,7 @@ void cBP::start()
 						auto p1 = e1->global_pos + e1->global_size * 0.5f;
 						auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
-						if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
+						if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
 						{
 							thiz->editor->sel_type = cBPEditor::SelLink;
 							thiz->editor->selected.l = input;
@@ -678,6 +680,8 @@ void cBP::start()
 
 void cBP::update()
 {
+	bezier_extent = 50.f * base_element->global_scale;
+
 	for (auto i = 0; i < editor->bp->node_count(); i++)
 	{
 		auto n = editor->bp->node(i);
@@ -695,7 +699,7 @@ void cBP::update()
 					auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
 					std::vector<Vec2f> points;
-					path_bezier(points, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2);
+					path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
 					element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
 				}
 			}
@@ -708,7 +712,7 @@ void cBP::update()
 		auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
 
 		std::vector<Vec2f> points;
-		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? 50.f : -50.f, 0.f), p2, p2);
+		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? bezier_extent : -bezier_extent, 0.f), p2, p2);
 		element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
 	}
 }
