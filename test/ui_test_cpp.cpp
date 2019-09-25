@@ -337,20 +337,20 @@ int main(int argc, char** args)
 	}
 
 	{
-		struct Data
+		struct Capture
 		{
 			Entity* menu;
 			Entity* root;
-		}data;
-		data.menu = e_popup_menu;
-		data.root = app.root;
+		}capture;
+		capture.menu = e_popup_menu;
+		capture.root = app.root;
 		app.c_event_receiver_root->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			if (is_mouse_down(action, key, true) && key == Mouse_Right)
 			{
-				auto data = (Data*)c;
-				popup_menu(data->menu, data->root, pos);
+				auto& capture = *(Capture*)c;
+				popup_menu(capture.menu, capture.root, pos);
 			}
-		}, new_mail(&data));
+		}, new_mail(&capture));
 	}
 	
 	auto e_menubar = create_standard_menubar();

@@ -646,11 +646,13 @@ void cBP::start()
 
 	event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 		auto thiz = *(cBP**)c;
+		auto editor = thiz->editor;
+
 		if (is_mouse_down(action, key, true) && key == Mouse_Left)
 		{
-			thiz->editor->sel_type = cBPEditor::SelAir;
-			thiz->editor->selected.n = nullptr;
-			auto bp = thiz->editor->bp;
+			editor->sel_type = cBPEditor::SelAir;
+			editor->selected.n = nullptr;
+			auto bp = editor->bp;
 
 			for (auto i = 0; i < bp->node_count(); i++)
 			{
@@ -668,12 +670,17 @@ void cBP::start()
 
 						if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
 						{
-							thiz->editor->sel_type = cBPEditor::SelLink;
-							thiz->editor->selected.l = input;
+							editor->sel_type = cBPEditor::SelLink;
+							editor->selected.l = input;
 						}
 					}
 				}
 			}
+		}
+		else if (is_mouse_down(action, key, true) && key == Mouse_Right)
+		{
+			popup_menu(editor->e_add_node_menu, app.root, pos);
+			editor->add_node_pos = pos - thiz->element->global_pos;
 		}
 	}, new_mail_p(this));
 }
@@ -1576,7 +1583,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				c_bp->base_element->scale += pos.x() > 0.f ? 0.1f : -0.1f;
 				c_bp->base_element->scale = clamp(c_bp->base_element->scale, 0.1f, 2.f);
 			}
-			else if (is_mouse_move(action, key) && (c_bp->event_receiver->event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown))
+			else if (is_mouse_move(action, key) && (c_bp->event_receiver->event_dispatcher->mouse_buttons[Mouse_Middle] & KeyStateDown))
 				c_bp->base_element->pos += pos;
 		}, new_mail_p(c_bp));
 		e_overlayer->add_component(c_event_receiver);
