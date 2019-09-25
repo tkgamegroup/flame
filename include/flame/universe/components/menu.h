@@ -30,6 +30,19 @@ namespace flame
 		{
 		}
 
+		bool can_open(KeyState action, MouseKey key)
+		{
+			if ((is_mouse_down(action, key, true) && key == Mouse_Left))
+				return true;
+			else if (move_to_open && is_mouse_move(action, key))
+			{
+				auto t = get_topmost(root);
+				if (t && t->name_hash() == cH("topmost"))
+					return true;
+			}
+			return false;
+		}
+
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 

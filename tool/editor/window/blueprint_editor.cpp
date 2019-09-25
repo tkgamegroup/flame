@@ -88,6 +88,7 @@ struct cBPEditor : Component
 	bool locked;
 
 	Entity* e_add_node_menu;
+	Vec2f add_node_pos;
 	Entity* e_base;
 	cDockerTab* console_tab;
 
@@ -214,7 +215,7 @@ struct cBPEditor : Component
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					capture.e->add_node(capture.u->name(), "");
+					capture.e->add_node(capture.u->name(), "", capture.e->add_node_pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -278,7 +279,7 @@ struct cBPEditor : Component
 								auto name = w2s(capture.t->text());
 								auto db = capture.e->bp->db();
 								if (db->find_udt(H(name.c_str())))
-									capture.e->add_node(name, "");
+									capture.e->add_node(name, "", capture.e->add_node_pos);
 								else
 								{
 									if (capture.e->running)
@@ -300,7 +301,7 @@ struct cBPEditor : Component
 											}
 											n_node->new_attr("id", id);
 										}
-										n_node->new_attr("pos", "0.0;0.0");
+										n_node->new_attr("pos", to_string(capture.e->add_node_pos));
 										SerializableNode::save_to_xml_file(file, capture.e->filename);
 										SerializableNode::destroy(file);
 
@@ -332,9 +333,10 @@ struct cBPEditor : Component
 
 	Entity* create_node_entity(BP::Node* n);
 
-	BP::Node* add_node(const std::string& type_name, const std::string& id)
+	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
 	{
 		auto n = bp->add_node(type_name, id);
+		n->pos = pos;
 		create_node_entity(n);
 		return n;
 	}
@@ -1435,6 +1437,19 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		c_editor->e_add_node_menu = e_menu;
 		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
+		struct Capture
+		{
+			cBPEditor* e;
+			cMenuButton* b;
+		}capture;
+		capture.e = c_editor;
+		capture.b = (cMenuButton*)e_menu_btn->find_component(cH("MenuButton"));
+		((cEventReceiver*)e_menu_btn->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto& capture = *(Capture*)c;
+
+			if (capture.b->can_open(action, key))
+				capture.e->add_node_pos = -((cElement*)capture.e->e_base->find_component(cH("Element")))->pos;
+		}, new_mail(&capture));
 	}
 	{
 		auto e_menu = create_standard_menu();
@@ -1714,7 +1729,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			if (tokens[1] == L"node")
 			{
-				auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]));
+				auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
 				if (n)
 					console->print(L"node added: " + s2w(n->id()));
 				else

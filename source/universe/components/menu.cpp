@@ -48,14 +48,8 @@ namespace flame
 			{
 				mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					auto thiz = *(cMenuButtonPrivate**)c;
-					if ((is_mouse_down(action, key, true) && key == Mouse_Left))
+					if (thiz->can_open(action, key))
 						thiz->open();
-					else if (thiz->move_to_open && is_mouse_move(action, key))
-					{
-						auto t = get_topmost(thiz->root);
-						if (t && t->name_hash() == cH("topmost"))
-							thiz->open();
-					}
 				}, new_mail_p(this));
 			}
 		}
