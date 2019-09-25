@@ -252,7 +252,7 @@ namespace flame
 				begin_draw((CmdType)f->draw_type, f->index);
 				auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 				auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-				Vec2f rect(0.f, lh);
+				Vec2f rect(0.f, f->pixel_height);
 				auto lw = 0.f;
 				for (auto ch : text)
 				{
@@ -261,7 +261,7 @@ namespace flame
 						_pos.y() += lh;
 						_pos.x() = pos.x();
 
-						rect.y() += lh;
+						rect.y() += f->pixel_height;
 						lw = 0.f;
 					}
 					else if (ch != '\r')
@@ -290,9 +290,9 @@ namespace flame
 							idx_cnt += 6;
 						}
 
-						auto w = g->advance * scale;
-						_pos.x() += w;
-						lw += w;
+						_pos.x() += g->advance * scale;
+
+						lw += g->advance;
 						if (lw > rect.x())
 							rect.x() = lw;
 					}
