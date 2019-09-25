@@ -1,3 +1,4 @@
+#include <flame/graphics/canvas.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
@@ -13,42 +14,144 @@
 
 struct cHierarchyItem : Component
 {
+	cElement* element;
+	cEventReceiver* event_receiver;
+
+	cHierarchy* hierarchy;
 	Entity* e;
+
+	int drop_pos;
+	int last_drop_pos;
 
 	cHierarchyItem() :
 		Component("HierarchyItem")
 	{
+		drop_pos = -1;
+		last_drop_pos = -1;
+	}
+
+	virtual void start() override
+	{
+		auto is_leaf = (bool)entity->find_component(cH("TreeLeaf"));
+
+		auto e = is_leaf ? entity : entity->child(0);
+		element = (cElement*)(e->find_component(cH("Element")));
+		event_receiver =  (cEventReceiver*)(e->find_component(cH("EventReceiver")));
+		event_receiver->drag_hash = cH("HierarchyItem");
+		event_receiver->set_acceptable_drops({ cH("HierarchyItem") });
+
+		event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+			auto thiz = *(cHierarchyItem**)c;
+			auto element = thiz->element;
+
+			if (action == DragOvering)
+			{
+				auto h = element->global_size.y() * 0.3f;
+				if (pos.y() < element->global_pos.y() + h)
+					thiz->drop_pos = 0;
+				else if (pos.y() > element->global_pos.y() + element->global_size.y() - h)
+					thiz->drop_pos = 2;
+				else
+					thiz->drop_pos = 1;
+			}
+			else if (action == Dropped)
+			{
+				if (!(thiz->entity->parent()->find_component(cH("Tree")) && thiz->last_drop_pos != 1))
+				{
+					struct Capture
+					{
+						cHierarchy* h;
+						Entity* dst;
+						Entity* src;
+						int i;
+					}capture;
+					capture.h = thiz->hierarchy;
+					capture.dst = thiz->e;
+					{
+						auto e = er->entity;
+						if (!e->find_component(cH("TreeLeaf")))
+							e = e->parent();
+						capture.src = ((cHierarchyItem*)e->find_component(cH("HierarchyItem")))->e;
+					}
+					capture.i = thiz->last_drop_pos;
+					looper().add_delay_event([](void* c) {
+						auto& capture = *(Capture*)c;
+
+						capture.src->parent()->remove_child(capture.src, false);
+
+						if (capture.i == 1)
+							capture.dst->add_child(capture.src);
+						else
+						{
+							auto p = capture.dst->parent();
+							auto idx = p->child_position(capture.dst);
+							if (capture.i == 2)
+								idx++;
+							p->add_child(capture.src, idx);
+						}
+
+						capture.h->refresh();
+					}, new_mail(&capture));
+				}
+
+			}
+		}, new_mail_p(this));
 	}
 
 	virtual void update() override
 	{
+		if (drop_pos >= 0)
+		{
+			std::vector<Vec2f> points;
+			switch (drop_pos)
+			{
+			case 0:
+				points.push_back(element->global_pos);
+				path_move(points, element->global_size.x(), 0.f);
+				break;
+			case 1:
+				path_rect(points, element->global_pos, element->global_size);
+				points.push_back(points[0]);
+				break;
+			case 2:
+				points.push_back(element->global_pos + Vec2f(0.f, element->global_size.y()));
+				path_move(points, element->global_size.x(), 0.f);
+				break;
+			}
+			element->canvas->stroke(points, Vec4c(120, 150, 255, 255), 3.f);
+
+			last_drop_pos = drop_pos;
+			drop_pos = -1;
+		}
 	}
 };
 
-static void create_tree_node(Entity* e, Entity* parent)
+static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 {
 	if (e->child_count() > 0)
 	{
 		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_node);
 		{
-			auto e_item = new_component<cHierarchyItem>();
-			e_item->e = e;
-			e_tree_node->add_component(e_item);
+			auto c_item = new_component<cHierarchyItem>();
+			c_item->hierarchy = hierarchy;
+			c_item->e = e;
+			e_tree_node->add_component(c_item);
 		}
 
 		auto e_sub_tree = e_tree_node->child(1);
 		for (auto i = 0; i < e->child_count(); i++)
-			create_tree_node(e->child(i), e_sub_tree);
+			create_tree_node(hierarchy, e->child(i), e_sub_tree);
 	}
 	else
 	{
 		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_leaf);
 		{
-			auto e_item = new_component<cHierarchyItem>();
-			e_item->e = e;
-			e_tree_leaf->add_component(e_item);
+			auto c_item = new_component<cHierarchyItem>();
+			c_item->hierarchy = hierarchy;
+			c_item->e = e;
+			e_tree_leaf->add_component(c_item);
 		}
 	}
 }
@@ -87,7 +190,7 @@ void cHierarchy::refresh_selected()
 void cHierarchy::refresh()
 {
 	e_tree->remove_all_children();
-	create_tree_node(editor->prefab, e_tree);
+	create_tree_node(this, editor->prefab, e_tree);
 	refresh_selected();
 }
 
@@ -168,7 +271,7 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 		e_tree->add_component(c_event_receiver);
 	}
 
-	create_tree_node(editor->prefab, e_tree);
+	create_tree_node(c_hierarchy, editor->prefab, e_tree);
 
 	c_hierarchy->e_tree = e_tree;
 
