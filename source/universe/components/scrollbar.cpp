@@ -35,12 +35,6 @@ namespace flame
 			assert(event_receiver);
 			thumb = (cScrollbarThumb*)(entity->child(0)->find_component(cH("ScrollbarThumb")));
 			assert(thumb);
-
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = (*(cScrollbarPrivate**)c);
-				if (is_mouse_scroll(action, key))
-					thiz->thumb->v -= pos.x() * 20.f;
-			}, new_mail_p(this));
 		}
 	};
 
@@ -105,8 +99,6 @@ namespace flame
 					else
 						thiz->v = pos.x();
 				}
-				else if (is_mouse_scroll(action, key))
-					thiz->v -= pos.x() * 20.f;
 			}, new_mail_p(this));
 		}
 
@@ -126,7 +118,7 @@ namespace flame
 				else
 					element->size.y() = 0.f;
 				element->pos.y() += v;
-				element->pos.y() = clamp(element->pos.y(), 0.f, scrollbar->element->size.y() - element->size.y());
+				element->pos.y() = element->size.y() > 0.f ? clamp(element->pos.y(), 0.f, scrollbar->element->size.y() - element->size.y()) : 0.f;
 				target_layout->scroll_offset.y() = -int(element->pos.y() / scrollbar->element->size.y() * content_size / step) * step;
 			}
 			else
@@ -142,7 +134,7 @@ namespace flame
 				else
 					element->size.x() = 0.f;
 				element->pos.x() += v;
-				element->pos.x() = clamp(element->pos.x(), 0.f, scrollbar->element->size.x() - element->size.x());
+				element->pos.x() = element->size.x() > 0.f ? clamp(element->pos.x(), 0.f, scrollbar->element->size.x() - element->size.x()) : 0.f;
 				target_layout->scroll_offset.x() = -int(element->pos.x() / scrollbar->element->size.x() * content_size / step) * step;
 			}
 			v = 0.f;
@@ -184,6 +176,7 @@ namespace flame
 			c_layout->item_padding = 4.f;
 			c_layout->width_fit_children = false;
 			c_layout->height_fit_children = false;
+			c_layout->fence = 2;
 			e_container->add_component(c_layout);
 		}
 
@@ -222,10 +215,29 @@ namespace flame
 			e_scrollbar_thumb->add_component(cEventReceiver::create());
 
 			e_scrollbar_thumb->add_component(cStyleColor::create(default_style.scrollbar_thumb_color_normal, default_style.scrollbar_thumb_color_hovering, default_style.scrollbar_thumb_color_active));
+		}
+		auto c_scrollbar_thumb = cScrollbarThumb::create(type);
+		c_scrollbar_thumb->step = scrollbar_step;
+		e_scrollbar_thumb->add_component(c_scrollbar_thumb);
 
-			auto c_scrollbar_thumb = cScrollbarThumb::create(type);
-			c_scrollbar_thumb->step = scrollbar_step;
-			e_scrollbar_thumb->add_component(c_scrollbar_thumb);
+		auto e_overlayer = Entity::create();
+		e_container->add_child(e_overlayer);
+		{
+			e_overlayer->add_component(cElement::create());
+
+			auto c_event_receiver = cEventReceiver::create();
+			c_event_receiver->penetrable = true;
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thumb = (*(cScrollbarThumb**)c);
+				if (is_mouse_scroll(action, key))
+					thumb->v -= pos.x() * 20.f;
+			}, new_mail_p(c_scrollbar_thumb));
+			e_overlayer->add_component(c_event_receiver);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitParent;
+			c_aligner->height_policy = SizeFitParent;
+			e_overlayer->add_component(c_aligner);
 		}
 
 		return e_container;
