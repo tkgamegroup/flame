@@ -212,8 +212,14 @@ struct cBPEditor : Component
 			auto e_edit = create_standard_edit(0.f, app.font_atlas_pixel, 1.f);
 			((cElement*)e_edit->find_component(cH("Element")))->color.w() = 0;
 			((cAligner*)e_edit->find_component(cH("Aligner")))->width_policy = SizeGreedy;
-			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH, true);
+			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH);
 			((cElement*)item->find_component(cH("Element")))->color = default_style.frame_color_normal;
+			((cLayout*)item->find_component(cH("Layout")))->width_fit_children = false;
+			{
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy = SizeGreedy;
+				item->add_component(c_aligner);
+			}
 			e_add_node_menu->add_child(item);
 
 			add_node_menu_filter = (cEdit*)e_edit->find_component(cH("Edit"));
@@ -281,7 +287,7 @@ struct cBPEditor : Component
 					}
 
 					auto e_name = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-					e_dialog->add_child(wrap_standard_text(e_name, true, app.font_atlas_pixel, 1.f, L"template"));
+					e_dialog->add_child(wrap_standard_text(e_name, false, app.font_atlas_pixel, 1.f, L"template"));
 
 					auto e_buttons = Entity::create();
 					e_dialog->add_child(e_buttons);

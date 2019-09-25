@@ -100,6 +100,8 @@ namespace flame
 					auto al = (cAligner*)e->find_component(cH("Aligner"));
 					als.emplace_back(al ? al->element : (cElement*)entity->child(i)->find_component(cH("Element")), al);
 				}
+				else
+					int cut = 1;
 			}
 
 			switch (type)
