@@ -11,8 +11,7 @@ namespace flame
 
 			x_align = AlignxFree;
 			y_align = AlignyFree;
-			min_width = -1.f;
-			min_height = -1.f;
+			min_size = -1.f;
 			width_policy = SizeFixed;
 			width_factor = 1.f;
 			height_policy = SizeFixed;
@@ -28,10 +27,10 @@ namespace flame
 
 		void update()
 		{
-			if (min_width < 0.f && width_policy == SizeGreedy)
-				min_width = element->width;
-			if (min_height < 0.f && height_policy == SizeGreedy)
-				min_height = element->height;
+			if (min_size.x() < 0.f && width_policy == SizeGreedy)
+				min_size.x() = element->size.x();
+			if (min_size.y() < 0.f && height_policy == SizeGreedy)
+				min_size.y() = element->size.y();
 		}
 
 		Component* copy()
@@ -40,8 +39,7 @@ namespace flame
 
 			copy->x_align = x_align;
 			copy->y_align = y_align;
-			copy->min_width = min_width;
-			copy->min_height = min_height;
+			copy->min_size = min_size;
 			copy->width_policy = width_policy;
 			copy->width_factor = width_factor;
 			copy->height_policy = height_policy;

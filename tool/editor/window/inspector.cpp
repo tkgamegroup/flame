@@ -215,8 +215,8 @@ struct cInspectorPrivate : cInspector
 				{
 					auto c_element = cElement::create();
 					c_element->inner_padding = Vec4f(4.f);
-					c_element->background_frame_thickness = 2.f;
-					c_element->background_frame_color = Vec4f(0, 0, 0, 255);
+					c_element->frame_thickness = 2.f;
+					c_element->frame_color = Vec4f(0, 0, 0, 255);
 					e_component->add_component(c_element);
 
 					auto c_aligner = cAligner::create();
@@ -530,10 +530,9 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 	app.root->add_child(e_container);
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->x = pos.x();
-		c_element->y = pos.y();
-		c_element->width = 200.f;
-		c_element->height = 900.f;
+		c_element->pos = pos;
+		c_element->size.x() = 200.f;
+		c_element->size.y() = 900.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();

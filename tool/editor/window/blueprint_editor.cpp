@@ -464,9 +464,7 @@ struct cBPEditor : Component
 			if (n)
 			{
 				n->pos = Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f;
-				auto element = (cElement*)((Entity*)n->user_data)->find_component(cH("Element"));
-				element->x = n->pos.x();
-				element->y = n->pos.y();
+				((cElement*)((Entity*)n->user_data)->find_component(cH("Element")))->pos = n->pos;
 			}
 
 			str = match.suffix();
@@ -481,9 +479,9 @@ struct cBPEditor : Component
 		entity->add_child(e_tip);
 		{
 			auto c_element = cElement::create();
-			c_element->y = tips.size() * (app.font_atlas_sdf->pixel_height + 20.f);
+			c_element->pos.y() = tips.size() * (app.font_atlas_sdf->pixel_height + 20.f);
 			c_element->inner_padding = Vec4f(8.f);
-			c_element->background_color = Vec4c(0, 0, 0, 255);
+			c_element->color = Vec4c(0, 0, 0, 255);
 			e_tip->add_component(c_element);
 			tips.emplace_back(c_element, 180);
 
@@ -509,7 +507,7 @@ struct cBPEditor : Component
 			if (it->second == 0)
 			{
 				for (auto _it = it + 1; _it != tips.end(); _it++)
-					_it->first->y = it->first->y;
+					_it->first->pos.y() = it->first->pos.y();
 				entity->remove_child(it->first->entity);
 				it = tips.erase(it);
 			}
@@ -572,12 +570,11 @@ struct cBPNode : Component
 	virtual void update() override
 	{
 		if (n == editor->selected.n)
-			element->background_frame_thickness = 4.f;
+			element->frame_thickness = 4.f;
 		else
-			element->background_frame_thickness = 0.f;
+			element->frame_thickness = 0.f;
 
-		n->pos.x() = element->x;
-		n->pos.y() = element->y;
+		n->pos = element->pos;
 	}
 };
 
@@ -662,8 +659,8 @@ void cBP::start()
 					{
 						auto e1 = ((cBPSlot*)output->user_data)->element;
 						auto e2 = ((cBPSlot*)input->user_data)->element;
-						auto p1 = Vec2f(e1->global_x + e1->global_width * 0.5f, e1->global_y + e1->global_height * 0.5f);
-						auto p2 = Vec2f(e2->global_x + e2->global_width * 0.5f, e2->global_y + e2->global_height * 0.5f);
+						auto p1 = (e1->global_pos + e1->global_size) * 0.5f;
+						auto p2 = (e2->global_pos + e2->global_size) * 0.5f;
 
 						if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
 						{
@@ -680,10 +677,7 @@ void cBP::start()
 			thiz->base_element->scale = clamp(thiz->base_element->scale, 0.1f, 2.f);
 		}
 		else if (is_mouse_move(action, key) && (thiz->event_receiver->event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown))
-		{
-			thiz->base_element->x += pos.x();
-			thiz->base_element->y += pos.y();
-		}
+			thiz->base_element->pos += pos;
 	}, new_mail_p(this));
 }
 
@@ -702,8 +696,8 @@ void cBP::update()
 				auto e2 = ((cBPSlot*)input->user_data)->element;
 				if (e1 && e2)
 				{
-					auto p1 = Vec2f(e1->global_x + e1->global_width * 0.5f, e1->global_y + e1->global_height * 0.5f);
-					auto p2 = Vec2f(e2->global_x + e2->global_width * 0.5f, e2->global_y + e2->global_height * 0.5f);
+					auto p1 = (e1->global_pos + e1->global_size) * 0.5f;
+					auto p2 = (e2->global_pos + e2->global_size) * 0.5f;
 
 					std::vector<Vec2f> points;
 					path_bezier(points, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2);
@@ -715,7 +709,7 @@ void cBP::update()
 	if (editor->dragging_slot)
 	{
 		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
-		auto p1 = Vec2f(e->global_x + e->global_width * 0.5f, e->global_y + e->global_height * 0.5f);
+		auto p1 = (e->global_pos + e->global_size) * 0.5f;
 		auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
 
 		std::vector<Vec2f> points;
@@ -731,10 +725,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	n->user_data = e_node;
 	{
 		auto c_element = cElement::create();
-		c_element->x = n->pos.x();
-		c_element->y = n->pos.y();
-		c_element->background_color = Vec4c(255, 255, 255, 200);
-		c_element->background_frame_color = Vec4c(252, 252, 50, 200);
+		c_element->pos = n->pos;
+		c_element->color = Vec4c(255, 255, 255, 200);
+		c_element->frame_color = Vec4c(252, 252, 50, 200);
 		e_node->add_component(c_element);
 
 		e_node->add_component(cEventReceiver::create());
@@ -930,12 +923,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_main->add_child(e_spliter);
 					{
 						auto c_element = cElement::create();
-						c_element->height = 8.f;
+						c_element->size.y() = 8.f;
 						e_spliter->add_component(c_element);
 
 						e_spliter->add_component(cEventReceiver::create());
 
-						e_spliter->add_component(cStyleBackgroundColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+						e_spliter->add_component(cStyleColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
 
 						auto c_splitter = cSplitter::create();
 						c_splitter->type = SplitterVertical;
@@ -1068,10 +1061,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-						c_element->width = r;
-						c_element->height = r;
-						c_element->background_round_radius = r * 0.5f;
-						c_element->background_color = Vec4c(200, 200, 200, 255);
+						c_element->size = r;
+						c_element->round_radius = r * 0.5f;
+						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -1313,10 +1305,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-						c_element->width = r;
-						c_element->height = r;
-						c_element->background_round_radius = r * 0.5f;
-						c_element->background_color = Vec4c(200, 200, 200, 255);
+						c_element->size = r;
+						c_element->round_radius = r * 0.5f;
+						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -1358,10 +1349,9 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	app.root->add_child(e_container);
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->x = pos.x();
-		c_element->y = pos.y();
-		c_element->width = 1052.f;
-		c_element->height = 963.f;
+		c_element->pos = pos;
+		c_element->size.x() = 1052.f;
+		c_element->size.y() = 963.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();

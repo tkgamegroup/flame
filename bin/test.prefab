@@ -3,32 +3,26 @@
 	<entity name="unnamed" visible="1">
 		<components>
 			<Element>
-				<x v="50.00" />
-				<y v="50.00" />
-				<width v="400.00" />
-				<height v="400.00" />
-				<background_color v="255;0;0;255" />
+				<pos v="50.00;50.00" />
+				<size v="400.00;400.00" />
+				<color v="255;0;0;255" />
 			</Element>
 		</components>
 		<children>
 			<entity name="unnamed" visible="1">
 				<components>
 					<Element>
-						<x v="50.00" />
-						<y v="50.00" />
-						<width v="300.00" />
-						<height v="300.00" />
-						<background_color v="255;255;0;255" />
+            <pos v="50.00;50.00" />
+            <size v="300.00;300.00" />
+						<color v="255;255;0;255" />
 					</Element>
 				</components>
 				<children>
 					<entity name="unnamed" visible="1">
 						<components>
 							<Element>
-								<x v="12.00" />
-								<y v="8.00" />
-								<width v="66.00" />
-								<height v="14.00" />
+								<pos v="12.00;8.00" />
+								<size v="66.00;14.00" />
 							</Element>
 							<Text>
 								<color v="0;0;0;255" />

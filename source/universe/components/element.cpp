@@ -7,29 +7,25 @@ namespace flame
 	{
 		cElementPrivate(graphics::Canvas* _canvas)
 		{
-			x = 0.f;
-			y = 0.f;
+			pos = 0.f;
 			scale = 1.f;
-			width = 0.f;
-			height = 0.f;
+			size = 0.f;
 			inner_padding = Vec4f(0.f);
 			alpha = 1.f;
 			draw = true;
-			background_round_radius = 0.f;
-			background_round_flags = Side$(SideNW | SideNE | SideSE | SideSW);
-			background_frame_thickness = 0.f;
-			background_color = Vec4c(0);
-			background_frame_color = Vec4c(255);
-			background_shadow_thickness = 0.f;
+			round_radius = 0.f;
+			round_flags = Side$(SideNW | SideNE | SideSE | SideSW);
+			frame_thickness = 0.f;
+			color = Vec4c(0);
+			frame_color = Vec4c(255);
+			shadow_thickness = 0.f;
 			clip_children = false;
 
 			p_element = nullptr;
 			canvas = _canvas;
-			global_x = 0.f;
-			global_y = 0.f;
+			global_pos = 0.f;
 			global_scale = 0.f;
-			global_width = 0.f;
-			global_height = 0.f;
+			global_size = 0.f;
 		}
 
 		void on_entity_added_to_parent()
@@ -55,23 +51,20 @@ namespace flame
 		{
 			if (!p_element)
 			{
-				global_x = x;
-				global_y = y;
+				global_pos = pos;
 				global_scale = scale;
 			}
 			else
 			{
-				global_x = p_element->global_x + p_element->global_scale * x;
-				global_y = p_element->global_y + p_element->global_scale * y;
+				global_pos = p_element->global_pos + p_element->global_scale * pos;
 				global_scale = p_element->global_scale * scale;
 			}
-			global_width = width * global_scale;
-			global_height = height * global_scale;
+			global_size = size * global_scale;
 
 			if (clip_children || !p_element)
 			{
-				auto cp = Vec2f(global_x, global_y) + Vec2f(inner_padding[0], inner_padding[1]) * global_scale;
-				auto cs = Vec2f(global_width, global_height) - Vec2f(inner_padding_horizontal(), inner_padding_vertical()) * global_scale;
+				auto cp = global_pos + Vec2f(inner_padding[0], inner_padding[1]) * global_scale;
+				auto cs = global_size - Vec2f(inner_padding_horizontal(), inner_padding_vertical()) * global_scale;
 				scissor = Vec4f(cp, cp + cs);
 			}
 			else
@@ -83,32 +76,29 @@ namespace flame
 			cliped = false;
 			if (draw)
 			{
-				auto p = Vec2f(global_x, global_y);
-				auto s = Vec2f(global_width, global_height);
-
-				if (!p_element || rect_overlapping(p_element->scissor, Vec4f(p, p + s)))
+				if (!p_element || rect_overlapping(p_element->scissor, Vec4f(global_pos, global_pos + global_size)))
 				{
-					auto rr = background_round_radius * global_scale;
-					auto st = background_shadow_thickness * global_scale;
+					auto rr = round_radius * global_scale;
+					auto st = shadow_thickness * global_scale;
 
 					if (st > 0.f)
 					{
 						std::vector<Vec2f> points;
-						path_rect(points, p - Vec2f(st * 0.5f), s + Vec2f(st), rr, (Side$)background_round_flags);
+						path_rect(points, global_pos - Vec2f(st * 0.5f), global_size + Vec2f(st), rr, (Side$)round_flags);
 						points.push_back(points[0]);
 						canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
 					}
 					if (alpha > 0.f)
 					{
 						std::vector<Vec2f> points;
-						path_rect(points, p, s, rr, (Side$)background_round_flags);
-						if (background_color.w() > 0)
-							canvas->fill(points, alpha_mul(background_color, alpha));
-						auto ft = background_frame_thickness * global_scale;
-						if (ft > 0.f && background_frame_color.w() > 0)
+						path_rect(points, global_pos, global_size, rr, (Side$)round_flags);
+						if (color.w() > 0)
+							canvas->fill(points, alpha_mul(color, alpha));
+						auto ft = frame_thickness * global_scale;
+						if (ft > 0.f && frame_color.w() > 0)
 						{
 							points.push_back(points[0]);
-							canvas->stroke(points, alpha_mul(background_frame_color, alpha), ft);
+							canvas->stroke(points, alpha_mul(frame_color, alpha), ft);
 						}
 					}
 				}
@@ -121,20 +111,18 @@ namespace flame
 		{
 			auto copy = new cElementPrivate(canvas);
 
-			copy->x = x;
-			copy->y = y;
+			copy->pos = pos;
 			copy->scale = scale;
-			copy->width = width;
-			copy->height = height;
+			copy->size = size;
 			copy->inner_padding = inner_padding;
 			copy->alpha = alpha;
 			copy->draw = draw;
-			copy->background_round_radius = background_round_radius;
-			copy->background_round_flags = background_round_flags;
-			copy->background_frame_thickness = background_frame_thickness;
-			copy->background_color = background_color;
-			copy->background_frame_color = background_frame_color;
-			copy->background_shadow_thickness = background_shadow_thickness;
+			copy->round_radius = round_radius;
+			copy->round_flags = round_flags;
+			copy->frame_thickness = frame_thickness;
+			copy->color = color;
+			copy->frame_color = frame_color;
+			copy->shadow_thickness = shadow_thickness;
 			copy->clip_children = clip_children;
 
 			return copy;
@@ -168,38 +156,34 @@ namespace flame
 
 	struct ComponentElement$
 	{
-		float x$;
-		float y$;
+		Vec2f pos$;
 		float scale$;
-		float width$;
-		float height$;
+		Vec2f size$;
 		Vec4f inner_padding$;
 		float alpha$;
 		bool draw$;
-		float background_round_radius$;
-		Side$ background_round_flags$m;
-		float background_frame_thickness$;
-		Vec4c background_color$;
-		Vec4c background_frame_color$;
-		float background_shadow_thickness$;
+		float round_radius$;
+		Side$ round_flags$m;
+		float frame_thickness$;
+		Vec4c color$;
+		Vec4c frame_color$;
+		float shadow_thickness$;
 		bool clip_children$;
 
 		FLAME_UNIVERSE_EXPORTS ComponentElement$()
 		{
-			x$ = 0.f;
-			y$ = 0.f;
+			pos$ = 0.f;
 			scale$ = 1.f;
-			width$ = 0.f;
-			height$ = 0.f;
+			size$ = 0.f;
 			inner_padding$ = Vec4f(0.f);
 			alpha$ = 1.f;
 			draw$ = true;
-			background_round_radius$ = 0.f;
-			background_round_flags$m = Side$(SideNW | SideNE | SideSE | SideSW);
-			background_frame_thickness$ = 0.f;
-			background_color$ = Vec4c(0);
-			background_frame_color$ = Vec4c(255);
-			background_shadow_thickness$ = 0.f;
+			round_radius$ = 0.f;
+			round_flags$m = Side$(SideNW | SideNE | SideSE | SideSW);
+			frame_thickness$ = 0.f;
+			color$ = Vec4c(0);
+			frame_color$ = Vec4c(255);
+			shadow_thickness$ = 0.f;
 			clip_children$ = false;
 		}
 
@@ -207,20 +191,18 @@ namespace flame
 		{
 			auto c = new cElementPrivate(nullptr);
 
-			c->x = x$;
-			c->y = y$;
+			c->pos = pos$;
 			c->scale = scale$;
-			c->width = width$;
-			c->height = height$;
+			c->size = size$;
 			c->inner_padding = inner_padding$;
 			c->alpha = alpha$;
 			c->draw = draw$;
-			c->background_round_radius = background_round_radius$;
-			c->background_round_flags = background_round_flags$m;
-			c->background_frame_thickness = background_frame_thickness$;
-			c->background_color = background_color$;
-			c->background_frame_color = background_frame_color$;
-			c->background_shadow_thickness = background_shadow_thickness$;
+			c->round_radius = round_radius$;
+			c->round_flags = round_flags$m;
+			c->frame_thickness = frame_thickness$;
+			c->color = color$;
+			c->frame_color = frame_color$;
+			c->shadow_thickness = shadow_thickness$;
 			c->clip_children = clip_children$;
 
 			return c;
@@ -230,20 +212,18 @@ namespace flame
 		{
 			auto c = (cElement*)_c;
 
-			x$ = c->x;
-			y$ = c->y;
+			pos$ = c->pos;
 			scale$ = c->scale;
-			width$ = c->width;
-			height$ = c->height;
+			size$ = c->size;
 			inner_padding$ = c->inner_padding;
 			alpha$ = c->alpha;
 			draw$ = c->draw;
-			background_round_radius$ = c->background_round_radius;
-			background_round_flags$m = c->background_round_flags;
-			background_frame_thickness$ = c->background_frame_thickness;
-			background_color$ = c->background_color;
-			background_frame_color$ = c->background_frame_color;
-			background_shadow_thickness$ = c->background_shadow_thickness;
+			round_radius$ = c->round_radius;
+			round_flags$m = c->round_flags;
+			frame_thickness$ = c->frame_thickness;
+			color$ = c->color;
+			frame_color$ = c->frame_color;
+			shadow_thickness$ = c->shadow_thickness;
 			clip_children$ = c->clip_children;
 		}
 
@@ -253,20 +233,15 @@ namespace flame
 
 			switch (name_hash)
 			{
-			case cH("x"):
-				c->x = x$;
+			case cH("pos"):
+				c->pos = pos$;
 				break;
-			case cH("y"):
-				c->y = y$;
 				break;
 			case cH("scale"):
 				c->scale = scale$;
 				break;
-			case cH("width"):
-				c->width = width$;
-				break;
-			case cH("height"):
-				c->height = height$;
+			case cH("size"):
+				c->size = size$;
 				break;
 			case cH("inner_padding"):
 				c->inner_padding = inner_padding$;
@@ -277,23 +252,23 @@ namespace flame
 			case cH("draw"):
 				c->draw = draw$;
 				break;
-			case cH("background_round_radius"):
-				c->background_round_radius = background_round_radius$;
+			case cH("round_radius"):
+				c->round_radius = round_radius$;
 				break;
-			case cH("background_round_flags"):
-				c->background_round_flags = background_round_flags$m;
+			case cH("round_flags"):
+				c->round_flags = round_flags$m;
 				break;
-			case cH("background_frame_thickness"):
-				c->background_frame_thickness = background_frame_thickness$;
+			case cH("frame_thickness"):
+				c->frame_thickness = frame_thickness$;
 				break;
-			case cH("background_color"):
-				c->background_color = background_color$;
+			case cH("color"):
+				c->color = color$;
 				break;
-			case cH("background_frame_color"):
-				c->background_frame_color = background_frame_color$;
+			case cH("frame_color"):
+				c->frame_color = frame_color$;
 				break;
-			case cH("background_shadow_thickness"):
-				c->background_shadow_thickness = background_shadow_thickness$;
+			case cH("shadow_thickness"):
+				c->shadow_thickness = shadow_thickness$;
 				break;
 			case cH("clip_children"):
 				c->clip_children = clip_children$;

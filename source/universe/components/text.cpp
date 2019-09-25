@@ -33,25 +33,25 @@ namespace flame
 	{
 		if (!right_align)
 		{
-			auto rect = element->canvas->add_text(font_atlas, Vec2f(element->global_x, element->global_y) +
+			auto rect = element->canvas->add_text(font_atlas, element->global_pos +
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
 				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 			if (auto_width)
 			{
 				auto w = rect.x() + element->inner_padding_horizontal() * element->global_scale;
-				if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_width)
-					element->width = w;
+				if (!aligner || aligner->width_policy != SizeGreedy || w > aligner->min_size.x())
+					element->size.x() = w;
 			}
 			if (auto_height)
 			{
 				auto h = rect.y() + element->inner_padding_vertical() * element->global_scale;
-				if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_height)
-					element->height = h;
+				if (!aligner || aligner->height_policy != SizeGreedy || h > aligner->min_size.y())
+					element->size.y() = h;
 			}
 		}
 		else
 		{
-			element->canvas->add_text_right_align(font_atlas, Vec2f(element->global_x, element->global_y) +
+			element->canvas->add_text_right_align(font_atlas, element->global_pos +
 				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
 				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
 		}
@@ -116,7 +116,7 @@ namespace flame
 
 			e_button->add_component(cEventReceiver::create());
 
-			e_button->add_component(cStyleBackgroundColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+			e_button->add_component(cStyleColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
 		}
 
 		return e_button;

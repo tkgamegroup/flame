@@ -12,12 +12,12 @@ namespace flame
 	struct cElement;
 	struct cText;
 	struct cEventReceiver;
-	struct cStyleBackgroundColor;
+	struct cStyleColor;
 	struct cTree;
 
 	struct cTreeLeaf : Component
 	{
-		cStyleBackgroundColor* style;
+		cStyleColor* style;
 		cEventReceiver* event_receiver;
 		cTree* tree;
 
@@ -41,7 +41,7 @@ namespace flame
 
 	struct cTreeNode : Component
 	{
-		cStyleBackgroundColor* title_style;
+		cStyleColor* title_style;
 		cEventReceiver* title_event_receiver;
 		cText* arrow_text;
 		cEventReceiver* arrow_event_receiver;

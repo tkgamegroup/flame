@@ -82,12 +82,12 @@ namespace flame
 				switch (popup_side)
 				{
 				case SideS:
-					menu_element->x = element->global_x;
-					menu_element->y = element->global_y + element->global_height;
+					menu_element->pos.x() = element->global_pos.x();
+					menu_element->pos.y() = element->global_pos.y() + element->global_size.y();
 					break;
 				case SideE:
-					menu_element->x = element->global_x + element->global_width;
-					menu_element->y = element->global_y;
+					menu_element->pos.x() = element->global_pos.x() + element->global_size.x();
+					menu_element->pos.y() = element->global_pos.y();
 					break;
 				}
 
@@ -165,9 +165,7 @@ namespace flame
 		if (!topmost)
 			topmost = create_topmost(root, false, true, false);
 
-		auto element = (cElement*)(menu->find_component(cH("Element")));
-		element->x = pos.x();
-		element->y = pos.y();
+		((cElement*)(menu->find_component(cH("Element"))))->pos = pos;
 
 		topmost->add_child(menu);
 	}
@@ -177,7 +175,7 @@ namespace flame
 		auto e_menu = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->background_color = default_style.window_color;
+			c_element->color = default_style.window_color;
 			e_menu->add_component(c_element);
 
 			e_menu->add_component(cLayout::create(LayoutVertical));
@@ -202,7 +200,7 @@ namespace flame
 
 			e_item->add_component(cEventReceiver::create());
 
-			e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			e_item->add_component(cStyleColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 			auto c_aligner = cAligner::create();
 			c_aligner->width_policy = SizeGreedy;
@@ -236,7 +234,7 @@ namespace flame
 			c_menu_btn->topmost_penetrable = topmost_penetrable;
 			e_menu_btn->add_component(c_menu_btn);
 
-			e_menu_btn->add_component(cStyleBackgroundColor::create(background_transparent ? Vec4c(0) : default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			e_menu_btn->add_component(cStyleColor::create(background_transparent ? Vec4c(0) : default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 			if (width_greedy)
 			{
@@ -276,7 +274,7 @@ namespace flame
 		auto e_menubar = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->background_color = default_style.frame_color_normal;
+			c_element->color = default_style.frame_color_normal;
 			e_menubar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();

@@ -11,14 +11,14 @@ namespace flame
 
 	struct cElement;
 	struct cEventReceiver;
-	struct cStyleBackgroundColor;
+	struct cStyleColor;
 	struct cStyleTextColor;
 	struct cList;
 
 	struct cListItem : Component
 	{
 		cEventReceiver* event_receiver;
-		cStyleBackgroundColor* background_style;
+		cStyleColor* background_style;
 		cStyleTextColor* text_style;
 		cList* list;
 

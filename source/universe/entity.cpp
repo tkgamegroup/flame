@@ -185,7 +185,8 @@ namespace flame
 					c->start();
 					c->first_update = false;
 				}
-				c->update();
+				else
+					c->update();
 			}
 			for (auto& e : children)
 				e->update();

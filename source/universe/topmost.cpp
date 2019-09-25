@@ -29,9 +29,8 @@ namespace flame
 			assert(e_c_element);
 
 			auto c_element = cElement::create();
-			c_element->width = e_c_element->width;
-			c_element->height = e_c_element->height;
-			c_element->background_color = col;
+			c_element->size = e_c_element->size;
+			c_element->color = col;
 			t->add_component(c_element);
 
 			auto c_event_receiver = cEventReceiver::create();

@@ -28,8 +28,8 @@ namespace flame
 			if (!element->cliped)
 			{
 				auto padding = element->inner_padding * element->global_scale;
-				auto pos = Vec2f(element->global_x, element->global_y) + Vec2f(padding[0], padding[1]);
-				auto size = Vec2f(element->global_width - padding[0] - padding[2], element->global_height - padding[1] - padding[3]);
+				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
+				auto size = element->global_size - Vec2f(element->inner_padding_horizontal(), element->inner_padding_vertical());
 				if (!stretch)
 					element->canvas->add_image(pos, size, id, uv0, uv1, Vec4c(255, 255, 255, element->alpha * 255));
 				else

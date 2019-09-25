@@ -42,7 +42,7 @@ namespace flame
 			assert(element);
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
+			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				if (is_mouse_clicked(action, key))

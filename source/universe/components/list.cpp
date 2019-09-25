@@ -45,7 +45,7 @@ namespace flame
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			background_style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
+			background_style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
 			text_style = (cStyleTextColor*)(entity->find_component(cH("StyleTextColor")));
 			list = (cList*)(entity->parent()->find_component(cH("List")));
 
@@ -221,7 +221,7 @@ namespace flame
 
 			e_item->add_component(cEventReceiver::create());
 
-			e_item->add_component(cStyleBackgroundColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			e_item->add_component(cStyleColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 			e_item->add_component(cListItem::create());
 

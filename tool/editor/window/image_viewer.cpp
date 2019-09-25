@@ -17,10 +17,8 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	app.root->add_child(e_container);
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->x = pos.x();
-		c_element->y = pos.y();
-		c_element->width = image_size.x() + 20.f;
-		c_element->height = image_size.y() + 20.f;
+		c_element->pos = pos;
+		c_element->size = Vec2f(image_size) + 20.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -40,8 +38,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	e_page->add_child(e_image);
 	{
 		auto c_element = cElement::create();
-		c_element->width = image_size.x();
-		c_element->height = image_size.y();
+		c_element->size = image_size;
 		e_image->add_component(c_element);
 
 		auto c_image = cImage::create();

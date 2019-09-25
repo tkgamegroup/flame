@@ -97,26 +97,19 @@ struct cSceneOverlayer : Component
 
 	virtual void update() override
 	{
-		transform_tool_element->x = -200.f;
-		transform_tool_element->y = -200.f;
+		transform_tool_element->pos = -200.f;
 		if (editor->selected)
 		{
 			auto se = (cElement*)editor->selected->find_component(cH("Element"));
 			if (se)
 			{
-				auto p = Vec2f(se->global_x, se->global_y);
-				auto s = Vec2f(se->global_width, se->global_height);
-				auto c = p + s * 0.5f;
 				std::vector<Vec2f> points;
-				path_rect(points, p, s);
+				path_rect(points, se->global_pos, se->global_size);
 				points.push_back(points[0]);
 				element->canvas->stroke(points, Vec4c(0, 0, 0, 255), Vec4c(255, 255, 255, 255), 6.f);
 
 				if (tool_type > 0)
-				{
-					transform_tool_element->x = c.x() - element->global_x - transform_tool_element->width * 0.5f;
-					transform_tool_element->y = c.y() - element->global_y - transform_tool_element->height * 0.5f;
-				}
+					transform_tool_element->pos = (se->global_pos + se->global_size * 0.5f) - element->global_pos - transform_tool_element->size * 0.5f;
 			}
 		}
 	}
@@ -128,10 +121,9 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	app.root->add_child(e_container);
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->x = pos.x();
-		c_element->y = pos.y();
-		c_element->width = 1000.f;
-		c_element->height = 900.f;
+		c_element->pos = pos;
+		c_element->size.x() = 1000.f;
+		c_element->size.y() = 900.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -318,9 +310,8 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		e_overlayer->add_child(e_transform_tool);
 		{
 			auto c_element = cElement::create();
-			c_element->width = 20.f;
-			c_element->height = 20.f;
-			c_element->background_frame_thickness = 2.f;
+			c_element->pos = 20.f;
+			c_element->frame_thickness = 2.f;
 			e_transform_tool->add_component(c_element);
 			c_overlayer->transform_tool_element = c_element;
 
@@ -338,25 +329,22 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				{
 					auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
 					if (e && capture.er->active && is_mouse_move(action, key))
-					{
-						e->x += pos.x();
-						e->y += pos.y();
-					}
+						e->pos += pos;
 				}
 			}, new_mail(&capture));
 			e_transform_tool->add_component(c_event_receiver);
 
-			e_transform_tool->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+			e_transform_tool->add_component(cStyleColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
 
 			auto e_h_wing = Entity::create();
 			e_transform_tool->add_child(e_h_wing);
 			{
 				auto c_element = cElement::create();
-				c_element->x = 25.f;
-				c_element->y = 5.f;
-				c_element->width = 20.f;
-				c_element->height = 10.f;
-				c_element->background_frame_thickness = 2.f;
+				c_element->pos.x() = 25.f;
+				c_element->pos.y() = 5.f;
+				c_element->size.x() = 20.f;
+				c_element->size.y() = 10.f;
+				c_element->frame_thickness = 2.f;
 				e_h_wing->add_component(c_element);
 
 				auto c_event_receiver = cEventReceiver::create();
@@ -373,23 +361,23 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					{
 						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
 						if (e && capture.er->active && is_mouse_move(action, key))
-							e->x += pos.x();
+							e->pos.x() += pos.x();
 					}
 				}, new_mail(&capture));
 				e_h_wing->add_component(c_event_receiver);
 
-				e_h_wing->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+				e_h_wing->add_component(cStyleColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
 			}
 
 			auto e_v_wing = Entity::create();
 			e_transform_tool->add_child(e_v_wing);
 			{
 				auto c_element = cElement::create();
-				c_element->x = 5.f;
-				c_element->y = 25.f;
-				c_element->width = 10.f;
-				c_element->height = 20.f;
-				c_element->background_frame_thickness = 2.f;
+				c_element->pos.x() = 5.f;
+				c_element->pos.y() = 25.f;
+				c_element->size.x() = 10.f;
+				c_element->size.y() = 20.f;
+				c_element->frame_thickness = 2.f;
 				e_v_wing->add_component(c_element);
 
 				auto c_event_receiver = cEventReceiver::create();
@@ -406,12 +394,12 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					{
 						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
 						if (e && capture.er->active && is_mouse_move(action, key))
-							e->y += pos.y();
+							e->pos.y() += pos.y();
 					}
 				}, new_mail(&capture));
 				e_v_wing->add_component(c_event_receiver);
 
-				e_v_wing->add_component(cStyleBackgroundColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+				e_v_wing->add_component(cStyleColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
 			}
 		}
 

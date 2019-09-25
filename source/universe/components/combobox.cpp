@@ -42,7 +42,7 @@ namespace flame
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
-			style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
+			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
 
 			if (style)
 			{
@@ -210,10 +210,10 @@ namespace flame
 		auto e_combobox = create_standard_menu_button(font_atlas, sdf_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
 		{
 			auto c_element = (cElement*)e_combobox->find_component(cH("Element"));
-			c_element->width = width + 8.f;
-			c_element->height = font_atlas->pixel_height * sdf_scale + 4.f;
-			c_element->background_frame_color = default_style.text_color_normal;
-			c_element->background_frame_thickness = 2.f;
+			c_element->size.x() = width + 8.f;
+			c_element->size.y() = font_atlas->pixel_height * sdf_scale + 4.f;
+			c_element->frame_color = default_style.text_color_normal;
+			c_element->frame_thickness = 2.f;
 
 			auto c_text = (cText*)e_combobox->find_component(cH("Text"));
 			c_text->auto_width = false;

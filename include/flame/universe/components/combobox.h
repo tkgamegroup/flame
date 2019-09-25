@@ -12,14 +12,14 @@ namespace flame
 	struct cElement;
 	struct cText;
 	struct cEventReceiver;
-	struct cStyleBackgroundColor;
+	struct cStyleColor;
 	struct cMenuButton;
 	struct cCombobox;
 
 	struct cComboboxItem : Component
 	{
 		cEventReceiver* event_receiver;
-		cStyleBackgroundColor* style;
+		cStyleColor* style;
 		cCombobox* combobox;
 
 		Vec4c unselected_color_normal;

@@ -62,7 +62,7 @@ struct cResourceExplorer : Component
 				auto e_stem = create_standard_button(app.font_atlas_pixel, 1.f, s.filename().wstring());
 				address_bar->add_child(e_stem);
 				{
-					((cStyleBackgroundColor*)e_stem->find_component(cH("StyleBackgroundColor")))->color_normal.a() = 0;
+					((cStyleColor*)e_stem->find_component(cH("StyleColor")))->color_normal.a() = 0;
 
 					struct Capture
 					{
@@ -202,10 +202,9 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	app.root->add_child(e_container);
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->x = pos.x();
-		c_element->y = pos.y();
-		c_element->width = 300.f;
-		c_element->height = 600.f;
+		c_element->pos = pos;
+		c_element->size.x() = 300.f;
+		c_element->size.y() = 600.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();

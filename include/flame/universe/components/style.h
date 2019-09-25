@@ -8,7 +8,7 @@ namespace flame
 	struct cText;
 	struct cEventReceiver;
 
-	struct cStyleBackgroundColor : Component
+	struct cStyleColor : Component
 	{
 		cElement* element;
 		cEventReceiver* event_receiver;
@@ -17,8 +17,8 @@ namespace flame
 		Vec4c color_hovering;
 		Vec4c color_active;
 
-		cStyleBackgroundColor() :
-			Component("StyleBackgroundColor")
+		cStyleColor() :
+			Component("StyleColor")
 		{
 		}
 
@@ -26,7 +26,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
-		FLAME_UNIVERSE_EXPORTS static cStyleBackgroundColor* create(const Vec4c& color_normal = Vec4c(0), const Vec4c& color_hovering = Vec4c(0), const Vec4c& color_active = Vec4c(0));
+		FLAME_UNIVERSE_EXPORTS static cStyleColor* create(const Vec4c& color_normal = Vec4c(0), const Vec4c& color_hovering = Vec4c(0), const Vec4c& color_active = Vec4c(0));
 	};
 
 	struct cStyleTextColor : Component

@@ -41,7 +41,7 @@ namespace flame
 
 		void start()
 		{
-			style = (cStyleBackgroundColor*)(entity->find_component(cH("StyleBackgroundColor")));
+			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 			auto p = entity->parent();
@@ -147,7 +147,7 @@ namespace flame
 			auto e_title = entity->child(0);
 			auto e_arrow = e_title->child(0);
 
-			title_style = (cStyleBackgroundColor*)(e_title->find_component(cH("StyleBackgroundColor")));
+			title_style = (cStyleColor*)(e_title->find_component(cH("StyleColor")));
 			title_event_receiver = (cEventReceiver*)(e_title->find_component(cH("EventReceiver")));
 			assert(title_event_receiver);
 			arrow_text = (cText*)(e_arrow->find_component(cH("Text")));
@@ -319,7 +319,7 @@ namespace flame
 
 			e_title->add_component(cEventReceiver::create());
 
-			e_title->add_component(cStyleBackgroundColor::create());
+			e_title->add_component(cStyleColor::create());
 
 			auto e_arrow = Entity::create();
 			e_title->add_child(e_arrow);
@@ -367,7 +367,7 @@ namespace flame
 
 			e_tree_leaf->add_component(cEventReceiver::create());
 
-			e_tree_leaf->add_component(cStyleBackgroundColor::create());
+			e_tree_leaf->add_component(cStyleColor::create());
 
 			auto c_tree_leaf = cTreeLeaf::create();
 			c_tree_leaf->unselected_color_normal = Vec4c(0);

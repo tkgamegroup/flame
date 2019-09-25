@@ -70,8 +70,7 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
-			c_element_root->width = w->size.x();
-			c_element_root->height = w->size.y();
+			c_element_root->size = w->size;
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
 
@@ -144,8 +143,8 @@ int main(int argc, char** args)
 	app.root->add_child(e_layout_left);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 16.f;
-		c_element->y = 28.f;
+		c_element->pos.x() = 16.f;
+		c_element->pos.y() = 28.f;
 		e_layout_left->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -203,9 +202,9 @@ int main(int argc, char** args)
 	e_layout_left->add_child(e_toggle);
 	{
 		auto c_element = cElement::create();
-		c_element->background_round_flags = Side$(SideNW | SideNE | SideSW | SideSE);
-		c_element->background_round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
-		c_element->inner_padding = Vec4f(c_element->background_round_radius, 2.f, c_element->background_round_radius, 2.f);
+		c_element->round_flags = Side$(SideNW | SideNE | SideSW | SideSE);
+		c_element->round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
+		c_element->inner_padding = Vec4f(c_element->round_radius, 2.f, c_element->round_radius, 2.f);
 		e_toggle->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_pixel);
@@ -214,7 +213,7 @@ int main(int argc, char** args)
 
 		e_toggle->add_component(cEventReceiver::create());
 
-		e_toggle->add_component(cStyleBackgroundColor::create(Vec4c(0), Vec4c(0), Vec4c(0)));
+		e_toggle->add_component(cStyleColor::create(Vec4c(0), Vec4c(0), Vec4c(0)));
 
 		e_toggle->add_component(cToggle::create());
 	}
@@ -223,11 +222,10 @@ int main(int argc, char** args)
 	e_layout_left->add_child(e_image);
 	{
 		auto c_element = cElement::create();
-		c_element->width = 258.f;
-		c_element->height = 258.f;
+		c_element->size = 258.f;
 		c_element->inner_padding = Vec4f(4.f);
-		c_element->background_frame_color = Vec4c(10, 200, 10, 255);
-		c_element->background_frame_thickness = 2.f;
+		c_element->frame_color = Vec4c(10, 200, 10, 255);
+		c_element->frame_thickness = 2.f;
 		e_image->add_component(c_element);
 
 		auto c_image = cImage::create();
@@ -242,8 +240,8 @@ int main(int argc, char** args)
 	app.root->add_child(e_layout_right);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 416.f;
-		c_element->y = 28.f;
+		c_element->pos.x() = 416.f;
+		c_element->pos.y() = 28.f;
 		e_layout_right->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -264,10 +262,10 @@ int main(int argc, char** args)
 		e_layout_right->add_child(e_container);
 		{
 			auto c_element = (cElement*)e_container->find_component(cH("Element"));
-			c_element->width = 200.f;
-			c_element->height = 100.f;
+			c_element->size.x() = 200.f;
+			c_element->size.y() = 100.f;
 			c_element->inner_padding = Vec4f(4.f);
-			c_element->background_frame_thickness = 2.f;
+			c_element->frame_thickness = 2.f;
 			c_element->clip_children = true;
 		}
 	}
@@ -437,7 +435,7 @@ int main(int argc, char** args)
 	{
 		auto c_element = (cElement*)e_tree->find_component(cH("Element"));
 		c_element->inner_padding = Vec4f(4.f);
-		c_element->background_frame_thickness = 2.f;
+		c_element->frame_thickness = 2.f;
 	}
 	{
 		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, L"A");
@@ -462,10 +460,10 @@ int main(int argc, char** args)
 		app.root->add_child(e_container);
 		{
 			auto c_element = (cElement*)e_container->find_component(cH("Element"));
-			c_element->x = 414.f;
-			c_element->y = 297.f;
-			c_element->width = 221.f;
-			c_element->height = 214.f;
+			c_element->pos.x() = 414.f;
+			c_element->pos.y() = 297.f;
+			c_element->size.x() = 221.f;
+			c_element->size.y() = 214.f;
 		}
 
 		auto e_docker = get_docker_model()->copy();
@@ -498,10 +496,10 @@ int main(int argc, char** args)
 		app.root->add_child(e_container);
 		{
 			auto c_element = (cElement*)e_container->find_component(cH("Element"));
-			c_element->x = 667.f;
-			c_element->y = 302.f;
-			c_element->width = 403.f;
-			c_element->height = 215.f;
+			c_element->pos.x() = 667.f;
+			c_element->pos.y() = 302.f;
+			c_element->size.x() = 403.f;
+			c_element->size.y() = 215.f;
 		}
 
 		auto e_docker_layout = get_docker_layout_model()->copy();

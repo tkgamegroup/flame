@@ -12,8 +12,7 @@ namespace flame
 
 		Alignx$ x_align;
 		Aligny$ y_align;
-		float min_width;
-		float min_height;
+		Vec2f min_size;
 		SizePolicy$ width_policy;
 		float width_factor;
 		SizePolicy$ height_policy;

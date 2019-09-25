@@ -5,9 +5,9 @@
 
 namespace flame
 {
-	struct cStyleBackgroundColorPrivate : cStyleBackgroundColor
+	struct cStyleColorPrivate : cStyleColor
 	{
-		cStyleBackgroundColorPrivate(const Vec4c& _color_normal, const Vec4c& _color_hovering, const Vec4c& _color_active)
+		cStyleColorPrivate(const Vec4c& _color_normal, const Vec4c& _color_hovering, const Vec4c& _color_active)
 		{
 			element = nullptr;
 			event_receiver = nullptr;
@@ -28,37 +28,37 @@ namespace flame
 		void update()
 		{
 			if (event_receiver->active)
-				element->background_color = color_active;
+				element->color = color_active;
 			else if (event_receiver->hovering)
-				element->background_color = color_hovering;
+				element->color = color_hovering;
 			else
-				element->background_color = color_normal;
+				element->color = color_normal;
 		}
 
 		Component* copy()
 		{
-			return new cStyleBackgroundColorPrivate(color_normal, color_hovering, color_active);
+			return new cStyleColorPrivate(color_normal, color_hovering, color_active);
 		}
 	};
 
-	void cStyleBackgroundColor::start()
+	void cStyleColor::start()
 	{
-		((cStyleBackgroundColorPrivate*)this)->start();
+		((cStyleColorPrivate*)this)->start();
 	}
 
-	void cStyleBackgroundColor::update()
+	void cStyleColor::update()
 	{
-		((cStyleBackgroundColorPrivate*)this)->update();
+		((cStyleColorPrivate*)this)->update();
 	}
 
-	Component* cStyleBackgroundColor::copy()
+	Component* cStyleColor::copy()
 	{
-		return ((cStyleBackgroundColorPrivate*)this)->copy();
+		return ((cStyleColorPrivate*)this)->copy();
 	}
 
-	cStyleBackgroundColor* cStyleBackgroundColor::create(const Vec4c& color_normal, const Vec4c& color_hovering, const Vec4c& color_active)
+	cStyleColor* cStyleColor::create(const Vec4c& color_normal, const Vec4c& color_hovering, const Vec4c& color_active)
 	{
-		return new cStyleBackgroundColorPrivate(color_normal, color_hovering, color_active);
+		return new cStyleColorPrivate(color_normal, color_hovering, color_active);
 	}
 
 	struct cStyleTextColorPrivate : cStyleTextColor

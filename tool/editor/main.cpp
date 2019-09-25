@@ -100,8 +100,7 @@ void App::run()
 		sc->acquire_image();
 		fence->wait();
 
-		c_element_root->width = w->size.x();
-		c_element_root->height = w->size.y();
+		c_element_root->size = w->size;
 		c_text_fps->set_text(std::to_wstring(looper().fps));
 		root->update();
 

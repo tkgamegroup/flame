@@ -124,12 +124,12 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto lh = text->font_atlas->pixel_height * text->sdf_scale;
-					auto y = thiz->element->global_y;
+					auto y = thiz->element->global_pos.y();
 					for (auto p = str.c_str(); ; p++)
 					{
 						if (y < pos.y() && pos.y() < y + lh)
 						{
-							auto x = thiz->element->global_x;
+							auto x = thiz->element->global_pos.x();
 							for (;; p++)
 							{
 								if (!*p)
@@ -159,7 +159,7 @@ namespace flame
 			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
 				auto text_scale = text->sdf_scale * element->global_scale;
-				element->canvas->add_text(text->font_atlas, Vec2f(element->global_x, element->global_y) +
+				element->canvas->add_text(text->font_atlas, element->global_pos +
 					Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
 					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
 					alpha_mul(text->color, element->alpha), L"|", text_scale);
@@ -209,11 +209,11 @@ namespace flame
 		auto e_edit = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->width = width + 8.f;
+			c_element->size.x() = width + 8.f;
 			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_element->background_color = default_style.frame_color_normal;
-			c_element->background_frame_color = default_style.text_color_normal;
-			c_element->background_frame_thickness = 2.f;
+			c_element->color = default_style.frame_color_normal;
+			c_element->frame_color = default_style.text_color_normal;
+			c_element->frame_thickness = 2.f;
 			e_edit->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);

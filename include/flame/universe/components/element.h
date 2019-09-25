@@ -11,29 +11,25 @@ namespace flame
 
 	struct cElement : Component
 	{
-		float x;
-		float y;
+		Vec2f pos;
 		float scale;
-		float width;
-		float height;
+		Vec2f size;
 		Vec4f inner_padding; // L T R B
 		float alpha;
 		bool draw;
-		float background_round_radius;
-		Side$ background_round_flags;
-		float background_frame_thickness;
-		Vec4c background_color;
-		Vec4c background_frame_color;
-		float background_shadow_thickness;
+		float round_radius;
+		Side$ round_flags;
+		float frame_thickness;
+		Vec4c color;
+		Vec4c frame_color;
+		float shadow_thickness;
 		bool clip_children;
 
 		cElement* p_element;
 		graphics::Canvas* canvas;
-		float global_x;
-		float global_y;
+		Vec2f global_pos;
 		float global_scale;
-		float global_width;
-		float global_height;
+		Vec2f global_size;
 		Vec4f scissor;
 		bool cliped;
 
@@ -49,8 +45,7 @@ namespace flame
 
 		bool contains(const Vec2f& pos) const
 		{
-			return rect_contains(Vec4f(global_x, global_y, global_x + global_width, global_y + global_height), pos) &&
-				rect_contains(scissor, pos);
+			return rect_contains(Vec4f(global_pos, global_pos + global_size), pos) && rect_contains(scissor, pos);
 		}
 
 		cElement() :
