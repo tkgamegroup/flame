@@ -659,8 +659,8 @@ void cBP::start()
 					{
 						auto e1 = ((cBPSlot*)output->user_data)->element;
 						auto e2 = ((cBPSlot*)input->user_data)->element;
-						auto p1 = (e1->global_pos + e1->global_size) * 0.5f;
-						auto p2 = (e2->global_pos + e2->global_size) * 0.5f;
+						auto p1 = e1->global_pos + e1->global_size * 0.5f;
+						auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
 						if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
 						{
@@ -696,8 +696,8 @@ void cBP::update()
 				auto e2 = ((cBPSlot*)input->user_data)->element;
 				if (e1 && e2)
 				{
-					auto p1 = (e1->global_pos + e1->global_size) * 0.5f;
-					auto p2 = (e2->global_pos + e2->global_size) * 0.5f;
+					auto p1 = e1->global_pos + e1->global_size * 0.5f;
+					auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
 					std::vector<Vec2f> points;
 					path_bezier(points, p1, p1 + Vec2f(50.f, 0.f), p2 - Vec2f(50.f, 0.f), p2);
@@ -709,7 +709,7 @@ void cBP::update()
 	if (editor->dragging_slot)
 	{
 		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
-		auto p1 = (e->global_pos + e->global_size) * 0.5f;
+		auto p1 = e->global_pos + e->global_size * 0.5f;
 		auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
 
 		std::vector<Vec2f> points;

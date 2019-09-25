@@ -125,7 +125,11 @@ struct cResourceExplorer : Component
 						dirs.push_back(it->path());
 				}
 				else
-					files.push_back(it->path());
+				{
+					auto ext = it->path().extension();
+					if (ext != L".ilk" && ext != L".exp")
+						files.push_back(it->path());
+				}
 			}
 			auto upward_item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" .."));
 			((cListItem*)upward_item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
