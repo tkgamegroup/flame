@@ -1,3 +1,4 @@
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/font.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
@@ -277,7 +278,18 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
+						popup_input_dialog(c_explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
+							auto explorer = *(cResourceExplorer**)c;
 
+							if (ok)
+							{
+								auto p = explorer->curr_path / text;
+								std::filesystem::create_directory(p);
+								auto bp = BP::create();
+								bp->save_to_file(bp, p / L"bp");
+								BP::destroy(bp);
+							}
+						}, new_mail_p(c_explorer));
 					}
 				}, new_mail_p(c_explorer));
 			}

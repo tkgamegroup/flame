@@ -336,6 +336,9 @@ namespace flame
 	BPPrivate::BPPrivate()
 	{
 		graphics_device = nullptr;
+
+		module = nullptr;
+		db = nullptr;
 	}
 
 	BPPrivate::~BPPrivate()
@@ -713,6 +716,11 @@ namespace flame
 		((BPPrivate*)this)->update();
 	}
 
+	BP* BP::create()
+	{
+		return new BPPrivate();
+	}
+
 	static std::vector<std::filesystem::path> loaded_bps; // track locked pdbs
 
 	BP *BP::create_from_file(const std::wstring& filename, bool no_compile)
@@ -744,18 +752,22 @@ namespace flame
 		loaded_bps.push_back(path);
 		if (!no_compile && !loaded_before) // delete pervious created random pdbs
 		{
-			std::vector<std::filesystem::path> pdbs;
-			for (std::filesystem::directory_iterator end, it(ppath / L"build/Debug"); it != end; it++)
+			auto p = ppath / L"build/Debug";
+			if (std::filesystem::exists(p))
 			{
-				if (!std::filesystem::is_directory(it->status()))
+				std::vector<std::filesystem::path> pdbs;
+				for (std::filesystem::directory_iterator end, it(p); it != end; it++)
 				{
-					auto ext = it->path().extension().wstring();
-					if (ext == L".pdb")
-						pdbs.push_back(it->path());
+					if (!std::filesystem::is_directory(it->status()))
+					{
+						auto ext = it->path().extension().wstring();
+						if (ext == L".pdb")
+							pdbs.push_back(it->path());
+					}
 				}
+				for (auto& p : pdbs)
+					std::filesystem::remove(p);
 			}
-			for (auto& p : pdbs)
-				std::filesystem::remove(p);
 		}
 
 		std::vector<std::pair<std::wstring, std::wstring>> dependencies;
@@ -940,6 +952,10 @@ namespace flame
 			}
 		}
 
+		auto module = load_module(ppath_str + L"/build/debug/bp.dll");
+		if (!module)
+			return nullptr;
+
 		auto bp = new BPPrivate();
 		bp->filename = filename;
 
@@ -948,7 +964,7 @@ namespace flame
 		std::vector< TypeinfoDatabase*> dbs;
 		for (auto& d : bp->dependencies)
 			dbs.push_back(d.db);
-		bp->module = load_module(ppath_str + L"/build/debug/bp.dll");
+		bp->module = module;
 		bp->db = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
 		dbs.push_back(bp->db);
 
@@ -992,9 +1008,11 @@ namespace flame
 
 		auto file = SerializableNode::create("BP");
 
-		if (!bp->dependencies.empty())
+		auto n_dependencies = file->new_node("dependencies");
+		if (bp->dependencies.empty())
+			n_dependencies->new_node("dependency")->new_attr("v", "flame.foundation.dll");
+		else
 		{
-			auto n_dependencies = file->new_node("dependencies");
 			for (auto& d : bp->dependencies)
 				n_dependencies->new_node("dependency")->new_attr("v", (w2s(d.filename)));
 		}

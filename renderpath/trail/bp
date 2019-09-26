@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<BP>
+  <dependencies>
+    <dependency v="flame_foundation.dll" />
+  </dependencies>
+	<nodes />
+	<links />
+</BP>

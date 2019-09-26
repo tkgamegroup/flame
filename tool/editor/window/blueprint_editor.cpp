@@ -166,13 +166,19 @@ struct cBPEditor : Component
 			BP::destroy(bp);
 		bp = BP::create_from_file(filename, no_compile);
 		dbs.clear();
-		for (auto i = 0; i < bp->dependency_count(); i++)
-			dbs.push_back(bp->dependency_typeinfodatabase(i));
-		dbs.push_back(bp->db());
+		if (bp)
+		{
+			for (auto i = 0; i < bp->dependency_count(); i++)
+				dbs.push_back(bp->dependency_typeinfodatabase(i));
+			dbs.push_back(bp->db());
+		}
 
 		e_base->remove_all_children();
-		for (auto i = 0; i < bp->node_count(); i++)
-			create_node_entity(bp->node(i));
+		if (bp)
+		{
+			for (auto i = 0; i < bp->node_count(); i++)
+				create_node_entity(bp->node(i));
+		}
 
 		e_add_node_menu->remove_all_children();
 
@@ -236,13 +242,17 @@ struct cBPEditor : Component
 			capture.u = udt;
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto& capture = *(Capture*)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
 
 					capture.e->reset_add_node_menu_filter();
 
-					capture.e->add_node(capture.u->name(), "", capture.e->add_node_pos);
+					if (!capture.e->bp)
+						capture.e->add_tip(L"BP is unavailable, try to reload with compiling");
+					else
+						capture.e->add_node(capture.u->name(), "", capture.e->add_node_pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -251,47 +261,53 @@ struct cBPEditor : Component
 			e_add_node_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto editor = *(cBPEditor**)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
 
 					editor->reset_add_node_menu_filter();
 
-					popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
-						auto editor = *(cBPEditor**)c;
-						auto bp = editor->bp;
-						auto name = w2s(text);
+					if (!editor->bp)
+						editor->add_tip(L"BP is unavailable, try to reload with compiling");
+					else
+					{
+						popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
+							auto editor = *(cBPEditor**)c;
+							auto bp = editor->bp;
+							auto name = w2s(text);
 
-						if (bp->db()->find_udt(H(name.c_str())))
-							editor->add_node(name, "", editor->add_node_pos);
-						else
-						{
-							if (editor->running)
-								editor->add_tip(L"Cannot Add New Template Node While Running");
+							if (bp->db()->find_udt(H(name.c_str())))
+								editor->add_node(name, "", editor->add_node_pos);
 							else
 							{
-								auto file = SerializableNode::create_from_xml_file(editor->filename);
-								auto n_nodes = file->find_node("nodes");
-								auto n_node = n_nodes->new_node("node");
-								n_node->new_attr("type", name);
+								if (editor->running)
+									editor->add_tip(L"Cannot Add New Template Node While Running");
+								else
 								{
-									std::string id;
-									for (auto i = 0; i < bp->node_count() + 1; i++)
+									auto file = SerializableNode::create_from_xml_file(editor->filename);
+									auto n_nodes = file->find_node("nodes");
+									auto n_node = n_nodes->new_node("node");
+									n_node->new_attr("type", name);
 									{
-										id = "node_" + std::to_string(i);
-										if (!bp->find_node(id))
-											break;
+										std::string id;
+										for (auto i = 0; i < bp->node_count() + 1; i++)
+										{
+											id = "node_" + std::to_string(i);
+											if (!bp->find_node(id))
+												break;
+										}
+										n_node->new_attr("id", id);
 									}
-									n_node->new_attr("id", id);
-								}
-								n_node->new_attr("pos", to_string(editor->add_node_pos));
-								SerializableNode::save_to_xml_file(file, editor->filename);
-								SerializableNode::destroy(file);
+									n_node->new_attr("pos", to_string(editor->add_node_pos));
+									SerializableNode::save_to_xml_file(file, editor->filename);
+									SerializableNode::destroy(file);
 
-								editor->load(editor->filename, false);
+									editor->load(editor->filename, false);
+								}
 							}
-						}
-					}, new_mail_p(editor));
+						}, new_mail_p(editor));
+					}
 				}
 			}, new_mail_p(this));
 		}
@@ -626,24 +642,27 @@ void cBP::start()
 			editor->selected.n = nullptr;
 			auto bp = editor->bp;
 
-			for (auto i = 0; i < bp->node_count(); i++)
+			if (bp)
 			{
-				auto n = bp->node(i);
-				for (auto j = 0; j < n->input_count(); j++)
+				for (auto i = 0; i < bp->node_count(); i++)
 				{
-					auto input = n->input(j);
-					auto output = input->link(0);
-					if (output)
+					auto n = bp->node(i);
+					for (auto j = 0; j < n->input_count(); j++)
 					{
-						auto e1 = ((cBPSlot*)output->user_data)->element;
-						auto e2 = ((cBPSlot*)input->user_data)->element;
-						auto p1 = e1->global_pos + e1->global_size * 0.5f;
-						auto p2 = e2->global_pos + e2->global_size * 0.5f;
-
-						if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
+						auto input = n->input(j);
+						auto output = input->link(0);
+						if (output)
 						{
-							editor->sel_type = cBPEditor::SelLink;
-							editor->selected.l = input;
+							auto e1 = ((cBPSlot*)output->user_data)->element;
+							auto e2 = ((cBPSlot*)input->user_data)->element;
+							auto p1 = e1->global_pos + e1->global_size * 0.5f;
+							auto p2 = e2->global_pos + e2->global_size * 0.5f;
+
+							if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
+							{
+								editor->sel_type = cBPEditor::SelLink;
+								editor->selected.l = input;
+							}
 						}
 					}
 				}
@@ -661,38 +680,42 @@ void cBP::update()
 {
 	bezier_extent = 50.f * base_element->global_scale;
 
-	for (auto i = 0; i < editor->bp->node_count(); i++)
+	auto bp = editor->bp;
+	if (bp)
 	{
-		auto n = editor->bp->node(i);
-		for (auto j = 0; j < n->input_count(); j++)
+		for (auto i = 0; i < bp->node_count(); i++)
 		{
-			auto input = n->input(j);
-			auto output = input->link(0);
-			if (output)
+			auto n = bp->node(i);
+			for (auto j = 0; j < n->input_count(); j++)
 			{
-				auto e1 = ((cBPSlot*)output->user_data)->element;
-				auto e2 = ((cBPSlot*)input->user_data)->element;
-				if (e1 && e2)
+				auto input = n->input(j);
+				auto output = input->link(0);
+				if (output)
 				{
-					auto p1 = e1->global_pos + e1->global_size * 0.5f;
-					auto p2 = e2->global_pos + e2->global_size * 0.5f;
+					auto e1 = ((cBPSlot*)output->user_data)->element;
+					auto e2 = ((cBPSlot*)input->user_data)->element;
+					if (e1 && e2)
+					{
+						auto p1 = e1->global_pos + e1->global_size * 0.5f;
+						auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
-					std::vector<Vec2f> points;
-					path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-					element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+						std::vector<Vec2f> points;
+						path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
+						element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+					}
 				}
 			}
 		}
-	}
-	if (editor->dragging_slot)
-	{
-		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
-		auto p1 = e->global_pos + e->global_size * 0.5f;
-		auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
+		if (editor->dragging_slot)
+		{
+			auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
+			auto p1 = e->global_pos + e->global_size * 0.5f;
+			auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
 
-		std::vector<Vec2f> points;
-		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? bezier_extent : -bezier_extent, 0.f), p2, p2);
-		element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
+			std::vector<Vec2f> points;
+			path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? bezier_extent : -bezier_extent, 0.f), p2, p2);
+			element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
+		}
 	}
 }
 
@@ -1353,10 +1376,15 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto editor = *(cBPEditor**)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					editor->bp->save_to_file(editor->bp, editor->filename);
+
+					if (!editor->bp)
+						editor->add_tip(L"BP is unavailable, try to reload with compiling");
+					else
+						editor->bp->save_to_file(editor->bp, editor->filename);
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1365,6 +1393,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto editor = *(cBPEditor**)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
@@ -1391,13 +1420,20 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto editor = *(cBPEditor**)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					if (editor->running)
-						editor->add_tip(L"Cannot Reload While Running");
+
+					if (!editor->bp)
+						editor->add_tip(L"BP is unavailable, try to reload with compiling");
 					else
-						editor->load(editor->filename, true);
+					{
+						if (editor->running)
+							editor->add_tip(L"Cannot Reload While Running");
+						else
+							editor->load(editor->filename, true);
+					}
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1431,11 +1467,16 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					auto editor = *(cBPEditor**)c;
-					editor->delete_selected();
+
+					if (!editor->bp)
+						editor->add_tip(L"BP is unavailable, try to reload with compiling");
+					else
+						editor->delete_selected();
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1448,11 +1489,16 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Auto Set Layout");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					destroy_topmost(app.root);
-					auto editor = *(cBPEditor**)c;
-					editor->auto_set_layout();
+
+					if (!editor->bp)
+						editor->add_tip(L"BP is unavailable, try to reload with compiling");
+					else
+						editor->auto_set_layout();
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1472,10 +1518,14 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		capture.e = c_editor;
 		capture.t = (cText*)e_btn_run->find_component(cH("Text"));
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto& capture = *(Capture*)c;
+
 			if (is_mouse_clicked(action, key))
 			{
-				auto& capture = *(Capture*)c;
 				capture.e->running = !capture.e->running;
+
+				if (!capture.e->bp)
+					capture.e->running = false;
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
 
 				if (capture.e->running)
@@ -1578,6 +1628,11 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		if (editor->locked)
 		{
 			console->print(L"bp is locked");
+			return;
+		}
+		else if (!editor->bp)
+		{
+			console->print(L"bp is unavailable");
 			return;
 		}
 
