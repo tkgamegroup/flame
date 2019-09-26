@@ -665,7 +665,6 @@ namespace flame
 
 	struct FileWatcher
 	{
-		int options;
 		void *hEventExpired;
 
 		~FileWatcher()
@@ -674,7 +673,7 @@ namespace flame
 		}
 	};
 
-	void do_file_watch(FileWatcher *filewatcher, bool only_content, const std::wstring& _path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture)
+	void do_file_watch(FileWatcher *filewatcher, bool all_changes, const std::wstring& _path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture)
 	{
 		auto path = std::wstring(_path);
 
@@ -692,7 +691,9 @@ namespace flame
 		OVERLAPPED overlapped;
 		auto hEvent = create_event(false);
 
-		auto flags = (only_content ? 0 : FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_CREATION) | FILE_NOTIFY_CHANGE_LAST_WRITE;
+		auto flags = FILE_NOTIFY_CHANGE_LAST_WRITE;
+		if (all_changes)
+			flags |= FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_CREATION;
 
 		while (true)
 		{
@@ -742,7 +743,7 @@ namespace flame
 					break;
 				}
 
-				if (!(only_content && (type != FileModified)))
+				if (all_changes || type == FileModified)
 					callback(capture.p, type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
 
 				if (p->NextEntryOffset <= 0)
@@ -758,16 +759,15 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	FileWatcher *add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, uint options)
+	FileWatcher *add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes, bool sync)
 	{
-		if (options & FileWatcherAsynchronous)
+		if (!sync)
 		{
 			auto w = new FileWatcher;
-			w->options = options;
 			w->hEventExpired = CreateEvent(NULL, false, false, NULL);
 
 			std::thread([=]() {
-				do_file_watch(w, w->options & FileWatcherMonitorOnlyContentChanged, path, callback, capture);
+				do_file_watch(w, all_changes, path, callback, capture);
 				delete w;
 			}).detach();
 
@@ -775,7 +775,7 @@ namespace flame
 		}
 		else
 		{
-			do_file_watch(nullptr, options & FileWatcherMonitorOnlyContentChanged, path, callback, capture);
+			do_file_watch(nullptr, all_changes, path, callback, capture);
 
 			return nullptr;
 		}

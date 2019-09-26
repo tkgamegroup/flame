@@ -6,15 +6,7 @@ int main(int argc, char **args)
 {
 	if (argc != 3)
 	{
-		printf(
-			   "usage:\n"
-			   "  key \"command\"\n"
-			   "note:\n"
-			   "  key can be combine with modifier i.e. Shift+Ctrl+C\n"
-			   "  modifiers are: Shift, Ctrl, Alt\n"
-			   "  both keys and modifiers aren't case sensitive\n"
-			   "  command must be wraped in \"\"\n"
-		);
+		printf("usage:\n  key \"command\"\nnote:\n  key can be combine with modifier i.e. Shift+Ctrl+C\n  modifiers are: Shift, Ctrl, Alt\n  both keys and modifiers aren't case sensitive\n  command must be wraped in \"\"\n");
 		system("pause");
 		return 0;
 	}

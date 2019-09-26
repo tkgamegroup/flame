@@ -8,12 +8,7 @@ int main(int argc, char **args)
 {
 	if (argc != 3)
 	{
-		printf(
-			   "usage:\n"
-			   "  filename \"command\"\n"
-			   "note:\n"
-			   "  command must be wraped in \"\"\n"
-		);
+		printf("usage:\n  filename \"command\"\nnote:\n  command must be wraped in \"\"\n");
 		system("pause");
 		return 0;
 	}
@@ -39,5 +34,5 @@ int main(int argc, char **args)
 		}
 		last_change_time = now_time;
 
-	}, new_mail(&capture), FileWatcherMonitorOnlyContentChanged | FileWatcherSynchronous);
+	}, new_mail(&capture), false);
 }

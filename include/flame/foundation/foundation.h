@@ -1094,14 +1094,6 @@ namespace flame
 	struct FileWatcher;
 	typedef FileWatcher* FileWatcherPtr;
 
-	enum FileWatcherOption
-	{
-		FileWatcherMonitorAllChanges = 1 << 0,
-		FileWatcherMonitorOnlyContentChanged = 1 << 1,
-		FileWatcherSynchronous = 1 << 2,
-		FileWatcherAsynchronous = 1 << 3
-	};
-
 	enum FileChangeType
 	{
 		FileAdded,
@@ -1110,7 +1102,7 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, uint options = FileWatcherMonitorAllChanges | FileWatcherAsynchronous);
+	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes = true, bool sync = true);
 	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
 
 	FLAME_FOUNDATION_EXPORTS void add_work(void (*callback)(void* c), const Mail<>& capture);
