@@ -9,6 +9,7 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/default_style.h>
+#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
@@ -134,6 +135,87 @@ void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scal
 {
 	for (auto i = 0; i < info->item_count(); i++)
 		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, sdf_scale, s2w(info->item(i)->name())));
+}
+
+void popup_input_dialog(Entity* e, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
+{
+	auto t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
+	{
+		t->add_component(cLayout::create(LayoutFree));
+	}
+
+	auto e_dialog = Entity::create();
+	t->add_child(e_dialog);
+	{
+		e_dialog->add_component(cElement::create());
+
+		auto c_aligner = cAligner::create();
+		c_aligner->x_align = AlignxMiddle;
+		c_aligner->y_align = AlignyMiddle;
+		e_dialog->add_component(c_aligner);
+
+		auto c_layout = cLayout::create(LayoutVertical);
+		c_layout->item_padding = 4.f;
+		e_dialog->add_component(c_layout);
+	}
+
+	auto e_input = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
+	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, L"template"));
+
+	auto e_buttons = Entity::create();
+	e_dialog->add_child(e_buttons);
+	{
+		e_buttons->add_component(cElement::create());
+
+		auto c_layout = cLayout::create(LayoutHorizontal);
+		c_layout->item_padding = 4.f;
+		e_buttons->add_component(c_layout);
+	}
+
+	struct Capture
+	{
+		Entity* e;
+		void (*c)(void* c, bool ok, const std::wstring& text);
+		Mail<> m;
+		cText* t;
+	}capture;
+	capture.e = e;
+	capture.c = callback;
+	capture.m = _capture;
+	capture.t = (cText*)e_input->find_component(cH("Text"));
+
+	auto e_btn_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
+	e_buttons->add_child(e_btn_ok);
+	{
+		((cEventReceiver*)e_btn_ok->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto& capture = *(Capture*)c;
+
+			if (is_mouse_clicked(action, key))
+			{
+				auto text = capture.t->text();
+				destroy_topmost(capture.e, false);
+
+				capture.c(capture.m.p, true, text);
+				delete_mail(capture.m);
+			}
+		}, new_mail(&capture));
+	}
+
+	auto e_btn_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
+	e_buttons->add_child(e_btn_cancel);
+	{
+		((cEventReceiver*)e_btn_cancel->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto& capture = *(Capture*)c;
+
+			if (is_mouse_clicked(action, key))
+			{
+				destroy_topmost(capture.e, false);
+
+				capture.c(capture.m.p, false, L"");
+				delete_mail(capture.m);
+			}
+		}, new_mail(&capture));
+	}
 }
 
 int main(int argc, char **args)

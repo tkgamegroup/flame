@@ -26,9 +26,9 @@ struct cResourceExplorer : Component
 	Entity* list;
 
 	std::filesystem::path selected;
-	Entity* dir_menu;
-	Entity* bp_menu;
+	Entity* blank_menu;
 	Entity* pf_menu;
+	Entity* bp_menu;
 
 	void* ev_file_changed;
 	void* ev_end_file_watcher;
@@ -165,12 +165,7 @@ struct cResourceExplorer : Component
 				capture.p = p;
 				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					auto& capture = *(Capture*)c;
-					if (is_mouse_down(action, key, true) && key == Mouse_Right)
-					{
-						capture.e->selected = capture.p;
-						popup_menu(capture.e->dir_menu, app.root, pos);
-					}
-					else if (is_mouse_clicked(action, key, true))
+					if (is_mouse_clicked(action, key, true))
 						capture.e->navigate(capture.p);
 				}, new_mail(&capture));
 			}
@@ -193,10 +188,10 @@ struct cResourceExplorer : Component
 						capture.e->selected = capture.p;
 						auto fn = capture.p.filename().wstring();
 						auto ext = capture.p.extension().wstring();
-						if (fn == L"bp")
-							popup_menu(capture.e->bp_menu, app.root, pos);
-						else if (ext == L".prefab")
+						if (ext == L".prefab")
 							popup_menu(capture.e->pf_menu, app.root, pos);
+						else if (fn == L"bp")
+							popup_menu(capture.e->bp_menu, app.root, pos);
 					}
 				}, new_mail(&capture));
 			}
@@ -250,33 +245,32 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	{
 		c_explorer->base_path = path;
 
-		c_explorer->dir_menu = create_standard_menu();
+		c_explorer->blank_menu = create_standard_menu();
 		{
+			{
+				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Prefab");
+				c_explorer->blank_menu->add_child(item);
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto c_explorer = *(cResourceExplorer**)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						destroy_topmost(app.root);
 
-		}
+					}
+				}, new_mail_p(c_explorer));
+			}
+			{
+				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New BP");
+				c_explorer->blank_menu->add_child(item);
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto c_explorer = *(cResourceExplorer**)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						destroy_topmost(app.root);
 
-		c_explorer->bp_menu = create_standard_menu();
-		{
-			auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
-			c_explorer->bp_menu->add_child(mi_open);
-			((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto c_explorer = *(cResourceExplorer**)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					destroy_topmost(app.root);
-					open_blueprint_editor(c_explorer->selected, false, Vec2f(450.f, 20.f));
-				}
-			}, new_mail_p(c_explorer));
-			auto mi_open_no_compile = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
-			c_explorer->bp_menu->add_child(mi_open_no_compile);
-			((cEventReceiver*)mi_open_no_compile->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto c_explorer = *(cResourceExplorer**)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					destroy_topmost(app.root);
-					open_blueprint_editor(c_explorer->selected, true, Vec2f(450.f, 20.f));
-				}
-			}, new_mail_p(c_explorer));
+					}
+				}, new_mail_p(c_explorer));
+			}
 		}
 
 		c_explorer->pf_menu = create_standard_menu();
@@ -291,6 +285,34 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 					open_scene_editor(c_explorer->selected, Vec2f(450.f, 20.f));
 				}
 			}, new_mail_p(c_explorer));
+		}
+
+		c_explorer->bp_menu = create_standard_menu();
+		{
+			{
+				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
+				c_explorer->bp_menu->add_child(item);
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto c_explorer = *(cResourceExplorer**)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						destroy_topmost(app.root);
+						open_blueprint_editor(c_explorer->selected, false, Vec2f(450.f, 20.f));
+					}
+				}, new_mail_p(c_explorer));
+			}
+			{
+				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
+				c_explorer->bp_menu->add_child(item);
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto c_explorer = *(cResourceExplorer**)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						destroy_topmost(app.root);
+						open_blueprint_editor(c_explorer->selected, true, Vec2f(450.f, 20.f));
+					}
+				}, new_mail_p(c_explorer));
+			}
 		}
 	}
 	e_page->add_component(c_explorer);
@@ -308,11 +330,24 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	auto e_list = create_standard_list(true);
 	{
 		auto c_event_receiver = cEventReceiver::create();
+		struct Capture
+		{
+			cList* l;
+			cResourceExplorer* e;
+		}capture;
+		capture.l = (cList*)e_list->find_component(cH("List"));
+		capture.e = c_explorer;
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto list = *(cList**)c;
-			if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				list->selected = nullptr;
-		}, new_mail_p(e_list->find_component(cH("List"))));
+			auto& capture = *(Capture*)c;
+
+			if (is_mouse_down(action, key, true))
+			{
+				if (key == Mouse_Left)
+					capture.l->selected = nullptr;
+				else if (key == Mouse_Right)
+					popup_menu(capture.e->blank_menu, app.root, pos);
+			}
+		}, new_mail(&capture));
 		e_list->add_component(c_event_receiver);
 	}
 	c_explorer->list = e_list;

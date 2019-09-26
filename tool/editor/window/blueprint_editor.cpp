@@ -257,99 +257,41 @@ struct cBPEditor : Component
 
 					editor->reset_add_node_menu_filter();
 
-					auto t = create_topmost(editor->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
-					{
-						t->add_component(cLayout::create(LayoutFree));
-					}
+					popup_input_dialog(editor->entity, [](void* c, bool ok, const std::wstring& text) {
+						auto editor = *(cBPEditor**)c;
+						auto bp = editor->bp;
+						auto name = w2s(text);
 
-					auto e_dialog = Entity::create();
-					t->add_child(e_dialog);
-					{
-						e_dialog->add_component(cElement::create());
-
-						auto c_aligner = cAligner::create();
-						c_aligner->x_align = AlignxMiddle;
-						c_aligner->y_align = AlignyMiddle;
-						e_dialog->add_component(c_aligner);
-
-						auto c_layout = cLayout::create(LayoutVertical);
-						c_layout->item_padding = 4.f;
-						e_dialog->add_component(c_layout);
-					}
-
-					auto e_name = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-					e_dialog->add_child(wrap_standard_text(e_name, false, app.font_atlas_pixel, 1.f, L"template"));
-
-					auto e_buttons = Entity::create();
-					e_dialog->add_child(e_buttons);
-					{
-						e_buttons->add_component(cElement::create());
-
-						auto c_layout = cLayout::create(LayoutHorizontal);
-						c_layout->item_padding = 4.f;
-						e_buttons->add_component(c_layout);
-					}
-
-					auto e_btn_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
-					e_buttons->add_child(e_btn_ok);
-					{
-						struct Capture
+						if (bp->db()->find_udt(H(name.c_str())))
+							editor->add_node(name, "", editor->add_node_pos);
+						else
 						{
-							cBPEditor* e;
-							cText* t;
-						}capture;
-						capture.e = editor;
-						capture.t = (cText*)e_name->find_component(cH("Text"));
-						((cEventReceiver*)e_btn_ok->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							auto& capture = *(Capture*)c;
-							if (is_mouse_clicked(action, key))
+							if (editor->running)
+								editor->add_tip(L"Cannot Add New Template Node While Running");
+							else
 							{
-								destroy_topmost(capture.e->entity, false);
-
-								auto name = w2s(capture.t->text());
-								auto db = capture.e->bp->db();
-								if (db->find_udt(H(name.c_str())))
-									capture.e->add_node(name, "", capture.e->add_node_pos);
-								else
+								auto file = SerializableNode::create_from_xml_file(editor->filename);
+								auto n_nodes = file->find_node("nodes");
+								auto n_node = n_nodes->new_node("node");
+								n_node->new_attr("type", name);
 								{
-									if (capture.e->running)
-										capture.e->add_tip(L"Cannot Add New Template Node While Running");
-									else
+									std::string id;
+									for (auto i = 0; i < bp->node_count() + 1; i++)
 									{
-										auto file = SerializableNode::create_from_xml_file(capture.e->filename);
-										auto n_nodes = file->find_node("nodes");
-										auto n_node = n_nodes->new_node("node");
-										n_node->new_attr("type", name);
-										{
-											std::string id;
-											auto bp = capture.e->bp;
-											for (auto i = 0; i < bp->node_count() + 1; i++)
-											{
-												id = "node_" + std::to_string(i);
-												if (!bp->find_node(id))
-													break;
-											}
-											n_node->new_attr("id", id);
-										}
-										n_node->new_attr("pos", to_string(capture.e->add_node_pos));
-										SerializableNode::save_to_xml_file(file, capture.e->filename);
-										SerializableNode::destroy(file);
-
-										capture.e->load(capture.e->filename, false);
+										id = "node_" + std::to_string(i);
+										if (!bp->find_node(id))
+											break;
 									}
+									n_node->new_attr("id", id);
 								}
-							}
-						}, new_mail(&capture));
-					}
+								n_node->new_attr("pos", to_string(editor->add_node_pos));
+								SerializableNode::save_to_xml_file(file, editor->filename);
+								SerializableNode::destroy(file);
 
-					auto e_btn_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
-					e_buttons->add_child(e_btn_cancel);
-					{
-						((cEventReceiver*)e_btn_cancel->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							if (is_mouse_clicked(action, key))
-								destroy_topmost(*(Entity**)c, false);
-						}, new_mail_p(editor->entity));
-					}
+								editor->load(editor->filename, false);
+							}
+						}
+					}, new_mail_p(editor));
 				}
 			}, new_mail_p(this));
 		}
