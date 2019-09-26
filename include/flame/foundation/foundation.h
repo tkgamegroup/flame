@@ -1091,9 +1091,6 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyState action), const Mail<>& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
-	struct FileWatcher;
-	typedef FileWatcher* FileWatcherPtr;
-
 	enum FileChangeType
 	{
 		FileAdded,
@@ -1102,8 +1099,8 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS FileWatcher* add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes = true, bool sync = true);
-	FLAME_FOUNDATION_EXPORTS void remove_file_watcher(FileWatcher* w);
+	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes = true, bool sync = true);
+	// set_event to returned ev to end the file watching
 
 	FLAME_FOUNDATION_EXPORTS void add_work(void (*callback)(void* c), const Mail<>& capture);
 	FLAME_FOUNDATION_EXPORTS void clear_works();

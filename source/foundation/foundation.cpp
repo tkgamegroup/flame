@@ -663,33 +663,15 @@ namespace flame
 		}
 	}
 
-	struct FileWatcher
+	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture)
 	{
-		void *hEventExpired;
-
-		~FileWatcher()
-		{
-			CloseHandle(hEventExpired);
-		}
-	};
-
-	void do_file_watch(FileWatcher *filewatcher, bool all_changes, const std::wstring& _path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture)
-	{
-		auto path = std::wstring(_path);
-
-		if (path.empty())
-		{
-			auto curr_path = get_curr_path();
-			path = *curr_path.p;
-			delete_mail(curr_path);
-		}
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];
 
 		OVERLAPPED overlapped;
-		auto hEvent = create_event(false);
+		auto event_changed = create_event(false);
 
 		auto flags = FILE_NOTIFY_CHANGE_LAST_WRITE;
 		if (all_changes)
@@ -698,15 +680,15 @@ namespace flame
 		while (true)
 		{
 			ZeroMemory(&overlapped, sizeof(OVERLAPPED));
-			overlapped.hEvent = hEvent;
+			overlapped.hEvent = event_changed;
 
 			assert(ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags, NULL, &overlapped, NULL));
 
-			if (filewatcher)
+			if (event_end)
 			{
 				HANDLE events[] = {
 					overlapped.hEvent,
-					filewatcher->hEventExpired
+					event_end
 				};
 
 				if (WaitForMultipleObjects(2, events, false, INFINITE) - WAIT_OBJECT_0 == 1)
@@ -755,23 +737,24 @@ namespace flame
 
 		delete_mail(capture);
 
-		CloseHandle(hEvent);
+		CloseHandle(event_changed);
 		CloseHandle(dir_handle);
+
+		if (event_end)
+			CloseHandle(event_end);
 	}
 
-	FileWatcher *add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes, bool sync)
+	void* add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes, bool sync)
 	{
 		if (!sync)
 		{
-			auto w = new FileWatcher;
-			w->hEventExpired = CreateEvent(NULL, false, false, NULL);
+			auto ev = create_event(false);
 
 			std::thread([=]() {
-				do_file_watch(w, all_changes, path, callback, capture);
-				delete w;
+				do_file_watch(ev, all_changes, path, callback, capture);
 			}).detach();
 
-			return w;
+			return ev;
 		}
 		else
 		{
@@ -781,11 +764,6 @@ namespace flame
 		}
 
 		return nullptr;
-	}
-
-	void remove_file_watcher(FileWatcher *w)
-	{
-		set_event(w->hEventExpired);
 	}
 
 	/*
