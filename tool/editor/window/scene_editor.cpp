@@ -21,7 +21,6 @@
 struct cSceneEditorPrivate : cSceneEditor
 {
 	std::wstring filename;
-	std::vector<TypeinfoDatabase*> dbs;
 
 	cSceneEditorPrivate()
 	{
@@ -31,10 +30,6 @@ struct cSceneEditorPrivate : cSceneEditor
 		inspector = nullptr;
 
 		selected = nullptr;
-
-		dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_foundation.typeinfo"));
-		dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_graphics.typeinfo"));
-		dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_universe.typeinfo"));
 	}
 
 	~cSceneEditorPrivate()
@@ -51,9 +46,6 @@ struct cSceneEditorPrivate : cSceneEditor
 				(*(cDockerTab**)c)->take_away(true);
 			}, new_mail_p(inspector->tab));
 		}
-
-		for (auto db : dbs)
-			TypeinfoDatabase::destroy(db);
 	}
 
 	void load(const std::wstring& _filename)
@@ -61,15 +53,10 @@ struct cSceneEditorPrivate : cSceneEditor
 		filename = _filename;
 		if (prefab)
 			e_scene->remove_child(prefab);
-		prefab = Entity::create_from_file(dbs, filename);
+		prefab = Entity::create_from_file(app.dbs, filename);
 		e_scene->add_child(prefab);
 	}
 };
-
-const std::vector<TypeinfoDatabase*> cSceneEditor::dbs()
-{
-	return ((cSceneEditorPrivate*)this)->dbs;
-}
 
 void cSceneEditor::update()
 {

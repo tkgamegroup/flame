@@ -155,7 +155,6 @@ struct cInspectorPrivate : cInspector
 
 	void refresh()
 	{
-		auto& dbs = editor->dbs();
 		auto selected = editor->selected;
 
 		e_layout->remove_all_children();
@@ -228,7 +227,7 @@ struct cInspectorPrivate : cInspector
 					e_component->add_component(c_layout);
 				}
 
-				auto udt = find_udt(dbs, H((std::string("Component") + component->type_name).c_str()));
+				auto udt = find_udt(app.dbs, H((std::string("Component") + component->type_name).c_str()));
 
 				auto c_dealer = new_component<cComponentDealer>();
 				c_dealer->component = component;
@@ -324,7 +323,7 @@ struct cInspectorPrivate : cInspector
 					{
 					case TypeTagEnumSingle:
 					{
-						auto info = find_enum(dbs, hash);
+						auto info = find_enum(app.dbs, hash);
 
 						auto c_tracker = new_component<cEnumSingleDataTracker>();
 						c_tracker->auto_update = true;
@@ -351,7 +350,7 @@ struct cInspectorPrivate : cInspector
 						break;
 					case TypeTagEnumMulti:
 					{
-						auto info = find_enum(dbs, hash);
+						auto info = find_enum(app.dbs, hash);
 
 						auto c_tracker = new_component<cEnumMultiDataTracker>();
 						c_tracker->auto_update = true;
@@ -509,7 +508,7 @@ struct cInspectorPrivate : cInspector
 				}
 			}
 
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, e_add_component_menu, true, SideS, false, false, false, nullptr);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Component", app.root, e_add_component_menu, true, SideS, false, false, false, nullptr);
 			e_layout->add_child(e_menu_btn);
 		}
 	}
@@ -564,7 +563,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 		#define COMPONENT_PREFIX "Component"
 		std::vector<UdtInfo*> all_udts;
-		for (auto db : editor->dbs())
+		for (auto db : app.dbs)
 		{
 			auto udts = db->get_udts();
 			for (auto i = 0; i < udts.p->size(); i++)

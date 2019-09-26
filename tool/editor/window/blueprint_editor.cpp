@@ -257,7 +257,7 @@ struct cBPEditor : Component
 
 					editor->reset_add_node_menu_filter();
 
-					popup_input_dialog(editor->entity, [](void* c, bool ok, const std::wstring& text) {
+					popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
 						auto editor = *(cBPEditor**)c;
 						auto bp = editor->bp;
 						auto name = w2s(text);

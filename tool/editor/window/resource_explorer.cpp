@@ -239,6 +239,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
+		c_layout->fence = 2;
 		e_page->add_component(c_layout);
 	}
 	auto c_explorer = new_component<cResourceExplorer>();
@@ -255,7 +256,16 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
+						popup_input_dialog(c_explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
+							auto explorer = *(cResourceExplorer**)c;
 
+							if (ok)
+							{
+								auto e = Entity::create();
+								Entity::save_to_file(app.dbs, e, explorer->curr_path / ext_replace(text, L".prefab"));
+								Entity::destroy(e);
+							}
+						}, new_mail_p(c_explorer));
 					}
 				}, new_mail_p(c_explorer));
 			}

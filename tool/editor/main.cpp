@@ -82,6 +82,10 @@ void App::create()
 		e_fps->add_component(c_aligner);
 	}
 
+	dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_foundation.typeinfo"));
+	dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_graphics.typeinfo"));
+	dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_universe.typeinfo"));
+
 	open_resource_explorer(L"..", Vec2f(20.f));
 }
 
@@ -137,7 +141,7 @@ void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scal
 		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, sdf_scale, s2w(info->item(i)->name())));
 }
 
-void popup_input_dialog(Entity* e, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
+void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
 {
 	auto t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
 	{
@@ -160,7 +164,7 @@ void popup_input_dialog(Entity* e, void (*callback)(void* c, bool ok, const std:
 	}
 
 	auto e_input = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, L"template"));
+	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, title));
 
 	auto e_buttons = Entity::create();
 	e_dialog->add_child(e_buttons);
