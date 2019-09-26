@@ -55,7 +55,7 @@ namespace flame
 			assert(tree);
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 				{
 					auto thiz = *(cTreeLeafPrivate**)c;
 					thiz->tree->set_selected(thiz->entity);
@@ -165,7 +165,7 @@ namespace flame
 			assert(tree);
 
 			title_mouse_listener = title_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 				{
 					auto thiz = *(cTreeNodePrivate**)c;
 					thiz->tree->set_selected(thiz->entity);

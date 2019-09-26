@@ -50,7 +50,7 @@ namespace flame
 			list = (cList*)(entity->parent()->find_component(cH("List")));
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 				{
 					auto thiz = *(cListItemPrivate**)c;
 					if (thiz->list)

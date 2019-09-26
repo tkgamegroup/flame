@@ -75,24 +75,39 @@ struct cHierarchyItem : Component
 						capture.src = ((cHierarchyItem*)e->find_component(cH("HierarchyItem")))->e;
 					}
 					capture.i = thiz->last_drop_pos;
-					looper().add_delay_event([](void* c) {
-						auto& capture = *(Capture*)c;
 
-						capture.src->parent()->remove_child(capture.src, false);
-
-						if (capture.i == 1)
-							capture.dst->add_child(capture.src);
-						else
+					auto ok = true;
+					auto p = capture.src->parent();
+					while (p)
+					{
+						if (p == capture.dst)
 						{
-							auto p = capture.dst->parent();
-							auto idx = p->child_position(capture.dst);
-							if (capture.i == 2)
-								idx++;
-							p->add_child(capture.src, idx);
+							ok = false;
+							break;
 						}
+					}
 
-						capture.h->refresh();
-					}, new_mail(&capture));
+					if (ok)
+					{
+						looper().add_delay_event([](void* c) {
+							auto& capture = *(Capture*)c;
+
+							capture.src->parent()->remove_child(capture.src, false);
+
+							if (capture.i == 1)
+								capture.dst->add_child(capture.src);
+							else
+							{
+								auto p = capture.dst->parent();
+								auto idx = p->child_position(capture.dst);
+								if (capture.i == 2)
+									idx++;
+								p->add_child(capture.src, idx);
+							}
+
+							capture.h->refresh();
+						}, new_mail(&capture));
+					}
 				}
 
 			}

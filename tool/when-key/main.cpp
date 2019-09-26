@@ -22,13 +22,13 @@ int main(int argc, char **args)
 	printf("key=\"%s\" cmd=\"%s\"\n", args[1], args[2]);
 
 	auto keys = string_split(std::string(args[1]), '+');
-	auto key = Key_Null;
+	auto key = KeyNull;
 	auto shift = false;
 	auto ctrl = false;
 	auto alt = false;
 	for (auto &t : keys)
 	{
-		string_to_lower$(t);
+		string_to_lower(t);
 		if (t == "shift")
 			shift = true;
 		else if (t == "ctrl")
@@ -45,28 +45,19 @@ int main(int argc, char **args)
 
 	struct Capture
 	{
-		const char* key;
-		const char* command;
-	};
+		std::string c;
+	}capture;
+	capture.c = args[2];
+	add_global_key_listener(key, shift, ctrl, alt, [](void* c, KeyState action){
+		auto& capture = *(Capture*)c;
 
-	Capture capture;
-	capture.key = args[1];
-	capture.command = args[2];
-
-	add_global_key_listener(key, shift, ctrl, alt, Function<void(void* c, KeyState action)>(
-	[](void* _c, KeyState action){
 		if (action == KeyStateDown)
 		{
-			auto c = (Capture*)_c;
+			printf("pressed\n");
 
-			printf("key down: %s\n", c->key);
-			printf("run: %s\n", c->command);
-
-			system(c->command);
-
-			printf("key=[ %s ] cmd=[ %s ]\n", c->key, c->command);
+			system(capture.c.c_str());
 		}
-	}, sizeof(Capture), &capture));
+	}, new_mail(&capture));
 
 	do_simple_dispatch_loop();
 

@@ -758,7 +758,7 @@ namespace flame
 		CloseHandle(dir_handle);
 	}
 
-	FileWatcher *add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, int options)
+	FileWatcher *add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, uint options)
 	{
 		if (options & FileWatcherAsynchronous)
 		{
