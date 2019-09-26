@@ -202,9 +202,9 @@ int main(int argc, char** args)
 	e_layout_left->add_child(e_toggle);
 	{
 		auto c_element = cElement::create();
-		c_element->round_flags = Side$(SideNW | SideNE | SideSW | SideSE);
-		c_element->round_radius = app.font_atlas_pixel->pixel_height * 0.5f;
-		c_element->inner_padding = Vec4f(c_element->round_radius, 2.f, c_element->round_radius, 2.f);
+		auto r = app.font_atlas_pixel->pixel_height * 0.5f;
+		c_element->roundness = r;
+		c_element->inner_padding = Vec4f(r, 2.f, r, 2.f);
 		e_toggle->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_pixel);

@@ -117,7 +117,7 @@ namespace flame
 		AxisNegZ = 1 << 5
 	};
 
-	enum Side$
+	enum Side
 	{
 		Outside = 0,
 		SideN = 1 << 0,
@@ -1603,7 +1603,7 @@ namespace flame
 	}
 
 	template<class T>
-	Side$ rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
+	Side rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
 	{
 		if (p.x() < rect.z() && p.x() > rect.z() - threshold &&
 			p.y() > rect.y() && p.y() < rect.y() + threshold)
@@ -1635,7 +1635,7 @@ namespace flame
 	}
 
 	template<class T>
-	Vec<2, T> side_dir(Side$ s)
+	Vec<2, T> side_dir(Side s)
 	{
 		switch (s)
 		{
@@ -2016,34 +2016,24 @@ namespace flame
 		}
 	}
 
-	inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, float round_radius = 0.f, Side$ round_flags = Side$(SideNW | SideNE | SideSW | SideSE))
+	inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, const Vec4f& roundness = Vec4f(0.f)) // LT RT RB LB
 	{
-		if (round_radius == 0.f || round_flags == 0)
-		{
-			points.push_back(pos);
-			points.push_back(pos + Vec2f(size.x(), 0.f));
-			points.push_back(pos + size);
-			points.push_back(pos + Vec2f(0.f, size.y()));
-		}
+		if (roundness[0] > 0.f)
+			path_arc(points, pos + Vec2f(roundness[0]), roundness[0], 18, 27);
 		else
-		{
-			if (round_flags & SideNW)
-				path_arc(points, pos + Vec2f(round_radius), round_radius, 18, 27);
-			else
-				points.push_back(pos);
-			if (round_flags & SideNE)
-				path_arc(points, pos + Vec2f(size.x() - round_radius, round_radius), round_radius, 27, 35);
-			else
-				points.push_back(pos + Vec2f(size.x(), 0.f));
-			if (round_flags & SideSE)
-				path_arc(points, pos + size - Vec2f(round_radius), round_radius, 0, 9);
-			else
-				points.push_back(pos + size);
-			if (round_flags & SideSW)
-				path_arc(points, pos + Vec2f(round_radius, size.y() - round_radius), round_radius, 9, 17);
-			else
-				points.push_back(pos + Vec2f(0.f, size.y()));
-		}
+			points.push_back(pos);
+		if (roundness[1] > 0.f)
+			path_arc(points, pos + Vec2f(size.x() - roundness[1], roundness[1]), roundness[1], 27, 35);
+		else
+			points.push_back(pos + Vec2f(size.x(), 0.f));
+		if (roundness[2] > 0.f)
+			path_arc(points, pos + size - Vec2f(roundness[2]), roundness[2], 0, 9);
+		else
+			points.push_back(pos + size);
+		if (roundness[3] > 0.f)
+			path_arc(points, pos + Vec2f(roundness[3], size.y() - roundness[3]), roundness[3], 9, 17);
+		else
+			points.push_back(pos + Vec2f(0.f, size.y()));
 	}
 
 	inline void path_circle(std::vector<Vec2f>& points, const Vec2f& center, float radius)

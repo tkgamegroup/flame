@@ -13,9 +13,6 @@ namespace flame
 		Vec3 aabb_c;
 		float aabb_r;
 
-		long long last_show_frame[2];
-		int show_idx;
-
 		void update_mat()
 		{
 			mat = Mat4(Mat3(euler) * Mat3(scale), pos);

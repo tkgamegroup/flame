@@ -12,8 +12,7 @@ namespace flame
 			size = 0.f;
 			inner_padding = Vec4f(0.f);
 			alpha = 1.f;
-			round_radius = 0.f;
-			round_flags = Side$(SideNW | SideNE | SideSE | SideSW);
+			roundness = Vec4f(0.f);
 			frame_thickness = 0.f;
 			color = Vec4c(0);
 			frame_color = Vec4c(255);
@@ -75,20 +74,20 @@ namespace flame
 			cliped = false;
 			if (!p_element || rect_overlapping(p_element->scissor, Vec4f(global_pos, global_pos + global_size)))
 			{
-				auto rr = round_radius * global_scale;
+				auto r = roundness * global_scale;
 				auto st = shadow_thickness * global_scale;
 
 				if (st > 0.f)
 				{
 					std::vector<Vec2f> points;
-					path_rect(points, global_pos - Vec2f(st * 0.5f), global_size + Vec2f(st), rr, (Side$)round_flags);
+					path_rect(points, global_pos - Vec2f(st * 0.5f), global_size + Vec2f(st), r);
 					points.push_back(points[0]);
 					canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
 				}
 				if (alpha > 0.f)
 				{
 					std::vector<Vec2f> points;
-					path_rect(points, global_pos, global_size, rr, (Side$)round_flags);
+					path_rect(points, global_pos, global_size, r);
 					if (color.w() > 0)
 						canvas->fill(points, alpha_mul(color, alpha));
 					auto ft = frame_thickness * global_scale;
@@ -112,8 +111,7 @@ namespace flame
 			copy->size = size;
 			copy->inner_padding = inner_padding;
 			copy->alpha = alpha;
-			copy->round_radius = round_radius;
-			copy->round_flags = round_flags;
+			copy->roundness = roundness;
 			copy->frame_thickness = frame_thickness;
 			copy->color = color;
 			copy->frame_color = frame_color;
@@ -156,8 +154,7 @@ namespace flame
 		Vec2f size$;
 		Vec4f inner_padding$;
 		float alpha$;
-		float round_radius$;
-		Side$ round_flags$m;
+		Vec4f roundness$;
 		float frame_thickness$;
 		Vec4c color$;
 		Vec4c frame_color$;
@@ -171,8 +168,7 @@ namespace flame
 			size$ = 0.f;
 			inner_padding$ = Vec4f(0.f);
 			alpha$ = 1.f;
-			round_radius$ = 0.f;
-			round_flags$m = Side$(SideNW | SideNE | SideSE | SideSW);
+			roundness$ = Vec4f(0.f);
 			frame_thickness$ = 0.f;
 			color$ = Vec4c(0);
 			frame_color$ = Vec4c(255);
@@ -189,8 +185,7 @@ namespace flame
 			c->size = size$;
 			c->inner_padding = inner_padding$;
 			c->alpha = alpha$;
-			c->round_radius = round_radius$;
-			c->round_flags = round_flags$m;
+			c->inner_padding = inner_padding$;
 			c->frame_thickness = frame_thickness$;
 			c->color = color$;
 			c->frame_color = frame_color$;
@@ -209,8 +204,7 @@ namespace flame
 			size$ = c->size;
 			inner_padding$ = c->inner_padding;
 			alpha$ = c->alpha;
-			round_radius$ = c->round_radius;
-			round_flags$m = c->round_flags;
+			inner_padding$ = c->inner_padding;
 			frame_thickness$ = c->frame_thickness;
 			color$ = c->color;
 			frame_color$ = c->frame_color;
@@ -240,11 +234,8 @@ namespace flame
 			case cH("alpha"):
 				c->alpha = alpha$;
 				break;
-			case cH("round_radius"):
-				c->round_radius = round_radius$;
-				break;
-			case cH("round_flags"):
-				c->round_flags = round_flags$m;
+			case cH("roundness"):
+				c->roundness = roundness$;
 				break;
 			case cH("frame_thickness"):
 				c->frame_thickness = frame_thickness$;

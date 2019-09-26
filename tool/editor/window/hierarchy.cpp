@@ -3,6 +3,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
+#include <flame/universe/components/menu.h>
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
@@ -274,6 +275,8 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 	create_tree_node(c_hierarchy, editor->prefab, e_tree);
 
 	c_hierarchy->e_tree = e_tree;
+
+	c_hierarchy->e_item_menu = create_standard_menu();
 
 	e_page->add_child(wrap_standard_scrollbar(e_tree, ScrollbarVertical, true, 1.f));
 }

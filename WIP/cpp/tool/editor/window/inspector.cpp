@@ -188,22 +188,6 @@ void InspectorWindow::on_show()
 									}
 									break;
 								}
-								case flame::ComponentTypeCamera:
-								{
-									if (ImGui::TreeNode("Camera"))
-									{
-										ImGui::TreePop();
-									}
-									break;
-								}
-								case flame::ComponentTypeLight:
-								{
-									if (ImGui::TreeNode("Light"))
-									{
-										ImGui::TreePop();
-									}
-									break;
-								}
 								case flame::ComponentTypeModelInstance:
 								{
 									if (ImGui::TreeNode("Model Instance"))
@@ -398,14 +382,6 @@ void InspectorWindow::on_show()
 										//	ImGui::Text("Height:%f", t->height);
 										//	ImGui::Text("Use Physx:%s", t->enable_physics ? "Yse" : "No");
 
-										ImGui::TreePop();
-									}
-									break;
-								}
-								case flame::ComponentTypeWater:
-								{
-									if (ImGui::TreeNode("Water"))
-									{
 										ImGui::TreePop();
 									}
 									break;

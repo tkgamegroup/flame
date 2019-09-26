@@ -16,8 +16,7 @@ namespace flame
 		Vec2f size;
 		Vec4f inner_padding; // L T R B
 		float alpha;
-		float round_radius;
-		Side$ round_flags;
+		Vec4f roundness;
 		float frame_thickness;
 		Vec4c color;
 		Vec4c frame_color;

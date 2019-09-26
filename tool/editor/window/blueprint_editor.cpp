@@ -1097,7 +1097,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
 						c_element->size = r;
-						c_element->round_radius = r * 0.5f;
+						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
@@ -1336,7 +1336,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
 						c_element->size = r;
-						c_element->round_radius = r * 0.5f;
+						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
@@ -1463,9 +1463,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_menubar->add_child(e_menu_btn);
 	}
 	{
-		auto e_menu = create_standard_menu();
-		c_editor->e_add_node_menu = e_menu;
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		c_editor->e_add_node_menu = create_standard_menu();
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, c_editor->e_add_node_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 		struct Capture
 		{

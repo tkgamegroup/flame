@@ -103,6 +103,19 @@ namespace flame
 		}
 	};
 
+	bool cMenuButton::can_open(KeyState action, MouseKey key)
+	{
+		if ((is_mouse_down(action, key, true) && key == Mouse_Left))
+			return true;
+		else if (move_to_open && is_mouse_move(action, key))
+		{
+			auto t = get_topmost(root);
+			if (t && t->name_hash() == cH("topmost"))
+				return true;
+		}
+		return false;
+	}
+
 	void cMenuButton::start()
 	{
 		((cMenuButtonPrivate*)this)->start();
@@ -206,7 +219,7 @@ namespace flame
 		return e_item;
 	}
 
-	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side$ popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text)
+	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text)
 	{
 		auto e_menu_btn = Entity::create();
 		{

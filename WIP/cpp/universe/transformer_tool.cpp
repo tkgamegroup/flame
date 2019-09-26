@@ -1,7 +1,3 @@
-#include <flame/global.h>
-#include <flame/engine/entity/node.h>
-#include "transformer_tool.h"
-
 static const float quad_min = 0.5f;
 static const float quad_max = 0.8f;
 static const float quad_uv[8] = { 
