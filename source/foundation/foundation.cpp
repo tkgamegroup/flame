@@ -100,7 +100,11 @@ namespace flame
 
 	bool wait_event(void* ev, int timeout)
 	{
-		return WaitForSingleObject(ev, timeout < 0 ? INFINITE : timeout) == 0;
+		return WaitForSingleObject(ev, timeout < 0 ? INFINITE : timeout) == WAIT_OBJECT_0;
+	}
+
+	void destroy_event(void* ev)
+	{
 	}
 
 	void do_simple_dispatch_loop()
@@ -737,11 +741,11 @@ namespace flame
 
 		delete_mail(capture);
 
-		CloseHandle(event_changed);
-		CloseHandle(dir_handle);
+		destroy_event(event_changed);
+		destroy_event(dir_handle);
 
 		if (event_end)
-			CloseHandle(event_end);
+			destroy_event(event_end);
 	}
 
 	void* add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes, bool sync)

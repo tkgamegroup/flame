@@ -1066,6 +1066,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void set_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
+	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS Mail<std::string> exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);

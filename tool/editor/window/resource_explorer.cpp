@@ -30,9 +30,18 @@ struct cResourceExplorer : Component
 	Entity* bp_menu;
 	Entity* pf_menu;
 
+	void* ev_file_changed;
+	void* ev_end_file_watcher;
+
 	cResourceExplorer() :
 		Component("ResourceExplorer")
 	{
+	}
+
+	~cResourceExplorer()
+	{
+		destroy_event(ev_file_changed);
+		set_event(ev_end_file_watcher);
 	}
 
 	void navigate(const std::filesystem::path& path)
@@ -197,6 +206,17 @@ struct cResourceExplorer : Component
 
 	virtual void update() override
 	{
+		if (wait_event(ev_file_changed, 0))
+		{
+			while (!std::filesystem::exists(curr_path))
+			{
+				curr_path = curr_path.parent_path();
+				assert(curr_path != base_path);
+			}
+
+			navigate(curr_path);
+		}
+
 	}
 };
 
@@ -298,6 +318,13 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	c_explorer->list = e_list;
 
 	e_page->add_child(wrap_standard_scrollbar(e_list, ScrollbarVertical, true, 1.f));
+
+	c_explorer->ev_file_changed = create_event(false);
+	c_explorer->ev_end_file_watcher = add_file_watcher(path, [](void* c, FileChangeType type, const std::wstring& filename) {
+		auto explorer = *(cResourceExplorer**)c;
+
+		set_event(explorer->ev_file_changed);
+	}, new_mail_p(c_explorer), true, false);
 
 	c_explorer->navigate(path);
 }
