@@ -188,6 +188,9 @@ namespace flame
 		{
 			e_list->add_component(cElement::create());
 
+			auto c_event_receiver = cEventReceiver::create();
+			e_list->add_component(c_event_receiver);
+
 			if (size_fit_parent)
 			{
 				auto c_aligner = cAligner::create();
@@ -202,7 +205,15 @@ namespace flame
 			c_layout->height_fit_children = false;
 			e_list->add_component(c_layout);
 
-			e_list->add_component(cList::create());
+			auto c_list = cList::create();
+			e_list->add_component(c_list);
+
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto list = *(cList**)c;
+
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					list->selected = nullptr;
+			}, new_mail_p(c_list));
 		}
 
 		return e_list;

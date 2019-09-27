@@ -351,25 +351,13 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 
 	auto e_list = create_standard_list(true);
 	{
-		auto c_event_receiver = cEventReceiver::create();
-		struct Capture
-		{
-			cList* l;
-			cResourceExplorer* e;
-		}capture;
-		capture.l = (cList*)e_list->find_component(cH("List"));
-		capture.e = c_explorer;
+		auto c_event_receiver = (cEventReceiver*)e_list->find_component(cH("EventReceiver"));
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto& capture = *(Capture*)c;
+			auto exploter = *(cResourceExplorer**)c;
 
-			if (is_mouse_down(action, key, true))
-			{
-				if (key == Mouse_Left)
-					capture.l->selected = nullptr;
-				else if (key == Mouse_Right)
-					popup_menu(capture.e->blank_menu, app.root, pos);
-			}
-		}, new_mail(&capture));
+			if (is_mouse_down(action, key, true) && key == Mouse_Right)
+				popup_menu(exploter->blank_menu, app.root, pos);
+		}, new_mail_p(c_explorer));
 		e_list->add_component(c_event_receiver);
 	}
 	c_explorer->list = e_list;

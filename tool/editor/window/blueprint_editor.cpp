@@ -1376,7 +1376,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}, new_mail_p(c_editor));
 		}
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Dependency Manager");
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Modules");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto editor = *(cBPEditor**)c;

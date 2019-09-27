@@ -271,6 +271,9 @@ namespace flame
 		{
 			e_tree->add_component(cElement::create());
 
+			auto c_event_receiver = cEventReceiver::create();
+			e_tree->add_component(c_event_receiver);
+
 			if (size_fit_parent)
 			{
 				auto c_aligner = cAligner::create();
@@ -285,7 +288,14 @@ namespace flame
 			c_layout->height_fit_children = !size_fit_parent;
 			e_tree->add_component(c_layout);
 
-			e_tree->add_component(cTree::create());
+			auto c_tree = cTree::create();
+			e_tree->add_component(c_tree);
+
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto tree = *(cTree**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					tree->set_selected(nullptr);
+			}, new_mail_p(c_tree));
 		}
 
 		return e_tree;
