@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <BP>
-	<dependencies>
-		<dependency v="flame_foundation.dll" />
-		<dependency v="flame_graphics.dll" />
-	</dependencies>
+	<modules>
+    <module v="flame_foundation.dll" />
+    <module v="flame_graphics.dll" />
+	</modules>
 	<nodes>
 		<node type="Var(uint)" id="img_count" pos="109.72;3034.70">
 			<datas>

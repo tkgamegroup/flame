@@ -31,11 +31,12 @@ namespace flame
 	{
 		struct Node;
 
-		struct Environment
+		struct Module
 		{
-			std::wstring path;
-			std::vector<TypeinfoDatabase*> dbs;
-			graphics::Device* graphics_device;
+			std::wstring filename;
+			std::wstring final_filename;
+			void* module;
+			TypeinfoDatabase* db;
 		};
 
 		struct Slot
@@ -70,7 +71,7 @@ namespace flame
 				set_data(&p);
 			}
 
-			FLAME_FOUNDATION_EXPORTS int link_count() const;
+			FLAME_FOUNDATION_EXPORTS uint link_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* link(int idx = 0) const;
 			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);
 
@@ -87,9 +88,9 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
 			Vec2f pos;
 
-			FLAME_FOUNDATION_EXPORTS int input_count() const;
+			FLAME_FOUNDATION_EXPORTS uint input_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* input(int idx) const;
-			FLAME_FOUNDATION_EXPORTS int output_count() const;
+			FLAME_FOUNDATION_EXPORTS uint output_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* output(int idx) const;
 
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& name) const;
@@ -98,15 +99,19 @@ namespace flame
 			void* user_data;
 		};
 
+		struct Environment
+		{
+			std::wstring path;
+			std::vector<TypeinfoDatabase*> dbs;
+			graphics::Device* graphics_device;
+		};
+
 		graphics::Device* graphics_device;
 
-		FLAME_FOUNDATION_EXPORTS uint dependency_count() const;
-		FLAME_FOUNDATION_EXPORTS Mail<std::wstring> dependency_filename(int idx) const;
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* dependency_typeinfodatabase(int idx) const;
-		FLAME_FOUNDATION_EXPORTS void add_dependency(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS void remove_dependency(const std::wstring& filename);
-
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
+		FLAME_FOUNDATION_EXPORTS bool add_module(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS void remove_module(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS const std::vector<Module>& modules() const;
+		FLAME_FOUNDATION_EXPORTS const Module& self_module() const;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;
@@ -128,11 +133,5 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS const BP::Environment& bp_env();
-
-	// basic nodes are available after calling typeinfo_init_basic_bp_nodes or loading from file
-	// they are:
-	//  Vec<[1-4], [float, uint, int, uchar, bool]
-	//  Mat<[2-4], [2-4], [float, double]>
-	//  Array<[1-16], [float, uint, int, uchar, bool, voidptr, Vec, Mat]>
 }
 

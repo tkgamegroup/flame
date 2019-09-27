@@ -54,21 +54,12 @@ namespace flame
 		void update();
 	};
 
-	struct Dependency
-	{
-		std::wstring filename;
-		std::wstring final_filename;
-		void* module;
-		TypeinfoDatabase* db;
-	};
-
 	struct BPPrivate : BP
 	{
 		std::wstring filename;
 
-		std::vector<Dependency> dependencies;
-		void* module;
-		TypeinfoDatabase* db;
+		std::vector<Module> modules;
+		Module self_module;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
@@ -76,10 +67,10 @@ namespace flame
 		BPPrivate();
 		~BPPrivate();
 
-		void add_dependency(const std::wstring& filename);
-		void remove_dependency(const std::wstring& filename);
+		bool add_module(const std::wstring& filename);
+		void remove_module(const std::wstring& filename);
 
-		NodePrivate *add_node(const std::string& id, const std::string& type_name);
+		NodePrivate* add_node(const std::string& id, const std::string& type_name);
 		void remove_node(NodePrivate *n);
 
 		NodePrivate* find_node(const std::string &id) const;
@@ -335,54 +326,69 @@ namespace flame
 
 	BPPrivate::BPPrivate()
 	{
-		graphics_device = nullptr;
+		self_module.module = nullptr;
+		self_module.db = nullptr;
 
-		module = nullptr;
-		db = nullptr;
+		graphics_device = nullptr;
 	}
 
 	BPPrivate::~BPPrivate()
 	{
-		for (auto& d : dependencies)
+		for (auto& m : modules)
 		{
-			free_module(d.module);
-			TypeinfoDatabase::destroy(d.db);
+			free_module(m.module);
+			TypeinfoDatabase::destroy(m.db);
 		}
-		free_module(module);
-		TypeinfoDatabase::destroy(db);
+
+		if (self_module.module)
+		{
+			free_module(self_module.module);
+			TypeinfoDatabase::destroy(self_module.db);
+		}
 
 		for (auto& n : nodes) // since module has been removed, dtor is not valid
 			n->dtor_addr = nullptr;
 	}
 
-	void BPPrivate::add_dependency(const std::wstring& filename)
+	bool BPPrivate::add_module(const std::wstring& filename)
 	{
-		for (auto& d : dependencies)
+		if (filename == L"bp.dll")
+			return false;
+		for (auto& m : modules)
 		{
-			if (d.filename == filename)
-				return;
+			if (m.filename == filename)
+				return false;
 		}
-		Dependency d;
-		d.filename = filename;
-		d.final_filename = filename;
-		d.module = load_module(filename);
-		if (!d.module)
+
+		Module m;
+		m.filename = filename;
+		m.final_filename = filename;
+		m.module = load_module(filename);
+		if (!m.module)
 		{
 			std::filesystem::path path(this->filename);
-			d.final_filename = path.parent_path().wstring() + L"/" + filename;
-			d.module = load_module(d.final_filename);
+			m.final_filename = path.parent_path().wstring() + L"/" + filename;
+			m.module = load_module(m.final_filename);
 		}
-		assert(d.module);
+		if (!m.module)
+		{
+			printf("cannot add module %s\n", w2s(filename).c_str());
+			return false;
+		}
+
 		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& d : dependencies)
-			dbs.push_back(d.db);
-		d.db = TypeinfoDatabase::load(dbs, ext_replace(d.final_filename, L".typeinfo"));
-		dependencies.push_back(d);
+		for (auto& m : modules)
+			dbs.push_back(m.db);
+		m.db = TypeinfoDatabase::load(dbs, ext_replace(m.final_filename, L".typeinfo"));
+		modules.push_back(m);
 	}
 
-	void BPPrivate::remove_dependency(const std::wstring& filename)
+	void BPPrivate::remove_module(const std::wstring& filename)
 	{
-		for (auto it = dependencies.begin(); it != dependencies.end(); it++)
+		if (filename == L"bp.dll")
+			return;
+
+		for (auto it = modules.begin(); it != modules.end(); it++)
 		{
 			if (it->filename == filename)
 			{
@@ -397,7 +403,7 @@ namespace flame
 
 				free_module(it->module);
 				TypeinfoDatabase::destroy(it->db);
-				dependencies.erase(it);
+				modules.erase(it);
 
 				((BPPrivate*)this)->build_update_list();
 				return;
@@ -408,23 +414,23 @@ namespace flame
 	NodePrivate* BPPrivate::add_node(const std::string& type_name, const std::string& id)
 	{
 		UdtInfo* udt = nullptr;
-		void* m = nullptr;
+		void* module = nullptr;
 		{
 			auto hash = H(type_name.c_str());
-			for (auto& d : dependencies)
+			for (auto& m : modules)
 			{
-				udt = d.db->find_udt(hash);
+				udt = m.db->find_udt(hash);
 				if (udt)
 				{
-					m = d.module;
+					module = m.module;
 					break;
 				}
 			}
 			if (!udt)
 			{
-				udt = db->find_udt(hash);
+				udt = self_module.db->find_udt(hash);
 				if (udt)
-					m = module;
+					module = self_module.module;
 			}
 		}
 
@@ -448,7 +454,7 @@ namespace flame
 			}
 		}
 
-		auto n = new NodePrivate(this, s_id, udt, m);
+		auto n = new NodePrivate(this, s_id, udt, module);
 		nodes.emplace_back(n);
 
 		build_update_list();
@@ -516,17 +522,15 @@ namespace flame
 	void BPPrivate::update()
 	{
 		if (update_list.empty())
-		{
-			printf("no nodes or didn't call 'prepare'\n");
 			return;
-		}
 
 		_bp_env.path = std::filesystem::path(filename).parent_path().wstring();
 		_bp_env.graphics_device = graphics_device;
 		_bp_env.dbs.clear();
-		for (auto& d : dependencies)
-			_bp_env.dbs.push_back(d.db);
-		_bp_env.dbs.push_back(db);
+		for (auto& m : modules)
+			_bp_env.dbs.push_back(m.db);
+		if (self_module.db)
+			_bp_env.dbs.push_back(self_module.db);
 
 		for (auto &n : update_list)
 			n->update();
@@ -571,7 +575,7 @@ namespace flame
 		((SlotPrivate*)this)->set_data(d);
 	}
 
-	int BP::Slot::link_count() const
+	uint BP::Slot::link_count() const
 	{
 		return ((SlotPrivate*)this)->links.size();
 	}
@@ -611,7 +615,7 @@ namespace flame
 		return ((NodePrivate*)this)->udt;
 	}
 
-	int BP::Node::input_count() const
+	uint BP::Node::input_count() const
 	{
 		return ((NodePrivate*)this)->inputs.size();
 	}
@@ -621,7 +625,7 @@ namespace flame
 		return ((NodePrivate*)this)->inputs[idx].get();
 	}
 
-	int BP::Node::output_count() const
+	uint BP::Node::output_count() const
 	{
 		return ((NodePrivate*)this)->outputs.size();
 	}
@@ -641,34 +645,24 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
-	uint BP::dependency_count() const
+	bool BP::add_module(const std::wstring& filename)
 	{
-		return ((BPPrivate*)this)->dependencies.size();
+		return ((BPPrivate*)this)->add_module(filename);
 	}
 
-	Mail<std::wstring> BP::dependency_filename(int idx) const
+	void BP::remove_module(const std::wstring& filename)
 	{
-		return new_mail(&(((BPPrivate*)this)->dependencies[idx].filename));
+		((BPPrivate*)this)->remove_module(filename);
 	}
 
-	TypeinfoDatabase* BP::dependency_typeinfodatabase(int idx) const
+	const std::vector<BP::Module>& BP::modules() const
 	{
-		return ((BPPrivate*)this)->dependencies[idx].db;
+		return ((BPPrivate*)this)->modules;
 	}
 
-	void BP::add_dependency(const std::wstring& filename)
+	const BP::Module& BP::self_module() const
 	{
-		((BPPrivate*)this)->add_dependency(filename);
-	}
-
-	void BP::remove_dependency(const std::wstring& filename)
-	{
-		((BPPrivate*)this)->remove_dependency(filename);
-	}
-
-	TypeinfoDatabase* BP::db() const
-	{
-		return ((BPPrivate*)this)->db;
+		return ((BPPrivate*)this)->self_module;
 	}
 
 	uint BP::node_count() const
@@ -718,7 +712,9 @@ namespace flame
 
 	BP* BP::create()
 	{
-		return new BPPrivate();
+		auto bp = new BPPrivate();
+		bp->add_module(L"flame_foundation.dll");
+		return bp;
 	}
 
 	static std::vector<std::filesystem::path> loaded_bps; // track locked pdbs
@@ -770,21 +766,21 @@ namespace flame
 			}
 		}
 
-		std::vector<std::pair<std::wstring, std::wstring>> dependencies;
+		std::vector<std::pair<std::wstring, std::wstring>> modules;
 
-		auto n_dependencies = file->find_node("dependencies");
-		if (n_dependencies)
+		auto n_modules = file->find_node("modules");
+		if (n_modules)
 		{
-			for (auto i_d = 0; i_d < n_dependencies->node_count(); i_d++)
+			for (auto i_d = 0; i_d < n_modules->node_count(); i_d++)
 			{
-				std::pair<std::wstring, std::wstring> d;
-				d.first = s2w(n_dependencies->node(i_d)->find_attr("v")->value());
-				auto final_filename = d;
-				if (!std::filesystem::exists(d.first))
-					d.second = ppath_str + L"/" + d.first;
+				std::pair<std::wstring, std::wstring> m;
+				m.first = s2w(n_modules->node(i_d)->find_attr("v")->value());
+				auto final_filename = m;
+				if (!std::filesystem::exists(m.first))
+					m.second = ppath_str + L"/" + m.first;
 				else
-					d.second = d.first;
-				dependencies.push_back(d);
+					m.second = m.first;
+				modules.push_back(m);
 			}
 		}
 
@@ -913,10 +909,10 @@ namespace flame
 			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
 			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
-			for (auto& d : dependencies)
+			for (auto& m : modules)
 			{
 				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-				cmakelists << w2s(ext_replace(d.second, L".lib"));
+				cmakelists << w2s(ext_replace(m.second, L".lib"));
 				cmakelists << ")\n";
 			}
 			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
@@ -924,8 +920,8 @@ namespace flame
 			auto pdb_filename = std::to_string(::rand() % 100000);
 			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " + pdb_filename + ")\n";
 			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
-			for (auto& d : dependencies)
-				cmakelists << "-d${CMAKE_SOURCE_DIR}/../../bin/" + w2s(d.second) + " ";
+			for (auto& m : modules)
+				cmakelists << "-d${CMAKE_SOURCE_DIR}/../../bin/" + w2s(m.second) + " ";
 			cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" + pdb_filename + ".pdb)\n";
 			cmakelists.close();
 
@@ -952,33 +948,37 @@ namespace flame
 			}
 		}
 
-		auto module = load_module(ppath_str + L"/build/debug/bp.dll");
-		if (!module)
-			return nullptr;
-
 		auto bp = new BPPrivate();
 		bp->filename = filename;
 
-		for (auto& d : dependencies)
-			bp->add_dependency(d.first);
-		std::vector< TypeinfoDatabase*> dbs;
-		for (auto& d : bp->dependencies)
-			dbs.push_back(d.db);
-		bp->module = module;
-		bp->db = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
-		dbs.push_back(bp->db);
+		for (auto& m : modules)
+			bp->add_module(m.first);
+
+		std::vector<TypeinfoDatabase*> dbs;
+		for (auto& m : bp->modules)
+			dbs.push_back(m.db);
+
+		bp->self_module.module = load_module(ppath_str + L"/build/debug/bp.dll");
+		if (bp->self_module.module)
+		{
+			bp->self_module.db = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
+			dbs.push_back(bp->self_module.db);
+		}
 
 		for (auto& n_d : node_descs)
 		{
 			auto n = bp->add_node(n_d.type, n_d.id);
-			n->pos = n_d.pos;
-			for (auto& d_d : n_d.datas)
+			if (n)
 			{
-				auto input = n->find_input(d_d.name);
-				auto v = input->vi;
-				auto type = v->type();
-				if (v->default_value())
-					unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->data());
+				n->pos = n_d.pos;
+				for (auto& d_d : n_d.datas)
+				{
+					auto input = n->find_input(d_d.name);
+					auto v = input->vi;
+					auto type = v->type();
+					if (v->default_value())
+						unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->data());
+				}
 			}
 		}
 
@@ -1008,19 +1008,15 @@ namespace flame
 
 		auto file = SerializableNode::create("BP");
 
-		auto n_dependencies = file->new_node("dependencies");
-		if (bp->dependencies.empty())
-			n_dependencies->new_node("dependency")->new_attr("v", "flame.foundation.dll");
-		else
-		{
-			for (auto& d : bp->dependencies)
-				n_dependencies->new_node("dependency")->new_attr("v", (w2s(d.filename)));
-		}
+		auto n_modules = file->new_node("modules");
+		for (auto& m : bp->modules)
+			n_modules->new_node("module")->new_attr("v", (w2s(m.filename)));
 
 		std::vector< TypeinfoDatabase*> dbs;
-		for (auto& d : bp->dependencies)
-			dbs.push_back(d.db);
-		dbs.push_back(bp->db);
+		for (auto& m : bp->modules)
+			dbs.push_back(m.db);
+		if (bp->self_module.module)
+			dbs.push_back(bp->self_module.db);
 
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)

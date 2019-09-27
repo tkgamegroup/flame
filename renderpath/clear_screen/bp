@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <BP>
-	<dependencies>
-		<dependency v="flame_foundation.dll" />
-		<dependency v="flame_graphics.dll" />
-	</dependencies>
+  <modules>
+    <module v="flame_foundation.dll" />
+    <module v="flame_graphics.dll" />
+	</modules>
 	<nodes>
 		<node type="graphics::RenderTarget" id="rt_dst" pos="21.72;35.53">
 			<datas>

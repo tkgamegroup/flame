@@ -166,12 +166,10 @@ struct cBPEditor : Component
 			BP::destroy(bp);
 		bp = BP::create_from_file(filename, no_compile);
 		dbs.clear();
-		if (bp)
-		{
-			for (auto i = 0; i < bp->dependency_count(); i++)
-				dbs.push_back(bp->dependency_typeinfodatabase(i));
-			dbs.push_back(bp->db());
-		}
+		for (auto& m : bp->modules())
+			dbs.push_back(m.db);
+		if (bp->self_module().db)
+			dbs.push_back(bp->self_module().db);
 
 		e_base->remove_all_children();
 		if (bp)
@@ -249,10 +247,7 @@ struct cBPEditor : Component
 
 					capture.e->reset_add_node_menu_filter();
 
-					if (!capture.e->bp)
-						capture.e->add_tip(L"BP is unavailable, try to reload with compiling");
-					else
-						capture.e->add_node(capture.u->name(), "", capture.e->add_node_pos);
+					capture.e->add_node(capture.u->name(), "", capture.e->add_node_pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -268,46 +263,41 @@ struct cBPEditor : Component
 
 					editor->reset_add_node_menu_filter();
 
-					if (!editor->bp)
-						editor->add_tip(L"BP is unavailable, try to reload with compiling");
-					else
-					{
-						popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
-							auto editor = *(cBPEditor**)c;
-							auto bp = editor->bp;
-							auto name = w2s(text);
+					popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
+						auto editor = *(cBPEditor**)c;
+						auto bp = editor->bp;
+						auto name = w2s(text);
 
-							if (bp->db()->find_udt(H(name.c_str())))
-								editor->add_node(name, "", editor->add_node_pos);
+						if (bp->self_module().db && bp->self_module().db->find_udt(H(name.c_str())))
+							editor->add_node(name, "", editor->add_node_pos);
+						else
+						{
+							if (editor->running)
+								editor->add_tip(L"Cannot Add New Template Node While Running");
 							else
 							{
-								if (editor->running)
-									editor->add_tip(L"Cannot Add New Template Node While Running");
-								else
+								auto file = SerializableNode::create_from_xml_file(editor->filename);
+								auto n_nodes = file->find_node("nodes");
+								auto n_node = n_nodes->new_node("node");
+								n_node->new_attr("type", name);
 								{
-									auto file = SerializableNode::create_from_xml_file(editor->filename);
-									auto n_nodes = file->find_node("nodes");
-									auto n_node = n_nodes->new_node("node");
-									n_node->new_attr("type", name);
+									std::string id;
+									for (auto i = 0; i < bp->node_count() + 1; i++)
 									{
-										std::string id;
-										for (auto i = 0; i < bp->node_count() + 1; i++)
-										{
-											id = "node_" + std::to_string(i);
-											if (!bp->find_node(id))
-												break;
-										}
-										n_node->new_attr("id", id);
+										id = "node_" + std::to_string(i);
+										if (!bp->find_node(id))
+											break;
 									}
-									n_node->new_attr("pos", to_string(editor->add_node_pos));
-									SerializableNode::save_to_xml_file(file, editor->filename);
-									SerializableNode::destroy(file);
-
-									editor->load(editor->filename, false);
+									n_node->new_attr("id", id);
 								}
+								n_node->new_attr("pos", to_string(editor->add_node_pos));
+								SerializableNode::save_to_xml_file(file, editor->filename);
+								SerializableNode::destroy(file);
+
+								editor->load(editor->filename, false);
 							}
-						}, new_mail_p(editor));
-					}
+						}
+					}, new_mail_p(editor));
 				}
 			}, new_mail_p(this));
 		}
@@ -1381,10 +1371,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 
-					if (!editor->bp)
-						editor->add_tip(L"BP is unavailable, try to reload with compiling");
-					else
-						editor->bp->save_to_file(editor->bp, editor->filename);
+					editor->bp->save_to_file(editor->bp, editor->filename);
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1425,15 +1412,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 
-					if (!editor->bp)
-						editor->add_tip(L"BP is unavailable, try to reload with compiling");
+					if (editor->running)
+						editor->add_tip(L"Cannot Reload While Running");
 					else
-					{
-						if (editor->running)
-							editor->add_tip(L"Cannot Reload While Running");
-						else
-							editor->load(editor->filename, true);
-					}
+						editor->load(editor->filename, true);
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1473,10 +1455,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 
-					if (!editor->bp)
-						editor->add_tip(L"BP is unavailable, try to reload with compiling");
-					else
-						editor->delete_selected();
+					editor->delete_selected();
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1495,10 +1474,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 
-					if (!editor->bp)
-						editor->add_tip(L"BP is unavailable, try to reload with compiling");
-					else
-						editor->auto_set_layout();
+					editor->auto_set_layout();
 				}
 			}, new_mail_p(c_editor));
 		}
@@ -1523,9 +1499,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			if (is_mouse_clicked(action, key))
 			{
 				capture.e->running = !capture.e->running;
-
-				if (!capture.e->bp)
-					capture.e->running = false;
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
 
 				if (capture.e->running)
@@ -1628,11 +1601,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		if (editor->locked)
 		{
 			console->print(L"bp is locked");
-			return;
-		}
-		else if (!editor->bp)
-		{
-			console->print(L"bp is unavailable");
 			return;
 		}
 
