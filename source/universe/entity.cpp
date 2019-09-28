@@ -4,6 +4,8 @@
 
 namespace flame
 {
+
+
 	struct EntityPrivate : Entity
 	{
 		std::string name;
@@ -16,6 +18,7 @@ namespace flame
 			parent(nullptr)
 		{
 			created_frame = looper().frame;
+			dying = false;
 
 			visible = true;
 			global_visible = false;
@@ -99,6 +102,13 @@ namespace flame
 			}
 		}
 
+		void mark_dying()
+		{
+			dying = true;
+			for (auto& e : children)
+				e->mark_dying();
+		}
+
 		void remove_child(EntityPrivate* e, bool destroy)
 		{
 			for (auto it = children.begin(); it != children.end(); it++)
@@ -110,6 +120,8 @@ namespace flame
 						e->parent = nullptr;
 						it->release();
 					}
+					else
+						e->mark_dying();
 					children.erase(it);
 					return;
 				}
@@ -118,13 +130,15 @@ namespace flame
 
 		void remove_all_children(bool destroy)
 		{
-			if (!destroy)
+			for (auto& e : children)
 			{
-				for (auto& e : children)
+				if (!destroy)
 				{
 					e->parent = nullptr;
 					e.release();
 				}
+				else
+					e->mark_dying();
 			}
 			children.clear();
 		}

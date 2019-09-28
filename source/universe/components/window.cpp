@@ -29,8 +29,7 @@ namespace flame
 
 		~cMoveablePrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
@@ -84,8 +83,7 @@ namespace flame
 
 		~cBringToFrontPrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
@@ -149,8 +147,7 @@ namespace flame
 
 		~cSizeDraggerPrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
@@ -221,8 +218,7 @@ namespace flame
 
 		~cDockerTabPrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
 			{
 				event_receiver->remove_mouse_listener(mouse_listener);
 				event_receiver->remove_drag_and_drop_listener(drag_and_drop_listener);
@@ -440,12 +436,11 @@ namespace flame
 
 		~cDockerTabbarPrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
+			{
 				event_receiver->remove_drag_and_drop_listener(drag_and_drop_listener);
-			list = (cList*)(entity->find_component(cH("List")));
-			if (list)
 				list->remove_selected_changed_listener(selected_changed_listener);
+			}
 		}
 
 		uint calc_pos(float x, float* out)
@@ -592,8 +587,7 @@ namespace flame
 
 		~cDockerPagesPrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
 				event_receiver->remove_drag_and_drop_listener(drag_and_drop_listener);
 		}
 

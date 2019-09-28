@@ -177,8 +177,8 @@ struct cResourceExplorer : Component
 
 	void navigate(const std::filesystem::path& path)
 	{
-		wait_all_works();
-		looper().clear_delay_events();
+		clear_all_works();
+		looper().clear_delay_events(cH("update thumbnail"));
 
 		curr_path = path;
 
@@ -313,7 +313,9 @@ struct cResourceExplorer : Component
 				auto ext = p.extension();
 				if (ext == L".bmp" ||
 					ext == L".jpg" ||
-					ext == L".png")
+					ext == L".png" ||
+					ext == L".gif" ||
+					ext == L".mp4")
 					is_image_type = true;
 
 				auto item = thiz->create_listitem(p.filename().wstring(), is_image_type ? 0 : thiz->file_img_idx);
@@ -457,7 +459,7 @@ void cThumbnail::update()
 						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
 						image->uv1 = Vec2f(thiz->seat->pos + thumbnail_size) / thumbnails_img_size;
 						image->color = Vec4c(255);
-					}, new_mail_p(this));
+					}, new_mail_p(this), cH("update thumbnail"));
 				}
 			}
 		}

@@ -34,8 +34,7 @@ namespace flame
 
 		~cTreeLeafPrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
@@ -129,17 +128,12 @@ namespace flame
 
 			auto e_title = entity->child(0);
 
-			title_event_receiver = (cEventReceiver*)(e_title->find_component(cH("EventReceiver")));
-			if (title_event_receiver)
+			if (!entity->dying)
+			{
 				title_event_receiver->remove_mouse_listener(title_mouse_listener);
-
-			if (e_title->child_count() == 0)
-				return;
-
-			auto e_arrow = e_title->child(0);
-			arrow_event_receiver = (cEventReceiver*)(e_arrow->find_component(cH("EventReceiver")));
-			if (arrow_event_receiver)
-				arrow_event_receiver->remove_mouse_listener(arrow_mouse_listener);
+				if (e_title->child_count() > 0)
+					arrow_event_receiver->remove_mouse_listener(arrow_mouse_listener);
+			}
 		}
 
 		void start()

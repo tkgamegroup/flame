@@ -810,6 +810,17 @@ namespace flame
 		try_distribute_work();
 	}
 
+	void clear_all_works()
+	{
+		mtx.lock();
+		for (auto& c : works)
+			delete_mail(c.second);
+		works.clear();
+		mtx.unlock();
+
+		wait_all_works();
+	}
+
 	void wait_all_works()
 	{
 		std::unique_lock<std::mutex> lock(mtx);
@@ -1446,17 +1457,29 @@ namespace flame
 		}
 	}
 
-	void Looper::add_delay_event(void (*event)(void* c), const Mail<>& capture)
+	void Looper::add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id)
 	{
 		auto c = new Closure<void(void* c)>;
 		c->function = event;
 		c->capture = capture;
+		c->id = id;
 		delay_events.emplace_back(c);
 	}
 
-	void Looper::clear_delay_events()
+	void Looper::clear_delay_events(int id)
 	{
-		delay_events.clear();
+		if (id == -1)
+			delay_events.clear();
+		else
+		{
+			for (auto it = delay_events.begin(); it != delay_events.end();)
+			{
+				if ((*it)->id == id)
+					it = delay_events.erase(it);
+				else
+					it++;
+			}
+		}
 	}
 
 	Looper& looper()

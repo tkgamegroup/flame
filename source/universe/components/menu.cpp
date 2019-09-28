@@ -33,8 +33,7 @@ namespace flame
 
 		~cMenuButtonPrivate()
 		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			if (event_receiver)
+			if (!entity->dying)
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 

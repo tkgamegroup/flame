@@ -1048,6 +1048,7 @@ namespace flame
 	{
 		F* function;
 		Mail<> capture;
+		uint id;
 
 		~Closure()
 		{
@@ -1104,6 +1105,7 @@ namespace flame
 	// set_event to returned ev to end the file watching
 
 	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(void* c), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void clear_all_works();
 	FLAME_FOUNDATION_EXPORTS void wait_all_works();
 
 	enum WindowStyle
@@ -1183,8 +1185,8 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void add_delay_event(void (*event)(void* c), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void clear_delay_events();
+		FLAME_FOUNDATION_EXPORTS void add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id = 0);
+		FLAME_FOUNDATION_EXPORTS void clear_delay_events(int id = 0); /* id=-1 means all */
 	};
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();
