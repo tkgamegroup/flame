@@ -17,7 +17,6 @@ namespace flame
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
 		sdf_scale = default_style.sdf_scale;
-		right_align = false;
 		auto_width = true;
 		auto_height = true;
 	}
@@ -31,31 +30,22 @@ namespace flame
 
 	void cTextPrivate::update()
 	{
-		if (!right_align)
+		auto rect = element->canvas->add_text(font_atlas, element->global_pos +
+			Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
+			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+		if (auto_width)
 		{
-			auto rect = element->canvas->add_text(font_atlas, element->global_pos +
-				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
-				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
-			if (auto_width)
-			{
-				auto w = rect.x() * sdf_scale + element->inner_padding_horizontal();
-				element->size.x() = w;
-				if (aligner && aligner->width_policy == SizeGreedy)
-					aligner->min_size.x() = w;
-			}
-			if (auto_height)
-			{
-				auto h = rect.y() * sdf_scale + element->inner_padding_vertical();
-				element->size.y() = h;
-				if (aligner && aligner->width_policy == SizeGreedy)
-					aligner->min_size.y() = h;
-			}
+			auto w = rect.x() * sdf_scale + element->inner_padding_horizontal();
+			element->size.x() = w;
+			if (aligner && aligner->width_policy == SizeGreedy)
+				aligner->min_size.x() = w;
 		}
-		else
+		if (auto_height)
 		{
-			element->canvas->add_text_right_align(font_atlas, element->global_pos +
-				Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
-				alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+			auto h = rect.y() * sdf_scale + element->inner_padding_vertical();
+			element->size.y() = h;
+			if (aligner && aligner->width_policy == SizeGreedy)
+				aligner->min_size.y() = h;
 		}
 	}
 
@@ -65,7 +55,6 @@ namespace flame
 
 		copy->color = color;
 		copy->sdf_scale = sdf_scale;
-		copy->right_align = right_align;
 		copy->auto_width = auto_width;
 		copy->auto_height = auto_height;
 		copy->text = text;
@@ -187,7 +176,6 @@ namespace flame
 
 			c->color = color$;
 			c->sdf_scale = sdf_scale$;
-			c->right_align = right_align$;
 			c->auto_width = auto_width$;
 			c->auto_height = auto_height$;
 			c->set_text(text$);
@@ -206,7 +194,6 @@ namespace flame
 			}
 			color$ = c->color;
 			sdf_scale$ = c->sdf_scale;
-			right_align$ = c->right_align;
 			auto_width$ = c->auto_width;
 			auto_height$ = c->auto_height;
 			text$ = c->text();
@@ -223,9 +210,6 @@ namespace flame
 				break;
 			case cH("sdf_scale"):
 				c->sdf_scale = sdf_scale$;
-				break;
-			case cH("right_align"):
-				c->right_align = right_align$;
 				break;
 			case cH("auto_width"):
 				c->auto_width = auto_width$;

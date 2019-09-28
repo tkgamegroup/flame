@@ -3,6 +3,7 @@
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
+#include <flame/universe/components/image.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
@@ -24,7 +25,9 @@ struct cResourceExplorer : Component
 	std::filesystem::path curr_path;
 
 	Entity* address_bar;
-	Entity* list;
+	Entity* e_list;
+	cElement* c_list_element;
+	cLayout* c_list_layout;
 
 	std::filesystem::path selected;
 	Entity* blank_menu;
@@ -45,6 +48,54 @@ struct cResourceExplorer : Component
 		set_event(ev_end_file_watcher);
 	}
 
+	Entity* create_listitem(const std::wstring& title)
+	{
+		auto e_item = Entity::create();
+		{
+			e_item->add_component(cElement::create());
+
+			e_item->add_component(cEventReceiver::create());
+
+			e_item->add_component(cStyleColor::create(Vec4c(0), Vec4c(0), Vec4c(0)));
+
+			auto c_layout = cLayout::create(LayoutVertical);
+			c_layout->item_padding = 4.f;
+			e_item->add_component(c_layout);
+
+			auto c_listitem = cListItem::create();
+			c_listitem->unselected_color_normal = Vec4c(0);
+			e_item->add_component(c_listitem);
+		}
+
+		auto e_image = Entity::create();
+		e_item->add_child(e_image);
+		{
+			auto c_element = cElement::create();
+			c_element->size = 100.f;
+			e_image->add_component(c_element);
+
+			auto c_image = cImage::create();
+			c_image->id = 0;
+			e_image->add_component(c_image);
+		}
+
+		auto e_title = Entity::create();
+		e_item->add_child(e_title);
+		{
+			e_title->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_pixel);
+			{
+				auto str = app.font_atlas_pixel->slice_text_by_width(title, 100.f);
+				c_text->set_text(*str.p);
+				delete_mail(str);
+			}
+			e_title->add_component(c_text);
+		}
+
+		return e_item;
+	}
+
 	void navigate(const std::filesystem::path& path)
 	{
 		curr_path = path;
@@ -54,9 +105,20 @@ struct cResourceExplorer : Component
 			auto& base_path = thiz->base_path;
 			auto& curr_path = thiz->curr_path;
 			auto address_bar = thiz->address_bar;
-			auto list = thiz->list;
+			auto list = thiz->e_list;
 
 			address_bar->remove_all_children();
+			auto e_upward = create_standard_button(app.font_atlas_pixel, 1.f, Icon_LEVEL_UP);
+			address_bar->add_child(e_upward);
+			((cStyleColor*)e_upward->find_component(cH("StyleColor")))->color_normal.a() = 0;
+			((cEventReceiver*)e_upward->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = *(cResourceExplorer**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					if (thiz->curr_path != thiz->base_path)
+						thiz->navigate(thiz->curr_path.parent_path());
+				}
+			}, new_mail_p(thiz));
 
 			std::vector<std::filesystem::path> stems;
 			for (auto p = curr_path; ; p = p.parent_path())
@@ -141,23 +203,9 @@ struct cResourceExplorer : Component
 						files.push_back(it->path());
 				}
 			}
-			auto upward_item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" .."));
-			((cAligner*)upward_item->find_component(cH("Aligner")))->width_policy = SizeFixed;
-			((cListItem*)upward_item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
-			list->add_child(upward_item);
-			((cEventReceiver*)upward_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = *(cResourceExplorer**)c;
-				if (is_mouse_clicked(action, key, true))
-				{
-					if (thiz->curr_path != thiz->base_path)
-						thiz->navigate(thiz->curr_path.parent_path());
-				}
-			}, new_mail_p(thiz));
 			for (auto& p : dirs)
 			{
-				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" ") + p.filename().wstring());
-				((cAligner*)item->find_component(cH("Aligner")))->width_policy = SizeFixed;
-				((cListItem*)item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
+				auto item = thiz->create_listitem(Icon_FOLDER_O + std::wstring(L" ") + p.filename().wstring());
 				list->add_child(item);
 				struct Capture
 				{
@@ -174,9 +222,7 @@ struct cResourceExplorer : Component
 			}
 			for (auto& p : files)
 			{
-				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FILE_O + std::wstring(L" ") + p.filename().wstring());
-				((cAligner*)item->find_component(cH("Aligner")))->width_policy = SizeFixed;
-				((cListItem*)item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
+				auto item = thiz->create_listitem(Icon_FILE_O + std::wstring(L" ") + p.filename().wstring());
 				list->add_child(item);
 				struct Capture
 				{
@@ -215,7 +261,11 @@ struct cResourceExplorer : Component
 
 			navigate(curr_path);
 		}
-
+		else
+		{
+			auto w = c_list_element->size.x() - c_list_element->inner_padding_horizontal();
+			c_list_layout->column = max(1U, uint(w / (c_list_layout->item_padding + 100.f)));
+		}
 	}
 };
 
@@ -354,9 +404,12 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 
 	auto e_list = create_standard_list(true);
 	{
+		c_explorer->c_list_element = (cElement*)e_list->find_component(cH("Element"));
+
 		auto c_layout = (cLayout*)e_list->find_component(cH("Layout"));
 		c_layout->type = LayoutGrid;
 		c_layout->column = 4;
+		c_explorer->c_list_layout = c_layout;
 
 		auto c_event_receiver = (cEventReceiver*)e_list->find_component(cH("EventReceiver"));
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
@@ -367,7 +420,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		}, new_mail_p(c_explorer));
 		e_list->add_component(c_event_receiver);
 	}
-	c_explorer->list = e_list;
+	c_explorer->e_list = e_list;
 
 	e_page->add_child(wrap_standard_scrollbar(e_list, ScrollbarVertical, true, 1.f));
 

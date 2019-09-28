@@ -365,8 +365,8 @@ namespace flame
 
 						assert(!al.second || (al.second->x_align == AlignxFree && al.second->y_align == AlignyFree));
 
-						al.first->pos.x() = x;
-						al.first->pos.y() = y;
+						al.first->pos.x() = scroll_offset.x() + x;
+						al.first->pos.y() = scroll_offset.y() + y;
 
 						x += al.first->size.x() + item_padding;
 						lh = max(al.first->size.y(), lh);

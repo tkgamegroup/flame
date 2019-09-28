@@ -232,7 +232,7 @@ namespace flame
 
 			e_item->add_component(cEventReceiver::create());
 
-			e_item->add_component(cStyleColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			e_item->add_component(cStyleColor::create(Vec4c(0), Vec4c(0), Vec4c(0)));
 
 			e_item->add_component(cListItem::create());
 

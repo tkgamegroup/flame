@@ -1,4 +1,3 @@
-#include <flame/foundation/foundation.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
@@ -297,19 +296,52 @@ namespace flame
 			{
 				auto w = 0;
 				auto h = 0;
-				for (auto c : text)
+				for (auto ch : text)
 				{
-					if (!c)
+					if (!ch)
 						break;
-					if (c == '\n')
+					if (ch == '\n')
 					{
 						w = 0;
 						h += pixel_height;
 					}
-					else if (c != '\r' && c != '\t')
-						w += get_glyph(c)->advance;
+					else if (ch != '\r' && ch != '\t')
+						w += get_glyph(ch)->advance;
 				}
 				return Vec2i(w, h);
+			}
+
+			Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width)
+			{
+				assert(width > max_width);
+
+				auto ret = new_mail<std::wstring>();
+				auto w = 0;
+				for (auto ch : text)
+				{
+					if (!ch)
+						break;
+					switch (ch)
+					{
+					case '\n':
+						w = 0;
+						*ret.p += '\n';
+						break;
+					case '\r':
+						break;
+					case '\t':
+						ch = ' ';
+					default:
+						w += get_glyph(ch)->advance;
+						if (w >= width)
+						{
+							w = 0;
+							*ret.p += '\n';
+						}
+						*ret.p += ch;
+					}
+				}
+				return ret;
 			}
 		};
 
@@ -331,6 +363,11 @@ namespace flame
 		Vec2i FontAtlas::get_text_offset(const std::wstring_view& text)
 		{
 			return ((FontAtlasPrivate*)this)->get_text_offset(text);
+		}
+
+		Mail<std::wstring> FontAtlas::slice_text_by_width(const std::wstring_view& text, uint width)
+		{
+			return ((FontAtlasPrivate*)this)->slice_text_by_width(text, width);
 		}
 
 		Image* FontAtlas::image() const

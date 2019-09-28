@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
@@ -46,6 +47,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS const Glyph* get_glyph(wchar_t unicode);
 			FLAME_GRAPHICS_EXPORTS Vec2i get_text_offset(const std::wstring_view& text);
+			FLAME_GRAPHICS_EXPORTS Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width);
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 
