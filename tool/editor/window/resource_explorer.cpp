@@ -1,4 +1,6 @@
 #include <flame/foundation/blueprint.h>
+#include <flame/foundation/bitmap.h>
+#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
@@ -21,6 +23,29 @@
 #include "blueprint_editor.h"
 #include "scene_editor.h"
 
+struct cResourceExplorer;
+
+struct Seat
+{
+	Vec2u pos;
+};
+
+struct cThumbnail : Component
+{
+	cImage* image;
+
+	cResourceExplorer* explorer;
+	std::wstring filename;
+	Bitmap* thumbnail;
+	Seat* seat;
+
+	cThumbnail();
+	~cThumbnail();
+	void return_seat();
+	virtual void start() override;
+	virtual void update() override;
+};
+
 struct cResourceExplorer : Component
 {
 	std::filesystem::path base_path;
@@ -33,6 +58,15 @@ struct cResourceExplorer : Component
 	Image* folder_img;
 	Imageview* folder_img_v;
 	uint folder_img_idx;
+	Image* file_img;
+	Imageview* file_img_v;
+	uint file_img_idx;
+	Image* thumbnails_img;
+	Imageview* thumbnails_img_v;
+	uint thumbnails_img_idx;
+	Vec2u thumbnails_img_pos;
+	std::vector<std::unique_ptr<Seat>> thumbnails_seats_free;
+	std::vector<std::unique_ptr<Seat>> thumbnails_seats_occupied;
 
 	std::filesystem::path selected;
 	Entity* blank_menu;
@@ -48,6 +82,32 @@ struct cResourceExplorer : Component
 		folder_img = Image::create_from_file(app.d, L"../asset/ui/imgs/folder.png");
 		folder_img_v = Imageview::create(folder_img);
 		folder_img_idx = app.canvas->set_image(-1, folder_img_v);
+		file_img = Image::create_from_file(app.d, L"../asset/ui/imgs/file.png");
+		file_img_v = Imageview::create(file_img);
+		file_img_idx = app.canvas->set_image(-1, file_img_v);
+		thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1020), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageSampled));
+		thumbnails_img->init(Vec4c(255));
+		thumbnails_img_v = Imageview::create(thumbnails_img);
+		thumbnails_img_idx = app.canvas->set_image(-1, thumbnails_img_v, FilterNearest);
+		{
+			auto x = 0;
+			auto y = 0;
+			while (true)
+			{
+				if (x + 64 > thumbnails_img->size.x())
+				{
+					if (y + 64 > thumbnails_img->size.y())
+						break;
+					x = 0;
+					y += 64;
+				}
+				auto seat = new Seat;
+				seat->pos.x() = x;
+				seat->pos.y() = y;
+				thumbnails_seats_free.emplace_back(seat);
+				x += 64;
+			}
+		}
 	}
 
 	~cResourceExplorer()
@@ -55,6 +115,12 @@ struct cResourceExplorer : Component
 		app.canvas->set_image(folder_img_idx, nullptr);
 		Imageview::destroy(folder_img_v);
 		Image::destroy(folder_img);
+		app.canvas->set_image(file_img_idx, nullptr);
+		Imageview::destroy(file_img_v);
+		Image::destroy(file_img);
+		app.canvas->set_image(thumbnails_img_idx, nullptr);
+		Imageview::destroy(thumbnails_img_v);
+		Image::destroy(thumbnails_img);
 
 		destroy_event(ev_file_changed);
 		set_event(ev_end_file_watcher);
@@ -234,8 +300,25 @@ struct cResourceExplorer : Component
 			}
 			for (auto& p : files)
 			{
-				auto item = thiz->create_listitem(p.filename().wstring(), 0);
+				auto is_image_type = false;
+				auto ext = p.extension();
+				if (ext == L".bmp" ||
+					ext == L".jpg" ||
+					ext == L".png")
+					is_image_type = true;
+
+				auto item = thiz->create_listitem(p.filename().wstring(), is_image_type ? 0 : thiz->file_img_idx);
 				list->add_child(item);
+				if (is_image_type)
+				{
+					auto e_image = item->child(0);
+					((cImage*)e_image->find_component(cH("Image")))->color = Vec4c(100, 100, 100, 128);
+
+					auto c_thumbnail = new_component<cThumbnail>();
+					c_thumbnail->explorer = thiz;
+					c_thumbnail->filename = std::filesystem::canonical(p).wstring();
+					e_image->add_component(c_thumbnail);
+				}
 				struct Capture
 				{
 					cResourceExplorer* e;
@@ -280,6 +363,97 @@ struct cResourceExplorer : Component
 		}
 	}
 };
+
+cThumbnail::cThumbnail() :
+	Component("Thumbnail")
+{
+	thumbnail = nullptr;
+	seat = nullptr;
+}
+
+cThumbnail::~cThumbnail()
+{
+	if (thumbnail)
+		Bitmap::destroy(thumbnail);
+	if (seat)
+		return_seat();
+}
+
+void cThumbnail::return_seat()
+{
+	for (auto it = explorer->thumbnails_seats_occupied.begin(); it != explorer->thumbnails_seats_occupied.end(); it++)
+	{
+		if (it->get() == seat)
+		{
+			explorer->thumbnails_seats_free.push_back(std::move(*it));
+			explorer->thumbnails_seats_occupied.erase(it);
+			break;
+		}
+	}
+	seat = nullptr;
+}
+
+void cThumbnail::start()
+{
+	image = (cImage*)entity->find_component(cH("Image"));
+
+	add_work([](void* c) {
+		auto thiz = *(cThumbnail**)c;
+		uint w, h;
+		char* data;
+		get_thumbnail(64, thiz->filename, &w, &h, &data);
+		auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
+		bitmap->swap_channel(0, 2);
+		thiz->thumbnail = bitmap;
+	}, new_mail_p(this));
+}
+
+void cThumbnail::update()
+{
+	if (thumbnail)
+	{
+		if (image->element->cliped)
+		{
+			if (seat)
+				return_seat();
+			image->element->inner_padding = Vec4f(0.f);
+			image->id = 0;
+			image->color = Vec4c(100, 100, 100, 128);
+		}
+		else
+		{
+			if (!seat)
+			{
+				if (!explorer->thumbnails_seats_free.empty())
+				{
+					seat = explorer->thumbnails_seats_free.front().get();
+					explorer->thumbnails_seats_occupied.push_back(std::move(explorer->thumbnails_seats_free.front()));
+					explorer->thumbnails_seats_free.erase(explorer->thumbnails_seats_free.begin());
+					
+					looper().add_delay_event([](void* c) {
+						auto thiz = *(cThumbnail**)c;
+						auto image = thiz->image;
+						auto explorer = thiz->explorer;
+						auto& thumbnails_img_size = explorer->thumbnails_img->size;
+						auto& thumbnail_size = thiz->thumbnail->size;
+
+						explorer->thumbnails_img->set_pixels(thiz->seat->pos.x(), thiz->seat->pos.y(), thumbnail_size.x(), thumbnail_size.y(), thiz->thumbnail->data);
+
+						{
+							auto h = (64 - thumbnail_size.x()) * 0.5f;
+							auto v = (64 - thumbnail_size.y()) * 0.5f;
+							image->element->inner_padding = Vec4f(h, v, h, v);
+						}
+						image->id = explorer->thumbnails_img_idx;
+						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
+						image->uv1 = Vec2f(thiz->seat->pos + thumbnail_size) / thumbnails_img_size;
+						image->color = Vec4c(255);
+					}, new_mail_p(this));
+				}
+			}
+		}
+	}
+}
 
 void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 {

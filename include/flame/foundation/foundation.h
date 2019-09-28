@@ -1084,7 +1084,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void get_thumbnai(uint width, const std::wstring& filename, uint* out_width, uint* out_height, char** out_data);
+	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const std::wstring& filename, uint* out_width, uint* out_height, char** out_data);
 
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
@@ -1103,8 +1103,8 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes = true, bool sync = true);
 	// set_event to returned ev to end the file watching
 
-	FLAME_FOUNDATION_EXPORTS void add_work(void (*callback)(void* c), const Mail<>& capture);
-	FLAME_FOUNDATION_EXPORTS void clear_works();
+	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(void* c), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void wait_all_works();
 
 	enum WindowStyle
 	{

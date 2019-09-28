@@ -332,12 +332,14 @@ namespace flame
 					case '\t':
 						ch = ' ';
 					default:
-						w += get_glyph(ch)->advance;
-						if (w >= width)
+						auto adv = get_glyph(ch)->advance;
+						if (w + adv >= width)
 						{
-							w = 0;
+							w = adv;
 							*ret.p += '\n';
 						}
+						else
+							w += adv;
 						*ret.p += ch;
 					}
 				}

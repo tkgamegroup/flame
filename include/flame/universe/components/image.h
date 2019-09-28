@@ -13,8 +13,7 @@ namespace flame
 		uint id;
 		Vec2f uv0;
 		Vec2f uv1;
-		bool stretch;
-		Vec4f border;
+		Vec4c color;
 
 		cImage() :
 			Component("Image")

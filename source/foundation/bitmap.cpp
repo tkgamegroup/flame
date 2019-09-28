@@ -78,7 +78,7 @@ namespace flame
 		}
 	}
 
-	Bitmap* Bitmap::create(const Vec2u& size, uint channel, uint bpp, uchar* data)
+	Bitmap* Bitmap::create(const Vec2u& size, uint channel, uint bpp, uchar* data, bool move)
 	{
 		auto b = new Bitmap;
 		b->size = size;
@@ -86,13 +86,18 @@ namespace flame
 		b->bpp = bpp;
 		b->pitch = get_pitch(b->size.x() * bpp / 8);
 		b->data_size = b->pitch * b->size.y();
-		b->data = new uchar[b->data_size];
-		if (!data)
-			memset(b->data, 0, b->data_size);
+		if (move)
+			b->data = data;
 		else
 		{
-			if (data != FLAME_INVALID_POINTER)
-				memcpy(b->data, data, b->data_size);
+			b->data = new uchar[b->data_size];
+			if (!data)
+				memset(b->data, 0, b->data_size);
+			else
+			{
+				if (data != FLAME_INVALID_POINTER)
+					memcpy(b->data, data, b->data_size);
+			}
 		}
 		b->srgb = false;
 		return b;

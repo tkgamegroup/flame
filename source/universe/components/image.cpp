@@ -13,8 +13,7 @@ namespace flame
 			id = 0;
 			uv0 = Vec2f(0.f);
 			uv1 = Vec2f(1.f);
-			stretch = false;
-			border = Vec4f(0.f);
+			color = Vec4c(255);
 		}
 
 		void start()
@@ -30,10 +29,7 @@ namespace flame
 				auto padding = element->inner_padding * element->global_scale;
 				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
 				auto size = element->global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]);
-				if (!stretch)
-					element->canvas->add_image(pos, size, id, uv0, uv1, Vec4c(255, 255, 255, element->alpha * 255));
-				else
-					;
+				element->canvas->add_image(pos, size, id, uv0, uv1, alpha_mul(color, element->alpha));
 			}
 		}
 	};

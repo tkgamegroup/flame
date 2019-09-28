@@ -342,7 +342,7 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
-	void get_thumbnai(uint width, const std::wstring& _filename, uint* out_width, uint* out_height, char** out_data)
+	void get_thumbnail(uint width, const std::wstring& _filename, uint* out_width, uint* out_height, char** out_data)
 	{
 		std::filesystem::path path(_filename);
 		path.make_preferred();
@@ -770,71 +770,53 @@ namespace flame
 		return nullptr;
 	}
 
-	/*
 	const auto all_workers = 3;
 	static std::mutex mtx;
 	static std::condition_variable cv;
 	static auto workers = all_workers;
 
-	static std::vector<Function*> works;
+	static std::vector<std::pair<void(*)(void* c), Mail<>>> works;
 
-	void try_distribute();
-
-	static void do_work(CommonData *d)
+	static void try_distribute_work()
 	{
-		((Function*)d[0].p)->exec();
-
-		Function::destroy((Function*)d[0].p);
-		Function::destroy((Function*)d[1].p);
-
-		mtx.lock();
-		workers++;
-		cv.notify_one();
-		mtx.unlock();
-
-		try_distribute();
-	}
-
-	void try_distribute()
-	{
-		mtx.lock();
 		if (!works.empty() && workers > 0)
 		{
+			mtx.lock();
+
 			workers--;
 			auto w = works.front();
 			works.erase(works.begin());
 
-			auto f_thread = Function::create(do_work, "p:work p:thread", "", 0);
-			f_thread->datas[0].p = w;
-			f_thread->datas[1].p = f_thread;
-			f_thread->exec_in_new_thread();
+			std::thread([=]() {
+				w.first(w.second.p);
+				delete_mail(w.second);
+				mtx.lock();
+				workers++;
+				cv.notify_one();
+				mtx.unlock();
+				try_distribute_work();
+			}).detach();
+
+			mtx.unlock();
 		}
-		mtx.unlock();
 	}
 
-	void add_work(PF pf, char *capture_fmt, ...)
+	void add_work(void (*function)(void* c), const Mail<>& capture)
 	{
-		va_list ap;
-		va_start(ap, capture_fmt);
-		auto f = Function::create(pf, "", capture_fmt, ap);
-		va_end(ap);
-
 		mtx.lock();
-		works.push_back(f);
+		works.emplace_back(function, capture);
 		mtx.unlock();
 
-		try_distribute();
+		try_distribute_work();
 	}
 
-	void clear_works()
+	void wait_all_works()
 	{
-		std::unique_lock<std::mutex> lk(mtx);
+		std::unique_lock<std::mutex> lock(mtx);
 
-		works.clear();
 		while (workers != all_workers)
-			cv.wait(lk);
+			cv.wait(lock);
 	}
-	*/
 
 	enum KeyEventType
 	{
@@ -1450,7 +1432,6 @@ namespace flame
 				for (auto& e : delay_events)
 					events.push_back(std::move(e));
 				delay_events.clear();
-
 				for (auto& f : events)
 					f->function(f->capture.p);
 			}
