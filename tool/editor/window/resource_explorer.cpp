@@ -1,5 +1,7 @@
 #include <flame/foundation/blueprint.h>
+#include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
+#include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -28,6 +30,9 @@ struct cResourceExplorer : Component
 	Entity* e_list;
 	cElement* c_list_element;
 	cLayout* c_list_layout;
+	Image* folder_img;
+	Imageview* folder_img_v;
+	uint folder_img_idx;
 
 	std::filesystem::path selected;
 	Entity* blank_menu;
@@ -40,15 +45,22 @@ struct cResourceExplorer : Component
 	cResourceExplorer() :
 		Component("ResourceExplorer")
 	{
+		folder_img = Image::create_from_file(app.d, L"../asset/ui/imgs/folder.png");
+		folder_img_v = Imageview::create(folder_img);
+		folder_img_idx = app.canvas->set_image(-1, folder_img_v);
 	}
 
 	~cResourceExplorer()
 	{
+		app.canvas->set_image(folder_img_idx, nullptr);
+		Imageview::destroy(folder_img_v);
+		Image::destroy(folder_img);
+
 		destroy_event(ev_file_changed);
 		set_event(ev_end_file_watcher);
 	}
 
-	Entity* create_listitem(const std::wstring& title)
+	Entity* create_listitem(const std::wstring& title, uint img_id)
 	{
 		auto e_item = Entity::create();
 		{
@@ -71,11 +83,11 @@ struct cResourceExplorer : Component
 		e_item->add_child(e_image);
 		{
 			auto c_element = cElement::create();
-			c_element->size = 100.f;
+			c_element->size = 64.f;
 			e_image->add_component(c_element);
 
 			auto c_image = cImage::create();
-			c_image->id = 0;
+			c_image->id = img_id;
 			e_image->add_component(c_image);
 		}
 
@@ -86,7 +98,7 @@ struct cResourceExplorer : Component
 
 			auto c_text = cText::create(app.font_atlas_pixel);
 			{
-				auto str = app.font_atlas_pixel->slice_text_by_width(title, 100.f);
+				auto str = app.font_atlas_pixel->slice_text_by_width(title, 64.f);
 				c_text->set_text(*str.p);
 				delete_mail(str);
 			}
@@ -205,7 +217,7 @@ struct cResourceExplorer : Component
 			}
 			for (auto& p : dirs)
 			{
-				auto item = thiz->create_listitem(Icon_FOLDER_O + std::wstring(L" ") + p.filename().wstring());
+				auto item = thiz->create_listitem(p.filename().wstring(), thiz->folder_img_idx);
 				list->add_child(item);
 				struct Capture
 				{
@@ -222,7 +234,7 @@ struct cResourceExplorer : Component
 			}
 			for (auto& p : files)
 			{
-				auto item = thiz->create_listitem(Icon_FILE_O + std::wstring(L" ") + p.filename().wstring());
+				auto item = thiz->create_listitem(p.filename().wstring(), 0);
 				list->add_child(item);
 				struct Capture
 				{
@@ -264,7 +276,7 @@ struct cResourceExplorer : Component
 		else
 		{
 			auto w = c_list_element->size.x() - c_list_element->inner_padding_horizontal();
-			c_list_layout->column = max(1U, uint(w / (c_list_layout->item_padding + 100.f)));
+			c_list_layout->column = max(1U, uint(w / (c_list_layout->item_padding + 64.f)));
 		}
 	}
 };
@@ -276,8 +288,8 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
 		c_element->pos = pos;
-		c_element->size.x() = 300.f;
-		c_element->size.y() = 600.f;
+		c_element->size.x() = 1914.f;
+		c_element->size.y() = 274.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();

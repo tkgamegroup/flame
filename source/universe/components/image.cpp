@@ -33,7 +33,7 @@ namespace flame
 				if (!stretch)
 					element->canvas->add_image(pos, size, id, uv0, uv1, Vec4c(255, 255, 255, element->alpha * 255));
 				else
-					element->canvas->add_image_stretch(pos, size, id, border);
+					;
 			}
 		}
 	};

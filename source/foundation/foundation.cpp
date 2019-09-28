@@ -350,7 +350,7 @@ namespace flame
 
 		HRESULT hr;
 
-		IShellFolder* desktop_folder, * shell_folder;
+		IShellFolder* desktop_folder, *shell_folder;
 		SHGetDesktopFolder(&desktop_folder);
 
 		LPITEMIDLIST pidl;
@@ -359,7 +359,7 @@ namespace flame
 		auto pidl_child = ILFindLastID(pidl);
 
 		IThumbnailProvider* thumbnail_provider;
-		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)& pidl_child, IID_IThumbnailProvider, NULL, (void**)& thumbnail_provider);
+		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)&pidl_child, IID_IThumbnailProvider, NULL, (void**)& thumbnail_provider);
 		HBITMAP hbmp;
 		WTS_ALPHATYPE alpha_type;
 		thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type);

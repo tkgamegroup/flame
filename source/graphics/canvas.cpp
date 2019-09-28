@@ -437,24 +437,27 @@ namespace flame
 			return ((CanvasPrivate*)this)->ivs[index];
 		}
 
-		void Canvas::set_image(uint index, Imageview* v, Filter filter)
+		uint Canvas::set_image(int index, Imageview* v, Filter filter)
 		{
 			auto thiz = (CanvasPrivate*)this;
+			if (index == -1)
+			{
+				assert(v);
+				for (auto i = 1; i < thiz->ivs.size(); i++)
+				{
+					if (thiz->ivs[i] == thiz->white_iv)
+					{
+						index = i;
+						break;
+					}
+				}
+				assert(index != -1);
+			}
 			if (!v)
 				v = thiz->white_iv;
 			thiz->ds->set_image(0, index, v, (filter == FilterLinear ? thiz->d->sp_linear : thiz->d->sp_nearest));
 			thiz->ivs[index] = v;
-		}
-
-		uint Canvas::find_free_image() const
-		{
-			auto thiz = (CanvasPrivate*)this;
-			for (auto i = 1; i < thiz->ivs.size(); i++)
-			{
-				if (thiz->ivs[i] == thiz->white_iv)
-					return i;
-			}
-			return 0;
+			return index;
 		}
 
 		void Canvas::stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)
@@ -475,11 +478,6 @@ namespace flame
 		void Canvas::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 		{
 			((CanvasPrivate*)this)->add_image(pos, size, id, uv0, uv1, tint_col);
-		}
-
-		void Canvas::add_image_stretch(const Vec2f& pos, const Vec2f& size, uint id, const Vec4f& border, const Vec4c& tint_col)
-		{
-			((CanvasPrivate*)this)->add_image_stretch(pos, size, id, border, tint_col);
 		}
 
 		void Canvas::set_scissor(const Vec4f& _scissor)

@@ -416,8 +416,8 @@ struct App
 			text_level->set_text(std::to_wstring(level));
 			text_lines->set_text(std::to_wstring(lines));
 
-			piece.root->x = (piece.x + 1) * 32;
-			piece.root->y = piece.y * 32;
+			piece.root->pos.x() = (piece.x + 1) * 32;
+			piece.root->pos.y() = piece.y * 32;
 		}
 
 		auto sc = scr->sc();
@@ -434,8 +434,7 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
-			c_element_root->width = w->size.x();
-			c_element_root->height = w->size.y();
+			c_element_root->size = w->size;
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
 
@@ -465,15 +464,12 @@ int main(int argc, char **args)
 	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	auto font2 = Font::create(L"../game/tetris/joystix monospace.ttf", block_size);
 	app.font_atlas_1 = FontAtlas::create(app.d, FontDrawPixel, { font1 });
-	app.font_atlas_1->index = 1;
+	app.font_atlas_1->index = app.canvas->set_image(-1, Imageview::create(app.font_atlas_1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { font2 });
-	app.font_atlas_2->index = 2;
-	app.canvas->set_image(app.font_atlas_1->index, Imageview::create(app.font_atlas_1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
-	app.canvas->set_image(app.font_atlas_2->index, Imageview::create(app.font_atlas_2->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+	app.font_atlas_2->index = app.canvas->set_image(-1, Imageview::create(app.font_atlas_2->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 
-	const auto atlas_id = 3U;
 	auto atlas_image = Image::create_from_file(app.d, L"../game/tetris/images/atlas.png");
-	app.canvas->set_image(atlas_id, Imageview::create(atlas_image), FilterNearest);
+	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(atlas_image), FilterNearest);
 
 	auto texture_pack = load_texture_pack(L"../game/tetris/images/atlas.png.pack");
 
@@ -485,7 +481,7 @@ int main(int argc, char **args)
 		app.c_event_dispatcher_root = cEventDispatcher::create(app.w);
 		app.root->add_component(app.c_event_dispatcher_root);
 
-		app.root->add_component(cLayout::create());
+		app.root->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_fps = Entity::create();
@@ -529,10 +525,9 @@ int main(int argc, char **args)
 			app.root->add_child(e_image);
 			{
 				auto c_element = cElement::create();
-				c_element->x = 0;
-				c_element->y = i * block_size;
-				c_element->width = block_size;
-				c_element->height = block_size;
+				c_element->pos.x() = 0;
+				c_element->pos.y() = i * block_size;
+				c_element->size = block_size;
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
@@ -549,10 +544,9 @@ int main(int argc, char **args)
 			app.root->add_child(e_image);
 			{
 				auto c_element = cElement::create();
-				c_element->x = (block_cx + 1) * block_size;
-				c_element->y = i * block_size;
-				c_element->width = block_size;
-				c_element->height = block_size;
+				c_element->pos.x() = (block_cx + 1) * block_size;
+				c_element->pos.y() = i * block_size;
+				c_element->size = block_size;
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
@@ -589,10 +583,9 @@ int main(int argc, char **args)
 				app.root->add_child(e_image);
 				{
 					auto c_element = cElement::create();
-					c_element->x = block_size + j * block_size;
-					c_element->y = i * block_size;
-					c_element->width = block_size;
-					c_element->height = block_size;
+					c_element->pos.x() = block_size + j * block_size;
+					c_element->pos.y() = i * block_size;
+					c_element->size = block_size;
 					e_image->add_component(c_element);
 
 					auto c_image = cImage::create();
@@ -709,7 +702,6 @@ int main(int argc, char **args)
 		e_lines->add_component(c_element);
 
 		app.text_lines = cText::create(app.font_atlas_2);
-		app.text_score->right_align = true;
 		e_lines->add_component(app.text_lines);
 	}
 

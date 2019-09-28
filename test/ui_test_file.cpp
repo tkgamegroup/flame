@@ -50,8 +50,7 @@ struct App
 			sc->acquire_image();
 			fence->wait();
 
-			c_element_root->width = w->size.x();
-			c_element_root->height = w->size.y();
+			c_element_root->size = w->size;
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
 
@@ -83,8 +82,7 @@ int main(int argc, char** args)
 
 	auto font_msyh14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font_msyh14 });
-	app.font_atlas_pixel->index = 1;
-	app.canvas->set_image(app.font_atlas_pixel->index, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+	app.font_atlas_pixel->index = app.canvas->set_image(-1, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 
 	universe_serialization_set_data("font_atlas1", app.font_atlas_pixel);
 
@@ -95,7 +93,7 @@ int main(int argc, char** args)
 
 		app.root->add_component(cEventDispatcher::create(app.w));
 
-		app.root->add_component(cLayout::create());
+		app.root->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_fps = Entity::create();
@@ -116,12 +114,11 @@ int main(int argc, char** args)
 	app.root->add_child(e_layout);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 16.f;
-		c_element->y = 28.f;
+		c_element->pos.x() = 16.f;
+		c_element->pos.y() = 28.f;
 		e_layout->add_component(c_element);
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutVertical;
+		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 16.f;
 		e_layout->add_component(c_layout);
 	}
@@ -130,9 +127,8 @@ int main(int argc, char** args)
 	e_layout->add_child(e_scene);
 	{
 		auto c_element = cElement::create();
-		c_element->width = 500.f;
-		c_element->height = 500.f;
-		c_element->background_frame_thickness = 2.f;
+		c_element->size = 500.f;
+		c_element->frame_thickness = 2.f;
 		e_scene->add_component(c_element);
 	}
 
@@ -141,8 +137,7 @@ int main(int argc, char** args)
 	{
 		e_buttons->add_component(cElement::create());
 
-		auto c_layout = cLayout::create();
-		c_layout->type = LayoutHorizontal;
+		auto c_layout = cLayout::create(LayoutHorizontal);
 		c_layout->item_padding = 4.f;
 		e_buttons->add_component(c_layout);
 	}
@@ -163,11 +158,9 @@ int main(int argc, char** args)
 					e_scene->add_child(e_box1);
 					{
 						auto c_element = cElement::create();
-						c_element->x = 50.f;
-						c_element->y = 50.f;
-						c_element->width = 400.f;
-						c_element->height = 400.f;
-						c_element->background_color = Vec4c(255, 0, 0, 255);
+						c_element->pos = 50.f;
+						c_element->size = 400.f;
+						c_element->color = Vec4c(255, 0, 0, 255);
 						e_box1->add_component(c_element);
 					}
 
@@ -175,11 +168,9 @@ int main(int argc, char** args)
 					e_box1->add_child(e_box2);
 					{
 						auto c_element = cElement::create();
-						c_element->x = 50.f;
-						c_element->y = 50.f;
-						c_element->width = 300.f;
-						c_element->height = 300.f;
-						c_element->background_color = Vec4c(255, 255, 0, 255);
+						c_element->pos = 50.f;
+						c_element->size = 300.f;
+						c_element->color = Vec4c(255, 255, 0, 255);
 						e_box2->add_component(c_element);
 					}
 
@@ -187,8 +178,8 @@ int main(int argc, char** args)
 					e_box2->add_child(e_text);
 					{
 						auto c_element = cElement::create();
-						c_element->x = 12.f;
-						c_element->y = 8.f;
+						c_element->pos.x() = 12.f;
+						c_element->pos.y() = 8.f;
 						e_text->add_component(c_element);
 
 						auto c_text = cText::create(app.font_atlas_pixel);

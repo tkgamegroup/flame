@@ -128,11 +128,9 @@ struct cBPEditor : Component
 		rt = graphics::Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
 		rt->init(Vec4c(0, 0, 0, 255));
 		rt_v = Imageview::create(rt);
-		rt_id = app.canvas->find_free_image();
+		rt_id = app.canvas->set_image(-1, rt_v);
 		rt_cbs.resize(1);
 		rt_cbs[0] = Commandbuffer::create(app.d->gcp);
-
-		app.canvas->set_image(rt_id, rt_v);
 	}
 
 	~cBPEditor()

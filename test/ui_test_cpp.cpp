@@ -103,13 +103,10 @@ int main(int argc, char** args)
 	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font_msyh14, font_awesome14 });
 	app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { font_msyh14 });
 	app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font_msyh32 });
-	app.font_atlas_pixel->index = 1;
-	app.font_atlas_lcd->index = 2;
-	app.font_atlas_sdf->index = 3;
-	app.canvas->set_image(app.font_atlas_pixel->index, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
-	app.canvas->set_image(app.font_atlas_lcd->index, Imageview::create(app.font_atlas_lcd->image()));
-	app.canvas->set_image(app.font_atlas_sdf->index, Imageview::create(app.font_atlas_sdf->image()));
-
+	app.font_atlas_pixel->index = app.canvas->set_image(-1, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));;
+	app.font_atlas_lcd->index = app.canvas->set_image(-1, Imageview::create(app.font_atlas_lcd->image()));
+	app.font_atlas_sdf->index = app.canvas->set_image(-1, Imageview::create(app.font_atlas_sdf->image()));
+	
 	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
 
 	app.root = Entity::create();

@@ -77,10 +77,8 @@ int main(int argc, char** args)
 	app.font_atlas2 = FontAtlas::create(app.d, FontDrawSdf, { font_msyh });
 	auto font_atlas_view1 = Imageview::create(app.font_atlas1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
 	auto font_atlas_view2 = Imageview::create(app.font_atlas2->image());
-	app.font_atlas1->index = 1;
-	app.font_atlas2->index = 2;
-	app.canvas->set_image(app.font_atlas1->index, font_atlas_view1);
-	app.canvas->set_image(app.font_atlas2->index, font_atlas_view2);
+	app.font_atlas1->index = app.canvas->set_image(-1, font_atlas_view1);
+	app.font_atlas2->index = app.canvas->set_image(-1, font_atlas_view2);
 
 	app.cbs.resize(sc->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
