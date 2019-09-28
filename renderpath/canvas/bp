@@ -10,7 +10,7 @@
 				<data name="in" value="64" />
 			</datas>
 		</node>
-		<node type="EnumSN(graphics::SampleCount)" id="sc" pos="411.81;1498.60">
+		<node type="Enum(graphics::SampleCount)" id="sc" pos="411.81;1498.60">
 			<datas>
 				<data name="in" value="SampleCount_8" />
 			</datas>

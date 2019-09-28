@@ -3,8 +3,6 @@
 #include <flame/foundation/foundation.h>
 #include <flame/foundation/serialize.h>
 
-// when a type followed by a 'N', means it is not a template type, and bp will not put "<>" on it
-
 namespace flame
 {
 	void* calc_rva(void* p, void* module)
@@ -41,7 +39,8 @@ namespace flame
 		}
 	};
 
-	struct BP_EnumSN
+	template<class T>
+	struct BP_Enum
 	{
 		AttributeV<int> in;
 
@@ -60,12 +59,12 @@ namespace flame
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = db->add_udt("EnumSN" + template_parameters, sizeof(BP_EnumSN));
+			auto u = db->add_udt("Enum" + template_parameters, sizeof(BP_Enum));
 
-			u->add_variable(TypeTagAttributeES, type_name, "in", "i", offsetof(BP_EnumSN, in), sizeof(AttributeV<int>));
-			u->add_variable(TypeTagAttributeES, type_name, "out", "o", offsetof(BP_EnumSN, out), sizeof(AttributeV<int>));
+			u->add_variable(TypeTagAttributeES, type_name, "in", "i", offsetof(BP_Enum, in), sizeof(AttributeV<int>));
+			u->add_variable(TypeTagAttributeES, type_name, "out", "o", offsetof(BP_Enum, out), sizeof(AttributeV<int>));
 
-			u->add_function("update", calc_rva(f2v(&BP_EnumSN::update), module), TypeTagVariable, "void", "");
+			u->add_function("update", calc_rva(f2v(&BP_Enum::update), module), TypeTagVariable, "void", "");
 		}
 	};
 

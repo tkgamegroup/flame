@@ -848,6 +848,16 @@ namespace flame
 
 		SerializableNode::destroy(file);
 
+		auto bp = new BPPrivate();
+		bp->filename = filename;
+
+		for (auto& m : modules)
+			bp->add_module(m.first);
+
+		std::vector<TypeinfoDatabase*> dbs;
+		for (auto& m : bp->modules)
+			dbs.push_back(m.db);
+
 		if (!no_compile)
 		{
 			auto templatecpp_path = ppath / L"template.cpp";
@@ -882,8 +892,8 @@ namespace flame
 						all_templates.push_back(n.type);
 
 						templatecpp << "\tBP_";
-						if (n.type[pos_t - 1] == 'N')
-							templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t);
+						if (find_enum(dbs, H(std::string(n.type.begin() + pos_t + 1, n.type.end() - 1).c_str())))
+							templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t) + "<int>";
 						else
 							templatecpp << tn_a2c(n.type);
 						templatecpp << "::add_udt_info(db, \"";
@@ -947,16 +957,6 @@ namespace flame
 #undef OUTPUT_FILE
 			}
 		}
-
-		auto bp = new BPPrivate();
-		bp->filename = filename;
-
-		for (auto& m : modules)
-			bp->add_module(m.first);
-
-		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& m : bp->modules)
-			dbs.push_back(m.db);
 
 		bp->self_module.module = load_module(ppath_str + L"/build/debug/bp.dll");
 		if (bp->self_module.module)
