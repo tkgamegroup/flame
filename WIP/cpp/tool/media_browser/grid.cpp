@@ -93,19 +93,6 @@ void clear_grids()
 	app->clear_delay_events();
 
 	w_grids->clear_widgets(0, -1, true);
-	for (auto i = 0; i < grid_hori_pic_cnt * grid_vert_pic_cnt; i++)
-	{
-		auto p = grid_slots[i];
-		if (p)
-		{
-			ui->set_imageview(1 + i, nullptr);
-			if (p->img_thumbnail)
-				graphics::Image::destroy(p->img_thumbnail);
-			p->img_thumbnail = nullptr;
-			p->w_img = nullptr;
-			grid_slots[i] = nullptr;
-		}
-	}
 }
 
 void create_grids()
@@ -115,20 +102,6 @@ void create_grids()
 		auto p = grid_slots[i];
 		if (p)
 		{
-			add_work([p, i]() {
-				auto img = get_thumbnai(100, p->filename.c_str());
-
-				app->add_delay_event([p, img, i]() {
-					p->img_thumbnail = graphics::Image::create_from_img(d, img);
-					ui->set_imageview(1 + i, graphics::Imageview::get(p->img_thumbnail));
-					p->w_img->inner_padding[0] = (100.f - img->size.x) * 0.5f;
-					p->w_img->inner_padding[1] = p->w_img->inner_padding[0];
-					p->w_img->inner_padding[2] = (100.f - img->size.y) * 0.5f;
-					p->w_img->inner_padding[3] = p->w_img->inner_padding[2];
-					destroy_img(img);
-				});
-			});
-
 			p->w_img = new UI::Image(ui);
 			p->w_img->size = Vec2(100.f);
 			p->w_img->align = UI::AlignLittleEnd;

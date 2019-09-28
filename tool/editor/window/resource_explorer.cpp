@@ -70,6 +70,7 @@ struct cResourceExplorer : Component
 
 	std::filesystem::path selected;
 	Entity* blank_menu;
+	Entity* dir_menu;
 	Entity* pf_menu;
 	Entity* bp_menu;
 
@@ -85,7 +86,7 @@ struct cResourceExplorer : Component
 		file_img = Image::create_from_file(app.d, L"../asset/ui/imgs/file.png");
 		file_img_v = Imageview::create(file_img);
 		file_img_idx = app.canvas->set_image(-1, file_img_v);
-		thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1020), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageSampled));
+		thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageSampled));
 		thumbnails_img->init(Vec4c(255));
 		thumbnails_img_v = Imageview::create(thumbnails_img);
 		thumbnails_img_idx = app.canvas->set_image(-1, thumbnails_img_v, FilterNearest);
@@ -96,10 +97,10 @@ struct cResourceExplorer : Component
 			{
 				if (x + 64 > thumbnails_img->size.x())
 				{
-					if (y + 64 > thumbnails_img->size.y())
-						break;
 					x = 0;
 					y += 64;
+					if (y + 64 > thumbnails_img->size.y())
+						break;
 				}
 				auto seat = new Seat;
 				seat->pos.x() = x;
@@ -176,6 +177,9 @@ struct cResourceExplorer : Component
 
 	void navigate(const std::filesystem::path& path)
 	{
+		wait_all_works();
+		looper().clear_delay_events();
+
 		curr_path = path;
 
 		looper().add_delay_event([](void* c) {
@@ -296,6 +300,11 @@ struct cResourceExplorer : Component
 					auto& capture = *(Capture*)c;
 					if (is_mouse_clicked(action, key, true))
 						capture.e->navigate(capture.p);
+					else if (is_mouse_down(action, key, true) && key == Mouse_Right)
+					{
+						capture.e->selected = capture.p;
+						popup_menu(capture.e->dir_menu, app.root, pos);
+					}
 				}, new_mail(&capture));
 			}
 			for (auto& p : files)
@@ -486,17 +495,33 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	{
 		c_explorer->base_path = path;
 
+		c_explorer->dir_menu = create_standard_menu();
+		{
+			{
+				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Goto");
+				c_explorer->dir_menu->add_child(item);
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto explorer = *(cResourceExplorer**)c;
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						destroy_topmost(app.root);
+						explorer->navigate(explorer->selected);
+					}
+				}, new_mail_p(c_explorer));
+			}
+		}
+
 		c_explorer->blank_menu = create_standard_menu();
 		{
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Prefab");
 				c_explorer->blank_menu->add_child(item);
 				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					auto c_explorer = *(cResourceExplorer**)c;
+					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						popup_input_dialog(c_explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
+						popup_input_dialog(explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
 							auto explorer = *(cResourceExplorer**)c;
 
 							if (ok)
@@ -505,7 +530,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 								Entity::save_to_file(app.dbs, e, explorer->curr_path / ext_replace(text, L".prefab"));
 								Entity::destroy(e);
 							}
-						}, new_mail_p(c_explorer));
+						}, new_mail_p(explorer));
 					}
 				}, new_mail_p(c_explorer));
 			}
@@ -513,11 +538,11 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New BP");
 				c_explorer->blank_menu->add_child(item);
 				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					auto c_explorer = *(cResourceExplorer**)c;
+					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						popup_input_dialog(c_explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
+						popup_input_dialog(explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
 							auto explorer = *(cResourceExplorer**)c;
 
 							if (ok)
@@ -528,7 +553,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 								bp->save_to_file(bp, p / L"bp");
 								BP::destroy(bp);
 							}
-						}, new_mail_p(c_explorer));
+						}, new_mail_p(explorer));
 					}
 				}, new_mail_p(c_explorer));
 			}
@@ -539,11 +564,11 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 			c_explorer->pf_menu->add_child(mi_open);
 			((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto c_explorer = *(cResourceExplorer**)c;
+				auto explorer = *(cResourceExplorer**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					destroy_topmost(app.root);
-					open_scene_editor(c_explorer->selected, Vec2f(450.f, 20.f));
+					open_scene_editor(explorer->selected, Vec2f(450.f, 20.f));
 				}
 			}, new_mail_p(c_explorer));
 		}
@@ -554,11 +579,11 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 				c_explorer->bp_menu->add_child(item);
 				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					auto c_explorer = *(cResourceExplorer**)c;
+					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						open_blueprint_editor(c_explorer->selected, false, Vec2f(450.f, 20.f));
+						open_blueprint_editor(explorer->selected, false, Vec2f(450.f, 20.f));
 					}
 				}, new_mail_p(c_explorer));
 			}
@@ -566,11 +591,11 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
 				c_explorer->bp_menu->add_child(item);
 				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					auto c_explorer = *(cResourceExplorer**)c;
+					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						open_blueprint_editor(c_explorer->selected, true, Vec2f(450.f, 20.f));
+						open_blueprint_editor(explorer->selected, true, Vec2f(450.f, 20.f));
 					}
 				}, new_mail_p(c_explorer));
 			}
