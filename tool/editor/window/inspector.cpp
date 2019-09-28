@@ -277,7 +277,8 @@ struct cInspectorPrivate : cInspector
 					e_close->add_component(cElement::create());
 
 					auto c_text = cText::create(app.font_atlas_pixel);
-					c_text->set_text(Icon_WINDOW_CLOSE);
+					c_text->color = Vec4c(200, 40, 20, 255);
+					c_text->set_text(Icon_TIMES);
 					e_close->add_component(c_text);
 
 					auto c_event_receiver = cEventReceiver::create();
@@ -290,6 +291,7 @@ struct cInspectorPrivate : cInspector
 					capture.c = component;
 					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 						auto& capture = *(Capture*)c;
+
 						if (is_mouse_clicked(action, key))
 						{
 							Capture _capture;

@@ -142,6 +142,7 @@ struct cResourceExplorer : Component
 				}
 			}
 			auto upward_item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" .."));
+			((cAligner*)upward_item->find_component(cH("Aligner")))->width_policy = SizeFixed;
 			((cListItem*)upward_item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
 			list->add_child(upward_item);
 			((cEventReceiver*)upward_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
@@ -155,6 +156,7 @@ struct cResourceExplorer : Component
 			for (auto& p : dirs)
 			{
 				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FOLDER_O + std::wstring(L" ") + p.filename().wstring());
+				((cAligner*)item->find_component(cH("Aligner")))->width_policy = SizeFixed;
 				((cListItem*)item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
 				list->add_child(item);
 				struct Capture
@@ -173,6 +175,7 @@ struct cResourceExplorer : Component
 			for (auto& p : files)
 			{
 				auto item = create_standard_listitem(app.font_atlas_pixel, 1.f, Icon_FILE_O + std::wstring(L" ") + p.filename().wstring());
+				((cAligner*)item->find_component(cH("Aligner")))->width_policy = SizeFixed;
 				((cListItem*)item->find_component(cH("ListItem")))->unselected_color_normal.a() = 0;
 				list->add_child(item);
 				struct Capture
@@ -351,6 +354,10 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 
 	auto e_list = create_standard_list(true);
 	{
+		auto c_layout = (cLayout*)e_list->find_component(cH("Layout"));
+		c_layout->type = LayoutGrid;
+		c_layout->column = 4;
+
 		auto c_event_receiver = (cEventReceiver*)e_list->find_component(cH("EventReceiver"));
 		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			auto exploter = *(cResourceExplorer**)c;

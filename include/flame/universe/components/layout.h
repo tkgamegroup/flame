@@ -18,6 +18,7 @@ namespace flame
 		bool height_fit_children;
 		uint fence; // children that exceed fence will under free layout
 		Vec2f scroll_offset;
+		uint column;
 
 		Vec2f content_size;
 

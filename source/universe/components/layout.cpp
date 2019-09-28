@@ -16,6 +16,7 @@ namespace flame
 			height_fit_children = true;
 			fence = -1;
 			scroll_offset = Vec2f(0.f);
+			column = 0;
 
 			content_size = Vec2f(0.f);
 		}
@@ -80,6 +81,28 @@ namespace flame
 				al.first->pos.y() = scroll_offset.y() + element->size.y() - padding[1] - al.first->size.y();
 				break;
 			}
+		}
+
+		void use_children_width(float w)
+		{
+			if (aligner && aligner->width_policy == SizeGreedy)
+			{
+				aligner->min_size.x() = w;
+				element->size.x() = max(element->size.x(), w);
+			}
+			else
+				element->size.x() = w;
+		}
+
+		void use_children_height(float h)
+		{
+			if (aligner && aligner->height_policy == SizeGreedy)
+			{
+				aligner->min_size.y() = h;
+				element->size.y() = max(element->size.y(), h);
+			}
+			else
+				element->size.y() = h;
 		}
 
 		void start()
@@ -153,17 +176,11 @@ namespace flame
 				content_size = Vec2f(w, h);
 				w += element->inner_padding_horizontal();
 				h += element->inner_padding_vertical();
-
 				if (width_fit_children)
-				{
-					if (aligner && aligner->width_policy == SizeGreedy)
-					{
-						aligner->min_size.x() = w;
-						element->size.x() = max(element->size.x(), w);
-					}
-					else
-						element->size.x() = w;
-				}
+					use_children_width(w);
+				if (height_fit_children)
+					use_children_height(h);
+
 				w = element->size.x() - w;
 				if (w > 0.f && factor > 0)
 					w /= factor;
@@ -184,16 +201,6 @@ namespace flame
 					assert(!al.second || al.second->x_align == AlignxFree);
 					al.first->pos.x() = scroll_offset.x() + x;
 					x += al.first->size.x() + item_padding;
-				}
-				if (height_fit_children)
-				{
-					if (aligner && aligner->height_policy == SizeGreedy)
-					{
-						aligner->min_size.y() = h;
-						element->size.y() = max(element->size.y(), h);
-					}
-					else
-						element->size.y() = h;
 				}
 				for (auto i = n; i < als.size(); i++)
 					apply_h_free_layout(als[i], false);
@@ -245,31 +252,15 @@ namespace flame
 				content_size = Vec2f(w, h);
 				w += element->inner_padding_horizontal();
 				h += element->inner_padding_vertical();
-
 				if (width_fit_children)
-				{
-					if (aligner && aligner->width_policy == SizeGreedy)
-					{
-						aligner->min_size.x() = w;
-						element->size.x() = max(element->size.x(), w);
-					}
-					else
-						element->size.x() = w;
-				}
+					use_children_width(w);
+				if (height_fit_children)
+					use_children_height(h);
+
 				for (auto i = 0; i < n; i++)
 					apply_h_free_layout(als[i], true);
 				for (auto i = n; i < als.size(); i++)
 					apply_h_free_layout(als[i], false);
-				if (height_fit_children)
-				{
-					if (aligner && aligner->height_policy == SizeGreedy)
-					{
-						aligner->min_size.y() = h;
-						element->size.y() = max(element->size.y(), h);
-					}
-					else
-						element->size.y() = h;
-				}
 				h = element->size.y() - h;
 				if (h > 0.f && factor > 0)
 					h /= factor;
@@ -293,6 +284,108 @@ namespace flame
 				}
 				for (auto i = n; i < als.size(); i++)
 					apply_v_free_layout(als[i], false);
+			}
+				break;
+			case LayoutGrid:
+			{
+				auto n = min(fence, (uint)als.size());
+
+				if (column == 0)
+				{
+					content_size = Vec2f(0.f);
+					if (width_fit_children)
+						use_children_width(element->inner_padding_horizontal());
+					if (height_fit_children)
+						use_children_height(element->inner_padding_vertical());
+					for (auto i = 0; i < n; i++)
+					{
+						auto& al = als[i];
+
+						assert(!al.second || (al.second->x_align == AlignxFree && al.second->y_align == AlignyFree));
+
+						al.first->pos.x() = scroll_offset.x() + element->inner_padding[0];
+						al.first->pos.y() = scroll_offset.y() + element->inner_padding[1];
+					}
+					for (auto i = n; i < als.size(); i++)
+					{
+						apply_h_free_layout(als[i], false);
+						apply_v_free_layout(als[i], false);
+					}
+				}
+				else
+				{
+					auto w = 0.f;
+					auto h = 0.f;
+					auto lw = 0.f;
+					auto lh = 0.f;
+					auto c = 0;
+					for (auto i = 0; i < n; i++)
+					{
+						auto& al = als[i];
+
+						assert(!al.second || (al.second->width_policy == SizeFixed && al.second->height_policy == SizeFixed));
+
+						lw += al.first->size.x() + item_padding;
+						lh = max(al.first->size.y(), lh);
+
+						c++;
+						if (c == column)
+						{
+							w = max(lw - item_padding, w);
+							h += lh + item_padding;
+							lw = 0.f;
+							lh = 0.f;
+							c = 0;
+						}
+					}
+					if (fence > 0 && !als.empty())
+					{
+						if (n % column != 0)
+						{
+							w = max(lw - item_padding, w);
+							h += lh + item_padding;
+						}
+						h -= item_padding;
+					}
+					content_size = Vec2f(w, h);
+					w += element->inner_padding_horizontal();
+					h += element->inner_padding_vertical();
+					if (width_fit_children)
+						use_children_width(w);
+					if (height_fit_children)
+						use_children_height(h);
+
+					auto x = element->inner_padding[0];
+					auto y = element->inner_padding[1];
+					lh = 0.f;
+					c = 0;
+					for (auto i = 0; i < n; i++)
+					{
+						auto& al = als[i];
+
+						assert(!al.second || (al.second->x_align == AlignxFree && al.second->y_align == AlignyFree));
+
+						al.first->pos.x() = x;
+						al.first->pos.y() = y;
+
+						x += al.first->size.x() + item_padding;
+						lh = max(al.first->size.y(), lh);
+
+						c++;
+						if (c == column)
+						{
+							x = element->inner_padding[0];
+							y += lh + item_padding;
+							lh = 0.f;
+							c = 0;
+						}
+					}
+					for (auto i = n; i < als.size(); i++)
+					{
+						apply_h_free_layout(als[i], false);
+						apply_v_free_layout(als[i], false);
+					}
+				}
 			}
 				break;
 			}
