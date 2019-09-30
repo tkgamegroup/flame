@@ -8,7 +8,14 @@
 
 namespace flame
 {
-	enum Alignx$
+	enum EventReceiverState
+	{
+		EventReceiverNormal,
+		EventReceiverHovering,
+		EventReceiverActive
+	};
+
+	enum Alignx
 	{
 		AlignxFree,
 		AlignxLeft,
@@ -16,7 +23,7 @@ namespace flame
 		AlignxRight
 	};
 
-	enum Aligny$
+	enum Aligny
 	{
 		AlignyFree,
 		AlignyTop,
@@ -24,14 +31,14 @@ namespace flame
 		AlignyBottom
 	};
 
-	enum SizePolicy$
+	enum SizePolicy
 	{
 		SizeFixed,
 		SizeFitParent,
 		SizeGreedy
 	};
 
-	enum LayoutType$
+	enum LayoutType
 	{
 		LayoutFree,
 		LayoutVertical,

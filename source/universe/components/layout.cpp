@@ -6,7 +6,7 @@ namespace flame
 {
 	struct cLayoutPrivate : cLayout
 	{
-		cLayoutPrivate(LayoutType$ _type)
+		cLayoutPrivate(LayoutType _type)
 		{
 			element = nullptr;
 
@@ -418,7 +418,7 @@ namespace flame
 		return ((cLayoutPrivate*)this)->copy();
 	}
 
-	cLayout* cLayout::create(LayoutType$ type)
+	cLayout* cLayout::create(LayoutType type)
 	{
 		return new cLayoutPrivate(type);
 	}

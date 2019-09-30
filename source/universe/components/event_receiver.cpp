@@ -15,6 +15,7 @@ namespace flame
 		focusing = false;
 		active = false;
 		dragging = false;
+		state = EventReceiverNormal;
 
 		drag_hash = 0;
 	}
@@ -84,6 +85,15 @@ namespace flame
 		return c;
 	}
 
+	void* cEventReceiver::add_state_changed_listener(void (*listener)(void* c, EventReceiverState prev_state, EventReceiverState curr_state), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, EventReceiverState prev_state, EventReceiverState curr_state)>;
+		c->function = listener;
+		c->capture = capture;
+		((cEventReceiverPrivate*)this)->state_changed_listeners.emplace_back(c);
+		return c;
+	}
+
 	void cEventReceiver::remove_focus_listener(void* ret_by_add)
 	{
 		auto& listeners = ((cEventReceiverPrivate*)this)->focus_listeners;
@@ -136,6 +146,19 @@ namespace flame
 		}
 	}
 
+	void cEventReceiver::remove_state_changed_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->state_changed_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
+	}
+
 	void cEventReceiver::on_focus(FocusType type)
 	{
 		auto& listeners = ((cEventReceiverPrivate*)this)->focus_listeners;
@@ -162,6 +185,13 @@ namespace flame
 		auto& listeners = ((cEventReceiverPrivate*)this)->drag_and_drop_listeners;
 		for (auto& l : listeners)
 			l->function(l->capture.p, action, er, pos);
+	}
+
+	void cEventReceiver::on_state_changed(EventReceiverState prev_state, EventReceiverState curr_state)
+	{
+		auto& listeners = ((cEventReceiverPrivate*)this)->state_changed_listeners;
+		for (auto& l : listeners)
+			l->function(l->capture.p, prev_state, curr_state);
 	}
 
 	void cEventReceiver::start()

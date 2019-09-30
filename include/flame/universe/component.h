@@ -31,9 +31,10 @@ namespace flame
 		virtual Component* copy() { return nullptr; }
 	};
 
-	// each component type should has a type for serialization
-	// the type name is component type name + 'A$'
+	// component type may has a type for serialization
+	// the type name is 'Component' + component type name
 	// the type contains the data for serialization
-	// the type should has a static function called 'create' that returns the component
-	// the type should has a static function called 'save' that takes the component for parameter to save it
+	// the type should has a function called 'create' that returns the component
+	// the type should has a function called 'save' that takes the component for parameter to save it
+	// the type may has a function called 'data_changed' that takes the data name hash for parameter to update compoent's corresponding data
 }

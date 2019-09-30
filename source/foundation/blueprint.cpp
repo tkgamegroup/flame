@@ -58,6 +58,8 @@ namespace flame
 	{
 		std::wstring filename;
 
+		std::vector<BP*> imports;
+
 		std::vector<Module> modules;
 		Module self_module;
 

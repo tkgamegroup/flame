@@ -10,6 +10,7 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, int value)>>> key_listeners;
 		std::vector<std::unique_ptr<Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & value)>>> mouse_listeners;
 		std::vector<std::unique_ptr<Closure<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2f & pos)>>> drag_and_drop_listeners;
+		std::vector<std::unique_ptr<Closure<void(void* c, EventReceiverState prev_state, EventReceiverState curr_state)>>> state_changed_listeners;
 
 		cEventReceiverPrivate();
 		~cEventReceiverPrivate();

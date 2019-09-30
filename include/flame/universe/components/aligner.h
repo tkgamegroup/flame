@@ -10,12 +10,12 @@ namespace flame
 	{
 		cElement* element;
 
-		Alignx$ x_align;
-		Aligny$ y_align;
+		Alignx x_align;
+		Aligny y_align;
 		Vec2f min_size;
-		SizePolicy$ width_policy;
+		SizePolicy width_policy;
 		float width_factor;
-		SizePolicy$ height_policy;
+		SizePolicy height_policy;
 		float height_factor;
 		bool using_padding; // using layout's padding
 

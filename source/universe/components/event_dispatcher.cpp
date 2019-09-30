@@ -114,12 +114,11 @@ namespace flame
 				}
 			}
 
+			auto prev_hovering = hovering;
+			auto prev_hovering_active = (hovering && hovering->active) ? true : false;
 			auto prev_focusing = focusing;
-			auto prev_dragging = focusing;
-			if (!focusing || !focusing->dragging)
-				prev_dragging = nullptr;
+			auto prev_dragging = (!focusing || !focusing->dragging) ? nullptr : focusing;
 			auto prev_drag_overing = drag_overing;
-			drag_overing = nullptr;
 
 			if (focusing)
 			{
@@ -138,6 +137,7 @@ namespace flame
 				}
 			}
 
+			drag_overing = nullptr;
 			if (focusing && focusing->active)
 			{
 				if (focusing->drag_hash != 0 && !focusing->dragging)
@@ -261,6 +261,24 @@ namespace flame
 					potential_dbclick_er = focusing;
 			}
 
+			if (prev_hovering != hovering)
+			{
+				if (prev_hovering)
+				{
+					prev_hovering->on_state_changed(prev_hovering->state, EventReceiverNormal);
+					prev_hovering->state = EventReceiverNormal;
+				}
+				if (hovering)
+				{
+					hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
+					hovering->on_state_changed(EventReceiverNormal, hovering->state);
+				}
+			}
+			else if (hovering && hovering->active != prev_hovering_active)
+			{
+				hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
+				hovering->on_state_changed(prev_hovering_active ? EventReceiverActive : EventReceiverHovering, hovering->state);
+			}
 			if (!prev_dragging && focusing && focusing->dragging)
 				focusing->on_drag_and_drop(DragStart, nullptr, Vec2f(mouse_pos));
 			else if (prev_dragging && (!focusing || !focusing->dragging))

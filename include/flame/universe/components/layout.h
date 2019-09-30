@@ -12,7 +12,7 @@ namespace flame
 		cElement* element;
 		cAligner* aligner;
 
-		LayoutType$ type;
+		LayoutType type;
 		float item_padding;
 		bool width_fit_children;
 		bool height_fit_children;
@@ -31,6 +31,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
-		FLAME_UNIVERSE_EXPORTS static cLayout* create(LayoutType$ type);
+		FLAME_UNIVERSE_EXPORTS static cLayout* create(LayoutType type);
 	};
 }

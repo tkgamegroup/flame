@@ -31,6 +31,12 @@ namespace flame
 	{
 		struct Node;
 
+		struct Import
+		{
+			BP* bp;
+			std::string id;
+		};
+
 		struct Module
 		{
 			std::wstring filename;
