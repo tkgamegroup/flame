@@ -28,6 +28,8 @@ namespace flame
 			selected_color_hovering = default_style.selected_color_hovering;
 			selected_color_active = default_style.selected_color_active;
 
+			idx = -1;
+
 			mouse_listener = nullptr;
 		}
 
@@ -35,6 +37,30 @@ namespace flame
 		{
 			if (!entity->dying)
 				event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void do_style(bool selected)
+		{
+			if (!selected)
+			{
+				if (style)
+				{
+					style->color_normal = unselected_color_normal;
+					style->color_hovering = unselected_color_hovering;
+					style->color_active = unselected_color_active;
+					style->style();
+				}
+			}
+			else
+			{
+				if (style)
+				{
+					style->color_normal = selected_color_normal;
+					style->color_hovering = selected_color_hovering;
+					style->color_active = selected_color_active;
+					style->style();
+				}
+			}
 		}
 
 		void start()
@@ -58,36 +84,14 @@ namespace flame
 					destroy_topmost(thiz->combobox->menu_button->root);
 				}
 			}, new_mail_p(this));
-		}
 
-		void update()
-		{
-			if (style)
-			{
-				if (combobox->selected == entity)
-				{
-					style->color_normal = selected_color_normal;
-					style->color_hovering = selected_color_hovering;
-					style->color_active = selected_color_active;
-				}
-				else
-				{
-					style->color_normal = unselected_color_normal;
-					style->color_hovering = unselected_color_hovering;
-					style->color_active = unselected_color_active;
-				}
-			}
+			do_style(combobox && combobox->selected == entity);
 		}
 	};
 
 	void cComboboxItem::start()
 	{
 		((cComboboxItemPrivate*)this)->start();
-	}
-
-	void cComboboxItem::update()
-	{
-		((cComboboxItemPrivate*)this)->update();
 	}
 
 	cComboboxItem* cComboboxItem::create()
@@ -163,18 +167,28 @@ namespace flame
 			return;
 		}
 
+		if (selected)
+		{
+			auto comboboxitem = (cComboboxItemPrivate*)selected->find_component(cH("ComboboxItem"));
+			if (comboboxitem)
+				comboboxitem->do_style(false);
+		}
 		if (idx < 0)
 		{
 			selected = nullptr;
 			text->set_text(L"");
-			if (trigger_changed)
-				((cComboboxPrivate*)this)->on_changed(-1);
-			return;
 		}
-
-		auto menu = menu_button->menu;
-		selected = menu->child(idx);
-		text->set_text(((cText*)(selected->find_component(cH("Text"))))->text());
+		else
+		{
+			auto menu = menu_button->menu;
+			selected = menu->child(idx);
+			text->set_text(((cText*)(selected->find_component(cH("Text"))))->text());
+			{
+				auto comboboxitem = (cComboboxItemPrivate*)selected->find_component(cH("ComboboxItem"));
+				if (comboboxitem)
+					comboboxitem->do_style(true);
+			}
+		}
 		if (trigger_changed)
 			((cComboboxPrivate*)this)->on_changed(idx);
 	}

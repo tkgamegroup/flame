@@ -40,7 +40,7 @@ namespace flame
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
-		void style(bool selected)
+		void do_style(bool selected)
 		{
 			if (!selected)
 			{
@@ -94,7 +94,7 @@ namespace flame
 				}
 			}, new_mail_p(this));
 
-			style(list && list->selected == entity);
+			do_style(list && list->selected == entity);
 		}
 
 		Component* copy()
@@ -196,13 +196,13 @@ namespace flame
 		{
 			auto listitem = (cListItemPrivate*)selected->find_component(cH("ListItem"));
 			if (listitem)
-				listitem->style(false);
+				listitem->do_style(false);
 		}
 		if (e)
 		{
 			auto listitem = (cListItemPrivate*)e->find_component(cH("ListItem"));
 			if (listitem)
-				listitem->style(true);
+				listitem->do_style(true);
 		}
 		selected = e;
 		if (trigger_changed)
