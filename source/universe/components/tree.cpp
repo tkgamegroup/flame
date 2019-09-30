@@ -38,6 +38,30 @@ namespace flame
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
+		void do_style(bool selected)
+		{
+			if (!selected)
+			{
+				if (style)
+				{
+					style->color_normal = unselected_color_normal;
+					style->color_hovering = unselected_color_hovering;
+					style->color_active = unselected_color_active;
+					style->style();
+				}
+			}
+			else
+			{
+				if (style)
+				{
+					style->color_normal = selected_color_normal;
+					style->color_hovering = selected_color_hovering;
+					style->color_active = selected_color_active;
+					style->style();
+				}
+			}
+		}
+
 		void start()
 		{
 			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
@@ -60,36 +84,14 @@ namespace flame
 					thiz->tree->set_selected(thiz->entity);
 				}
 			}, new_mail_p(this));
-		}
 
-		void update()
-		{
-			if (style)
-			{
-				if (tree->selected == entity)
-				{
-					style->color_normal = selected_color_normal;
-					style->color_hovering = selected_color_hovering;
-					style->color_active = selected_color_active;
-				}
-				else
-				{
-					style->color_normal = unselected_color_normal;
-					style->color_hovering = unselected_color_hovering;
-					style->color_active = unselected_color_active;
-				}
-			}
+			do_style(tree->selected == entity);
 		}
 	};
 
 	void cTreeLeaf::start()
 	{
 		((cTreeLeafPrivate*)this)->start();
-	}
-
-	void cTreeLeaf::update()
-	{
-		((cTreeLeafPrivate*)this)->update();
 	}
 
 	cTreeLeaf* cTreeLeaf::create()
@@ -136,6 +138,30 @@ namespace flame
 			}
 		}
 
+		void do_style(bool selected)
+		{
+			if (!selected)
+			{
+				if (title_style)
+				{
+					title_style->color_normal = unselected_color_normal;
+					title_style->color_hovering = unselected_color_hovering;
+					title_style->color_active = unselected_color_active;
+					title_style->style();
+				}
+			}
+			else
+			{
+				if (title_style)
+				{
+					title_style->color_normal = selected_color_normal;
+					title_style->color_hovering = selected_color_hovering;
+					title_style->color_active = selected_color_active;
+					title_style->style();
+				}
+			}
+		}
+
 		void start()
 		{
 			auto e_title = entity->child(0);
@@ -175,36 +201,14 @@ namespace flame
 					thiz->arrow_text->set_text(e->visible ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
 				}
 			}, new_mail_p(this));
-		}
 
-		void update()
-		{
-			if (title_style)
-			{
-				if (tree->selected == entity)
-				{
-					title_style->color_normal = selected_color_normal;
-					title_style->color_hovering = selected_color_hovering;
-					title_style->color_active = selected_color_active;
-				}
-				else
-				{
-					title_style->color_normal = unselected_color_normal;
-					title_style->color_hovering = unselected_color_hovering;
-					title_style->color_active = unselected_color_active;
-				}
-			}
+			do_style(tree->selected == entity);
 		}
 	};
 
 	void cTreeNode::start()
 	{
 		((cTreeNodePrivate*)this)->start();
-	}
-
-	void cTreeNode::update()
-	{
-		((cTreeNodePrivate*)this)->update();
 	}
 
 	cTreeNode* cTreeNode::create()
@@ -214,7 +218,35 @@ namespace flame
 
 	struct cTreePrivate : cTree
 	{
+		void* mouse_listener;
+
 		std::vector<std::unique_ptr<Closure<void(void* c, Entity * selected)>>> selected_changed_listeners;
+
+		cTreePrivate()
+		{
+			event_receiver = nullptr;
+
+			selected = nullptr;
+		}
+
+		~cTreePrivate()
+		{
+			if (!entity->dying)
+				event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void start()
+		{
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = *(cTreePrivate**)c;
+
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					thiz->set_selected(nullptr);
+			}, new_mail_p(this));
+		}
 	};
 
 	void* cTree::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
@@ -241,6 +273,30 @@ namespace flame
 
 	void cTree::set_selected(Entity* e, bool trigger_changed)
 	{
+		if (selected)
+		{
+			auto treeleaf = (cTreeLeafPrivate*)selected->find_component(cH("TreeLeaf"));
+			if (treeleaf)
+				treeleaf->do_style(false);
+			else
+			{
+				auto treenode = (cTreeNodePrivate*)selected->find_component(cH("TreeNode"));
+				if (treenode)
+					treenode->do_style(false);
+			}
+		}
+		if (e)
+		{
+			auto treeleaf = (cTreeLeafPrivate*)e->find_component(cH("TreeLeaf"));
+			if (treeleaf)
+				treeleaf->do_style(true);
+			else
+			{
+				auto treenode = (cTreeNodePrivate*)e->find_component(cH("TreeNode"));
+				if (treenode)
+					treenode->do_style(true);
+			}
+		}
 		selected = e;
 		if (trigger_changed)
 		{
@@ -250,8 +306,9 @@ namespace flame
 		}
 	}
 
-	void cTree::update()
+	void cTree::start()
 	{
+		((cTreePrivate*)this)->start();
 	}
 
 	cTree* cTree::create()
@@ -265,8 +322,7 @@ namespace flame
 		{
 			e_tree->add_component(cElement::create());
 
-			auto c_event_receiver = cEventReceiver::create();
-			e_tree->add_component(c_event_receiver);
+			e_tree->add_component(cEventReceiver::create());
 
 			if (size_fit_parent)
 			{
@@ -282,14 +338,7 @@ namespace flame
 			c_layout->height_fit_children = !size_fit_parent;
 			e_tree->add_component(c_layout);
 
-			auto c_tree = cTree::create();
-			e_tree->add_component(c_tree);
-
-			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto tree = *(cTree**)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					tree->set_selected(nullptr);
-			}, new_mail_p(c_tree));
+			e_tree->add_component(cTree::create());
 		}
 
 		return e_tree;

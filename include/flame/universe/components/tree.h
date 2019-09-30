@@ -34,7 +34,6 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cTreeLeaf* create();
 	};
@@ -60,13 +59,14 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
 	};
 
 	struct cTree : Component
 	{
+		cEventReceiver* event_receiver;
+
 		Entity* selected;
 
 		cTree() :
@@ -80,7 +80,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 
 		FLAME_UNIVERSE_EXPORTS static cTree* create();
 	};

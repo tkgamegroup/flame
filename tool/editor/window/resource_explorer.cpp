@@ -266,7 +266,7 @@ struct cResourceExplorer : Component
 				}
 			}
 
-			((cList*)list->find_component(cH("List")))->set_selected(nullptr);
+			((cList*)list->find_component(cH("List")))->set_selected(nullptr, false);
 			list->remove_all_children();
 
 			std::vector<std::filesystem::path> dirs;

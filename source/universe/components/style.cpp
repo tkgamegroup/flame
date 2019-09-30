@@ -65,8 +65,11 @@ namespace flame
 
 	void cStyleColor::style()
 	{
-		auto state = event_receiver->state;
-		((cStyleColorPrivate*)this)->style(state, state);
+		if (event_receiver)
+		{
+			auto state = event_receiver->state;
+			((cStyleColorPrivate*)this)->style(state, state);
+		}
 	}
 
 	void cStyleColor::start()

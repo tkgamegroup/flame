@@ -198,9 +198,9 @@ void cHierarchy::refresh_selected()
 {
 	auto tree = (cTree*)e_tree->find_component(cH("Tree"));
 	if (!editor->selected)
-		tree->selected = nullptr;
+		tree->set_selected(nullptr, false);
 	else
-		tree->selected = find_item(editor->selected);
+		tree->set_selected(find_item(editor->selected), false);
 }
 
 void cHierarchy::refresh()
