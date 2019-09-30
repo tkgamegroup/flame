@@ -133,22 +133,24 @@ namespace flame
 
 	struct cListPrivate : cList
 	{
+		bool select_air_when_clicked;
 		void* mouse_listener;
 
 		std::vector<std::unique_ptr<Closure<void(void* c, Entity* selected)>>> selected_changed_listeners;
 
-		cListPrivate()
+		cListPrivate(bool _select_air_when_clicked)
 		{
 			event_receiver = nullptr;
 
 			selected = nullptr;
 
+			select_air_when_clicked = _select_air_when_clicked;
 			mouse_listener = nullptr;
 		}
 
 		~cListPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying && mouse_listener)
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
@@ -157,12 +159,21 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = *(cListPrivate**)c;
+			if (select_air_when_clicked)
+			{
+				mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					auto thiz = *(cListPrivate**)c;
 
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					thiz->set_selected(nullptr);
-			}, new_mail_p(this));
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+						thiz->set_selected(nullptr);
+				}, new_mail_p(this));
+			}
+		}
+
+		Component* copy()
+		{
+			auto copy = new cListPrivate(select_air_when_clicked);
+			return copy;
 		}
 	};
 
@@ -220,12 +231,12 @@ namespace flame
 
 	Component* cList::copy()
 	{
-		return new cListPrivate();
+		return ((cListPrivate*)this)->copy();
 	}
 
-	cList* cList::create()
+	cList* cList::create(bool select_air_when_clicked)
 	{
-		return new cListPrivate();
+		return new cListPrivate(select_air_when_clicked);
 	}
 
 	Entity* create_standard_list(bool size_fit_parent)

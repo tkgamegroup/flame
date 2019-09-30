@@ -39,8 +39,8 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
 		c_element->pos = pos;
-		c_element->size.x() = 400.f;
-		c_element->size.y() = 300.f;
+		c_element->size.x() = 421.f;
+		c_element->size.y() = 323.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();

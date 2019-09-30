@@ -1416,8 +1416,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
 		c_element->pos = pos;
-		c_element->size.x() = 1052.f;
-		c_element->size.y() = 963.f;
+		c_element->size.x() = 1483.f;
+		c_element->size.y() = 711.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -1975,8 +1975,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}, new_mail_p(c_editor), [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		editor->console_tab = nullptr;
-	}, new_mail_p(c_editor), filename + L":", Vec2f(1505.f, 20.f));
+	}, new_mail_p(c_editor), filename + L":", Vec2f(1495.f, 10.f));
 	c_editor->console_tab = (cDockerTab*)console_page->parent()->parent()->child(0)->child(0)->find_component(cH("DockerTab"));
 
-	open_image_viewer(c_editor->rt_id, Vec2f(20.f, 655.f));
+	open_image_viewer(c_editor->rt_id, Vec2f(1495.f, 339.f));
 }

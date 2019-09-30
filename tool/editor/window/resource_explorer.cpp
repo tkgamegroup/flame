@@ -585,7 +585,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						open_blueprint_editor(explorer->selected, false, Vec2f(450.f, 20.f));
+						open_blueprint_editor(explorer->selected, false, Vec2f(4.f, 10.f));
 					}
 				}, new_mail_p(c_explorer));
 			}
@@ -597,7 +597,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						open_blueprint_editor(explorer->selected, true, Vec2f(450.f, 20.f));
+						open_blueprint_editor(explorer->selected, true, Vec2f(4.f, 10.f));
 					}
 				}, new_mail_p(c_explorer));
 			}

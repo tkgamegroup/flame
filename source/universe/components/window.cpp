@@ -960,7 +960,7 @@ namespace flame
 
 				e_tabbar->add_component(cLayout::create(LayoutHorizontal));
 
-				e_tabbar->add_component(cList::create());
+				e_tabbar->add_component(cList::create(false));
 
 				e_tabbar->add_component(cDockerTabbar::create());
 			}

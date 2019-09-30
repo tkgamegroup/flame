@@ -64,7 +64,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
-		FLAME_UNIVERSE_EXPORTS static cList* create();
+		FLAME_UNIVERSE_EXPORTS static cList* create(bool select_air_when_clicked = true);
 	};
 
 	FLAME_UNIVERSE_EXPORTS Entity* create_standard_list(bool size_fit_parent);
