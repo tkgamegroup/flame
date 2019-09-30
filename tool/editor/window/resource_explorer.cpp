@@ -266,8 +266,8 @@ struct cResourceExplorer : Component
 				}
 			}
 
+			((cList*)list->find_component(cH("List")))->set_selected(nullptr);
 			list->remove_all_children();
-			((cList*)list->find_component(cH("List")))->selected = nullptr;
 
 			std::vector<std::filesystem::path> dirs;
 			std::vector<std::filesystem::path> files;
@@ -624,14 +624,12 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_layout->column = 4;
 		c_explorer->c_list_layout = c_layout;
 
-		auto c_event_receiver = (cEventReceiver*)e_list->find_component(cH("EventReceiver"));
-		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		((cEventReceiver*)e_list->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 			auto exploter = *(cResourceExplorer**)c;
 
 			if (is_mouse_down(action, key, true) && key == Mouse_Right)
 				popup_menu(exploter->blank_menu, app.root, pos);
 		}, new_mail_p(c_explorer));
-		e_list->add_component(c_event_receiver);
 	}
 	c_explorer->e_list = e_list;
 

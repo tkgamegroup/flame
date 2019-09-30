@@ -63,14 +63,15 @@ namespace flame
 		}
 	};
 
+	void cStyleColor::style()
+	{
+		auto state = event_receiver->state;
+		((cStyleColorPrivate*)this)->style(state, state);
+	}
+
 	void cStyleColor::start()
 	{
 		((cStyleColorPrivate*)this)->start();
-	}
-
-	void cStyleColor::update()
-	{
-		((cStyleColorPrivate*)this)->update();
 	}
 
 	Component* cStyleColor::copy()
@@ -137,14 +138,15 @@ namespace flame
 		}
 	};
 
+	void cStyleTextColor::style()
+	{
+		auto state = event_receiver->state;
+		((cStyleTextColorPrivate*)this)->style(state, state);
+	}
+
 	void cStyleTextColor::start()
 	{
 		((cStyleTextColorPrivate*)this)->start();
-	}
-
-	void cStyleTextColor::update()
-	{
-		((cStyleTextColorPrivate*)this)->update();
 	}
 
 	Component* cStyleTextColor::copy()

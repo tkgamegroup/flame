@@ -39,7 +39,6 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cListItem* create();
@@ -47,6 +46,8 @@ namespace flame
 
 	struct cList : Component
 	{
+		cEventReceiver* event_receiver;
+
 		Entity* selected;
 
 		cList() :
@@ -60,7 +61,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cList* create();

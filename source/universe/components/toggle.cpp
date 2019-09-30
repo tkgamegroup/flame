@@ -11,6 +11,8 @@ namespace flame
 	{
 		void* mouse_listener;
 
+		std::vector<std::unique_ptr<Closure<void(void* c, bool toggled)>>> changed_listeners;
+
 		cTogglePrivate()
 		{
 			element = nullptr;
@@ -47,40 +49,66 @@ namespace flame
 				if (is_mouse_clicked(action, key))
 				{
 					auto thiz = *(cTogglePrivate**)c;
-					thiz->toggled = !thiz->toggled;
+					thiz->set_toggled(!thiz->toggled);
 				}
 
 			}, new_mail_p(this));
-		}
 
-		void update()
-		{
-			if (style)
-			{
-				if (!toggled)
-				{
-					style->color_normal = untoggled_color_normal;
-					style->color_hovering = untoggled_color_hovering;
-					style->color_active = untoggled_color_active;
-				}
-				else
-				{
-					style->color_normal = toggled_color_normal;
-					style->color_hovering = toggled_color_hovering;
-					style->color_active = toggled_color_active;
-				}
-			}
+			set_toggled(false);
 		}
 	};
+
+	void* cToggle::add_changed_listener(void (*listener)(void* c, bool checked), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c, bool toggled)>;
+		c->function = listener;
+		c->capture = capture;
+		((cTogglePrivate*)this)->changed_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cToggle::remove_changed_listener(void* ret_by_add)
+	{
+		auto& listeners = ((cTogglePrivate*)this)->changed_listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == ret_by_add)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
+	}
+
+	void cToggle::set_toggled(bool _toggled, bool trigger_changed)
+	{
+		toggled = _toggled;
+		if (style)
+		{
+			if (!toggled)
+			{
+				style->color_normal = untoggled_color_normal;
+				style->color_hovering = untoggled_color_hovering;
+				style->color_active = untoggled_color_active;
+			}
+			else
+			{
+				style->color_normal = toggled_color_normal;
+				style->color_hovering = toggled_color_hovering;
+				style->color_active = toggled_color_active;
+			}
+			style->style();
+		}
+		if (trigger_changed)
+		{
+			for (auto& l : ((cTogglePrivate*)this)->changed_listeners)
+				l->function(l->capture.p, toggled);
+		}
+	}
 
 	void cToggle::start()
 	{
 		((cTogglePrivate*)this)->start();
-	}
-
-	void cToggle::update()
-	{
-		((cTogglePrivate*)this)->update();
 	}
 
 	cToggle* cToggle::create()

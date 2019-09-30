@@ -40,6 +40,42 @@ namespace flame
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
+		void style(bool selected)
+		{
+			if (!selected)
+			{
+				if (background_style)
+				{
+					background_style->color_normal = unselected_color_normal;
+					background_style->color_hovering = unselected_color_hovering;
+					background_style->color_active = unselected_color_active;
+					background_style->style();
+				}
+				if (text_style)
+				{
+					text_style->color_normal = unselected_text_color_normal;
+					text_style->color_else = unselected_text_color_else;
+					text_style->style();
+				}
+			}
+			else
+			{
+				if (background_style)
+				{
+					background_style->color_normal = selected_color_normal;
+					background_style->color_hovering = selected_color_hovering;
+					background_style->color_active = selected_color_active;
+					background_style->style();
+				}
+				if (text_style)
+				{
+					text_style->color_normal = selected_text_color_normal;
+					text_style->color_else = selected_text_color_else;
+					text_style->style();
+				}
+			}
+		}
+
 		void start()
 		{
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
@@ -49,45 +85,16 @@ namespace flame
 			list = (cList*)(entity->parent()->find_component(cH("List")));
 
 			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = *(cListItemPrivate**)c;
+
 				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 				{
-					auto thiz = *(cListItemPrivate**)c;
 					if (thiz->list)
 						thiz->list->set_selected(thiz->entity);
 				}
 			}, new_mail_p(this));
-		}
 
-		void update()
-		{
-			if (background_style)
-			{
-				if (list && list->selected == entity)
-				{
-					background_style->color_normal = selected_color_normal;
-					background_style->color_hovering = selected_color_hovering;
-					background_style->color_active = selected_color_active;
-				}
-				else
-				{
-					background_style->color_normal = unselected_color_normal;
-					background_style->color_hovering = unselected_color_hovering;
-					background_style->color_active = unselected_color_active;
-				}
-			}
-			if (text_style)
-			{
-				if (list && list->selected == entity)
-				{
-					text_style->color_normal = selected_text_color_normal;
-					text_style->color_else = selected_text_color_else;
-				}
-				else
-				{
-					text_style->color_normal = unselected_text_color_normal;
-					text_style->color_else = unselected_text_color_else;
-				}
-			}
+			style(list && list->selected == entity);
 		}
 
 		Component* copy()
@@ -114,11 +121,6 @@ namespace flame
 		((cListItemPrivate*)this)->start();
 	}
 
-	void cListItem::update()
-	{
-		((cListItemPrivate*)this)->update();
-	}
-
 	Component* cListItem::copy()
 	{
 		return ((cListItemPrivate*)this)->copy();
@@ -131,7 +133,37 @@ namespace flame
 
 	struct cListPrivate : cList
 	{
+		void* mouse_listener;
+
 		std::vector<std::unique_ptr<Closure<void(void* c, Entity* selected)>>> selected_changed_listeners;
+
+		cListPrivate()
+		{
+			event_receiver = nullptr;
+
+			selected = nullptr;
+
+			mouse_listener = nullptr;
+		}
+
+		~cListPrivate()
+		{
+			if (!entity->dying)
+				event_receiver->remove_mouse_listener(mouse_listener);
+		}
+
+		void start()
+		{
+			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+			assert(event_receiver);
+
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = *(cListPrivate**)c;
+
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					thiz->set_selected(nullptr);
+			}, new_mail_p(this));
+		}
 	};
 
 	void* cList::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
@@ -158,6 +190,20 @@ namespace flame
 
 	void cList::set_selected(Entity* e, bool trigger_changed)
 	{
+		if (selected == e)
+			return;
+		if (selected)
+		{
+			auto listitem = (cListItemPrivate*)selected->find_component(cH("ListItem"));
+			if (listitem)
+				listitem->style(false);
+		}
+		if (e)
+		{
+			auto listitem = (cListItemPrivate*)e->find_component(cH("ListItem"));
+			if (listitem)
+				listitem->style(true);
+		}
 		selected = e;
 		if (trigger_changed)
 		{
@@ -167,8 +213,9 @@ namespace flame
 		}
 	}
 
-	void cList::update()
+	void cList::start()
 	{
+		((cListPrivate*)this)->start();
 	}
 
 	Component* cList::copy()
@@ -187,8 +234,7 @@ namespace flame
 		{
 			e_list->add_component(cElement::create());
 
-			auto c_event_receiver = cEventReceiver::create();
-			e_list->add_component(c_event_receiver);
+			e_list->add_component(cEventReceiver::create());
 
 			if (size_fit_parent)
 			{
@@ -204,15 +250,7 @@ namespace flame
 			c_layout->height_fit_children = false;
 			e_list->add_component(c_layout);
 
-			auto c_list = cList::create();
-			e_list->add_component(c_list);
-
-			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto list = *(cList**)c;
-
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					list->selected = nullptr;
-			}, new_mail_p(c_list));
+			e_list->add_component(cList::create());
 		}
 
 		return e_list;

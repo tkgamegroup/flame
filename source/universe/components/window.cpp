@@ -546,6 +546,7 @@ namespace flame
 					pages->child(i)->visible = false;
 				pages->child(idx)->visible = true;
 			}, new_mail_p(this));
+
 			list->set_selected(entity->child(0));
 		}
 	};

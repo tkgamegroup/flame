@@ -77,21 +77,6 @@ namespace flame
 		}
 	};
 
-	void cCheckbox::start()
-	{
-		((cCheckboxPrivate*)this)->start();
-	}
-
-	void cCheckbox::update()
-	{
-		((cCheckboxPrivate*)this)->update();
-	}
-
-	cCheckbox* cCheckbox::create()
-	{
-		return new cCheckboxPrivate();
-	}
-
 	void* cCheckbox::add_changed_listener(void (*listener)(void* c, bool checked), const Mail<>& capture)
 	{
 		auto c = new Closure<void(void* c, bool checked)>;
@@ -122,6 +107,21 @@ namespace flame
 			for (auto& l : ((cCheckboxPrivate*)this)->changed_listeners)
 				l->function(l->capture.p, checked);
 		}
+	}
+
+	void cCheckbox::start()
+	{
+		((cCheckboxPrivate*)this)->start();
+	}
+
+	void cCheckbox::update()
+	{
+		((cCheckboxPrivate*)this)->update();
+	}
+
+	cCheckbox* cCheckbox::create()
+	{
+		return new cCheckboxPrivate();
 	}
 
 	Entity* create_standard_checkbox()
