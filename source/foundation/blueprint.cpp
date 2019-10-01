@@ -9,6 +9,23 @@ namespace flame
 
 	static BP::Environment _bp_env;
 
+	struct ImportPrivate : BP::Import
+	{
+		BP* bp;
+		std::string id;
+	};
+
+	struct ModulePrivate : BP::Module
+	{
+		std::wstring filename;
+		std::wstring absolute_filename;
+		void* module;
+		TypeinfoDatabase* db;
+
+		ModulePrivate();
+		~ModulePrivate();
+	};
+
 	struct SlotPrivate : BP::Slot
 	{
 		Type type;
@@ -22,14 +39,14 @@ namespace flame
 
 		void set_frame(int frame);
 		void set_data(const void* data);
-		bool link_to(SlotPrivate*target);
+		bool link_to(SlotPrivate* target);
 
 		Mail<std::string> get_address() const;
 	};
 
 	struct NodePrivate : BP::Node
 	{
-		BPPrivate *bp;
+		BPPrivate* bp;
 		std::string id;
 		UdtInfo* udt;
 
@@ -43,11 +60,11 @@ namespace flame
 
 		bool in_list;
 
-		NodePrivate(BPPrivate *_bp, const std::string &_id, UdtInfo *_udt, void* module);
+		NodePrivate(BPPrivate* _bp, const std::string& _id, UdtInfo* _udt, void* module);
 		~NodePrivate();
 
-		SlotPrivate* find_input(const std::string &name) const;
-		SlotPrivate* find_output(const std::string &name) const;
+		SlotPrivate* find_input(const std::string& name) const;
+		SlotPrivate* find_output(const std::string& name) const;
 
 		void add_to_update_list();
 
@@ -60,8 +77,8 @@ namespace flame
 
 		std::vector<BP*> imports;
 
-		std::vector<Module> modules;
-		Module self_module;
+		std::vector<std::unique_ptr<ModulePrivate>> modules;
+		std::unique_ptr<ModulePrivate> self_module;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 		std::vector<NodePrivate*> update_list;
@@ -69,15 +86,15 @@ namespace flame
 		BPPrivate();
 		~BPPrivate();
 
-		bool add_module(const std::wstring& filename);
-		void remove_module(const std::wstring& filename);
+		Module* add_module(const std::wstring& filename);
+		void remove_module(Module* m);
 
 		NodePrivate* add_node(const std::string& id, const std::string& type_name);
-		void remove_node(NodePrivate *n);
+		void remove_node(NodePrivate* n);
 
-		NodePrivate* find_node(const std::string &id) const;
-		SlotPrivate* find_input(const std::string &address) const;
-		SlotPrivate* find_output(const std::string &address) const;
+		NodePrivate* find_node(const std::string& id) const;
+		SlotPrivate* find_input(const std::string& address) const;
+		SlotPrivate* find_output(const std::string& address) const;
 
 		void clear();
 
@@ -85,6 +102,17 @@ namespace flame
 
 		void update();
 	};
+
+	ModulePrivate::ModulePrivate()
+	{
+		pos = Vec2f(0.f);
+	}
+
+	ModulePrivate::~ModulePrivate()
+	{
+		free_module(module);
+		TypeinfoDatabase::destroy(db);
+	}
 
 	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
 		node(_node)
@@ -182,7 +210,7 @@ namespace flame
 		return ret;
 	}
 
-	NodePrivate::NodePrivate(BPPrivate *_bp, const std::string& _id, UdtInfo *_udt, void* module) :
+	NodePrivate::NodePrivate(BPPrivate* _bp, const std::string& _id, UdtInfo* _udt, void* module) :
 		bp(_bp),
 		id(_id),
 		in_list(false)
@@ -206,12 +234,12 @@ namespace flame
 			if (f)
 				dtor_addr = (char*)module + (uint)f->rva();
 		}
-		
+
 		update_addr = nullptr;
 		{
 			auto f = udt->find_function("update");
 			assert(f);
-			if(f)
+			if (f)
 			{
 				auto ret_t = f->return_type();
 				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("void") && f->parameter_count() == 0)
@@ -267,7 +295,7 @@ namespace flame
 		free(dummy);
 	}
 
-	SlotPrivate* NodePrivate::find_input(const std::string &name) const
+	SlotPrivate* NodePrivate::find_input(const std::string& name) const
 	{
 		for (auto& input : inputs)
 		{
@@ -277,7 +305,7 @@ namespace flame
 		return nullptr;
 	}
 
-	SlotPrivate* NodePrivate::find_output(const std::string &name) const
+	SlotPrivate* NodePrivate::find_output(const std::string& name) const
 	{
 		for (auto& output : outputs)
 		{
@@ -328,83 +356,71 @@ namespace flame
 
 	BPPrivate::BPPrivate()
 	{
-		self_module.module = nullptr;
-		self_module.db = nullptr;
-
 		graphics_device = nullptr;
 	}
 
 	BPPrivate::~BPPrivate()
 	{
-		for (auto& m : modules)
-		{
-			free_module(m.module);
-			TypeinfoDatabase::destroy(m.db);
-		}
-
-		if (self_module.module)
-		{
-			free_module(self_module.module);
-			TypeinfoDatabase::destroy(self_module.db);
-		}
-
 		for (auto& n : nodes) // since module has been removed, dtor is not valid
 			n->dtor_addr = nullptr;
 	}
 
-	bool BPPrivate::add_module(const std::wstring& filename)
+	BP::Module* BPPrivate::add_module(const std::wstring& filename)
 	{
 		if (filename == L"bp.dll")
-			return false;
+			return nullptr;
 		for (auto& m : modules)
 		{
-			if (m.filename == filename)
-				return false;
+			if (m->filename == filename)
+				return nullptr;
 		}
 
-		Module m;
-		m.filename = filename;
-		m.final_filename = filename;
-		m.module = load_module(filename);
-		if (!m.module)
+		auto absolute_filename = filename;
+		auto module = load_module(filename);
+		if (!module)
 		{
 			std::filesystem::path path(this->filename);
-			m.final_filename = path.parent_path().wstring() + L"/" + filename;
-			m.module = load_module(m.final_filename);
+			absolute_filename = path.parent_path().wstring() + L"/" + filename;
+			module = load_module(absolute_filename);
 		}
-		if (!m.module)
+		if (!module)
 		{
 			printf("cannot add module %s\n", w2s(filename).c_str());
-			return false;
+			return nullptr;
 		}
 
+		auto m = new ModulePrivate;
+		m->filename = filename;
+		m->absolute_filename = absolute_filename;
+		m->module = module;
 		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& m : modules)
-			dbs.push_back(m.db);
-		m.db = TypeinfoDatabase::load(dbs, ext_replace(m.final_filename, L".typeinfo"));
-		modules.push_back(m);
+			dbs.push_back(m->db);
+		m->db = TypeinfoDatabase::load(dbs, ext_replace(absolute_filename, L".typeinfo"));
+
+		modules.emplace_back(m);
+
+		return m;
 	}
 
-	void BPPrivate::remove_module(const std::wstring& filename)
+	void BPPrivate::remove_module(Module* m)
 	{
 		if (filename == L"bp.dll")
 			return;
 
 		for (auto it = modules.begin(); it != modules.end(); it++)
 		{
-			if (it->filename == filename)
+			if (it->get() == m)
 			{
 				auto& nodes = this->nodes;
 				for (auto n_it = nodes.begin(); n_it != nodes.end(); )
 				{
-					if ((*n_it)->udt->db() == it->db)
+					if ((*n_it)->udt->db() == (*it)->db)
 						n_it = nodes.erase(n_it);
 					else
 						n_it++;
 				}
 
-				free_module(it->module);
-				TypeinfoDatabase::destroy(it->db);
 				modules.erase(it);
 
 				((BPPrivate*)this)->build_update_list();
@@ -421,18 +437,18 @@ namespace flame
 			auto hash = H(type_name.c_str());
 			for (auto& m : modules)
 			{
-				udt = m.db->find_udt(hash);
+				udt = m->db->find_udt(hash);
 				if (udt)
 				{
-					module = m.module;
+					module = m->module;
 					break;
 				}
 			}
-			if (!udt)
+			if (!udt && self_module)
 			{
-				udt = self_module.db->find_udt(hash);
+				udt = self_module->db->find_udt(hash);
 				if (udt)
-					module = self_module.module;
+					module = self_module->module;
 			}
 		}
 
@@ -464,7 +480,7 @@ namespace flame
 		return n;
 	}
 
-	void BPPrivate::remove_node(NodePrivate *n)
+	void BPPrivate::remove_node(NodePrivate* n)
 	{
 		for (auto it = nodes.begin(); it != nodes.end(); it++)
 		{
@@ -478,9 +494,9 @@ namespace flame
 		build_update_list();
 	}
 
-	NodePrivate *BPPrivate::find_node(const std::string &id) const
+	NodePrivate* BPPrivate::find_node(const std::string& id) const
 	{
-		for (auto &n : nodes)
+		for (auto& n : nodes)
 		{
 			if (n->id == id)
 				return n.get();
@@ -488,7 +504,7 @@ namespace flame
 		return nullptr;
 	}
 
-	SlotPrivate* BPPrivate::find_input(const std::string &address) const
+	SlotPrivate* BPPrivate::find_input(const std::string& address) const
 	{
 		auto sp = string_split(address, '.');
 		auto n = find_node(sp[0]);
@@ -497,7 +513,7 @@ namespace flame
 		return (SlotPrivate*)n->find_input(sp[1]);
 	}
 
-	SlotPrivate* BPPrivate::find_output(const std::string &address) const
+	SlotPrivate* BPPrivate::find_output(const std::string& address) const
 	{
 		auto sp = string_split(address, '.');
 		auto n = find_node(sp[0]);
@@ -515,9 +531,9 @@ namespace flame
 	void BPPrivate::build_update_list()
 	{
 		update_list.clear();
-		for (auto &n : nodes)
+		for (auto& n : nodes)
 			n->in_list = false;
-		for (auto &n : nodes)
+		for (auto& n : nodes)
 			n->add_to_update_list();
 	}
 
@@ -530,16 +546,31 @@ namespace flame
 		_bp_env.graphics_device = graphics_device;
 		_bp_env.dbs.clear();
 		for (auto& m : modules)
-			_bp_env.dbs.push_back(m.db);
-		if (self_module.db)
-			_bp_env.dbs.push_back(self_module.db);
+			_bp_env.dbs.push_back(m->db);
+		if (self_module)
+			_bp_env.dbs.push_back(self_module->db);
 
-		for (auto &n : update_list)
+		for (auto& n : update_list)
 			n->update();
 
 		_bp_env.path = L"";
 		_bp_env.graphics_device = nullptr;
 		_bp_env.dbs.clear();
+	}
+
+	const std::wstring& BP::Module::filename() const
+	{
+		return ((ModulePrivate*)this)->filename;
+	}
+
+	void* BP::Module::module() const
+	{
+		return ((ModulePrivate*)this)->module;
+	}
+
+	TypeinfoDatabase* BP::Module::db() const
+	{
+		return ((ModulePrivate*)this)->db;
 	}
 
 	BP::Slot::Type BP::Slot::type() const
@@ -622,7 +653,7 @@ namespace flame
 		return ((NodePrivate*)this)->inputs.size();
 	}
 
-	BP::Slot *BP::Node::input(int idx) const
+	BP::Slot *BP::Node::input(uint idx) const
 	{
 		return ((NodePrivate*)this)->inputs[idx].get();
 	}
@@ -632,7 +663,7 @@ namespace flame
 		return ((NodePrivate*)this)->outputs.size();
 	}
 
-	BP::Slot*BP::Node::output(int idx) const
+	BP::Slot*BP::Node::output(uint idx) const
 	{
 		return ((NodePrivate*)this)->outputs[idx].get();
 	}
@@ -647,24 +678,29 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
-	bool BP::add_module(const std::wstring& filename)
+	uint BP::module_count() const
+	{
+		return ((BPPrivate*)this)->modules.size();
+	}
+
+	BP::Module* BP::module(uint idx) const
+	{
+		return ((BPPrivate*)this)->modules[idx].get();
+	}
+
+	BP::Module* BP::self_module() const
+	{
+		return ((BPPrivate*)this)->self_module.get();
+	}
+
+	BP::Module* BP::add_module(const std::wstring& filename)
 	{
 		return ((BPPrivate*)this)->add_module(filename);
 	}
 
-	void BP::remove_module(const std::wstring& filename)
+	void BP::remove_module(BP::Module* m)
 	{
-		((BPPrivate*)this)->remove_module(filename);
-	}
-
-	const std::vector<BP::Module>& BP::modules() const
-	{
-		return ((BPPrivate*)this)->modules;
-	}
-
-	const BP::Module& BP::self_module() const
-	{
-		return ((BPPrivate*)this)->self_module;
+		((BPPrivate*)this)->remove_module(m);
 	}
 
 	uint BP::node_count() const
@@ -672,7 +708,7 @@ namespace flame
 		return ((BPPrivate*)this)->nodes.size();
 	}
 
-	BP::Node *BP::node(int idx) const
+	BP::Node *BP::node(uint idx) const
 	{
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
@@ -768,21 +804,28 @@ namespace flame
 			}
 		}
 
-		std::vector<std::pair<std::wstring, std::wstring>> modules;
+		struct ModuleDesc
+		{
+			std::wstring filename;
+			Vec2f pos;
+		};
+		std::vector<ModuleDesc> module_descs;
 
 		auto n_modules = file->find_node("modules");
 		if (n_modules)
 		{
-			for (auto i_d = 0; i_d < n_modules->node_count(); i_d++)
+			for (auto i_m = 0; i_m < n_modules->node_count(); i_m++)
 			{
-				std::pair<std::wstring, std::wstring> m;
-				m.first = s2w(n_modules->node(i_d)->find_attr("v")->value());
-				auto final_filename = m;
-				if (!std::filesystem::exists(m.first))
-					m.second = ppath_str + L"/" + m.first;
+				ModuleDesc module;
+
+				auto n_module = n_modules->node(i_m);
+				module.filename = s2w(n_module->find_attr("filename")->value());
+				auto a_pos = n_module->find_attr("pos");
+				if (a_pos)
+					module.pos = stof2(a_pos->value().c_str());
 				else
-					m.second = m.first;
-				modules.push_back(m);
+					module.pos = Vec2f(0.f);
+				module_descs.push_back(module);
 			}
 		}
 
@@ -853,12 +896,16 @@ namespace flame
 		auto bp = new BPPrivate();
 		bp->filename = filename;
 
-		for (auto& m : modules)
-			bp->add_module(m.first);
+		for (auto& m_d : module_descs)
+		{
+			auto m = bp->add_module(m_d.filename);
+			if (m)
+				m->pos = m_d.pos;
+		}
 
 		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& m : bp->modules)
-			dbs.push_back(m.db);
+			dbs.push_back(m->db);
 
 		if (!no_compile)
 		{
@@ -921,10 +968,10 @@ namespace flame
 			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
 			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
-			for (auto& m : modules)
+			for (auto& m : bp->modules)
 			{
 				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-				cmakelists << w2s(ext_replace(m.second, L".lib"));
+				cmakelists << w2s(ext_replace(m->absolute_filename, L".lib"));
 				cmakelists << ")\n";
 			}
 			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
@@ -932,8 +979,8 @@ namespace flame
 			auto pdb_filename = std::to_string(::rand() % 100000);
 			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " + pdb_filename + ")\n";
 			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
-			for (auto& m : modules)
-				cmakelists << "-d${CMAKE_SOURCE_DIR}/../../bin/" + w2s(m.second) + " ";
+			for (auto& m : bp->modules)
+				cmakelists << "-d${CMAKE_SOURCE_DIR}/../../bin/" + w2s(m->absolute_filename) + " ";
 			cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" + pdb_filename + ".pdb)\n";
 			cmakelists.close();
 
@@ -960,11 +1007,16 @@ namespace flame
 			}
 		}
 
-		bp->self_module.module = load_module(ppath_str + L"/build/debug/bp.dll");
-		if (bp->self_module.module)
+		auto self_module_filename = ppath_str + L"/build/debug/bp.dll";
+		auto self_module = load_module(self_module_filename);
+		if (self_module)
 		{
-			bp->self_module.db = TypeinfoDatabase::load(dbs, ppath_str + L"/build/debug/bp.typeinfo");
-			dbs.push_back(bp->self_module.db);
+			auto m = new ModulePrivate;
+			m->filename = self_module_filename;
+			m->absolute_filename = self_module_filename;
+			m->module = self_module;
+			m->db = TypeinfoDatabase::load(dbs, ext_replace(self_module_filename, L".typeinfo"));
+			bp->self_module.reset(m);
 		}
 
 		for (auto& n_d : node_descs)
@@ -1012,13 +1064,17 @@ namespace flame
 
 		auto n_modules = file->new_node("modules");
 		for (auto& m : bp->modules)
-			n_modules->new_node("module")->new_attr("v", (w2s(m.filename)));
+		{
+			auto n_module = n_modules->new_node("module");
+			n_module->new_attr("filename", (w2s(m->filename)));
+			n_module->new_attr("pos", to_string(m->pos, 2));
+		}
 
 		std::vector< TypeinfoDatabase*> dbs;
 		for (auto& m : bp->modules)
-			dbs.push_back(m.db);
-		if (bp->self_module.module)
-			dbs.push_back(bp->self_module.db);
+			dbs.push_back(m->db);
+		if (bp->self_module)
+			dbs.push_back(bp->self_module->db);
 
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)

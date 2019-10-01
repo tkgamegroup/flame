@@ -31,18 +31,23 @@ namespace flame
 	{
 		struct Node;
 
-		struct Import
-		{
-			BP* bp;
-			std::string id;
-		};
-
 		struct Module
 		{
-			std::wstring filename;
-			std::wstring final_filename;
-			void* module;
-			TypeinfoDatabase* db;
+			FLAME_FOUNDATION_EXPORTS const std::wstring& filename() const;
+			FLAME_FOUNDATION_EXPORTS void* module() const;
+			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
+			Vec2f pos;
+
+			void* user_data;
+		};
+
+		struct Import
+		{
+			FLAME_FOUNDATION_EXPORTS BP* bp() const;
+			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
+			Vec2f pos;
+
+			void* user_data;
 		};
 
 		struct Slot
@@ -95,9 +100,9 @@ namespace flame
 			Vec2f pos;
 
 			FLAME_FOUNDATION_EXPORTS uint input_count() const;
-			FLAME_FOUNDATION_EXPORTS Slot* input(int idx) const;
+			FLAME_FOUNDATION_EXPORTS Slot* input(uint idx) const;
 			FLAME_FOUNDATION_EXPORTS uint output_count() const;
-			FLAME_FOUNDATION_EXPORTS Slot* output(int idx) const;
+			FLAME_FOUNDATION_EXPORTS Slot* output(uint idx) const;
 
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
@@ -114,13 +119,14 @@ namespace flame
 
 		graphics::Device* graphics_device;
 
-		FLAME_FOUNDATION_EXPORTS bool add_module(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS void remove_module(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS const std::vector<Module>& modules() const;
-		FLAME_FOUNDATION_EXPORTS const Module& self_module() const;
+		FLAME_FOUNDATION_EXPORTS uint module_count() const;
+		FLAME_FOUNDATION_EXPORTS Module* module(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS Module* self_module() const;
+		FLAME_FOUNDATION_EXPORTS Module* add_module(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS void remove_module(Module* m);
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
-		FLAME_FOUNDATION_EXPORTS Node* node(int idx) const;
+		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type_name, const std::string& id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 

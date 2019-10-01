@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <BP>
   <modules>
-    <module v="flame_foundation.dll" />
-    <module v="flame_graphics.dll" />
+    <module filename="flame_foundation.dll" pos="0.00;0.00" />
+    <module filename="flame_graphics.dll" pos="0.00;0.00" />
 	</modules>
 	<nodes>
 		<node type="graphics::RenderTarget" id="rt_dst" pos="20.00;-1.00">

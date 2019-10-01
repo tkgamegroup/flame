@@ -102,11 +102,13 @@ struct cBPEditor : Component
 	enum SelType
 	{
 		SelAir,
+		SelModule,
 		SelNode,
 		SelLink
 	}sel_type;
 	union
 	{
+		BP::Module* m;
 		BP::Node* n;
 		BP::Slot* l;
 	}selected;
@@ -135,8 +137,7 @@ struct cBPEditor : Component
 
 	~cBPEditor()
 	{
-		if (bp)
-			BP::destroy(bp);
+		BP::destroy(bp);
 
 		if (console_tab)
 		{
@@ -157,6 +158,9 @@ struct cBPEditor : Component
 			e_add_node_menu->child(i)->visible = true;
 	}
 
+	Entity* create_module_entity(BP::Module* m);
+	Entity* create_node_entity(BP::Node* n);
+
 	void load(const std::wstring& _filename, bool no_compile)
 	{
 		filename = _filename;
@@ -165,17 +169,16 @@ struct cBPEditor : Component
 			BP::destroy(bp);
 		bp = BP::create_from_file(filename, no_compile);
 		dbs.clear();
-		for (auto& m : bp->modules())
-			dbs.push_back(m.db);
-		if (bp->self_module().db)
-			dbs.push_back(bp->self_module().db);
+		for (auto i = 0; i < bp->module_count(); i++)
+			dbs.push_back(bp->module(i)->db());
+		if (bp->self_module())
+			dbs.push_back(bp->self_module()->db());
 
 		e_base->remove_all_children();
-		if (bp)
-		{
-			for (auto i = 0; i < bp->node_count(); i++)
-				create_node_entity(bp->node(i));
-		}
+		for (auto i = 0; i < bp->module_count(); i++)
+			create_module_entity(bp->module(i));
+		for (auto i = 0; i < bp->node_count(); i++)
+			create_node_entity(bp->node(i));
 
 		e_add_node_menu->remove_all_children();
 
@@ -267,7 +270,7 @@ struct cBPEditor : Component
 						auto bp = editor->bp;
 						auto name = w2s(text);
 
-						if (bp->self_module().db && bp->self_module().db->find_udt(H(name.c_str())))
+						if (bp->self_module() && bp->self_module()->db()->find_udt(H(name.c_str())))
 							editor->add_node(name, "", editor->add_node_pos);
 						else
 						{
@@ -307,85 +310,6 @@ struct cBPEditor : Component
 		running = false;
 		cb_recorded = false;
 	}
-
-	void update_modules_list(Entity* e_list)
-	{
-		for (auto& m : bp->modules())
-		{
-			auto e_item = Entity::create();
-			e_list->add_child(e_item);
-			{
-				e_item->add_component(cElement::create());
-
-				e_item->add_component(cEventReceiver::create());
-
-				e_item->add_component(cStyleColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
-
-				e_item->add_component(cListItem::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				e_item->add_component(c_aligner);
-
-				auto c_layout = cLayout::create(LayoutHorizontal);
-				c_layout->item_padding = 4.f;
-				c_layout->width_fit_children = false;
-				e_item->add_component(c_layout);
-			}
-
-			auto e_text = Entity::create();
-			e_item->add_child(e_text);
-			{
-				e_text->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(m.filename);
-				e_text->add_component(c_text);
-			}
-
-			auto e_remove = Entity::create();
-			e_item->add_child(e_remove);
-			{
-				e_remove->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->color = Vec4c(200, 40, 20, 255);
-				c_text->set_text(Icon_TIMES);
-				e_remove->add_component(c_text);
-
-				auto c_event_receiver = cEventReceiver::create();
-				struct Capture
-				{
-					cBPEditor* e;
-					Entity* l;
-					std::wstring fn;
-				}capture;
-				capture.e = this;
-				capture.l = e_list;
-				capture.fn = m.filename;
-				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-					auto& capture = *(Capture*)c;
-
-					if (is_mouse_clicked(action, key))
-					{
-						Capture _capture;
-						_capture.e = capture.e;
-						_capture.l = capture.l;
-						_capture.fn = capture.fn;
-						looper().add_delay_event([](void* c) {
-							auto& capture = *(Capture*)c;
-
-							capture.e->bp->remove_module(capture.fn);
-
-						}, new_mail(&_capture));
-					}
-				}, new_mail(&capture));
-				e_remove->add_component(c_event_receiver);
-			}
-		}
-	}
-
-	Entity* create_node_entity(BP::Node* n);
 
 	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
 	{
@@ -599,6 +523,45 @@ struct cBP : Component
 	virtual void update() override;
 };
 
+struct cBPModule : Component
+{
+	cElement* element;
+	cEventReceiver* event_receiver;
+
+	cBPEditor* editor;
+	BP::Module* m;
+
+	cBPModule() :
+		Component("BPModule")
+	{
+	}
+
+	virtual void start() override
+	{
+		element = (cElement*)(entity->find_component(cH("Element")));
+		event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+
+		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto thiz = *(cBPModule**)c;
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			{
+				thiz->editor->sel_type = cBPEditor::SelModule;
+				thiz->editor->selected.m = thiz->m;
+			}
+		}, new_mail_p(this));
+	}
+
+	virtual void update() override
+	{
+		if (m == editor->selected.m)
+			element->frame_thickness = 4.f;
+		else
+			element->frame_thickness = 0.f;
+
+		m->pos = element->pos;
+	}
+};
+
 struct cBPNode : Component
 {
 	cElement* element;
@@ -710,27 +673,24 @@ void cBP::start()
 			editor->selected.n = nullptr;
 			auto bp = editor->bp;
 
-			if (bp)
+			for (auto i = 0; i < bp->node_count(); i++)
 			{
-				for (auto i = 0; i < bp->node_count(); i++)
+				auto n = bp->node(i);
+				for (auto j = 0; j < n->input_count(); j++)
 				{
-					auto n = bp->node(i);
-					for (auto j = 0; j < n->input_count(); j++)
+					auto input = n->input(j);
+					auto output = input->link(0);
+					if (output)
 					{
-						auto input = n->input(j);
-						auto output = input->link(0);
-						if (output)
-						{
-							auto e1 = ((cBPSlot*)output->user_data)->element;
-							auto e2 = ((cBPSlot*)input->user_data)->element;
-							auto p1 = e1->global_pos + e1->global_size * 0.5f;
-							auto p2 = e2->global_pos + e2->global_size * 0.5f;
+						auto e1 = ((cBPSlot*)output->user_data)->element;
+						auto e2 = ((cBPSlot*)input->user_data)->element;
+						auto p1 = e1->global_pos + e1->global_size * 0.5f;
+						auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
-							if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
-							{
-								editor->sel_type = cBPEditor::SelLink;
-								editor->selected.l = input;
-							}
+						if (distance(pos, bezier_closest_point(pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
+						{
+							editor->sel_type = cBPEditor::SelLink;
+							editor->selected.l = input;
 						}
 					}
 				}
@@ -752,42 +712,123 @@ void cBP::update()
 	bezier_extent = 50.f * base_element->global_scale;
 
 	auto bp = editor->bp;
-	if (bp)
+	for (auto i = 0; i < bp->node_count(); i++)
 	{
-		for (auto i = 0; i < bp->node_count(); i++)
+		auto n = bp->node(i);
+		for (auto j = 0; j < n->input_count(); j++)
 		{
-			auto n = bp->node(i);
-			for (auto j = 0; j < n->input_count(); j++)
+			auto input = n->input(j);
+			auto output = input->link(0);
+			if (output)
 			{
-				auto input = n->input(j);
-				auto output = input->link(0);
-				if (output)
+				auto e1 = ((cBPSlot*)output->user_data)->element;
+				auto e2 = ((cBPSlot*)input->user_data)->element;
+				if (e1 && e2)
 				{
-					auto e1 = ((cBPSlot*)output->user_data)->element;
-					auto e2 = ((cBPSlot*)input->user_data)->element;
-					if (e1 && e2)
-					{
-						auto p1 = e1->global_pos + e1->global_size * 0.5f;
-						auto p2 = e2->global_pos + e2->global_size * 0.5f;
+					auto p1 = e1->global_pos + e1->global_size * 0.5f;
+					auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
-						std::vector<Vec2f> points;
-						path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-						element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
-					}
+					std::vector<Vec2f> points;
+					path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
+					element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
 				}
 			}
 		}
-		if (editor->dragging_slot)
-		{
-			auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
-			auto p1 = e->global_pos + e->global_size * 0.5f;
-			auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
+	}
+	if (editor->dragging_slot)
+	{
+		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
+		auto p1 = e->global_pos + e->global_size * 0.5f;
+		auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
 
-			std::vector<Vec2f> points;
-			path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? bezier_extent : -bezier_extent, 0.f), p2, p2);
-			element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
+		std::vector<Vec2f> points;
+		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? bezier_extent : -bezier_extent, 0.f), p2, p2);
+		element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
+	}
+}
+
+Entity* cBPEditor::create_module_entity(BP::Module* m)
+{
+	auto e_module = Entity::create();
+	e_base->add_child(e_module);
+	m->user_data = e_module;
+	{
+		auto c_element = cElement::create();
+		c_element->pos = m->pos;
+		c_element->color = Vec4c(255, 200, 190, 200);
+		c_element->frame_color = Vec4c(252, 252, 50, 200);
+		e_module->add_component(c_element);
+
+		e_module->add_component(cEventReceiver::create());
+
+		auto c_layout = cLayout::create(LayoutVertical);
+		c_layout->fence = 1;
+		e_module->add_component(c_layout);
+
+		e_module->add_component(cMoveable::create());
+
+		auto c_module = new_component<cBPModule>();
+		c_module->editor = this;
+		c_module->m = m;
+		e_module->add_component(c_module);
+	}
+	{
+		auto e_content = Entity::create();
+		e_module->add_child(e_content);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(8.f);
+			e_content->add_component(c_element);
+
+			auto c_layout = cLayout::create(LayoutVertical);
+			c_layout->item_padding = 4.f;
+			e_content->add_component(c_layout);
+		}
+
+		auto e_text_filename = Entity::create();
+		e_content->add_child(e_text_filename);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			e_text_filename->add_component(c_element);
+
+			auto c_text = cText::create(app.font_atlas_sdf);
+			c_text->set_text(m->filename());
+			c_text->sdf_scale = 0.8f;
+			e_text_filename->add_component(c_text);
+		}
+
+		auto e_text_type = Entity::create();
+		e_content->add_child(e_text_type);
+		{
+			e_text_type->add_component(cElement::create());
+
+			auto c_text = cText::create(app.font_atlas_sdf);
+			c_text->set_text(L"module");
+			c_text->color = Vec4c(50, 50, 50, 255);
+			c_text->sdf_scale = 0.5f;
+			e_text_type->add_component(c_text);
+		}
+
+		auto e_bring_to_front = Entity::create();
+		e_module->add_child(e_bring_to_front);
+		{
+			e_bring_to_front->add_component(cElement::create());
+
+			auto c_event_receiver = cEventReceiver::create();
+			c_event_receiver->penetrable = true;
+			e_bring_to_front->add_component(c_event_receiver);
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeFitParent;
+			c_aligner->height_policy = SizeFitParent;
+			e_bring_to_front->add_component(c_aligner);
+
+			e_bring_to_front->add_component(cBringToFront::create());
 		}
 	}
+
+	return e_module;
 }
 
 Entity* cBPEditor::create_node_entity(BP::Node* n)
@@ -1457,81 +1498,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}, new_mail_p(c_editor));
 		}
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Modules");
-			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					auto e = editor->entity;
-
-					auto t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
-					{
-						t->add_component(cLayout::create(LayoutFree));
-					}
-
-					auto e_dialog = Entity::create();
-					t->add_child(e_dialog);
-					{
-						e_dialog->add_component(cElement::create());
-
-						auto c_aligner = cAligner::create();
-						c_aligner->x_align = AlignxMiddle;
-						c_aligner->y_align = AlignyMiddle;
-						e_dialog->add_component(c_aligner);
-
-						auto c_layout = cLayout::create(LayoutVertical);
-						c_layout->item_padding = 4.f;
-						e_dialog->add_component(c_layout);
-					}
-
-					auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
-					e_dialog->add_child(e_back);
-					{
-						((cEventReceiver*)e_back->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-							auto editor = *(cBPEditor**)c;
-
-							if (is_mouse_clicked(action, key))
-								destroy_topmost(editor->entity, false);
-						}, new_mail_p(editor));
-					}
-
-					auto e_text = Entity::create();
-					e_dialog->add_child(e_text);
-					{
-						e_text->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(L"Modules:");
-						e_text->add_component(c_text);
-					}
-
-					auto e_list = create_standard_list(true);
-
-					editor->update_modules_list(e_list);
-
-					{
-						auto e_container = wrap_standard_scrollbar(e_list, ScrollbarVertical, false, 1.f);
-						e_dialog->add_child(e_container);
-						{
-							auto c_element = (cElement*)e_container->find_component(cH("Element"));
-							c_element->size.x() = 200.f;
-							c_element->size.y() = 100.f;
-							c_element->inner_padding = Vec4f(4.f);
-							c_element->frame_thickness = 2.f;
-							c_element->frame_color = Vec4c(0, 0, 0, 255);
-						}
-					}
-
-					auto e_add = create_standard_button(app.font_atlas_pixel, 1.f, L"Add");
-					e_dialog->add_child(e_add);
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Reload");
 			e_menu->add_child(e_item);
 			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
@@ -1567,25 +1533,43 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_menubar->add_child(e_menu_btn);
 	}
 	{
-		c_editor->e_add_node_menu = create_standard_menu();
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Node", app.root, c_editor->e_add_node_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
-		struct Capture
+		auto e_menu = create_standard_menu();
 		{
-			cBPEditor* e;
-			cMenuButton* b;
-		}capture;
-		capture.e = c_editor;
-		capture.b = (cMenuButton*)e_menu_btn->find_component(cH("MenuButton"));
-		((cEventReceiver*)e_menu_btn->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-			auto& capture = *(Capture*)c;
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Module");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
 
-			if (capture.b->can_open(action, key))
+				}
+			}, new_mail_p(c_editor));
+		}
+		{
+			auto e_sub_menu = create_standard_menu();
+			c_editor->e_add_node_menu = e_sub_menu;
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Nodes", app.root, e_sub_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
+			e_menu->add_child(e_menu_btn);
+			struct Capture
 			{
-				auto base = capture.e->e_base;
-				capture.e->add_node_pos = ((cElement*)base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)base->find_component(cH("Element")))->pos;
-			}
-		}, new_mail(&capture));
+				cBPEditor* e;
+				cMenuButton* b;
+			}capture;
+			capture.e = c_editor;
+			capture.b = (cMenuButton*)e_menu_btn->find_component(cH("MenuButton"));
+			((cEventReceiver*)e_menu_btn->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto& capture = *(Capture*)c;
+
+				if (capture.b->can_open(action, key))
+				{
+					auto base = capture.e->e_base;
+					capture.e->add_node_pos = ((cElement*)base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)base->find_component(cH("Element")))->pos;
+				}
+			}, new_mail(&capture));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		e_menubar->add_child(e_menu_btn);
 	}
 	{
 		auto e_menu = create_standard_menu();
