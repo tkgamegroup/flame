@@ -90,8 +90,10 @@ struct cBPEditor : Component
 
 	Entity* e_add_node_menu;
 	cEdit* add_node_menu_filter;
-	Vec2f add_node_pos;
+	Vec2f add_pos;
 	Entity* e_base;
+	Entity* e_exports_content;
+	Entity* e_slot_menu;
 	cDockerTab* console_tab;
 
 	graphics::Image* rt;
@@ -104,12 +106,14 @@ struct cBPEditor : Component
 		SelAir,
 		SelModule,
 		SelNode,
+		SelSlot,
 		SelLink
 	}sel_type;
 	union
 	{
 		BP::Module* m;
 		BP::Node* n;
+		BP::Slot* s;
 		BP::Slot* l;
 	}selected;
 	BP::Slot* dragging_slot;
@@ -160,6 +164,8 @@ struct cBPEditor : Component
 
 	Entity* create_module_entity(BP::Module* m);
 	Entity* create_node_entity(BP::Node* n);
+	Entity* create_exports_entity();
+	Entity* create_export_entity(BP::Export* e);
 
 	void load(const std::wstring& _filename, bool no_compile)
 	{
@@ -175,10 +181,14 @@ struct cBPEditor : Component
 			dbs.push_back(bp->self_module()->db());
 
 		e_base->remove_all_children();
+
 		for (auto i = 0; i < bp->module_count(); i++)
 			create_module_entity(bp->module(i));
 		for (auto i = 0; i < bp->node_count(); i++)
 			create_node_entity(bp->node(i));
+		create_exports_entity();
+		for (auto i = 0; i < bp->expt_count(); i++)
+			create_export_entity(bp->expt(i));
 
 		e_add_node_menu->remove_all_children();
 
@@ -249,7 +259,7 @@ struct cBPEditor : Component
 
 					capture.e->reset_add_node_menu_filter();
 
-					capture.e->add_node(capture.u->name(), "", capture.e->add_node_pos);
+					capture.e->add_node(capture.u->name(), "", capture.e->add_pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -271,7 +281,7 @@ struct cBPEditor : Component
 						auto name = w2s(text);
 
 						if (bp->self_module() && bp->self_module()->db()->find_udt(H(name.c_str())))
-							editor->add_node(name, "", editor->add_node_pos);
+							editor->add_node(name, "", editor->add_pos);
 						else
 						{
 							if (editor->running)
@@ -292,7 +302,7 @@ struct cBPEditor : Component
 									}
 									n_node->new_attr("id", id);
 								}
-								n_node->new_attr("pos", to_string(editor->add_node_pos));
+								n_node->new_attr("pos", to_string(editor->add_pos));
 								SerializableNode::save_to_xml_file(file, editor->filename);
 								SerializableNode::destroy(file);
 
@@ -711,6 +721,44 @@ struct cBPSlot : Component
 					oth->link_to(thiz->s);
 			}
 		}, new_mail_p(this));
+
+		if (s->type() == BP::Slot::Output)
+		{
+			event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto thiz = *(cBPSlot**)c;
+				auto editor = thiz->editor;
+
+				if (is_mouse_down(action, key, true) && key == Mouse_Right)
+				{
+					editor->sel_type = cBPEditor::SelSlot;
+					editor->selected.s = thiz->s;
+					popup_menu(editor->e_slot_menu, app.root, pos);
+				}
+			}, new_mail_p(this));
+		}
+	}
+};
+
+struct cBPExport : Component
+{
+	cElement* element;
+
+	cBPEditor* editor;
+	BP* bp;
+
+	cBPExport() :
+		Component("BPExport")
+	{
+	}
+
+	virtual void start() override
+	{
+		element = (cElement*)(entity->find_component(cH("Element")));
+	}
+
+	virtual void update() override
+	{
+		bp->expts_node_pos = element->pos;
 	}
 };
 
@@ -758,7 +806,7 @@ void cBP::start()
 		else if (thiz->can_popup_menu && is_mouse_up(action, key, true) && key == Mouse_Right)
 		{
 			popup_menu(editor->e_add_node_menu, app.root, pos);
-			editor->add_node_pos = pos - thiz->element->global_pos;
+			editor->add_pos = pos - thiz->element->global_pos;
 			thiz->can_popup_menu = false;
 		}
 	}, new_mail_p(this));
@@ -866,23 +914,23 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 			c_text->sdf_scale = 0.5f;
 			e_text_type->add_component(c_text);
 		}
+	}
 
-		auto e_bring_to_front = Entity::create();
-		e_module->add_child(e_bring_to_front);
-		{
-			e_bring_to_front->add_component(cElement::create());
+	auto e_bring_to_front = Entity::create();
+	e_module->add_child(e_bring_to_front);
+	{
+		e_bring_to_front->add_component(cElement::create());
 
-			auto c_event_receiver = cEventReceiver::create();
-			c_event_receiver->penetrable = true;
-			e_bring_to_front->add_component(c_event_receiver);
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->penetrable = true;
+		e_bring_to_front->add_component(c_event_receiver);
 
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitParent;
-			c_aligner->height_policy = SizeFitParent;
-			e_bring_to_front->add_component(c_aligner);
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitParent;
+		c_aligner->height_policy = SizeFitParent;
+		e_bring_to_front->add_component(c_aligner);
 
-			e_bring_to_front->add_component(cBringToFront::create());
-		}
+		e_bring_to_front->add_component(cBringToFront::create());
 	}
 
 	return e_module;
@@ -1485,26 +1533,153 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				}
 			}
 		}
+	}
 
-		auto e_bring_to_front = Entity::create();
-		e_node->add_child(e_bring_to_front);
-		{
-			e_bring_to_front->add_component(cElement::create());
+	auto e_bring_to_front = Entity::create();
+	e_node->add_child(e_bring_to_front);
+	{
+		e_bring_to_front->add_component(cElement::create());
 
-			auto c_event_receiver = cEventReceiver::create();
-			c_event_receiver->penetrable = true;
-			e_bring_to_front->add_component(c_event_receiver);
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->penetrable = true;
+		e_bring_to_front->add_component(c_event_receiver);
 
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitParent;
-			c_aligner->height_policy = SizeFitParent;
-			e_bring_to_front->add_component(c_aligner);
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitParent;
+		c_aligner->height_policy = SizeFitParent;
+		e_bring_to_front->add_component(c_aligner);
 
-			e_bring_to_front->add_component(cBringToFront::create());
-		}
+		e_bring_to_front->add_component(cBringToFront::create());
 	}
 
 	return e_node;
+}
+
+Entity* cBPEditor::create_exports_entity() 
+{
+	auto e_exports = Entity::create();
+	e_base->add_child(e_exports);
+	{
+		auto c_element = cElement::create();
+		c_element->pos = bp->expts_node_pos;
+		c_element->color = Vec4c(190, 200, 255, 200);
+		c_element->frame_color = Vec4c(252, 252, 50, 200);
+		e_exports->add_component(c_element);
+
+		e_exports->add_component(cEventReceiver::create());
+
+		auto c_layout = cLayout::create(LayoutVertical);
+		c_layout->fence = 1;
+		e_exports->add_component(c_layout);
+
+		e_exports->add_component(cMoveable::create());
+
+		auto c_export = new_component<cBPExport>();
+		c_export->bp = bp;
+		e_exports->add_component(c_export);
+	}
+	{
+		auto e_content = Entity::create();
+		e_exports->add_child(e_content);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(8.f);
+			e_content->add_component(c_element);
+
+			auto c_layout = cLayout::create(LayoutVertical);
+			c_layout->item_padding = 4.f;
+			e_content->add_component(c_layout);
+		}
+		e_exports_content = e_content;
+
+		auto e_text_id = Entity::create();
+		e_content->add_child(e_text_id);
+		{
+			auto c_element = cElement::create();
+			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			e_text_id->add_component(c_element);
+
+			auto c_text = cText::create(app.font_atlas_sdf);
+			c_text->set_text(L"Exports");
+			c_text->sdf_scale = 0.8f;
+			e_text_id->add_component(c_text);
+		}
+	}
+
+	auto e_bring_to_front = Entity::create();
+	e_exports->add_child(e_bring_to_front);
+	{
+		e_bring_to_front->add_component(cElement::create());
+
+		auto c_event_receiver = cEventReceiver::create();
+		c_event_receiver->penetrable = true;
+		e_bring_to_front->add_component(c_event_receiver);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeFitParent;
+		c_aligner->height_policy = SizeFitParent;
+		e_bring_to_front->add_component(c_aligner);
+
+		e_bring_to_front->add_component(cBringToFront::create());
+	}
+
+	return e_exports;
+}
+
+Entity* cBPEditor::create_export_entity(BP::Export* e)
+{
+	auto e_export = Entity::create();
+	e_exports_content->add_child(e_export);
+	e->user_data = e_export;
+	{
+		auto c_element = cElement::create();
+		c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_pixel->pixel_height, 0.f);
+		e_export->add_component(c_element);
+
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->color = Vec4c(30, 40, 160, 255);
+		auto out_addr = e->slot()->get_address();
+		c_text->set_text(s2w(e->alias()) + L" (" + s2w(*out_addr.p) + L")");
+		delete_mail(out_addr);
+		e_export->add_component(c_text);
+
+		e_export->add_component(cLayout::create(LayoutFree));
+	}
+
+	auto e_close = Entity::create();
+	e_export->add_child(e_close);
+	{
+		e_close->add_component(cElement::create());
+
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->color = Vec4c(200, 40, 20, 255);
+		c_text->set_text(Icon_TIMES);
+		e_close->add_component(c_text);
+
+		auto c_event_receiver = cEventReceiver::create();
+		//c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		//	auto& capture = *(Capture*)c;
+
+		//	if (is_mouse_clicked(action, key))
+		//	{
+		//		Capture _capture;
+		//		_capture.e = capture.e;
+		//		_capture.c = capture.c;
+		//		looper().add_delay_event([](void* c) {
+		//			auto& capture = *(Capture*)c;
+		//			capture.e->parent()->remove_child(capture.e);
+		//			capture.c->entity->remove_component(capture.c);
+		//		}, new_mail(&_capture));
+		//	}
+		//}, new_mail(&capture));
+		e_close->add_component(c_event_receiver);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->x_align = AlignxRight;
+		e_close->add_component(c_aligner);
+	}
+
+	return e_export;
 }
 
 void open_blueprint_editor(const std::wstring& filename, bool no_compile, const Vec2f& pos)
@@ -1609,10 +1784,35 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						else
 						{
 							auto m = bp->add_module(text);
+							auto base = editor->e_base;
+							m->pos = ((cElement*)base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)base->find_component(cH("Element")))->pos;
 							if (!m)
 								editor->add_tip(L"Add Module Failed");
 							else
 								editor->create_module_entity(m);
+						}
+					}, new_mail_p(editor));
+				}
+			}, new_mail_p(c_editor));
+		}
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Import");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+					popup_input_dialog(editor->entity, L"bp", [](void* c, bool ok, const std::wstring& text) {
+						auto editor = *(cBPEditor**)c;
+						auto bp = editor->bp;
+
+						if (editor->running)
+							editor->add_tip(L"Cannot Add Import While Running");
+						else
+						{
+
 						}
 					}, new_mail_p(editor));
 				}
@@ -1636,7 +1836,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				if (capture.b->can_open(action, key))
 				{
 					auto base = capture.e->e_base;
-					capture.e->add_node_pos = ((cElement*)base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)base->find_component(cH("Element")))->pos;
+					capture.e->add_pos = ((cElement*)base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)base->find_component(cH("Element")))->pos;
 				}
 			}, new_mail(&capture));
 		}
@@ -1764,6 +1964,31 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 	c_editor->e_base = e_base;
 
+	{
+		auto e_menu = create_standard_menu();
+		c_editor->e_slot_menu = e_menu;
+		{
+			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Add To Export");
+			e_menu->add_child(item);
+			((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					destroy_topmost(app.root);
+					popup_input_dialog(editor->entity, L"alias", [](void* c, bool ok, const std::wstring& text) {
+						auto editor = *(cBPEditor**)c;
+
+						if (ok)
+						{
+							auto e = editor->bp->add_expt(editor->selected.s, w2s(text));
+							editor->create_export_entity(e);
+						}
+					}, new_mail_p(editor));
+				}
+			}, new_mail_p(c_editor));
+		}
+	}
+
 	auto e_overlayer = Entity::create();
 	e_scene->add_child(e_overlayer);
 	{
@@ -1813,13 +2038,13 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			{
 				auto v = i->vi();
 				auto type = v->type();
-				auto value_before = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
+				auto value_before = serialize_value(dbs, type->tag(), type->hash(), i->raw_data(), 2);
 				auto data = new char[v->size()];
 				unserialize_value(dbs, type->tag(), type->hash(), value, data);
-				i->set_data(data);
+				i->set_data((char*)data + sizeof(int));
 				((cBPSlot*)i->user_data)->tracker->update_view();
 				delete data;
-				auto value_after = serialize_value(dbs, type->tag(), type->hash(), i->data(), 2);
+				auto value_after = serialize_value(dbs, type->tag(), type->hash(), i->raw_data(), 2);
 				console->print(L"set value: " + s2w(address) + L", " + s2w(*value_before.p) + L" -> " + s2w(*value_after.p));
 				delete_mail(value_before);
 				delete_mail(value_after);
@@ -1917,7 +2142,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							link_address = input->link()->get_address();
 						console->print(L"[" + (link_address.p ? s2w(*link_address.p) : L"") + L"]");
 						delete_mail(link_address);
-						auto str = serialize_value(dbs, type->tag(), type->hash(), input->data(), 2);
+						auto str = serialize_value(dbs, type->tag(), type->hash(), input->raw_data(), 2);
 						console->print(std::wstring(L"   ") + (str.p->empty() ? L"-" : s2w(*str.p)));
 						delete_mail(str);
 					}
@@ -1928,7 +2153,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						auto v = output->vi();
 						auto type = v->type();
 						console->print(s2w(v->name()));
-						auto str = serialize_value(dbs, type->tag(), type->hash(), output->data(), 2);
+						auto str = serialize_value(dbs, type->tag(), type->hash(), output->raw_data(), 2);
 						console->print(std::wstring(L"   ") + (str.p->empty() ? L"-" : s2w(*str.p)));
 						delete_mail(str);
 					}

@@ -98,4 +98,5 @@
 		<link out="ds.out" in="ds_wrt.set" />
 		<link out="ubo.out" in="ds_wrt.v" />
 	</links>
+  <exports pos="0.00;0.00" />
 </BP>

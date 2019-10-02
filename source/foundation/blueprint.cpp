@@ -71,6 +71,12 @@ namespace flame
 		void update();
 	};
 
+	struct ExportPrivate : BP::Export
+	{
+		SlotPrivate* slot;
+		std::string alias;
+	};
+
 	struct BPPrivate : BP
 	{
 		std::wstring filename;
@@ -81,6 +87,9 @@ namespace flame
 		std::unique_ptr<ModulePrivate> self_module;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
+
+		std::vector<std::unique_ptr<ExportPrivate>> expts;
+
 		std::vector<NodePrivate*> update_list;
 
 		BPPrivate();
@@ -95,6 +104,9 @@ namespace flame
 		NodePrivate* find_node(const std::string& id) const;
 		SlotPrivate* find_input(const std::string& address) const;
 		SlotPrivate* find_output(const std::string& address) const;
+
+		ExportPrivate* add_expt(SlotPrivate* output, const std::string& alias);
+		void remove_expt(ExportPrivate* e);
 
 		void clear();
 
@@ -357,6 +369,8 @@ namespace flame
 	BPPrivate::BPPrivate()
 	{
 		graphics_device = nullptr;
+
+		expts_node_pos = Vec2f(0.f);
 	}
 
 	BPPrivate::~BPPrivate()
@@ -522,6 +536,35 @@ namespace flame
 		return (SlotPrivate*)n->find_output(sp[1]);
 	}
 
+	ExportPrivate* BPPrivate::add_expt(SlotPrivate* output, const std::string& alias)
+	{
+		for (auto& e : expts)
+		{
+			if (e->slot == output || e->alias == alias)
+				return nullptr;
+		}
+
+		assert(output->type == Slot::Output);
+		auto e = new ExportPrivate;
+		e->slot = output;
+		e->alias = alias;
+		expts.emplace_back(e);
+
+		return e;
+	}
+
+	void BPPrivate::remove_expt(ExportPrivate* e)
+	{
+		for (auto it = expts.begin(); it != expts.end(); it++)
+		{
+			if (it->get() == e)
+			{
+				expts.erase(it);
+				return;
+			}
+		}
+	}
+
 	void BPPrivate::clear()
 	{
 		nodes.clear();
@@ -603,6 +646,11 @@ namespace flame
 		return (char*)((SlotPrivate*)this)->raw_data + sizeof(int);
 	}
 
+	void* BP::Slot::raw_data() const
+	{
+		return ((SlotPrivate*)this)->raw_data;
+	}
+
 	void BP::Slot::set_data(const void* d)
 	{
 		((SlotPrivate*)this)->set_data(d);
@@ -678,6 +726,16 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
+	BP::Slot* BP::Export::slot() const
+	{
+		return ((ExportPrivate*)this)->slot;
+	}
+
+	const std::string& BP::Export::alias() const
+	{
+		return ((ExportPrivate*)this)->alias;
+	}
+
 	uint BP::module_count() const
 	{
 		return ((BPPrivate*)this)->modules.size();
@@ -736,6 +794,26 @@ namespace flame
 	BP::Slot*BP::find_output(const std::string& address) const
 	{
 		return ((BPPrivate*)this)->find_output(address);
+	}
+
+	uint BP::expt_count() const
+	{
+		return ((BPPrivate*)this)->expts.size();
+	}
+
+	BP::Export* BP::expt(uint idx) const
+	{
+		return ((BPPrivate*)this)->expts[idx].get();
+	}
+
+	BP::Export* BP::add_expt(Slot* output, const std::string& alias)
+	{
+		return ((BPPrivate*)this)->add_expt((SlotPrivate*)output, alias);
+	}
+
+	void BP::remove_expt(Export* e)
+	{
+		((BPPrivate*)this)->remove_expt((ExportPrivate*)e);
 	}
 
 	void BP::clear()
@@ -851,11 +929,7 @@ namespace flame
 			auto n_node = n_nodes->node(i_n);
 			node.type = n_node->find_attr("type")->value();
 			node.id = n_node->find_attr("id")->value();
-			auto a_pos = n_node->find_attr("pos");
-			if (a_pos)
-				node.pos = stof2(a_pos->value().c_str());
-			else
-				node.pos = Vec2f(0.f);
+			node.pos = stof2(n_node->find_attr("pos")->value().c_str());
 
 			auto n_datas = n_node->find_node("datas");
 			if (n_datas)
@@ -881,7 +955,6 @@ namespace flame
 		std::vector<LinkDesc> link_descs;
 
 		auto n_links = file->find_node("links");
-		auto lc = n_links->node_count();
 		for (auto i_l = 0; i_l < n_links->node_count(); i_l++)
 		{
 			auto n_link = n_links->node(i_l);
@@ -889,6 +962,24 @@ namespace flame
 			link.out_addr = n_link->find_attr("out")->value();
 			link.in_addr = n_link->find_attr("in")->value();
 			link_descs.push_back(link);
+		}
+
+		struct ExportDesc
+		{
+			std::string out_addr;
+			std::string alias;
+		};
+		std::vector<ExportDesc> export_descs;
+
+		auto n_exports = file->find_node("exports");
+		auto expts_node_pos = stof2(n_exports->find_attr("pos")->value().c_str());
+		for (auto i_e = 0; i_e < n_exports->node_count(); i_e++)
+		{
+			auto n_export = n_exports->node(i_e);
+			ExportDesc expt;
+			expt.out_addr = n_export->find_attr("slot")->value();
+			expt.alias = n_export->find_attr("alias")->value();
+			export_descs.push_back(expt);
 		}
 
 		SerializableNode::destroy(file);
@@ -1031,7 +1122,7 @@ namespace flame
 					auto v = input->vi;
 					auto type = v->type();
 					if (v->default_value())
-						unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->data());
+						unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->raw_data);
 				}
 			}
 		}
@@ -1046,7 +1137,17 @@ namespace flame
 					printf("link type mismatch: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
 			}
 			else
-				printf("unable to link: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
+				printf("cannot link: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
+		}
+
+		bp->expts_node_pos = expts_node_pos;
+		for(auto& e_d : export_descs)
+		{
+			auto slot = bp->find_output(e_d.out_addr);
+			if (slot)
+				bp->add_expt(slot, e_d.alias);
+			else
+				printf("cannot find output: %s\n", e_d.out_addr.c_str());
 		}
 
 		printf("end loading bp: %s\n", s_filename.c_str());
@@ -1097,7 +1198,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(dbs, type->tag(), type->hash(), input->data(), 2);
+					auto value = serialize_value(dbs, type->tag(), type->hash(), input->raw_data, 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}
@@ -1120,6 +1221,17 @@ namespace flame
 					delete_mail(in_addr);
 				}
 			}
+		}
+
+		auto n_exports = file->new_node("exports");
+		n_exports->new_attr("pos", to_string(bp->expts_node_pos, 2));
+		for (auto& e : bp->expts)
+		{
+			auto n_export = n_exports->new_node("export");
+			auto out_addr = e->slot->get_address();
+			n_export->new_attr("slot", *out_addr.p);
+			n_export->new_attr("alias", e->alias);
+			delete_mail(out_addr);
 		}
 
 		SerializableNode::save_to_xml_file(file, filename);

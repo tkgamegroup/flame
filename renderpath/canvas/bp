@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <BP>
 	<modules>
-    <module filename="flame_foundation.dll" pos="0.00;0.00" />
-    <module filename="flame_graphics.dll" pos="0.00;0.00" />
+		<module filename="flame_foundation.dll" pos="-232.00;379.00" />
+		<module filename="flame_graphics.dll" pos="-232.00;477.00" />
 	</modules>
 	<nodes>
 		<node type="Var(uint)" id="img_count" pos="109.72;3034.70">
@@ -37,6 +37,7 @@
 			<datas>
 				<data name="type" value="DescriptorSampledImage" />
 				<data name="name" value="images" />
+				<data name="buffer_udt_name" value="" />
 			</datas>
 		</node>
 		<node type="Array(1+void*)" id="desc_bindings" pos="698.61;2862.50" />
@@ -160,7 +161,7 @@
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="graphics::Descriptorset" id="ds" pos="1138.60;2781.75" />
+		<node type="graphics::Descriptorset" id="ds" pos="1125.60;2782.75" />
 		<node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="1627.80;2977.23" />
 		<node type="graphics::Buffer" id="vtx_buf" pos="88.88;835.00">
 			<datas>
@@ -246,4 +247,15 @@
 		<link out="img_white.out" in="ds_wrt.v" />
 		<link out="img_count.out" in="ds_wrt.count" />
 	</links>
+	<exports pos="-230.00;583.00">
+		<export slot="vtx_buf.out" alias="vtx_buf" />
+		<export slot="idx_buf.out" alias="idx_buf" />
+		<export slot="rnf.out" alias="rnf" />
+		<export slot="pll.out" alias="pll" />
+		<export slot="ds.out" alias="ds" />
+		<export slot="ds_wrt.iv" alias="white_iv" />
+		<export slot="pl_element.out" alias="pl_element" />
+		<export slot="pl_text_sdf.out" alias="pl_text_sdf" />
+		<export slot="pl_text_lcd.out" alias="pl_text_lcd" />
+	</exports>
 </BP>

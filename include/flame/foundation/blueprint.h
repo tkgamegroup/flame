@@ -64,6 +64,7 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS int frame() const;
 			FLAME_FOUNDATION_EXPORTS void set_frame(int frame);
+			FLAME_FOUNDATION_EXPORTS void* raw_data() const;
 			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
 
@@ -110,6 +111,14 @@ namespace flame
 			void* user_data;
 		};
 
+		struct Export
+		{
+			FLAME_FOUNDATION_EXPORTS Slot* slot() const;
+			FLAME_FOUNDATION_EXPORTS const std::string& alias() const;
+
+			void* user_data;
+		};
+
 		struct Environment
 		{
 			std::wstring path;
@@ -133,6 +142,12 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Node* find_node(const std::string& id) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& address) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& address) const;
+		
+		Vec2f expts_node_pos;
+		FLAME_FOUNDATION_EXPORTS uint expt_count() const;
+		FLAME_FOUNDATION_EXPORTS Export* expt(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS Export* add_expt(Slot* output, const std::string& alias);
+		FLAME_FOUNDATION_EXPORTS void remove_expt(Export* e);
 
 		FLAME_FOUNDATION_EXPORTS void clear(); // all nodes and links
 
