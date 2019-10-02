@@ -319,6 +319,31 @@ struct cBPEditor : Component
 		return n;
 	}
 
+	void remove_module(BP::Module* m)
+	{
+		struct Capture
+		{
+			Entity* e_m;
+			std::vector<Entity*> e_ns;
+		}capture;
+		capture.e_m = (Entity*)m->user_data;
+		auto m_db = m->db();
+		for (auto i = 0; i < bp->node_count(); i++)
+		{
+			auto n = bp->node(i);
+			if (n->udt()->db() == m_db)
+				capture.e_ns.push_back((Entity*)n->user_data);
+		}
+		looper().add_delay_event([](void* c) {
+			auto& capture = *(Capture*)c;
+
+			capture.e_m->parent()->remove_child(capture.e_m);
+			for (auto e : capture.e_ns)
+				e->parent()->remove_child(e);
+		}, new_mail(&capture));
+		bp->remove_module(m);
+	}
+
 	void remove_node(BP::Node* n)
 	{
 		looper().add_delay_event([](void* c) {
@@ -332,6 +357,38 @@ struct cBPEditor : Component
 	{
 		switch (sel_type)
 		{
+		case SelModule:
+			if (selected.m->filename() == L"bp.dll")
+				add_tip(L"Cannot Remove Self Module");
+			else if (selected.m->filename() == L"flame_foundation.dll")
+				add_tip(L"Cannot Remove 'foundation' Module");
+			else
+			{
+				std::wstring str;
+				auto m_db = selected.m->db();
+				for (auto i = 0; i < bp->node_count(); i++)
+				{
+					auto n = bp->node(i);
+					auto udt = n->udt();
+					if (udt->db() == m_db)
+						str += L"id: " + s2w(n->id()) + L", type: " + s2w(udt->name()) + L"\n";
+				}
+
+				struct Capture
+				{
+					cBPEditor* e;
+					BP::Module* m;
+				}capture;
+				capture.e = this;
+				capture.m = selected.m;
+				popup_confirm_dialog(entity, L"The node(s):\n" + str + L"will be removed, sure to remove module?", [](void* c, bool yes) {
+					auto& capture = *(Capture*)c;
+
+					if (yes)
+						capture.e->remove_module(capture.m);
+				}, new_mail(&capture));
+			}
+			break;
 		case SelNode:
 			remove_node(selected.n);
 			break;
@@ -1543,6 +1600,21 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 
+					popup_input_dialog(editor->entity, L"module", [](void* c, bool ok, const std::wstring& text) {
+						auto editor = *(cBPEditor**)c;
+						auto bp = editor->bp;
+
+						if (editor->running)
+							editor->add_tip(L"Cannot Add Module While Running");
+						else
+						{
+							auto m = bp->add_module(text);
+							if (!m)
+								editor->add_tip(L"Add Module Failed");
+							else
+								editor->create_module_entity(m);
+						}
+					}, new_mail_p(editor));
 				}
 			}, new_mail_p(c_editor));
 		}

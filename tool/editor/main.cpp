@@ -140,8 +140,89 @@ void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scal
 		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, sdf_scale, s2w(info->item(i)->name())));
 }
 
-void popup_confirm_dialog(Entity* e, const std::wstring& yes_text, const std::wstring& no_text, void (*callback)(void* c, bool yes), const Mail<>& _capture)
+void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)
 {
+	auto t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
+	{
+		t->add_component(cLayout::create(LayoutFree));
+	}
+
+	auto e_dialog = Entity::create();
+	t->add_child(e_dialog);
+	{
+		e_dialog->add_component(cElement::create());
+
+		auto c_aligner = cAligner::create();
+		c_aligner->x_align = AlignxMiddle;
+		c_aligner->y_align = AlignyMiddle;
+		e_dialog->add_component(c_aligner);
+
+		auto c_layout = cLayout::create(LayoutVertical);
+		c_layout->item_padding = 4.f;
+		e_dialog->add_component(c_layout);
+	}
+
+	auto e_text = Entity::create();
+	e_dialog->add_child(e_text);
+	{
+		e_text->add_component(cElement::create());
+
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->set_text(title);
+		e_text->add_component(c_text);
+	}
+
+	auto e_buttons = Entity::create();
+	e_dialog->add_child(e_buttons);
+	{
+		e_buttons->add_component(cElement::create());
+
+		auto c_layout = cLayout::create(LayoutHorizontal);
+		c_layout->item_padding = 4.f;
+		e_buttons->add_component(c_layout);
+	}
+
+	struct Capture
+	{
+		Entity* e;
+		void (*c)(void* c, bool yes);
+		Mail<> m;
+	}capture;
+	capture.e = e;
+	capture.c = callback;
+	capture.m = _capture;
+
+	auto e_yes = create_standard_button(app.font_atlas_pixel, 1.f, L"Yes");
+	e_buttons->add_child(e_yes);
+	{
+		((cEventReceiver*)e_yes->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto& capture = *(Capture*)c;
+
+			if (is_mouse_clicked(action, key))
+			{
+				destroy_topmost(capture.e, false);
+
+				capture.c(capture.m.p, true);
+				delete_mail(capture.m);
+			}
+		}, new_mail(&capture));
+	}
+
+	auto e_no = create_standard_button(app.font_atlas_pixel, 1.f, L"No");
+	e_buttons->add_child(e_no);
+	{
+		((cEventReceiver*)e_no->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto& capture = *(Capture*)c;
+
+			if (is_mouse_clicked(action, key))
+			{
+				destroy_topmost(capture.e, false);
+
+				capture.c(capture.m.p, false);
+				delete_mail(capture.m);
+			}
+		}, new_mail(&capture));
+	}
 }
 
 void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)

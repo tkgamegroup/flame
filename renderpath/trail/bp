@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <BP>
-  <modules>
-    <module v="flame_foundation.dll" />
-  </modules>
+	<modules>
+		<module filename="flame_foundation.dll" pos="-231.00;-6.00" />
+		<module filename="flame_graphics.dll" pos="-230.00;79.00" />
+	</modules>
 	<nodes />
 	<links />
 </BP>
