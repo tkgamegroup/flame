@@ -45,6 +45,7 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
+			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
 			Vec2f pos;
 
 			void* user_data;
@@ -134,11 +135,16 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Module* add_module(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void remove_module(Module* m);
 
+		FLAME_FOUNDATION_EXPORTS uint impt_count() const;
+		FLAME_FOUNDATION_EXPORTS Import* impt(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS Import* add_impt(const std::wstring& filename, const std::string& id);
+		FLAME_FOUNDATION_EXPORTS void remove_impt(Import* e);
+		FLAME_FOUNDATION_EXPORTS Import* find_impt(const std::string& id) const;
+
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type_name, const std::string& id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
-
 		FLAME_FOUNDATION_EXPORTS Node* find_node(const std::string& id) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& address) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& address) const;
@@ -148,6 +154,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Export* expt(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Export* add_expt(Slot* output, const std::string& alias);
 		FLAME_FOUNDATION_EXPORTS void remove_expt(Export* e);
+		FLAME_FOUNDATION_EXPORTS Export* find_expt(const std::string& alias) const;
 
 		FLAME_FOUNDATION_EXPORTS void clear(); // all nodes and links
 

@@ -9,12 +9,6 @@ namespace flame
 
 	static BP::Environment _bp_env;
 
-	struct ImportPrivate : BP::Import
-	{
-		BP* bp;
-		std::string id;
-	};
-
 	struct ModulePrivate : BP::Module
 	{
 		std::wstring filename;
@@ -26,6 +20,16 @@ namespace flame
 		~ModulePrivate();
 	};
 
+	struct ImportPrivate : BP::Import
+	{
+		std::wstring filename;
+		BP* bp;
+		std::string id;
+
+		ImportPrivate();
+		~ImportPrivate();
+	};
+
 	struct SlotPrivate : BP::Slot
 	{
 		Type type;
@@ -35,7 +39,7 @@ namespace flame
 
 		std::vector<SlotPrivate*> links;
 
-		SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info);
+		SlotPrivate(Type type, NodePrivate* node, VariableInfo* variable_info);
 
 		void set_frame(int frame);
 		void set_data(const void* data);
@@ -81,32 +85,34 @@ namespace flame
 	{
 		std::wstring filename;
 
-		std::vector<BP*> imports;
+		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
 		std::vector<std::unique_ptr<ModulePrivate>> modules;
 		std::unique_ptr<ModulePrivate> self_module;
 
-		std::vector<std::unique_ptr<NodePrivate>> nodes;
-
+		std::vector<std::unique_ptr<ImportPrivate>> impts;
 		std::vector<std::unique_ptr<ExportPrivate>> expts;
 
 		std::vector<NodePrivate*> update_list;
 
 		BPPrivate();
-		~BPPrivate();
 
 		Module* add_module(const std::wstring& filename);
 		void remove_module(Module* m);
 
+		ImportPrivate* add_impt(const std::wstring& filename, const std::string& id);
+		void remove_impt(ImportPrivate* i);
+		ImportPrivate* find_impt(const std::string& id) const;
+
 		NodePrivate* add_node(const std::string& id, const std::string& type_name);
 		void remove_node(NodePrivate* n);
-
 		NodePrivate* find_node(const std::string& id) const;
 		SlotPrivate* find_input(const std::string& address) const;
 		SlotPrivate* find_output(const std::string& address) const;
 
 		ExportPrivate* add_expt(SlotPrivate* output, const std::string& alias);
 		void remove_expt(ExportPrivate* e);
+		ExportPrivate* find_expt(const std::string& alias) const;
 
 		void clear();
 
@@ -124,6 +130,16 @@ namespace flame
 	{
 		free_module(module);
 		TypeinfoDatabase::destroy(db);
+	}
+
+	ImportPrivate::ImportPrivate()
+	{
+		pos = Vec2f(0.f);
+	}
+
+	ImportPrivate::~ImportPrivate()
+	{
+		BP::destroy(bp);
 	}
 
 	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
@@ -373,12 +389,6 @@ namespace flame
 		expts_node_pos = Vec2f(0.f);
 	}
 
-	BPPrivate::~BPPrivate()
-	{
-		for (auto& n : nodes) // since module has been removed, dtor is not valid
-			n->dtor_addr = nullptr;
-	}
-
 	BP::Module* BPPrivate::add_module(const std::wstring& filename)
 	{
 		if (filename == L"bp.dll")
@@ -437,10 +447,64 @@ namespace flame
 
 				modules.erase(it);
 
-				((BPPrivate*)this)->build_update_list();
+				build_update_list();
 				return;
 			}
 		}
+	}
+
+	ImportPrivate* BPPrivate::add_impt(const std::wstring& _filename, const std::string& id)
+	{
+		std::string s_id;
+		if (!id.empty())
+		{
+			s_id = id;
+			if (find_impt(s_id))
+				return nullptr;
+		}
+		else
+		{
+			for (auto i = 0; i < impts.size() + 1; i++)
+			{
+				s_id = "import_" + std::to_string(i);
+				if (!find_impt(s_id))
+					break;
+			}
+		}
+
+		auto bp = BP::create_from_file((std::filesystem::path(filename).parent_path().parent_path() / _filename / L"bp").wstring(), true);
+		if (!bp)
+			return nullptr;
+
+		auto i = new ImportPrivate;
+		i->filename = _filename;
+		i->bp = bp;
+		i->id = s_id;
+		impts.emplace_back(i);
+
+		return i;
+	}
+
+	void BPPrivate::remove_impt(ImportPrivate* i)
+	{
+		for (auto it = impts.begin(); it != impts.end(); it++)
+		{
+			if (it->get() == i)
+			{
+				impts.erase(it);
+				return;
+			}
+		}
+	}
+
+	ImportPrivate* BPPrivate::find_impt(const std::string& id) const
+	{
+		for (auto& i : impts)
+		{
+			if (i->id == id)
+				return i.get();
+		}
+		return nullptr;
 	}
 
 	NodePrivate* BPPrivate::add_node(const std::string& type_name, const std::string& id)
@@ -538,6 +602,8 @@ namespace flame
 
 	ExportPrivate* BPPrivate::add_expt(SlotPrivate* output, const std::string& alias)
 	{
+		if (alias.empty())
+			return nullptr;
 		for (auto& e : expts)
 		{
 			if (e->slot == output || e->alias == alias)
@@ -563,6 +629,16 @@ namespace flame
 				return;
 			}
 		}
+	}
+
+	ExportPrivate* BPPrivate::find_expt(const std::string& alias) const
+	{
+		for (auto& e : expts)
+		{
+			if (e->alias == alias)
+				return e.get();
+		}
+		return nullptr;
 	}
 
 	void BPPrivate::clear()
@@ -614,6 +690,21 @@ namespace flame
 	TypeinfoDatabase* BP::Module::db() const
 	{
 		return ((ModulePrivate*)this)->db;
+	}
+
+	BP* BP::Import::bp() const
+	{
+		return ((ImportPrivate*)this)->bp;
+	}
+
+	const std::string& BP::Import::id() const
+	{
+		return ((ImportPrivate*)this)->id;
+	}
+
+	void BP::Import::set_id(const std::string& id)
+	{
+		((ImportPrivate*)this)->id = id;
 	}
 
 	BP::Slot::Type BP::Slot::type() const
@@ -761,6 +852,31 @@ namespace flame
 		((BPPrivate*)this)->remove_module(m);
 	}
 
+	uint BP::impt_count() const
+	{
+		return ((BPPrivate*)this)->impts.size();
+	}
+
+	BP::Import* BP::impt(uint idx) const
+	{
+		return ((BPPrivate*)this)->impts[idx].get();
+	}
+
+	BP::Import* BP::add_impt(const std::wstring& filename, const std::string& id)
+	{
+		return ((BPPrivate*)this)->add_impt(filename, id);
+	}
+
+	void BP::remove_impt(Import* e)
+	{
+		((BPPrivate*)this)->remove_impt((ImportPrivate*)e);
+	}
+
+	BP::Import* BP::find_impt(const std::string& id) const
+	{
+		return ((BPPrivate*)this)->find_impt(id);
+	}
+
 	uint BP::node_count() const
 	{
 		return ((BPPrivate*)this)->nodes.size();
@@ -814,6 +930,11 @@ namespace flame
 	void BP::remove_expt(Export* e)
 	{
 		((BPPrivate*)this)->remove_expt((ExportPrivate*)e);
+	}
+
+	BP::Export* BP::find_expt(const std::string& alias) const
+	{
+		return ((BPPrivate*)this)->find_expt(alias);
 	}
 
 	void BP::clear()
@@ -890,20 +1011,36 @@ namespace flame
 		std::vector<ModuleDesc> module_descs;
 
 		auto n_modules = file->find_node("modules");
-		if (n_modules)
+		for (auto i_m = 0; i_m < n_modules->node_count(); i_m++)
 		{
-			for (auto i_m = 0; i_m < n_modules->node_count(); i_m++)
-			{
-				ModuleDesc module;
+			ModuleDesc module;
 
-				auto n_module = n_modules->node(i_m);
-				module.filename = s2w(n_module->find_attr("filename")->value());
-				auto a_pos = n_module->find_attr("pos");
-				if (a_pos)
-					module.pos = stof2(a_pos->value().c_str());
-				else
-					module.pos = Vec2f(0.f);
-				module_descs.push_back(module);
+			auto n_module = n_modules->node(i_m);
+			module.filename = s2w(n_module->find_attr("filename")->value());
+			module.pos = stof2(n_module->find_attr("pos")->value().c_str());
+			module_descs.push_back(module);
+		}
+
+		struct ImportDesc
+		{
+			std::wstring filename;
+			std::string id;
+			Vec2f pos;
+		};
+		std::vector<ImportDesc> import_descs; 
+
+		auto n_imports = file->find_node("imports");
+		if (n_imports)
+		{
+			for (auto i_i = 0; i_i < n_imports->node_count(); i_i++)
+			{
+				ImportDesc import;
+
+				auto n_import = n_imports->node(i_i);
+				import.filename = s2w(n_import->find_attr("filename")->value());
+				import.id = n_import->find_attr("id")->value();
+				import.pos = stof2(n_import->find_attr("pos")->value().c_str());
+				import_descs.push_back(import);
 			}
 		}
 
@@ -992,6 +1129,13 @@ namespace flame
 			auto m = bp->add_module(m_d.filename);
 			if (m)
 				m->pos = m_d.pos;
+		}
+
+		for (auto& i_d : import_descs)
+		{
+			auto i = bp->add_impt(i_d.filename, i_d.id);
+			if (i)
+				i->pos = i_d.pos;
 		}
 
 		std::vector<TypeinfoDatabase*> dbs;
@@ -1167,8 +1311,20 @@ namespace flame
 		for (auto& m : bp->modules)
 		{
 			auto n_module = n_modules->new_node("module");
-			n_module->new_attr("filename", (w2s(m->filename)));
+			n_module->new_attr("filename", w2s(m->filename));
 			n_module->new_attr("pos", to_string(m->pos, 2));
+		}
+
+		if (!bp->impts.empty())
+		{
+			auto n_imports = file->new_node("imports");
+			for (auto& i : bp->impts)
+			{
+				auto n_import = n_imports->new_node("import");
+				n_import->new_attr("filename", w2s(i->filename));
+				n_import->new_attr("id", i->id);
+				n_import->new_attr("pos", to_string(i->pos, 2));
+			}
 		}
 
 		std::vector< TypeinfoDatabase*> dbs;
