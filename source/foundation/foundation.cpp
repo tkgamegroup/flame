@@ -1437,16 +1437,6 @@ namespace flame
 
 			idle_func(capture.p);
 
-			if (!delay_events.empty())
-			{
-				std::vector<std::unique_ptr<Closure<void(void*)>>> events;
-				for (auto& e : delay_events)
-					events.push_back(std::move(e));
-				delay_events.clear();
-				for (auto& f : events)
-					f->function(f->capture.p);
-			}
-
 			frame++;
 			counting_frame++;
 			auto et = last_time;
@@ -1479,6 +1469,19 @@ namespace flame
 				else
 					it++;
 			}
+		}
+	}
+
+	void Looper::process_delay_events()
+	{
+		if (!delay_events.empty())
+		{
+			std::vector<std::unique_ptr<Closure<void(void*)>>> events;
+			for (auto& e : delay_events)
+				events.push_back(std::move(e));
+			delay_events.clear();
+			for (auto& f : events)
+				f->function(f->capture.p);
 		}
 	}
 

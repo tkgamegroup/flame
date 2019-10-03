@@ -80,6 +80,8 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 	}
 }
 
+
+
 struct cBPEditor : Component
 {
 	std::wstring filename;

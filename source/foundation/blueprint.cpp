@@ -81,14 +81,17 @@ namespace flame
 		std::string alias;
 	};
 
-	struct BPPrivate : BP
+	struct BPModules : BP
+	{
+		std::vector<std::unique_ptr<ModulePrivate>> modules;
+		std::unique_ptr<ModulePrivate> self_module;
+	};
+
+	struct BPPrivate : BPModules
 	{
 		std::wstring filename;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
-
-		std::vector<std::unique_ptr<ModulePrivate>> modules;
-		std::unique_ptr<ModulePrivate> self_module;
 
 		std::vector<std::unique_ptr<ImportPrivate>> impts;
 		std::vector<std::unique_ptr<ExportPrivate>> expts;

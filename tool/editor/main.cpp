@@ -102,6 +102,7 @@ void App::run()
 	{
 		sc->acquire_image();
 		fence->wait();
+		looper().process_delay_events();
 
 		c_element_root->size = w->size;
 		c_text_fps->set_text(std::to_wstring(looper().fps));

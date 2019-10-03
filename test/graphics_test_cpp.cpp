@@ -41,6 +41,7 @@ struct App
 		{
 			sc->acquire_image();
 			fence->wait();
+			looper().process_delay_events();
 
 			canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World  ");
 			canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
