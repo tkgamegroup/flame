@@ -500,7 +500,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_explorer->dir_menu = create_standard_menu();
 		{
 			{
-				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Goto");
+				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 				c_explorer->dir_menu->add_child(item);
 				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					auto explorer = *(cResourceExplorer**)c;

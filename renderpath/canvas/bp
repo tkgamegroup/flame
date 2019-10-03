@@ -247,15 +247,17 @@
 		<link out="img_white.out" in="ds_wrt.v" />
 		<link out="img_count.out" in="ds_wrt.count" />
 	</links>
-	<exports pos="-230.00;583.00">
-		<export slot="vtx_buf.out" alias="vtx_buf" />
-		<export slot="idx_buf.out" alias="idx_buf" />
-		<export slot="rnf.out" alias="rnf" />
-		<export slot="pll.out" alias="pll" />
-		<export slot="ds.out" alias="ds" />
-		<export slot="ds_wrt.iv" alias="white_iv" />
-		<export slot="pl_element.out" alias="pl_element" />
-		<export slot="pl_text_sdf.out" alias="pl_text_sdf" />
-		<export slot="pl_text_lcd.out" alias="pl_text_lcd" />
+	<exports pos="-259.00;585.00">
+		<export type="in" slot="rt_dst.type" alias="rt_dst_type" />
+		<export type="in" slot="rt_dst.v" alias="rt_dst_v" />
+		<export type="out" slot="vtx_buf.out" alias="vtx_buf" />
+		<export type="out" slot="idx_buf.out" alias="idx_buf" />
+		<export type="out" slot="rnf.out" alias="rnf" />
+		<export type="out" slot="pll.out" alias="pll" />
+		<export type="out" slot="ds.out" alias="ds" />
+		<export type="out" slot="ds_wrt.iv" alias="white_iv" />
+		<export type="out" slot="pl_element.out" alias="pl_element" />
+		<export type="out" slot="pl_text_sdf.out" alias="pl_text_sdf" />
+		<export type="out" slot="pl_text_lcd.out" alias="pl_text_lcd" />
 	</exports>
 </BP>

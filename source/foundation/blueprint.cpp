@@ -600,21 +600,31 @@ namespace flame
 		return (SlotPrivate*)n->find_output(sp[1]);
 	}
 
-	ExportPrivate* BPPrivate::add_expt(SlotPrivate* output, const std::string& alias)
+	ExportPrivate* BPPrivate::add_expt(SlotPrivate* s, const std::string& alias)
 	{
 		if (alias.empty())
 			return nullptr;
 		for (auto& e : expts)
 		{
-			if (e->slot == output || e->alias == alias)
+			if (e->slot == s || e->alias == alias)
 				return nullptr;
 		}
 
-		assert(output->type == Slot::Output);
 		auto e = new ExportPrivate;
-		e->slot = output;
+		e->slot = s;
 		e->alias = alias;
-		expts.emplace_back(e);
+		if (s->type == Slot::Input)
+		{
+			std::vector<std::unique_ptr<ExportPrivate>>::iterator it;
+			for (it = expts.begin(); it != expts.end(); it++)
+			{
+				if ((*it)->slot->type == Slot::Output)
+					break;
+			}
+			expts.emplace(it, e);
+		}
+		else
+			expts.emplace_back(e);
 
 		return e;
 	}
@@ -922,9 +932,9 @@ namespace flame
 		return ((BPPrivate*)this)->expts[idx].get();
 	}
 
-	BP::Export* BP::add_expt(Slot* output, const std::string& alias)
+	BP::Export* BP::add_expt(Slot* s, const std::string& alias)
 	{
-		return ((BPPrivate*)this)->add_expt((SlotPrivate*)output, alias);
+		return ((BPPrivate*)this)->add_expt((SlotPrivate*)s, alias);
 	}
 
 	void BP::remove_expt(Export* e)
@@ -1103,6 +1113,7 @@ namespace flame
 
 		struct ExportDesc
 		{
+			bool is_in;
 			std::string out_addr;
 			std::string alias;
 		};
@@ -1114,6 +1125,7 @@ namespace flame
 		{
 			auto n_export = n_exports->node(i_e);
 			ExportDesc expt;
+			expt.is_in = n_export->find_attr("type")->value() == "in";
 			expt.out_addr = n_export->find_attr("slot")->value();
 			expt.alias = n_export->find_attr("alias")->value();
 			export_descs.push_back(expt);
@@ -1287,11 +1299,15 @@ namespace flame
 		bp->expts_node_pos = expts_node_pos;
 		for(auto& e_d : export_descs)
 		{
-			auto slot = bp->find_output(e_d.out_addr);
+			SlotPrivate* slot = nullptr;
+			if (e_d.is_in)
+				slot = bp->find_input(e_d.out_addr);
+			else
+				slot = bp->find_output(e_d.out_addr);
 			if (slot)
 				bp->add_expt(slot, e_d.alias);
 			else
-				printf("cannot find output: %s\n", e_d.out_addr.c_str());
+				printf("cannot find slot: %s\n", e_d.out_addr.c_str());
 		}
 
 		printf("end loading bp: %s\n", s_filename.c_str());
@@ -1381,13 +1397,18 @@ namespace flame
 
 		auto n_exports = file->new_node("exports");
 		n_exports->new_attr("pos", to_string(bp->expts_node_pos, 2));
-		for (auto& e : bp->expts)
 		{
-			auto n_export = n_exports->new_node("export");
-			auto out_addr = e->slot->get_address();
-			n_export->new_attr("slot", *out_addr.p);
-			n_export->new_attr("alias", e->alias);
-			delete_mail(out_addr);
+			for (auto& e : bp->expts)
+			{
+				auto s = e->slot;
+
+				auto n_export = n_exports->new_node("export");
+				n_export->new_attr("type", s->type == Slot::Input ? "in" : "out");
+				auto out_addr = s->get_address();
+				n_export->new_attr("slot", *out_addr.p);
+				n_export->new_attr("alias", e->alias);
+				delete_mail(out_addr);
+			}
 		}
 
 		SerializableNode::save_to_xml_file(file, filename);

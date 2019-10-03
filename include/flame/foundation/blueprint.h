@@ -152,7 +152,7 @@ namespace flame
 		Vec2f expts_node_pos;
 		FLAME_FOUNDATION_EXPORTS uint expt_count() const;
 		FLAME_FOUNDATION_EXPORTS Export* expt(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Export* add_expt(Slot* output, const std::string& alias);
+		FLAME_FOUNDATION_EXPORTS Export* add_expt(Slot* s, const std::string& alias);
 		FLAME_FOUNDATION_EXPORTS void remove_expt(Export* e);
 		FLAME_FOUNDATION_EXPORTS Export* find_expt(const std::string& alias) const;
 

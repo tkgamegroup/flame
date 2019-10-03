@@ -92,7 +92,7 @@ struct cBPEditor : Component
 	cEdit* add_node_menu_filter;
 	Vec2f add_pos;
 	Entity* e_base;
-	Entity* e_exports_content;
+	Entity* e_exports_main;
 	Entity* e_slot_menu;
 	cDockerTab* console_tab;
 
@@ -169,6 +169,7 @@ struct cBPEditor : Component
 	Entity* create_import_entity(BP::Import* i);
 	Entity* create_exports_entity();
 	Entity* create_export_entity(BP::Export* e);
+	void refresh_exports_entity();
 
 	void load(const std::wstring& _filename, bool no_compile)
 	{
@@ -192,8 +193,7 @@ struct cBPEditor : Component
 		for (auto i = 0; i < bp->node_count(); i++)
 			create_node_entity(bp->node(i));
 		create_exports_entity();
-		for (auto i = 0; i < bp->expt_count(); i++)
-			create_export_entity(bp->expt(i));
+		refresh_exports_entity();
 
 		e_add_node_menu->remove_all_children();
 
@@ -727,20 +727,17 @@ struct cBPSlot : Component
 			}
 		}, new_mail_p(this));
 
-		if (s->type() == BP::Slot::Output)
-		{
-			event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
-				auto thiz = *(cBPSlot**)c;
-				auto editor = thiz->editor;
+		event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			auto thiz = *(cBPSlot**)c;
+			auto editor = thiz->editor;
 
-				if (is_mouse_down(action, key, true) && key == Mouse_Right)
-				{
-					editor->sel_type = cBPEditor::SelSlot;
-					editor->selected.s = thiz->s;
-					popup_menu(editor->e_slot_menu, app.root, pos);
-				}
-			}, new_mail_p(this));
-		}
+			if (is_mouse_down(action, key, true) && key == Mouse_Right)
+			{
+				editor->sel_type = cBPEditor::SelSlot;
+				editor->selected.s = thiz->s;
+				popup_menu(editor->e_slot_menu, app.root, pos);
+			}
+		}, new_mail_p(this));
 	}
 };
 
@@ -1047,55 +1044,123 @@ Entity* cBPEditor::create_import_entity(BP::Import* i)
 			c_aligner->width_policy = SizeGreedy;
 			e_main->add_component(c_aligner);
 
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
+			auto c_layout = cLayout::create(LayoutHorizontal);
+			c_layout->item_padding = 16.f;
 			e_main->add_component(c_layout);
 		}
 
-		for (auto j = 0; j < i->bp()->expt_count(); j++)
+		auto j = 0;
+
+		auto e_left = Entity::create();
+		e_main->add_child(e_left);
 		{
-			auto expt = i->bp()->expt(j);
-			auto output = expt->slot();
+			e_left->add_component(cElement::create());
 
-			auto e_title = Entity::create();
-			e_main->add_child(e_title);
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeGreedy;
+			e_left->add_component(c_aligner);
+
+			e_left->add_component(cLayout::create(LayoutVertical));
+
+			for (; j < i->bp()->expt_count(); j++)
 			{
-				e_title->add_component(cElement::create());
+				auto expt = i->bp()->expt(j);
+				auto slot = expt->slot();
+				if (slot->type() == BP::Slot::Output)
+					break;
 
-				auto c_aligner = cAligner::create();
-				c_aligner->x_align = AlignxRight;
-				e_title->add_component(c_aligner);
-
-				e_title->add_component(cLayout::create(LayoutHorizontal));
-
-				auto e_text = Entity::create();
-				e_title->add_child(e_text);
+				auto e_title = Entity::create();
+				e_left->add_child(e_title);
 				{
-					e_text->add_component(cElement::create());
+					e_title->add_component(cElement::create());
 
-					auto c_text = cText::create(app.font_atlas_sdf);
-					c_text->sdf_scale = 0.6f;
-					c_text->set_text(s2w(expt->alias()));
-					e_text->add_component(c_text);
+					e_title->add_component(cLayout::create(LayoutHorizontal));
+
+					auto e_slot = Entity::create();
+					e_title->add_child(e_slot);
+					{
+						auto c_element = cElement::create();
+						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						c_element->size = r;
+						c_element->roundness = r * 0.5f;
+						c_element->color = Vec4c(200, 200, 200, 255);
+						e_slot->add_component(c_element);
+
+						e_slot->add_component(cEventReceiver::create());
+
+						auto c_slot = new_component<cBPSlot>();
+						c_slot->editor = this;
+						c_slot->s = slot;
+						e_slot->add_component(c_slot);
+						slot->user_data = c_slot;
+					}
+
+					auto e_text = Entity::create();
+					e_title->add_child(e_text);
+					{
+						e_text->add_component(cElement::create());
+
+						auto c_text = cText::create(app.font_atlas_sdf);
+						c_text->sdf_scale = 0.6f;
+						c_text->set_text(s2w(expt->alias()));
+						e_text->add_component(c_text);
+					}
 				}
+			}
+		}
 
-				auto e_slot = Entity::create();
-				e_title->add_child(e_slot);
+		auto e_right = Entity::create();
+		e_main->add_child(e_right);
+		{
+			e_right->add_component(cElement::create());
+
+			e_right->add_component(cLayout::create(LayoutVertical));
+
+			for (; j < i->bp()->expt_count(); j++)
+			{
+				auto expt = i->bp()->expt(j);
+				auto slot = expt->slot();
+
+				auto e_title = Entity::create();
+				e_right->add_child(e_title);
 				{
-					auto c_element = cElement::create();
-					auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-					c_element->size = r;
-					c_element->roundness = r * 0.5f;
-					c_element->color = Vec4c(200, 200, 200, 255);
-					e_slot->add_component(c_element);
+					e_title->add_component(cElement::create());
 
-					e_slot->add_component(cEventReceiver::create());
+					auto c_aligner = cAligner::create();
+					c_aligner->x_align = AlignxRight;
+					e_title->add_component(c_aligner);
 
-					auto c_slot = new_component<cBPSlot>();
-					c_slot->editor = this;
-					c_slot->s = output;
-					e_slot->add_component(c_slot);
-					output->user_data = c_slot;
+					e_title->add_component(cLayout::create(LayoutHorizontal));
+
+					auto e_text = Entity::create();
+					e_title->add_child(e_text);
+					{
+						e_text->add_component(cElement::create());
+
+						auto c_text = cText::create(app.font_atlas_sdf);
+						c_text->sdf_scale = 0.6f;
+						c_text->set_text(s2w(expt->alias()));
+						e_text->add_component(c_text);
+					}
+
+					auto e_slot = Entity::create();
+					e_title->add_child(e_slot);
+					{
+						auto c_element = cElement::create();
+						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						c_element->size = r;
+						c_element->roundness = r * 0.5f;
+						c_element->color = Vec4c(200, 200, 200, 255);
+						e_slot->add_component(c_element);
+
+						e_slot->add_component(cEventReceiver::create());
+
+						auto c_slot = new_component<cBPSlot>();
+						c_slot->editor = this;
+						c_slot->s = slot;
+						e_slot->add_component(c_slot);
+						slot->user_data = c_slot;
+					}
 				}
 			}
 		}
@@ -1156,7 +1221,6 @@ Entity* cBPEditor::create_exports_entity()
 			c_layout->item_padding = 4.f;
 			e_content->add_component(c_layout);
 		}
-		e_exports_content = e_content;
 
 		auto e_text_id = Entity::create();
 		e_content->add_child(e_text_id);
@@ -1170,6 +1234,21 @@ Entity* cBPEditor::create_exports_entity()
 			c_text->sdf_scale = 0.8f;
 			e_text_id->add_component(c_text);
 		}
+
+		auto e_main = Entity::create();
+		e_content->add_child(e_main);
+		{
+			e_main->add_component(cElement::create());
+
+			auto c_aligner = cAligner::create();
+			c_aligner->width_policy = SizeGreedy;
+			e_main->add_component(c_aligner);
+
+			auto c_layout = cLayout::create(LayoutHorizontal);
+			c_layout->item_padding = 16.f;
+			e_main->add_component(c_layout);
+		}
+		e_exports_main = e_main;
 	}
 
 	auto e_bring_to_front = Entity::create();
@@ -1194,8 +1273,9 @@ Entity* cBPEditor::create_exports_entity()
 
 Entity* cBPEditor::create_export_entity(BP::Export* e)
 {
+	auto s = e->slot();
+
 	auto e_export = Entity::create();
-	e_exports_content->add_child(e_export);
 	e->user_data = e_export;
 	{
 		auto c_element = cElement::create();
@@ -1203,10 +1283,17 @@ Entity* cBPEditor::create_export_entity(BP::Export* e)
 		e_export->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		auto out_addr = e->slot()->get_address();
+		auto out_addr = s->get_address();
 		c_text->set_text(s2w(e->alias()) + L" (" + s2w(*out_addr.p) + L")");
 		delete_mail(out_addr);
 		e_export->add_component(c_text);
+
+		if (s->type() == BP::Slot::Output)
+		{
+			auto c_aligner = cAligner::create();
+			c_aligner->x_align = AlignxRight;
+			e_export->add_component(c_aligner);
+		}
 
 		e_export->add_component(cLayout::create(LayoutFree));
 	}
@@ -1230,6 +1317,49 @@ Entity* cBPEditor::create_export_entity(BP::Export* e)
 	}
 
 	return e_export;
+}
+
+void cBPEditor::refresh_exports_entity()
+{
+	e_exports_main->remove_all_children();
+
+	auto i = 0;
+
+	auto e_left = Entity::create();
+	e_exports_main->add_child(e_left);
+	{
+		e_left->add_component(cElement::create());
+
+		auto c_aligner = cAligner::create();
+		c_aligner->width_policy = SizeGreedy;
+		e_left->add_component(c_aligner);
+
+		e_left->add_component(cLayout::create(LayoutVertical));
+
+		for (; i < bp->expt_count(); i++)
+		{
+			auto e = bp->expt(i);
+			if (e->slot()->type() == BP::Slot::Output)
+				break;
+
+			e_left->add_child(create_export_entity(e));
+		}
+	}
+
+	auto e_right = Entity::create();
+	e_exports_main->add_child(e_right);
+	{
+		e_right->add_component(cElement::create());
+
+		e_right->add_component(cLayout::create(LayoutVertical));
+
+		for (; i < bp->expt_count(); i++)
+		{
+			auto e = bp->expt(i);
+
+			e_right->add_child(create_export_entity(e));
+		}
+	}
 }
 
 Entity* cBPEditor::create_node_entity(BP::Node* n)
@@ -2160,7 +2290,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						auto editor = *(cBPEditor**)c;
 
 						if (ok)
-							editor->create_export_entity(editor->bp->add_expt(editor->selected.s, w2s(text)));
+						{
+							editor->bp->add_expt(editor->selected.s, w2s(text));
+							editor->refresh_exports_entity();
+						}
 					}, new_mail_p(editor));
 				}
 			}, new_mail_p(c_editor));
