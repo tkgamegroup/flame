@@ -3,6 +3,7 @@
 	<modules>
 		<module filename="flame_foundation.dll" pos="-254.00;-1.00" />
 		<module filename="flame_graphics.dll" pos="-253.00;85.00" />
+		<module filename="editor.exe" pos="-249.50;168.50" />
 	</modules>
 	<nodes>
 		<node type="graphics::RenderTarget" id="rt_dst" pos="21.72;35.53">
@@ -27,5 +28,5 @@
 		<link out="rnf.fbs" in="make_cmd.fbs" />
 		<link out="rnf.cv" in="make_cmd.cv" />
 	</links>
-	<exports pos="0.00;0.00" />
+	<exports pos="-250.00;248.00" />
 </BP>

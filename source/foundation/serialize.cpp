@@ -1319,7 +1319,7 @@ namespace flame
 		return u;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::collect(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& dll_filename, const std::wstring& _pdb_filename)
+	TypeinfoDatabase* TypeinfoDatabase::collect(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& module_filename, const std::wstring& _pdb_filename)
 	{
 		com_init();
 
@@ -1332,7 +1332,7 @@ namespace flame
 		}
 		auto pdb_filename = _pdb_filename;
 		if (pdb_filename.empty())
-			pdb_filename = ext_replace(dll_filename, L".pdb").wstring();
+			pdb_filename = ext_replace(module_filename, L".pdb").wstring();
 		if (FAILED(dia_source->loadDataFromPdb(pdb_filename.c_str())))
 		{
 			printf("pdb failed to open: %s\n", w2s(pdb_filename).c_str());
@@ -1355,12 +1355,12 @@ namespace flame
 		}
 
 		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = dll_filename;
+		db->module_name = module_filename;
 		auto dbs = existed_dbs;
 		dbs.push_back(db);
 
 		{
-			auto library = load_module(dll_filename.c_str());
+			auto library = load_module(module_filename.c_str());
 			if (library)
 			{
 				typedef void (*add_templates_func)(TypeinfoDatabase*);
@@ -1587,7 +1587,7 @@ namespace flame
 					}
 					if (ctor)
 					{
-						auto library = load_module(dll_filename.c_str());
+						auto library = load_module(module_filename.c_str());
 						if (library)
 						{
 							auto obj = malloc(u->size);

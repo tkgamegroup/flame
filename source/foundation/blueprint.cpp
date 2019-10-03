@@ -1227,7 +1227,7 @@ namespace flame
 			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " + pdb_filename + ")\n";
 			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
 			for (auto& m : bp->modules)
-				cmakelists << "-d${CMAKE_SOURCE_DIR}/../../bin/" + w2s(m->absolute_filename) + " ";
+				cmakelists << "-m${CMAKE_SOURCE_DIR}/../../bin/" + w2s(m->absolute_filename) + " ";
 			cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" + pdb_filename + ".pdb)\n";
 			cmakelists.close();
 
