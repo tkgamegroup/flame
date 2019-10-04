@@ -132,7 +132,7 @@ namespace flame
 			std::vector<std::unique_ptr<Resource>> storage_images;
 			std::unique_ptr<Resource> push_constant;
 
-			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs, const std::vector<void*>* outputs, Pipelinelayout* pll, bool autogen_code);
+			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code);
 			~ShaderPrivate();
 		};
 

@@ -393,7 +393,8 @@ namespace flame
 			{
 				auto iv = input->vi;
 				auto ia = (AttributeBase*)input->raw_data;
-				if (ia->twist == 1 || (out->vi->type()->tag() == TypeTagAttributeV && iv->type()->tag() == TypeTagAttributeP))
+				auto ot = out->vi->type()->tag();
+				if ((ia->twist == 1 && ot == TypeTagAttributeV) || (ot == TypeTagAttributeV && iv->type()->tag() == TypeTagAttributeP))
 				{
 					auto p = out->data();
 					memcpy(input->data(), &p, sizeof(void*));

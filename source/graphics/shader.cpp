@@ -93,8 +93,7 @@ namespace flame
 			info.bindingCount = vk_bindings.size();
 			info.pBindings = vk_bindings.data();
 
-			chk_res(vkCreateDescriptorSetLayout(((DevicePrivate*)d)->v,
-				&info, nullptr, &v));
+			chk_res(vkCreateDescriptorSetLayout(((DevicePrivate*)d)->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -179,7 +178,7 @@ namespace flame
 						Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
 					if (d)
-						out$o.v = Descriptorlayout::create(d, bindings$i.v ? *bindings$i.v : std::vector<void*>());
+						out$o.v = Descriptorlayout::create(d, get_attribute_vec(bindings$i));
 					else
 					{
 						printf("cannot create descriptorsetlayout\n");
@@ -503,7 +502,8 @@ namespace flame
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
 					auto& env = bp_env();
 					auto d = env.graphics_device;
-					if (d && descriptorlayouts$i.v && !descriptorlayouts$i.v->empty())
+					auto descriptorlayouts = get_attribute_vec(descriptorlayouts$i);
+					if (d && !descriptorlayouts.empty())
 					{
 						UdtInfo* pc_udt = nullptr;
 						if (!push_constant_udt_name$i.v.empty())
@@ -511,7 +511,7 @@ namespace flame
 							pc_udt = find_udt(env.dbs, H(push_constant_udt_name$i.v.c_str()));
 							assert(pc_udt);
 						}
-						out$o.v = Pipelinelayout::create(d, *descriptorlayouts$i.v, push_constant_size$i.v, pc_udt);
+						out$o.v = Pipelinelayout::create(d, descriptorlayouts, push_constant_size$i.v, pc_udt);
 					}
 					else
 					{
@@ -606,9 +606,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (attribs$i.frame > out$o.frame)
-					out$o.v.attribs = *attribs$i.v;
+					out$o.v.attribs = get_attribute_vec(attribs$i);
 				if (buffers$i.frame > out$o.frame)
-					out$o.v.buffers = *buffers$i.v;
+					out$o.v.buffers = get_attribute_vec(buffers$i);
 				if (primitive_topology$i.frame > out$o.frame)
 					out$o.v.primitive_topology = primitive_topology$i.v;
 				if (patch_control_points$i.frame > out$o.frame)
@@ -704,7 +704,7 @@ namespace flame
 			}
 		};
 
-		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>* _inputs, const std::vector<void*>* _outputs, Pipelinelayout* _pll, bool autogen_code) :
+		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>& _inputs, const std::vector<void*>& _outputs, Pipelinelayout* _pll, bool autogen_code) :
 			d((DevicePrivate*)d)
 		{
 			assert(std::filesystem::exists(filename));
@@ -960,14 +960,14 @@ namespace flame
 
 				// do validate
 
-				if (_inputs)
+				if (!_inputs.empty())
 				{
 					if (stage == ShaderStageVert)
 					{
 						for (auto& r : inputs)
 						{
 							VertexInputAttribute* via = nullptr;
-							for (auto _i : *_inputs)
+							for (auto _i : _inputs)
 							{
 								auto i = (VertexInputAttribute*)_i;
 								if (r->location == i->location)
@@ -984,7 +984,7 @@ namespace flame
 						for (auto& r : inputs)
 						{
 							StageInOut* io = nullptr;
-							for (auto _i : *_inputs)
+							for (auto _i : _inputs)
 							{
 								auto i = (StageInOut*)_i;
 								if (r->location == i->location)
@@ -998,14 +998,14 @@ namespace flame
 					}
 				}
 
-				if (_outputs)
+				if (!_outputs.empty())
 				{
 					if (stage == ShaderStageFrag)
 					{
 						for (auto& r : outputs)
 						{
 							OutputAttachmentInfo* oa = nullptr;
-							for (auto _o : *_outputs)
+							for (auto _o : _outputs)
 							{
 								auto o = (OutputAttachmentInfo*)_o;
 								if (r->location == o->location)  
@@ -1023,7 +1023,7 @@ namespace flame
 						for (auto& r : outputs)
 						{
 							StageInOut* io = nullptr;
-							for (auto _o : *_outputs)
+							for (auto _o : _outputs)
 							{
 								auto o = (StageInOut*)_o;
 								if (r->location == o->location)
@@ -1096,16 +1096,16 @@ namespace flame
 #endif
 		}
 
-		Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>* inputs, const std::vector<void*>* outputs, Pipelinelayout* _pll)
+		Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* _pll)
 		{
 			auto ret = new_mail<std::string>();
 
-			if (inputs)
+			if (!inputs.empty())
 			{
 				*ret.p += "\n";
 				if (stage == ShaderStageVert)
 				{
-					for (auto _i : *inputs)
+					for (auto _i : inputs)
 					{
 						auto i = (VertexInputAttribute*)_i;
 						*ret.p += "layout (location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
@@ -1113,7 +1113,7 @@ namespace flame
 				}
 				else
 				{
-					for (auto _i : *inputs)
+					for (auto _i : inputs)
 					{
 						auto i = (StageInOut*)_i;
 						*ret.p += "layout (location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
@@ -1121,12 +1121,12 @@ namespace flame
 				}
 			}
 
-			if (outputs)
+			if (!outputs.empty())
 			{
 				*ret.p += "\n";
 				if (stage == ShaderStageFrag)
 				{
-					for (auto _o : *outputs)
+					for (auto _o : outputs)
 					{
 						auto o = (OutputAttachmentInfo*)_o;
 						if (o->dual_src)
@@ -1140,7 +1140,7 @@ namespace flame
 				}
 				else
 				{
-					for (auto _o : *outputs)
+					for (auto _o : outputs)
 					{
 						auto o = (StageInOut*)_o;
 						*ret.p += "layout (location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
@@ -1205,7 +1205,7 @@ namespace flame
 			return ret;
 		}
 
-		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs, const std::vector<void*>* outputs, Pipelinelayout* pll, bool autogen_code)
+		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code)
 		{
 			return new ShaderPrivate(d, filename, prefix, inputs, outputs, pll, autogen_code);
 		}
@@ -1238,7 +1238,7 @@ namespace flame
 						Shader::destroy((Shader*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
 					if (d)
-						out$o.v = Shader::create(d, bp_env().path + L"/" + filename$i.v, prefix$i.v, inputs$i.v, outputs$i.v, (Pipelinelayout*)pll$i.v, autogen_code$i.v);
+						out$o.v = Shader::create(d, bp_env().path + L"/" + filename$i.v, prefix$i.v, get_attribute_vec(inputs$i), get_attribute_vec(outputs$i), (Pipelinelayout*)pll$i.v, autogen_code$i.v);
 					else
 					{
 						printf("cannot create shader\n");
@@ -1551,9 +1551,10 @@ namespace flame
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
-					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && shaders$i.v && !shaders$i.v->empty() && pll$i.v)
-						out$o.v = Pipeline::create(d, *shaders$i.v, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v, 
-						(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, outputs$i.v  ? *outputs$i.v : std::vector<void*>(), dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
+					auto shaders = get_attribute_vec(shaders$i);
+					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && !shaders.empty() && pll$i.v)
+						out$o.v = Pipeline::create(d, shaders, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,
+						(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, get_attribute_vec(outputs$i), dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
 					else
 					{
 						printf("cannot create pipeline\n");

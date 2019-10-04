@@ -216,8 +216,8 @@ namespace flame
 
 		struct SubpassInfo$
 		{
-			AttributeV<std::vector<uint>> color_attachments$i;
-			AttributeV<std::vector<uint>> resolve_attachments$i;
+			AttributeP<std::vector<uint>> color_attachments$i;
+			AttributeP<std::vector<uint>> resolve_attachments$i;
 			AttributeV<int> depth_attachment$i;
 
 			AttributeV<SubpassInfo> out$o;
@@ -230,9 +230,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (color_attachments$i.frame > out$o.frame)
-					out$o.v.color_attachments = color_attachments$i.v;
+					out$o.v.color_attachments = color_attachments$i.v ? *color_attachments$i.v : std::vector<uint>();
 				if (resolve_attachments$i.frame > out$o.frame)
-					out$o.v.resolve_attachments = resolve_attachments$i.v;
+					out$o.v.resolve_attachments = resolve_attachments$i.v ? *resolve_attachments$i.v : std::vector<uint>();
 				if (depth_attachment$i.frame > out$o.frame)
 					out$o.v.depth_attachment = depth_attachment$i.v;
 				out$o.frame = maxN(color_attachments$i.frame, resolve_attachments$i.frame, depth_attachment$i.frame);
@@ -244,7 +244,7 @@ namespace flame
 		{
 			AttributeP<std::vector<void*>> attachments$i;
 			AttributeP<std::vector<void*>> subpasses$i;
-			AttributeP<std::vector<Vec<2, uint>>> dependencies$i;
+			AttributeP<std::vector<Vec2u>> dependencies$i;
 
 			AttributeP<void> out$o;
 
@@ -255,10 +255,12 @@ namespace flame
 					if (out$o.v)
 						Renderpass::destroy((Renderpass*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
-					if (attachments$i.v && !attachments$i.v->empty() && subpasses$i.v && !subpasses$i.v->empty())
+					auto attachments = get_attribute_vec(attachments$i);
+					auto subpasses = get_attribute_vec(subpasses$i);
+					if (!attachments.empty() && !subpasses.empty())
 					{
 						auto ok = true;
-						for (auto a : *attachments$i.v)
+						for (auto a : attachments)
 						{
 							if (((AttachmentInfo*)a)->format == Format_Undefined)
 							{
@@ -268,7 +270,7 @@ namespace flame
 						}
 
 						if (ok)
-							out$o.v = Renderpass::create(d, *attachments$i.v, *subpasses$i.v, dependencies$i.v ? *dependencies$i.v : std::vector<Vec<2, uint>>());
+							out$o.v = Renderpass::create(d, attachments, subpasses, dependencies$i.v ? *dependencies$i.v : std::vector<Vec2u>());
 						else
 							out$o.v = nullptr;
 					}
@@ -380,8 +382,11 @@ namespace flame
 					if (cv && cv->renderpass())
 					{
 						auto count = cv->renderpass()->attachment_count();
-						for (auto i = 0; i < count; i++)
-							cv->set(i, (*colors$i.v)[i]);
+						if (colors$i.v && !colors$i.v->empty())
+						{
+							for (auto i = 0; i < count; i++)
+								cv->set(i, (*colors$i.v)[i]);
+						}
 					}
 					else
 						printf("cannot update clearvalues\n");
@@ -461,8 +466,9 @@ namespace flame
 					if (out$o.v)
 						Framebuffer::destroy((Framebuffer*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
-					if (d && renderpass$i.v && views$i.v && !views$i.v->empty())
-						out$o.v = Framebuffer::create(d, (Renderpass*)renderpass$i.v, *views$i.v);
+					auto views = get_attribute_vec(views$i);
+					if (d && renderpass$i.v && !views.empty())
+						out$o.v = Framebuffer::create(d, (Renderpass*)renderpass$i.v, views);
 					else
 					{
 						printf("cannot create framebuffer\n");
@@ -654,8 +660,8 @@ namespace flame
 
 		struct SubpassTargetInfo$
 		{
-			AttributeV<std::vector<void*>> color_targets$i;
-			AttributeV<std::vector<void*>> resolve_targets$i;
+			AttributeP<std::vector<void*>> color_targets$i;
+			AttributeP<std::vector<void*>> resolve_targets$i;
 			AttributeP<void> depth_target$i;
 
 			AttributeV<SubpassTargetInfo> out$o;
@@ -668,9 +674,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				if (color_targets$i.frame > out$o.frame)
-					out$o.v.color_targets = color_targets$i.v;
+					out$o.v.color_targets = get_attribute_vec(color_targets$i);
 				if (resolve_targets$i.frame > out$o.frame)
-					out$o.v.resolve_targets = resolve_targets$i.v;
+					out$o.v.resolve_targets = get_attribute_vec(resolve_targets$i);
 				if (depth_target$i.frame > out$o.frame)
 					out$o.v.depth_target = depth_target$i.v;
 				out$o.frame = maxN(color_targets$i.frame, resolve_targets$i.frame, depth_target$i.frame);
@@ -688,32 +694,6 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS RenderpassAndFramebuffer$()
 			{
-			}
-
-			void succeeded(RenderpassAndFramebuffer* rnf)
-			{
-				out$o.v = rnf;
-				rp$o.v = rnf->renderpass();
-				fbs$o.v = rnf->framebuffers();
-				cv$o.v = rnf->clearvalues();
-			}
-
-			void failed()
-			{
-				printf("cannot create renderpassandframebuffer\n");
-
-				out$o.v = nullptr;
-				rp$o.v = nullptr;
-				fbs$o.v.clear();
-				cv$o.v = nullptr;
-			}
-
-			void update_frame()
-			{
-				out$o.frame = passes$i.frame;
-				rp$o.frame = passes$i.frame;
-				fbs$o.frame = passes$i.frame;
-				cv$o.frame = passes$i.frame;
 			}
 
 			FLAME_GRAPHICS_EXPORTS void update$()
@@ -750,46 +730,41 @@ namespace flame
 
 					return true;
 				};
-				if (passes$i.twist == 1)
+				if (passes$i.frame > out$o.frame)
 				{
-					if (passes$i.frame > out$o.frame)
+					auto passes = get_attribute_vec(passes$i);
+					if (out$o.v)
+						RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
+					auto ok = !passes.empty();
+					for (auto _p : passes)
 					{
-						if (out$o.v)
-							RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
-						auto p = (void*)passes$i.v;
-						if (check_pass(p))
-							succeeded(RenderpassAndFramebuffer::create((Device*)bp_env().graphics_device, { p }));
-						else
-							failed();
-						update_frame();
-					}
-				}
-				else
-				{
-					if (passes$i.frame > out$o.frame)
-					{
-						if (out$o.v)
-							RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
-						auto ok = false;
-						if (passes$i.v && !passes$i.v->empty())
+						if (!check_pass(_p))
 						{
-							ok = true;
-
-							for (auto _p : *passes$i.v)
-							{
-								if (!check_pass(_p))
-								{
-									ok = false;
-									break;
-								}
-							}
+							ok = false;
+							break;
 						}
-						if (ok)
-							succeeded(RenderpassAndFramebuffer::create((Device*)bp_env().graphics_device, *passes$i.v));
-						else
-							failed();
-						update_frame();
 					}
+					if (ok)
+					{
+						auto rnf = RenderpassAndFramebuffer::create((Device*)bp_env().graphics_device, passes);
+						out$o.v = rnf;
+						rp$o.v = rnf->renderpass();
+						fbs$o.v = rnf->framebuffers();
+						cv$o.v = rnf->clearvalues();
+					}
+					else
+					{
+						printf("cannot create renderpassandframebuffer\n");
+
+						out$o.v = nullptr;
+						rp$o.v = nullptr;
+						fbs$o.v.clear();
+						cv$o.v = nullptr;
+					}
+					out$o.frame = passes$i.frame;
+					rp$o.frame = passes$i.frame;
+					fbs$o.frame = passes$i.frame;
+					cv$o.frame = passes$i.frame;
 				}
 			}
 

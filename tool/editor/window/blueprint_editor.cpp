@@ -1102,8 +1102,8 @@ Entity* cBPEditor::create_import_entity(BP::Import* i)
 			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->set_text(s2w(i->id()));
 			c_text->sdf_scale = 0.8f;
+			c_text->set_text(s2w(i->id()));
 			e_text_id->add_component(c_text);
 
 			e_text_id->add_component(cEventReceiver::create());
@@ -1359,10 +1359,11 @@ Entity* cBPEditor::create_export_entity(BP::Export* e)
 	e->user_data = e_export;
 	{
 		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_pixel->pixel_height, 0.f);
+		c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_sdf->pixel_height * 0.8f, 0.f);
 		e_export->add_component(c_element);
 
-		auto c_text = cText::create(app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_sdf);
+		c_text->sdf_scale = 0.8f;
 		auto out_addr = s->get_address();
 		c_text->set_text(s2w(e->alias()) + L" (" + s2w(*out_addr.p) + L")");
 		delete_mail(out_addr);
@@ -1488,8 +1489,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->set_text(s2w(n->id()));
 			c_text->sdf_scale = 0.8f;
+			c_text->set_text(s2w(n->id()));
 			e_text_id->add_component(c_text);
 
 			e_text_id->add_component(cEventReceiver::create());
@@ -1606,8 +1607,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 					auto filename = *(std::wstring*)capture.n->find_input("filename")->data();
 					auto prefix = *(std::string*)capture.n->find_input("prefix")->data();
-					auto inputs = (std::vector<void*>*)capture.n->find_input("inputs")->data_p();
-					auto outputs = (std::vector<void*>*)capture.n->find_input("outputs")->data_p();
+					auto inputs = (AttributeP<std::vector<void*>>*)capture.n->find_input("inputs")->raw_data();
+					auto outputs = (AttributeP < std::vector<void*>>*)capture.n->find_input("outputs")->raw_data();
 					auto pll = (Pipelinelayout*)capture.n->find_input("pll")->data_p();
 					auto autogen_code = *(bool*)capture.n->find_input("autogen_code")->data();
 
@@ -1638,7 +1639,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto _prefix = s2w(prefix);
 							if (autogen_code)
 							{
-								auto code = get_shader_autogen_code(shader_stage_from_filename(filename), inputs, outputs, pll);
+								auto code = get_shader_autogen_code(shader_stage_from_filename(filename), get_attribute_vec(*inputs), get_attribute_vec(*outputs), pll);
 								_prefix += s2w(*code.p);
 								delete_mail(code);
 							}

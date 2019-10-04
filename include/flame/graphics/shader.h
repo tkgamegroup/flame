@@ -256,11 +256,11 @@ namespace flame
 			return ShaderStageNone;
 		}
 
-		FLAME_GRAPHICS_EXPORTS Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>* inputs = nullptr, const std::vector<void*>* outputs = nullptr, Pipelinelayout* pll = nullptr);
+		FLAME_GRAPHICS_EXPORTS Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>& inputs = {}, const std::vector<void*>& outputs = {}, Pipelinelayout* pll = nullptr);
 
 		struct Shader
 		{
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>* inputs = nullptr, const std::vector<void*>* outputs = nullptr, Pipelinelayout* pll = nullptr, bool autogen_code = false);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs = {}, const std::vector<void*>& outputs = {}, Pipelinelayout* pll = nullptr, bool autogen_code = false);
 			// for vertex shader, inputs are the VertexInputAttributeInfos, for fragment shader, outputs are the OutputAttachmentInfos, otherwise, inputs and outputs are StageInOutInfos
 			// if autogen_code, inputs, outputs and pll are used to generate the code, otherwise, just the validation
 			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);

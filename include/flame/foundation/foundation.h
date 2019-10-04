@@ -976,25 +976,33 @@ namespace flame
 		int frame;
 	};
 
-	template<typename T>
+	template<class T>
 	struct AttributeE : AttributeBase // enum type attribute
 	{
 		T v;
 	};
 
-	template<typename T>
+	template<class T>
 	struct AttributeV : AttributeBase // variable type attribute
 	{
 		T v;
 	};
 
-	template<typename T>
+	template<class T>
 	struct AttributeP : AttributeBase // pointer type attribute
 	{
 		T* v;
 	};
 
 #pragma pack()
+
+	template<class T>
+	std::vector<T> get_attribute_vec(const AttributeP<std::vector<T>>& v)
+	{
+		if (v.twist == 1)
+			return { (T)v.v };
+		return v.v ? *v.v : std::vector<T>();
+	}
 
 	template<class T = void>
 	struct Mail
