@@ -306,8 +306,23 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 	}
 }
 
+extern "C" void mainCRTStartup();
+static void* init_crt_ev = nullptr;
+extern "C" __declspec(dllexport) void init_crt(void* ev)
+{
+	init_crt_ev = ev;
+	mainCRTStartup();
+}
+
 int main(int argc, char **args)
 {
+	if (init_crt_ev)
+	{
+		set_event(init_crt_ev);
+		for (;;)
+			sleep(60000);
+	}
+
 	app.create();
 
 	looper().loop([](void* c) {

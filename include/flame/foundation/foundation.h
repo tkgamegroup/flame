@@ -55,14 +55,6 @@ namespace flame
 		return cvt.p;
 	}
 
-	struct Dummy
-	{
-	};
-	typedef void(Dummy::*MF_v_v)();
-	typedef void(Dummy::* MF_v_vp)(void*);
-	typedef void(Dummy::* MF_v_vp_u)(void*, uint);
-	typedef void*(Dummy::* MF_vp_v)();
-
 	template<class F>
 	F p2f(void* p) // void pointer to function
 	{
@@ -74,6 +66,20 @@ namespace flame
 		cvt.p = p;
 		return cvt.f;
 	}
+
+	template<class F, class ...Args>
+	auto cf(F f, Args... args) // call function
+	{
+		return (*f)(args...);
+	}
+
+	struct Dummy
+	{
+	};
+	typedef void(Dummy::*MF_v_v)();
+	typedef void(Dummy::* MF_v_vp)(void*);
+	typedef void(Dummy::* MF_v_vp_u)(void*, uint);
+	typedef void*(Dummy::* MF_vp_v)();
 
 	template<class F, class ...Args>
 	auto cmf(F f, void* p, Args... args) // call member function at an address

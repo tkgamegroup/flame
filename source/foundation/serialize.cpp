@@ -6,6 +6,7 @@
 #include <Windows.h>
 #include <dia2.h>
 #include <atlbase.h>
+#include <DbgHelp.h>
 
 namespace flame
 {
@@ -1592,6 +1593,77 @@ namespace flame
 						{
 							auto obj = malloc(u->size);
 							memset(obj, 0, u->size);
+
+							if (std::filesystem::path(module_filename).extension() == L".exe")
+							{
+								auto ulsize = 0UL;
+								auto pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToData(library, TRUE, IMAGE_DIRECTORY_ENTRY_IMPORT, &ulsize);
+								if (pImportDesc)
+								{
+									for (; pImportDesc->Name; pImportDesc++)
+									{
+										PSTR pszModName = (PSTR)((PBYTE)library + pImportDesc->Name);
+										if (!pszModName)
+											break;
+
+										auto hImportDLL = LoadLibraryA(pszModName);
+										assert(hImportDLL);
+
+										auto pThunk = (PIMAGE_THUNK_DATA)((PBYTE)library + pImportDesc->FirstThunk);
+
+										for (; pThunk->u1.Function; pThunk++)
+										{
+											FARPROC pfnNew = 0;
+											size_t rva = 0;
+											if (pThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG64)
+											{
+												size_t ord = IMAGE_ORDINAL64(pThunk->u1.Ordinal);
+
+												PROC* ppfn = (PROC*)&pThunk->u1.Function;
+												assert(ppfn);
+												rva = (size_t)pThunk;
+
+												char fe[100] = { 0 };
+												sprintf_s(fe, 100, "#%u", ord);
+												pfnNew = GetProcAddress(hImportDLL, (LPCSTR)ord);
+												assert(pfnNew);
+											}
+											else
+											{
+												PROC* ppfn = (PROC*)&pThunk->u1.Function;
+												assert(ppfn);
+												rva = (size_t)pThunk;
+												PSTR fName = (PSTR)library;
+												fName += pThunk->u1.Function;
+												fName += 2;
+												if (!fName)
+													break;
+												pfnNew = GetProcAddress(hImportDLL, fName);
+												assert(pfnNew);
+											}
+
+											auto hp = GetCurrentProcess();
+											if (!WriteProcessMemory(hp, (LPVOID*)rva, &pfnNew, sizeof(pfnNew), NULL) && (ERROR_NOACCESS == GetLastError()))
+											{
+												DWORD dwOldProtect;
+												if (VirtualProtect((LPVOID)rva, sizeof(pfnNew), PAGE_WRITECOPY, &dwOldProtect))
+												{
+													assert(WriteProcessMemory(GetCurrentProcess(), (LPVOID*)rva, &pfnNew, sizeof(pfnNew), NULL));
+													assert(VirtualProtect((LPVOID)rva, sizeof(pfnNew), dwOldProtect, &dwOldProtect));
+												}
+											}
+										}
+									}
+								}
+
+								auto f = (void(*)(void*))GetProcAddress((HMODULE)library, "init_crt");
+								auto ev = create_event(false);
+								std::thread([&]() {
+									f(ev);
+								}).detach();
+								wait_event(ev, -1);
+								destroy_event(ev);
+							}
 
 							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->rva)), obj);
 							for (auto& i : u->variables)

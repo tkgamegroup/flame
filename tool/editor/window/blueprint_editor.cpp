@@ -80,7 +80,98 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 	}
 }
 
+namespace flame
+{
+	struct DstImage$
+	{
+		AttributeV<Vec2u> size$i;
 
+		AttributeP<void> img$o;
+		AttributeE<TargetType$> type$o;
+		AttributeP<void> view$o;
+
+		AttributeV<uint> idx$o;
+
+		__declspec(dllexport) DstImage$()
+		{
+			size$i.v = Vec2u(400, 300);
+		}
+
+		__declspec(dllexport) void update$()
+		{
+			if (size$i.frame > img$o.frame)
+			{
+				if (idx$o.v > 0)
+					app.canvas->set_image(idx$o.v, nullptr);
+				if (img$o.v)
+					Image::destroy((Image*)img$o.v);
+				if (view$o.v)
+					Imageview::destroy((Imageview*)view$o.v);
+				auto d = (Device*)bp_env().graphics_device;
+				if (d && size$i.v.x() > 0 && size$i.v.y() > 0)
+				{
+					img$o.v = Image::create(d, Format_R8G8B8A8_UNORM, size$i.v, 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
+					((Image*)img$o.v)->init(Vec4c(0, 0, 0, 255));
+				}
+				else
+					img$o.v = nullptr;
+				type$o.v = TargetImageview;
+				type$o.frame = size$i.frame;
+				if (img$o.v)
+				{
+					view$o.v = Imageview::create((Image*)img$o.v);
+					idx$o.v = app.canvas->set_image(-1, (Imageview*)view$o.v);
+				}
+				img$o.frame = size$i.frame;
+				view$o.frame = size$i.frame;
+				idx$o.frame = size$i.frame;
+			}
+		}
+
+		__declspec(dllexport) ~DstImage$()
+		{
+			if (idx$o.v > 0)
+				app.canvas->set_image(idx$o.v, nullptr);
+			if (img$o.v)
+				Image::destroy((Image*)img$o.v);
+			if (view$o.v)
+				Imageview::destroy((Imageview*)view$o.v);
+		}
+	};
+
+	struct CmdBufs$
+	{
+		AttributeV<std::vector<void*>> out$o;
+
+		__declspec(dllexport) CmdBufs$()
+		{
+		}
+
+		__declspec(dllexport) void update$()
+		{
+			if (out$o.frame == -1)
+			{
+				for (auto i = 0; i < out$o.v.size(); i++)
+					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+				auto d = (Device*)bp_env().graphics_device;
+				if (d)
+				{
+					out$o.v.resize(1);
+					out$o.v[0] = Commandbuffer::create(d->gcp);
+				}
+				else
+					out$o.v.clear();
+				out$o.frame = 0;
+			}
+		}
+
+		__declspec(dllexport) ~CmdBufs$()
+		{
+			for (auto i = 0; i < out$o.v.size(); i++)
+				Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+		}
+	};
+}
 
 struct cBPEditor : Component
 {
@@ -97,11 +188,6 @@ struct cBPEditor : Component
 	Entity* e_exports_main;
 	Entity* e_slot_menu;
 	cDockerTab* console_tab;
-
-	graphics::Image* rt;
-	graphics::Imageview* rt_v;
-	uint rt_id;
-	std::vector<void*> rt_cbs;
 
 	enum SelType
 	{
@@ -134,13 +220,6 @@ struct cBPEditor : Component
 		locked = false;
 
 		console_tab = nullptr;
-
-		rt = graphics::Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(400, 300), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
-		rt->init(Vec4c(0, 0, 0, 255));
-		rt_v = Imageview::create(rt);
-		rt_id = app.canvas->set_image(-1, rt_v);
-		rt_cbs.resize(1);
-		rt_cbs[0] = Commandbuffer::create(app.d->gcp);
 	}
 
 	~cBPEditor()
@@ -154,8 +233,6 @@ struct cBPEditor : Component
 				tab->take_away(true);
 			}, new_mail_p(console_tab));
 		}
-
-		app.canvas->set_image(rt_id, nullptr);
 	}
 
 	void reset_add_node_menu_filter()
@@ -340,34 +417,39 @@ struct cBPEditor : Component
 	{
 		struct Capture
 		{
-			Entity* e_m;
-			std::vector<Entity*> e_ns;
+			BP* bp;
+			BP::Module* m;
 		}capture;
-		capture.e_m = (Entity*)m->user_data;
-		auto m_db = m->db();
-		for (auto i = 0; i < bp->node_count(); i++)
-		{
-			auto n = bp->node(i);
-			if (n->udt()->db() == m_db)
-				capture.e_ns.push_back((Entity*)n->user_data);
-		}
+		capture.bp = bp;
+		capture.m = m;
 		looper().add_delay_event([](void* c) {
 			auto& capture = *(Capture*)c;
 
-			capture.e_m->parent()->remove_child(capture.e_m);
-			for (auto e : capture.e_ns)
-				e->parent()->remove_child(e);
+			auto m_db = capture.m->db();
+			for (auto i = 0; i < capture.bp->node_count(); i++)
+			{
+				auto n = capture.bp->node(i);
+				if (n->udt()->db() == m_db)
+				{
+					auto e = (Entity*)n->user_data;
+					e->parent()->remove_child(e);
+				}
+			}
+			auto e = (Entity*)capture.m->user_data;
+			e->parent()->remove_child(e);
+
+			capture.bp->remove_module(capture.m);
 		}, new_mail(&capture));
-		bp->remove_module(m);
 	}
 
 	void remove_node(BP::Node* n)
 	{
 		looper().add_delay_event([](void* c) {
-			auto e = *(Entity**)c;
+			auto n = *(BP::Node**)c;
+			auto e = (Entity*)n->user_data;
 			e->parent()->remove_child(e);
-		}, new_mail_p(n->user_data));
-		bp->remove_node(n);
+			n->bp()->remove_node(n);
+		}, new_mail_p(n));
 	}
 
 	void delete_selected()
@@ -549,11 +631,7 @@ struct cBPEditor : Component
 	virtual void update() override
 	{
 		if (running)
-		{
 			bp->update();
-			if (cb_recorded)
-				app.extra_cbs.push_back((Commandbuffer*)rt_cbs[0]);
-		}
 
 		for (auto it = tips.begin(); it != tips.end(); )
 		{
@@ -1435,7 +1513,17 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_type->add_component(c_text);
 		}
 
-		if (n->udt()->name() == "graphics::Shader")
+		auto udt_name = n->udt()->name();
+		if (udt_name == "DstImage")
+		{
+			auto e_show = create_standard_button(app.font_atlas_sdf, 0.5f, L"Show");
+			e_content->add_child(e_show);
+			((cEventReceiver*)e_show->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				if (is_mouse_clicked(action, key))
+					open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
+			}, new_mail_p(n));
+		}
+		else if (udt_name == "graphics::Shader")
 		{
 			auto e_edit = create_standard_button(app.font_atlas_sdf, 0.5f, L"Edit Shader");
 			e_content->add_child(e_edit);
@@ -1449,6 +1537,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			capture.n = n;
 			((cEventReceiver*)e_edit->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto& capture = *(Capture*)c;
+
 				if (is_mouse_clicked(action, key))
 				{
 					capture.e->locked = true;
@@ -2218,18 +2307,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					auto bp = capture.e->bp;
 					bp->graphics_device = app.d;
-					auto rt_dst = bp->find_node("rt_dst");
-					if (rt_dst)
-					{
-						rt_dst->find_input("type")->set_data_i(TargetImageview);
-						rt_dst->find_input("v")->set_data_p(capture.e->rt_v);
-					}
-					auto make_cmd = bp->find_node("make_cmd");
-					if (make_cmd)
-					{
-						make_cmd->find_input("cbs")->set_data_p(&capture.e->rt_cbs);
-						capture.e->cb_recorded = true;
-					}
 				}
 				else
 					capture.e->cb_recorded = false;
@@ -2571,6 +2648,4 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		editor->console_tab = nullptr;
 	}, new_mail_p(c_editor), filename + L":", Vec2f(1495.f, 10.f));
 	c_editor->console_tab = (cDockerTab*)console_page->parent()->parent()->child(0)->child(0)->find_component(cH("DockerTab"));
-
-	open_image_viewer(c_editor->rt_id, Vec2f(1495.f, 339.f));
 }

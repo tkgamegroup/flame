@@ -8,7 +8,6 @@
 	<nodes>
 		<node type="graphics::RenderTarget" id="rt_dst" pos="21.72;35.53">
 			<datas>
-				<data name="type" value="TargetImageview" />
 				<data name="clear" value="1" />
 				<data name="clear_color" value="200;100;50;255" />
 			</datas>
@@ -18,12 +17,17 @@
 		<node type="Array(1+void*)" id="sps" pos="734.94;42.53" />
 		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="879.20;82.53" />
 		<node type="MakeCmd" id="make_cmd" pos="1168.20;111.53" />
+		<node type="DstImage" id="test_dst" pos="-232.50;-205.50" />
+		<node type="CmdBufs" id="test_cbs" pos="1115.50;-72.50" />
 	</nodes>
 	<links>
+		<link out="test_dst.type" in="rt_dst.type" />
+		<link out="test_dst.view" in="rt_dst.v" />
 		<link out="rt_dst.out" in="rts.1" />
 		<link out="rts.v" in="sp.color_targets" />
 		<link out="sp.out" in="sps.1" />
 		<link out="sps.v" in="rnf.passes" />
+		<link out="test_cbs.out" in="make_cmd.cbs" />
 		<link out="rnf.rp" in="make_cmd.rp" />
 		<link out="rnf.fbs" in="make_cmd.fbs" />
 		<link out="rnf.cv" in="make_cmd.cv" />

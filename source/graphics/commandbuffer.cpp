@@ -683,7 +683,6 @@ namespace flame
 				for (auto i = 0; i < out$o.v.size(); i++)
 					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
 			}
-
 		};
 
 		QueuePrivate::QueuePrivate(Device *_d, uint queue_family_idx)
