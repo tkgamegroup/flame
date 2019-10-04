@@ -1,15 +1,12 @@
 <?xml version="1.0"?>
 <BP>
-  <modules>
-    <module filename="flame_foundation.dll" pos="0.00;0.00" />
-    <module filename="flame_graphics.dll" pos="0.00;0.00" />
+	<modules>
+		<module filename="flame_foundation.dll" pos="-543.00;-202.00" />
+		<module filename="flame_graphics.dll" pos="-543.00;-110.00" />
+		<module filename="editor.exe" pos="-537.50;-16.50" />
 	</modules>
 	<nodes>
-		<node type="graphics::RenderTarget" id="rt_dst" pos="20.00;-1.00">
-			<datas>
-				<data name="type" value="TargetImageview" />
-			</datas>
-		</node>
+		<node type="graphics::RenderTarget" id="rt_dst" pos="20.00;-1.00" />
 		<node type="Array(1+void*)" id="rts" pos="352.00;31.00" />
 		<node type="graphics::SubpassTargetInfo" id="sp" pos="489.00;21.00" />
 		<node type="Array(1+void*)" id="sps" pos="745.00;96.00" />
@@ -40,16 +37,12 @@
 		<node type="MakeCmd" id="make_cmd" pos="1230.00;16.00" />
 		<node type="graphics::OutputAttachmentInfo" id="out" pos="243.00;520.00">
 			<datas>
-				<data name="format" value="Format_R8G8B8A8_UNORM" />
 				<data name="name" value="color" />
-				<data name="blend_src_color" value="BlendFactorOne" />
-				<data name="blend_src_alpha" value="BlendFactorOne" />
 			</datas>
 		</node>
 		<node type="Array(1+void*)" id="outs" pos="546.00;642.00" />
 		<node type="graphics::DescriptorBinding" id="bd0" pos="-401.00;279.00">
 			<datas>
-				<data name="count" value="1" />
 				<data name="name" value="data" />
 				<data name="buffer_udt_name" value="Ubo" />
 			</datas>
@@ -63,13 +56,13 @@
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="graphics::BufferDescriptorWrite" id="ds_wrt" pos="-72.00;691.00">
-			<datas>
-				<data name="count" value="1" />
-			</datas>
-		</node>
+		<node type="graphics::BufferDescriptorWrite" id="ds_wrt" pos="-72.00;691.00" />
+		<node type="DstImage" id="test_dst" pos="-232.50;-205.50" />
+		<node type="CmdBufs" id="test_cbs" pos="1115.50;-72.50" />
 	</nodes>
 	<links>
+		<link out="test_dst.type" in="rt_dst.type" />
+		<link out="test_dst.view" in="rt_dst.v" />
 		<link out="rt_dst.out" in="rts.1" />
 		<link out="rts.v" in="sp.color_targets" />
 		<link out="sp.out" in="sps.1" />
@@ -86,6 +79,7 @@
 		<link out="pll.out" in="pl.pll" />
 		<link out="rnf.rp" in="pl.renderpass" />
 		<link out="outs.v" in="pl.outputs" />
+		<link out="test_cbs.out" in="make_cmd.cbs" />
 		<link out="rnf.rp" in="make_cmd.rp" />
 		<link out="rnf.fbs" in="make_cmd.fbs" />
 		<link out="pl.out" in="make_cmd.pl" />
@@ -98,5 +92,5 @@
 		<link out="ds.out" in="ds_wrt.set" />
 		<link out="ubo.out" in="ds_wrt.v" />
 	</links>
-  <exports pos="0.00;0.00" />
+	<exports pos="-541.00;72.00" />
 </BP>

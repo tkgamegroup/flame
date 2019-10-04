@@ -39,6 +39,26 @@ namespace flame
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
+		void do_style()
+		{
+			if (style)
+			{
+				if (!checked)
+				{
+					style->color_normal = unchecked_color_normal;
+					style->color_hovering = unchecked_color_hovering;
+					style->color_active = unchecked_color_active;
+				}
+				else
+				{
+					style->color_normal = checked_color_normal;
+					style->color_hovering = checked_color_hovering;
+					style->color_active = checked_color_active;
+				}
+				style->style();
+			}
+		}
+
 		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
@@ -55,25 +75,8 @@ namespace flame
 				}
 
 			}, new_mail_p(this));
-		}
 
-		void update()
-		{
-			if (style)
-			{
-				if (!checked)
-				{
-					style->color_normal = unchecked_color_normal;
-					style->color_hovering = unchecked_color_hovering;
-					style->color_active = unchecked_color_active;
-				}
-				else
-				{
-					style->color_normal = checked_color_normal;
-					style->color_hovering = checked_color_hovering;
-					style->color_active = checked_color_active;
-				}
-			}
+			do_style();
 		}
 	};
 
@@ -101,10 +104,12 @@ namespace flame
 
 	void cCheckbox::set_checked(bool _checked, bool trigger_changed)
 	{
+		auto thiz = (cCheckboxPrivate*)this;
 		checked = _checked;
+		thiz->do_style();
 		if (trigger_changed)
 		{
-			for (auto& l : ((cCheckboxPrivate*)this)->changed_listeners)
+			for (auto& l : thiz->changed_listeners)
 				l->function(l->capture.p, checked);
 		}
 	}
@@ -112,11 +117,6 @@ namespace flame
 	void cCheckbox::start()
 	{
 		((cCheckboxPrivate*)this)->start();
-	}
-
-	void cCheckbox::update()
-	{
-		((cCheckboxPrivate*)this)->update();
 	}
 
 	cCheckbox* cCheckbox::create()

@@ -37,6 +37,26 @@ namespace flame
 				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
+		void do_style()
+		{
+			if (style)
+			{
+				if (!toggled)
+				{
+					style->color_normal = untoggled_color_normal;
+					style->color_hovering = untoggled_color_hovering;
+					style->color_active = untoggled_color_active;
+				}
+				else
+				{
+					style->color_normal = toggled_color_normal;
+					style->color_hovering = toggled_color_hovering;
+					style->color_active = toggled_color_active;
+				}
+				style->style();
+			}
+		}
+
 		void start()
 		{
 			element = (cElement*)(entity->find_component(cH("Element")));
@@ -54,7 +74,7 @@ namespace flame
 
 			}, new_mail_p(this));
 
-			set_toggled(false);
+			do_style();
 		}
 	};
 
@@ -82,26 +102,12 @@ namespace flame
 
 	void cToggle::set_toggled(bool _toggled, bool trigger_changed)
 	{
+		auto thiz = (cTogglePrivate*)this;
 		toggled = _toggled;
-		if (style)
-		{
-			if (!toggled)
-			{
-				style->color_normal = untoggled_color_normal;
-				style->color_hovering = untoggled_color_hovering;
-				style->color_active = untoggled_color_active;
-			}
-			else
-			{
-				style->color_normal = toggled_color_normal;
-				style->color_hovering = toggled_color_hovering;
-				style->color_active = toggled_color_active;
-			}
-			style->style();
-		}
+		thiz->do_style();
 		if (trigger_changed)
 		{
-			for (auto& l : ((cTogglePrivate*)this)->changed_listeners)
+			for (auto& l : thiz->changed_listeners)
 				l->function(l->capture.p, toggled);
 		}
 	}
