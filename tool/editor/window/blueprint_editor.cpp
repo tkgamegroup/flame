@@ -2426,7 +2426,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				auto value_before = serialize_value(dbs, type->tag(), type->hash(), i->raw_data(), 2);
 				auto data = new char[v->size()];
 				unserialize_value(dbs, type->tag(), type->hash(), value, data);
-				i->set_data((char*)data + sizeof(int));
+				i->set_data((char*)data + sizeof(AttributeBase));
 				((cBPSlot*)i->user_data)->tracker->update_view();
 				delete data;
 				auto value_after = serialize_value(dbs, type->tag(), type->hash(), i->raw_data(), 2);

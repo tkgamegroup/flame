@@ -49,20 +49,17 @@ namespace flame
 			Format_DepthStencil_End = Format_Depth24Stencil8,
 			Format_Depth_Begin = Format_Depth16,
 			Format_Depth_End = Format_Depth24Stencil8,
+
+			FormatMax = 0xffffffff
 		};
 
 		enum MemProp$
 		{
 			MemPropDevice = 1 << 0,
 			MemPropHost = 1 << 1,
-			MemPropHostCoherent = 1 << 2
-		};
+			MemPropHostCoherent = 1 << 2,
 
-		enum DescriptorSetBindings
-		{
-			MainDescriptorSetBinding,
-			MaterialDescriptorSetBinding,
-			BoneSetDescriptorBinding
+			MemPropMax = 0xffffffff
 		};
 
 		enum SampleCount$
@@ -72,7 +69,9 @@ namespace flame
 			SampleCount_4,
 			SampleCount_8,
 			SampleCount_16,
-			SampleCount_32
+			SampleCount_32,
+
+			SampleCountMax = 0xffffffff
 		};
 
 		enum ShaderStage$
@@ -84,7 +83,9 @@ namespace flame
 			ShaderStageGeom = 1 << 3,
 			ShaderStageFrag = 1 << 4,
 			ShaderStageComp = 1 << 5,
-			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag
+			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag,
+
+			ShaderStageMax = 0xffffffff
 		};
 
 		enum DescriptorType$
@@ -92,7 +93,9 @@ namespace flame
 			DescriptorUniformBuffer,
 			DescriptorStorageBuffer,
 			DescriptorSampledImage,
-			DescriptorStorageImage
+			DescriptorStorageImage,
+
+			DescriptorMax = 0xffffffff
 		};
 
 		enum PipelineType
@@ -110,7 +113,9 @@ namespace flame
 			BufferUsageStorage = 1 << 3,
 			BufferUsageIndex = 1 << 4,
 			BufferUsageVertex = 1 << 5,
-			BufferUsageIndirect = 1 << 6
+			BufferUsageIndirect = 1 << 6,
+
+			BufferUsageMax = 0xffffffff
 		};
 
 		enum ImageUsage$
@@ -119,7 +124,9 @@ namespace flame
 			ImageUsageTransferDst = 1 << 1,
 			ImageUsageSampled = 1 << 2,
 			ImageUsageStorage = 1 << 3,
-			ImageUsageAttachment = 1 << 4
+			ImageUsageAttachment = 1 << 4,
+
+			ImageUsageMax = 0xffffffff
 		};
 
 		enum ImageLayout
@@ -148,7 +155,9 @@ namespace flame
 			ImageviewCube,
 			Imageview1DArray,
 			ImageView2DArray,
-			ImageViewCubeArray
+			ImageViewCubeArray,
+
+			ImageViewMax = 0xffffffff
 		};
 
 		enum Swizzle$

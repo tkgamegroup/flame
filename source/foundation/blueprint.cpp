@@ -160,7 +160,7 @@ namespace flame
 
 	void SlotPrivate::set_frame(int frame)
 	{
-		auto& p = *(AttributeV<int>*)raw_data;
+		auto& p = *(AttributeBase*)raw_data;
 		p.frame = frame;
 	}
 
@@ -173,14 +173,14 @@ namespace flame
 			switch (type->hash())
 			{
 			case cH("std::basic_string(char)"):
-				*(std::string*)((char*)raw_data + sizeof(uint)) = *(std::string*)d;
+				*(std::string*)((char*)raw_data + sizeof(AttributeBase)) = *(std::string*)d;
 				return;
 			case cH("std::basic_string(wchar_t)"):
-				*(std::wstring*)((char*)raw_data + sizeof(uint)) = *(std::wstring*)d;
+				*(std::wstring*)((char*)raw_data + sizeof(AttributeBase)) = *(std::wstring*)d;
 				return;
 			}
 		}
-		memcpy((char*)raw_data + sizeof(uint), d, vi->size() - sizeof(int));
+		memcpy(data(), d, vi->size() - sizeof(AttributeBase));
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -206,9 +206,30 @@ namespace flame
 			auto in_hash = in_type->hash();
 			auto out_hash = out_type->hash();
 
-			if (!(in_tag == out_tag && in_hash == out_hash) && !((out_tag == TypeTagAttributeV || out_tag == TypeTagAttributeP) && in_tag == TypeTagAttributeP && (out_hash == in_hash || in_hash == cH("void"))))
+			if (![&]() {
+				if (in_tag == out_tag && in_hash == out_hash)
+					return true;
+				if (in_tag == TypeTagAttributeP)
+				{
+					if (out_tag == TypeTagAttributeV || out_tag == TypeTagAttributeP)
+					{
+						if ((out_hash == in_hash || in_hash == cH("void")))
+							return true;
+						#define PREFIX "std::vector"
+						if (in_type->name().compare(0, strlen(PREFIX), PREFIX) == 0)
+						{
+							((AttributeBase*)raw_data)->twist = 1;
+							return true;
+						}
+						#undef PREFIX
+					}
+				}
+				return false;
+			}())
 				return false;
 		}
+		else
+			((AttributeBase*)raw_data)->twist = 0;
 
 		if (links[0])
 		{
@@ -367,18 +388,19 @@ namespace flame
 	{
 		for (auto& input : inputs)
 		{
-			auto v = input->vi;
 			auto out = input->links[0];
 			if (out)
 			{
-				if (out->vi->type()->tag() == TypeTagAttributeV && v->type()->tag() == TypeTagAttributeP)
+				auto iv = input->vi;
+				auto ia = (AttributeBase*)input->raw_data;
+				if (ia->twist == 1 || (out->vi->type()->tag() == TypeTagAttributeV && iv->type()->tag() == TypeTagAttributeP))
 				{
-					memcpy(input->raw_data, out->raw_data, sizeof(int));
-					auto p = (char*)out->raw_data + sizeof(int);
-					memcpy((char*)input->raw_data + sizeof(int), &p, sizeof(void*));
+					auto p = out->data();
+					memcpy(input->data(), &p, sizeof(void*));
 				}
 				else
-					memcpy(input->raw_data, out->raw_data, v->size());
+					memcpy(input->data(), out->data(), iv->size() - sizeof(AttributeBase));
+				((AttributeBase*)out->raw_data)->frame = ia->frame;
 			}
 		}
 
@@ -747,7 +769,7 @@ namespace flame
 
 	void* BP::Slot::data() const
 	{
-		return (char*)((SlotPrivate*)this)->raw_data + sizeof(int);
+		return (char*)((SlotPrivate*)this)->raw_data + sizeof(AttributeBase);
 	}
 
 	void* BP::Slot::raw_data() const
@@ -1367,7 +1389,7 @@ namespace flame
 					continue;
 				auto v = input->vi;
 				auto type = v->type();
-				if (v->default_value() && memcmp((char*)input->raw_data + sizeof(int), (char*)v->default_value() + sizeof(int), v->size() - sizeof(int)) != 0)
+				if (v->default_value() && memcmp(input->data(), (char*)v->default_value() + sizeof(AttributeBase), v->size() - sizeof(AttributeBase)) != 0)
 				{
 					if (!n_datas)
 						n_datas = n_node->new_node("datas");

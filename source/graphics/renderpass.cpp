@@ -686,81 +686,110 @@ namespace flame
 			AttributeV<std::vector<void*>> fbs$o;
 			AttributeP<void> cv$o;
 
+			FLAME_GRAPHICS_EXPORTS RenderpassAndFramebuffer$()
+			{
+			}
+
+			void succeeded(RenderpassAndFramebuffer* rnf)
+			{
+				out$o.v = rnf;
+				rp$o.v = rnf->renderpass();
+				fbs$o.v = rnf->framebuffers();
+				cv$o.v = rnf->clearvalues();
+			}
+
+			void failed()
+			{
+				printf("cannot create renderpassandframebuffer\n");
+
+				out$o.v = nullptr;
+				rp$o.v = nullptr;
+				fbs$o.v.clear();
+				cv$o.v = nullptr;
+			}
+
+			void update_frame()
+			{
+				out$o.frame = passes$i.frame;
+				rp$o.frame = passes$i.frame;
+				fbs$o.frame = passes$i.frame;
+				cv$o.frame = passes$i.frame;
+			}
+
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (passes$i.frame > out$o.frame)
-				{
-					if (out$o.v)
-						RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
-					auto ok = false;
-					if (passes$i.v && !passes$i.v->empty())
+				const auto check_target = [&](void* _t) {
+					const auto& t = *(RenderTarget*)_t;
+
+					switch (t.type)
 					{
-						ok = true;
+					case TargetImage: case TargetImageview:
+						return t.v != nullptr;
+					case TargetImages:
+						return t.v != nullptr && !(((std::vector<Image*>*)t.v)->empty());
+					}
+				};
+				const auto check_pass = [&](void* _p) {
+					const auto& p = *(SubpassTargetInfo*)_p;
 
-						for (auto& _p : *passes$i.v)
+					for (auto t : p.color_targets)
+					{
+						if (!check_target(t))
+							return false;
+					}
+					for (auto t : p.resolve_targets)
+					{
+						if (!check_target(t))
+							return false;
+					}
+					if (p.depth_target)
+					{
+						if (!check_target(p.depth_target))
+							return false;
+					}
+
+					return true;
+				};
+				if (passes$i.twist == 1)
+				{
+					if (passes$i.frame > out$o.frame)
+					{
+						if (out$o.v)
+							RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
+						auto p = (void*)passes$i.v;
+						if (check_pass(p))
+							succeeded(RenderpassAndFramebuffer::create((Device*)bp_env().graphics_device, { p }));
+						else
+							failed();
+						update_frame();
+					}
+				}
+				else
+				{
+					if (passes$i.frame > out$o.frame)
+					{
+						if (out$o.v)
+							RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
+						auto ok = false;
+						if (passes$i.v && !passes$i.v->empty())
 						{
-							auto check_target = [&](void* p) {
-								const auto& t = *(RenderTarget*)p;
+							ok = true;
 
-								switch (t.type)
-								{
-								case TargetImage: case TargetImageview:
-									return t.v != nullptr;
-								case TargetImages:
-									return t.v != nullptr && !(((std::vector<Image*>*)t.v)->empty());
-								}
-							};
-
-							const auto& p = *(SubpassTargetInfo*)_p;
-
-							for (auto& t : p.color_targets)
+							for (auto _p : *passes$i.v)
 							{
-								if (!check_target(t))
-								{
-									ok = false;
-									break;
-								}
-							}
-							for (auto& t : p.resolve_targets)
-							{
-								if (!check_target(t))
-								{
-									ok = false;
-									break;
-								}
-							}
-							if (p.depth_target)
-							{
-								if (!check_target(p.depth_target))
+								if (!check_pass(_p))
 								{
 									ok = false;
 									break;
 								}
 							}
 						}
+						if (ok)
+							succeeded(RenderpassAndFramebuffer::create((Device*)bp_env().graphics_device, *passes$i.v));
+						else
+							failed();
+						update_frame();
 					}
-					if (ok)
-					{
-						auto rnf = RenderpassAndFramebuffer::create(d, *passes$i.v);
-						out$o.v = rnf;
-						rp$o.v = rnf->renderpass();
-						fbs$o.v = rnf->framebuffers();
-						cv$o.v = rnf->clearvalues();
-					}
-					else
-					{
-						printf("cannot create renderpassandframebuffer\n");
-
-						out$o.v = nullptr;
-						rp$o.v = nullptr;
-						fbs$o.v.clear();
-						cv$o.v = nullptr;
-					}
-					out$o.frame = passes$i.frame;
-					rp$o.frame = passes$i.frame;
-					fbs$o.frame = passes$i.frame;
-					cv$o.frame = passes$i.frame;
 				}
 			}
 

@@ -970,24 +970,27 @@ namespace flame
 
 #pragma pack(1)
 
-	template<typename T>
-	struct AttributeE // enum type attribute
+	struct AttributeBase
 	{
+		uchar twist;
 		int frame;
+	};
+
+	template<typename T>
+	struct AttributeE : AttributeBase // enum type attribute
+	{
 		T v;
 	};
 
 	template<typename T>
-	struct AttributeV // variable type attribute
+	struct AttributeV : AttributeBase // variable type attribute
 	{
-		int frame;
 		T v;
 	};
 
 	template<typename T>
-	struct AttributeP // pointer type attribute
+	struct AttributeP : AttributeBase // pointer type attribute
 	{
-		int frame;
 		T* v;
 	};
 

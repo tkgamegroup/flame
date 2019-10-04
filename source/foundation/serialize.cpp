@@ -1917,7 +1917,7 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagAttributeES:
-			src = (char*)src + sizeof(int);
+			src = (char*)src + sizeof(AttributeBase);
 		case TypeTagEnumSingle:
 		{
 			auto e = find_enum(dbs, hash);
@@ -1926,7 +1926,7 @@ namespace flame
 		}
 			break;
 		case TypeTagAttributeEM:
-			src = (char*)src + sizeof(int);
+			src = (char*)src + sizeof(AttributeBase);
 		case TypeTagEnumMulti:
 		{
 			std::string str;
@@ -1947,7 +1947,7 @@ namespace flame
 		}
 			break;
 		case TypeTagAttributeV:
-			src = (char*)src + sizeof(int);
+			src = (char*)src + sizeof(AttributeBase);
 		case TypeTagVariable:
 			switch (hash)
 			{
@@ -2034,7 +2034,7 @@ namespace flame
 		switch (tag)
 		{
 		case TypeTagAttributeES:
-			dst = (char*)dst + sizeof(int);
+			dst = (char*)dst + sizeof(AttributeBase);
 		case TypeTagEnumSingle:
 		{
 			auto e = find_enum(dbs, hash);
@@ -2043,7 +2043,7 @@ namespace flame
 		}
 			break;
 		case TypeTagAttributeEM:
-			dst = (char*)dst + sizeof(int);
+			dst = (char*)dst + sizeof(AttributeBase);
 		case TypeTagEnumMulti:
 		{
 			auto v = 0;
@@ -2056,7 +2056,7 @@ namespace flame
 		}
 			break;
 		case TypeTagAttributeV:
-			dst = (char*)dst + sizeof(int);
+			dst = (char*)dst + sizeof(AttributeBase);
 		case TypeTagVariable:
 			switch (hash)
 			{
