@@ -1603,8 +1603,6 @@ namespace flame
 									for (; pImportDesc->Name; pImportDesc++)
 									{
 										PSTR pszModName = (PSTR)((PBYTE)library + pImportDesc->Name);
-										if (!pszModName)
-											break;
 
 										auto hImportDLL = LoadLibraryA(pszModName);
 										assert(hImportDLL);

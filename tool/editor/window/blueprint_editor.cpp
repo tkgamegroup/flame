@@ -163,6 +163,8 @@ namespace flame
 					out$o.v.clear();
 				out$o.frame = 0;
 			}
+
+			app.extra_cbs.push_back((Commandbuffer*)out$o.v[0]);
 		}
 
 		__declspec(dllexport) ~CmdBufs$()
@@ -209,7 +211,6 @@ struct cBPEditor : Component
 	BP::Slot* dragging_slot;
 
 	bool running;
-	bool cb_recorded;
 
 	std::vector<std::pair<cElement*, uint>> tips;
 
@@ -402,7 +403,6 @@ struct cBPEditor : Component
 		selected.n = nullptr;
 		dragging_slot = nullptr;
 		running = false;
-		cb_recorded = false;
 	}
 
 	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
@@ -2304,12 +2304,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
 
 				if (capture.e->running)
-				{
-					auto bp = capture.e->bp;
-					bp->graphics_device = app.d;
-				}
-				else
-					capture.e->cb_recorded = false;
+					capture.e->bp->graphics_device = app.d;
 			}
 		}, new_mail(&capture));
 	}
