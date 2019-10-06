@@ -88,12 +88,12 @@ namespace flame
 				set_render_target(type, v);
 
 				pll = (Pipelinelayout*)renderpath->find_output("pll.out")->data_p();
-				ds = (Descriptorset*)renderpath->find_output("ds.out")->data_p();
-				white_iv = (Imageview*)renderpath->find_output("ds_wrt.iv")->data_p();
+				ds = (Descriptorset*)renderpath->find_output("dsl.default_set")->data_p();
+				white_iv = (Imageview*)renderpath->find_output("images_binding.iv")->data_p();
 				vtx_buffer = (Buffer*)renderpath->find_output("vtx_buf.out")->data_p();
 				idx_buffer = (Buffer*)renderpath->find_output("idx_buf.out")->data_p();
 
-				ivs.resize(ds->layout()->get_binding(0).count, white_iv);
+				ivs.resize(ds->layout()->get_binding(0)->count, white_iv);
 
 				vtx_buffer->map();
 				idx_buffer->map();

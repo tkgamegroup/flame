@@ -12,6 +12,7 @@ namespace flame
 	{
 		struct Buffer;
 		struct Sampler;
+		struct Descriptorset;
 
 		struct Descriptorpool
 		{
@@ -19,37 +20,58 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorpool* p);
 		};
 
-		struct DescriptorBinding
+		struct DescriptorBindingBase
 		{
 			uint binding;
 			DescriptorType$ type;
 			uint count;
 			std::string name;
-			UdtInfo* buffer_udt;
 
-			DescriptorBinding() :
+			DescriptorBindingBase() :
 				binding(-1),
 				type(DescriptorUniformBuffer),
-				count(1),
-				buffer_udt(nullptr)
+				count(1)
 			{
 			}
 
-			DescriptorBinding(uint binding, DescriptorType$ type, uint count = 1, const std::string& name = "", UdtInfo* buffer_udt = nullptr) :
+			DescriptorBindingBase(uint binding, DescriptorType$ type, uint count = 1, const std::string& name = "", UdtInfo* buffer_udt = nullptr) :
 				binding(binding),
 				type(type),
 				count(count),
-				name(name),
-				buffer_udt(buffer_udt)
+				name(name)
+			{
+			}
+		};
+
+		struct DescriptorBufferBinding : DescriptorBindingBase
+		{
+			Buffer* buffer;
+			UdtInfo* udt;
+
+			DescriptorBufferBinding() :
+				buffer(nullptr),
+				udt(nullptr)
+			{
+			}
+		};
+
+		struct DescriptorImageBinding : DescriptorBindingBase
+		{
+			Imageview* view;
+			Sampler* sampler;
+
+			DescriptorImageBinding() :
+				view(nullptr)
 			{
 			}
 		};
 
 		struct Descriptorlayout
 		{
-			const DescriptorBinding& get_binding(uint binding);
+			const DescriptorBindingBase* get_binding(uint binding);
+			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set();
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, const std::vector<void*>& bindings);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, const std::vector<void*>& bindings, Descriptorpool* pool_to_create_default_set = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 

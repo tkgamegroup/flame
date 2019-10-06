@@ -5,51 +5,45 @@
 		<module filename="flame_graphics.dll" pos="-232.00;477.00" />
 	</modules>
 	<nodes>
-		<node type="Var(uint)" id="img_count" pos="366.86;2640.41">
-			<datas>
-				<data name="in" value="64" />
-			</datas>
-		</node>
-		<node type="Enum(graphics::SampleCount)" id="sc" pos="411.81;1498.60">
+		<node type="Enum(graphics::SampleCount)" id="sc" pos="536.81;1600.60">
 			<datas>
 				<data name="in" value="SampleCount_8" />
 			</datas>
 		</node>
-		<node type="graphics::RenderTarget" id="rt_dst" pos="229.72;360.27" />
-		<node type="graphics::ImageInspector" id="dst_props" pos="637.64;611.25" />
-		<node type="graphics::Image" id="img_ms" pos="819.61;722.05">
+		<node type="graphics::RenderTarget" id="rt_dst" pos="265.72;372.27" />
+		<node type="graphics::ImageInspector" id="dst_props" pos="614.64;691.25" />
+		<node type="graphics::Image" id="img_ms" pos="878.61;739.05">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="graphics::RenderTarget" id="rt_ms" pos="1204.58;663.05">
+		<node type="graphics::RenderTarget" id="rt_ms" pos="1246.58;655.05">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
-		<node type="graphics::SubpassTargetInfo" id="sp" pos="1557.80;850.92" />
+		<node type="graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
 		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="2160.64;759.29" />
-		<node type="graphics::DescriptorBinding" id="desc_binding" pos="692.31;2366.46">
+		<node type="graphics::DescriptorImageBinding" id="images_binding" pos="618.31;1776.79">
 			<datas>
-				<data name="type" value="DescriptorSampledImage" />
+				<data name="count" value="64" />
 				<data name="name" value="images" />
-				<data name="buffer_udt_name" value="" />
 			</datas>
 		</node>
-		<node type="graphics::Descriptorlayout" id="dsl" pos="977.68;2156.08" />
+		<node type="graphics::Descriptorlayout" id="dsl" pos="930.01;1818.41" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="1527.80;1116.37">
 			<datas>
 				<data name="push_constant_udt_name" value="CanvasShaderPushconstantT" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via1" pos="1252.60;1556.00">
+		<node type="graphics::VertexInputAttribute" id="via1" pos="1263.60;1566.00">
 			<datas>
 				<data name="format" value="Format_R32G32_SFLOAT" />
 				<data name="name" value="pos" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via2" pos="1255.60;1825.00">
+		<node type="graphics::VertexInputAttribute" id="via2" pos="1263.60;1853.00">
 			<datas>
 				<data name="location" value="1" />
 				<data name="offset" value="8" />
@@ -57,7 +51,7 @@
 				<data name="name" value="uv" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via3" pos="1255.60;2075.00">
+		<node type="graphics::VertexInputAttribute" id="via3" pos="1264.60;2145.00">
 			<datas>
 				<data name="location" value="2" />
 				<data name="offset" value="16" />
@@ -72,20 +66,20 @@
 			</datas>
 		</node>
 		<node type="graphics::VertexInputInfo" id="vi" pos="2216.83;2133.37" />
-		<node type="graphics::StageInOut" id="vert_out1" pos="1255.60;984.72">
+		<node type="graphics::StageInOut" id="vert_out1" pos="1261.60;954.72">
 			<datas>
 				<data name="format" value="Format_R32G32B32A32_SFLOAT" />
 				<data name="name" value="color" />
 			</datas>
 		</node>
-		<node type="graphics::StageInOut" id="vert_out2" pos="1255.60;1170.80">
+		<node type="graphics::StageInOut" id="vert_out2" pos="1259.60;1156.80">
 			<datas>
 				<data name="location" value="1" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 				<data name="name" value="uv" />
 			</datas>
 		</node>
-		<node type="graphics::StageInOut" id="vert_out3" pos="1255.60;1356.90">
+		<node type="graphics::StageInOut" id="vert_out3" pos="1261.60;1360.90">
 			<datas>
 				<data name="location" value="2" />
 				<data name="format" value="Format_R32_UINT" />
@@ -146,23 +140,21 @@
 		<node type="graphics::Pipeline" id="pl_element" pos="2684.73;832.38" />
 		<node type="graphics::Pipeline" id="pl_text_lcd" pos="2688.06;1232.47" />
 		<node type="graphics::Pipeline" id="pl_text_sdf" pos="2695.68;1647.94" />
-		<node type="graphics::Image" id="img_white" pos="1046.79;2754.07">
+		<node type="graphics::Image" id="img_white" pos="275.12;1750.74">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="graphics::Descriptorset" id="ds" pos="1216.85;2569.00" />
-		<node type="graphics::ImageDescriptorWrite" id="ds_wrt" pos="1395.30;2714.19" />
-		<node type="graphics::Buffer" id="vtx_buf" pos="88.88;835.00">
+		<node type="graphics::Buffer" id="vtx_buf" pos="504.88;821.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="graphics::Buffer" id="idx_buf" pos="93.05;1227.72">
+		<node type="graphics::Buffer" id="idx_buf" pos="505.05;1208.72">
 			<datas>
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
@@ -179,8 +171,8 @@
 		<link out="rt_ms.out" in="sp.color_targets" />
 		<link out="rt_dst.out" in="sp.resolve_targets" />
 		<link out="sp.out" in="rnf.passes" />
-		<link out="img_count.out" in="desc_binding.count" />
-		<link out="desc_binding.out" in="dsl.bindings" />
+		<link out="img_white.out" in="images_binding.v" />
+		<link out="images_binding.out" in="dsl.bindings" />
 		<link out="dsl.out" in="pll.descriptorlayouts" />
 		<link out="via1.out" in="vias.1" />
 		<link out="via2.out" in="vias.2" />
@@ -226,20 +218,16 @@
 		<link out="vi.out" in="pl_text_sdf.vi" />
 		<link out="sc.out" in="pl_text_sdf.sc" />
 		<link out="out_alpha_blend.out" in="pl_text_sdf.outputs" />
-		<link out="dsl.out" in="ds.dsl" />
-		<link out="ds.out" in="ds_wrt.set" />
-		<link out="img_white.out" in="ds_wrt.v" />
-		<link out="img_count.out" in="ds_wrt.count" />
 	</links>
-	<exports pos="-259.00;585.00">
+	<exports pos="-229.00;587.00">
 		<export type="in" slot="rt_dst.type" alias="rt_dst_type" />
 		<export type="in" slot="rt_dst.v" alias="rt_dst_v" />
 		<export type="out" slot="vtx_buf.out" alias="vtx_buf" />
 		<export type="out" slot="idx_buf.out" alias="idx_buf" />
 		<export type="out" slot="rnf.out" alias="rnf" />
 		<export type="out" slot="pll.out" alias="pll" />
-		<export type="out" slot="ds.out" alias="ds" />
-		<export type="out" slot="ds_wrt.iv" alias="white_iv" />
+		<export type="out" slot="dsl.default_set" alias="ds" />
+		<export type="out" slot="images_binding.iv" alias="white_iv" />
 		<export type="out" slot="pl_element.out" alias="pl_element" />
 		<export type="out" slot="pl_text_sdf.out" alias="pl_text_sdf" />
 		<export type="out" slot="pl_text_lcd.out" alias="pl_text_lcd" />

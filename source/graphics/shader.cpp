@@ -60,27 +60,33 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, const std::vector<void*>& _bindings) :
+		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, const std::vector<void*>& bindings, Descriptorpool* pool_to_create_default_set) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
-			for (auto i = 0; i < _bindings.size(); i++)
+			for (auto i = 0; i < bindings.size(); i++)
 			{
-				auto b = (DescriptorBinding*)_bindings[i];
-				auto binding = b->binding;
+				auto _b = (DescriptorBindingBase*)bindings[i];
+				auto type = _b->type;
+				auto binding = _b->binding;
 
-				assert(binding < 64);
-				assert(bindings_map.size() <= binding || bindings_map[binding].binding >= 64); // if the slot is empty?
+				assert(bindings_map.size() <= binding || !bindings_map[binding]); // if the slot is empty?
 
 				if (bindings_map.size() <= binding)
 					bindings_map.resize(binding + 1);
-				bindings_map[binding] = *b;
+				DescriptorBindingBase* new_b = nullptr;
+				if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+					bindings_map[binding] = new DescriptorBufferBinding(*(DescriptorBufferBinding*)_b);
+				else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
+					bindings_map[binding] = new DescriptorImageBinding(*(DescriptorImageBinding*)_b);
+				else
+					assert(0);
 
 				VkDescriptorSetLayoutBinding vk_binding;
-				vk_binding.binding = b->binding;
-				vk_binding.descriptorType = to_enum(b->type);
-				vk_binding.descriptorCount = b->count;
+				vk_binding.binding = binding;
+				vk_binding.descriptorType = to_enum(type);
+				vk_binding.descriptorCount = _b->count;
 				vk_binding.stageFlags = to_flags(ShaderStageAll);
 				vk_binding.pImmutableSamplers = nullptr;
 				vk_bindings.push_back(vk_binding);
@@ -97,10 +103,52 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+			if (pool_to_create_default_set)
+			{
+				default_set = Descriptorset::create(pool_to_create_default_set, this);
+				for (auto _b : bindings_map)
+				{
+					if (_b)
+					{
+						auto type = _b->type;
+						if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+						{
+							auto b = (DescriptorBufferBinding*)_b;
+							if (b->buffer)
+							{
+								for (auto i = 0; i < b->count; i++)
+									default_set->set_buffer(b->binding, i, b->buffer);
+							}
+						}
+						else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
+						{
+							auto b = (DescriptorImageBinding*)_b;
+							if (b->view)
+							{
+								for (auto i = 0; i < b->count; i++)
+									default_set->set_image(b->binding, i, b->view, b->sampler);
+							}
+						}
+					}
+				}
+			}
+			else
+				default_set = nullptr;
 		}
 
 		DescriptorlayoutPrivate::~DescriptorlayoutPrivate()
 		{
+			if (default_set)
+				Descriptorset::destroy(default_set);
+
+			for (auto b : bindings_map)
+			{
+				auto type = b->type;
+				if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+					delete(DescriptorBufferBinding*)b;
+				else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
+					delete(DescriptorImageBinding*)b;
+			}
 #if defined(FLAME_VULKAN)
 			vkDestroyDescriptorSetLayout(((DevicePrivate*)d)->v, v, nullptr);
 #elif defined(FLAME_D3D12)
@@ -108,14 +156,19 @@ namespace flame
 #endif
 		}
 
-		const DescriptorBinding& Descriptorlayout::get_binding(uint binding)
+		const DescriptorBindingBase* Descriptorlayout::get_binding(uint binding)
 		{
 			return ((DescriptorlayoutPrivate*)this)->bindings_map[binding];
 		}
 
-		Descriptorlayout* Descriptorlayout::create(Device* d, const std::vector<void*>& bindings)
+		Descriptorset* Descriptorlayout::default_set()
 		{
-			return new DescriptorlayoutPrivate(d, bindings);
+			return ((DescriptorlayoutPrivate*)this)->default_set;
+		}
+
+		Descriptorlayout* Descriptorlayout::create(Device* d, const std::vector<void*>& bindings, Descriptorpool* pool_to_create_default_set)
+		{
+			return new DescriptorlayoutPrivate(d, bindings, pool_to_create_default_set);
 		}
 
 		void Descriptorlayout::destroy(Descriptorlayout* l)
@@ -123,18 +176,20 @@ namespace flame
 			delete (DescriptorlayoutPrivate*)l;
 		}
 
-		struct DescriptorBinding$
+		struct DescriptorBufferBinding$
 		{
 			AttributeV<uint> binding$i;
-			AttributeE<DescriptorType$> type$i;
+			AttributeV<bool> storage$i;
 			AttributeV<uint> count$i;
 			AttributeV<std::string> name$i;
-			AttributeV<std::string> buffer_udt_name$i;
+			AttributeP<void> buffer$i;
+			AttributeV<std::string> udt_name$i;
 
-			AttributeV<DescriptorBinding> out$o;
+			AttributeV<DescriptorBufferBinding> out$o;
 
-			FLAME_GRAPHICS_EXPORTS DescriptorBinding$()
+			FLAME_GRAPHICS_EXPORTS DescriptorBufferBinding$()
 			{
+				storage$i.v = false;
 				count$i.v = 1;
 			}
 
@@ -142,50 +197,134 @@ namespace flame
 			{
 				if (binding$i.frame > out$o.frame)
 					out$o.v.binding = binding$i.v;
-				if (type$i.frame > out$o.frame)
-					out$o.v.type = type$i.v;
+				if (storage$i.frame > out$o.frame)
+					out$o.v.type = storage$i.v ? DescriptorStorageBuffer : DescriptorUniformBuffer;
 				if (count$i.frame > out$o.frame)
 					out$o.v.count = count$i.v;
 				if (name$i.frame > out$o.frame)
 					out$o.v.name = name$i.v;
-				if (buffer_udt_name$i.frame > out$o.frame)
+				if (buffer$i.frame > out$o.frame)
+					out$o.v.buffer = (Buffer*)buffer$i.v;
+				if (udt_name$i.frame > out$o.frame)
 				{
-					if (!buffer_udt_name$i.v.empty())
+					if (!udt_name$i.v.empty())
 					{
-						out$o.v.buffer_udt = find_udt(bp_env().dbs, H(buffer_udt_name$i.v.c_str()));
-						assert(out$o.v.buffer_udt);
+						out$o.v.udt = find_udt(bp_env().dbs, H(udt_name$i.v.c_str()));
+						assert(out$o.v.udt);
 					}
 				}
-				out$o.frame = maxN(binding$i.frame, type$i.frame, count$i.frame, name$i.frame, buffer_udt_name$i.frame);
+				out$o.frame = maxN(binding$i.frame, storage$i.frame, count$i.frame, name$i.frame, buffer$i.frame, udt_name$i.frame);
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~DescriptorBinding$()
+			FLAME_GRAPHICS_EXPORTS ~DescriptorBufferBinding$()
 			{
+			}
+		};
+
+		struct DescriptorImageBinding$
+		{
+			AttributeV<uint> binding$i;
+			AttributeV<bool> storage$i;
+			AttributeV<uint> count$i;
+			AttributeV<std::string> name$i;
+			AttributeE<TargetType$> target_type$i;
+			AttributeP<void> v$i;
+
+			AttributeV<DescriptorImageBinding> out$o;
+			AttributeP<void> iv$o;
+
+			FLAME_GRAPHICS_EXPORTS DescriptorImageBinding$()
+			{
+				storage$i.v = false;
+				count$i.v = 1;
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (out$o.frame == -1)
+				{
+					auto d = (Device*)bp_env().graphics_device;
+					if (d)
+						out$o.v.sampler = d->sp_linear;
+				}
+				if (target_type$i.frame > iv$o.frame || v$i.frame > iv$o.frame)
+				{
+					if (iv$o.v)
+						Imageview::destroy((Imageview*)iv$o.v);
+					if (target_type$i.v == TargetImage)
+						iv$o.v = Imageview::create((Image*)v$i.v);
+					else
+						iv$o.v = nullptr;
+					iv$o.frame = max(target_type$i.frame, v$i.frame);
+				}
+				if (binding$i.frame > out$o.frame)
+					out$o.v.binding = binding$i.v;
+				if (storage$i.frame > out$o.frame)
+					out$o.v.type = storage$i.v ? DescriptorStorageImage : DescriptorSampledImage;
+				if (count$i.frame > out$o.frame)
+					out$o.v.count = count$i.v;
+				if (name$i.frame > out$o.frame)
+					out$o.v.name = name$i.v;
+				if (iv$o.frame > out$o.frame)
+				{
+					switch (target_type$i.v)
+					{
+					case TargetImage:
+						out$o.v.view = (Imageview*)iv$o.v;
+						break;
+					case TargetImageview:
+						out$o.v.view = (Imageview*)v$i.v;
+						break;
+					case TargetImages:
+						out$o.v.view = nullptr;
+						break;
+					}
+				}
+				out$o.frame = maxN(binding$i.frame, storage$i.frame, count$i.frame, name$i.frame, iv$o.frame);
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~DescriptorImageBinding$()
+			{
+				if (iv$o.v)
+					Imageview::destroy((Imageview*)iv$o.v);
 			}
 		};
 
 		struct Descriptorlayout$
 		{
 			AttributeP<std::vector<void*>> bindings$i;
+			AttributeV<bool> create_default_set$i;
 
 			AttributeP<void> out$o;
+			AttributeP<void> default_set$o;
+
+			FLAME_GRAPHICS_EXPORTS Descriptorlayout$()
+			{
+				create_default_set$i.v = true;
+			}
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (bindings$i.frame > out$o.frame)
+				if (bindings$i.frame > out$o.frame || create_default_set$i.frame > default_set$o.frame)
 				{
 					if (out$o.v)
 						Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
 					if (d)
-						out$o.v = Descriptorlayout::create(d, get_attribute_vec(bindings$i));
+					{
+						out$o.v = Descriptorlayout::create(d, get_attribute_vec(bindings$i), create_default_set$i.v ? d->dp : nullptr);
+						default_set$o.v = ((Descriptorlayout*)out$o.v)->default_set();
+					}
 					else
 					{
-						printf("cannot create descriptorsetlayout\n");
+						printf("cannot create descriptorlayout\n");
 
 						out$o.v = nullptr;
+						default_set$o.v = nullptr;
 					}
-					out$o.frame = bindings$i.frame;
+					auto frame = max(bindings$i.frame, create_default_set$i.frame);
+					out$o.frame = frame;
+					default_set$o.frame = frame;
 				}
 			}
 
@@ -237,7 +376,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_enum(l->bindings_map[binding].type);
+			write.descriptorType = to_enum(l->bindings_map[binding]->type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
@@ -263,7 +402,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_enum(l->bindings_map[binding].type);
+			write.descriptorType = to_enum(l->bindings_map[binding]->type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;
@@ -329,93 +468,6 @@ namespace flame
 			{
 				if (out$o.v)
 					Descriptorset::destroy((Descriptorset*)out$o.v);
-			}
-		};
-
-		struct BufferDescriptorWrite$
-		{
-			AttributeP<void> set$i;
-			AttributeP<void> v$i;
-			AttributeV<uint> binding$i;
-			AttributeV<uint> index$i;
-			AttributeV<uint> count$i;
-
-			AttributeP<void> out$o;
-
-			FLAME_GRAPHICS_EXPORTS BufferDescriptorWrite$()
-			{
-				count$i.v = 1;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$()
-			{
-				if (set$i.frame > out$o.frame)
-				{
-					auto d = (Device*)bp_env().graphics_device;
-					if (d && set$i.v && v$i.v)
-					{
-						for (auto i = 0; i < count$i.v; i++)
-							((Descriptorset*)set$i.v)->set_buffer(binding$i.v, index$i.v + i, (Buffer*)v$i.v);
-					}
-					else
-						printf("cannot write buffer descriptor\n");
-					out$o.frame = set$i.frame;
-				}
-			}
-		};
-
-		struct ImageDescriptorWrite$
-		{
-			AttributeP<void> set$i;
-			AttributeE<TargetType$> type$i;
-			AttributeP<void> v$i;
-			AttributeV<uint> binding$i;
-			AttributeV<uint> index$i;
-			AttributeV<uint> count$i;
-
-			AttributeP<void> out$o;
-			AttributeP<void> iv$o;
-
-			FLAME_GRAPHICS_EXPORTS ImageDescriptorWrite$()
-			{
-				count$i.v = 1;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$()
-			{
-				if (set$i.frame > out$o.frame)
-				{
-					if (iv$o.v)
-					{
-						Imageview::destroy((Imageview*)iv$o.v);
-						iv$o.v = nullptr;
-					}
-					auto d = (Device*)bp_env().graphics_device;
-					if (d && set$i.v && v$i.v)
-					{
-						Imageview* iv = nullptr;
-						assert(type$i.v != TargetImages);
-						if (type$i.v == TargetImageview)
-							iv = (Imageview*)v$i.v;
-						else
-						{
-							iv = Imageview::create((Image*)v$i.v);
-							iv$o.v = iv;
-						}
-						for (auto i = 0; i < count$i.v; i++)
-							((Descriptorset*)set$i.v)->set_image(binding$i.v, index$i.v + i, iv, d->sp_linear);
-					}
-					else
-						printf("cannot write image descriptor\n");
-					out$o.frame = set$i.frame;
-					iv$o.frame = set$i.frame;
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS ~ImageDescriptorWrite$()
-			{
-				if (iv$o.v)
-					Imageview::destroy((Imageview*)iv$o.v);
 			}
 		};
 
@@ -1039,12 +1091,12 @@ namespace flame
 
 				if (pll) 
 				{
-					auto validate_binding = [&](DescriptorType$ type, Resource* r) -> DescriptorBinding& {
+					auto validate_binding = [&](DescriptorType$ type, Resource* r) -> DescriptorBindingBase* {
 						assert(r->set < pll->dsls.size());
 						auto dsl = pll->dsls[r->set];
 						assert(r->binding < dsl->bindings_map.size());
-						auto& binding = dsl->bindings_map[r->binding];
-						assert(binding.binding < 64 && binding.type == type && r->v.count == binding.count);
+						auto binding = dsl->bindings_map[r->binding];
+						assert(binding->type == type && binding->count == r->v.count);
 						return binding;
 					};
 					auto validate_variable = [&](UdtInfo* u, Variable* v) {
@@ -1065,9 +1117,9 @@ namespace flame
 
 					for (auto& r : uniform_buffers)
 					{
-						auto& binding = validate_binding(DescriptorUniformBuffer, r.get());
-						if (binding.buffer_udt)
-							validate_variable(binding.buffer_udt, &r->v);
+						auto b = (DescriptorBufferBinding*)validate_binding(DescriptorUniformBuffer, r.get());
+						if (b->udt)
+							validate_variable(b->udt, &r->v);
 					}
 					for (auto& r : storage_buffers)
 						validate_binding(DescriptorStorageBuffer, r.get());
@@ -1170,25 +1222,25 @@ namespace flame
 						auto dsl = pll->dsls[i];
 						for (auto j = 0; j < dsl->bindings_map.size(); j++)
 						{
-							auto& b = dsl->bindings_map[j];
-							if (b.binding < 64)
+							auto _b = dsl->bindings_map[j];
+							switch (_b->type)
 							{
-								switch (b.type)
-								{
-								case DescriptorUniformBuffer:
-								{
-									assert(b.buffer_udt);
-									*ret.p += "layout (binding = " + std::to_string(j) + ") uniform " + b.buffer_udt->name() + "\n{\n";
-									print_udt(b.buffer_udt, *ret.p);
-									*ret.p += "}" + b.name + ";\n";
-								}
+							case DescriptorUniformBuffer:
+							{
+								auto b = (DescriptorBufferBinding*)_b;
+								*ret.p += "layout (binding = " + std::to_string(j) + ") uniform " + b->udt->name() + "\n{\n";
+								print_udt(b->udt, *ret.p);
+								*ret.p += "}" + b->name + ";\n";
+							}
 								break;
-								case DescriptorSampledImage:
-									*ret.p += "layout (binding = " + std::to_string(j) + ") uniform sampler2D " + b.name + (b.count > 1 ? ("[" + std::to_string(b.count) + "]") : "") + ";\n";
-									break;
-								default:
-									assert(0); // others are WIP
-								}
+							case DescriptorSampledImage:
+							{
+								auto b = (DescriptorImageBinding*)_b;
+								*ret.p += "layout (binding = " + std::to_string(j) + ") uniform sampler2D " + b->name + (b->count > 1 ? ("[" + std::to_string(b->count) + "]") : "") + ";\n";
+							}
+								break;
+							default:
+								assert(0); // others are WIP
 							}
 						}
 					}

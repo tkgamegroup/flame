@@ -1359,11 +1359,11 @@ Entity* cBPEditor::create_export_entity(BP::Export* e)
 	e->user_data = e_export;
 	{
 		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_sdf->pixel_height * 0.8f, 0.f);
+		c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_sdf->pixel_height * 0.5f, 0.f);
 		e_export->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_sdf);
-		c_text->sdf_scale = 0.8f;
+		c_text->sdf_scale = 0.5f;
 		auto out_addr = s->get_address();
 		c_text->set_text(s2w(e->alias()) + L" (" + s2w(*out_addr.p) + L")");
 		delete_mail(out_addr);
@@ -1384,8 +1384,9 @@ Entity* cBPEditor::create_export_entity(BP::Export* e)
 	{
 		e_close->add_component(cElement::create());
 
-		auto c_text = cText::create(app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_sdf);
 		c_text->color = Vec4c(200, 40, 20, 255);
+		c_text->sdf_scale = 0.5f;
 		c_text->set_text(Icon_TIMES);
 		e_close->add_component(c_text);
 

@@ -35,9 +35,10 @@ namespace flame
 
 #endif
 
-			std::vector<DescriptorBinding> bindings_map;
+			std::vector<DescriptorBindingBase*> bindings_map;
+			Descriptorset* default_set;
 
-			DescriptorlayoutPrivate(Device* d, const std::vector<void*>& _bindings);
+			DescriptorlayoutPrivate(Device* d, const std::vector<void*>& _bindings, Descriptorpool* pool_to_create_default_set);
 			~DescriptorlayoutPrivate();
 		};
 
