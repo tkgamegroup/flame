@@ -20,7 +20,6 @@ namespace flame
 		AttributeP<std::vector<void*>> fbs$i;
 		AttributeP<void> pl$i;
 		AttributeP<void> ds$i;
-		AttributeP<void> ds_wrt$i; // for dependency
 
 		AttributeP<void> ubo$i;
 
@@ -75,6 +74,4 @@ namespace flame
 			memcpy(ubo->mapped, &data, sizeof(Ubo$));
 		}
 	};
-
-	static MakeCmd$ bp_makecmd_unused;
 }

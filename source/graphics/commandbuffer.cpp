@@ -106,9 +106,9 @@ namespace flame
 			current_pipeline = nullptr;
 		}
 
-		void CommandbufferPrivate::begin_renderpass(Renderpass *_r, Framebuffer *_f, Clearvalues*_cv)
+		void CommandbufferPrivate::begin_renderpass(Framebuffer *_f, Clearvalues*_cv)
 		{
-			auto r = (RenderpassPrivate*)_r;
+			auto r = (RenderpassPrivate*)_f->renderpass();
 			auto f = (FramebufferPrivate*)_f;
 			auto cv = (ClearvaluesPrivate*)_cv;
 
@@ -511,9 +511,9 @@ namespace flame
 			((CommandbufferPrivate*)this)->begin(once);
 		}
 
-		void Commandbuffer::begin_renderpass(Renderpass *r, Framebuffer *f, Clearvalues*cv)
+		void Commandbuffer::begin_renderpass(Framebuffer *f, Clearvalues*cv)
 		{
-			((CommandbufferPrivate*)this)->begin_renderpass(r, f, cv);
+			((CommandbufferPrivate*)this)->begin_renderpass(f, cv);
 		}
 
 		void Commandbuffer::end_renderpass()

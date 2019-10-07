@@ -227,7 +227,6 @@ namespace flame
 				else
 					thiz->sc = nullptr;
 				thiz->sc_frame = looper().frame;
-
 			}, new_mail(&thiz));
 		}
 		
@@ -257,6 +256,11 @@ namespace flame
 		{
 			delete (SwapchainResizablePrivate*)s;
 		}
+
+		struct SwapchainResizabl$
+		{
+
+		};
 	}
 }
 

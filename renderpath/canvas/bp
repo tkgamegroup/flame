@@ -34,7 +34,7 @@
 		<node type="graphics::Descriptorlayout" id="dsl" pos="930.01;1818.41" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="1527.80;1116.37">
 			<datas>
-				<data name="push_constant_udt_name" value="CanvasShaderPushconstantT" />
+				<data name="push_constant_udt_name" value="PushconstantT" />
 			</datas>
 		</node>
 		<node type="graphics::VertexInputAttribute" id="via1" pos="1263.60;1566.00">

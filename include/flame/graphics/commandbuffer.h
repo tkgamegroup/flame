@@ -90,7 +90,7 @@ namespace flame
 		{
 			FLAME_GRAPHICS_EXPORTS void begin(bool once = false);
 
-			FLAME_GRAPHICS_EXPORTS void begin_renderpass(Renderpass *r, Framebuffer *f, Clearvalues *cv);
+			FLAME_GRAPHICS_EXPORTS void begin_renderpass(Framebuffer *f, Clearvalues *cv);
 			FLAME_GRAPHICS_EXPORTS void end_renderpass();
 			FLAME_GRAPHICS_EXPORTS void set_viewport(const Vec4f& rect);
 			FLAME_GRAPHICS_EXPORTS void set_scissor(const Vec4f& rect);

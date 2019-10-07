@@ -442,6 +442,11 @@ namespace flame
 #endif
 		}
 
+		Renderpass* Framebuffer::renderpass() const
+		{
+			return ((FramebufferPrivate*)this)->rp;
+		}
+
 		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, const std::vector<void*>& views)
 		{
 			return new FramebufferPrivate(d, rp, views);

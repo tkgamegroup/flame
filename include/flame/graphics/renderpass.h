@@ -63,6 +63,8 @@ namespace flame
 		{
 			Vec2u image_size;
 
+			FLAME_GRAPHICS_EXPORTS Renderpass* renderpass() const;
+
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, Renderpass* rp, const std::vector<void*>& views);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
 		};

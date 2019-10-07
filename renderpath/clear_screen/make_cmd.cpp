@@ -45,6 +45,4 @@ namespace flame
 			}
 		}
 	};
-
-	static MakeCmd$ bp_makecmd_unused;
 }

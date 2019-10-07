@@ -9,14 +9,10 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 
+#include "../renderpath/canvas/type.h"
+
 namespace flame
 {
-	struct CanvasShaderPushconstantT$
-	{
-		Vec2f scale$;
-		Vec2f sdf_range$;
-	};
-
 	namespace graphics
 	{
 		static SampleCount$ sample_count = SampleCount_8;
@@ -355,7 +351,7 @@ namespace flame
 				set_scissor(Vec4f(Vec2f(0.f), surface_size));
 
 				cb->begin();
-				cb->begin_renderpass(rnf->renderpass(), fb, rnf->clearvalues());
+				cb->begin_renderpass(fb, rnf->clearvalues());
 				if (idx_end != idx_buffer->mapped)
 				{
 					cb->set_viewport(Vec4f(Vec2f(0.f), surface_size));
@@ -363,11 +359,11 @@ namespace flame
 					cb->bind_vertexbuffer(vtx_buffer, 0);
 					cb->bind_indexbuffer(idx_buffer, IndiceTypeUint);
 
-					CanvasShaderPushconstantT$ pc;
+					PushconstantT$ pc;
 					pc.scale$ = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
 					pc.sdf_range$ = Vec2f(4.f / 512.f); /* sdf_image->size */
 
-					cb->push_constant(pll, 0, sizeof(CanvasShaderPushconstantT$), &pc);
+					cb->push_constant(pll, 0, sizeof(PushconstantT$), &pc);
 
 					auto vtx_off = 0;
 					auto idx_off = 0;
