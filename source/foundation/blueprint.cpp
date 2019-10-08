@@ -107,7 +107,7 @@ namespace flame
 		void remove_impt(ImportPrivate* i);
 		ImportPrivate* find_impt(const std::string& id) const;
 
-		NodePrivate* add_node(const std::string& id, const std::string& type_name);
+		NodePrivate* add_node(uint type_hash, const std::string& type_name);
 		void remove_node(NodePrivate* n);
 		NodePrivate* find_node(const std::string& id) const;
 		SlotPrivate* find_input(const std::string& address) const;
@@ -127,6 +127,7 @@ namespace flame
 	ModulePrivate::ModulePrivate()
 	{
 		pos = Vec2f(0.f);
+		placed = false;
 	}
 
 	ModulePrivate::~ModulePrivate()
@@ -533,15 +534,14 @@ namespace flame
 		return nullptr;
 	}
 
-	NodePrivate* BPPrivate::add_node(const std::string& type_name, const std::string& id)
+	NodePrivate* BPPrivate::add_node(uint type_hash, const std::string& id)
 	{
 		UdtInfo* udt = nullptr;
 		void* module = nullptr;
 		{
-			auto hash = H(type_name.c_str());
 			for (auto& m : modules)
 			{
-				udt = m->db->find_udt(hash);
+				udt = m->db->find_udt(type_hash);
 				if (udt)
 				{
 					module = m->module;
@@ -550,7 +550,7 @@ namespace flame
 			}
 			if (!udt && self_module)
 			{
-				udt = self_module->db->find_udt(hash);
+				udt = self_module->db->find_udt(type_hash);
 				if (udt)
 					module = self_module->module;
 			}
@@ -923,9 +923,9 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(const std::string& type_name, const std::string& id)
+	BP::Node *BP::add_node(uint type_hash, const std::string& id)
 	{
-		return ((BPPrivate*)this)->add_node(type_name, id);
+		return ((BPPrivate*)this)->add_node(type_hash, id);
 	}
 
 	void BP::remove_node(BP::Node *n)
@@ -1294,7 +1294,7 @@ namespace flame
 
 		for (auto& n_d : node_descs)
 		{
-			auto n = bp->add_node(n_d.type, n_d.id);
+			auto n = bp->add_node(H(n_d.type.c_str()), n_d.id);
 			if (n)
 			{
 				n->pos = n_d.pos;
@@ -1352,6 +1352,8 @@ namespace flame
 		auto n_modules = file->new_node("modules");
 		for (auto& m : bp->modules)
 		{
+			if (m->placed)
+				continue;
 			auto n_module = n_modules->new_node("module");
 			n_module->new_attr("filename", w2s(m->filename));
 			n_module->new_attr("pos", to_string(m->pos, 2));
@@ -1375,11 +1377,30 @@ namespace flame
 		if (bp->self_module)
 			dbs.push_back(bp->self_module->db);
 
+		std::vector<Module*> skipped_modules;
+		for (auto& m : bp->modules)
+		{
+			if (m->placed)
+				skipped_modules.push_back(m.get());
+		}
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)
 		{
+			auto udt = n->udt;
+			auto skip = false;
+			for (auto m : skipped_modules)
+			{
+				if (udt->db() == m->db())
+				{
+					skip = true;
+					break;
+				}
+			}
+			if (skip)
+				continue;
+
 			auto n_node = n_nodes->new_node("node");
-			n_node->new_attr("type", n->udt->name());
+			n_node->new_attr("type", udt->name());
 			n_node->new_attr("id", n->id);
 			n_node->new_attr("pos", to_string(n->pos, 2));
 

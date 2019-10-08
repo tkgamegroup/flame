@@ -7,7 +7,11 @@
 	<imports>
 		<import filename="canvas" id="canvas" pos="27.00;-18.00" />
 	</imports>
-	<nodes />
-	<links />
+	<nodes>
+		<node type="MakeCmd" id="make_cmd" pos="385.50;42.50" />
+	</nodes>
+	<links>
+		<link out="rnf.out" in="make_cmd.rnf" />
+	</links>
 	<exports pos="-201.00;163.00" />
 </BP>

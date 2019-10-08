@@ -461,6 +461,8 @@ struct cBPEditor : Component
 				add_tip(L"Cannot Remove Self Module");
 			else if (selected.m->filename() == L"flame_foundation.dll")
 				add_tip(L"Cannot Remove 'foundation' Module");
+			else if (selected.m->filename() == L"editor.exe")
+				add_tip(L"Cannot Remove 'this' Module");
 			else
 			{
 				std::wstring str;
@@ -1509,7 +1511,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_type->add_component(cElement::create());
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->set_text(s2w(n->udt()->name()));
+			auto udt = n->udt();
+			c_text->set_text(udt->db()->module_name() + L"\n" + s2w(udt->name()));
 			c_text->color = Vec4c(50, 50, 50, 255);
 			c_text->sdf_scale = 0.5f;
 			e_text_type->add_component(c_text);

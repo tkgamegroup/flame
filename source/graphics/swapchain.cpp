@@ -257,9 +257,39 @@ namespace flame
 			delete (SwapchainResizablePrivate*)s;
 		}
 
-		struct SwapchainResizabl$
+		struct SwapchainResizable$
 		{
+			AttributeP<void> in$i;
 
+			AttributeP<void> sc$o;
+			AttributeV<std::vector<void*>> images$o;
+			AttributeV<uint> image_idx$o;
+
+			FLAME_GRAPHICS_EXPORTS SwapchainResizable$()
+			{
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				auto scr = (SwapchainResizable*)in$i.v;
+				auto sc_frame = scr->sc_frame();
+				if (sc_frame > sc$o.frame)
+				{
+					sc$o.v = scr->sc();
+					if (sc$o.v)
+						images$o.v = ((Swapchain*)sc$o.v)->images();
+					else
+						images$o.v.clear();
+					sc$o.frame = sc_frame;
+					images$o.frame = sc_frame;
+				}
+				image_idx$o.v = sc$o.v ? ((Swapchain*)sc$o.v)->image_index() : 0;
+				image_idx$o.frame = looper().frame;
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~SwapchainResizable$()
+			{
+			}
 		};
 	}
 }

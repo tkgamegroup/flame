@@ -37,6 +37,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS void* module() const;
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 			Vec2f pos;
+			bool placed; // if true, BP::Save will ignore this module and its nodes
 
 			void* user_data;
 		};
@@ -143,7 +144,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type_name, const std::string& id);
+		FLAME_FOUNDATION_EXPORTS Node* add_node(uint type_hash, const std::string& id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 		FLAME_FOUNDATION_EXPORTS Node* find_node(const std::string& id) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& address) const;

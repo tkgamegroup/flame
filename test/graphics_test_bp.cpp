@@ -18,18 +18,12 @@ struct App
 	std::vector<Fence*> fences;
 	std::vector<void*> cbs;
 	BP* bp;
-	int rt_frame;
 
 	void run()
 	{
 		auto sc = scr->sc();
 		auto sc_frame = scr->sc_frame();
 
-		if (sc_frame > rt_frame)
-		{
-			bp->find_input("rt_dst.v")->set_data_p(sc ? &sc->images() : nullptr);
-			rt_frame = sc_frame;
-		}
 		bp->update();
 
 		if (sc)
@@ -49,13 +43,12 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/canvas/bp");
+	app.bp = BP::create_from_file(L"../renderpath/clear_screen/bp");
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
 		return 0;
 	}
-	app.rt_frame = -1; // let render target pass to bp at 0 frame
 
 	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
@@ -73,8 +66,11 @@ int main(int argc, char** args)
 	}
 
 	app.bp->graphics_device = app.d;
+	auto scr_n = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
+	scr_n->find_input("in")->set_data_p(app.scr);
 	app.bp->find_input("rt_dst.type")->set_data_i(TargetImages);
-	app.bp->find_input("make_cmd.cmdbufs")->set_data_p(&app.cbs);
+	app.bp->find_input("rt_dst.v")->link_to(scr_n->find_output("images"));
+	app.bp->find_input("make_cmd.cbs")->set_data_p(&app.cbs);
 
 	looper().loop([](void* c) {
 		auto app = (*(App * *)c);

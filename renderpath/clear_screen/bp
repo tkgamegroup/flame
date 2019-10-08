@@ -3,27 +3,21 @@
 	<modules>
 		<module filename="flame_foundation.dll" pos="-254.00;-1.00" />
 		<module filename="flame_graphics.dll" pos="-253.00;85.00" />
-		<module filename="editor.exe" pos="-249.50;168.50" />
 	</modules>
 	<nodes>
-		<node type="graphics::RenderTarget" id="rt_dst" pos="57.72;-152.47">
+		<node type="graphics::RenderTarget" id="rt_dst" pos="-2.28;-195.47">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="graphics::SubpassTargetInfo" id="sp" pos="410.81;-125.47" />
-		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="666.20;-62.47" />
-		<node type="MakeCmd" id="make_cmd" pos="939.20;31.53" />
-		<node type="DstImage" id="test_dst" pos="-232.50;-205.50" />
-		<node type="CmdBufs" id="test_cbs" pos="927.50;-165.50" />
+		<node type="graphics::SubpassTargetInfo" id="sp" pos="328.81;-157.47" />
+		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="556.20;-73.47" />
+		<node type="MakeCmd" id="make_cmd" pos="842.20;-75.47" />
 	</nodes>
 	<links>
-		<link out="test_dst.type" in="rt_dst.type" />
-		<link out="test_dst.view" in="rt_dst.v" />
 		<link out="rt_dst.out" in="sp.color_targets" />
 		<link out="sp.out" in="rnf.passes" />
-		<link out="test_cbs.out" in="make_cmd.cbs" />
 		<link out="rnf.fbs" in="make_cmd.fbs" />
 		<link out="rnf.cv" in="make_cmd.cv" />
 	</links>
