@@ -5,6 +5,7 @@
 using namespace flame;
 
 struct cSceneEditor;
+struct cDataTracker;
 
 struct cInspector : Component 
 {
@@ -19,6 +20,7 @@ struct cInspector : Component
 	{
 	}
 
+	void update_data_tracker(uint component_hash, uint data_offset) const;
 	void refresh();
 
 	virtual void update() override;

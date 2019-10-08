@@ -59,9 +59,9 @@ struct cComponentDealer : Component
 {
 	Component* component;
 	void* dummy;
-	void* save_addr;
+	void* serialize_addr;
+	void* unserialize_addr;
 	void* dtor_addr;
-	void* data_changed_addr;
 
 	cComponentDealer() :
 		Component("ComponentDealer")
@@ -75,14 +75,14 @@ struct cComponentDealer : Component
 		free(dummy);
 	}
 
-	void data_changed(uint name_hash)
+	void serialize(int offset)
 	{
-		cmf(p2f<MF_v_vp_u>(data_changed_addr), dummy, component, name_hash);
+		cmf(p2f<MF_v_vp_u>(serialize_addr), dummy, component, offset);
 	}
 
-	virtual void update() override
+	void unserialize(int offset)
 	{
-		cmf(p2f<MF_v_vp>(save_addr), dummy, component);
+		cmf(p2f<MF_v_vp_u>(unserialize_addr), dummy, component, offset);
 	}
 };
 
@@ -90,8 +90,7 @@ template<class T>
 void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
 {
 	auto c_tracker = new_component<cDigitalDataTracker<T>>();
-	c_tracker->auto_update = true;
-	c_tracker->data = (T*)pdata;
+	c_tracker->data = pdata;
 	parent->add_component(c_tracker);
 
 	auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
@@ -106,7 +105,7 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 		auto& capture = *(Capture*)c;
 		*(T*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<T>(text) : 0;
-		capture.d->data_changed(capture.v->name_hash());
+		capture.d->unserialize(capture.v->offset());
 	}, new_mail(&capture));
 
 }
@@ -115,8 +114,7 @@ template<uint N, class T>
 void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
 {
 	auto c_tracker = new_component<cDigitalVecDataTracker<N, T>>();
-	c_tracker->auto_update = true;
-	c_tracker->data = (Vec<N, T>*)pdata;
+	c_tracker->data = pdata;
 	parent->add_component(c_tracker);
 
 	struct Capture
@@ -135,7 +133,7 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = text[0] ? sto<T>(text) : 0;
-			capture.d->data_changed(capture.v->name_hash());
+			capture.d->unserialize(capture.v->offset());
 		}, new_mail(&capture));
 	}
 }
@@ -237,22 +235,22 @@ struct cInspectorPrivate : cInspector
 					if (f && f->parameter_count() == 0)
 						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), c_dealer->dummy);
 				}
+				{
+					auto f = udt->find_function("serialize");
+					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("int")));
+					c_dealer->serialize_addr = (char*)module + (uint)f->rva();
+					c_dealer->serialize(-1);
+				}
+				{
+					auto f = udt->find_function("unserialize");
+					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("int")));
+					c_dealer->unserialize_addr = (char*)module + (uint)f->rva();
+				}
 				c_dealer->dtor_addr = nullptr;
 				{
 					auto f = udt->find_function("dtor");
 					if (f)
 						c_dealer->dtor_addr = (char*)module + (uint)f->rva();
-				}
-				{
-					auto f = udt->find_function("save");
-					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")));
-					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), c_dealer->dummy, component);
-					c_dealer->save_addr = (char*)module + (uint)f->rva();
-				}
-				{
-					auto f = udt->find_function("data_changed");
-					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("uint")));
-					c_dealer->data_changed_addr = (char*)module + (uint)f->rva();
 				}
 				e_component->add_component(c_dealer);
 
@@ -328,8 +326,7 @@ struct cInspectorPrivate : cInspector
 						auto info = find_enum(app.dbs, hash);
 
 						auto c_tracker = new_component<cEnumSingleDataTracker>();
-						c_tracker->auto_update = true;
-						c_tracker->data = (int*)pdata;
+						c_tracker->data = pdata;
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
 
@@ -346,7 +343,7 @@ struct cInspectorPrivate : cInspector
 						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->add_changed_listener([](void* c, int idx) {
 							auto& capture = *(Capture*)c;
 							*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(idx)->value();
-							capture.d->data_changed(capture.v->name_hash());
+							capture.d->unserialize(capture.v->offset());
 						}, new_mail(&capture));
 					}
 						break;
@@ -355,8 +352,7 @@ struct cInspectorPrivate : cInspector
 						auto info = find_enum(app.dbs, hash);
 
 						auto c_tracker = new_component<cEnumMultiDataTracker>();
-						c_tracker->auto_update = true;
-						c_tracker->data = (int*)pdata;
+						c_tracker->data = pdata;
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
 
@@ -379,7 +375,7 @@ struct cInspectorPrivate : cInspector
 									(*pv) |= capture.vl;
 								else
 									(*pv) &= ~capture.vl;
-								capture.d->data_changed(capture.v->name_hash());
+								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 						}
 					}
@@ -390,8 +386,7 @@ struct cInspectorPrivate : cInspector
 						case cH("bool"):
 						{
 							auto c_tracker = new_component<cBoolDataTracker>();
-							c_tracker->auto_update = true;
-							c_tracker->data = (bool*)pdata;
+							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 
 							auto e_checkbox = create_standard_checkbox();
@@ -406,7 +401,7 @@ struct cInspectorPrivate : cInspector
 							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
 								*(bool*)((char*)capture.d->dummy + capture.v->offset()) = checked;
-								capture.d->data_changed(capture.v->name_hash());
+								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 						}
 							break;
@@ -461,8 +456,7 @@ struct cInspectorPrivate : cInspector
 						case cH("std::basic_string(char)"):
 						{
 							auto c_tracker = new_component<cStringDataTracker>();
-							c_tracker->auto_update = true;
-							c_tracker->data = (std::string*)pdata;
+							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
@@ -477,15 +471,14 @@ struct cInspectorPrivate : cInspector
 							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto& capture = *(Capture*)c;
 								*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
-								capture.d->data_changed(capture.v->name_hash());
+								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 						}
 							break;
 						case cH("std::basic_string(wchar_t)"):
 						{
 							auto c_tracker = new_component<cWStringDataTracker>();
-							c_tracker->auto_update = true;
-							c_tracker->data = (std::wstring*)pdata;
+							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
@@ -500,7 +493,7 @@ struct cInspectorPrivate : cInspector
 							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto& capture = *(Capture*)c;
 								*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
-								capture.d->data_changed(capture.v->name_hash());
+								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 						}
 							break;
@@ -515,6 +508,30 @@ struct cInspectorPrivate : cInspector
 		}
 	}
 };
+
+void cInspector::update_data_tracker(uint component_hash, uint data_offset) const
+{
+	if (!editor->selected)
+		return;
+	for (auto i = 2; i < e_layout->child_count(); i++)
+	{
+		auto e_component = e_layout->child(i);
+		auto dealer = (cComponentDealer*)e_component->find_component(cH("ComponentDealer"));
+		if (dealer && dealer->component->type_hash == component_hash)
+		{
+			for (auto j = 1; j < e_component->child_count(); j++)
+			{
+				auto e_data = e_component->child(j)->child(1);
+				auto tracker = (cDataTracker*)e_data->find_component(cH("DataTracker"));
+				if (tracker && tracker->data == (char*)dealer->dummy + data_offset)
+				{
+					dealer->serialize(data_offset);
+					tracker->update_view();
+				}
+			}
+		}
+	}
+}
 
 void cInspector::refresh()
 {

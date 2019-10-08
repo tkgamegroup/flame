@@ -5,6 +5,7 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/menu.h>
@@ -14,6 +15,7 @@
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
+#include "../data_tracker.h"
 #include "scene_editor.h"
 #include "hierarchy.h"
 #include "inspector.h"
@@ -293,6 +295,10 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
 
+		auto udt_element = find_udt(app.dbs, cH("ComponentElement"));
+		assert(udt_element);
+		auto element_pos_offset = udt_element->find_variable("pos")->offset();
+
 		auto e_transform_tool = Entity::create();
 		e_overlayer->add_child(e_transform_tool);
 		{
@@ -307,16 +313,21 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			{
 				cSceneEditorPrivate* e;
 				cEventReceiver* er;
+				uint off;
 			}capture;
 			capture.e = c_editor;
 			capture.er = c_event_receiver;
+			capture.off = element_pos_offset;
 			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto& capture = *(Capture*)c;
-				if (capture.e->selected)
+				if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 				{
 					auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
-					if (e && capture.er->active && is_mouse_move(action, key))
+					if (e)
+					{
 						e->pos += pos;
+						capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
+					}
 				}
 			}, new_mail(&capture));
 			e_transform_tool->add_component(c_event_receiver);
@@ -339,16 +350,21 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				{
 					cSceneEditorPrivate* e;
 					cEventReceiver* er;
+					uint off;
 				}capture;
 				capture.e = c_editor;
 				capture.er = c_event_receiver;
+				capture.off = element_pos_offset;
 				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					auto& capture = *(Capture*)c;
-					if (capture.e->selected)
+					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
 						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
-						if (e && capture.er->active && is_mouse_move(action, key))
+						if (e)
+						{
 							e->pos.x() += pos.x();
+							capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
+						}
 					}
 				}, new_mail(&capture));
 				e_h_wing->add_component(c_event_receiver);
@@ -372,16 +388,21 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				{
 					cSceneEditorPrivate* e;
 					cEventReceiver* er;
+					uint off;
 				}capture;
 				capture.e = c_editor;
 				capture.er = c_event_receiver;
+				capture.off = element_pos_offset;
 				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 					auto& capture = *(Capture*)c;
-					if (capture.e->selected)
+					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
 						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
-						if (e && capture.er->active && is_mouse_move(action, key))
+						if (e)
+						{
 							e->pos.y() += pos.y();
+							capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
+						}
 					}
 				}, new_mail(&capture));
 				e_v_wing->add_component(c_event_receiver);

@@ -2,34 +2,26 @@
 
 struct cDataTracker : Component
 {
-	bool auto_update;
+	void* data;
 
 	cDataTracker() :
 		Component("DataTracker")
 	{
-		auto_update = false;
 	}
 
 	virtual void update_view() = 0;
-
-	virtual void update() override
-	{
-		if (auto_update)
-			update_view();
-	}
 };
 
 struct cEnumSingleDataTracker : cDataTracker
 {
 	cCombobox* combobox;
 
-	int* data;
 	EnumInfo* info;
 
 	virtual void update_view() override
 	{
 		int idx;
-		info->find_item(*data, &idx);
+		info->find_item(*(int*)data, &idx);
 		combobox->set_index(idx, false);
 	}
 
@@ -37,8 +29,7 @@ struct cEnumSingleDataTracker : cDataTracker
 	{
 		combobox = (cCombobox*)entity->child(0)->find_component(cH("Combobox"));
 
-		if (!auto_update)
-			update_view();
+		update_view();
 	}
 };
 
@@ -46,13 +37,12 @@ struct cEnumMultiDataTracker : cDataTracker
 {
 	std::vector<cCheckbox*> checkboxs;
 
-	int* data;
 	EnumInfo* info;
 
 	virtual void update_view() override
 	{
 		for (auto i = 0; i < checkboxs.size(); i++)
-			checkboxs[i]->set_checked(*data & info->item(i)->value(), false);
+			checkboxs[i]->set_checked(*(int*)data & info->item(i)->value(), false);
 	}
 
 	virtual void start() override
@@ -60,8 +50,7 @@ struct cEnumMultiDataTracker : cDataTracker
 		for (auto i = 0; i < entity->child_count(); i++)
 			checkboxs.push_back((cCheckbox*)entity->child(i)->child(0)->find_component(cH("Checkbox")));
 
-		if (!auto_update)
-			update_view();
+		update_view();
 	}
 };
 
@@ -69,19 +58,16 @@ struct cBoolDataTracker : cDataTracker
 {
 	cCheckbox* checkbox;
 
-	bool* data;
-
 	virtual void update_view() override
 	{
-		checkbox->set_checked(*data, false);
+		checkbox->set_checked(*(bool*)data, false);
 	}
 
 	virtual void start() override
 	{
 		checkbox = (cCheckbox*)entity->child(0)->find_component(cH("Checkbox"));
 
-		if (!auto_update)
-			update_view();
+		update_view();
 	}
 };
 
@@ -91,12 +77,9 @@ struct cDigitalDataTracker : cDataTracker
 	cEventReceiver* event_receiver;
 	cText* text;
 
-	T* data;
-
 	virtual void update_view() override
 	{
-		if (!(auto_update && event_receiver->focusing))
-			text->set_text(to_wstring(*data));
+		text->set_text(to_wstring(*(T*)data));
 	}
 
 	virtual void start() override
@@ -104,8 +87,7 @@ struct cDigitalDataTracker : cDataTracker
 		event_receiver = (cEventReceiver*)entity->child(0)->find_component(cH("EventReceiver"));
 		text = (cText*)entity->child(0)->find_component(cH("Text"));
 
-		if (!auto_update)
-			update_view();
+		update_view();
 	}
 };
 
@@ -115,15 +97,10 @@ struct cDigitalVecDataTracker : cDataTracker
 	cEventReceiver* event_receivers[N];
 	cText* texts[N];
 
-	Vec<N, T>* data;
-
 	virtual void update_view() override
 	{
 		for (auto i = 0; i < N; i++)
-		{
-			if (!(auto_update && event_receivers[i]->focusing))
-				texts[i]->set_text(to_wstring((*data)[i]));
-		}
+			texts[i]->set_text(to_wstring((*(Vec<N, T>*)data)[i]));
 	}
 
 	virtual void start() override
@@ -135,8 +112,7 @@ struct cDigitalVecDataTracker : cDataTracker
 			texts[i] = (cText*)e->find_component(cH("Text"));
 		}
 
-		if (!auto_update)
-			update_view();
+		update_view();
 	}
 };
 
@@ -144,19 +120,16 @@ struct cStringDataTracker : cDataTracker
 {
 	cText* text;
 
-	std::string* data;
-
 	virtual void update_view() override
 	{
-		text->set_text(s2w(*data));
+		text->set_text(s2w(*(std::string*)data));
 	}
 
 	virtual void start() override
 	{
 		text = (cText*)entity->child(0)->find_component(cH("Text"));
 
-		if (!auto_update)
-			update_view();
+		update_view();
 	}
 };
 
@@ -164,18 +137,15 @@ struct cWStringDataTracker : cDataTracker
 {
 	cText* text;
 
-	std::wstring* data;
-
 	virtual void update_view() override
 	{
-		text->set_text(*data);
+		text->set_text(*(std::wstring*)data);
 	}
 
 	virtual void start() override
 	{
 		text = (cText*)entity->child(0)->find_component(cH("Text"));
 
-		if (!auto_update)
-			update_view();
+		update_view();
 	}
 };

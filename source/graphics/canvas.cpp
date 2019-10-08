@@ -15,8 +15,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		static SampleCount$ sample_count = SampleCount_8;
-
 		struct Vertex
 		{
 			Vec2f pos;

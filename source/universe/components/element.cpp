@@ -195,63 +195,121 @@ namespace flame
 			return c;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void save$(Component* _c)
+		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
 		{
 			auto c = (cElement*)_c;
 
-			pos$ = c->pos;
-			scale$ = c->scale;
-			size$ = c->size;
-			inner_padding$ = c->inner_padding;
-			alpha$ = c->alpha;
-			inner_padding$ = c->inner_padding;
-			frame_thickness$ = c->frame_thickness;
-			color$ = c->color;
-			frame_color$ = c->frame_color;
-			shadow_thickness$ = c->shadow_thickness;
-			clip_children$ = c->clip_children;
+			if (offset == -1)
+			{
+				pos$ = c->pos;
+				scale$ = c->scale;
+				size$ = c->size;
+				inner_padding$ = c->inner_padding;
+				alpha$ = c->alpha;
+				roundness$ = c->roundness;
+				frame_thickness$ = c->frame_thickness;
+				color$ = c->color;
+				frame_color$ = c->frame_color;
+				shadow_thickness$ = c->shadow_thickness;
+				clip_children$ = c->clip_children;
+			}
+			else
+			{
+				switch (offset)
+				{
+				case offsetof(ComponentElement$, pos$):
+					pos$ = c->pos;
+					break;
+				case offsetof(ComponentElement$, scale$):
+					scale$ = c->scale;
+					break;
+				case offsetof(ComponentElement$, size$):
+					size$ = c->size;
+					break;
+				case offsetof(ComponentElement$, inner_padding$):
+					inner_padding$ = c->inner_padding;
+					break;
+				case offsetof(ComponentElement$, alpha$):
+					alpha$ = c->alpha;
+					break;
+				case offsetof(ComponentElement$, roundness$):
+					roundness$ = c->roundness;
+					break;
+				case offsetof(ComponentElement$, frame_thickness$):
+					frame_thickness$ = c->frame_thickness;
+					break;
+				case offsetof(ComponentElement$, color$):
+					color$ = c->color;
+					break;
+				case offsetof(ComponentElement$, frame_color$):
+					frame_color$ = c->frame_color;
+					break;
+				case offsetof(ComponentElement$, shadow_thickness$):
+					shadow_thickness$ = c->shadow_thickness;
+					break;
+				case offsetof(ComponentElement$, clip_children$):
+					clip_children$ = c->clip_children;
+					break;
+				}
+			}
 		}
 
-		FLAME_UNIVERSE_EXPORTS void data_changed$(Component* _c, uint name_hash)
+		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
 		{
 			auto c = (cElement*)_c;
 
-			switch (name_hash)
+			if (offset == -1)
 			{
-			case cH("pos"):
 				c->pos = pos$;
-				break;
-				break;
-			case cH("scale"):
 				c->scale = scale$;
-				break;
-			case cH("size"):
 				c->size = size$;
-				break;
-			case cH("inner_padding"):
 				c->inner_padding = inner_padding$;
-				break;
-			case cH("alpha"):
 				c->alpha = alpha$;
-				break;
-			case cH("roundness"):
 				c->roundness = roundness$;
-				break;
-			case cH("frame_thickness"):
 				c->frame_thickness = frame_thickness$;
-				break;
-			case cH("color"):
 				c->color = color$;
-				break;
-			case cH("frame_color"):
 				c->frame_color = frame_color$;
-				break;
-			case cH("shadow_thickness"):
 				c->shadow_thickness = shadow_thickness$;
-				break;
-			case cH("clip_children"):
 				c->clip_children = clip_children$;
-				break;
+			}
+			else
+			{
+				switch (offset)
+				{
+				case offsetof(ComponentElement$, pos$):
+					c->pos = pos$;
+					break;
+				case offsetof(ComponentElement$, scale$):
+					c->scale = scale$;
+					break;
+				case offsetof(ComponentElement$, size$):
+					c->size = size$;
+					break;
+				case offsetof(ComponentElement$, inner_padding$):
+					c->inner_padding = inner_padding$;
+					break;
+				case offsetof(ComponentElement$, alpha$):
+					c->alpha = alpha$;
+					break;
+				case offsetof(ComponentElement$, roundness$):
+					c->roundness = roundness$;
+					break;
+				case offsetof(ComponentElement$, frame_thickness$):
+					c->frame_thickness = frame_thickness$;
+					break;
+				case offsetof(ComponentElement$, color$):
+					c->color = color$;
+					break;
+				case offsetof(ComponentElement$, frame_color$):
+					c->frame_color = frame_color$;
+					break;
+				case offsetof(ComponentElement$, shadow_thickness$):
+					c->shadow_thickness = shadow_thickness$;
+					break;
+				case offsetof(ComponentElement$, clip_children$):
+					c->clip_children = clip_children$;
+					break;
+				}
 			}
 		}
 	};

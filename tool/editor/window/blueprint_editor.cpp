@@ -1842,7 +1842,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.5f, e_data);
 
 						auto c_tracker = new_component<cEnumSingleDataTracker>();
-						c_tracker->data = (int*)input->data();
+						c_tracker->data = input->data();
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
 
@@ -1867,7 +1867,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto info = find_enum(dbs, type->hash());
 
 						auto c_tracker = new_component<cEnumMultiDataTracker>();
-						c_tracker->data = (int*)input->data();
+						c_tracker->data = input->data();
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
 
@@ -1901,7 +1901,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						case cH("bool"):
 						{
 							auto c_tracker = new_component<cBoolDataTracker>();
-							c_tracker->data = (bool*)input->data();
+							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 
 							auto e_checkbox = create_standard_checkbox();
@@ -1965,7 +1965,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						case cH("std::basic_string(char)"):
 						{
 							auto c_tracker = new_component<cStringDataTracker>();
-							c_tracker->data = (std::string*)input->data();
+							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
@@ -1979,7 +1979,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						case cH("std::basic_string(wchar_t)"):
 						{
 							auto c_tracker = new_component<cWStringDataTracker>();
-							c_tracker->data = (std::wstring*)input->data();
+							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);

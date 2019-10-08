@@ -420,9 +420,9 @@ namespace flame
 						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
 				}
 				{
-					auto f = udt->find_function("save");
-					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")));
-					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), dummy, c.get());
+					auto f = udt->find_function("serialize");
+					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("int")));
+					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), dummy, c.get(), -1);
 				}
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{

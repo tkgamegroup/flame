@@ -183,43 +183,89 @@ namespace flame
 			return c;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void save$(Component* _c)
+		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
 		{
 			auto c = (cText*)_c;
 
+			if (offset == -1)
 			{
-				auto& name = universe_serialization_find_data(c->font_atlas);
-				assert(name.compare(0, strlen(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
-				font_atlas_index$ = std::stoul(name.c_str() + strlen(FONT_ATLAS_PREFIX));
+				{
+					auto& name = universe_serialization_find_data(c->font_atlas);
+					assert(name.compare(0, strlen(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
+					font_atlas_index$ = std::stoul(name.c_str() + strlen(FONT_ATLAS_PREFIX));
+				}
+				color$ = c->color;
+				sdf_scale$ = c->sdf_scale;
+				auto_width$ = c->auto_width;
+				auto_height$ = c->auto_height;
+				text$ = c->text();
 			}
-			color$ = c->color;
-			sdf_scale$ = c->sdf_scale;
-			auto_width$ = c->auto_width;
-			auto_height$ = c->auto_height;
-			text$ = c->text();
+			else
+			{
+				switch (offset)
+				{
+				case offsetof(ComponentText$, font_atlas_index$):
+				{
+					auto& name = universe_serialization_find_data(c->font_atlas);
+					assert(name.compare(0, strlen(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
+					font_atlas_index$ = std::stoul(name.c_str() + strlen(FONT_ATLAS_PREFIX));
+				}
+					break;
+				case offsetof(ComponentText$, color$):
+					color$ = c->color;
+					break;
+				case offsetof(ComponentText$, sdf_scale$):
+					sdf_scale$ = c->sdf_scale;
+					break;
+				case offsetof(ComponentText$, auto_width$):
+					auto_width$ = c->auto_width;
+					break;
+				case offsetof(ComponentText$, auto_height$):
+					auto_height$ = c->auto_height;
+					break;
+				case offsetof(ComponentText$, text$):
+					text$ = c->text();
+					break;
+				}
+			}
 		}
 
-		FLAME_UNIVERSE_EXPORTS void data_changed$(Component* _c, uint name_hash)
+		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
 		{
 			auto c = (cText*)_c;
 
-			switch (name_hash)
+			if (offset == -1)
 			{
-			case cH("font_atlas_index"):
-				c->font_atlas = (graphics::FontAtlas*)universe_serialization_get_data("font_atlas" + std::to_string(font_atlas_index$));
-				break;
-			case cH("sdf_scale"):
+				c->font_atlas = (graphics::FontAtlas*)universe_serialization_get_data(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$));
+				c->color = color$;
 				c->sdf_scale = sdf_scale$;
-				break;
-			case cH("auto_width"):
 				c->auto_width = auto_width$;
-				break;
-			case cH("auto_height"):
 				c->auto_height = auto_height$;
-				break;
-			case cH("text"):
 				c->set_text(text$);
-				break;
+			}
+			else
+			{
+				switch (offset)
+				{
+				case offsetof(ComponentText$, font_atlas_index$):
+					c->font_atlas = (graphics::FontAtlas*)universe_serialization_get_data(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$));
+					break;
+				case offsetof(ComponentText$, color$):
+					c->color = color$;
+					break;
+				case offsetof(ComponentText$, sdf_scale$):
+					c->sdf_scale = sdf_scale$;
+					break;
+				case offsetof(ComponentText$, auto_width$):
+					c->auto_width = auto_width$;
+					break;
+				case offsetof(ComponentText$, auto_height$):
+					c->auto_height = auto_height$;
+					break;
+				case offsetof(ComponentText$, text$):
+					c->set_text(text$);
+					break;
+				}
 			}
 		}
 
