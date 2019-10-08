@@ -213,7 +213,7 @@ namespace flame
 			w(w)
 		{
 			sc = Swapchain::create(d, w);
-			sc_frame = looper().frame;
+			signal = true;
 			auto thiz = this;
 			resize_listener = w->add_resize_listener([](void* c, const Vec2u& size) {
 				auto thiz = *(SwapchainResizablePrivate**)c;
@@ -226,7 +226,7 @@ namespace flame
 					thiz->sc = Swapchain::create(thiz->d, thiz->w);
 				else
 					thiz->sc = nullptr;
-				thiz->sc_frame = looper().frame;
+				thiz->signal = true;
 			}, new_mail(&thiz));
 		}
 		
@@ -240,11 +240,6 @@ namespace flame
 		Swapchain* SwapchainResizable::sc() const
 		{
 			return ((SwapchainResizablePrivate*)this)->sc;
-		}
-
-		int SwapchainResizable::sc_frame() const
-		{
-			return ((SwapchainResizablePrivate*)this)->sc_frame;
 		}
 
 		SwapchainResizable* SwapchainResizable::create(Device* d, Window* w)
@@ -272,16 +267,16 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				auto scr = (SwapchainResizable*)in$i.v;
-				auto sc_frame = scr->sc_frame();
-				if (sc_frame > sc$o.frame)
+				if (scr->signal)
 				{
 					sc$o.v = scr->sc();
 					if (sc$o.v)
 						images$o.v = ((Swapchain*)sc$o.v)->images();
 					else
 						images$o.v.clear();
-					sc$o.frame = sc_frame;
-					images$o.frame = sc_frame;
+					auto frame = looper().frame;
+					sc$o.frame = frame;
+					images$o.frame = frame;
 				}
 				image_idx$o.v = sc$o.v ? ((Swapchain*)sc$o.v)->image_index() : 0;
 				image_idx$o.frame = looper().frame;

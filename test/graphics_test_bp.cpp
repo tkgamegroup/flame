@@ -23,6 +23,7 @@ struct App
 	{
 		bp->update();
 
+		scr->signal = false;
 		auto sc = scr->sc();
 		if (sc)
 		{
@@ -41,7 +42,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/clear_screen/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");

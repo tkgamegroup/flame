@@ -40,7 +40,6 @@ struct App
 	FontAtlas* font_atlas_pixel;
 	FontAtlas* font_atlas_sdf;
 	Canvas* canvas;
-	int rt_frame;
 
 	Entity* root;
 	cElement* c_element_root;

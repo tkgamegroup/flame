@@ -62,8 +62,6 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
-		bool in_list;
-
 		NodePrivate(BPPrivate* _bp, const std::string& _id, UdtInfo* _udt, void* module);
 		~NodePrivate();
 
@@ -116,6 +114,7 @@ namespace flame
 		ExportPrivate* add_expt(SlotPrivate* output, const std::string& alias);
 		void remove_expt(ExportPrivate* e);
 		ExportPrivate* find_expt(const std::string& alias) const;
+		ExportPrivate* find_expt(Slot* s) const;
 
 		void clear();
 
@@ -265,8 +264,7 @@ namespace flame
 
 	NodePrivate::NodePrivate(BPPrivate* _bp, const std::string& _id, UdtInfo* _udt, void* module) :
 		bp(_bp),
-		id(_id),
-		in_list(false)
+		id(_id)
 	{
 		udt = _udt;
 		pos = Vec2f(0.f);
@@ -370,8 +368,11 @@ namespace flame
 
 	void NodePrivate::add_to_update_list()
 	{
-		if (in_list)
-			return;
+		for (auto n : bp->update_list)
+		{
+			if (n == this)
+				return;
+		}
 
 		for (auto& input : inputs)
 		{
@@ -381,8 +382,6 @@ namespace flame
 		}
 
 		bp->update_list.push_back(this);
-
-		in_list = true;
 	}
 
 	void NodePrivate::update()
@@ -412,8 +411,6 @@ namespace flame
 	BPPrivate::BPPrivate()
 	{
 		graphics_device = nullptr;
-
-		expts_node_pos = Vec2f(0.f);
 	}
 
 	BP::Module* BPPrivate::add_module(const std::wstring& filename)
@@ -676,6 +673,15 @@ namespace flame
 		}
 		return nullptr;
 	}
+	ExportPrivate* BPPrivate::find_expt(Slot* s) const
+	{
+		for (auto& e : expts)
+		{
+			if (e->slot == s)
+				return e.get();
+		}
+		return nullptr;
+	}
 
 	void BPPrivate::clear()
 	{
@@ -686,8 +692,6 @@ namespace flame
 	void BPPrivate::build_update_list()
 	{
 		update_list.clear();
-		for (auto& n : nodes)
-			n->in_list = false;
 		for (auto& n : nodes)
 			n->add_to_update_list();
 	}
@@ -973,6 +977,11 @@ namespace flame
 		return ((BPPrivate*)this)->find_expt(alias);
 	}
 
+	BP::Export* BP::find_expt(Slot* s) const
+	{
+		return ((BPPrivate*)this)->find_expt(s);
+	}
+
 	void BP::clear()
 	{
 		((BPPrivate*)this)->clear();
@@ -1146,7 +1155,6 @@ namespace flame
 		std::vector<ExportDesc> export_descs;
 
 		auto n_exports = file->find_node("exports");
-		auto expts_node_pos = stof2(n_exports->find_attr("pos")->value().c_str());
 		for (auto i_e = 0; i_e < n_exports->node_count(); i_e++)
 		{
 			auto n_export = n_exports->node(i_e);
@@ -1322,7 +1330,6 @@ namespace flame
 				printf("cannot link: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
 		}
 
-		bp->expts_node_pos = expts_node_pos;
 		for(auto& e_d : export_descs)
 		{
 			SlotPrivate* slot = nullptr;
@@ -1443,7 +1450,6 @@ namespace flame
 		}
 
 		auto n_exports = file->new_node("exports");
-		n_exports->new_attr("pos", to_string(bp->expts_node_pos, 2));
 		{
 			for (auto& e : bp->expts)
 			{

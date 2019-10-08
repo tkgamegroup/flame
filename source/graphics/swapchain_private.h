@@ -39,7 +39,6 @@ namespace flame
 			Device* d;
 			Swapchain* sc;
 			void* resize_listener;
-			int sc_frame;
 
 			SwapchainResizablePrivate(Device* d, Window* w);
 			~SwapchainResizablePrivate();

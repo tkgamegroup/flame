@@ -187,7 +187,6 @@ struct cBPEditor : Component
 	cEdit* add_node_menu_filter;
 	Vec2f add_pos;
 	Entity* e_base;
-	Entity* e_exports_main;
 	Entity* e_slot_menu;
 	cDockerTab* console_tab;
 
@@ -247,9 +246,6 @@ struct cBPEditor : Component
 	Entity* create_module_entity(BP::Module* m);
 	Entity* create_node_entity(BP::Node* n);
 	Entity* create_import_entity(BP::Import* i);
-	Entity* create_exports_entity();
-	Entity* create_export_entity(BP::Export* e);
-	void refresh_exports_entity();
 
 	void load(const std::wstring& _filename, bool no_compile)
 	{
@@ -272,8 +268,6 @@ struct cBPEditor : Component
 			create_import_entity(bp->impt(i));
 		for (auto i = 0; i < bp->node_count(); i++)
 			create_node_entity(bp->node(i));
-		create_exports_entity();
-		refresh_exports_entity();
 
 		e_add_node_menu->remove_all_children();
 
@@ -407,7 +401,7 @@ struct cBPEditor : Component
 
 	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
 	{
-		auto n = bp->add_node(type_name, id);
+		auto n = bp->add_node(H(type_name.c_str()), id);
 		n->pos = pos;
 		create_node_entity(n);
 		return n;
@@ -862,28 +856,6 @@ struct cBPImport : Component
 	}
 };
 
-struct cBPExport : Component
-{
-	cElement* element;
-
-	BP* bp;
-
-	cBPExport() :
-		Component("BPExport")
-	{
-	}
-
-	virtual void start() override
-	{
-		element = (cElement*)(entity->find_component(cH("Element")));
-	}
-
-	virtual void update() override
-	{
-		bp->expts_node_pos = element->pos;
-	}
-};
-
 void cBP::start()
 {
 	element = (cElement*)(entity->find_component(cH("Element")));
@@ -1165,7 +1137,6 @@ Entity* cBPEditor::create_import_entity(BP::Import* i)
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
 						c_element->size = r;
 						c_element->roundness = r * 0.5f;
-						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -1232,7 +1203,6 @@ Entity* cBPEditor::create_import_entity(BP::Import* i)
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
 						c_element->size = r;
 						c_element->roundness = r * 0.5f;
-						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -1266,184 +1236,6 @@ Entity* cBPEditor::create_import_entity(BP::Import* i)
 	}
 
 	return e_import;
-}
-
-Entity* cBPEditor::create_exports_entity()
-{
-	auto e_exports = Entity::create();
-	e_base->add_child(e_exports);
-	{
-		auto c_element = cElement::create();
-		c_element->pos = bp->expts_node_pos;
-		c_element->color = Vec4c(190, 200, 255, 200);
-		c_element->frame_color = Vec4c(252, 252, 50, 200);
-		e_exports->add_component(c_element);
-
-		e_exports->add_component(cEventReceiver::create());
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->fence = 1;
-		e_exports->add_component(c_layout);
-
-		e_exports->add_component(cMoveable::create());
-
-		auto c_export = new_component<cBPExport>();
-		c_export->bp = bp;
-		e_exports->add_component(c_export);
-	}
-	{
-		auto e_content = Entity::create();
-		e_exports->add_child(e_content);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(8.f);
-			e_content->add_component(c_element);
-
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
-			e_content->add_component(c_layout);
-		}
-
-		auto e_text_id = Entity::create();
-		e_content->add_child(e_text_id);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			e_text_id->add_component(c_element);
-
-			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->set_text(L"Exports");
-			c_text->sdf_scale = 0.8f;
-			e_text_id->add_component(c_text);
-		}
-
-		auto e_main = Entity::create();
-		e_content->add_child(e_main);
-		{
-			e_main->add_component(cElement::create());
-
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
-			e_main->add_component(c_aligner);
-
-			auto c_layout = cLayout::create(LayoutHorizontal);
-			c_layout->item_padding = 16.f;
-			e_main->add_component(c_layout);
-		}
-		e_exports_main = e_main;
-	}
-
-	auto e_bring_to_front = Entity::create();
-	e_exports->add_child(e_bring_to_front);
-	{
-		e_bring_to_front->add_component(cElement::create());
-
-		auto c_event_receiver = cEventReceiver::create();
-		c_event_receiver->penetrable = true;
-		e_bring_to_front->add_component(c_event_receiver);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
-		e_bring_to_front->add_component(c_aligner);
-
-		e_bring_to_front->add_component(cBringToFront::create());
-	}
-
-	return e_exports;
-}
-
-Entity* cBPEditor::create_export_entity(BP::Export* e)
-{
-	auto s = e->slot();
-
-	auto e_export = Entity::create();
-	e->user_data = e_export;
-	{
-		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_sdf->pixel_height * 0.5f, 0.f);
-		e_export->add_component(c_element);
-
-		auto c_text = cText::create(app.font_atlas_sdf);
-		c_text->sdf_scale = 0.5f;
-		auto out_addr = s->get_address();
-		c_text->set_text(s2w(e->alias()) + L" (" + s2w(*out_addr.p) + L")");
-		delete_mail(out_addr);
-		e_export->add_component(c_text);
-
-		if (s->type() == BP::Slot::Output)
-		{
-			auto c_aligner = cAligner::create();
-			c_aligner->x_align = AlignxRight;
-			e_export->add_component(c_aligner);
-		}
-
-		e_export->add_component(cLayout::create(LayoutFree));
-	}
-
-	auto e_close = Entity::create();
-	e_export->add_child(e_close);
-	{
-		e_close->add_component(cElement::create());
-
-		auto c_text = cText::create(app.font_atlas_sdf);
-		c_text->color = Vec4c(200, 40, 20, 255);
-		c_text->sdf_scale = 0.5f;
-		c_text->set_text(Icon_TIMES);
-		e_close->add_component(c_text);
-
-		auto c_event_receiver = cEventReceiver::create();
-		e_close->add_component(c_event_receiver);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxRight;
-		e_close->add_component(c_aligner);
-	}
-
-	return e_export;
-}
-
-void cBPEditor::refresh_exports_entity()
-{
-	e_exports_main->remove_all_children();
-
-	auto i = 0;
-
-	auto e_left = Entity::create();
-	e_exports_main->add_child(e_left);
-	{
-		e_left->add_component(cElement::create());
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeGreedy;
-		e_left->add_component(c_aligner);
-
-		e_left->add_component(cLayout::create(LayoutVertical));
-
-		for (; i < bp->expt_count(); i++)
-		{
-			auto e = bp->expt(i);
-			if (e->slot()->type() == BP::Slot::Output)
-				break;
-
-			e_left->add_child(create_export_entity(e));
-		}
-	}
-
-	auto e_right = Entity::create();
-	e_exports_main->add_child(e_right);
-	{
-		e_right->add_component(cElement::create());
-
-		e_right->add_component(cLayout::create(LayoutVertical));
-
-		for (; i < bp->expt_count(); i++)
-		{
-			auto e = bp->expt(i);
-
-			e_right->add_child(create_export_entity(e));
-		}
-	}
 }
 
 Entity* cBPEditor::create_node_entity(BP::Node* n)
@@ -1801,7 +1593,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
 						c_element->size = r;
 						c_element->roundness = r * 0.5f;
-						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->color = bp->find_expt(input) ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -2040,7 +1832,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
 						c_element->size = r;
 						c_element->roundness = r * 0.5f;
-						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->color = bp->find_expt(output) ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -2358,7 +2150,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto e_menu = create_standard_menu();
 		c_editor->e_slot_menu = e_menu;
 		{
-			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Add To Export");
+			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Add To Exports");
 			e_menu->add_child(item);
 			((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
 				auto editor = *(cBPEditor**)c;
@@ -2370,12 +2162,17 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 						if (ok)
 						{
-							editor->bp->add_expt(editor->selected.s, w2s(text));
-							editor->refresh_exports_entity();
+							auto s = editor->selected.s;
+							editor->bp->add_expt(s, w2s(text));
+							((cBPSlot*)s->user_data)->element->color = Vec4c(200, 40, 20, 255);
 						}
 					}, new_mail_p(editor));
 				}
 			}, new_mail_p(c_editor));
+		}
+		{
+			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Remove From Exports");
+			e_menu->add_child(item);
 		}
 	}
 

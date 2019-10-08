@@ -90,12 +90,11 @@ void App::create()
 void App::run()
 {
 	auto sc = scr->sc();
-	auto sc_frame = scr->sc_frame();
 
-	if (sc_frame > rt_frame)
+	if (scr->signal)
 	{
 		canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
-		rt_frame = sc_frame;
+		scr->signal = false;
 	}
 
 	if (sc)

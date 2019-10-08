@@ -219,7 +219,7 @@
 		<link out="sc.out" in="pl_text_sdf.sc" />
 		<link out="out_alpha_blend.out" in="pl_text_sdf.outputs" />
 	</links>
-	<exports pos="-229.00;587.00">
+	<exports>
 		<export type="in" slot="rt_dst.type" alias="rt_dst_type" />
 		<export type="in" slot="rt_dst.v" alias="rt_dst_v" />
 		<export type="out" slot="vtx_buf.out" alias="vtx_buf" />
