@@ -21,11 +21,9 @@ struct App
 
 	void run()
 	{
-		auto sc = scr->sc();
-		auto sc_frame = scr->sc_frame();
-
 		bp->update();
 
+		auto sc = scr->sc();
 		if (sc)
 		{
 			auto idx = looper().frame % fences.size();
@@ -43,7 +41,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/clear_screen/bp");
+	app.bp = BP::create_from_file(L"../renderpath/clear_screen/bp", true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");

@@ -346,14 +346,13 @@ namespace flame
 				auto fb = (Framebuffer*)rnf->framebuffers()[image_idx];
 				surface_size = Vec2f(fb->image_size);
 
-				set_scissor(Vec4f(Vec2f(0.f), surface_size));
-
 				cb->begin();
 				cb->begin_renderpass(fb, rnf->clearvalues());
 				if (idx_end != idx_buffer->mapped)
 				{
-					cb->set_viewport(Vec4f(Vec2f(0.f), surface_size));
-					cb->set_scissor(Vec4f(Vec2f(0.f), surface_size));
+					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
+					cb->set_viewport(curr_scissor);
+					cb->set_scissor(curr_scissor);
 					cb->bind_vertexbuffer(vtx_buffer, 0);
 					cb->bind_indexbuffer(idx_buffer, IndiceTypeUint);
 

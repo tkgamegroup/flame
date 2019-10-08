@@ -402,7 +402,7 @@ namespace flame
 				}
 				else
 					memcpy(input->data(), out->data(), iv->size() - sizeof(AttributeBase));
-				((AttributeBase*)out->raw_data)->frame = ia->frame;
+				ia->frame = ((AttributeBase*)out->raw_data)->frame;
 			}
 		}
 

@@ -74,7 +74,10 @@ namespace flame
 			case TargetImageview:
 				return ((Imageview*)v)->image();
 			case TargetImages:
-				return (*(std::vector<Image*>*)v)[0];
+			{
+				auto& vec = *(std::vector<Image*>*)v;
+				return vec.empty() ? nullptr : vec[0];
+			}
 			}
 			return nullptr;
 		}
