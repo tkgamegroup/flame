@@ -19,12 +19,21 @@ namespace flame
 			auto rnf = (RenderpassAndFramebuffer*)rnf$i.v;
 			auto img_idx = image_idx$i.v;
 			auto cb = (Commandbuffer*)(*cbs$i.v)[img_idx];
-			auto fb = (Framebuffer*)rnf->framebuffers()[img_idx];
 
-			cb->begin();
-			cb->begin_renderpass(fb, rnf->clearvalues());
-			cb->end_renderpass();
-			cb->end();
+			if (rnf)
+			{
+				auto fb = (Framebuffer*)rnf->framebuffers()[img_idx];
+
+				cb->begin();
+				cb->begin_renderpass(fb, rnf->clearvalues());
+				cb->end_renderpass();
+				cb->end();
+			}
+			else
+			{
+				cb->begin();
+				cb->end();
+			}
 		}
 	};
 }

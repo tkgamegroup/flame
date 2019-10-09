@@ -305,6 +305,21 @@ namespace flame
 	}
 
 	template<typename CH>
+	inline std::vector<std::basic_string<CH>> string_last_first_split(const std::basic_string<CH>& str, CH delimiter = ' ')
+	{
+		auto i = str.size() - 1;
+		for (; i >= 0; i--)
+		{
+			if (str[i] == delimiter)
+				break;
+		}
+		std::vector<std::basic_string<CH>> ret;
+		ret.push_back(i > 0 ? std::basic_string<CH>(str.begin(), str.begin() + i) : std::basic_string<CH>());
+		ret.push_back(i < str.size() - 1 ? std::basic_string<CH>(str.begin() + i + 1, str.end()) : std::basic_string<CH>());
+		return ret;
+	}
+
+	template<typename CH>
 	inline std::vector<std::basic_string<CH>> doublenull_string_split(const CH* str)
 	{
 		std::vector<std::basic_string<CH>> ret;

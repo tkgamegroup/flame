@@ -15,26 +15,29 @@ struct App
 	Device* d;
 	Semaphore* render_finished;
 	SwapchainResizable* scr;
-	std::vector<Fence*> fences;
+	Fence* fence;
 	std::vector<void*> cbs;
 	BP* bp;
 
 	void run()
 	{
+		auto sc = scr->sc();
+
+		if (sc)
+			sc->acquire_image();
+
+		fence->wait();
+		looper().process_delay_events();
+
 		bp->update();
 
-		scr->signal = false;
-		auto sc = scr->sc();
 		if (sc)
 		{
-			auto idx = looper().frame % fences.size();
-			sc->acquire_image();
-			fences[idx]->wait();
-			looper().process_delay_events();
-
-			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fences[idx]);
+			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
+
+		scr->signal = false;
 	}
 
 }app;
@@ -42,7 +45,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", false);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -56,20 +59,22 @@ int main(int argc, char** args)
 
 	auto& images = app.scr->sc()->images();
 
-	app.fences.resize(images.size());
+	app.fence = Fence::create(app.d);
 	app.cbs.resize(images.size());
 	for (auto i = 0; i < images.size(); i++)
-	{
-		app.fences[i] = Fence::create(app.d);
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
-	}
 
 	app.bp->graphics_device = app.d;
-	auto scr_n = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
-	scr_n->find_input("in")->set_data_p(app.scr);
-	app.bp->find_input("rt_dst.type")->set_data_i(TargetImages);
-	app.bp->find_input("rt_dst.v")->link_to(scr_n->find_output("images"));
+	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
+	n_scr->find_input("in")->set_data_p(app.scr);
+	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
+	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
 	app.bp->find_input("make_cmd.cbs")->set_data_p(&app.cbs);
+	{
+		auto s_img_idx = app.bp->find_input("make_cmd.image_idx");
+		if (s_img_idx)
+			s_img_idx->link_to(n_scr->find_output("image_idx"));
+	}
 
 	looper().loop([](void* c) {
 		auto app = (*(App * *)c);

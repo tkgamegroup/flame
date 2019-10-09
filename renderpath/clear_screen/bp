@@ -21,5 +21,4 @@
 		<link out="rnf.fbs" in="make_cmd.fbs" />
 		<link out="rnf.cv" in="make_cmd.cv" />
 	</links>
-	<exports pos="-250.00;248.00" />
 </BP>

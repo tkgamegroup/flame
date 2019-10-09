@@ -220,16 +220,20 @@
 		<link out="out_alpha_blend.out" in="pl_text_sdf.outputs" />
 	</links>
 	<exports>
-		<export type="in" slot="rt_dst.type" alias="rt_dst_type" />
-		<export type="in" slot="rt_dst.v" alias="rt_dst_v" />
-		<export type="out" slot="vtx_buf.out" alias="vtx_buf" />
-		<export type="out" slot="idx_buf.out" alias="idx_buf" />
-		<export type="out" slot="rnf.out" alias="rnf" />
-		<export type="out" slot="pll.out" alias="pll" />
-		<export type="out" slot="dsl.default_set" alias="ds" />
-		<export type="out" slot="images_binding.iv" alias="white_iv" />
-		<export type="out" slot="pl_element.out" alias="pl_element" />
-		<export type="out" slot="pl_text_sdf.out" alias="pl_text_sdf" />
-		<export type="out" slot="pl_text_lcd.out" alias="pl_text_lcd" />
+    <input>
+      <export v="rt_dst.type" />
+      <export v="rt_dst.v" />
+    </input>
+    <output>
+      <export v="vtx_buf.out" />
+      <export v="idx_buf.out" />
+      <export v="rnf.out" />
+      <export v="pll.out" />
+      <export v="dsl.default_set" />
+      <export v="images_binding.iv" />
+      <export v="pl_element.out" />
+      <export v="pl_text_sdf.out" />
+      <export v="pl_text_lcd.out" />
+    </output>
 	</exports>
 </BP>

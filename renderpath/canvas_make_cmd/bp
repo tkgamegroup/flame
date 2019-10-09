@@ -4,14 +4,13 @@
 		<module filename="flame_foundation.dll" pos="-206.00;-19.00" />
 		<module filename="flame_graphics.dll" pos="-204.50;68.50" />
 	</modules>
-	<imports>
+	<packages>
 		<import filename="canvas" id="canvas" pos="27.00;-18.00" />
-	</imports>
+	</packages>
 	<nodes>
 		<node type="MakeCmd" id="make_cmd" pos="385.50;42.50" />
 	</nodes>
 	<links>
-		<link out="rnf.out" in="make_cmd.rnf" />
+		<link out="canvas.rnf.out" in="make_cmd.rnf" />
 	</links>
-	<exports pos="-201.00;163.00" />
 </BP>

@@ -80,5 +80,4 @@
 		<link out="dsl.default_set" in="ds_wrt.set" />
 		<link out="ubo.out" in="ds_wrt.v" />
 	</links>
-	<exports pos="-541.00;72.00" />
 </BP>
