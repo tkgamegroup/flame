@@ -179,7 +179,12 @@ namespace flame
 						Buffer::destroy((Buffer*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
 					if (d && size$i.v > 0 && usage$im.v > 0 && mem_prop$im.v > 0)
-						out$o.v = Buffer::create(d, size$i.v, usage$im.v, mem_prop$im.v);
+					{
+						auto b = Buffer::create(d, size$i.v, usage$im.v, mem_prop$im.v);
+						if (mem_prop$im.v == (MemPropHost | MemPropHostCoherent))
+							b->map();
+						out$o.v = b;
+					}
 					else
 						out$o.v = nullptr;
 					out$o.frame = maxN(size$i.frame, usage$im.frame, mem_prop$im.frame);

@@ -48,10 +48,10 @@ namespace flame
 			void set_viewport(const Vec4f& rect);
 			void set_scissor(const Vec4f& rect);
 			void bind_pipeline(Pipeline* p);
-			void bind_descriptorset(Descriptorset* s, uint idx);
+			void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll);
 			void bind_vertexbuffer(Buffer* b, uint id);
 			void bind_indexbuffer(Buffer* b, IndiceType t);
-			void push_constant(Pipelinelayout* pll, uint offset, uint size, const void* data);
+			void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll);
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance);
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance);
 			void dispatch(const Vec3u& v);

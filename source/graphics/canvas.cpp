@@ -89,8 +89,6 @@ namespace flame
 
 				ivs.resize(ds->layout()->get_binding(0)->count, white_iv);
 
-				vtx_buffer->map();
-				idx_buffer->map();
 				vtx_end = (Vertex*)vtx_buffer->mapped;
 				idx_end = (uint*)idx_buffer->mapped;
 			}
@@ -359,8 +357,8 @@ namespace flame
 					PushconstantT$ pc;
 					pc.scale$ = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
 					pc.sdf_range$ = Vec2f(4.f / 512.f); /* sdf_image->size */
-
-					cb->push_constant(pll, 0, sizeof(PushconstantT$), &pc);
+					cb->push_constant(0, sizeof(PushconstantT$), &pc, pll);
+					cb->bind_descriptorset(ds, 0, pll);
 
 					auto vtx_off = 0;
 					auto idx_off = 0;
@@ -372,7 +370,6 @@ namespace flame
 							if (cmd.v.draw_data.idx_cnt > 0)
 							{
 								cb->bind_pipeline(pl_element);
-								cb->bind_descriptorset(ds, 0);
 								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 								vtx_off += cmd.v.draw_data.vtx_cnt;
 								idx_off += cmd.v.draw_data.idx_cnt;
@@ -382,7 +379,6 @@ namespace flame
 							if (cmd.v.draw_data.idx_cnt > 0)
 							{
 								cb->bind_pipeline(pl_text_lcd);
-								cb->bind_descriptorset(ds, 0);
 								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 								vtx_off += cmd.v.draw_data.vtx_cnt;
 								idx_off += cmd.v.draw_data.idx_cnt;
@@ -392,7 +388,6 @@ namespace flame
 							if (cmd.v.draw_data.idx_cnt > 0)
 							{
 								cb->bind_pipeline(pl_text_sdf);
-								cb->bind_descriptorset(ds, 0);
 								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 								vtx_off += cmd.v.draw_data.vtx_cnt;
 								idx_off += cmd.v.draw_data.idx_cnt;

@@ -8,9 +8,14 @@
 		<import filename="canvas" id="canvas" pos="27.00;-18.00" />
 	</packages>
 	<nodes>
-		<node type="MakeCmd" id="make_cmd" pos="385.50;42.50" />
+		<node type="MakeCmd" id="make_cmd" pos="426.50;-39.50" />
 	</nodes>
 	<links>
 		<link out="canvas.rnf.out" in="make_cmd.rnf" />
+		<link out="canvas.pll.out" in="make_cmd.pll" />
+		<link out="canvas.pl_element.out" in="make_cmd.pl_element" />
+		<link out="canvas.dsl.default_set" in="make_cmd.ds" />
+		<link out="canvas.vtx_buf.out" in="make_cmd.vtx_buf" />
+		<link out="canvas.idx_buf.out" in="make_cmd.idx_buf" />
 	</links>
 </BP>
