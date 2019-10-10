@@ -287,6 +287,11 @@ namespace flame
 		return LoadLibraryW(module_name.c_str());
 	}
 
+	void* get_module_func(void* module, const char* name)
+	{
+		return GetProcAddress((HMODULE)module, name);
+	}
+
 	void free_module(void* library)
 	{
 		FreeLibrary((HMODULE)library);

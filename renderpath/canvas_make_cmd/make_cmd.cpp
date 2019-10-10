@@ -1,4 +1,5 @@
 #include <flame/foundation/foundation.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/all.h>
 
 #include "../canvas/type.h"
@@ -227,4 +228,9 @@ namespace flame
 			}
 		}
 	};
+}
+
+extern "C" __declspec(dllexport) bool package_check_update(BP::Package * p)
+{
+	return true;
 }

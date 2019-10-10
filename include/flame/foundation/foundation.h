@@ -1098,6 +1098,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* get_module_from_address(void* addr);
 	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_module_name(void* module);
 	FLAME_FOUNDATION_EXPORTS void* load_module(const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);
 	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
 
 	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_clipboard();

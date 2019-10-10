@@ -2,6 +2,7 @@
 <BP>
 	<modules>
 		<module filename="flame_foundation.dll" pos="-206.00;-19.00" />
+    <module filename="flame_graphics.dll" pos="-206.00;-19.00" />
 	</modules>
 	<packages>
 		<import filename="canvas" id="canvas" pos="27.00;-18.00" />

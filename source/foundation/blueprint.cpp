@@ -22,10 +22,13 @@ namespace flame
 
 	struct PackagePrivate : BP::Package
 	{
+		typedef bool (*check_update_func)(Package*);
+
 		BPPrivate* parent;
 		std::string id;
 		std::wstring filename;
 		BPPrivate* bp;
+		check_update_func pf_check_update;
 		int frame;
 
 		PackagePrivate();
@@ -152,6 +155,7 @@ namespace flame
 	PackagePrivate::PackagePrivate()
 	{
 		pos = Vec2f(0.f);
+		pf_check_update = nullptr;
 		frame = -1;
 	}
 
@@ -502,9 +506,12 @@ namespace flame
 		p->filename = _filename;
 		((BPPrivate*)bp)->parent = p;
 		p->bp = (BPPrivate*)bp;
+		if (p->bp->self_module)
+			p->pf_check_update = (PackagePrivate::check_update_func)get_module_func(p->bp->self_module->module, "package_check_update");
 		packages.emplace_back(p);
 
 		collect_package_modules();
+		build_update_list();
 
 		return p;
 	}
@@ -517,6 +524,7 @@ namespace flame
 			{
 				packages.erase(it);
 				collect_package_modules();
+				build_update_list();
 				return;
 			}
 		}
@@ -819,10 +827,11 @@ namespace flame
 			if (o)
 			{
 				auto n = o->parent;
-				if (n->parent == this)
+				auto bp = n->parent;
+				if (bp == this)
 					add_to_update_list(n);
-				else
-					add_to_update_list(n->parent->parent);
+				else if (bp->parent)
+					add_to_update_list(bp->parent);
 			}
 		}
 
@@ -837,6 +846,8 @@ namespace flame
 		update_list.clear();
 		for (auto& n : nodes)
 			add_to_update_list(n.get());
+		for (auto& p : packages)
+			add_to_update_list(p.get());
 	}
 
 	void BPPrivate::update()
@@ -862,13 +873,22 @@ namespace flame
 				auto& frame = p->frame;
 				auto bp = p->bp;
 				auto need_update = false;
-				for (auto i = 0; i < bp->input_exports.size(); i++)
+				if (p->pf_check_update)
 				{
-					auto s = bp->input_exports[i]->links[0];
-					if (s && s->frame() > frame)
+					need_update = p->pf_check_update(p);
+					if (need_update)
+						frame = looper().frame;
+				}
+				else
+				{
+					for (auto i = 0; i < bp->input_exports.size(); i++)
 					{
-						need_update = true;
-						frame = s->frame();
+						auto s = bp->input_exports[i]->links[0];
+						if (s && s->frame() > frame)
+						{
+							need_update = true;
+							frame = s->frame();
+						}
 					}
 				}
 				if (need_update)
@@ -1439,7 +1459,7 @@ namespace flame
 			for (auto& m : bp->modules)
 			{
 				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-				cmakelists << std::filesystem::path(m->absolute_filename).replace_extension(L".lib");
+				cmakelists << std::filesystem::path(m->absolute_filename).replace_extension(L".lib").string();
 				cmakelists << ")\n";
 			}
 			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
