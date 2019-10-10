@@ -81,6 +81,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0);
 			FLAME_GRAPHICS_EXPORTS void set_image(uint binding, uint index, Imageview* v, Sampler* sampler);
+			FLAME_GRAPHICS_EXPORTS void set_image(uint binding, uint index, Imageview* v, Filter filter);
 
 			FLAME_GRAPHICS_EXPORTS static Descriptorset* create(Descriptorpool* p, Descriptorlayout* l);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorset* s);

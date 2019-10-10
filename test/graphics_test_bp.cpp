@@ -6,6 +6,8 @@
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/commandbuffer.h>
 
+#include "../renderpath/canvas_make_cmd/canvas.h"
+
 using namespace flame;
 using namespace graphics;
 
@@ -18,6 +20,7 @@ struct App
 	Fence* fence;
 	std::vector<void*> cbs;
 	BP* bp;
+	Canvas* canvas;
 
 	void run()
 	{
@@ -29,7 +32,15 @@ struct App
 		fence->wait();
 		looper().process_delay_events();
 
+		if (canvas)
+		{
+			std::vector<Vec2f> points;
+			path_rect(points, Vec2f(100.f), Vec2f(200.f));
+			canvas->fill(points, Vec4c(255));
+		}
 		bp->update();
+		if (!canvas)
+			canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
 		if (sc)
 		{
@@ -45,7 +56,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/logo/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -63,6 +74,7 @@ int main(int argc, char** args)
 	app.cbs.resize(images.size());
 	for (auto i = 0; i < images.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	app.canvas = nullptr;
 
 	app.bp->graphics_device = app.d;
 	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");

@@ -8,3 +8,4 @@
 #include "buffer.h"
 #include "image.h"
 #include "shader.h"
+#include "font.h"

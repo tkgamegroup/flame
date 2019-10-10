@@ -429,6 +429,12 @@ namespace flame
 			((DescriptorsetPrivate*)this)->set_image(binding, index, v, sampler);
 		}
 
+		void Descriptorset::set_image(uint binding, uint index, Imageview* v, Filter filter)
+		{
+			auto d = ((DescriptorsetPrivate*)this)->p->d;
+			((DescriptorsetPrivate*)this)->set_image(binding, index, v, filter == FilterNearest ? d->sp_nearest : d->sp_linear);
+		}
+
 		Descriptorset* Descriptorset::create(Descriptorpool* p, Descriptorlayout* l)
 		{
 			return new DescriptorsetPrivate(p, l);
