@@ -438,7 +438,7 @@ namespace flame
 		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& m : modules)
 			dbs.push_back(m->db);
-		m->db = TypeinfoDatabase::load(dbs, ext_replace(absolute_filename, L".typeinfo"));
+		m->db = TypeinfoDatabase::load(dbs, std::filesystem::path(absolute_filename).replace_extension(L".typeinfo"));
 
 		modules.emplace_back(m);
 
@@ -1377,7 +1377,7 @@ namespace flame
 			for (auto& m : bp->modules)
 			{
 				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-				cmakelists << w2s(ext_replace(m->absolute_filename, L".lib"));
+				cmakelists << std::filesystem::path(m->absolute_filename).replace_extension(L".lib");
 				cmakelists << ")\n";
 			}
 			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
@@ -1421,7 +1421,7 @@ namespace flame
 			m->filename = self_module_filename;
 			m->absolute_filename = self_module_filename;
 			m->module = self_module;
-			m->db = TypeinfoDatabase::load(dbs, ext_replace(self_module_filename, L".typeinfo"));
+			m->db = TypeinfoDatabase::load(dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
 			bp->self_module.reset(m);
 		}
 

@@ -1322,7 +1322,10 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 			auto c_text = cText::create(app.font_atlas_sdf);
 			auto udt = n->udt();
-			c_text->set_text(udt->db()->module_name() + L"\n" + s2w(udt->name()));
+			auto module_name = std::filesystem::path(udt->db()->module_name());
+			if (module_name.parent_path() != L"")
+				module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
+			c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->name()));
 			c_text->color = Vec4c(50, 50, 50, 255);
 			c_text->sdf_scale = 0.5f;
 			e_text_type->add_component(c_text);

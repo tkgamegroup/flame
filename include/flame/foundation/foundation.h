@@ -820,18 +820,6 @@ namespace flame
 		}
 	};
 
-	inline std::filesystem::path ext_replace(const std::filesystem::path& path, const std::wstring& ext)
-	{
-		if (path.extension().wstring() != ext)
-		{
-			auto pp = path.parent_path().wstring();
-			if (pp != L"")
-				pp += L"\\";
-			return pp + path.stem().wstring() + ext;
-		}
-		return path;
-	}
-
 	template<class T>
 	inline T read(std::ifstream& file)
 	{

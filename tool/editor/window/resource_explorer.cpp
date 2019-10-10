@@ -529,7 +529,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 							if (ok)
 							{
 								auto e = Entity::create();
-								Entity::save_to_file(app.dbs, e, explorer->curr_path / ext_replace(text, L".prefab"));
+								Entity::save_to_file(app.dbs, e, explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab"));
 								Entity::destroy(e);
 							}
 						}, new_mail_p(explorer));

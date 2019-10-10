@@ -1333,7 +1333,7 @@ namespace flame
 		}
 		auto pdb_filename = _pdb_filename;
 		if (pdb_filename.empty())
-			pdb_filename = ext_replace(module_filename, L".pdb").wstring();
+			pdb_filename = std::filesystem::path(module_filename).replace_extension(L".pdb");
 		if (FAILED(dia_source->loadDataFromPdb(pdb_filename.c_str())))
 		{
 			printf("pdb failed to open: %s\n", w2s(pdb_filename).c_str());
@@ -1747,7 +1747,7 @@ namespace flame
 		};
 
 		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = ext_replace(typeinfo_filename, L".dll");
+		db->module_name = std::filesystem::path(typeinfo_filename).replace_extension(L".dll");
 		auto dbs = existed_dbs;
 		dbs.push_back(db);
 
@@ -1901,7 +1901,7 @@ namespace flame
 			}
 		}
 
-		SerializableNode::save_to_xml_file(file, ext_replace(db->module_name, L".typeinfo"));
+		SerializableNode::save_to_xml_file(file, std::filesystem::path(db->module_name).replace_extension(L".typeinfo"));
 		SerializableNode::destroy(file);
 	}
 
