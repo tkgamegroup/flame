@@ -1079,6 +1079,16 @@ namespace flame
 		return ((BPPrivate*)this)->find_package(id);
 	}
 
+	uint BP::package_module_count() const
+	{
+		return ((BPPrivate*)this)->package_modules.size();
+	}
+
+	BP::Module* BP::package_module(uint idx) const
+	{
+		return ((BPPrivate*)this)->package_modules[idx];
+	}
+
 	uint BP::node_count() const
 	{
 		return ((BPPrivate*)this)->nodes.size();

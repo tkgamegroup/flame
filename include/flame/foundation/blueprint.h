@@ -138,6 +138,9 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void remove_package(Package* e);
 		FLAME_FOUNDATION_EXPORTS Package* find_package(const std::string& id) const;
 
+		FLAME_FOUNDATION_EXPORTS uint package_module_count() const;
+		FLAME_FOUNDATION_EXPORTS Module* package_module(uint idx) const;
+
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(uint type_hash, const std::string& id);

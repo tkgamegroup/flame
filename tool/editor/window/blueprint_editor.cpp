@@ -243,31 +243,15 @@ struct cBPEditor : Component
 			e_add_node_menu->child(i)->visible = true;
 	}
 
-	Entity* create_module_entity(BP::Module* m);
-	Entity* create_node_entity(BP::Node* n);
-	Entity* create_package_entity(BP::Package* p);
-
-	void load(const std::wstring& _filename, bool no_compile)
+	void refresh_dbs_and_add_node_menu()
 	{
-		filename = _filename;
-		filepath = std::filesystem::path(filename).parent_path().wstring();
-		if (bp)
-			BP::destroy(bp);
-		bp = BP::create_from_file(filename, no_compile);
 		dbs.clear();
 		for (auto i = 0; i < bp->module_count(); i++)
 			dbs.push_back(bp->module(i)->db());
 		if (bp->self_module())
 			dbs.push_back(bp->self_module()->db());
-
-		e_base->remove_all_children();
-
-		for (auto i = 0; i < bp->module_count(); i++)
-			create_module_entity(bp->module(i));
-		for (auto i = 0; i < bp->package_count(); i++)
-			create_package_entity(bp->package(i));
-		for (auto i = 0; i < bp->node_count(); i++)
-			create_node_entity(bp->node(i));
+		for (auto i = 0; i < bp->package_module_count(); i++)
+			dbs.push_back(bp->package_module(i)->db());
 
 		e_add_node_menu->remove_all_children();
 
@@ -392,6 +376,30 @@ struct cBPEditor : Component
 				}
 			}, new_mail_p(this));
 		}
+	}
+
+	Entity* create_module_entity(BP::Module* m);
+	Entity* create_node_entity(BP::Node* n);
+	Entity* create_package_entity(BP::Package* p);
+
+	void load(const std::wstring& _filename, bool no_compile)
+	{
+		filename = _filename;
+		filepath = std::filesystem::path(filename).parent_path().wstring();
+		if (bp)
+			BP::destroy(bp);
+		bp = BP::create_from_file(filename, no_compile);
+
+		refresh_dbs_and_add_node_menu();
+
+		e_base->remove_all_children();
+
+		for (auto i = 0; i < bp->module_count(); i++)
+			create_module_entity(bp->module(i));
+		for (auto i = 0; i < bp->package_count(); i++)
+			create_package_entity(bp->package(i));
+		for (auto i = 0; i < bp->node_count(); i++)
+			create_node_entity(bp->node(i));
 
 		sel_type = SelAir;
 		selected.n = nullptr;
@@ -411,18 +419,19 @@ struct cBPEditor : Component
 	{
 		struct Capture
 		{
-			BP* bp;
+			cBPEditor* e;
 			BP::Module* m;
 		}capture;
-		capture.bp = bp;
+		capture.e = this;
 		capture.m = m;
 		looper().add_delay_event([](void* c) {
 			auto& capture = *(Capture*)c;
+			auto bp = capture.e->bp;
 
 			auto m_db = capture.m->db();
-			for (auto i = 0; i < capture.bp->node_count(); i++)
+			for (auto i = 0; i < bp->node_count(); i++)
 			{
-				auto n = capture.bp->node(i);
+				auto n = bp->node(i);
 				if (n->udt()->db() == m_db)
 				{
 					auto e = (Entity*)n->user_data;
@@ -432,7 +441,26 @@ struct cBPEditor : Component
 			auto e = (Entity*)capture.m->user_data;
 			e->parent()->remove_child(e);
 
-			capture.bp->remove_module(capture.m);
+			bp->remove_module(capture.m);
+			capture.e->refresh_dbs_and_add_node_menu();
+		}, new_mail(&capture));
+	}
+
+	void remove_package(BP::Package* p)
+	{
+		struct Capture
+		{
+			cBPEditor* e;
+			BP::Package* p;
+		}capture;
+		capture.e = this;
+		capture.p = p;
+		looper().add_delay_event([](void* c) {
+			auto& capture = *(Capture*)c;
+			auto e = (Entity*)capture.p->user_data;
+			e->parent()->remove_child(e);
+			capture.e->bp->remove_package(capture.p);
+			capture.e->refresh_dbs_and_add_node_menu();
 		}, new_mail(&capture));
 	}
 
@@ -483,6 +511,8 @@ struct cBPEditor : Component
 						capture.e->remove_module(capture.m);
 				}, new_mail(&capture));
 			}
+			break;
+		case SelPackage:
 			break;
 		case SelNode:
 			remove_node(selected.n);
@@ -1999,6 +2029,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 								{
 									m->pos = editor->add_pos;
 									editor->create_module_entity(m);
+									editor->refresh_dbs_and_add_node_menu();
 								}
 							}
 						}, new_mail_p(editor));
@@ -2032,6 +2063,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 								{
 									p->pos = editor->add_pos;
 									editor->create_package_entity(p);
+									editor->refresh_dbs_and_add_node_menu();
 								}
 							}
 						}, new_mail_p(editor));
