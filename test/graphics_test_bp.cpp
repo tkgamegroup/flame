@@ -69,7 +69,7 @@ int main(int argc, char** args)
 	n_scr->find_input("in")->set_data_p(app.scr);
 	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
 	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
-	app.bp->find_input("make_cmd.cbs")->set_data_p(&app.cbs);
+	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
 	{
 		auto s_img_idx = app.bp->find_input("make_cmd.image_idx");
 		if (s_img_idx)

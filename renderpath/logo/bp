@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<BP>
+	<modules>
+		<module filename="flame_foundation.dll" pos="-32.00;-10.00" />
+    <module filename="flame_graphics.dll" pos="-32.00;-10.00" />
+		<module filename="../canvas_make_cmd/build/Debug/bp.dll" pos="-69.50;79.50" />
+	</modules>
+	<packages>
+		<import filename="canvas_make_cmd" id="canvas" pos="817.50;97.50" />
+	</packages>
+	<nodes>
+		<node type="Rect" id="rect1" pos="376.50;13.50">
+			<datas>
+				<data name="size" value="100.00;100.00" />
+				<data name="color" value="255;0;0;255" />
+			</datas>
+		</node>
+	</nodes>
+	<links>
+		<link out="rect1.out" in="canvas.make_cmd.content" />
+	</links>
+</BP>

@@ -1118,7 +1118,17 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 			for (auto j = 0; j < bp->input_export_count(); j++)
 			{
-				auto slot = bp->input_export(j);
+				auto s = bp->input_export(j);
+
+				auto e_input = Entity::create();
+				e_left->add_child(e_input);
+				{
+					e_input->add_component(cElement::create());
+
+					auto c_layout = cLayout::create(LayoutVertical);
+					c_layout->item_padding = 2.f;
+					e_input->add_component(c_layout);
+				}
 
 				auto e_title = Entity::create();
 				e_left->add_child(e_title);
@@ -1141,9 +1151,9 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 						auto c_slot = new_component<cBPSlot>();
 						c_slot->editor = this;
-						c_slot->s = slot;
+						c_slot->s = s;
 						e_slot->add_component(c_slot);
-						slot->user_data = c_slot;
+						s->user_data = c_slot;
 					}
 
 					auto e_text = Entity::create();
@@ -1153,11 +1163,17 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 						auto c_text = cText::create(app.font_atlas_sdf);
 						c_text->sdf_scale = 0.6f;
-						auto addr = slot->get_address();
+						auto addr = s->get_address();
 						c_text->set_text(s2w(*addr.p));
 						delete_mail(addr);
 						e_text->add_component(c_text);
 					}
+				}
+
+				auto e_data = Entity::create();
+				e_input->add_child(e_data);
+				{
+					e_data->add_component(cElement::create());
 				}
 			}
 		}
@@ -1171,7 +1187,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 			for (auto j = 0; j < bp->output_export_count(); j++)
 			{
-				auto slot = bp->output_export(j);
+				auto s = bp->output_export(j);
 
 				auto e_title = Entity::create();
 				e_right->add_child(e_title);
@@ -1191,7 +1207,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 						auto c_text = cText::create(app.font_atlas_sdf);
 						c_text->sdf_scale = 0.6f;
-						auto addr = slot->get_address();
+						auto addr = s->get_address();
 						c_text->set_text(s2w(*addr.p));
 						delete_mail(addr);
 						e_text->add_component(c_text);
@@ -1211,9 +1227,9 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 						auto c_slot = new_component<cBPSlot>();
 						c_slot->editor = this;
-						c_slot->s = slot;
+						c_slot->s = s;
 						e_slot->add_component(c_slot);
-						slot->user_data = c_slot;
+						s->user_data = c_slot;
 					}
 				}
 			}

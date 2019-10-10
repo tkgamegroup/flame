@@ -20,12 +20,18 @@ namespace flame
 		CmdDrawElement,
 		CmdDrawTextLcd,
 		CmdDrawTextSdf,
-		CmdSetScissor
+		CmdSetScissor,
+
+		CmdDrawRect
 	};
 
-	struct Cmd
+	struct CmdBase
 	{
 		CmdType type;
+	};
+
+	struct Cmd : CmdBase
+	{
 		union
 		{
 			struct
@@ -38,6 +44,34 @@ namespace flame
 		}v;
 	};
 
+	struct Rect : CmdBase
+	{
+		Vec2f pos;
+		Vec2f size;
+		Vec4c color;
+	};
+
+	struct Rect$
+	{
+		AttributeV<Vec2f> pos$i;
+		AttributeV<Vec2f> size$i;
+		AttributeV<Vec4c> color$i;
+
+		AttributeV<Rect> out$o;
+
+		__declspec(dllexport) void update$()
+		{
+			out$o.v.type = CmdDrawRect;
+			if (pos$i.frame > out$o.frame)
+				out$o.v.pos = pos$i.v;
+			if (size$i.frame > out$o.frame)
+				out$o.v.size = size$i.v;
+			if (color$i.frame > out$o.frame)
+				out$o.v.color = color$i.v;
+			out$o.frame = maxN(pos$i.frame, size$i.frame, color$i.frame);
+		}
+	};
+
 	struct MakeCmd$
 	{
 		AttributeP<std::vector<void*>> cbs$i;
@@ -48,6 +82,8 @@ namespace flame
 		AttributeP<void> pll$i;
 		AttributeP<void> pl_element$i;
 		AttributeP<void> ds$i;
+
+		AttributeP<std::vector<void*>> content$i;
 
 		Vertex* vtx_end;
 		uint* idx_end;
@@ -127,9 +163,21 @@ namespace flame
 				auto fb = (Framebuffer*)rnf->framebuffers()[img_idx];
 				surface_size = Vec2f(fb->image_size);
 
-				std::vector<Vec2f> points;
-				path_rect(points, Vec2f(0.f), Vec2f(100.f));
-				fill(points, Vec4c(255, 0, 0, 255));
+				auto content = get_attribute_vec(content$i);
+				for (auto& _c : content)
+				{
+					switch (((CmdBase*)_c)->type)
+					{
+					case CmdDrawRect:
+					{
+						auto c = (Rect*)_c;
+						std::vector<Vec2f> points;
+						path_rect(points, c->pos, c->size);
+						fill(points, c->color);
+					}
+						break;
+					}
+				}
 
 				cb->begin();
 				cb->begin_renderpass(fb, rnf->clearvalues());

@@ -606,7 +606,7 @@ namespace flame
 			}
 			for (auto& p : packages)
 			{
-				auto n = p->bp->find_node(sp[1]);
+				auto n = p->bp->find_node(address);
 				if (n)
 					return n;
 			}
