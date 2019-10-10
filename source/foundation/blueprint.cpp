@@ -86,6 +86,7 @@ namespace flame
 		std::wstring filename;
 
 		std::vector<std::unique_ptr<PackagePrivate>> packages;
+		std::vector<ModulePrivate*> package_modules;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
@@ -111,6 +112,7 @@ namespace flame
 		PackagePrivate* add_package(const std::wstring& filename, const std::string& id);
 		void remove_package(PackagePrivate* i);
 		PackagePrivate* find_package(const std::string& id) const;
+		void collect_package_modules();
 
 		NodePrivate* add_node(uint type_hash, const std::string& type_name);
 		void remove_node(NodePrivate* n);
@@ -502,6 +504,8 @@ namespace flame
 		p->bp = (BPPrivate*)bp;
 		packages.emplace_back(p);
 
+		collect_package_modules();
+
 		return p;
 	}
 
@@ -512,6 +516,7 @@ namespace flame
 			if (it->get() == i)
 			{
 				packages.erase(it);
+				collect_package_modules();
 				return;
 			}
 		}
@@ -525,6 +530,35 @@ namespace flame
 				return i.get();
 		}
 		return nullptr;
+	}
+
+	void BPPrivate::collect_package_modules()
+	{
+		package_modules.clear();
+		auto had = [&](ModulePrivate* m) {
+			for (auto _m : package_modules)
+			{
+				if (_m->module == m->module)
+					return true;
+			}
+			return false;
+		};
+		for (auto& p : packages)
+		{
+			auto bp = p->bp;
+			for (auto& m : bp->modules)
+			{
+				if (!had(m.get()))
+					package_modules.push_back(m.get());
+			}
+			if (!had(bp->self_module.get()))
+				package_modules.push_back(bp->self_module.get());
+			for (auto& m : bp->package_modules)
+			{
+				if (!had(m))
+					package_modules.push_back(m);
+			}
+		}
 	}
 
 	NodePrivate* BPPrivate::add_node(uint type_hash, const std::string& id)
@@ -547,17 +581,35 @@ namespace flame
 				if (udt)
 					module = self_module->module;
 			}
+			if (!udt)
+			{
+				for (auto m : package_modules)
+				{
+					udt = m->db->find_udt(type_hash);
+					if (udt)
+					{
+						module = m->module;
+						break;
+					}
+				}
+			}
 		}
 
 		if (!udt)
+		{
+			printf("cannot add node, type not found\n");
 			return nullptr;
+		}
 
 		std::string s_id;
 		if (!id.empty())
 		{
 			s_id = id;
 			if (find_node(s_id))
+			{
+				printf("cannot add node, id repeated\n");
 				return nullptr;
+			}
 		}
 		else
 		{

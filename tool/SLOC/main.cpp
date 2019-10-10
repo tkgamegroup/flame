@@ -123,10 +123,6 @@ void iter(const std::wstring &p)
 
 int main(int argc, char **args)
 {
-	std::filesystem::path p1("a\\b/c");
-	std::filesystem::path p2("a/b/c/d");
-	auto w = p2.lexically_relative(p1);
-
 	std::ifstream policy_file("SLOC_Policy.txt");
 	if (policy_file.good())
 	{
