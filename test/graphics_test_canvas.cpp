@@ -38,11 +38,14 @@ struct App
 		fence->wait();
 		looper().process_delay_events();
 
-		std::vector<Vec2f> points;
-		path_rect(points, Vec2f(100.f), Vec2f(200.f));
-		canvas->fill(points, Vec4c(255));
-		canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World  ");
-		canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
+		if (sc)
+		{
+			std::vector<Vec2f> points;
+			path_rect(points, Vec2f(100.f), Vec2f(200.f));
+			canvas->fill(points, Vec4c(255));
+			canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World  ");
+			canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
+		}
 		bp->update();
 
 		if (sc)
@@ -88,6 +91,7 @@ int main(int argc, char** args)
 	app.bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
 	app.bp->update();
 	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
+	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 
 	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
 	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);

@@ -80,6 +80,7 @@ namespace flame
 	{
 		MakeCmd$* thiz;
 
+		virtual void set_clear_color(const Vec4c& col) override;
 		virtual Imageview* get_image(uint index) override;
 		virtual uint set_image(int index, Imageview* v, Filter filter) override;
 
@@ -108,6 +109,8 @@ namespace flame
 		AttributeP<void> canvas$o;
 
 		AttributeP<std::vector<void*>> content$i;
+
+		Vec4c clear_color;
 
 		std::vector<Imageview*> ivs;
 
@@ -392,6 +395,8 @@ namespace flame
 				vtx_end = (Vertex*)vtx_buf->mapped;
 				idx_end = (uint*)idx_buf->mapped;
 
+				clear_color = Vec4c(0, 0, 0, 255);
+
 				ivs.resize(ds->layout()->get_binding(0)->count, (Imageview*)white_iv$i.v);
 
 				auto c = new CanvasPrivate;
@@ -424,7 +429,9 @@ namespace flame
 				}
 
 				cb->begin();
-				cb->begin_renderpass(fb, rnf->clearvalues());
+				auto cv = rnf->clearvalues();
+				cv->set(0, clear_color);
+				cb->begin_renderpass(fb, cv);
 				if (idx_end != idx_buf->mapped)
 				{
 					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
@@ -492,6 +499,11 @@ namespace flame
 			}
 		}
 	};
+
+	void CanvasPrivate::set_clear_color(const Vec4c& col)
+	{
+		thiz->clear_color = col;
+	}
 
 	Imageview* CanvasPrivate::get_image(uint index)
 	{

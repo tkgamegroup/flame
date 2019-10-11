@@ -48,7 +48,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/logo/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/canvas/bp", false);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");

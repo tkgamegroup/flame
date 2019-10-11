@@ -143,7 +143,7 @@ namespace flame
 	ModulePrivate::ModulePrivate()
 	{
 		pos = Vec2f(0.f);
-		placed = false;
+		dont_save = false;
 	}
 
 	ModulePrivate::~ModulePrivate()
@@ -155,6 +155,7 @@ namespace flame
 	PackagePrivate::PackagePrivate()
 	{
 		pos = Vec2f(0.f);
+		dont_save = false;
 		pf_check_update = nullptr;
 		frame = -1;
 	}
@@ -285,6 +286,7 @@ namespace flame
 	{
 		udt = _udt;
 		pos = Vec2f(0.f);
+		dont_save = false;
 
 		auto size = udt->size();
 		dummy = malloc(size);
@@ -1558,7 +1560,7 @@ namespace flame
 		auto n_modules = file->new_node("modules");
 		for (auto& m : bp->modules)
 		{
-			if (m->placed)
+			if (m->dont_save)
 				continue;
 			auto n_module = n_modules->new_node("module");
 			n_module->new_attr("filename", w2s(m->filename));
@@ -1568,12 +1570,15 @@ namespace flame
 		if (!bp->packages.empty())
 		{
 			auto n_packages = file->new_node("packages");
-			for (auto& i : bp->packages)
+			for (auto& p : bp->packages)
 			{
-				auto n_import = n_packages->new_node("import");
-				n_import->new_attr("filename", w2s(i->filename));
-				n_import->new_attr("id", i->id);
-				n_import->new_attr("pos", to_string(i->pos, 2));
+				if (p->dont_save)
+					continue;
+
+				auto n_import = n_packages->new_node("package");
+				n_import->new_attr("filename", w2s(p->filename));
+				n_import->new_attr("id", p->id);
+				n_import->new_attr("pos", to_string(p->pos, 2));
 			}
 		}
 
@@ -1586,12 +1591,15 @@ namespace flame
 		std::vector<Module*> skipped_modules;
 		for (auto& m : bp->modules)
 		{
-			if (m->placed)
+			if (m->dont_save)
 				skipped_modules.push_back(m.get());
 		}
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)
 		{
+			if (n->dont_save)
+				continue;
+
 			auto udt = n->udt;
 			auto skip = false;
 			for (auto m : skipped_modules)

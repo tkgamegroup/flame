@@ -37,8 +37,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS void* module() const;
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 			Vec2f pos;
-			bool placed; // if true, BP::Save will ignore this module and its nodes
 
+			bool dont_save;
 			void* user_data;
 		};
 
@@ -51,6 +51,7 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 
+			bool dont_save;
 			void* user_data;
 		};
 
@@ -112,6 +113,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
 
+			bool dont_save;
 			void* user_data;
 		};
 

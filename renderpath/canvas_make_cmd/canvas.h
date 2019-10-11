@@ -11,6 +11,7 @@ namespace flame
 
 		struct Canvas
 		{
+			virtual void set_clear_color(const Vec4c& col) = 0;
 			virtual Imageview* get_image(uint index) = 0;
 			virtual uint set_image(int index, Imageview* v, Filter filter = FilterLinear) = 0; // index=-1 to find an empty slot
 
