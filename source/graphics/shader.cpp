@@ -156,12 +156,12 @@ namespace flame
 #endif
 		}
 
-		const DescriptorBindingBase* Descriptorlayout::get_binding(uint binding)
+		const DescriptorBindingBase* Descriptorlayout::get_binding(uint binding) const
 		{
 			return ((DescriptorlayoutPrivate*)this)->bindings_map[binding];
 		}
 
-		Descriptorset* Descriptorlayout::default_set()
+		Descriptorset* Descriptorlayout::default_set() const
 		{
 			return ((DescriptorlayoutPrivate*)this)->default_set;
 		}

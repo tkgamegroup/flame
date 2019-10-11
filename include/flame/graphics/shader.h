@@ -68,8 +68,8 @@ namespace flame
 
 		struct Descriptorlayout
 		{
-			const DescriptorBindingBase* get_binding(uint binding);
-			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set();
+			FLAME_GRAPHICS_EXPORTS const DescriptorBindingBase* get_binding(uint binding) const;
+			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 
 			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, const std::vector<void*>& bindings, Descriptorpool* pool_to_create_default_set = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);

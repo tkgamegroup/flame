@@ -32,15 +32,7 @@ struct App
 		fence->wait();
 		looper().process_delay_events();
 
-		if (canvas)
-		{
-			std::vector<Vec2f> points;
-			path_rect(points, Vec2f(100.f), Vec2f(200.f));
-			canvas->fill(points, Vec4c(255));
-		}
 		bp->update();
-		if (!canvas)
-			canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
 		if (sc)
 		{
@@ -56,14 +48,14 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/logo/bp", true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
 		return 0;
 	}
 
-	app.w = Window::create("", Vec2u(1280, 720), WindowFrame);
+	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.render_finished = Semaphore::create(app.d);
@@ -74,7 +66,6 @@ int main(int argc, char** args)
 	app.cbs.resize(images.size());
 	for (auto i = 0; i < images.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
-	app.canvas = nullptr;
 
 	app.bp->graphics_device = app.d;
 	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
@@ -87,6 +78,8 @@ int main(int argc, char** args)
 		if (s_img_idx)
 			s_img_idx->link_to(n_scr->find_output("image_idx"));
 	}
+	app.bp->update();
+	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
 	looper().loop([](void* c) {
 		auto app = (*(App * *)c);

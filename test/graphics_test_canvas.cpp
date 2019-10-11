@@ -1,4 +1,5 @@
 ﻿#include <flame/foundation/serialize.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/renderpass.h>
@@ -7,7 +8,8 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 using namespace flame;
 using namespace graphics;
@@ -20,39 +22,36 @@ struct App
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
+	BP* bp;
+	Canvas* canvas;
 
 	FontAtlas* font_atlas1;
 	FontAtlas* font_atlas2;
-	Canvas* canvas;
-	int rt_frame;
 
 	void run()
 	{
 		auto sc = scr->sc();
-		auto sc_frame = scr->sc_frame();
 
-		if (sc_frame > rt_frame)
-		{
-			canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
-			rt_frame = sc_frame;
-		}
+		if (sc)
+			sc->acquire_image();
+
+		fence->wait();
+		looper().process_delay_events();
+
+		std::vector<Vec2f> points;
+		path_rect(points, Vec2f(100.f), Vec2f(200.f));
+		canvas->fill(points, Vec4c(255));
+		canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World  ");
+		canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
+		bp->update();
 
 		if (sc)
 		{
-			sc->acquire_image();
-			fence->wait();
-			looper().process_delay_events();
-
-			canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World  ");
-			canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
-
-			auto img_idx = sc->image_index();
-			auto cb = cbs[img_idx];
-			canvas->record(cb, img_idx);
-
-			d->gq->submit({ cb }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
+
+		scr->signal = false;
 	}
 
 }app;
@@ -60,7 +59,12 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.rt_frame = 0;
+	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	if (!app.bp)
+	{
+		printf("bp not found, exit\n");
+		return 0;
+	}
 
 	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
@@ -68,9 +72,22 @@ int main(int argc, char** args)
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 
-	auto sc = app.scr->sc();
+	auto& images = app.scr->sc()->images();
 
-	app.canvas = Canvas::create(app.d, TargetImages, &sc->images());
+	app.fence = Fence::create(app.d);
+	app.cbs.resize(images.size());
+	for (auto i = 0; i < images.size(); i++)
+		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+
+	app.bp->graphics_device = app.d;
+	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
+	n_scr->find_input("in")->set_data_p(app.scr);
+	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
+	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
+	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
+	app.bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
+	app.bp->update();
+	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
 	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
 	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
@@ -80,10 +97,6 @@ int main(int argc, char** args)
 	auto font_atlas_view2 = Imageview::create(app.font_atlas2->image());
 	app.font_atlas1->index = app.canvas->set_image(-1, font_atlas_view1);
 	app.font_atlas2->index = app.canvas->set_image(-1, font_atlas_view2);
-
-	app.cbs.resize(sc->images().size());
-	for (auto i = 0; i < app.cbs.size(); i++)
-		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	looper().loop([](void* c) {
 		auto app = *(App**)c;

@@ -392,6 +392,8 @@ namespace flame
 				vtx_end = (Vertex*)vtx_buf->mapped;
 				idx_end = (uint*)idx_buf->mapped;
 
+				ivs.resize(ds->layout()->get_binding(0)->count, (Imageview*)white_iv$i.v);
+
 				auto c = new CanvasPrivate;
 				c->thiz = this;
 				canvas$o.v = c;
