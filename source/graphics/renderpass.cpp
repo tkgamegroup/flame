@@ -57,9 +57,9 @@ namespace flame
 				vk_subpasses[i].pDepthStencilAttachment = nullptr;
 				vk_subpasses[i].preserveAttachmentCount = 0;
 				vk_subpasses[i].pPreserveAttachments = nullptr;
-				if (sp_info->color_attachments.size() > 0)
+				if (!sp_info->color_attachments.empty())
 				{
-					vk_color_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size()]);
+					vk_color_refs[i].reset(new VkAttachmentReference[sp_info->color_attachments.size()]);
 					for (auto j = 0; j < sp_info->color_attachments.size(); j++)
 					{
 						vk_color_refs[i][j].attachment = sp_info->color_attachments[j];
@@ -68,19 +68,20 @@ namespace flame
 					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachments.size();
 					vk_subpasses[i].pColorAttachments = vk_color_refs[i].get();
 				}
-				if (sp_info->resolve_attachments.size() != 0)
+				if (!sp_info->resolve_attachments.empty())
 				{
-					vk_resolve_refs[i] = std::unique_ptr<VkAttachmentReference[]>(new VkAttachmentReference[sp_info->color_attachments.size()]);
-					for (auto j = 0; j < sp_info->color_attachments.size(); j++)
+					vk_resolve_refs[i].reset(new VkAttachmentReference[sp_info->resolve_attachments.size()]);
+					for (auto j = 0; j < sp_info->resolve_attachments.size(); j++)
 					{
 						vk_resolve_refs[i][j].attachment = sp_info->resolve_attachments[j];
 						vk_resolve_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+						vk_attachments[j].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
 					vk_subpasses[i].pResolveAttachments = vk_resolve_refs[i].get();
 				}
 				if (sp_info->depth_attachment != -1)
 				{
-					vk_depth_refs[i] = std::unique_ptr<VkAttachmentReference>(new VkAttachmentReference);
+					vk_depth_refs[i].reset(new VkAttachmentReference);
 					vk_depth_refs[i]->attachment = sp_info->depth_attachment;
 					vk_depth_refs[i]->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					vk_subpasses[i].pDepthStencilAttachment = vk_depth_refs[i].get();

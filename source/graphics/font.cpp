@@ -100,7 +100,7 @@ namespace flame
 				memset(map, 0, sizeof(map));
 
 				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
-				image->init(Vec4c(0));
+				image->init(Vec4c(0, 0, 0, 255));
 
 				max_width = 0;
 				for (auto f : fonts)

@@ -74,6 +74,38 @@ namespace flame
 		}
 	};
 
+	struct TextSdf : CmdBase
+	{
+		Vec2f pos;
+		float scale;
+		Vec4c color;
+		std::wstring text;
+	};
+
+	struct TextSdf$
+	{
+		AttributeV<Vec2f> pos$i;
+		AttributeV<float> scale$i;
+		AttributeV<Vec4c> color$i;
+		AttributeV<std::wstring> text$i;
+
+		AttributeV<TextSdf> out$o;
+
+		__declspec(dllexport) void update$()
+		{
+			out$o.v.type = CmdDrawTextSdf;
+			if (pos$i.frame > out$o.frame)
+				out$o.v.pos = pos$i.v;
+			if (scale$i.frame > out$o.frame)
+				out$o.v.scale = scale$i.v;
+			if (color$i.frame > out$o.frame)
+				out$o.v.color = color$i.v;
+			if (text$i.frame > out$o.frame)
+				out$o.v.text = text$i.v;
+			out$o.frame = maxN(pos$i.frame, scale$i.frame, color$i.frame, text$i.frame);
+		}
+	};
+
 	struct MakeCmd$;
 
 	struct CanvasPrivate : Canvas
@@ -423,6 +455,11 @@ namespace flame
 						std::vector<Vec2f> points;
 						path_rect(points, c->pos, c->size);
 						fill(points, c->color);
+					}
+						break;
+					case CmdDrawTextSdf:
+					{
+
 					}
 						break;
 					}

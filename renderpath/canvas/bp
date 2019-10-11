@@ -94,7 +94,7 @@
 				<data name="blend_src_color" value="BlendFactorSrcAlpha" />
 				<data name="blend_dst_color" value="BlendFactorOneMinusSrcAlpha" />
 				<data name="blend_src_alpha" value="BlendFactorZero" />
-				<data name="blend_dst_alpha" value="BlendFactorOneMinusSrcAlpha" />
+				<data name="blend_dst_alpha" value="BlendFactorOne" />
 			</datas>
 		</node>
 		<node type="graphics::OutputAttachmentInfo" id="out_lcd" pos="1559.17;2189.26">

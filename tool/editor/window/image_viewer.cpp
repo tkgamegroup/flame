@@ -39,6 +39,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	e_page->add_child(e_image);
 	{
 		auto c_element = cElement::create();
+		c_element->pos = 8.f;
 		c_element->size = image_size;
 		e_image->add_component(c_element);
 
