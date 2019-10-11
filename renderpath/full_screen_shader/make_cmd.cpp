@@ -41,7 +41,7 @@ namespace flame
 						auto cb = (graphics::Commandbuffer*)(*cbs$i.v)[i];
 						cb->begin();
 						auto fb = (graphics::Framebuffer*)(*fbs$i.v)[i];
-						cb->begin_renderpass((graphics::Renderpass*)rp$i.v, fb, nullptr);
+						cb->begin_renderpass(fb, nullptr);
 						auto size = Vec2f(fb->image_size);
 						cb->set_viewport(Vec4f(Vec2f(0.f), size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), size));
@@ -49,7 +49,7 @@ namespace flame
 						cb->bind_descriptorset((graphics::Descriptorset*)ds$i.v, 0);
 						PushconstantT$ pc;
 						pc.screen_size$ = size;
-						cb->push_constant(nullptr, 0, sizeof(PushconstantT$), &pc);
+						cb->push_constant(0, sizeof(PushconstantT$), &pc);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 						cb->end();

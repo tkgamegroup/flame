@@ -390,6 +390,20 @@ struct cBPEditor : Component
 		if (bp)
 			BP::destroy(bp);
 		bp = BP::create_from_file(filename, no_compile);
+		{
+			auto m = bp->add_module(L"editor.exe");
+			m->pos = Vec2f(-200.f, 0.f);
+			m->dont_save = true;
+			auto n_dst = bp->add_node(cH("DstImage"), "test_dst");
+			n_dst->pos = Vec2f(0.f, -200.f);
+			n_dst->dont_save = true;
+			bp->find_input("*.rt_dst.type")->link_to(n_dst->find_output("type"));
+			bp->find_input("*.rt_dst.v")->link_to(n_dst->find_output("view"));
+			auto n_cbs = bp->add_node(cH("CmdBufs"), "test_cbs");
+			n_cbs->pos = Vec2f(200.f, -200.f);
+			n_cbs->dont_save = true;
+			bp->find_input("*.make_cmd.cbs")->link_to(n_cbs->find_output("out"));
+		}
 
 		refresh_dbs_and_add_node_menu();
 

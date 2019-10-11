@@ -19,6 +19,7 @@
     <link out="canvas.pl_text_lcd.out" in="make_cmd.pl_text_lcd" />
     <link out="canvas.pl_text_sdf.out" in="make_cmd.pl_text_sdf" />
 		<link out="canvas.dsl.default_set" in="make_cmd.ds" />
+		<link out="canvas.images_binding.iv" in="make_cmd.white_iv" />
 	</links>
 	<exports>
 		<input>

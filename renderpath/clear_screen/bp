@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
 <BP>
 	<modules>
-		<module filename="flame_foundation.dll" pos="-254.00;-1.00" />
-		<module filename="flame_graphics.dll" pos="-253.00;85.00" />
+		<module filename="flame_foundation.dll" pos="-281.00;-185.00" />
+		<module filename="flame_graphics.dll" pos="-277.00;-99.00" />
 	</modules>
 	<nodes>
-		<node type="graphics::RenderTarget" id="rt_dst" pos="-2.28;-195.47">
+		<node type="graphics::RenderTarget" id="rt_dst" pos="17.72;43.53">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="graphics::SubpassTargetInfo" id="sp" pos="328.81;-157.47" />
-		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="556.20;-73.47" />
-		<node type="MakeCmd" id="make_cmd" pos="842.20;-75.47" />
+		<node type="graphics::SubpassTargetInfo" id="sp" pos="355.81;41.53" />
+		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="605.20;68.53" />
+		<node type="MakeCmd" id="make_cmd" pos="940.20;85.53" />
 	</nodes>
 	<links>
 		<link out="rt_dst.out" in="sp.color_targets" />

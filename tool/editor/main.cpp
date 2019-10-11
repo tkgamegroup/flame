@@ -115,12 +115,12 @@ void App::run()
 	}
 	bp->update();
 
-	auto cbs = sc_cbs;
-	cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
-	extra_cbs.clear();
-
 	if (sc)
 	{
+		std::vector<Commandbuffer*> cbs;
+		cbs.push_back(sc_cbs[sc->image_index()]);
+		cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
+		extra_cbs.clear();
 		d->gq->submit(cbs, sc->image_avalible(), render_finished, fence);
 		d->gq->present(sc, render_finished);
 	}
