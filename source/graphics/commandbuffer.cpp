@@ -72,6 +72,9 @@ namespace flame
 			recording = true;
 			end();
 #endif
+
+			begin();
+			end();
 		}
 
 		CommandbufferPrivate::~CommandbufferPrivate()

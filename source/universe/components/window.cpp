@@ -1,5 +1,4 @@
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
@@ -12,6 +11,8 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 namespace flame
 {

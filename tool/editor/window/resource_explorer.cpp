@@ -3,7 +3,6 @@
 #include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -17,6 +16,8 @@
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 #include "../app.h"
 #include "resource_explorer.h"

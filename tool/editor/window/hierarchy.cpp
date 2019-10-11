@@ -1,4 +1,3 @@
-#include <flame/graphics/canvas.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
@@ -7,6 +6,8 @@
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 #include "../app.h"
 #include "hierarchy.h"

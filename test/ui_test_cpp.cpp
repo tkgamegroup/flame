@@ -1,4 +1,5 @@
 #include <flame/foundation/serialize.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/renderpass.h>
@@ -7,7 +8,6 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
@@ -29,6 +29,8 @@
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
 
+#include "../renderpath/canvas_make_cmd/canvas.h"
+
 using namespace flame;
 using namespace graphics;
 
@@ -42,12 +44,12 @@ struct App
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
+	BP* bp;
+	Canvas* canvas;
 
 	FontAtlas* font_atlas_pixel;
 	FontAtlas* font_atlas_lcd;
 	FontAtlas* font_atlas_sdf;
-	Canvas* canvas;
-	int rt_frame;
 
 	Entity* root;
 	cElement* c_element_root;
@@ -57,31 +59,28 @@ struct App
 	void run()
 	{
 		auto sc = scr->sc();
-		auto sc_frame = scr->sc_frame();
 
-		if (sc_frame > rt_frame)
-		{
-			canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
-			rt_frame = sc_frame;
-		}
+		if (sc)
+			sc->acquire_image();
+
+		fence->wait();
+		looper().process_delay_events();
 
 		if (sc)
 		{
-			sc->acquire_image();
-			fence->wait();
-			looper().process_delay_events();
-
 			c_element_root->size = w->size;
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			root->update();
+		}
+		bp->update();
 
-			auto img_idx = sc->image_index();
-			auto cb = cbs[img_idx];
-			canvas->record(cb, img_idx);
-
-			d->gq->submit({ cb }, sc->image_avalible(), render_finished, fence);
+		if (sc)
+		{
+			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
+
+		scr->signal = false;
 	}
 }app;
 
@@ -92,11 +91,20 @@ int main(int argc, char** args)
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-	auto sc = app.scr->sc();
-	app.canvas = Canvas::create(app.d, TargetImages, &sc->images());
-	app.cbs.resize(sc->images().size());
+	app.cbs.resize(app.scr->sc()->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+
+	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	app.bp->graphics_device = app.d;
+	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
+	n_scr->find_input("in")->set_data_p(app.scr);
+	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
+	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
+	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
+	app.bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
+	app.bp->update();
+	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
 	auto font_msyh14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	auto font_awesome14 = Font::create(L"../asset/font_awesome.ttf", 14);

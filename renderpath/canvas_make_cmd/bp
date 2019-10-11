@@ -16,6 +16,8 @@
 		<link out="canvas.rnf.out" in="make_cmd.rnf" />
 		<link out="canvas.pll.out" in="make_cmd.pll" />
 		<link out="canvas.pl_element.out" in="make_cmd.pl_element" />
+    <link out="canvas.pl_text_lcd.out" in="make_cmd.pl_text_lcd" />
+    <link out="canvas.pl_text_sdf.out" in="make_cmd.pl_text_sdf" />
 		<link out="canvas.dsl.default_set" in="make_cmd.ds" />
 	</links>
 	<exports>

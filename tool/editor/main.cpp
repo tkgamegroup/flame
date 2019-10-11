@@ -6,7 +6,6 @@
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
@@ -24,6 +23,8 @@
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
 
+#include "../renderpath/canvas_make_cmd/canvas.h"
+
 #include "app.h"
 #include "window/resource_explorer.h"
 
@@ -35,11 +36,20 @@ void App::create()
 	render_finished = Semaphore::create(d);
 	scr = SwapchainResizable::create(d, w);
 	fence = Fence::create(d);
-	auto sc = scr->sc();
-	canvas = Canvas::create(d, TargetImages, &sc->images());
-	sc_cbs.resize(sc->images().size());
+	sc_cbs.resize(scr->sc()->images().size());
 	for (auto i = 0; i < sc_cbs.size(); i++)
 		sc_cbs[i] = Commandbuffer::create(d->gcp);
+
+	bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	bp->graphics_device = d;
+	auto n_scr = bp->add_node(cH("graphics::SwapchainResizable"), "scr");
+	n_scr->find_input("in")->set_data_p(scr);
+	bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
+	bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
+	bp->find_input("*.make_cmd.cbs")->set_data_p(&sc_cbs);
+	bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
+	bp->update();
+	canvas = (Canvas*)bp->find_output("*.make_cmd.canvas")->data_p();
 
 	auto font14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	auto font_awesome14 = Font::create(L"../asset/font_awesome.ttf", 14);
@@ -53,7 +63,7 @@ void App::create()
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();
 
-	universe_serialization_set_data("font_atlas1", app.font_atlas_pixel);
+	universe_serialization_set_data("font_atlas1", font_atlas_pixel);
 
 	root = Entity::create();
 	{
@@ -91,35 +101,31 @@ void App::run()
 {
 	auto sc = scr->sc();
 
-	if (scr->signal)
-	{
-		canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
-		scr->signal = false;
-	}
+	if (sc)
+		sc->acquire_image();
+
+	fence->wait();
+	looper().process_delay_events();
 
 	if (sc)
 	{
-		sc->acquire_image();
-		fence->wait();
-		looper().process_delay_events();
-
 		c_element_root->size = w->size;
 		c_text_fps->set_text(std::to_wstring(looper().fps));
 		root->update();
+	}
+	bp->update();
 
-		std::vector<Commandbuffer*> cbs;
-		{
-			auto img_idx = sc->image_index();
-			auto cb = sc_cbs[img_idx];
-			canvas->record(cb, img_idx);
-			cbs.push_back(cb);
-		}
-		cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
-		extra_cbs.clear();
+	auto cbs = sc_cbs;
+	cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
+	extra_cbs.clear();
 
+	if (sc)
+	{
 		d->gq->submit(cbs, sc->image_avalible(), render_finished, fence);
 		d->gq->present(sc, render_finished);
 	}
+
+	scr->signal = false;
 }
 
 App app;

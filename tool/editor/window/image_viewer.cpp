@@ -1,10 +1,11 @@
 #include <flame/graphics/image.h>
-#include <flame/graphics/canvas.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/window.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 #include "../app.h"
 #include "image_viewer.h"

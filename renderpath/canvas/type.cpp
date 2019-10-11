@@ -2,4 +2,7 @@
 
 using namespace flame;
 
-PushconstantT$ unused;
+__declspec(dllexport) void unused_declare()
+{
+	PushconstantT$ unused;
+}

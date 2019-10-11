@@ -1,4 +1,3 @@
-#include <flame/graphics/canvas.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include "text_private.h"
@@ -6,6 +5,8 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 namespace flame
 {

@@ -1,5 +1,4 @@
 #include <flame/foundation/serialize.h>
-#include <flame/graphics/canvas.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
@@ -13,6 +12,8 @@
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 #include "../app.h"
 #include "../data_tracker.h"

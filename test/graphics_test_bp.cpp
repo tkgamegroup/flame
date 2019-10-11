@@ -48,7 +48,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/canvas/bp", false);
+	app.bp = BP::create_from_file(L"../renderpath/logo/bp", false);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -57,14 +57,11 @@ int main(int argc, char** args)
 
 	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
-	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.render_finished = Semaphore::create(app.d);
-
-	auto& images = app.scr->sc()->images();
-
+	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-	app.cbs.resize(images.size());
-	for (auto i = 0; i < images.size(); i++)
+	app.cbs.resize(app.scr->sc()->images().size());
+	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	app.bp->graphics_device = app.d;

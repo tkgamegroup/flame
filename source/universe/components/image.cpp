@@ -1,6 +1,7 @@
-#include <flame/graphics/canvas.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/image.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 namespace flame
 {

@@ -38,7 +38,7 @@ namespace flame
 			bool recording;
 #endif
 
-			CommandbufferPrivate(Commandpool* p, bool sub = false);
+			CommandbufferPrivate(Commandpool* p, bool sub);
 			~CommandbufferPrivate();
 
 			void begin(bool once = false);

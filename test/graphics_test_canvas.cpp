@@ -74,12 +74,8 @@ int main(int argc, char** args)
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-
-	auto& images = app.scr->sc()->images();
-
-	app.fence = Fence::create(app.d);
-	app.cbs.resize(images.size());
-	for (auto i = 0; i < images.size(); i++)
+	app.cbs.resize(app.scr->sc()->images().size());
+	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	app.bp->graphics_device = app.d;

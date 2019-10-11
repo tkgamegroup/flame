@@ -4,6 +4,7 @@
 
 namespace flame
 {
+	struct BP;
 	struct Window;
 	struct EnumInfo;
 
@@ -36,10 +37,11 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> sc_cbs;
 	std::vector<Commandbuffer*> extra_cbs;
+	BP* bp;
+	Canvas* canvas;
 
 	FontAtlas* font_atlas_pixel;
 	FontAtlas* font_atlas_sdf;
-	Canvas* canvas;
 
 	Entity* root;
 	cElement* c_element_root;
