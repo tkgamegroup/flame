@@ -8,7 +8,7 @@
 		<node type="graphics::RenderTarget" id="rt_dst" pos="66.00;17.00" />
 		<node type="graphics::SubpassTargetInfo" id="sp" pos="409.00;32.00" />
 		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="676.00;34.00" />
-		<node type="graphics::Descriptorlayout" id="dsl" pos="65.00;360.00" />
+		<node type="graphics::Descriptorlayout" id="dsl" pos="91.00;383.00" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="416.00;264.00">
 			<datas>
 				<data name="push_constant_udt_name" value="PushconstantT" />
@@ -36,11 +36,17 @@
 				<data name="name" value="color" />
 			</datas>
 		</node>
-		<node type="graphics::Buffer" id="ubo" pos="54.00;577.00">
+		<node type="graphics::Buffer" id="ubo" pos="-498.00;206.00">
 			<datas>
 				<data name="size" value="4" />
 				<data name="usage" value="BufferUsageUniform" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
+			</datas>
+		</node>
+		<node type="graphics::DescriptorBufferBinding" id="bd" pos="-163.50;339.50">
+			<datas>
+				<data name="name" value="data" />
+				<data name="udt_name" value="Ubo" />
 			</datas>
 		</node>
 	</nodes>
@@ -49,6 +55,7 @@
 		<link out="test_dst.view" in="rt_dst.v" />
 		<link out="rt_dst.out" in="sp.color_targets" />
 		<link out="sp.out" in="rnf.passes" />
+		<link out="bd.out" in="dsl.bindings" />
 		<link out="dsl.out" in="pll.descriptorlayouts" />
 		<link out="pll.out" in="shv.pll" />
 		<link out="out.out" in="shf.outputs" />
@@ -65,5 +72,6 @@
 		<link out="pl.out" in="make_cmd.pl" />
 		<link out="dsl.default_set" in="make_cmd.ds" />
 		<link out="ubo.out" in="make_cmd.ubo" />
+		<link out="ubo.out" in="bd.buffer" />
 	</links>
 </BP>
