@@ -200,7 +200,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	auto e_yes = create_standard_button(app.font_atlas_pixel, 1.f, L"Yes");
 	e_buttons->add_child(e_yes);
 	{
-		((cEventReceiver*)e_yes->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		((cEventReceiver*)e_yes->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -216,7 +216,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	auto e_no = create_standard_button(app.font_atlas_pixel, 1.f, L"No");
 	e_buttons->add_child(e_no);
 	{
-		((cEventReceiver*)e_no->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		((cEventReceiver*)e_no->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -280,7 +280,7 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 	auto e_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
 	e_buttons->add_child(e_ok);
 	{
-		((cEventReceiver*)e_ok->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		((cEventReceiver*)e_ok->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -297,7 +297,7 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 	auto e_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
 	e_buttons->add_child(e_cancel);
 	{
-		((cEventReceiver*)e_cancel->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		((cEventReceiver*)e_cancel->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))

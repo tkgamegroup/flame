@@ -19,7 +19,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	{
 		auto c_element = (cElement*)e_container->find_component(cH("Element"));
 		c_element->pos = pos;
-		c_element->size = Vec2f(image_size) + 20.f;
+		c_element->size = Vec2f(image_size) * 0.5f + 20.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -41,6 +41,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 		auto c_element = cElement::create();
 		c_element->pos = 8.f;
 		c_element->size = image_size;
+		c_element->scale = 0.5f;
 		e_image->add_component(c_element);
 
 		auto c_image = cImage::create();

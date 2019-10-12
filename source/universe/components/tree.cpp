@@ -77,7 +77,7 @@ namespace flame
 			}
 			assert(tree);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 				{
 					auto thiz = *(cTreeLeafPrivate**)c;
@@ -184,7 +184,7 @@ namespace flame
 			}
 			assert(tree);
 
-			title_mouse_listener = title_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			title_mouse_listener = title_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 				{
 					auto thiz = *(cTreeNodePrivate**)c;
@@ -192,7 +192,7 @@ namespace flame
 				}
 			}, new_mail_p(this));
 
-			arrow_mouse_listener = arrow_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			arrow_mouse_listener = arrow_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cTreeNodePrivate**)c;
@@ -240,7 +240,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cTreePrivate**)c;
 
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)

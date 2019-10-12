@@ -1,5 +1,7 @@
 #pragma once
 
+
+
 struct cDataTracker : Component
 {
 	void* data;

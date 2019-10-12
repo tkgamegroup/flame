@@ -67,18 +67,18 @@ namespace flame
 		return c;
 	}
 
-	void* cEventReceiver::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2f& value), const Mail<>& capture)
+	void* cEventReceiver::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& value), const Mail<>& capture)
 	{
-		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2f & value)>;
+		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2i& value)>;
 		c->function = listener;
 		c->capture = capture;
 		((cEventReceiverPrivate*)this)->mouse_listeners.emplace_back(c);
 		return c;
 	}
 
-	void* cEventReceiver::add_drag_and_drop_listener(void (*listener)(void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos), const Mail<>& capture)
+	void* cEventReceiver::add_drag_and_drop_listener(void (*listener)(void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos), const Mail<>& capture)
 	{
-		auto c = new Closure<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2f & pos)>;
+		auto c = new Closure<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i& pos)>;
 		c->function = listener;
 		c->capture = capture;
 		((cEventReceiverPrivate*)this)->drag_and_drop_listeners.emplace_back(c);
@@ -173,14 +173,14 @@ namespace flame
 			l->function(l->capture.p, action, value);
 	}
 
-	void cEventReceiver::on_mouse(KeyState action, MouseKey key, const Vec2f& value)
+	void cEventReceiver::on_mouse(KeyState action, MouseKey key, const Vec2i& value)
 	{
 		auto& listeners = ((cEventReceiverPrivate*)this)->mouse_listeners;
 		for (auto& l : listeners)
 			l->function(l->capture.p, action, key, value);
 	}
 
-	void cEventReceiver::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2f& pos)
+	void cEventReceiver::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 	{
 		auto& listeners = ((cEventReceiverPrivate*)this)->drag_and_drop_listeners;
 		for (auto& l : listeners)

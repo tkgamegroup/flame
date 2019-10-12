@@ -238,22 +238,23 @@ namespace flame
 			{
 				auto er = *it;
 				if (mouse_disp != 0)
-					er->on_mouse(KeyStateNull, Mouse_Null, Vec2f(mouse_disp));
+					er->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
 				if (mouse_scroll != 0)
-					er->on_mouse(KeyStateNull, Mouse_Middle, Vec2f(mouse_scroll, 0.f));
+					er->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mouse_scroll, 0));
 				for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
 				{
 					auto s = mouse_buttons[i];
 					if (s & KeyStateJust)
-						er->on_mouse((KeyState)s, (MouseKey)i, Vec2f(mouse_pos));
+						er->on_mouse((KeyState)s, (MouseKey)i, mouse_pos);
 				}
 			}
 			if (focusing && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true) && focusing->element->contains(Vec2f(mouse_pos)))
 			{
-				focusing->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, Vec2f(mouse_pos));
+				auto disp = mouse_pos - active_pos;
+				focusing->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, disp);
 				if (potential_dbclick_er == focusing)
 				{
-					focusing->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, Vec2f(mouse_pos));
+					focusing->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, disp);
 					potential_dbclick_er = nullptr;
 					potential_dbclick_time = 0.f;
 				}
@@ -280,15 +281,15 @@ namespace flame
 				hovering->on_state_changed(prev_hovering_active ? EventReceiverActive : EventReceiverHovering, hovering->state);
 			}
 			if (!prev_dragging && focusing && focusing->dragging)
-				focusing->on_drag_and_drop(DragStart, nullptr, Vec2f(mouse_pos));
+				focusing->on_drag_and_drop(DragStart, nullptr, mouse_pos);
 			else if (prev_dragging && (!focusing || !focusing->dragging))
 			{
 				if (prev_drag_overing)
-					prev_drag_overing->on_drag_and_drop(Dropped, prev_dragging, Vec2f(mouse_pos));
-				prev_dragging->on_drag_and_drop(DragEnd, prev_drag_overing, Vec2f(mouse_pos));
+					prev_drag_overing->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
+				prev_dragging->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
 			}
 			if (drag_overing)
-				drag_overing->on_drag_and_drop(DragOvering, focusing, Vec2f(mouse_pos));
+				drag_overing->on_drag_and_drop(DragOvering, focusing, mouse_pos);
 
 			keydown_inputs.clear();
 			keyup_inputs.clear();

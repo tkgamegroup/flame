@@ -32,7 +32,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = (*(cSplitterPrivate**)c);
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
@@ -53,13 +53,13 @@ namespace flame
 						{
 							if (pos.x() < 0.f)
 							{
-								auto v = min(left_element->size.x() - max(1.f, left_aligner ? left_aligner->min_size.x() : left_element->inner_padding_horizontal()), -pos.x());
+								auto v = min(left_element->size.x() - max(1.f, left_aligner ? left_aligner->min_size.x() : left_element->inner_padding_horizontal()), (float)-pos.x());
 								left_element->size.x() -= v;
 								right_element->size.x() += v;
 							}
 							else if (pos.x() > 0.f)
 							{
-								auto v = min(right_element->size.x() - max(1.f, right_aligner ? right_aligner->min_size.x() : right_element->inner_padding_horizontal()), pos.x());
+								auto v = min(right_element->size.x() - max(1.f, right_aligner ? right_aligner->min_size.x() : right_element->inner_padding_horizontal()), (float)pos.x());
 								left_element->size.x() += v;
 								right_element->size.x() -= v;
 							}
@@ -72,13 +72,13 @@ namespace flame
 						{
 							if (pos.y() < 0.f)
 							{
-								auto v = min(left_element->size.y() - max(1.f, left_aligner ? left_aligner->min_size.y() : left_element->inner_padding_vertical()), -pos.y());
+								auto v = min(left_element->size.y() - max(1.f, left_aligner ? left_aligner->min_size.y() : left_element->inner_padding_vertical()), (float)-pos.y());
 								left_element->size.y() -= v;
 								right_element->size.y() += v;
 							}
 							else if (pos.y() > 0.f)
 							{
-								auto v = min(right_element->size.y() - max(1.f, right_aligner ? right_aligner->min_size.y() : right_element->inner_padding_vertical()), pos.y());
+								auto v = min(right_element->size.y() - max(1.f, right_aligner ? right_aligner->min_size.y() : right_element->inner_padding_vertical()), (float)pos.y());
 								left_element->size.y() += v;
 								right_element->size.y() -= v;
 							}

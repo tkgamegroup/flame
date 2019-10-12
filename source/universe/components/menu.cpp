@@ -45,7 +45,7 @@ namespace flame
 
 			if (event_receiver)
 			{
-				mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMenuButtonPrivate**)c;
 					if (thiz->can_open(action, key))
 						thiz->open();

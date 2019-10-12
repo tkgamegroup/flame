@@ -108,7 +108,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 
 	auto e_btn_clear = create_standard_button(app.font_atlas_pixel, 1.f, L"Clear");
 	e_page->add_child(e_btn_clear);
-	((cEventReceiver*)e_btn_clear->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+	((cEventReceiver*)e_btn_clear->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 		if (is_mouse_clicked(action, key))
 		{
 			auto text = *(cText**)c;
@@ -137,7 +137,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 
 	auto e_btn_exec = create_standard_button(app.font_atlas_pixel, 1.f, L"Exec");
 	e_input->add_child(e_btn_exec);
-	((cEventReceiver*)e_btn_exec->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+	((cEventReceiver*)e_btn_exec->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 		if (is_mouse_clicked(action, key))
 		{
 			auto c_console = *(cConsolePrivate**)c;

@@ -76,7 +76,7 @@ namespace flame
 				unselected_color_active = style->color_active;
 			}
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto thiz = *(cComboboxItemPrivate**)c;

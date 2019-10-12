@@ -287,7 +287,7 @@ struct cInspectorPrivate : cInspector
 					}capture;
 					capture.e = e_component;
 					capture.c = component;
-					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+					c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
 
 						if (is_mouse_clicked(action, key))
@@ -607,7 +607,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 			}capture;
 			capture.i = c_inspector;
 			capture.u = udt;
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
 				{

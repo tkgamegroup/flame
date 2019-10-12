@@ -141,7 +141,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Entity");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -165,7 +165,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -182,7 +182,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -208,7 +208,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -249,7 +249,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 
 		auto c_event_receiver = cEventReceiver::create();
 		c_event_receiver->penetrable = true;
-		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+		c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto editor = *(cSceneEditorPrivate**)c;
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
@@ -319,7 +319,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			capture.e = c_editor;
 			capture.er = c_event_receiver;
 			capture.off = element_pos_offset;
-			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 				{
@@ -356,7 +356,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				capture.e = c_editor;
 				capture.er = c_event_receiver;
 				capture.off = element_pos_offset;
-				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
@@ -394,7 +394,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				capture.e = c_editor;
 				capture.er = c_event_receiver;
 				capture.off = element_pos_offset;
-				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{

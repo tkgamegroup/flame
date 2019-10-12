@@ -116,7 +116,7 @@ namespace flame
 				}
 			}, new_mail_p(this));
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cEditPrivate**)c;
 				auto element = thiz->element;
 				auto text = thiz->text;

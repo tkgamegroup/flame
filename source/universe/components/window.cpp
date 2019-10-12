@@ -41,12 +41,12 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cMoveablePrivate**)c;
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
 					auto e = thiz->element;
-					e->pos += pos / e->global_scale;
+					e->pos += (Vec2f)pos / e->global_scale;
 				}
 			}, new_mail_p(this));
 		}
@@ -95,7 +95,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cBringToFrontPrivate**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
@@ -159,7 +159,7 @@ namespace flame
 			p_element = (cElement*)(entity->parent()->find_component(cH("Element")));
 			assert(p_element);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = (*(cSizeDraggerPrivate**)c);
 				if (is_mouse_move(action, key) && thiz->event_receiver->active)
 					thiz->p_element->size += pos;
@@ -298,7 +298,7 @@ namespace flame
 			assert(list_item);
 			assert(entity->parent()->name_hash() == cH("docker_tabbar"));
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = (*(cDockerTabPrivate**)c);
 				if (is_mouse_move(action, key) && thiz->event_receiver->dragging && thiz->page)
 				{
@@ -307,7 +307,7 @@ namespace flame
 				}
 			}, new_mail_p(this));
 
-			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = (*(cDockerTabPrivate**)c);
 				if (action == DragStart)
 				{
@@ -482,7 +482,7 @@ namespace flame
 			assert(list);
 			assert(entity->parent()->name_hash() == cH("docker"));
 
-			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = (*(cDockerTabbarPrivate**)c);
 				if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
 				{
@@ -601,22 +601,22 @@ namespace flame
 			assert(event_receiver);
 			event_receiver->set_acceptable_drops({ cH("DockerTab") });
 
-			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2f& pos) {
+			drag_and_drop_listener = event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = (*(cDockerPagesPrivate**)c);
 				if (action == DragOvering)
 				{
 					auto element = thiz->element;
 					thiz->dock_side = Outside;
 					auto center = element->global_pos + element->global_size * 0.5f;
-					if (rect_contains(Vec4f(center + Vec2f(-25.f), center + Vec2f(25.f)), pos))
+					if (rect_contains(Vec4f(center + Vec2f(-25.f), center + Vec2f(25.f)), (Vec2f)pos))
 						thiz->dock_side = SideCenter;
-					else if (rect_contains(Vec4f(center + Vec2f(-55.f, -25.f), center + Vec2f(-30.f, 25.f)), pos))
+					else if (rect_contains(Vec4f(center + Vec2f(-55.f, -25.f), center + Vec2f(-30.f, 25.f)), (Vec2f)pos))
 						thiz->dock_side = SideW;
-					else if (rect_contains(Vec4f(center + Vec2f(30.f, -25.f), center + Vec2f(55.f, 25.f)), pos))
+					else if (rect_contains(Vec4f(center + Vec2f(30.f, -25.f), center + Vec2f(55.f, 25.f)), (Vec2f)pos))
 						thiz->dock_side = SideE;
-					else if (rect_contains(Vec4f(center + Vec2f(-25.f, -55.f), center + Vec2f(25.f, -30.f)), pos))
+					else if (rect_contains(Vec4f(center + Vec2f(-25.f, -55.f), center + Vec2f(25.f, -30.f)), (Vec2f)pos))
 						thiz->dock_side = SideN;
-					else if (rect_contains(Vec4f(center + Vec2f(-25.f, 30.f), center + Vec2f(25.f, 55.f)), pos))
+					else if (rect_contains(Vec4f(center + Vec2f(-25.f, 30.f), center + Vec2f(25.f, 55.f)), (Vec2f)pos))
 						thiz->dock_side = SideS;
 
 					auto drop_tab = (cDockerTabPrivate*)(er->entity->find_component(cH("DockerTab")));
@@ -668,7 +668,7 @@ namespace flame
 						if (thiz->dock_side == SideCenter)
 						{
 							auto tabbar_er = (cEventReceiver*)thiz->entity->parent()->child(0)->find_component(cH("EventReceiver"));
-							tabbar_er->on_drag_and_drop(Dropped, er, Vec2f(0.f, 99999.f));
+							tabbar_er->on_drag_and_drop(Dropped, er, Vec2i(0, 99999));
 						}
 						else
 						{
@@ -881,7 +881,7 @@ namespace flame
 			e_close->add_component(c_text);
 
 			auto c_event_receiver = cEventReceiver::create();
-			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2f& pos) {
+			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_clicked(action, key))
 				{
 					auto thiz = (*(cDockerTabPrivate**)c);
