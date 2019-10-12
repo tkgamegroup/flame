@@ -30,6 +30,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
 
+		FLAME_UNIVERSE_EXPORTS void on_changed();
+
 		FLAME_UNIVERSE_EXPORTS virtual void start() override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 

@@ -55,6 +55,8 @@ struct App
 
 extern App app;
 
+Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float);
+
 void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale, Entity* parent);
 void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scale, Entity* parent);
 

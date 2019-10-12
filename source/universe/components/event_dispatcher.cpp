@@ -30,6 +30,8 @@ namespace flame
 			focusing = nullptr;
 			drag_overing = nullptr;
 
+			next_focusing = (cEventReceiver*)FLAME_INVALID_POINTER;
+
 			char_input_compelete = true;
 			for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
 				key_states[i] = KeyStateUp;
@@ -120,6 +122,12 @@ namespace flame
 			auto prev_dragging = (!focusing || !focusing->dragging) ? nullptr : focusing;
 			auto prev_drag_overing = drag_overing;
 
+			if (next_focusing != FLAME_INVALID_POINTER)
+			{
+				focusing = next_focusing;
+				next_focusing = (cEventReceiver*)FLAME_INVALID_POINTER;
+			}
+
 			if (focusing)
 			{
 				if (!focusing->entity->global_visible)
@@ -203,15 +211,11 @@ namespace flame
 			}
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 			{
-				if (focusing)
-				{
-					focusing->focusing = false;
-					focusing = nullptr;
-				}
+				focusing = nullptr;
+
 				if (hovering)
 				{
 					focusing = hovering;
-					hovering->focusing = true;
 					hovering->active = true;
 					active_pos = mouse_pos;
 				}
@@ -220,9 +224,15 @@ namespace flame
 			if (prev_focusing != focusing)
 			{
 				if (prev_focusing)
+				{
+					prev_focusing->focusing = false;
 					prev_focusing->on_focus(Focus_Lost);
+				}
 				if (focusing)
+				{
+					focusing->focusing = true;
 					focusing->on_focus(Focus_Gain);
+				}
 			}
 
 			if (focusing)

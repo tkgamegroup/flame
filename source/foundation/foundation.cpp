@@ -105,6 +105,7 @@ namespace flame
 
 	void destroy_event(void* ev)
 	{
+		CloseHandle((HANDLE)ev);
 	}
 
 	void do_simple_dispatch_loop()

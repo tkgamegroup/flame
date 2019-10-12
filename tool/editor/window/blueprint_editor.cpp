@@ -40,13 +40,22 @@ void create_edit(Entity* parent, BP::Slot* input)
 	c_tracker->data = &data;
 	parent->add_component(c_tracker);
 
-	auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+	auto e_edit = create_drag_edit(app.font_atlas_sdf, 0.5f, std::is_floating_point<T>::value);
 	parent->add_child(e_edit);
 	{
-		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+		struct Capture
+		{
+			BP::Slot* input;
+			cText* drag_text;
+		}capture;
+		capture.input = input;
+		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
+		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+			auto& capture = *(Capture*)c;
 			auto data = text[0] ? sto<T>(text) : 0;
-			(*(BP::Slot**)c)->set_data(&data);
-		}, new_mail_p(input));
+			capture.input->set_data(&data);
+			capture.drag_text->set_text(text);
+		}, new_mail(&capture));
 	}
 }
 
@@ -63,18 +72,21 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 	{
 		BP::Slot* input;
 		uint i;
+		cText* drag_text;
 	}capture;
 	capture.input = input;
 	for (auto i = 0; i < N; i++)
 	{
-		auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+		auto e_edit = create_drag_edit(app.font_atlas_sdf, 0.5f, std::is_floating_point<T>::value);
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
-		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
+		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			auto data = *(Vec<N, T>*)capture.input->data();
 			data[capture.i] = text[0] ? sto<T>(text) : 0;
 			capture.input->set_data(&data);
+			capture.drag_text->set_text(text);
 		}, new_mail(&capture));
 	}
 }

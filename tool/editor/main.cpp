@@ -130,6 +130,95 @@ void App::run()
 
 App app;
 
+Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
+{
+	auto e_layout = Entity::create();
+	{
+		e_layout->add_component(cElement::create());
+
+		auto c_layout = cLayout::create(LayoutVertical);
+		c_layout->fence = 1;
+		e_layout->add_component(c_layout);
+	}
+
+	auto e_edit = create_standard_edit(50.f, font_atlas, sdf_scale);
+	e_layout->add_child(e_edit);
+	e_edit->visible = false;
+
+	auto e_drag = Entity::create();
+	e_layout->add_child(e_drag);
+	{
+		auto c_element = cElement::create();
+		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+		c_element->size.x() = 58.f;
+		e_drag->add_component(c_element);
+
+		auto c_text = cText::create(font_atlas);
+		c_text->sdf_scale = sdf_scale;
+		c_text->auto_width = false;
+		e_drag->add_component(c_text);
+
+		e_drag->add_component(cEventReceiver::create());
+
+		e_drag->add_component(cStyleColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+	}
+
+	struct Capture
+	{
+		Entity* e;
+		cText* e_t;
+		cEdit* e_e;
+		cEventReceiver* e_er;
+		Entity* d;
+		cEventReceiver* d_er;
+		bool is_float;
+	}capture;
+	capture.e = e_edit;
+	capture.e_t = (cText*)e_edit->find_component(cH("Text"));
+	capture.e_e = (cEdit*)e_edit->find_component(cH("Edit"));
+	capture.e_er = (cEventReceiver*)e_edit->find_component(cH("EventReceiver"));
+	capture.d = e_drag;
+	capture.d_er = (cEventReceiver*)e_drag->find_component(cH("EventReceiver"));
+	capture.is_float = is_float;
+
+	capture.e_er->add_focus_listener([](void* c, FocusType type) {
+		auto& capture = *(Capture*)c;
+		if (type == Focus_Lost)
+		{
+			capture.e->visible = false;
+			capture.d->visible = true;
+		}
+	}, new_mail(&capture));
+
+	capture.d_er->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		auto& capture = *(Capture*)c;
+		if (is_mouse_clicked(action, key) && pos == 0)
+		{
+			capture.e->visible = true;
+			capture.d->visible = false;
+			capture.d_er->event_dispatcher->next_focusing = capture.e_er;
+		}
+		else if (capture.d_er->active && is_mouse_move(action, key))
+		{
+			if (capture.is_float)
+			{
+				auto v = std::stof(capture.e_t->text());
+				v += pos.x() * 0.05f;
+				capture.e_t->set_text(std::to_wstring(v));
+			}
+			else
+			{
+				auto v = std::stoi(capture.e_t->text());
+				v += pos.x();
+				capture.e_t->set_text(std::to_wstring(v));
+			}
+			capture.e_e->on_changed();
+		}
+	}, new_mail(&capture));
+
+	return e_layout;
+}
+
 void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale, Entity* parent)
 {
 	std::vector<std::wstring> items;

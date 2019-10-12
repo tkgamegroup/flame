@@ -93,21 +93,23 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	c_tracker->data = pdata;
 	parent->add_component(c_tracker);
 
-	auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+	auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
 	parent->add_child(e_edit);
 	struct Capture
 	{
 		cComponentDealer* d;
 		VariableInfo* v;
+		cText* drag_text;
 	}capture;
 	capture.d = d;
 	capture.v = v;
-	((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+	capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
+	((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 		auto& capture = *(Capture*)c;
 		*(T*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<T>(text) : 0;
 		capture.d->unserialize(capture.v->offset());
+		capture.drag_text->set_text(text);
 	}, new_mail(&capture));
-
 }
 
 template<uint N, class T>
@@ -122,18 +124,21 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		cComponentDealer* d;
 		VariableInfo* v;
 		int i;
+		cText* drag_text;
 	}capture;
 	capture.d = d;
 	capture.v = v;
 	for (auto i = 0; i < N; i++)
 	{
-		auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
+		auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
-		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
+		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = text[0] ? sto<T>(text) : 0;
 			capture.d->unserialize(capture.v->offset());
+			capture.drag_text->set_text(text);
 		}, new_mail(&capture));
 	}
 }

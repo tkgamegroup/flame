@@ -38,7 +38,7 @@ namespace flame
 			}
 		}
 
-		void on_change()
+		void on_changed()
 		{
 			for (auto& l : changed_listeners)
 				l->function(l->capture.p, ((cTextPrivate*)text)->text.c_str());
@@ -66,7 +66,7 @@ namespace flame
 						{
 							thiz->cursor--;
 							str.erase(str.begin() + thiz->cursor);
-							thiz->on_change();
+							thiz->on_changed();
 						}
 						break;
 					case 22:
@@ -84,7 +84,7 @@ namespace flame
 					default:
 						str.insert(str.begin() + thiz->cursor, value);
 						thiz->cursor++;
-						thiz->on_change();
+						thiz->on_changed();
 					}
 				}
 				else if (action == KeyStateDown)
@@ -109,7 +109,7 @@ namespace flame
 						if (thiz->cursor < str.size())
 						{
 							str.erase(str.begin() + thiz->cursor);
-							thiz->on_change();
+							thiz->on_changed();
 						}
 						break;
 					}
@@ -190,6 +190,11 @@ namespace flame
 				return;
 			}
 		}
+	}
+
+	void cEdit::on_changed()
+	{
+		((cEditPrivate*)this)->on_changed();
 	}
 
 	void cEdit::start()

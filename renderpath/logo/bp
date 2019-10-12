@@ -7,13 +7,13 @@
 		<package filename="canvas_make_cmd" id="canvas" pos="416.50;110.50" />
 	</packages>
 	<nodes>
-		<node type="graphics::Font" id="font" pos="-286.50;103.50">
+		<node type="graphics::Font" id="font" pos="-555.50;98.50">
 			<datas>
 				<data name="filename" value="c:/windows/fonts/msyh.ttc" />
 				<data name="pixel_height" value="32" />
 			</datas>
 		</node>
-		<node type="graphics::FontAtlas" id="font_atlas" pos="-50.50;93.50">
+		<node type="graphics::FontAtlas" id="font_atlas" pos="-328.50;109.50">
 			<datas>
 				<data name="draw_type" value="FontDrawSdf" />
 			</datas>

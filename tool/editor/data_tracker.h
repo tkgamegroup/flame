@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 struct cDataTracker : Component
 {
 	void* data;
@@ -76,21 +74,25 @@ struct cBoolDataTracker : cDataTracker
 template<class T>
 struct cDigitalDataTracker : cDataTracker
 {
-	cEventReceiver* event_receiver;
-	cText* text;
+	cText* edit_text;
+	cText* drag_text;
 
 	virtual void update_view() override
 	{
-		if (std::is_floating_point<T>::value)
-			text->set_text(to_wstring(*(T*)data, 2));
+		std::wstring str;
+		if constexpr (std::is_floating_point<T>::value)
+			str = to_wstring(*(T*)data, 2);
 		else
-			text->set_text(to_wstring(*(T*)data));
+			str = to_wstring(*(T*)data);
+		edit_text->set_text(str);
+		drag_text->set_text(str);
 	}
 
 	virtual void start() override
 	{
-		event_receiver = (cEventReceiver*)entity->child(0)->find_component(cH("EventReceiver"));
-		text = (cText*)entity->child(0)->find_component(cH("Text"));
+		auto e = entity->child(0);
+		edit_text = (cText*)e->child(0)->find_component(cH("Text"));
+		drag_text = (cText*)e->child(1)->find_component(cH("Text"));
 
 		update_view();
 	}
@@ -99,17 +101,20 @@ struct cDigitalDataTracker : cDataTracker
 template<uint N, class T>
 struct cDigitalVecDataTracker : cDataTracker
 {
-	cEventReceiver* event_receivers[N];
-	cText* texts[N];
+	cText* edit_texts[N];
+	cText* drag_texts[N];
 
 	virtual void update_view() override
 	{
 		for (auto i = 0; i < N; i++)
 		{
-			if (std::is_floating_point<T>::value)
-				texts[i]->set_text(to_wstring((*(Vec<N, T>*)data)[i], 2));
+			std::wstring str;
+			if constexpr (std::is_floating_point<T>::value)
+				str = to_wstring((*(Vec<N, T>*)data)[i], 2);
 			else
-				texts[i]->set_text(to_wstring((*(Vec<N, T>*)data)[i]));
+				str = to_wstring((*(Vec<N, T>*)data)[i]);
+			edit_texts[i]->set_text(str);
+			drag_texts[i]->set_text(str);
 		}
 	}
 
@@ -118,8 +123,8 @@ struct cDigitalVecDataTracker : cDataTracker
 		for (auto i = 0; i < N; i++)
 		{
 			auto e = entity->child(i)->child(0);
-			event_receivers[i] = (cEventReceiver*)e->find_component(cH("EventReceiver"));
-			texts[i] = (cText*)e->find_component(cH("Text"));
+			edit_texts[i] = (cText*)e->child(0)->find_component(cH("Text"));
+			drag_texts[i] = (cText*)e->child(1)->find_component(cH("Text"));
 		}
 
 		update_view();
