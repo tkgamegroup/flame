@@ -104,7 +104,7 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	capture.d = d;
 	capture.v = v;
 	capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-	((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+	((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 		auto& capture = *(Capture*)c;
 		*(T*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<T>(text) : 0;
 		capture.d->unserialize(capture.v->offset());
@@ -134,7 +134,7 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
 		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+		((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = text[0] ? sto<T>(text) : 0;
 			capture.d->unserialize(capture.v->offset());
@@ -181,8 +181,9 @@ struct cInspectorPrivate : cInspector
 
 				auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 				e_item->child(1)->add_child(e_edit);
-				((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(selected->name()));
-				((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+				auto c_text = (cText*)e_edit->find_component(cH("Text"));
+				c_text->set_text(s2w(selected->name()));
+				c_text->add_changed_listener([](void* c, const wchar_t* text) {
 					auto editor = *(cSceneEditor**)c;
 					editor->selected->set_name(w2s(text));
 					if (editor->hierarchy)
@@ -473,7 +474,7 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+							((cText*)e_edit->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto& capture = *(Capture*)c;
 								*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
 								capture.d->unserialize(capture.v->offset());
@@ -495,7 +496,7 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+							((cText*)e_edit->find_component(cH("text")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto& capture = *(Capture*)c;
 								*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
 								capture.d->unserialize(capture.v->offset());

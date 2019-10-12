@@ -226,6 +226,7 @@ namespace flame
 				if (prev_focusing)
 				{
 					prev_focusing->focusing = false;
+					prev_focusing->active = false;
 					prev_focusing->on_focus(Focus_Lost);
 				}
 				if (focusing)

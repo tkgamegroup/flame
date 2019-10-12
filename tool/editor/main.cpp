@@ -167,7 +167,6 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 	{
 		Entity* e;
 		cText* e_t;
-		cEdit* e_e;
 		cEventReceiver* e_er;
 		Entity* d;
 		cEventReceiver* d_er;
@@ -175,7 +174,6 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 	}capture;
 	capture.e = e_edit;
 	capture.e_t = (cText*)e_edit->find_component(cH("Text"));
-	capture.e_e = (cEdit*)e_edit->find_component(cH("Edit"));
 	capture.e_er = (cEventReceiver*)e_edit->find_component(cH("EventReceiver"));
 	capture.d = e_drag;
 	capture.d_er = (cEventReceiver*)e_drag->find_component(cH("EventReceiver"));
@@ -204,7 +202,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 			{
 				auto v = std::stof(capture.e_t->text());
 				v += pos.x() * 0.05f;
-				capture.e_t->set_text(std::to_wstring(v));
+				capture.e_t->set_text(to_wstring(v, 2));
 			}
 			else
 			{
@@ -212,7 +210,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 				v += pos.x();
 				capture.e_t->set_text(std::to_wstring(v));
 			}
-			capture.e_e->on_changed();
+			capture.e_t->on_changed();
 		}
 	}, new_mail(&capture));
 

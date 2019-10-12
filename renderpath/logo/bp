@@ -21,14 +21,16 @@
 		<node type="Array(2+void*)" id="cmds" pos="303.50;300.50" />
 		<node type="TextSdf" id="text1" pos="-28.50;284.50">
 			<datas>
-				<data name="pos" value="100.00;100.00" />
+				<data name="pos" value="111.45;168.50" />
+				<data name="scale" value="4.55" />
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="f" />
 			</datas>
 		</node>
 		<node type="TextSdf" id="text2" pos="-33.50;669.50">
 			<datas>
-				<data name="pos" value="200.00;100.00" />
+				<data name="pos" value="182.95;168.50" />
+				<data name="scale" value="4.55" />
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="l" />
 			</datas>

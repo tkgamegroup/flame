@@ -15,8 +15,6 @@ namespace flame
 		void* key_listener;
 		void* mouse_listener;
 
-		std::vector<std::unique_ptr<Closure<void(void* c, const wchar_t* text)>>> changed_listeners;
-
 		cEditPrivate()
 		{
 			element = nullptr;
@@ -36,12 +34,6 @@ namespace flame
 				event_receiver->remove_mouse_listener(key_listener);
 				event_receiver->remove_mouse_listener(mouse_listener);
 			}
-		}
-
-		void on_changed()
-		{
-			for (auto& l : changed_listeners)
-				l->function(l->capture.p, ((cTextPrivate*)text)->text.c_str());
 		}
 
 		void start()
@@ -66,7 +58,7 @@ namespace flame
 						{
 							thiz->cursor--;
 							str.erase(str.begin() + thiz->cursor);
-							thiz->on_changed();
+							thiz->text->on_changed();
 						}
 						break;
 					case 22:
@@ -84,7 +76,7 @@ namespace flame
 					default:
 						str.insert(str.begin() + thiz->cursor, value);
 						thiz->cursor++;
-						thiz->on_changed();
+						thiz->text->on_changed();
 					}
 				}
 				else if (action == KeyStateDown)
@@ -109,7 +101,7 @@ namespace flame
 						if (thiz->cursor < str.size())
 						{
 							str.erase(str.begin() + thiz->cursor);
-							thiz->on_changed();
+							thiz->text->on_changed();
 						}
 						break;
 					}
@@ -169,33 +161,6 @@ namespace flame
 			}
 		}
 	};
-
-	void* cEdit::add_changed_listener(void (*listener)(void* c, const wchar_t* text), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, const wchar_t* text)>;
-		c->function = listener;
-		c->capture = capture;
-		((cEditPrivate*)this)->changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cEdit::remove_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cEditPrivate*)this)->changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	void cEdit::on_changed()
-	{
-		((cEditPrivate*)this)->on_changed();
-	}
 
 	void cEdit::start()
 	{

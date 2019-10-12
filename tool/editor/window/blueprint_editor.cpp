@@ -50,7 +50,7 @@ void create_edit(Entity* parent, BP::Slot* input)
 		}capture;
 		capture.input = input;
 		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+		((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			auto data = text[0] ? sto<T>(text) : 0;
 			capture.input->set_data(&data);
@@ -81,7 +81,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
 		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+		((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			auto data = *(Vec<N, T>*)capture.input->data();
 			data[capture.i] = text[0] ? sto<T>(text) : 0;
@@ -294,8 +294,7 @@ struct cBPEditor : Component
 			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH);
 			e_add_node_menu->add_child(item);
 
-			add_node_menu_filter = (cEdit*)e_edit->find_component(cH("Edit"));
-			add_node_menu_filter->add_changed_listener([](void* c, const wchar_t* text) {
+			((cText*)e_edit->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 				auto menu = *(Entity**)c;
 				for (auto i = 1; i < menu->child_count(); i++)
 				{
@@ -303,6 +302,8 @@ struct cBPEditor : Component
 					item->visible = text[0] ? (((cText*)item->find_component(cH("Text")))->text().find(text) != std::string::npos) : true;
 				}
 			}, new_mail_p(e_add_node_menu));
+
+			add_node_menu_filter = (cEdit*)e_edit->find_component(cH("Edit"));
 		}
 		for (auto udt : all_udts)
 		{
@@ -1136,14 +1137,13 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			c_text->sdf_scale = 0.8f;
 			c_text->set_text(s2w(p->id()));
 			e_text_id->add_component(c_text);
+			c_text->add_changed_listener([](void* c, const wchar_t* text) {
+				(*(BP::Package**)c)->set_id(w2s(text));
+			}, new_mail_p(p));
 
 			e_text_id->add_component(cEventReceiver::create());
 
-			auto c_edit = cEdit::create();
-			c_edit->add_changed_listener([](void* c, const wchar_t* text) {
-				(*(BP::Package**)c)->set_id(w2s(text));
-			}, new_mail_p(p));
-			e_text_id->add_component(c_edit);
+			e_text_id->add_component(cEdit::create());
 		}
 
 		auto e_main = Entity::create();
@@ -1362,14 +1362,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			c_text->sdf_scale = 0.8f;
 			c_text->set_text(s2w(n->id()));
 			e_text_id->add_component(c_text);
+			c_text->add_changed_listener([](void* c, const wchar_t* text) {
+				(*(BP::Node**)c)->set_id(w2s(text));
+			}, new_mail_p(n));
 
 			e_text_id->add_component(cEventReceiver::create());
 
-			auto c_edit = cEdit::create();
-			c_edit->add_changed_listener([](void* c, const wchar_t* text) {
-				(*(BP::Node**)c)->set_id(w2s(text));
-			}, new_mail_p(n));
-			e_text_id->add_component(c_edit);
+			e_text_id->add_component(cEdit::create());
 		}
 
 		auto e_text_type = Entity::create();
@@ -1843,7 +1842,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 							e_data->add_child(e_edit);
-							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+							((cText*)e_edit->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto str = w2s(text);
 								(*(BP::Slot**)c)->set_data(&str);
 							}, new_mail_p(input));
@@ -1857,7 +1856,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 							e_data->add_child(e_edit);
-							((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
+							((cText*)e_edit->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto str = std::wstring(text);
 								(*(BP::Slot**)c)->set_data(&str);
 							}, new_mail_p(input));
