@@ -79,7 +79,10 @@ struct cDigitalDataTracker : cDataTracker
 
 	virtual void update_view() override
 	{
-		text->set_text(to_wstring(*(T*)data));
+		if (std::is_floating_point<T>::value)
+			text->set_text(to_wstring(*(T*)data, 2));
+		else
+			text->set_text(to_wstring(*(T*)data));
 	}
 
 	virtual void start() override
@@ -100,7 +103,12 @@ struct cDigitalVecDataTracker : cDataTracker
 	virtual void update_view() override
 	{
 		for (auto i = 0; i < N; i++)
-			texts[i]->set_text(to_wstring((*(Vec<N, T>*)data)[i]));
+		{
+			if (std::is_floating_point<T>::value)
+				texts[i]->set_text(to_wstring((*(Vec<N, T>*)data)[i], 2));
+			else
+				texts[i]->set_text(to_wstring((*(Vec<N, T>*)data)[i]));
+		}
 	}
 
 	virtual void start() override

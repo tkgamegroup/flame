@@ -1724,6 +1724,23 @@ namespace flame
 		return _bp_env;
 	}
 
+	struct MakeVec2f$
+	{
+		AttributeV<float> x$i;
+		AttributeV<float> y$i;
+
+		AttributeV<Vec2f> out$i;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (x$i.frame > out$i.frame)
+				out$i.v.x() = x$i.v;
+			if (y$i.frame > out$i.frame)
+				out$i.v.x() = y$i.v;
+			out$i.frame = max(x$i.frame, y$i.frame);
+		}
+	};
+
 	struct Time$
 	{
 		AttributeV<float> delta$o;

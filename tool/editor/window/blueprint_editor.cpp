@@ -43,8 +43,6 @@ void create_edit(Entity* parent, BP::Slot* input)
 	auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 	parent->add_child(e_edit);
 	{
-		((cText*)e_edit->find_component(cH("Text")))->set_text(std::to_wstring(data));
-
 		((cEdit*)e_edit->find_component(cH("Edit")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto data = text[0] ? sto<T>(text) : 0;
 			(*(BP::Slot**)c)->set_data(&data);
