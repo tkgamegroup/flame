@@ -417,6 +417,7 @@ namespace flame
 	{
 		parent = nullptr;
 		graphics_device = nullptr;
+		time = 0.f;
 	}
 
 	BP::Module* BPPrivate::add_module(const std::wstring& filename)
@@ -883,8 +884,9 @@ namespace flame
 			return;
 
 		_bp_env.path = std::filesystem::path(filename).parent_path().wstring();
-		_bp_env.graphics_device = graphics_device;
 		_bp_env.dbs = dbs;
+		_bp_env.graphics_device = graphics_device;
+		_bp_env.time = time;
 
 		for (auto& o : update_list)
 		{
@@ -922,9 +924,12 @@ namespace flame
 			}
 		}
 
+		time += looper().delta_time;
+
 		_bp_env.path = L"";
-		_bp_env.graphics_device = nullptr;
 		_bp_env.dbs.clear();
+		_bp_env.graphics_device = nullptr;
+		_bp_env.time = 0.f;
 	}
 
 	const std::wstring& BP::Module::filename() const
@@ -1477,7 +1482,7 @@ namespace flame
 				cmakelists << ")\n";
 			}
 			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
-			srand(time(0));
+			srand(::time(0));
 			auto pdb_filename = std::to_string(::rand() % 100000);
 			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " + pdb_filename + ")\n";
 			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
@@ -1718,5 +1723,20 @@ namespace flame
 	{
 		return _bp_env;
 	}
+
+	struct Time$
+	{
+		AttributeV<float> delta$o;
+		AttributeV<float> total$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			delta$o.v = looper().delta_time;
+			total$o.v = bp_env().time;
+			auto frame = looper().frame;
+			delta$o.frame = frame;
+			total$o.frame = frame;
+		}
+	};
 }
 

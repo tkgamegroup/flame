@@ -947,6 +947,34 @@ void cBP::update()
 	bezier_extent = 50.f * base_element->global_scale;
 
 	auto bp = editor->bp;
+	const auto show_link = [&](BP::Slot* input, BP::Slot* output) {
+		if (output->parent()->parent() == bp)
+		{
+			auto e1 = ((cBPSlot*)output->user_data)->element;
+			auto e2 = ((cBPSlot*)input->user_data)->element;
+			if (e1 && e2)
+			{
+				auto p1 = e1->global_pos + e1->global_size * 0.5f;
+				auto p2 = e2->global_pos + e2->global_size * 0.5f;
+
+				std::vector<Vec2f> points;
+				path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
+				element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+			}
+		}
+	};
+	for (auto i = 0; i < bp->package_count(); i++)
+	{
+		auto p = bp->package(i);
+		auto pbp = p->bp();
+		for (auto j = 0; j < pbp->input_export_count(); j++)
+		{
+			auto input = pbp->input_export(j);
+			auto output = input->link(0);
+			if (output)
+				show_link(input, output);
+		}
+	}
 	for (auto i = 0; i < bp->node_count(); i++)
 	{
 		auto n = bp->node(i);
@@ -955,19 +983,7 @@ void cBP::update()
 			auto input = n->input(j);
 			auto output = input->link(0);
 			if (output)
-			{
-				auto e1 = ((cBPSlot*)output->user_data)->element;
-				auto e2 = ((cBPSlot*)input->user_data)->element;
-				if (e1 && e2)
-				{
-					auto p1 = e1->global_pos + e1->global_size * 0.5f;
-					auto p2 = e2->global_pos + e2->global_size * 0.5f;
-
-					std::vector<Vec2f> points;
-					path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-					element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
-				}
-			}
+				show_link(input, output);
 		}
 	}
 	if (editor->dragging_slot)
@@ -2160,7 +2176,11 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
 
 				if (capture.e->running)
-					capture.e->bp->graphics_device = app.d;
+				{
+					auto bp = capture.e->bp;
+					bp->graphics_device = app.d;
+					bp->time = 0.f;
+				}
 			}
 		}, new_mail(&capture));
 	}
