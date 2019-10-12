@@ -76,6 +76,7 @@ namespace flame
 
 	struct TextSdf : CmdBase
 	{
+		FontAtlas* font_atals;
 		Vec2f pos;
 		float scale;
 		Vec4c color;
@@ -84,6 +85,7 @@ namespace flame
 
 	struct TextSdf$
 	{
+		AttributeP<void> font_atals$i;
 		AttributeV<Vec2f> pos$i;
 		AttributeV<float> scale$i;
 		AttributeV<Vec4c> color$i;
@@ -91,9 +93,16 @@ namespace flame
 
 		AttributeV<TextSdf> out$o;
 
+		__declspec(dllexport) TextSdf$()
+		{
+			scale$i.v = 1.f;
+		}
+
 		__declspec(dllexport) void update$()
 		{
 			out$o.v.type = CmdDrawTextSdf;
+			if (font_atals$i.frame > out$o.frame)
+				out$o.v.font_atals = (FontAtlas*)font_atals$i.v;
 			if (pos$i.frame > out$o.frame)
 				out$o.v.pos = pos$i.v;
 			if (scale$i.frame > out$o.frame)
@@ -101,8 +110,12 @@ namespace flame
 			if (color$i.frame > out$o.frame)
 				out$o.v.color = color$i.v;
 			if (text$i.frame > out$o.frame)
-				out$o.v.text = text$i.v;
-			out$o.frame = maxN(pos$i.frame, scale$i.frame, color$i.frame, text$i.frame);
+			{
+				out$o.v.text.resize(text$i.v.size());
+				for (auto i = 0; i < text$i.v.size(); i++)
+					out$o.v.text[i] = text$i.v[i];
+			}
+			out$o.frame = maxN(font_atals$i.frame, pos$i.frame, scale$i.frame, color$i.frame, text$i.frame);
 		}
 	};
 
@@ -140,6 +153,7 @@ namespace flame
 
 		AttributeP<void> canvas$o;
 
+		AttributeP<std::vector<void*>> font_atlases$i;
 		AttributeP<std::vector<void*>> content$i;
 
 		Vec4c clear_color;
@@ -158,6 +172,11 @@ namespace flame
 		__declspec(dllexport) MakeCmd$() :
 			frame(-1)
 		{
+		}
+
+		__declspec(dllexport) ~MakeCmd$()
+		{
+			delete (CanvasPrivate*)canvas$o.v;
 		}
 
 		uint set_image(int index, Imageview* v, Filter filter)
@@ -436,6 +455,13 @@ namespace flame
 				canvas$o.v = c;
 				canvas$o.frame = looper().frame;
 
+				auto font_atlases = get_attribute_vec(font_atlases$i);
+				for (auto _f : font_atlases)
+				{
+					auto f = (FontAtlas*)_f;
+					f->index = set_image(-1, f->imageview(), FilterLinear);
+				}
+
 				frame = 0;
 			}
 
@@ -443,6 +469,8 @@ namespace flame
 			{
 				auto fb = (Framebuffer*)rnf->framebuffers()[img_idx];
 				surface_size = Vec2f(fb->image_size);
+
+				curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 
 				auto content = get_attribute_vec(content$i);
 				for (auto& _c : content)
@@ -459,7 +487,8 @@ namespace flame
 						break;
 					case CmdDrawTextSdf:
 					{
-
+						auto c = (TextSdf*)_c;
+						add_text(c->font_atals, c->pos, c->color, c->text, c->scale);
 					}
 						break;
 					}
@@ -471,7 +500,6 @@ namespace flame
 				cb->begin_renderpass(fb, cv);
 				if (idx_end != idx_buf->mapped)
 				{
-					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 					cb->set_viewport(curr_scissor);
 					cb->set_scissor(curr_scissor);
 					cb->bind_vertexbuffer(vtx_buf, 0);

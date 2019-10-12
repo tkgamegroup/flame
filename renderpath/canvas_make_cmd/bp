@@ -23,7 +23,8 @@
 	</links>
 	<exports>
 		<input>
-			<export v="make_cmd.content" />
+			<export v="make_cmd.font_atlases" />
+      <export v="make_cmd.content" />
 		</input>
 		<output />
 	</exports>

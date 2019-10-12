@@ -9,6 +9,7 @@ namespace flame
 	{
 		struct Device;
 		struct Image;
+		struct Imageview;
 
 		FLAME_GRAPHICS_EXPORTS void get_latin_code_range(wchar_t& out_begin, wchar_t& out_end);
 
@@ -30,7 +31,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Font* f);
 		};
 
-		enum FontDrawType
+		enum FontDrawType$
 		{
 			FontDrawPixel,
 			FontDrawLcd,
@@ -39,7 +40,7 @@ namespace flame
 
 		struct FontAtlas
 		{
-			FontDrawType draw_type;
+			FontDrawType$ draw_type;
 			uint pixel_height;
 			uint max_width;
 
@@ -50,8 +51,9 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width);
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
+			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType draw_type, const std::vector<Font*>& fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType$ draw_type, const std::vector<void*>& fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

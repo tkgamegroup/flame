@@ -83,7 +83,7 @@ int main(int argc, char** args)
 
 	auto font_msyh14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font_msyh14 });
-	app.font_atlas_pixel->index = app.canvas->set_image(-1, Imageview::create(app.font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+	app.font_atlas_pixel->index = app.canvas->set_image(-1, app.font_atlas_pixel->imageview());
 
 	universe_serialization_set_data("font_atlas1", app.font_atlas_pixel);
 

@@ -57,8 +57,8 @@ void App::create()
 	auto font_awesome32 = Font::create(L"../asset/font_awesome.ttf", 32);
 	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { font14, font_awesome14 });
 	font_atlas_sdf = FontAtlas::create(d, FontDrawSdf, { font32, font_awesome32 });
-	font_atlas_pixel->index = canvas->set_image(-1, Imageview::create(font_atlas_pixel->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
-	font_atlas_sdf->index = canvas->set_image(-1, Imageview::create(font_atlas_sdf->image()));
+	font_atlas_pixel->index = canvas->set_image(-1, font_atlas_pixel->imageview());
+	font_atlas_sdf->index = canvas->set_image(-1, font_atlas_sdf->imageview());
 	
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();

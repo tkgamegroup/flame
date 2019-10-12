@@ -91,6 +91,8 @@ namespace flame
 		std::vector<std::unique_ptr<PackagePrivate>> packages;
 		std::vector<ModulePrivate*> package_modules;
 
+		std::vector<TypeinfoDatabase*> dbs;
+
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
 		std::vector<SlotPrivate*> input_exports;
@@ -116,6 +118,8 @@ namespace flame
 		void remove_package(PackagePrivate* i);
 		PackagePrivate* find_package(const std::string& id) const;
 		void collect_package_modules();
+
+		void collect_dbs();
 
 		NodePrivate* add_node(uint type_hash, const std::string& type_name);
 		void remove_node(NodePrivate* n);
@@ -449,6 +453,7 @@ namespace flame
 		m->db = TypeinfoDatabase::load(dbs, std::filesystem::path(absolute_filename).replace_extension(L".typeinfo"));
 
 		modules.emplace_back(m);
+		collect_dbs();
 
 		return m;
 	}
@@ -472,8 +477,8 @@ namespace flame
 				}
 
 				modules.erase(it);
+				collect_dbs();
 
-				build_update_list();
 				return;
 			}
 		}
@@ -513,6 +518,7 @@ namespace flame
 		packages.emplace_back(p);
 
 		collect_package_modules();
+		collect_dbs();
 		build_update_list();
 
 		return p;
@@ -525,8 +531,11 @@ namespace flame
 			if (it->get() == i)
 			{
 				packages.erase(it);
+
 				collect_package_modules();
+				collect_dbs();
 				build_update_list();
+
 				return;
 			}
 		}
@@ -546,6 +555,11 @@ namespace flame
 	{
 		package_modules.clear();
 		auto had = [&](ModulePrivate* m) {
+			for (auto& _m : modules)
+			{
+				if (_m->module == m->module)
+					return true;
+			}
 			for (auto _m : package_modules)
 			{
 				if (_m->module == m->module)
@@ -569,6 +583,17 @@ namespace flame
 					package_modules.push_back(m);
 			}
 		}
+	}
+
+	void BPPrivate::collect_dbs()
+	{
+		dbs.clear();
+		for (auto& m : modules)
+			dbs.push_back(m->db);
+		if (self_module)
+			dbs.push_back(self_module->db);
+		for (auto m : package_modules)
+			dbs.push_back(m->db);
 	}
 
 	NodePrivate* BPPrivate::add_node(uint type_hash, const std::string& id)
@@ -859,11 +884,7 @@ namespace flame
 
 		_bp_env.path = std::filesystem::path(filename).parent_path().wstring();
 		_bp_env.graphics_device = graphics_device;
-		_bp_env.dbs.clear();
-		for (auto& m : modules)
-			_bp_env.dbs.push_back(m->db);
-		if (self_module)
-			_bp_env.dbs.push_back(self_module->db);
+		_bp_env.dbs = dbs;
 
 		for (auto& o : update_list)
 		{
@@ -1101,14 +1122,9 @@ namespace flame
 		return ((BPPrivate*)this)->find_package(id);
 	}
 
-	uint BP::package_module_count() const
+	const std::vector<TypeinfoDatabase*> BP::dbs() const
 	{
-		return ((BPPrivate*)this)->package_modules.size();
-	}
-
-	BP::Module* BP::package_module(uint idx) const
-	{
-		return ((BPPrivate*)this)->package_modules[idx];
+		return ((BPPrivate*)this)->dbs;
 	}
 
 	uint BP::node_count() const
@@ -1393,10 +1409,6 @@ namespace flame
 				i->pos = i_d.pos;
 		}
 
-		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& m : bp->modules)
-			dbs.push_back(m->db);
-
 		if (!no_compile)
 		{
 			auto templatecpp_path = ppath / L"template.cpp";
@@ -1431,7 +1443,7 @@ namespace flame
 						all_templates.push_back(n.type);
 
 						templatecpp << "\tBP_";
-						if (find_enum(dbs, H(std::string(n.type.begin() + pos_t + 1, n.type.end() - 1).c_str())))
+						if (find_enum(bp->dbs, H(std::string(n.type.begin() + pos_t + 1, n.type.end() - 1).c_str())))
 							templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t) + "<int>";
 						else
 							templatecpp << tn_a2c(n.type);
@@ -1505,8 +1517,10 @@ namespace flame
 			m->filename = self_module_filename;
 			m->absolute_filename = self_module_filename;
 			m->module = self_module;
-			m->db = TypeinfoDatabase::load(dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
+			m->db = TypeinfoDatabase::load(bp->dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
 			bp->self_module.reset(m);
+
+			bp->collect_dbs();
 		}
 
 		for (auto& n_d : node_descs)
@@ -1521,7 +1535,7 @@ namespace flame
 					auto v = input->vi;
 					auto type = v->type();
 					if (v->default_value())
-						unserialize_value(dbs, type->tag(), type->hash(), d_d.value, input->raw_data);
+						unserialize_value(bp->dbs, type->tag(), type->hash(), d_d.value, input->raw_data);
 				}
 			}
 		}
@@ -1582,12 +1596,6 @@ namespace flame
 			}
 		}
 
-		std::vector< TypeinfoDatabase*> dbs;
-		for (auto& m : bp->modules)
-			dbs.push_back(m->db);
-		if (bp->self_module)
-			dbs.push_back(bp->self_module->db);
-
 		std::vector<Module*> skipped_modules;
 		for (auto& m : bp->modules)
 		{
@@ -1631,7 +1639,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(dbs, type->tag(), type->hash(), input->raw_data, 2);
+					auto value = serialize_value(bp->dbs, type->tag(), type->hash(), input->raw_data, 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}

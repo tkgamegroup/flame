@@ -93,10 +93,8 @@ int main(int argc, char** args)
 	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
 	app.font_atlas1 = FontAtlas::create(app.d, FontDrawPixel, { font_msyh, font_awesome });
 	app.font_atlas2 = FontAtlas::create(app.d, FontDrawSdf, { font_msyh });
-	auto font_atlas_view1 = Imageview::create(app.font_atlas1->image(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
-	auto font_atlas_view2 = Imageview::create(app.font_atlas2->image());
-	app.font_atlas1->index = app.canvas->set_image(-1, font_atlas_view1);
-	app.font_atlas2->index = app.canvas->set_image(-1, font_atlas_view2);
+	app.font_atlas1->index = app.canvas->set_image(-1, app.font_atlas1->imageview());
+	app.font_atlas2->index = app.canvas->set_image(-1, app.font_atlas2->imageview());
 
 	looper().loop([](void* c) {
 		auto app = *(App**)c;

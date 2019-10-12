@@ -181,7 +181,6 @@ struct cBPEditor : Component
 	std::wstring filename;
 	std::wstring filepath;
 	BP* bp;
-	std::vector<TypeinfoDatabase*> dbs;
 	bool locked;
 
 	Entity* e_add_node_menu;
@@ -244,20 +243,12 @@ struct cBPEditor : Component
 			e_add_node_menu->child(i)->visible = true;
 	}
 
-	void refresh_dbs_and_add_node_menu()
+	void refresh_add_node_menu()
 	{
-		dbs.clear();
-		for (auto i = 0; i < bp->module_count(); i++)
-			dbs.push_back(bp->module(i)->db());
-		if (bp->self_module())
-			dbs.push_back(bp->self_module()->db());
-		for (auto i = 0; i < bp->package_module_count(); i++)
-			dbs.push_back(bp->package_module(i)->db());
-
 		e_add_node_menu->remove_all_children();
 
 		std::vector<UdtInfo*> all_udts;
-		for (auto db : dbs)
+		for (auto db : bp->dbs())
 		{
 			auto udts = db->get_udts();
 			for (auto i = 0; i < udts.p->size(); i++)
@@ -405,7 +396,7 @@ struct cBPEditor : Component
 			bp->find_input("*.make_cmd.cbs")->link_to(n_cbs->find_output("out"));
 		}
 
-		refresh_dbs_and_add_node_menu();
+		refresh_add_node_menu();
 
 		e_base->remove_all_children();
 
@@ -457,7 +448,7 @@ struct cBPEditor : Component
 			e->parent()->remove_child(e);
 
 			bp->remove_module(capture.m);
-			capture.e->refresh_dbs_and_add_node_menu();
+			capture.e->refresh_add_node_menu();
 		}, new_mail(&capture));
 	}
 
@@ -475,7 +466,7 @@ struct cBPEditor : Component
 			auto e = (Entity*)capture.p->user_data;
 			e->parent()->remove_child(e);
 			capture.e->bp->remove_package(capture.p);
-			capture.e->refresh_dbs_and_add_node_menu();
+			capture.e->refresh_add_node_menu();
 		}, new_mail(&capture));
 	}
 
@@ -1699,7 +1690,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 					case TypeTagAttributeES:
 					{
-						auto info = find_enum(dbs, type->hash());
+						auto info = find_enum(bp->dbs(), type->hash());
 						create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.5f, e_data);
 
 						auto c_tracker = new_component<cEnumSingleDataTracker>();
@@ -1725,7 +1716,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						auto v = *(int*)input->data();
 
-						auto info = find_enum(dbs, type->hash());
+						auto info = find_enum(bp->dbs(), type->hash());
 
 						auto c_tracker = new_component<cEnumMultiDataTracker>();
 						c_tracker->data = input->data();
@@ -2044,7 +2035,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 								{
 									m->pos = editor->add_pos;
 									editor->create_module_entity(m);
-									editor->refresh_dbs_and_add_node_menu();
+									editor->refresh_add_node_menu();
 								}
 							}
 						}, new_mail_p(editor));
@@ -2078,7 +2069,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 								{
 									p->pos = editor->add_pos;
 									editor->create_package_entity(p);
-									editor->refresh_dbs_and_add_node_menu();
+									editor->refresh_add_node_menu();
 								}
 							}
 						}, new_mail_p(editor));
@@ -2274,7 +2265,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto editor = *(cBPEditor**)c;
 		auto& filename = editor->filename;
 		auto bp = editor->bp;
-		auto& dbs = editor->dbs;
+		auto& dbs = editor->bp->dbs();
 		auto tokens = string_split(cmd);
 
 		if (editor->locked)

@@ -7,14 +7,42 @@
 		<package filename="canvas_make_cmd" id="canvas" pos="416.50;110.50" />
 	</packages>
 	<nodes>
-		<node type="Rect" id="rect1" pos="18.50;42.50">
+		<node type="graphics::Font" id="font" pos="-286.50;103.50">
 			<datas>
-				<data name="size" value="100.00;100.00" />
-				<data name="color" value="255;0;0;255" />
+				<data name="filename" value="c:/windows/fonts/msyh.ttc" />
+				<data name="pixel_height" value="32" />
+			</datas>
+		</node>
+		<node type="graphics::FontAtlas" id="font_atlas" pos="-24.50;153.50">
+			<datas>
+				<data name="draw_type" value="FontDrawSdf" />
+			</datas>
+		</node>
+		<node type="Array(2+void*)" id="cmds" pos="303.50;300.50" />
+		<node type="TextSdf" id="text1" pos="58.50;502.50">
+			<datas>
+				<data name="pos" value="100.00;100.00" />
+				<data name="scale" value="1.00" />
+				<data name="color" value="255;255;255;255" />
+				<data name="text" value="f" />
+			</datas>
+		</node>
+		<node type="TextSdf" id="text2" pos="58.50;502.50">
+			<datas>
+				<data name="pos" value="200.00;100.00" />
+				<data name="scale" value="1.00" />
+				<data name="color" value="255;255;255;255" />
+				<data name="text" value="l" />
 			</datas>
 		</node>
 	</nodes>
 	<links>
-		<link out="rect1.out" in="canvas.make_cmd.content" />
+		<link out="font_atlas.out" in="canvas.make_cmd.font_atlases" />
+		<link out="cmds.v" in="canvas.make_cmd.content" />
+		<link out="font.out" in="font_atlas.fonts" />
+		<link out="text1.out" in="cmds.1" />
+		<link out="text2.out" in="cmds.2" />
+		<link out="font_atlas.out" in="text1.font_atals" />
+		<link out="font_atlas.out" in="text2.font_atals" />
 	</links>
 </BP>

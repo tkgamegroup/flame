@@ -1,4 +1,5 @@
 #include <flame/foundation/bitmap.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 
@@ -74,6 +75,38 @@ namespace flame
 			delete (FontPrivate*)f;
 		}
 
+		struct Font$
+		{
+			AttributeV<std::wstring> filename$i;
+			AttributeV<uint> pixel_height$i;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS Font$()
+			{
+			}
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (filename$i.frame > out$o.frame || pixel_height$i.frame > out$o.frame)
+				{
+					if (out$o.v)
+						Font::destroy((Font*)out$o.v);
+					if (std::filesystem::exists(filename$i.v))
+						out$o.v = Font::create(filename$i.v, pixel_height$i.v);
+					else
+						printf("cannot create font\n");
+					out$o.frame = max(filename$i.frame, pixel_height$i.frame);
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~Font$()
+			{
+				if (out$o.v)
+					Font::destroy((Font*)out$o.v);
+			}
+		};
+
 		struct FontAtlasPrivate : FontAtlas
 		{
 			Device* d;
@@ -89,11 +122,14 @@ namespace flame
 			uint grid_curr_y;
 
 			Image* image;
+			Imageview* imageview;
 
-			FontAtlasPrivate(Device* d, FontDrawType _draw_type, const std::vector<Font*>& fonts) :
-				d(d),
-				fonts(fonts)
+			FontAtlasPrivate(Device* d, FontDrawType$ _draw_type, const std::vector<void*>& _fonts) :
+				d(d)
 			{
+				for (auto f : _fonts)
+					fonts.push_back((Font*)f);
+
 				draw_type = _draw_type;
 				pixel_height = fonts[0]->pixel_height;
 
@@ -101,6 +137,10 @@ namespace flame
 
 				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
 				image->init(Vec4c(0, 0, 0, 255));
+				if (draw_type == FontDrawPixel)
+					imageview = Imageview::create(image, Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
+				else
+					imageview = Imageview::create(image);
 
 				max_width = 0;
 				for (auto f : fonts)
@@ -118,6 +158,7 @@ namespace flame
 
 			~FontAtlasPrivate()
 			{
+				Imageview::destroy(imageview);
 				Image::destroy(image);
 			}
 
@@ -347,7 +388,7 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, FontDrawType draw_type, const std::vector<Font*>& fonts)
+		FontAtlas* FontAtlas::create(Device* d, FontDrawType$ draw_type, const std::vector<void*>& fonts)
 		{
 			return new FontAtlasPrivate(d, draw_type, fonts);
 		}
@@ -376,6 +417,41 @@ namespace flame
 		{
 			return ((FontAtlasPrivate*)this)->image;
 		}
+
+		Imageview* FontAtlas::imageview() const
+		{
+			return ((FontAtlasPrivate*)this)->imageview;
+		}
+
+		struct FontAtlas$
+		{
+			AttributeE<FontDrawType$> draw_type$i;
+			AttributeP<std::vector<void*>> fonts$i;
+
+			AttributeP<void> out$o;
+
+			FLAME_GRAPHICS_EXPORTS void update$()
+			{
+				if (draw_type$i.frame > out$o.frame || fonts$i.frame > out$o.frame)
+				{
+					if (out$o.v)
+						FontAtlas::destroy((FontAtlas*)out$o.v);
+					auto d = (Device*)bp_env().graphics_device;
+					auto fonts = get_attribute_vec(fonts$i);
+					if (d && !fonts.empty())
+						out$o.v = FontAtlas::create(d, draw_type$i.v, fonts);
+					else
+						printf("cannot create fontatlas\n");
+					out$o.frame = max(draw_type$i.frame, fonts$i.frame);
+				}
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~FontAtlas$()
+			{
+				if (out$o.v)
+					FontAtlas::destroy((FontAtlas*)out$o.v);
+			}
+		};
 	}
 }
 
