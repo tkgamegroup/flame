@@ -58,8 +58,14 @@ namespace flame
 		AttributeV<Vec2f> pos$i;
 		AttributeV<Vec2f> size$i;
 		AttributeV<Vec4c> color$i;
+		AttributeV<float> alpha$i;
 
 		AttributeV<Rect> out$o;
+
+		__declspec(dllexport) Rect$()
+		{
+			alpha$i.v = 1.f;
+		}
 
 		__declspec(dllexport) void update$()
 		{
@@ -68,9 +74,9 @@ namespace flame
 				out$o.v.pos = pos$i.v;
 			if (size$i.frame > out$o.frame)
 				out$o.v.size = size$i.v;
-			if (color$i.frame > out$o.frame)
-				out$o.v.color = color$i.v;
-			out$o.frame = maxN(pos$i.frame, size$i.frame, color$i.frame);
+			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
+				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
+			out$o.frame = maxN(pos$i.frame, size$i.frame, color$i.frame, alpha$i.frame);
 		}
 	};
 
@@ -89,6 +95,7 @@ namespace flame
 		AttributeV<Vec2f> pos$i;
 		AttributeV<float> scale$i;
 		AttributeV<Vec4c> color$i;
+		AttributeV<float> alpha$i;
 		AttributeV<std::wstring> text$i;
 
 		AttributeV<TextSdf> out$o;
@@ -96,6 +103,7 @@ namespace flame
 		__declspec(dllexport) TextSdf$()
 		{
 			scale$i.v = 1.f;
+			alpha$i.v = 1.f;
 		}
 
 		__declspec(dllexport) void update$()
@@ -107,15 +115,15 @@ namespace flame
 				out$o.v.pos = pos$i.v;
 			if (scale$i.frame > out$o.frame)
 				out$o.v.scale = scale$i.v;
-			if (color$i.frame > out$o.frame)
-				out$o.v.color = color$i.v;
+			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
+				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
 			if (text$i.frame > out$o.frame)
 			{
 				out$o.v.text.resize(text$i.v.size());
 				for (auto i = 0; i < text$i.v.size(); i++)
 					out$o.v.text[i] = text$i.v[i];
 			}
-			out$o.frame = maxN(font_atals$i.frame, pos$i.frame, scale$i.frame, color$i.frame, text$i.frame);
+			out$o.frame = maxN(font_atals$i.frame, pos$i.frame, scale$i.frame, color$i.frame, alpha$i.frame, text$i.frame);
 		}
 	};
 
