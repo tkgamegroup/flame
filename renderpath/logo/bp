@@ -35,6 +35,7 @@
 				<data name="text" value="l" />
 			</datas>
 		</node>
+		<node type="MakeVec2f" id="pos" pos="-365.50;374.50" />
 	</nodes>
 	<links>
 		<link out="font_atlas.out" in="canvas.make_cmd.font_atlases" />

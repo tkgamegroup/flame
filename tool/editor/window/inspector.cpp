@@ -106,7 +106,7 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
 	((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 		auto& capture = *(Capture*)c;
-		*(T*)((char*)capture.d->dummy + capture.v->offset()) = text[0] ? sto<T>(text) : 0;
+		*(T*)((char*)capture.d->dummy + capture.v->offset()) = sto_s<T>(text);
 		capture.d->unserialize(capture.v->offset());
 		capture.drag_text->set_text(text);
 	}, new_mail(&capture));
@@ -136,7 +136,7 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
 		((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
-			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = text[0] ? sto<T>(text) : 0;
+			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = sto_s<T>(text);
 			capture.d->unserialize(capture.v->offset());
 			capture.drag_text->set_text(text);
 		}, new_mail(&capture));

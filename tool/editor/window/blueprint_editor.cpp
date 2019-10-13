@@ -52,7 +52,7 @@ void create_edit(Entity* parent, BP::Slot* input)
 		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
 		((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
-			auto data = text[0] ? sto<T>(text) : 0;
+			auto data = sto_s<T>(text);
 			capture.input->set_data(&data);
 			capture.drag_text->set_text(text);
 		}, new_mail(&capture));
@@ -84,7 +84,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			auto data = *(Vec<N, T>*)capture.input->data();
-			data[capture.i] = text[0] ? sto<T>(text) : 0;
+			data[capture.i] = sto_s<T>(text);
 			capture.input->set_data(&data);
 			capture.drag_text->set_text(text);
 		}, new_mail(&capture));

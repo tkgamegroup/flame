@@ -406,7 +406,9 @@ namespace flame
 				}
 				else
 					memcpy(input->data(), out->data(), iv->size() - sizeof(AttributeBase));
-				ia->frame = ((AttributeBase*)out->raw_data)->frame;
+				auto new_frame = ((AttributeBase*)out->raw_data)->frame;
+				if (new_frame > ia->frame)
+					ia->frame = new_frame;
 			}
 		}
 
@@ -1724,20 +1726,54 @@ namespace flame
 		return _bp_env;
 	}
 
+	struct Add$
+	{
+		AttributeV<float> a$i;
+		AttributeV<float> b$i;
+
+		AttributeV<float> out$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
+			{
+				out$o.v = a$i.v + b$i.v;
+				out$o.frame = max(a$i.frame, b$i.frame);
+			}
+		}
+	};
+
+	struct Multiple$
+	{
+		AttributeV<float> a$i;
+		AttributeV<float> b$i;
+
+		AttributeV<float> out$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
+			{
+				out$o.v = a$i.v * b$i.v;
+				out$o.frame = max(a$i.frame, b$i.frame);
+			}
+		}
+	};
+
 	struct MakeVec2f$
 	{
 		AttributeV<float> x$i;
 		AttributeV<float> y$i;
 
-		AttributeV<Vec2f> out$i;
+		AttributeV<Vec2f> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (x$i.frame > out$i.frame)
-				out$i.v.x() = x$i.v;
-			if (y$i.frame > out$i.frame)
-				out$i.v.x() = y$i.v;
-			out$i.frame = max(x$i.frame, y$i.frame);
+			if (x$i.frame > out$o.frame)
+				out$o.v.x() = x$i.v;
+			if (y$i.frame > out$o.frame)
+				out$o.v.x() = y$i.v;
+			out$o.frame = max(x$i.frame, y$i.frame);
 		}
 	};
 
@@ -1753,6 +1789,24 @@ namespace flame
 			auto frame = looper().frame;
 			delta$o.frame = frame;
 			total$o.frame = frame;
+		}
+	};
+
+	struct Interpolation$
+	{
+		AttributeV<float> a$i;
+		AttributeV<float> b$i;
+		AttributeV<float> t$i;
+
+		AttributeV<float> out$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
+			{
+				out$o.v = clamp(a$i.v + (b$i.v - a$i.v) * t$i.v, a$i.v, b$i.v);
+				out$o.frame = maxN(a$i.frame, b$i.frame, t$i.frame);
+			}
 		}
 	};
 }

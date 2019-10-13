@@ -55,7 +55,7 @@ int main(int argc, char** args)
 		return 0;
 	}
 
-	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
+	app.w = Window::create("Graphics Test", Vec2u(800, 600), WindowFrame);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
