@@ -4,7 +4,7 @@
 		<module filename="flame_foundation.dll" pos="-291.00;-91.00" />
 	</modules>
 	<packages>
-		<package filename="canvas_make_cmd" id="canvas" pos="416.50;110.50" />
+		<package filename="canvas_make_cmd" id="canvas" pos="1124.60;806.93" />
 	</packages>
 	<nodes>
 		<node type="graphics::Font" id="font" pos="-555.50;98.50">
@@ -18,32 +18,151 @@
 				<data name="draw_type" value="FontDrawSdf" />
 			</datas>
 		</node>
-		<node type="Array(2+void*)" id="cmds" pos="303.50;300.50" />
 		<node type="TextSdf" id="text1" pos="-28.50;284.50">
 			<datas>
-				<data name="pos" value="111.45;168.50" />
-				<data name="scale" value="4.55" />
+				<data name="scale" value="4.50" />
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="f" />
 			</datas>
 		</node>
-		<node type="TextSdf" id="text2" pos="-33.50;669.50">
+		<node type="TextSdf" id="text2" pos="-27.50;670.50">
 			<datas>
-				<data name="pos" value="182.95;168.50" />
-				<data name="scale" value="4.55" />
+				<data name="scale" value="4.50" />
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="l" />
 			</datas>
 		</node>
-		<node type="MakeVec2f" id="pos" pos="-365.50;374.50" />
+		<node type="MakeVec2f" id="pos1" pos="-305.50;394.50">
+			<datas>
+				<data name="y" value="160.00" />
+			</datas>
+		</node>
+		<node type="Time" id="time" pos="-974.50;360.50" />
+		<node type="Interpolation" id="path1" pos="-541.50;324.50">
+			<datas>
+				<data name="a" value="900.00" />
+				<data name="b" value="200.00" />
+			</datas>
+		</node>
+		<node type="MakeVec2f" id="pos2" pos="-295.50;613.50">
+			<datas>
+				<data name="y" value="160.00" />
+			</datas>
+		</node>
+		<node type="Interpolation" id="path2" pos="-531.50;579.50">
+			<datas>
+				<data name="a" value="950.00" />
+				<data name="b" value="250.00" />
+			</datas>
+		</node>
+		<node type="Add" id="delay1" pos="-755.50;520.50">
+			<datas>
+				<data name="b" value="-0.40" />
+			</datas>
+		</node>
+		<node type="Array(5+void*)" id="node_0" pos="609.21;930.54" />
+		<node type="Add" id="delay2" pos="-754.50;728.50">
+			<datas>
+				<data name="b" value="-0.80" />
+			</datas>
+		</node>
+		<node type="Add" id="dealy3" pos="-766.50;947.50">
+			<datas>
+				<data name="b" value="-1.20" />
+			</datas>
+		</node>
+		<node type="Add" id="delay4" pos="-769.50;1160.50">
+			<datas>
+				<data name="b" value="-1.60" />
+			</datas>
+		</node>
+		<node type="Interpolation" id="path3" pos="-523.50;825.50">
+			<datas>
+				<data name="a" value="990.00" />
+				<data name="b" value="290.00" />
+			</datas>
+		</node>
+		<node type="Interpolation" id="path4" pos="-531.50;1053.50">
+			<datas>
+				<data name="a" value="1050.00" />
+				<data name="b" value="350.00" />
+			</datas>
+		</node>
+		<node type="Interpolation" id="path5" pos="-543.50;1293.50">
+			<datas>
+				<data name="a" value="1150.00" />
+				<data name="b" value="450.00" />
+			</datas>
+		</node>
+		<node type="MakeVec2f" id="pos3" pos="-287.50;917.50">
+			<datas>
+				<data name="y" value="160.00" />
+			</datas>
+		</node>
+		<node type="MakeVec2f" id="pos4" pos="-310.50;1188.50">
+			<datas>
+				<data name="y" value="160.00" />
+			</datas>
+		</node>
+		<node type="MakeVec2f" id="pos5" pos="-347.50;1613.50">
+			<datas>
+				<data name="y" value="160.00" />
+			</datas>
+		</node>
+		<node type="TextSdf" id="text3" pos="-30.50;1057.50">
+			<datas>
+				<data name="scale" value="4.50" />
+				<data name="color" value="255;255;255;255" />
+				<data name="text" value="a" />
+			</datas>
+		</node>
+		<node type="TextSdf" id="text4" pos="-40.50;1433.50">
+			<datas>
+				<data name="scale" value="4.50" />
+				<data name="color" value="255;255;255;255" />
+				<data name="text" value="m" />
+			</datas>
+		</node>
+		<node type="TextSdf" id="text5" pos="-57.50;1830.50">
+			<datas>
+				<data name="scale" value="4.50" />
+				<data name="color" value="255;255;255;255" />
+				<data name="text" value="e" />
+			</datas>
+		</node>
 	</nodes>
 	<links>
 		<link out="font_atlas.out" in="canvas.make_cmd.font_atlases" />
-		<link out="cmds.v" in="canvas.make_cmd.content" />
+		<link out="node_0.v" in="canvas.make_cmd.content" />
 		<link out="font.out" in="font_atlas.fonts" />
-		<link out="text1.out" in="cmds.1" />
-		<link out="text2.out" in="cmds.2" />
 		<link out="font_atlas.out" in="text1.font_atals" />
+		<link out="pos1.out" in="text1.pos" />
 		<link out="font_atlas.out" in="text2.font_atals" />
+		<link out="pos2.out" in="text2.pos" />
+		<link out="path1.out" in="pos1.x" />
+		<link out="time.total" in="path1.t" />
+		<link out="path2.out" in="pos2.x" />
+		<link out="delay1.out" in="path2.t" />
+		<link out="time.total" in="delay1.a" />
+		<link out="text1.out" in="node_0.1" />
+		<link out="text2.out" in="node_0.2" />
+		<link out="text3.out" in="node_0.3" />
+		<link out="text4.out" in="node_0.4" />
+		<link out="text5.out" in="node_0.5" />
+		<link out="time.total" in="delay2.a" />
+		<link out="time.total" in="dealy3.a" />
+		<link out="time.total" in="delay4.a" />
+		<link out="delay2.out" in="path3.t" />
+		<link out="dealy3.out" in="path4.t" />
+		<link out="delay4.out" in="path5.t" />
+		<link out="path3.out" in="pos3.x" />
+		<link out="path4.out" in="pos4.x" />
+		<link out="path5.out" in="pos5.x" />
+		<link out="font_atlas.out" in="text3.font_atals" />
+		<link out="pos3.out" in="text3.pos" />
+		<link out="font_atlas.out" in="text4.font_atals" />
+		<link out="pos4.out" in="text4.pos" />
+		<link out="font_atlas.out" in="text5.font_atals" />
+		<link out="pos5.out" in="text5.pos" />
 	</links>
 </BP>

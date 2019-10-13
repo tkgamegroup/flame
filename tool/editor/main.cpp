@@ -319,9 +319,13 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 
 void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
 {
-	auto t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
+	auto t = get_topmost(e);
+	if (!t)
 	{
-		t->add_component(cLayout::create(LayoutFree));
+		t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
+		{
+			t->add_component(cLayout::create(LayoutFree));
+		}
 	}
 
 	auto e_dialog = Entity::create();

@@ -354,25 +354,37 @@ struct cBPEditor : Component
 								editor->add_tip(L"Cannot Add New Template Node While Running");
 							else
 							{
-								auto file = SerializableNode::create_from_xml_file(editor->filename);
-								auto n_nodes = file->find_node("nodes");
-								auto n_node = n_nodes->new_node("node");
-								n_node->new_attr("type", name);
+								struct Capture
 								{
-									std::string id;
-									for (auto i = 0; i < bp->node_count() + 1; i++)
-									{
-										id = "node_" + std::to_string(i);
-										if (!bp->find_node(id))
-											break;
-									}
-									n_node->new_attr("id", id);
-								}
-								n_node->new_attr("pos", to_string(editor->add_pos));
-								SerializableNode::save_to_xml_file(file, editor->filename);
-								SerializableNode::destroy(file);
+									cBPEditor* e;
+									std::string n;
+								}capture;
+								capture.e = editor;
+								capture.n = name;
+								popup_confirm_dialog(editor->entity, L"Save BP first?", [](void* c, bool ok) {
+									auto& capture = *(Capture*)c;
+									auto bp = capture.e->bp;
 
-								editor->load(editor->filename, false);
+									auto file = SerializableNode::create_from_xml_file(capture.e->filename);
+									auto n_nodes = file->find_node("nodes");
+									auto n_node = n_nodes->new_node("node");
+									n_node->new_attr("type", capture.n);
+									{
+										std::string id;
+										for (auto i = 0; i < bp->node_count() + 1; i++)
+										{
+											id = "node_" + std::to_string(i);
+											if (!bp->find_node(id))
+												break;
+										}
+										n_node->new_attr("id", id);
+									}
+									n_node->new_attr("pos", to_string(capture.e->add_pos));
+									SerializableNode::save_to_xml_file(file, capture.e->filename);
+									SerializableNode::destroy(file);
+
+									capture.e->load(capture.e->filename, false);
+								}, new_mail(&capture));
 							}
 						}
 					}, new_mail_p(editor));
@@ -422,6 +434,11 @@ struct cBPEditor : Component
 		selected.n = nullptr;
 		dragging_slot = nullptr;
 		running = false;
+	}
+
+	void set_add_pos_center()
+	{
+		add_pos = ((cElement*)e_base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)e_base->find_component(cH("Element")))->pos;
 	}
 
 	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
@@ -489,6 +506,27 @@ struct cBPEditor : Component
 			e->parent()->remove_child(e);
 			n->parent()->remove_node(n);
 		}, new_mail_p(n));
+	}
+
+	void duplicate_selected()
+	{
+		switch (sel_type)
+		{
+		case SelNode:
+		{
+			auto n = bp->add_node(H(selected.n->udt()->name().c_str()), "");
+			n->pos = add_pos;
+			for (auto i = 0; i < n->input_count(); i++)
+			{
+				auto src = selected.n->input(i);
+				auto dst = n->input(i);
+				dst->set_data(src->data());
+				dst->link_to(src->link(0));
+			}
+			create_node_entity(n);
+		}
+			break;
+		}
 	}
 
 	void delete_selected()
@@ -2117,12 +2155,27 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			if (capture.b->can_open(action, key))
 			{
 				auto base = capture.e->e_base;
-				capture.e->add_pos = ((cElement*)base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)base->find_component(cH("Element")))->pos;
+				capture.e->set_add_pos_center();
 			}
 		}, new_mail(&capture));
 	}
 	{
 		auto e_menu = create_standard_menu();
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
+			e_menu->add_child(e_item);
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+					editor->set_add_pos_center();
+					editor->duplicate_selected();
+				}
+			}, new_mail_p(c_editor));
+		}
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
 			e_menu->add_child(e_item);

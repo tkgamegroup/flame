@@ -1772,7 +1772,7 @@ namespace flame
 			if (x$i.frame > out$o.frame)
 				out$o.v.x() = x$i.v;
 			if (y$i.frame > out$o.frame)
-				out$o.v.x() = y$i.v;
+				out$o.v.y() = y$i.v;
 			out$o.frame = max(x$i.frame, y$i.frame);
 		}
 	};
@@ -1804,7 +1804,11 @@ namespace flame
 		{
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
 			{
-				out$o.v = clamp(a$i.v + (b$i.v - a$i.v) * t$i.v, a$i.v, b$i.v);
+				auto s = a$i.v;
+				auto b = b$i.v;
+				if (s > b)
+					std::swap(s, b);
+				out$o.v = clamp(a$i.v + (b$i.v - a$i.v) * t$i.v, s, b);
 				out$o.frame = maxN(a$i.frame, b$i.frame, t$i.frame);
 			}
 		}
