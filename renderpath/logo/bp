@@ -36,7 +36,7 @@
 			</datas>
 		</node>
 		<node type="Time" id="time" pos="-940.50;293.50" />
-		<node type="Interpolation" id="path1" pos="-533.50;280.50">
+		<node type="LinearInterpolation1d" id="path1" pos="-533.50;280.50">
 			<datas>
 				<data name="a" value="900.00" />
 				<data name="b" value="237.00" />
@@ -47,7 +47,7 @@
 				<data name="y" value="190.00" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="path2" pos="-542.50;882.50">
+		<node type="LinearInterpolation1d" id="path2" pos="-542.50;882.50">
 			<datas>
 				<data name="a" value="950.00" />
 				<data name="b" value="287.00" />
@@ -74,19 +74,19 @@
 				<data name="b" value="-1.60" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="path3" pos="-560.50;1524.50">
+		<node type="LinearInterpolation1d" id="path3" pos="-560.50;1524.50">
 			<datas>
 				<data name="a" value="990.00" />
 				<data name="b" value="327.00" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="path4" pos="-629.50;2168.50">
+		<node type="LinearInterpolation1d" id="path4" pos="-629.50;2168.50">
 			<datas>
 				<data name="a" value="1050.00" />
 				<data name="b" value="387.00" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="path5" pos="-568.50;2853.50">
+		<node type="LinearInterpolation1d" id="path5" pos="-568.50;2853.50">
 			<datas>
 				<data name="a" value="1150.00" />
 				<data name="b" value="487.00" />
@@ -125,57 +125,57 @@
 				<data name="text" value="e" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="scale1" pos="-317.50;462.50">
+		<node type="LinearInterpolation1d" id="scale1" pos="-317.50;462.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="scale2" pos="-321.50;1074.50">
+		<node type="LinearInterpolation1d" id="scale2" pos="-321.50;1074.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="scale3" pos="-332.50;1711.50">
+		<node type="LinearInterpolation1d" id="scale3" pos="-332.50;1711.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="scale4" pos="-334.50;2355.50">
+		<node type="LinearInterpolation1d" id="scale4" pos="-334.50;2355.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="scale5" pos="-302.50;3039.50">
+		<node type="LinearInterpolation1d" id="scale5" pos="-302.50;3039.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="alpha1" pos="-322.50;678.50">
+		<node type="LinearInterpolation1d" id="alpha1" pos="-322.50;678.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="alpha2" pos="-319.50;1301.50">
+		<node type="LinearInterpolation1d" id="alpha2" pos="-319.50;1301.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="alpha3" pos="-332.50;1940.50">
+		<node type="LinearInterpolation1d" id="alpha3" pos="-332.50;1940.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="alpha4" pos="-334.50;2605.50">
+		<node type="LinearInterpolation1d" id="alpha4" pos="-334.50;2605.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="Interpolation" id="alpha5" pos="-313.50;3264.50">
+		<node type="LinearInterpolation1d" id="alpha5" pos="-313.50;3264.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>

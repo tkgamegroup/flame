@@ -1792,7 +1792,7 @@ namespace flame
 		}
 	};
 
-	struct Interpolation$
+	struct LinearInterpolation1d$
 	{
 		AttributeV<float> a$i;
 		AttributeV<float> b$i;
@@ -1804,11 +1804,35 @@ namespace flame
 		{
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
 			{
-				auto s = a$i.v;
-				auto b = b$i.v;
-				if (s > b)
-					std::swap(s, b);
-				out$o.v = clamp(a$i.v + (b$i.v - a$i.v) * t$i.v, s, b);
+				if (t$i.v <= 0.f)
+					out$o.v = a$i.v;
+				else if (t$i.v >= 1.f)
+					out$o.v = b$i.v;
+				else
+					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
+				out$o.frame = maxN(a$i.frame, b$i.frame, t$i.frame);
+			}
+		}
+	};
+
+	struct LinearInterpolation2d$
+	{
+		AttributeV<Vec2f> a$i;
+		AttributeV<Vec2f> b$i;
+		AttributeV<float> t$i;
+
+		AttributeV<Vec2f> out$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
+			{
+				if (t$i.v <= 0.f)
+					out$o.v = a$i.v;
+				else if (t$i.v >= 1.f)
+					out$o.v = b$i.v;
+				else
+					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
 				out$o.frame = maxN(a$i.frame, b$i.frame, t$i.frame);
 			}
 		}
