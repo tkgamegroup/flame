@@ -61,6 +61,25 @@ namespace flame
 		return c;
 	}
 
+	FLAME_UNIVERSE_EXPORTS void* add_listener_plain(void* hub, void(*pf)(void *c), const Mail<>& capture);
+	FLAME_UNIVERSE_EXPORTS void remove_listener_plain(void* hub, void* c);
+
+	template<class F>
+	struct Listeners
+	{
+		void* hub;
+
+		void* add(F* pf, const Mail<>& capture)
+		{
+			return add_listener_plain(hub, (void(*)(void* c))pf, capture);
+		}
+
+		void remove(void* c)
+		{
+			remove_listener_plain(hub, c);
+		}
+	};
+
 	FLAME_UNIVERSE_EXPORTS void universe_serialization_initialize();
 	FLAME_UNIVERSE_EXPORTS void universe_serialization_set_data(const std::string& name, void* data);
 	FLAME_UNIVERSE_EXPORTS void* universe_serialization_get_data(const std::string& name);

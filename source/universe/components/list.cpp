@@ -37,7 +37,7 @@ namespace flame
 		~cListItemPrivate()
 		{
 			if (!entity->dying)
-				event_receiver->remove_mouse_listener(mouse_listener);
+				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
 		void do_style(bool selected)
@@ -84,7 +84,7 @@ namespace flame
 			text_style = (cStyleTextColor*)(entity->find_component(cH("StyleTextColor")));
 			list = (cList*)(entity->parent()->find_component(cH("List")));
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cListItemPrivate**)c;
 
 				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
@@ -151,7 +151,7 @@ namespace flame
 		~cListPrivate()
 		{
 			if (!entity->dying && mouse_listener)
-				event_receiver->remove_mouse_listener(mouse_listener);
+				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
 		void start()
@@ -161,7 +161,7 @@ namespace flame
 
 			if (select_air_when_clicked)
 			{
-				mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cListPrivate**)c;
 
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)

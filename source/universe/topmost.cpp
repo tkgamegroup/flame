@@ -37,7 +37,7 @@ namespace flame
 			c_event_receiver->penetrable = penetrable;
 			if (close_when_clicked)
 			{
-				c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto e = *(Entity**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left && get_topmost(e)->created_frame != looper().frame)
 						destroy_topmost(e);

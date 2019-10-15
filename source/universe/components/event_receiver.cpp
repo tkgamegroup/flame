@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include <flame/universe/components/element.h>
 #include "event_receiver_private.h"
 #include <flame/universe/components/event_dispatcher.h>
@@ -18,6 +19,12 @@ namespace flame
 		state = EventReceiverNormal;
 
 		drag_hash = 0;
+
+		focus_listeners.hub = new ListenerHub;
+		key_listeners.hub = new ListenerHub;
+		mouse_listeners.hub = new ListenerHub;
+		drag_and_drop_listeners.hub = new ListenerHub;
+		state_changed_listeners.hub = new ListenerHub;
 	}
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
@@ -26,6 +33,47 @@ namespace flame
 			event_dispatcher->focusing = nullptr;
 		if (hovering)
 			event_dispatcher->hovering = nullptr;
+
+		delete (ListenerHub*)focus_listeners.hub;
+		delete (ListenerHub*)key_listeners.hub;
+		delete (ListenerHub*)mouse_listeners.hub;
+		delete (ListenerHub*)drag_and_drop_listeners.hub;
+		delete (ListenerHub*)state_changed_listeners.hub;
+	}
+
+	void cEventReceiverPrivate::on_focus(FocusType type)
+	{
+		auto& listeners = ((ListenerHub*)focus_listeners.hub)->listeners;
+		for (auto& l : listeners)
+			((void(*)(void*, FocusType))l->function)(l->capture.p, type);
+	}
+
+	void cEventReceiverPrivate::on_key(KeyState action, uint value)
+	{
+		auto& listeners = ((ListenerHub*)key_listeners.hub)->listeners;
+		for (auto& l : listeners)
+			((void(*)(void*, KeyState action, int value))l->function)(l->capture.p, action, value);
+	}
+
+	void cEventReceiverPrivate::on_mouse(KeyState action, MouseKey key, const Vec2i& value)
+	{
+		auto& listeners = ((ListenerHub*)mouse_listeners.hub)->listeners;
+		for (auto& l : listeners)
+			((void(*)(void*, KeyState action, MouseKey key, const Vec2i & pos))l->function)(l->capture.p, action, key, value);
+	}
+
+	void cEventReceiverPrivate::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
+	{
+		auto& listeners = ((ListenerHub*)drag_and_drop_listeners.hub)->listeners;
+		for (auto& l : listeners)
+			((void(*)(void*, DragAndDrop action, cEventReceiver * er, const Vec2i & pos))l->function)(l->capture.p, action, er, pos);
+	}
+
+	void cEventReceiverPrivate::on_state_changed(EventReceiverState prev_state, EventReceiverState curr_state)
+	{
+		auto& listeners = ((ListenerHub*)state_changed_listeners.hub)->listeners;
+		for (auto& l : listeners)
+			((void(*)(void*, EventReceiverState prev_state, EventReceiverState curr_state))l->function)(l->capture.p, prev_state, curr_state);
 	}
 
 	void cEventReceiverPrivate::start()
@@ -47,151 +95,6 @@ namespace flame
 	void cEventReceiver::set_acceptable_drops(const std::vector<uint>& hashes)
 	{
 		((cEventReceiverPrivate*)this)->acceptable_drops = hashes;
-	}
-
-	void* cEventReceiver::add_focus_listener(void (*listener)(void* c, FocusType type), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, FocusType type)>;
-		c->function = listener;
-		c->capture = capture;
-		((cEventReceiverPrivate*)this)->focus_listeners.emplace_back(c);
-		return c;
-	}
-
-	void* cEventReceiver::add_key_listener(void (*listener)(void* c, KeyState action, int value), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, KeyState action, int value)>;
-		c->function = listener;
-		c->capture = capture;
-		((cEventReceiverPrivate*)this)->key_listeners.emplace_back(c);
-		return c;
-	}
-
-	void* cEventReceiver::add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& value), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, KeyState action, MouseKey key, const Vec2i& value)>;
-		c->function = listener;
-		c->capture = capture;
-		((cEventReceiverPrivate*)this)->mouse_listeners.emplace_back(c);
-		return c;
-	}
-
-	void* cEventReceiver::add_drag_and_drop_listener(void (*listener)(void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i& pos)>;
-		c->function = listener;
-		c->capture = capture;
-		((cEventReceiverPrivate*)this)->drag_and_drop_listeners.emplace_back(c);
-		return c;
-	}
-
-	void* cEventReceiver::add_state_changed_listener(void (*listener)(void* c, EventReceiverState prev_state, EventReceiverState curr_state), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, EventReceiverState prev_state, EventReceiverState curr_state)>;
-		c->function = listener;
-		c->capture = capture;
-		((cEventReceiverPrivate*)this)->state_changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cEventReceiver::remove_focus_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->focus_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	void cEventReceiver::remove_key_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->key_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	void cEventReceiver::remove_mouse_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->mouse_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	void cEventReceiver::remove_drag_and_drop_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->drag_and_drop_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	void cEventReceiver::remove_state_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->state_changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	void cEventReceiver::on_focus(FocusType type)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->focus_listeners;
-		for (auto& l : listeners)
-			l->function(l->capture.p, type);
-	}
-
-	void cEventReceiver::on_key(KeyState action, uint value)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->key_listeners;
-		for (auto& l : listeners)
-			l->function(l->capture.p, action, value);
-	}
-
-	void cEventReceiver::on_mouse(KeyState action, MouseKey key, const Vec2i& value)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->mouse_listeners;
-		for (auto& l : listeners)
-			l->function(l->capture.p, action, key, value);
-	}
-
-	void cEventReceiver::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->drag_and_drop_listeners;
-		for (auto& l : listeners)
-			l->function(l->capture.p, action, er, pos);
-	}
-
-	void cEventReceiver::on_state_changed(EventReceiverState prev_state, EventReceiverState curr_state)
-	{
-		auto& listeners = ((cEventReceiverPrivate*)this)->state_changed_listeners;
-		for (auto& l : listeners)
-			l->function(l->capture.p, prev_state, curr_state);
 	}
 
 	void cEventReceiver::start()

@@ -22,7 +22,7 @@ namespace flame
 		~cSplitterPrivate()
 		{
 			if (!entity->dying)
-				event_receiver->remove_mouse_listener(mouse_listener);
+				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
 		void start()
@@ -32,7 +32,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = (*(cSplitterPrivate**)c);
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{

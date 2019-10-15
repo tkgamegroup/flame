@@ -194,7 +194,7 @@ struct cResourceExplorer : Component
 			auto e_upward = create_standard_button(app.font_atlas_pixel, 1.f, Icon_LEVEL_UP);
 			address_bar->add_child(e_upward);
 			((cStyleColor*)e_upward->find_component(cH("StyleColor")))->color_normal.a() = 0;
-			((cEventReceiver*)e_upward->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			((cEventReceiver*)e_upward->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cResourceExplorer**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -226,7 +226,7 @@ struct cResourceExplorer : Component
 					}capture;
 					capture.e = thiz;
 					capture.p = s.wstring();
-					((cEventReceiver*)e_stem->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					((cEventReceiver*)e_stem->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
 						if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							capture.e->navigate(capture.p);
@@ -253,7 +253,7 @@ struct cResourceExplorer : Component
 						}capture;
 						capture.e = thiz;
 						capture.p = p.wstring();
-						((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+						((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 							auto& capture = *(Capture*)c;
 							if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							{
@@ -297,7 +297,7 @@ struct cResourceExplorer : Component
 				}capture;
 				capture.e = thiz;
 				capture.p = p;
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (is_mouse_clicked(action, key, true))
 						capture.e->navigate(capture.p);
@@ -338,7 +338,7 @@ struct cResourceExplorer : Component
 				}capture;
 				capture.e = thiz;
 				capture.p = p;
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Right)
 					{
@@ -503,7 +503,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 				c_explorer->dir_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -519,7 +519,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Prefab");
 				c_explorer->blank_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -540,7 +540,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New BP");
 				c_explorer->blank_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -566,7 +566,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		{
 			auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 			c_explorer->pf_menu->add_child(mi_open);
-			((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto explorer = *(cResourceExplorer**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
@@ -581,7 +581,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 				c_explorer->bp_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -593,7 +593,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
 				c_explorer->bp_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -625,7 +625,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_layout->column = 4;
 		c_explorer->c_list_layout = c_layout;
 
-		((cEventReceiver*)e_list->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		((cEventReceiver*)e_list->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto exploter = *(cResourceExplorer**)c;
 
 			if (is_mouse_down(action, key, true) && key == Mouse_Right)

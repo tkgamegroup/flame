@@ -10,20 +10,10 @@ namespace flame
 {
 	struct cScrollbarPrivate : cScrollbar
 	{
-		void* mouse_listener;
-
 		cScrollbarPrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
-
-			mouse_listener = nullptr;
-		}
-
-		~cScrollbarPrivate()
-		{
-			if (!entity->dying)
-				event_receiver->remove_mouse_listener(mouse_listener);
 		}
 
 		void start()
@@ -73,7 +63,7 @@ namespace flame
 		~cScrollbarThumbPrivate()
 		{
 			if (!entity->dying)
-				event_receiver->remove_mouse_listener(mouse_listener);
+				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
 		void start()
@@ -88,7 +78,7 @@ namespace flame
 			target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
 			assert(target_layout);
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = (*(cScrollbarThumbPrivate**)c);
 				if (thiz->event_receiver->active && is_mouse_move(action, key))
 				{
@@ -225,7 +215,7 @@ namespace flame
 
 			auto c_event_receiver = cEventReceiver::create();
 			c_event_receiver->penetrable = true;
-			c_event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thumb = (*(cScrollbarThumb**)c);
 				if (is_mouse_scroll(action, key))
 					thumb->v -= pos.x() * 20.f;

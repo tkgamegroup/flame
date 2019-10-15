@@ -1,211 +1,201 @@
 #include <flame/foundation/serialize.h>
-#include <flame/universe/entity.h>
+#include "entity_private.h"
 #include <flame/universe/component.h>
+
 
 namespace flame
 {
-
-
-	struct EntityPrivate : Entity
+	EntityPrivate::EntityPrivate() :
+		parent(nullptr)
 	{
-		std::string name;
-		uint name_hash;
-		std::vector<std::unique_ptr<Component>> components;
-		EntityPrivate* parent;
-		std::vector<std::unique_ptr<EntityPrivate>> children;
+		created_frame = looper().frame;
+		dying = false;
 
-		EntityPrivate() :
-			parent(nullptr)
+		visible = true;
+		global_visible = false;
+
+		name_hash = 0;
+	}
+
+	Component* EntityPrivate::find_component(uint type_hash)
+	{
+		for (auto& c : components)
 		{
-			created_frame = looper().frame;
-			dying = false;
-
-			visible = true;
-			global_visible = false;
-
-			name_hash = 0;
+			if (c->type_hash == type_hash)
+				return c.get();
 		}
+		return nullptr;
+	}
 
-		Component* find_component(uint type_hash)
+	Mail<std::vector<Component*>> EntityPrivate::find_components(uint type_hash)
+	{
+		auto ret = new_mail<std::vector<Component*>>();
+		for (auto& c : components)
 		{
-			for (auto& c : components)
+			if (c->type_hash == type_hash)
+				ret.p->push_back(c.get());
+		}
+		return ret;
+	}
+
+	void EntityPrivate::add_component(Component* c)
+	{
+		c->entity = this;
+		components.emplace_back(c);
+	}
+
+	void EntityPrivate::remove_component(Component* c)
+	{
+		for (auto it = components.begin(); it != components.end(); it++)
+		{
+			if (it->get() == c)
 			{
-				if (c->type_hash == type_hash)
-					return c.get();
-			}
-			return nullptr;
-		}
-
-		Mail<std::vector<Component*>> find_components(uint type_hash)
-		{
-			auto ret = new_mail<std::vector<Component*>>();
-			for (auto& c : components)
-			{
-				if (c->type_hash == type_hash)
-					ret.p->push_back(c.get());
-			}
-			return ret;
-		}
-
-		void add_component(Component* c)
-		{
-			c->entity = this;
-			components.emplace_back(c);
-		}
-
-		void remove_component(Component* c)
-		{
-			for (auto it = components.begin(); it != components.end(); it++)
-			{
-				if (it->get() == c)
-				{
-					components.erase(it);
-					return;
-				}
-			}
-		}
-
-		EntityPrivate* find_child(const std::string& name) const
-		{
-			for (auto& e : children)
-			{
-				if (e->name == name)
-					return e.get();
-			}
-			return nullptr;
-		}
-
-		void add_child(EntityPrivate* e, int position)
-		{
-			if (position == -1)
-				position = children.size();
-			children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
-			e->parent = this;
-			for (auto& c : e->components)
-				c->on_entity_added_to_parent();
-		}
-
-		void reposition_child(EntityPrivate* e, int position)
-		{
-			if (position == -1)
-				position = children.size() - 1;
-			assert(position < children.size());
-			if (children[position].get() == e)
+				components.erase(it);
 				return;
-			for (auto& _e : children)
-			{
-				if (_e.get() == e)
-				{
-					std::swap(_e, children[position]);
-					break;
-				}
 			}
 		}
+	}
 
-		void mark_dying()
+	EntityPrivate* EntityPrivate::find_child(const std::string& name) const
+	{
+		for (auto& e : children)
 		{
-			dying = true;
-			for (auto& e : children)
-				e->mark_dying();
+			if (e->name == name)
+				return e.get();
 		}
+		return nullptr;
+	}
 
-		void remove_child(EntityPrivate* e, bool destroy)
+	void EntityPrivate::add_child(EntityPrivate* e, int position)
+	{
+		if (position == -1)
+			position = children.size();
+		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
+		e->parent = this;
+		for (auto& c : e->components)
+			c->on_entity_added_to_parent();
+	}
+
+	void EntityPrivate::reposition_child(EntityPrivate* e, int position)
+	{
+		if (position == -1)
+			position = children.size() - 1;
+		assert(position < children.size());
+		if (children[position].get() == e)
+			return;
+		for (auto& _e : children)
 		{
-			for (auto it = children.begin(); it != children.end(); it++)
+			if (_e.get() == e)
 			{
-				if (it->get() == e)
-				{
-					if (!destroy)
-					{
-						e->parent = nullptr;
-						it->release();
-					}
-					else
-						e->mark_dying();
-					children.erase(it);
-					return;
-				}
+				std::swap(_e, children[position]);
+				break;
 			}
 		}
+	}
 
-		void remove_all_children(bool destroy)
+	void EntityPrivate::mark_dying()
+	{
+		dying = true;
+		for (auto& e : children)
+			e->mark_dying();
+	}
+
+	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
+	{
+		for (auto it = children.begin(); it != children.end(); it++)
 		{
-			for (auto& e : children)
+			if (it->get() == e)
 			{
 				if (!destroy)
 				{
 					e->parent = nullptr;
-					e.release();
+					it->release();
 				}
 				else
 					e->mark_dying();
-			}
-			children.clear();
-		}
-
-		EntityPrivate* copy()
-		{
-			auto ret = new EntityPrivate;
-
-			ret->visible = visible;
-			ret->set_name(name);
-			for (auto& c : components)
-			{
-				auto copy = c->copy();
-				ret->add_component(copy);
-			}
-			for (auto& e : children)
-			{
-				auto copy = e->copy();
-				ret->add_child(copy, -1);
-			}
-
-			return ret;
-		}
-
-		void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
-		{
-			callback(capture.p, this);
-			for (auto& c : children)
-			{
-				if (c->global_visible)
-					c->traverse_forward(callback, capture);
-			}
-		}
-
-		void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
-		{
-			for (auto it = children.rbegin(); it != children.rend(); it++)
-			{
-				auto c = it->get();
-				if (c->global_visible)
-					c->traverse_backward(callback, capture);
-			}
-			callback(capture.p, this);
-		}
-
-		void update()
-		{
-			if (!parent)
-				global_visible = visible;
-			else
-				global_visible = visible && parent->global_visible;
-			if (!global_visible)
+				children.erase(it);
 				return;
-			for (auto& c : components)
-			{
-				if (c->first_update)
-				{
-					c->start();
-					c->first_update = false;
-				}
-				else
-					c->update();
 			}
-			for (auto& e : children)
-				e->update();
 		}
-	};
+	}
+
+	void EntityPrivate::remove_all_children(bool destroy)
+	{
+		for (auto& e : children)
+		{
+			if (!destroy)
+			{
+				e->parent = nullptr;
+				e.release();
+			}
+			else
+				e->mark_dying();
+		}
+		children.clear();
+	}
+
+	EntityPrivate* EntityPrivate::copy()
+	{
+		auto ret = new EntityPrivate;
+
+		ret->visible = visible;
+		ret->set_name(name);
+		for (auto& c : components)
+		{
+			auto copy = c->copy();
+			ret->add_component(copy);
+		}
+		for (auto& e : children)
+		{
+			auto copy = e->copy();
+			ret->add_child(copy, -1);
+		}
+
+		return ret;
+	}
+
+	void EntityPrivate::traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
+	{
+		callback(capture.p, this);
+		for (auto& c : children)
+		{
+			if (c->global_visible)
+				c->traverse_forward(callback, capture);
+		}
+	}
+
+	void EntityPrivate::traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
+	{
+		for (auto it = children.rbegin(); it != children.rend(); it++)
+		{
+			auto c = it->get();
+			if (c->global_visible)
+				c->traverse_backward(callback, capture);
+		}
+		callback(capture.p, this);
+	}
+
+	void EntityPrivate::update()
+	{
+		if (!parent)
+			global_visible = visible;
+		else
+			global_visible = visible && parent->global_visible;
+		if (!global_visible)
+			return;
+		for (auto& c : components)
+		{
+			if (c->first_update)
+			{
+				c->start();
+				c->first_update = false;
+			}
+			else
+				c->update();
+		}
+		for (auto& e : children)
+			e->update();
+	}
 
 	const std::string& Entity::name() const
 	{
@@ -474,6 +464,28 @@ namespace flame
 	void* component_alloc(uint size)
 	{
 		return malloc(size);
+	}
+
+	void* add_listener_plain(void* hub, void(*pf)(void* c), const Mail<>& capture)
+	{
+		auto c = new Closure<void(void* c)>;
+		c->function = pf;
+		c->capture = capture;
+		((ListenerHub*)hub)->listeners.emplace_back(c);
+		return c;
+	}
+
+	void remove_listener_plain(void* hub, void* c)
+	{
+		auto& listeners = ((ListenerHub*)hub)->listeners;
+		for (auto it = listeners.begin(); it != listeners.end(); it++)
+		{
+			if (it->get() == c)
+			{
+				listeners.erase(it);
+				return;
+			}
+		}
 	}
 
 	static std::map<std::string, void*> serialization_datas;

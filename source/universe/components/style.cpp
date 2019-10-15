@@ -24,7 +24,7 @@ namespace flame
 		~cStyleColorPrivate()
 		{
 			if (!entity->dying)
-				event_receiver->remove_state_changed_listener(state_changed_listener);
+				event_receiver->state_changed_listeners.remove(state_changed_listener);
 		}
 
 		void style(EventReceiverState prev_state, EventReceiverState curr_state)
@@ -50,7 +50,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			state_changed_listener = event_receiver->add_state_changed_listener([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
+			state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
 				(*(cStyleColorPrivate**)c)->style(prev_state, curr_state);
 			}, new_mail_p(this));
 
@@ -105,7 +105,7 @@ namespace flame
 		~cStyleTextColorPrivate()
 		{
 			if (!entity->dying)
-				event_receiver->remove_state_changed_listener(state_changed_listener);
+				event_receiver->state_changed_listeners.remove(state_changed_listener);
 		}
 
 		void style(EventReceiverState prev_state, EventReceiverState curr_state)
@@ -128,7 +128,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			state_changed_listener = event_receiver->add_state_changed_listener([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
+			state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
 				(*(cStyleTextColorPrivate**)c)->style(prev_state, curr_state);
 			}, new_mail_p(this));
 

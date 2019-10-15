@@ -42,7 +42,7 @@ struct cHierarchyItem : Component
 		event_receiver->drag_hash = cH("HierarchyItem");
 		event_receiver->set_acceptable_drops({ cH("HierarchyItem") });
 
-		event_receiver->add_drag_and_drop_listener([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+		event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 			auto thiz = *(cHierarchyItem**)c;
 			auto element = thiz->element;
 

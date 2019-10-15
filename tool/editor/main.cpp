@@ -179,7 +179,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 	capture.d_er = (cEventReceiver*)e_drag->find_component(cH("EventReceiver"));
 	capture.is_float = is_float;
 
-	capture.e_er->add_focus_listener([](void* c, FocusType type) {
+	capture.e_er->focus_listeners.add([](void* c, FocusType type) {
 		auto& capture = *(Capture*)c;
 		if (type == Focus_Lost)
 		{
@@ -188,7 +188,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		}
 	}, new_mail(&capture));
 
-	capture.d_er->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+	capture.d_er->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 		auto& capture = *(Capture*)c;
 		if (is_mouse_clicked(action, key) && pos == 0)
 		{
@@ -287,7 +287,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	auto e_yes = create_standard_button(app.font_atlas_pixel, 1.f, L"Yes");
 	e_buttons->add_child(e_yes);
 	{
-		((cEventReceiver*)e_yes->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		((cEventReceiver*)e_yes->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -303,7 +303,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	auto e_no = create_standard_button(app.font_atlas_pixel, 1.f, L"No");
 	e_buttons->add_child(e_no);
 	{
-		((cEventReceiver*)e_no->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		((cEventReceiver*)e_no->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -371,7 +371,7 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 	auto e_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
 	e_buttons->add_child(e_ok);
 	{
-		((cEventReceiver*)e_ok->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		((cEventReceiver*)e_ok->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -388,7 +388,7 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 	auto e_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
 	e_buttons->add_child(e_cancel);
 	{
-		((cEventReceiver*)e_cancel->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		((cEventReceiver*)e_cancel->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))

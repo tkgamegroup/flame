@@ -31,8 +31,8 @@ namespace flame
 		{
 			if (!entity->dying)
 			{
-				event_receiver->remove_mouse_listener(key_listener);
-				event_receiver->remove_mouse_listener(mouse_listener);
+				event_receiver->key_listeners.remove(key_listener);
+				event_receiver->mouse_listeners.remove(mouse_listener);
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace flame
 			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
 			assert(event_receiver);
 
-			key_listener = event_receiver->add_key_listener([](void* c, KeyState action, int value) {
+			key_listener = event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
 				auto thiz = *(cEditPrivate**)c;
 				auto& str = ((cTextPrivate*)thiz->text)->text;
 
@@ -108,7 +108,7 @@ namespace flame
 				}
 			}, new_mail_p(this));
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cEditPrivate**)c;
 				auto element = thiz->element;
 				auto text = thiz->text;

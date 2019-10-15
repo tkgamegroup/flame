@@ -33,7 +33,7 @@ namespace flame
 		~cTogglePrivate()
 		{
 			if (!entity->dying)
-				event_receiver->remove_mouse_listener(mouse_listener);
+				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
 		void do_style()
@@ -64,7 +64,7 @@ namespace flame
 			assert(event_receiver);
 			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
 
-			mouse_listener = event_receiver->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_clicked(action, key))
 				{
 					auto thiz = *(cTogglePrivate**)c;

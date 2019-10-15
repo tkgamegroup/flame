@@ -227,45 +227,45 @@ namespace flame
 				{
 					prev_focusing->focusing = false;
 					prev_focusing->active = false;
-					prev_focusing->on_focus(Focus_Lost);
+					((cEventReceiverPrivate*)prev_focusing)->on_focus(Focus_Lost);
 				}
 				if (focusing)
 				{
 					focusing->focusing = true;
-					focusing->on_focus(Focus_Gain);
+					((cEventReceiverPrivate*)focusing)->on_focus(Focus_Gain);
 				}
 			}
 
 			if (focusing)
 			{
 				for (auto& code : keydown_inputs)
-					focusing->on_key(KeyStateDown, code);
+					((cEventReceiverPrivate*)focusing)->on_key(KeyStateDown, code);
 				for (auto& code : keyup_inputs)
-					focusing->on_key(KeyStateUp, code);
+					((cEventReceiverPrivate*)focusing)->on_key(KeyStateUp, code);
 				for (auto& ch : char_inputs)
-					focusing->on_key(KeyStateNull, ch);
+					((cEventReceiverPrivate*)focusing)->on_key(KeyStateNull, ch);
 			}
 			for (auto it = hovers.rbegin(); it != hovers.rend(); it++)
 			{
 				auto er = *it;
 				if (mouse_disp != 0)
-					er->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
+					((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
 				if (mouse_scroll != 0)
-					er->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mouse_scroll, 0));
+					((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mouse_scroll, 0));
 				for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
 				{
 					auto s = mouse_buttons[i];
 					if (s & KeyStateJust)
-						er->on_mouse((KeyState)s, (MouseKey)i, mouse_pos);
+						((cEventReceiverPrivate*)er)->on_mouse((KeyState)s, (MouseKey)i, mouse_pos);
 				}
 			}
 			if (focusing && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true) && focusing->element->contains(Vec2f(mouse_pos)))
 			{
 				auto disp = mouse_pos - active_pos;
-				focusing->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, disp);
+				((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, disp);
 				if (potential_dbclick_er == focusing)
 				{
-					focusing->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, disp);
+					((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, disp);
 					potential_dbclick_er = nullptr;
 					potential_dbclick_time = 0.f;
 				}
@@ -277,30 +277,30 @@ namespace flame
 			{
 				if (prev_hovering)
 				{
-					prev_hovering->on_state_changed(prev_hovering->state, EventReceiverNormal);
+					((cEventReceiverPrivate*)prev_hovering)->on_state_changed(prev_hovering->state, EventReceiverNormal);
 					prev_hovering->state = EventReceiverNormal;
 				}
 				if (hovering)
 				{
 					hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-					hovering->on_state_changed(EventReceiverNormal, hovering->state);
+					((cEventReceiverPrivate*)hovering)->on_state_changed(EventReceiverNormal, hovering->state);
 				}
 			}
 			else if (hovering && hovering->active != prev_hovering_active)
 			{
 				hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-				hovering->on_state_changed(prev_hovering_active ? EventReceiverActive : EventReceiverHovering, hovering->state);
+				((cEventReceiverPrivate*)hovering)->on_state_changed(prev_hovering_active ? EventReceiverActive : EventReceiverHovering, hovering->state);
 			}
 			if (!prev_dragging && focusing && focusing->dragging)
-				focusing->on_drag_and_drop(DragStart, nullptr, mouse_pos);
+				((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
 			else if (prev_dragging && (!focusing || !focusing->dragging))
 			{
 				if (prev_drag_overing)
-					prev_drag_overing->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
-				prev_dragging->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
+					((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
+				((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
 			}
 			if (drag_overing)
-				drag_overing->on_drag_and_drop(DragOvering, focusing, mouse_pos);
+				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOvering, focusing, mouse_pos);
 
 			keydown_inputs.clear();
 			keyup_inputs.clear();
