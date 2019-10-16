@@ -26,8 +26,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cMoveable* create();
@@ -35,7 +34,6 @@ namespace flame
 
 	struct cBringToFront : Component
 	{
-		cElement* element;
 		cEventReceiver* event_receiver;
 
 		cBringToFront() :
@@ -43,8 +41,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cBringToFront* create();
@@ -60,8 +57,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
@@ -87,7 +83,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void take_away(bool close);
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
@@ -105,8 +101,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cDockerTabbar* create();
@@ -122,8 +117,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cDockerPages* create();

@@ -32,7 +32,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS bool can_open(KeyState action, MouseKey key);
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS void open();
@@ -49,8 +49,6 @@ namespace flame
 			Component("Menu")
 		{
 		}
-
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cMenu* create();
 	};

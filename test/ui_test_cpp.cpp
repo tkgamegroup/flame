@@ -192,7 +192,7 @@ int main(int argc, char** args)
 	auto e_button = create_standard_button(app.font_atlas_pixel, 1.f, L"Click Me!");
 	e_layout_left->add_child(e_button);
 	{
-		((cEventReceiver*)e_button->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		((cEventReceiver*)e_button->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_clicked(action, key))
 			{
 				auto thiz = *(App**)c;
@@ -286,7 +286,7 @@ int main(int argc, char** args)
 			};
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 			e_popup_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					printf("%s!\n", *(char**)c);
@@ -306,7 +306,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Add %s!\n", *(char**)c);
@@ -329,7 +329,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Remove %s!\n", *(char**)c);
@@ -350,7 +350,7 @@ int main(int argc, char** args)
 		}capture;
 		capture.menu = e_popup_menu;
 		capture.root = app.root;
-		app.c_event_receiver_root->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		app.c_event_receiver_root->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_down(action, key, true) && key == Mouse_Right)
 			{
 				auto& capture = *(Capture*)c;
@@ -373,7 +373,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -398,7 +398,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -419,7 +419,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);

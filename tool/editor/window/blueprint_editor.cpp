@@ -416,7 +416,11 @@ struct cBPEditor : Component
 			auto n_cbs = bp->add_node(cH("CmdBufs"), "test_cbs");
 			n_cbs->pos = Vec2f(200.f, -200.f);
 			n_cbs->dont_save = true;
-			bp->find_input("*.make_cmd.cbs")->link_to(n_cbs->find_output("out"));
+			{
+				auto s = bp->find_input("*.make_cmd.cbs");
+				if (s)
+					s->link_to(n_cbs->find_output("out"));
+			}
 		}
 
 		refresh_add_node_menu();

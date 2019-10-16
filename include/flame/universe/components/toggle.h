@@ -10,7 +10,6 @@ namespace flame
 
 	struct cToggle : Component
 	{
-		cElement* element;
 		cEventReceiver* event_receiver;
 		cStyleColor* style;
 
@@ -34,7 +33,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_toggled(bool toggled, bool trigg_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 
 		FLAME_UNIVERSE_EXPORTS static cToggle* create();
 	};

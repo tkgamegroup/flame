@@ -36,7 +36,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 
 		FLAME_UNIVERSE_EXPORTS static cComboboxItem* create();
 	};
@@ -59,7 +59,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_index(int idx, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();

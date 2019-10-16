@@ -10,7 +10,6 @@ namespace flame
 
 	struct cSplitter : Component
 	{
-		cElement* element;
 		cEventReceiver* event_receiver;
 
 		SplitterType type;
@@ -20,8 +19,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cSplitter* create();

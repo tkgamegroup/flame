@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include <flame/universe/components/element.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
@@ -25,25 +26,6 @@ namespace flame
 			global_pos = 0.f;
 			global_scale = 0.f;
 			global_size = 0.f;
-		}
-
-		void on_entity_added_to_parent()
-		{
-			auto e = entity->parent();
-			if (e)
-				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
-			else
-				p_element = nullptr;
-		}
-
-		void start()
-		{
-			auto e = entity->parent();
-			if (e)
-				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
-			if (p_element)
-				canvas = p_element->canvas;
-			assert(canvas);
 		}
 
 		void update()
@@ -123,14 +105,29 @@ namespace flame
 		}
 	};
 
-	void cElement::on_entity_added_to_parent()
+	void boardcast_canvas(graphics::Canvas* canvas, EntityPrivate* e)
 	{
-		((cElementPrivate*)this)->on_entity_added_to_parent();
+		((cElement*)e->find_component(cH("Element")))->canvas = canvas;
+		for (auto& c : e->children)
+			boardcast_canvas(canvas, c.get());
 	}
 
-	void cElement::start()
+	void cElement::on_enter_hierarchy(Component* c)
 	{
-		((cElementPrivate*)this)->start();
+		if (!c || c == this)
+		{
+			auto e = entity->parent();
+			if (e)
+				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
+			else
+				p_element = nullptr;
+			if (p_element && p_element->canvas)
+			{
+				canvas = p_element->canvas;
+				for (auto& c : ((EntityPrivate*)entity)->children)
+					boardcast_canvas(canvas, c.get());
+			}
+		}
 	}
 
 	void cElement::update()

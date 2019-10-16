@@ -76,12 +76,6 @@ namespace flame
 			((void(*)(void*, EventReceiverState prev_state, EventReceiverState curr_state))l->function)(l->capture.p, prev_state, curr_state);
 	}
 
-	void cEventReceiverPrivate::start()
-	{
-		element = (cElement*)(entity->find_component(cH("Element")));
-		assert(element);
-	}
-
 	Component* cEventReceiverPrivate::copy()
 	{
 		auto copy = new cEventReceiverPrivate();
@@ -97,9 +91,15 @@ namespace flame
 		((cEventReceiverPrivate*)this)->acceptable_drops = hashes;
 	}
 
-	void cEventReceiver::start()
+	void cEventReceiver::on_enter_hierarchy(Component* c)
 	{
-		((cEventReceiverPrivate*)this)->start();
+		if (c)
+		{
+			if (c == this)
+				element = (cElement*)(entity->find_component(cH("Element")));
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+		}
 	}
 
 	void cEventReceiver::update()

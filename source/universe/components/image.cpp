@@ -35,9 +35,15 @@ namespace flame
 		}
 	};
 
-	void cImage::start()
+	void cImage::on_enter_hierarchy(Component* c)
 	{
-		((cImagePrivate*)this)->start();
+		if (c)
+		{
+			if (c == this)
+				element = (cElement*)(entity->find_component(cH("Element")));
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+		}
 	}
 
 	void cImage::update()

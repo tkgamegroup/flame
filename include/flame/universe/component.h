@@ -24,8 +24,7 @@ namespace flame
 
 		virtual ~Component() {};
 
-		virtual void on_entity_added_to_parent() {}
-
+		virtual void on_enter_hierarchy(Component* c) {} // c==nullptr, then the action is entity had been added to parent
 		virtual void start() {}
 		virtual void update() {}
 		virtual Component* copy() { return nullptr; }

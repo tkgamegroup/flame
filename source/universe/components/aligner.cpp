@@ -19,12 +19,6 @@ namespace flame
 			using_padding = false;
 		}
 
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-		}
-
 		void update()
 		{
 			if (min_size.x() < 0.f && width_policy == SizeGreedy)
@@ -50,9 +44,15 @@ namespace flame
 		}
 	};
 
-	void cAligner::start()
+	void cAligner::on_enter_hierarchy(Component* c)
 	{
-		((cAlignerPrivate*)this)->start();
+		if (c)
+		{
+			if (c == this)
+				element = (cElement*)(entity->find_component(cH("Element")));
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+		}
 	}
 
 	void cAligner::update()

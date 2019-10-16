@@ -496,7 +496,7 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cText*)e_edit->find_component(cH("text")))->add_changed_listener([](void* c, const wchar_t* text) {
+							((cText*)e_edit->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
 								auto& capture = *(Capture*)c;
 								*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
 								capture.d->unserialize(capture.v->offset());

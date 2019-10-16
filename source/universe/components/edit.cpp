@@ -36,119 +36,6 @@ namespace flame
 			}
 		}
 
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text);
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-
-			key_listener = event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
-				auto thiz = *(cEditPrivate**)c;
-				auto& str = ((cTextPrivate*)thiz->text)->text;
-
-				if (action == KeyStateNull)
-				{
-					switch (value)
-					{
-					case L'\b':
-						if (thiz->cursor > 0)
-						{
-							thiz->cursor--;
-							str.erase(str.begin() + thiz->cursor);
-							thiz->text->on_changed();
-						}
-						break;
-					case 22:
-					{
-						auto copied = get_clipboard();
-						thiz->cursor = 0;
-						str = *copied.p;
-						delete_mail(copied);
-					}
-						break;
-					case 27:
-						break;
-					case 13:
-						value = '\n';
-					default:
-						str.insert(str.begin() + thiz->cursor, value);
-						thiz->cursor++;
-						thiz->text->on_changed();
-					}
-				}
-				else if (action == KeyStateDown)
-				{
-					switch (value)
-					{
-					case Key_Left:
-						if (thiz->cursor > 0)
-							thiz->cursor--;
-						break;
-					case Key_Right:
-						if (thiz->cursor < str.size())
-							thiz->cursor++;
-						break;
-					case Key_Home:
-						thiz->cursor = 0;
-						break;
-					case Key_End:
-						thiz->cursor = str.size();
-						break;
-					case Key_Del:
-						if (thiz->cursor < str.size())
-						{
-							str.erase(str.begin() + thiz->cursor);
-							thiz->text->on_changed();
-						}
-						break;
-					}
-				}
-			}, new_mail_p(this));
-
-			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cEditPrivate**)c;
-				auto element = thiz->element;
-				auto text = thiz->text;
-				auto& str = ((cTextPrivate*)text)->text;
-
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					auto scl = text->sdf_scale * element->global_scale;
-
-					auto lh = text->font_atlas->pixel_height * scl;
-					auto y = element->global_pos.y();
-					for (auto p = str.c_str(); ; p++)
-					{
-						if (y < pos.y() && pos.y() < y + lh)
-						{
-							auto x = element->global_pos.x();
-							for (;; p++)
-							{
-								if (!*p)
-									break;
-								if (*p == '\n' || *p == '\r')
-									break;
-								auto w = text->font_atlas->get_glyph(*p == '\t' ? ' ' : *p)->advance * scl;
-								if (x <= pos.x() && pos.x() < x + w)
-									break;
-								x += w;
-							}
-							thiz->cursor = p - str.c_str();
-							break;
-						}
-
-						if (!*p)
-							break;
-						if (*p == '\n')
-							y += lh;
-					}
-				}
-			}, new_mail_p(this));
-		}
-
 		void update()
 		{
 			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
@@ -162,9 +49,132 @@ namespace flame
 		}
 	};
 
-	void cEdit::start()
+	void cEdit::on_enter_hierarchy(Component* c)
 	{
-		((cEditPrivate*)this)->start();
+		if (c)
+		{
+			const auto add_listener = [](cEditPrivate* thiz) {
+				thiz->key_listener = thiz->event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
+					auto thiz = *(cEditPrivate**)c;
+					auto& str = ((cTextPrivate*)thiz->text)->text;
+
+					if (action == KeyStateNull)
+					{
+						switch (value)
+						{
+						case L'\b':
+							if (thiz->cursor > 0)
+							{
+								thiz->cursor--;
+								str.erase(str.begin() + thiz->cursor);
+								thiz->text->on_changed();
+							}
+							break;
+						case 22:
+						{
+							auto copied = get_clipboard();
+							thiz->cursor = 0;
+							str = *copied.p;
+							delete_mail(copied);
+						}
+						break;
+						case 27:
+							break;
+						case 13:
+							value = '\n';
+						default:
+							str.insert(str.begin() + thiz->cursor, value);
+							thiz->cursor++;
+							thiz->text->on_changed();
+						}
+					}
+					else if (action == KeyStateDown)
+					{
+						switch (value)
+						{
+						case Key_Left:
+							if (thiz->cursor > 0)
+								thiz->cursor--;
+							break;
+						case Key_Right:
+							if (thiz->cursor < str.size())
+								thiz->cursor++;
+							break;
+						case Key_Home:
+							thiz->cursor = 0;
+							break;
+						case Key_End:
+							thiz->cursor = str.size();
+							break;
+						case Key_Del:
+							if (thiz->cursor < str.size())
+							{
+								str.erase(str.begin() + thiz->cursor);
+								thiz->text->on_changed();
+							}
+							break;
+						}
+					}
+				}, new_mail_p(thiz));
+
+				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = *(cEditPrivate**)c;
+					auto element = thiz->element;
+					auto text = thiz->text;
+					auto& str = ((cTextPrivate*)text)->text;
+
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						auto scl = text->sdf_scale * element->global_scale;
+
+						auto lh = text->font_atlas->pixel_height * scl;
+						auto y = element->global_pos.y();
+						for (auto p = str.c_str(); ; p++)
+						{
+							if (y < pos.y() && pos.y() < y + lh)
+							{
+								auto x = element->global_pos.x();
+								for (;; p++)
+								{
+									if (!*p)
+										break;
+									if (*p == '\n' || *p == '\r')
+										break;
+									auto w = text->font_atlas->get_glyph(*p == '\t' ? ' ' : *p)->advance * scl;
+									if (x <= pos.x() && pos.x() < x + w)
+										break;
+									x += w;
+								}
+								thiz->cursor = p - str.c_str();
+								break;
+							}
+
+							if (!*p)
+								break;
+							if (*p == '\n')
+								y += lh;
+						}
+					}
+				}, new_mail_p(thiz));
+			};
+			if (c == this)
+			{
+				element = (cElement*)(entity->find_component(cH("Element")));
+				text = (cText*)(entity->find_component(cH("Text")));
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				if (event_receiver)
+					add_listener((cEditPrivate*)this);
+			}
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("Text"))
+				text = (cText*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				add_listener((cEditPrivate*)this);
+			}
+		}
 	}
 
 	void cEdit::update()

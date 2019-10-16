@@ -105,13 +105,6 @@ namespace flame
 				element->size.y() = h;
 		}
 
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-			aligner = (cAligner*)(entity->find_component(cH("Aligner")));
-		}
-
 		void update()
 		{
 			std::vector<std::pair<cElement*, cAligner*>> als;
@@ -403,9 +396,20 @@ namespace flame
 		}
 	};
 
-	void cLayout::start()
+	void cLayout::on_enter_hierarchy(Component* c)
 	{
-		((cLayoutPrivate*)this)->start();
+		if (c)
+		{
+			if (c == this)
+			{
+				element = (cElement*)(entity->find_component(cH("Element")));
+				aligner = (cAligner*)(entity->find_component(cH("Aligner")));
+			}
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("Aligner"))
+				aligner = (cAligner*)c;
+		}
 	}
 
 	void cLayout::update()

@@ -145,9 +145,12 @@ namespace flame
 				}
 			}
 
+			hovers.clear();
 			drag_overing = nullptr;
 			if (focusing && focusing->active)
 			{
+				hovers.push_back(focusing);
+
 				if (focusing->drag_hash != 0 && !focusing->dragging)
 				{
 					if (mouse_disp != 0 && (abs(mouse_pos.x() - active_pos.x()) > 4.f || abs(mouse_pos.y() - active_pos.y()) > 4.f))
@@ -187,7 +190,6 @@ namespace flame
 					hovering->hovering = false;
 					hovering = nullptr;
 				}
-				hovers.clear();
 				entity->traverse_backward([](void* c, Entity* e) {
 					auto thiz = *(cEventDispatcherPrivate**)c;
 					if (thiz->hovering)

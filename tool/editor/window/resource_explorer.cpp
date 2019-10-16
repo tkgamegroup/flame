@@ -193,7 +193,11 @@ struct cResourceExplorer : Component
 			address_bar->remove_all_children();
 			auto e_upward = create_standard_button(app.font_atlas_pixel, 1.f, Icon_LEVEL_UP);
 			address_bar->add_child(e_upward);
-			((cStyleColor*)e_upward->find_component(cH("StyleColor")))->color_normal.a() = 0;
+			{
+				auto s = (cStyleColor*)e_upward->find_component(cH("StyleColor"));
+				s->color_normal.a() = 0;
+				s->style();
+			}
 			((cEventReceiver*)e_upward->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cResourceExplorer**)c;
 				if (is_mouse_clicked(action, key))
@@ -217,7 +221,11 @@ struct cResourceExplorer : Component
 				auto e_stem = create_standard_button(app.font_atlas_pixel, 1.f, s.filename().wstring());
 				address_bar->add_child(e_stem);
 				{
-					((cStyleColor*)e_stem->find_component(cH("StyleColor")))->color_normal.a() = 0;
+					{
+						auto s = (cStyleColor*)e_stem->find_component(cH("StyleColor"));
+						s->color_normal.a() = 0;
+						s->style();
+					}
 
 					struct Capture
 					{

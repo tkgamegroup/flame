@@ -14,7 +14,6 @@ namespace flame
 
 		cTogglePrivate()
 		{
-			element = nullptr;
 			event_receiver = nullptr;
 			style = nullptr;
 
@@ -55,26 +54,6 @@ namespace flame
 				style->style();
 			}
 		}
-
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-
-			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_clicked(action, key))
-				{
-					auto thiz = *(cTogglePrivate**)c;
-					thiz->set_toggled(!thiz->toggled);
-				}
-
-			}, new_mail_p(this));
-
-			do_style();
-		}
 	};
 
 	void* cToggle::add_changed_listener(void (*listener)(void* c, bool checked), const Mail<>& capture)
@@ -111,9 +90,38 @@ namespace flame
 		}
 	}
 
-	void cToggle::start()
+	void cToggle::on_enter_hierarchy(Component* c)
 	{
-		((cTogglePrivate*)this)->start();
+		if (c)
+		{
+			const auto add_listener = [](cTogglePrivate* thiz) {
+				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_clicked(action, key))
+					{
+						auto thiz = *(cTogglePrivate**)c;
+						thiz->set_toggled(!thiz->toggled);
+					}
+				}, new_mail_p(thiz));
+			};
+			if (c == this)
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				if (event_receiver)
+					add_listener((cTogglePrivate*)this);
+				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
+				((cTogglePrivate*)this)->do_style();
+			}
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				add_listener((cTogglePrivate*)this);
+			}
+			else if (c->type_hash == cH("StyleColor"))
+			{
+				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
+				((cTogglePrivate*)this)->do_style();
+			}
+		}
 	}
 
 	cToggle* cToggle::create()

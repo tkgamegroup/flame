@@ -23,7 +23,7 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS void style();
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cStyleColor* create(const Vec4c& color_normal = Vec4c(0), const Vec4c& color_hovering = Vec4c(0), const Vec4c& color_active = Vec4c(0));
@@ -43,7 +43,7 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS void style();
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cStyleTextColor* create(const Vec4c& color_normal = Vec4c(0), const Vec4c& color_else = Vec4c(0));

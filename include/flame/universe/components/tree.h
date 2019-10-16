@@ -9,7 +9,6 @@ namespace flame
 		struct FontAtlas;
 	}
 
-	struct cElement;
 	struct cText;
 	struct cEventReceiver;
 	struct cStyleColor;
@@ -17,8 +16,8 @@ namespace flame
 
 	struct cTreeLeaf : Component
 	{
-		cStyleColor* style;
 		cEventReceiver* event_receiver;
+		cStyleColor* style;
 		cTree* tree;
 
 		Vec4c unselected_color_normal;
@@ -33,17 +32,27 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cTreeLeaf* create();
 	};
 
 	struct cTreeNode : Component
 	{
-		cStyleColor* title_style;
-		cEventReceiver* title_event_receiver;
-		cText* arrow_text;
-		cEventReceiver* arrow_event_receiver;
+		cTree* tree;
+
+		cTreeNode() :
+			Component("TreeNode")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
+		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
+	};
+
+	struct cTreeNodeTitle : Component
+	{
+		cEventReceiver* event_receiver;
+		cStyleColor* style;
 		cTree* tree;
 
 		Vec4c unselected_color_normal;
@@ -53,14 +62,28 @@ namespace flame
 		Vec4c selected_color_hovering;
 		Vec4c selected_color_active;
 
-		cTreeNode() :
-			Component("TreeNode")
+		cTreeNodeTitle() :
+			Component("TreeNodeTitle")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
+		FLAME_UNIVERSE_EXPORTS static cTreeNodeTitle* create();
+	};
 
-		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
+	struct cTreeNodeArrow : Component
+	{
+		cEventReceiver* event_receiver;
+		cText* text;
+		cTree* tree;
+
+		cTreeNodeArrow() :
+			Component("TreeNodeArrow")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
+		FLAME_UNIVERSE_EXPORTS static cTreeNodeArrow* create();
 	};
 
 	struct cTree : Component
@@ -80,8 +103,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cTree* create();
 	};
 

@@ -76,27 +76,6 @@ namespace flame
 			}
 		}
 
-		void start()
-		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-			background_style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-			text_style = (cStyleTextColor*)(entity->find_component(cH("StyleTextColor")));
-			list = (cList*)(entity->parent()->find_component(cH("List")));
-
-			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cListItemPrivate**)c;
-
-				if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-				{
-					if (thiz->list)
-						thiz->list->set_selected(thiz->entity);
-				}
-			}, new_mail_p(this));
-
-			do_style(list && list->selected == entity);
-		}
-
 		Component* copy()
 		{
 			auto copy = new cListItemPrivate();
@@ -116,9 +95,50 @@ namespace flame
 		}
 	};
 
-	void cListItem::start()
+	void cListItem::on_enter_hierarchy(Component* c)
 	{
-		((cListItemPrivate*)this)->start();
+		if (c)
+		{
+			const auto add_listener = [](cListItemPrivate* thiz) {
+				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = *(cListItemPrivate**)c;
+
+					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
+					{
+						if (thiz->list)
+							thiz->list->set_selected(thiz->entity);
+					}
+				}, new_mail_p(thiz));
+			};
+			if (c == this)
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				if (event_receiver)
+					add_listener((cListItemPrivate*)this);
+				background_style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
+				text_style = (cStyleTextColor*)(entity->find_component(cH("StyleTextColor")));
+				((cListItemPrivate*)this)->do_style(false);
+				if (entity->parent())
+					list = (cList*)(entity->parent()->find_component(cH("List")));
+			}
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				add_listener((cListItemPrivate*)this);
+			}
+			else if (c->type_hash == cH("StyleColor"))
+			{
+				background_style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
+				((cListItemPrivate*)this)->do_style(false);
+			}
+			else if (c->type_hash == cH("StyleTextColor"))
+			{
+				text_style = (cStyleTextColor*)(entity->find_component(cH("StyleTextColor")));
+				((cListItemPrivate*)this)->do_style(false);
+			}
+		}
+		else
+			list = (cList*)(entity->parent()->find_component(cH("List")));
 	}
 
 	Component* cListItem::copy()
@@ -152,22 +172,6 @@ namespace flame
 		{
 			if (!entity->dying && mouse_listener)
 				event_receiver->mouse_listeners.remove(mouse_listener);
-		}
-
-		void start()
-		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-
-			if (select_air_when_clicked)
-			{
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cListPrivate**)c;
-
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						thiz->set_selected(nullptr);
-				}, new_mail_p(this));
-			}
 		}
 
 		Component* copy()
@@ -224,9 +228,33 @@ namespace flame
 		}
 	}
 
-	void cList::start()
+	void cList::on_enter_hierarchy(Component* c)
 	{
-		((cListPrivate*)this)->start();
+		if (c)
+		{
+			const auto add_listener = [](cListPrivate* thiz) {
+				if (thiz->select_air_when_clicked)
+				{
+					thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+						auto thiz = *(cListPrivate**)c;
+
+						if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							thiz->set_selected(nullptr);
+					}, new_mail_p(thiz));
+				}
+			};
+			if (c == this)
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				if (event_receiver)
+					add_listener((cListPrivate*)this);
+			}
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				add_listener((cListPrivate*)this);
+			}
+		}
 	}
 
 	Component* cList::copy()

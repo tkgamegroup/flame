@@ -13,27 +13,18 @@ namespace flame
 		cScrollbarPrivate()
 		{
 			element = nullptr;
-			event_receiver = nullptr;
-		}
-
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-			thumb = (cScrollbarThumb*)(entity->child(0)->find_component(cH("ScrollbarThumb")));
-			assert(thumb);
 		}
 	};
 
-	void cScrollbar::start()
+	void cScrollbar::on_enter_hierarchy(Component* c)
 	{
-		((cScrollbarPrivate*)this)->start();
-	}
-
-	void cScrollbar::update()
-	{
+		if (c)
+		{
+			if (c == this)
+				element = (cElement*)(entity->find_component(cH("Element")));
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+		}
 	}
 
 	cScrollbar* cScrollbar::create()
@@ -64,30 +55,6 @@ namespace flame
 		{
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
-		}
-
-		void start()
-		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-			auto parent = entity->parent();
-			scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
-			assert(scrollbar);
-			target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
-			assert(target_layout);
-
-			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thiz = (*(cScrollbarThumbPrivate**)c);
-				if (thiz->event_receiver->active && is_mouse_move(action, key))
-				{
-					if (thiz->type == ScrollbarVertical)
-						thiz->v = pos.y();
-					else
-						thiz->v = pos.x();
-				}
-			}, new_mail_p(this));
 		}
 
 		void update()
@@ -129,9 +96,49 @@ namespace flame
 		}
 	};
 
-	void cScrollbarThumb::start()
+	void cScrollbarThumb::on_enter_hierarchy(Component* c)
 	{
-		((cScrollbarThumbPrivate*)this)->start();
+		if (c)
+		{
+			const auto add_listener = [](cScrollbarThumbPrivate* thiz) {
+				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = (*(cScrollbarThumbPrivate**)c);
+					if (thiz->event_receiver->active && is_mouse_move(action, key))
+					{
+						if (thiz->type == ScrollbarVertical)
+							thiz->v = pos.y();
+						else
+							thiz->v = pos.x();
+					}
+				}, new_mail_p(thiz));
+			};
+			if (c == this)
+			{
+				element = (cElement*)(entity->find_component(cH("Element")));
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				if (event_receiver)
+					add_listener((cScrollbarThumbPrivate*)this);
+				auto parent = entity->parent();
+				if (parent)
+				{
+					scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
+					target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
+				}
+			}
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				add_listener((cScrollbarThumbPrivate*)this);
+			}
+		}
+		else
+		{
+			auto parent = entity->parent();
+			scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
+			target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
+		}
 	}
 
 	void cScrollbarThumb::update()

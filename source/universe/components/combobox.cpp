@@ -62,36 +62,41 @@ namespace flame
 				}
 			}
 		}
-
-		void start()
-		{
-			event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-			assert(event_receiver);
-			style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-
-			if (style)
-			{
-				unselected_color_normal = style->color_normal;
-				unselected_color_hovering = style->color_hovering;
-				unselected_color_active = style->color_active;
-			}
-
-			mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					auto thiz = *(cComboboxItemPrivate**)c;
-					thiz->combobox->set_index(thiz->idx);
-					destroy_topmost(thiz->combobox->menu_button->root);
-				}
-			}, new_mail_p(this));
-
-			do_style(combobox && combobox->selected == entity);
-		}
 	};
 
-	void cComboboxItem::start()
+	void cComboboxItem::on_enter_hierarchy(Component* c)
 	{
-		((cComboboxItemPrivate*)this)->start();
+		if (c)
+		{
+			const auto add_listener = [](cComboboxItemPrivate* thiz) {
+				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					{
+						auto thiz = *(cComboboxItemPrivate**)c;
+						thiz->combobox->set_index(thiz->idx);
+						destroy_topmost(thiz->combobox->menu_button->root);
+					}
+				}, new_mail_p(thiz));
+			};
+			if (c == this)
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				if (event_receiver)
+					add_listener((cComboboxItemPrivate*)this);
+				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
+				((cComboboxItemPrivate*)this)->do_style(false);
+			}
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
+				add_listener((cComboboxItemPrivate*)this);
+			}
+			else if (c->type_hash == cH("StyleColor"))
+			{
+				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
+				((cComboboxItemPrivate*)this)->do_style(false);
+			}
+		}
 	}
 
 	cComboboxItem* cComboboxItem::create()
@@ -101,8 +106,6 @@ namespace flame
 
 	struct cComboboxPrivate : cCombobox
 	{
-		int init_idx;
-
 		std::vector<std::unique_ptr<Closure<void(void* c, int idx)>>> changed_listeners;
 
 		cComboboxPrivate()
@@ -111,29 +114,12 @@ namespace flame
 			menu_button = nullptr;
 
 			selected = nullptr;
-
-			init_idx = -1;
 		}
 
 		void on_changed(int idx)
 		{
 			for (auto& l : changed_listeners)
 				l->function(l->capture.p, idx);
-		}
-
-		void start()
-		{
-			text = (cText*)(entity->find_component(cH("Text")));
-			assert(text);
-			menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
-			assert(menu_button);
-
-			if (init_idx >= 0)
-				set_index(init_idx);
-
-			auto menu = menu_button->menu;
-			for (auto i = 0; i < menu->child_count(); i++)
-				((cComboboxItem*)(menu->child(i)->find_component(cH("ComboboxItem"))))->combobox = this;
 		}
 	};
 
@@ -161,12 +147,6 @@ namespace flame
 
 	void cCombobox::set_index(int idx, bool trigger_changed)
 	{
-		if (!menu_button)
-		{
-			((cComboboxPrivate*)this)->init_idx = idx;
-			return;
-		}
-
 		if (selected)
 		{
 			auto comboboxitem = (cComboboxItemPrivate*)selected->find_component(cH("ComboboxItem"));
@@ -180,8 +160,7 @@ namespace flame
 		}
 		else
 		{
-			auto menu = menu_button->menu;
-			selected = menu->child(idx);
+			selected = menu_button->menu->child(idx);
 			text->set_text(((cText*)(selected->find_component(cH("Text"))))->text());
 			{
 				auto comboboxitem = (cComboboxItemPrivate*)selected->find_component(cH("ComboboxItem"));
@@ -193,9 +172,30 @@ namespace flame
 			((cComboboxPrivate*)this)->on_changed(idx);
 	}
 
-	void cCombobox::start()
+	void cCombobox::on_enter_hierarchy(Component* c)
 	{
-		((cComboboxPrivate*)this)->start();
+		if (c)
+		{
+			const auto set_ptr = [](cComboboxPrivate* thiz) {
+				auto menu = thiz->menu_button->menu;
+				for (auto i = 0; i < menu->child_count(); i++)
+					((cComboboxItem*)(menu->child(i)->find_component(cH("ComboboxItem"))))->combobox = thiz;
+			};
+			if (c == this)
+			{
+				text = (cText*)(entity->find_component(cH("Text")));
+				menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
+				if (menu_button)
+					set_ptr((cComboboxPrivate*)this);
+			}
+			else if (c->type_hash == cH("Text"))
+				text = (cText*)(entity->find_component(cH("Text")));
+			else if (c->type_hash == cH("MenuButton"))
+			{
+				menu_button = (cMenuButton*)(entity->find_component(cH("MenuButton")));
+				set_ptr((cComboboxPrivate*)this);
+			}
+		}
 	}
 
 	void cCombobox::update()

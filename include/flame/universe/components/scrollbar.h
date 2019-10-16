@@ -8,22 +8,16 @@ namespace flame
 	struct cEventReceiver;
 	struct cLayout;
 
-	struct cScrollbarThumb;
-
 	struct cScrollbar : Component
 	{
 		cElement* element;
-		cEventReceiver* event_receiver;
-
-		cScrollbarThumb* thumb;
 
 		cScrollbar() :
 			Component("Scrollbar")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 
 		FLAME_UNIVERSE_EXPORTS static cScrollbar* create();
 	};
@@ -46,7 +40,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cScrollbarThumb* create(ScrollbarType type);

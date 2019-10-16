@@ -4,11 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct FontAtlas;
-	}
-
 	struct cElement;
 	struct cEventReceiver;
 	struct cStyleColor;
@@ -39,8 +34,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void start() override;
-
+		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();
 	};
 

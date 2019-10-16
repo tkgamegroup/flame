@@ -28,13 +28,6 @@ namespace flame
 			l->function(l->capture.p, ((cTextPrivate*)this)->text.c_str());
 	}
 
-	void cTextPrivate::start()
-	{
-		element = (cElement*)(entity->find_component(cH("Element")));
-		assert(element);
-		aligner = (cAligner*)(entity->find_component(cH("Aligner")));
-	}
-
 	void cTextPrivate::update()
 	{
 		auto rect = element->canvas->add_text(font_atlas, element->global_pos +
@@ -43,16 +36,24 @@ namespace flame
 		if (auto_width)
 		{
 			auto w = rect.x() * sdf_scale + element->inner_padding_horizontal();
-			element->size.x() = w;
 			if (aligner && aligner->width_policy == SizeGreedy)
+			{
 				aligner->min_size.x() = w;
+				element->size.x() = max(element->size.x(), w);
+			}
+			else
+				element->size.x() = w;
 		}
 		if (auto_height)
 		{
 			auto h = rect.y() * sdf_scale + element->inner_padding_vertical();
-			element->size.y() = h;
 			if (aligner && aligner->width_policy == SizeGreedy)
+			{
 				aligner->min_size.y() = h;
+				element->size.y() = max(element->size.y(), h);
+			}
+			else
+				element->size.y() = h;
 		}
 	}
 
@@ -106,9 +107,20 @@ namespace flame
 		((cTextPrivate*)this)->on_changed();
 	}
 
-	void cText::start()
+	void cText::on_enter_hierarchy(Component* c)
 	{
-		((cTextPrivate*)this)->start();
+		if (c)
+		{
+			if (c == this)
+			{
+				element = (cElement*)(entity->find_component(cH("Element")));
+				aligner = (cAligner*)(entity->find_component(cH("Aligner")));
+			}
+			else if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("Aligner"))
+				aligner = (cAligner*)c;
+		}
 	}
 
 	void cText::update()

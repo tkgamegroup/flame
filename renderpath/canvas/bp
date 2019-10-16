@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <BP>
 	<modules>
-		<module filename="flame_foundation.dll" pos="-232.00;379.00" />
-		<module filename="flame_graphics.dll" pos="-232.00;477.00" />
+		<module filename="flame_foundation.dll" pos="-294.00;-179.00" />
+		<module filename="flame_graphics.dll" pos="-270.00;-86.00" />
 	</modules>
 	<nodes>
-		<node type="Enum(graphics::SampleCount)" id="sc" pos="536.81;1600.60">
+		<node type="Enum(graphics::SampleCount)" id="sc" pos="552.81;1429.60">
 			<datas>
 				<data name="in" value="SampleCount_8" />
 			</datas>
 		</node>
-		<node type="graphics::RenderTarget" id="rt_dst" pos="265.72;372.27" />
-		<node type="graphics::ImageInspector" id="dst_props" pos="614.64;691.25" />
-		<node type="graphics::Image" id="img_ms" pos="878.61;739.05">
+		<node type="graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
+		<node type="graphics::ImageInspector" id="dst_props" pos="374.64;356.25" />
+		<node type="graphics::Image" id="img_ms" pos="874.61;704.05">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
@@ -25,13 +25,13 @@
 		</node>
 		<node type="graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
 		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="2160.64;759.29" />
-		<node type="graphics::DescriptorImageBinding" id="images_binding" pos="618.31;1776.79">
+		<node type="graphics::DescriptorImageBinding" id="images_binding" pos="567.31;1671.79">
 			<datas>
 				<data name="count" value="64" />
 				<data name="name" value="images" />
 			</datas>
 		</node>
-		<node type="graphics::Descriptorlayout" id="dsl" pos="930.01;1818.41" />
+		<node type="graphics::Descriptorlayout" id="dsl" pos="870.01;1827.41" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="1527.80;1116.37">
 			<datas>
 				<data name="push_constant_udt_name" value="PushconstantT" />
@@ -140,21 +140,21 @@
 		<node type="graphics::Pipeline" id="pl_element" pos="2684.73;832.38" />
 		<node type="graphics::Pipeline" id="pl_text_lcd" pos="2688.06;1232.47" />
 		<node type="graphics::Pipeline" id="pl_text_sdf" pos="2695.68;1647.94" />
-		<node type="graphics::Image" id="img_white" pos="275.12;1750.74">
+		<node type="graphics::Image" id="img_white" pos="181.12;1582.74">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="graphics::Buffer" id="vtx_buf" pos="504.88;821.00">
+		<node type="graphics::Buffer" id="vtx_buf" pos="224.88;545.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="graphics::Buffer" id="idx_buf" pos="505.05;1208.72">
+		<node type="graphics::Buffer" id="idx_buf" pos="229.05;998.72">
 			<datas>
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
@@ -220,20 +220,20 @@
 		<link out="out_alpha_blend.out" in="pl_text_sdf.outputs" />
 	</links>
 	<exports>
-    <input>
-      <export v="rt_dst.type" />
-      <export v="rt_dst.v" />
-    </input>
-    <output>
-      <export v="vtx_buf.out" />
-      <export v="idx_buf.out" />
-      <export v="rnf.out" />
-      <export v="pll.out" />
-      <export v="dsl.default_set" />
-      <export v="images_binding.iv" />
-      <export v="pl_element.out" />
-      <export v="pl_text_sdf.out" />
-      <export v="pl_text_lcd.out" />
-    </output>
+		<input>
+			<export v="rt_dst.type" />
+			<export v="rt_dst.v" />
+		</input>
+		<output>
+			<export v="vtx_buf.out" />
+			<export v="idx_buf.out" />
+			<export v="rnf.out" />
+			<export v="pll.out" />
+			<export v="dsl.default_set" />
+			<export v="images_binding.iv" />
+			<export v="pl_element.out" />
+			<export v="pl_text_sdf.out" />
+			<export v="pl_text_lcd.out" />
+		</output>
 	</exports>
 </BP>
