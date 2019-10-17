@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
@@ -9,8 +10,6 @@ namespace flame
 	struct cTogglePrivate : cToggle
 	{
 		void* mouse_listener;
-
-		std::vector<std::unique_ptr<Closure<void(void* c, bool toggled)>>> changed_listeners;
 
 		cTogglePrivate()
 		{
@@ -27,12 +26,16 @@ namespace flame
 			toggled_color_active = default_style.button_color_active;
 
 			mouse_listener = nullptr;
+
+			changed_listeners.hub = new ListenerHub;
 		}
 
 		~cTogglePrivate()
 		{
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
+
+			delete (ListenerHub*)changed_listeners.hub;
 		}
 
 		void do_style()
@@ -55,7 +58,7 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -76,28 +79,6 @@ namespace flame
 		}
 	};
 
-	void* cToggle::add_changed_listener(void (*listener)(void* c, bool checked), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, bool toggled)>;
-		c->function = listener;
-		c->capture = capture;
-		((cTogglePrivate*)this)->changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cToggle::remove_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cTogglePrivate*)this)->changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
 	void cToggle::set_toggled(bool _toggled, bool trigger_changed)
 	{
 		auto thiz = (cTogglePrivate*)this;
@@ -105,14 +86,10 @@ namespace flame
 		thiz->do_style();
 		if (trigger_changed)
 		{
-			for (auto& l : thiz->changed_listeners)
-				l->function(l->capture.p, toggled);
+			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
+			for (auto& l : listeners)
+				((void(*)(void*, bool))l->function)(l->capture.p, toggled);
 		}
-	}
-
-	void cToggle::on_component_added(Component* c)
-	{
-		((cTogglePrivate*)this)->on_component_added(c);
 	}
 
 	cToggle* cToggle::create()

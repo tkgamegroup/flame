@@ -13,7 +13,7 @@ namespace flame
 		void on_mouse(KeyState action, MouseKey key, const Vec2i& value);
 		void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
 		void on_state_changed(EventReceiverState prev_state, EventReceiverState curr_state);
-		void on_component_added(Component* c);
-		Component* copy();
+		virtual void on_component_added(Component* c) override;
+		virtual Component* copy() override;
 	};
 }

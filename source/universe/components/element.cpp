@@ -37,7 +37,7 @@ namespace flame
 			global_size = 0.f;
 		}
 
-		void on_added()
+		virtual void on_added() override
 		{
 			auto p = entity->parent();
 			if (p)
@@ -48,7 +48,7 @@ namespace flame
 			}
 		}
 
-		void on_child_component_added(Component* _c)
+		virtual void on_child_component_added(Component* _c) override
 		{
 			if (_c->type_hash == cH("Element"))
 			{
@@ -59,7 +59,7 @@ namespace flame
 			}
 		}
 
-		void update()
+		virtual void update() override
 		{
 			if (!p_element)
 			{
@@ -116,7 +116,7 @@ namespace flame
 				cliped = true;
 		}
 
-		Component* copy()
+		virtual Component* copy() override
 		{
 			auto copy = new cElementPrivate(canvas);
 
@@ -135,26 +135,6 @@ namespace flame
 			return copy;
 		}
 	};
-
-	void cElement::on_added()
-	{
-		((cElementPrivate*)this)->on_added();
-	}
-
-	void cElement::on_child_component_added(Component* c)
-	{
-		((cElementPrivate*)this)->on_child_component_added(c);
-	}
-
-	void cElement::update()
-	{
-		((cElementPrivate*)this)->update();
-	}
-
-	Component* cElement::copy()
-	{
-		return ((cElementPrivate*)this)->copy();
-	}
 
 	cElement* cElement::create(graphics::Canvas* canvas)
 	{

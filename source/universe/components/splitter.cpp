@@ -24,7 +24,7 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -90,7 +90,7 @@ namespace flame
 			}
 		}
 
-		Component* copy()
+		virtual Component* copy() override
 		{
 			auto copy = new cSplitterPrivate();
 
@@ -99,16 +99,6 @@ namespace flame
 			return copy;
 		}
 	};
-
-	void cSplitter::on_component_added(Component* c)
-	{
-		((cSplitterPrivate*)this)->on_component_added(c);
-	}
-
-	Component* cSplitter::copy()
-	{
-		return ((cSplitterPrivate*)this)->copy();
-	}
 
 	cSplitter* cSplitter::create()
 	{

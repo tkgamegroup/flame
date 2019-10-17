@@ -19,9 +19,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
-		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
-
 		FLAME_UNIVERSE_EXPORTS static cSplitter* create();
 	};
 }

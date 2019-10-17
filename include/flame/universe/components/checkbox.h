@@ -28,13 +28,10 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void* add_changed_listener(void (*listener)(void* c, bool checked), const Mail<>& capture);
-
-		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
+		Listeners<void(void* c, bool checked)> changed_listeners;
 
 		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();
 	};
 

@@ -34,7 +34,7 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -51,17 +51,12 @@ namespace flame
 				}, new_mail_p(this));
 			}
 		}
+
+		virtual Component* copy() override
+		{
+			return new cMoveablePrivate;
+		}
 	};
-
-	void cMoveable::on_component_added(Component* c)
-	{
-		((cMoveablePrivate*)this)->on_component_added(c);
-	}
-
-	Component* cMoveable::copy()
-	{
-		return new cMoveablePrivate;
-	}
 
 	cMoveable* cMoveable::create()
 	{
@@ -84,7 +79,7 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -108,17 +103,12 @@ namespace flame
 				}, new_mail_p(this));
 			}
 		}
+
+		virtual Component* copy() override
+		{
+			return new cBringToFrontPrivate;
+		}
 	};
-
-	void cBringToFront::on_component_added(Component* c)
-	{
-		((cBringToFrontPrivate*)this)->on_component_added(c);
-	}
-
-	Component* cBringToFront::copy()
-	{
-		return new cBringToFrontPrivate;
-	}
 
 	cBringToFront* cBringToFront::create()
 	{
@@ -143,14 +133,14 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_added()
+		virtual void on_added() override
 		{
 			auto p = entity->parent();
 			if (p)
 				p_element = (cElement*)(p->find_component(cH("Element")));
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -162,22 +152,12 @@ namespace flame
 				}, new_mail_p(this));
 			}
 		}
+
+		virtual Component* copy() override
+		{
+			return new cSizeDraggerPrivate;
+		}
 	};
-
-	void cSizeDragger::on_added()
-	{
-		((cSizeDraggerPrivate*)this)->on_added();
-	}
-
-	void cSizeDragger::on_component_added(Component* c)
-	{
-		((cSizeDraggerPrivate*)this)->on_component_added(c);
-	}
-
-	Component* cSizeDragger::copy()
-	{
-		return new cSizeDraggerPrivate;
-	}
 
 	cSizeDragger* cSizeDragger::create()
 	{
@@ -291,7 +271,7 @@ namespace flame
 			}
 		}
 
-		void on_added()
+		virtual void on_added() override
 		{
 			auto p = entity->parent();
 			if (p && p->child_count() == 1)
@@ -301,7 +281,7 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -376,7 +356,7 @@ namespace flame
 				list_item = (cListItem*)c;
 		}
 
-		void update()
+		virtual void update() override
 		{
 			if (!drop_tips.empty())
 			{
@@ -391,7 +371,7 @@ namespace flame
 			}
 		}
 
-		Component* copy()
+		virtual Component* copy() override
 		{
 			auto copy = new cDockerTabPrivate();
 
@@ -404,26 +384,6 @@ namespace flame
 	void cDockerTab::take_away(bool close)
 	{
 		((cDockerTabPrivate*)this)->take_away(close);
-	}
-
-	void cDockerTab::on_added()
-	{
-		((cDockerTabPrivate*)this)->on_added();
-	}
-
-	void cDockerTab::on_component_added(Component* c)
-	{
-		((cDockerTabPrivate*)this)->on_component_added(c);
-	}
-
-	void cDockerTab::update()
-	{
-		((cDockerTabPrivate*)this)->update();
-	}
-
-	Component* cDockerTab::copy()
-	{
-		return ((cDockerTabPrivate*)this)->copy();
 	}
 
 	cDockerTab* cDockerTab::create()
@@ -485,7 +445,7 @@ namespace flame
 			return entity->child_count();
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -567,17 +527,12 @@ namespace flame
 				}, new_mail_p(this));
 			}
 		}
+
+		virtual Component* copy() override
+		{
+			return new cDockerTabbarPrivate;
+		}
 	};
-
-	void cDockerTabbar::on_component_added(Component* c)
-	{
-		((cDockerTabbarPrivate*)this)->on_component_added(c);
-	}
-
-	Component* cDockerTabbar::copy()
-	{
-		return new cDockerTabbarPrivate;
-	}
 
 	cDockerTabbar* cDockerTabbar::create()
 	{
@@ -606,7 +561,7 @@ namespace flame
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -824,17 +779,12 @@ namespace flame
 				}, new_mail_p(this));
 			}
 		}
+
+		virtual Component* copy() override
+		{
+			return new cDockerPagesPrivate;
+		}
 	};
-
-	void cDockerPages::on_component_added(Component* c)
-	{
-		((cDockerPages*)this)->on_component_added(c);
-	}
-
-	Component* cDockerPages::copy()
-	{
-		return new cDockerPagesPrivate;
-	}
 
 	cDockerPages* cDockerPages::create()
 	{

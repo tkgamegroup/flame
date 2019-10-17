@@ -22,12 +22,6 @@ namespace flame
 		auto_height = true;
 	}
 
-	void cTextPrivate::on_changed()
-	{
-		for (auto& l : changed_listeners)
-			l->function(l->capture.p, ((cTextPrivate*)this)->text.c_str());
-	}
-
 	void cTextPrivate::on_component_added(Component* c)
 	{
 		if (c->type_hash == cH("Element"))
@@ -86,48 +80,6 @@ namespace flame
 	void cText::set_text(const std::wstring& text)
 	{
 		((cTextPrivate*)this)->text = text;
-	}
-
-	void* cText::add_changed_listener(void (*listener)(void* c, const wchar_t* text), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, const wchar_t* text)>;
-		c->function = listener;
-		c->capture = capture;
-		((cTextPrivate*)this)->changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cText::remove_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cTextPrivate*)this)->changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	void cText::on_changed()
-	{
-		((cTextPrivate*)this)->on_changed();
-	}
-
-	void cText::on_component_added(Component* c)
-	{
-		((cTextPrivate*)this)->on_component_added(c);
-	}
-
-	void cText::update()
-	{
-		((cTextPrivate*)this)->update();
-	}
-
-	Component* cText::copy()
-	{
-		return ((cTextPrivate*)this)->copy();
 	}
 
 	cText* cText::create(graphics::FontAtlas* font_atlas)

@@ -20,9 +20,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
-
 		FLAME_UNIVERSE_EXPORTS static cImage* create();
 	};
 }

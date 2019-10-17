@@ -103,7 +103,7 @@ namespace flame
 			window->remove_mouse_listener(mouse_listener);
 		}
 
-		void update()
+		virtual void update() override
 		{
 			mouse_disp = mouse_pos - mouse_pos_prev;
 			if (potential_dbclick_er)
@@ -316,11 +316,6 @@ namespace flame
 				mouse_buttons[i] &= ~KeyStateJust;
 		}
 	};
-
-	void cEventDispatcher::update()
-	{
-		((cEventDispatcherPrivate*)this)->update();
-	}
 
 	cEventDispatcher* cEventDispatcher::create(Window* window)
 	{

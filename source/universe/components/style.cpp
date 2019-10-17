@@ -43,7 +43,7 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -58,7 +58,7 @@ namespace flame
 			}
 		}
 
-		Component* copy()
+		virtual Component* copy() override
 		{
 			return new cStyleColorPrivate(color_normal, color_hovering, color_active);
 		}
@@ -68,16 +68,6 @@ namespace flame
 	{
 		auto state = event_receiver->state;
 		((cStyleColorPrivate*)this)->style(state, state);
-	}
-
-	void cStyleColor::on_component_added(Component* c)
-	{
-		((cStyleColorPrivate*)this)->on_component_added(c);
-	}
-
-	Component* cStyleColor::copy()
-	{
-		return ((cStyleColorPrivate*)this)->copy();
 	}
 
 	cStyleColor* cStyleColor::create(const Vec4c& color_normal, const Vec4c& color_hovering, const Vec4c& color_active)
@@ -119,7 +109,7 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Text"))
 				text = (cText*)c;
@@ -134,7 +124,7 @@ namespace flame
 			}
 		}
 
-		Component* copy()
+		virtual Component* copy() override
 		{
 			return new cStyleTextColorPrivate(color_normal, color_else);
 		}
@@ -144,16 +134,6 @@ namespace flame
 	{
 		auto state = event_receiver->state;
 		((cStyleTextColorPrivate*)this)->style(state, state);
-	}
-
-	void cStyleTextColor::on_component_added(Component* c)
-	{
-		((cStyleTextColorPrivate*)this)->on_component_added(c);
-	}
-
-	Component* cStyleTextColor::copy()
-	{
-		return ((cStyleTextColorPrivate*)this)->copy();
 	}
 
 	cStyleTextColor* cStyleTextColor::create(const Vec4c& color_normal, const Vec4c& color_else)

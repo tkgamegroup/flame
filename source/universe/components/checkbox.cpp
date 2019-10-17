@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -11,8 +12,6 @@ namespace flame
 	struct cCheckboxPrivate : cCheckbox
 	{
 		void* mouse_listener;
-
-		std::vector<std::unique_ptr<Closure<void(void* c, bool checked)>>> changed_listeners;
 
 		cCheckboxPrivate()
 		{
@@ -29,15 +28,19 @@ namespace flame
 			checked_color_active = default_style.checked_color_active;
 
 			mouse_listener = nullptr;
+
+			changed_listeners.hub = new ListenerHub;
 		}
 
 		~cCheckboxPrivate()
 		{
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
+
+			delete (ListenerHub*)changed_listeners.hub;
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -78,28 +81,6 @@ namespace flame
 		}
 	};
 
-	void* cCheckbox::add_changed_listener(void (*listener)(void* c, bool checked), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, bool checked)>;
-		c->function = listener;
-		c->capture = capture;
-		((cCheckboxPrivate*)this)->changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cCheckbox::remove_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cCheckboxPrivate*)this)->changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
 	void cCheckbox::set_checked(bool _checked, bool trigger_changed)
 	{
 		auto thiz = (cCheckboxPrivate*)this;
@@ -107,14 +88,10 @@ namespace flame
 		thiz->do_style();
 		if (trigger_changed)
 		{
-			for (auto& l : thiz->changed_listeners)
-				l->function(l->capture.p, checked);
+			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
+			for (auto& l : listeners)
+				((void(*)(void*, bool))l->function)(l->capture.p, checked);
 		}
-	}
-
-	void cCheckbox::on_component_added(Component* c)
-	{
-		((cCheckboxPrivate*)this)->on_component_added(c);
 	}
 
 	cCheckbox* cCheckbox::create()

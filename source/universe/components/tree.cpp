@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include "../entity_private.h"
@@ -65,41 +66,6 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_added()
-		{
-			auto p = entity->parent();
-			if (p)
-			{
-				auto pp = p->parent();
-				if (pp)
-				{
-					auto n = (cTreeNode*)pp->find_component(cH("TreeNode"));
-					if (n)
-						tree = n->tree;
-				}
-			}
-		}
-
-		void on_component_added(Component* c)
-		{
-			if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-					{
-						auto thiz = *(cTreeLeafPrivate**)c;
-						thiz->tree->set_selected(thiz->entity);
-					}
-				}, new_mail_p(this));
-			}
-			else if (c->type_hash == cH("StyleColor"))
-			{
-				style = (cStyleColor*)c;
-				do_style(false);
-			}
-		}
-
 		void do_style(bool selected)
 		{
 			if (!selected)
@@ -123,17 +89,42 @@ namespace flame
 				}
 			}
 		}
+
+		virtual void on_added() override
+		{
+			auto p = entity->parent();
+			if (p)
+			{
+				auto pp = p->parent();
+				if (pp)
+				{
+					auto n = (cTreeNode*)pp->find_component(cH("TreeNode"));
+					if (n)
+						tree = n->tree;
+				}
+			}
+		}
+
+		virtual void on_component_added(Component* c) override
+		{
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
+					{
+						auto thiz = *(cTreeLeafPrivate**)c;
+						thiz->tree->set_selected(thiz->entity);
+					}
+				}, new_mail_p(this));
+			}
+			else if (c->type_hash == cH("StyleColor"))
+			{
+				style = (cStyleColor*)c;
+				do_style(false);
+			}
+		}
 	};
-
-	void cTreeLeaf::on_added()
-	{
-		((cTreeLeafPrivate*)this)->on_added();
-	}
-
-	void cTreeLeaf::on_component_added(Component* c)
-	{
-		((cTreeLeafPrivate*)this)->on_component_added(c);
-	}
 
 	cTreeLeaf* cTreeLeaf::create()
 	{
@@ -147,7 +138,7 @@ namespace flame
 			tree = nullptr;
 		}
 
-		void on_added()
+		virtual void on_added() override
 		{
 			auto p = entity->parent();
 			if (p)
@@ -162,11 +153,6 @@ namespace flame
 			}
 		}
 	};
-
-	void cTreeNode::on_added()
-	{
-		((cTreeNodePrivate*)this)->on_added();
-	}
 
 	cTreeNode* cTreeNode::create()
 	{
@@ -220,12 +206,12 @@ namespace flame
 			}
 		}
 
-		void on_added()
+		virtual void on_added() override
 		{
 			tree = ((cTreeNode*)entity->parent()->find_component(cH("TreeNode")))->tree;
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -245,16 +231,6 @@ namespace flame
 			}
 		}
 	};
-
-	void cTreeNodeTitle::on_added()
-	{
-		((cTreeNodeTitlePrivate*)this)->on_added();
-	}
-
-	void cTreeNodeTitle::on_component_added(Component* c)
-	{
-		((cTreeNodeTitlePrivate*)this)->on_component_added(c);
-	}
 
 	cTreeNodeTitle* cTreeNodeTitle::create()
 	{
@@ -280,12 +256,12 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_added()
+		virtual void on_added() override
 		{
 			tree = ((cTreeNodeTitle*)entity->parent()->find_component(cH("TreeNodeTitle")))->tree;
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Text"))
 				text = (cText*)c;
@@ -305,16 +281,6 @@ namespace flame
 		}
 	};
 
-	void cTreeNodeArrow::on_added()
-	{
-		((cTreeNodeArrowPrivate*)this)->on_added();
-	}
-
-	void cTreeNodeArrow::on_component_added(Component* c)
-	{
-		((cTreeNodeArrowPrivate*)this)->on_component_added(c);
-	}
-
 	cTreeNodeArrow* cTreeNodeArrow::create()
 	{
 		return new cTreeNodeArrowPrivate();
@@ -324,22 +290,24 @@ namespace flame
 	{
 		void* mouse_listener;
 
-		std::vector<std::unique_ptr<Closure<void(void* c, Entity * selected)>>> selected_changed_listeners;
-
 		cTreePrivate()
 		{
 			event_receiver = nullptr;
 
 			selected = nullptr;
+
+			selected_changed_listeners.hub = new ListenerHub;
 		}
 
 		~cTreePrivate()
 		{
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
+
+			delete (ListenerHub*)selected_changed_listeners.hub;
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -351,7 +319,7 @@ namespace flame
 			}
 		}
 
-		void on_child_component_added(Component* c)
+		virtual void on_child_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("TreeLeaf"))
 				((cTreeLeaf*)c)->tree = this;
@@ -359,28 +327,6 @@ namespace flame
 				boardcast_tree(this, (EntityPrivate*)c->entity);
 		}
 	};
-
-	void* cTree::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, Entity * selected)>;
-		c->function = listener;
-		c->capture = capture;
-		((cTreePrivate*)this)->selected_changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cTree::remove_selected_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cTreePrivate*)this)->selected_changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
 
 	void cTree::set_selected(Entity* e, bool trigger_changed)
 	{
@@ -411,20 +357,10 @@ namespace flame
 		selected = e;
 		if (trigger_changed)
 		{
-			auto& listeners = ((cTreePrivate*)this)->selected_changed_listeners;
+			auto& listeners = ((ListenerHub*)selected_changed_listeners.hub)->listeners;
 			for (auto& l : listeners)
-				l->function(l->capture.p, selected);
+				((void(*)(void*, Entity*))l->function)(l->capture.p, selected);
 		}
-	}
-
-	void cTree::on_component_added(Component* c)
-	{
-		((cTreePrivate*)this)->on_component_added(c);
-	}
-
-	void cTree::on_child_component_added(Component* c)
-	{
-		((cTreePrivate*)this)->on_child_component_added(c);
 	}
 
 	cTree* cTree::create()

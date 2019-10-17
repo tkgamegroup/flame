@@ -35,8 +35,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void open();
 		FLAME_UNIVERSE_EXPORTS void close();
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
-
 		FLAME_UNIVERSE_EXPORTS static cMenuButton* create();
 	};
 

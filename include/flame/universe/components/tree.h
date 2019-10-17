@@ -32,8 +32,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cTreeLeaf* create();
 	};
 
@@ -46,7 +44,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
 		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
 	};
 
@@ -68,8 +65,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cTreeNodeTitle* create();
 	};
 
@@ -84,8 +79,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_added() override;
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cTreeNodeArrow* create();
 	};
 
@@ -100,14 +93,10 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void* add_selected_changed_listener(void (*listener)(void* c, Entity* e), const Mail<>& capture);
-
-		FLAME_UNIVERSE_EXPORTS void remove_selected_changed_listener(void* ret_by_add);
+		Listeners<void(void* c, Entity * e)> selected_changed_listeners;
 
 		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
-		FLAME_UNIVERSE_EXPORTS virtual void on_child_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cTree* create();
 	};
 

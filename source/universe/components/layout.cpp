@@ -106,7 +106,7 @@ namespace flame
 				element->size.y() = h;
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -114,7 +114,7 @@ namespace flame
 				aligner = (cAligner*)c;
 		}
 
-		void update()
+		virtual void update() override
 		{
 			std::vector<std::pair<cElement*, cAligner*>> als;
 			for (auto i = 0; i < entity->child_count(); i++)
@@ -393,7 +393,7 @@ namespace flame
 			}
 		}
 
-		Component* copy()
+		virtual Component* copy() override
 		{
 			auto copy = new cLayoutPrivate(type);
 
@@ -404,21 +404,6 @@ namespace flame
 			return copy;
 		}
 	};
-
-	void cLayout::on_component_added(Component* c)
-	{
-		((cLayoutPrivate*)this)->on_component_added(c);
-	}
-
-	void cLayout::update()
-	{
-		((cLayoutPrivate*)this)->update();
-	}
-
-	Component* cLayout::copy()
-	{
-		return ((cLayoutPrivate*)this)->copy();
-	}
 
 	cLayout* cLayout::create(LayoutType type)
 	{

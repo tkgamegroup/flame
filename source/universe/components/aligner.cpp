@@ -19,7 +19,13 @@ namespace flame
 			using_padding = false;
 		}
 
-		void update()
+		virtual void on_component_added(Component* c) override
+		{
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+		}
+
+		virtual void update() override
 		{
 			if (min_size.x() < 0.f && width_policy == SizeGreedy)
 				min_size.x() = element->size.x();
@@ -27,7 +33,7 @@ namespace flame
 				min_size.y() = element->size.y();
 		}
 
-		Component* copy()
+		virtual Component* copy() override
 		{
 			auto copy = new cAlignerPrivate();
 
@@ -43,22 +49,6 @@ namespace flame
 			return copy;
 		}
 	};
-
-	void cAligner::on_component_added(Component* c)
-	{
-		if(c->type_hash == cH("Element"))
-			element = (cElement*)c;
-	}
-
-	void cAligner::update()
-	{
-		((cAlignerPrivate*)this)->update();
-	}
-
-	Component* cAligner::copy()
-	{
-		return ((cAlignerPrivate*)this)->copy();
-	}
 
 	cAligner* cAligner::create()
 	{

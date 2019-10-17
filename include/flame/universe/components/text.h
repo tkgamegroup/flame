@@ -31,16 +31,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS const std::wstring& text() const;
 		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);
 
-		FLAME_UNIVERSE_EXPORTS void* add_changed_listener(void (*listener)(void* c, const wchar_t* text), const Mail<>& capture);
-
-		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
-
-		FLAME_UNIVERSE_EXPORTS void on_changed();
-
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
-		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
-
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
 	};
 

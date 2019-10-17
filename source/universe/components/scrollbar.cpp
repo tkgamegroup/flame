@@ -15,17 +15,12 @@ namespace flame
 			element = nullptr;
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
 		}
 	};
-
-	void cScrollbar::on_component_added(Component* c)
-	{
-		((cScrollbarPrivate*)this)->on_component_added(c);
-	}
 
 	cScrollbar* cScrollbar::create()
 	{
@@ -57,14 +52,14 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_added()
+		virtual void on_added() override
 		{
 			auto parent = entity->parent();
 			scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
 			target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -84,7 +79,7 @@ namespace flame
 			}
 		}
 
-		void update()
+		virtual void update() override
 		{
 			auto target_element = target_layout->element;
 			if (type == ScrollbarVertical)
@@ -122,21 +117,6 @@ namespace flame
 			v = 0.f;
 		}
 	};
-
-	void cScrollbarThumb::on_added()
-	{
-		((cScrollbarThumbPrivate*)this)->on_added();
-	}
-
-	void cScrollbarThumb::on_component_added(Component* c)
-	{
-		((cScrollbarThumbPrivate*)this)->on_component_added(c);
-	}
-
-	void cScrollbarThumb::update()
-	{
-		((cScrollbarThumbPrivate*)this)->update();
-	}
 
 	cScrollbarThumb* cScrollbarThumb::create(ScrollbarType type)
 	{

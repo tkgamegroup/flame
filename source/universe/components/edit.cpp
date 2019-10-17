@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
@@ -25,6 +26,8 @@ namespace flame
 
 			key_listener = nullptr;
 			mouse_listener = nullptr;
+
+			changed_listeners.hub = new ListenerHub;
 		}
 
 		~cEditPrivate()
@@ -34,9 +37,19 @@ namespace flame
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
 			}
+
+			delete (ListenerHub*)changed_listeners.hub;
 		}
 
-		void on_component_added(Component* c)
+		void on_changed()
+		{
+			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
+			auto str = ((cTextPrivate*)text)->text.c_str();
+			for (auto& l : listeners)
+				((void(*)(void*, const wchar_t*))l->function)(l->capture.p, str);
+		}
+
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -58,7 +71,7 @@ namespace flame
 							{
 								thiz->cursor--;
 								str.erase(str.begin() + thiz->cursor);
-								thiz->text->on_changed();
+								thiz->on_changed();
 							}
 							break;
 						case 22:
@@ -68,7 +81,7 @@ namespace flame
 							str = *copied.p;
 							delete_mail(copied);
 						}
-						break;
+							break;
 						case 27:
 							break;
 						case 13:
@@ -76,7 +89,7 @@ namespace flame
 						default:
 							str.insert(str.begin() + thiz->cursor, value);
 							thiz->cursor++;
-							thiz->text->on_changed();
+							thiz->on_changed();
 						}
 					}
 					else if (action == KeyStateDown)
@@ -101,7 +114,7 @@ namespace flame
 							if (thiz->cursor < str.size())
 							{
 								str.erase(str.begin() + thiz->cursor);
-								thiz->text->on_changed();
+								thiz->on_changed();
 							}
 							break;
 						}
@@ -150,7 +163,7 @@ namespace flame
 			}
 		}
 
-		void update()
+		virtual void update() override
 		{
 			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
@@ -163,14 +176,9 @@ namespace flame
 		}
 	};
 
-	void cEdit::on_component_added(Component* c)
+	void cEdit::trigger_changed()
 	{
-		((cEditPrivate*)this)->on_component_added(c);
-	}
-
-	void cEdit::update()
-	{
-		((cEditPrivate*)this)->update();
+		((cEditPrivate*)this)->on_changed();
 	}
 
 	cEdit* cEdit::create()

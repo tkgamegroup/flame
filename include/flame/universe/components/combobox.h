@@ -36,8 +36,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
-
 		FLAME_UNIVERSE_EXPORTS static cComboboxItem* create();
 	};
 
@@ -53,14 +51,9 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void* add_changed_listener(void (*listener)(void* c, int idx), const Mail<>& capture);
-
-		FLAME_UNIVERSE_EXPORTS void remove_changed_listener(void* ret_by_add);
+		Listeners<void(void* c, int idx)> changed_listeners;
 
 		FLAME_UNIVERSE_EXPORTS void set_index(int idx, bool trigger_changed = true);
-
-		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
 
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};

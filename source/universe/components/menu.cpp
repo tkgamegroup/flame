@@ -85,7 +85,7 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -112,11 +112,6 @@ namespace flame
 				return true;
 		}
 		return false;
-	}
-
-	void cMenuButton::on_component_added(Component* c)
-	{
-		((cMenuButtonPrivate*)this)->on_component_added(c);
 	}
 
 	void cMenuButton::open()

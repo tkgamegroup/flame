@@ -97,16 +97,6 @@ namespace flame
 		((cEventReceiverPrivate*)this)->acceptable_drops = hashes;
 	}
 
-	void cEventReceiver::on_component_added(Component* c)
-	{
-		((cEventReceiverPrivate*)this)->on_component_added(c);
-	}
-
-	Component* cEventReceiver::copy()
-	{
-		return ((cEventReceiverPrivate*)this)->copy();
-	}
-
 	cEventReceiver* cEventReceiver::create()
 	{
 		return new cEventReceiverPrivate();

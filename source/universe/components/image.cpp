@@ -17,13 +17,13 @@ namespace flame
 			color = Vec4c(255);
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
 		}
 
-		void update()
+		virtual void update() override
 		{
 			if (!element->cliped)
 			{
@@ -34,16 +34,6 @@ namespace flame
 			}
 		}
 	};
-
-	void cImage::on_component_added(Component* c)
-	{
-		((cImagePrivate*)this)->on_component_added(c);
-	}
-
-	void cImage::update()
-	{
-		((cImagePrivate*)this)->update();
-	}
 
 	cImage* cImage::create()
 	{

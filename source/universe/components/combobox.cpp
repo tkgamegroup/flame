@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
@@ -63,7 +64,7 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -85,11 +86,6 @@ namespace flame
 		}
 	};
 
-	void cComboboxItem::on_component_added(Component* c)
-	{
-		((cComboboxItemPrivate*)this)->on_component_added(c);
-	}
-
 	cComboboxItem* cComboboxItem::create()
 	{
 		return new cComboboxItemPrivate();
@@ -97,23 +93,29 @@ namespace flame
 
 	struct cComboboxPrivate : cCombobox
 	{
-		std::vector<std::unique_ptr<Closure<void(void* c, int idx)>>> changed_listeners;
-
 		cComboboxPrivate()
 		{
 			text = nullptr;
 			menu_button = nullptr;
 
 			selected = nullptr;
+
+			changed_listeners.hub = new ListenerHub;
+		}
+
+		~cComboboxPrivate()
+		{
+			delete (ListenerHub*)changed_listeners.hub;
 		}
 
 		void on_changed(int idx)
 		{
-			for (auto& l : changed_listeners)
-				l->function(l->capture.p, idx);
+			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
+			for (auto& l : listeners)
+				((void(*)(void*, int))l->function)(l->capture.p, idx);
 		}
 
-		void on_component_added(Component* c)
+		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Text"))
 				text = (cText*)c;
@@ -126,28 +128,6 @@ namespace flame
 			}
 		}
 	};
-
-	void* cCombobox::add_changed_listener(void (*listener)(void* c, int idx), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, int idx)>;
-		c->function = listener;
-		c->capture = capture;
-		((cComboboxPrivate*)this)->changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cCombobox::remove_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cComboboxPrivate*)this)->changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
 
 	void cCombobox::set_index(int idx, bool trigger_changed)
 	{
@@ -174,15 +154,6 @@ namespace flame
 		}
 		if (trigger_changed)
 			((cComboboxPrivate*)this)->on_changed(idx);
-	}
-
-	void cCombobox::on_component_added(Component* c)
-	{
-		((cComboboxPrivate*)this)->on_component_added(c);
-	}
-
-	void cCombobox::update()
-	{
 	}
 
 	cCombobox* cCombobox::create()
