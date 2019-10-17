@@ -608,7 +608,7 @@ namespace flame
 
 		void on_component_added(Component* c)
 		{
-			if (c->type_hash == cH("EventReceiver"))
+			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
 			else if (c->type_hash == cH("EventReceiver"))
 			{
