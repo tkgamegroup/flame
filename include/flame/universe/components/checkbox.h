@@ -34,7 +34,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();
 	};
 

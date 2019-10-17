@@ -41,9 +41,12 @@ namespace flame
 	void EntityPrivate::add_component(Component* c)
 	{
 		c->entity = this;
-		components.emplace_back(c);
 		for (auto& _c : components)
-			_c->on_enter_hierarchy(c);
+			_c->on_component_added(c);
+		for (auto& _c : components)
+			c->on_component_added(_c.get());
+		components.emplace_back(c);
+		c->on_added();
 	}
 
 	void EntityPrivate::remove_component(Component* c)
@@ -74,8 +77,13 @@ namespace flame
 			position = children.size();
 		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
 		e->parent = this;
+		for (auto& c : components)
+		{
+			for (auto& _c : e->components)
+				c->on_child_component_added(_c.get());
+		}
 		for (auto& c : e->components)
-			c->on_enter_hierarchy(nullptr);
+			c->on_added();
 	}
 
 	void EntityPrivate::reposition_child(EntityPrivate* e, int position)
@@ -186,15 +194,7 @@ namespace flame
 		if (!global_visible)
 			return;
 		for (auto& c : components)
-		{
-			if (c->first_update)
-			{
-				c->start();
-				c->first_update = false;
-			}
-			else
-				c->update();
-		}
+			c->update();
 		for (auto& e : children)
 			e->update();
 	}

@@ -13,19 +13,17 @@ namespace flame
 
 		Entity* entity;
 
-		bool first_update;
-
 		Component(const char* name) :
 			type_name(name),
-			type_hash(H(name)),
-			first_update(true)
+			type_hash(H(name))
 		{
 		}
 
 		virtual ~Component() {};
 
-		virtual void on_enter_hierarchy(Component* c) {} // c==nullptr, then the action is entity had been added to parent
-		virtual void start() {}
+		virtual void on_added() {}
+		virtual void on_component_added(Component* c) {}
+		virtual void on_child_component_added(Component* c) {}
 		virtual void update() {}
 		virtual Component* copy() { return nullptr; }
 	};

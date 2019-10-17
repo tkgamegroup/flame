@@ -12,6 +12,7 @@ namespace flame
 
 		cTextPrivate(graphics::FontAtlas* font_atlas);
 		void on_changed();
+		void on_component_added(Component* c);
 		void update();
 		Component* copy();
 	};

@@ -14,17 +14,17 @@ namespace flame
 		{
 			element = nullptr;
 		}
-	};
 
-	void cScrollbar::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_component_added(Component* c)
 		{
-			if (c == this)
-				element = (cElement*)(entity->find_component(cH("Element")));
-			else if (c->type_hash == cH("Element"))
+			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
 		}
+	};
+
+	void cScrollbar::on_component_added(Component* c)
+	{
+		((cScrollbarPrivate*)this)->on_component_added(c);
 	}
 
 	cScrollbar* cScrollbar::create()
@@ -55,6 +55,33 @@ namespace flame
 		{
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
+		}
+
+		void on_added()
+		{
+			auto parent = entity->parent();
+			scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
+			target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
+		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = (*(cScrollbarThumbPrivate**)c);
+					if (thiz->event_receiver->active && is_mouse_move(action, key))
+					{
+						if (thiz->type == ScrollbarVertical)
+							thiz->v = pos.y();
+						else
+							thiz->v = pos.x();
+					}
+				}, new_mail_p(this));
+			}
 		}
 
 		void update()
@@ -96,49 +123,14 @@ namespace flame
 		}
 	};
 
-	void cScrollbarThumb::on_enter_hierarchy(Component* c)
+	void cScrollbarThumb::on_added()
 	{
-		if (c)
-		{
-			const auto add_listener = [](cScrollbarThumbPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto thiz = (*(cScrollbarThumbPrivate**)c);
-					if (thiz->event_receiver->active && is_mouse_move(action, key))
-					{
-						if (thiz->type == ScrollbarVertical)
-							thiz->v = pos.y();
-						else
-							thiz->v = pos.x();
-					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cScrollbarThumbPrivate*)this);
-				auto parent = entity->parent();
-				if (parent)
-				{
-					scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
-					target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
-				}
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cScrollbarThumbPrivate*)this);
-			}
-		}
-		else
-		{
-			auto parent = entity->parent();
-			scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
-			target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
-		}
+		((cScrollbarThumbPrivate*)this)->on_added();
+	}
+
+	void cScrollbarThumb::on_component_added(Component* c)
+	{
+		((cScrollbarThumbPrivate*)this)->on_component_added(c);
 	}
 
 	void cScrollbarThumb::update()

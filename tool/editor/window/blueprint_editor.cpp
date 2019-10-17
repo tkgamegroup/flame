@@ -754,7 +754,6 @@ struct cBP : Component
 	}
 
 	virtual void start() override;
-
 	virtual void update() override;
 };
 

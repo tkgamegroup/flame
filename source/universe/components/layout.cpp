@@ -9,6 +9,7 @@ namespace flame
 		cLayoutPrivate(LayoutType _type)
 		{
 			element = nullptr;
+			aligner = nullptr;
 
 			type = _type;
 			item_padding = 0.f;
@@ -103,6 +104,14 @@ namespace flame
 			}
 			else
 				element->size.y() = h;
+		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("Aligner"))
+				aligner = (cAligner*)c;
 		}
 
 		void update()
@@ -396,20 +405,9 @@ namespace flame
 		}
 	};
 
-	void cLayout::on_enter_hierarchy(Component* c)
+	void cLayout::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				aligner = (cAligner*)(entity->find_component(cH("Aligner")));
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("Aligner"))
-				aligner = (cAligner*)c;
-		}
+		((cLayoutPrivate*)this)->on_component_added(c);
 	}
 
 	void cLayout::update()

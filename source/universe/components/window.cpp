@@ -33,37 +33,29 @@ namespace flame
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
-	};
 
-	void cMoveable::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_component_added(Component* c)
 		{
-			const auto add_listener = [](cMoveablePrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMoveablePrivate**)c;
 					if (thiz->event_receiver->active && is_mouse_move(action, key))
 					{
 						auto e = thiz->element;
 						e->pos += (Vec2f)pos / e->global_scale;
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cMoveablePrivate*)this);
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cMoveablePrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
+	};
+
+	void cMoveable::on_component_added(Component* c)
+	{
+		((cMoveablePrivate*)this)->on_component_added(c);
 	}
 
 	Component* cMoveable::copy()
@@ -91,14 +83,13 @@ namespace flame
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
-	};
 
-	void cBringToFront::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_component_added(Component* c)
 		{
-			const auto add_listener = [](cBringToFrontPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cBringToFrontPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -114,20 +105,14 @@ namespace flame
 							pp->reposition_child(p, idx);
 						}, new_mail_p(thiz->entity));
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cBringToFrontPrivate*)this);
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cBringToFrontPrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
+	};
+
+	void cBringToFront::on_component_added(Component* c)
+	{
+		((cBringToFrontPrivate*)this)->on_component_added(c);
 	}
 
 	Component* cBringToFront::copy()
@@ -157,35 +142,36 @@ namespace flame
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
-	};
 
-	void cSizeDragger::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_added()
 		{
-			const auto add_listener = [](cSizeDraggerPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			auto p = entity->parent();
+			if (p)
+				p_element = (cElement*)(p->find_component(cH("Element")));
+		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSizeDraggerPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->active)
 						thiz->p_element->size += pos;
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cSizeDraggerPrivate*)this);
-				if (entity->parent())
-					p_element = (cElement*)(entity->parent()->find_component(cH("Element")));
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cSizeDraggerPrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
-		else
-			p_element = (cElement*)(entity->parent()->find_component(cH("Element")));
+	};
+
+	void cSizeDragger::on_added()
+	{
+		((cSizeDraggerPrivate*)this)->on_added();
+	}
+
+	void cSizeDragger::on_component_added(Component* c)
+	{
+		((cSizeDraggerPrivate*)this)->on_component_added(c);
 	}
 
 	Component* cSizeDragger::copy()
@@ -235,16 +221,6 @@ namespace flame
 			{
 				event_receiver->mouse_listeners.remove(mouse_listener);
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
-			}
-		}
-
-		void select_me_if_only()
-		{
-			auto p = entity->parent();
-			if (p->child_count() == 1)
-			{
-				auto tabbar = (cDockerTabbar*)p->find_component(cH("DockerTabbar"));
-				tabbar->list->set_selected(entity);
 			}
 		}
 
@@ -315,51 +291,34 @@ namespace flame
 			}
 		}
 
-		void update()
+		void on_added()
 		{
-			if (!drop_tips.empty())
+			auto p = entity->parent();
+			if (p && p->child_count() == 1)
 			{
-				for (auto p : drop_tips)
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, p.pos, p.size);
-					element->canvas->fill(points, p.col);
-				}
-
-				drop_tips.clear();
+				auto tabbar = (cDockerTabbar*)p->find_component(cH("DockerTabbar"));
+				tabbar->list->set_selected(entity);
 			}
 		}
 
-		Component* copy()
+		void on_component_added(Component* c)
 		{
-			auto copy = new cDockerTabPrivate();
-
-			copy->root = root;
-
-			return copy;
-		}
-	};
-
-	void cDockerTab::take_away(bool close)
-	{
-		((cDockerTabPrivate*)this)->take_away(close);
-	}
-
-	void cDockerTab::on_enter_hierarchy(Component* c)
-	{
-		if (c)
-		{
-			const auto add_listener = [](cDockerTabPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				event_receiver->drag_hash = cH("DockerTab");
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->dragging && thiz->page)
 					{
 						thiz->element->pos += pos;
 						thiz->page_element->pos += pos;
 					}
-				}, new_mail_p(thiz));
+				}, new_mail_p(this));
 
-				thiz->drag_and_drop_listener = thiz->event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
 					if (action == DragStart)
 					{
@@ -411,34 +370,50 @@ namespace flame
 							}, new_mail_p(thiz));
 						}
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-				{
-					event_receiver->drag_hash = cH("DockerTab");
-					add_listener((cDockerTabPrivate*)this);
-				}
-				list_item = (cListItem*)(entity->find_component(cH("ListItem")));
-				if (entity->parent())
-					((cDockerTabPrivate*)this)->select_me_if_only();
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				event_receiver->drag_hash = cH("DockerTab");
-				add_listener((cDockerTabPrivate*)this);
+				}, new_mail_p(this));
 			}
 			else if (c->type_hash == cH("ListItem"))
 				list_item = (cListItem*)c;
 		}
-		else
-			((cDockerTabPrivate*)this)->select_me_if_only();
+
+		void update()
+		{
+			if (!drop_tips.empty())
+			{
+				for (auto p : drop_tips)
+				{
+					std::vector<Vec2f> points;
+					path_rect(points, p.pos, p.size);
+					element->canvas->fill(points, p.col);
+				}
+
+				drop_tips.clear();
+			}
+		}
+
+		Component* copy()
+		{
+			auto copy = new cDockerTabPrivate();
+
+			copy->root = root;
+
+			return copy;
+		}
+	};
+
+	void cDockerTab::take_away(bool close)
+	{
+		((cDockerTabPrivate*)this)->take_away(close);
+	}
+
+	void cDockerTab::on_added()
+	{
+		((cDockerTabPrivate*)this)->on_added();
+	}
+
+	void cDockerTab::on_component_added(Component* c)
+	{
+		((cDockerTabPrivate*)this)->on_component_added(c);
 	}
 
 	void cDockerTab::update()
@@ -509,14 +484,16 @@ namespace flame
 			}
 			return entity->child_count();
 		}
-	};
 
-	void cDockerTabbar::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_component_added(Component* c)
 		{
-			const auto add_listener = [](cDockerTabbarPrivate* thiz) {
-				thiz->drag_and_drop_listener = thiz->event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				event_receiver->set_acceptable_drops({ cH("DockerTab") });
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
 					if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
 					{
@@ -570,10 +547,12 @@ namespace flame
 							}, new_mail_p(thiz));
 						}
 					}
-				}, new_mail_p(thiz));
-			};
-			const auto add_list_listener = [](cDockerTabbarPrivate* thiz) {
-				thiz->selected_changed_listener = thiz->list->add_selected_changed_listener([](void* c, Entity* selected) {
+				}, new_mail_p(this));
+			}
+			else if (c->type_hash == cH("List"))
+			{
+				list = (cList*)c;
+				selected_changed_listener = list->add_selected_changed_listener([](void* c, Entity* selected) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
 					auto tabbar = thiz->entity;
 					auto docker = tabbar->parent();
@@ -585,35 +564,14 @@ namespace flame
 							pages->child(i)->visible = false;
 						pages->child(idx)->visible = true;
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-				{
-					event_receiver->set_acceptable_drops({ cH("DockerTab") });
-					add_listener((cDockerTabbarPrivate*)this);
-				}
-				list = (cList*)(entity->find_component(cH("List")));
-				if (list)
-					add_list_listener((cDockerTabbarPrivate*)this);
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver->set_acceptable_drops({ cH("DockerTab") });
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cDockerTabbarPrivate*)this);
-			}
-			else if (c->type_hash == cH("List"))
-			{
-				list = (cList*)c;
-				add_list_listener((cDockerTabbarPrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
+	};
+
+	void cDockerTabbar::on_component_added(Component* c)
+	{
+		((cDockerTabbarPrivate*)this)->on_component_added(c);
 	}
 
 	Component* cDockerTabbar::copy()
@@ -647,14 +605,16 @@ namespace flame
 			if (!entity->dying)
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 		}
-	};
 
-	void cDockerPages::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_component_added(Component* c)
 		{
-			const auto add_listener = [](cDockerPagesPrivate* thiz) {
-				thiz->drag_and_drop_listener = thiz->event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+			if (c->type_hash == cH("EventReceiver"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				event_receiver->set_acceptable_drops({ cH("DockerTab") });
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerPagesPrivate**)c);
 					if (action == DragOvering)
 					{
@@ -861,27 +821,14 @@ namespace flame
 							}
 						}
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-				{
-					event_receiver->set_acceptable_drops({ cH("DockerTab") });
-					add_listener((cDockerPagesPrivate*)this);
-				}
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops({ cH("DockerTab") });
-				add_listener((cDockerPagesPrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
+	};
+
+	void cDockerPages::on_component_added(Component* c)
+	{
+		((cDockerPages*)this)->on_component_added(c);
 	}
 
 	Component* cDockerPages::copy()

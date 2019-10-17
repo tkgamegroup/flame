@@ -17,10 +17,10 @@ namespace flame
 			color = Vec4c(255);
 		}
 
-		void start()
+		void on_component_added(Component* c)
 		{
-			element = (cElement*)(entity->find_component(cH("Element")));
-			assert(element);
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
 		}
 
 		void update()
@@ -35,15 +35,9 @@ namespace flame
 		}
 	};
 
-	void cImage::on_enter_hierarchy(Component* c)
+	void cImage::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			if (c == this)
-				element = (cElement*)(entity->find_component(cH("Element")));
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-		}
+		((cImagePrivate*)this)->on_component_added(c);
 	}
 
 	void cImage::update()

@@ -37,6 +37,26 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_clicked(action, key))
+					{
+						auto thiz = *(cCheckboxPrivate**)c;
+						thiz->set_checked(!thiz->checked);
+					}
+				}, new_mail_p(this));
+			}
+			else if (c->type_hash == cH("StyleColor"))
+			{
+				style = (cStyleColor*)c;
+				do_style();
+			}
+		}
+
 		void do_style()
 		{
 			if (style)
@@ -92,38 +112,9 @@ namespace flame
 		}
 	}
 
-	void cCheckbox::on_enter_hierarchy(Component* c)
+	void cCheckbox::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			const auto add_listener = [](cCheckboxPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_clicked(action, key))
-					{
-						auto thiz = *(cCheckboxPrivate**)c;
-						thiz->set_checked(!thiz->checked);
-					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cCheckboxPrivate*)this);
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-				((cCheckboxPrivate*)this)->do_style();
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cCheckboxPrivate*)this);
-			}
-			else if (c->type_hash == cH("StyleColor"))
-			{
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-				((cCheckboxPrivate*)this)->do_style();
-			}
-		}
+		((cCheckboxPrivate*)this)->on_component_added(c);
 	}
 
 	cCheckbox* cCheckbox::create()

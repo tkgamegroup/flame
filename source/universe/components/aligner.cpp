@@ -44,15 +44,10 @@ namespace flame
 		}
 	};
 
-	void cAligner::on_enter_hierarchy(Component* c)
+	void cAligner::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			if (c == this)
-				element = (cElement*)(entity->find_component(cH("Element")));
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-		}
+		if(c->type_hash == cH("Element"))
+			element = (cElement*)c;
 	}
 
 	void cAligner::update()

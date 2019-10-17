@@ -43,6 +43,21 @@ namespace flame
 			}
 		}
 
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
+					(*(cStyleColorPrivate**)c)->style(prev_state, curr_state);
+				}, new_mail_p(this));
+				auto state = event_receiver->state;
+				style(state, state);
+			}
+		}
+
 		Component* copy()
 		{
 			return new cStyleColorPrivate(color_normal, color_hovering, color_active);
@@ -55,35 +70,9 @@ namespace flame
 		((cStyleColorPrivate*)this)->style(state, state);
 	}
 
-	void cStyleColor::on_enter_hierarchy(Component* c)
+	void cStyleColor::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			const auto add_listener = [](cStyleColorPrivate* thiz) {
-				thiz->state_changed_listener = thiz->event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
-					(*(cStyleColorPrivate**)c)->style(prev_state, curr_state);
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cStyleColorPrivate*)this);
-				style();
-			}
-			else if (c->type_hash == cH("Element"))
-			{
-				element = (cElement*)c;
-				style();
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cStyleColorPrivate*)this);
-				style();
-			}
-		}
+		((cStyleColorPrivate*)this)->on_component_added(c);
 	}
 
 	Component* cStyleColor::copy()
@@ -130,6 +119,21 @@ namespace flame
 			}
 		}
 
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("Text"))
+				text = (cText*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
+					(*(cStyleTextColorPrivate**)c)->style(prev_state, curr_state);
+				}, new_mail_p(this));
+				auto state = event_receiver->state;
+				style(state, state);
+			}
+		}
+
 		Component* copy()
 		{
 			return new cStyleTextColorPrivate(color_normal, color_else);
@@ -142,35 +146,9 @@ namespace flame
 		((cStyleTextColorPrivate*)this)->style(state, state);
 	}
 
-	void cStyleTextColor::on_enter_hierarchy(Component* c)
+	void cStyleTextColor::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			const auto add_listener = [](cStyleTextColorPrivate* thiz) {
-				thiz->state_changed_listener = thiz->event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
-					(*(cStyleTextColorPrivate**)c)->style(prev_state, curr_state);
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				text = (cText*)(entity->find_component(cH("Text")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cStyleTextColorPrivate*)this);
-				style();
-			}
-			else if (c->type_hash == cH("Text"))
-			{
-				text = (cText*)c;
-				style();
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cStyleTextColorPrivate*)this);
-				style();
-			}
-		}
+		((cStyleTextColorPrivate*)this)->on_component_added(c);
 	}
 
 	Component* cStyleTextColor::copy()

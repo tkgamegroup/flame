@@ -7,6 +7,15 @@ namespace flame
 {
 	struct cElementPrivate : cElement
 	{
+		void boardcast_canvas(graphics::Canvas* canvas, EntityPrivate* e)
+		{
+			auto c = (cElement*)e->find_component(cH("Element"));
+			if (c)
+				c->canvas = canvas;
+			for (auto& c : e->children)
+				boardcast_canvas(canvas, c.get());
+		}
+
 		cElementPrivate(graphics::Canvas* _canvas)
 		{
 			pos = 0.f;
@@ -26,6 +35,28 @@ namespace flame
 			global_pos = 0.f;
 			global_scale = 0.f;
 			global_size = 0.f;
+		}
+
+		void on_added()
+		{
+			auto p = entity->parent();
+			if (p)
+			{
+				p_element = (cElement*)(p->find_component(cH("Element")));
+				if (p_element)
+					canvas = p_element->canvas;
+			}
+		}
+
+		void on_child_component_added(Component* _c)
+		{
+			if (_c->type_hash == cH("Element"))
+			{
+				auto c = (cElement*)_c;
+				c->p_element = this;
+				if (!c->canvas && canvas)
+					boardcast_canvas(canvas, (EntityPrivate*)c->entity);
+			}
 		}
 
 		void update()
@@ -105,29 +136,14 @@ namespace flame
 		}
 	};
 
-	void boardcast_canvas(graphics::Canvas* canvas, EntityPrivate* e)
+	void cElement::on_added()
 	{
-		((cElement*)e->find_component(cH("Element")))->canvas = canvas;
-		for (auto& c : e->children)
-			boardcast_canvas(canvas, c.get());
+		((cElementPrivate*)this)->on_added();
 	}
 
-	void cElement::on_enter_hierarchy(Component* c)
+	void cElement::on_child_component_added(Component* c)
 	{
-		if (!c || c == this)
-		{
-			auto e = entity->parent();
-			if (e)
-				p_element = (cElementPrivate*)(e->find_component(cH("Element")));
-			else
-				p_element = nullptr;
-			if (p_element && p_element->canvas)
-			{
-				canvas = p_element->canvas;
-				for (auto& c : ((EntityPrivate*)entity)->children)
-					boardcast_canvas(canvas, c.get());
-			}
-		}
+		((cElementPrivate*)this)->on_child_component_added(c);
 	}
 
 	void cElement::update()

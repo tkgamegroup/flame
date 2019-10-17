@@ -24,22 +24,12 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		Component* copy()
+		void on_component_added(Component* c)
 		{
-			auto copy = new cSplitterPrivate();
-
-			copy->type = type;
-
-			return copy;
-		}
-	};
-
-	void cSplitter::on_enter_hierarchy(Component* c)
-	{
-		if (c)
-		{
-			const auto add_listener = [](cSplitterPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSplitterPrivate**)c);
 					if (thiz->event_receiver->active && is_mouse_move(action, key))
 					{
@@ -96,20 +86,23 @@ namespace flame
 							}
 						}
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cSplitterPrivate*)this);
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cSplitterPrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
+
+		Component* copy()
+		{
+			auto copy = new cSplitterPrivate();
+
+			copy->type = type;
+
+			return copy;
+		}
+	};
+
+	void cSplitter::on_component_added(Component* c)
+	{
+		((cSplitterPrivate*)this)->on_component_added(c);
 	}
 
 	Component* cSplitter::copy()

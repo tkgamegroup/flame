@@ -13,20 +13,6 @@
 
 namespace flame
 {
-	cTree* find_tree(Entity* e)
-	{
-		auto n = (cTreeNode*)e->find_component(cH("TreeNode"));
-		if (n)
-			return n->tree;
-		auto t = (cTree*)e->find_component(cH("Tree"));
-		if (t)
-			return t;
-		auto p = e->parent();
-		if (p)
-			return find_tree(p);
-		return nullptr;
-	}
-
 	void boardcast_tree(cTree* t, EntityPrivate* e)
 	{
 		{
@@ -79,6 +65,41 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
+		void on_added()
+		{
+			auto p = entity->parent();
+			if (p)
+			{
+				auto pp = p->parent();
+				if (pp)
+				{
+					auto n = (cTreeNode*)pp->find_component(cH("TreeNode"));
+					if (n)
+						tree = n->tree;
+				}
+			}
+		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
+					{
+						auto thiz = *(cTreeLeafPrivate**)c;
+						thiz->tree->set_selected(thiz->entity);
+					}
+				}, new_mail_p(this));
+			}
+			else if (c->type_hash == cH("StyleColor"))
+			{
+				style = (cStyleColor*)c;
+				do_style(false);
+			}
+		}
+
 		void do_style(bool selected)
 		{
 			if (!selected)
@@ -104,45 +125,14 @@ namespace flame
 		}
 	};
 
-	void cTreeLeaf::on_enter_hierarchy(Component* c)
+	void cTreeLeaf::on_added()
 	{
-		if (c)
-		{
-			const auto add_listener = [](cTreeLeafPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-					{
-						auto thiz = *(cTreeLeafPrivate**)c;
-						thiz->tree->set_selected(thiz->entity);
-					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cTreeLeafPrivate*)this);
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-				((cTreeLeafPrivate*)this)->do_style(false);
-				if (entity->parent())
-					tree = find_tree(entity->parent());
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cTreeLeafPrivate*)this);
-			}
-			else if (c->type_hash == cH("StyleColor"))
-			{
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-				((cTreeLeafPrivate*)this)->do_style(false);
-			}
-		}
-		else
-		{
-			tree = find_tree(entity->parent());
-			assert(tree);
-		}
+		((cTreeLeafPrivate*)this)->on_added();
+	}
+
+	void cTreeLeaf::on_component_added(Component* c)
+	{
+		((cTreeLeafPrivate*)this)->on_component_added(c);
 	}
 
 	cTreeLeaf* cTreeLeaf::create()
@@ -156,24 +146,26 @@ namespace flame
 		{
 			tree = nullptr;
 		}
-	};
 
-	void cTreeNode::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_added()
 		{
-			if (c == this)
+			auto p = entity->parent();
+			if (p)
 			{
-				if (entity->parent())
-					tree = find_tree(entity->parent());
+				auto pp = p->parent();
+				if (pp)
+				{
+					auto n = (cTreeNode*)pp->find_component(cH("TreeNode"));
+					if (n)
+						tree = n->tree;
+				}
 			}
 		}
-		else
-		{
-			tree = find_tree(entity->parent());
-			assert(tree);
-			boardcast_tree(tree, (EntityPrivate*)entity);
-		}
+	};
+
+	void cTreeNode::on_added()
+	{
+		((cTreeNodePrivate*)this)->on_added();
 	}
 
 	cTreeNode* cTreeNode::create()
@@ -227,47 +219,41 @@ namespace flame
 				}
 			}
 		}
-	};
 
-	void cTreeNodeTitle::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_added()
 		{
-			const auto add_listener = [](cTreeNodeTitlePrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			tree = ((cTreeNode*)entity->parent()->find_component(cH("TreeNode")))->tree;
+		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 					{
 						auto thiz = *(cTreeNodeTitlePrivate**)c;
 						thiz->tree->set_selected(thiz->entity->parent());
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cTreeNodeTitlePrivate*)this);
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-				((cTreeNodeTitlePrivate*)this)->do_style(false);
-				if (entity->parent())
-					tree = find_tree(entity->parent());
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cTreeNodeTitlePrivate*)this);
+				}, new_mail_p(this));
 			}
 			else if (c->type_hash == cH("StyleColor"))
 			{
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
+				style = (cStyleColor*)c;
 				((cTreeNodeTitlePrivate*)this)->do_style(false);
 			}
 		}
-		else
-		{
-			tree = find_tree(entity->parent());
-			assert(tree);
-		}
+	};
+
+	void cTreeNodeTitle::on_added()
+	{
+		((cTreeNodeTitlePrivate*)this)->on_added();
+	}
+
+	void cTreeNodeTitle::on_component_added(Component* c)
+	{
+		((cTreeNodeTitlePrivate*)this)->on_component_added(c);
 	}
 
 	cTreeNodeTitle* cTreeNodeTitle::create()
@@ -293,14 +279,20 @@ namespace flame
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
-	};
 
-	void cTreeNodeArrow::on_enter_hierarchy(Component* c)
-	{
-		if (c)
+		void on_added()
 		{
-			const auto add_listener = [](cTreeNodeArrowPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			tree = ((cTreeNodeTitle*)entity->parent()->find_component(cH("TreeNodeTitle")))->tree;
+		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("Text"))
+				text = (cText*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						auto thiz = *(cTreeNodeArrowPrivate**)c;
@@ -308,30 +300,19 @@ namespace flame
 						e->visible = !e->visible;
 						thiz->text->set_text(e->visible ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				text = (cText*)(entity->find_component(cH("Text")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cTreeNodeArrowPrivate*)this);
-				if (entity->parent())
-					tree = find_tree(entity->parent());
-			}
-			else if (c->type_hash == cH("Text"))
-				text = (cText*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cTreeNodeArrowPrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
-		else
-		{
-			tree = find_tree(entity->parent());
-			assert(tree);
-		}
+	};
+
+	void cTreeNodeArrow::on_added()
+	{
+		((cTreeNodeArrowPrivate*)this)->on_added();
+	}
+
+	void cTreeNodeArrow::on_component_added(Component* c)
+	{
+		((cTreeNodeArrowPrivate*)this)->on_component_added(c);
 	}
 
 	cTreeNodeArrow* cTreeNodeArrow::create()
@@ -356,6 +337,26 @@ namespace flame
 		{
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
+		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+						(*(cTreePrivate**)c)->set_selected(nullptr);
+				}, new_mail_p(this));
+			}
+		}
+
+		void on_child_component_added(Component* c)
+		{
+			if (c->type_hash == cH("TreeLeaf"))
+				((cTreeLeaf*)c)->tree = this;
+			else if (c->type_hash == cH("TreeNode"))
+				boardcast_tree(this, (EntityPrivate*)c->entity);
 		}
 	};
 
@@ -416,28 +417,14 @@ namespace flame
 		}
 	}
 
-	void cTree::on_enter_hierarchy(Component* c)
+	void cTree::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			const auto add_listener = [](cTreePrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						(*(cTreePrivate**)c)->set_selected(nullptr);
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cTreePrivate*)this);
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cTreePrivate*)this);
-			}
-		}
+		((cTreePrivate*)this)->on_component_added(c);
+	}
+
+	void cTree::on_child_component_added(Component* c)
+	{
+		((cTreePrivate*)this)->on_child_component_added(c);
 	}
 
 	cTree* cTree::create()

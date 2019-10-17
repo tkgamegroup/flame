@@ -28,6 +28,14 @@ namespace flame
 			l->function(l->capture.p, ((cTextPrivate*)this)->text.c_str());
 	}
 
+	void cTextPrivate::on_component_added(Component* c)
+	{
+		if (c->type_hash == cH("Element"))
+			element = (cElement*)c;
+		else if (c->type_hash == cH("Aligner"))
+			aligner = (cAligner*)c;
+	}
+
 	void cTextPrivate::update()
 	{
 		auto rect = element->canvas->add_text(font_atlas, element->global_pos +
@@ -107,20 +115,9 @@ namespace flame
 		((cTextPrivate*)this)->on_changed();
 	}
 
-	void cText::on_enter_hierarchy(Component* c)
+	void cText::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				aligner = (cAligner*)(entity->find_component(cH("Aligner")));
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("Aligner"))
-				aligner = (cAligner*)c;
-		}
+		((cTextPrivate*)this)->on_component_added(c);
 	}
 
 	void cText::update()

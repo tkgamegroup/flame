@@ -38,7 +38,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cListItem* create();
@@ -61,7 +61,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_child_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cList* create(bool select_air_when_clicked = true);

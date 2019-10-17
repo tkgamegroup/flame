@@ -84,6 +84,21 @@ namespace flame
 				get_topmost(root)->remove_child(menu, false);
 			}
 		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = *(cMenuButtonPrivate**)c;
+					if (thiz->can_open(action, key))
+						thiz->open();
+				}, new_mail_p(this));
+			}
+		}
 	};
 
 	bool cMenuButton::can_open(KeyState action, MouseKey key)
@@ -99,36 +114,9 @@ namespace flame
 		return false;
 	}
 
-	void cMenuButton::on_enter_hierarchy(Component* c)
+	void cMenuButton::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			const auto add_listener = [](cMenuButtonPrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cMenuButtonPrivate**)c;
-					if (thiz->can_open(action, key))
-						thiz->open();
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cMenuButtonPrivate*)this);
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cMenuButtonPrivate*)this);
-			}
-		}
-	}
-
-	void cMenuButton::update()
-	{
+		((cMenuButtonPrivate*)this)->on_component_added(c);
 	}
 
 	void cMenuButton::open()

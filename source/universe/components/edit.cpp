@@ -36,25 +36,16 @@ namespace flame
 			}
 		}
 
-		void update()
+		void on_component_added(Component* c)
 		{
-			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
+			if (c->type_hash == cH("Element"))
+				element = (cElement*)c;
+			else if (c->type_hash == cH("Text"))
+				text = (cText*)c;
+			else if (c->type_hash == cH("EventReceiver"))
 			{
-				auto text_scale = text->sdf_scale * element->global_scale;
-				element->canvas->add_text(text->font_atlas, element->global_pos +
-					Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
-					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
-					alpha_mul(text->color, element->alpha), L"|", text_scale);
-			}
-		}
-	};
-
-	void cEdit::on_enter_hierarchy(Component* c)
-	{
-		if (c)
-		{
-			const auto add_listener = [](cEditPrivate* thiz) {
-				thiz->key_listener = thiz->event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
+				event_receiver = (cEventReceiver*)c;
+				key_listener = event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
 					auto thiz = *(cEditPrivate**)c;
 					auto& str = ((cTextPrivate*)thiz->text)->text;
 
@@ -115,9 +106,9 @@ namespace flame
 							break;
 						}
 					}
-				}, new_mail_p(thiz));
+				}, new_mail_p(this));
 
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cEditPrivate**)c;
 					auto element = thiz->element;
 					auto text = thiz->text;
@@ -155,26 +146,26 @@ namespace flame
 								y += lh;
 						}
 					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				element = (cElement*)(entity->find_component(cH("Element")));
-				text = (cText*)(entity->find_component(cH("Text")));
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cEditPrivate*)this);
-			}
-			else if (c->type_hash == cH("Element"))
-				element = (cElement*)c;
-			else if (c->type_hash == cH("Text"))
-				text = (cText*)c;
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cEditPrivate*)this);
+				}, new_mail_p(this));
 			}
 		}
+
+		void update()
+		{
+			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
+			{
+				auto text_scale = text->sdf_scale * element->global_scale;
+				element->canvas->add_text(text->font_atlas, element->global_pos +
+					Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
+					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
+					alpha_mul(text->color, element->alpha), L"|", text_scale);
+			}
+		}
+	};
+
+	void cEdit::on_component_added(Component* c)
+	{
+		((cEditPrivate*)this)->on_component_added(c);
 	}
 
 	void cEdit::update()

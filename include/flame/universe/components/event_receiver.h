@@ -35,8 +35,7 @@ namespace flame
 		Listeners<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)> drag_and_drop_listeners;
 		Listeners<void(void* c, EventReceiverState prev_state, EventReceiverState curr_state)> state_changed_listeners;
 
-		FLAME_UNIVERSE_EXPORTS virtual void on_enter_hierarchy(Component* c) override;
-		FLAME_UNIVERSE_EXPORTS virtual void update() override;
+		FLAME_UNIVERSE_EXPORTS virtual void on_component_added(Component* c) override;
 		FLAME_UNIVERSE_EXPORTS virtual Component* copy() override;
 
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();

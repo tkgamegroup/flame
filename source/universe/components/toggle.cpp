@@ -54,6 +54,26 @@ namespace flame
 				style->style();
 			}
 		}
+
+		void on_component_added(Component* c)
+		{
+			if (c->type_hash == cH("EventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_clicked(action, key))
+					{
+						auto thiz = *(cTogglePrivate**)c;
+						thiz->set_toggled(!thiz->toggled);
+					}
+				}, new_mail_p(this));
+			}
+			else if (c->type_hash == cH("StyleColor"))
+			{
+				style = (cStyleColor*)c;
+				do_style();
+			}
+		}
 	};
 
 	void* cToggle::add_changed_listener(void (*listener)(void* c, bool checked), const Mail<>& capture)
@@ -90,38 +110,9 @@ namespace flame
 		}
 	}
 
-	void cToggle::on_enter_hierarchy(Component* c)
+	void cToggle::on_component_added(Component* c)
 	{
-		if (c)
-		{
-			const auto add_listener = [](cTogglePrivate* thiz) {
-				thiz->mouse_listener = thiz->event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_clicked(action, key))
-					{
-						auto thiz = *(cTogglePrivate**)c;
-						thiz->set_toggled(!thiz->toggled);
-					}
-				}, new_mail_p(thiz));
-			};
-			if (c == this)
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				if (event_receiver)
-					add_listener((cTogglePrivate*)this);
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-				((cTogglePrivate*)this)->do_style();
-			}
-			else if (c->type_hash == cH("EventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)(entity->find_component(cH("EventReceiver")));
-				add_listener((cTogglePrivate*)this);
-			}
-			else if (c->type_hash == cH("StyleColor"))
-			{
-				style = (cStyleColor*)(entity->find_component(cH("StyleColor")));
-				((cTogglePrivate*)this)->do_style();
-			}
-		}
+		((cTogglePrivate*)this)->on_component_added(c);
 	}
 
 	cToggle* cToggle::create()
