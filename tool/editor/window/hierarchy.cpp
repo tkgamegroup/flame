@@ -148,7 +148,7 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 			auto c_item = new_component<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;
-			e_tree_node->add_component(c_item);
+			e_tree_node->child(0)->add_component(c_item);
 		}
 
 		auto e_sub_tree = e_tree_node->child(1);
