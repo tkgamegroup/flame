@@ -38,7 +38,7 @@ struct cEnumSingleDataTracker : cDataTracker
 		combobox->set_index(idx, false);
 	}
 
-	virtual void start() override
+	virtual void on_added() override
 	{
 		combobox = (cCombobox*)entity->child(0)->find_component(cH("Combobox"));
 
@@ -58,8 +58,9 @@ struct cEnumMultiDataTracker : cDataTracker
 			checkboxs[i]->set_checked(*(int*)data & info->item(i)->value(), false);
 	}
 
-	virtual void start() override
+	virtual void on_added() override
 	{
+		checkboxs.clear();
 		for (auto i = 0; i < entity->child_count(); i++)
 			checkboxs.push_back((cCheckbox*)entity->child(i)->child(0)->find_component(cH("Checkbox")));
 
@@ -76,7 +77,7 @@ struct cBoolDataTracker : cDataTracker
 		checkbox->set_checked(*(bool*)data, false);
 	}
 
-	virtual void start() override
+	virtual void on_added() override
 	{
 		checkbox = (cCheckbox*)entity->child(0)->find_component(cH("Checkbox"));
 
@@ -101,7 +102,7 @@ struct cDigitalDataTracker : cDataTracker
 		drag_text->set_text(str);
 	}
 
-	virtual void start() override
+	virtual void on_added() override
 	{
 		auto e = entity->child(0);
 		edit_text = (cText*)e->child(0)->find_component(cH("Text"));
@@ -131,7 +132,7 @@ struct cDigitalVecDataTracker : cDataTracker
 		}
 	}
 
-	virtual void start() override
+	virtual void on_added() override
 	{
 		for (auto i = 0; i < N; i++)
 		{
@@ -153,7 +154,7 @@ struct cStringDataTracker : cDataTracker
 		text->set_text(s2w(*(std::string*)data));
 	}
 
-	virtual void start() override
+	virtual void on_added() override
 	{
 		text = (cText*)entity->child(0)->find_component(cH("Text"));
 
@@ -170,7 +171,7 @@ struct cWStringDataTracker : cDataTracker
 		text->set_text(*(std::wstring*)data);
 	}
 
-	virtual void start() override
+	virtual void on_added() override
 	{
 		text = (cText*)entity->child(0)->find_component(cH("Text"));
 

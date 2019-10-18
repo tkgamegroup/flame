@@ -89,12 +89,9 @@ struct cComponentDealer : Component
 template<class T>
 void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
 {
-	auto c_tracker = new_component<cDigitalDataTracker<T>>();
-	c_tracker->data = pdata;
-	parent->add_component(c_tracker);
-
 	auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
 	parent->add_child(e_edit);
+
 	struct Capture
 	{
 		cComponentDealer* d;
@@ -104,21 +101,21 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	capture.d = d;
 	capture.v = v;
 	capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-	((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
+	((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
 		auto& capture = *(Capture*)c;
 		*(T*)((char*)capture.d->dummy + capture.v->offset()) = sto_s<T>(text);
 		capture.d->unserialize(capture.v->offset());
 		capture.drag_text->set_text(text);
 	}, new_mail(&capture));
+
+	auto c_tracker = new_component<cDigitalDataTracker<T>>();
+	c_tracker->data = pdata;
+	parent->add_component(c_tracker);
 }
 
 template<uint N, class T>
 void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
 {
-	auto c_tracker = new_component<cDigitalVecDataTracker<N, T>>();
-	c_tracker->data = pdata;
-	parent->add_component(c_tracker);
-
 	struct Capture
 	{
 		cComponentDealer* d;
@@ -134,13 +131,17 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
 		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-		((cText*)e_edit->child(0)->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
+		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
 			auto& capture = *(Capture*)c;
 			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = sto_s<T>(text);
 			capture.d->unserialize(capture.v->offset());
 			capture.drag_text->set_text(text);
 		}, new_mail(&capture));
 	}
+
+	auto c_tracker = new_component<cDigitalVecDataTracker<N, T>>();
+	c_tracker->data = pdata;
+	parent->add_component(c_tracker);
 }
 
 struct cInspectorPrivate : cInspector
@@ -181,9 +182,8 @@ struct cInspectorPrivate : cInspector
 
 				auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 				e_item->child(1)->add_child(e_edit);
-				auto c_text = (cText*)e_edit->find_component(cH("Text"));
-				c_text->set_text(s2w(selected->name()));
-				c_text->add_changed_listener([](void* c, const wchar_t* text) {
+				((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(selected->name()));
+				((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
 					auto editor = *(cSceneEditor**)c;
 					editor->selected->set_name(w2s(text));
 					if (editor->hierarchy)
@@ -204,7 +204,7 @@ struct cInspectorPrivate : cInspector
 				e_item->child(1)->add_child(e_checkbox);
 				auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
 				checkbox->set_checked(selected->visible, false);
-				checkbox->add_changed_listener([](void* c, bool checked) {
+				checkbox->changed_listeners.add([](void* c, bool checked) {
 					(*(Entity**)c)->visible = checked;
 				}, new_mail_p(selected));
 			}
@@ -331,12 +331,8 @@ struct cInspectorPrivate : cInspector
 					{
 						auto info = find_enum(app.dbs, hash);
 
-						auto c_tracker = new_component<cEnumSingleDataTracker>();
-						c_tracker->data = pdata;
-						c_tracker->info = info;
-						e_data->add_component(c_tracker);
-
 						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
+
 						struct Capture
 						{
 							cComponentDealer* d;
@@ -346,21 +342,21 @@ struct cInspectorPrivate : cInspector
 						capture.d = c_dealer;
 						capture.v = v;
 						capture.info = info;
-						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->add_changed_listener([](void* c, int idx) {
+						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->changed_listeners.add([](void* c, int idx) {
 							auto& capture = *(Capture*)c;
 							*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(idx)->value();
 							capture.d->unserialize(capture.v->offset());
 						}, new_mail(&capture));
+
+						auto c_tracker = new_component<cEnumSingleDataTracker>();
+						c_tracker->data = pdata;
+						c_tracker->info = info;
+						e_data->add_component(c_tracker);
 					}
 						break;
 					case TypeTagEnumMulti:
 					{
 						auto info = find_enum(app.dbs, hash);
-
-						auto c_tracker = new_component<cEnumMultiDataTracker>();
-						c_tracker->data = pdata;
-						c_tracker->info = info;
-						e_data->add_component(c_tracker);
 
 						create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
 						for (auto k = 0; k < info->item_count(); k++)
@@ -374,7 +370,7 @@ struct cInspectorPrivate : cInspector
 							capture.d = c_dealer;
 							capture.v = v;
 							capture.vl = info->item(k)->value();
-							((cCheckbox*)e_data->child(k)->child(0)->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+							((cCheckbox*)e_data->child(k)->child(0)->find_component(cH("Checkbox")))->changed_listeners.add([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
 								auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
 								if (checked)
@@ -384,6 +380,11 @@ struct cInspectorPrivate : cInspector
 								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 						}
+
+						auto c_tracker = new_component<cEnumMultiDataTracker>();
+						c_tracker->data = pdata;
+						c_tracker->info = info;
+						e_data->add_component(c_tracker);
 					}
 						break;
 					case TypeTagVariable:
@@ -391,10 +392,6 @@ struct cInspectorPrivate : cInspector
 						{
 						case cH("bool"):
 						{
-							auto c_tracker = new_component<cBoolDataTracker>();
-							c_tracker->data = pdata;
-							e_data->add_component(c_tracker);
-
 							auto e_checkbox = create_standard_checkbox();
 							e_data->add_child(e_checkbox);
 							struct Capture
@@ -404,11 +401,15 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->add_changed_listener([](void* c, bool checked) {
+							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->changed_listeners.add([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
 								*(bool*)((char*)capture.d->dummy + capture.v->offset()) = checked;
 								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
+
+							auto c_tracker = new_component<cBoolDataTracker>();
+							c_tracker->data = pdata;
+							e_data->add_component(c_tracker);
 						}
 							break;
 						case cH("int"):
@@ -461,10 +462,6 @@ struct cInspectorPrivate : cInspector
 							break;
 						case cH("std::basic_string(char)"):
 						{
-							auto c_tracker = new_component<cStringDataTracker>();
-							c_tracker->data = pdata;
-							e_data->add_component(c_tracker);
-
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 							e_data->add_child(e_edit);
 							struct Capture
@@ -474,19 +471,19 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cText*)e_edit->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
+							((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
 								auto& capture = *(Capture*)c;
 								*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
 								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
+
+							auto c_tracker = new_component<cStringDataTracker>();
+							c_tracker->data = pdata;
+							e_data->add_component(c_tracker);
 						}
 							break;
 						case cH("std::basic_string(wchar_t)"):
 						{
-							auto c_tracker = new_component<cWStringDataTracker>();
-							c_tracker->data = pdata;
-							e_data->add_component(c_tracker);
-
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 							e_data->add_child(e_edit);
 							struct Capture
@@ -496,11 +493,15 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cText*)e_edit->find_component(cH("Text")))->add_changed_listener([](void* c, const wchar_t* text) {
+							((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
 								auto& capture = *(Capture*)c;
 								*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
 								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
+
+							auto c_tracker = new_component<cWStringDataTracker>();
+							c_tracker->data = pdata;
+							e_data->add_component(c_tracker);
 						}
 							break;
 						}

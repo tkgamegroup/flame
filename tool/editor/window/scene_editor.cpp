@@ -76,13 +76,13 @@ struct cSceneOverlayer : Component
 	cSceneOverlayer() :
 		Component("SceneOverlayer")
 	{
+		tool_type = 0;
 	}
 
-	virtual void start() override
+	virtual void on_component_added(Component* c) override
 	{
-		element = (cElement*)entity->find_component(cH("Element"));
-
-		tool_type = 0;
+		if (c->type_hash == cH("Element"))
+			element = (cElement*)c;
 	}
 
 	virtual void update() override
@@ -415,7 +415,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto combobox = (cCombobox*)e_tool->find_component(cH("Combobox"));
 			combobox->set_index(0, false);
-			combobox->add_changed_listener([](void* c, int idx) {
+			combobox->changed_listeners.add([](void* c, int idx) {
 				(*(cSceneOverlayer**)c)->tool_type = idx;
 			}, new_mail_p(c_overlayer));
 		}

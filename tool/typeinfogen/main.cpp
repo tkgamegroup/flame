@@ -12,7 +12,7 @@ int main(int argc, char **args)
 	}
 
 	std::wstring filename = s2w(args[1]);
-	std::wstring typeinfo_filename = ext_replace(filename, L".typeinfo");
+	std::wstring typeinfo_filename = std::filesystem::path(filename).replace_extension(L".typeinfo");
 	std::vector<std::wstring> modules;
 	std::wstring pdb_filename;
 	for (auto i = 2; i < argc; i++)
@@ -38,7 +38,7 @@ int main(int argc, char **args)
 
 		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& d : modules)
-			dbs.push_back(TypeinfoDatabase::load(dbs, ext_replace(d, L".typeinfo")));
+			dbs.push_back(TypeinfoDatabase::load(dbs, std::filesystem::path(d).replace_extension(L".typeinfo")));
 
 		auto db = TypeinfoDatabase::collect(dbs, filename, pdb_filename);
 		TypeinfoDatabase::save(dbs, db);

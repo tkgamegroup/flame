@@ -32,87 +32,82 @@ struct cHierarchyItem : Component
 		last_drop_pos = -1;
 	}
 
-	virtual void start() override
+	virtual void on_component_added(Component* c) override
 	{
-		auto is_leaf = (bool)entity->find_component(cH("TreeLeaf"));
+		if (c->type_hash == cH("Element"))
+			element = (cElement*)c;
+		else if (c->type_hash == cH("EventReceiver"))
+		{
+			event_receiver = (cEventReceiver*)c;
+			event_receiver->drag_hash = cH("HierarchyItem");
+			event_receiver->set_acceptable_drops({ cH("HierarchyItem") });
+			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+				auto thiz = *(cHierarchyItem**)c;
+				auto element = thiz->element;
 
-		auto e = is_leaf ? entity : entity->child(0);
-		element = (cElement*)(e->find_component(cH("Element")));
-		event_receiver =  (cEventReceiver*)(e->find_component(cH("EventReceiver")));
-		event_receiver->drag_hash = cH("HierarchyItem");
-		event_receiver->set_acceptable_drops({ cH("HierarchyItem") });
-
-		event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-			auto thiz = *(cHierarchyItem**)c;
-			auto element = thiz->element;
-
-			if (action == DragOvering)
-			{
-				auto h = element->global_size.y() * 0.3f;
-				if (pos.y() < element->global_pos.y() + h)
-					thiz->drop_pos = 0;
-				else if (pos.y() > element->global_pos.y() + element->global_size.y() - h)
-					thiz->drop_pos = 2;
-				else
-					thiz->drop_pos = 1;
-			}
-			else if (action == Dropped)
-			{
-				if (!(thiz->entity->parent()->find_component(cH("Tree")) && thiz->last_drop_pos != 1))
+				if (action == DragOvering)
 				{
-					struct Capture
+					auto h = element->global_size.y() * 0.3f;
+					if (pos.y() < element->global_pos.y() + h)
+						thiz->drop_pos = 0;
+					else if (pos.y() > element->global_pos.y() + element->global_size.y() - h)
+						thiz->drop_pos = 2;
+					else
+						thiz->drop_pos = 1;
+				}
+				else if (action == Dropped)
+				{
+					if (!(thiz->entity->parent()->find_component(cH("Tree")) && thiz->last_drop_pos != 1))
 					{
-						cHierarchy* h;
-						Entity* dst;
-						Entity* src;
-						int i;
-					}capture;
-					capture.h = thiz->hierarchy;
-					capture.dst = thiz->e;
-					{
-						auto e = er->entity;
-						if (!e->find_component(cH("TreeLeaf")))
-							e = e->parent();
-						capture.src = ((cHierarchyItem*)e->find_component(cH("HierarchyItem")))->e;
-					}
-					capture.i = thiz->last_drop_pos;
-
-					auto ok = true;
-					auto p = capture.src->parent();
-					while (p)
-					{
-						if (p == capture.dst)
+						struct Capture
 						{
-							ok = false;
-							break;
+							cHierarchy* h;
+							Entity* dst;
+							Entity* src;
+							int i;
+						}capture;
+						capture.h = thiz->hierarchy;
+						capture.dst = thiz->e;
+						capture.src = ((cHierarchyItem*)er->entity->find_component(cH("HierarchyItem")))->e;
+						capture.i = thiz->last_drop_pos;
+
+						auto ok = true;
+						auto p = capture.src->parent();
+						while (p)
+						{
+							if (p == capture.dst)
+							{
+								ok = false;
+								break;
+							}
+						}
+
+						if (ok)
+						{
+							looper().add_delay_event([](void* c) {
+								auto& capture = *(Capture*)c;
+
+								capture.src->parent()->remove_child(capture.src, false);
+
+								if (capture.i == 1)
+									capture.dst->add_child(capture.src);
+								else
+								{
+									auto p = capture.dst->parent();
+									auto idx = p->child_position(capture.dst);
+									if (capture.i == 2)
+										idx++;
+									p->add_child(capture.src, idx);
+								}
+
+								capture.h->refresh();
+							}, new_mail(&capture));
 						}
 					}
 
-					if (ok)
-					{
-						looper().add_delay_event([](void* c) {
-							auto& capture = *(Capture*)c;
-
-							capture.src->parent()->remove_child(capture.src, false);
-
-							if (capture.i == 1)
-								capture.dst->add_child(capture.src);
-							else
-							{
-								auto p = capture.dst->parent();
-								auto idx = p->child_position(capture.dst);
-								if (capture.i == 2)
-									idx++;
-								p->add_child(capture.src, idx);
-							}
-
-							capture.h->refresh();
-						}, new_mail(&capture));
-					}
 				}
-
-			}
-		}, new_mail_p(this));
+			}, new_mail_p(this));
+		}
 	}
 
 	virtual void update() override
@@ -183,10 +178,15 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 	for (auto i = 0; i < sub_tree->child_count(); i++)
 	{
 		auto item = sub_tree->child(i);
-		if (((cHierarchyItem*)item->find_component(cH("HierarchyItem")))->e == e)
-			return item;
-		if (item->find_component(cH("TreeNode")))
+		if ((cHierarchyItem*)item->find_component(cH("TreeLeaf")))
 		{
+			if (((cHierarchyItem*)item->find_component(cH("HierarchyItem")))->e == e)
+				return item;
+		}
+		else
+		{
+			if (((cHierarchyItem*)item->child(0)->find_component(cH("HierarchyItem")))->e == e)
+				return item;
 			auto res = find_item_in_tree(item->child(1), e);
 			if (res)
 				return res;
@@ -257,7 +257,7 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 		((cElement*)e_tree->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
 
 		auto c_tree = (cTree*)e_tree->find_component(cH("Tree"));
-		c_tree->add_selected_changed_listener([](void* c, Entity* e) {
+		c_tree->selected_changed_listeners.add([](void* c, Entity* e) {
 			auto editor = *(cSceneEditor**)c;
 
 			struct Capture

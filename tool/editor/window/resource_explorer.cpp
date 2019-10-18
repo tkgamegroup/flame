@@ -43,7 +43,7 @@ struct cThumbnail : Component
 	cThumbnail();
 	~cThumbnail();
 	void return_seat();
-	virtual void start() override;
+	virtual void on_component_added(Component* c) override;
 	virtual void update() override;
 };
 
@@ -413,19 +413,21 @@ void cThumbnail::return_seat()
 	seat = nullptr;
 }
 
-void cThumbnail::start()
+void cThumbnail::on_component_added(Component* c)
 {
-	image = (cImage*)entity->find_component(cH("Image"));
-
-	add_work([](void* c) {
-		auto thiz = *(cThumbnail**)c;
-		uint w, h;
-		char* data;
-		get_thumbnail(64, thiz->filename, &w, &h, &data);
-		auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
-		bitmap->swap_channel(0, 2);
-		thiz->thumbnail = bitmap;
-	}, new_mail_p(this));
+	if (c->type_hash == cH("Image"))
+	{
+		image = (cImage*)c;
+		add_work([](void* c) {
+			auto thiz = *(cThumbnail**)c;
+			uint w, h;
+			char* data;
+			get_thumbnail(64, thiz->filename, &w, &h, &data);
+			auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
+			bitmap->swap_channel(0, 2);
+			thiz->thumbnail = bitmap;
+		}, new_mail_p(this));
+	}
 }
 
 void cThumbnail::update()

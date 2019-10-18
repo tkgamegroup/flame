@@ -22,6 +22,7 @@ namespace flame
 		Vec2i active_pos;
 
 		std::vector<cEventReceiver*> hovers;
+		bool meet_last_hovering;
 
 		cEventDispatcherPrivate(Window* window) :
 			window(window)
@@ -156,18 +157,38 @@ namespace flame
 					if (mouse_disp != 0 && (abs(mouse_pos.x() - active_pos.x()) > 4.f || abs(mouse_pos.y() - active_pos.y()) > 4.f))
 						focusing->dragging = true;
 				}
-				if (focusing->dragging)
+			}
+			else
+			{
+				if (hovering)
 				{
-					entity->traverse_backward([](void* c, Entity* e) {
-						auto thiz = *(cEventDispatcherPrivate**)c;
-						if (thiz->drag_overing)
-							return;
-
-						auto er = (cEventReceiverPrivate*)e->find_component(cH("EventReceiver"));
-						if (er)
+					hovering->hovering = false;
+					hovering = nullptr;
+				}
+			}
+			meet_last_hovering = false;
+			entity->traverse_backward([](void* c, Entity* e) {
+				auto thiz = *(cEventDispatcherPrivate**)c;
+				auto er = (cEventReceiverPrivate*)e->find_component(cH("EventReceiver"));
+				if (er)
+				{
+					er->event_dispatcher = thiz;
+					auto active = thiz->focusing && thiz->focusing->active;
+					if (active && thiz->hovering == er)
+						thiz->meet_last_hovering = true;
+					if (!er->element->cliped && er->element->contains(Vec2f(thiz->mouse_pos)))
+					{
+						if (!thiz->hovering || (active && !thiz->meet_last_hovering))
+							thiz->hovers.push_back(er);
+						if (!er->penetrable)
 						{
-							er->event_dispatcher = thiz;
-							if (!er->penetrable && !er->element->cliped && er != thiz->focusing && er->element->contains(Vec2f(thiz->mouse_pos)) && !er->acceptable_drops.empty())
+							if (!thiz->hovering)
+							{
+								er->hovering = true;
+								thiz->hovering = er;
+							}
+
+							if (thiz->focusing && thiz->focusing->dragging && !thiz->drag_overing && er != thiz->focusing && !er->acceptable_drops.empty())
 							{
 								auto h = thiz->focusing->drag_hash;
 								for (auto _h : er->acceptable_drops)
@@ -180,37 +201,10 @@ namespace flame
 								}
 							}
 						}
-					}, new_mail_p(this));
-				}
-			}
-			else
-			{
-				if (hovering)
-				{
-					hovering->hovering = false;
-					hovering = nullptr;
-				}
-				entity->traverse_backward([](void* c, Entity* e) {
-					auto thiz = *(cEventDispatcherPrivate**)c;
-					if (thiz->hovering)
-						return;
-
-					auto er = (cEventReceiver*)e->find_component(cH("EventReceiver"));
-					if (er)
-					{
-						er->event_dispatcher = thiz;
-						if (!er->element->cliped && er->element->contains(Vec2f(thiz->mouse_pos)))
-						{
-							thiz->hovers.push_back(er);
-							if (!er->penetrable)
-							{
-								er->hovering = true;
-								thiz->hovering = er;
-							}
-						}
 					}
-				}, new_mail_p(this));
-			}
+				}
+			}, new_mail_p(this));
+
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 			{
 				focusing = nullptr;
