@@ -14,30 +14,15 @@
 
 namespace flame
 {
-	void boardcast_tree(cTree* t, EntityPrivate* e)
+	cTree* get_tree(Entity* e)
 	{
-		{
-			auto c = (cTreeLeaf*)e->find_component(cH("TreeLeaf"));
-			if (c)
-				c->tree = t;
-		}
-		{
-			auto c = (cTreeNode*)e->find_component(cH("TreeNode"));
-			if (c)
-				c->tree = t;
-		}
-		{
-			auto c = (cTreeNodeTitle*)e->find_component(cH("TreeNodeTitle"));
-			if (c)
-				c->tree = t;
-		}
-		{
-			auto c = (cTreeNodeArrow*)e->find_component(cH("TreeNodeArrow"));
-			if (c)
-				c->tree = t;
-		}
-		for (auto& c : e->children)
-			boardcast_tree(t, c.get());
+		auto p = e->parent();
+		if (!p)
+			return nullptr;
+		auto t = (cTree*)p->find_component(cH("Tree"));
+		if (t)
+			return t;
+		return ((cTreeNode*)p->parent()->find_component(cH("TreeNode")))->tree;
 	}
 
 	struct cTreeLeafPrivate : cTreeLeaf
@@ -92,17 +77,7 @@ namespace flame
 
 		virtual void on_added() override
 		{
-			auto p = entity->parent();
-			if (p)
-			{
-				auto pp = p->parent();
-				if (pp)
-				{
-					auto n = (cTreeNode*)pp->find_component(cH("TreeNode"));
-					if (n)
-						tree = n->tree;
-				}
-			}
+			tree = get_tree(entity);
 		}
 
 		virtual void on_component_added(Component* c) override
@@ -140,16 +115,12 @@ namespace flame
 
 		virtual void on_added() override
 		{
-			auto p = entity->parent();
-			if (p)
+			tree = get_tree(entity);
+			if (tree)
 			{
-				auto pp = p->parent();
-				if (pp)
-				{
-					auto n = (cTreeNode*)pp->find_component(cH("TreeNode"));
-					if (n)
-						tree = n->tree;
-				}
+				auto title = entity->child(0);
+				((cTreeNodeTitle*)title->find_component(cH("TreeNodeTitle")))->tree = tree;
+				((cTreeNodeArrow*)title->child(0)->find_component(cH("TreeNodeArrow")))->tree = tree;
 			}
 		}
 	};
@@ -206,11 +177,6 @@ namespace flame
 			}
 		}
 
-		virtual void on_added() override
-		{
-			tree = ((cTreeNode*)entity->parent()->find_component(cH("TreeNode")))->tree;
-		}
-
 		virtual void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
@@ -254,11 +220,6 @@ namespace flame
 		{
 			if (!entity->dying)
 				event_receiver->mouse_listeners.remove(mouse_listener);
-		}
-
-		virtual void on_added() override
-		{
-			tree = ((cTreeNodeTitle*)entity->parent()->find_component(cH("TreeNodeTitle")))->tree;
 		}
 
 		virtual void on_component_added(Component* c) override
@@ -318,14 +279,6 @@ namespace flame
 				}, new_mail_p(this));
 			}
 		}
-
-		virtual void on_child_component_added(Component* c) override
-		{
-			if (c->type_hash == cH("TreeLeaf"))
-				((cTreeLeaf*)c)->tree = this;
-			else if (c->type_hash == cH("TreeNode"))
-				boardcast_tree(this, (EntityPrivate*)c->entity);
-		}
 	};
 
 	void cTree::set_selected(Entity* e, bool trigger_changed)
@@ -337,7 +290,7 @@ namespace flame
 				treeleaf->do_style(false);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->child(0)->find_component(cH("TreeNode"));
+				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->child(0)->find_component(cH("TreeNodeTitle"));
 				if (treenodetitle)
 					treenodetitle->do_style(false);
 			}
@@ -349,7 +302,7 @@ namespace flame
 				treeleaf->do_style(true);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)e->child(0)->find_component(cH("TreeNode"));
+				auto treenodetitle = (cTreeNodeTitlePrivate*)e->child(0)->find_component(cH("TreeNodeTitle"));
 				if (treenodetitle)
 					treenodetitle->do_style(true);
 			}

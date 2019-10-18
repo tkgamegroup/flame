@@ -270,8 +270,14 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 			looper().add_delay_event([](void* c) {
 				auto& capture = *(Capture*)c;
 				auto editor = capture.e;
-
-				auto selected = capture.s ? ((cHierarchyItem*)capture.s->find_component(cH("HierarchyItem")))->e : nullptr;
+				Entity* selected = nullptr;
+				if (capture.s)
+				{
+					if (capture.s->find_component(cH("TreeLeaf")))
+						selected = ((cHierarchyItem*)capture.s->find_component(cH("HierarchyItem")))->e;
+					else
+						selected = ((cHierarchyItem*)capture.s->child(0)->find_component(cH("HierarchyItem")))->e;
+				}
 				auto different = selected != editor->selected;
 				editor->selected = selected;
 				if (editor->inspector && different)
