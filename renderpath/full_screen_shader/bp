@@ -51,8 +51,6 @@
 		</node>
 	</nodes>
 	<links>
-		<link out="test_dst.type" in="rt_dst.type" />
-		<link out="test_dst.view" in="rt_dst.v" />
 		<link out="rt_dst.out" in="sp.color_targets" />
 		<link out="sp.out" in="rnf.passes" />
 		<link out="bd.out" in="dsl.bindings" />
@@ -66,7 +64,6 @@
 		<link out="pll.out" in="pl.pll" />
 		<link out="rnf.rp" in="pl.renderpass" />
 		<link out="out.out" in="pl.outputs" />
-		<link out="test_cbs.out" in="make_cmd.cbs" />
 		<link out="rnf.rp" in="make_cmd.rp" />
 		<link out="rnf.fbs" in="make_cmd.fbs" />
 		<link out="pl.out" in="make_cmd.pl" />

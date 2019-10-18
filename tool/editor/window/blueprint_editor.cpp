@@ -365,6 +365,9 @@ struct cBPEditor : Component
 									auto& capture = *(Capture*)c;
 									auto bp = capture.e->bp;
 
+									if (ok)
+										BP::save_to_file(bp, capture.e->filename);
+
 									auto file = SerializableNode::create_from_xml_file(capture.e->filename);
 									auto n_nodes = file->find_node("nodes");
 									auto n_node = n_nodes->new_node("node");
@@ -1013,15 +1016,12 @@ void cBP::update()
 		{
 			auto e1 = ((cBPSlot*)output->user_data)->element;
 			auto e2 = ((cBPSlot*)input->user_data)->element;
-			if (e1 && e2)
-			{
-				auto p1 = e1->global_pos + e1->global_size * 0.5f;
-				auto p2 = e2->global_pos + e2->global_size * 0.5f;
+			auto p1 = e1->global_pos + e1->global_size * 0.5f;
+			auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
-				std::vector<Vec2f> points;
-				path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-				element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
-			}
+			std::vector<Vec2f> points;
+			path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
+			element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
 		}
 	};
 	for (auto i = 0; i < bp->package_count(); i++)

@@ -37,13 +37,13 @@
 				<data name="push_constant_udt_name" value="PushconstantT" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via1" pos="1263.60;1566.00">
+		<node type="graphics::VertexInputAttribute" id="via1" pos="1255.60;1601.00">
 			<datas>
 				<data name="format" value="Format_R32G32_SFLOAT" />
 				<data name="name" value="pos" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via2" pos="1263.60;1853.00">
+		<node type="graphics::VertexInputAttribute" id="via2" pos="1255.60;1902.00">
 			<datas>
 				<data name="location" value="1" />
 				<data name="offset" value="8" />
@@ -51,7 +51,7 @@
 				<data name="name" value="uv" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via3" pos="1264.60;2145.00">
+		<node type="graphics::VertexInputAttribute" id="via3" pos="1255.60;2208.00">
 			<datas>
 				<data name="location" value="2" />
 				<data name="offset" value="16" />
@@ -66,20 +66,20 @@
 			</datas>
 		</node>
 		<node type="graphics::VertexInputInfo" id="vi" pos="2216.83;2133.37" />
-		<node type="graphics::StageInOut" id="vert_out1" pos="1261.60;954.72">
+		<node type="graphics::StageInOut" id="vert_out1" pos="1256.60;948.72">
 			<datas>
 				<data name="format" value="Format_R32G32B32A32_SFLOAT" />
 				<data name="name" value="color" />
 			</datas>
 		</node>
-		<node type="graphics::StageInOut" id="vert_out2" pos="1259.60;1156.80">
+		<node type="graphics::StageInOut" id="vert_out2" pos="1255.60;1163.80">
 			<datas>
 				<data name="location" value="1" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 				<data name="name" value="uv" />
 			</datas>
 		</node>
-		<node type="graphics::StageInOut" id="vert_out3" pos="1261.60;1360.90">
+		<node type="graphics::StageInOut" id="vert_out3" pos="1255.60;1380.90">
 			<datas>
 				<data name="location" value="2" />
 				<data name="format" value="Format_R32_UINT" />

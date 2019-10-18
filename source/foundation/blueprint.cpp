@@ -1614,7 +1614,6 @@ namespace flame
 		{
 			if (n->dont_save)
 				continue;
-
 			auto udt = n->udt;
 			auto skip = false;
 			for (auto m : skipped_modules)
@@ -1674,10 +1673,12 @@ namespace flame
 		}
 		for (auto& n : bp->nodes)
 		{
+			if (n->dont_save)
+				continue;
 			for (auto& in : n->inputs)
 			{
 				auto out = in->links[0];
-				if (out)
+				if (out && !out->parent->dont_save)
 				{
 					auto n_link = n_links->new_node("link");
 					auto out_addr = out->get_address();
