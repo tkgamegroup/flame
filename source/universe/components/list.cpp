@@ -36,7 +36,7 @@ namespace flame
 
 		~cListItemPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -146,7 +146,7 @@ namespace flame
 
 		~cListPrivate()
 		{
-			if (!entity->dying && mouse_listener)
+			if (!entity->dying_ && mouse_listener)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 

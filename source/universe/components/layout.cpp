@@ -6,6 +6,9 @@ namespace flame
 {
 	struct cLayoutPrivate : cLayout
 	{
+		bool als_dirty;
+		std::vector<std::pair<cElement*, cAligner*>> als;
+
 		cLayoutPrivate(LayoutType _type)
 		{
 			element = nullptr;
@@ -20,6 +23,8 @@ namespace flame
 			column = 0;
 
 			content_size = Vec2f(0.f);
+
+			als_dirty = true;
 		}
 
 		void apply_h_free_layout(const std::pair<cElement*, cAligner*>& al, bool lock = false)
@@ -114,17 +119,42 @@ namespace flame
 				aligner = (cAligner*)c;
 		}
 
+		virtual void on_child_visible_changed() override
+		{
+			als_dirty = true;
+		}
+
+		virtual void on_child_component_added(Component* c) override
+		{
+			if (c->type_hash == cH("Element"))
+				als_dirty = true;
+			else if (c->type_hash == cH("Aligner"))
+				als_dirty = true;
+		}
+
+		virtual void on_child_component_removed(Component* c) override
+		{
+			if (c->type_hash == cH("Element"))
+				als_dirty = true;
+			else if (c->type_hash == cH("Aligner"))
+				als_dirty = true;
+		}
+
 		virtual void update() override
 		{
-			std::vector<std::pair<cElement*, cAligner*>> als;
-			for (auto i = 0; i < entity->child_count(); i++)
+			if (als_dirty)
 			{
-				auto e = entity->child(i);
-				if (e->global_visible)
+				als.clear();
+				for (auto i = 0; i < entity->child_count(); i++)
 				{
-					auto al = (cAligner*)e->find_component(cH("Aligner"));
-					als.emplace_back(al ? al->element : (cElement*)entity->child(i)->find_component(cH("Element")), al);
+					auto e = entity->child(i);
+					if (e->visible_)
+					{
+						auto al = (cAligner*)e->find_component(cH("Aligner"));
+						als.emplace_back(al ? al->element : (cElement*)entity->child(i)->find_component(cH("Element")), al);
+					}
 				}
+				als_dirty = false;
 			}
 
 			switch (type)

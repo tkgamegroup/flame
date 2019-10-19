@@ -23,7 +23,7 @@ namespace flame
 
 		~cStyleColorPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->state_changed_listeners.remove(state_changed_listener);
 		}
 
@@ -92,7 +92,7 @@ namespace flame
 
 		~cStyleTextColorPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->state_changed_listeners.remove(state_changed_listener);
 		}
 

@@ -47,7 +47,7 @@ namespace flame
 
 		~cTreeLeafPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -152,7 +152,7 @@ namespace flame
 
 		~cTreeNodeTitlePrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -218,7 +218,7 @@ namespace flame
 
 		~cTreeNodeArrowPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -234,8 +234,8 @@ namespace flame
 					{
 						auto thiz = *(cTreeNodeArrowPrivate**)c;
 						auto e = thiz->entity->parent()->parent()->child(1);
-						e->visible = !e->visible;
-						thiz->text->set_text(e->visible ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
+						e->set_visible(!e->visible_);
+						thiz->text->set_text(e->visible_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
 					}
 				}, new_mail_p(this));
 			}
@@ -262,7 +262,7 @@ namespace flame
 
 		~cTreePrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 
 			delete (ListenerHub*)selected_changed_listeners.hub;

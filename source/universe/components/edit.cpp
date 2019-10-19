@@ -32,7 +32,7 @@ namespace flame
 
 		~cEditPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 			{
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);

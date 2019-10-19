@@ -48,7 +48,7 @@ namespace flame
 
 		~cScrollbarThumbPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 

@@ -32,7 +32,7 @@ namespace flame
 
 		~cTogglePrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 
 			delete (ListenerHub*)changed_listeners.hub;

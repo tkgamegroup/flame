@@ -33,7 +33,7 @@ namespace flame
 
 		~cMenuButtonPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -50,7 +50,7 @@ namespace flame
 				if (!topmost)
 					topmost = create_topmost(root, topmost_penetrable, true, !move_to_open);
 				else
-					topmost->created_frame = looper().frame;
+					topmost->created_frame_ = looper().frame;
 
 				auto c_menu = (cMenu*)menu->find_component(cH("Menu"));
 				if (c_menu)

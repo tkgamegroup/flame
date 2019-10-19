@@ -25,6 +25,8 @@ struct cSceneEditorPrivate : cSceneEditor
 {
 	std::wstring filename;
 
+	Vec2f mpos;
+
 	cSceneEditorPrivate()
 	{
 		prefab = nullptr;
@@ -58,6 +60,22 @@ struct cSceneEditorPrivate : cSceneEditor
 			e_scene->remove_child(prefab);
 		prefab = Entity::create_from_file(app.dbs, filename);
 		e_scene->add_child(prefab);
+	}
+
+	void search_hover(Entity* e)
+	{
+		for (auto i = e->child_count() - 1; i >= 0; i--)
+		{
+			auto c = e->child(i);
+			if (c->global_visible_)
+				search_hover(c);
+		}
+		if (selected)
+			return;
+
+		auto element = (cElement*)e->find_component(cH("Element"));
+		if (element && element->contains(mpos))
+			selected = e;
 	}
 };
 
@@ -266,15 +284,8 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 
 					auto prev_selected = editor->selected;
 					editor->selected = nullptr;
-					editor->prefab->traverse_backward([](void* c, Entity* e) {
-						auto& capture = *(Capture*)c;
-						if (capture.e->selected)
-							return;
-
-						auto element = (cElement*)e->find_component(cH("Element"));
-						if (element && element->contains(capture.pos))
-							capture.e->selected = e;
-					}, new_mail(&capture));
+					editor->mpos = capture.pos;
+					editor->search_hover(editor->prefab);
 					if (prev_selected != editor->selected)
 					{
 						if (editor->hierarchy)

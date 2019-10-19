@@ -30,7 +30,7 @@ namespace flame
 
 		~cMoveablePrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -75,7 +75,7 @@ namespace flame
 
 		~cBringToFrontPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -129,7 +129,7 @@ namespace flame
 
 		~cSizeDraggerPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
@@ -197,7 +197,7 @@ namespace flame
 
 		~cDockerTabPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 			{
 				event_receiver->mouse_listeners.remove(mouse_listener);
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
@@ -227,7 +227,7 @@ namespace flame
 			{
 				tabbar->remove_child(entity, false);
 				pages->remove_child(page, false);
-				page->visible = true;
+				page->set_visible(true);
 				element->pos = element->global_pos;
 				element->alpha = 0.5f;
 				page_element->pos.x() = element->pos.x();
@@ -411,7 +411,7 @@ namespace flame
 
 		~cDockerTabbarPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 			{
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 				list->remove_selected_changed_listener(selected_changed_listener);
@@ -521,8 +521,8 @@ namespace flame
 					{
 						auto idx = tabbar->child_position(selected);
 						for (auto i = 0; i < pages->child_count(); i++)
-							pages->child(i)->visible = false;
-						pages->child(idx)->visible = true;
+							pages->child(i)->set_visible(false);
+						pages->child(idx)->set_visible(true);
 					}
 				}, new_mail_p(this));
 			}
@@ -557,7 +557,7 @@ namespace flame
 
 		~cDockerPagesPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 		}
 

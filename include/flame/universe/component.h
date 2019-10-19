@@ -13,17 +13,16 @@ namespace flame
 
 		Entity* entity;
 
-		Component(const char* name) :
-			type_name(name),
-			type_hash(H(name))
-		{
-		}
+		Listeners<void(void* c, uint hash)> data_changed_listeners;
 
-		virtual ~Component() {};
+		FLAME_UNIVERSE_EXPORTS Component(const char* name);
+		FLAME_UNIVERSE_EXPORTS virtual ~Component();
 
 		virtual void on_added() {}
 		virtual void on_component_added(Component* c) {}
 		virtual void on_child_component_added(Component* c) {}
+		virtual void on_component_removed(Component* c) {}
+		virtual void on_child_component_removed(Component* c) {}
 		virtual void on_visible_changed() {}
 		virtual void on_child_visible_changed() {}
 		virtual void update() {}

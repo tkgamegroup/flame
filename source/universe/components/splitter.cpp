@@ -20,7 +20,7 @@ namespace flame
 
 		~cSplitterPrivate()
 		{
-			if (!entity->dying)
+			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 

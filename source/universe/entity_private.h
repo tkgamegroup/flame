@@ -13,6 +13,7 @@ namespace flame
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
 		EntityPrivate();
+		void set_visible(bool v);
 		Component* find_component(uint type_hash);
 		Mail<std::vector<Component*>> find_components(uint type_hash);
 		void add_component(Component* c);
@@ -22,10 +23,7 @@ namespace flame
 		void reposition_child(EntityPrivate* e, int position);
 		void mark_dying();
 		void remove_child(EntityPrivate* e, bool destroy);
-		void remove_all_children(bool destroy);
 		EntityPrivate* copy();
-		void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
-		void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 		void update();
 	};
 

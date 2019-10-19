@@ -143,7 +143,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 
 	auto e_edit = create_standard_edit(50.f, font_atlas, sdf_scale);
 	e_layout->add_child(e_edit);
-	e_edit->visible = false;
+	e_edit->set_visible(false);
 
 	auto e_drag = Entity::create();
 	e_layout->add_child(e_drag);
@@ -185,8 +185,8 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		auto& capture = *(Capture*)c;
 		if (type == Focus_Lost)
 		{
-			capture.e->visible = false;
-			capture.d->visible = true;
+			capture.e->set_visible(false);
+			capture.d->set_visible(true);
 		}
 	}, new_mail(&capture));
 
@@ -194,8 +194,8 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		auto& capture = *(Capture*)c;
 		if (is_mouse_clicked(action, key) && pos == 0)
 		{
-			capture.e->visible = true;
-			capture.d->visible = false;
+			capture.e->set_visible(true);
+			capture.d->set_visible(false);
 			capture.d_er->event_dispatcher->next_focusing = capture.e_er;
 		}
 		else if (capture.d_er->active && is_mouse_move(action, key))

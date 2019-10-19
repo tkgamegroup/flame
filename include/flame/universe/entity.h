@@ -11,15 +11,17 @@ namespace flame
 
 	struct Entity
 	{
-		int created_frame;
-		bool dying;
+		int created_frame_;
+		bool dying_;
 
-		bool visible;
-		bool global_visible;
+		bool visible_;
+		bool global_visible_;
 
 		FLAME_UNIVERSE_EXPORTS const std::string& name() const;
 		FLAME_UNIVERSE_EXPORTS uint name_hash() const;
 		FLAME_UNIVERSE_EXPORTS void set_name(const std::string& name) const;
+
+		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
 
 		FLAME_UNIVERSE_EXPORTS uint component_count() const;
 		FLAME_UNIVERSE_EXPORTS Component* component(uint index) const;
@@ -35,13 +37,9 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* find_child(const std::string& name) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e, int position = -1); /* -1 is end */
 		FLAME_UNIVERSE_EXPORTS void reposition_child(Entity* e, int position); /* -1 is last */
-		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true);
-		FLAME_UNIVERSE_EXPORTS void remove_all_children(bool destroy = true);
+		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true); /* if e==InvalidPointer, then remove all */
 
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
-
-		FLAME_UNIVERSE_EXPORTS void traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
-		FLAME_UNIVERSE_EXPORTS void traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture);
 
 		FLAME_UNIVERSE_EXPORTS void update();
 

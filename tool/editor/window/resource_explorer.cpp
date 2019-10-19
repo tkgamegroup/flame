@@ -190,7 +190,7 @@ struct cResourceExplorer : Component
 			auto address_bar = thiz->address_bar;
 			auto list = thiz->e_list;
 
-			address_bar->remove_all_children();
+			address_bar->remove_child((Entity*)FLAME_INVALID_POINTER);
 			auto e_upward = create_standard_button(app.font_atlas_pixel, 1.f, Icon_LEVEL_UP);
 			address_bar->add_child(e_upward);
 			{
@@ -276,7 +276,7 @@ struct cResourceExplorer : Component
 			}
 
 			((cList*)list->find_component(cH("List")))->set_selected(nullptr, false);
-			list->remove_all_children();
+			list->remove_child((Entity*)FLAME_INVALID_POINTER);
 
 			std::vector<std::filesystem::path> dirs;
 			std::vector<std::filesystem::path> files;

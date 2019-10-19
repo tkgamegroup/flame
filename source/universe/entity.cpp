@@ -8,13 +8,25 @@ namespace flame
 	EntityPrivate::EntityPrivate() :
 		parent(nullptr)
 	{
-		created_frame = looper().frame;
-		dying = false;
+		created_frame_ = looper().frame;
+		dying_ = false;
 
-		visible = true;
-		global_visible = false;
+		visible_ = true;
+		global_visible_ = true;
 
 		name_hash = 0;
+	}
+
+	void EntityPrivate::set_visible(bool v)
+	{
+		visible_ = v;
+		for (auto& c : components)
+			c->on_visible_changed();
+		if (parent)
+		{
+			for (auto& c : parent->components)
+				c->on_child_visible_changed();
+		}
 	}
 
 	Component* EntityPrivate::find_component(uint type_hash)
@@ -55,6 +67,8 @@ namespace flame
 		{
 			if (it->get() == c)
 			{
+				for (auto& _c : components)
+					_c->on_child_component_removed(c);
 				components.erase(it);
 				return;
 			}
@@ -105,50 +119,65 @@ namespace flame
 
 	void EntityPrivate::mark_dying()
 	{
-		dying = true;
+		dying_ = true;
 		for (auto& e : children)
 			e->mark_dying();
 	}
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
-		for (auto it = children.begin(); it != children.end(); it++)
+		if (e == FLAME_INVALID_POINTER)
 		{
-			if (it->get() == e)
+			for (auto& c : components)
+			{
+				for (auto& e : children)
+				{
+					for (auto& _c : e->components)
+						c->on_child_component_removed(_c.get());
+				}
+			}
+			for (auto& e : children)
 			{
 				if (!destroy)
 				{
 					e->parent = nullptr;
-					it->release();
+					e.release();
 				}
 				else
 					e->mark_dying();
-				children.erase(it);
-				return;
 			}
+			children.clear();
 		}
-	}
-
-	void EntityPrivate::remove_all_children(bool destroy)
-	{
-		for (auto& e : children)
+		else
 		{
-			if (!destroy)
+			for (auto it = children.begin(); it != children.end(); it++)
 			{
-				e->parent = nullptr;
-				e.release();
+				for (auto& c : components)
+				{
+					for (auto& _c : e->components)
+						c->on_child_component_removed(_c.get());
+				}
+				if (it->get() == e)
+				{
+					if (!destroy)
+					{
+						e->parent = nullptr;
+						it->release();
+					}
+					else
+						e->mark_dying();
+					children.erase(it);
+					return;
+				}
 			}
-			else
-				e->mark_dying();
 		}
-		children.clear();
 	}
 
 	EntityPrivate* EntityPrivate::copy()
 	{
 		auto ret = new EntityPrivate;
 
-		ret->visible = visible;
+		ret->visible_ = visible_;
 		ret->set_name(name);
 		for (auto& c : components)
 		{
@@ -164,34 +193,13 @@ namespace flame
 		return ret;
 	}
 
-	void EntityPrivate::traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
-	{
-		callback(capture.p, this);
-		for (auto& c : children)
-		{
-			if (c->global_visible)
-				c->traverse_forward(callback, capture);
-		}
-	}
-
-	void EntityPrivate::traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
-	{
-		for (auto it = children.rbegin(); it != children.rend(); it++)
-		{
-			auto c = it->get();
-			if (c->global_visible)
-				c->traverse_backward(callback, capture);
-		}
-		callback(capture.p, this);
-	}
-
 	void EntityPrivate::update()
 	{
 		if (!parent)
-			global_visible = visible;
+			global_visible_ = visible_;
 		else
-			global_visible = visible && parent->global_visible;
-		if (!global_visible)
+			global_visible_ = visible_ && parent->global_visible_;
+		if (!global_visible_)
 			return;
 		for (auto& c : components)
 			c->update();
@@ -214,6 +222,11 @@ namespace flame
 		auto thiz = ((EntityPrivate*)this);
 		thiz->name = name;
 		thiz->name_hash = H(name.c_str());
+	}
+
+	void Entity::set_visible(bool v)
+	{
+		((EntityPrivate*)this)->set_visible(v);
 	}
 
 	uint Entity::component_count() const
@@ -292,26 +305,9 @@ namespace flame
 		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
 	}
 
-	void Entity::remove_all_children(bool destroy)
-	{
-		((EntityPrivate*)this)->remove_all_children(destroy);
-	}
-
 	Entity* Entity::copy()
 	{
 		return ((EntityPrivate*)this)->copy();
-	}
-
-	void Entity::traverse_forward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
-	{
-		((EntityPrivate*)this)->traverse_forward(callback, capture);
-		delete_mail(capture);
-	}
-
-	void Entity::traverse_backward(void (*callback)(void* c, Entity* n), const Mail<>& capture)
-	{
-		((EntityPrivate*)this)->traverse_backward(callback, capture);
-		delete_mail(capture);
 	}
 
 	void Entity::update()
@@ -393,7 +389,7 @@ namespace flame
 	{
 		auto n = dst->new_node("entity");
 		n->new_attr("name", src->name.empty() ? "unnamed" : src->name);
-		n->new_attr("visible", src->visible ? "1" : "0");
+		n->new_attr("visible", src->visible_ ? "1" : "0");
 
 		if (!src->components.empty())
 		{

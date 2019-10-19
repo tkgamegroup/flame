@@ -250,12 +250,12 @@ struct cBPEditor : Component
 		add_node_menu_filter->text->set_text(L"");
 
 		for (auto i = 1; i < e_add_node_menu->child_count(); i++)
-			e_add_node_menu->child(i)->visible = true;
+			e_add_node_menu->child(i)->set_visible(true);
 	}
 
 	void refresh_add_node_menu()
 	{
-		e_add_node_menu->remove_all_children();
+		e_add_node_menu->remove_child((Entity*)FLAME_INVALID_POINTER);
 
 		std::vector<UdtInfo*> all_udts;
 		for (auto db : bp->dbs())
@@ -299,7 +299,7 @@ struct cBPEditor : Component
 				for (auto i = 1; i < menu->child_count(); i++)
 				{
 					auto item = menu->child(i);
-					item->visible = text[0] ? (((cText*)item->find_component(cH("Text")))->text().find(text) != std::string::npos) : true;
+					item->set_visible(text[0] ? (((cText*)item->find_component(cH("Text")))->text().find(text) != std::string::npos) : true);
 				}
 			}, new_mail_p(e_add_node_menu));
 
@@ -428,7 +428,7 @@ struct cBPEditor : Component
 
 		refresh_add_node_menu();
 
-		e_base->remove_all_children();
+		e_base->remove_child((Entity*)FLAME_INVALID_POINTER);
 
 		for (auto i = 0; i < bp->module_count(); i++)
 			create_module_entity(bp->module(i));

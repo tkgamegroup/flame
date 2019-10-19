@@ -39,7 +39,7 @@ namespace flame
 			{
 				c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto e = *(Entity**)c;
-					if (is_mouse_down(action, key, true) && key == Mouse_Left && get_topmost(e)->created_frame != looper().frame)
+					if (is_mouse_down(action, key, true) && key == Mouse_Left && get_topmost(e)->created_frame_ != looper().frame)
 						destroy_topmost(e);
 				}, new_mail_p(e));
 			}
@@ -77,7 +77,7 @@ namespace flame
 		}
 
 		if (take)
-			t->remove_all_children(false);
+			t->remove_child((Entity*)FLAME_INVALID_POINTER, false);
 		looper().add_delay_event([](void* c) {
 			auto t = *(Entity**)c;
 			t->parent()->remove_child(t, false);

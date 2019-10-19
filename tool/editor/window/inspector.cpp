@@ -161,7 +161,7 @@ struct cInspectorPrivate : cInspector
 	{
 		auto selected = editor->selected;
 
-		e_layout->remove_all_children();
+		e_layout->remove_child((Entity*)FLAME_INVALID_POINTER);
 		if (!selected)
 		{
 			auto e_text = Entity::create();
@@ -203,9 +203,9 @@ struct cInspectorPrivate : cInspector
 				auto e_checkbox = create_standard_checkbox();
 				e_item->child(1)->add_child(e_checkbox);
 				auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
-				checkbox->set_checked(selected->visible, false);
+				checkbox->set_checked(selected->visible_, false);
 				checkbox->changed_listeners.add([](void* c, bool checked) {
-					(*(Entity**)c)->visible = checked;
+					(*(Entity**)c)->set_visible(checked);
 				}, new_mail_p(selected));
 			}
 

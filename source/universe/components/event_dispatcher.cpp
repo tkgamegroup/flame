@@ -1,4 +1,4 @@
-#include <flame/universe/entity.h>
+#include "../entity_private.h"
 #include <flame/universe/components/element.h>
 #include "event_receiver_private.h"
 #include <flame/universe/components/event_dispatcher.h>
@@ -104,6 +104,51 @@ namespace flame
 			window->remove_mouse_listener(mouse_listener);
 		}
 
+		void search_hovers(EntityPrivate* e)
+		{
+			for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
+			{
+				auto c = it->get();
+				if (c->global_visible_)
+					search_hovers(c);
+			}
+
+			auto er = (cEventReceiverPrivate*)e->find_component(cH("EventReceiver"));
+			if (!er)
+				return;
+
+			er->event_dispatcher = this;
+			auto active = focusing && focusing->active;
+			if (active && hovering == er)
+				meet_last_hovering = true;
+			if (!er->element->cliped && er->element->contains(Vec2f(mouse_pos)))
+			{
+				if (!hovering || (active && !meet_last_hovering))
+					hovers.push_back(er);
+				if (!er->penetrable)
+				{
+					if (!hovering)
+					{
+						er->hovering = true;
+						hovering = er;
+					}
+
+					if (focusing && focusing->dragging && !drag_overing && er != focusing && !er->acceptable_drops.empty())
+					{
+						auto h = focusing->drag_hash;
+						for (auto _h : er->acceptable_drops)
+						{
+							if (_h == h)
+							{
+								drag_overing = er;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
 		virtual void update() override
 		{
 			mouse_disp = mouse_pos - mouse_pos_prev;
@@ -131,7 +176,7 @@ namespace flame
 
 			if (focusing)
 			{
-				if (!focusing->entity->global_visible)
+				if (!focusing->entity->global_visible_)
 				{
 					focusing->hovering = false;
 					focusing->focusing = false;
@@ -167,43 +212,7 @@ namespace flame
 				}
 			}
 			meet_last_hovering = false;
-			entity->traverse_backward([](void* c, Entity* e) {
-				auto thiz = *(cEventDispatcherPrivate**)c;
-				auto er = (cEventReceiverPrivate*)e->find_component(cH("EventReceiver"));
-				if (er)
-				{
-					er->event_dispatcher = thiz;
-					auto active = thiz->focusing && thiz->focusing->active;
-					if (active && thiz->hovering == er)
-						thiz->meet_last_hovering = true;
-					if (!er->element->cliped && er->element->contains(Vec2f(thiz->mouse_pos)))
-					{
-						if (!thiz->hovering || (active && !thiz->meet_last_hovering))
-							thiz->hovers.push_back(er);
-						if (!er->penetrable)
-						{
-							if (!thiz->hovering)
-							{
-								er->hovering = true;
-								thiz->hovering = er;
-							}
-
-							if (thiz->focusing && thiz->focusing->dragging && !thiz->drag_overing && er != thiz->focusing && !er->acceptable_drops.empty())
-							{
-								auto h = thiz->focusing->drag_hash;
-								for (auto _h : er->acceptable_drops)
-								{
-									if (_h == h)
-									{
-										thiz->drag_overing = er;
-										break;
-									}
-								}
-							}
-						}
-					}
-				}
-			}, new_mail_p(this));
+			search_hovers((EntityPrivate*)entity);
 
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 			{

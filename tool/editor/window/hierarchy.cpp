@@ -206,7 +206,7 @@ void cHierarchy::refresh_selected()
 
 void cHierarchy::refresh()
 {
-	e_tree->remove_all_children();
+	e_tree->remove_child((Entity*)FLAME_INVALID_POINTER);
 	create_tree_node(this, editor->prefab, e_tree);
 	refresh_selected();
 }
