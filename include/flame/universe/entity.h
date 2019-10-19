@@ -7,26 +7,36 @@ namespace flame
 {
 	struct TypeinfoDatabase;
 
+	struct World;
 	struct Component;
 
 	struct Entity
 	{
+		World* world_;
+
 		int created_frame_;
 		bool dying_;
 
-		bool visible_;
-		bool global_visible_;
+		bool visibility_;
+		bool global_visibility_;
 
 		FLAME_UNIVERSE_EXPORTS const std::string& name() const;
 		FLAME_UNIVERSE_EXPORTS uint name_hash() const;
 		FLAME_UNIVERSE_EXPORTS void set_name(const std::string& name) const;
 
-		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
+		FLAME_UNIVERSE_EXPORTS void set_visibility(bool v);
 
-		FLAME_UNIVERSE_EXPORTS uint component_count() const;
-		FLAME_UNIVERSE_EXPORTS Component* component(uint index) const;
-		FLAME_UNIVERSE_EXPORTS Component* find_component(uint type_hash) const;
-		FLAME_UNIVERSE_EXPORTS Mail<std::vector<Component*>> find_components(uint type_hash /* 0 to get all components */ ) const;
+		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint type_hash) const;
+
+		template<class T>
+		T* get_component_t(uint type_hash) const
+		{
+			return (T*)get_component_plain(type_hash);
+		}
+
+#define get_component(T) get_component_t<c##T>(cH(#T))
+
+		FLAME_UNIVERSE_EXPORTS Mail<std::vector<Component*>> get_components() const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);
 
@@ -41,45 +51,9 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
 
-		FLAME_UNIVERSE_EXPORTS void update();
-
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void save_to_file(const std::vector<TypeinfoDatabase*>& dbs, Entity* e, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};
-
-	FLAME_UNIVERSE_EXPORTS void* component_alloc(uint size); // for user-define component
-
-	template<class T>
-	T* new_component()
-	{
-		auto c = (T*)component_alloc(sizeof(T));
-		new (c) T;
-		return c;
-	}
-
-	FLAME_UNIVERSE_EXPORTS void* add_listener_plain(void* hub, void(*pf)(void *c), const Mail<>& capture);
-	FLAME_UNIVERSE_EXPORTS void remove_listener_plain(void* hub, void* c);
-
-	template<class F>
-	struct Listeners
-	{
-		void* hub;
-
-		void* add(F* pf, const Mail<>& capture)
-		{
-			return add_listener_plain(hub, (void(*)(void* c))pf, capture);
-		}
-
-		void remove(void* c)
-		{
-			remove_listener_plain(hub, c);
-		}
-	};
-
-	FLAME_UNIVERSE_EXPORTS void universe_serialization_initialize();
-	FLAME_UNIVERSE_EXPORTS void universe_serialization_set_data(const std::string& name, void* data);
-	FLAME_UNIVERSE_EXPORTS void* universe_serialization_get_data(const std::string& name);
-	FLAME_UNIVERSE_EXPORTS const std::string& universe_serialization_find_data(void* data);
 }

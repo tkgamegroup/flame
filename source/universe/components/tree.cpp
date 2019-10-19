@@ -1,6 +1,6 @@
-#include "../entity_private.h"
 #include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
+#include "../universe_private.h"
 #include "../entity_private.h"
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>

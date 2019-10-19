@@ -2,7 +2,6 @@
 #include "entity_private.h"
 #include <flame/universe/component.h>
 
-
 namespace flame
 {
 	EntityPrivate::EntityPrivate() :
@@ -11,67 +10,74 @@ namespace flame
 		created_frame_ = looper().frame;
 		dying_ = false;
 
-		visible_ = true;
-		global_visible_ = true;
+		visibility_ = true;
+		global_visibility_ = true;
 
 		name_hash = 0;
 	}
 
-	void EntityPrivate::set_visible(bool v)
+	void EntityPrivate::set_visibility(bool v)
 	{
-		visible_ = v;
+		visibility_ = v;
 		for (auto& c : components)
-			c->on_visible_changed();
+			c.second->on_visible_changed();
 		if (parent)
 		{
 			for (auto& c : parent->components)
-				c->on_child_visible_changed();
+				c.second->on_child_visible_changed();
 		}
 	}
 
-	Component* EntityPrivate::find_component(uint type_hash)
+	Component* EntityPrivate::get_component(uint type_hash)
 	{
-		for (auto& c : components)
-		{
-			if (c->type_hash == type_hash)
-				return c.get();
-		}
-		return nullptr;
+		auto it = components.find(type_hash);
+		if (it == components.end())
+			return nullptr;
+		return it->second.get();
 	}
 
-	Mail<std::vector<Component*>> EntityPrivate::find_components(uint type_hash)
+	Mail<std::vector<Component*>> EntityPrivate::get_components()
 	{
 		auto ret = new_mail<std::vector<Component*>>();
 		for (auto& c : components)
-		{
-			if (c->type_hash == type_hash)
-				ret.p->push_back(c.get());
-		}
+			ret.p->push_back(c.second.get());
 		return ret;
 	}
 
 	void EntityPrivate::add_component(Component* c)
 	{
+		assert(!get_component(c->type_hash));
+
 		c->entity = this;
 		for (auto& _c : components)
-			_c->on_component_added(c);
+			_c.second->on_component_added(c);
 		for (auto& _c : components)
-			c->on_component_added(_c.get());
-		components.emplace_back(c);
+			c->on_component_added(_c.second.get());
+		components[c->type_hash].reset(c);
 		c->on_added();
+		if (parent)
+		{
+			for (auto& _c : parent->components)
+				_c.second->on_child_component_added(c);
+		}
 	}
 
 	void EntityPrivate::remove_component(Component* c)
 	{
-		for (auto it = components.begin(); it != components.end(); it++)
+		auto it = components.find(c->type_hash);
+		if (it != components.end())
 		{
-			if (it->get() == c)
+			for (auto& _c : components)
 			{
-				for (auto& _c : components)
-					_c->on_child_component_removed(c);
-				components.erase(it);
-				return;
+				if (_c.second.get() != c)
+					_c.second->on_component_removed(c);
 			}
+			if (parent)
+			{
+				for (auto& _c : parent->components)
+					_c.second->on_child_component_removed(c);
+			}
+			components.erase(it);
 		}
 	}
 
@@ -90,14 +96,15 @@ namespace flame
 		if (position == -1)
 			position = children.size();
 		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
+		e->world_ = world_;
 		e->parent = this;
 		for (auto& c : components)
 		{
 			for (auto& _c : e->components)
-				c->on_child_component_added(_c.get());
+				c.second->on_child_component_added(_c.second.get());
 		}
 		for (auto& c : e->components)
-			c->on_added();
+			c.second->on_added();
 	}
 
 	void EntityPrivate::reposition_child(EntityPrivate* e, int position)
@@ -115,6 +122,10 @@ namespace flame
 				break;
 			}
 		}
+		for (auto& c : e->components)
+			c.second->on_position_changed();
+		for (auto& c : components)
+			c.second->on_child_position_changed(e);
 	}
 
 	void EntityPrivate::mark_dying()
@@ -133,7 +144,7 @@ namespace flame
 				for (auto& e : children)
 				{
 					for (auto& _c : e->components)
-						c->on_child_component_removed(_c.get());
+						c.second->on_child_component_removed(_c.second.get());
 				}
 			}
 			for (auto& e : children)
@@ -155,7 +166,7 @@ namespace flame
 				for (auto& c : components)
 				{
 					for (auto& _c : e->components)
-						c->on_child_component_removed(_c.get());
+						c.second->on_child_component_removed(_c.second.get());
 				}
 				if (it->get() == e)
 				{
@@ -177,34 +188,25 @@ namespace flame
 	{
 		auto ret = new EntityPrivate;
 
-		ret->visible_ = visible_;
+		ret->visibility_ = visibility_;
 		ret->set_name(name);
 		for (auto& c : components)
-		{
-			auto copy = c->copy();
-			ret->add_component(copy);
-		}
+			ret->add_component(c.second->copy());
 		for (auto& e : children)
-		{
-			auto copy = e->copy();
-			ret->add_child(copy, -1);
-		}
+			ret->add_child(e->copy(), -1);
 
 		return ret;
 	}
 
-	void EntityPrivate::update()
+	void EntityPrivate::update_visibility()
 	{
 		if (!parent)
-			global_visible_ = visible_;
+			global_visibility_ = visibility_;
 		else
-			global_visible_ = visible_ && parent->global_visible_;
-		if (!global_visible_)
-			return;
-		for (auto& c : components)
-			c->update();
+			global_visibility_ = visibility_ && parent->global_visibility_;
+
 		for (auto& e : children)
-			e->update();
+			e->update_visibility();
 	}
 
 	const std::string& Entity::name() const
@@ -224,29 +226,19 @@ namespace flame
 		thiz->name_hash = H(name.c_str());
 	}
 
-	void Entity::set_visible(bool v)
+	void Entity::set_visibility(bool v)
 	{
-		((EntityPrivate*)this)->set_visible(v);
+		((EntityPrivate*)this)->set_visibility(v);
 	}
 
-	uint Entity::component_count() const
+	Component* Entity::get_component_plain(uint type_hash) const
 	{
-		return ((EntityPrivate*)this)->components.size();
+		return ((EntityPrivate*)this)->get_component(type_hash);
 	}
 
-	Component* Entity::component(uint index) const
+	Mail<std::vector<Component*>> Entity::get_components() const
 	{
-		return ((EntityPrivate*)this)->components[index].get();
-	}
-
-	Component* Entity::find_component(uint type_hash) const
-	{
-		return ((EntityPrivate*)this)->find_component(type_hash);
-	}
-
-	Mail<std::vector<Component*>> Entity::find_components(uint type_hash) const
-	{
-		return ((EntityPrivate*)this)->find_components(type_hash);
+		return ((EntityPrivate*)this)->get_components();
 	}
 
 	void Entity::add_component(Component* c)
@@ -310,11 +302,6 @@ namespace flame
 		return ((EntityPrivate*)this)->copy();
 	}
 
-	void Entity::update()
-	{
-		((EntityPrivate*)this)->update();
-	}
-
 	Entity* Entity::create()
 	{
 		return new EntityPrivate;
@@ -324,6 +311,7 @@ namespace flame
 	{
 		auto e = Entity::create();
 		e->set_name(src->find_attr("name")->value());
+		e->set_visibility(src->find_attr("visibility")->value() == "1");
 
 		auto n_cs = src->find_node("components");
 		if (n_cs)
@@ -389,13 +377,15 @@ namespace flame
 	{
 		auto n = dst->new_node("entity");
 		n->new_attr("name", src->name.empty() ? "unnamed" : src->name);
-		n->new_attr("visible", src->visible_ ? "1" : "0");
+		n->new_attr("visibility", src->visibility_ ? "1" : "0");
 
 		if (!src->components.empty())
 		{
 			auto n_cs = n->new_node("components");
-			for (auto& c : src->components)
+			for (auto& _c : src->components)
 			{
+				auto c = _c.second.get();
+
 				auto n_c = n_cs->new_node(c->type_name);
 
 				auto udt = find_udt(dbs, H((std::string("Component") + c->type_name).c_str()));
@@ -410,7 +400,7 @@ namespace flame
 				{
 					auto f = udt->find_function("serialize");
 					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("int")));
-					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), dummy, c.get(), -1);
+					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), dummy, c, -1);
 				}
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
@@ -457,60 +447,5 @@ namespace flame
 	void Entity::destroy(Entity* w)
 	{
 		delete (EntityPrivate*)w;
-	}
-
-	void* component_alloc(uint size)
-	{
-		return malloc(size);
-	}
-
-	void* add_listener_plain(void* hub, void(*pf)(void* c), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c)>;
-		c->function = pf;
-		c->capture = capture;
-		((ListenerHub*)hub)->listeners.emplace_back(c);
-		return c;
-	}
-
-	void remove_listener_plain(void* hub, void* c)
-	{
-		auto& listeners = ((ListenerHub*)hub)->listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == c)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	static std::map<std::string, void*> serialization_datas;
-
-	void universe_serialization_initialize()
-	{
-		serialization_datas.clear();
-	}
-
-	void universe_serialization_set_data(const std::string& name, void* data)
-	{
-		serialization_datas[name] = data;
-	}
-
-	void* universe_serialization_get_data(const std::string& name)
-	{
-		return serialization_datas[name];
-	}
-
-	const std::string& universe_serialization_find_data(void* data)
-	{
-		for (auto it = serialization_datas.begin(); it != serialization_datas.end(); it++)
-		{
-			if (it->second == data)
-				return it->first;
-		}
-
-		return "";
 	}
 }

@@ -1,4 +1,4 @@
-#include "../entity_private.h"
+#include "../universe_private.h"
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>

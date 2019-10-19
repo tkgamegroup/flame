@@ -8,14 +8,15 @@ namespace flame
 	{
 		std::string name;
 		uint name_hash;
-		std::vector<std::unique_ptr<Component>> components;
+
+		std::unordered_map<uint, std::unique_ptr<Component>> components;
 		EntityPrivate* parent;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
 		EntityPrivate();
-		void set_visible(bool v);
-		Component* find_component(uint type_hash);
-		Mail<std::vector<Component*>> find_components(uint type_hash);
+		void set_visibility(bool v);
+		Component* get_component(uint type_hash);
+		Mail<std::vector<Component*>> get_components();
 		void add_component(Component* c);
 		void remove_component(Component* c);
 		EntityPrivate* find_child(const std::string& name) const;
@@ -24,11 +25,6 @@ namespace flame
 		void mark_dying();
 		void remove_child(EntityPrivate* e, bool destroy);
 		EntityPrivate* copy();
-		void update();
-	};
-
-	struct ListenerHub
-	{
-		std::vector<std::unique_ptr<Closure<void(void* c)>>> listeners;
+		void update_visibility();
 	};
 }

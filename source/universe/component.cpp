@@ -1,4 +1,4 @@
-#include "entity_private.h"
+#include "universe_private.h"
 #include <flame/universe/component.h>
 
 namespace flame

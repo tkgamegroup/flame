@@ -1,4 +1,4 @@
-#include "../entity_private.h"
+#include "../universe_private.h"
 #include <flame/universe/components/element.h>
 #include "event_receiver_private.h"
 #include <flame/universe/components/event_dispatcher.h>

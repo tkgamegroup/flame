@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-	<entity name="unnamed" visible="1">
+	<entity name="unnamed" visibility="1">
 		<components>
 			<Element>
 				<pos v="50.00;50.00" />
@@ -9,7 +9,7 @@
 			</Element>
 		</components>
 		<children>
-			<entity name="unnamed" visible="1">
+			<entity name="unnamed" visibility="1">
 				<components>
 					<Element>
             <pos v="50.00;50.00" />
@@ -18,7 +18,7 @@
 					</Element>
 				</components>
 				<children>
-					<entity name="unnamed" visible="1">
+					<entity name="unnamed" visibility="1">
 						<components>
 							<Element>
 								<pos v="12.00;8.00" />

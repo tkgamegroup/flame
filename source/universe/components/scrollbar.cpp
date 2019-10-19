@@ -55,8 +55,8 @@ namespace flame
 		virtual void on_added() override
 		{
 			auto parent = entity->parent();
-			scrollbar = (cScrollbar*)(parent->find_component(cH("Scrollbar")));
-			target_layout = (cLayout*)(parent->parent()->child(0)->find_component(cH("Layout")));
+			scrollbar = parent->get_component(Scrollbar);
+			target_layout = parent->parent()->child(0)->get_component(Layout);
 		}
 
 		virtual void on_component_added(Component* c) override
