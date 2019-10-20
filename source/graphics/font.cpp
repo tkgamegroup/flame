@@ -352,6 +352,30 @@ namespace flame
 				return Vec2i(w, h);
 			}
 
+			Vec2i get_text_size(const std::wstring_view& text)
+			{
+				auto w = 0;
+				auto h = pixel_height;
+				auto lw = 0;
+				for (auto ch : text)
+				{
+					if (ch == '\n')
+					{
+						h += pixel_height;
+						lw = 0;
+					}
+					else if (ch != '\r')
+					{
+						if (ch == '\t')
+							ch = ' ';
+						lw += get_glyph(ch)->advance;
+						if (lw > w)
+							w = lw;
+					}
+				}
+				return Vec2i(w, h);
+			}
+
 			Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width)
 			{
 				assert(width > max_width);
@@ -406,6 +430,11 @@ namespace flame
 		Vec2i FontAtlas::get_text_offset(const std::wstring_view& text)
 		{
 			return ((FontAtlasPrivate*)this)->get_text_offset(text);
+		}
+
+		Vec2i FontAtlas::get_text_size(const std::wstring_view& text)
+		{
+			return ((FontAtlasPrivate*)this)->get_text_size(text);
 		}
 
 		Mail<std::wstring> FontAtlas::slice_text_by_width(const std::wstring_view& text, uint width)

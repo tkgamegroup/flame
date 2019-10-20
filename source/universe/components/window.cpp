@@ -212,8 +212,7 @@ namespace flame
 
 			auto docker = tabbar->parent();
 			auto pages = docker->child(1);
-			auto idx = tabbar->child_position(entity);
-			page = pages->child(idx);
+			page = pages->child(entity->order_ & 0xffffff);
 			page_element = page->get_component(Element);
 			auto page_aligner = page->get_component(Aligner);
 			auto list = list_item->list;
@@ -248,10 +247,10 @@ namespace flame
 						p->parent()->remove_child(p);
 					else if (p->name_hash() == cH("docker_layout"))
 					{
-						auto oth_docker = p->child(p->child_position(docker) == 0 ? 2 : 0);
+						auto oth_docker = p->child((docker->order_ & 0xffffff) == 0 ? 2 : 0);
 						p->remove_child(oth_docker, false);
 						auto pp = p->parent();
-						auto idx = pp->child_position(p);
+						auto idx = p->order_ & 0xffffff;
 						pp->remove_child(p);
 						pp->add_child(oth_docker, idx);
 						if (pp->name_hash() == cH("docker_container"))
@@ -519,7 +518,7 @@ namespace flame
 					auto pages = docker->child(1);
 					if (pages->child_count() > 0)
 					{
-						auto idx = tabbar->child_position(selected);
+						auto idx = selected->order_ & 0xffffff;
 						for (auto i = 0; i < pages->child_count(); i++)
 							pages->child(i)->set_visibility(false);
 						pages->child(idx)->set_visibility(true);
@@ -653,7 +652,7 @@ namespace flame
 									auto docker_element = docker->get_component(Element);
 									auto docker_aligner = docker->get_component(Aligner);
 									auto p = docker->parent();
-									auto docker_idx = p->child_position(docker);
+									auto docker_idx = docker->order_ & 0xffffff;
 									auto layout = get_docker_layout_model()->copy();
 
 									if (p->name_hash() == cH("docker_container"))

@@ -3,9 +3,9 @@
 
 namespace flame
 {
-	EntityPrivate::EntityPrivate() :
-		parent(nullptr)
+	EntityPrivate::EntityPrivate()
 	{
+		order_ = 0;
 		created_frame_ = looper().frame;
 		dying_ = false;
 
@@ -13,6 +13,8 @@ namespace flame
 		global_visibility_ = true;
 
 		name_hash = 0;
+
+		parent = nullptr;
 	}
 
 	void EntityPrivate::set_visibility(bool v)
@@ -95,6 +97,7 @@ namespace flame
 		if (position == -1)
 			position = children.size();
 		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
+		e->order_ = (order_ & 0xff000000) + (1 << 24) + position;
 		e->world_ = world_;
 		e->parent = this;
 		for (auto& c : components)
@@ -111,16 +114,13 @@ namespace flame
 		if (position == -1)
 			position = children.size() - 1;
 		assert(position < children.size());
-		if (children[position].get() == e)
+		auto old_position = e->order_ & 0xffffff;
+		if (old_position == position)
 			return;
-		for (auto& _e : children)
-		{
-			if (_e.get() == e)
-			{
-				std::swap(_e, children[position]);
-				break;
-			}
-		}
+		auto dst = children[position].get();
+		std::swap(children[old_position], children[position]);
+		dst->order_ = (dst->order_ & 0xff000000) + old_position;
+		e->order_ = (e->order_ & 0xff000000) + position;
 		for (auto& c : e->components)
 			c.second->on_position_changed();
 		for (auto& c : components)
@@ -258,17 +258,6 @@ namespace flame
 	uint Entity::child_count() const
 	{
 		return ((EntityPrivate*)this)->children.size();
-	}
-
-	int Entity::child_position(Entity* e) const
-	{
-		auto& children = ((EntityPrivate*)this)->children;
-		for (auto i = 0; i < children.size(); i++)
-		{
-			if (children[i].get() == e)
-				return i;
-		}
-		return -1;
 	}
 
 	Entity* Entity::child(uint index) const

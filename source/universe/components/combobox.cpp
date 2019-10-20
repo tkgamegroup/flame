@@ -182,8 +182,7 @@ namespace flame
 			c_element->frame_color = default_style.text_color_normal;
 			c_element->frame_thickness = 2.f;
 
-			auto c_text = e_combobox->get_component(Text);
-			c_text->auto_width = false;
+			e_combobox->get_component(Text)->auto_width = false;
 			
 			e_combobox->add_component(cCombobox::create());
 		}

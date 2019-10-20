@@ -140,7 +140,7 @@ namespace flame
 		void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness) override;
 		void fill(const std::vector<Vec2f>& points, const Vec4c& col) override;
 
-		Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale) override;
+		void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale) override;
 		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 		const Vec4f& scissor() override;
 		void set_scissor(const Vec4f& scissor) override;
@@ -353,7 +353,7 @@ namespace flame
 			}
 		}
 
-		Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+		void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 		{
 			if (f->draw_type != FontDrawSdf)
 				scale = 1.f;
@@ -364,17 +364,13 @@ namespace flame
 			begin_draw((CmdType)f->draw_type, f->index);
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-			Vec2f rect(0.f, f->pixel_height);
-			auto lw = 0.f;
+
 			for (auto ch : text)
 			{
 				if (ch == '\n')
 				{
 					_pos.y() += lh;
 					_pos.x() = pos.x();
-
-					rect.y() += f->pixel_height;
-					lw = 0.f;
 				}
 				else if (ch != '\r')
 				{
@@ -403,14 +399,8 @@ namespace flame
 					}
 
 					_pos.x() += g->advance * scale;
-
-					lw += g->advance;
-					if (lw > rect.x())
-						rect.x() = lw;
 				}
 			}
-
-			return rect;
 		}
 
 		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
@@ -599,9 +589,9 @@ namespace flame
 		thiz->fill(points, col);
 	}
 
-	Vec2f CanvasPrivate::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+	void CanvasPrivate::add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
 	{
-		return thiz->add_text(f, pos, col, text, scale);
+		thiz->add_text(f, pos, col, text, scale);
 	}
 
 	void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

@@ -25,6 +25,32 @@ namespace flame
 			content_size = Vec2f(0.f);
 
 			als_dirty = true;
+
+			/*
+				auto s = Vec2f(font_atlas->get_text_size(text)) * sdf_scale;
+				if (c_t->auto_width)
+				{
+					auto w = rect.x() * c_t->sdf_scale + c_e->inner_padding_horizontal();
+					if (c_t->aligner && c_t->aligner->width_policy == SizeGreedy)
+					{
+						c_t->aligner->min_size.x() = w;
+						c_e->size.x() = max(c_e->size.x(), w);
+					}
+					else
+						c_e->size.x() = w;
+				}
+				if (c_t->auto_height)
+				{
+					auto h = rect.y() * c_t->sdf_scale + c_e->inner_padding_vertical();
+					if (c_t->aligner && c_t->aligner->width_policy == SizeGreedy)
+					{
+						c_t->aligner->min_size.y() = h;
+						c_e->size.y() = max(c_e->size.y(), h);
+					}
+					else
+						c_e->size.y() = h;
+				}
+			*/
 		}
 
 		void apply_h_free_layout(const std::pair<cElement*, cAligner*>& al, bool lock = false)

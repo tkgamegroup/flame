@@ -1,3 +1,4 @@
+#include <flame/graphics/font.h>
 #include <flame/universe/world.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>

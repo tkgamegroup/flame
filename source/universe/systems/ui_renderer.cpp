@@ -51,31 +51,9 @@ namespace flame
 				auto c_t = e->get_component(Text);
 				if (c_t)
 				{
-					auto rect = canvas->add_text(c_t->font_atlas, c_e->global_pos +
+					canvas->add_text(c_t->font_atlas, c_e->global_pos +
 						Vec2f(c_e->inner_padding[0], c_e->inner_padding[1]) * c_e->global_scale,
 						alpha_mul(c_t->color, c_e->alpha), c_t->text().c_str(), c_t->sdf_scale * c_e->global_scale);
-					if (c_t->auto_width)
-					{
-						auto w = rect.x() * c_t->sdf_scale + c_e->inner_padding_horizontal();
-						if (c_t->aligner && c_t->aligner->width_policy == SizeGreedy)
-						{
-							c_t->aligner->min_size.x() = w;
-							c_e->size.x() = max(c_e->size.x(), w);
-						}
-						else
-							c_e->size.x() = w;
-					}
-					if (c_t->auto_height)
-					{
-						auto h = rect.y() * c_t->sdf_scale + c_e->inner_padding_vertical();
-						if (c_t->aligner && c_t->aligner->width_policy == SizeGreedy)
-						{
-							c_t->aligner->min_size.y() = h;
-							c_e->size.y() = max(c_e->size.y(), h);
-						}
-						else
-							c_e->size.y() = h;
-					}
 				}
 			}
 

@@ -34,7 +34,7 @@ namespace flame
 					if (thiz->event_receiver->active && is_mouse_move(action, key))
 					{
 						auto parent = thiz->entity->parent();
-						auto idx = parent->child_position(thiz->entity);
+						auto idx = thiz->entity->order_ & 0xffffff;
 						if (idx > 0 && idx < parent->child_count() - 1)
 						{
 							auto left = parent->child(idx - 1);
