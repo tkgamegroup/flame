@@ -59,63 +59,6 @@ namespace flame
 			}
 		}
 
-		void update()
-		{
-			if (!p_element)
-			{
-				global_pos = pos;
-				global_scale = scale;
-			}
-			else
-			{
-				global_pos = p_element->global_pos + p_element->global_scale * pos;
-				global_scale = p_element->global_scale * scale;
-			}
-			global_size = size * global_scale;
-
-			if (clip_children || !p_element)
-			{
-				auto cp = global_pos + Vec2f(inner_padding[0], inner_padding[1]) * global_scale;
-				auto cs = global_size - Vec2f(inner_padding_horizontal(), inner_padding_vertical()) * global_scale;
-				scissor = Vec4f(cp, cp + cs);
-			}
-			else
-			{
-				scissor = p_element->scissor;
-				canvas->set_scissor(scissor);
-			}
-
-			cliped = false;
-			if (!p_element || rect_overlapping(p_element->scissor, Vec4f(global_pos, global_pos + global_size)))
-			{
-				auto r = roundness * global_scale;
-				auto st = shadow_thickness * global_scale;
-
-				if (st > 0.f)
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, global_pos - Vec2f(st * 0.5f), global_size + Vec2f(st), r);
-					points.push_back(points[0]);
-					canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
-				}
-				if (alpha > 0.f)
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, global_pos, global_size, r);
-					if (color.w() > 0)
-						canvas->fill(points, alpha_mul(color, alpha));
-					auto ft = frame_thickness * global_scale;
-					if (ft > 0.f && frame_color.w() > 0)
-					{
-						points.push_back(points[0]);
-						canvas->stroke(points, alpha_mul(frame_color, alpha), ft);
-					}
-				}
-			}
-			else
-				cliped = true;
-		}
-
 		Component* copy() override
 		{
 			auto copy = new cElementPrivate(canvas);

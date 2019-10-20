@@ -10,7 +10,6 @@ namespace flame
 
 		cTextPrivate(graphics::FontAtlas* font_atlas);
 		void on_component_added(Component* c) override;
-		void update();
 		Component* copy() override;
 	};
 }

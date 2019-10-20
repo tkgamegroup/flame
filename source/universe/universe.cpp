@@ -30,6 +30,27 @@ namespace flame
 		}
 	}
 
+	void UniversePrivate::update()
+	{
+		for (auto& w : worlds)
+		{
+			w->root->update_visibility();
+			for (auto& s : w->systems)
+				s->update(w->root.get());
+		}
+	}
+
+	void Universe::add_world(World* w)
+	{
+		w->universe_ = this;
+		((UniversePrivate*)this)->worlds.emplace_back((WorldPrivate*)w);
+	}
+
+	void Universe::update()
+	{
+		((UniversePrivate*)this)->update();
+	}
+
 	void Universe::clear_bank()
 	{
 		((UniversePrivate*)this)->bank.clear();
@@ -54,5 +75,15 @@ namespace flame
 				return it->first;
 		}
 		return "";
+	}
+
+	Universe* Universe::create()
+	{
+		return new UniversePrivate;
+	}
+
+	void Universe::destroy(Universe* u)
+	{
+		delete (UniversePrivate*)u;
 	}
 }

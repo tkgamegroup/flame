@@ -31,35 +31,6 @@ namespace flame
 			aligner = (cAligner*)c;
 	}
 
-	void cTextPrivate::update()
-	{
-		auto rect = element->canvas->add_text(font_atlas, element->global_pos +
-			Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
-			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
-		if (auto_width)
-		{
-			auto w = rect.x() * sdf_scale + element->inner_padding_horizontal();
-			if (aligner && aligner->width_policy == SizeGreedy)
-			{
-				aligner->min_size.x() = w;
-				element->size.x() = max(element->size.x(), w);
-			}
-			else
-				element->size.x() = w;
-		}
-		if (auto_height)
-		{
-			auto h = rect.y() * sdf_scale + element->inner_padding_vertical();
-			if (aligner && aligner->width_policy == SizeGreedy)
-			{
-				aligner->min_size.y() = h;
-				element->size.y() = max(element->size.y(), h);
-			}
-			else
-				element->size.y() = h;
-		}
-	}
-
 	Component* cTextPrivate::copy()
 	{
 		auto copy = new cTextPrivate(font_atlas);

@@ -9,6 +9,6 @@ namespace flame
 	struct System
 	{
 		virtual ~System() {};
-		virtual void update(Entity* root);
+		virtual void update(Entity* root) = 0;
 	};
 }

@@ -15,5 +15,7 @@ namespace flame
 		std::vector<std::unique_ptr<WorldPrivate>> worlds;
 
 		std::map<std::string, void*> bank;
+
+		void update();
 	};
 }

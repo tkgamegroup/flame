@@ -133,16 +133,17 @@ namespace flame
 	{
 		MakeCmd$* thiz;
 
-		virtual void set_clear_color(const Vec4c& col) override;
-		virtual Imageview* get_image(uint index) override;
-		virtual uint set_image(int index, Imageview* v, Filter filter) override;
+		void set_clear_color(const Vec4c& col) override;
+		Imageview* get_image(uint index) override;
+		uint set_image(int index, Imageview* v, Filter filter) override;
 
-		virtual void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness) override;
-		virtual void fill(const std::vector<Vec2f>& points, const Vec4c& col) override;
+		void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness) override;
+		void fill(const std::vector<Vec2f>& points, const Vec4c& col) override;
 
-		virtual Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale) override;
-		virtual void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
-		virtual void set_scissor(const Vec4f& scissor) override;
+		Vec2f add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale) override;
+		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
+		const Vec4f& scissor() override;
+		void set_scissor(const Vec4f& scissor) override;
 	};
 
 	struct MakeCmd$
@@ -606,6 +607,11 @@ namespace flame
 	void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 	{
 		thiz->add_image(pos, size, id, uv0, uv1, tint_col);
+	}
+
+	const Vec4f& CanvasPrivate::scissor()
+	{
+		return thiz->curr_scissor;
 	}
 
 	void CanvasPrivate::set_scissor(const Vec4f& scissor)
