@@ -109,11 +109,11 @@ namespace flame
 			for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
 			{
 				auto c = it->get();
-				if (c->global_visible_)
+				if (c->global_visibility_)
 					search_hovers(c);
 			}
 
-			auto er = (cEventReceiverPrivate*)e->find_component(cH("EventReceiver"));
+			auto er = (cEventReceiverPrivate*)e->get_component(EventReceiver);
 			if (!er)
 				return;
 
@@ -149,7 +149,7 @@ namespace flame
 			}
 		}
 
-		virtual void update() override
+		void update()
 		{
 			mouse_disp = mouse_pos - mouse_pos_prev;
 			if (potential_dbclick_er)
@@ -176,7 +176,7 @@ namespace flame
 
 			if (focusing)
 			{
-				if (!focusing->entity->global_visible_)
+				if (!focusing->entity->global_visibility_)
 				{
 					focusing->hovering = false;
 					focusing->focusing = false;

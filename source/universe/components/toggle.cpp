@@ -1,4 +1,4 @@
-#include "../entity_private.h"
+#include "../universe_private.h"
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
@@ -58,7 +58,7 @@ namespace flame
 			}
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{

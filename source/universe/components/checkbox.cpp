@@ -40,7 +40,7 @@ namespace flame
 			delete (ListenerHub*)changed_listeners.hub;
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{

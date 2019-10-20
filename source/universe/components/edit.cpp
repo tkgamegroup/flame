@@ -49,7 +49,7 @@ namespace flame
 				((void(*)(void*, const wchar_t*))l->function)(l->capture.p, str);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -163,7 +163,7 @@ namespace flame
 			}
 		}
 
-		virtual void update() override
+		void update()
 		{
 			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{

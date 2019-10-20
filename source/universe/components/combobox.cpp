@@ -64,7 +64,7 @@ namespace flame
 			}
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -115,7 +115,7 @@ namespace flame
 				((void(*)(void*, int))l->function)(l->capture.p, idx);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Text"))
 				text = (cText*)c;
@@ -124,7 +124,7 @@ namespace flame
 				menu_button = (cMenuButton*)c;
 				auto menu = menu_button->menu;
 				for (auto i = 0; i < menu->child_count(); i++)
-					((cComboboxItem*)(menu->child(i)->find_component(cH("ComboboxItem"))))->combobox = this;
+					menu->child(i)->get_component(ComboboxItem)->combobox = this;
 			}
 		}
 	};
@@ -133,7 +133,7 @@ namespace flame
 	{
 		if (selected)
 		{
-			auto comboboxitem = (cComboboxItemPrivate*)selected->find_component(cH("ComboboxItem"));
+			auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(ComboboxItem);
 			if (comboboxitem)
 				comboboxitem->do_style(false);
 		}
@@ -145,9 +145,9 @@ namespace flame
 		else
 		{
 			selected = menu_button->menu->child(idx);
-			text->set_text(((cText*)(selected->find_component(cH("Text"))))->text());
+			text->set_text(selected->get_component(Text)->text());
 			{
-				auto comboboxitem = (cComboboxItemPrivate*)selected->find_component(cH("ComboboxItem"));
+				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(ComboboxItem);
 				if (comboboxitem)
 					comboboxitem->do_style(true);
 			}
@@ -176,13 +176,13 @@ namespace flame
 
 		auto e_combobox = create_standard_menu_button(font_atlas, sdf_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
 		{
-			auto c_element = (cElement*)e_combobox->find_component(cH("Element"));
+			auto c_element = e_combobox->get_component(Element);
 			c_element->size.x() = width + 8.f;
 			c_element->size.y() = font_atlas->pixel_height * sdf_scale + 4.f;
 			c_element->frame_color = default_style.text_color_normal;
 			c_element->frame_thickness = 2.f;
 
-			auto c_text = (cText*)e_combobox->find_component(cH("Text"));
+			auto c_text = e_combobox->get_component(Text);
 			c_text->auto_width = false;
 			
 			e_combobox->add_component(cCombobox::create());

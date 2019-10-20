@@ -19,10 +19,10 @@ namespace flame
 		auto p = e->parent();
 		if (!p)
 			return nullptr;
-		auto t = (cTree*)p->find_component(cH("Tree"));
+		auto t = p->get_component(Tree);
 		if (t)
 			return t;
-		return ((cTreeNode*)p->parent()->find_component(cH("TreeNode")))->tree;
+		return p->parent()->get_component(TreeNode)->tree;
 	}
 
 	struct cTreeLeafPrivate : cTreeLeaf
@@ -75,12 +75,12 @@ namespace flame
 			}
 		}
 
-		virtual void on_added() override
+		void on_added() override
 		{
 			tree = get_tree(entity);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -113,14 +113,14 @@ namespace flame
 			tree = nullptr;
 		}
 
-		virtual void on_added() override
+		void on_added() override
 		{
 			tree = get_tree(entity);
 			if (tree)
 			{
 				auto title = entity->child(0);
-				((cTreeNodeTitle*)title->find_component(cH("TreeNodeTitle")))->tree = tree;
-				((cTreeNodeArrow*)title->child(0)->find_component(cH("TreeNodeArrow")))->tree = tree;
+				title->get_component(TreeNodeTitle)->tree = tree;
+				title->child(0)->get_component(TreeNodeArrow)->tree = tree;
 			}
 		}
 	};
@@ -177,7 +177,7 @@ namespace flame
 			}
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -222,7 +222,7 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Text"))
 				text = (cText*)c;
@@ -234,8 +234,8 @@ namespace flame
 					{
 						auto thiz = *(cTreeNodeArrowPrivate**)c;
 						auto e = thiz->entity->parent()->parent()->child(1);
-						e->set_visible(!e->visible_);
-						thiz->text->set_text(e->visible_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
+						e->set_visibility(!e->visibility_);
+						thiz->text->set_text(e->visibility_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
 					}
 				}, new_mail_p(this));
 			}
@@ -268,7 +268,7 @@ namespace flame
 			delete (ListenerHub*)selected_changed_listeners.hub;
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -285,24 +285,24 @@ namespace flame
 	{
 		if (selected)
 		{
-			auto treeleaf = (cTreeLeafPrivate*)selected->find_component(cH("TreeLeaf"));
+			auto treeleaf = (cTreeLeafPrivate*)selected->get_component(TreeLeaf);
 			if (treeleaf)
 				treeleaf->do_style(false);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->child(0)->find_component(cH("TreeNodeTitle"));
+				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->child(0)->get_component(TreeNodeTitle);
 				if (treenodetitle)
 					treenodetitle->do_style(false);
 			}
 		}
 		if (e)
 		{
-			auto treeleaf = (cTreeLeafPrivate*)e->find_component(cH("TreeLeaf"));
+			auto treeleaf = (cTreeLeafPrivate*)e->get_component(TreeLeaf);
 			if (treeleaf)
 				treeleaf->do_style(true);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)e->child(0)->find_component(cH("TreeNodeTitle"));
+				auto treenodetitle = (cTreeNodeTitlePrivate*)e->child(0)->get_component(TreeNodeTitle);
 				if (treenodetitle)
 					treenodetitle->do_style(true);
 			}

@@ -43,7 +43,7 @@ namespace flame
 			}
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -58,7 +58,7 @@ namespace flame
 			}
 		}
 
-		virtual Component* copy() override
+		Component* copy() override
 		{
 			return new cStyleColorPrivate(color_normal, color_hovering, color_active);
 		}
@@ -109,7 +109,7 @@ namespace flame
 			}
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Text"))
 				text = (cText*)c;
@@ -124,7 +124,7 @@ namespace flame
 			}
 		}
 
-		virtual Component* copy() override
+		Component* copy() override
 		{
 			return new cStyleTextColorPrivate(color_normal, color_else);
 		}

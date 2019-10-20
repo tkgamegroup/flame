@@ -24,7 +24,7 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -38,13 +38,13 @@ namespace flame
 						if (idx > 0 && idx < parent->child_count() - 1)
 						{
 							auto left = parent->child(idx - 1);
-							auto left_element = (cElement*)(left->find_component(cH("Element")));
+							auto left_element = left->get_component(Element);
 							assert(left_element);
-							auto left_aligner = (cAligner*)(left->find_component(cH("Aligner")));
+							auto left_aligner = left->get_component(Aligner);
 							auto right = parent->child(idx + 1);
-							auto right_element = (cElement*)(right->find_component(cH("Element")));
+							auto right_element = right->get_component(Element);
 							assert(right_element);
-							auto right_aligner = (cAligner*)(right->find_component(cH("Aligner")));
+							auto right_aligner = right->get_component(Aligner);
 
 							if (thiz->type == SplitterHorizontal)
 							{
@@ -90,7 +90,7 @@ namespace flame
 			}
 		}
 
-		virtual Component* copy() override
+		Component* copy() override
 		{
 			auto copy = new cSplitterPrivate();
 

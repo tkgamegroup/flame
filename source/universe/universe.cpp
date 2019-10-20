@@ -30,31 +30,29 @@ namespace flame
 		}
 	}
 
-	static std::map<std::string, void*> serialization_datas;
-
-	void universe_serialization_initialize()
+	void Universe::clear_bank()
 	{
-		serialization_datas.clear();
+		((UniversePrivate*)this)->bank.clear();
 	}
 
-	void universe_serialization_set_data(const std::string& name, void* data)
+	void Universe::bank_save(const std::string& key, void* v)
 	{
-		serialization_datas[name] = data;
+		((UniversePrivate*)this)->bank[key] = v;
 	}
 
-	void* universe_serialization_get_data(const std::string& name)
+	void* Universe::bank_get(const std::string& key)
 	{
-		return serialization_datas[name];
+		return ((UniversePrivate*)this)->bank[key];
 	}
 
-	const std::string& universe_serialization_find_data(void* data)
+	const std::string& Universe::bank_find(void* v)
 	{
-		for (auto it = serialization_datas.begin(); it != serialization_datas.end(); it++)
+		const auto& bank = ((UniversePrivate*)this)->bank;
+		for (auto it = bank.begin(); it != bank.end(); it++)
 		{
-			if (it->second == data)
+			if (it->second == v)
 				return it->first;
 		}
-
 		return "";
 	}
 }

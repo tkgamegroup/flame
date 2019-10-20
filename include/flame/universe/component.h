@@ -23,8 +23,8 @@ namespace flame
 		virtual void on_child_component_added(Component* c) {}
 		virtual void on_component_removed(Component* c) {}
 		virtual void on_child_component_removed(Component* c) {}
-		virtual void on_visible_changed() {}
-		virtual void on_child_visible_changed() {}
+		virtual void on_visibility_changed() {}
+		virtual void on_child_visibility_changed() {}
 		virtual void on_position_changed() {}
 		virtual void on_child_position_changed(Entity* e) {}
 		virtual Component* copy() { return nullptr; }

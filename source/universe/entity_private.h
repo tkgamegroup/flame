@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flame/universe/entity.h>
+#include <flame/universe/component.h>
 
 namespace flame
 {
@@ -15,7 +16,7 @@ namespace flame
 
 		EntityPrivate();
 		void set_visibility(bool v);
-		Component* get_component(uint type_hash);
+		Component* get_component_plain(uint type_hash);
 		Mail<std::vector<Component*>> get_components();
 		void add_component(Component* c);
 		void remove_component(Component* c);

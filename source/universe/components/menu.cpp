@@ -52,10 +52,10 @@ namespace flame
 				else
 					topmost->created_frame_ = looper().frame;
 
-				auto c_menu = (cMenu*)menu->find_component(cH("Menu"));
+				auto c_menu = menu->get_component(Menu);
 				if (c_menu)
 					c_menu->popuped_by = this;
-				auto menu_element = (cElement*)menu->find_component(cH("Element"));
+				auto menu_element = menu->get_component(Element);
 				switch (popup_side)
 				{
 				case SideS:
@@ -85,7 +85,7 @@ namespace flame
 			}
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -146,7 +146,7 @@ namespace flame
 	{
 		for (auto i = 0; i < menu->child_count(); i++)
 		{
-			auto menu_btn = (cMenuButton*)menu->child(i)->find_component(cH("MenuButton"));
+			auto menu_btn = menu->child(i)->get_component(MenuButton);
 			if (menu_btn)
 				menu_btn->close();
 		}
@@ -158,7 +158,7 @@ namespace flame
 		if (!topmost)
 			topmost = create_topmost(root, false, true, false);
 
-		((cElement*)(menu->find_component(cH("Element"))))->pos = pos;
+		menu->get_component(Element)->pos = pos;
 
 		topmost->add_child(menu);
 	}

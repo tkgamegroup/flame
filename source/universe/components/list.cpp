@@ -76,7 +76,7 @@ namespace flame
 			}
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -103,7 +103,7 @@ namespace flame
 			}
 		}
 
-		virtual Component* copy() override
+		Component* copy() override
 		{
 			auto copy = new cListItemPrivate();
 
@@ -150,7 +150,7 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("EventReceiver"))
 			{
@@ -167,13 +167,13 @@ namespace flame
 			}
 		}
 
-		virtual void on_child_component_added(Component* c) override
+		void on_child_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("ListItem"))
 				((cListItem*)c)->list = this;
 		}
 
-		virtual Component* copy() override
+		Component* copy() override
 		{
 			auto copy = new cListPrivate(select_air_when_clicked);
 			return copy;
@@ -208,13 +208,13 @@ namespace flame
 			return;
 		if (selected)
 		{
-			auto listitem = (cListItemPrivate*)selected->find_component(cH("ListItem"));
+			auto listitem = (cListItemPrivate*)selected->get_component(ListItem);
 			if (listitem)
 				listitem->do_style(false);
 		}
 		if (e)
 		{
-			auto listitem = (cListItemPrivate*)e->find_component(cH("ListItem"));
+			auto listitem = (cListItemPrivate*)e->get_component(ListItem);
 			if (listitem)
 				listitem->do_style(true);
 		}

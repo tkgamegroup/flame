@@ -17,13 +17,13 @@ namespace flame
 			color = Vec4c(255);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
 		}
 
-		virtual void update() override
+		void update()
 		{
 			if (!element->cliped)
 			{

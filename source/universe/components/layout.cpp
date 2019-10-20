@@ -111,7 +111,7 @@ namespace flame
 				element->size.y() = h;
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -119,12 +119,12 @@ namespace flame
 				aligner = (cAligner*)c;
 		}
 
-		virtual void on_child_visible_changed() override
+		void on_child_visibility_changed() override
 		{
 			als_dirty = true;
 		}
 
-		virtual void on_child_component_added(Component* c) override
+		void on_child_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				als_dirty = true;
@@ -132,7 +132,7 @@ namespace flame
 				als_dirty = true;
 		}
 
-		virtual void on_child_component_removed(Component* c) override
+		void on_child_component_removed(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				als_dirty = true;
@@ -140,7 +140,7 @@ namespace flame
 				als_dirty = true;
 		}
 
-		virtual void update() override
+		void update()
 		{
 			if (als_dirty)
 			{
@@ -148,10 +148,10 @@ namespace flame
 				for (auto i = 0; i < entity->child_count(); i++)
 				{
 					auto e = entity->child(i);
-					if (e->visible_)
+					if (e->global_visibility_)
 					{
-						auto al = (cAligner*)e->find_component(cH("Aligner"));
-						als.emplace_back(al ? al->element : (cElement*)entity->child(i)->find_component(cH("Element")), al);
+						auto al = e->get_component(Aligner);
+						als.emplace_back(al ? al->element : entity->child(i)->get_component(Element), al);
 					}
 				}
 				als_dirty = false;

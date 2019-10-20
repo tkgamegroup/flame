@@ -9,7 +9,7 @@ namespace flame
 	{
 		void boardcast_canvas(graphics::Canvas* canvas, EntityPrivate* e)
 		{
-			auto c = (cElement*)e->find_component(cH("Element"));
+			auto c = e->get_component(Element);
 			if (c)
 				c->canvas = canvas;
 			for (auto& c : e->children)
@@ -37,18 +37,18 @@ namespace flame
 			global_size = 0.f;
 		}
 
-		virtual void on_added() override
+		void on_added() override
 		{
 			auto p = entity->parent();
 			if (p)
 			{
-				p_element = (cElement*)(p->find_component(cH("Element")));
+				p_element = p->get_component(Element);
 				if (p_element)
 					canvas = p_element->canvas;
 			}
 		}
 
-		virtual void on_child_component_added(Component* _c) override
+		void on_child_component_added(Component* _c) override
 		{
 			if (_c->type_hash == cH("Element"))
 			{
@@ -59,7 +59,7 @@ namespace flame
 			}
 		}
 
-		virtual void update() override
+		void update()
 		{
 			if (!p_element)
 			{
@@ -116,7 +116,7 @@ namespace flame
 				cliped = true;
 		}
 
-		virtual Component* copy() override
+		Component* copy() override
 		{
 			auto copy = new cElementPrivate(canvas);
 

@@ -51,7 +51,7 @@ struct App
 	FontAtlas* font_atlas_lcd;
 	FontAtlas* font_atlas_sdf;
 
-	Entity* root;
+	Universe* u;
 	cElement* c_element_root;
 	cEventReceiver* c_event_receiver_root;
 	cText* c_text_fps;
@@ -70,7 +70,7 @@ struct App
 		{
 			c_element_root->size = w->size;
 			c_text_fps->set_text(std::to_wstring(looper().fps));
-			root->update();
+			u->update();
 		}
 		bp->update();
 

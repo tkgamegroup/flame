@@ -15,7 +15,7 @@ namespace flame
 			element = nullptr;
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -52,14 +52,14 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		virtual void on_added() override
+		void on_added() override
 		{
 			auto parent = entity->parent();
 			scrollbar = parent->get_component(Scrollbar);
 			target_layout = parent->parent()->child(0)->get_component(Layout);
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
@@ -79,7 +79,7 @@ namespace flame
 			}
 		}
 
-		virtual void update() override
+		void update()
 		{
 			auto target_element = target_layout->element;
 			if (type == ScrollbarVertical)

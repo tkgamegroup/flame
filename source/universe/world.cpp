@@ -1,21 +1,7 @@
-#include "entity_private.h"
-#include <flame/universe/world.h>
+#include "world_private.h"
 
 namespace flame
 {
-	struct WorldPrivate : World
-	{
-		std::unique_ptr<EntityPrivate> root;
-		std::vector<std::unique_ptr<System>> systems;
-
-		WorldPrivate()
-		{
-			auto e = new EntityPrivate;
-			e->world_ = this;
-			root.reset(e);
-		}
-	};
-
 	Entity* World::root() const
 	{
 		return ((WorldPrivate*)this)->root.get();

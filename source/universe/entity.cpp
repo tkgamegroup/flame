@@ -1,6 +1,5 @@
 #include <flame/foundation/serialize.h>
 #include "entity_private.h"
-#include <flame/universe/component.h>
 
 namespace flame
 {
@@ -20,15 +19,15 @@ namespace flame
 	{
 		visibility_ = v;
 		for (auto& c : components)
-			c.second->on_visible_changed();
+			c.second->on_visibility_changed();
 		if (parent)
 		{
 			for (auto& c : parent->components)
-				c.second->on_child_visible_changed();
+				c.second->on_child_visibility_changed();
 		}
 	}
 
-	Component* EntityPrivate::get_component(uint type_hash)
+	Component* EntityPrivate::get_component_plain(uint type_hash)
 	{
 		auto it = components.find(type_hash);
 		if (it == components.end())
@@ -46,7 +45,7 @@ namespace flame
 
 	void EntityPrivate::add_component(Component* c)
 	{
-		assert(!get_component(c->type_hash));
+		assert(!get_component_plain(c->type_hash));
 
 		c->entity = this;
 		for (auto& _c : components)
@@ -233,7 +232,7 @@ namespace flame
 
 	Component* Entity::get_component_plain(uint type_hash) const
 	{
-		return ((EntityPrivate*)this)->get_component(type_hash);
+		return ((EntityPrivate*)this)->get_component_plain(type_hash);
 	}
 
 	Mail<std::vector<Component*>> Entity::get_components() const
@@ -307,7 +306,7 @@ namespace flame
 		return new EntityPrivate;
 	}
 
-	static Entity* load_prefab(const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* src)
+	static Entity* load_prefab(Universe* u, const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* src)
 	{
 		auto e = Entity::create();
 		e->set_name(src->find_attr("name")->value());
@@ -340,8 +339,8 @@ namespace flame
 				void* component;
 				{
 					auto f = udt->find_function("create");
-					assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
-					component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
+					assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Universe")));
+					component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, u);
 				}
 				e->add_component((Component*)component);
 				{
@@ -358,19 +357,19 @@ namespace flame
 		if (n_es)
 		{
 			for (auto i_e = 0; i_e < n_es->node_count(); i_e++)
-				e->add_child(load_prefab(dbs, n_es->node(i_e)));
+				e->add_child(load_prefab(u, dbs, n_es->node(i_e)));
 		}
 
 		return e;
 	}
 
-	Entity* Entity::create_from_file(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
+	Entity* Entity::create_from_file(Universe* u, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file || file->name() != "prefab")
 			return nullptr;
 
-		return load_prefab(dbs, file->node(0));
+		return load_prefab(u, dbs, file->node(0));
 	}
 
 	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* dst, EntityPrivate* src)

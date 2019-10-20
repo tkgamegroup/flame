@@ -9,8 +9,8 @@ namespace flame
 		std::wstring text;
 
 		cTextPrivate(graphics::FontAtlas* font_atlas);
-		virtual void on_component_added(Component* c) override;
-		virtual void update() override;
-		virtual Component* copy() override;
+		void on_component_added(Component* c) override;
+		void update();
+		Component* copy() override;
 	};
 }

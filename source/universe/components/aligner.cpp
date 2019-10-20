@@ -19,13 +19,13 @@ namespace flame
 			using_padding = false;
 		}
 
-		virtual void on_component_added(Component* c) override
+		void on_component_added(Component* c) override
 		{
 			if (c->type_hash == cH("Element"))
 				element = (cElement*)c;
 		}
 
-		virtual void update() override
+		void update()
 		{
 			if (min_size.x() < 0.f && width_policy == SizeGreedy)
 				min_size.x() = element->size.x();
@@ -33,7 +33,7 @@ namespace flame
 				min_size.y() = element->size.y();
 		}
 
-		virtual Component* copy() override
+		Component* copy() override
 		{
 			auto copy = new cAlignerPrivate();
 
