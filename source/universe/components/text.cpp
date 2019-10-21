@@ -8,8 +8,6 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
-
 namespace flame
 {
 	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
@@ -26,9 +24,9 @@ namespace flame
 
 	void cTextPrivate::on_component_added(Component* c)
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-		else if (c->type_hash == cH("Aligner"))
+		else if (c->name_hash == cH("Aligner"))
 			aligner = (cAligner*)c;
 	}
 

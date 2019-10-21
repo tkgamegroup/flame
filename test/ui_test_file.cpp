@@ -7,6 +7,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
+#include <flame/universe/systems/layout_management.h>
 #include <flame/universe/systems/ui_renderer.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -99,6 +100,7 @@ int main(int argc, char** args)
 	app.u->bank_save("font_atlas1", app.font_atlas_pixel);
 
 	auto w = World::create();
+	w->add_system(sLayoutManagement::create());
 	w->add_system(sUIRenderer::create(app.canvas));
 	app.u->add_world(w);
 

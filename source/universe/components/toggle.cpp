@@ -60,7 +60,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -71,7 +71,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->type_hash == cH("StyleColor"))
+			else if (c->name_hash == cH("StyleColor"))
 			{
 				style = (cStyleColor*)c;
 				do_style();

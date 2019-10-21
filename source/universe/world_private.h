@@ -11,11 +11,7 @@ namespace flame
 		std::unique_ptr<EntityPrivate> root;
 		std::vector<std::unique_ptr<System>> systems;
 
-		WorldPrivate()
-		{
-			auto e = new EntityPrivate;
-			e->world_ = this;
-			root.reset(e);
-		}
+		WorldPrivate();
+		System* get_system_plain(uint name_hash) const;
 	};
 }

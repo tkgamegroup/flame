@@ -1,8 +1,6 @@
 #include "../entity_private.h"
 #include <flame/universe/components/element.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
-
 namespace flame
 {
 	struct cElementPrivate : cElement
@@ -50,7 +48,7 @@ namespace flame
 
 		void on_child_component_added(Component* _c) override
 		{
-			if (_c->type_hash == cH("Element"))
+			if (_c->name_hash == cH("Element"))
 			{
 				auto c = (cElement*)_c;
 				c->p_element = this;

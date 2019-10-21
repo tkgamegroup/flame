@@ -107,4 +107,9 @@ namespace flame
 	{
 		return new sUIRendererPrivate(canvas);
 	}
+
+	void sUIRenderer::destroy(sUIRenderer* s)
+	{
+		delete (sUIRendererPrivate*)s;
+	}
 }

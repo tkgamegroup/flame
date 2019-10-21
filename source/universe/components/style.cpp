@@ -45,9 +45,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
@@ -111,9 +111,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Text"))
+			if (c->name_hash == cH("Text"))
 				text = (cText*)c;
-			else if (c->type_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {

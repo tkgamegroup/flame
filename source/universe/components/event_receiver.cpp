@@ -78,7 +78,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_component_added(Component* c)
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
 	}
 

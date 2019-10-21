@@ -29,9 +29,9 @@ namespace flame
 		}
 	}
 
-	Component* EntityPrivate::get_component_plain(uint type_hash)
+	Component* EntityPrivate::get_component_plain(uint name_hash)
 	{
-		auto it = components.find(type_hash);
+		auto it = components.find(name_hash);
 		if (it == components.end())
 			return nullptr;
 		return it->second.get();
@@ -47,14 +47,16 @@ namespace flame
 
 	void EntityPrivate::add_component(Component* c)
 	{
-		assert(!get_component_plain(c->type_hash));
+		assert(!get_component_plain(c->name_hash));
 
 		c->entity = this;
+		if (world_)
+			c->on_into_world();
 		for (auto& _c : components)
 			_c.second->on_component_added(c);
 		for (auto& _c : components)
 			c->on_component_added(_c.second.get());
-		components[c->type_hash].reset(c);
+		components[c->name_hash].reset(c);
 		c->on_added();
 		if (parent)
 		{
@@ -65,7 +67,7 @@ namespace flame
 
 	void EntityPrivate::remove_component(Component* c)
 	{
-		auto it = components.find(c->type_hash);
+		auto it = components.find(c->name_hash);
 		if (it != components.end())
 		{
 			for (auto& _c : components)
@@ -106,7 +108,11 @@ namespace flame
 				c.second->on_child_component_added(_c.second.get());
 		}
 		for (auto& c : e->components)
+		{
+			if (world_)
+				c.second->on_into_world();
 			c.second->on_added();
+		}
 	}
 
 	void EntityPrivate::reposition_child(EntityPrivate* e, int position)
@@ -230,9 +236,9 @@ namespace flame
 		((EntityPrivate*)this)->set_visibility(v);
 	}
 
-	Component* Entity::get_component_plain(uint type_hash) const
+	Component* Entity::get_component_plain(uint name_hash) const
 	{
-		return ((EntityPrivate*)this)->get_component_plain(type_hash);
+		return ((EntityPrivate*)this)->get_component_plain(name_hash);
 	}
 
 	Mail<std::vector<Component*>> Entity::get_components() const
@@ -374,9 +380,9 @@ namespace flame
 			{
 				auto c = _c.second.get();
 
-				auto n_c = n_cs->new_node(c->type_name);
+				auto n_c = n_cs->new_node(c->name);
 
-				auto udt = find_udt(dbs, H((std::string("Component") + c->type_name).c_str()));
+				auto udt = find_udt(dbs, H((std::string("Component") + c->name).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");

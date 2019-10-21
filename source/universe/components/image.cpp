@@ -19,7 +19,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				element = (cElement*)c;
 		}
 

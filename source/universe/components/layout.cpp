@@ -1,3 +1,5 @@
+#include <flame/universe/world.h>
+#include <flame/universe/systems/layout_management.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
@@ -6,6 +8,9 @@ namespace flame
 {
 	struct cLayoutPrivate : cLayout
 	{
+		sLayoutManagement* management;
+		bool pending_update;
+
 		bool als_dirty;
 		std::vector<std::pair<cElement*, cAligner*>> als;
 
@@ -23,6 +28,9 @@ namespace flame
 			column = 0;
 
 			content_size = Vec2f(0.f);
+
+			management = nullptr;
+			pending_update = false;
 
 			als_dirty = true;
 
@@ -137,11 +145,18 @@ namespace flame
 				element->size.y() = h;
 		}
 
+		void on_into_world() override
+		{
+			management = entity->world_->get_system(LayoutManagement);
+			management->add_to_update_list(this);
+			pending_update = true;
+		}
+
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				element = (cElement*)c;
-			else if (c->type_hash == cH("Aligner"))
+			else if (c->name_hash == cH("Aligner"))
 				aligner = (cAligner*)c;
 		}
 
@@ -152,17 +167,17 @@ namespace flame
 
 		void on_child_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				als_dirty = true;
-			else if (c->type_hash == cH("Aligner"))
+			else if (c->name_hash == cH("Aligner"))
 				als_dirty = true;
 		}
 
 		void on_child_component_removed(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				als_dirty = true;
-			else if (c->type_hash == cH("Aligner"))
+			else if (c->name_hash == cH("Aligner"))
 				als_dirty = true;
 		}
 

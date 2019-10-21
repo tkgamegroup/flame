@@ -16,7 +16,7 @@ namespace flame
 
 		EntityPrivate();
 		void set_visibility(bool v);
-		Component* get_component_plain(uint type_hash);
+		Component* get_component_plain(uint name_hash);
 		Mail<std::vector<Component*>> get_components();
 		void add_component(Component* c);
 		void remove_component(Component* c);

@@ -27,12 +27,12 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_visibility(bool v);
 
-		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint type_hash) const;
+		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint name_hash) const;
 
 		template<class T>
-		T* get_component_t(uint type_hash) const
+		T* get_component_t(uint name_hash) const
 		{
-			return (T*)get_component_plain(type_hash);
+			return (T*)get_component_plain(name_hash);
 		}
 
 #define get_component(T) get_component_t<c##T>(cH(#T))

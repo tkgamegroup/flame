@@ -36,9 +36,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -81,7 +81,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -142,7 +142,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -282,9 +282,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->drag_hash = cH("DockerTab");
@@ -351,7 +351,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->type_hash == cH("ListItem"))
+			else if (c->name_hash == cH("ListItem"))
 				list_item = (cListItem*)c;
 		}
 
@@ -446,9 +446,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->set_acceptable_drops({ cH("DockerTab") });
@@ -508,7 +508,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->type_hash == cH("List"))
+			else if (c->name_hash == cH("List"))
 			{
 				list = (cList*)c;
 				selected_changed_listener = list->add_selected_changed_listener([](void* c, Entity* selected) {
@@ -562,9 +562,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->type_hash == cH("Element"))
+			if (c->name_hash == cH("Element"))
 				element = (cElement*)c;
-			else if (c->type_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->set_acceptable_drops({ cH("DockerTab") });

@@ -13,6 +13,7 @@
 #include <flame/math.h>
 
 #include <memory>
+#include <stack>
 #include <list>
 #include <map>
 #include <unordered_map>

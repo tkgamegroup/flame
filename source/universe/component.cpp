@@ -4,8 +4,8 @@
 namespace flame
 {
 	Component::Component(const char* name) :
-		type_name(name),
-		type_hash(H(name))
+		name(name),
+		name_hash(H(name))
 	{
 		data_changed_listeners.hub = new ListenerHub;
 	}
