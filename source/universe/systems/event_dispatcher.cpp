@@ -95,6 +95,8 @@ namespace flame
 				{
 					thiz->mouse_buttons[key] = action | KeyStateJust;
 					thiz->mouse_pos = pos;
+					if (action == KeyStateUp)
+						int cut = 1;
 				}
 
 				thiz->pending_update = true;
@@ -190,7 +192,7 @@ namespace flame
 					focusing->dragging = false;
 					focusing = nullptr;
 				}
-				else if (focusing->active && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left))
+				else if (focusing->active && ((KeyState)mouse_buttons[Mouse_Left] & KeyStateUp))
 				{
 					focusing->active = false;
 					focusing->dragging = false;

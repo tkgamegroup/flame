@@ -8,11 +8,14 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
+#include <flame/universe/world.h>
+#include <flame/universe/systems/layout_management.h>
+#include <flame/universe/systems/ui_renderer.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
-#include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
@@ -52,6 +55,7 @@ struct App
 	FontAtlas* font_atlas_sdf;
 
 	Universe* u;
+	Entity* root;
 	cElement* c_element_root;
 	cEventReceiver* c_event_receiver_root;
 	cText* c_text_fps;
@@ -118,21 +122,28 @@ int main(int argc, char** args)
 	
 	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
 
-	app.root = Entity::create();
-	{
-		app.c_element_root = cElement::create(app.canvas);
-		app.root->add_component(app.c_element_root);
+	app.u = Universe::create();
 
-		app.root->add_component(cEventDispatcher::create(app.w));
+	auto w = World::create();
+	w->add_system(sLayoutManagement::create());
+	w->add_system(sUIRenderer::create(app.canvas));
+	w->add_system(sEventDispatcher::create(app.w));
+	app.u->add_world(w);
+
+	auto root = w->root();
+	app.root = root;
+	{
+		app.c_element_root = cElement::create();
+		root->add_component(app.c_element_root);
 
 		app.c_event_receiver_root = cEventReceiver::create();
-		app.root->add_component(app.c_event_receiver_root);
+		root->add_component(app.c_event_receiver_root);
 
-		app.root->add_component(cLayout::create(LayoutFree));
+		root->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_fps = Entity::create();
-	app.root->add_child(e_fps);
+	root->add_child(e_fps);
 	{
 		e_fps->add_component(cElement::create());
 
@@ -146,7 +157,7 @@ int main(int argc, char** args)
 	}
 
 	auto e_layout_left = Entity::create();
-	app.root->add_child(e_layout_left);
+	root->add_child(e_layout_left);
 	{
 		auto c_element = cElement::create();
 		c_element->pos.x() = 16.f;
@@ -192,7 +203,7 @@ int main(int argc, char** args)
 	auto e_button = create_standard_button(app.font_atlas_pixel, 1.f, L"Click Me!");
 	e_layout_left->add_child(e_button);
 	{
-		((cEventReceiver*)e_button->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_button->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_clicked(action, key))
 			{
 				auto thiz = *(App**)c;
@@ -243,7 +254,7 @@ int main(int argc, char** args)
 	e_layout_left->add_child(e_edit);
 
 	auto e_layout_right = Entity::create();
-	app.root->add_child(e_layout_right);
+	root->add_child(e_layout_right);
 	{
 		auto c_element = cElement::create();
 		c_element->pos.x() = 416.f;
@@ -267,7 +278,7 @@ int main(int argc, char** args)
 		auto e_container = wrap_standard_scrollbar(e_list, ScrollbarVertical, false, 1.f);
 		e_layout_right->add_child(e_container);
 		{
-			auto c_element = (cElement*)e_container->find_component(cH("Element"));
+			auto c_element = e_container->get_component(Element);
 			c_element->size.x() = 200.f;
 			c_element->size.y() = 100.f;
 			c_element->inner_padding = Vec4f(4.f);
@@ -286,7 +297,7 @@ int main(int argc, char** args)
 			};
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 			e_popup_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					printf("%s!\n", *(char**)c);
@@ -306,7 +317,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Add %s!\n", *(char**)c);
@@ -314,7 +325,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
 		}
 
@@ -329,7 +340,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Remove %s!\n", *(char**)c);
@@ -337,7 +348,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Remove", app.root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Remove", root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
 		}
 	}
@@ -349,7 +360,7 @@ int main(int argc, char** args)
 			Entity* root;
 		}capture;
 		capture.menu = e_popup_menu;
-		capture.root = app.root;
+		capture.root = root;
 		app.c_event_receiver_root->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_down(action, key, true) && key == Mouse_Right)
 			{
@@ -360,7 +371,7 @@ int main(int argc, char** args)
 	}
 	
 	auto e_menubar = create_standard_menubar();
-	app.root->add_child(e_menubar);
+	root->add_child(e_menubar);
 
 	{
 		{
@@ -373,7 +384,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -381,7 +392,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", app.root, e_menu, true, SideS, true, false, true, nullptr);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
 		}
 		{
@@ -398,7 +409,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -406,7 +417,7 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
 		}
 		{
@@ -419,7 +430,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -427,18 +438,18 @@ int main(int argc, char** args)
 					}
 				}, new_mail_p((char*)names[i]));
 			}
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tool", app.root, e_menu, true, SideS, true, false, true, nullptr);
+			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tool", root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
 		}
 	}
 
-	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, app.root, { L"Apple", L"Boy", L"Cat" });
+	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, root, { L"Apple", L"Boy", L"Cat" });
 	e_layout_right->add_child(e_combobox);
 
 	auto e_tree = create_standard_tree(false);
 	e_layout_right->add_child(e_tree);
 	{
-		auto c_element = (cElement*)e_tree->find_component(cH("Element"));
+		auto c_element = e_tree->get_component(Element);
 		c_element->inner_padding = Vec4f(4.f);
 		c_element->frame_thickness = 2.f;
 	}
@@ -462,9 +473,9 @@ int main(int argc, char** args)
 
 	{
 		auto e_container = get_docker_container_model()->copy();
-		app.root->add_child(e_container);
+		root->add_child(e_container);
 		{
-			auto c_element = (cElement*)e_container->find_component(cH("Element"));
+			auto c_element = e_container->get_component(Element);
 			c_element->pos.x() = 414.f;
 			c_element->pos.y() = 297.f;
 			c_element->size.x() = 221.f;
@@ -482,7 +493,7 @@ int main(int argc, char** args)
 				L"Hierarchy",
 			};
 
-			e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], app.root));
+			e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], root));
 
 			auto e_page = get_docker_page_model()->copy();
 			e_pages->add_child(e_page);
@@ -498,9 +509,9 @@ int main(int argc, char** args)
 
 	{
 		auto e_container = get_docker_container_model()->copy();
-		app.root->add_child(e_container);
+		root->add_child(e_container);
 		{
-			auto c_element = (cElement*)e_container->find_component(cH("Element"));
+			auto c_element = e_container->get_component(Element);
 			c_element->pos.x() = 667.f;
 			c_element->pos.y() = 302.f;
 			c_element->size.x() = 403.f;
@@ -515,7 +526,7 @@ int main(int argc, char** args)
 				auto e_docker = get_docker_model()->copy();
 				e_docker_layout->add_child(e_docker, 0);
 				{
-					auto c_aligner = (cAligner*)e_docker->find_component(cH("Aligner"));
+					auto c_aligner = e_docker->get_component(Aligner);
 					c_aligner->x_align = AlignxFree;
 					c_aligner->y_align = AlignyFree;
 					c_aligner->using_padding = false;
@@ -531,7 +542,7 @@ int main(int argc, char** args)
 						L"ResourceExplorer"
 					};
 
-					e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], app.root));
+					e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], root));
 
 					auto e_page = get_docker_page_model()->copy();
 					e_pages->add_child(e_page);
@@ -549,7 +560,7 @@ int main(int argc, char** args)
 				auto e_docker = get_docker_model()->copy();
 				e_docker_layout->add_child(e_docker, 2);
 				{
-					auto c_aligner = (cAligner*)e_docker->find_component(cH("Aligner"));
+					auto c_aligner = e_docker->get_component(Aligner);
 					c_aligner->x_align = AlignxFree;
 					c_aligner->y_align = AlignyFree;
 					c_aligner->using_padding = false;
@@ -565,7 +576,7 @@ int main(int argc, char** args)
 						L"ShaderEditor"
 					};
 
-					e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], app.root));
+					e_tabbar->add_child(create_standard_docker_tab(app.font_atlas_pixel, names[i], root));
 
 					auto e_page = get_docker_page_model()->copy();
 					e_pages->add_child(e_page);

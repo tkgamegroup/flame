@@ -136,29 +136,9 @@ namespace flame
 	void cLayoutPrivate::on_child_component_added(Component* c)
 	{
 		if (c->name_hash == cH("Element"))
-		{
 			als_dirty = true;
-			management->add_to_update_list(this);
-		}
 		else if (c->name_hash == cH("Aligner"))
-		{
 			als_dirty = true;
-			management->add_to_update_list(this);
-		}
-	}
-
-	void cLayoutPrivate::on_child_component_removed(Component* c)
-	{
-		if (c->name_hash == cH("Element"))
-		{
-			als_dirty = true;
-			management->add_to_update_list(this);
-		}
-		else if (c->name_hash == cH("Aligner"))
-		{
-			als_dirty = true;
-			management->add_to_update_list(this);
-		}
 	}
 
 	void cLayoutPrivate::update()
