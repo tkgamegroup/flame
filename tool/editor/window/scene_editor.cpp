@@ -73,8 +73,8 @@ struct cSceneEditorPrivate : cSceneEditor
 		if (selected)
 			return;
 
-		auto element = (cElement*)e->find_component(cH("Element"));
-		if (element && element->contains(mpos))
+		auto element = e->get_component(Element);
+		if (element && rect_contains(element->cliped_rect, mpos))
 			selected = e;
 	}
 };

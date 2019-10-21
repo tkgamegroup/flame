@@ -21,8 +21,8 @@ namespace flame
 		Vec2f global_pos;
 		float global_scale;
 		Vec2f global_size;
-		Vec4f scissor;
 		bool cliped;
+		Vec4f cliped_rect;
 
 		float inner_padding_horizontal() const
 		{
@@ -32,11 +32,6 @@ namespace flame
 		float inner_padding_vertical() const
 		{
 			return inner_padding[1] + inner_padding[3];
-		}
-
-		bool contains(const Vec2f& pos) const
-		{
-			return rect_contains(Vec4f(global_pos, global_pos + global_size), pos) && rect_contains(scissor, pos);
 		}
 
 		cElement() :

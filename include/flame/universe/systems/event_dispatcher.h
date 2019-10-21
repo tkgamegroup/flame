@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/universe/component.h>
+#include <flame/universe/system.h>
 
 namespace flame
 {
@@ -8,7 +8,7 @@ namespace flame
 
 	struct cEventReceiver;
 
-	struct cEventDispatcher : Component
+	struct sEventDispatcher : System
 	{
 		uint key_states[KeyCount];
 		uint mouse_buttons[3];
@@ -21,11 +21,13 @@ namespace flame
 
 		cEventReceiver* next_focusing;
 
-		cEventDispatcher() :
-			Component("EventDispatcher")
+		bool pending_update;
+
+		sEventDispatcher() :
+			System("EventDispatcher")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static cEventDispatcher* create(Window* window = nullptr);
+		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* create(Window* window);
 	};
 }

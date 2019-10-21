@@ -1,6 +1,8 @@
+#include "../entity_private.h"
 #include <flame/universe/systems/layout_management.h>
-#include "../components/layout_private.h"
+#include "../components/element_private.h"
 #include <flame/universe/components/aligner.h>
+#include "../components/layout_private.h"
 
 namespace flame
 {
@@ -19,6 +21,18 @@ namespace flame
 			});
 		}
 
+		void calc_geometry(EntityPrivate* e)
+		{
+			auto element = (cElementPrivate*)e->get_component(Element);
+			if (!element)
+				return;
+
+			element->calc_geometry();
+
+			for (auto& c : e->children)
+				calc_geometry(c.get());
+		}
+
 		void update(Entity* root) override
 		{
 			while (!update_list.empty())
@@ -28,6 +42,8 @@ namespace flame
 				l->pending_update = false;
 				l->update();
 			}
+
+			calc_geometry((EntityPrivate*)root);
 		}
 	};
 

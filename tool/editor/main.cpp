@@ -196,7 +196,9 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		{
 			capture.e->set_visible(true);
 			capture.d->set_visible(false);
-			capture.d_er->event_dispatcher->next_focusing = capture.e_er;
+			auto dp = capture.d_er->event_dispatcher;
+			dp->next_focusing = capture.e_er;
+			dp->pending_update = true;
 		}
 		else if (capture.d_er->active && is_mouse_move(action, key))
 		{

@@ -21,15 +21,21 @@ namespace flame
 		{
 			auto e = (EntityPrivate*)c_e->entity;
 
-			c_e->cliped = !rect_overlapping(canvas->scissor(), Vec4f(c_e->global_pos, c_e->global_pos + c_e->global_size));
+			const auto& scissor = canvas->scissor();
+			auto rect = Vec4f(c_e->global_pos, c_e->global_pos + c_e->global_size);
+			c_e->cliped = !rect_overlapping(scissor, rect);
 			if (!c_e->cliped)
 			{
+				c_e->cliped_rect = Vec4f(max(rect.x(), scissor.x()), max(rect.y(), scissor.y()), min(rect.z(), scissor.z()), min(rect.w(), scissor.w()));
+
 				c_e->draw(canvas);
 
 				auto c_t = (cTextPrivate*)e->get_component(Text);
 				if (c_t)
 					c_t->draw(canvas);
 			}
+			else
+				c_e->cliped_rect = Vec4f(-1.f);
 
 			for (auto& c : e->children)
 				do_render(c.get());
@@ -43,8 +49,6 @@ namespace flame
 			auto element = (cElementPrivate*)e->get_component(Element);
 			if (!element)
 				return;
-
-			element->calc_geometry();
 
 			if (element->clip_children)
 			{

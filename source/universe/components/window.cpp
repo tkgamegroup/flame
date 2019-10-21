@@ -1,9 +1,9 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/default_style.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
-#include <flame/universe/components/event_dispatcher.h>
 #include "event_receiver_private.h"
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>

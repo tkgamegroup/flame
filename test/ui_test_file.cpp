@@ -9,9 +9,9 @@
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include <flame/universe/systems/ui_renderer.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
-#include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
@@ -102,14 +102,13 @@ int main(int argc, char** args)
 	auto w = World::create();
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sUIRenderer::create(app.canvas));
+	w->add_system(sEventDispatcher::create(app.w));
 	app.u->add_world(w);
 
 	auto root = w->root();
 	{
 		app.c_element_root = cElement::create();
 		root->add_component(app.c_element_root);
-
-		root->add_component(cEventDispatcher::create(app.w));
 
 		root->add_component(cLayout::create(LayoutFree));
 	}

@@ -4,13 +4,13 @@
 
 namespace flame
 {
+	struct sEventDispatcher;
 	struct cElement;
-	struct cEventDispatcher;
 
 	struct cEventReceiver : Component
 	{
+		sEventDispatcher* dispatcher;
 		cElement* element;
-		cEventDispatcher* event_dispatcher;
 
 		bool penetrable;
 

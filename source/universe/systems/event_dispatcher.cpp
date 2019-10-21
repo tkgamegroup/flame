@@ -1,11 +1,11 @@
 #include "../entity_private.h"
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
-#include "event_receiver_private.h"
-#include <flame/universe/components/event_dispatcher.h>
+#include "../components/event_receiver_private.h"
 
 namespace flame
 {
-	struct cEventDispatcherPrivate : cEventDispatcher
+	struct sEventDispatcherPrivate : sEventDispatcher
 	{
 		Window* window;
 		void* key_listener;
@@ -24,7 +24,7 @@ namespace flame
 		std::vector<cEventReceiver*> hovers;
 		bool meet_last_hovering;
 
-		cEventDispatcherPrivate(Window* window) :
+		sEventDispatcherPrivate(Window* window) :
 			window(window)
 		{
 			hovering = nullptr;
@@ -49,7 +49,7 @@ namespace flame
 			active_pos = Vec2i(0);
 
 			key_listener = window->add_key_listener([](void* c, KeyState action, int value) {
-				auto thiz = *(cEventDispatcherPrivate**)c;
+				auto thiz = *(sEventDispatcherPrivate**)c;
 
 				if (action == KeyStateNull)
 				{
@@ -77,11 +77,12 @@ namespace flame
 					else if (action == KeyStateUp)
 						thiz->keyup_inputs.push_back((Key)value);
 				}
-				
+
+				thiz->pending_update = true;
 			}, new_mail_p(this));
 
 			mouse_listener = window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cEventDispatcherPrivate * *)c;
+				auto thiz = *(sEventDispatcherPrivate**)c;
 
 				if (action == KeyStateNull)
 				{
@@ -95,10 +96,12 @@ namespace flame
 					thiz->mouse_buttons[key] = action | KeyStateJust;
 					thiz->mouse_pos = pos;
 				}
+
+				thiz->pending_update = true;
 			}, new_mail_p(this));
 		}
 
-		~cEventDispatcherPrivate() 
+		~sEventDispatcherPrivate()
 		{
 			window->remove_key_listener(key_listener);
 			window->remove_mouse_listener(mouse_listener);
@@ -117,11 +120,10 @@ namespace flame
 			if (!er)
 				return;
 
-			er->event_dispatcher = this;
 			auto active = focusing && focusing->active;
 			if (active && hovering == er)
 				meet_last_hovering = true;
-			if (!er->element->cliped && er->element->contains(Vec2f(mouse_pos)))
+			if (!er->element->cliped && rect_contains(er->element->cliped_rect, Vec2f(mouse_pos)))
 			{
 				if (!hovering || (active && !meet_last_hovering))
 					hovers.push_back(er);
@@ -149,8 +151,12 @@ namespace flame
 			}
 		}
 
-		void update()
+		void update(Entity* root) override
 		{
+			if (!pending_update)
+				return;
+			pending_update = false;
+
 			mouse_disp = mouse_pos - mouse_pos_prev;
 			if (potential_dbclick_er)
 			{
@@ -212,7 +218,7 @@ namespace flame
 				}
 			}
 			meet_last_hovering = false;
-			search_hovers((EntityPrivate*)entity);
+			search_hovers((EntityPrivate*)root);
 
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 			{
@@ -264,7 +270,7 @@ namespace flame
 						((cEventReceiverPrivate*)er)->on_mouse((KeyState)s, (MouseKey)i, mouse_pos);
 				}
 			}
-			if (focusing && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true) && focusing->element->contains(Vec2f(mouse_pos)))
+			if (focusing && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
 			{
 				auto disp = mouse_pos - active_pos;
 				((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, disp);
@@ -320,8 +326,8 @@ namespace flame
 		}
 	};
 
-	cEventDispatcher* cEventDispatcher::create(Window* window)
+	sEventDispatcher* sEventDispatcher::create(Window* window)
 	{
-		return new cEventDispatcherPrivate(window);
+		return new sEventDispatcherPrivate(window);
 	}
 }

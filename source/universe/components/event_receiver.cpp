@@ -1,14 +1,14 @@
 #include "../universe_private.h"
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include "event_receiver_private.h"
-#include <flame/universe/components/event_dispatcher.h>
 
 namespace flame
 {
 	cEventReceiverPrivate::cEventReceiverPrivate()
 	{
+		dispatcher = nullptr;
 		element = nullptr;
-		event_dispatcher = nullptr;
 
 		penetrable = false;
 
@@ -29,11 +29,6 @@ namespace flame
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
-		if (focusing)
-			event_dispatcher->focusing = nullptr;
-		if (hovering)
-			event_dispatcher->hovering = nullptr;
-
 		delete (ListenerHub*)focus_listeners.hub;
 		delete (ListenerHub*)key_listeners.hub;
 		delete (ListenerHub*)mouse_listeners.hub;
@@ -76,10 +71,33 @@ namespace flame
 			((void(*)(void*, EventReceiverState prev_state, EventReceiverState curr_state))l->function)(l->capture.p, prev_state, curr_state);
 	}
 
+	void cEventReceiverPrivate::on_into_world()
+	{
+		dispatcher = entity->world_->get_system(EventDispatcher);
+		dispatcher->pending_update = true;
+	}
+
 	void cEventReceiverPrivate::on_component_added(Component* c)
 	{
 		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
+	}
+
+	void cEventReceiverPrivate::on_component_removed(Component* c)
+	{
+		if (c == this)
+		{
+			if (focusing)
+				dispatcher->focusing = nullptr;
+			if (hovering)
+				dispatcher->hovering = nullptr;
+			dispatcher->pending_update = true;
+		}
+	}
+
+	void cEventReceiverPrivate::on_visibility_changed()
+	{
+		dispatcher->pending_update = true;
 	}
 
 	Component* cEventReceiverPrivate::copy()

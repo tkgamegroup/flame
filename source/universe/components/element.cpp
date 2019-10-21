@@ -22,6 +22,8 @@ namespace flame
 		global_pos = 0.f;
 		global_scale = 0.f;
 		global_size = 0.f;
+		cliped = true;
+		cliped_rect = Vec4f(-1.f);
 	}
 
 	void cElementPrivate::calc_geometry()
