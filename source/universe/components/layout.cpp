@@ -29,64 +29,64 @@ namespace flame
 		als_dirty = true;
 	}
 
-	void cLayoutPrivate::apply_h_free_layout(cElement* element, cAligner* aligner, bool lock = false)
+	void cLayoutPrivate::apply_h_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
 	{
-		auto padding = (lock || (aligner ? aligner->using_padding : false)) ? element->inner_padding.xz() : Vec2f(0.f);
+		auto padding = (lock || (_aligner ? _aligner->using_padding : false)) ? element->inner_padding.xz() : Vec2f(0.f);
 		auto w = element->size.x() - padding[0] - padding[1];
-		switch (aligner ? aligner->width_policy : SizeFixed)
+		switch (_aligner ? _aligner->width_policy : SizeFixed)
 		{
 		case SizeFitParent:
-			element->size.x() = w;
+			_element->size.x() = w;
 			break;
 		case SizeGreedy:
-			if (w > aligner->min_size.x())
-				element->size.x() = w;
+			if (w > _aligner->min_size.x())
+				_element->size.x() = w;
 			break;
 		}
-		switch (aligner ? aligner->x_align : AlignxFree)
+		switch (_aligner ? _aligner->x_align : AlignxFree)
 		{
 		case AlignxFree:
 			if (!lock)
 				break;
 		case AlignxLeft:
-			element->pos.x() = scroll_offset.x() + padding[0];
+			_element->pos.x() = scroll_offset.x() + padding[0];
 			break;
 		case AlignxMiddle:
-			element->pos.x() = scroll_offset.x() + (w - element->size.x()) * 0.5f;
+			_element->pos.x() = scroll_offset.x() + (w - _element->size.x()) * 0.5f;
 			break;
 		case AlignxRight:
-			element->pos.x() = scroll_offset.x() + element->size.x() - padding[1] - element->size.x();
+			_element->pos.x() = scroll_offset.x() + element->size.x() - padding[1] - _element->size.x();
 			break;
 		}
 	}
 
-	void cLayoutPrivate::apply_v_free_layout(cElement* element, cAligner* aligner, bool lock = false)
+	void cLayoutPrivate::apply_v_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
 	{
-		auto padding = (lock || (aligner ? aligner->using_padding : false)) ? element->inner_padding.yw() : Vec2f(0.f);
+		auto padding = (lock || (_aligner ? _aligner->using_padding : false)) ? element->inner_padding.yw() : Vec2f(0.f);
 		auto h = element->size.y() - padding[0] - padding[1];
-		switch (aligner ? aligner->height_policy : SizeFixed)
+		switch (_aligner ? _aligner->height_policy : SizeFixed)
 		{
 		case SizeFitParent:
-			element->size.y() = h;
+			_element->size.y() = h;
 			break;
 		case SizeGreedy:
-			if (h > aligner->min_size.y())
-				element->size.y() = h;
+			if (h > _aligner->min_size.y())
+				_element->size.y() = h;
 			break;
 		}
-		switch (aligner ? aligner->y_align : AlignyFree)
+		switch (_aligner ? _aligner->y_align : AlignyFree)
 		{
 		case AlignyFree:
 			if (!lock)
 				break;
 		case AlignyTop:
-			element->pos.y() = scroll_offset.y() + padding[0];
+			_element->pos.y() = scroll_offset.y() + padding[0];
 			break;
 		case AlignyMiddle:
-			element->pos.y() = scroll_offset.y() + (h - element->size.y()) * 0.5f;
+			_element->pos.y() = scroll_offset.y() + (h - _element->size.y()) * 0.5f;
 			break;
 		case AlignyBottom:
-			element->pos.y() = scroll_offset.y() + element->size.y() - padding[1] - element->size.y();
+			_element->pos.y() = scroll_offset.y() + element->size.y() - padding[1] - _element->size.y();
 			break;
 		}
 	}
@@ -206,8 +206,8 @@ namespace flame
 		case LayoutFree:
 			for (auto al : als)
 			{
-				apply_h_free_layout(std::get<0>(al), std::get<1>(al), std::get<2>(al));
-				apply_v_free_layout(std::get<0>(al), std::get<1>(al), std::get<2>(al));
+				apply_h_free_layout(std::get<0>(al), std::get<1>(al));
+				apply_v_free_layout(std::get<0>(al), std::get<1>(al));
 			}
 			break;
 		case LayoutHorizontal:

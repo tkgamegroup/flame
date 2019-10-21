@@ -25,6 +25,7 @@ namespace flame
 			{
 				auto l = update_list.back();
 				update_list.erase(update_list.end() - 1);
+				l->pending_update = false;
 				l->update();
 			}
 		}
