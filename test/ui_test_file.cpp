@@ -106,7 +106,7 @@ int main(int argc, char** args)
 
 	auto root = w->root();
 	{
-		app.c_element_root = cElement::create(app.canvas);
+		app.c_element_root = cElement::create();
 		root->add_component(app.c_element_root);
 
 		root->add_component(cEventDispatcher::create(app.w));

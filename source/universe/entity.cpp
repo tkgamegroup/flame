@@ -14,6 +14,7 @@ namespace flame
 
 		name_hash = 0;
 
+		world_ = nullptr;
 		parent = nullptr;
 	}
 
@@ -94,25 +95,31 @@ namespace flame
 		return nullptr;
 	}
 
+	static void boardcast_world(World* w, EntityPrivate* e)
+	{
+		e->world_ = w;
+		for (auto& c : e->components)
+			c.second->on_into_world();
+		for (auto& c : e->children)
+			boardcast_world(w, c.get());
+	}
+
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
 		if (position == -1)
 			position = children.size();
 		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
 		e->order_ = (order_ & 0xff000000) + (1 << 24) + position;
-		e->world_ = world_;
 		e->parent = this;
+		if (!e->world_ && world_)
+			boardcast_world(world_, e);
 		for (auto& c : components)
 		{
 			for (auto& _c : e->components)
 				c.second->on_child_component_added(_c.second.get());
 		}
 		for (auto& c : e->components)
-		{
-			if (world_)
-				c.second->on_into_world();
 			c.second->on_added();
-		}
 	}
 
 	void EntityPrivate::reposition_child(EntityPrivate* e, int position)

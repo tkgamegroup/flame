@@ -1,85 +1,95 @@
 #include "../entity_private.h"
-#include <flame/universe/components/element.h>
+#include "element_private.h"
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 namespace flame
 {
-	struct cElementPrivate : cElement
+	cElementPrivate::cElementPrivate()
 	{
-		void boardcast_canvas(graphics::Canvas* canvas, EntityPrivate* e)
+		pos = 0.f;
+		scale = 1.f;
+		size = 0.f;
+		inner_padding = Vec4f(0.f);
+		alpha = 1.f;
+		roundness = Vec4f(0.f);
+		frame_thickness = 0.f;
+		color = Vec4c(0);
+		frame_color = Vec4c(255);
+		shadow_thickness = 0.f;
+		clip_children = false;
+
+		global_pos = 0.f;
+		global_scale = 0.f;
+		global_size = 0.f;
+	}
+
+	void cElementPrivate::calc_geometry()
+	{
+		auto p = entity->parent();
+		if (!p)
 		{
-			auto c = e->get_component(Element);
-			if (c)
-				c->canvas = canvas;
-			for (auto& c : e->children)
-				boardcast_canvas(canvas, c.get());
+			global_pos = pos;
+			global_scale = scale;
 		}
-
-		cElementPrivate(graphics::Canvas* _canvas)
+		else
 		{
-			pos = 0.f;
-			scale = 1.f;
-			size = 0.f;
-			inner_padding = Vec4f(0.f);
-			alpha = 1.f;
-			roundness = Vec4f(0.f);
-			frame_thickness = 0.f;
-			color = Vec4c(0);
-			frame_color = Vec4c(255);
-			shadow_thickness = 0.f;
-			clip_children = false;
-
-			p_element = nullptr;
-			canvas = _canvas;
-			global_pos = 0.f;
-			global_scale = 0.f;
-			global_size = 0.f;
+			auto p_element = p->get_component(Element);
+			global_pos = p_element->global_pos + p_element->global_scale * pos;
+			global_scale = p_element->global_scale * scale;
 		}
+		global_size = size * global_scale;
+	}
 
-		void on_added() override
+	void cElementPrivate::draw(graphics::Canvas* canvas)
+	{
+		auto r = roundness * global_scale;
+		auto st = shadow_thickness * global_scale;
+
+		if (st > 0.f)
 		{
-			auto p = entity->parent();
-			if (p)
+			std::vector<Vec2f> points;
+			path_rect(points, global_pos - Vec2f(st * 0.5f), global_size + Vec2f(st), r);
+			points.push_back(points[0]);
+			canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
+		}
+		if (alpha > 0.f)
+		{
+			std::vector<Vec2f> points;
+			path_rect(points, global_pos, global_size, r);
+			if (color.w() > 0)
+				canvas->fill(points, alpha_mul(color, alpha));
+			auto ft = frame_thickness * global_scale;
+			if (ft > 0.f && frame_color.w() > 0)
 			{
-				p_element = p->get_component(Element);
-				if (p_element)
-					canvas = p_element->canvas;
+				points.push_back(points[0]);
+				canvas->stroke(points, alpha_mul(frame_color, alpha), ft);
 			}
 		}
+	}
 
-		void on_child_component_added(Component* _c) override
-		{
-			if (_c->name_hash == cH("Element"))
-			{
-				auto c = (cElement*)_c;
-				c->p_element = this;
-				if (!c->canvas && canvas)
-					boardcast_canvas(canvas, (EntityPrivate*)c->entity);
-			}
-		}
-
-		Component* copy() override
-		{
-			auto copy = new cElementPrivate(canvas);
-
-			copy->pos = pos;
-			copy->scale = scale;
-			copy->size = size;
-			copy->inner_padding = inner_padding;
-			copy->alpha = alpha;
-			copy->roundness = roundness;
-			copy->frame_thickness = frame_thickness;
-			copy->color = color;
-			copy->frame_color = frame_color;
-			copy->shadow_thickness = shadow_thickness;
-			copy->clip_children = clip_children;
-
-			return copy;
-		}
-	};
-
-	cElement* cElement::create(graphics::Canvas* canvas)
+	Component* cElementPrivate::copy()
 	{
-		return new cElementPrivate(canvas);
+		auto copy = new cElementPrivate();
+
+		copy->pos = pos;
+		copy->scale = scale;
+		copy->size = size;
+		copy->inner_padding = inner_padding;
+		copy->alpha = alpha;
+		copy->roundness = roundness;
+		copy->frame_thickness = frame_thickness;
+		copy->color = color;
+		copy->frame_color = frame_color;
+		copy->shadow_thickness = shadow_thickness;
+		copy->clip_children = clip_children;
+
+		return copy;
+	}
+
+	cElement* cElement::create()
+	{
+		return new cElementPrivate();
 	}
 
 	struct ComponentElement$
@@ -113,7 +123,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Component* create$()
 		{
-			auto c = new cElementPrivate(nullptr);
+			auto c = new cElementPrivate();
 
 			c->pos = pos$;
 			c->scale = scale$;

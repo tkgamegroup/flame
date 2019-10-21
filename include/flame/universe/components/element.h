@@ -4,11 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
 	struct cElement : Component
 	{
 		Vec2f pos;
@@ -23,8 +18,6 @@ namespace flame
 		float shadow_thickness;
 		bool clip_children;
 
-		cElement* p_element;
-		graphics::Canvas* canvas;
 		Vec2f global_pos;
 		float global_scale;
 		Vec2f global_size;
@@ -51,6 +44,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static cElement* create(graphics::Canvas* canvas = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};
 }

@@ -165,14 +165,14 @@ namespace flame
 
 		void update()
 		{
-			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
-			{
-				auto text_scale = text->sdf_scale * element->global_scale;
-				element->canvas->add_text(text->font_atlas, element->global_pos +
-					Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
-					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
-					alpha_mul(text->color, element->alpha), L"|", text_scale);
-			}
+			//if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
+			//{
+			//	auto text_scale = text->sdf_scale * element->global_scale;
+			//	element->canvas->add_text(text->font_atlas, element->global_pos +
+			//		Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
+			//		Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
+			//		alpha_mul(text->color, element->alpha), L"|", text_scale);
+			//}
 		}
 	};
 

@@ -8,12 +8,13 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 
+#include "../renderpath/canvas_make_cmd/canvas.h"
+
 namespace flame
 {
 	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
 	{
 		element = nullptr;
-		aligner = nullptr;
 
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
@@ -22,12 +23,17 @@ namespace flame
 		auto_height = true;
 	}
 
+	void cTextPrivate::draw(graphics::Canvas* canvas)
+	{
+		canvas->add_text(font_atlas, element->global_pos +
+			Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale,
+			alpha_mul(color, element->alpha), text.c_str(), sdf_scale * element->global_scale);
+	}
+
 	void cTextPrivate::on_component_added(Component* c)
 	{
 		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-		else if (c->name_hash == cH("Aligner"))
-			aligner = (cAligner*)c;
 	}
 
 	Component* cTextPrivate::copy()

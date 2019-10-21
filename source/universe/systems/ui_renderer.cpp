@@ -1,10 +1,10 @@
 #include "../entity_private.h"
 #include <flame/universe/systems/ui_renderer.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
+#include "../components/element_private.h"
+#include "../components/text_private.h"
 #include <flame/universe/components/aligner.h>
 
-#include "../../../flame/renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 namespace flame
 {
@@ -17,44 +17,18 @@ namespace flame
 		{
 		}
 
-		void draw_element_and_its_children(cElement* c_e)
+		void draw_element_and_its_children(cElementPrivate* c_e)
 		{
 			auto e = (EntityPrivate*)c_e->entity;
 
 			c_e->cliped = !rect_overlapping(canvas->scissor(), Vec4f(c_e->global_pos, c_e->global_pos + c_e->global_size));
 			if (!c_e->cliped)
 			{
-				auto r = c_e->roundness * c_e->global_scale;
-				auto st = c_e->shadow_thickness * c_e->global_scale;
+				c_e->draw(canvas);
 
-				if (st > 0.f)
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, c_e->global_pos - Vec2f(st * 0.5f), c_e->global_size + Vec2f(st), r);
-					points.push_back(points[0]);
-					canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
-				}
-				if (c_e->alpha > 0.f)
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, c_e->global_pos, c_e->global_size, r);
-					if (c_e->color.w() > 0)
-						canvas->fill(points, alpha_mul(c_e->color, c_e->alpha));
-					auto ft = c_e->frame_thickness * c_e->global_scale;
-					if (ft > 0.f && c_e->frame_color.w() > 0)
-					{
-						points.push_back(points[0]);
-						canvas->stroke(points, alpha_mul(c_e->frame_color, c_e->alpha), ft);
-					}
-				}
-
-				auto c_t = e->get_component(Text);
+				auto c_t = (cTextPrivate*)e->get_component(Text);
 				if (c_t)
-				{
-					canvas->add_text(c_t->font_atlas, c_e->global_pos +
-						Vec2f(c_e->inner_padding[0], c_e->inner_padding[1]) * c_e->global_scale,
-						alpha_mul(c_t->color, c_e->alpha), c_t->text().c_str(), c_t->sdf_scale * c_e->global_scale);
-				}
+					c_t->draw(canvas);
 			}
 
 			for (auto& c : e->children)
@@ -66,23 +40,11 @@ namespace flame
 			if (!e->global_visibility_)
 				return;
 
-			auto element = e->get_component(Element);
+			auto element = (cElementPrivate*)e->get_component(Element);
 			if (!element)
 				return;
 
-			auto p = e->parent();
-			if (!p)
-			{
-				element->global_pos = element->pos;
-				element->global_scale = element->scale;
-			}
-			else
-			{
-				auto p_element = p->get_component(Element);
-				element->global_pos = p_element->global_pos + p_element->global_scale * element->pos;
-				element->global_scale = p_element->global_scale * element->scale;
-			}
-			element->global_size = element->size * element->global_scale;
+			element->calc_geometry();
 
 			if (element->clip_children)
 			{

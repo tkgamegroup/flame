@@ -10,12 +10,10 @@ namespace flame
 	}
 
 	struct cElement;
-	struct cAligner;
 
 	struct cText : Component
 	{
 		cElement* element;
-		cAligner* aligner;
 
 		graphics::FontAtlas* font_atlas;
 		Vec4c color;

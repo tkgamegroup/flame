@@ -357,17 +357,17 @@ namespace flame
 
 		void update()
 		{
-			if (!drop_tips.empty())
-			{
-				for (auto p : drop_tips)
-				{
-					std::vector<Vec2f> points;
-					path_rect(points, p.pos, p.size);
-					element->canvas->fill(points, p.col);
-				}
+			//if (!drop_tips.empty())
+			//{
+			//	for (auto p : drop_tips)
+			//	{
+			//		std::vector<Vec2f> points;
+			//		path_rect(points, p.pos, p.size);
+			//		element->canvas->fill(points, p.col);
+			//	}
 
-				drop_tips.clear();
-			}
+			//	drop_tips.clear();
+			//}
 		}
 
 		Component* copy() override
