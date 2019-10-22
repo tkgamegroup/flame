@@ -21,6 +21,21 @@ namespace flame
 			});
 		}
 
+		void remove_from_update_list(cLayoutPrivate* l)
+		{
+			if (!l->pending_update)
+				return;
+			l->pending_update = false;
+			for (auto it = update_list.begin(); it != update_list.end(); it++)
+			{
+				if ((*it) == l)
+				{
+					update_list.erase(it);
+					return;
+				}
+			}
+		}
+
 		void calc_geometry(EntityPrivate* e)
 		{
 			auto element = (cElementPrivate*)e->get_component(Element);
@@ -40,7 +55,8 @@ namespace flame
 				auto l = update_list.back();
 				update_list.erase(update_list.end() - 1);
 				l->pending_update = false;
-				l->update();
+				if (l->entity->global_visibility_)
+					l->update();
 			}
 
 			calc_geometry((EntityPrivate*)root);
@@ -50,6 +66,11 @@ namespace flame
 	void sLayoutManagement::add_to_update_list(cLayout* l)
 	{
 		((sLayoutManagementPrivate*)this)->add_to_update_list((cLayoutPrivate*)l);
+	}
+
+	void sLayoutManagement::remove_from_update_list(cLayout* l)
+	{
+		((sLayoutManagementPrivate*)this)->remove_from_update_list((cLayoutPrivate*)l);
 	}
 
 	sLayoutManagement* sLayoutManagement::create()

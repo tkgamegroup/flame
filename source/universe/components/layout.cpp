@@ -29,6 +29,11 @@ namespace flame
 		als_dirty = true;
 	}
 
+	cLayoutPrivate::~cLayoutPrivate()
+	{
+		management->remove_from_update_list(this);
+	}
+
 	void cLayoutPrivate::apply_h_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
 	{
 		auto padding = (lock || (_aligner ? _aligner->using_padding : false)) ? element->inner_padding.xz() : Vec2f(0.f);
@@ -130,15 +135,50 @@ namespace flame
 	void cLayoutPrivate::on_child_visibility_changed()
 	{
 		als_dirty = true;
-		management->add_to_update_list(this);
+		if (management)
+			management->add_to_update_list(this);
 	}
 
 	void cLayoutPrivate::on_child_component_added(Component* c)
 	{
 		if (c->name_hash == cH("Element"))
+		{
 			als_dirty = true;
+			if (management)
+				management->add_to_update_list(this);
+		}
 		else if (c->name_hash == cH("Aligner"))
+		{
 			als_dirty = true;
+			if (management)
+				management->add_to_update_list(this);
+		}
+	}
+
+	void cLayoutPrivate::on_child_component_removed(Component* c)
+	{
+		if (c->name_hash == cH("Element"))
+		{
+			als_dirty = true;
+			if (management)
+				management->add_to_update_list(this);
+		}
+		else if (c->name_hash == cH("Aligner"))
+		{
+			als_dirty = true;
+			if (management)
+				management->add_to_update_list(this);
+		}
+		else if (c->name_hash == cH("Text"))
+		{
+			auto t = (cText*)c;
+			if (t->auto_width || t->auto_height)
+			{
+				als_dirty = true;
+				if (management)
+					management->add_to_update_list(this);
+			}
+		}
 	}
 
 	void cLayoutPrivate::update()

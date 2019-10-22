@@ -72,7 +72,10 @@ namespace flame
 		if (it != components.end())
 		{
 			for (auto& _c : components)
-				_c.second->on_component_removed(c);
+			{
+				if (_c.second.get() != c)
+					_c.second->on_component_removed(c);
+			}
 			if (parent)
 			{
 				for (auto& _c : parent->components)
