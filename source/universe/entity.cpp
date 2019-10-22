@@ -52,7 +52,7 @@ namespace flame
 
 		c->entity = this;
 		if (world_)
-			c->on_into_world();
+			c->on_entered_world();
 		for (auto& _c : components)
 			_c.second->on_component_added(c);
 		for (auto& _c : components)
@@ -95,13 +95,22 @@ namespace flame
 		return nullptr;
 	}
 
-	static void boardcast_world(World* w, EntityPrivate* e)
+	static void enter_world(World* w, EntityPrivate* e)
 	{
 		e->world_ = w;
 		for (auto& c : e->components)
-			c.second->on_into_world();
+			c.second->on_entered_world();
 		for (auto& c : e->children)
-			boardcast_world(w, c.get());
+			enter_world(w, c.get());
+	}
+
+	static void leave_world(EntityPrivate* e)
+	{
+		e->world_ = nullptr;
+		for (auto& c : e->components)
+			c.second->on_left_world();
+		for (auto& c : e->children)
+			leave_world(c.get());
 	}
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
@@ -112,7 +121,7 @@ namespace flame
 		e->order_ = (order_ & 0xff000000) + (1 << 24) + position;
 		e->parent = this;
 		if (!e->world_ && world_)
-			boardcast_world(world_, e);
+			enter_world(world_, e);
 		for (auto& c : components)
 		{
 			for (auto& _c : e->components)
@@ -161,6 +170,7 @@ namespace flame
 			}
 			for (auto& e : children)
 			{
+				leave_world(e.get());
 				if (!destroy)
 				{
 					e->parent = nullptr;
@@ -175,13 +185,14 @@ namespace flame
 		{
 			for (auto it = children.begin(); it != children.end(); it++)
 			{
-				for (auto& c : components)
-				{
-					for (auto& _c : e->components)
-						c.second->on_child_component_removed(_c.second.get());
-				}
 				if (it->get() == e)
 				{
+					for (auto& c : components)
+					{
+						for (auto& _c : e->components)
+							c.second->on_child_component_removed(_c.second.get());
+					}
+					leave_world(e);
 					if (!destroy)
 					{
 						e->parent = nullptr;

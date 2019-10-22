@@ -95,8 +95,6 @@ namespace flame
 				{
 					thiz->mouse_buttons[key] = action | KeyStateJust;
 					thiz->mouse_pos = pos;
-					if (action == KeyStateUp)
-						int cut = 1;
 				}
 
 				thiz->pending_update = true;
@@ -211,13 +209,10 @@ namespace flame
 						focusing->dragging = true;
 				}
 			}
-			else
+			else if (hovering)
 			{
-				if (hovering)
-				{
-					hovering->hovering = false;
-					hovering = nullptr;
-				}
+				hovering->hovering = false;
+				hovering = nullptr;
 			}
 			meet_last_hovering = false;
 			search_hovers((EntityPrivate*)root);

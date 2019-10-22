@@ -118,10 +118,16 @@ namespace flame
 			element->size.y() = h;
 	}
 
-	void cLayoutPrivate::on_into_world()
+	void cLayoutPrivate::on_entered_world()
 	{
 		management = entity->world_->get_system(LayoutManagement);
 		management->add_to_update_list(this);
+	}
+
+	void cLayoutPrivate::on_left_world()
+	{
+		management->remove_from_update_list(this);
+		management = nullptr;
 	}
 
 	void cLayoutPrivate::on_component_added(Component* c)

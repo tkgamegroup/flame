@@ -20,7 +20,8 @@ namespace flame
 		void apply_v_free_layout(cElement* element, cAligner* aligner, bool lock);
 		void use_children_width(float w);
 		void use_children_height(float h);
-		void on_into_world() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 		void on_component_added(Component* c) override;
 		void on_child_visibility_changed() override;
 		void on_child_component_added(Component* c) override;

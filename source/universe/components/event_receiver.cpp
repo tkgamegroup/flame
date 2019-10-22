@@ -71,28 +71,34 @@ namespace flame
 			((void(*)(void*, EventReceiverState prev_state, EventReceiverState curr_state))l->function)(l->capture.p, prev_state, curr_state);
 	}
 
-	void cEventReceiverPrivate::on_into_world()
+	void cEventReceiverPrivate::on_entered_world()
 	{
 		dispatcher = entity->world_->get_system(EventDispatcher);
 		dispatcher->pending_update = true;
+	}
+
+	void cEventReceiverPrivate::on_left_world()
+	{
+		if (focusing)
+		{
+			focusing = false;
+			active = false;
+			dragging = false;
+			dispatcher->focusing = nullptr;
+		}
+		if (hovering)
+		{
+			hovering = false;
+			dispatcher->hovering = nullptr;
+		}
+		dispatcher->pending_update = true;
+		dispatcher = nullptr;
 	}
 
 	void cEventReceiverPrivate::on_component_added(Component* c)
 	{
 		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-	}
-
-	void cEventReceiverPrivate::on_component_removed(Component* c)
-	{
-		if (c == this)
-		{
-			if (focusing)
-				dispatcher->focusing = nullptr;
-			if (hovering)
-				dispatcher->hovering = nullptr;
-			dispatcher->pending_update = true;
-		}
 	}
 
 	void cEventReceiverPrivate::on_visibility_changed()

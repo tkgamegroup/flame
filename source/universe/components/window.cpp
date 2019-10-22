@@ -224,6 +224,8 @@ namespace flame
 			}
 			else
 			{
+				auto dp = event_receiver->dispatcher;
+
 				tabbar->remove_child(entity, false);
 				pages->remove_child(page, false);
 				page->set_visibility(true);
@@ -236,6 +238,11 @@ namespace flame
 				page_aligner->height_policy = SizeFixed;
 				root->add_child(page);
 				root->add_child(entity);
+
+				event_receiver->focusing = true;
+				event_receiver->active = true;
+				event_receiver->dragging = true;
+				dp->focusing = event_receiver;
 			}
 
 			if (tabbar->child_count() == 0)
