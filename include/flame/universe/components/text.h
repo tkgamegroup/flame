@@ -28,6 +28,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS const std::wstring& text() const;
 		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);
+		FLAME_UNIVERSE_EXPORTS void insert_char(wchar_t ch, uint pos);
+		FLAME_UNIVERSE_EXPORTS void erase_char(uint pos);
 
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
 	};

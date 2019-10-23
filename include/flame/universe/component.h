@@ -18,6 +18,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Component(const char* name);
 		FLAME_UNIVERSE_EXPORTS virtual ~Component();
 
+		FLAME_UNIVERSE_EXPORTS void data_changed(uint hash);
+
 		virtual void on_added() {} // on this component added to entity; or on this component's entity added to parent
 		virtual void on_entered_world() {} // on this component's entity entered world
 		virtual void on_left_world() {} // on this component's entity left world

@@ -2,6 +2,7 @@
 #include <flame/universe/systems/ui_renderer.h>
 #include "../components/element_private.h"
 #include "../components/text_private.h"
+#include "../components/image_private.h"
 #include <flame/universe/components/aligner.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
@@ -33,6 +34,10 @@ namespace flame
 				auto c_t = (cTextPrivate*)e->get_component(Text);
 				if (c_t)
 					c_t->draw(canvas);
+
+				auto c_i = (cImagePrivate*)e->get_component(Image);
+				if (c_i)
+					c_i->draw(canvas);
 			}
 			else
 				c_e->cliped_rect = Vec4f(-1.f);
@@ -54,7 +59,7 @@ namespace flame
 			{
 				auto last_scissor = canvas->scissor();
 				auto scissor = Vec4f(element->global_pos, element->global_pos + element->global_size);
-				scissor += Vec4f(element->inner_padding[0], element->inner_padding[1], element->inner_padding_horizontal(), element->inner_padding_vertical()) * element->global_scale;
+				scissor += Vec4f(element->inner_padding[0], element->inner_padding[1], -element->inner_padding_horizontal(), -element->inner_padding_vertical()) * element->global_scale;
 				canvas->set_scissor(scissor);
 				draw_element_and_its_children(element);
 				canvas->set_scissor(last_scissor);

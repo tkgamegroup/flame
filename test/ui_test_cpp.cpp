@@ -206,10 +206,10 @@ int main(int argc, char** args)
 		e_button->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_clicked(action, key))
 			{
-				auto thiz = *(App**)c;
+				(*(cText**)c)->set_text(L"Click Me! :)");
 				printf("thank you for clicking me\n");
 			}
-		}, new_mail_p(&app));
+		}, new_mail_p(e_button->get_component(Text)));
 	}
 
 	auto e_checkbox = wrap_standard_text(create_standard_checkbox(), false, app.font_atlas_pixel, 1.f, L"Checkbox");

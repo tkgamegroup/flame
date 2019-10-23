@@ -26,10 +26,6 @@ namespace flame
 		{
 		}
 
-		Listeners<void(void* c, const wchar_t* text)> changed_listeners;
-
-		FLAME_UNIVERSE_EXPORTS void trigger_changed();
-
 		FLAME_UNIVERSE_EXPORTS static cEdit* create();
 	};
 

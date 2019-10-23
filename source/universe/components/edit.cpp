@@ -1,8 +1,7 @@
-#include "../universe_private.h"
 #include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
-#include "text_private.h"
+#include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
@@ -26,8 +25,6 @@ namespace flame
 
 			key_listener = nullptr;
 			mouse_listener = nullptr;
-
-			changed_listeners.hub = new ListenerHub;
 		}
 
 		~cEditPrivate()
@@ -37,16 +34,6 @@ namespace flame
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
 			}
-
-			delete (ListenerHub*)changed_listeners.hub;
-		}
-
-		void on_changed()
-		{
-			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
-			auto str = ((cTextPrivate*)text)->text.c_str();
-			for (auto& l : listeners)
-				((void(*)(void*, const wchar_t*))l->function)(l->capture.p, str);
 		}
 
 		void on_component_added(Component* c) override
@@ -60,7 +47,8 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
 					auto thiz = *(cEditPrivate**)c;
-					auto& str = ((cTextPrivate*)thiz->text)->text;
+					auto text = thiz->text;
+					auto& str = text->text();
 
 					if (action == KeyStateNull)
 					{
@@ -70,15 +58,14 @@ namespace flame
 							if (thiz->cursor > 0)
 							{
 								thiz->cursor--;
-								str.erase(str.begin() + thiz->cursor);
-								thiz->on_changed();
+								text->erase_char(thiz->cursor);
 							}
 							break;
 						case 22:
 						{
 							auto copied = get_clipboard();
 							thiz->cursor = 0;
-							str = *copied.p;
+							text->set_text(*copied.p);
 							delete_mail(copied);
 						}
 							break;
@@ -87,9 +74,8 @@ namespace flame
 						case 13:
 							value = '\n';
 						default:
-							str.insert(str.begin() + thiz->cursor, value);
+							text->insert_char(value, thiz->cursor);
 							thiz->cursor++;
-							thiz->on_changed();
 						}
 					}
 					else if (action == KeyStateDown)
@@ -112,10 +98,7 @@ namespace flame
 							break;
 						case Key_Del:
 							if (thiz->cursor < str.size())
-							{
-								str.erase(str.begin() + thiz->cursor);
-								thiz->on_changed();
-							}
+								text->erase_char(thiz->cursor);
 							break;
 						}
 					}
@@ -125,7 +108,7 @@ namespace flame
 					auto thiz = *(cEditPrivate**)c;
 					auto element = thiz->element;
 					auto text = thiz->text;
-					auto& str = ((cTextPrivate*)text)->text;
+					auto& str = text->text();
 
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -175,11 +158,6 @@ namespace flame
 			//}
 		}
 	};
-
-	void cEdit::trigger_changed()
-	{
-		((cEditPrivate*)this)->on_changed();
-	}
 
 	cEdit* cEdit::create()
 	{

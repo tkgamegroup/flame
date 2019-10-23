@@ -22,15 +22,13 @@ namespace flame
 		void on_component_added(Component* c) override
 		{
 			if (c->name_hash == cH("Element"))
+			{
 				element = (cElement*)c;
-		}
-
-		void update()
-		{
-			if (min_size.x() < 0.f && width_policy == SizeGreedy)
-				min_size.x() = element->size.x();
-			if (min_size.y() < 0.f && height_policy == SizeGreedy)
-				min_size.y() = element->size.y();
+				if (min_size.x() < 0.f && width_policy == SizeGreedy)
+					min_size.x() = element->size.x();
+				if (min_size.y() < 0.f && height_policy == SizeGreedy)
+					min_size.y() = element->size.y();
+			}
 		}
 
 		Component* copy() override

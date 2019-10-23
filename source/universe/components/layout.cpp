@@ -191,12 +191,68 @@ namespace flame
 	{
 		if (als_dirty)
 		{
+			for (auto& al : als)
+			{
+				if (std::get<0>(al))
+					std::get<0>(al)->data_changed_listeners.remove(std::get<3>(al));
+				if (std::get<1>(al))
+					std::get<1>(al)->data_changed_listeners.remove(std::get<4>(al));
+				if (std::get<2>(al))
+					std::get<2>(al)->data_changed_listeners.remove(std::get<5>(al));
+			}
 			als.clear();
 			for (auto i = 0; i < entity->child_count(); i++)
 			{
 				auto e = entity->child(i);
 				if (e->global_visibility_)
-					als.emplace_back(e->get_component(Element), e->get_component(Aligner), e->get_component(Text));
+				{
+					auto element = e->get_component(Element);
+					auto aligner = e->get_component(Aligner);
+					auto text = e->get_component(Text);
+					void* element_data_listener = nullptr;
+					if (element)
+					{
+						element_data_listener = element->data_changed_listeners.add([](void* c, uint hash) {
+							auto thiz = *(cLayoutPrivate**)c;
+							switch (hash)
+							{
+							case cH("pos"):
+								thiz->management->add_to_update_list(thiz);
+								break;
+							}
+						}, new_mail_p(this));
+					}
+					void* aligner_data_listener = nullptr;
+					if (aligner)
+					{
+
+					}
+					void* text_data_listener = nullptr;
+					if (text)
+					{
+						struct Capture
+						{
+							cLayoutPrivate* l;
+							cText* t;
+						}capture;
+						capture.l = this;
+						capture.t = text;
+						text_data_listener = text->data_changed_listeners.add([](void* c, uint hash) {
+							auto& capture = *(Capture*)c;
+							switch (hash)
+							{
+							case cH("text"):
+								if (capture.t->auto_width || capture.t->auto_height)
+									capture.l->management->add_to_update_list(capture.l);
+								break;
+							}
+						}, new_mail(&capture));
+					}
+					als.emplace_back(element, aligner, text, 
+						element_data_listener,
+						aligner_data_listener,
+						text_data_listener);
+				}
 			}
 			als_dirty = false;
 		}

@@ -12,7 +12,7 @@ namespace flame
 		bool pending_update;
 
 		bool als_dirty;
-		std::vector<std::tuple<cElement*, cAligner*, cText*>> als;
+		std::vector<std::tuple<cElement*, cAligner*, cText*, void*, void*, void*>> als;
 
 		cLayoutPrivate(LayoutType _type);
 		~cLayoutPrivate();

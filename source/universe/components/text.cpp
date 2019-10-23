@@ -57,6 +57,21 @@ namespace flame
 	void cText::set_text(const std::wstring& text)
 	{
 		((cTextPrivate*)this)->text = text;
+		data_changed(cH("text"));
+	}
+
+	void cText::insert_char(wchar_t ch, uint pos)
+	{
+		auto& str = ((cTextPrivate*)this)->text;
+		str.insert(str.begin() + pos, ch);
+		data_changed(cH("text"));
+	}
+
+	void cText::erase_char(uint pos)
+	{
+		auto& str = ((cTextPrivate*)this)->text;
+		str.erase(str.begin() + pos);
+		data_changed(cH("text"));
 	}
 
 	cText* cText::create(graphics::FontAtlas* font_atlas)
