@@ -102,34 +102,24 @@ namespace flame
 
 	void cLayoutPrivate::use_children_width(float w)
 	{
-		if (aligner)
-		{
-			if (aligner->width_policy_ == SizeGreedy)
-			{
-				aligner->set_min_width(w);
-				element->set_width(max(element->size_.x(), w), false, this);
-			}
-			else if (aligner->width_policy_ == SizeFixed)
-				element->set_width(w, false, this);
-		}
-		else
+		if (!aligner || aligner->width_policy_ == SizeFixed)
 			element->set_width(w, false, this);
+		else if (aligner && aligner->width_policy_ == SizeGreedy)
+		{
+			aligner->set_min_width(w);
+			element->set_width(max(element->size_.x(), w), false, this);
+		}
 	}
 
 	void cLayoutPrivate::use_children_height(float h)
 	{
-		if (aligner)
-		{
-			if (aligner->height_policy_ == SizeGreedy)
-			{
-				aligner->set_min_height(h);
-				element->set_width(max(element->size_.y(), h), false, this);
-			}
-			else if (aligner->height_policy_ == SizeFixed)
-				element->set_height(h, false, this);
-		}
-		else
+		if (!aligner || aligner->height_policy_ == SizeFixed)
 			element->set_height(h, false, this);
+		else if (aligner && aligner->height_policy_ == SizeGreedy)
+		{
+			aligner->set_min_height(h);
+			element->set_height(max(element->size_.y(), h), false, this);
+		}
 	}
 
 	void cLayoutPrivate::on_entered_world()
@@ -193,6 +183,24 @@ namespace flame
 			als_dirty = true;
 			if (management)
 				management->add_to_update_list(this);
+			for (auto& al : als)
+			{
+				if (c == std::get<0>(al))
+				{
+					std::get<0>(al) = nullptr;
+					return;
+				}
+				if (c == std::get<1>(al))
+				{
+					std::get<1>(al) = nullptr;
+					return;
+				}
+				if (c == std::get<2>(al))
+				{
+					std::get<2>(al) = nullptr;
+					return;
+				}
+			}
 		}
 	}
 

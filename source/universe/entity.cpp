@@ -117,6 +117,8 @@ namespace flame
 	{
 		if (position == -1)
 			position = children.size();
+		for (auto i = position; i < children.size(); i++)
+			children[i]->order_ += 1;
 		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
 		e->order_ = (order_ & 0xff000000) + (1 << 24) + position;
 		e->parent = this;
@@ -187,6 +189,8 @@ namespace flame
 			{
 				if (it->get() == e)
 				{
+					for (auto _it = it + 1; _it != children.end(); _it++)
+						(*_it)->order_ -= 1;
 					for (auto& c : components)
 					{
 						for (auto& _c : e->components)

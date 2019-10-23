@@ -307,12 +307,12 @@ namespace flame
 					((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
 				((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
 			}
-			if (!prev_drag_overing && drag_overing)
-				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOveringEnter, focusing, mouse_pos);
+			//if (!prev_drag_overing && drag_overing)
+			//	((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOveringEnter, focusing, mouse_pos);
 			if (drag_overing)
 				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOvering, focusing, mouse_pos);
-			if (prev_drag_overing && !drag_overing)
-				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOveringLeave, focusing, mouse_pos);
+			//if (prev_drag_overing && !drag_overing)
+			//	((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(DragOveringLeave, focusing, mouse_pos);
 
 			keydown_inputs.clear();
 			keyup_inputs.clear();
