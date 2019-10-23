@@ -16,11 +16,7 @@ namespace flame
 			virtual Imageview* get_image(uint index) = 0;
 			virtual uint set_image(int index, Imageview* v, Filter filter = FilterLinear) = 0; // index=-1 to find an empty slot
 
-			void stroke(std::vector<Vec2f>& points, const Vec4c& col, float thickness)
-			{
-				stroke(points, col, col, thickness);
-			}
-			virtual void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness) = 0;
+			virtual void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) = 0;
 			virtual void fill(const std::vector<Vec2f>& points, const Vec4c& col) = 0;
 
 			virtual void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale = 1.f) = 0;

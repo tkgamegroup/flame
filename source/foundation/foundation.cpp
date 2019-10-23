@@ -1465,7 +1465,7 @@ namespace flame
 		c->function = event;
 		c->capture = capture;
 		c->id = id;
-		delay_events.emplace_back(c, only);
+		delay_events.emplace_back(c);
 	}
 
 	void Looper::clear_delay_events(int id)

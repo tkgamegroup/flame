@@ -15,7 +15,6 @@ namespace flame
 		float frame_thickness;
 		Vec4c color;
 		Vec4c frame_color;
-		float shadow_thickness;
 		bool clip_children;
 
 		Vec2f global_pos;

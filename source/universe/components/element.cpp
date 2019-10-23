@@ -16,7 +16,6 @@ namespace flame
 		frame_thickness = 0.f;
 		color = Vec4c(0);
 		frame_color = Vec4c(255);
-		shadow_thickness = 0.f;
 		clip_children = false;
 
 		global_pos = 0.f;
@@ -46,15 +45,7 @@ namespace flame
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
 		auto r = roundness * global_scale;
-		auto st = shadow_thickness * global_scale;
 
-		if (st > 0.f)
-		{
-			std::vector<Vec2f> points;
-			path_rect(points, global_pos - Vec2f(st * 0.5f), global_size + Vec2f(st), r);
-			points.push_back(points[0]);
-			canvas->stroke(points, Vec4c(0, 0, 0, 128), Vec4c(0), st);
-		}
 		if (alpha > 0.f)
 		{
 			std::vector<Vec2f> points;
@@ -83,7 +74,6 @@ namespace flame
 		copy->frame_thickness = frame_thickness;
 		copy->color = color;
 		copy->frame_color = frame_color;
-		copy->shadow_thickness = shadow_thickness;
 		copy->clip_children = clip_children;
 
 		return copy;
@@ -183,7 +173,6 @@ namespace flame
 		float frame_thickness$;
 		Vec4c color$;
 		Vec4c frame_color$;
-		float shadow_thickness$;
 		bool clip_children$;
 
 		FLAME_UNIVERSE_EXPORTS ComponentElement$()
@@ -197,7 +186,6 @@ namespace flame
 			frame_thickness$ = 0.f;
 			color$ = Vec4c(0);
 			frame_color$ = Vec4c(255);
-			shadow_thickness$ = 0.f;
 			clip_children$ = false;
 		}
 
@@ -214,7 +202,6 @@ namespace flame
 			c->frame_thickness = frame_thickness$;
 			c->color = color$;
 			c->frame_color = frame_color$;
-			c->shadow_thickness = shadow_thickness$;
 			c->clip_children = clip_children$;
 
 			return c;
@@ -235,7 +222,6 @@ namespace flame
 				frame_thickness$ = c->frame_thickness;
 				color$ = c->color;
 				frame_color$ = c->frame_color;
-				shadow_thickness$ = c->shadow_thickness;
 				clip_children$ = c->clip_children;
 			}
 			else
@@ -269,9 +255,6 @@ namespace flame
 				case offsetof(ComponentElement$, frame_color$):
 					frame_color$ = c->frame_color;
 					break;
-				case offsetof(ComponentElement$, shadow_thickness$):
-					shadow_thickness$ = c->shadow_thickness;
-					break;
 				case offsetof(ComponentElement$, clip_children$):
 					clip_children$ = c->clip_children;
 					break;
@@ -294,7 +277,6 @@ namespace flame
 				c->frame_thickness = frame_thickness$;
 				c->color = color$;
 				c->frame_color = frame_color$;
-				c->shadow_thickness = shadow_thickness$;
 				c->clip_children = clip_children$;
 			}
 			else
@@ -327,9 +309,6 @@ namespace flame
 					break;
 				case offsetof(ComponentElement$, frame_color$):
 					c->frame_color = frame_color$;
-					break;
-				case offsetof(ComponentElement$, shadow_thickness$):
-					c->shadow_thickness = shadow_thickness$;
 					break;
 				case offsetof(ComponentElement$, clip_children$):
 					c->clip_children = clip_children$;

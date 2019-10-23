@@ -137,7 +137,7 @@ namespace flame
 		Imageview* get_image(uint index) override;
 		uint set_image(int index, Imageview* v, Filter filter) override;
 
-		void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness) override;
+		void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) override;
 		void fill(const std::vector<Vec2f>& points, const Vec4c& col) override;
 
 		void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale) override;
@@ -242,7 +242,7 @@ namespace flame
 			cmds.push_back(cmd);
 		}
 
-		void stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)
+		void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness)
 		{
 			if (points.size() < 2)
 				return;
@@ -281,10 +281,10 @@ namespace flame
 					auto n0 = normals[i] * thickness * 0.5f;
 					auto n1 = normals[i + 1] * thickness * 0.5f;
 
-					vtx_end->pos = p0 + n0; vtx_end->uv = Vec2f(0.5f); vtx_end->col = outter_col; vtx_end++;
-					vtx_end->pos = p0 - n0; vtx_end->uv = Vec2f(0.5f); vtx_end->col = inner_col;  vtx_end++;
-					vtx_end->pos = p1 - n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = inner_col;  vtx_end++;
-					vtx_end->pos = p1 + n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = outter_col; vtx_end++;
+					vtx_end->pos = p0 + n0; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
+					vtx_end->pos = p0 - n0; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col;  vtx_end++;
+					vtx_end->pos = p1 - n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col;  vtx_end++;
+					vtx_end->pos = p1 + n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
 
 					*idx_end = vtx_cnt + 0; idx_end++;
 					*idx_end = vtx_cnt + 2; idx_end++;
@@ -302,8 +302,8 @@ namespace flame
 
 					auto n1 = normals[i + 1] * thickness * 0.5f;
 
-					vtx_end->pos = p1 - n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = inner_col;  vtx_end++;
-					vtx_end->pos = p1 + n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = outter_col; vtx_end++;
+					vtx_end->pos = p1 - n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col;  vtx_end++;
+					vtx_end->pos = p1 + n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
 
 					*idx_end = vtx_cnt - 1; idx_end++;
 					*idx_end = vtx_cnt + 0; idx_end++;
@@ -579,9 +579,9 @@ namespace flame
 		return thiz->set_image(index, v, filter);
 	}
 
-	void CanvasPrivate::stroke(const std::vector<Vec2f>& points, const Vec4c& inner_col, const Vec4c& outter_col, float thickness)
+	void CanvasPrivate::stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness)
 	{
-		thiz->stroke(points, inner_col, outter_col, thickness);
+		thiz->stroke(points, col, thickness);
 	}
 
 	void CanvasPrivate::fill(const std::vector<Vec2f>& points, const Vec4c& col)
