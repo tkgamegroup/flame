@@ -243,8 +243,8 @@ namespace flame
 			if (size_fit_parent)
 			{
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 				e_list->add_component(c_aligner);
 			}
 
@@ -267,7 +267,7 @@ namespace flame
 			e_item->add_component(cElement::create());
 
 			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale = sdf_scale;
+			c_text->sdf_scale_ = sdf_scale;
 			c_text->set_text(text);
 			e_item->add_component(c_text);
 
@@ -278,7 +278,7 @@ namespace flame
 			e_item->add_component(cListItem::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitParent;
+			c_aligner->width_policy_ = SizeFitParent;
 			e_item->add_component(c_aligner);
 		}
 

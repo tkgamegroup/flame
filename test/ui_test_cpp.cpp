@@ -72,7 +72,7 @@ struct App
 
 		if (sc)
 		{
-			c_element_root->size = w->size;
+			c_element_root->set_size(Vec2f(w->size));
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			u->update();
 		}
@@ -147,12 +147,14 @@ int main(int argc, char** args)
 	{
 		e_fps->add_component(cElement::create());
 
-		app.c_text_fps = cText::create(app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->auto_width_ = false;
+		app.c_text_fps = c_text;
 		e_fps->add_component(app.c_text_fps);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxLeft;
-		c_aligner->y_align = AlignyBottom;
+		c_aligner->x_align_ = AlignxLeft;
+		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
 	}
 
@@ -160,8 +162,8 @@ int main(int argc, char** args)
 	root->add_child(e_layout_left);
 	{
 		auto c_element = cElement::create();
-		c_element->pos.x() = 16.f;
-		c_element->pos.y() = 28.f;
+		c_element->pos_.x() = 16.f;
+		c_element->pos_.y() = 28.f;
 		e_layout_left->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -196,7 +198,7 @@ int main(int argc, char** args)
 
 		auto c_text = cText::create(app.font_atlas_sdf);
 		c_text->set_text(L"Text Sdf");
-		c_text->sdf_scale = 14.f / 32.f;
+		c_text->sdf_scale_ = 14.f / 32.f;
 		e_text_sdf->add_component(c_text);
 	}
 
@@ -221,7 +223,7 @@ int main(int argc, char** args)
 		auto c_element = cElement::create();
 		auto r = app.font_atlas_pixel->pixel_height * 0.5f;
 		c_element->roundness = r;
-		c_element->inner_padding = Vec4f(r, 2.f, r, 2.f);
+		c_element->inner_padding_ = Vec4f(r, 2.f, r, 2.f);
 		e_toggle->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_pixel);
@@ -239,8 +241,8 @@ int main(int argc, char** args)
 	e_layout_left->add_child(e_image);
 	{
 		auto c_element = cElement::create();
-		c_element->size = 258.f;
-		c_element->inner_padding = Vec4f(4.f);
+		c_element->size_ = 258.f;
+		c_element->inner_padding_ = Vec4f(4.f);
 		c_element->frame_color = Vec4c(10, 200, 10, 255);
 		c_element->frame_thickness = 2.f;
 		e_image->add_component(c_element);
@@ -257,8 +259,8 @@ int main(int argc, char** args)
 	root->add_child(e_layout_right);
 	{
 		auto c_element = cElement::create();
-		c_element->pos.x() = 416.f;
-		c_element->pos.y() = 28.f;
+		c_element->pos_.x() = 416.f;
+		c_element->pos_.y() = 28.f;
 		e_layout_right->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -279,9 +281,9 @@ int main(int argc, char** args)
 		e_layout_right->add_child(e_container);
 		{
 			auto c_element = e_container->get_component(Element);
-			c_element->size.x() = 200.f;
-			c_element->size.y() = 100.f;
-			c_element->inner_padding = Vec4f(4.f);
+			c_element->size_.x() = 200.f;
+			c_element->size_.y() = 100.f;
+			c_element->inner_padding_ = Vec4f(4.f);
 			c_element->frame_thickness = 2.f;
 		}
 	}
@@ -450,7 +452,7 @@ int main(int argc, char** args)
 	e_layout_right->add_child(e_tree);
 	{
 		auto c_element = e_tree->get_component(Element);
-		c_element->inner_padding = Vec4f(4.f);
+		c_element->inner_padding_ = Vec4f(4.f);
 		c_element->frame_thickness = 2.f;
 	}
 	{
@@ -476,10 +478,10 @@ int main(int argc, char** args)
 		root->add_child(e_container);
 		{
 			auto c_element = e_container->get_component(Element);
-			c_element->pos.x() = 414.f;
-			c_element->pos.y() = 297.f;
-			c_element->size.x() = 221.f;
-			c_element->size.y() = 214.f;
+			c_element->pos_.x() = 414.f;
+			c_element->pos_.y() = 297.f;
+			c_element->size_.x() = 221.f;
+			c_element->size_.y() = 214.f;
 		}
 
 		auto e_docker = get_docker_model()->copy();
@@ -499,8 +501,8 @@ int main(int argc, char** args)
 			e_pages->add_child(e_page);
 			{
 				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->auto_width = false;
-				c_text->auto_height = false;
+				c_text->auto_width_ = false;
+				c_text->auto_height_ = false;
 				c_text->set_text(names[i]);
 				e_page->add_component(c_text);
 			}
@@ -512,10 +514,10 @@ int main(int argc, char** args)
 		root->add_child(e_container);
 		{
 			auto c_element = e_container->get_component(Element);
-			c_element->pos.x() = 667.f;
-			c_element->pos.y() = 302.f;
-			c_element->size.x() = 403.f;
-			c_element->size.y() = 215.f;
+			c_element->pos_.x() = 667.f;
+			c_element->pos_.y() = 302.f;
+			c_element->size_.x() = 403.f;
+			c_element->size_.y() = 215.f;
 		}
 
 		auto e_docker_layout = get_docker_layout_model()->copy();
@@ -527,9 +529,9 @@ int main(int argc, char** args)
 				e_docker_layout->add_child(e_docker, 0);
 				{
 					auto c_aligner = e_docker->get_component(Aligner);
-					c_aligner->x_align = AlignxFree;
-					c_aligner->y_align = AlignyFree;
-					c_aligner->using_padding = false;
+					c_aligner->x_align_ = AlignxFree;
+					c_aligner->y_align_ = AlignyFree;
+					c_aligner->using_padding_ = false;
 				}
 
 				auto e_tabbar = e_docker->child(0);
@@ -548,8 +550,8 @@ int main(int argc, char** args)
 					e_pages->add_child(e_page);
 					{
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->auto_width = false;
-						c_text->auto_height = false;
+						c_text->auto_width_ = false;
+						c_text->auto_height_ = false;
 						c_text->set_text(names[i]);
 						e_page->add_component(c_text);
 					}
@@ -561,9 +563,9 @@ int main(int argc, char** args)
 				e_docker_layout->add_child(e_docker, 2);
 				{
 					auto c_aligner = e_docker->get_component(Aligner);
-					c_aligner->x_align = AlignxFree;
-					c_aligner->y_align = AlignyFree;
-					c_aligner->using_padding = false;
+					c_aligner->x_align_ = AlignxFree;
+					c_aligner->y_align_ = AlignyFree;
+					c_aligner->using_padding_ = false;
 				}
 
 				auto e_tabbar = e_docker->child(0);
@@ -582,8 +584,8 @@ int main(int argc, char** args)
 					e_pages->add_child(e_page);
 					{
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->auto_width = false;
-						c_text->auto_height = false;
+						c_text->auto_width_ = false;
+						c_text->auto_height_ = false;
 						c_text->set_text(names[i]);
 						e_page->add_component(c_text);
 					}

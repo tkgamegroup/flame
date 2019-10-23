@@ -44,10 +44,7 @@ namespace flame
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMoveablePrivate**)c;
 					if (thiz->event_receiver->active && is_mouse_move(action, key))
-					{
-						auto e = thiz->element;
-						e->pos += (Vec2f)pos / e->global_scale;
-					}
+						thiz->element->set_pos((Vec2f)pos / thiz->element->global_scale, true);
 				}, new_mail_p(this));
 			}
 		}
@@ -148,7 +145,7 @@ namespace flame
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSizeDraggerPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->active)
-						thiz->p_element->size += pos;
+						thiz->p_element->set_size(Vec2f(pos), true);
 				}, new_mail_p(this));
 			}
 		}
@@ -229,13 +226,13 @@ namespace flame
 				tabbar->remove_child(entity, false);
 				pages->remove_child(page, false);
 				page->set_visibility(true);
-				element->pos = element->global_pos;
+				element->set_pos(element->global_pos);
 				element->alpha = 0.5f;
-				page_element->pos.x() = element->pos.x();
-				page_element->pos.y() = element->pos.y() + element->global_size.y() + 8.f;
+				page_element->set_x(element->pos_.x());
+				page_element->set_y(element->pos_.y() + element->global_size.y() + 8.f);
 				page_element->alpha = 0.5f;
-				page_aligner->width_policy = SizeFixed;
-				page_aligner->height_policy = SizeFixed;
+				page_aligner->set_width_policy(SizeFixed);
+				page_aligner->set_height_policy(SizeFixed);
 				root->add_child(page);
 				root->add_child(entity);
 
@@ -263,9 +260,9 @@ namespace flame
 						if (pp->name_hash() == cH("docker_container"))
 						{
 							auto aligner = oth_docker->get_component(Aligner);
-							aligner->x_align = AlignxLeft;
-							aligner->y_align = AlignyTop;
-							aligner->using_padding = true;
+							aligner->set_x_align(AlignxLeft);
+							aligner->set_y_align(AlignyTop);
+							aligner->set_using_padding(true);
 						}
 					}
 				}
@@ -299,8 +296,8 @@ namespace flame
 					auto thiz = (*(cDockerTabPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->dragging && thiz->page)
 					{
-						thiz->element->pos += pos;
-						thiz->page_element->pos += pos;
+						thiz->element->set_pos(Vec2f(pos), true);
+						thiz->page_element->set_pos(Vec2f(pos), true);
 					}
 				}, new_mail_p(this));
 
@@ -330,8 +327,8 @@ namespace flame
 								thiz->root->add_child(e_container);
 								{
 									auto c_element = e_container->get_component(Element);
-									c_element->pos = thiz->drop_pos;
-									c_element->size = page_element->size;
+									c_element->set_pos(thiz->drop_pos);
+									c_element->set_size(page_element->size_);
 								}
 
 								auto e_docker = get_docker_model()->copy();
@@ -344,13 +341,13 @@ namespace flame
 								thiz->list_item->list = e_tabbar->get_component(List);
 								e_tabbar->add_child(e_tab);
 								auto element = thiz->element;
-								element->pos = 0.f;
+								element->set_pos(Vec2f(0.f));
 								element->alpha = 1.f;
 								e_pages->add_child(e_page);
-								page_element->pos = 0.f;
+								page_element->set_pos(Vec2f(0.f));
 								page_element->alpha = 1.f;
-								page_aligner->width_policy = SizeFitParent;
-								page_aligner->height_policy = SizeFitParent;
+								page_aligner->set_width_policy(SizeFitParent);
+								page_aligner->set_height_policy(SizeFitParent);
 								thiz->page = nullptr;
 								thiz->page_element = nullptr;
 							}, new_mail_p(thiz));
@@ -429,17 +426,17 @@ namespace flame
 			for (auto i = 0; i < entity->child_count(); i++)
 			{
 				auto element = entity->child(i)->get_component(Element);
-				auto half = element->global_pos.x() + element->size.x() * 0.5f;
+				auto half = element->global_pos.x() + element->size_.x() * 0.5f;
 				if (x >= element->global_pos.x() && x < half)
 				{
 					if (out)
 						*out = element->global_pos.x();
 					return i;
 				}
-				if (x >= half && x < element->global_pos.x() + element->size.x())
+				if (x >= half && x < element->global_pos.x() + element->size_.x())
 				{
 					if (out)
-						*out = element->global_pos.x() + element->size.x();
+						*out = element->global_pos.x() + element->size_.x();
 					return i + 1;
 				}
 			}
@@ -499,10 +496,10 @@ namespace flame
 								tabbar->parent()->child(1)->add_child(e_page);
 
 								tab->element->alpha = 1.f;
-								page_element->pos = 0.f;
+								page_element->set_pos(Vec2f(0.f));
 								page_element->alpha = 1.f;
-								page_aligner->width_policy = SizeFitParent;
-								page_aligner->height_policy = SizeFitParent;
+								page_aligner->set_width_policy(SizeFitParent);
+								page_aligner->set_height_policy(SizeFitParent);
 
 								thiz->drop_tab->page = nullptr;
 								thiz->drop_tab->page_element = nullptr;
@@ -665,30 +662,30 @@ namespace flame
 									if (p->name_hash() == cH("docker_container"))
 									{
 										auto aligner = docker->get_component(Aligner);
-										aligner->x_align = AlignxFree;
-										aligner->y_align = AlignyFree;
-										aligner->using_padding = false;
+										aligner->set_x_align(AlignxFree);
+										aligner->set_y_align(AlignyFree);
+										aligner->set_using_padding(false);
 									}
 									else
 									{
 										auto p_element = p->get_component(Element);
 										auto layout_element = layout->get_component(Element);
 
-										layout_element->size = p_element->size;
+										layout_element->set_size(p_element->size_);
 
 										auto aligner = layout->get_component(Aligner);
-										aligner->x_align = AlignxFree;
-										aligner->y_align = AlignyFree;
-										aligner->width_factor = p_element->size.x();
-										aligner->height_factor = p_element->size.y();
-										aligner->using_padding = false;
+										aligner->set_x_align(AlignxFree);
+										aligner->set_y_align(AlignyFree);
+										aligner->set_width_factor(p_element->size_.x());
+										aligner->set_height_factor(p_element->size_.y());
+										aligner->set_using_padding(false);
 
 										{
 											auto oth = p->child(docker_idx == 0 ? 2 : 0);
 											auto element = oth->get_component(Element);
 											auto aligner = oth->get_component(Aligner);
-											aligner->width_factor = element->size.x();
-											aligner->height_factor = element->size.y();
+											aligner->set_width_factor(element->size_.x());
+											aligner->set_height_factor(element->size_.y());
 										}
 									}
 									p->remove_child(docker, false);
@@ -699,9 +696,9 @@ namespace flame
 									auto new_docker_aligner = new_docker->get_component(Aligner);
 									{
 										auto c_aligner = new_docker->get_component(Aligner);
-										c_aligner->x_align = AlignxFree;
-										c_aligner->y_align = AlignyFree;
-										c_aligner->using_padding = false;
+										c_aligner->set_x_align(AlignxFree);
+										c_aligner->set_y_align(AlignyFree);
+										c_aligner->set_using_padding(false);
 									}
 									auto new_tabbar = new_docker->child(0);
 									auto new_pages = new_docker->child(1);
@@ -713,49 +710,49 @@ namespace flame
 									new_pages->add_child(e_page);
 
 									tab->element->alpha = 1.f;
-									page_element->pos = 0.f;
+									page_element->set_pos(Vec2f(0.f));
 									page_element->alpha = 1.f;
-									page_aligner->width_policy = SizeFitParent;
-									page_aligner->height_policy = SizeFitParent;
+									page_aligner->set_width_policy(SizeFitParent);
+									page_aligner->set_height_policy(SizeFitParent);
 
 									auto e_splitter = layout->child(0);
 									auto splitter_element = e_splitter->get_component(Element);
 									auto splitter = e_splitter->get_component(Splitter);
 									if (thiz->dock_side == SideW || thiz->dock_side == SideE)
 									{
-										auto w = (docker_element->size.x() - splitter_element->size.x()) * 0.5f;
-										docker_element->size.x() = w;
-										new_docker_element->size.x() = w;
-										docker_aligner->width_factor = w;
-										new_docker_aligner->width_factor = w;
+										auto w = (docker_element->size_.x() - splitter_element->size_.x()) * 0.5f;
+										docker_element->set_width(w);
+										new_docker_element->set_width(w);
+										docker_aligner->set_width_factor(w);
+										new_docker_aligner->set_width_factor(w);
 
-										auto h = docker_element->size.y() * 0.5f;
-										docker_element->size.y() = h;
-										new_docker_element->size.y() = h;
-										docker_aligner->height_factor = h;
-										new_docker_aligner->height_factor = h;
+										auto h = docker_element->size_.y() * 0.5f;
+										docker_element->set_height(h);
+										new_docker_element->set_height(h);
+										docker_aligner->set_height_factor(h);
+										new_docker_aligner->set_height_factor(h);
 									}
 									else
 									{
 										layout->get_component(Layout)->type = LayoutVertical;
-										splitter_element->size.y() = splitter_element->size.x();
-										splitter_element->size.x() = 0.f;
+										splitter_element->set_height(splitter_element->size_.x());
+										splitter_element->set_width(0.f);
 										splitter->type = SplitterVertical;
 										auto splitter_aligner = e_splitter->get_component(Aligner);
-										splitter_aligner->width_policy = SizeFitParent;
-										splitter_aligner->height_policy = SizeFixed;
+										splitter_aligner->set_width_policy(SizeFitParent);
+										splitter_aligner->set_height_policy(SizeFixed);
 
-										auto w = docker_element->size.x();
-										docker_element->size.x() = w;
-										new_docker_element->size.x() = w;
-										docker_aligner->width_factor = w;
-										new_docker_aligner->width_factor = w;
+										auto w = docker_element->size_.x();
+										docker_element->set_width(w);
+										new_docker_element->set_width(w);
+										docker_aligner->set_width_factor(w);
+										new_docker_aligner->set_width_factor(w);
 
-										auto h = (docker_element->size.y() - splitter_element->size.y()) * 0.5f;
-										docker_element->size.y() = h;
-										new_docker_element->size.y() = h;
-										docker_aligner->height_factor = h;
-										new_docker_aligner->height_factor = h;
+										auto h = (docker_element->size_.y() - splitter_element->size_.y()) * 0.5f;
+										docker_element->set_height(h);
+										new_docker_element->set_height(h);
+										docker_aligner->set_height_factor(h);
+										new_docker_aligner->set_height_factor(h);
 									}
 
 									if (thiz->dock_side == SideW)
@@ -803,7 +800,7 @@ namespace flame
 		tab->set_name("docker_tab");
 
 		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(4.f, 2.f, 6.f + font_atlas->pixel_height, 2.f);
+		c_element->inner_padding_ = Vec4f(4.f, 2.f, 6.f + font_atlas->pixel_height, 2.f);
 		tab->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);
@@ -838,7 +835,7 @@ namespace flame
 		tab->add_child(e_close);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(2.f, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(2.f, 2.f, 4.f, 2.f);
 			e_close->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
@@ -859,7 +856,7 @@ namespace flame
 			e_close->add_component(c_event_receiver);
 
 			auto c_aligner = cAligner::create();
-			c_aligner->x_align = AlignxRight;
+			c_aligner->x_align_ = AlignxRight;
 			e_close->add_component(c_aligner);
 		}
 
@@ -880,8 +877,8 @@ namespace flame
 			docker_page_model->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitParent;
-			c_aligner->height_policy = SizeFitParent;
+			c_aligner->width_policy_ = SizeFitParent;
+			c_aligner->height_policy_ = SizeFitParent;
 			docker_page_model->add_component(c_aligner);
 		}
 		return docker_page_model;
@@ -898,11 +895,11 @@ namespace flame
 			docker_model->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->x_align = AlignxLeft;
-			c_aligner->y_align = AlignyTop;
-			c_aligner->width_policy = SizeFitParent;
-			c_aligner->height_policy = SizeFitParent;
-			c_aligner->using_padding = true;
+			c_aligner->x_align_ = AlignxLeft;
+			c_aligner->y_align_ = AlignyTop;
+			c_aligner->width_policy_ = SizeFitParent;
+			c_aligner->height_policy_ = SizeFitParent;
+			c_aligner->using_padding_ = true;
 			docker_model->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutVertical);
@@ -921,7 +918,7 @@ namespace flame
 				e_tabbar->add_component(cEventReceiver::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
 				e_tabbar->add_component(c_aligner);
 
 				e_tabbar->add_component(cLayout::create(LayoutHorizontal));
@@ -940,8 +937,8 @@ namespace flame
 				e_pages->add_component(cEventReceiver::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 				e_pages->add_component(c_aligner);
 
 				e_pages->add_component(cLayout::create(LayoutFree));
@@ -963,11 +960,11 @@ namespace flame
 			docker_layout_model->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->x_align = AlignxLeft;
-			c_aligner->y_align = AlignyTop;
-			c_aligner->width_policy = SizeFitParent;
-			c_aligner->height_policy = SizeFitParent;
-			c_aligner->using_padding = true;
+			c_aligner->x_align_ = AlignxLeft;
+			c_aligner->y_align_ = AlignyTop;
+			c_aligner->width_policy_ = SizeFitParent;
+			c_aligner->height_policy_ = SizeFitParent;
+			c_aligner->using_padding_ = true;
 			docker_layout_model->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutHorizontal);
@@ -979,7 +976,7 @@ namespace flame
 			docker_layout_model->add_child(e_spliter);
 			{
 				auto c_element = cElement::create();
-				c_element->size.x() = 8.f;
+				c_element->size_.x() = 8.f;
 				e_spliter->add_component(c_element);
 
 				e_spliter->add_component(cEventReceiver::create());
@@ -989,7 +986,7 @@ namespace flame
 				e_spliter->add_component(cSplitter::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 				e_spliter->add_component(c_aligner);
 			}
 
@@ -1006,8 +1003,8 @@ namespace flame
 			docker_container_model->set_name("docker_container");
 
 			auto c_element = cElement::create();
-			c_element->size = 200.f;
-			c_element->inner_padding = Vec4f(8.f, 16.f, 8.f, 8.f);
+			c_element->size_ = 200.f;
+			c_element->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
 			c_element->color = default_style.docker_color;
 			docker_container_model->add_component(c_element);
 
@@ -1027,8 +1024,8 @@ namespace flame
 				e_bring_to_front->add_component(c_event_receiver);
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 				e_bring_to_front->add_component(c_aligner);
 
 				e_bring_to_front->add_component(cBringToFront::create());
@@ -1038,15 +1035,15 @@ namespace flame
 			docker_container_model->add_child(e_size_dragger);
 			{
 				auto c_element = cElement::create();
-				c_element->size = 8.f;
+				c_element->size_ = 8.f;
 				c_element->color = Vec4c(200, 100, 100, 255);
 				e_size_dragger->add_component(c_element);
 
 				e_size_dragger->add_component(cEventReceiver::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->x_align = AlignxRight;
-				c_aligner->y_align = AlignyBottom;
+				c_aligner->x_align_ = AlignxRight;
+				c_aligner->y_align_ = AlignyBottom;
 				e_size_dragger->add_component(c_aligner);
 
 				e_size_dragger->add_component(cSizeDragger::create());

@@ -6,10 +6,10 @@ namespace flame
 {
 	struct cElement : Component
 	{
-		Vec2f pos;
+		Vec2f pos_;
 		float scale;
-		Vec2f size;
-		Vec4f inner_padding; // L T R B
+		Vec2f size_;
+		Vec4f inner_padding_; // L T R B
 		float alpha;
 		Vec4f roundness;
 		float frame_thickness;
@@ -26,18 +26,25 @@ namespace flame
 
 		float inner_padding_horizontal() const
 		{
-			return inner_padding[0] + inner_padding[2];
+			return inner_padding_[0] + inner_padding_[2];
 		}
 
 		float inner_padding_vertical() const
 		{
-			return inner_padding[1] + inner_padding[3];
+			return inner_padding_[1] + inner_padding_[3];
 		}
 
 		cElement() :
 			Component("Element")
 		{
 		}
+
+		FLAME_UNIVERSE_EXPORTS void set_x(float x, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_y(float y, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_pos(const Vec2f& p, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_width(float w, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_height(float h, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_size(const Vec2f& s, bool add = false, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};

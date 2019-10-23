@@ -11,8 +11,10 @@ namespace flame
 		sLayoutManagement* management;
 		bool pending_update;
 
-		bool als_dirty;
+		void* element_data_listener;
+
 		std::vector<std::tuple<cElement*, cAligner*, cText*, void*, void*, void*>> als;
+		bool als_dirty;
 
 		cLayoutPrivate(LayoutType _type);
 		~cLayoutPrivate();

@@ -112,7 +112,7 @@ namespace flame
 
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto scl = text->sdf_scale * element->global_scale;
+						auto scl = text->sdf_scale_ * element->global_scale;
 
 						auto lh = text->font_atlas->pixel_height * scl;
 						auto y = element->global_pos.y();
@@ -169,22 +169,22 @@ namespace flame
 		auto e_edit = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->size.x() = width + 8.f;
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element->size_.x() = width + 8.f;
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_element->color = default_style.frame_color_normal;
 			c_element->frame_color = default_style.text_color_normal;
 			c_element->frame_thickness = 2.f;
 			e_edit->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale = sdf_scale;
-			c_text->auto_width = false;
+			c_text->sdf_scale_ = sdf_scale;
+			c_text->auto_width_ = false;
 			e_edit->add_component(c_text);
 
 			if (width == 0.f)
 			{
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
 				e_edit->add_component(c_aligner);
 			}
 

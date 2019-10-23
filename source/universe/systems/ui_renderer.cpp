@@ -18,35 +18,7 @@ namespace flame
 		{
 		}
 
-		void draw_element_and_its_children(cElementPrivate* c_e)
-		{
-			auto e = (EntityPrivate*)c_e->entity;
-
-			const auto& scissor = canvas->scissor();
-			auto rect = Vec4f(c_e->global_pos, c_e->global_pos + c_e->global_size);
-			c_e->cliped = !rect_overlapping(scissor, rect);
-			if (!c_e->cliped)
-			{
-				c_e->cliped_rect = Vec4f(max(rect.x(), scissor.x()), max(rect.y(), scissor.y()), min(rect.z(), scissor.z()), min(rect.w(), scissor.w()));
-
-				c_e->draw(canvas);
-
-				auto c_t = (cTextPrivate*)e->get_component(Text);
-				if (c_t)
-					c_t->draw(canvas);
-
-				auto c_i = (cImagePrivate*)e->get_component(Image);
-				if (c_i)
-					c_i->draw(canvas);
-			}
-			else
-				c_e->cliped_rect = Vec4f(-1.f);
-
-			for (auto& c : e->children)
-				do_render(c.get());
-		}
-
-		void do_render(Entity* e)
+		void do_render(EntityPrivate* e)
 		{
 			if (!e->global_visibility_)
 				return;
@@ -55,22 +27,46 @@ namespace flame
 			if (!element)
 				return;
 
+			const auto& scissor = canvas->scissor();
+			auto rect = Vec4f(element->global_pos, element->global_pos + element->global_size);
+			element->cliped = !rect_overlapping(scissor, rect);
+			if (!element->cliped)
+			{
+				element->cliped_rect = Vec4f(max(rect.x(), scissor.x()), max(rect.y(), scissor.y()), min(rect.z(), scissor.z()), min(rect.w(), scissor.w()));
+
+				element->draw(canvas);
+
+				auto text = (cTextPrivate*)e->get_component(Text);
+				if (text)
+					text->draw(canvas);
+
+				auto image = (cImagePrivate*)e->get_component(Image);
+				if (image)
+					image->draw(canvas);
+			}
+			else
+				element->cliped_rect = Vec4f(-1.f);
+
 			if (element->clip_children)
 			{
 				auto last_scissor = canvas->scissor();
 				auto scissor = Vec4f(element->global_pos, element->global_pos + element->global_size);
-				scissor += Vec4f(element->inner_padding[0], element->inner_padding[1], -element->inner_padding_horizontal(), -element->inner_padding_vertical()) * element->global_scale;
+				scissor += Vec4f(element->inner_padding_[0], element->inner_padding_[1], -element->inner_padding_[2], -element->inner_padding_[3]) * element->global_scale;
 				canvas->set_scissor(scissor);
-				draw_element_and_its_children(element);
+				for (auto& c : e->children)
+					do_render(c.get());
 				canvas->set_scissor(last_scissor);
 			}
 			else
-				draw_element_and_its_children(element);
+			{
+				for (auto& c : e->children)
+					do_render(c.get());
+			}
 		}
 
 		void update(Entity* root) override
 		{
-			do_render(root);
+			do_render((EntityPrivate*)root);
 		}
 	};
 

@@ -51,7 +51,7 @@ struct App
 
 		if (sc)
 		{
-			c_element_root->size = w->size;
+			c_element_root->set_size(Vec2f(w->size));
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			u->update();
 		}
@@ -118,12 +118,14 @@ int main(int argc, char** args)
 	{
 		e_fps->add_component(cElement::create());
 
-		app.c_text_fps = cText::create(app.font_atlas_pixel);
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->auto_width_ = false;
+		app.c_text_fps = c_text;
 		e_fps->add_component(app.c_text_fps);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxLeft;
-		c_aligner->y_align = AlignyBottom;
+		c_aligner->x_align_ = AlignxLeft;
+		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
 	}
 
@@ -131,8 +133,8 @@ int main(int argc, char** args)
 	root->add_child(e_layout);
 	{
 		auto c_element = cElement::create();
-		c_element->pos.x() = 16.f;
-		c_element->pos.y() = 28.f;
+		c_element->pos_.x() = 16.f;
+		c_element->pos_.y() = 28.f;
 		e_layout->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -144,7 +146,7 @@ int main(int argc, char** args)
 	e_layout->add_child(e_scene);
 	{
 		auto c_element = cElement::create();
-		c_element->size = 500.f;
+		c_element->size_ = 500.f;
 		c_element->frame_thickness = 2.f;
 		e_scene->add_component(c_element);
 	}
@@ -175,8 +177,8 @@ int main(int argc, char** args)
 					e_scene->add_child(e_box1);
 					{
 						auto c_element = cElement::create();
-						c_element->pos = 50.f;
-						c_element->size = 400.f;
+						c_element->pos_ = 50.f;
+						c_element->size_ = 400.f;
 						c_element->color = Vec4c(255, 0, 0, 255);
 						e_box1->add_component(c_element);
 					}
@@ -185,8 +187,8 @@ int main(int argc, char** args)
 					e_box1->add_child(e_box2);
 					{
 						auto c_element = cElement::create();
-						c_element->pos = 50.f;
-						c_element->size = 300.f;
+						c_element->pos_ = 50.f;
+						c_element->size_ = 300.f;
 						c_element->color = Vec4c(255, 255, 0, 255);
 						e_box2->add_component(c_element);
 					}
@@ -195,8 +197,8 @@ int main(int argc, char** args)
 					e_box2->add_child(e_text);
 					{
 						auto c_element = cElement::create();
-						c_element->pos.x() = 12.f;
-						c_element->pos.y() = 8.f;
+						c_element->pos_.x() = 12.f;
+						c_element->pos_.y() = 8.f;
 						e_text->add_component(c_element);
 
 						auto c_text = cText::create(app.font_atlas_pixel);

@@ -17,9 +17,9 @@ namespace flame
 
 		graphics::FontAtlas* font_atlas;
 		Vec4c color;
-		float sdf_scale;
-		bool auto_width;
-		bool auto_height;
+		float sdf_scale_;
+		bool auto_width_;
+		bool auto_height_;
 
 		cText() :
 			Component("Text")
@@ -27,9 +27,12 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS const std::wstring& text() const;
-		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text);
-		FLAME_UNIVERSE_EXPORTS void insert_char(wchar_t ch, uint pos);
-		FLAME_UNIVERSE_EXPORTS void erase_char(uint pos);
+		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void insert_char(wchar_t ch, uint pos, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void erase_char(uint pos, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_sdf_scale(float s, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_auto_width(bool v, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_auto_height(bool v, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
 	};

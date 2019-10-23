@@ -332,8 +332,8 @@ namespace flame
 			if (size_fit_parent)
 			{
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 				e_tree->add_component(c_aligner);
 			}
 
@@ -366,7 +366,7 @@ namespace flame
 		e_tree_node->add_child(e_title);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f + font_atlas->pixel_height, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(4.f + font_atlas->pixel_height, 2.f, 4.f, 2.f);
 			e_title->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
@@ -385,7 +385,7 @@ namespace flame
 			e_title->add_child(e_arrow);
 			{
 				auto c_element = cElement::create();
-				c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
+				c_element->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
 				e_arrow->add_component(c_element);
 
 				auto c_text = cText::create(font_atlas);
@@ -404,7 +404,7 @@ namespace flame
 		e_tree_node->add_child(e_sub_tree);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(font_atlas->pixel_height * 0.5f, 0.f, 0.f, 0.f);
+			c_element->inner_padding_ = Vec4f(font_atlas->pixel_height * 0.5f, 0.f, 0.f, 0.f);
 			e_sub_tree->add_component(c_element);
 
 			auto c_layout = cLayout::create(LayoutVertical);
@@ -420,7 +420,7 @@ namespace flame
 		auto e_tree_leaf = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f + font_atlas->pixel_height, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(4.f + font_atlas->pixel_height, 2.f, 4.f, 2.f);
 			e_tree_leaf->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);

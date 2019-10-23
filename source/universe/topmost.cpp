@@ -29,7 +29,7 @@ namespace flame
 			assert(e_c_element);
 
 			auto c_element = cElement::create();
-			c_element->size = e_c_element->size;
+			c_element->size_ = e_c_element->size_;
 			c_element->color = col;
 			t->add_component(c_element);
 
@@ -48,8 +48,8 @@ namespace flame
 			if (size_fit_parent)
 			{
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 				t->add_component(c_aligner);
 			}
 		}

@@ -84,35 +84,35 @@ namespace flame
 			auto target_element = target_layout->element;
 			if (type == ScrollbarVertical)
 			{
-				if (target_element->size.y() > 0.f)
+				if (target_element->size_.y() > 0.f)
 				{
 					content_size = target_layout->content_size.y() + 20.f;
-					if (content_size > target_element->size.y())
-						element->size.y() = target_element->size.y() / content_size * scrollbar->element->size.y();
+					if (content_size > target_element->size_.y())
+						element->set_height(target_element->size_.y() / content_size * scrollbar->element->size_.y());
 					else
-						element->size.y() = 0.f;
+						element->set_height(0.f);
 				}
 				else
-					element->size.y() = 0.f;
-				element->pos.y() += v;
-				element->pos.y() = element->size.y() > 0.f ? clamp(element->pos.y(), 0.f, scrollbar->element->size.y() - element->size.y()) : 0.f;
-				target_layout->scroll_offset.y() = -int(element->pos.y() / scrollbar->element->size.y() * content_size / step) * step;
+					element->set_height(0.f);
+				v += element->size_.y();
+				element->set_y(element->size_.y() > 0.f ? clamp(v, 0.f, scrollbar->element->size_.y() - element->size_.y()) : 0.f);
+				target_layout->set_y_scroll_offset(-int(element->pos_.y() / scrollbar->element->size_.y() * content_size / step) * step);
 			}
 			else
 			{
-				if (target_element->size.x() > 0.f)
+				if (target_element->size_.x() > 0.f)
 				{
 					content_size = target_layout->content_size.x() + 20.f;
-					if (content_size > target_element->size.x())
-						element->size.x() = target_element->size.x() / content_size * scrollbar->element->size.x();
+					if (content_size > target_element->size_.x())
+						element->set_width(target_element->size_.x() / content_size * scrollbar->element->size_.x());
 					else
-						element->size.x() = 0.f;
+						element->set_width(0.f);
 				}
 				else
-					element->size.x() = 0.f;
-				element->pos.x() += v;
-				element->pos.x() = element->size.x() > 0.f ? clamp(element->pos.x(), 0.f, scrollbar->element->size.x() - element->size.x()) : 0.f;
-				target_layout->scroll_offset.x() = -int(element->pos.x() / scrollbar->element->size.x() * content_size / step) * step;
+					element->set_width(0.f);
+				v += element->size_.x();
+				element->set_x(element->size_.x() > 0.f ? clamp(v, 0.f, scrollbar->element->size_.x() - element->size_.x()) : 0.f);
+				target_layout->set_x_scroll_offset(-int(element->pos_.x() / scrollbar->element->size_.x() * content_size / step) * step);
 			}
 			v = 0.f;
 		}
@@ -134,8 +134,8 @@ namespace flame
 			if (container_fit_parent)
 			{
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeFitParent;
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 				e_container->add_component(c_aligner);
 			}
 
@@ -154,17 +154,17 @@ namespace flame
 		{
 			auto c_element = cElement::create();
 			if (type == ScrollbarVertical)
-				c_element->size.x() = 10.f;
+				c_element->size_.x() = 10.f;
 			else
-				c_element->size.y() = 10.f;
+				c_element->size_.y() = 10.f;
 			c_element->color = default_style.scrollbar_color;
 			e_scrollbar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
 			if (type == ScrollbarVertical)
-				c_aligner->height_policy = SizeFitParent;
+				c_aligner->height_policy_ = SizeFitParent;
 			else
-				c_aligner->width_policy = SizeFitParent;
+				c_aligner->width_policy_ = SizeFitParent;
 			e_scrollbar->add_component(c_aligner);
 
 			e_scrollbar->add_component(cEventReceiver::create());
@@ -176,7 +176,7 @@ namespace flame
 		e_scrollbar->add_child(e_scrollbar_thumb);
 		{
 			auto c_element = cElement::create();
-			c_element->size = 10.f;
+			c_element->size_ = 10.f;
 			e_scrollbar_thumb->add_component(c_element);
 
 			e_scrollbar_thumb->add_component(cEventReceiver::create());
@@ -202,8 +202,8 @@ namespace flame
 			e_overlayer->add_component(c_event_receiver);
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitParent;
-			c_aligner->height_policy = SizeFitParent;
+			c_aligner->width_policy_ = SizeFitParent;
+			c_aligner->height_policy_ = SizeFitParent;
 			e_overlayer->add_component(c_aligner);
 		}
 

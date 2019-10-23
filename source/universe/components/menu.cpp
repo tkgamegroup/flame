@@ -59,12 +59,12 @@ namespace flame
 				switch (popup_side)
 				{
 				case SideS:
-					menu_element->pos.x() = element->global_pos.x();
-					menu_element->pos.y() = element->global_pos.y() + element->global_size.y();
+					menu_element->set_x(element->global_pos.x());
+					menu_element->set_y(element->global_pos.y() + element->global_size.y());
 					break;
 				case SideE:
-					menu_element->pos.x() = element->global_pos.x() + element->global_size.x();
-					menu_element->pos.y() = element->global_pos.y();
+					menu_element->set_x(element->global_pos.x() + element->global_size.x());
+					menu_element->set_y(element->global_pos.y());
 					break;
 				}
 				menu_element->scale = element->global_scale;
@@ -158,7 +158,7 @@ namespace flame
 		if (!topmost)
 			topmost = create_topmost(root, false, true, false);
 
-		menu->get_component(Element)->pos = pos;
+		menu->get_component(Element)->set_pos(pos);
 
 		topmost->add_child(menu);
 	}
@@ -184,11 +184,11 @@ namespace flame
 		auto e_item = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			e_item->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale = sdf_scale;
+			c_text->sdf_scale_ = sdf_scale;
 			c_text->set_text(text);
 			e_item->add_component(c_text);
 
@@ -197,7 +197,7 @@ namespace flame
 			e_item->add_component(cStyleColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
+			c_aligner->width_policy_ = SizeGreedy;
 			e_item->add_component(c_aligner);
 		}
 
@@ -209,11 +209,11 @@ namespace flame
 		auto e_menu_btn = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f + (arrow_text ? font_atlas->pixel_height * sdf_scale : 0.f), 2.f);
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f + (arrow_text ? font_atlas->pixel_height * sdf_scale : 0.f), 2.f);
 			e_menu_btn->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale = sdf_scale;
+			c_text->sdf_scale_ = sdf_scale;
 			if (text[0])
 				c_text->set_text(text);
 			e_menu_btn->add_component(c_text);
@@ -233,7 +233,7 @@ namespace flame
 			if (width_greedy)
 			{
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
+				c_aligner->width_policy_ = SizeGreedy;
 				e_menu_btn->add_component(c_aligner);
 			}
 
@@ -245,16 +245,16 @@ namespace flame
 				e_menu_btn->add_child(e_arrow);
 				{
 					auto c_element = cElement::create();
-					c_element->inner_padding = Vec4f(0.f, 2.f, 4.f, 2.f);
+					c_element->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
 					e_arrow->add_component(c_element);
 
 					auto c_text = cText::create(font_atlas);
-					c_text->sdf_scale = sdf_scale;
+					c_text->sdf_scale_ = sdf_scale;
 					c_text->set_text(arrow_text);
 					e_arrow->add_component(c_text);
 
 					auto c_aligner = cAligner::create();
-					c_aligner->x_align = AlignxRight;
+					c_aligner->x_align_ = AlignxRight;
 					e_arrow->add_component(c_aligner);
 				}
 			}
@@ -272,7 +272,7 @@ namespace flame
 			e_menubar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeFitParent;
+			c_aligner->width_policy_ = SizeFitParent;
 			e_menubar->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutHorizontal);

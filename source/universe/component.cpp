@@ -15,10 +15,10 @@ namespace flame
 		delete (ListenerHub*)data_changed_listeners.hub;
 	}
 
-	void Component::data_changed(uint hash)
+	void Component::data_changed(uint hash, void* sender)
 	{
 		auto& listeners = ((ListenerHub*)data_changed_listeners.hub)->listeners;
 		for (auto& l : listeners)
-			((void(*)(void*, uint hash))l->function)(l->capture.p, hash);
+			((void(*)(void*, uint hash, void* sender))l->function)(l->capture.p, hash, sender);
 	}
 }

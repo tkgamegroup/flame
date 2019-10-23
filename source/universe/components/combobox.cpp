@@ -177,12 +177,12 @@ namespace flame
 		auto e_combobox = create_standard_menu_button(font_atlas, sdf_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
 		{
 			auto c_element = e_combobox->get_component(Element);
-			c_element->size.x() = width + 8.f;
-			c_element->size.y() = font_atlas->pixel_height * sdf_scale + 4.f;
+			c_element->size_.x() = width + 8.f;
+			c_element->size_.y() = font_atlas->pixel_height * sdf_scale + 4.f;
 			c_element->frame_color = default_style.text_color_normal;
 			c_element->frame_thickness = 2.f;
 
-			e_combobox->get_component(Text)->auto_width = false;
+			e_combobox->get_component(Text)->auto_width_ = false;
 			
 			e_combobox->add_component(cCombobox::create());
 		}
