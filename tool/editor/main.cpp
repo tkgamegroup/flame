@@ -8,6 +8,9 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
+#include <flame/universe/world.h>
+#include <flame/universe/systems/layout_management.h>
+#include <flame/universe/systems/ui_renderer.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -63,14 +66,19 @@ void App::create()
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();
 
-	universe_serialization_set_data("font_atlas1", font_atlas_pixel);
+	app.u = Universe::create();
+	app.u->bank_save("font_atlas1", app.font_atlas_pixel);
 
-	root = Entity::create();
+	auto w = World::create();
+	w->add_system(sLayoutManagement::create());
+	w->add_system(sUIRenderer::create(app.canvas));
+	w->add_system(sEventDispatcher::create(app.w));
+	app.u->add_world(w);
+
+	root = w->root();
 	{
-		c_element_root = cElement::create(canvas);
+		c_element_root = cElement::create();
 		root->add_component(c_element_root);
-
-		root->add_component(cEventDispatcher::create(w));
 
 		root->add_component(cLayout::create(LayoutFree));
 	}
@@ -85,8 +93,8 @@ void App::create()
 		e_fps->add_component(c_text);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxLeft;
-		c_aligner->y_align = AlignyBottom;
+		c_aligner->x_align_ = AlignxLeft;
+		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
 	}
 
@@ -109,9 +117,9 @@ void App::run()
 
 	if (sc)
 	{
-		c_element_root->size = w->size;
+		c_element_root->set_size(Vec2f(w->size));
 		c_text_fps->set_text(std::to_wstring(looper().fps));
-		root->update();
+		u->update();
 	}
 	bp->update();
 
@@ -143,19 +151,19 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 
 	auto e_edit = create_standard_edit(50.f, font_atlas, sdf_scale);
 	e_layout->add_child(e_edit);
-	e_edit->set_visible(false);
+	e_edit->set_visibility(false);
 
 	auto e_drag = Entity::create();
 	e_layout->add_child(e_drag);
 	{
 		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-		c_element->size.x() = 58.f;
+		c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+		c_element->size_.x() = 58.f;
 		e_drag->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);
-		c_text->sdf_scale = sdf_scale;
-		c_text->auto_width = false;
+		c_text->sdf_scale_ = sdf_scale;
+		c_text->auto_width_ = false;
 		e_drag->add_component(c_text);
 
 		e_drag->add_component(cEventReceiver::create());
@@ -174,19 +182,19 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		bool is_float;
 	}capture;
 	capture.e = e_edit;
-	capture.e_t = (cText*)e_edit->find_component(cH("Text"));
-	capture.e_e = (cEdit*)e_edit->find_component(cH("Edit"));
-	capture.e_er = (cEventReceiver*)e_edit->find_component(cH("EventReceiver"));
+	capture.e_t = e_edit->get_component(Text);
+	capture.e_e = e_edit->get_component(Edit);
+	capture.e_er = e_edit->get_component(EventReceiver);
 	capture.d = e_drag;
-	capture.d_er = (cEventReceiver*)e_drag->find_component(cH("EventReceiver"));
+	capture.d_er = e_drag->get_component(EventReceiver);
 	capture.is_float = is_float;
 
 	capture.e_er->focus_listeners.add([](void* c, FocusType type) {
 		auto& capture = *(Capture*)c;
 		if (type == Focus_Lost)
 		{
-			capture.e->set_visible(false);
-			capture.d->set_visible(true);
+			capture.e->set_visibility(false);
+			capture.d->set_visibility(true);
 		}
 	}, new_mail(&capture));
 
@@ -194,9 +202,9 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		auto& capture = *(Capture*)c;
 		if (is_mouse_clicked(action, key) && pos == 0)
 		{
-			capture.e->set_visible(true);
-			capture.d->set_visible(false);
-			auto dp = capture.d_er->event_dispatcher;
+			capture.e->set_visibility(true);
+			capture.d->set_visibility(false);
+			auto dp = capture.d_er->dispatcher;
 			dp->next_focusing = capture.e_er;
 			dp->pending_update = true;
 		}
@@ -214,7 +222,6 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 				v += pos.x();
 				capture.e_t->set_text(std::to_wstring(v));
 			}
-			capture.e_e->trigger_changed();
 		}
 	}, new_mail(&capture));
 
@@ -253,8 +260,8 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 		e_dialog->add_component(cElement::create());
 
 		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxMiddle;
-		c_aligner->y_align = AlignyMiddle;
+		c_aligner->x_align_ = AlignxMiddle;
+		c_aligner->y_align_ = AlignyMiddle;
 		e_dialog->add_component(c_aligner);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -295,7 +302,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	auto e_yes = create_standard_button(app.font_atlas_pixel, 1.f, L"Yes");
 	e_buttons->add_child(e_yes);
 	{
-		((cEventReceiver*)e_yes->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_yes->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -311,7 +318,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	auto e_no = create_standard_button(app.font_atlas_pixel, 1.f, L"No");
 	e_buttons->add_child(e_no);
 	{
-		((cEventReceiver*)e_no->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_no->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -342,8 +349,8 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 		e_dialog->add_component(cElement::create());
 
 		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxMiddle;
-		c_aligner->y_align = AlignyMiddle;
+		c_aligner->x_align_ = AlignxMiddle;
+		c_aligner->y_align_ = AlignyMiddle;
 		e_dialog->add_component(c_aligner);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -374,12 +381,12 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 	capture.e = e;
 	capture.c = callback;
 	capture.m = _capture;
-	capture.t = (cText*)e_input->find_component(cH("Text"));
+	capture.t = e_input->get_component(Text);
 
 	auto e_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
 	e_buttons->add_child(e_ok);
 	{
-		((cEventReceiver*)e_ok->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_ok->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))
@@ -396,7 +403,7 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 	auto e_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
 	e_buttons->add_child(e_cancel);
 	{
-		((cEventReceiver*)e_cancel->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_cancel->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (is_mouse_clicked(action, key))

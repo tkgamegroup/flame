@@ -19,6 +19,6 @@ namespace flame
 	{
 		auto& listeners = ((ListenerHub*)data_changed_listeners.hub)->listeners;
 		for (auto& l : listeners)
-			((void(*)(void*, uint hash, void* sender))l->function)(l->capture.p, hash, sender);
+			((void(*)(void*, Component* thiz, uint hash, void* sender))l->function)(l->capture.p, this, hash, sender);
 	}
 }

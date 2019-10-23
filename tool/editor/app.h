@@ -19,6 +19,7 @@ namespace flame
 		struct Canvas;
 	}
 
+	struct Universe;
 	struct Entity;
 	struct cElement;
 	struct cText;
@@ -43,6 +44,7 @@ struct App
 	FontAtlas* font_atlas_pixel;
 	FontAtlas* font_atlas_sdf;
 
+	Universe* u;
 	Entity* root;
 	cElement* c_element_root;
 	cText* c_text_fps;

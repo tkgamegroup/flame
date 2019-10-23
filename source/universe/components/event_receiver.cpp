@@ -79,18 +79,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_left_world()
 	{
-		if (focusing)
-		{
-			focusing = false;
-			active = false;
-			dragging = false;
-			dispatcher->focusing = nullptr;
-		}
-		if (hovering)
-		{
-			hovering = false;
-			dispatcher->hovering = nullptr;
-		}
+		dispatcher->receiver_leave_world(this);
 		dispatcher->pending_update = true;
 		dispatcher = nullptr;
 	}

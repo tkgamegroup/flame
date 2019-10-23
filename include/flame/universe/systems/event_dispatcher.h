@@ -28,6 +28,8 @@ namespace flame
 		{
 		}
 
+		FLAME_UNIVERSE_EXPORTS void receiver_leave_world(cEventReceiver* er);
+
 		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* create(Window* window);
 	};
 }

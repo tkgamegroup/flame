@@ -148,7 +148,6 @@ int main(int argc, char** args)
 		e_fps->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->auto_width_ = false;
 		app.c_text_fps = c_text;
 		e_fps->add_component(app.c_text_fps);
 

@@ -1211,7 +1211,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id = 0);
+		FLAME_FOUNDATION_EXPORTS void add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id = 0, bool only = false);
 		FLAME_FOUNDATION_EXPORTS void clear_delay_events(int id = 0); /* id=-1 means all */
 		FLAME_FOUNDATION_EXPORTS void process_delay_events();
 	};

@@ -842,10 +842,6 @@ namespace flame
 		KeyEventUp
 	};
 
-	struct WindowPrivate;
-
-	static std::vector<std::unique_ptr<Closure<void(void* c)>>> delay_events;
-
 	struct WindowPrivate : Window
 	{
 		std::string title;
@@ -1453,13 +1449,23 @@ namespace flame
 		}
 	}
 
-	void Looper::add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id)
+	static std::vector<std::unique_ptr<Closure<void(void* c)>>> delay_events;
+
+	void Looper::add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id, bool only)
 	{
+		if (only)
+		{
+			for (auto& e : delay_events)
+			{
+				if (id == e->id)
+					return;
+			}
+		}
 		auto c = new Closure<void(void* c)>;
 		c->function = event;
 		c->capture = capture;
 		c->id = id;
-		delay_events.emplace_back(c);
+		delay_events.emplace_back(c, only);
 	}
 
 	void Looper::clear_delay_events(int id)

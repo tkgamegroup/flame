@@ -151,6 +151,28 @@ namespace flame
 			}
 		}
 
+		void clear_focus()
+		{
+			focusing->hovering = false;
+			focusing->focusing = false;
+			focusing->active = false;
+			focusing->dragging = false;
+			focusing = nullptr;
+		}
+
+		void receiver_leave_world(cEventReceiver* er)
+		{
+			if (er == focusing)
+				clear_focus();
+			if (er == hovering)
+			{
+				er->hovering = false;
+				hovering = false;
+			}
+			if (er == drag_overing)
+				drag_overing = nullptr;
+		}
+
 		void update(Entity* root) override
 		{
 			if (!pending_update)
@@ -183,13 +205,7 @@ namespace flame
 			if (focusing)
 			{
 				if (!focusing->entity->global_visibility_)
-				{
-					focusing->hovering = false;
-					focusing->focusing = false;
-					focusing->active = false;
-					focusing->dragging = false;
-					focusing = nullptr;
-				}
+					clear_focus();
 				else if (focusing->active && ((KeyState)mouse_buttons[Mouse_Left] & KeyStateUp))
 				{
 					focusing->active = false;
@@ -307,12 +323,12 @@ namespace flame
 					((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
 				((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
 			}
-			//if (!prev_drag_overing && drag_overing)
-			//	((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOveringEnter, focusing, mouse_pos);
+			if (!prev_drag_overing && drag_overing)
+				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOveringEnter, focusing, mouse_pos);
 			if (drag_overing)
 				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOvering, focusing, mouse_pos);
-			//if (prev_drag_overing && !drag_overing)
-			//	((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(DragOveringLeave, focusing, mouse_pos);
+			if (prev_drag_overing && !drag_overing)
+				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(DragOveringLeave, focusing, mouse_pos);
 
 			keydown_inputs.clear();
 			keyup_inputs.clear();
@@ -326,6 +342,11 @@ namespace flame
 				mouse_buttons[i] &= ~KeyStateJust;
 		}
 	};
+
+	void sEventDispatcher::receiver_leave_world(cEventReceiver* er)
+	{
+		((sEventDispatcherPrivate*)this)->receiver_leave_world(er);
+	}
 
 	sEventDispatcher* sEventDispatcher::create(Window* window)
 	{

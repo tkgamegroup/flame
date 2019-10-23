@@ -7,13 +7,13 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
@@ -221,7 +221,7 @@ struct cBPEditor : Component
 
 	bool running;
 
-	std::vector<std::pair<cElement*, uint>> tips;
+	std::vector<std::pair<cElement*, uint>> notification;
 
 	cBPEditor() :
 		Component("BPEditor")
@@ -250,7 +250,7 @@ struct cBPEditor : Component
 		add_node_menu_filter->text->set_text(L"");
 
 		for (auto i = 1; i < e_add_node_menu->child_count(); i++)
-			e_add_node_menu->child(i)->set_visible(true);
+			e_add_node_menu->child(i)->set_visibility(true);
 	}
 
 	void refresh_add_node_menu()
@@ -294,16 +294,17 @@ struct cBPEditor : Component
 			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH);
 			e_add_node_menu->add_child(item);
 
-			((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+			e_edit->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 				auto menu = *(Entity**)c;
+				auto& str = ((cText*)t)->text();
 				for (auto i = 1; i < menu->child_count(); i++)
 				{
 					auto item = menu->child(i);
-					item->set_visible(text[0] ? (((cText*)item->find_component(cH("Text")))->text().find(text) != std::string::npos) : true);
+					item->set_visibility(str[0] ? (item->get_component(Text)->text().find(str) != std::string::npos) : true);
 				}
 			}, new_mail_p(e_add_node_menu));
 
-			add_node_menu_filter = (cEdit*)e_edit->find_component(cH("Edit"));
+			add_node_menu_filter = e_edit->get_component(Edit);
 		}
 		for (auto udt : all_udts)
 		{
@@ -316,7 +317,7 @@ struct cBPEditor : Component
 			}capture;
 			capture.e = this;
 			capture.u = udt;
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 
 				if (is_mouse_clicked(action, key))
@@ -332,7 +333,7 @@ struct cBPEditor : Component
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"template..");
 			e_add_node_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 
 				if (is_mouse_clicked(action, key))
@@ -351,7 +352,7 @@ struct cBPEditor : Component
 						else
 						{
 							if (editor->running)
-								editor->add_tip(L"Cannot Add New Template Node While Running");
+								editor->add_notification(L"Cannot Add New Template Node While Running");
 							else
 							{
 								struct Capture
@@ -445,7 +446,7 @@ struct cBPEditor : Component
 
 	void set_add_pos_center()
 	{
-		add_pos = ((cElement*)e_base->parent()->find_component(cH("Element")))->size * 0.5f - ((cElement*)e_base->find_component(cH("Element")))->pos;
+		add_pos = e_base->parent()->get_component(Element)->size_ * 0.5f - e_base->get_component(Element)->pos_;
 	}
 
 	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
@@ -542,11 +543,11 @@ struct cBPEditor : Component
 		{
 		case SelModule:
 			if (selected.m->filename() == L"bp.dll")
-				add_tip(L"Cannot Remove Self Module");
+				add_notification(L"Cannot Remove Self Module");
 			else if (selected.m->filename() == L"flame_foundation.dll")
-				add_tip(L"Cannot Remove 'foundation' Module");
+				add_notification(L"Cannot Remove 'foundation' Module");
 			else if (selected.m->filename() == L"editor.exe")
-				add_tip(L"Cannot Remove 'this' Module");
+				add_notification(L"Cannot Remove 'this' Module");
 			else
 			{
 				std::wstring str;
@@ -688,7 +689,7 @@ struct cBPEditor : Component
 			if (n)
 			{
 				n->pos = Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f;
-				((cElement*)((Entity*)n->user_data)->find_component(cH("Element")))->pos = n->pos;
+				((Entity*)n->user_data)->get_component(Element)->set_pos(n->pos);
 			}
 
 			str = match.suffix();
@@ -697,22 +698,22 @@ struct cBPEditor : Component
 		return true;
 	}
 
-	void add_tip(const std::wstring& text)
+	void add_notification(const std::wstring& text)
 	{
-		auto e_tip = Entity::create();
-		entity->add_child(e_tip);
+		auto e_notification = Entity::create();
+		entity->add_child(e_notification);
 		{
 			auto c_element = cElement::create();
-			c_element->pos.y() = tips.size() * (app.font_atlas_sdf->pixel_height + 20.f);
+			c_element->pos.y() = notification.size() * (app.font_atlas_sdf->pixel_height + 20.f);
 			c_element->inner_padding = Vec4f(8.f);
 			c_element->color = Vec4c(0, 0, 0, 255);
-			e_tip->add_component(c_element);
-			tips.emplace_back(c_element, 180);
+			e_notification->add_component(c_element);
+			notification.emplace_back(c_element, 180);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
 			c_text->color = Vec4c(255);
 			c_text->set_text(text);
-			e_tip->add_component(c_text);
+			e_notification->add_component(c_text);
 		}
 	}
 
@@ -721,15 +722,15 @@ struct cBPEditor : Component
 		if (running)
 			bp->update();
 
-		for (auto it = tips.begin(); it != tips.end(); )
+		for (auto it = notification.begin(); it != notification.end(); )
 		{
 			it->second--;
 			if (it->second == 0)
 			{
-				for (auto _it = it + 1; _it != tips.end(); _it++)
+				for (auto _it = it + 1; _it != notification.end(); _it++)
 					_it->first->pos.y() = it->first->pos.y();
 				entity->remove_child(it->first->entity);
-				it = tips.erase(it);
+				it = notification.erase(it);
 			}
 			else
 			{
@@ -2054,7 +2055,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 					if (editor->running)
-						editor->add_tip(L"Cannot Reload While Running");
+						editor->add_notification(L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, false);
 				}
@@ -2071,7 +2072,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						editor->add_tip(L"Cannot Reload While Running");
+						editor->add_notification(L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, true);
 				}
@@ -2092,7 +2093,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						editor->add_tip(L"Cannot Add Module While Running");
+						editor->add_notification(L"Cannot Add Module While Running");
 					else
 					{
 						popup_input_dialog(editor->entity, L"module", [](void* c, bool ok, const std::wstring& text) {
@@ -2103,7 +2104,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							{
 								auto m = bp->add_module(text);
 								if (!m)
-									editor->add_tip(L"Add Module Failed");
+									editor->add_notification(L"Add Module Failed");
 								else
 								{
 									m->pos = editor->add_pos;
@@ -2126,7 +2127,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						editor->add_tip(L"Cannot Add Package While Running");
+						editor->add_notification(L"Cannot Add Package While Running");
 					else
 					{
 						popup_input_dialog(editor->entity, L"bp", [](void* c, bool ok, const std::wstring& text) {
@@ -2137,7 +2138,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							{
 								auto p = bp->add_package(text, "");
 								if (!p)
-									editor->add_tip(L"Add Package Failed");
+									editor->add_notification(L"Add Package Failed");
 								else
 								{
 									p->pos = editor->add_pos;
