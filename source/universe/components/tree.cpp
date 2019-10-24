@@ -256,16 +256,12 @@ namespace flame
 			event_receiver = nullptr;
 
 			selected = nullptr;
-
-			selected_changed_listeners.hub = new ListenerHub;
 		}
 
 		~cTreePrivate()
 		{
 			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
-
-			delete (ListenerHub*)selected_changed_listeners.hub;
 		}
 
 		void on_component_added(Component* c) override
@@ -309,11 +305,7 @@ namespace flame
 		}
 		selected = e;
 		if (trigger_changed)
-		{
-			auto& listeners = ((ListenerHub*)selected_changed_listeners.hub)->listeners;
-			for (auto& l : listeners)
-				((void(*)(void*, Entity*))l->function)(l->capture.p, selected);
-		}
+			data_changed(cH("selected"), nullptr);
 	}
 
 	cTree* cTree::create()
@@ -376,6 +368,8 @@ namespace flame
 			e_title->add_component(cEventReceiver::create());
 
 			e_title->add_component(cStyleColor::create());
+
+			e_title->add_component(cLayout::create(LayoutFree));
 
 			auto c_title = cTreeNodeTitle::create();
 			c_title->unselected_color_normal = Vec4c(0);

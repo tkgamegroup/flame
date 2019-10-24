@@ -44,14 +44,12 @@ namespace flame
 		cText* text;
 		cMenuButton* menu_button;
 
-		Entity* selected;
+		int idx;
 
 		cCombobox() :
 			Component("Combobox")
 		{
 		}
-
-		Listeners<void(void* c, int idx)> changed_listeners;
 
 		FLAME_UNIVERSE_EXPORTS void set_index(int idx, bool trigger_changed = true);
 

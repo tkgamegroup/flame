@@ -98,21 +98,7 @@ namespace flame
 			text = nullptr;
 			menu_button = nullptr;
 
-			selected = nullptr;
-
-			changed_listeners.hub = new ListenerHub;
-		}
-
-		~cComboboxPrivate()
-		{
-			delete (ListenerHub*)changed_listeners.hub;
-		}
-
-		void on_changed(int idx)
-		{
-			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
-			for (auto& l : listeners)
-				((void(*)(void*, int))l->function)(l->capture.p, idx);
+			idx = -1;
 		}
 
 		void on_component_added(Component* c) override
@@ -129,22 +115,21 @@ namespace flame
 		}
 	};
 
-	void cCombobox::set_index(int idx, bool trigger_changed)
+	void cCombobox::set_index(int _idx, bool trigger_changed)
 	{
-		if (selected)
+		auto menu = menu_button->menu;
+		if (idx != -1)
 		{
-			auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(ComboboxItem);
+			auto comboboxitem = (cComboboxItemPrivate*)menu->child(idx)->get_component(ComboboxItem);
 			if (comboboxitem)
 				comboboxitem->do_style(false);
 		}
+		idx = _idx;
 		if (idx < 0)
-		{
-			selected = nullptr;
 			text->set_text(L"");
-		}
 		else
 		{
-			selected = menu_button->menu->child(idx);
+			auto selected = menu->child(idx);
 			text->set_text(selected->get_component(Text)->text());
 			{
 				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(ComboboxItem);
@@ -153,7 +138,7 @@ namespace flame
 			}
 		}
 		if (trigger_changed)
-			((cComboboxPrivate*)this)->on_changed(idx);
+			data_changed(cH("index"), nullptr);
 	}
 
 	cCombobox* cCombobox::create()

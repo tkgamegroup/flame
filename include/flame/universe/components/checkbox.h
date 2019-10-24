@@ -28,8 +28,6 @@ namespace flame
 		{
 		}
 
-		Listeners<void(void* c, bool checked)> changed_listeners;
-
 		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked, bool trigger_changed = true);
 
 		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();

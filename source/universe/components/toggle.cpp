@@ -26,16 +26,12 @@ namespace flame
 			toggled_color_active = default_style.button_color_active;
 
 			mouse_listener = nullptr;
-
-			changed_listeners.hub = new ListenerHub;
 		}
 
 		~cTogglePrivate()
 		{
 			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
-
-			delete (ListenerHub*)changed_listeners.hub;
 		}
 
 		void do_style()
@@ -85,11 +81,7 @@ namespace flame
 		toggled = _toggled;
 		thiz->do_style();
 		if (trigger_changed)
-		{
-			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
-			for (auto& l : listeners)
-				((void(*)(void*, bool))l->function)(l->capture.p, toggled);
-		}
+			data_changed(cH("toggled"), nullptr);
 	}
 
 	cToggle* cToggle::create()

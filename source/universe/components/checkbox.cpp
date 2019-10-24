@@ -28,16 +28,12 @@ namespace flame
 			checked_color_active = default_style.checked_color_active;
 
 			mouse_listener = nullptr;
-
-			changed_listeners.hub = new ListenerHub;
 		}
 
 		~cCheckboxPrivate()
 		{
 			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
-
-			delete (ListenerHub*)changed_listeners.hub;
 		}
 
 		void on_component_added(Component* c) override
@@ -87,11 +83,7 @@ namespace flame
 		checked = _checked;
 		thiz->do_style();
 		if (trigger_changed)
-		{
-			auto& listeners = ((ListenerHub*)changed_listeners.hub)->listeners;
-			for (auto& l : listeners)
-				((void(*)(void*, bool))l->function)(l->capture.p, checked);
-		}
+			data_changed(cH("checked"), nullptr);
 	}
 
 	cCheckbox* cCheckbox::create()

@@ -132,8 +132,6 @@ namespace flame
 		bool select_air_when_clicked;
 		void* mouse_listener;
 
-		std::vector<std::unique_ptr<Closure<void(void* c, Entity* selected)>>> selected_changed_listeners;
-
 		cListPrivate(bool _select_air_when_clicked)
 		{
 			event_receiver = nullptr;
@@ -180,28 +178,6 @@ namespace flame
 		}
 	};
 
-	void* cList::add_selected_changed_listener(void (*listener)(void* c, Entity* selected), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c, Entity * selected)>;
-		c->function = listener;
-		c->capture = capture;
-		((cListPrivate*)this)->selected_changed_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cList::remove_selected_changed_listener(void* ret_by_add)
-	{
-		auto& listeners = ((cListPrivate*)this)->selected_changed_listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == ret_by_add)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
 	void cList::set_selected(Entity* e, bool trigger_changed)
 	{
 		if (selected == e)
@@ -220,11 +196,7 @@ namespace flame
 		}
 		selected = e;
 		if (trigger_changed)
-		{
-			auto& listeners = ((cListPrivate*)this)->selected_changed_listeners;
-			for (auto& l : listeners)
-				l->function(l->capture.p, selected);
-		}
+			data_changed(cH("selected"), nullptr);
 	}
 
 	cList* cList::create(bool select_air_when_clicked)

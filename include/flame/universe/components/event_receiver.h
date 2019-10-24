@@ -29,11 +29,9 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(const std::vector<uint>& hashes);
 
-		Listeners<void(void* c, FocusType type)> focus_listeners;
 		Listeners<void(void* c, KeyState action, int value)> key_listeners;
 		Listeners<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)> mouse_listeners;
 		Listeners<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)> drag_and_drop_listeners;
-		Listeners<void(void* c, EventReceiverState prev_state, EventReceiverState curr_state)> state_changed_listeners;
 
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
 	};

@@ -27,8 +27,6 @@ namespace flame
 		{
 		}
 
-		Listeners<void(void* c, bool toggled)> changed_listeners;
-
 		FLAME_UNIVERSE_EXPORTS void set_toggled(bool toggled, bool trigger_changed = true);
 
 		FLAME_UNIVERSE_EXPORTS static cToggle* create();

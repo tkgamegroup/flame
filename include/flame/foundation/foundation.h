@@ -183,19 +183,11 @@ namespace flame
 		MouseKey_count
 	};
 
-	enum FocusType
-	{
-		Focus_Gain,
-		Focus_Lost
-	};
-
 	enum DragAndDrop
 	{
 		DragStart,
 		DragEnd,
-		DragOveringEnter,
 		DragOvering,
-		DragOveringLeave,
 		Dropped
 	};
 

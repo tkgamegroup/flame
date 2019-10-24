@@ -417,7 +417,7 @@ namespace flame
 			if (!entity->dying_)
 			{
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
-				list->remove_selected_changed_listener(selected_changed_listener);
+				list->data_changed_listeners.remove(selected_changed_listener);
 			}
 		}
 
@@ -515,17 +515,20 @@ namespace flame
 			else if (c->name_hash == cH("List"))
 			{
 				list = (cList*)c;
-				selected_changed_listener = list->add_selected_changed_listener([](void* c, Entity* selected) {
+				selected_changed_listener = list->data_changed_listeners.add([](void* c, Component* l, uint hash, void*) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
-					auto tabbar = thiz->entity;
-					auto docker = tabbar->parent();
-					auto pages = docker->child(1);
-					if (pages->child_count() > 0)
+					if (hash == cH("selected"))
 					{
-						auto idx = selected->order_ & 0xffffff;
-						for (auto i = 0; i < pages->child_count(); i++)
-							pages->child(i)->set_visibility(false);
-						pages->child(idx)->set_visibility(true);
+						auto tabbar = thiz->entity;
+						auto docker = tabbar->parent();
+						auto pages = docker->child(1);
+						if (pages->child_count() > 0)
+						{
+							auto idx = ((cList*)l)->selected->order_ & 0xffffff;
+							for (auto i = 0; i < pages->child_count(); i++)
+								pages->child(i)->set_visibility(false);
+							pages->child(idx)->set_visibility(true);
+						}
 					}
 				}, new_mail_p(this));
 			}

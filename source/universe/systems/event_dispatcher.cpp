@@ -251,12 +251,12 @@ namespace flame
 				{
 					prev_focusing->focusing = false;
 					prev_focusing->active = false;
-					((cEventReceiverPrivate*)prev_focusing)->on_focus(Focus_Lost);
+					prev_focusing->data_changed(cH("focusing"), nullptr);
 				}
 				if (focusing)
 				{
 					focusing->focusing = true;
-					((cEventReceiverPrivate*)focusing)->on_focus(Focus_Gain);
+					focusing->data_changed(cH("focusing"), nullptr);
 				}
 			}
 
@@ -301,19 +301,19 @@ namespace flame
 			{
 				if (prev_hovering)
 				{
-					((cEventReceiverPrivate*)prev_hovering)->on_state_changed(prev_hovering->state, EventReceiverNormal);
 					prev_hovering->state = EventReceiverNormal;
+					prev_hovering->data_changed(cH("state"), nullptr);
 				}
 				if (hovering)
 				{
 					hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-					((cEventReceiverPrivate*)hovering)->on_state_changed(EventReceiverNormal, hovering->state);
+					hovering->data_changed(cH("state"), nullptr);
 				}
 			}
 			else if (hovering && hovering->active != prev_hovering_active)
 			{
 				hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-				((cEventReceiverPrivate*)hovering)->on_state_changed(prev_hovering_active ? EventReceiverActive : EventReceiverHovering, hovering->state);
+				hovering->data_changed(cH("state"), nullptr);
 			}
 			if (!prev_dragging && focusing && focusing->dragging)
 				((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
@@ -323,12 +323,8 @@ namespace flame
 					((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
 				((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
 			}
-			if (!prev_drag_overing && drag_overing)
-				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOveringEnter, focusing, mouse_pos);
 			if (drag_overing)
 				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOvering, focusing, mouse_pos);
-			if (prev_drag_overing && !drag_overing)
-				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(DragOveringLeave, focusing, mouse_pos);
 
 			keydown_inputs.clear();
 			keyup_inputs.clear();

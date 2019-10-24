@@ -24,23 +24,7 @@ namespace flame
 		~cStyleColorPrivate()
 		{
 			if (!entity->dying_)
-				event_receiver->state_changed_listeners.remove(state_changed_listener);
-		}
-
-		void style(EventReceiverState prev_state, EventReceiverState curr_state)
-		{
-			switch (curr_state)
-			{
-			case EventReceiverNormal:
-				element->color = color_normal;
-				break;
-			case EventReceiverHovering:
-				element->color = color_hovering;
-				break;
-			case EventReceiverActive:
-				element->color = color_active;
-				break;
-			}
+				event_receiver->data_changed_listeners.remove(state_changed_listener);
 		}
 
 		void on_component_added(Component* c) override
@@ -50,11 +34,11 @@ namespace flame
 			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
-					(*(cStyleColorPrivate**)c)->style(prev_state, curr_state);
+				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
+					if (hash == cH("state"))
+						(*(cStyleColorPrivate**)c)->style();
 				}, new_mail_p(this));
-				auto state = event_receiver->state;
-				style(state, state);
+				style();
 			}
 		}
 
@@ -66,8 +50,18 @@ namespace flame
 
 	void cStyleColor::style()
 	{
-		auto state = event_receiver->state;
-		((cStyleColorPrivate*)this)->style(state, state);
+		switch (event_receiver->state)
+		{
+		case EventReceiverNormal:
+			element->color = color_normal;
+			break;
+		case EventReceiverHovering:
+			element->color = color_hovering;
+			break;
+		case EventReceiverActive:
+			element->color = color_active;
+			break;
+		}
 	}
 
 	cStyleColor* cStyleColor::create(const Vec4c& color_normal, const Vec4c& color_hovering, const Vec4c& color_active)
@@ -93,20 +87,7 @@ namespace flame
 		~cStyleTextColorPrivate()
 		{
 			if (!entity->dying_)
-				event_receiver->state_changed_listeners.remove(state_changed_listener);
-		}
-
-		void style(EventReceiverState prev_state, EventReceiverState curr_state)
-		{
-			switch (curr_state)
-			{
-			case EventReceiverNormal:
-				text->color = color_normal;
-				break;
-			case EventReceiverHovering: case EventReceiverActive:
-				text->color = color_else;
-				break;
-			}
+				event_receiver->data_changed_listeners.remove(state_changed_listener);
 		}
 
 		void on_component_added(Component* c) override
@@ -116,11 +97,10 @@ namespace flame
 			else if (c->name_hash == cH("EventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_changed_listeners.add([](void* c, EventReceiverState prev_state, EventReceiverState curr_state) {
-					(*(cStyleTextColorPrivate**)c)->style(prev_state, curr_state);
+				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
+					(*(cStyleTextColorPrivate**)c)->style();
 				}, new_mail_p(this));
-				auto state = event_receiver->state;
-				style(state, state);
+				style();
 			}
 		}
 
@@ -132,8 +112,15 @@ namespace flame
 
 	void cStyleTextColor::style()
 	{
-		auto state = event_receiver->state;
-		((cStyleTextColorPrivate*)this)->style(state, state);
+		switch (event_receiver->state)
+		{
+		case EventReceiverNormal:
+			text->color = color_normal;
+			break;
+		case EventReceiverHovering: case EventReceiverActive:
+			text->color = color_else;
+			break;
+		}
 	}
 
 	cStyleTextColor* cStyleTextColor::create(const Vec4c& color_normal, const Vec4c& color_else)

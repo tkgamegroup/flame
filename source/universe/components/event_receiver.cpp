@@ -20,27 +20,16 @@ namespace flame
 
 		drag_hash = 0;
 
-		focus_listeners.hub = new ListenerHub;
 		key_listeners.hub = new ListenerHub;
 		mouse_listeners.hub = new ListenerHub;
 		drag_and_drop_listeners.hub = new ListenerHub;
-		state_changed_listeners.hub = new ListenerHub;
 	}
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
-		delete (ListenerHub*)focus_listeners.hub;
 		delete (ListenerHub*)key_listeners.hub;
 		delete (ListenerHub*)mouse_listeners.hub;
 		delete (ListenerHub*)drag_and_drop_listeners.hub;
-		delete (ListenerHub*)state_changed_listeners.hub;
-	}
-
-	void cEventReceiverPrivate::on_focus(FocusType type)
-	{
-		auto& listeners = ((ListenerHub*)focus_listeners.hub)->listeners;
-		for (auto& l : listeners)
-			((void(*)(void*, FocusType))l->function)(l->capture.p, type);
 	}
 
 	void cEventReceiverPrivate::on_key(KeyState action, uint value)
@@ -62,13 +51,6 @@ namespace flame
 		auto& listeners = ((ListenerHub*)drag_and_drop_listeners.hub)->listeners;
 		for (auto& l : listeners)
 			((void(*)(void*, DragAndDrop action, cEventReceiver * er, const Vec2i & pos))l->function)(l->capture.p, action, er, pos);
-	}
-
-	void cEventReceiverPrivate::on_state_changed(EventReceiverState prev_state, EventReceiverState curr_state)
-	{
-		auto& listeners = ((ListenerHub*)state_changed_listeners.hub)->listeners;
-		for (auto& l : listeners)
-			((void(*)(void*, EventReceiverState prev_state, EventReceiverState curr_state))l->function)(l->capture.p, prev_state, curr_state);
 	}
 
 	void cEventReceiverPrivate::on_entered_world()
