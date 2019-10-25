@@ -18,6 +18,7 @@ namespace flame
 
 		cLayoutPrivate(LayoutType _type);
 		~cLayoutPrivate();
+		void set_content_size(const Vec2f& s);
 		void apply_h_free_layout(cElement* element, cAligner* aligner, bool lock);
 		void apply_v_free_layout(cElement* element, cAligner* aligner, bool lock);
 		void use_children_width(float w);

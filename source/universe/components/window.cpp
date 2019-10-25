@@ -10,6 +10,7 @@
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
+#include <flame/universe/components/custom_draw.h>
 #include <flame/universe/components/window.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
@@ -166,6 +167,7 @@ namespace flame
 		void* mouse_listener;
 		void* drag_and_drop_listener;
 		Vec2f drop_pos;
+		void* draw_cmd;
 
 		struct Primitive
 		{
@@ -174,12 +176,14 @@ namespace flame
 			Vec2f size;
 		};
 		std::vector<Primitive> drop_tips;
+		cEventReceiver* overing;
 
 		cDockerTabPrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
 			list_item = nullptr;
+			custom_draw = nullptr;
 
 			root = nullptr;
 
@@ -190,6 +194,9 @@ namespace flame
 			mouse_listener = nullptr;
 			drag_and_drop_listener = nullptr;
 			drop_pos = Vec2f(0.f);
+			draw_cmd = nullptr;
+
+			overing = nullptr;
 		}
 
 		~cDockerTabPrivate()
@@ -198,6 +205,7 @@ namespace flame
 			{
 				event_receiver->mouse_listeners.remove(mouse_listener);
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
+				custom_draw->cmds.remove(draw_cmd);
 			}
 		}
 
@@ -357,21 +365,34 @@ namespace flame
 			}
 			else if (c->name_hash == cH("ListItem"))
 				list_item = (cListItem*)c;
+			else if (c->name_hash == cH("CustomDraw"))
+			{
+				custom_draw = (cCustomDraw*)c;
+				draw_cmd = custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+					(*(cDockerTabPrivate**)c)->draw(canvas);
+				}, new_mail_p(this));
+			}
 		}
 
-		void update()
+		void draw(graphics::Canvas* canvas)
 		{
-			//if (!drop_tips.empty())
-			//{
-			//	for (auto p : drop_tips)
-			//	{
-			//		std::vector<Vec2f> points;
-			//		path_rect(points, p.pos, p.size);
-			//		element->canvas->fill(points, p.col);
-			//	}
-
-			//	drop_tips.clear();
-			//}
+			if (!overing || event_receiver->dispatcher->drag_overing != overing)
+			{
+				drop_tips.clear();
+				overing = nullptr;
+			}
+			else
+			{
+				if (!drop_tips.empty())
+				{
+					for (auto p : drop_tips)
+					{
+						std::vector<Vec2f> points;
+						path_rect(points, p.pos, p.size);
+						canvas->fill(points, p.col);
+					}
+				}
+			}
 		}
 
 		Component* copy() override
@@ -469,6 +490,8 @@ namespace flame
 							else if (idx != 0)
 								show_drop_pos -= 5.f;
 							auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(DockerTab);
+							drop_tab->drop_tips.clear();
+							drop_tab->overing = thiz->event_receiver;
 							cDockerTabPrivate::Primitive primitive;
 							primitive.col = Vec4c(50, 80, 200, 200);
 							primitive.pos = Vec2f(show_drop_pos, thiz->element->global_pos.y());
@@ -594,6 +617,8 @@ namespace flame
 							thiz->dock_side = SideS;
 
 						auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(DockerTab);
+						drop_tab->drop_tips.clear();
+						drop_tab->overing = thiz->event_receiver;
 						{
 							cDockerTabPrivate::Primitive primitive;
 							primitive.col = (thiz->dock_side == SideCenter ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
@@ -811,6 +836,8 @@ namespace flame
 		tab->add_component(c_text);
 
 		tab->add_component(cEventReceiver::create());
+
+		tab->add_component(cCustomDraw::create());
 
 		auto c_docker_tab = cDockerTab::create();
 		c_docker_tab->root = root;

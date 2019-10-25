@@ -3,6 +3,7 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/custom_draw.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
 
@@ -14,17 +15,20 @@ namespace flame
 	{
 		void* key_listener;
 		void* mouse_listener;
+		void* draw_cmd;
 
 		cEditPrivate()
 		{
 			element = nullptr;
 			text = nullptr;
 			event_receiver = nullptr;
+			custom_draw = nullptr;
 
 			cursor = 0;
 
 			key_listener = nullptr;
 			mouse_listener = nullptr;
+			draw_cmd = nullptr;
 		}
 
 		~cEditPrivate()
@@ -33,6 +37,7 @@ namespace flame
 			{
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
+				custom_draw->cmds.remove(draw_cmd);
 			}
 		}
 
@@ -144,18 +149,25 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
+			else if (c->name_hash == cH("CustomDraw"))
+			{
+				custom_draw = (cCustomDraw*)c;
+				draw_cmd = custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+					(*(cEditPrivate**)c)->draw(canvas);
+				}, new_mail_p(this));
+			}
 		}
 
-		void update()
+		void draw(graphics::Canvas* canvas)
 		{
-			//if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
-			//{
-			//	auto text_scale = text->sdf_scale * element->global_scale;
-			//	element->canvas->add_text(text->font_atlas, element->global_pos +
-			//		Vec2f(element->inner_padding[0], element->inner_padding[1]) * element->global_scale +
-			//		Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
-			//		alpha_mul(text->color, element->alpha), L"|", text_scale);
-			//}
+			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
+			{
+				auto text_scale = text->sdf_scale_ * element->global_scale;
+				canvas->add_text(text->font_atlas, element->global_pos +
+					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
+					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
+					alpha_mul(text->color, element->alpha), L"|", text_scale);
+			}
 		}
 	};
 
@@ -181,14 +193,16 @@ namespace flame
 			c_text->auto_width_ = false;
 			e_edit->add_component(c_text);
 
+			e_edit->add_component(cEventReceiver::create());
+
+			e_edit->add_component(cCustomDraw::create());
+
 			if (width == 0.f)
 			{
 				auto c_aligner = cAligner::create();
 				c_aligner->width_policy_ = SizeFitParent;
 				e_edit->add_component(c_aligner);
 			}
-
-			e_edit->add_component(cEventReceiver::create());
 
 			e_edit->add_component(cEdit::create());
 		}

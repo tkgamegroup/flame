@@ -15,6 +15,7 @@ namespace flame
 	struct cLayout;
 	struct cListItem;
 	struct cList;
+	struct cCustomDraw;
 
 	struct cMoveable : Component
 	{
@@ -59,6 +60,7 @@ namespace flame
 		cElement* element;
 		cEventReceiver* event_receiver;
 		cListItem* list_item;
+		cCustomDraw* custom_draw;
 
 		Entity* root;
 

@@ -25,13 +25,10 @@ namespace flame
 		cElement* element;
 		cEventReceiver* event_receiver;
 		cScrollbar* scrollbar;
+		cLayout* target_layout;
 
 		ScrollbarType type;
-		cLayout* target_layout;
 		float step;
-
-		float content_size;
-		float v;
 
 		cScrollbarThumb() :
 			Component("ScrollbarThumb")

@@ -20,6 +20,8 @@ namespace flame
 		{
 		}
 
+		Listeners<void(void* c, graphics::Canvas* canvas)> cmds;
+
 		FLAME_UNIVERSE_EXPORTS static cCustomDraw* create();
 	};
 }

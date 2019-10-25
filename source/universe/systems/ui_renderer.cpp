@@ -1,8 +1,10 @@
 #include "../entity_private.h"
+#include "../universe_private.h"
 #include <flame/universe/systems/ui_renderer.h>
 #include "../components/element_private.h"
 #include "../components/text_private.h"
 #include "../components/image_private.h"
+#include <flame/universe/components/custom_draw.h>
 #include <flame/universe/components/aligner.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
@@ -43,6 +45,14 @@ namespace flame
 				auto image = (cImagePrivate*)e->get_component(Image);
 				if (image)
 					image->draw(canvas);
+
+				auto cd = e->get_component(CustomDraw);
+				if (cd)
+				{
+					auto& cmds = ((ListenerHub*)cd->cmds.hub)->listeners;
+					for (auto& l : cmds)
+						((void(*)(void*, graphics::Canvas*))l->function)(l->capture.p, canvas);
+				}
 			}
 			else
 				element->cliped_rect = Vec4f(-1.f);

@@ -38,6 +38,14 @@ namespace flame
 			element->data_changed_listeners.remove(element_data_listener);
 	}
 
+	void cLayoutPrivate::set_content_size(const Vec2f& s)
+	{
+		if (s == content_size)
+			return;
+		content_size = s;
+		data_changed(cH("content_size"), this);
+	}
+
 	void cLayoutPrivate::apply_h_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
 	{
 		auto padding = (lock || (_aligner ? _aligner->using_padding_ : false)) ? element->inner_padding_.xz() : Vec2f(0.f);
@@ -355,7 +363,7 @@ namespace flame
 			}
 			if (fence > 0 && !als.empty())
 				w -= item_padding;
-			content_size = Vec2f(w, h);
+			set_content_size(Vec2f(w, h));
 			w += element->inner_padding_horizontal();
 			h += element->inner_padding_vertical();
 			if (width_fit_children)
@@ -435,7 +443,7 @@ namespace flame
 			}
 			if (fence > 0 && !als.empty())
 				h -= item_padding;
-			content_size = Vec2f(w, h);
+			set_content_size(Vec2f(w, h));
 			w += element->inner_padding_horizontal();
 			h += element->inner_padding_vertical();
 			if (width_fit_children)
@@ -480,7 +488,7 @@ namespace flame
 
 			if (column == 0)
 			{
-				content_size = Vec2f(0.f);
+				set_content_size(Vec2f(0.f));
 				if (width_fit_children)
 					use_children_width(element->inner_padding_horizontal());
 				if (height_fit_children)
@@ -539,7 +547,7 @@ namespace flame
 					}
 					h -= item_padding;
 				}
-				content_size = Vec2f(w, h);
+				set_content_size(Vec2f(w, h));
 				w += element->inner_padding_horizontal();
 				h += element->inner_padding_vertical();
 				if (width_fit_children)
@@ -599,13 +607,17 @@ namespace flame
 	void cLayout::set_x_scroll_offset(float x)
 	{
 		scroll_offset_.x() = x;
-		((cLayoutPrivate*)this)->management->add_to_update_list(this);
+		auto thiz = (cLayoutPrivate*)this;
+		if (thiz->management)
+			thiz->management->add_to_update_list(thiz);
 	}
 
 	void cLayout::set_y_scroll_offset(float y)
 	{
 		scroll_offset_.y() = y;
-		((cLayoutPrivate*)this)->management->add_to_update_list(this);
+		auto thiz = (cLayoutPrivate*)this;
+		if (thiz->management)
+			thiz->management->add_to_update_list(thiz);
 	}
 
 	cLayout* cLayout::create(LayoutType type)
