@@ -66,18 +66,12 @@ namespace flame
 			scrollbar = parent->get_component(Scrollbar);
 			target_layout = parent->parent()->child(0)->get_component(Layout);
 			target_element_listener = target_layout->element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
-				switch (hash)
-				{
-				case cH("size"):
+				if (hash == cH("size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
-				}
 			}, new_mail_p(this));
 			target_layout_listener = target_layout->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
-				switch (hash)
-				{
-				case cH("content_size"):
+				if (hash == cH("content_size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
-				}
 			}, new_mail_p(this));
 			update(0.f);
 		}

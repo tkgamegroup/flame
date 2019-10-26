@@ -67,7 +67,7 @@ namespace flame
 					menu_element->set_y(element->global_pos.y());
 					break;
 				}
-				menu_element->scale = element->global_scale;
+				menu_element->set_scale(element->global_scale);
 
 				topmost->add_child(menu);
 			}

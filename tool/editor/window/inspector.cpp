@@ -108,7 +108,7 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 		capture.drag_text->set_text(text);
 	}, new_mail(&capture));
 
-	auto c_tracker = new_component<cDigitalDataTracker<T>>();
+	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
 	c_tracker->data = pdata;
 	parent->add_component(c_tracker);
 }
@@ -139,7 +139,7 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		}, new_mail(&capture));
 	}
 
-	auto c_tracker = new_component<cDigitalVecDataTracker<N, T>>();
+	auto c_tracker = new_u_object<cDigitalVecDataTracker<N, T>>();
 	c_tracker->data = pdata;
 	parent->add_component(c_tracker);
 }
@@ -233,7 +233,7 @@ struct cInspectorPrivate : cInspector
 
 				auto udt = find_udt(app.dbs, H((std::string("Component") + component->type_name).c_str()));
 
-				auto c_dealer = new_component<cComponentDealer>();
+				auto c_dealer = new_u_object<cComponentDealer>();
 				c_dealer->component = component;
 				c_dealer->dummy = malloc(udt->size());
 				{
@@ -348,7 +348,7 @@ struct cInspectorPrivate : cInspector
 							capture.d->unserialize(capture.v->offset());
 						}, new_mail(&capture));
 
-						auto c_tracker = new_component<cEnumSingleDataTracker>();
+						auto c_tracker = new_u_object<cEnumSingleDataTracker>();
 						c_tracker->data = pdata;
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
@@ -381,7 +381,7 @@ struct cInspectorPrivate : cInspector
 							}, new_mail(&capture));
 						}
 
-						auto c_tracker = new_component<cEnumMultiDataTracker>();
+						auto c_tracker = new_u_object<cEnumMultiDataTracker>();
 						c_tracker->data = pdata;
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
@@ -407,7 +407,7 @@ struct cInspectorPrivate : cInspector
 								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 
-							auto c_tracker = new_component<cBoolDataTracker>();
+							auto c_tracker = new_u_object<cBoolDataTracker>();
 							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 						}
@@ -477,7 +477,7 @@ struct cInspectorPrivate : cInspector
 								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 
-							auto c_tracker = new_component<cStringDataTracker>();
+							auto c_tracker = new_u_object<cStringDataTracker>();
 							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 						}
@@ -499,7 +499,7 @@ struct cInspectorPrivate : cInspector
 								capture.d->unserialize(capture.v->offset());
 							}, new_mail(&capture));
 
-							auto c_tracker = new_component<cWStringDataTracker>();
+							auto c_tracker = new_u_object<cWStringDataTracker>();
 							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 						}
@@ -577,7 +577,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 	}
 	e_docker->child(1)->add_child(e_page);
 
-	auto c_inspector = new_component<cInspectorPrivate>();
+	auto c_inspector = new_u_object<cInspectorPrivate>();
 	e_page->add_component(c_inspector);
 	c_inspector->tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
 	c_inspector->editor = editor;

@@ -145,7 +145,7 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_node);
 		{
-			auto c_item = new_component<cHierarchyItem>();
+			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;
 			e_tree_node->child(0)->add_component(c_item);
@@ -160,7 +160,7 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_leaf);
 		{
-			auto c_item = new_component<cHierarchyItem>();
+			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;
 			e_tree_leaf->add_component(c_item);
@@ -246,7 +246,7 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 	}
 	e_docker->child(1)->add_child(e_page);
 
-	auto c_hierarchy = new_component<cHierarchy>();
+	auto c_hierarchy = new_u_object<cHierarchy>();
 	e_page->add_component(c_hierarchy);
 	c_hierarchy->tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
 	c_hierarchy->editor = editor;

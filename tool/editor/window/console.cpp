@@ -28,10 +28,6 @@ void cConsole::print(const std::wstring& str)
 	c_text_log->set_text(c_text_log->text() + str + L"\n");
 }
 
-void cConsole::update()
-{
-}
-
 Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& cmd_callback_capture, void (*close_callback)(void* c), const Mail<>& close_callback_capture, const std::wstring& init_str, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
@@ -60,7 +56,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 		e_page->add_component(c_layout);
 	}
 
-	auto c_console = new_component<cConsolePrivate>();
+	auto c_console = new_u_object<cConsolePrivate>();
 	{
 		auto c = new Closure<void(void* c, const std::wstring & cmd, cConsole * console)>;
 		c->function = cmd_callback;

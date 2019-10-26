@@ -22,6 +22,7 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -45,16 +46,20 @@ void create_edit(Entity* parent, BP::Slot* input)
 			cText* drag_text;
 		}capture;
 		capture.input = input;
-		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+		capture.drag_text = e_edit->child(1)->get_component(Text);
+		e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			auto data = sto_s<T>(text);
-			capture.input->set_data(&data);
-			capture.drag_text->set_text(text);
+			if (hash == cH("Text"))
+			{
+				auto& text = ((cText*)t)->text();
+				auto data = sto_s<T>(text.c_str());
+				capture.input->set_data(&data);
+				capture.drag_text->set_text(text);
+			}
 		}, new_mail(&capture));
 	}
 
-	auto c_tracker = new_component<cDigitalDataTracker<T>>();
+	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
 	c_tracker->data = &data;
 	parent->add_component(c_tracker);
 }
@@ -76,17 +81,21 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		auto e_edit = create_drag_edit(app.font_atlas_sdf, 0.5f, std::is_floating_point<T>::value);
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
-		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+		capture.drag_text = e_edit->child(1)->get_component(Text);
+		e_edit->child(0)->get_component(Text)->changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			auto data = *(Vec<N, T>*)capture.input->data();
-			data[capture.i] = sto_s<T>(text);
-			capture.input->set_data(&data);
-			capture.drag_text->set_text(text);
+			if (hash == cH("Text"))
+			{
+				auto& text = ((cText*)t)->text();
+				auto data = *(Vec<N, T>*)capture.input->data();
+				data[capture.i] = sto_s<T>(text.c_str());
+				capture.input->set_data(&data);
+				capture.drag_text->set_text(text);
+			}
 		}, new_mail(&capture));
 	}
 
-	auto c_tracker = new_component<cDigitalVecDataTracker<N, T>>();
+	auto c_tracker = new_u_object<cDigitalVecDataTracker<N, T>>();
 	c_tracker->data = &data;
 	parent->add_component(c_tracker);
 }
@@ -188,6 +197,8 @@ namespace flame
 
 struct cBPEditor : Component
 {
+	cCustomDraw* custom_draw;
+
 	std::wstring filename;
 	std::wstring filepath;
 	BP* bp;
@@ -208,7 +219,7 @@ struct cBPEditor : Component
 		SelNode,
 		SelSlot,
 		SelLink
-	}sel_type;
+	}sel_type_;
 	union
 	{
 		BP::Module* m;
@@ -216,7 +227,8 @@ struct cBPEditor : Component
 		BP::Node* n;
 		BP::Slot* s;
 		BP::Slot* l;
-	}selected;
+	}selected_;
+
 	BP::Slot* dragging_slot;
 
 	bool running;
@@ -243,6 +255,42 @@ struct cBPEditor : Component
 				tab->take_away(true);
 			}, new_mail_p(console_tab));
 		}
+	}
+
+	void deselect()
+	{
+		sel_type_ = SelAir;
+		selected_.n = nullptr;
+	}
+
+	void select(BP::Package* p)
+	{
+		sel_type_ = SelPackage;
+		selected_.p = p;
+	}
+
+	void select(BP::Node* n)
+	{
+		sel_type_ = SelNode;
+		selected_.n = n;
+	}
+
+	void select_s(BP::Slot* s)
+	{
+		sel_type_ = SelSlot;
+		selected_.s = s;
+	}
+
+	void select_l(BP::Slot* s)
+	{
+		sel_type_ = SelLink;
+		selected_.l = s;
+	}
+
+	void select(BP::Module* m)
+	{
+		sel_type_ = SelModule;
+		selected_.m = m;
 	}
 
 	void reset_add_node_menu_filter()
@@ -438,8 +486,7 @@ struct cBPEditor : Component
 		for (auto i = 0; i < bp->node_count(); i++)
 			create_node_entity(bp->node(i));
 
-		sel_type = SelAir;
-		selected.n = nullptr;
+		deselect();
 		dragging_slot = nullptr;
 		running = false;
 	}
@@ -518,15 +565,15 @@ struct cBPEditor : Component
 
 	void duplicate_selected()
 	{
-		switch (sel_type)
+		switch (sel_type_)
 		{
 		case SelNode:
 		{
-			auto n = bp->add_node(H(selected.n->udt()->name().c_str()), "");
+			auto n = bp->add_node(H(selected_.n->udt()->name().c_str()), "");
 			n->pos = add_pos;
 			for (auto i = 0; i < n->input_count(); i++)
 			{
-				auto src = selected.n->input(i);
+				auto src = selected_.n->input(i);
 				auto dst = n->input(i);
 				dst->set_data(src->data());
 				dst->link_to(src->link(0));
@@ -539,19 +586,19 @@ struct cBPEditor : Component
 
 	void delete_selected()
 	{
-		switch (sel_type)
+		switch (sel_type_)
 		{
 		case SelModule:
-			if (selected.m->filename() == L"bp.dll")
+			if (selected_.m->filename() == L"bp.dll")
 				add_notification(L"Cannot Remove Self Module");
-			else if (selected.m->filename() == L"flame_foundation.dll")
+			else if (selected_.m->filename() == L"flame_foundation.dll")
 				add_notification(L"Cannot Remove 'foundation' Module");
-			else if (selected.m->filename() == L"editor.exe")
+			else if (selected_.m->filename() == L"editor.exe")
 				add_notification(L"Cannot Remove 'this' Module");
 			else
 			{
 				std::wstring str;
-				auto m_db = selected.m->db();
+				auto m_db = selected_.m->db();
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto n = bp->node(i);
@@ -566,7 +613,7 @@ struct cBPEditor : Component
 					BP::Module* m;
 				}capture;
 				capture.e = this;
-				capture.m = selected.m;
+				capture.m = selected_.m;
 				popup_confirm_dialog(entity, L"The node(s):\n" + str + L"will be removed, sure to remove module?", [](void* c, bool yes) {
 					auto& capture = *(Capture*)c;
 
@@ -578,14 +625,14 @@ struct cBPEditor : Component
 		case SelPackage:
 			break;
 		case SelNode:
-			remove_node(selected.n);
+			remove_node(selected_.n);
 			break;
 		case SelLink:
-			selected.l->link_to(nullptr);
+			selected_.l->link_to(nullptr);
 			break;
 		}
-		sel_type = SelAir;
-		selected.n = nullptr;
+
+		deselect();
 	}
 
 	void generate_graph_and_layout()
@@ -704,8 +751,8 @@ struct cBPEditor : Component
 		entity->add_child(e_notification);
 		{
 			auto c_element = cElement::create();
-			c_element->pos.y() = notification.size() * (app.font_atlas_sdf->pixel_height + 20.f);
-			c_element->inner_padding = Vec4f(8.f);
+			c_element->pos_.y() = notification.size() * (app.font_atlas_sdf->pixel_height + 20.f);
+			c_element->inner_padding_ = Vec4f(8.f);
 			c_element->color = Vec4c(0, 0, 0, 255);
 			e_notification->add_component(c_element);
 			notification.emplace_back(c_element, 180);
@@ -717,7 +764,18 @@ struct cBPEditor : Component
 		}
 	}
 
-	virtual void update() override
+	void on_component_added(Component* c) override
+	{
+		if (c->name_hash == cH("CustomDraw"))
+		{
+			custom_draw = (cCustomDraw*)c;
+			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+				(*(cBPEditor**)c)->draw(canvas);
+			}, new_mail_p(this));
+		}
+	}
+
+	void draw(graphics::Canvas* canvas)
 	{
 		if (running)
 			bp->update();
@@ -728,7 +786,7 @@ struct cBPEditor : Component
 			if (it->second == 0)
 			{
 				for (auto _it = it + 1; _it != notification.end(); _it++)
-					_it->first->pos.y() = it->first->pos.y();
+					_it->first->set_y(it->first->pos_.y());
 				entity->remove_child(it->first->entity);
 				it = notification.erase(it);
 			}
@@ -747,6 +805,7 @@ struct cBP : Component
 	cElement* element;
 	cEventReceiver* event_receiver;
 	cElement* base_element;
+	cCustomDraw* custom_draw;
 
 	cBPEditor* editor;
 
@@ -757,8 +816,8 @@ struct cBP : Component
 	{
 	}
 
-	virtual void on_component_added(Component* c) override;
-	virtual void update() override;
+	void on_component_added(Component* c) override;
+	void draw(graphics::Canvas* canvas);
 };
 
 struct cBPModule : Component
@@ -774,25 +833,22 @@ struct cBPModule : Component
 	{
 	}
 
-	virtual void on_component_added(Component* c) override
+	void on_component_added(Component* c) override
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-		else if (c->type_hash == cH("EventReceiver"))
+		else if (c->name_hash == cH("EventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cBPModule**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					thiz->editor->sel_type = cBPEditor::SelModule;
-					thiz->editor->selected.m = thiz->m;
-				}
+					thiz->editor->select(thiz->m);
 			}, new_mail_p(this));
 		}
 	}
 
-	virtual void update() override
+	void update()
 	{
 		if (m == editor->selected.m)
 			element->frame_thickness = 4.f;
@@ -816,25 +872,22 @@ struct cBPNode : Component
 	{
 	}
 
-	virtual void on_component_added(Component* c) override
+	void on_component_added(Component* c) override
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-		else if (c->type_hash == cH("EventReceiver"))
+		else if (c->name_hash == cH("EventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cBPNode**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					thiz->editor->sel_type = cBPEditor::SelNode;
-					thiz->editor->selected.n = thiz->n;
-				}
+					thiz->editor->select(thiz->n);
 			}, new_mail_p(this));
 		}
 	}
 
-	virtual void update() override
+	void update()
 	{
 		if (n == editor->selected.n)
 			element->frame_thickness = 4.f;
@@ -862,11 +915,11 @@ struct cBPSlot : Component
 		tracker = nullptr;
 	}
 
-	virtual void on_component_added(Component* c) override
+	void on_component_added(Component* c) override
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-		else if (c->type_hash == cH("EventReceiver"))
+		else if (c->name_hash == cH("EventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			if (s->type() == BP::Slot::Input)
@@ -892,7 +945,7 @@ struct cBPSlot : Component
 					thiz->editor->dragging_slot = nullptr;
 				else if (action == Dropped)
 				{
-					auto oth = ((cBPSlot*)er->entity->find_component(cH("BPSlot")))->s;
+					auto oth = er->entity->get_component(BPSlot)->s;
 					if (thiz->s->type() == BP::Slot::Input)
 						thiz->s->link_to(oth);
 					else
@@ -906,8 +959,7 @@ struct cBPSlot : Component
 
 				if (is_mouse_down(action, key, true) && key == Mouse_Right)
 				{
-					editor->sel_type = cBPEditor::SelSlot;
-					editor->selected.s = thiz->s;
+					editor->select_s(thiz->s);
 					popup_menu(editor->e_slot_menu, app.root, (Vec2f)pos);
 				}
 			}, new_mail_p(this));
@@ -929,25 +981,22 @@ struct cBPPackage : Component
 	}
 
 
-	virtual void on_component_added(Component* c) override
+	void on_component_added(Component* c) override
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-		else if (c->type_hash == cH("EventReceiver"))
+		else if (c->name_hash == cH("EventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cBPPackage**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					thiz->editor->sel_type = cBPEditor::SelPackage;
-					thiz->editor->selected.p = thiz->p;
-				}
+					thiz->editor->select(thiz->p);
 			}, new_mail_p(this));
 		}
 	}
 
-	virtual void update() override
+	void update()
 	{
 		if (p == editor->selected.p)
 			element->frame_thickness = 4.f;
@@ -960,9 +1009,9 @@ struct cBPPackage : Component
 
 void cBP::on_component_added(Component* c)
 {
-	if (c->type_hash == cH("Element"))
+	if (c->name_hash == cH("Element"))
 		element = (cElement*)c;
-	else if (c->type_hash == cH("EventReceiver"))
+	else if (c->name_hash == cH("EventReceiver"))
 	{
 		event_receiver = (cEventReceiver*)c;
 		event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -971,8 +1020,8 @@ void cBP::on_component_added(Component* c)
 
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
-				editor->sel_type = cBPEditor::SelAir;
-				editor->selected.n = nullptr;
+				editor->deselect();
+
 				auto bp = editor->bp;
 
 				for (auto i = 0; i < bp->node_count(); i++)
@@ -990,10 +1039,7 @@ void cBP::on_component_added(Component* c)
 							auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
 							if (distance((Vec2f)pos, bezier_closest_point((Vec2f)pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
-							{
-								editor->sel_type = cBPEditor::SelLink;
-								editor->selected.l = input;
-							}
+								editor->select_l(input);
 						}
 					}
 				}
@@ -1005,9 +1051,13 @@ void cBP::on_component_added(Component* c)
 			}
 		}, new_mail_p(this));
 	}
+	else if (c->name_hash == cH("CustomDraw"))
+	{
+
+	}
 }
 
-void cBP::update()
+void cBP::draw(graphics::Canvas* canvas)
 {
 	bezier_extent = 50.f * base_element->global_scale;
 
@@ -1022,7 +1072,7 @@ void cBP::update()
 
 			std::vector<Vec2f> points;
 			path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-			element->canvas->stroke(points, editor->selected.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+			canvas->stroke(points, editor->selected_.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
 		}
 	};
 	for (auto i = 0; i < bp->package_count(); i++)
@@ -1052,11 +1102,11 @@ void cBP::update()
 	{
 		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
 		auto p1 = e->global_pos + e->global_size * 0.5f;
-		auto p2 = Vec2f(event_receiver->event_dispatcher->mouse_pos);
+		auto p2 = Vec2f(event_receiver->dispatcher->mouse_pos);
 
 		std::vector<Vec2f> points;
 		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? bezier_extent : -bezier_extent, 0.f), p2, p2);
-		element->canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
+		canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
 	}
 }
 
@@ -1067,7 +1117,7 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 	m->user_data = e_module;
 	{
 		auto c_element = cElement::create();
-		c_element->pos = m->pos;
+		c_element->pos_ = m->pos;
 		c_element->color = Vec4c(255, 200, 190, 200);
 		c_element->frame_color = Vec4c(252, 252, 50, 200);
 		e_module->add_component(c_element);
@@ -1080,7 +1130,7 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 
 		e_module->add_component(cMoveable::create());
 
-		auto c_module = new_component<cBPModule>();
+		auto c_module = new_u_object<cBPModule>();
 		c_module->editor = this;
 		c_module->m = m;
 		e_module->add_component(c_module);
@@ -1090,7 +1140,7 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 		e_module->add_child(e_content);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(8.f);
+			c_element->inner_padding_ = Vec4f(8.f);
 			e_content->add_component(c_element);
 
 			auto c_layout = cLayout::create(LayoutVertical);
@@ -1102,12 +1152,12 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 		e_content->add_child(e_text_filename);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			e_text_filename->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
 			c_text->set_text(m->filename());
-			c_text->sdf_scale = 0.8f;
+			c_text->sdf_scale_ = 0.8f;
 			e_text_filename->add_component(c_text);
 		}
 
@@ -1119,7 +1169,7 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 			auto c_text = cText::create(app.font_atlas_sdf);
 			c_text->set_text(L"module");
 			c_text->color = Vec4c(50, 50, 50, 255);
-			c_text->sdf_scale = 0.5f;
+			c_text->sdf_scale_ = 0.5f;
 			e_text_type->add_component(c_text);
 		}
 	}
@@ -1134,8 +1184,8 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 		e_bring_to_front->add_component(c_event_receiver);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_bring_to_front->add_component(c_aligner);
 
 		e_bring_to_front->add_component(cBringToFront::create());
@@ -1151,7 +1201,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 	p->user_data = e_package;
 	{
 		auto c_element = cElement::create();
-		c_element->pos = p->pos;
+		c_element->pos_ = p->pos;
 		c_element->color = Vec4c(190, 255, 200, 200);
 		c_element->frame_color = Vec4c(252, 252, 50, 200);
 		e_package->add_component(c_element);
@@ -1164,7 +1214,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 		e_package->add_component(cMoveable::create());
 
-		auto c_package = new_component<cBPPackage>();
+		auto c_package = new_u_object<cBPPackage>();
 		c_package->editor = this;
 		c_package->p = p;
 		e_package->add_component(c_package);
@@ -1174,7 +1224,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 		e_package->add_child(e_content);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(8.f);
+			c_element->inner_padding_ = Vec4f(8.f);
 			e_content->add_component(c_element);
 
 			auto c_layout = cLayout::create(LayoutVertical);
@@ -1186,11 +1236,11 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 		e_content->add_child(e_text_id);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->sdf_scale = 0.8f;
+			c_text->sdf_scale_ = 0.8f;
 			c_text->set_text(s2w(p->id()));
 			e_text_id->add_component(c_text);
 
@@ -1263,7 +1313,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 						e_slot->add_component(cEventReceiver::create());
 
-						auto c_slot = new_component<cBPSlot>();
+						auto c_slot = new_u_object<cBPSlot>();
 						c_slot->editor = this;
 						c_slot->s = s;
 						e_slot->add_component(c_slot);
@@ -1333,7 +1383,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 						e_slot->add_component(cEventReceiver::create());
 
-						auto c_slot = new_component<cBPSlot>();
+						auto c_slot = new_u_object<cBPSlot>();
 						c_slot->editor = this;
 						c_slot->s = s;
 						e_slot->add_component(c_slot);
@@ -1384,7 +1434,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		e_node->add_component(cMoveable::create());
 
-		auto c_node = new_component<cBPNode>();
+		auto c_node = new_u_object<cBPNode>();
 		c_node->editor = this;
 		c_node->n = n;
 		e_node->add_component(c_node);
@@ -1436,7 +1486,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
 			c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->name()));
 			c_text->color = Vec4c(50, 50, 50, 255);
-			c_text->sdf_scale = 0.5f;
+			c_text->sdf_scale_ = 0.5f;
 			e_text_type->add_component(c_text);
 		}
 
@@ -1445,7 +1495,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		{
 			auto e_show = create_standard_button(app.font_atlas_sdf, 0.5f, L"Show");
 			e_content->add_child(e_show);
-			((cEventReceiver*)e_show->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_show->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_clicked(action, key))
 					open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
 			}, new_mail_p(n));
@@ -1462,7 +1512,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			}capture;
 			capture.e = this;
 			capture.n = n;
-			((cEventReceiver*)e_edit->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_edit->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 
 				if (is_mouse_clicked(action, key))
@@ -1470,7 +1520,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					capture.e->locked = true;
 					auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
 					{
-						((cElement*)t->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
+						t->get_component(Element)->inner_padding = Vec4f(4.f);
 
 						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->width_fit_children = false;
@@ -1491,7 +1541,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
 					e_buttons->add_child(e_back);
 					{
-						((cEventReceiver*)e_back->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+						e_back->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 							if (is_mouse_clicked(action, key))
 							{
 								auto editor = *(cBPEditor**)c;
@@ -1570,12 +1620,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								delete_mail(code);
 							}
 							c_text->set_text(_prefix);
-							c_text->auto_width = false;
+							c_text->auto_width_ = false;
 							e_text->add_component(c_text);
 						}
 
 						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height);
-						((cAligner*)e_scrollbar_container->find_component(cH("Aligner")))->height_factor = 1.f / 3.f;
+						e_scrollbar_container->get_component(Aligner)->height_factor_ = 1.f / 3.f;
 						e_main->add_child(e_scrollbar_container);
 					}
 
@@ -1625,7 +1675,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto c_text = cText::create(app.font_atlas_pixel);
 							auto file = get_file_string(capture.e->filepath + L"/" + filename);
 							c_text->set_text(s2w(file));
-							c_text->auto_width = false;
+							c_text->auto_width_ = false;
 							e_text->add_component(c_text);
 
 							e_text->add_component(cEventReceiver::create());
@@ -1633,7 +1683,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_text->add_component(cEdit::create());
 
 							auto c_aligner = cAligner::create();
-							c_aligner->width_policy = SizeFitParent;
+							c_aligner->width_policy_ = SizeFitParent;
 							e_text->add_component(c_aligner);
 
 							{
@@ -1646,7 +1696,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								_capture.e = capture.e;
 								_capture.n = capture.n;
 								_capture.t = c_text;
-								((cEventReceiver*)e_compile->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+								e_compile->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 									auto& capture = *(_Capture*)c;
 									if (is_mouse_clicked(action, key))
 									{
@@ -1663,7 +1713,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						}
 
 						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height);
-						((cAligner*)e_scrollbar_container->find_component(cH("Aligner")))->height_factor = 2.f / 3.f;
+						e_scrollbar_container->get_component(Aligner)->height_factor = 2.f / 3.f;
 						e_main->add_child(e_scrollbar_container);
 					}
 				}
@@ -1728,7 +1778,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 						e_slot->add_component(cEventReceiver::create());
 					}
-					auto c_slot = new_component<cBPSlot>();
+					auto c_slot = new_u_object<cBPSlot>();
 					c_slot->editor = this;
 					c_slot->s = input;
 					e_slot->add_component(c_slot);
@@ -1740,7 +1790,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale = 0.6f;
+						c_text->sdf_scale_ = 0.6f;
 						c_text->set_text(s2w(input->vi()->name()));
 						e_text->add_component(c_text);
 					}
@@ -1749,7 +1799,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_input->add_child(e_data);
 					{
 						auto c_element = cElement::create();
-						c_element->inner_padding = Vec4f(app.font_atlas_sdf->pixel_height, 0.f, 0.f, 0.f);
+						c_element->inner_padding_ = Vec4f(app.font_atlas_sdf->pixel_height, 0.f, 0.f, 0.f);
 						e_data->add_component(c_element);
 
 						auto c_layout = cLayout::create(LayoutVertical);
@@ -1772,13 +1822,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						}capture;
 						capture.input = input;
 						capture.e = info;
-						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->changed_listeners.add([](void* c, int idx) {
+						e_data->child(0)->get_component(Combobox)->changed_listeners.add([](void* c, int idx) {
 							auto& capture = *(Capture*)c;
 							auto v = capture.e->item(idx)->value();
 							capture.input->set_data(&v);
 						}, new_mail(&capture));
 
-						auto c_tracker = new_component<cEnumSingleDataTracker>();
+						auto c_tracker = new_u_object<cEnumSingleDataTracker>();
 						c_tracker->data = input->data();
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
@@ -1802,7 +1852,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}capture;
 							capture.input = input;
 							capture.v = item->value();
-							((cCheckbox*)e_data->child(k)->child(0)->find_component(cH("Checkbox")))->changed_listeners.add([](void* c, bool checked) {
+							e_data->child(k)->child(0)->get_component(Checkbox)->changed_listeners.add([](void* c, bool checked) {
 								auto& capture = *(Capture*)c;
 								auto v = *(int*)capture.input->data();
 								if (checked)
@@ -1813,7 +1863,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}, new_mail(&capture));
 						}
 
-						auto c_tracker = new_component<cEnumMultiDataTracker>();
+						auto c_tracker = new_u_object<cEnumMultiDataTracker>();
 						c_tracker->data = input->data();
 						c_tracker->info = info;
 						e_data->add_component(c_tracker);
@@ -1827,13 +1877,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto e_checkbox = create_standard_checkbox();
 							e_data->add_child(e_checkbox);
 
-							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->changed_listeners.add([](void* c, bool checked) {
+							e_checkbox->get_component(Checkbox)->changed_listeners.add([](void* c, bool checked) {
 								auto input = *(BP::Slot**)c;
 								auto v = checked ? 1 : 0;
 								input->set_data(&v);
 							}, new_mail_p(input));
 
-							auto c_tracker = new_component<cBoolDataTracker>();
+							auto c_tracker = new_u_object<cBoolDataTracker>();
 							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 						}
@@ -1890,12 +1940,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 							e_data->add_child(e_edit);
-							((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
-								auto str = w2s(text);
+							e_edit->get_component(Edit)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+								auto str = w2s(((cText*)t)->text());
 								(*(BP::Slot**)c)->set_data(&str);
 							}, new_mail_p(input));
 
-							auto c_tracker = new_component<cStringDataTracker>();
+							auto c_tracker = new_u_object<cStringDataTracker>();
 							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 						}
@@ -1904,12 +1954,11 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
 							e_data->add_child(e_edit);
-							((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
-								auto str = std::wstring(text);
-								(*(BP::Slot**)c)->set_data(&str);
+							e_edit->get_component(Edit)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+								(*(BP::Slot**)c)->set_data(&((cText*)t)->text());
 							}, new_mail_p(input));
 
-							auto c_tracker = new_component<cWStringDataTracker>();
+							auto c_tracker = new_u_object<cWStringDataTracker>();
 							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 						}
@@ -1918,7 +1967,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						break;
 					}
 
-					c_slot->tracker = (cDataTracker*)e_data->find_component(cH("DataTracker"));
+					c_slot->tracker = e_data->get_component(DataTracker);
 				}
 			}
 
@@ -1968,7 +2017,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 						e_slot->add_component(cEventReceiver::create());
 
-						auto c_slot = new_component<cBPSlot>();
+						auto c_slot = new_u_object<cBPSlot>();
 						c_slot->editor = this;
 						c_slot->s = output;
 						e_slot->add_component(c_slot);
@@ -2004,7 +2053,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = (cElement*)e_container->find_component(cH("Element"));
+		auto c_element = e_container->get_component(Element);
 		c_element->pos = pos;
 		c_element->size.x() = 1483.f;
 		c_element->size.y() = 711.f;
@@ -2025,7 +2074,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 	e_docker->child(1)->add_child(e_page);
 
-	auto c_editor = new_component<cBPEditor>();
+	auto c_editor = new_u_object<cBPEditor>();
 	e_page->add_component(c_editor);
 
 	auto e_menubar = create_standard_menubar();
@@ -2035,7 +2084,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 
 				if (is_mouse_clicked(action, key))
@@ -2049,7 +2098,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Reload");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -2287,7 +2336,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 		e_scene->add_component(cLayout::create(LayoutFree));
 	}
-	auto c_bp = new_component<cBP>();
+	auto c_bp = new_u_object<cBP>();
 	c_bp->editor = c_editor;
 	e_scene->add_component(c_bp);
 

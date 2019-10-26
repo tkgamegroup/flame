@@ -8,7 +8,7 @@ namespace flame
 	cElementPrivate::cElementPrivate()
 	{
 		pos_ = 0.f;
-		scale = 1.f;
+		scale_ = 1.f;
 		size_ = 0.f;
 		inner_padding_ = Vec4f(0.f);
 		alpha = 1.f;
@@ -31,13 +31,13 @@ namespace flame
 		if (!p)
 		{
 			global_pos = pos_;
-			global_scale = scale;
+			global_scale = scale_;
 		}
 		else
 		{
 			auto p_element = p->get_component(Element);
 			global_pos = p_element->global_pos + p_element->global_scale * pos_;
-			global_scale = p_element->global_scale * scale;
+			global_scale = p_element->global_scale * scale_;
 		}
 		global_size = size_ * global_scale;
 	}
@@ -66,7 +66,7 @@ namespace flame
 		auto copy = new cElementPrivate();
 
 		copy->pos_ = pos_;
-		copy->scale = scale;
+		copy->scale_ = scale_;
 		copy->size_ = size_;
 		copy->inner_padding_ = inner_padding_;
 		copy->alpha = alpha;
@@ -116,6 +116,19 @@ namespace flame
 		else
 			pos_ = p;
 		data_changed(cH("pos"), sender);
+	}
+
+	void cElement::set_scale(float s, bool add, void* sender)
+	{
+		if (add && s == 0.f)
+			return;
+		if (s == scale_)
+			return;
+		if (add)
+			scale_ += s;
+		else
+			scale_ = s;
+		data_changed(cH("scale"), sender);
 	}
 
 	void cElement::set_width(float w, bool add, void* sender)
@@ -194,7 +207,7 @@ namespace flame
 			auto c = new cElementPrivate();
 
 			c->pos_ = pos$;
-			c->scale = scale$;
+			c->scale_ = scale$;
 			c->size_ = size$;
 			c->inner_padding_ = inner_padding$;
 			c->alpha = alpha$;
@@ -214,7 +227,7 @@ namespace flame
 			if (offset == -1)
 			{
 				pos$ = c->pos_;
-				scale$ = c->scale;
+				scale$ = c->scale_;
 				size$ = c->size_;
 				inner_padding$ = c->inner_padding_;
 				alpha$ = c->alpha;
@@ -232,7 +245,7 @@ namespace flame
 					pos$ = c->pos_;
 					break;
 				case offsetof(ComponentElement$, scale$):
-					scale$ = c->scale;
+					scale$ = c->scale_;
 					break;
 				case offsetof(ComponentElement$, size$):
 					size$ = c->size_;
@@ -269,7 +282,7 @@ namespace flame
 			if (offset == -1)
 			{
 				c->pos_ = pos$;
-				c->scale = scale$;
+				c->scale_ = scale$;
 				c->size_ = size$;
 				c->inner_padding_ = inner_padding$;
 				c->alpha = alpha$;
@@ -287,7 +300,7 @@ namespace flame
 					c->pos_ = pos$;
 					break;
 				case offsetof(ComponentElement$, scale$):
-					c->scale = scale$;
+					c->scale_ = scale$;
 					break;
 				case offsetof(ComponentElement$, size$):
 					c->size_ = size$;

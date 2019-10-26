@@ -189,9 +189,9 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 	capture.d_er = e_drag->get_component(EventReceiver);
 	capture.is_float = is_float;
 
-	capture.e_er->focus_listeners.add([](void* c, FocusType type) {
+	capture.e_er->data_changed_listeners.add([](void* c, Component* er, uint hash, void*) {
 		auto& capture = *(Capture*)c;
-		if (type == Focus_Lost)
+		if (hash == cH("focusing") && ((cEventReceiver*)er)->focusing == false)
 		{
 			capture.e->set_visibility(false);
 			capture.d->set_visibility(true);

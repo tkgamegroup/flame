@@ -153,6 +153,7 @@ namespace flame
 					return;
 				switch (hash)
 				{
+				case cH("scale"):
 				case cH("size"):
 				case cH("inner_padding"):
 					thiz->management->add_to_update_list(thiz);
@@ -244,6 +245,7 @@ namespace flame
 							switch (hash)
 							{
 							case cH("pos"):
+							case cH("scale"):
 							case cH("size"):
 								thiz->management->add_to_update_list(thiz);
 								break;

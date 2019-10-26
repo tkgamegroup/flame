@@ -149,7 +149,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	}
 	e_docker->child(1)->add_child(e_page);
 
-	auto c_editor = new_component<cSceneEditorPrivate>();
+	auto c_editor = new_u_object<cSceneEditorPrivate>();
 	e_page->add_component(c_editor);
 
 	auto e_menubar = create_standard_menubar();
@@ -303,7 +303,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_aligner->height_policy = SizeFitParent;
 		e_overlayer->add_component(c_aligner);
 
-		auto c_overlayer = new_component<cSceneOverlayer>();
+		auto c_overlayer = new_u_object<cSceneOverlayer>();
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
 

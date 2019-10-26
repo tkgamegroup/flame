@@ -40,7 +40,7 @@ struct cEnumSingleDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		combobox = (cCombobox*)entity->child(0)->find_component(cH("Combobox"));
+		combobox = entity->child(0)->get_component(Combobox);
 
 		update_view();
 	}
@@ -62,7 +62,7 @@ struct cEnumMultiDataTracker : cDataTracker
 	{
 		checkboxs.clear();
 		for (auto i = 0; i < entity->child_count(); i++)
-			checkboxs.push_back((cCheckbox*)entity->child(i)->child(0)->find_component(cH("Checkbox")));
+			checkboxs.push_back(entity->child(i)->child(0)->get_component(Checkbox));
 
 		update_view();
 	}
@@ -79,7 +79,7 @@ struct cBoolDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		checkbox = (cCheckbox*)entity->child(0)->find_component(cH("Checkbox"));
+		checkbox = entity->child(0)->get_component(Checkbox);
 
 		update_view();
 	}
@@ -156,7 +156,7 @@ struct cStringDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		text = (cText*)entity->child(0)->find_component(cH("Text"));
+		text = entity->child(0)->get_component(Text);
 
 		update_view();
 	}
@@ -173,7 +173,7 @@ struct cWStringDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		text = (cText*)entity->child(0)->find_component(cH("Text"));
+		text = entity->child(0)->get_component(Text);
 
 		update_view();
 	}

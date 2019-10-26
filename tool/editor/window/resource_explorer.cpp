@@ -334,7 +334,7 @@ struct cResourceExplorer : Component
 					auto e_image = item->child(0);
 					((cImage*)e_image->find_component(cH("Image")))->color = Vec4c(100, 100, 100, 128);
 
-					auto c_thumbnail = new_component<cThumbnail>();
+					auto c_thumbnail = new_u_object<cThumbnail>();
 					c_thumbnail->explorer = thiz;
 					c_thumbnail->filename = std::filesystem::canonical(p).wstring();
 					e_image->add_component(c_thumbnail);
@@ -504,7 +504,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_layout->fence = 2;
 		e_page->add_component(c_layout);
 	}
-	auto c_explorer = new_component<cResourceExplorer>();
+	auto c_explorer = new_u_object<cResourceExplorer>();
 	{
 		c_explorer->base_path = path;
 
