@@ -1,17 +1,22 @@
 #include <flame/foundation/serialize.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
+#include <flame/universe/world.h>
+#include <flame/universe/systems/layout_management.h>
+#include <flame/universe/systems/ui_renderer.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
-#include <flame/universe/components/event_dispatcher.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/image.h>
+
+#include "../renderpath/canvas_make_cmd/canvas.h"
 
 using namespace flame;
 using namespace graphics;
@@ -241,7 +246,7 @@ struct Piece
 
 		auto& d = styles[style_index][transform_index];
 		for (auto i = 0; i < 16; i++)
-			blocks[i]->visible = d[i] == 1;
+			blocks[i]->visibility_ = (d[i] == 1);
 
 		down_timer.max = 50;
 		down_timer.curr = 0;
@@ -256,15 +261,15 @@ struct App
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
+	BP* bp;
+	Canvas* canvas;
 
 	FontAtlas* font_atlas_1;
 	FontAtlas* font_atlas_2;
-	Canvas* canvas;
-	int rt_frame;
 
-	Entity* root;
+	Universe* u;
+	sEventDispatcher* event_dispatcher;
 	cElement* c_element_root;
-	cEventDispatcher* c_event_dispatcher_root;
 	cText* c_text_fps;
 
 	bool gameover;
@@ -283,14 +288,14 @@ struct App
 		{
 			for (auto j = 0; j < 4; j++)
 			{
-				if (piece.blocks[i * 4 + j]->visible)
+				if (piece.blocks[i * 4 + j]->visibility_)
 				{
 					auto x = piece.x + j + x_off;
 					auto y = piece.y + i + y_off;
 					if (x < 0 || x >= block_cx ||
 						y < 0 || y >= block_cy)
 						return false;
-					if (blocks[y * block_cx + x]->visible)
+					if (blocks[y * block_cx + x]->visibility_)
 						return false;
 				}
 			}
@@ -312,7 +317,7 @@ struct App
 					if (x < 0 || x >= block_cx ||
 						y < 0 || y >= block_cy)
 						return false;
-					if (blocks[y * block_cx + x]->visible)
+					if (blocks[y * block_cx + x]->visibility_)
 						return false;
 				}
 			}
@@ -325,7 +330,7 @@ struct App
 	{
 		if (!gameover)
 		{
-			auto& key_states = c_event_dispatcher_root->key_states;
+			auto& key_states = event_dispatcher->key_states;
 			if (key_states[Key_Up] == (KeyStateDown | KeyStateJust))
 			{
 				auto index = (piece.transform_index + 1) % 4;
@@ -334,7 +339,7 @@ struct App
 					piece.transform_index = index;
 					auto& d = styles[piece.style_index][index];
 					for (auto i = 0; i < 16; i++)
-						piece.blocks[i]->visible = d[i] == 1;
+						piece.blocks[i]->visibility_ = (d[i] == 1);
 				}
 			}
 			auto x_off = 0;
@@ -370,11 +375,11 @@ struct App
 				{
 					for (auto j = 0; j < 4; j++)
 					{
-						if (piece.blocks[i * 4 + j]->visible)
+						if (piece.blocks[i * 4 + j]->visibility_)
 						{
 							auto x = piece.x + j;
 							auto y = piece.y + i;
-							blocks[y * block_cx + x]->visible = true;
+							blocks[y * block_cx + x]->visibility_ = true;
 						}
 					}
 				}
@@ -385,7 +390,7 @@ struct App
 					auto full = true;
 					for (auto j = 0; j < block_cx; j++)
 					{
-						if (!blocks[i * block_cx + j]->visible)
+						if (!blocks[i * block_cx + j]->visibility_)
 						{
 							full = false;
 							break;
@@ -396,10 +401,10 @@ struct App
 					for (auto ii = i; ii > 0; ii--)
 					{
 						for (auto j = 0; j < block_cx; j++)
-							blocks[ii * block_cx + j]->visible = blocks[(ii - 1) * block_cx + j]->visible;
+							blocks[ii * block_cx + j]->visibility_ = blocks[(ii - 1) * block_cx + j]->visibility_;
 					}
 					for (auto i = 0; i < block_cx; i++)
-						blocks[i]->visible = false;
+						blocks[i]->visibility_ = false;
 					l++;
 
 					i++;
@@ -416,36 +421,33 @@ struct App
 			text_level->set_text(std::to_wstring(level));
 			text_lines->set_text(std::to_wstring(lines));
 
-			piece.root->pos.x() = (piece.x + 1) * 32;
-			piece.root->pos.y() = piece.y * 32;
+			piece.root->pos_.x() = (piece.x + 1) * 32;
+			piece.root->pos_.y() = piece.y * 32;
 		}
 
 		auto sc = scr->sc();
-		auto sc_frame = scr->sc_frame();
 
-		if (sc_frame > rt_frame)
-		{
-			canvas->set_render_target(TargetImages, sc ? &sc->images() : nullptr);
-			rt_frame = sc_frame;
-		}
+		if (sc)
+			sc->acquire_image();
+
+		fence->wait();
+		looper().process_delay_events();
 
 		if (sc)
 		{
-			sc->acquire_image();
-			fence->wait();
-			looper().process_delay_events();
-
-			c_element_root->size = w->size;
+			c_element_root->set_size(Vec2f(w->size));
 			c_text_fps->set_text(std::to_wstring(looper().fps));
-			root->update();
+			u->update();
+		}
+		bp->update();
 
-			auto img_idx = sc->image_index();
-			auto cb = cbs[img_idx];
-			canvas->record(cb, img_idx);
-
-			d->gq->submit({ cb }, sc->image_avalible(), render_finished, fence);
+		if (sc)
+		{
+			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
+
+		scr->signal = false;
 	}
 }app;
 
@@ -456,11 +458,20 @@ int main(int argc, char **args)
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-	auto sc = app.scr->sc();
-	app.canvas = Canvas::create(app.d, TargetImages, &sc->images());
-	app.cbs.resize(sc->images().size());
+	app.cbs.resize(app.scr->sc()->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+
+	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	app.bp->graphics_device = app.d;
+	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
+	n_scr->find_input("in")->set_data_p(app.scr);
+	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
+	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
+	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
+	app.bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
+	app.bp->update();
+	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
 	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	auto font2 = Font::create(L"../game/tetris/joystix monospace.ttf", block_size);
@@ -474,19 +485,25 @@ int main(int argc, char **args)
 
 	auto texture_pack = load_texture_pack(L"../game/tetris/images/atlas.png.pack");
 
-	app.root = Entity::create();
+	app.u = Universe::create();
+
+	auto w = World::create();
+	w->add_system(sLayoutManagement::create());
+	app.event_dispatcher = sEventDispatcher::create(app.w);
+	w->add_system(app.event_dispatcher);
+	w->add_system(sUIRenderer::create(app.canvas));
+	app.u->add_world(w);
+
+	auto root = w->root();
 	{
-		app.c_element_root = cElement::create(app.canvas);
-		app.root->add_component(app.c_element_root);
+		app.c_element_root = cElement::create();
+		root->add_component(app.c_element_root);
 
-		app.c_event_dispatcher_root = cEventDispatcher::create(app.w);
-		app.root->add_component(app.c_event_dispatcher_root);
-
-		app.root->add_component(cLayout::create(LayoutFree));
+		root->add_component(cLayout::create(LayoutFree));
 	}
 
 	auto e_fps = Entity::create();
-	app.root->add_child(e_fps);
+	root->add_child(e_fps);
 	{
 		e_fps->add_component(cElement::create());
 
@@ -495,8 +512,8 @@ int main(int argc, char **args)
 		e_fps->add_component(c_text);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->x_align = AlignxRight;
-		c_aligner->y_align = AlignyBottom;
+		c_aligner->x_align_ = AlignxRight;
+		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
 	}
 
@@ -523,12 +540,12 @@ int main(int argc, char **args)
 		for (auto i = 0; i < block_cy; i++)
 		{
 			auto e_image = Entity::create();
-			app.root->add_child(e_image);
+			root->add_child(e_image);
 			{
 				auto c_element = cElement::create();
-				c_element->pos.x() = 0;
-				c_element->pos.y() = i * block_size;
-				c_element->size = block_size;
+				c_element->pos_.x() = 0;
+				c_element->pos_.y() = i * block_size;
+				c_element->size_ = block_size;
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
@@ -542,12 +559,12 @@ int main(int argc, char **args)
 		for (auto i = 0; i < block_cy; i++)
 		{
 			auto e_image = Entity::create();
-			app.root->add_child(e_image);
+			root->add_child(e_image);
 			{
 				auto c_element = cElement::create();
-				c_element->pos.x() = (block_cx + 1) * block_size;
-				c_element->pos.y() = i * block_size;
-				c_element->size = block_size;
+				c_element->pos_.x() = (block_cx + 1) * block_size;
+				c_element->pos_.y() = i * block_size;
+				c_element->size_ = block_size;
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
@@ -579,14 +596,14 @@ int main(int argc, char **args)
 			for (auto j = 0; j < block_cx; j++)
 			{
 				auto e_image = Entity::create();
-				e_image->visible = false;
+				e_image->visibility_ = false;
 				app.blocks[i * block_cx + j] = e_image;
-				app.root->add_child(e_image);
+				root->add_child(e_image);
 				{
 					auto c_element = cElement::create();
-					c_element->pos.x() = block_size + j * block_size;
-					c_element->pos.y() = i * block_size;
-					c_element->size = block_size;
+					c_element->pos_.x() = block_size + j * block_size;
+					c_element->pos_.y() = i * block_size;
+					c_element->size_ = block_size;
 					e_image->add_component(c_element);
 
 					auto c_image = cImage::create();
@@ -599,7 +616,7 @@ int main(int argc, char **args)
 		}
 
 		auto e_root = Entity::create();
-		app.root->add_child(e_root);
+		root->add_child(e_root);
 		app.piece.root = cElement::create();
 		e_root->add_component(app.piece.root);
 		for (auto i = 0; i < 4; i++)
@@ -611,10 +628,10 @@ int main(int argc, char **args)
 				e_root->add_child(e_image);
 				{
 					auto c_element = cElement::create();
-					c_element->x = j * block_size;
-					c_element->y = i * block_size;
-					c_element->width = block_size;
-					c_element->height = block_size;
+					c_element->pos_.x() = j * block_size;
+					c_element->pos_.y() = i * block_size;
+					c_element->size_.x() = block_size;
+					c_element->size_.y() = block_size;
 					c_element->alpha = 0.8f;
 					e_image->add_component(c_element);
 
@@ -630,11 +647,11 @@ int main(int argc, char **args)
 	}
 
 	auto e_score_title = Entity::create();
-	app.root->add_child(e_score_title);
+	root->add_child(e_score_title);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 13 * block_size;
-		c_element->y = 1 * block_size;
+		c_element->pos_.x() = 13 * block_size;
+		c_element->pos_.y() = 1 * block_size;
 		e_score_title->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_2);
@@ -643,24 +660,23 @@ int main(int argc, char **args)
 	}
 
 	auto e_score = Entity::create();
-	app.root->add_child(e_score);
+	root->add_child(e_score);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 16 * block_size;
-		c_element->y = 2 * block_size;
+		c_element->pos_.x() = 16 * block_size;
+		c_element->pos_.y() = 2 * block_size;
 		e_score->add_component(c_element);
 
 		app.text_score = cText::create(app.font_atlas_2);
-		app.text_score->right_align = true;
 		e_score->add_component(app.text_score);
 	}
 
 	auto e_level_title = Entity::create();
-	app.root->add_child(e_level_title);
+	root->add_child(e_level_title);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 13 * block_size;
-		c_element->y = 5 * block_size;
+		c_element->pos_.x() = 13 * block_size;
+		c_element->pos_.y() = 5 * block_size;
 		e_level_title->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_2);
@@ -669,24 +685,23 @@ int main(int argc, char **args)
 	}
 
 	auto e_level = Entity::create();
-	app.root->add_child(e_level);
+	root->add_child(e_level);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 16 * block_size;
-		c_element->y = 6 * block_size;
+		c_element->pos_.x() = 16 * block_size;
+		c_element->pos_.y() = 6 * block_size;
 		e_level->add_component(c_element);
 
 		app.text_level = cText::create(app.font_atlas_2);
-		app.text_score->right_align = true;
 		e_level->add_component(app.text_level);
 	}
 
 	auto e_lines_title = Entity::create();
-	app.root->add_child(e_lines_title);
+	root->add_child(e_lines_title);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 13 * block_size;
-		c_element->y = 9 * block_size;
+		c_element->pos_.x() = 13 * block_size;
+		c_element->pos_.y() = 9 * block_size;
 		e_lines_title->add_component(c_element);
 
 		auto c_text = cText::create(app.font_atlas_2);
@@ -695,11 +710,11 @@ int main(int argc, char **args)
 	}
 
 	auto e_lines = Entity::create();
-	app.root->add_child(e_lines);
+	root->add_child(e_lines);
 	{
 		auto c_element = cElement::create();
-		c_element->x = 16 * block_size;
-		c_element->y = 10 * block_size;
+		c_element->pos_.x() = 16 * block_size;
+		c_element->pos_.y() = 10 * block_size;
 		e_lines->add_component(c_element);
 
 		app.text_lines = cText::create(app.font_atlas_2);

@@ -71,8 +71,8 @@ void App::create()
 
 	auto w = World::create();
 	w->add_system(sLayoutManagement::create());
-	w->add_system(sUIRenderer::create(app.canvas));
 	w->add_system(sEventDispatcher::create(app.w));
+	w->add_system(sUIRenderer::create(app.canvas));
 	app.u->add_world(w);
 
 	root = w->root();
