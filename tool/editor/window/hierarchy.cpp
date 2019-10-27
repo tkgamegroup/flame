@@ -1,3 +1,4 @@
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
@@ -6,6 +7,7 @@
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -18,25 +20,24 @@ struct cHierarchyItem : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
+	cCustomDraw* custom_draw;
 
 	cHierarchy* hierarchy;
 	Entity* e;
 
 	int drop_pos;
-	int last_drop_pos;
 
 	cHierarchyItem() :
 		Component("HierarchyItem")
 	{
 		drop_pos = -1;
-		last_drop_pos = -1;
 	}
 
 	virtual void on_component_added(Component* c) override
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
-		else if (c->type_hash == cH("EventReceiver"))
+		else if (c->name_hash == cH("EventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->drag_hash = cH("HierarchyItem");
@@ -57,7 +58,7 @@ struct cHierarchyItem : Component
 				}
 				else if (action == Dropped)
 				{
-					if (!(thiz->entity->parent()->find_component(cH("Tree")) && thiz->last_drop_pos != 1))
+					if (!(thiz->entity->parent()->get_component(Tree) && thiz->drop_pos != 1))
 					{
 						struct Capture
 						{
@@ -68,8 +69,8 @@ struct cHierarchyItem : Component
 						}capture;
 						capture.h = thiz->hierarchy;
 						capture.dst = thiz->e;
-						capture.src = ((cHierarchyItem*)er->entity->find_component(cH("HierarchyItem")))->e;
-						capture.i = thiz->last_drop_pos;
+						capture.src = er->entity->get_component(HierarchyItem)->e;
+						capture.i = thiz->drop_pos;
 
 						auto ok = true;
 						auto p = capture.src->parent();
@@ -93,11 +94,10 @@ struct cHierarchyItem : Component
 									capture.dst->add_child(capture.src);
 								else
 								{
-									auto p = capture.dst->parent();
-									auto idx = p->child_position(capture.dst);
+									auto idx = capture.dst->order_ & 0xffffff;
 									if (capture.i == 2)
 										idx++;
-									p->add_child(capture.src, idx);
+									capture.dst->parent()->add_child(capture.src, idx);
 								}
 
 								capture.h->refresh();
@@ -108,10 +108,19 @@ struct cHierarchyItem : Component
 				}
 			}, new_mail_p(this));
 		}
+		else if (c->name_hash == cH("CustomDraw"))
+		{
+			custom_draw = (cCustomDraw*)c;
+			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+				(*(cHierarchyItem**)c)->draw(canvas);
+			}, new_mail_p(this));
+		}
 	}
 
-	virtual void update() override
+	void draw(graphics::Canvas* canvas)
 	{
+		if (event_receiver->dispatcher->drag_overing != event_receiver)
+			drop_pos = -1;
 		if (drop_pos >= 0)
 		{
 			std::vector<Vec2f> points;
@@ -130,10 +139,7 @@ struct cHierarchyItem : Component
 				path_move(points, element->global_size.x(), 0.f);
 				break;
 			}
-			element->canvas->stroke(points, Vec4c(120, 150, 255, 255), 3.f);
-
-			last_drop_pos = drop_pos;
-			drop_pos = -1;
+			canvas->stroke(points, Vec4c(120, 150, 255, 255), 3.f);
 		}
 	}
 };
@@ -145,10 +151,14 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_node);
 		{
+			auto e_item = e_tree_node->child(0);
+
+			e_item->add_component(cCustomDraw::create());
+
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;
-			e_tree_node->child(0)->add_component(c_item);
+			e_item->add_component(c_item);
 		}
 
 		auto e_sub_tree = e_tree_node->child(1);
@@ -160,6 +170,8 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_leaf);
 		{
+			e_tree_leaf->add_component(cCustomDraw::create());
+
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;
@@ -178,14 +190,14 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 	for (auto i = 0; i < sub_tree->child_count(); i++)
 	{
 		auto item = sub_tree->child(i);
-		if ((cHierarchyItem*)item->find_component(cH("TreeLeaf")))
+		if (item->get_component(TreeLeaf))
 		{
-			if (((cHierarchyItem*)item->find_component(cH("HierarchyItem")))->e == e)
+			if (item->get_component(HierarchyItem)->e == e)
 				return item;
 		}
 		else
 		{
-			if (((cHierarchyItem*)item->child(0)->find_component(cH("HierarchyItem")))->e == e)
+			if (item->child(0)->get_component(HierarchyItem)->e == e)
 				return item;
 			auto res = find_item_in_tree(item->child(1), e);
 			if (res)
@@ -197,7 +209,7 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 
 void cHierarchy::refresh_selected()
 {
-	auto tree = (cTree*)e_tree->find_component(cH("Tree"));
+	auto tree = e_tree->get_component(Tree);
 	if (!editor->selected)
 		tree->set_selected(nullptr, false);
 	else
@@ -216,19 +228,15 @@ Entity* cHierarchy::find_item(Entity* e) const
 	return find_item_in_tree(e_tree, e);
 }
 
-void cHierarchy::update()
-{
-}
-
 void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->pos = pos;
-		c_element->size.x() = 200.f;
-		c_element->size.y() = 900.f;
+		auto c_element = e_container->get_component(Element);
+		c_element->pos_ = pos;
+		c_element->size_.x() = 200.f;
+		c_element->size_.y() = 900.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -248,16 +256,16 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_hierarchy = new_u_object<cHierarchy>();
 	e_page->add_component(c_hierarchy);
-	c_hierarchy->tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
+	c_hierarchy->tab = tab->get_component(DockerTab);
 	c_hierarchy->editor = editor;
 	editor->hierarchy = c_hierarchy;
 
 	auto e_tree = create_standard_tree(true);
 	{
-		((cElement*)e_tree->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
+		e_tree->get_component(Element)->inner_padding_ = Vec4f(4.f);
 
-		auto c_tree = (cTree*)e_tree->find_component(cH("Tree"));
-		c_tree->selected_changed_listeners.add([](void* c, Entity* e) {
+		auto c_tree = e_tree->get_component(Tree);
+		c_tree->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto editor = *(cSceneEditor**)c;
 
 			struct Capture
@@ -266,17 +274,17 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 				Entity* s;
 			}capture;
 			capture.e = editor;
-			capture.s = e;
+			capture.s = ((cTree*)t)->selected;
 			looper().add_delay_event([](void* c) {
 				auto& capture = *(Capture*)c;
 				auto editor = capture.e;
 				Entity* selected = nullptr;
 				if (capture.s)
 				{
-					if (capture.s->find_component(cH("TreeLeaf")))
-						selected = ((cHierarchyItem*)capture.s->find_component(cH("HierarchyItem")))->e;
+					if (capture.s->get_component(TreeLeaf))
+						selected = capture.s->get_component(HierarchyItem)->e;
 					else
-						selected = ((cHierarchyItem*)capture.s->child(0)->find_component(cH("HierarchyItem")))->e;
+						selected = capture.s->child(0)->get_component(HierarchyItem)->e;
 				}
 				auto different = selected != editor->selected;
 				editor->selected = selected;

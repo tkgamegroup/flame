@@ -22,8 +22,6 @@ struct cInspector : Component
 
 	void update_data_tracker(uint component_hash, uint data_offset) const;
 	void refresh();
-
-	virtual void update() override;
 };
 
 void open_inspector(cSceneEditor* editor, const Vec2f& pos);

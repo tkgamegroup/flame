@@ -16,6 +16,7 @@
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -34,6 +35,7 @@ struct Seat
 struct cThumbnail : Component
 {
 	cImage* image;
+	cCustomDraw* custom_draw;
 
 	cResourceExplorer* explorer;
 	std::wstring filename;
@@ -44,11 +46,13 @@ struct cThumbnail : Component
 	~cThumbnail();
 	void return_seat();
 	virtual void on_component_added(Component* c) override;
-	virtual void update() override;
+	void draw(graphics::Canvas* canvas);
 };
 
 struct cResourceExplorer : Component
 {
+	cCustomDraw* custom_draw;
+
 	std::filesystem::path base_path;
 	std::filesystem::path curr_path;
 
@@ -151,7 +155,7 @@ struct cResourceExplorer : Component
 		e_item->add_child(e_image);
 		{
 			auto c_element = cElement::create();
-			c_element->size = 64.f;
+			c_element->size_ = 64.f;
 			e_image->add_component(c_element);
 
 			auto c_image = cImage::create();
@@ -194,11 +198,11 @@ struct cResourceExplorer : Component
 			auto e_upward = create_standard_button(app.font_atlas_pixel, 1.f, Icon_LEVEL_UP);
 			address_bar->add_child(e_upward);
 			{
-				auto s = (cStyleColor*)e_upward->find_component(cH("StyleColor"));
+				auto s = e_upward->get_component(StyleColor);
 				s->color_normal.a() = 0;
 				s->style();
 			}
-			((cEventReceiver*)e_upward->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_upward->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cResourceExplorer**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -222,7 +226,7 @@ struct cResourceExplorer : Component
 				address_bar->add_child(e_stem);
 				{
 					{
-						auto s = (cStyleColor*)e_stem->find_component(cH("StyleColor"));
+						auto s = e_stem->get_component(StyleColor);
 						s->color_normal.a() = 0;
 						s->style();
 					}
@@ -234,7 +238,7 @@ struct cResourceExplorer : Component
 					}capture;
 					capture.e = thiz;
 					capture.p = s.wstring();
-					((cEventReceiver*)e_stem->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					e_stem->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
 						if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							capture.e->navigate(capture.p);
@@ -261,7 +265,7 @@ struct cResourceExplorer : Component
 						}capture;
 						capture.e = thiz;
 						capture.p = p.wstring();
-						((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+						e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 							auto& capture = *(Capture*)c;
 							if (is_mouse_down(action, key, true) && key == Mouse_Left)
 							{
@@ -275,7 +279,7 @@ struct cResourceExplorer : Component
 				}
 			}
 
-			((cList*)list->find_component(cH("List")))->set_selected(nullptr, false);
+			list->get_component(List)->set_selected(nullptr, false);
 			list->remove_child((Entity*)FLAME_INVALID_POINTER);
 
 			std::vector<std::filesystem::path> dirs;
@@ -305,7 +309,7 @@ struct cResourceExplorer : Component
 				}capture;
 				capture.e = thiz;
 				capture.p = p;
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (is_mouse_clicked(action, key, true))
 						capture.e->navigate(capture.p);
@@ -332,7 +336,9 @@ struct cResourceExplorer : Component
 				if (is_image_type)
 				{
 					auto e_image = item->child(0);
-					((cImage*)e_image->find_component(cH("Image")))->color = Vec4c(100, 100, 100, 128);
+					e_image->get_component(Image)->color = Vec4c(100, 100, 100, 128);
+
+					e_image->add_component(cCustomDraw::create());
 
 					auto c_thumbnail = new_u_object<cThumbnail>();
 					c_thumbnail->explorer = thiz;
@@ -346,7 +352,7 @@ struct cResourceExplorer : Component
 				}capture;
 				capture.e = thiz;
 				capture.p = p;
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Right)
 					{
@@ -364,7 +370,18 @@ struct cResourceExplorer : Component
 		}, new_mail_p(this));
 	}
 
-	virtual void update() override
+	void on_component_added(Component* c) override
+	{
+		if (c->name_hash == cH("CustomDraw"))
+		{
+			custom_draw = (cCustomDraw*)c;
+			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+				(*(cResourceExplorer**)c)->draw(canvas);
+			}, new_mail_p(this));
+		}
+	}
+
+	void draw(graphics::Canvas* canvas)
 	{
 		if (wait_event(ev_file_changed, 0))
 		{
@@ -378,8 +395,8 @@ struct cResourceExplorer : Component
 		}
 		else
 		{
-			auto w = c_list_element->size.x() - c_list_element->inner_padding_horizontal();
-			c_list_layout->column = max(1U, uint(w / (c_list_layout->item_padding + 64.f)));
+			auto w = c_list_element->size_.x() - c_list_element->inner_padding_horizontal();
+			c_list_layout->set_column(max(1U, uint(w / (c_list_layout->item_padding + 64.f))));
 		}
 	}
 };
@@ -415,7 +432,7 @@ void cThumbnail::return_seat()
 
 void cThumbnail::on_component_added(Component* c)
 {
-	if (c->type_hash == cH("Image"))
+	if (c->name_hash == cH("Image"))
 	{
 		image = (cImage*)c;
 		add_work([](void* c) {
@@ -428,9 +445,16 @@ void cThumbnail::on_component_added(Component* c)
 			thiz->thumbnail = bitmap;
 		}, new_mail_p(this));
 	}
+	else if (c->name_hash == cH("CustomDraw"))
+	{
+		custom_draw = (cCustomDraw*)c;
+		custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+			(*(cThumbnail**)c)->draw(canvas);
+		}, new_mail_p(this));
+	}
 }
 
-void cThumbnail::update()
+void cThumbnail::draw(graphics::Canvas* canvas)
 {
 	if (thumbnail)
 	{
@@ -438,7 +462,7 @@ void cThumbnail::update()
 		{
 			if (seat)
 				return_seat();
-			image->element->inner_padding = Vec4f(0.f);
+			image->element->inner_padding_ = Vec4f(0.f);
 			image->id = 0;
 			image->color = Vec4c(100, 100, 100, 128);
 		}
@@ -464,7 +488,7 @@ void cThumbnail::update()
 						{
 							auto h = (64 - thumbnail_size.x()) * 0.5f;
 							auto v = (64 - thumbnail_size.y()) * 0.5f;
-							image->element->inner_padding = Vec4f(h, v, h, v);
+							image->element->inner_padding_ = Vec4f(h, v, h, v);
 						}
 						image->id = explorer->thumbnails_img_idx;
 						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
@@ -482,10 +506,10 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->pos = pos;
-		c_element->size.x() = 1914.f;
-		c_element->size.y() = 274.f;
+		auto c_element = e_container->get_component(Element);
+		c_element->pos_ = pos;
+		c_element->size_.x() = 1914.f;
+		c_element->size_.y() = 274.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -495,7 +519,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 
 	auto e_page = get_docker_page_model()->copy();
 	{
-		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
+		e_page->get_component(Element)->inner_padding_ = Vec4f(4.f);
 
 		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->item_padding = 4.f;
@@ -504,6 +528,9 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_layout->fence = 2;
 		e_page->add_component(c_layout);
 	}
+
+	e_page->add_component(cCustomDraw::create());
+
 	auto c_explorer = new_u_object<cResourceExplorer>();
 	{
 		c_explorer->base_path = path;
@@ -513,7 +540,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 				c_explorer->dir_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -529,7 +556,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Prefab");
 				c_explorer->blank_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -550,7 +577,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New BP");
 				c_explorer->blank_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -576,7 +603,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		{
 			auto mi_open = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 			c_explorer->pf_menu->add_child(mi_open);
-			((cEventReceiver*)mi_open->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			mi_open->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto explorer = *(cResourceExplorer**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
@@ -591,7 +618,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open");
 				c_explorer->bp_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -603,7 +630,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			{
 				auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Open (No Compile)");
 				c_explorer->bp_menu->add_child(item);
-				((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto explorer = *(cResourceExplorer**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -628,14 +655,14 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 
 	auto e_list = create_standard_list(true);
 	{
-		c_explorer->c_list_element = (cElement*)e_list->find_component(cH("Element"));
+		c_explorer->c_list_element = e_list->get_component(Element);
 
-		auto c_layout = (cLayout*)e_list->find_component(cH("Layout"));
+		auto c_layout = e_list->get_component(Layout);
 		c_layout->type = LayoutGrid;
-		c_layout->column = 4;
+		c_layout->column_ = 4;
 		c_explorer->c_list_layout = c_layout;
 
-		((cEventReceiver*)e_list->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_list->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto exploter = *(cResourceExplorer**)c;
 
 			if (is_mouse_down(action, key, true) && key == Mouse_Right)

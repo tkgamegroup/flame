@@ -12,6 +12,7 @@
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -58,7 +59,7 @@ struct cSceneEditorPrivate : cSceneEditor
 		filename = _filename;
 		if (prefab)
 			e_scene->remove_child(prefab);
-		prefab = Entity::create_from_file(app.dbs, filename);
+		prefab = Entity::create_from_file(app.u, app.dbs, filename);
 		e_scene->add_child(prefab);
 	}
 
@@ -67,7 +68,7 @@ struct cSceneEditorPrivate : cSceneEditor
 		for (auto i = e->child_count() - 1; i >= 0; i--)
 		{
 			auto c = e->child(i);
-			if (c->global_visible_)
+			if (c->global_visibility_)
 				search_hover(c);
 		}
 		if (selected)
@@ -79,13 +80,10 @@ struct cSceneEditorPrivate : cSceneEditor
 	}
 };
 
-void cSceneEditor::update()
-{
-}
-
 struct cSceneOverlayer : Component
 {
 	cElement* element;
+	cCustomDraw* custom_draw;
 
 	cSceneEditorPrivate* editor;
 	int tool_type;
@@ -99,25 +97,32 @@ struct cSceneOverlayer : Component
 
 	virtual void on_component_added(Component* c) override
 	{
-		if (c->type_hash == cH("Element"))
+		if (c->name_hash == cH("Element"))
 			element = (cElement*)c;
+		else if (c->name_hash == cH("CustomDraw"))
+		{
+			custom_draw = (cCustomDraw*)c;
+			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+				(*(cSceneOverlayer**)c)->draw(canvas);
+			}, new_mail_p(this));
+		}
 	}
 
-	virtual void update() override
+	void draw(graphics::Canvas* canvas)
 	{
-		transform_tool_element->pos = -200.f;
+		transform_tool_element->set_pos(Vec2f(-200.f));
 		if (editor->selected)
 		{
-			auto se = (cElement*)editor->selected->find_component(cH("Element"));
+			auto se = editor->selected->get_component(Element);
 			if (se)
 			{
 				std::vector<Vec2f> points;
 				path_rect(points, se->global_pos, se->global_size);
 				points.push_back(points[0]);
-				element->canvas->stroke(points, Vec4c(0, 0, 0, 255), Vec4c(255, 255, 255, 255), 6.f);
+				canvas->stroke(points, Vec4c(255, 255, 255, 255), 6.f);
 
 				if (tool_type > 0)
-					transform_tool_element->pos = (se->global_pos + se->global_size * 0.5f) - element->global_pos - transform_tool_element->size * 0.5f;
+					transform_tool_element->set_pos((se->global_pos + se->global_size * 0.5f) - element->global_pos - transform_tool_element->size_ * 0.5f);
 			}
 		}
 	}
@@ -128,10 +133,10 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->pos = pos;
-		c_element->size.x() = 1000.f;
-		c_element->size.y() = 900.f;
+		auto c_element = e_container->get_component(Element);
+		c_element->pos_ = pos;
+		c_element->size_.x() = 1000.f;
+		c_element->size_.y() = 900.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -159,7 +164,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Entity");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -183,7 +188,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -200,7 +205,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -226,7 +231,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -250,8 +255,8 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		e_scene->add_component(c_element);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_scene->add_component(c_aligner);
 
 		e_scene->add_component(cLayout::create(LayoutFree));
@@ -299,9 +304,11 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		e_overlayer->add_component(c_event_receiver);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_overlayer->add_component(c_aligner);
+
+		e_overlayer->add_component(cCustomDraw::create());
 
 		auto c_overlayer = new_u_object<cSceneOverlayer>();
 		c_overlayer->editor = c_editor;
@@ -315,7 +322,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		e_overlayer->add_child(e_transform_tool);
 		{
 			auto c_element = cElement::create();
-			c_element->size = 20.f;
+			c_element->size_ = 20.f;
 			c_element->frame_thickness = 2.f;
 			e_transform_tool->add_component(c_element);
 			c_overlayer->transform_tool_element = c_element;
@@ -334,10 +341,10 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				auto& capture = *(Capture*)c;
 				if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 				{
-					auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
+					auto e = capture.e->selected->get_component(Element);
 					if (e)
 					{
-						e->pos += pos;
+						e->set_pos(Vec2f(pos), true);
 						capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
 					}
 				}
@@ -350,10 +357,10 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			e_transform_tool->add_child(e_h_wing);
 			{
 				auto c_element = cElement::create();
-				c_element->pos.x() = 25.f;
-				c_element->pos.y() = 5.f;
-				c_element->size.x() = 20.f;
-				c_element->size.y() = 10.f;
+				c_element->pos_.x() = 25.f;
+				c_element->pos_.y() = 5.f;
+				c_element->size_.x() = 20.f;
+				c_element->size_.y() = 10.f;
 				c_element->frame_thickness = 2.f;
 				e_h_wing->add_component(c_element);
 
@@ -371,10 +378,10 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
-						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
+						auto e = capture.e->selected->get_component(Element);
 						if (e)
 						{
-							e->pos.x() += pos.x();
+							e->set_x(pos.x(), true);
 							capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
 						}
 					}
@@ -388,10 +395,10 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			e_transform_tool->add_child(e_v_wing);
 			{
 				auto c_element = cElement::create();
-				c_element->pos.x() = 5.f;
-				c_element->pos.y() = 25.f;
-				c_element->size.x() = 10.f;
-				c_element->size.y() = 20.f;
+				c_element->pos_.x() = 5.f;
+				c_element->pos_.y() = 25.f;
+				c_element->size_.x() = 10.f;
+				c_element->size_.y() = 20.f;
 				c_element->frame_thickness = 2.f;
 				e_v_wing->add_component(c_element);
 
@@ -409,10 +416,10 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
-						auto e = (cElement*)capture.e->selected->find_component(cH("Element"));
+						auto e = capture.e->selected->get_component(Element);
 						if (e)
 						{
-							e->pos.y() += pos.y();
+							e->set_y(pos.y(), true);
 							capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
 						}
 					}
@@ -424,10 +431,11 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		}
 
 		{
-			auto combobox = (cCombobox*)e_tool->find_component(cH("Combobox"));
+			auto combobox = e_tool->get_component(Combobox);
 			combobox->set_index(0, false);
-			combobox->changed_listeners.add([](void* c, int idx) {
-				(*(cSceneOverlayer**)c)->tool_type = idx;
+			combobox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+				if (hash == cH("index"))
+					(*(cSceneOverlayer**)c)->tool_type = ((cCombobox*)cb)->idx;
 			}, new_mail_p(c_overlayer));
 		}
 	}

@@ -19,7 +19,7 @@ namespace flame
 		height_fit_children = true;
 		fence = -1;
 		scroll_offset_ = Vec2f(0.f);
-		column = 0;
+		column_ = 0;
 
 		content_size = Vec2f(0.f);
 
@@ -488,7 +488,7 @@ namespace flame
 		{
 			auto n = min(fence, (uint)als.size());
 
-			if (column == 0)
+			if (column_ == 0)
 			{
 				set_content_size(Vec2f(0.f));
 				if (width_fit_children)
@@ -531,7 +531,7 @@ namespace flame
 					lh = max(element->size_.y(), lh);
 
 					c++;
-					if (c == column)
+					if (c == column_)
 					{
 						w = max(lw - item_padding, w);
 						h += lh + item_padding;
@@ -542,7 +542,7 @@ namespace flame
 				}
 				if (fence > 0 && !als.empty())
 				{
-					if (n % column != 0)
+					if (n % column_ != 0)
 					{
 						w = max(lw - item_padding, w);
 						h += lh + item_padding;
@@ -576,7 +576,7 @@ namespace flame
 					lh = max(element->size_.y(), lh);
 
 					c++;
-					if (c == column)
+					if (c == column_)
 					{
 						x = element->inner_padding_[0];
 						y += lh + item_padding;
@@ -608,6 +608,8 @@ namespace flame
 
 	void cLayout::set_x_scroll_offset(float x)
 	{
+		if (scroll_offset_.x() == x)
+			return;
 		scroll_offset_.x() = x;
 		auto thiz = (cLayoutPrivate*)this;
 		if (thiz->management)
@@ -616,7 +618,19 @@ namespace flame
 
 	void cLayout::set_y_scroll_offset(float y)
 	{
+		if (scroll_offset_.y() == y)
+			return;
 		scroll_offset_.y() = y;
+		auto thiz = (cLayoutPrivate*)this;
+		if (thiz->management)
+			thiz->management->add_to_update_list(thiz);
+	}
+
+	void cLayout::set_column(uint c)
+	{
+		if (column_ == c)
+			return;
+		column_ = c;
 		auto thiz = (cLayoutPrivate*)this;
 		if (thiz->management)
 			thiz->management->add_to_update_list(thiz);

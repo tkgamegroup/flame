@@ -74,7 +74,8 @@ namespace flame
 
 	void cEventReceiverPrivate::on_visibility_changed()
 	{
-		dispatcher->pending_update = true;
+		if (dispatcher)
+			dispatcher->pending_update = true;
 	}
 
 	Component* cEventReceiverPrivate::copy()

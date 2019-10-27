@@ -105,8 +105,8 @@ struct cDigitalDataTracker : cDataTracker
 	virtual void on_added() override
 	{
 		auto e = entity->child(0);
-		edit_text = (cText*)e->child(0)->find_component(cH("Text"));
-		drag_text = (cText*)e->child(1)->find_component(cH("Text"));
+		edit_text = e->child(0)->get_component(Text);
+		drag_text = e->child(1)->get_component(Text);
 
 		update_view();
 	}
@@ -137,8 +137,8 @@ struct cDigitalVecDataTracker : cDataTracker
 		for (auto i = 0; i < N; i++)
 		{
 			auto e = entity->child(i)->child(0);
-			edit_texts[i] = (cText*)e->child(0)->find_component(cH("Text"));
-			drag_texts[i] = (cText*)e->child(1)->find_component(cH("Text"));
+			edit_texts[i] = e->child(0)->get_component(Text);
+			drag_texts[i] = e->child(1)->get_component(Text);
 		}
 
 		update_view();

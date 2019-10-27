@@ -11,6 +11,7 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
+#include <flame/universe/components/tree.h>
 #include <flame/universe/components/window.h>
 
 #include "../app.h"
@@ -44,7 +45,7 @@ Entity* create_item(const std::wstring& title)
 	e_item->add_child(e_data);
 	{
 		auto c_element = cElement::create();
-		c_element->inner_padding = Vec4f(app.font_atlas_pixel->pixel_height, 0.f, 0.f, 0.f);
+		c_element->inner_padding_ = Vec4f(app.font_atlas_pixel->pixel_height, 0.f, 0.f, 0.f);
 		e_data->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -100,12 +101,16 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	}capture;
 	capture.d = d;
 	capture.v = v;
-	capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-	((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+	capture.drag_text = e_edit->child(1)->get_component(Text);
+	e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 		auto& capture = *(Capture*)c;
-		*(T*)((char*)capture.d->dummy + capture.v->offset()) = sto_s<T>(text);
-		capture.d->unserialize(capture.v->offset());
-		capture.drag_text->set_text(text);
+		if (hash == cH("text"))
+		{
+			auto& text = ((cText*)t)->text();
+			*(T*)((char*)capture.d->dummy + capture.v->offset()) = sto_s<T>(text.c_str());
+			capture.d->unserialize(capture.v->offset());
+			capture.drag_text->set_text(text);
+		}
 	}, new_mail(&capture));
 
 	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
@@ -130,12 +135,16 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
-		capture.drag_text = (cText*)e_edit->child(1)->find_component(cH("Text"));
-		((cEdit*)e_edit->child(0)->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+		capture.drag_text = e_edit->child(1)->get_component(Text);
+		e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = sto_s<T>(text);
-			capture.d->unserialize(capture.v->offset());
-			capture.drag_text->set_text(text);
+			if (hash == cH("text"))
+			{
+				auto& text = ((cText*)t)->text();
+				(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = sto_s<T>(text.c_str());
+				capture.d->unserialize(capture.v->offset());
+				capture.drag_text->set_text(text);
+			}
 		}, new_mail(&capture));
 	}
 
@@ -182,17 +191,22 @@ struct cInspectorPrivate : cInspector
 
 				auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 				e_item->child(1)->add_child(e_edit);
-				((cText*)e_edit->find_component(cH("Text")))->set_text(s2w(selected->name()));
-				((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+				auto c_text = e_edit->get_component(Text);
+				c_text->set_text(s2w(selected->name()));
+				c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 					auto editor = *(cSceneEditor**)c;
-					editor->selected->set_name(w2s(text));
-					if (editor->hierarchy)
+					if (hash == cH("text"))
 					{
-						auto item = editor->hierarchy->find_item(editor->selected);
-						if (item->find_component(cH("TreeNode")))
-							((cText*)item->child(0)->find_component(cH("Text")))->set_text(text);
-						else
-							((cText*)item->find_component(cH("Text")))->set_text(text);
+						auto& text = ((cText*)t)->text();
+						editor->selected->set_name(w2s(text));
+						if (editor->hierarchy)
+						{
+							auto item = editor->hierarchy->find_item(editor->selected);
+							if (item->get_component(TreeNode))
+								item->child(0)->get_component(Text)->set_text(text);
+							else
+								item->get_component(Text)->set_text(text);
+						}
 					}
 				}, new_mail_p(editor));
 			}
@@ -202,28 +216,28 @@ struct cInspectorPrivate : cInspector
 
 				auto e_checkbox = create_standard_checkbox();
 				e_item->child(1)->add_child(e_checkbox);
-				auto checkbox = (cCheckbox*)e_checkbox->find_component(cH("Checkbox"));
-				checkbox->set_checked(selected->visible_, false);
-				checkbox->changed_listeners.add([](void* c, bool checked) {
-					(*(Entity**)c)->set_visible(checked);
+				auto checkbox = e_checkbox->get_component(Checkbox);
+				checkbox->set_checked(selected->visibility_, false);
+				checkbox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+					if (hash == cH("checked"))
+						(*(Entity**)c)->set_visibility(((cCheckbox*)cb)->checked);
 				}, new_mail_p(selected));
 			}
 
-			for (auto i = 0; i < selected->component_count(); i++)
+			auto components = selected->get_components();
+			for (auto component : *components.p)
 			{
-				auto component = selected->component(i);
-
 				auto e_component = Entity::create();
 				e_layout->add_child(e_component);
 				{
 					auto c_element = cElement::create();
-					c_element->inner_padding = Vec4f(4.f);
+					c_element->inner_padding_ = Vec4f(4.f);
 					c_element->frame_thickness = 2.f;
 					c_element->frame_color = Vec4f(0, 0, 0, 255);
 					e_component->add_component(c_element);
 
 					auto c_aligner = cAligner::create();
-					c_aligner->width_policy = SizeFitParent;
+					c_aligner->width_policy_ = SizeFitParent;
 					e_component->add_component(c_aligner);
 
 					auto c_layout = cLayout::create(LayoutVertical);
@@ -231,7 +245,7 @@ struct cInspectorPrivate : cInspector
 					e_component->add_component(c_layout);
 				}
 
-				auto udt = find_udt(app.dbs, H((std::string("Component") + component->type_name).c_str()));
+				auto udt = find_udt(app.dbs, H((std::string("Component") + component->name).c_str()));
 
 				auto c_dealer = new_u_object<cComponentDealer>();
 				c_dealer->component = component;
@@ -264,12 +278,12 @@ struct cInspectorPrivate : cInspector
 				e_component->add_child(e_name);
 				{
 					auto c_element = cElement::create();
-					c_element->inner_padding = Vec4f(0.f, 0.f, 4.f + app.font_atlas_pixel->pixel_height, 0.f);
+					c_element->inner_padding_ = Vec4f(0.f, 0.f, 4.f + app.font_atlas_pixel->pixel_height, 0.f);
 					e_name->add_component(c_element);
 
 					auto c_text = cText::create(app.font_atlas_pixel);
 					c_text->color = Vec4c(30, 40, 160, 255);
-					c_text->set_text(s2w(component->type_name));
+					c_text->set_text(s2w(component->name));
 					e_name->add_component(c_text);
 
 					e_name->add_component(cLayout::create(LayoutFree));
@@ -311,7 +325,7 @@ struct cInspectorPrivate : cInspector
 					e_close->add_component(c_event_receiver);
 
 					auto c_aligner = cAligner::create();
-					c_aligner->x_align = AlignxRight;
+					c_aligner->x_align_ = AlignxRight;
 					e_close->add_component(c_aligner);
 				}
 
@@ -342,10 +356,13 @@ struct cInspectorPrivate : cInspector
 						capture.d = c_dealer;
 						capture.v = v;
 						capture.info = info;
-						((cCombobox*)e_data->child(0)->find_component(cH("Combobox")))->changed_listeners.add([](void* c, int idx) {
+						e_data->child(0)->get_component(Combobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 							auto& capture = *(Capture*)c;
-							*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(idx)->value();
-							capture.d->unserialize(capture.v->offset());
+							if (hash == cH("index"))
+							{
+								*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(((cCombobox*)cb)->idx)->value();
+								capture.d->unserialize(capture.v->offset());
+							}
 						}, new_mail(&capture));
 
 						auto c_tracker = new_u_object<cEnumSingleDataTracker>();
@@ -370,14 +387,17 @@ struct cInspectorPrivate : cInspector
 							capture.d = c_dealer;
 							capture.v = v;
 							capture.vl = info->item(k)->value();
-							((cCheckbox*)e_data->child(k)->child(0)->find_component(cH("Checkbox")))->changed_listeners.add([](void* c, bool checked) {
+							e_data->child(k)->child(0)->get_component(Checkbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
-								if (checked)
-									(*pv) |= capture.vl;
-								else
-									(*pv) &= ~capture.vl;
-								capture.d->unserialize(capture.v->offset());
+								if (hash == cH("checkbox"))
+								{
+									auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
+									if (((cCheckbox*)cb)->checked)
+										(*pv) |= capture.vl;
+									else
+										(*pv) &= ~capture.vl;
+									capture.d->unserialize(capture.v->offset());
+								}
 							}, new_mail(&capture));
 						}
 
@@ -401,10 +421,13 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cCheckbox*)e_checkbox->find_component(cH("Checkbox")))->changed_listeners.add([](void* c, bool checked) {
+							e_checkbox->get_component(Checkbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								*(bool*)((char*)capture.d->dummy + capture.v->offset()) = checked;
-								capture.d->unserialize(capture.v->offset());
+								if (hash == cH("checkbox"))
+								{
+									*(bool*)((char*)capture.d->dummy + capture.v->offset()) = ((cCheckbox*)cb)->checked;
+									capture.d->unserialize(capture.v->offset());
+								}
 							}, new_mail(&capture));
 
 							auto c_tracker = new_u_object<cBoolDataTracker>();
@@ -471,10 +494,13 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+							e_edit->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(text);
-								capture.d->unserialize(capture.v->offset());
+								if (hash == cH("text"))
+								{
+									*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(((cText*)t)->text());
+									capture.d->unserialize(capture.v->offset());
+								}
 							}, new_mail(&capture));
 
 							auto c_tracker = new_u_object<cStringDataTracker>();
@@ -493,10 +519,13 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							((cEdit*)e_edit->find_component(cH("Edit")))->changed_listeners.add([](void* c, const wchar_t* text) {
+							e_edit->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = text;
-								capture.d->unserialize(capture.v->offset());
+								if (hash == cH("text"))
+								{
+									*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = ((cText*)t)->text();
+									capture.d->unserialize(capture.v->offset());
+								}
 							}, new_mail(&capture));
 
 							auto c_tracker = new_u_object<cWStringDataTracker>();
@@ -509,6 +538,7 @@ struct cInspectorPrivate : cInspector
 					}
 				}
 			}
+			delete_mail(components);
 
 			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Component", app.root, e_add_component_menu, true, SideS, false, false, false, nullptr);
 			e_layout->add_child(e_menu_btn);
@@ -523,13 +553,13 @@ void cInspector::update_data_tracker(uint component_hash, uint data_offset) cons
 	for (auto i = 2; i < e_layout->child_count(); i++)
 	{
 		auto e_component = e_layout->child(i);
-		auto dealer = (cComponentDealer*)e_component->find_component(cH("ComponentDealer"));
-		if (dealer && dealer->component->type_hash == component_hash)
+		auto dealer = e_component->get_component(ComponentDealer);
+		if (dealer && dealer->component->name_hash == component_hash)
 		{
 			for (auto j = 1; j < e_component->child_count(); j++)
 			{
 				auto e_data = e_component->child(j)->child(1);
-				auto tracker = (cDataTracker*)e_data->find_component(cH("DataTracker"));
+				auto tracker = e_data->get_component(DataTracker);
 				if (tracker && tracker->data == (char*)dealer->dummy + data_offset)
 				{
 					dealer->serialize(data_offset);
@@ -545,19 +575,15 @@ void cInspector::refresh()
 	((cInspectorPrivate*)this)->refresh();
 }
 
-void cInspector::update()
-{
-}
-
 void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 {
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = (cElement*)e_container->find_component(cH("Element"));
-		c_element->pos = pos;
-		c_element->size.x() = 200.f;
-		c_element->size.y() = 900.f;
+		auto c_element = e_container->get_component(Element);
+		c_element->pos_ = pos;
+		c_element->size_.x() = 200.f;
+		c_element->size_.y() = 900.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -568,7 +594,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	auto e_page = get_docker_page_model()->copy();
 	{
-		((cElement*)e_page->find_component(cH("Element")))->inner_padding = Vec4f(4.f);
+		e_page->get_component(Element)->inner_padding_ = Vec4f(4.f);
 
 		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
@@ -579,7 +605,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_inspector = new_u_object<cInspectorPrivate>();
 	e_page->add_component(c_inspector);
-	c_inspector->tab = (cDockerTab*)tab->find_component(cH("DockerTab"));
+	c_inspector->tab = tab->get_component(DockerTab);
 	c_inspector->editor = editor;
 	c_inspector->module = load_module(L"flame_universe.dll");
 
@@ -614,7 +640,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 			}capture;
 			capture.i = c_inspector;
 			capture.u = udt;
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -662,8 +688,8 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 		e_layout->add_component(c_element);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_layout->add_component(c_aligner);
 
 		auto c_layout = cLayout::create(LayoutVertical);

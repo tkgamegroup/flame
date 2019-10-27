@@ -25,8 +25,6 @@ struct cHierarchy : Component
 	Entity* find_item(Entity* e) const;
 	void refresh_selected();
 	void refresh();
-
-	virtual void update() override;
 };
 
 void open_hierachy(cSceneEditor* editor, const Vec2f& pos);

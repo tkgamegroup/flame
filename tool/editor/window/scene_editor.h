@@ -21,8 +21,6 @@ struct cSceneEditor : Component
 		Component("SceneEditor")
 	{
 	}
-
-	virtual void update() override;
 };
 
 void open_scene_editor(const std::wstring& filename, const Vec2f& pos);

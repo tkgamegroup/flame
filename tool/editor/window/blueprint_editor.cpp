@@ -82,7 +82,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(Text);
-		e_edit->child(0)->get_component(Text)->changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
 			if (hash == cH("Text"))
 			{
@@ -259,38 +259,55 @@ struct cBPEditor : Component
 
 	void deselect()
 	{
+		switch (sel_type_)
+		{
+		case SelModule:
+		case SelPackage:
+		case SelNode:
+			((Entity*)selected_.m->user_data)->get_component(Element)->frame_thickness = 0.f;
+			break;
+		}
+
 		sel_type_ = SelAir;
 		selected_.n = nullptr;
 	}
 
+	void select(BP::Module* m)
+	{
+		deselect();
+		sel_type_ = SelModule;
+		selected_.m = m;
+		((Entity*)selected_.m->user_data)->get_component(Element)->frame_thickness = 4.f;
+	}
+
 	void select(BP::Package* p)
 	{
+		deselect();
 		sel_type_ = SelPackage;
 		selected_.p = p;
+		((Entity*)selected_.m->user_data)->get_component(Element)->frame_thickness = 4.f;
 	}
 
 	void select(BP::Node* n)
 	{
+		deselect();
 		sel_type_ = SelNode;
 		selected_.n = n;
+		((Entity*)selected_.m->user_data)->get_component(Element)->frame_thickness = 4.f;
 	}
 
 	void select_s(BP::Slot* s)
 	{
+		deselect();
 		sel_type_ = SelSlot;
 		selected_.s = s;
 	}
 
 	void select_l(BP::Slot* s)
 	{
+		deselect();
 		sel_type_ = SelLink;
 		selected_.l = s;
-	}
-
-	void select(BP::Module* m)
-	{
-		sel_type_ = SelModule;
-		selected_.m = m;
 	}
 
 	void reset_add_node_menu_filter()
@@ -836,7 +853,13 @@ struct cBPModule : Component
 	void on_component_added(Component* c) override
 	{
 		if (c->name_hash == cH("Element"))
+		{
 			element = (cElement*)c;
+			element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+				if (hash == cH("pos"))
+					(*(cBPModule**)c)->m->pos = ((cElement*)e)->pos_;
+			}, new_mail_p(this));
+		}
 		else if (c->name_hash == cH("EventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
@@ -847,15 +870,40 @@ struct cBPModule : Component
 			}, new_mail_p(this));
 		}
 	}
+};
 
-	void update()
+struct cBPPackage : Component
+{
+	cElement* element;
+	cEventReceiver* event_receiver;
+
+	cBPEditor* editor;
+	BP::Package* p;
+
+	cBPPackage() :
+		Component("BPPackage")
 	{
-		if (m == editor->selected.m)
-			element->frame_thickness = 4.f;
-		else
-			element->frame_thickness = 0.f;
+	}
 
-		m->pos = element->pos;
+	void on_component_added(Component* c) override
+	{
+		if (c->name_hash == cH("Element"))
+		{
+			element = (cElement*)c;
+			element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+				if (hash == cH("pos"))
+					(*(cBPModule**)c)->m->pos = ((cElement*)e)->pos_;
+			}, new_mail_p(this));
+		}
+		else if (c->name_hash == cH("EventReceiver"))
+		{
+			event_receiver = (cEventReceiver*)c;
+			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto thiz = *(cBPPackage**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					thiz->editor->select(thiz->p);
+			}, new_mail_p(this));
+		}
 	}
 };
 
@@ -875,7 +923,13 @@ struct cBPNode : Component
 	void on_component_added(Component* c) override
 	{
 		if (c->name_hash == cH("Element"))
+		{
 			element = (cElement*)c;
+			element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+				if (hash == cH("pos"))
+					(*(cBPModule**)c)->m->pos = ((cElement*)e)->pos_;
+			}, new_mail_p(this));
+		}
 		else if (c->name_hash == cH("EventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
@@ -885,16 +939,6 @@ struct cBPNode : Component
 					thiz->editor->select(thiz->n);
 			}, new_mail_p(this));
 		}
-	}
-
-	void update()
-	{
-		if (n == editor->selected.n)
-			element->frame_thickness = 4.f;
-		else
-			element->frame_thickness = 0.f;
-
-		n->pos = element->pos;
 	}
 };
 
@@ -964,46 +1008,6 @@ struct cBPSlot : Component
 				}
 			}, new_mail_p(this));
 		}
-	}
-};
-
-struct cBPPackage : Component
-{
-	cElement* element;
-	cEventReceiver* event_receiver;
-
-	cBPEditor* editor;
-	BP::Package* p;
-
-	cBPPackage() :
-		Component("BPPackage")
-	{
-	}
-
-
-	void on_component_added(Component* c) override
-	{
-		if (c->name_hash == cH("Element"))
-			element = (cElement*)c;
-		else if (c->name_hash == cH("EventReceiver"))
-		{
-			event_receiver = (cEventReceiver*)c;
-			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cBPPackage**)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					thiz->editor->select(thiz->p);
-			}, new_mail_p(this));
-		}
-	}
-
-	void update()
-	{
-		if (p == editor->selected.p)
-			element->frame_thickness = 4.f;
-		else
-			element->frame_thickness = 0.f;
-
-		p->pos = element->pos;
 	}
 };
 
@@ -1242,15 +1246,14 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			auto c_text = cText::create(app.font_atlas_sdf);
 			c_text->sdf_scale_ = 0.8f;
 			c_text->set_text(s2w(p->id()));
+			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+				(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()));
+			}, new_mail_p(p));
 			e_text_id->add_component(c_text);
 
 			e_text_id->add_component(cEventReceiver::create());
 
-			auto c_edit = cEdit::create();
-			c_edit->changed_listeners.add([](void* c, const wchar_t* text) {
-				(*(BP::Package**)c)->set_id(w2s(text));
-			}, new_mail_p(p));
-			e_text_id->add_component(c_edit);
+			e_text_id->add_component(cEdit::create());
 		}
 
 		auto e_main = Entity::create();
@@ -1259,7 +1262,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			e_main->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
+			c_aligner->width_policy_ = SizeGreedy;
 			e_main->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutHorizontal);
@@ -1275,7 +1278,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			e_left->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
+			c_aligner->width_policy_ = SizeGreedy;
 			e_left->add_component(c_aligner);
 
 			e_left->add_component(cLayout::create(LayoutVertical));
@@ -1306,7 +1309,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 					{
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-						c_element->size = r;
+						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
@@ -1326,7 +1329,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale = 0.6f;
+						c_text->sdf_scale_ = 0.6f;
 						auto addr = s->get_address();
 						c_text->set_text(s2w(*addr.p));
 						delete_mail(addr);
@@ -1353,7 +1356,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 					e_title->add_component(cElement::create());
 
 					auto c_aligner = cAligner::create();
-					c_aligner->x_align = AlignxRight;
+					c_aligner->x_align_ = AlignxRight;
 					e_title->add_component(c_aligner);
 
 					e_title->add_component(cLayout::create(LayoutHorizontal));
@@ -1364,7 +1367,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale = 0.6f;
+						c_text->sdf_scale_ = 0.6f;
 						auto addr = s->get_address();
 						c_text->set_text(s2w(*addr.p));
 						delete_mail(addr);
@@ -1376,7 +1379,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 					{
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-						c_element->size = r;
+						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
@@ -1404,8 +1407,8 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 		e_bring_to_front->add_component(c_event_receiver);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_bring_to_front->add_component(c_aligner);
 
 		e_bring_to_front->add_component(cBringToFront::create());
@@ -1421,7 +1424,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	n->user_data = e_node;
 	{
 		auto c_element = cElement::create();
-		c_element->pos = n->pos;
+		c_element->pos_ = n->pos;
 		c_element->color = Vec4c(255, 255, 255, 200);
 		c_element->frame_color = Vec4c(252, 252, 50, 200);
 		e_node->add_component(c_element);
@@ -1444,7 +1447,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		e_node->add_child(e_content);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(8.f);
+			c_element->inner_padding_ = Vec4f(8.f);
 			e_content->add_component(c_element);
 
 			auto c_layout = cLayout::create(LayoutVertical);
@@ -1456,21 +1459,20 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		e_content->add_child(e_text_id);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->sdf_scale = 0.8f;
+			c_text->sdf_scale_ = 0.8f;
 			c_text->set_text(s2w(n->id()));
+			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+				(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()));
+			}, new_mail_p(n));
 			e_text_id->add_component(c_text);
 
 			e_text_id->add_component(cEventReceiver::create());
 
-			auto c_edit = cEdit::create();
-			c_edit->changed_listeners.add([](void* c, const wchar_t* text) {
-				(*(BP::Node**)c)->set_id(w2s(text));
-			}, new_mail_p(n));
-			e_text_id->add_component(c_edit);
+			e_text_id->add_component(cEdit::create());
 
 		}
 
@@ -1520,7 +1522,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					capture.e->locked = true;
 					auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
 					{
-						t->get_component(Element)->inner_padding = Vec4f(4.f);
+						t->get_component(Element)->inner_padding_ = Vec4f(4.f);
 
 						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->width_fit_children = false;
@@ -1570,8 +1572,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_main->add_component(cElement::create());
 
 						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeFitParent;
-						c_aligner->height_policy = SizeFitParent;
+						c_aligner->width_policy_ = SizeFitParent;
+						c_aligner->height_policy_ = SizeFitParent;
 						e_main->add_component(c_aligner);
 
 						auto c_layout = cLayout::create(LayoutVertical);
@@ -1596,8 +1598,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_text_view->add_component(c_element);
 
 							auto c_aligner = cAligner::create();
-							c_aligner->width_policy = SizeFitParent;
-							c_aligner->height_policy = SizeFitParent;
+							c_aligner->width_policy_ = SizeFitParent;
+							c_aligner->height_policy_ = SizeFitParent;
 							e_text_view->add_component(c_aligner);
 
 							auto c_layout = cLayout::create(LayoutVertical);
@@ -1633,7 +1635,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_main->add_child(e_spliter);
 					{
 						auto c_element = cElement::create();
-						c_element->size.y() = 8.f;
+						c_element->size_.y() = 8.f;
 						e_spliter->add_component(c_element);
 
 						e_spliter->add_component(cEventReceiver::create());
@@ -1645,7 +1647,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_spliter->add_component(c_splitter);
 
 						auto c_aligner = cAligner::create();
-						c_aligner->width_policy = SizeFitParent;
+						c_aligner->width_policy_ = SizeFitParent;
 						e_spliter->add_component(c_aligner);
 					}
 
@@ -1657,8 +1659,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_text_view->add_component(c_element);
 
 							auto c_aligner = cAligner::create();
-							c_aligner->width_policy = SizeFitParent;
-							c_aligner->height_policy = SizeFitParent;
+							c_aligner->width_policy_ = SizeFitParent;
+							c_aligner->height_policy_ = SizeFitParent;
 							e_text_view->add_component(c_aligner);
 
 							auto c_layout = cLayout::create(LayoutVertical);
@@ -1713,7 +1715,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						}
 
 						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height);
-						e_scrollbar_container->get_component(Aligner)->height_factor = 2.f / 3.f;
+						e_scrollbar_container->get_component(Aligner)->height_factor_ = 2.f / 3.f;
 						e_main->add_child(e_scrollbar_container);
 					}
 				}
@@ -1726,7 +1728,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_main->add_component(cElement::create());
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy = SizeGreedy;
+			c_aligner->width_policy_ = SizeGreedy;
 			e_main->add_component(c_aligner);
 
 			auto c_layout = cLayout::create(LayoutHorizontal);
@@ -1739,7 +1741,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				e_left->add_component(cElement::create());
 
 				auto c_aligner = cAligner::create();
-				c_aligner->width_policy = SizeGreedy;
+				c_aligner->width_policy_ = SizeGreedy;
 				e_left->add_component(c_aligner);
 
 				e_left->add_component(cLayout::create(LayoutVertical));
@@ -1771,7 +1773,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-						c_element->size = r;
+						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = bp->find_input_export(input) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
@@ -1822,10 +1824,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						}capture;
 						capture.input = input;
 						capture.e = info;
-						e_data->child(0)->get_component(Combobox)->changed_listeners.add([](void* c, int idx) {
+						e_data->child(0)->get_component(Combobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 							auto& capture = *(Capture*)c;
-							auto v = capture.e->item(idx)->value();
-							capture.input->set_data(&v);
+							if (hash == cH("index"))
+							{
+								auto v = capture.e->item(((cCombobox*)cb)->idx)->value();
+								capture.input->set_data(&v);
+							}
 						}, new_mail(&capture));
 
 						auto c_tracker = new_u_object<cEnumSingleDataTracker>();
@@ -1852,14 +1857,17 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}capture;
 							capture.input = input;
 							capture.v = item->value();
-							e_data->child(k)->child(0)->get_component(Checkbox)->changed_listeners.add([](void* c, bool checked) {
+							e_data->child(k)->child(0)->get_component(Checkbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								auto v = *(int*)capture.input->data();
-								if (checked)
-									v |= capture.v;
-								else
-									v &= ~capture.v;
-								capture.input->set_data(&v);
+								if (hash == cH("checked"))
+								{
+									auto v = *(int*)capture.input->data();
+									if (((cCheckbox*)cb)->checked)
+										v |= capture.v;
+									else
+										v &= ~capture.v;
+									capture.input->set_data(&v);
+								}
 							}, new_mail(&capture));
 						}
 
@@ -1877,10 +1885,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							auto e_checkbox = create_standard_checkbox();
 							e_data->add_child(e_checkbox);
 
-							e_checkbox->get_component(Checkbox)->changed_listeners.add([](void* c, bool checked) {
-								auto input = *(BP::Slot**)c;
-								auto v = checked ? 1 : 0;
-								input->set_data(&v);
+							e_checkbox->get_component(Checkbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+								if (hash == cH("checked"))
+								{
+									auto input = *(BP::Slot**)c;
+									auto v = (((cCheckbox*)cb)->checked) ? 1 : 0;
+									input->set_data(&v);
+								}
 							}, new_mail_p(input));
 
 							auto c_tracker = new_u_object<cBoolDataTracker>();
@@ -1988,7 +1999,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_title->add_component(cElement::create());
 
 						auto c_aligner = cAligner::create();
-						c_aligner->x_align = AlignxRight;
+						c_aligner->x_align_ = AlignxRight;
 						e_title->add_component(c_aligner);
 
 						e_title->add_component(cLayout::create(LayoutHorizontal));
@@ -2000,7 +2011,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale = 0.6f;
+						c_text->sdf_scale_ = 0.6f;
 						c_text->set_text(s2w(output->vi()->name()));
 						e_text->add_component(c_text);
 					}
@@ -2010,7 +2021,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						auto c_element = cElement::create();
 						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
-						c_element->size = r;
+						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = bp->find_output_export(output) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
@@ -2038,8 +2049,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		e_bring_to_front->add_component(c_event_receiver);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_bring_to_front->add_component(c_aligner);
 
 		e_bring_to_front->add_component(cBringToFront::create());
@@ -2054,9 +2065,9 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	app.root->add_child(e_container);
 	{
 		auto c_element = e_container->get_component(Element);
-		c_element->pos = pos;
-		c_element->size.x() = 1483.f;
-		c_element->size.y() = 711.f;
+		c_element->pos_ = pos;
+		c_element->size_.x() = 1483.f;
+		c_element->size_.y() = 711.f;
 	}
 
 	auto e_docker = get_docker_model()->copy();
@@ -2113,7 +2124,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Reload (No Compile)");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 
 				if (is_mouse_clicked(action, key))
@@ -2135,7 +2146,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Module");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -2169,7 +2180,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Package");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -2213,8 +2224,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			cMenuButton* b;
 		}capture;
 		capture.e = c_editor;
-		capture.b = (cMenuButton*)e_menu_btn->find_component(cH("MenuButton"));
-		((cEventReceiver*)e_menu_btn->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		capture.b = e_menu_btn->get_component(MenuButton);
+		e_menu_btn->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (capture.b->can_open(action, key))
@@ -2229,7 +2240,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 
 				if (is_mouse_clicked(action, key))
@@ -2244,7 +2255,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 
 				if (is_mouse_clicked(action, key))
@@ -2263,7 +2274,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Auto Set Layout");
 			e_menu->add_child(e_item);
-			((cEventReceiver*)e_item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 
 				if (is_mouse_clicked(action, key))
@@ -2281,14 +2292,14 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto e_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
 	e_page->add_child(e_run);
 	{
-		auto c_event_receiver = (cEventReceiver*)e_run->find_component(cH("EventReceiver"));
+		auto c_event_receiver = e_run->get_component(EventReceiver);
 		struct Capture
 		{
 			cBPEditor* e;
 			cText* t;
 		}capture;
 		capture.e = c_editor;
-		capture.t = (cText*)e_run->find_component(cH("Text"));
+		capture.t = e_run->get_component(Text);
 		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
@@ -2315,8 +2326,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_clipper->add_component(c_element);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_clipper->add_component(c_aligner);
 
 		e_clipper->add_component(cLayout::create(LayoutFree));
@@ -2330,8 +2341,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_scene->add_component(cEventReceiver::create());
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_scene->add_component(c_aligner);
 
 		e_scene->add_component(cLayout::create(LayoutFree));
@@ -2355,12 +2366,12 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Add To Exports");
 			e_menu->add_child(item);
-			((cEventReceiver*)item->find_component(cH("EventReceiver")))->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cBPEditor**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					destroy_topmost(app.root);
-					auto s = editor->selected.s;
+					auto s = editor->selected_.s;
 					if (s->type() == BP::Slot::Input)
 						editor->bp->add_input_export(s);
 					else
@@ -2386,21 +2397,21 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto c_bp = *(cBP**)c;
 			if (is_mouse_scroll(action, key))
 			{
-				c_bp->base_element->scale += pos.x() > 0.f ? 0.1f : -0.1f;
-				c_bp->base_element->scale = clamp(c_bp->base_element->scale, 0.1f, 2.f);
+				auto s = c_bp->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f);
+				c_bp->base_element->set_scale(clamp(s, 0.1f, 2.f));
 			}
 			else if (is_mouse_move(action, key))
 			{
-				auto ed = c_bp->event_receiver->event_dispatcher;
+				auto ed = c_bp->event_receiver->dispatcher;
 				if ((ed->key_states[Key_Ctrl] & KeyStateDown) && (ed->mouse_buttons[Mouse_Left] & KeyStateDown))
-					c_bp->base_element->pos += pos;
+					c_bp->base_element->set_pos(Vec2f(pos), true);
 			}
 		}, new_mail_p(c_bp));
 		e_overlayer->add_component(c_event_receiver);
 
 		auto c_aligner = cAligner::create();
-		c_aligner->width_policy = SizeFitParent;
-		c_aligner->height_policy = SizeFitParent;
+		c_aligner->width_policy_ = SizeFitParent;
+		c_aligner->height_policy_ = SizeFitParent;
 		e_overlayer->add_component(c_aligner);
 	}
 
@@ -2644,5 +2655,5 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto editor = *(cBPEditor**)c;
 		editor->console_tab = nullptr;
 	}, new_mail_p(c_editor), filename + L":", Vec2f(1495.f, 10.f));
-	c_editor->console_tab = (cDockerTab*)console_page->parent()->parent()->child(0)->child(0)->find_component(cH("DockerTab"));
+	c_editor->console_tab = console_page->parent()->parent()->child(0)->child(0)->get_component(DockerTab);
 }
