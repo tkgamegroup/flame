@@ -287,14 +287,17 @@ namespace flame
 			{
 				auto disp = mouse_pos - active_pos;
 				((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, disp);
-				if (potential_dbclick_er == focusing)
+				if (focusing) // since focusing may change to null after on_mouse
 				{
-					((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, disp);
-					potential_dbclick_er = nullptr;
-					potential_dbclick_time = 0.f;
+					if (potential_dbclick_er == focusing)
+					{
+						((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, disp);
+						potential_dbclick_er = nullptr;
+						potential_dbclick_time = 0.f;
+					}
+					else
+						potential_dbclick_er = focusing;
 				}
-				else
-					potential_dbclick_er = focusing;
 			}
 
 			if (prev_hovering != hovering)

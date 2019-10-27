@@ -527,10 +527,9 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_layout->height_fit_children = false;
 		c_layout->fence = 2;
 		e_page->add_component(c_layout);
+
+		e_page->add_component(cCustomDraw::create());
 	}
-
-	e_page->add_component(cCustomDraw::create());
-
 	auto c_explorer = new_u_object<cResourceExplorer>();
 	{
 		c_explorer->base_path = path;

@@ -368,16 +368,18 @@ namespace flame
 		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)&pidl_child, IID_IThumbnailProvider, NULL, (void**)& thumbnail_provider);
 		HBITMAP hbmp;
 		WTS_ALPHATYPE alpha_type;
-		thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type);
-		thumbnail_provider->Release();
+		if (SUCCEEDED(thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type)))
+		{
+			BITMAP bmp;
+			GetObject(hbmp, sizeof(bmp), &bmp);
+			*out_width = bmp.bmWidth;
+			*out_height = bmp.bmHeight;
+			*out_data = new char[bmp.bmWidth * bmp.bmHeight * 4];
+			GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, *out_data);
+			DeleteObject(hbmp);
+		}
 
-		BITMAP bmp;
-		GetObject(hbmp, sizeof(bmp), &bmp);
-		*out_width = bmp.bmWidth;
-		*out_height = bmp.bmHeight;
-		*out_data = new char[bmp.bmWidth * bmp.bmHeight * 4];
-		GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, *out_data);
-		DeleteObject(hbmp);
+		thumbnail_provider->Release();
 
 		desktop_folder->Release();
 		shell_folder->Release();

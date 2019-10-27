@@ -1057,7 +1057,10 @@ void cBP::on_component_added(Component* c)
 	}
 	else if (c->name_hash == cH("CustomDraw"))
 	{
-
+		custom_draw = (cCustomDraw*)c;
+		custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+			(*(cBP**)c)->draw(canvas);
+		}, new_mail_p(this));
 	}
 }
 
@@ -2346,6 +2349,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_scene->add_component(c_aligner);
 
 		e_scene->add_component(cLayout::create(LayoutFree));
+
+		e_scene->add_component(cCustomDraw::create());
 	}
 	auto c_bp = new_u_object<cBP>();
 	c_bp->editor = c_editor;
