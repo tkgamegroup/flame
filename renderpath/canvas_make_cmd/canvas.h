@@ -5,6 +5,8 @@
 
 namespace flame
 {
+	struct Atlas;
+
 	namespace graphics
 	{
 		struct Imageview;
@@ -14,7 +16,7 @@ namespace flame
 		{
 			virtual void set_clear_color(const Vec4c& col) = 0;
 			virtual Imageview* get_image(uint index) = 0;
-			virtual uint set_image(int index, Imageview* v, Filter filter = FilterLinear) = 0; // index=-1 to find an empty slot
+			virtual uint set_image(int index /* -1 to find an empty slot */, Imageview* v, Filter filter = FilterLinear, Atlas* atlas = nullptr) = 0;
 
 			virtual void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) = 0;
 			virtual void fill(const std::vector<Vec2f>& points, const Vec4c& col) = 0;

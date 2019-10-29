@@ -1,3 +1,4 @@
+#include <flame/foundation/bitmap.h>
 #include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
@@ -480,10 +481,8 @@ int main(int argc, char **args)
 	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { font2 });
 	app.font_atlas_2->index = app.canvas->set_image(-1, app.font_atlas_2->imageview());
 
-	auto atlas_image = Image::create_from_file(app.d, L"../game/tetris/images/main.png");
-	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(atlas_image), FilterNearest);
-
-	auto texture_pack = load_texture_pack(L"../game/tetris/images/main.atlas");
+	auto atlas_main = Atlas::load(L"../game/tetris/release/asset/main.png");
+	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(Image::create_from_bitmap(app.d, atlas_main->bitmap())), FilterNearest, atlas_main);
 
 	app.u = Universe::create();
 
@@ -522,129 +521,92 @@ int main(int argc, char **args)
 	app.level = 0;
 	app.lines = 0;
 
-	{
-		Vec2f uv0 = Vec2f(0.f);
-		Vec2f uv1 = Vec2f(0.f);
-		for (auto& t : texture_pack)
-		{
-			if (t.first == "brick.png")
-			{
-				uv0.x() = (float)t.second.x() / atlas_image->size.x();
-				uv0.y() = (float)t.second.y() / atlas_image->size.y();
-				uv1.x() = (float)(t.second.x() + t.second.z()) / atlas_image->size.x();
-				uv1.y() = (float)(t.second.y() + t.second.w()) / atlas_image->size.y();
-				break;
-			}
-		}
+	auto brick_idx = atlas_main->find_piece(L"brick.png");
+	auto block_idx = atlas_main->find_piece(L"block.png");
 
-		for (auto i = 0; i < block_cy; i++)
+	for (auto i = 0; i < block_cy; i++)
+	{
+		auto e_image = Entity::create();
+		root->add_child(e_image);
+		{
+			auto c_element = cElement::create();
+			c_element->pos_.x() = 0;
+			c_element->pos_.y() = i * block_size;
+			c_element->size_ = block_size;
+			e_image->add_component(c_element);
+
+			auto c_image = cImage::create();
+			c_image->id = (atlas_id << 16) + brick_idx;
+			e_image->add_component(c_image);
+		}
+	}
+
+	for (auto i = 0; i < block_cy; i++)
+	{
+		auto e_image = Entity::create();
+		root->add_child(e_image);
+		{
+			auto c_element = cElement::create();
+			c_element->pos_.x() = (block_cx + 1) * block_size;
+			c_element->pos_.y() = i * block_size;
+			c_element->size_ = block_size;
+			e_image->add_component(c_element);
+
+			auto c_image = cImage::create();
+			c_image->id = (atlas_id << 16) + brick_idx;
+			e_image->add_component(c_image);
+		}
+	}
+
+	for (auto i = 0; i < block_cy; i++)
+	{
+		for (auto j = 0; j < block_cx; j++)
 		{
 			auto e_image = Entity::create();
+			e_image->visibility_ = false;
+			app.blocks[i * block_cx + j] = e_image;
 			root->add_child(e_image);
 			{
 				auto c_element = cElement::create();
-				c_element->pos_.x() = 0;
+				c_element->pos_.x() = block_size + j * block_size;
 				c_element->pos_.y() = i * block_size;
 				c_element->size_ = block_size;
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
-				c_image->id = atlas_id;
-				c_image->uv0 = uv0;
-				c_image->uv1 = uv1;
+				c_image->id = (atlas_id << 16) + block_idx;
 				e_image->add_component(c_image);
 			}
 		}
+	}
 
-		for (auto i = 0; i < block_cy; i++)
+	auto e_root = Entity::create();
+	root->add_child(e_root);
+	app.piece.root = cElement::create();
+	e_root->add_component(app.piece.root);
+	for (auto i = 0; i < 4; i++)
+	{
+		for (auto j = 0; j < 4; j++)
 		{
 			auto e_image = Entity::create();
-			root->add_child(e_image);
+			app.piece.blocks[i * 4 + j] = e_image;
+			e_root->add_child(e_image);
 			{
 				auto c_element = cElement::create();
-				c_element->pos_.x() = (block_cx + 1) * block_size;
+				c_element->pos_.x() = j * block_size;
 				c_element->pos_.y() = i * block_size;
-				c_element->size_ = block_size;
+				c_element->size_.x() = block_size;
+				c_element->size_.y() = block_size;
+				c_element->alpha = 0.8f;
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
-				c_image->id = atlas_id;
-				c_image->uv0 = uv0;
-				c_image->uv1 = uv1;
+				c_image->id = (atlas_id << 16) + block_idx;
 				e_image->add_component(c_image);
 			}
 		}
 	}
-
-	{
-		Vec2f uv0 = Vec2f(0.f);
-		Vec2f uv1 = Vec2f(0.f);
-		for (auto& t : texture_pack)
-		{
-			if (t.first == "block.png")
-			{
-				uv0.x() = (float)t.second.x() / atlas_image->size.x();
-				uv0.y() = (float)t.second.y() / atlas_image->size.y();
-				uv1.x() = (float)(t.second.x() + t.second.z()) / atlas_image->size.x();
-				uv1.y() = (float)(t.second.y() + t.second.w()) / atlas_image->size.y();
-				break;
-			}
-		}
-
-		for (auto i = 0; i < block_cy; i++)
-		{
-			for (auto j = 0; j < block_cx; j++)
-			{
-				auto e_image = Entity::create();
-				e_image->visibility_ = false;
-				app.blocks[i * block_cx + j] = e_image;
-				root->add_child(e_image);
-				{
-					auto c_element = cElement::create();
-					c_element->pos_.x() = block_size + j * block_size;
-					c_element->pos_.y() = i * block_size;
-					c_element->size_ = block_size;
-					e_image->add_component(c_element);
-
-					auto c_image = cImage::create();
-					c_image->id = atlas_id;
-					c_image->uv0 = uv0;
-					c_image->uv1 = uv1;
-					e_image->add_component(c_image);
-				}
-			}
-		}
-
-		auto e_root = Entity::create();
-		root->add_child(e_root);
-		app.piece.root = cElement::create();
-		e_root->add_component(app.piece.root);
-		for (auto i = 0; i < 4; i++)
-		{
-			for (auto j = 0; j < 4; j++)
-			{
-				auto e_image = Entity::create();
-				app.piece.blocks[i * 4 + j] = e_image;
-				e_root->add_child(e_image);
-				{
-					auto c_element = cElement::create();
-					c_element->pos_.x() = j * block_size;
-					c_element->pos_.y() = i * block_size;
-					c_element->size_.x() = block_size;
-					c_element->size_.y() = block_size;
-					c_element->alpha = 0.8f;
-					e_image->add_component(c_element);
-
-					auto c_image = cImage::create();
-					c_image->id = atlas_id;
-					c_image->uv0 = uv0;
-					c_image->uv1 = uv1;
-					e_image->add_component(c_image);
-				}
-			}
-		}
-		app.piece.reset();
-	}
+	app.piece.reset();
 
 	auto e_score_title = Entity::create();
 	root->add_child(e_score_title);

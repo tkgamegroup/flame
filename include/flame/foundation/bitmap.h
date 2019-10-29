@@ -29,14 +29,28 @@ namespace flame
 	{
 		struct Piece
 		{
-			std::string filename;
+			std::wstring filename;
 			Vec2i pos;
 			Vec2i size;
+			Vec2f uv0;
+			Vec2f uv1;
 		};
 
+		FLAME_FOUNDATION_EXPORTS Bitmap* bitmap() const;
 		FLAME_FOUNDATION_EXPORTS const std::vector<Piece>& pieces() const;
 
+		int find_piece(const std::wstring& filename) const
+		{
+			for (auto i = 0; i < pieces().size(); i++)
+			{
+				if (pieces()[i].filename == filename)
+					return i;
+			}
+			return -1;
+		}
+
 		FLAME_FOUNDATION_EXPORTS static void bin_pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border);
-		FLAME_FOUNDATION_EXPORTS static Atlas* load(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static Atlas* load(const std::wstring& filename /* the image filename, not the atlas */);
+		FLAME_FOUNDATION_EXPORTS static void destroy(Atlas* a);
 	};
 }

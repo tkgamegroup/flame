@@ -149,8 +149,19 @@ namespace flame
 
 	struct AtlasPrivate : Atlas
 	{
+		Bitmap* bitmap;
 		std::vector<Piece> pieces;
+
+		~AtlasPrivate()
+		{
+			Bitmap::destroy(bitmap);
+		}
 	};
+
+	Bitmap* Atlas::bitmap() const
+	{
+		return ((AtlasPrivate*)this)->bitmap;
+	}
 
 	const std::vector<Atlas::Piece>& Atlas::pieces() const
 	{
@@ -246,14 +257,20 @@ namespace flame
 
 	Atlas* Atlas::load(const std::wstring& filename)
 	{
-		std::ifstream file(filename);
-		if (!file.good())
+		auto atlas_filename = filename + L".atlas";
+		if (!std::filesystem::exists(filename) || !std::filesystem::exists(atlas_filename))
 			return nullptr;
 
 		auto atlas = new AtlasPrivate;
 
+		atlas->bitmap = Bitmap::create_from_file(filename);
+		auto w = (float)atlas->bitmap->size.x();
+		auto h = (float)atlas->bitmap->size.y();
+
+		std::ifstream file(atlas_filename);
 		while (!file.eof())
 		{
+			std::string t;
 			Piece piece;
 
 			std::string line;
@@ -261,18 +278,26 @@ namespace flame
 			if (line.empty())
 				break;
 			std::stringstream ss(line);
-			ss >> piece.filename;
-			std::string t;
+			ss >> t;
+			piece.filename = s2w(t);
 			ss >> t;
 			auto v = stou4(t.c_str());
 			piece.pos = Vec2i(v.x(), v.y());
 			piece.size = Vec2i(v.z(), v.w());
+			piece.uv0.x() = piece.pos.x() / w;
+			piece.uv0.y() = piece.pos.y() / h;
+			piece.uv1.x() = (piece.pos.x() + piece.size.x()) / w;
+			piece.uv1.y() = (piece.pos.y() + piece.size.y()) / h;
 
 			atlas->pieces.push_back(piece);
 		}
-
 		file.close();
 
 		return atlas;
+	}
+
+	void Atlas::destroy(Atlas* a)
+	{
+		delete (AtlasPrivate*)a;
 	}
 }

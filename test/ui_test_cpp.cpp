@@ -247,7 +247,7 @@ int main(int argc, char** args)
 		e_image->add_component(c_element);
 
 		auto c_image = cImage::create();
-		c_image->id = img_id;
+		c_image->id = img_id << 16;
 		e_image->add_component(c_image);
 	}
 

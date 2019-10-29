@@ -1,4 +1,5 @@
 #include <flame/foundation/foundation.h>
+#include <flame/foundation/bitmap.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/all.h>
 
@@ -135,7 +136,7 @@ namespace flame
 
 		void set_clear_color(const Vec4c& col) override;
 		Imageview* get_image(uint index) override;
-		uint set_image(int index, Imageview* v, Filter filter) override;
+		uint set_image(int index, Imageview* v, Filter filter, Atlas* atlas) override;
 
 		void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) override;
 		void fill(const std::vector<Vec2f>& points, const Vec4c& col) override;
@@ -167,7 +168,7 @@ namespace flame
 
 		Vec4c clear_color;
 
-		std::vector<Imageview*> ivs;
+		std::vector<std::pair<Imageview*, Atlas*>> imgs;
 
 		Vertex* vtx_end;
 		uint* idx_end;
@@ -188,14 +189,14 @@ namespace flame
 			delete (CanvasPrivate*)canvas$o.v;
 		}
 
-		uint set_image(int index, Imageview* v, Filter filter)
+		uint set_image(int index, Imageview* v, Filter filter, Atlas* atlas)
 		{
 			if (index == -1)
 			{
 				assert(v);
-				for (auto i = 1; i < ivs.size(); i++)
+				for (auto i = 1; i < imgs.size(); i++)
 				{
-					if (ivs[i] == (Imageview*)white_iv$i.v)
+					if (imgs[i].first == (Imageview*)white_iv$i.v)
 					{
 						index = i;
 						break;
@@ -204,9 +205,12 @@ namespace flame
 				assert(index != -1);
 			}
 			if (!v)
+			{
 				v = (Imageview*)white_iv$i.v;
+				atlas = nullptr;
+			}
 			((Descriptorset*)ds$i.v)->set_image(0, index, v, filter);
-			ivs[index] = v;
+			imgs[index] = std::make_pair(v, atlas);
 			return index;
 		}
 
@@ -353,13 +357,13 @@ namespace flame
 			}
 		}
 
-		void add_text(FontAtlas* f, const Vec2f& pos, const Vec4c& col, const std::wstring& text, float scale)
+		void add_text(FontAtlas* f, const Vec2f& _pos, const Vec4c& col, const std::wstring& text, float scale)
 		{
 			if (f->draw_type != FontDrawSdf)
 				scale = 1.f;
 			auto lh = f->pixel_height * scale;
 
-			auto _pos = Vec2f(Vec2i(pos));
+			auto pos = Vec2f(Vec2i(_pos));
 
 			begin_draw((CmdType)f->draw_type, f->index);
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
@@ -369,8 +373,8 @@ namespace flame
 			{
 				if (ch == '\n')
 				{
-					_pos.y() += lh;
-					_pos.x() = pos.x();
+					pos.y() += lh;
+					pos.x() = (int)_pos.x();
 				}
 				else if (ch != '\r')
 				{
@@ -378,7 +382,7 @@ namespace flame
 						ch = ' ';
 					auto g = f->get_glyph(ch);
 
-					auto p = _pos + Vec2f(g->off) * scale;
+					auto p = pos + Vec2f(g->off) * scale;
 					auto size = Vec2f(g->size) * scale;
 					if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), curr_scissor))
 					{
@@ -398,23 +402,33 @@ namespace flame
 						idx_cnt += 6;
 					}
 
-					_pos.x() += g->advance * scale;
+					pos.x() += g->advance * scale;
 				}
 			}
 		}
 
-		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
+		void add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
 		{
-			auto _pos = Vec2f(Vec2i(pos));
+			auto pos = Vec2f(Vec2i(_pos));
+			auto uv0 = _uv0;
+			auto uv1 = _uv1;
 
-			begin_draw(CmdDrawElement, id);
+			auto img_id = (id & 0xffff0000) >> 16;
+			begin_draw(CmdDrawElement, img_id);
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
+			auto atlas = imgs[img_id].second;
+			if (atlas)
+			{
+				auto& piece = atlas->pieces()[id & 0xffff];
+				uv0 = mix(piece.uv0, piece.uv1, uv0);
+				uv1 = mix(piece.uv0, piece.uv1, uv1);
+			}
 
-			vtx_end->pos = _pos;								vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = _pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = _pos + Vec2f(size.x(), size.y());	vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = _pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
+			vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
+			vtx_end->pos = pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
+			vtx_end->pos = pos + Vec2f(size.x(), size.y());		vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
+			vtx_end->pos = pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
 
 			*idx_end = vtx_cnt + 0; idx_end++;
 			*idx_end = vtx_cnt + 2; idx_end++;
@@ -447,7 +461,7 @@ namespace flame
 
 				clear_color = Vec4c(0, 0, 0, 255);
 
-				ivs.resize(ds->layout()->get_binding(0)->count, (Imageview*)white_iv$i.v);
+				imgs.resize(ds->layout()->get_binding(0)->count, std::make_pair((Imageview*)white_iv$i.v, nullptr));
 
 				auto c = new CanvasPrivate;
 				c->thiz = this;
@@ -458,7 +472,7 @@ namespace flame
 				for (auto _f : font_atlases)
 				{
 					auto f = (FontAtlas*)_f;
-					f->index = set_image(-1, f->imageview(), FilterLinear);
+					f->index = set_image(-1, f->imageview(), FilterLinear, nullptr);
 				}
 
 				frame = 0;
@@ -571,12 +585,12 @@ namespace flame
 
 	Imageview* CanvasPrivate::get_image(uint index)
 	{
-		return thiz->ivs[index];
+		return thiz->imgs[index].first;
 	}
 
-	uint CanvasPrivate::set_image(int index, Imageview* v, Filter filter)
+	uint CanvasPrivate::set_image(int index, Imageview* v, Filter filter, Atlas* atlas)
 	{
-		return thiz->set_image(index, v, filter);
+		return thiz->set_image(index, v, filter, atlas);
 	}
 
 	void CanvasPrivate::stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness)
