@@ -38,7 +38,7 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> sc_cbs;
 	std::vector<Commandbuffer*> extra_cbs;
-	BP* bp;
+	BP* canvas_bp;
 	Canvas* canvas;
 
 	FontAtlas* font_atlas_pixel;

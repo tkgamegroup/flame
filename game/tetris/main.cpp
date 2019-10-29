@@ -262,7 +262,7 @@ struct App
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
-	BP* bp;
+	BP* canvas_bp;
 	Canvas* canvas;
 
 	FontAtlas* font_atlas_1;
@@ -440,11 +440,11 @@ struct App
 			c_text_fps->set_text(std::to_wstring(looper().fps));
 			u->update();
 		}
-		bp->update();
+		canvas_bp->update();
 
 		if (sc)
 		{
-			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 
@@ -463,16 +463,11 @@ int main(int argc, char **args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
-	app.bp->graphics_device = app.d;
-	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
-	n_scr->find_input("in")->set_data_p(app.scr);
-	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
-	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
-	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
-	app.bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
-	app.bp->update();
-	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
+	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	app.canvas_bp->graphics_device = app.d;
+	app.scr->link_bp(app.canvas_bp, app.cbs);
+	app.canvas_bp->update();
+	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 
 	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	auto font2 = Font::create(L"../game/tetris/joystix monospace.ttf", block_size);

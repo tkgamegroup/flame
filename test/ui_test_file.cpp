@@ -59,7 +59,7 @@ struct App
 
 		if (sc)
 		{
-			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 

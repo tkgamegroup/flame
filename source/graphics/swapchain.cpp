@@ -1,11 +1,10 @@
+#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "synchronize_private.h"
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include "commandbuffer_private.h"
 #include "swapchain_private.h"
-
-#include <flame/foundation/blueprint.h>
 
 #ifdef FLAME_ANDROID
 #include <android_native_app_glue.h>
@@ -240,6 +239,18 @@ namespace flame
 		Swapchain* SwapchainResizable::sc() const
 		{
 			return ((SwapchainResizablePrivate*)this)->sc;
+		}
+
+		void SwapchainResizable::link_bp(BP* bp, const std::vector<Commandbuffer*>& cbs)
+		{
+			auto n_scr = bp->add_node(cH("graphics::SwapchainResizable"), "scr");
+			n_scr->find_input("in")->set_data_p(this);
+			bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
+			bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
+			bp->find_input("*.make_cmd.cbs")->set_data_p(&cbs);
+			auto s_img_idx = bp->find_input("*.make_cmd.image_idx");
+			if (s_img_idx)
+				s_img_idx->link_to(n_scr->find_output("image_idx"));
 		}
 
 		SwapchainResizable* SwapchainResizable::create(Device* d, Window* w)

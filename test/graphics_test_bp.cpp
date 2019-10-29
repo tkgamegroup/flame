@@ -18,7 +18,7 @@ struct App
 	Semaphore* render_finished;
 	SwapchainResizable* scr;
 	Fence* fence;
-	std::vector<void*> cbs;
+	std::vector<Commandbuffer*> cbs;
 	BP* bp;
 	Canvas* canvas;
 
@@ -36,7 +36,7 @@ struct App
 
 		if (sc)
 		{
-			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 
@@ -65,16 +65,7 @@ int main(int argc, char** args)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	app.bp->graphics_device = app.d;
-	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
-	n_scr->find_input("in")->set_data_p(app.scr);
-	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
-	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
-	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
-	{
-		auto s_img_idx = app.bp->find_input("*.make_cmd.image_idx");
-		if (s_img_idx)
-			s_img_idx->link_to(n_scr->find_output("image_idx"));
-	}
+	app.scr->link_bp(app.bp, app.cbs);
 	app.bp->update();
 	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 

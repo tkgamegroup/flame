@@ -22,7 +22,7 @@ struct App
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
-	BP* bp;
+	BP* canvas_bp;
 	Canvas* canvas;
 
 	FontAtlas* font_atlas1;
@@ -46,11 +46,11 @@ struct App
 			canvas->add_text(font_atlas1, Vec2f(5, 0), Vec4c(162, 21, 21, 255), L"Hello World  ");
 			canvas->add_text(font_atlas2, Vec2f(100, 100), Vec4c(0, 0, 0, 255), L"中文", 0.375f);
 		}
-		bp->update();
+		canvas_bp->update();
 
 		if (sc)
 		{
-			d->gq->submit({ (Commandbuffer*)cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 
@@ -62,8 +62,8 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
-	if (!app.bp)
+	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	if (!app.canvas_bp)
 	{
 		printf("bp not found, exit\n");
 		return 0;
@@ -78,15 +78,10 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-	app.bp->graphics_device = app.d;
-	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
-	n_scr->find_input("in")->set_data_p(app.scr);
-	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
-	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
-	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
-	app.bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
-	app.bp->update();
-	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
+	app.canvas_bp->graphics_device = app.d;
+	app.scr->link_bp(app.canvas_bp, app.cbs);
+	app.canvas_bp->update();
+	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 
 	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
