@@ -480,10 +480,10 @@ int main(int argc, char **args)
 	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { font2 });
 	app.font_atlas_2->index = app.canvas->set_image(-1, app.font_atlas_2->imageview());
 
-	auto atlas_image = Image::create_from_file(app.d, L"../game/tetris/images/atlas.png");
+	auto atlas_image = Image::create_from_file(app.d, L"../game/tetris/images/main.png");
 	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(atlas_image), FilterNearest);
 
-	auto texture_pack = load_texture_pack(L"../game/tetris/images/atlas.png.pack");
+	auto texture_pack = load_texture_pack(L"../game/tetris/images/main.atlas");
 
 	app.u = Universe::create();
 

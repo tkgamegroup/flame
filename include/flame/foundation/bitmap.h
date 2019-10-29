@@ -24,4 +24,19 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(Bitmap* b, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Bitmap* b);
 	};
+
+	struct Atlas
+	{
+		struct Piece
+		{
+			std::string filename;
+			Vec2i pos;
+			Vec2i size;
+		};
+
+		FLAME_FOUNDATION_EXPORTS const std::vector<Piece>& pieces() const;
+
+		FLAME_FOUNDATION_EXPORTS static void bin_pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border);
+		FLAME_FOUNDATION_EXPORTS static Atlas* load(const std::wstring& filename);
+	};
 }
