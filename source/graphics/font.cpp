@@ -41,7 +41,7 @@ namespace flame
 
 			FontPrivate(const std::wstring& filename, uint _pixel_height)
 			{
-				pixel_height = _pixel_height;
+				max_height = _pixel_height;
 
 				if (!ft_library)
 				{
@@ -51,9 +51,10 @@ namespace flame
 
 				font_file = get_file_content(filename);
 				FT_New_Memory_Face(ft_library, (uchar*)font_file.first.get(), font_file.second, 0, &ft_face);
+
 				FT_Size_RequestRec ft_req = {};
 				ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
-				ft_req.height = pixel_height * 64;
+				ft_req.height = max_height * 64;
 				FT_Request_Size(ft_face, &ft_req);
 				max_width = ft_face->size->metrics.max_advance / 64;
 				ascender = ft_face->size->metrics.ascender / 64;
@@ -111,9 +112,9 @@ namespace flame
 		{
 			Device* d;
 
-			std::vector<Font*> fonts;
+			std::vector<FontPrivate*> fonts;
 
-			Glyph* map[65536];
+			GlyphPrivate* map[65536];
 			GlyphPrivate* glyph_head;
 			GlyphPrivate* glyph_tail;
 			uint grid_cx;
@@ -128,10 +129,10 @@ namespace flame
 				d(d)
 			{
 				for (auto f : _fonts)
-					fonts.push_back((Font*)f);
+					fonts.push_back((FontPrivate*)f);
 
 				draw_type = _draw_type;
-				pixel_height = fonts[0]->pixel_height;
+				max_height = fonts[0]->max_height;
 
 				memset(map, 0, sizeof(map));
 
@@ -145,14 +146,14 @@ namespace flame
 				max_width = 0;
 				for (auto f : fonts)
 				{
-					assert(f->pixel_height == pixel_height);
+					assert(f->max_height == max_height);
 					max_width = max(f->max_width, max_width);
 				}
 
 				glyph_head = glyph_tail = nullptr;
 
 				grid_cx = atlas_width / (max_width + (draw_type == FontDrawSdf ? sdf_range : 0));
-				grid_cy = atlas_height / (pixel_height + (draw_type == FontDrawSdf ? sdf_range : 0));
+				grid_cy = atlas_height / (max_height + (draw_type == FontDrawSdf ? sdf_range : 0));
 				grid_curr_x = grid_curr_y = 0;
 			}
 
@@ -204,9 +205,8 @@ namespace flame
 
 					map[unicode] = g;
 
-					for (auto _font : fonts)
+					for (auto font : fonts)
 					{
-						auto font = (FontPrivate*)_font;
 						auto ft_face = font->ft_face;
 						auto ascender = font->ascender;
 						auto glyph_index = FT_Get_Char_Index(ft_face, unicode);
@@ -230,7 +230,7 @@ namespace flame
 							FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_NORMAL);
 
 							auto x = g->grid_x * max_width;
-							auto y = g->grid_y * pixel_height;
+							auto y = g->grid_y * max_height;
 
 							if (width > 0 && height > 0)
 							{
@@ -257,7 +257,7 @@ namespace flame
 							FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
 
 							auto x = g->grid_x * max_width;
-							auto y = g->grid_y * pixel_height;
+							auto y = g->grid_y * max_height;
 
 							if (width > 0 && height > 0)
 							{
@@ -314,7 +314,7 @@ namespace flame
 							}
 
 							auto x = g->grid_x * (max_width + sdf_range);
-							auto y = g->grid_y * (pixel_height + sdf_range);
+							auto y = g->grid_y * (max_height + sdf_range);
 
 							image->set_pixels(x, y, size.x(), size.y(), temp);
 
@@ -344,7 +344,7 @@ namespace flame
 					if (ch == '\n')
 					{
 						w = 0;
-						h += pixel_height;
+						h += max_height;
 					}
 					else if (ch != '\r' && ch != '\t')
 						w += get_glyph(ch)->advance;
@@ -355,13 +355,13 @@ namespace flame
 			Vec2i get_text_size(const std::wstring_view& text)
 			{
 				auto w = 0;
-				auto h = pixel_height;
+				auto h = max_height;
 				auto lw = 0;
 				for (auto ch : text)
 				{
 					if (ch == '\n')
 					{
-						h += pixel_height;
+						h += max_height;
 						lw = 0;
 					}
 					else if (ch != '\r')

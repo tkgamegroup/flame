@@ -100,7 +100,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 	}
 	c_console->c_text_log = e_log->get_component(Text);
 
-	e_page->add_child(wrap_standard_scrollbar(e_log_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height));
+	e_page->add_child(wrap_standard_scrollbar(e_log_view, ScrollbarVertical, true, app.font_atlas_pixel->max_height));
 
 	auto e_btn_clear = create_standard_button(app.font_atlas_pixel, 1.f, L"Clear");
 	e_page->add_child(e_btn_clear);

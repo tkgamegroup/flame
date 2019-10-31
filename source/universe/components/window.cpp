@@ -828,7 +828,7 @@ namespace flame
 		tab->set_name("docker_tab");
 
 		auto c_element = cElement::create();
-		c_element->inner_padding_ = Vec4f(4.f, 2.f, 6.f + font_atlas->pixel_height, 2.f);
+		c_element->inner_padding_ = Vec4f(4.f, 2.f, 6.f + font_atlas->max_height, 2.f);
 		tab->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);

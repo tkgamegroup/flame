@@ -163,7 +163,7 @@ namespace flame
 		{
 			auto c_element = e_combobox->get_component(Element);
 			c_element->size_.x() = width + 8.f;
-			c_element->size_.y() = font_atlas->pixel_height * sdf_scale + 4.f;
+			c_element->size_.y() = font_atlas->max_height * sdf_scale + 4.f;
 			c_element->frame_color = default_style.text_color_normal;
 			c_element->frame_thickness = 2.f;
 

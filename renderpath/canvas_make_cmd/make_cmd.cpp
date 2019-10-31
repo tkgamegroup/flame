@@ -361,7 +361,7 @@ namespace flame
 		{
 			if (f->draw_type != FontDrawSdf)
 				scale = 1.f;
-			auto lh = f->pixel_height * scale;
+			auto lh = f->max_height * scale;
 
 			auto pos = Vec2f(Vec2i(_pos));
 

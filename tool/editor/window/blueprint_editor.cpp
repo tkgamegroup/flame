@@ -768,7 +768,7 @@ struct cBPEditor : Component
 		entity->add_child(e_notification);
 		{
 			auto c_element = cElement::create();
-			c_element->pos_.y() = notification.size() * (app.font_atlas_sdf->pixel_height + 20.f);
+			c_element->pos_.y() = notification.size() * (app.font_atlas_sdf->max_height + 20.f);
 			c_element->inner_padding_ = Vec4f(8.f);
 			c_element->color = Vec4c(0, 0, 0, 255);
 			e_notification->add_component(c_element);
@@ -1311,7 +1311,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						auto r = app.font_atlas_sdf->max_height * 0.6f;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
@@ -1381,7 +1381,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						auto r = app.font_atlas_sdf->max_height * 0.6f;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
@@ -1629,7 +1629,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_text->add_component(c_text);
 						}
 
-						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height);
+						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->max_height);
 						e_scrollbar_container->get_component(Aligner)->height_factor_ = 1.f / 3.f;
 						e_main->add_child(e_scrollbar_container);
 					}
@@ -1717,7 +1717,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}
 						}
 
-						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->pixel_height);
+						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, app.font_atlas_pixel->max_height);
 						e_scrollbar_container->get_component(Aligner)->height_factor_ = 2.f / 3.f;
 						e_main->add_child(e_scrollbar_container);
 					}
@@ -1775,7 +1775,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						auto r = app.font_atlas_sdf->max_height * 0.6f;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = bp->find_input_export(input) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
@@ -1804,7 +1804,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_input->add_child(e_data);
 					{
 						auto c_element = cElement::create();
-						c_element->inner_padding_ = Vec4f(app.font_atlas_sdf->pixel_height, 0.f, 0.f, 0.f);
+						c_element->inner_padding_ = Vec4f(app.font_atlas_sdf->max_height, 0.f, 0.f, 0.f);
 						e_data->add_component(c_element);
 
 						auto c_layout = cLayout::create(LayoutVertical);
@@ -2023,7 +2023,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->pixel_height * 0.6f;
+						auto r = app.font_atlas_sdf->max_height * 0.6f;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = bp->find_output_export(output) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);

@@ -209,7 +209,7 @@ namespace flame
 		auto e_menu_btn = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f + (arrow_text ? font_atlas->pixel_height * sdf_scale : 0.f), 2.f);
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f + (arrow_text ? font_atlas->max_height * sdf_scale : 0.f), 2.f);
 			e_menu_btn->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);

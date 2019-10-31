@@ -119,7 +119,7 @@ namespace flame
 					{
 						auto scl = text->sdf_scale_ * element->global_scale;
 
-						auto lh = text->font_atlas->pixel_height * scl;
+						auto lh = text->font_atlas->max_height * scl;
 						auto y = element->global_pos.y();
 						for (auto p = str.c_str(); ; p++)
 						{

@@ -23,7 +23,7 @@ namespace flame
 
 		struct Font
 		{
-			uint pixel_height;
+			uint max_height;
 			uint max_width;
 			int ascender;
 
@@ -34,6 +34,7 @@ namespace flame
 		enum FontDrawType$
 		{
 			FontDrawPixel,
+			FontDrawPixelCaching,
 			FontDrawLcd,
 			FontDrawSdf
 		};
@@ -41,7 +42,7 @@ namespace flame
 		struct FontAtlas
 		{
 			FontDrawType$ draw_type;
-			uint pixel_height;
+			uint max_height;
 			uint max_width;
 
 			uint index;
