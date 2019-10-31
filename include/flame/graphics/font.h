@@ -34,7 +34,6 @@ namespace flame
 		enum FontDrawType$
 		{
 			FontDrawPixel,
-			FontDrawPixelCaching,
 			FontDrawLcd,
 			FontDrawSdf
 		};

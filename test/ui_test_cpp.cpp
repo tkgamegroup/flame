@@ -220,7 +220,7 @@ int main(int argc, char** args)
 	e_layout_left->add_child(e_toggle);
 	{
 		auto c_element = cElement::create();
-		auto r = app.font_atlas_pixel->pixel_height * 0.5f;
+		auto r = app.font_atlas_pixel->max_height * 0.5f;
 		c_element->roundness = r;
 		c_element->inner_padding_ = Vec4f(r, 2.f, r, 2.f);
 		e_toggle->add_component(c_element);
