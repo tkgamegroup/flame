@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/graphics/graphics.h>
+#include <flame/graphics/font.h>
 
 namespace flame
 {
@@ -9,13 +9,17 @@ namespace flame
 	namespace graphics
 	{
 		struct Imageview;
-		struct FontAtlas;
 
 		struct Canvas
 		{
 			virtual void set_clear_color(const Vec4c& col) = 0;
 			virtual Imageview* get_image(uint index) = 0;
 			virtual uint set_image(int index /* -1 to find an empty slot */, Imageview* v, Filter filter = FilterLinear, Atlas* atlas = nullptr) = 0;
+
+			void add_font(FontAtlas* f)
+			{
+				f->index = set_image(-1, f->imageview(), f->draw_type == FontDrawSdf ? FilterLinear : FilterNearest);
+			}
 
 			virtual void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) = 0;
 			virtual void fill(const std::vector<Vec2f>& points, const Vec4c& col) = 0;

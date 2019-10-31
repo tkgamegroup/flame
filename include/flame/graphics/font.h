@@ -13,6 +13,10 @@ namespace flame
 
 		FLAME_GRAPHICS_EXPORTS void get_latin_code_range(wchar_t& out_begin, wchar_t& out_end);
 
+		const Vec2u font_atlas_size = Vec2u(512);
+		const uint sdf_range = 4;
+		const uint sdf_grid_size = 32;
+
 		struct Glyph
 		{
 			Vec2i off;

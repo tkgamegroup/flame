@@ -87,9 +87,9 @@ int main(int argc, char** args)
 	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
 	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
 	app.font_atlas1 = FontAtlas::create(app.d, FontDrawPixel, { font_msyh, font_awesome });
+	app.canvas->add_font(app.font_atlas1);
 	app.font_atlas2 = FontAtlas::create(app.d, FontDrawSdf, { font_msyh });
-	app.font_atlas1->index = app.canvas->set_image(-1, app.font_atlas1->imageview());
-	app.font_atlas2->index = app.canvas->set_image(-1, app.font_atlas2->imageview());
+	app.canvas->add_font(app.font_atlas2);
 
 	looper().loop([](void* c) {
 		auto app = *(App**)c;

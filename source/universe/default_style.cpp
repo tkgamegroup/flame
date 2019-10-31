@@ -11,6 +11,8 @@ namespace flame
 
 	void DefaultStyle::set_to_light()
 	{
+		font_size = 14;
+		sdf_scale = 1.f;
 		text_color_normal = Vec4c(0, 0, 0, 255);
 		text_color_else = Vec4c(255, 255, 255, 255);
 		window_color = Vec4c(0.94f * 255.f, 0.94f * 255.f, 0.94f * 255.f, 1.00f * 255.f);
@@ -45,7 +47,6 @@ namespace flame
 		selected_tab_text_color_normal = Vec4c(0, 0, 0, 255);
 		selected_tab_text_color_else = Vec4c(0, 0, 0, 255);
 		docker_color = Vec4c(93, 107, 153, 255);
-		sdf_scale = 1.f;
 	}
 
 	void DefaultStyle::set_to_dark()

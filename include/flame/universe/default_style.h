@@ -7,6 +7,8 @@ namespace flame
 {
 	struct DefaultStyle
 	{
+		uint font_size;
+		float sdf_scale;
 		Vec4c text_color_normal;
 		Vec4c text_color_else;
 		Vec4c window_color;
@@ -41,8 +43,6 @@ namespace flame
 		Vec4c selected_tab_text_color_normal;
 		Vec4c selected_tab_text_color_else;
 		Vec4c docker_color;
-
-		float sdf_scale;
 
 		FLAME_UNIVERSE_EXPORTS DefaultStyle();
 		FLAME_UNIVERSE_EXPORTS void set_to_light();

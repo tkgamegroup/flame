@@ -30,10 +30,6 @@ namespace flame
 			GlyphPrivate* next;
 		};
 
-		const int atlas_width = 512;
-		const int atlas_height = 512;
-		const int sdf_range = 4;
-
 		struct FontPrivate : Font
 		{
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
@@ -136,7 +132,7 @@ namespace flame
 
 				memset(map, 0, sizeof(map));
 
-				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, Vec2u(atlas_width, atlas_height), 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
+				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
 				image->init(Vec4c(0, 0, 0, 255));
 				if (draw_type == FontDrawPixel)
 					imageview = Imageview::create(image, Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
@@ -152,8 +148,20 @@ namespace flame
 
 				glyph_head = glyph_tail = nullptr;
 
-				grid_cx = atlas_width / (max_width + (draw_type == FontDrawSdf ? sdf_range : 0));
-				grid_cy = atlas_height / (max_height + (draw_type == FontDrawSdf ? sdf_range : 0));
+				uint grid_width;
+				uint grid_height;
+				if (draw_type != FontDrawSdf)
+				{
+					grid_width = max_width;
+					grid_height = max_height;
+				}
+				else
+				{
+					grid_width = sdf_grid_size + sdf_range * 2;
+					grid_height = sdf_grid_size + sdf_range * 2;
+				}
+				grid_cx = font_atlas_size.x() / grid_width;
+				grid_cy = font_atlas_size.y() / grid_height;
 				grid_curr_x = grid_curr_y = 0;
 			}
 
@@ -313,8 +321,8 @@ namespace flame
 								}
 							}
 
-							auto x = g->grid_x * (max_width + sdf_range);
-							auto y = g->grid_y * (max_height + sdf_range);
+							auto x = g->grid_x * (max_width + sdf_range * 2);
+							auto y = g->grid_y * (max_height + sdf_range * 2);
 
 							image->set_pixels(x, y, size.x(), size.y(), temp);
 

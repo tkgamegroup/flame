@@ -469,11 +469,8 @@ namespace flame
 				canvas$o.frame = looper().frame;
 
 				auto font_atlases = get_attribute_vec(font_atlases$i);
-				for (auto _f : font_atlases)
-				{
-					auto f = (FontAtlas*)_f;
-					f->index = set_image(-1, f->imageview(), FilterLinear, nullptr);
-				}
+				for (auto f : font_atlases)
+					c->add_font((FontAtlas*)f);
 
 				frame = 0;
 			}
@@ -520,7 +517,7 @@ namespace flame
 
 					PushconstantT$ pc;
 					pc.scale$ = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
-					pc.sdf_range$ = Vec2f(4.f / 512.f); /* sdf_image->size */
+					pc.sdf_range$ = Vec2f(sdf_range) / font_atlas_size;
 					cb->push_constant(0, sizeof(PushconstantT$), &pc, pll);
 					cb->bind_descriptorset(ds, 0, pll);
 

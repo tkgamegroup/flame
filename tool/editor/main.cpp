@@ -54,9 +54,9 @@ void App::create()
 	auto font32 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
 	auto font_awesome32 = Font::create(L"../asset/font_awesome.ttf", 32);
 	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { font14, font_awesome14 });
+	app.canvas->add_font(app.font_atlas_pixel);
 	font_atlas_sdf = FontAtlas::create(d, FontDrawSdf, { font32, font_awesome32 });
-	font_atlas_pixel->index = canvas->set_image(-1, font_atlas_pixel->imageview());
-	font_atlas_sdf->index = canvas->set_image(-1, font_atlas_sdf->imageview());
+	app.canvas->add_font(app.font_atlas_sdf);
 	
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();

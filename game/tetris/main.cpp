@@ -472,9 +472,9 @@ int main(int argc, char **args)
 	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
 	auto font2 = Font::create(L"../game/tetris/joystix monospace.ttf", block_size);
 	app.font_atlas_1 = FontAtlas::create(app.d, FontDrawPixel, { font1 });
-	app.font_atlas_1->index = app.canvas->set_image(-1, app.font_atlas_1->imageview());
+	app.canvas->add_font(app.font_atlas_1);
 	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { font2 });
-	app.font_atlas_2->index = app.canvas->set_image(-1, app.font_atlas_2->imageview());
+	app.canvas->add_font(app.font_atlas_2);
 
 	auto atlas_main = Atlas::load(L"../game/tetris/release/asset/main.png");
 	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(Image::create_from_bitmap(app.d, atlas_main->bitmap())), FilterNearest, atlas_main);
