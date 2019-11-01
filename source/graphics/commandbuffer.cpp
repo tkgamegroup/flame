@@ -335,10 +335,10 @@ namespace flame
 		{
 			VkBufferImageCopy vk_cpy = {};
 			vk_cpy.bufferOffset = cpy.buffer_offset;
-			vk_cpy.imageOffset.x = cpy.image_x;
-			vk_cpy.imageOffset.y = cpy.image_y;
-			vk_cpy.imageExtent.width = cpy.image_width;
-			vk_cpy.imageExtent.height = cpy.image_height;
+			vk_cpy.imageOffset.x = cpy.image_offset.x();
+			vk_cpy.imageOffset.y = cpy.image_offset.y();
+			vk_cpy.imageExtent.width = cpy.image_extent.x();
+			vk_cpy.imageExtent.height = cpy.image_extent.y();
 			vk_cpy.imageExtent.depth = 1;
 			vk_cpy.imageSubresource.aspectMask = aspect;
 			vk_cpy.imageSubresource.mipLevel = cpy.image_level;

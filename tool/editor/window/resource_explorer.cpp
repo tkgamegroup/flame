@@ -483,7 +483,7 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 						auto& thumbnails_img_size = explorer->thumbnails_img->size;
 						auto& thumbnail_size = thiz->thumbnail->size;
 
-						explorer->thumbnails_img->set_pixels(thiz->seat->pos.x(), thiz->seat->pos.y(), thumbnail_size.x(), thumbnail_size.y(), thiz->thumbnail->data);
+						explorer->thumbnails_img->set_pixels(thiz->seat->pos, thumbnail_size, thiz->thumbnail->data);
 
 						{
 							auto h = (64 - thumbnail_size.x()) * 0.5f;

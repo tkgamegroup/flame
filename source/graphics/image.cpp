@@ -188,23 +188,18 @@ namespace flame
 			Commandbuffer::destroy(cb);
 		}
 
-		void ImagePrivate::get_pixels(uint x, uint y, int cx, int cy, void *dst)
+		void ImagePrivate::get_pixels(const Vec2u& offset, const Vec2u& extent, void *dst)
 		{
 			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
-			if (cx == -1)
-				cx = size.x();
-			if (cy == -1)
-				cy = size.y();
-
-			auto data_size = (bpp / 8) * cx * cy;
+			auto data_size = (bpp / 8) * extent.x() * extent.y();
 
 			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferDst, MemPropHost);
 
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(cx, cy, 0, 0, x, y));
+			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
 			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
@@ -218,16 +213,11 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void ImagePrivate::set_pixels(uint x, uint y, int cx, int cy, const void *src)
+		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void *src)
 		{
 			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
-			if (cx == -1)
-				cx = size.x();
-			if (cy == -1)
-				cy = size.y();
-
-			auto data_size = (bpp / 8) * cx * cy;
+			auto data_size = (bpp / 8) * extent.x() * extent.y();
 
 			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferSrc, MemPropHost);
 			stag_buf->map();
@@ -237,7 +227,7 @@ namespace flame
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(cx, cy, 0, 0, x, y));
+			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
@@ -252,14 +242,14 @@ namespace flame
 			((ImagePrivate*)this)->init(col);
 		}
 
-		void Image::get_pixels(uint x, uint y, int cx, int cy, void *dst)
+		void Image::get_pixels(const Vec2u& offset, const Vec2u& extent, void *dst)
 		{
-			((ImagePrivate*)this)->get_pixels(x, y, cx, cy, dst);
+			((ImagePrivate*)this)->get_pixels(offset, extent, dst);
 		}
 
-		void Image::set_pixels(uint x, uint y, int cx, int cy, const void *src)
+		void Image::set_pixels(const Vec2u& offset, const Vec2u& extent, const void *src)
 		{
-			((ImagePrivate*)this)->set_pixels(x, y, cx, cy, src);
+			((ImagePrivate*)this)->set_pixels(offset, extent, src);
 		}
 
 		Image *Image::create(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void *data)
@@ -276,7 +266,7 @@ namespace flame
 				auto cb = Commandbuffer::create(d->gcp);
 				cb->begin(true);
 				cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-				BufferImageCopy copy(i->size.x(), i->size.y());
+				BufferImageCopy copy(i->size);
 				cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 				cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
@@ -301,7 +291,7 @@ namespace flame
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
 			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-			BufferImageCopy copy(bmp->size.x(), bmp->size.y());
+			BufferImageCopy copy(bmp->size);
 			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
@@ -390,7 +380,7 @@ namespace flame
 
 				Bitmap::destroy(bmp);
 
-				buffer_copy_regions.push_back(BufferImageCopy(width, height));
+				buffer_copy_regions.push_back(BufferImageCopy(Vec2u(width, height)));
 			}
 
 			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst | extra_usage));
@@ -415,7 +405,7 @@ namespace flame
 			if (i->bpp / i->channel <= 8)
 			{
 				auto bmp = Bitmap::create(i->size, i->channel, i->bpp);
-				i->get_pixels(0, 0, -1, -1, bmp->data);
+				i->get_pixels(Vec2u(0), i->size, bmp->data);
 				Bitmap::save_to_file(bmp, filename);
 			}
 			else

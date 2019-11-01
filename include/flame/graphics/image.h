@@ -31,8 +31,8 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void init(const Vec4c& col);
 
 			// accepted formats for get/set pixels: Format_R8G8B8A8_UNORM, Format_R16G16B16A16_UNORM
-			FLAME_GRAPHICS_EXPORTS void get_pixels(uint x, uint y, int cx/* -1 means whole */, int cy/* -1 means whole */, void* dst);
-			FLAME_GRAPHICS_EXPORTS void set_pixels(uint x, uint y, int cx/* -1 means whole */, int cy/* -1 means whole */, const void* src);
+			FLAME_GRAPHICS_EXPORTS void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst);
+			FLAME_GRAPHICS_EXPORTS void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src);
 
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void* data = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, ImageUsage$ extra_usage = ImageUsage$(0)); // default usage: ShaderSampled, TransferDst

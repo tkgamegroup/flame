@@ -1253,6 +1253,8 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 
 			e_text_id->add_component(cEventReceiver::create());
 
+			e_text_id->add_component(cCustomDraw::create());
+
 			e_text_id->add_component(cEdit::create());
 		}
 
@@ -1469,6 +1471,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_id->add_component(c_text);
 
 			e_text_id->add_component(cEventReceiver::create());
+
+			e_text_id->add_component(cCustomDraw::create());
 
 			e_text_id->add_component(cEdit::create());
 

@@ -26,10 +26,8 @@ namespace flame
 			void set_props();
 
 			void init(const Vec4c& col);
-			void get_pixels(uint x, uint y, int cx, int cy, void* dst);
-			void set_pixels(uint x, uint y, int cx, int cy, const void* src);
-
-			void save_png(const std::wstring& filename);
+			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst);
+			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src);
 		};
 
 		struct ImageviewPrivate : Imageview

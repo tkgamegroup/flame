@@ -49,8 +49,46 @@ namespace flame
 			return -1;
 		}
 
-		FLAME_FOUNDATION_EXPORTS static void bin_pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border);
+		FLAME_FOUNDATION_EXPORTS static void pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border);
 		FLAME_FOUNDATION_EXPORTS static Atlas* load(const std::wstring& filename /* the image filename, not the atlas */);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Atlas* a);
+	};
+
+	struct BinPackNode
+	{
+		bool used;
+		Vec2u pos;
+		Vec2u size;
+		std::unique_ptr<BinPackNode> right;
+		std::unique_ptr<BinPackNode> bottom;
+
+		BinPackNode(uint w, uint h)
+		{
+			used = false;
+			size.x() = w;
+			size.y() = h;
+		}
+
+		BinPackNode* find(const Vec2u& _size)
+		{
+			if (!used && size >= _size)
+			{
+				used = true;
+				right.reset(new BinPackNode(size.x() - _size.x(), _size.y()));
+				right->pos = pos + Vec2u(_size.x(), 0);
+				bottom.reset(new BinPackNode(size.x(), size.y() - _size.y()));
+				bottom->pos = pos + Vec2u(0, _size.y());
+				return this;
+			}
+			if (!right || !bottom)
+				return nullptr;
+			auto n1 = right->find(size);
+			if (n1)
+				return n1;
+			auto n2 = bottom->find(size);
+			if (n2)
+				return n2;
+			return nullptr;
+		}
 	};
 }

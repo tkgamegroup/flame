@@ -168,42 +168,7 @@ namespace flame
 		return ((AtlasPrivate*)this)->pieces;
 	}
 
-	struct BinPackNode
-	{
-		bool used;
-		Vec2u pos;
-		Vec2u size;
-		std::unique_ptr<BinPackNode> right;
-		std::unique_ptr<BinPackNode> bottom;
-	};
-
-	BinPackNode* bin_pack_find_node(BinPackNode* n, const Vec2u& size)
-	{
-		if (!n->used && n->size >= size)
-		{
-			n->used = true;
-			n->right.reset(new BinPackNode);
-			n->right->used = false;
-			n->right->pos = n->pos + Vec2u(size.x(), 0);
-			n->right->size = Vec2u(n->size.x() - size.x(), size.y());
-			n->bottom.reset(new BinPackNode);
-			n->bottom->used = false;
-			n->bottom->pos = n->pos + Vec2u(0, size.y());
-			n->bottom->size = Vec2u(n->size.x(), n->size.x() - size.y());
-			return n;
-		}
-		if (!n->right || !n->bottom)
-			return nullptr;
-		auto n1 = bin_pack_find_node(n->right.get(), size);
-		if (n1)
-			return n1;
-		auto n2 = bin_pack_find_node(n->bottom.get(), size);
-		if (n2)
-			return n2;
-		return nullptr;
-	}
-
-	void Atlas::bin_pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border)
+	void Atlas::pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border)
 	{
 		struct Piece
 		{
@@ -225,15 +190,12 @@ namespace flame
 		});
 
 		auto w = 512, h = 512;
-		auto tree = std::make_unique<BinPackNode>();
-		tree->used = false;
+		auto tree = std::make_unique<BinPackNode>(w, h);
 		tree->pos = Vec2u(0);
-		tree->size.x() = w;
-		tree->size.y() = h;
 
 		for (auto& p : pieces)
 		{
-			auto n = bin_pack_find_node(tree.get(), p.b->size + Vec2i(border ? 2 : 0));
+			auto n = tree->find(p.b->size + Vec2i(border ? 2 : 0));
 			if (n)
 				p.pos = n->pos;
 		}

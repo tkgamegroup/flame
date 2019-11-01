@@ -65,22 +65,18 @@ namespace flame
 		struct BufferImageCopy
 		{
 			uint buffer_offset;
-			uint image_x;
-			uint image_y;
-			uint image_width;
-			uint image_height;
+			Vec2u image_offset;
+			Vec2u image_extent;
 			uint image_level;
 
 			BufferImageCopy()
 			{
 			}
 
-			BufferImageCopy(uint w, uint h, uint buf_off = 0, uint level = 0, uint x = 0, uint y = 0) :
+			BufferImageCopy(const Vec2u& image_extent, uint buf_off = 0, uint level = 0, const Vec2u& image_offset = Vec2u(0)) :
 				buffer_offset(buf_off),
-				image_x(x),
-				image_y(y),
-				image_width(w),
-				image_height(h),
+				image_offset(image_offset),
+				image_extent(image_extent),
 				image_level(level)
 			{
 			}
