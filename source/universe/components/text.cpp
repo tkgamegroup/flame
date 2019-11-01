@@ -18,16 +18,16 @@ namespace flame
 
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
-		sdf_scale_ = default_style.sdf_scale;
+		font_size_ = default_style.font_size;
 		auto_width_ = true;
 		auto_height_ = true;
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(font_atlas, , element->global_pos +
+		canvas->add_text(font_atlas, font_size_ * element->global_scale, element->global_pos +
 			Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
-			alpha_mul(color, element->alpha), text.c_str(), sdf_scale_ * element->global_scale);
+			alpha_mul(color, element->alpha), text.c_str());
 	}
 
 	void cTextPrivate::on_component_added(Component* c)
@@ -41,7 +41,7 @@ namespace flame
 		auto copy = new cTextPrivate(font_atlas);
 
 		copy->color = color;
-		copy->sdf_scale_ = sdf_scale_;
+		copy->font_size_ = font_size_;
 		copy->auto_width_ = auto_width_;
 		copy->auto_height_ = auto_height_;
 		copy->text = text;
@@ -74,12 +74,12 @@ namespace flame
 		data_changed(cH("text"), sender);
 	}
 
-	void cText::set_sdf_scale(float s, void* sender)
+	void cText::set_font_size(uint s, void* sender)
 	{
-		if (s == sdf_scale_)
+		if (s == font_size_)
 			return;
-		sdf_scale_ = s;
-		data_changed(cH("sdf_scale"), sender);
+		font_size_ = s;
+		data_changed(cH("font_size"), sender);
 	}
 
 	void cText::set_auto_width(bool v, void* sender)
@@ -104,7 +104,7 @@ namespace flame
 		return new cTextPrivate(font_atlas);
 	}
 
-	Entity* create_standard_button(graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text)
+	Entity* create_standard_button(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text)
 	{
 		auto e_button = Entity::create();
 		{
@@ -113,7 +113,7 @@ namespace flame
 			e_button->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = font_size;
+			c_text->font_size_ = default_style.font_size * font_size_scale;
 			c_text->set_text(text);
 			e_button->add_component(c_text);
 
@@ -125,7 +125,7 @@ namespace flame
 		return e_button;
 	}
 
-	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text)
+	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text)
 	{
 		auto e_layout = Entity::create();
 		{
@@ -145,7 +145,7 @@ namespace flame
 			e_text->add_component(cElement::create());
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = font_size;
+			c_text->font_size_ = default_style.font_size * font_size_scale;
 			c_text->set_text(text);
 			e_text->add_component(c_text);
 		}
@@ -160,7 +160,7 @@ namespace flame
 	{
 		uint font_atlas_index$;
 		Vec4c color$;
-		float sdf_scale$;
+		uint font_size$;
 		bool right_align$;
 		bool auto_width$;
 		bool auto_height$;
@@ -172,7 +172,7 @@ namespace flame
 		{
 			font_atlas_index$ = 1;
 			color$ = default_style.text_color_normal;
-			sdf_scale$ = default_style.sdf_scale;
+			font_size$ = default_style.font_size;
 			right_align$ = false;
 			auto_width$ = false;
 			auto_height$ = false;
@@ -187,7 +187,7 @@ namespace flame
 			auto c = new cTextPrivate((graphics::FontAtlas*)u->bank_get(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$)));
 
 			c->color = color$;
-			c->sdf_scale_ = sdf_scale$;
+			c->font_size_ = font_size$;
 			c->auto_width_ = auto_width$;
 			c->auto_height_ = auto_height$;
 			c->set_text(text$);
@@ -208,7 +208,7 @@ namespace flame
 					font_atlas_index$ = std::stoul(name.c_str() + strlen(FONT_ATLAS_PREFIX));
 				}
 				color$ = c->color;
-				sdf_scale$ = c->sdf_scale_;
+				font_size$ = c->font_size_;
 				auto_width$ = c->auto_width_;
 				auto_height$ = c->auto_height_;
 				text$ = c->text();
@@ -227,8 +227,8 @@ namespace flame
 				case offsetof(ComponentText$, color$):
 					color$ = c->color;
 					break;
-				case offsetof(ComponentText$, sdf_scale$):
-					sdf_scale$ = c->sdf_scale_;
+				case offsetof(ComponentText$, font_size$):
+					font_size$ = c->font_size_;
 					break;
 				case offsetof(ComponentText$, auto_width$):
 					auto_width$ = c->auto_width_;
@@ -252,7 +252,7 @@ namespace flame
 			{
 				c->font_atlas = (graphics::FontAtlas*)u->bank_get(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$));
 				c->color = color$;
-				c->sdf_scale_ = sdf_scale$;
+				c->font_size_ = font_size$;
 				c->auto_width_ = auto_width$;
 				c->auto_height_ = auto_height$;
 				c->set_text(text$);
@@ -267,8 +267,8 @@ namespace flame
 				case offsetof(ComponentText$, color$):
 					c->color = color$;
 					break;
-				case offsetof(ComponentText$, sdf_scale$):
-					c->sdf_scale_ = sdf_scale$;
+				case offsetof(ComponentText$, font_size$):
+					c->font_size_ = font_size$;
 					break;
 				case offsetof(ComponentText$, auto_width$):
 					c->auto_width_ = auto_width$;

@@ -50,6 +50,7 @@ namespace flame
 
 	void DefaultStyle::set_to_dark()
 	{
+		font_size = 14;
 		text_color_normal = Vec4c(255, 255, 255, 255);
 		text_color_else = Vec4c(180, 180, 180, 255);
 		window_color = Vec4c(0.06f * 255.f, 0.06f * 255.f, 0.06f * 255.f, 0.94f * 255.f);

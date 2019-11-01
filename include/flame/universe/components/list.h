@@ -58,5 +58,5 @@ namespace flame
 	};
 
 	FLAME_UNIVERSE_EXPORTS Entity* create_standard_list(bool size_fit_parent);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_listitem(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_listitem(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text);
 }

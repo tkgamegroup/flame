@@ -54,7 +54,7 @@ namespace flame
 	FLAME_UNIVERSE_EXPORTS void popup_menu(Entity* menu, Entity* root, const Vec2f& pos);
 
 	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu();
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text);
 	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menubar();
 }

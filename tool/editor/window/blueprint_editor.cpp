@@ -37,7 +37,7 @@ void create_edit(Entity* parent, BP::Slot* input)
 {
 	auto& data = *(T*)input->data();
 
-	auto e_edit = create_drag_edit(app.font_atlas_sdf, 0.5f, std::is_floating_point<T>::value);
+	auto e_edit = create_drag_edit(app.font_atlas_sdf, 0.9f, std::is_floating_point<T>::value);
 	parent->add_child(e_edit);
 	{
 		struct Capture
@@ -78,8 +78,8 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 	capture.input = input;
 	for (auto i = 0; i < N; i++)
 	{
-		auto e_edit = create_drag_edit(app.font_atlas_sdf, 0.5f, std::is_floating_point<T>::value);
-		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_sdf, 0.5f, s2w(Vec<N, T>::coord_name(i))));
+		auto e_edit = create_drag_edit(app.font_atlas_sdf, 0.9f, std::is_floating_point<T>::value);
+		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_sdf, 0.9f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(Text);
 		e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
@@ -1164,7 +1164,6 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 
 			auto c_text = cText::create(app.font_atlas_sdf);
 			c_text->set_text(m->filename());
-			c_text->sdf_scale_ = 0.8f;
 			e_text_filename->add_component(c_text);
 		}
 
@@ -1176,7 +1175,6 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 			auto c_text = cText::create(app.font_atlas_sdf);
 			c_text->set_text(L"module");
 			c_text->color = Vec4c(50, 50, 50, 255);
-			c_text->sdf_scale_ = 0.5f;
 			e_text_type->add_component(c_text);
 		}
 	}
@@ -1247,7 +1245,6 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->sdf_scale_ = 0.8f;
 			c_text->set_text(s2w(p->id()));
 			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 				(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()));
@@ -1311,7 +1308,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->max_height * 0.6f;
+						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
@@ -1332,7 +1329,6 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale_ = 0.6f;
 						auto addr = s->get_address();
 						c_text->set_text(s2w(*addr.p));
 						delete_mail(addr);
@@ -1370,7 +1366,6 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale_ = 0.6f;
 						auto addr = s->get_address();
 						c_text->set_text(s2w(*addr.p));
 						delete_mail(addr);
@@ -1381,7 +1376,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->max_height * 0.6f;
+						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = Vec4c(200, 200, 200, 255);
@@ -1466,7 +1461,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_sdf);
-			c_text->sdf_scale_ = 0.8f;
+			c_text->font_size_ = default_style.font_size * 1.5f;
 			c_text->set_text(s2w(n->id()));
 			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 				(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()));
@@ -1491,14 +1486,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
 			c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->name()));
 			c_text->color = Vec4c(50, 50, 50, 255);
-			c_text->sdf_scale_ = 0.5f;
 			e_text_type->add_component(c_text);
 		}
 
 		auto udt_name = n->udt()->name();
 		if (udt_name == "DstImage")
 		{
-			auto e_show = create_standard_button(app.font_atlas_sdf, 0.5f, L"Show");
+			auto e_show = create_standard_button(app.font_atlas_sdf, 0.9f, L"Show");
 			e_content->add_child(e_show);
 			e_show->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_clicked(action, key))
@@ -1507,7 +1501,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		}
 		else if (udt_name == "graphics::Shader")
 		{
-			auto e_edit = create_standard_button(app.font_atlas_sdf, 0.5f, L"Edit Shader");
+			auto e_edit = create_standard_button(app.font_atlas_sdf, 0.9f, L"Edit Shader");
 			e_content->add_child(e_edit);
 
 			struct Capture
@@ -1775,7 +1769,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->max_height * 0.6f;
+						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = bp->find_input_export(input) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
@@ -1795,7 +1789,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale_ = 0.6f;
 						c_text->set_text(s2w(input->vi()->name()));
 						e_text->add_component(c_text);
 					}
@@ -1804,7 +1797,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_input->add_child(e_data);
 					{
 						auto c_element = cElement::create();
-						c_element->inner_padding_ = Vec4f(app.font_atlas_sdf->max_height, 0.f, 0.f, 0.f);
+						c_element->inner_padding_ = Vec4f(default_style.font_size, 0.f, 0.f, 0.f);
 						e_data->add_component(c_element);
 
 						auto c_layout = cLayout::create(LayoutVertical);
@@ -1818,7 +1811,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					case TypeTagAttributeES:
 					{
 						auto info = find_enum(bp->dbs(), type->hash());
-						create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.5f, e_data);
+						create_enum_combobox(info, 120.f, app.font_atlas_sdf, 0.9f, e_data);
 
 						struct Capture
 						{
@@ -1848,7 +1841,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 						auto info = find_enum(bp->dbs(), type->hash());
 
-						create_enum_checkboxs(info, app.font_atlas_sdf, 0.5f, e_data);
+						create_enum_checkboxs(info, app.font_atlas_sdf, 0.9f, e_data);
 						for (auto k = 0; k < info->item_count(); k++)
 						{
 							auto item = info->item(k);
@@ -1952,7 +1945,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							break;
 						case cH("std::basic_string(char)"):
 						{
-							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.9f);
 							e_data->add_child(e_edit);
 							e_edit->get_component(Edit)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto str = w2s(((cText*)t)->text());
@@ -1966,7 +1959,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							break;
 						case cH("std::basic_string(wchar_t)"):
 						{
-							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.5f);
+							auto e_edit = create_standard_edit(50.f, app.font_atlas_sdf, 0.9f);
 							e_data->add_child(e_edit);
 							e_edit->get_component(Edit)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								(*(BP::Slot**)c)->set_data(&((cText*)t)->text());
@@ -2014,7 +2007,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_sdf);
-						c_text->sdf_scale_ = 0.6f;
 						c_text->set_text(s2w(output->vi()->name()));
 						e_text->add_component(c_text);
 					}
@@ -2023,7 +2015,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					e_title->add_child(e_slot);
 					{
 						auto c_element = cElement::create();
-						auto r = app.font_atlas_sdf->max_height * 0.6f;
+						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness = r * 0.5f;
 						c_element->color = bp->find_output_export(output) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);

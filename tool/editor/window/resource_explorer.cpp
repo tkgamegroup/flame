@@ -159,7 +159,7 @@ struct cResourceExplorer : Component
 			e_image->add_component(c_element);
 
 			auto c_image = cImage::create();
-			c_image->id = img_id;
+			c_image->id = img_id << 16;
 			e_image->add_component(c_image);
 		}
 
@@ -490,7 +490,7 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 							auto v = (64 - thumbnail_size.y()) * 0.5f;
 							image->element->inner_padding_ = Vec4f(h, v, h, v);
 						}
-						image->id = explorer->thumbnails_img_idx;
+						image->id = explorer->thumbnails_img_idx << 16;
 						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
 						image->uv1 = Vec2f(thiz->seat->pos + thumbnail_size) / thumbnails_img_size;
 						image->color = Vec4c(255);

@@ -37,6 +37,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_button(graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text);
-	FLAME_UNIVERSE_EXPORTS Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_button(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text);
+	FLAME_UNIVERSE_EXPORTS Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text);
 }

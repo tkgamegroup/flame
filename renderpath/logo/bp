@@ -58,7 +58,7 @@
 				<data name="b" value="-0.40" />
 			</datas>
 		</node>
-		<node type="Array(5+void*)" id="node_0" pos="609.21;930.54" />
+		<node type="Array(5+void*)" id="content" pos="609.21;930.54" />
 		<node type="Add" id="delay2" pos="-868.50;1516.50">
 			<datas>
 				<data name="b" value="-0.80" />
@@ -125,41 +125,41 @@
 				<data name="text" value="e" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="scale1" pos="-317.50;462.50">
+		<node type="LinearInterpolation1d" id="scale1" pos="-429.50;462.50">
 			<datas>
 				<data name="a" value="640.00" />
 				<data name="b" value="144.00" />
 			</datas>
 		</node>
-    <node type="F2U" id="scale1_cvt" pos="0.00;0.00" />
-		<node type="LinearInterpolation1d" id="scale2" pos="-321.50;1074.50">
+		<node type="F2U" id="scale1_cvt" pos="-252.00;515.00" />
+		<node type="LinearInterpolation1d" id="scale2" pos="-448.50;1070.50">
 			<datas>
-        <data name="a" value="640.00" />
-        <data name="b" value="144.00" />
+				<data name="a" value="640.00" />
+				<data name="b" value="144.00" />
 			</datas>
 		</node>
-    <node type="F2U" id="scale2_cvt" pos="0.00;0.00" />
-		<node type="LinearInterpolation1d" id="scale3" pos="-332.50;1711.50">
+		<node type="F2U" id="scale2_cvt" pos="-281.00;1075.00" />
+		<node type="LinearInterpolation1d" id="scale3" pos="-454.50;1705.50">
 			<datas>
-        <data name="a" value="640.00" />
-        <data name="b" value="144.00" />
+				<data name="a" value="640.00" />
+				<data name="b" value="144.00" />
 			</datas>
 		</node>
-    <node type="F2U" id="scale3_cvt" pos="0.00;0.00" />
-		<node type="LinearInterpolation1d" id="scale4" pos="-334.50;2355.50">
+		<node type="F2U" id="scale3_cvt" pos="-271.00;1696.00" />
+		<node type="LinearInterpolation1d" id="scale4" pos="-494.50;2339.50">
 			<datas>
-        <data name="a" value="640.00" />
-        <data name="b" value="144.00" />
+				<data name="a" value="640.00" />
+				<data name="b" value="144.00" />
 			</datas>
 		</node>
-    <node type="F2U" id="scale4_cvt" pos="0.00;0.00" />
-		<node type="LinearInterpolation1d" id="scale5" pos="-302.50;3039.50">
+		<node type="F2U" id="scale4_cvt" pos="-302.00;2360.00" />
+		<node type="LinearInterpolation1d" id="scale5" pos="-404.50;3024.50">
 			<datas>
-        <data name="a" value="640.00" />
-        <data name="b" value="144.00" />
+				<data name="a" value="640.00" />
+				<data name="b" value="144.00" />
 			</datas>
 		</node>
-    <node type="F2U" id="scale5_cvt" pos="0.00;0.00" />
+		<node type="F2U" id="scale5_cvt" pos="-243.00;3058.00" />
 		<node type="LinearInterpolation1d" id="alpha1" pos="-322.50;678.50">
 			<datas>
 				<data name="b" value="1.00" />
@@ -188,28 +188,26 @@
 	</nodes>
 	<links>
 		<link out="font_atlas.out" in="canvas.make_cmd.font_atlases" />
-		<link out="node_0.v" in="canvas.make_cmd.content" />
+		<link out="content.v" in="canvas.make_cmd.content" />
 		<link out="font.out" in="font_atlas.fonts" />
 		<link out="font_atlas.out" in="text1.font_atals" />
+		<link out="scale1_cvt.out" in="text1.font_size" />
 		<link out="pos1.out" in="text1.pos" />
-    <link out="scale1.out" in="scale1_cvt.v" />
-    <link out="scale1_cvt.out" in="text1.font_size" />
 		<link out="alpha1.out" in="text1.alpha" />
 		<link out="font_atlas.out" in="text2.font_atals" />
-		<link out="pos2.out" in="text2.pos" />
-    <link out="scale2.out" in="scale2_cvt.v" />
 		<link out="scale2_cvt.out" in="text2.font_size" />
+		<link out="pos2.out" in="text2.pos" />
 		<link out="alpha2.out" in="text2.alpha" />
 		<link out="path1.out" in="pos1.x" />
 		<link out="time.total" in="path1.t" />
 		<link out="path2.out" in="pos2.x" />
 		<link out="delay1.out" in="path2.t" />
 		<link out="time.total" in="delay1.a" />
-		<link out="text1.out" in="node_0.1" />
-		<link out="text2.out" in="node_0.2" />
-		<link out="text3.out" in="node_0.3" />
-		<link out="text4.out" in="node_0.4" />
-		<link out="text5.out" in="node_0.5" />
+		<link out="text1.out" in="content.1" />
+		<link out="text2.out" in="content.2" />
+		<link out="text3.out" in="content.3" />
+		<link out="text4.out" in="content.4" />
+		<link out="text5.out" in="content.5" />
 		<link out="time.total" in="delay2.a" />
 		<link out="time.total" in="dealy3.a" />
 		<link out="time.total" in="delay4.a" />
@@ -220,25 +218,27 @@
 		<link out="path4.out" in="pos4.x" />
 		<link out="path5.out" in="pos5.x" />
 		<link out="font_atlas.out" in="text3.font_atals" />
-		<link out="pos3.out" in="text3.pos" />
-    <link out="scale3.out" in="scale3_cvt.v" />
 		<link out="scale3_cvt.out" in="text3.font_size" />
+		<link out="pos3.out" in="text3.pos" />
 		<link out="alpha3.out" in="text3.alpha" />
 		<link out="font_atlas.out" in="text4.font_atals" />
-		<link out="pos4.out" in="text4.pos" />
-    <link out="scale4.out" in="scale4_cvt.v" />
 		<link out="scale4_cvt.out" in="text4.font_size" />
+		<link out="pos4.out" in="text4.pos" />
 		<link out="alpha4.out" in="text4.alpha" />
 		<link out="font_atlas.out" in="text5.font_atals" />
-		<link out="pos5.out" in="text5.pos" />
-    <link out="scale5.out" in="scale5_cvt.v" />
 		<link out="scale5_cvt.out" in="text5.font_size" />
+		<link out="pos5.out" in="text5.pos" />
 		<link out="alpha5.out" in="text5.alpha" />
 		<link out="time.total" in="scale1.t" />
+		<link out="scale1.out" in="scale1_cvt.v" />
 		<link out="delay1.out" in="scale2.t" />
+		<link out="scale2.out" in="scale2_cvt.v" />
 		<link out="delay2.out" in="scale3.t" />
+		<link out="scale3.out" in="scale3_cvt.v" />
 		<link out="dealy3.out" in="scale4.t" />
+		<link out="scale4.out" in="scale4_cvt.v" />
 		<link out="delay4.out" in="scale5.t" />
+		<link out="scale5.out" in="scale5_cvt.v" />
 		<link out="time.total" in="alpha1.t" />
 		<link out="delay1.out" in="alpha2.t" />
 		<link out="delay2.out" in="alpha3.t" />

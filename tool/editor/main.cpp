@@ -133,7 +133,7 @@ void App::run()
 
 App app;
 
-Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
+Entity* create_drag_edit(FontAtlas* font_atlas, float font_size_scale, bool is_float)
 {
 	auto e_layout = Entity::create();
 	{
@@ -144,7 +144,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		e_layout->add_component(c_layout);
 	}
 
-	auto e_edit = create_standard_edit(50.f, font_atlas, sdf_scale);
+	auto e_edit = create_standard_edit(50.f, font_atlas, font_size_scale);
 	e_layout->add_child(e_edit);
 	e_edit->set_visibility(false);
 
@@ -157,7 +157,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 		e_drag->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);
-		c_text->sdf_scale_ = sdf_scale;
+		c_text->font_size_ = default_style.font_size * font_size_scale;
 		c_text->auto_width_ = false;
 		e_drag->add_component(c_text);
 
@@ -223,19 +223,19 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float sdf_scale, bool is_float)
 	return e_layout;
 }
 
-void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float sdf_scale, Entity* parent)
+void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float font_size_scale, Entity* parent)
 {
 	std::vector<std::wstring> items;
 	for (auto i = 0; i < info->item_count(); i++)
 		items.push_back(s2w(info->item(i)->name()));
 
-	parent->add_child(create_standard_combobox(120.f, font_atlas, sdf_scale, app.root, items));
+	parent->add_child(create_standard_combobox(120.f, font_atlas, font_size_scale, app.root, items));
 }
 
-void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float sdf_scale, Entity* parent)
+void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float font_size_scale, Entity* parent)
 {
 	for (auto i = 0; i < info->item_count(); i++)
-		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, sdf_scale, s2w(info->item(i)->name())));
+		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, font_size_scale, s2w(info->item(i)->name())));
 }
 
 void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)

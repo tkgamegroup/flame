@@ -197,7 +197,6 @@ int main(int argc, char** args)
 
 		auto c_text = cText::create(app.font_atlas_sdf);
 		c_text->set_text(L"Text Sdf");
-		c_text->sdf_scale_ = 14.f / 32.f;
 		e_text_sdf->add_component(c_text);
 	}
 

@@ -189,7 +189,7 @@ namespace flame
 						g->grid_pos = grid_curr_pos;
 
 						grid_curr_pos.x()++;
-						if (grid_curr_pos.x() == grid_size.x())
+						if (grid_curr_pos.x() == grid_count.x())
 						{
 							grid_curr_pos.x() = 0;
 							grid_curr_pos.y()++;
@@ -337,47 +337,47 @@ namespace flame
 				return map[unicode];
 			}
 
-			Vec2i get_text_offset(const std::wstring_view& text)
+			Vec2f get_text_offset(const std::wstring_view& text, uint font_size)
 			{
-				auto w = 0;
-				auto h = 0;
+				auto w = 0.f;
+				auto h = 0.f;
 				for (auto ch : text)
 				{
 					if (!ch)
 						break;
 					if (ch == '\n')
 					{
-						w = 0;
-						h += max_height;
+						w = 0.f;
+						h += font_size;
 					}
 					else if (ch != '\r' && ch != '\t')
-						w += get_glyph(ch)->advance;
+						w += get_advance(ch, font_size);
 				}
-				return Vec2i(w, h);
+				return Vec2f(w, h);
 			}
 
-			Vec2i get_text_size(const std::wstring_view& text)
+			Vec2f get_text_size(const std::wstring_view& text, uint font_size)
 			{
-				auto w = 0;
-				auto h = max_height;
-				auto lw = 0;
+				auto w = 0.f;
+				auto h = (float)font_size;
+				auto lw = 0.f;
 				for (auto ch : text)
 				{
 					if (ch == '\n')
 					{
-						h += max_height;
-						lw = 0;
+						h += font_size;
+						lw = 0.f;
 					}
 					else if (ch != '\r')
 					{
 						if (ch == '\t')
 							ch = ' ';
-						lw += get_glyph(ch)->advance;
+						lw += get_advance(ch, font_size);
 						if (lw > w)
 							w = lw;
 					}
 				}
-				return Vec2i(w, h);
+				return Vec2f(w, h);
 			}
 
 			Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width)
@@ -431,22 +431,22 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->get_glyph(unicode);
 		}
 
-		int FontAtlas::get_advance(wchar_t unicode, uint font_size)
+		float FontAtlas::get_advance(wchar_t unicode, uint font_size)
 		{
-			auto advance = ((FontAtlasPrivate*)this)->get_glyph(unicode)->advance;
+			float advance = ((FontAtlasPrivate*)this)->get_glyph(unicode)->advance;
 			if (draw_type == FontDrawSdf)
 				advance *= (float)font_size / sdf_grid_size;
 			return advance;
 		}
 
-		Vec2i FontAtlas::get_text_offset(const std::wstring_view& text)
+		Vec2f FontAtlas::get_text_offset(const std::wstring_view& text, uint font_size)
 		{
-			return ((FontAtlasPrivate*)this)->get_text_offset(text);
+			return ((FontAtlasPrivate*)this)->get_text_offset(text, font_size);
 		}
 
-		Vec2i FontAtlas::get_text_size(const std::wstring_view& text)
+		Vec2f FontAtlas::get_text_size(const std::wstring_view& text, uint font_size)
 		{
-			return ((FontAtlasPrivate*)this)->get_text_size(text);
+			return ((FontAtlasPrivate*)this)->get_text_size(text, font_size);
 		}
 
 		Mail<std::wstring> FontAtlas::slice_text_by_width(const std::wstring_view& text, uint width)

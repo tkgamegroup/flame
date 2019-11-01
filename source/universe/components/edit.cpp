@@ -158,12 +158,12 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas)
 		{
-			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
+			if (event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
-				auto scale = element->global_scale;
-				canvas->add_text(text->font_atlas, text->font_size_ * scale, element->global_pos +
+				auto font_size = text->font_size_ * element->global_scale;
+				canvas->add_text(text->font_atlas, font_size, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
-					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * scale,
+					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), font_size)),
 					alpha_mul(text->color, element->alpha), L"|");
 			}
 		}
@@ -174,7 +174,7 @@ namespace flame
 		return new cEditPrivate();
 	}
 
-	Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, uint font_size)
+	Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, float font_size_scale)
 	{
 		auto e_edit = Entity::create();
 		{
@@ -187,7 +187,7 @@ namespace flame
 			e_edit->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = font_size;
+			c_text->font_size_ = default_style.font_size * font_size_scale;
 			c_text->auto_width_ = false;
 			e_edit->add_component(c_text);
 
