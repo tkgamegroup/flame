@@ -1,6 +1,7 @@
 #include <flame/graphics/font.h>
 #include <flame/foundation/serialize.h>
 #include <flame/universe/topmost.h>
+#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/text.h>
@@ -45,7 +46,7 @@ Entity* create_item(const std::wstring& title)
 	e_item->add_child(e_data);
 	{
 		auto c_element = cElement::create();
-		c_element->inner_padding_ = Vec4f(app.font_atlas_pixel->max_height, 0.f, 0.f, 0.f);
+		c_element->inner_padding_ = Vec4f(default_style.font_size, 0.f, 0.f, 0.f);
 		e_data->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -278,7 +279,7 @@ struct cInspectorPrivate : cInspector
 				e_component->add_child(e_name);
 				{
 					auto c_element = cElement::create();
-					c_element->inner_padding_ = Vec4f(0.f, 0.f, 4.f + app.font_atlas_pixel->max_height, 0.f);
+					c_element->inner_padding_ = Vec4f(0.f, 0.f, 4.f + default_style.font_size, 0.f);
 					e_name->add_component(c_element);
 
 					auto c_text = cText::create(app.font_atlas_pixel);

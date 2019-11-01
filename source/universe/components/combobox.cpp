@@ -146,12 +146,12 @@ namespace flame
 		return new cComboboxPrivate;
 	}
 
-	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float sdf_scale, Entity* root, const std::vector<std::wstring>& items)
+	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float font_size_scale, Entity* root, const std::vector<std::wstring>& items)
 	{
 		auto e_menu = create_standard_menu();
 		for (auto i = 0; i < items.size(); i++)
 		{
-			auto e_item = create_standard_menu_item(font_atlas, sdf_scale, items[i]);
+			auto e_item = create_standard_menu_item(font_atlas, font_size_scale, items[i]);
 			e_menu->add_child(e_item);
 
 			auto c_combobox_item = cComboboxItem::create();
@@ -159,11 +159,11 @@ namespace flame
 			e_item->add_component(c_combobox_item);
 		}
 
-		auto e_combobox = create_standard_menu_button(font_atlas, sdf_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
+		auto e_combobox = create_standard_menu_button(font_atlas, font_size_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
 		{
 			auto c_element = e_combobox->get_component(Element);
 			c_element->size_.x() = width + 8.f;
-			c_element->size_.y() = font_atlas->max_height * sdf_scale + 4.f;
+			c_element->size_.y() = default_style.font_size * font_size_scale + 4.f;
 			c_element->frame_color = default_style.text_color_normal;
 			c_element->frame_thickness = 2.f;
 

@@ -1,4 +1,5 @@
 #include <flame/graphics/font.h>
+#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
@@ -100,7 +101,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 	}
 	c_console->c_text_log = e_log->get_component(Text);
 
-	e_page->add_child(wrap_standard_scrollbar(e_log_view, ScrollbarVertical, true, app.font_atlas_pixel->max_height));
+	e_page->add_child(wrap_standard_scrollbar(e_log_view, ScrollbarVertical, true, default_style.font_size));
 
 	auto e_btn_clear = create_standard_button(app.font_atlas_pixel, 1.f, L"Clear");
 	e_page->add_child(e_btn_clear);
