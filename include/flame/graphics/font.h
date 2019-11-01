@@ -51,6 +51,7 @@ namespace flame
 			uint index;
 
 			FLAME_GRAPHICS_EXPORTS const Glyph* get_glyph(wchar_t unicode);
+			FLAME_GRAPHICS_EXPORTS int get_advance(wchar_t unicode, uint font_size);
 			FLAME_GRAPHICS_EXPORTS Vec2i get_text_offset(const std::wstring_view& text);
 			FLAME_GRAPHICS_EXPORTS Vec2i get_text_size(const std::wstring_view& text);
 			FLAME_GRAPHICS_EXPORTS Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width);

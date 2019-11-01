@@ -25,7 +25,7 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(font_atlas, element->global_pos +
+		canvas->add_text(font_atlas, , element->global_pos +
 			Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
 			alpha_mul(color, element->alpha), text.c_str(), sdf_scale_ * element->global_scale);
 	}
@@ -104,7 +104,7 @@ namespace flame
 		return new cTextPrivate(font_atlas);
 	}
 
-	Entity* create_standard_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
+	Entity* create_standard_button(graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text)
 	{
 		auto e_button = Entity::create();
 		{
@@ -113,7 +113,7 @@ namespace flame
 			e_button->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale_ = sdf_scale;
+			c_text->font_size_ = font_size;
 			c_text->set_text(text);
 			e_button->add_component(c_text);
 
@@ -125,7 +125,7 @@ namespace flame
 		return e_button;
 	}
 
-	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text)
+	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text)
 	{
 		auto e_layout = Entity::create();
 		{
@@ -145,7 +145,7 @@ namespace flame
 			e_text->add_component(cElement::create());
 
 			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale_ = sdf_scale;
+			c_text->font_size_ = font_size;
 			c_text->set_text(text);
 			e_text->add_component(c_text);
 		}

@@ -211,8 +211,16 @@ namespace flame
 	{
 		assert(type == Input);
 
-		if (target && (target->type == Input || parent == target->parent || (parent->parent->parent && parent->parent->parent == target->parent->parent->parent)))
-			return false;
+		if (target)
+		{
+			if (target->type == Input)
+				return false;
+			if (parent == target->parent) // same node
+				return false;
+			auto p = parent->parent->parent;
+			if (p && p == target->parent->parent->parent) // same package
+				return false;
+		}
 
 		if (links[0] == target)
 			return true;

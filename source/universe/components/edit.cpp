@@ -117,13 +117,11 @@ namespace flame
 
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto scl = text->sdf_scale_ * element->global_scale;
-
-						auto lh = text->font_atlas->max_height * scl;
+						auto font_size = text->font_size_ * element->global_scale;
 						auto y = element->global_pos.y();
 						for (auto p = str.c_str(); ; p++)
 						{
-							if (y < pos.y() && pos.y() < y + lh)
+							if (y < pos.y() && pos.y() < y + font_size)
 							{
 								auto x = element->global_pos.x();
 								for (;; p++)
@@ -132,7 +130,7 @@ namespace flame
 										break;
 									if (*p == '\n' || *p == '\r')
 										break;
-									auto w = text->font_atlas->get_glyph(*p == '\t' ? ' ' : *p)->advance * scl;
+									auto w = text->font_atlas->get_advance(*p == '\t' ? ' ' : *p, font_size);
 									if (x <= pos.x() && pos.x() < x + w)
 										break;
 									x += w;
@@ -144,7 +142,7 @@ namespace flame
 							if (!*p)
 								break;
 							if (*p == '\n')
-								y += lh;
+								y += font_size;
 						}
 					}
 				}, new_mail_p(this));
@@ -162,11 +160,11 @@ namespace flame
 		{
 			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
-				auto text_scale = text->sdf_scale_ * element->global_scale;
-				canvas->add_text(text->font_atlas, element->global_pos +
+				auto scale = element->global_scale;
+				canvas->add_text(text->font_atlas, text->font_size_ * scale, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
-					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * text_scale,
-					alpha_mul(text->color, element->alpha), L"|", text_scale);
+					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor))) * scale,
+					alpha_mul(text->color, element->alpha), L"|");
 			}
 		}
 	};
@@ -176,7 +174,7 @@ namespace flame
 		return new cEditPrivate();
 	}
 
-	Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, float sdf_scale)
+	Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, uint font_size)
 	{
 		auto e_edit = Entity::create();
 		{
@@ -189,7 +187,7 @@ namespace flame
 			e_edit->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->sdf_scale_ = sdf_scale;
+			c_text->font_size_ = font_size;
 			c_text->auto_width_ = false;
 			e_edit->add_component(c_text);
 

@@ -187,11 +187,11 @@
 		<link out="font.out" in="font_atlas.fonts" />
 		<link out="font_atlas.out" in="text1.font_atals" />
 		<link out="pos1.out" in="text1.pos" />
-		<link out="scale1.out" in="text1.scale" />
+		<link out="scale1.out" in="text1.font_size" />
 		<link out="alpha1.out" in="text1.alpha" />
 		<link out="font_atlas.out" in="text2.font_atals" />
 		<link out="pos2.out" in="text2.pos" />
-		<link out="scale2.out" in="text2.scale" />
+		<link out="scale2.out" in="text2.font_size" />
 		<link out="alpha2.out" in="text2.alpha" />
 		<link out="path1.out" in="pos1.x" />
 		<link out="time.total" in="path1.t" />
@@ -214,15 +214,15 @@
 		<link out="path5.out" in="pos5.x" />
 		<link out="font_atlas.out" in="text3.font_atals" />
 		<link out="pos3.out" in="text3.pos" />
-		<link out="scale3.out" in="text3.scale" />
+		<link out="scale3.out" in="text3.font_size" />
 		<link out="alpha3.out" in="text3.alpha" />
 		<link out="font_atlas.out" in="text4.font_atals" />
 		<link out="pos4.out" in="text4.pos" />
-		<link out="scale4.out" in="text4.scale" />
+		<link out="scale4.out" in="text4.font_size" />
 		<link out="alpha4.out" in="text4.alpha" />
 		<link out="font_atlas.out" in="text5.font_atals" />
 		<link out="pos5.out" in="text5.pos" />
-		<link out="scale5.out" in="text5.scale" />
+		<link out="scale5.out" in="text5.font_size" />
 		<link out="alpha5.out" in="text5.alpha" />
 		<link out="time.total" in="scale1.t" />
 		<link out="delay1.out" in="scale2.t" />

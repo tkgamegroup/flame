@@ -26,7 +26,7 @@ namespace flame
 		struct GlyphPrivate : Glyph
 		{
 			ushort unicode;
-			uint grid_x, grid_y;
+			Vec2u grid_pos;
 			GlyphPrivate* next;
 		};
 
@@ -113,10 +113,9 @@ namespace flame
 			GlyphPrivate* map[65536];
 			GlyphPrivate* glyph_head;
 			GlyphPrivate* glyph_tail;
-			uint grid_cx;
-			uint grid_cy;
-			uint grid_curr_x;
-			uint grid_curr_y;
+			Vec2u grid_size;
+			Vec2u grid_count;
+			Vec2u grid_curr_pos;
 
 			Image* image;
 			Imageview* imageview;
@@ -148,21 +147,19 @@ namespace flame
 
 				glyph_head = glyph_tail = nullptr;
 
-				uint grid_width;
-				uint grid_height;
 				if (draw_type != FontDrawSdf)
 				{
-					grid_width = max_width;
-					grid_height = max_height;
+					grid_size.x() = max_width;
+					grid_size.y() = max_height;
 				}
 				else
 				{
-					grid_width = sdf_grid_size + sdf_range * 2;
-					grid_height = sdf_grid_size + sdf_range * 2;
+					grid_size.x() = sdf_grid_size + sdf_range * 2;
+					grid_size.y() = sdf_grid_size + sdf_range * 2;
 				}
-				grid_cx = font_atlas_size.x() / grid_width;
-				grid_cy = font_atlas_size.y() / grid_height;
-				grid_curr_x = grid_curr_y = 0;
+				grid_count.x() = font_atlas_size.x() / grid_size.x();
+				grid_count.y() = font_atlas_size.y() / grid_size.y();
+				grid_curr_pos = 0;
 			}
 
 			~FontAtlasPrivate()
@@ -176,7 +173,7 @@ namespace flame
 				if (!map[unicode])
 				{
 					GlyphPrivate* g;
-					if (grid_curr_y == grid_cy)
+					if (grid_curr_pos.y() == grid_size.y())
 					{
 						g = glyph_head;
 						glyph_head = g->next;
@@ -189,14 +186,13 @@ namespace flame
 					else
 					{
 						g = new GlyphPrivate;
-						g->grid_x = grid_curr_x;
-						g->grid_y = grid_curr_y;
+						g->grid_pos = grid_curr_pos;
 
-						grid_curr_x++;
-						if (grid_curr_x == grid_cx)
+						grid_curr_pos.x()++;
+						if (grid_curr_pos.x() == grid_size.x())
 						{
-							grid_curr_x = 0;
-							grid_curr_y++;
+							grid_curr_pos.x() = 0;
+							grid_curr_pos.y()++;
 						}
 
 						if (glyph_tail)
@@ -237,8 +233,8 @@ namespace flame
 						{
 							FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_NORMAL);
 
-							auto x = g->grid_x * max_width;
-							auto y = g->grid_y * max_height;
+							auto x = g->grid_pos.x() * grid_size.x();
+							auto y = g->grid_pos.y() * grid_size.y();
 
 							if (width > 0 && height > 0)
 							{
@@ -264,8 +260,8 @@ namespace flame
 						{
 							FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
 
-							auto x = g->grid_x * max_width;
-							auto y = g->grid_y * max_height;
+							auto x = g->grid_pos.x() * grid_size.x();
+							auto y = g->grid_pos.y() * grid_size.y();
 
 							if (width > 0 && height > 0)
 							{
@@ -321,8 +317,8 @@ namespace flame
 								}
 							}
 
-							auto x = g->grid_x * (max_width + sdf_range * 2);
-							auto y = g->grid_y * (max_height + sdf_range * 2);
+							auto x = g->grid_pos.x() * grid_size.x();
+							auto y = g->grid_pos.y() * grid_size.y();
 
 							image->set_pixels(x, y, size.x(), size.y(), temp);
 
@@ -433,6 +429,14 @@ namespace flame
 		const Glyph* FontAtlas::get_glyph(wchar_t unicode)
 		{
 			return ((FontAtlasPrivate*)this)->get_glyph(unicode);
+		}
+
+		int FontAtlas::get_advance(wchar_t unicode, uint font_size)
+		{
+			auto advance = ((FontAtlasPrivate*)this)->get_glyph(unicode)->advance;
+			if (draw_type == FontDrawSdf)
+				advance *= (float)font_size / sdf_grid_size;
+			return advance;
 		}
 
 		Vec2i FontAtlas::get_text_offset(const std::wstring_view& text)

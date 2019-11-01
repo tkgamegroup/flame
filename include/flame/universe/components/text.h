@@ -17,7 +17,7 @@ namespace flame
 
 		graphics::FontAtlas* font_atlas;
 		Vec4c color;
-		float sdf_scale_;
+		uint font_size_;
 		bool auto_width_;
 		bool auto_height_;
 
@@ -30,13 +30,13 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_text(const std::wstring& text, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void insert_char(wchar_t ch, uint pos, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void erase_char(uint pos, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_sdf_scale(float s, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_font_size(uint s, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_auto_width(bool v, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_auto_height(bool v, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_button(graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text);
-	FLAME_UNIVERSE_EXPORTS Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float sdf_scale, const std::wstring& text);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_button(graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text);
+	FLAME_UNIVERSE_EXPORTS Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, uint font_size, const std::wstring& text);
 }

@@ -8,7 +8,6 @@ namespace flame
 	struct DefaultStyle
 	{
 		uint font_size;
-		float sdf_scale;
 		Vec4c text_color_normal;
 		Vec4c text_color_else;
 		Vec4c window_color;
