@@ -1735,6 +1735,22 @@ namespace flame
 		return _bp_env;
 	}
 
+	struct F2U$
+	{
+		AttributeV<float> v$i;
+
+		AttributeV<uint> out$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (v$i.frame > out$o.frame)
+			{
+				out$o.v = v$i.v;
+				out$o.frame = v$i.frame;
+			}
+		}
+	};
+
 	struct Add$
 	{
 		AttributeV<float> a$i;
