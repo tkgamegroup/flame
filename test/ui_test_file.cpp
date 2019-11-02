@@ -95,9 +95,9 @@ int main(int argc, char** args)
 	app.u->bank_save("font_atlas1", app.font_atlas_pixel);
 
 	auto w = World::create();
-	w->add_system(sUIRenderer::create(app.canvas));
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create(app.w));
+	w->add_system(sUIRenderer::create(app.canvas));
 	app.u->add_world(w);
 
 	auto root = w->root();

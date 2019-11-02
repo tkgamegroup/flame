@@ -82,10 +82,10 @@ namespace flame
 			}
 			if (!right || !bottom)
 				return nullptr;
-			auto n1 = right->find(size);
+			auto n1 = right->find(_size);
 			if (n1)
 				return n1;
-			auto n2 = bottom->find(size);
+			auto n2 = bottom->find(_size);
 			if (n2)
 				return n2;
 			return nullptr;
