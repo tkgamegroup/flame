@@ -19,6 +19,7 @@ namespace flame
 
 		struct Glyph
 		{
+			ushort unicode;
 			Vec2i off;
 			Vec2u size;
 			Vec2f uv0;

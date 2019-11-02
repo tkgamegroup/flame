@@ -190,8 +190,7 @@ namespace flame
 		});
 
 		auto w = 512, h = 512;
-		auto tree = std::make_unique<BinPackNode>(w, h);
-		tree->pos = Vec2u(0);
+		auto tree = std::make_unique<BinPackNode>(Vec2u(w, h));
 
 		for (auto& p : pieces)
 		{

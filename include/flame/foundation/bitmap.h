@@ -62,11 +62,11 @@ namespace flame
 		std::unique_ptr<BinPackNode> right;
 		std::unique_ptr<BinPackNode> bottom;
 
-		BinPackNode(uint w, uint h)
+		BinPackNode(const Vec2u& size) :
+			used(false),
+			pos(0),
+			size(size)
 		{
-			used = false;
-			size.x() = w;
-			size.y() = h;
 		}
 
 		BinPackNode* find(const Vec2u& _size)
@@ -74,9 +74,9 @@ namespace flame
 			if (!used && size >= _size)
 			{
 				used = true;
-				right.reset(new BinPackNode(size.x() - _size.x(), _size.y()));
+				right.reset(new BinPackNode(Vec2u(size.x() - _size.x(), _size.y())));
 				right->pos = pos + Vec2u(_size.x(), 0);
-				bottom.reset(new BinPackNode(size.x(), size.y() - _size.y()));
+				bottom.reset(new BinPackNode(Vec2u(size.x(), size.y() - _size.y())));
 				bottom->pos = pos + Vec2u(0, _size.y());
 				return this;
 			}
