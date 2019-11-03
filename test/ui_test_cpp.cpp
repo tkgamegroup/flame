@@ -54,6 +54,8 @@ struct App
 	FontAtlas* font_atlas_lcd;
 	FontAtlas* font_atlas_sdf;
 
+	uint fps;
+
 	Universe* u;
 	Entity* root;
 	cElement* c_element_root;
@@ -73,7 +75,12 @@ struct App
 		if (sc)
 		{
 			c_element_root->set_size(Vec2f(w->size));
-			c_text_fps->set_text(std::to_wstring(looper().fps));
+			auto _fps = looper().fps;
+			if (_fps != fps)
+			{
+				fps = _fps;
+				c_text_fps->set_text(std::to_wstring(fps));
+			}
 			u->update();
 		}
 		bp->update();
@@ -120,6 +127,8 @@ int main(int argc, char** args)
 	app.canvas->add_font(app.font_atlas_sdf);
 	
 	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
+
+	app.fps = 0;
 
 	app.u = Universe::create();
 

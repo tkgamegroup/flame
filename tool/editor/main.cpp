@@ -49,14 +49,10 @@ void App::create()
 	canvas_bp->update();
 	canvas = (Canvas*)canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 
-	auto font14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
-	auto font_awesome14 = Font::create(L"../asset/font_awesome.ttf", 14);
-	auto font32 = Font::create(L"c:/windows/fonts/msyh.ttc", 32);
-	auto font_awesome32 = Font::create(L"../asset/font_awesome.ttf", 32);
-	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { font14, font_awesome14 });
+	auto font = Font::create(L"c:/windows/fonts/msyh.ttc");
+	auto font_awesome = Font::create(L"../asset/font_awesome.ttf");
+	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { font, font_awesome });
 	app.canvas->add_font(app.font_atlas_pixel);
-	font_atlas_sdf = FontAtlas::create(d, FontDrawSdf, { font32, font_awesome32 });
-	app.canvas->add_font(app.font_atlas_sdf);
 	
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();

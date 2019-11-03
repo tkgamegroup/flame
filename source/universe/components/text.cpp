@@ -36,7 +36,7 @@ namespace flame
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
 		auto global_scale = element->global_scale;
-		auto fs = font_size_ * global_scale;
+		auto fs = int(font_size_ * global_scale);
 		if (fs != draw_font_size)
 		{
 			draw_font_size = fs;

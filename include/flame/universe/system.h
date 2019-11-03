@@ -6,14 +6,10 @@ namespace flame
 {
 	struct Entity;
 
-	struct System
+	struct System : Object
 	{
-		const char* name;
-		const uint name_hash;
-
 		System(const char* name) :
-			name(name),
-			name_hash(H(name))
+			Object(name)
 		{
 		}
 

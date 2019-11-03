@@ -6,11 +6,8 @@ namespace flame
 {
 	struct Entity;
 
-	struct Component
+	struct Component : Object
 	{
-		const char* name;
-		const uint name_hash;
-
 		Entity* entity;
 
 		Listeners<void(void* c, Component* thiz, uint hash, void* sender)> data_changed_listeners;

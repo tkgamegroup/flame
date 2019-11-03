@@ -1073,6 +1073,18 @@ namespace flame
 		}
 	};
 
+	struct Object
+	{
+		const char* name;
+		const uint name_hash;
+
+		Object(const char* name) :
+			name(name),
+			name_hash(H(name))
+		{
+		}
+	};
+
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_curr_path();

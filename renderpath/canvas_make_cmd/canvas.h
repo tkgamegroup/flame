@@ -10,8 +10,13 @@ namespace flame
 	{
 		struct Imageview;
 
-		struct Canvas
+		struct Canvas : Object
 		{
+			Canvas() :
+				Object("Canvas")
+			{
+			}
+
 			virtual void set_clear_color(const Vec4c& col) = 0;
 			virtual Imageview* get_image(uint index) = 0;
 			virtual uint set_image(int index /* -1 to find an empty slot */, Imageview* v, Filter filter = FilterLinear, Atlas* atlas = nullptr) = 0;

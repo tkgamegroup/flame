@@ -42,7 +42,6 @@ struct App
 	Canvas* canvas;
 
 	FontAtlas* font_atlas_pixel;
-	FontAtlas* font_atlas_sdf;
 
 	Universe* u;
 	Entity* root;
