@@ -9,12 +9,17 @@
 #define FLAME_MAKEINT(H, L) ((L) | ((H) << 16))
 #define FLAME_INVALID_POINTER ((void*)0x7fffffffffffffff)
 
-inline constexpr unsigned int _HASH(char const* str, unsigned int seed)
+inline constexpr unsigned int hash_update(unsigned int h, unsigned int v)
 {
-	return 0 == *str ? seed : _HASH(str + 1, seed ^ (*str + 0x9e3779b9 + (seed << 6) + (seed >> 2)));
+	return h ^ (v + 0x9e3779b9 + (h << 6) + (h >> 2));
 }
 
-#define H(x) (_HASH(x, 0))
+inline constexpr unsigned int hash_str(char const* str, unsigned int seed)
+{
+	return 0 == *str ? seed : hash_str(str + 1, hash_update(seed , *str));
+}
+
+#define H(x) (hash_str(x, 0))
 
 template <unsigned int N>
 struct EnsureConst
@@ -22,7 +27,7 @@ struct EnsureConst
 	static const unsigned int value = N;
 };
 
-#define cH(x) (EnsureConst<_HASH(x, 0)>::value)
+#define cH(x) (EnsureConst<hash_str(x, 0)>::value)
 
 namespace flame
 {

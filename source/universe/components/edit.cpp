@@ -111,17 +111,20 @@ namespace flame
 
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cEditPrivate**)c;
-					auto element = thiz->element;
-					auto text = thiz->text;
-					auto& str = text->text();
 
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto font_size = text->font_size_ * element->global_scale;
+						auto element = thiz->element;
+						auto text = thiz->text;
+						auto atlas = text->font_atlas;
+						auto& str = text->text();
+						auto scale = text->scale_ * element->global_scale;
+						auto font_size = text->font_size_;
+						auto line_space = font_size * scale;
 						auto y = element->global_pos.y();
 						for (auto p = str.c_str(); ; p++)
 						{
-							if (y < pos.y() && pos.y() < y + font_size)
+							if (y < pos.y() && pos.y() < y + line_space)
 							{
 								auto x = element->global_pos.x();
 								for (;; p++)
@@ -130,7 +133,7 @@ namespace flame
 										break;
 									if (*p == '\n' || *p == '\r')
 										break;
-									auto w = text->font_atlas->get_advance(*p == '\t' ? ' ' : *p, font_size);
+									auto w = atlas->get_glyph(*p == '\t' ? ' ' : *p, font_size)->advance * scale;
 									if (x <= pos.x() && pos.x() < x + w)
 										break;
 									x += w;
@@ -142,7 +145,7 @@ namespace flame
 							if (!*p)
 								break;
 							if (*p == '\n')
-								y += font_size;
+								y += line_space;
 						}
 					}
 				}, new_mail_p(this));
@@ -160,11 +163,11 @@ namespace flame
 		{
 			if (event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
-				auto font_size = text->font_size_ * element->global_scale;
-				canvas->add_text(text->font_atlas, font_size, element->global_pos +
-					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
-					Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), font_size)),
-					alpha_mul(text->color, element->alpha), L"|");
+				//auto font_size = text->font_size_ * element->global_scale;
+				//canvas->add_text(text->font_atlas, font_size, element->global_pos +
+				//	Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
+				//	Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), font_size)),
+				//	alpha_mul(text->color, element->alpha), L"|");
 			}
 		}
 	};

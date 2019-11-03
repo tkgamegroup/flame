@@ -10,7 +10,6 @@
 		<node type="graphics::Font" id="font" pos="-555.50;98.50">
 			<datas>
 				<data name="filename" value="c:/windows/fonts/msyh.ttc" />
-				<data name="pixel_height" value="32" />
 			</datas>
 		</node>
 		<node type="graphics::FontAtlas" id="font_atlas" pos="-328.50;109.50">
@@ -127,39 +126,34 @@
 		</node>
 		<node type="LinearInterpolation1d" id="scale1" pos="-429.50;462.50">
 			<datas>
-				<data name="a" value="640.00" />
-				<data name="b" value="144.00" />
+				<data name="a" value="20.00" />
+				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="F2U" id="scale1_cvt" pos="-252.00;515.00" />
 		<node type="LinearInterpolation1d" id="scale2" pos="-448.50;1070.50">
 			<datas>
-				<data name="a" value="640.00" />
-				<data name="b" value="144.00" />
+        <data name="a" value="20.00" />
+        <data name="b" value="4.50" />
+      </datas>
+    </node>
+    <node type="LinearInterpolation1d" id="scale3" pos="-454.50;1705.50">
+      <datas>
+        <data name="a" value="20.00" />
+        <data name="b" value="4.50" />
+      </datas>
+    </node>
+    <node type="LinearInterpolation1d" id="scale4" pos="-494.50;2339.50">
+      <datas>
+        <data name="a" value="20.00" />
+        <data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="F2U" id="scale2_cvt" pos="-281.00;1075.00" />
-		<node type="LinearInterpolation1d" id="scale3" pos="-454.50;1705.50">
-			<datas>
-				<data name="a" value="640.00" />
-				<data name="b" value="144.00" />
-			</datas>
-		</node>
-		<node type="F2U" id="scale3_cvt" pos="-271.00;1696.00" />
-		<node type="LinearInterpolation1d" id="scale4" pos="-494.50;2339.50">
-			<datas>
-				<data name="a" value="640.00" />
-				<data name="b" value="144.00" />
-			</datas>
-		</node>
-		<node type="F2U" id="scale4_cvt" pos="-302.00;2360.00" />
 		<node type="LinearInterpolation1d" id="scale5" pos="-404.50;3024.50">
 			<datas>
-				<data name="a" value="640.00" />
-				<data name="b" value="144.00" />
+        <data name="a" value="20.00" />
+        <data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="F2U" id="scale5_cvt" pos="-243.00;3058.00" />
 		<node type="LinearInterpolation1d" id="alpha1" pos="-322.50;678.50">
 			<datas>
 				<data name="b" value="1.00" />
@@ -191,11 +185,9 @@
 		<link out="content.v" in="canvas.make_cmd.content" />
 		<link out="font.out" in="font_atlas.fonts" />
 		<link out="font_atlas.out" in="text1.font_atals" />
-		<link out="scale1_cvt.out" in="text1.font_size" />
 		<link out="pos1.out" in="text1.pos" />
 		<link out="alpha1.out" in="text1.alpha" />
 		<link out="font_atlas.out" in="text2.font_atals" />
-		<link out="scale2_cvt.out" in="text2.font_size" />
 		<link out="pos2.out" in="text2.pos" />
 		<link out="alpha2.out" in="text2.alpha" />
 		<link out="path1.out" in="pos1.x" />
@@ -218,27 +210,24 @@
 		<link out="path4.out" in="pos4.x" />
 		<link out="path5.out" in="pos5.x" />
 		<link out="font_atlas.out" in="text3.font_atals" />
-		<link out="scale3_cvt.out" in="text3.font_size" />
 		<link out="pos3.out" in="text3.pos" />
 		<link out="alpha3.out" in="text3.alpha" />
 		<link out="font_atlas.out" in="text4.font_atals" />
-		<link out="scale4_cvt.out" in="text4.font_size" />
 		<link out="pos4.out" in="text4.pos" />
 		<link out="alpha4.out" in="text4.alpha" />
 		<link out="font_atlas.out" in="text5.font_atals" />
-		<link out="scale5_cvt.out" in="text5.font_size" />
 		<link out="pos5.out" in="text5.pos" />
 		<link out="alpha5.out" in="text5.alpha" />
 		<link out="time.total" in="scale1.t" />
-		<link out="scale1.out" in="scale1_cvt.v" />
+		<link out="scale1.out" in="text1.scale" />
 		<link out="delay1.out" in="scale2.t" />
-		<link out="scale2.out" in="scale2_cvt.v" />
+		<link out="scale2.out" in="text2.scale" />
 		<link out="delay2.out" in="scale3.t" />
-		<link out="scale3.out" in="scale3_cvt.v" />
+		<link out="scale3.out" in="text3.scale" />
 		<link out="dealy3.out" in="scale4.t" />
-		<link out="scale4.out" in="scale4_cvt.v" />
+		<link out="scale4.out" in="text4.scale" />
 		<link out="delay4.out" in="scale5.t" />
-		<link out="scale5.out" in="scale5_cvt.v" />
+		<link out="scale5.out" in="text5.scale" />
 		<link out="time.total" in="alpha1.t" />
 		<link out="delay1.out" in="alpha2.t" />
 		<link out="delay2.out" in="alpha3.t" />

@@ -19,15 +19,32 @@ namespace flame
 		font_atlas = _font_atlas;
 		color = default_style.text_color_normal;
 		font_size_ = default_style.font_size;
+		scale_ = 1.f;
 		auto_width_ = true;
 		auto_height_ = true;
+
+		draw_font_size = 0.f;
+	}
+
+	void cTextPrivate::update_glyphs()
+	{
+		glyphs.resize(text.size());
+		for (auto i = 0; i < text.size(); i++)
+			glyphs[i] = font_atlas->get_glyph(text[i], draw_font_size);
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(font_atlas, font_size_ * element->global_scale, element->global_pos +
-			Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
-			alpha_mul(color, element->alpha), text.c_str());
+		auto global_scale = element->global_scale;
+		auto fs = font_size_ * global_scale;
+		if (fs != draw_font_size)
+		{
+			draw_font_size = fs;
+			update_glyphs();
+		}
+		canvas->add_text(font_atlas, glyphs, draw_font_size, scale_ * global_scale, element->global_pos +
+			Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
+			alpha_mul(color, element->alpha));
 	}
 
 	void cTextPrivate::on_component_added(Component* c)
@@ -56,21 +73,27 @@ namespace flame
 
 	void cText::set_text(const std::wstring& text, void* sender)
 	{
-		((cTextPrivate*)this)->text = text;
+		auto thiz = (cTextPrivate*)this;
+		thiz->text = text;
+		thiz->update_glyphs();
 		data_changed(cH("text"), sender);
 	}
 
 	void cText::insert_char(wchar_t ch, uint pos, void* sender)
 	{
-		auto& str = ((cTextPrivate*)this)->text;
+		auto thiz = (cTextPrivate*)this;
+		auto& str = thiz->text;
 		str.insert(str.begin() + pos, ch);
+		thiz->update_glyphs();
 		data_changed(cH("text"), sender);
 	}
 
 	void cText::erase_char(uint pos, void* sender)
 	{
-		auto& str = ((cTextPrivate*)this)->text;
+		auto thiz = (cTextPrivate*)this;
+		auto& str = thiz->text;
 		str.erase(str.begin() + pos);
+		thiz->update_glyphs();
 		data_changed(cH("text"), sender);
 	}
 
@@ -79,6 +102,7 @@ namespace flame
 		if (s == font_size_)
 			return;
 		font_size_ = s;
+		((cTextPrivate*)this)->update_glyphs();
 		data_changed(cH("font_size"), sender);
 	}
 

@@ -87,8 +87,8 @@ int main(int argc, char** args)
 	app.canvas_bp->update();
 	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 
-	auto font_msyh14 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
-	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font_msyh14 });
+	auto font_msyh = Font::create(L"c:/windows/fonts/msyh.ttc");
+	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font_msyh });
 	app.canvas->add_font(app.font_atlas_pixel);
 
 	app.u = Universe::create();

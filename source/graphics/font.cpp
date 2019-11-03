@@ -28,10 +28,8 @@ namespace flame
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
 
-			FontPrivate(const std::wstring& filename, uint _pixel_height)
+			FontPrivate(const std::wstring& filename)
 			{
-				max_height = _pixel_height;
-
 				if (!ft_library)
 				{
 					FT_Init_FreeType(&ft_library);
@@ -40,13 +38,6 @@ namespace flame
 
 				font_file = get_file_content(filename);
 				FT_New_Memory_Face(ft_library, (uchar*)font_file.first.get(), font_file.second, 0, &ft_face);
-
-				FT_Size_RequestRec ft_req = {};
-				ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
-				ft_req.height = max_height * 64;
-				FT_Request_Size(ft_face, &ft_req);
-				max_width = ft_face->size->metrics.max_advance / 64;
-				ascender = ft_face->size->metrics.ascender / 64;
 			}
 
 			~FontPrivate()
@@ -55,9 +46,9 @@ namespace flame
 			}
 		};
 
-		Font* Font::create(const std::wstring& filename, uint pixel_height)
+		Font* Font::create(const std::wstring& filename)
 		{
-			return new FontPrivate(filename, pixel_height);
+			return new FontPrivate(filename);
 		}
 
 		void Font::destroy(Font* f)
@@ -68,7 +59,6 @@ namespace flame
 		struct Font$
 		{
 			AttributeV<std::wstring> filename$i;
-			AttributeV<uint> pixel_height$i;
 
 			AttributeP<void> out$o;
 
@@ -78,15 +68,15 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (filename$i.frame > out$o.frame || pixel_height$i.frame > out$o.frame)
+				if (filename$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Font::destroy((Font*)out$o.v);
 					if (std::filesystem::exists(filename$i.v))
-						out$o.v = Font::create(filename$i.v, pixel_height$i.v);
+						out$o.v = Font::create(filename$i.v);
 					else
 						printf("cannot create font\n");
-					out$o.frame = max(filename$i.frame, pixel_height$i.frame);
+					out$o.frame = filename$i.frame;
 				}
 			}
 
@@ -101,7 +91,7 @@ namespace flame
 		{
 			std::vector<FontPrivate*> fonts;
 
-			std::unordered_map<ushort, std::unique_ptr<Glyph>> map;
+			std::unordered_map<uint, std::unique_ptr<Glyph>> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
 			Image* image;
@@ -113,14 +103,6 @@ namespace flame
 					fonts.push_back((FontPrivate*)f);
 
 				draw_type = _draw_type;
-				max_height = fonts[0]->max_height;
-
-				max_width = 0;
-				for (auto f : fonts)
-				{
-					assert(f->max_height == max_height);
-					max_width = max(f->max_width, max_width);
-				}
 
 				bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
@@ -138,9 +120,13 @@ namespace flame
 				Image::destroy(image);
 			}
 
-			const Glyph* get_glyph(wchar_t unicode)
+			Glyph* get_glyph(wchar_t unicode, uint font_size)
 			{
-				if (!map[unicode])
+				if (draw_type == FontDrawSdf)
+					font_size = sdf_font_size;
+				auto hash = hash_update(unicode, font_size);
+
+				if (!map[hash])
 				{
 					auto g = new Glyph;
 					g->unicode = unicode;
@@ -149,7 +135,7 @@ namespace flame
 					g->advance = 0;
 					g->uv0 = Vec2f(0.f);
 					g->uv1 = Vec2f(0.f);
-					map[unicode].reset(g);
+					map[hash].reset(g);
 
 					for (auto font : fonts)
 					{
@@ -157,13 +143,19 @@ namespace flame
 						auto glyph_index = FT_Get_Char_Index(ft_face, unicode);
 						if (glyph_index == 0)
 							continue;
+
+						FT_Size_RequestRec ft_req = {};
+						ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
+						ft_req.height = font_size * 64;
+						FT_Request_Size(ft_face, &ft_req);
+						auto ascender = ft_face->size->metrics.ascender / 64;
+
 						FT_Load_Glyph(ft_face, glyph_index, draw_type == FontDrawLcd ? FT_LOAD_TARGET_LCD : FT_LOAD_DEFAULT);
 
 						auto ft_glyph = ft_face->glyph;
 						auto size = Vec2u(ft_glyph->bitmap.width, ft_glyph->bitmap.rows);
 						if (draw_type == FontDrawLcd)
 							size.x() /= 3;
-						auto ascender = font->ascender;
 						g->size = size;
 						g->off = Vec2u(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
 						g->advance = ft_glyph->advance.x / 64;
@@ -270,13 +262,14 @@ namespace flame
 					}
 				}
 
-				return map[unicode].get();
+				return map[hash].get();
 			}
 
-			Vec2f get_text_offset(const std::wstring_view& text, uint font_size)
+			Vec2u get_text_offset(const std::wstring_view& text, uint font_size)
 			{
-				auto w = 0.f;
-				auto h = 0.f;
+				auto w = 0U;
+				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
+				auto h = 0U;
 				for (auto ch : text)
 				{
 					if (!ch)
@@ -287,38 +280,39 @@ namespace flame
 						h += font_size;
 					}
 					else if (ch != '\r' && ch != '\t')
-						w += get_advance(ch, font_size);
+						w += get_glyph(ch, font_size)->advance;
 				}
-				return Vec2f(w, h);
+				return Vec2u(w, h);
 			}
 
-			Vec2f get_text_size(const std::wstring_view& text, uint font_size)
+			Vec2u get_text_size(const std::wstring_view& text, uint font_size)
 			{
-				auto w = 0.f;
-				auto h = (float)font_size;
-				auto lw = 0.f;
+				auto w = 0U;
+				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
+				auto h = line_space;
+				auto lw = 0U;
 				for (auto ch : text)
 				{
 					if (ch == '\n')
 					{
-						h += font_size;
+						h += line_space;
 						lw = 0.f;
 					}
 					else if (ch != '\r')
 					{
 						if (ch == '\t')
 							ch = ' ';
-						lw += get_advance(ch, font_size);
+						lw += get_glyph(ch, font_size)->advance;
 						if (lw > w)
 							w = lw;
 					}
 				}
-				return Vec2f(w, h);
+				return Vec2u(w, h);
 			}
 
-			Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width)
+			Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
 			{
-				assert(width > max_width);
+				assert(width > font_size);
 
 				auto ret = new_mail<std::wstring>();
 				auto w = 0;
@@ -337,7 +331,7 @@ namespace flame
 					case '\t':
 						ch = ' ';
 					default:
-						auto adv = get_glyph(ch)->advance;
+						auto adv = get_glyph(ch, font_size)->advance;
 						if (w + adv >= width)
 						{
 							w = adv;
@@ -362,32 +356,24 @@ namespace flame
 			delete (FontAtlasPrivate*)f;
 		}
 
-		const Glyph* FontAtlas::get_glyph(wchar_t unicode)
+		Glyph* FontAtlas::get_glyph(wchar_t unicode, uint font_size)
 		{
-			return ((FontAtlasPrivate*)this)->get_glyph(unicode);
+			return ((FontAtlasPrivate*)this)->get_glyph(unicode, font_size);
 		}
 
-		float FontAtlas::get_advance(wchar_t unicode, uint font_size)
-		{
-			float advance = ((FontAtlasPrivate*)this)->get_glyph(unicode)->advance;
-			if (draw_type == FontDrawSdf)
-				advance *= (float)font_size / sdf_grid_size;
-			return advance;
-		}
-
-		Vec2f FontAtlas::get_text_offset(const std::wstring_view& text, uint font_size)
+		Vec2u FontAtlas::get_text_offset(const std::wstring_view& text, uint font_size)
 		{
 			return ((FontAtlasPrivate*)this)->get_text_offset(text, font_size);
 		}
 
-		Vec2f FontAtlas::get_text_size(const std::wstring_view& text, uint font_size)
+		Vec2u FontAtlas::get_text_size(const std::wstring_view& text, uint font_size)
 		{
 			return ((FontAtlasPrivate*)this)->get_text_size(text, font_size);
 		}
 
-		Mail<std::wstring> FontAtlas::slice_text_by_width(const std::wstring_view& text, uint width)
+		Mail<std::wstring> FontAtlas::slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
 		{
-			return ((FontAtlasPrivate*)this)->slice_text_by_width(text, width);
+			return ((FontAtlasPrivate*)this)->slice_text_by_width(text, font_size, width);
 		}
 
 		Image* FontAtlas::image() const

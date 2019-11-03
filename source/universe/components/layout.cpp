@@ -273,6 +273,7 @@ namespace flame
 							{
 							case cH("text"):
 							case cH("font_size"):
+							case cH("scale"):
 							case cH("auto_width"):
 							case cH("auto_height"):
 								thiz->management->add_to_update_list(thiz);
@@ -297,7 +298,7 @@ namespace flame
 				auto element = std::get<0>(al);
 				auto aligner = std::get<1>(al);
 
-				auto s = Vec2f(text->font_atlas->get_text_size(text->text(), text->font_size_));
+				auto s = Vec2f(text->font_atlas->get_text_size(text->text(), text->font_size_)) * text->scale_;
 				if (text->auto_width_)
 				{
 					auto w = s.x() + element->inner_padding_horizontal();

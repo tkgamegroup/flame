@@ -15,7 +15,7 @@ namespace flame
 
 		const Vec2u font_atlas_size = Vec2u(1024);
 		const uint sdf_range = 4;
-		const uint sdf_grid_size = 32;
+		const uint sdf_font_size = 32;
 
 		struct Glyph
 		{
@@ -29,11 +29,7 @@ namespace flame
 
 		struct Font
 		{
-			uint max_height;
-			uint max_width;
-			int ascender;
-
-			FLAME_GRAPHICS_EXPORTS static Font* create(const std::wstring& filename, uint pixel_height);
+			FLAME_GRAPHICS_EXPORTS static Font* create(const std::wstring& filename);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Font* f);
 		};
 
@@ -47,16 +43,13 @@ namespace flame
 		struct FontAtlas
 		{
 			FontDrawType$ draw_type;
-			uint max_height;
-			uint max_width;
 
 			uint index;
 
-			FLAME_GRAPHICS_EXPORTS const Glyph* get_glyph(wchar_t unicode);
-			FLAME_GRAPHICS_EXPORTS float get_advance(wchar_t unicode, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2f get_text_offset(const std::wstring_view& text, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2f get_text_size(const std::wstring_view& text, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint width);
+			FLAME_GRAPHICS_EXPORTS Glyph* get_glyph(wchar_t unicode, uint font_size);
+			FLAME_GRAPHICS_EXPORTS Vec2u get_text_offset(const std::wstring_view& text, uint font_size);
+			FLAME_GRAPHICS_EXPORTS Vec2u get_text_size(const std::wstring_view& text, uint font_size);
+			FLAME_GRAPHICS_EXPORTS Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint font_size, uint width);
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;

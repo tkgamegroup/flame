@@ -18,6 +18,7 @@ namespace flame
 		graphics::FontAtlas* font_atlas;
 		Vec4c color;
 		uint font_size_;
+		float scale_;
 		bool auto_width_;
 		bool auto_height_;
 

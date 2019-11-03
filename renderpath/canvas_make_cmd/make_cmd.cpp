@@ -84,16 +84,16 @@ namespace flame
 	struct TextSdf : CmdBase
 	{
 		FontAtlas* font_atals;
-		uint font_size;
+		float scale;
 		Vec2f pos;
 		Vec4c color;
-		std::wstring text;
+		std::vector<Glyph*> glyphs;
 	};
 
 	struct TextSdf$
 	{
 		AttributeP<void> font_atals$i;
-		AttributeV<uint> font_size$i;
+		AttributeV<float> scale$i;
 		AttributeV<Vec2f> pos$i;
 		AttributeV<Vec4c> color$i;
 		AttributeV<float> alpha$i;
@@ -103,7 +103,7 @@ namespace flame
 
 		__declspec(dllexport) TextSdf$()
 		{
-			font_size$i.v = 10;
+			scale$i.v = 1.f;
 			alpha$i.v = 1.f;
 		}
 
@@ -112,19 +112,20 @@ namespace flame
 			out$o.v.type = CmdDrawTextSdf;
 			if (font_atals$i.frame > out$o.frame)
 				out$o.v.font_atals = (FontAtlas*)font_atals$i.v;
-			if (font_size$i.frame > out$o.frame)
-				out$o.v.font_size = font_size$i.v;
+			if (scale$i.frame > out$o.frame)
+				out$o.v.scale = scale$i.v;
 			if (pos$i.frame > out$o.frame)
 				out$o.v.pos = pos$i.v;
 			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
 				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
 			if (text$i.frame > out$o.frame)
 			{
-				out$o.v.text.resize(text$i.v.size());
+				out$o.v.glyphs.resize(text$i.v.size());
+				auto atlas = (FontAtlas*)font_atals$i.v;
 				for (auto i = 0; i < text$i.v.size(); i++)
-					out$o.v.text[i] = text$i.v[i];
+					out$o.v.glyphs[i] = atlas->get_glyph(text$i.v[i], 0);
 			}
-			out$o.frame = maxN(font_atals$i.frame, font_size$i.frame, pos$i.frame, color$i.frame, alpha$i.frame, text$i.frame);
+			out$o.frame = maxN(font_atals$i.frame, scale$i.frame, pos$i.frame, color$i.frame, alpha$i.frame, text$i.frame);
 		}
 	};
 
@@ -141,7 +142,7 @@ namespace flame
 		void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) override;
 		void fill(const std::vector<Vec2f>& points, const Vec4c& col) override;
 
-		void add_text(FontAtlas* f, uint font_size, const Vec2f& pos, const Vec4c& col, const std::wstring& text) override;
+		void add_text(FontAtlas* f, const std::vector<Glyph*> glyphs, uint line_space, float scale, const Vec2f& pos, const Vec4c& col) override;
 		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 		const Vec4f& scissor() override;
 		void set_scissor(const Vec4f& scissor) override;
@@ -357,31 +358,26 @@ namespace flame
 			}
 		}
 
-		void add_text(FontAtlas* f, uint font_size, const Vec2f& _pos, const Vec4c& col, const std::wstring& text)
+		void add_text(FontAtlas* f, const std::vector<Glyph*> glyphs, uint line_space, float scale, const Vec2f& _pos, const Vec4c& col)
 		{
-			auto scale = 1.f;
-			if (f->draw_type == FontDrawSdf)
-				scale = (float)font_size / sdf_grid_size;
-			auto lh = f->max_height * scale;
-
 			auto pos = Vec2f(Vec2i(_pos));
 
 			begin_draw((CmdType)f->draw_type, f->index);
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
-			for (auto ch : text)
+			for (auto g : glyphs)
 			{
+				auto ch = g->unicode;
 				if (ch == '\n')
 				{
-					pos.y() += lh;
+					pos.y() += line_space;
 					pos.x() = (int)_pos.x();
 				}
 				else if (ch != '\r')
 				{
 					if (ch == '\t')
 						ch = ' ';
-					auto g = f->get_glyph(ch);
 
 					auto p = pos + Vec2f(g->off) * scale;
 					auto size = Vec2f(g->size) * scale;
@@ -499,7 +495,7 @@ namespace flame
 					case CmdDrawTextSdf:
 					{
 						auto c = (TextSdf*)_c;
-						add_text(c->font_atals, c->font_size, c->pos, c->color, c->text);
+						add_text(c->font_atals, c->glyphs,  sdf_font_size * c->scale, c->scale, c->pos, c->color);
 					}
 						break;
 					}
@@ -601,9 +597,9 @@ namespace flame
 		thiz->fill(points, col);
 	}
 
-	void CanvasPrivate::add_text(FontAtlas* f, uint font_size, const Vec2f& pos, const Vec4c& col, const std::wstring& text)
+	void CanvasPrivate::add_text(FontAtlas* f, const std::vector<Glyph*> glyphs, uint line_space, float scale, const Vec2f& pos, const Vec4c& col)
 	{
-		thiz->add_text(f, font_size, pos, col, text);
+		thiz->add_text(f, glyphs, line_space, scale, pos, col);
 	}
 
 	void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

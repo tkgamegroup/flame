@@ -170,7 +170,7 @@ struct cResourceExplorer : Component
 
 			auto c_text = cText::create(app.font_atlas_pixel);
 			{
-				auto str = app.font_atlas_pixel->slice_text_by_width(title, 64.f);
+				auto str = app.font_atlas_pixel->slice_text_by_width(title, c_text->font_size_, 64.f);
 				c_text->set_text(*str.p);
 				delete_mail(str);
 			}
