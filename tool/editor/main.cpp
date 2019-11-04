@@ -44,27 +44,25 @@ void App::create()
 		sc_cbs[i] = Commandbuffer::create(d->gcp);
 
 	canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
-	canvas_bp->graphics_device = d;
 	scr->link_bp(canvas_bp, sc_cbs);
 	canvas_bp->update();
 	canvas = (Canvas*)canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 
-	auto font = Font::create(L"c:/windows/fonts/msyh.ttc");
-	auto font_awesome = Font::create(L"../asset/font_awesome.ttf");
-	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { font, font_awesome });
+	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc", L"../asset/font_awesome.ttf" });
 	app.canvas->add_font(app.font_atlas_pixel);
 	
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();
 
 	app.u = Universe::create();
-	app.u->bank_save("font_atlas1", app.font_atlas_pixel);
+	app.u->add_object(app.w);
+	app.u->add_object(app.canvas);
+	app.u->add_object(app.font_atlas_pixel);
 
-	auto w = World::create();
+	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());
-	w->add_system(sEventDispatcher::create(app.w));
-	w->add_system(sUIRenderer::create(app.canvas));
-	app.u->add_world(w);
+	w->add_system(sEventDispatcher::create());
+	w->add_system(sUIRenderer::create());
 
 	root = w->root();
 	{

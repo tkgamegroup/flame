@@ -147,6 +147,54 @@ namespace flame
 		delete b;
 	}
 
+	void pack_atlas(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border)
+	{
+		struct Region
+		{
+			std::string filename;
+			Bitmap* b;
+			Vec2i pos;
+		};
+		std::vector<Region> regions;
+		auto output_dir = std::filesystem::path(output).parent_path();
+		for (auto& i : inputs)
+		{
+			Region r;
+			r.filename = std::filesystem::path(i).lexically_relative(output_dir).make_preferred().string();
+			r.pos = Vec2i(-1);
+			regions.push_back(r);
+		}
+		std::sort(regions.begin(), regions.end(), [](const Region& a, const Region& b) {
+			return max(a.b->size.x(), a.b->size.y()) > max(b.b->size.x(), b.b->size.y());
+		});
+
+		auto w = 512, h = 512;
+		auto tree = std::make_unique<BinPackNode>(Vec2u(w, h));
+
+		for (auto& r : regions)
+		{
+			auto n = tree->find(r.b->size + Vec2i(border ? 2 : 0));
+			if (n)
+				r.pos = n->pos;
+		}
+
+		auto b = Bitmap::create(Vec2u(w, h), 4, 32);
+		for (auto& r : regions)
+		{
+			if (r.pos >= 0)
+				r.b->copy_to(b, Vec2u(0), r.b->size, Vec2u(r.pos), border);
+		}
+
+		Bitmap::save_to_file(b, output);
+		std::ofstream atlas_file(output + L".atlas");
+		for (auto& r : regions)
+		{
+			atlas_file << r.filename + " " + to_string(Vec4u(Vec2u(r.pos) + (border ? 1U : 0U), r.b->size)) + "\n";
+			Bitmap::destroy(r.b);
+		}
+		atlas_file.close();
+	}
+
 	struct AtlasPrivate : Atlas
 	{
 		Bitmap* bitmap;
@@ -166,54 +214,6 @@ namespace flame
 	const std::vector<Atlas::Region>& Atlas::regions() const
 	{
 		return ((AtlasPrivate*)this)->regions;
-	}
-
-	void Atlas::pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border)
-	{
-		struct Piece
-		{
-			std::string filename;
-			Bitmap* b;
-			Vec2i pos;
-		};
-		std::vector<Piece> pieces;
-		auto output_dir = std::filesystem::path(output).parent_path();
-		for (auto& i : inputs)
-		{
-			Piece p;
-			p.filename = std::filesystem::path(i).lexically_relative(output_dir).make_preferred().string();
-			p.pos = Vec2i(-1);
-			pieces.push_back(p);
-		}
-		std::sort(pieces.begin(), pieces.end(), [](const Piece& a, const Piece& b) {
-			return max(a.b->size.x(), a.b->size.y()) > max(b.b->size.x(), b.b->size.y());
-		});
-
-		auto w = 512, h = 512;
-		auto tree = std::make_unique<BinPackNode>(Vec2u(w, h));
-
-		for (auto& p : pieces)
-		{
-			auto n = tree->find(p.b->size + Vec2i(border ? 2 : 0));
-			if (n)
-				p.pos = n->pos;
-		}
-
-		auto b = Bitmap::create(Vec2u(w, h), 4, 32);
-		for (auto& e : pieces)
-		{
-			if (e.pos >= 0)
-				e.b->copy_to(b, Vec2u(0), e.b->size, Vec2u(e.pos), border);
-		}
-
-		Bitmap::save_to_file(b, output);
-		std::ofstream atlas_file(output + L".atlas");
-		for (auto& p : pieces)
-		{
-			atlas_file << p.filename + " " + to_string(Vec4u(Vec2u(p.pos) + (border ? 1U : 0U), p.b->size)) + "\n";
-			Bitmap::destroy(p.b);
-		}
-		atlas_file.close();
 	}
 
 	Atlas* Atlas::load(const std::wstring& filename)

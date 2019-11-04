@@ -107,7 +107,6 @@ int main(int argc, char** args)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
 	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
-	app.bp->graphics_device = app.d;
 	app.scr->link_bp(app.bp, app.cbs);
 	app.bp->update();
 	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
@@ -128,14 +127,13 @@ int main(int argc, char** args)
 	app.fps = 0;
 
 	app.u = Universe::create();
-	app.u->add_object(app.w, "");
-	app.u->add_object(app.canvas, "");
+	app.u->add_object(app.w);
+	app.u->add_object(app.canvas);
 
-	auto w = World::create();
+	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create());
 	w->add_system(sUIRenderer::create());
-	app.u->add_world(w);
 
 	auto root = w->root();
 	app.root = root;

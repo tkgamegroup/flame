@@ -127,7 +127,7 @@ namespace flame
 					Image::destroy((Image*)img$o.v);
 				if (view$o.v)
 					Imageview::destroy((Imageview*)view$o.v);
-				auto d = (Device*)bp_env().graphics_device;
+				auto d = Device::default_one();
 				if (d && size$i.v.x() > 0 && size$i.v.y() > 0)
 				{
 					img$o.v = Image::create(d, Format_R8G8B8A8_UNORM, size$i.v, 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
@@ -173,7 +173,7 @@ namespace flame
 			{
 				for (auto i = 0; i < out$o.v.size(); i++)
 					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
-				auto d = (Device*)bp_env().graphics_device;
+				auto d = Device::default_one();
 				if (d)
 				{
 					out$o.v.resize(1);
@@ -2081,6 +2081,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		c_layout->height_fit_children = false;
 		c_layout->fence = 3;
 		e_page->add_component(c_layout);
+
+		e_page->add_component(cCustomDraw::create());
 	}
 	e_docker->child(1)->add_child(e_page);
 
@@ -2308,11 +2310,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
 
 				if (capture.e->running)
-				{
-					auto bp = capture.e->bp;
-					bp->graphics_device = app.d;
-					bp->time = 0.f;
-				}
+					capture.e->bp->time = 0.f;
 			}
 		}, new_mail(&capture));
 	}

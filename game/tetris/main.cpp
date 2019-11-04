@@ -515,8 +515,8 @@ int main(int argc, char **args)
 	app.level = 0;
 	app.lines = 0;
 
-	auto brick_idx = atlas_main->find_piece(L"brick.png");
-	auto block_idx = atlas_main->find_piece(L"block.png");
+	auto brick_idx = atlas_main->find_region(L"brick.png");
+	auto block_idx = atlas_main->find_region(L"block.png");
 
 	for (auto i = 0; i < block_cy; i++)
 	{

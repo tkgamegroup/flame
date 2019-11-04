@@ -50,7 +50,6 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Vec2u get_text_size(const std::wstring_view& text, uint font_size);
 			FLAME_GRAPHICS_EXPORTS Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint font_size, uint width);
 
-			FLAME_GRAPHICS_EXPORTS Image* image() const;
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 
 			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType$ draw_type, const std::vector<std::wstring>& fonts);

@@ -45,7 +45,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 		e_image->add_component(c_element);
 
 		auto c_image = cImage::create();
-		c_image->id = id;
+		c_image->id = id << 16;
 		e_image->add_component(c_image);
 	}
 }

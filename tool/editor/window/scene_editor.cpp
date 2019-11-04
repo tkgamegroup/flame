@@ -59,7 +59,7 @@ struct cSceneEditorPrivate : cSceneEditor
 		filename = _filename;
 		if (prefab)
 			e_scene->remove_child(prefab);
-		prefab = Entity::create_from_file(app.u, app.dbs, filename);
+		prefab = Entity::create_from_file(e_scene->world_, app.dbs, filename);
 		e_scene->add_child(prefab);
 	}
 

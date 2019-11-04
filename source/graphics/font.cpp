@@ -387,11 +387,6 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->slice_text_by_width(text, font_size, width);
 		}
 
-		Image* FontAtlas::image() const
-		{
-			return ((FontAtlasPrivate*)this)->image;
-		}
-
 		Imageview* FontAtlas::imageview() const
 		{
 			return ((FontAtlasPrivate*)this)->imageview;

@@ -95,11 +95,10 @@ int main(int argc, char** args)
 	app.u->add_object(app.canvas);
 	app.u->add_object(app.font_atlas_pixel);
 
-	app.w_m = World::create();
+	app.w_m = World::create(app.u);
 	app.w_m->add_system(sLayoutManagement::create());
 	app.w_m->add_system(sEventDispatcher::create());
 	app.w_m->add_system(sUIRenderer::create());
-	app.u->add_world(app.w_m);
 
 	auto root = app.w_m->root();
 	{
