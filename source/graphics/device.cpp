@@ -521,9 +521,19 @@ namespace flame
 			return ((DevicePrivate*)this)->has_feature(f);
 		}
 
+		static Device* default_device;
+
+		Device* Device::default_one()
+		{
+			return default_device;
+		}
+
 		Device *Device::create(bool debug)
 		{
-			return new DevicePrivate(debug);
+			auto d = new DevicePrivate(debug);
+			if (!default_device)
+				default_device = d;
+			return d;
 		}
 
 		void Device::destroy(Device *d)

@@ -1,4 +1,3 @@
-#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "buffer_private.h"
 #include "commandbuffer_private.h"
@@ -177,7 +176,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Buffer::destroy((Buffer*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					if (d && size$i.v > 0 && usage$im.v > 0 && mem_prop$im.v > 0)
 					{
 						auto b = Buffer::create(d, size$i.v, usage$im.v, mem_prop$im.v);

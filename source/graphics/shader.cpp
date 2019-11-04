@@ -1,11 +1,10 @@
+#include <flame/foundation/serialize.h>
+#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
 #include "shader_private.h"
-
-#include <flame/foundation/serialize.h>
-#include <flame/foundation/blueprint.h>
 
 #if defined(FLAME_VULKAN)
 #include <spirv_glsl.hpp>
@@ -243,7 +242,7 @@ namespace flame
 			{
 				if (out$o.frame == -1)
 				{
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					if (d)
 						out$o.v.sampler = d->sp_linear;
 				}
@@ -309,7 +308,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					if (d)
 					{
 						out$o.v = Descriptorlayout::create(d, get_attribute_vec(bindings$i), create_default_set$i.v ? d->dp : nullptr);
@@ -457,7 +456,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Descriptorset::destroy((Descriptorset*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					if (d && dsl$i.v)
 						out$o.v = Descriptorset::create(d->dp, (Descriptorlayout*)dsl$i.v);
 					else
@@ -559,7 +558,7 @@ namespace flame
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
 					auto& env = bp_env();
-					auto d = env.graphics_device;
+					auto d = Device::default_one();
 					auto descriptorlayouts = get_attribute_vec(descriptorlayouts$i);
 					if (d && !descriptorlayouts.empty())
 					{
@@ -1294,7 +1293,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Shader::destroy((Shader*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					if (d)
 						out$o.v = Shader::create(d, bp_env().path + L"/" + filename$i.v, prefix$i.v, get_attribute_vec(inputs$i), get_attribute_vec(outputs$i), (Pipelinelayout*)pll$i.v, autogen_code$i.v);
 					else
@@ -1608,7 +1607,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					auto shaders = get_attribute_vec(shaders$i);
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && !shaders.empty() && pll$i.v)
 						out$o.v = Pipeline::create(d, shaders, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,

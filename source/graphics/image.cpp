@@ -1,5 +1,3 @@
-#include <flame/foundation/foundation.h>
-#include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
 #include "device_private.h"
 #include "renderpass_private.h"
@@ -450,7 +448,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Image::destroy((Image*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					if (d && format$i.v != Format_Undefined && size$i.v.x() > 0 && size$i.v.y() > 0 && level$i.v > 0 && layer$i.v > 0)
 					{
 						out$o.v = Image::create(d, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);

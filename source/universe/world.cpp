@@ -86,6 +86,7 @@ namespace flame
 			return nullptr;
 
 		auto w = new WorldPrivate;
+		w->filename = filename;
 
 		auto n_os = file->find_node("objects");
 		if (n_os)

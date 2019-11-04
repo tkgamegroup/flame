@@ -426,7 +426,6 @@ namespace flame
 	BPPrivate::BPPrivate()
 	{
 		parent = nullptr;
-		graphics_device = nullptr;
 		time = 0.f;
 	}
 
@@ -895,7 +894,6 @@ namespace flame
 
 		_bp_env.path = std::filesystem::path(filename).parent_path().wstring();
 		_bp_env.dbs = dbs;
-		_bp_env.graphics_device = graphics_device;
 		_bp_env.time = time;
 
 		for (auto& o : update_list)
@@ -927,10 +925,7 @@ namespace flame
 					}
 				}
 				if (need_update)
-				{
-					bp->graphics_device = graphics_device;
 					bp->update();
-				}
 			}
 		}
 
@@ -938,7 +933,6 @@ namespace flame
 
 		_bp_env.path = L"";
 		_bp_env.dbs.clear();
-		_bp_env.graphics_device = nullptr;
 		_bp_env.time = 0.f;
 	}
 

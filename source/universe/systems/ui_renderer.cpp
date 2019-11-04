@@ -1,3 +1,4 @@
+#include <flame/graphics/device.h>
 #include "../entity_private.h"
 #include "../universe_private.h"
 #include <flame/universe/world.h>
@@ -29,7 +30,10 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
 			auto fonts = string_split(fonts$, L';');
-			return graphics::FontAtlas::create(d, draw_type$, fonts);
+			auto world_dir = std::filesystem::path(w->filename()).parent_path().wstring() + L"/";
+			for (auto& f : fonts)
+				f = world_dir + f;
+			return graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts);
 		}
 	};
 

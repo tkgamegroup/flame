@@ -34,6 +34,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS bool has_feature(Feature f);
 
+			FLAME_GRAPHICS_EXPORTS static Device* default_one();
 			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Device* d);
 		};

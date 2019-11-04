@@ -1,8 +1,6 @@
 #include "device_private.h"
 #include "renderpass_private.h"
 
-#include <flame/foundation/blueprint.h>
-
 #include <memory>
 
 namespace flame
@@ -255,7 +253,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Renderpass::destroy((Renderpass*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					auto attachments = get_attribute_vec(attachments$i);
 					auto subpasses = get_attribute_vec(subpasses$i);
 					if (!attachments.empty() && !subpasses.empty())
@@ -471,7 +469,7 @@ namespace flame
 				{
 					if (out$o.v)
 						Framebuffer::destroy((Framebuffer*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					auto views = get_attribute_vec(views$i);
 					if (d && renderpass$i.v && !views.empty())
 						out$o.v = Framebuffer::create(d, (Renderpass*)renderpass$i.v, views);
@@ -752,7 +750,7 @@ namespace flame
 					}
 					if (ok)
 					{
-						auto rnf = RenderpassAndFramebuffer::create((Device*)bp_env().graphics_device, passes);
+						auto rnf = RenderpassAndFramebuffer::create(Device::default_one(), passes);
 						out$o.v = rnf;
 						rp$o.v = rnf->renderpass();
 						fbs$o.v = rnf->framebuffers();

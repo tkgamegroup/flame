@@ -121,11 +121,9 @@ namespace flame
 		{
 			std::wstring path;
 			std::vector<TypeinfoDatabase*> dbs;
-			graphics::Device* graphics_device;
 			float time;
 		};
 
-		graphics::Device* graphics_device;
 		float time;
 
 		FLAME_FOUNDATION_EXPORTS Package* parent() const;

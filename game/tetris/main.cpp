@@ -468,7 +468,6 @@ int main(int argc, char **args)
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_universe.typeinfo"));
 
 	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
-	app.canvas_bp->graphics_device = app.d;
 	app.scr->link_bp(app.canvas_bp, app.cbs);
 	app.canvas_bp->update();
 	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();

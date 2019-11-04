@@ -1,5 +1,5 @@
 #include <flame/foundation/bitmap.h>
-#include <flame/foundation/blueprint.h>
+#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 
@@ -69,6 +69,8 @@ namespace flame
 				for (auto _filename : _fonts)
 				{
 					Font* f = nullptr;
+					if (!std::filesystem::exists(_filename))
+						continue;
 					auto filename = std::filesystem::canonical(_filename).wstring();
 					for (auto& _f : loaded_fonts)
 					{
@@ -80,11 +82,8 @@ namespace flame
 					}
 					if (!f)
 					{
-						if (std::filesystem::exists(filename))
-						{
-							f = new Font(filename);
-							loaded_fonts.emplace_back(f);
-						}
+						f = new Font(filename);
+						loaded_fonts.emplace_back(f);
 					}
 					if (f)
 					{
@@ -408,7 +407,7 @@ namespace flame
 				{
 					if (out$o.v)
 						FontAtlas::destroy((FontAtlas*)out$o.v);
-					auto d = (Device*)bp_env().graphics_device;
+					auto d = Device::default_one();
 					if (d && !fonts$i.v->empty())
 						out$o.v = FontAtlas::create(d, draw_type$i.v, *fonts$i.v);
 					else
