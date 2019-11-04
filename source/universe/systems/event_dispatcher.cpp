@@ -1,4 +1,5 @@
 #include "../entity_private.h"
+#include <flame/universe/world.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include "../components/event_receiver_private.h"
@@ -24,9 +25,12 @@ namespace flame
 		std::vector<cEventReceiver*> hovers;
 		bool meet_last_hovering;
 
-		sEventDispatcherPrivate(Window* window) :
-			window(window)
+		sEventDispatcherPrivate()
 		{
+			window = nullptr;
+			key_listener = nullptr;
+			mouse_listener = nullptr;
+
 			hovering = nullptr;
 			focusing = nullptr;
 			drag_overing = nullptr;
@@ -47,64 +51,15 @@ namespace flame
 			potential_dbclick_time = 0.f;
 
 			active_pos = Vec2i(0);
-
-			key_listener = window->add_key_listener([](void* c, KeyState action, int value) {
-				auto thiz = *(sEventDispatcherPrivate**)c;
-
-				if (action == KeyStateNull)
-				{
-					if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
-					{
-						std::string ansi;
-						ansi += thiz->char_inputs.back();
-						ansi += value;
-						auto wstr = a2w(ansi);
-						thiz->char_inputs.back() = wstr[0];
-						thiz->char_input_compelete = true;
-					}
-					else
-					{
-						thiz->char_inputs.push_back(value);
-						if (value >= 0x80)
-							thiz->char_input_compelete = false;
-					}
-				}
-				else
-				{
-					thiz->key_states[value] = action | KeyStateJust;
-					if (action == KeyStateDown)
-						thiz->keydown_inputs.push_back((Key)value);
-					else if (action == KeyStateUp)
-						thiz->keyup_inputs.push_back((Key)value);
-				}
-
-				thiz->pending_update = true;
-			}, new_mail_p(this));
-
-			mouse_listener = window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(sEventDispatcherPrivate**)c;
-
-				if (action == KeyStateNull)
-				{
-					if (key == Mouse_Middle)
-						thiz->mouse_scroll = pos.x();
-					else if (key == Mouse_Null)
-						thiz->mouse_pos = pos;
-				}
-				else
-				{
-					thiz->mouse_buttons[key] = action | KeyStateJust;
-					thiz->mouse_pos = pos;
-				}
-
-				thiz->pending_update = true;
-			}, new_mail_p(this));
 		}
 
 		~sEventDispatcherPrivate()
 		{
-			window->remove_key_listener(key_listener);
-			window->remove_mouse_listener(mouse_listener);
+			if (window)
+			{
+				window->remove_key_listener(key_listener);
+				window->remove_mouse_listener(mouse_listener);
+			}
 		}
 
 		void search_hovers(EntityPrivate* e)
@@ -171,6 +126,66 @@ namespace flame
 			}
 			if (er == drag_overing)
 				drag_overing = nullptr;
+		}
+
+		void on_added() override
+		{
+			window = (Window*)world_->find_object(cH("Window"), "");
+			if (window)
+			{
+
+				key_listener = window->add_key_listener([](void* c, KeyState action, int value) {
+					auto thiz = *(sEventDispatcherPrivate**)c;
+
+					if (action == KeyStateNull)
+					{
+						if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
+						{
+							std::string ansi;
+							ansi += thiz->char_inputs.back();
+							ansi += value;
+							auto wstr = a2w(ansi);
+							thiz->char_inputs.back() = wstr[0];
+							thiz->char_input_compelete = true;
+						}
+						else
+						{
+							thiz->char_inputs.push_back(value);
+							if (value >= 0x80)
+								thiz->char_input_compelete = false;
+						}
+					}
+					else
+					{
+						thiz->key_states[value] = action | KeyStateJust;
+						if (action == KeyStateDown)
+							thiz->keydown_inputs.push_back((Key)value);
+						else if (action == KeyStateUp)
+							thiz->keyup_inputs.push_back((Key)value);
+					}
+
+					thiz->pending_update = true;
+				}, new_mail_p(this));
+
+				mouse_listener = window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = *(sEventDispatcherPrivate**)c;
+
+					if (action == KeyStateNull)
+					{
+						if (key == Mouse_Middle)
+							thiz->mouse_scroll = pos.x();
+						else if (key == Mouse_Null)
+							thiz->mouse_pos = pos;
+					}
+					else
+					{
+						thiz->mouse_buttons[key] = action | KeyStateJust;
+						thiz->mouse_pos = pos;
+					}
+
+					thiz->pending_update = true;
+				}, new_mail_p(this));
+			}
 		}
 
 		void update(Entity* root) override
@@ -347,8 +362,8 @@ namespace flame
 		((sEventDispatcherPrivate*)this)->receiver_leave_world(er);
 	}
 
-	sEventDispatcher* sEventDispatcher::create(Window* window)
+	sEventDispatcher* sEventDispatcher::create()
 	{
-		return new sEventDispatcherPrivate(window);
+		return new sEventDispatcherPrivate();
 	}
 }

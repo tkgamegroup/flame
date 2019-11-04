@@ -93,13 +93,12 @@ namespace flame
 
 	struct Universe
 	{
+		FLAME_UNIVERSE_EXPORTS void add_object(Object* o, const std::string& id);
+		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, const std::string& id);
+		FLAME_UNIVERSE_EXPORTS const std::string* find_id(Object* o);
+
 		FLAME_UNIVERSE_EXPORTS void add_world(World* w);
 		FLAME_UNIVERSE_EXPORTS void update();
-
-		FLAME_UNIVERSE_EXPORTS void clear_bank();
-		FLAME_UNIVERSE_EXPORTS void bank_save(const std::string& key, void* v);
-		FLAME_UNIVERSE_EXPORTS void* bank_get(const std::string& key);
-		FLAME_UNIVERSE_EXPORTS const std::string& bank_find(void* v);
 
 		FLAME_UNIVERSE_EXPORTS static Universe* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(Universe* u);

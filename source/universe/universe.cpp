@@ -40,41 +40,48 @@ namespace flame
 		}
 	}
 
-	void Universe::add_world(World* w)
+	void Universe::add_object(Object* o, const std::string& id)
 	{
+		((UniversePrivate*)this)->objects.emplace_back(o, id);
+	}
+
+	Object* Universe::find_object(uint name_hash, const std::string& id)
+	{
+		const auto& objects = ((UniversePrivate*)this)->objects;
+		for (auto& o : objects)
+		{
+			if (o.first->name_hash == name_hash)
+			{
+				if (id.empty() || o.second == id)
+					return o.first;
+			}
+		}
+		return nullptr;
+	}
+
+	const std::string* Universe::find_id(Object* _o)
+	{
+		const auto& objects = ((UniversePrivate*)this)->objects;
+		for (auto& o : objects)
+		{
+			if (o.first == _o)
+				return &o.second;
+		}
+		return nullptr;
+	}
+
+	void Universe::add_world(World* _w)
+	{
+		auto w = (WorldPrivate*)_w;
 		w->universe_ = this;
 		((UniversePrivate*)this)->worlds.emplace_back((WorldPrivate*)w);
+		for (auto& s : w->systems)
+			s->on_added();
 	}
 
 	void Universe::update()
 	{
 		((UniversePrivate*)this)->update();
-	}
-
-	void Universe::clear_bank()
-	{
-		((UniversePrivate*)this)->bank.clear();
-	}
-
-	void Universe::bank_save(const std::string& key, void* v)
-	{
-		((UniversePrivate*)this)->bank[key] = v;
-	}
-
-	void* Universe::bank_get(const std::string& key)
-	{
-		return ((UniversePrivate*)this)->bank[key];
-	}
-
-	const std::string& Universe::bank_find(void* v)
-	{
-		const auto& bank = ((UniversePrivate*)this)->bank;
-		for (auto it = bank.begin(); it != bank.end(); it++)
-		{
-			if (it->second == v)
-				return it->first;
-		}
-		return "";
 	}
 
 	Universe* Universe::create()

@@ -1169,13 +1169,18 @@ namespace flame
 	struct Window;
 	typedef Window* WindowPtr;
 
-	struct Window
+	struct Window : Object
 	{
 		Vec2i pos;
 		Vec2u size;
 		int style;
 
 		bool minimized;
+
+		Window() :
+			Object("Window")
+		{
+		}
 
 		FLAME_FOUNDATION_EXPORTS void* get_native();
 

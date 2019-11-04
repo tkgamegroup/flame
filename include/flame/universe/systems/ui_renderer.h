@@ -4,11 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
 	struct sUIRenderer : System
 	{
 		sUIRenderer() :
@@ -16,7 +11,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static sUIRenderer* create(graphics::Canvas* canvas);
+		FLAME_UNIVERSE_EXPORTS static sUIRenderer* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(sUIRenderer* s);
 	};
 }

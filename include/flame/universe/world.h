@@ -11,7 +11,9 @@ namespace flame
 	{
 		Universe* universe_;
 
-		FLAME_UNIVERSE_EXPORTS Entity* root() const;
+		FLAME_UNIVERSE_EXPORTS void add_object(Object* o, const std::string& id);
+		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, const std::string& id);
+		FLAME_UNIVERSE_EXPORTS const std::string* find_id(Object* o);
 
 		FLAME_UNIVERSE_EXPORTS System* get_system_plain(uint name_hash) const;
 
@@ -24,6 +26,8 @@ namespace flame
 #define get_system(T) get_system_t<s##T>(cH(#T))
 
 		FLAME_UNIVERSE_EXPORTS void add_system(System* s);
+
+		FLAME_UNIVERSE_EXPORTS Entity* root() const;
 
 		FLAME_UNIVERSE_EXPORTS static World* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(World* w);

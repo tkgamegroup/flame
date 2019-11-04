@@ -193,8 +193,6 @@ namespace flame
 		bool auto_height$;
 		std::wstring text$;
 
-#define FONT_ATLAS_PREFIX "font_atlas"
-
 		FLAME_UNIVERSE_EXPORTS ComponentText$()
 		{
 			font_atlas_index$ = 1;
@@ -209,9 +207,9 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS Component* create$(Universe* u)
+		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
 		{
-			auto c = new cTextPrivate((graphics::FontAtlas*)u->bank_get(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$)));
+			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(cH("FontAtlas"), std::to_string(font_atlas_index$)));
 
 			c->color = color$;
 			c->font_size_ = font_size$;
@@ -225,15 +223,11 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
 		{
 			auto c = (cText*)_c;
-			auto u = c->entity->world_->universe_;
+			auto w = c->entity->world_;
 
 			if (offset == -1)
 			{
-				{
-					auto& name = u->bank_find(c->font_atlas);
-					assert(name.compare(0, strlen(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
-					font_atlas_index$ = std::stoul(name.c_str() + strlen(FONT_ATLAS_PREFIX));
-				}
+				font_atlas_index$ = std::stoul(*w->find_id(c->font_atlas));
 				color$ = c->color;
 				font_size$ = c->font_size_;
 				auto_width$ = c->auto_width_;
@@ -245,11 +239,7 @@ namespace flame
 				switch (offset)
 				{
 				case offsetof(ComponentText$, font_atlas_index$):
-				{
-					auto& name = u->bank_find(c->font_atlas);
-					assert(name.compare(0, strlen(FONT_ATLAS_PREFIX), FONT_ATLAS_PREFIX) == 0);
-					font_atlas_index$ = std::stoul(name.c_str() + strlen(FONT_ATLAS_PREFIX));
-				}
+					font_atlas_index$ = std::stoul(*w->find_id(c->font_atlas));
 					break;
 				case offsetof(ComponentText$, color$):
 					color$ = c->color;
@@ -273,11 +263,11 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
 		{
 			auto c = (cText*)_c;
-			auto u = c->entity->world_->universe_;
+			auto w = c->entity->world_;
 
 			if (offset == -1)
 			{
-				c->font_atlas = (graphics::FontAtlas*)u->bank_get(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$));
+				c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), std::to_string(font_atlas_index$));
 				c->color = color$;
 				c->font_size_ = font_size$;
 				c->auto_width_ = auto_width$;
@@ -289,7 +279,7 @@ namespace flame
 				switch (offset)
 				{
 				case offsetof(ComponentText$, font_atlas_index$):
-					c->font_atlas = (graphics::FontAtlas*)u->bank_get(FONT_ATLAS_PREFIX + std::to_string(font_atlas_index$));
+					c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), std::to_string(font_atlas_index$));
 					break;
 				case offsetof(ComponentText$, color$):
 					c->color = color$;
@@ -309,7 +299,5 @@ namespace flame
 				}
 			}
 		}
-
-#undef FONT_ATLAS_PREFIX
 	};
 }

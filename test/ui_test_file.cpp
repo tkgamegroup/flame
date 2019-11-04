@@ -36,6 +36,7 @@ struct App
 	FontAtlas* font_atlas_pixel;
 
 	Universe* u;
+	World* w_m;
 	cElement* c_element_root;
 	cText* c_text_fps;
 
@@ -92,15 +93,17 @@ int main(int argc, char** args)
 	app.canvas->add_font(app.font_atlas_pixel);
 
 	app.u = Universe::create();
-	app.u->bank_save("font_atlas1", app.font_atlas_pixel);
+	app.u->add_object(app.w, "");
+	app.u->add_object(app.canvas, "");
+	app.u->add_object(app.font_atlas_pixel, "1");
 
-	auto w = World::create();
-	w->add_system(sLayoutManagement::create());
-	w->add_system(sEventDispatcher::create(app.w));
-	w->add_system(sUIRenderer::create(app.canvas));
-	app.u->add_world(w);
+	app.w_m = World::create();
+	app.w_m->add_system(sLayoutManagement::create());
+	app.w_m->add_system(sEventDispatcher::create());
+	app.w_m->add_system(sUIRenderer::create());
+	app.u->add_world(app.w_m);
 
-	auto root = w->root();
+	auto root = app.w_m->root();
 	{
 		app.c_element_root = cElement::create();
 		root->add_component(app.c_element_root);
@@ -251,7 +254,7 @@ int main(int argc, char** args)
 
 					e_scene->remove_child((Entity*)FLAME_INVALID_POINTER);
 					if (std::filesystem::exists(L"test.prefab"))
-						e_scene->add_child(Entity::create_from_file(app.u, app.dbs, L"test.prefab"));
+						e_scene->add_child(Entity::create_from_file(app.w_m, app.dbs, L"test.prefab"));
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));

@@ -4,8 +4,6 @@
 
 namespace flame
 {
-	struct Window;
-
 	struct cEventReceiver;
 
 	struct sEventDispatcher : System
@@ -30,6 +28,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void receiver_leave_world(cEventReceiver* er);
 
-		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* create(Window* window);
+		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* create();
 	};
 }

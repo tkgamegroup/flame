@@ -12,8 +12,8 @@
 			<entity name="unnamed" visibility="1">
 				<components>
 					<Element>
-            <pos v="50.00;50.00" />
-            <size v="300.00;300.00" />
+						<pos v="50.00;50.00" />
+						<size v="300.00;300.00" />
 						<color v="255;255;0;255" />
 					</Element>
 				</components>
@@ -22,10 +22,11 @@
 						<components>
 							<Element>
 								<pos v="12.00;8.00" />
-								<size v="66.00;14.00" />
 							</Element>
 							<Text>
 								<color v="0;0;0;255" />
+								<auto_width v="1" />
+								<auto_height v="1" />
 								<text v="Hello World!" />
 							</Text>
 						</components>

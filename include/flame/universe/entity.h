@@ -52,7 +52,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
-		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(Universe* u, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
+		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(World* w, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void save_to_file(const std::vector<TypeinfoDatabase*>& dbs, Entity* e, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};

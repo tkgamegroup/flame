@@ -8,8 +8,11 @@ namespace flame
 {
 	struct WorldPrivate : World
 	{
-		std::unique_ptr<EntityPrivate> root;
+		std::vector<std::pair<Object*, std::string>> objects;
+
 		std::vector<std::unique_ptr<System>> systems;
+
+		std::unique_ptr<EntityPrivate> root;
 
 		WorldPrivate();
 		System* get_system_plain(uint name_hash) const;

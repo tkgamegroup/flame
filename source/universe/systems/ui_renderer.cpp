@@ -1,5 +1,6 @@
 #include "../entity_private.h"
 #include "../universe_private.h"
+#include <flame/universe/world.h>
 #include <flame/universe/systems/ui_renderer.h>
 #include "../components/element_private.h"
 #include "../components/text_private.h"
@@ -14,11 +15,6 @@ namespace flame
 	struct sUIRendererPrivate : sUIRenderer
 	{
 		graphics::Canvas* canvas;
-
-		sUIRendererPrivate(graphics::Canvas* canvas) :
-			canvas(canvas)
-		{
-		}
 
 		void do_render(EntityPrivate* e)
 		{
@@ -74,15 +70,20 @@ namespace flame
 			}
 		}
 
+		void on_added() override
+		{
+			canvas = (graphics::Canvas*)world_->find_object(cH("Canvas"), "");
+		}
+
 		void update(Entity* root) override
 		{
 			do_render((EntityPrivate*)root);
 		}
 	};
 
-	sUIRenderer* sUIRenderer::create(graphics::Canvas* canvas)
+	sUIRenderer* sUIRenderer::create()
 	{
-		return new sUIRendererPrivate(canvas);
+		return new sUIRendererPrivate();
 	}
 
 	void sUIRenderer::destroy(sUIRenderer* s)

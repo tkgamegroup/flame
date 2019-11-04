@@ -40,11 +40,16 @@ namespace flame
 			FontDrawSdf
 		};
 
-		struct FontAtlas
+		struct FontAtlas : Object
 		{
 			FontDrawType$ draw_type;
 
 			uint index;
+
+			FontAtlas() :
+				Object("FontAtlas")
+			{
+			}
 
 			FLAME_GRAPHICS_EXPORTS Glyph* get_glyph(wchar_t unicode, uint font_size);
 			FLAME_GRAPHICS_EXPORTS Vec2u get_text_offset(const std::wstring_view& text, uint font_size);

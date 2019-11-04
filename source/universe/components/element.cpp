@@ -202,7 +202,7 @@ namespace flame
 			clip_children$ = false;
 		}
 
-		FLAME_UNIVERSE_EXPORTS Component* create$(Universe* u)
+		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
 		{
 			auto c = new cElementPrivate();
 
