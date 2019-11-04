@@ -108,12 +108,7 @@ int main(int argc, char** args)
 
 	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
 	app.bp->graphics_device = app.d;
-	auto n_scr = app.bp->add_node(cH("graphics::SwapchainResizable"), "scr");
-	n_scr->find_input("in")->set_data_p(app.scr);
-	app.bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
-	app.bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
-	app.bp->find_input("*.make_cmd.cbs")->set_data_p(&app.cbs);
-	app.bp->find_input("*.make_cmd.image_idx")->link_to(n_scr->find_output("image_idx"));
+	app.scr->link_bp(app.bp, app.cbs);
 	app.bp->update();
 	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
@@ -131,11 +126,13 @@ int main(int argc, char** args)
 	app.fps = 0;
 
 	app.u = Universe::create();
+	app.u->add_object(app.w, "");
+	app.u->add_object(app.canvas, "");
 
 	auto w = World::create();
 	w->add_system(sLayoutManagement::create());
-	w->add_system(sEventDispatcher::create(app.w));
-	w->add_system(sUIRenderer::create(app.canvas));
+	w->add_system(sEventDispatcher::create());
+	w->add_system(sUIRenderer::create());
 	app.u->add_world(w);
 
 	auto root = w->root();

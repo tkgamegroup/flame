@@ -30,6 +30,8 @@ namespace flame
 
 			FontPrivate(const std::wstring& filename)
 			{
+				auto absolute_path = std::filesystem::canonical(filename).wstring();
+
 				if (!ft_library)
 				{
 					FT_Init_FreeType(&ft_library);
