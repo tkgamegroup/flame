@@ -186,7 +186,7 @@ namespace flame
 
 									delete[] temp;
 								}
-									break;
+								break;
 								case FontDrawLcd:
 								{
 									FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
@@ -209,7 +209,7 @@ namespace flame
 
 									delete[] temp;
 								}
-									break;
+								break;
 								case FontDrawSdf:
 								{
 									void* ptr = ft_face;
@@ -242,7 +242,7 @@ namespace flame
 
 									delete[] temp;
 								}
-									break;
+								break;
 								}
 
 								if (draw_type == FontDrawSdf)
@@ -256,6 +256,8 @@ namespace flame
 									g->uv1 = Vec2f(atlas_pos.x() + size.x(), atlas_pos.y()) / image->size;
 								}
 							}
+							else
+								printf("font atlas is full\n");
 						}
 
 						break;

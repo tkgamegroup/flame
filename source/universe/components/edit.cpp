@@ -118,7 +118,9 @@ namespace flame
 						auto text = thiz->text;
 						auto atlas = text->font_atlas;
 						auto& str = text->text();
-						auto scale = text->scale_ * element->global_scale;
+						auto scale = element->global_scale;
+						if (atlas->draw_type == graphics::FontDrawSdf)
+							scale *= text->scale_;
 						auto font_size = text->font_size_;
 						auto line_space = font_size * scale;
 						auto y = element->global_pos.y();

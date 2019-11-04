@@ -35,14 +35,17 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
+		auto is_sdf = font_atlas->draw_type == graphics::FontDrawSdf;
 		auto global_scale = element->global_scale;
-		auto fs = int(font_size_ * global_scale);
+		auto fs = font_size_;
+		if (!is_sdf)
+			fs *= global_scale;
 		if (fs != draw_font_size)
 		{
 			draw_font_size = fs;
 			update_glyphs();
 		}
-		canvas->add_text(font_atlas, glyphs, draw_font_size, scale_ * global_scale, element->global_pos +
+		canvas->add_text(font_atlas, glyphs, draw_font_size, scale_ * (is_sdf ? global_scale : 1.f), element->global_pos +
 			Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
 			alpha_mul(color, element->alpha));
 	}
