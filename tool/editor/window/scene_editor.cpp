@@ -317,7 +317,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
 
-		auto udt_element = find_udt(app.dbs, cH("ComponentElement"));
+		auto udt_element = find_udt(app.dbs, cH("Serializer_Element"));
 		assert(udt_element);
 		auto element_pos_offset = udt_element->find_variable("pos")->offset();
 

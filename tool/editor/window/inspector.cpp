@@ -246,7 +246,7 @@ struct cInspectorPrivate : cInspector
 					e_component->add_component(c_layout);
 				}
 
-				auto udt = find_udt(app.dbs, H((std::string("Component") + component->name).c_str()));
+				auto udt = find_udt(app.dbs, H((std::string("Serializer_") + component->name).c_str()));
 
 				auto c_dealer = new_u_object<cComponentDealer>();
 				c_dealer->component = component;
@@ -614,7 +614,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 		auto e_menu = create_standard_menu();
 		c_inspector->e_add_component_menu = e_menu;
 
-		#define COMPONENT_PREFIX "Component"
+		#define COMPONENT_PREFIX "Serializer_c"
 		std::vector<UdtInfo*> all_udts;
 		for (auto db : app.dbs)
 		{
