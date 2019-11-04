@@ -33,7 +33,8 @@ namespace flame
 
 	cLayoutPrivate::~cLayoutPrivate()
 	{
-		management->remove_from_update_list(this);
+		if (management)
+			management->remove_from_update_list(this);
 		if (!entity->dying_)
 			element->data_changed_listeners.remove(element_data_listener);
 	}
@@ -156,7 +157,8 @@ namespace flame
 				case cH("scale"):
 				case cH("size"):
 				case cH("inner_padding"):
-					thiz->management->add_to_update_list(thiz);
+					if (thiz->management)
+						thiz->management->add_to_update_list(thiz);
 				}
 			}, new_mail_p(this));
 		}
