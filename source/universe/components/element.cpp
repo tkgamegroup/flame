@@ -175,7 +175,7 @@ namespace flame
 		return new cElementPrivate();
 	}
 
-	struct ComponentElement$
+	struct Serializer_Element$
 	{
 		Vec2f pos$;
 		float scale$;
@@ -188,7 +188,7 @@ namespace flame
 		Vec4c frame_color$;
 		bool clip_children$;
 
-		FLAME_UNIVERSE_EXPORTS ComponentElement$()
+		FLAME_UNIVERSE_EXPORTS Serializer_Element$()
 		{
 			pos$ = 0.f;
 			scale$ = 1.f;
@@ -241,34 +241,34 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(ComponentElement$, pos$):
+				case offsetof(Serializer_Element$, pos$):
 					pos$ = c->pos_;
 					break;
-				case offsetof(ComponentElement$, scale$):
+				case offsetof(Serializer_Element$, scale$):
 					scale$ = c->scale_;
 					break;
-				case offsetof(ComponentElement$, size$):
+				case offsetof(Serializer_Element$, size$):
 					size$ = c->size_;
 					break;
-				case offsetof(ComponentElement$, inner_padding$):
+				case offsetof(Serializer_Element$, inner_padding$):
 					inner_padding$ = c->inner_padding_;
 					break;
-				case offsetof(ComponentElement$, alpha$):
+				case offsetof(Serializer_Element$, alpha$):
 					alpha$ = c->alpha;
 					break;
-				case offsetof(ComponentElement$, roundness$):
+				case offsetof(Serializer_Element$, roundness$):
 					roundness$ = c->roundness;
 					break;
-				case offsetof(ComponentElement$, frame_thickness$):
+				case offsetof(Serializer_Element$, frame_thickness$):
 					frame_thickness$ = c->frame_thickness;
 					break;
-				case offsetof(ComponentElement$, color$):
+				case offsetof(Serializer_Element$, color$):
 					color$ = c->color;
 					break;
-				case offsetof(ComponentElement$, frame_color$):
+				case offsetof(Serializer_Element$, frame_color$):
 					frame_color$ = c->frame_color;
 					break;
-				case offsetof(ComponentElement$, clip_children$):
+				case offsetof(Serializer_Element$, clip_children$):
 					clip_children$ = c->clip_children;
 					break;
 				}
@@ -296,34 +296,34 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(ComponentElement$, pos$):
+				case offsetof(Serializer_Element$, pos$):
 					c->pos_ = pos$;
 					break;
-				case offsetof(ComponentElement$, scale$):
+				case offsetof(Serializer_Element$, scale$):
 					c->scale_ = scale$;
 					break;
-				case offsetof(ComponentElement$, size$):
+				case offsetof(Serializer_Element$, size$):
 					c->size_ = size$;
 					break;
-				case offsetof(ComponentElement$, inner_padding$):
+				case offsetof(Serializer_Element$, inner_padding$):
 					c->inner_padding_ = inner_padding$;
 					break;
-				case offsetof(ComponentElement$, alpha$):
+				case offsetof(Serializer_Element$, alpha$):
 					c->alpha = alpha$;
 					break;
-				case offsetof(ComponentElement$, roundness$):
+				case offsetof(Serializer_Element$, roundness$):
 					c->roundness = roundness$;
 					break;
-				case offsetof(ComponentElement$, frame_thickness$):
+				case offsetof(Serializer_Element$, frame_thickness$):
 					c->frame_thickness = frame_thickness$;
 					break;
-				case offsetof(ComponentElement$, color$):
+				case offsetof(Serializer_Element$, color$):
 					c->color = color$;
 					break;
-				case offsetof(ComponentElement$, frame_color$):
+				case offsetof(Serializer_Element$, frame_color$):
 					c->frame_color = frame_color$;
 					break;
-				case offsetof(ComponentElement$, clip_children$):
+				case offsetof(Serializer_Element$, clip_children$):
 					c->clip_children = clip_children$;
 					break;
 				}

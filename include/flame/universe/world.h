@@ -4,12 +4,16 @@
 
 namespace flame
 {
+	struct TypeinfoDatabase;
+
 	struct Entity;
 	struct System;
 
 	struct World
 	{
 		Universe* universe_;
+
+		FLAME_UNIVERSE_EXPORTS const std::wstring& filename() const;
 
 		FLAME_UNIVERSE_EXPORTS void add_object(Object* o, const std::string& id);
 		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, const std::string& id);
@@ -30,6 +34,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* root() const;
 
 		FLAME_UNIVERSE_EXPORTS static World* create();
+		FLAME_UNIVERSE_EXPORTS static World* create_from_file(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(World* w);
 	};
 }

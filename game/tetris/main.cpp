@@ -264,6 +264,7 @@ struct App
 	std::vector<Commandbuffer*> cbs;
 	BP* canvas_bp;
 	Canvas* canvas;
+	std::vector<TypeinfoDatabase*> dbs;
 
 	FontAtlas* font_atlas_1;
 	FontAtlas* font_atlas_2;
@@ -462,6 +463,9 @@ int main(int argc, char **args)
 	app.cbs.resize(app.scr->sc()->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_foundation.typeinfo"));
+	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_graphics.typeinfo"));
+	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_universe.typeinfo"));
 
 	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
 	app.canvas_bp->graphics_device = app.d;
@@ -469,23 +473,25 @@ int main(int argc, char **args)
 	app.canvas_bp->update();
 	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 
-	auto font1 = Font::create(L"c:/windows/fonts/msyh.ttc", 14);
-	auto font2 = Font::create(L"../game/tetris/joystix monospace.ttf", block_size);
-	app.font_atlas_1 = FontAtlas::create(app.d, FontDrawPixel, { font1 });
+	app.font_atlas_1 = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
 	app.canvas->add_font(app.font_atlas_1);
-	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { font2 });
+	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { L"../game/tetris/joystix monospace.ttf" });
 	app.canvas->add_font(app.font_atlas_2);
 
-	auto atlas_main = Atlas::load(L"../game/tetris/release/asset/main.png");
+	auto atlas_main = Atlas::load(L"../game/tetris/release/main.png");
 	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(Image::create_from_bitmap(app.d, atlas_main->bitmap())), FilterNearest, atlas_main);
 
 	app.u = Universe::create();
+	app.u->add_object(app.w, "");
+	app.u->add_object(app.canvas, "");
+	app.u->add_object(app.font_atlas_1, "1");
+	app.u->add_object(app.font_atlas_2, "2");
 
-	auto w = World::create();
+	auto w = World::create_from_file(app.dbs, L"../game/tetris/main.world");
 	w->add_system(sLayoutManagement::create());
-	app.event_dispatcher = sEventDispatcher::create(app.w);
+	app.event_dispatcher = sEventDispatcher::create();
 	w->add_system(app.event_dispatcher);
-	w->add_system(sUIRenderer::create(app.canvas));
+	w->add_system(sUIRenderer::create());
 	app.u->add_world(w);
 
 	auto root = w->root();

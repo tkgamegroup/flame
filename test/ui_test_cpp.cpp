@@ -112,14 +112,16 @@ int main(int argc, char** args)
 	app.bp->update();
 	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
-	auto font_msyh = Font::create(L"c:/windows/fonts/msyh.ttc");
-	auto font_awesome = Font::create(L"../asset/font_awesome.ttf");
-	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { font_msyh, font_awesome });
+#define FONT_MSYH L"c:/windows/fonts/msyh.ttc"
+#define FONT_AWESOME L"../asset/font_awesome.ttf"
+	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { FONT_MSYH, FONT_AWESOME });
 	app.canvas->add_font(app.font_atlas_pixel);
-	app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { font_msyh });
+	app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { FONT_MSYH });
 	app.canvas->add_font(app.font_atlas_lcd);
-	app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { font_msyh });
+	app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { FONT_MSYH });
 	app.canvas->add_font(app.font_atlas_sdf);
+#undef FONT_MSYH
+#undef FONT_AWESOME
 	
 	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
 

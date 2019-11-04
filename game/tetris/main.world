@@ -1,5 +1,7 @@
 <world>
   <objects>
-    
+    <FontAtlas id="1">
+        <fonts v="joystix monospace.ttf" />
+    </FontAtlas>
   </objects>
 </world>

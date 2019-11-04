@@ -183,7 +183,7 @@ namespace flame
 		return e_layout;
 	}
 
-	struct ComponentText$
+	struct Serializer_Text$
 	{
 		uint font_atlas_index$;
 		Vec4c color$;
@@ -193,7 +193,7 @@ namespace flame
 		bool auto_height$;
 		std::wstring text$;
 
-		FLAME_UNIVERSE_EXPORTS ComponentText$()
+		FLAME_UNIVERSE_EXPORTS Serializer_Text$()
 		{
 			font_atlas_index$ = 1;
 			color$ = default_style.text_color_normal;
@@ -203,7 +203,7 @@ namespace flame
 			auto_height$ = false;
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~ComponentText$()
+		FLAME_UNIVERSE_EXPORTS ~Serializer_Text$()
 		{
 		}
 
@@ -238,22 +238,22 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(ComponentText$, font_atlas_index$):
+				case offsetof(Serializer_Text$, font_atlas_index$):
 					font_atlas_index$ = std::stoul(*w->find_id(c->font_atlas));
 					break;
-				case offsetof(ComponentText$, color$):
+				case offsetof(Serializer_Text$, color$):
 					color$ = c->color;
 					break;
-				case offsetof(ComponentText$, font_size$):
+				case offsetof(Serializer_Text$, font_size$):
 					font_size$ = c->font_size_;
 					break;
-				case offsetof(ComponentText$, auto_width$):
+				case offsetof(Serializer_Text$, auto_width$):
 					auto_width$ = c->auto_width_;
 					break;
-				case offsetof(ComponentText$, auto_height$):
+				case offsetof(Serializer_Text$, auto_height$):
 					auto_height$ = c->auto_height_;
 					break;
-				case offsetof(ComponentText$, text$):
+				case offsetof(Serializer_Text$, text$):
 					text$ = c->text();
 					break;
 				}
@@ -278,22 +278,22 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(ComponentText$, font_atlas_index$):
+				case offsetof(Serializer_Text$, font_atlas_index$):
 					c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), std::to_string(font_atlas_index$));
 					break;
-				case offsetof(ComponentText$, color$):
+				case offsetof(Serializer_Text$, color$):
 					c->color = color$;
 					break;
-				case offsetof(ComponentText$, font_size$):
+				case offsetof(Serializer_Text$, font_size$):
 					c->font_size_ = font_size$;
 					break;
-				case offsetof(ComponentText$, auto_width$):
+				case offsetof(Serializer_Text$, auto_width$):
 					c->auto_width_ = auto_width$;
 					break;
-				case offsetof(ComponentText$, auto_height$):
+				case offsetof(Serializer_Text$, auto_height$):
 					c->auto_height_ = auto_height$;
 					break;
-				case offsetof(ComponentText$, text$):
+				case offsetof(Serializer_Text$, text$):
 					c->set_text(text$);
 					break;
 				}

@@ -103,4 +103,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static Universe* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(Universe* u);
 	};
+
+	// objects in universe module can have serialization through an reflected type, the type name is 'Serializer_' + object's name + '$'
 }

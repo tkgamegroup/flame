@@ -12,6 +12,27 @@
 
 namespace flame
 {
+	struct Serializer_FontAtlas$
+	{
+		graphics::FontDrawType$ draw_type$;
+		std::wstring fonts$;
+
+		FLAME_UNIVERSE_EXPORTS Serializer_FontAtlas$()
+		{
+			draw_type$ = graphics::FontDrawPixel;
+		}
+
+		FLAME_UNIVERSE_EXPORTS ~Serializer_FontAtlas$()
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
+		{
+			auto fonts = string_split(fonts$, L';');
+			return graphics::FontAtlas::create(d, draw_type$, fonts);
+		}
+	};
+
 	struct sUIRendererPrivate : sUIRenderer
 	{
 		graphics::Canvas* canvas;

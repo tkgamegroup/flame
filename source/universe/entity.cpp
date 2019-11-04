@@ -336,7 +336,7 @@ namespace flame
 			{
 				auto n_c = n_cs->node(i_c);
 
-				auto udt = find_udt(dbs, H(("Component" + n_c->name()).c_str()));
+				auto udt = find_udt(dbs, H(("Serializer_" + n_c->name()).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(udt->db()->module_name());
@@ -404,7 +404,7 @@ namespace flame
 
 				auto n_c = n_cs->new_node(c->name);
 
-				auto udt = find_udt(dbs, H((std::string("Component") + c->name).c_str()));
+				auto udt = find_udt(dbs, H((std::string("Serializer_") + c->name).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");

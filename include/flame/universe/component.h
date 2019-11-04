@@ -30,8 +30,4 @@ namespace flame
 		virtual void on_child_position_changed(Entity* e) {} // same thing happened on child
 		virtual Component* copy() { return nullptr; }
 	};
-
-	// component type may has a type for serialization
-	// the type name is 'Component' + component type name + '$'
-	// the type contains the data for serialization
 }

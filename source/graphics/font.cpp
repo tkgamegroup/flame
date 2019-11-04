@@ -23,14 +23,17 @@ namespace flame
 			out_end = 0xff;
 		}
 
-		struct FontPrivate : Font
+		struct Font
 		{
+			std::wstring filename;
 			std::pair<std::unique_ptr<char[]>, long long> font_file;
 			FT_Face ft_face;
+			uint ref_count;
 
-			FontPrivate(const std::wstring& filename)
+			Font(const std::wstring& _filename)
 			{
-				auto absolute_path = std::filesystem::canonical(filename).wstring();
+				filename = _filename;
+				font_file = get_file_content(filename);
 
 				if (!ft_library)
 				{
@@ -38,60 +41,22 @@ namespace flame
 					FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
 				}
 
-				font_file = get_file_content(filename);
 				FT_New_Memory_Face(ft_library, (uchar*)font_file.first.get(), font_file.second, 0, &ft_face);
+
+				ref_count = 0;
 			}
 
-			~FontPrivate()
+			~Font()
 			{
 				FT_Done_Face(ft_face);
 			}
 		};
 
-		Font* Font::create(const std::wstring& filename)
-		{
-			return new FontPrivate(filename);
-		}
-
-		void Font::destroy(Font* f)
-		{
-			delete (FontPrivate*)f;
-		}
-
-		struct Font$
-		{
-			AttributeV<std::wstring> filename$i;
-
-			AttributeP<void> out$o;
-
-			FLAME_GRAPHICS_EXPORTS Font$()
-			{
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$()
-			{
-				if (filename$i.frame > out$o.frame)
-				{
-					if (out$o.v)
-						Font::destroy((Font*)out$o.v);
-					if (std::filesystem::exists(filename$i.v))
-						out$o.v = Font::create(filename$i.v);
-					else
-						printf("cannot create font\n");
-					out$o.frame = filename$i.frame;
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS ~Font$()
-			{
-				if (out$o.v)
-					Font::destroy((Font*)out$o.v);
-			}
-		};
+		static std::vector<std::unique_ptr<Font>> loaded_fonts;
 
 		struct FontAtlasPrivate : FontAtlas
 		{
-			std::vector<FontPrivate*> fonts;
+			std::vector<Font*> fonts;
 
 			std::unordered_map<uint, std::unique_ptr<Glyph>> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
@@ -99,10 +64,34 @@ namespace flame
 			Image* image;
 			Imageview* imageview;
 
-			FontAtlasPrivate(Device* d, FontDrawType$ _draw_type, const std::vector<void*>& _fonts)
+			FontAtlasPrivate(Device* d, FontDrawType$ _draw_type, const std::vector<std::wstring>& _fonts)
 			{
-				for (auto f : _fonts)
-					fonts.push_back((FontPrivate*)f);
+				for (auto _filename : _fonts)
+				{
+					Font* f = nullptr;
+					auto filename = std::filesystem::canonical(_filename).wstring();
+					for (auto& _f : loaded_fonts)
+					{
+						if (_f->filename == filename)
+						{
+							f = _f.get();
+							break;
+						}
+					}
+					if (!f)
+					{
+						if (std::filesystem::exists(filename))
+						{
+							f = new Font(filename);
+							loaded_fonts.emplace_back(f);
+						}
+					}
+					if (f)
+					{
+						f->ref_count++;
+						fonts.push_back(f);
+					}
+				}
 
 				draw_type = _draw_type;
 
@@ -118,6 +107,22 @@ namespace flame
 
 			~FontAtlasPrivate()
 			{
+				for (auto f : fonts)
+				{
+					f->ref_count--;
+					if (f->ref_count == 0)
+					{
+						for (auto it = loaded_fonts.begin(); it != loaded_fonts.end(); it++)
+						{
+							if (it->get() == f)
+							{
+								loaded_fonts.erase(it);
+								break;
+							}
+						}
+					}
+				}
+
 				Imageview::destroy(imageview);
 				Image::destroy(image);
 			}
@@ -350,7 +355,7 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, FontDrawType$ draw_type, const std::vector<void*>& fonts)
+		FontAtlas* FontAtlas::create(Device* d, FontDrawType$ draw_type, const std::vector<std::wstring>& fonts)
 		{
 			return new FontAtlasPrivate(d, draw_type, fonts);
 		}
@@ -393,7 +398,7 @@ namespace flame
 		struct FontAtlas$
 		{
 			AttributeE<FontDrawType$> draw_type$i;
-			AttributeP<std::vector<void*>> fonts$i;
+			AttributeP<std::vector<std::wstring>> fonts$i;
 
 			AttributeP<void> out$o;
 
@@ -404,9 +409,8 @@ namespace flame
 					if (out$o.v)
 						FontAtlas::destroy((FontAtlas*)out$o.v);
 					auto d = (Device*)bp_env().graphics_device;
-					auto fonts = get_attribute_vec(fonts$i);
-					if (d && !fonts.empty())
-						out$o.v = FontAtlas::create(d, draw_type$i.v, fonts);
+					if (d && !fonts$i.v->empty())
+						out$o.v = FontAtlas::create(d, draw_type$i.v, *fonts$i.v);
 					else
 						printf("cannot create fontatlas\n");
 					out$o.frame = max(draw_type$i.frame, fonts$i.frame);

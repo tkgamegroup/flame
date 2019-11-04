@@ -7,11 +7,11 @@
 		<package filename="canvas_make_cmd" id="canvas" pos="1124.60;806.93" />
 	</packages>
 	<nodes>
-		<node type="graphics::Font" id="font" pos="-555.50;98.50">
-			<datas>
-				<data name="filename" value="c:/windows/fonts/msyh.ttc" />
-			</datas>
-		</node>
+    <node type="Array(1+std::basic_string(wchar_t))" id="fonts" pos="0.00;0.00">
+      <datas>
+        <data name="1" value="c:/windows/fonts/msyh.ttc" />
+      </datas>
+    </node>
 		<node type="graphics::FontAtlas" id="font_atlas" pos="-328.50;109.50">
 			<datas>
 				<data name="draw_type" value="FontDrawSdf" />
@@ -181,9 +181,9 @@
 		</node>
 	</nodes>
 	<links>
+    <link out="fonts.v" in="font_atlas.fonts" />
 		<link out="font_atlas.out" in="canvas.make_cmd.font_atlases" />
 		<link out="content.v" in="canvas.make_cmd.content" />
-		<link out="font.out" in="font_atlas.fonts" />
 		<link out="font_atlas.out" in="text1.font_atals" />
 		<link out="pos1.out" in="text1.pos" />
 		<link out="alpha1.out" in="text1.alpha" />

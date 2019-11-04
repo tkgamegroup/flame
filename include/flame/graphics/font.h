@@ -27,12 +27,6 @@ namespace flame
 			int advance;
 		};
 
-		struct Font
-		{
-			FLAME_GRAPHICS_EXPORTS static Font* create(const std::wstring& filename);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Font* f);
-		};
-
 		enum FontDrawType$
 		{
 			FontDrawPixel,
@@ -59,7 +53,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType$ draw_type, const std::vector<void*>& fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType$ draw_type, const std::vector<std::wstring>& fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

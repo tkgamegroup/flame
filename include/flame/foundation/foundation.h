@@ -997,7 +997,7 @@ namespace flame
 #pragma pack()
 
 	template<class T>
-	std::vector<T> get_attribute_vec(const AttributeP<std::vector<T>>& v)
+	std::vector<T> get_attribute_vec(const AttributeP<std::vector<T>>& v) // cannot be used to AttributeP<std::vector<std::basic_string<U>>>
 	{
 		if (v.twist == 1)
 			return { (T)v.v };
