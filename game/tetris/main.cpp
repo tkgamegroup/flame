@@ -266,9 +266,6 @@ struct App
 	Canvas* canvas;
 	std::vector<TypeinfoDatabase*> dbs;
 
-	FontAtlas* font_atlas_1;
-	FontAtlas* font_atlas_2;
-
 	Universe* u;
 	sEventDispatcher* event_dispatcher;
 	cElement* c_element_root;
@@ -472,26 +469,23 @@ int main(int argc, char **args)
 	app.canvas_bp->update();
 	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 
-	app.font_atlas_1 = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
-	app.canvas->add_font(app.font_atlas_1);
-	app.font_atlas_2 = FontAtlas::create(app.d, FontDrawPixel, { L"../game/tetris/joystix monospace.ttf" });
-	app.canvas->add_font(app.font_atlas_2);
-
-	auto atlas_main = Atlas::load(L"../game/tetris/release/main.png");
-	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(Image::create_from_bitmap(app.d, atlas_main->bitmap())), FilterNearest, atlas_main);
+	auto font_atlas_standard = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
+	app.canvas->add_font(font_atlas_standard);
 
 	app.u = Universe::create();
-	app.u->add_object(app.w, "");
-	app.u->add_object(app.canvas, "");
-	app.u->add_object(app.font_atlas_1, "1");
-	app.u->add_object(app.font_atlas_2, "2");
+	app.u->add_object(app.w);
+	app.u->add_object(app.canvas);
 
-	auto w = World::create_from_file(app.dbs, L"../game/tetris/main.world");
+	auto w = World::create_from_file(app.u, app.dbs, L"../game/tetris/main.world");
 	w->add_system(sLayoutManagement::create());
 	app.event_dispatcher = sEventDispatcher::create();
 	w->add_system(app.event_dispatcher);
 	w->add_system(sUIRenderer::create());
-	app.u->add_world(w);
+
+	auto font_atlas_joystix = (FontAtlas*)w->find_object(cH("FontAtlas"), 0);
+
+	auto atlas_main = Atlas::load(L"../game/tetris/release/main.png");
+	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(Image::create_from_bitmap(app.d, atlas_main->bitmap())), FilterNearest, atlas_main);
 
 	auto root = w->root();
 	{
@@ -506,7 +500,7 @@ int main(int argc, char **args)
 	{
 		e_fps->add_component(cElement::create());
 
-		auto c_text = cText::create(app.font_atlas_1);
+		auto c_text = cText::create(font_atlas_standard);
 		app.c_text_fps = c_text;
 		e_fps->add_component(c_text);
 
@@ -616,7 +610,7 @@ int main(int argc, char **args)
 		c_element->pos_.y() = 1 * block_size;
 		e_score_title->add_component(c_element);
 
-		auto c_text = cText::create(app.font_atlas_2);
+		auto c_text = cText::create(font_atlas_joystix);
 		c_text->set_text(L"SCORE");
 		e_score_title->add_component(c_text);
 	}
@@ -629,7 +623,7 @@ int main(int argc, char **args)
 		c_element->pos_.y() = 2 * block_size;
 		e_score->add_component(c_element);
 
-		app.text_score = cText::create(app.font_atlas_2);
+		app.text_score = cText::create(font_atlas_joystix);
 		e_score->add_component(app.text_score);
 	}
 
@@ -641,7 +635,7 @@ int main(int argc, char **args)
 		c_element->pos_.y() = 5 * block_size;
 		e_level_title->add_component(c_element);
 
-		auto c_text = cText::create(app.font_atlas_2);
+		auto c_text = cText::create(font_atlas_joystix);
 		c_text->set_text(L"LEVEL");
 		e_level_title->add_component(c_text);
 	}
@@ -654,7 +648,7 @@ int main(int argc, char **args)
 		c_element->pos_.y() = 6 * block_size;
 		e_level->add_component(c_element);
 
-		app.text_level = cText::create(app.font_atlas_2);
+		app.text_level = cText::create(font_atlas_joystix);
 		e_level->add_component(app.text_level);
 	}
 
@@ -666,7 +660,7 @@ int main(int argc, char **args)
 		c_element->pos_.y() = 9 * block_size;
 		e_lines_title->add_component(c_element);
 
-		auto c_text = cText::create(app.font_atlas_2);
+		auto c_text = cText::create(font_atlas_joystix);
 		c_text->set_text(L"LINES");
 		e_lines_title->add_component(c_text);
 	}
@@ -679,7 +673,7 @@ int main(int argc, char **args)
 		c_element->pos_.y() = 10 * block_size;
 		e_lines->add_component(c_element);
 
-		app.text_lines = cText::create(app.font_atlas_2);
+		app.text_lines = cText::create(font_atlas_joystix);
 		e_lines->add_component(app.text_lines);
 	}
 

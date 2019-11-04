@@ -27,7 +27,7 @@ namespace flame
 
 	struct Atlas
 	{
-		struct Piece
+		struct Region
 		{
 			std::wstring filename;
 			Vec2i pos;
@@ -37,13 +37,13 @@ namespace flame
 		};
 
 		FLAME_FOUNDATION_EXPORTS Bitmap* bitmap() const;
-		FLAME_FOUNDATION_EXPORTS const std::vector<Piece>& pieces() const;
+		FLAME_FOUNDATION_EXPORTS const std::vector<Region>& regions() const;
 
 		int find_piece(const std::wstring& filename) const
 		{
-			for (auto i = 0; i < pieces().size(); i++)
+			for (auto i = 0; i < regions().size(); i++)
 			{
-				if (pieces()[i].filename == filename)
+				if (regions()[i].filename == filename)
 					return i;
 			}
 			return -1;

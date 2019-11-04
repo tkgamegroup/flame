@@ -13,6 +13,11 @@
 
 namespace flame
 {
+	struct Serializer_Atlas$
+	{
+
+	};
+
 	struct Serializer_FontAtlas$
 	{
 		graphics::FontDrawType$ draw_type$;
@@ -33,7 +38,16 @@ namespace flame
 			auto world_dir = std::filesystem::path(w->filename()).parent_path().wstring() + L"/";
 			for (auto& f : fonts)
 				f = world_dir + f;
-			return graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts);
+			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts);
+			auto canvas = (graphics::Canvas*)w->find_object(cH("Canvas"), 0);
+			if (canvas)
+				canvas->add_font(f);
+			return f;
+		}
+
+		FLAME_UNIVERSE_EXPORTS void destroy$(Object* o)
+		{
+			graphics::FontAtlas::destroy((graphics::FontAtlas*)o);
 		}
 	};
 

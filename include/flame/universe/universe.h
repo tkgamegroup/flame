@@ -97,7 +97,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, uint id);
 		FLAME_UNIVERSE_EXPORTS uint find_id(Object* o);
 
-		FLAME_UNIVERSE_EXPORTS void add_world(World* w);
 		FLAME_UNIVERSE_EXPORTS void update();
 
 		FLAME_UNIVERSE_EXPORTS static Universe* create();

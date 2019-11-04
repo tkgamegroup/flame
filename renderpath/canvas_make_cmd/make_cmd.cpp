@@ -417,9 +417,9 @@ namespace flame
 			auto atlas = imgs[img_id].second;
 			if (atlas)
 			{
-				auto& piece = atlas->pieces()[id & 0xffff];
-				uv0 = mix(piece.uv0, piece.uv1, uv0);
-				uv1 = mix(piece.uv0, piece.uv1, uv1);
+				auto& region = atlas->regions()[id & 0xffff];
+				uv0 = mix(region.uv0, region.uv1, uv0);
+				uv1 = mix(region.uv0, region.uv1, uv1);
 			}
 
 			vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;

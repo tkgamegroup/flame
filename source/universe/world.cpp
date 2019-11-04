@@ -1,15 +1,47 @@
 #include <flame/foundation/serialize.h>
+#include "universe_private.h"
 #include "world_private.h"
 
 namespace flame
 {
-	WorldPrivate::WorldPrivate()
+	WorldPrivate::WorldPrivate(Universe* u)
 	{
-		universe_ = nullptr;
+		universe_ = u;
+		((UniversePrivate*)u)->worlds.emplace_back(this);
 
 		auto e = new EntityPrivate;
 		e->world_ = this;
 		root.reset(e);
+	}
+
+	WorldPrivate::~WorldPrivate()
+	{
+		for (auto& o : objects)
+		{
+			auto udt = o.second;
+			if (udt)
+			{
+				auto dummy = malloc(udt->size());
+				auto module = load_module(udt->db()->module_name());
+				{
+					auto f = udt->find_function("ctor");
+					if (f && f->parameter_count() == 0)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
+				{
+					auto f = udt->find_function("destroy");
+					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Object")));
+					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), dummy, o.first);
+				}
+				{
+					auto f = udt->find_function("dtor");
+					if (f)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
+				free_module(module);
+				free(dummy);
+			}
+		}
 	}
 
 	System*  WorldPrivate::get_system_plain(uint name_hash) const
@@ -29,7 +61,7 @@ namespace flame
 
 	void World::add_object(Object* o)
 	{
-		((WorldPrivate*)this)->objects.push_back(o);
+		((WorldPrivate*)this)->objects.emplace_back(o, nullptr);
 	}
 
 	Object* World::find_object(uint name_hash, uint id)
@@ -37,13 +69,13 @@ namespace flame
 		const auto& objects = ((WorldPrivate*)this)->objects;
 		for (auto& o : objects)
 		{
-			if (o->name_hash == name_hash)
+			if (o.first->name_hash == name_hash)
 			{
-				if (!id || o->id == id)
-					return o;
+				if (!id || o.first->id == id)
+					return o.first;
 			}
 		}
-		return universe_ ? universe_->find_object(name_hash, id) : nullptr;
+		return universe_->find_object(name_hash, id);
 	}
 
 	System* World::get_system_plain(uint name_hash) const
@@ -63,18 +95,18 @@ namespace flame
 		return ((WorldPrivate*)this)->root.get();
 	}
 
-	World* World::create()
+	World* World::create(Universe* u)
 	{
-		return new WorldPrivate;
+		return new WorldPrivate(u);
 	}
 
-	World* World::create_from_file(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
+	World* World::create_from_file(Universe* u, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(filename);
 		if (!file || file->name() != "world")
 			return nullptr;
 
-		auto w = new WorldPrivate;
+		auto w = new WorldPrivate(u);
 		w->filename = filename;
 
 		auto n_os = file->find_node("objects");
@@ -107,7 +139,7 @@ namespace flame
 					assert(f && f->return_type()->equal(TypeTagPointer, cH("Object")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("World")));
 					object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 				}
-				w->add_object((Object*)object);
+				w->objects.emplace_back((Object*)object, udt);
 				{
 					auto f = udt->find_function("dtor");
 					if (f)

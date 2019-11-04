@@ -150,7 +150,7 @@ namespace flame
 	struct AtlasPrivate : Atlas
 	{
 		Bitmap* bitmap;
-		std::vector<Piece> pieces;
+		std::vector<Region> regions;
 
 		~AtlasPrivate()
 		{
@@ -163,9 +163,9 @@ namespace flame
 		return ((AtlasPrivate*)this)->bitmap;
 	}
 
-	const std::vector<Atlas::Piece>& Atlas::pieces() const
+	const std::vector<Atlas::Region>& Atlas::regions() const
 	{
-		return ((AtlasPrivate*)this)->pieces;
+		return ((AtlasPrivate*)this)->regions;
 	}
 
 	void Atlas::pack(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border)
@@ -232,7 +232,7 @@ namespace flame
 		while (!file.eof())
 		{
 			std::string t;
-			Piece piece;
+			Region region;
 
 			std::string line;
 			std::getline(file, line);
@@ -240,17 +240,17 @@ namespace flame
 				break;
 			std::stringstream ss(line);
 			ss >> t;
-			piece.filename = s2w(t);
+			region.filename = s2w(t);
 			ss >> t;
 			auto v = stou4(t.c_str());
-			piece.pos = Vec2i(v.x(), v.y());
-			piece.size = Vec2i(v.z(), v.w());
-			piece.uv0.x() = piece.pos.x() / w;
-			piece.uv0.y() = piece.pos.y() / h;
-			piece.uv1.x() = (piece.pos.x() + piece.size.x()) / w;
-			piece.uv1.y() = (piece.pos.y() + piece.size.y()) / h;
+			region.pos = Vec2i(v.x(), v.y());
+			region.size = Vec2i(v.z(), v.w());
+			region.uv0.x() = region.pos.x() / w;
+			region.uv0.y() = region.pos.y() / h;
+			region.uv1.x() = (region.pos.x() + region.size.x()) / w;
+			region.uv1.y() = (region.pos.y() + region.size.y()) / h;
 
-			atlas->pieces.push_back(piece);
+			atlas->regions.push_back(region);
 		}
 		file.close();
 

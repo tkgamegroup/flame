@@ -59,15 +59,6 @@ namespace flame
 		return nullptr;
 	}
 
-	void Universe::add_world(World* _w)
-	{
-		auto w = (WorldPrivate*)_w;
-		w->universe_ = this;
-		((UniversePrivate*)this)->worlds.emplace_back((WorldPrivate*)w);
-		for (auto& s : w->systems)
-			s->on_added();
-	}
-
 	void Universe::update()
 	{
 		((UniversePrivate*)this)->update();
