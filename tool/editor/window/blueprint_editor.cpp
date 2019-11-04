@@ -49,7 +49,7 @@ void create_edit(Entity* parent, BP::Slot* input)
 		capture.drag_text = e_edit->child(1)->get_component(Text);
 		e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			if (hash == cH("Text"))
+			if (hash == cH("text"))
 			{
 				auto& text = ((cText*)t)->text();
 				auto data = sto_s<T>(text.c_str());
@@ -84,7 +84,7 @@ void create_vec_edit(Entity* parent, BP::Slot* input)
 		capture.drag_text = e_edit->child(1)->get_component(Text);
 		e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			if (hash == cH("Text"))
+			if (hash == cH("text"))
 			{
 				auto& text = ((cText*)t)->text();
 				auto data = *(Vec<N, T>*)capture.input->data();
@@ -1951,9 +1951,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);
-							e_edit->get_component(Edit)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-								auto str = w2s(((cText*)t)->text());
-								(*(BP::Slot**)c)->set_data(&str);
+							e_edit->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+								if (hash == cH("text"))
+								{
+									auto str = w2s(((cText*)t)->text());
+									(*(BP::Slot**)c)->set_data(&str);
+								}
 							}, new_mail_p(input));
 
 							auto c_tracker = new_u_object<cStringDataTracker>();
@@ -1965,8 +1968,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);
-							e_edit->get_component(Edit)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-								(*(BP::Slot**)c)->set_data(&((cText*)t)->text());
+							e_edit->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+								if (hash == cH("text"))
+									(*(BP::Slot**)c)->set_data(&((cText*)t)->text());
 							}, new_mail_p(input));
 
 							auto c_tracker = new_u_object<cWStringDataTracker>();
