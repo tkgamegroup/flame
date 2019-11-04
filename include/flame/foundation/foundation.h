@@ -1077,10 +1077,12 @@ namespace flame
 	{
 		const char* name;
 		const uint name_hash;
+		uint id;
 
 		Object(const char* name) :
 			name(name),
-			name_hash(H(name))
+			name_hash(H(name)),
+			id(0)
 		{
 		}
 	};

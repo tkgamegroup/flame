@@ -130,7 +130,7 @@ namespace flame
 
 		void on_added() override
 		{
-			window = (Window*)world_->find_object(cH("Window"), "");
+			window = (Window*)world_->find_object(cH("Window"), 0);
 			if (window)
 			{
 

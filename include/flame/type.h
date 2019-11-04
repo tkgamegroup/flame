@@ -14,7 +14,8 @@ inline constexpr unsigned int hash_update(unsigned int h, unsigned int v)
 	return h ^ (v + 0x9e3779b9 + (h << 6) + (h >> 2));
 }
 
-inline constexpr unsigned int hash_str(char const* str, unsigned int seed)
+template<class T>
+constexpr unsigned int hash_str(const T* str, unsigned int seed)
 {
 	return 0 == *str ? seed : hash_str(str + 1, hash_update(seed , *str));
 }

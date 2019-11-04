@@ -185,7 +185,7 @@ namespace flame
 
 	struct Serializer_Text$
 	{
-		uint font_atlas_index$;
+		uint font_atlas_id$;
 		Vec4c color$;
 		uint font_size$;
 		bool right_align$;
@@ -195,7 +195,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Serializer_Text$()
 		{
-			font_atlas_index$ = 1;
 			color$ = default_style.text_color_normal;
 			font_size$ = default_style.font_size;
 			right_align$ = false;
@@ -209,7 +208,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
 		{
-			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(cH("FontAtlas"), std::to_string(font_atlas_index$)));
+			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(cH("FontAtlas"), font_atlas_id$));
 
 			c->color = color$;
 			c->font_size_ = font_size$;
@@ -227,7 +226,7 @@ namespace flame
 
 			if (offset == -1)
 			{
-				font_atlas_index$ = std::stoul(*w->find_id(c->font_atlas));
+				font_atlas_id$ = c->font_atlas->id;
 				color$ = c->color;
 				font_size$ = c->font_size_;
 				auto_width$ = c->auto_width_;
@@ -238,8 +237,8 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_Text$, font_atlas_index$):
-					font_atlas_index$ = std::stoul(*w->find_id(c->font_atlas));
+				case offsetof(Serializer_Text$, font_atlas_id$):
+					font_atlas_id$ = c->font_atlas->id;
 					break;
 				case offsetof(Serializer_Text$, color$):
 					color$ = c->color;
@@ -267,7 +266,7 @@ namespace flame
 
 			if (offset == -1)
 			{
-				c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), std::to_string(font_atlas_index$));
+				c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), font_atlas_id$);
 				c->color = color$;
 				c->font_size_ = font_size$;
 				c->auto_width_ = auto_width$;
@@ -278,8 +277,8 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_Text$, font_atlas_index$):
-					c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), std::to_string(font_atlas_index$));
+				case offsetof(Serializer_Text$, font_atlas_id$):
+					c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), font_atlas_id$);
 					break;
 				case offsetof(Serializer_Text$, color$):
 					c->color = color$;

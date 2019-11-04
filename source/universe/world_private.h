@@ -10,7 +10,7 @@ namespace flame
 	{
 		std::wstring filename;
 
-		std::vector<std::pair<Object*, std::string>> objects;
+		std::vector<Object*> objects;
 
 		std::vector<std::unique_ptr<System>> systems;
 

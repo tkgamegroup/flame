@@ -24,6 +24,7 @@
 								<pos v="12.00;8.00" />
 							</Element>
 							<Text>
+								<font_atlas_id v="1694471046" />
 								<color v="0;0;0;255" />
 								<auto_width v="1" />
 								<auto_height v="1" />

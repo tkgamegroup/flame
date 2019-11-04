@@ -4,7 +4,8 @@
 namespace flame
 {
 	Component::Component(const char* name) :
-		Object(name)
+		Object(name),
+		entity(nullptr)
 	{
 		data_changed_listeners.hub = new ListenerHub;
 	}

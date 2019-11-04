@@ -1,6 +1,6 @@
 <world>
   <objects>
-    <FontAtlas id="1">
+    <FontAtlas>
         <fonts v="joystix monospace.ttf" />
     </FontAtlas>
   </objects>

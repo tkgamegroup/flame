@@ -38,7 +38,7 @@ namespace flame
 		{
 			FontDrawType$ draw_type;
 
-			uint index;
+			uint index; // used by canvas
 
 			FontAtlas() :
 				Object("FontAtlas")

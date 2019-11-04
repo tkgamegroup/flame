@@ -97,7 +97,7 @@ namespace flame
 
 		void on_added() override
 		{
-			canvas = (graphics::Canvas*)world_->find_object(cH("Canvas"), "");
+			canvas = (graphics::Canvas*)world_->find_object(cH("Canvas"), 0);
 		}
 
 		void update(Entity* root) override

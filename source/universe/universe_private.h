@@ -12,7 +12,7 @@ namespace flame
 
 	struct UniversePrivate : Universe
 	{
-		std::vector<std::pair<Object*, std::string>> objects;
+		std::vector<Object*> objects;
 
 		std::vector<std::unique_ptr<WorldPrivate>> worlds;
 

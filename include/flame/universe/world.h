@@ -15,9 +15,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS const std::wstring& filename() const;
 
-		FLAME_UNIVERSE_EXPORTS void add_object(Object* o, const std::string& id);
-		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, const std::string& id);
-		FLAME_UNIVERSE_EXPORTS const std::string* find_id(Object* o);
+		FLAME_UNIVERSE_EXPORTS void add_object(Object* o);
+		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, uint id);
 
 		FLAME_UNIVERSE_EXPORTS System* get_system_plain(uint name_hash) const;
 

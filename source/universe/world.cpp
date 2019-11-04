@@ -27,34 +27,23 @@ namespace flame
 		return ((WorldPrivate*)this)->filename;
 	}
 
-	void World::add_object(Object* o, const std::string& id)
+	void World::add_object(Object* o)
 	{
-		((WorldPrivate*)this)->objects.emplace_back(o, id);
+		((WorldPrivate*)this)->objects.push_back(o);
 	}
 
-	Object* World::find_object(uint name_hash, const std::string& id)
+	Object* World::find_object(uint name_hash, uint id)
 	{
 		const auto& objects = ((WorldPrivate*)this)->objects;
 		for (auto& o : objects)
 		{
-			if (o.first->name_hash == name_hash)
+			if (o->name_hash == name_hash)
 			{
-				if (!id.empty() && o.second == id)
-					return o.first;
+				if (!id || o->id == id)
+					return o;
 			}
 		}
 		return universe_ ? universe_->find_object(name_hash, id) : nullptr;
-	}
-
-	const std::string* World::find_id(Object* _o)
-	{
-		const auto& objects = ((WorldPrivate*)this)->objects;
-		for (auto& o : objects)
-		{
-			if (o.first == _o)
-				return &o.second;
-		}
-		return universe_ ? universe_->find_id(_o) : nullptr;
 	}
 
 	System* World::get_system_plain(uint name_hash) const
@@ -118,7 +107,7 @@ namespace flame
 					assert(f && f->return_type()->equal(TypeTagPointer, cH("Object")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("World")));
 					object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 				}
-				w->add_object((Object*)object, n_o->find_attr("id")->value());
+				w->add_object((Object*)object);
 				{
 					auto f = udt->find_function("dtor");
 					if (f)

@@ -40,32 +40,21 @@ namespace flame
 		}
 	}
 
-	void Universe::add_object(Object* o, const std::string& id)
+	void Universe::add_object(Object* o)
 	{
-		((UniversePrivate*)this)->objects.emplace_back(o, id);
+		((UniversePrivate*)this)->objects.push_back(o);
 	}
 
-	Object* Universe::find_object(uint name_hash, const std::string& id)
+	Object* Universe::find_object(uint name_hash, uint id)
 	{
 		const auto& objects = ((UniversePrivate*)this)->objects;
 		for (auto& o : objects)
 		{
-			if (o.first->name_hash == name_hash)
+			if (o->name_hash == name_hash)
 			{
-				if (id.empty() || o.second == id)
-					return o.first;
+				if (!id || o->id == id)
+					return o;
 			}
-		}
-		return nullptr;
-	}
-
-	const std::string* Universe::find_id(Object* _o)
-	{
-		const auto& objects = ((UniversePrivate*)this)->objects;
-		for (auto& o : objects)
-		{
-			if (o.first == _o)
-				return &o.second;
 		}
 		return nullptr;
 	}
