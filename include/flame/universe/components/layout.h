@@ -23,7 +23,7 @@ namespace flame
 		Vec2f content_size;
 
 		cLayout() :
-			Component("Layout")
+			Component("cLayout")
 		{
 		}
 

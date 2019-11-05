@@ -66,7 +66,7 @@ struct cComponentDealer : Component
 	void* dtor_addr;
 
 	cComponentDealer() :
-		Component("ComponentDealer")
+		Component("cComponentDealer")
 	{
 	}
 
@@ -102,8 +102,8 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	}capture;
 	capture.d = d;
 	capture.v = v;
-	capture.drag_text = e_edit->child(1)->get_component(Text);
-	e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+	capture.drag_text = e_edit->child(1)->get_component(cText);
+	e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 		auto& capture = *(Capture*)c;
 		if (hash == cH("text"))
 		{
@@ -136,8 +136,8 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 		auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
 		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
 		capture.i = i;
-		capture.drag_text = e_edit->child(1)->get_component(Text);
-		e_edit->child(0)->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		capture.drag_text = e_edit->child(1)->get_component(cText);
+		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
 			if (hash == cH("text"))
 			{
@@ -192,7 +192,7 @@ struct cInspectorPrivate : cInspector
 
 				auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 				e_item->child(1)->add_child(e_edit);
-				auto c_text = e_edit->get_component(Text);
+				auto c_text = e_edit->get_component(cText);
 				c_text->set_text(s2w(selected->name()));
 				c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 					auto editor = *(cSceneEditor**)c;
@@ -203,10 +203,10 @@ struct cInspectorPrivate : cInspector
 						if (editor->hierarchy)
 						{
 							auto item = editor->hierarchy->find_item(editor->selected);
-							if (item->get_component(TreeNode))
-								item->child(0)->get_component(Text)->set_text(text);
+							if (item->get_component(cTreeNode))
+								item->child(0)->get_component(cText)->set_text(text);
 							else
-								item->get_component(Text)->set_text(text);
+								item->get_component(cText)->set_text(text);
 						}
 					}
 				}, new_mail_p(editor));
@@ -217,7 +217,7 @@ struct cInspectorPrivate : cInspector
 
 				auto e_checkbox = create_standard_checkbox();
 				e_item->child(1)->add_child(e_checkbox);
-				auto checkbox = e_checkbox->get_component(Checkbox);
+				auto checkbox = e_checkbox->get_component(cCheckbox);
 				checkbox->set_checked(selected->visibility_, false);
 				checkbox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 					if (hash == cH("checked"))
@@ -357,7 +357,7 @@ struct cInspectorPrivate : cInspector
 						capture.d = c_dealer;
 						capture.v = v;
 						capture.info = info;
-						e_data->child(0)->get_component(Combobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+						e_data->child(0)->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 							auto& capture = *(Capture*)c;
 							if (hash == cH("index"))
 							{
@@ -388,7 +388,7 @@ struct cInspectorPrivate : cInspector
 							capture.d = c_dealer;
 							capture.v = v;
 							capture.vl = info->item(k)->value();
-							e_data->child(k)->child(0)->get_component(Checkbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+							e_data->child(k)->child(0)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
 								if (hash == cH("checkbox"))
 								{
@@ -422,7 +422,7 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							e_checkbox->get_component(Checkbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+							e_checkbox->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
 								if (hash == cH("checkbox"))
 								{
@@ -495,7 +495,7 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							e_edit->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
 								if (hash == cH("text"))
 								{
@@ -520,7 +520,7 @@ struct cInspectorPrivate : cInspector
 							}capture;
 							capture.d = c_dealer;
 							capture.v = v;
-							e_edit->get_component(Text)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
 								if (hash == cH("text"))
 								{
@@ -554,13 +554,13 @@ void cInspector::update_data_tracker(uint component_hash, uint data_offset) cons
 	for (auto i = 2; i < e_layout->child_count(); i++)
 	{
 		auto e_component = e_layout->child(i);
-		auto dealer = e_component->get_component(ComponentDealer);
+		auto dealer = e_component->get_component(cComponentDealer);
 		if (dealer && dealer->component->name_hash == component_hash)
 		{
 			for (auto j = 1; j < e_component->child_count(); j++)
 			{
 				auto e_data = e_component->child(j)->child(1);
-				auto tracker = e_data->get_component(DataTracker);
+				auto tracker = e_data->get_component(cDataTracker);
 				if (tracker && tracker->data == (char*)dealer->dummy + data_offset)
 				{
 					dealer->serialize(data_offset);
@@ -581,7 +581,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = e_container->get_component(Element);
+		auto c_element = e_container->get_component(cElement);
 		c_element->pos_ = pos;
 		c_element->size_.x() = 200.f;
 		c_element->size_.y() = 900.f;
@@ -595,7 +595,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	auto e_page = get_docker_page_model()->copy();
 	{
-		e_page->get_component(Element)->inner_padding_ = Vec4f(4.f);
+		e_page->get_component(cElement)->inner_padding_ = Vec4f(4.f);
 
 		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
@@ -606,7 +606,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_inspector = new_u_object<cInspectorPrivate>();
 	e_page->add_component(c_inspector);
-	c_inspector->tab = tab->get_component(DockerTab);
+	c_inspector->tab = tab->get_component(cDockerTab);
 	c_inspector->editor = editor;
 	c_inspector->module = load_module(L"flame_universe.dll");
 
@@ -641,7 +641,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 			}capture;
 			capture.i = c_inspector;
 			capture.u = udt;
-			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
 				{

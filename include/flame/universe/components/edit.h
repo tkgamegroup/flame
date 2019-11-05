@@ -24,7 +24,7 @@ namespace flame
 		uint cursor;
 
 		cEdit() :
-			Component("Edit")
+			Component("cEdit")
 		{
 		}
 

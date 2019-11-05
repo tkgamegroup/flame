@@ -16,7 +16,7 @@ struct cConsole : Component
 	cEdit* c_edit_input;
 
 	cConsole() :
-		Component("Console")
+		Component("cConsole")
 	{
 	}
 

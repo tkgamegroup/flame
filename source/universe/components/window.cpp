@@ -37,9 +37,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -79,7 +79,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -135,12 +135,12 @@ namespace flame
 		{
 			auto p = entity->parent();
 			if (p)
-				p_element = p->get_component(Element);
+				p_element = p->get_component(cElement);
 		}
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -218,8 +218,8 @@ namespace flame
 			auto docker = tabbar->parent();
 			auto pages = docker->child(1);
 			page = pages->child(entity->order_ & 0xffffff);
-			page_element = page->get_component(Element);
-			auto page_aligner = page->get_component(Aligner);
+			page_element = page->get_component(cElement);
+			auto page_aligner = page->get_component(cAligner);
 			auto list = list_item->list;
 
 			if (close)
@@ -267,7 +267,7 @@ namespace flame
 						pp->add_child(oth_docker, idx);
 						if (pp->name_hash() == cH("docker_container"))
 						{
-							auto aligner = oth_docker->get_component(Aligner);
+							auto aligner = oth_docker->get_component(cAligner);
 							aligner->set_x_align(AlignxLeft);
 							aligner->set_y_align(AlignyTop);
 							aligner->set_using_padding(true);
@@ -286,20 +286,17 @@ namespace flame
 		{
 			auto p = entity->parent();
 			if (p && p->child_count() == 1)
-			{
-				auto tabbar = p->get_component(DockerTabbar);
-				tabbar->list->set_selected(entity);
-			}
+				p->get_component(cDockerTabbar)->list->set_selected(entity);
 		}
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->drag_hash = cH("DockerTab");
+				event_receiver->drag_hash = cH("cDockerTab");
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->dragging && thiz->page)
@@ -329,12 +326,12 @@ namespace flame
 								auto e_tab = thiz->entity;
 								auto e_page = thiz->page;
 								auto page_element = thiz->page_element;
-								auto page_aligner = e_page->get_component(Aligner);
+								auto page_aligner = e_page->get_component(cAligner);
 
 								auto e_container = get_docker_container_model()->copy();
 								thiz->root->add_child(e_container);
 								{
-									auto c_element = e_container->get_component(Element);
+									auto c_element = e_container->get_component(cElement);
 									c_element->set_pos(thiz->drop_pos);
 									c_element->set_size(page_element->size_);
 								}
@@ -346,7 +343,7 @@ namespace flame
 
 								thiz->root->remove_child(e_tab, false);
 								thiz->root->remove_child(e_page, false);
-								thiz->list_item->list = e_tabbar->get_component(List);
+								thiz->list_item->list = e_tabbar->get_component(cList);
 								e_tabbar->add_child(e_tab);
 								auto element = thiz->element;
 								element->set_pos(Vec2f(0.f));
@@ -363,9 +360,9 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("ListItem"))
+			else if (c->name_hash == cH("cListItem"))
 				list_item = (cListItem*)c;
-			else if (c->name_hash == cH("CustomDraw"))
+			else if (c->name_hash == cH("cCustomDraw"))
 			{
 				custom_draw = (cCustomDraw*)c;
 				draw_cmd = custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -446,7 +443,7 @@ namespace flame
 		{
 			for (auto i = 0; i < entity->child_count(); i++)
 			{
-				auto element = entity->child(i)->get_component(Element);
+				auto element = entity->child(i)->get_component(cElement);
 				auto half = element->global_pos.x() + element->size_.x() * 0.5f;
 				if (x >= element->global_pos.x() && x < half)
 				{
@@ -463,7 +460,7 @@ namespace flame
 			}
 			if (out)
 			{
-				auto element = entity->child(entity->child_count() - 1)->get_component(Element);
+				auto element = entity->child(entity->child_count() - 1)->get_component(cElement);
 				*out = element->global_pos.x() + element->global_size.x();
 			}
 			return entity->child_count();
@@ -471,9 +468,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->set_acceptable_drops({ cH("DockerTab") });
@@ -489,7 +486,7 @@ namespace flame
 								show_drop_pos -= 10.f;
 							else if (idx != 0)
 								show_drop_pos -= 5.f;
-							auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(DockerTab);
+							auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
 							drop_tab->drop_tips.clear();
 							drop_tab->overing = thiz->event_receiver;
 							cDockerTabPrivate::Primitive primitive;
@@ -500,7 +497,7 @@ namespace flame
 						}
 						else if (action == Dropped)
 						{
-							thiz->drop_tab = er->entity->get_component(DockerTab);
+							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
 							thiz->drop_tab->floating = false;
 							looper().add_delay_event([](void* c) {
@@ -510,7 +507,7 @@ namespace flame
 								auto e_tab = tab->entity;
 								auto e_page = tab->page;
 								auto page_element = tab->page_element;
-								auto page_aligner = e_page->get_component(Aligner);
+								auto page_aligner = e_page->get_component(cAligner);
 
 								tab->root->remove_child(e_tab, false);
 								tab->root->remove_child(e_page, false);
@@ -535,7 +532,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("List"))
+			else if (c->name_hash == cH("cList"))
 			{
 				list = (cList*)c;
 				selected_changed_listener = list->data_changed_listeners.add([](void* c, Component* l, uint hash, void*) {
@@ -592,12 +589,12 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops({ cH("DockerTab") });
+				event_receiver->set_acceptable_drops({ cH("cDockerTab") });
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerPagesPrivate**)c);
 					if (action == DragOvering)
@@ -616,7 +613,7 @@ namespace flame
 						else if (rect_contains(Vec4f(center + Vec2f(-25.f, 30.f), center + Vec2f(25.f, 55.f)), (Vec2f)pos))
 							thiz->dock_side = SideS;
 
-						auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(DockerTab);
+						auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
 						drop_tab->drop_tips.clear();
 						drop_tab->overing = thiz->event_receiver;
 						{
@@ -666,12 +663,12 @@ namespace flame
 						{
 							if (thiz->dock_side == SideCenter)
 							{
-								auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent()->child(0)->get_component(EventReceiver);
+								auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent()->child(0)->get_component(cEventReceiver);
 								tabbar_er->on_drag_and_drop(Dropped, er, Vec2i(0, 99999));
 							}
 							else
 							{
-								thiz->drop_tab = er->entity->get_component(DockerTab);
+								thiz->drop_tab = er->entity->get_component(cDockerTab);
 								thiz->drop_tab->floating = false;
 								looper().add_delay_event([](void* c) {
 									auto thiz = (*(cDockerPagesPrivate**)c);
@@ -679,29 +676,29 @@ namespace flame
 									auto e_tab = tab->entity;
 									auto e_page = tab->page;
 									auto page_element = tab->page_element;
-									auto page_aligner = e_page->get_component(Aligner);
+									auto page_aligner = e_page->get_component(cAligner);
 									auto docker = thiz->entity->parent();
-									auto docker_element = docker->get_component(Element);
-									auto docker_aligner = docker->get_component(Aligner);
+									auto docker_element = docker->get_component(cElement);
+									auto docker_aligner = docker->get_component(cAligner);
 									auto p = docker->parent();
 									auto docker_idx = docker->order_ & 0xffffff;
 									auto layout = get_docker_layout_model()->copy();
 
 									if (p->name_hash() == cH("docker_container"))
 									{
-										auto aligner = docker->get_component(Aligner);
+										auto aligner = docker->get_component(cAligner);
 										aligner->set_x_align(AlignxFree);
 										aligner->set_y_align(AlignyFree);
 										aligner->set_using_padding(false);
 									}
 									else
 									{
-										auto p_element = p->get_component(Element);
-										auto layout_element = layout->get_component(Element);
+										auto p_element = p->get_component(cElement);
+										auto layout_element = layout->get_component(cElement);
 
 										layout_element->set_size(p_element->size_);
 
-										auto aligner = layout->get_component(Aligner);
+										auto aligner = layout->get_component(cAligner);
 										aligner->set_x_align(AlignxFree);
 										aligner->set_y_align(AlignyFree);
 										aligner->set_width_factor(p_element->size_.x());
@@ -710,8 +707,8 @@ namespace flame
 
 										{
 											auto oth = p->child(docker_idx == 0 ? 2 : 0);
-											auto element = oth->get_component(Element);
-											auto aligner = oth->get_component(Aligner);
+											auto element = oth->get_component(cElement);
+											auto aligner = oth->get_component(cAligner);
 											aligner->set_width_factor(element->size_.x());
 											aligner->set_height_factor(element->size_.y());
 										}
@@ -720,10 +717,10 @@ namespace flame
 									p->add_child(layout, docker_idx);
 
 									auto new_docker = get_docker_model()->copy();
-									auto new_docker_element = new_docker->get_component(Element);
-									auto new_docker_aligner = new_docker->get_component(Aligner);
+									auto new_docker_element = new_docker->get_component(cElement);
+									auto new_docker_aligner = new_docker->get_component(cAligner);
 									{
-										auto c_aligner = new_docker->get_component(Aligner);
+										auto c_aligner = new_docker->get_component(cAligner);
 										c_aligner->set_x_align(AlignxFree);
 										c_aligner->set_y_align(AlignyFree);
 										c_aligner->set_using_padding(false);
@@ -733,7 +730,7 @@ namespace flame
 
 									tab->root->remove_child(e_tab, false);
 									tab->root->remove_child(e_page, false);
-									tab->list_item->list = (cList*)new_tabbar->get_component(List);
+									tab->list_item->list = (cList*)new_tabbar->get_component(cList);
 									new_tabbar->add_child(e_tab);
 									new_pages->add_child(e_page);
 
@@ -744,8 +741,8 @@ namespace flame
 									page_aligner->set_height_policy(SizeFitParent);
 
 									auto e_splitter = layout->child(0);
-									auto splitter_element = e_splitter->get_component(Element);
-									auto splitter = e_splitter->get_component(Splitter);
+									auto splitter_element = e_splitter->get_component(cElement);
+									auto splitter = e_splitter->get_component(cSplitter);
 									if (thiz->dock_side == SideW || thiz->dock_side == SideE)
 									{
 										auto w = (docker_element->size_.x() - splitter_element->size_.x()) * 0.5f;
@@ -762,11 +759,11 @@ namespace flame
 									}
 									else
 									{
-										layout->get_component(Layout)->type = LayoutVertical;
+										layout->get_component(cLayout)->type = LayoutVertical;
 										splitter_element->set_height(splitter_element->size_.x());
 										splitter_element->set_width(0.f);
 										splitter->type = SplitterVertical;
-										auto splitter_aligner = e_splitter->get_component(Aligner);
+										auto splitter_aligner = e_splitter->get_component(cAligner);
 										splitter_aligner->set_width_policy(SizeFitParent);
 										splitter_aligner->set_height_policy(SizeFixed);
 

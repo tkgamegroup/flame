@@ -133,7 +133,7 @@ namespace flame
 
 	void cLayoutPrivate::on_entered_world()
 	{
-		management = entity->world_->get_system(LayoutManagement);
+		management = entity->world_->get_system(sLayoutManagement);
 		management->add_to_update_list(this);
 	}
 
@@ -145,7 +145,7 @@ namespace flame
 
 	void cLayoutPrivate::on_component_added(Component* c)
 	{
-		if (c->name_hash == cH("Element"))
+		if (c->name_hash == cH("cElement"))
 		{
 			element = (cElement*)c;
 			element_data_listener = element->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
@@ -162,7 +162,7 @@ namespace flame
 				}
 			}, new_mail_p(this));
 		}
-		else if (c->name_hash == cH("Aligner"))
+		else if (c->name_hash == cH("cAligner"))
 			aligner = (cAligner*)c;
 	}
 
@@ -175,9 +175,9 @@ namespace flame
 
 	void cLayoutPrivate::on_child_component_added(Component* c)
 	{
-		if (c->name_hash == cH("Element") ||
-			c->name_hash == cH("Aligner") ||
-			c->name_hash == cH("Text"))
+		if (c->name_hash == cH("cElement") ||
+			c->name_hash == cH("cAligner") ||
+			c->name_hash == cH("cText"))
 		{
 			als_dirty = true;
 			if (management)
@@ -187,9 +187,9 @@ namespace flame
 
 	void cLayoutPrivate::on_child_component_removed(Component* c)
 	{
-		if (c->name_hash == cH("Element") ||
-			c->name_hash == cH("Aligner") ||
-			c->name_hash == cH("Text"))
+		if (c->name_hash == cH("cElement") ||
+			c->name_hash == cH("cAligner") ||
+			c->name_hash == cH("cText"))
 		{
 			als_dirty = true;
 			if (management)
@@ -234,9 +234,9 @@ namespace flame
 				auto e = entity->child(i);
 				if (e->global_visibility_)
 				{
-					auto element = e->get_component(Element);
-					auto aligner = e->get_component(Aligner);
-					auto text = e->get_component(Text);
+					auto element = e->get_component(cElement);
+					auto aligner = e->get_component(cAligner);
+					auto text = e->get_component(cText);
 					void* element_data_listener = nullptr;
 					if (element)
 					{

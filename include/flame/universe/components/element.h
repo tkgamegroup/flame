@@ -34,7 +34,7 @@ namespace flame
 		}
 
 		cElement() :
-			Component("Element")
+			Component("cElement")
 		{
 		}
 

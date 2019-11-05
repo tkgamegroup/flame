@@ -15,7 +15,7 @@ namespace flame
 		SplitterType type;
 
 		cSplitter() :
-			Component("Splitter")
+			Component("cSplitter")
 		{
 		}
 

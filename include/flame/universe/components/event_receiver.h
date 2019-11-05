@@ -23,7 +23,7 @@ namespace flame
 		uint drag_hash; // non-zero means it can be draged to drop
 
 		cEventReceiver() :
-			Component("EventReceiver")
+			Component("cEventReceiver")
 		{
 		}
 

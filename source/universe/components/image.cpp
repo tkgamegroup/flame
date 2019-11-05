@@ -17,7 +17,7 @@ namespace flame
 
 	void cImagePrivate::on_component_added(Component* c)
 	{
-		if (c->name_hash == cH("Element"))
+		if (c->name_hash == cH("cElement"))
 			element = (cElement*)c;
 	}
 

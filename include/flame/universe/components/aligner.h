@@ -21,7 +21,7 @@ namespace flame
 		bool using_padding_; // using layout's padding
 
 		cAligner() :
-			Component("Aligner")
+			Component("cAligner")
 		{
 		}
 

@@ -19,10 +19,10 @@ namespace flame
 		auto p = e->parent();
 		if (!p)
 			return nullptr;
-		auto t = p->get_component(Tree);
+		auto t = p->get_component(cTree);
 		if (t)
 			return t;
-		return p->parent()->get_component(TreeNode)->tree;
+		return p->parent()->get_component(cTreeNode)->tree;
 	}
 
 	struct cTreeLeafPrivate : cTreeLeaf
@@ -82,7 +82,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -93,7 +93,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("StyleColor"))
+			else if (c->name_hash == cH("cStyleColor"))
 			{
 				style = (cStyleColor*)c;
 				do_style(false);
@@ -119,8 +119,8 @@ namespace flame
 			if (tree)
 			{
 				auto title = entity->child(0);
-				title->get_component(TreeNodeTitle)->tree = tree;
-				title->child(0)->get_component(TreeNodeArrow)->tree = tree;
+				title->get_component(cTreeNodeTitle)->tree = tree;
+				title->child(0)->get_component(cTreeNodeArrow)->tree = tree;
 			}
 		}
 	};
@@ -179,7 +179,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -190,7 +190,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("StyleColor"))
+			else if (c->name_hash == cH("cStyleColor"))
 			{
 				style = (cStyleColor*)c;
 				((cTreeNodeTitlePrivate*)this)->do_style(false);
@@ -224,9 +224,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Text"))
+			if (c->name_hash == cH("cText"))
 				text = (cText*)c;
-			else if (c->name_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -266,7 +266,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -281,24 +281,24 @@ namespace flame
 	{
 		if (selected)
 		{
-			auto treeleaf = (cTreeLeafPrivate*)selected->get_component(TreeLeaf);
+			auto treeleaf = (cTreeLeafPrivate*)selected->get_component(cTreeLeaf);
 			if (treeleaf)
 				treeleaf->do_style(false);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->child(0)->get_component(TreeNodeTitle);
+				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->child(0)->get_component(cTreeNodeTitle);
 				if (treenodetitle)
 					treenodetitle->do_style(false);
 			}
 		}
 		if (e)
 		{
-			auto treeleaf = (cTreeLeafPrivate*)e->get_component(TreeLeaf);
+			auto treeleaf = (cTreeLeafPrivate*)e->get_component(cTreeLeaf);
 			if (treeleaf)
 				treeleaf->do_style(true);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)e->child(0)->get_component(TreeNodeTitle);
+				auto treenodetitle = (cTreeNodeTitlePrivate*)e->child(0)->get_component(cTreeNodeTitle);
 				if (treenodetitle)
 					treenodetitle->do_style(true);
 			}

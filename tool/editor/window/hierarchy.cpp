@@ -28,20 +28,20 @@ struct cHierarchyItem : Component
 	int drop_pos;
 
 	cHierarchyItem() :
-		Component("HierarchyItem")
+		Component("cHierarchyItem")
 	{
 		drop_pos = -1;
 	}
 
 	virtual void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("Element"))
+		if (c->name_hash == cH("cElement"))
 			element = (cElement*)c;
-		else if (c->name_hash == cH("EventReceiver"))
+		else if (c->name_hash == cH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
-			event_receiver->drag_hash = cH("HierarchyItem");
-			event_receiver->set_acceptable_drops({ cH("HierarchyItem") });
+			event_receiver->drag_hash = cH("cHierarchyItem");
+			event_receiver->set_acceptable_drops({ cH("cHierarchyItem") });
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = *(cHierarchyItem**)c;
 				auto element = thiz->element;
@@ -58,7 +58,7 @@ struct cHierarchyItem : Component
 				}
 				else if (action == Dropped)
 				{
-					if (!(thiz->entity->parent()->get_component(Tree) && thiz->drop_pos != 1))
+					if (!(thiz->entity->parent()->get_component(cTree) && thiz->drop_pos != 1))
 					{
 						struct Capture
 						{
@@ -69,7 +69,7 @@ struct cHierarchyItem : Component
 						}capture;
 						capture.h = thiz->hierarchy;
 						capture.dst = thiz->e;
-						capture.src = er->entity->get_component(HierarchyItem)->e;
+						capture.src = er->entity->get_component(cHierarchyItem)->e;
 						capture.i = thiz->drop_pos;
 
 						auto ok = true;
@@ -108,7 +108,7 @@ struct cHierarchyItem : Component
 				}
 			}, new_mail_p(this));
 		}
-		else if (c->name_hash == cH("CustomDraw"))
+		else if (c->name_hash == cH("cCustomDraw"))
 		{
 			custom_draw = (cCustomDraw*)c;
 			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -190,14 +190,14 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 	for (auto i = 0; i < sub_tree->child_count(); i++)
 	{
 		auto item = sub_tree->child(i);
-		if (item->get_component(TreeLeaf))
+		if (item->get_component(cTreeLeaf))
 		{
-			if (item->get_component(HierarchyItem)->e == e)
+			if (item->get_component(cHierarchyItem)->e == e)
 				return item;
 		}
 		else
 		{
-			if (item->child(0)->get_component(HierarchyItem)->e == e)
+			if (item->child(0)->get_component(cHierarchyItem)->e == e)
 				return item;
 			auto res = find_item_in_tree(item->child(1), e);
 			if (res)
@@ -209,7 +209,7 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 
 void cHierarchy::refresh_selected()
 {
-	auto tree = e_tree->get_component(Tree);
+	auto tree = e_tree->get_component(cTree);
 	if (!editor->selected)
 		tree->set_selected(nullptr, false);
 	else
@@ -233,7 +233,7 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = e_container->get_component(Element);
+		auto c_element = e_container->get_component(cElement);
 		c_element->pos_ = pos;
 		c_element->size_.x() = 200.f;
 		c_element->size_.y() = 900.f;
@@ -256,15 +256,15 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 
 	auto c_hierarchy = new_u_object<cHierarchy>();
 	e_page->add_component(c_hierarchy);
-	c_hierarchy->tab = tab->get_component(DockerTab);
+	c_hierarchy->tab = tab->get_component(cDockerTab);
 	c_hierarchy->editor = editor;
 	editor->hierarchy = c_hierarchy;
 
 	auto e_tree = create_standard_tree(true);
 	{
-		e_tree->get_component(Element)->inner_padding_ = Vec4f(4.f);
+		e_tree->get_component(cElement)->inner_padding_ = Vec4f(4.f);
 
-		auto c_tree = e_tree->get_component(Tree);
+		auto c_tree = e_tree->get_component(cTree);
 		c_tree->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto editor = *(cSceneEditor**)c;
 
@@ -281,10 +281,10 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 				Entity* selected = nullptr;
 				if (capture.s)
 				{
-					if (capture.s->get_component(TreeLeaf))
-						selected = capture.s->get_component(HierarchyItem)->e;
+					if (capture.s->get_component(cTreeLeaf))
+						selected = capture.s->get_component(cHierarchyItem)->e;
 					else
-						selected = capture.s->child(0)->get_component(HierarchyItem)->e;
+						selected = capture.s->child(0)->get_component(cHierarchyItem)->e;
 				}
 				auto different = selected != editor->selected;
 				editor->selected = selected;

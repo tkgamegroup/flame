@@ -34,7 +34,7 @@ namespace flame
 		Vec4c selected_text_color_else;
 
 		cListItem() :
-			Component("ListItem")
+			Component("cListItem")
 		{
 		}
 
@@ -48,7 +48,7 @@ namespace flame
 		Entity* selected;
 
 		cList() :
-			Component("List")
+			Component("cList")
 		{
 		}
 

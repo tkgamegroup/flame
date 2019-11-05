@@ -7,7 +7,7 @@ namespace flame
 	struct sUIRenderer : System
 	{
 		sUIRenderer() :
-			System("UIRenderer")
+			System("sUIRenderer")
 		{
 		}
 

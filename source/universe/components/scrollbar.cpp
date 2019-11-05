@@ -17,7 +17,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 				element = (cElement*)c;
 		}
 	};
@@ -63,8 +63,8 @@ namespace flame
 		void on_added() override
 		{
 			auto parent = entity->parent();
-			scrollbar = parent->get_component(Scrollbar);
-			target_layout = parent->parent()->child(0)->get_component(Layout);
+			scrollbar = parent->get_component(cScrollbar);
+			target_layout = parent->parent()->child(0)->get_component(cLayout);
 			target_element_listener = target_layout->element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
 				if (hash == cH("size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
@@ -78,9 +78,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -216,7 +216,7 @@ namespace flame
 				auto thumb = (*(cScrollbarThumbPrivate**)c);
 				if (is_mouse_scroll(action, key))
 					thumb->update(-pos.x() * 20.f);
-			}, new_mail_p(e_scrollbar_thumb->get_component(ScrollbarThumb)));
+			}, new_mail_p(e_scrollbar_thumb->get_component(cScrollbarThumb)));
 			e_overlayer->add_component(c_event_receiver);
 
 			auto c_aligner = cAligner::create();

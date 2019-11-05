@@ -23,7 +23,7 @@ namespace flame
 		bool auto_height_;
 
 		cText() :
-			Component("Text")
+			Component("cText")
 		{
 		}
 

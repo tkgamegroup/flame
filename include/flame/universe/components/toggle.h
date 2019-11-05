@@ -23,7 +23,7 @@ namespace flame
 		Vec4c toggled_color_active;
 
 		cToggle() :
-			Component("Toggle")
+			Component("cToggle")
 		{
 		}
 

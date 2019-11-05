@@ -16,7 +16,7 @@ namespace flame
 		Vec4c color;
 
 		cImage() :
-			Component("Image")
+			Component("cImage")
 		{
 		}
 

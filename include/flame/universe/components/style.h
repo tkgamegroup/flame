@@ -18,7 +18,7 @@ namespace flame
 		Vec4c color_active;
 
 		cStyleColor() :
-			Component("StyleColor")
+			Component("cStyleColor")
 		{
 		}
 
@@ -36,7 +36,7 @@ namespace flame
 		Vec4c color_else;
 
 		cStyleTextColor() :
-			Component("StyleTextColor")
+			Component("cStyleTextColor")
 		{
 		}
 

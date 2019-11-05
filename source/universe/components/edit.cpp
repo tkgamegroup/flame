@@ -43,11 +43,11 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("Text"))
+			else if (c->name_hash == cH("cText"))
 				text = (cText*)c;
-			else if (c->name_hash == cH("EventReceiver"))
+			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
@@ -152,7 +152,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("CustomDraw"))
+			else if (c->name_hash == cH("cCustomDraw"))
 			{
 				custom_draw = (cCustomDraw*)c;
 				draw_cmd = custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {

@@ -22,7 +22,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Element"))
+			if (c->name_hash == cH("cElement"))
 			{
 				element = (cElement*)c;
 				if (min_width_ < 0.f && width_policy_ == SizeGreedy)

@@ -32,7 +32,7 @@ namespace flame
 		uint idx;
 
 		cComboboxItem() :
-			Component("ComboboxItem")
+			Component("cComboboxItem")
 		{
 		}
 
@@ -47,7 +47,7 @@ namespace flame
 		int idx;
 
 		cCombobox() :
-			Component("Combobox")
+			Component("cCombobox")
 		{
 		}
 

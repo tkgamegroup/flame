@@ -17,7 +17,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = e_container->get_component(Element);
+		auto c_element = e_container->get_component(cElement);
 		c_element->pos_ = pos;
 		c_element->size_ = Vec2f(image_size) * 0.5f + 20.f;
 	}
@@ -30,7 +30,7 @@ void open_image_viewer(uint id, const Vec2f& pos)
 	auto e_page = get_docker_page_model()->copy();
 	e_docker->child(1)->add_child(e_page);
 	{
-		e_page->get_component(Element)->inner_padding_ = Vec4f(8.f);
+		e_page->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 
 		e_page->add_component(cLayout::create(LayoutFree));
 	}

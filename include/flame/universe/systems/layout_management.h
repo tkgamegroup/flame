@@ -9,7 +9,7 @@ namespace flame
 	struct sLayoutManagement : System
 	{
 		sLayoutManagement() :
-			System("LayoutManagement")
+			System("sLayoutManagement")
 		{
 		}
 

@@ -26,7 +26,7 @@ namespace flame
 		bool opened;
 
 		cMenuButton() :
-			Component("MenuButton")
+			Component("cMenuButton")
 		{
 		}
 
@@ -43,7 +43,7 @@ namespace flame
 		cMenuButton* popuped_by;
 
 		cMenu() :
-			Component("Menu")
+			Component("cMenu")
 		{
 		}
 

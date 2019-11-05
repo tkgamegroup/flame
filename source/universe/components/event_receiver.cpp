@@ -55,7 +55,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_entered_world()
 	{
-		dispatcher = entity->world_->get_system(EventDispatcher);
+		dispatcher = entity->world_->get_system(sEventDispatcher);
 		dispatcher->pending_update = true;
 	}
 
@@ -68,7 +68,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_component_added(Component* c)
 	{
-		if (c->name_hash == cH("Element"))
+		if (c->name_hash == cH("cElement"))
 			element = (cElement*)c;
 	}
 

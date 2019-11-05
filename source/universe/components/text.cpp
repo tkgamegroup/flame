@@ -52,7 +52,7 @@ namespace flame
 
 	void cTextPrivate::on_component_added(Component* c)
 	{
-		if (c->name_hash == cH("Element"))
+		if (c->name_hash == cH("cElement"))
 			element = (cElement*)c;
 	}
 
@@ -183,7 +183,7 @@ namespace flame
 		return e_layout;
 	}
 
-	struct Serializer_Text$
+	struct Serializer_cText$
 	{
 		uint font_atlas_id$;
 		Vec4c color$;
@@ -193,7 +193,7 @@ namespace flame
 		bool auto_height$;
 		std::wstring text$;
 
-		FLAME_UNIVERSE_EXPORTS Serializer_Text$()
+		FLAME_UNIVERSE_EXPORTS Serializer_cText$()
 		{
 			color$ = default_style.text_color_normal;
 			font_size$ = default_style.font_size;
@@ -202,7 +202,7 @@ namespace flame
 			auto_height$ = false;
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~Serializer_Text$()
+		FLAME_UNIVERSE_EXPORTS ~Serializer_cText$()
 		{
 		}
 
@@ -237,22 +237,22 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_Text$, font_atlas_id$):
+				case offsetof(Serializer_cText$, font_atlas_id$):
 					font_atlas_id$ = c->font_atlas->id;
 					break;
-				case offsetof(Serializer_Text$, color$):
+				case offsetof(Serializer_cText$, color$):
 					color$ = c->color;
 					break;
-				case offsetof(Serializer_Text$, font_size$):
+				case offsetof(Serializer_cText$, font_size$):
 					font_size$ = c->font_size_;
 					break;
-				case offsetof(Serializer_Text$, auto_width$):
+				case offsetof(Serializer_cText$, auto_width$):
 					auto_width$ = c->auto_width_;
 					break;
-				case offsetof(Serializer_Text$, auto_height$):
+				case offsetof(Serializer_cText$, auto_height$):
 					auto_height$ = c->auto_height_;
 					break;
-				case offsetof(Serializer_Text$, text$):
+				case offsetof(Serializer_cText$, text$):
 					text$ = c->text();
 					break;
 				}
@@ -277,22 +277,22 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_Text$, font_atlas_id$):
+				case offsetof(Serializer_cText$, font_atlas_id$):
 					c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), font_atlas_id$);
 					break;
-				case offsetof(Serializer_Text$, color$):
+				case offsetof(Serializer_cText$, color$):
 					c->color = color$;
 					break;
-				case offsetof(Serializer_Text$, font_size$):
+				case offsetof(Serializer_cText$, font_size$):
 					c->font_size_ = font_size$;
 					break;
-				case offsetof(Serializer_Text$, auto_width$):
+				case offsetof(Serializer_cText$, auto_width$):
 					c->auto_width_ = auto_width$;
 					break;
-				case offsetof(Serializer_Text$, auto_height$):
+				case offsetof(Serializer_cText$, auto_height$):
 					c->auto_height_ = auto_height$;
 					break;
-				case offsetof(Serializer_Text$, text$):
+				case offsetof(Serializer_cText$, text$):
 					c->set_text(text$);
 					break;
 				}

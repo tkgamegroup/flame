@@ -24,7 +24,7 @@ namespace flame
 		Vec4c checked_color_active;
 
 		cCheckbox() :
-			Component("Checkbox")
+			Component("cCheckbox")
 		{
 		}
 

@@ -78,7 +78,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -91,12 +91,12 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("StyleColor"))
+			else if (c->name_hash == cH("cStyleColor"))
 			{
 				background_style = (cStyleColor*)c;
 				do_style(false);
 			}
-			else if (c->name_hash == cH("StyleTextColor"))
+			else if (c->name_hash == cH("cStyleTextColor"))
 			{
 				text_style = (cStyleTextColor*)c;
 				do_style(false);
@@ -150,7 +150,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				if (select_air_when_clicked)
@@ -167,7 +167,7 @@ namespace flame
 
 		void on_child_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("ListItem"))
+			if (c->name_hash == cH("cListItem"))
 				((cListItem*)c)->list = this;
 		}
 
@@ -184,13 +184,13 @@ namespace flame
 			return;
 		if (selected)
 		{
-			auto listitem = (cListItemPrivate*)selected->get_component(ListItem);
+			auto listitem = (cListItemPrivate*)selected->get_component(cListItem);
 			if (listitem)
 				listitem->do_style(false);
 		}
 		if (e)
 		{
-			auto listitem = (cListItemPrivate*)e->get_component(ListItem);
+			auto listitem = (cListItemPrivate*)e->get_component(cListItem);
 			if (listitem)
 				listitem->do_style(true);
 		}

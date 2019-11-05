@@ -25,7 +25,7 @@ namespace flame
 		e->add_child(t);
 
 		{
-			auto e_c_element = e->get_component(Element);
+			auto e_c_element = e->get_component(cElement);
 			assert(e_c_element);
 
 			auto c_element = cElement::create();
@@ -66,7 +66,7 @@ namespace flame
 			children.push_back(t->child(i));
 		for (auto e : children)
 		{
-			auto menu = e->get_component(Menu);
+			auto menu = e->get_component(cMenu);
 			if (menu)
 			{
 				if (menu->popuped_by)

@@ -22,7 +22,7 @@ namespace flame
 		bool pending_update;
 
 		sEventDispatcher() :
-			System("EventDispatcher")
+			System("sEventDispatcher")
 		{
 		}
 

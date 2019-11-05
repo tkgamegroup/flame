@@ -18,7 +18,7 @@ struct cDataTracker : Component
 	void* data;
 
 	cDataTracker() :
-		Component("DataTracker")
+		Component("cDataTracker")
 	{
 	}
 
@@ -40,7 +40,7 @@ struct cEnumSingleDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		combobox = entity->child(0)->get_component(Combobox);
+		combobox = entity->child(0)->get_component(cCombobox);
 
 		update_view();
 	}
@@ -62,7 +62,7 @@ struct cEnumMultiDataTracker : cDataTracker
 	{
 		checkboxs.clear();
 		for (auto i = 0; i < entity->child_count(); i++)
-			checkboxs.push_back(entity->child(i)->child(0)->get_component(Checkbox));
+			checkboxs.push_back(entity->child(i)->child(0)->get_component(cCheckbox));
 
 		update_view();
 	}
@@ -79,7 +79,7 @@ struct cBoolDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		checkbox = entity->child(0)->get_component(Checkbox);
+		checkbox = entity->child(0)->get_component(cCheckbox);
 
 		update_view();
 	}
@@ -105,8 +105,8 @@ struct cDigitalDataTracker : cDataTracker
 	virtual void on_added() override
 	{
 		auto e = entity->child(0);
-		edit_text = e->child(0)->get_component(Text);
-		drag_text = e->child(1)->get_component(Text);
+		edit_text = e->child(0)->get_component(cText);
+		drag_text = e->child(1)->get_component(cText);
 
 		update_view();
 	}
@@ -137,8 +137,8 @@ struct cDigitalVecDataTracker : cDataTracker
 		for (auto i = 0; i < N; i++)
 		{
 			auto e = entity->child(i)->child(0);
-			edit_texts[i] = e->child(0)->get_component(Text);
-			drag_texts[i] = e->child(1)->get_component(Text);
+			edit_texts[i] = e->child(0)->get_component(cText);
+			drag_texts[i] = e->child(1)->get_component(cText);
 		}
 
 		update_view();
@@ -156,7 +156,7 @@ struct cStringDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		text = entity->child(0)->get_component(Text);
+		text = entity->child(0)->get_component(cText);
 
 		update_view();
 	}
@@ -173,7 +173,7 @@ struct cWStringDataTracker : cDataTracker
 
 	virtual void on_added() override
 	{
-		text = entity->child(0)->get_component(Text);
+		text = entity->child(0)->get_component(cText);
 
 		update_view();
 	}

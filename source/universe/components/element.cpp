@@ -35,7 +35,7 @@ namespace flame
 		}
 		else
 		{
-			auto p_element = p->get_component(Element);
+			auto p_element = p->get_component(cElement);
 			global_pos = p_element->global_pos + p_element->global_scale * pos_;
 			global_scale = p_element->global_scale * scale_;
 		}
@@ -175,7 +175,7 @@ namespace flame
 		return new cElementPrivate();
 	}
 
-	struct Serializer_Element$
+	struct Serializer_cElement$
 	{
 		Vec2f pos$;
 		float scale$;
@@ -188,7 +188,7 @@ namespace flame
 		Vec4c frame_color$;
 		bool clip_children$;
 
-		FLAME_UNIVERSE_EXPORTS Serializer_Element$()
+		FLAME_UNIVERSE_EXPORTS Serializer_cElement$()
 		{
 			pos$ = 0.f;
 			scale$ = 1.f;
@@ -241,34 +241,34 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_Element$, pos$):
+				case offsetof(Serializer_cElement$, pos$):
 					pos$ = c->pos_;
 					break;
-				case offsetof(Serializer_Element$, scale$):
+				case offsetof(Serializer_cElement$, scale$):
 					scale$ = c->scale_;
 					break;
-				case offsetof(Serializer_Element$, size$):
+				case offsetof(Serializer_cElement$, size$):
 					size$ = c->size_;
 					break;
-				case offsetof(Serializer_Element$, inner_padding$):
+				case offsetof(Serializer_cElement$, inner_padding$):
 					inner_padding$ = c->inner_padding_;
 					break;
-				case offsetof(Serializer_Element$, alpha$):
+				case offsetof(Serializer_cElement$, alpha$):
 					alpha$ = c->alpha;
 					break;
-				case offsetof(Serializer_Element$, roundness$):
+				case offsetof(Serializer_cElement$, roundness$):
 					roundness$ = c->roundness;
 					break;
-				case offsetof(Serializer_Element$, frame_thickness$):
+				case offsetof(Serializer_cElement$, frame_thickness$):
 					frame_thickness$ = c->frame_thickness;
 					break;
-				case offsetof(Serializer_Element$, color$):
+				case offsetof(Serializer_cElement$, color$):
 					color$ = c->color;
 					break;
-				case offsetof(Serializer_Element$, frame_color$):
+				case offsetof(Serializer_cElement$, frame_color$):
 					frame_color$ = c->frame_color;
 					break;
-				case offsetof(Serializer_Element$, clip_children$):
+				case offsetof(Serializer_cElement$, clip_children$):
 					clip_children$ = c->clip_children;
 					break;
 				}
@@ -296,34 +296,34 @@ namespace flame
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_Element$, pos$):
+				case offsetof(Serializer_cElement$, pos$):
 					c->pos_ = pos$;
 					break;
-				case offsetof(Serializer_Element$, scale$):
+				case offsetof(Serializer_cElement$, scale$):
 					c->scale_ = scale$;
 					break;
-				case offsetof(Serializer_Element$, size$):
+				case offsetof(Serializer_cElement$, size$):
 					c->size_ = size$;
 					break;
-				case offsetof(Serializer_Element$, inner_padding$):
+				case offsetof(Serializer_cElement$, inner_padding$):
 					c->inner_padding_ = inner_padding$;
 					break;
-				case offsetof(Serializer_Element$, alpha$):
+				case offsetof(Serializer_cElement$, alpha$):
 					c->alpha = alpha$;
 					break;
-				case offsetof(Serializer_Element$, roundness$):
+				case offsetof(Serializer_cElement$, roundness$):
 					c->roundness = roundness$;
 					break;
-				case offsetof(Serializer_Element$, frame_thickness$):
+				case offsetof(Serializer_cElement$, frame_thickness$):
 					c->frame_thickness = frame_thickness$;
 					break;
-				case offsetof(Serializer_Element$, color$):
+				case offsetof(Serializer_cElement$, color$):
 					c->color = color$;
 					break;
-				case offsetof(Serializer_Element$, frame_color$):
+				case offsetof(Serializer_cElement$, frame_color$):
 					c->frame_color = frame_color$;
 					break;
-				case offsetof(Serializer_Element$, clip_children$):
+				case offsetof(Serializer_cElement$, clip_children$):
 					c->clip_children = clip_children$;
 					break;
 				}

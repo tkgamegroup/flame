@@ -13,7 +13,7 @@ namespace flame
 		cElement* element;
 
 		cScrollbar() :
-			Component("Scrollbar")
+			Component("cScrollbar")
 		{
 		}
 
@@ -31,7 +31,7 @@ namespace flame
 		float step;
 
 		cScrollbarThumb() :
-			Component("ScrollbarThumb")
+			Component("cScrollbarThumb")
 		{
 		}
 

@@ -71,7 +71,7 @@ namespace flame
 					search_hovers(c);
 			}
 
-			auto er = (cEventReceiverPrivate*)e->get_component(EventReceiver);
+			auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
 			if (!er)
 				return;
 

@@ -66,7 +66,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -78,7 +78,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("StyleColor"))
+			else if (c->name_hash == cH("cStyleColor"))
 			{
 				style = (cStyleColor*)c;
 				do_style(false);
@@ -103,14 +103,14 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("Text"))
+			if (c->name_hash == cH("cText"))
 				text = (cText*)c;
-			else if (c->name_hash == cH("MenuButton"))
+			else if (c->name_hash == cH("cMenuButton"))
 			{
 				menu_button = (cMenuButton*)c;
 				auto menu = menu_button->menu;
 				for (auto i = 0; i < menu->child_count(); i++)
-					menu->child(i)->get_component(ComboboxItem)->combobox = this;
+					menu->child(i)->get_component(cComboboxItem)->combobox = this;
 			}
 		}
 	};
@@ -120,7 +120,7 @@ namespace flame
 		auto menu = menu_button->menu;
 		if (idx != -1)
 		{
-			auto comboboxitem = (cComboboxItemPrivate*)menu->child(idx)->get_component(ComboboxItem);
+			auto comboboxitem = (cComboboxItemPrivate*)menu->child(idx)->get_component(cComboboxItem);
 			if (comboboxitem)
 				comboboxitem->do_style(false);
 		}
@@ -130,9 +130,9 @@ namespace flame
 		else
 		{
 			auto selected = menu->child(idx);
-			text->set_text(selected->get_component(Text)->text());
+			text->set_text(selected->get_component(cText)->text());
 			{
-				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(ComboboxItem);
+				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(cComboboxItem);
 				if (comboboxitem)
 					comboboxitem->do_style(true);
 			}
@@ -161,13 +161,13 @@ namespace flame
 
 		auto e_combobox = create_standard_menu_button(font_atlas, font_size_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
 		{
-			auto c_element = e_combobox->get_component(Element);
+			auto c_element = e_combobox->get_component(cElement);
 			c_element->size_.x() = width + 8.f;
 			c_element->size_.y() = default_style.font_size * font_size_scale + 4.f;
 			c_element->frame_color = default_style.text_color_normal;
 			c_element->frame_thickness = 2.f;
 
-			e_combobox->get_component(Text)->auto_width_ = false;
+			e_combobox->get_component(cText)->auto_width_ = false;
 			
 			e_combobox->add_component(cCombobox::create());
 		}

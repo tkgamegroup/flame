@@ -38,7 +38,7 @@ namespace flame
 
 		void calc_geometry(EntityPrivate* e)
 		{
-			auto element = (cElementPrivate*)e->get_component(Element);
+			auto element = (cElementPrivate*)e->get_component(cElement);
 			if (!element)
 				return;
 

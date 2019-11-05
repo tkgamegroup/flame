@@ -60,7 +60,7 @@ namespace flame
 			if (!e->global_visibility_)
 				return;
 
-			auto element = (cElementPrivate*)e->get_component(Element);
+			auto element = (cElementPrivate*)e->get_component(cElement);
 			if (!element)
 				return;
 
@@ -73,15 +73,15 @@ namespace flame
 
 				element->draw(canvas);
 
-				auto text = (cTextPrivate*)e->get_component(Text);
+				auto text = (cTextPrivate*)e->get_component(cText);
 				if (text)
 					text->draw(canvas);
 
-				auto image = (cImagePrivate*)e->get_component(Image);
+				auto image = (cImagePrivate*)e->get_component(cImage);
 				if (image)
 					image->draw(canvas);
 
-				auto cd = e->get_component(CustomDraw);
+				auto cd = e->get_component(cCustomDraw);
 				if (cd)
 				{
 					auto& cmds = ((ListenerHub*)cd->cmds.hub)->listeners;

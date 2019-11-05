@@ -77,7 +77,7 @@ struct cSceneEditorPrivate : cSceneEditor
 		if (selected)
 			return;
 
-		auto element = e->get_component(Element);
+		auto element = e->get_component(cElement);
 		if (element && rect_contains(element->cliped_rect, mpos))
 			selected = e;
 	}
@@ -93,16 +93,16 @@ struct cSceneOverlayer : Component
 	cElement* transform_tool_element;
 
 	cSceneOverlayer() :
-		Component("SceneOverlayer")
+		Component("cSceneOverlayer")
 	{
 		tool_type = 0;
 	}
 
 	virtual void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("Element"))
+		if (c->name_hash == cH("cElement"))
 			element = (cElement*)c;
-		else if (c->name_hash == cH("CustomDraw"))
+		else if (c->name_hash == cH("cCustomDraw"))
 		{
 			custom_draw = (cCustomDraw*)c;
 			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -116,7 +116,7 @@ struct cSceneOverlayer : Component
 		transform_tool_element->set_pos(Vec2f(-200.f));
 		if (editor->selected)
 		{
-			auto se = editor->selected->get_component(Element);
+			auto se = editor->selected->get_component(cElement);
 			if (se)
 			{
 				std::vector<Vec2f> points;
@@ -136,7 +136,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);
 	{
-		auto c_element = e_container->get_component(Element);
+		auto c_element = e_container->get_component(cElement);
 		c_element->pos_ = pos;
 		c_element->size_.x() = 1000.f;
 		c_element->size_.y() = 900.f;
@@ -167,7 +167,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Entity");
 			e_menu->add_child(e_item);
-			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -191,7 +191,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
 			e_menu->add_child(e_item);
-			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -208,7 +208,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
 			e_menu->add_child(e_item);
-			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -234,7 +234,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
 			e_menu->add_child(e_item);
-			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto editor = *(cSceneEditor**)c;
 				if (is_mouse_clicked(action, key))
 				{
@@ -317,7 +317,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
 
-		auto udt_element = find_udt(app.dbs, cH("Serializer_Element"));
+		auto udt_element = find_udt(app.dbs, cH("Serializer_cElement"));
 		assert(udt_element);
 		auto element_pos_offset = udt_element->find_variable("pos")->offset();
 
@@ -344,11 +344,11 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				auto& capture = *(Capture*)c;
 				if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 				{
-					auto e = capture.e->selected->get_component(Element);
+					auto e = capture.e->selected->get_component(cElement);
 					if (e)
 					{
 						e->set_pos(Vec2f(pos), true);
-						capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
+						capture.e->inspector->update_data_tracker(cH("cElement"), capture.off);
 					}
 				}
 			}, new_mail(&capture));
@@ -381,11 +381,11 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
-						auto e = capture.e->selected->get_component(Element);
+						auto e = capture.e->selected->get_component(cElement);
 						if (e)
 						{
 							e->set_x(pos.x(), true);
-							capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
+							capture.e->inspector->update_data_tracker(cH("cElement"), capture.off);
 						}
 					}
 				}, new_mail(&capture));
@@ -419,11 +419,11 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
-						auto e = capture.e->selected->get_component(Element);
+						auto e = capture.e->selected->get_component(cElement);
 						if (e)
 						{
 							e->set_y(pos.y(), true);
-							capture.e->inspector->update_data_tracker(cH("Element"), capture.off);
+							capture.e->inspector->update_data_tracker(cH("cElement"), capture.off);
 						}
 					}
 				}, new_mail(&capture));
@@ -434,7 +434,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		}
 
 		{
-			auto combobox = e_tool->get_component(Combobox);
+			auto combobox = e_tool->get_component(cCombobox);
 			combobox->set_index(0, false);
 			combobox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 				if (hash == cH("index"))

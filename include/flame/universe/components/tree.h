@@ -28,7 +28,7 @@ namespace flame
 		Vec4c selected_color_active;
 
 		cTreeLeaf() :
-			Component("TreeLeaf")
+			Component("cTreeLeaf")
 		{
 		}
 
@@ -40,7 +40,7 @@ namespace flame
 		cTree* tree;
 
 		cTreeNode() :
-			Component("TreeNode")
+			Component("cTreeNode")
 		{
 		}
 
@@ -61,7 +61,7 @@ namespace flame
 		Vec4c selected_color_active;
 
 		cTreeNodeTitle() :
-			Component("TreeNodeTitle")
+			Component("cTreeNodeTitle")
 		{
 		}
 
@@ -75,7 +75,7 @@ namespace flame
 		cTree* tree;
 
 		cTreeNodeArrow() :
-			Component("TreeNodeArrow")
+			Component("cTreeNodeArrow")
 		{
 		}
 
@@ -89,7 +89,7 @@ namespace flame
 		Entity* selected;
 
 		cTree() :
-			Component("Tree")
+			Component("cTree")
 		{
 		}
 

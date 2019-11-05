@@ -26,7 +26,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("EventReceiver"))
+			if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -38,13 +38,13 @@ namespace flame
 						if (idx > 0 && idx < parent->child_count() - 1)
 						{
 							auto left = parent->child(idx - 1);
-							auto left_element = left->get_component(Element);
+							auto left_element = left->get_component(cElement);
 							assert(left_element);
-							auto left_aligner = left->get_component(Aligner);
+							auto left_aligner = left->get_component(cAligner);
 							auto right = parent->child(idx + 1);
-							auto right_element = right->get_component(Element);
+							auto right_element = right->get_component(cElement);
 							assert(right_element);
-							auto right_aligner = right->get_component(Aligner);
+							auto right_aligner = right->get_component(cAligner);
 
 							if (thiz->type == SplitterHorizontal)
 							{

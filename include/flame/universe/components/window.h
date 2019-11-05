@@ -23,7 +23,7 @@ namespace flame
 		cEventReceiver* event_receiver;
 
 		cMoveable() :
-			Component("Moveable")
+			Component("cMoveable")
 		{
 		}
 
@@ -35,7 +35,7 @@ namespace flame
 		cEventReceiver* event_receiver;
 
 		cBringToFront() :
-			Component("BringToFront")
+			Component("cBringToFront")
 		{
 		}
 
@@ -48,7 +48,7 @@ namespace flame
 		cElement* p_element;
 
 		cSizeDragger() :
-			Component("SizeDragger")
+			Component("cSizeDragger")
 		{
 		}
 
@@ -69,7 +69,7 @@ namespace flame
 		cElement* page_element;
 
 		cDockerTab() :
-			Component("DockerTab")
+			Component("cDockerTab")
 		{
 
 		}
@@ -86,7 +86,7 @@ namespace flame
 		cList* list;
 
 		cDockerTabbar() :
-			Component("DockerTabbar")
+			Component("cDockerTabbar")
 		{
 		}
 
@@ -99,7 +99,7 @@ namespace flame
 		cEventReceiver* event_receiver;
 
 		cDockerPages() :
-			Component("DockerPages")
+			Component("cDockerPages")
 		{
 		}
 

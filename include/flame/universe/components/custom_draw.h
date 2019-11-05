@@ -16,7 +16,7 @@ namespace flame
 		cElement* element;
 
 		cCustomDraw() :
-			Component("CustomDraw")
+			Component("cCustomDraw")
 		{
 		}
 
