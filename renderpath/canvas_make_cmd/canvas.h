@@ -4,11 +4,10 @@
 
 namespace flame
 {
-	struct Atlas;
-
 	namespace graphics
 	{
 		struct Imageview;
+		struct Atlas;
 
 		struct Canvas : Object
 		{

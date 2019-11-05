@@ -71,6 +71,16 @@ namespace flame
 			SamplerPrivate(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			~SamplerPrivate();
 		};
+
+		struct AtlasPrivate : Atlas
+		{
+			Image* image;
+			Imageview* imageview;
+			std::vector<Region> regions;
+
+			AtlasPrivate(Device* d, const std::wstring& filename, const std::wstring& atlas_filename);
+			~AtlasPrivate();
+		};
 	}
 }
 

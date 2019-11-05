@@ -64,32 +64,4 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS void pack_atlas(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border);
-
-	struct Atlas
-	{
-		struct Region
-		{
-			std::wstring filename;
-			Vec2i pos;
-			Vec2i size;
-			Vec2f uv0;
-			Vec2f uv1;
-		};
-
-		FLAME_FOUNDATION_EXPORTS Bitmap* bitmap() const;
-		FLAME_FOUNDATION_EXPORTS const std::vector<Region>& regions() const;
-
-		int find_region(const std::wstring& filename) const
-		{
-			for (auto i = 0; i < regions().size(); i++)
-			{
-				if (regions()[i].filename == filename)
-					return i;
-			}
-			return -1;
-		}
-
-		FLAME_FOUNDATION_EXPORTS static Atlas* load(const std::wstring& filename /* the image filename, not the atlas */);
-		FLAME_FOUNDATION_EXPORTS static void destroy(Atlas* a);
-	};
 }

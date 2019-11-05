@@ -484,8 +484,8 @@ int main(int argc, char **args)
 
 	auto font_atlas_joystix = (FontAtlas*)w->find_object(cH("FontAtlas"), 0);
 
-	auto atlas_main = Atlas::load(L"../game/tetris/release/main.png");
-	const auto atlas_id = app.canvas->set_image(-1, Imageview::create(Image::create_from_bitmap(app.d, atlas_main->bitmap())), FilterNearest, atlas_main);
+	auto atlas_main = Atlas::load(app.d, L"../game/tetris/release/main.png");
+	const auto atlas_id = app.canvas->set_image(-1, atlas_main->imageview(), atlas_main->border ? FilterLinear : FilterNearest, atlas_main);
 
 	auto root = w->root();
 	{

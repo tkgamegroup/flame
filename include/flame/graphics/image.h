@@ -87,6 +87,36 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Sampler* s);
 		};
+
+		struct Atlas
+		{
+			bool border;
+
+			struct Region
+			{
+				std::wstring filename;
+				Vec2i pos;
+				Vec2i size;
+				Vec2f uv0;
+				Vec2f uv1;
+			};
+
+			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
+			FLAME_GRAPHICS_EXPORTS const std::vector<Region>& regions() const;
+
+			int find_region(const std::wstring& filename) const
+			{
+				for (auto i = 0; i < regions().size(); i++)
+				{
+					if (regions()[i].filename == filename)
+						return i;
+				}
+				return -1;
+			}
+
+			FLAME_GRAPHICS_EXPORTS static Atlas* load(Device* d, const std::wstring& filename /* the image filename, not the atlas */);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Atlas* a);
+		};
 	}
 }
 

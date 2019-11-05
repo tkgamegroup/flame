@@ -1,4 +1,5 @@
 #include <flame/foundation/bitmap.h>
+#include <flame/foundation/serialize.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"
@@ -736,6 +737,77 @@ namespace flame
 		void Sampler::destroy(Sampler *s)
 		{
 			delete (SamplerPrivate*)s;
+		}
+
+		AtlasPrivate::~AtlasPrivate()
+		{
+			Imageview::destroy(imageview);
+			Image::destroy(image);
+		}
+
+		AtlasPrivate::AtlasPrivate(Device* d, const std::wstring& filename, const std::wstring& atlas_filename)
+		{
+			image = Image::create_from_file(d, filename);
+			imageview = Imageview::create(image);
+
+			auto w = (float)image->size.x();
+			auto h = (float)image->size.y();
+
+			std::ifstream file(atlas_filename);
+
+			std::string line;
+			std::getline(file, line);
+			border = line == "1";
+
+			while (!file.eof())
+			{
+				std::string t;
+				Region region;
+
+				std::getline(file, line);
+				if (line.empty())
+					break;
+				std::stringstream ss(line);
+				ss >> t;
+				region.filename = s2w(t);
+				ss >> t;
+				auto v = stou4(t.c_str());
+				region.pos = Vec2i(v.x(), v.y());
+				region.size = Vec2i(v.z(), v.w());
+				region.uv0.x() = region.pos.x() / w;
+				region.uv0.y() = region.pos.y() / h;
+				region.uv1.x() = (region.pos.x() + region.size.x()) / w;
+				region.uv1.y() = (region.pos.y() + region.size.y()) / h;
+
+				regions.push_back(region);
+			}
+			file.close();
+		}
+
+		Imageview* Atlas::imageview() const
+		{
+			return ((AtlasPrivate*)this)->imageview;
+		}
+
+		const std::vector<Atlas::Region>& Atlas::regions() const
+		{
+			return ((AtlasPrivate*)this)->regions;
+		}
+
+		Atlas* Atlas::load(Device* d, const std::wstring& filename)
+		{
+			auto atlas_filename = filename + L".atlas";
+			if (!std::filesystem::exists(filename) || !std::filesystem::exists(atlas_filename))
+				return nullptr;
+
+			auto atlas = new AtlasPrivate(d, filename, atlas_filename);
+
+			return atlas;
+		}
+
+		void Atlas::destroy(Atlas* a)
+		{
+			delete (AtlasPrivate*)a;
 		}
 	}
 }

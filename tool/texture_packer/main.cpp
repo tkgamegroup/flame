@@ -24,7 +24,7 @@ int main(int argc, char **args)
 			inputs.push_back(s2w(args[i]));
 	}
 
-	Atlas::pack(inputs, output, border);
+	pack_atlas(inputs, output, border);
 
 	return 0;
 }
