@@ -63,6 +63,11 @@ namespace flame
 		return ret;
 	}
 
+	void set_curr_path(const std::wstring& p)
+	{
+		SetCurrentDirectoryW(p.c_str());
+	}
+
 	void com_init()
 	{
 		static bool inited = false;

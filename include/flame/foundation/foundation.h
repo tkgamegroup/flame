@@ -1091,6 +1091,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_curr_path();
 	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_app_path();
+	FLAME_FOUNDATION_EXPORTS void set_curr_path(const std::wstring& p);
 	FLAME_FOUNDATION_EXPORTS void com_init();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever

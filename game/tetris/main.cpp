@@ -484,7 +484,7 @@ int main(int argc, char **args)
 
 	auto font_atlas_joystix = (FontAtlas*)w->find_object(cH("FontAtlas"), 0);
 
-	auto atlas_main = (Atlas*)w->find_object(cH("Atlas"), cH("../game/tetris/release/main.png"));
+	auto atlas_main = (Atlas*)w->find_object(cH("Atlas"), cH("release/main.png"));
 
 	auto root = w->root();
 	{

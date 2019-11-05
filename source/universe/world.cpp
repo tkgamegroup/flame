@@ -109,6 +109,9 @@ namespace flame
 		auto w = new WorldPrivate(u);
 		w->filename = filename;
 
+		auto last_curr_path = get_curr_path();
+		set_curr_path(std::filesystem::path(filename).parent_path().wstring());
+
 		auto n_os = file->find_node("objects");
 		if (n_os)
 		{
@@ -149,6 +152,9 @@ namespace flame
 				free(dummy);
 			}
 		}
+
+		set_curr_path(*last_curr_path.p);
+		delete_mail(last_curr_path);
 
 		return w;
 	}

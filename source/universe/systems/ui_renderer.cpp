@@ -27,7 +27,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
-			auto a = graphics::Atlas::load(graphics::Device::default_one(), std::filesystem::path(w->filename()).parent_path().wstring() + L"/" + filename$);
+			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename$);
 			auto canvas = (graphics::Canvas*)w->find_object(cH("Canvas"), 0);
 			if (canvas)
 				canvas->add_atlas(a);
@@ -59,9 +59,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
 			auto fonts = string_split(fonts$, L';');
-			auto world_dir = std::filesystem::path(w->filename()).parent_path().wstring() + L"/";
-			for (auto& f : fonts)
-				f = world_dir + f;
 			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts);
 			auto canvas = (graphics::Canvas*)w->find_object(cH("Canvas"), 0);
 			if (canvas)
