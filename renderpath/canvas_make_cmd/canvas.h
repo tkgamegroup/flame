@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 
 namespace flame
@@ -20,9 +21,16 @@ namespace flame
 			virtual Imageview* get_image(uint index) = 0;
 			virtual uint set_image(int index /* -1 to find an empty slot */, Imageview* v, Filter filter = FilterLinear, Atlas* atlas = nullptr) = 0;
 
+			void add_atlas(Atlas* a)
+			{
+				a->canvas_ = this;
+				a->canvas_slot_ = set_image(-1, a->imageview(), a->border ? FilterLinear : FilterNearest, a);
+			}
+
 			void add_font(FontAtlas* f)
 			{
-				f->index = set_image(-1, f->imageview(), f->draw_type == FontDrawSdf ? FilterLinear : FilterNearest);
+				f->canvas_ = this;
+				f->canvas_slot_ = set_image(-1, f->imageview(), f->draw_type == FontDrawSdf ? FilterLinear : FilterNearest);
 			}
 
 			virtual void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) = 0;

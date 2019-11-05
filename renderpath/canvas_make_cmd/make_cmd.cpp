@@ -362,7 +362,7 @@ namespace flame
 		{
 			auto pos = Vec2f(Vec2i(_pos));
 
-			begin_draw((CmdType)f->draw_type, f->index);
+			begin_draw((CmdType)f->draw_type, f->canvas_slot_);
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 

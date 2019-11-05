@@ -66,15 +66,15 @@ namespace flame
 
 			FontAtlasPrivate(Device* d, FontDrawType$ _draw_type, const std::vector<std::wstring>& _fonts)
 			{
-				index = 0;
-
 				for (auto _filename : _fonts)
 				{
 					Font* f = nullptr;
 					if (!std::filesystem::exists(_filename))
 						continue;
+
+					id = hash_update(id, H(_filename.c_str()));
+
 					auto filename = std::filesystem::canonical(_filename).wstring();
-					id = hash_update(id, H(filename.c_str()));
 					for (auto& _f : loaded_fonts)
 					{
 						if (_f->filename == filename)

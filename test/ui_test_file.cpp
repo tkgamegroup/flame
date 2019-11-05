@@ -158,7 +158,7 @@ int main(int argc, char** args)
 	auto e_btn_create_sample_scene = create_standard_button(app.font_atlas_pixel, 1.f, L"Create Sample Scene");
 	e_buttons->add_child(e_btn_create_sample_scene);
 	{
-		e_btn_create_sample_scene->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_btn_create_sample_scene->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
@@ -209,7 +209,7 @@ int main(int argc, char** args)
 	auto e_btn_clear_scene = create_standard_button(app.font_atlas_pixel, 1.f, L"Clear Scene");
 	e_buttons->add_child(e_btn_clear_scene);
 	{
-		e_btn_clear_scene->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_btn_clear_scene->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
@@ -225,7 +225,7 @@ int main(int argc, char** args)
 	auto e_btn_save_scene = create_standard_button(app.font_atlas_pixel, 1.f, L"Save Scene");
 	e_buttons->add_child(e_btn_save_scene);
 	{
-		e_btn_save_scene->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_btn_save_scene->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
@@ -242,7 +242,7 @@ int main(int argc, char** args)
 	auto e_btn_load_scene = create_standard_button(app.font_atlas_pixel, 1.f, L"Load Scene");
 	e_buttons->add_child(e_btn_load_scene);
 	{
-		e_btn_load_scene->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_btn_load_scene->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{

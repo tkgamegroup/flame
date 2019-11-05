@@ -20,16 +20,16 @@
 				<children>
 					<entity name="unnamed" visibility="1">
 						<components>
-							<cElement>
-								<pos v="12.00;8.00" />
-							</cElement>
 							<cText>
-								<font_atlas_id v="1694471046" />
+								<font_atlas_id v="4169055772" />
 								<color v="0;0;0;255" />
 								<auto_width v="1" />
 								<auto_height v="1" />
 								<text v="Hello World!" />
 							</cText>
+							<cElement>
+								<pos v="12.00;8.00" />
+							</cElement>
 						</components>
 					</entity>
 				</children>

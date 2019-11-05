@@ -476,7 +476,7 @@ int main(int argc, char **args)
 	app.u->add_object(app.w);
 	app.u->add_object(app.canvas);
 
-	auto w = World::create_from_file(app.u, app.dbs, L"../game/tetris/main.world");
+	auto w = World::create_from_file(app.u, app.dbs, L"../game/tetris/world");
 	w->add_system(sLayoutManagement::create());
 	app.event_dispatcher = sEventDispatcher::create();
 	w->add_system(app.event_dispatcher);
@@ -484,8 +484,7 @@ int main(int argc, char **args)
 
 	auto font_atlas_joystix = (FontAtlas*)w->find_object(cH("FontAtlas"), 0);
 
-	auto atlas_main = Atlas::load(app.d, L"../game/tetris/release/main.png");
-	const auto atlas_id = app.canvas->set_image(-1, atlas_main->imageview(), atlas_main->border ? FilterLinear : FilterNearest, atlas_main);
+	auto atlas_main = (Atlas*)w->find_object(cH("Atlas"), cH("../game/tetris/release/main.png"));
 
 	auto root = w->root();
 	{
@@ -530,7 +529,7 @@ int main(int argc, char **args)
 			e_image->add_component(c_element);
 
 			auto c_image = cImage::create();
-			c_image->id = (atlas_id << 16) + brick_idx;
+			c_image->id = (atlas_main->canvas_slot_ << 16) + brick_idx;
 			e_image->add_component(c_image);
 		}
 	}
@@ -547,7 +546,7 @@ int main(int argc, char **args)
 			e_image->add_component(c_element);
 
 			auto c_image = cImage::create();
-			c_image->id = (atlas_id << 16) + brick_idx;
+			c_image->id = (atlas_main->canvas_slot_ << 16) + brick_idx;
 			e_image->add_component(c_image);
 		}
 	}
@@ -568,7 +567,7 @@ int main(int argc, char **args)
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
-				c_image->id = (atlas_id << 16) + block_idx;
+				c_image->id = (atlas_main->canvas_slot_ << 16) + block_idx;
 				e_image->add_component(c_image);
 			}
 		}
@@ -595,7 +594,7 @@ int main(int argc, char **args)
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();
-				c_image->id = (atlas_id << 16) + block_idx;
+				c_image->id = (atlas_main->canvas_slot_ << 16) + block_idx;
 				e_image->add_component(c_image);
 			}
 		}

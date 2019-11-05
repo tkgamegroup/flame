@@ -747,6 +747,8 @@ namespace flame
 
 		AtlasPrivate::AtlasPrivate(Device* d, const std::wstring& filename, const std::wstring& atlas_filename)
 		{
+			id = H(filename.c_str());
+
 			image = Image::create_from_file(d, filename);
 			imageview = Imageview::create(image);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 #include <vector>
@@ -88,9 +89,12 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Sampler* s);
 		};
 
-		struct Atlas
+		struct Atlas : Object
 		{
 			bool border;
+
+			void* canvas_;
+			uint canvas_slot_;
 
 			struct Region
 			{
@@ -100,6 +104,11 @@ namespace flame
 				Vec2f uv0;
 				Vec2f uv1;
 			};
+
+			Atlas() :
+				Object("Atlas")
+			{
+			}
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 			FLAME_GRAPHICS_EXPORTS const std::vector<Region>& regions() const;

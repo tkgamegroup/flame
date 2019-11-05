@@ -15,7 +15,31 @@ namespace flame
 {
 	struct Serializer_Atlas$
 	{
+		std::wstring filename$;
 
+		FLAME_UNIVERSE_EXPORTS Serializer_Atlas$()
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS ~Serializer_Atlas$()
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
+		{
+			auto a = graphics::Atlas::load(graphics::Device::default_one(), std::filesystem::path(w->filename()).parent_path().wstring() + L"/" + filename$);
+			auto canvas = (graphics::Canvas*)w->find_object(cH("Canvas"), 0);
+			if (canvas)
+				canvas->add_atlas(a);
+			return a;
+		}
+
+		FLAME_UNIVERSE_EXPORTS void destroy$(Object* o)
+		{
+			auto a = (graphics::Atlas*)o;
+			((graphics::Canvas*)a->canvas_)->set_image(a->canvas_slot_, nullptr);
+			graphics::Atlas::destroy(a);
+		}
 	};
 
 	struct Serializer_FontAtlas$
@@ -47,7 +71,9 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void destroy$(Object* o)
 		{
-			graphics::FontAtlas::destroy((graphics::FontAtlas*)o);
+			auto f = (graphics::FontAtlas*)o;
+			((graphics::Canvas*)f->canvas_)->set_image(f->canvas_slot_, nullptr);
+			graphics::FontAtlas::destroy(f);
 		}
 	};
 
