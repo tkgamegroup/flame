@@ -208,13 +208,13 @@ int main(int argc, char** args)
 	auto e_button = create_standard_button(app.font_atlas_pixel, 1.f, L"Click Me!");
 	e_layout_left->add_child(e_button);
 	{
-		e_button->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		e_button->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_clicked(action, key))
 			{
 				(*(cText**)c)->set_text(L"Click Me! :)");
 				printf("thank you for clicking me\n");
 			}
-		}, new_mail_p(e_button->get_component(Text)));
+		}, new_mail_p(e_button->get_component(cText)));
 	}
 
 	auto e_checkbox = wrap_standard_text(create_standard_checkbox(), false, app.font_atlas_pixel, 1.f, L"Checkbox");
@@ -283,7 +283,7 @@ int main(int argc, char** args)
 		auto e_container = wrap_standard_scrollbar(e_list, ScrollbarVertical, false, 1.f);
 		e_layout_right->add_child(e_container);
 		{
-			auto c_element = e_container->get_component(Element);
+			auto c_element = e_container->get_component(cElement);
 			c_element->size_.x() = 200.f;
 			c_element->size_.y() = 100.f;
 			c_element->inner_padding_ = Vec4f(4.f);
@@ -302,7 +302,7 @@ int main(int argc, char** args)
 			};
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 			e_popup_menu->add_child(e_item);
-			e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					printf("%s!\n", *(char**)c);
@@ -322,7 +322,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Add %s!\n", *(char**)c);
@@ -345,7 +345,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Remove %s!\n", *(char**)c);
@@ -389,7 +389,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -414,7 +414,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -435,7 +435,7 @@ int main(int argc, char** args)
 				};
 				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
 				e_menu->add_child(e_item);
-				e_item->get_component(EventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
@@ -454,7 +454,7 @@ int main(int argc, char** args)
 	auto e_tree = create_standard_tree(false);
 	e_layout_right->add_child(e_tree);
 	{
-		auto c_element = e_tree->get_component(Element);
+		auto c_element = e_tree->get_component(cElement);
 		c_element->inner_padding_ = Vec4f(4.f);
 		c_element->frame_thickness = 2.f;
 	}
@@ -480,7 +480,7 @@ int main(int argc, char** args)
 		auto e_container = get_docker_container_model()->copy();
 		root->add_child(e_container);
 		{
-			auto c_element = e_container->get_component(Element);
+			auto c_element = e_container->get_component(cElement);
 			c_element->pos_.x() = 414.f;
 			c_element->pos_.y() = 297.f;
 			c_element->size_.x() = 221.f;
@@ -516,7 +516,7 @@ int main(int argc, char** args)
 		auto e_container = get_docker_container_model()->copy();
 		root->add_child(e_container);
 		{
-			auto c_element = e_container->get_component(Element);
+			auto c_element = e_container->get_component(cElement);
 			c_element->pos_.x() = 667.f;
 			c_element->pos_.y() = 302.f;
 			c_element->size_.x() = 403.f;
@@ -531,7 +531,7 @@ int main(int argc, char** args)
 				auto e_docker = get_docker_model()->copy();
 				e_docker_layout->add_child(e_docker, 0);
 				{
-					auto c_aligner = e_docker->get_component(Aligner);
+					auto c_aligner = e_docker->get_component(cAligner);
 					c_aligner->x_align_ = AlignxFree;
 					c_aligner->y_align_ = AlignyFree;
 					c_aligner->using_padding_ = false;
@@ -565,7 +565,7 @@ int main(int argc, char** args)
 				auto e_docker = get_docker_model()->copy();
 				e_docker_layout->add_child(e_docker, 2);
 				{
-					auto c_aligner = e_docker->get_component(Aligner);
+					auto c_aligner = e_docker->get_component(cAligner);
 					c_aligner->x_align_ = AlignxFree;
 					c_aligner->y_align_ = AlignyFree;
 					c_aligner->using_padding_ = false;

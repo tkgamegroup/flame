@@ -2,34 +2,34 @@
 <prefab>
 	<entity name="unnamed" visibility="1">
 		<components>
-			<Element>
+			<cElement>
 				<pos v="50.00;50.00" />
 				<size v="400.00;400.00" />
 				<color v="255;0;0;255" />
-			</Element>
+			</cElement>
 		</components>
 		<children>
 			<entity name="unnamed" visibility="1">
 				<components>
-					<Element>
+					<cElement>
 						<pos v="50.00;50.00" />
 						<size v="300.00;300.00" />
 						<color v="255;255;0;255" />
-					</Element>
+					</cElement>
 				</components>
 				<children>
 					<entity name="unnamed" visibility="1">
 						<components>
-							<Element>
+							<cElement>
 								<pos v="12.00;8.00" />
-							</Element>
-							<Text>
+							</cElement>
+							<cText>
 								<font_atlas_id v="1694471046" />
 								<color v="0;0;0;255" />
 								<auto_width v="1" />
 								<auto_height v="1" />
 								<text v="Hello World!" />
-							</Text>
+							</cText>
 						</components>
 					</entity>
 				</children>
