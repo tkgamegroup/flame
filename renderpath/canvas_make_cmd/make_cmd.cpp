@@ -137,6 +137,7 @@ namespace flame
 
 		void set_clear_color(const Vec4c& col) override;
 		Imageview* get_image(uint index) override;
+		Atlas* get_atlas(uint index) override;
 		uint set_image(int index, Imageview* v, Filter filter, Atlas* atlas) override;
 
 		void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness) override;
@@ -580,6 +581,11 @@ namespace flame
 	Imageview* CanvasPrivate::get_image(uint index)
 	{
 		return thiz->imgs[index].first;
+	}
+
+	Atlas* CanvasPrivate::get_atlas(uint index)
+	{
+		return thiz->imgs[index].second;
 	}
 
 	uint CanvasPrivate::set_image(int index, Imageview* v, Filter filter, Atlas* atlas)

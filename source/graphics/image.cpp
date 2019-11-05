@@ -772,6 +772,7 @@ namespace flame
 				std::stringstream ss(line);
 				ss >> t;
 				region.filename = s2w(t);
+				region.id = H(t.c_str());
 				ss >> t;
 				auto v = stou4(t.c_str());
 				region.pos = Vec2i(v.x(), v.y());

@@ -486,6 +486,8 @@ int main(int argc, char **args)
 
 	auto atlas_main = (Atlas*)w->find_object(cH("Atlas"), cH("release/main.png"));
 
+	auto main_scene = Entity::create_from_file(w, app.dbs, L"../game/tetris/main.prefab");
+
 	auto root = w->root();
 	{
 		app.c_element_root = cElement::create();
@@ -493,6 +495,8 @@ int main(int argc, char **args)
 
 		root->add_component(cLayout::create(LayoutFree));
 	}
+
+	root->add_child(main_scene);
 
 	auto e_fps = Entity::create();
 	root->add_child(e_fps);
@@ -514,42 +518,8 @@ int main(int argc, char **args)
 	app.level = 0;
 	app.lines = 0;
 
-	auto brick_idx = atlas_main->find_region(L"brick.png");
-	auto block_idx = atlas_main->find_region(L"block.png");
-
-	for (auto i = 0; i < block_cy; i++)
-	{
-		auto e_image = Entity::create();
-		root->add_child(e_image);
-		{
-			auto c_element = cElement::create();
-			c_element->pos_.x() = 0;
-			c_element->pos_.y() = i * block_size;
-			c_element->size_ = block_size;
-			e_image->add_component(c_element);
-
-			auto c_image = cImage::create();
-			c_image->id = (atlas_main->canvas_slot_ << 16) + brick_idx;
-			e_image->add_component(c_image);
-		}
-	}
-
-	for (auto i = 0; i < block_cy; i++)
-	{
-		auto e_image = Entity::create();
-		root->add_child(e_image);
-		{
-			auto c_element = cElement::create();
-			c_element->pos_.x() = (block_cx + 1) * block_size;
-			c_element->pos_.y() = i * block_size;
-			c_element->size_ = block_size;
-			e_image->add_component(c_element);
-
-			auto c_image = cImage::create();
-			c_image->id = (atlas_main->canvas_slot_ << 16) + brick_idx;
-			e_image->add_component(c_image);
-		}
-	}
+	auto brick_idx = atlas_main->find_region(cH("../asset/brick.png"));
+	auto block_idx = atlas_main->find_region(cH("../asset/block.png"));
 
 	for (auto i = 0; i < block_cy; i++)
 	{
@@ -601,19 +571,6 @@ int main(int argc, char **args)
 	}
 	app.piece.reset();
 
-	auto e_score_title = Entity::create();
-	root->add_child(e_score_title);
-	{
-		auto c_element = cElement::create();
-		c_element->pos_.x() = 13 * block_size;
-		c_element->pos_.y() = 1 * block_size;
-		e_score_title->add_component(c_element);
-
-		auto c_text = cText::create(font_atlas_joystix);
-		c_text->set_text(L"SCORE");
-		e_score_title->add_component(c_text);
-	}
-
 	auto e_score = Entity::create();
 	root->add_child(e_score);
 	{
@@ -626,19 +583,6 @@ int main(int argc, char **args)
 		e_score->add_component(app.text_score);
 	}
 
-	auto e_level_title = Entity::create();
-	root->add_child(e_level_title);
-	{
-		auto c_element = cElement::create();
-		c_element->pos_.x() = 13 * block_size;
-		c_element->pos_.y() = 5 * block_size;
-		e_level_title->add_component(c_element);
-
-		auto c_text = cText::create(font_atlas_joystix);
-		c_text->set_text(L"LEVEL");
-		e_level_title->add_component(c_text);
-	}
-
 	auto e_level = Entity::create();
 	root->add_child(e_level);
 	{
@@ -649,19 +593,6 @@ int main(int argc, char **args)
 
 		app.text_level = cText::create(font_atlas_joystix);
 		e_level->add_component(app.text_level);
-	}
-
-	auto e_lines_title = Entity::create();
-	root->add_child(e_lines_title);
-	{
-		auto c_element = cElement::create();
-		c_element->pos_.x() = 13 * block_size;
-		c_element->pos_.y() = 9 * block_size;
-		e_lines_title->add_component(c_element);
-
-		auto c_text = cText::create(font_atlas_joystix);
-		c_text->set_text(L"LINES");
-		e_lines_title->add_component(c_text);
 	}
 
 	auto e_lines = Entity::create();

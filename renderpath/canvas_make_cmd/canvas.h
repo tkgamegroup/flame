@@ -19,6 +19,7 @@ namespace flame
 
 			virtual void set_clear_color(const Vec4c& col) = 0;
 			virtual Imageview* get_image(uint index) = 0;
+			virtual Atlas* get_atlas(uint index) = 0;
 			virtual uint set_image(int index /* -1 to find an empty slot */, Imageview* v, Filter filter = FilterLinear, Atlas* atlas = nullptr) = 0;
 
 			void add_atlas(Atlas* a)

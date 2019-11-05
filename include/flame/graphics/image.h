@@ -99,6 +99,7 @@ namespace flame
 			struct Region
 			{
 				std::wstring filename;
+				uint id;
 				Vec2i pos;
 				Vec2i size;
 				Vec2f uv0;
@@ -113,11 +114,11 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 			FLAME_GRAPHICS_EXPORTS const std::vector<Region>& regions() const;
 
-			int find_region(const std::wstring& filename) const
+			int find_region(uint id) const
 			{
 				for (auto i = 0; i < regions().size(); i++)
 				{
-					if (regions()[i].filename == filename)
+					if (regions()[i].id == id)
 						return i;
 				}
 				return -1;
