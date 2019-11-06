@@ -35,6 +35,8 @@ struct App
 
 	FontAtlas* font_atlas_pixel;
 
+	uint fps;
+
 	Universe* u;
 	World* w_m;
 	cElement* c_element_root;
@@ -53,7 +55,12 @@ struct App
 		if (sc)
 		{
 			c_element_root->set_size(Vec2f(w->size));
-			c_text_fps->set_text(std::to_wstring(looper().fps));
+			auto _fps = looper().fps;
+			if (_fps != fps)
+			{
+				fps = _fps;
+				c_text_fps->set_text(std::to_wstring(fps));
+			}
 			u->update();
 		}
 		canvas_bp->update();
@@ -89,6 +96,8 @@ int main(int argc, char** args)
 
 	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
 	app.canvas->add_font(app.font_atlas_pixel);
+
+	app.fps = 0;
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);

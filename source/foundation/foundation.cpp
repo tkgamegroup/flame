@@ -126,6 +126,17 @@ namespace flame
 		}
 	}
 
+	bool is_file_occupied(const std::wstring& filename)
+	{
+		auto file = CreateFileW(filename.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		if (GetLastError() == 0)
+		{
+			CloseHandle(file);
+			return false;
+		}
+		return true;
+	}
+
 	void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show)
 	{
 		SHELLEXECUTEINFOW info = {};

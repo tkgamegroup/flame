@@ -1101,6 +1101,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
+	FLAME_FOUNDATION_EXPORTS bool is_file_occupied(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS Mail<std::string> exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
 	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const std::wstring& filename, const std::wstring& parameters);

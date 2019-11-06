@@ -594,14 +594,17 @@ struct cBPEditor : Component
 		}, new_mail(&capture));
 	}
 
-	void remove_node(BP::Node* n)
+	bool remove_node(BP::Node* n)
 	{
+		if (selected_.n->id() == "test_dst" || selected_.n->id() == "test_cbs")
+			return false;
 		looper().add_delay_event([](void* c) {
 			auto n = *(BP::Node**)c;
 			auto e = (Entity*)n->user_data;
 			e->parent()->remove_child(e);
 			n->parent()->remove_node(n);
 		}, new_mail_p(n));
+		return true;
 	}
 
 	void duplicate_selected()
@@ -666,10 +669,8 @@ struct cBPEditor : Component
 		case SelPackage:
 			break;
 		case SelNode:
-			if (selected_.n->id() == "test_dst" || selected_.n->id() == "test_cbs")
+			if (!remove_node(selected_.n))
 				add_notification(L"Cannot Remove Test Nodes");
-			else
-				remove_node(selected_.n);
 			break;
 		case SelLink:
 			selected_.l->link_to(nullptr);
@@ -2640,13 +2641,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				auto n = bp->find_node(w2s(tokens[2]));
 				if (n)
 				{
-					if (n->id() == "test_dst" || n->id() == "test_cbs")
+					if (!editor->remove_node(n))
 						printf("cannot remove test nodes\n");
 					else
-					{
-						editor->remove_node(n);
 						console->print(L"node removed: " + tokens[2]);
-					}
 				}
 				else
 					console->print(L"node not found");

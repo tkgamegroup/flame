@@ -54,6 +54,8 @@ void App::create()
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();
 
+	app.fps = 0;
+
 	app.u = Universe::create();
 	app.u->add_object(app.w);
 	app.u->add_object(app.canvas);
@@ -107,7 +109,12 @@ void App::run()
 	if (sc)
 	{
 		c_element_root->set_size(Vec2f(w->size));
-		c_text_fps->set_text(std::to_wstring(looper().fps));
+		auto _fps = looper().fps;
+		if (_fps != fps)
+		{
+			fps = _fps;
+			c_text_fps->set_text(std::to_wstring(fps));
+		}
 		u->update();
 	}
 	canvas_bp->update();

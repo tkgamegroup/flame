@@ -1208,8 +1208,6 @@ namespace flame
 		return bp;
 	}
 
-	static std::vector<std::filesystem::path> loaded_bps; // track locked pdbs
-
 	BP *BP::create_from_file(const std::wstring& filename, bool no_compile)
 	{
 		auto s_filename = w2s(filename);
@@ -1227,17 +1225,7 @@ namespace flame
 			return nullptr;
 		}
 
-		auto loaded_before = false;
-		for (auto& l : loaded_bps)
-		{
-			if (l == path)
-			{
-				loaded_before = true;
-				break;
-			}
-		}
-		loaded_bps.push_back(path);
-		if (!no_compile && !loaded_before) // delete pervious created random pdbs
+		if (!no_compile) // delete pervious created random pdbs
 		{
 			auto p = ppath / L"build/Debug";
 			if (std::filesystem::exists(p))
@@ -1248,7 +1236,7 @@ namespace flame
 					if (!std::filesystem::is_directory(it->status()))
 					{
 						auto ext = it->path().extension().wstring();
-						if (ext == L".pdb")
+						if (ext == L".pdb" && !is_file_occupied(it->path().wstring()))
 							pdbs.push_back(it->path());
 					}
 				}
@@ -1275,26 +1263,26 @@ namespace flame
 			module_descs.push_back(module);
 		}
 
-		struct ImportDesc
+		struct PackageDesc
 		{
 			std::wstring filename;
 			std::string id;
 			Vec2f pos;
 		};
-		std::vector<ImportDesc> import_descs; 
+		std::vector<PackageDesc> package_descs; 
 
 		auto n_packages = file->find_node("packages");
 		if (n_packages)
 		{
-			for (auto i_i = 0; i_i < n_packages->node_count(); i_i++)
+			for (auto i_p = 0; i_p < n_packages->node_count(); i_p++)
 			{
-				ImportDesc import;
+				PackageDesc package;
 
-				auto n_import = n_packages->node(i_i);
-				import.filename = s2w(n_import->find_attr("filename")->value());
-				import.id = n_import->find_attr("id")->value();
-				import.pos = stof2(n_import->find_attr("pos")->value().c_str());
-				import_descs.push_back(import);
+				auto n_package = n_packages->node(i_p);
+				package.filename = s2w(n_package->find_attr("filename")->value());
+				package.id = n_package->find_attr("id")->value();
+				package.pos = stof2(n_package->find_attr("pos")->value().c_str());
+				package_descs.push_back(package);
 			}
 		}
 
@@ -1381,11 +1369,11 @@ namespace flame
 				m->pos = m_d.pos;
 		}
 
-		for (auto& i_d : import_descs)
+		for (auto& p_d : package_descs)
 		{
-			auto i = bp->add_package(i_d.filename, i_d.id);
-			if (i)
-				i->pos = i_d.pos;
+			auto p = bp->add_package(p_d.filename, p_d.id);
+			if (p)
+				p->pos = p_d.pos;
 		}
 
 		if (!no_compile)
