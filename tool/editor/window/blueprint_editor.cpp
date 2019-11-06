@@ -466,6 +466,46 @@ struct cBPEditor : Component
 	Entity* create_node_entity(BP::Node* n);
 	Entity* create_package_entity(BP::Package* p);
 
+	void link_test_nodes()
+	{
+		auto m = bp->find_module(L"editor.exe");
+		if (!m)
+		{
+			m = bp->add_module(L"editor.exe");
+			m->pos = Vec2f(-200.f, 0.f);
+			m->dont_save = true;
+		}
+		auto n_dst = bp->find_node("test_dst");
+		if (!n_dst)
+		{
+			n_dst = bp->add_node(cH("DstImage"), "test_dst");
+			n_dst->pos = Vec2f(0.f, -200.f);
+			n_dst->dont_save = true;
+		}
+		{
+			auto s = bp->find_input("*.rt_dst.type");
+			if (s)
+				s->link_to(n_dst->find_output("type"));
+		}
+		{
+			auto s = bp->find_input("*.rt_dst.v");
+			if (s)
+				s->link_to(n_dst->find_output("view"));
+		}
+		auto n_cbs = bp->find_node("test_cbs");
+		if (!n_cbs)
+		{
+			n_cbs = bp->add_node(cH("CmdBufs"), "test_cbs");
+			n_cbs->pos = Vec2f(200.f, -200.f);
+			n_cbs->dont_save = true;
+		}
+		{
+			auto s = bp->find_input("*.make_cmd.cbs");
+			if (s)
+				s->link_to(n_cbs->find_output("out"));
+		}
+	}
+
 	void load(const std::wstring& _filename, bool no_compile)
 	{
 		filename = _filename;
@@ -473,24 +513,7 @@ struct cBPEditor : Component
 		if (bp)
 			BP::destroy(bp);
 		bp = BP::create_from_file(filename, no_compile);
-		{
-			auto m = bp->add_module(L"editor.exe");
-			m->pos = Vec2f(-200.f, 0.f);
-			m->dont_save = true;
-			auto n_dst = bp->add_node(cH("DstImage"), "test_dst");
-			n_dst->pos = Vec2f(0.f, -200.f);
-			n_dst->dont_save = true;
-			bp->find_input("*.rt_dst.type")->link_to(n_dst->find_output("type"));
-			bp->find_input("*.rt_dst.v")->link_to(n_dst->find_output("view"));
-			auto n_cbs = bp->add_node(cH("CmdBufs"), "test_cbs");
-			n_cbs->pos = Vec2f(200.f, -200.f);
-			n_cbs->dont_save = true;
-			{
-				auto s = bp->find_input("*.make_cmd.cbs");
-				if (s)
-					s->link_to(n_cbs->find_output("out"));
-			}
-		}
+		link_test_nodes();
 
 		refresh_add_node_menu();
 
@@ -517,6 +540,7 @@ struct cBPEditor : Component
 	{
 		auto n = bp->add_node(H(type_name.c_str()), id);
 		n->pos = pos;
+		link_test_nodes();
 		create_node_entity(n);
 		return n;
 	}
@@ -642,7 +666,10 @@ struct cBPEditor : Component
 		case SelPackage:
 			break;
 		case SelNode:
-			remove_node(selected_.n);
+			if (selected_.n->id() == "test_dst" || selected_.n->id() == "test_cbs")
+				add_notification(L"Cannot Remove Test Nodes");
+			else
+				remove_node(selected_.n);
 			break;
 		case SelLink:
 			selected_.l->link_to(nullptr);
@@ -2613,8 +2640,13 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				auto n = bp->find_node(w2s(tokens[2]));
 				if (n)
 				{
-					editor->remove_node(n);
-					console->print(L"node removed: " + tokens[2]);
+					if (n->id() == "test_dst" || n->id() == "test_cbs")
+						printf("cannot remove test nodes\n");
+					else
+					{
+						editor->remove_node(n);
+						console->print(L"node removed: " + tokens[2]);
+					}
 				}
 				else
 					console->print(L"node not found");

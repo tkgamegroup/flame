@@ -133,6 +133,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Module* self_module() const;
 		FLAME_FOUNDATION_EXPORTS Module* add_module(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS void remove_module(Module* m);
+		FLAME_FOUNDATION_EXPORTS Module* find_module(const std::wstring& filename) const;
 
 		FLAME_FOUNDATION_EXPORTS uint package_count() const;
 		FLAME_FOUNDATION_EXPORTS Package* package(uint idx) const;

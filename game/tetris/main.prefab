@@ -492,6 +492,7 @@
           </cElement>
           <cText>
             <font_atlas_id v="3901601329" />
+            <font_size v="32" />
             <color v="255;255;255;255" />
             <text v="SCORE" />
           </cText>
@@ -504,6 +505,7 @@
           </cElement>
           <cText>
             <font_atlas_id v="3901601329" />
+            <font_size v="32" />
             <color v="255;255;255;255" />
             <text v="LEVEL" />
           </cText>
@@ -516,6 +518,7 @@
           </cElement>
           <cText>
             <font_atlas_id v="3901601329" />
+            <font_size v="32" />
             <color v="255;255;255;255" />
             <text v="LINES" />
           </cText>

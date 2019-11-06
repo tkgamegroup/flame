@@ -109,14 +109,17 @@ namespace flame
 		};
 		std::vector<UpdateObject> update_list;
 
-		BPPrivate();
+		BPPrivate()
+		{
+			parent = nullptr;
+			time = 0.f;
+		}
 
 		Module* add_module(const std::wstring& filename);
 		void remove_module(Module* m);
 
 		PackagePrivate* add_package(const std::wstring& filename, const std::string& id);
 		void remove_package(PackagePrivate* i);
-		PackagePrivate* find_package(const std::string& id) const;
 		void collect_package_modules();
 
 		void collect_dbs();
@@ -126,14 +129,6 @@ namespace flame
 		NodePrivate* find_node(const std::string& id) const;
 		SlotPrivate* find_input(const std::string& address) const;
 		SlotPrivate* find_output(const std::string& address) const;
-
-		void add_input_export(SlotPrivate* s);
-		void remove_input_export(SlotPrivate* s);
-		int find_input_export(SlotPrivate* s) const;
-
-		void add_output_export(SlotPrivate* s);
-		void remove_output_export(SlotPrivate* s);
-		int find_output_export(SlotPrivate* s) const;
 
 		void clear();
 
@@ -423,12 +418,6 @@ namespace flame
 		cmf(p2f<MF_v_v>(update_addr), dummy);
 	}
 
-	BPPrivate::BPPrivate()
-	{
-		parent = nullptr;
-		time = 0.f;
-	}
-
 	BP::Module* BPPrivate::add_module(const std::wstring& filename)
 	{
 		if (filename == L"bp.dll")
@@ -549,16 +538,6 @@ namespace flame
 				return;
 			}
 		}
-	}
-
-	PackagePrivate* BPPrivate::find_package(const std::string& id) const
-	{
-		for (auto& i : packages)
-		{
-			if (i->id == id)
-				return i.get();
-		}
-		return nullptr;
 	}
 
 	void BPPrivate::collect_package_modules()
@@ -696,7 +675,7 @@ namespace flame
 		case 2:
 			if (sp[0] != "*")
 			{
-				auto p = find_package(sp[0]);
+				auto p = (PackagePrivate*)find_package(sp[0]);
 				if (p)
 					return p->bp->find_node(sp[1]);
 				return nullptr;
@@ -734,72 +713,6 @@ namespace flame
 		if (!n)
 			return nullptr;
 		return (SlotPrivate*)n->find_output(sp[1]);
-	}
-
-	void BPPrivate::add_input_export(SlotPrivate* s)
-	{
-		for (auto& e : input_exports)
-		{
-			if (e == s)
-				return;
-		}
-
-		input_exports.emplace_back(s);
-	}
-
-	void BPPrivate::remove_input_export(SlotPrivate* s)
-	{
-		for (auto it = input_exports.begin(); it != input_exports.end(); it++)
-		{
-			if ((*it) == s)
-			{
-				input_exports.erase(it);
-				return;
-			}
-		}
-	}
-
-	int BPPrivate::find_input_export(SlotPrivate* s) const
-	{
-		for (auto i = 0; i < input_exports.size(); i++)
-		{
-			if (input_exports[i] == s)
-				return i;
-		}
-		return -1;
-	}
-
-	void BPPrivate::add_output_export(SlotPrivate* s)
-	{
-		for (auto& e : output_exports)
-		{
-			if (e == s)
-				return;
-		}
-
-		output_exports.emplace_back(s);
-	}
-
-	void BPPrivate::remove_output_export(SlotPrivate* s)
-	{
-		for (auto it = output_exports.begin(); it != output_exports.end(); it++)
-		{
-			if ((*it) == s)
-			{
-				output_exports.erase(it);
-				return;
-			}
-		}
-	}
-
-	int BPPrivate::find_output_export(SlotPrivate* s) const
-	{
-		for (auto i = 0; i < output_exports.size(); i++)
-		{
-			if (output_exports[i] == s)
-				return i;
-		}
-		return -1;
 	}
 
 	void BPPrivate::clear()
@@ -1106,6 +1019,17 @@ namespace flame
 		((BPPrivate*)this)->remove_module(m);
 	}
 
+	BP::Module* BP::find_module(const std::wstring& filename) const
+	{
+		auto& modules = ((BPPrivate*)this)->modules;
+		for (auto& m : modules)
+		{
+			if (m->filename == filename)
+				return m.get();
+		}
+		return nullptr;
+	}
+
 	uint BP::package_count() const
 	{
 		return ((BPPrivate*)this)->packages.size();
@@ -1128,7 +1052,13 @@ namespace flame
 
 	BP::Package* BP::find_package(const std::string& id) const
 	{
-		return ((BPPrivate*)this)->find_package(id);
+		auto& packages = ((BPPrivate*)this)->packages;
+		for (auto& p : packages)
+		{
+			if (p->id == id)
+				return p.get();
+		}
+		return nullptr;
 	}
 
 	const std::vector<TypeinfoDatabase*> BP::dbs() const
@@ -1183,17 +1113,37 @@ namespace flame
 
 	void BP::add_input_export(Slot* s)
 	{
-		((BPPrivate*)this)->add_input_export((SlotPrivate*)s);
+		auto& input_exports = ((BPPrivate*)this)->input_exports;
+		for (auto& e : input_exports)
+		{
+			if (e == s)
+				return;
+		}
+		input_exports.emplace_back((SlotPrivate*)s);
 	}
 
 	void BP::remove_input_export(Slot* s)
 	{
-		((BPPrivate*)this)->remove_input_export((SlotPrivate*)s);
+		auto& input_exports = ((BPPrivate*)this)->input_exports;
+		for (auto it = input_exports.begin(); it != input_exports.end(); it++)
+		{
+			if ((*it) == s)
+			{
+				input_exports.erase(it);
+				return;
+			}
+		}
 	}
 
 	int BP::find_input_export(Slot* s) const
 	{
-		return ((BPPrivate*)this)->find_input_export((SlotPrivate*)s);
+		auto& input_exports = ((BPPrivate*)this)->input_exports;
+		for (auto i = 0; i < input_exports.size(); i++)
+		{
+			if (input_exports[i] == s)
+				return i;
+		}
+		return -1;
 	}
 
 	uint BP::output_export_count() const
@@ -1208,17 +1158,37 @@ namespace flame
 
 	void BP::add_output_export(Slot* s)
 	{
-		((BPPrivate*)this)->add_output_export((SlotPrivate*)s);
+		auto& output_exports = ((BPPrivate*)this)->output_exports;
+		for (auto& e : output_exports)
+		{
+			if (e == s)
+				return;
+		}
+		output_exports.emplace_back((SlotPrivate*)s);
 	}
 
 	void BP::remove_output_export(Slot* s)
 	{
-		((BPPrivate*)this)->remove_output_export((SlotPrivate*)s);
+		auto& output_exports = ((BPPrivate*)this)->output_exports;
+		for (auto it = output_exports.begin(); it != output_exports.end(); it++)
+		{
+			if ((*it) == s)
+			{
+				output_exports.erase(it);
+				return;
+			}
+		}
 	}
 
 	int BP::find_output_export(Slot* s) const
 	{
-		return ((BPPrivate*)this)->find_output_export((SlotPrivate*)s);
+		auto& output_exports = ((BPPrivate*)this)->output_exports;
+		for (auto i = 0; i < output_exports.size(); i++)
+		{
+			if (output_exports[i] == s)
+				return i;
+		}
+		return -1;
 	}
 
 	void BP::clear()

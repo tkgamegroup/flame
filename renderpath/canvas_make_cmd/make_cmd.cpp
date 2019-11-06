@@ -423,20 +423,27 @@ namespace flame
 				uv1 = mix(region.uv0, region.uv1, uv1);
 			}
 
-			vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(size.x(), size.y());		vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
+			if (false)
+			{
 
-			*idx_end = vtx_cnt + 0; idx_end++;
-			*idx_end = vtx_cnt + 2; idx_end++;
-			*idx_end = vtx_cnt + 1; idx_end++;
-			*idx_end = vtx_cnt + 0; idx_end++;
-			*idx_end = vtx_cnt + 3; idx_end++;
-			*idx_end = vtx_cnt + 2; idx_end++;
+			}
+			else
+			{
+				vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
+				vtx_end->pos = pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
+				vtx_end->pos = pos + Vec2f(size.x(), size.y());		vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
+				vtx_end->pos = pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
 
-			vtx_cnt += 4;
-			idx_cnt += 6;
+				*idx_end = vtx_cnt + 0; idx_end++;
+				*idx_end = vtx_cnt + 2; idx_end++;
+				*idx_end = vtx_cnt + 1; idx_end++;
+				*idx_end = vtx_cnt + 0; idx_end++;
+				*idx_end = vtx_cnt + 3; idx_end++;
+				*idx_end = vtx_cnt + 2; idx_end++;
+
+				vtx_cnt += 4;
+				idx_cnt += 6;
+			}
 		}
 
 		__declspec(dllexport) void update$()
