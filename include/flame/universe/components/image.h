@@ -14,6 +14,7 @@ namespace flame
 		Vec2f uv0;
 		Vec2f uv1;
 		Vec4c color;
+		bool repeat;
 
 		cImage() :
 			Component("cImage")

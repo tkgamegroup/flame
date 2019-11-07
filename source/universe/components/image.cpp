@@ -14,6 +14,7 @@ namespace flame
 		uv0 = Vec2f(0.f);
 		uv1 = Vec2f(1.f);
 		color = Vec4c(255);
+		repeat = false;
 	}
 
 	void cImagePrivate::on_component_added(Component* c)
@@ -27,7 +28,7 @@ namespace flame
 		auto padding = element->inner_padding_ * element->global_scale;
 		auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
 		auto size = element->global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]);
-		canvas->add_image(pos, size, id, uv0, uv1, alpha_mul(color, element->alpha));
+		canvas->add_image(pos, size, id, uv0, uv1, alpha_mul(color, element->alpha), repeat);
 	}
 
 	cImage* cImage::create()
@@ -37,19 +38,19 @@ namespace flame
 
 	struct Serializer_cImage$
 	{
-		uint atlas_id$;
-		uint region_id$;
+		ulonglong id$;
 		Vec2f uv0$;
 		Vec2f uv1$;
 		Vec4c color$;
+		bool repeat$;
 
 		FLAME_UNIVERSE_EXPORTS Serializer_cImage$()
 		{
-			atlas_id$ = 0;
-			region_id$ = 0;
+			id$ = 0;
 			uv0$ = Vec2f(0.f);
 			uv1$ = Vec2f(1.f);
 			color$ = Vec4c(255);
+			repeat$ = false;
 		}
 
 		FLAME_UNIVERSE_EXPORTS ~Serializer_cImage$()
@@ -60,11 +61,12 @@ namespace flame
 		{
 			auto c = new cImagePrivate();
 
-			auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), atlas_id$);
-			c->id = (atlas->canvas_slot_ << 16) + atlas->find_region(region_id$);
+			auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), id$ >> 32);
+			c->id = (atlas->canvas_slot_ << 16) + atlas->find_region(id$ & 0xffffffff);
 			c->uv0 = uv0$;
 			c->uv1 = uv1$;
 			c->color = color$;
+			c->repeat = repeat$;
 
 			return c;
 		}
@@ -77,16 +79,22 @@ namespace flame
 			if (offset == -1)
 			{
 				auto atlas = ((graphics::Canvas*)w->find_object(cH("Canvas"), 0))->get_atlas(c->id >> 16);
-				atlas_id$ = atlas->id;
-				region_id$ = atlas->regions()[c->id & 0xffff].id;
+				id$ = (atlas->id << 32) + atlas->regions()[c->id & 0xffff].id;
 				color$ = c->color;
 				uv0$ = c->uv0;
 				uv1$ = c->uv1;
+				repeat$ = c->repeat;
 			}
 			else
 			{
 				switch (offset)
 				{
+				case offsetof(Serializer_cImage$, id$):
+				{
+					auto atlas = ((graphics::Canvas*)w->find_object(cH("Canvas"), 0))->get_atlas(c->id >> 16);
+					id$ = (atlas->id << 32) + atlas->regions()[c->id & 0xffff].id;
+				}
+					break;
 				case offsetof(Serializer_cImage$, color$):
 					color$ = c->color;
 					break;
@@ -95,6 +103,9 @@ namespace flame
 					break;
 				case offsetof(Serializer_cImage$, uv1$):
 					uv1$ = c->uv1;
+					break;
+				case offsetof(Serializer_cImage$, repeat$):
+					repeat$ = c->repeat;
 					break;
 				}
 			}
@@ -107,16 +118,23 @@ namespace flame
 
 			if (offset == -1)
 			{
-				auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), atlas_id$);
-				c->id = (atlas->canvas_slot_ << 16) + atlas->find_region(region_id$);
+				auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), id$ >> 32);
+				c->id = (atlas->canvas_slot_ << 16) + atlas->find_region(id$ & 0xffffffff);
 				c->uv0 = uv0$;
 				c->uv1 = uv1$;
 				c->color = color$;
+				c->repeat = repeat$;
 			}
 			else
 			{
 				switch (offset)
 				{
+				case offsetof(Serializer_cImage$, id$):
+				{
+					auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), id$ >> 32);
+					c->id = (atlas->canvas_slot_ << 16) + atlas->find_region(id$ & 0xffffffff);
+				}
+					break;
 				case offsetof(Serializer_cImage$, color$):
 					c->color = color$;
 					break;
@@ -125,6 +143,9 @@ namespace flame
 					break;
 				case offsetof(Serializer_cImage$, uv1$):
 					c->uv1 = uv1$;
+					break;
+				case offsetof(Serializer_cImage$, repeat$):
+					c->repeat = repeat$;
 					break;
 				}
 			}

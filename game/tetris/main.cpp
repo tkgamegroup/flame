@@ -495,6 +495,9 @@ int main(int argc, char **args)
 
 	auto atlas_main = (Atlas*)w->find_object(cH("Atlas"), cH("release/main.png"));
 
+	auto brick_idx = atlas_main->find_region(cH("../asset/brick.png"));
+	auto block_idx = atlas_main->find_region(cH("../asset/block.png"));
+
 	auto main_scene = Entity::create_from_file(w, app.dbs, L"../game/tetris/main.prefab");
 
 	auto root = w->root();
@@ -526,9 +529,6 @@ int main(int argc, char **args)
 	app.score = 0;
 	app.level = 0;
 	app.lines = 0;
-
-	auto brick_idx = atlas_main->find_region(cH("../asset/brick.png"));
-	auto block_idx = atlas_main->find_region(cH("../asset/block.png"));
 
 	for (auto i = 0; i < block_cy; i++)
 	{

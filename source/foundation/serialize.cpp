@@ -1984,6 +1984,9 @@ namespace flame
 			case cH("Vec(4+uint)"):
 				(*ret.p) = to_string(*(Vec4u*)src);
 				break;
+			case cH("ulonglong"):
+				(*ret.p) = std::to_string(*(ulonglong*)src);
+				break;
 			case cH("float"):
 				(*ret.p) = to_string(*(float*)src, precision);
 				break;
@@ -2092,6 +2095,9 @@ namespace flame
 				break;
 			case cH("Vec(4+uint)"):
 				*(Vec4u*)dst = stou4(src.c_str());
+				break;
+			case cH("ulonglong"):
+				*(ulonglong*)dst = std::stoull(src);
 				break;
 			case cH("float"):
 				*(float*)dst = std::stof(src.c_str());
