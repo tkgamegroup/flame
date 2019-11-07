@@ -486,10 +486,7 @@ int main(int argc, char **args)
 	app.u->add_object(app.canvas);
 
 	auto w = World::create_from_file(app.u, app.dbs, L"../game/tetris/world");
-	w->add_system(sLayoutManagement::create());
-	app.event_dispatcher = sEventDispatcher::create();
-	w->add_system(app.event_dispatcher);
-	w->add_system(sUIRenderer::create());
+	app.event_dispatcher = w->get_system(sEventDispatcher);
 
 	auto font_atlas_joystix = (FontAtlas*)w->find_object(cH("FontAtlas"), 0);
 

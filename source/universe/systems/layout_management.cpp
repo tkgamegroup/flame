@@ -82,4 +82,12 @@ namespace flame
 	{
 		delete (sLayoutManagementPrivate*)s;
 	}
+
+	struct Serializer_sLayoutManagement$
+	{
+		FLAME_UNIVERSE_EXPORTS System* create$(World* w)
+		{
+			return new sLayoutManagementPrivate();
+		}
+	};
 }

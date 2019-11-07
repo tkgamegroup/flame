@@ -7,4 +7,9 @@
         <fonts v="joystix monospace.ttf" />
     </FontAtlas>
   </objects>
+  <systems>
+    <sLayoutManagement />
+    <sEventDispatcher />
+    <sUIRenderer />
+  </systems>
 </world>

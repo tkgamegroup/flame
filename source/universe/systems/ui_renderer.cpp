@@ -152,4 +152,12 @@ namespace flame
 	{
 		delete (sUIRendererPrivate*)s;
 	}
+
+	struct Serializer_sUIRenderer$
+	{
+		FLAME_UNIVERSE_EXPORTS System* create$(World* w)
+		{
+			return new sUIRendererPrivate();
+		}
+	};
 }

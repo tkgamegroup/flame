@@ -44,16 +44,6 @@ namespace flame
 		}
 	}
 
-	System*  WorldPrivate::get_system_plain(uint name_hash) const
-	{
-		for (auto& s : systems)
-		{
-			if (s->name_hash == name_hash)
-				return s.get();
-		}
-		return nullptr;
-	}
-
 	const std::wstring& World::filename() const
 	{
 		return ((WorldPrivate*)this)->filename;
@@ -76,6 +66,16 @@ namespace flame
 			}
 		}
 		return universe_->find_object(name_hash, id);
+	}
+
+	System* WorldPrivate::get_system_plain(uint name_hash) const
+	{
+		for (auto& s : systems)
+		{
+			if (s->name_hash == name_hash)
+				return s.get();
+		}
+		return nullptr;
 	}
 
 	System* World::get_system_plain(uint name_hash) const
@@ -143,6 +143,47 @@ namespace flame
 					object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 				}
 				w->objects.emplace_back((Object*)object, udt);
+				{
+					auto f = udt->find_function("dtor");
+					if (f)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
+				free_module(module);
+				free(dummy);
+			}
+		}
+
+		auto n_ss = file->find_node("systems");
+		if (n_ss)
+		{
+			for (auto i_s = 0; i_s < n_ss->node_count(); i_s++)
+			{
+				auto n_s = n_ss->node(i_s);
+
+				auto udt = find_udt(dbs, H(("Serializer_" + n_s->name()).c_str()));
+				assert(udt);
+				auto dummy = malloc(udt->size());
+				auto module = load_module(udt->db()->module_name());
+				{
+					auto f = udt->find_function("ctor");
+					if (f && f->parameter_count() == 0)
+						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				}
+				for (auto i = 0; i < n_s->node_count(); i++)
+				{
+					auto n = n_s->node(i);
+
+					auto v = udt->find_variable(n->name());
+					auto type = v->type();
+					unserialize_value(dbs, type->tag(), type->hash(), n->find_attr("v")->value(), (char*)dummy + v->offset());
+				}
+				void* system;
+				{
+					auto f = udt->find_function("create");
+					assert(f && f->return_type()->equal(TypeTagPointer, cH("System")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("World")));
+					system = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
+				}
+				w->add_system((System*)system);
 				{
 					auto f = udt->find_function("dtor");
 					if (f)
