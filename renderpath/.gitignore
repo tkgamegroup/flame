@@ -1,5 +1,8 @@
 */CMakeLists.txt
 */template.cpp
+*/bp.gv
+*/bp.graph
+*/bp.png
 *.dll
 *.lib
 *.typeinfo

@@ -750,9 +750,9 @@ struct cBPEditor : Component
 		update_gv();
 		auto png_filename = filepath + L"/bp.png";
 		if (!std::filesystem::exists(png_filename) || std::filesystem::last_write_time(png_filename) < std::filesystem::last_write_time(filename))
-			exec(dot_path, L"-Tpng" + filepath + L"/bp.gv -y -o " + png_filename, true);
-		if (!std::filesystem::exists(png_filename))
-			return false;
+			exec(dot_path, L"-Tpng " + filepath + L"/bp.gv -y -o " + png_filename, true);
+
+		return std::filesystem::exists(png_filename);
 	}
 
 	bool auto_set_layout()
