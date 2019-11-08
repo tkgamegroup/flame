@@ -261,7 +261,8 @@ namespace flame
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
 								return;
-							thiz->management->add_to_update_list(thiz);
+							if (thiz->management)
+								thiz->management->add_to_update_list(thiz);
 						}, new_mail_p(this));
 					}
 					void* text_data_listener = nullptr;
@@ -278,7 +279,8 @@ namespace flame
 							case cH("scale"):
 							case cH("auto_width"):
 							case cH("auto_height"):
-								thiz->management->add_to_update_list(thiz);
+								if (thiz->management)
+									thiz->management->add_to_update_list(thiz);
 								break;
 							}
 						}, new_mail_p(this));

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<BP>
+	<modules>
+		<module filename="flame_foundation.dll" pos="0.00;0.00" />
+		<module filename="flame_graphics.dll" pos="16.50;73.50" />
+	</modules>
+	<nodes>
+		<node type="graphics::Pipeline" id="node_0" pos="551.00;-27.00" />
+	</nodes>
+	<links />
+</BP>
