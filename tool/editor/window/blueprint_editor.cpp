@@ -195,6 +195,8 @@ namespace flame
 	};
 }
 
+const auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
+
 struct cBPEditor : Component
 {
 	cCustomDraw* custom_draw;
@@ -540,7 +542,6 @@ struct cBPEditor : Component
 	{
 		auto n = bp->add_node(H(type_name.c_str()), id);
 		n->pos = pos;
-		link_test_nodes();
 		create_node_entity(n);
 		return n;
 	}
@@ -680,75 +681,87 @@ struct cBPEditor : Component
 		deselect();
 	}
 
-	void generate_graph_and_layout()
+	void update_gv()
 	{
-		if (GRAPHVIZ_PATH == std::string(""))
-			assert(0);
-		auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
-
-		std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
-		for (auto i = 0; i < bp->node_count(); i++)
+		auto gv_filename = filepath + L"/bp.gv";
+		if (!std::filesystem::exists(gv_filename) || std::filesystem::last_write_time(gv_filename) < std::filesystem::last_write_time(filename))
 		{
-			auto src = bp->node(i);
-			auto& name = src->id();
+			if (GRAPHVIZ_PATH == std::string(""))
+				assert(0);
 
-			auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->name() + "|{{";
-			for (auto j = 0; j < src->input_count(); j++)
+			std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
+			for (auto i = 0; i < bp->node_count(); i++)
 			{
-				auto input = src->input(j);
-				auto& name = input->vi()->name();
-				str += "<" + name + ">" + name;
-				if (j != src->input_count() - 1)
-					str += "|";
-			}
-			str += "}|{";
-			for (auto j = 0; j < src->output_count(); j++)
-			{
-				auto output = src->output(j);
-				auto& name = output->vi()->name();
-				str += "<" + name + ">" + name;
-				if (j != src->output_count() - 1)
-					str += "|";
-			}
-			str += "}}\"];\n";
+				auto src = bp->node(i);
+				auto& name = src->id();
 
-			gv += str;
-		}
-		for (auto i = 0; i < bp->node_count(); i++)
-		{
-			auto src = bp->node(i);
-
-			for (auto j = 0; j < src->input_count(); j++)
-			{
-				auto input = src->input(j);
-				if (input->link())
+				auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->name() + "|{{";
+				for (auto j = 0; j < src->input_count(); j++)
 				{
-					auto in_addr = input->get_address();
-					auto out_addr = input->link()->get_address();
-					auto in_sp = string_split(*in_addr.p, '.');
-					auto out_sp = string_split(*out_addr.p, '.');
-					delete_mail(in_addr);
-					delete_mail(out_addr);
+					auto input = src->input(j);
+					auto& name = input->vi()->name();
+					str += "<" + name + ">" + name;
+					if (j != src->input_count() - 1)
+						str += "|";
+				}
+				str += "}|{";
+				for (auto j = 0; j < src->output_count(); j++)
+				{
+					auto output = src->output(j);
+					auto& name = output->vi()->name();
+					str += "<" + name + ">" + name;
+					if (j != src->output_count() - 1)
+						str += "|";
+				}
+				str += "}}\"];\n";
 
-					gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+				gv += str;
+			}
+			for (auto i = 0; i < bp->node_count(); i++)
+			{
+				auto src = bp->node(i);
+
+				for (auto j = 0; j < src->input_count(); j++)
+				{
+					auto input = src->input(j);
+					if (input->link())
+					{
+						auto in_addr = input->get_address();
+						auto out_addr = input->link()->get_address();
+						auto in_sp = string_split(*in_addr.p, '.');
+						auto out_sp = string_split(*out_addr.p, '.');
+						delete_mail(in_addr);
+						delete_mail(out_addr);
+
+						gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+					}
 				}
 			}
+			gv += "}\n";
+
+			std::ofstream file(gv_filename);
+			file << gv;
+			file.close();
 		}
-		gv += "}\n";
+	}
 
-		std::ofstream file("bp.gv");
-		file << gv;
-		file.close();
-
-		exec(dot_path, L"-Tpng bp.gv -o bp.png", true);
-		exec(dot_path, L"-Tplain bp.gv -y -o bp.graph.txt", true);
-	};
+	bool generate_graph_image()
+	{
+		update_gv();
+		auto png_filename = filepath + L"/bp.png";
+		if (!std::filesystem::exists(png_filename) || std::filesystem::last_write_time(png_filename) < std::filesystem::last_write_time(filename))
+			exec(dot_path, L"-Tpng" + filepath + L"/bp.gv -y -o " + png_filename, true);
+		if (!std::filesystem::exists(png_filename))
+			return false;
+	}
 
 	bool auto_set_layout()
 	{
-		if (!std::filesystem::exists(L"bp.graph.txt") || std::filesystem::last_write_time(L"bp.graph.txt") < std::filesystem::last_write_time(filename))
-			generate_graph_and_layout();
-		if (!std::filesystem::exists(L"bp.graph.txt"))
+		update_gv();
+		auto graph_filename = filepath + L"/bp.graph";
+		if (!std::filesystem::exists(graph_filename) || std::filesystem::last_write_time(graph_filename) < std::filesystem::last_write_time(filename))
+			exec(dot_path, L"-Tplain" + filepath + L"/bp.gv -y -o " + graph_filename, true);
+		if (!std::filesystem::exists(graph_filename))
 			return false;
 
 		auto str = get_file_string(L"bp.graph.txt");
@@ -2305,6 +2318,20 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	{
 		auto e_menu = create_standard_menu();
 		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Generate Graph Image");
+			e_menu->add_child(e_item);
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+					editor->generate_graph_image();
+				}
+			}, new_mail_p(c_editor));
+		}
+		{
 			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Auto Set Layout");
 			e_menu->add_child(e_item);
 			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -2318,7 +2345,21 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				}
 			}, new_mail_p(c_editor));
 		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Layout", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Link Test Nodes");
+			e_menu->add_child(e_item);
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+					editor->link_test_nodes();
+				}
+			}, new_mail_p(c_editor));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tools", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 	}
 
@@ -2592,9 +2633,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}
 			else if (tokens[1] == L"graph")
 			{
-				if (!std::filesystem::exists(L"bp.png") || std::filesystem::last_write_time(L"bp.png") < std::filesystem::last_write_time(filename))
-					editor->generate_graph_and_layout();
-				if (std::filesystem::exists(L"bp.png"))
+				if (!editor->generate_graph_image())
 				{
 					exec(L"bp.png", L"", false);
 					console->print(L"ok");

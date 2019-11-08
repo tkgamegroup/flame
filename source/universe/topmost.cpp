@@ -11,7 +11,7 @@ namespace flame
 		if (e->child_count() == 0)
 			return nullptr;
 		auto t = e->child(e->child_count() - 1);
-		if (t->name_hash() == cH("topmost") || t->name_hash() == cH("topmost_no_mousemove_to_open_menu"))
+		if (!t->dying_ && (t->name_hash() == cH("topmost") || t->name_hash() == cH("topmost_no_mousemove_to_open_menu")))
 			return t;
 		return nullptr;
 	}
@@ -78,6 +78,8 @@ namespace flame
 
 		if (take)
 			t->remove_child((Entity*)FLAME_INVALID_POINTER, false);
+		else
+			t->dying_ = true;
 		looper().add_delay_event([](void* c) {
 			auto t = *(Entity**)c;
 			t->parent()->remove_child(t, false);
