@@ -1,50 +1,34 @@
 # Flame Game Engine
 An ECS Game Engine Based On Reflection.
 
-# thanks to:
+# Requirements:
 
-- pugixml     - for parsing and loading XML (https://github.com/zeux/pugixml)
+- pugixml     - https://github.com/zeux/pugixml
 
-- nlohmannjson     - for parsing and loading JSON (https://github.com/nlohmann/json)
+- nlohmannjson     - https://github.com/nlohmann/json
 
-- STB         - for image loading/saving (https://github.com/nothings/stb)
+- STB         - https://github.com/nothings/stb
   
-- freetype    - for font loading/composition (https://github.com/ubawurinna/freetype-windows-binaries)
+- freetype    - https://github.com/ubawurinna/freetype-windows-binaries
 
-- msdfgen     - for generating sdf (https://github.com/Chlumsky/msdfgen)
+- msdfgen     - (must use my forked version, changed a little bit) https://github.com/tkgamegroup/msdfgen
 
-- VulkanSDK   - graphics API (https://vulkan.lunarg.com/sdk/home#windows)
+- VulkanSDK   - https://vulkan.lunarg.com/sdk/home#windows
 
-- SPIRV-Cross - for shader reflection (https://github.com/KhronosGroup/SPIRV-Cross)
+- SPIRV-Cross - https://github.com/KhronosGroup/SPIRV-Cross
 
-- OpenAL      - for sound playing and recording (http://www.openal.org/)
+- OpenAL      - http://www.openal.org/
 
-- Graphviz    - for visualizing bp nodes
+- Graphviz    - (optional)
   
 
-# build:
+# Build:
 
 - regsvr32 msdia**.dll in visual studio's dia sdk
 
-- download & install git-lfs
-
-- download & build pugixml
-
-- download STB
-
-- download freetype
-
-- download & build msdfgen (must use my forked version, changed a little bit: https://github.com/tkgamegroup/msdfgen)
-
-- download & install VulkanSDK
-
-- download & build SPIRV-Cross
-
-- download OpenAL
-
-- download & install Graphviz (optional)
+- you need git-lfs
   
-- cmake flame
+- cmake, set path to those libraries
   
 - enjoy
 
