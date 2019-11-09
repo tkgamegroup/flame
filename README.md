@@ -1,5 +1,5 @@
 # Flame Game Engine
-A lightweight and powerful 3D Game Engine.
+An ECS Game Engine Based On Reflection.
 
 # thanks to:
 
