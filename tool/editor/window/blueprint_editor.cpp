@@ -1119,9 +1119,12 @@ void cBP::draw(graphics::Canvas* canvas)
 			auto p1 = e1->global_pos + e1->global_size * 0.5f;
 			auto p2 = e2->global_pos + e2->global_size * 0.5f;
 
-			std::vector<Vec2f> points;
-			path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-			canvas->stroke(points, editor->selected_.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+			if (rect_overlapping(rect(element->pos_, element->size_), Vec4f(min(p1, p2), max(p1, p2))))
+			{
+				std::vector<Vec2f> points;
+				path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
+				canvas->stroke(points, editor->selected_.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+			}
 		}
 	};
 	for (auto i = 0; i < bp->package_count(); i++)
