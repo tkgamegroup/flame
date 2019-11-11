@@ -865,6 +865,7 @@ struct cBP : Component
 	cElement* base_element;
 	cCustomDraw* custom_draw;
 
+	cText* scale_text;
 	cBPEditor* editor;
 
 	float bezier_extent;
@@ -2363,31 +2364,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_menubar->add_child(e_menu_btn);
 	}
 
-	auto e_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
-	e_page->add_child(e_run);
-	{
-		auto c_event_receiver = e_run->get_component(cEventReceiver);
-		struct Capture
-		{
-			cBPEditor* e;
-			cText* t;
-		}capture;
-		capture.e = c_editor;
-		capture.t = e_run->get_component(cText);
-		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto& capture = *(Capture*)c;
-
-			if (is_mouse_clicked(action, key))
-			{
-				capture.e->running = !capture.e->running;
-				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
-
-				if (capture.e->running)
-					capture.e->bp->time = 0.f;
-			}
-		}, new_mail(&capture));
-	}
-
 	auto e_clipper = Entity::create();
 	e_page->add_child(e_clipper);
 	{
@@ -2418,10 +2394,13 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_scene->add_component(cLayout::create(LayoutFree));
 
 		e_scene->add_component(cCustomDraw::create());
+
+		auto c_bp = new_u_object<cBP>();
+		c_bp->editor = c_editor;
+		e_scene->add_component(c_bp);
 	}
-	auto c_bp = new_u_object<cBP>();
-	c_bp->editor = c_editor;
-	e_scene->add_component(c_bp);
+
+	auto c_bp = e_scene->get_component(cBP);
 
 	auto e_base = Entity::create();
 	e_scene->add_child(e_base);
@@ -2469,8 +2448,9 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto c_bp = *(cBP**)c;
 			if (is_mouse_scroll(action, key))
 			{
-				auto s = c_bp->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f);
-				c_bp->base_element->set_scale(clamp(s, 0.1f, 2.f));
+				auto s = clamp(c_bp->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
+				c_bp->base_element->set_scale(s);
+				c_bp->scale_text->set_text(std::to_wstring(int(s * 100)) + L"%");
 			}
 			else if (is_mouse_move(action, key))
 			{
@@ -2488,6 +2468,48 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 
 	c_editor->load(filename, no_compile);
+
+	auto e_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
+	e_clipper->add_child(e_run);
+	{
+		auto c_event_receiver = e_run->get_component(cEventReceiver);
+		struct Capture
+		{
+			cBPEditor* e;
+			cText* t;
+		}capture;
+		capture.e = c_editor;
+		capture.t = e_run->get_component(cText);
+		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			auto& capture = *(Capture*)c;
+
+			if (is_mouse_clicked(action, key))
+			{
+				capture.e->running = !capture.e->running;
+				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
+
+				if (capture.e->running)
+					capture.e->bp->time = 0.f;
+			}
+		}, new_mail(&capture));
+	}
+
+	auto e_scale = Entity::create();
+	{
+		e_scale->add_component(cElement::create());
+		
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->set_text(L"100%");
+		e_scale->add_component(c_text);
+
+		auto c_aligner = cAligner::create();
+		c_aligner->x_align_ = AlignxLeft;
+		c_aligner->y_align_ = AlignyBottom;
+		e_scale->add_component(c_aligner);
+	}
+	e_clipper->add_child(e_scale);
+
+	c_bp->scale_text = e_scale->get_component(cText);
 
 	auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
 		auto editor = *(cBPEditor**)c;
