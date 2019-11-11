@@ -2128,7 +2128,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto c_layout = cLayout::create(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
-		c_layout->fence = 3;
+		c_layout->fence = 2;
 		e_page->add_component(c_layout);
 
 		e_page->add_component(cCustomDraw::create());

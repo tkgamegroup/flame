@@ -3,6 +3,8 @@
 	<modules>
 		<module filename="flame_foundation.dll" pos="0.00;0.00" />
 	</modules>
-	<nodes />
+	<nodes>
+		<node type="Array(1+void*)" id="node_0" pos="723.000000;313.000000" />
+	</nodes>
 	<links />
 </BP>

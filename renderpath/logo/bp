@@ -179,7 +179,6 @@
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="1" id="node_0" pos="733.500000;316.500000" />
 	</nodes>
 	<links>
 		<link out="font_atlas.out" in="canvas.make_cmd.font_atlases" />

@@ -1459,21 +1459,9 @@ namespace flame
 			exec_and_redirect_to_std_output(L"", L"cmake -S " + ppath_str + L" -B " + ppath_str + L"/build");
 
 			printf("compiling:\n");
-			{
-#define OUTPUT_FILE L"compile_log.txt"
-
-				auto curr_path = get_curr_path();
-				exec(s2w(VS_LOCATION) + L"/Common7/IDE/devenv.exe", L"\"" + *curr_path.p + L"/" + ppath_str + L"/build/bp.sln\" /build debug /out " OUTPUT_FILE, true);
-				delete_mail(curr_path);
-
-				auto content = get_file_string(OUTPUT_FILE);
-				printf("%s\n", content.c_str());
-
-				if (!content.empty())
-					std::filesystem::remove(OUTPUT_FILE);
-
-#undef OUTPUT_FILE
-			}
+			auto curr_path = get_curr_path();
+			exec_and_redirect_to_std_output(L"", s2w(VS_LOCATION) + L"/Common7/IDE/devenv.com \"" + *curr_path.p + L"/" + ppath_str + L"/build/bp.sln\" /build debug");
+			delete_mail(curr_path);
 		}
 
 		auto self_module_filename = ppath_str + L"/build/debug/bp.dll";
