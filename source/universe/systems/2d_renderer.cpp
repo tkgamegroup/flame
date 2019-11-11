@@ -2,7 +2,7 @@
 #include "../entity_private.h"
 #include "../universe_private.h"
 #include <flame/universe/world.h>
-#include <flame/universe/systems/ui_renderer.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include "../components/element_private.h"
 #include "../components/text_private.h"
 #include "../components/image_private.h"
@@ -74,7 +74,7 @@ namespace flame
 		}
 	};
 
-	struct sUIRendererPrivate : sUIRenderer
+	struct s2DRendererPrivate : s2DRenderer
 	{
 		graphics::Canvas* canvas;
 
@@ -143,21 +143,21 @@ namespace flame
 		}
 	};
 
-	sUIRenderer* sUIRenderer::create()
+	s2DRenderer* s2DRenderer::create()
 	{
-		return new sUIRendererPrivate();
+		return new s2DRendererPrivate();
 	}
 
-	void sUIRenderer::destroy(sUIRenderer* s)
+	void s2DRenderer::destroy(s2DRenderer* s)
 	{
-		delete (sUIRendererPrivate*)s;
+		delete (s2DRendererPrivate*)s;
 	}
 
 	struct Serializer_sUIRenderer$
 	{
 		FLAME_UNIVERSE_EXPORTS System* create$(World* w)
 		{
-			return new sUIRendererPrivate();
+			return new s2DRendererPrivate();
 		}
 	};
 }

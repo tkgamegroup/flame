@@ -10,6 +10,6 @@
   <systems>
     <sLayoutManagement />
     <sEventDispatcher />
-    <sUIRenderer />
+    <s2DRenderer />
   </systems>
 </world>

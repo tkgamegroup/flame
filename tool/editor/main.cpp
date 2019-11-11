@@ -10,8 +10,8 @@
 #include <flame/universe/topmost.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/ui_renderer.h>
 #include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
@@ -64,7 +64,7 @@ void App::create()
 	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create());
-	w->add_system(sUIRenderer::create());
+	w->add_system(s2DRenderer::create());
 
 	root = w->root();
 	{

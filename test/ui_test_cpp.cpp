@@ -10,8 +10,8 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/ui_renderer.h>
 #include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
@@ -133,7 +133,7 @@ int main(int argc, char** args)
 	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create());
-	w->add_system(sUIRenderer::create());
+	w->add_system(s2DRenderer::create());
 
 	auto root = w->root();
 	app.root = root;
