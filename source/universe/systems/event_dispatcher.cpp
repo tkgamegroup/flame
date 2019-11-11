@@ -22,7 +22,8 @@ namespace flame
 
 		Vec2i active_pos;
 
-		std::vector<cEventReceiver*> hovers;
+		std::vector<cEventReceiver*> mouse_dispatch_list;
+		std::vector<cEventReceiver*> key_dispatch_list;
 		bool meet_last_hovering;
 
 		sEventDispatcherPrivate()
@@ -81,7 +82,7 @@ namespace flame
 			if (!er->element->cliped && rect_contains(er->element->cliped_rect, Vec2f(mouse_pos)))
 			{
 				if (!hovering || (active && !meet_last_hovering))
-					hovers.push_back(er);
+					mouse_dispatch_list.push_back(er);
 				if (!er->penetrable)
 				{
 					if (!hovering)
@@ -228,11 +229,11 @@ namespace flame
 				}
 			}
 
-			hovers.clear();
+			mouse_dispatch_list.clear();
 			drag_overing = nullptr;
 			if (focusing && focusing->active)
 			{
-				hovers.push_back(focusing);
+				mouse_dispatch_list.insert(mouse_dispatch_list.begin(), focusing);
 
 				if (focusing->drag_hash != 0 && !focusing->dragging)
 				{
@@ -247,6 +248,7 @@ namespace flame
 			}
 			meet_last_hovering = false;
 			search_hovers((EntityPrivate*)root);
+			std::reverse(mouse_dispatch_list.begin(), mouse_dispatch_list.end());
 
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 			{
@@ -262,6 +264,8 @@ namespace flame
 
 			if (prev_focusing != focusing)
 			{
+				key_dispatch_list.clear();
+
 				if (prev_focusing)
 				{
 					prev_focusing->focusing = false;
@@ -270,23 +274,31 @@ namespace flame
 				}
 				if (focusing)
 				{
+					auto e = focusing->entity;
+					while (e)
+					{
+						auto er = e->get_component(cEventReceiver);
+						if (er && er->accept_key)
+							key_dispatch_list.push_back(er);
+						e = e->parent();
+					}
+
 					focusing->focusing = true;
 					focusing->data_changed(cH("focusing"), nullptr);
 				}
 			}
 
-			if (focusing)
+			for (auto er : key_dispatch_list)
 			{
 				for (auto& code : keydown_inputs)
-					((cEventReceiverPrivate*)focusing)->on_key(KeyStateDown, code);
+					((cEventReceiverPrivate*)er)->on_key(KeyStateDown, code);
 				for (auto& code : keyup_inputs)
-					((cEventReceiverPrivate*)focusing)->on_key(KeyStateUp, code);
+					((cEventReceiverPrivate*)er)->on_key(KeyStateUp, code);
 				for (auto& ch : char_inputs)
-					((cEventReceiverPrivate*)focusing)->on_key(KeyStateNull, ch);
+					((cEventReceiverPrivate*)er)->on_key(KeyStateNull, ch);
 			}
-			for (auto it = hovers.rbegin(); it != hovers.rend(); it++)
+			for (auto er : mouse_dispatch_list)
 			{
-				auto er = *it;
 				if (mouse_disp != 0)
 					((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
 				if (mouse_scroll != 0)

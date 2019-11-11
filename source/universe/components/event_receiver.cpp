@@ -11,14 +11,14 @@ namespace flame
 		element = nullptr;
 
 		penetrable = false;
+		accept_key = false;
+		drag_hash = 0;
 
 		hovering = false;
 		focusing = false;
 		active = false;
 		dragging = false;
 		state = EventReceiverNormal;
-
-		drag_hash = 0;
 
 		key_listeners.hub = new ListenerHub;
 		mouse_listeners.hub = new ListenerHub;

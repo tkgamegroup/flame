@@ -13,14 +13,14 @@ namespace flame
 		cElement* element;
 
 		bool penetrable;
+		bool accept_key;
+		uint drag_hash; // non-zero means it can be draged to drop
 
 		bool hovering;
 		bool focusing;
 		bool active;
 		bool dragging;
 		EventReceiverState state;
-
-		uint drag_hash; // non-zero means it can be draged to drop
 
 		cEventReceiver() :
 			Component("cEventReceiver")
