@@ -1,4 +1,4 @@
 *.dll
 *.typeinfo
-compile_log.txt
 temp.*
+out.spv
