@@ -528,7 +528,8 @@ struct cBPEditor : Component
 		for (auto i = 0; i < bp->node_count(); i++)
 			create_node_entity(bp->node(i));
 
-		deselect();
+		sel_type_ = SelAir;
+		selected_.n = nullptr;
 		dragging_slot = nullptr;
 		running = false;
 	}

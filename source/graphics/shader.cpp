@@ -560,7 +560,7 @@ namespace flame
 					auto& env = bp_env();
 					auto d = Device::default_one();
 					auto descriptorlayouts = get_attribute_vec(descriptorlayouts$i);
-					if (d && !descriptorlayouts.empty())
+					if (d)
 					{
 						UdtInfo* pc_udt = nullptr;
 						if (!push_constant_udt_name$i.v.empty())
@@ -568,7 +568,7 @@ namespace flame
 							pc_udt = find_udt(env.dbs, H(push_constant_udt_name$i.v.c_str()));
 							assert(pc_udt);
 						}
-						out$o.v = Pipelinelayout::create(d, descriptorlayouts, push_constant_size$i.v, pc_udt);
+						out$o.v = Pipelinelayout::create(d, !descriptorlayouts.empty() ? descriptorlayouts : std::vector<void*>(), push_constant_size$i.v, pc_udt);
 					}
 					else
 					{
