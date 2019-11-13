@@ -1,4 +1,3 @@
-#include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "renderpass_private.h"
@@ -59,33 +58,29 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, const std::vector<void*>& bindings, Descriptorpool* pool_to_create_default_set) :
+		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, const std::vector<void*>& _bindings, Descriptorpool* default_set_pool) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
+			bindings.resize(_bindings.size());
 			for (auto i = 0; i < bindings.size(); i++)
 			{
-				auto _b = (DescriptorBindingBase*)bindings[i];
-				auto type = _b->type;
-				auto binding = _b->binding;
+				auto b = (DescriptorBindingBase*)_bindings[i];
+				auto type = b->type;
 
-				assert(bindings_map.size() <= binding || !bindings_map[binding]); // if the slot is empty?
-
-				if (bindings_map.size() <= binding)
-					bindings_map.resize(binding + 1);
 				DescriptorBindingBase* new_b = nullptr;
 				if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-					bindings_map[binding] = new DescriptorBufferBinding(*(DescriptorBufferBinding*)_b);
+					bindings[i] = new DescriptorBufferBinding(*(DescriptorBufferBinding*)b);
 				else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
-					bindings_map[binding] = new DescriptorImageBinding(*(DescriptorImageBinding*)_b);
+					bindings[i] = new DescriptorImageBinding(*(DescriptorImageBinding*)b);
 				else
 					assert(0);
 
 				VkDescriptorSetLayoutBinding vk_binding;
-				vk_binding.binding = binding;
+				vk_binding.binding = i;
 				vk_binding.descriptorType = to_enum(type);
-				vk_binding.descriptorCount = _b->count;
+				vk_binding.descriptorCount = b->count;
 				vk_binding.stageFlags = to_flags(ShaderStageAll);
 				vk_binding.pImmutableSamplers = nullptr;
 				vk_bindings.push_back(vk_binding);
@@ -102,31 +97,29 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			if (pool_to_create_default_set)
+			if (default_set_pool)
 			{
-				default_set = Descriptorset::create(pool_to_create_default_set, this);
-				for (auto _b : bindings_map)
+				default_set = Descriptorset::create(default_set_pool, this);
+				for (auto i = 0; i < bindings.size(); i++)
 				{
-					if (_b)
+					auto& _b = bindings[i];
+					auto type = _b->type;
+					if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
 					{
-						auto type = _b->type;
-						if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+						auto b = (DescriptorBufferBinding*)_b;
+						if (b->buffer)
 						{
-							auto b = (DescriptorBufferBinding*)_b;
-							if (b->buffer)
-							{
-								for (auto i = 0; i < b->count; i++)
-									default_set->set_buffer(b->binding, i, b->buffer);
-							}
+							for (auto j = 0; j < b->count; j++)
+								default_set->set_buffer(i, j, b->buffer);
 						}
-						else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
+					}
+					else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
+					{
+						auto b = (DescriptorImageBinding*)_b;
+						if (b->view)
 						{
-							auto b = (DescriptorImageBinding*)_b;
-							if (b->view)
-							{
-								for (auto i = 0; i < b->count; i++)
-									default_set->set_image(b->binding, i, b->view, b->sampler);
-							}
+							for (auto j = 0; j < b->count; j++)
+								default_set->set_image(i, j, b->view, b->sampler);
 						}
 					}
 				}
@@ -140,7 +133,7 @@ namespace flame
 			if (default_set)
 				Descriptorset::destroy(default_set);
 
-			for (auto b : bindings_map)
+			for (auto b : bindings)
 			{
 				auto type = b->type;
 				if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
@@ -157,7 +150,7 @@ namespace flame
 
 		const DescriptorBindingBase* Descriptorlayout::get_binding(uint binding) const
 		{
-			return ((DescriptorlayoutPrivate*)this)->bindings_map[binding];
+			return ((DescriptorlayoutPrivate*)this)->bindings[binding];
 		}
 
 		Descriptorset* Descriptorlayout::default_set() const
@@ -177,12 +170,10 @@ namespace flame
 
 		struct DescriptorBufferBinding$
 		{
-			AttributeV<uint> binding$i;
 			AttributeV<bool> storage$i;
 			AttributeV<uint> count$i;
 			AttributeV<std::string> name$i;
 			AttributeP<void> buffer$i;
-			AttributeV<std::string> udt_name$i;
 
 			AttributeV<DescriptorBufferBinding> out$o;
 
@@ -194,8 +185,6 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (binding$i.frame > out$o.frame)
-					out$o.v.binding = binding$i.v;
 				if (storage$i.frame > out$o.frame)
 					out$o.v.type = storage$i.v ? DescriptorStorageBuffer : DescriptorUniformBuffer;
 				if (count$i.frame > out$o.frame)
@@ -204,15 +193,7 @@ namespace flame
 					out$o.v.name = name$i.v;
 				if (buffer$i.frame > out$o.frame)
 					out$o.v.buffer = (Buffer*)buffer$i.v;
-				if (udt_name$i.frame > out$o.frame)
-				{
-					if (!udt_name$i.v.empty())
-					{
-						out$o.v.udt = find_udt(bp_env().dbs, H(udt_name$i.v.c_str()));
-						assert(out$o.v.udt);
-					}
-				}
-				out$o.frame = maxN(binding$i.frame, storage$i.frame, count$i.frame, name$i.frame, buffer$i.frame, udt_name$i.frame);
+				out$o.frame = maxN(storage$i.frame, count$i.frame, name$i.frame, buffer$i.frame);
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~DescriptorBufferBinding$()
@@ -256,8 +237,6 @@ namespace flame
 						iv$o.v = nullptr;
 					iv$o.frame = max(target_type$i.frame, v$i.frame);
 				}
-				if (binding$i.frame > out$o.frame)
-					out$o.v.binding = binding$i.v;
 				if (storage$i.frame > out$o.frame)
 					out$o.v.type = storage$i.v ? DescriptorStorageImage : DescriptorSampledImage;
 				if (count$i.frame > out$o.frame)
@@ -279,7 +258,7 @@ namespace flame
 						break;
 					}
 				}
-				out$o.frame = maxN(binding$i.frame, storage$i.frame, count$i.frame, name$i.frame, iv$o.frame);
+				out$o.frame = maxN(storage$i.frame, count$i.frame, name$i.frame, iv$o.frame);
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~DescriptorImageBinding$()
@@ -375,7 +354,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_enum(l->bindings_map[binding]->type);
+			write.descriptorType = to_enum(l->bindings[binding]->type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
@@ -401,7 +380,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_enum(l->bindings_map[binding]->type);
+			write.descriptorType = to_enum(l->bindings[binding]->type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;
@@ -476,20 +455,10 @@ namespace flame
 			}
 		};
 
-		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt) :
-			d((DevicePrivate*)d)
+		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size) :
+			d((DevicePrivate*)d),
+			pc_size(push_constant_size)
 		{
-			if (push_constant_udt)
-			{
-				pc_udt = push_constant_udt;
-				pc_size = pc_udt->size();
-			}
-			else
-			{
-				pc_udt = nullptr;
-				pc_size = push_constant_size;
-			}
-
 #if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayout> vk_descriptorsetlayouts;
 			vk_descriptorsetlayouts.resize(descriptorsetlayouts.size());
@@ -529,9 +498,9 @@ namespace flame
 #endif
 		}
 
-		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt)
+		Pipelinelayout* Pipelinelayout::create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size)
 		{
-			return new PipelinelayoutPrivate(d, descriptorsetlayouts, push_constant_size, push_constant_udt);
+			return new PipelinelayoutPrivate(d, descriptorsetlayouts, push_constant_size);
 		}
 
 		void Pipelinelayout::destroy(Pipelinelayout* l)
@@ -543,7 +512,6 @@ namespace flame
 		{
 			AttributeP<std::vector<void*>> descriptorlayouts$i;
 			AttributeV<uint> push_constant_size$i;
-			AttributeV<std::string> push_constant_udt_name$i;
 
 			AttributeP<void> out$o;
 
@@ -553,7 +521,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (descriptorlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame || push_constant_udt_name$i.frame > out$o.frame)
+				if (descriptorlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
@@ -561,22 +529,14 @@ namespace flame
 					auto d = Device::default_one();
 					auto descriptorlayouts = get_attribute_vec(descriptorlayouts$i);
 					if (d)
-					{
-						UdtInfo* pc_udt = nullptr;
-						if (!push_constant_udt_name$i.v.empty())
-						{
-							pc_udt = find_udt(env.dbs, H(push_constant_udt_name$i.v.c_str()));
-							assert(pc_udt);
-						}
-						out$o.v = Pipelinelayout::create(d, !descriptorlayouts.empty() ? descriptorlayouts : std::vector<void*>(), push_constant_size$i.v, pc_udt);
-					}
+						out$o.v = Pipelinelayout::create(d, !descriptorlayouts.empty() ? descriptorlayouts : std::vector<void*>(), push_constant_size$i.v);
 					else
 					{
 						printf("cannot create pipelinelayout\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(descriptorlayouts$i.frame, push_constant_size$i.frame, push_constant_udt_name$i.frame);
+					out$o.frame = max(descriptorlayouts$i.frame, push_constant_size$i.frame);
 				}
 			}
 
@@ -589,31 +549,23 @@ namespace flame
 
 		struct VertexInputAttribute$
 		{
-			AttributeV<uint> location$i;
-			AttributeV<uint> buffer_id$i;
-			AttributeV<uint> offset$i;
-			AttributeE<Format$> format$i;
 			AttributeV<std::string> name$i;
+			AttributeE<Format$> format$i;
 
 			AttributeV<VertexInputAttribute> out$o;
 
 			FLAME_GRAPHICS_EXPORTS VertexInputAttribute$()
 			{
+				format$i.v = Format_R8G8B8A8_UNORM;
 			}
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (location$i.frame > out$o.frame)
-					out$o.v.location = location$i.v;
-				if (buffer_id$i.frame > out$o.frame)
-					out$o.v.buffer_id = buffer_id$i.v;
-				if (offset$i.frame > out$o.frame)
-					out$o.v.offset = offset$i.v;
-				if (format$i.frame > out$o.frame)
-					out$o.v.format = format$i.v;
 				if (name$i.frame > out$o.frame)
 					out$o.v.name = name$i.v;
-				out$o.frame = maxN(location$i.frame, buffer_id$i.frame, offset$i.frame, format$i.frame, name$i.frame);
+				if (format$i.frame > out$o.frame)
+					out$o.v.format = format$i.v;
+				out$o.frame = max(name$i.frame, format$i.frame);
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~VertexInputAttribute$()
@@ -623,8 +575,7 @@ namespace flame
 
 		struct VertexInputBuffer$
 		{
-			AttributeV<uint> id$i;
-			AttributeV<uint> stride$i;
+			AttributeP<std::vector<void*>> attributes$i;
 			AttributeE<VertexInputRate$> rate$i;
 
 			AttributeV<VertexInputBuffer> out$o;
@@ -636,19 +587,20 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (id$i.frame > out$o.frame)
-					out$o.v.id = id$i.v;
-				if (stride$i.frame > out$o.frame)
-					out$o.v.stride = stride$i.v;
+				if (attributes$i.frame > out$o.frame)
+					out$o.v.attributes = get_attribute_vec(attributes$i);
 				if (rate$i.frame > out$o.frame)
 					out$o.v.rate = rate$i.v;
-				out$o.frame = maxN(id$i.frame, stride$i.frame, rate$i.frame);
+				out$o.frame = max(attributes$i.frame, rate$i.frame);
+			}
+
+			FLAME_GRAPHICS_EXPORTS ~VertexInputBuffer$()
+			{
 			}
 		};
 
 		struct VertexInputInfo$
 		{
-			AttributeP<std::vector<void*>> attribs$i;
 			AttributeP<std::vector<void*>> buffers$i;
 			AttributeE<PrimitiveTopology$> primitive_topology$i;
 			AttributeV<uint> patch_control_points$i;
@@ -662,661 +614,390 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (attribs$i.frame > out$o.frame)
-					out$o.v.attribs = get_attribute_vec(attribs$i);
 				if (buffers$i.frame > out$o.frame)
 					out$o.v.buffers = get_attribute_vec(buffers$i);
 				if (primitive_topology$i.frame > out$o.frame)
 					out$o.v.primitive_topology = primitive_topology$i.v;
 				if (patch_control_points$i.frame > out$o.frame)
 					out$o.v.patch_control_points = patch_control_points$i.v;
-				out$o.frame = maxN(attribs$i.frame, buffers$i.frame, primitive_topology$i.frame, patch_control_points$i.frame);
+				out$o.frame = maxN(buffers$i.frame, primitive_topology$i.frame, patch_control_points$i.frame);
 			}
 		};
 
-		struct StageInOut$
+		const std::regex shader_in_regex(R"(in\s([\w]+)\si_([\w]+))");
+		const std::regex shader_out_regex(R"(out\s([\w]+)\so_([\w]+)(\{()\})?)");
+
+		void compile_shaders(DevicePrivate* d, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
 		{
-			AttributeV<uint> location$i;
-			AttributeE<Format$> format$i;
-			AttributeV<std::string> name$i;
-
-			AttributeV<StageInOut> out$o;
-
-			FLAME_GRAPHICS_EXPORTS StageInOut$()
+			for (auto i = 0; i < stage_infos.size(); i++)
 			{
-			}
+				auto& s = stage_infos[i];
 
-			FLAME_GRAPHICS_EXPORTS void update$()
-			{
-				if (location$i.frame > out$o.frame)
-					out$o.v.location = location$i.v;
-				if (format$i.frame > out$o.frame)
-					out$o.v.format = format$i.v;
-				if (name$i.frame > out$o.frame)
-					out$o.v.name = name$i.v;
-				out$o.frame = maxN(location$i.frame, format$i.frame, name$i.frame);
-			}
+				std::ifstream src(s.path);
 
-			FLAME_GRAPHICS_EXPORTS ~StageInOut$()
-			{
-			}
-		};
+				std::string glsl_header = "#version 450 core\n"
+					"#extension GL_ARB_shading_language_420pack : enable\n";
+				if (s.type != ShaderStageComp)
+					glsl_header += "#extension GL_ARB_separate_shader_objects : enable\n";
+				glsl_header += s.prefix + "\n";
 
-		struct OutputAttachmentInfo$
-		{
-			AttributeV<uint> location$i;
-			AttributeE<Format$> format$i;
-			AttributeV<std::string> name$i;
-			AttributeV<bool> blend_enable$i;
-			AttributeE<BlendFactor$> blend_src_color$i;
-			AttributeE<BlendFactor$> blend_dst_color$i;
-			AttributeE<BlendFactor$> blend_src_alpha$i;
-			AttributeE<BlendFactor$> blend_dst_alpha$i;
-
-			AttributeV<OutputAttachmentInfo> out$o;
-
-			FLAME_GRAPHICS_EXPORTS OutputAttachmentInfo$()
-			{
-				format$i.v = Format_R8G8B8A8_UNORM;
-				blend_src_color$i.v = BlendFactorOne;
-				blend_src_alpha$i.v = BlendFactorOne;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$()
-			{
-				if (location$i.frame > out$o.frame)
-					out$o.v.location = location$i.v;
-				if (format$i.frame > out$o.frame)
-					out$o.v.format = format$i.v;
-				if (name$i.frame > out$o.frame)
-					out$o.v.name = name$i.v;
-				if (blend_enable$i.frame > out$o.frame)
-					out$o.v.blend_enable = blend_enable$i.v;
-				if (blend_src_color$i.frame > out$o.frame)
+				std::ofstream glsl_file(L"out.glsl");
+				glsl_file << glsl_header;
 				{
-					out$o.v.blend_src_color = blend_src_color$i.v;
-					out$o.v.judge_dual();
+					std::string line;
+					std::smatch match;
+					while (!src.eof())
+					{
+						std::getline(src, line);
+
+						if (std::regex_search(line, match, shader_in_regex))
+						{
+							StageInfo::InOut in(match[2].str(), match[3].str());
+							if (s.type == ShaderStageVert)
+							{
+								auto location = 0;
+								if (vi)
+								{
+									for (auto _b : vi->buffers)
+									{
+										const auto& b = *(VertexInputBuffer*)_b;
+										for (auto _a : b.attributes)
+										{
+											const auto& a = *(VertexInputAttribute*)_a;
+											if (a.name == in.name)
+											{
+												glsl_file << "layout (location = " + std::to_string(location) + +") in " + in.formated_type + " i_" + in.name + ";\n";
+												location = -1;
+												break;
+											}
+											location++;
+										}
+										if (location == -1)
+											break;
+									}
+								}
+							}
+							else
+							{
+								auto& ps = stage_infos[i - 1];
+								for (auto j = 0; j < ps.outputs.size(); j++)
+								{
+									if (ps.outputs[j].name == in.name)
+									{
+										glsl_file << "layout (location = " + std::to_string(j) + +") in " + in.formated_type + " i_" + in.name + ";\n";
+										break;
+									}
+								}
+								s.inputs.push_back(in);
+							}
+						}
+						else if (std::regex_search(line, match, shader_out_regex))
+						{
+							StageInfo::InOut out(match[2].str(), match[3].str());
+							out.name = match[2].str();
+							glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +") out " + out.formated_type + " o_" + out.name + ";\n";
+							if (s.type == ShaderStageFrag)
+							{
+							}
+							s.outputs.push_back(out);
+						}
+						else
+							glsl_file << line + "\n";
+					}
+
 				}
-				if (blend_dst_color$i.frame > out$o.frame)
-				{
-					out$o.v.blend_dst_color = blend_dst_color$i.v;
-					out$o.v.judge_dual();
-				}
-				if (blend_src_alpha$i.frame > out$o.frame)
-				{
-					out$o.v.blend_src_alpha = blend_src_alpha$i.v;
-					out$o.v.judge_dual();
-				}
-				if (blend_dst_alpha$i.frame > out$o.frame)
-				{
-					out$o.v.blend_dst_alpha = blend_dst_alpha$i.v;
-					out$o.v.judge_dual();
-				}
-				out$o.frame = maxN(location$i.frame, format$i.frame, name$i.frame, blend_enable$i.frame, 
-					blend_src_color$i.frame, blend_dst_color$i.frame, blend_src_alpha$i.frame, blend_dst_alpha$i.frame);
-			}
+				glsl_file.close();
 
-			FLAME_GRAPHICS_EXPORTS ~OutputAttachmentInfo$()
-			{
-			}
-		};
+				//	if (!outputs.empty())
+				//	{
+				//		*ret.p += "\n";
+				//		if (stage == ShaderStageFrag)
+				//		{
+				//			for (auto _o : outputs)
+				//			{
+				//				auto o = (OutputAttachmentInfo*)_o;
+				//				if (o->dual_src)
+				//				{
+				//					*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
+				//					*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
+				//				}
+				//			}
+				//		}
+				//	}
 
-		ShaderPrivate::ShaderPrivate(Device* d, const std::wstring& filename, const std::string& _prefix, const std::vector<void*>& _inputs, const std::vector<void*>& _outputs, Pipelinelayout* _pll, bool autogen_code) :
-			d((DevicePrivate*)d)
-		{
-			assert(std::filesystem::exists(filename));
+				//	if (_pll)
+				//	{
+				//		auto pll = (PipelinelayoutPrivate*)_pll;
 
-			auto ext = std::filesystem::path(filename).extension();
+				//		auto print_udt = [](UdtInfo* udt, std::string& out) {
+				//			for (auto i = 0; i < udt->variable_count(); i++)
+				//			{
+				//				auto v = udt->variable(i);
+				//				auto t = v->type();
+				//				assert(t->tag() == TypeTagVariable);
+				//				out += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
+				//			}
+				//		};
 
-			stage = shader_stage_from_filename(filename);
+				//		if (!pll->dsls.empty())
+				//		{
+				//			*ret.p += "\n";
+				//			for (auto i = 0; i < pll->dsls.size(); i++)
+				//			{
+				//				auto dsl = pll->dsls[i];
+				//				for (auto j = 0; j < dsl->bindings_map.size(); j++)
+				//				{
+				//					auto _b = dsl->bindings_map[j];
+				//					switch (_b->type)
+				//					{
+				//					case DescriptorUniformBuffer:
+				//					{
+				//						auto b = (DescriptorBufferBinding*)_b;
+				//						*ret.p += "layout (binding = " + std::to_string(j) + ") uniform " + b->udt->name() + "\n{\n";
+				//						print_udt(b->udt, *ret.p);
+				//						*ret.p += "}" + b->name + ";\n";
+				//					}
+				//						break;
+				//					case DescriptorSampledImage:
+				//					{
+				//						auto b = (DescriptorImageBinding*)_b;
+				//						*ret.p += "layout (binding = " + std::to_string(j) + ") uniform sampler2D " + b->name + (b->count > 1 ? ("[" + std::to_string(b->count) + "]") : "") + ";\n";
+				//					}
+				//						break;
+				//					default:
+				//						assert(0); // others are WIP
+				//					}
+				//				}
+				//			}
+				//		}
 
-			auto pll = (PipelinelayoutPrivate*)_pll;
+				//		if (pll->pc_udt)
+				//		{
+				//			*ret.p += "\nlayout(push_constant) uniform PushconstantT\n{\n";
+				//			print_udt(pll->pc_udt, *ret.p);
+				//			*ret.p += "}pc;\n";
+				//		}
+				//	}
 
-			auto prefix = _prefix;
-			if (autogen_code)
-			{
-				auto code = get_shader_autogen_code(stage, _inputs, _outputs, _pll);
-				prefix += *code.p;
-				delete_mail(code);
-			}
+				if (std::filesystem::exists(L"out.spv"))
+					std::filesystem::remove(L"out.spv");
 
-			prefix = std::string(
-				"#version 450 core\n"
-				"#extension GL_ARB_shading_language_420pack : enable\n") +
-				(stage != ShaderStageComp ? "#extension GL_ARB_separate_shader_objects : enable\n" : "")
-				+ prefix;
+				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
+				assert(vk_sdk_path != L"");
 
-			if (std::filesystem::exists(L"out.spv"))
-				std::filesystem::remove(L"out.spv");
+				std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -flimit-file shader.conf -o out.spv");
 
-			auto temp_filename = L"temp" + ext.wstring();
-
-			std::ofstream temp_file(temp_filename);
-			auto content = get_file_string(filename);
-			content.erase(std::remove(content.begin(), content.end(), '\r'), content.end());
-			temp_file << prefix << "\n";
-			temp_file << content;
-			temp_file.close();
-
-			auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
-			assert(vk_sdk_path != L"");
-
-			std::wstring command_line(L" " + temp_filename + L" -flimit-file shader.conf -o out.spv");
-
-			auto output1 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
-			std::filesystem::remove(temp_filename);
-			if (!std::filesystem::exists(L"out.spv"))
-			{
-				printf("shader \"%s\" compile error:\n%s\n", w2s(filename).c_str(), output1.p->c_str());
-				printf("trying to use fallback");
-
-				std::ofstream temp_file(temp_filename);
-				temp_file << prefix << "\n";
-
-				switch (stage)
-				{
-				case ShaderStageVert:
-					temp_file << "void main()\n"
-						"{\n"
-						"\tgl_Position = vec4(0, 0, 0, 1);"
-						"}\n";
-					break;
-				case ShaderStageFrag:
-					temp_file <<
-						"void main()\n"
-						"{\n"
-						"}\n";
-					break;
-				default:
-					assert(0); // WIP
-				}
-
-				temp_file.close();
-
-				auto output2 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
-				std::filesystem::remove(temp_filename);
+				auto output1 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
+				std::filesystem::remove(L"out.glsl");
 				if (!std::filesystem::exists(L"out.spv"))
 				{
-					printf(" - failed\n error:\n%s", output2.p->c_str());
+					printf("shader \"%s\" compile error:\n%s\n", w2s(s.filename).c_str(), output1.p->c_str());
+					printf("trying to use fallback");
+
+					std::ofstream glsl_file(L"out.glsl");
+					glsl_file << glsl_header;
+					switch (s.type)
+					{
+					case ShaderStageVert:
+						glsl_file << "void main()\n"
+							"{\n"
+							"\tgl_Position = vec4(0, 0, 0, 1);"
+							"}\n";
+						break;
+					case ShaderStageFrag:
+						glsl_file <<
+							"void main()\n"
+							"{\n"
+							"}\n";
+						break;
+					default:
+						assert(0); // WIP
+					}
+					glsl_file.close();
+
+					auto output2 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
+					std::filesystem::remove(L"out.glsl");
+					if (!std::filesystem::exists(L"out.spv"))
+					{
+						printf(" - failed\n error:\n%s", output2.p->c_str());
+						assert(0);
+					}
+					delete_mail(output2);
+
+					printf(" - ok\n");
+				}
+				delete_mail(output1);
+
+				auto spv_file = get_file_content(L"out.spv");
+				if (!spv_file.first)
 					assert(0);
-				}
-				delete_mail(output2);
 
-				printf(" - ok\n");
-			}
-			delete_mail(output1);
-
-			auto spv_file = get_file_content(L"out.spv");
-			if (!spv_file.first)
-				assert(0);
-
-			if (std::filesystem::exists(L"out.spv"))
-				std::filesystem::remove(L"out.spv");
+				if (std::filesystem::exists(L"out.spv"))
+					std::filesystem::remove(L"out.spv");
 
 #if defined(FLAME_VULKAN)
-			VkShaderModuleCreateInfo shader_info;
-			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-			shader_info.flags = 0;
-			shader_info.pNext = nullptr;
-			shader_info.codeSize = spv_file.second;
-			shader_info.pCode = (uint*)spv_file.first.get();
-			chk_res(vkCreateShaderModule(((DevicePrivate*)d)->v, &shader_info, nullptr, &v));
+				VkShaderModuleCreateInfo shader_info;
+				shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+				shader_info.flags = 0;
+				shader_info.pNext = nullptr;
+				shader_info.codeSize = spv_file.second;
+				shader_info.pCode = (uint*)spv_file.first.get();
+				chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &s.vk_shader_module));
 #elif defined(FLAME_D3D12)
 
 #endif
-			{
-				spirv_cross::CompilerGLSL compiler((uint*)spv_file.first.get(), spv_file.second / sizeof(uint));
-				auto resources = compiler.get_shader_resources();
+				//{
+				//	spirv_cross::CompilerGLSL compiler((uint*)spv_file.first.get(), spv_file.second / sizeof(uint));
+				//	auto resources = compiler.get_shader_resources();
 
-				std::function<void(uint, Variable*)> get_v;
-				get_v = [&](uint type_id, Variable* v) {
-					const auto* t = &compiler.get_type(type_id);
-					while (t->pointer)
-					{
-						type_id = t->parent_type;
-						t = &compiler.get_type(type_id);
-					}
+				//	std::function<void(uint, Variable*)> get_v;
+				//	get_v = [&](uint type_id, Variable* v) {
+				//		const auto* t = &compiler.get_type(type_id);
+				//		while (t->pointer)
+				//		{
+				//			type_id = t->parent_type;
+				//			t = &compiler.get_type(type_id);
+				//		}
 
-					assert(t->array.size() <= 1); // multidimensional array is WIP
-					v->count = t->array.empty() ? 1 : t->array[0];
-					if (t->array.empty())
-						v->array_stride = 0;
-					else
-						v->array_stride = compiler.get_decoration(type_id, spv::DecorationArrayStride);
+				//		assert(t->array.size() <= 1); // multidimensional array is WIP
+				//		v->count = t->array.empty() ? 1 : t->array[0];
+				//		if (t->array.empty())
+				//			v->array_stride = 0;
+				//		else
+				//			v->array_stride = compiler.get_decoration(type_id, spv::DecorationArrayStride);
 
-					if (t->basetype == spirv_cross::SPIRType::Struct)
-					{
-						v->type_name = compiler.get_name(type_id);
-						v->size = compiler.get_declared_struct_size(*t);
-						for (auto i = 0; i < t->member_types.size(); i++)
-						{
-							auto m = new Variable;
-							m->name = compiler.get_member_name(type_id, i);
-							m->offset = compiler.type_struct_member_offset(*t, i);
-							m->size = compiler.get_declared_struct_member_size(*t, i);
-							v->members.emplace_back(m);
-							get_v(t->member_types[i], m);
-						}
-					}
-					else
-					{
-						std::string base_name;
-						switch (t->basetype)
-						{
-						case spirv_cross::SPIRType::SByte:
-							base_name = "char";
-							break;
-						case spirv_cross::SPIRType::UByte:
-							base_name = "uchar";
-							break;
-						case spirv_cross::SPIRType::Short:
-							base_name = "short";
-							break;
-						case spirv_cross::SPIRType::UShort:
-							base_name = "ushort";
-							break;
-						case spirv_cross::SPIRType::Int:
-							base_name = "int";
-							break;
-						case spirv_cross::SPIRType::UInt:
-							base_name = "uint";
-							break;
-						case spirv_cross::SPIRType::Float:
-							base_name = "float";
-							break;
-						case spirv_cross::SPIRType::SampledImage:
-							base_name = "SampledImage";
-							break;
-						default:
-							assert(0);
-						}
-						if (t->columns <= 1)
-						{
-							if (t->vecsize <= 1)
-								v->type_name = base_name;
-							else
-								v->type_name = "Vec(" + std::to_string(t->vecsize) + "+" + base_name + ")";
-						}
-						else
-							v->type_name = "Mat(" + std::to_string(t->vecsize) + "+" + std::to_string(t->columns) + "+" + base_name + ")";
-					}
-				};
+				//		if (t->basetype == spirv_cross::SPIRType::Struct)
+				//		{
+				//			v->type_name = compiler.get_name(type_id);
+				//			v->size = compiler.get_declared_struct_size(*t);
+				//			for (auto i = 0; i < t->member_types.size(); i++)
+				//			{
+				//				auto m = new Variable;
+				//				m->name = compiler.get_member_name(type_id, i);
+				//				m->offset = compiler.type_struct_member_offset(*t, i);
+				//				m->size = compiler.get_declared_struct_member_size(*t, i);
+				//				v->members.emplace_back(m);
+				//				get_v(t->member_types[i], m);
+				//			}
+				//		}
+				//		else
+				//		{
+				//			std::string base_name;
+				//			switch (t->basetype)
+				//			{
+				//			case spirv_cross::SPIRType::SByte:
+				//				base_name = "char";
+				//				break;
+				//			case spirv_cross::SPIRType::UByte:
+				//				base_name = "uchar";
+				//				break;
+				//			case spirv_cross::SPIRType::Short:
+				//				base_name = "short";
+				//				break;
+				//			case spirv_cross::SPIRType::UShort:
+				//				base_name = "ushort";
+				//				break;
+				//			case spirv_cross::SPIRType::Int:
+				//				base_name = "int";
+				//				break;
+				//			case spirv_cross::SPIRType::UInt:
+				//				base_name = "uint";
+				//				break;
+				//			case spirv_cross::SPIRType::Float:
+				//				base_name = "float";
+				//				break;
+				//			case spirv_cross::SPIRType::SampledImage:
+				//				base_name = "SampledImage";
+				//				break;
+				//			default:
+				//				assert(0);
+				//			}
+				//			if (t->columns <= 1)
+				//			{
+				//				if (t->vecsize <= 1)
+				//					v->type_name = base_name;
+				//				else
+				//					v->type_name = "Vec(" + std::to_string(t->vecsize) + "+" + base_name + ")";
+				//			}
+				//			else
+				//				v->type_name = "Mat(" + std::to_string(t->vecsize) + "+" + std::to_string(t->columns) + "+" + base_name + ")";
+				//		}
+				//	};
 
-				for (auto& src : resources.stage_inputs)
-				{
-					auto r = new Resource;
-					r->location = compiler.get_decoration(src.id, spv::DecorationLocation);
-					r->name = src.name;
-					get_v(src.type_id, &r->v);
-					inputs.emplace_back(r);
-				}
+				//	for (auto& src : resources.uniform_buffers)
+				//	{
+				//		auto r = new Resource;
+				//		r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
+				//		r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
+				//		r->name = src.name;
+				//		get_v(src.type_id, &r->v);
+				//		uniform_buffers.emplace_back(r);
+				//	}
 
-				for (auto& src : resources.stage_outputs)
-				{
-					auto r = new Resource;
-					r->location = compiler.get_decoration(src.id, spv::DecorationLocation);
-					r->index = compiler.get_decoration(src.id, spv::DecorationIndex);
-					r->name = src.name;
-					get_v(src.type_id, &r->v);
-					outputs.emplace_back(r);
-				}
+				//	assert(resources.push_constant_buffers.size() <= 1);
+				//	if (!resources.push_constant_buffers.empty())
+				//	{
+				//		auto& src = resources.push_constant_buffers[0];
+				//		push_constant.reset(new Resource);
+				//		push_constant->name = src.name;
 
-				for (auto& src : resources.uniform_buffers)
-				{
-					auto r = new Resource;
-					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
-					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
-					r->name = src.name;
-					get_v(src.type_id, &r->v);
-					uniform_buffers.emplace_back(r);
-				}
+				//		get_v(src.type_id, &push_constant->v);
+				//	}
 
-				for (auto& src : resources.storage_buffers)
-				{
-					auto r = new Resource;
-					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
-					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
-					r->name = src.name;
-					get_v(src.type_id, &r->v);
-					storage_buffers.emplace_back(r);
-				}
+				//	assert(resources.subpass_inputs.empty()); // subpass inputs are WIP
+				//	assert(resources.atomic_counters.empty()); // atomic counters are WIP
+				//	assert(resources.acceleration_structures.empty()); // acceleration structures are WIP
 
-				for (auto& src : resources.sampled_images)
-				{
-					auto r = new Resource;
-					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
-					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
-					r->name = src.name;
-					get_v(src.type_id, &r->v);
-					sampled_images.emplace_back(r);
-				}
+				//	if (pll)
+				//	{
+				//		auto validate_binding = [&](DescriptorType$ type, Resource* r) -> DescriptorBindingBase* {
+				//			assert(r->set < pll->dsls.size());
+				//			auto dsl = pll->dsls[r->set];
+				//			assert(r->binding < dsl->bindings_map.size());
+				//			auto binding = dsl->bindings_map[r->binding];
+				//			assert(binding->type == type && binding->count == r->v.count);
+				//			return binding;
+				//		};
+				//		auto validate_variable = [&](UdtInfo* u, Variable* v) {
+				//			assert(v->members.size() == u->variable_count());
+				//			for (auto i = 0; i < v->members.size(); i++)
+				//			{
+				//				auto m = v->members[i].get();
+				//				assert(m->members.empty()); // nested structs are WIP
 
-				for (auto& src : resources.storage_images)
-				{
-					auto r = new Resource;
-					r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
-					r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
-					r->name = src.name;
-					get_v(src.type_id, &r->v);
-					storage_images.emplace_back(r);
-				}
+				//				auto v = u->variable(i);
+				//				assert(m->type_name == v->type()->name());
+				//				assert(m->name == v->name());
+				//				assert(m->offset == v->offset());
+				//				assert(m->size == v->size());
+				//				assert(m->count == 1); // count is WIP
+				//			}
+				//		};
 
-				assert(resources.push_constant_buffers.size() <= 1);
-				if (!resources.push_constant_buffers.empty())
-				{
-					auto& src = resources.push_constant_buffers[0];
-					push_constant.reset(new Resource);
-					push_constant->name = src.name;
+				//		for (auto& r : uniform_buffers)
+				//		{
+				//			auto b = (DescriptorBufferBinding*)validate_binding(DescriptorUniformBuffer, r.get());
+				//			if (b->udt)
+				//				validate_variable(b->udt, &r->v);
+				//		}
 
-					get_v(src.type_id, &push_constant->v);
-				}
-				
-				assert(resources.subpass_inputs.empty()); // subpass inputs are WIP
-				assert(resources.atomic_counters.empty()); // atomic counters are WIP
-				assert(resources.acceleration_structures.empty()); // acceleration structures are WIP
-
-				// do validate
-
-				if (!_inputs.empty())
-				{
-					if (stage == ShaderStageVert)
-					{
-						for (auto& r : inputs)
-						{
-							VertexInputAttribute* via = nullptr;
-							for (auto _i : _inputs)
-							{
-								auto i = (VertexInputAttribute*)_i;
-								if (r->location == i->location)
-								{
-									via = i;
-									break;
-								}
-							}
-							assert(via && r->v.type_name == format_to_cpp_typename(via->format));
-						}
-					}
-					else
-					{
-						for (auto& r : inputs)
-						{
-							StageInOut* io = nullptr;
-							for (auto _i : _inputs)
-							{
-								auto i = (StageInOut*)_i;
-								if (r->location == i->location)
-								{
-									io = i;
-									break;
-								}
-							}
-							assert(io && r->v.type_name == format_to_cpp_typename(io->format));
-						}
-					}
-				}
-
-				if (!_outputs.empty())
-				{
-					if (stage == ShaderStageFrag)
-					{
-						for (auto& r : outputs)
-						{
-							OutputAttachmentInfo* oa = nullptr;
-							for (auto _o : _outputs)
-							{
-								auto o = (OutputAttachmentInfo*)_o;
-								if (r->location == o->location)  
-								{
-									oa = o;
-									break;
-								}
-							}
-							assert(oa && r->v.type_name == format_to_cpp_typename(oa->format));
-							assert(r->index <= 1 && (r->index != 1 || oa->dual_src));
-						}
-					}
-					else
-					{
-						for (auto& r : outputs)
-						{
-							StageInOut* io = nullptr;
-							for (auto _o : _outputs)
-							{
-								auto o = (StageInOut*)_o;
-								if (r->location == o->location)
-								{
-									io = o;
-									break;
-								}
-							}
-							assert(io && r->v.type_name == format_to_cpp_typename(io->format));
-						}
-					}
-				}
-
-				if (pll) 
-				{
-					auto validate_binding = [&](DescriptorType$ type, Resource* r) -> DescriptorBindingBase* {
-						assert(r->set < pll->dsls.size());
-						auto dsl = pll->dsls[r->set];
-						assert(r->binding < dsl->bindings_map.size());
-						auto binding = dsl->bindings_map[r->binding];
-						assert(binding->type == type && binding->count == r->v.count);
-						return binding;
-					};
-					auto validate_variable = [&](UdtInfo* u, Variable* v) {
-						assert(v->members.size() == u->variable_count());
-						for (auto i = 0; i < v->members.size(); i++)
-						{
-							auto m = v->members[i].get();
-							assert(m->members.empty()); // nested structs are WIP
-
-							auto v = u->variable(i);
-							assert(m->type_name == v->type()->name());
-							assert(m->name == v->name());
-							assert(m->offset == v->offset());
-							assert(m->size == v->size());
-							assert(m->count == 1); // count is WIP
-						}
-					};
-
-					for (auto& r : uniform_buffers)
-					{
-						auto b = (DescriptorBufferBinding*)validate_binding(DescriptorUniformBuffer, r.get());
-						if (b->udt)
-							validate_variable(b->udt, &r->v);
-					}
-					for (auto& r : storage_buffers)
-						validate_binding(DescriptorStorageBuffer, r.get());
-					for (auto& r : sampled_images)
-						validate_binding(DescriptorSampledImage, r.get());
-					for (auto& r : storage_images)
-						validate_binding(DescriptorStorageImage, r.get());
-
-					if (push_constant)
-					{
-						assert(!pll->pc_udt || push_constant->v.size == pll->pc_size);
-						if (pll->pc_udt)
-							validate_variable(pll->pc_udt, &push_constant->v);
-					}
-				}
+				//		if (push_constant)
+				//		{
+				//			assert(!pll->pc_udt || push_constant->v.size == pll->pc_size);
+				//			if (pll->pc_udt)
+				//				validate_variable(pll->pc_udt, &push_constant->v);
+				//		}
+				//	}
+				//}
 			}
 		}
 
-		ShaderPrivate::~ShaderPrivate()
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<uint>& dynamic_states) :
+			d(d),
+			pll(pll)
 		{
-#if defined(FLAME_VULKAN)
-			if (v)
-				vkDestroyShaderModule(d->v, v, nullptr);
-#elif defined(FLAME_D3D12)
+			type = PipelineGraphics;
 
-#endif
-		}
-
-		Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* _pll)
-		{
-			auto ret = new_mail<std::string>();
-
-			if (!inputs.empty())
-			{
-				*ret.p += "\n";
-				if (stage == ShaderStageVert)
-				{
-					for (auto _i : inputs)
-					{
-						auto i = (VertexInputAttribute*)_i;
-						*ret.p += "layout (location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
-					}
-				}
-				else
-				{
-					for (auto _i : inputs)
-					{
-						auto i = (StageInOut*)_i;
-						*ret.p += "layout (location = " + std::to_string(i->location) + ") in " + format_to_glsl_typename(i->format) + " in_" + i->name + ";\n";
-					}
-				}
-			}
-
-			if (!outputs.empty())
-			{
-				*ret.p += "\n";
-				if (stage == ShaderStageFrag)
-				{
-					for (auto _o : outputs)
-					{
-						auto o = (OutputAttachmentInfo*)_o;
-						if (o->dual_src)
-						{
-							*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
-							*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
-						}
-						else
-							*ret.p += "layout (location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
-					}
-				}
-				else
-				{
-					for (auto _o : outputs)
-					{
-						auto o = (StageInOut*)_o;
-						*ret.p += "layout (location = " + std::to_string(o->location) + ") out " + format_to_glsl_typename(o->format) + " out_" + o->name + ";\n";
-					}
-				}
-			}
-
-			if (_pll)
-			{
-				auto pll = (PipelinelayoutPrivate*)_pll;
-
-				auto print_udt = [](UdtInfo* udt, std::string& out) {
-					for (auto i = 0; i < udt->variable_count(); i++)
-					{
-						auto v = udt->variable(i);
-						auto t = v->type();
-						assert(t->tag() == TypeTagVariable);
-						out += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
-					}
-				};
-
-				if (!pll->dsls.empty())
-				{
-					*ret.p += "\n";
-					for (auto i = 0; i < pll->dsls.size(); i++)
-					{
-						auto dsl = pll->dsls[i];
-						for (auto j = 0; j < dsl->bindings_map.size(); j++)
-						{
-							auto _b = dsl->bindings_map[j];
-							switch (_b->type)
-							{
-							case DescriptorUniformBuffer:
-							{
-								auto b = (DescriptorBufferBinding*)_b;
-								*ret.p += "layout (binding = " + std::to_string(j) + ") uniform " + b->udt->name() + "\n{\n";
-								print_udt(b->udt, *ret.p);
-								*ret.p += "}" + b->name + ";\n";
-							}
-								break;
-							case DescriptorSampledImage:
-							{
-								auto b = (DescriptorImageBinding*)_b;
-								*ret.p += "layout (binding = " + std::to_string(j) + ") uniform sampler2D " + b->name + (b->count > 1 ? ("[" + std::to_string(b->count) + "]") : "") + ";\n";
-							}
-								break;
-							default:
-								assert(0); // others are WIP
-							}
-						}
-					}
-				}
-
-				if (pll->pc_udt)
-				{
-					*ret.p += "\nlayout(push_constant) uniform PushconstantT\n{\n";
-					print_udt(pll->pc_udt, *ret.p);
-					*ret.p += "}pc;\n";
-				}
-			}
-
-			return ret;
-		}
-
-		Shader* Shader::create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code)
-		{
-			return new ShaderPrivate(d, filename, prefix, inputs, outputs, pll, autogen_code);
-		}
-
-		void Shader::destroy(Shader* s)
-		{
-			delete (ShaderPrivate*)s;
-		}
-
-		struct Shader$
-		{
-			AttributeV<std::wstring> filename$i;
-			AttributeV<std::string> prefix$i;
-			AttributeP<std::vector<void*>> inputs$i;
-			AttributeP<std::vector<void*>> outputs$i;
-			AttributeP<void> pll$i;
-			AttributeV<bool> autogen_code$i;
-
-			AttributeP<void> out$o;
-
-			FLAME_GRAPHICS_EXPORTS Shader$()
-			{
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$()
-			{
-				if (filename$i.frame > out$o.frame || prefix$i.frame > out$o.frame || inputs$i.frame > out$o.frame || outputs$i.frame > out$o.frame || pll$i.frame > out$o.frame || autogen_code$i.frame > out$o.frame)
-				{
-					if (out$o.v)
-						Shader::destroy((Shader*)out$o.v);
-					auto d = Device::default_one();
-					if (d)
-						out$o.v = Shader::create(d, bp_env().path + L"/" + filename$i.v, prefix$i.v, get_attribute_vec(inputs$i), get_attribute_vec(outputs$i), (Pipelinelayout*)pll$i.v, autogen_code$i.v);
-					else
-					{
-						printf("cannot create shader\n");
-
-						out$o.v = nullptr;
-					}
-					out$o.frame = maxN(filename$i.frame, prefix$i.frame, inputs$i.frame, outputs$i.frame, pll$i.frame, autogen_code$i.frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS ~Shader$()
-			{
-				if (out$o.v)
-					Shader::destroy((Shader*)out$o.v);
-			}
-		};
-
-		PipelinePrivate::PipelinePrivate(Device* _d, const std::vector<void*>& shaders, Pipelinelayout* _pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* _vi, const Vec2u& _vp, RasterInfo* _raster, SampleCount$ _sc, DepthInfo* _depth, const std::vector<void*>& _outputs, const std::vector<uint>& _dynamic_states) :
-			d((DevicePrivate*)_d),
-			pll((PipelinelayoutPrivate*)_pll)
-		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 			std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
@@ -1324,39 +1005,41 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			vk_stage_infos.resize(shaders.size());
-			for (auto i = 0; i < shaders.size(); i++)
+			vk_stage_infos.resize(stage_infos.size());
+			for (auto i = 0; i < stage_infos.size(); i++)
 			{
-				auto src = (ShaderPrivate*)shaders[i];
+				auto& src = stage_infos[i];
 				auto& dst = vk_stage_infos[i];
+				vk_shader_modules.push_back(src.vk_shader_module);
 				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				dst.flags = 0;
 				dst.pNext = nullptr;
 				dst.pSpecializationInfo = nullptr;
 				dst.pName = "main";
-				dst.stage = to_enum(src->stage);
-				dst.module = src->v;
+				dst.stage = to_enum(src.type);
+				dst.module = src.vk_shader_module;
 			}
 
-			if (_vi)
+			if (vi)
 			{
-				vk_vi_attributes.resize(_vi->attribs.size());
-				for (auto i = 0; i < _vi->attribs.size(); i++)
+				auto attribute_location = 0;
+				vk_vi_bindings.resize(vi->buffers.size());
+				for (auto i = 0; i < vi->buffers.size(); i++)
 				{
-					const auto& src = *(VertexInputAttribute*)_vi->attribs[i];
-					auto& dst = vk_vi_attributes[i];
-					dst.location = src.location;
-					dst.binding = src.buffer_id;
-					dst.offset = src.offset;
-					dst.format = to_enum(src.format);
-				}
-				vk_vi_bindings.resize(_vi->buffers.size());
-				for (auto i = 0; i < _vi->buffers.size(); i++)
-				{
-					const auto& src = *(VertexInputBuffer*)_vi->buffers[i];
+					const auto& src = *(VertexInputBuffer*)vi->buffers[i];
 					auto& dst = vk_vi_bindings[i];
-					dst.binding = src.id;
-					dst.stride = src.stride;
+					dst.binding = i;
+					for (auto a : src.attributes)
+					{
+						const auto& _src = *(VertexInputAttribute*)a;
+						VkVertexInputAttributeDescription _dst;
+						_dst.location = attribute_location++;
+						_dst.binding = i;
+						_dst.offset = dst.stride;
+						dst.stride += format_size(_src.format);
+						_dst.format = to_enum(_src.format);
+						vk_vi_attributes.push_back(_dst);
+					}
 					dst.inputRate = to_enum(src.rate);
 				}
 			}
@@ -1374,26 +1057,26 @@ namespace flame
 			assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 			assembly_state.flags = 0;
 			assembly_state.pNext = nullptr;
-			assembly_state.topology = to_enum(_vi ? _vi->primitive_topology : PrimitiveTopologyTriangleList);
+			assembly_state.topology = to_enum(vi ? vi->primitive_topology : PrimitiveTopologyTriangleList);
 			assembly_state.primitiveRestartEnable = VK_FALSE;
 
 			VkPipelineTessellationStateCreateInfo tess_state;
 			tess_state.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 			tess_state.pNext = nullptr;
 			tess_state.flags = 0;
-			tess_state.patchControlPoints = _vi ? _vi->patch_control_points : 0;
+			tess_state.patchControlPoints = vi ? vi->patch_control_points : 0;
 
 			VkViewport viewport;
-			viewport.width = (float)_vp.x();
-			viewport.height = (float)_vp.y();
+			viewport.width = (float)vp.x();
+			viewport.height = (float)vp.y();
 			viewport.minDepth = (float)0.0f;
 			viewport.maxDepth = (float)1.0f;
 			viewport.x = 0;
 			viewport.y = 0;
 
 			VkRect2D scissor;
-			scissor.extent.width = _vp.x();
-			scissor.extent.height = _vp.y();
+			scissor.extent.width = vp.x();
+			scissor.extent.height = vp.y();
 			scissor.offset.x = 0;
 			scissor.offset.y = 0;
 
@@ -1410,10 +1093,10 @@ namespace flame
 			raster_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 			raster_state.pNext = nullptr;
 			raster_state.flags = 0;
-			raster_state.depthClampEnable = _raster ? _raster->depth_clamp : false;
+			raster_state.depthClampEnable = raster ? raster->depth_clamp : false;
 			raster_state.rasterizerDiscardEnable = VK_FALSE;
-			raster_state.polygonMode = to_enum(_raster ? _raster->polygon_mode : PolygonModeFill);
-			raster_state.cullMode = to_enum(_raster ? _raster->cull_mode : CullModeNone);
+			raster_state.polygonMode = to_enum(raster ? raster->polygon_mode : PolygonModeFill);
+			raster_state.cullMode = to_enum(raster ? raster->cull_mode : CullModeNone);
 			raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 			raster_state.depthBiasEnable = VK_FALSE;
 			raster_state.depthBiasConstantFactor = 0.f;
@@ -1425,7 +1108,7 @@ namespace flame
 			multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
-			multisample_state.rasterizationSamples = to_enum(_sc);
+			multisample_state.rasterizationSamples = to_enum(sc);
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
 			multisample_state.pSampleMask = nullptr;
@@ -1436,9 +1119,9 @@ namespace flame
 			depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 			depth_stencil_state.flags = 0;
 			depth_stencil_state.pNext = nullptr;
-			depth_stencil_state.depthTestEnable = _depth ? _depth->test : false;
-			depth_stencil_state.depthWriteEnable = _depth ? _depth->write : false;
-			depth_stencil_state.depthCompareOp = to_enum(_depth ? _depth->compare_op : CompareOpLess);
+			depth_stencil_state.depthTestEnable = depth ? depth->test : false;
+			depth_stencil_state.depthWriteEnable = depth ? depth->write : false;
+			depth_stencil_state.depthCompareOp = to_enum(depth ? depth->compare_op : CompareOpLess);
 			depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 			depth_stencil_state.minDepthBounds = 0;
 			depth_stencil_state.maxDepthBounds = 0;
@@ -1452,18 +1135,22 @@ namespace flame
 				memset(&a, 0, sizeof(a));
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
-			for (auto i = 0; i < _outputs.size(); i++)
+			if (stage_infos.back().type == ShaderStageFrag)
 			{
-				const auto& src = *(OutputAttachmentInfo*)_outputs[i];
-				auto& dst = vk_blend_attachment_states[i];
-				dst.blendEnable = src.blend_enable;
-				dst.srcColorBlendFactor = to_enum(src.blend_src_color);
-				dst.dstColorBlendFactor = to_enum(src.blend_dst_color);
-				dst.colorBlendOp = VK_BLEND_OP_ADD;
-				dst.srcAlphaBlendFactor = to_enum(src.blend_src_alpha);
-				dst.dstAlphaBlendFactor = to_enum(src.blend_dst_alpha);
-				dst.alphaBlendOp = VK_BLEND_OP_ADD;
-				dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				auto& outputs = stage_infos.back().outputs;
+				for (auto i = 0; i < outputs.size(); i++)
+				{
+					const auto& src = outputs[i];
+					auto& dst = vk_blend_attachment_states[i];
+					dst.blendEnable = src.blend_enable;
+					dst.srcColorBlendFactor = to_enum(src.blend_src_color);
+					dst.dstColorBlendFactor = to_enum(src.blend_dst_color);
+					dst.colorBlendOp = VK_BLEND_OP_ADD;
+					dst.srcAlphaBlendFactor = to_enum(src.blend_src_alpha);
+					dst.dstAlphaBlendFactor = to_enum(src.blend_dst_alpha);
+					dst.alphaBlendOp = VK_BLEND_OP_ADD;
+					dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				}
 			}
 
 			VkPipelineColorBlendStateCreateInfo blend_state;
@@ -1479,9 +1166,9 @@ namespace flame
 			blend_state.attachmentCount = vk_blend_attachment_states.size();
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
-			for (auto& s : _dynamic_states)
+			for (auto& s : dynamic_states)
 				vk_dynamic_states.push_back(to_enum((DynamicState)s));
-			if (_vp.x() == 0 && _vp.y() == 0)
+			if (vp.x() == 0 && vp.y() == 0)
 			{
 				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
 					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
@@ -1521,15 +1208,16 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
-			type = PipelineGraphics;
 		}
 
-		PipelinePrivate::PipelinePrivate(Device* _d, Shader* compute_shader, Pipelinelayout* _pll) :
-			d((DevicePrivate*)_d),
-			pll((PipelinelayoutPrivate*)_pll)
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const StageInfo& compute_shader_info, PipelinelayoutPrivate* pll) :
+			d(d),
+			pll(pll)
 		{
+			type = PipelineCompute;
+
 #if defined(FLAME_VULKAN)
+			vk_shader_modules.push_back(compute_shader_info.vk_shader_module);
 
 			VkComputePipelineCreateInfo pipeline_info;
 			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -1542,7 +1230,7 @@ namespace flame
 			pipeline_info.stage.pSpecializationInfo = nullptr;
 			pipeline_info.stage.pName = "main";
 			pipeline_info.stage.stage = to_enum(ShaderStageComp);
-			pipeline_info.stage.module = ((ShaderPrivate*)compute_shader)->v;
+			pipeline_info.stage.module = compute_shader_info.vk_shader_module;
 
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
@@ -1552,27 +1240,68 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
-			type = PipelineCompute;
 		}
 
 		PipelinePrivate::~PipelinePrivate()
 		{
 #if defined(FLAME_VULKAN)
+			for (auto v : vk_shader_modules)
+				vkDestroyShaderModule(d->v, v, nullptr);
+
 			vkDestroyPipeline(d->v, v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		Pipeline* Pipeline::create(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<void*>& outputs, const std::vector<uint>& dynamic_states)
+		Pipeline* Pipeline::create(Device* d, const std::vector<std::wstring>& shader_filenames, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<uint>& dynamic_states)
 		{
-			return new PipelinePrivate(d, shaders, pll, rp, subpass_idx, vi, vp, raster, sc, depth, outputs, dynamic_states);
+			std::vector<StageInfo> stage_infos;
+			auto has_vert_stage = false;
+			auto tess_stages_count = 0;
+			for (auto& f : shader_filenames)
+			{
+				StageInfo info(f);
+
+				auto sp = string_split(f, L':');
+				if (!std::filesystem::exists(info.path))
+					return nullptr;
+				for (auto& s : stage_infos)
+				{
+					if (s.path == info.path || s.type == info.type)
+						return nullptr;
+				}
+				if (info.type == ShaderStageComp)
+					return nullptr;
+				if (info.type == ShaderStageVert)
+					has_vert_stage = true;
+				if (info.type == ShaderStageTesc || info.type == ShaderStageTese)
+					tess_stages_count++;
+
+				stage_infos.push_back(std::move(info));
+			}
+			if (!has_vert_stage || (tess_stages_count != 0 && tess_stages_count != 2))
+				return nullptr;
+			std::sort(stage_infos.begin(), stage_infos.end(), [](const auto& a, const auto& b) {
+				return (int)a.type < (int)b.type;
+			});
+
+			compile_shaders((DevicePrivate*)d, stage_infos, (PipelinelayoutPrivate*)pll, vi);
+
+			return new PipelinePrivate((DevicePrivate*)d, stage_infos, (PipelinelayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, dynamic_states);
 		}
 
-		Pipeline* Pipeline::create(Device* d, Shader* compute_shader, Pipelinelayout* pll)
+		Pipeline* Pipeline::create(Device* d, const std::wstring& compute_shader_filename, Pipelinelayout* pll)
 		{
-			return new PipelinePrivate(d, compute_shader, pll);
+			StageInfo compute_stage_info(compute_shader_filename);
+			if (!std::filesystem::exists(compute_stage_info.path) || compute_stage_info.type != ShaderStageComp)
+				return nullptr;
+
+			std::vector<StageInfo> stage_infos;
+			stage_infos.push_back(std::move(compute_stage_info));
+			compile_shaders((DevicePrivate*)d, stage_infos, (PipelinelayoutPrivate*)pll, nullptr);
+
+			return new PipelinePrivate((DevicePrivate*)d, compute_stage_info, (PipelinelayoutPrivate*)pll);
 		}
 
 		void Pipeline::destroy(Pipeline* p)
@@ -1582,7 +1311,7 @@ namespace flame
 
 		struct Pipeline$
 		{
-			AttributeP<std::vector<void*>> shaders$i;
+			AttributeP<std::vector<std::wstring>> shader_filenames$i;
 			AttributeP<void> pll$i;
 			AttributeP<void> renderpass$i;
 			AttributeV<uint> subpass_idx$i;
@@ -1591,7 +1320,6 @@ namespace flame
 			AttributeP<void> raster$i;
 			AttributeE<SampleCount$> sc$i;
 			AttributeP<void> depth$i;
-			AttributeP<std::vector<void*>> outputs$i;
 			AttributeP<std::vector<uint>> dynamic_states$i;
 
 			AttributeP<void> out$o;
@@ -1602,24 +1330,28 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shaders$i.frame > out$o.frame || pll$i.frame > out$o.frame ||
-					vi$i.frame > out$o.frame || vp$i.frame > out$o.frame || raster$i.frame > out$o.frame || sc$i.frame > out$o.frame || depth$i.frame > out$o.frame || outputs$i.frame > out$o.frame || dynamic_states$i.frame > out$o.frame)
+				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shader_filenames$i.frame > out$o.frame || pll$i.frame > out$o.frame ||
+					vi$i.frame > out$o.frame || vp$i.frame > out$o.frame || raster$i.frame > out$o.frame || sc$i.frame > out$o.frame || depth$i.frame > out$o.frame || dynamic_states$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
 					auto d = Device::default_one();
-					auto shaders = get_attribute_vec(shaders$i);
-					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && !shaders.empty() && pll$i.v)
-						out$o.v = Pipeline::create(d, shaders, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,
-						(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, get_attribute_vec(outputs$i), dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
+					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v&& shader_filenames$i.v && !shader_filenames$i.v->empty() && pll$i.v)
+					{
+						auto filenames = *shader_filenames$i.v;
+						for (auto& fn : filenames)
+							fn = bp_env().path + L"/" + fn;
+						out$o.v = Pipeline::create(d, filenames, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,
+							(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
+					}
 					else
 					{
 						printf("cannot create pipeline\n");
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(shaders$i.frame, pll$i.frame, renderpass$i.frame, subpass_idx$i.frame, 
-						vi$i.frame, vp$i.frame, raster$i.frame, sc$i.frame, depth$i.frame, outputs$i.frame, dynamic_states$i.frame);
+					out$o.frame = maxN(shader_filenames$i.frame, pll$i.frame, renderpass$i.frame, subpass_idx$i.frame,
+						vi$i.frame, vp$i.frame, raster$i.frame, sc$i.frame, depth$i.frame, dynamic_states$i.frame);
 				}
 			}
 

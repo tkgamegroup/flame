@@ -6,8 +6,6 @@
 
 namespace flame
 {
-	struct UdtInfo;
-
 	namespace graphics
 	{
 		struct Buffer;
@@ -22,20 +20,17 @@ namespace flame
 
 		struct DescriptorBindingBase
 		{
-			uint binding;
 			DescriptorType$ type;
 			uint count;
 			std::string name;
 
 			DescriptorBindingBase() :
-				binding(-1),
 				type(DescriptorUniformBuffer),
 				count(1)
 			{
 			}
 
-			DescriptorBindingBase(uint binding, DescriptorType$ type, uint count = 1, const std::string& name = "", UdtInfo* buffer_udt = nullptr) :
-				binding(binding),
+			DescriptorBindingBase(DescriptorType$ type, uint count = 1, const std::string& name = "") :
 				type(type),
 				count(count),
 				name(name)
@@ -46,11 +41,9 @@ namespace flame
 		struct DescriptorBufferBinding : DescriptorBindingBase
 		{
 			Buffer* buffer;
-			UdtInfo* udt;
 
 			DescriptorBufferBinding() :
-				buffer(nullptr),
-				udt(nullptr)
+				buffer(nullptr)
 			{
 			}
 		};
@@ -71,7 +64,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS const DescriptorBindingBase* get_binding(uint binding) const;
 			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, const std::vector<void*>& bindings, Descriptorpool* pool_to_create_default_set = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, const std::vector<void*>& bindings, Descriptorpool* default_set_pool = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 
@@ -89,52 +82,27 @@ namespace flame
 
 		struct Pipelinelayout
 		{
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
 		};
 
 		struct VertexInputAttribute
 		{
-			uint location;
-			uint buffer_id;
-			uint offset;
-			Format$ format;
 			std::string name;
-
-			VertexInputAttribute() :
-				location(0),
-				buffer_id(0),
-				offset(0),
-				format(Format_Undefined)
-			{
-			}
-
-			VertexInputAttribute(uint location, uint buffer_id, uint offset, Format$ format, const std::string& name = "") :
-				location(location),
-				buffer_id(buffer_id),
-				offset(offset),
-				format(format),
-				name(name)
-			{
-			}
+			Format$ format;
 		};
 
 		struct VertexInputBuffer
 		{
-			uint id;
-			uint stride;
+			std::vector<void*> attributes;
 			VertexInputRate$ rate;
 
 			VertexInputBuffer() :
-				id(0),
-				stride(0),
 				rate(VertexInputRateVertex)
 			{
 			}
 
 			VertexInputBuffer(uint id, uint stride, VertexInputRate$ rate = VertexInputRateVertex) :
-				id(id),
-				stride(stride),
 				rate(rate)
 			{
 			}
@@ -142,7 +110,6 @@ namespace flame
 
 		struct VertexInputInfo
 		{
-			std::vector<void*> attribs;
 			std::vector<void*> buffers;
 			PrimitiveTopology$ primitive_topology;
 			uint patch_control_points;
@@ -150,26 +117,6 @@ namespace flame
 			VertexInputInfo() :
 				primitive_topology(PrimitiveTopologyTriangleList),
 				patch_control_points(0)
-			{
-			}
-		};
-
-		struct StageInOut
-		{
-			uint location;
-			Format$ format;
-			std::string name;
-
-			StageInOut() :
-				location(0),
-				format(Format_Undefined)
-			{
-			}
-
-			StageInOut(uint location, Format$ format, const std::string& name = "") :
-				location(location),
-				format(format),
-				name(name)
 			{
 			}
 		};
@@ -202,101 +149,52 @@ namespace flame
 			}
 		};
 
-		struct OutputAttachmentInfo
+		inline std::wstring shader_stage_name(ShaderStage$ s)
 		{
-			uint location;
-			Format$ format;
-			std::string name;
-			bool blend_enable;
-			BlendFactor$ blend_src_color;
-			BlendFactor$ blend_dst_color;
-			BlendFactor$ blend_src_alpha;
-			BlendFactor$ blend_dst_alpha;
-			bool dual_src;
-
-			OutputAttachmentInfo() :
-				location(0),
-				format(Format_R8G8B8A8_UNORM),
-				blend_enable(false),
-				blend_src_color(BlendFactorOne),
-				blend_dst_color(BlendFactorZero),
-				blend_src_alpha(BlendFactorOne),
-				blend_dst_alpha(BlendFactorZero),
-				dual_src(false)
+			switch (s)
 			{
+			case ShaderStageVert:
+				return L"vert";
+			case ShaderStageTesc:
+				return L"tesc";
+			case ShaderStageTese:
+				return L"tese";
+			case ShaderStageGeom:
+				return L"geom";
+			case ShaderStageFrag:
+				return L"frag";
+			case ShaderStageComp:
+				return L"comp";
 			}
+		}
 
-			OutputAttachmentInfo(uint location, Format$ format, const std::string& name) :
-				location(location),
-				format(format),
-				name(name),
-				blend_enable(false),
-				blend_src_color(BlendFactorOne),
-				blend_dst_color(BlendFactorZero),
-				blend_src_alpha(BlendFactorOne),
-				blend_dst_alpha(BlendFactorZero),
-				dual_src(false)
-			{
-			}
-
-			OutputAttachmentInfo(uint location, Format$ format, const std::string& name, BlendFactor$ sc, BlendFactor$ dc, BlendFactor$ sa, BlendFactor$ da) :
-				location(location),
-				format(format),
-				name(name),
-				blend_enable(true),
-				blend_src_color(sc),
-				blend_dst_color(dc),
-				blend_src_alpha(sa),
-				blend_dst_alpha(da)
-			{
-				judge_dual();
-			}
-
-			void judge_dual()
-			{
-				dual_src = is_blend_factor_dual(blend_src_color) || 
-					is_blend_factor_dual(blend_dst_color) ||
-					is_blend_factor_dual(blend_src_alpha) ||
-					is_blend_factor_dual(blend_dst_alpha);
-			}
-		};
-
-		inline ShaderStage$ shader_stage_from_filename(const std::wstring& filename)
+		inline ShaderStage$ shader_stage_from_ext(const std::filesystem::path& extension)
 		{
-			auto ext = std::filesystem::path(filename).extension();
-			if (ext == L".vert")
+			if (extension == L".vert")
 				return ShaderStageVert;
-			else if (ext == L".tesc")
+			else if (extension == L".tesc")
 				return ShaderStageTesc;
-			else if (ext == L".tese")
+			else if (extension == L".tese")
 				return ShaderStageTese;
-			else if (ext == L".geom")
+			else if (extension == L".geom")
 				return ShaderStageGeom;
-			else if (ext == L".frag")
+			else if (extension == L".frag")
 				return ShaderStageFrag;
-			else if (ext == L".comp")
+			else if (extension == L".comp")
 				return ShaderStageComp;
 			return ShaderStageNone;
 		}
 
-		FLAME_GRAPHICS_EXPORTS Mail<std::string> get_shader_autogen_code(ShaderStage$ stage, const std::vector<void*>& inputs = {}, const std::vector<void*>& outputs = {}, Pipelinelayout* pll = nullptr);
-
-		struct Shader
-		{
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs = {}, const std::vector<void*>& outputs = {}, Pipelinelayout* pll = nullptr, bool autogen_code = false);
-			// for vertex shader, inputs are the VertexInputAttributeInfos, for fragment shader, outputs are the OutputAttachmentInfos, otherwise, inputs and outputs are StageInOutInfos
-			// if autogen_code, inputs, outputs and pll are used to generate the code, otherwise, just the validation
-			FLAME_GRAPHICS_EXPORTS static void destroy(Shader* s);
-		};
+		// 'i_' or 'o_' will be emitted to verify between stages
 
 		struct Pipeline
 		{
 			PipelineType type;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, 
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const std::vector<std::wstring>& shader_filenames /* filename[:prefix] */, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
 				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount$ sc = SampleCount_1, DepthInfo* depth = nullptr,
-				const std::vector<void*>& outputs = {}, const std::vector<uint>& dynamic_states = {});
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, Shader* compute_shader, Pipelinelayout* pll);
+				const std::vector<uint>& dynamic_states = {});
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const std::wstring& compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);
 			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline* p);
 		};
 	}

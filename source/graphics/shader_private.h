@@ -35,10 +35,10 @@ namespace flame
 
 #endif
 
-			std::vector<DescriptorBindingBase*> bindings_map;
+			std::vector<DescriptorBindingBase*> bindings;
 			Descriptorset* default_set;
 
-			DescriptorlayoutPrivate(Device* d, const std::vector<void*>& _bindings, Descriptorpool* pool_to_create_default_set);
+			DescriptorlayoutPrivate(Device* d, const std::vector<void*>& _bindings, Descriptorpool* default_set_pool);
 			~DescriptorlayoutPrivate();
 		};
 
@@ -70,14 +70,38 @@ namespace flame
 
 			std::vector<DescriptorlayoutPrivate*> dsls;
 			uint pc_size;
-			UdtInfo* pc_udt;
 
-			PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size, UdtInfo* push_constant_udt);
+			PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();
 		};
 
-		struct ShaderPrivate : Shader
+		struct StageInfo
 		{
+			struct InOut
+			{
+				std::string name;
+				std::string formated_type;
+
+				bool blend_enable;
+				BlendFactor$ blend_src_color;
+				BlendFactor$ blend_dst_color;
+				BlendFactor$ blend_src_alpha;
+				BlendFactor$ blend_dst_alpha;
+
+				InOut(const std::string& name, const std::string& type) :
+					name(name),
+					formated_type(type),
+					blend_enable(false),
+					blend_src_color(BlendFactorZero),
+					blend_dst_color(BlendFactorZero),
+					blend_src_alpha(BlendFactorZero),
+					blend_dst_alpha(BlendFactorZero)
+				{
+					if (type[0] == 'i' || type[0] == 'u')
+						formated_type = "flat " + formated_type;
+				}
+			};
+
 			struct Variable
 			{
 				std::string type_name;
@@ -117,24 +141,32 @@ namespace flame
 				}
 			};
 
-			DevicePrivate* d;
+			std::wstring filename;
+			std::string prefix;
+			std::filesystem::path path;
+			ShaderStage$ type;
+
+			std::vector<InOut> inputs;
+			std::vector<InOut> outputs;
+			std::vector<std::unique_ptr<Resource>> uniform_buffers;
+			std::unique_ptr<Resource> push_constant;
+
 #if defined(FLAME_VULKAN)
-			VkShaderModule v;
+			VkShaderModule vk_shader_module;
 #elif defined(FLAME_D3D12)
 
 #endif
-			ShaderStage$ stage;
 
-			std::vector<std::unique_ptr<Resource>> inputs;
-			std::vector<std::unique_ptr<Resource>> outputs;
-			std::vector<std::unique_ptr<Resource>> uniform_buffers;
-			std::vector<std::unique_ptr<Resource>> storage_buffers;
-			std::vector<std::unique_ptr<Resource>> sampled_images;
-			std::vector<std::unique_ptr<Resource>> storage_images;
-			std::unique_ptr<Resource> push_constant;
-
-			ShaderPrivate(Device* d, const std::wstring& filename, const std::string& prefix, const std::vector<void*>& inputs, const std::vector<void*>& outputs, Pipelinelayout* pll, bool autogen_code);
-			~ShaderPrivate();
+			StageInfo(const std::wstring& fn)
+			{
+				auto sp = string_split(fn, L':');
+				filename = sp[0];
+				if (sp.size() > 1)
+					prefix = w2s(sp[1]);
+				path = std::filesystem::canonical(filename);
+				type = shader_stage_from_ext(path.extension());
+				vk_shader_module = 0;
+			}
 		};
 
 		struct PipelinePrivate : Pipeline
@@ -143,13 +175,14 @@ namespace flame
 			PipelinelayoutPrivate* pll;
 
 #if defined(FLAME_VULKAN)
+			std::vector<VkShaderModule> vk_shader_modules;
 			VkPipeline v;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			PipelinePrivate(Device* d, const std::vector<void*>& shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<void*>& output_states, const std::vector<uint>& dynamic_states);
-			PipelinePrivate(Device* d, Shader* compute_shader, Pipelinelayout* pll);
+			PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<uint>& dynamic_states);
+			PipelinePrivate(DevicePrivate* d, const StageInfo& compute_stage_info, PipelinelayoutPrivate* pll);
 			~PipelinePrivate();
 		};
 	}

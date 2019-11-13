@@ -33,9 +33,6 @@
 		</node>
 		<node type="graphics::Descriptorlayout" id="dsl" pos="870.01;1827.41" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="1527.80;1116.37">
-			<datas>
-				<data name="push_constant_udt_name" value="PushconstantT" />
-			</datas>
 		</node>
 		<node type="graphics::VertexInputAttribute" id="via1" pos="1255.60;1601.00">
 			<datas>
@@ -45,98 +42,53 @@
 		</node>
 		<node type="graphics::VertexInputAttribute" id="via2" pos="1255.60;1902.00">
 			<datas>
-				<data name="location" value="1" />
-				<data name="offset" value="8" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 				<data name="name" value="uv" />
 			</datas>
 		</node>
 		<node type="graphics::VertexInputAttribute" id="via3" pos="1255.60;2208.00">
 			<datas>
-				<data name="location" value="2" />
-				<data name="offset" value="16" />
 				<data name="format" value="Format_R8G8B8A8_UNORM" />
 				<data name="name" value="color" />
 			</datas>
 		</node>
 		<node type="Array(3+void*)" id="vias" pos="1611.13;1808.33" />
-		<node type="graphics::VertexInputBuffer" id="vib" pos="1929.05;2353.21">
-			<datas>
-				<data name="stride" value="20" />
-			</datas>
-		</node>
+		<node type="graphics::VertexInputBuffer" id="vib" pos="1929.05;2353.21" />
 		<node type="graphics::VertexInputInfo" id="vi" pos="2216.83;2133.37" />
-		<node type="graphics::StageInOut" id="vert_out1" pos="1256.60;948.72">
-			<datas>
-				<data name="format" value="Format_R32G32B32A32_SFLOAT" />
-				<data name="name" value="color" />
-			</datas>
-		</node>
-		<node type="graphics::StageInOut" id="vert_out2" pos="1255.60;1163.80">
-			<datas>
-				<data name="location" value="1" />
-				<data name="format" value="Format_R32G32_SFLOAT" />
-				<data name="name" value="uv" />
-			</datas>
-		</node>
-		<node type="graphics::StageInOut" id="vert_out3" pos="1255.60;1380.90">
-			<datas>
-				<data name="location" value="2" />
-				<data name="format" value="Format_R32_UINT" />
-				<data name="name" value="id" />
-			</datas>
-		</node>
-		<node type="Array(3+void*)" id="vert_outs" pos="1602.28;1521.85" />
 		<node type="graphics::OutputAttachmentInfo" id="out_alpha_blend" pos="1835.60;554.40">
 			<datas>
-				<data name="name" value="color" />
-				<data name="blend_enable" value="1" />
 				<data name="blend_src_color" value="BlendFactorSrcAlpha" />
 				<data name="blend_dst_color" value="BlendFactorOneMinusSrcAlpha" />
 				<data name="blend_src_alpha" value="BlendFactorZero" />
-				<data name="blend_dst_alpha" value="BlendFactorOne" />
+				<data name="blend_dst_alpha" value="BlendFactorZero" />
 			</datas>
 		</node>
 		<node type="graphics::OutputAttachmentInfo" id="out_lcd" pos="1559.17;2189.26">
 			<datas>
-				<data name="name" value="color" />
-				<data name="blend_enable" value="1" />
 				<data name="blend_src_color" value="BlendFactorSrc1Color" />
 				<data name="blend_dst_color" value="BlendFactorOneMinusSrc1Color" />
 				<data name="blend_src_alpha" value="BlendFactorZero" />
+        <data name="blend_dst_alpha" value="BlendFactorZero" />
 			</datas>
 		</node>
-		<node type="graphics::Shader" id="shv_element" pos="1854.20;1035.39">
-			<datas>
-				<data name="filename" value="element.vert" />
-				<data name="prefix" value="" />
-				<data name="autogen_code" value="1" />
-			</datas>
-		</node>
-		<node type="graphics::Shader" id="shf_element" pos="1853.72;1344.68">
-			<datas>
-				<data name="filename" value="element.frag" />
-				<data name="prefix" value="" />
-				<data name="autogen_code" value="1" />
-			</datas>
-		</node>
-		<node type="graphics::Shader" id="shf_text_lcd" pos="1844.20;1645.77">
-			<datas>
-				<data name="filename" value="text_lcd.frag" />
-				<data name="prefix" value="" />
-				<data name="autogen_code" value="1" />
-			</datas>
-		</node>
-		<node type="graphics::Shader" id="shf_text_sdf" pos="1854.20;1963.10">
-			<datas>
-				<data name="filename" value="text_sdf.frag" />
-				<data name="prefix" value="" />
-				<data name="autogen_code" value="1" />
-			</datas>
-		</node>
-		<node type="Array(2+void*)" id="pl_element_shs" pos="2212.07;1043.81" />
-		<node type="Array(2+void*)" id="pl_text_lcd_shs" pos="2203.50;1353.57" />
-		<node type="Array(2+void*)" id="pl_text_sdf_shs" pos="2229.21;1671.75" />
+    <node type="Array(2+std::basic_string(wchar_t))" id="pl_element_shs" pos="2212.07;1043.81">
+      <datas>
+        <data name="1" value="element.vert" />
+        <data name="2" value="element.frag" />
+      </datas>
+    </node>
+		<node type="Array(2+std::basic_string(wchar_t))" id="pl_text_lcd_shs" pos="2203.50;1353.57">
+      <datas>
+        <data name="1" value="element.vert" />
+        <data name="2" value="text_lcd.frag" />
+      </datas>
+    </node>
+		<node type="Array(2+std::basic_string(wchar_t))" id="pl_text_sdf_shs" pos="2229.21;1671.75">
+      <datas>
+        <data name="1" value="element.vert" />
+        <data name="2" value="text_sdf.frag" />
+      </datas>
+    </node>
 		<node type="graphics::Pipeline" id="pl_element" pos="2684.73;832.38" />
 		<node type="graphics::Pipeline" id="pl_text_lcd" pos="2688.06;1232.47" />
 		<node type="graphics::Pipeline" id="pl_text_sdf" pos="2695.68;1647.94" />
@@ -177,47 +129,23 @@
 		<link out="via1.out" in="vias.1" />
 		<link out="via2.out" in="vias.2" />
 		<link out="via3.out" in="vias.3" />
-		<link out="vias.v" in="vi.attribs" />
+		<link out="vias.v" in="vib.attributes" />
 		<link out="vib.out" in="vi.buffers" />
-		<link out="vert_out1.out" in="vert_outs.1" />
-		<link out="vert_out2.out" in="vert_outs.2" />
-		<link out="vert_out3.out" in="vert_outs.3" />
-		<link out="vias.v" in="shv_element.inputs" />
-		<link out="vert_outs.v" in="shv_element.outputs" />
-		<link out="pll.out" in="shv_element.pll" />
-		<link out="vert_outs.v" in="shf_element.inputs" />
-		<link out="out_alpha_blend.out" in="shf_element.outputs" />
-		<link out="pll.out" in="shf_element.pll" />
-		<link out="vert_outs.v" in="shf_text_lcd.inputs" />
-		<link out="out_lcd.out" in="shf_text_lcd.outputs" />
-		<link out="pll.out" in="shf_text_lcd.pll" />
-		<link out="vert_outs.v" in="shf_text_sdf.inputs" />
-		<link out="out_alpha_blend.out" in="shf_text_sdf.outputs" />
-		<link out="pll.out" in="shf_text_sdf.pll" />
-		<link out="shv_element.out" in="pl_element_shs.1" />
-		<link out="shf_element.out" in="pl_element_shs.2" />
-		<link out="shv_element.out" in="pl_text_lcd_shs.1" />
-		<link out="shf_text_lcd.out" in="pl_text_lcd_shs.2" />
-		<link out="shv_element.out" in="pl_text_sdf_shs.1" />
-		<link out="shf_text_sdf.out" in="pl_text_sdf_shs.2" />
-		<link out="pl_element_shs.v" in="pl_element.shaders" />
+		<link out="pl_element_shs.v" in="pl_element.shader_filenames" />
 		<link out="pll.out" in="pl_element.pll" />
 		<link out="rnf.rp" in="pl_element.renderpass" />
 		<link out="vi.out" in="pl_element.vi" />
 		<link out="sc.out" in="pl_element.sc" />
-		<link out="out_alpha_blend.out" in="pl_element.outputs" />
-		<link out="pl_text_lcd_shs.v" in="pl_text_lcd.shaders" />
+		<link out="pl_text_lcd_shs.v" in="pl_text_lcd.shader_filenames" />
 		<link out="pll.out" in="pl_text_lcd.pll" />
 		<link out="rnf.rp" in="pl_text_lcd.renderpass" />
 		<link out="vi.out" in="pl_text_lcd.vi" />
 		<link out="sc.out" in="pl_text_lcd.sc" />
-		<link out="out_lcd.out" in="pl_text_lcd.outputs" />
-		<link out="pl_text_sdf_shs.v" in="pl_text_sdf.shaders" />
+		<link out="pl_text_sdf_shs.v" in="pl_text_sdf.shader_filenames" />
 		<link out="pll.out" in="pl_text_sdf.pll" />
 		<link out="rnf.rp" in="pl_text_sdf.renderpass" />
 		<link out="vi.out" in="pl_text_sdf.vi" />
 		<link out="sc.out" in="pl_text_sdf.sc" />
-		<link out="out_alpha_blend.out" in="pl_text_sdf.outputs" />
 	</links>
 	<exports>
 		<input>

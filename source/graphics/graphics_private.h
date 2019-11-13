@@ -314,6 +314,27 @@ namespace flame
 			}
 		}
 
+		inline uint format_size(Format$ f)
+		{
+			switch (f)
+			{
+			case Format_R8_UNORM:
+				return 1;
+			case Format_R32_UINT: case Format_R32_SFLOAT:
+				return 4;
+			case Format_R32G32_SFLOAT:
+				return 8;
+			case Format_R32G32B32_SFLOAT:
+				return 12;
+			case Format_R8G8B8A8_UNORM:
+				return 4;
+			case Format_R32G32B32A32_SFLOAT:
+				return 16;
+			default:
+				assert(0);
+			}
+		}
+
 		inline std::string format_to_cpp_typename(Format$ f)
 		{
 			switch (f)

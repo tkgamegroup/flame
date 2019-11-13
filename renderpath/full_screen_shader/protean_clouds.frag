@@ -21,6 +21,8 @@
 
 */
 
+out vec4 o_color;
+
 vec2 iMouse = vec2(0.0);
 
 mat2 rot(in float a){float c = cos(a), s = sin(a);return mat2(c,s,-s,c);}
@@ -143,5 +145,5 @@ void main()
 
     col *= pow( 16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.12)*0.7+0.3; //Vign
     
-	out_color = vec4( col*2, 1.0 );
+	o_color = vec4( col, 1.0 );
 }

@@ -20,7 +20,6 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
 	BP* bp;
-	Canvas* canvas;
 
 	void run()
 	{
@@ -48,7 +47,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/logo/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/full_screen_shader/bp", false);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -66,7 +65,6 @@ int main(int argc, char** args)
 
 	app.scr->link_bp(app.bp, app.cbs);
 	app.bp->update();
-	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
 
 	looper().loop([](void* c) {
 		auto app = (*(App * *)c);

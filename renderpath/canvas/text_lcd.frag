@@ -1,5 +1,11 @@
+in vec4 i_color;
+in vec2 i_uv;
+in uint i_id;
+
+out vec4 o_color{};
+
 void main()
 {
-	out_color0 = in_color;
-	out_color1 = texture(images[in_id], in_uv) * in_color.a;
+	o_color0 = i_color;
+	o_color1 = texture(images[i_id], i_uv) * i_color.a;
 }

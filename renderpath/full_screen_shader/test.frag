@@ -1,6 +1,8 @@
+in vec2 i_coord;
+
+out vec4 o_color;
+
 void main()
 {
-	float x = gl_FragCoord.x - pc.screen_size.x * 0.5;
-	float y = gl_FragCoord.y - pc.screen_size.y * 0.5;
-	out_color = vec4(1000.0 / (x * x + y * y) * vec3(93.0 / 255.0, 207.0 / 255.0, 205.0 / 255.0), 1);
+	o_color = vec4(0.8 * i_coord.x, 0.9 * i_coord.y, 0.2, 1.0);
 }

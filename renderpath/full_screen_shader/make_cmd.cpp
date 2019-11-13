@@ -47,9 +47,9 @@ namespace flame
 						cb->set_scissor(Vec4f(Vec2f(0.f), size));
 						cb->bind_pipeline((graphics::Pipeline*)pl$i.v);
 						cb->bind_descriptorset((graphics::Descriptorset*)ds$i.v, 0);
-						PushconstantT$ pc;
-						pc.screen_size$ = size;
-						cb->push_constant(0, sizeof(PushconstantT$), &pc);
+						//PushconstantT$ pc;
+						//pc.screen_size$ = size;
+						//cb->push_constant(0, sizeof(PushconstantT$), &pc);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 						cb->end();
