@@ -624,8 +624,11 @@ namespace flame
 			}
 		};
 
-		const std::regex shader_in_regex(R"(in\s([\w]+)\si_([\w]+))");
-		const std::regex shader_out_regex(R"(out\s([\w]+)\so_([\w]+)(\{()\})?)");
+		const std::regex shader_regex_in(R"(^\s*in\s+([\w]+)\s+i_([\w]+)\s*;\s*$)");
+		const std::regex shader_regex_out(R"(^\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;\s*$)");
+		const std::regex shader_regex_pc(R"(^\s*pushconstant\s*$)");
+		const std::regex shader_regex_ubo(R"(^\s*uniform\s+([\w]+)\s*$)");
+		const std::regex shader_regex_tex(R"(^\s*sampler2D\s+([\w]+)([\[\]\w\s]+);\s*$)");
 
 		void compile_shaders(DevicePrivate* d, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
 		{
@@ -641,6 +644,8 @@ namespace flame
 					glsl_header += "#extension GL_ARB_separate_shader_objects : enable\n";
 				glsl_header += s.prefix + "\n";
 
+				auto type_id = 0;
+
 				std::ofstream glsl_file(L"out.glsl");
 				glsl_file << glsl_header;
 				{
@@ -650,9 +655,9 @@ namespace flame
 					{
 						std::getline(src, line);
 
-						if (std::regex_search(line, match, shader_in_regex))
+						if (std::regex_search(line, match, shader_regex_in))
 						{
-							StageInfo::InOut in(match[2].str(), match[3].str());
+							StageInfo::InOut in(match[2].str(), match[1].str());
 							if (s.type == ShaderStageVert)
 							{
 								auto location = 0;
@@ -691,15 +696,119 @@ namespace flame
 								s.inputs.push_back(in);
 							}
 						}
-						else if (std::regex_search(line, match, shader_out_regex))
+						else if (std::regex_search(line, match, shader_regex_out))
 						{
-							StageInfo::InOut out(match[2].str(), match[3].str());
-							out.name = match[2].str();
-							glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +") out " + out.formated_type + " o_" + out.name + ";\n";
+							StageInfo::InOut out(match[2].str(), match[1].str());
+							auto dual = false;
 							if (s.type == ShaderStageFrag)
 							{
+								if (match[3].matched)
+								{
+									out.blend_enable = true;
+									auto sp = string_split(match[4].str());
+									for (auto& p : sp)
+									{
+										auto sp = string_split(p, ':');
+										BlendFactor$ f;
+										if (sp[1] == "0")
+											f = BlendFactorZero;
+										else if (sp[1] == "1")
+											f = BlendFactorOne;
+										else if (sp[1] == "sa")
+											f = BlendFactorSrcAlpha;
+										else if (sp[1] == "1msa")
+											f = BlendFactorOneMinusSrcAlpha;
+										else if (sp[1] == "s1c")
+										{
+											dual = true;
+											f = BlendFactorSrc1Color;
+										}
+										else if (sp[1] == "1ms1c")
+										{
+											dual = true;
+											f = BlendFactorOneMinusSrc1Color;
+										}
+										else
+											continue;
+										if (sp[0] == "sc")
+											out.blend_src_color = f;
+										else if (sp[0] == "dc")
+											out.blend_dst_color = f;
+										else if (sp[0] == "sa")
+											out.blend_src_alpha = f;
+										else if (sp[0] == "da")
+											out.blend_dst_alpha = f;
+									}
+								}
 							}
+							if (dual)
+							{
+								glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 0) out " + out.formated_type + " o_" + out.name + "0;\n";
+								glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 1) out " + out.formated_type + " o_" + out.name + "1;\n";
+							}
+							else
+								glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +") out " + out.formated_type + " o_" + out.name + ";\n";
 							s.outputs.push_back(out);
+						}
+						else if (std::regex_search(line, match, shader_regex_pc))
+						{
+							if (pll && pll->pc_size > 0)
+								glsl_file << "layout (push_constant) uniform pc_t\n";
+							else
+								glsl_file << "struct type_" + std::to_string(type_id++) + "\n";
+						}
+						else if (std::regex_search(line, match, shader_regex_ubo))
+						{
+							auto set = 0;
+							auto binding = -1;
+							if (pll)
+							{
+								auto name = match[1].str();
+								for (auto j = 0; j < pll->dsls.size(); j++)
+								{
+									auto dsl = pll->dsls[j];
+									for (auto k = 0; k < dsl->bindings.size(); k++)
+									{
+										if (dsl->bindings[k]->name == name)
+										{
+											set = j;
+											binding = k;
+											glsl_file << "layout (set = " + std::to_string(set) + ", binding = "+ std::to_string(binding) + ") uniform type_" + std::to_string(type_id) + "\n";
+											break;
+										}
+									}
+									if (binding != -1)
+										break;
+								}
+							}
+							if (binding == -1)
+								glsl_file << "struct eliminate_" + std::to_string(type_id) + "\n";
+							type_id++;
+						}
+						else if (std::regex_search(line, match, shader_regex_tex))
+						{
+							auto set = 0;
+							auto binding = -1;
+							if (pll)
+							{
+								auto name = match[1].str();
+								for (auto j = 0; j < pll->dsls.size(); j++)
+								{
+									auto dsl = pll->dsls[j];
+									for (auto k = 0; k < dsl->bindings.size(); k++)
+									{
+										if (dsl->bindings[k]->name == name)
+										{
+											set = j;
+											binding = k;
+											glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform sampler2D " + name + (match[2].matched ? match[2].str() : "") + ";\n";
+											break;
+										}
+									}
+									if (binding != -1)
+										break;
+								}
+							}
 						}
 						else
 							glsl_file << line + "\n";
@@ -707,77 +816,6 @@ namespace flame
 
 				}
 				glsl_file.close();
-
-				//	if (!outputs.empty())
-				//	{
-				//		*ret.p += "\n";
-				//		if (stage == ShaderStageFrag)
-				//		{
-				//			for (auto _o : outputs)
-				//			{
-				//				auto o = (OutputAttachmentInfo*)_o;
-				//				if (o->dual_src)
-				//				{
-				//					*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 0) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "0;\n";
-				//					*ret.p += "layout (location = " + std::to_string(o->location) + ", index = 1) out " + format_to_glsl_typename(o->format) + " out_" + o->name + "1;\n";
-				//				}
-				//			}
-				//		}
-				//	}
-
-				//	if (_pll)
-				//	{
-				//		auto pll = (PipelinelayoutPrivate*)_pll;
-
-				//		auto print_udt = [](UdtInfo* udt, std::string& out) {
-				//			for (auto i = 0; i < udt->variable_count(); i++)
-				//			{
-				//				auto v = udt->variable(i);
-				//				auto t = v->type();
-				//				assert(t->tag() == TypeTagVariable);
-				//				out += "\t" + cpp_typehash_to_glsl_typename(t->hash()) + " " + v->name() + ";\n";
-				//			}
-				//		};
-
-				//		if (!pll->dsls.empty())
-				//		{
-				//			*ret.p += "\n";
-				//			for (auto i = 0; i < pll->dsls.size(); i++)
-				//			{
-				//				auto dsl = pll->dsls[i];
-				//				for (auto j = 0; j < dsl->bindings_map.size(); j++)
-				//				{
-				//					auto _b = dsl->bindings_map[j];
-				//					switch (_b->type)
-				//					{
-				//					case DescriptorUniformBuffer:
-				//					{
-				//						auto b = (DescriptorBufferBinding*)_b;
-				//						*ret.p += "layout (binding = " + std::to_string(j) + ") uniform " + b->udt->name() + "\n{\n";
-				//						print_udt(b->udt, *ret.p);
-				//						*ret.p += "}" + b->name + ";\n";
-				//					}
-				//						break;
-				//					case DescriptorSampledImage:
-				//					{
-				//						auto b = (DescriptorImageBinding*)_b;
-				//						*ret.p += "layout (binding = " + std::to_string(j) + ") uniform sampler2D " + b->name + (b->count > 1 ? ("[" + std::to_string(b->count) + "]") : "") + ";\n";
-				//					}
-				//						break;
-				//					default:
-				//						assert(0); // others are WIP
-				//					}
-				//				}
-				//			}
-				//		}
-
-				//		if (pll->pc_udt)
-				//		{
-				//			*ret.p += "\nlayout(push_constant) uniform PushconstantT\n{\n";
-				//			print_udt(pll->pc_udt, *ret.p);
-				//			*ret.p += "}pc;\n";
-				//		}
-				//	}
 
 				if (std::filesystem::exists(L"out.spv"))
 					std::filesystem::remove(L"out.spv");
@@ -846,148 +884,101 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-				//{
-				//	spirv_cross::CompilerGLSL compiler((uint*)spv_file.first.get(), spv_file.second / sizeof(uint));
-				//	auto resources = compiler.get_shader_resources();
+				//spirv_cross::CompilerGLSL compiler((uint*)spv_file.first.get(), spv_file.second / sizeof(uint));
+				//auto resources = compiler.get_shader_resources();
 
-				//	std::function<void(uint, Variable*)> get_v;
-				//	get_v = [&](uint type_id, Variable* v) {
-				//		const auto* t = &compiler.get_type(type_id);
-				//		while (t->pointer)
+				//std::function<void(uint, Variable*)> get_v;
+				//get_v = [&](uint type_id, Variable* v) {
+				//	const auto* t = &compiler.get_type(type_id);
+				//	while (t->pointer)
+				//	{
+				//		type_id = t->parent_type;
+				//		t = &compiler.get_type(type_id);
+				//	}
+
+				//	assert(t->array.size() <= 1); // no support multidimensional array
+				//	v->count = t->array.empty() ? 1 : t->array[0];
+				//	if (t->array.empty())
+				//		v->array_stride = 0;
+				//	else
+				//		v->array_stride = compiler.get_decoration(type_id, spv::DecorationArrayStride);
+
+				//	if (t->basetype == spirv_cross::SPIRType::Struct)
+				//	{
+				//		v->type_name = compiler.get_name(type_id);
+				//		v->size = compiler.get_declared_struct_size(*t);
+				//		for (auto i = 0; i < t->member_types.size(); i++)
 				//		{
-				//			type_id = t->parent_type;
-				//			t = &compiler.get_type(type_id);
+				//			auto m = new Variable;
+				//			m->name = compiler.get_member_name(type_id, i);
+				//			m->offset = compiler.type_struct_member_offset(*t, i);
+				//			m->size = compiler.get_declared_struct_member_size(*t, i);
+				//			v->members.emplace_back(m);
+				//			get_v(t->member_types[i], m);
 				//		}
-
-				//		assert(t->array.size() <= 1); // multidimensional array is WIP
-				//		v->count = t->array.empty() ? 1 : t->array[0];
-				//		if (t->array.empty())
-				//			v->array_stride = 0;
-				//		else
-				//			v->array_stride = compiler.get_decoration(type_id, spv::DecorationArrayStride);
-
-				//		if (t->basetype == spirv_cross::SPIRType::Struct)
+				//}
+				//	else
+				//	{
+				//		std::string base_name;
+				//		switch (t->basetype)
 				//		{
-				//			v->type_name = compiler.get_name(type_id);
-				//			v->size = compiler.get_declared_struct_size(*t);
-				//			for (auto i = 0; i < t->member_types.size(); i++)
-				//			{
-				//				auto m = new Variable;
-				//				m->name = compiler.get_member_name(type_id, i);
-				//				m->offset = compiler.type_struct_member_offset(*t, i);
-				//				m->size = compiler.get_declared_struct_member_size(*t, i);
-				//				v->members.emplace_back(m);
-				//				get_v(t->member_types[i], m);
-				//			}
+				//		case spirv_cross::SPIRType::SByte:
+				//			base_name = "char";
+				//			break;
+				//		case spirv_cross::SPIRType::UByte:
+				//			base_name = "uchar";
+				//			break;
+				//		case spirv_cross::SPIRType::Short:
+				//			base_name = "short";
+				//			break;
+				//		case spirv_cross::SPIRType::UShort:
+				//			base_name = "ushort";
+				//			break;
+				//		case spirv_cross::SPIRType::Int:
+				//			base_name = "int";
+				//			break;
+				//		case spirv_cross::SPIRType::UInt:
+				//			base_name = "uint";
+				//			break;
+				//		case spirv_cross::SPIRType::Float:
+				//			base_name = "float";
+				//			break;
+				//		case spirv_cross::SPIRType::SampledImage:
+				//			base_name = "SampledImage";
+				//			break;
+				//		default:
+				//			assert(0);
 				//		}
-				//		else
+				//		if (t->columns <= 1)
 				//		{
-				//			std::string base_name;
-				//			switch (t->basetype)
-				//			{
-				//			case spirv_cross::SPIRType::SByte:
-				//				base_name = "char";
-				//				break;
-				//			case spirv_cross::SPIRType::UByte:
-				//				base_name = "uchar";
-				//				break;
-				//			case spirv_cross::SPIRType::Short:
-				//				base_name = "short";
-				//				break;
-				//			case spirv_cross::SPIRType::UShort:
-				//				base_name = "ushort";
-				//				break;
-				//			case spirv_cross::SPIRType::Int:
-				//				base_name = "int";
-				//				break;
-				//			case spirv_cross::SPIRType::UInt:
-				//				base_name = "uint";
-				//				break;
-				//			case spirv_cross::SPIRType::Float:
-				//				base_name = "float";
-				//				break;
-				//			case spirv_cross::SPIRType::SampledImage:
-				//				base_name = "SampledImage";
-				//				break;
-				//			default:
-				//				assert(0);
-				//			}
-				//			if (t->columns <= 1)
-				//			{
-				//				if (t->vecsize <= 1)
-				//					v->type_name = base_name;
-				//				else
-				//					v->type_name = "Vec(" + std::to_string(t->vecsize) + "+" + base_name + ")";
-				//			}
+				//			if (t->vecsize <= 1)
+				//				v->type_name = base_name;
 				//			else
-				//				v->type_name = "Mat(" + std::to_string(t->vecsize) + "+" + std::to_string(t->columns) + "+" + base_name + ")";
+				//				v->type_name = "Vec(" + std::to_string(t->vecsize) + "+" + base_name + ")";
 				//		}
+				//		else
+				//			v->type_name = "Mat(" + std::to_string(t->vecsize) + "+" + std::to_string(t->columns) + "+" + base_name + ")";
+				//	}
 				//	};
 
-				//	for (auto& src : resources.uniform_buffers)
-				//	{
-				//		auto r = new Resource;
-				//		r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
-				//		r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
-				//		r->name = src.name;
-				//		get_v(src.type_id, &r->v);
-				//		uniform_buffers.emplace_back(r);
-				//	}
+				//for (auto& src : resources.uniform_buffers)
+				//{
+				//	auto r = new Resource;
+				//	r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
+				//	r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
+				//	r->name = src.name;
+				//	get_v(src.type_id, &r->v);
+				//	uniform_buffers.emplace_back(r);
+				//}
 
-				//	assert(resources.push_constant_buffers.size() <= 1);
-				//	if (!resources.push_constant_buffers.empty())
-				//	{
-				//		auto& src = resources.push_constant_buffers[0];
-				//		push_constant.reset(new Resource);
-				//		push_constant->name = src.name;
+				//assert(resources.push_constant_buffers.size() <= 1);
+				//if (!resources.push_constant_buffers.empty())
+				//{
+				//	auto& src = resources.push_constant_buffers[0];
+				//	push_constant.reset(new Resource);
+				//	push_constant->name = src.name;
 
-				//		get_v(src.type_id, &push_constant->v);
-				//	}
-
-				//	assert(resources.subpass_inputs.empty()); // subpass inputs are WIP
-				//	assert(resources.atomic_counters.empty()); // atomic counters are WIP
-				//	assert(resources.acceleration_structures.empty()); // acceleration structures are WIP
-
-				//	if (pll)
-				//	{
-				//		auto validate_binding = [&](DescriptorType$ type, Resource* r) -> DescriptorBindingBase* {
-				//			assert(r->set < pll->dsls.size());
-				//			auto dsl = pll->dsls[r->set];
-				//			assert(r->binding < dsl->bindings_map.size());
-				//			auto binding = dsl->bindings_map[r->binding];
-				//			assert(binding->type == type && binding->count == r->v.count);
-				//			return binding;
-				//		};
-				//		auto validate_variable = [&](UdtInfo* u, Variable* v) {
-				//			assert(v->members.size() == u->variable_count());
-				//			for (auto i = 0; i < v->members.size(); i++)
-				//			{
-				//				auto m = v->members[i].get();
-				//				assert(m->members.empty()); // nested structs are WIP
-
-				//				auto v = u->variable(i);
-				//				assert(m->type_name == v->type()->name());
-				//				assert(m->name == v->name());
-				//				assert(m->offset == v->offset());
-				//				assert(m->size == v->size());
-				//				assert(m->count == 1); // count is WIP
-				//			}
-				//		};
-
-				//		for (auto& r : uniform_buffers)
-				//		{
-				//			auto b = (DescriptorBufferBinding*)validate_binding(DescriptorUniformBuffer, r.get());
-				//			if (b->udt)
-				//				validate_variable(b->udt, &r->v);
-				//		}
-
-				//		if (push_constant)
-				//		{
-				//			assert(!pll->pc_udt || push_constant->v.size == pll->pc_size);
-				//			if (pll->pc_udt)
-				//				validate_variable(pll->pc_udt, &push_constant->v);
-				//		}
-				//	}
+				//	get_v(src.type_id, &push_constant->v);
 				//}
 			}
 		}

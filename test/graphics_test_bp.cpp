@@ -47,7 +47,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/full_screen_shader/bp", false);
+	app.bp = BP::create_from_file(L"../renderpath/logo/bp", true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");

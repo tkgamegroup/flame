@@ -21,7 +21,14 @@
 
 */
 
+in vec2 i_coord;
+
 out vec4 o_color;
+
+uniform Data
+{
+    float time;
+}data;
 
 vec2 iMouse = vec2(0.0);
 
@@ -115,9 +122,9 @@ vec3 iLerp(in vec3 a, in vec3 b, in float x)
 
 void main()
 {	
-	vec2 q = gl_FragCoord.xy/ pc.screen_size.xy;
-    vec2 p = (gl_FragCoord.xy - 0.5*pc.screen_size.xy)/pc.screen_size.y;
-    bsMo = (iMouse.xy - 0.5*pc.screen_size.xy)/pc.screen_size.y;
+	vec2 q = i_coord;
+    vec2 p = i_coord - 0.5;
+    bsMo = iMouse.xy - 0.5;
     
     float time = data.time*3.;
     vec3 ro = vec3(0,0,time);

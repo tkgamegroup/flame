@@ -10,13 +10,13 @@
 		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="676.00;34.00" />
 		<node type="graphics::Descriptorlayout" id="dsl" pos="91.00;383.00" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="416.00;264.00" />
-    <node type="Array(2+std::basic_string(wchar_t))" id="shs" pos="983.00;458.00">
-      <datas>
-        <data name="1" value="fullscreen.vert" />
-        <data name="2" value="test.frag" />
-      </datas>
-    </node>
-		<node type="graphics::Pipeline" id="pl" pos="1120.00;353.00" />
+		<node type="Array(2+std::basic_string(wchar_t))" id="shs" pos="458.00;442.00">
+			<datas>
+				<data name="1" value="fullscreen.vert" />
+				<data name="2" value="protean_clouds.frag" />
+			</datas>
+		</node>
+		<node type="graphics::Pipeline" id="pl" pos="798.00;326.00" />
 		<node type="MakeCmd" id="make_cmd" pos="1050.00;-34.00" />
 		<node type="graphics::Buffer" id="ubo" pos="-498.00;206.00">
 			<datas>
@@ -27,7 +27,7 @@
 		</node>
 		<node type="graphics::DescriptorBufferBinding" id="bd" pos="-163.50;339.50">
 			<datas>
-				<data name="name" value="data" />
+				<data name="name" value="Data" />
 			</datas>
 		</node>
 	</nodes>

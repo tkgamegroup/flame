@@ -2,7 +2,9 @@ in vec4 i_color;
 in vec2 i_uv;
 in uint i_id;
 
-out vec4 o_color;
+out vec4 o_color{sc:sa dc:1msa};
+
+sampler2D images[64];
 
 void main()
 {

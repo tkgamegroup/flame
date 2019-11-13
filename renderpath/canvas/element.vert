@@ -6,6 +6,12 @@ out vec4 o_color;
 out vec2 o_uv;
 out uint o_id;
 
+pushconstant
+{
+	vec2 scale;
+	vec2 sdf_range;
+}pc;
+
 void main()
 {
 	o_color = i_color;

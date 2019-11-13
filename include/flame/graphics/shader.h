@@ -185,7 +185,17 @@ namespace flame
 			return ShaderStageNone;
 		}
 
-		// 'i_' or 'o_' will be emitted to verify between stages
+		// 'i_' or 'o_' will be eliminated to verify between stages
+		// for blend factor:
+		// 0 - zero
+		// 1 - one
+		// sc - src color
+		// dc - dst color
+		// sa - src alpha
+		// da - dst alpha
+		// 1msa - one minus src alpha
+		// s1c - src1 color
+		// 1ms1c - one minus src1 color
 
 		struct Pipeline
 		{

@@ -2,7 +2,15 @@ in vec4 i_color;
 in vec2 i_uv;
 in uint i_id;
 
-out vec4 o_color;
+out vec4 o_color{sc:sa dc:1msa};
+
+pushconstant
+{
+	vec2 scale;
+	vec2 sdf_range;
+}pc;
+
+sampler2D images[64];
 
 float median(vec3 v) 
 {

@@ -3,7 +3,6 @@
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/all.h>
 
-#include "../canvas/type.h"
 #include "canvas.h"
 
 using namespace flame;
@@ -533,10 +532,14 @@ namespace flame
 					cb->bind_vertexbuffer(vtx_buf, 0);
 					cb->bind_indexbuffer(idx_buf, IndiceTypeUint);
 
-					PushconstantT$ pc;
-					pc.scale$ = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
-					pc.sdf_range$ = Vec2f(sdf_range) / font_atlas_size;
-					cb->push_constant(0, sizeof(PushconstantT$), &pc, pll);
+					struct
+					{
+						Vec2f scale;
+						Vec2f sdf_range;
+					}pc;
+					pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
+					pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
+					cb->push_constant(0, sizeof(pc), &pc, pll);
 					cb->bind_descriptorset(ds, 0, pll);
 
 					auto vtx_off = 0;

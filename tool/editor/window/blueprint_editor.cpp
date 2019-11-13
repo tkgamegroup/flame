@@ -1613,158 +1613,73 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text_tip->add_component(c_text);
 					}
 
-					auto e_main = Entity::create();
-					t->add_child(e_main);
+					auto filename = string_split(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
+
+					auto e_text_view = Entity::create();
 					{
-						e_main->add_component(cElement::create());
+						auto c_element = cElement::create();
+						c_element->clip_children = true;
+						e_text_view->add_component(c_element);
 
 						auto c_aligner = cAligner::create();
 						c_aligner->width_policy_ = SizeFitParent;
 						c_aligner->height_policy_ = SizeFitParent;
-						e_main->add_component(c_aligner);
+						e_text_view->add_component(c_aligner);
 
 						auto c_layout = cLayout::create(LayoutVertical);
 						c_layout->width_fit_children = false;
 						c_layout->height_fit_children = false;
-						e_main->add_component(c_layout);
+						e_text_view->add_component(c_layout);
 					}
 
-
-					auto filename = *(std::wstring*)capture.n->find_input("filename")->data();
-					auto prefix = *(std::string*)capture.n->find_input("prefix")->data();
-					auto inputs = (AttributeP<std::vector<void*>>*)capture.n->find_input("inputs")->raw_data();
-					auto outputs = (AttributeP < std::vector<void*>>*)capture.n->find_input("outputs")->raw_data();
-					auto pll = (Pipelinelayout*)capture.n->find_input("pll")->data_p();
-					auto autogen_code = *(bool*)capture.n->find_input("autogen_code")->data();
-
+					auto e_text = Entity::create();
+					e_text_view->add_child(e_text);
 					{
-						auto e_text_view = Entity::create();
-						{
-							auto c_element = cElement::create();
-							c_element->clip_children = true;
-							e_text_view->add_component(c_element);
+						e_text->add_component(cElement::create());
 
-							auto c_aligner = cAligner::create();
-							c_aligner->width_policy_ = SizeFitParent;
-							c_aligner->height_policy_ = SizeFitParent;
-							e_text_view->add_component(c_aligner);
+						auto c_text = cText::create(app.font_atlas_pixel);
+						auto file = get_file_string(capture.e->filepath + L"/" + filename);
+						c_text->set_text(s2w(file));
+						c_text->auto_width_ = false;
+						e_text->add_component(c_text);
 
-							auto c_layout = cLayout::create(LayoutVertical);
-							c_layout->width_fit_children = false;
-							c_layout->height_fit_children = false;
-							e_text_view->add_component(c_layout);
-						}
+						e_text->add_component(cEventReceiver::create());
 
-						auto e_text = Entity::create();
-						e_text_view->add_child(e_text);
-						{
-							e_text->add_component(cElement::create());
-
-							auto c_text = cText::create(app.font_atlas_pixel);
-							auto _prefix = s2w(prefix);
-							if (autogen_code)
-							{
-								auto code = get_shader_autogen_code(shader_stage_from_filename(filename), get_attribute_vec(*inputs), get_attribute_vec(*outputs), pll);
-								_prefix += s2w(*code.p);
-								delete_mail(code);
-							}
-							c_text->set_text(_prefix);
-							c_text->auto_width_ = false;
-							e_text->add_component(c_text);
-						}
-
-						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
-						e_scrollbar_container->get_component(cAligner)->height_factor_ = 1.f / 3.f;
-						e_main->add_child(e_scrollbar_container);
-					}
-
-					auto e_spliter = Entity::create();
-					e_main->add_child(e_spliter);
-					{
-						auto c_element = cElement::create();
-						c_element->size_.y() = 8.f;
-						e_spliter->add_component(c_element);
-
-						e_spliter->add_component(cEventReceiver::create());
-
-						e_spliter->add_component(cStyleColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
-
-						auto c_splitter = cSplitter::create();
-						c_splitter->type = SplitterVertical;
-						e_spliter->add_component(c_splitter);
+						e_text->add_component(cEdit::create());
 
 						auto c_aligner = cAligner::create();
 						c_aligner->width_policy_ = SizeFitParent;
-						e_spliter->add_component(c_aligner);
-					}
+						e_text->add_component(c_aligner);
 
-					{
-						auto e_text_view = Entity::create();
 						{
-							auto c_element = cElement::create();
-							c_element->clip_children = true;
-							e_text_view->add_component(c_element);
-
-							auto c_aligner = cAligner::create();
-							c_aligner->width_policy_ = SizeFitParent;
-							c_aligner->height_policy_ = SizeFitParent;
-							e_text_view->add_component(c_aligner);
-
-							auto c_layout = cLayout::create(LayoutVertical);
-							c_layout->width_fit_children = false;
-							c_layout->height_fit_children = false;
-							e_text_view->add_component(c_layout);
-						}
-
-						auto e_text = Entity::create();
-						e_text_view->add_child(e_text);
-						{
-							e_text->add_component(cElement::create());
-
-							auto c_text = cText::create(app.font_atlas_pixel);
-							auto file = get_file_string(capture.e->filepath + L"/" + filename);
-							c_text->set_text(s2w(file));
-							c_text->auto_width_ = false;
-							e_text->add_component(c_text);
-
-							e_text->add_component(cEventReceiver::create());
-
-							e_text->add_component(cEdit::create());
-
-							auto c_aligner = cAligner::create();
-							c_aligner->width_policy_ = SizeFitParent;
-							e_text->add_component(c_aligner);
-
+							struct _Capture
 							{
-								struct _Capture
+								cBPEditor* e;
+								BP::Node* n;
+								cText* t;
+							}_capture;
+							_capture.e = capture.e;
+							_capture.n = capture.n;
+							_capture.t = c_text;
+							e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+								auto& capture = *(_Capture*)c;
+								if (is_mouse_clicked(action, key))
 								{
-									cBPEditor* e;
-									BP::Node* n;
-									cText* t;
-								}_capture;
-								_capture.e = capture.e;
-								_capture.n = capture.n;
-								_capture.t = c_text;
-								e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-									auto& capture = *(_Capture*)c;
-									if (is_mouse_clicked(action, key))
-									{
-										auto i_filename = capture.n->find_input("filename");
-										std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
-										auto str = w2s(capture.t->text());
-										str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
-										file.write(str.c_str(), str.size());
-										file.close();
-										i_filename->set_frame(looper().frame);
-									}
-								}, new_mail(&_capture));
-							}
+									auto i_filename = capture.n->find_input("filename");
+									std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
+									auto str = w2s(capture.t->text());
+									str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+									file.write(str.c_str(), str.size());
+									file.close();
+									i_filename->set_frame(looper().frame);
+								}
+							}, new_mail(&_capture));
 						}
-
-						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
-						e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
-						e_main->add_child(e_scrollbar_container);
 					}
+
+					auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
+					e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
+					t->add_child(e_scrollbar_container);
 				}
 			}, new_mail(&capture));
 		}
