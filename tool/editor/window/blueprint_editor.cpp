@@ -289,59 +289,99 @@ struct cBPEditor : Component
 			add_node_menu_filter = e_edit->get_component(cEdit);
 		}
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"template..");
-			e_add_node_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
+			auto e_sub_menu = create_standard_menu();
+			e_add_node_menu->add_child(create_standard_menu_button(app.font_atlas_pixel, 1.f, L"template", app.root, e_sub_menu, true, SideE, false, true, false, Icon_CARET_RIGHT));
+			{
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Variable");
+				e_sub_menu->add_child(e_item);
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto editor = *(cBPEditor**)c;
+					if (is_mouse_clicked(action, key))
+					{
+						destroy_topmost(app.root);
+					}
+				}, new_mail_p(this));
+			}
+			{
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Enum");
+				e_sub_menu->add_child(e_item);
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto editor = *(cBPEditor**)c;
+					if (is_mouse_clicked(action, key))
+					{
+						destroy_topmost(app.root);
+					}
+				}, new_mail_p(this));
+			}
+			{
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Array");
+				e_sub_menu->add_child(e_item);
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto editor = *(cBPEditor**)c;
+					if (is_mouse_clicked(action, key))
+					{
+						destroy_topmost(app.root);
+					}
+				}, new_mail_p(this));
+			}
+			{
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"manual input..");
+				e_sub_menu->add_child(e_item);
+				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto editor = *(cBPEditor**)c;
 
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
+					if (is_mouse_clicked(action, key))
+					{
+						destroy_topmost(app.root);
 
-					editor->reset_add_node_menu_filter();
+						editor->reset_add_node_menu_filter();
 
-					popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
-						auto editor = *(cBPEditor**)c;
-						auto bp = editor->bp;
-						auto name = w2s(text);
+						popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
+							auto editor = *(cBPEditor**)c;
+							auto bp = editor->bp;
+							auto name = w2s(text);
 
-						if (bp->self_module() && bp->self_module()->db()->find_udt(H(name.c_str())))
-							editor->add_node(name, "", editor->add_pos);
-						else
-						{
-							if (editor->running)
-								editor->add_notification(L"Cannot Add New Template Node While Running");
-							else
+							if (ok && !name.empty())
 							{
-								if (editor->changed)
-									editor->add_notification(L"Cannot Add New Template Node With Unsaved Changes");
+								if (bp->self_module() && bp->self_module()->db()->find_udt(H(name.c_str())))
+									editor->add_node(name, "", editor->add_pos);
 								else
 								{
-									auto file = SerializableNode::create_from_xml_file(editor->filename);
-									auto n_nodes = file->find_node("nodes");
-									auto n_node = n_nodes->new_node("node");
-									n_node->new_attr("type", name);
+									if (editor->running)
+										editor->add_notification(L"Cannot Add New Template Node While Running");
+									else
 									{
-										std::string id;
-										for (auto i = 0; i < bp->node_count() + 1; i++)
+										if (editor->changed)
+											editor->add_notification(L"Cannot Add New Template Node With Unsaved Changes");
+										else
 										{
-											id = "node_" + std::to_string(i);
-											if (!bp->find_node(id))
-												break;
-										}
-										n_node->new_attr("id", id);
-									}
-									n_node->new_attr("pos", to_string(editor->add_pos));
-									SerializableNode::save_to_xml_file(file, editor->filename);
-									SerializableNode::destroy(file);
+											auto file = SerializableNode::create_from_xml_file(editor->filename);
+											auto n_nodes = file->find_node("nodes");
+											auto n_node = n_nodes->new_node("node");
+											n_node->new_attr("type", name);
+											{
+												std::string id;
+												for (auto i = 0; i < bp->node_count() + 1; i++)
+												{
+													id = "node_" + std::to_string(i);
+													if (!bp->find_node(id))
+														break;
+												}
+												n_node->new_attr("id", id);
+											}
+											n_node->new_attr("pos", to_string(editor->add_pos));
+											SerializableNode::save_to_xml_file(file, editor->filename);
+											SerializableNode::destroy(file);
 
-									editor->load(editor->filename, false);
+											editor->load(editor->filename, false);
+										}
+									}
 								}
 							}
-						}
-					}, new_mail_p(editor));
-				}
-			}, new_mail_p(this));
+						}, new_mail_p(editor));
+					}
+				}, new_mail_p(this));
+			}
 		}
 		for (auto udt : all_udts)
 		{
@@ -1534,6 +1574,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				c_layout->item_padding = 4.f;
 				e_buttons->add_component(c_layout);
 			}
+
 			struct Capture
 			{
 				cBPEditor* e;
@@ -1542,6 +1583,17 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			}capture;
 			capture.e = this;
 			capture.n = n;
+
+			auto e_size = create_standard_button(app.font_atlas_pixel, 0.9f, s2w(std::string(udt_name.begin() + strlen("Array("), udt_name.begin() + udt_name.find('+'))));
+			e_buttons->add_child(e_size);
+			e_size->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto& capture = *(Capture*)c;
+				if (is_mouse_clicked(action, key))
+				{
+					auto e_dialog = popup_dialog(capture.e->entity);
+				}
+			}, new_mail(&capture));
+
 			auto change_size = [](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
@@ -1559,19 +1611,67 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						}
 						auto type = std::string("Array(") + std::to_string(size) + "+" + match[2].str() + ")";
 						auto bp = capture.e->bp;
-						if (bp->self_module() && bp->self_module()->db()->find_udt(H(type.c_str())))
+						auto id = capture.n->id();
+						if (bp->self_module())
 						{
-
+							auto hash = H(type.c_str());
+							if (bp->self_module()->db()->find_udt(hash))
+							{
+								capture.n->set_id("");
+								auto new_n = bp->add_node(hash, id);
+								new_n->pos = capture.n->pos;
+								for (auto i = 0; i < capture.n->input_count(); i++)
+								{
+									auto src = capture.n->input(i);
+									auto dst = new_n->find_input(src->vi()->name());
+									if (dst)
+									{
+										dst->set_data(src->data());
+										dst->link_to(src->link(0));
+									}
+								}
+								for (auto i = 0; i < capture.n->output_count(); i++)
+								{
+									auto src = capture.n->output(i);
+									auto dst = new_n->find_output(src->vi()->name());
+									if (dst)
+									{
+										for (auto j = 0; j < src->link_count(); j++)
+											src->link(j)->link_to(dst);
+									}
+								}
+								capture.e->remove_node(capture.n);
+								capture.e->create_node_entity(new_n);
+							}
 						}
 						else if (capture.e->changed)
-						{
 							capture.e->add_notification(L"Cannot Change Array Size To New With Unsaved Changes");
-						}
 						else
-							;
+						{
+							auto file = SerializableNode::create_from_xml_file(capture.e->filename);
+							auto n_nodes = file->find_node("nodes");
+							for (auto i = 0; i < n_nodes->node_count(); i++)
+							{
+								auto n_node = n_nodes->node(i);
+								if (n_node->find_attr("id")->value() == id)
+								{
+									n_nodes->remove_node(n_node);
+									break;
+								}
+							}
+							auto n_node = n_nodes->new_node("node");
+							n_node->new_attr("type", type);
+							n_node->new_attr("id", id);
+							n_node->new_attr("pos", to_string(capture.n->pos));
+							SerializableNode::save_to_xml_file(file, capture.e->filename);
+							SerializableNode::destroy(file);
+
+							capture.e->load(capture.e->filename, false);
+						}
 					}
 				}
 			};
+
 			auto e_add = create_standard_button(app.font_atlas_pixel, 0.9f, L"+");
 			e_buttons->add_child(e_add);
 			capture.v = 1;
@@ -1973,7 +2073,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 									capture.input->set_data(&str);
 									capture.editor->set_changed(true);
 								}
-							}, new_mail_p(&capture));
+							}, new_mail(&capture));
 
 							auto c_tracker = new_u_object<cStringDataTracker>();
 							c_tracker->data = input->data();
@@ -1998,7 +2098,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 									capture.input->set_data(&((cText*)t)->text());
 									capture.editor->set_changed(true);
 								}
-							}, new_mail_p(&capture));
+							}, new_mail(&capture));
 
 							auto c_tracker = new_u_object<cWStringDataTracker>();
 							c_tracker->data = input->data();
@@ -2194,7 +2294,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							auto editor = *(cBPEditor**)c;
 							auto bp = editor->bp;
 
-							if (ok)
+							if (ok && !text.empty())
 							{
 								auto m = bp->add_module(text);
 								if (!m)
@@ -2229,7 +2329,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							auto editor = *(cBPEditor**)c;
 							auto bp = editor->bp;
 
-							if (ok)
+							if (ok && !text.empty())
 							{
 								auto p = bp->add_package(text, "");
 								if (!p)

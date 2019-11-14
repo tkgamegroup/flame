@@ -239,12 +239,12 @@ void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float font_siz
 		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, font_size_scale, s2w(info->item(i)->name())));
 }
 
-void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)
+Entity* popup_dialog(Entity* e)
 {
 	auto t = get_topmost(e);
 	if (!t)
 	{
-		t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
+		t = create_topmost(e, false, false, true, Vec4c(0, 0, 0, 127), true);
 		{
 			t->add_component(cLayout::create(LayoutFree));
 		}
@@ -253,7 +253,10 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	auto e_dialog = Entity::create();
 	t->add_child(e_dialog);
 	{
-		e_dialog->add_component(cElement::create());
+		auto c_element = cElement::create();
+		c_element->inner_padding_ = Vec4f(8.f);
+		c_element->color = Vec4c(255);
+		e_dialog->add_component(c_element);
 
 		auto c_aligner = cAligner::create();
 		c_aligner->x_align_ = AlignxMiddle;
@@ -264,6 +267,13 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 		c_layout->item_padding = 4.f;
 		e_dialog->add_component(c_layout);
 	}
+
+	return e_dialog;
+}
+
+void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)
+{
+	auto e_dialog = popup_dialog(e);
 
 	auto e_text = Entity::create();
 	e_dialog->add_child(e_text);
@@ -330,29 +340,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 
 void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
 {
-	auto t = get_topmost(e);
-	if (!t)
-	{
-		t = create_topmost(e, false, false, true, Vec4c(255, 255, 255, 235), true);
-		{
-			t->add_component(cLayout::create(LayoutFree));
-		}
-	}
-
-	auto e_dialog = Entity::create();
-	t->add_child(e_dialog);
-	{
-		e_dialog->add_component(cElement::create());
-
-		auto c_aligner = cAligner::create();
-		c_aligner->x_align_ = AlignxMiddle;
-		c_aligner->y_align_ = AlignyMiddle;
-		e_dialog->add_component(c_aligner);
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 4.f;
-		e_dialog->add_component(c_layout);
-	}
+	auto e_dialog = popup_dialog(e);
 
 	auto e_input = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, title));
