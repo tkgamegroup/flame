@@ -11,25 +11,18 @@
 		<node type="graphics::SubpassTargetInfo" id="sp" pos="644.00;-216.00" />
 		<node type="graphics::Pipelinelayout" id="pll" pos="852.00;492.00">
 			<datas>
-				<data name="push_constant_udt_name" value="" />
+				<data name="push_constant_size" value="0" />
 			</datas>
 		</node>
-		<node type="Array(2+void*)" id="shs" pos="1034.00;163.00" />
-		<node type="graphics::Shader" id="shv" pos="802.00;-74.00">
-			<datas>
-				<data name="filename" value="" />
-				<data name="prefix" value="" />
-			</datas>
-		</node>
-		<node type="graphics::Shader" id="shf" pos="799.00;194.00">
-			<datas>
-				<data name="filename" value="" />
-				<data name="prefix" value="" />
-			</datas>
-		</node>
+    <node type="Array(2+std::basic_string(wchar_t))" id="shs" pos="458.00;442.00">
+      <datas>
+        <data name="1" value="forward.vert" />
+        <data name="2" value="forward.frag" />
+      </datas>
+    </node>
 	</nodes>
 	<links>
-		<link out="shs.v" in="pl.shaders" />
+		<link out="shs.v" in="pl.shader_filenames" />
 		<link out="pll.out" in="pl.pll" />
 		<link out="rnf.rp" in="pl.renderpass" />
 		<link out="sp.out" in="rnf.passes" />

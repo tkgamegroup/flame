@@ -869,6 +869,11 @@ namespace flame
 		return ((PackagePrivate*)this)->bp;
 	}
 
+	BP* BP::Package::parent() const
+	{
+		return ((PackagePrivate*)this)->parent;
+	}
+
 	const std::string& BP::Package::id() const
 	{
 		return ((PackagePrivate*)this)->id;

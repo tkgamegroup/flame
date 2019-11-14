@@ -1112,43 +1112,61 @@ void cBP::draw(graphics::Canvas* canvas)
 	bezier_extent = 50.f * base_element->global_scale;
 
 	auto bp = editor->bp;
-	const auto show_link = [&](BP::Slot* input, BP::Slot* output) {
-		if (output->parent()->parent() == bp)
-		{
-			auto e1 = ((cBPSlot*)output->user_data)->element;
-			auto e2 = ((cBPSlot*)input->user_data)->element;
-			auto p1 = e1->global_pos + e1->global_size * 0.5f;
-			auto p2 = e2->global_pos + e2->global_size * 0.5f;
+	const auto show_link = [&](BP::Slot* output, BP::Slot* input) {
+		auto e1 = ((cBPSlot*)output->user_data)->element;
+		auto p1 = e1->global_pos + e1->global_size * 0.5f;
+		Vec2f p2;
 
-			if (rect_overlapping(rect(element->pos_, element->size_), Vec4f(min(p1, p2), max(p1, p2))))
+		auto dst_bp = input->parent()->parent();
+		if (dst_bp == bp)
+		{
+			auto e = ((cBPSlot*)input->user_data)->element;
+			p2 = e->global_pos + e->global_size * 0.5f;
+		}
+		else
+		{
+			BP::Package* p;
+			while (dst_bp != bp)
 			{
-				std::vector<Vec2f> points;
-				path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-				canvas->stroke(points, editor->selected_.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+				p = dst_bp->parent();
+				dst_bp = p->parent();
 			}
+
+			if (p->bp()->find_input_export(input) != -1)
+			{
+				auto e = ((cBPSlot*)input->user_data)->element;
+				p2 = e->global_pos + e->global_size * 0.5f;
+			}
+			else
+				p2 = ((Entity*)p->user_data)->get_component(cElement)->global_pos;
+		}
+
+		if (rect_overlapping(rect(element->pos_, element->size_), Vec4f(min(p1, p2), max(p1, p2))))
+		{
+			std::vector<Vec2f> points;
+			path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
+			canvas->stroke(points, editor->selected_.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
 		}
 	};
 	for (auto i = 0; i < bp->package_count(); i++)
 	{
 		auto p = bp->package(i);
 		auto pbp = p->bp();
-		for (auto j = 0; j < pbp->input_export_count(); j++)
+		for (auto j = 0; j < pbp->output_export_count(); j++)
 		{
-			auto input = pbp->input_export(j);
-			auto output = input->link(0);
-			if (output)
-				show_link(input, output);
+			auto output = pbp->output_export(j);
+			for (auto k = 0; k < output->link_count(); k++)
+				show_link(output, output->link(k));
 		}
 	}
 	for (auto i = 0; i < bp->node_count(); i++)
 	{
 		auto n = bp->node(i);
-		for (auto j = 0; j < n->input_count(); j++)
+		for (auto j = 0; j < n->output_count(); j++)
 		{
-			auto input = n->input(j);
-			auto output = input->link(0);
-			if (output)
-				show_link(input, output);
+			auto output = n->output(j);
+			for (auto k = 0; k < output->link_count(); k++)
+				show_link(output, output->link(k));
 		}
 	}
 	if (editor->dragging_slot)
