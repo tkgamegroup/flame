@@ -10,7 +10,6 @@
 
 namespace flame
 {
-
 	struct SerializableAttributePrivate : SerializableAttribute
 	{
 		std::string name;

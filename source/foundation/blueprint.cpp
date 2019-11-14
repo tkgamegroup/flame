@@ -142,7 +142,7 @@ namespace flame
 	ModulePrivate::ModulePrivate()
 	{
 		pos = Vec2f(0.f);
-		dont_save = false;
+		external = false;
 	}
 
 	ModulePrivate::~ModulePrivate()
@@ -154,7 +154,7 @@ namespace flame
 	PackagePrivate::PackagePrivate()
 	{
 		pos = Vec2f(0.f);
-		dont_save = false;
+		external = false;
 		pf_check_update = nullptr;
 		frame = -1;
 	}
@@ -293,7 +293,7 @@ namespace flame
 	{
 		udt = _udt;
 		pos = Vec2f(0.f);
-		dont_save = false;
+		external = false;
 
 		auto size = udt->size();
 		dummy = malloc(size);
@@ -1534,7 +1534,7 @@ namespace flame
 		auto n_modules = file->new_node("modules");
 		for (auto& m : bp->modules)
 		{
-			if (m->dont_save)
+			if (m->external)
 				continue;
 			auto n_module = n_modules->new_node("module");
 			n_module->new_attr("filename", w2s(m->filename));
@@ -1546,7 +1546,7 @@ namespace flame
 			auto n_packages = file->new_node("packages");
 			for (auto& p : bp->packages)
 			{
-				if (p->dont_save)
+				if (p->external)
 					continue;
 
 				auto n_import = n_packages->new_node("package");
@@ -1559,13 +1559,13 @@ namespace flame
 		std::vector<Module*> skipped_modules;
 		for (auto& m : bp->modules)
 		{
-			if (m->dont_save)
+			if (m->external)
 				skipped_modules.push_back(m.get());
 		}
 		auto n_nodes = file->new_node("nodes");
 		for (auto& n : bp->nodes)
 		{
-			if (n->dont_save)
+			if (n->external)
 				continue;
 			auto udt = n->udt;
 			auto skip = false;
@@ -1626,12 +1626,12 @@ namespace flame
 		}
 		for (auto& n : bp->nodes)
 		{
-			if (n->dont_save)
+			if (n->external)
 				continue;
 			for (auto& in : n->inputs)
 			{
 				auto out = in->links[0];
-				if (out && !out->parent->dont_save)
+				if (out && !out->parent->external)
 				{
 					auto n_link = n_links->new_node("link");
 					auto out_addr = out->get_address();

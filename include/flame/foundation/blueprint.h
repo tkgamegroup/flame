@@ -38,7 +38,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 			Vec2f pos;
 
-			bool dont_save;
+			bool external;
 			void* user_data;
 		};
 
@@ -51,7 +51,7 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 
-			bool dont_save;
+			bool external;
 			void* user_data;
 		};
 
@@ -113,8 +113,13 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
 
-			bool dont_save;
+			bool external;
 			void* user_data;
+		};
+
+		struct Group
+		{
+
 		};
 
 		struct Environment
