@@ -109,8 +109,7 @@ struct cSceneOverlayer : Component
 
 	void draw(graphics::Canvas* canvas)
 	{
-		transform_tool_element->set_pos(Vec2f(-200.f));
-		if (editor->selected)
+		if (!element->cliped && editor->selected)
 		{
 			auto se = editor->selected->get_component(cElement);
 			if (se)
@@ -124,6 +123,8 @@ struct cSceneOverlayer : Component
 					transform_tool_element->set_pos((se->global_pos + se->global_size * 0.5f) - element->global_pos - transform_tool_element->size_ * 0.5f);
 			}
 		}
+		else
+			transform_tool_element->set_pos(Vec2f(-200.f));
 	}
 };
 

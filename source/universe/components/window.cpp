@@ -376,7 +376,7 @@ namespace flame
 			}
 			else
 			{
-				if (!drop_tips.empty())
+				if (!element->cliped && !drop_tips.empty())
 				{
 					for (auto p : drop_tips)
 					{

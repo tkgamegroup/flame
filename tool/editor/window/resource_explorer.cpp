@@ -452,10 +452,12 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 		if (image->element->cliped)
 		{
 			if (seat)
+			{
 				return_seat();
-			image->element->inner_padding_ = Vec4f(0.f);
-			image->id = 0;
-			image->color = Vec4c(100, 100, 100, 128);
+				image->element->inner_padding_ = Vec4f(0.f);
+				image->id = 0;
+				image->color = Vec4c(100, 100, 100, 128);
+			}
 		}
 		else
 		{

@@ -14,7 +14,7 @@ namespace flame
 	{
 		World* world_;
 
-		uint order_;
+		uint order_; // depth, child_idx
 		int created_frame_;
 		bool dying_;
 

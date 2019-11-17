@@ -167,8 +167,6 @@ struct cBPEditor : Component
 
 	bool running;
 
-	std::vector<std::pair<cElement*, uint>> notification;
-
 	cBPEditor() :
 		Component("BPEditor")
 	{
@@ -345,11 +343,11 @@ struct cBPEditor : Component
 								else
 								{
 									if (editor->running)
-										editor->add_notification(L"Cannot Add New Template Node While Running");
+										popup_message_dialog(editor->entity, L"Cannot Add New Template Node While Running");
 									else
 									{
 										if (editor->changed)
-											editor->add_notification(L"Cannot Add New Template Node With Unsaved Changes");
+											popup_message_dialog(editor->entity, L"Cannot Add New Template Node With Unsaved Changes");
 										else
 										{
 											auto file = SerializableNode::create_from_xml_file(editor->filename);
@@ -585,11 +583,11 @@ struct cBPEditor : Component
 		{
 		case SelModule:
 			if (selected_.m->filename() == L"bp.dll")
-				add_notification(L"Cannot Remove Self Module");
+				popup_message_dialog(entity, L"Cannot Remove Self Module");
 			else if (selected_.m->filename() == L"flame_foundation.dll")
-				add_notification(L"Cannot Remove 'foundation' Module");
+				popup_message_dialog(entity, L"Cannot Remove 'foundation' Module");
 			else if (selected_.m->filename() == L"editor.exe")
-				add_notification(L"Cannot Remove 'this' Module");
+				popup_message_dialog(entity, L"Cannot Remove 'this' Module");
 			else
 			{
 				std::wstring str;
@@ -621,7 +619,7 @@ struct cBPEditor : Component
 			break;
 		case SelNode:
 			if (!remove_node(selected_.n))
-				add_notification(L"Cannot Remove Test Nodes");
+				popup_message_dialog(entity, L"Cannot Remove Test Nodes");
 			break;
 		case SelLink:
 			selected_.l->link_to(nullptr);
@@ -753,25 +751,6 @@ struct cBPEditor : Component
 		return true;
 	}
 
-	void add_notification(const std::wstring& text)
-	{
-		auto e_notification = Entity::create();
-		entity->add_child(e_notification);
-		{
-			auto c_element = cElement::create();
-			c_element->pos_.y() = notification.size() * (default_style.font_size + 20.f);
-			c_element->inner_padding_ = Vec4f(8.f);
-			c_element->color = Vec4c(0, 0, 0, 255);
-			e_notification->add_component(c_element);
-			notification.emplace_back(c_element, 180);
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->color = Vec4c(255);
-			c_text->set_text(text);
-			e_notification->add_component(c_text);
-		}
-	}
-
 	void on_component_added(Component* c) override
 	{
 		if (c->name_hash == cH("cElement"))
@@ -786,24 +765,6 @@ struct cBPEditor : Component
 	{
 		if (running)
 			bp->update();
-
-		for (auto it = notification.begin(); it != notification.end(); )
-		{
-			it->second--;
-			if (it->second == 0)
-			{
-				for (auto _it = it + 1; _it != notification.end(); _it++)
-					_it->first->set_y(it->first->pos_.y());
-				entity->remove_child(it->first->entity);
-				it = notification.erase(it);
-			}
-			else
-			{
-				if (it->second < 60)
-					it->first->alpha = it->second / 60.f;
-				it++;
-			}
-		}
 	}
 };
 
@@ -1023,6 +984,9 @@ void cBP::draw(graphics::Canvas* canvas)
 {
 	bezier_extent = 50.f * base_element->global_scale;
 
+	if (element->cliped)
+		return;
+	
 	auto bp = editor->bp;
 	const auto show_link = [&](BP::Slot* output, BP::Slot* input) {
 		auto e1 = ((cBPSlot*)output->user_data)->element;
@@ -1044,13 +1008,8 @@ void cBP::draw(graphics::Canvas* canvas)
 				dst_bp = p->scene();
 			}
 
-			if (p->bp()->find_input_export(input) != -1)
-			{
-				auto e = ((cBPSlot*)input->user_data)->element;
-				p2 = e->global_pos + e->global_size * 0.5f;
-			}
-			else
-				p2 = ((Entity*)p->user_data)->get_component(cElement)->global_pos;
+			auto e = ((Entity*)p->user_data)->get_component(cElement);
+			p2 = e->global_pos + Vec2f(0.f, e->global_size.y() * 0.5f);
 		}
 
 		if (rect_overlapping(rect(element->pos_, element->size_), Vec4f(min(p1, p2), max(p1, p2))))
@@ -1595,7 +1554,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto size = std::stoi(match[1].str()) + capture.v;
 						if (size == 0)
 						{
-							capture.e->add_notification(L"Array Size Cannot Be 0");
+							popup_message_dialog(capture.e->entity, L"Array Size Cannot Be 0");
 							return;
 						}
 						auto type = std::string("Array(") + std::to_string(size) + "+" + match[2].str() + ")";
@@ -1634,7 +1593,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}
 						}
 						else if (capture.e->changed)
-							capture.e->add_notification(L"Cannot Change Array Size To New With Unsaved Changes");
+							popup_message_dialog(capture.e->entity, L"Cannot Change Array Size To New With Unsaved Changes");
 						else
 						{
 							auto file = SerializableNode::create_from_xml_file(capture.e->filename);
@@ -2236,7 +2195,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 					if (editor->running)
-						editor->add_notification(L"Cannot Reload While Running");
+						popup_message_dialog(editor->entity, L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, false);
 				}
@@ -2253,7 +2212,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						editor->add_notification(L"Cannot Reload While Running");
+						popup_message_dialog(editor->entity, L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, true);
 				}
@@ -2274,7 +2233,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						editor->add_notification(L"Cannot Add Module While Running");
+						popup_message_dialog(editor->entity, L"Cannot Add Module While Running");
 					else
 					{
 						popup_input_dialog(editor->entity, L"module", [](void* c, bool ok, const std::wstring& text) {
@@ -2285,7 +2244,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							{
 								auto m = bp->add_module(text);
 								if (!m)
-									editor->add_notification(L"Add Module Failed");
+									popup_message_dialog(editor->entity, L"Add Module Failed");
 								else
 								{
 									m->pos = editor->add_pos;
@@ -2309,7 +2268,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						editor->add_notification(L"Cannot Add Package While Running");
+						popup_message_dialog(editor->entity, L"Cannot Add Package While Running");
 					else
 					{
 						popup_input_dialog(editor->entity, L"bp", [](void* c, bool ok, const std::wstring& text) {
@@ -2320,7 +2279,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							{
 								auto p = bp->add_package(text, "");
 								if (!p)
-									editor->add_notification(L"Add Package Failed");
+									popup_message_dialog(editor->entity, L"Add Package Failed");
 								else
 								{
 									p->pos = editor->add_pos;

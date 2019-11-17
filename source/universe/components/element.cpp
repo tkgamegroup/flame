@@ -52,19 +52,22 @@ namespace flame
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
-		auto r = roundness * global_scale;
-
-		if (alpha > 0.f)
+		if (!cliped)
 		{
-			std::vector<Vec2f> points;
-			path_rect(points, global_pos, global_size, r);
-			if (color.w() > 0)
-				canvas->fill(points, alpha_mul(color, alpha));
-			auto ft = frame_thickness * global_scale;
-			if (ft > 0.f && frame_color.w() > 0)
+			auto r = roundness * global_scale;
+
+			if (alpha > 0.f)
 			{
-				points.push_back(points[0]);
-				canvas->stroke(points, alpha_mul(frame_color, alpha), ft);
+				std::vector<Vec2f> points;
+				path_rect(points, global_pos, global_size, r);
+				if (color.w() > 0)
+					canvas->fill(points, alpha_mul(color, alpha));
+				auto ft = frame_thickness * global_scale;
+				if (ft > 0.f && frame_color.w() > 0)
+				{
+					points.push_back(points[0]);
+					canvas->stroke(points, alpha_mul(frame_color, alpha), ft);
+				}
 			}
 		}
 

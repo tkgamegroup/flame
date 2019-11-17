@@ -269,6 +269,30 @@ Entity* popup_dialog(Entity* e)
 	return e_dialog;
 }
 
+void popup_message_dialog(Entity* e, const std::wstring& text)
+{
+	auto e_dialog = popup_dialog(e);
+
+	auto e_text = Entity::create();
+	e_dialog->add_child(e_text);
+	{
+		e_text->add_component(cElement::create());
+
+		auto c_text = cText::create(app.font_atlas_pixel);
+		c_text->set_text(text);
+		e_text->add_component(c_text);
+	}
+
+	auto e_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"OK");
+	e_dialog->add_child(e_ok);
+	{
+		e_ok->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			if (is_mouse_clicked(action, key))
+				destroy_topmost(*(Entity**)c, false);
+		}, new_mail_p(e));
+	}
+}
+
 void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)
 {
 	auto e_dialog = popup_dialog(e);

@@ -20,6 +20,12 @@ namespace flame
 		~ModulePrivate();
 	};
 
+	struct UpdateObject
+	{
+		int order; // package_depth, tree_idx, tree_depth, child_idx
+		int frame;
+	};
+
 	struct PackagePrivate : BP::Package
 	{
 		typedef bool (*check_update_func)(Package*);
@@ -754,7 +760,10 @@ namespace flame
 						for (auto& pp : packages)
 						{
 							if (pp.get() == p)
+							{
 								add_to_update_list(p);
+								break;
+							}
 						}
 					}
 				}

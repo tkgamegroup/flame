@@ -87,14 +87,8 @@ namespace flame
 			const auto& scissor = canvas->scissor();
 			auto r = rect(element->global_pos, element->global_size);
 			element->cliped = !rect_overlapping(scissor, r);
-			if (!element->cliped)
-			{
-				element->cliped_rect = Vec4f(max(r.x(), scissor.x()), max(r.y(), scissor.y()), min(r.z(), scissor.z()), min(r.w(), scissor.w()));
-
-				element->draw(canvas);
-			}
-			else
-				element->cliped_rect = Vec4f(-1.f);
+			element->cliped_rect = element->cliped ? Vec4f(-1.f) : Vec4f(max(r.x(), scissor.x()), max(r.y(), scissor.y()), min(r.z(), scissor.z()), min(r.w(), scissor.w()));
+			element->draw(canvas);
 
 			if (element->clip_children)
 			{
