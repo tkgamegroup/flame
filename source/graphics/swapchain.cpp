@@ -212,7 +212,8 @@ namespace flame
 			w(w)
 		{
 			sc = Swapchain::create(d, w);
-			signal = true;
+			changed = true;
+
 			auto thiz = this;
 			resize_listener = w->add_resize_listener([](void* c, const Vec2u& size) {
 				auto thiz = *(SwapchainResizablePrivate**)c;
@@ -225,7 +226,7 @@ namespace flame
 					thiz->sc = Swapchain::create(thiz->d, thiz->w);
 				else
 					thiz->sc = nullptr;
-				thiz->signal = true;
+				thiz->changed = true;
 			}, new_mail(&thiz));
 		}
 		
@@ -278,7 +279,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
 				auto scr = (SwapchainResizable*)in$i.v;
-				if (scr->signal)
+				if (scr->changed)
 				{
 					sc$o.v = scr->sc();
 					if (sc$o.v)
@@ -291,6 +292,7 @@ namespace flame
 				}
 				image_idx$o.v = sc$o.v ? ((Swapchain*)sc$o.v)->image_index() : 0;
 				image_idx$o.frame = looper().frame;
+				scr->changed = false;
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~SwapchainResizable$()

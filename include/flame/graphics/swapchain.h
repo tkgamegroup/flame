@@ -32,7 +32,7 @@ namespace flame
 
 		struct SwapchainResizable
 		{
-			bool signal;
+			bool changed;
 
 			FLAME_GRAPHICS_EXPORTS Swapchain* sc() const;
 

@@ -53,8 +53,6 @@ struct App
 			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
-
-		scr->signal = false;
 	}
 
 }app;
@@ -78,17 +76,14 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 
-	app.canvas_bp->graphics_device = app.d;
 	app.scr->link_bp(app.canvas_bp, app.cbs);
 	app.canvas_bp->update();
 	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 
-	auto font_msyh = Font::create(L"c:/windows/fonts/consola.ttf", 14);
-	auto font_awesome = Font::create(L"../asset/font_awesome.ttf", 14);
-	app.font_atlas1 = FontAtlas::create(app.d, FontDrawPixel, { font_msyh, font_awesome });
+	app.font_atlas1 = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/consola.ttf", L"../asset/font_awesome.ttf" });
 	app.canvas->add_font(app.font_atlas1);
-	app.font_atlas2 = FontAtlas::create(app.d, FontDrawSdf, { font_msyh });
+	app.font_atlas2 = FontAtlas::create(app.d, FontDrawSdf, { L"c:/windows/fonts/consola.ttf" });
 	app.canvas->add_font(app.font_atlas2);
 
 	looper().loop([](void* c) {

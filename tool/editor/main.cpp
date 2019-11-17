@@ -128,8 +128,6 @@ void App::run()
 		d->gq->submit(cbs, sc->image_avalible(), render_finished, fence);
 		d->gq->present(sc, render_finished);
 	}
-
-	scr->signal = false;
 }
 
 App app;
