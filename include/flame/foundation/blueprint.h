@@ -6,15 +6,11 @@ namespace flame
 {
 	/*
 		- A blueprint(BP) is a scene that represents relations between objects.
-		- An object is called node and associated with an udt.
+		- An object is called node and associated with an udt or a package that contains another scene.
 		- The reflected members with attribute 'i' or 'o' will be as inputs or outpus.
 		- All inputs and outputs must be Attribute[*]<T> type.
 		- The udt must have a update function, the function return nothing and takes no parameters
-		- Address in BP: [node_id].[varible_name]
-		  you can use address to find an object in BP, e.g.
-		  'a'     for node
-		  'a.b'   for node input or output
-		- A BP file is basically a XML file
+		- Address: [package_id].[node_id].[varible_name]
 	*/
 
 	struct SerializableNode;
@@ -44,7 +40,7 @@ namespace flame
 
 		struct Package
 		{
-			FLAME_FOUNDATION_EXPORTS BP* parent() const;
+			FLAME_FOUNDATION_EXPORTS BP* scene() const;
 			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
 			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
 			Vec2f pos;
@@ -63,7 +59,7 @@ namespace flame
 				Output
 			};
 
-			FLAME_FOUNDATION_EXPORTS Node* parent() const;
+			FLAME_FOUNDATION_EXPORTS Node* node() const;
 			FLAME_FOUNDATION_EXPORTS Type type() const;
 			FLAME_FOUNDATION_EXPORTS VariableInfo* vi() const;
 
@@ -99,7 +95,7 @@ namespace flame
 
 		struct Node
 		{
-			FLAME_FOUNDATION_EXPORTS BP* parent() const;
+			FLAME_FOUNDATION_EXPORTS BP* scene() const;
 			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
 			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
@@ -131,7 +127,7 @@ namespace flame
 
 		float time;
 
-		FLAME_FOUNDATION_EXPORTS Package* parent() const;
+		FLAME_FOUNDATION_EXPORTS Package* package() const;
 
 		FLAME_FOUNDATION_EXPORTS uint module_count() const;
 		FLAME_FOUNDATION_EXPORTS Module* module(uint idx) const;

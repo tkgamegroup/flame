@@ -24,20 +24,20 @@ namespace flame
 	{
 		typedef bool (*check_update_func)(Package*);
 
-		BPPrivate* parent;
+		BPPrivate* scene;
 		std::string id;
 		std::wstring filename;
 		BPPrivate* bp;
 		check_update_func pf_check_update;
 		int frame;
 
-		PackagePrivate();
+		PackagePrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp);
 		~PackagePrivate();
 	};
 
 	struct SlotPrivate : BP::Slot
 	{
-		NodePrivate* parent;
+		NodePrivate* node;
 		Type type;
 		void* raw_data;
 		VariableInfo* vi;
@@ -55,7 +55,7 @@ namespace flame
 
 	struct NodePrivate : BP::Node
 	{
-		BPPrivate* parent;
+		BPPrivate* scene;
 		std::string id;
 		UdtInfo* udt;
 
@@ -67,7 +67,7 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
-		NodePrivate(BPPrivate* _bp, const std::string& _id, UdtInfo* _udt, void* module);
+		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
 		~NodePrivate();
 
 		SlotPrivate* find_input(const std::string& name) const;
@@ -84,7 +84,7 @@ namespace flame
 
 	struct BPPrivate : BPDestroyDependence
 	{
-		PackagePrivate* parent;
+		PackagePrivate* package;
 
 		std::wstring filename;
 
@@ -111,7 +111,7 @@ namespace flame
 
 		BPPrivate()
 		{
-			parent = nullptr;
+			package = nullptr;
 			time = 0.f;
 		}
 
@@ -151,11 +151,21 @@ namespace flame
 		TypeinfoDatabase::destroy(db);
 	}
 
-	PackagePrivate::PackagePrivate()
+	PackagePrivate::PackagePrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp) :
+		scene(scene),
+		id(id),
+		bp(bp)
 	{
 		pos = Vec2f(0.f);
 		external = false;
-		pf_check_update = nullptr;
+
+		if (scene->self_module)
+			pf_check_update = (PackagePrivate::check_update_func)get_module_func(scene->self_module->module, "package_check_update");
+		else
+			pf_check_update = nullptr;
+
+		bp->package = this;
+
 		frame = -1;
 	}
 
@@ -165,11 +175,11 @@ namespace flame
 	}
 
 	SlotPrivate::SlotPrivate(Type _type, NodePrivate* _node, VariableInfo* _variable_info) :
-		parent(_node)
+		node(_node)
 	{
 		type = _type;
 		vi = _variable_info;
-		raw_data = (char*)parent->dummy + vi->offset();
+		raw_data = (char*)node->dummy + vi->offset();
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -210,10 +220,10 @@ namespace flame
 		{
 			if (target->type == Input)
 				return false;
-			if (parent == target->parent) // same node
+			if (node == target->node) // same node
 				return false;
-			auto p = parent->parent->parent;
-			if (p && p == target->parent->parent->parent) // same package
+			auto p = node->scene->package;
+			if (p && p == target->node->scene->package) // same package
 				return false;
 		}
 
@@ -273,9 +283,9 @@ namespace flame
 
 		set_frame(looper().frame);
 
-		parent->parent->build_update_list();
+		node->scene->build_update_list();
 		if (target)
-			target->parent->parent->build_update_list();
+			target->node->scene->build_update_list();
 
 		return true;
 	}
@@ -283,15 +293,15 @@ namespace flame
 	Mail<std::string> SlotPrivate::get_address() const
 	{
 		auto ret = new_mail<std::string>();
-		(*ret.p) = parent->id + "." + vi->name();
+		(*ret.p) = node->id + "." + vi->name();
 		return ret;
 	}
 
-	NodePrivate::NodePrivate(BPPrivate* _bp, const std::string& _id, UdtInfo* _udt, void* module) :
-		parent(_bp),
-		id(_id)
+	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
+		scene(scene),
+		id(id),
+		udt(udt)
 	{
-		udt = _udt;
 		pos = Vec2f(0.f);
 		external = false;
 
@@ -506,14 +516,7 @@ namespace flame
 		if (!bp)
 			return nullptr;
 
-		auto p = new PackagePrivate;
-		p->parent = this;
-		p->id = s_id;
-		p->filename = _filename;
-		((BPPrivate*)bp)->parent = p;
-		p->bp = (BPPrivate*)bp;
-		if (p->bp->self_module)
-			p->pf_check_update = (PackagePrivate::check_update_func)get_module_func(p->bp->self_module->module, "package_check_update");
+		auto p = new PackagePrivate(this, s_id, (BPPrivate*)bp);
 		packages.emplace_back(p);
 
 		collect_package_modules();
@@ -738,12 +741,12 @@ namespace flame
 			auto o = input->links[0];
 			if (o)
 			{
-				auto nn = o->parent;
-				if (nn->parent == this)
+				auto nn = o->node;
+				if (nn->scene == this)
 					add_to_update_list(nn);
 				else
 				{
-					auto p = nn->parent->parent;
+					auto p = nn->scene->package;
 					if (p)
 					{
 						for (auto& pp : packages)
@@ -776,12 +779,12 @@ namespace flame
 			auto o = bp->input_exports[i]->links[0];
 			if (o)
 			{
-				auto n = o->parent;
-				auto bp = n->parent;
+				auto n = o->node;
+				auto bp = n->scene;
 				if (bp == this)
 					add_to_update_list(n);
-				else if (bp->parent)
-					add_to_update_list(bp->parent);
+				else if (bp->package)
+					add_to_update_list(bp->package);
 			}
 		}
 
@@ -869,9 +872,9 @@ namespace flame
 		return ((PackagePrivate*)this)->bp;
 	}
 
-	BP* BP::Package::parent() const
+	BP* BP::Package::scene() const
 	{
-		return ((PackagePrivate*)this)->parent;
+		return ((PackagePrivate*)this)->scene;
 	}
 
 	const std::string& BP::Package::id() const
@@ -889,9 +892,9 @@ namespace flame
 		return ((SlotPrivate*)this)->type;
 	}
 
-	BP::Node* BP::Slot::parent() const
+	BP::Node* BP::Slot::node() const
 	{
-		return ((SlotPrivate*)this)->parent;
+		return ((SlotPrivate*)this)->node;
 	}
 
 	VariableInfo* BP::Slot::vi() const
@@ -944,9 +947,9 @@ namespace flame
 		return ((SlotPrivate*)this)->get_address();
 	}
 
-	BP *BP::Node::parent() const
+	BP *BP::Node::scene() const
 	{
-		return ((NodePrivate*)this)->parent;
+		return ((NodePrivate*)this)->scene;
 	}
 
 	const std::string& BP::Node::id() const
@@ -994,9 +997,9 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
-	BP::Package* BP::parent() const
+	BP::Package* BP::package() const
 	{
-		return ((BPPrivate*)this)->parent;
+		return ((BPPrivate*)this)->package;
 	}
 
 	uint BP::module_count() const
@@ -1616,8 +1619,8 @@ namespace flame
 					auto n_link = n_links->new_node("link");
 					auto out_addr = out->get_address();
 					auto in_addr = in->get_address();
-					auto out_bp = out->parent->parent;
-					n_link->new_attr("out", (out_bp != bp ? out_bp->parent->id + "." : "") + *out_addr.p);
+					auto out_bp = out->node->scene;
+					n_link->new_attr("out", (out_bp != bp ? out_bp->package->id + "." : "") + *out_addr.p);
 					n_link->new_attr("in", p->id + "." + *in_addr.p);
 					delete_mail(out_addr);
 					delete_mail(in_addr);
@@ -1631,13 +1634,13 @@ namespace flame
 			for (auto& in : n->inputs)
 			{
 				auto out = in->links[0];
-				if (out && !out->parent->external)
+				if (out && !out->node->external)
 				{
 					auto n_link = n_links->new_node("link");
 					auto out_addr = out->get_address();
 					auto in_addr = in->get_address();
-					auto out_bp = out->parent->parent;
-					n_link->new_attr("out", (out_bp != bp ? out_bp->parent->id + "." : "") + *out_addr.p);
+					auto out_bp = out->node->scene;
+					n_link->new_attr("out", (out_bp != bp ? out_bp->package->id + "." : "") + *out_addr.p);
 					n_link->new_attr("in", *in_addr.p);
 					delete_mail(out_addr);
 					delete_mail(in_addr);

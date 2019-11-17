@@ -554,7 +554,7 @@ struct cBPEditor : Component
 			auto n = *(BP::Node**)c;
 			auto e = (Entity*)n->user_data;
 			e->parent()->remove_child(e);
-			n->parent()->remove_node(n);
+			n->scene()->remove_node(n);
 		}, new_mail_p(n));
 		set_changed(true);
 		return true;
@@ -1036,7 +1036,7 @@ void cBP::draw(graphics::Canvas* canvas)
 		auto p1 = e1->global_pos + e1->global_size * 0.5f;
 		Vec2f p2;
 
-		auto dst_bp = input->parent()->parent();
+		auto dst_bp = input->node()->scene();
 		if (dst_bp == bp)
 		{
 			auto e = ((cBPSlot*)input->user_data)->element;
@@ -1047,8 +1047,8 @@ void cBP::draw(graphics::Canvas* canvas)
 			BP::Package* p;
 			while (dst_bp != bp)
 			{
-				p = dst_bp->parent();
-				dst_bp = p->parent();
+				p = dst_bp->package();
+				dst_bp = p->scene();
 			}
 
 			if (p->bp()->find_input_export(input) != -1)
