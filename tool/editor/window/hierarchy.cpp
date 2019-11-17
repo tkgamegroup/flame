@@ -7,7 +7,6 @@
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
-#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -20,7 +19,6 @@ struct cHierarchyItem : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
-	cCustomDraw* custom_draw;
 
 	cHierarchy* hierarchy;
 	Entity* e;
@@ -36,7 +34,12 @@ struct cHierarchyItem : Component
 	virtual void on_component_added(Component* c) override
 	{
 		if (c->name_hash == cH("cElement"))
+		{
 			element = (cElement*)c;
+			element->cmds.add([](void* c, graphics::Canvas* canvas) {
+				(*(cHierarchyItem**)c)->draw(canvas);
+			}, new_mail_p(this));
+		}
 		else if (c->name_hash == cH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
@@ -108,13 +111,6 @@ struct cHierarchyItem : Component
 				}
 			}, new_mail_p(this));
 		}
-		else if (c->name_hash == cH("cCustomDraw"))
-		{
-			custom_draw = (cCustomDraw*)c;
-			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
-				(*(cHierarchyItem**)c)->draw(canvas);
-			}, new_mail_p(this));
-		}
 	}
 
 	void draw(graphics::Canvas* canvas)
@@ -153,8 +149,6 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 		{
 			auto e_item = e_tree_node->child(0);
 
-			e_item->add_component(cCustomDraw::create());
-
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;
@@ -170,8 +164,6 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()));
 		parent->add_child(e_tree_leaf);
 		{
-			e_tree_leaf->add_component(cCustomDraw::create());
-
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;

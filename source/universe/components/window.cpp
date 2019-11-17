@@ -10,7 +10,6 @@
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
-#include <flame/universe/components/custom_draw.h>
 #include <flame/universe/components/window.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
@@ -183,7 +182,6 @@ namespace flame
 			element = nullptr;
 			event_receiver = nullptr;
 			list_item = nullptr;
-			custom_draw = nullptr;
 
 			root = nullptr;
 
@@ -203,9 +201,9 @@ namespace flame
 		{
 			if (!entity->dying_)
 			{
+				element->cmds.remove(draw_cmd);
 				event_receiver->mouse_listeners.remove(mouse_listener);
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
-				custom_draw->cmds.remove(draw_cmd);
 			}
 		}
 
@@ -292,7 +290,12 @@ namespace flame
 		void on_component_added(Component* c) override
 		{
 			if (c->name_hash == cH("cElement"))
+			{
 				element = (cElement*)c;
+				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
+					(*(cDockerTabPrivate**)c)->draw(canvas);
+				}, new_mail_p(this));
+			}
 			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
@@ -362,13 +365,6 @@ namespace flame
 			}
 			else if (c->name_hash == cH("cListItem"))
 				list_item = (cListItem*)c;
-			else if (c->name_hash == cH("cCustomDraw"))
-			{
-				custom_draw = (cCustomDraw*)c;
-				draw_cmd = custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
-					(*(cDockerTabPrivate**)c)->draw(canvas);
-				}, new_mail_p(this));
-			}
 		}
 
 		void draw(graphics::Canvas* canvas)
@@ -833,8 +829,6 @@ namespace flame
 		tab->add_component(c_text);
 
 		tab->add_component(cEventReceiver::create());
-
-		tab->add_component(cCustomDraw::create());
 
 		auto c_docker_tab = cDockerTab::create();
 		c_docker_tab->root = root;

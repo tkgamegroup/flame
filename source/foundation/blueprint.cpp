@@ -29,6 +29,7 @@ namespace flame
 		std::wstring filename;
 		BPPrivate* bp;
 		check_update_func pf_check_update;
+
 		int frame;
 
 		PackagePrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp);
@@ -517,6 +518,7 @@ namespace flame
 			return nullptr;
 
 		auto p = new PackagePrivate(this, s_id, (BPPrivate*)bp);
+		p->filename = _filename;
 		packages.emplace_back(p);
 
 		collect_package_modules();

@@ -12,6 +12,7 @@ namespace flame
 	struct cElementPrivate : cElement
 	{
 		cElementPrivate();
+		~cElementPrivate();
 		void calc_geometry();
 		void draw(graphics::Canvas* canvas);
 		Component* copy() override;

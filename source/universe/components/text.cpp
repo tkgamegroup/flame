@@ -2,7 +2,7 @@
 #include <flame/universe/world.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
-#include "text_private.h"
+#include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
@@ -12,62 +12,83 @@
 
 namespace flame
 {
-	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
+	struct cTextPrivate : cText
 	{
-		element = nullptr;
+		std::wstring text;
+		uint draw_font_size;
+		std::vector<graphics::Glyph*> glyphs;
+		void* draw_cmd;
 
-		font_atlas = _font_atlas;
-		color = default_style.text_color_normal;
-		font_size_ = default_style.font_size;
-		scale_ = 1.f;
-		auto_width_ = true;
-		auto_height_ = true;
-
-		draw_font_size = 0.f;
-	}
-
-	void cTextPrivate::update_glyphs()
-	{
-		glyphs.resize(text.size());
-		for (auto i = 0; i < text.size(); i++)
-			glyphs[i] = font_atlas->get_glyph(text[i], draw_font_size);
-	}
-
-	void cTextPrivate::draw(graphics::Canvas* canvas)
-	{
-		auto is_sdf = font_atlas->draw_type == graphics::FontDrawSdf;
-		auto global_scale = element->global_scale;
-		auto fs = font_size_;
-		if (!is_sdf)
-			fs *= global_scale;
-		if (fs != draw_font_size)
+		cTextPrivate(graphics::FontAtlas* _font_atlas)
 		{
-			draw_font_size = fs;
-			update_glyphs();
+			element = nullptr;
+
+			font_atlas = _font_atlas;
+			color = default_style.text_color_normal;
+			font_size_ = default_style.font_size;
+			scale_ = 1.f;
+			auto_width_ = true;
+			auto_height_ = true;
+
+			draw_font_size = 0.f;
+
+			draw_cmd = nullptr;
 		}
-		canvas->add_text(font_atlas, glyphs, draw_font_size, scale_ * (is_sdf ? global_scale : 1.f), element->global_pos +
-			Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
-			alpha_mul(color, element->alpha));
-	}
 
-	void cTextPrivate::on_component_added(Component* c)
-	{
-		if (c->name_hash == cH("cElement"))
-			element = (cElement*)c;
-	}
+		cTextPrivate::~cTextPrivate()
+		{
+			if (!entity->dying_)
+				element->cmds.remove(draw_cmd);
+		}
 
-	Component* cTextPrivate::copy()
-	{
-		auto copy = new cTextPrivate(font_atlas);
+		void update_glyphs()
+		{
+			glyphs.resize(text.size());
+			for (auto i = 0; i < text.size(); i++)
+				glyphs[i] = font_atlas->get_glyph(text[i], draw_font_size);
+		}
 
-		copy->color = color;
-		copy->font_size_ = font_size_;
-		copy->auto_width_ = auto_width_;
-		copy->auto_height_ = auto_height_;
-		copy->text = text;
+		void draw(graphics::Canvas* canvas)
+		{
+			auto is_sdf = font_atlas->draw_type == graphics::FontDrawSdf;
+			auto global_scale = element->global_scale;
+			auto fs = font_size_;
+			if (!is_sdf)
+				fs *= global_scale;
+			if (fs != draw_font_size)
+			{
+				draw_font_size = fs;
+				update_glyphs();
+			}
+			canvas->add_text(font_atlas, glyphs, draw_font_size, scale_ * (is_sdf ? global_scale : 1.f), element->global_pos +
+				Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
+				alpha_mul(color, element->alpha));
+		}
 
-		return copy;
-	}
+		void on_component_added(Component* c) override
+		{
+			if (c->name_hash == cH("cElement"))
+			{
+				element = (cElement*)c;
+				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
+					(*(cTextPrivate**)c)->draw(canvas);
+				}, new_mail_p(this));
+			}
+		}
+
+		Component* copy() override
+		{
+			auto copy = new cTextPrivate(font_atlas);
+
+			copy->color = color;
+			copy->font_size_ = font_size_;
+			copy->auto_width_ = auto_width_;
+			copy->auto_height_ = auto_height_;
+			copy->text = text;
+
+			return copy;
+		}
+	};
 
 	const std::wstring& cText::text() const
 	{

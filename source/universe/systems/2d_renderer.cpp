@@ -4,9 +4,6 @@
 #include <flame/universe/world.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include "../components/element_private.h"
-#include "../components/text_private.h"
-#include "../components/image_private.h"
-#include <flame/universe/components/custom_draw.h>
 #include <flame/universe/components/aligner.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
@@ -95,22 +92,6 @@ namespace flame
 				element->cliped_rect = Vec4f(max(r.x(), scissor.x()), max(r.y(), scissor.y()), min(r.z(), scissor.z()), min(r.w(), scissor.w()));
 
 				element->draw(canvas);
-
-				auto text = (cTextPrivate*)e->get_component(cText);
-				if (text)
-					text->draw(canvas);
-
-				auto image = (cImagePrivate*)e->get_component(cImage);
-				if (image)
-					image->draw(canvas);
-
-				auto cd = e->get_component(cCustomDraw);
-				if (cd)
-				{
-					auto& cmds = ((ListenerHub*)cd->cmds.hub)->listeners;
-					for (auto& l : cmds)
-						((void(*)(void*, graphics::Canvas*))l->function)(l->capture.p, canvas);
-				}
 			}
 			else
 				element->cliped_rect = Vec4f(-1.f);

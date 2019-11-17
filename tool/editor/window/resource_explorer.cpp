@@ -16,7 +16,6 @@
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
-#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -35,7 +34,6 @@ struct Seat
 struct cThumbnail : Component
 {
 	cImage* image;
-	cCustomDraw* custom_draw;
 
 	cResourceExplorer* explorer;
 	std::wstring filename;
@@ -65,8 +63,6 @@ struct cThumbnail : Component
 
 struct cResourceExplorer : Component
 {
-	cCustomDraw* custom_draw;
-
 	std::filesystem::path base_path;
 	std::filesystem::path curr_path;
 
@@ -352,8 +348,6 @@ struct cResourceExplorer : Component
 					auto e_image = item->child(0);
 					e_image->get_component(cImage)->color = Vec4c(100, 100, 100, 128);
 
-					e_image->add_component(cCustomDraw::create());
-
 					auto c_thumbnail = new_u_object<cThumbnail>();
 					c_thumbnail->explorer = thiz;
 					c_thumbnail->filename = std::filesystem::canonical(p).wstring();
@@ -386,10 +380,9 @@ struct cResourceExplorer : Component
 
 	void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cCustomDraw"))
+		if (c->name_hash == cH("cElement"))
 		{
-			custom_draw = (cCustomDraw*)c;
-			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+			((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cResourceExplorer**)c)->draw(canvas);
 			}, new_mail_p(this));
 		}
@@ -431,7 +424,13 @@ void cThumbnail::return_seat()
 
 void cThumbnail::on_component_added(Component* c)
 {
-	if (c->name_hash == cH("cImage"))
+	if (c->name_hash == cH("cElement"))
+	{
+		((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
+			(*(cThumbnail**)c)->draw(canvas);
+		}, new_mail_p(this));
+	}
+	else if (c->name_hash == cH("cImage"))
 	{
 		image = (cImage*)c;
 		add_work([](void* c) {
@@ -442,13 +441,6 @@ void cThumbnail::on_component_added(Component* c)
 			auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
 			bitmap->swap_channel(0, 2);
 			thiz->thumbnail = bitmap;
-		}, new_mail_p(this));
-	}
-	else if (c->name_hash == cH("cCustomDraw"))
-	{
-		custom_draw = (cCustomDraw*)c;
-		custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
-			(*(cThumbnail**)c)->draw(canvas);
 		}, new_mail_p(this));
 	}
 }
@@ -526,8 +518,6 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_layout->height_fit_children = false;
 		c_layout->fence = 2;
 		e_page->add_component(c_layout);
-
-		e_page->add_component(cCustomDraw::create());
 	}
 	auto c_explorer = new_u_object<cResourceExplorer>();
 	{

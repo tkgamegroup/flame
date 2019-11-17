@@ -22,7 +22,6 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
-#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -131,8 +130,6 @@ const auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
 
 struct cBPEditor : Component
 {
-	cCustomDraw* custom_draw;
-
 	std::wstring filename;
 	std::wstring filepath;
 	BP* bp;
@@ -777,10 +774,9 @@ struct cBPEditor : Component
 
 	void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cCustomDraw"))
+		if (c->name_hash == cH("cElement"))
 		{
-			custom_draw = (cCustomDraw*)c;
-			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+			((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cBPEditor**)c)->draw(canvas);
 			}, new_mail_p(this));
 		}
@@ -816,7 +812,6 @@ struct cBP : Component
 	cElement* element;
 	cEventReceiver* event_receiver;
 	cElement* base_element;
-	cCustomDraw* custom_draw;
 
 	cText* scale_text;
 	cBPEditor* editor;
@@ -976,7 +971,12 @@ struct cBPSlot : Component
 void cBP::on_component_added(Component* c)
 {
 	if (c->name_hash == cH("cElement"))
+	{
 		element = (cElement*)c;
+		element->cmds.add([](void* c, graphics::Canvas* canvas) {
+			(*(cBP**)c)->draw(canvas);
+		}, new_mail_p(this));
+	}
 	else if (c->name_hash == cH("cEventReceiver"))
 	{
 		event_receiver = (cEventReceiver*)c;
@@ -1015,13 +1015,6 @@ void cBP::on_component_added(Component* c)
 				popup_menu(editor->e_add_node_menu, app.root, (Vec2f)pos);
 				editor->add_pos = pos - thiz->element->global_pos;
 			}
-		}, new_mail_p(this));
-	}
-	else if (c->name_hash == cH("cCustomDraw"))
-	{
-		custom_draw = (cCustomDraw*)c;
-		custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
-			(*(cBP**)c)->draw(canvas);
 		}, new_mail_p(this));
 	}
 }
@@ -1237,8 +1230,6 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			e_text_id->add_component(c_text);
 
 			e_text_id->add_component(cEventReceiver::create());
-
-			e_text_id->add_component(cCustomDraw::create());
 
 			e_text_id->add_component(cEdit::create());
 		}
@@ -1531,8 +1522,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			e_text_id->add_component(c_text);
 
 			e_text_id->add_component(cEventReceiver::create());
-
-			e_text_id->add_component(cCustomDraw::create());
 
 			e_text_id->add_component(cEdit::create());
 
@@ -2212,8 +2201,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		c_layout->height_fit_children = false;
 		c_layout->fence = 2;
 		e_page->add_component(c_layout);
-
-		e_page->add_component(cCustomDraw::create());
 	}
 	e_docker->child(1)->add_child(e_page);
 
@@ -2481,8 +2468,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		e_scene->add_component(c_aligner);
 
 		e_scene->add_component(cLayout::create(LayoutFree));
-
-		e_scene->add_component(cCustomDraw::create());
 
 		auto c_bp = new_u_object<cBP>();
 		c_bp->editor = c_editor;

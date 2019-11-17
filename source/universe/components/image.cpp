@@ -1,35 +1,53 @@
 #include <flame/universe/world.h>
 #include <flame/universe/components/element.h>
-#include "image_private.h"
+#include <flame/universe/components/image.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
 namespace flame
 {
-	cImagePrivate::cImagePrivate()
+	struct cImagePrivate : cImage
 	{
-		element = nullptr;
+		void* draw_cmd;
 
-		id = 0;
-		uv0 = Vec2f(0.f);
-		uv1 = Vec2f(1.f);
-		color = Vec4c(255);
-		repeat = false;
-	}
+		cImagePrivate()
+		{
+			element = nullptr;
 
-	void cImagePrivate::on_component_added(Component* c)
-	{
-		if (c->name_hash == cH("cElement"))
-			element = (cElement*)c;
-	}
+			id = 0;
+			uv0 = Vec2f(0.f);
+			uv1 = Vec2f(1.f);
+			color = Vec4c(255);
+			repeat = false;
 
-	void cImagePrivate::draw(graphics::Canvas* canvas)
-	{
-		auto padding = element->inner_padding_ * element->global_scale;
-		auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
-		auto size = element->global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]);
-		canvas->add_image(pos, size, id, uv0, uv1, alpha_mul(color, element->alpha), repeat);
-	}
+			draw_cmd = nullptr;
+		}
+
+		~cImagePrivate()
+		{
+			if (!entity->dying_)
+				element->cmds.remove(draw_cmd);
+		}
+
+		void on_component_added(Component* c) override
+		{
+			if (c->name_hash == cH("cElement"))
+			{
+				element = (cElement*)c;
+				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
+					(*(cImagePrivate**)c)->draw(canvas);
+				}, new_mail_p(this));
+			}
+		}
+
+		void draw(graphics::Canvas* canvas)
+		{
+			auto padding = element->inner_padding_ * element->global_scale;
+			auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
+			auto size = element->global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]);
+			canvas->add_image(pos, size, id, uv0, uv1, alpha_mul(color, element->alpha), repeat);
+		}
+	};
 
 	cImage* cImage::create()
 	{

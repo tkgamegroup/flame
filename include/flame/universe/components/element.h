@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
 	struct cElement : Component
 	{
 		Vec2f pos_;
@@ -37,6 +42,8 @@ namespace flame
 			Component("cElement")
 		{
 		}
+
+		Listeners<void(void* c, graphics::Canvas * canvas)> cmds;
 
 		FLAME_UNIVERSE_EXPORTS void set_x(float x, bool add = false, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_y(float y, bool add = false, void* sender = nullptr);

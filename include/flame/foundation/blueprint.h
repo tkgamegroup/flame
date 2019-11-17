@@ -113,11 +113,6 @@ namespace flame
 			void* user_data;
 		};
 
-		struct Group
-		{
-
-		};
-
 		struct Environment
 		{
 			std::wstring path;

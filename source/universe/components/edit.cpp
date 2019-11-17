@@ -3,7 +3,6 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/custom_draw.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
 
@@ -22,7 +21,6 @@ namespace flame
 			element = nullptr;
 			text = nullptr;
 			event_receiver = nullptr;
-			custom_draw = nullptr;
 
 			cursor = 0;
 
@@ -35,16 +33,21 @@ namespace flame
 		{
 			if (!entity->dying_)
 			{
+				element->cmds.remove(draw_cmd);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
-				custom_draw->cmds.remove(draw_cmd);
 			}
 		}
 
 		void on_component_added(Component* c) override
 		{
 			if (c->name_hash == cH("cElement"))
+			{
 				element = (cElement*)c;
+				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
+					(*(cEditPrivate**)c)->draw(canvas);
+				}, new_mail_p(this));
+			}
 			else if (c->name_hash == cH("cText"))
 				text = (cText*)c;
 			else if (c->name_hash == cH("cEventReceiver"))
@@ -153,13 +156,6 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cCustomDraw"))
-			{
-				custom_draw = (cCustomDraw*)c;
-				draw_cmd = custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
-					(*(cEditPrivate**)c)->draw(canvas);
-				}, new_mail_p(this));
-			}
 		}
 
 		void draw(graphics::Canvas* canvas)
@@ -198,8 +194,6 @@ namespace flame
 			e_edit->add_component(c_text);
 
 			e_edit->add_component(cEventReceiver::create());
-
-			e_edit->add_component(cCustomDraw::create());
 
 			if (width == 0.f)
 			{

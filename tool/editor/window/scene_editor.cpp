@@ -12,7 +12,6 @@
 #include <flame/universe/components/tree.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
-#include <flame/universe/components/custom_draw.h>
 
 #include "../renderpath/canvas_make_cmd/canvas.h"
 
@@ -86,7 +85,6 @@ struct cSceneEditorPrivate : cSceneEditor
 struct cSceneOverlayer : Component
 {
 	cElement* element;
-	cCustomDraw* custom_draw;
 
 	cSceneEditorPrivate* editor;
 	int tool_type;
@@ -101,11 +99,9 @@ struct cSceneOverlayer : Component
 	virtual void on_component_added(Component* c) override
 	{
 		if (c->name_hash == cH("cElement"))
-			element = (cElement*)c;
-		else if (c->name_hash == cH("cCustomDraw"))
 		{
-			custom_draw = (cCustomDraw*)c;
-			custom_draw->cmds.add([](void* c, graphics::Canvas* canvas) {
+			element = (cElement*)c;
+			element->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cSceneOverlayer**)c)->draw(canvas);
 			}, new_mail_p(this));
 		}
@@ -310,8 +306,6 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_aligner->width_policy_ = SizeFitParent;
 		c_aligner->height_policy_ = SizeFitParent;
 		e_overlayer->add_component(c_aligner);
-
-		e_overlayer->add_component(cCustomDraw::create());
 
 		auto c_overlayer = new_u_object<cSceneOverlayer>();
 		c_overlayer->editor = c_editor;

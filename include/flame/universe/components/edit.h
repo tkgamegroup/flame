@@ -12,14 +12,12 @@ namespace flame
 	struct cElement;
 	struct cText;
 	struct cEventReceiver;
-	struct cCustomDraw;
 
 	struct cEdit : Component
 	{
 		cElement* element;
 		cText* text;
 		cEventReceiver* event_receiver;
-		cCustomDraw* custom_draw;
 
 		uint cursor;
 
