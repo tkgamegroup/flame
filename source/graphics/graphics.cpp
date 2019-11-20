@@ -194,7 +194,7 @@ PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT;
 
 namespace flame
 {
-	const char *vk_device_type_names[] = {
+	const char* vk_device_type_names[] = {
 		"other",
 		"integrated gpu",
 		"discrete gpu",

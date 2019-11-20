@@ -83,6 +83,7 @@ namespace flame
 	typedef void(Dummy::* MF_v_vp_u)(void*, uint);
 	typedef void*(Dummy::* MF_vp_v)();
 	typedef void* (Dummy::* MF_vp_vp)(void*);
+	typedef bool(Dummy::* MF_b_v)();
 
 	template<class F, class ...Args>
 	auto cmf(F f, void* p, Args... args) // call member function at an address

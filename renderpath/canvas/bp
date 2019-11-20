@@ -143,11 +143,11 @@
 			<export v="idx_buf.out" />
 			<export v="rnf.out" />
 			<export v="pll.out" />
+			<export v="pl_element.out" />
+			<export v="pl_text_lcd.out" />
+			<export v="pl_text_sdf.out" />
 			<export v="dsl.default_set" />
 			<export v="images_binding.iv" />
-			<export v="pl_element.out" />
-			<export v="pl_text_sdf.out" />
-			<export v="pl_text_lcd.out" />
 		</output>
 	</exports>
 </BP>

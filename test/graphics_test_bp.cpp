@@ -15,10 +15,10 @@ struct App
 {
 	Window* w;
 	Device* d;
-	Semaphore* render_finished;
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
+	Semaphore* render_finished;
 	BP* bp;
 
 	void run()
@@ -54,12 +54,12 @@ int main(int argc, char** args)
 
 	app.w = Window::create("Graphics Test", Vec2u(800, 600), WindowFrame);
 	app.d = Device::create(true);
-	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.cbs.resize(app.scr->sc()->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	app.render_finished = Semaphore::create(app.d);
 
 	app.scr->link_bp(app.bp, app.cbs);
 	app.bp->update();

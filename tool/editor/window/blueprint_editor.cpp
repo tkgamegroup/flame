@@ -31,6 +31,8 @@
 #include "console.h"
 #include "image_viewer.h"
 
+#include <functional>
+
 namespace flame
 {
 	struct DstImage$
@@ -768,7 +770,7 @@ struct cBPEditor : Component
 	}
 };
 
-struct cBP : Component
+struct cBPScene : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
@@ -779,11 +781,12 @@ struct cBP : Component
 
 	float bezier_extent;
 
-	cBP() :
-		Component("cBP")
+	cBPScene() :
+		Component("cBPScene")
 	{
 	}
 
+	void for_each_link(const std::function<bool(const Vec2f&p1, const Vec2f & p2, BP::Slot* input)>& l);
 	void on_component_added(Component* c) override;
 	void draw(graphics::Canvas* canvas);
 };
@@ -929,47 +932,105 @@ struct cBPSlot : Component
 	}
 };
 
-void cBP::on_component_added(Component* c)
+void cBPScene::for_each_link(const std::function<bool(const Vec2f & p1, const Vec2f & p2, BP::Slot* l)>& callback)
+{
+	auto bp = editor->bp;
+	const auto process = [&](BP::Slot* output, BP::Slot* input) {
+		if (!output->user_data && !input->user_data)
+			return true;
+
+		auto get_pos = [&](BP::Slot* s) {
+			if (s->user_data)
+			{
+				auto e = ((cBPSlot*)s->user_data)->element;
+				return e->global_pos + e->global_size * 0.5f;
+			}
+			else
+			{
+				auto scn = s->node()->scene();
+				BP::Package* p;
+				while (scn != bp)
+				{
+					p = scn->package();
+					if (!p)
+						break;
+					scn = p->scene();
+				}
+
+				auto e = ((Entity*)p->user_data)->get_component(cElement);
+				auto ret = e->global_pos;
+				if (s->type() == BP::Slot::Output)
+					ret.x() += e->size_.x();
+				return ret;
+			}
+		};
+
+		if (!callback(get_pos(output), get_pos(input), input))
+			return false;
+		return true;
+	};
+
+	for (auto i = 0; i < bp->package_count(); i++)
+	{
+		auto p = bp->package(i);
+		auto pbp = p->bp();
+		for (auto j = 0; j < pbp->output_export_count(); j++)
+		{
+			auto output = pbp->output_export(j);
+			for (auto k = 0; k < output->link_count(); k++)
+			{
+				auto input = output->link(k);
+				if (input->node()->scene()->package() != p)
+				{
+					if (!process(output, input))
+						return;
+				}
+			}
+		}
+	}
+	for (auto i = 0; i < bp->node_count(); i++)
+	{
+		auto n = bp->node(i);
+		for (auto j = 0; j < n->output_count(); j++)
+		{
+			auto output = n->output(j);
+			for (auto k = 0; k < output->link_count(); k++)
+			{
+				if (!process(output, output->link(k)))
+					return;
+			}
+		}
+	}
+}
+
+void cBPScene::on_component_added(Component* c)
 {
 	if (c->name_hash == cH("cElement"))
 	{
 		element = (cElement*)c;
 		element->cmds.add([](void* c, graphics::Canvas* canvas) {
-			(*(cBP**)c)->draw(canvas);
+			(*(cBPScene**)c)->draw(canvas);
 		}, new_mail_p(this));
 	}
 	else if (c->name_hash == cH("cEventReceiver"))
 	{
 		event_receiver = (cEventReceiver*)c;
 		event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto thiz = *(cBP**)c;
+			auto thiz = *(cBPScene**)c;
 			auto editor = thiz->editor;
 
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
 				editor->deselect();
 
-				auto bp = editor->bp;
-
-				for (auto i = 0; i < bp->node_count(); i++)
-				{
-					auto n = bp->node(i);
-					for (auto j = 0; j < n->input_count(); j++)
+				thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
+					if (distance((Vec2f)pos, bezier_closest_point((Vec2f)pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
 					{
-						auto input = n->input(j);
-						auto output = input->link(0);
-						if (output)
-						{
-							auto e1 = ((cBPSlot*)output->user_data)->element;
-							auto e2 = ((cBPSlot*)input->user_data)->element;
-							auto p1 = e1->global_pos + e1->global_size * 0.5f;
-							auto p2 = e2->global_pos + e2->global_size * 0.5f;
-
-							if (distance((Vec2f)pos, bezier_closest_point((Vec2f)pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
-								editor->select(cBPEditor::SelLink, input);
-						}
+						editor->select(cBPEditor::SelLink, l);
+						return false;
 					}
-				}
+					return true;
+				});
 			}
 			else if (is_mouse_up(action, key, true) && key == Mouse_Right)
 			{
@@ -980,66 +1041,22 @@ void cBP::on_component_added(Component* c)
 	}
 }
 
-void cBP::draw(graphics::Canvas* canvas)
+void cBPScene::draw(graphics::Canvas* canvas)
 {
 	bezier_extent = 50.f * base_element->global_scale;
 
 	if (element->cliped)
 		return;
 	
-	auto bp = editor->bp;
-	const auto show_link = [&](BP::Slot* output, BP::Slot* input) {
-		auto e1 = ((cBPSlot*)output->user_data)->element;
-		auto p1 = e1->global_pos + e1->global_size * 0.5f;
-		Vec2f p2;
-
-		auto dst_bp = input->node()->scene();
-		if (dst_bp == bp)
-		{
-			auto e = ((cBPSlot*)input->user_data)->element;
-			p2 = e->global_pos + e->global_size * 0.5f;
-		}
-		else
-		{
-			BP::Package* p;
-			while (dst_bp != bp)
-			{
-				p = dst_bp->package();
-				dst_bp = p->scene();
-			}
-
-			auto e = ((Entity*)p->user_data)->get_component(cElement);
-			p2 = e->global_pos + Vec2f(0.f, e->global_size.y() * 0.5f);
-		}
-
+	for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
 		if (rect_overlapping(rect(element->pos_, element->size_), Vec4f(min(p1, p2), max(p1, p2))))
 		{
 			std::vector<Vec2f> points;
 			path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-			canvas->stroke(points, editor->selected_.l == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+			canvas->stroke(points, editor->selected_.l == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
 		}
-	};
-	for (auto i = 0; i < bp->package_count(); i++)
-	{
-		auto p = bp->package(i);
-		auto pbp = p->bp();
-		for (auto j = 0; j < pbp->output_export_count(); j++)
-		{
-			auto output = pbp->output_export(j);
-			for (auto k = 0; k < output->link_count(); k++)
-				show_link(output, output->link(k));
-		}
-	}
-	for (auto i = 0; i < bp->node_count(); i++)
-	{
-		auto n = bp->node(i);
-		for (auto j = 0; j < n->output_count(); j++)
-		{
-			auto output = n->output(j);
-			for (auto k = 0; k < output->link_count(); k++)
-				show_link(output, output->link(k));
-		}
-	}
+		return true;
+	});
 	if (editor->dragging_slot)
 	{
 		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
@@ -2428,19 +2445,19 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 		e_scene->add_component(cLayout::create(LayoutFree));
 
-		auto c_bp = new_u_object<cBP>();
+		auto c_bp = new_u_object<cBPScene>();
 		c_bp->editor = c_editor;
 		e_scene->add_component(c_bp);
 	}
 
-	auto c_bp = e_scene->get_component(cBP);
+	auto c_bp_scene = e_scene->get_component(cBPScene);
 
 	auto e_base = Entity::create();
 	e_scene->add_child(e_base);
 	{
 		auto c_element = cElement::create();
 		e_base->add_component(c_element);
-		c_bp->base_element = c_element;
+		c_bp_scene->base_element = c_element;
 	}
 	c_editor->e_base = e_base;
 
@@ -2484,20 +2501,20 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto c_event_receiver = cEventReceiver::create();
 		c_event_receiver->penetrable = true;
 		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto c_bp = *(cBP**)c;
+			auto c_bp_scene = *(cBPScene**)c;
 			if (is_mouse_scroll(action, key))
 			{
-				auto s = clamp(c_bp->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
-				c_bp->base_element->set_scale(s);
-				c_bp->scale_text->set_text(std::to_wstring(int(s * 100)) + L"%");
+				auto s = clamp(c_bp_scene->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
+				c_bp_scene->base_element->set_scale(s);
+				c_bp_scene->scale_text->set_text(std::to_wstring(int(s * 100)) + L"%");
 			}
 			else if (is_mouse_move(action, key))
 			{
-				auto ed = c_bp->event_receiver->dispatcher;
+				auto ed = c_bp_scene->event_receiver->dispatcher;
 				if ((ed->key_states[Key_Ctrl] & KeyStateDown) && (ed->mouse_buttons[Mouse_Left] & KeyStateDown))
-					c_bp->base_element->set_pos(Vec2f(pos), true);
+					c_bp_scene->base_element->set_pos(Vec2f(pos), true);
 			}
-		}, new_mail_p(c_bp));
+		}, new_mail_p(c_bp_scene));
 		e_overlayer->add_component(c_event_receiver);
 
 		auto c_aligner = cAligner::create();
@@ -2528,7 +2545,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
 
 				if (capture.e->running)
-					capture.e->bp->time = 0.f;
+					capture.e->bp->set_time(0.f);
 			}
 		}, new_mail(&capture));
 	}
@@ -2548,7 +2565,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 	e_clipper->add_child(e_scale);
 
-	c_bp->scale_text = e_scale->get_component(cText);
+	c_bp_scene->scale_text = e_scale->get_component(cText);
 
 	auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
 		auto editor = *(cBPEditor**)c;

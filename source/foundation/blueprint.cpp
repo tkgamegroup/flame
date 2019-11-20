@@ -7,7 +7,7 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
-	static BP::Environment _bp_env;
+	static BP::Environment* p_env;
 
 	struct ModulePrivate : BP::Module
 	{
@@ -20,23 +20,12 @@ namespace flame
 		~ModulePrivate();
 	};
 
-	struct UpdateObject
-	{
-		int order; // package_depth, tree_idx, tree_depth, child_idx
-		int frame;
-	};
-
 	struct PackagePrivate : BP::Package
 	{
-		typedef bool (*check_update_func)(Package*);
-
 		BPPrivate* scene;
 		std::string id;
 		std::wstring filename;
 		BPPrivate* bp;
-		check_update_func pf_check_update;
-
-		int frame;
 
 		PackagePrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp);
 		~PackagePrivate();
@@ -74,11 +63,11 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> inputs;
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
+		uint order;
+		bool in_update_list;
+
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
 		~NodePrivate();
-
-		SlotPrivate* find_input(const std::string& name) const;
-		SlotPrivate* find_output(const std::string& name) const;
 
 		void update();
 	};
@@ -92,38 +81,32 @@ namespace flame
 	struct BPPrivate : BPDestroyDependence
 	{
 		PackagePrivate* package;
-
-		std::wstring filename;
+		BPPrivate* root;
 
 		std::vector<std::unique_ptr<PackagePrivate>> packages;
 		std::vector<ModulePrivate*> package_modules;
-
-		std::vector<TypeinfoDatabase*> dbs;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
 		std::vector<SlotPrivate*> input_exports;
 		std::vector<SlotPrivate*> output_exports;
 
-		struct UpdateObject
-		{
-			int t;
-			union
-			{
-				NodePrivate* n;
-				PackagePrivate* p;
-			}v;
-		};
-		std::vector<UpdateObject> update_list;
+		Environment env;
+
+		std::vector<NodePrivate*> head_nodes;
+		std::list<NodePrivate*> update_list;
+		bool need_update_hierarchy;
 
 		BPPrivate()
 		{
 			package = nullptr;
-			time = 0.f;
+			root = this;
+			env.time = 0.f;
+			need_update_hierarchy = true;
 		}
 
 		Module* add_module(const std::wstring& filename);
-		void remove_module(Module* m);
+		void remove_module(ModulePrivate* m);
 
 		PackagePrivate* add_package(const std::wstring& filename, const std::string& id);
 		void remove_package(PackagePrivate* i);
@@ -133,16 +116,11 @@ namespace flame
 
 		NodePrivate* add_node(uint type_hash, const std::string& type_name);
 		void remove_node(NodePrivate* n);
-		NodePrivate* find_node(const std::string& id) const;
-		SlotPrivate* find_input(const std::string& address) const;
-		SlotPrivate* find_output(const std::string& address) const;
 
 		void clear();
 
 		void add_to_update_list(NodePrivate* n);
-		void add_to_update_list(PackagePrivate* p);
-		void build_update_list();
-
+		void remove_from_update_list(NodePrivate* n);
 		void update();
 	};
 
@@ -150,6 +128,7 @@ namespace flame
 	{
 		pos = Vec2f(0.f);
 		external = false;
+		user_data = nullptr;
 	}
 
 	ModulePrivate::~ModulePrivate()
@@ -165,15 +144,10 @@ namespace flame
 	{
 		pos = Vec2f(0.f);
 		external = false;
-
-		if (scene->self_module)
-			pf_check_update = (PackagePrivate::check_update_func)get_module_func(scene->self_module->module, "package_check_update");
-		else
-			pf_check_update = nullptr;
+		user_data = nullptr;
 
 		bp->package = this;
-
-		frame = -1;
+		bp->root = scene->root;
 	}
 
 	PackagePrivate::~PackagePrivate()
@@ -187,6 +161,7 @@ namespace flame
 		type = _type;
 		vi = _variable_info;
 		raw_data = (char*)node->dummy + vi->offset();
+		user_data = nullptr;
 
 		if (type == Input)
 			links.push_back(nullptr);
@@ -196,13 +171,14 @@ namespace flame
 
 	void SlotPrivate::set_frame(int frame)
 	{
-		auto& p = *(AttributeBase*)raw_data;
-		p.frame = frame;
+		((AttributeBase*)raw_data)->frame = frame;
 	}
 
 	void SlotPrivate::set_data(const void* d)
 	{
 		set_frame(looper().frame);
+		node->scene->root->add_to_update_list(node);
+		 
 		auto type = vi->type();
 		if (type->tag() == TypeTagAttributeV)
 		{
@@ -290,9 +266,9 @@ namespace flame
 
 		set_frame(looper().frame);
 
-		node->scene->build_update_list();
-		if (target)
-			target->node->scene->build_update_list();
+		auto root = node->scene->root;
+		root->need_update_hierarchy = true;
+		root->add_to_update_list(node);
 
 		return true;
 	}
@@ -307,10 +283,13 @@ namespace flame
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
 		id(id),
-		udt(udt)
+		udt(udt),
+		order(0xffffffff),
+		in_update_list(false)
 	{
 		pos = Vec2f(0.f);
 		external = false;
+		user_data = nullptr;
 
 		auto size = udt->size();
 		dummy = malloc(size);
@@ -332,12 +311,12 @@ namespace flame
 		update_addr = nullptr;
 		{
 			auto f = udt->find_function("update");
-			assert(f);
 			if (f)
 			{
 				auto ret_t = f->return_type();
 				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("void") && f->parameter_count() == 0)
 					update_addr = (char*)module + (uint)f->rva();
+				assert(update_addr);
 			}
 		}
 
@@ -375,38 +354,23 @@ namespace flame
 				}
 			}
 		}
+		auto root = scene->root;
 		for (auto& o : outputs)
 		{
 			for (auto& l : o->links)
 			{
-				l->set_frame(looper().frame);
 				l->links[0] = nullptr;
+				l->set_frame(looper().frame);
+				root->add_to_update_list(l->node);
 			}
 		}
 
 		if (dtor_addr)
 			cmf(p2f<MF_v_v>(dtor_addr), dummy);
 		free(dummy);
-	}
 
-	SlotPrivate* NodePrivate::find_input(const std::string& name) const
-	{
-		for (auto& input : inputs)
-		{
-			if (name == input->vi->name())
-				return input.get();
-		}
-		return nullptr;
-	}
-
-	SlotPrivate* NodePrivate::find_output(const std::string& name) const
-	{
-		for (auto& output : outputs)
-		{
-			if (name == output->vi->name())
-				return output.get();
-		}
-		return nullptr;
+		root->need_update_hierarchy = true;
+		root->remove_from_update_list(this);
 	}
 
 	void NodePrivate::update()
@@ -432,7 +396,8 @@ namespace flame
 			}
 		}
 
-		cmf(p2f<MF_v_v>(update_addr), dummy);
+		if (update_addr)
+			cmf(p2f<MF_v_v>(update_addr), dummy);
 	}
 
 	BP::Module* BPPrivate::add_module(const std::wstring& filename)
@@ -449,7 +414,7 @@ namespace flame
 		auto module = load_module(filename);
 		if (!module)
 		{
-			std::filesystem::path path(this->filename);
+			std::filesystem::path path(env.filename);
 			absolute_filename = path.parent_path().wstring() + L"/" + filename;
 			module = load_module(absolute_filename);
 		}
@@ -474,9 +439,9 @@ namespace flame
 		return m;
 	}
 
-	void BPPrivate::remove_module(Module* m)
+	void BPPrivate::remove_module(ModulePrivate* m)
 	{
-		if (filename == L"bp.dll")
+		if (m->filename == L"bp.dll")
 			return;
 
 		for (auto it = modules.begin(); it != modules.end(); it++)
@@ -519,7 +484,7 @@ namespace flame
 			}
 		}
 
-		auto bp = BP::create_from_file((std::filesystem::path(filename).parent_path().parent_path() / _filename / L"bp").wstring(), true);
+		auto bp = BP::create_from_file((std::filesystem::path(env.filename).parent_path().parent_path() / _filename / L"bp").wstring(), true);
 		if (!bp)
 			return nullptr;
 
@@ -529,7 +494,7 @@ namespace flame
 
 		collect_package_modules();
 		collect_dbs();
-		build_update_list();
+		root->need_update_hierarchy = true;
 
 		return p;
 	}
@@ -544,7 +509,7 @@ namespace flame
 
 				collect_package_modules();
 				collect_dbs();
-				build_update_list();
+				root->need_update_hierarchy = true;
 
 				return;
 			}
@@ -587,13 +552,13 @@ namespace flame
 
 	void BPPrivate::collect_dbs()
 	{
-		dbs.clear();
+		env.dbs.clear();
 		for (auto& m : modules)
-			dbs.push_back(m->db);
+			env.dbs.push_back(m->db);
 		if (self_module)
-			dbs.push_back(self_module->db);
+			env.dbs.push_back(self_module->db);
 		for (auto m : package_modules)
-			dbs.push_back(m->db);
+			env.dbs.push_back(m->db);
 	}
 
 	NodePrivate* BPPrivate::add_node(uint type_hash, const std::string& id)
@@ -659,7 +624,7 @@ namespace flame
 		auto n = new NodePrivate(this, s_id, udt, module);
 		nodes.emplace_back(n);
 
-		build_update_list();
+		root->need_update_hierarchy = true;
 
 		return n;
 	}
@@ -675,192 +640,121 @@ namespace flame
 			}
 		}
 
-		build_update_list();
-	}
-
-	NodePrivate* BPPrivate::find_node(const std::string& address) const
-	{
-		auto sp = string_split(address, '.');
-		switch (sp.size())
-		{
-		case 2:
-			if (sp[0] != "*")
-			{
-				auto p = (PackagePrivate*)find_package(sp[0]);
-				if (p)
-					return p->bp->find_node(sp[1]);
-				return nullptr;
-			}
-			for (auto& p : packages)
-			{
-				auto n = p->bp->find_node(address);
-				if (n)
-					return n;
-			}
-			sp[0] = sp[1];
-		case 1:
-			for (auto& n : nodes)
-			{
-				if (n->id == sp[0])
-					return n.get();
-			}
-		}
-		return nullptr;
-	}
-
-	SlotPrivate* BPPrivate::find_input(const std::string& address) const
-	{
-		auto sp = string_last_first_split(address, '.');
-		auto n = find_node(sp[0]);
-		if (!n)
-			return nullptr;
-		return (SlotPrivate*)n->find_input(sp[1]);
-	}
-
-	SlotPrivate* BPPrivate::find_output(const std::string& address) const
-	{
-		auto sp = string_last_first_split(address, '.');
-		auto n = find_node(sp[0]);
-		if (!n)
-			return nullptr;
-		return (SlotPrivate*)n->find_output(sp[1]);
+		root->need_update_hierarchy = true;
 	}
 
 	void BPPrivate::clear()
 	{
 		packages.clear();
 		nodes.clear();
-		update_list.clear();
 		input_exports.clear();
 		output_exports.clear();
 		modules.clear();
+		need_update_hierarchy = true;
+		update_list.clear();
 	}
 
 	void BPPrivate::add_to_update_list(NodePrivate* n)
 	{
-		for (auto& o : update_list)
+		if (n->in_update_list || n->order == 0xffffffff)
+			return;
+		std::list<NodePrivate*>::iterator it;
+		for (it = update_list.begin(); it != update_list.end(); it++)
 		{
-			if (o.v.n == n)
-				return;
+			if (n->order < (*it)->order)
+				break;
 		}
+		update_list.insert(it, n);
+		n->in_update_list = true;
+	}
 
-		for (auto& input : n->inputs)
+	void BPPrivate::remove_from_update_list(NodePrivate* n)
+	{
+		if (!n->in_update_list)
+			return;
+		for (auto it = update_list.begin(); it != update_list.end(); it++)
 		{
-			auto o = input->links[0];
+			if (*it == n)
+			{
+				update_list.erase(it);
+				n->in_update_list = false;
+				return;
+			}
+		}
+	}
+
+	static void collect_nodes(BPPrivate* scn, std::vector<NodePrivate*>& ns)
+	{
+		for (auto& n : scn->nodes)
+		{
+			n->order = 0xffffffff;
+			ns.push_back(n.get());
+		}
+		for (auto& p : scn->packages)
+			collect_nodes(p->bp, ns);
+	}
+
+	static void add_to_hierarchy(BPPrivate* scn, NodePrivate* n, uint& order)
+	{
+		if (n->order != 0xffffffff)
+			return;
+		auto no_dependencies = true;
+		for (auto& i : n->inputs)
+		{
+			auto o = i->links[0];
 			if (o)
 			{
 				auto nn = o->node;
-				if (nn->scene == this)
-					add_to_update_list(nn);
-				else
-				{
-					auto p = nn->scene->package;
-					if (p)
-					{
-						for (auto& pp : packages)
-						{
-							if (pp.get() == p)
-							{
-								add_to_update_list(p);
-								break;
-							}
-						}
-					}
-				}
+				add_to_hierarchy(scn, nn, order);
+				no_dependencies = false;
 			}
 		}
-
-		UpdateObject o;
-		o.t = 0;
-		o.v.n = n;
-		update_list.emplace_back(o);
-	}
-
-	void BPPrivate::add_to_update_list(PackagePrivate* p)
-	{
-		for (auto& o : update_list)
-		{
-			if (o.v.p == p)
-				return;
-		}
-
-		auto bp = p->bp;
-		for (auto i = 0; i < bp->input_exports.size(); i++)
-		{
-			auto o = bp->input_exports[i]->links[0];
-			if (o)
-			{
-				auto n = o->node;
-				auto bp = n->scene;
-				if (bp == this)
-					add_to_update_list(n);
-				else if (bp->package)
-					add_to_update_list(bp->package);
-			}
-		}
-
-		UpdateObject o;
-		o.t = 1;
-		o.v.p = p;
-		update_list.emplace_back(o);
-	}
-
-	void BPPrivate::build_update_list()
-	{
-		update_list.clear();
-		for (auto& n : nodes)
-			add_to_update_list(n.get());
-		for (auto& p : packages)
-			add_to_update_list(p.get());
+		if (no_dependencies)
+			scn->head_nodes.emplace_back(n);
+		n->order = order++;
 	}
 
 	void BPPrivate::update()
 	{
-		if (update_list.empty())
-			return;
+		assert(root == this);
 
-		_bp_env.path = std::filesystem::path(filename).parent_path().wstring();
-		_bp_env.dbs = dbs;
-		_bp_env.time = time;
-
-		for (auto& o : update_list)
+		if (need_update_hierarchy)
 		{
-			if (o.t == 0)
-				o.v.n->update();
-			else
+			head_nodes.clear();
+
+			std::vector<NodePrivate*> ns;
+			collect_nodes(this, ns);
+
+			auto order = 0U;
+			for (auto n : ns)
+				add_to_hierarchy(this, n, order);
+		}
+
+		for (auto n : head_nodes)
+			add_to_update_list(n);
+		
+		while (!update_list.empty())
+		{
+			auto n = update_list.front();
+			update_list.erase(update_list.begin());
+			n->in_update_list = false;
+
+			p_env = &n->scene->env;
+			p_env->time = env.time;
+			n->update();
+
+			auto frame = looper().frame;
+			for (auto& o : n->outputs)
 			{
-				auto p = o.v.p;
-				auto& frame = p->frame;
-				auto bp = p->bp;
-				auto need_update = false;
-				if (p->pf_check_update)
+				if (o->frame() == frame)
 				{
-					need_update = p->pf_check_update(p);
-					if (need_update)
-						frame = looper().frame;
+					for (auto& i : o->links)
+						add_to_update_list(i->node);
 				}
-				else
-				{
-					for (auto i = 0; i < bp->input_exports.size(); i++)
-					{
-						auto s = bp->input_exports[i]->links[0];
-						if (s && s->frame() > frame)
-						{
-							need_update = true;
-							frame = s->frame();
-						}
-					}
-				}
-				if (need_update)
-					bp->update();
 			}
 		}
 
-		time += looper().delta_time;
-
-		_bp_env.path = L"";
-		_bp_env.dbs.clear();
-		_bp_env.time = 0.f;
+		env.time += looper().delta_time;
 	}
 
 	const std::wstring& BP::Module::filename() const
@@ -915,7 +809,7 @@ namespace flame
 
 	int BP::Slot::frame() const
 	{
-		return *(int*)((SlotPrivate*)this)->raw_data;
+		return ((AttributeBase*)(((SlotPrivate*)this)->raw_data))->frame;
 	}
 
 	void BP::Slot::set_frame(int frame)
@@ -993,19 +887,34 @@ namespace flame
 		return ((NodePrivate*)this)->outputs.size();
 	}
 
-	BP::Slot*BP::Node::output(uint idx) const
+	BP::Slot* BP::Node::output(uint idx) const
 	{
 		return ((NodePrivate*)this)->outputs[idx].get();
 	}
 
-	BP::Slot*BP::Node::find_input(const std::string& name) const
+	BP::Slot* BP::Node::find_input(const std::string& name) const
 	{
-		return ((NodePrivate*)this)->find_input(name);
+		for (auto& input : ((NodePrivate*)this)->inputs)
+		{
+			if (name == input->vi->name())
+				return input.get();
+		}
+		return nullptr;
 	}
 
-	BP::Slot*BP::Node::find_output(const std::string& name) const
+	BP::Slot* BP::Node::find_output(const std::string& name) const
 	{
-		return ((NodePrivate*)this)->find_output(name);
+		for (auto& output : ((NodePrivate*)this)->outputs)
+		{
+			if (name == output->vi->name())
+				return output.get();
+		}
+		return nullptr;
+	}
+
+	void BP::set_time(float t)
+	{
+		((BPPrivate*)this)->env.time = t;
 	}
 
 	BP::Package* BP::package() const
@@ -1035,7 +944,7 @@ namespace flame
 
 	void BP::remove_module(BP::Module* m)
 	{
-		((BPPrivate*)this)->remove_module(m);
+		((BPPrivate*)this)->remove_module((ModulePrivate*)m);
 	}
 
 	BP::Module* BP::find_module(const std::wstring& filename) const
@@ -1082,7 +991,7 @@ namespace flame
 
 	const std::vector<TypeinfoDatabase*> BP::dbs() const
 	{
-		return ((BPPrivate*)this)->dbs;
+		return ((BPPrivate*)this)->env.dbs;
 	}
 
 	uint BP::node_count() const
@@ -1107,17 +1016,50 @@ namespace flame
 
 	BP::Node *BP::find_node(const std::string& address) const
 	{
-		return ((BPPrivate*)this)->find_node(address);
+		auto sp = string_split(address, '.');
+		switch (sp.size())
+		{
+		case 2:
+			if (sp[0] != "*")
+			{
+				auto p = (PackagePrivate*)find_package(sp[0]);
+				if (p)
+					return p->bp->find_node(sp[1]);
+				return nullptr;
+			}
+			for (auto& p : ((BPPrivate*)this)->packages)
+			{
+				auto n = p->bp->find_node(address);
+				if (n)
+					return n;
+			}
+			sp[0] = sp[1];
+		case 1:
+			for (auto& n : ((BPPrivate*)this)->nodes)
+			{
+				if (n->id == sp[0])
+					return n.get();
+			}
+		}
+		return nullptr;
 	}
 
-	BP::Slot*BP::find_input(const std::string& address) const
+	BP::Slot* BP::find_input(const std::string& address) const
 	{
-		return ((BPPrivate*)this)->find_input(address);
+		auto sp = string_last_first_split(address, '.');
+		auto n = find_node(sp[0]);
+		if (!n)
+			return nullptr;
+		return (SlotPrivate*)n->find_input(sp[1]);
 	}
 
-	BP::Slot*BP::find_output(const std::string& address) const
+	BP::Slot* BP::find_output(const std::string& address) const
 	{
-		return ((BPPrivate*)this)->find_output(address);
+		auto sp = string_last_first_split(address, '.');
+		auto n = find_node(sp[0]);
+		if (!n)
+			return nullptr;
+		return (SlotPrivate*)n->find_output(sp[1]);
 	}
 
 	uint BP::input_export_count() const
@@ -1379,7 +1321,7 @@ namespace flame
 		SerializableNode::destroy(file);
 
 		auto bp = new BPPrivate();
-		bp->filename = filename;
+		bp->env.filename = filename;
 
 		for (auto& m_d : module_descs)
 		{
@@ -1429,7 +1371,7 @@ namespace flame
 						all_templates.push_back(n.type);
 
 						templatecpp << "\tBP_";
-						if (find_enum(bp->dbs, H(std::string(n.type.begin() + pos_t + 1, n.type.end() - 1).c_str())))
+						if (find_enum(bp->env.dbs, H(std::string(n.type.begin() + pos_t + 1, n.type.end() - 1).c_str())))
 							templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t) + "<int>";
 						else
 							templatecpp << tn_a2c(n.type);
@@ -1491,7 +1433,7 @@ namespace flame
 			m->filename = self_module_filename;
 			m->absolute_filename = self_module_filename;
 			m->module = self_module;
-			m->db = TypeinfoDatabase::load(bp->dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
+			m->db = TypeinfoDatabase::load(bp->env.dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
 			bp->self_module.reset(m);
 
 			bp->collect_dbs();
@@ -1506,10 +1448,10 @@ namespace flame
 				for (auto& d_d : n_d.datas)
 				{
 					auto input = n->find_input(d_d.name);
-					auto v = input->vi;
+					auto v = input->vi();
 					auto type = v->type();
 					if (v->default_value())
-						unserialize_value(bp->dbs, type->tag(), type->hash(), d_d.value, input->raw_data);
+						unserialize_value(bp->env.dbs, type->tag(), type->hash(), d_d.value, input->raw_data());
 				}
 			}
 		}
@@ -1541,7 +1483,7 @@ namespace flame
 	{
 		auto bp = (BPPrivate*)_bp;
 
-		bp->filename = filename;
+		bp->env.filename = filename;
 
 		auto file = SerializableNode::create("BP");
 
@@ -1612,7 +1554,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(bp->dbs, type->tag(), type->hash(), input->raw_data, 2);
+					auto value = serialize_value(bp->env.dbs, type->tag(), type->hash(), input->raw_data, 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}
@@ -1691,7 +1633,7 @@ namespace flame
 
 	const BP::Environment& bp_env()
 	{
-		return _bp_env;
+		return *p_env;
 	}
 
 	struct F2U$
@@ -1705,7 +1647,7 @@ namespace flame
 			if (v$i.frame > out$o.frame)
 			{
 				out$o.v = v$i.v;
-				out$o.frame = v$i.frame;
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1722,7 +1664,7 @@ namespace flame
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
 			{
 				out$o.v = a$i.v + b$i.v;
-				out$o.frame = max(a$i.frame, b$i.frame);
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1739,7 +1681,7 @@ namespace flame
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
 			{
 				out$o.v = a$i.v * b$i.v;
-				out$o.frame = max(a$i.frame, b$i.frame);
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1757,7 +1699,7 @@ namespace flame
 				out$o.v.x() = x$i.v;
 			if (y$i.frame > out$o.frame)
 				out$o.v.y() = y$i.v;
-			out$o.frame = max(x$i.frame, y$i.frame);
+			out$o.frame = looper().frame;
 		}
 	};
 
@@ -1794,7 +1736,7 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = maxN(a$i.frame, b$i.frame, t$i.frame);
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1817,7 +1759,7 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = maxN(a$i.frame, b$i.frame, t$i.frame);
+				out$o.frame = looper().frame;
 			}
 		}
 	};

@@ -202,13 +202,22 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (format$i.frame > out$o.frame)
+				auto last_out_frame = out$o.frame;
+				if (format$i.frame > last_out_frame)
+				{
 					out$o.v.format = format$i.v;
-				if (clear$i.frame > out$o.frame)
+					out$o.frame = looper().frame;
+				}
+				if (clear$i.frame > last_out_frame)
+				{
 					out$o.v.clear = clear$i.v;
-				if (sample_count$i.frame > out$o.frame)
+					out$o.frame = looper().frame;
+				}
+				if (sample_count$i.frame > last_out_frame)
+				{
 					out$o.v.sample_count = sample_count$i.v;
-				out$o.frame = maxN(format$i.frame, clear$i.frame, sample_count$i.frame);
+					out$o.frame = looper().frame;
+				}
 			}
 
 		};
@@ -228,13 +237,22 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (color_attachments$i.frame > out$o.frame)
+				auto last_out_frame = out$o.frame;
+				if (color_attachments$i.frame > last_out_frame)
+				{
 					out$o.v.color_attachments = color_attachments$i.v ? *color_attachments$i.v : std::vector<uint>();
-				if (resolve_attachments$i.frame > out$o.frame)
+					out$o.frame = looper().frame;
+				}
+				if (resolve_attachments$i.frame > last_out_frame)
+				{
 					out$o.v.resolve_attachments = resolve_attachments$i.v ? *resolve_attachments$i.v : std::vector<uint>();
-				if (depth_attachment$i.frame > out$o.frame)
+					out$o.frame = looper().frame;
+				}
+				if (depth_attachment$i.frame > last_out_frame)
+				{
 					out$o.v.depth_attachment = depth_attachment$i.v;
-				out$o.frame = maxN(color_attachments$i.frame, resolve_attachments$i.frame, depth_attachment$i.frame);
+					out$o.frame = looper().frame;
+				}
 			}
 
 		};
@@ -279,7 +297,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(attachments$i.frame, subpasses$i.frame, dependencies$i.frame);
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -373,7 +391,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = max(out$o.frame, renderpass$i.frame);
+					out$o.frame = looper().frame;
 				}
 				if (colors$i.frame > last_out_frame || renderpass$i.frame > last_out_frame)
 				{
@@ -389,7 +407,7 @@ namespace flame
 					}
 					else
 						printf("cannot update clearvalues\n");
-					out$o.frame = max(out$o.frame, colors$i.frame);
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -479,7 +497,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = max(renderpass$i.frame, views$i.frame);
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -647,18 +665,25 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (type$i.frame > out$o.frame || v$i.frame > out$o.frame)
+				auto last_out_frame = out$o.frame;
+				if (type$i.frame > out$o.frame || v$i.frame > last_out_frame)
 				{
 					out$o.v.type = type$i.v;
 					out$o.v.v = v$i.v;
+					out$o.frame = looper().frame;
 					first_image$o.v = image_from_target(type$i.v, v$i.v);
-					first_image$o.frame = max(type$i.frame, v$i.frame);
+					first_image$o.frame = looper().frame;
 				}
-				if (clear$i.frame > out$o.frame)
+				if (clear$i.frame > last_out_frame)
+				{
 					out$o.v.clear = clear$i.v;
-				if (clear_color$i.frame > out$o.frame)
+					out$o.frame = looper().frame;
+				}
+				if (clear_color$i.frame > last_out_frame)
+				{
 					out$o.v.clear_color = clear_color$i.v;
-				out$o.frame = maxN(type$i.frame, v$i.frame, clear$i.frame, clear_color$i.frame);
+					out$o.frame = looper().frame;
+				}
 			}
 		};
 
@@ -677,13 +702,22 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (color_targets$i.frame > out$o.frame)
+				auto last_out_frame = out$o.frame;
+				if (color_targets$i.frame > last_out_frame)
+				{
 					out$o.v.color_targets = get_attribute_vec(color_targets$i);
-				if (resolve_targets$i.frame > out$o.frame)
+					out$o.frame = looper().frame;
+				}
+				if (resolve_targets$i.frame > last_out_frame)
+				{
 					out$o.v.resolve_targets = get_attribute_vec(resolve_targets$i);
-				if (depth_target$i.frame > out$o.frame)
+					out$o.frame = looper().frame;
+				}
+				if (depth_target$i.frame > last_out_frame)
+				{
 					out$o.v.depth_target = depth_target$i.v;
-				out$o.frame = maxN(color_targets$i.frame, resolve_targets$i.frame, depth_target$i.frame);
+					out$o.frame = looper().frame;
+				}
 			}
 		};
 
@@ -765,10 +799,11 @@ namespace flame
 						fbs$o.v.clear();
 						cv$o.v = nullptr;
 					}
-					out$o.frame = passes$i.frame;
-					rp$o.frame = passes$i.frame;
-					fbs$o.frame = passes$i.frame;
-					cv$o.frame = passes$i.frame;
+					auto frame = looper().frame;
+					out$o.frame = frame;
+					rp$o.frame = frame;
+					fbs$o.frame = frame;
+					cv$o.frame = frame;
 				}
 			}
 

@@ -410,7 +410,7 @@ namespace flame
 						out$o.v = FontAtlas::create(d, draw_type$i.v, *fonts$i.v);
 					else
 						printf("cannot create fontatlas\n");
-					out$o.frame = max(draw_type$i.frame, fonts$i.frame);
+					out$o.frame = looper().frame;
 				}
 			}
 

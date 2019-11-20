@@ -20,9 +20,9 @@ namespace flame
 			uint64_t                                    object,
 			size_t                                      location,
 			int32_t                                     messageCode,
-			const char*                                 pLayerPrefix,
-			const char*                                 pMessage,
-			void*                                       pUserData)
+			const char* pLayerPrefix,
+			const char* pMessage,
+			void* pUserData)
 		{
 			if (messageCode == 1) return VK_FALSE; // THREADING ERROR
 
@@ -528,7 +528,7 @@ namespace flame
 			return default_device;
 		}
 
-		Device *Device::create(bool debug)
+		Device* Device::create(bool debug)
 		{
 			auto d = new DevicePrivate(debug);
 			if (!default_device)
@@ -536,7 +536,7 @@ namespace flame
 			return d;
 		}
 
-		void Device::destroy(Device *d)
+		void Device::destroy(Device* d)
 		{
 			delete (DevicePrivate*)d;
 		}

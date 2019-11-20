@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(Device *_d, uint _size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing) :
+		BufferPrivate::BufferPrivate(Device* _d, uint _size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing) :
 			d((DevicePrivate*)_d)
 		{
 			size = _size;
@@ -103,7 +103,7 @@ namespace flame
 #endif
 		}
 
-		void BufferPrivate::copy_from_data(void *data)
+		void BufferPrivate::copy_from_data(void* data)
 		{
 			auto stag_buf = Buffer::create(d, size, BufferUsageTransferSrc, MemPropHost);
 			stag_buf->map();
@@ -137,12 +137,12 @@ namespace flame
 			((BufferPrivate*)this)->flush();
 		}
 
-		void Buffer::copy_from_data(void *data)
+		void Buffer::copy_from_data(void* data)
 		{
 			((BufferPrivate*)this)->copy_from_data(data);
 		}
 
-		Buffer *Buffer::create(Device *d, uint size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing, void *data)
+		Buffer* Buffer::create(Device* d, uint size, BufferUsage$ usage, MemProp$ mem_prop, bool sharing, void* data)
 		{
 			auto b = new BufferPrivate(d, size, usage, mem_prop, sharing);
 
@@ -152,7 +152,7 @@ namespace flame
 			return b;
 		}
 
-		void Buffer::destroy(Buffer *b)
+		void Buffer::destroy(Buffer* b)
 		{
 			delete (BufferPrivate*)b;
 		}
@@ -186,7 +186,7 @@ namespace flame
 					}
 					else
 						out$o.v = nullptr;
-					out$o.frame = maxN(size$i.frame, usage$im.frame, mem_prop$im.frame);
+					out$o.frame = looper().frame;
 				}
 			}
 

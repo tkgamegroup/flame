@@ -18,11 +18,6 @@ namespace flame
 	struct UdtInfo;
 	struct TypeinfoDatabase;
 
-	namespace graphics
-	{
-		struct Device;
-	}
-
 	struct BP
 	{
 		struct Node;
@@ -115,12 +110,12 @@ namespace flame
 
 		struct Environment
 		{
-			std::wstring path;
+			std::wstring filename;
 			std::vector<TypeinfoDatabase*> dbs;
 			float time;
 		};
 
-		float time;
+		FLAME_FOUNDATION_EXPORTS void set_time(float t);
 
 		FLAME_FOUNDATION_EXPORTS Package* package() const;
 

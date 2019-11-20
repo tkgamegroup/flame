@@ -490,6 +490,8 @@ namespace flame
 					c->add_font((FontAtlas*)f);
 
 				frame = 0;
+
+				return;
 			}
 
 			if (rnf)

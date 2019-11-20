@@ -22,7 +22,7 @@ namespace flame
 			if (in.frame > out.frame)
 			{
 				out.v = in.v;
-				out.frame = in.frame;
+				out.frame = looper().frame;
 			}
 		}
 
@@ -51,7 +51,7 @@ namespace flame
 			if (in.frame > out.frame)
 			{
 				out.v = in.v;
-				out.frame = in.frame;
+				out.frame = looper().frame;
 			}
 		}
 
@@ -82,7 +82,7 @@ namespace flame
 				if (in[i].frame > out.frame)
 				{
 					out.v.v_[i] = in[i].v;
-					out.frame = in[i].frame;
+					out.frame = looper().frame;
 				}
 			}
 		}
@@ -119,7 +119,7 @@ namespace flame
 				if (in[i].frame > last_out_frame)
 				{
 					out.v[i] = in[i].v;
-					out.frame = max(out.frame, in[i].frame);
+					out.frame = looper().frame;
 				}
 			}
 		}
@@ -161,7 +161,7 @@ namespace flame
 			if (in.frame > out.frame)
 			{
 				out.v = in.v.size();
-				out.frame = in.frame;
+				out.frame = looper().frame;
 			}
 		}
 

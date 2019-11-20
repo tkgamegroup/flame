@@ -458,7 +458,7 @@ namespace flame
 					}
 					else
 						out$o.v = nullptr;
-					out$o.frame = maxN(format$i.frame, size$i.frame, level$i.frame, layer$i.frame, sample_count$i.frame, usage$mi.frame);
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -491,8 +491,9 @@ namespace flame
 						format$o.v = Format_Undefined;
 						size$o.v = Vec2u(0);
 					}
-					format$o.frame = in$i.frame;
-					size$o.frame = in$i.frame;
+					auto frame = looper().frame;
+					format$o.frame = frame;
+					size$o.frame = frame;
 				}
 			}
 		};
@@ -607,7 +608,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = maxN(image$i.frame, type$i.frame, base_level$i.frame, level_count$i.frame, base_layer$i.frame, layer_count$i.frame, swizzle_r$i.frame, swizzle_g$i.frame, swizzle_b$i.frame, swizzle_a$i.frame);
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -639,7 +640,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = image$i.frame;
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -679,7 +680,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.frame = images$i.frame;
+					out$o.frame = looper().frame;
 				}
 			}
 
