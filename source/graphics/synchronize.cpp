@@ -5,7 +5,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		SemaphorePrivate::SemaphorePrivate(Device *_d) :
+		SemaphorePrivate::SemaphorePrivate(Device* _d) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
@@ -22,12 +22,12 @@ namespace flame
 #endif
 		}
 
-		Semaphore *Semaphore::create(Device *d)
+		Semaphore* Semaphore::create(Device* d)
 		{
 			return new SemaphorePrivate(d);
 		}
 
-		void Semaphore::destroy(Semaphore *s)
+		void Semaphore::destroy(Semaphore* s)
 		{
 			delete (SemaphorePrivate*)s;
 		}

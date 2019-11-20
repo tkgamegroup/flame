@@ -50,7 +50,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsage$ usage)
+		ImagePrivate::ImagePrivate(Device* _d, Format$ _format, const Vec2u& _size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsage$ usage)
 		{
 			format = _format;
 			size = _size;
@@ -101,7 +101,7 @@ namespace flame
 #endif
 		}
 
-		ImagePrivate::ImagePrivate(Device *_d, Format$ _format, const Vec2u &_size, uint _level, uint _layer, void *native) :
+		ImagePrivate::ImagePrivate(Device* _d, Format$ _format, const Vec2u& _size, uint _level, uint _layer, void* native) :
 			d((DevicePrivate*)_d)
 		{
 			format = _format;
@@ -174,7 +174,7 @@ namespace flame
 			data_size = pitch * size.y();
 		}
 
-		void ImagePrivate::init(const Vec4c &col)
+		void ImagePrivate::init(const Vec4c& col)
 		{
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
@@ -187,7 +187,7 @@ namespace flame
 			Commandbuffer::destroy(cb);
 		}
 
-		void ImagePrivate::get_pixels(const Vec2u& offset, const Vec2u& extent, void *dst)
+		void ImagePrivate::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
 		{
 			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
@@ -212,7 +212,7 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void *src)
+		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
 		{
 			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
@@ -236,22 +236,22 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void Image::init(const Vec4c &col)
+		void Image::init(const Vec4c& col)
 		{
 			((ImagePrivate*)this)->init(col);
 		}
 
-		void Image::get_pixels(const Vec2u& offset, const Vec2u& extent, void *dst)
+		void Image::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
 		{
 			((ImagePrivate*)this)->get_pixels(offset, extent, dst);
 		}
 
-		void Image::set_pixels(const Vec2u& offset, const Vec2u& extent, const void *src)
+		void Image::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
 		{
 			((ImagePrivate*)this)->set_pixels(offset, extent, src);
 		}
 
-		Image *Image::create(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void *data)
+		Image* Image::create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void* data)
 		{
 			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
 
@@ -278,7 +278,7 @@ namespace flame
 			return i;
 		}
 
-		Image *Image::create_from_bitmap(Device *d, Bitmap *bmp, ImageUsage$ extra_usage)
+		Image* Image::create_from_bitmap(Device* d, Bitmap* bmp, ImageUsage$ extra_usage)
 		{
 			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst | extra_usage));
 
@@ -302,7 +302,7 @@ namespace flame
 			return i;
 		}
 
-		Image *Image::create_from_file(Device *d, const std::wstring& filename, ImageUsage$ extra_usage)
+		Image* Image::create_from_file(Device* d, const std::wstring& filename, ImageUsage$ extra_usage)
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
@@ -311,7 +311,7 @@ namespace flame
 			int width, height, level, layer;
 			auto fmt = Format_Undefined;
 
-			Buffer *staging_buffer;
+			Buffer* staging_buffer;
 			std::vector<BufferImageCopy> buffer_copy_regions;
 
 			auto ext = path.extension().string();
@@ -411,12 +411,12 @@ namespace flame
 				printf("cannot save png that has more than 8bit per channel\n");
 		}
 
-		Image *Image::create_from_native(Device *d, Format$ format, const Vec2u &size, uint level, uint layer, void *native)
+		Image* Image::create_from_native(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native)
 		{
 			return new ImagePrivate(d, format, size, level, layer, native);
 		}
 
-		void Image::destroy(Image *i)
+		void Image::destroy(Image* i)
 		{
 			delete (ImagePrivate*)i;
 		}
@@ -498,7 +498,7 @@ namespace flame
 			}
 		};
 
-		ImageviewPrivate::ImageviewPrivate(Image *_image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a) :
+		ImageviewPrivate::ImageviewPrivate(Image* _image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a) :
 			image((ImagePrivate*)_image)
 		{
 			d = image->d;
@@ -562,12 +562,12 @@ namespace flame
 			return ((ImageviewPrivate*)this)->image;
 		}
 
-		Imageview* Imageview::create(Image *image, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a)
+		Imageview* Imageview::create(Image* image, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a)
 		{
 			return new ImageviewPrivate(image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
 		}
 
-		void Imageview::destroy(Imageview *v)
+		void Imageview::destroy(Imageview* v)
 		{
 			delete (ImageviewPrivate*)v;
 		}
@@ -691,7 +691,7 @@ namespace flame
 			}
 		};
 
-		SamplerPrivate::SamplerPrivate(Device *_d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
+		SamplerPrivate::SamplerPrivate(Device* _d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{
 			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
@@ -730,12 +730,12 @@ namespace flame
 #endif
 		}
 
-		Sampler *Sampler::create(Device *d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
+		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{
 			return new SamplerPrivate(d, mag_filter, min_filter, unnormalized_coordinates);
 		}
 
-		void Sampler::destroy(Sampler *s)
+		void Sampler::destroy(Sampler* s)
 		{
 			delete (SamplerPrivate*)s;
 		}
