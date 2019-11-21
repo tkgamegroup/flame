@@ -138,7 +138,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Node* add_node(uint type_hash, const std::string& id);
+		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type, const std::string& id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 		FLAME_FOUNDATION_EXPORTS Node* find_node(const std::string& address) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& address) const;

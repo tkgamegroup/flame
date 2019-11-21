@@ -6,8 +6,6 @@
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/commandbuffer.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
-
 using namespace flame;
 using namespace graphics;
 

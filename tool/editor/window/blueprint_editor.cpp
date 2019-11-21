@@ -23,7 +23,7 @@
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 #include "../app.h"
 #include "../data_tracker.h"
@@ -197,9 +197,13 @@ struct cBPEditor : Component
 		switch (sel_type_)
 		{
 		case SelModule:
-		case SelPackage:
-		case SelNode:
 			((Entity*)selected_.m->user_data)->get_component(cElement)->frame_thickness = 0.f;
+			break;
+		case SelPackage:
+			((Entity*)selected_.p->user_data)->get_component(cElement)->frame_thickness = 0.f;
+			break;
+		case SelNode:
+			((Entity*)selected_.n->user_data)->get_component(cElement)->frame_thickness = 0.f;
 			break;
 		}
 
@@ -212,7 +216,18 @@ struct cBPEditor : Component
 		deselect();
 		sel_type_ = t;
 		selected_.plain = p;
-		((Entity*)selected_.m->user_data)->get_component(cElement)->frame_thickness = 4.f;
+		switch (sel_type_)
+		{
+		case SelModule:
+			((Entity*)selected_.m->user_data)->get_component(cElement)->frame_thickness = 4.f;
+			break;
+		case SelPackage:
+			((Entity*)selected_.p->user_data)->get_component(cElement)->frame_thickness = 4.f;
+			break;
+		case SelNode:
+			((Entity*)selected_.n->user_data)->get_component(cElement)->frame_thickness = 4.f;
+			break;
+		}
 	}
 
 	void set_changed(bool v)
@@ -422,7 +437,7 @@ struct cBPEditor : Component
 		auto n_dst = bp->find_node("test_dst");
 		if (!n_dst)
 		{
-			n_dst = bp->add_node(cH("DstImage"), "test_dst");
+			n_dst = bp->add_node("DstImage", "test_dst");
 			n_dst->pos = Vec2f(0.f, -200.f);
 			n_dst->external = true;
 		}
@@ -439,7 +454,7 @@ struct cBPEditor : Component
 		auto n_cbs = bp->find_node("test_cbs");
 		if (!n_cbs)
 		{
-			n_cbs = bp->add_node(cH("CmdBufs"), "test_cbs");
+			n_cbs = bp->add_node("CmdBufs", "test_cbs");
 			n_cbs->pos = Vec2f(200.f, -200.f);
 			n_cbs->external = true;
 		}
@@ -485,7 +500,7 @@ struct cBPEditor : Component
 
 	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
 	{
-		auto n = bp->add_node(H(type_name.c_str()), id);
+		auto n = bp->add_node(type_name, id);
 		n->pos = pos;
 		create_node_entity(n);
 		set_changed(true);
@@ -563,7 +578,7 @@ struct cBPEditor : Component
 		{
 		case SelNode:
 		{
-			auto n = bp->add_node(H(selected_.n->udt()->name().c_str()), "");
+			auto n = bp->add_node(selected_.n->udt()->name(), "");
 			n->pos = add_pos;
 			for (auto i = 0; i < n->input_count(); i++)
 			{
@@ -1493,7 +1508,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			c_text->font_size_ = default_style.font_size * 1.5f;
 			c_text->set_text(s2w(n->id()));
 			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()));
+				if (hash == cH("text"))
+					(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()));
 			}, new_mail_p(n));
 			e_text_id->add_component(c_text);
 
@@ -1516,6 +1532,36 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->name()));
 			c_text->color = Vec4c(50, 50, 50, 255);
 			e_text_type->add_component(c_text);
+		}
+
+		auto e_initiative = Entity::create();
+		e_content->add_child(e_initiative);
+		{
+			e_initiative->add_component(cElement::create());
+
+			auto c_layout = cLayout::create(LayoutHorizontal);
+			c_layout->item_padding = 4.f;
+			e_initiative->add_component(c_layout);
+
+			auto e_checkbox = create_standard_checkbox();
+			e_initiative->add_child(e_checkbox);
+			auto c_checkbox = e_checkbox->get_component(cCheckbox);
+			c_checkbox->set_checked(n->initiative());
+			c_checkbox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+				if (hash == cH("checked"))
+					(*(BP::Node**)c)->set_initiative(((cCheckbox*)cb)->checked);
+			}, new_mail_p(n));
+
+			auto e_text = Entity::create();
+			e_initiative->add_child(e_text);
+			{
+				e_text->add_component(cElement::create());
+
+				auto c_text = cText::create(app.font_atlas_pixel);
+				c_text->set_text(L"Initiative");
+				e_text->add_component(c_text);
+			}
+
 		}
 
 		auto udt_name = n->udt()->name();
@@ -1579,11 +1625,10 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto id = capture.n->id();
 						if (bp->self_module())
 						{
-							auto hash = H(type.c_str());
-							if (bp->self_module()->db()->find_udt(hash))
+							if (bp->self_module()->db()->find_udt(H(type.c_str())))
 							{
 								capture.n->set_id("");
-								auto new_n = bp->add_node(hash, id);
+								auto new_n = bp->add_node(type, id);
 								new_n->pos = capture.n->pos;
 								for (auto i = 0; i < capture.n->input_count(); i++)
 								{

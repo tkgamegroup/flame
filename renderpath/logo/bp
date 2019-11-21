@@ -4,7 +4,7 @@
 		<module filename="flame_foundation.dll" pos="-259.00;-84.00" />
 	</modules>
 	<packages>
-		<package filename="canvas_make_cmd" id="canvas" pos="1124.60;806.93" />
+		<package filename="canvas" id="canvas" pos="1124.60;806.93" />
 	</packages>
 	<nodes>
 		<node type="Array(1+std::basic_string(wchar_t))" id="fonts" pos="-569.00;42.00">
@@ -34,7 +34,7 @@
 				<data name="y" value="190.00" />
 			</datas>
 		</node>
-		<node type="Time" id="time" pos="-940.50;293.50" />
+		<node type="Time" id="time" pos="-940.50;293.50" initiative="1" />
 		<node type="LinearInterpolation1d" id="path1" pos="-533.50;280.50">
 			<datas>
 				<data name="a" value="900.00" />

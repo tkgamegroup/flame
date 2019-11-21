@@ -13,7 +13,7 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/window.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 #include "../app.h"
 #include "../data_tracker.h"

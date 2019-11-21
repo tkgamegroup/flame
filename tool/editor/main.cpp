@@ -26,7 +26,7 @@
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/window.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 #include "app.h"
 #include "window/resource_explorer.h"
@@ -43,7 +43,7 @@ void App::create()
 	for (auto i = 0; i < sc_cbs.size(); i++)
 		sc_cbs[i] = Commandbuffer::create(d->gcp);
 
-	canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	canvas_bp = BP::create_from_file(L"../renderpath/canvas/bp", true);
 	scr->link_bp(canvas_bp, sc_cbs);
 	canvas_bp->update();
 	canvas = (Canvas*)canvas_bp->find_output("*.make_cmd.canvas")->data_p();

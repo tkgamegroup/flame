@@ -117,7 +117,7 @@ namespace flame
 
 		void collect_dbs();
 
-		NodePrivate* add_node(uint type_hash, const std::string& type_name);
+		NodePrivate* add_node(const std::string& type, const std::string& type_name);
 		void remove_node(NodePrivate* n);
 
 		void clear();
@@ -567,8 +567,9 @@ namespace flame
 			env.dbs.push_back(m->db);
 	}
 
-	NodePrivate* BPPrivate::add_node(uint type_hash, const std::string& id)
+	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& id)
 	{
+		auto type_hash = H(type.c_str());
 		UdtInfo* udt = nullptr;
 		void* module = nullptr;
 		{
@@ -603,7 +604,7 @@ namespace flame
 
 		if (!udt)
 		{
-			printf("cannot add node, type not found\n");
+			printf("cannot add node, type not found: %s\n", type.c_str());
 			return nullptr;
 		}
 
@@ -1042,9 +1043,9 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(uint type_hash, const std::string& id)
+	BP::Node *BP::add_node(const std::string& type, const std::string& id)
 	{
-		return ((BPPrivate*)this)->add_node(type_hash, id);
+		return ((BPPrivate*)this)->add_node(type, id);
 	}
 
 	void BP::remove_node(BP::Node *n)
@@ -1486,7 +1487,7 @@ namespace flame
 
 		for (auto& n_d : node_descs)
 		{
-			auto n = bp->add_node(H(n_d.type.c_str()), n_d.id);
+			auto n = bp->add_node(n_d.type, n_d.id);
 			if (n)
 			{
 				n->set_initiative(n_d.initiative);
