@@ -6,7 +6,7 @@
 #include "../components/element_private.h"
 #include <flame/universe/components/aligner.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 namespace flame
 {

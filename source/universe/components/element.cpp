@@ -2,7 +2,7 @@
 #include "../entity_private.h"
 #include "element_private.h"
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 namespace flame
 {

@@ -649,7 +649,3 @@ namespace flame
 	}
 }
 
-extern "C" __declspec(dllexport) bool package_check_update(BP::Package * p)
-{
-	return true;
-}

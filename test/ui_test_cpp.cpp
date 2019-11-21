@@ -32,7 +32,7 @@
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 using namespace flame;
 using namespace graphics;
@@ -104,7 +104,7 @@ int main(int argc, char** args)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
 
-	app.bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/canvas/bp", false);
 	app.scr->link_bp(app.bp, app.cbs);
 	app.bp->update();
 	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
