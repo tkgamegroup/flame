@@ -94,6 +94,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
 			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
+			FLAME_FOUNDATION_EXPORTS bool initiative() const;
+			FLAME_FOUNDATION_EXPORTS void set_initiative(bool v);
 			Vec2f pos;
 
 			FLAME_FOUNDATION_EXPORTS uint input_count() const;
@@ -159,7 +161,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS static BP* create();
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename, bool no_compile = false);
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename, bool no_compile = false, BP* root = nullptr);
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};

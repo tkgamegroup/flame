@@ -54,8 +54,9 @@ namespace flame
 		BPPrivate* scene;
 		std::string id;
 		UdtInfo* udt;
+		bool initiative;
 
-		void* dummy; // represents the object
+		void* object;
 
 		void* dtor_addr;
 		void* update_addr;
@@ -64,6 +65,7 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
 		uint order;
+		bool in_pending_update;
 		bool in_update_list;
 
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
@@ -93,7 +95,8 @@ namespace flame
 
 		Environment env;
 
-		std::vector<NodePrivate*> head_nodes;
+		std::vector<NodePrivate*> initiative_nodes;
+		std::vector<NodePrivate*> pending_update_nodes;
 		std::list<NodePrivate*> update_list;
 		bool need_update_hierarchy;
 
@@ -119,8 +122,8 @@ namespace flame
 
 		void clear();
 
-		void add_to_update_list(NodePrivate* n);
-		void remove_from_update_list(NodePrivate* n);
+		void add_to_pending_update(NodePrivate* n);
+		void remove_from_pending_update(NodePrivate* n);
 		void update();
 	};
 
@@ -147,7 +150,6 @@ namespace flame
 		user_data = nullptr;
 
 		bp->package = this;
-		bp->root = scene->root;
 	}
 
 	PackagePrivate::~PackagePrivate()
@@ -160,7 +162,7 @@ namespace flame
 	{
 		type = _type;
 		vi = _variable_info;
-		raw_data = (char*)node->dummy + vi->offset();
+		raw_data = (char*)node->object + vi->offset();
 		user_data = nullptr;
 
 		if (type == Input)
@@ -177,7 +179,7 @@ namespace flame
 	void SlotPrivate::set_data(const void* d)
 	{
 		set_frame(looper().frame);
-		node->scene->root->add_to_update_list(node);
+		node->scene->root->add_to_pending_update(node);
 		 
 		auto type = vi->type();
 		if (type->tag() == TypeTagAttributeV)
@@ -268,7 +270,9 @@ namespace flame
 
 		auto root = node->scene->root;
 		root->need_update_hierarchy = true;
-		root->add_to_update_list(node);
+		root->add_to_pending_update(node);
+		if (target)
+			root->add_to_pending_update(target->node);
 
 		return true;
 	}
@@ -284,7 +288,9 @@ namespace flame
 		scene(scene),
 		id(id),
 		udt(udt),
+		initiative(false),
 		order(0xffffffff),
+		in_pending_update(false),
 		in_update_list(false)
 	{
 		pos = Vec2f(0.f);
@@ -292,13 +298,13 @@ namespace flame
 		user_data = nullptr;
 
 		auto size = udt->size();
-		dummy = malloc(size);
-		memset(dummy, 0, size);
+		object = malloc(size);
+		memset(object, 0, size);
 
 		{
 			auto f = udt->find_function("ctor");
 			if (f && f->parameter_count() == 0)
-				cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+				cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
 		}
 
 		dtor_addr = nullptr;
@@ -361,16 +367,16 @@ namespace flame
 			{
 				l->links[0] = nullptr;
 				l->set_frame(looper().frame);
-				root->add_to_update_list(l->node);
+				root->add_to_pending_update(l->node);
 			}
 		}
 
 		if (dtor_addr)
-			cmf(p2f<MF_v_v>(dtor_addr), dummy);
-		free(dummy);
+			cmf(p2f<MF_v_v>(dtor_addr), object);
+		free(object);
 
 		root->need_update_hierarchy = true;
-		root->remove_from_update_list(this);
+		root->remove_from_pending_update(this);
 	}
 
 	void NodePrivate::update()
@@ -397,7 +403,7 @@ namespace flame
 		}
 
 		if (update_addr)
-			cmf(p2f<MF_v_v>(update_addr), dummy);
+			cmf(p2f<MF_v_v>(update_addr), object);
 	}
 
 	BP::Module* BPPrivate::add_module(const std::wstring& filename)
@@ -484,11 +490,11 @@ namespace flame
 			}
 		}
 
-		auto bp = BP::create_from_file((std::filesystem::path(env.filename).parent_path().parent_path() / _filename / L"bp").wstring(), true);
+		auto bp = (BPPrivate*)BP::create_from_file((std::filesystem::path(env.filename).parent_path().parent_path() / _filename / L"bp").wstring(), true, root);
 		if (!bp)
 			return nullptr;
 
-		auto p = new PackagePrivate(this, s_id, (BPPrivate*)bp);
+		auto p = new PackagePrivate(this, s_id, bp);
 		p->filename = _filename;
 		packages.emplace_back(p);
 
@@ -654,30 +660,24 @@ namespace flame
 		update_list.clear();
 	}
 
-	void BPPrivate::add_to_update_list(NodePrivate* n)
+	void BPPrivate::add_to_pending_update(NodePrivate* n)
 	{
-		if (n->in_update_list || n->order == 0xffffffff)
+		if (n->in_pending_update)
 			return;
-		std::list<NodePrivate*>::iterator it;
-		for (it = update_list.begin(); it != update_list.end(); it++)
-		{
-			if (n->order < (*it)->order)
-				break;
-		}
-		update_list.insert(it, n);
-		n->in_update_list = true;
+		pending_update_nodes.push_back(n);
+		n->in_pending_update = true;
 	}
 
-	void BPPrivate::remove_from_update_list(NodePrivate* n)
+	void BPPrivate::remove_from_pending_update(NodePrivate* n)
 	{
-		if (!n->in_update_list)
+		if (!n->in_pending_update)
 			return;
-		for (auto it = update_list.begin(); it != update_list.end(); it++)
+		for (auto it = pending_update_nodes.begin(); it != pending_update_nodes.end(); it++)
 		{
 			if (*it == n)
 			{
-				update_list.erase(it);
-				n->in_update_list = false;
+				pending_update_nodes.erase(it);
+				n->in_pending_update = false;
 				return;
 			}
 		}
@@ -698,7 +698,6 @@ namespace flame
 	{
 		if (n->order != 0xffffffff)
 			return;
-		auto no_dependencies = true;
 		for (auto& i : n->inputs)
 		{
 			auto o = i->links[0];
@@ -706,12 +705,23 @@ namespace flame
 			{
 				auto nn = o->node;
 				add_to_hierarchy(scn, nn, order);
-				no_dependencies = false;
 			}
 		}
-		if (no_dependencies)
-			scn->head_nodes.emplace_back(n);
 		n->order = order++;
+	}
+
+	static void add_to_update_list(BPPrivate* scn, NodePrivate* n)
+	{
+		if (n->in_update_list)
+			return;
+		std::list<NodePrivate*>::iterator it;
+		for (it = scn->update_list.begin(); it != scn->update_list.end(); it++)
+		{
+			if (n->order < (*it)->order)
+				break;
+		}
+		scn->update_list.insert(it, n);
+		n->in_update_list = true;
 	}
 
 	void BPPrivate::update()
@@ -720,8 +730,6 @@ namespace flame
 
 		if (need_update_hierarchy)
 		{
-			head_nodes.clear();
-
 			std::vector<NodePrivate*> ns;
 			collect_nodes(this, ns);
 
@@ -730,8 +738,11 @@ namespace flame
 				add_to_hierarchy(this, n, order);
 		}
 
-		for (auto n : head_nodes)
-			add_to_update_list(n);
+		for (auto n : initiative_nodes)
+			add_to_update_list(this, n);
+		for (auto n : pending_update_nodes)
+			add_to_update_list(this, n);
+		pending_update_nodes.clear();
 		
 		while (!update_list.empty())
 		{
@@ -749,7 +760,7 @@ namespace flame
 				if (o->frame() == frame)
 				{
 					for (auto& i : o->links)
-						add_to_update_list(i->node);
+						add_to_update_list(this, i->node);
 				}
 			}
 		}
@@ -870,6 +881,33 @@ namespace flame
 	UdtInfo* BP::Node::udt() const
 	{
 		return ((NodePrivate*)this)->udt;
+	}
+
+	bool BP::Node::initiative() const 
+	{
+		return ((NodePrivate*)this)->initiative;
+	}
+
+	void BP::Node::set_initiative(bool v)
+	{
+		auto thiz = (NodePrivate*)this;
+		if (thiz->initiative == v)
+			return;
+		thiz->initiative = v;
+		auto root = thiz->scene->root;
+		if (!v)
+		{
+			for (auto it = root->initiative_nodes.begin(); it != root->initiative_nodes.end(); it++)
+			{
+				if (*it == thiz)
+				{
+					root->initiative_nodes.erase(it);
+					break;
+				}
+			}
+		}
+		else
+			root->initiative_nodes.push_back(thiz);
 	}
 
 	uint BP::Node::input_count() const
@@ -1169,7 +1207,7 @@ namespace flame
 		return bp;
 	}
 
-	BP *BP::create_from_file(const std::wstring& filename, bool no_compile)
+	BP* BP::create_from_file(const std::wstring& filename, bool no_compile, BP* root)
 	{
 		auto s_filename = w2s(filename);
 		auto path = std::filesystem::path(filename);
@@ -1256,6 +1294,7 @@ namespace flame
 		{
 			std::string type;
 			std::string id;
+			bool initiative;
 			Vec2f pos;
 			std::vector<DataDesc> datas;
 		};
@@ -1269,6 +1308,10 @@ namespace flame
 			auto n_node = n_nodes->node(i_n);
 			node.type = n_node->find_attr("type")->value();
 			node.id = n_node->find_attr("id")->value();
+			{
+				auto a = n_node->find_attr("initiative");
+				node.initiative = a ? a->value() == "1" : false;
+			}
 			node.pos = stof2(n_node->find_attr("pos")->value().c_str());
 
 			auto n_datas = n_node->find_node("datas");
@@ -1321,6 +1364,8 @@ namespace flame
 		SerializableNode::destroy(file);
 
 		auto bp = new BPPrivate();
+		if (root)
+			bp->root = (BPPrivate*)root;
 		bp->env.filename = filename;
 
 		for (auto& m_d : module_descs)
@@ -1444,6 +1489,7 @@ namespace flame
 			auto n = bp->add_node(H(n_d.type.c_str()), n_d.id);
 			if (n)
 			{
+				n->set_initiative(n_d.initiative);
 				n->pos = n_d.pos;
 				for (auto& d_d : n_d.datas)
 				{
@@ -1539,6 +1585,8 @@ namespace flame
 			auto n_node = n_nodes->new_node("node");
 			n_node->new_attr("type", udt->name());
 			n_node->new_attr("id", n->id);
+			if (n->initiative)
+				n_node->new_attr("initiative", "1");
 			n_node->new_attr("pos", to_string(n->pos, 2));
 
 			SerializableNode* n_datas = nullptr;
