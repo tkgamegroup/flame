@@ -32,6 +32,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void insert_char(wchar_t ch, uint pos, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void erase_char(uint pos, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_font_size(uint s, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_scale(float s, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_auto_width(bool v, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_auto_height(bool v, void* sender = nullptr);
 

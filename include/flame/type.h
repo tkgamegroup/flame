@@ -9,26 +9,51 @@
 #define FLAME_MAKEINT(H, L) ((L) | ((H) << 16))
 #define FLAME_INVALID_POINTER ((void*)0x7fffffffffffffff)
 
+template <unsigned int N>
+struct EnsureConstU
+{
+	static const unsigned int value = N;
+};
+
+template<class CH>
+constexpr unsigned int str_len(const CH* str)
+{
+	auto p = str;
+	while (*p)
+		p++;
+	return p - str;
+}
+
+template <class CH>
+struct _SAL // str and len
+{
+	unsigned int l;
+	const CH* s;
+
+	_SAL(unsigned int l, const CH* s) :
+		l(l),
+		s(s)
+	{
+	}
+};
+
+#define SAL_S(x) EnsureConstU<str_len(x)>::value, x
+#define SAL(n, x) _SAL n(SAL_S(x))
+
 inline constexpr unsigned int hash_update(unsigned int h, unsigned int v)
 {
 	return h ^ (v + 0x9e3779b9 + (h << 6) + (h >> 2));
 }
 
-template<class T>
-constexpr unsigned int hash_str(const T* str, unsigned int seed)
+template<class CH>
+constexpr unsigned int hash_str(const CH* str, unsigned int seed)
 {
 	return 0 == *str ? seed : hash_str(str + 1, hash_update(seed , *str));
 }
 
 #define H(x) (hash_str(x, 0))
 
-template <unsigned int N>
-struct EnsureConst
-{
-	static const unsigned int value = N;
-};
-
-#define cH(x) (EnsureConst<hash_str(x, 0)>::value)
+#define cH(x) (EnsureConstU<hash_str(x, 0)>::value)
 
 namespace flame
 {

@@ -181,10 +181,9 @@ namespace flame
 		set_frame(looper().frame);
 		node->scene->root->add_to_pending_update(node);
 		 
-		auto type = vi->type();
-		if (type->tag() == TypeTagAttributeV)
+		if (vi->type().tag == TypeTagAttributeV)
 		{
-			switch (type->hash())
+			switch (vi->type().hash)
 			{
 			case cH("std::basic_string(char)"):
 				*(std::string*)((char*)raw_data + sizeof(AttributeBase)) = *(std::string*)d;
@@ -219,22 +218,18 @@ namespace flame
 		{
 			auto in_type = vi->type();
 			auto out_type = target->vi->type();
-			auto in_tag = in_type->tag();
-			auto out_tag = out_type->tag();
-			auto in_hash = in_type->hash();
-			auto out_hash = out_type->hash();
 
 			if (![&]() {
-				if (in_tag == out_tag && in_hash == out_hash)
+				if (in_type.tag == out_type.tag && in_type.hash == out_type.hash)
 					return true;
-				if (in_tag == TypeTagAttributeP)
+				if (in_type.tag == TypeTagAttributeP)
 				{
-					if (out_tag == TypeTagAttributeV || out_tag == TypeTagAttributeP)
+					if (out_type.tag == TypeTagAttributeV || out_type.tag == TypeTagAttributeP)
 					{
-						if ((out_hash == in_hash || in_hash == cH("void")))
+						if ((out_type.hash == in_type.hash || in_type.hash == cH("void")))
 							return true;
 						#define PREFIX "std::vector"
-						if (in_type->name().compare(0, strlen(PREFIX), PREFIX) == 0)
+						if (in_type.name.compare(0, strlen(PREFIX), PREFIX) == 0)
 						{
 							((AttributeBase*)raw_data)->twist = 1;
 							return true;
@@ -319,8 +314,7 @@ namespace flame
 			auto f = udt->find_function("update");
 			if (f)
 			{
-				auto ret_t = f->return_type();
-				if (ret_t->tag() == TypeTagVariable && ret_t->hash() == cH("void") && f->parameter_count() == 0)
+				if (f->return_type().tag == TypeTagVariable && f->return_type().hash == cH("void") && f->parameter_count() == 0)
 					update_addr = (char*)module + (uint)f->rva();
 				assert(update_addr);
 			}
@@ -334,8 +328,7 @@ namespace flame
 			if (!ai && !ao)
 				continue;
 			assert(!(ai && ao));
-			auto tag = v->type()->tag();
-			assert(tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV || tag == TypeTagAttributeP);
+			assert(v->type().tag == TypeTagAttributeES || v->type().tag == TypeTagAttributeEM || v->type().tag == TypeTagAttributeV || v->type().tag == TypeTagAttributeP);
 			if (ai)
 				inputs.emplace_back(new SlotPrivate(SlotPrivate::Input, this, v));
 			else /* if (ao) */
@@ -388,8 +381,8 @@ namespace flame
 			{
 				auto iv = input->vi;
 				auto ia = (AttributeBase*)input->raw_data;
-				auto ot = out->vi->type()->tag();
-				if ((ia->twist == 1 && ot == TypeTagAttributeV) || (ot == TypeTagAttributeV && iv->type()->tag() == TypeTagAttributeP))
+				auto ot = out->vi->type().tag;
+				if ((ia->twist == 1 && ot == TypeTagAttributeV) || (ot == TypeTagAttributeV && iv->type().tag == TypeTagAttributeP))
 				{
 					auto p = out->data();
 					memcpy(input->data(), &p, sizeof(void*));
@@ -1496,9 +1489,8 @@ namespace flame
 				{
 					auto input = n->find_input(d_d.name);
 					auto v = input->vi();
-					auto type = v->type();
-					if (v->default_value())
-						unserialize_value(bp->env.dbs, type->tag(), type->hash(), d_d.value, input->raw_data());
+					if (v->default_value() && v->decoration().find('o') == std::string::npos)
+						unserialize_value(bp->env.dbs, v->type().tag, v->type().hash, d_d.value, input->raw_data());
 				}
 			}
 		}
@@ -1596,14 +1588,13 @@ namespace flame
 				if (input->links[0])
 					continue;
 				auto v = input->vi;
-				auto type = v->type();
 				if (v->default_value() && memcmp(input->data(), (char*)v->default_value() + sizeof(AttributeBase), v->size() - sizeof(AttributeBase)) != 0)
 				{
 					if (!n_datas)
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(bp->env.dbs, type->tag(), type->hash(), input->raw_data, 2);
+					auto value = serialize_value(bp->env.dbs, v->type().tag, v->type().hash, input->raw_data, 2);
 					n_data->new_attr("value", *value.p);
 					delete_mail(value);
 				}

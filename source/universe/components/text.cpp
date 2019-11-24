@@ -133,6 +133,14 @@ namespace flame
 		data_changed(cH("font_size"), sender);
 	}
 
+	void cText::set_scale(float s, void* sender)
+	{
+		if (s == scale_)
+			return;
+		scale_ = s;
+		data_changed(cH("scale"), sender);
+	}
+
 	void cText::set_auto_width(bool v, void* sender)
 	{
 		if (v == auto_width_)

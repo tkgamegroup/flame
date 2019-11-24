@@ -526,46 +526,255 @@ namespace flame
 		"attributeES",
 		"attributeEM",
 		"attributeV",
-		"attributeP"
+		"attributeP",
+		"vector"
 	};
 
-	const char* get_name(TypeTag$ tag)
+	const char* get_tag_name(TypeTag$ tag)
 	{
 		return tag_names[tag];
 	}
 
-	struct TypeInfoPrivate : TypeInfo
+	std::string serialize_type(const TypeInfo& t)
 	{
-		TypeTag$ tag;
-		std::string name;
-		uint hash;
-
-		void set(TypeTag$ _tag, const std::string& _name)
-		{
-			tag = _tag;
-			name = _name;
-			hash = H(name.c_str());
-		}
-
-		std::string serialize() const
-		{
-			return std::string(get_name(tag)) + "#" + name;
-		}
-	};
-
-	TypeTag$ TypeInfo::tag() const
-	{
-		return ((TypeInfoPrivate*)this)->tag;
+		return std::string(get_tag_name(t.tag)) + "#" + t.name;
 	}
 
-	const std::string& TypeInfo::name() const
+	void vector_resize(uint type_hash, void* p)
 	{
-		return ((TypeInfoPrivate*)this)->name;
+
 	}
 
-	uint TypeInfo::hash() const
+	Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint type_hash, const void* src, int precision)
 	{
-		return ((TypeInfoPrivate*)this)->hash;
+		auto ret = new_mail<std::string>();
+
+		switch (tag)
+		{
+		case TypeTagAttributeES:
+			src = (char*)src + sizeof(AttributeBase);
+		case TypeTagEnumSingle:
+		{
+			auto e = find_enum(dbs, type_hash);
+			assert(e);
+			*(ret.p) = e->find_item(*(int*)src)->name();
+		}
+		break;
+		case TypeTagAttributeEM:
+			src = (char*)src + sizeof(AttributeBase);
+		case TypeTagEnumMulti:
+		{
+			std::string str;
+			auto e = find_enum(dbs, type_hash);
+			assert(e);
+			auto v = *(int*)src;
+			for (auto i = 0; i < e->item_count(); i++)
+			{
+				if ((v & 1) == 1)
+				{
+					if (!str.empty())
+						str += ";";
+					str += e->find_item(1 << i)->name();
+				}
+				v >>= 1;
+			}
+			(*ret.p) = str;
+		}
+		break;
+		case TypeTagAttributeV:
+			src = (char*)src + sizeof(AttributeBase);
+		case TypeTagVariable:
+			switch (type_hash)
+			{
+			case cH("bool"):
+				(*ret.p) = *(bool*)src ? "1" : "0";
+				break;
+			case cH("int"):
+				(*ret.p) = std::to_string(*(int*)src);
+				break;
+			case cH("Vec(1+int)"):
+				(*ret.p) = to_string(*(Vec1i*)src);
+				break;
+			case cH("Vec(2+int)"):
+				(*ret.p) = to_string(*(Vec2i*)src);
+				break;
+			case cH("Vec(3+int)"):
+				(*ret.p) = to_string(*(Vec3i*)src);
+				break;
+			case cH("Vec(4+int)"):
+				(*ret.p) = to_string(*(Vec4i*)src);
+				break;
+			case cH("uint"):
+				(*ret.p) = std::to_string(*(uint*)src);
+				break;
+			case cH("Vec(1+uint)"):
+				(*ret.p) = to_string(*(Vec1u*)src);
+				break;
+			case cH("Vec(2+uint)"):
+				(*ret.p) = to_string(*(Vec2u*)src);
+				break;
+			case cH("Vec(3+uint)"):
+				(*ret.p) = to_string(*(Vec3u*)src);
+				break;
+			case cH("Vec(4+uint)"):
+				(*ret.p) = to_string(*(Vec4u*)src);
+				break;
+			case cH("ulonglong"):
+				(*ret.p) = std::to_string(*(ulonglong*)src);
+				break;
+			case cH("float"):
+				(*ret.p) = to_string(*(float*)src, precision);
+				break;
+			case cH("Vec(1+float)"):
+				(*ret.p) = to_string(*(Vec1f*)src, precision);
+				break;
+			case cH("Vec(2+float)"):
+				(*ret.p) = to_string(*(Vec2f*)src, precision);
+				break;
+			case cH("Vec(3+float)"):
+				(*ret.p) = to_string(*(Vec3f*)src, precision);
+				break;
+			case cH("Vec(4+float)"):
+				(*ret.p) = to_string(*(Vec4f*)src, precision);
+				break;
+			case cH("uchar"):
+				(*ret.p) = std::to_string(*(uchar*)src);
+				break;
+			case cH("Vec(1+uchar)"):
+				(*ret.p) = to_string(*(Vec1c*)src);
+				break;
+			case cH("Vec(2+uchar)"):
+				(*ret.p) = to_string(*(Vec2c*)src);
+				break;
+			case cH("Vec(3+uchar)"):
+				(*ret.p) = to_string(*(Vec3c*)src);
+				break;
+			case cH("Vec(4+uchar)"):
+				(*ret.p) = to_string(*(Vec4c*)src);
+				break;
+			case cH("std::basic_string(char)"):
+				(*ret.p) = *(std::string*)src;
+				break;
+			case cH("std::basic_string(wchar_t)"):
+				(*ret.p) = w2s(*(std::wstring*)src);
+				break;
+			default:
+				assert(0);
+			}
+			break;
+		}
+
+		return ret;
+	}
+
+	void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint type_hash, const std::string& src, void* dst)
+	{
+		switch (tag)
+		{
+		case TypeTagAttributeES:
+			dst = (char*)dst + sizeof(AttributeBase);
+		case TypeTagEnumSingle:
+		{
+			auto e = find_enum(dbs, type_hash);
+			assert(e);
+			e->find_item(src, (int*)dst);
+		}
+		break;
+		case TypeTagAttributeEM:
+			dst = (char*)dst + sizeof(AttributeBase);
+		case TypeTagEnumMulti:
+		{
+			auto v = 0;
+			auto e = find_enum(dbs, type_hash);
+			assert(e);
+			auto sp = string_split(src, ';');
+			for (auto& t : sp)
+				v |= e->find_item(t)->value();
+			*(int*)dst = v;
+		}
+		break;
+		case TypeTagAttributeV:
+			dst = (char*)dst + sizeof(AttributeBase);
+		case TypeTagVariable:
+			switch (type_hash)
+			{
+			case cH("bool"):
+				*(bool*)dst = (src != "0");
+				break;
+			case cH("int"):
+				*(int*)dst = std::stoi(src);
+				break;
+			case cH("Vec(1+int)"):
+				*(Vec1u*)dst = std::stoi(src.c_str());
+				break;
+			case cH("Vec(2+int)"):
+				*(Vec2u*)dst = stoi2(src.c_str());
+				break;
+			case cH("Vec(3+int)"):
+				*(Vec3u*)dst = stoi3(src.c_str());
+				break;
+			case cH("Vec(4+int)"):
+				*(Vec4u*)dst = stoi4(src.c_str());
+				break;
+			case cH("uint"):
+				*(uint*)dst = std::stoul(src);
+				break;
+			case cH("Vec(1+uint)"):
+				*(Vec1u*)dst = std::stoul(src.c_str());
+				break;
+			case cH("Vec(2+uint)"):
+				*(Vec2u*)dst = stou2(src.c_str());
+				break;
+			case cH("Vec(3+uint)"):
+				*(Vec3u*)dst = stou3(src.c_str());
+				break;
+			case cH("Vec(4+uint)"):
+				*(Vec4u*)dst = stou4(src.c_str());
+				break;
+			case cH("ulonglong"):
+				*(ulonglong*)dst = std::stoull(src);
+				break;
+			case cH("float"):
+				*(float*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec(1+float)"):
+				*(Vec1f*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec(2+float)"):
+				*(Vec2f*)dst = stof2(src.c_str());
+				break;
+			case cH("Vec(3+float)"):
+				*(Vec3f*)dst = stof3(src.c_str());
+				break;
+			case cH("Vec(4+float)"):
+				*(Vec4f*)dst = stof4(src.c_str());
+				break;
+			case cH("uchar"):
+				*(uchar*)dst = std::stoul(src);
+				break;
+			case cH("Vec(1+uchar)"):
+				*(Vec1c*)dst = std::stoul(src.c_str());
+				break;
+			case cH("Vec(2+uchar)"):
+				*(Vec2c*)dst = stoc2(src.c_str());
+				break;
+			case cH("Vec(3+uchar)"):
+				*(Vec3c*)dst = stoc3(src.c_str());
+				break;
+			case cH("Vec(4+uchar)"):
+				*(Vec4c*)dst = stoc4(src.c_str());
+				break;
+			case cH("std::basic_string(char)"):
+				*(std::string*)dst = src;
+				break;
+			case cH("std::basic_string(wchar_t)"):
+				*(std::wstring*)dst = s2w(src);
+				break;
+			default:
+				assert(0);
+			}
+			break;
+		}
 	}
 
 	void unserialize_typeinfo(const std::string& src, TypeTag$& tag, std::string& name)
@@ -588,7 +797,7 @@ namespace flame
 
 	struct VariableInfoPrivate : VariableInfo
 	{
-		TypeInfoPrivate type;
+		TypeInfo type;
 		std::string name;
 		uint name_hash;
 		std::string decoration;
@@ -601,9 +810,9 @@ namespace flame
 		}
 	};
 
-	const TypeInfo* VariableInfo::type() const
+	const TypeInfo& VariableInfo::type() const
 	{
-		return &(((VariableInfoPrivate*)this)->type);
+		return ((VariableInfoPrivate*)this)->type;
 	}
 
 	const std::string& VariableInfo::name() const
@@ -729,8 +938,8 @@ namespace flame
 
 		std::string name;
 		void* rva;
-		TypeInfoPrivate return_type;
-		std::vector<TypeInfoPrivate> parameter_types;
+		TypeInfo return_type;
+		std::vector<TypeInfo> parameter_types;
 		std::string code_pos;
 	};
 
@@ -749,9 +958,9 @@ namespace flame
 		return ((FunctionInfoPrivate*)this)->rva;
 	}
 
-	const TypeInfo* FunctionInfo::return_type() const
+	const TypeInfo& FunctionInfo::return_type() const
 	{
-		return &(((FunctionInfoPrivate*)this)->return_type);
+		return ((FunctionInfoPrivate*)this)->return_type;
 	}
 
 	uint FunctionInfo::parameter_count() const
@@ -759,15 +968,15 @@ namespace flame
 		return ((FunctionInfoPrivate*)this)->parameter_types.size();
 	}
 
-	const TypeInfo* FunctionInfo::parameter_type(uint idx) const
+	const TypeInfo& FunctionInfo::parameter_type(uint idx) const
 	{
-		return &(((FunctionInfoPrivate*)this)->parameter_types[idx]);
+		return ((FunctionInfoPrivate*)this)->parameter_types[idx];
 	}
 
 	void FunctionInfo::add_parameter(TypeTag$ tag, const std::string& type_name)
 	{
-		TypeInfoPrivate t;
-		t.set(tag, type_name);
+		TypeInfo t;
+		t.assign(tag, type_name);
 		((FunctionInfoPrivate*)this)->parameter_types.push_back(t);
 	}
 
@@ -904,25 +1113,17 @@ namespace flame
 	VariableInfo* UdtInfo::add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& decoration, uint offset, uint size)
 	{
 		auto v = new VariableInfoPrivate;
-		v->type.set(tag, type_name);
+		v->type.assign(tag, type_name);
 		v->name = name;
 		v->name_hash = H(name.c_str());
 		v->decoration = decoration;
 		v->offset = offset;
 		v->size = size;
 		v->default_value = nullptr;
-		if (tag == TypeTagEnumSingle || tag == TypeTagEnumMulti || tag == TypeTagVariable ||
-			tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV)
+		if (is_type_serializable(tag, type_name) && !type_name.compare(0, SAL_S("std::string")))
 		{
-			static std::string vector_str("std::vector");
-			static std::string string_str("std::string");
-			if (type_name.compare(0, vector_str.size(), vector_str) != 0 &&
-				type_name.compare(0, string_str.size(), string_str) != 0 &&
-				decoration.find('o') == std::string::npos)
-			{
-				v->default_value = new char[size];
-				memset(v->default_value, 0, size);
-			}
+			v->default_value = new char[size];
+			memset(v->default_value, 0, size);
 		}
 		((UdtInfoPrivate*)this)->variables.emplace_back(v);
 		return v;
@@ -949,7 +1150,7 @@ namespace flame
 		f->db = db();
 		f->name = name;
 		f->rva = rva;
-		f->return_type.set(return_type_tag, return_type_name);
+		f->return_type.assign(return_type_tag, return_type_name);
 		f->code_pos = code_pos;
 		((UdtInfoPrivate*)this)->functions.emplace_back(f);
 		return f;
@@ -1035,9 +1236,9 @@ namespace flame
 
 	static std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
-		static std::string prefix("flame::");
-		static std::string str_unsigned("unsigned ");
-		static std::string str_enum("enum ");
+		static SAL(prefix, "flame::");
+		static SAL(str_unsigned, "unsigned ");
+		static SAL(str_enum, "enum ");
 
 		if (pass_prefix)
 			* pass_prefix = false;
@@ -1048,34 +1249,34 @@ namespace flame
 
 		if (pass_prefix)
 		{
-			if (str.compare(0, prefix.size(), prefix) == 0)
+			if (str.compare(0, prefix.l, prefix.s) == 0)
 				* pass_prefix = true;
 			else
 				return "";
 		}
 
 		{
-			auto pos = str.find(prefix);
+			auto pos = str.find(prefix.s, 0, prefix.l);
 			while (pos != std::string::npos)
 			{
-				str = str.replace(pos, prefix.size(), "");
-				pos = str.find(prefix);
+				str = str.replace(pos, prefix.l, "");
+				pos = str.find(prefix.s, 0, prefix.l);
 			}
 		}
 		{
-			auto pos = str.find(str_unsigned);
+			auto pos = str.find(str_unsigned.s, 0, str_unsigned.l);
 			while (pos != std::string::npos)
 			{
-				str = str.replace(pos, str_unsigned.size(), "u");
-				pos = str.find(str_unsigned);
+				str = str.replace(pos, str_unsigned.l, "u");
+				pos = str.find(str_unsigned.s, 0, str_unsigned.l);
 			}
 		}
 		{
-			auto pos = str.find(str_enum);
+			auto pos = str.find(str_enum.s, 0, str_enum.l);
 			while (pos != std::string::npos)
 			{
-				str = str.replace(pos, str_enum.size(), "");
-				pos = str.find(str_enum);
+				str = str.replace(pos, str_enum.l, "");
+				pos = str.find(str_enum.s, 0, str_enum.l);
 			}
 		}
 
@@ -1136,7 +1337,7 @@ namespace flame
 		return tn_c2a(str);
 	}
 
-	static void symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute /* type varies with variable's attribute */, TypeTag$& tag, std::string& name)
+	static void symbol_to_typeinfo(IDiaSymbol* symbol, const std::string& variable_attribute, TypeTag$& tag, std::string& name)
 	{
 		DWORD dw;
 		wchar_t* pwname;
@@ -1185,28 +1386,31 @@ namespace flame
 			tag = TypeTagVariable;
 			name = format_name(pwname);
 
-			static std::string attr_str("Attribute");
-			if (name.compare(0, attr_str.size(), attr_str) == 0 && name.size() > attr_str.size() + 1)
+			SAL(attribute_str, "Attribute");
+			SAL(vector_str, "std::vector");
+
+			if (name.compare(0, attribute_str.l, attribute_str.s) && name.size() > attribute_str.l + 1)
 			{
-				auto ch = name[attr_str.size()];
-				if (ch == 'E')
+				switch (name[attribute_str.l])
 				{
+				case 'E':
 					tag = variable_attribute.find('m') != std::string::npos ? TypeTagAttributeEM : TypeTagAttributeES;
-					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
-					name.erase(name.end() - 1);
-				}
-				else if (ch == 'V')
-				{
+					break;
+				case 'V':
 					tag = TypeTagAttributeV;
-					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
-					name.erase(name.end() - 1);
-				}
-				else if (ch == 'P')
-				{
+					break;
+				case 'P':
 					tag = TypeTagAttributeP;
-					name.erase(name.begin(), name.begin() + attr_str.size() + 2);
-					name.erase(name.end() - 1);
+					break;
 				}
+				name.erase(name.begin(), name.begin() + attribute_str.l + 2);
+				name.erase(name.end() - 1);
+			}
+			else if (name.compare(0, vector_str.l, vector_str.s) && name.size() > vector_str.l + 1)
+			{
+				tag = TypeTagVector;
+				name.erase(name.begin(), name.begin() + vector_str.l + 2);
+				name.erase(name.end() - 1);
 			}
 		}
 			break;
@@ -1293,7 +1497,7 @@ namespace flame
 		f->db = this;
 		f->name = name;
 		f->rva = rva;
-		f->return_type.set(return_type_tag, return_type_name);
+		f->return_type.assign(return_type_tag, return_type_name);
 		f->code_pos = code_pos;
 		((TypeinfoDatabasePrivate*)this)->functions.emplace(H(name.c_str()), f);
 		return f;
@@ -1819,12 +2023,12 @@ namespace flame
 		auto serialize_function = [](FunctionInfoPrivate * src, SerializableNode * dst) {
 			dst->new_attr("name", src->name);
 			dst->new_attr("rva", std::to_string((uint)src->rva));
-			dst->new_attr("return_type", src->return_type.serialize());
+			dst->new_attr("return_type", serialize_type(src->return_type));
 			if (!src->parameter_types.empty())
 			{
 				auto n_parameters = dst->new_node("parameters");
 				for (auto& p : src->parameter_types)
-					n_parameters->new_node("parameter")->new_attr("type", p.serialize());
+					n_parameters->new_node("parameter")->new_attr("type", serialize_type(p));
 			}
 			if (src->code_pos.length() > 0)
 				dst->new_node("code_pos")->set_value(src->code_pos);
@@ -1877,7 +2081,7 @@ namespace flame
 				{
 					auto n_vari = n_items->new_node("variable");
 					const auto& type = v->type;
-					n_vari->new_attr("type", type.serialize());
+					n_vari->new_attr("type", serialize_type(type));
 					n_vari->new_attr("name", v->name);
 					n_vari->new_attr("decoration", v->decoration);
 					n_vari->new_attr("offset", std::to_string(v->offset));
@@ -1907,237 +2111,5 @@ namespace flame
 	void TypeinfoDatabase::destroy(TypeinfoDatabase* db)
 	{
 		delete (TypeinfoDatabasePrivate*)db;
-	}
-
-	Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const void* src, int precision)
-	{
-		auto ret = new_mail<std::string>();
-
-		switch (tag)
-		{
-		case TypeTagAttributeES:
-			src = (char*)src + sizeof(AttributeBase);
-		case TypeTagEnumSingle:
-		{
-			auto e = find_enum(dbs, hash);
-			assert(e);
-			*(ret.p) = e->find_item(*(int*)src)->name();
-		}
-			break;
-		case TypeTagAttributeEM:
-			src = (char*)src + sizeof(AttributeBase);
-		case TypeTagEnumMulti:
-		{
-			std::string str;
-			auto e = find_enum(dbs, hash);
-			assert(e);
-			auto v = *(int*)src;
-			for (auto i = 0; i < e->item_count(); i++)
-			{
-				if ((v & 1) == 1)
-				{
-					if (!str.empty())
-						str += ";";
-					str += e->find_item(1 << i)->name();
-				}
-				v >>= 1;
-			}
-			(*ret.p) = str;
-		}
-			break;
-		case TypeTagAttributeV:
-			src = (char*)src + sizeof(AttributeBase);
-		case TypeTagVariable:
-			switch (hash)
-			{
-			case cH("bool"):
-				(*ret.p) = *(bool*)src ? "1" : "0";
-				break;
-			case cH("int"):
-				(*ret.p) = std::to_string(*(int*)src);
-				break;
-			case cH("Vec(1+int)"):
-				(*ret.p) = to_string(*(Vec1i*)src);
-				break;
-			case cH("Vec(2+int)"):
-				(*ret.p) = to_string(*(Vec2i*)src);
-				break;
-			case cH("Vec(3+int)"):
-				(*ret.p) = to_string(*(Vec3i*)src);
-				break;
-			case cH("Vec(4+int)"):
-				(*ret.p) = to_string(*(Vec4i*)src);
-				break;
-			case cH("uint"):
-				(*ret.p) = std::to_string(*(uint*)src);
-				break;
-			case cH("Vec(1+uint)"):
-				(*ret.p) = to_string(*(Vec1u*)src);
-				break;
-			case cH("Vec(2+uint)"):
-				(*ret.p) = to_string(*(Vec2u*)src);
-				break;
-			case cH("Vec(3+uint)"):
-				(*ret.p) = to_string(*(Vec3u*)src);
-				break;
-			case cH("Vec(4+uint)"):
-				(*ret.p) = to_string(*(Vec4u*)src);
-				break;
-			case cH("ulonglong"):
-				(*ret.p) = std::to_string(*(ulonglong*)src);
-				break;
-			case cH("float"):
-				(*ret.p) = to_string(*(float*)src, precision);
-				break;
-			case cH("Vec(1+float)"):
-				(*ret.p) = to_string(*(Vec1f*)src, precision);
-				break;
-			case cH("Vec(2+float)"):
-				(*ret.p) = to_string(*(Vec2f*)src, precision);
-				break;
-			case cH("Vec(3+float)"):
-				(*ret.p) = to_string(*(Vec3f*)src, precision);
-				break;
-			case cH("Vec(4+float)"):
-				(*ret.p) = to_string(*(Vec4f*)src, precision);
-				break;
-			case cH("uchar"):
-				(*ret.p) = std::to_string(*(uchar*)src);
-				break;
-			case cH("Vec(1+uchar)"):
-				(*ret.p) = to_string(*(Vec1c*)src);
-				break;
-			case cH("Vec(2+uchar)"):
-				(*ret.p) = to_string(*(Vec2c*)src);
-				break;
-			case cH("Vec(3+uchar)"):
-				(*ret.p) = to_string(*(Vec3c*)src);
-				break;
-			case cH("Vec(4+uchar)"):
-				(*ret.p) = to_string(*(Vec4c*)src);
-				break;
-			case cH("std::basic_string(char)"):
-				(*ret.p) = *(std::string*)src;
-				break;
-			case cH("std::basic_string(wchar_t)"):
-				(*ret.p) = w2s(*(std::wstring*)src);
-				break;
-			default:
-				assert(0);
-			}
-			break;
-		}
-
-		return ret;
-	}
-
-	void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const std::string& src, void* dst)
-	{
-		switch (tag)
-		{
-		case TypeTagAttributeES:
-			dst = (char*)dst + sizeof(AttributeBase);
-		case TypeTagEnumSingle:
-		{
-			auto e = find_enum(dbs, hash);
-			assert(e);
-			e->find_item(src, (int*)dst);
-		}
-			break;
-		case TypeTagAttributeEM:
-			dst = (char*)dst + sizeof(AttributeBase);
-		case TypeTagEnumMulti:
-		{
-			auto v = 0;
-			auto e = find_enum(dbs, hash);
-			assert(e);
-			auto sp = string_split(src, ';');
-			for (auto& t : sp)
-				v |= e->find_item(t)->value();
-			*(int*)dst = v;
-		}
-			break;
-		case TypeTagAttributeV:
-			dst = (char*)dst + sizeof(AttributeBase);
-		case TypeTagVariable:
-			switch (hash)
-			{
-			case cH("bool"):
-				*(bool*)dst = (src != "0");
-				break;
-			case cH("int"):
-				*(int*)dst = std::stoi(src);
-				break;
-			case cH("Vec(1+int)"):
-				*(Vec1u*)dst = std::stoi(src.c_str());
-				break;
-			case cH("Vec(2+int)"):
-				*(Vec2u*)dst = stoi2(src.c_str());
-				break;
-			case cH("Vec(3+int)"):
-				*(Vec3u*)dst = stoi3(src.c_str());
-				break;
-			case cH("Vec(4+int)"):
-				*(Vec4u*)dst = stoi4(src.c_str());
-				break;
-			case cH("uint"):
-				*(uint*)dst = std::stoul(src);
-				break;
-			case cH("Vec(1+uint)"):
-				*(Vec1u*)dst = std::stoul(src.c_str());
-				break;
-			case cH("Vec(2+uint)"):
-				*(Vec2u*)dst = stou2(src.c_str());
-				break;
-			case cH("Vec(3+uint)"):
-				*(Vec3u*)dst = stou3(src.c_str());
-				break;
-			case cH("Vec(4+uint)"):
-				*(Vec4u*)dst = stou4(src.c_str());
-				break;
-			case cH("ulonglong"):
-				*(ulonglong*)dst = std::stoull(src);
-				break;
-			case cH("float"):
-				*(float*)dst = std::stof(src.c_str());
-				break;
-			case cH("Vec(1+float)"):
-				*(Vec1f*)dst = std::stof(src.c_str());
-				break;
-			case cH("Vec(2+float)"):
-				*(Vec2f*)dst = stof2(src.c_str());
-				break;
-			case cH("Vec(3+float)"):
-				*(Vec3f*)dst = stof3(src.c_str());
-				break;
-			case cH("Vec(4+float)"):
-				*(Vec4f*)dst = stof4(src.c_str());
-				break;
-			case cH("uchar"):
-				*(uchar*)dst = std::stoul(src);
-				break;
-			case cH("Vec(1+uchar)"):
-				*(Vec1c*)dst = std::stoul(src.c_str());
-				break;
-			case cH("Vec(2+uchar)"):
-				*(Vec2c*)dst = stoc2(src.c_str());
-				break;
-			case cH("Vec(3+uchar)"):
-				*(Vec3c*)dst = stoc3(src.c_str());
-				break;
-			case cH("Vec(4+uchar)"):
-				*(Vec4c*)dst = stoc4(src.c_str());
-				break;
-			case cH("std::basic_string(char)"):
-				*(std::string*)dst = src;
-				break;
-			case cH("std::basic_string(wchar_t)"):
-				*(std::wstring*)dst = s2w(src);
-				break;
-			default:
-				assert(0);
-			}
-			break;
-		}
 	}
 }

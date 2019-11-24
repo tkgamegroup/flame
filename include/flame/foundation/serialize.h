@@ -424,10 +424,11 @@ namespace flame
 		TypeTagAttributeES, // AttributeE<T>, single
 		TypeTagAttributeEM, // AttributeE<T>, multi
 		TypeTagAttributeV,  // AttributeV<T>
-		TypeTagAttributeP   // AttributeP<T>
+		TypeTagAttributeP,  // AttributeP<T>
+		TypeTagVector		// std::vector<T>
 	};
 
-	FLAME_FOUNDATION_EXPORTS const char* get_name(TypeTag$ tag);
+	FLAME_FOUNDATION_EXPORTS const char* get_tag_name(TypeTag$ tag);
 
 	struct TypeInfo;
 	struct EnumInfo;
@@ -480,21 +481,45 @@ namespace flame
 		return ret;
 	}
 
+	inline bool is_type_serializable(TypeTag$ tag, const std::string& type_name)
+	{
+		return (tag == TypeTagEnumSingle || tag == TypeTagEnumMulti || tag == TypeTagVariable ||
+			tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV) &&
+			type_name.compare(0, SAL_S("std::vector")) != 0;
+	}
+
+	inline uint vector_size(const void* p)
+	{
+		return ((std::vector<int>*)p)->size();
+	}
+
+	FLAME_FOUNDATION_EXPORTS void vector_resize(uint type_hash, void* p);
+
+	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint type_hash, const void* src, int precision = 6);
+	FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint type_hash, const std::string& src, void* dst);
+
 	struct TypeInfo
 	{
-		bool equal(TypeTag$ t, uint h) const
+		TypeTag$ tag;
+		std::string name;
+		uint hash;
+
+		void assign(TypeTag$ _tag, const std::string& _name)
 		{
-			return t == tag() && h == hash();
+			tag = _tag;
+			name = _name;
+			hash = H(name.c_str());
 		}
 
-		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const; // type name archive
-		FLAME_FOUNDATION_EXPORTS uint hash() const;
+		bool equal(TypeTag$ t, uint h) const
+		{
+			return t == tag && h == hash;
+		}
 	};
 
 	struct VariableInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo& type() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
 		FLAME_FOUNDATION_EXPORTS const std::string& decoration() const;
@@ -528,10 +553,10 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo& return_type() const;
 
 		FLAME_FOUNDATION_EXPORTS uint parameter_count() const;
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo& parameter_type(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS void add_parameter(TypeTag$ tag, const std::string& type_name);
 
 		FLAME_FOUNDATION_EXPORTS const std::string& code_pos() const; // source_file_name#line_begin:line_end
@@ -629,8 +654,5 @@ namespace flame
 		}
 		return nullptr;
 	}
-
-	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint hash, const std::string& src, void* dst);
 }
 

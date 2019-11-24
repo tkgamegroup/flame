@@ -279,7 +279,6 @@ namespace flame
 			Vec2u get_text_offset(const std::wstring_view& text, uint font_size)
 			{
 				auto w = 0U;
-				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
 				auto h = 0U;
 				for (auto ch : text)
 				{
