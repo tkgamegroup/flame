@@ -80,7 +80,7 @@ namespace flame
 			t->remove_child((Entity*)FLAME_INVALID_POINTER, false);
 		else
 			t->dying_ = true;
-		looper().add_delay_event([](void* c) {
+		looper().add_event([](void* c) {
 			auto t = *(Entity**)c;
 			t->parent()->remove_child(t, false);
 		}, new_mail_p(t));

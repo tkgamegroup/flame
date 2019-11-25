@@ -258,13 +258,13 @@ struct cInspectorPrivate : cInspector
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("int")));
+					assert(f && f->return_type().equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0).equal(TypeTagPointer, cH("Component")) && f->parameter_type(1).equal(TypeTagVariable, cH("int")));
 					c_dealer->serialize_addr = (char*)module + (uint)f->rva();
 					c_dealer->serialize(-1);
 				}
 				{
 					auto f = udt->find_function("unserialize");
-					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0)->equal(TypeTagPointer, cH("Component")) && f->parameter_type(1)->equal(TypeTagVariable, cH("int")));
+					assert(f && f->return_type().equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0).equal(TypeTagPointer, cH("Component")) && f->parameter_type(1).equal(TypeTagVariable, cH("int")));
 					c_dealer->unserialize_addr = (char*)module + (uint)f->rva();
 				}
 				c_dealer->dtor_addr = nullptr;
@@ -316,7 +316,7 @@ struct cInspectorPrivate : cInspector
 							Capture _capture;
 							_capture.e = capture.e;
 							_capture.c = capture.c;
-							looper().add_delay_event([](void* c) {
+							looper().add_event([](void* c) {
 								auto& capture = *(Capture*)c;
 								capture.e->parent()->remove_child(capture.e);
 								capture.c->entity->remove_component(capture.c);
@@ -333,18 +333,16 @@ struct cInspectorPrivate : cInspector
 				for (auto j = 0; j < udt->variable_count(); j++)
 				{
 					auto v = udt->variable(j);
-					auto t = v->type();
-					auto hash = t->hash();
 					auto pdata = (char*)c_dealer->dummy + v->offset();
 
 					auto e_item = create_item(s2w(v->name()));
 					e_component->add_child(e_item);
 					auto e_data = e_item->child(1);
-					switch (t->tag())
+					switch (v->type().tag)
 					{
 					case TypeTagEnumSingle:
 					{
-						auto info = find_enum(app.dbs, hash);
+						auto info = find_enum(app.dbs, v->type().hash);
 
 						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
 
@@ -374,7 +372,7 @@ struct cInspectorPrivate : cInspector
 						break;
 					case TypeTagEnumMulti:
 					{
-						auto info = find_enum(app.dbs, hash);
+						auto info = find_enum(app.dbs, v->type().hash);
 
 						create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
 						for (auto k = 0; k < info->item_count(); k++)
@@ -409,7 +407,7 @@ struct cInspectorPrivate : cInspector
 					}
 						break;
 					case TypeTagVariable:
-						switch (hash)
+						switch (v->type().hash)
 						{
 						case cH("bool"):
 						{
@@ -647,7 +645,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 				{
 					destroy_topmost(app.root);
 
-					looper().add_delay_event([](void* c) {
+					looper().add_event([](void* c) {
 						auto& capture = *(Capture*)c;
 
 						auto dummy = malloc(capture.u->size());
@@ -660,7 +658,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 						void* component;
 						{
 							auto f = capture.u->find_function("create");
-							assert(f && f->return_type()->equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
+							assert(f && f->return_type().equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
 							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
 						}
 						capture.i->editor->selected->add_component((Component*)component);

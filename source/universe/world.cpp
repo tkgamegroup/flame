@@ -30,7 +30,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("destroy");
-					assert(f && f->return_type()->equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("Object")));
+					assert(f && f->return_type().equal(TypeTagVariable, cH("void")) && f->parameter_count() == 1 && f->parameter_type(0).equal(TypeTagPointer, cH("Object")));
 					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), dummy, o.first);
 				}
 				{
@@ -133,13 +133,12 @@ namespace flame
 					auto n = n_o->node(i);
 
 					auto v = udt->find_variable(n->name());
-					auto type = v->type();
-					unserialize_value(dbs, type->tag(), type->hash(), n->find_attr("v")->value(), (char*)dummy + v->offset());
+					unserialize_value(dbs, v->type().tag, v->type().hash, n->find_attr("v")->value(), (char*)dummy + v->offset());
 				}
 				void* object;
 				{
 					auto f = udt->find_function("create");
-					assert(f && f->return_type()->equal(TypeTagPointer, cH("Object")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("World")));
+					assert(f && f->return_type().equal(TypeTagPointer, cH("Object")) && f->parameter_count() == 1 && f->parameter_type(0).equal(TypeTagPointer, cH("World")));
 					object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 				}
 				w->objects.emplace_back((Object*)object, udt);
@@ -174,13 +173,12 @@ namespace flame
 					auto n = n_s->node(i);
 
 					auto v = udt->find_variable(n->name());
-					auto type = v->type();
-					unserialize_value(dbs, type->tag(), type->hash(), n->find_attr("v")->value(), (char*)dummy + v->offset());
+					unserialize_value(dbs, v->type().tag, v->type().hash, n->find_attr("v")->value(), (char*)dummy + v->offset());
 				}
 				void* system;
 				{
 					auto f = udt->find_function("create");
-					assert(f && f->return_type()->equal(TypeTagPointer, cH("System")) && f->parameter_count() == 1 && f->parameter_type(0)->equal(TypeTagPointer, cH("World")));
+					assert(f && f->return_type().equal(TypeTagPointer, cH("System")) && f->parameter_count() == 1 && f->parameter_type(0).equal(TypeTagPointer, cH("World")));
 					system = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 				}
 				w->add_system((System*)system);

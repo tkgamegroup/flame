@@ -85,7 +85,7 @@ namespace flame
 					auto thiz = *(cBringToFrontPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						looper().add_delay_event([](void* c) {
+						looper().add_event([](void* c) {
 							auto e = *(Entity**)c;
 							auto p = e->parent();
 							auto pp = p->parent();
@@ -314,7 +314,7 @@ namespace flame
 					if (action == DragStart)
 					{
 						thiz->floating = true;
-						looper().add_delay_event([](void* c) {
+						looper().add_event([](void* c) {
 							(*(cDockerTabPrivate**)c)->take_away(false);
 						}, new_mail_p(thiz));
 					}
@@ -323,7 +323,7 @@ namespace flame
 						if (!er || thiz->floating)
 						{
 							thiz->drop_pos = pos;
-							looper().add_delay_event([](void* c) {
+							looper().add_event([](void* c) {
 								auto thiz = (*(cDockerTabPrivate**)c);
 
 								auto e_tab = thiz->entity;
@@ -496,7 +496,7 @@ namespace flame
 							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
 							thiz->drop_tab->floating = false;
-							looper().add_delay_event([](void* c) {
+							looper().add_event([](void* c) {
 								auto thiz = *(cDockerTabbarPrivate**)c;
 								auto tabbar = thiz->entity;
 								auto tab = thiz->drop_tab;
@@ -666,7 +666,7 @@ namespace flame
 							{
 								thiz->drop_tab = er->entity->get_component(cDockerTab);
 								thiz->drop_tab->floating = false;
-								looper().add_delay_event([](void* c) {
+								looper().add_event([](void* c) {
 									auto thiz = (*(cDockerPagesPrivate**)c);
 									auto tab = thiz->drop_tab;
 									auto e_tab = tab->entity;
@@ -868,7 +868,7 @@ namespace flame
 				if (is_mouse_clicked(action, key))
 				{
 					auto thiz = (*(cDockerTabPrivate**)c);
-					looper().add_delay_event([](void* c) {
+					looper().add_event([](void* c) {
 						auto thiz = (*(cDockerTabPrivate**)c);
 						thiz->take_away(true);
 					}, new_mail_p(thiz));

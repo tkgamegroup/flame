@@ -43,12 +43,9 @@ struct App
 
 	FontAtlas* font_atlas_pixel;
 
-	uint fps;
-
 	Universe* u;
 	Entity* root;
 	cElement* c_element_root;
-	cText* c_text_fps;
 
 	std::vector<TypeinfoDatabase*> dbs;
 

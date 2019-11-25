@@ -45,13 +45,13 @@ namespace flame
 			{
 				auto padding = element->inner_padding_ * element->global_scale;
 				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
-				for (auto y = 0; y < size_.y; y++)
+				for (auto y = 0; y < size_.y(); y++)
 				{
-					for (auto x = 0; x < size_.x; x++)
+					for (auto x = 0; x < size_.x(); x++)
 					{
-						auto idx = cells[y * size_.x + x];
+						auto idx = cells[y * size_.x() + x];
 						if (idx != -1)
-							canvas->add_image(pos + Vec2f(x * cell_size.x, y * cell_size.y), cell_size, tiles[idx], Vec2f(0.f), Vec2f(1.f), color);
+							canvas->add_image(pos + Vec2f(x * cell_size.x(), y * cell_size.y()), cell_size, tiles[idx], Vec2f(0.f), Vec2f(1.f), color);
 					}
 				}
 			}
@@ -95,13 +95,13 @@ namespace flame
 		if (size_ == s)
 			return;
 		auto& cells = ((cTileMapPrivate*)this)->cells;
-		std::vector<int> new_cells(s.x * s.y, -1);
-		auto mx = min(s.x, size_.x);
-		auto my = min(s.y, size_.y);
+		std::vector<int> new_cells(s.x() * s.y(), -1);
+		auto mx = min(s.x(), size_.x());
+		auto my = min(s.y(), size_.y());
 		for (auto y = 0; y < my; y++)
 		{
 			for (auto x = 0; x < mx; x++)
-				new_cells[y * s.x + x] = cells[y * size_.x + x];
+				new_cells[y * s.x() + x] = cells[y * size_.x() + x];
 		}
 		size_ = s;
 		cells = new_cells;
@@ -110,8 +110,8 @@ namespace flame
 	int cTileMap::cell(const Vec2u& idx) const
 	{
 		if (idx >= size_)
-			return;
-		return ((cTileMapPrivate*)this)->cells[idx.y * size_.x + idx.x];
+			return -1;
+		return ((cTileMapPrivate*)this)->cells[idx.y() * size_.x() + idx.x()];
 	}
 
 	void cTileMap::set_cell(const Vec2u& idx, int tile_idx)
@@ -119,7 +119,7 @@ namespace flame
 		auto thiz = (cTileMapPrivate*)this;
 		if (idx >= size_ || tile_idx >= thiz->tiles.size())
 			return;
-		thiz->cells[idx.y * size_.x + idx.x] = tile_idx;
+		thiz->cells[idx.y() * size_.x() + idx.x()] = tile_idx;
 	}
 
 	cTileMap* cTileMap::create()

@@ -41,13 +41,13 @@ struct cSceneEditorPrivate : cSceneEditor
 	{
 		if (hierarchy)
 		{
-			looper().add_delay_event([](void* c) {
+			looper().add_event([](void* c) {
 				(*(cDockerTab**)c)->take_away(true);
 			}, new_mail_p(hierarchy->tab));
 		}
 		if (inspector)
 		{
-			looper().add_delay_event([](void* c) {
+			looper().add_event([](void* c) {
 				(*(cDockerTab**)c)->take_away(true);
 			}, new_mail_p(inspector->tab));
 		}
@@ -170,7 +170,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				{
 					destroy_topmost(app.root);
 
-					looper().add_delay_event([](void* c) {
+					looper().add_event([](void* c) {
 						auto editor = *(cSceneEditor**)c;
 
 						auto e = Entity::create();
@@ -211,7 +211,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				{
 					destroy_topmost(app.root);
 
-					looper().add_delay_event([](void* c) {
+					looper().add_event([](void* c) {
 						auto editor = *(cSceneEditor**)c;
 
 						auto sel = editor->selected;
@@ -283,7 +283,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				}capture;
 				capture.e = editor;
 				capture.pos = pos;
-				looper().add_delay_event([](void* c) {
+				looper().add_event([](void* c) {
 					auto& capture = *(Capture*)c;
 					auto editor = capture.e;
 

@@ -54,13 +54,10 @@ struct App
 	FontAtlas* font_atlas_lcd;
 	FontAtlas* font_atlas_sdf;
 
-	uint fps;
-
 	Universe* u;
 	Entity* root;
 	cElement* c_element_root;
 	cEventReceiver* c_event_receiver_root;
-	cText* c_text_fps;
 
 	void run()
 	{
@@ -70,17 +67,11 @@ struct App
 			sc->acquire_image();
 
 		fence->wait();
-		looper().process_delay_events();
+		looper().process_events();
 
 		if (sc)
 		{
 			c_element_root->set_size(Vec2f(w->size));
-			auto _fps = looper().fps;
-			if (_fps != fps)
-			{
-				fps = _fps;
-				c_text_fps->set_text(std::to_wstring(fps));
-			}
 			u->update();
 		}
 		bp->update();
@@ -104,7 +95,7 @@ int main(int argc, char** args)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
 
-	app.bp = BP::create_from_file(L"../renderpath/canvas/bp", false);
+	app.bp = BP::create_from_file(L"../renderpath/canvas/bp", true);
 	app.scr->link_bp(app.bp, app.cbs);
 	app.bp->update();
 	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
@@ -121,8 +112,6 @@ int main(int argc, char** args)
 #undef FONT_AWESOME
 	
 	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
-
-	app.fps = 0;
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
@@ -151,13 +140,16 @@ int main(int argc, char** args)
 		e_fps->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		app.c_text_fps = c_text;
-		e_fps->add_component(app.c_text_fps);
+		e_fps->add_component(c_text);
 
 		auto c_aligner = cAligner::create();
 		c_aligner->x_align_ = AlignxLeft;
 		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
+
+		add_fps_listener([](void* c, uint fps) {
+			(*(cText**)c)->set_text(std::to_wstring(fps));
+		}, new_mail_p(c_text));
 	}
 
 	auto e_layout_left = Entity::create();

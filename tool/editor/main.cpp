@@ -54,8 +54,6 @@ void App::create()
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();
 
-	app.fps = 0;
-
 	app.u = Universe::create();
 	app.u->add_object(app.w);
 	app.u->add_object(app.canvas);
@@ -80,13 +78,16 @@ void App::create()
 		e_fps->add_component(cElement::create());
 
 		auto c_text = cText::create(font_atlas_pixel);
-		c_text_fps = c_text;
 		e_fps->add_component(c_text);
 
 		auto c_aligner = cAligner::create();
 		c_aligner->x_align_ = AlignxLeft;
 		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
+
+		add_fps_listener([](void* c, uint fps) {
+			(*(cText**)c)->set_text(std::to_wstring(fps));
+		}, new_mail_p(c_text));
 	}
 
 	dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_foundation.typeinfo"));
@@ -104,17 +105,11 @@ void App::run()
 		sc->acquire_image();
 
 	fence->wait();
-	looper().process_delay_events();
+	looper().process_events();
 
 	if (sc)
 	{
 		c_element_root->set_size(Vec2f(w->size));
-		auto _fps = looper().fps;
-		if (_fps != fps)
-		{
-			fps = _fps;
-			c_text_fps->set_text(std::to_wstring(fps));
-		}
 		u->update();
 	}
 	canvas_bp->update();

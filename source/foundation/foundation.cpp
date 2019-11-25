@@ -1390,8 +1390,6 @@ namespace flame
 	static Looper _looper;
 
 	static ulonglong last_time;
-	static ulonglong last_frame_time;
-	static uint counting_frame;
 
 	int Looper::loop(void (*idle_func)(void* c), const Mail<>& capture)
 	{
@@ -1399,8 +1397,6 @@ namespace flame
 			return 1;
 
 		last_time = get_now_ns();
-		last_frame_time = last_time;
-		counting_frame = 0;
 		frame = 0;
 
 		for (;;)
@@ -1448,17 +1444,9 @@ namespace flame
 				return 0;
 			}
 
-			if (last_time - last_frame_time >= 1000000000)
-			{
-				fps = counting_frame;
-				counting_frame = 0;
-				last_frame_time = last_time;
-			}
-
 			idle_func(capture.p);
 
 			frame++;
-			counting_frame++;
 			auto et = last_time;
 			last_time = get_now_ns();
 			et = last_time - et;
@@ -1467,51 +1455,85 @@ namespace flame
 		}
 	}
 
-	static std::vector<std::unique_ptr<Closure<void(void* c)>>> delay_events;
+	struct Event
+	{
+		uint id;
+		bool repeatly;
+		float interval;
+		float rest;
+		std::unique_ptr<Closure<void(void* c)>> c;
+	};
 
-	void Looper::add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id, bool only)
+	static std::list<Event> events;
+
+	void* Looper::add_event(void (*event)(void* c), const Mail<>& capture, bool repeatly, float interval, uint id, bool only)
 	{
 		if (only)
 		{
-			for (auto& e : delay_events)
+			for (auto& e : events)
 			{
-				if (id == e->id)
-					return;
+				if (id == e.id)
+					return nullptr;
 			}
 		}
+		Event e;
+		e.id = id;
+		e.repeatly = repeatly;
+		e.interval = interval;
+		e.rest = interval;
 		auto c = new Closure<void(void* c)>;
 		c->function = event;
 		c->capture = capture;
-		c->id = id;
-		delay_events.emplace_back(c);
+		e.c.reset(c);
+		events.push_back(std::move(e));
+		return c;
 	}
 
-	void Looper::clear_delay_events(int id)
+	void Looper::remove_event(void* ret_by_add)
+	{
+		for (auto it = events.begin(); it != events.end(); it++)
+		{
+			if (it->c.get() == ret_by_add)
+			{
+				it = events.erase(it);
+				return;
+			}
+		}
+	}
+
+	void Looper::clear_events(int id)
 	{
 		if (id == -1)
-			delay_events.clear();
+			events.clear();
 		else
 		{
-			for (auto it = delay_events.begin(); it != delay_events.end();)
+			for (auto it = events.begin(); it != events.end();)
 			{
-				if ((*it)->id == id)
-					it = delay_events.erase(it);
+				if (it->id == id)
+					it = events.erase(it);
 				else
 					it++;
 			}
 		}
 	}
 
-	void Looper::process_delay_events()
+	void Looper::process_events()
 	{
-		if (!delay_events.empty())
+		for (auto it = events.begin(); it != events.end();)
 		{
-			std::vector<std::unique_ptr<Closure<void(void*)>>> events;
-			for (auto& e : delay_events)
-				events.push_back(std::move(e));
-			delay_events.clear();
-			for (auto& f : events)
-				f->function(f->capture.p);
+			auto& e = *it;
+			e.rest -= delta_time;
+			if (e.rest <= 0)
+			{
+				e.c->function(e.c->capture.p);
+				if (!e.repeatly)
+				{
+					it = events.erase(it);
+					continue;
+				}
+				e.rest = e.interval;
+			}
+			it++;
 		}
 	}
 

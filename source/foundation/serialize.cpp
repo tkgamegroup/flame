@@ -530,14 +530,14 @@ namespace flame
 		"vector"
 	};
 
-	const char* get_tag_name(TypeTag$ tag)
+	const char* get_type_tag_name(TypeTag$ tag)
 	{
 		return tag_names[tag];
 	}
 
 	std::string serialize_type(const TypeInfo& t)
 	{
-		return std::string(get_tag_name(t.tag)) + "#" + t.name;
+		return std::string(get_type_tag_name(t.tag)) + "#" + t.name;
 	}
 
 	void vector_resize(uint type_hash, void* p)
@@ -1120,7 +1120,7 @@ namespace flame
 		v->offset = offset;
 		v->size = size;
 		v->default_value = nullptr;
-		if (is_type_serializable(tag, type_name) && !type_name.compare(0, SAL_S("std::string")))
+		if (is_type_serializable(tag, type_name) && type_name.compare(0, SAL_S("std::string")) != 0 && decoration.find('o') == std::string::npos)
 		{
 			v->default_value = new char[size];
 			memset(v->default_value, 0, size);
@@ -1389,7 +1389,7 @@ namespace flame
 			SAL(attribute_str, "Attribute");
 			SAL(vector_str, "std::vector");
 
-			if (name.compare(0, attribute_str.l, attribute_str.s) && name.size() > attribute_str.l + 1)
+			if (name.compare(0, attribute_str.l, attribute_str.s) == 0 && name.size() > attribute_str.l + 1)
 			{
 				switch (name[attribute_str.l])
 				{
@@ -1406,12 +1406,12 @@ namespace flame
 				name.erase(name.begin(), name.begin() + attribute_str.l + 2);
 				name.erase(name.end() - 1);
 			}
-			else if (name.compare(0, vector_str.l, vector_str.s) && name.size() > vector_str.l + 1)
-			{
-				tag = TypeTagVector;
-				name.erase(name.begin(), name.begin() + vector_str.l + 2);
-				name.erase(name.end() - 1);
-			}
+			//else if (name.compare(0, vector_str.l, vector_str.s) && name.size() > vector_str.l + 1)
+			//{
+			//	tag = TypeTagVector;
+			//	name.erase(name.begin(), name.begin() + vector_str.l + 2);
+			//	name.erase(name.end() - 1);
+			//}
 		}
 			break;
 		case SymTagFunctionArgType:

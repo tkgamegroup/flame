@@ -428,7 +428,7 @@ namespace flame
 		TypeTagVector		// std::vector<T>
 	};
 
-	FLAME_FOUNDATION_EXPORTS const char* get_tag_name(TypeTag$ tag);
+	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag$ tag);
 
 	struct TypeInfo;
 	struct EnumInfo;

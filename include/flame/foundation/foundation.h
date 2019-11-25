@@ -1066,7 +1066,6 @@ namespace flame
 	{
 		F* function;
 		Mail<> capture;
-		uint id;
 
 		~Closure()
 		{
@@ -1219,16 +1218,36 @@ namespace flame
 	struct Looper
 	{
 		uint frame;
-		uint fps;
 		float delta_time; // second
 		float total_time; // second
 
 		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void add_delay_event(void (*event)(void* c), const Mail<>& capture, uint id = 0, bool only = false);
-		FLAME_FOUNDATION_EXPORTS void clear_delay_events(int id = 0); /* id=-1 means all */
-		FLAME_FOUNDATION_EXPORTS void process_delay_events();
+		FLAME_FOUNDATION_EXPORTS void* add_event(void (*event)(void* c), const Mail<>& capture, bool repeatly = false, float interval = 0.f, uint id = 0, bool only = false /* if true, only one event of the id can exists in list */);
+
+		FLAME_FOUNDATION_EXPORTS void remove_event(void* ret_by_add);
+		FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0); /* id=-1 means all */
+		FLAME_FOUNDATION_EXPORTS void process_events();
 	};
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();
+
+	inline void* add_fps_listener(void (*event)(void* c, uint fps), const Mail<>& capture) // you need to delete the capture when you remove the event... yes, it's stupid
+	{
+		struct Capture
+		{
+			uint last_frame;
+			void (*e)(void* c, uint fps);
+			Mail<> c;
+		}e;
+		e.last_frame = 0;
+		e.e = event;
+		e.c = capture;
+		return looper().add_event([](void* c) {
+			auto& capture = *(Capture*)c;
+			auto frame = looper().frame;
+			capture.e(capture.c.p, frame - capture.last_frame);
+			capture.last_frame = frame;
+		}, new_mail(&e), true, 1.f);
+	}
 }

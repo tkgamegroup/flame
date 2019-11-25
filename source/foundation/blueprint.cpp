@@ -1489,7 +1489,7 @@ namespace flame
 				{
 					auto input = n->find_input(d_d.name);
 					auto v = input->vi();
-					if (v->default_value() && v->decoration().find('o') == std::string::npos)
+					if (v->default_value())
 						unserialize_value(bp->env.dbs, v->type().tag, v->type().hash, d_d.value, input->raw_data());
 				}
 			}
