@@ -36,12 +36,12 @@ void App::create()
 	w = Window::create("Editor", Vec2u(300, 200), WindowFrame | WindowResizable);
 	w->set_maximized(true);
 	d = Device::create(true);
-	render_finished = Semaphore::create(d);
 	scr = SwapchainResizable::create(d, w);
 	fence = Fence::create(d);
 	sc_cbs.resize(scr->sc()->images().size());
 	for (auto i = 0; i < sc_cbs.size(); i++)
 		sc_cbs[i] = Commandbuffer::create(d->gcp);
+	render_finished = Semaphore::create(d);
 
 	canvas_bp = BP::create_from_file(L"../renderpath/canvas/bp", true);
 	scr->link_bp(canvas_bp, sc_cbs);

@@ -1067,9 +1067,38 @@ namespace flame
 		F* function;
 		Mail<> capture;
 
+		template<class FF = F, class ...Args>
+		auto call(Args... args)
+		{
+			return ((FF*)function)(capture.p, args...);
+		}
+
 		~Closure()
 		{
 			delete_mail(capture);
+		}
+	};
+
+	FLAME_FOUNDATION_EXPORTS void* listeners_init();
+	FLAME_FOUNDATION_EXPORTS void listeners_deinit(void* hub);
+	FLAME_FOUNDATION_EXPORTS uint listeners_count(void* hub);
+	FLAME_FOUNDATION_EXPORTS Closure<void(void*)>& listeners_listener(void* hub, uint idx);
+	FLAME_FOUNDATION_EXPORTS void* listeners_add_plain(void* hub, void(*pf)(void* c), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void listeners_remove_plain(void* hub, void* c);
+
+	template<class F>
+	struct Listeners
+	{
+		void* hub;
+
+		void* add(F* pf, const Mail<>& capture)
+		{
+			return listeners_add_plain(hub, (void(*)(void* c))pf, capture);
+		}
+
+		void remove(void* c)
+		{
+			listeners_remove_plain(hub, c);
 		}
 	};
 
@@ -1199,15 +1228,10 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		FLAME_FOUNDATION_EXPORTS void* add_key_listener(void (*listener)(void* c, KeyState action, int value), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void* add_mouse_listener(void (*listener)(void* c, KeyState action, MouseKey key, const Vec2i& pos), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void* add_resize_listener(void (*listener)(void* c, const Vec2u& size), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void* add_destroy_listener(void (*listener)(void* c), const Mail<>& capture);
-
-		FLAME_FOUNDATION_EXPORTS void remove_key_listener(void* ret_by_add);
-		FLAME_FOUNDATION_EXPORTS void remove_mouse_listener(void* ret_by_add);
-		FLAME_FOUNDATION_EXPORTS void remove_resize_listener(void* ret_by_add);
-		FLAME_FOUNDATION_EXPORTS void remove_destroy_listener(void* ret_by_add);
+		Listeners<void(void* c, KeyState action, int value)>						key_listeners;
+		Listeners<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
+		Listeners<void(void* c, const Vec2u & size)>								resize_listeners;
+		Listeners<void(void* c)>													destroy_listeners;
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
@@ -1223,7 +1247,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void* add_event(void (*event)(void* c), const Mail<>& capture, bool repeatly = false, float interval = 0.f, uint id = 0, bool only = false /* if true, only one event of the id can exists in list */);
+		FLAME_FOUNDATION_EXPORTS void* add_event(void (*event)(void* c), const Mail<>& capture, void (*ending)(void* c) = nullptr, bool repeatly = false, float interval = 0.f, uint id = 0, bool only = false /* if true, only one event of the id can exists in list */);
 
 		FLAME_FOUNDATION_EXPORTS void remove_event(void* ret_by_add);
 		FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0); /* id=-1 means all */
@@ -1232,7 +1256,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();
 
-	inline void* add_fps_listener(void (*event)(void* c, uint fps), const Mail<>& capture) // you need to delete the capture when you remove the event... yes, it's stupid
+	inline void* add_fps_listener(void (*event)(void* c, uint fps), const Mail<>& capture)
 	{
 		struct Capture
 		{
@@ -1248,6 +1272,8 @@ namespace flame
 			auto frame = looper().frame;
 			capture.e(capture.c.p, frame - capture.last_frame);
 			capture.last_frame = frame;
-		}, new_mail(&e), true, 1.f);
+		}, new_mail(&e), [](void* c) {
+			delete_mail(((Capture*)c)->c);
+		}, true, 1.f);
 	}
 }

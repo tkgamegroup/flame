@@ -33,10 +33,10 @@ struct App
 {
 	Window* w;
 	Device* d;
-	Semaphore* render_finished;
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> sc_cbs;
+	Semaphore* render_finished;
 	std::vector<Commandbuffer*> extra_cbs;
 	BP* canvas_bp;
 	Canvas* canvas;

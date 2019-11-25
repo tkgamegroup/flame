@@ -1,4 +1,4 @@
-#include "../universe_private.h"
+#include <flame/universe/world.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include "event_receiver_private.h"
@@ -20,37 +20,37 @@ namespace flame
 		dragging = false;
 		state = EventReceiverNormal;
 
-		key_listeners.hub = new ListenerHub;
-		mouse_listeners.hub = new ListenerHub;
-		drag_and_drop_listeners.hub = new ListenerHub;
+		key_listeners.hub = listeners_init();
+		mouse_listeners.hub = listeners_init();
+		drag_and_drop_listeners.hub = listeners_init();
 	}
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
-		delete (ListenerHub*)key_listeners.hub;
-		delete (ListenerHub*)mouse_listeners.hub;
-		delete (ListenerHub*)drag_and_drop_listeners.hub;
+		listeners_deinit(key_listeners.hub);
+		listeners_deinit(mouse_listeners.hub);
+		listeners_deinit(drag_and_drop_listeners.hub);
 	}
 
 	void cEventReceiverPrivate::on_key(KeyState action, uint value)
 	{
-		auto& listeners = ((ListenerHub*)key_listeners.hub)->listeners;
-		for (auto& l : listeners)
-			((void(*)(void*, KeyState action, int value))l->function)(l->capture.p, action, value);
+		auto hub = key_listeners.hub;
+		for (auto i = 0; i < listeners_count(hub); i++)
+			listeners_listener(hub, i).call<void(void*, KeyState action, int value)>(action, value);
 	}
 
 	void cEventReceiverPrivate::on_mouse(KeyState action, MouseKey key, const Vec2i& value)
 	{
-		auto& listeners = ((ListenerHub*)mouse_listeners.hub)->listeners;
-		for (auto& l : listeners)
-			((void(*)(void*, KeyState action, MouseKey key, const Vec2i & pos))l->function)(l->capture.p, action, key, value);
+		auto hub = mouse_listeners.hub;
+		for (auto i = 0; i < listeners_count(hub); i++)
+			listeners_listener(hub, i).call<void(void*, KeyState action, MouseKey key, const Vec2i & pos)>(action, key, value);
 	}
 
 	void cEventReceiverPrivate::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 	{
-		auto& listeners = ((ListenerHub*)drag_and_drop_listeners.hub)->listeners;
-		for (auto& l : listeners)
-			((void(*)(void*, DragAndDrop action, cEventReceiver * er, const Vec2i & pos))l->function)(l->capture.p, action, er, pos);
+		auto hub = mouse_listeners.hub;
+		for (auto i = 0; i < listeners_count(hub); i++)
+			listeners_listener(hub, i).call<void(void*, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)>(action, er, pos);
 	}
 
 	void cEventReceiverPrivate::on_entered_world()

@@ -72,25 +72,6 @@ namespace flame
 		return c;
 	}
 
-	FLAME_UNIVERSE_EXPORTS void* add_listener_plain(void* hub, void(*pf)(void* c), const Mail<>& capture);
-	FLAME_UNIVERSE_EXPORTS void remove_listener_plain(void* hub, void* c);
-
-	template<class F>
-	struct Listeners
-	{
-		void* hub;
-
-		void* add(F* pf, const Mail<>& capture)
-		{
-			return add_listener_plain(hub, (void(*)(void* c))pf, capture);
-		}
-
-		void remove(void* c)
-		{
-			remove_listener_plain(hub, c);
-		}
-	};
-
 	struct Universe
 	{
 		FLAME_UNIVERSE_EXPORTS void add_object(Object* o);

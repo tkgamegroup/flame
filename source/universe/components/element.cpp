@@ -1,4 +1,3 @@
-#include "../universe_private.h"
 #include "../entity_private.h"
 #include "element_private.h"
 
@@ -25,12 +24,12 @@ namespace flame
 		cliped = true;
 		cliped_rect = Vec4f(-1.f);
 
-		cmds.hub = new ListenerHub;
+		cmds.hub = listeners_init();
 	}
 
 	cElementPrivate::~cElementPrivate()
 	{
-		delete (ListenerHub*)cmds.hub;
+		listeners_deinit(cmds.hub);
 	}
 
 	void cElementPrivate::calc_geometry()
@@ -71,9 +70,9 @@ namespace flame
 			}
 		}
 
-		auto& listeners = ((ListenerHub*)cmds.hub)->listeners;
-		for (auto& l : listeners)
-			((void(*)(void*, graphics::Canvas*))l->function)(l->capture.p, canvas);
+		auto hub = cmds.hub;
+		for (auto i = 0; i < listeners_count(hub); i++)
+			listeners_listener(hub, i).call<void(void*, graphics::Canvas*)>(canvas);
 	}
 
 	Component* cElementPrivate::copy()

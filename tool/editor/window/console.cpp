@@ -19,8 +19,7 @@ struct cConsolePrivate : cConsole
 
 	~cConsolePrivate()
 	{
-		auto p = close_callback.get();
-		p->function(p->capture.p);
+		close_callback->call();
 	}
 };
 
@@ -140,8 +139,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 			auto c_console = *(cConsolePrivate**)c;
 			auto input_text = c_console->c_edit_input->text;
 			c_console->print(input_text->text());
-			auto p = c_console->cmd_callback.get();
-			p->function(p->capture.p, input_text->text(), c_console);
+			c_console->cmd_callback->call(input_text->text(), c_console);
 
 			input_text->set_text(L"");
 			c_console->c_edit_input->cursor = 0;

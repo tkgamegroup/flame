@@ -1,4 +1,3 @@
-#include "universe_private.h"
 #include <flame/universe/component.h>
 
 namespace flame
@@ -7,18 +6,18 @@ namespace flame
 		Object(name),
 		entity(nullptr)
 	{
-		data_changed_listeners.hub = new ListenerHub;
+		data_changed_listeners.hub = listeners_init();
 	}
 
 	Component::~Component()
 	{
-		delete (ListenerHub*)data_changed_listeners.hub;
+		listeners_deinit(data_changed_listeners.hub);
 	}
 
 	void Component::data_changed(uint hash, void* sender)
 	{
-		auto& listeners = ((ListenerHub*)data_changed_listeners.hub)->listeners;
-		for (auto& l : listeners)
-			((void(*)(void*, Component* thiz, uint hash, void* sender))l->function)(l->capture.p, this, hash, sender);
+		auto hub = data_changed_listeners.hub;
+		for (auto i = 0; i < listeners_count(hub); i++)
+			listeners_listener(hub, i).call<void(void*, Component * thiz, uint hash, void* sender)>(this, hash, sender);
 	}
 }

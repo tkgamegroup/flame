@@ -5,11 +5,6 @@
 
 namespace flame
 {
-	struct ListenerHub
-	{
-		std::vector<std::unique_ptr<Closure<void(void* c)>>> listeners;
-	};
-
 	struct UniversePrivate : Universe
 	{
 		std::vector<Object*> objects;

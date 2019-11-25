@@ -8,28 +8,6 @@ namespace flame
 		return malloc(size);
 	}
 
-	void* add_listener_plain(void* hub, void(*pf)(void* c), const Mail<>& capture)
-	{
-		auto c = new Closure<void(void* c)>;
-		c->function = pf;
-		c->capture = capture;
-		((ListenerHub*)hub)->listeners.emplace_back(c);
-		return c;
-	}
-
-	void remove_listener_plain(void* hub, void* c)
-	{
-		auto& listeners = ((ListenerHub*)hub)->listeners;
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == c)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
 	void UniversePrivate::update()
 	{
 		for (auto& w : worlds)

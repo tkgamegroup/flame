@@ -58,8 +58,8 @@ namespace flame
 		{
 			if (window)
 			{
-				window->remove_key_listener(key_listener);
-				window->remove_mouse_listener(mouse_listener);
+				window->key_listeners.remove(key_listener);
+				window->mouse_listeners.remove(mouse_listener);
 			}
 		}
 
@@ -135,7 +135,7 @@ namespace flame
 			if (window)
 			{
 
-				key_listener = window->add_key_listener([](void* c, KeyState action, int value) {
+				key_listener = window->key_listeners.add([](void* c, KeyState action, int value) {
 					auto thiz = *(sEventDispatcherPrivate**)c;
 
 					if (action == KeyStateNull)
@@ -168,7 +168,7 @@ namespace flame
 					thiz->pending_update = true;
 				}, new_mail_p(this));
 
-				mouse_listener = window->add_mouse_listener([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = window->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(sEventDispatcherPrivate**)c;
 
 					if (action == KeyStateNull)

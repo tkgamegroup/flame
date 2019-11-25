@@ -215,7 +215,7 @@ namespace flame
 			changed = true;
 
 			auto thiz = this;
-			resize_listener = w->add_resize_listener([](void* c, const Vec2u& size) {
+			resize_listener = w->resize_listeners.add([](void* c, const Vec2u& size) {
 				auto thiz = *(SwapchainResizablePrivate**)c;
 				if (thiz->sc)
 				{
@@ -232,7 +232,7 @@ namespace flame
 		
 		SwapchainResizablePrivate::~SwapchainResizablePrivate()
 		{
-			w->remove_resize_listener(resize_listener);
+			w->resize_listeners.remove(resize_listener);
 			if (sc)
 				Swapchain::destroy(sc);
 		}
