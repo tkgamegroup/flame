@@ -57,19 +57,19 @@
 		<node type="Array(3+void*)" id="vias" pos="1928.63;1198.33" />
 		<node type="graphics::VertexInputBuffer" id="vib" pos="2064.05;1175.71" />
 		<node type="graphics::VertexInputInfo" id="vi" pos="2026.83;1423.37" />
-		<node type="Array(2+std::basic_string(wchar_t))" id="pl_element_shs" pos="2879.57;628.81">
+		<node type="Array(2+std::wstring)" id="pl_element_shs" pos="2879.57;628.81">
 			<datas>
 				<data name="1" value="element.vert" />
 				<data name="2" value="element.frag" />
 			</datas>
 		</node>
-		<node type="Array(2+std::basic_string(wchar_t))" id="pl_text_lcd_shs" pos="2878.50;1161.07">
+		<node type="Array(2+std::wstring)" id="pl_text_lcd_shs" pos="2878.50;1161.07">
 			<datas>
 				<data name="1" value="element.vert" />
 				<data name="2" value="text_lcd.frag" />
 			</datas>
 		</node>
-		<node type="Array(2+std::basic_string(wchar_t))" id="pl_text_sdf_shs" pos="2901.71;1701.75">
+		<node type="Array(2+std::wstring)" id="pl_text_sdf_shs" pos="2901.71;1701.75">
 			<datas>
 				<data name="1" value="element.vert" />
 				<data name="2" value="text_sdf.frag" />

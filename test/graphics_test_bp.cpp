@@ -27,7 +27,7 @@ struct App
 			sc->acquire_image();
 
 		fence->wait();
-		looper().process_delay_events();
+		looper().process_events();
 
 		bp->update();
 

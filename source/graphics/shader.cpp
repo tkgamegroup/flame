@@ -170,12 +170,12 @@ namespace flame
 
 		struct DescriptorBufferBinding$
 		{
-			AttributeV<bool> storage$i;
-			AttributeV<uint> count$i;
-			AttributeV<std::string> name$i;
+			AttributeD<bool> storage$i;
+			AttributeD<uint> count$i;
+			AttributeD<std::string> name$i;
 			AttributeP<void> buffer$i;
 
-			AttributeV<DescriptorBufferBinding> out$o;
+			AttributeD<DescriptorBufferBinding> out$o;
 
 			FLAME_GRAPHICS_EXPORTS DescriptorBufferBinding$()
 			{
@@ -185,26 +185,26 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				auto last_out_frame = out$o.frame;
-				if (storage$i.frame > last_out_frame)
+				auto last_out_frame = out$o.b.frame;
+				if (storage$i.b.frame > last_out_frame)
 				{
 					out$o.v.type = storage$i.v ? DescriptorStorageBuffer : DescriptorUniformBuffer;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (count$i.frame > last_out_frame)
+				if (count$i.b.frame > last_out_frame)
 				{
 					out$o.v.count = count$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (name$i.frame > last_out_frame)
+				if (name$i.b.frame > last_out_frame)
 				{
 					out$o.v.name = name$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (buffer$i.frame > last_out_frame)
+				if (buffer$i.b.frame > last_out_frame)
 				{
 					out$o.v.buffer = (Buffer*)buffer$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -215,14 +215,14 @@ namespace flame
 
 		struct DescriptorImageBinding$
 		{
-			AttributeV<uint> binding$i;
-			AttributeV<bool> storage$i;
-			AttributeV<uint> count$i;
-			AttributeV<std::string> name$i;
+			AttributeD<uint> binding$i;
+			AttributeD<bool> storage$i;
+			AttributeD<uint> count$i;
+			AttributeD<std::string> name$i;
 			AttributeE<TargetType$> target_type$i;
 			AttributeP<void> v$i;
 
-			AttributeV<DescriptorImageBinding> out$o;
+			AttributeD<DescriptorImageBinding> out$o;
 			AttributeP<void> iv$o;
 
 			FLAME_GRAPHICS_EXPORTS DescriptorImageBinding$()
@@ -233,15 +233,15 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				auto last_out_frame = out$o.frame;
+				auto last_out_frame = out$o.b.frame;
 				if (last_out_frame == -1)
 				{
 					auto d = Device::default_one();
 					if (d)
 						out$o.v.sampler = d->sp_linear;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (target_type$i.frame > iv$o.frame || v$i.frame > iv$o.frame)
+				if (target_type$i.b.frame > iv$o.b.frame || v$i.b.frame > iv$o.b.frame)
 				{
 					if (iv$o.v)
 						Imageview::destroy((Imageview*)iv$o.v);
@@ -249,24 +249,24 @@ namespace flame
 						iv$o.v = Imageview::create((Image*)v$i.v);
 					else
 						iv$o.v = nullptr;
-					iv$o.frame = looper().frame;
+					iv$o.b.frame = looper().frame;
 				}
-				if (storage$i.frame > last_out_frame)
+				if (storage$i.b.frame > last_out_frame)
 				{
 					out$o.v.type = storage$i.v ? DescriptorStorageImage : DescriptorSampledImage;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (count$i.frame > last_out_frame)
+				if (count$i.b.frame > last_out_frame)
 				{
 					out$o.v.count = count$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (name$i.frame > last_out_frame)
+				if (name$i.b.frame > last_out_frame)
 				{
 					out$o.v.name = name$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (iv$o.frame > last_out_frame)
+				if (iv$o.b.frame > last_out_frame)
 				{
 					switch (target_type$i.v)
 					{
@@ -280,7 +280,7 @@ namespace flame
 						out$o.v.view = nullptr;
 						break;
 					}
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -294,7 +294,7 @@ namespace flame
 		struct Descriptorlayout$
 		{
 			AttributeP<std::vector<void*>> bindings$i;
-			AttributeV<bool> create_default_set$i;
+			AttributeD<bool> create_default_set$i;
 
 			AttributeP<void> out$o;
 			AttributeP<void> default_set$o;
@@ -306,7 +306,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (bindings$i.frame > out$o.frame || create_default_set$i.frame > default_set$o.frame)
+				if (bindings$i.b.frame > out$o.b.frame || create_default_set$i.b.frame > default_set$o.b.frame)
 				{
 					if (out$o.v)
 						Descriptorlayout::destroy((Descriptorlayout*)out$o.v);
@@ -324,8 +324,8 @@ namespace flame
 						default_set$o.v = nullptr;
 					}
 					auto frame = looper().frame;
-					out$o.frame = frame;
-					default_set$o.frame = frame;
+					out$o.b.frame = frame;
+					default_set$o.b.frame = frame;
 				}
 			}
 
@@ -454,7 +454,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (dsl$i.frame > out$o.frame)
+				if (dsl$i.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						Descriptorset::destroy((Descriptorset*)out$o.v);
@@ -467,7 +467,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -534,7 +534,7 @@ namespace flame
 		struct Pipelinelayout$
 		{
 			AttributeP<std::vector<void*>> descriptorlayouts$i;
-			AttributeV<uint> push_constant_size$i;
+			AttributeD<uint> push_constant_size$i;
 
 			AttributeP<void> out$o;
 
@@ -544,7 +544,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (descriptorlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame)
+				if (descriptorlayouts$i.b.frame > out$o.b.frame || push_constant_size$i.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
@@ -559,7 +559,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -572,10 +572,10 @@ namespace flame
 
 		struct VertexInputAttribute$
 		{
-			AttributeV<std::string> name$i;
+			AttributeD<std::string> name$i;
 			AttributeE<Format$> format$i;
 
-			AttributeV<VertexInputAttribute> out$o;
+			AttributeD<VertexInputAttribute> out$o;
 
 			FLAME_GRAPHICS_EXPORTS VertexInputAttribute$()
 			{
@@ -584,16 +584,16 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				auto last_out_frame = out$o.frame;
-				if (name$i.frame > last_out_frame)
+				auto last_out_frame = out$o.b.frame;
+				if (name$i.b.frame > last_out_frame)
 				{
 					out$o.v.name = name$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (format$i.frame > last_out_frame)
+				if (format$i.b.frame > last_out_frame)
 				{
 					out$o.v.format = format$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -607,7 +607,7 @@ namespace flame
 			AttributeP<std::vector<void*>> attributes$i;
 			AttributeE<VertexInputRate$> rate$i;
 
-			AttributeV<VertexInputBuffer> out$o;
+			AttributeD<VertexInputBuffer> out$o;
 
 			FLAME_GRAPHICS_EXPORTS VertexInputBuffer$()
 			{
@@ -616,16 +616,16 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				auto last_out_frame = out$o.frame;
-				if (attributes$i.frame > last_out_frame)
+				auto last_out_frame = out$o.b.frame;
+				if (attributes$i.b.frame > last_out_frame)
 				{
 					out$o.v.attributes = get_attribute_vec(attributes$i);
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (rate$i.frame > last_out_frame)
+				if (rate$i.b.frame > last_out_frame)
 				{
 					out$o.v.rate = rate$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -638,9 +638,9 @@ namespace flame
 		{
 			AttributeP<std::vector<void*>> buffers$i;
 			AttributeE<PrimitiveTopology$> primitive_topology$i;
-			AttributeV<uint> patch_control_points$i;
+			AttributeD<uint> patch_control_points$i;
 
-			AttributeV<VertexInputInfo> out$o;
+			AttributeD<VertexInputInfo> out$o;
 
 			FLAME_GRAPHICS_EXPORTS VertexInputInfo$()
 			{
@@ -649,21 +649,21 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				auto last_out_frame = out$o.frame;
-				if (buffers$i.frame > last_out_frame)
+				auto last_out_frame = out$o.b.frame;
+				if (buffers$i.b.frame > last_out_frame)
 				{
 					out$o.v.buffers = get_attribute_vec(buffers$i);
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (primitive_topology$i.frame > last_out_frame)
+				if (primitive_topology$i.b.frame > last_out_frame)
 				{
 					out$o.v.primitive_topology = primitive_topology$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
-				if (patch_control_points$i.frame > last_out_frame)
+				if (patch_control_points$i.b.frame > last_out_frame)
 				{
 					out$o.v.patch_control_points = patch_control_points$i.v;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 		};
@@ -1349,9 +1349,9 @@ namespace flame
 			AttributeP<std::vector<std::wstring>> shader_filenames$i;
 			AttributeP<void> pll$i;
 			AttributeP<void> renderpass$i;
-			AttributeV<uint> subpass_idx$i;
+			AttributeD<uint> subpass_idx$i;
 			AttributeP<void> vi$i;
-			AttributeV<Vec2u> vp$i;
+			AttributeD<Vec2u> vp$i;
 			AttributeP<void> raster$i;
 			AttributeE<SampleCount$> sc$i;
 			AttributeP<void> depth$i;
@@ -1365,8 +1365,8 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shader_filenames$i.frame > out$o.frame || pll$i.frame > out$o.frame ||
-					vi$i.frame > out$o.frame || vp$i.frame > out$o.frame || raster$i.frame > out$o.frame || sc$i.frame > out$o.frame || depth$i.frame > out$o.frame || dynamic_states$i.frame > out$o.frame)
+				if (renderpass$i.b.frame > out$o.b.frame || subpass_idx$i.b.frame > out$o.b.frame || shader_filenames$i.b.frame > out$o.b.frame || pll$i.b.frame > out$o.b.frame ||
+					vi$i.b.frame > out$o.b.frame || vp$i.b.frame > out$o.b.frame || raster$i.b.frame > out$o.b.frame || sc$i.b.frame > out$o.b.frame || depth$i.b.frame > out$o.b.frame || dynamic_states$i.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
@@ -1385,7 +1385,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 

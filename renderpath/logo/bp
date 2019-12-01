@@ -7,7 +7,7 @@
 		<package filename="canvas" id="canvas" pos="1124.60;806.93" />
 	</packages>
 	<nodes>
-		<node type="Array(1+std::basic_string(wchar_t))" id="fonts" pos="-569.00;42.00">
+		<node type="Array(1+std::wstring)" id="fonts" pos="-569.00;42.00">
 			<datas>
 				<data name="1" value="c:/windows/fonts/msyh.ttc" />
 			</datas>

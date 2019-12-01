@@ -173,7 +173,7 @@ namespace flame
 
 	void SlotPrivate::set_frame(int frame)
 	{
-		((AttributeBase*)raw_data)->frame = frame;
+		((AttributeBase*)raw_data)->b.frame = frame;
 	}
 
 	void SlotPrivate::set_data(const void* d)
@@ -181,14 +181,14 @@ namespace flame
 		set_frame(looper().frame);
 		node->scene->root->add_to_pending_update(node);
 		 
-		if (vi->type().tag == TypeTagAttributeV)
+		if (vi->type().tag == TypeData)
 		{
 			switch (vi->type().hash)
 			{
-			case cH("std::basic_string(char)"):
+			case cH("std::string"):
 				*(std::string*)((char*)raw_data + sizeof(AttributeBase)) = *(std::string*)d;
 				return;
-			case cH("std::basic_string(wchar_t)"):
+			case cH("std::wstring"):
 				*(std::wstring*)((char*)raw_data + sizeof(AttributeBase)) = *(std::wstring*)d;
 				return;
 			}
@@ -216,25 +216,20 @@ namespace flame
 
 		if (target)
 		{
-			auto in_type = vi->type();
-			auto out_type = target->vi->type();
+			auto& in_type = vi->type();
+			auto& out_type = target->vi->type();
 
 			if (![&]() {
-				if (in_type.tag == out_type.tag && in_type.hash == out_type.hash)
+				if (in_type.hash == out_type.hash)
 					return true;
-				if (in_type.tag == TypeTagAttributeP)
+				if (in_type.tag == TypePointer && (out_type.tag == TypeData || out_type.tag == TypePointer))
 				{
-					if (out_type.tag == TypeTagAttributeV || out_type.tag == TypeTagAttributeP)
+					if (in_type.base_hash == out_type.base_hash || in_type.base_hash == cH("void"))
+						return true;
+					if (in_type.is_vector && !out_type.is_vector)
 					{
-						if ((out_type.hash == in_type.hash || in_type.hash == cH("void")))
-							return true;
-						#define PREFIX "std::vector"
-						if (in_type.name.compare(0, strlen(PREFIX), PREFIX) == 0)
-						{
-							((AttributeBase*)raw_data)->twist = 1;
-							return true;
-						}
-						#undef PREFIX
+						((AttributeBase*)raw_data)->b.twist = true;
+						return true;
 					}
 				}
 				return false;
@@ -242,7 +237,7 @@ namespace flame
 				return false;
 		}
 		else
-			((AttributeBase*)raw_data)->twist = 0;
+			((AttributeBase*)raw_data)->b.twist = false;
 
 		if (links[0])
 		{
@@ -314,7 +309,7 @@ namespace flame
 			auto f = udt->find_function("update");
 			if (f)
 			{
-				if (f->return_type().tag == TypeTagVariable && f->return_type().hash == cH("void") && f->parameter_count() == 0)
+				if (f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 0)
 					update_addr = (char*)module + (uint)f->rva();
 				assert(update_addr);
 			}
@@ -328,7 +323,7 @@ namespace flame
 			if (!ai && !ao)
 				continue;
 			assert(!(ai && ao));
-			assert(v->type().tag == TypeTagAttributeES || v->type().tag == TypeTagAttributeEM || v->type().tag == TypeTagAttributeV || v->type().tag == TypeTagAttributeP);
+			assert(v->type().is_attribute);
 			if (ai)
 				inputs.emplace_back(new SlotPrivate(SlotPrivate::Input, this, v));
 			else /* if (ao) */
@@ -382,16 +377,16 @@ namespace flame
 				auto iv = input->vi;
 				auto ia = (AttributeBase*)input->raw_data;
 				auto ot = out->vi->type().tag;
-				if ((ia->twist == 1 && ot == TypeTagAttributeV) || (ot == TypeTagAttributeV && iv->type().tag == TypeTagAttributeP))
+				if ((ia->b.twist && ot == TypeData) || (ot == TypeData && iv->type().tag == TypePointer))
 				{
 					auto p = out->data();
 					memcpy(input->data(), &p, sizeof(void*));
 				}
 				else
 					memcpy(input->data(), out->data(), iv->size() - sizeof(AttributeBase));
-				auto new_frame = ((AttributeBase*)out->raw_data)->frame;
-				if (new_frame > ia->frame)
-					ia->frame = new_frame;
+				auto new_frame = ((AttributeBase*)out->raw_data)->b.frame;
+				if (new_frame > ia->b.frame)
+					ia->b.frame = new_frame;
 			}
 		}
 
@@ -562,7 +557,7 @@ namespace flame
 
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& id)
 	{
-		auto type_hash = H(type.c_str());
+		auto type_hash = H(("D#" + type).c_str());
 		UdtInfo* udt = nullptr;
 		void* module = nullptr;
 		{
@@ -814,7 +809,7 @@ namespace flame
 
 	int BP::Slot::frame() const
 	{
-		return ((AttributeBase*)(((SlotPrivate*)this)->raw_data))->frame;
+		return ((AttributeBase*)(((SlotPrivate*)this)->raw_data))->b.frame;
 	}
 
 	void BP::Slot::set_frame(int frame)
@@ -1490,7 +1485,7 @@ namespace flame
 					auto input = n->find_input(d_d.name);
 					auto v = input->vi();
 					if (v->default_value())
-						unserialize_value(bp->env.dbs, v->type().tag, v->type().hash, d_d.value, input->raw_data());
+						v->type().unserialize_value(bp->env.dbs, d_d.value, input->raw_data());
 				}
 			}
 		}
@@ -1576,7 +1571,7 @@ namespace flame
 				continue;
 
 			auto n_node = n_nodes->new_node("node");
-			n_node->new_attr("type", udt->name());
+			n_node->new_attr("type", udt->type().name);
 			n_node->new_attr("id", n->id);
 			if (n->initiative)
 				n_node->new_attr("initiative", "1");
@@ -1594,9 +1589,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					auto value = serialize_value(bp->env.dbs, v->type().tag, v->type().hash, input->raw_data, 2);
-					n_data->new_attr("value", *value.p);
-					delete_mail(value);
+					n_data->new_attr("value", v->type().serialize_value(bp->env.dbs, input->raw_data, 2));
 				}
 			}
 		}
@@ -1678,97 +1671,97 @@ namespace flame
 
 	struct F2U$
 	{
-		AttributeV<float> v$i;
+		AttributeD<float> v$i;
 
-		AttributeV<uint> out$o;
+		AttributeD<uint> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (v$i.frame > out$o.frame)
+			if (v$i.b.frame > out$o.b.frame)
 			{
 				out$o.v = v$i.v;
-				out$o.frame = looper().frame;
+				out$o.b.frame = looper().frame;
 			}
 		}
 	};
 
 	struct Add$
 	{
-		AttributeV<float> a$i;
-		AttributeV<float> b$i;
+		AttributeD<float> a$i;
+		AttributeD<float> b$i;
 
-		AttributeV<float> out$o;
+		AttributeD<float> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
+			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame)
 			{
 				out$o.v = a$i.v + b$i.v;
-				out$o.frame = looper().frame;
+				out$o.b.frame = looper().frame;
 			}
 		}
 	};
 
 	struct Multiple$
 	{
-		AttributeV<float> a$i;
-		AttributeV<float> b$i;
+		AttributeD<float> a$i;
+		AttributeD<float> b$i;
 
-		AttributeV<float> out$o;
+		AttributeD<float> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
+			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame)
 			{
 				out$o.v = a$i.v * b$i.v;
-				out$o.frame = looper().frame;
+				out$o.b.frame = looper().frame;
 			}
 		}
 	};
 
 	struct MakeVec2f$
 	{
-		AttributeV<float> x$i;
-		AttributeV<float> y$i;
+		AttributeD<float> x$i;
+		AttributeD<float> y$i;
 
-		AttributeV<Vec2f> out$o;
+		AttributeD<Vec2f> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (x$i.frame > out$o.frame)
+			if (x$i.b.frame > out$o.b.frame)
 				out$o.v.x() = x$i.v;
-			if (y$i.frame > out$o.frame)
+			if (y$i.b.frame > out$o.b.frame)
 				out$o.v.y() = y$i.v;
-			out$o.frame = looper().frame;
+			out$o.b.frame = looper().frame;
 		}
 	};
 
 	struct Time$
 	{
-		AttributeV<float> delta$o;
-		AttributeV<float> total$o;
+		AttributeD<float> delta$o;
+		AttributeD<float> total$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
 			delta$o.v = looper().delta_time;
 			total$o.v = bp_env().time;
 			auto frame = looper().frame;
-			delta$o.frame = frame;
-			total$o.frame = frame;
+			delta$o.b.frame = frame;
+			total$o.b.frame = frame;
 		}
 	};
 
 	struct LinearInterpolation1d$
 	{
-		AttributeV<float> a$i;
-		AttributeV<float> b$i;
-		AttributeV<float> t$i;
+		AttributeD<float> a$i;
+		AttributeD<float> b$i;
+		AttributeD<float> t$i;
 
-		AttributeV<float> out$o;
+		AttributeD<float> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
+			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame || t$i.b.frame > out$o.b.frame)
 			{
 				if (t$i.v <= 0.f)
 					out$o.v = a$i.v;
@@ -1776,22 +1769,22 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = looper().frame;
+				out$o.b.frame = looper().frame;
 			}
 		}
 	};
 
 	struct LinearInterpolation2d$
 	{
-		AttributeV<Vec2f> a$i;
-		AttributeV<Vec2f> b$i;
-		AttributeV<float> t$i;
+		AttributeD<Vec2f> a$i;
+		AttributeD<Vec2f> b$i;
+		AttributeD<float> t$i;
 
-		AttributeV<Vec2f> out$o;
+		AttributeD<Vec2f> out$o;
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
+			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame || t$i.b.frame > out$o.b.frame)
 			{
 				if (t$i.v <= 0.f)
 					out$o.v = a$i.v;
@@ -1799,7 +1792,7 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = looper().frame;
+				out$o.b.frame = looper().frame;
 			}
 		}
 	};

@@ -55,12 +55,12 @@ namespace flame
 
 	struct Rect$
 	{
-		AttributeV<Vec2f> pos$i;
-		AttributeV<Vec2f> size$i;
-		AttributeV<Vec4c> color$i;
-		AttributeV<float> alpha$i;
+		AttributeD<Vec2f> pos$i;
+		AttributeD<Vec2f> size$i;
+		AttributeD<Vec4c> color$i;
+		AttributeD<float> alpha$i;
 
-		AttributeV<Rect> out$o;
+		AttributeD<Rect> out$o;
 
 		__declspec(dllexport) Rect$()
 		{
@@ -70,13 +70,13 @@ namespace flame
 		__declspec(dllexport) void update$()
 		{
 			out$o.v.type = CmdDrawRect;
-			if (pos$i.frame > out$o.frame)
+			if (pos$i.b.frame > out$o.b.frame)
 				out$o.v.pos = pos$i.v;
-			if (size$i.frame > out$o.frame)
+			if (size$i.b.frame > out$o.b.frame)
 				out$o.v.size = size$i.v;
-			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
+			if (color$i.b.frame > out$o.b.frame || alpha$i.b.frame > out$o.b.frame)
 				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
-			out$o.frame = maxN(pos$i.frame, size$i.frame, color$i.frame, alpha$i.frame);
+			out$o.b.frame = maxN(pos$i.b.frame, size$i.b.frame, color$i.b.frame, alpha$i.b.frame);
 		}
 	};
 
@@ -92,39 +92,41 @@ namespace flame
 	struct TextSdf$
 	{
 		AttributeP<void> font_atals$i;
-		AttributeV<float> scale$i;
-		AttributeV<Vec2f> pos$i;
-		AttributeV<Vec4c> color$i;
-		AttributeV<float> alpha$i;
-		AttributeV<std::wstring> text$i;
+		AttributeD<float> scale$i;
+		AttributeD<Vec2f> pos$i;
+		AttributeD<Vec4c> color$i;
+		AttributeD<float> alpha$i;
+		AttributeD<std::wstring> text$i;
 
-		AttributeV<TextSdf> out$o;
+		AttributeD<TextSdf> out$o;
 
 		__declspec(dllexport) TextSdf$()
 		{
 			scale$i.v = 1.f;
 			alpha$i.v = 1.f;
+
+			text$i.v = L"Replace Me!";
 		}
 
 		__declspec(dllexport) void update$()
 		{
 			out$o.v.type = CmdDrawTextSdf;
-			if (font_atals$i.frame > out$o.frame)
+			if (font_atals$i.b.frame > out$o.b.frame)
 				out$o.v.font_atals = (FontAtlas*)font_atals$i.v;
-			if (scale$i.frame > out$o.frame)
+			if (scale$i.b.frame > out$o.b.frame)
 				out$o.v.scale = scale$i.v;
-			if (pos$i.frame > out$o.frame)
+			if (pos$i.b.frame > out$o.b.frame)
 				out$o.v.pos = pos$i.v;
-			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
+			if (color$i.b.frame > out$o.b.frame || alpha$i.b.frame > out$o.b.frame)
 				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
-			if (text$i.frame > out$o.frame)
+			if (text$i.b.frame > out$o.b.frame)
 			{
 				out$o.v.glyphs.resize(text$i.v.size());
 				auto atlas = (FontAtlas*)font_atals$i.v;
 				for (auto i = 0; i < text$i.v.size(); i++)
 					out$o.v.glyphs[i] = atlas->get_glyph(text$i.v[i], 0);
 			}
-			out$o.frame = maxN(font_atals$i.frame, scale$i.frame, pos$i.frame, color$i.frame, alpha$i.frame, text$i.frame);
+			out$o.b.frame = maxN(font_atals$i.b.frame, scale$i.b.frame, pos$i.b.frame, color$i.b.frame, alpha$i.b.frame, text$i.b.frame);
 		}
 	};
 
@@ -154,7 +156,7 @@ namespace flame
 		AttributeP<void> vtx_buf$i;
 		AttributeP<void> idx_buf$i;
 		AttributeP<void> rnf$i;
-		AttributeV<uint> image_idx$i;
+		AttributeD<uint> image_idx$i;
 		AttributeP<void> pll$i;
 		AttributeP<void> pl_element$i;
 		AttributeP<void> pl_text_lcd$i;
@@ -483,7 +485,7 @@ namespace flame
 				auto c = new CanvasPrivate;
 				c->thiz = this;
 				canvas$o.v = c;
-				canvas$o.frame = looper().frame;
+				canvas$o.b.frame = looper().frame;
 
 				auto font_atlases = get_attribute_vec(font_atlases$i);
 				for (auto f : font_atlases)

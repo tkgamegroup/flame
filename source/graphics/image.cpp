@@ -424,13 +424,13 @@ namespace flame
 		struct Image$
 		{
 			AttributeE<Format$> format$i;
-			AttributeV<Vec2u> size$i;
-			AttributeV<uint> level$i;
-			AttributeV<uint> layer$i;
+			AttributeD<Vec2u> size$i;
+			AttributeD<uint> level$i;
+			AttributeD<uint> layer$i;
 			AttributeE<SampleCount$> sample_count$i;
 			AttributeE<ImageUsage$> usage$mi;
-			AttributeV<bool> init_with_color$i;
-			AttributeV<Vec4c> init_color$i;
+			AttributeD<bool> init_with_color$i;
+			AttributeD<Vec4c> init_color$i;
 
 			AttributeP<void> out$o;
 
@@ -445,7 +445,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (format$i.frame > out$o.frame || size$i.frame > out$o.frame || level$i.frame > out$o.frame || layer$i.frame > out$o.frame || sample_count$i.frame > out$o.frame || usage$mi.frame > out$o.frame)
+				if (format$i.b.frame > out$o.b.frame || size$i.b.frame > out$o.b.frame || level$i.b.frame > out$o.b.frame || layer$i.b.frame > out$o.b.frame || sample_count$i.b.frame > out$o.b.frame || usage$mi.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						Image::destroy((Image*)out$o.v);
@@ -457,8 +457,12 @@ namespace flame
 							((Image*)out$o.v)->init(init_color$i.v);
 					}
 					else
+					{
+						printf("cannot create image\n");
+
 						out$o.v = nullptr;
-					out$o.frame = looper().frame;
+					}
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -474,11 +478,11 @@ namespace flame
 			AttributeP<void> in$i;
 
 			AttributeE<Format$> format$o;
-			AttributeV<Vec2u> size$o;
+			AttributeD<Vec2u> size$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (in$i.frame > format$o.frame || in$i.frame > size$o.frame)
+				if (in$i.b.frame > format$o.b.frame || in$i.b.frame > size$o.b.frame)
 				{
 					auto image = (Image*)in$i.v;
 					if (image)
@@ -488,12 +492,14 @@ namespace flame
 					}
 					else
 					{
+						printf("cannot inspect image\n");
+
 						format$o.v = Format_Undefined;
 						size$o.v = Vec2u(0);
 					}
 					auto frame = looper().frame;
-					format$o.frame = frame;
-					size$o.frame = frame;
+					format$o.b.frame = frame;
+					size$o.b.frame = frame;
 				}
 			}
 		};
@@ -576,10 +582,10 @@ namespace flame
 		{
 			AttributeP<void> image$i;
 			AttributeE<ImageviewType$> type$i;
-			AttributeV<uint> base_level$i;
-			AttributeV<uint> level_count$i;
-			AttributeV<uint> base_layer$i;
-			AttributeV<uint> layer_count$i;
+			AttributeD<uint> base_level$i;
+			AttributeD<uint> level_count$i;
+			AttributeD<uint> base_layer$i;
+			AttributeD<uint> layer_count$i;
 			AttributeE<Swizzle$> swizzle_r$i;
 			AttributeE<Swizzle$> swizzle_g$i;
 			AttributeE<Swizzle$> swizzle_b$i;
@@ -596,7 +602,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (image$i.frame > out$o.frame || type$i.frame > out$o.frame || base_level$i.frame > out$o.frame || base_layer$i.frame > out$o.frame || layer_count$i.frame > out$o.frame || swizzle_r$i.frame > out$o.frame || swizzle_g$i.frame > out$o.frame || swizzle_b$i.frame > out$o.frame || swizzle_a$i.frame > out$o.frame)
+				if (image$i.b.frame > out$o.b.frame || type$i.b.frame > out$o.b.frame || base_level$i.b.frame > out$o.b.frame || base_layer$i.b.frame > out$o.b.frame || layer_count$i.b.frame > out$o.b.frame || swizzle_r$i.b.frame > out$o.b.frame || swizzle_g$i.b.frame > out$o.b.frame || swizzle_b$i.b.frame > out$o.b.frame || swizzle_a$i.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						Imageview::destroy((Imageview*)out$o.v);
@@ -608,7 +614,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -628,7 +634,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (image$i.frame > out$o.frame)
+				if (image$i.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						Imageview::destroy((Imageview*)out$o.v);
@@ -640,7 +646,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
@@ -655,7 +661,7 @@ namespace flame
 		{
 			AttributeP<std::vector<void*>> images$i;
 
-			AttributeV<std::vector<void*>> out$o;
+			AttributeD<std::vector<void*>> out$o;
 
 			FLAME_GRAPHICS_EXPORTS ImageviewsGeneral$()
 			{
@@ -663,7 +669,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (images$i.frame > out$o.frame)
+				if (images$i.b.frame > out$o.b.frame)
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Imageview::destroy((Imageview*)out$o.v[i]);
@@ -680,7 +686,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 

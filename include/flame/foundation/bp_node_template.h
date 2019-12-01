@@ -13,16 +13,16 @@ namespace flame
 	template<class T>
 	struct BP_Var
 	{
-		AttributeV<T> in;
+		AttributeD<T> in;
 
-		AttributeV<T> out;
+		AttributeD<T> out;
 
 		void update()
 		{
-			if (in.frame > out.frame)
+			if (in.b.frame > out.b.frame)
 			{
 				out.v = in.v;
-				out.frame = looper().frame;
+				out.b.frame = looper().frame;
 			}
 		}
 
@@ -30,28 +30,28 @@ namespace flame
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = db->add_udt("Var" + template_parameters, sizeof(BP_Var));
+			auto u = db->add_udt(TypeInfo(TypeData, "Var" + template_parameters), sizeof(BP_Var));
 
-			u->add_variable(TypeTagAttributeV, type_name, "in", "i", offsetof(BP_Var, in), sizeof(AttributeV<T>));
-			u->add_variable(TypeTagAttributeV, type_name, "out", "o", offsetof(BP_Var, out), sizeof(AttributeV<T>));
+			u->add_variable(TypeInfo(TypeData, type_name, true), "in", "i", offsetof(BP_Var, in), sizeof(AttributeD<T>));
+			u->add_variable(TypeInfo(TypeData, type_name, true), "out", "o", offsetof(BP_Var, out), sizeof(AttributeD<T>));
 
-			u->add_function("update", calc_rva(f2v(&BP_Var::update), module), TypeTagVariable, "void", "");
+			u->add_function("update", calc_rva(f2v(&BP_Var::update), module), TypeInfo(TypeData, "void"), "");
 		}
 	};
 
 	template<class T>
 	struct BP_Enum
 	{
-		AttributeV<int> in;
+		AttributeD<int> in;
 
-		AttributeV<int> out;
+		AttributeD<int> out;
 
 		void update()
 		{
-			if (in.frame > out.frame)
+			if (in.b.frame > out.b.frame)
 			{
 				out.v = in.v;
-				out.frame = looper().frame;
+				out.b.frame = looper().frame;
 			}
 		}
 
@@ -59,30 +59,30 @@ namespace flame
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = db->add_udt("Enum" + template_parameters, sizeof(BP_Enum));
+			auto u = db->add_udt(TypeInfo(TypeData, "Enum" + template_parameters), sizeof(BP_Enum));
 
-			u->add_variable(TypeTagAttributeES, type_name, "in", "i", offsetof(BP_Enum, in), sizeof(AttributeV<int>));
-			u->add_variable(TypeTagAttributeES, type_name, "out", "o", offsetof(BP_Enum, out), sizeof(AttributeV<int>));
+			u->add_variable(TypeInfo(TypeEnumSingle, type_name, true), "in", "i", offsetof(BP_Enum, in), sizeof(AttributeD<int>));
+			u->add_variable(TypeInfo(TypeEnumSingle, type_name, true), "out", "o", offsetof(BP_Enum, out), sizeof(AttributeD<int>));
 
-			u->add_function("update", calc_rva(f2v(&BP_Enum::update), module), TypeTagVariable, "void", "");
+			u->add_function("update", calc_rva(f2v(&BP_Enum::update), module), TypeInfo(TypeData, "void"), "");
 		}
 	};
 
 	template<uint N, class T>
 	struct BP_Vec
 	{
-		AttributeV<T> in[N];
+		AttributeD<T> in[N];
 
-		AttributeV<Vec<N, T>> out;
+		AttributeD<Vec<N, T>> out;
 
 		void update()
 		{
 			for (auto i = 0; i < N; i++)
 			{
-				if (in[i].frame > out.frame)
+				if (in[i].b.frame > out.b.frame)
 				{
 					out.v.v_[i] = in[i].v;
-					out.frame = looper().frame;
+					out.b.frame = looper().frame;
 				}
 			}
 		}
@@ -93,33 +93,33 @@ namespace flame
 			assert(pos_plus != std::string::npos);
 			auto type_name = std::string(template_parameters.begin() + pos_plus + 1, template_parameters.end() - 1);
 
-			auto u = db->add_udt("Vec" + template_parameters, sizeof(BP_Vec));
+			auto u = db->add_udt(TypeInfo(TypeData, "Vec" + template_parameters), sizeof(BP_Vec));
 
 			for (auto i = 0; i < N; i++)
-				u->add_variable(TypeTagAttributeV, type_name, std::string(1, "xyzw"[i]), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
-			u->add_variable(TypeTagAttributeV, "Vec" + template_parameters, "v", "o", offsetof(BP_Vec, out), sizeof(BP_Vec::out));
+				u->add_variable(TypeInfo(TypeData, type_name, true), std::string(1, "xyzw"[i]), "i", sizeof(AttributeD<T>) * i, sizeof(AttributeD<T>));
+			u->add_variable(TypeInfo(TypeData, "Vec" + template_parameters, true), "v", "o", offsetof(BP_Vec, out), sizeof(BP_Vec::out));
 
-			u->add_function("update", calc_rva(f2v(&BP_Vec::update), module), TypeTagVariable, "void", "");
+			u->add_function("update", calc_rva(f2v(&BP_Vec::update), module), TypeInfo(TypeData, "void"), "");
 		}
 	};
 
 	template<uint N, class T>
 	struct BP_Array
 	{
-		AttributeV<T> in[N];
+		AttributeD<T> in[N];
 
-		AttributeV<std::vector<T>> out;
+		AttributeD<std::vector<T>> out;
 
 		void update()
 		{
-			auto last_out_frame = out.frame;
+			auto last_out_frame = out.b.frame;
 			out.v.resize(N);
 			for (auto i = 0; i < N; i++)
 			{
-				if (in[i].frame > last_out_frame)
+				if (in[i].b.frame > last_out_frame)
 				{
 					out.v[i] = in[i].v;
-					out.frame = looper().frame;
+					out.b.frame = looper().frame;
 				}
 			}
 		}
@@ -130,22 +130,22 @@ namespace flame
 			assert(pos_plus != std::string::npos);
 			auto type_name = std::string(template_parameters.begin() + pos_plus + 1, template_parameters.end() - 1);
 
-			auto u = db->add_udt("Array" + template_parameters, sizeof(BP_Array));
+			auto u = db->add_udt(TypeInfo(TypeData, "Array" + template_parameters), sizeof(BP_Array));
 
-			auto tag = TypeTagAttributeV;
+			auto tag = TypeData;
 			auto in_type_name = type_name;
 			if (type_name.back() == '*')
 			{
-				tag = TypeTagAttributeP;
+				tag = TypePointer;
 				in_type_name.resize(in_type_name.size() - 1);
 			}
 			for (auto i = 0; i < N; i++)
-				u->add_variable(tag, in_type_name, std::to_string(i + 1), "i", sizeof(AttributeV<T>) * i, sizeof(AttributeV<T>));
-			u->add_variable(TypeTagAttributeV, "std::vector(" + type_name + ")", "v", "o", offsetof(BP_Array, out), sizeof(BP_Array::out));
+				u->add_variable(TypeInfo(tag, in_type_name, true), std::to_string(i + 1), "i", sizeof(AttributeD<T>) * i, sizeof(AttributeD<T>));
+			u->add_variable(TypeInfo(TypeData, type_name, true, true), "v", "o", offsetof(BP_Array, out), sizeof(BP_Array::out));
 
-			u->add_function("ctor", calc_rva(cf2v<BP_Array>(), module), TypeTagVariable, "void", "");
-			u->add_function("dtor", calc_rva(df2v<BP_Array>(), module), TypeTagVariable, "void", "");
-			u->add_function("update", calc_rva(f2v(&BP_Array::update), module), TypeTagVariable, "void", "");
+			u->add_function("ctor", calc_rva(cf2v<BP_Array>(), module), TypeInfo(TypeData, "void"), "");
+			u->add_function("dtor", calc_rva(df2v<BP_Array>(), module), TypeInfo(TypeData, "void"), "");
+			u->add_function("update", calc_rva(f2v(&BP_Array::update), module), TypeInfo(TypeData, "void"), "");
 		}
 	};
 
@@ -154,14 +154,14 @@ namespace flame
 	{
 		AttributeP<std::vector<T>> in;
 
-		AttributeV<uint> out;
+		AttributeD<uint> out;
 
 		void update()
 		{
-			if (in.frame > out.frame)
+			if (in.b.frame > out.b.frame)
 			{
 				out.v = in.v.size();
-				out.frame = looper().frame;
+				out.b.frame = looper().frame;
 			}
 		}
 
@@ -169,12 +169,12 @@ namespace flame
 		{
 			auto type_name = std::string(template_parameters.begin() + 1, template_parameters.end() - 1);
 
-			auto u = db->add_udt("Pointer" + template_parameters, sizeof(BP_Pointer));
+			auto u = db->add_udt(TypeInfo(TypeData, "ArraySize" + template_parameters), sizeof(BP_Pointer));
 
-			u->add_variable(TypeTagAttributeP, "std::vector(" + type_name + ")", "in", "i", offsetof(BP_ArraySize, in), sizeof(AttributeP<std::vector<T>>));
-			u->add_variable(TypeTagAttributeV, "uint", "out", "o", offsetof(BP_ArraySize, out), sizeof(AttributeV<uint>));
+			u->add_variable(TypeInfo(TypePointer, type_name, true, true), "in", "i", offsetof(BP_ArraySize, in), sizeof(AttributeP<std::vector<T>>));
+			u->add_variable(TypeInfo(TypeData, "uint", true), "out", "o", offsetof(BP_ArraySize, out), sizeof(AttributeD<uint>));
 
-			u->add_function("update", calc_rva(f2v(&BP_ArraySize::update), module), TypeTagVariable, "void", "");
+			u->add_function("update", calc_rva(f2v(&BP_ArraySize::update), module), TypeInfo(TypeData, "void"), "");
 		}
 	};
 }

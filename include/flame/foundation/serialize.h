@@ -417,27 +417,29 @@ namespace flame
 
 	enum TypeTag$
 	{
-		TypeTagEnumSingle,
-		TypeTagEnumMulti,
-		TypeTagVariable,
-		TypeTagPointer,
-		TypeTagAttributeES, // AttributeE<T>, single
-		TypeTagAttributeEM, // AttributeE<T>, multi
-		TypeTagAttributeV,  // AttributeV<T>
-		TypeTagAttributeP,  // AttributeP<T>
-		TypeTagVector		// std::vector<T>
+		TypeEnumSingle,
+		TypeEnumMulti,
+		TypeData,
+		TypePointer
 	};
 
-	FLAME_FOUNDATION_EXPORTS const char* get_type_tag_name(TypeTag$ tag);
+	inline char type_tag(TypeTag$ tag)
+	{
+		static char names[] = {
+			'S',
+			'M',
+			'D',
+			'P'
+		};
+		return names[tag];
+	}
 
-	struct TypeInfo;
 	struct EnumInfo;
 	struct VariableInfo;
 	struct FunctionInfo;
 	struct UdtInfo;
 	struct TypeinfoDatabase;
 
-	typedef TypeInfo* TypeInfoPtr;
 	typedef EnumInfo* EnumInfoPtr;
 	typedef VariableInfo* VariableInfoPtr;
 	typedef FunctionInfo* FunctionInfoPtr;
@@ -481,40 +483,70 @@ namespace flame
 		return ret;
 	}
 
-	inline bool is_type_serializable(TypeTag$ tag, const std::string& type_name)
-	{
-		return (tag == TypeTagEnumSingle || tag == TypeTagEnumMulti || tag == TypeTagVariable ||
-			tag == TypeTagAttributeES || tag == TypeTagAttributeEM || tag == TypeTagAttributeV) &&
-			type_name.compare(0, SAL_S("std::vector")) != 0;
-	}
-
 	inline uint vector_size(const void* p)
 	{
 		return ((std::vector<int>*)p)->size();
 	}
 
-	FLAME_FOUNDATION_EXPORTS void vector_resize(uint type_hash, void* p);
-
-	FLAME_FOUNDATION_EXPORTS Mail<std::string> serialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint type_hash, const void* src, int precision = 6);
-	FLAME_FOUNDATION_EXPORTS void unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, TypeTag$ tag, uint type_hash, const std::string& src, void* dst);
-
 	struct TypeInfo
 	{
 		TypeTag$ tag;
-		std::string name;
+		bool is_attribute;
+		bool is_vector;
+		std::string base_name;
+		std::string name; // tag[A][V]#base, order matters
+		uint base_hash;
 		uint hash;
 
-		void assign(TypeTag$ _tag, const std::string& _name)
+		TypeInfo() :
+			tag(TypeData),
+			is_attribute(false),
+			is_vector(false),
+			base_hash(0),
+			hash(0)
 		{
-			tag = _tag;
-			name = _name;
+		}
+
+		TypeInfo(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_vector = false) :
+			tag(tag),
+			base_name(base_name),
+			base_hash(H(base_name.c_str())),
+			is_attribute(is_attribute),
+			is_vector(is_vector)
+		{
+			name = type_tag(tag);
+			if (is_attribute)
+				name += "A";
+			if (is_vector)
+				name += "V";
+			name += "#" + base_name;
 			hash = H(name.c_str());
 		}
 
-		bool equal(TypeTag$ t, uint h) const
+		bool is_serializable() const
 		{
-			return t == tag && h == hash;
+			return !is_vector && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData);
 		}
+
+		static TypeInfo from_str(const std::string& str)
+		{
+			auto sp = string_split(str, '#');
+			auto tag = -1;
+			while (type_tag((TypeTag$)++tag) != sp[0][0]);
+			auto is_attribute = false;
+			auto is_vector = false;
+			for (auto i = 1; i < sp[0].size(); i++)
+			{
+				if (sp[0][i] == 'A')
+					is_attribute = true;
+				else if (sp[0][i] == 'V')
+					is_vector = true;
+			}
+			return TypeInfo((TypeTag$)tag, sp[1], is_attribute, is_vector);
+		}
+
+		inline std::string TypeInfo::serialize_value(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
+		inline void TypeInfo::unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const;
 	};
 
 	struct VariableInfo
@@ -557,7 +589,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS uint parameter_count() const;
 		FLAME_FOUNDATION_EXPORTS const TypeInfo& parameter_type(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS void add_parameter(TypeTag$ tag, const std::string& type_name);
+		FLAME_FOUNDATION_EXPORTS void add_parameter(const TypeInfo& type);
 
 		FLAME_FOUNDATION_EXPORTS const std::string& code_pos() const; // source_file_name#line_begin:line_end
 
@@ -567,18 +599,18 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
-		FLAME_FOUNDATION_EXPORTS uint size() const; // if 0, then this is a template
+		FLAME_FOUNDATION_EXPORTS const TypeInfo& type() const;
+		FLAME_FOUNDATION_EXPORTS uint size() const;
 
 		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* variable(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* find_variable(const std::string& name, int *out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* add_variable(TypeTag$ tag, const std::string& type_name, const std::string& name, const std::string& decoration, uint offset, uint size);
+		FLAME_FOUNDATION_EXPORTS VariableInfo* add_variable(const TypeInfo& type, const std::string& name, const std::string& decoration, uint offset, uint size);
 
 		FLAME_FOUNDATION_EXPORTS uint function_count() const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const std::string& name, int *out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, const TypeInfo& return_type, const std::string& code_pos);
 	};
 
 	/*
@@ -610,11 +642,11 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS Mail<std::vector<FunctionInfo*>> get_functions();
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, TypeTag$ return_type_tag, const std::string& return_type_name, const std::string& code_pos);
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, const TypeInfo& return_type, const std::string& code_pos);
 
 		FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts();
 		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
-		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const std::string& name, uint size);
+		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const TypeInfo& type, uint size);
 
 		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* collect(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& module_filename, const std::wstring& pdb_filename = L"");
 		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& typeinfo_filename);
@@ -653,6 +685,201 @@ namespace flame
 				return info;
 		}
 		return nullptr;
+	}
+
+	std::string TypeInfo::serialize_value(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const
+	{
+		if (is_attribute)
+			src = (char*)src + sizeof(AttributeBase);
+
+		switch (tag)
+		{
+		case TypeEnumSingle:
+		{
+			auto e = find_enum(dbs, base_hash);
+			assert(e);
+			return e->find_item(*(int*)src)->name();
+		}
+		case TypeEnumMulti:
+		{
+			std::string str;
+			auto e = find_enum(dbs, base_hash);
+			assert(e);
+			auto v = *(int*)src;
+			for (auto i = 0; i < e->item_count(); i++)
+			{
+				if ((v & 1) == 1)
+				{
+					if (!str.empty())
+						str += ";";
+					str += e->find_item(1 << i)->name();
+				}
+				v >>= 1;
+			}
+			return str;
+		}
+		case TypeData:
+			switch (base_hash)
+			{
+			case cH("bool"):
+				return *(bool*)src ? "1" : "0";
+			case cH("int"):
+				return std::to_string(*(int*)src);
+			case cH("Vec(1+int)"):
+				return to_string(*(Vec1i*)src);
+			case cH("Vec(2+int)"):
+				return to_string(*(Vec2i*)src);
+			case cH("Vec(3+int)"):
+				return to_string(*(Vec3i*)src);
+			case cH("Vec(4+int)"):
+				return to_string(*(Vec4i*)src);
+			case cH("uint"):
+				return std::to_string(*(uint*)src);
+			case cH("Vec(1+uint)"):
+				return to_string(*(Vec1u*)src);
+			case cH("Vec(2+uint)"):
+				return to_string(*(Vec2u*)src);
+			case cH("Vec(3+uint)"):
+				return to_string(*(Vec3u*)src);
+			case cH("Vec(4+uint)"):
+				return to_string(*(Vec4u*)src);
+			case cH("ulonglong"):
+				return std::to_string(*(ulonglong*)src);
+			case cH("float"):
+				return to_string(*(float*)src, precision);
+			case cH("Vec(1+float)"):
+				return to_string(*(Vec1f*)src, precision);
+			case cH("Vec(2+float)"):
+				return to_string(*(Vec2f*)src, precision);
+			case cH("Vec(3+float)"):
+				return to_string(*(Vec3f*)src, precision);
+			case cH("Vec(4+float)"):
+				return to_string(*(Vec4f*)src, precision);
+			case cH("uchar"):
+				return std::to_string(*(uchar*)src);
+			case cH("Vec(1+uchar)"):
+				return to_string(*(Vec1c*)src);
+			case cH("Vec(2+uchar)"):
+				return to_string(*(Vec2c*)src);
+			case cH("Vec(3+uchar)"):
+				return to_string(*(Vec3c*)src);
+			case cH("Vec(4+uchar)"):
+				return to_string(*(Vec4c*)src);
+			case cH("std::string"):
+				return *(std::string*)src;
+			case cH("std::wstring"):
+				return w2s(*(std::wstring*)src);
+			default:
+				assert(0);
+			}
+		}
+	}
+
+	void TypeInfo::unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const
+	{
+		if (is_attribute)
+			dst = (char*)dst + sizeof(AttributeBase);
+
+		switch (tag)
+		{
+		case TypeEnumSingle:
+		{
+			auto e = find_enum(dbs, base_hash);
+			assert(e);
+			e->find_item(src, (int*)dst);
+		}
+			return;
+		case TypeEnumMulti:
+		{
+			auto v = 0;
+			auto e = find_enum(dbs, base_hash);
+			assert(e);
+			auto sp = string_split(src, ';');
+			for (auto& t : sp)
+				v |= e->find_item(t)->value();
+			*(int*)dst = v;
+		}
+			return;
+		case TypeData:
+			switch (base_hash)
+			{
+			case cH("bool"):
+				*(bool*)dst = (src != "0");
+				break;
+			case cH("int"):
+				*(int*)dst = std::stoi(src);
+				break;
+			case cH("Vec(1+int)"):
+				*(Vec1u*)dst = std::stoi(src.c_str());
+				break;
+			case cH("Vec(2+int)"):
+				*(Vec2u*)dst = stoi2(src.c_str());
+				break;
+			case cH("Vec(3+int)"):
+				*(Vec3u*)dst = stoi3(src.c_str());
+				break;
+			case cH("Vec(4+int)"):
+				*(Vec4u*)dst = stoi4(src.c_str());
+				break;
+			case cH("uint"):
+				*(uint*)dst = std::stoul(src);
+				break;
+			case cH("Vec(1+uint)"):
+				*(Vec1u*)dst = std::stoul(src.c_str());
+				break;
+			case cH("Vec(2+uint)"):
+				*(Vec2u*)dst = stou2(src.c_str());
+				break;
+			case cH("Vec(3+uint)"):
+				*(Vec3u*)dst = stou3(src.c_str());
+				break;
+			case cH("Vec(4+uint)"):
+				*(Vec4u*)dst = stou4(src.c_str());
+				break;
+			case cH("ulonglong"):
+				*(ulonglong*)dst = std::stoull(src);
+				break;
+			case cH("float"):
+				*(float*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec(1+float)"):
+				*(Vec1f*)dst = std::stof(src.c_str());
+				break;
+			case cH("Vec(2+float)"):
+				*(Vec2f*)dst = stof2(src.c_str());
+				break;
+			case cH("Vec(3+float)"):
+				*(Vec3f*)dst = stof3(src.c_str());
+				break;
+			case cH("Vec(4+float)"):
+				*(Vec4f*)dst = stof4(src.c_str());
+				break;
+			case cH("uchar"):
+				*(uchar*)dst = std::stoul(src);
+				break;
+			case cH("Vec(1+uchar)"):
+				*(Vec1c*)dst = std::stoul(src.c_str());
+				break;
+			case cH("Vec(2+uchar)"):
+				*(Vec2c*)dst = stoc2(src.c_str());
+				break;
+			case cH("Vec(3+uchar)"):
+				*(Vec3c*)dst = stoc3(src.c_str());
+				break;
+			case cH("Vec(4+uchar)"):
+				*(Vec4c*)dst = stoc4(src.c_str());
+				break;
+			case cH("std::string"):
+				*(std::string*)dst = src;
+				break;
+			case cH("std::wstring"):
+				*(std::wstring*)dst = s2w(src);
+				break;
+			default:
+				assert(0);
+			}
+			return;
+		}
 	}
 }
 

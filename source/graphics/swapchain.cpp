@@ -248,11 +248,11 @@ namespace flame
 			n_scr->set_initiative(true);
 			n_scr->find_input("in")->set_data_p(this);
 			bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
-			bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
+			assert(bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images")));
 			bp->find_input("*.make_cmd.cbs")->set_data_p(&cbs);
 			auto s_img_idx = bp->find_input("*.make_cmd.image_idx");
 			if (s_img_idx)
-				s_img_idx->link_to(n_scr->find_output("image_idx"));
+				assert(s_img_idx->link_to(n_scr->find_output("image_idx")));
 		}
 
 		SwapchainResizable* SwapchainResizable::create(Device* d, Window* w)
@@ -270,8 +270,8 @@ namespace flame
 			AttributeP<void> in$i;
 
 			AttributeP<void> sc$o;
-			AttributeV<std::vector<void*>> images$o;
-			AttributeV<uint> image_idx$o;
+			AttributeD<std::vector<void*>> images$o;
+			AttributeD<uint> image_idx$o;
 
 			FLAME_GRAPHICS_EXPORTS SwapchainResizable$()
 			{
@@ -288,11 +288,11 @@ namespace flame
 					else
 						images$o.v.clear();
 					auto frame = looper().frame;
-					sc$o.frame = frame;
-					images$o.frame = frame;
+					sc$o.b.frame = frame;
+					images$o.b.frame = frame;
 				}
 				image_idx$o.v = sc$o.v ? ((Swapchain*)sc$o.v)->image_index() : 0;
-				image_idx$o.frame = looper().frame;
+				image_idx$o.b.frame = looper().frame;
 				scr->changed = false;
 			}
 

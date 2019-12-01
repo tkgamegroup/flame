@@ -159,7 +159,7 @@ namespace flame
 
 		struct Buffer$
 		{
-			AttributeV<uint> size$i;
+			AttributeD<uint> size$i;
 			AttributeE<BufferUsage$> usage$im;
 			AttributeE<MemProp$> mem_prop$im;
 
@@ -172,7 +172,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (size$i.frame > out$o.frame || usage$im.frame > out$o.frame || mem_prop$im.frame > out$o.frame)
+				if (size$i.b.frame > out$o.b.frame || usage$im.b.frame > out$o.b.frame || mem_prop$im.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						Buffer::destroy((Buffer*)out$o.v);
@@ -186,7 +186,7 @@ namespace flame
 					}
 					else
 						out$o.v = nullptr;
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 

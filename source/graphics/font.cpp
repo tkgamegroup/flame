@@ -400,7 +400,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (draw_type$i.frame > out$o.frame || fonts$i.frame > out$o.frame)
+				if (draw_type$i.b.frame > out$o.b.frame || fonts$i.b.frame > out$o.b.frame)
 				{
 					if (out$o.v)
 						FontAtlas::destroy((FontAtlas*)out$o.v);
@@ -409,7 +409,7 @@ namespace flame
 						out$o.v = FontAtlas::create(d, draw_type$i.v, *fonts$i.v);
 					else
 						printf("cannot create fontatlas\n");
-					out$o.frame = looper().frame;
+					out$o.b.frame = looper().frame;
 				}
 			}
 
