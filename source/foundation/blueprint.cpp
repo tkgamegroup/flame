@@ -1500,20 +1500,30 @@ namespace flame
 			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
 			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
+			auto print_link_library = [&](ModulePrivate* m) {
+				auto name = std::filesystem::path(m->absolute_filename).replace_extension(L".lib").string();
+				std::replace(name.begin(), name.end(), '\\', '/');
+				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/" << name << ")\n";
+			};
 			for (auto& m : bp->modules)
-			{
-				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/";
-				cmakelists << std::filesystem::path(m->absolute_filename).replace_extension(L".lib").string();
-				cmakelists << ")\n";
-			}
+				print_link_library(m.get());
+			for (auto& m : bp->package_modules)
+				print_link_library(m);
 			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
 			srand(::time(0));
 			auto pdb_filename = std::to_string(::rand() % 100000);
-			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " + pdb_filename + ")\n";
+			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " << pdb_filename << ")\n";
 			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
+			auto print_typeinfogen_dependency = [&](ModulePrivate* m) {
+				auto name = w2s(m->absolute_filename);
+				std::replace(name.begin(), name.end(), '\\', '/');
+				cmakelists << "-m${CMAKE_SOURCE_DIR}/../../bin/" << name << " ";
+			};
 			for (auto& m : bp->modules)
-				cmakelists << "-m${CMAKE_SOURCE_DIR}/../../bin/" + w2s(m->absolute_filename) + " ";
-			cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" + pdb_filename + ".pdb)\n";
+				print_typeinfogen_dependency(m.get());
+			for (auto& m : bp->package_modules)
+				print_typeinfogen_dependency(m);
+			cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" << pdb_filename << ".pdb)\n";
 			cmakelists.close();
 
 			printf(" - done\n");
