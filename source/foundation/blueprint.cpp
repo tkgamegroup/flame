@@ -57,6 +57,7 @@ namespace flame
 		bool initiative;
 
 		void* object;
+		void* module;
 
 		void* dtor_addr;
 		void* update_addr;
@@ -181,19 +182,7 @@ namespace flame
 		set_frame(looper().frame);
 		node->scene->root->add_to_pending_update(node);
 		 
-		if (vi->type().tag == TypeData)
-		{
-			switch (vi->type().hash)
-			{
-			case cH("std::string"):
-				*(std::string*)((char*)raw_data + sizeof(AttributeBase)) = *(std::string*)d;
-				return;
-			case cH("std::wstring"):
-				*(std::wstring*)((char*)raw_data + sizeof(AttributeBase)) = *(std::wstring*)d;
-				return;
-			}
-		}
-		memcpy(data(), d, vi->size() - sizeof(AttributeBase));
+		vi->type().copy_from(d, vi->size(), raw_data, node->module, node->udt->db());
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -279,6 +268,7 @@ namespace flame
 		id(id),
 		udt(udt),
 		initiative(false),
+		module(module),
 		order(0xffffffff),
 		in_pending_update(false),
 		in_update_list(false)
@@ -1380,11 +1370,13 @@ namespace flame
 
 				std::ofstream templatecpp(templatecpp_path);
 				templatecpp << "// THIS FILE IS AUTO GENERATED\n";
-				templatecpp << "#include <flame/foundation/bp_node_template.h>\n";
-				templatecpp << "using namespace flame;\n";
-				templatecpp << "extern \"C\" __declspec(dllexport) void add_templates(TypeinfoDatabase* db)\n";
-				templatecpp << "{\n";
-				templatecpp << "\tauto module = get_module_from_address(f2v(add_templates));\n";
+				templatecpp << "#include <flame/foundation/foundation.h>\n";
+				templatecpp << "#include <flame/graphics/graphics.h>\n";
+				templatecpp << "namespace flame\n{\n";
+				templatecpp << "\ttemplate<class T>\n\tstruct Var$;\n\n";
+				templatecpp << "\ttemplate<class T>\n\tstruct Enum$;\n\n";
+				templatecpp << "\ttemplate<uint N, class T>\n\tstruct Vec$;\n\n";
+				templatecpp << "\ttemplate<uint N, class T>\n\tstruct Array$;\n\n";
 				std::vector<std::string> all_templates;
 				for (auto& n : node_descs)
 				{
@@ -1404,14 +1396,90 @@ namespace flame
 							continue;
 						all_templates.push_back(n.type);
 
-						templatecpp << "\tBP_";
-						if (find_enum(bp->env.dbs, H(std::string(n.type.begin() + pos_t + 1, n.type.end() - 1).c_str())))
-							templatecpp << std::string(n.type.begin(), n.type.begin() + pos_t) + "<int>";
+						auto template_name = std::string(n.type.begin(), n.type.begin() + pos_t);
+						auto template_parameters = std::string(n.type.begin() + pos_t + 1, n.type.end() - 1);
+
+						if (template_name == "Var")
+						{
+							templatecpp << "\ttemplate<>\n\tstruct Var$<" << template_parameters << ">\n\t{\n";
+							templatecpp << "\t\tAttributeD<" << template_parameters << "> in$i;\n";
+							templatecpp << "\t\tAttributeD<" << template_parameters << "> out$o;\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\t\t\tif (in$i.b.frame > out$o.b.frame)\n\t\t\t{\n";
+							templatecpp << "\t\t\t\tout$o.v = in$i.v;\n";
+							templatecpp << "\t\t\t\tout$o.b.frame = looper().frame;\n";
+							templatecpp << "\t\t\t}\n";
+							templatecpp << "\t\t}\n";
+							templatecpp << "\t};\n\n";
+						}
+						else if (template_name == "Enum")
+						{
+							templatecpp << "\ttemplate<>\n\tstruct Enum$<" << template_parameters << "$>\n\t{\n";
+							templatecpp << "\t\tAttributeE<" << template_parameters << "$> in$i;\n";
+							templatecpp << "\t\tAttributeE<" << template_parameters << "$> out$o;\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\t\t\tif (in$i.b.frame > out$o.b.frame)\n\t\t\t{\n";
+							templatecpp << "\t\t\t\tout$o.v = in$i.v;\n";
+							templatecpp << "\t\t\t\tout$o.b.frame = looper().frame;\n";
+							templatecpp << "\t\t\t}\n";
+							templatecpp << "\t\t}\n";
+							templatecpp << "\t};\n\n";
+						}
+						else if (template_name == "Vec")
+						{
+							auto sp = string_split(template_parameters, '+');
+							auto N = std::stoi(sp[0]);
+							templatecpp << "\ttemplate<>\n\tstruct Array$<" << sp[0] << ", " << sp[1] << ">\n\t{\n";
+							for (auto i = 0; i < N; i++)
+								templatecpp << "\t\tAttributeD<" << sp[1] << "> " << "xyzw"[i] << "$i;\n";
+							templatecpp << "\t\tAttributeD<Vec<" << N << ", " << sp[1] << ">> v$o;\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\t\t\tauto out_frame = v$o.b.frame;\n";
+							templatecpp << "\t\t\tif (out_frame == -1)\n";
+							templatecpp << "\t\t\t\tv$o.v.resize(" << sp[0] << ");\n";
+							for (auto i = 0; i < N; i++)
+							{
+								templatecpp << "\t\t\tif (" << "xyzw"[i] << "$i.b.frame > v$o.b.frame)\n\t\t\t{\n";
+								templatecpp << "\t\t\t\tv$o.v[" << i << "] = " << "xyzw"[i] << "$i.v;\n";
+								templatecpp << "\t\t\t\tout_frame = looper().frame;\n";
+								templatecpp << "\t\t\t}\n";
+							}
+							templatecpp << "\t\t\tv$o.b.frame = out_frame;\n";
+							templatecpp << "\t\t}\n";
+							templatecpp << "\t};\n\n";
+						}
+						else if (template_name == "Array")
+						{
+							auto sp = string_split(template_parameters, '+');
+							auto N = std::stoi(sp[0]);
+							templatecpp << "\ttemplate<>\n\tstruct Array$<" << sp[0] << ", " << sp[1] << ">\n\t{\n";
+							auto is_pointer = false;
+							auto T = sp[1];
+							if (T.back() == '*')
+							{
+								is_pointer = true;
+								T.erase(T.end() - 1);
+							}
+							for (auto i = 0; i < N; i++)
+								templatecpp << "\t\tAttribute" << (is_pointer ? "P" : "D") << "<" << T << "> _" << (i + 1) << "$i;\n";
+							templatecpp << "\t\tAttributeD<std::vector<" << sp[1] << ">> v$o;\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\t\t\tauto out_frame = v$o.b.frame;\n";
+							templatecpp << "\t\t\tif (out_frame == -1)\n";
+							templatecpp << "\t\t\t\tv$o.v.resize(" << sp[0] << ");\n";
+							for (auto i = 0; i < N; i++)
+							{
+								templatecpp << "\t\t\tif (_" << (i + 1) << "$i.b.frame > v$o.b.frame)\n\t\t\t{\n";
+								templatecpp << "\t\t\t\tv$o.v[" << i << "] = _" << (i + 1) << "$i.v;\n";
+								templatecpp << "\t\t\t\tout_frame = looper().frame;\n";
+								templatecpp << "\t\t\t}\n";
+							}
+							templatecpp << "\t\t\tv$o.b.frame = out_frame;\n";
+							templatecpp << "\t\t}\n";
+							templatecpp << "\t};\n\n";
+						}
 						else
-							templatecpp << tn_a2c(n.type);
-						templatecpp << "::add_udt_info(db, \"";
-						templatecpp << std::string(n.type.begin() + pos_t, n.type.end());
-						templatecpp << "\", module);\n";
+							assert(0);
 					}
 				}
 				templatecpp << "}\n";
@@ -1485,7 +1553,7 @@ namespace flame
 					auto input = n->find_input(d_d.name);
 					auto v = input->vi();
 					if (v->default_value())
-						v->type().unserialize_value(bp->env.dbs, d_d.value, input->raw_data());
+						v->type().unserialize(bp->env.dbs, d_d.value, input->raw_data(), n->module, n->udt->db());
 				}
 			}
 		}
@@ -1589,7 +1657,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					n_data->new_attr("value", v->type().serialize_value(bp->env.dbs, input->raw_data, 2));
+					n_data->new_attr("value", v->type().serialize(bp->env.dbs, input->raw_data, 2));
 				}
 			}
 		}

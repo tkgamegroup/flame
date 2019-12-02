@@ -47,14 +47,9 @@ namespace flame
 		std::vector<std::unique_ptr<SerializableNodePrivate>> nodes;
 		SerializableNodePrivate* parent;
 
-		int attr_find_pos;
-		int node_find_pos;
-
 		SerializableNodePrivate() :
 			type(Object),
-			parent(nullptr),
-			attr_find_pos(0),
-			node_find_pos(0)
+			parent(nullptr)
 		{
 		}
 
@@ -98,26 +93,10 @@ namespace flame
 
 		SerializableAttribute* find_attr(const std::string& name)
 		{
-			if (attrs.empty())
-				return nullptr;
-
-			auto p = attr_find_pos;
-			while (true)
+			for (auto& a : attrs)
 			{
-				auto attr = attrs[attr_find_pos].get();
-				if (attr->name == name)
-				{
-					auto t = attr_find_pos;
-					attr_find_pos++;
-					if (attr_find_pos >= attrs.size())
-						attr_find_pos = 0;
-					return attr;
-				}
-				attr_find_pos++;
-				if (attr_find_pos >= attrs.size())
-					attr_find_pos = 0;
-				if (attr_find_pos == p)
-					return nullptr;
+				if (a->name == name)
+					return a.get();
 			}
 			return nullptr;
 		}
@@ -168,26 +147,10 @@ namespace flame
 
 		SerializableNode* find_node(const std::string& name)
 		{
-			if (nodes.empty())
-				return nullptr;
-
-			auto p = node_find_pos;
-			while (true)
+			for (auto& n : nodes)
 			{
-				auto node = nodes[node_find_pos].get();
-				if (node->name == name)
-				{
-					auto t = node_find_pos;
-					node_find_pos++;
-					if (node_find_pos >= nodes.size())
-						node_find_pos = 0;
-					return node;
-				}
-				node_find_pos++;
-				if (node_find_pos >= nodes.size())
-					node_find_pos = 0;
-				if (node_find_pos == p)
-					return nullptr;
+				if (n->name == name)
+					return n.get();
 			}
 			return nullptr;
 		}
@@ -725,89 +688,40 @@ namespace flame
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
-		uint item_find_pos;
-		uint func_find_pos;
-
 		UdtInfoPrivate(const TypeInfo& type) :
 			type(type)
 		{
-			item_find_pos = 0;
-			func_find_pos = 0;
 		}
 
 		VariableInfoPrivate* find_vari(const std::string& name, int *out_idx)
 		{
-			if (variables.empty())
+			for (auto i = 0; i < variables.size(); i++)
 			{
-				if (out_idx)
-					* out_idx = -1;
-				return nullptr;
-			}
-
-			auto p = item_find_pos;
-			while (true)
-			{
-				auto item = variables[item_find_pos].get();
-				if (item->name == name)
-				{
-					auto t = item_find_pos;
-					item_find_pos++;
-					if (item_find_pos >= variables.size())
-						item_find_pos = 0;
-					if (out_idx)
-						* out_idx = t;
-					return item;
-				}
-				item_find_pos++;
-				if (item_find_pos >= variables.size())
-					item_find_pos = 0;
-				if (item_find_pos == p)
+				if (variables[i]->name == name)
 				{
 					if (out_idx)
-						* out_idx = -1;
-					return nullptr;
+						*out_idx = i;
+					return variables[i].get();
 				}
 			}
 			if (out_idx)
-				* out_idx = -1;
+				*out_idx = -1;
 			return nullptr;
 		}
 
 		FunctionInfoPrivate* find_func(const std::string& name, int* out_idx)
 		{
-			if (functions.empty())
+			for (auto i = 0; i < functions.size(); i++)
 			{
-				if (out_idx)
-					* out_idx = -1;
-				return nullptr;
-			}
-
-			auto p = func_find_pos;
-			while (true)
-			{
-				auto func = functions[func_find_pos].get();
-				if (func->name == name)
-				{
-					auto t = func_find_pos;
-					func_find_pos++;
-					if (func_find_pos >= functions.size())
-						func_find_pos = 0;
-					if (out_idx)
-						* out_idx = t;
-					return func;
-				}
-				func_find_pos++;
-				if (func_find_pos >= functions.size())
-					func_find_pos = 0;
-				if (func_find_pos == p)
+				if (functions[i]->name == name)
 				{
 					if (out_idx)
-						* out_idx = -1;
-					return nullptr;
+						*out_idx = i;
+					return functions[i].get();
 				}
 			}
 			if (out_idx)
-				* out_idx = -1;
+				*out_idx = -1;
 			return nullptr;
 		}
 	};
@@ -1461,7 +1375,7 @@ namespace flame
 			bool pass_prefix, pass_$;
 			auto udt_name = format_name(pwname, &pass_prefix, &pass_$);
 
-			if (pass_prefix && pass_$ && udt_name.find("(lambda_") == std::string::npos)
+			if (pass_prefix && pass_$ && udt_name.find("(unnamed") == std::string::npos && udt_name.find("(lambda_") == std::string::npos)
 			{
 				auto udt_hash = H(udt_name.c_str());
 				if (!::flame::find_udt(dbs, udt_hash))
@@ -1479,6 +1393,9 @@ namespace flame
 						auto name = format_name(pwname, nullptr, &pass_$, &attribute);
 						if (pass_$)
 						{
+							if (name[0] == '_')
+								name.erase(name.begin());
+
 							IDiaSymbol* s_type;
 							_variable->get_type(&s_type);
  
@@ -1741,7 +1658,7 @@ namespace flame
 		return db;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::load(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& typeinfo_filename)
+	TypeinfoDatabase* TypeinfoDatabase::load(const std::vector<TypeinfoDatabase*>& _dbs, const std::wstring& typeinfo_filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(typeinfo_filename);
 		if (!file)
@@ -1772,7 +1689,7 @@ namespace flame
 
 		auto db = new TypeinfoDatabasePrivate;
 		db->module_name = std::filesystem::path(typeinfo_filename).replace_extension(L".dll");
-		auto dbs = existed_dbs;
+		auto dbs = _dbs;
 		dbs.push_back(db);
 
 		auto n_enums = file->find_node("enums");
@@ -1814,7 +1731,7 @@ namespace flame
 				{
 					auto a_default_value = n_vari->find_attr("default_value");
 					if (a_default_value)
-						type.unserialize_value(dbs, a_default_value->value(), v->default_value);
+						type.unserialize(dbs, a_default_value->value(), v->default_value, nullptr, nullptr);
 				}
 			}
 
@@ -1907,7 +1824,7 @@ namespace flame
 					n_vari->new_attr("size", std::to_string(v->size));
 					if (v->default_value)
 					{
-						auto default_value_str = type.serialize_value(dbs, v->default_value, 1);
+						auto default_value_str = type.serialize(dbs, v->default_value, 1);
 						if (!default_value_str.empty())
 							n_vari->new_attr("default_value", default_value_str);
 					}

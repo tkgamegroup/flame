@@ -545,8 +545,9 @@ namespace flame
 			return TypeInfo((TypeTag$)tag, sp[1], is_attribute, is_vector);
 		}
 
-		inline std::string TypeInfo::serialize_value(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
-		inline void TypeInfo::unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const;
+		inline std::string serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
+		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
+		inline void copy_from(const void* src, uint size, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
 	};
 
 	struct VariableInfo
@@ -616,12 +617,14 @@ namespace flame
 	/*
 		something end with '$[a]' means it is reflectable
 		the 'a' is called decoration, and is optional
+		if first char of member name is '_', then the '_' will be ignored in reflection
 
 		such as:
 			struct Apple$ // mark this will be collected by typeinfogen
 			{
 				float size$; // mark this member will be collected
 				Vec3f color$i; // mark this member will be collected, and its decoration is 'i'
+				float _1$i; // mark this member will be collected, and reflected name is '1'
 			};
 
 		the decoration can be one or more chars, and order doesn't matter
@@ -649,7 +652,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const TypeInfo& type, uint size);
 
 		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* collect(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& module_filename, const std::wstring& pdb_filename = L"");
-		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& typeinfo_filename);
+		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& typeinfo_filename);
 		FLAME_FOUNDATION_EXPORTS static void save(const std::vector<TypeinfoDatabase*>& dbs, TypeinfoDatabase* db);
 		FLAME_FOUNDATION_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};
@@ -687,7 +690,7 @@ namespace flame
 		return nullptr;
 	}
 
-	std::string TypeInfo::serialize_value(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const
+	std::string TypeInfo::serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const
 	{
 		if (is_attribute)
 			src = (char*)src + sizeof(AttributeBase);
@@ -775,7 +778,7 @@ namespace flame
 		}
 	}
 
-	void TypeInfo::unserialize_value(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const
+	void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const
 	{
 		if (is_attribute)
 			dst = (char*)dst + sizeof(AttributeBase);
@@ -870,16 +873,58 @@ namespace flame
 				*(Vec4c*)dst = stoc4(src.c_str());
 				break;
 			case cH("std::string"):
-				*(std::string*)dst = src;
+				if (dst_module)
+					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)&src);
+				else
+					*(std::string*)dst = src;
 				break;
 			case cH("std::wstring"):
-				*(std::wstring*)dst = s2w(src);
+			{
+				auto str = s2w(src);
+				if (dst_module)
+					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
+				else
+					*(std::wstring*)dst = str;
+			}
 				break;
 			default:
 				assert(0);
 			}
 			return;
 		}
+	}
+
+	void TypeInfo::copy_from(const void* src, uint size, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const
+	{
+		if (is_attribute)
+		{
+			dst = (char*)dst + sizeof(AttributeBase);
+			size -= sizeof(AttributeBase);
+		}
+
+		if (tag == TypeData)
+		{
+			switch (base_hash)
+			{
+			case cH("std::string"):
+				if (dst_module)
+					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)src);
+				else
+					*(std::string*)dst = *(std::string*)src;
+				return;
+			case cH("std::wstring"):
+			{
+				auto str = s2w(*(std::string*)src);
+				if (dst_module)
+					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
+				else
+					*(std::wstring*)dst = str;
+			}
+				return;
+			}
+		}
+
+		memcpy(dst, src, size);
 	}
 }
 
