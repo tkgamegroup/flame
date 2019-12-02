@@ -70,13 +70,13 @@ namespace flame
 		__declspec(dllexport) void update$()
 		{
 			out$o.v.type = CmdDrawRect;
-			if (pos$i.b.frame > out$o.b.frame)
+			if (pos$i.frame > out$o.frame)
 				out$o.v.pos = pos$i.v;
-			if (size$i.b.frame > out$o.b.frame)
+			if (size$i.frame > out$o.frame)
 				out$o.v.size = size$i.v;
-			if (color$i.b.frame > out$o.b.frame || alpha$i.b.frame > out$o.b.frame)
+			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
 				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
-			out$o.b.frame = maxN(pos$i.b.frame, size$i.b.frame, color$i.b.frame, alpha$i.b.frame);
+			out$o.frame = maxN(pos$i.frame, size$i.frame, color$i.frame, alpha$i.frame);
 		}
 	};
 
@@ -111,22 +111,22 @@ namespace flame
 		__declspec(dllexport) void update$()
 		{
 			out$o.v.type = CmdDrawTextSdf;
-			if (font_atals$i.b.frame > out$o.b.frame)
+			if (font_atals$i.frame > out$o.frame)
 				out$o.v.font_atals = (FontAtlas*)font_atals$i.v;
-			if (scale$i.b.frame > out$o.b.frame)
+			if (scale$i.frame > out$o.frame)
 				out$o.v.scale = scale$i.v;
-			if (pos$i.b.frame > out$o.b.frame)
+			if (pos$i.frame > out$o.frame)
 				out$o.v.pos = pos$i.v;
-			if (color$i.b.frame > out$o.b.frame || alpha$i.b.frame > out$o.b.frame)
+			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
 				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
-			if (text$i.b.frame > out$o.b.frame)
+			if (text$i.frame > out$o.frame)
 			{
 				out$o.v.glyphs.resize(text$i.v.size());
 				auto atlas = (FontAtlas*)font_atals$i.v;
 				for (auto i = 0; i < text$i.v.size(); i++)
 					out$o.v.glyphs[i] = atlas->get_glyph(text$i.v[i], 0);
 			}
-			out$o.b.frame = maxN(font_atals$i.b.frame, scale$i.b.frame, pos$i.b.frame, color$i.b.frame, alpha$i.b.frame, text$i.b.frame);
+			out$o.frame = maxN(font_atals$i.frame, scale$i.frame, pos$i.frame, color$i.frame, alpha$i.frame, text$i.frame);
 		}
 	};
 
@@ -485,7 +485,7 @@ namespace flame
 				auto c = new CanvasPrivate;
 				c->thiz = this;
 				canvas$o.v = c;
-				canvas$o.b.frame = looper().frame;
+				canvas$o.frame = looper().frame;
 
 				auto font_atlases = get_attribute_vec(font_atlases$i);
 				for (auto f : font_atlases)

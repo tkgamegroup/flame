@@ -1304,19 +1304,6 @@ namespace flame
 		auto dbs = existed_dbs;
 		dbs.push_back(db);
 
-		{
-			auto library = load_module(module_filename.c_str());
-			if (library)
-			{
-				typedef void (*add_templates_func)(TypeinfoDatabase*);
-				auto add_templates = (add_templates_func)GetProcAddress((HMODULE)library, "add_templates");
-				if (add_templates)
-					add_templates(db);
-
-				free_module(library);
-			}
-		}
-
 		LONG l;
 		ULONG ul;
 		ULONGLONG ull;
@@ -1633,9 +1620,8 @@ namespace flame
 		{
 			_function->get_name(&pwname);
 			bool pass_prefix, pass_$;
-			std::string attribute;
-			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
-			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
+			auto name = format_name(pwname, &pass_prefix, &pass_$);
+			if (pass_prefix && pass_$ && name.find("::") == std::string::npos /* not a member function */)
 			{
 				auto hash = H(name.c_str());
 				if (!::flame::find_function(dbs, hash))

@@ -623,7 +623,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (out$o.b.frame == -1)
+				if (out$o.frame == -1)
 				{
 					auto d = Device::default_one();
 					if (d)
@@ -634,7 +634,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.b.frame = looper().frame;
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -658,7 +658,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (size$i.b.frame > out$o.b.frame)
+				if (size$i.frame > out$o.frame)
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
@@ -675,7 +675,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.b.frame = looper().frame;
+					out$o.frame = looper().frame;
 				}
 			}
 

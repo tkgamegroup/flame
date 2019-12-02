@@ -174,7 +174,7 @@ namespace flame
 
 	void SlotPrivate::set_frame(int frame)
 	{
-		((AttributeBase*)raw_data)->b.frame = frame;
+		((AttributeBase*)raw_data)->frame = frame;
 	}
 
 	void SlotPrivate::set_data(const void* d)
@@ -217,7 +217,7 @@ namespace flame
 						return true;
 					if (in_type.is_vector && !out_type.is_vector)
 					{
-						((AttributeBase*)raw_data)->b.twist = true;
+						((AttributeBase*)raw_data)->twist = 1;
 						return true;
 					}
 				}
@@ -226,7 +226,7 @@ namespace flame
 				return false;
 		}
 		else
-			((AttributeBase*)raw_data)->b.twist = false;
+			((AttributeBase*)raw_data)->twist = 0;
 
 		if (links[0])
 		{
@@ -367,16 +367,16 @@ namespace flame
 				auto iv = input->vi;
 				auto ia = (AttributeBase*)input->raw_data;
 				auto ot = out->vi->type().tag;
-				if ((ia->b.twist && ot == TypeData) || (ot == TypeData && iv->type().tag == TypePointer))
+				if ((ia->twist == 1 && ot == TypeData) || (ot == TypeData && iv->type().tag == TypePointer))
 				{
 					auto p = out->data();
 					memcpy(input->data(), &p, sizeof(void*));
 				}
 				else
 					memcpy(input->data(), out->data(), iv->size() - sizeof(AttributeBase));
-				auto new_frame = ((AttributeBase*)out->raw_data)->b.frame;
-				if (new_frame > ia->b.frame)
-					ia->b.frame = new_frame;
+				auto new_frame = ((AttributeBase*)out->raw_data)->frame;
+				if (new_frame > ia->frame)
+					ia->frame = new_frame;
 			}
 		}
 
@@ -799,7 +799,7 @@ namespace flame
 
 	int BP::Slot::frame() const
 	{
-		return ((AttributeBase*)(((SlotPrivate*)this)->raw_data))->b.frame;
+		return ((AttributeBase*)(((SlotPrivate*)this)->raw_data))->frame;
 	}
 
 	void BP::Slot::set_frame(int frame)
@@ -1405,9 +1405,9 @@ namespace flame
 							templatecpp << "\t\tAttributeD<" << template_parameters << "> in$i;\n";
 							templatecpp << "\t\tAttributeD<" << template_parameters << "> out$o;\n";
 							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
-							templatecpp << "\t\t\tif (in$i.b.frame > out$o.b.frame)\n\t\t\t{\n";
+							templatecpp << "\t\t\tif (in$i.frame > out$o.frame)\n\t\t\t{\n";
 							templatecpp << "\t\t\t\tout$o.v = in$i.v;\n";
-							templatecpp << "\t\t\t\tout$o.b.frame = looper().frame;\n";
+							templatecpp << "\t\t\t\tout$o.frame = looper().frame;\n";
 							templatecpp << "\t\t\t}\n";
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
@@ -1418,9 +1418,9 @@ namespace flame
 							templatecpp << "\t\tAttributeE<" << template_parameters << "$> in$i;\n";
 							templatecpp << "\t\tAttributeE<" << template_parameters << "$> out$o;\n";
 							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
-							templatecpp << "\t\t\tif (in$i.b.frame > out$o.b.frame)\n\t\t\t{\n";
+							templatecpp << "\t\t\tif (in$i.frame > out$o.frame)\n\t\t\t{\n";
 							templatecpp << "\t\t\t\tout$o.v = in$i.v;\n";
-							templatecpp << "\t\t\t\tout$o.b.frame = looper().frame;\n";
+							templatecpp << "\t\t\t\tout$o.frame = looper().frame;\n";
 							templatecpp << "\t\t\t}\n";
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
@@ -1434,17 +1434,17 @@ namespace flame
 								templatecpp << "\t\tAttributeD<" << sp[1] << "> " << "xyzw"[i] << "$i;\n";
 							templatecpp << "\t\tAttributeD<Vec<" << N << ", " << sp[1] << ">> v$o;\n";
 							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
-							templatecpp << "\t\t\tauto out_frame = v$o.b.frame;\n";
+							templatecpp << "\t\t\tauto out_frame = v$o.frame;\n";
 							templatecpp << "\t\t\tif (out_frame == -1)\n";
 							templatecpp << "\t\t\t\tv$o.v.resize(" << sp[0] << ");\n";
 							for (auto i = 0; i < N; i++)
 							{
-								templatecpp << "\t\t\tif (" << "xyzw"[i] << "$i.b.frame > v$o.b.frame)\n\t\t\t{\n";
+								templatecpp << "\t\t\tif (" << "xyzw"[i] << "$i.frame > v$o.frame)\n\t\t\t{\n";
 								templatecpp << "\t\t\t\tv$o.v[" << i << "] = " << "xyzw"[i] << "$i.v;\n";
 								templatecpp << "\t\t\t\tout_frame = looper().frame;\n";
 								templatecpp << "\t\t\t}\n";
 							}
-							templatecpp << "\t\t\tv$o.b.frame = out_frame;\n";
+							templatecpp << "\t\t\tv$o.frame = out_frame;\n";
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
 						}
@@ -1464,17 +1464,17 @@ namespace flame
 								templatecpp << "\t\tAttribute" << (is_pointer ? "P" : "D") << "<" << T << "> _" << (i + 1) << "$i;\n";
 							templatecpp << "\t\tAttributeD<std::vector<" << sp[1] << ">> v$o;\n";
 							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
-							templatecpp << "\t\t\tauto out_frame = v$o.b.frame;\n";
+							templatecpp << "\t\t\tauto out_frame = v$o.frame;\n";
 							templatecpp << "\t\t\tif (out_frame == -1)\n";
 							templatecpp << "\t\t\t\tv$o.v.resize(" << sp[0] << ");\n";
 							for (auto i = 0; i < N; i++)
 							{
-								templatecpp << "\t\t\tif (_" << (i + 1) << "$i.b.frame > v$o.b.frame)\n\t\t\t{\n";
+								templatecpp << "\t\t\tif (_" << (i + 1) << "$i.frame > v$o.frame)\n\t\t\t{\n";
 								templatecpp << "\t\t\t\tv$o.v[" << i << "] = _" << (i + 1) << "$i.v;\n";
 								templatecpp << "\t\t\t\tout_frame = looper().frame;\n";
 								templatecpp << "\t\t\t}\n";
 							}
-							templatecpp << "\t\t\tv$o.b.frame = out_frame;\n";
+							templatecpp << "\t\t\tv$o.frame = out_frame;\n";
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
 						}
@@ -1745,10 +1745,10 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (v$i.b.frame > out$o.b.frame)
+			if (v$i.frame > out$o.frame)
 			{
 				out$o.v = v$i.v;
-				out$o.b.frame = looper().frame;
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1762,10 +1762,10 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame)
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
 			{
 				out$o.v = a$i.v + b$i.v;
-				out$o.b.frame = looper().frame;
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1779,10 +1779,10 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame)
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
 			{
 				out$o.v = a$i.v * b$i.v;
-				out$o.b.frame = looper().frame;
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1796,11 +1796,11 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (x$i.b.frame > out$o.b.frame)
+			if (x$i.frame > out$o.frame)
 				out$o.v.x() = x$i.v;
-			if (y$i.b.frame > out$o.b.frame)
+			if (y$i.frame > out$o.frame)
 				out$o.v.y() = y$i.v;
-			out$o.b.frame = looper().frame;
+			out$o.frame = looper().frame;
 		}
 	};
 
@@ -1814,8 +1814,8 @@ namespace flame
 			delta$o.v = looper().delta_time;
 			total$o.v = bp_env().time;
 			auto frame = looper().frame;
-			delta$o.b.frame = frame;
-			total$o.b.frame = frame;
+			delta$o.frame = frame;
+			total$o.frame = frame;
 		}
 	};
 
@@ -1829,7 +1829,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame || t$i.b.frame > out$o.b.frame)
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
 			{
 				if (t$i.v <= 0.f)
 					out$o.v = a$i.v;
@@ -1837,7 +1837,7 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.b.frame = looper().frame;
+				out$o.frame = looper().frame;
 			}
 		}
 	};
@@ -1852,7 +1852,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update$()
 		{
-			if (a$i.b.frame > out$o.b.frame || b$i.b.frame > out$o.b.frame || t$i.b.frame > out$o.b.frame)
+			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
 			{
 				if (t$i.v <= 0.f)
 					out$o.v = a$i.v;
@@ -1860,7 +1860,7 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.b.frame = looper().frame;
+				out$o.frame = looper().frame;
 			}
 		}
 	};

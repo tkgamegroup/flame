@@ -973,11 +973,8 @@ namespace flame
 
 	struct AttributeBase
 	{
-		struct
-		{
-			bool twist : 1;
-			int frame : 31;
-		}b;
+		uint twist : 1;
+		int frame : 31;
 	};
 
 	template<class T>
@@ -1003,7 +1000,7 @@ namespace flame
 	template<class T>
 	std::vector<T> get_attribute_vec(const AttributeP<std::vector<T>>& v) // cannot be used to AttributeP<std::vector<std::[w]string>>
 	{
-		if (v.b.twist == 1)
+		if (v.twist == 1)
 			return { (T)v.v };
 		return v.v ? *v.v : std::vector<T>();
 	}

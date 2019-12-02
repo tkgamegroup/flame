@@ -172,7 +172,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (size$i.b.frame > out$o.b.frame || usage$im.b.frame > out$o.b.frame || mem_prop$im.b.frame > out$o.b.frame)
+				if (size$i.frame > out$o.frame || usage$im.frame > out$o.frame || mem_prop$im.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Buffer::destroy((Buffer*)out$o.v);
@@ -186,7 +186,7 @@ namespace flame
 					}
 					else
 						out$o.v = nullptr;
-					out$o.b.frame = looper().frame;
+					out$o.frame = looper().frame;
 				}
 			}
 

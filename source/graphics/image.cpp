@@ -445,7 +445,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (format$i.b.frame > out$o.b.frame || size$i.b.frame > out$o.b.frame || level$i.b.frame > out$o.b.frame || layer$i.b.frame > out$o.b.frame || sample_count$i.b.frame > out$o.b.frame || usage$mi.b.frame > out$o.b.frame)
+				if (format$i.frame > out$o.frame || size$i.frame > out$o.frame || level$i.frame > out$o.frame || layer$i.frame > out$o.frame || sample_count$i.frame > out$o.frame || usage$mi.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Image::destroy((Image*)out$o.v);
@@ -462,7 +462,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.b.frame = looper().frame;
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -482,7 +482,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (in$i.b.frame > format$o.b.frame || in$i.b.frame > size$o.b.frame)
+				if (in$i.frame > format$o.frame || in$i.frame > size$o.frame)
 				{
 					auto image = (Image*)in$i.v;
 					if (image)
@@ -498,8 +498,8 @@ namespace flame
 						size$o.v = Vec2u(0);
 					}
 					auto frame = looper().frame;
-					format$o.b.frame = frame;
-					size$o.b.frame = frame;
+					format$o.frame = frame;
+					size$o.frame = frame;
 				}
 			}
 		};
@@ -602,7 +602,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (image$i.b.frame > out$o.b.frame || type$i.b.frame > out$o.b.frame || base_level$i.b.frame > out$o.b.frame || base_layer$i.b.frame > out$o.b.frame || layer_count$i.b.frame > out$o.b.frame || swizzle_r$i.b.frame > out$o.b.frame || swizzle_g$i.b.frame > out$o.b.frame || swizzle_b$i.b.frame > out$o.b.frame || swizzle_a$i.b.frame > out$o.b.frame)
+				if (image$i.frame > out$o.frame || type$i.frame > out$o.frame || base_level$i.frame > out$o.frame || base_layer$i.frame > out$o.frame || layer_count$i.frame > out$o.frame || swizzle_r$i.frame > out$o.frame || swizzle_g$i.frame > out$o.frame || swizzle_b$i.frame > out$o.frame || swizzle_a$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Imageview::destroy((Imageview*)out$o.v);
@@ -614,7 +614,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.b.frame = looper().frame;
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -634,7 +634,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (image$i.b.frame > out$o.b.frame)
+				if (image$i.frame > out$o.frame)
 				{
 					if (out$o.v)
 						Imageview::destroy((Imageview*)out$o.v);
@@ -646,7 +646,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.b.frame = looper().frame;
+					out$o.frame = looper().frame;
 				}
 			}
 
@@ -669,7 +669,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$()
 			{
-				if (images$i.b.frame > out$o.b.frame)
+				if (images$i.frame > out$o.frame)
 				{
 					for (auto i = 0; i < out$o.v.size(); i++)
 						Imageview::destroy((Imageview*)out$o.v[i]);
@@ -686,7 +686,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.b.frame = looper().frame;
+					out$o.frame = looper().frame;
 				}
 			}
 

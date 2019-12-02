@@ -288,11 +288,11 @@ namespace flame
 					else
 						images$o.v.clear();
 					auto frame = looper().frame;
-					sc$o.b.frame = frame;
-					images$o.b.frame = frame;
+					sc$o.frame = frame;
+					images$o.frame = frame;
 				}
 				image_idx$o.v = sc$o.v ? ((Swapchain*)sc$o.v)->image_index() : 0;
-				image_idx$o.b.frame = looper().frame;
+				image_idx$o.frame = looper().frame;
 				scr->changed = false;
 			}
 
