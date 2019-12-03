@@ -437,19 +437,17 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type().equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0).equal(TypeTagPointer, cH("Component")) && f->parameter_type(1).equal(TypeTagVariable, cH("int")));
+					assert(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 2 && f->parameter_type(0).hash == TypeInfo(TypeData, "Component").hash && f->parameter_type(1).hash == TypeInfo(TypeData, "int").hash);
 					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), object, c, -1);
 				}
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
 					auto p = (char*)object + v->offset();
-					if ((v->type().tag == TypeTagVariable && (v->type().hash == cH("std::basic_string(char)") || v->type().hash == cH("std::basic_string(wchar_t)"))) || memcmp(p, v->default_value(), v->size()) != 0)
+					if ((v->type().tag == TypeData && (v->type().hash == cH("std::string") || v->type().hash == cH("std::wstring"))) || memcmp(p, v->default_value(), v->size()) != 0)
 					{
 						auto n = n_c->new_node(v->name());
-						auto value = serialize_value(dbs, v->type().tag, v->type().hash, p, 2);
-						n->new_attr("v", *value.p);
-						delete_mail(value);
+						n->new_attr("v", v->type().serialize(dbs, p, 2));
 					}
 				}
 				{
