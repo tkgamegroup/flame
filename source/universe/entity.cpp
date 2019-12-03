@@ -332,6 +332,17 @@ namespace flame
 		auto n_cs = src->find_node("components");
 		if (n_cs)
 		{
+			auto this_module = load_module(L"flame_universe.dll");
+			TypeinfoDatabase* this_db = nullptr;
+			for (auto db : dbs)
+			{
+				if (std::filesystem::path(db->module_name()).filename() == L"flame_universe.dll")
+				{
+					this_db = db;
+					break;
+				}
+			}
+			assert(this_module && this_db);
 			for (auto i_c = 0; i_c < n_cs->node_count(); i_c++)
 			{
 				auto n_c = n_cs->node(i_c);
@@ -350,7 +361,7 @@ namespace flame
 					auto n_v = n_c->node(i);
 
 					auto v = udt->find_variable(n_v->name());
-					if (v->type().tag == TypeTagVector)
+					if (v->type().is_vector)
 					{
 						auto size = std::stoi(n_v->find_attr("size")->value());
 
@@ -361,12 +372,12 @@ namespace flame
 						}
 					}
 					else
-						unserialize_value(dbs, v->type().tag, v->type().hash, n_v->find_attr("v")->value(), (char*)object + v->offset());
+						v->type().unserialize(dbs, n_v->find_attr("v")->value(), (char*)object + v->offset(), this_module, this_db);
 				}
 				void* component;
 				{
 					auto f = udt->find_function("create");
-					assert(f && f->return_type().equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 1 && f->parameter_type(0).equal(TypeTagPointer, cH("World")));
+					assert(f && f->return_type().hash == TypeInfo(TypePointer, "Component").hash && f->parameter_count() == 1 && f->parameter_type(0).hash == TypeInfo(TypePointer, "World").hash);
 					component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), object, w);
 				}
 				e->add_component((Component*)component);
@@ -378,6 +389,7 @@ namespace flame
 				free_module(module);
 				free(object);
 			}
+			free_module(this_module);
 		}
 
 		auto n_es = src->find_node("children");

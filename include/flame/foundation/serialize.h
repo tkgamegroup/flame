@@ -873,18 +873,12 @@ namespace flame
 				*(Vec4c*)dst = stoc4(src.c_str());
 				break;
 			case cH("std::string"):
-				if (dst_module)
-					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)&src);
-				else
-					*(std::string*)dst = src;
+				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)&src);
 				break;
 			case cH("std::wstring"):
 			{
 				auto str = s2w(src);
-				if (dst_module)
-					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
-				else
-					*(std::wstring*)dst = str;
+				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
 			}
 				break;
 			default:
@@ -907,18 +901,12 @@ namespace flame
 			switch (base_hash)
 			{
 			case cH("std::string"):
-				if (dst_module)
-					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)src);
-				else
-					*(std::string*)dst = *(std::string*)src;
+				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)src);
 				return;
 			case cH("std::wstring"):
 			{
 				auto str = s2w(*(std::string*)src);
-				if (dst_module)
-					cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
-				else
-					*(std::wstring*)dst = str;
+				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
 			}
 				return;
 			}

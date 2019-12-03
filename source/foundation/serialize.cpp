@@ -1701,6 +1701,17 @@ namespace flame
 			unserialize_parameters(n_function, db->add_function(name, rva, type, code_pos));
 		}
 
+		auto this_module = load_module(L"flame_foundation.dll");
+		TypeinfoDatabase* this_db = nullptr;
+		for (auto db : dbs)
+		{
+			if (std::filesystem::path(db->module_name()).filename() == L"flame_foundation.dll")
+			{
+				this_db = db;
+				break;
+			}
+		}
+		assert(this_module && this_db);
 		auto n_udts = file->find_node("udts");
 		for (auto i = 0; i < n_udts->node_count(); i++)
 		{
@@ -1717,7 +1728,7 @@ namespace flame
 				{
 					auto a_default_value = n_vari->find_attr("default_value");
 					if (a_default_value)
-						type.unserialize(dbs, a_default_value->value(), v->default_value, nullptr, nullptr);
+						type.unserialize(dbs, a_default_value->value(), v->default_value, this_module, this_db);
 				}
 			}
 
@@ -1732,6 +1743,7 @@ namespace flame
 				}
 			}
 		}
+		free_module(this_module);
 
 		SerializableNode::destroy(file);
 

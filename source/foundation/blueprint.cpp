@@ -1763,6 +1763,40 @@ namespace flame
 		}
 	};
 
+	// the S2W and W2S node type must be kept, because we need reflected std::string std::wstring to do serialize
+
+	struct S2W$
+	{
+		AttributeD<std::string> v$i;
+
+		AttributeD<std::wstring> out$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (v$i.frame > out$o.frame)
+			{
+				out$o.v = s2w(v$i.v);
+				out$o.frame = looper().frame;
+			}
+		}
+	};
+
+	struct W2S$
+	{
+		AttributeD<std::wstring> v$i;
+
+		AttributeD<std::string> out$o;
+
+		FLAME_FOUNDATION_EXPORTS void update$()
+		{
+			if (v$i.frame > out$o.frame)
+			{
+				out$o.v = w2s(v$i.v);
+				out$o.frame = looper().frame;
+			}
+		}
+	};
+
 	struct Add$
 	{
 		AttributeD<float> a$i;
