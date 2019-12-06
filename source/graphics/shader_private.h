@@ -87,6 +87,17 @@ namespace flame
 				BlendFactor$ blend_dst_color;
 				BlendFactor$ blend_src_alpha;
 				BlendFactor$ blend_dst_alpha;
+				/*
+					if (blendEnable) 
+					{
+						finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
+						finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
+					}
+					else
+						finalColor = newColor;
+ 
+					finalColor = finalColor & colorWriteMask;
+				*/
 
 				InOut(const std::string& name, const std::string& type) :
 					name(name),

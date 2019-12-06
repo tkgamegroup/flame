@@ -455,6 +455,7 @@ struct cBPEditor : Component
 		if (!n_cbs)
 		{
 			n_cbs = bp->add_node("D#CmdBufs", "test_cbs");
+			n_cbs->set_initiative(true);
 			n_cbs->pos = Vec2f(200.f, -200.f);
 			n_cbs->external = true;
 		}

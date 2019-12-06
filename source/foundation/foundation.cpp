@@ -1245,7 +1245,7 @@ namespace flame
 				if (size != w->size)
 				{
 					w->size = size;
-					auto hub = w->mouse_listeners.hub;
+					auto hub = w->resize_listeners.hub;
 					for (auto i = 0; i < listeners_count(hub); i++)
 						listeners_listener(hub, i).call<void(void* c, const Vec2u & size)>(size);
 				}

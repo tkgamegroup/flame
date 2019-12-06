@@ -519,7 +519,7 @@ namespace flame
 					case CmdDrawTextSdf:
 					{
 						auto c = (TextSdf*)_c;
-						add_text(c->font_atals, c->glyphs,  sdf_font_size * c->scale, c->scale, c->pos, c->color);
+						add_text(c->font_atals, c->glyphs, sdf_font_size * c->scale, c->scale, c->pos, c->color);
 					}
 						break;
 					}
