@@ -547,7 +547,7 @@ namespace flame
 
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& id)
 	{
-		auto type_hash = H(("D#" + type).c_str());
+		auto type_hash = H(type.c_str());
 		UdtInfo* udt = nullptr;
 		void* module = nullptr;
 		{

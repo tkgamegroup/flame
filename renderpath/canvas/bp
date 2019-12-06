@@ -5,101 +5,101 @@
 		<module filename="flame_graphics.dll" pos="-270.00;-86.00" />
 	</modules>
 	<nodes>
-		<node type="Enum(graphics::SampleCount)" id="sc" pos="517.81;967.10">
+		<node type="D#Enum(graphics::SampleCount)" id="sc" pos="517.81;967.10">
 			<datas>
 				<data name="in" value="SampleCount_8" />
 			</datas>
 		</node>
-		<node type="graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
-		<node type="graphics::ImageInspector" id="dst_props" pos="374.64;356.25" />
-		<node type="graphics::Image" id="img_ms" pos="874.61;704.05">
+		<node type="D#graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
+		<node type="D#graphics::ImageInspector" id="dst_props" pos="374.64;356.25" />
+		<node type="D#graphics::Image" id="img_ms" pos="874.61;704.05">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="graphics::RenderTarget" id="rt_ms" pos="1246.58;655.05">
+		<node type="D#graphics::RenderTarget" id="rt_ms" pos="1246.58;655.05">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
-		<node type="graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
-		<node type="graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
-		<node type="graphics::DescriptorImageBinding" id="images_binding" pos="1234.81;1486.79">
+		<node type="D#graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
+		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
+		<node type="D#graphics::DescriptorImageBinding" id="images_binding" pos="1234.81;1486.79">
 			<datas>
 				<data name="count" value="64" />
 				<data name="name" value="images" />
 			</datas>
 		</node>
-		<node type="graphics::Descriptorlayout" id="dsl" pos="1542.51;1724.91" />
-		<node type="graphics::Pipelinelayout" id="pll" pos="1852.80;1716.37">
+		<node type="D#graphics::Descriptorlayout" id="dsl" pos="1542.51;1724.91" />
+		<node type="D#graphics::Pipelinelayout" id="pll" pos="1852.80;1716.37">
 			<datas>
 				<data name="push_constant_size" value="16" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via1" pos="1678.10;1036.00">
+		<node type="D#graphics::VertexInputAttribute" id="via1" pos="1678.10;1036.00">
 			<datas>
 				<data name="name" value="pos" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via2" pos="1648.10;1222.00">
+		<node type="D#graphics::VertexInputAttribute" id="via2" pos="1648.10;1222.00">
 			<datas>
 				<data name="name" value="uv" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="graphics::VertexInputAttribute" id="via3" pos="1650.60;1398.00">
+		<node type="D#graphics::VertexInputAttribute" id="via3" pos="1650.60;1398.00">
 			<datas>
 				<data name="name" value="color" />
 			</datas>
 		</node>
-		<node type="Array(3+void*)" id="vias" pos="1928.63;1198.33" />
-		<node type="graphics::VertexInputBuffer" id="vib" pos="2064.05;1175.71" />
-		<node type="graphics::VertexInputInfo" id="vi" pos="2026.83;1423.37" />
-		<node type="Array(2+std::wstring)" id="pl_element_shs" pos="2879.57;628.81">
+		<node type="D#Array(3+void*)" id="vias" pos="1928.63;1198.33" />
+		<node type="D#graphics::VertexInputBuffer" id="vib" pos="2064.05;1175.71" />
+		<node type="D#graphics::VertexInputInfo" id="vi" pos="2026.83;1423.37" />
+		<node type="D#Array(2+std::wstring)" id="pl_element_shs" pos="2879.57;628.81">
 			<datas>
 				<data name="1" value="element.vert" />
 				<data name="2" value="element.frag" />
 			</datas>
 		</node>
-		<node type="Array(2+std::wstring)" id="pl_text_lcd_shs" pos="2878.50;1161.07">
+		<node type="D#Array(2+std::wstring)" id="pl_text_lcd_shs" pos="2878.50;1161.07">
 			<datas>
 				<data name="1" value="element.vert" />
 				<data name="2" value="text_lcd.frag" />
 			</datas>
 		</node>
-		<node type="Array(2+std::wstring)" id="pl_text_sdf_shs" pos="2901.71;1701.75">
+		<node type="D#Array(2+std::wstring)" id="pl_text_sdf_shs" pos="2901.71;1701.75">
 			<datas>
 				<data name="1" value="element.vert" />
 				<data name="2" value="text_sdf.frag" />
 			</datas>
 		</node>
-		<node type="graphics::Pipeline" id="pl_element" pos="2877.23;827.38" />
-		<node type="graphics::Pipeline" id="pl_text_lcd" pos="2893.06;1359.97" />
-		<node type="graphics::Pipeline" id="pl_text_sdf" pos="2885.68;1890.44" />
-		<node type="graphics::Image" id="img_white" pos="866.12;1425.24">
+		<node type="D#graphics::Pipeline" id="pl_element" pos="2877.23;827.38" />
+		<node type="D#graphics::Pipeline" id="pl_text_lcd" pos="2893.06;1359.97" />
+		<node type="D#graphics::Pipeline" id="pl_text_sdf" pos="2885.68;1890.44" />
+		<node type="D#graphics::Image" id="img_white" pos="866.12;1425.24">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="graphics::Buffer" id="vtx_buf" pos="224.88;545.00">
+		<node type="D#graphics::Buffer" id="vtx_buf" pos="224.88;545.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="graphics::Buffer" id="idx_buf" pos="229.05;998.72">
+		<node type="D#graphics::Buffer" id="idx_buf" pos="229.05;998.72">
 			<datas>
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="MakeCmd" id="make_cmd" pos="3555.50;360.50" />
+		<node type="D#MakeCmd" id="make_cmd" pos="3555.50;360.50" />
 	</nodes>
 	<links>
 		<link out="rt_dst.first_image" in="dst_props.in" />

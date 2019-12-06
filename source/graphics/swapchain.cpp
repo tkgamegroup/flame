@@ -244,7 +244,7 @@ namespace flame
 
 		void SwapchainResizable::link_bp(BP* bp, const std::vector<Commandbuffer*>& cbs)
 		{
-			auto n_scr = bp->add_node("graphics::SwapchainResizable", "scr");
+			auto n_scr = bp->add_node("D#graphics::SwapchainResizable", "scr");
 			n_scr->set_initiative(true);
 			n_scr->find_input("in")->set_data_p(this);
 			bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);

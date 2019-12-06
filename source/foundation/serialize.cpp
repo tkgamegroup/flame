@@ -1313,8 +1313,6 @@ namespace flame
 		std::vector<UdtInfo*> staging_string_symbols;
 		std::vector<UdtInfo*> staging_vector_symbols;
 
-		auto exe_loaded_crt = false;
-
 		// enums
 		IDiaEnumSymbols* _enums;
 		global->findChildren(SymTagEnum, NULL, nsNone, &_enums);
@@ -1522,7 +1520,7 @@ namespace flame
 							auto obj = malloc(u->size);
 							memset(obj, 0, u->size);
 
-							if (std::filesystem::path(module_filename).extension() == L".exe" && !exe_loaded_crt)
+							if (std::filesystem::path(module_filename).extension() == L".exe")
 							{
 								auto ulsize = 0UL;
 								auto pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToData(library, TRUE, IMAGE_DIRECTORY_ENTRY_IMPORT, &ulsize);
@@ -1589,8 +1587,6 @@ namespace flame
 								}).detach();
 								wait_event(ev, -1);
 								destroy_event(ev);
-
-								exe_loaded_crt = true;
 							}
 
 							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->rva)), obj);

@@ -258,13 +258,13 @@ struct cInspectorPrivate : cInspector
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type().equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0).equal(TypeTagPointer, cH("Component")) && f->parameter_type(1).equal(TypeTagVariable, cH("int")));
+					assert(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 2 && f->parameter_type(0).hash == TypeInfo(TypePointer, "Component").hash && f->parameter_type(1).hash == TypeInfo(TypeData, "int").hash);
 					c_dealer->serialize_addr = (char*)module + (uint)f->rva();
 					c_dealer->serialize(-1);
 				}
 				{
 					auto f = udt->find_function("unserialize");
-					assert(f && f->return_type().equal(TypeTagVariable, cH("void")) && f->parameter_count() == 2 && f->parameter_type(0).equal(TypeTagPointer, cH("Component")) && f->parameter_type(1).equal(TypeTagVariable, cH("int")));
+					assert(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 2 && f->parameter_type(0).hash == TypeInfo(TypePointer, "Component").hash && f->parameter_type(1).hash == TypeInfo(TypeData, "int").hash);
 					c_dealer->unserialize_addr = (char*)module + (uint)f->rva();
 				}
 				c_dealer->dtor_addr = nullptr;
@@ -340,7 +340,7 @@ struct cInspectorPrivate : cInspector
 					auto e_data = e_item->child(1);
 					switch (v->type().tag)
 					{
-					case TypeTagEnumSingle:
+					case TypeEnumSingle:
 					{
 						auto info = find_enum(app.dbs, v->type().hash);
 
@@ -370,7 +370,7 @@ struct cInspectorPrivate : cInspector
 						e_data->add_component(c_tracker);
 					}
 						break;
-					case TypeTagEnumMulti:
+					case TypeEnumMulti:
 					{
 						auto info = find_enum(app.dbs, v->type().hash);
 
@@ -406,7 +406,7 @@ struct cInspectorPrivate : cInspector
 						e_data->add_component(c_tracker);
 					}
 						break;
-					case TypeTagVariable:
+					case TypeData:
 						switch (v->type().hash)
 						{
 						case cH("bool"):
@@ -620,17 +620,17 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 			for (auto i = 0; i < udts.p->size(); i++)
 			{
 				auto u = udts.p->at(i);
-				if (u->name().compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
+				if (u->type().name.compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
 					all_udts.push_back(u);
 			}
 			delete_mail(udts);
 		}
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-			return a->name() < b->name();
+			return a->type().name < b->type().name;
 		});
 		for (auto udt : all_udts)
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name().c_str() + strlen(COMPONENT_PREFIX)));
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type().name.c_str() + strlen(COMPONENT_PREFIX)));
 			e_menu->add_child(e_item);
 			struct Capture
 			{
@@ -658,7 +658,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 						void* component;
 						{
 							auto f = capture.u->find_function("create");
-							assert(f && f->return_type().equal(TypeTagPointer, cH("Component")) && f->parameter_count() == 0);
+							assert(f && f->return_type().hash == TypeInfo(TypePointer, "Component").hash && f->parameter_count() == 0);
 							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
 						}
 						capture.i->editor->selected->add_component((Component*)component);

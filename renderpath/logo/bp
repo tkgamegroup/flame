@@ -7,174 +7,174 @@
 		<package filename="canvas" id="canvas" pos="1124.60;806.93" />
 	</packages>
 	<nodes>
-		<node type="Array(1+std::wstring)" id="fonts" pos="-569.00;42.00">
+		<node type="D#Array(1+std::wstring)" id="fonts" pos="-569.00;42.00">
 			<datas>
 				<data name="1" value="c:/windows/fonts/msyh.ttc" />
 			</datas>
 		</node>
-		<node type="graphics::FontAtlas" id="font_atlas" pos="-323.50;82.50">
+		<node type="D#graphics::FontAtlas" id="font_atlas" pos="-323.50;82.50">
 			<datas>
 				<data name="draw_type" value="FontDrawSdf" />
 			</datas>
 		</node>
-		<node type="TextSdf" id="text1" pos="-28.50;284.50">
+		<node type="D#TextSdf" id="text1" pos="-28.50;284.50">
 			<datas>
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="f" />
 			</datas>
 		</node>
-		<node type="TextSdf" id="text2" pos="-54.50;893.50">
+		<node type="D#TextSdf" id="text2" pos="-54.50;893.50">
 			<datas>
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="l" />
 			</datas>
 		</node>
-		<node type="MakeVec2f" id="pos1" pos="-313.50;283.50">
+		<node type="D#MakeVec2f" id="pos1" pos="-313.50;283.50">
 			<datas>
 				<data name="y" value="190.00" />
 			</datas>
 		</node>
-		<node type="Time" id="time" pos="-940.50;293.50" initiative="1" />
-		<node type="LinearInterpolation1d" id="path1" pos="-533.50;280.50">
+		<node type="D#Time" id="time" pos="-940.50;293.50" initiative="1" />
+		<node type="D#LinearInterpolation1d" id="path1" pos="-533.50;280.50">
 			<datas>
 				<data name="a" value="900.00" />
 				<data name="b" value="237.00" />
 			</datas>
 		</node>
-		<node type="MakeVec2f" id="pos2" pos="-323.50;892.50">
+		<node type="D#MakeVec2f" id="pos2" pos="-323.50;892.50">
 			<datas>
 				<data name="y" value="190.00" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="path2" pos="-542.50;882.50">
+		<node type="D#LinearInterpolation1d" id="path2" pos="-542.50;882.50">
 			<datas>
 				<data name="a" value="950.00" />
 				<data name="b" value="287.00" />
 			</datas>
 		</node>
-		<node type="Add" id="delay1" pos="-805.50;876.50">
+		<node type="D#Add" id="delay1" pos="-805.50;876.50">
 			<datas>
 				<data name="b" value="-0.40" />
 			</datas>
 		</node>
-		<node type="Array(5+void*)" id="content" pos="609.21;930.54" />
-		<node type="Add" id="delay2" pos="-868.50;1516.50">
+		<node type="D#Array(5+void*)" id="content" pos="609.21;930.54" />
+		<node type="D#Add" id="delay2" pos="-868.50;1516.50">
 			<datas>
 				<data name="b" value="-0.80" />
 			</datas>
 		</node>
-		<node type="Add" id="dealy3" pos="-963.50;2191.50">
+		<node type="D#Add" id="dealy3" pos="-963.50;2191.50">
 			<datas>
 				<data name="b" value="-1.20" />
 			</datas>
 		</node>
-		<node type="Add" id="delay4" pos="-828.50;2899.50">
+		<node type="D#Add" id="delay4" pos="-828.50;2899.50">
 			<datas>
 				<data name="b" value="-1.60" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="path3" pos="-560.50;1524.50">
+		<node type="D#LinearInterpolation1d" id="path3" pos="-560.50;1524.50">
 			<datas>
 				<data name="a" value="990.00" />
 				<data name="b" value="327.00" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="path4" pos="-629.50;2168.50">
+		<node type="D#LinearInterpolation1d" id="path4" pos="-629.50;2168.50">
 			<datas>
 				<data name="a" value="1050.00" />
 				<data name="b" value="387.00" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="path5" pos="-568.50;2853.50">
+		<node type="D#LinearInterpolation1d" id="path5" pos="-568.50;2853.50">
 			<datas>
 				<data name="a" value="1150.00" />
 				<data name="b" value="487.00" />
 			</datas>
 		</node>
-		<node type="MakeVec2f" id="pos3" pos="-324.50;1530.50">
+		<node type="D#MakeVec2f" id="pos3" pos="-324.50;1530.50">
 			<datas>
 				<data name="y" value="190.00" />
 			</datas>
 		</node>
-		<node type="MakeVec2f" id="pos4" pos="-341.50;2163.50">
+		<node type="D#MakeVec2f" id="pos4" pos="-341.50;2163.50">
 			<datas>
 				<data name="y" value="190.00" />
 			</datas>
 		</node>
-		<node type="MakeVec2f" id="pos5" pos="-297.50;2857.50">
+		<node type="D#MakeVec2f" id="pos5" pos="-297.50;2857.50">
 			<datas>
 				<data name="y" value="190.00" />
 			</datas>
 		</node>
-		<node type="TextSdf" id="text3" pos="-86.50;1536.50">
+		<node type="D#TextSdf" id="text3" pos="-86.50;1536.50">
 			<datas>
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="a" />
 			</datas>
 		</node>
-		<node type="TextSdf" id="text4" pos="-86.50;2173.50">
+		<node type="D#TextSdf" id="text4" pos="-86.50;2173.50">
 			<datas>
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="m" />
 			</datas>
 		</node>
-		<node type="TextSdf" id="text5" pos="-60.50;2866.50">
+		<node type="D#TextSdf" id="text5" pos="-60.50;2866.50">
 			<datas>
 				<data name="color" value="255;255;255;255" />
 				<data name="text" value="e" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="scale1" pos="-429.50;462.50">
+		<node type="D#LinearInterpolation1d" id="scale1" pos="-429.50;462.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="scale2" pos="-448.50;1070.50">
+		<node type="D#LinearInterpolation1d" id="scale2" pos="-448.50;1070.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="scale3" pos="-454.50;1705.50">
+		<node type="D#LinearInterpolation1d" id="scale3" pos="-454.50;1705.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="scale4" pos="-494.50;2339.50">
+		<node type="D#LinearInterpolation1d" id="scale4" pos="-494.50;2339.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="scale5" pos="-404.50;3024.50">
+		<node type="D#LinearInterpolation1d" id="scale5" pos="-404.50;3024.50">
 			<datas>
 				<data name="a" value="20.00" />
 				<data name="b" value="4.50" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="alpha1" pos="-322.50;678.50">
+		<node type="D#LinearInterpolation1d" id="alpha1" pos="-322.50;678.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="alpha2" pos="-319.50;1301.50">
+		<node type="D#LinearInterpolation1d" id="alpha2" pos="-319.50;1301.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="alpha3" pos="-332.50;1940.50">
+		<node type="D#LinearInterpolation1d" id="alpha3" pos="-332.50;1940.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="alpha4" pos="-334.50;2605.50">
+		<node type="D#LinearInterpolation1d" id="alpha4" pos="-334.50;2605.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>
 		</node>
-		<node type="LinearInterpolation1d" id="alpha5" pos="-313.50;3264.50">
+		<node type="D#LinearInterpolation1d" id="alpha5" pos="-313.50;3264.50">
 			<datas>
 				<data name="b" value="1.00" />
 			</datas>

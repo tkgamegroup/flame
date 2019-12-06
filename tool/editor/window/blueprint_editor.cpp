@@ -37,13 +37,13 @@ namespace flame
 {
 	struct DstImage$
 	{
-		AttributeV<Vec2u> size$i;
+		AttributeD<Vec2u> size$i;
 
 		AttributeP<void> img$o;
 		AttributeE<TargetType$> type$o;
 		AttributeP<void> view$o;
 
-		AttributeV<uint> idx$o;
+		AttributeD<uint> idx$o;
 
 		__declspec(dllexport) DstImage$()
 		{
@@ -94,7 +94,7 @@ namespace flame
 
 	struct CmdBufs$
 	{
-		AttributeV<std::vector<void*>> out$o;
+		AttributeD<std::vector<void*>> out$o;
 
 		__declspec(dllexport) CmdBufs$()
 		{
@@ -258,11 +258,11 @@ struct cBPEditor : Component
 			for (auto i = 0; i < udts.p->size(); i++)
 			{
 				auto u = udts.p->at(i);
-				if (u->name().find('(') != std::string::npos)
+				if (u->type().name.find('(') != std::string::npos)
 					continue;
 				{
 					auto f = u->find_function("update");
-					if (!(f && f->return_type().equal(TypeTagVariable, cH("void")) && f->parameter_count() == 0))
+					if (!(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 0))
 						continue;
 				}
 				auto no_input_output = true;
@@ -281,7 +281,7 @@ struct cBPEditor : Component
 			delete_mail(udts);
 		}
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-			return a->name() < b->name();
+			return a->type().name < b->type().name;
 		});
 		{
 			auto e_edit = create_standard_edit(150.f, app.font_atlas_pixel, 1.f);
@@ -397,7 +397,7 @@ struct cBPEditor : Component
 		}
 		for (auto udt : all_udts)
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->name()));
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type().name));
 			e_add_node_menu->add_child(e_item);
 			struct Capture
 			{
@@ -415,7 +415,7 @@ struct cBPEditor : Component
 
 					capture.e->reset_add_node_menu_filter();
 
-					capture.e->add_node(capture.u->name(), "", capture.e->add_pos);
+					capture.e->add_node(capture.u->type().name, "", capture.e->add_pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -437,7 +437,7 @@ struct cBPEditor : Component
 		auto n_dst = bp->find_node("test_dst");
 		if (!n_dst)
 		{
-			n_dst = bp->add_node("DstImage", "test_dst");
+			n_dst = bp->add_node("D#DstImage", "test_dst");
 			n_dst->pos = Vec2f(0.f, -200.f);
 			n_dst->external = true;
 		}
@@ -454,7 +454,7 @@ struct cBPEditor : Component
 		auto n_cbs = bp->find_node("test_cbs");
 		if (!n_cbs)
 		{
-			n_cbs = bp->add_node("CmdBufs", "test_cbs");
+			n_cbs = bp->add_node("D#CmdBufs", "test_cbs");
 			n_cbs->pos = Vec2f(200.f, -200.f);
 			n_cbs->external = true;
 		}
@@ -578,7 +578,7 @@ struct cBPEditor : Component
 		{
 		case SelNode:
 		{
-			auto n = bp->add_node(selected_.n->udt()->name(), "");
+			auto n = bp->add_node(selected_.n->udt()->type().name, "");
 			n->pos = add_pos;
 			for (auto i = 0; i < n->input_count(); i++)
 			{
@@ -614,7 +614,7 @@ struct cBPEditor : Component
 					auto n = bp->node(i);
 					auto udt = n->udt();
 					if (udt->db() == m_db)
-						str += L"id: " + s2w(n->id()) + L", type: " + s2w(udt->name()) + L"\n";
+						str += L"id: " + s2w(n->id()) + L", type: " + s2w(udt->type().name) + L"\n";
 				}
 
 				struct Capture
@@ -660,7 +660,7 @@ struct cBPEditor : Component
 				auto src = bp->node(i);
 				auto& name = src->id();
 
-				auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->name() + "|{{";
+				auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->type().name + "|{{";
 				for (auto j = 0; j < src->input_count(); j++)
 				{
 					auto input = src->input(j);
@@ -1529,7 +1529,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			auto module_name = std::filesystem::path(udt->db()->module_name());
 			if (module_name.parent_path() != L"")
 				module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
-			c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->name()));
+			c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->type().name));
 			c_text->color = Vec4c(50, 50, 50, 255);
 			e_text_type->add_component(c_text);
 		}
@@ -1564,8 +1564,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		}
 
-		auto udt_name = n->udt()->name();
-		if (udt_name == "DstImage")
+		auto udt_name = n->udt()->type().name;
+		if (udt_name == "D#DstImage")
 		{
 			auto e_show = create_standard_button(app.font_atlas_pixel, 0.9f, L"Show");
 			e_content->add_child(e_show);
@@ -1609,7 +1609,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
 				{
-					auto name = capture.n->udt()->name();
+					auto name = capture.n->udt()->type().name;
 					std::regex reg(R"(Array\(([0-9]+\+([\w\*]+))\))");
 					std::smatch match;
 					if (std::regex_search(name, match, reg))
@@ -1691,7 +1691,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			capture.v = -1;
 			e_remove->get_component(cEventReceiver)->mouse_listeners.add(change_size, new_mail(&capture));
 		}
-		else if (udt_name == "graphics::Shader")
+		else if (udt_name == "D#graphics::Shader")
 		{
 			auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
 			e_content->add_child(e_edit);
@@ -1915,9 +1915,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					auto& type = input->vi()->type();
 					switch (type.tag)
 					{
-					case TypeTagAttributeES:
+					case TypeEnumSingle:
 					{
-						auto info = find_enum(bp->dbs(), type.hash);
+						auto info = find_enum(bp->dbs(), type.base_hash);
 						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 0.9f, e_data);
 
 						struct Capture
@@ -1945,11 +1945,11 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_data->add_component(c_tracker);
 					}
 						break;
-					case TypeTagAttributeEM:
+					case TypeEnumMulti:
 					{
 						auto v = *(int*)input->data();
 
-						auto info = find_enum(bp->dbs(), type.hash);
+						auto info = find_enum(bp->dbs(), type.base_hash);
 
 						create_enum_checkboxs(info, app.font_atlas_pixel, 0.9f, e_data);
 						for (auto k = 0; k < info->item_count(); k++)
@@ -1986,7 +1986,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_data->add_component(c_tracker);
 					}
 						break;
-					case TypeTagAttributeV:
+					case TypeData:
 						switch (type.hash)
 						{
 						case cH("bool"):
@@ -2631,16 +2631,26 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			{
 				auto v = i->vi();
 				auto& type = v->type();
-				auto value_before = serialize_value(dbs, type.tag, type.hash, i->raw_data(), 2);
+				auto value_before = type.serialize(dbs, i->raw_data(), 2);
 				auto data = new char[v->size()];
-				unserialize_value(dbs, type.tag, type.hash, value, data);
+				auto this_module = load_module(L"editor.exe");
+				TypeinfoDatabase* this_db = nullptr;
+				for (auto db : dbs)
+				{
+					if (std::filesystem::path(db->module_name()).filename() == L"editor.exe")
+					{
+						this_db = db;
+						break;
+					}
+				}
+				assert(this_module && this_db);
+				type.unserialize(dbs, value, data, this_module, this_db);
 				i->set_data((char*)data + sizeof(AttributeBase));
 				((cBPSlot*)i->user_data)->tracker->update_view();
-				delete data;
-				auto value_after = serialize_value(dbs, type.tag, type.hash, i->raw_data(), 2);
-				console->print(L"set value: " + s2w(address) + L", " + s2w(*value_before.p) + L" -> " + s2w(*value_after.p));
-				delete_mail(value_before);
-				delete_mail(value_after);
+				delete[] data;
+				free_module(this_module);
+				auto value_after = type.serialize(dbs, i->raw_data(), 2);
+				console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
 				editor->set_changed(true);
 			}
 			else
@@ -2679,17 +2689,17 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					delete_mail(udts);
 				}
 				std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-					return a->name() < b->name();
+					return a->type().name < b->type().name;
 				});
 				for (auto udt : all_udts)
-					console->print(s2w(udt->name()));
+					console->print(s2w(udt->type().name));
 			}
 			else if (tokens[1] == L"udt")
 			{
 				auto udt = find_udt(dbs, H(w2s(tokens[2]).c_str()));
 				if (udt)
 				{
-					console->print(s2w(udt->name()));
+					console->print(s2w(udt->type().name));
 					std::vector<VariableInfo*> inputs;
 					std::vector<VariableInfo*> outputs;
 					for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
@@ -2703,10 +2713,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					}
 					console->print(L"[In]");
 					for (auto& i : inputs)
-						console->print(L"name:" + s2w(i->name()) + L" decoration:" + s2w(i->decoration()) + L" tag:" + s2w(get_type_tag_name(i->type().tag)) + L" type:" + s2w(i->type().name));
+						console->print(L"name:" + s2w(i->name()) + L" decoration:" + s2w(i->decoration()) + L" type:" + s2w(i->type().name));
 					console->print(L"[Out]");
 					for (auto& o : outputs)
-						console->print(L"name:" + s2w(o->name()) + L" decoration:" + s2w(o->decoration()) + L" tag:" + s2w(get_type_tag_name(o->type().tag)) + L" type:" + s2w(o->type().name));
+						console->print(L"name:" + s2w(o->name()) + L" decoration:" + s2w(o->decoration()) + L" type:" + s2w(o->type().name));
 				}
 				else
 					console->print(L"udt not found");
@@ -2716,7 +2726,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto n = bp->node(i);
-					console->print(L"id:" + s2w(n->id()) + L" type:" + s2w(n->udt()->name()));
+					console->print(L"id:" + s2w(n->id()) + L" type:" + s2w(n->udt()->type().name));
 				}
 			}
 			else if (tokens[1] == L"node")
@@ -2736,9 +2746,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							link_address = input->link()->get_address();
 						console->print(L"[" + (link_address.p ? s2w(*link_address.p) : L"") + L"]");
 						delete_mail(link_address);
-						auto str = serialize_value(dbs, type.tag, type.hash, input->raw_data(), 2);
-						console->print(std::wstring(L"   ") + (str.p->empty() ? L"-" : s2w(*str.p)));
-						delete_mail(str);
+						auto str = type.serialize(dbs, input->raw_data(), 2);
+						console->print(std::wstring(L"   ") + (str.empty() ? L"-" : s2w(str)));
 					}
 					console->print(L"[Out]");
 					for (auto i = 0; i < n->output_count(); i++)
@@ -2747,9 +2756,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						auto v = output->vi();
 						auto& type = v->type();
 						console->print(s2w(v->name()));
-						auto str = serialize_value(dbs, type.tag, type.hash, output->raw_data(), 2);
-						console->print(std::wstring(L"   ") + (str.p->empty() ? L"-" : s2w(*str.p)));
-						delete_mail(str);
+						auto str = type.serialize(dbs, output->raw_data(), 2);
+						console->print(std::wstring(L"   ") + (str.empty() ? L"-" : s2w(str)));
 					}
 				}
 				else

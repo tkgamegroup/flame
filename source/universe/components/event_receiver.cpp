@@ -48,7 +48,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 	{
-		auto hub = mouse_listeners.hub;
+		auto hub = drag_and_drop_listeners.hub;
 		for (auto i = 0; i < listeners_count(hub); i++)
 			listeners_listener(hub, i).call<void(void*, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)>(action, er, pos);
 	}
