@@ -12,7 +12,7 @@ namespace flame
 	struct ModulePrivate : BP::Module
 	{
 		std::wstring filename;
-		std::wstring absolute_filename;
+		std::filesystem::path absolute_filename;
 		void* module;
 		TypeinfoDatabase* db;
 
@@ -394,12 +394,18 @@ namespace flame
 				return nullptr;
 		}
 
-		auto absolute_filename = filename;
+		std::filesystem::path absolute_filename = filename;
 		auto module = load_module(filename);
-		if (!module)
+		if (module)
+		{
+			auto app_path = get_app_path();
+			absolute_filename = *app_path.p + L"/" + absolute_filename.wstring();
+			delete_mail(app_path);
+		}
+		else
 		{
 			std::filesystem::path path(env.filename);
-			absolute_filename = path.parent_path().wstring() + L"/" + filename;
+			absolute_filename = path.parent_path() / filename;
 			module = load_module(absolute_filename);
 		}
 		if (!module)
@@ -407,6 +413,7 @@ namespace flame
 			printf("cannot add module %s\n", w2s(filename).c_str());
 			return nullptr;
 		}
+		absolute_filename = std::filesystem::canonical(absolute_filename);
 
 		auto m = new ModulePrivate;
 		m->filename = filename;
@@ -415,7 +422,7 @@ namespace flame
 		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& m : modules)
 			dbs.push_back(m->db);
-		m->db = TypeinfoDatabase::load(dbs, std::filesystem::path(absolute_filename).replace_extension(L".typeinfo"));
+		m->db = TypeinfoDatabase::load(dbs, absolute_filename.replace_extension(L".typeinfo"));
 
 		modules.emplace_back(m);
 		collect_dbs();
@@ -1192,6 +1199,8 @@ namespace flame
 		auto path = std::filesystem::path(filename);
 		auto ppath = path.parent_path();
 		auto ppath_str = ppath.wstring();
+		if (!ppath_str.empty())
+			ppath_str = L"/" + ppath_str;
 
 		printf("begin to load bp: %s\n", s_filename.c_str());
 
@@ -1399,7 +1408,7 @@ namespace flame
 						auto template_name = std::string(n.type.begin(), n.type.begin() + pos_t);
 						auto template_parameters = std::string(n.type.begin() + pos_t + 1, n.type.end() - 1);
 
-						if (template_name == "Var")
+						if (template_name == "D#Var")
 						{
 							templatecpp << "\ttemplate<>\n\tstruct Var$<" << template_parameters << ">\n\t{\n";
 							templatecpp << "\t\tAttributeD<" << template_parameters << "> in$i;\n";
@@ -1412,7 +1421,7 @@ namespace flame
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
 						}
-						else if (template_name == "Enum")
+						else if (template_name == "D#Enum")
 						{
 							templatecpp << "\ttemplate<>\n\tstruct Enum$<" << template_parameters << "$>\n\t{\n";
 							templatecpp << "\t\tAttributeE<" << template_parameters << "$> in$i;\n";
@@ -1425,7 +1434,7 @@ namespace flame
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
 						}
-						else if (template_name == "Vec")
+						else if (template_name == "D#Vec")
 						{
 							auto sp = string_split(template_parameters, '+');
 							auto N = std::stoi(sp[0]);
@@ -1448,7 +1457,7 @@ namespace flame
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
 						}
-						else if (template_name == "Array")
+						else if (template_name == "D#Array")
 						{
 							auto sp = string_split(template_parameters, '+');
 							auto N = std::stoi(sp[0]);
@@ -1501,9 +1510,9 @@ namespace flame
 			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
 			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
 			auto print_link_library = [&](ModulePrivate* m) {
-				auto name = std::filesystem::path(m->absolute_filename).replace_extension(L".lib").string();
+				auto name = m->absolute_filename.replace_extension(L".lib").string();
 				std::replace(name.begin(), name.end(), '\\', '/');
-				cmakelists << "target_link_libraries(bp ${CMAKE_SOURCE_DIR}/../../bin/" << name << ")\n";
+				cmakelists << "target_link_libraries(bp " << name << ")\n";
 			};
 			for (auto& m : bp->modules)
 				print_link_library(m.get());
@@ -1515,9 +1524,9 @@ namespace flame
 			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " << pdb_filename << ")\n";
 			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
 			auto print_typeinfogen_dependency = [&](ModulePrivate* m) {
-				auto name = w2s(m->absolute_filename);
+				auto name = m->absolute_filename.string();
 				std::replace(name.begin(), name.end(), '\\', '/');
-				cmakelists << "-m${CMAKE_SOURCE_DIR}/../../bin/" << name << " ";
+				cmakelists << "-m" << name << " ";
 			};
 			for (auto& m : bp->modules)
 				print_typeinfogen_dependency(m.get());
@@ -1529,11 +1538,15 @@ namespace flame
 			printf(" - done\n");
 
 			printf("cmaking:\n");
-			exec_and_redirect_to_std_output(L"", L"cmake -S " + ppath_str + L" -B " + ppath_str + L"/build");
+			std::wstring cmake_cmd(L"cmake ");
+			if (!ppath_str.empty())
+				cmake_cmd += L"-s " + ppath_str;
+			cmake_cmd += L" -B " + ppath_str + L"build";
+			exec_and_redirect_to_std_output(L"", cmake_cmd);
 
 			printf("compiling:\n");
 			auto curr_path = get_curr_path();
-			exec_and_redirect_to_std_output(L"", s2w(VS_LOCATION) + L"/Common7/IDE/devenv.com \"" + *curr_path.p + L"/" + ppath_str + L"/build/bp.sln\" /build debug");
+			exec_and_redirect_to_std_output(L"", s2w(VS_LOCATION) + L"/Common7/IDE/devenv.com \"" + *curr_path.p + L"/" + ppath_str + L"build/bp.sln\" /build debug");
 			delete_mail(curr_path);
 		}
 
@@ -1543,7 +1556,7 @@ namespace flame
 		{
 			auto m = new ModulePrivate;
 			m->filename = self_module_filename;
-			m->absolute_filename = self_module_filename;
+			m->absolute_filename = std::filesystem::canonical(self_module_filename);
 			m->module = self_module;
 			m->db = TypeinfoDatabase::load(bp->env.dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
 			bp->self_module.reset(m);

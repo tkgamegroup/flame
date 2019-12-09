@@ -90,4 +90,6 @@ int main(int argc, char** args)
 		auto app = *(App**)c;
 		app->run();
 	}, new_mail_p(&app));
+
+	return 0;
 }

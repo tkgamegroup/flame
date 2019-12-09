@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<BP>
+	<modules>
+		<module filename="flame_foundation.dll" pos="-294.00;-179.00" />
+		<module filename="flame_graphics.dll" pos="-270.00;-86.00" />
+	</modules>
+	<nodes>
+		<node type="D#graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
+		<node type="D#graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
+		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
+		<node type="D#graphics::DescriptorImageBinding" id="images_binding" pos="1234.81;1486.79">
+			<datas>
+				<data name="count" value="64" />
+				<data name="name" value="images" />
+			</datas>
+		</node>
+		<node type="D#graphics::Descriptorlayout" id="dsl" pos="1542.51;1724.91" />
+		<node type="D#graphics::Pipelinelayout" id="pll" pos="1852.80;1716.37">
+			<datas>
+				<data name="push_constant_size" value="16" />
+			</datas>
+		</node>
+		<node type="D#graphics::VertexInputAttribute" id="via1" pos="1678.10;1036.00">
+			<datas>
+				<data name="name" value="pos" />
+				<data name="format" value="Format_R32G32_SFLOAT" />
+			</datas>
+		</node>
+		<node type="D#graphics::VertexInputAttribute" id="via2" pos="1648.10;1222.00">
+			<datas>
+				<data name="name" value="uv" />
+				<data name="format" value="Format_R32G32_SFLOAT" />
+			</datas>
+		</node>
+		<node type="D#graphics::VertexInputAttribute" id="via3" pos="1650.60;1398.00">
+			<datas>
+				<data name="name" value="color" />
+			</datas>
+		</node>
+		<node type="D#Array(3+void*)" id="vias" pos="1928.63;1198.33" />
+		<node type="D#graphics::VertexInputBuffer" id="vib" pos="2064.05;1175.71" />
+		<node type="D#graphics::VertexInputInfo" id="vi" pos="2026.83;1423.37" />
+		<node type="D#Array(2+std::wstring)" id="pl__shs" pos="2879.57;628.81">
+			<datas>
+				<data name="1" value="compose.vert" />
+				<data name="2" value="compose.frag" />
+			</datas>
+		</node>
+		<node type="D#graphics::Pipeline" id="pl" pos="2877.23;827.38" />
+		<node type="D#MakeCmd" id="make_cmd" pos="3555.50;360.50" />
+	</nodes>
+	<links>
+		<link out="rt_dst.first_image" in="dst_props.in" />
+		<link out="rt_dst.out" in="sp.color_targets" />
+		<link out="sp.out" in="rnf.passes" />
+		<link out="images_binding.out" in="dsl.bindings" />
+		<link out="dsl.out" in="pll.descriptorlayouts" />
+		<link out="via1.out" in="vias.1" />
+		<link out="via2.out" in="vias.2" />
+		<link out="via3.out" in="vias.3" />
+		<link out="vias.v" in="vib.attributes" />
+		<link out="vib.out" in="vi.buffers" />
+		<link out="pl_shs.v" in="pl.shader_filenames" />
+		<link out="pll.out" in="pl.pll" />
+		<link out="rnf.rp" in="pl.renderpass" />
+		<link out="vi.out" in="pl.vi" />
+		<link out="rnf.out" in="make_cmd.rnf" />
+		<link out="pll.out" in="make_cmd.pll" />
+		<link out="pl_element.out" in="make_cmd.pl_element" />
+		<link out="pl_text_lcd.out" in="make_cmd.pl_text_lcd" />
+		<link out="pl_text_sdf.out" in="make_cmd.pl_text_sdf" />
+		<link out="dsl.default_set" in="make_cmd.ds" />
+		<link out="images_binding.iv" in="make_cmd.white_iv" />
+	</links>
+	<exports>
+		<input />
+		<output />
+	</exports>
+</BP>
