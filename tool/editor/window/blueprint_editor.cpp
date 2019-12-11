@@ -1988,7 +1988,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					}
 						break;
 					case TypeData:
-						switch (type.hash)
+						switch (type.base_hash)
 						{
 						case cH("bool"):
 						{
@@ -2065,7 +2065,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						case cH("Vec(4+uchar)"):
 							create_vec_edit<4, uchar>(this, e_data, input);
 							break;
-						case cH("std::basic_string(char)"):
+						case cH("std::string"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);
@@ -2091,7 +2091,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_data->add_component(c_tracker);
 						}
 							break;
-						case cH("std::basic_string(wchar_t)"):
+						case cH("std::wstring"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);

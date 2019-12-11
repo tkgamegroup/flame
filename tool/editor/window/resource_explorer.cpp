@@ -487,7 +487,7 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
 						image->uv1 = Vec2f(thiz->seat->pos + thumbnail_size) / thumbnails_img_size;
 						image->color = Vec4c(255);
-					}, new_mail_p(this), false, 0.f, cH("update thumbnail"));
+					}, new_mail_p(this), nullptr, false, 0.f, cH("update thumbnail"));
 				}
 			}
 		}

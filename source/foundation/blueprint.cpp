@@ -1199,8 +1199,6 @@ namespace flame
 		auto path = std::filesystem::path(filename);
 		auto ppath = path.parent_path();
 		auto ppath_str = ppath.wstring();
-		if (!ppath_str.empty())
-			ppath_str = L"/" + ppath_str;
 
 		printf("begin to load bp: %s\n", s_filename.c_str());
 
@@ -1539,18 +1537,19 @@ namespace flame
 
 			printf("cmaking:\n");
 			std::wstring cmake_cmd(L"cmake ");
-			if (!ppath_str.empty())
-				cmake_cmd += L"-s " + ppath_str;
-			cmake_cmd += L" -B " + ppath_str + L"build";
+			if (ppath_str.empty())
+				cmake_cmd += L" -B build";
+			else
+				cmake_cmd += L"-s " + ppath_str + L" -B " + ppath_str + L"/build";
 			exec_and_redirect_to_std_output(L"", cmake_cmd);
 
 			printf("compiling:\n");
 			auto curr_path = get_curr_path();
-			exec_and_redirect_to_std_output(L"", s2w(VS_LOCATION) + L"/Common7/IDE/devenv.com \"" + *curr_path.p + L"/" + ppath_str + L"build/bp.sln\" /build debug");
+			exec_and_redirect_to_std_output(L"", s2w(VS_LOCATION) + L"/Common7/IDE/devenv.com \"" + *curr_path.p + L"/" + (ppath_str.empty() ? L"" : ppath_str + L"/") + L"build/bp.sln\" /build debug");
 			delete_mail(curr_path);
 		}
 
-		auto self_module_filename = ppath_str + L"/build/debug/bp.dll";
+		auto self_module_filename = (ppath_str.empty() ? L"" : ppath_str + L"/") + L"build/debug/bp.dll";
 		auto self_module = load_module(self_module_filename);
 		if (self_module)
 		{

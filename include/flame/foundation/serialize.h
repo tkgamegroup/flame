@@ -904,10 +904,7 @@ namespace flame
 				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)src);
 				return;
 			case cH("std::wstring"):
-			{
-				auto str = s2w(*(std::string*)src);
-				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
-			}
+				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)src);
 				return;
 			}
 		}
