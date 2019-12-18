@@ -25,7 +25,7 @@
 		</node>
 		<node type="D#graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
 		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
-		<node type="D#graphics::DescriptorImageBinding" id="images_binding" pos="1234.81;1486.79">
+		<node type="D#graphics::DescriptorImageBinding" id="imgs_binding" pos="1234.81;1486.79">
 			<datas>
 				<data name="count" value="64" />
 				<data name="name" value="images" />
@@ -110,8 +110,8 @@
 		<link out="rt_ms.out" in="sp.color_targets" />
 		<link out="rt_dst.out" in="sp.resolve_targets" />
 		<link out="sp.out" in="rnf.passes" />
-		<link out="img_white.out" in="images_binding.v" />
-		<link out="images_binding.out" in="dsl.bindings" />
+		<link out="img_white.out" in="imgs_binding.v" />
+		<link out="imgs_binding.out" in="dsl.bindings" />
 		<link out="dsl.out" in="pll.descriptorlayouts" />
 		<link out="via1.out" in="vias.1" />
 		<link out="via2.out" in="vias.2" />
@@ -141,7 +141,7 @@
 		<link out="pl_text_lcd.out" in="make_cmd.pl_text_lcd" />
 		<link out="pl_text_sdf.out" in="make_cmd.pl_text_sdf" />
 		<link out="dsl.default_set" in="make_cmd.ds" />
-		<link out="images_binding.iv" in="make_cmd.white_iv" />
+		<link out="imgs_binding.iv" in="make_cmd.white_iv" />
 	</links>
 	<exports>
 		<input>

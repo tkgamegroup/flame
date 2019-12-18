@@ -1,3 +1,4 @@
+#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "buffer_private.h"
 #include "commandbuffer_private.h"
@@ -170,7 +171,7 @@ namespace flame
 				mem_prop$im.v = MemPropDevice;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (size$i.frame > out$o.frame || usage$im.frame > out$o.frame || mem_prop$im.frame > out$o.frame)
 				{
@@ -186,7 +187,7 @@ namespace flame
 					}
 					else
 						out$o.v = nullptr;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 

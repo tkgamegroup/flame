@@ -1,3 +1,4 @@
+#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 
@@ -200,23 +201,23 @@ namespace flame
 				clear$i.v = true;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				auto last_out_frame = out$o.frame;
 				if (format$i.frame > last_out_frame)
 				{
 					out$o.v.format = format$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (clear$i.frame > last_out_frame)
 				{
 					out$o.v.clear = clear$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (sample_count$i.frame > last_out_frame)
 				{
 					out$o.v.sample_count = sample_count$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -235,23 +236,23 @@ namespace flame
 				depth_attachment$i.v = -1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				auto last_out_frame = out$o.frame;
 				if (color_attachments$i.frame > last_out_frame)
 				{
 					out$o.v.color_attachments = color_attachments$i.v ? *color_attachments$i.v : std::vector<uint>();
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (resolve_attachments$i.frame > last_out_frame)
 				{
 					out$o.v.resolve_attachments = resolve_attachments$i.v ? *resolve_attachments$i.v : std::vector<uint>();
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (depth_attachment$i.frame > last_out_frame)
 				{
 					out$o.v.depth_attachment = depth_attachment$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -265,7 +266,7 @@ namespace flame
 
 			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (attachments$i.frame > out$o.frame || subpasses$i.frame > out$o.frame || dependencies$i.frame > out$o.frame)
 				{
@@ -297,7 +298,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -376,7 +377,7 @@ namespace flame
 
 			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				auto last_out_frame = out$o.frame;
 				if (renderpass$i.frame > last_out_frame)
@@ -391,7 +392,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (colors$i.frame > last_out_frame || renderpass$i.frame > last_out_frame)
 				{
@@ -407,7 +408,7 @@ namespace flame
 					}
 					else
 						printf("cannot update clearvalues\n");
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -481,7 +482,7 @@ namespace flame
 
 			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame)
 				{
@@ -497,7 +498,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -663,26 +664,26 @@ namespace flame
 				clear_color$i.v = Vec4c(0);
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				auto last_out_frame = out$o.frame;
 				if (type$i.frame > out$o.frame || v$i.frame > last_out_frame)
 				{
 					out$o.v.type = type$i.v;
 					out$o.v.v = v$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 					first_image$o.v = image_from_target(type$i.v, v$i.v);
-					first_image$o.frame = looper().frame;
+					first_image$o.frame = scene->frame;
 				}
 				if (clear$i.frame > last_out_frame)
 				{
 					out$o.v.clear = clear$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (clear_color$i.frame > last_out_frame)
 				{
 					out$o.v.clear_color = clear_color$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 		};
@@ -700,23 +701,23 @@ namespace flame
 				depth_target$i.v = nullptr;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				auto last_out_frame = out$o.frame;
 				if (color_targets$i.frame > last_out_frame)
 				{
 					out$o.v.color_targets = get_attribute_vec(color_targets$i);
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (resolve_targets$i.frame > last_out_frame)
 				{
 					out$o.v.resolve_targets = get_attribute_vec(resolve_targets$i);
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 				if (depth_target$i.frame > last_out_frame)
 				{
 					out$o.v.depth_target = depth_target$i.v;
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 		};
@@ -734,7 +735,7 @@ namespace flame
 			{
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				const auto check_target = [&](void* _t) {
 					const auto& t = *(RenderTarget*)_t;
@@ -799,11 +800,10 @@ namespace flame
 						fbs$o.v.clear();
 						cv$o.v = nullptr;
 					}
-					auto frame = looper().frame;
-					out$o.frame = frame;
-					rp$o.frame = frame;
-					fbs$o.frame = frame;
-					cv$o.frame = frame;
+					out$o.frame = scene->frame;
+					rp$o.frame = scene->frame;
+					fbs$o.frame = scene->frame;
+					cv$o.frame = scene->frame;
 				}
 			}
 

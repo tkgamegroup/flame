@@ -1,3 +1,4 @@
+#include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/serialize.h>
 #include "device_private.h"
@@ -443,7 +444,7 @@ namespace flame
 				usage$mi.v = ImageUsageSampled;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (format$i.frame > out$o.frame || size$i.frame > out$o.frame || level$i.frame > out$o.frame || layer$i.frame > out$o.frame || sample_count$i.frame > out$o.frame || usage$mi.frame > out$o.frame)
 				{
@@ -462,7 +463,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -480,7 +481,7 @@ namespace flame
 			AttributeE<Format$> format$o;
 			AttributeD<Vec2u> size$o;
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (in$i.frame > format$o.frame || in$i.frame > size$o.frame)
 				{
@@ -497,9 +498,8 @@ namespace flame
 						format$o.v = Format_Undefined;
 						size$o.v = Vec2u(0);
 					}
-					auto frame = looper().frame;
-					format$o.frame = frame;
-					size$o.frame = frame;
+					format$o.frame = scene->frame;
+					size$o.frame = scene->frame;
 				}
 			}
 		};
@@ -600,7 +600,7 @@ namespace flame
 				layer_count$i.v = 1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (image$i.frame > out$o.frame || type$i.frame > out$o.frame || base_level$i.frame > out$o.frame || base_layer$i.frame > out$o.frame || layer_count$i.frame > out$o.frame || swizzle_r$i.frame > out$o.frame || swizzle_g$i.frame > out$o.frame || swizzle_b$i.frame > out$o.frame || swizzle_a$i.frame > out$o.frame)
 				{
@@ -614,7 +614,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -632,7 +632,7 @@ namespace flame
 
 			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (image$i.frame > out$o.frame)
 				{
@@ -646,7 +646,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -667,7 +667,7 @@ namespace flame
 			{
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (images$i.frame > out$o.frame)
 				{
@@ -686,7 +686,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 

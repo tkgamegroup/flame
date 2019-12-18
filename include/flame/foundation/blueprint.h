@@ -110,14 +110,10 @@ namespace flame
 			void* user_data;
 		};
 
-		struct Environment
-		{
-			std::wstring filename;
-			std::vector<TypeinfoDatabase*> dbs;
-			float time;
-		};
+		uint frame;
+		float time;
 
-		FLAME_FOUNDATION_EXPORTS void set_time(float t);
+		FLAME_FOUNDATION_EXPORTS const std::wstring filename() const;
 
 		FLAME_FOUNDATION_EXPORTS Package* package() const;
 
@@ -165,7 +161,5 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
-
-	FLAME_FOUNDATION_EXPORTS const BP::Environment& bp_env();
 }
 

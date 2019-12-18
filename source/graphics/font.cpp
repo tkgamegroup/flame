@@ -1,3 +1,4 @@
+#include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
@@ -398,7 +399,7 @@ namespace flame
 
 			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (draw_type$i.frame > out$o.frame || fonts$i.frame > out$o.frame)
 				{
@@ -409,7 +410,7 @@ namespace flame
 						out$o.v = FontAtlas::create(d, draw_type$i.v, *fonts$i.v);
 					else
 						printf("cannot create fontatlas\n");
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 

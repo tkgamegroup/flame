@@ -1,4 +1,3 @@
-#include <flame/foundation/foundation.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/all.h>
@@ -67,7 +66,7 @@ namespace flame
 			alpha$i.v = 1.f;
 		}
 
-		__declspec(dllexport) void update$()
+		__declspec(dllexport) void update$(BP* scene)
 		{
 			out$o.v.type = CmdDrawRect;
 			if (pos$i.frame > out$o.frame)
@@ -76,7 +75,7 @@ namespace flame
 				out$o.v.size = size$i.v;
 			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
 				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
-			out$o.frame = maxN(pos$i.frame, size$i.frame, color$i.frame, alpha$i.frame);
+			out$o.frame = scene->frame;
 		}
 	};
 
@@ -108,7 +107,7 @@ namespace flame
 			text$i.v = L"Replace Me!";
 		}
 
-		__declspec(dllexport) void update$()
+		__declspec(dllexport) void update$(BP* scene)
 		{
 			out$o.v.type = CmdDrawTextSdf;
 			if (font_atals$i.frame > out$o.frame)
@@ -126,7 +125,7 @@ namespace flame
 				for (auto i = 0; i < text$i.v.size(); i++)
 					out$o.v.glyphs[i] = atlas->get_glyph(text$i.v[i], 0);
 			}
-			out$o.frame = maxN(font_atals$i.frame, scale$i.frame, pos$i.frame, color$i.frame, alpha$i.frame, text$i.frame);
+			out$o.frame = scene->frame;
 		}
 	};
 
@@ -460,7 +459,7 @@ namespace flame
 				add_image_detail(pos, size, uv0, uv1, tint_col, vtx_cnt, idx_cnt);
 		}
 
-		__declspec(dllexport) void update$()
+		__declspec(dllexport) void update$(BP* scene)
 		{
 			auto rnf = (RenderpassAndFramebuffer*)rnf$i.v;
 			auto img_idx = image_idx$i.v;
@@ -485,7 +484,7 @@ namespace flame
 				auto c = new CanvasPrivate;
 				c->thiz = this;
 				canvas$o.v = c;
-				canvas$o.frame = looper().frame;
+				canvas$o.frame = scene->frame;
 
 				auto font_atlases = get_attribute_vec(font_atlases$i);
 				for (auto f : font_atlases)

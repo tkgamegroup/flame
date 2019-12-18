@@ -50,7 +50,7 @@ namespace flame
 			size$i.v = Vec2u(800, 600);
 		}
 
-		__declspec(dllexport) void update$()
+		__declspec(dllexport) void update$(BP* scene)
 		{
 			if (size$i.frame > img$o.frame)
 			{
@@ -69,15 +69,15 @@ namespace flame
 				else
 					img$o.v = nullptr;
 				type$o.v = TargetImageview;
-				type$o.frame = size$i.frame;
+				type$o.frame = scene->frame;
 				if (img$o.v)
 				{
 					view$o.v = Imageview::create((Image*)img$o.v);
 					idx$o.v = app.canvas->set_image(-1, (Imageview*)view$o.v);
 				}
-				img$o.frame = size$i.frame;
-				view$o.frame = size$i.frame;
-				idx$o.frame = size$i.frame;
+				img$o.frame = scene->frame;
+				view$o.frame = scene->frame;
+				idx$o.frame = scene->frame;
 			}
 		}
 
@@ -100,7 +100,7 @@ namespace flame
 		{
 		}
 
-		__declspec(dllexport) void update$()
+		__declspec(dllexport) void update$(BP* scene)
 		{
 			if (out$o.frame == -1)
 			{
@@ -114,7 +114,7 @@ namespace flame
 				}
 				else
 					out$o.v.clear();
-				out$o.frame = 0;
+				out$o.frame = scene->frame;
 			}
 
 			app.extra_cbs.push_back((Commandbuffer*)out$o.v[0]);
@@ -1814,7 +1814,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 									str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
 									file.write(str.c_str(), str.size());
 									file.close();
-									i_filename->set_frame(looper().frame);
+									i_filename->set_frame(capture.n->scene()->frame);
 								}
 							}, new_mail(&_capture));
 						}
@@ -2591,7 +2591,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
 
 				if (capture.e->running)
-					capture.e->bp->set_time(0.f);
+					capture.e->bp->time = 0.f;
 			}
 		}, new_mail(&capture));
 	}

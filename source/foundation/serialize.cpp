@@ -1339,7 +1339,9 @@ namespace flame
 						item->get_name(&pwname);
 						item->get_value(&v);
 
-						e->add_item(w2s(pwname), v.lVal);
+						auto item_name = w2s(pwname);
+						if (!string_endswith(item_name, std::string("Max")))
+							e->add_item(item_name, v.lVal);
 
 						item->Release();
 					}

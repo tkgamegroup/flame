@@ -1,3 +1,4 @@
+#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "synchronize_private.h"
 #include "renderpass_private.h"
@@ -621,7 +622,7 @@ namespace flame
 		{
 			AttributeP<void> out$o;
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (out$o.frame == -1)
 				{
@@ -634,7 +635,7 @@ namespace flame
 
 						out$o.v = nullptr;
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 
@@ -656,7 +657,7 @@ namespace flame
 			{
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (size$i.frame > out$o.frame)
 				{
@@ -675,7 +676,7 @@ namespace flame
 
 						out$o.v.clear();
 					}
-					out$o.frame = looper().frame;
+					out$o.frame = scene->frame;
 				}
 			}
 

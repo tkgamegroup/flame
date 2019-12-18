@@ -277,7 +277,7 @@ namespace flame
 			{
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$()
+			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				auto scr = (SwapchainResizable*)in$i.v;
 				if (scr->changed)
@@ -287,12 +287,12 @@ namespace flame
 						images$o.v = ((Swapchain*)sc$o.v)->images();
 					else
 						images$o.v.clear();
-					auto frame = looper().frame;
+					auto frame = scene->frame;
 					sc$o.frame = frame;
 					images$o.frame = frame;
 				}
 				image_idx$o.v = sc$o.v ? ((Swapchain*)sc$o.v)->image_index() : 0;
-				image_idx$o.frame = looper().frame;
+				image_idx$o.frame = scene->frame;
 				scr->changed = false;
 			}
 

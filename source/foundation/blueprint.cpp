@@ -7,8 +7,6 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
-	static BP::Environment* p_env;
-
 	struct ModulePrivate : BP::Module
 	{
 		std::wstring filename;
@@ -83,18 +81,20 @@ namespace flame
 
 	struct BPPrivate : BPDestroyDependence
 	{
+		std::wstring filename;
+
 		PackagePrivate* package;
 		BPPrivate* root;
 
 		std::vector<std::unique_ptr<PackagePrivate>> packages;
 		std::vector<ModulePrivate*> package_modules;
 
+		std::vector<TypeinfoDatabase*> dbs;
+
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
 		std::vector<SlotPrivate*> input_exports;
 		std::vector<SlotPrivate*> output_exports;
-
-		Environment env;
 
 		std::vector<NodePrivate*> initiative_nodes;
 		std::vector<NodePrivate*> pending_update_nodes;
@@ -103,9 +103,10 @@ namespace flame
 
 		BPPrivate()
 		{
+			frame = 0;
+			time = 0.f;
 			package = nullptr;
 			root = this;
-			env.time = 0.f;
 			need_update_hierarchy = true;
 		}
 
@@ -179,7 +180,7 @@ namespace flame
 
 	void SlotPrivate::set_data(const void* d)
 	{
-		set_frame(looper().frame);
+		set_frame(node->scene->frame);
 		node->scene->root->add_to_pending_update(node);
 		 
 		vi->type().copy_from(d, vi->size(), raw_data, node->module, node->udt->db());
@@ -245,7 +246,7 @@ namespace flame
 		if (target)
 			target->links.push_back(this);
 
-		set_frame(looper().frame);
+		set_frame(node->scene->frame);
 
 		auto root = node->scene->root;
 		root->need_update_hierarchy = true;
@@ -299,7 +300,7 @@ namespace flame
 			auto f = udt->find_function("update");
 			if (f)
 			{
-				if (f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 0)
+				if (f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 1 && f->parameter_type(0).hash == TypeInfo(TypePointer, "BP").hash)
 					update_addr = (char*)module + (uint)f->rva();
 				assert(update_addr);
 			}
@@ -344,7 +345,7 @@ namespace flame
 			for (auto& l : o->links)
 			{
 				l->links[0] = nullptr;
-				l->set_frame(looper().frame);
+				l->set_frame(scene->frame);
 				root->add_to_pending_update(l->node);
 			}
 		}
@@ -381,21 +382,21 @@ namespace flame
 		}
 
 		if (update_addr)
-			cmf(p2f<MF_v_v>(update_addr), object);
+			cmf(p2f<MF_v_vp>(update_addr), object, scene);
 	}
 
-	BP::Module* BPPrivate::add_module(const std::wstring& filename)
+	BP::Module* BPPrivate::add_module(const std::wstring& fn)
 	{
-		if (filename == L"bp.dll")
+		if (fn == L"bp.dll")
 			return nullptr;
 		for (auto& m : modules)
 		{
-			if (m->filename == filename)
+			if (m->filename == fn)
 				return nullptr;
 		}
 
-		std::filesystem::path absolute_filename = filename;
-		auto module = load_module(filename);
+		std::filesystem::path absolute_filename = fn;
+		auto module = load_module(fn);
 		if (module)
 		{
 			auto app_path = get_app_path();
@@ -404,19 +405,19 @@ namespace flame
 		}
 		else
 		{
-			std::filesystem::path path(env.filename);
-			absolute_filename = path.parent_path() / filename;
+			std::filesystem::path path(filename);
+			absolute_filename = path.parent_path() / fn;
 			module = load_module(absolute_filename);
 		}
 		if (!module)
 		{
-			printf("cannot add module %s\n", w2s(filename).c_str());
+			printf("cannot add module %s\n", w2s(fn).c_str());
 			return nullptr;
 		}
 		absolute_filename = std::filesystem::canonical(absolute_filename);
 
 		auto m = new ModulePrivate;
-		m->filename = filename;
+		m->filename = fn;
 		m->absolute_filename = absolute_filename;
 		m->module = module;
 		std::vector<TypeinfoDatabase*> dbs;
@@ -456,7 +457,7 @@ namespace flame
 		}
 	}
 
-	PackagePrivate* BPPrivate::add_package(const std::wstring& _filename, const std::string& id)
+	PackagePrivate* BPPrivate::add_package(const std::wstring& fn, const std::string& id)
 	{
 		std::string s_id;
 		if (!id.empty())
@@ -475,12 +476,12 @@ namespace flame
 			}
 		}
 
-		auto bp = (BPPrivate*)BP::create_from_file((std::filesystem::path(env.filename).parent_path().parent_path() / _filename / L"bp").wstring(), true, root);
+		auto bp = (BPPrivate*)BP::create_from_file((std::filesystem::path(filename).parent_path().parent_path() / fn / L"bp").wstring(), true, root);
 		if (!bp)
 			return nullptr;
 
 		auto p = new PackagePrivate(this, s_id, bp);
-		p->filename = _filename;
+		p->filename = fn;
 		packages.emplace_back(p);
 
 		collect_package_modules();
@@ -543,13 +544,13 @@ namespace flame
 
 	void BPPrivate::collect_dbs()
 	{
-		env.dbs.clear();
+		dbs.clear();
 		for (auto& m : modules)
-			env.dbs.push_back(m->db);
+			dbs.push_back(m->db);
 		if (self_module)
-			env.dbs.push_back(self_module->db);
+			dbs.push_back(self_module->db);
 		for (auto m : package_modules)
-			env.dbs.push_back(m->db);
+			dbs.push_back(m->db);
 	}
 
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& id)
@@ -727,7 +728,10 @@ namespace flame
 		for (auto n : initiative_nodes)
 			add_to_update_list(this, n);
 		for (auto n : pending_update_nodes)
+		{
 			add_to_update_list(this, n);
+			n->in_pending_update = false;
+		}
 		pending_update_nodes.clear();
 		
 		while (!update_list.empty())
@@ -736,11 +740,8 @@ namespace flame
 			update_list.erase(update_list.begin());
 			n->in_update_list = false;
 
-			p_env = &n->scene->env;
-			p_env->time = env.time;
 			n->update();
 
-			auto frame = looper().frame;
 			for (auto& o : n->outputs)
 			{
 				if (o->frame() == frame)
@@ -751,7 +752,8 @@ namespace flame
 			}
 		}
 
-		env.time += looper().delta_time;
+		frame++;
+		time += looper().delta_time;
 	}
 
 	const std::wstring& BP::Module::filename() const
@@ -936,9 +938,9 @@ namespace flame
 		return nullptr;
 	}
 
-	void BP::set_time(float t)
+	const std::wstring BP::filename() const
 	{
-		((BPPrivate*)this)->env.time = t;
+		return ((BPPrivate*)this)->filename;
 	}
 
 	BP::Package* BP::package() const
@@ -1015,7 +1017,7 @@ namespace flame
 
 	const std::vector<TypeinfoDatabase*> BP::dbs() const
 	{
-		return ((BPPrivate*)this)->env.dbs;
+		return ((BPPrivate*)this)->dbs;
 	}
 
 	uint BP::node_count() const
@@ -1070,7 +1072,7 @@ namespace flame
 
 	BP::Slot* BP::find_input(const std::string& address) const
 	{
-		auto sp = string_last_first_split(address, '.');
+		auto sp = string_last_split(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
@@ -1079,7 +1081,7 @@ namespace flame
 
 	BP::Slot* BP::find_output(const std::string& address) const
 	{
-		auto sp = string_last_first_split(address, '.');
+		auto sp = string_last_split(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
@@ -1352,7 +1354,7 @@ namespace flame
 		auto bp = new BPPrivate();
 		if (root)
 			bp->root = (BPPrivate*)root;
-		bp->env.filename = filename;
+		bp->filename = filename;
 
 		for (auto& m_d : module_descs)
 		{
@@ -1377,7 +1379,7 @@ namespace flame
 
 				std::ofstream templatecpp(templatecpp_path);
 				templatecpp << "// THIS FILE IS AUTO GENERATED\n";
-				templatecpp << "#include <flame/foundation/foundation.h>\n";
+				templatecpp << "#include <flame/foundation/blueprint.h>\n";
 				templatecpp << "#include <flame/graphics/graphics.h>\n";
 				templatecpp << "namespace flame\n{\n";
 				templatecpp << "\ttemplate<class T>\n\tstruct Var$;\n\n";
@@ -1411,10 +1413,10 @@ namespace flame
 							templatecpp << "\ttemplate<>\n\tstruct Var$<" << template_parameters << ">\n\t{\n";
 							templatecpp << "\t\tAttributeD<" << template_parameters << "> in$i;\n";
 							templatecpp << "\t\tAttributeD<" << template_parameters << "> out$o;\n";
-							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$(BP* scene)\n\t\t{\n";
 							templatecpp << "\t\t\tif (in$i.frame > out$o.frame)\n\t\t\t{\n";
 							templatecpp << "\t\t\t\tout$o.v = in$i.v;\n";
-							templatecpp << "\t\t\t\tout$o.frame = looper().frame;\n";
+							templatecpp << "\t\t\t\tout$o.frame = scene->frame;\n";
 							templatecpp << "\t\t\t}\n";
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
@@ -1424,10 +1426,10 @@ namespace flame
 							templatecpp << "\ttemplate<>\n\tstruct Enum$<" << template_parameters << "$>\n\t{\n";
 							templatecpp << "\t\tAttributeE<" << template_parameters << "$> in$i;\n";
 							templatecpp << "\t\tAttributeE<" << template_parameters << "$> out$o;\n";
-							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$(BP* scene)\n\t\t{\n";
 							templatecpp << "\t\t\tif (in$i.frame > out$o.frame)\n\t\t\t{\n";
 							templatecpp << "\t\t\t\tout$o.v = in$i.v;\n";
-							templatecpp << "\t\t\t\tout$o.frame = looper().frame;\n";
+							templatecpp << "\t\t\t\tout$o.frame = scene->frame;\n";
 							templatecpp << "\t\t\t}\n";
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
@@ -1440,7 +1442,7 @@ namespace flame
 							for (auto i = 0; i < N; i++)
 								templatecpp << "\t\tAttributeD<" << sp[1] << "> " << "xyzw"[i] << "$i;\n";
 							templatecpp << "\t\tAttributeD<Vec<" << N << ", " << sp[1] << ">> v$o;\n";
-							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$(BP* scene)\n\t\t{\n";
 							templatecpp << "\t\t\tauto out_frame = v$o.frame;\n";
 							templatecpp << "\t\t\tif (out_frame == -1)\n";
 							templatecpp << "\t\t\t\tv$o.v.resize(" << sp[0] << ");\n";
@@ -1448,7 +1450,7 @@ namespace flame
 							{
 								templatecpp << "\t\t\tif (" << "xyzw"[i] << "$i.frame > v$o.frame)\n\t\t\t{\n";
 								templatecpp << "\t\t\t\tv$o.v[" << i << "] = " << "xyzw"[i] << "$i.v;\n";
-								templatecpp << "\t\t\t\tout_frame = looper().frame;\n";
+								templatecpp << "\t\t\t\tout_frame = scene->frame;\n";
 								templatecpp << "\t\t\t}\n";
 							}
 							templatecpp << "\t\t\tv$o.frame = out_frame;\n";
@@ -1470,7 +1472,7 @@ namespace flame
 							for (auto i = 0; i < N; i++)
 								templatecpp << "\t\tAttribute" << (is_pointer ? "P" : "D") << "<" << T << "> _" << (i + 1) << "$i;\n";
 							templatecpp << "\t\tAttributeD<std::vector<" << sp[1] << ">> v$o;\n";
-							templatecpp << "\n\t\t__declspec(dllexport) void update$()\n\t\t{\n";
+							templatecpp << "\n\t\t__declspec(dllexport) void update$(BP* scene)\n\t\t{\n";
 							templatecpp << "\t\t\tauto out_frame = v$o.frame;\n";
 							templatecpp << "\t\t\tif (out_frame == -1)\n";
 							templatecpp << "\t\t\t\tv$o.v.resize(" << sp[0] << ");\n";
@@ -1478,12 +1480,16 @@ namespace flame
 							{
 								templatecpp << "\t\t\tif (_" << (i + 1) << "$i.frame > v$o.frame)\n\t\t\t{\n";
 								templatecpp << "\t\t\t\tv$o.v[" << i << "] = _" << (i + 1) << "$i.v;\n";
-								templatecpp << "\t\t\t\tout_frame = looper().frame;\n";
+								templatecpp << "\t\t\t\tout_frame = scene->frame;\n";
 								templatecpp << "\t\t\t}\n";
 							}
 							templatecpp << "\t\t\tv$o.frame = out_frame;\n";
 							templatecpp << "\t\t}\n";
 							templatecpp << "\t};\n\n";
+						}
+						else if (template_name == "D#Array_")
+						{
+
 						}
 						else
 							assert(0);
@@ -1557,7 +1563,7 @@ namespace flame
 			m->filename = self_module_filename;
 			m->absolute_filename = std::filesystem::canonical(self_module_filename);
 			m->module = self_module;
-			m->db = TypeinfoDatabase::load(bp->env.dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
+			m->db = TypeinfoDatabase::load(bp->dbs, std::filesystem::path(self_module_filename).replace_extension(L".typeinfo"));
 			bp->self_module.reset(m);
 
 			bp->collect_dbs();
@@ -1575,7 +1581,7 @@ namespace flame
 					auto input = n->find_input(d_d.name);
 					auto v = input->vi();
 					if (v->default_value())
-						v->type().unserialize(bp->env.dbs, d_d.value, input->raw_data(), n->module, n->udt->db());
+						v->type().unserialize(bp->dbs, d_d.value, input->raw_data(), n->module, n->udt->db());
 				}
 			}
 		}
@@ -1607,7 +1613,7 @@ namespace flame
 	{
 		auto bp = (BPPrivate*)_bp;
 
-		bp->env.filename = filename;
+		bp->filename = filename;
 
 		auto file = SerializableNode::create("BP");
 
@@ -1679,7 +1685,7 @@ namespace flame
 						n_datas = n_node->new_node("datas");
 					auto n_data = n_datas->new_node("data");
 					n_data->new_attr("name", v->name());
-					n_data->new_attr("value", v->type().serialize(bp->env.dbs, input->raw_data, 2));
+					n_data->new_attr("value", v->type().serialize(bp->dbs, input->raw_data, 2));
 				}
 			}
 		}
@@ -1754,23 +1760,18 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-	const BP::Environment& bp_env()
-	{
-		return *p_env;
-	}
-
 	struct F2U$
 	{
 		AttributeD<float> v$i;
 
 		AttributeD<uint> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (v$i.frame > out$o.frame)
 			{
 				out$o.v = v$i.v;
-				out$o.frame = looper().frame;
+				out$o.frame = scene->frame;
 			}
 		}
 	};
@@ -1783,12 +1784,12 @@ namespace flame
 
 		AttributeD<std::wstring> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (v$i.frame > out$o.frame)
 			{
 				out$o.v = s2w(v$i.v);
-				out$o.frame = looper().frame;
+				out$o.frame = scene->frame;
 			}
 		}
 	};
@@ -1799,12 +1800,12 @@ namespace flame
 
 		AttributeD<std::string> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (v$i.frame > out$o.frame)
 			{
 				out$o.v = w2s(v$i.v);
-				out$o.frame = looper().frame;
+				out$o.frame = scene->frame;
 			}
 		}
 	};
@@ -1816,12 +1817,12 @@ namespace flame
 
 		AttributeD<float> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
 			{
 				out$o.v = a$i.v + b$i.v;
-				out$o.frame = looper().frame;
+				out$o.frame = scene->frame;
 			}
 		}
 	};
@@ -1833,12 +1834,12 @@ namespace flame
 
 		AttributeD<float> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
 			{
 				out$o.v = a$i.v * b$i.v;
-				out$o.frame = looper().frame;
+				out$o.frame = scene->frame;
 			}
 		}
 	};
@@ -1850,13 +1851,13 @@ namespace flame
 
 		AttributeD<Vec2f> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (x$i.frame > out$o.frame)
 				out$o.v.x() = x$i.v;
 			if (y$i.frame > out$o.frame)
 				out$o.v.y() = y$i.v;
-			out$o.frame = looper().frame;
+			out$o.frame = scene->frame;
 		}
 	};
 
@@ -1865,13 +1866,12 @@ namespace flame
 		AttributeD<float> delta$o;
 		AttributeD<float> total$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			delta$o.v = looper().delta_time;
-			total$o.v = bp_env().time;
-			auto frame = looper().frame;
-			delta$o.frame = frame;
-			total$o.frame = frame;
+			total$o.v = scene->time;
+			delta$o.frame = scene->frame;
+			total$o.frame = scene->frame;
 		}
 	};
 
@@ -1883,7 +1883,7 @@ namespace flame
 
 		AttributeD<float> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
 			{
@@ -1893,7 +1893,7 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = looper().frame;
+				out$o.frame = scene->frame;
 			}
 		}
 	};
@@ -1906,7 +1906,7 @@ namespace flame
 
 		AttributeD<Vec2f> out$o;
 
-		FLAME_FOUNDATION_EXPORTS void update$()
+		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
 		{
 			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
 			{
@@ -1916,7 +1916,7 @@ namespace flame
 					out$o.v = b$i.v;
 				else
 					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = looper().frame;
+				out$o.frame = scene->frame;
 			}
 		}
 	};

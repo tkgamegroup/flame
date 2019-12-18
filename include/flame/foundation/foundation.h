@@ -270,7 +270,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::basic_string<CH> string_cut(const std::basic_string<CH>& str, int length) // < 0 means from end
+	std::basic_string<CH> string_cut(const std::basic_string<CH>& str, int length) // < 0 means from end
 	{
 		if (length < 0)
 			length = str.size() + length;
@@ -278,19 +278,25 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline void string_to_lower(std::basic_string<CH>& str)
+	void string_to_lower(std::basic_string<CH>& str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 	}
 
 	template<typename CH>
-	inline void string_to_upper(std::basic_string<CH>& str)
+	void string_to_upper(std::basic_string<CH>& str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(), ::toupper);
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> string_split(const std::basic_string<CH>& str, CH delimiter = ' ')
+	bool string_endswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
+	{
+		return str.size() > oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
+	}
+
+	template<typename CH>
+	std::vector<std::basic_string<CH>> string_split(const std::basic_string<CH>& str, CH delimiter = ' ')
 	{
 		std::basic_istringstream<CH> iss(str);
 		std::vector<std::basic_string<CH>> ret;
@@ -303,7 +309,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> string_last_first_split(const std::basic_string<CH>& str, CH delimiter = ' ')
+	std::vector<std::basic_string<CH>> string_last_split(const std::basic_string<CH>& str, CH delimiter = ' ')
 	{
 		auto i = str.size() - 1;
 		for (; i >= 0; i--)
@@ -318,7 +324,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> doublenull_string_split(const CH* str)
+	std::vector<std::basic_string<CH>> doublenull_string_split(const CH* str)
 	{
 		std::vector<std::basic_string<CH>> ret;
 
@@ -341,7 +347,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	inline std::vector<std::basic_string<CH>> string_regex_split(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
+	std::vector<std::basic_string<CH>> string_regex_split(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
 	{
 		std::vector<std::basic_string<CH>> ret;
 
