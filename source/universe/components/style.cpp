@@ -53,13 +53,13 @@ namespace flame
 		switch (event_receiver->state)
 		{
 		case EventReceiverNormal:
-			element->color = color_normal;
+			element->set_color(color_normal);
 			break;
 		case EventReceiverHovering:
-			element->color = color_hovering;
+			element->set_color(color_hovering);
 			break;
 		case EventReceiverActive:
-			element->color = color_active;
+			element->set_color(color_active);
 			break;
 		}
 	}

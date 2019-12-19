@@ -321,7 +321,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		{
 			auto c_element = cElement::create();
 			c_element->size_ = 20.f;
-			c_element->frame_thickness = 2.f;
+			c_element->frame_thickness_ = 2.f;
 			e_transform_tool->add_component(c_element);
 			c_overlayer->transform_tool_element = c_element;
 
@@ -359,7 +359,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				c_element->pos_.y() = 5.f;
 				c_element->size_.x() = 20.f;
 				c_element->size_.y() = 10.f;
-				c_element->frame_thickness = 2.f;
+				c_element->frame_thickness_ = 2.f;
 				e_h_wing->add_component(c_element);
 
 				auto c_event_receiver = cEventReceiver::create();
@@ -397,7 +397,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				c_element->pos_.y() = 25.f;
 				c_element->size_.x() = 10.f;
 				c_element->size_.y() = 20.f;
-				c_element->frame_thickness = 2.f;
+				c_element->frame_thickness_ = 2.f;
 				e_v_wing->add_component(c_element);
 
 				auto c_event_receiver = cEventReceiver::create();

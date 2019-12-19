@@ -164,8 +164,8 @@ namespace flame
 			auto c_element = e_combobox->get_component(cElement);
 			c_element->size_.x() = width + 8.f;
 			c_element->size_.y() = default_style.font_size * font_size_scale + 4.f;
-			c_element->frame_color = default_style.text_color_normal;
-			c_element->frame_thickness = 2.f;
+			c_element->frame_color_ = default_style.text_color_normal;
+			c_element->frame_thickness_ = 2.f;
 
 			e_combobox->get_component(cText)->auto_width_ = false;
 			

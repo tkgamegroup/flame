@@ -233,10 +233,10 @@ namespace flame
 				pages->remove_child(page, false);
 				page->set_visibility(true);
 				element->set_pos(element->global_pos);
-				element->alpha = 0.5f;
+				element->set_alpha(0.5f);
 				page_element->set_x(element->pos_.x());
 				page_element->set_y(element->pos_.y() + element->global_size.y() + 8.f);
-				page_element->alpha = 0.5f;
+				page_element->set_alpha(0.5f);
 				page_aligner->set_width_policy(SizeFixed);
 				page_aligner->set_height_policy(SizeFixed);
 				root->add_child(page);
@@ -350,10 +350,10 @@ namespace flame
 								e_tabbar->add_child(e_tab);
 								auto element = thiz->element;
 								element->set_pos(Vec2f(0.f));
-								element->alpha = 1.f;
+								element->set_alpha(1.f);
 								e_pages->add_child(e_page);
 								page_element->set_pos(Vec2f(0.f));
-								page_element->alpha = 1.f;
+								page_element->set_alpha(1.f);
 								page_aligner->set_width_policy(SizeFitParent);
 								page_aligner->set_height_policy(SizeFitParent);
 								thiz->page = nullptr;
@@ -511,9 +511,9 @@ namespace flame
 								tabbar->add_child(e_tab, thiz->drop_idx);
 								tabbar->parent()->child(1)->add_child(e_page);
 
-								tab->element->alpha = 1.f;
+								tab->element->set_alpha(1.f);
 								page_element->set_pos(Vec2f(0.f));
-								page_element->alpha = 1.f;
+								page_element->set_alpha(1.f);
 								page_aligner->set_width_policy(SizeFitParent);
 								page_aligner->set_height_policy(SizeFitParent);
 
@@ -730,9 +730,9 @@ namespace flame
 									new_tabbar->add_child(e_tab);
 									new_pages->add_child(e_page);
 
-									tab->element->alpha = 1.f;
+									tab->element->set_alpha(1.f);
 									page_element->set_pos(Vec2f(0.f));
-									page_element->alpha = 1.f;
+									page_element->set_alpha(1.f);
 									page_aligner->set_width_policy(SizeFitParent);
 									page_aligner->set_height_policy(SizeFitParent);
 
@@ -893,7 +893,7 @@ namespace flame
 			docker_page_model->set_name("docker_page");
 
 			auto c_element = cElement::create();
-			c_element->color = default_style.window_color;
+			c_element->color_ = default_style.window_color;
 			c_element->clip_children = true;
 			docker_page_model->add_component(c_element);
 
@@ -1026,7 +1026,7 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->size_ = 200.f;
 			c_element->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-			c_element->color = default_style.docker_color;
+			c_element->color_ = default_style.docker_color;
 			docker_container_model->add_component(c_element);
 
 			docker_container_model->add_component(cEventReceiver::create());
@@ -1057,7 +1057,7 @@ namespace flame
 			{
 				auto c_element = cElement::create();
 				c_element->size_ = 8.f;
-				c_element->color = Vec4c(200, 100, 100, 255);
+				c_element->color_ = Vec4c(200, 100, 100, 255);
 				e_size_dragger->add_component(c_element);
 
 				e_size_dragger->add_component(cEventReceiver::create());

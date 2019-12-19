@@ -233,8 +233,8 @@ struct cInspectorPrivate : cInspector
 				{
 					auto c_element = cElement::create();
 					c_element->inner_padding_ = Vec4f(4.f);
-					c_element->frame_thickness = 2.f;
-					c_element->frame_color = Vec4f(0, 0, 0, 255);
+					c_element->frame_thickness_ = 2.f;
+					c_element->frame_color_ = Vec4f(0, 0, 0, 255);
 					e_component->add_component(c_element);
 
 					auto c_aligner = cAligner::create();

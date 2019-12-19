@@ -248,7 +248,7 @@ Entity* popup_dialog(Entity* e)
 	{
 		auto c_element = cElement::create();
 		c_element->inner_padding_ = Vec4f(8.f);
-		c_element->color = Vec4c(255);
+		c_element->color_ = Vec4c(255);
 		e_dialog->add_component(c_element);
 
 		auto c_aligner = cAligner::create();

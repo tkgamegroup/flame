@@ -174,7 +174,7 @@ namespace flame
 				c_element->size_.x() = 10.f;
 			else
 				c_element->size_.y() = 10.f;
-			c_element->color = default_style.scrollbar_color;
+			c_element->color_ = default_style.scrollbar_color;
 			e_scrollbar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();

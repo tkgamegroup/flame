@@ -168,7 +168,7 @@ namespace flame
 		auto e_menu = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->color = default_style.window_color;
+			c_element->color_ = default_style.window_color;
 			e_menu->add_component(c_element);
 
 			e_menu->add_component(cLayout::create(LayoutVertical));
@@ -268,7 +268,7 @@ namespace flame
 		auto e_menubar = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->color = default_style.frame_color_normal;
+			c_element->color_ = default_style.frame_color_normal;
 			e_menubar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();

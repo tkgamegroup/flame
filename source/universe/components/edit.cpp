@@ -183,9 +183,9 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->size_.x() = width + 8.f;
 			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_element->color = default_style.frame_color_normal;
-			c_element->frame_color = default_style.text_color_normal;
-			c_element->frame_thickness = 2.f;
+			c_element->color_ = default_style.frame_color_normal;
+			c_element->frame_color_ = default_style.text_color_normal;
+			c_element->frame_thickness_ = 2.f;
 			e_edit->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);

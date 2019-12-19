@@ -64,7 +64,7 @@ namespace flame
 				}
 				canvas->add_text(font_atlas, glyphs, draw_font_size, scale_ * (is_sdf ? global_scale : 1.f), element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
-					alpha_mul(color, element->alpha));
+					alpha_mul(color, element->alpha_));
 			}
 		}
 

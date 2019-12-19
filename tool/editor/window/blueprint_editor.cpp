@@ -192,20 +192,25 @@ struct cBPEditor : Component
 		}
 	}
 
-	void deselect()
+	Entity* selected_entity()
 	{
 		switch (sel_type_)
 		{
 		case SelModule:
-			((Entity*)selected_.m->user_data)->get_component(cElement)->frame_thickness = 0.f;
-			break;
+			return (Entity*)selected_.m->user_data;
 		case SelPackage:
-			((Entity*)selected_.p->user_data)->get_component(cElement)->frame_thickness = 0.f;
-			break;
+			return (Entity*)selected_.p->user_data;
 		case SelNode:
-			((Entity*)selected_.n->user_data)->get_component(cElement)->frame_thickness = 0.f;
-			break;
+			return (Entity*)selected_.n->user_data;
 		}
+		return nullptr;
+	}
+
+	void deselect()
+	{
+		auto e = selected_entity();
+		if (e)
+			e->get_component(cElement)->set_frame_thickness(0.f);
 
 		sel_type_ = SelAir;
 		selected_.plain = nullptr;
@@ -216,18 +221,10 @@ struct cBPEditor : Component
 		deselect();
 		sel_type_ = t;
 		selected_.plain = p;
-		switch (sel_type_)
-		{
-		case SelModule:
-			((Entity*)selected_.m->user_data)->get_component(cElement)->frame_thickness = 4.f;
-			break;
-		case SelPackage:
-			((Entity*)selected_.p->user_data)->get_component(cElement)->frame_thickness = 4.f;
-			break;
-		case SelNode:
-			((Entity*)selected_.n->user_data)->get_component(cElement)->frame_thickness = 4.f;
-			break;
-		}
+
+		auto e = selected_entity();
+		if (e)
+			e->get_component(cElement)->set_frame_thickness(4.f);
 	}
 
 	void set_changed(bool v)
@@ -1093,8 +1090,8 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 	{
 		auto c_element = cElement::create();
 		c_element->pos_ = m->pos;
-		c_element->color = Vec4c(255, 200, 190, 200);
-		c_element->frame_color = Vec4c(252, 252, 50, 200);
+		c_element->color_ = Vec4c(255, 200, 190, 200);
+		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
 		e_module->add_component(c_element);
 
 		e_module->add_component(cEventReceiver::create());
@@ -1176,8 +1173,8 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 	{
 		auto c_element = cElement::create();
 		c_element->pos_ = p->pos;
-		c_element->color = Vec4c(190, 255, 200, 200);
-		c_element->frame_color = Vec4c(252, 252, 50, 200);
+		c_element->color_ = Vec4c(190, 255, 200, 200);
+		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
 		e_package->add_component(c_element);
 
 		e_package->add_component(cEventReceiver::create());
@@ -1280,8 +1277,8 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						auto c_element = cElement::create();
 						auto r = default_style.font_size;
 						c_element->size_ = r;
-						c_element->roundness = r * 0.5f;
-						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->roundness_ = r * 0.5f;
+						c_element->color_ = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -1348,8 +1345,8 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						auto c_element = cElement::create();
 						auto r = default_style.font_size;
 						c_element->size_ = r;
-						c_element->roundness = r * 0.5f;
-						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->roundness_ = r * 0.5f;
+						c_element->color_ = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -1467,8 +1464,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	{
 		auto c_element = cElement::create();
 		c_element->pos_ = n->pos;
-		c_element->color = Vec4c(255, 255, 255, 200);
-		c_element->frame_color = Vec4c(252, 252, 50, 200);
+		c_element->color_ = Vec4c(255, 255, 255, 200);
+		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
 		e_node->add_component(c_element);
 
 		e_node->add_component(cEventReceiver::create());
@@ -1879,8 +1876,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto c_element = cElement::create();
 						auto r = default_style.font_size;
 						c_element->size_ = r;
-						c_element->roundness = r * 0.5f;
-						c_element->color = bp->find_input_export(input) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
+						c_element->roundness_ = r * 0.5f;
+						c_element->color_ = bp->find_input_export(input) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -2163,8 +2160,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto c_element = cElement::create();
 						auto r = default_style.font_size;
 						c_element->size_ = r;
-						c_element->roundness = r * 0.5f;
-						c_element->color = bp->find_output_export(output) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
+						c_element->roundness_ = r * 0.5f;
+						c_element->color_ = bp->find_output_export(output) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
 						e_slot->add_component(cEventReceiver::create());
@@ -2529,7 +2526,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						editor->bp->add_output_export(s);
 						editor->set_changed(true);
 					}
-					((cBPSlot*)s->user_data)->element->color = Vec4c(200, 40, 20, 255);
+					((cBPSlot*)s->user_data)->element->set_color(Vec4c(200, 40, 20, 255));
 				}
 			}, new_mail_p(c_editor));
 		}

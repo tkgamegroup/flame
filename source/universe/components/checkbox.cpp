@@ -97,8 +97,8 @@ namespace flame
 		{
 			auto c_element = cElement::create();
 			c_element->size_ = 16.f;
-			c_element->frame_thickness = 3.f;
-			c_element->frame_color = default_style.text_color_normal;
+			c_element->frame_thickness_ = 3.f;
+			c_element->frame_color_ = default_style.text_color_normal;
 			e_checkbox->add_component(c_element);
 
 			e_checkbox->add_component(cEventReceiver::create());

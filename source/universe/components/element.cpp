@@ -11,11 +11,11 @@ namespace flame
 		scale_ = 1.f;
 		size_ = 0.f;
 		inner_padding_ = Vec4f(0.f);
-		alpha = 1.f;
-		roundness = Vec4f(0.f);
-		frame_thickness = 0.f;
-		color = Vec4c(0);
-		frame_color = Vec4c(255);
+		alpha_ = 1.f;
+		roundness_ = Vec4f(0.f);
+		frame_thickness_ = 0.f;
+		color_ = Vec4c(0);
+		frame_color_ = Vec4c(255);
 		clip_children = false;
 
 		global_pos = 0.f;
@@ -53,19 +53,19 @@ namespace flame
 	{
 		if (!cliped)
 		{
-			auto r = roundness * global_scale;
+			auto r = roundness_ * global_scale;
 
-			if (alpha > 0.f)
+			if (alpha_ > 0.f)
 			{
 				std::vector<Vec2f> points;
 				path_rect(points, global_pos, global_size, r);
-				if (color.w() > 0)
-					canvas->fill(points, alpha_mul(color, alpha));
-				auto ft = frame_thickness * global_scale;
-				if (ft > 0.f && frame_color.w() > 0)
+				if (color_.w() > 0)
+					canvas->fill(points, alpha_mul(color_, alpha_));
+				auto ft = frame_thickness_ * global_scale;
+				if (ft > 0.f && frame_color_.w() > 0)
 				{
 					points.push_back(points[0]);
-					canvas->stroke(points, alpha_mul(frame_color, alpha), ft);
+					canvas->stroke(points, alpha_mul(frame_color_, alpha_), ft);
 				}
 			}
 		}
@@ -83,11 +83,11 @@ namespace flame
 		copy->scale_ = scale_;
 		copy->size_ = size_;
 		copy->inner_padding_ = inner_padding_;
-		copy->alpha = alpha;
-		copy->roundness = roundness;
-		copy->frame_thickness = frame_thickness;
-		copy->color = color;
-		copy->frame_color = frame_color;
+		copy->alpha_ = alpha_;
+		copy->roundness_ = roundness_;
+		copy->frame_thickness_ = frame_thickness_;
+		copy->color_ = color_;
+		copy->frame_color_ = frame_color_;
 		copy->clip_children = clip_children;
 
 		return copy;
@@ -97,7 +97,7 @@ namespace flame
 	{
 		if (add && x == 0.f)
 			return;
-		if (x == pos_.x())
+		if (!add && x == pos_.x())
 			return;
 		if (add)
 			pos_.x() += x;
@@ -110,7 +110,7 @@ namespace flame
 	{
 		if (add && y == 0.f)
 			return;
-		if (y == pos_.y())
+		if (!add && y == pos_.y())
 			return;
 		if (add)
 			pos_.y() += y;
@@ -123,7 +123,7 @@ namespace flame
 	{
 		if (add && p == 0.f)
 			return;
-		if (p == pos_)
+		if (!add && p == pos_)
 			return;
 		if (add)
 			pos_ += p;
@@ -136,7 +136,7 @@ namespace flame
 	{
 		if (add && s == 0.f)
 			return;
-		if (s == scale_)
+		if (!add && s == scale_)
 			return;
 		if (add)
 			scale_ += s;
@@ -149,7 +149,7 @@ namespace flame
 	{
 		if (add && w == 0.f)
 			return;
-		if (w == size_.x())
+		if (!add && w == size_.x())
 			return;
 		if (add)
 			size_.x() += w;
@@ -162,7 +162,7 @@ namespace flame
 	{
 		if (add && h == 0.f)
 			return;
-		if (h == size_.y())
+		if (!add && h == size_.y())
 			return;
 		if (add)
 			size_.y() += h;
@@ -175,13 +175,78 @@ namespace flame
 	{
 		if (add && s == 0.f)
 			return;
-		if (s == size_)
+		if (!add && s == size_)
 			return;
 		if (add)
 			size_ += s;
 		else
 			size_ = s;
 		data_changed(cH("size"), sender);
+	}
+
+	void cElement::set_alpha(float a, bool add, void* sender)
+	{
+		if (add && a == 0.f)
+			return;
+		if (!add && a == alpha_)
+			return;
+		if (add)
+			alpha_ += a;
+		else
+			alpha_ = a;
+		data_changed(cH("alpha"), sender);
+	}
+
+	void cElement::set_roundness(const Vec4f& r, bool add, void* sender)
+	{
+		if (add && r == 0.f)
+			return;
+		if (!add && r == roundness_)
+			return;
+		if (add)
+			roundness_ += r;
+		else
+			roundness_ = r;
+		data_changed(cH("roundness"), sender);
+	}
+
+	void cElement::set_frame_thickness(float t, bool add, void* sender)
+	{
+		if (add && t == 0.f)
+			return;
+		if (!add && t == frame_thickness_)
+			return;
+		if (add)
+			frame_thickness_ += t;
+		else
+			frame_thickness_ = t;
+		data_changed(cH("frame_thickness"), sender);
+	}
+
+	void cElement::set_color(const Vec4c& c, bool add, void* sender)
+	{
+		if (add && c == (uchar)0)
+			return;
+		if (!add && c == color_)
+			return;
+		if (add)
+			color_ += c;
+		else
+			color_ = c;
+		data_changed(cH("color"), sender);
+	}
+
+	void cElement::set_frame_color(const Vec4c& c, bool add, void* sender)
+	{
+		if (add && c == (uchar)0)
+			return;
+		if (!add && c == frame_color_)
+			return;
+		if (add)
+			frame_color_ += c;
+		else
+			frame_color_ = c;
+		data_changed(cH("frame_color"), sender);
 	}
 
 	cElement* cElement::create()
@@ -224,11 +289,11 @@ namespace flame
 			c->scale_ = scale$;
 			c->size_ = size$;
 			c->inner_padding_ = inner_padding$;
-			c->alpha = alpha$;
-			c->roundness = roundness$;
-			c->frame_thickness = frame_thickness$;
-			c->color = color$;
-			c->frame_color = frame_color$;
+			c->alpha_ = alpha$;
+			c->roundness_ = roundness$;
+			c->frame_thickness_ = frame_thickness$;
+			c->color_ = color$;
+			c->frame_color_ = frame_color$;
 			c->clip_children = clip_children$;
 
 			return c;
@@ -244,11 +309,11 @@ namespace flame
 				scale$ = c->scale_;
 				size$ = c->size_;
 				inner_padding$ = c->inner_padding_;
-				alpha$ = c->alpha;
-				roundness$ = c->roundness;
-				frame_thickness$ = c->frame_thickness;
-				color$ = c->color;
-				frame_color$ = c->frame_color;
+				alpha$ = c->alpha_;
+				roundness$ = c->roundness_;
+				frame_thickness$ = c->frame_thickness_;
+				color$ = c->color_;
+				frame_color$ = c->frame_color_;
 				clip_children$ = c->clip_children;
 			}
 			else
@@ -268,19 +333,19 @@ namespace flame
 					inner_padding$ = c->inner_padding_;
 					break;
 				case offsetof(Serializer_cElement$, alpha$):
-					alpha$ = c->alpha;
+					alpha$ = c->alpha_;
 					break;
 				case offsetof(Serializer_cElement$, roundness$):
-					roundness$ = c->roundness;
+					roundness$ = c->roundness_;
 					break;
 				case offsetof(Serializer_cElement$, frame_thickness$):
-					frame_thickness$ = c->frame_thickness;
+					frame_thickness$ = c->frame_thickness_;
 					break;
 				case offsetof(Serializer_cElement$, color$):
-					color$ = c->color;
+					color$ = c->color_;
 					break;
 				case offsetof(Serializer_cElement$, frame_color$):
-					frame_color$ = c->frame_color;
+					frame_color$ = c->frame_color_;
 					break;
 				case offsetof(Serializer_cElement$, clip_children$):
 					clip_children$ = c->clip_children;
@@ -299,11 +364,11 @@ namespace flame
 				c->scale_ = scale$;
 				c->size_ = size$;
 				c->inner_padding_ = inner_padding$;
-				c->alpha = alpha$;
-				c->roundness = roundness$;
-				c->frame_thickness = frame_thickness$;
-				c->color = color$;
-				c->frame_color = frame_color$;
+				c->alpha_ = alpha$;
+				c->roundness_ = roundness$;
+				c->frame_thickness_ = frame_thickness$;
+				c->color_ = color$;
+				c->frame_color_ = frame_color$;
 				c->clip_children = clip_children$;
 			}
 			else
@@ -323,19 +388,19 @@ namespace flame
 					c->inner_padding_ = inner_padding$;
 					break;
 				case offsetof(Serializer_cElement$, alpha$):
-					c->alpha = alpha$;
+					c->alpha_ = alpha$;
 					break;
 				case offsetof(Serializer_cElement$, roundness$):
-					c->roundness = roundness$;
+					c->roundness_ = roundness$;
 					break;
 				case offsetof(Serializer_cElement$, frame_thickness$):
-					c->frame_thickness = frame_thickness$;
+					c->frame_thickness_ = frame_thickness$;
 					break;
 				case offsetof(Serializer_cElement$, color$):
-					c->color = color$;
+					c->color_ = color$;
 					break;
 				case offsetof(Serializer_cElement$, frame_color$):
-					c->frame_color = frame_color$;
+					c->frame_color_ = frame_color$;
 					break;
 				case offsetof(Serializer_cElement$, clip_children$):
 					c->clip_children = clip_children$;

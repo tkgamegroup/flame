@@ -30,7 +30,7 @@ namespace flame
 
 			auto c_element = cElement::create();
 			c_element->size_ = e_c_element->size_;
-			c_element->color = col;
+			c_element->color_ = col;
 			t->add_component(c_element);
 
 			auto c_event_receiver = cEventReceiver::create();

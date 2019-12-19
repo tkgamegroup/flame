@@ -15,11 +15,11 @@ namespace flame
 		float scale_;
 		Vec2f size_;
 		Vec4f inner_padding_; // L T R B
-		float alpha;
-		Vec4f roundness;
-		float frame_thickness;
-		Vec4c color;
-		Vec4c frame_color;
+		float alpha_;
+		Vec4f roundness_;
+		float frame_thickness_;
+		Vec4c color_;
+		Vec4c frame_color_;
 		bool clip_children;
 
 		Vec2f global_pos;
@@ -52,6 +52,11 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_width(float w, bool add = false, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_height(float h, bool add = false, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_size(const Vec2f& s, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_alpha(float a, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_roundness(const Vec4f& r, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_frame_thickness(float t, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_color(const Vec4c& c, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_frame_color(const Vec4c& c, bool add = false, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};

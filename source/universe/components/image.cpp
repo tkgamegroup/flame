@@ -47,7 +47,7 @@ namespace flame
 				auto padding = element->inner_padding_ * element->global_scale;
 				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
 				auto size = element->global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]);
-				canvas->add_image(pos, size, id, uv0, uv1, alpha_mul(color, element->alpha), repeat);
+				canvas->add_image(pos, size, id, uv0, uv1, alpha_mul(color, element->alpha_), repeat);
 			}
 		}
 	};
