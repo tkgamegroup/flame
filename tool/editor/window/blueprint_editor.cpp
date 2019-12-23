@@ -691,8 +691,8 @@ struct cBPEditor : Component
 					{
 						auto in_addr = input->get_address();
 						auto out_addr = input->link()->get_address();
-						auto in_sp = string_split(*in_addr.p, '.');
-						auto out_sp = string_split(*out_addr.p, '.');
+						auto in_sp = ssplit(*in_addr.p, '.');
+						auto out_sp = ssplit(*out_addr.p, '.');
 						delete_mail(in_addr);
 						delete_mail(out_addr);
 
@@ -1753,7 +1753,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text_tip->add_component(c_text);
 					}
 
-					auto filename = string_split(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
+					auto filename = ssplit(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
 
 					auto e_text_view = Entity::create();
 					{
@@ -2615,7 +2615,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto& filename = editor->filename;
 		auto bp = editor->bp;
 		auto& dbs = editor->bp->dbs();
-		auto tokens = string_split(cmd);
+		auto tokens = ssplit(cmd);
 
 		if (editor->locked)
 		{
@@ -2711,10 +2711,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					}
 					console->print(L"[In]");
 					for (auto& i : inputs)
-						console->print(L"name:" + s2w(i->name()) + L" decoration:" + s2w(i->decoration()) + L" type:" + s2w(i->type().name));
+						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()), s2w(i->decoration()), s2w(i->type().name)));
 					console->print(L"[Out]");
 					for (auto& o : outputs)
-						console->print(L"name:" + s2w(o->name()) + L" decoration:" + s2w(o->decoration()) + L" type:" + s2w(o->type().name));
+						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()), s2w(o->decoration()), s2w(o->type().name)));
 				}
 				else
 					console->print(L"udt not found");
@@ -2724,7 +2724,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto n = bp->node(i);
-					console->print(L"id:" + s2w(n->id()) + L" type:" + s2w(n->udt()->type().name));
+					console->print(wsfmt(L"id:%s type:%s", s2w(n->id()), s2w(n->udt()->type().name)));
 				}
 			}
 			else if (tokens[1] == L"node")
@@ -2739,13 +2739,21 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						auto v = input->vi();
 						auto& type = v->type();
 						console->print(s2w(v->name()));
-						Mail<std::string> link_address;
-						if (input->link())
-							link_address = input->link()->get_address();
-						console->print(L"[" + (link_address.p ? s2w(*link_address.p) : L"") + L"]");
-						delete_mail(link_address);
-						auto str = type.serialize(dbs, input->raw_data(), 2);
-						console->print(std::wstring(L"   ") + (str.empty() ? L"-" : s2w(str)));
+						std::string link_address;
+						{
+							Mail<std::string> m;
+							if (input->link())
+							{
+								m = input->link()->get_address();
+								link_address = *m.p;
+							}
+							delete_mail(m);
+						}
+						console->print(wsfmt(L"[%s]", s2w(link_address)));
+						auto str = s2w(type.serialize(dbs, input->raw_data(), 2));
+						if (str.empty())
+							str = L"-";
+						console->print(wsfmt(L"   %s", str));
 					}
 					console->print(L"[Out]");
 					for (auto i = 0; i < n->output_count(); i++)
@@ -2754,8 +2762,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						auto v = output->vi();
 						auto& type = v->type();
 						console->print(s2w(v->name()));
-						auto str = type.serialize(dbs, output->raw_data(), 2);
-						console->print(std::wstring(L"   ") + (str.empty() ? L"-" : s2w(str)));
+						auto str = s2w(type.serialize(dbs, output->raw_data(), 2));
+						if (str.empty())
+							str = L"-";
+						console->print(wsfmt(L"   %s", str));
 					}
 				}
 				else
@@ -2780,7 +2790,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			{
 				auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
 				if (n)
-					console->print(L"node added: " + s2w(n->id()));
+					console->print(wsfmt(L"node added: %s", s2w(n->id())));
 				else
 					console->print(L"bad udt name or id already exist");
 			}
@@ -2793,7 +2803,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					in->link_to(out);
 					auto out_addr = in->link()->get_address();
 					auto in_addr = in->get_address();
-					console->print(L"link added: " + s2w(*out_addr.p) + L" -> " + s2w(*in_addr.p));
+					console->print(wsfmt(L"link added: %s -> %s", s2w(*out_addr.p), s2w(*in_addr.p)));
 					delete_mail(out_addr);
 					delete_mail(in_addr);
 				}
@@ -2813,7 +2823,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					if (!editor->remove_node(n))
 						printf("cannot remove test nodes\n");
 					else
-						console->print(L"node removed: " + tokens[2]);
+						console->print(wsfmt(L"node removed: %s", tokens[2]));
 				}
 				else
 					console->print(L"node not found");
@@ -2824,7 +2834,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				if (i)
 				{
 					i->link_to(nullptr);
-					console->print(L"link removed: " + tokens[2]);
+					console->print(wsfmt(L"link removed: %s", tokens[2]));
 				}
 				else
 					console->print(L"input not found");

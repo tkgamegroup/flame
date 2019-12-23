@@ -170,7 +170,7 @@ namespace flame
 
 		Vec4c clear_color;
 
-		std::vector<std::pair<Imageview*, Atlas*>> imgs;
+		std::vector<std::tuple<Imageview*, Vec2f, Atlas*>> imgs;
 
 		Vertex* vtx_end;
 		uint* idx_end;
@@ -196,9 +196,9 @@ namespace flame
 			if (index == -1)
 			{
 				assert(v);
-				for (auto i = 1; i < imgs.size(); i++)
+				for (auto i = 0; i < imgs.size(); i++)
 				{
-					if (imgs[i].first == (Imageview*)white_iv$i.v)
+					if (std::get<0>(imgs[i]) == (Imageview*)white_iv$i.v)
 					{
 						index = i;
 						break;
@@ -206,23 +206,31 @@ namespace flame
 				}
 				assert(index != -1);
 			}
+			Vec2f white_uv;
 			if (!v)
 			{
 				v = (Imageview*)white_iv$i.v;
+				white_uv = 0.5f;
 				atlas = nullptr;
 			}
+			else
+			{
+				auto img = v->image();
+				img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
+				white_uv = Vec2f(img->size - 1U) + 0.5f / Vec2f(img->size);
+			}
 			((Descriptorset*)ds$i.v)->set_image(0, index, v, filter);
-			imgs[index] = std::make_pair(v, atlas);
+			imgs[index] = std::make_tuple(v, white_uv, atlas);
 			return index;
 		}
 
 		void set_scissor(const Vec4f& _scissor)
 		{
-			auto scissor = _scissor;
-			scissor.x() = max(scissor.x(), 0.f);
-			scissor.y() = max(scissor.y(), 0.f);
-			scissor.z() = min(scissor.z(), surface_size.x());
-			scissor.w() = min(scissor.w(), surface_size.y());
+			auto scissor = Vec4f(
+				max(_scissor.x(), 0.f),
+				max(_scissor.y(), 0.f),
+				min(_scissor.z(), surface_size.x()),
+				min(_scissor.w(), surface_size.y()));
 			if (scissor == curr_scissor)
 				return;
 			curr_scissor = scissor;
@@ -232,31 +240,24 @@ namespace flame
 			cmds.push_back(cmd);
 		}
 
-		void begin_draw(CmdType type, uint id)
-		{
-			if (!cmds.empty())
-			{
-				auto& last = cmds.back();
-				if (last.type == type && last.v.draw_data.id == id)
-					return;
-			}
-			Cmd cmd;
-			cmd.type = type;
-			cmd.v.draw_data.id = id;
-			cmd.v.draw_data.vtx_cnt = 0;
-			cmd.v.draw_data.idx_cnt = 0;
-			cmds.push_back(cmd);
-		}
-
 		void stroke(const std::vector<Vec2f>& points, const Vec4c& col, float thickness)
 		{
 			if (points.size() < 2)
 				return;
 
-			begin_draw(CmdDrawElement, 0);
+			if (cmds.empty() || cmds.back().type == CmdSetScissor)
+			{
+				Cmd cmd;
+				cmd.type = CmdDrawElement;
+				cmd.v.draw_data.id = 0;
+				cmd.v.draw_data.vtx_cnt = 0;
+				cmd.v.draw_data.idx_cnt = 0;
+				cmds.push_back(cmd);
+			}
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 			auto first_vtx_cnt = vtx_cnt;
+			auto uv = std::get<1>(imgs[cmds.back().v.draw_data.id]);
 
 			auto closed = points.front() == points.back();
 
@@ -287,10 +288,10 @@ namespace flame
 					auto n0 = normals[i] * thickness * 0.5f;
 					auto n1 = normals[i + 1] * thickness * 0.5f;
 
-					vtx_end->pos = p0 + n0; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
-					vtx_end->pos = p0 - n0; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col;  vtx_end++;
-					vtx_end->pos = p1 - n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col;  vtx_end++;
-					vtx_end->pos = p1 + n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
+					vtx_end->pos = p0 + n0; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+					vtx_end->pos = p0 - n0; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+					vtx_end->pos = p1 - n1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+					vtx_end->pos = p1 + n1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
 
 					*idx_end = vtx_cnt + 0; idx_end++;
 					*idx_end = vtx_cnt + 2; idx_end++;
@@ -308,8 +309,8 @@ namespace flame
 
 					auto n1 = normals[i + 1] * thickness * 0.5f;
 
-					vtx_end->pos = p1 - n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col;  vtx_end++;
-					vtx_end->pos = p1 + n1; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
+					vtx_end->pos = p1 - n1; vtx_end->uv = uv; vtx_end->col = col;  vtx_end++;
+					vtx_end->pos = p1 + n1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
 
 					*idx_end = vtx_cnt - 1; idx_end++;
 					*idx_end = vtx_cnt + 0; idx_end++;
@@ -340,15 +341,24 @@ namespace flame
 			if (points.size() < 3)
 				return;
 
-			begin_draw(CmdDrawElement, 0);
+			if (cmds.empty() || cmds.back().type == CmdSetScissor)
+			{
+				Cmd cmd;
+				cmd.type = CmdDrawElement;
+				cmd.v.draw_data.id = 0;
+				cmd.v.draw_data.vtx_cnt = 0;
+				cmd.v.draw_data.idx_cnt = 0;
+				cmds.push_back(cmd);
+			}
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
+			auto uv = std::get<1>(imgs[cmds.back().v.draw_data.id]);
 
 			for (auto i = 0; i < points.size() - 2; i++)
 			{
-				vtx_end->pos = points[0];	  vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
-				vtx_end->pos = points[i + 2]; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
-				vtx_end->pos = points[i + 1]; vtx_end->uv = Vec2f(0.5f); vtx_end->col = col; vtx_end++;
+				vtx_end->pos = points[0];	  vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+				vtx_end->pos = points[i + 2]; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+				vtx_end->pos = points[i + 1]; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
 
 				*idx_end = vtx_cnt + 0; idx_end++;
 				*idx_end = vtx_cnt + 1; idx_end++;
@@ -363,7 +373,15 @@ namespace flame
 		{
 			auto pos = Vec2f(Vec2i(_pos));
 
-			begin_draw((CmdType)f->draw_type, f->canvas_slot_);
+			if (cmds.empty() || cmds.back().type != (CmdType)f->draw_type || cmds.back().v.draw_data.id != f->canvas_slot_)
+			{
+				Cmd cmd;
+				cmd.type = (CmdType)f->draw_type;
+				cmd.v.draw_data.id = f->canvas_slot_;
+				cmd.v.draw_data.vtx_cnt = 0;
+				cmd.v.draw_data.idx_cnt = 0;
+				cmds.push_back(cmd);
+			}
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
@@ -431,11 +449,19 @@ namespace flame
 			Vec2f img_size;
 
 			auto img_id = (id & 0xffff0000) >> 16;
-			begin_draw(CmdDrawElement, img_id);
+			if (cmds.empty() || cmds.back().type != CmdDrawElement || cmds.back().v.draw_data.id != img_id)
+			{
+				Cmd cmd;
+				cmd.type = CmdDrawElement;
+				cmd.v.draw_data.id = img_id;
+				cmd.v.draw_data.vtx_cnt = 0;
+				cmd.v.draw_data.idx_cnt = 0;
+				cmds.push_back(cmd);
+			}
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 			auto& img = imgs[img_id];
-			auto atlas = img.second;
+			auto atlas = std::get<2>(img);
 			if (atlas)
 			{
 				auto& region = atlas->regions()[id & 0xffff];
@@ -444,7 +470,7 @@ namespace flame
 				img_size = region.size;
 			}
 			else
-				img_size = img.first->image()->size;
+				img_size = std::get<0>(img)->image()->size;
 
 			if (repeat)
 			{
@@ -479,7 +505,7 @@ namespace flame
 
 				clear_color = Vec4c(0, 0, 0, 255);
 
-				imgs.resize(ds->layout()->get_binding(0)->count, std::make_pair((Imageview*)white_iv$i.v, nullptr));
+				imgs.resize(ds->layout()->get_binding(0)->count, std::make_tuple((Imageview*)white_iv$i.v, Vec2f(0.5f), nullptr));
 
 				auto c = new CanvasPrivate;
 				c->thiz = this;
@@ -606,12 +632,12 @@ namespace flame
 
 	Imageview* CanvasPrivate::get_image(uint index)
 	{
-		return thiz->imgs[index].first;
+		return std::get<0>(thiz->imgs[index]);
 	}
 
 	Atlas* CanvasPrivate::get_atlas(uint index)
 	{
-		return thiz->imgs[index].second;
+		return std::get<2>(thiz->imgs[index]);
 	}
 
 	uint CanvasPrivate::set_image(int index, Imageview* v, Filter filter, Atlas* atlas)

@@ -247,30 +247,18 @@ namespace flame
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
-	inline bool is_space_chr(int ch)
+	inline bool is_space(int ch)
 	{
 		return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
 	}
 
-	inline bool is_slash_chr(int ch)
+	inline bool is_slash(int ch)
 	{
 		return ch == '\\' || ch == '/';
 	}
 
-	inline uint get_str_line_number(const char* str)
-	{
-		auto lines = 0u;
-		while (*str)
-		{
-			if (*str == '\n')
-				lines++;
-			str++;
-		}
-		return lines;
-	}
-
 	template<typename CH>
-	std::basic_string<CH> string_cut(const std::basic_string<CH>& str, int length) // < 0 means from end
+	std::basic_string<CH> scut(const std::basic_string<CH>& str, int length) // < 0 means from end
 	{
 		if (length < 0)
 			length = str.size() + length;
@@ -278,25 +266,13 @@ namespace flame
 	}
 
 	template<typename CH>
-	void string_to_lower(std::basic_string<CH>& str)
-	{
-		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-	}
-
-	template<typename CH>
-	void string_to_upper(std::basic_string<CH>& str)
-	{
-		std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-	}
-
-	template<typename CH>
-	bool string_endswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
+	bool sendswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
 	{
 		return str.size() > oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
 	}
 
 	template<typename CH>
-	std::vector<std::basic_string<CH>> string_split(const std::basic_string<CH>& str, CH delimiter = ' ')
+	std::vector<std::basic_string<CH>> ssplit(const std::basic_string<CH>& str, CH delimiter = ' ')
 	{
 		std::basic_istringstream<CH> iss(str);
 		std::vector<std::basic_string<CH>> ret;
@@ -309,7 +285,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	std::vector<std::basic_string<CH>> string_last_split(const std::basic_string<CH>& str, CH delimiter = ' ')
+	std::vector<std::basic_string<CH>> ssplit_lastone(const std::basic_string<CH>& str, CH delimiter = ' ')
 	{
 		auto i = str.size() - 1;
 		for (; i >= 0; i--)
@@ -324,7 +300,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	std::vector<std::basic_string<CH>> doublenull_string_split(const CH* str)
+	std::vector<std::basic_string<CH>> ssplit_dbnull(const CH* str)
 	{
 		std::vector<std::basic_string<CH>> ret;
 
@@ -347,7 +323,7 @@ namespace flame
 	}
 
 	template<typename CH>
-	std::vector<std::basic_string<CH>> string_regex_split(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
+	std::vector<std::basic_string<CH>> ssplit_regex(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
 	{
 		std::vector<std::basic_string<CH>> ret;
 
@@ -384,6 +360,26 @@ namespace flame
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.to_bytes(wstr);
+	}
+
+	inline std::string sfmt(const std::string& fmt, ...)
+	{
+		static char buf[1024];
+		va_list ap;
+		va_start(ap, &fmt);
+		vsprintf(buf, fmt.c_str(), ap);
+		va_end(ap);
+		return buf;
+	}
+
+	inline std::wstring wsfmt(const std::wstring& fmt, ...)
+	{
+		static wchar_t buf[1024];
+		va_list ap;
+		va_start(ap, &fmt);
+		vswprintf(buf, fmt.c_str(), ap);
+		va_end(ap);
+		return buf;
 	}
 
 #ifdef FLAME_WINDOWS

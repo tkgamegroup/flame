@@ -1,4 +1,3 @@
-#include <flame/foundation/foundation.h>
 #include <flame/foundation/bitmap.h>
 
 #ifdef FLAME_WINDOWS
@@ -259,11 +258,8 @@ namespace flame
 
 	Mail<std::string> compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
 	{
-		std::wstring cl(L"\"");
-		cl += s2w(VS_LOCATION);
-		cl += L"/VC/Auxiliary/Build/vcvars64.bat\"";
+		auto cl = wsfmt(L"\"%s/VC/Auxiliary/Build/vcvars64.bat\" & cl ", s2w(VS_LOCATION));
 
-		cl += L" & cl ";
 		for (auto& s : sources)
 			cl += s + L" ";
 		cl += L"-LD -MD -EHsc -Zi -std:c++17 -I ../include -link -DEBUG ";
@@ -272,7 +268,7 @@ namespace flame
 
 		cl += L" -out:" + out;
 
-		return exec_and_get_output(L"", cl.c_str());
+		return exec_and_get_output(L"", cl);
 	}
 
 	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)

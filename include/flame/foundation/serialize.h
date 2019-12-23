@@ -530,7 +530,7 @@ namespace flame
 
 		static TypeInfo from_str(const std::string& str)
 		{
-			auto sp = string_split(str, '#');
+			auto sp = ssplit(str, '#');
 			auto tag = -1;
 			while (type_tag((TypeTag$)++tag) != sp[0][0]);
 			auto is_attribute = false;
@@ -797,7 +797,7 @@ namespace flame
 			auto v = 0;
 			auto e = find_enum(dbs, base_hash);
 			assert(e);
-			auto sp = string_split(src, ';');
+			auto sp = ssplit(src, ';');
 			for (auto& t : sp)
 				v |= e->find_item(t)->value();
 			*(int*)dst = v;

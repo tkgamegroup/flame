@@ -850,10 +850,10 @@ namespace flame
 								if (match[3].matched)
 								{
 									out.blend_enable = true;
-									auto sp = string_split(match[4].str());
+									auto sp = ssplit(match[4].str());
 									for (auto& p : sp)
 									{
-										auto sp = string_split(p, ':');
+										auto sp = ssplit(p, ':');
 										BlendFactor$ f;
 										if (sp[1] == "0")
 											f = BlendFactorZero;
@@ -1399,7 +1399,7 @@ namespace flame
 			{
 				StageInfo info(f);
 
-				auto sp = string_split(f, L':');
+				auto sp = ssplit(f, L':');
 				if (!std::filesystem::exists(info.path))
 					return nullptr;
 				for (auto& s : stage_infos)

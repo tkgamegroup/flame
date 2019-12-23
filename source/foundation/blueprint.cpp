@@ -1042,7 +1042,7 @@ namespace flame
 
 	BP::Node *BP::find_node(const std::string& address) const
 	{
-		auto sp = string_split(address, '.');
+		auto sp = ssplit(address, '.');
 		switch (sp.size())
 		{
 		case 2:
@@ -1072,7 +1072,7 @@ namespace flame
 
 	BP::Slot* BP::find_input(const std::string& address) const
 	{
-		auto sp = string_last_split(address, '.');
+		auto sp = ssplit_lastone(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
@@ -1081,7 +1081,7 @@ namespace flame
 
 	BP::Slot* BP::find_output(const std::string& address) const
 	{
-		auto sp = string_last_split(address, '.');
+		auto sp = ssplit_lastone(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
@@ -1201,6 +1201,7 @@ namespace flame
 		auto path = std::filesystem::path(filename);
 		auto ppath = path.parent_path();
 		auto ppath_str = ppath.wstring();
+		auto ppath_slash_str = ppath_str.empty() ? L"" : ppath_str + L"/";
 
 		printf("begin to load bp: %s\n", s_filename.c_str());
 
@@ -1436,7 +1437,7 @@ namespace flame
 						}
 						else if (template_name == "D#Vec")
 						{
-							auto sp = string_split(template_parameters, '+');
+							auto sp = ssplit(template_parameters, '+');
 							auto N = std::stoi(sp[0]);
 							templatecpp << "\ttemplate<>\n\tstruct Array$<" << sp[0] << ", " << sp[1] << ">\n\t{\n";
 							for (auto i = 0; i < N; i++)
@@ -1459,7 +1460,7 @@ namespace flame
 						}
 						else if (template_name == "D#Array")
 						{
-							auto sp = string_split(template_parameters, '+');
+							auto sp = ssplit(template_parameters, '+');
 							auto N = std::stoi(sp[0]);
 							templatecpp << "\ttemplate<>\n\tstruct Array$<" << sp[0] << ", " << sp[1] << ">\n\t{\n";
 							auto is_pointer = false;
@@ -1551,11 +1552,11 @@ namespace flame
 
 			printf("compiling:\n");
 			auto curr_path = get_curr_path();
-			exec_and_redirect_to_std_output(L"", s2w(VS_LOCATION) + L"/Common7/IDE/devenv.com \"" + *curr_path.p + L"/" + (ppath_str.empty() ? L"" : ppath_str + L"/") + L"build/bp.sln\" /build debug");
+			exec_and_redirect_to_std_output(L"", wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION), *curr_path.p + L"/" + ppath_slash_str));
 			delete_mail(curr_path);
 		}
 
-		auto self_module_filename = (ppath_str.empty() ? L"" : ppath_str + L"/") + L"build/debug/bp.dll";
+		auto self_module_filename = ppath_slash_str + L"build/debug/bp.dll";
 		auto self_module = load_module(self_module_filename);
 		if (self_module)
 		{

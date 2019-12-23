@@ -170,7 +170,7 @@ namespace flame
 
 			StageInfo(const std::wstring& fn)
 			{
-				auto sp = string_split(fn, L':');
+				auto sp = ssplit(fn, L':');
 				filename = sp[0];
 				if (sp.size() > 1)
 					prefix = w2s(sp[1]);

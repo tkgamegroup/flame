@@ -1988,57 +1988,52 @@ namespace flame
 
 	inline void path_move(std::vector<Vec2f>& points, float x, float y)
 	{
-		auto p = points.back();
-		p.x() += x;
-		p.y() += y;
-		points.push_back(p);
+		points.push_back(points.back() + Vec2f(x, y));
 	}
 
-	inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, int a_min, int a_max)
+	inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, float a1, float a2, uint lod = 0)
 	{
 		const uint pieces_num = 36;
-		static const Vec2f pieces[] = {
-			Vec2f(0.000000f, 1.000000f), Vec2f(0.173648f, 0.984807f), Vec2f(0.342020f, 0.939692f), Vec2f(0.500000f, 0.866025f), Vec2f(0.642787f, 0.766044f), Vec2f(0.766044f, 0.642787f),
-			Vec2f(0.866025f, 0.500000f), Vec2f(0.939692f, 0.342020f), Vec2f(0.984807f, 0.173648f), Vec2f(1.000000f, 0.000000f), Vec2f(0.984807f, -0.173648f), Vec2f(0.939692f, -0.342020f),
-			Vec2f(0.866025f, -0.500000f), Vec2f(0.766044f, -0.642787f), Vec2f(0.642787f, -0.766044f), Vec2f(0.500000f, -0.866025f), Vec2f(0.342020f, -0.939692f), Vec2f(0.173648f, -0.984807f),
-			Vec2f(0.000000f, -1.000000f), Vec2f(-0.173648f, -0.984807f), Vec2f(-0.342020f, -0.939692f), Vec2f(-0.500000f, -0.866025f), Vec2f(-0.642787f, -0.766044f), Vec2f(-0.766044f, -0.642787f),
-			Vec2f(-0.866025f, -0.500000f), Vec2f(-0.939692f, -0.342020f), Vec2f(-0.984807f, -0.173648f), Vec2f(-1.000000f, 0.000000f), Vec2f(-0.984807f, 0.173648f), Vec2f(-0.939692f, 0.342020f),
-			Vec2f(-0.866025f, 0.500000f), Vec2f(-0.766044f, 0.642787f), Vec2f(-0.642787f, 0.766044f), Vec2f(-0.500000f, 0.866025f), Vec2f(-0.342020f, 0.939692f), Vec2f(-0.173648f, 0.984807f)
+		static const Vec2f pieces[] = { 
+			Vec2f(+1.000000f, +0.000000f), Vec2f(+0.984808f, +0.173648f), Vec2f(+0.939693f, +0.342020f), Vec2f(+0.866025f, +0.500000f), Vec2f(+0.766044f, +0.642788f), Vec2f(+0.642788f, +0.766044f),
+			Vec2f(+0.500000f, +0.866025f), Vec2f(+0.342020f, +0.939693f), Vec2f(+0.173648f, +0.984808f), Vec2f(+0.000000f, +1.000000f), Vec2f(-0.173648f, +0.984808f), Vec2f(-0.342020f, +0.939693f),
+			Vec2f(-0.500000f, +0.866025f), Vec2f(-0.642788f, +0.766044f), Vec2f(-0.766044f, +0.642788f), Vec2f(-0.866025f, +0.500000f), Vec2f(-0.939693f, +0.342020f), Vec2f(-0.984808f, +0.173648f),
+			Vec2f(-1.000000f, +0.000000f), Vec2f(-0.984808f, -0.173648f), Vec2f(-0.939693f, -0.342020f), Vec2f(-0.866025f, -0.500000f), Vec2f(-0.766044f, -0.642788f), Vec2f(-0.642788f, -0.766044f),
+			Vec2f(-0.500000f, -0.866025f), Vec2f(-0.342020f, -0.939693f), Vec2f(-0.173648f, -0.984808f), Vec2f(-0.000000f, -1.000000f), Vec2f(+0.173648f, -0.984808f), Vec2f(+0.342020f, -0.939693f),
+			Vec2f(+0.500000f, -0.866025f), Vec2f(+0.642788f, -0.766044f), Vec2f(+0.766044f, -0.642788f), Vec2f(+0.866025f, -0.500000f), Vec2f(+0.939693f, -0.342020f), Vec2f(+0.984808f, -0.173648f)
 		};
 		static_assert(FLAME_ARRAYSIZE(pieces) == pieces_num);
 
-		if (a_max == -1)
-			a_max = pieces_num - 1;
-		for (auto a = a_min; a <= a_max; a++)
-		{
-			auto& v = pieces[a % pieces_num];
-			points.push_back(center + Vec2f(v.y(), v.x()) * radius);
-		}
+		int a = pieces_num * a1;
+		int b = pieces_num * a2;
+		lod += 1;
+		for (; a <= b; a += lod)
+			points.push_back(center + pieces[a % pieces_num] * radius);
 	}
 
-	inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, const Vec4f& roundness = Vec4f(0.f)) // LT RT RB LB
+	inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, const Vec4f& roundness = Vec4f(0.f)/* LT RT RB LB */, uint lod = 0)
 	{
 		if (roundness[0] > 0.f)
-			path_arc(points, pos + Vec2f(roundness[0]), roundness[0], 18, 27);
+			path_arc(points, pos + Vec2f(roundness[0]), roundness[0], 0.5f, 0.75f, lod);
 		else
 			points.push_back(pos);
 		if (roundness[1] > 0.f)
-			path_arc(points, pos + Vec2f(size.x() - roundness[1], roundness[1]), roundness[1], 27, 35);
+			path_arc(points, pos + Vec2f(size.x() - roundness[1], roundness[1]), roundness[1], 0.75f, 1.f, lod);
 		else
 			points.push_back(pos + Vec2f(size.x(), 0.f));
 		if (roundness[2] > 0.f)
-			path_arc(points, pos + size - Vec2f(roundness[2]), roundness[2], 0, 9);
+			path_arc(points, pos + size - Vec2f(roundness[2]), roundness[2], 0.f, 0.25f, lod);
 		else
 			points.push_back(pos + size);
 		if (roundness[3] > 0.f)
-			path_arc(points, pos + Vec2f(roundness[3], size.y() - roundness[3]), roundness[3], 9, 17);
+			path_arc(points, pos + Vec2f(roundness[3], size.y() - roundness[3]), roundness[3], 0.25f, 0.5f, lod);
 		else
 			points.push_back(pos + Vec2f(0.f, size.y()));
 	}
 
-	inline void path_circle(std::vector<Vec2f>& points, const Vec2f& center, float radius)
+	inline void path_circle(std::vector<Vec2f>& points, const Vec2f& center, float radius, uint lod = 0)
 	{
-		path_arc(points, center, radius, 0, -1);
+		path_arc(points, center, radius, 0.f, 1.f, lod);
 	}
 
 	inline void path_bezier(std::vector<Vec2f>& points, const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, uint level = 0)

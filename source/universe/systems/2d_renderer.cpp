@@ -54,7 +54,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
-			auto fonts = string_split(fonts$, L';');
+			auto fonts = ssplit(fonts$, L';');
 			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts);
 			auto canvas = (graphics::Canvas*)w->find_object(cH("Canvas"), 0);
 			if (canvas)
