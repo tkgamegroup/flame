@@ -17,6 +17,7 @@ namespace flame
 		Vec4f inner_padding_; // L T R B
 		float alpha_;
 		Vec4f roundness_;
+		uint roundness_lod;
 		float frame_thickness_;
 		Vec4c color_;
 		Vec4c frame_color_;

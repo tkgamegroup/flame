@@ -13,6 +13,7 @@ namespace flame
 		inner_padding_ = Vec4f(0.f);
 		alpha_ = 1.f;
 		roundness_ = Vec4f(0.f);
+		roundness_lod = 0;
 		frame_thickness_ = 0.f;
 		color_ = Vec4c(0);
 		frame_color_ = Vec4c(255);
@@ -58,7 +59,7 @@ namespace flame
 			if (alpha_ > 0.f)
 			{
 				std::vector<Vec2f> points;
-				path_rect(points, global_pos, global_size, r);
+				path_rect(points, global_pos, global_size, r, roundness_lod);
 				if (color_.w() > 0)
 					canvas->fill(points, alpha_mul(color_, alpha_));
 				auto ft = frame_thickness_ * global_scale;
@@ -85,6 +86,7 @@ namespace flame
 		copy->inner_padding_ = inner_padding_;
 		copy->alpha_ = alpha_;
 		copy->roundness_ = roundness_;
+		copy->roundness_lod = roundness_lod;
 		copy->frame_thickness_ = frame_thickness_;
 		copy->color_ = color_;
 		copy->frame_color_ = frame_color_;
@@ -262,6 +264,7 @@ namespace flame
 		Vec4f inner_padding$;
 		float alpha$;
 		Vec4f roundness$;
+		uint roundness_lod$;
 		float frame_thickness$;
 		Vec4c color$;
 		Vec4c frame_color$;
@@ -275,6 +278,7 @@ namespace flame
 			inner_padding$ = Vec4f(0.f);
 			alpha$ = 1.f;
 			roundness$ = Vec4f(0.f);
+			roundness_lod$ = 0;
 			frame_thickness$ = 0.f;
 			color$ = Vec4c(0);
 			frame_color$ = Vec4c(255);
@@ -291,6 +295,7 @@ namespace flame
 			c->inner_padding_ = inner_padding$;
 			c->alpha_ = alpha$;
 			c->roundness_ = roundness$;
+			c->roundness_lod = roundness_lod$;
 			c->frame_thickness_ = frame_thickness$;
 			c->color_ = color$;
 			c->frame_color_ = frame_color$;
@@ -311,6 +316,7 @@ namespace flame
 				inner_padding$ = c->inner_padding_;
 				alpha$ = c->alpha_;
 				roundness$ = c->roundness_;
+				roundness_lod$ = c->roundness_lod;
 				frame_thickness$ = c->frame_thickness_;
 				color$ = c->color_;
 				frame_color$ = c->frame_color_;
@@ -337,6 +343,9 @@ namespace flame
 					break;
 				case offsetof(Serializer_cElement$, roundness$):
 					roundness$ = c->roundness_;
+					break;
+				case offsetof(Serializer_cElement$, roundness_lod$):
+					roundness_lod$ = c->roundness_lod;
 					break;
 				case offsetof(Serializer_cElement$, frame_thickness$):
 					frame_thickness$ = c->frame_thickness_;
@@ -366,6 +375,7 @@ namespace flame
 				c->inner_padding_ = inner_padding$;
 				c->alpha_ = alpha$;
 				c->roundness_ = roundness$;
+				c->roundness_lod = roundness_lod$;
 				c->frame_thickness_ = frame_thickness$;
 				c->color_ = color$;
 				c->frame_color_ = frame_color$;
@@ -392,6 +402,9 @@ namespace flame
 					break;
 				case offsetof(Serializer_cElement$, roundness$):
 					c->roundness_ = roundness$;
+					break;
+				case offsetof(Serializer_cElement$, roundness_lod$):
+					c->roundness_lod = roundness_lod$;
 					break;
 				case offsetof(Serializer_cElement$, frame_thickness$):
 					c->frame_thickness_ = frame_thickness$;

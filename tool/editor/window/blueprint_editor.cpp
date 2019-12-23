@@ -1278,6 +1278,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness_ = r * 0.5f;
+						c_element->roundness_lod = 2;
 						c_element->color_ = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
@@ -1346,6 +1347,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness_ = r * 0.5f;
+						c_element->roundness_lod = 2;
 						c_element->color_ = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
@@ -1877,6 +1879,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness_ = r * 0.5f;
+						c_element->roundness_lod = 2;
 						c_element->color_ = bp->find_input_export(input) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
@@ -2161,6 +2164,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto r = default_style.font_size;
 						c_element->size_ = r;
 						c_element->roundness_ = r * 0.5f;
+						c_element->roundness_lod = 2;
 						c_element->color_ = bp->find_output_export(output) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
 
