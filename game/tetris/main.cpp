@@ -9,7 +9,7 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/ui_renderer.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -17,7 +17,7 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/image.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 using namespace flame;
 using namespace graphics;
@@ -266,12 +266,9 @@ struct App
 	Canvas* canvas;
 	std::vector<TypeinfoDatabase*> dbs;
 
-	uint fps;
-
 	Universe* u;
 	sEventDispatcher* event_dispatcher;
 	cElement* c_element_root;
-	cText* c_text_fps;
 
 	bool gameover;
 	uint score;
@@ -432,17 +429,11 @@ struct App
 			sc->acquire_image();
 
 		fence->wait();
-		looper().process_delay_events();
+		looper().process_events();
 
 		if (sc)
 		{
 			c_element_root->set_size(Vec2f(w->size));
-			auto _fps = looper().fps;
-			if (_fps != fps)
-			{
-				fps = _fps;
-				c_text_fps->set_text(std::to_wstring(fps));
-			}
 			u->update();
 		}
 		canvas_bp->update();
@@ -452,8 +443,6 @@ struct App
 			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
-
-		scr->signal = false;
 	}
 }app;
 
@@ -471,15 +460,13 @@ int main(int argc, char **args)
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_graphics.typeinfo"));
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_universe.typeinfo"));
 
-	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
+	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas/bp", true);
 	app.scr->link_bp(app.canvas_bp, app.cbs);
 	app.canvas_bp->update();
 	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
 
 	auto font_atlas_standard = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
 	app.canvas->add_font(font_atlas_standard);
-
-	app.fps = 0;
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
@@ -513,13 +500,16 @@ int main(int argc, char **args)
 		e_fps->add_component(cElement::create());
 
 		auto c_text = cText::create(font_atlas_standard);
-		app.c_text_fps = c_text;
 		e_fps->add_component(c_text);
 
 		auto c_aligner = cAligner::create();
 		c_aligner->x_align_ = AlignxRight;
 		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
+
+		add_fps_listener([](void* c, uint fps) {
+			(*(cText**)c)->set_text(std::to_wstring(fps));
+		}, new_mail_p(c_text));
 	}
 
 	app.gameover = false;
@@ -566,7 +556,7 @@ int main(int argc, char **args)
 				c_element->pos_.y() = i * block_size;
 				c_element->size_.x() = block_size;
 				c_element->size_.y() = block_size;
-				c_element->alpha = 0.8f;
+				c_element->alpha_ = 0.8f;
 				e_image->add_component(c_element);
 
 				auto c_image = cImage::create();

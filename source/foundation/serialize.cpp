@@ -1618,8 +1618,9 @@ namespace flame
 		{
 			_function->get_name(&pwname);
 			bool pass_prefix, pass_$;
-			auto name = format_name(pwname, &pass_prefix, &pass_$);
-			if (pass_prefix && pass_$ && name.find("::") == std::string::npos /* not a member function */)
+			std::string attribute;
+			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
+			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
 			{
 				auto hash = H(name.c_str());
 				if (!::flame::find_function(dbs, hash))

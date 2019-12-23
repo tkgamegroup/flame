@@ -112,6 +112,18 @@ namespace flame
 		auto last_curr_path = get_curr_path();
 		set_curr_path(std::filesystem::path(filename).parent_path().wstring());
 
+		auto this_module = load_module(L"flame_universe.dll");
+		TypeinfoDatabase* this_db = nullptr;
+		for (auto db : dbs)
+		{
+			if (std::filesystem::path(db->module_name()).filename() == L"flame_universe.dll")
+			{
+				this_db = db;
+				break;
+			}
+		}
+		assert(this_module && this_db);
+
 		auto n_os = file->find_node("objects");
 		if (n_os)
 		{
@@ -119,7 +131,7 @@ namespace flame
 			{
 				auto n_o = n_os->node(i_o);
 
-				auto udt = find_udt(dbs, H(("Serializer_" + n_o->name()).c_str()));
+				auto udt = find_udt(dbs, H(("D#Serializer_" + n_o->name()).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(udt->db()->module_name());
@@ -133,7 +145,7 @@ namespace flame
 					auto n = n_o->node(i);
 
 					auto v = udt->find_variable(n->name());
-					v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), nullptr, nullptr);
+					v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), this_module, this_db);
 				}
 				void* object;
 				{
@@ -159,7 +171,7 @@ namespace flame
 			{
 				auto n_s = n_ss->node(i_s);
 
-				auto udt = find_udt(dbs, H(("Serializer_" + n_s->name()).c_str()));
+				auto udt = find_udt(dbs, H(("D#Serializer_" + n_s->name()).c_str()));
 				assert(udt);
 				auto dummy = malloc(udt->size());
 				auto module = load_module(udt->db()->module_name());
@@ -173,7 +185,7 @@ namespace flame
 					auto n = n_s->node(i);
 
 					auto v = udt->find_variable(n->name());
-					v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), nullptr, nullptr);
+					v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), this_module, this_db);
 				}
 				void* system;
 				{
@@ -191,6 +203,8 @@ namespace flame
 				free(dummy);
 			}
 		}
+
+		free_module(this_module);
 
 		set_curr_path(*last_curr_path.p);
 		delete_mail(last_curr_path);

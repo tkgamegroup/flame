@@ -329,25 +329,26 @@ namespace flame
 		e->set_name(src->find_attr("name")->value());
 		e->set_visibility(src->find_attr("visibility")->value() == "1");
 
+		auto this_module = load_module(L"flame_universe.dll");
+		TypeinfoDatabase* this_db = nullptr;
+		for (auto db : dbs)
+		{
+			if (std::filesystem::path(db->module_name()).filename() == L"flame_universe.dll")
+			{
+				this_db = db;
+				break;
+			}
+		}
+		assert(this_module && this_db);
+
 		auto n_cs = src->find_node("components");
 		if (n_cs)
 		{
-			auto this_module = load_module(L"flame_universe.dll");
-			TypeinfoDatabase* this_db = nullptr;
-			for (auto db : dbs)
-			{
-				if (std::filesystem::path(db->module_name()).filename() == L"flame_universe.dll")
-				{
-					this_db = db;
-					break;
-				}
-			}
-			assert(this_module && this_db);
 			for (auto i_c = 0; i_c < n_cs->node_count(); i_c++)
 			{
 				auto n_c = n_cs->node(i_c);
 
-				auto udt = find_udt(dbs, H(("Serializer_" + n_c->name()).c_str()));
+				auto udt = find_udt(dbs, H(("D#Serializer_" + n_c->name()).c_str()));
 				assert(udt);
 				auto object = malloc(udt->size());
 				auto module = load_module(udt->db()->module_name());
@@ -389,7 +390,6 @@ namespace flame
 				free_module(module);
 				free(object);
 			}
-			free_module(this_module);
 		}
 
 		auto n_es = src->find_node("children");
@@ -398,6 +398,8 @@ namespace flame
 			for (auto i_e = 0; i_e < n_es->node_count(); i_e++)
 				e->add_child(load_prefab(w, dbs, n_es->node(i_e)));
 		}
+
+		free_module(this_module);
 
 		return e;
 	}

@@ -215,7 +215,7 @@ int main(int argc, char** args)
 	{
 		auto c_element = cElement::create();
 		auto r = default_style.font_size * 0.5f;
-		c_element->roundness = r;
+		c_element->roundness_ = r;
 		c_element->inner_padding_ = Vec4f(r, 2.f, r, 2.f);
 		e_toggle->add_component(c_element);
 
@@ -236,8 +236,8 @@ int main(int argc, char** args)
 		auto c_element = cElement::create();
 		c_element->size_ = 258.f;
 		c_element->inner_padding_ = Vec4f(4.f);
-		c_element->frame_color = Vec4c(10, 200, 10, 255);
-		c_element->frame_thickness = 2.f;
+		c_element->frame_color_ = Vec4c(10, 200, 10, 255);
+		c_element->frame_thickness_ = 2.f;
 		e_image->add_component(c_element);
 
 		auto c_image = cImage::create();
@@ -277,7 +277,7 @@ int main(int argc, char** args)
 			c_element->size_.x() = 200.f;
 			c_element->size_.y() = 100.f;
 			c_element->inner_padding_ = Vec4f(4.f);
-			c_element->frame_thickness = 2.f;
+			c_element->frame_thickness_ = 2.f;
 		}
 	}
 
@@ -446,7 +446,7 @@ int main(int argc, char** args)
 	{
 		auto c_element = e_tree->get_component(cElement);
 		c_element->inner_padding_ = Vec4f(4.f);
-		c_element->frame_thickness = 2.f;
+		c_element->frame_thickness_ = 2.f;
 	}
 	{
 		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, L"A");
