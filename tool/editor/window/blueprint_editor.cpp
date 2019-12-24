@@ -626,7 +626,10 @@ struct cBPEditor : Component
 					auto& capture = *(Capture*)c;
 
 					if (yes)
+					{
 						capture.e->remove_module(capture.m);
+						capture.e->set_changed(true);
+					}
 				}, new_mail(&capture));
 			}
 			break;
@@ -638,6 +641,7 @@ struct cBPEditor : Component
 			break;
 		case SelLink:
 			selected_.l->link_to(nullptr);
+			set_changed(true);
 			break;
 		}
 
@@ -913,21 +917,32 @@ struct cBPSlot : Component
 
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = *(cBPSlot**)c;
+				auto editor = thiz->editor;
+				auto s = thiz->s;
 				if (action == DragStart)
 				{
-					thiz->editor->dragging_slot = thiz->s;
-					if (thiz->s->type() == BP::Slot::Input)
-						thiz->s->link_to(nullptr);
+					editor->dragging_slot = s;
+					if (s->type() == BP::Slot::Input)
+					{
+						s->link_to(nullptr);
+						editor->set_changed(true);
+					}
 				}
 				else if (action == DragEnd)
-					thiz->editor->dragging_slot = nullptr;
+					editor->dragging_slot = nullptr;
 				else if (action == Dropped)
 				{
 					auto oth = er->entity->get_component(cBPSlot)->s;
-					if (thiz->s->type() == BP::Slot::Input)
-						thiz->s->link_to(oth);
+					if (s->type() == BP::Slot::Input)
+					{
+						if (s->link_to(oth))
+							editor->set_changed(true);
+					}
 					else
-						oth->link_to(thiz->s);
+					{
+						if (oth->link_to(thiz->s))
+							editor->set_changed(true);
+					}
 				}
 			}, new_mail_p(this));
 
@@ -2810,6 +2825,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					console->print(wsfmt(L"link added: %s -> %s", s2w(*out_addr.p), s2w(*in_addr.p)));
 					delete_mail(out_addr);
 					delete_mail(in_addr);
+					editor->set_changed(true);
 				}
 				else
 					console->print(L"wrong address");
@@ -2839,6 +2855,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					i->link_to(nullptr);
 					console->print(wsfmt(L"link removed: %s", tokens[2]));
+					editor->set_changed(true);
 				}
 				else
 					console->print(L"input not found");
