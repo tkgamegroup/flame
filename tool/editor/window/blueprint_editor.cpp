@@ -259,7 +259,7 @@ struct cBPEditor : Component
 					continue;
 				{
 					auto f = u->find_function("update");
-					if (!(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 0))
+					if (!(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 0))
 						continue;
 				}
 				auto no_input_output = true;

@@ -210,7 +210,7 @@ namespace flame
 			auto& out_type = target->vi->type();
 
 			if (![&]() {
-				if (in_type.hash == out_type.hash)
+				if (in_type == out_type)
 					return true;
 				if (in_type.tag == TypePointer && (out_type.tag == TypeData || out_type.tag == TypePointer))
 				{
@@ -300,7 +300,7 @@ namespace flame
 			auto f = udt->find_function("update");
 			if (f)
 			{
-				if (f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 1 && f->parameter_type(0).hash == TypeInfo(TypePointer, "BP").hash)
+				if (f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "BP"))
 					update_addr = (char*)module + (uint)f->rva();
 				assert(update_addr);
 			}

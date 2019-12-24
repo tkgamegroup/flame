@@ -378,7 +378,7 @@ namespace flame
 				void* component;
 				{
 					auto f = udt->find_function("create");
-					assert(f && f->return_type().hash == TypeInfo(TypePointer, "Component").hash && f->parameter_count() == 1 && f->parameter_type(0).hash == TypeInfo(TypePointer, "World").hash);
+					assert(f && f->return_type() == TypeInfo(TypePointer, "Component") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
 					component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), object, w);
 				}
 				e->add_component((Component*)component);
@@ -439,7 +439,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 2 && f->parameter_type(0).hash == TypeInfo(TypeData, "Component").hash && f->parameter_type(1).hash == TypeInfo(TypeData, "int").hash);
+					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0) == TypeInfo(TypeData, "Component") && f->parameter_type(1) == TypeInfo(TypeData, "int"));
 					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), object, c, -1);
 				}
 				for (auto i = 0; i < udt->variable_count(); i++)

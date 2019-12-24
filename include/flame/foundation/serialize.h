@@ -552,6 +552,11 @@ namespace flame
 		inline void copy_from(const void* src, uint size, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
 	};
 
+	inline bool operator==(const TypeInfo& lhs, const TypeInfo& rhs)
+	{
+		return lhs.hash == rhs.hash;
+	}
+
 	struct VariableInfo
 	{
 		FLAME_FOUNDATION_EXPORTS const TypeInfo& type() const;

@@ -882,6 +882,7 @@ namespace flame
 	{
 		static SAL(prefix, "flame::");
 		static SAL(str_unsigned, "unsigned ");
+		static SAL(str_int64, "__int64");
 		static SAL(str_enum, "enum ");
 		static SAL(str_string, "std::basic_string<char >");
 		static SAL(str_wstring, "std::basic_string<wchar_t >");
@@ -915,6 +916,14 @@ namespace flame
 			{
 				str = str.replace(pos, str_unsigned.l, "u");
 				pos = str.find(str_unsigned.s, 0, str_unsigned.l);
+			}
+		}
+		{
+			auto pos = str.find(str_int64.s, 0, str_int64.l);
+			while (pos != std::string::npos)
+			{
+				str = str.replace(pos, str_int64.l, "longlong");
+				pos = str.find(str_int64.s, 0, str_int64.l);
 			}
 		}
 		{
@@ -1352,6 +1361,78 @@ namespace flame
 		}
 		_enums->Release();
 
+		auto find_udt_and_get_spcial_functions = [&](const TypeInfo& type, std::vector<std::pair<std::string, FunctionDesc>>& functions) {
+			UdtInfo* u = nullptr;
+			auto ok = false;
+
+			IDiaEnumSymbols* _udts;
+			global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
+			IDiaSymbol* _udt;
+			while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
+			{
+				auto udt_type = symbol_to_typeinfo(_udt, "");
+				if (!udt_type.is_attribute && udt_type.is_vector == type.is_vector && udt_type.base_hash == type.base_hash)
+				{
+					for (auto& f : functions)
+						f.second.rva = nullptr;
+
+					IDiaEnumSymbols* _functions;
+					_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
+					IDiaSymbol* _function;
+					while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
+					{
+						_function->get_name(&pwname);
+						auto name = w2s(pwname);
+						for (auto& f : functions)
+						{
+							if (!f.second.rva && name == f.first)
+							{
+								FunctionDesc desc;
+								symbol_to_function(_function, desc);
+								if (desc.rva && desc.ret_type == f.second.ret_type &&
+									desc.parameters == f.second.parameters)
+									f.second.rva = desc.rva;
+								break;
+							}
+						}
+
+						_function->Release();
+					}
+					_functions->Release();
+
+					ok = true;
+					for (auto& f : functions)
+					{
+						if (!f.second.rva)
+						{
+							ok = false;
+							break;
+						}
+					}
+				}
+
+				if (ok)
+				{
+					_udt->get_length(&ull);
+					u = db->add_udt(TypeInfo(TypeData, type.base_name), ull);
+					for (auto& f : functions)
+					{
+						auto _f = u->add_function(f.first, f.second.rva, f.second.ret_type, "");
+						for (auto& p : f.second.parameters)
+							_f->add_parameter(p);
+					}
+				}
+
+				_udt->Release();
+
+				if (ok)
+					break;
+			}
+			_udts->Release();
+
+			return u;
+		};
+
 		// udts
 		IDiaEnumSymbols* _udts;
 		global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
@@ -1404,47 +1485,15 @@ namespace flame
 								}
 								if (is_new)
 								{
-									auto found = false;
-									IDiaEnumSymbols* _udts;
-									global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
-									IDiaSymbol* _udt;
-									while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
-									{
-										auto udt_type = symbol_to_typeinfo(_udt, "");
-										if (!udt_type.is_attribute && !udt_type.is_vector && udt_type.base_hash == type.base_hash)
-										{
-											IDiaEnumSymbols* _functions;
-											_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-											IDiaSymbol* _function;
-											while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
-											{
-												_function->get_name(&pwname);
-												auto name = std::wstring(pwname);
-												if (name == L"operator=")
-												{
-													FunctionDesc desc;
-													symbol_to_function(_function, desc);
-													if (desc.rva && desc.ret_type.hash == TypeInfo(TypePointer, udt_type.base_name).hash && 
-														desc.parameters.size() == 1 && desc.parameters[0].hash == TypeInfo(TypePointer, udt_type.base_name).hash)
-													{
-														found = true;
-														_udt->get_length(&ull);
-														auto u = (UdtInfoPrivate*)db->add_udt(TypeInfo(TypeData, udt_type.base_name), ull);
-														auto f = (FunctionInfoPrivate*)u->add_function("operator=", desc.rva, desc.ret_type, "");
-														for (auto& p : desc.parameters)
-															f->add_parameter(p);
-														staging_string_symbols.push_back(u);
-													}
-												}
-												_function->Release();
-											}
-											_functions->Release();
-										}
-										_udt->Release();
-										if (found)
-											break;
-									}
-									_udts->Release();
+									std::vector<std::pair<std::string, FunctionDesc>> functions;
+									functions.emplace_back("operator=", FunctionDesc{
+										nullptr,
+										TypeInfo(TypePointer, type.base_name),
+										{ TypeInfo(TypePointer, type.base_name) }
+									});
+									auto u = find_udt_and_get_spcial_functions(type, functions);
+									if (u)
+										staging_string_symbols.push_back(u);
 								}
 							}
 							if (type.is_vector)
@@ -1460,7 +1509,6 @@ namespace flame
 								}
 								if (is_new)
 								{
-
 								}
 							}
 

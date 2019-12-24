@@ -258,13 +258,13 @@ struct cInspectorPrivate : cInspector
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 2 && f->parameter_type(0).hash == TypeInfo(TypePointer, "Component").hash && f->parameter_type(1).hash == TypeInfo(TypeData, "int").hash);
+					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0) == TypeInfo(TypePointer, "Component") && f->parameter_type(1) == TypeInfo(TypeData, "int"));
 					c_dealer->serialize_addr = (char*)module + (uint)f->rva();
 					c_dealer->serialize(-1);
 				}
 				{
 					auto f = udt->find_function("unserialize");
-					assert(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 2 && f->parameter_type(0).hash == TypeInfo(TypePointer, "Component").hash && f->parameter_type(1).hash == TypeInfo(TypeData, "int").hash);
+					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0) == TypeInfo(TypePointer, "Component") && f->parameter_type(1) == TypeInfo(TypeData, "int"));
 					c_dealer->unserialize_addr = (char*)module + (uint)f->rva();
 				}
 				c_dealer->dtor_addr = nullptr;
@@ -658,7 +658,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 						void* component;
 						{
 							auto f = capture.u->find_function("create");
-							assert(f && f->return_type().hash == TypeInfo(TypePointer, "Component").hash && f->parameter_count() == 0);
+							assert(f && f->return_type() == TypeInfo(TypePointer, "Component") && f->parameter_count() == 0);
 							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
 						}
 						capture.i->editor->selected->add_component((Component*)component);

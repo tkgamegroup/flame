@@ -30,7 +30,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("destroy");
-					assert(f && f->return_type().hash == TypeInfo(TypeData, "void").hash && f->parameter_count() == 1 && f->parameter_type(0).hash == TypeInfo(TypePointer, "Object").hash);
+					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "Object"));
 					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), dummy, o.first);
 				}
 				{
@@ -150,7 +150,7 @@ namespace flame
 				void* object;
 				{
 					auto f = udt->find_function("create");
-					assert(f && f->return_type().hash == TypeInfo(TypePointer, "Object").hash && f->parameter_count() == 1 && f->parameter_type(0).hash == TypeInfo(TypePointer, "World").hash);
+					assert(f && f->return_type() == TypeInfo(TypePointer, "Object") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
 					object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 				}
 				w->objects.emplace_back((Object*)object, udt);
@@ -190,7 +190,7 @@ namespace flame
 				void* system;
 				{
 					auto f = udt->find_function("create");
-					assert(f && f->return_type().hash == TypeInfo(TypePointer, "System").hash && f->parameter_count() == 1 && f->parameter_type(0).hash == TypeInfo(TypePointer, "World").hash);
+					assert(f && f->return_type() == TypeInfo(TypePointer, "System") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
 					system = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 				}
 				w->add_system((System*)system);
