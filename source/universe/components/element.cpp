@@ -306,7 +306,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
 		{
-			auto c = (cElement*)_c;
+			auto c = (cElementPrivate*)_c;
 
 			if (offset == -1)
 			{
@@ -365,7 +365,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
 		{
-			auto c = (cElement*)_c;
+			auto c = (cElementPrivate*)_c;
 
 			if (offset == -1)
 			{

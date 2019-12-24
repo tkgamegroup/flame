@@ -94,7 +94,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
 		{
-			auto c = (cImage*)_c;
+			auto c = (cImagePrivate*)_c;
 			auto w = c->entity->world_;
 
 			if (offset == -1)
@@ -134,7 +134,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
 		{
-			auto c = (cImage*)_c;
+			auto c = (cImagePrivate*)_c;
 			auto w = c->entity->world_;
 
 			if (offset == -1)

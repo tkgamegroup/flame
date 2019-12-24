@@ -32,6 +32,20 @@
       <entity name="unnamed" visibility="1">
         <components>
           <cElement>
+            <pos v="0.00;0.00" />
+          </cElement>
+          <cTileMap>
+            <size v="11;20" />
+            <cell_size v="32.0;32.0" />
+            <tiles s="1">
+              <v i="0" v="6870730967664280668" />
+            </tiles>
+          </cTileMap>
+        </components>
+      </entity>
+      <entity name="unnamed" visibility="1">
+        <components>
+          <cElement>
             <pos v="416.00;32.00" />
           </cElement>
           <cText>

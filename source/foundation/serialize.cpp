@@ -91,7 +91,7 @@ namespace flame
 			attrs.clear();
 		}
 
-		SerializableAttribute* find_attr(const std::string& name)
+		SerializableAttribute* find_attr(const std::string& name) const
 		{
 			for (auto& a : attrs)
 			{
@@ -145,7 +145,7 @@ namespace flame
 			nodes.clear();
 		}
 
-		SerializableNode* find_node(const std::string& name)
+		SerializableNode* find_node(const std::string& name) const
 		{
 			for (auto& n : nodes)
 			{
@@ -221,7 +221,7 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->attrs[idx].get();
 	}
 
-	SerializableAttribute* SerializableNode::find_attr(const std::string& name)
+	SerializableAttribute* SerializableNode::find_attr(const std::string& name) const
 	{
 		return ((SerializableNodePrivate*)this)->find_attr(name);
 	}
@@ -266,7 +266,7 @@ namespace flame
 		return ((SerializableNodePrivate*)this)->nodes[idx].get();
 	}
 
-	SerializableNode* SerializableNode::find_node(const std::string& name)
+	SerializableNode* SerializableNode::find_node(const std::string& name) const
 	{
 		return ((SerializableNodePrivate*)this)->find_node(name);
 	}

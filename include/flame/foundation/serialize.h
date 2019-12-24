@@ -391,7 +391,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void clear_attrs();
 		FLAME_FOUNDATION_EXPORTS int attr_count() const;
 		FLAME_FOUNDATION_EXPORTS SerializableAttribute* attr(int idx) const;
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* find_attr(const std::string& name);
+		FLAME_FOUNDATION_EXPORTS SerializableAttribute* find_attr(const std::string& name) const;
 
 		FLAME_FOUNDATION_EXPORTS void add_node(SerializableNode* n);
 		FLAME_FOUNDATION_EXPORTS SerializableNode* new_node(const std::string& name);
@@ -401,7 +401,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void clear_nodes();
 		FLAME_FOUNDATION_EXPORTS int node_count() const;
 		FLAME_FOUNDATION_EXPORTS SerializableNode* node(int idx) const;
-		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name);
+		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name) const;
 
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create(const std::string& name);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_string(const std::string& str);
@@ -546,7 +546,9 @@ namespace flame
 		}
 
 		inline std::string serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
+		inline void serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision, SerializableNode* dst) const;
 		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
+		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
 		inline void copy_from(const void* src, uint size, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
 	};
 
@@ -778,6 +780,16 @@ namespace flame
 		}
 	}
 
+	void TypeInfo::serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision, SerializableNode* dst) const
+	{
+		if (is_vector)
+		{
+
+		}
+		else
+			dst->new_attr("v", serialize(dbs, src, precision));
+	}
+
 	void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const
 	{
 		if (is_attribute)
@@ -886,6 +898,20 @@ namespace flame
 			}
 			return;
 		}
+	}
+
+	inline void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const
+	{
+		if (is_vector)
+		{
+			if (is_attribute)
+				dst = (char*)dst + sizeof(AttributeBase);
+
+			auto size = std::stoi(src->find_attr("s")->value());
+
+		}
+		else
+			unserialize(dbs, src->find_attr("v")->value(), dst, dst_module, dst_db);
 	}
 
 	void TypeInfo::copy_from(const void* src, uint size, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const

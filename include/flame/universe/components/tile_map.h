@@ -12,7 +12,6 @@ namespace flame
 
 		Vec2u size_;
 		Vec2f cell_size;
-		Vec4c color;
 
 		cTileMap() :
 			Component("cTileMap")

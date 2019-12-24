@@ -1,3 +1,4 @@
+#include <flame/universe/world.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/tile_map.h>
 
@@ -17,7 +18,7 @@ namespace flame
 			element = nullptr;
 
 			size_ = Vec2u(0);
-			color = Vec4c(255);
+			cell_size = Vec2f(0.f);
 
 			draw_cmd = nullptr;
 		}
@@ -51,7 +52,7 @@ namespace flame
 					{
 						auto idx = cells[y * size_.x() + x];
 						if (idx != -1)
-							canvas->add_image(pos + Vec2f(x * cell_size.x(), y * cell_size.y()), cell_size, tiles[idx], Vec2f(0.f), Vec2f(1.f), color);
+							canvas->add_image(pos + Vec2f(x * cell_size.x(), y * cell_size.y()), cell_size, tiles[idx], Vec2f(0.f), Vec2f(1.f));
 					}
 				}
 			}
@@ -131,8 +132,54 @@ namespace flame
 	{
 		Vec2u size$;
 		Vec2f cell_size$;
-		Vec4c color$;
 		std::vector<ulonglong> tiles$;
 		std::vector<int> cells$;
+
+		FLAME_UNIVERSE_EXPORTS Serializer_cTileMap$()
+		{
+			size$ = Vec2u(0);
+			cell_size$ = Vec2f(0.f);
+		}
+
+		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
+		{
+			auto c = new cTileMapPrivate();
+
+			c->size_ = size$;
+			c->cell_size = cell_size$;
+			c->tiles.resize(tiles$.size());
+			for (auto i = 0; i < tiles$.size(); i++)
+			{
+				auto id = tiles$[i];
+				auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), id >> 32);
+				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_region(id & 0xffffffff);
+			}
+			c->cells = cells$;
+
+			return c;
+		}
+
+		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
+		{
+			auto c = (cTileMapPrivate*)_c;
+
+			if (offset == -1)
+			{
+				size$ = c->size_;
+				cell_size$ = c->cell_size;
+
+			}
+		}
+
+		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
+		{
+			auto c = (cTileMapPrivate*)_c;
+
+			if (offset == -1)
+			{
+				c->size_ = size$;
+				c->cell_size = cell_size$;
+			}
+		}
 	};
 }

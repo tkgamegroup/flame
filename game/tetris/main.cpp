@@ -258,10 +258,10 @@ struct App
 {
 	Window* w;
 	Device* d;
-	Semaphore* render_finished;
 	SwapchainResizable* scr;
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
+	Semaphore* render_finished;
 	BP* canvas_bp;
 	Canvas* canvas;
 	std::vector<TypeinfoDatabase*> dbs;
@@ -450,12 +450,12 @@ int main(int argc, char **args)
 {
 	app.w = Window::create("Tetris", Vec2u(18 * block_size, block_cy * block_size), WindowFrame);
 	app.d = Device::create(true);
-	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.cbs.resize(app.scr->sc()->images().size());
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	app.render_finished = Semaphore::create(app.d);
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_foundation.typeinfo"));
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_graphics.typeinfo"));
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_universe.typeinfo"));

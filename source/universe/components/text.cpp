@@ -253,7 +253,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
 		{
-			auto c = (cText*)_c;
+			auto c = (cTextPrivate*)_c;
 			auto w = c->entity->world_;
 
 			if (offset == -1)
@@ -263,7 +263,7 @@ namespace flame
 				font_size$ = c->font_size_;
 				auto_width$ = c->auto_width_;
 				auto_height$ = c->auto_height_;
-				text$ = c->text();
+				text$ = c->text;
 			}
 			else
 			{
@@ -285,7 +285,7 @@ namespace flame
 					auto_height$ = c->auto_height_;
 					break;
 				case offsetof(Serializer_cText$, text$):
-					text$ = c->text();
+					text$ = c->text;
 					break;
 				}
 			}
@@ -293,7 +293,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
 		{
-			auto c = (cText*)_c;
+			auto c = (cTextPrivate*)_c;
 			auto w = c->entity->world_;
 
 			if (offset == -1)

@@ -446,7 +446,7 @@ namespace flame
 				{
 					auto v = udt->variable(i);
 					auto p = (char*)object + v->offset();
-					if ((v->type().tag == TypeData && (v->type().hash == cH("std::string") || v->type().hash == cH("std::wstring"))) || memcmp(p, v->default_value(), v->size()) != 0)
+					if ((v->type().tag == TypeData && (v->type().is_vector || v->type().hash == cH("std::string") || v->type().hash == cH("std::wstring"))) || memcmp(p, v->default_value(), v->size()) != 0)
 					{
 						auto n = n_c->new_node(v->name());
 						n->new_attr("v", v->type().serialize(dbs, p, 2));
