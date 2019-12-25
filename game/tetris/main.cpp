@@ -262,12 +262,10 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
 	Semaphore* render_finished;
-	BP* canvas_bp;
-	Canvas* canvas;
 	std::vector<TypeinfoDatabase*> dbs;
 
 	Universe* u;
-	sEventDispatcher* event_dispatcher;
+	sEventDispatcher* s_event_dispatcher;
 	cElement* c_element_root;
 
 	bool gameover;
@@ -328,7 +326,7 @@ struct App
 	{
 		if (!gameover)
 		{
-			auto& key_states = event_dispatcher->key_states;
+			auto& key_states = s_event_dispatcher->key_states;
 			if (key_states[Key_Up] == (KeyStateDown | KeyStateJust))
 			{
 				auto index = (piece.transform_index + 1) % 4;
@@ -431,12 +429,8 @@ struct App
 		fence->wait();
 		looper().process_events();
 
-		if (sc)
-		{
-			c_element_root->set_size(Vec2f(w->size));
-			u->update();
-		}
-		canvas_bp->update();
+		c_element_root->set_size(Vec2f(w->size));
+		u->update();
 
 		if (sc)
 		{
@@ -460,22 +454,19 @@ int main(int argc, char **args)
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_graphics.typeinfo"));
 	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_universe.typeinfo"));
 
-	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas/bp", true);
-	app.scr->link_bp(app.canvas_bp, app.cbs);
-	app.canvas_bp->update();
-	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
-
-	auto font_atlas_standard = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
-	app.canvas->add_font(font_atlas_standard);
-
 	app.u = Universe::create();
 	app.u->add_object(app.w);
-	app.u->add_object(app.canvas);
 
-	auto w = World::create_from_file(app.u, app.dbs, L"../game/tetris/world");
-	app.event_dispatcher = w->get_system(sEventDispatcher);
-
+	auto w = World::create(app.u);
+	w->add_system(sLayoutManagement::create());
+	app.s_event_dispatcher = sEventDispatcher::create();
+	w->add_system(app.s_event_dispatcher);
+	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, cH("SwapchainResizable"), &app.cbs);
+	w->add_system(s_2d_renderer);
+	load_res(w, app.dbs, L"../game/tetris/res");
 	auto font_atlas_joystix = (FontAtlas*)w->find_object(cH("FontAtlas"), 0);
+	auto font_atlas_standard = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
+	s_2d_renderer->canvas->add_font(font_atlas_standard);
 
 	auto atlas_main = (Atlas*)w->find_object(cH("Atlas"), cH("release/main.png"));
 
@@ -576,6 +567,7 @@ int main(int argc, char **args)
 		e_score->add_component(c_element);
 
 		app.text_score = cText::create(font_atlas_joystix);
+		app.text_score->font_size_ = 32;
 		e_score->add_component(app.text_score);
 	}
 
@@ -588,6 +580,7 @@ int main(int argc, char **args)
 		e_level->add_component(c_element);
 
 		app.text_level = cText::create(font_atlas_joystix);
+		app.text_level->font_size_ = 32;
 		e_level->add_component(app.text_level);
 	}
 
@@ -600,6 +593,7 @@ int main(int argc, char **args)
 		e_lines->add_component(c_element);
 
 		app.text_lines = cText::create(font_atlas_joystix);
+		app.text_lines->font_size_ = 32;
 		e_lines->add_component(app.text_lines);
 	}
 

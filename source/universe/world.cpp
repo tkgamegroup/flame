@@ -44,11 +44,6 @@ namespace flame
 		}
 	}
 
-	const std::wstring& World::filename() const
-	{
-		return ((WorldPrivate*)this)->filename;
-	}
-
 	void World::add_object(Object* o)
 	{
 		((WorldPrivate*)this)->objects.emplace_back(o, nullptr);
@@ -100,14 +95,16 @@ namespace flame
 		return new WorldPrivate(u);
 	}
 
-	World* World::create_from_file(Universe* u, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
+	void World::destroy(World* w)
+	{
+		delete (WorldPrivate*)w;
+	}
+
+	void load_res(World* w, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
 	{
 		auto file = SerializableNode::create_from_xml_file(filename);
-		if (!file || file->name() != "world")
-			return nullptr;
-
-		auto w = new WorldPrivate(u);
-		w->filename = filename;
+		if (!file || file->name() != "res")
+			return;
 
 		auto last_curr_path = get_curr_path();
 		set_curr_path(std::filesystem::path(filename).parent_path().wstring());
@@ -124,96 +121,45 @@ namespace flame
 		}
 		assert(this_module && this_db);
 
-		auto n_os = file->find_node("objects");
-		if (n_os)
+		for (auto i_o = 0; i_o < file->node_count(); i_o++)
 		{
-			for (auto i_o = 0; i_o < n_os->node_count(); i_o++)
+			auto n_o = file->node(i_o);
+
+			auto udt = find_udt(dbs, H(("D#Serializer_" + n_o->name()).c_str()));
+			assert(udt);
+			auto dummy = malloc(udt->size());
+			auto module = load_module(udt->db()->module_name());
 			{
-				auto n_o = n_os->node(i_o);
-
-				auto udt = find_udt(dbs, H(("D#Serializer_" + n_o->name()).c_str()));
-				assert(udt);
-				auto dummy = malloc(udt->size());
-				auto module = load_module(udt->db()->module_name());
-				{
-					auto f = udt->find_function("ctor");
-					if (f && f->parameter_count() == 0)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-				}
-				for (auto i = 0; i < n_o->node_count(); i++)
-				{
-					auto n = n_o->node(i);
-
-					auto v = udt->find_variable(n->name());
-					v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), this_module, this_db);
-				}
-				void* object;
-				{
-					auto f = udt->find_function("create");
-					assert(f && f->return_type() == TypeInfo(TypePointer, "Object") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
-					object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
-				}
-				w->objects.emplace_back((Object*)object, udt);
-				{
-					auto f = udt->find_function("dtor");
-					if (f)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-				}
-				free_module(module);
-				free(dummy);
+				auto f = udt->find_function("ctor");
+				if (f && f->parameter_count() == 0)
+					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
 			}
-		}
-
-		auto n_ss = file->find_node("systems");
-		if (n_ss)
-		{
-			for (auto i_s = 0; i_s < n_ss->node_count(); i_s++)
+			for (auto i = 0; i < n_o->node_count(); i++)
 			{
-				auto n_s = n_ss->node(i_s);
+				auto n = n_o->node(i);
 
-				auto udt = find_udt(dbs, H(("D#Serializer_" + n_s->name()).c_str()));
-				assert(udt);
-				auto dummy = malloc(udt->size());
-				auto module = load_module(udt->db()->module_name());
-				{
-					auto f = udt->find_function("ctor");
-					if (f && f->parameter_count() == 0)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-				}
-				for (auto i = 0; i < n_s->node_count(); i++)
-				{
-					auto n = n_s->node(i);
-
-					auto v = udt->find_variable(n->name());
-					v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), this_module, this_db);
-				}
-				void* system;
-				{
-					auto f = udt->find_function("create");
-					assert(f && f->return_type() == TypeInfo(TypePointer, "System") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
-					system = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
-				}
-				w->add_system((System*)system);
-				{
-					auto f = udt->find_function("dtor");
-					if (f)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-				}
-				free_module(module);
-				free(dummy);
+				auto v = udt->find_variable(n->name());
+				v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), this_module, this_db);
 			}
+			void* object;
+			{
+				auto f = udt->find_function("create");
+				assert(f && f->return_type() == TypeInfo(TypePointer, "Object") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
+				object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
+			}
+			((WorldPrivate*)w)->objects.emplace_back((Object*)object, udt);
+			{
+				auto f = udt->find_function("dtor");
+				if (f)
+					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+			}
+			free_module(module);
+			free(dummy);
 		}
 
 		free_module(this_module);
 
 		set_curr_path(*last_curr_path.p);
 		delete_mail(last_curr_path);
-
-		return w;
-	}
-
-	void World::destroy(World* w)
-	{
-		delete (WorldPrivate*)w;
 	}
 }

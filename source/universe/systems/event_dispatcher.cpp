@@ -378,12 +378,4 @@ namespace flame
 	{
 		return new sEventDispatcherPrivate();
 	}
-
-	struct Serializer_sEventDispatcher$
-	{
-		FLAME_UNIVERSE_EXPORTS System* create$(World* w)
-		{
-			return new sEventDispatcherPrivate();
-		}
-	};
 }

@@ -360,20 +360,8 @@ namespace flame
 				for (auto i = 0; i < n_c->node_count(); i++)
 				{
 					auto n_v = n_c->node(i);
-
 					auto v = udt->find_variable(n_v->name());
-					if (v->type().is_vector)
-					{
-						auto size = std::stoi(n_v->find_attr("size")->value());
-
-						for (auto j = 0; j < n_v->node_count(); j++)
-						{
-							auto n_i = n_v->node(j);
-
-						}
-					}
-					else
-						v->type().unserialize(dbs, n_v->find_attr("v")->value(), (char*)object + v->offset(), this_module, this_db);
+					v->type().unserialize(dbs, n_v, (char*)object + v->offset(), this_module, this_db);
 				}
 				void* component;
 				{
@@ -447,10 +435,7 @@ namespace flame
 					auto v = udt->variable(i);
 					auto p = (char*)object + v->offset();
 					if ((v->type().tag == TypeData && (v->type().is_vector || v->type().hash == cH("std::string") || v->type().hash == cH("std::wstring"))) || memcmp(p, v->default_value(), v->size()) != 0)
-					{
-						auto n = n_c->new_node(v->name());
-						n->new_attr("v", v->type().serialize(dbs, p, 2));
-					}
+						v->type().serialize(dbs, p, 2, n_c->new_node(v->name()));
 				}
 				{
 					auto f = udt->find_function("dtor");

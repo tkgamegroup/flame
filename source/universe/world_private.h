@@ -10,8 +10,6 @@ namespace flame
 
 	struct WorldPrivate : World
 	{
-		std::wstring filename;
-
 		std::vector<std::pair<Object*, UdtInfo*>> objects;
 
 		std::vector<std::unique_ptr<System>> systems;

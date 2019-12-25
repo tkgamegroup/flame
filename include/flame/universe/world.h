@@ -13,8 +13,6 @@ namespace flame
 	{
 		Universe* universe_;
 
-		FLAME_UNIVERSE_EXPORTS const std::wstring& filename() const;
-
 		FLAME_UNIVERSE_EXPORTS void add_object(Object* o);
 		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, uint id);
 
@@ -33,7 +31,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* root() const;
 
 		FLAME_UNIVERSE_EXPORTS static World* create(Universe* u);
-		FLAME_UNIVERSE_EXPORTS static World* create_from_file(Universe* u, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(World* w);
 	};
+
+	FLAME_UNIVERSE_EXPORTS void load_res(World* w, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
 }

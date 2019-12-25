@@ -48,7 +48,6 @@ void App::create()
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
-	app.u->add_object(app.font_atlas_pixel);
 
 	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());

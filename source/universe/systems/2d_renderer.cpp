@@ -125,13 +125,4 @@ namespace flame
 	{
 		delete (s2DRendererPrivate*)s;
 	}
-
-	struct Serializer_s2DRenderer$
-	{
-		FLAME_UNIVERSE_EXPORTS System* create$(World* w)
-		{
-			//return new s2DRendererPrivate();
-			return nullptr;
-		}
-	};
 }

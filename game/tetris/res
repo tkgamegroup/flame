@@ -1,15 +1,8 @@
-<world>
-  <objects>
+<res>
     <Atlas>
       <filename v="release/main.png" />
     </Atlas>
     <FontAtlas>
         <fonts v="joystix monospace.ttf" />
     </FontAtlas>
-  </objects>
-  <systems>
-    <sLayoutManagement />
-    <sEventDispatcher />
-    <s2DRenderer />
-  </systems>
-</world>
+</res>
