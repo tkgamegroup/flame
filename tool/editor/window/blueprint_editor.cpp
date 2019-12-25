@@ -8,6 +8,7 @@
 #include <flame/universe/default_style.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/edit.h>
@@ -55,7 +56,7 @@ namespace flame
 			if (size$i.frame > img$o.frame)
 			{
 				if (idx$o.v > 0)
-					app.canvas->set_image(idx$o.v, nullptr);
+					app.s_2d_renderer->canvas->set_image(idx$o.v, nullptr);
 				if (img$o.v)
 					Image::destroy((Image*)img$o.v);
 				if (view$o.v)
@@ -73,7 +74,7 @@ namespace flame
 				if (img$o.v)
 				{
 					view$o.v = Imageview::create((Image*)img$o.v);
-					idx$o.v = app.canvas->set_image(-1, (Imageview*)view$o.v);
+					idx$o.v = app.s_2d_renderer->canvas->set_image(-1, (Imageview*)view$o.v);
 				}
 				img$o.frame = scene->frame;
 				view$o.frame = scene->frame;
@@ -84,7 +85,7 @@ namespace flame
 		__declspec(dllexport) ~DstImage$()
 		{
 			if (idx$o.v > 0)
-				app.canvas->set_image(idx$o.v, nullptr);
+				app.s_2d_renderer->canvas->set_image(idx$o.v, nullptr);
 			if (img$o.v)
 				Image::destroy((Image*)img$o.v);
 			if (view$o.v)

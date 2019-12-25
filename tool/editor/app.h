@@ -20,6 +20,7 @@ namespace flame
 	}
 
 	struct Universe;
+	struct s2DRenderer;
 	struct Entity;
 	struct cElement;
 	struct cText;
@@ -38,12 +39,11 @@ struct App
 	std::vector<Commandbuffer*> sc_cbs;
 	Semaphore* render_finished;
 	std::vector<Commandbuffer*> extra_cbs;
-	BP* canvas_bp;
-	Canvas* canvas;
 
 	FontAtlas* font_atlas_pixel;
 
 	Universe* u;
+	s2DRenderer* s_2d_renderer;
 	Entity* root;
 	cElement* c_element_root;
 

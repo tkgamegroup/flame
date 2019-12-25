@@ -43,26 +43,24 @@ void App::create()
 		sc_cbs[i] = Commandbuffer::create(d->gcp);
 	render_finished = Semaphore::create(d);
 
-	canvas_bp = BP::create_from_file(L"../renderpath/canvas/bp", true);
-	scr->link_bp(canvas_bp, sc_cbs);
-	canvas_bp->update();
-	canvas = (Canvas*)canvas_bp->find_output("*.make_cmd.canvas")->data_p();
-
 	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc", L"../asset/font_awesome.ttf" });
-	app.canvas->add_font(app.font_atlas_pixel);
-	
-	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	default_style.set_to_light();
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
-	app.u->add_object(app.canvas);
 	app.u->add_object(app.font_atlas_pixel);
 
 	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create());
-	w->add_system(s2DRenderer::create());
+
+	s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", scr, cH("SwapchainResizable"), &sc_cbs);
+	w->add_system(s_2d_renderer);
+	{
+		auto canvas = s_2d_renderer->canvas;
+		canvas->add_font(app.font_atlas_pixel);
+		canvas->set_clear_color(Vec4c(100, 100, 100, 255));
+	}
 
 	root = w->root();
 	{
@@ -107,12 +105,8 @@ void App::run()
 	fence->wait();
 	looper().process_events();
 
-	if (sc)
-	{
-		c_element_root->set_size(Vec2f(w->size));
-		u->update();
-	}
-	canvas_bp->update();
+	c_element_root->set_size(Vec2f(w->size));
+	u->update();
 
 	if (sc)
 	{

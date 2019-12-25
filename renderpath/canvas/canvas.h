@@ -1,21 +1,19 @@
 #pragma once
 
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
+#include <flame/graphics/swapchain.h>
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct Imageview;
-		struct Atlas;
+		struct Commandbuffer;
 
-		struct Canvas : Object
+		struct Canvas
 		{
-			Canvas() :
-				Object("Canvas")
-			{
-			}
+			BP* scene;
 
 			virtual void set_clear_color(const Vec4c& col) = 0;
 			virtual Imageview* get_image(uint index) = 0;
@@ -41,6 +39,15 @@ namespace flame
 			virtual void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255), bool repeat = false) = 0;
 			virtual const Vec4f& scissor() = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;
+
+			inline static Canvas* create(const std::wstring& filename, void* dst, uint dst_hash, void* cbs)
+			{
+				auto bp = BP::create_from_file(filename, true);
+				if (dst_hash == cH("SwapchainResizable"))
+					((graphics::SwapchainResizable*)dst)->link_bp(bp, cbs);
+				bp->update();
+				return (Canvas*)bp->find_output("*.make_cmd.canvas")->data_p();
+			}
 		};
 	}
 }

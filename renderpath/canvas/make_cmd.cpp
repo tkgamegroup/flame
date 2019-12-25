@@ -1,6 +1,9 @@
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/blueprint.h>
-#include <flame/graphics/all.h>
+#include <flame/graphics/buffer.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/shader.h>
+#include <flame/graphics/commandbuffer.h>
 
 #include "canvas.h"
 
@@ -487,15 +490,8 @@ namespace flame
 
 		__declspec(dllexport) void update$(BP* scene)
 		{
-			auto rnf = (RenderpassAndFramebuffer*)rnf$i.v;
-			auto img_idx = image_idx$i.v;
-			auto cb = (Commandbuffer*)(*cbs$i.v)[img_idx];
 			auto vtx_buf = (Buffer*)vtx_buf$i.v;
 			auto idx_buf = (Buffer*)idx_buf$i.v;
-			auto pll = (Pipelinelayout*)pll$i.v;
-			auto pl_element = (Pipeline*)pl_element$i.v;
-			auto pl_text_lcd = (Pipeline*)pl_text_lcd$i.v;
-			auto pl_text_sdf = (Pipeline*)pl_text_sdf$i.v;
 			auto ds = (Descriptorset*)ds$i.v;
 
 			if (frame == -1)
@@ -508,6 +504,7 @@ namespace flame
 				imgs.resize(ds->layout()->get_binding(0)->count, std::make_tuple((Imageview*)white_iv$i.v, Vec2f(0.5f), nullptr));
 
 				auto c = new CanvasPrivate;
+				c->scene = scene;
 				c->thiz = this;
 				canvas$o.v = c;
 				canvas$o.frame = scene->frame;
@@ -517,110 +514,119 @@ namespace flame
 					c->add_font((FontAtlas*)f);
 
 				frame = 0;
-
-				return;
 			}
-
-			if (rnf)
+			else
 			{
-				auto fb = (Framebuffer*)rnf->framebuffers()[img_idx];
-				surface_size = Vec2f(fb->image_size);
+				auto rnf = (RenderpassAndFramebuffer*)rnf$i.v;
+				auto img_idx = image_idx$i.v;
+				auto cb = (Commandbuffer*)(*cbs$i.v)[img_idx];
 
-				curr_scissor = Vec4f(Vec2f(0.f), surface_size);
-
-				auto content = get_attribute_vec(content$i);
-				for (auto& _c : content)
+				if (rnf)
 				{
-					switch (((CmdBase*)_c)->type)
-					{
-					case CmdDrawRect:
-					{
-						auto c = (Rect*)_c;
-						std::vector<Vec2f> points;
-						path_rect(points, c->pos, c->size);
-						fill(points, c->color);
-					}
-						break;
-					case CmdDrawTextSdf:
-					{
-						auto c = (TextSdf*)_c;
-						add_text(c->font_atals, c->glyphs, sdf_font_size * c->scale, c->scale, c->pos, c->color);
-					}
-						break;
-					}
-				}
+					auto pll = (Pipelinelayout*)pll$i.v;
+					auto pl_element = (Pipeline*)pl_element$i.v;
+					auto pl_text_lcd = (Pipeline*)pl_text_lcd$i.v;
+					auto pl_text_sdf = (Pipeline*)pl_text_sdf$i.v;
 
-				cb->begin();
-				auto cv = rnf->clearvalues();
-				cv->set(0, clear_color);
-				cb->begin_renderpass(fb, cv);
-				if (idx_end != idx_buf->mapped)
-				{
-					cb->set_viewport(curr_scissor);
-					cb->set_scissor(curr_scissor);
-					cb->bind_vertexbuffer(vtx_buf, 0);
-					cb->bind_indexbuffer(idx_buf, IndiceTypeUint);
+					auto fb = (Framebuffer*)rnf->framebuffers()[img_idx];
+					surface_size = Vec2f(fb->image_size);
 
-					struct
-					{
-						Vec2f scale;
-						Vec2f sdf_range;
-					}pc;
-					pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
-					pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
-					cb->push_constant(0, sizeof(pc), &pc, pll);
-					cb->bind_descriptorset(ds, 0, pll);
+					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 
-					auto vtx_off = 0;
-					auto idx_off = 0;
-					for (auto& cmd : cmds)
+					auto content = get_attribute_vec(content$i);
+					for (auto& _c : content)
 					{
-						switch (cmd.type)
+						switch (((CmdBase*)_c)->type)
 						{
-						case CmdDrawElement:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_element);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
-						case CmdDrawTextLcd:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_text_lcd);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
+						case CmdDrawRect:
+						{
+							auto c = (Rect*)_c;
+							std::vector<Vec2f> points;
+							path_rect(points, c->pos, c->size);
+							fill(points, c->color);
+						}
+						break;
 						case CmdDrawTextSdf:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_text_sdf);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
-						case CmdSetScissor:
-							cb->set_scissor(cmd.v.scissor);
-							break;
+						{
+							auto c = (TextSdf*)_c;
+							add_text(c->font_atals, c->glyphs, sdf_font_size * c->scale, c->scale, c->pos, c->color);
+						}
+						break;
 						}
 					}
+
+					cb->begin();
+					auto cv = rnf->clearvalues();
+					cv->set(0, clear_color);
+					cb->begin_renderpass(fb, cv);
+					if (idx_end != idx_buf->mapped)
+					{
+						cb->set_viewport(curr_scissor);
+						cb->set_scissor(curr_scissor);
+						cb->bind_vertexbuffer(vtx_buf, 0);
+						cb->bind_indexbuffer(idx_buf, IndiceTypeUint);
+
+						struct
+						{
+							Vec2f scale;
+							Vec2f sdf_range;
+						}pc;
+						pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
+						pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
+						cb->push_constant(0, sizeof(pc), &pc, pll);
+						cb->bind_descriptorset(ds, 0, pll);
+
+						auto vtx_off = 0;
+						auto idx_off = 0;
+						for (auto& cmd : cmds)
+						{
+							switch (cmd.type)
+							{
+							case CmdDrawElement:
+								if (cmd.v.draw_data.idx_cnt > 0)
+								{
+									cb->bind_pipeline(pl_element);
+									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+									vtx_off += cmd.v.draw_data.vtx_cnt;
+									idx_off += cmd.v.draw_data.idx_cnt;
+								}
+								break;
+							case CmdDrawTextLcd:
+								if (cmd.v.draw_data.idx_cnt > 0)
+								{
+									cb->bind_pipeline(pl_text_lcd);
+									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+									vtx_off += cmd.v.draw_data.vtx_cnt;
+									idx_off += cmd.v.draw_data.idx_cnt;
+								}
+								break;
+							case CmdDrawTextSdf:
+								if (cmd.v.draw_data.idx_cnt > 0)
+								{
+									cb->bind_pipeline(pl_text_sdf);
+									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+									vtx_off += cmd.v.draw_data.vtx_cnt;
+									idx_off += cmd.v.draw_data.idx_cnt;
+								}
+								break;
+							case CmdSetScissor:
+								cb->set_scissor(cmd.v.scissor);
+								break;
+							}
+						}
+					}
+					cb->end_renderpass();
+					cb->end();
 				}
-				cb->end_renderpass();
-				cb->end();
+				else
+				{
+					cb->begin();
+					cb->end();
+				}
 
 				vtx_end = (Vertex*)vtx_buf->mapped;
 				idx_end = (uint*)idx_buf->mapped;
 				cmds.clear();
-			}
-			else
-			{
-				cb->begin();
-				cb->end();
 			}
 		}
 	};

@@ -36,7 +36,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Swapchain* sc() const;
 
-			FLAME_GRAPHICS_EXPORTS void link_bp(BP* bp, const std::vector<Commandbuffer*>& cbs);
+			FLAME_GRAPHICS_EXPORTS void link_bp(BP* bp, void* cbs);
 
 			FLAME_GRAPHICS_EXPORTS static SwapchainResizable* create(Device* d, Window* w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(SwapchainResizable* s);

@@ -4,6 +4,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 #include <flame/universe/topmost.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
@@ -95,16 +96,17 @@ struct cResourceExplorer : Component
 	cResourceExplorer() :
 		Component("cResourceExplorer")
 	{
+		auto canvas = app.s_2d_renderer->canvas;
 		folder_img = Image::create_from_file(app.d, L"../asset/ui/imgs/folder.png");
 		folder_img_v = Imageview::create(folder_img);
-		folder_img_idx = app.canvas->set_image(-1, folder_img_v);
+		folder_img_idx = canvas->set_image(-1, folder_img_v);
 		file_img = Image::create_from_file(app.d, L"../asset/ui/imgs/file.png");
 		file_img_v = Imageview::create(file_img);
-		file_img_idx = app.canvas->set_image(-1, file_img_v);
+		file_img_idx = canvas->set_image(-1, file_img_v);
 		thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageSampled));
 		thumbnails_img->init(Vec4c(255));
 		thumbnails_img_v = Imageview::create(thumbnails_img);
-		thumbnails_img_idx = app.canvas->set_image(-1, thumbnails_img_v, FilterNearest);
+		thumbnails_img_idx = canvas->set_image(-1, thumbnails_img_v, FilterNearest);
 		{
 			auto x = 0;
 			auto y = 0;
@@ -128,13 +130,14 @@ struct cResourceExplorer : Component
 
 	~cResourceExplorer()
 	{
-		app.canvas->set_image(folder_img_idx, nullptr);
+		auto canvas = app.s_2d_renderer->canvas;
+		canvas->set_image(folder_img_idx, nullptr);
 		Imageview::destroy(folder_img_v);
 		Image::destroy(folder_img);
-		app.canvas->set_image(file_img_idx, nullptr);
+		canvas->set_image(file_img_idx, nullptr);
 		Imageview::destroy(file_img_v);
 		Image::destroy(file_img);
-		app.canvas->set_image(thumbnails_img_idx, nullptr);
+		canvas->set_image(thumbnails_img_idx, nullptr);
 		Imageview::destroy(thumbnails_img_v);
 		Image::destroy(thumbnails_img);
 

@@ -47,8 +47,6 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
 	Semaphore* render_finished;
-	BP* bp;
-	Canvas* canvas;
 
 	FontAtlas* font_atlas_pixel;
 	FontAtlas* font_atlas_lcd;
@@ -69,12 +67,8 @@ struct App
 		fence->wait();
 		looper().process_events();
 
-		if (sc)
-		{
-			c_element_root->set_size(Vec2f(w->size));
-			u->update();
-		}
-		bp->update();
+		c_element_root->set_size(Vec2f(w->size));
+		u->update();
 
 		if (sc)
 		{
@@ -95,32 +89,29 @@ int main(int argc, char** args)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
 
-	app.bp = BP::create_from_file(L"../renderpath/canvas/bp", true);
-	app.scr->link_bp(app.bp, app.cbs);
-	app.bp->update();
-	app.canvas = (Canvas*)app.bp->find_output("*.make_cmd.canvas")->data_p();
-
-#define FONT_MSYH L"c:/windows/fonts/msyh.ttc"
-#define FONT_AWESOME L"../asset/font_awesome.ttf"
-	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { FONT_MSYH, FONT_AWESOME });
-	app.canvas->add_font(app.font_atlas_pixel);
-	app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { FONT_MSYH });
-	app.canvas->add_font(app.font_atlas_lcd);
-	app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { FONT_MSYH });
-	app.canvas->add_font(app.font_atlas_sdf);
-#undef FONT_MSYH
-#undef FONT_AWESOME
-	
-	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
-
 	app.u = Universe::create();
 	app.u->add_object(app.w);
-	app.u->add_object(app.canvas);
 
 	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create());
-	w->add_system(s2DRenderer::create());
+	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, cH("SwapchainResizable"), &app.cbs);
+	w->add_system(s_2d_renderer);
+	{
+		auto canvas = s_2d_renderer->canvas;
+#define FONT_MSYH L"c:/windows/fonts/msyh.ttc"
+#define FONT_AWESOME L"../asset/font_awesome.ttf"
+		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { FONT_MSYH, FONT_AWESOME });
+		canvas->add_font(app.font_atlas_pixel);
+		app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { FONT_MSYH });
+		canvas->add_font(app.font_atlas_lcd);
+		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { FONT_MSYH });
+		canvas->add_font(app.font_atlas_sdf);
+#undef FONT_MSYH
+#undef FONT_AWESOME
+
+		canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
+	}
 
 	auto root = w->root();
 	app.root = root;

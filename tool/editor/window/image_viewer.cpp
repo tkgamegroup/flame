@@ -1,4 +1,5 @@
 #include <flame/graphics/image.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
@@ -12,7 +13,7 @@
 
 void open_image_viewer(uint id, const Vec2f& pos)
 {
-	auto image_size = app.canvas->get_image(id)->image()->size;
+	auto image_size = app.s_2d_renderer->canvas->get_image(id)->image()->size;
 
 	auto e_container = get_docker_container_model()->copy();
 	app.root->add_child(e_container);

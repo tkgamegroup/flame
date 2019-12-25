@@ -24,9 +24,9 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
 			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename$);
-			auto canvas = (graphics::Canvas*)w->find_object(cH("Canvas"), 0);
-			if (canvas)
-				canvas->add_atlas(a);
+			auto renderer = w->get_system(s2DRenderer);
+			if (renderer)
+				renderer->canvas->add_atlas(a);
 			return a;
 		}
 
@@ -56,9 +56,9 @@ namespace flame
 		{
 			auto fonts = ssplit(fonts$, L';');
 			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts);
-			auto canvas = (graphics::Canvas*)w->find_object(cH("Canvas"), 0);
-			if (canvas)
-				canvas->add_font(f);
+			auto renderer = w->get_system(s2DRenderer);
+			if (renderer)
+				renderer->canvas->add_font(f);
 			return f;
 		}
 
@@ -72,7 +72,10 @@ namespace flame
 
 	struct s2DRendererPrivate : s2DRenderer
 	{
-		graphics::Canvas* canvas;
+		s2DRendererPrivate(graphics::Canvas* _canvas)
+		{
+			canvas = _canvas;
+		}
 
 		void do_render(EntityPrivate* e)
 		{
@@ -106,20 +109,16 @@ namespace flame
 			}
 		}
 
-		void on_added() override
-		{
-			canvas = (graphics::Canvas*)world_->find_object(cH("Canvas"), 0);
-		}
-
 		void update(Entity* root) override
 		{
 			do_render((EntityPrivate*)root);
+			canvas->scene->update();
 		}
 	};
 
-	s2DRenderer* s2DRenderer::create()
+	s2DRenderer* s2DRenderer::create(const std::wstring& canvas_filename, void* dst, uint dst_hash, void* cbs)
 	{
-		return new s2DRendererPrivate();
+		return new s2DRendererPrivate(graphics::Canvas::create(canvas_filename, dst, dst_hash, cbs));
 	}
 
 	void s2DRenderer::destroy(s2DRenderer* s)
@@ -131,7 +130,8 @@ namespace flame
 	{
 		FLAME_UNIVERSE_EXPORTS System* create$(World* w)
 		{
-			return new s2DRendererPrivate();
+			//return new s2DRendererPrivate();
+			return nullptr;
 		}
 	};
 }
