@@ -14,23 +14,23 @@
 #include <android_native_app_glue.h>
 #endif
 
-void* flame_malloc(unsigned int size)
-{
-	return malloc(size);
-}
-
-void* flame_realloc(void* p, unsigned int size)
-{
-	return realloc(p, size);
-}
-
-void flame_free(void *p)
-{
-	free(p);
-}
-
 namespace flame
 {
+	void* f_malloc(unsigned int size)
+	{
+		return malloc(size);
+	}
+
+	void* f_realloc(void* p, unsigned int size)
+	{
+		return realloc(p, size);
+	}
+
+	void f_free(void* p)
+	{
+		free(p);
+	}
+
 	struct ListenerHub
 	{
 		std::vector<std::unique_ptr<Closure<void(void* c)>>> listeners;

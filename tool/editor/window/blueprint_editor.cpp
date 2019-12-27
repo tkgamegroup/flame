@@ -797,7 +797,7 @@ struct cBPScene : Component
 	cText* scale_text;
 	cBPEditor* editor;
 
-	float bezier_extent;
+	float link_stick_out;
 
 	cBPScene() :
 		Component("cBPScene")
@@ -1044,16 +1044,22 @@ void cBPScene::on_component_added(Component* c)
 	else if (c->name_hash == cH("cEventReceiver"))
 	{
 		event_receiver = (cEventReceiver*)c;
-		event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& _pos) {
 			auto thiz = *(cBPScene**)c;
 			auto editor = thiz->editor;
+			auto pos = (Vec2f)_pos;
+			auto line_width = 3.f * thiz->base_element->global_scale;
 
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
 				editor->deselect();
 
-				thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
-					if (distance((Vec2f)pos, bezier_closest_point((Vec2f)pos, p1, p1 + Vec2f(thiz->bezier_extent, 0.f), p2 - Vec2f(thiz->bezier_extent, 0.f), p2, 4, 7)) < 3.f * thiz->element->global_scale)
+				thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p4, BP::Slot* l) {
+					auto p2 = p1 + Vec2f(thiz->link_stick_out, 0.f);
+					auto p3 = p4 - Vec2f(thiz->link_stick_out, 0.f);
+					if (segment_distance(p1, p2, pos) < line_width ||
+						segment_distance(p2, p3, pos) < line_width ||
+						segment_distance(p3, p4, pos) < line_width)
 					{
 						editor->select(cBPEditor::SelLink, l);
 						return false;
@@ -1063,7 +1069,7 @@ void cBPScene::on_component_added(Component* c)
 			}
 			else if (is_mouse_up(action, key, true) && key == Mouse_Right)
 			{
-				popup_menu(editor->e_add_node_menu, app.root, (Vec2f)pos);
+				popup_menu(editor->e_add_node_menu, app.root, pos);
 				editor->add_pos = pos - thiz->element->global_pos;
 			}
 		}, new_mail_p(this));
@@ -1072,7 +1078,8 @@ void cBPScene::on_component_added(Component* c)
 
 void cBPScene::draw(graphics::Canvas* canvas)
 {
-	bezier_extent = 50.f * base_element->global_scale;
+	link_stick_out = 50.f * base_element->global_scale;
+	auto line_width = 3.f * base_element->global_scale;
 
 	if (element->cliped)
 		return;
@@ -1081,8 +1088,11 @@ void cBPScene::draw(graphics::Canvas* canvas)
 		if (rect_overlapping(rect(element->pos_, element->size_), Vec4f(min(p1, p2), max(p1, p2))))
 		{
 			std::vector<Vec2f> points;
-			path_bezier(points, p1, p1 + Vec2f(bezier_extent, 0.f), p2 - Vec2f(bezier_extent, 0.f), p2);
-			canvas->stroke(points, editor->selected_.l == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), 3.f * base_element->global_scale);
+			points.push_back(p1);
+			points.push_back(p1 + Vec2f(link_stick_out, 0.f));
+			points.push_back(p2 - Vec2f(link_stick_out, 0.f));
+			points.push_back(p2);
+			canvas->stroke(points, editor->selected_.l == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
 		}
 		return true;
 	});
@@ -1090,11 +1100,12 @@ void cBPScene::draw(graphics::Canvas* canvas)
 	{
 		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
 		auto p1 = e->global_pos + e->global_size * 0.5f;
-		auto p2 = Vec2f(event_receiver->dispatcher->mouse_pos);
 
 		std::vector<Vec2f> points;
-		path_bezier(points, p1, p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? bezier_extent : -bezier_extent, 0.f), p2, p2);
-		canvas->stroke(points, Vec4c(255, 255, 50, 255), 3.f * base_element->global_scale);
+		points.push_back(p1);
+		points.push_back(p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? link_stick_out : -link_stick_out, 0.f));
+		points.push_back(Vec2f(event_receiver->dispatcher->mouse_pos));
+		canvas->stroke(points, Vec4c(255, 255, 50, 255), line_width);
 	}
 }
 

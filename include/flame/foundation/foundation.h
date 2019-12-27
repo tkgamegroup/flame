@@ -39,12 +39,12 @@
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "flame", __VA_ARGS__))
 #endif
 
-FLAME_FOUNDATION_EXPORTS void* flame_malloc(unsigned int size);
-FLAME_FOUNDATION_EXPORTS void* flame_realloc(void* p, unsigned int size);
-FLAME_FOUNDATION_EXPORTS void flame_free(void* p);
-
 namespace flame
 {
+	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
+	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
+	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
+
 	template<class F>
 	void* f2v(F f) // function to void pointer
 	{
@@ -971,6 +971,23 @@ namespace flame
 		return std::string();
 	}
 
+	template<class CH>
+	struct String
+	{
+		uint s;
+		CH* v;
+	};
+
+	using StringA = String<char>;
+	using StringW = String<wchar_t>;
+
+	template<class T>
+	struct Array
+	{
+		uint s;
+		T* v;
+	};
+
 #pragma pack(1)
 
 	struct AttributeBase
@@ -1034,7 +1051,7 @@ namespace flame
 	template<class T>
 	Mail<T> new_mail(const T* v = nullptr, uint udt_name_hash = 0)
 	{
-		auto p = flame_malloc(sizeof(T));
+		auto p = f_malloc(sizeof(T));
 		if (v)
 			new(p) T(*v);
 		else
@@ -1060,7 +1077,7 @@ namespace flame
 			return;
 		if (m.dtor)
 			cmf(p2f<MF_v_v>(m.dtor), m.p);
-		flame_free(m.p);
+		f_free(m.p);
 	}
 
 	template<class F>

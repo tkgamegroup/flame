@@ -1299,10 +1299,16 @@ namespace flame
 	}
 
 	template<uint N, class T>
-	T distance(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
+	T distance_square(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
 	{
 		auto d = lhs - rhs;
 		return dot(d, d);
+	}
+
+	template<uint N, class T>
+	T distance(const Vec<N, T>& lhs, const Vec<N, T>& rhs)
+	{
+		return sqrt(distance_square(lhs, rhs));
 	}
 
 	template<uint N, class T>
@@ -1479,6 +1485,21 @@ namespace flame
 			Vec<4, T>(0, 0, 0, 1)) * ret;
 	}
 
+	template<class T>
+	T segment_distance(const Vec<2, T>& a, const Vec<2, T>& b, const Vec<2, T>& p)
+	{
+		auto l2 = distance_square(a, b);
+		auto l = sqrt(l2);
+		auto pa2 = distance_square(p, a);
+		auto pb2 = distance_square(p, b);
+		auto x = (pa2 - pb2 + l2) * 0.5f / l;
+		if (x < 0.f)
+			return sqrt(pa2);
+		if (x > l)
+			return sqrt(pb2);
+		return sqrt(pa2 - x * x);
+	}
+
 	template<uint N, class T>
 	Vec<N, T> bezier(float t, const Vec<N, T>& p0, const Vec<N, T>& p1, const Vec<N, T>& p2, const Vec<N, T>& p3)
 	{
@@ -1497,17 +1518,17 @@ namespace flame
 
 		float tick = (end - start) / float(slices);
 		float best = 0;
-		float bestDistance = T(1000000);
+		float best_distance = T(1000000);
 		float t = start;
 
 		while (t <= end)
 		{
 			auto v = bezier(t, p0, p1, p2, p3);
 			auto d = v - pos;
-			float currentDistance = d.x() * d.x() + d.y() * d.y();
-			if (currentDistance < bestDistance)
+			float current_distance = d.x() * d.x() + d.y() * d.y();
+			if (current_distance < best_distance)
 			{
-				bestDistance = currentDistance;
+				best_distance = current_distance;
 				best = t;
 			}
 			t += tick;
