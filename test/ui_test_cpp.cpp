@@ -100,7 +100,7 @@ int main(int argc, char** args)
 	{
 		auto canvas = s_2d_renderer->canvas;
 #define FONT_MSYH L"c:/windows/fonts/msyh.ttc"
-#define FONT_AWESOME L"../asset/font_awesome.ttf"
+#define FONT_AWESOME L"../art/font_awesome.ttf"
 		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { FONT_MSYH, FONT_AWESOME });
 		canvas->add_font(app.font_atlas_pixel);
 		app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { FONT_MSYH });
@@ -110,7 +110,7 @@ int main(int argc, char** args)
 #undef FONT_MSYH
 #undef FONT_AWESOME
 
-		canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../asset/ui/imgs/9.png")));
+		canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../art/ui/imgs/9.png")));
 	}
 
 	auto root = w->root();

@@ -97,10 +97,10 @@ struct cResourceExplorer : Component
 		Component("cResourceExplorer")
 	{
 		auto canvas = app.s_2d_renderer->canvas;
-		folder_img = Image::create_from_file(app.d, L"../asset/ui/imgs/folder.png");
+		folder_img = Image::create_from_file(app.d, L"../art/ui/imgs/folder.png");
 		folder_img_v = Imageview::create(folder_img);
 		folder_img_idx = canvas->set_image(-1, folder_img_v);
-		file_img = Image::create_from_file(app.d, L"../asset/ui/imgs/file.png");
+		file_img = Image::create_from_file(app.d, L"../art/ui/imgs/file.png");
 		file_img_v = Imageview::create(file_img);
 		file_img_idx = canvas->set_image(-1, file_img_v);
 		thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageSampled));
