@@ -12,6 +12,8 @@ namespace flame
 {
 	struct cEditPrivate : cEdit
 	{
+		uint last_font_size;
+		graphics::Glyph* cursor_glyph;
 		void* key_listener;
 		void* mouse_listener;
 		void* draw_cmd;
@@ -23,6 +25,9 @@ namespace flame
 			event_receiver = nullptr;
 
 			cursor = 0;
+
+			last_font_size = 0;
+			cursor_glyph = nullptr;
 
 			key_listener = nullptr;
 			mouse_listener = nullptr;
@@ -160,13 +165,21 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas)
 		{
-			if (event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
+			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
-				//auto font_size = text->font_size_ * element->global_scale;
-				//canvas->add_text(text->font_atlas, font_size, element->global_pos +
-				//	Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
-				//	Vec2f(text->font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), font_size)),
-				//	alpha_mul(text->color, element->alpha), L"|");
+				auto font_atlas = text->font_atlas;
+				auto global_scale = element->global_scale;
+				auto fs = text->last_font_size;
+				if (fs != last_font_size)
+				{
+					last_font_size = fs;
+					cursor_glyph = font_atlas->get_glyph(L'|', last_font_size);
+				}
+				auto scale = font_atlas->draw_type == graphics::FontDrawSdf ? text->scale_ : 1.f;
+				canvas->add_text(font_atlas, { cursor_glyph }, last_font_size, scale * global_scale, element->global_pos +
+					(Vec2f(element->inner_padding_[0], element->inner_padding_[1]) + 
+					Vec2f(font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), last_font_size)) * scale) * global_scale,
+					alpha_mul(text->color, element->alpha_));
 			}
 		}
 	};

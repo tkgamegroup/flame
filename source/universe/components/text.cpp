@@ -15,7 +15,6 @@ namespace flame
 	struct cTextPrivate : cText
 	{
 		std::wstring text;
-		uint draw_font_size;
 		std::vector<graphics::Glyph*> glyphs;
 		void* draw_cmd;
 
@@ -30,7 +29,7 @@ namespace flame
 			auto_width_ = true;
 			auto_height_ = true;
 
-			draw_font_size = 0.f;
+			last_font_size = 0;
 
 			draw_cmd = nullptr;
 		}
@@ -45,7 +44,7 @@ namespace flame
 		{
 			glyphs.resize(text.size());
 			for (auto i = 0; i < text.size(); i++)
-				glyphs[i] = font_atlas->get_glyph(text[i], draw_font_size);
+				glyphs[i] = font_atlas->get_glyph(text[i], last_font_size);
 		}
 
 		void draw(graphics::Canvas* canvas)
@@ -57,12 +56,12 @@ namespace flame
 				auto fs = font_size_;
 				if (!is_sdf)
 					fs *= global_scale;
-				if (fs != draw_font_size)
+				if (fs != last_font_size)
 				{
-					draw_font_size = fs;
+					last_font_size = fs;
 					update_glyphs();
 				}
-				canvas->add_text(font_atlas, glyphs, draw_font_size, scale_ * (is_sdf ? global_scale : 1.f), element->global_pos +
+				canvas->add_text(font_atlas, glyphs, last_font_size, scale_ * (is_sdf ? global_scale : 1.f), element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
 					alpha_mul(color, element->alpha_));
 			}

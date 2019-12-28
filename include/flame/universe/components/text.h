@@ -22,6 +22,8 @@ namespace flame
 		bool auto_width_;
 		bool auto_height_;
 
+		uint last_font_size;
+
 		cText() :
 			Component("cText")
 		{
