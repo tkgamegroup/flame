@@ -346,7 +346,7 @@ struct cBPEditor : Component
 
 						editor->reset_add_node_menu_filter();
 
-						popup_input_dialog(editor->entity, L"template", [](void* c, bool ok, const std::wstring& text) {
+						popup_input_dialog(L"template", [](void* c, bool ok, const std::wstring& text) {
 							auto editor = *(cBPEditor**)c;
 							auto bp = editor->bp;
 							auto name = w2s(text);
@@ -358,11 +358,11 @@ struct cBPEditor : Component
 								else
 								{
 									if (editor->running)
-										popup_message_dialog(editor->entity, L"Cannot Add New Template Node While Running");
+										popup_message_dialog(L"Cannot Add New Template Node While Running");
 									else
 									{
 										if (editor->changed)
-											popup_message_dialog(editor->entity, L"Cannot Add New Template Node With Unsaved Changes");
+											popup_message_dialog(L"Cannot Add New Template Node With Unsaved Changes");
 										else
 										{
 											auto file = SerializableNode::create_from_xml_file(editor->filename);
@@ -599,11 +599,11 @@ struct cBPEditor : Component
 		{
 		case SelModule:
 			if (selected_.m->filename() == L"bp.dll")
-				popup_message_dialog(entity, L"Cannot Remove Self Module");
+				popup_message_dialog(L"Cannot Remove Self Module");
 			else if (selected_.m->filename() == L"flame_foundation.dll")
-				popup_message_dialog(entity, L"Cannot Remove 'foundation' Module");
+				popup_message_dialog(L"Cannot Remove 'foundation' Module");
 			else if (selected_.m->filename() == L"editor.exe")
-				popup_message_dialog(entity, L"Cannot Remove 'this' Module");
+				popup_message_dialog(L"Cannot Remove 'this' Module");
 			else
 			{
 				std::wstring str;
@@ -623,7 +623,7 @@ struct cBPEditor : Component
 				}capture;
 				capture.e = this;
 				capture.m = selected_.m;
-				popup_confirm_dialog(entity, L"The node(s):\n" + str + L"will be removed, sure to remove module?", [](void* c, bool yes) {
+				popup_confirm_dialog(L"The node(s):\n" + str + L"will be removed, sure to remove module?", [](void* c, bool yes) {
 					auto& capture = *(Capture*)c;
 
 					if (yes)
@@ -638,7 +638,7 @@ struct cBPEditor : Component
 			break;
 		case SelNode:
 			if (!remove_node(selected_.n))
-				popup_message_dialog(entity, L"Cannot Remove Test Nodes");
+				popup_message_dialog(L"Cannot Remove Test Nodes");
 			break;
 		case SelLink:
 			selected_.l->link_to(nullptr);
@@ -1628,7 +1628,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
 				{
-					auto e_dialog = popup_dialog(capture.e->entity);
+					auto e_dialog = popup_dialog();
 				}
 			}, new_mail(&capture));
 
@@ -1644,7 +1644,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						auto size = std::stoi(match[1].str()) + capture.v;
 						if (size == 0)
 						{
-							popup_message_dialog(capture.e->entity, L"Array Size Cannot Be 0");
+							popup_message_dialog(L"Array Size Cannot Be 0");
 							return;
 						}
 						auto type = std::string("Array(") + std::to_string(size) + "+" + match[2].str() + ")";
@@ -1682,7 +1682,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							}
 						}
 						else if (capture.e->changed)
-							popup_message_dialog(capture.e->entity, L"Cannot Change Array Size To New With Unsaved Changes");
+							popup_message_dialog(L"Cannot Change Array Size To New With Unsaved Changes");
 						else
 						{
 							auto file = SerializableNode::create_from_xml_file(capture.e->filename);
@@ -2286,7 +2286,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 					if (editor->running)
-						popup_message_dialog(editor->entity, L"Cannot Reload While Running");
+						popup_message_dialog(L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, false);
 				}
@@ -2303,7 +2303,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						popup_message_dialog(editor->entity, L"Cannot Reload While Running");
+						popup_message_dialog(L"Cannot Reload While Running");
 					else
 						editor->load(editor->filename, true);
 				}
@@ -2324,10 +2324,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						popup_message_dialog(editor->entity, L"Cannot Add Module While Running");
+						popup_message_dialog(L"Cannot Add Module While Running");
 					else
 					{
-						popup_input_dialog(editor->entity, L"module", [](void* c, bool ok, const std::wstring& text) {
+						popup_input_dialog(L"module", [](void* c, bool ok, const std::wstring& text) {
 							auto editor = *(cBPEditor**)c;
 							auto bp = editor->bp;
 
@@ -2335,7 +2335,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							{
 								auto m = bp->add_module(text);
 								if (!m)
-									popup_message_dialog(editor->entity, L"Add Module Failed");
+									popup_message_dialog(L"Add Module Failed");
 								else
 								{
 									m->pos = editor->add_pos;
@@ -2359,10 +2359,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					destroy_topmost(app.root);
 
 					if (editor->running)
-						popup_message_dialog(editor->entity, L"Cannot Add Package While Running");
+						popup_message_dialog(L"Cannot Add Package While Running");
 					else
 					{
-						popup_input_dialog(editor->entity, L"bp", [](void* c, bool ok, const std::wstring& text) {
+						popup_input_dialog(L"bp", [](void* c, bool ok, const std::wstring& text) {
 							auto editor = *(cBPEditor**)c;
 							auto bp = editor->bp;
 
@@ -2370,7 +2370,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 							{
 								auto p = bp->add_package(text, "");
 								if (!p)
-									popup_message_dialog(editor->entity, L"Add Package Failed");
+									popup_message_dialog(L"Add Package Failed");
 								else
 								{
 									p->pos = editor->add_pos;

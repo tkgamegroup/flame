@@ -78,8 +78,7 @@ namespace flame
 
 		if (take)
 			t->remove_child((Entity*)FLAME_INVALID_POINTER, false);
-		else
-			t->dying_ = true;
+		t->dying_ = true;
 		looper().add_event([](void* c) {
 			auto t = *(Entity**)c;
 			t->parent()->remove_child(t, false);

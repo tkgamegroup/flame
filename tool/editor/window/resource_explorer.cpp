@@ -554,7 +554,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						popup_input_dialog(explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
+						popup_input_dialog(L"name", [](void* c, bool ok, const std::wstring& text) {
 							auto explorer = *(cResourceExplorer**)c;
 
 							if (ok)
@@ -575,7 +575,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						destroy_topmost(app.root);
-						popup_input_dialog(explorer->entity, L"name", [](void* c, bool ok, const std::wstring& text) {
+						popup_input_dialog(L"name", [](void* c, bool ok, const std::wstring& text) {
 							auto explorer = *(cResourceExplorer**)c;
 
 							if (ok)

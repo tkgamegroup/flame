@@ -225,12 +225,12 @@ void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float font_siz
 		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, font_size_scale, s2w(info->item(i)->name())));
 }
 
-Entity* popup_dialog(Entity* e)
+Entity* popup_dialog()
 {
-	auto t = get_topmost(e);
+	auto t = get_topmost(app.root);
 	if (!t)
 	{
-		t = create_topmost(e, false, false, true, Vec4c(0, 0, 0, 127), true);
+		t = create_topmost(app.root, false, false, true, Vec4c(0, 0, 0, 127), true);
 		{
 			t->add_component(cLayout::create(LayoutFree));
 		}
@@ -257,9 +257,9 @@ Entity* popup_dialog(Entity* e)
 	return e_dialog;
 }
 
-void popup_message_dialog(Entity* e, const std::wstring& text)
+void popup_message_dialog(const std::wstring& text)
 {
-	auto e_dialog = popup_dialog(e);
+	auto e_dialog = popup_dialog();
 
 	auto e_text = Entity::create();
 	e_dialog->add_child(e_text);
@@ -276,14 +276,14 @@ void popup_message_dialog(Entity* e, const std::wstring& text)
 	{
 		e_ok->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_clicked(action, key))
-				destroy_topmost(*(Entity**)c, false);
-		}, new_mail_p(e));
+				destroy_topmost(app.root, false);
+		}, Mail());
 	}
 }
 
-void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)
+void popup_confirm_dialog(const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)
 {
-	auto e_dialog = popup_dialog(e);
+	auto e_dialog = popup_dialog();
 
 	auto e_text = Entity::create();
 	e_dialog->add_child(e_text);
@@ -307,11 +307,9 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 
 	struct Capture
 	{
-		Entity* e;
 		void (*c)(void* c, bool yes);
 		Mail<> m;
 	}capture;
-	capture.e = e;
 	capture.c = callback;
 	capture.m = _capture;
 
@@ -323,7 +321,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 
 			if (is_mouse_clicked(action, key))
 			{
-				destroy_topmost(capture.e, false);
+				destroy_topmost(app.root, false);
 
 				capture.c(capture.m.p, true);
 				delete_mail(capture.m);
@@ -339,7 +337,7 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 
 			if (is_mouse_clicked(action, key))
 			{
-				destroy_topmost(capture.e, false);
+				destroy_topmost(app.root, false);
 
 				capture.c(capture.m.p, false);
 				delete_mail(capture.m);
@@ -348,9 +346,9 @@ void popup_confirm_dialog(Entity* e, const std::wstring& title, void (*callback)
 	}
 }
 
-void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
+void popup_input_dialog(const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
 {
-	auto e_dialog = popup_dialog(e);
+	auto e_dialog = popup_dialog();
 
 	auto e_input = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, title));
@@ -367,12 +365,10 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 
 	struct Capture
 	{
-		Entity* e;
 		void (*c)(void* c, bool ok, const std::wstring& text);
 		Mail<> m;
 		cText* t;
 	}capture;
-	capture.e = e;
 	capture.c = callback;
 	capture.m = _capture;
 	capture.t = e_input->get_component(cText);
@@ -386,7 +382,7 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 			if (is_mouse_clicked(action, key))
 			{
 				auto text = capture.t->text();
-				destroy_topmost(capture.e, false);
+				destroy_topmost(app.root, false);
 
 				capture.c(capture.m.p, true, text);
 				delete_mail(capture.m);
@@ -402,7 +398,7 @@ void popup_input_dialog(Entity* e, const std::wstring& title, void (*callback)(v
 
 			if (is_mouse_clicked(action, key))
 			{
-				destroy_topmost(capture.e, false);
+				destroy_topmost(app.root, false);
 
 				capture.c(capture.m.p, false, L"");
 				delete_mail(capture.m);
