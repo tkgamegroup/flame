@@ -30,6 +30,7 @@ namespace flame
 			auto_height_ = true;
 
 			last_font_size = 0;
+			last_scale = 0.f;
 
 			draw_cmd = nullptr;
 		}
@@ -61,7 +62,8 @@ namespace flame
 					last_font_size = fs;
 					update_glyphs();
 				}
-				canvas->add_text(font_atlas, glyphs, last_font_size, scale_ * (is_sdf ? global_scale : 1.f), element->global_pos +
+				last_scale = scale_ * (is_sdf ? global_scale : 1.f);
+				canvas->add_text(font_atlas, glyphs, last_font_size, last_scale, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
 					alpha_mul(color, element->alpha_));
 			}

@@ -12,8 +12,13 @@ namespace flame
 {
 	struct cEditPrivate : cEdit
 	{
+		bool text_changed;
 		uint last_font_size;
+		uint last_cursor;
 		graphics::Glyph* cursor_glyph;
+		Vec2f cursor_pos;
+
+		void* text_changed_listener;
 		void* key_listener;
 		void* mouse_listener;
 		void* draw_cmd;
@@ -26,9 +31,12 @@ namespace flame
 
 			cursor = 0;
 
+			text_changed = true;
 			last_font_size = 0;
+			last_cursor = 0;
 			cursor_glyph = nullptr;
 
+			text_changed_listener = nullptr;
 			key_listener = nullptr;
 			mouse_listener = nullptr;
 			draw_cmd = nullptr;
@@ -39,6 +47,7 @@ namespace flame
 			if (!entity->dying_)
 			{
 				element->cmds.remove(draw_cmd);
+				text->data_changed_listeners.remove(text_changed_listener);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
 			}
@@ -54,7 +63,18 @@ namespace flame
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == cH("cText"))
+			{
 				text = (cText*)c;
+				text_changed_listener = text->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
+					auto thiz = *(cEditPrivate**)c;
+					switch (hash)
+					{
+					case cH("text"):
+						thiz->text_changed = true;
+						break;
+					}
+				}, new_mail_p(this));
+			}
 			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
@@ -167,18 +187,20 @@ namespace flame
 		{
 			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
 			{
-				auto font_atlas = text->font_atlas;
 				auto global_scale = element->global_scale;
-				auto fs = text->last_font_size;
-				if (fs != last_font_size)
+				auto font_atlas = text->font_atlas;
+				auto font_size = text->last_font_size;
+				if (text_changed || font_size != last_font_size || cursor != last_cursor)
 				{
-					last_font_size = fs;
+					text_changed = false;
+					last_font_size = font_size;
+					last_cursor = cursor;
 					cursor_glyph = font_atlas->get_glyph(L'|', last_font_size);
+					cursor_pos = Vec2f(font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), last_font_size));
 				}
-				auto scale = font_atlas->draw_type == graphics::FontDrawSdf ? text->scale_ : 1.f;
-				canvas->add_text(font_atlas, { cursor_glyph }, last_font_size, scale * global_scale, element->global_pos +
-					(Vec2f(element->inner_padding_[0], element->inner_padding_[1]) + 
-					Vec2f(font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), last_font_size)) * scale) * global_scale,
+				auto scale = text->last_scale;
+				canvas->add_text(font_atlas, { cursor_glyph }, last_font_size, scale, element->global_pos +
+					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale + cursor_pos * scale,
 					alpha_mul(text->color, element->alpha_));
 			}
 		}

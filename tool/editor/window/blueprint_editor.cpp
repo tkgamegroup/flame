@@ -1054,12 +1054,8 @@ void cBPScene::on_component_added(Component* c)
 			{
 				editor->deselect();
 
-				thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p4, BP::Slot* l) {
-					auto p2 = p1 + Vec2f(thiz->link_stick_out, 0.f);
-					auto p3 = p4 - Vec2f(thiz->link_stick_out, 0.f);
-					if (segment_distance(p1, p2, pos) < line_width ||
-						segment_distance(p2, p3, pos) < line_width ||
-						segment_distance(p3, p4, pos) < line_width)
+				thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
+					if (segment_distance(p1, p2, pos) < line_width)
 					{
 						editor->select(cBPEditor::SelLink, l);
 						return false;
@@ -1089,8 +1085,6 @@ void cBPScene::draw(graphics::Canvas* canvas)
 		{
 			std::vector<Vec2f> points;
 			points.push_back(p1);
-			points.push_back(p1 + Vec2f(link_stick_out, 0.f));
-			points.push_back(p2 - Vec2f(link_stick_out, 0.f));
 			points.push_back(p2);
 			canvas->stroke(points, editor->selected_.l == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
 		}
@@ -1099,11 +1093,9 @@ void cBPScene::draw(graphics::Canvas* canvas)
 	if (editor->dragging_slot)
 	{
 		auto e = ((cBPSlot*)editor->dragging_slot->user_data)->element;
-		auto p1 = e->global_pos + e->global_size * 0.5f;
 
 		std::vector<Vec2f> points;
-		points.push_back(p1);
-		points.push_back(p1 + Vec2f(editor->dragging_slot->type() == BP::Slot::Output ? link_stick_out : -link_stick_out, 0.f));
+		points.push_back(e->global_pos + e->global_size * 0.5f);
 		points.push_back(Vec2f(event_receiver->dispatcher->mouse_pos));
 		canvas->stroke(points, Vec4c(255, 255, 50, 255), line_width);
 	}

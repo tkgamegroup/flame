@@ -43,7 +43,7 @@ void App::create()
 		sc_cbs[i] = Commandbuffer::create(d->gcp);
 	render_finished = Semaphore::create(d);
 
-	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc", L"../asset/font_awesome.ttf" });
+	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc", L"../art/font_awesome.ttf" });
 	default_style.set_to_light();
 
 	app.u = Universe::create();

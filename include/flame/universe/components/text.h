@@ -23,6 +23,7 @@ namespace flame
 		bool auto_height_;
 
 		uint last_font_size;
+		float last_scale;
 
 		cText() :
 			Component("cText")
