@@ -1552,7 +1552,7 @@ namespace flame
 
 			printf("compiling:\n");
 			auto curr_path = get_curr_path();
-			exec_and_redirect_to_std_output(L"", wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION), *curr_path.p + L"/" + ppath_slash_str));
+			exec_and_redirect_to_std_output(L"", wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), (*curr_path.p + L"/" + ppath_slash_str).c_str()));
 			delete_mail(curr_path);
 		}
 
