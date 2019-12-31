@@ -523,11 +523,6 @@ namespace flame
 			hash = H(name.c_str());
 		}
 
-		bool is_serializable() const
-		{
-			return !is_vector && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData);
-		}
-
 		static TypeInfo from_str(const std::string& str)
 		{
 			auto sp = ssplit(str, '#');
@@ -779,6 +774,10 @@ namespace flame
 				return *(std::string*)src;
 			case cH("std::wstring"):
 				return w2s(*(std::wstring*)src);
+			case cH("StringA"):
+				return ((StringA*)src)->v;
+			case cH("StringW"):
+				return w2s(((StringW*)src)->v);
 			default:
 				assert(0);
 			}
@@ -897,6 +896,12 @@ namespace flame
 				auto str = s2w(src);
 				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
 			}
+				break;
+			case cH("StringA"):
+				*(StringA*)dst = src;
+				break;
+			case cH("StringW"):
+				*(StringW*)dst = s2w(src);
 				break;
 			default:
 				assert(0);

@@ -23,19 +23,6 @@ namespace flame
 			DescriptorType$ type;
 			uint count;
 			std::string name;
-
-			DescriptorBindingBase() :
-				type(DescriptorUniformBuffer),
-				count(1)
-			{
-			}
-
-			DescriptorBindingBase(DescriptorType$ type, uint count = 1, const std::string& name = "") :
-				type(type),
-				count(count),
-				name(name)
-			{
-			}
 		};
 
 		struct DescriptorBufferBinding : DescriptorBindingBase

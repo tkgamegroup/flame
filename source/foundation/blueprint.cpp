@@ -1581,7 +1581,8 @@ namespace flame
 				{
 					auto input = n->find_input(d_d.name);
 					auto v = input->vi();
-					if (v->default_value())
+					auto& type = v->type();
+					if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData))
 						v->type().unserialize(bp->dbs, d_d.value, input->raw_data(), n->module, n->udt->db());
 				}
 			}
@@ -1680,13 +1681,21 @@ namespace flame
 				if (input->links[0])
 					continue;
 				auto v = input->vi;
-				if (v->default_value() && memcmp(input->data(), (char*)v->default_value() + sizeof(AttributeBase), v->size() - sizeof(AttributeBase)) != 0)
+				auto& type = v->type();
+				if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData))
 				{
-					if (!n_datas)
-						n_datas = n_node->new_node("datas");
-					auto n_data = n_datas->new_node("data");
-					n_data->new_attr("name", v->name());
-					n_data->new_attr("value", v->type().serialize(bp->dbs, input->raw_data, 2));
+					if (!(type.base_hash != cH("std::string") &&
+						type.base_hash != cH("std::wstring") &&
+						type.base_hash != cH("StringA") &&
+						type.base_hash != cH("StringW") &&
+						v->default_value() && memcmp(input->data(), (char*)v->default_value() + sizeof(AttributeBase), v->size() - sizeof(AttributeBase)) == 0))
+					{
+						if (!n_datas)
+							n_datas = n_node->new_node("datas");
+						auto n_data = n_datas->new_node("data");
+						n_data->new_attr("name", v->name());
+						n_data->new_attr("value", v->type().serialize(bp->dbs, input->raw_data, 2));
+					}
 				}
 			}
 		}

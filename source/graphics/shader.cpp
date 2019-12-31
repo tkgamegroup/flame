@@ -218,7 +218,7 @@ namespace flame
 			AttributeD<uint> binding$i;
 			AttributeD<bool> storage$i;
 			AttributeD<uint> count$i;
-			AttributeD<std::string> name$i;
+			AttributeD<StringA> name$i;
 			AttributeE<TargetType$> target_type$i;
 			AttributeP<void> v$i;
 
@@ -263,7 +263,7 @@ namespace flame
 				}
 				if (name$i.frame > last_out_frame)
 				{
-					out$o.v.name = name$i.v;
+					out$o.v.name.assign(name$i.v.v, name$i.v.s);
 					out$o.frame = scene->frame;
 				}
 				if (iv$o.frame > last_out_frame)
@@ -1481,11 +1481,10 @@ namespace flame
 							(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
 					}
 					else
-					{
+						out$o.v = nullptr;
+					if (!out$o.v)
 						printf("cannot create pipeline\n");
 
-						out$o.v = nullptr;
-					}
 					out$o.frame = scene->frame;
 				}
 			}

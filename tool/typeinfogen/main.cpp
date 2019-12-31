@@ -11,8 +11,8 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	std::wstring filename = s2w(args[1]);
-	std::wstring typeinfo_filename = std::filesystem::path(filename).replace_extension(L".typeinfo");
+	std::filesystem::path filename(args[1]);
+	std::filesystem::path typeinfo_filename = std::filesystem::path(filename).replace_extension(L".typeinfo");
 	std::vector<std::wstring> modules;
 	std::wstring pdb_filename;
 	for (auto i = 2; i < argc; i++)

@@ -765,7 +765,12 @@ namespace flame
 		v->offset = offset;
 		v->size = size;
 		v->default_value = nullptr;
-		if (type.is_serializable() && !type.is_vector && decoration.find('o') == std::string::npos)
+		if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData) &&
+			type.base_hash != cH("std::string") &&
+			type.base_hash != cH("std::wstring") &&
+			type.base_hash != cH("StringA") &&
+			type.base_hash != cH("StringW") &&
+			decoration.find('o') == std::string::npos)
 		{
 			v->default_value = new char[size];
 			memset(v->default_value, 0, size);
@@ -800,44 +805,7 @@ namespace flame
 		return f;
 	}
 
-	static const char* name_base_type[] = {
-		"<NoType>",                         // btNoType = 0,
-		"void",                             // btVoid = 1,
-		"char",                             // btChar = 2,
-		"wchar_t",                          // btWChar = 3,
-		"signed char",
-		"unsigned char",
-		"int",                              // btInt = 6,
-		"unsigned int",                     // btUInt = 7,
-		"float",                            // btFloat = 8,
-		"<BCD>",                            // btBCD = 9,
-		"bool",                              // btBool = 10,
-		"short",
-		"unsigned short",
-		"long",                             // btLong = 13,
-		"unsigned long",                    // btULong = 14,
-		"__int8",
-		"__int16",
-		"__int32",
-		"__int64",
-		"__int128",
-		"unsigned __int8",
-		"unsigned __int16",
-		"unsigned __int32",
-		"unsigned __int64",
-		"unsigned __int128",
-		"<currency>",                       // btCurrency = 25,
-		"<date>",                           // btDate = 26,
-		"VARIANT",                          // btVariant = 27,
-		"<complex>",                        // btComplex = 28,
-		"<bit>",                            // btBit = 29,
-		"BSTR",                             // btBSTR = 30,
-		"HRESULT",                          // btHresult = 31
-		"char16_t",                         // btChar16 = 32
-		"char32_t"                          // btChar32 = 33
-	};
-
-	static std::string base_type_name(IDiaSymbol * s)
+	static std::string base_type_name(IDiaSymbol* s)
 	{
 		DWORD baseType;
 		s->get_baseType(&baseType);
@@ -846,6 +814,14 @@ namespace flame
 		std::string name;
 		switch (baseType)
 		{
+		case btVoid:
+			return "void";
+		case btChar:
+			return "char";
+		case btWChar:
+			return "wchar_t";
+		case btBool:
+			return "bool";
 		case btUInt:
 			name = "u";
 		case btInt:
@@ -874,8 +850,9 @@ namespace flame
 				return "double";
 			}
 			break;
+		default:
+			assert(0);
 		}
-		return name_base_type[baseType];
 	}
 
 	static std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
@@ -886,6 +863,8 @@ namespace flame
 		static SAL(str_enum, "enum ");
 		static SAL(str_string, "std::basic_string<char >");
 		static SAL(str_wstring, "std::basic_string<wchar_t >");
+		static SAL(str_stringa, "String<char>");
+		static SAL(str_stringw, "String<wchar_t>");
 
 		if (pass_prefix)
 			*pass_prefix = false;
@@ -973,6 +952,22 @@ namespace flame
 			{
 				str = str.replace(pos, str_wstring.l, "std::wstring");
 				pos = str.find(str_wstring.s, 0, str_wstring.l);
+			}
+		}
+		{
+			auto pos = str.find(str_stringa.s, 0, str_stringa.l);
+			while (pos != std::string::npos)
+			{
+				str = str.replace(pos, str_stringa.l, "StringA");
+				pos = str.find(str_stringa.s, 0, str_stringa.l);
+			}
+		}
+		{
+			auto pos = str.find(str_stringw.s, 0, str_stringw.l);
+			while (pos != std::string::npos)
+			{
+				str = str.replace(pos, str_stringw.l, "StringW");
+				pos = str.find(str_stringw.s, 0, str_stringw.l);
 			}
 		}
 
@@ -1320,7 +1315,6 @@ namespace flame
 		wchar_t* pwname;
 
 		std::vector<UdtInfo*> staging_string_symbols;
-		std::vector<UdtInfo*> staging_vector_symbols;
 
 		// enums
 		IDiaEnumSymbols* _enums;
@@ -1494,21 +1488,6 @@ namespace flame
 									auto u = find_udt_and_get_spcial_functions(type, functions);
 									if (u)
 										staging_string_symbols.push_back(u);
-								}
-							}
-							if (type.is_vector)
-							{
-								auto is_new = true;
-								for (auto u : staging_vector_symbols)
-								{
-									if (u->type().base_hash == type.base_hash)
-									{
-										is_new = false;
-										break;
-									}
-								}
-								if (is_new)
-								{
 								}
 							}
 

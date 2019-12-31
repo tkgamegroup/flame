@@ -976,6 +976,28 @@ namespace flame
 	{
 		uint s;
 		CH* v;
+
+		String() :
+			s(0),
+			v(nullptr)
+		{
+		}
+
+		~String()
+		{
+			f_free(v);
+		}
+
+		void operator=(const std::basic_string<CH>& rhs)
+		{
+			if (s != rhs.size())
+			{
+				s = rhs.size();
+				v = (CH*)f_realloc(v, s + 1);
+			}
+			memcpy(v, rhs.data(), sizeof(CH) * s);
+			v[s] = 0;
+		}
 	};
 
 	using StringA = String<char>;
@@ -986,6 +1008,17 @@ namespace flame
 	{
 		uint s;
 		T* v;
+
+		Array() :
+			s(0),
+			v(nullptr)
+		{
+		}
+
+		~Array()
+		{
+			f_free(v);
+		}
 	};
 
 #pragma pack(1)
