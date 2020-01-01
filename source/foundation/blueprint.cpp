@@ -44,7 +44,7 @@ namespace flame
 		void set_data(const void* data);
 		bool link_to(SlotPrivate* target);
 
-		Mail<std::string> get_address() const;
+		StringA get_address() const;
 	};
 
 	struct NodePrivate : BP::Node
@@ -257,11 +257,9 @@ namespace flame
 		return true;
 	}
 
-	Mail<std::string> SlotPrivate::get_address() const
+	StringA SlotPrivate::get_address() const
 	{
-		auto ret = new_mail<std::string>();
-		(*ret.p) = node->id + "." + vi->name();
-		return ret;
+		return StringA(node->id + "." + vi->name());
 	}
 
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
@@ -398,11 +396,7 @@ namespace flame
 		std::filesystem::path absolute_filename = fn;
 		auto module = load_module(fn);
 		if (module)
-		{
-			auto app_path = get_app_path();
-			absolute_filename = *app_path.p + L"/" + absolute_filename.wstring();
-			delete_mail(app_path);
-		}
+			absolute_filename = get_app_path().str() + L"/" + absolute_filename.wstring();
 		else
 		{
 			std::filesystem::path path(filename);
@@ -846,7 +840,7 @@ namespace flame
 		return ((SlotPrivate*)this)->link_to((SlotPrivate*)target);
 	}
 
-	Mail<std::string> BP::Slot::get_address() const
+	StringA BP::Slot::get_address() const
 	{
 		return ((SlotPrivate*)this)->get_address();
 	}
@@ -1551,9 +1545,7 @@ namespace flame
 			exec_and_redirect_to_std_output(L"", cmake_cmd);
 
 			printf("compiling:\n");
-			auto curr_path = get_curr_path();
-			exec_and_redirect_to_std_output(L"", wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), (*curr_path.p + L"/" + ppath_slash_str).c_str()));
-			delete_mail(curr_path);
+			exec_and_redirect_to_std_output(L"", wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), (get_curr_path().str() + L"/" + ppath_slash_str).c_str()));
 		}
 
 		auto self_module_filename = ppath_slash_str + L"build/debug/bp.dll";
@@ -1709,13 +1701,9 @@ namespace flame
 				if (out)
 				{
 					auto n_link = n_links->new_node("link");
-					auto out_addr = out->get_address();
-					auto in_addr = in->get_address();
 					auto out_bp = out->node->scene;
-					n_link->new_attr("out", (out_bp != bp ? out_bp->package->id + "." : "") + *out_addr.p);
-					n_link->new_attr("in", p->id + "." + *in_addr.p);
-					delete_mail(out_addr);
-					delete_mail(in_addr);
+					n_link->new_attr("out", (out_bp != bp ? out_bp->package->id + "." : "") + out->get_address().v);
+					n_link->new_attr("in", p->id + "." + in->get_address().v);
 				}
 			}
 		}
@@ -1729,13 +1717,9 @@ namespace flame
 				if (out && !out->node->external)
 				{
 					auto n_link = n_links->new_node("link");
-					auto out_addr = out->get_address();
-					auto in_addr = in->get_address();
 					auto out_bp = out->node->scene;
-					n_link->new_attr("out", (out_bp != bp ? out_bp->package->id + "." : "") + *out_addr.p);
-					n_link->new_attr("in", *in_addr.p);
-					delete_mail(out_addr);
-					delete_mail(in_addr);
+					n_link->new_attr("out", (out_bp != bp ? out_bp->package->id + "." : "") + out->get_address().v);
+					n_link->new_attr("in", in->get_address().v);
 				}
 			}
 		}
@@ -1746,18 +1730,10 @@ namespace flame
 			{
 				auto n_input_exports = n_exports->new_node("input");
 				for (auto& e : bp->input_exports)
-				{
-					auto addr = e->get_address();
-					auto n_export = n_input_exports->new_node("export")->new_attr("v", *addr.p);
-					delete_mail(addr);
-				}
+					auto n_export = n_input_exports->new_node("export")->new_attr("v", e->get_address().v);
 				auto n_output_exports = n_exports->new_node("output");
 				for (auto& e : bp->output_exports)
-				{
-					auto addr = e->get_address();
-					auto n_export = n_output_exports->new_node("export")->new_attr("v", *addr.p);
-					delete_mail(addr);
-				}
+					auto n_export = n_output_exports->new_node("export")->new_attr("v", e->get_address().v);
 			}
 		}
 

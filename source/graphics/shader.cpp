@@ -970,11 +970,11 @@ namespace flame
 
 				std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -flimit-file shader.conf -o out.spv");
 
-				auto output1 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
+				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
 				std::filesystem::remove(L"out.glsl");
 				if (!std::filesystem::exists(L"out.spv"))
 				{
-					printf("shader \"%s\" compile error:\n%s\n", w2s(s.filename).c_str(), output1.p->c_str());
+					printf("shader \"%s\" compile error:\n%s\n", w2s(s.filename).c_str(), output.v);
 					printf("trying to use fallback");
 
 					std::ofstream glsl_file(L"out.glsl");
@@ -998,18 +998,16 @@ namespace flame
 					}
 					glsl_file.close();
 
-					auto output2 = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
+					auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe"), command_line);
 					std::filesystem::remove(L"out.glsl");
 					if (!std::filesystem::exists(L"out.spv"))
 					{
-						printf(" - failed\n error:\n%s", output2.p->c_str());
+						printf(" - failed\n error:\n%s", output.v);
 						assert(0);
 					}
-					delete_mail(output2);
 
 					printf(" - ok\n");
 				}
-				delete_mail(output1);
 
 				auto spv_file = get_file_content(L"out.spv");
 				if (!spv_file.first)

@@ -389,7 +389,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void remove_attr(int idx);
 		FLAME_FOUNDATION_EXPORTS void remove_attr(SerializableAttribute* a);
 		FLAME_FOUNDATION_EXPORTS void clear_attrs();
-		FLAME_FOUNDATION_EXPORTS int attr_count() const;
+		FLAME_FOUNDATION_EXPORTS uint attr_count() const;
 		FLAME_FOUNDATION_EXPORTS SerializableAttribute* attr(int idx) const;
 		FLAME_FOUNDATION_EXPORTS SerializableAttribute* find_attr(const std::string& name) const;
 
@@ -399,7 +399,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void remove_node(int idx);
 		FLAME_FOUNDATION_EXPORTS void remove_node(SerializableNode* n);
 		FLAME_FOUNDATION_EXPORTS void clear_nodes();
-		FLAME_FOUNDATION_EXPORTS int node_count() const;
+		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS SerializableNode* node(int idx) const;
 		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name) const;
 
@@ -408,8 +408,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_file(const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_xml_string(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS static Mail<std::string> to_json_string(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS static StringA to_xml_string(SerializableNode* n);
+		FLAME_FOUNDATION_EXPORTS static StringA to_json_string(SerializableNode* n);
 		FLAME_FOUNDATION_EXPORTS static void save_to_xml_file(SerializableNode* n, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void save_to_json_file(SerializableNode* n, const std::wstring& filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
@@ -641,15 +641,15 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
 
-		FLAME_FOUNDATION_EXPORTS Mail<std::vector<EnumInfo*>> get_enums();
+		FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
 		FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
 		FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const std::string& name);
 
-		FLAME_FOUNDATION_EXPORTS Mail<std::vector<FunctionInfo*>> get_functions();
+		FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, const TypeInfo& return_type, const std::string& code_pos);
 
-		FLAME_FOUNDATION_EXPORTS Mail<std::vector<UdtInfo*>> get_udts();
+		FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
 		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
 		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const TypeInfo& type, uint size);
 
@@ -775,9 +775,9 @@ namespace flame
 			case cH("std::wstring"):
 				return w2s(*(std::wstring*)src);
 			case cH("StringA"):
-				return ((StringA*)src)->v;
+				return ((StringA*)src)->str();
 			case cH("StringW"):
-				return w2s(((StringW*)src)->v);
+				return w2s(((StringW*)src)->str());
 			default:
 				assert(0);
 			}

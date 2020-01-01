@@ -321,11 +321,11 @@ namespace flame
 				return Vec2u(w, h);
 			}
 
-			Mail<std::wstring> slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
+			StringW slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
 			{
 				assert(width > font_size);
 
-				auto ret = new_mail<std::wstring>();
+				auto ret = std::wstring();
 				auto w = 0;
 				for (auto ch : text)
 				{
@@ -335,7 +335,7 @@ namespace flame
 					{
 					case '\n':
 						w = 0;
-						*ret.p += '\n';
+						ret += '\n';
 						break;
 					case '\r':
 						break;
@@ -346,14 +346,14 @@ namespace flame
 						if (w + adv >= width)
 						{
 							w = adv;
-							*ret.p += '\n';
+							ret += '\n';
 						}
 						else
 							w += adv;
-						*ret.p += ch;
+						ret += ch;
 					}
 				}
-				return ret;
+				return StringW(ret);
 			}
 		};
 
@@ -382,7 +382,7 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->get_text_size(text, font_size);
 		}
 
-		Mail<std::wstring> FontAtlas::slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
+		StringW FontAtlas::slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
 		{
 			return ((FontAtlasPrivate*)this)->slice_text_by_width(text, font_size, width);
 		}

@@ -38,11 +38,16 @@ namespace flame
 		return it->second.get();
 	}
 
-	Mail<std::vector<Component*>> EntityPrivate::get_components()
+	Array<Component*> EntityPrivate::get_components()
 	{
-		auto ret = new_mail<std::vector<Component*>>();
+		auto ret = Array<Component*>();
+		ret.resize(components.size());
+		auto i = 0;
 		for (auto& c : components)
-			ret.p->push_back(c.second.get());
+		{
+			ret.v[i] = c.second.get();
+			i++;
+		}
 		return ret;
 	}
 
@@ -263,7 +268,7 @@ namespace flame
 		return ((EntityPrivate*)this)->get_component_plain(name_hash);
 	}
 
-	Mail<std::vector<Component*>> Entity::get_components() const
+	Array<Component*> Entity::get_components() const
 	{
 		return ((EntityPrivate*)this)->get_components();
 	}

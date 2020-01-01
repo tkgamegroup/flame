@@ -226,8 +226,10 @@ struct cInspectorPrivate : cInspector
 			}
 
 			auto components = selected->get_components();
-			for (auto component : *components.p)
+			for (auto i = 0; i < components.s; i++)
 			{
+				auto component = components.v[i];
+
 				auto e_component = Entity::create();
 				e_layout->add_child(e_component);
 				{
@@ -330,9 +332,9 @@ struct cInspectorPrivate : cInspector
 					e_close->add_component(c_aligner);
 				}
 
-				for (auto j = 0; j < udt->variable_count(); j++)
+				for (auto i = 0; i < udt->variable_count(); i++)
 				{
-					auto v = udt->variable(j);
+					auto v = udt->variable(i);
 					auto pdata = (char*)c_dealer->dummy + v->offset();
 
 					auto e_item = create_item(s2w(v->name()));
@@ -537,7 +539,6 @@ struct cInspectorPrivate : cInspector
 					}
 				}
 			}
-			delete_mail(components);
 
 			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Component", app.root, e_add_component_menu, true, SideS, false, false, false, nullptr);
 			e_layout->add_child(e_menu_btn);
@@ -617,13 +618,12 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 		for (auto db : app.dbs)
 		{
 			auto udts = db->get_udts();
-			for (auto i = 0; i < udts.p->size(); i++)
+			for (auto i = 0; i < udts.s; i++)
 			{
-				auto u = udts.p->at(i);
+				auto u = udts.v[i];
 				if (u->type().name.compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
 					all_udts.push_back(u);
 			}
-			delete_mail(udts);
 		}
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return a->type().name < b->type().name;

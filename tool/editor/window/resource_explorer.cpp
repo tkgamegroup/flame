@@ -182,11 +182,7 @@ struct cResourceExplorer : Component
 			e_title->add_component(cElement::create());
 
 			auto c_text = cText::create(app.font_atlas_pixel);
-			{
-				auto str = app.font_atlas_pixel->slice_text_by_width(title, c_text->font_size_, 64.f);
-				c_text->set_text(*str.p);
-				delete_mail(str);
-			}
+				c_text->set_text(app.font_atlas_pixel->slice_text_by_width(title, c_text->font_size_, 64.f).v);
 			e_title->add_component(c_text);
 		}
 

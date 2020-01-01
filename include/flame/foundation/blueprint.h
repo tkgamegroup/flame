@@ -83,7 +83,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* link(int idx = 0) const;
 			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);
 
-			FLAME_FOUNDATION_EXPORTS Mail<std::string> get_address() const;
+			FLAME_FOUNDATION_EXPORTS StringA get_address() const;
 
 			void* user_data;
 		};

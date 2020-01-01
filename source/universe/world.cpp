@@ -159,7 +159,6 @@ namespace flame
 
 		free_module(this_module);
 
-		set_curr_path(*last_curr_path.p);
-		delete_mail(last_curr_path);
+		set_curr_path(last_curr_path.str());
 	}
 }

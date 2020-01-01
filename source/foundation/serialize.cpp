@@ -211,7 +211,7 @@ namespace flame
 		((SerializableNodePrivate*)this)->clear_attrs();
 	}
 
-	int SerializableNode::attr_count() const
+	uint SerializableNode::attr_count() const
 	{
 		return ((SerializableNodePrivate*)this)->attrs.size();
 	}
@@ -256,7 +256,7 @@ namespace flame
 		((SerializableNodePrivate*)this)->clear_nodes();
 	}
 
-	int SerializableNode::node_count() const
+	uint SerializableNode::node_count() const
 	{
 		return ((SerializableNodePrivate*)this)->nodes.size();
 	}
@@ -424,7 +424,7 @@ namespace flame
 		return create_from_json_string(str);
 	}
 
-	Mail<std::string> SerializableNode::to_xml_string(SerializableNode* n)
+	StringA SerializableNode::to_xml_string(SerializableNode* n)
 	{
 		pugi::xml_document doc;
 		auto rn = doc.append_child(n->name().c_str());
@@ -433,26 +433,26 @@ namespace flame
 
 		struct xml_string_writer : pugi::xml_writer
 		{
-			std::string result;
+			std::string str;
 
 			virtual void write(const void* data, size_t size)
 			{
-				result.append(static_cast<const char*>(data), size);
+				str.append((const char*)(data), size);
 			}
 		};
 		xml_string_writer writer;
 		doc.print(writer);
 
-		return new_mail(&writer.result);
+		return StringA(writer.str);
 	}
 
-	Mail<std::string> SerializableNode::to_json_string(SerializableNode* n)
+	StringA SerializableNode::to_json_string(SerializableNode* n)
 	{
 		nlohmann::json doc;
 
 		to_json(doc, (SerializableNodePrivate*)n);
 
-		return new_mail(&doc.dump());
+		return StringA(doc.dump());
 	}
 
 	void SerializableNode::save_to_xml_file(SerializableNode* n, const std::wstring& filename)
@@ -1187,14 +1187,14 @@ namespace flame
 	}
 
 	template<class T, class U>
-	 Mail<std::vector<T*>> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
+	Array<T*> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
 	{
-		auto ret = new_mail<std::vector<T*>>();
-		ret.p->resize(map.size());
+		auto ret = Array<T*>();
+		ret.resize(map.size());
 		auto i = 0;
 		for (auto it = map.begin(); it != map.end(); it++)
 		{
-			(*ret.p)[i] = it->second.get();
+			ret.v[i] = it->second.get();
 			i++;
 		}
 		return ret;
@@ -1209,7 +1209,7 @@ namespace flame
 		return it->second.get();
 	}
 
-	Mail<std::vector<EnumInfo*>> TypeinfoDatabase::get_enums()
+	Array<EnumInfo*> TypeinfoDatabase::get_enums()
 	{
 		return get_typeinfo_objects<EnumInfo>(((TypeinfoDatabasePrivate*)this)->enums);
 	}
@@ -1228,7 +1228,7 @@ namespace flame
 		return e;
 	}
 
-	Mail<std::vector<FunctionInfo*>> TypeinfoDatabase::get_functions()
+	Array<FunctionInfo*> TypeinfoDatabase::get_functions()
 	{
 		return get_typeinfo_objects<FunctionInfo>(((TypeinfoDatabasePrivate*)this)->functions);
 	}
@@ -1249,7 +1249,7 @@ namespace flame
 		return f;
 	}
 
-	Mail<std::vector<UdtInfo*>> TypeinfoDatabase::get_udts()
+	Array<UdtInfo*> TypeinfoDatabase::get_udts()
 	{
 		return get_typeinfo_objects<UdtInfo>(((TypeinfoDatabasePrivate*)this)->udts);
 	}

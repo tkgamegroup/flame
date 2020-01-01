@@ -253,9 +253,9 @@ struct cBPEditor : Component
 		for (auto db : bp->dbs())
 		{
 			auto udts = db->get_udts();
-			for (auto i = 0; i < udts.p->size(); i++)
+			for (auto i = 0; i < udts.s; i++)
 			{
-				auto u = udts.p->at(i);
+				auto u = udts.v[i];
 				if (u->type().name.find('(') != std::string::npos)
 					continue;
 				{
@@ -276,7 +276,6 @@ struct cBPEditor : Component
 				if (!no_input_output)
 					all_udts.push_back(u);
 			}
-			delete_mail(udts);
 		}
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return a->type().name < b->type().name;
@@ -694,12 +693,8 @@ struct cBPEditor : Component
 					auto input = src->input(j);
 					if (input->link())
 					{
-						auto in_addr = input->get_address();
-						auto out_addr = input->link()->get_address();
-						auto in_sp = ssplit(*in_addr.p, '.');
-						auto out_sp = ssplit(*out_addr.p, '.');
-						delete_mail(in_addr);
-						delete_mail(out_addr);
+						auto in_sp = ssplit(input->get_address().str(), '.');
+						auto out_sp = ssplit(input->link()->get_address().str(), '.');
 
 						gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
 					}
@@ -1316,9 +1311,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						auto addr = s->get_address();
-						c_text->set_text(s2w(*addr.p));
-						delete_mail(addr);
+						c_text->set_text(s2w(s->get_address().str()));
 						e_text->add_component(c_text);
 					}
 				}
@@ -1353,9 +1346,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						auto addr = s->get_address();
-						c_text->set_text(s2w(*addr.p));
-						delete_mail(addr);
+						c_text->set_text(s2w(s->get_address().str()));
 						e_text->add_component(c_text);
 					}
 
@@ -2705,9 +2696,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				for (auto db : dbs)
 				{
 					auto udts = db->get_udts();
-					for (auto i = 0; i < udts.p->size(); i++)
-						all_udts.push_back(udts.p->at(i));
-					delete_mail(udts);
+					for (auto i = 0; i < udts.s; i++)
+						all_udts.push_back(udts.v[i]);
 				}
 				std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 					return a->type().name < b->type().name;
@@ -2763,15 +2753,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						auto& type = v->type();
 						console->print(s2w(v->name()));
 						std::string link_address;
-						{
-							Mail<std::string> m;
-							if (input->link())
-							{
-								m = input->link()->get_address();
-								link_address = *m.p;
-							}
-							delete_mail(m);
-						}
+						if (input->link())
+							link_address = input->link()->get_address().str();
 						console->print(wsfmt(L"[%s]", s2w(link_address)));
 						auto str = s2w(type.serialize(dbs, input->raw_data(), 2));
 						if (str.empty())
@@ -2826,9 +2809,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					in->link_to(out);
 					auto out_addr = in->link()->get_address();
 					auto in_addr = in->get_address();
-					console->print(wsfmt(L"link added: %s -> %s", s2w(*out_addr.p), s2w(*in_addr.p)));
-					delete_mail(out_addr);
-					delete_mail(in_addr);
+					console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()), s2w(in_addr.str())));
 					editor->set_changed(true);
 				}
 				else

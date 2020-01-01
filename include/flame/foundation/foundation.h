@@ -937,7 +937,7 @@ namespace flame
 		return FileTypeUnknown;
 	}
 
-	inline long long get_file_length(std::ifstream& f)
+	inline longlong get_file_length(std::ifstream& f)
 	{
 		f.seekg(0, std::ios::end);
 		auto s = f.tellg();
@@ -945,7 +945,7 @@ namespace flame
 		return s;
 	}
 
-	inline std::pair<std::unique_ptr<char[]>, long long> get_file_content(const std::wstring& filename)
+	inline std::pair<std::unique_ptr<char[]>, longlong> get_file_content(const std::wstring& filename)
 	{
 #ifdef FLAME_WINDOWS
 		std::ifstream file(filename, std::ios::binary);
@@ -983,20 +983,83 @@ namespace flame
 		{
 		}
 
+		String(const String& rhs)
+		{
+			s = rhs.s;
+			v = (CH*)f_malloc(sizeof(CH) * (s + 1));
+			memcpy(v, rhs.v, sizeof(CH) * s);
+			v[s] = 0;
+		}
+
+		String(String&& rhs)
+		{
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
+		String(const CH* str, uint _s)
+		{
+			s = _s;
+			v = (CH*)f_malloc(sizeof(CH) * (s + 1));
+			memcpy(v, str, sizeof(CH) * s);
+			v[s] = 0;
+		}
+
+		String(const CH* str) :
+			String(str, std::char_traits<CH>::length(str))
+		{
+		}
+
+		String(const std::basic_string<CH>& str) :
+			String(str.data(), str.size())
+		{
+		}
+
 		~String()
 		{
 			f_free(v);
 		}
 
-		void operator=(const std::basic_string<CH>& rhs)
+		void resize(uint _s)
 		{
-			if (s != rhs.size())
+			if (s != _s)
 			{
-				s = rhs.size();
-				v = (CH*)f_realloc(v, s + 1);
+				s = _s;
+				v = (CH*)f_realloc(v, sizeof(CH) * (s + 1));
+				v[s] = 0;
 			}
-			memcpy(v, rhs.data(), sizeof(CH) * s);
-			v[s] = 0;
+		}
+
+		void assign(const CH* _v, uint _s)
+		{
+			resize(_s);
+			memcpy(v, _v, sizeof(CH) * s);
+		}
+
+		void operator=(const String& rhs)
+		{
+			assign(rhs.v, rhs.s);
+		}
+
+		void operator=(String&& rhs)
+		{
+			f_free(v);
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
+		void operator=(const CH* str)
+		{
+			assign(str, std::char_traits<CH>::length(str));
+		}
+
+		std::basic_string<CH> str()
+		{
+			return std::basic_string<CH>(v, s);
 		}
 	};
 
@@ -1015,9 +1078,67 @@ namespace flame
 		{
 		}
 
+		Array(const Array& rhs)
+		{
+			s = rhs.s;
+			v = (T*)f_malloc(sizeof(T) * s);
+			for (auto i = 0; i < s; i++)
+			{
+				new (&v[i])T;
+				v[i] = rhs.v[i];
+			}
+		}
+
+		Array(Array&& rhs)
+		{
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
 		~Array()
 		{
+			for (auto i = 0; i < s; i++)
+				v[i].~T();
 			f_free(v);
+		}
+
+		void resize(uint _s)
+		{
+			if (s != _s)
+			{
+				s = _s;
+				for (auto i = 0; i < s; i++)
+					v[i].~T();
+				v = (T*)f_realloc(v, sizeof(T) * s);
+				for (auto i = 0; i < s; i++)
+					new (&v[i])T;
+			}
+		}
+
+		void operator=(const Array& rhs)
+		{
+			resize(rhs.s);
+			for (auto i = 0; i < s; i++)
+				v[i] = rhs.v[i];
+		}
+
+		void operator=(Array&& rhs)
+		{
+			for (auto i = 0; i < s; i++)
+				v[i].~T();
+			f_free(v);
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
+		void push_back(const T& _v)
+		{
+			resize(s + 1);
+			v[s - 1] = _v;
 		}
 	};
 
@@ -1170,8 +1291,8 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
-	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_curr_path();
-	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_app_path();
+	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
+	FLAME_FOUNDATION_EXPORTS StringW get_app_path();
 	FLAME_FOUNDATION_EXPORTS void set_curr_path(const std::wstring& p);
 	FLAME_FOUNDATION_EXPORTS void com_init();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
@@ -1184,18 +1305,18 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS bool is_file_occupied(const std::wstring& filename);
 	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
-	FLAME_FOUNDATION_EXPORTS Mail<std::string> exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
+	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
 	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const std::wstring& filename, const std::wstring& parameters);
-	FLAME_FOUNDATION_EXPORTS Mail<std::string> compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
+	FLAME_FOUNDATION_EXPORTS StringA compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::vector<std::string>> get_module_dependancies(const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS Array<StringA> get_module_dependancies(const std::wstring& module_name);
 	FLAME_FOUNDATION_EXPORTS void* get_module_from_address(void* addr);
-	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_module_name(void* module);
+	FLAME_FOUNDATION_EXPORTS StringW get_module_name(void* module);
 	FLAME_FOUNDATION_EXPORTS void* load_module(const std::wstring& module_name);
 	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);
 	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
 
-	FLAME_FOUNDATION_EXPORTS Mail<std::wstring> get_clipboard();
+	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const std::wstring& s);
 
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const std::wstring& filename);

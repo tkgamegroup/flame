@@ -91,22 +91,18 @@ namespace flame
 		return ret;
 	}
 
-	Mail<std::wstring> get_curr_path()
+	StringW get_curr_path()
 	{
 		wchar_t buf[260];
 		GetCurrentDirectoryW(sizeof(buf), buf);
-		auto ret = new_mail<std::wstring>();
-		(*ret.p) = buf;
-		return ret;
+		return StringW(buf);
 	}
 
-	Mail<std::wstring> get_app_path()
+	StringW get_app_path()
 	{
 		wchar_t buf[260];
 		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		auto ret = new_mail<std::wstring>();
-		(*ret.p) = std::filesystem::path(buf).parent_path().generic_wstring();
-		return ret;
+		return StringW(std::filesystem::path(buf).parent_path().wstring());
 	}
 
 	void set_curr_path(const std::wstring& p)
@@ -197,7 +193,7 @@ namespace flame
 			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	Mail<std::string> exec_and_get_output(const std::wstring& filename, const std::wstring& parameters)
+	StringA exec_and_get_output(const std::wstring& filename, const std::wstring& parameters)
 	{
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
@@ -229,10 +225,10 @@ namespace flame
 		CloseHandle(proc_info.hThread);
 
 		DWORD output_size;
-		auto output = new_mail<std::string>();
+		StringA output;
 		PeekNamedPipe(hChildStd_OUT_Rd, NULL, NULL, NULL, &output_size, NULL);
-		output.p->resize(output_size);
-		PeekNamedPipe(hChildStd_OUT_Rd, (void*)output.p->data(), output_size, NULL, NULL, NULL);
+		output.resize(output_size);
+		PeekNamedPipe(hChildStd_OUT_Rd, (void*)output.v, output_size, NULL, NULL, NULL);
 		return output;
 	}
 
@@ -256,7 +252,7 @@ namespace flame
 	}
 
 
-	Mail<std::string> compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
+	StringA compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
 	{
 		auto cl = wsfmt(L"\"%s/VC/Auxiliary/Build/vcvars64.bat\" & cl ", s2w(VS_LOCATION));
 
@@ -301,11 +297,11 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	Mail<std::vector<std::string>> get_module_dependancies(const std::wstring& module_name)
+	Array<StringA> get_module_dependancies(const std::wstring& module_name)
 	{
 		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::filesystem::path(module_name).parent_path().string().c_str());
 
-		auto ret = new_mail<std::vector<std::string>>();
+		auto ret = Array<StringA>();
 		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2) 
 		{
 			PIMAGE_IMPORT_DESCRIPTOR importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
@@ -316,7 +312,7 @@ namespace flame
 				if ((importDesc->TimeDateStamp == 0) && (importDesc->Name == 0))
 					break;
 
-				ret.p->push_back((char*)get_ptr_from_rva(importDesc->Name,
+				ret.push_back((char*)get_ptr_from_rva(importDesc->Name,
 					image->FileHeader,
 					image->MappedAddress));
 				importDesc++;
@@ -333,13 +329,11 @@ namespace flame
 		return module;
 	}
 
-	Mail<std::wstring> get_module_name(void* module)
+	StringW get_module_name(void* module)
 	{
 		wchar_t buf[260];
 		GetModuleFileNameW((HMODULE)module, buf, sizeof(buf));
-		auto ret = new_mail<std::wstring>();
-		(*ret.p) = buf;
-		return ret;
+		return StringW(buf);
 	}
 
 	void* load_module(const std::wstring& module_name)
@@ -357,13 +351,13 @@ namespace flame
 		FreeLibrary((HMODULE)library);
 	}
 
-	Mail<std::wstring> get_clipboard()
+	StringW get_clipboard()
 	{
 		OpenClipboard(NULL);
 		auto hMemory = GetClipboardData(CF_UNICODETEXT);
-		auto output = new_mail<std::wstring>();
-		output.p->resize(GlobalSize(hMemory) / sizeof(wchar_t) - 1);
-		memcpy(output.p->data(), GlobalLock(hMemory), sizeof(wchar_t)*output.p->size());
+		StringW output;
+		output.resize(GlobalSize(hMemory) / sizeof(wchar_t) - 1);
+		memcpy(output.v, GlobalLock(hMemory), sizeof(wchar_t)*output.s);
 		GlobalUnlock(hMemory);
 		CloseClipboard();
 		return output;

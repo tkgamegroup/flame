@@ -97,10 +97,8 @@ namespace flame
 							break;
 						case 22:
 						{
-							auto copied = get_clipboard();
 							thiz->cursor = 0;
-							text->set_text(*copied.p);
-							delete_mail(copied);
+							text->set_text(get_clipboard().v);
 						}
 							break;
 						case 27:

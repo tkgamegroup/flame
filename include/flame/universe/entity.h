@@ -37,7 +37,7 @@ namespace flame
 
 #define get_component(T) get_component_t<T>(cH(#T))
 
-		FLAME_UNIVERSE_EXPORTS Mail<std::vector<Component*>> get_components() const;
+		FLAME_UNIVERSE_EXPORTS Array<Component*> get_components() const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);
 

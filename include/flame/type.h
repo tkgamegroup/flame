@@ -63,6 +63,7 @@ namespace flame
 	typedef unsigned short		ushort;
 	typedef unsigned int		uint;
 	typedef unsigned long		ulong;
+	typedef long long			longlong;
 	typedef unsigned long long  ulonglong;
 
 	typedef void* voidptr;
