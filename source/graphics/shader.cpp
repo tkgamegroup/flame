@@ -1445,7 +1445,7 @@ namespace flame
 
 		struct Pipeline$
 		{
-			AttributeP<std::vector<std::wstring>> shader_filenames$i;
+			AttributeP<std::vector<StringW>> shader_filenames$i;
 			AttributeP<void> pll$i;
 			AttributeP<void> renderpass$i;
 			AttributeD<uint> subpass_idx$i;
@@ -1472,9 +1472,9 @@ namespace flame
 					auto d = Device::default_one();
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v&& shader_filenames$i.v && !shader_filenames$i.v->empty() && pll$i.v)
 					{
-						auto filenames = *shader_filenames$i.v;
-						for (auto& fn : filenames)
-							fn = std::filesystem::path(scene->filename()).parent_path().wstring() + L"/" + fn;
+						std::vector<std::wstring> filenames;
+						for (auto& fn : *shader_filenames$i.v)
+							filenames.push_back(std::filesystem::path(scene->filename()).parent_path().wstring() + L"/" + fn.str());
 						out$o.v = Pipeline::create(d, filenames, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,
 							(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
 					}

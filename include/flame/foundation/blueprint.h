@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
+#include <flame/foundation/serialize.h>
 
 namespace flame
 {
@@ -48,15 +48,28 @@ namespace flame
 
 		struct Slot
 		{
-			enum Type
+			enum IO
 			{
-				Input,
-				Output
+				In,
+				Out
+			};
+
+			struct Desc
+			{
+				TypeInfo type;
+				std::string name;
+				uint offset;
+				uint size;
+				std::string default_value;
 			};
 
 			FLAME_FOUNDATION_EXPORTS Node* node() const;
-			FLAME_FOUNDATION_EXPORTS Type type() const;
-			FLAME_FOUNDATION_EXPORTS VariableInfo* vi() const;
+			FLAME_FOUNDATION_EXPORTS IO io() const;
+			FLAME_FOUNDATION_EXPORTS const TypeInfo& type() const;
+			FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+			FLAME_FOUNDATION_EXPORTS uint offset() const;
+			FLAME_FOUNDATION_EXPORTS uint size() const;
+			FLAME_FOUNDATION_EXPORTS const std::string& default_value() const;
 
 			FLAME_FOUNDATION_EXPORTS int frame() const;
 			FLAME_FOUNDATION_EXPORTS void set_frame(int frame);

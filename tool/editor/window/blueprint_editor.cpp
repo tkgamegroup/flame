@@ -522,7 +522,8 @@ struct cBPEditor : Component
 			for (auto i = 0; i < bp->node_count(); i++)
 			{
 				auto n = bp->node(i);
-				if (n->udt()->db() == m_db)
+				auto udt = n->udt();
+				if (udt && udt->db() == m_db)
 				{
 					auto e = (Entity*)n->user_data;
 					e->parent()->remove_child(e);
@@ -576,17 +577,23 @@ struct cBPEditor : Component
 		{
 		case SelNode:
 		{
-			auto n = bp->add_node(selected_.n->udt()->type().name, "");
-			n->pos = add_pos;
-			for (auto i = 0; i < n->input_count(); i++)
+			auto udt = selected_.n->udt();
+			if (udt)
 			{
-				auto src = selected_.n->input(i);
-				auto dst = n->input(i);
-				dst->set_data(src->data());
-				dst->link_to(src->link(0));
+				auto n = bp->add_node(selected_.n->udt()->type().name, "");
+				n->pos = add_pos;
+				for (auto i = 0; i < n->input_count(); i++)
+				{
+					auto src = selected_.n->input(i);
+					auto dst = n->input(i);
+					dst->set_data(src->data());
+					dst->link_to(src->link(0));
+				}
+				create_node_entity(n);
+				set_changed(true);
 			}
-			create_node_entity(n);
-			set_changed(true);
+			else
+				popup_message_dialog(L"Cannot Duplicate Nodes That Have No Udt");
 		}
 			break;
 		}
@@ -611,7 +618,7 @@ struct cBPEditor : Component
 				{
 					auto n = bp->node(i);
 					auto udt = n->udt();
-					if (udt->db() == m_db)
+					if (udt && udt->db() == m_db)
 						str += L"id: " + s2w(n->id()) + L", type: " + s2w(udt->type().name) + L"\n";
 				}
 
@@ -659,38 +666,42 @@ struct cBPEditor : Component
 			std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
 			for (auto i = 0; i < bp->node_count(); i++)
 			{
-				auto src = bp->node(i);
-				auto& name = src->id();
-
-				auto str = "\t" + name + " [label = \"" + name + "|" + src->udt()->type().name + "|{{";
-				for (auto j = 0; j < src->input_count(); j++)
+				auto n = bp->node(i);
+				auto udt = n->udt();
+				if (udt)
 				{
-					auto input = src->input(j);
-					auto& name = input->vi()->name();
-					str += "<" + name + ">" + name;
-					if (j != src->input_count() - 1)
-						str += "|";
-				}
-				str += "}|{";
-				for (auto j = 0; j < src->output_count(); j++)
-				{
-					auto output = src->output(j);
-					auto& name = output->vi()->name();
-					str += "<" + name + ">" + name;
-					if (j != src->output_count() - 1)
-						str += "|";
-				}
-				str += "}}\"];\n";
+					auto& name = n->id();
 
-				gv += str;
+					auto str = "\t" + name + " [label = \"" + name + "|" + udt->type().name + "|{{";
+					for (auto j = 0; j < n->input_count(); j++)
+					{
+						auto input = n->input(j);
+						auto& name = input->name();
+						str += "<" + name + ">" + name;
+						if (j != n->input_count() - 1)
+							str += "|";
+					}
+					str += "}|{";
+					for (auto j = 0; j < n->output_count(); j++)
+					{
+						auto output = n->output(j);
+						auto& name = output->name();
+						str += "<" + name + ">" + name;
+						if (j != n->output_count() - 1)
+							str += "|";
+					}
+					str += "}}\"];\n";
+
+					gv += str;
+				}
 			}
 			for (auto i = 0; i < bp->node_count(); i++)
 			{
-				auto src = bp->node(i);
+				auto n = bp->node(i);
 
-				for (auto j = 0; j < src->input_count(); j++)
+				for (auto j = 0; j < n->input_count(); j++)
 				{
-					auto input = src->input(j);
+					auto input = n->input(j);
 					if (input->link())
 					{
 						auto in_sp = ssplit(input->get_address().str(), '.');
@@ -900,7 +911,7 @@ struct cBPSlot : Component
 		else if (c->name_hash == cH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
-			if (s->type() == BP::Slot::Input)
+			if (s->io() == BP::Slot::In)
 			{
 				event_receiver->drag_hash = cH("input_slot");
 				event_receiver->set_acceptable_drops({ cH("output_slot") });
@@ -918,7 +929,7 @@ struct cBPSlot : Component
 				if (action == DragStart)
 				{
 					editor->dragging_slot = s;
-					if (s->type() == BP::Slot::Input)
+					if (s->io() == BP::Slot::In)
 					{
 						s->link_to(nullptr);
 						editor->set_changed(true);
@@ -929,7 +940,7 @@ struct cBPSlot : Component
 				else if (action == Dropped)
 				{
 					auto oth = er->entity->get_component(cBPSlot)->s;
-					if (s->type() == BP::Slot::Input)
+					if (s->io() == BP::Slot::In)
 					{
 						if (s->link_to(oth))
 							editor->set_changed(true);
@@ -983,7 +994,7 @@ void cBPScene::for_each_link(const std::function<bool(const Vec2f & p1, const Ve
 
 				auto e = ((Entity*)p->user_data)->get_component(cElement);
 				auto ret = e->global_pos;
-				if (s->type() == BP::Slot::Output)
+				if (s->io() == BP::Slot::Out)
 					ret.x() += e->size_.x();
 				return ret;
 			}
@@ -1470,6 +1481,8 @@ void create_vec_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
 
 Entity* cBPEditor::create_node_entity(BP::Node* n)
 {
+	auto udt = n->udt();
+
 	auto e_node = Entity::create();
 	e_base->add_child(e_node);
 	n->user_data = e_node;
@@ -1529,19 +1542,21 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		}
 
-		auto e_text_type = Entity::create();
-		e_content->add_child(e_text_type);
+		if (udt)
 		{
-			e_text_type->add_component(cElement::create());
+			auto e_text_type = Entity::create();
+			e_content->add_child(e_text_type);
+			{
+				e_text_type->add_component(cElement::create());
 
-			auto c_text = cText::create(app.font_atlas_pixel);
-			auto udt = n->udt();
-			auto module_name = std::filesystem::path(udt->db()->module_name());
-			if (module_name.parent_path() != L"")
-				module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
-			c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->type().name));
-			c_text->color = Vec4c(50, 50, 50, 255);
-			e_text_type->add_component(c_text);
+				auto c_text = cText::create(app.font_atlas_pixel);
+				auto module_name = std::filesystem::path(udt->db()->module_name());
+				if (module_name.parent_path() != L"")
+					module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
+				c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->type().name));
+				c_text->color = Vec4c(50, 50, 50, 255);
+				e_text_type->add_component(c_text);
+			}
 		}
 
 		auto e_initiative = Entity::create();
@@ -1574,7 +1589,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		}
 
-		auto udt_name = n->udt()->type().name;
+		std::string udt_name;
+		if (udt)
+			udt_name = udt->type().name;
 		if (udt_name == "D#DstImage")
 		{
 			auto e_show = create_standard_button(app.font_atlas_pixel, 0.9f, L"Show");
@@ -1619,6 +1636,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key))
 				{
+					assert(0);
 					auto name = capture.n->udt()->type().name;
 					std::regex reg(R"(Array\(([0-9]+\+([\w\*]+))\))");
 					std::smatch match;
@@ -1643,7 +1661,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								for (auto i = 0; i < capture.n->input_count(); i++)
 								{
 									auto src = capture.n->input(i);
-									auto dst = new_n->find_input(src->vi()->name());
+									auto dst = new_n->find_input(src->name());
 									if (dst)
 									{
 										dst->set_data(src->data());
@@ -1653,7 +1671,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								for (auto i = 0; i < capture.n->output_count(); i++)
 								{
 									auto src = capture.n->output(i);
-									auto dst = new_n->find_output(src->vi()->name());
+									auto dst = new_n->find_output(src->name());
 									if (dst)
 									{
 										for (auto j = 0; j < src->link_count(); j++)
@@ -1907,7 +1925,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(input->vi()->name()));
+						c_text->set_text(s2w(input->name()));
 						e_text->add_component(c_text);
 					}
 
@@ -1923,7 +1941,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_data->add_component(c_layout);
 					}
 
-					auto& type = input->vi()->type();
+					auto& type = input->type();
 					switch (type.tag)
 					{
 					case TypeEnumSingle:
@@ -2163,7 +2181,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(output->vi()->name()));
+						c_text->set_text(s2w(output->name()));
 						e_text->add_component(c_text);
 					}
 
@@ -2530,7 +2548,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 					auto s = editor->selected_.s;
-					if (s->type() == BP::Slot::Input)
+					if (s->io() == BP::Slot::In)
 					{
 						editor->bp->add_input_export(s);
 						editor->set_changed(true);
@@ -2641,26 +2659,13 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto i = bp->find_input(address.c_str());
 			if (i)
 			{
-				auto v = i->vi();
-				auto& type = v->type();
+				auto& type = i->type();
 				auto value_before = type.serialize(dbs, i->raw_data(), 2);
-				auto data = new char[v->size()];
-				auto this_module = load_module(L"editor.exe");
-				TypeinfoDatabase* this_db = nullptr;
-				for (auto db : dbs)
-				{
-					if (std::filesystem::path(db->module_name()).filename() == L"editor.exe")
-					{
-						this_db = db;
-						break;
-					}
-				}
-				assert(this_module && this_db);
-				type.unserialize(dbs, value, data, this_module, this_db);
+				auto data = new char[i->size()];
+				type.unserialize(dbs, value, data);
 				i->set_data((char*)data + sizeof(AttributeBase));
 				((cBPSlot*)i->user_data)->tracker->update_view();
 				delete[] data;
-				free_module(this_module);
 				auto value_after = type.serialize(dbs, i->raw_data(), 2);
 				console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
 				editor->set_changed(true);
@@ -2749,9 +2754,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
-						auto v = input->vi();
-						auto& type = v->type();
-						console->print(s2w(v->name()));
+						auto& type = input->type();
+						console->print(s2w(input->name()));
 						std::string link_address;
 						if (input->link())
 							link_address = input->link()->get_address().str();
@@ -2765,9 +2769,8 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
-						auto v = output->vi();
-						auto& type = v->type();
-						console->print(s2w(v->name()));
+						auto& type = output->type();
+						console->print(s2w(output->name()));
 						auto str = s2w(type.serialize(dbs, output->raw_data(), 2));
 						if (str.empty())
 							str = L"-";

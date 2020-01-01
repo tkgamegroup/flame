@@ -488,16 +488,11 @@ namespace flame
 		uint name_hash;
 		std::string decoration;
 		uint offset, size;
-		void* default_value;
+		std::string default_value;
 
 		VariableInfoPrivate(const TypeInfo& type) :
 			type(type)
 		{
-		}
-
-		~VariableInfoPrivate()
-		{
-			delete default_value;
 		}
 	};
 
@@ -531,7 +526,7 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->decoration;
 	}
 
-	const void* VariableInfo::default_value() const
+	const std::string& VariableInfo::default_value() const
 	{
 		return ((VariableInfoPrivate*)this)->default_value;
 	}
@@ -764,17 +759,6 @@ namespace flame
 		v->decoration = decoration;
 		v->offset = offset;
 		v->size = size;
-		v->default_value = nullptr;
-		if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData) &&
-			type.base_hash != cH("std::string") &&
-			type.base_hash != cH("std::wstring") &&
-			type.base_hash != cH("StringA") &&
-			type.base_hash != cH("StringW") &&
-			decoration.find('o') == std::string::npos)
-		{
-			v->default_value = new char[size];
-			memset(v->default_value, 0, size);
-		}
 		((UdtInfoPrivate*)this)->variables.emplace_back(v);
 		return v;
 	}
@@ -1621,8 +1605,10 @@ namespace flame
 							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->rva)), obj);
 							for (auto& i : u->variables)
 							{
-								if (i->default_value)
-									memcpy(i->default_value, (char*)obj + i->offset, i->size);
+								auto type = i->type;
+								if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData) &&
+									i->decoration.find('o') == std::string::npos)
+									i->default_value = type.serialize(dbs, (char*)obj + i->offset, 1);
 							}
 							if (dtor)
 								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
@@ -1750,11 +1736,10 @@ namespace flame
 				auto n_vari = n_items->node(j);
 				auto type = TypeInfo::from_str(n_vari->find_attr("type")->value());
 				auto v = (VariableInfoPrivate*)u->add_variable(type, n_vari->find_attr("name")->value(), n_vari->find_attr("decoration")->value(), std::stoi(n_vari->find_attr("offset")->value()), std::stoi(n_vari->find_attr("size")->value()));
-				if (v->default_value)
 				{
 					auto a_default_value = n_vari->find_attr("default_value");
 					if (a_default_value)
-						type.unserialize(dbs, a_default_value->value(), v->default_value, this_module, this_db);
+						v->default_value = a_default_value->value();
 				}
 			}
 
@@ -1846,12 +1831,8 @@ namespace flame
 					n_vari->new_attr("decoration", v->decoration);
 					n_vari->new_attr("offset", std::to_string(v->offset));
 					n_vari->new_attr("size", std::to_string(v->size));
-					if (v->default_value)
-					{
-						auto default_value_str = type.serialize(dbs, v->default_value, 1);
-						if (!default_value_str.empty())
-							n_vari->new_attr("default_value", default_value_str);
-					}
+					if (!v->default_value.empty())
+						n_vari->new_attr("default_value", v->default_value);
 				}
 
 				auto n_functions = n_udt->new_node("functions");

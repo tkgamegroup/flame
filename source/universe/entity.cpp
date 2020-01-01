@@ -334,18 +334,6 @@ namespace flame
 		e->set_name(src->find_attr("name")->value());
 		e->set_visibility(src->find_attr("visibility")->value() == "1");
 
-		auto this_module = load_module(L"flame_universe.dll");
-		TypeinfoDatabase* this_db = nullptr;
-		for (auto db : dbs)
-		{
-			if (std::filesystem::path(db->module_name()).filename() == L"flame_universe.dll")
-			{
-				this_db = db;
-				break;
-			}
-		}
-		assert(this_module && this_db);
-
 		auto n_cs = src->find_node("components");
 		if (n_cs)
 		{
@@ -366,7 +354,7 @@ namespace flame
 				{
 					auto n_v = n_c->node(i);
 					auto v = udt->find_variable(n_v->name());
-					v->type().unserialize(dbs, n_v, (char*)object + v->offset(), this_module, this_db);
+					v->type().unserialize(dbs, n_v, (char*)object + v->offset());
 				}
 				void* component;
 				{
@@ -391,8 +379,6 @@ namespace flame
 			for (auto i_e = 0; i_e < n_es->node_count(); i_e++)
 				e->add_child(load_prefab(w, dbs, n_es->node(i_e)));
 		}
-
-		free_module(this_module);
 
 		return e;
 	}
@@ -438,9 +424,13 @@ namespace flame
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
+					auto& type = v->type();
 					auto p = (char*)object + v->offset();
-					if ((v->type().tag == TypeData && (v->type().is_vector || v->type().hash == cH("std::string") || v->type().hash == cH("std::wstring"))) || memcmp(p, v->default_value(), v->size()) != 0)
-						v->type().serialize(dbs, p, 2, n_c->new_node(v->name()));
+					if (type.tag == TypeData)
+					{
+						if (type.is_vector || type.serialize(dbs, p, 2) != v->default_value())
+							type.serialize(dbs, p, 2, n_c->new_node(v->name()));
+					}
 				}
 				{
 					auto f = udt->find_function("dtor");

@@ -520,13 +520,13 @@ namespace flame
 				auto rnf = (RenderpassAndFramebuffer*)rnf$i.v;
 				auto img_idx = image_idx$i.v;
 				auto cb = (Commandbuffer*)(*cbs$i.v)[img_idx];
+				auto pl_element = (Pipeline*)pl_element$i.v;
+				auto pl_text_lcd = (Pipeline*)pl_text_lcd$i.v;
+				auto pl_text_sdf = (Pipeline*)pl_text_sdf$i.v;
 
-				if (rnf)
+				if (rnf && (pl_element || pl_text_lcd || pl_text_sdf))
 				{
 					auto pll = (Pipelinelayout*)pll$i.v;
-					auto pl_element = (Pipeline*)pl_element$i.v;
-					auto pl_text_lcd = (Pipeline*)pl_text_lcd$i.v;
-					auto pl_text_sdf = (Pipeline*)pl_text_sdf$i.v;
 
 					auto fb = (Framebuffer*)rnf->framebuffers()[img_idx];
 					surface_size = Vec2f(fb->image_size);

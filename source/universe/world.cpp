@@ -109,18 +109,6 @@ namespace flame
 		auto last_curr_path = get_curr_path();
 		set_curr_path(std::filesystem::path(filename).parent_path().wstring());
 
-		auto this_module = load_module(L"flame_universe.dll");
-		TypeinfoDatabase* this_db = nullptr;
-		for (auto db : dbs)
-		{
-			if (std::filesystem::path(db->module_name()).filename() == L"flame_universe.dll")
-			{
-				this_db = db;
-				break;
-			}
-		}
-		assert(this_module && this_db);
-
 		for (auto i_o = 0; i_o < file->node_count(); i_o++)
 		{
 			auto n_o = file->node(i_o);
@@ -139,7 +127,7 @@ namespace flame
 				auto n = n_o->node(i);
 
 				auto v = udt->find_variable(n->name());
-				v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset(), this_module, this_db);
+				v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset());
 			}
 			void* object;
 			{
@@ -156,8 +144,6 @@ namespace flame
 			free_module(module);
 			free(dummy);
 		}
-
-		free_module(this_module);
 
 		set_curr_path(last_curr_path.str());
 	}

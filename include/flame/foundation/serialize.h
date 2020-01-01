@@ -542,9 +542,9 @@ namespace flame
 
 		inline std::string serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
 		inline void serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision, SerializableNode* dst) const;
-		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
-		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
-		inline void copy_from(const void* src, uint size, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const;
+		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const;
+		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst) const;
+		inline void copy_from(const void* src, uint size, void* dst) const;
 	};
 
 	inline bool operator==(const TypeInfo& lhs, const TypeInfo& rhs)
@@ -560,7 +560,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS const std::string& decoration() const;
 		FLAME_FOUNDATION_EXPORTS uint offset() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;
-		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
+		FLAME_FOUNDATION_EXPORTS const std::string& default_value() const;
 	};
 
 	struct EnumItem
@@ -794,7 +794,7 @@ namespace flame
 			dst->new_attr("v", serialize(dbs, src, precision));
 	}
 
-	void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const
+	void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const
 	{
 		if (is_attribute)
 			dst = (char*)dst + sizeof(AttributeBase);
@@ -888,15 +888,6 @@ namespace flame
 			case cH("Vec(4+uchar)"):
 				*(Vec4c*)dst = stoc4(src.c_str());
 				break;
-			case cH("std::string"):
-				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)&src);
-				break;
-			case cH("std::wstring"):
-			{
-				auto str = s2w(src);
-				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)&str);
-			}
-				break;
 			case cH("StringA"):
 				*(StringA*)dst = src;
 				break;
@@ -910,7 +901,7 @@ namespace flame
 		}
 	}
 
-	inline void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const
+	inline void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst) const
 	{
 		if (is_vector)
 		{
@@ -921,10 +912,10 @@ namespace flame
 
 		}
 		else
-			unserialize(dbs, src->find_attr("v")->value(), dst, dst_module, dst_db);
+			unserialize(dbs, src->find_attr("v")->value(), dst);
 	}
 
-	void TypeInfo::copy_from(const void* src, uint size, void* dst, void* dst_module, TypeinfoDatabase* dst_db) const
+	void TypeInfo::copy_from(const void* src, uint size, void* dst) const
 	{
 		if (is_attribute)
 		{
@@ -936,11 +927,11 @@ namespace flame
 		{
 			switch (base_hash)
 			{
-			case cH("std::string"):
-				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::string").hash)->find_function("operator=")->rva()), dst, (void*)src);
+			case cH("StringA"):
+				*(StringA*)dst = *(StringA*)src;
 				return;
-			case cH("std::wstring"):
-				cmf(p2f<MF_vp_vp>((char*)dst_module + (uint)dst_db->find_udt(TypeInfo(TypeData, "std::wstring").hash)->find_function("operator=")->rva()), dst, (void*)src);
+			case cH("StringW"):
+				*(StringW*)dst = *(StringW*)src;
 				return;
 			}
 		}
