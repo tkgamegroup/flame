@@ -172,7 +172,7 @@ namespace flame
 		{
 			AttributeD<bool> storage$i;
 			AttributeD<uint> count$i;
-			AttributeD<std::string> name$i;
+			AttributeD<StringA> name$i;
 			AttributeP<void> buffer$i;
 
 			AttributeD<DescriptorBufferBinding> out$o;
@@ -198,7 +198,7 @@ namespace flame
 				}
 				if (name$i.frame > last_out_frame)
 				{
-					out$o.v.name = name$i.v;
+					out$o.v.name = name$i.v.str();
 					out$o.frame = scene->frame;
 				}
 				if (buffer$i.frame > last_out_frame)
@@ -263,7 +263,7 @@ namespace flame
 				}
 				if (name$i.frame > last_out_frame)
 				{
-					out$o.v.name.assign(name$i.v.v, name$i.v.s);
+					out$o.v.name = name$i.v.str();
 					out$o.frame = scene->frame;
 				}
 				if (iv$o.frame > last_out_frame)
@@ -673,7 +673,7 @@ namespace flame
 
 		struct VertexInputAttribute$
 		{
-			AttributeD<std::string> name$i;
+			AttributeD<StringA> name$i;
 			AttributeE<Format$> format$i;
 
 			AttributeD<VertexInputAttribute> out$o;
@@ -688,7 +688,7 @@ namespace flame
 				auto last_out_frame = out$o.frame;
 				if (name$i.frame > last_out_frame)
 				{
-					out$o.v.name = name$i.v;
+					out$o.v.name = name$i.v.str();
 					out$o.frame = scene->frame;
 				}
 				if (format$i.frame > last_out_frame)

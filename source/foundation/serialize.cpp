@@ -1549,7 +1549,7 @@ namespace flame
 							auto obj = malloc(u->size);
 							memset(obj, 0, u->size);
 
-							if (false && std::filesystem::path(module_filename).extension() == L".exe")
+							if (std::filesystem::path(module_filename).extension() == L".exe")
 							{
 								auto ulsize = 0UL;
 								auto pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToData(library, TRUE, IMAGE_DIRECTORY_ENTRY_IMPORT, &ulsize);
