@@ -38,22 +38,15 @@ namespace flame
 {
 	struct DstImage$
 	{
-		AttributeD<Vec2u> size$i;
-
 		AttributeP<void> img$o;
 		AttributeE<TargetType$> type$o;
 		AttributeP<void> view$o;
 
 		AttributeD<uint> idx$o;
 
-		__declspec(dllexport) DstImage$()
-		{
-			size$i.v = Vec2u(800, 600);
-		}
-
 		__declspec(dllexport) void update$(BP* scene)
 		{
-			if (size$i.frame > img$o.frame)
+			if (img$o.frame == -1)
 			{
 				if (idx$o.v > 0)
 					app.s_2d_renderer->canvas->set_image(idx$o.v, nullptr);
@@ -62,9 +55,9 @@ namespace flame
 				if (view$o.v)
 					Imageview::destroy((Imageview*)view$o.v);
 				auto d = Device::default_one();
-				if (d && size$i.v.x() > 0 && size$i.v.y() > 0)
+				if (d)
 				{
-					img$o.v = Image::create(d, Format_R8G8B8A8_UNORM, size$i.v, 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
+					img$o.v = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(800, 600), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
 					((Image*)img$o.v)->init(Vec4c(0, 0, 0, 255));
 				}
 				else
@@ -95,36 +88,32 @@ namespace flame
 
 	struct CmdBufs$
 	{
-		AttributeD<std::vector<void*>> out$o;
-
-		__declspec(dllexport) CmdBufs$()
-		{
-		}
+		AttributeD<Array<void*>> out$o;
 
 		__declspec(dllexport) void update$(BP* scene)
 		{
 			if (out$o.frame == -1)
 			{
-				for (auto i = 0; i < out$o.v.size(); i++)
-					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+				for (auto i = 0; i < out$o.v.s; i++)
+					Commandbuffer::destroy((Commandbuffer*)out$o.v.v[i]);
 				auto d = Device::default_one();
 				if (d)
 				{
 					out$o.v.resize(1);
-					out$o.v[0] = Commandbuffer::create(d->gcp);
+					out$o.v.v[0] = Commandbuffer::create(d->gcp);
 				}
 				else
-					out$o.v.clear();
+					out$o.v.resize(0);
 				out$o.frame = scene->frame;
 			}
 
-			app.extra_cbs.push_back((Commandbuffer*)out$o.v[0]);
+			app.extra_cbs.push_back((Commandbuffer*)out$o.v.v[0]);
 		}
 
 		__declspec(dllexport) ~CmdBufs$()
 		{
-			for (auto i = 0; i < out$o.v.size(); i++)
-				Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+			for (auto i = 0; i < out$o.v.s; i++)
+				Commandbuffer::destroy((Commandbuffer*)out$o.v.v[i]);
 		}
 	};
 }
@@ -1592,7 +1581,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		std::string udt_name;
 		if (udt)
 			udt_name = udt->type().name;
-		if (udt_name == "D#DstImage")
+		if (n->id() == "test_dst")
 		{
 			auto e_show = create_standard_button(app.font_atlas_pixel, 0.9f, L"Show");
 			e_content->add_child(e_show);

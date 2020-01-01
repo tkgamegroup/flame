@@ -42,7 +42,8 @@ namespace flame
 
 		std::vector<SlotPrivate*> links;
 
-		SlotPrivate(IO io, NodePrivate* node, VariableInfo* vi);
+		SlotPrivate(NodePrivate* node, IO io, const TypeInfo& type, const std::string& name, uint offset, uint size, const std::string& default_value);
+		SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi);
 
 		void set_frame(int frame);
 		void set_data(const void* data);
@@ -71,6 +72,7 @@ namespace flame
 		bool in_pending_update;
 		bool in_update_list;
 
+		NodePrivate(BPPrivate* scene, const std::string& id, uint size, const std::vector<BP::Slot::Desc>& inputs, const std::vector<BP::Slot::Desc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
 		~NodePrivate();
 
@@ -123,7 +125,9 @@ namespace flame
 
 		void collect_dbs();
 
+		bool check_or_create_id(std::string& id) const;
 		NodePrivate* add_node(const std::string& type, const std::string& type_name);
+		NodePrivate* add_node(uint size, const std::vector<Slot::Desc>& inputs, const std::vector<Slot::Desc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& id);
 		void remove_node(NodePrivate* n);
 
 		void clear();
@@ -163,15 +167,15 @@ namespace flame
 		BP::destroy(bp);
 	}
 
-	SlotPrivate::SlotPrivate(IO io, NodePrivate* node, VariableInfo* vi) :
+	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, const TypeInfo& type, const std::string& name, uint offset, uint size, const std::string& default_value) :
 		io(io),
-		node(node)
+		node(node),
+		type(type),
+		name(name),
+		offset(offset),
+		size(size),
+		default_value(default_value)
 	{
-		type = vi->type();
-		name = vi->name();
-		offset = vi->offset();
-		size = vi->size();
-		default_value = vi->default_value();
 		raw_data = (char*)node->object + offset;
 		user_data = nullptr;
 
@@ -179,6 +183,12 @@ namespace flame
 			links.push_back(nullptr);
 		else /* if (type == Output) */
 			set_frame(-1);
+	}
+
+	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi) :
+		SlotPrivate(node, io, vi->type(), vi->name(),
+			vi->offset(), vi->size(), vi->default_value())
+	{
 	}
 
 	void SlotPrivate::set_frame(int frame)
@@ -321,9 +331,48 @@ namespace flame
 			assert(!(ai && ao));
 			assert(v->type().is_attribute);
 			if (ai)
-				inputs.emplace_back(new SlotPrivate(SlotPrivate::In, this, v));
+				inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, v));
 			else /* if (ao) */
-				outputs.emplace_back(new SlotPrivate(SlotPrivate::Out, this, v));
+				outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, v));
+		}
+	}
+
+	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, uint size, const std::vector<BP::Slot::Desc>& _inputs, const std::vector<BP::Slot::Desc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr) :
+		scene(scene),
+		id(id),
+		udt(nullptr),
+		initiative(false),
+		module(nullptr),
+		order(0xffffffff),
+		in_pending_update(false),
+		in_update_list(false)
+	{
+		pos = Vec2f(0.f);
+		external = false;
+		user_data = nullptr;
+
+		object = malloc(size);
+		memset(object, 0, size);
+
+		if (ctor_addr)
+			cmf(p2f<MF_v_v>(ctor_addr), object);
+
+		dtor_addr = _dtor_addr;
+		update_addr = _update_addr;
+		assert(update_addr);
+
+		for (auto& _i : _inputs)
+		{
+			auto i = new SlotPrivate(this, BP::Slot::In, _i.type, _i.name,
+				_i.offset, _i.size, _i.default_value);
+			inputs.emplace_back(i);
+		}
+
+		for (auto& _o : _outputs)
+		{
+			auto o = new SlotPrivate(this, BP::Slot::Out, _o.type, _o.name,
+				_o.offset, _o.size, _o.default_value);
+			outputs.emplace_back(o);
 		}
 	}
 
@@ -554,7 +603,26 @@ namespace flame
 			dbs.push_back(m->db);
 	}
 
-	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& id)
+	bool BPPrivate::check_or_create_id(std::string& id) const
+	{
+		if (!id.empty())
+		{
+			if (find_node(id))
+				return false;
+		}
+		else
+		{
+			for (auto i = 0; i < nodes.size() + 1; i++)
+			{
+				id = "node_" + std::to_string(i);
+				if (!find_node(id))
+					break;
+			}
+		}
+		return true;
+	}
+
+	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& _id)
 	{
 		auto type_hash = H(type.c_str());
 		UdtInfo* udt = nullptr;
@@ -595,27 +663,31 @@ namespace flame
 			return nullptr;
 		}
 
-		std::string s_id;
-		if (!id.empty())
+		std::string id = _id;
+		if (!check_or_create_id(id))
 		{
-			s_id = id;
-			if (find_node(s_id))
-			{
-				printf("cannot add node, id repeated\n");
-				return nullptr;
-			}
-		}
-		else
-		{
-			for (auto i = 0; i < nodes.size() + 1; i++)
-			{
-				s_id = "node_" + std::to_string(i);
-				if (!find_node(s_id))
-					break;
-			}
+			printf("cannot add node, id repeated\n");
+			return nullptr;
 		}
 
-		auto n = new NodePrivate(this, s_id, udt, module);
+		auto n = new NodePrivate(this, id, udt, module);
+		nodes.emplace_back(n);
+
+		root->need_update_hierarchy = true;
+
+		return n;
+	}
+
+	NodePrivate* BPPrivate::add_node(uint size, const std::vector<Slot::Desc>& inputs, const std::vector<Slot::Desc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& _id)
+	{
+		std::string id = _id;
+		if (!check_or_create_id(id))
+		{
+			printf("cannot add node, id repeated\n");
+			return nullptr;
+		}
+
+		auto n = new NodePrivate(this, id, size, inputs, outputs, ctor_addr, dtor_addr, update_addr);
 		nodes.emplace_back(n);
 
 		root->need_update_hierarchy = true;
@@ -1046,14 +1118,19 @@ namespace flame
 		return ((BPPrivate*)this)->nodes.size();
 	}
 
-	BP::Node *BP::node(uint idx) const
+	BP::Node* BP::node(uint idx) const
 	{
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node *BP::add_node(const std::string& type, const std::string& id)
+	BP::Node* BP::add_node(const std::string& type, const std::string& id)
 	{
 		return ((BPPrivate*)this)->add_node(type, id);
+	}
+
+	BP::Node* BP::add_node(uint size, const std::vector<Slot::Desc>& inputs, const std::vector<Slot::Desc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& id)
+	{
+		return ((BPPrivate*)this)->add_node(size, inputs, outputs, ctor_addr, dtor_addr, update_addr, id);
 	}
 
 	void BP::remove_node(BP::Node *n)
@@ -1061,7 +1138,7 @@ namespace flame
 		((BPPrivate*)this)->remove_node((NodePrivate*)n);
 	}
 
-	BP::Node *BP::find_node(const std::string& address) const
+	BP::Node* BP::find_node(const std::string& address) const
 	{
 		auto sp = ssplit(address, '.');
 		switch (sp.size())

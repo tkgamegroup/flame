@@ -154,7 +154,7 @@ namespace flame
 
 	struct MakeCmd$
 	{
-		AttributeP<std::vector<void*>> cbs$i;
+		AttributeP<Array<void*>> cbs$i;
 		AttributeP<void> vtx_buf$i;
 		AttributeP<void> idx_buf$i;
 		AttributeP<void> rnf$i;
@@ -519,7 +519,7 @@ namespace flame
 			{
 				auto rnf = (RenderpassAndFramebuffer*)rnf$i.v;
 				auto img_idx = image_idx$i.v;
-				auto cb = (Commandbuffer*)(*cbs$i.v)[img_idx];
+				auto cb = (Commandbuffer*)(*cbs$i.v).v[img_idx];
 				auto pl_element = (Pipeline*)pl_element$i.v;
 				auto pl_text_lcd = (Pipeline*)pl_text_lcd$i.v;
 				auto pl_text_sdf = (Pipeline*)pl_text_sdf$i.v;

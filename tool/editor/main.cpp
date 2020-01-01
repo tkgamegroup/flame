@@ -39,8 +39,8 @@ void App::create()
 	scr = SwapchainResizable::create(d, w);
 	fence = Fence::create(d);
 	sc_cbs.resize(scr->sc()->images().size());
-	for (auto i = 0; i < sc_cbs.size(); i++)
-		sc_cbs[i] = Commandbuffer::create(d->gcp);
+	for (auto i = 0; i < sc_cbs.s; i++)
+		sc_cbs.v[i] = Commandbuffer::create(d->gcp);
 	render_finished = Semaphore::create(d);
 
 	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc", L"../art/font_awesome.ttf" });
@@ -110,7 +110,7 @@ void App::run()
 	if (sc)
 	{
 		std::vector<Commandbuffer*> cbs;
-		cbs.push_back(sc_cbs[sc->image_index()]);
+		cbs.push_back(sc_cbs.v[sc->image_index()]);
 		cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
 		extra_cbs.clear();
 		d->gq->submit(cbs, sc->image_avalible(), render_finished, fence);

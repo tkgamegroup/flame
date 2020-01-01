@@ -36,7 +36,7 @@ struct App
 	Device* d;
 	SwapchainResizable* scr;
 	Fence* fence;
-	std::vector<Commandbuffer*> sc_cbs;
+	Array<Commandbuffer*> sc_cbs;
 	Semaphore* render_finished;
 	std::vector<Commandbuffer*> extra_cbs;
 
