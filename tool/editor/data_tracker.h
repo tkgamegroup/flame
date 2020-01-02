@@ -145,13 +145,13 @@ struct cDigitalVecDataTracker : cDataTracker
 	}
 };
 
-struct cStringDataTracker : cDataTracker
+struct cStringADataTracker : cDataTracker
 {
 	cText* text;
 
 	virtual void update_view() override
 	{
-		text->set_text(s2w(*(std::string*)data));
+		text->set_text(s2w(((StringA*)data)->str())) ;
 	}
 
 	virtual void on_added() override
@@ -162,13 +162,13 @@ struct cStringDataTracker : cDataTracker
 	}
 };
 
-struct cWStringDataTracker : cDataTracker
+struct cStringWDataTracker : cDataTracker
 {
 	cText* text;
 
 	virtual void update_view() override
 	{
-		text->set_text(*(std::wstring*)data);
+		text->set_text(((StringW*)data)->str());
 	}
 
 	virtual void on_added() override

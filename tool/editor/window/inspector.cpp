@@ -484,7 +484,7 @@ struct cInspectorPrivate : cInspector
 						case cH("Vec(4+uchar)"):
 							create_vec_edit<4, uchar>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("std::basic_string(char)"):
+						case cH("StringA"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 							e_data->add_child(e_edit);
@@ -499,17 +499,17 @@ struct cInspectorPrivate : cInspector
 								auto& capture = *(Capture*)c;
 								if (hash == cH("text"))
 								{
-									*(std::string*)((char*)capture.d->dummy + capture.v->offset()) = w2s(((cText*)t)->text());
+									*(StringA*)((char*)capture.d->dummy + capture.v->offset()) = w2s(((cText*)t)->text());
 									capture.d->unserialize(capture.v->offset());
 								}
 							}, new_mail(&capture));
 
-							auto c_tracker = new_u_object<cStringDataTracker>();
+							auto c_tracker = new_u_object<cStringADataTracker>();
 							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 						}
 							break;
-						case cH("std::basic_string(wchar_t)"):
+						case cH("StringW"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 							e_data->add_child(e_edit);
@@ -524,12 +524,12 @@ struct cInspectorPrivate : cInspector
 								auto& capture = *(Capture*)c;
 								if (hash == cH("text"))
 								{
-									*(std::wstring*)((char*)capture.d->dummy + capture.v->offset()) = ((cText*)t)->text();
+									*(StringW*)((char*)capture.d->dummy + capture.v->offset()) = ((cText*)t)->text();
 									capture.d->unserialize(capture.v->offset());
 								}
 							}, new_mail(&capture));
 
-							auto c_tracker = new_u_object<cWStringDataTracker>();
+							auto c_tracker = new_u_object<cStringWDataTracker>();
 							c_tracker->data = pdata;
 							e_data->add_component(c_tracker);
 						}

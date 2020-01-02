@@ -483,11 +483,6 @@ namespace flame
 		return ret;
 	}
 
-	inline uint vector_size(const void* p)
-	{
-		return ((std::vector<int>*)p)->size();
-	}
-
 	struct TypeInfo
 	{
 		TypeTag$ tag;
@@ -544,8 +539,89 @@ namespace flame
 		inline void serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision, SerializableNode* dst) const;
 		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const;
 		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst) const;
-		inline void copy_from(const void* src, uint size, void* dst) const;
+		inline void copy_from(const void* src, void* dst) const;
 	};
+
+	inline uint data_size(uint type_hash)
+	{
+		switch (type_hash)
+		{
+		case cH("bool"):
+			return sizeof(bool);
+		case cH("int"):
+		case cH("uint"):
+			return sizeof(int);
+		case cH("Vec(1+int)"):
+		case cH("Vec(1+uint)"):
+			return sizeof(Vec1i);
+		case cH("Vec(2+int)"):
+		case cH("Vec(2+uint)"):
+			return sizeof(Vec2i);
+		case cH("Vec(3+int)"):
+		case cH("Vec(3+uint)"):
+			return sizeof(Vec3i);
+		case cH("Vec(4+int)"):
+		case cH("Vec(4+uint)"):
+			return sizeof(Vec4i);
+		case cH("longlong"):
+		case cH("ulonglong"):
+			return sizeof(longlong);
+		case cH("float"):
+			return sizeof(float);
+		case cH("Vec(1+float)"):
+			return sizeof(Vec1f);
+		case cH("Vec(2+float)"):
+			return sizeof(Vec2f);
+		case cH("Vec(3+float)"):
+			return sizeof(Vec3f);
+		case cH("Vec(4+float)"):
+			return sizeof(Vec4f);
+		case cH("uchar"):
+			return sizeof(uchar);
+		case cH("Vec(1+uchar)"):
+			return sizeof(Vec1c);
+		case cH("Vec(2+uchar)"):
+			return sizeof(Vec2c);
+		case cH("Vec(3+uchar)"):
+			return sizeof(Vec3c);
+		case cH("Vec(4+uchar)"):
+			return sizeof(Vec4c);
+		case cH("StringA"):
+			return sizeof(StringA);
+		case cH("StringW"):
+			return sizeof(StringW);
+		default:
+			assert(0);
+		}
+	}
+
+	inline void data_copy(uint type_hash, const void* src, void* dst, uint size = 0)
+	{
+		switch (type_hash)
+		{
+		case cH("StringA"):
+			*(StringA*)dst = *(StringA*)src;
+			return;
+		case cH("StringW"):
+			*(StringW*)dst = *(StringW*)src;
+			return;
+		}
+
+		memcpy(dst, src, size ? size : data_size(type_hash));
+	}
+
+	inline void data_dtor(uint type_hash, void* p)
+	{
+		switch (type_hash)
+		{
+		case cH("StringA"):
+			((StringA*)p)->~String();
+			return;
+		case cH("StringW"):
+			((StringW*)p)->~String();
+			return;
+		}
+	}
 
 	inline bool operator==(const TypeInfo& lhs, const TypeInfo& rhs)
 	{
@@ -915,28 +991,17 @@ namespace flame
 			unserialize(dbs, src->find_attr("v")->value(), dst);
 	}
 
-	void TypeInfo::copy_from(const void* src, uint size, void* dst) const
+	void TypeInfo::copy_from(const void* src, void* dst) const
 	{
 		if (is_attribute)
-		{
 			dst = (char*)dst + sizeof(AttributeBase);
-			size -= sizeof(AttributeBase);
-		}
 
 		if (tag == TypeData)
-		{
-			switch (base_hash)
-			{
-			case cH("StringA"):
-				*(StringA*)dst = *(StringA*)src;
-				return;
-			case cH("StringW"):
-				*(StringW*)dst = *(StringW*)src;
-				return;
-			}
-		}
-
-		memcpy(dst, src, size);
+			data_copy(base_hash, src, dst);
+		else if (tag == TypeEnumSingle || tag == TypeEnumMulti)
+			memcpy(dst, src, sizeof(int));
+		else if (tag == TypePointer)
+			memcpy(dst, src, sizeof(void*));
 	}
 }
 

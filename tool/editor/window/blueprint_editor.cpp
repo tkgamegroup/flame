@@ -2082,7 +2082,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						case cH("Vec(4+uchar)"):
 							create_vec_edit<4, uchar>(this, e_data, input);
 							break;
-						case cH("std::string"):
+						case cH("StringA"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);
@@ -2097,18 +2097,17 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								auto& capture = *(Capture*)c;
 								if (hash == cH("text"))
 								{
-									auto str = w2s(((cText*)t)->text());
-									capture.input->set_data(&str);
+									capture.input->set_data(&StringA(w2s(((cText*)t)->text())));
 									capture.editor->set_changed(true);
 								}
 							}, new_mail(&capture));
 
-							auto c_tracker = new_u_object<cStringDataTracker>();
+							auto c_tracker = new_u_object<cStringADataTracker>();
 							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 						}
 							break;
-						case cH("std::wstring"):
+						case cH("StringW"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);
@@ -2123,12 +2122,12 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 								auto& capture = *(Capture*)c;
 								if (hash == cH("text"))
 								{
-									capture.input->set_data(&((cText*)t)->text());
+									capture.input->set_data(&StringW(((cText*)t)->text()));
 									capture.editor->set_changed(true);
 								}
 							}, new_mail(&capture));
 
-							auto c_tracker = new_u_object<cWStringDataTracker>();
+							auto c_tracker = new_u_object<cStringWDataTracker>();
 							c_tracker->data = input->data();
 							e_data->add_component(c_tracker);
 						}

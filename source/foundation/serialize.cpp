@@ -1297,8 +1297,6 @@ namespace flame
 		DWORD dw;
 		wchar_t* pwname;
 
-		std::vector<UdtInfo*> staging_string_symbols;
-
 		// enums
 		IDiaEnumSymbols* _enums;
 		global->findChildren(SymTagEnum, NULL, nsNone, &_enums);
@@ -1449,30 +1447,6 @@ namespace flame
 
 							auto type = symbol_to_typeinfo(s_type, attribute);
 							u->add_variable(type, name, attribute, l, ull);
-							if (type.base_hash == cH("std::string") || type.base_hash == cH("std::wstring"))
-							{
-								auto is_new = true;
-								for (auto u : staging_string_symbols)
-								{
-									if (u->type().base_hash == type.base_hash)
-									{
-										is_new = false;
-										break;
-									}
-								}
-								if (is_new)
-								{
-									std::vector<std::pair<std::string, FunctionDesc>> functions;
-									functions.emplace_back("operator=", FunctionDesc{
-										nullptr,
-										TypeInfo(TypePointer, type.base_name),
-										{ TypeInfo(TypePointer, type.base_name) }
-									});
-									auto u = find_udt_and_get_spcial_functions(type, functions);
-									if (u)
-										staging_string_symbols.push_back(u);
-								}
-							}
 
 							s_type->Release();
 						}
