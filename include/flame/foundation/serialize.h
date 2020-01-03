@@ -487,7 +487,7 @@ namespace flame
 	{
 		TypeTag$ tag;
 		bool is_attribute;
-		bool is_vector;
+		bool is_array;
 		std::string base_name;
 		std::string name; // tag[A][V]#base, order matters
 		uint base_hash;
@@ -496,23 +496,23 @@ namespace flame
 		TypeInfo() :
 			tag(TypeData),
 			is_attribute(false),
-			is_vector(false),
+			is_array(false),
 			base_hash(0),
 			hash(0)
 		{
 		}
 
-		TypeInfo(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_vector = false) :
+		TypeInfo(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_array = false) :
 			tag(tag),
 			base_name(base_name),
 			base_hash(H(base_name.c_str())),
 			is_attribute(is_attribute),
-			is_vector(is_vector)
+			is_array(is_array)
 		{
 			name = type_tag(tag);
 			if (is_attribute)
 				name += "A";
-			if (is_vector)
+			if (is_array)
 				name += "V";
 			name += "#" + base_name;
 			hash = H(name.c_str());
@@ -524,15 +524,15 @@ namespace flame
 			auto tag = -1;
 			while (type_tag((TypeTag$)++tag) != sp[0][0]);
 			auto is_attribute = false;
-			auto is_vector = false;
+			auto is_array = false;
 			for (auto i = 1; i < sp[0].size(); i++)
 			{
 				if (sp[0][i] == 'A')
 					is_attribute = true;
 				else if (sp[0][i] == 'V')
-					is_vector = true;
+					is_array = true;
 			}
-			return TypeInfo((TypeTag$)tag, sp[1], is_attribute, is_vector);
+			return TypeInfo((TypeTag$)tag, sp[1], is_attribute, is_array);
 		}
 
 		inline std::string serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
@@ -862,7 +862,7 @@ namespace flame
 
 	void TypeInfo::serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision, SerializableNode* dst) const
 	{
-		if (is_vector)
+		if (is_array)
 		{
 
 		}
@@ -979,7 +979,7 @@ namespace flame
 
 	inline void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst) const
 	{
-		if (is_vector)
+		if (is_array)
 		{
 			if (is_attribute)
 				dst = (char*)dst + sizeof(AttributeBase);

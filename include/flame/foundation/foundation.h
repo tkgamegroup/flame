@@ -1027,8 +1027,11 @@ namespace flame
 			if (s != _s)
 			{
 				s = _s;
-				v = (CH*)f_realloc(v, sizeof(CH) * (s + 1));
-				v[s] = 0;
+				if (s > 0)
+				{
+					v = (CH*)f_realloc(v, sizeof(CH) * (s + 1));
+					v[s] = 0;
+				}
 			}
 		}
 
@@ -1055,6 +1058,11 @@ namespace flame
 		void operator=(const CH* str)
 		{
 			assign(str, std::char_traits<CH>::length(str));
+		}
+
+		void operator=(const std::basic_string<CH>& str)
+		{
+			assign(str.c_str(), str.size());
 		}
 
 		std::basic_string<CH> str()
@@ -1108,12 +1116,20 @@ namespace flame
 		{
 			if (s != _s)
 			{
-				s = _s;
 				for (auto i = 0; i < s; i++)
 					v[i].~T();
-				v = (T*)f_realloc(v, sizeof(T) * s);
-				for (auto i = 0; i < s; i++)
-					new (&v[i])T;
+				s = _s;
+				if (s > 0)
+				{
+					v = (T*)f_realloc(v, sizeof(T) * s);
+					for (auto i = 0; i < s; i++)
+						new (&v[i])T;
+				}
+				else
+				{
+					f_free(v);
+					v = nullptr;
+				}
 			}
 		}
 
@@ -1146,7 +1162,7 @@ namespace flame
 
 	struct AttributeBase
 	{
-		uint twist : 1;
+		uint satisfied : 1;
 		int frame : 31;
 	};
 
@@ -1169,14 +1185,6 @@ namespace flame
 	};
 
 #pragma pack()
-
-	template<class T>
-	std::vector<T> get_attribute_vec(const AttributeP<std::vector<T>>& v) // cannot be used to AttributeP<std::vector<std::[w]string>>
-	{
-		if (v.twist == 1)
-			return { (T)v.v };
-		return v.v ? *v.v : std::vector<T>();
-	}
 
 	template<class T = void>
 	struct Mail

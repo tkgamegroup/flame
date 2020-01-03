@@ -659,32 +659,30 @@ namespace flame
 
 		struct ImageviewsGeneral$
 		{
-			AttributeP<std::vector<void*>> images$i;
+			AttributeP<Array<void*>> images$i;
 
-			AttributeD<std::vector<void*>> out$o;
-
-			FLAME_GRAPHICS_EXPORTS ImageviewsGeneral$()
-			{
-			}
+			AttributeD<Array<void*>> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (images$i.frame > out$o.frame)
 				{
-					for (auto i = 0; i < out$o.v.size(); i++)
-						Imageview::destroy((Imageview*)out$o.v[i]);
-					auto images = get_attribute_vec(images$i);
+					for (auto i = 0; i < out$o.v.s; i++)
+						Imageview::destroy((Imageview*)out$o.v.v[i]);
+					std::vector<Image*> images(images$i.v ? images$i.v->s : 0);
+					for (auto i = 0; i < images.size(); i++)
+						images[i] = (Image*)images$i.v->v[i];
 					if (!images.empty())
 					{
 						out$o.v.resize(images.size());
-						for (auto i = 0; i < out$o.v.size(); i++)
-							out$o.v[i] = Imageview::create((Image*)images[i]);
+						for (auto i = 0; i < out$o.v.s; i++)
+							out$o.v.v[i] = Imageview::create((Image*)images[i]);
 					}
 					else
 					{
 						printf("cannot create imageviews general\n");
 
-						out$o.v.clear();
+						out$o.v.resize(0);
 					}
 					out$o.frame = scene->frame;
 				}
@@ -692,8 +690,8 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS ~ImageviewsGeneral$()
 			{
-				for (auto i = 0; i < out$o.v.size(); i++)
-					Imageview::destroy((Imageview*)out$o.v[i]);
+				for (auto i = 0; i < out$o.v.s; i++)
+					Imageview::destroy((Imageview*)out$o.v.v[i]);
 			}
 		};
 

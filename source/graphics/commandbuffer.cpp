@@ -651,30 +651,26 @@ namespace flame
 		{
 			AttributeD<uint> size$i;
 
-			AttributeD<std::vector<void*>> out$o;
-
-			FLAME_GRAPHICS_EXPORTS Commandbuffers$()
-			{
-			}
+			AttributeD<Array<void*>> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (size$i.frame > out$o.frame)
 				{
-					for (auto i = 0; i < out$o.v.size(); i++)
-						Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+					for (auto i = 0; i < out$o.v.s; i++)
+						Commandbuffer::destroy((Commandbuffer*)out$o.v.v[i]);
 					auto d = Device::default_one();
 					if (d && size$i.v > 0)
 					{
 						out$o.v.resize(size$i.v);
 						for (auto i = 0; i < size$i.v; i++)
-							out$o.v[i] = Commandbuffer::create(d->gcp);
+							out$o.v.v[i] = Commandbuffer::create(d->gcp);
 					}
 					else
 					{
 						printf("cannot create commandbuffers\n");
 
-						out$o.v.clear();
+						out$o.v.resize(0);
 					}
 					out$o.frame = scene->frame;
 				}
@@ -682,8 +678,8 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS ~Commandbuffers$()
 			{
-				for (auto i = 0; i < out$o.v.size(); i++)
-					Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
+				for (auto i = 0; i < out$o.v.s; i++)
+					Commandbuffer::destroy((Commandbuffer*)out$o.v.v[i]);
 			}
 		};
 

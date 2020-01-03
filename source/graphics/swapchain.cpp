@@ -270,7 +270,7 @@ namespace flame
 			AttributeP<void> in$i;
 
 			AttributeP<void> sc$o;
-			AttributeD<std::vector<void*>> images$o;
+			AttributeD<Array<void*>> images$o;
 			AttributeD<uint> image_idx$o;
 
 			FLAME_GRAPHICS_EXPORTS SwapchainResizable$()
@@ -284,9 +284,14 @@ namespace flame
 				{
 					sc$o.v = scr->sc();
 					if (sc$o.v)
-						images$o.v = ((Swapchain*)sc$o.v)->images();
+					{
+						auto& images = ((Swapchain*)sc$o.v)->images();
+						images$o.v.resize(images.size());
+						for (auto i = 0; i < images.size(); i++)
+							images$o.v.v[i] = images[i];
+					}
 					else
-						images$o.v.clear();
+						images$o.v.resize(0);
 					auto frame = scene->frame;
 					sc$o.frame = frame;
 					images$o.frame = frame;

@@ -395,7 +395,7 @@ namespace flame
 		struct FontAtlas$
 		{
 			AttributeE<FontDrawType$> draw_type$i;
-			AttributeP<std::vector<std::wstring>> fonts$i;
+			AttributeP<Array<StringW>> fonts$i;
 
 			AttributeP<void> out$o;
 
@@ -406,8 +406,11 @@ namespace flame
 					if (out$o.v)
 						FontAtlas::destroy((FontAtlas*)out$o.v);
 					auto d = Device::default_one();
-					if (d && !fonts$i.v->empty())
-						out$o.v = FontAtlas::create(d, draw_type$i.v, *fonts$i.v);
+					std::vector<std::wstring> fonts(fonts$i.v ? fonts$i.v->s : 0);
+					for (auto i = 0; i < fonts.size(); i++)
+						fonts[i] = fonts$i.v->v[i].str();
+					if (d && !fonts.empty())
+						out$o.v = FontAtlas::create(d, draw_type$i.v, fonts);
 					else
 						printf("cannot create fontatlas\n");
 					out$o.frame = scene->frame;

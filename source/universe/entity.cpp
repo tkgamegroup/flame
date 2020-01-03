@@ -428,7 +428,7 @@ namespace flame
 					auto p = (char*)object + v->offset();
 					if (type.tag == TypeData)
 					{
-						if (type.is_vector || type.serialize(dbs, p, 2) != v->default_value())
+						if (type.is_array || type.serialize(dbs, p, 2) != v->default_value())
 							type.serialize(dbs, p, 2, n_c->new_node(v->name()));
 					}
 				}

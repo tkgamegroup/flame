@@ -132,8 +132,8 @@ namespace flame
 	{
 		Vec2u size$;
 		Vec2f cell_size$;
-		std::vector<ulonglong> tiles$;
-		std::vector<int> cells$;
+		Array<ulonglong> tiles$;
+		Array<int> cells$;
 
 		FLAME_UNIVERSE_EXPORTS Serializer_cTileMap$()
 		{
@@ -147,14 +147,16 @@ namespace flame
 
 			c->size_ = size$;
 			c->cell_size = cell_size$;
-			c->tiles.resize(tiles$.size());
-			for (auto i = 0; i < tiles$.size(); i++)
+			c->tiles.resize(tiles$.s);
+			for (auto i = 0; i < tiles$.s; i++)
 			{
-				auto id = tiles$[i];
+				auto id = tiles$.v[i];
 				auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), id >> 32);
 				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_region(id & 0xffffffff);
 			}
-			c->cells = cells$;
+			c->cells.resize(cells$.s);
+			for (auto i = 0; i < cells$.s; i++)
+				c->cells[i ]= cells$.v[i];
 
 			return c;
 		}

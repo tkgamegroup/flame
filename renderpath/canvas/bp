@@ -11,6 +11,7 @@
 			</datas>
 		</node>
 		<node type="D#graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
+    <node type="D#Array(1+void*)" id="resolve_targets" pos="90.72;52.27" />
 		<node type="D#graphics::ImageInspector" id="dst_props" pos="374.64;356.25" />
 		<node type="D#graphics::Image" id="img_ms" pos="874.61;704.05">
 			<datas>
@@ -23,7 +24,9 @@
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
+		<node type="D#Array(1+void*)" id="color_targets" pos="1246.58;655.05" />
 		<node type="D#graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
+    <node type="D#Array(1+void*)" id="sps" pos="1586.80;795.92" />
 		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
 		<node type="D#graphics::DescriptorImageBinding" id="imgs_binding" pos="1234.81;1486.79">
 			<datas>
@@ -31,48 +34,51 @@
 				<data name="name" value="images" />
 			</datas>
 		</node>
+    <node type="D#Array(1+void*)" id="bindings" pos="1234.81;1486.79" />
 		<node type="D#graphics::Descriptorlayout" id="dsl" pos="1542.51;1724.91" />
+    <node type="D#Array(1+void*)" id="dsls" pos="1542.51;1724.91" />
 		<node type="D#graphics::Pipelinelayout" id="pll" pos="1852.80;1716.37">
 			<datas>
 				<data name="push_constant_size" value="16" />
 			</datas>
 		</node>
-		<node type="D#graphics::VertexInputAttribute" id="via1" pos="1678.10;1036.00">
+		<node type="D#graphics::VertexInputAttribute" id="via0" pos="1678.10;1036.00">
 			<datas>
 				<data name="name" value="pos" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="D#graphics::VertexInputAttribute" id="via2" pos="1648.10;1222.00">
+		<node type="D#graphics::VertexInputAttribute" id="via1" pos="1648.10;1222.00">
 			<datas>
 				<data name="name" value="uv" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="D#graphics::VertexInputAttribute" id="via3" pos="1650.60;1398.00">
+		<node type="D#graphics::VertexInputAttribute" id="via2" pos="1650.60;1398.00">
 			<datas>
 				<data name="name" value="color" />
 			</datas>
 		</node>
 		<node type="D#Array(3+void*)" id="vias" pos="1928.63;1198.33" />
 		<node type="D#graphics::VertexInputBuffer" id="vib" pos="2064.05;1175.71" />
+    <node type="D#Array(1+void*)" id="vibs" pos="2064.05;1175.71" />
 		<node type="D#graphics::VertexInputInfo" id="vi" pos="2026.83;1423.37" />
 		<node type="D#Array(2+StringW)" id="pl_element_shs" pos="2879.57;628.81">
 			<datas>
-				<data name="1" value="element.vert" />
-				<data name="2" value="element.frag" />
+				<data name="0" value="element.vert" />
+				<data name="1" value="element.frag" />
 			</datas>
 		</node>
 		<node type="D#Array(2+StringW)" id="pl_text_lcd_shs" pos="2878.50;1161.07">
 			<datas>
-				<data name="1" value="element.vert" />
-				<data name="2" value="text_lcd.frag" />
+				<data name="0" value="element.vert" />
+				<data name="1" value="text_lcd.frag" />
 			</datas>
 		</node>
 		<node type="D#Array(2+StringW)" id="pl_text_sdf_shs" pos="2901.71;1701.75">
 			<datas>
-				<data name="1" value="element.vert" />
-				<data name="2" value="text_sdf.frag" />
+				<data name="0" value="element.vert" />
+				<data name="1" value="text_sdf.frag" />
 			</datas>
 		</node>
 		<node type="D#graphics::Pipeline" id="pl_element" pos="2877.23;827.38" />
@@ -107,28 +113,34 @@
 		<link out="dst_props.size" in="img_ms.size" />
 		<link out="sc.out" in="img_ms.sample_count" />
 		<link out="img_ms.out" in="rt_ms.v" />
-		<link out="rt_ms.out" in="sp.color_targets" />
-		<link out="rt_dst.out" in="sp.resolve_targets" />
-		<link out="sp.out" in="rnf.passes" />
+    <link out="rt_ms.out" in="color_targets.0" />
+		<link out="color_targets.out" in="sp.color_targets" />
+    <link out="rt_dst.out" in="resolve_targets.0" />
+    <link out="resolve_targets.out" in="sp.resolve_targets" />
+    <link out="sp.out" in="sps.0" />
+		<link out="sps.out" in="rnf.passes" />
 		<link out="img_white.out" in="imgs_binding.v" />
-		<link out="imgs_binding.out" in="dsl.bindings" />
-		<link out="dsl.out" in="pll.descriptorlayouts" />
+    <link out="imgs_binding.out" in="bindings.0" />
+		<link out="bindings.out" in="dsl.bindings" />
+    <link out="dsl.out" in="dsls.0" />
+		<link out="dsls.out" in="pll.descriptorlayouts" />
+		<link out="via0.out" in="vias.0" />
 		<link out="via1.out" in="vias.1" />
 		<link out="via2.out" in="vias.2" />
-		<link out="via3.out" in="vias.3" />
-		<link out="vias.v" in="vib.attributes" />
-		<link out="vib.out" in="vi.buffers" />
-		<link out="pl_element_shs.v" in="pl_element.shader_filenames" />
+		<link out="vias.out" in="vib.attributes" />
+    <link out="vib.out" in="vibs.0" />
+		<link out="vibs.out" in="vi.buffers" />
+		<link out="pl_element_shs.out" in="pl_element.shader_filenames" />
 		<link out="pll.out" in="pl_element.pll" />
 		<link out="rnf.rp" in="pl_element.renderpass" />
 		<link out="vi.out" in="pl_element.vi" />
 		<link out="sc.out" in="pl_element.sc" />
-		<link out="pl_text_lcd_shs.v" in="pl_text_lcd.shader_filenames" />
+		<link out="pl_text_lcd_shs.out" in="pl_text_lcd.shader_filenames" />
 		<link out="pll.out" in="pl_text_lcd.pll" />
 		<link out="rnf.rp" in="pl_text_lcd.renderpass" />
 		<link out="vi.out" in="pl_text_lcd.vi" />
 		<link out="sc.out" in="pl_text_lcd.sc" />
-		<link out="pl_text_sdf_shs.v" in="pl_text_sdf.shader_filenames" />
+		<link out="pl_text_sdf_shs.out" in="pl_text_sdf.shader_filenames" />
 		<link out="pll.out" in="pl_text_sdf.pll" />
 		<link out="rnf.rp" in="pl_text_sdf.renderpass" />
 		<link out="vi.out" in="pl_text_sdf.vi" />

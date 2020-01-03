@@ -233,18 +233,11 @@ namespace flame
 				{
 					if (type.base_hash == out_type.base_hash || type.base_hash == cH("void"))
 						return true;
-					if (type.is_vector && !out_type.is_vector)
-					{
-						((AttributeBase*)raw_data)->twist = 1;
-						return true;
-					}
 				}
 				return false;
 			}())
 				return false;
 		}
-		else
-			((AttributeBase*)raw_data)->twist = 0;
 
 		if (links[0])
 		{
@@ -421,7 +414,7 @@ namespace flame
 			{
 				auto ia = (AttributeBase*)input->raw_data;
 				auto ot = out->type.tag;
-				if ((ia->twist == 1 && ot == TypeData) || (ot == TypeData && input->type.tag == TypePointer))
+				if (ot == TypeData && input->type.tag == TypePointer)
 				{
 					auto p = out->data();
 					memcpy(input->data(), &p, sizeof(void*));
@@ -1471,88 +1464,6 @@ namespace flame
 
 		if (!no_compile)
 		{
-			auto templatecpp_path = ppath / L"template.cpp";
-			if (!std::filesystem::exists(templatecpp_path) || std::filesystem::last_write_time(templatecpp_path) < std::filesystem::last_write_time(filename))
-			{
-				printf("generating template.cpp");
-
-				std::ofstream templatecpp(templatecpp_path);
-				templatecpp << "// THIS FILE IS AUTO GENERATED\n";
-				templatecpp << "#include <flame/foundation/blueprint.h>\n";
-				templatecpp << "#include <flame/graphics/graphics.h>\n";
-				templatecpp << "namespace flame\n{\n";
-				templatecpp << "\ttemplate<class T>\n\tstruct Var$;\n\n";
-				templatecpp << "\ttemplate<class T>\n\tstruct Enum$;\n\n";
-				templatecpp << "\ttemplate<uint N, class T>\n\tstruct Vec$;\n\n";
-				templatecpp << "\ttemplate<uint N, class T>\n\tstruct Array$;\n\n";
-				std::vector<std::string> all_templates;
-				for (auto& n : node_descs)
-				{
-					auto pos_t = n.type.find('(');
-					if (pos_t != std::string::npos)
-					{
-						auto found = false;
-						for (auto& t : all_templates)
-						{
-							if (t == n.type)
-							{
-								found = true;
-								break;
-							}
-						}
-						if (found)
-							continue;
-						all_templates.push_back(n.type);
-
-						auto template_name = std::string(n.type.begin(), n.type.begin() + pos_t);
-						auto template_parameters = std::string(n.type.begin() + pos_t + 1, n.type.end() - 1);
-
-						if (template_name == "D#Array")
-						{
-							auto sp = ssplit(template_parameters, '+');
-							auto N = std::stoi(sp[0]);
-							templatecpp << "\ttemplate<>\n\tstruct Array$<" << sp[0] << ", " << sp[1] << ">\n\t{\n";
-							auto is_pointer = false;
-							auto T = sp[1];
-							if (T.back() == '*')
-							{
-								is_pointer = true;
-								T.erase(T.end() - 1);
-							}
-							for (auto i = 0; i < N; i++)
-								templatecpp << "\t\tAttribute" << (is_pointer ? "P" : "D") << "<" << T << "> _" << (i + 1) << "$i;\n";
-							templatecpp << "\t\tAttributeD<std::vector<" << sp[1] << ">> v$o;\n";
-							templatecpp << "\n\t\t__declspec(dllexport) void update$(BP* scene)\n\t\t{\n";
-							templatecpp << "\t\t\tauto out_frame = v$o.frame;\n";
-							templatecpp << "\t\t\tif (out_frame == -1)\n";
-							templatecpp << "\t\t\t\tv$o.v.resize(" << sp[0] << ");\n";
-							for (auto i = 0; i < N; i++)
-							{
-								templatecpp << "\t\t\tif (_" << (i + 1) << "$i.frame > v$o.frame)\n\t\t\t{\n";
-								templatecpp << "\t\t\t\tv$o.v[" << i << "] = _" << (i + 1) << "$i.v;\n";
-								templatecpp << "\t\t\t\tout_frame = scene->frame;\n";
-								templatecpp << "\t\t\t}\n";
-							}
-							templatecpp << "\t\t\tv$o.frame = out_frame;\n";
-							templatecpp << "\t\t}\n";
-							templatecpp << "\t};\n\n";
-						}
-						else if (template_name == "D#Array_")
-						{
-
-						}
-						else
-							assert(0);
-					}
-				}
-				templatecpp << "}\n";
-				templatecpp.close();
-
-				printf(" - done\n");
-			}
-			else
-				printf("template.cpp up to data\n");
-
 			auto cmakelists_path = ppath / L"CMakeLists.txt";
 			printf("generating cmakelists");
 
@@ -1626,7 +1537,7 @@ namespace flame
 			static SAL(prefix_array, "D#Array");
 			if (n_d.type.compare(0, prefix_enum.l, prefix_enum.s) == 0)
 			{
-				std::string name(n_d.type.begin() + prefix_enum.l + 1, n_d.type.end() - 1);
+				std::string enum_name(n_d.type.begin() + prefix_enum.l + 1, n_d.type.end() - 1);
 				struct Dummy
 				{
 					AttributeD<int> in;
@@ -1642,63 +1553,118 @@ namespace flame
 					}
 				};
 				n = bp->add_node(sizeof(Dummy), {
-						{TypeInfo(TypeEnumSingle, name, true), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
+						{TypeInfo(TypeEnumSingle, enum_name, true), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
 					}, {
-						{TypeInfo(TypeEnumSingle, name, true), "out", offsetof(Dummy, out), sizeof(Dummy::in), ""}
+						{TypeInfo(TypeEnumSingle, enum_name, true), "out", offsetof(Dummy, out), sizeof(Dummy::in), ""}
 					}, nullptr, nullptr, f2v(&Dummy::update), n_d.id);
 			}
 			else if (n_d.type.compare(0, prefix_var.l, prefix_var.s) == 0)
 			{
-				std::string name(n_d.type.begin() + prefix_var.l + 1, n_d.type.end() - 1);
+				std::string type_name(n_d.type.begin() + prefix_var.l + 1, n_d.type.end() - 1);
 				struct Dummy
 				{
 					uint type_hash;
-					uint size;
+					uint type_size;
 
-					~Dummy()
+					void dtor()
 					{
-						auto& in = *(AttributeD<int>*)(sizeof(Dummy));
-						auto& out = *(AttributeD<int>*)(sizeof(Dummy) + sizeof(AttributeBase) + size);
+						auto& in = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy));
+						auto& out = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + sizeof(AttributeBase) + type_size);
 						data_dtor(type_hash, &in.v);
 						data_dtor(type_hash, &out.v);
 					}
 
 					void update(BP* scene)
 					{
-						auto& in = *(AttributeD<int>*)(sizeof(Dummy));
-						auto& out = *(AttributeD<int>*)(sizeof(Dummy) + sizeof(AttributeBase) + size);
+						auto& in = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy));
+						auto& out = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + sizeof(AttributeBase) + type_size);
 						if (in.frame > out.frame)
 						{
-							data_copy(type_hash, &in.v, &out.v, size);
+							data_copy(type_hash, &in.v, &out.v, type_size);
 							out.frame = scene->frame;
 						}
 					}
 				};
-				auto type_hash = H(name.c_str());
-				auto size = data_size(type_hash);
-				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + size) * 2, {
-						{TypeInfo(TypeData, name), "in", sizeof(Dummy), size, ""}
+				auto type_hash = H(type_name.c_str());
+				auto type_size = data_size(type_hash);
+				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * 2, {
+						{TypeInfo(TypeData, type_name, true), "in", sizeof(Dummy), sizeof(AttributeBase) + type_size, ""}
 					}, {
-						{TypeInfo(TypeData, name), "out", sizeof(Dummy) + sizeof(AttributeBase) + size, size, ""}
-					}, nullptr, nullptr, f2v(&Dummy::update), n_d.id);
+						{TypeInfo(TypeData, type_name, true), "out", sizeof(Dummy) + sizeof(AttributeBase) + type_size, sizeof(AttributeBase) + type_size, ""}
+					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), n_d.id);
 				auto obj = n->object;
 				*(uint*)obj = type_hash;
-				*(uint*)((char*)obj + sizeof(uint)) = size;
+				*(uint*)((char*)obj + sizeof(uint)) = type_size;
 			}
-			//else if (n_d.type.compare(0, prefix_array.l, prefix_array.s) == 0)
-			//{
-			//	std::string name(n_d.type.begin() + prefix_var.l + 1, n_d.type.end() - 1);
-			//	struct Dummy
-			//	{
-			//		uint type_hash;
-			//		uint size;
+			else if (n_d.type.compare(0, prefix_array.l, prefix_array.s) == 0)
+			{
+				auto parameters = ssplit(std::string(n_d.type.begin() + prefix_array.l + 1, n_d.type.end() - 1), '+');
+				struct Dummy
+				{
+					uint type_hash;
+					uint type_size;
+					uint size;
 
-			//		~Dummy()
-			//		{
+					void dtor()
+					{
+						for (auto i = 0; i < size; i++)
+							data_dtor(type_hash, &((AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i))->v);
+						auto& out = *(AttributeD<Array<int>>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size);
+						for (auto i = 0; i < out.v.s; i++)
+							data_dtor(type_hash, &out.v.v[i]);
+						out.v.~Array();
+					}
 
-			//		}
-			//	};
-			//}
+					void update(BP* scene)
+					{
+						auto& out = *(AttributeD<Array<int>>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size);
+						if (out.frame == -1)
+						{
+							out.v.s = size;
+							auto m_size = type_size * size;
+							out.v.v = (int*)f_malloc(m_size);
+							memset(out.v.v, 0, m_size);
+						}
+						auto last_out_frame = out.frame;
+						for (auto i = 0; i < size; i++)
+						{
+							auto& v = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i);
+							if (v.frame > last_out_frame)
+							{
+								data_copy(type_hash, &v.v, (char*)out.v.v + type_size * i, type_size);
+								out.frame = scene->frame;
+							}
+						}
+					}
+				};
+				auto tag = TypeData;
+				auto type_name = parameters[1];
+				auto base_name = type_name;
+				if (type_name.back() == '*')
+				{
+					base_name.erase(base_name.end() - 1);
+					tag = TypePointer;
+				}
+				auto type_hash = H(base_name.c_str());
+				uint type_size = tag == TypeData ? data_size(type_hash) : sizeof(void*);
+				auto size = stoi(parameters[0]);
+				std::vector<Slot::Desc> inputs;
+				for (auto i = 0; i < size; i++)
+				{
+					inputs.push_back({
+						TypeInfo(tag, base_name, true), std::to_string(i),
+						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i, sizeof(AttributeBase) + type_size, ""
+					});
+				}
+				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size, inputs, {
+						{TypeInfo(TypeData, type_name, true, true), "out", 
+						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size, sizeof(AttributeBase) + type_size, ""}
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), n_d.id);
+				auto obj = n->object;
+				*(uint*)obj = type_hash;
+				*(uint*)((char*)obj + sizeof(uint)) = type_size;
+				*(uint*)((char*)obj + sizeof(uint) + sizeof(uint)) = size;
+			}
 			else
 				n = bp->add_node(n_d.type, n_d.id);
 			if (n)
@@ -1709,7 +1675,7 @@ namespace flame
 				{
 					auto input = n->find_input(d_d.name);
 					auto& type = input->type();
-					if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData))
+					if (!type.is_array && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData))
 						type.unserialize(bp->dbs, d_d.value, input->raw_data());
 				}
 			}
@@ -1808,7 +1774,7 @@ namespace flame
 				if (input->links[0])
 					continue;
 				auto& type = input->type;
-				if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData))
+				if (!type.is_array && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData))
 				{
 					auto value_str = type.serialize(bp->dbs, input->data(), 2);
 					if (value_str != input->default_value)

@@ -48,6 +48,7 @@ namespace flame
 
 		struct Descriptorlayout
 		{
+			FLAME_GRAPHICS_EXPORTS uint binding_count() const;
 			FLAME_GRAPHICS_EXPORTS const DescriptorBindingBase* get_binding(uint binding) const;
 			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 

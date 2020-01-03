@@ -168,8 +168,8 @@ namespace flame
 
 		AttributeP<void> canvas$o;
 
-		AttributeP<std::vector<void*>> font_atlases$i;
-		AttributeP<std::vector<void*>> content$i;
+		AttributeP<Array<void*>> font_atlases$i;
+		AttributeP<Array<void*>> content$i;
 
 		Vec4c clear_color;
 
@@ -196,6 +196,8 @@ namespace flame
 
 		uint set_image(int index, Imageview* v, Filter filter, Atlas* atlas)
 		{
+			if (imgs.empty())
+				return -1;
 			if (index == -1)
 			{
 				assert(v);
@@ -501,7 +503,8 @@ namespace flame
 
 				clear_color = Vec4c(0, 0, 0, 255);
 
-				imgs.resize(ds->layout()->get_binding(0)->count, std::make_tuple((Imageview*)white_iv$i.v, Vec2f(0.5f), nullptr));
+				auto ds_layout = ds->layout();
+				imgs.resize(ds_layout->binding_count() ? ds_layout->get_binding(0)->count : 0, std::make_tuple((Imageview*)white_iv$i.v, Vec2f(0.5f), nullptr));
 
 				auto c = new CanvasPrivate;
 				c->scene = scene;
@@ -509,7 +512,9 @@ namespace flame
 				canvas$o.v = c;
 				canvas$o.frame = scene->frame;
 
-				auto font_atlases = get_attribute_vec(font_atlases$i);
+				std::vector<void*> font_atlases(font_atlases$i.v ? font_atlases$i.v->s : 0);
+				for (auto i = 0; i < font_atlases.size(); i++)
+					font_atlases[i] = font_atlases$i.v->v[i];
 				for (auto f : font_atlases)
 					c->add_font((FontAtlas*)f);
 
@@ -533,25 +538,28 @@ namespace flame
 
 					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 
-					auto content = get_attribute_vec(content$i);
-					for (auto& _c : content)
+					if (content$i.v)
 					{
-						switch (((CmdBase*)_c)->type)
+						auto& content = *content$i.v;
+						for (auto i = 0; i < content.s; i++)
 						{
-						case CmdDrawRect:
-						{
-							auto c = (Rect*)_c;
-							std::vector<Vec2f> points;
-							path_rect(points, c->pos, c->size);
-							fill(points, c->color);
-						}
-						break;
-						case CmdDrawTextSdf:
-						{
-							auto c = (TextSdf*)_c;
-							add_text(c->font_atals, c->glyphs, sdf_font_size * c->scale, c->scale, c->pos, c->color);
-						}
-						break;
+							switch (((CmdBase*)content.v[i])->type)
+							{
+							case CmdDrawRect:
+							{
+								auto c = (Rect*)content.v[i];
+								std::vector<Vec2f> points;
+								path_rect(points, c->pos, c->size);
+								fill(points, c->color);
+							}
+							break;
+							case CmdDrawTextSdf:
+							{
+								auto c = (TextSdf*)content.v[i];
+								add_text(c->font_atals, c->glyphs, sdf_font_size * c->scale, c->scale, c->pos, c->color);
+							}
+							break;
+							}
 						}
 					}
 

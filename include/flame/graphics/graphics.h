@@ -175,7 +175,7 @@ namespace flame
 		{
 			TargetImage, // Image*
 			TargetImageview, // Imageview*
-			TargetImages, // std::vector<Image*>*
+			TargetImages, // Array<Image*>*
 
 			TargetTypeMax = 0xffffffff
 		};

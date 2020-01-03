@@ -148,6 +148,11 @@ namespace flame
 #endif
 		}
 
+		uint Descriptorlayout::binding_count() const
+		{
+			return ((DescriptorlayoutPrivate*)this)->bindings.size();
+		}
+
 		const DescriptorBindingBase* Descriptorlayout::get_binding(uint binding) const
 		{
 			return ((DescriptorlayoutPrivate*)this)->bindings[binding];
@@ -293,7 +298,7 @@ namespace flame
 
 		struct Descriptorlayout$
 		{
-			AttributeP<std::vector<void*>> bindings$i;
+			AttributeP<Array<void*>> bindings$i;
 			AttributeD<bool> create_default_set$i;
 
 			AttributeP<void> out$o;
@@ -313,7 +318,10 @@ namespace flame
 					auto d = Device::default_one();
 					if (d)
 					{
-						out$o.v = Descriptorlayout::create(d, get_attribute_vec(bindings$i), create_default_set$i.v ? d->dp : nullptr);
+						std::vector<void*> bindings(bindings$i.v ? bindings$i.v->s : 0);
+						for (auto i = 0; i < bindings.size(); i++)
+							bindings[i] = bindings$i.v->v[i];
+						out$o.v = Descriptorlayout::create(d, bindings, create_default_set$i.v ? d->dp : nullptr);
 						default_set$o.v = ((Descriptorlayout*)out$o.v)->default_set();
 					}
 					else
@@ -546,8 +554,8 @@ namespace flame
 		struct DescriptorWriter$
 		{
 			AttributeP<void> set$i;
-			AttributeP<std::vector<void*>> buffer_writes$i;
-			AttributeP<std::vector<void*>> image_writes$i;
+			AttributeP<Array<void*>> buffer_writes$i;
+			AttributeP<Array<void*>> image_writes$i;
 
 			AttributeP<void> set$o;
 
@@ -555,14 +563,18 @@ namespace flame
 			{
 				if (set$i.frame > set$o.frame || buffer_writes$i.frame > set$o.frame || image_writes$i.frame > set$o.frame)
 				{
-					auto buffer_writes = get_attribute_vec(buffer_writes$i);
+					std::vector<void*> buffer_writes(buffer_writes$i.v ? buffer_writes$i.v->s : 0);
+					for (auto i = 0; i < buffer_writes.size(); i++)
+						buffer_writes[i] = buffer_writes$i.v->v[i];
 					for (auto _w : buffer_writes)
 					{
 						auto w = (BufferDescriptorWrite$*)_w;
 						for (auto i = 0; i < w->count$i.v; i++)
 							((graphics::Descriptorset*)set$i.v)->set_buffer(w->binding$i.v, w->index$i.v + i, (graphics::Buffer*)w->buffer$i.v);
 					}
-					auto image_writes = get_attribute_vec(image_writes$i);
+					std::vector<void*> image_writes(image_writes$i.v ? image_writes$i.v->s : 0);
+					for (auto i = 0; i < image_writes.size(); i++)
+						image_writes[i] = image_writes$i.v->v[i];
 					if (!image_writes.empty())
 					{
 						auto sampler = Device::default_one()->sp_linear;
@@ -635,7 +647,7 @@ namespace flame
 
 		struct Pipelinelayout$
 		{
-			AttributeP<std::vector<void*>> descriptorlayouts$i;
+			AttributeP<Array<void*>> descriptorlayouts$i;
 			AttributeD<uint> push_constant_size$i;
 
 			AttributeP<void> out$o;
@@ -651,7 +663,9 @@ namespace flame
 					if (out$o.v)
 						Pipelinelayout::destroy((Pipelinelayout*)out$o.v);
 					auto d = Device::default_one();
-					auto descriptorlayouts = get_attribute_vec(descriptorlayouts$i);
+					std::vector<void*> descriptorlayouts(descriptorlayouts$i.v ? descriptorlayouts$i.v->s : 0);
+					for (auto i = 0; i < descriptorlayouts.size(); i++)
+						descriptorlayouts[i] = descriptorlayouts$i.v->v[i];
 					if (d)
 						out$o.v = Pipelinelayout::create(d, !descriptorlayouts.empty() ? descriptorlayouts : std::vector<void*>(), push_constant_size$i.v);
 					else
@@ -705,7 +719,7 @@ namespace flame
 
 		struct VertexInputBuffer$
 		{
-			AttributeP<std::vector<void*>> attributes$i;
+			AttributeP<Array<void*>> attributes$i;
 			AttributeE<VertexInputRate$> rate$i;
 
 			AttributeD<VertexInputBuffer> out$o;
@@ -720,7 +734,9 @@ namespace flame
 				auto last_out_frame = out$o.frame;
 				if (attributes$i.frame > last_out_frame)
 				{
-					out$o.v.attributes = get_attribute_vec(attributes$i);
+					out$o.v.attributes.resize(attributes$i.v ? attributes$i.v->s : 0);
+					for (auto i = 0; i < out$o.v.attributes.size(); i++)
+						out$o.v.attributes[i] = attributes$i.v->v[i];
 					out$o.frame = scene->frame;
 				}
 				if (rate$i.frame > last_out_frame)
@@ -737,7 +753,7 @@ namespace flame
 
 		struct VertexInputInfo$
 		{
-			AttributeP<std::vector<void*>> buffers$i;
+			AttributeP<Array<void*>> buffers$i;
 			AttributeE<PrimitiveTopology$> primitive_topology$i;
 			AttributeD<uint> patch_control_points$i;
 
@@ -753,7 +769,9 @@ namespace flame
 				auto last_out_frame = out$o.frame;
 				if (buffers$i.frame > last_out_frame)
 				{
-					out$o.v.buffers = get_attribute_vec(buffers$i);
+					out$o.v.buffers.resize(buffers$i.v ? buffers$i.v->s : 0);
+					for (auto i = 0; i < out$o.v.buffers.size(); i++)
+						out$o.v.buffers[i] = buffers$i.v->v[i];
 					out$o.frame = scene->frame;
 				}
 				if (primitive_topology$i.frame > last_out_frame)
@@ -1388,7 +1406,8 @@ namespace flame
 #endif
 		}
 
-		Pipeline* Pipeline::create(Device* d, const std::vector<std::wstring>& shader_filenames, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<uint>& dynamic_states)
+		Pipeline* Pipeline::create(Device* d, const std::vector<std::wstring>& shader_filenames, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, 
+			VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<uint>& dynamic_states)
 		{
 			std::vector<StageInfo> stage_infos;
 			auto has_vert_stage = false;
@@ -1445,7 +1464,7 @@ namespace flame
 
 		struct Pipeline$
 		{
-			AttributeP<std::vector<StringW>> shader_filenames$i;
+			AttributeP<Array<StringW>> shader_filenames$i;
 			AttributeP<void> pll$i;
 			AttributeP<void> renderpass$i;
 			AttributeD<uint> subpass_idx$i;
@@ -1454,7 +1473,7 @@ namespace flame
 			AttributeP<void> raster$i;
 			AttributeE<SampleCount$> sc$i;
 			AttributeP<void> depth$i;
-			AttributeP<std::vector<uint>> dynamic_states$i;
+			AttributeP<Array<uint>> dynamic_states$i;
 
 			AttributeP<void> out$o;
 
@@ -1470,13 +1489,17 @@ namespace flame
 					if (out$o.v)
 						Pipeline::destroy((Pipeline*)out$o.v);
 					auto d = Device::default_one();
-					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v&& shader_filenames$i.v && !shader_filenames$i.v->empty() && pll$i.v)
+					std::vector<std::wstring> shader_filenames(shader_filenames$i.v ? shader_filenames$i.v->s : 0);
+					auto bp_path = std::filesystem::path(scene->filename()).parent_path().wstring() + L"/";
+					for (auto i = 0; i < shader_filenames.size(); i++)
+						shader_filenames[i] = bp_path + shader_filenames$i.v->v[i].str();
+					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && !shader_filenames.empty() && pll$i.v)
 					{
-						std::vector<std::wstring> filenames;
-						for (auto& fn : *shader_filenames$i.v)
-							filenames.push_back(std::filesystem::path(scene->filename()).parent_path().wstring() + L"/" + fn.str());
-						out$o.v = Pipeline::create(d, filenames, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,
-							(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, dynamic_states$i.v ? *dynamic_states$i.v : std::vector<uint>());
+						std::vector<uint> dynamic_states(dynamic_states$i.v ? dynamic_states$i.v->s : 0);
+						for (auto i = 0; i < dynamic_states.size(); i++)
+							dynamic_states[i] = dynamic_states$i.v->v[i];
+						out$o.v = Pipeline::create(d, shader_filenames, (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,
+							(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, dynamic_states);
 					}
 					else
 						out$o.v = nullptr;

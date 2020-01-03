@@ -1025,10 +1025,10 @@ namespace flame
 			s_type->get_name(&pwname);
 			auto tag = TypeData;
 			auto name = format_name(pwname);
-			auto is_vector = false;
+			auto is_array = false;
 			auto is_attribute = false;
 
-			SAL(vector_str, "std::vector");
+			SAL(array_str, "Array");
 			SAL(attribute_str, "Attribute");
 
 			if (name.compare(0, attribute_str.l, attribute_str.s) == 0 && name.size() > attribute_str.l + 1)
@@ -1048,13 +1048,13 @@ namespace flame
 				name.erase(name.begin(), name.begin() + attribute_str.l + 2);
 				name.erase(name.end() - 1);
 			}
-			if (name.compare(0, vector_str.l, vector_str.s) == 0 && name.size() > vector_str.l + 1)
+			if (name.compare(0, array_str.l, array_str.s) == 0 && name.size() > array_str.l + 1)
 			{
-				is_vector = true;
-				name.erase(name.begin(), name.begin() + vector_str.l + 1);
+				is_array = true;
+				name.erase(name.begin(), name.begin() + array_str.l + 1);
 				name.erase(name.end() - 1);
 			}
-			return TypeInfo(tag, name, is_attribute, is_vector);
+			return TypeInfo(tag, name, is_attribute, is_array);
 		}
 			break;
 		case SymTagFunctionArgType:
@@ -1346,7 +1346,7 @@ namespace flame
 			while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
 			{
 				auto udt_type = symbol_to_typeinfo(_udt, "");
-				if (!udt_type.is_attribute && udt_type.is_vector == type.is_vector && udt_type.base_hash == type.base_hash)
+				if (!udt_type.is_attribute && udt_type.is_array == type.is_array && udt_type.base_hash == type.base_hash)
 				{
 					for (auto& f : functions)
 						f.second.rva = nullptr;
@@ -1510,7 +1510,7 @@ namespace flame
 							for (auto& i : u->variables)
 							{
 								auto type = i->type;
-								if (!type.is_vector && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData) &&
+								if (!type.is_array && (type.tag == TypeEnumSingle || type.tag == TypeEnumMulti || type.tag == TypeData) &&
 									i->decoration.find('o') == std::string::npos)
 									i->default_value = type.serialize(dbs, (char*)obj + i->offset, 1);
 							}
