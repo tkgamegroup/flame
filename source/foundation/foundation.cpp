@@ -16,13 +16,15 @@
 
 namespace flame
 {
-	void* f_malloc(unsigned int size)
+	void* f_malloc(uint size)
 	{
 		return malloc(size);
 	}
 
-	void* f_realloc(void* p, unsigned int size)
+	void* f_realloc(void* p, uint size)
 	{
+		if (!p)
+			return f_malloc(size);
 		return realloc(p, size);
 	}
 
@@ -31,43 +33,43 @@ namespace flame
 		free(p);
 	}
 
-	struct ListenerHub
+	struct ListenerHubImnplPrivate: ListenerHubImpl
 	{
 		std::vector<std::unique_ptr<Closure<void(void* c)>>> listeners;
 	};
 
-	void* listeners_init()
+	ListenerHubImpl* ListenerHubImpl::create()
 	{
-		return new ListenerHub;
+		return new ListenerHubImnplPrivate;
 	}
 
-	void listeners_deinit(void* hub)
+	void ListenerHubImpl::destroy(ListenerHubImpl* h)
 	{
-		delete(ListenerHub*)hub;
+		delete (ListenerHubImnplPrivate*)h;
 	}
 
-	uint listeners_count(void* hub)
+	uint ListenerHubImpl::count()
 	{
-		return ((ListenerHub*)hub)->listeners.size();
+		return ((ListenerHubImnplPrivate*)this)->listeners.size();
 	}
 
-	Closure<void(void*)>& listeners_listener(void* hub, uint idx)
+	Closure<void(void*)>& ListenerHubImpl::item(uint idx)
 	{
-		return *((ListenerHub*)hub)->listeners[idx].get();
+		return *((ListenerHubImnplPrivate*)this)->listeners[idx].get();
 	}
 
-	void* listeners_add_plain(void* hub, void(*pf)(void* c), const Mail<>& capture)
+	void* ListenerHubImpl::add_plain(void(*pf)(void* c), const Mail<>& capture)
 	{
 		auto c = new Closure<void(void* c)>;
 		c->function = pf;
 		c->capture = capture;
-		((ListenerHub*)hub)->listeners.emplace_back(c);
+		((ListenerHubImnplPrivate*)this)->listeners.emplace_back(c);
 		return c;
 	}
 
-	void listeners_remove_plain(void* hub, void* c)
+	void ListenerHubImpl::remove_plain(void* c)
 	{
-		auto& listeners = ((ListenerHub*)hub)->listeners;
+		auto& listeners = ((ListenerHubImnplPrivate*)this)->listeners;
 		for (auto it = listeners.begin(); it != listeners.end(); it++)
 		{
 			if (it->get() == c)
@@ -975,10 +977,10 @@ namespace flame
 			}
 			cursor_type = CursorArrow;
 
-			key_listeners.hub = listeners_init();
-			mouse_listeners.hub = listeners_init();
-			resize_listeners.hub = listeners_init();
-			destroy_listeners.hub = listeners_init();
+			key_listeners.impl = ListenerHubImpl::create();
+			mouse_listeners.impl = ListenerHubImpl::create();
+			resize_listeners.impl = ListenerHubImpl::create();
+			destroy_listeners.impl = ListenerHubImpl::create();
 
 			dead = false;
 		}
@@ -991,13 +993,12 @@ namespace flame
 
 		~WindowPrivate()
 		{
-			for (auto i = 0; i < listeners_count(destroy_listeners.hub); i++)
-				listeners_listener(destroy_listeners.hub, i).call();
+			destroy_listeners.call();
 
-			listeners_deinit(key_listeners.hub);
-			listeners_deinit(mouse_listeners.hub);
-			listeners_deinit(resize_listeners.hub);
-			listeners_deinit(destroy_listeners.hub);
+			ListenerHubImpl::destroy(key_listeners.impl);
+			ListenerHubImpl::destroy(mouse_listeners.impl);
+			ListenerHubImpl::destroy(resize_listeners.impl);
+			ListenerHubImpl::destroy(destroy_listeners.impl);
 		}
 
 #ifdef FLAME_WINDOWS
@@ -1137,94 +1138,42 @@ namespace flame
 			{
 				auto v = vk_code_to_key(wParam);
 				if (v > 0)
-				{
-					auto hub = w->key_listeners.hub;
-					for (auto i = 0; i < listeners_count(hub); i++)
-						listeners_listener(hub, i).call<void(void* c, KeyState action, int value)>(KeyStateDown, v);
-				}
+					w->key_listeners.call(KeyStateDown, v);
 			}
 			break;
 			case WM_KEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
 				if (v > 0)
-				{
-					auto hub = w->key_listeners.hub;
-					for (auto i = 0; i < listeners_count(hub); i++)
-						listeners_listener(hub, i).call<void(void* c, KeyState action, int value)>(KeyStateUp, v);
-				}
+					w->key_listeners.call(KeyStateUp, v);
 			}
 			break;
 			case WM_CHAR:
-			{
-				auto hub = w->key_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, int value)>(KeyStateNull, (Key)wParam);
-			}
+				w->key_listeners.call(KeyStateNull, (Key)wParam);
 				break;
 			case WM_LBUTTONDOWN:
-			{
-				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateDown, Mouse_Left, pos);
-			}
+				w->mouse_listeners.call(KeyStateDown, Mouse_Left, Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			break;
 			case WM_LBUTTONUP:
-			{
-				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateUp, Mouse_Left, pos);
-			}
+				w->mouse_listeners.call(KeyStateUp, Mouse_Left, Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			break;
 			case WM_MBUTTONDOWN:
-			{
-				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateDown, Mouse_Middle, pos);
-			}
+				w->mouse_listeners.call(KeyStateDown, Mouse_Middle, Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			break;
 			case WM_MBUTTONUP:
-			{
-				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateUp, Mouse_Middle, pos);
-			}
+				w->mouse_listeners.call(KeyStateUp, Mouse_Middle, Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			break;
 			case WM_RBUTTONDOWN:
-			{
-				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateDown, Mouse_Right, pos);
-			}
+				w->mouse_listeners.call(KeyStateDown, Mouse_Right, Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			break;
 			case WM_RBUTTONUP:
-			{
-				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateUp, Mouse_Right, pos);
-			}
+				w->mouse_listeners.call(KeyStateUp, Mouse_Right, Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			break;
 			case WM_MOUSEMOVE:
-			{
-				auto pos = Vec2i(LOWORD(lParam), HIWORD(lParam));
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateNull, Mouse_Null, pos);
-			}
+				w->mouse_listeners.call(KeyStateNull, Mouse_Null, Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			break;
 			case WM_MOUSEWHEEL:
-			{
-				auto v = Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0);
-				auto hub = w->mouse_listeners.hub;
-				for (auto i = 0; i < listeners_count(hub); i++)
-					listeners_listener(hub, i).call<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>(KeyStateNull, Mouse_Middle, v);
-			}
+				w->mouse_listeners.call(KeyStateNull, Mouse_Middle, Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0));
 			break;
 			case WM_DESTROY:
 				w->dead = true;
@@ -1235,9 +1184,7 @@ namespace flame
 				if (size != w->size)
 				{
 					w->size = size;
-					auto hub = w->resize_listeners.hub;
-					for (auto i = 0; i < listeners_count(hub); i++)
-						listeners_listener(hub, i).call<void(void* c, const Vec2u & size)>(size);
+					w->resize_listeners.call(size);
 				}
 			}
 			break;

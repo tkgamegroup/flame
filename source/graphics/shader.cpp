@@ -1411,7 +1411,7 @@ namespace flame
 		{
 			std::vector<StageInfo> stage_infos;
 			auto has_vert_stage = false;
-			auto tess_stages_count = 0;
+			auto tess_stage_count = 0;
 			for (auto& f : shader_filenames)
 			{
 				StageInfo info(f);
@@ -1429,11 +1429,11 @@ namespace flame
 				if (info.type == ShaderStageVert)
 					has_vert_stage = true;
 				if (info.type == ShaderStageTesc || info.type == ShaderStageTese)
-					tess_stages_count++;
+					tess_stage_count++;
 
 				stage_infos.push_back(std::move(info));
 			}
-			if (!has_vert_stage || (tess_stages_count != 0 && tess_stages_count != 2))
+			if (!has_vert_stage || (tess_stage_count != 0 && tess_stage_count != 2))
 				return nullptr;
 			std::sort(stage_infos.begin(), stage_infos.end(), [](const auto& a, const auto& b) {
 				return (int)a.type < (int)b.type;

@@ -1260,26 +1260,37 @@ namespace flame
 		}
 	};
 
-	FLAME_FOUNDATION_EXPORTS void* listeners_init();
-	FLAME_FOUNDATION_EXPORTS void listeners_deinit(void* hub);
-	FLAME_FOUNDATION_EXPORTS uint listeners_count(void* hub);
-	FLAME_FOUNDATION_EXPORTS Closure<void(void*)>& listeners_listener(void* hub, uint idx);
-	FLAME_FOUNDATION_EXPORTS void* listeners_add_plain(void* hub, void(*pf)(void* c), const Mail<>& capture);
-	FLAME_FOUNDATION_EXPORTS void listeners_remove_plain(void* hub, void* c);
+	struct ListenerHubImpl
+	{
+		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl *create();
+		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
+		FLAME_FOUNDATION_EXPORTS uint count();
+		FLAME_FOUNDATION_EXPORTS Closure<void(void*)>& item(uint idx);
+		FLAME_FOUNDATION_EXPORTS void* add_plain(void(*pf)(void* c), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void remove_plain(void* c);
+	};
 
 	template<class F>
-	struct Listeners
+	struct ListenerHub
 	{
-		void* hub;
+		ListenerHubImpl* impl;
 
 		void* add(F* pf, const Mail<>& capture)
 		{
-			return listeners_add_plain(hub, (void(*)(void* c))pf, capture);
+			return impl->add_plain((void(*)(void* c))pf, capture);
 		}
 
 		void remove(void* c)
 		{
-			listeners_remove_plain(hub, c);
+			impl->remove_plain(c);
+		}
+
+		template<class ...Args>
+		void call(Args... args)
+		{
+			auto count = impl->count();
+			for (auto i = 0; i < count; i++)
+				impl->item(i).call<F>(args...);
 		}
 	};
 
@@ -1409,10 +1420,10 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		Listeners<void(void* c, KeyState action, int value)>						key_listeners;
-		Listeners<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
-		Listeners<void(void* c, const Vec2u & size)>								resize_listeners;
-		Listeners<void(void* c)>													destroy_listeners;
+		ListenerHub<void(void* c, KeyState action, int value)>							key_listeners;
+		ListenerHub<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
+		ListenerHub<void(void* c, const Vec2u & size)>									resize_listeners;
+		ListenerHub<void(void* c)>														destroy_listeners;
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
