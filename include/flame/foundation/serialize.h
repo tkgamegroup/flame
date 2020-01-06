@@ -2,6 +2,9 @@
 
 #include <flame/foundation/foundation.h>
 
+#include <pugixml.hpp>
+#include <nlohmann/json.hpp>
+
 namespace flame
 {
 	inline std::string to_string(int v)
@@ -355,66 +358,6 @@ namespace flame
 		return std::stoul(s);
 	}
 
-	struct SerializableAttribute
-	{
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
-
-		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
-	};
-
-	struct SerializableNode
-	{
-		enum Type
-		{
-			Value,
-			Object,
-			Array,
-			Cdata,
-			Pcdata
-		};
-
-		FLAME_FOUNDATION_EXPORTS Type type() const;
-		FLAME_FOUNDATION_EXPORTS void set_type(Type type);
-
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& value() const;
-
-		FLAME_FOUNDATION_EXPORTS void set_name(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS void set_value(const std::string& value);
-
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* new_attr(const std::string& name, const std::string& value);
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* insert_attr(int idx, const std::string& name, const std::string& value);
-		FLAME_FOUNDATION_EXPORTS void remove_attr(int idx);
-		FLAME_FOUNDATION_EXPORTS void remove_attr(SerializableAttribute* a);
-		FLAME_FOUNDATION_EXPORTS void clear_attrs();
-		FLAME_FOUNDATION_EXPORTS uint attr_count() const;
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* attr(int idx) const;
-		FLAME_FOUNDATION_EXPORTS SerializableAttribute* find_attr(const std::string& name) const;
-
-		FLAME_FOUNDATION_EXPORTS void add_node(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS SerializableNode* new_node(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS SerializableNode* insert_node(int idx, const std::string& name);
-		FLAME_FOUNDATION_EXPORTS void remove_node(int idx);
-		FLAME_FOUNDATION_EXPORTS void remove_node(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS void clear_nodes();
-		FLAME_FOUNDATION_EXPORTS uint node_count() const;
-		FLAME_FOUNDATION_EXPORTS SerializableNode* node(int idx) const;
-		FLAME_FOUNDATION_EXPORTS SerializableNode* find_node(const std::string& name) const;
-
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create(const std::string& name);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_string(const std::string& str);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_string(const std::string& str);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_xml_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static SerializableNode* create_from_json_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static StringA to_xml_string(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS static StringA to_json_string(SerializableNode* n);
-		FLAME_FOUNDATION_EXPORTS static void save_to_xml_file(SerializableNode* n, const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void save_to_json_file(SerializableNode* n, const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void destroy(SerializableNode* n);
-	};
-
 	enum TypeTag$
 	{
 		TypeEnumSingle,
@@ -485,60 +428,31 @@ namespace flame
 
 	struct TypeInfo
 	{
-		TypeTag$ tag;
-		bool is_attribute;
-		bool is_array;
-		std::string base_name;
-		std::string name; // tag[A][V]#base, order matters
-		uint base_hash;
-		uint hash;
+		FLAME_FOUNDATION_EXPORTS TypeTag$ tag() const;
+		FLAME_FOUNDATION_EXPORTS bool is_attribute() const;
+		FLAME_FOUNDATION_EXPORTS bool is_array() const;
+		FLAME_FOUNDATION_EXPORTS const char* base_name() const;
+		FLAME_FOUNDATION_EXPORTS const char* name() const; // tag[A][V]#base, order matters
+		FLAME_FOUNDATION_EXPORTS uint base_hash() const;
+		FLAME_FOUNDATION_EXPORTS uint hash() const;
 
-		TypeInfo() :
-			tag(TypeData),
-			is_attribute(false),
-			is_array(false),
-			base_hash(0),
-			hash(0)
+		inline static uint get_hash(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_array = false)
 		{
-		}
-
-		TypeInfo(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_array = false) :
-			tag(tag),
-			base_name(base_name),
-			base_hash(H(base_name.c_str())),
-			is_attribute(is_attribute),
-			is_array(is_array)
-		{
+			std::string name;
 			name = type_tag(tag);
 			if (is_attribute)
 				name += "A";
 			if (is_array)
 				name += "V";
 			name += "#" + base_name;
-			hash = H(name.c_str());
+			return H(name.c_str());
 		}
 
-		static TypeInfo from_str(const std::string& str)
-		{
-			auto sp = ssplit(str, '#');
-			auto tag = -1;
-			while (type_tag((TypeTag$)++tag) != sp[0][0]);
-			auto is_attribute = false;
-			auto is_array = false;
-			for (auto i = 1; i < sp[0].size(); i++)
-			{
-				if (sp[0][i] == 'A')
-					is_attribute = true;
-				else if (sp[0][i] == 'V')
-					is_array = true;
-			}
-			return TypeInfo((TypeTag$)tag, sp[1], is_attribute, is_array);
-		}
+		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(TypeTag$ tag, const char* base_name, bool is_attribute = false, bool is_array = false);
+		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(const char* str);
 
 		inline std::string serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
-		inline void serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision, SerializableNode* dst) const;
 		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const;
-		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst) const;
 		inline void copy_from(const void* src, void* dst) const;
 	};
 
@@ -623,25 +537,20 @@ namespace flame
 		}
 	}
 
-	inline bool operator==(const TypeInfo& lhs, const TypeInfo& rhs)
-	{
-		return lhs.hash == rhs.hash;
-	}
-
 	struct VariableInfo
 	{
-		FLAME_FOUNDATION_EXPORTS const TypeInfo& type() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
 		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& decoration() const;
+		FLAME_FOUNDATION_EXPORTS const char* decoration() const;
 		FLAME_FOUNDATION_EXPORTS uint offset() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;
-		FLAME_FOUNDATION_EXPORTS const std::string& default_value() const;
+		FLAME_FOUNDATION_EXPORTS const char* default_value() const;
 	};
 
 	struct EnumItem
 	{
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
 		FLAME_FOUNDATION_EXPORTS int value() const;
 	};
 
@@ -649,28 +558,26 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint item_count() const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* item(int idx) const;
-		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(const std::string& name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(const char* name, int *out_idx = nullptr) const;
 		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(int value, int* out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS EnumItem* add_item(const std::string& name, int value);
+		FLAME_FOUNDATION_EXPORTS EnumItem* add_item(const char* name, int value);
 	};
 
 	struct FunctionInfo
 	{
 		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 
-		FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+		FLAME_FOUNDATION_EXPORTS const char* name() const;
 		FLAME_FOUNDATION_EXPORTS void* rva() const;
-		FLAME_FOUNDATION_EXPORTS const TypeInfo& return_type() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
 
 		FLAME_FOUNDATION_EXPORTS uint parameter_count() const;
-		FLAME_FOUNDATION_EXPORTS const TypeInfo& parameter_type(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS void add_parameter(const TypeInfo& type);
-
-		FLAME_FOUNDATION_EXPORTS const std::string& code_pos() const; // source_file_name#line_begin:line_end
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS void add_parameter(const TypeInfo* type);
 
 	};
 
@@ -678,18 +585,18 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 
-		FLAME_FOUNDATION_EXPORTS const TypeInfo& type() const;
+		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;
 
 		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* variable(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* find_variable(const std::string& name, int *out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* add_variable(const TypeInfo& type, const std::string& name, const std::string& decoration, uint offset, uint size);
+		FLAME_FOUNDATION_EXPORTS VariableInfo* find_variable(const char* name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS VariableInfo* add_variable(const TypeInfo* type, const char* name, const char* decoration, uint offset, uint size);
 
 		FLAME_FOUNDATION_EXPORTS uint function_count() const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const std::string& name, int *out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, const TypeInfo& return_type, const std::string& code_pos);
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const char* name, int *out_idx = nullptr) const;
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const char* name, void* rva, const TypeInfo* return_type);
 	};
 
 	/*
@@ -710,28 +617,27 @@ namespace flame
 		currently, the following attributes are used by typeinfogen, others are free to use:
 			'm' for enum variable, means it can hold combination of the enum
 			'c' for function, means to collect the code of the function
-			'f' for std::[w]string variable, means this is a filename
 	*/
 
 	struct TypeinfoDatabase
 	{
-		FLAME_FOUNDATION_EXPORTS const std::wstring& module_name() const;
+		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
 
 		FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
 		FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
-		FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const std::string& name);
+		FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const char* name);
 
 		FLAME_FOUNDATION_EXPORTS Array<FunctionInfo*> get_functions();
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(uint name_hash);
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const std::string& name, void* rva, const TypeInfo& return_type, const std::string& code_pos);
+		FLAME_FOUNDATION_EXPORTS FunctionInfo* add_function(const char* name, void* rva, const TypeInfo* return_type);
 
 		FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
 		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
-		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const TypeInfo& type, uint size);
+		FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const TypeInfo* type, uint size);
 
-		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* collect(const std::vector<TypeinfoDatabase*>& existed_dbs, const std::wstring& module_filename, const std::wstring& pdb_filename = L"");
-		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& typeinfo_filename);
-		FLAME_FOUNDATION_EXPORTS static void save(const std::vector<TypeinfoDatabase*>& dbs, TypeinfoDatabase* db);
+		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* collect(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, const wchar_t* module_filename, const wchar_t* pdb_filename = nullptr);
+		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, const wchar_t* typeinfo_filename);
+		FLAME_FOUNDATION_EXPORTS static void save(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, TypeinfoDatabase* db);
 		FLAME_FOUNDATION_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};
 
@@ -770,21 +676,21 @@ namespace flame
 
 	std::string TypeInfo::serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const
 	{
-		if (is_attribute)
+		if (is_attribute())
 			src = (char*)src + sizeof(AttributeBase);
 
-		switch (tag)
+		switch (tag())
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(dbs, base_hash);
+			auto e = find_enum(dbs, base_hash());
 			assert(e);
 			return e->find_item(*(int*)src)->name();
 		}
 		case TypeEnumMulti:
 		{
 			std::string str;
-			auto e = find_enum(dbs, base_hash);
+			auto e = find_enum(dbs, base_hash());
 			assert(e);
 			auto v = *(int*)src;
 			for (auto i = 0; i < e->item_count(); i++)
@@ -800,7 +706,7 @@ namespace flame
 			return str;
 		}
 		case TypeData:
-			switch (base_hash)
+			switch (base_hash())
 			{
 			case cH("bool"):
 				return *(bool*)src ? "1" : "0";
@@ -860,43 +766,33 @@ namespace flame
 		}
 	}
 
-	void TypeInfo::serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision, SerializableNode* dst) const
-	{
-		if (is_array)
-		{
-
-		}
-		else
-			dst->new_attr("v", serialize(dbs, src, precision));
-	}
-
 	void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const
 	{
-		if (is_attribute)
+		if (is_attribute())
 			dst = (char*)dst + sizeof(AttributeBase);
 
-		switch (tag)
+		switch (tag())
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(dbs, base_hash);
+			auto e = find_enum(dbs, base_hash());
 			assert(e);
-			e->find_item(src, (int*)dst);
+			e->find_item(src.c_str(), (int*)dst);
 		}
 			return;
 		case TypeEnumMulti:
 		{
 			auto v = 0;
-			auto e = find_enum(dbs, base_hash);
+			auto e = find_enum(dbs, base_hash());
 			assert(e);
 			auto sp = ssplit(src, ';');
 			for (auto& t : sp)
-				v |= e->find_item(t)->value();
+				v |= e->find_item(t.c_str())->value();
 			*(int*)dst = v;
 		}
 			return;
 		case TypeData:
-			switch (base_hash)
+			switch (base_hash())
 			{
 			case cH("bool"):
 				*(bool*)dst = (src != "0");
@@ -977,30 +873,16 @@ namespace flame
 		}
 	}
 
-	inline void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const SerializableNode* src, void* dst) const
-	{
-		if (is_array)
-		{
-			if (is_attribute)
-				dst = (char*)dst + sizeof(AttributeBase);
-
-			auto size = std::stoi(src->find_attr("s")->value());
-
-		}
-		else
-			unserialize(dbs, src->find_attr("v")->value(), dst);
-	}
-
 	void TypeInfo::copy_from(const void* src, void* dst) const
 	{
-		if (is_attribute)
+		if (is_attribute())
 			dst = (char*)dst + sizeof(AttributeBase);
 
-		if (tag == TypeData)
-			data_copy(base_hash, src, dst);
-		else if (tag == TypeEnumSingle || tag == TypeEnumMulti)
+		if (tag() == TypeData)
+			data_copy(base_hash(), src, dst);
+		else if (tag() == TypeEnumSingle || tag() == TypeEnumMulti)
 			memcpy(dst, src, sizeof(int));
-		else if (tag == TypePointer)
+		else if (tag() == TypePointer)
 			memcpy(dst, src, sizeof(void*));
 	}
 }

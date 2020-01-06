@@ -107,9 +107,9 @@ namespace flame
 		return StringW(std::filesystem::path(buf).parent_path().wstring());
 	}
 
-	void set_curr_path(const std::wstring& p)
+	void set_curr_path(const wchar_t* p)
 	{
-		SetCurrentDirectoryW(p.c_str());
+		SetCurrentDirectoryW(p);
 	}
 
 	void com_init()
@@ -170,9 +170,9 @@ namespace flame
 		}
 	}
 
-	bool is_file_occupied(const std::wstring& filename)
+	bool is_file_occupied(const wchar_t* filename)
 	{
-		auto file = CreateFileW(filename.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		auto file = CreateFileW(filename, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 		if (GetLastError() == 0)
 		{
 			CloseHandle(file);
@@ -181,21 +181,21 @@ namespace flame
 		return true;
 	}
 
-	void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show)
+	void exec(const wchar_t* filename, const wchar_t* parameters, bool wait, bool show)
 	{
 		SHELLEXECUTEINFOW info = {};
 		info.cbSize = sizeof(SHELLEXECUTEINFOW);
 		info.fMask = SEE_MASK_NOCLOSEPROCESS;
 		info.lpVerb = L"open";
-		info.lpFile = filename.c_str();
+		info.lpFile = filename;
 		info.nShow = show ? SW_SHOW : SW_HIDE;
-		info.lpParameters = parameters.c_str();
+		info.lpParameters = parameters;
 		ShellExecuteExW(&info);
 		if (wait)
 			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	StringA exec_and_get_output(const std::wstring& filename, const std::wstring& parameters)
+	StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters)
 	{
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
@@ -215,7 +215,7 @@ namespace flame
 		start_info.hStdOutput = hChildStd_OUT_Wr;
 		start_info.dwFlags |= STARTF_USESTDHANDLES;
 		PROCESS_INFORMATION proc_info = {};
-		if (!CreateProcessW(filename[0] == 0 ? nullptr : filename.c_str(), (wchar_t*)parameters.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
+		if (!CreateProcessW(filename, parameters, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
 		{
 			auto e = GetLastError();
 			assert(0);
@@ -234,14 +234,14 @@ namespace flame
 		return output;
 	}
 
-	void exec_and_redirect_to_std_output(const std::wstring& filename, const std::wstring& parameters)
+	void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters)
 	{
 		STARTUPINFOW start_info = {};
 		start_info.cb = sizeof(STARTUPINFOW);
 		start_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 		start_info.dwFlags |= STARTF_USESTDHANDLES;
 		PROCESS_INFORMATION proc_info = {};
-		if (!CreateProcessW(filename[0] == 0 ? nullptr : filename.c_str(), (wchar_t*)parameters.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
+		if (!CreateProcessW(filename, parameters, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
 		{
 			auto e = GetLastError();
 			assert(0);
@@ -254,19 +254,26 @@ namespace flame
 	}
 
 
-	StringA compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out)
+	StringA compile_to_dll(uint source_count, const wchar_t* const* sources, uint library_count, const wchar_t* const* libraries, const wchar_t* out)
 	{
 		auto cl = wsfmt(L"\"%s/VC/Auxiliary/Build/vcvars64.bat\" & cl ", s2w(VS_LOCATION));
 
-		for (auto& s : sources)
-			cl += s + L" ";
+		for (auto i = 0; i < source_count; i++)
+		{
+			cl += sources[i];
+			cl += L" ";
+		}
 		cl += L"-LD -MD -EHsc -Zi -std:c++17 -I ../include -link -DEBUG ";
-		for (auto& l : libraries)
-			cl += l + L" ";
+		for (auto i = 0; i < library_count; i++)
+		{
+			cl += libraries[i];
+			cl += L" ";
+		}
 
-		cl += L" -out:" + out;
+		cl += L" -out:";
+		cl += out;
 
-		return exec_and_get_output(L"", cl);
+		return exec_and_get_output(nullptr, cl.data());
 	}
 
 	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
@@ -299,7 +306,7 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	Array<StringA> get_module_dependancies(const std::wstring& module_name)
+	Array<StringA> get_module_dependancies(const wchar_t* module_name)
 	{
 		PLOADED_IMAGE image = ImageLoad(w2s(module_name).c_str(), std::filesystem::path(module_name).parent_path().string().c_str());
 
@@ -338,9 +345,9 @@ namespace flame
 		return StringW(buf);
 	}
 
-	void* load_module(const std::wstring& module_name)
+	void* load_module(const wchar_t* module_name)
 	{
-		return LoadLibraryW(module_name.c_str());
+		return LoadLibraryW(module_name);
 	}
 
 	void* get_module_func(void* module, const char* name)
@@ -365,11 +372,11 @@ namespace flame
 		return output;
 	}
 
-	void set_clipboard(const std::wstring& s)
+	void set_clipboard(const wchar_t* s)
 	{
-		auto size = sizeof(wchar_t) * (s.size() + 1);
+		auto size = sizeof(wchar_t) * (lstrlenW(s) + 1);
 		auto hGlobalMemory = GlobalAlloc(GHND, size);
-		memcpy(GlobalLock(hGlobalMemory), s.data(), size);
+		memcpy(GlobalLock(hGlobalMemory), s, size);
 		GlobalUnlock(hGlobalMemory);
 		OpenClipboard(NULL);
 		EmptyClipboard();
@@ -377,9 +384,9 @@ namespace flame
 		CloseClipboard();
 	}
 
-	void open_explorer_and_select(const std::wstring& filename)
+	void open_explorer_and_select(const wchar_t* filename)
 	{
-		auto pidl = ILCreateFromPathW(filename.c_str());
+		auto pidl = ILCreateFromPathW(filename);
 		if (pidl)
 		{
 			SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
@@ -387,7 +394,7 @@ namespace flame
 		}
 	}
 
-	void move_to_trashbin(const std::wstring& filename)
+	void move_to_trashbin(const wchar_t* filename)
 	{
 		SHFILEOPSTRUCTW sh_op;
 		sh_op.hwnd = 0;
@@ -403,7 +410,7 @@ namespace flame
 		auto result = SHFileOperationW(&sh_op);
 	}
 
-	void get_thumbnail(uint width, const std::wstring& _filename, uint* out_width, uint* out_height, char** out_data)
+	void get_thumbnail(uint width, const wchar_t* _filename, uint* out_width, uint* out_height, char** out_data)
 	{
 		std::filesystem::path path(_filename);
 		path.make_preferred();
@@ -730,7 +737,7 @@ namespace flame
 		}
 	}
 
-	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture)
+	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture)
 	{
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
@@ -811,7 +818,7 @@ namespace flame
 			destroy_event(event_end);
 	}
 
-	void* add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes, bool sync)
+	void* add_file_watcher(const wchar_t* path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture, bool all_changes, bool sync)
 	{
 		if (!sync)
 		{
@@ -1087,12 +1094,12 @@ namespace flame
 #endif
 	}
 
-	const std::string& Window::title()
+	const char* Window::title()
 	{
-		return ((WindowPrivate*)this)->title;
+		return ((WindowPrivate*)this)->title.c_str();
 	}
 
-	const void Window::set_title(std::string& _title)
+	const void Window::set_title(const char* _title)
 	{
 		((WindowPrivate*)this)->title = _title;
 	}
@@ -1197,7 +1204,7 @@ namespace flame
 
 	static std::vector<WindowPrivate*> windows;
 
-	Window* Window::create(const std::string& _title, const Vec2u& _size, uint _style)
+	Window* Window::create(const char* title, const Vec2u& size, uint style)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -1229,7 +1236,7 @@ namespace flame
 			initialized = true;
 		}
 
-		auto w = new WindowPrivate(_title, _size, _style);
+		auto w = new WindowPrivate(title, size, style);
 		windows.push_back(w);
 		return w;
 	}

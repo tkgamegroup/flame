@@ -13,7 +13,6 @@ namespace flame
 		- Address: [package_id].[node_id].[varible_name]
 	*/
 
-	struct SerializableNode;
 	struct VariableInfo;
 	struct UdtInfo;
 	struct TypeinfoDatabase;
@@ -24,7 +23,7 @@ namespace flame
 
 		struct Module
 		{
-			FLAME_FOUNDATION_EXPORTS const std::wstring& filename() const;
+			FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
 			FLAME_FOUNDATION_EXPORTS void* module() const;
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 			Vec2f pos;
@@ -36,8 +35,8 @@ namespace flame
 		struct Package
 		{
 			FLAME_FOUNDATION_EXPORTS BP* scene() const;
-			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
-			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
+			FLAME_FOUNDATION_EXPORTS const char* id() const;
+			FLAME_FOUNDATION_EXPORTS void set_id(const char* id);
 			Vec2f pos;
 
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
@@ -54,22 +53,13 @@ namespace flame
 				Out
 			};
 
-			struct Desc
-			{
-				TypeInfo type;
-				std::string name;
-				uint offset;
-				uint size;
-				std::string default_value;
-			};
-
 			FLAME_FOUNDATION_EXPORTS Node* node() const;
 			FLAME_FOUNDATION_EXPORTS IO io() const;
-			FLAME_FOUNDATION_EXPORTS const TypeInfo& type() const;
-			FLAME_FOUNDATION_EXPORTS const std::string& name() const;
+			FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
+			FLAME_FOUNDATION_EXPORTS const char* name() const;
 			FLAME_FOUNDATION_EXPORTS uint offset() const;
 			FLAME_FOUNDATION_EXPORTS uint size() const;
-			FLAME_FOUNDATION_EXPORTS const std::string& default_value() const;
+			FLAME_FOUNDATION_EXPORTS const char* default_value() const;
 
 			FLAME_FOUNDATION_EXPORTS int frame() const;
 			FLAME_FOUNDATION_EXPORTS void set_frame(int frame);
@@ -104,8 +94,8 @@ namespace flame
 		struct Node
 		{
 			FLAME_FOUNDATION_EXPORTS BP* scene() const;
-			FLAME_FOUNDATION_EXPORTS const std::string& id() const;
-			FLAME_FOUNDATION_EXPORTS void set_id(const std::string& id);
+			FLAME_FOUNDATION_EXPORTS const char* id() const;
+			FLAME_FOUNDATION_EXPORTS void set_id(const char* id);
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
 			FLAME_FOUNDATION_EXPORTS bool initiative() const;
 			FLAME_FOUNDATION_EXPORTS void set_initiative(bool v);
@@ -116,8 +106,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS uint output_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* output(uint idx) const;
 
-			FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& name) const;
-			FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& name) const;
+			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
+			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
 
 			bool external;
 			void* user_data;
@@ -126,33 +116,33 @@ namespace flame
 		uint frame;
 		float time;
 
-		FLAME_FOUNDATION_EXPORTS const std::wstring filename() const;
+		FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
 
 		FLAME_FOUNDATION_EXPORTS Package* package() const;
 
 		FLAME_FOUNDATION_EXPORTS uint module_count() const;
 		FLAME_FOUNDATION_EXPORTS Module* module(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Module* self_module() const;
-		FLAME_FOUNDATION_EXPORTS Module* add_module(const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS Module* add_module(const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS void remove_module(Module* m);
-		FLAME_FOUNDATION_EXPORTS Module* find_module(const std::wstring& filename) const;
+		FLAME_FOUNDATION_EXPORTS Module* find_module(const wchar_t* filename) const;
 
 		FLAME_FOUNDATION_EXPORTS uint package_count() const;
 		FLAME_FOUNDATION_EXPORTS Package* package(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Package* add_package(const std::wstring& filename, const std::string& id);
+		FLAME_FOUNDATION_EXPORTS Package* add_package(const wchar_t* filename, const char* id);
 		FLAME_FOUNDATION_EXPORTS void remove_package(Package* e);
-		FLAME_FOUNDATION_EXPORTS Package* find_package(const std::string& id) const;
+		FLAME_FOUNDATION_EXPORTS Package* find_package(const char* id) const;
 
-		FLAME_FOUNDATION_EXPORTS const std::vector<TypeinfoDatabase*> dbs() const;
+		FLAME_FOUNDATION_EXPORTS uint db_count() const;
+		FLAME_FOUNDATION_EXPORTS const TypeinfoDatabase* const* dbs() const;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Node* add_node(const std::string& type, const std::string& id);
-		FLAME_FOUNDATION_EXPORTS Node* add_node(uint size, const std::vector<Slot::Desc>& inputs, const std::vector<Slot::Desc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& id);
+		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* type, const char* id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
-		FLAME_FOUNDATION_EXPORTS Node* find_node(const std::string& address) const;
-		FLAME_FOUNDATION_EXPORTS Slot* find_input(const std::string& address) const;
-		FLAME_FOUNDATION_EXPORTS Slot* find_output(const std::string& address) const;
+		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* address) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address) const;
 		
 		FLAME_FOUNDATION_EXPORTS uint input_export_count() const;
 		FLAME_FOUNDATION_EXPORTS Slot* input_export(uint idx) const;
@@ -171,8 +161,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS static BP* create();
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const std::wstring& filename, bool no_compile = false, BP* root = nullptr);
-		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename, bool no_compile = false, BP* root = nullptr);
+		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
 }

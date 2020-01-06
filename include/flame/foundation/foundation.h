@@ -1312,7 +1312,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
 	FLAME_FOUNDATION_EXPORTS StringW get_app_path();
-	FLAME_FOUNDATION_EXPORTS void set_curr_path(const std::wstring& p);
+	FLAME_FOUNDATION_EXPORTS void set_curr_path(const wchar_t* p);
 	FLAME_FOUNDATION_EXPORTS void com_init();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever
@@ -1322,25 +1322,25 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
-	FLAME_FOUNDATION_EXPORTS bool is_file_occupied(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void exec(const std::wstring& filename, const std::wstring& parameters, bool wait, bool show = false);
-	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const std::wstring& filename, const std::wstring& parameters);
-	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const std::wstring& filename, const std::wstring& parameters);
-	FLAME_FOUNDATION_EXPORTS StringA compile_to_dll(const std::vector<std::wstring>& sources, const std::vector<std::wstring>& libraries, const std::wstring& out);
+	FLAME_FOUNDATION_EXPORTS bool is_file_occupied(const wchar_t* filename);
+	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
+	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
+	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters);
+	FLAME_FOUNDATION_EXPORTS StringA compile_to_dll(uint source_count, const wchar_t* const* sources, uint library_count, const wchar_t* const* libraries, const wchar_t* out);
 
-	FLAME_FOUNDATION_EXPORTS Array<StringA> get_module_dependancies(const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS Array<StringA> get_module_dependancies(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void* get_module_from_address(void* addr);
 	FLAME_FOUNDATION_EXPORTS StringW get_module_name(void* module);
-	FLAME_FOUNDATION_EXPORTS void* load_module(const std::wstring& module_name);
+	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);
 	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
 
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
-	FLAME_FOUNDATION_EXPORTS void set_clipboard(const std::wstring& s);
+	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 
-	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const std::wstring& filename);
-	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const std::wstring& filename, uint* out_width, uint* out_height, char** out_data);
+	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const wchar_t* filename);
+	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const wchar_t* filename);
+	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
 
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
@@ -1356,7 +1356,7 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const std::wstring& path, void (*callback)(void* c, FileChangeType type, const std::wstring& filename), const Mail<>& capture, bool all_changes = true, bool sync = true);
+	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture, bool all_changes = true, bool sync = true);
 	// set_event to returned ev to end the file watching
 
 	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(void* c), const Mail<>& capture);
@@ -1409,14 +1409,14 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void* get_native();
 
-		FLAME_FOUNDATION_EXPORTS const std::string& title();
-		FLAME_FOUNDATION_EXPORTS const void set_title(std::string& _title);
+		FLAME_FOUNDATION_EXPORTS const char* title();
+		FLAME_FOUNDATION_EXPORTS const void set_title(const char* title);
 
 #ifdef FLAME_WINDOWS
 		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
 
 		FLAME_FOUNDATION_EXPORTS void set_pos(const Vec2i& pos);
-		FLAME_FOUNDATION_EXPORTS void set_size(const Vec2i& _pos, const Vec2u& _size, int _style);
+		FLAME_FOUNDATION_EXPORTS void set_size(const Vec2i& pos, const Vec2u& size, int style);
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
@@ -1427,7 +1427,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
-		FLAME_FOUNDATION_EXPORTS static Window* create(const std::string& _title, const Vec2u& _size, uint _style);
+		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const Vec2u& size, uint style);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Window* s);
 	};
 

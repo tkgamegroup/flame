@@ -19,9 +19,9 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void copy_to(Bitmap* b, const Vec2u& src_off, const Vec2u& cpy_size, const Vec2u& dst_off, bool border = false);
 
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const Vec2u& size, uint channel, uint bpp, uchar* data = nullptr, bool move = false);
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_file(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_gif(const std::wstring& filename);
-		FLAME_FOUNDATION_EXPORTS static void save_to_file(Bitmap* b, const std::wstring& filename);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_file(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_gif(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static void save_to_file(Bitmap* b, const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(Bitmap* b);
 	};
 
@@ -63,5 +63,5 @@ namespace flame
 		}
 	};
 
-	FLAME_FOUNDATION_EXPORTS void pack_atlas(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border);
+	FLAME_FOUNDATION_EXPORTS void pack_atlas(uint input_count, const wchar_t* const *inputs, const wchar_t* output, bool border);
 }

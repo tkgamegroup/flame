@@ -104,9 +104,9 @@ namespace flame
 		return b;
 	}
 
-	Bitmap* Bitmap::create_from_file(const std::wstring& filename)
+	Bitmap* Bitmap::create_from_file(const wchar_t* filename)
 	{
-		auto file = _wfopen(filename.c_str(), L"rb");
+		auto file = _wfopen(filename, L"rb");
 		if (!file)
 			return nullptr;
 
@@ -120,7 +120,7 @@ namespace flame
 		return b;
 	}
 
-	Bitmap* Bitmap::create_from_gif(const std::wstring& filename)
+	Bitmap* Bitmap::create_from_gif(const wchar_t* filename)
 	{
 		auto file = get_file_content(filename);
 
@@ -131,7 +131,7 @@ namespace flame
 		return nullptr;
 	}
 
-	void Bitmap::save_to_file(Bitmap* b, const std::wstring& filename)
+	void Bitmap::save_to_file(Bitmap* b, const wchar_t* filename)
 	{
 		auto ext = std::filesystem::path(filename).extension();
 
@@ -147,7 +147,7 @@ namespace flame
 		delete b;
 	}
 
-	void pack_atlas(const std::vector<std::wstring>& inputs, const std::wstring& output, bool border)
+	void pack_atlas(uint input_count, const wchar_t* const* inputs, const wchar_t* output, bool border)
 	{
 		struct Region
 		{
@@ -157,10 +157,10 @@ namespace flame
 		};
 		std::vector<Region> regions;
 		auto output_dir = std::filesystem::path(output).parent_path();
-		for (auto& i : inputs)
+		for (auto i = 0; i < input_count; i++)
 		{
 			Region r;
-			r.filename = std::filesystem::path(i).lexically_relative(output_dir).make_preferred().string();
+			r.filename = std::filesystem::path(inputs[i]).lexically_relative(output_dir).make_preferred().string();
 			r.pos = Vec2i(-1);
 			regions.push_back(r);
 		}
@@ -186,7 +186,7 @@ namespace flame
 		}
 
 		Bitmap::save_to_file(b, output);
-		std::ofstream atlas_file(output + L".atlas");
+		std::ofstream atlas_file(output + std::wstring(L".atlas"));
 		atlas_file << (border ? "1" : "0");
 		for (auto& r : regions)
 		{

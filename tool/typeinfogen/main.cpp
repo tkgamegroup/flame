@@ -38,10 +38,10 @@ int main(int argc, char **args)
 
 		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& d : modules)
-			dbs.push_back(TypeinfoDatabase::load(dbs, std::filesystem::path(d).replace_extension(L".typeinfo")));
+			dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), std::filesystem::path(d).replace_extension(L".typeinfo").c_str()));
 
-		auto db = TypeinfoDatabase::collect(dbs, filename, pdb_filename);
-		TypeinfoDatabase::save(dbs, db);
+		auto db = TypeinfoDatabase::collect(dbs.size(), dbs.data(), filename.c_str(), !pdb_filename.empty() ? pdb_filename.c_str() : nullptr);
+		TypeinfoDatabase::save(dbs.size(), dbs.data(), db);
 
 		printf(" - done\n");
 	}
