@@ -20,37 +20,31 @@ namespace flame
 		dragging = false;
 		state = EventReceiverNormal;
 
-		key_listeners.hub = listeners_init();
-		mouse_listeners.hub = listeners_init();
-		drag_and_drop_listeners.hub = listeners_init();
+		key_listeners.impl = ListenerHubImpl::create();
+		mouse_listeners.impl = ListenerHubImpl::create();
+		drag_and_drop_listeners.impl = ListenerHubImpl::create();
 	}
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
-		listeners_deinit(key_listeners.hub);
-		listeners_deinit(mouse_listeners.hub);
-		listeners_deinit(drag_and_drop_listeners.hub);
+		ListenerHubImpl::destroy(key_listeners.impl);
+		ListenerHubImpl::destroy(mouse_listeners.impl);
+		ListenerHubImpl::destroy(drag_and_drop_listeners.impl);
 	}
 
 	void cEventReceiverPrivate::on_key(KeyState action, uint value)
 	{
-		auto hub = key_listeners.hub;
-		for (auto i = 0; i < listeners_count(hub); i++)
-			listeners_listener(hub, i).call<void(void*, KeyState action, int value)>(action, value);
+		key_listeners.call(action, value);
 	}
 
 	void cEventReceiverPrivate::on_mouse(KeyState action, MouseKey key, const Vec2i& value)
 	{
-		auto hub = mouse_listeners.hub;
-		for (auto i = 0; i < listeners_count(hub); i++)
-			listeners_listener(hub, i).call<void(void*, KeyState action, MouseKey key, const Vec2i & pos)>(action, key, value);
+		mouse_listeners.call(action, key, value);
 	}
 
 	void cEventReceiverPrivate::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 	{
-		auto hub = drag_and_drop_listeners.hub;
-		for (auto i = 0; i < listeners_count(hub); i++)
-			listeners_listener(hub, i).call<void(void*, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)>(action, er, pos);
+		drag_and_drop_listeners.call(action, er, pos);
 	}
 
 	void cEventReceiverPrivate::on_entered_world()

@@ -6,18 +6,16 @@ namespace flame
 		Object(name),
 		entity(nullptr)
 	{
-		data_changed_listeners.hub = listeners_init();
+		data_changed_listeners.impl = ListenerHubImpl::create();
 	}
 
 	Component::~Component()
 	{
-		listeners_deinit(data_changed_listeners.hub);
+		ListenerHubImpl::destroy(data_changed_listeners.impl);
 	}
 
 	void Component::data_changed(uint hash, void* sender)
 	{
-		auto hub = data_changed_listeners.hub;
-		for (auto i = 0; i < listeners_count(hub); i++)
-			listeners_listener(hub, i).call<void(void*, Component * thiz, uint hash, void* sender)>(this, hash, sender);
+		data_changed_listeners.call(this, hash, sender);
 	}
 }

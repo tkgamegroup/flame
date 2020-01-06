@@ -25,12 +25,12 @@ namespace flame
 		cliped = true;
 		cliped_rect = Vec4f(-1.f);
 
-		cmds.hub = listeners_init();
+		cmds.impl = ListenerHubImpl::create();
 	}
 
 	cElementPrivate::~cElementPrivate()
 	{
-		listeners_deinit(cmds.hub);
+		ListenerHubImpl::destroy(cmds.impl);
 	}
 
 	void cElementPrivate::calc_geometry()
@@ -71,9 +71,7 @@ namespace flame
 			}
 		}
 
-		auto hub = cmds.hub;
-		for (auto i = 0; i < listeners_count(hub); i++)
-			listeners_listener(hub, i).call<void(void*, graphics::Canvas*)>(canvas);
+		cmds.call(canvas);
 	}
 
 	Component* cElementPrivate::copy()
