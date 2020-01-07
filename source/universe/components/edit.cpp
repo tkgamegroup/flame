@@ -194,10 +194,10 @@ namespace flame
 					last_font_size = font_size;
 					last_cursor = cursor;
 					cursor_glyph = font_atlas->get_glyph(L'|', last_font_size);
-					cursor_pos = Vec2f(font_atlas->get_text_offset(std::wstring_view(text->text().c_str(), cursor), last_font_size));
+					cursor_pos = Vec2f(font_atlas->get_text_offset(text->text().c_str(), cursor, last_font_size));
 				}
 				auto scale = text->last_scale;
-				canvas->add_text(font_atlas, { cursor_glyph }, last_font_size, scale, element->global_pos +
+				canvas->add_text(font_atlas, 1, &cursor_glyph, last_font_size, scale, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale + cursor_pos * scale,
 					alpha_mul(text->color, element->alpha_));
 			}

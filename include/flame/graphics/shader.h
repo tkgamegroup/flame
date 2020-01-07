@@ -118,7 +118,7 @@ namespace flame
 			}
 		}
 
-		inline ShaderStage$ shader_stage_from_ext(const std::filesystem::path& extension)
+		inline ShaderStage$ shader_stage_from_ext(const std::wstring& extension)
 		{
 			if (extension == L".vert")
 				return ShaderStageVert;

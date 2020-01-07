@@ -7,9 +7,9 @@
 		<package filename="canvas" id="canvas" pos="1124.60;806.93" />
 	</packages>
 	<nodes>
-		<node type="D#Array(1+std::wstring)" id="fonts" pos="-569.00;42.00">
+		<node type="D#Array(1+StringW)" id="fonts" pos="-569.00;42.00">
 			<datas>
-				<data name="1" value="c:/windows/fonts/msyh.ttc" />
+				<data name="0" value="c:/windows/fonts/msyh.ttc" />
 			</datas>
 		</node>
 		<node type="D#graphics::FontAtlas" id="font_atlas" pos="-323.50;82.50">
@@ -17,6 +17,7 @@
 				<data name="draw_type" value="FontDrawSdf" />
 			</datas>
 		</node>
+    <node type="D#Array(1+graphics::FontAtlas*)" id="font_atlases" pos="-323.50;82.50" />
 		<node type="D#TextSdf" id="text1" pos="-28.50;284.50">
 			<datas>
 				<data name="color" value="255;255;255;255" />
@@ -181,9 +182,10 @@
 		</node>
 	</nodes>
 	<links>
-		<link out="font_atlas.out" in="canvas.make_cmd.font_atlases" />
-		<link out="content.v" in="canvas.make_cmd.content" />
-		<link out="fonts.v" in="font_atlas.fonts" />
+		<link out="font_atlas.out" in="font_atlases.0" />
+    <link out="font_atlases.out" in="canvas.make_cmd.font_atlases" />
+		<link out="content.out" in="canvas.make_cmd.content" />
+		<link out="fonts.out" in="font_atlas.fonts" />
 		<link out="font_atlas.out" in="text1.font_atals" />
 		<link out="scale1.out" in="text1.scale" />
 		<link out="pos1.out" in="text1.pos" />
@@ -197,11 +199,11 @@
 		<link out="path2.out" in="pos2.x" />
 		<link out="delay1.out" in="path2.t" />
 		<link out="time.total" in="delay1.a" />
-		<link out="text1.out" in="content.1" />
-		<link out="text2.out" in="content.2" />
-		<link out="text3.out" in="content.3" />
-		<link out="text4.out" in="content.4" />
-		<link out="text5.out" in="content.5" />
+		<link out="text1.out" in="content.0" />
+		<link out="text2.out" in="content.1" />
+		<link out="text3.out" in="content.2" />
+		<link out="text4.out" in="content.3" />
+		<link out="text5.out" in="content.4" />
 		<link out="time.total" in="delay2.a" />
 		<link out="time.total" in="dealy3.a" />
 		<link out="time.total" in="delay4.a" />

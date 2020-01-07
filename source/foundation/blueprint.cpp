@@ -1488,15 +1488,16 @@ namespace flame
 			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
 			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
-			auto print_link_library = [&](ModulePrivate* m) {
-				auto name = m->absolute_filename.replace_extension(L".lib").string();
+			auto print_link_library = [&](const std::filesystem::path& p) {
+				auto name = std::filesystem::path(p).replace_extension(L".lib").string();
 				std::replace(name.begin(), name.end(), '\\', '/');
 				cmakelists << "target_link_libraries(bp " << name << ")\n";
 			};
+			print_link_library(get_app_path().str() + L"\\flame_type.dll");
 			for (auto& m : bp->modules)
-				print_link_library(m.get());
+				print_link_library(m->absolute_filename);
 			for (auto& m : bp->package_modules)
-				print_link_library(m);
+				print_link_library(m->absolute_filename);
 			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
 			srand(::time(0));
 			auto pdb_filename = std::to_string(::rand() % 100000);

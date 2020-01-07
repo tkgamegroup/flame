@@ -406,7 +406,7 @@ namespace flame
 				if (draw_type$i.frame > out$o.frame || fonts$i.frame > out$o.frame)
 				{
 					if (out$o.v)
-						FontAtlas::destroy((FontAtlas*)out$o.v);
+						FontAtlas::destroy(out$o.v);
 					auto d = Device::default_one();
 					std::vector<const wchar_t*> fonts(fonts$i.v ? fonts$i.v->s : 0);
 					for (auto i = 0; i < fonts.size(); i++)
@@ -422,7 +422,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS ~FontAtlas$()
 			{
 				if (out$o.v)
-					FontAtlas::destroy((FontAtlas*)out$o.v);
+					FontAtlas::destroy(out$o.v);
 			}
 		};
 	}

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <BP>
 	<modules>
-		<module filename="flame_foundation.dll" pos="-294.00;-179.00" />
+    <module filename="flame_foundation.dll" pos="-294.00;-179.00" />
 		<module filename="flame_graphics.dll" pos="-270.00;-86.00" />
 	</modules>
 	<nodes>
@@ -11,7 +11,7 @@
 			</datas>
 		</node>
 		<node type="D#graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
-    <node type="D#Array(1+RenderTarget*)" id="resolve_targets" pos="90.72;52.27" />
+    <node type="D#Array(1+graphics::RenderTarget*)" id="resolve_targets" pos="90.72;52.27" />
 		<node type="D#graphics::ImageInspector" id="dst_props" pos="374.64;356.25" />
 		<node type="D#graphics::Image" id="img_ms" pos="874.61;704.05">
 			<datas>
@@ -34,7 +34,7 @@
 				<data name="name" value="images" />
 			</datas>
 		</node>
-    <node type="D#Array(1+graphics::DescriptorImageBinding*)" id="bindings" pos="1234.81;1486.79" />
+    <node type="D#Array(1+void*)" id="bindings" pos="1234.81;1486.79" />
 		<node type="D#graphics::Descriptorlayout" id="dsl" pos="1542.51;1724.91" />
     <node type="D#Array(1+graphics::Descriptorlayout*)" id="dsls" pos="1542.51;1724.91" />
 		<node type="D#graphics::Pipelinelayout" id="pll" pos="1852.80;1716.37">
