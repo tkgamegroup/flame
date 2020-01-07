@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include "entity_private.h"
 
 namespace flame
@@ -221,7 +221,7 @@ namespace flame
 		auto ret = new EntityPrivate;
 
 		ret->visibility_ = visibility_;
-		ret->set_name(name);
+		ret->set_name(name.c_str());
 		for (auto& c : components)
 			ret->add_component(c.second->copy());
 		for (auto& e : children)
@@ -241,9 +241,9 @@ namespace flame
 			e->update_visibility();
 	}
 
-	const std::string& Entity::name() const
+	const char* Entity::name() const
 	{
-		return ((EntityPrivate*)this)->name;
+		return ((EntityPrivate*)this)->name.c_str();
 	}
 
 	uint Entity::name_hash() const
@@ -251,11 +251,11 @@ namespace flame
 		return ((EntityPrivate*)this)->name_hash;
 	}
 
-	void Entity::set_name(const std::string& name) const
+	void Entity::set_name(const char* name) const
 	{
 		auto thiz = ((EntityPrivate*)this);
 		thiz->name = name;
-		thiz->name_hash = H(name.c_str());
+		thiz->name_hash = H(name);
 	}
 
 	void Entity::set_visibility(bool v)
@@ -298,7 +298,7 @@ namespace flame
 		return ((EntityPrivate*)this)->children[index].get();
 	}
 
-	Entity* Entity::find_child(const std::string& name) const
+	Entity* Entity::find_child(const char* name) const
 	{
 		return ((EntityPrivate*)this)->find_child(name);
 	}
@@ -328,7 +328,7 @@ namespace flame
 		return new EntityPrivate;
 	}
 
-	static Entity* load_prefab(World* w, const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* src)
+	static Entity* load_prefab(World* w, const std::vector<TypeinfoDatabase*>& dbs, pugi::xml_node src)
 	{
 		auto e = Entity::create();
 		e->set_name(src->find_attr("name")->value());
@@ -383,16 +383,23 @@ namespace flame
 		return e;
 	}
 
-	Entity* Entity::create_from_file(World* w, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
+	Entity* Entity::create_from_file(World* w, uint db_count, TypeinfoDatabase* const* _dbs, const wchar_t* filename)
 	{
-		auto file = SerializableNode::create_from_xml_file(filename);
-		if (!file || file->name() != "prefab")
+		pugi::xml_document file;
+		pugi::xml_node file_root;
+		if (!file.load_file(filename) || (file_root = file.first_child()).name() != std::string("prefab"))
+		{
+			assert(0);
 			return nullptr;
+		}
 
-		return load_prefab(w, dbs, file->node(0));
+		std::vector<TypeinfoDatabase*> dbs(db_count);
+		for (auto i = 0; i < db_count; i++)
+			dbs[i] = _dbs[i];
+		return load_prefab(w, dbs, file_root.first_child());
 	}
 
-	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, SerializableNode* dst, EntityPrivate* src)
+	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, pugi::xml_node dst, EntityPrivate* src)
 	{
 		auto n = dst->new_node("entity");
 		n->new_attr("name", src->name.empty() ? "unnamed" : src->name);
@@ -450,13 +457,17 @@ namespace flame
 		}
 	}
 
-	void Entity::save_to_file(const std::vector<TypeinfoDatabase*>& dbs, Entity* e, const std::wstring& filename)
+	void Entity::save_to_file(uint db_count, TypeinfoDatabase* const* _dbs, Entity* e, const wchar_t* filename)
 	{
-		auto file = SerializableNode::create("prefab");
+		pugi::xml_document file;
+		auto file_root = file.append_child("prefab");
 
+		std::vector<TypeinfoDatabase*> dbs(db_count);
+		for (auto i = 0; i < db_count; i++)
+			dbs[i] = _dbs[i];
 		save_prefab(dbs, file, (EntityPrivate*)e);
 
-		SerializableNode::save_to_xml_file(file, filename);
+		file.save_file(filename);
 	}
 
 	void Entity::destroy(Entity* w)

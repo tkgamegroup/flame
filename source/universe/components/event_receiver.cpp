@@ -85,9 +85,12 @@ namespace flame
 		return copy;
 	}
 
-	void cEventReceiver::set_acceptable_drops(const std::vector<uint>& hashes)
+	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
 	{
-		((cEventReceiverPrivate*)this)->acceptable_drops = hashes;
+		auto& drops = ((cEventReceiverPrivate*)this)->acceptable_drops;
+		drops.resize(drop_count);
+		for (auto i = 0; i < drop_count; i++)
+			drops[i] = _drops[i];
 	}
 
 	cEventReceiver* cEventReceiver::create()

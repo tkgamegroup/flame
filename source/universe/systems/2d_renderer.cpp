@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/graphics/device.h>
 #include "../entity_private.h"
 #include "../universe_private.h"
@@ -11,7 +12,7 @@ namespace flame
 {
 	struct Serializer_Atlas$
 	{
-		std::wstring filename$;
+		StringW filename$;
 
 		FLAME_UNIVERSE_EXPORTS Serializer_Atlas$()
 		{
@@ -23,7 +24,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
-			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename$);
+			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename$.v);
 			auto renderer = w->get_system(s2DRenderer);
 			if (renderer)
 				renderer->canvas->add_atlas(a);
@@ -41,7 +42,7 @@ namespace flame
 	struct Serializer_FontAtlas$
 	{
 		graphics::FontDrawType$ draw_type$;
-		std::wstring fonts$;
+		StringW fonts$;
 
 		FLAME_UNIVERSE_EXPORTS Serializer_FontAtlas$()
 		{
@@ -54,8 +55,11 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
-			auto fonts = ssplit(fonts$, L';');
-			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts);
+			auto sp = ssplit(std::wstring(fonts$.v), L';');
+			std::vector<const wchar_t*> fonts(sp.size());
+			for (auto i = 0; i < sp.size(); i++)
+				fonts[i] = sp[i].c_str();
+			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts.size(), fonts.data());
 			auto renderer = w->get_system(s2DRenderer);
 			if (renderer)
 				renderer->canvas->add_font(f);
@@ -116,7 +120,7 @@ namespace flame
 		}
 	};
 
-	s2DRenderer* s2DRenderer::create(const std::wstring& canvas_filename, void* dst, uint dst_hash, void* cbs)
+	s2DRenderer* s2DRenderer::create(const wchar_t* canvas_filename, void* dst, uint dst_hash, void* cbs)
 	{
 		return new s2DRendererPrivate(graphics::Canvas::create(canvas_filename, dst, dst_hash, cbs));
 	}

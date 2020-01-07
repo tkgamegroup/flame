@@ -100,7 +100,7 @@ namespace flame
 			if (offset == -1)
 			{
 				auto atlas = ((graphics::Canvas*)w->find_object(cH("Canvas"), 0))->get_atlas(c->id >> 16);
-				id$ = (atlas->id << 32) + atlas->regions()[c->id & 0xffff].id;
+				id$ = (atlas->id << 32) + atlas->region(c->id & 0xffff).id;
 				color$ = c->color;
 				uv0$ = c->uv0;
 				uv1$ = c->uv1;
@@ -113,7 +113,7 @@ namespace flame
 				case offsetof(Serializer_cImage$, id$):
 				{
 					auto atlas = ((graphics::Canvas*)w->find_object(cH("Canvas"), 0))->get_atlas(c->id >> 16);
-					id$ = (atlas->id << 32) + atlas->regions()[c->id & 0xffff].id;
+					id$ = (atlas->id << 32) + atlas->region(c->id & 0xffff).id;
 				}
 					break;
 				case offsetof(Serializer_cImage$, color$):

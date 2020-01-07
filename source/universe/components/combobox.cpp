@@ -151,7 +151,7 @@ namespace flame
 		auto e_menu = create_standard_menu();
 		for (auto i = 0; i < items.size(); i++)
 		{
-			auto e_item = create_standard_menu_item(font_atlas, font_size_scale, items[i]);
+			auto e_item = create_standard_menu_item(font_atlas, font_size_scale, items[i].c_str());
 			e_menu->add_child(e_item);
 
 			auto c_combobox_item = cComboboxItem::create();

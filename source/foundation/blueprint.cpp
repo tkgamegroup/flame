@@ -1627,7 +1627,7 @@ namespace flame
 						auto& out = *(AttributeD<Array<int>>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size);
 						for (auto i = 0; i < out.v.s; i++)
 							data_dtor(type_hash, &out.v.v[i]);
-						out.v.~Array();
+						f_free(out.v.v);
 					}
 
 					void update(BP* scene)
@@ -1671,7 +1671,7 @@ namespace flame
 						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i, sizeof(AttributeBase) + type_size, ""
 					});
 				}
-				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size, inputs, {
+				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size + sizeof(AttributeBase) + sizeof(Array<int>), inputs, {
 						{TypeInfo::get(TypeData, type_name.c_str(), true, true), "out", 
 						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size, sizeof(AttributeBase) + type_size, ""}
 				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), n_d.id);

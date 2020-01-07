@@ -382,7 +382,7 @@ namespace flame
 					{
 						std::vector<Vec2f> points;
 						path_rect(points, p.pos, p.size);
-						canvas->fill(points, p.col);
+						canvas->fill(points.size(), points.data(), p.col);
 					}
 				}
 			}
@@ -469,7 +469,7 @@ namespace flame
 			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops({ cH("DockerTab") });
+				event_receiver->set_acceptable_drops(1, &cH("DockerTab"));
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
 					if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
@@ -590,7 +590,7 @@ namespace flame
 			else if (c->name_hash == cH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops({ cH("cDockerTab") });
+				event_receiver->set_acceptable_drops(1, &cH("cDockerTab"));
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerPagesPrivate**)c);
 					if (action == DragOvering)
@@ -825,7 +825,7 @@ namespace flame
 		tab->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);
-		c_text->set_text(title);
+		c_text->set_text(title.c_str());
 		tab->add_component(c_text);
 
 		tab->add_component(cEventReceiver::create());

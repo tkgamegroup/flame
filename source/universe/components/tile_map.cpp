@@ -59,9 +59,14 @@ namespace flame
 		}
 	};
 
-	const std::vector<uint>& cTileMap::tiles() const
+	uint cTileMap::tile_count() const
 	{
-		return ((cTileMapPrivate*)this)->tiles;
+		return ((cTileMapPrivate*)this)->tiles.size();
+	}
+
+	uint cTileMap::tile(uint idx) const
+	{
+		return ((cTileMapPrivate*)this)->tiles[idx];
 	}
 
 	void cTileMap::add_tile(uint id)

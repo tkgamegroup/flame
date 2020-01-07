@@ -362,7 +362,7 @@ namespace flame
 			e_title->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->set_text(name);
+			c_text->set_text(name.c_str());
 			e_title->add_component(c_text);
 
 			e_title->add_component(cEventReceiver::create());
@@ -418,7 +418,7 @@ namespace flame
 			e_tree_leaf->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->set_text(name);
+			c_text->set_text(name.c_str());
 			e_tree_leaf->add_component(c_text);
 
 			e_tree_leaf->add_component(cEventReceiver::create());

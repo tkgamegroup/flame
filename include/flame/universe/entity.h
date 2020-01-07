@@ -21,9 +21,9 @@ namespace flame
 		bool visibility_;
 		bool global_visibility_;
 
-		FLAME_UNIVERSE_EXPORTS const std::string& name() const;
+		FLAME_UNIVERSE_EXPORTS const char* name() const;
 		FLAME_UNIVERSE_EXPORTS uint name_hash() const;
-		FLAME_UNIVERSE_EXPORTS void set_name(const std::string& name) const;
+		FLAME_UNIVERSE_EXPORTS void set_name(const char* name) const;
 
 		FLAME_UNIVERSE_EXPORTS void set_visibility(bool v);
 
@@ -44,7 +44,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* parent() const;
 		FLAME_UNIVERSE_EXPORTS uint child_count() const;
 		FLAME_UNIVERSE_EXPORTS Entity* child(uint index) const;
-		FLAME_UNIVERSE_EXPORTS Entity* find_child(const std::string& name) const;
+		FLAME_UNIVERSE_EXPORTS Entity* find_child(const char* name) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e, int position = -1); /* -1 is end */
 		FLAME_UNIVERSE_EXPORTS void reposition_child(Entity* e, int position); /* -1 is last */
 		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true); /* if e==InvalidPointer, then remove all */
@@ -52,8 +52,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
-		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(World* w, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename);
-		FLAME_UNIVERSE_EXPORTS static void save_to_file(const std::vector<TypeinfoDatabase*>& dbs, Entity* e, const std::wstring& filename);
+		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(World* w, uint db_count, TypeinfoDatabase* const* dbs, const wchar_t* filename);
+		FLAME_UNIVERSE_EXPORTS static void save_to_file(uint db_count, TypeinfoDatabase* const* dbs, Entity* e, const wchar_t* filename);
 		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};
 }

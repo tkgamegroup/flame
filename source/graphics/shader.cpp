@@ -22,7 +22,7 @@ namespace flame
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
 				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 128},
 				{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32},
-				{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2048},
+				{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 128},
 				{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 32},
 			};
 
@@ -32,7 +32,7 @@ namespace flame
 			descriptorPoolInfo.pNext = nullptr;
 			descriptorPoolInfo.poolSizeCount = FLAME_ARRAYSIZE(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
-			descriptorPoolInfo.maxSets = 64;
+			descriptorPoolInfo.maxSets = 8;
 			chk_res(vkCreateDescriptorPool(((DevicePrivate*)d)->v, &descriptorPoolInfo, nullptr, &v));
 #elif defined(FLAME_D3D12)
 
@@ -965,7 +965,7 @@ namespace flame
 				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
 				assert(vk_sdk_path != L"");
 
-				std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -flimit-file shader.conf -o out.spv");
+				std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -o out.spv");
 
 				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), (wchar_t*)command_line.c_str());
 				std::filesystem::remove(L"out.glsl");

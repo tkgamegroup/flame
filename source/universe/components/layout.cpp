@@ -302,7 +302,7 @@ namespace flame
 				auto element = std::get<0>(al);
 				auto aligner = std::get<1>(al);
 
-				auto s = Vec2f(text->font_atlas->get_text_size(text->text(), text->font_size_));
+				auto s = Vec2f(text->font_atlas->get_text_size(text->text(), text->text_length(), text->font_size_));
 				if (text->font_atlas->draw_type == graphics::FontDrawSdf)
 					s *= text->scale_;
 				if (text->auto_width_)

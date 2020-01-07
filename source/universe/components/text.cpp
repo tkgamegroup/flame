@@ -63,7 +63,7 @@ namespace flame
 					update_glyphs();
 				}
 				last_scale = scale_ * (is_sdf ? global_scale : 1.f);
-				canvas->add_text(font_atlas, glyphs, last_font_size, last_scale, element->global_pos +
+				canvas->add_text(font_atlas, glyphs.size(), glyphs.data(), last_font_size, last_scale, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
 					alpha_mul(color, element->alpha_));
 			}
@@ -94,12 +94,17 @@ namespace flame
 		}
 	};
 
-	const std::wstring& cText::text() const
+	uint cText::text_length() const
 	{
-		return ((cTextPrivate*)this)->text;
+		return ((cTextPrivate*)this)->text.size();
 	}
 
-	void cText::set_text(const std::wstring& text, void* sender)
+	const wchar_t* cText::text() const
+	{
+		return ((cTextPrivate*)this)->text.c_str();
+	}
+
+	void cText::set_text(const wchar_t* text, void* sender)
 	{
 		auto thiz = (cTextPrivate*)this;
 		thiz->text = text;
@@ -174,7 +179,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
-			c_text->set_text(text);
+			c_text->set_text(text.c_str());
 			e_button->add_component(c_text);
 
 			e_button->add_component(cEventReceiver::create());
@@ -206,7 +211,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
-			c_text->set_text(text);
+			c_text->set_text(text.c_str());
 			e_text->add_component(c_text);
 		}
 
@@ -224,7 +229,7 @@ namespace flame
 		bool right_align$;
 		bool auto_width$;
 		bool auto_height$;
-		std::wstring text$;
+		StringW text$;
 
 		FLAME_UNIVERSE_EXPORTS Serializer_cText$()
 		{
@@ -247,7 +252,7 @@ namespace flame
 			c->font_size_ = font_size$;
 			c->auto_width_ = auto_width$;
 			c->auto_height_ = auto_height$;
-			c->set_text(text$);
+			c->set_text(text$.v);
 
 			return c;
 		}
@@ -304,7 +309,7 @@ namespace flame
 				c->font_size_ = font_size$;
 				c->auto_width_ = auto_width$;
 				c->auto_height_ = auto_height$;
-				c->set_text(text$);
+				c->set_text(text$.v);
 			}
 			else
 			{
@@ -326,7 +331,7 @@ namespace flame
 					c->auto_height_ = auto_height$;
 					break;
 				case offsetof(Serializer_cText$, text$):
-					c->set_text(text$);
+					c->set_text(text$.v);
 					break;
 				}
 			}

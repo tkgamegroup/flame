@@ -189,7 +189,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
-			c_text->set_text(text);
+			c_text->set_text(text.c_str());
 			e_item->add_component(c_text);
 
 			e_item->add_component(cEventReceiver::create());
@@ -215,7 +215,7 @@ namespace flame
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
 			if (text[0])
-				c_text->set_text(text);
+				c_text->set_text(text.c_str());
 			e_menu_btn->add_component(c_text);
 
 			e_menu_btn->add_component(cEventReceiver::create());

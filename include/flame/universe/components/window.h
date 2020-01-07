@@ -104,7 +104,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cDockerPages* create();
 	};
 
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_docker_tab(graphics::FontAtlas* font_atlas, const std::wstring& title, Entity* root);
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_docker_tab(graphics::FontAtlas* font_atlas, const wchar_t* title, Entity* root);
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_page_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_model();
 	FLAME_UNIVERSE_EXPORTS Entity* get_docker_layout_model();

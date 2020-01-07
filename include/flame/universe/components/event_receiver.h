@@ -27,7 +27,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(const std::vector<uint>& hashes);
+		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drop_count, const uint* drops);
 
 		ListenerHub<void(void* c, KeyState action, int value)> key_listeners;
 		ListenerHub<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)> mouse_listeners;

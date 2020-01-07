@@ -82,7 +82,7 @@ namespace flame
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
 					auto thiz = *(cEditPrivate**)c;
 					auto text = thiz->text;
-					auto& str = text->text();
+					auto lenght = text->text_length();
 
 					if (action == KeyStateNull)
 					{
@@ -119,17 +119,17 @@ namespace flame
 								thiz->cursor--;
 							break;
 						case Key_Right:
-							if (thiz->cursor < str.size())
+							if (thiz->cursor < lenght)
 								thiz->cursor++;
 							break;
 						case Key_Home:
 							thiz->cursor = 0;
 							break;
 						case Key_End:
-							thiz->cursor = str.size();
+							thiz->cursor = lenght;
 							break;
 						case Key_Del:
-							if (thiz->cursor < str.size())
+							if (thiz->cursor < lenght)
 								text->erase_char(thiz->cursor);
 							break;
 						}
@@ -144,14 +144,14 @@ namespace flame
 						auto element = thiz->element;
 						auto text = thiz->text;
 						auto atlas = text->font_atlas;
-						auto& str = text->text();
+						auto str = text->text();
 						auto scale = element->global_scale;
 						if (atlas->draw_type == graphics::FontDrawSdf)
 							scale *= text->scale_;
 						auto font_size = text->font_size_;
 						auto line_space = font_size * scale;
 						auto y = element->global_pos.y();
-						for (auto p = str.c_str(); ; p++)
+						for (auto p = str; ; p++)
 						{
 							if (y < pos.y() && pos.y() < y + line_space)
 							{
@@ -167,7 +167,7 @@ namespace flame
 										break;
 									x += w;
 								}
-								thiz->cursor = p - str.c_str();
+								thiz->cursor = p - str;
 								break;
 							}
 
@@ -194,7 +194,7 @@ namespace flame
 					last_font_size = font_size;
 					last_cursor = cursor;
 					cursor_glyph = font_atlas->get_glyph(L'|', last_font_size);
-					cursor_pos = Vec2f(font_atlas->get_text_offset(text->text().c_str(), cursor, last_font_size));
+					cursor_pos = Vec2f(font_atlas->get_text_offset(text->text(), cursor, last_font_size));
 				}
 				auto scale = text->last_scale;
 				canvas->add_text(font_atlas, 1, &cursor_glyph, last_font_size, scale, element->global_pos +
