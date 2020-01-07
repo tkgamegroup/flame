@@ -1,5 +1,5 @@
+#include <flame/serialize.h>
 #include <flame/foundation/bitmap.h>
-#include <flame/foundation/serialize.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

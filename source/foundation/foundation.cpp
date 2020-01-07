@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/foundation/bitmap.h>
 
 #ifdef FLAME_WINDOWS
@@ -16,23 +17,6 @@
 
 namespace flame
 {
-	void* f_malloc(uint size)
-	{
-		return malloc(size);
-	}
-
-	void* f_realloc(void* p, uint size)
-	{
-		if (!p)
-			return f_malloc(size);
-		return realloc(p, size);
-	}
-
-	void f_free(void* p)
-	{
-		free(p);
-	}
-
 	struct ListenerHubImnplPrivate: ListenerHubImpl
 	{
 		std::vector<std::unique_ptr<Closure<void(void* c)>>> listeners;
@@ -110,15 +94,6 @@ namespace flame
 	void set_curr_path(const wchar_t* p)
 	{
 		SetCurrentDirectoryW(p);
-	}
-
-	void com_init()
-	{
-		static bool inited = false;
-		if (inited)
-			return;
-		assert(SUCCEEDED(CoInitialize(NULL)));
-		inited = true;
 	}
 
 	void read_process_memory(void* process, void* address, uint size, void* dst)

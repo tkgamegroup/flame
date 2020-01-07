@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 
 #include <Windows.h>
 #include <dia2.h>
@@ -6,114 +6,22 @@
 
 namespace flame
 {
-	/*
-	StringA SerializableNode::to_xml_string(SerializableNode* n)
+	void* f_malloc(uint size)
 	{
-		struct xml_string_writer : pugi::xml_writer
-		{
-			std::string str;
-
-			virtual void write(const void* data, size_t size)
-			{
-				str.append((const char*)(data), size);
-			}
-		};
-		xml_string_writer writer;
-		doc.print(writer);
+		return malloc(size);
 	}
 
-	static void from_json(nlohmann::json::reference src, SerializableNode* dst)
+	void* f_realloc(void* p, uint size)
 	{
-		if (src.is_object())
-		{
-			dst->set_type(SerializableNode::Object);
-			for (auto it = src.begin(); it != src.end(); ++it)
-			{
-				auto c = it.value();
-				if (!c.is_object() && !c.is_array())
-					dst->new_attr(it.key(), c.is_string() ? c.get<std::string>() : c.dump());
-				else
-				{
-					auto node = dst->new_node(it.key());
-					from_json(c, node);
-				}
-			}
-		}
-		else if (src.is_array())
-		{
-			dst->set_type(SerializableNode::Array);
-			for (auto& n : src)
-			{
-				auto node = dst->new_node("");
-				from_json(n, node);
-			}
-		}
+		if (!p)
+			return f_malloc(size);
+		return realloc(p, size);
 	}
 
-	static void to_json(nlohmann::json::reference dst, SerializableNodePrivate* src)
+	void f_free(void* p)
 	{
-		if (src->type != SerializableNode::Array)
-		{
-			if (src->type == SerializableNode::Value && !src->attrs.empty())
-				dst = src->attrs[0]->value;
-			else if (!src->value.empty())
-				dst = src->value;
-			else
-			{
-				for (auto& sa : src->attrs)
-					dst[sa->name] = sa->value;
-			}
-
-			for (auto& sn : src->nodes)
-				to_json(dst[sn->name], sn.get());
-		}
-		else
-		{
-			for (auto i = 0; i < src->nodes.size(); i++)
-				to_json(dst[i], src->nodes[i].get());
-		}
+		free(p);
 	}
-
-	SerializableNode* SerializableNode::create_from_json_string(const std::string& str)
-	{
-		auto doc = nlohmann::json::parse(str);
-
-		auto n = new SerializableNodePrivate;
-
-		from_json(doc, n);
-
-		return n;
-	}
-
-	SerializableNode* SerializableNode::create_from_json_file(const std::wstring& filename)
-	{
-		auto str = get_file_string(filename);
-		if (str.empty())
-			return nullptr;
-
-		return create_from_json_string(str);
-	}
-
-	StringA SerializableNode::to_json_string(SerializableNode* n)
-	{
-		nlohmann::json doc;
-
-		to_json(doc, (SerializableNodePrivate*)n);
-
-		return StringA(doc.dump());
-	}
-
-	void SerializableNode::save_to_json_file(SerializableNode* n, const std::wstring& filename)
-	{
-		std::ofstream file(filename);
-		nlohmann::json doc;
-
-		to_json(doc, (SerializableNodePrivate*)n);
-
-		file << doc.dump(2);
-		file.close();
-	}
-	*/
 
 	struct TypeInfoPrivate : TypeInfo
 	{
@@ -307,12 +215,12 @@ namespace flame
 			if (items[i]->name == name)
 			{
 				if (out_idx)
-					* out_idx = items[i]->value;
+					*out_idx = items[i]->value;
 				return items[i].get();
 			}
 		}
 		if (out_idx)
-			* out_idx = -1;
+			*out_idx = -1;
 		return nullptr;
 	}
 
@@ -324,12 +232,12 @@ namespace flame
 			if (items[i]->value == value)
 			{
 				if (out_idx)
-					* out_idx = i;
+					*out_idx = i;
 				return items[i].get();
 			}
 		}
 		if (out_idx)
-			* out_idx = -1;
+			*out_idx = -1;
 		return nullptr;
 	}
 
@@ -396,7 +304,7 @@ namespace flame
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
-		VariableInfoPrivate* find_vari(const std::string& name, int *out_idx)
+		VariableInfoPrivate* find_vari(const std::string& name, int* out_idx)
 		{
 			for (auto i = 0; i < variables.size(); i++)
 			{
@@ -454,7 +362,7 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->variables[idx].get();
 	}
 
-	VariableInfo* UdtInfo::find_variable(const char* name, int *out_idx) const
+	VariableInfo* UdtInfo::find_variable(const char* name, int* out_idx) const
 	{
 		return ((UdtInfoPrivate*)this)->find_vari(name, out_idx);
 	}
@@ -681,7 +589,7 @@ namespace flame
 				*pass_$ = true;
 
 			if (attribute)
-				* attribute = std::string(head.begin() + pos_$ + 1, head.end());
+				*attribute = std::string(head.begin() + pos_$ + 1, head.end());
 			head.resize(pos_$);
 		}
 		else if (pass_$)
@@ -695,7 +603,7 @@ namespace flame
 		return tn_c2a(str);
 	}
 
-	struct TypeInfoDesc 
+	struct TypeInfoDesc
 	{
 		TypeTag$ tag;
 		bool is_attribute;
@@ -791,7 +699,7 @@ namespace flame
 			}
 			return TypeInfoDesc(tag, name, is_attribute, is_array);
 		}
-			break;
+		break;
 		case SymTagFunctionArgType:
 		{
 			IDiaSymbol* s_arg_type;
@@ -987,12 +895,21 @@ namespace flame
 		return u;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::collect(uint owned_dbs_count,  TypeinfoDatabase** owned_dbs, const wchar_t* module_filename, const wchar_t* _pdb_filename)
+	static void com_init()
+	{
+		static bool inited = false;
+		if (inited)
+			return;
+		assert(SUCCEEDED(CoInitialize(NULL)));
+		inited = true;
+	}
+
+	TypeinfoDatabase* TypeinfoDatabase::collect(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, const wchar_t* module_filename, const wchar_t* _pdb_filename)
 	{
 		com_init();
 
 		CComPtr<IDiaDataSource> dia_source;
-		if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)& dia_source)))
+		if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
 		{
 			printf("dia not found\n");
 			assert(0);
@@ -1109,7 +1026,7 @@ namespace flame
 
 							IDiaSymbol* s_type;
 							_variable->get_type(&s_type);
- 
+
 							_variable->get_offset(&l);
 							s_type->get_length(&ull);
 
@@ -1168,7 +1085,7 @@ namespace flame
 					}
 					if (ctor)
 					{
-						auto library = load_module(module_filename);
+						auto library = LoadLibraryW(module_filename);
 						if (library)
 						{
 							auto obj = malloc(u->size);
@@ -1187,7 +1104,7 @@ namespace flame
 								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
 
 							free(obj);
-							free_module(library);
+							FreeLibrary(library);
 						}
 					}
 				}
@@ -1261,7 +1178,7 @@ namespace flame
 				f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
 		}
 
-		auto this_module = load_module(L"flame_foundation.dll");
+		auto this_module = LoadLibraryW(L"flame_foundation.dll");
 		TypeinfoDatabase* this_db = nullptr;
 		for (auto db : dbs)
 		{
@@ -1278,7 +1195,7 @@ namespace flame
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
-				auto v = (VariableInfoPrivate*)u->add_variable(TypeInfo::get(n_variable.attribute("type").value()), n_variable.attribute("name").value(), 
+				auto v = (VariableInfoPrivate*)u->add_variable(TypeInfo::get(n_variable.attribute("type").value()), n_variable.attribute("name").value(),
 					n_variable.attribute("decoration").value(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
 				v->default_value = n_variable.attribute("default_value").value();
 			}
@@ -1290,7 +1207,7 @@ namespace flame
 					f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
 			}
 		}
-		free_module(this_module);
+		FreeLibrary(this_module);
 
 		return db;
 	}
