@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
 
 #include <iterator>
@@ -7,6 +8,11 @@ using namespace flame;
 static std::vector<std::wstring> accept_exts;
 static std::vector<std::wstring> general_ignores;
 static std::vector<std::wstring> special_ignores;
+
+bool is_slash_chr(wchar_t ch)
+{
+	return ch == L'/' || ch == L'\\';
+}
 
 void add_accept(const std::wstring &i)
 {
@@ -106,7 +112,7 @@ void iter(const std::wstring &p)
 						empty_lines++;
 						for (auto chr : line)
 						{
-							if (!is_space_chr(chr))
+							if (!std::isspace((uchar)chr))
 							{
 								empty_lines--;
 								break;
@@ -131,7 +137,7 @@ int main(int argc, char **args)
 			std::string line;
 			std::getline(policy_file, line);
 
-			auto sp = string_split(line);
+			auto sp = ssplit(line);
 			if (sp.size() > 0)
 			{
 				if (sp[0] == "accept:")
@@ -170,10 +176,10 @@ int main(int argc, char **args)
 	{
 		if (i.size() > 0 && !is_slash_chr(i[0]))
 			i = L"\\" + i;
-		i = *curr_path.p + i;
+		i = curr_path.v + i;
 	}
 
-	iter(*curr_path.p);
+	iter(curr_path.v);
 
 	printf("total:%d\n", total_lines);
 	printf("empty:%d\n", empty_lines);
