@@ -20,7 +20,8 @@ namespace flame
 		struct Swapchain
 		{
 			FLAME_GRAPHICS_EXPORTS Window* window() const;
-			FLAME_GRAPHICS_EXPORTS const std::vector<void*>& images() const;
+			FLAME_GRAPHICS_EXPORTS uint image_count() const;
+			FLAME_GRAPHICS_EXPORTS Image* const* images() const;
 			FLAME_GRAPHICS_EXPORTS Semaphore* image_avalible() const;
 
 			FLAME_GRAPHICS_EXPORTS uint image_index() const;

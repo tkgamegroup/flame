@@ -1,9 +1,7 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
+#include <flame/math.h>
 #include <flame/graphics/graphics.h>
-
-#include <vector>
 
 namespace flame
 {
@@ -37,8 +35,8 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void* data = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, ImageUsage$ extra_usage = ImageUsage$(0)); // default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const std::wstring& filename, ImageUsage$ extra_usage = ImageUsage$(0)); // default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static void save_to_png(Image *i, const std::wstring& filename);
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const wchar_t* filename, ImageUsage$ extra_usage = ImageUsage$(0)); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static void save_to_png(Image *i, const wchar_t* filename);
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native);
 
 			FLAME_GRAPHICS_EXPORTS static void destroy(Image* i);
@@ -76,8 +74,8 @@ namespace flame
 				return ((Imageview*)v)->image();
 			case TargetImages:
 			{
-				auto& vec = *(std::vector<Image*>*)v;
-				return vec.empty() ? nullptr : vec[0];
+				auto& arr = *(Array<Image*>*)v;
+				return !arr.s ? nullptr : arr.v[0];
 			}
 			}
 			return nullptr;
@@ -98,7 +96,7 @@ namespace flame
 
 			struct Region
 			{
-				std::wstring filename;
+				const wchar_t* filename;
 				uint id;
 				Vec2i pos;
 				Vec2i size;
@@ -112,19 +110,22 @@ namespace flame
 			}
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
-			FLAME_GRAPHICS_EXPORTS const std::vector<Region>& regions() const;
+			FLAME_GRAPHICS_EXPORTS uint region_count() const;
+			FLAME_GRAPHICS_EXPORTS const Region* regions() const;
 
 			int find_region(uint id) const
 			{
-				for (auto i = 0; i < regions().size(); i++)
+				auto count = region_count();
+				auto regs = regions();
+				for (auto i = 0; i < count; i++)
 				{
-					if (regions()[i].id == id)
+					if (regs[i].id == id)
 						return i;
 				}
 				return -1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS static Atlas* load(Device* d, const std::wstring& filename /* the image filename, not the atlas */);
+			FLAME_GRAPHICS_EXPORTS static Atlas* load(Device* d, const wchar_t* filename /* the image filename, not the atlas */);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Atlas* a);
 		};
 	}

@@ -47,13 +47,13 @@ namespace flame
 			}
 
 			FLAME_GRAPHICS_EXPORTS Glyph* get_glyph(wchar_t unicode, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2u get_text_offset(const std::wstring_view& text, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2u get_text_size(const std::wstring_view& text, uint font_size);
-			FLAME_GRAPHICS_EXPORTS StringW slice_text_by_width(const std::wstring_view& text, uint font_size, uint width);
+			FLAME_GRAPHICS_EXPORTS Vec2u get_text_offset(const wchar_t* text, uint font_size);
+			FLAME_GRAPHICS_EXPORTS Vec2u get_text_size(const wchar_t* text, uint font_size);
+			FLAME_GRAPHICS_EXPORTS StringW slice_text_by_width(const wchar_t* text, uint font_size, uint width);
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType$ draw_type, const std::vector<std::wstring>& fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType$ draw_type, uint font_count, const wchar_t* const* fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

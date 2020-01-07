@@ -14,9 +14,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <sstream>
-#include <iomanip>
-#include <filesystem>
 
 #define FLAME_STR_(x) #x
 #define FLAME_STR(x) FLAME_STR_(x)
@@ -585,9 +582,9 @@ namespace flame
 		FLAME_TYPE_EXPORTS UdtInfo* find_udt(uint name_hash);
 		FLAME_TYPE_EXPORTS UdtInfo* add_udt(const TypeInfo* type, uint size);
 
-		FLAME_TYPE_EXPORTS static TypeinfoDatabase* collect(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, const wchar_t* module_filename, const wchar_t* pdb_filename = nullptr);
-		FLAME_TYPE_EXPORTS static TypeinfoDatabase* load(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, const wchar_t* typeinfo_filename);
-		FLAME_TYPE_EXPORTS static void save(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, TypeinfoDatabase* db);
+		FLAME_TYPE_EXPORTS static TypeinfoDatabase* collect(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* module_filename, const wchar_t* pdb_filename = nullptr);
+		FLAME_TYPE_EXPORTS static TypeinfoDatabase* load(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* typeinfo_filename);
+		FLAME_TYPE_EXPORTS static void save(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, TypeinfoDatabase* db);
 		FLAME_TYPE_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};
 

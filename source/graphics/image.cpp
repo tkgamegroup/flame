@@ -1,6 +1,6 @@
+#include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
-#include <flame/foundation/serialize.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"

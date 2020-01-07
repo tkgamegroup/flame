@@ -92,8 +92,8 @@ namespace flame
 			{
 				auto& dp_info = _dependencies[i];
 
-				vk_dependencies[i].srcSubpass = dp_info.x();
-				vk_dependencies[i].dstSubpass = dp_info.y();
+				vk_dependencies[i].srcSubpass = dp_info[0];
+				vk_dependencies[i].dstSubpass = dp_info[1];
 				vk_dependencies[i].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 				vk_dependencies[i].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 				vk_dependencies[i].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -379,7 +379,7 @@ namespace flame
 			return ((ClearvaluesPrivate*)this)->rp;
 		}
 
-		void Clearvalues::set(int idx, const Vec4c& col)
+		void Clearvalues::set(uint idx, const Vec4c& col)
 		{
 			((ClearvaluesPrivate*)this)->set(idx, col);
 		}

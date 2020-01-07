@@ -1183,7 +1183,7 @@ namespace flame
 		return ((BPPrivate*)this)->dbs.size();
 	}
 
-	const TypeinfoDatabase* const* BP::dbs() const
+	TypeinfoDatabase* const* BP::dbs() const
 	{
 		return ((BPPrivate*)this)->dbs.data();
 	}

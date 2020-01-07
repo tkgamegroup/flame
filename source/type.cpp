@@ -904,7 +904,7 @@ namespace flame
 		inited = true;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::collect(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, const wchar_t* module_filename, const wchar_t* _pdb_filename)
+	TypeinfoDatabase* TypeinfoDatabase::collect(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* module_filename, const wchar_t* _pdb_filename)
 	{
 		com_init();
 
@@ -1146,7 +1146,7 @@ namespace flame
 		return db;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::load(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, const wchar_t* typeinfo_filename)
+	TypeinfoDatabase* TypeinfoDatabase::load(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* typeinfo_filename)
 	{
 		pugi::xml_document file;
 		pugi::xml_node file_root;
@@ -1212,7 +1212,7 @@ namespace flame
 		return db;
 	}
 
-	void TypeinfoDatabase::save(uint owned_dbs_count, TypeinfoDatabase** owned_dbs, TypeinfoDatabase* _db)
+	void TypeinfoDatabase::save(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, TypeinfoDatabase* _db)
 	{
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");

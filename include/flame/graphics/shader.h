@@ -52,7 +52,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS const DescriptorBindingBase* get_binding(uint binding) const;
 			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, const std::vector<void*>& bindings, Descriptorpool* default_set_pool = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, const DescriptorBindingBase* bindings, Descriptorpool* default_set_pool = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 
@@ -70,7 +70,7 @@ namespace flame
 
 		struct Pipelinelayout
 		{
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, uint descriptorlayout_count, const Descriptorlayout* descriptorlayouts, uint push_constant_size);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
 		};
 
@@ -189,10 +189,10 @@ namespace flame
 		{
 			PipelineType type;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const std::vector<std::wstring>& shader_filenames /* filename[:prefix] */, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, uint shader_count, const wchar_t* const* shader_filenames /* filename[:prefix] */, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
 				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount$ sc = SampleCount_1, DepthInfo* depth = nullptr,
-				const std::vector<uint>& dynamic_states = {});
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const std::wstring& compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);
+				uint dynamic_state_count = 0, const uint* dynamic_states = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);
 			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline* p);
 		};
 	}
