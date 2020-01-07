@@ -13,6 +13,10 @@
 #include <assert.h>
 #include <string>
 #include <vector>
+#include <stack>
+#include <list>
+#include <map>
+#include <unordered_map>
 #include <memory>
 
 #define FLAME_STR_(x) #x

@@ -12,12 +12,7 @@
 
 #include <flame/math.h>
 
-#include <stack>
-#include <list>
-#include <map>
-#include <unordered_map>
 #include <chrono>
-#include <fstream>
 #include <thread>
 #include <mutex>
 
@@ -166,58 +161,6 @@ namespace flame
 	}
 #endif
 
-	template<class T>
-	inline T read(std::ifstream& file)
-	{
-		T v;
-		file.read((char*)& v, sizeof(T));
-		return v;
-	}
-
-	inline std::string read_string(std::ifstream& file)
-	{
-		uint size = 0;
-		uint q = 1;
-		for (auto i = 0; i < 4; i++)
-		{
-			unsigned char byte;
-			file.read((char*)& byte, 1);
-			if (byte >= 128)
-				byte -= 128;
-			else
-				i = 4;
-			size += q * byte;
-			q *= 128;
-		}
-		std::string v;
-		v.resize(size);
-		file.read((char*)v.data(), size);
-		return v;
-	}
-
-	template<class T>
-	inline void write(std::ofstream& file, const T& v)
-	{
-		file.write((char*)& v, sizeof(T));
-	}
-
-	inline void write_string(std::ofstream& file, const std::string& v)
-	{
-		uint size = v.size();
-		for (auto i = 0; i < 4; i++)
-		{
-			unsigned char byte = size % 128;
-			size /= 128;
-			if (size > 0)
-				byte += 128;
-			else
-				i = 4;
-			file.write((char*)& byte, 1);
-
-		}
-		file.write((char*)v.data(), v.size());
-	}
-
 	enum FileType
 	{
 		FileTypeUnknown,
@@ -269,40 +212,6 @@ namespace flame
 		if (is_model_file(ext))
 			return FileTypeModel;
 		return FileTypeUnknown;
-	}
-
-	inline longlong get_file_length(std::ifstream& f)
-	{
-		f.seekg(0, std::ios::end);
-		auto s = f.tellg();
-		f.seekg(0, std::ios::beg);
-		return s;
-	}
-
-	inline std::pair<std::unique_ptr<char[]>, longlong> get_file_content(const std::wstring& filename)
-	{
-#ifdef FLAME_WINDOWS
-		std::ifstream file(filename, std::ios::binary);
-#else
-		auto utf8_filename = w2s(filename);
-		std::ifstream file(utf8_filename, std::ios::binary);
-#endif
-		if (!file.good())
-			return std::make_pair(nullptr, 0);
-
-		auto length = get_file_length(file);
-		auto data = new char[length + 1];
-		file.read(data, length);
-		data[length] = 0;
-		return std::make_pair(std::unique_ptr<char[]>(data), length);
-	}
-
-	inline std::string get_file_string(const std::wstring& filename)
-	{
-		auto content = get_file_content(filename);
-		if (content.first)
-			return std::string(content.first.get(), content.first.get() + content.second);
-		return std::string();
 	}
 
 	template<class T = void>
