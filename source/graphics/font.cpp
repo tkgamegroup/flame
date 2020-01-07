@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/device.h>
@@ -65,17 +66,18 @@ namespace flame
 			Image* image;
 			Imageview* imageview;
 
-			FontAtlasPrivate(Device* d, FontDrawType$ _draw_type, const std::vector<std::wstring>& _fonts)
+			FontAtlasPrivate(Device* d, FontDrawType$ _draw_type, uint font_count, const wchar_t* const* _fonts)
 			{
-				for (auto _filename : _fonts)
+				for (auto i = 0; i < font_count; i++)
 				{
-					Font* f = nullptr;
-					if (!std::filesystem::exists(_filename))
+					auto fn = _fonts[i];
+					if (!std::filesystem::exists(fn))
 						continue;
 
-					id = hash_update(id, H(_filename.c_str()));
+					id = hash_update(id, H(fn));
 
-					auto filename = std::filesystem::canonical(_filename).wstring();
+					Font* f = nullptr;
+					auto filename = std::filesystem::canonical(fn).wstring();
 					for (auto& _f : loaded_fonts)
 					{
 						if (_f->filename == filename)
@@ -357,9 +359,9 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, FontDrawType$ draw_type, const std::vector<std::wstring>& fonts)
+		FontAtlas* FontAtlas::create(Device* d, FontDrawType$ draw_type, uint font_count, const wchar_t* const* fonts)
 		{
-			return new FontAtlasPrivate(d, draw_type, fonts);
+			return new FontAtlasPrivate(d, draw_type, font_count, fonts);
 		}
 
 		void FontAtlas::destroy(FontAtlas* f)
@@ -372,19 +374,19 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->get_glyph(unicode, font_size);
 		}
 
-		Vec2u FontAtlas::get_text_offset(const std::wstring_view& text, uint font_size)
+		Vec2u FontAtlas::get_text_offset(const wchar_t* text, uint text_length, uint font_size)
 		{
-			return ((FontAtlasPrivate*)this)->get_text_offset(text, font_size);
+			return ((FontAtlasPrivate*)this)->get_text_offset(std::wstring_view(text, text_length), font_size);
 		}
 
-		Vec2u FontAtlas::get_text_size(const std::wstring_view& text, uint font_size)
+		Vec2u FontAtlas::get_text_size(const wchar_t* text, uint text_length, uint font_size)
 		{
-			return ((FontAtlasPrivate*)this)->get_text_size(text, font_size);
+			return ((FontAtlasPrivate*)this)->get_text_size(std::wstring_view(text, text_length), font_size);
 		}
 
-		StringW FontAtlas::slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
+		StringW FontAtlas::slice_text_by_width(const wchar_t* text, uint text_length, uint font_size, uint width)
 		{
-			return ((FontAtlasPrivate*)this)->slice_text_by_width(text, font_size, width);
+			return ((FontAtlasPrivate*)this)->slice_text_by_width(std::wstring_view(text, text_length), font_size, width);
 		}
 
 		Imageview* FontAtlas::imageview() const
@@ -397,7 +399,7 @@ namespace flame
 			AttributeE<FontDrawType$> draw_type$i;
 			AttributeP<Array<StringW>> fonts$i;
 
-			AttributeP<void> out$o;
+			AttributeP<FontAtlas> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
@@ -406,11 +408,11 @@ namespace flame
 					if (out$o.v)
 						FontAtlas::destroy((FontAtlas*)out$o.v);
 					auto d = Device::default_one();
-					std::vector<std::wstring> fonts(fonts$i.v ? fonts$i.v->s : 0);
+					std::vector<const wchar_t*> fonts(fonts$i.v ? fonts$i.v->s : 0);
 					for (auto i = 0; i < fonts.size(); i++)
-						fonts[i] = fonts$i.v->v[i].str();
+						fonts[i] = fonts$i.v->v[i].v;
 					if (d && !fonts.empty())
-						out$o.v = FontAtlas::create(d, draw_type$i.v, fonts);
+						out$o.v = FontAtlas::create(d, draw_type$i.v, fonts.size(), fonts.data());
 					else
 						printf("cannot create fontatlas\n");
 					out$o.frame = scene->frame;

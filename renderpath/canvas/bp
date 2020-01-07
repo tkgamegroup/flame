@@ -11,7 +11,7 @@
 			</datas>
 		</node>
 		<node type="D#graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
-    <node type="D#Array(1+void*)" id="resolve_targets" pos="90.72;52.27" />
+    <node type="D#Array(1+RenderTarget*)" id="resolve_targets" pos="90.72;52.27" />
 		<node type="D#graphics::ImageInspector" id="dst_props" pos="374.64;356.25" />
 		<node type="D#graphics::Image" id="img_ms" pos="874.61;704.05">
 			<datas>
@@ -24,9 +24,9 @@
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
-		<node type="D#Array(1+void*)" id="color_targets" pos="1246.58;655.05" />
+		<node type="D#Array(1+graphics::RenderTarget*)" id="color_targets" pos="1246.58;655.05" />
 		<node type="D#graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
-    <node type="D#Array(1+void*)" id="sps" pos="1586.80;795.92" />
+    <node type="D#Array(1+graphics::SubpassTargetInfo*)" id="sps" pos="1586.80;795.92" />
 		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
 		<node type="D#graphics::DescriptorImageBinding" id="imgs_binding" pos="1234.81;1486.79">
 			<datas>
@@ -34,9 +34,9 @@
 				<data name="name" value="images" />
 			</datas>
 		</node>
-    <node type="D#Array(1+void*)" id="bindings" pos="1234.81;1486.79" />
+    <node type="D#Array(1+graphics::DescriptorImageBinding*)" id="bindings" pos="1234.81;1486.79" />
 		<node type="D#graphics::Descriptorlayout" id="dsl" pos="1542.51;1724.91" />
-    <node type="D#Array(1+void*)" id="dsls" pos="1542.51;1724.91" />
+    <node type="D#Array(1+graphics::Descriptorlayout*)" id="dsls" pos="1542.51;1724.91" />
 		<node type="D#graphics::Pipelinelayout" id="pll" pos="1852.80;1716.37">
 			<datas>
 				<data name="push_constant_size" value="16" />
@@ -59,9 +59,9 @@
 				<data name="name" value="color" />
 			</datas>
 		</node>
-		<node type="D#Array(3+void*)" id="vias" pos="1928.63;1198.33" />
+		<node type="D#Array(3+graphics::VertexInputAttribute*)" id="vias" pos="1928.63;1198.33" />
 		<node type="D#graphics::VertexInputBuffer" id="vib" pos="2064.05;1175.71" />
-    <node type="D#Array(1+void*)" id="vibs" pos="2064.05;1175.71" />
+    <node type="D#Array(1+graphics::VertexInputBuffer*)" id="vibs" pos="2064.05;1175.71" />
 		<node type="D#graphics::VertexInputInfo" id="vi" pos="2026.83;1423.37" />
 		<node type="D#Array(2+StringW)" id="pl_element_shs" pos="2879.57;628.81">
 			<datas>

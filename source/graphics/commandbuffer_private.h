@@ -80,7 +80,7 @@ namespace flame
 			~QueuePrivate();
 
 			void wait_idle();
-			void submit(const std::vector<Commandbuffer*> cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence);
+			void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence);
 			void present(Swapchain* s, Semaphore* wait_semaphore);
 		};
 	}

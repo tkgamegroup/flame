@@ -111,15 +111,14 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 			FLAME_GRAPHICS_EXPORTS uint region_count() const;
-			FLAME_GRAPHICS_EXPORTS const Region* regions() const;
+			FLAME_GRAPHICS_EXPORTS const Region& region(uint idx) const;
 
 			int find_region(uint id) const
 			{
 				auto count = region_count();
-				auto regs = regions();
 				for (auto i = 0; i < count; i++)
 				{
-					if (regs[i].id == id)
+					if (region(i).id == id)
 						return i;
 				}
 				return -1;

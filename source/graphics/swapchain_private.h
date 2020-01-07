@@ -21,7 +21,7 @@ namespace flame
 			IDXGISwapChain3* v;
 #endif
 
-			std::vector<void*> images;
+			std::vector<Image*> images;
 			SemaphorePrivate* image_avalible;
 
 			uint image_index;

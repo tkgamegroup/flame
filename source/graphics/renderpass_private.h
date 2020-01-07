@@ -10,16 +10,36 @@ namespace flame
 	{
 		struct DevicePrivate;
 
+		struct SubpassInfoPrivate : SubpassInfo
+		{
+			std::vector<uint> _color_attachments;
+			std::vector<uint> _resolve_attachments;
+
+			void operator=(const SubpassInfo& info)
+			{
+				_color_attachments.resize(info.color_attachment_count);
+				for (auto i = 0; i < info.color_attachment_count; i++)
+					_color_attachments[i] = info.color_attachments[i];
+				_resolve_attachments.resize(info.resolve_attachment_count);
+				for (auto i = 0; i < info.resolve_attachment_count; i++)
+					_resolve_attachments[i] = info.resolve_attachments[i];
+				color_attachment_count = info.color_attachment_count;
+				color_attachments = _color_attachments.data();
+				resolve_attachment_count = info.resolve_attachment_count;
+				resolve_attachments = _resolve_attachments.data();
+				depth_attachment = info.depth_attachment;
+			}
+		};
+
 		struct RenderpassPrivate : Renderpass
 		{
 			DevicePrivate* d;
 			std::vector<AttachmentInfo> attachments;
-			std::vector<SubpassInfo> subpasses;
-			uint color_attachment_count;
+			std::vector<SubpassInfoPrivate> subpasses;
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
-			RenderpassPrivate(Device* d, const std::vector<void*>& attachments, const std::vector<void*>& subpasses, const std::vector<Vec<2, uint>>& dependencies);
+			RenderpassPrivate(Device* d, uint attachment_count, AttachmentInfo* const* attachments, uint subpass_count, SubpassInfo* const* subpasses, uint dependency_count, const Vec2u* _dependencies);
 			~RenderpassPrivate();
 		};
 
@@ -48,7 +68,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			FramebufferPrivate(Device* d, Renderpass* rp, const std::vector<void*>& views);
+			FramebufferPrivate(Device* d, Renderpass* rp, uint view_count, Imageview* const* views);
 			~FramebufferPrivate();
 		};
 
@@ -56,10 +76,10 @@ namespace flame
 		{
 			RenderpassPrivate* rp;
 			std::vector<Imageview*> created_views;
-			std::vector<void*> fbs;
+			std::vector<Framebuffer*> fbs;
 			ClearvaluesPrivate* cv;
 
-			RenderpassAndFramebufferPrivate(Device* d, const std::vector<void*>& passes);
+			RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes);
 			~RenderpassAndFramebufferPrivate();
 		};
 	}

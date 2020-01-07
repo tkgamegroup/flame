@@ -47,9 +47,9 @@ namespace flame
 			}
 
 			FLAME_GRAPHICS_EXPORTS Glyph* get_glyph(wchar_t unicode, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2u get_text_offset(const wchar_t* text, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2u get_text_size(const wchar_t* text, uint font_size);
-			FLAME_GRAPHICS_EXPORTS StringW slice_text_by_width(const wchar_t* text, uint font_size, uint width);
+			FLAME_GRAPHICS_EXPORTS Vec2u get_text_offset(const wchar_t* text, uint text_length, uint font_size);
+			FLAME_GRAPHICS_EXPORTS Vec2u get_text_size(const wchar_t* text, uint text_length, uint font_size);
+			FLAME_GRAPHICS_EXPORTS StringW slice_text_by_width(const wchar_t* text, uint text_length, uint font_size, uint width);
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 

@@ -39,7 +39,7 @@ namespace flame
 			std::vector<DescriptorBindingBase*> bindings;
 			Descriptorset* default_set;
 
-			DescriptorlayoutPrivate(Device* d, const std::vector<void*>& _bindings, Descriptorpool* default_set_pool);
+			DescriptorlayoutPrivate(Device* d, uint binding_count, DescriptorBindingBase* const* bindings, Descriptorpool* default_set_pool);
 			~DescriptorlayoutPrivate();
 		};
 
@@ -72,7 +72,7 @@ namespace flame
 			std::vector<DescriptorlayoutPrivate*> dsls;
 			uint pc_size;
 
-			PipelinelayoutPrivate(Device* d, const std::vector<void*>& descriptorsetlayouts, uint push_constant_size);
+			PipelinelayoutPrivate(Device* d, uint descriptorlayout_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();
 		};
 
@@ -193,7 +193,7 @@ namespace flame
 
 #endif
 
-			PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, const std::vector<uint>& dynamic_states);
+			PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states);
 			PipelinePrivate(DevicePrivate* d, const StageInfo& compute_stage_info, PipelinelayoutPrivate* pll);
 			~PipelinePrivate();
 		};

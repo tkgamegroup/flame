@@ -620,7 +620,7 @@ namespace flame
 
 		struct Commandbuffer$
 		{
-			AttributeP<void> out$o;
+			AttributeP<Commandbuffer> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
@@ -651,7 +651,7 @@ namespace flame
 		{
 			AttributeD<uint> size$i;
 
-			AttributeD<Array<void*>> out$o;
+			AttributeD<Array<Commandbuffer*>> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
@@ -708,7 +708,7 @@ namespace flame
 #endif
 		}
 
-		void QueuePrivate::submit(const std::vector<Commandbuffer*> cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
+		void QueuePrivate::submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
 		{
 #if defined(FLAME_VULKAN)
 			VkSubmitInfo info;
@@ -718,10 +718,10 @@ namespace flame
 			info.pWaitDstStageMask = &wait_stage;
 			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
 			info.pWaitSemaphores = wait_semaphore ? &((SemaphorePrivate*)wait_semaphore)->v : nullptr;
-			info.commandBufferCount = cbs.size();
+			info.commandBufferCount = cb_count;
 			std::vector<VkCommandBuffer> vk_cbs;
-			vk_cbs.resize(cbs.size());
-			for (auto i = 0; i < cbs.size(); i++)
+			vk_cbs.resize(cb_count);
+			for (auto i = 0; i < cb_count; i++)
 				vk_cbs[i] = ((CommandbufferPrivate*)cbs[i])->v;
 			info.pCommandBuffers = vk_cbs.data();
 			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
@@ -769,9 +769,9 @@ namespace flame
 			((QueuePrivate*)this)->wait_idle();
 		}
 
-		void Queue::submit(const std::vector<Commandbuffer*> cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
+		void Queue::submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
 		{
-			((QueuePrivate*)this)->submit(cbs, wait_semaphore, signal_semaphore, signal_fence);
+			((QueuePrivate*)this)->submit(cb_count, cbs, wait_semaphore, signal_semaphore, signal_fence);
 		}
 
 		void Queue::present(Swapchain* s, Semaphore* wait_semaphore)

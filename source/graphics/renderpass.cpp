@@ -2,20 +2,18 @@
 #include "device_private.h"
 #include "renderpass_private.h"
 
-#include <memory>
-
 namespace flame
 {
 	namespace graphics
 	{
-		RenderpassPrivate::RenderpassPrivate(Device* _d, const std::vector<void*>& _attachments, const std::vector<void*>& _subpasses, const std::vector<Vec<2, uint>>& _dependencies) :
+		RenderpassPrivate::RenderpassPrivate(Device* _d, uint attachment_count, AttachmentInfo* const* _attachments, uint subpass_count, SubpassInfo* const* _subpasses, uint dependency_count, const Vec2u* _dependencies) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
-			std::vector<VkAttachmentDescription> vk_attachments(_attachments.size());
-			for (auto i = 0; i < _attachments.size(); i++)
+			std::vector<VkAttachmentDescription> vk_attachments(attachment_count);
+			for (auto i = 0; i < attachment_count; i++)
 			{
-				auto at_info = (AttachmentInfo*)_attachments[i];
+				auto at_info = _attachments[i];
 
 				vk_attachments[i].flags = 0;
 				vk_attachments[i].format = to_enum(at_info->format);
@@ -38,13 +36,13 @@ namespace flame
 					vk_attachments[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			}
 
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(_subpasses.size());
-			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(_subpasses.size());
-			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(_subpasses.size());
-			std::vector<VkSubpassDescription> vk_subpasses(_subpasses.size());
-			for (auto i = 0; i < _subpasses.size(); i++)
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_color_refs(subpass_count);
+			std::vector<std::unique_ptr<VkAttachmentReference[]>> vk_resolve_refs(subpass_count);
+			std::vector<std::unique_ptr<VkAttachmentReference>> vk_depth_refs(subpass_count);
+			std::vector<VkSubpassDescription> vk_subpasses(subpass_count);
+			for (auto i = 0; i < subpass_count; i++)
 			{
-				auto sp_info = (SubpassInfo*)_subpasses[i];
+				auto sp_info = _subpasses[i];
 
 				vk_subpasses[i].flags = 0;
 				vk_subpasses[i].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -56,21 +54,21 @@ namespace flame
 				vk_subpasses[i].pDepthStencilAttachment = nullptr;
 				vk_subpasses[i].preserveAttachmentCount = 0;
 				vk_subpasses[i].pPreserveAttachments = nullptr;
-				if (!sp_info->color_attachments.empty())
+				if (sp_info->color_attachment_count)
 				{
-					vk_color_refs[i].reset(new VkAttachmentReference[sp_info->color_attachments.size()]);
-					for (auto j = 0; j < sp_info->color_attachments.size(); j++)
+					vk_color_refs[i].reset(new VkAttachmentReference[sp_info->color_attachment_count]);
+					for (auto j = 0; j < sp_info->color_attachment_count; j++)
 					{
 						vk_color_refs[i][j].attachment = sp_info->color_attachments[j];
 						vk_color_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
-					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachments.size();
+					vk_subpasses[i].colorAttachmentCount = sp_info->color_attachment_count;
 					vk_subpasses[i].pColorAttachments = vk_color_refs[i].get();
 				}
-				if (!sp_info->resolve_attachments.empty())
+				if (sp_info->resolve_attachment_count)
 				{
-					vk_resolve_refs[i].reset(new VkAttachmentReference[sp_info->resolve_attachments.size()]);
-					for (auto j = 0; j < sp_info->resolve_attachments.size(); j++)
+					vk_resolve_refs[i].reset(new VkAttachmentReference[sp_info->resolve_attachment_count]);
+					for (auto j = 0; j < sp_info->resolve_attachment_count; j++)
 					{
 						vk_resolve_refs[i][j].attachment = sp_info->resolve_attachments[j];
 						vk_resolve_refs[i][j].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -87,8 +85,8 @@ namespace flame
 				}
 			}
 
-			std::vector<VkSubpassDependency> vk_dependencies(_dependencies.size());
-			for (auto i = 0; i < _dependencies.size(); i++)
+			std::vector<VkSubpassDependency> vk_dependencies(dependency_count);
+			for (auto i = 0; i < dependency_count; i++)
 			{
 				auto& dp_info = _dependencies[i];
 
@@ -114,34 +112,12 @@ namespace flame
 
 			chk_res(vkCreateRenderPass(d->v, &create_info, nullptr, &v));
 
-			attachments.resize(_attachments.size());
-			for (auto i = 0; i < _attachments.size(); i++)
-				attachments[i] = *(AttachmentInfo*)(_attachments[i]);
-			subpasses.resize(_subpasses.size());
-			for (auto i = 0; i < _subpasses.size(); i++)
-				subpasses[i] = *(SubpassInfo*)(_subpasses[i]);
-
-			std::vector<uint> color_attachments;
-			for (auto i = 0; i < _subpasses.size(); i++)
-			{
-				auto sp_info = (SubpassInfo*)_subpasses[i];
-
-				for (auto idx : sp_info->color_attachments)
-				{
-					auto found = false;
-					for (auto existing : color_attachments)
-					{
-						if (idx == existing)
-						{
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-						color_attachments.push_back(idx);
-				}
-			}
-			color_attachment_count = color_attachments.size();
+			attachments.resize(attachment_count);
+			for (auto i = 0; i < attachment_count; i++)
+				attachments[i] = *_attachments[i];
+			subpasses.resize(subpass_count);
+			for (auto i = 0; i < subpass_count; i++)
+				subpasses[i] = *_subpasses[i];
 #endif
 		}
 
@@ -155,11 +131,6 @@ namespace flame
 		uint Renderpass::attachment_count() const
 		{
 			return ((RenderpassPrivate*)this)->attachments.size();
-		}
-
-		uint Renderpass::color_attachment_count() const
-		{
-			return ((RenderpassPrivate*)this)->color_attachment_count;
 		}
 
 		const AttachmentInfo& Renderpass::attachment_info(uint idx) const
@@ -177,9 +148,9 @@ namespace flame
 			return ((RenderpassPrivate*)this)->subpasses[idx];
 		}
 
-		Renderpass* Renderpass::create(Device* d, const std::vector<void*>& attachments, const std::vector<void*>& subpasses, const std::vector<Vec<2, uint>>& dependencies)
+		Renderpass* Renderpass::create(Device* d, uint attachment_count, AttachmentInfo* const* attachments, uint subpass_count, SubpassInfo* const* subpasses, uint dependency_count, const Vec2u* dependencies)
 		{
-			return new RenderpassPrivate(d, attachments, subpasses, dependencies);
+			return new RenderpassPrivate(d, attachment_count, attachments, subpass_count, subpasses, dependency_count, dependencies);
 		}
 
 		void Renderpass::destroy(Renderpass* r)
@@ -241,16 +212,14 @@ namespace flame
 				auto last_out_frame = out$o.frame;
 				if (color_attachments$i.frame > last_out_frame)
 				{
-					out$o.v.color_attachments.resize(color_attachments$i.v ? color_attachments$i.v->s : 0);
-					for (auto i = 0; i < out$o.v.color_attachments.size(); i++)
-						out$o.v.color_attachments[i] = color_attachments$i.v->v[i];
+					out$o.v.color_attachment_count = color_attachments$i.v ? color_attachments$i.v->s : 0;
+					out$o.v.color_attachments = color_attachments$i.v ? color_attachments$i.v->v : nullptr;
 					out$o.frame = scene->frame;
 				}
 				if (resolve_attachments$i.frame > last_out_frame)
 				{
-					out$o.v.resolve_attachments.resize(resolve_attachments$i.v ? resolve_attachments$i.v->s : 0);
-					for (auto i = 0; i < out$o.v.resolve_attachments.size(); i++)
-						out$o.v.resolve_attachments[i] = resolve_attachments$i.v->v[i];
+					out$o.v.resolve_attachment_count = resolve_attachments$i.v ? resolve_attachments$i.v->s : 0;
+					out$o.v.resolve_attachments = resolve_attachments$i.v ? resolve_attachments$i.v->v : nullptr;
 					out$o.frame = scene->frame;
 				}
 				if (depth_attachment$i.frame > last_out_frame)
@@ -263,8 +232,8 @@ namespace flame
 
 		struct Renderpass$
 		{
-			AttributeP<Array<void*>> attachments$i;
-			AttributeP<Array<void*>> subpasses$i;
+			AttributeP<Array<AttachmentInfo*>> attachments$i;
+			AttributeP<Array<SubpassInfo*>> subpasses$i;
 			AttributeP<Array<Vec2u>> dependencies$i;
 
 			AttributeP<void> out$o;
@@ -276,26 +245,12 @@ namespace flame
 					if (out$o.v)
 						Renderpass::destroy((Renderpass*)out$o.v);
 					auto d = Device::default_one();
-					std::vector<void*> attachments;
-					if (attachments$i.v)
-					{
-						attachments.resize(attachments$i.v->s);
-						for (auto i = 0; i < attachments.size(); i++)
-							attachments[i] = attachments$i.v->v[i];
-					}
-					std::vector<void*> subpasses;
-					if (subpasses$i.v)
-					{
-						subpasses.resize(subpasses$i.v->s);
-						for (auto i = 0; i < subpasses.size(); i++)
-							subpasses[i] = subpasses$i.v->v[i];
-					}
-					if (!attachments.empty() && !subpasses.empty())
+					if (attachments$i.v->s && subpasses$i.v->s)
 					{
 						auto ok = true;
-						for (auto a : attachments)
+						for (auto i = 0; i < attachments$i.v->s; i++)
 						{
-							if (((AttachmentInfo*)a)->format == Format_Undefined)
+							if (attachments$i.v->v[i]->format == Format_Undefined)
 							{
 								ok = false;
 								break;
@@ -303,16 +258,7 @@ namespace flame
 						}
 
 						if (ok)
-						{
-							std::vector<Vec2u> dependencies;
-							if (dependencies$i.v)
-							{
-								dependencies.resize(dependencies$i.v->s);
-								for (auto i = 0; i < dependencies.size(); i++)
-									dependencies[i] = dependencies$i.v->v[i];
-							}
-							out$o.v = Renderpass::create(d, attachments, subpasses, dependencies);
-						}
+							out$o.v = Renderpass::create(d, attachments$i.v->s, attachments$i.v->v, subpasses$i.v->s, subpasses$i.v->v, dependencies$i.v->s, dependencies$i.v->v);
 						else
 							out$o.v = nullptr;
 					}
@@ -396,10 +342,10 @@ namespace flame
 
 		struct Clearvalues$
 		{
-			AttributeP<void> renderpass$i;
+			AttributeP<Renderpass> renderpass$i;
 			AttributeP<Array<Vec4c>> colors$i;
 
-			AttributeP<void> out$o;
+			AttributeP<Clearvalues> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
@@ -407,9 +353,9 @@ namespace flame
 				if (renderpass$i.frame > last_out_frame)
 				{
 					if (out$o.v)
-						Clearvalues::destroy((Clearvalues*)out$o.v);
+						Clearvalues::destroy(out$o.v);
 					if (renderpass$i.v)
-						out$o.v = Clearvalues::create((Renderpass*)renderpass$i.v);
+						out$o.v = Clearvalues::create(renderpass$i.v);
 					else
 					{
 						printf("cannot create clearvalues\n");
@@ -420,13 +366,12 @@ namespace flame
 				}
 				if (colors$i.frame > last_out_frame || renderpass$i.frame > last_out_frame)
 				{
-					auto cv = (Clearvalues*)out$o.v;
-					if (cv && cv->renderpass())
+					if (out$o.v && out$o.v->renderpass())
 					{
 						if (colors$i.v)
 						{
 							for (auto i = 0; i < colors$i.v->s; i++)
-								cv->set(i, colors$i.v->v[i]);
+								out$o.v->set(i, colors$i.v->v[i]);
 						}
 					}
 					else
@@ -438,18 +383,18 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS ~Clearvalues$()
 			{
 				if (out$o.v)
-					Clearvalues::destroy((Clearvalues*)out$o.v);
+					Clearvalues::destroy(out$o.v);
 			}
 
 		};
 
-		FramebufferPrivate::FramebufferPrivate(Device* _d, Renderpass* _rp, const std::vector<void*>& views) :
+		FramebufferPrivate::FramebufferPrivate(Device* _d, Renderpass* _rp, uint view_count, Imageview* const* views) :
 			d((DevicePrivate*)_d),
 			rp((RenderpassPrivate*)_rp)
 		{
 #if defined(FLAME_VULKAN)
-			std::vector<VkImageView> vk_views(views.size());
-			for (auto i = 0; i < views.size(); i++)
+			std::vector<VkImageView> vk_views(view_count);
+			for (auto i = 0; i < view_count; i++)
 			{
 				auto v = (ImageviewPrivate*)views[i];
 
@@ -469,7 +414,7 @@ namespace flame
 			create_info.height = image_size.y();
 			create_info.layers = 1;
 			create_info.renderPass = rp->v;
-			create_info.attachmentCount = views.size();
+			create_info.attachmentCount = view_count;
 			create_info.pAttachments = vk_views.data();
 
 			chk_res(vkCreateFramebuffer(d->v, &create_info, nullptr, &v));
@@ -488,9 +433,9 @@ namespace flame
 			return ((FramebufferPrivate*)this)->rp;
 		}
 
-		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, const std::vector<void*>& views)
+		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, uint view_count, Imageview* const* views)
 		{
-			return new FramebufferPrivate(d, rp, views);
+			return new FramebufferPrivate(d, rp, view_count, views);
 		}
 
 		void Framebuffer::destroy(Framebuffer* f)
@@ -500,23 +445,20 @@ namespace flame
 
 		struct Framebuffer$
 		{
-			AttributeP<void> renderpass$i;
-			AttributeP<Array<void*>> views$i;
+			AttributeP<Renderpass> renderpass$i;
+			AttributeP<Array<Imageview*>> views$i;
 
-			AttributeP<void> out$o;
+			AttributeP<Framebuffer> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (renderpass$i.frame > out$o.frame || views$i.frame > out$o.frame)
 				{
 					if (out$o.v)
-						Framebuffer::destroy((Framebuffer*)out$o.v);
+						Framebuffer::destroy(out$o.v);
 					auto d = Device::default_one();
-					std::vector<void*> views(views$i.v ? views$i.v->s : 0);
-					for (auto i = 0; i < views.size(); i++)
-						views[i] = views$i.v->v[i];
-					if (d && renderpass$i.v && !views.empty())
-						out$o.v = Framebuffer::create(d, (Renderpass*)renderpass$i.v, views);
+					if (d && renderpass$i.v && views$i.v->s)
+						out$o.v = Framebuffer::create(d, renderpass$i.v, views$i.v->s, views$i.v->v);
 					else
 					{
 						printf("cannot create framebuffer\n");
@@ -530,22 +472,20 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS ~Framebuffer$()
 			{
 				if (out$o.v)
-					Framebuffer::destroy((Framebuffer*)out$o.v);
+					Framebuffer::destroy(out$o.v);
 			}
 
 		};
 
-		RenderpassAndFramebufferPrivate::RenderpassAndFramebufferPrivate(Device* d, const std::vector<void*>& passes)
+		RenderpassAndFramebufferPrivate::RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes)
 		{
-			std::vector<void*> rp_attachments;
-			std::vector<void*> rp_subpasses;
+			std::vector<AttachmentInfo*> rp_attachments;
+			std::vector<SubpassInfo*> rp_subpasses;
 			std::vector<std::tuple<TargetType$, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
-			std::vector<std::unique_ptr<SubpassInfo>> sp_infos;
-			for (auto& _p : passes)
+			std::vector<std::unique_ptr<SubpassInfoPrivate>> sp_infos;
+			for (auto i = 0; i < pass_count; i++)
 			{
-				auto find_or_add_att = [&](void* p) {
-					const auto& t = *(RenderTarget*)p;
-
+				auto find_or_add_att = [&](const RenderTarget& t) {
 					for (auto i = 0; i < att_infos.size(); i++)
 					{
 						auto& att = att_infos[i];
@@ -569,22 +509,26 @@ namespace flame
 					return idx;
 				};
 
-				auto sp_info = new SubpassInfo;
-
-				const auto& p = *(SubpassTargetInfo*)_p;
-
-				for (auto& t : p.color_targets)
-					sp_info->color_attachments.push_back(find_or_add_att(t));
-				for (auto& t : p.resolve_targets)
-					sp_info->resolve_attachments.push_back(find_or_add_att(t));
+				auto sp_info = new SubpassInfoPrivate;
+				const auto& p = *passes[i];
+				for (auto i = 0; i < p.color_target_count; i++)
+					sp_info->_color_attachments.push_back(find_or_add_att(*p.color_targets[i]));
+				for (auto i = 0; i < p.resolve_target_count; i++)
+					sp_info->_resolve_attachments.push_back(find_or_add_att(*p.resolve_targets[i]));
+				sp_info->color_attachment_count = p.color_target_count;
+				sp_info->color_attachments = sp_info->_color_attachments.data();
+				sp_info->resolve_attachment_count = p.resolve_target_count;
+				sp_info->resolve_attachments = sp_info->_resolve_attachments.data();
 				if (p.depth_target)
-					sp_info->depth_attachment = find_or_add_att(p.depth_target);
+					sp_info->depth_attachment = find_or_add_att(*p.depth_target);
+				else
+					sp_info->depth_attachment = -1;
 
 				sp_infos.emplace_back(sp_info);
-
 				rp_subpasses.push_back(sp_info);
+
 			}
-			rp = (RenderpassPrivate*)Renderpass::create(d, rp_attachments, rp_subpasses, {});
+			rp = (RenderpassPrivate*)Renderpass::create(d, rp_attachments.size(), rp_attachments.data(), rp_subpasses.size(), rp_subpasses.data(), 0, nullptr);
 
 			cv = (ClearvaluesPrivate*)Clearvalues::create(rp);
 			for (auto i = 0; i < att_infos.size(); i++)
@@ -608,7 +552,7 @@ namespace flame
 
 			for (auto i = 0; i < image_count; i++)
 			{
-				std::vector<void*> fb_views;
+				std::vector<Imageview*> fb_views;
 				for (auto& att_info : att_infos)
 				{
 					auto type = std::get<0>(att_info);
@@ -623,7 +567,7 @@ namespace flame
 					}
 						break;
 					case TargetImageview:
-						fb_views.push_back(v);
+						fb_views.push_back((Imageview*)v);
 						break;
 					case TargetImages:
 					{
@@ -634,7 +578,7 @@ namespace flame
 						break;
 					}
 				}
-				fbs.emplace_back(Framebuffer::create(d, rp, fb_views));
+				fbs.emplace_back(Framebuffer::create(d, rp, fb_views.size(), fb_views.data()));
 			}
 		}
 
@@ -653,9 +597,14 @@ namespace flame
 			return ((RenderpassAndFramebufferPrivate*)this)->rp;
 		}
 
-		const std::vector<void*>& RenderpassAndFramebuffer::framebuffers() const
+		uint RenderpassAndFramebuffer::framebuffer_count() const
 		{
-			return ((RenderpassAndFramebufferPrivate*)this)->fbs;
+			return ((RenderpassAndFramebufferPrivate*)this)->fbs.size();
+		}
+
+		Framebuffer* RenderpassAndFramebuffer::framebuffer(uint idx) const
+		{
+			return ((RenderpassAndFramebufferPrivate*)this)->fbs[idx];
 		}
 
 		Clearvalues* RenderpassAndFramebuffer::clearvalues() const
@@ -663,9 +612,9 @@ namespace flame
 			return ((RenderpassAndFramebufferPrivate*)this)->cv;
 		}
 
-		RenderpassAndFramebuffer* RenderpassAndFramebuffer::create(Device* d, const std::vector<void*>& passes)
+		RenderpassAndFramebuffer* RenderpassAndFramebuffer::create(Device* d, uint pass_count, SubpassTargetInfo* const* passes)
 		{
-			return new RenderpassAndFramebufferPrivate(d, passes);
+			return new RenderpassAndFramebufferPrivate(d, pass_count, passes);
 		}
 
 		void RenderpassAndFramebuffer::destroy(RenderpassAndFramebuffer* s)
@@ -681,7 +630,7 @@ namespace flame
 			AttributeD<Vec4c> clear_color$i;
 
 			AttributeD<RenderTarget> out$o;
-			AttributeP<void> first_image$o;
+			AttributeP<Image> first_image$o;
 
 			FLAME_GRAPHICS_EXPORTS RenderTarget$()
 			{
@@ -715,9 +664,9 @@ namespace flame
 
 		struct SubpassTargetInfo$
 		{
-			AttributeP<Array<void*>> color_targets$i;
-			AttributeP<Array<void*>> resolve_targets$i;
-			AttributeP<void> depth_target$i;
+			AttributeP<Array<RenderTarget*>> color_targets$i;
+			AttributeP<Array<RenderTarget*>> resolve_targets$i;
+			AttributeP<RenderTarget> depth_target$i;
 
 			AttributeD<SubpassTargetInfo> out$o;
 
@@ -731,16 +680,14 @@ namespace flame
 				auto last_out_frame = out$o.frame;
 				if (color_targets$i.frame > last_out_frame)
 				{
-					out$o.v.color_targets.resize(color_targets$i.v ? color_targets$i.v->s : 0);
-					for (auto i = 0; i < out$o.v.color_targets.size(); i++)
-						out$o.v.color_targets[i] = color_targets$i.v->v[i];
+					out$o.v.color_target_count = color_targets$i.v ? color_targets$i.v->s : 0;
+					out$o.v.color_targets = color_targets$i.v ? color_targets$i.v->v : nullptr;
 					out$o.frame = scene->frame;
 				}
 				if (resolve_targets$i.frame > last_out_frame)
 				{
-					out$o.v.resolve_targets.resize(resolve_targets$i.v ? resolve_targets$i.v->s : 0);
-					for (auto i = 0; i < out$o.v.resolve_targets.size(); i++)
-						out$o.v.resolve_targets[i] = resolve_targets$i.v->v[i];
+					out$o.v.resolve_target_count = resolve_targets$i.v ? resolve_targets$i.v->s : 0;
+					out$o.v.resolve_targets = resolve_targets$i.v ? resolve_targets$i.v->v : nullptr;
 					out$o.frame = scene->frame;
 				}
 				if (depth_target$i.frame > last_out_frame)
@@ -753,46 +700,38 @@ namespace flame
 
 		struct RenderpassAndFramebuffer$
 		{
-			AttributeP<Array<void*>> passes$i;
+			AttributeP<Array<SubpassTargetInfo*>> passes$i;
 
-			AttributeP<void> out$o;
-			AttributeP<void> rp$o;
-			AttributeD<std::vector<void*>> fbs$o;
-			AttributeP<void> cv$o;
-
-			FLAME_GRAPHICS_EXPORTS RenderpassAndFramebuffer$()
-			{
-			}
+			AttributeP<RenderpassAndFramebuffer> out$o;
+			AttributeP<Renderpass> rp$o;
+			AttributeD<Array<Framebuffer*>> fbs$o;
+			AttributeP<Clearvalues> cv$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
-				const auto check_target = [&](void* _t) {
-					const auto& t = *(RenderTarget*)_t;
-
+				const auto check_target = [&](const RenderTarget& t) {
 					switch (t.type)
 					{
 					case TargetImage: case TargetImageview:
 						return t.v != nullptr;
 					case TargetImages:
-						return t.v != nullptr && !(((std::vector<Image*>*)t.v)->empty());
+						return t.v != nullptr && ((Array<Image*>*)t.v)->s;
 					}
 				};
-				const auto check_pass = [&](void* _p) {
-					const auto& p = *(SubpassTargetInfo*)_p;
-
-					for (auto t : p.color_targets)
+				const auto check_pass = [&](const SubpassTargetInfo& p) {
+					for (auto i = 0; i < p.color_target_count; i++)
 					{
-						if (!check_target(t))
+						if (!check_target(*p.color_targets[i]))
 							return false;
 					}
-					for (auto t : p.resolve_targets)
+					for (auto i = 0; i < p.resolve_target_count; i++)
 					{
-						if (!check_target(t))
+						if (!check_target(*p.resolve_targets[i]))
 							return false;
 					}
 					if (p.depth_target)
 					{
-						if (!check_target(p.depth_target))
+						if (!check_target(*p.depth_target))
 							return false;
 					}
 
@@ -802,24 +741,26 @@ namespace flame
 				{
 					if (out$o.v)
 						RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
-					std::vector<void*> passes(passes$i.v ? passes$i.v->s : 0);
-					for (auto i = 0; i < passes.size(); i++)
-						passes[i] = passes$i.v->v[i];
-					auto ok = !passes.empty();
-					for (auto _p : passes)
+					auto ok = passes$i.v && passes$i.v->s;
+					if (ok)
 					{
-						if (!check_pass(_p))
+						for (auto i = 0; i < passes$i.v->s; i++)
 						{
-							ok = false;
-							break;
+							if (!check_pass(*passes$i.v->v[i]))
+							{
+								ok = false;
+								break;
+							}
 						}
 					}
 					if (ok)
 					{
-						auto rnf = RenderpassAndFramebuffer::create(Device::default_one(), passes);
+						auto rnf = RenderpassAndFramebuffer::create(Device::default_one(), passes$i.v->s, passes$i.v->v);
 						out$o.v = rnf;
 						rp$o.v = rnf->renderpass();
-						fbs$o.v = rnf->framebuffers();
+						fbs$o.v.resize(rnf->framebuffer_count());
+						for (auto i = 0; i < fbs$o.v.s; i++)
+							fbs$o.v.v[i] = rnf->framebuffer(i);
 						cv$o.v = rnf->clearvalues();
 					}
 					else
@@ -828,7 +769,7 @@ namespace flame
 
 						out$o.v = nullptr;
 						rp$o.v = nullptr;
-						fbs$o.v.clear();
+						fbs$o.v.resize(0);
 						cv$o.v = nullptr;
 					}
 					out$o.frame = scene->frame;
@@ -843,7 +784,6 @@ namespace flame
 				if (out$o.v)
 					RenderpassAndFramebuffer::destroy((RenderpassAndFramebuffer*)out$o.v);
 			}
-
 		};
 	}
 }

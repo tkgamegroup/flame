@@ -22,28 +22,18 @@ namespace flame
 		{
 			DescriptorType$ type;
 			uint count;
-			std::string name;
+			const char* name;
 		};
 
 		struct DescriptorBufferBinding : DescriptorBindingBase
 		{
 			Buffer* buffer;
-
-			DescriptorBufferBinding() :
-				buffer(nullptr)
-			{
-			}
 		};
 
 		struct DescriptorImageBinding : DescriptorBindingBase
 		{
 			Imageview* view;
 			Sampler* sampler;
-
-			DescriptorImageBinding() :
-				view(nullptr)
-			{
-			}
 		};
 
 		struct Descriptorlayout
@@ -52,7 +42,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS const DescriptorBindingBase* get_binding(uint binding) const;
 			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, const DescriptorBindingBase* bindings, Descriptorpool* default_set_pool = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, DescriptorBindingBase* const* bindings, Descriptorpool* default_set_pool = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 
@@ -70,43 +60,29 @@ namespace flame
 
 		struct Pipelinelayout
 		{
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, uint descriptorlayout_count, const Descriptorlayout* descriptorlayouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, uint descriptorlayout_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Pipelinelayout* p);
 		};
 
 		struct VertexInputAttribute
 		{
-			std::string name;
+			const char* name;
 			Format$ format;
 		};
 
 		struct VertexInputBuffer
 		{
-			std::vector<void*> attributes;
+			uint attribute_count;
+			VertexInputAttribute* const* attributes;
 			VertexInputRate$ rate;
-
-			VertexInputBuffer() :
-				rate(VertexInputRateVertex)
-			{
-			}
-
-			VertexInputBuffer(uint id, uint stride, VertexInputRate$ rate = VertexInputRateVertex) :
-				rate(rate)
-			{
-			}
 		};
 
 		struct VertexInputInfo
 		{
-			std::vector<void*> buffers;
+			uint buffer_count;
+			VertexInputBuffer* const* buffers;
 			PrimitiveTopology$ primitive_topology;
 			uint patch_control_points;
-
-			VertexInputInfo() :
-				primitive_topology(PrimitiveTopologyTriangleList),
-				patch_control_points(0)
-			{
-			}
 		};
 
 		struct RasterInfo
@@ -114,13 +90,6 @@ namespace flame
 			bool depth_clamp;
 			PolygonMode polygon_mode;
 			CullMode cull_mode;
-
-			RasterInfo() :
-				depth_clamp(false),
-				polygon_mode(PolygonModeFill),
-				cull_mode(CullModeNone)
-			{
-			}
 		};
 
 		struct DepthInfo
@@ -128,13 +97,6 @@ namespace flame
 			bool test;
 			bool write;
 			CompareOp compare_op;
-
-			DepthInfo() :
-				test(false),
-				write(false),
-				compare_op(CompareOpLess)
-			{
-			}
 		};
 
 		inline std::wstring shader_stage_name(ShaderStage$ s)

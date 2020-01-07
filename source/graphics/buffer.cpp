@@ -116,7 +116,7 @@ namespace flame
 			cb->begin(true);
 			cb->copy_buffer(stag_buf, this, 1, &BufferCopy(0, 0, size));
 			cb->end();
-			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
+			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 
@@ -164,7 +164,7 @@ namespace flame
 			AttributeE<BufferUsage$> usage$im;
 			AttributeE<MemProp$> mem_prop$im;
 
-			AttributeP<void> out$o;
+			AttributeP<Buffer> out$o;
 
 			FLAME_GRAPHICS_EXPORTS Buffer$()
 			{

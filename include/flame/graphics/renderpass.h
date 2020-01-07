@@ -34,7 +34,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS uint subpass_count() const;
 			FLAME_GRAPHICS_EXPORTS const SubpassInfo& subpass_info(uint idx) const;
 
-			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, uint attachment_count, const AttachmentInfo* attachments, uint subpass_count, const SubpassInfo* subpasses, uint dependency_count, const Vec<2, uint>* dependencies);
+			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, uint attachment_count, AttachmentInfo* const* attachments, uint subpass_count, SubpassInfo* const* subpasses, uint dependency_count, const Vec2u* dependencies);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
 		};
 
@@ -69,20 +69,20 @@ namespace flame
 		struct SubpassTargetInfo
 		{
 			uint color_target_count;
-			const RenderTarget* color_targets;
+			RenderTarget* const* color_targets;
 			uint resolve_target_count;
-			const RenderTarget* resolve_targets;
-			void* depth_target;
+			RenderTarget* const* resolve_targets;
+			RenderTarget* depth_target;
 		};
 
 		struct RenderpassAndFramebuffer
 		{
 			FLAME_GRAPHICS_EXPORTS Renderpass* renderpass() const;
 			FLAME_GRAPHICS_EXPORTS uint framebuffer_count() const;
-			FLAME_GRAPHICS_EXPORTS Framebuffer* const* framebuffers() const;
+			FLAME_GRAPHICS_EXPORTS Framebuffer* framebuffer(uint idx) const;
 			FLAME_GRAPHICS_EXPORTS Clearvalues* clearvalues() const;
 
-			FLAME_GRAPHICS_EXPORTS static RenderpassAndFramebuffer* create(Device* d, uint pass_count, const SubpassTargetInfo* passes);
+			FLAME_GRAPHICS_EXPORTS static RenderpassAndFramebuffer* create(Device* d, uint pass_count, SubpassTargetInfo* const* passes);
 			FLAME_GRAPHICS_EXPORTS static void destroy(RenderpassAndFramebuffer* s);
 		};
 	}

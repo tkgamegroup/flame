@@ -491,6 +491,75 @@ namespace flame
 		return buf;
 	}
 
+#ifdef FLAME_WINDOWS
+	inline std::string translate(const char* src_locale, const char* dst_locale, const std::string& src)
+	{
+		std::wstring_convert<std::codecvt_byname<wchar_t, char, mbstate_t>>
+			cv1(new std::codecvt_byname<wchar_t, char, mbstate_t>(src_locale));
+		std::wstring_convert<std::codecvt_byname<wchar_t, char, mbstate_t>>
+			cv2(new std::codecvt_byname<wchar_t, char, mbstate_t>(dst_locale));
+		return cv2.to_bytes(cv1.from_bytes(src));
+	}
+
+	inline std::string japanese_to_chinese(const std::string& src)
+	{
+		return translate(".932", ".936", src);
+	}
+#endif
+
+	enum FileType
+	{
+		FileTypeUnknown,
+		FileTypeFolder,
+		FileTypeText,
+		FileTypeImage,
+		FileTypeModel
+	};
+
+	inline bool is_text_file(const std::wstring& _ext)
+	{
+		auto ext = _ext;
+		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
+		if (ext == L".txt" ||
+			ext == L".h" || ext == L".c" || ext == L".cpp" || ext == L".hpp" || ext == L".cxx" || ext == L".inl" ||
+			ext == L".glsl" || ext == L".vert" || ext == L".tesc" || ext == L".tese" || ext == L".geom" || ext == L".frag" || ext == L".hlsl" ||
+			ext == L".xml" || ext == L".json" || ext == L".ini" || ext == L".log" ||
+			ext == L".htm" || ext == L".html" || ext == L".css" ||
+			ext == L".sln" || ext == L".vcxproj")
+			return true;
+		return false;
+	}
+
+	inline bool is_image_file(const std::wstring& _ext)
+	{
+		auto ext = _ext;
+		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
+		if (ext == L".bmp" || ext == L".jpg" || ext == L".jpeg" || ext == L".png" || ext == L".gif" ||
+			ext == L".tga" || ext == L".dds" || ext == L".ktx")
+			return true;
+		return false;
+	}
+
+	inline bool is_model_file(const std::wstring& _ext)
+	{
+		auto ext = _ext;
+		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
+		if (ext == L".obj" || ext == L".pmd" || ext == L".pmx" || ext == L".dae")
+			return true;
+		return false;
+	}
+
+	inline FileType get_file_type(const std::wstring& ext)
+	{
+		if (is_text_file(ext))
+			return FileTypeText;
+		if (is_image_file(ext))
+			return FileTypeImage;
+		if (is_model_file(ext))
+			return FileTypeModel;
+		return FileTypeUnknown;
+	}
+
 	template<class T>
 	inline T read(std::ifstream& file)
 	{

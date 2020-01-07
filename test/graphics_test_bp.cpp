@@ -1,4 +1,3 @@
-#include <flame/foundation/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/renderpass.h>
@@ -15,7 +14,7 @@ struct App
 	Device* d;
 	SwapchainResizable* scr;
 	Fence* fence;
-	std::vector<Commandbuffer*> cbs;
+	Array<Commandbuffer*> cbs;
 	Semaphore* render_finished;
 	BP* bp;
 
@@ -33,7 +32,7 @@ struct App
 
 		if (sc)
 		{
-			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit(1, &cbs.v[sc->image_index()], sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 	}
@@ -43,7 +42,7 @@ auto papp = &app;
 
 int main(int argc, char** args)
 {
-	app.bp = BP::create_from_file(L"../renderpath/logo/bp", true);
+	app.bp = BP::create_from_file(L"../renderpath/clear/bp", true);
 	if (!app.bp)
 	{
 		printf("bp not found, exit\n");
@@ -54,12 +53,12 @@ int main(int argc, char** args)
 	app.d = Device::create(true);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-	app.cbs.resize(app.scr->sc()->images().size());
-	for (auto i = 0; i < app.cbs.size(); i++)
-		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	app.cbs.resize(app.scr->sc()->image_count());
+	for (auto i = 0; i < app.cbs.s; i++)
+		app.cbs.v[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
 
-	app.scr->link_bp(app.bp, app.cbs);
+	app.scr->link_bp(app.bp, &app.cbs);
 	app.bp->update();
 
 	looper().loop([](void* c) {

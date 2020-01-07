@@ -11,13 +11,17 @@
 				<data name="clear_color" value="200;100;50;255" />
 			</datas>
 		</node>
+    <node type="D#Array(1+graphics::RenderTarget*)" id="color_targets" pos="17.72;43.53" />
 		<node type="D#graphics::SubpassTargetInfo" id="sp" pos="355.81;41.53" />
+    <node type="D#Array(1+graphics::SubpassTargetInfo*)" id="sps" pos="355.81;41.53" />
 		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" pos="605.20;68.53" />
 		<node type="D#MakeCmd" id="make_cmd" pos="940.20;85.53" />
 	</nodes>
 	<links>
-		<link out="rt_dst.out" in="sp.color_targets" />
-		<link out="sp.out" in="rnf.passes" />
+		<link out="rt_dst.out" in="color_targets.0" />
+    <link out="color_targets.out" in="sp.color_targets" />
+		<link out="sp.out" in="sps.0" />
+    <link out="sps.out" in="rnf.passes" />
 		<link out="rnf.fbs" in="make_cmd.fbs" />
 		<link out="rnf.cv" in="make_cmd.cv" />
 	</links>

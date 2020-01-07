@@ -151,7 +151,7 @@ namespace flame
 		SwapchainPrivate::~SwapchainPrivate()
 		{
 			for (auto i : images)
-				Image::destroy((Image*)i);
+				Image::destroy(i);
 
 #if defined(FLAME_VULKAN)
 			vkDestroySwapchainKHR(d->v, v, nullptr);
@@ -177,9 +177,14 @@ namespace flame
 			return ((SwapchainPrivate*)this)->w;
 		}
 
-		const std::vector<void*>& Swapchain::images() const
+		uint Swapchain::image_count() const
 		{
-			return ((SwapchainPrivate*)this)->images;
+			return ((SwapchainPrivate*)this)->images.size();
+		}
+
+		Image* Swapchain::image(uint idx) const
+		{
+			return ((SwapchainPrivate*)this)->images[idx];
 		}
 
 		Semaphore* Swapchain::image_avalible() const
@@ -267,10 +272,10 @@ namespace flame
 
 		struct SwapchainResizable$
 		{
-			AttributeP<void> in$i;
+			AttributeP<SwapchainResizable> in$i;
 
-			AttributeP<void> sc$o;
-			AttributeD<Array<void*>> images$o;
+			AttributeP<Swapchain> sc$o;
+			AttributeD<Array<Image*>> images$o;
 			AttributeD<uint> image_idx$o;
 
 			FLAME_GRAPHICS_EXPORTS SwapchainResizable$()
@@ -279,16 +284,14 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
-				auto scr = (SwapchainResizable*)in$i.v;
-				if (scr->changed)
+				if (in$i.v->changed)
 				{
-					sc$o.v = scr->sc();
+					sc$o.v = in$i.v->sc();
 					if (sc$o.v)
 					{
-						auto& images = ((Swapchain*)sc$o.v)->images();
-						images$o.v.resize(images.size());
-						for (auto i = 0; i < images.size(); i++)
-							images$o.v.v[i] = images[i];
+						images$o.v.resize(sc$o.v->image_count());
+						for (auto i = 0; i < images$o.v.s; i++)
+							images$o.v.v[i] = sc$o.v->image(i);
 					}
 					else
 						images$o.v.resize(0);
@@ -296,9 +299,9 @@ namespace flame
 					sc$o.frame = frame;
 					images$o.frame = frame;
 				}
-				image_idx$o.v = sc$o.v ? ((Swapchain*)sc$o.v)->image_index() : 0;
+				image_idx$o.v = sc$o.v ? sc$o.v->image_index() : 0;
 				image_idx$o.frame = scene->frame;
-				scr->changed = false;
+				in$i.v->changed = false;
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~SwapchainResizable$()

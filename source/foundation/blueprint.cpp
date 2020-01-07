@@ -316,13 +316,10 @@ namespace flame
 		update_addr = nullptr;
 		{
 			auto f = udt->find_function("update");
-			if (f)
-			{
-				if (f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "BP"))
-					update_addr = (char*)module + (uint)f->rva();
-				assert(update_addr);
-			}
+			if (f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "BP"))
+				update_addr = (char*)module + (uint)f->rva();
 		}
+		assert(update_addr);
 
 		for (auto i = 0; i < udt->variable_count(); i++)
 		{
@@ -456,8 +453,7 @@ namespace flame
 			}
 		}
 
-		if (update_addr)
-			cmf(p2f<MF_v_vp>(update_addr), object, scene);
+		cmf(p2f<MF_v_vp>(update_addr), object, scene);
 	}
 
 	BP::Module* BPPrivate::add_module(const std::wstring& fn)
@@ -1529,7 +1525,7 @@ namespace flame
 			exec_and_redirect_to_std_output(nullptr, cmake_cmd.data());
 
 			printf("compiling:\n");
-			exec_and_redirect_to_std_output(L"", wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), (get_curr_path().str() + L"/" + ppath_slash_str).c_str()).data());
+			exec_and_redirect_to_std_output(nullptr, wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), (get_curr_path().str() + L"/" + ppath_slash_str).c_str()).data());
 		}
 
 		auto self_module_filename = ppath_slash_str + L"build/debug/bp.dll";

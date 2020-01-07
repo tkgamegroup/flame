@@ -183,7 +183,7 @@ namespace flame
 			cb->clear_image(this, col);
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
+			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 		}
@@ -202,7 +202,7 @@ namespace flame
 			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
+			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 
@@ -230,7 +230,7 @@ namespace flame
 			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
+			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 
@@ -270,7 +270,7 @@ namespace flame
 				cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 				cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
-				d->gq->submit({ cb }, nullptr, nullptr, nullptr);
+				d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 				d->gq->wait_idle();
 				Commandbuffer::destroy(cb);
 				Buffer::destroy(staging_buffer);
@@ -295,7 +295,7 @@ namespace flame
 			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
+			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 			Buffer::destroy(staging_buffer);
@@ -303,7 +303,7 @@ namespace flame
 			return i;
 		}
 
-		Image* Image::create_from_file(Device* d, const std::wstring& filename, ImageUsage$ extra_usage)
+		Image* Image::create_from_file(Device* d, const wchar_t* filename, ImageUsage$ extra_usage)
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
@@ -391,7 +391,7 @@ namespace flame
 			cb->copy_buffer_to_image(staging_buffer, i, buffer_copy_regions.size(), buffer_copy_regions.data());
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit({ cb }, nullptr, nullptr, nullptr);
+			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
 			Commandbuffer::destroy(cb);
 
@@ -400,7 +400,7 @@ namespace flame
 			return i;
 		}
 
-		void Image::save_to_png(Image* i, const std::wstring& filename)
+		void Image::save_to_png(Image* i, const wchar_t* filename)
 		{
 			if (i->bpp / i->channel <= 8)
 			{
@@ -433,7 +433,7 @@ namespace flame
 			AttributeD<bool> init_with_color$i;
 			AttributeD<Vec4c> init_color$i;
 
-			AttributeP<void> out$o;
+			AttributeP<Image> out$o;
 
 			FLAME_GRAPHICS_EXPORTS Image$()
 			{
@@ -580,7 +580,7 @@ namespace flame
 
 		struct Imageview$
 		{
-			AttributeP<void> image$i;
+			AttributeP<Image> image$i;
 			AttributeE<ImageviewType$> type$i;
 			AttributeD<uint> base_level$i;
 			AttributeD<uint> level_count$i;
@@ -591,7 +591,7 @@ namespace flame
 			AttributeE<Swizzle$> swizzle_b$i;
 			AttributeE<Swizzle$> swizzle_a$i;
 
-			AttributeP<void> out$o;
+			AttributeP<Imageview> out$o;
 
 			FLAME_GRAPHICS_EXPORTS Imageview$()
 			{
@@ -605,9 +605,9 @@ namespace flame
 				if (image$i.frame > out$o.frame || type$i.frame > out$o.frame || base_level$i.frame > out$o.frame || base_layer$i.frame > out$o.frame || layer_count$i.frame > out$o.frame || swizzle_r$i.frame > out$o.frame || swizzle_g$i.frame > out$o.frame || swizzle_b$i.frame > out$o.frame || swizzle_a$i.frame > out$o.frame)
 				{
 					if (out$o.v)
-						Imageview::destroy((Imageview*)out$o.v);
+						Imageview::destroy(out$o.v);
 					if (image$i.v && level_count$i.v > 0 && layer_count$i.v > 0)
-						out$o.v = Imageview::create((Image*)image$i.v, type$i.v, base_level$i.v, level_count$i.v, base_layer$i.v, layer_count$i.v, swizzle_r$i.v, swizzle_g$i.v, swizzle_b$i.v, swizzle_a$i.v);
+						out$o.v = Imageview::create(image$i.v, type$i.v, base_level$i.v, level_count$i.v, base_layer$i.v, layer_count$i.v, swizzle_r$i.v, swizzle_g$i.v, swizzle_b$i.v, swizzle_a$i.v);
 					else
 					{
 						printf("cannot create imageview\n");
@@ -621,25 +621,25 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS ~Imageview$()
 			{
 				if (out$o.v)
-					Imageview::destroy((Imageview*)out$o.v);
+					Imageview::destroy(out$o.v);
 			}
 
 		};
 
 		struct ImageviewGeneral$
 		{
-			AttributeP<void> image$i;
+			AttributeP<Image> image$i;
 
-			AttributeP<void> out$o;
+			AttributeP<Imageview> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (image$i.frame > out$o.frame)
 				{
 					if (out$o.v)
-						Imageview::destroy((Imageview*)out$o.v);
+						Imageview::destroy(out$o.v);
 					if (image$i.v)
-						out$o.v = Imageview::create((Image*)image$i.v);
+						out$o.v = Imageview::create(image$i.v);
 					else
 					{
 						printf("cannot create imageview general\n");
@@ -653,30 +653,27 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS ~ImageviewGeneral$()
 			{
 				if (out$o.v)
-					Imageview::destroy((Imageview*)out$o.v);
+					Imageview::destroy(out$o.v);
 			}
 		};
 
 		struct ImageviewsGeneral$
 		{
-			AttributeP<Array<void*>> images$i;
+			AttributeP<Array<Image*>> images$i;
 
-			AttributeD<Array<void*>> out$o;
+			AttributeD<Array<Imageview*>> out$o;
 
 			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
 			{
 				if (images$i.frame > out$o.frame)
 				{
 					for (auto i = 0; i < out$o.v.s; i++)
-						Imageview::destroy((Imageview*)out$o.v.v[i]);
-					std::vector<Image*> images(images$i.v ? images$i.v->s : 0);
-					for (auto i = 0; i < images.size(); i++)
-						images[i] = (Image*)images$i.v->v[i];
-					if (!images.empty())
+						Imageview::destroy(out$o.v.v[i]);
+					if (images$i.v && images$i.v->s)
 					{
-						out$o.v.resize(images.size());
+						out$o.v.resize(images$i.v->s);
 						for (auto i = 0; i < out$o.v.s; i++)
-							out$o.v.v[i] = Imageview::create((Image*)images[i]);
+							out$o.v.v[i] = Imageview::create(images$i.v->v[i]);
 					}
 					else
 					{
@@ -691,7 +688,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS ~ImageviewsGeneral$()
 			{
 				for (auto i = 0; i < out$o.v.s; i++)
-					Imageview::destroy((Imageview*)out$o.v.v[i]);
+					Imageview::destroy(out$o.v.v[i]);
 			}
 		};
 
@@ -754,7 +751,7 @@ namespace flame
 		{
 			id = H(filename.c_str());
 
-			image = Image::create_from_file(d, filename);
+			image = Image::create_from_file(d, filename.c_str());
 			imageview = Imageview::create(image);
 
 			auto w = (float)image->size.x();
@@ -769,14 +766,15 @@ namespace flame
 			while (!file.eof())
 			{
 				std::string t;
-				Region region;
+				AtlasRegionPrivate region;
 
 				std::getline(file, line);
 				if (line.empty())
 					break;
 				std::stringstream ss(line);
 				ss >> t;
-				region.filename = s2w(t);
+				region._filename = s2w(t);
+				region.filename = region._filename.c_str();
 				region.id = H(t.c_str());
 				ss >> t;
 				auto v = stou4(t.c_str());
@@ -797,14 +795,19 @@ namespace flame
 			return ((AtlasPrivate*)this)->imageview;
 		}
 
-		const std::vector<Atlas::Region>& Atlas::regions() const
+		uint Atlas::region_count() const
 		{
-			return ((AtlasPrivate*)this)->regions;
+			return ((AtlasPrivate*)this)->regions.size();
 		}
 
-		Atlas* Atlas::load(Device* d, const std::wstring& filename)
+		const Atlas::Region& Atlas::region(uint idx) const
 		{
-			auto atlas_filename = filename + L".atlas";
+			return ((AtlasPrivate*)this)->regions[idx];
+		}
+
+		Atlas* Atlas::load(Device* d, const wchar_t* filename)
+		{
+			auto atlas_filename = std::wstring(filename) + L".atlas";
 			if (!std::filesystem::exists(filename) || !std::filesystem::exists(atlas_filename))
 				return nullptr;
 

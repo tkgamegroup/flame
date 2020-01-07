@@ -304,7 +304,7 @@ namespace flame
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
-		VariableInfoPrivate* find_vari(const std::string& name, int* out_idx)
+		VariableInfoPrivate* find_variable(const std::string& name, int* out_idx)
 		{
 			for (auto i = 0; i < variables.size(); i++)
 			{
@@ -320,7 +320,7 @@ namespace flame
 			return nullptr;
 		}
 
-		FunctionInfoPrivate* find_func(const std::string& name, int* out_idx)
+		FunctionInfoPrivate* find_function(const std::string& name, int* out_idx)
 		{
 			for (auto i = 0; i < functions.size(); i++)
 			{
@@ -364,7 +364,7 @@ namespace flame
 
 	VariableInfo* UdtInfo::find_variable(const char* name, int* out_idx) const
 	{
-		return ((UdtInfoPrivate*)this)->find_vari(name, out_idx);
+		return ((UdtInfoPrivate*)this)->find_variable(name, out_idx);
 	}
 
 	VariableInfo* UdtInfo::add_variable(const TypeInfo* type, const char* name, const char* decoration, uint offset, uint size)
@@ -392,7 +392,7 @@ namespace flame
 
 	FunctionInfo* UdtInfo::find_function(const char* name, int* out_idx) const
 	{
-		return ((UdtInfoPrivate*)this)->find_func(name, out_idx);
+		return ((UdtInfoPrivate*)this)->find_function(name, out_idx);
 	}
 
 	FunctionInfo* UdtInfo::add_function(const char* name, void* rva, const TypeInfo* return_type)
@@ -1202,7 +1202,7 @@ namespace flame
 
 			for (auto n_function : n_udt.child("functions"))
 			{
-				auto f = db->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
+				auto f = u->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
 				for (auto n_parameter : n_function.child("parameters"))
 					f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
 			}
