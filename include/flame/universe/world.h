@@ -24,7 +24,7 @@ namespace flame
 			return (T*)get_system_plain(name_hash);
 		}
 
-#define get_system(T) get_system_t<T>(cH(#T))
+#define get_system(T) get_system_t<T>(FLAME_CHASH(#T))
 
 		FLAME_UNIVERSE_EXPORTS void add_system(System* s);
 

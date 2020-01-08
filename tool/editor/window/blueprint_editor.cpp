@@ -239,24 +239,26 @@ struct cBPEditor : Component
 		e_add_node_menu->remove_child((Entity*)FLAME_INVALID_POINTER);
 
 		std::vector<UdtInfo*> all_udts;
-		for (auto db : bp->dbs())
+		for (auto i = 0; i < bp->db_count(); i++)
 		{
+			auto db = bp->db(i);
 			auto udts = db->get_udts();
-			for (auto i = 0; i < udts.s; i++)
+			for (auto j = 0; j < udts.s; j++)
 			{
-				auto u = udts.v[i];
-				if (u->type().name.find('(') != std::string::npos)
+				auto u = udts.v[j];
+				if (std::string(u->type()->name()).find('(') != std::string::npos)
 					continue;
 				{
 					auto f = u->find_function("update");
-					if (!(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 0))
+					if (!(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 0))
 						continue;
 				}
 				auto no_input_output = true;
 				for (auto i = 0; i < u->variable_count(); i++)
 				{
 					auto v = u->variable(i);
-					if (v->decoration().find('i') != std::string::npos || v->decoration().find('o') != std::string::npos)
+					std::string decoration = v->decoration();
+					if (decoration.find('i') != std::string::npos || decoration.find('o') != std::string::npos)
 					{
 						no_input_output = false;
 						break;
@@ -267,7 +269,7 @@ struct cBPEditor : Component
 			}
 		}
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-			return a->type().name < b->type().name;
+			return std::string(a->type()->name()) < std::string(b->type()->name());
 		});
 		{
 			auto e_edit = create_standard_edit(150.f, app.font_atlas_pixel, 1.f);
@@ -276,114 +278,52 @@ struct cBPEditor : Component
 
 			e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 				auto menu = *(Entity**)c;
-				auto& str = ((cText*)t)->text();
+				auto str = ((cText*)t)->text();
 				for (auto i = 1; i < menu->child_count(); i++)
 				{
 					auto item = menu->child(i);
-					item->set_visibility(str[0] ? (item->get_component(cText)->text().find(str) != std::string::npos) : true);
+					item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
 				}
 			}, new_mail_p(e_add_node_menu));
 
 			add_node_menu_filter = e_edit->get_component(cEdit);
 		}
 		{
-			auto e_sub_menu = create_standard_menu();
-			e_add_node_menu->add_child(create_standard_menu_button(app.font_atlas_pixel, 1.f, L"template", app.root, e_sub_menu, true, SideE, false, true, false, Icon_CARET_RIGHT));
-			{
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Variable");
-				e_sub_menu->add_child(e_item);
-				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto editor = *(cBPEditor**)c;
-					if (is_mouse_clicked(action, key))
-					{
-						destroy_topmost(app.root);
-					}
-				}, new_mail_p(this));
-			}
-			{
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Enum");
-				e_sub_menu->add_child(e_item);
-				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto editor = *(cBPEditor**)c;
-					if (is_mouse_clicked(action, key))
-					{
-						destroy_topmost(app.root);
-					}
-				}, new_mail_p(this));
-			}
-			{
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Array");
-				e_sub_menu->add_child(e_item);
-				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto editor = *(cBPEditor**)c;
-					if (is_mouse_clicked(action, key))
-					{
-						destroy_topmost(app.root);
-					}
-				}, new_mail_p(this));
-			}
-			{
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"manual input..");
-				e_sub_menu->add_child(e_item);
-				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto editor = *(cBPEditor**)c;
-
-					if (is_mouse_clicked(action, key))
-					{
-						destroy_topmost(app.root);
-
-						editor->reset_add_node_menu_filter();
-
-						popup_input_dialog(L"template", [](void* c, bool ok, const std::wstring& text) {
-							auto editor = *(cBPEditor**)c;
-							auto bp = editor->bp;
-							auto name = w2s(text);
-
-							if (ok && !name.empty())
-							{
-								if (bp->self_module() && bp->self_module()->db()->find_udt(H(name.c_str())))
-									editor->add_node(name, "", editor->add_pos);
-								else
-								{
-									if (editor->running)
-										popup_message_dialog(L"Cannot Add New Template Node While Running");
-									else
-									{
-										if (editor->changed)
-											popup_message_dialog(L"Cannot Add New Template Node With Unsaved Changes");
-										else
-										{
-											auto file = SerializableNode::create_from_xml_file(editor->filename);
-											auto n_nodes = file->find_node("nodes");
-											auto n_node = n_nodes->new_node("node");
-											n_node->new_attr("type", name);
-											{
-												std::string id;
-												for (auto i = 0; i < bp->node_count() + 1; i++)
-												{
-													id = "node_" + std::to_string(i);
-													if (!bp->find_node(id))
-														break;
-												}
-												n_node->new_attr("id", id);
-											}
-											n_node->new_attr("pos", to_string(editor->add_pos));
-											SerializableNode::save_to_xml_file(file, editor->filename);
-											SerializableNode::destroy(file);
-
-											editor->load(editor->filename, false);
-										}
-									}
-								}
-							}
-						}, new_mail_p(editor));
-					}
-				}, new_mail_p(this));
-			}
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Enum");
+			e_add_node_menu->add_child(e_item);
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+				}
+			}, new_mail_p(this));
+		}
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Var");
+			e_add_node_menu->add_child(e_item);
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+				}
+			}, new_mail_p(this));
+		}
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Array");
+			e_add_node_menu->add_child(e_item);
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+				}
+			}, new_mail_p(this));
 		}
 		for (auto udt : all_udts)
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type().name));
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type()->name()).c_str());
 			e_add_node_menu->add_child(e_item);
 			struct Capture
 			{
@@ -401,7 +341,7 @@ struct cBPEditor : Component
 
 					capture.e->reset_add_node_menu_filter();
 
-					capture.e->add_node(capture.u->type().name, "", capture.e->add_pos);
+					capture.e->add_node(capture.u->type()->name(), "", capture.e->add_pos);
 				}
 			}, new_mail(&capture));
 		}
@@ -458,7 +398,7 @@ struct cBPEditor : Component
 		filepath = std::filesystem::path(filename).parent_path().wstring();
 		if (bp)
 			BP::destroy(bp);
-		bp = BP::create_from_file(filename, no_compile);
+		bp = BP::create_from_file(filename.c_str(), no_compile);
 		link_test_nodes();
 
 		refresh_add_node_menu();
@@ -487,7 +427,7 @@ struct cBPEditor : Component
 
 	BP::Node* add_node(const std::string& type_name, const std::string& id, const Vec2f& pos)
 	{
-		auto n = bp->add_node(type_name, id);
+		auto n = bp->add_node(type_name.c_str(), id.c_str());
 		n->pos = pos;
 		create_node_entity(n);
 		set_changed(true);
@@ -569,7 +509,7 @@ struct cBPEditor : Component
 			auto udt = selected_.n->udt();
 			if (udt)
 			{
-				auto n = bp->add_node(selected_.n->udt()->type().name, "");
+				auto n = bp->add_node(selected_.n->udt()->type()->name(), "");
 				n->pos = add_pos;
 				for (auto i = 0; i < n->input_count(); i++)
 				{
@@ -608,7 +548,7 @@ struct cBPEditor : Component
 					auto n = bp->node(i);
 					auto udt = n->udt();
 					if (udt && udt->db() == m_db)
-						str += L"id: " + s2w(n->id()) + L", type: " + s2w(udt->type().name) + L"\n";
+						str += L"id: " + s2w(n->id()) + L", type: " + s2w(udt->type()->name()) + L"\n";
 				}
 
 				struct Capture
@@ -649,7 +589,7 @@ struct cBPEditor : Component
 		auto gv_filename = filepath + L"/bp.gv";
 		if (!std::filesystem::exists(gv_filename) || std::filesystem::last_write_time(gv_filename) < std::filesystem::last_write_time(filename))
 		{
-			if (GRAPHVIZ_PATH == std::string(""))
+			if (!GRAPHVIZ_PATH[0])
 				assert(0);
 
 			std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
@@ -659,14 +599,13 @@ struct cBPEditor : Component
 				auto udt = n->udt();
 				if (udt)
 				{
-					auto& name = n->id();
-
-					auto str = "\t" + name + " [label = \"" + name + "|" + udt->type().name + "|{{";
+					auto name = n->id();
+					auto str = sfmt("\t%s[label = \"%s|%s|{{", name, name, udt->type()->name());
 					for (auto j = 0; j < n->input_count(); j++)
 					{
 						auto input = n->input(j);
-						auto& name = input->name();
-						str += "<" + name + ">" + name;
+						auto name = input->name();
+						str += sfmt("<%s>%s", name, name);
 						if (j != n->input_count() - 1)
 							str += "|";
 					}
@@ -674,8 +613,8 @@ struct cBPEditor : Component
 					for (auto j = 0; j < n->output_count(); j++)
 					{
 						auto output = n->output(j);
-						auto& name = output->name();
-						str += "<" + name + ">" + name;
+						auto name = output->name();
+						str += sfmt("<%s>%s", name, name);
 						if (j != n->output_count() - 1)
 							str += "|";
 					}
@@ -713,7 +652,7 @@ struct cBPEditor : Component
 		update_gv();
 		auto png_filename = filepath + L"/bp.png";
 		if (!std::filesystem::exists(png_filename) || std::filesystem::last_write_time(png_filename) < std::filesystem::last_write_time(filename))
-			exec(dot_path, L"-Tpng " + filepath + L"/bp.gv -y -o " + png_filename, true);
+			exec(dot_path.c_str(), (wchar_t*)(L"-Tpng " + filepath + L"/bp.gv -y -o " + png_filename).c_str(), true);
 
 		return std::filesystem::exists(png_filename);
 	}
@@ -723,7 +662,7 @@ struct cBPEditor : Component
 		update_gv();
 		auto graph_filename = filepath + L"/bp.graph";
 		if (!std::filesystem::exists(graph_filename) || std::filesystem::last_write_time(graph_filename) < std::filesystem::last_write_time(filename))
-			exec(dot_path, L"-Tplain" + filepath + L"/bp.gv -y -o " + graph_filename, true);
+			exec(dot_path.c_str(), (wchar_t*)(L"-Tplain" + filepath + L"/bp.gv -y -o " + graph_filename).c_str(), true);
 		if (!std::filesystem::exists(graph_filename))
 			return false;
 
@@ -768,7 +707,7 @@ struct cBPEditor : Component
 
 	void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cBPEditor**)c)->draw(canvas);
@@ -822,11 +761,11 @@ struct cBPObject : Component
 
 	void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
 			element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
-				if (hash == cH("pos"))
+				if (hash == FLAME_CHASH("pos"))
 				{
 					auto thiz = *(cBPObject**)c;
 					auto pos = ((cElement*)e)->pos_;
@@ -846,7 +785,7 @@ struct cBPObject : Component
 				}
 			}, new_mail_p(this));
 		}
-		else if (c->name_hash == cH("cEventReceiver"))
+		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -856,7 +795,7 @@ struct cBPObject : Component
 			}, new_mail_p(this));
 			event_receiver->data_changed_listeners.add([](void* c, Component* er, uint hash, void*) {
 				auto thiz = *(cBPObject**)c;
-				if (hash == cH("state"))
+				if (hash == FLAME_CHASH("state"))
 				{
 					switch (((cEventReceiver*)er)->state)
 					{
@@ -895,20 +834,20 @@ struct cBPSlot : Component
 
 	void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 			element = (cElement*)c;
-		else if (c->name_hash == cH("cEventReceiver"))
+		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			if (s->io() == BP::Slot::In)
 			{
-				event_receiver->drag_hash = cH("input_slot");
-				event_receiver->set_acceptable_drops({ cH("output_slot") });
+				event_receiver->drag_hash = FLAME_CHASH("input_slot");
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
 			}
 			else
 			{
-				event_receiver->drag_hash = cH("output_slot");
-				event_receiver->set_acceptable_drops({ cH("input_slot") });
+				event_receiver->drag_hash = FLAME_CHASH("output_slot");
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
 			}
 
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
@@ -1029,14 +968,14 @@ void cBPScene::for_each_link(const std::function<bool(const Vec2f & p1, const Ve
 
 void cBPScene::on_component_added(Component* c)
 {
-	if (c->name_hash == cH("cElement"))
+	if (c->name_hash == FLAME_CHASH("cElement"))
 	{
 		element = (cElement*)c;
 		element->cmds.add([](void* c, graphics::Canvas* canvas) {
 			(*(cBPScene**)c)->draw(canvas);
 		}, new_mail_p(this));
 	}
-	else if (c->name_hash == cH("cEventReceiver"))
+	else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 	{
 		event_receiver = (cEventReceiver*)c;
 		event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& _pos) {
@@ -1081,7 +1020,7 @@ void cBPScene::draw(graphics::Canvas* canvas)
 			std::vector<Vec2f> points;
 			points.push_back(p1);
 			points.push_back(p2);
-			canvas->stroke(points, editor->selected_.l == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
+			canvas->stroke(points.size(), points.data(), editor->selected_.l == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
 		}
 		return true;
 	});
@@ -1092,7 +1031,7 @@ void cBPScene::draw(graphics::Canvas* canvas)
 		std::vector<Vec2f> points;
 		points.push_back(e->global_pos + e->global_size * 0.5f);
 		points.push_back(Vec2f(event_receiver->dispatcher->mouse_pos));
-		canvas->stroke(points, Vec4c(255, 255, 50, 255), line_width);
+		canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 50, 255), line_width);
 	}
 }
 
@@ -1226,9 +1165,9 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			e_text_id->add_component(c_element);
 
 			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(s2w(p->id()));
+			c_text->set_text(s2w(p->id()).c_str());
 			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()));
+				(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()).c_str());
 			}, new_mail_p(p));
 			e_text_id->add_component(c_text);
 
@@ -1311,7 +1250,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(s->get_address().str()));
+						c_text->set_text(s2w(s->get_address().str()).c_str());
 						e_text->add_component(c_text);
 					}
 				}
@@ -1346,7 +1285,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(s->get_address().str()));
+						c_text->set_text(s2w(s->get_address().str()).c_str());
 						e_text->add_component(c_text);
 					}
 
@@ -1413,10 +1352,10 @@ void create_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
 		capture.drag_text = e_edit->child(1)->get_component(cText);
 		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			if (hash == cH("text"))
+			if (hash == FLAME_CHASH("text"))
 			{
-				auto& text = ((cText*)t)->text();
-				auto data = sto_s<T>(text.c_str());
+				auto text = ((cText*)t)->text();
+				auto data = sto_s<T>(text);
 				capture.input->set_data(&data);
 				capture.drag_text->set_text(text);
 				capture.editor->set_changed(true);
@@ -1446,16 +1385,16 @@ void create_vec_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
 	for (auto i = 0; i < N; i++)
 	{
 		auto e_edit = create_drag_edit(app.font_atlas_pixel, 0.9f, std::is_floating_point<T>::value);
-		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 0.9f, s2w(Vec<N, T>::coord_name(i))));
+		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 0.9f, s2w(Vec<N, T>::coord_name(i)).c_str()));
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
 		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			if (hash == cH("text"))
+			if (hash == FLAME_CHASH("text"))
 			{
-				auto& text = ((cText*)t)->text();
+				auto text = ((cText*)t)->text();
 				auto data = *(Vec<N, T>*)capture.input->data();
-				data[capture.i] = sto_s<T>(text.c_str());
+				data[capture.i] = sto_s<T>(text);
 				capture.input->set_data(&data);
 				capture.drag_text->set_text(text);
 				capture.editor->set_changed(true);
@@ -1518,10 +1457,10 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 			auto c_text = cText::create(app.font_atlas_pixel);
 			c_text->font_size_ = default_style.font_size * 1.5f;
-			c_text->set_text(s2w(n->id()));
+			c_text->set_text(s2w(n->id()).c_str());
 			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				if (hash == cH("text"))
-					(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()));
+				if (hash == FLAME_CHASH("text"))
+					(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()).c_str());
 			}, new_mail_p(n));
 			e_text_id->add_component(c_text);
 
@@ -1542,7 +1481,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				auto module_name = std::filesystem::path(udt->db()->module_name());
 				if (module_name.parent_path() != L"")
 					module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
-				c_text->set_text(module_name.wstring() + L"\n" + s2w(udt->type().name));
+				c_text->set_text((module_name.wstring() + L"\n" + s2w(udt->type()->name())).c_str());
 				c_text->color = Vec4c(50, 50, 50, 255);
 				e_text_type->add_component(c_text);
 			}
@@ -1562,7 +1501,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			auto c_checkbox = e_checkbox->get_component(cCheckbox);
 			c_checkbox->set_checked(n->initiative());
 			c_checkbox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-				if (hash == cH("checked"))
+				if (hash == FLAME_CHASH("checked"))
 					(*(BP::Node**)c)->set_initiative(((cCheckbox*)cb)->checked);
 			}, new_mail_p(n));
 
@@ -1580,7 +1519,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		std::string udt_name;
 		if (udt)
-			udt_name = udt->type().name;
+			udt_name = udt->type()->name();
 		if (n->id() == "test_dst")
 		{
 			auto e_show = create_standard_button(app.font_atlas_pixel, 0.9f, L"Show");
@@ -1589,124 +1528,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				if (is_mouse_clicked(action, key))
 					open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
 			}, new_mail_p(n));
-		}
-		else if (udt_name.compare(0, strlen("Array"), "Array") == 0)
-		{
-			auto e_buttons = Entity::create();
-			e_content->add_child(e_buttons);
-			{
-				e_buttons->add_component(cElement::create());
-
-				auto c_layout = cLayout::create(LayoutHorizontal);
-				c_layout->item_padding = 4.f;
-				e_buttons->add_component(c_layout);
-			}
-
-			struct Capture
-			{
-				cBPEditor* e;
-				BP::Node* n;
-				int v;
-			}capture;
-			capture.e = this;
-			capture.n = n;
-
-			auto e_size = create_standard_button(app.font_atlas_pixel, 0.9f, s2w(std::string(udt_name.begin() + strlen("Array("), udt_name.begin() + udt_name.find('+'))));
-			e_buttons->add_child(e_size);
-			e_size->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto& capture = *(Capture*)c;
-				if (is_mouse_clicked(action, key))
-				{
-					auto e_dialog = popup_dialog();
-				}
-			}, new_mail(&capture));
-
-			auto change_size = [](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto& capture = *(Capture*)c;
-				if (is_mouse_clicked(action, key))
-				{
-					assert(0);
-					auto name = capture.n->udt()->type().name;
-					std::regex reg(R"(Array\(([0-9]+\+([\w\*]+))\))");
-					std::smatch match;
-					if (std::regex_search(name, match, reg))
-					{
-						auto size = std::stoi(match[1].str()) + capture.v;
-						if (size == 0)
-						{
-							popup_message_dialog(L"Array Size Cannot Be 0");
-							return;
-						}
-						auto type = std::string("Array(") + std::to_string(size) + "+" + match[2].str() + ")";
-						auto bp = capture.e->bp;
-						auto id = capture.n->id();
-						if (bp->self_module())
-						{
-							if (bp->self_module()->db()->find_udt(H(type.c_str())))
-							{
-								capture.n->set_id("");
-								auto new_n = bp->add_node(type, id);
-								new_n->pos = capture.n->pos;
-								for (auto i = 0; i < capture.n->input_count(); i++)
-								{
-									auto src = capture.n->input(i);
-									auto dst = new_n->find_input(src->name());
-									if (dst)
-									{
-										dst->set_data(src->data());
-										dst->link_to(src->link(0));
-									}
-								}
-								for (auto i = 0; i < capture.n->output_count(); i++)
-								{
-									auto src = capture.n->output(i);
-									auto dst = new_n->find_output(src->name());
-									if (dst)
-									{
-										for (auto j = 0; j < src->link_count(); j++)
-											src->link(j)->link_to(dst);
-									}
-								}
-								capture.e->remove_node(capture.n);
-								capture.e->create_node_entity(new_n);
-							}
-						}
-						else if (capture.e->changed)
-							popup_message_dialog(L"Cannot Change Array Size To New With Unsaved Changes");
-						else
-						{
-							auto file = SerializableNode::create_from_xml_file(capture.e->filename);
-							auto n_nodes = file->find_node("nodes");
-							for (auto i = 0; i < n_nodes->node_count(); i++)
-							{
-								auto n_node = n_nodes->node(i);
-								if (n_node->find_attr("id")->value() == id)
-								{
-									n_nodes->remove_node(n_node);
-									break;
-								}
-							}
-							auto n_node = n_nodes->new_node("node");
-							n_node->new_attr("type", type);
-							n_node->new_attr("id", id);
-							n_node->new_attr("pos", to_string(capture.n->pos));
-							SerializableNode::save_to_xml_file(file, capture.e->filename);
-							SerializableNode::destroy(file);
-
-							capture.e->load(capture.e->filename, false);
-						}
-					}
-				}
-			};
-
-			auto e_add = create_standard_button(app.font_atlas_pixel, 0.9f, L"+");
-			e_buttons->add_child(e_add);
-			capture.v = 1;
-			e_add->get_component(cEventReceiver)->mouse_listeners.add(change_size, new_mail(&capture));
-			auto e_remove = create_standard_button(app.font_atlas_pixel, 0.9f, L"-");
-			e_buttons->add_child(e_remove);
-			capture.v = -1;
-			e_remove->get_component(cEventReceiver)->mouse_listeners.add(change_size, new_mail(&capture));
 		}
 		else if (udt_name == "D#graphics::Shader")
 		{
@@ -1798,7 +1619,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 						auto c_text = cText::create(app.font_atlas_pixel);
 						auto file = get_file_string(capture.e->filepath + L"/" + filename);
-						c_text->set_text(s2w(file));
+						c_text->set_text(s2w(file).c_str());
 						c_text->auto_width_ = false;
 						e_text->add_component(c_text);
 
@@ -1914,7 +1735,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(input->name()));
+						c_text->set_text(s2w(input->name()).c_str());
 						e_text->add_component(c_text);
 					}
 
@@ -1930,12 +1751,16 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_data->add_component(c_layout);
 					}
 
-					auto& type = input->type();
-					switch (type.tag)
+					std::vector<TypeinfoDatabase*> dbs(bp->db_count());
+					for (auto i = 0; i < dbs.size(); i++)
+						dbs[i] = bp->db(i);
+					auto type = input->type();
+					auto base_hash = type->base_hash();
+					switch (type->tag())
 					{
 					case TypeEnumSingle:
 					{
-						auto info = find_enum(bp->dbs(), type.base_hash);
+						auto info = find_enum(dbs, base_hash);
 						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 0.9f, e_data);
 
 						struct Capture
@@ -1949,7 +1774,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						capture.e = info;
 						e_data->child(0)->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 							auto& capture = *(Capture*)c;
-							if (hash == cH("index"))
+							if (hash == FLAME_CHASH("index"))
 							{
 								auto v = capture.e->item(((cCombobox*)cb)->idx)->value();
 								capture.input->set_data(&v);
@@ -1967,7 +1792,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					{
 						auto v = *(int*)input->data();
 
-						auto info = find_enum(bp->dbs(), type.base_hash);
+						auto info = find_enum(dbs, base_hash);
 
 						create_enum_checkboxs(info, app.font_atlas_pixel, 0.9f, e_data);
 						for (auto k = 0; k < info->item_count(); k++)
@@ -1985,7 +1810,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							capture.v = item->value();
 							e_data->child(k)->child(0)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("checked"))
+								if (hash == FLAME_CHASH("checked"))
 								{
 									auto v = *(int*)capture.input->data();
 									if (((cCheckbox*)cb)->checked)
@@ -2005,9 +1830,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 					}
 						break;
 					case TypeData:
-						switch (type.base_hash)
+						switch (base_hash)
 						{
-						case cH("bool"):
+						case FLAME_CHASH("bool"):
 						{
 							auto e_checkbox = create_standard_checkbox();
 							e_data->add_child(e_checkbox);
@@ -2021,7 +1846,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							capture.input = input;
 							e_checkbox->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("checked"))
+								if (hash == FLAME_CHASH("checked"))
 								{
 									auto v = (((cCheckbox*)cb)->checked) ? 1 : 0;
 									capture.input->set_data(&v);
@@ -2034,55 +1859,55 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_data->add_component(c_tracker);
 						}
 							break;
-						case cH("int"):
+						case FLAME_CHASH("int"):
 							create_edit<int>(this, e_data, input);
 							break;
-						case cH("Vec(2+int)"):
+						case FLAME_CHASH("Vec(2+int)"):
 							create_vec_edit<2, int>(this, e_data, input);
 							break;
-						case cH("Vec(3+int)"):
+						case FLAME_CHASH("Vec(3+int)"):
 							create_vec_edit<3, int>(this, e_data, input);
 							break;
-						case cH("Vec(4+int)"):
+						case FLAME_CHASH("Vec(4+int)"):
 							create_vec_edit<4, int>(this, e_data, input);
 							break;
-						case cH("uint"):
+						case FLAME_CHASH("uint"):
 							create_edit<uint>(this, e_data, input);
 							break;
-						case cH("Vec(2+uint)"):
+						case FLAME_CHASH("Vec(2+uint)"):
 							create_vec_edit<2, uint>(this, e_data, input);
 							break;
-						case cH("Vec(3+uint)"):
+						case FLAME_CHASH("Vec(3+uint)"):
 							create_vec_edit<3, uint>(this, e_data, input);
 							break;
-						case cH("Vec(4+uint)"):
+						case FLAME_CHASH("Vec(4+uint)"):
 							create_vec_edit<4, uint>(this, e_data, input);
 							break;
-						case cH("float"):
+						case FLAME_CHASH("float"):
 							create_edit<float>(this, e_data, input);
 							break;
-						case cH("Vec(2+float)"):
+						case FLAME_CHASH("Vec(2+float)"):
 							create_vec_edit<2, float>(this, e_data, input);
 							break;
-						case cH("Vec(3+float)"):
+						case FLAME_CHASH("Vec(3+float)"):
 							create_vec_edit<3, float>(this, e_data, input);
 							break;
-						case cH("Vec(4+float)"):
+						case FLAME_CHASH("Vec(4+float)"):
 							create_vec_edit<4, float>(this, e_data, input);
 							break;
-						case cH("uchar"):
+						case FLAME_CHASH("uchar"):
 							create_edit<uchar>(this, e_data, input);
 							break;
-						case cH("Vec(2+uchar)"):
+						case FLAME_CHASH("Vec(2+uchar)"):
 							create_vec_edit<2, uchar>(this, e_data, input);
 							break;
-						case cH("Vec(3+uchar)"):
+						case FLAME_CHASH("Vec(3+uchar)"):
 							create_vec_edit<3, uchar>(this, e_data, input);
 							break;
-						case cH("Vec(4+uchar)"):
+						case FLAME_CHASH("Vec(4+uchar)"):
 							create_vec_edit<4, uchar>(this, e_data, input);
 							break;
-						case cH("StringA"):
+						case FLAME_CHASH("StringA"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);
@@ -2095,7 +1920,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							capture.input = input;
 							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("text"))
+								if (hash == FLAME_CHASH("text"))
 								{
 									capture.input->set_data(&StringA(w2s(((cText*)t)->text())));
 									capture.editor->set_changed(true);
@@ -2107,7 +1932,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							e_data->add_component(c_tracker);
 						}
 							break;
-						case cH("StringW"):
+						case FLAME_CHASH("StringW"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
 							e_data->add_child(e_edit);
@@ -2120,7 +1945,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 							capture.input = input;
 							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("text"))
+								if (hash == FLAME_CHASH("text"))
 								{
 									capture.input->set_data(&StringW(((cText*)t)->text()));
 									capture.editor->set_changed(true);
@@ -2169,7 +1994,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						e_text->add_component(cElement::create());
 
 						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(output->name()));
+						c_text->set_text(s2w(output->name()).c_str());
 						e_text->add_component(c_text);
 					}
 
@@ -2231,7 +2056,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	auto e_docker = get_docker_model()->copy();
 	e_container->add_child(e_docker, 0);
 
-	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, filename, app.root));
+	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, filename.c_str(), app.root));
 
 	auto e_page = get_docker_page_model()->copy();
 	{
@@ -2261,7 +2086,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				{
 					destroy_topmost(app.root);
 
-					BP::save_to_file(editor->bp, editor->filename);
+					BP::save_to_file(editor->bp, editor->filename.c_str());
 					editor->set_changed(false);
 				}
 			}, new_mail_p(c_editor));
@@ -2322,7 +2147,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 							if (ok && !text.empty())
 							{
-								auto m = bp->add_module(text);
+								auto m = bp->add_module(text.c_str());
 								if (!m)
 									popup_message_dialog(L"Add Module Failed");
 								else
@@ -2357,7 +2182,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 							if (ok && !text.empty())
 							{
-								auto p = bp->add_package(text, "");
+								auto p = bp->add_package(text.c_str(), "");
 								if (!p)
 									popup_message_dialog(L"Add Package Failed");
 								else
@@ -2569,7 +2394,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			{
 				auto s = clamp(c_bp_scene->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
 				c_bp_scene->base_element->set_scale(s);
-				c_bp_scene->scale_text->set_text(std::to_wstring(int(s * 100)) + L"%");
+				c_bp_scene->scale_text->set_text((std::to_wstring(int(s * 100)) + L"%").c_str());
 			}
 			else if (is_mouse_move(action, key))
 			{
@@ -2634,7 +2459,9 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto editor = *(cBPEditor**)c;
 		auto& filename = editor->filename;
 		auto bp = editor->bp;
-		auto& dbs = editor->bp->dbs();
+		std::vector<TypeinfoDatabase*> dbs(bp->db_count());
+		for (auto i = 0; i < dbs.size(); i++)
+			dbs[i] = bp->db(i);
 		auto tokens = ssplit(cmd);
 
 		if (editor->locked)
@@ -2647,14 +2474,14 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			auto i = bp->find_input(address.c_str());
 			if (i)
 			{
-				auto& type = i->type();
-				auto value_before = type.serialize(dbs, i->raw_data(), 2);
+				auto type = i->type();
+				auto value_before = type->serialize(dbs, i->raw_data(), 2);
 				auto data = new char[i->size()];
-				type.unserialize(dbs, value, data);
+				type->unserialize(dbs, value, data);
 				i->set_data((char*)data + sizeof(AttributeBase));
 				((cBPSlot*)i->user_data)->tracker->update_view();
 				delete[] data;
-				auto value_after = type.serialize(dbs, i->raw_data(), 2);
+				auto value_after = type->serialize(dbs, i->raw_data(), 2);
 				console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
 				editor->set_changed(true);
 			}
@@ -2693,17 +2520,17 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 						all_udts.push_back(udts.v[i]);
 				}
 				std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-					return a->type().name < b->type().name;
+					return std::string(a->type()->name()) < std::string(b->type()->name());
 				});
 				for (auto udt : all_udts)
-					console->print(s2w(udt->type().name));
+					console->print(s2w(udt->type()->name()));
 			}
 			else if (tokens[1] == L"udt")
 			{
-				auto udt = find_udt(dbs, H(w2s(tokens[2]).c_str()));
+				auto udt = find_udt(dbs, FLAME_HASH(w2s(tokens[2]).c_str()));
 				if (udt)
 				{
-					console->print(s2w(udt->type().name));
+					console->print(s2w(udt->type()->name()));
 					std::vector<VariableInfo*> inputs;
 					std::vector<VariableInfo*> outputs;
 					for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
@@ -2717,10 +2544,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					}
 					console->print(L"[In]");
 					for (auto& i : inputs)
-						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()), s2w(i->decoration()), s2w(i->type().name)));
+						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
 					console->print(L"[Out]");
 					for (auto& o : outputs)
-						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()), s2w(o->decoration()), s2w(o->type().name)));
+						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
 				}
 				else
 					console->print(L"udt not found");
@@ -2730,7 +2557,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				for (auto i = 0; i < bp->node_count(); i++)
 				{
 					auto n = bp->node(i);
-					console->print(wsfmt(L"id:%s type:%s", s2w(n->id()), s2w(n->udt()->type().name)));
+					console->print(wsfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()));
 				}
 			}
 			else if (tokens[1] == L"node")
@@ -2742,27 +2569,27 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
-						auto& type = input->type();
+						auto type = input->type();
 						console->print(s2w(input->name()));
 						std::string link_address;
 						if (input->link())
 							link_address = input->link()->get_address().str();
-						console->print(wsfmt(L"[%s]", s2w(link_address)));
-						auto str = s2w(type.serialize(dbs, input->raw_data(), 2));
+						console->print(wsfmt(L"[%s]", s2w(link_address).c_str()));
+						auto str = s2w(type->serialize(dbs, input->raw_data(), 2));
 						if (str.empty())
 							str = L"-";
-						console->print(wsfmt(L"   %s", str));
+						console->print(wsfmt(L"   %s", str.c_str()));
 					}
 					console->print(L"[Out]");
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
-						auto& type = output->type();
+						auto type = output->type();
 						console->print(s2w(output->name()));
-						auto str = s2w(type.serialize(dbs, output->raw_data(), 2));
+						auto str = s2w(type->serialize(dbs, output->raw_data(), 2).c_str());
 						if (str.empty())
 							str = L"-";
-						console->print(wsfmt(L"   %s", str));
+						console->print(wsfmt(L"   %s", str.c_str()));
 					}
 				}
 				else
@@ -2787,20 +2614,20 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			{
 				auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
 				if (n)
-					console->print(wsfmt(L"node added: %s", s2w(n->id())));
+					console->print(wsfmt(L"node added: %s", s2w(n->id()).c_str()));
 				else
 					console->print(L"bad udt name or id already exist");
 			}
 			else if (tokens[1] == L"link")
 			{
-				auto out = bp->find_output(w2s(tokens[2]));
-				auto in = bp->find_input(w2s(tokens[3]));
+				auto out = bp->find_output(w2s(tokens[2]).c_str());
+				auto in = bp->find_input(w2s(tokens[3]).c_str());
 				if (out && in)
 				{
 					in->link_to(out);
 					auto out_addr = in->link()->get_address();
 					auto in_addr = in->get_address();
-					console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()), s2w(in_addr.str())));
+					console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()));
 					editor->set_changed(true);
 				}
 				else
@@ -2813,24 +2640,24 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		{
 			if (tokens[1] == L"node")
 			{
-				auto n = bp->find_node(w2s(tokens[2]));
+				auto n = bp->find_node(w2s(tokens[2]).c_str());
 				if (n)
 				{
 					if (!editor->remove_node(n))
 						printf("cannot remove test nodes\n");
 					else
-						console->print(wsfmt(L"node removed: %s", tokens[2]));
+						console->print(wsfmt(L"node removed: %s", tokens[2].c_str()));
 				}
 				else
 					console->print(L"node not found");
 			}
 			else if (tokens[1] == L"link")
 			{
-				auto i = bp->find_input(w2s(tokens[3]));
+				auto i = bp->find_input(w2s(tokens[3]).c_str());
 				if (i)
 				{
 					i->link_to(nullptr);
-					console->print(wsfmt(L"link removed: %s", tokens[2]));
+					console->print(wsfmt(L"link removed: %s", tokens[2].c_str()));
 					editor->set_changed(true);
 				}
 				else
@@ -2848,7 +2675,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		}
 		else if (tokens[0] == L"save")
 		{
-			BP::save_to_file(bp, filename);
+			BP::save_to_file(bp, filename.c_str());
 			editor->set_changed(false);
 			console->print(L"file saved");
 		}

@@ -65,7 +65,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_component_added(Component* c)
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 			element = (cElement*)c;
 	}
 

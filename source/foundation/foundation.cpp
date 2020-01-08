@@ -156,7 +156,7 @@ namespace flame
 		return true;
 	}
 
-	void exec(const wchar_t* filename, const wchar_t* parameters, bool wait, bool show)
+	void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show)
 	{
 		SHELLEXECUTEINFOW info = {};
 		info.cbSize = sizeof(SHELLEXECUTEINFOW);
@@ -793,8 +793,10 @@ namespace flame
 			destroy_event(event_end);
 	}
 
-	void* add_file_watcher(const wchar_t* path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture, bool all_changes, bool sync)
+	void* add_file_watcher(const wchar_t* _path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture, bool all_changes, bool sync)
 	{
+		std::filesystem::path path = _path;
+
 		if (!sync)
 		{
 			auto ev = create_event(false);

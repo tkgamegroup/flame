@@ -55,27 +55,27 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cEditPrivate**)c)->draw(canvas);
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cText"))
+			else if (c->name_hash == FLAME_CHASH("cText"))
 			{
 				text = (cText*)c;
 				text_changed_listener = text->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
 					auto thiz = *(cEditPrivate**)c;
 					switch (hash)
 					{
-					case cH("text"):
+					case FLAME_CHASH("text"):
 						thiz->text_changed = true;
 						break;
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->accept_key = true;

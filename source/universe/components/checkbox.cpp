@@ -38,7 +38,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cEventReceiver"))
+			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -49,7 +49,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cStyleColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
 			{
 				style = (cStyleColor*)c;
 				do_style();
@@ -83,7 +83,7 @@ namespace flame
 		checked = _checked;
 		thiz->do_style();
 		if (trigger_changed)
-			data_changed(cH("checked"), nullptr);
+			data_changed(FLAME_CHASH("checked"), nullptr);
 	}
 
 	cCheckbox* cCheckbox::create()

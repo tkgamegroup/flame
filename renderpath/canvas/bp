@@ -1,134 +1,119 @@
 <?xml version="1.0"?>
 <BP>
 	<modules>
-    <module filename="flame_foundation.dll" pos="-294.00;-179.00" />
+		<module filename="flame_foundation.dll" pos="-294.00;-179.00" />
 		<module filename="flame_graphics.dll" pos="-270.00;-86.00" />
 	</modules>
 	<nodes>
-		<node type="D#Enum(graphics::SampleCount)" id="sc" pos="517.81;967.10">
-			<datas>
-				<data name="in" value="SampleCount_8" />
-			</datas>
-		</node>
-		<node type="D#graphics::RenderTarget" id="rt_dst" pos="90.72;52.27" />
-    <node type="D#Array(1+graphics::RenderTarget*)" id="resolve_targets" pos="90.72;52.27" />
-		<node type="D#graphics::ImageInspector" id="dst_props" pos="374.64;356.25" />
-		<node type="D#graphics::Image" id="img_ms" pos="874.61;704.05">
+		<node type="D#graphics::RenderTarget" id="rt_dst" initiative="false" pos="170.72;51.27" />
+		<node type="D#graphics::ImageInspector" id="dst_props" initiative="false" pos="484.64;347.25" />
+		<node type="D#graphics::Image" id="img_ms" initiative="false" pos="874.61;704.05">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="D#graphics::RenderTarget" id="rt_ms" pos="1246.58;655.05">
+		<node type="D#graphics::RenderTarget" id="rt_ms" initiative="false" pos="1210.58;660.05">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
-		<node type="D#Array(1+graphics::RenderTarget*)" id="color_targets" pos="1246.58;655.05" />
-		<node type="D#graphics::SubpassTargetInfo" id="sp" pos="1586.80;795.92" />
-    <node type="D#Array(1+graphics::SubpassTargetInfo*)" id="sps" pos="1586.80;795.92" />
-		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
-		<node type="D#graphics::DescriptorImageBinding" id="imgs_binding" pos="1234.81;1486.79">
+		<node type="D#graphics::SubpassTargetInfo" id="sp" initiative="false" pos="1561.80;861.92" />
+		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" initiative="false" pos="2103.14;821.79" />
+		<node type="D#graphics::DescriptorImageBinding" id="imgs_binding" initiative="false" pos="1174.81;1478.79">
 			<datas>
 				<data name="count" value="64" />
 				<data name="name" value="images" />
 			</datas>
 		</node>
-    <node type="D#Array(1+void*)" id="bindings" pos="1234.81;1486.79" />
-		<node type="D#graphics::Descriptorlayout" id="dsl" pos="1542.51;1724.91" />
-    <node type="D#Array(1+graphics::Descriptorlayout*)" id="dsls" pos="1542.51;1724.91" />
-		<node type="D#graphics::Pipelinelayout" id="pll" pos="1852.80;1716.37">
+		<node type="D#graphics::Descriptorlayout" id="dsl" initiative="false" pos="1525.51;1688.91" />
+		<node type="D#graphics::Pipelinelayout" id="pll" initiative="false" pos="1881.80;1713.37">
 			<datas>
 				<data name="push_constant_size" value="16" />
 			</datas>
 		</node>
-		<node type="D#graphics::VertexInputAttribute" id="via0" pos="1678.10;1036.00">
+		<node type="D#graphics::VertexInputAttribute" id="via0" initiative="false" pos="1678.10;1036.00">
 			<datas>
 				<data name="name" value="pos" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="D#graphics::VertexInputAttribute" id="via1" pos="1648.10;1222.00">
+		<node type="D#graphics::VertexInputAttribute" id="via1" initiative="false" pos="1648.10;1222.00">
 			<datas>
 				<data name="name" value="uv" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="D#graphics::VertexInputAttribute" id="via2" pos="1650.60;1398.00">
+		<node type="D#graphics::VertexInputAttribute" id="via2" initiative="false" pos="1650.60;1398.00">
 			<datas>
 				<data name="name" value="color" />
 			</datas>
 		</node>
-		<node type="D#Array(3+graphics::VertexInputAttribute*)" id="vias" pos="1928.63;1198.33" />
-		<node type="D#graphics::VertexInputBuffer" id="vib" pos="2064.05;1175.71" />
-    <node type="D#Array(1+graphics::VertexInputBuffer*)" id="vibs" pos="2064.05;1175.71" />
-		<node type="D#graphics::VertexInputInfo" id="vi" pos="2026.83;1423.37" />
-		<node type="D#Array(2+StringW)" id="pl_element_shs" pos="2879.57;628.81">
+		<node type="D#graphics::VertexInputBuffer" id="vib" initiative="false" pos="2078.05;1231.71" />
+		<node type="D#graphics::VertexInputInfo" id="vi" initiative="false" pos="2416.83;1411.37" />
+		<node type="D#graphics::Pipeline" id="pl_element" initiative="false" pos="2877.23;827.38">
 			<datas>
-				<data name="0" value="element.vert" />
-				<data name="1" value="element.frag" />
+				<data name="subpass_idx" value="0" />
+				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#Array(2+StringW)" id="pl_text_lcd_shs" pos="2878.50;1161.07">
+		<node type="D#graphics::Pipeline" id="pl_text_lcd" initiative="false" pos="2893.06;1359.97">
 			<datas>
-				<data name="0" value="element.vert" />
-				<data name="1" value="text_lcd.frag" />
+				<data name="subpass_idx" value="0" />
+				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#Array(2+StringW)" id="pl_text_sdf_shs" pos="2901.71;1701.75">
+		<node type="D#graphics::Pipeline" id="pl_text_sdf" initiative="false" pos="2885.68;1890.44">
 			<datas>
-				<data name="0" value="element.vert" />
-				<data name="1" value="text_sdf.frag" />
+				<data name="subpass_idx" value="0" />
+				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#graphics::Pipeline" id="pl_element" pos="2877.23;827.38" />
-		<node type="D#graphics::Pipeline" id="pl_text_lcd" pos="2893.06;1359.97" />
-		<node type="D#graphics::Pipeline" id="pl_text_sdf" pos="2885.68;1890.44" />
-		<node type="D#graphics::Image" id="img_white" pos="866.12;1425.24">
+		<node type="D#graphics::Image" id="img_white" initiative="false" pos="866.12;1425.24">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="D#graphics::Buffer" id="vtx_buf" pos="224.88;545.00">
+		<node type="D#graphics::Buffer" id="vtx_buf" initiative="false" pos="224.88;545.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="D#graphics::Buffer" id="idx_buf" pos="229.05;998.72">
+		<node type="D#graphics::Buffer" id="idx_buf" initiative="false" pos="229.05;998.72">
 			<datas>
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="D#MakeCmd" id="make_cmd" pos="3555.50;360.50" />
+		<node type="D#MakeCmd" id="make_cmd" initiative="false" pos="3555.50;360.50" />
 	</nodes>
 	<links>
+		<link out="rt_dst.out" in="resolve_targets.0" />
 		<link out="rt_dst.first_image" in="dst_props.in" />
 		<link out="dst_props.format" in="img_ms.format" />
 		<link out="dst_props.size" in="img_ms.size" />
 		<link out="sc.out" in="img_ms.sample_count" />
 		<link out="img_ms.out" in="rt_ms.v" />
-    <link out="rt_ms.out" in="color_targets.0" />
+		<link out="rt_ms.out" in="color_targets.0" />
 		<link out="color_targets.out" in="sp.color_targets" />
-    <link out="rt_dst.out" in="resolve_targets.0" />
-    <link out="resolve_targets.out" in="sp.resolve_targets" />
-    <link out="sp.out" in="sps.0" />
+		<link out="resolve_targets.out" in="sp.resolve_targets" />
+		<link out="sp.out" in="sps.0" />
 		<link out="sps.out" in="rnf.passes" />
 		<link out="img_white.out" in="imgs_binding.v" />
-    <link out="imgs_binding.out" in="bindings.0" />
+		<link out="imgs_binding.out" in="bindings.0" />
 		<link out="bindings.out" in="dsl.bindings" />
-    <link out="dsl.out" in="dsls.0" />
+		<link out="dsl.out" in="dsls.0" />
 		<link out="dsls.out" in="pll.descriptorlayouts" />
 		<link out="via0.out" in="vias.0" />
 		<link out="via1.out" in="vias.1" />
 		<link out="via2.out" in="vias.2" />
 		<link out="vias.out" in="vib.attributes" />
-    <link out="vib.out" in="vibs.0" />
+		<link out="vib.out" in="vibs.0" />
 		<link out="vibs.out" in="vi.buffers" />
 		<link out="pl_element_shs.out" in="pl_element.shader_filenames" />
 		<link out="pll.out" in="pl_element.pll" />

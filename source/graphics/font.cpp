@@ -74,7 +74,7 @@ namespace flame
 					if (!std::filesystem::exists(fn))
 						continue;
 
-					id = hash_update(id, H(fn));
+					id = hash_update(id, FLAME_HASH(fn));
 
 					Font* f = nullptr;
 					auto filename = std::filesystem::canonical(fn).wstring();

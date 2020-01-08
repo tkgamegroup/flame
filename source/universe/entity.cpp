@@ -255,7 +255,7 @@ namespace flame
 	{
 		auto thiz = ((EntityPrivate*)this);
 		thiz->name = name;
-		thiz->name_hash = H(name);
+		thiz->name_hash = FLAME_HASH(name);
 	}
 
 	void Entity::set_visibility(bool v)
@@ -336,7 +336,7 @@ namespace flame
 
 		for (auto n_c : src.child("components"))
 		{
-			auto udt = find_udt(dbs, H((std::string("D#Serializer_") + n_c.name()).c_str()));
+			auto udt = find_udt(dbs, FLAME_HASH((std::string("D#Serializer_") + n_c.name()).c_str()));
 			assert(udt);
 			auto object = malloc(udt->size());
 			auto module = load_module(udt->db()->module_name());
@@ -400,7 +400,7 @@ namespace flame
 
 				auto n_c = n_cs.append_child(c->name);
 
-				auto udt = find_udt(dbs, H((std::string("Serializer_") + c->name).c_str()));
+				auto udt = find_udt(dbs, FLAME_HASH((std::string("Serializer_") + c->name).c_str()));
 				assert(udt);
 				auto object = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");

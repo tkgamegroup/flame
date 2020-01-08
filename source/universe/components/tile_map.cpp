@@ -31,7 +31,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -156,7 +156,7 @@ namespace flame
 			for (auto i = 0; i < tiles$.s; i++)
 			{
 				auto id = tiles$.v[i];
-				auto atlas = (graphics::Atlas*)w->find_object(cH("Atlas"), id >> 32);
+				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
 				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_region(id & 0xffffffff);
 			}
 			c->cells.resize(cells$.s);

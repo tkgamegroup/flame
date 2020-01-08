@@ -2022,7 +2022,7 @@ namespace flame
 			Vec2f(-0.500000f, -0.866025f), Vec2f(-0.342020f, -0.939693f), Vec2f(-0.173648f, -0.984808f), Vec2f(-0.000000f, -1.000000f), Vec2f(+0.173648f, -0.984808f), Vec2f(+0.342020f, -0.939693f),
 			Vec2f(+0.500000f, -0.866025f), Vec2f(+0.642788f, -0.766044f), Vec2f(+0.766044f, -0.642788f), Vec2f(+0.866025f, -0.500000f), Vec2f(+0.939693f, -0.342020f), Vec2f(+0.984808f, -0.173648f)
 		};
-		static_assert(FLAME_ARRAYSIZE(pieces) == pieces_num);
+		static_assert(array_size(pieces) == pieces_num);
 
 		int a = pieces_num * a1;
 		int b = pieces_num * a2;

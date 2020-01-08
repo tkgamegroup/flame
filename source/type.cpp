@@ -36,7 +36,7 @@ namespace flame
 		TypeInfoPrivate(TypeTag$ tag, const std::string& base_name, bool is_attribute, bool is_array) :
 			tag(tag),
 			base_name(base_name),
-			base_hash(H(base_name.c_str())),
+			base_hash(FLAME_HASH(base_name.c_str())),
 			is_attribute(is_attribute),
 			is_array(is_array)
 		{
@@ -46,7 +46,7 @@ namespace flame
 			if (is_array)
 				name += "V";
 			name += "#" + base_name;
-			hash = H(name.c_str());
+			hash = FLAME_HASH(name.c_str());
 		}
 	};
 
@@ -372,7 +372,7 @@ namespace flame
 		auto v = new VariableInfoPrivate;
 		v->type = type;
 		v->name = name;
-		v->name_hash = H(name);
+		v->name_hash = FLAME_HASH(name);
 		v->decoration = decoration;
 		v->offset = offset;
 		v->size = size;
@@ -458,14 +458,14 @@ namespace flame
 
 	static std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
-		static SAL(prefix, "flame::");
-		static SAL(str_unsigned, "unsigned ");
-		static SAL(str_int64, "__int64");
-		static SAL(str_enum, "enum ");
-		static SAL(str_string, "std::basic_string<char >");
-		static SAL(str_wstring, "std::basic_string<wchar_t >");
-		static SAL(str_stringa, "String<char>");
-		static SAL(str_stringw, "String<wchar_t>");
+		static FLAME_SAL(prefix, "flame::");
+		static FLAME_SAL(str_unsigned, "unsigned ");
+		static FLAME_SAL(str_int64, "__int64");
+		static FLAME_SAL(str_enum, "enum ");
+		static FLAME_SAL(str_string, "std::basic_string<char >");
+		static FLAME_SAL(str_wstring, "std::basic_string<wchar_t >");
+		static FLAME_SAL(str_stringa, "String<char>");
+		static FLAME_SAL(str_stringw, "String<wchar_t>");
 
 		if (pass_prefix)
 			*pass_prefix = false;
@@ -671,8 +671,8 @@ namespace flame
 			auto is_array = false;
 			auto is_attribute = false;
 
-			SAL(array_str, "Array");
-			SAL(attribute_str, "Attribute");
+			FLAME_SAL(array_str, "Array");
+			FLAME_SAL(attribute_str, "Attribute");
 
 			if (name.compare(0, attribute_str.l, attribute_str.s) == 0 && name.size() > attribute_str.l + 1)
 			{
@@ -850,7 +850,7 @@ namespace flame
 		auto e = new EnumInfoPrivate;
 		e->db = this;
 		e->name = name;
-		((TypeinfoDatabasePrivate*)this)->enums.emplace(H(name), e);
+		((TypeinfoDatabasePrivate*)this)->enums.emplace(FLAME_HASH(name), e);
 		return e;
 	}
 
@@ -871,7 +871,7 @@ namespace flame
 		f->db = this;
 		f->name = name;
 		f->rva = rva;
-		((TypeinfoDatabasePrivate*)this)->functions.emplace(H(name), f);
+		((TypeinfoDatabasePrivate*)this)->functions.emplace(FLAME_HASH(name), f);
 		return f;
 	}
 
@@ -965,7 +965,7 @@ namespace flame
 			auto name = format_name(pwname, &pass_prefix, &pass_$);
 			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
 			{
-				auto hash = H(name.c_str());
+				auto hash = FLAME_HASH(name.c_str());
 				if (!::flame::find_enum(dbs, hash))
 				{
 					auto e = db->add_enum(name.c_str());
@@ -1005,7 +1005,7 @@ namespace flame
 
 			if (pass_prefix && pass_$ && udt_name.find("(unnamed") == std::string::npos && udt_name.find("(lambda_") == std::string::npos)
 			{
-				auto udt_hash = H(udt_name.c_str());
+				auto udt_hash = FLAME_HASH(udt_name.c_str());
 				if (!::flame::find_udt(dbs, udt_hash))
 				{
 					_udt->get_length(&ull);
@@ -1125,7 +1125,7 @@ namespace flame
 			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
 			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
 			{
-				auto hash = H(name.c_str());
+				auto hash = FLAME_HASH(name.c_str());
 				if (!::flame::find_function(dbs, hash))
 				{
 					FunctionDesc desc;

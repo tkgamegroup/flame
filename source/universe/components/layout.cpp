@@ -44,7 +44,7 @@ namespace flame
 		if (s == content_size)
 			return;
 		content_size = s;
-		data_changed(cH("content_size"), this);
+		data_changed(FLAME_CHASH("content_size"), this);
 	}
 
 	void cLayoutPrivate::apply_h_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
@@ -145,7 +145,7 @@ namespace flame
 
 	void cLayoutPrivate::on_component_added(Component* c)
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
 			element_data_listener = element->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
@@ -154,15 +154,15 @@ namespace flame
 					return;
 				switch (hash)
 				{
-				case cH("scale"):
-				case cH("size"):
-				case cH("inner_padding"):
+				case FLAME_CHASH("scale"):
+				case FLAME_CHASH("size"):
+				case FLAME_CHASH("inner_padding"):
 					if (thiz->management)
 						thiz->management->add_to_update_list(thiz);
 				}
 			}, new_mail_p(this));
 		}
-		else if (c->name_hash == cH("cAligner"))
+		else if (c->name_hash == FLAME_CHASH("cAligner"))
 			aligner = (cAligner*)c;
 	}
 
@@ -175,9 +175,9 @@ namespace flame
 
 	void cLayoutPrivate::on_child_component_added(Component* c)
 	{
-		if (c->name_hash == cH("cElement") ||
-			c->name_hash == cH("cAligner") ||
-			c->name_hash == cH("cText"))
+		if (c->name_hash == FLAME_CHASH("cElement") ||
+			c->name_hash == FLAME_CHASH("cAligner") ||
+			c->name_hash == FLAME_CHASH("cText"))
 		{
 			als_dirty = true;
 			if (management)
@@ -187,9 +187,9 @@ namespace flame
 
 	void cLayoutPrivate::on_child_component_removed(Component* c)
 	{
-		if (c->name_hash == cH("cElement") ||
-			c->name_hash == cH("cAligner") ||
-			c->name_hash == cH("cText"))
+		if (c->name_hash == FLAME_CHASH("cElement") ||
+			c->name_hash == FLAME_CHASH("cAligner") ||
+			c->name_hash == FLAME_CHASH("cText"))
 		{
 			als_dirty = true;
 			if (management)
@@ -246,9 +246,9 @@ namespace flame
 								return;
 							switch (hash)
 							{
-							case cH("pos"):
-							case cH("scale"):
-							case cH("size"):
+							case FLAME_CHASH("pos"):
+							case FLAME_CHASH("scale"):
+							case FLAME_CHASH("size"):
 								thiz->management->add_to_update_list(thiz);
 								break;
 							}
@@ -274,11 +274,11 @@ namespace flame
 								return;
 							switch (hash)
 							{
-							case cH("text"):
-							case cH("font_size"):
-							case cH("scale"):
-							case cH("auto_width"):
-							case cH("auto_height"):
+							case FLAME_CHASH("text"):
+							case FLAME_CHASH("font_size"):
+							case FLAME_CHASH("scale"):
+							case FLAME_CHASH("auto_width"):
+							case FLAME_CHASH("auto_height"):
 								if (thiz->management)
 									thiz->management->add_to_update_list(thiz);
 								break;

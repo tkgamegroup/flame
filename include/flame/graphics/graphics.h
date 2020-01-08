@@ -270,7 +270,7 @@ namespace flame
 				BlendFactorSrc1Alpha,
 				BlendFactorOneMinusSrc1Alpha
 			};
-			for (auto i = 0; i < FLAME_ARRAYSIZE(dual_src_enums); i++)
+			for (auto i = 0; i < array_size(dual_src_enums); i++)
 			{
 				if (f == dual_src_enums[i])
 					return true;

@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
@@ -58,7 +58,7 @@ struct cSceneEditorPrivate : cSceneEditor
 		filename = _filename;
 		if (prefab)
 			e_scene->remove_child(prefab);
-		prefab = Entity::create_from_file(e_scene->world_, app.dbs, filename);
+		prefab = Entity::create_from_file(e_scene->world_, app.dbs.size(), app.dbs.data(), filename.c_str());
 		e_scene->add_child(prefab);
 	}
 
@@ -98,7 +98,7 @@ struct cSceneOverlayer : Component
 
 	virtual void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
 			element->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -117,7 +117,7 @@ struct cSceneOverlayer : Component
 				std::vector<Vec2f> points;
 				path_rect(points, se->global_pos, se->global_size);
 				points.push_back(points[0]);
-				canvas->stroke(points, Vec4c(255, 255, 255, 255), 6.f);
+				canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 255, 255), 6.f);
 
 				if (tool_type > 0)
 					transform_tool_element->set_pos((se->global_pos + se->global_size * 0.5f) - element->global_pos - transform_tool_element->size_ * 0.5f);
@@ -244,7 +244,12 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		e_menubar->add_child(e_menu_btn);
 	}
 
-	auto e_tool = create_standard_combobox(50.f, app.font_atlas_pixel, 1.f, app.root, { L"Null", L"Move", L"Scale" });
+	wchar_t* tool_names[] = {
+		L"Null",
+		L"Move",
+		L"Scale"
+	};
+	auto e_tool = create_standard_combobox(50.f, app.font_atlas_pixel, 1.f, app.root, 3, tool_names);
 	e_page->add_child(wrap_standard_text(e_tool, true, app.font_atlas_pixel, 1.f, L"Tool"));
 
 	auto e_scene = Entity::create();
@@ -312,7 +317,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
 
-		auto udt_element = find_udt(app.dbs, cH("Serializer_cElement"));
+		auto udt_element = find_udt(app.dbs, FLAME_CHASH("Serializer_cElement"));
 		assert(udt_element);
 		auto element_pos_offset = udt_element->find_variable("pos")->offset();
 
@@ -343,7 +348,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					if (e)
 					{
 						e->set_pos(Vec2f(pos), true);
-						capture.e->inspector->update_data_tracker(cH("cElement"), capture.off);
+						capture.e->inspector->update_data_tracker(FLAME_CHASH("cElement"), capture.off);
 					}
 				}
 			}, new_mail(&capture));
@@ -380,7 +385,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 						if (e)
 						{
 							e->set_x(pos.x(), true);
-							capture.e->inspector->update_data_tracker(cH("cElement"), capture.off);
+							capture.e->inspector->update_data_tracker(FLAME_CHASH("cElement"), capture.off);
 						}
 					}
 				}, new_mail(&capture));
@@ -418,7 +423,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 						if (e)
 						{
 							e->set_y(pos.y(), true);
-							capture.e->inspector->update_data_tracker(cH("cElement"), capture.off);
+							capture.e->inspector->update_data_tracker(FLAME_CHASH("cElement"), capture.off);
 						}
 					}
 				}, new_mail(&capture));
@@ -432,7 +437,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			auto combobox = e_tool->get_component(cCombobox);
 			combobox->set_index(0, false);
 			combobox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-				if (hash == cH("index"))
+				if (hash == FLAME_CHASH("index"))
 					(*(cSceneOverlayer**)c)->tool_type = ((cCombobox*)cb)->idx;
 			}, new_mail_p(c_overlayer));
 		}

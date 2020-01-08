@@ -36,9 +36,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -78,7 +78,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cEventReceiver"))
+			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -139,7 +139,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cEventReceiver"))
+			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -210,7 +210,7 @@ namespace flame
 		void take_away(bool close)
 		{
 			auto tabbar = entity->parent();
-			if (tabbar->name_hash() != cH("docker_tabbar"))
+			if (tabbar->name_hash() != FLAME_CHASH("docker_tabbar"))
 				return;
 
 			auto docker = tabbar->parent();
@@ -253,9 +253,9 @@ namespace flame
 				auto p = docker->parent();
 				if (p)
 				{
-					if (p->name_hash() == cH("docker_container"))
+					if (p->name_hash() == FLAME_CHASH("docker_container"))
 						p->parent()->remove_child(p);
-					else if (p->name_hash() == cH("docker_layout"))
+					else if (p->name_hash() == FLAME_CHASH("docker_layout"))
 					{
 						auto oth_docker = p->child((docker->order_ & 0xffffff) == 0 ? 2 : 0);
 						p->remove_child(oth_docker, false);
@@ -263,7 +263,7 @@ namespace flame
 						auto idx = p->order_ & 0xffffff;
 						pp->remove_child(p);
 						pp->add_child(oth_docker, idx);
-						if (pp->name_hash() == cH("docker_container"))
+						if (pp->name_hash() == FLAME_CHASH("docker_container"))
 						{
 							auto aligner = oth_docker->get_component(cAligner);
 							aligner->set_x_align(AlignxLeft);
@@ -289,17 +289,17 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cDockerTabPrivate**)c)->draw(canvas);
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->drag_hash = cH("cDockerTab");
+				event_receiver->drag_hash = FLAME_CHASH("cDockerTab");
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->dragging && thiz->page)
@@ -363,7 +363,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cListItem"))
+			else if (c->name_hash == FLAME_CHASH("cListItem"))
 				list_item = (cListItem*)c;
 		}
 
@@ -464,12 +464,12 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops(1, &cH("DockerTab"));
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("DockerTab"));
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
 					if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
@@ -528,12 +528,12 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cList"))
+			else if (c->name_hash == FLAME_CHASH("cList"))
 			{
 				list = (cList*)c;
 				selected_changed_listener = list->data_changed_listeners.add([](void* c, Component* l, uint hash, void*) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
-					if (hash == cH("selected"))
+					if (hash == FLAME_CHASH("selected"))
 					{
 						auto tabbar = thiz->entity;
 						auto docker = tabbar->parent();
@@ -585,12 +585,12 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops(1, &cH("cDockerTab"));
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerPagesPrivate**)c);
 					if (action == DragOvering)
@@ -680,7 +680,7 @@ namespace flame
 									auto docker_idx = docker->order_ & 0xffffff;
 									auto layout = get_docker_layout_model()->copy();
 
-									if (p->name_hash() == cH("docker_container"))
+									if (p->name_hash() == FLAME_CHASH("docker_container"))
 									{
 										auto aligner = docker->get_component(cAligner);
 										aligner->set_x_align(AlignxFree);

@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/device.h>
@@ -182,7 +183,7 @@ struct cResourceExplorer : Component
 			e_title->add_component(cElement::create());
 
 			auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(app.font_atlas_pixel->slice_text_by_width(title, c_text->font_size_, 64.f).v);
+				c_text->set_text(app.font_atlas_pixel->slice_text_by_width(title.c_str(), title.size(), c_text->font_size_, 64.f).v);
 			e_title->add_component(c_text);
 		}
 
@@ -192,7 +193,7 @@ struct cResourceExplorer : Component
 	void navigate(const std::filesystem::path& path)
 	{
 		clear_all_works();
-		looper().clear_events(cH("update thumbnail"));
+		looper().clear_events(FLAME_CHASH("update thumbnail"));
 
 		curr_path = path;
 
@@ -231,7 +232,7 @@ struct cResourceExplorer : Component
 
 			for (auto& s : stems)
 			{
-				auto e_stem = create_standard_button(app.font_atlas_pixel, 1.f, s.filename().wstring());
+				auto e_stem = create_standard_button(app.font_atlas_pixel, 1.f, s.filename().c_str());
 				address_bar->add_child(e_stem);
 				{
 					{
@@ -265,7 +266,7 @@ struct cResourceExplorer : Component
 					auto e_stem_popup = create_standard_menu();
 					for (auto& p : sub_dirs)
 					{
-						auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, p.filename().wstring());
+						auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, p.filename().c_str());
 						e_stem_popup->add_child(e_item);
 						struct Capture
 						{
@@ -379,7 +380,7 @@ struct cResourceExplorer : Component
 
 	void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cResourceExplorer**)c)->draw(canvas);
@@ -423,20 +424,20 @@ void cThumbnail::return_seat()
 
 void cThumbnail::on_component_added(Component* c)
 {
-	if (c->name_hash == cH("cElement"))
+	if (c->name_hash == FLAME_CHASH("cElement"))
 	{
 		((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 			(*(cThumbnail**)c)->draw(canvas);
 		}, new_mail_p(this));
 	}
-	else if (c->name_hash == cH("cImage"))
+	else if (c->name_hash == FLAME_CHASH("cImage"))
 	{
 		image = (cImage*)c;
 		add_work([](void* c) {
 			auto thiz = *(cThumbnail**)c;
 			uint w, h;
 			char* data;
-			get_thumbnail(64, thiz->filename, &w, &h, &data);
+			get_thumbnail(64, thiz->filename.c_str(), &w, &h, &data);
 			auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
 			bitmap->swap_channel(0, 2);
 			thiz->thumbnail = bitmap;
@@ -486,7 +487,7 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
 						image->uv1 = Vec2f(thiz->seat->pos + thumbnail_size) / thumbnails_img_size;
 						image->color = Vec4c(255);
-					}, new_mail_p(this), nullptr, false, 0.f, cH("update thumbnail"));
+					}, new_mail_p(this), nullptr, false, 0.f, FLAME_CHASH("update thumbnail"));
 				}
 			}
 		}
@@ -556,7 +557,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 							if (ok)
 							{
 								auto e = Entity::create();
-								Entity::save_to_file(app.dbs, e, explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab"));
+								Entity::save_to_file(app.dbs.size(), app.dbs.data(), e, (explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
 								Entity::destroy(e);
 							}
 						}, new_mail_p(explorer));
@@ -579,7 +580,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 								auto p = explorer->curr_path / text;
 								std::filesystem::create_directory(p);
 								auto bp = BP::create();
-								bp->save_to_file(bp, p / L"bp");
+								bp->save_to_file(bp, (p / L"bp").c_str());
 								BP::destroy(bp);
 							}
 						}, new_mail_p(explorer));
@@ -663,7 +664,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 	e_page->add_child(wrap_standard_scrollbar(e_list, ScrollbarVertical, true, 1.f));
 
 	c_explorer->ev_file_changed = create_event(false);
-	c_explorer->ev_end_file_watcher = add_file_watcher(path, [](void* c, FileChangeType type, const std::wstring& filename) {
+	c_explorer->ev_end_file_watcher = add_file_watcher(path.c_str(), [](void* c, FileChangeType type, const wchar_t* filename) {
 		auto explorer = *(cResourceExplorer**)c;
 
 		set_event(explorer->ev_file_changed);

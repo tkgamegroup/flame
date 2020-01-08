@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include <flame/foundation/bitmap.h>
 
 #include <functional>
@@ -7,7 +7,8 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	std::vector<std::wstring> inputs;
+	std::vector<std::wstring> _inputs;
+	std::vector<const wchar_t*> inputs;
 	std::wstring output;
 	auto border = false;
 	for (auto i = 1; i < argc; i++)
@@ -21,10 +22,12 @@ int main(int argc, char **args)
 		else if (args[i] == std::string("-border"))
 			border = true;
 		else
-			inputs.push_back(s2w(args[i]));
+			_inputs.push_back(s2w(args[i]));
 	}
+	for (auto& i : _inputs)
+		inputs.push_back(i.c_str());
 
-	pack_atlas(inputs, output, border);
+	pack_atlas(inputs.size(), inputs.data(), output.c_str(), border);
 
 	return 0;
 }

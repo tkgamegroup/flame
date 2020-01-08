@@ -25,7 +25,7 @@ struct cConsolePrivate : cConsole
 
 void cConsole::print(const std::wstring& str)
 {
-	c_text_log->set_text(c_text_log->text() + str + L"\n");
+	c_text_log->set_text((c_text_log->text() + str + L"\n").c_str());
 }
 
 Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cConsole* console), const Mail<>& cmd_callback_capture, void (*close_callback)(void* c), const Mail<>& close_callback_capture, const std::wstring& init_str, const Vec2f& pos)
@@ -95,7 +95,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 
 		auto c_text = cText::create(app.font_atlas_pixel);
 		if (!init_str.empty())
-			c_text->set_text(init_str + L"\n");
+			c_text->set_text((init_str + L"\n").c_str());
 		e_log->add_component(c_text);
 	}
 	c_console->c_text_log = e_log->get_component(cText);

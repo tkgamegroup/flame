@@ -80,7 +80,7 @@ int main(int argc, char** args)
 	auto w = World::create(app.u);
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create());
-	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, cH("SwapchainResizable"), &app.cbs);
+	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, FLAME_CHASH("SwapchainResizable"), &app.cbs);
 	w->add_system(s_2d_renderer);
 	{
 		auto canvas = s_2d_renderer->canvas;

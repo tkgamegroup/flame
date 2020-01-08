@@ -40,14 +40,14 @@ namespace flame
 			next_focusing = (cEventReceiver*)FLAME_INVALID_POINTER;
 
 			char_input_compelete = true;
-			for (auto i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
+			for (auto i = 0; i < array_size(key_states); i++)
 				key_states[i] = KeyStateUp;
 
 			mouse_pos = Vec2i(0);
 			mouse_pos_prev = Vec2i(0);
 			mouse_disp = Vec2i(0);
 			mouse_scroll = 0;
-			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
+			for (auto i = 0; i < array_size(mouse_buttons); i++)
 				mouse_buttons[i] = KeyStateUp;
 			potential_dbclick_er = nullptr;
 			potential_dbclick_time = 0.f;
@@ -132,7 +132,7 @@ namespace flame
 
 		void on_added() override
 		{
-			window = (Window*)world_->find_object(cH("Window"), 0);
+			window = (Window*)world_->find_object(FLAME_CHASH("Window"), 0);
 			if (window)
 			{
 
@@ -271,7 +271,7 @@ namespace flame
 				{
 					prev_focusing->focusing = false;
 					prev_focusing->active = false;
-					prev_focusing->data_changed(cH("focusing"), nullptr);
+					prev_focusing->data_changed(FLAME_CHASH("focusing"), nullptr);
 				}
 				if (focusing)
 				{
@@ -285,7 +285,7 @@ namespace flame
 					}
 
 					focusing->focusing = true;
-					focusing->data_changed(cH("focusing"), nullptr);
+					focusing->data_changed(FLAME_CHASH("focusing"), nullptr);
 				}
 			}
 
@@ -304,7 +304,7 @@ namespace flame
 					((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
 				if (mouse_scroll != 0)
 					((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mouse_scroll, 0));
-				for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
+				for (auto i = 0; i < array_size(mouse_buttons); i++)
 				{
 					auto s = mouse_buttons[i];
 					if (s & KeyStateJust)
@@ -333,18 +333,18 @@ namespace flame
 				if (prev_hovering)
 				{
 					prev_hovering->state = EventReceiverNormal;
-					prev_hovering->data_changed(cH("state"), nullptr);
+					prev_hovering->data_changed(FLAME_CHASH("state"), nullptr);
 				}
 				if (hovering)
 				{
 					hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-					hovering->data_changed(cH("state"), nullptr);
+					hovering->data_changed(FLAME_CHASH("state"), nullptr);
 				}
 			}
 			else if (hovering && hovering->active != prev_hovering_active)
 			{
 				hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-				hovering->data_changed(cH("state"), nullptr);
+				hovering->data_changed(FLAME_CHASH("state"), nullptr);
 			}
 			if (!prev_dragging && focusing && focusing->dragging)
 				((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
@@ -360,12 +360,12 @@ namespace flame
 			keydown_inputs.clear();
 			keyup_inputs.clear();
 			char_inputs.clear();
-			for (int i = 0; i < FLAME_ARRAYSIZE(key_states); i++)
+			for (int i = 0; i < array_size(key_states); i++)
 				key_states[i] &= ~KeyStateJust;
 
 			mouse_pos_prev = mouse_pos;
 			mouse_scroll = 0;
-			for (auto i = 0; i < FLAME_ARRAYSIZE(mouse_buttons); i++)
+			for (auto i = 0; i < array_size(mouse_buttons); i++)
 				mouse_buttons[i] &= ~KeyStateJust;
 		}
 	};

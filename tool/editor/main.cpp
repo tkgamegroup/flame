@@ -57,7 +57,7 @@ void App::create()
 	w->add_system(sLayoutManagement::create());
 	w->add_system(sEventDispatcher::create());
 
-	s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", scr, cH("SwapchainResizable"), &sc_cbs);
+	s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", scr, FLAME_CHASH("SwapchainResizable"), &sc_cbs);
 	w->add_system(s_2d_renderer);
 	{
 		auto canvas = s_2d_renderer->canvas;
@@ -177,7 +177,7 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float font_size_scale, bool is_f
 
 	capture.e_er->data_changed_listeners.add([](void* c, Component* er, uint hash, void*) {
 		auto& capture = *(Capture*)c;
-		if (hash == cH("focusing") && ((cEventReceiver*)er)->focusing == false)
+		if (hash == FLAME_CHASH("focusing") && ((cEventReceiver*)er)->focusing == false)
 		{
 			capture.e->set_visibility(false);
 			capture.d->set_visibility(true);

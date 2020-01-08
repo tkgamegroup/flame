@@ -749,7 +749,7 @@ namespace flame
 
 		AtlasPrivate::AtlasPrivate(Device* d, const std::wstring& filename, const std::wstring& atlas_filename)
 		{
-			id = H(filename.c_str());
+			id = FLAME_HASH(filename.c_str());
 
 			image = Image::create_from_file(d, filename.c_str());
 			imageview = Imageview::create(image);
@@ -775,7 +775,7 @@ namespace flame
 				ss >> t;
 				region._filename = s2w(t);
 				region.filename = region._filename.c_str();
-				region.id = H(t.c_str());
+				region.id = FLAME_HASH(t.c_str());
 				ss >> t;
 				auto v = stou4(t.c_str());
 				region.pos = Vec2i(v.x(), v.y());

@@ -5,8 +5,6 @@ An ECS Game Engine Based On Reflection.
 
 - pugixml     - https://github.com/zeux/pugixml
 
-- nlohmannjson     - https://github.com/nlohmann/json
-
 - STB         - https://github.com/nothings/stb
   
 - freetype    - https://github.com/ubawurinna/freetype-windows-binaries

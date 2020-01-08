@@ -116,7 +116,7 @@ namespace flame
 
 		for (auto n_o : file_root)
 		{
-			auto udt = find_udt(dbs, H((std::string("D#Serializer_") + n_o.name()).c_str()));
+			auto udt = find_udt(dbs, FLAME_HASH((std::string("D#Serializer_") + n_o.name()).c_str()));
 			assert(udt);
 			auto dummy = malloc(udt->size());
 			auto module = load_module(udt->db()->module_name());

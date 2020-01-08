@@ -19,60 +19,7 @@
 #include <unordered_map>
 #include <memory>
 
-#define FLAME_STR_(x) #x
-#define FLAME_STR(x) FLAME_STR_(x)
-#define FLAME_ARRAYSIZE(_ARR) ((int)(sizeof(_ARR)/sizeof(*_ARR)))
-#define FLAME_DERIVE_OFFSET(D, B) (TK_LONG_PTR((B*)((D*)1))-1)
-#define FLAME_LOW(I) ((I) & 0xffff)
-#define FLAME_HIGH(I) ((I) >> 16)
-#define FLAME_MAKEINT(H, L) ((L) | ((H) << 16))
 #define FLAME_INVALID_POINTER ((void*)0x7fffffffffffffff)
-
-template <unsigned int N>
-struct EnsureConstU
-{
-	static const unsigned int value = N;
-};
-
-template<class CH>
-constexpr unsigned int _strlen(const CH* str)
-{
-	auto p = str;
-	while (*p)
-		p++;
-	return p - str;
-}
-
-template <class CH>
-struct _SAL // str and len
-{
-	unsigned int l;
-	const CH* s;
-
-	_SAL(unsigned int l, const CH* s) :
-		l(l),
-		s(s)
-	{
-	}
-};
-
-#define SAL_S(x) EnsureConstU<_strlen(x)>::value, x
-#define SAL(n, x) _SAL n(SAL_S(x))
-
-inline constexpr unsigned int hash_update(unsigned int h, unsigned int v)
-{
-	return h ^ (v + 0x9e3779b9 + (h << 6) + (h >> 2));
-}
-
-template<class CH>
-constexpr unsigned int hash_str(const CH* str, unsigned int seed)
-{
-	return 0 == *str ? seed : hash_str(str + 1, hash_update(seed , *str));
-}
-
-#define H(x) (hash_str(x, 0))
-
-#define cH(x) (EnsureConstU<hash_str(x, 0)>::value)
 
 namespace flame
 {
@@ -84,8 +31,59 @@ namespace flame
 	typedef unsigned long		ulong;
 	typedef long long			longlong;
 	typedef unsigned long long  ulonglong;
+	typedef void*				voidptr;
 
-	typedef void* voidptr;
+	template<class T>
+	constexpr uint array_size(const T& a)
+	{
+		return sizeof(a) / sizeof(a[0]);
+	}
+
+	template <unsigned int N>
+	struct EnsureConstU
+	{
+		static const unsigned int value = N;
+	};
+
+	template <class CH>
+	struct _SAL // str and len
+	{
+		unsigned int l;
+		const CH* s;
+
+		_SAL(unsigned int l, const CH* s) :
+			l(l),
+			s(s)
+		{
+		}
+	};
+
+#define FLAME_SAL_S(x) EnsureConstU<__f_strlen(x)>::value, x
+#define FLAME_SAL(n, x) _SAL n(FLAME_SAL_S(x))
+
+	template<class CH>
+	constexpr unsigned int __f_strlen(const CH* str)
+	{
+		auto p = str;
+		while (*p)
+			p++;
+		return p - str;
+	}
+
+	inline constexpr unsigned int hash_update(unsigned int h, unsigned int v)
+	{
+		return h ^ (v + 0x9e3779b9 + (h << 6) + (h >> 2));
+	}
+
+	template<class CH>
+	constexpr unsigned int hash_str(const CH* str, unsigned int seed)
+	{
+		return 0 == *str ? seed : hash_str(str + 1, hash_update(seed, *str));
+	}
+
+#define FLAME_HASH(x) (hash_str(x, 0))
+
+#define FLAME_CHASH(x) (EnsureConstU<hash_str(x, 0)>::value)
 
 	FLAME_TYPE_EXPORTS void* f_malloc(uint size);
 	FLAME_TYPE_EXPORTS void* f_realloc(void* p, uint size);
@@ -398,7 +396,7 @@ namespace flame
 
 		Object(const char* name) :
 			name(name),
-			name_hash(H(name)),
+			name_hash(FLAME_HASH(name)),
 			id(0)
 		{
 		}
@@ -491,7 +489,7 @@ namespace flame
 			if (is_array)
 				name += "V";
 			name += "#" + base_name;
-			return H(name.c_str());
+			return FLAME_HASH(name.c_str());
 		}
 
 		FLAME_TYPE_EXPORTS static const TypeInfo* get(TypeTag$ tag, const char* base_name, bool is_attribute = false, bool is_array = false);

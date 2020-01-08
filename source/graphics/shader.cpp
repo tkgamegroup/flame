@@ -30,7 +30,7 @@ namespace flame
 			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 			descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 			descriptorPoolInfo.pNext = nullptr;
-			descriptorPoolInfo.poolSizeCount = FLAME_ARRAYSIZE(descriptorPoolSizes);
+			descriptorPoolInfo.poolSizeCount = array_size(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 			descriptorPoolInfo.maxSets = 8;
 			chk_res(vkCreateDescriptorPool(((DevicePrivate*)d)->v, &descriptorPoolInfo, nullptr, &v));

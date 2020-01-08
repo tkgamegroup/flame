@@ -87,9 +87,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -108,7 +108,7 @@ namespace flame
 		else if (move_to_open && is_mouse_move(action, key))
 		{
 			auto t = get_topmost(root);
-			if (t && t->name_hash() == cH("topmost"))
+			if (t && t->name_hash() == FLAME_CHASH("topmost"))
 				return true;
 		}
 		return false;

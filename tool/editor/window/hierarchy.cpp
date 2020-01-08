@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
@@ -33,18 +34,18 @@ struct cHierarchyItem : Component
 
 	virtual void on_component_added(Component* c) override
 	{
-		if (c->name_hash == cH("cElement"))
+		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
 			element->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cHierarchyItem**)c)->draw(canvas);
 			}, new_mail_p(this));
 		}
-		else if (c->name_hash == cH("cEventReceiver"))
+		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
-			event_receiver->drag_hash = cH("cHierarchyItem");
-			event_receiver->set_acceptable_drops({ cH("cHierarchyItem") });
+			event_receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
+			event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = *(cHierarchyItem**)c;
 				auto element = thiz->element;
@@ -135,7 +136,7 @@ struct cHierarchyItem : Component
 				path_move(points, element->global_size.x(), 0.f);
 				break;
 			}
-			canvas->stroke(points, Vec4c(120, 150, 255, 255), 3.f);
+			canvas->stroke(points.size(), points.data(), Vec4c(120, 150, 255, 255), 3.f);
 		}
 	}
 };
@@ -144,7 +145,7 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 {
 	if (e->child_count() > 0)
 	{
-		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, s2w(e->name()));
+		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, s2w(e->name()).c_str());
 		parent->add_child(e_tree_node);
 		{
 			auto e_item = e_tree_node->child(0);
@@ -161,7 +162,7 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
 	}
 	else
 	{
-		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()));
+		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()).c_str());
 		parent->add_child(e_tree_leaf);
 		{
 			auto c_item = new_u_object<cHierarchyItem>();

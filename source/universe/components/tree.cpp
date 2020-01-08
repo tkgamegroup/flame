@@ -82,7 +82,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cEventReceiver"))
+			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -93,7 +93,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cStyleColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
 			{
 				style = (cStyleColor*)c;
 				do_style(false);
@@ -179,7 +179,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cEventReceiver"))
+			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -190,7 +190,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == cH("cStyleColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
 			{
 				style = (cStyleColor*)c;
 				((cTreeNodeTitlePrivate*)this)->do_style(false);
@@ -224,9 +224,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cText"))
+			if (c->name_hash == FLAME_CHASH("cText"))
 				text = (cText*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -266,7 +266,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cEventReceiver"))
+			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
@@ -305,7 +305,7 @@ namespace flame
 		}
 		selected = e;
 		if (trigger_changed)
-			data_changed(cH("selected"), nullptr);
+			data_changed(FLAME_CHASH("selected"), nullptr);
 	}
 
 	cTree* cTree::create()

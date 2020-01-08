@@ -103,7 +103,7 @@ namespace flame
 			pos_.x() += x;
 		else
 			pos_.x() = x;
-		data_changed(cH("pos"), sender);
+		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
 	void cElement::set_y(float y, bool add, void* sender)
@@ -116,7 +116,7 @@ namespace flame
 			pos_.y() += y;
 		else
 			pos_.y() = y;
-		data_changed(cH("pos"), sender);
+		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
 	void cElement::set_pos(const Vec2f& p, bool add, void* sender)
@@ -129,7 +129,7 @@ namespace flame
 			pos_ += p;
 		else
 			pos_ = p;
-		data_changed(cH("pos"), sender);
+		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
 	void cElement::set_scale(float s, bool add, void* sender)
@@ -142,7 +142,7 @@ namespace flame
 			scale_ += s;
 		else
 			scale_ = s;
-		data_changed(cH("scale"), sender);
+		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
 	void cElement::set_width(float w, bool add, void* sender)
@@ -155,7 +155,7 @@ namespace flame
 			size_.x() += w;
 		else
 			size_.x() = w;
-		data_changed(cH("size"), sender);
+		data_changed(FLAME_CHASH("size"), sender);
 	}
 
 	void cElement::set_height(float h, bool add, void* sender)
@@ -168,7 +168,7 @@ namespace flame
 			size_.y() += h;
 		else
 			size_.y() = h;
-		data_changed(cH("size"), sender);
+		data_changed(FLAME_CHASH("size"), sender);
 	}
 
 	void cElement::set_size(const Vec2f& s, bool add, void* sender)
@@ -181,7 +181,7 @@ namespace flame
 			size_ += s;
 		else
 			size_ = s;
-		data_changed(cH("size"), sender);
+		data_changed(FLAME_CHASH("size"), sender);
 	}
 
 	void cElement::set_alpha(float a, bool add, void* sender)
@@ -194,7 +194,7 @@ namespace flame
 			alpha_ += a;
 		else
 			alpha_ = a;
-		data_changed(cH("alpha"), sender);
+		data_changed(FLAME_CHASH("alpha"), sender);
 	}
 
 	void cElement::set_roundness(const Vec4f& r, bool add, void* sender)
@@ -207,7 +207,7 @@ namespace flame
 			roundness_ += r;
 		else
 			roundness_ = r;
-		data_changed(cH("roundness"), sender);
+		data_changed(FLAME_CHASH("roundness"), sender);
 	}
 
 	void cElement::set_frame_thickness(float t, bool add, void* sender)
@@ -220,7 +220,7 @@ namespace flame
 			frame_thickness_ += t;
 		else
 			frame_thickness_ = t;
-		data_changed(cH("frame_thickness"), sender);
+		data_changed(FLAME_CHASH("frame_thickness"), sender);
 	}
 
 	void cElement::set_color(const Vec4c& c, bool add, void* sender)
@@ -233,7 +233,7 @@ namespace flame
 			color_ += c;
 		else
 			color_ = c;
-		data_changed(cH("color"), sender);
+		data_changed(FLAME_CHASH("color"), sender);
 	}
 
 	void cElement::set_frame_color(const Vec4c& c, bool add, void* sender)
@@ -246,7 +246,7 @@ namespace flame
 			frame_color_ += c;
 		else
 			frame_color_ = c;
-		data_changed(cH("frame_color"), sender);
+		data_changed(FLAME_CHASH("frame_color"), sender);
 	}
 
 	cElement* cElement::create()

@@ -245,7 +245,7 @@ namespace flame
 			auto target_type = target->type;
 			auto target_tag = target_type->tag();
 			if (!(type == target_type || (type->tag() == TypePointer && (target_tag == TypeData || target_tag == TypePointer) &&
-				(base_hash == target_type->base_hash() || base_hash == cH("void")))))
+				(base_hash == target_type->base_hash() || base_hash == FLAME_CHASH("void")))))
 				return false;
 		}
 
@@ -664,7 +664,7 @@ namespace flame
 
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& _id)
 	{
-		auto type_hash = H(type.c_str());
+		auto type_hash = FLAME_HASH(type.c_str());
 		UdtInfo* udt = nullptr;
 		void* module = nullptr;
 		{
@@ -1179,9 +1179,9 @@ namespace flame
 		return ((BPPrivate*)this)->dbs.size();
 	}
 
-	TypeinfoDatabase* const* BP::dbs() const
+	TypeinfoDatabase* BP::db(uint idx) const
 	{
-		return ((BPPrivate*)this)->dbs.data();
+		return ((BPPrivate*)this)->dbs[idx];
 	}
 
 	uint BP::node_count() const
@@ -1547,9 +1547,9 @@ namespace flame
 		{
 			NodePrivate* n = nullptr;
 
-			static SAL(prefix_enum, "D#Enum");
-			static SAL(prefix_var, "D#Var");
-			static SAL(prefix_array, "D#Array");
+			static FLAME_SAL(prefix_enum, "D#Enum");
+			static FLAME_SAL(prefix_var, "D#Var");
+			static FLAME_SAL(prefix_array, "D#Array");
 			if (n_d.type.compare(0, prefix_enum.l, prefix_enum.s) == 0)
 			{
 				std::string enum_name(n_d.type.begin() + prefix_enum.l + 1, n_d.type.end() - 1);
@@ -1600,7 +1600,7 @@ namespace flame
 						}
 					}
 				};
-				auto type_hash = H(type_name.c_str());
+				auto type_hash = FLAME_HASH(type_name.c_str());
 				auto type_size = data_size(type_hash);
 				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * 2, {
 						{TypeInfo::get(TypeData, type_name.c_str(), true), "in", sizeof(Dummy), sizeof(AttributeBase) + type_size, ""}
@@ -1660,7 +1660,7 @@ namespace flame
 					base_name.erase(base_name.end() - 1);
 					tag = TypePointer;
 				}
-				auto type_hash = H(base_name.c_str());
+				auto type_hash = FLAME_HASH(base_name.c_str());
 				uint type_size = tag == TypeData ? data_size(type_hash) : sizeof(void*);
 				auto size = stoi(parameters[0]);
 				std::vector<SlotDesc> inputs;
@@ -1793,7 +1793,7 @@ namespace flame
 				auto tag = type->tag();
 				if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
 				{
-					auto value_str = type->serialize(bp->dbs, input->data(), 2);
+					auto value_str = type->serialize(bp->dbs, input->raw_data, 2);
 					if (value_str != input->default_value)
 					{
 						if (!n_datas)

@@ -71,7 +71,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -109,7 +109,7 @@ namespace flame
 		auto thiz = (cTextPrivate*)this;
 		thiz->text = text;
 		thiz->update_glyphs();
-		data_changed(cH("text"), sender);
+		data_changed(FLAME_CHASH("text"), sender);
 	}
 
 	void cText::insert_char(wchar_t ch, uint pos, void* sender)
@@ -118,7 +118,7 @@ namespace flame
 		auto& str = thiz->text;
 		str.insert(str.begin() + pos, ch);
 		thiz->update_glyphs();
-		data_changed(cH("text"), sender);
+		data_changed(FLAME_CHASH("text"), sender);
 	}
 
 	void cText::erase_char(uint pos, void* sender)
@@ -127,7 +127,7 @@ namespace flame
 		auto& str = thiz->text;
 		str.erase(str.begin() + pos);
 		thiz->update_glyphs();
-		data_changed(cH("text"), sender);
+		data_changed(FLAME_CHASH("text"), sender);
 	}
 
 	void cText::set_font_size(uint s, void* sender)
@@ -136,7 +136,7 @@ namespace flame
 			return;
 		font_size_ = s;
 		((cTextPrivate*)this)->update_glyphs();
-		data_changed(cH("font_size"), sender);
+		data_changed(FLAME_CHASH("font_size"), sender);
 	}
 
 	void cText::set_scale(float s, void* sender)
@@ -144,7 +144,7 @@ namespace flame
 		if (s == scale_)
 			return;
 		scale_ = s;
-		data_changed(cH("scale"), sender);
+		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
 	void cText::set_auto_width(bool v, void* sender)
@@ -152,7 +152,7 @@ namespace flame
 		if (v == auto_width_)
 			return;
 		auto_width_ = v;
-		data_changed(cH("auto_width"), sender);
+		data_changed(FLAME_CHASH("auto_width"), sender);
 	}
 
 	void cText::set_auto_height(bool v, void* sender)
@@ -160,7 +160,7 @@ namespace flame
 		if (v == auto_height_)
 			return;
 		auto_height_ = v;
-		data_changed(cH("auto_height"), sender);
+		data_changed(FLAME_CHASH("auto_height"), sender);
 	}
 
 
@@ -246,7 +246,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
 		{
-			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(cH("FontAtlas"), font_atlas_id$));
+			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id$));
 
 			c->color = color$;
 			c->font_size_ = font_size$;
@@ -304,7 +304,7 @@ namespace flame
 
 			if (offset == -1)
 			{
-				c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), font_atlas_id$);
+				c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id$);
 				c->color = color$;
 				c->font_size_ = font_size$;
 				c->auto_width_ = auto_width$;
@@ -316,7 +316,7 @@ namespace flame
 				switch (offset)
 				{
 				case offsetof(Serializer_cText$, font_atlas_id$):
-					c->font_atlas = (graphics::FontAtlas*)w->find_object(cH("FontAtlas"), font_atlas_id$);
+					c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id$);
 					break;
 				case offsetof(Serializer_cText$, color$):
 					c->color = color$;

@@ -293,21 +293,21 @@ namespace flame
 		{
 			switch (hash)
 			{
-			case cH("int"):
+			case FLAME_CHASH("int"):
 				return "int";
-			case cH("Vec(2+int)"):
+			case FLAME_CHASH("Vec(2+int)"):
 				return "ivec2";
-			case cH("Vec(3+int)"):
+			case FLAME_CHASH("Vec(3+int)"):
 				return"ivec3";
-			case cH("Vec(4+int)"):
+			case FLAME_CHASH("Vec(4+int)"):
 				return"ivec4";
-			case cH("float"):
+			case FLAME_CHASH("float"):
 				return"float";
-			case cH("Vec(2+float)"):
+			case FLAME_CHASH("Vec(2+float)"):
 				return"vec2";
-			case cH("Vec(3+float)"):
+			case FLAME_CHASH("Vec(3+float)"):
 				return"vec3";
-			case cH("Vec(4+float)"):
+			case FLAME_CHASH("Vec(4+float)"):
 				return"vec4";
 			default:
 				assert(0);

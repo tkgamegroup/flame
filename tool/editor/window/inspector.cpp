@@ -1,5 +1,5 @@
 #include <flame/graphics/font.h>
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include <flame/universe/topmost.h>
 #include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
@@ -38,7 +38,7 @@ Entity* create_item(const std::wstring& title)
 		e_title->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(title);
+		c_text->set_text(title.c_str());
 		e_title->add_component(c_text);
 	}
 
@@ -105,10 +105,10 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 	capture.drag_text = e_edit->child(1)->get_component(cText);
 	e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 		auto& capture = *(Capture*)c;
-		if (hash == cH("text"))
+		if (hash == FLAME_CHASH("text"))
 		{
-			auto& text = ((cText*)t)->text();
-			*(T*)((char*)capture.d->dummy + capture.v->offset()) = sto_s<T>(text.c_str());
+			auto text = ((cText*)t)->text();
+			*(T*)((char*)capture.d->dummy + capture.v->offset()) = sto_s<T>(text);
 			capture.d->unserialize(capture.v->offset());
 			capture.drag_text->set_text(text);
 		}
@@ -134,15 +134,15 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 	for (auto i = 0; i < N; i++)
 	{
 		auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
-		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i))));
+		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i)).c_str()));
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
 		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			if (hash == cH("text"))
+			if (hash == FLAME_CHASH("text"))
 			{
-				auto& text = ((cText*)t)->text();
-				(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = sto_s<T>(text.c_str());
+				auto text = ((cText*)t)->text();
+				(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = sto_s<T>(text);
 				capture.d->unserialize(capture.v->offset());
 				capture.drag_text->set_text(text);
 			}
@@ -193,13 +193,13 @@ struct cInspectorPrivate : cInspector
 				auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
 				e_item->child(1)->add_child(e_edit);
 				auto c_text = e_edit->get_component(cText);
-				c_text->set_text(s2w(selected->name()));
+				c_text->set_text(s2w(selected->name()).c_str());
 				c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 					auto editor = *(cSceneEditor**)c;
-					if (hash == cH("text"))
+					if (hash == FLAME_CHASH("text"))
 					{
-						auto& text = ((cText*)t)->text();
-						editor->selected->set_name(w2s(text));
+						auto text = ((cText*)t)->text();
+						editor->selected->set_name(w2s(text).c_str());
 						if (editor->hierarchy)
 						{
 							auto item = editor->hierarchy->find_item(editor->selected);
@@ -220,7 +220,7 @@ struct cInspectorPrivate : cInspector
 				auto checkbox = e_checkbox->get_component(cCheckbox);
 				checkbox->set_checked(selected->visibility_, false);
 				checkbox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-					if (hash == cH("checked"))
+					if (hash == FLAME_CHASH("checked"))
 						(*(Entity**)c)->set_visibility(((cCheckbox*)cb)->checked);
 				}, new_mail_p(selected));
 			}
@@ -248,7 +248,7 @@ struct cInspectorPrivate : cInspector
 					e_component->add_component(c_layout);
 				}
 
-				auto udt = find_udt(app.dbs, H((std::string("Serializer_") + component->name).c_str()));
+				auto udt = find_udt(app.dbs, FLAME_HASH((std::string("Serializer_") + component->name).c_str()));
 
 				auto c_dealer = new_u_object<cComponentDealer>();
 				c_dealer->component = component;
@@ -260,13 +260,13 @@ struct cInspectorPrivate : cInspector
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0) == TypeInfo(TypePointer, "Component") && f->parameter_type(1) == TypeInfo(TypeData, "int"));
+					assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "Component") && f->parameter_type(1)->hash() == TypeInfo::get_hash(TypeData, "int"));
 					c_dealer->serialize_addr = (char*)module + (uint)f->rva();
 					c_dealer->serialize(-1);
 				}
 				{
 					auto f = udt->find_function("unserialize");
-					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0) == TypeInfo(TypePointer, "Component") && f->parameter_type(1) == TypeInfo(TypeData, "int"));
+					assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "Component") && f->parameter_type(1)->hash() == TypeInfo::get_hash(TypeData, "int"));
 					c_dealer->unserialize_addr = (char*)module + (uint)f->rva();
 				}
 				c_dealer->dtor_addr = nullptr;
@@ -286,7 +286,7 @@ struct cInspectorPrivate : cInspector
 
 					auto c_text = cText::create(app.font_atlas_pixel);
 					c_text->color = Vec4c(30, 40, 160, 255);
-					c_text->set_text(s2w(component->name));
+					c_text->set_text(s2w(component->name).c_str());
 					e_name->add_component(c_text);
 
 					e_name->add_component(cLayout::create(LayoutFree));
@@ -335,16 +335,18 @@ struct cInspectorPrivate : cInspector
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
+					auto type = v->type();
+					auto base_hash = type->base_hash();
 					auto pdata = (char*)c_dealer->dummy + v->offset();
 
 					auto e_item = create_item(s2w(v->name()));
 					e_component->add_child(e_item);
 					auto e_data = e_item->child(1);
-					switch (v->type().tag)
+					switch (type->tag())
 					{
 					case TypeEnumSingle:
 					{
-						auto info = find_enum(app.dbs, v->type().hash);
+						auto info = find_enum(app.dbs, base_hash);
 
 						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
 
@@ -359,7 +361,7 @@ struct cInspectorPrivate : cInspector
 						capture.info = info;
 						e_data->child(0)->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 							auto& capture = *(Capture*)c;
-							if (hash == cH("index"))
+							if (hash == FLAME_CHASH("index"))
 							{
 								*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(((cCombobox*)cb)->idx)->value();
 								capture.d->unserialize(capture.v->offset());
@@ -374,7 +376,7 @@ struct cInspectorPrivate : cInspector
 						break;
 					case TypeEnumMulti:
 					{
-						auto info = find_enum(app.dbs, v->type().hash);
+						auto info = find_enum(app.dbs, base_hash);
 
 						create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
 						for (auto k = 0; k < info->item_count(); k++)
@@ -390,7 +392,7 @@ struct cInspectorPrivate : cInspector
 							capture.vl = info->item(k)->value();
 							e_data->child(k)->child(0)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("checkbox"))
+								if (hash == FLAME_CHASH("checkbox"))
 								{
 									auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
 									if (((cCheckbox*)cb)->checked)
@@ -409,9 +411,9 @@ struct cInspectorPrivate : cInspector
 					}
 						break;
 					case TypeData:
-						switch (v->type().hash)
+						switch (base_hash)
 						{
-						case cH("bool"):
+						case FLAME_CHASH("bool"):
 						{
 							auto e_checkbox = create_standard_checkbox();
 							e_data->add_child(e_checkbox);
@@ -424,7 +426,7 @@ struct cInspectorPrivate : cInspector
 							capture.v = v;
 							e_checkbox->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("checkbox"))
+								if (hash == FLAME_CHASH("checkbox"))
 								{
 									*(bool*)((char*)capture.d->dummy + capture.v->offset()) = ((cCheckbox*)cb)->checked;
 									capture.d->unserialize(capture.v->offset());
@@ -436,55 +438,55 @@ struct cInspectorPrivate : cInspector
 							e_data->add_component(c_tracker);
 						}
 							break;
-						case cH("int"):
+						case FLAME_CHASH("int"):
 							create_edit<int>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(2+int)"):
+						case FLAME_CHASH("Vec(2+int)"):
 							create_vec_edit<2, int>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(3+int)"):
+						case FLAME_CHASH("Vec(3+int)"):
 							create_vec_edit<3, int>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(4+int)"):
+						case FLAME_CHASH("Vec(4+int)"):
 							create_vec_edit<4, int>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("uint"):
+						case FLAME_CHASH("uint"):
 							create_edit<uint>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(2+uint)"):
+						case FLAME_CHASH("Vec(2+uint)"):
 							create_vec_edit<2, uint>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(3+uint)"):
+						case FLAME_CHASH("Vec(3+uint)"):
 							create_vec_edit<3, uint>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(4+uint)"):
+						case FLAME_CHASH("Vec(4+uint)"):
 							create_vec_edit<4, uint>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("float"):
+						case FLAME_CHASH("float"):
 							create_edit<float>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(2+float)"):
+						case FLAME_CHASH("Vec(2+float)"):
 							create_vec_edit<2, float>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(3+float)"):
+						case FLAME_CHASH("Vec(3+float)"):
 							create_vec_edit<3, float>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(4+float)"):
+						case FLAME_CHASH("Vec(4+float)"):
 							create_vec_edit<4, float>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("uchar"):
+						case FLAME_CHASH("uchar"):
 							create_edit<uchar>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(2+uchar)"):
+						case FLAME_CHASH("Vec(2+uchar)"):
 							create_vec_edit<2, uchar>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(3+uchar)"):
+						case FLAME_CHASH("Vec(3+uchar)"):
 							create_vec_edit<3, uchar>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("Vec(4+uchar)"):
+						case FLAME_CHASH("Vec(4+uchar)"):
 							create_vec_edit<4, uchar>(e_data, pdata, c_dealer, v);
 							break;
-						case cH("StringA"):
+						case FLAME_CHASH("StringA"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 							e_data->add_child(e_edit);
@@ -497,7 +499,7 @@ struct cInspectorPrivate : cInspector
 							capture.v = v;
 							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("text"))
+								if (hash == FLAME_CHASH("text"))
 								{
 									*(StringA*)((char*)capture.d->dummy + capture.v->offset()) = w2s(((cText*)t)->text());
 									capture.d->unserialize(capture.v->offset());
@@ -509,7 +511,7 @@ struct cInspectorPrivate : cInspector
 							e_data->add_component(c_tracker);
 						}
 							break;
-						case cH("StringW"):
+						case FLAME_CHASH("StringW"):
 						{
 							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
 							e_data->add_child(e_edit);
@@ -522,7 +524,7 @@ struct cInspectorPrivate : cInspector
 							capture.v = v;
 							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 								auto& capture = *(Capture*)c;
-								if (hash == cH("text"))
+								if (hash == FLAME_CHASH("text"))
 								{
 									*(StringW*)((char*)capture.d->dummy + capture.v->offset()) = ((cText*)t)->text();
 									capture.d->unserialize(capture.v->offset());
@@ -621,16 +623,16 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 			for (auto i = 0; i < udts.s; i++)
 			{
 				auto u = udts.v[i];
-				if (u->type().name.compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
+				if (std::string(u->type()->name()).compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
 					all_udts.push_back(u);
 			}
 		}
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-			return a->type().name < b->type().name;
+			return std::string(a->type()->name()) < std::string(b->type()->name());
 		});
 		for (auto udt : all_udts)
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type().name.c_str() + strlen(COMPONENT_PREFIX)));
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type()->name() + strlen(COMPONENT_PREFIX)).c_str());
 			e_menu->add_child(e_item);
 			struct Capture
 			{
@@ -658,7 +660,7 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 						void* component;
 						{
 							auto f = capture.u->find_function("create");
-							assert(f && f->return_type() == TypeInfo(TypePointer, "Component") && f->parameter_count() == 0);
+							assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypePointer, "Component") && f->parameter_count() == 0);
 							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
 						}
 						capture.i->editor->selected->add_component((Component*)component);

@@ -29,13 +29,13 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
-					if (hash == cH("state"))
+					if (hash == FLAME_CHASH("state"))
 						(*(cStyleColorPrivate**)c)->style();
 				}, new_mail_p(this));
 				style();
@@ -92,9 +92,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cText"))
+			if (c->name_hash == FLAME_CHASH("cText"))
 				text = (cText*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {

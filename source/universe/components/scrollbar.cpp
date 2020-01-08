@@ -17,7 +17,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 				element = (cElement*)c;
 		}
 	};
@@ -66,11 +66,11 @@ namespace flame
 			scrollbar = parent->get_component(cScrollbar);
 			target_layout = parent->parent()->child(0)->get_component(cLayout);
 			target_element_listener = target_layout->element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
-				if (hash == cH("size"))
+				if (hash == FLAME_CHASH("size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
 			}, new_mail_p(this));
 			target_layout_listener = target_layout->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
-				if (hash == cH("content_size"))
+				if (hash == FLAME_CHASH("content_size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
 			}, new_mail_p(this));
 			update(0.f);
@@ -78,9 +78,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 				element = (cElement*)c;
-			else if (c->name_hash == cH("cEventReceiver"))
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {

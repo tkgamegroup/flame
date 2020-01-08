@@ -98,8 +98,8 @@ struct cDigitalDataTracker : cDataTracker
 			str = to_wstring(*(T*)data, 2);
 		else
 			str = to_wstring(*(T*)data);
-		edit_text->set_text(str);
-		drag_text->set_text(str);
+		edit_text->set_text(str.c_str());
+		drag_text->set_text(str.c_str());
 	}
 
 	virtual void on_added() override
@@ -127,8 +127,8 @@ struct cDigitalVecDataTracker : cDataTracker
 				str = to_wstring((*(Vec<N, T>*)data)[i], 2);
 			else
 				str = to_wstring((*(Vec<N, T>*)data)[i]);
-			edit_texts[i]->set_text(str);
-			drag_texts[i]->set_text(str);
+			edit_texts[i]->set_text(str.c_str());
+			drag_texts[i]->set_text(str.c_str());
 		}
 	}
 
@@ -151,7 +151,7 @@ struct cStringADataTracker : cDataTracker
 
 	virtual void update_view() override
 	{
-		text->set_text(s2w(((StringA*)data)->str())) ;
+		text->set_text(s2w(((StringA*)data)->str()).c_str()) ;
 	}
 
 	virtual void on_added() override
@@ -168,7 +168,7 @@ struct cStringWDataTracker : cDataTracker
 
 	virtual void update_view() override
 	{
-		text->set_text(((StringW*)data)->str());
+		text->set_text(((StringW*)data)->v);
 	}
 
 	virtual void on_added() override

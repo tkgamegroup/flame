@@ -22,7 +22,7 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == cH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
 				if (min_width_ < 0.f && width_policy_ == SizeGreedy)
@@ -60,7 +60,7 @@ namespace flame
 		if (a == x_align_)
 			return;
 		x_align_ = a;
-		data_changed(cH("x_align"), sender);
+		data_changed(FLAME_CHASH("x_align"), sender);
 	}
 
 	void cAligner::set_y_align(Aligny a, void* sender)
@@ -68,7 +68,7 @@ namespace flame
 		if (a == y_align_)
 			return;
 		y_align_ = a;
-		data_changed(cH("y_align"), sender);
+		data_changed(FLAME_CHASH("y_align"), sender);
 	}
 
 	void cAligner::set_width_policy(SizePolicy p, void* sender)
@@ -76,7 +76,7 @@ namespace flame
 		if (p == width_policy_)
 			return;
 		width_policy_ = p;
-		data_changed(cH("width_policy"), sender);
+		data_changed(FLAME_CHASH("width_policy"), sender);
 	}
 
 	void cAligner::set_min_width(float w, void* sender)
@@ -84,7 +84,7 @@ namespace flame
 		if (w == min_width_)
 			return;
 		min_width_ = w;
-		data_changed(cH("min_width"), sender);
+		data_changed(FLAME_CHASH("min_width"), sender);
 	}
 
 	void cAligner::set_width_factor(float f, void* sender)
@@ -92,7 +92,7 @@ namespace flame
 		if (f == width_factor_)
 			return;
 		width_factor_ = f;
-		data_changed(cH("width_factor"), sender);
+		data_changed(FLAME_CHASH("width_factor"), sender);
 	}
 
 	void cAligner::set_height_policy(SizePolicy p, void* sender)
@@ -100,7 +100,7 @@ namespace flame
 		if (p == height_policy_)
 			return;
 		height_policy_ = p;
-		data_changed(cH("height_policy"), sender);
+		data_changed(FLAME_CHASH("height_policy"), sender);
 	}
 
 	void cAligner::set_min_height(float h, void* sender)
@@ -108,7 +108,7 @@ namespace flame
 		if (h == min_height_)
 			return;
 		min_height_ = h;
-		data_changed(cH("min_height"), sender);
+		data_changed(FLAME_CHASH("min_height"), sender);
 	}
 
 	void cAligner::set_height_factor(float f, void* sender)
@@ -116,7 +116,7 @@ namespace flame
 		if (f == height_factor_)
 			return;
 		height_factor_ = f;
-		data_changed(cH("height_factor"), sender);
+		data_changed(FLAME_CHASH("height_factor"), sender);
 	}
 
 	void cAligner::set_using_padding(bool v, void* sender)
@@ -124,7 +124,7 @@ namespace flame
 		if (v == using_padding_)
 			return;
 		using_padding_ = v;
-		data_changed(cH("using_padding"), sender);
+		data_changed(FLAME_CHASH("using_padding"), sender);
 	}
 
 }
