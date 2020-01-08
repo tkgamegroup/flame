@@ -147,8 +147,7 @@ int main(int argc, char** args)
 	root->add_child(e_layout_left);
 	{
 		auto c_element = cElement::create();
-		c_element->pos_.x() = 16.f;
-		c_element->pos_.y() = 28.f;
+		c_element->pos_ = Vec2f(16.f, 28.f);
 		e_layout_left->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -243,8 +242,7 @@ int main(int argc, char** args)
 	root->add_child(e_layout_right);
 	{
 		auto c_element = cElement::create();
-		c_element->pos_.x() = 416.f;
-		c_element->pos_.y() = 28.f;
+		c_element->pos_ = Vec2f(416.f, 28.f);
 		e_layout_right->add_component(c_element);
 
 		auto c_layout = cLayout::create(LayoutVertical);
@@ -265,8 +263,7 @@ int main(int argc, char** args)
 		e_layout_right->add_child(e_container);
 		{
 			auto c_element = e_container->get_component(cElement);
-			c_element->size_.x() = 200.f;
-			c_element->size_.y() = 100.f;
+			c_element->size_ = Vec2f(200.f, 100.f);
 			c_element->inner_padding_ = Vec4f(4.f);
 			c_element->frame_thickness_ = 2.f;
 		}
@@ -276,7 +273,7 @@ int main(int argc, char** args)
 	{
 		for (auto i = 0; i < 3; i++)
 		{
-			static const char* names[] = {
+			char* names[] = {
 				"Refresh",
 				"Save",
 				"Help"
@@ -289,14 +286,14 @@ int main(int argc, char** args)
 					printf("%s!\n", *(char**)c);
 					destroy_topmost(app.root);
 				}
-			}, new_mail_p((char*)names[i]));
+			}, new_mail_p(names[i]));
 		}
 
 		{
 			auto e_menu = create_standard_menu();
 			for (auto i = 0; i < 3; i++)
 			{
-				static const char* names[] = {
+				char* names[] = {
 					"Tree",
 					"Car",
 					"House"
@@ -309,7 +306,7 @@ int main(int argc, char** args)
 						printf("Add %s!\n", *(char**)c);
 						destroy_topmost(app.root);
 					}
-				}, new_mail_p((char*)names[i]));
+				}, new_mail_p(names[i]));
 			}
 			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
@@ -319,7 +316,7 @@ int main(int argc, char** args)
 			auto e_menu = create_standard_menu();
 			for (auto i = 0; i < 3; i++)
 			{
-				static const char* names[] = {
+				char* names[] = {
 					"Tree",
 					"Car",
 					"House"
@@ -332,7 +329,7 @@ int main(int argc, char** args)
 						printf("Remove %s!\n", *(char**)c);
 						destroy_topmost(app.root);
 					}
-				}, new_mail_p((char*)names[i]));
+				}, new_mail_p(names[i]));
 			}
 			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Remove", root, e_menu, true, SideE, false, true, false, Icon_CARET_RIGHT);
 			e_popup_menu->add_child(e_menu_btn);
@@ -364,7 +361,7 @@ int main(int argc, char** args)
 			auto e_menu = create_standard_menu();
 			for (auto i = 0; i < 2; i++)
 			{
-				static const char* names[] = {
+				char* names[] = {
 					"New",
 					"Open"
 				};
@@ -376,7 +373,7 @@ int main(int argc, char** args)
 						printf("%s!\n", *(char**)c);
 						destroy_topmost(app.root);
 					}
-				}, new_mail_p((char*)names[i]));
+				}, new_mail_p(names[i]));
 			}
 			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"File", root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
@@ -385,7 +382,7 @@ int main(int argc, char** args)
 			auto e_menu = create_standard_menu();
 			for (auto i = 0; i < 6; i++)
 			{
-				static const char* names[] = {
+				char* names[] = {
 					"Undo",
 					"Redo",
 					"Cut",
@@ -401,7 +398,7 @@ int main(int argc, char** args)
 						printf("%s!\n", *(char**)c);
 						destroy_topmost(app.root);
 					}
-				}, new_mail_p((char*)names[i]));
+				}, new_mail_p(names[i]));
 			}
 			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
@@ -410,7 +407,7 @@ int main(int argc, char** args)
 			auto e_menu = create_standard_menu();
 			for (auto i = 0; i < 2; i++)
 			{
-				static const char* names[] = {
+				char* names[] = {
 					"Monitor",
 					"Console"
 				};
@@ -422,7 +419,7 @@ int main(int argc, char** args)
 						printf("%s!\n", *(char**)c);
 						destroy_topmost(app.root);
 					}
-				}, new_mail_p((char*)names[i]));
+				}, new_mail_p(names[i]));
 			}
 			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tool", root, e_menu, true, SideS, true, false, true, nullptr);
 			e_menubar->add_child(e_menu_btn);
@@ -480,7 +477,7 @@ int main(int argc, char** args)
 
 		for (auto i = 0; i < 1; i++)
 		{
-			static const wchar_t* names[] = {
+			wchar_t* names[] = {
 				L"Hierarchy",
 			};
 
@@ -503,10 +500,8 @@ int main(int argc, char** args)
 		root->add_child(e_container);
 		{
 			auto c_element = e_container->get_component(cElement);
-			c_element->pos_.x() = 667.f;
-			c_element->pos_.y() = 302.f;
-			c_element->size_.x() = 403.f;
-			c_element->size_.y() = 215.f;
+			c_element->pos_ = Vec2f(667.f, 302.f);
+			c_element->size_ = Vec2f(403.f, 215.f);
 		}
 
 		auto e_docker_layout = get_docker_layout_model()->copy();
@@ -528,7 +523,7 @@ int main(int argc, char** args)
 
 				for (auto i = 0; i < 2; i++)
 				{
-					static const wchar_t* names[] = {
+					wchar_t* names[] = {
 						L"Inspector",
 						L"ResourceExplorer"
 					};
@@ -562,7 +557,7 @@ int main(int argc, char** args)
 
 				for (auto i = 0; i < 2; i++)
 				{
-					static const wchar_t* names[] = {
+					wchar_t* names[] = {
 						L"TextEditor",
 						L"ShaderEditor"
 					};

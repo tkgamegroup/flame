@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
@@ -38,12 +38,16 @@ void App::create()
 	d = Device::create(true);
 	scr = SwapchainResizable::create(d, w);
 	fence = Fence::create(d);
-	sc_cbs.resize(scr->sc()->images().size());
+	sc_cbs.resize(scr->sc()->image_count());
 	for (auto i = 0; i < sc_cbs.s; i++)
 		sc_cbs.v[i] = Commandbuffer::create(d->gcp);
 	render_finished = Semaphore::create(d);
 
-	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc", L"../art/font_awesome.ttf" });
+	wchar_t* fonts[] = { 
+		L"c:/windows/fonts/msyh.ttc", 
+		L"../art/font_awesome.ttf"
+	};
+	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, 2, fonts);
 	default_style.set_to_light();
 
 	app.u = Universe::create();
@@ -83,13 +87,13 @@ void App::create()
 		e_fps->add_component(c_aligner);
 
 		add_fps_listener([](void* c, uint fps) {
-			(*(cText**)c)->set_text(std::to_wstring(fps));
+			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
 		}, new_mail_p(c_text));
 	}
 
-	dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_foundation.typeinfo"));
-	dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_graphics.typeinfo"));
-	dbs.push_back(TypeinfoDatabase::load(dbs, L"flame_universe.typeinfo"));
+	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_foundation.typeinfo"));
+	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_graphics.typeinfo"));
+	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_universe.typeinfo"));
 
 	open_resource_explorer(L"..", Vec2f(5, 724.f));
 }
@@ -113,7 +117,7 @@ void App::run()
 		cbs.push_back(sc_cbs.v[sc->image_index()]);
 		cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
 		extra_cbs.clear();
-		d->gq->submit(cbs, sc->image_avalible(), render_finished, fence);
+		d->gq->submit(cbs.size(), cbs.data(), sc->image_avalible(), render_finished, fence);
 		d->gq->present(sc, render_finished);
 	}
 }
@@ -196,13 +200,13 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float font_size_scale, bool is_f
 			{
 				auto v = std::stof(capture.e_t->text());
 				v += pos.x() * 0.05f;
-				capture.e_t->set_text(to_wstring(v, 2));
+				capture.e_t->set_text(to_wstring(v, 2).c_str());
 			}
 			else
 			{
 				auto v = std::stoi(capture.e_t->text());
 				v += pos.x();
-				capture.e_t->set_text(std::to_wstring(v));
+				capture.e_t->set_text(std::to_wstring(v).c_str());
 			}
 		}
 	}, new_mail(&capture));
@@ -212,17 +216,19 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float font_size_scale, bool is_f
 
 void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float font_size_scale, Entity* parent)
 {
-	std::vector<std::wstring> items;
+	std::vector<std::wstring> _items;
 	for (auto i = 0; i < info->item_count(); i++)
-		items.push_back(s2w(info->item(i)->name()));
-
-	parent->add_child(create_standard_combobox(120.f, font_atlas, font_size_scale, app.root, items));
+		_items.push_back(s2w(info->item(i)->name()));
+	std::vector<const wchar_t*> items(_items.size());
+	for (auto i = 0; i < items.size(); i++)
+		items[i] = _items[i].c_str();
+	parent->add_child(create_standard_combobox(120.f, font_atlas, font_size_scale, app.root, items.size(), items.data()));
 }
 
 void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float font_size_scale, Entity* parent)
 {
 	for (auto i = 0; i < info->item_count(); i++)
-		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, font_size_scale, s2w(info->item(i)->name())));
+		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, font_size_scale, s2w(info->item(i)->name()).c_str()));
 }
 
 Entity* popup_dialog()
@@ -267,7 +273,7 @@ void popup_message_dialog(const std::wstring& text)
 		e_text->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(text);
+		c_text->set_text(text.c_str());
 		e_text->add_component(c_text);
 	}
 
@@ -291,7 +297,7 @@ void popup_confirm_dialog(const std::wstring& title, void (*callback)(void* c, b
 		e_text->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(title);
+		c_text->set_text(title.c_str());
 		e_text->add_component(c_text);
 	}
 
@@ -351,7 +357,7 @@ void popup_input_dialog(const std::wstring& title, void (*callback)(void* c, boo
 	auto e_dialog = popup_dialog();
 
 	auto e_input = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, title));
+	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, title.c_str()));
 
 	auto e_buttons = Entity::create();
 	e_dialog->add_child(e_buttons);

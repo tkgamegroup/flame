@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/commandbuffer.h>
@@ -222,7 +222,7 @@ struct cBPEditor : Component
 		if (changed != v)
 		{
 			changed = v;
-			tab_text->set_text(filename + (changed ? L" *" : L""));
+			tab_text->set_text((filename + (changed ? L" *" : L"")).c_str());
 		}
 	}
 

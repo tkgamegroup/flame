@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
@@ -16,7 +16,7 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 
-#include "../renderpath/canvas_make_cmd/canvas.h"
+#include "../renderpath/canvas/canvas.h"
 
 using namespace flame;
 using namespace graphics;
@@ -28,19 +28,13 @@ struct App
 	Semaphore* render_finished;
 	SwapchainResizable* scr;
 	Fence* fence;
-	std::vector<Commandbuffer*> cbs;
-	BP* canvas_bp;
-	Canvas* canvas;
+	Array<Commandbuffer*> cbs;
 	std::vector<TypeinfoDatabase*> dbs;
 
 	FontAtlas* font_atlas_pixel;
 
-	uint fps;
-
 	Universe* u;
-	World* w_m;
 	cElement* c_element_root;
-	cText* c_text_fps;
 
 	void run()
 	{
@@ -50,24 +44,17 @@ struct App
 			sc->acquire_image();
 
 		fence->wait();
-		looper().process_delay_events();
+		looper().process_events();
 
 		if (sc)
 		{
 			c_element_root->set_size(Vec2f(w->size));
-			auto _fps = looper().fps;
-			if (_fps != fps)
-			{
-				fps = _fps;
-				c_text_fps->set_text(std::to_wstring(fps));
-			}
 			u->update();
 		}
-		canvas_bp->update();
 
 		if (sc)
 		{
-			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit(1, &cbs.v[sc->image_index()], sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 	}
@@ -80,34 +67,34 @@ int main(int argc, char** args)
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-	app.cbs.resize(app.scr->sc()->images().size());
-	for (auto i = 0; i < app.cbs.size(); i++)
-		app.cbs[i] = Commandbuffer::create(app.d->gcp);
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_foundation.typeinfo"));
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_graphics.typeinfo"));
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_universe.typeinfo"));
-
-	app.canvas_bp = BP::create_from_file(L"../renderpath/canvas_make_cmd/bp", true);
-	app.scr->link_bp(app.canvas_bp, app.cbs);
-	app.canvas_bp->update();
-	app.canvas = (Canvas*)app.canvas_bp->find_output("*.make_cmd.canvas")->data_p();
-
-	app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { L"c:/windows/fonts/msyh.ttc" });
-	app.canvas->add_font(app.font_atlas_pixel);
-
-	app.fps = 0;
+	app.cbs.resize(app.scr->sc()->image_count());
+	for (auto i = 0; i < app.cbs.s; i++)
+		app.cbs.v[i] = Commandbuffer::create(app.d->gcp);
+	app.dbs.push_back(TypeinfoDatabase::load(app.dbs.size(), app.dbs.data(), L"flame_foundation.typeinfo"));
+	app.dbs.push_back(TypeinfoDatabase::load(app.dbs.size(), app.dbs.data(), L"flame_graphics.typeinfo"));
+	app.dbs.push_back(TypeinfoDatabase::load(app.dbs.size(), app.dbs.data(), L"flame_universe.typeinfo"));
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
-	app.u->add_object(app.canvas);
-	app.u->add_object(app.font_atlas_pixel);
 
-	app.w_m = World::create(app.u);
-	app.w_m->add_system(sLayoutManagement::create());
-	app.w_m->add_system(sEventDispatcher::create());
-	app.w_m->add_system(s2DRenderer::create());
+	auto w = World::create(app.u);
+	w->add_system(sLayoutManagement::create());
+	w->add_system(sEventDispatcher::create());
+	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, cH("SwapchainResizable"), &app.cbs);
+	w->add_system(s_2d_renderer);
+	{
+		auto canvas = s_2d_renderer->canvas;
+		wchar_t* fonts[] = {
+			L"c:/windows/fonts/msyh.ttc"
+		};
 
-	auto root = app.w_m->root();
+		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, 1, fonts);
+		canvas->add_font(app.font_atlas_pixel);
+
+		w->add_object(app.font_atlas_pixel);
+	}
+
+	auto root = w->root();
 	{
 		app.c_element_root = cElement::create();
 		root->add_component(app.c_element_root);
@@ -121,13 +108,16 @@ int main(int argc, char** args)
 		e_fps->add_component(cElement::create());
 
 		auto c_text = cText::create(app.font_atlas_pixel);
-		app.c_text_fps = c_text;
-		e_fps->add_component(app.c_text_fps);
+		e_fps->add_component(c_text);
 
 		auto c_aligner = cAligner::create();
 		c_aligner->x_align_ = AlignxLeft;
 		c_aligner->y_align_ = AlignyBottom;
 		e_fps->add_component(c_aligner);
+
+		add_fps_listener([](void* c, uint fps) {
+			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+		}, new_mail_p(c_text));
 	}
 
 	auto e_layout = Entity::create();
@@ -148,7 +138,7 @@ int main(int argc, char** args)
 	{
 		auto c_element = cElement::create();
 		c_element->size_ = 500.f;
-		c_element->frame_thickness = 2.f;
+		c_element->frame_thickness_ = 2.f;
 		e_scene->add_component(c_element);
 	}
 
@@ -169,7 +159,7 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_delay_event([](void* c) {
+				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
 					e_scene->remove_child((Entity*)FLAME_INVALID_POINTER);
@@ -180,7 +170,7 @@ int main(int argc, char** args)
 						auto c_element = cElement::create();
 						c_element->pos_ = 50.f;
 						c_element->size_ = 400.f;
-						c_element->color = Vec4c(255, 0, 0, 255);
+						c_element->color_ = Vec4c(255, 0, 0, 255);
 						e_box1->add_component(c_element);
 					}
 
@@ -190,7 +180,7 @@ int main(int argc, char** args)
 						auto c_element = cElement::create();
 						c_element->pos_ = 50.f;
 						c_element->size_ = 300.f;
-						c_element->color = Vec4c(255, 255, 0, 255);
+						c_element->color_ = Vec4c(255, 255, 0, 255);
 						e_box2->add_component(c_element);
 					}
 
@@ -220,7 +210,7 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_delay_event([](void* c) {
+				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
 					e_scene->remove_child((Entity*)FLAME_INVALID_POINTER);
@@ -236,11 +226,11 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_delay_event([](void* c) {
+				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
 					if (e_scene->child_count() > 0)
-						Entity::save_to_file(app.dbs, e_scene->child(0), L"test.prefab");
+						Entity::save_to_file(app.dbs.size(), app.dbs.data(), e_scene->child(0), L"test.prefab");
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));
@@ -253,12 +243,12 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_delay_event([](void* c) {
+				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
 					e_scene->remove_child((Entity*)FLAME_INVALID_POINTER);
 					if (std::filesystem::exists(L"test.prefab"))
-						e_scene->add_child(Entity::create_from_file(app.w_m, app.dbs, L"test.prefab"));
+						e_scene->add_child(Entity::create_from_file(e_scene->world_, app.dbs.size(), app.dbs.data(), L"test.prefab"));
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));
