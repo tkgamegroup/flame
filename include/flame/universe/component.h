@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/universe/entity.h>
 
 namespace flame

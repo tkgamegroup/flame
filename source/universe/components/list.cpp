@@ -232,7 +232,7 @@ namespace flame
 		return e_list;
 	}
 
-	Entity* create_standard_listitem(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text)
+	Entity* create_standard_listitem(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text)
 	{
 		auto e_item = Entity::create();
 		{
@@ -240,7 +240,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
-			c_text->set_text(text.c_str());
+			c_text->set_text(text);
 			e_item->add_component(c_text);
 
 			e_item->add_component(cEventReceiver::create());

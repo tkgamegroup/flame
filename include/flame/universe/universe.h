@@ -6,7 +6,7 @@
 #define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
 #endif
 
-#include <flame/foundation/foundation.h>
+#include <flame/type.h>
 
 namespace flame
 {

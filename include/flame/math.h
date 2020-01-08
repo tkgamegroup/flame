@@ -4,6 +4,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <algorithm>
 
 #undef min
 #undef max

@@ -1420,7 +1420,7 @@ namespace flame
 
 			node.type = n_node.attribute("type").value();
 			node.id = n_node.attribute("id").value();
-			node.initiative = n_node.attribute("initiative").as_int() == 1;
+			node.initiative = n_node.attribute("initiative").as_bool();
 			node.pos = stof2(n_node.attribute("pos").value());
 
 			for (auto n_data : n_node.child("datas"))
@@ -1781,8 +1781,7 @@ namespace flame
 			auto n_node = n_nodes.append_child("node");
 			n_node.append_attribute("type").set_value(udt->type()->name());
 			n_node.append_attribute("id").set_value(n->id.c_str());
-			if (n->initiative)
-				n_node.append_attribute("initiative").set_value(1);
+			n_node.append_attribute("initiative").set_value(n->initiative);
 			n_node.append_attribute("pos").set_value(to_string(n->pos, 2).c_str());
 
 			pugi::xml_node n_datas;

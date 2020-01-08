@@ -1,4 +1,3 @@
-#include <flame/foundation/foundation.h>
 #include "universe_private.h"
 
 namespace flame

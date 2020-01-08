@@ -1,4 +1,3 @@
-#include <flame/foundation/foundation.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "image_private.h"

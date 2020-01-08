@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include "universe_private.h"
 #include "world_private.h"
 
@@ -30,7 +30,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("destroy");
-					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "Object"));
+					assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "Object"));
 					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), dummy, o.first);
 				}
 				{
@@ -100,20 +100,23 @@ namespace flame
 		delete (WorldPrivate*)w;
 	}
 
-	void load_res(World* w, const std::vector<TypeinfoDatabase*>& dbs, const std::wstring& filename)
+	void load_res(World* w, uint db_count, TypeinfoDatabase* const* _dbs, const wchar_t* filename)
 	{
-		auto file = SerializableNode::create_from_xml_file(filename);
-		if (!file || file->name() != "res")
+		pugi::xml_document file;
+		pugi::xml_node file_root;
+		if (!file.load_file(filename) || (file_root = file.first_child()).name() != std::string("res"))
 			return;
 
 		auto last_curr_path = get_curr_path();
-		set_curr_path(std::filesystem::path(filename).parent_path().wstring());
+		set_curr_path(std::filesystem::path(filename).parent_path().c_str());
 
-		for (auto i_o = 0; i_o < file->node_count(); i_o++)
+		std::vector<TypeinfoDatabase*> dbs(db_count);
+		for (auto i = 0; i < db_count; i++)
+			dbs[i] = _dbs[i];
+
+		for (auto n_o : file_root)
 		{
-			auto n_o = file->node(i_o);
-
-			auto udt = find_udt(dbs, H(("D#Serializer_" + n_o->name()).c_str()));
+			auto udt = find_udt(dbs, H((std::string("D#Serializer_") + n_o.name()).c_str()));
 			assert(udt);
 			auto dummy = malloc(udt->size());
 			auto module = load_module(udt->db()->module_name());
@@ -122,17 +125,15 @@ namespace flame
 				if (f && f->parameter_count() == 0)
 					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
 			}
-			for (auto i = 0; i < n_o->node_count(); i++)
+			for (auto n_v : n_o)
 			{
-				auto n = n_o->node(i);
-
-				auto v = udt->find_variable(n->name());
-				v->type().unserialize(dbs, n->find_attr("v")->value(), (char*)dummy + v->offset());
+				auto v = udt->find_variable(n_v.name());
+				v->type()->unserialize(dbs, n_v.attribute("v").value(), (char*)dummy + v->offset());
 			}
 			void* object;
 			{
 				auto f = udt->find_function("create");
-				assert(f && f->return_type() == TypeInfo(TypePointer, "Object") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
+				assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypePointer, "Object") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "World"));
 				object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 			}
 			((WorldPrivate*)w)->objects.emplace_back((Object*)object, udt);
@@ -145,6 +146,6 @@ namespace flame
 			free(dummy);
 		}
 
-		set_curr_path(last_curr_path.str());
+		set_curr_path(last_curr_path.v);
 	}
 }

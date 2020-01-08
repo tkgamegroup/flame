@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include "../entity_private.h"
 #include <flame/universe/world.h>
 #include <flame/universe/systems/event_dispatcher.h>

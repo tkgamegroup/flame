@@ -169,7 +169,7 @@ namespace flame
 		return new cTextPrivate(font_atlas);
 	}
 
-	Entity* create_standard_button(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text)
+	Entity* create_standard_button(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text)
 	{
 		auto e_button = Entity::create();
 		{
@@ -179,7 +179,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
-			c_text->set_text(text.c_str());
+			c_text->set_text(text);
 			e_button->add_component(c_text);
 
 			e_button->add_component(cEventReceiver::create());
@@ -190,7 +190,7 @@ namespace flame
 		return e_button;
 	}
 
-	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text)
+	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text)
 	{
 		auto e_layout = Entity::create();
 		{
@@ -211,7 +211,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
-			c_text->set_text(text.c_str());
+			c_text->set_text(text);
 			e_text->add_component(c_text);
 		}
 

@@ -253,20 +253,6 @@ namespace flame
 		}
 	};
 
-	struct Object
-	{
-		const char* name;
-		const uint name_hash;
-		uint id;
-
-		Object(const char* name) :
-			name(name),
-			name_hash(H(name)),
-			id(0)
-		{
-		}
-	};
-
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();

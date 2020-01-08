@@ -331,54 +331,43 @@ namespace flame
 	static Entity* load_prefab(World* w, const std::vector<TypeinfoDatabase*>& dbs, pugi::xml_node src)
 	{
 		auto e = Entity::create();
-		e->set_name(src->find_attr("name")->value());
-		e->set_visibility(src->find_attr("visibility")->value() == "1");
+		e->set_name(src.attribute("name").value());
+		e->set_visibility(src.attribute("visibility").as_bool());
 
-		auto n_cs = src->find_node("components");
-		if (n_cs)
+		for (auto n_c : src.child("components"))
 		{
-			for (auto i_c = 0; i_c < n_cs->node_count(); i_c++)
+			auto udt = find_udt(dbs, H((std::string("D#Serializer_") + n_c.name()).c_str()));
+			assert(udt);
+			auto object = malloc(udt->size());
+			auto module = load_module(udt->db()->module_name());
 			{
-				auto n_c = n_cs->node(i_c);
-
-				auto udt = find_udt(dbs, H(("D#Serializer_" + n_c->name()).c_str()));
-				assert(udt);
-				auto object = malloc(udt->size());
-				auto module = load_module(udt->db()->module_name());
-				{
-					auto f = udt->find_function("ctor");
-					if (f && f->parameter_count() == 0)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
-				}
-				for (auto i = 0; i < n_c->node_count(); i++)
-				{
-					auto n_v = n_c->node(i);
-					auto v = udt->find_variable(n_v->name());
-					v->type().unserialize(dbs, n_v, (char*)object + v->offset());
-				}
-				void* component;
-				{
-					auto f = udt->find_function("create");
-					assert(f && f->return_type() == TypeInfo(TypePointer, "Component") && f->parameter_count() == 1 && f->parameter_type(0) == TypeInfo(TypePointer, "World"));
-					component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), object, w);
-				}
-				e->add_component((Component*)component);
-				{
-					auto f = udt->find_function("dtor");
-					if (f)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
-				}
-				free_module(module);
-				free(object);
+				auto f = udt->find_function("ctor");
+				if (f && f->parameter_count() == 0)
+					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
 			}
+			for (auto n_v : n_c)
+			{
+				auto v = udt->find_variable(n_v.name());
+				v->type()->unserialize(dbs, n_v.attribute("v").value(), (char*)object + v->offset());
+			}
+			void* component;
+			{
+				auto f = udt->find_function("create");
+				assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypePointer, "Component") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "World"));
+				component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), object, w);
+			}
+			e->add_component((Component*)component);
+			{
+				auto f = udt->find_function("dtor");
+				if (f)
+					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
+			}
+			free_module(module);
+			free(object);
 		}
 
-		auto n_es = src->find_node("children");
-		if (n_es)
-		{
-			for (auto i_e = 0; i_e < n_es->node_count(); i_e++)
-				e->add_child(load_prefab(w, dbs, n_es->node(i_e)));
-		}
+		for (auto n_e : src.child("children"))
+			e->add_child(load_prefab(w, dbs, n_e));
 
 		return e;
 	}
@@ -388,10 +377,7 @@ namespace flame
 		pugi::xml_document file;
 		pugi::xml_node file_root;
 		if (!file.load_file(filename) || (file_root = file.first_child()).name() != std::string("prefab"))
-		{
-			assert(0);
 			return nullptr;
-		}
 
 		std::vector<TypeinfoDatabase*> dbs(db_count);
 		for (auto i = 0; i < db_count; i++)
@@ -401,18 +387,18 @@ namespace flame
 
 	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, pugi::xml_node dst, EntityPrivate* src)
 	{
-		auto n = dst->new_node("entity");
-		n->new_attr("name", src->name.empty() ? "unnamed" : src->name);
-		n->new_attr("visibility", src->visibility_ ? "1" : "0");
+		auto n = dst.append_child("entity");
+		n.append_attribute("name").set_value(src->name.empty() ? "unnamed" : src->name.c_str());
+		n.append_attribute("visibility").set_value(src->visibility_ );
 
 		if (!src->components.empty())
 		{
-			auto n_cs = n->new_node("components");
+			auto n_cs = n.append_child("components");
 			for (auto& _c : src->components)
 			{
 				auto c = _c.second.get();
 
-				auto n_c = n_cs->new_node(c->name);
+				auto n_c = n_cs.append_child(c->name);
 
 				auto udt = find_udt(dbs, H((std::string("Serializer_") + c->name).c_str()));
 				assert(udt);
@@ -425,18 +411,19 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type() == TypeInfo(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0) == TypeInfo(TypeData, "Component") && f->parameter_type(1) == TypeInfo(TypeData, "int"));
+					assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypeData, "Component") && f->parameter_type(1)->hash() == TypeInfo::get_hash(TypeData, "int"));
 					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), object, c, -1);
 				}
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
-					auto& type = v->type();
+					auto type = v->type();
 					auto p = (char*)object + v->offset();
-					if (type.tag == TypeData)
+					if (type->tag() == TypeData)
 					{
-						if (type.is_array || type.serialize(dbs, p, 2) != v->default_value())
-							type.serialize(dbs, p, 2, n_c->new_node(v->name()));
+						auto str = type->serialize(dbs, p, 2);
+						if (str != v->default_value())
+							n_c.append_child(v->name()).append_attribute("v").set_value(str.c_str());
 					}
 				}
 				{
@@ -451,7 +438,7 @@ namespace flame
 
 		if (!src->children.empty())
 		{
-			auto n_es = n->new_node("children");
+			auto n_es = n.append_child("children");
 			for (auto& e : src->children)
 				save_prefab(dbs, n_es, e.get());
 		}

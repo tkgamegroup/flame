@@ -179,7 +179,7 @@ namespace flame
 		return e_menu;
 	}
 
-	Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text)
+	Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text)
 	{
 		auto e_item = Entity::create();
 		{
@@ -189,7 +189,7 @@ namespace flame
 
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
-			c_text->set_text(text.c_str());
+			c_text->set_text(text);
 			e_item->add_component(c_text);
 
 			e_item->add_component(cEventReceiver::create());
@@ -204,7 +204,7 @@ namespace flame
 		return e_item;
 	}
 
-	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float font_size_scale, const std::wstring& text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text)
+	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text)
 	{
 		auto e_menu_btn = Entity::create();
 		{
@@ -215,7 +215,7 @@ namespace flame
 			auto c_text = cText::create(font_atlas);
 			c_text->font_size_ = default_style.font_size * font_size_scale;
 			if (text[0])
-				c_text->set_text(text.c_str());
+				c_text->set_text(text);
 			e_menu_btn->add_component(c_text);
 
 			e_menu_btn->add_component(cEventReceiver::create());

@@ -815,7 +815,7 @@ namespace flame
 		return new cDockerPagesPrivate;
 	}
 
-	Entity* create_standard_docker_tab(graphics::FontAtlas* font_atlas, const std::wstring& title, Entity* root)
+	Entity* create_standard_docker_tab(graphics::FontAtlas* font_atlas, const wchar_t* title, Entity* root)
 	{
 		auto tab = Entity::create();
 		tab->set_name("docker_tab");
@@ -825,7 +825,7 @@ namespace flame
 		tab->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);
-		c_text->set_text(title.c_str());
+		c_text->set_text(title);
 		tab->add_component(c_text);
 
 		tab->add_component(cEventReceiver::create());

@@ -341,7 +341,7 @@ namespace flame
 		return e_tree;
 	}
 
-	Entity* create_standard_tree_node(graphics::FontAtlas* font_atlas, const std::wstring& name)
+	Entity* create_standard_tree_node(graphics::FontAtlas* font_atlas, const wchar_t* name)
 	{
 		auto e_tree_node = Entity::create();
 		{
@@ -362,7 +362,7 @@ namespace flame
 			e_title->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->set_text(name.c_str());
+			c_text->set_text(name);
 			e_title->add_component(c_text);
 
 			e_title->add_component(cEventReceiver::create());
@@ -409,7 +409,7 @@ namespace flame
 		return e_tree_node;
 	}
 
-	Entity* create_standard_tree_leaf(graphics::FontAtlas* font_atlas, const std::wstring& name)
+	Entity* create_standard_tree_leaf(graphics::FontAtlas* font_atlas, const wchar_t* name)
 	{
 		auto e_tree_leaf = Entity::create();
 		{
@@ -418,7 +418,7 @@ namespace flame
 			e_tree_leaf->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->set_text(name.c_str());
+			c_text->set_text(name);
 			e_tree_leaf->add_component(c_text);
 
 			e_tree_leaf->add_component(cEventReceiver::create());

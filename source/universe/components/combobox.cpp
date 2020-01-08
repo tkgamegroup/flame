@@ -146,12 +146,12 @@ namespace flame
 		return new cComboboxPrivate;
 	}
 
-	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float font_size_scale, Entity* root, const std::vector<std::wstring>& items)
+	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float font_size_scale, Entity* root, uint item_count, const wchar_t* const* items)
 	{
 		auto e_menu = create_standard_menu();
-		for (auto i = 0; i < items.size(); i++)
+		for (auto i = 0; i < item_count; i++)
 		{
-			auto e_item = create_standard_menu_item(font_atlas, font_size_scale, items[i].c_str());
+			auto e_item = create_standard_menu_item(font_atlas, font_size_scale, items[i]);
 			e_menu->add_child(e_item);
 
 			auto c_combobox_item = cComboboxItem::create();

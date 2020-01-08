@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
 
 using namespace flame;
@@ -13,14 +14,14 @@ int main(int argc, char **args)
 
 	printf("key=\"%s\" cmd=\"%s\"\n", args[1], args[2]);
 
-	auto keys = string_split(std::string(args[1]), '+');
+	auto keys = ssplit(std::string(args[1]), '+');
 	auto key = KeyNull;
 	auto shift = false;
 	auto ctrl = false;
 	auto alt = false;
 	for (auto &t : keys)
 	{
-		string_to_lower(t);
+		std::transform(t.begin(), t.end(), t.begin(), ::tolower);
 		if (t == "shift")
 			shift = true;
 		else if (t == "ctrl")

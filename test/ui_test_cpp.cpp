@@ -1,4 +1,4 @@
-#include <flame/foundation/serialize.h>
+#include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/synchronize.h>
@@ -45,7 +45,7 @@ struct App
 	Device* d;
 	SwapchainResizable* scr;
 	Fence* fence;
-	std::vector<Commandbuffer*> cbs;
+	Array<Commandbuffer*> cbs;
 	Semaphore* render_finished;
 
 	FontAtlas* font_atlas_pixel;
@@ -72,7 +72,7 @@ struct App
 
 		if (sc)
 		{
-			d->gq->submit({ cbs[sc->image_index()] }, sc->image_avalible(), render_finished, fence);
+			d->gq->submit(1, &cbs.v[sc->image_index()], sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 	}
@@ -84,9 +84,9 @@ int main(int argc, char** args)
 	app.d = Device::create(true);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-	app.cbs.resize(app.scr->sc()->images().size());
-	for (auto i = 0; i < app.cbs.size(); i++)
-		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	app.cbs.resize(app.scr->sc()->image_count());
+	for (auto i = 0; i < app.cbs.s; i++)
+		app.cbs.v[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
 
 	app.u = Universe::create();
@@ -99,16 +99,16 @@ int main(int argc, char** args)
 	w->add_system(s_2d_renderer);
 	{
 		auto canvas = s_2d_renderer->canvas;
-#define FONT_MSYH L"c:/windows/fonts/msyh.ttc"
-#define FONT_AWESOME L"../art/font_awesome.ttf"
-		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, { FONT_MSYH, FONT_AWESOME });
+		wchar_t* fonts[] = {
+			L"c:/windows/fonts/msyh.ttc",
+			L"../art/font_awesome.ttf"
+		};
+		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, 2, fonts);
 		canvas->add_font(app.font_atlas_pixel);
-		app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, { FONT_MSYH });
+		app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, 1, fonts);
 		canvas->add_font(app.font_atlas_lcd);
-		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, { FONT_MSYH });
+		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, 1, fonts);
 		canvas->add_font(app.font_atlas_sdf);
-#undef FONT_MSYH
-#undef FONT_AWESOME
 
 		canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../art/ui/imgs/9.png")));
 	}
@@ -139,7 +139,7 @@ int main(int argc, char** args)
 		e_fps->add_component(c_aligner);
 
 		add_fps_listener([](void* c, uint fps) {
-			(*(cText**)c)->set_text(std::to_wstring(fps));
+			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
 		}, new_mail_p(c_text));
 	}
 
@@ -257,7 +257,7 @@ int main(int argc, char** args)
 
 		for (auto i = 0; i < 10; i++)
 		{
-			auto e_item = create_standard_listitem(app.font_atlas_pixel, 1.f, L"item" + std::to_wstring(i));
+			auto e_item = create_standard_listitem(app.font_atlas_pixel, 1.f, (L"item" + std::to_wstring(i)).c_str());
 			e_list->add_child(e_item);
 		}
 
@@ -281,7 +281,7 @@ int main(int argc, char** args)
 				"Save",
 				"Help"
 			};
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]).c_str());
 			e_popup_menu->add_child(e_item);
 			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -301,7 +301,7 @@ int main(int argc, char** args)
 					"Car",
 					"House"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]).c_str());
 				e_menu->add_child(e_item);
 				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -324,7 +324,7 @@ int main(int argc, char** args)
 					"Car",
 					"House"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]).c_str());
 				e_menu->add_child(e_item);
 				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -368,7 +368,7 @@ int main(int argc, char** args)
 					"New",
 					"Open"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]).c_str());
 				e_menu->add_child(e_item);
 				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -393,7 +393,7 @@ int main(int argc, char** args)
 					"Paste",
 					"Delete"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]).c_str());
 				e_menu->add_child(e_item);
 				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -414,7 +414,7 @@ int main(int argc, char** args)
 					"Monitor",
 					"Console"
 				};
-				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]));
+				auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(names[i]).c_str());
 				e_menu->add_child(e_item);
 				e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -429,8 +429,13 @@ int main(int argc, char** args)
 		}
 	}
 
-	auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, root, { L"Apple", L"Boy", L"Cat" });
-	e_layout_right->add_child(e_combobox);
+	{
+		wchar_t* items[] = {
+			L"Apple", L"Boy", L"Cat"
+		};
+		auto e_combobox = create_standard_combobox(100.f, app.font_atlas_pixel, 1.f, root, 3, items);
+		e_layout_right->add_child(e_combobox);
+	}
 
 	auto e_tree = create_standard_tree(false);
 	e_layout_right->add_child(e_tree);
