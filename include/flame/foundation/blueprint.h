@@ -96,6 +96,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS BP* scene() const;
 			FLAME_FOUNDATION_EXPORTS const char* id() const;
 			FLAME_FOUNDATION_EXPORTS void set_id(const char* id);
+			FLAME_FOUNDATION_EXPORTS const char* type_name() const;
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
 			FLAME_FOUNDATION_EXPORTS bool initiative() const;
 			FLAME_FOUNDATION_EXPORTS void set_initiative(bool v);

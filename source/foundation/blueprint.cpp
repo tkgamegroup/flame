@@ -65,6 +65,7 @@ namespace flame
 	{
 		BPPrivate* scene;
 		std::string id;
+		std::string type_name;
 		UdtInfo* udt;
 		bool initiative;
 
@@ -82,7 +83,7 @@ namespace flame
 		bool in_update_list;
 
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
-		NodePrivate(BPPrivate* scene, const std::string& id, uint size, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
+		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		~NodePrivate();
 
 		SlotPrivate* find_input(const std::string& name) const;
@@ -141,7 +142,7 @@ namespace flame
 
 		bool check_or_create_id(std::string& id) const;
 		NodePrivate* add_node(const std::string& type, const std::string& type_name);
-		NodePrivate* add_node(uint size, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& id);
+		NodePrivate* add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& id);
 		void remove_node(NodePrivate* n);
 		NodePrivate* find_node(const std::string& address) const;
 		SlotPrivate* find_input(const std::string& address) const;
@@ -285,6 +286,7 @@ namespace flame
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
 		id(id),
+		type_name(udt->type()->name()),
 		udt(udt),
 		initiative(false),
 		module(module),
@@ -337,9 +339,10 @@ namespace flame
 		}
 	}
 
-	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, uint size, const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr) :
+	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr) :
 		scene(scene),
 		id(id),
+		type_name(type_name),
 		udt(nullptr),
 		initiative(false),
 		module(nullptr),
@@ -718,7 +721,7 @@ namespace flame
 		return n;
 	}
 
-	NodePrivate* BPPrivate::add_node(uint size, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& _id)
+	NodePrivate* BPPrivate::add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& _id)
 	{
 		std::string id = _id;
 		if (!check_or_create_id(id))
@@ -727,7 +730,7 @@ namespace flame
 			return nullptr;
 		}
 
-		auto n = new NodePrivate(this, id, size, inputs, outputs, ctor_addr, dtor_addr, update_addr);
+		auto n = new NodePrivate(this, id, type_name, size, inputs, outputs, ctor_addr, dtor_addr, update_addr);
 		nodes.emplace_back(n);
 
 		root->need_update_hierarchy = true;
@@ -1045,6 +1048,11 @@ namespace flame
 	void BP::Node::set_id(const char* id)
 	{
 		((NodePrivate*)this)->id = id;
+	}
+
+	const char* BP::Node::type_name() const
+	{
+		return ((NodePrivate*)this)->type_name.c_str();
 	}
 
 	UdtInfo* BP::Node::udt() const
@@ -1567,7 +1575,7 @@ namespace flame
 						}
 					}
 				};
-				n = bp->add_node(sizeof(Dummy), {
+				n = bp->add_node(sizeof(Dummy), n_d.type, {
 						{TypeInfo::get(TypeEnumSingle, enum_name.c_str(), true), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
 					}, {
 						{TypeInfo::get(TypeEnumSingle, enum_name.c_str(), true), "out", offsetof(Dummy, out), sizeof(Dummy::in), ""}
@@ -1602,7 +1610,7 @@ namespace flame
 				};
 				auto type_hash = FLAME_HASH(type_name.c_str());
 				auto type_size = data_size(type_hash);
-				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * 2, {
+				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * 2, n_d.type, {
 						{TypeInfo::get(TypeData, type_name.c_str(), true), "in", sizeof(Dummy), sizeof(AttributeBase) + type_size, ""}
 					}, {
 						{TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + sizeof(AttributeBase) + type_size, sizeof(AttributeBase) + type_size, ""}
@@ -1671,7 +1679,7 @@ namespace flame
 						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i, sizeof(AttributeBase) + type_size, ""
 					});
 				}
-				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size + sizeof(AttributeBase) + sizeof(Array<int>), inputs, {
+				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size + sizeof(AttributeBase) + sizeof(Array<int>), n_d.type, inputs, {
 						{TypeInfo::get(TypeData, type_name.c_str(), true, true), "out", 
 						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size, sizeof(AttributeBase) + type_size, ""}
 				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), n_d.id);
@@ -1763,23 +1771,27 @@ namespace flame
 		auto n_nodes = file_root.append_child("nodes");
 		for (auto& n : bp->nodes)
 		{
-			auto udt = n->udt;
-			if (!udt || n->external)
+			if (n->external)
 				continue;
 			auto skip = false;
-			for (auto m : skipped_modules)
+			auto udt = n->udt;
+			if (udt)
 			{
-				if (udt->db() == m->db())
+				auto db = udt->db();
+				for (auto m : skipped_modules)
 				{
-					skip = true;
-					break;
+					if (db == m->db())
+					{
+						skip = true;
+						break;
+					}
 				}
 			}
 			if (skip)
 				continue;
 
 			auto n_node = n_nodes.append_child("node");
-			n_node.append_attribute("type").set_value(udt->type()->name());
+			n_node.append_attribute("type").set_value(n->type_name.c_str());
 			n_node.append_attribute("id").set_value(n->id.c_str());
 			n_node.append_attribute("initiative").set_value(n->initiative);
 			n_node.append_attribute("pos").set_value(to_string(n->pos, 2).c_str());

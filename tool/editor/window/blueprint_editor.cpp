@@ -506,23 +506,17 @@ struct cBPEditor : Component
 		{
 		case SelNode:
 		{
-			auto udt = selected_.n->udt();
-			if (udt)
+			auto n = bp->add_node(selected_.n->type_name(), "");
+			n->pos = add_pos;
+			for (auto i = 0; i < n->input_count(); i++)
 			{
-				auto n = bp->add_node(selected_.n->udt()->type()->name(), "");
-				n->pos = add_pos;
-				for (auto i = 0; i < n->input_count(); i++)
-				{
-					auto src = selected_.n->input(i);
-					auto dst = n->input(i);
-					dst->set_data(src->data());
-					dst->link_to(src->link(0));
-				}
-				create_node_entity(n);
-				set_changed(true);
+				auto src = selected_.n->input(i);
+				auto dst = n->input(i);
+				dst->set_data(src->data());
+				dst->link_to(src->link(0));
 			}
-			else
-				popup_message_dialog(L"Cannot Duplicate Nodes That Have No Udt");
+			create_node_entity(n);
+			set_changed(true);
 		}
 			break;
 		}
@@ -548,7 +542,7 @@ struct cBPEditor : Component
 					auto n = bp->node(i);
 					auto udt = n->udt();
 					if (udt && udt->db() == m_db)
-						str += L"id: " + s2w(n->id()) + L", type: " + s2w(udt->type()->name()) + L"\n";
+						str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type_name()) + L"\n";
 				}
 
 				struct Capture
@@ -596,32 +590,28 @@ struct cBPEditor : Component
 			for (auto i = 0; i < bp->node_count(); i++)
 			{
 				auto n = bp->node(i);
-				auto udt = n->udt();
-				if (udt)
+				auto name = n->id();
+				auto str = sfmt("\t%s[label = \"%s|%s|{{", name, name, n->type_name());
+				for (auto j = 0; j < n->input_count(); j++)
 				{
-					auto name = n->id();
-					auto str = sfmt("\t%s[label = \"%s|%s|{{", name, name, udt->type()->name());
-					for (auto j = 0; j < n->input_count(); j++)
-					{
-						auto input = n->input(j);
-						auto name = input->name();
-						str += sfmt("<%s>%s", name, name);
-						if (j != n->input_count() - 1)
-							str += "|";
-					}
-					str += "}|{";
-					for (auto j = 0; j < n->output_count(); j++)
-					{
-						auto output = n->output(j);
-						auto name = output->name();
-						str += sfmt("<%s>%s", name, name);
-						if (j != n->output_count() - 1)
-							str += "|";
-					}
-					str += "}}\"];\n";
-
-					gv += str;
+					auto input = n->input(j);
+					auto name = input->name();
+					str += sfmt("<%s>%s", name, name);
+					if (j != n->input_count() - 1)
+						str += "|";
 				}
+				str += "}|{";
+				for (auto j = 0; j < n->output_count(); j++)
+				{
+					auto output = n->output(j);
+					auto name = output->name();
+					str += sfmt("<%s>%s", name, name);
+					if (j != n->output_count() - 1)
+						str += "|";
+				}
+				str += "}}\"];\n";
+
+				gv += str;
 			}
 			for (auto i = 0; i < bp->node_count(); i++)
 			{
@@ -1409,8 +1399,6 @@ void create_vec_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
 
 Entity* cBPEditor::create_node_entity(BP::Node* n)
 {
-	auto udt = n->udt();
-
 	auto e_node = Entity::create();
 	e_base->add_child(e_node);
 	n->user_data = e_node;
@@ -1470,6 +1458,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		}
 
+		auto udt = n->udt();
+
 		if (udt)
 		{
 			auto e_text_type = Entity::create();
@@ -1481,7 +1471,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				auto module_name = std::filesystem::path(udt->db()->module_name());
 				if (module_name.parent_path() != L"")
 					module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
-				c_text->set_text((module_name.wstring() + L"\n" + s2w(udt->type()->name())).c_str());
+				c_text->set_text((module_name.wstring() + L"\n" + s2w(n->type_name())).c_str());
 				c_text->color = Vec4c(50, 50, 50, 255);
 				e_text_type->add_component(c_text);
 			}
@@ -1517,9 +1507,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		}
 
-		std::string udt_name;
-		if (udt)
-			udt_name = udt->type()->name();
+		std::string udt_name = n->type_name();
 		if (n->id() == "test_dst")
 		{
 			auto e_show = create_standard_button(app.font_atlas_pixel, 0.9f, L"Show");
