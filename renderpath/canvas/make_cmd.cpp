@@ -130,11 +130,9 @@ namespace flame
 		}
 	};
 
-	struct MakeCmd$;
-
 	struct CanvasPrivate : Canvas
 	{
-		MakeCmd$* thiz;
+		void* mc;
 
 		void set_clear_color(const Vec4c& col) override;
 		Imageview* get_image(uint index) override;
@@ -148,6 +146,13 @@ namespace flame
 		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col, bool repeat) override;
 		const Vec4f& scissor() override;
 		void set_scissor(const Vec4f& scissor) override;
+	};
+
+	struct Img
+	{
+		Imageview* view;
+		Vec2f white_uv;
+		Atlas* atlas;
 	};
 
 	struct MakeCmd$
@@ -171,7 +176,7 @@ namespace flame
 
 		Vec4c clear_color;
 
-		std::vector<std::tuple<Imageview*, Vec2f, Atlas*>> imgs;
+		std::vector<Img> imgs;
 
 		Vertex* vtx_end;
 		uint* idx_end;
@@ -201,7 +206,7 @@ namespace flame
 				assert(v);
 				for (auto i = 0; i < imgs.size(); i++)
 				{
-					if (std::get<0>(imgs[i]) == white_iv$i.v)
+					if (imgs[i].view == white_iv$i.v)
 					{
 						index = i;
 						break;
@@ -220,10 +225,10 @@ namespace flame
 			{
 				auto img = v->image();
 				img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
-				white_uv = Vec2f(img->size - 1U) + 0.5f / Vec2f(img->size);
+				white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
 			}
 			((Descriptorset*)ds$i.v)->set_image(0, index, v, filter);
-			imgs[index] = std::make_tuple(v, white_uv, atlas);
+			imgs[index] = { v, white_uv, atlas };
 			return index;
 		}
 
@@ -260,7 +265,7 @@ namespace flame
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 			auto first_vtx_cnt = vtx_cnt;
-			auto uv = std::get<1>(imgs[cmds.back().v.draw_data.id]);
+			auto uv = imgs[cmds.back().v.draw_data.id].white_uv;
 
 			auto closed = points[0] == points[point_count - 1];
 
@@ -355,7 +360,7 @@ namespace flame
 			}
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-			auto uv = std::get<1>(imgs[cmds.back().v.draw_data.id]);
+			auto uv = imgs[cmds.back().v.draw_data.id].white_uv;
 
 			for (auto i = 0; i < point_count - 2; i++)
 			{
@@ -465,7 +470,7 @@ namespace flame
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 			auto& img = imgs[img_id];
-			auto atlas = std::get<2>(img);
+			auto atlas = img.atlas;
 			if (atlas)
 			{
 				auto& region = atlas->region(id & 0xffff);
@@ -474,7 +479,7 @@ namespace flame
 				img_size = region.size;
 			}
 			else
-				img_size = std::get<0>(img)->image()->size;
+				img_size = img.view->image()->size;
 
 			if (repeat)
 			{
@@ -499,11 +504,11 @@ namespace flame
 				clear_color = Vec4c(0, 0, 0, 255);
 
 				auto ds_layout = ds$i.v->layout();
-				imgs.resize(ds_layout->binding_count() ? ds_layout->get_binding(0)->count : 0, std::make_tuple(white_iv$i.v, Vec2f(0.5f), nullptr));
+				imgs.resize(ds_layout->binding_count() ? ds_layout->get_binding(0)->count : 0, { white_iv$i.v, Vec2f(0.5f), nullptr });
 
 				auto c = new CanvasPrivate;
 				c->scene = scene;
-				c->thiz = this;
+				c->mc = this;
 				canvas$o.v = c;
 				canvas$o.frame = scene->frame;
 
@@ -631,52 +636,52 @@ namespace flame
 
 	void CanvasPrivate::set_clear_color(const Vec4c& col)
 	{
-		thiz->clear_color = col;
+		((MakeCmd$*)mc)->clear_color = col;
 	}
 
 	Imageview* CanvasPrivate::get_image(uint index)
 	{
-		return std::get<0>(thiz->imgs[index]);
+		return ((MakeCmd$*)mc)->imgs[index].view;
 	}
 
 	Atlas* CanvasPrivate::get_atlas(uint index)
 	{
-		return std::get<2>(thiz->imgs[index]);
+		return ((MakeCmd$*)mc)->imgs[index].atlas;
 	}
 
 	uint CanvasPrivate::set_image(int index, Imageview* v, Filter filter, Atlas* atlas)
 	{
-		return thiz->set_image(index, v, filter, atlas);
+		return ((MakeCmd$*)mc)->set_image(index, v, filter, atlas);
 	}
 
 	void CanvasPrivate::stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness)
 	{
-		thiz->stroke(point_count, points, col, thickness);
+		((MakeCmd$*)mc)->stroke(point_count, points, col, thickness);
 	}
 
 	void CanvasPrivate::fill(uint point_count, const Vec2f* points, const Vec4c& col)
 	{
-		thiz->fill(point_count, points, col);
+		((MakeCmd$*)mc)->fill(point_count, points, col);
 	}
 
 	void CanvasPrivate::add_text(FontAtlas* f, uint glyph_count, Glyph* const* glyphs, uint line_space, float scale, const Vec2f& pos, const Vec4c& col)
 	{
-		thiz->add_text(f, glyph_count, glyphs, line_space, scale, pos, col);
+		((MakeCmd$*)mc)->add_text(f, glyph_count, glyphs, line_space, scale, pos, col);
 	}
 
 	void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col, bool repeat)
 	{
-		thiz->add_image(pos, size, id, uv0, uv1, tint_col, repeat);
+		((MakeCmd$*)mc)->add_image(pos, size, id, uv0, uv1, tint_col, repeat);
 	}
 
 	const Vec4f& CanvasPrivate::scissor()
 	{
-		return thiz->curr_scissor;
+		return ((MakeCmd$*)mc)->curr_scissor;
 	}
 
 	void CanvasPrivate::set_scissor(const Vec4f& scissor)
 	{
-		thiz->set_scissor(scissor);
+		((MakeCmd$*)mc)->set_scissor(scissor);
 	}
 }
 

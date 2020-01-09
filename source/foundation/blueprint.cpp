@@ -151,7 +151,6 @@ namespace flame
 		void clear();
 
 		void add_to_pending_update(NodePrivate* n);
-		void remove_from_pending_update(NodePrivate* n);
 		void update();
 	};
 
@@ -386,49 +385,9 @@ namespace flame
 
 	NodePrivate::~NodePrivate()
 	{
-		for (auto& i : inputs)
-		{
-			auto o = i->links[0];
-			if (o)
-			{
-				for (auto it = o->links.begin(); it != o->links.end(); it++)
-				{
-					if (*it == i.get())
-					{
-						o->links.erase(it);
-						break;
-					}
-				}
-			}
-		}
-		auto root = scene->root;
-		for (auto& o : outputs)
-		{
-			for (auto& l : o->links)
-			{
-				l->links[0] = nullptr;
-				l->set_frame(scene->frame);
-				root->add_to_pending_update(l->node);
-			}
-		}
-
 		if (dtor_addr)
 			cmf(p2f<MF_v_v>(dtor_addr), object);
 		free(object);
-
-		root->need_update_hierarchy = true;
-		root->remove_from_pending_update(this);
-		if (active)
-		{
-			for (auto it = root->active_nodes.begin(); it != root->active_nodes.end(); it++)
-			{
-				if (*it == this)
-				{
-					root->active_nodes.erase(it);
-					break;
-				}
-			}
-		}
 	}
 
 	SlotPrivate* NodePrivate::find_input(const std::string& name) const
@@ -475,6 +434,68 @@ namespace flame
 		cmf(p2f<MF_v_vp>(update_addr), object, scene);
 	}
 
+	static void on_node_added(NodePrivate* n)
+	{
+		if (n->active)
+			n->scene->root->active_nodes.push_back(n);
+	}
+
+	static void on_node_removed(NodePrivate* n)
+	{
+		auto scene = n->scene;
+		auto frame = scene->frame;
+		auto root = scene->root;
+
+		for (auto& i : n->inputs)
+		{
+			auto o = i->links[0];
+			if (o)
+			{
+				for (auto it = o->links.begin(); it != o->links.end(); it++)
+				{
+					if (*it == i.get())
+					{
+						o->links.erase(it);
+						break;
+					}
+				}
+			}
+		}
+		for (auto& o : n->outputs)
+		{
+			for (auto& l : o->links)
+			{
+				l->links[0] = nullptr;
+				l->set_frame(frame);
+				root->add_to_pending_update(l->node);
+			}
+		}
+
+		if (n->in_pending_update)
+		{
+			for (auto it = root->pending_update_nodes.begin(); it != root->pending_update_nodes.end(); it++)
+			{
+				if (*it == n)
+				{
+					root->pending_update_nodes.erase(it);
+					break;
+				}
+			}
+		}
+
+		if (n->active)
+		{
+			for (auto it = root->active_nodes.begin(); it != root->active_nodes.end(); it++)
+			{
+				if (*it == n)
+				{
+					root->active_nodes.erase(it);
+					break;
+				}
+			}
+		}
+	}
+
 	BP::Module* BPPrivate::add_module(const std::wstring& fn)
 	{
 		if (fn == L"bp.dll")
@@ -517,21 +538,27 @@ namespace flame
 		return m;
 	}
 
-	void BPPrivate::remove_module(ModulePrivate* m)
+	void BPPrivate::remove_module(ModulePrivate* _m)
 	{
-		if (m->filename == L"bp.dll")
+		if (_m->filename == L"bp.dll")
 			return;
 
 		for (auto it = modules.begin(); it != modules.end(); it++)
 		{
-			if (it->get() == m)
+			auto m = it->get();
+			if (m == _m)
 			{
+				auto db = m->db;
 				auto& nodes = this->nodes;
 				for (auto n_it = nodes.begin(); n_it != nodes.end(); )
 				{
-					auto udt = (*n_it)->udt;
-					if (udt && udt->db() == (*it)->db)
+					auto n = n_it->get();
+					auto udt = n->udt;
+					if (udt && udt->db() == db)
+					{
+						on_node_removed(n);
 						n_it = nodes.erase(n_it);
+					}
 					else
 						n_it++;
 				}
@@ -731,8 +758,7 @@ namespace flame
 
 		auto n = new NodePrivate(this, id, udt, module);
 		nodes.emplace_back(n);
-		if (n->active)
-			root->active_nodes.push_back(n);
+		on_node_added(n);
 
 		root->need_update_hierarchy = true;
 
@@ -750,20 +776,21 @@ namespace flame
 
 		auto n = new NodePrivate(this, id, type_name, size, inputs, outputs, ctor_addr, dtor_addr, update_addr, active);
 		nodes.emplace_back(n);
-		if (n->active)
-			root->active_nodes.push_back(n);
+		on_node_added(n);
 
 		root->need_update_hierarchy = true;
 
 		return n;
 	}
 
-	void BPPrivate::remove_node(NodePrivate* n)
+	void BPPrivate::remove_node(NodePrivate* _n)
 	{
 		for (auto it = nodes.begin(); it != nodes.end(); it++)
 		{
-			if ((*it).get() == n)
+			auto n = it->get();
+			if (n == _n)
 			{
+				on_node_removed(n);
 				nodes.erase(it);
 				break;
 			}
@@ -837,21 +864,6 @@ namespace flame
 			return;
 		pending_update_nodes.push_back(n);
 		n->in_pending_update = true;
-	}
-
-	void BPPrivate::remove_from_pending_update(NodePrivate* n)
-	{
-		if (!n->in_pending_update)
-			return;
-		for (auto it = pending_update_nodes.begin(); it != pending_update_nodes.end(); it++)
-		{
-			if (*it == n)
-			{
-				pending_update_nodes.erase(it);
-				n->in_pending_update = false;
-				return;
-			}
-		}
 	}
 
 	static void collect_nodes(BPPrivate* scn, std::vector<NodePrivate*>& ns)

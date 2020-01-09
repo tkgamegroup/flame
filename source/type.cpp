@@ -119,7 +119,7 @@ namespace flame
 
 	struct VariableInfoPrivate : VariableInfo
 	{
-		const TypeInfo* type;
+		TypeInfoPrivate* type;
 		std::string name;
 		uint name_hash;
 		std::string decoration;
@@ -256,8 +256,8 @@ namespace flame
 
 		std::string name;
 		void* rva;
-		const TypeInfo* return_type;
-		std::vector<const TypeInfo*> parameter_types;
+		TypeInfoPrivate* return_type;
+		std::vector<TypeInfoPrivate*> parameter_types;
 	};
 
 	TypeinfoDatabase* FunctionInfo::db() const
@@ -292,14 +292,14 @@ namespace flame
 
 	void FunctionInfo::add_parameter(const TypeInfo* type)
 	{
-		((FunctionInfoPrivate*)this)->parameter_types.push_back(type);
+		((FunctionInfoPrivate*)this)->parameter_types.push_back((TypeInfoPrivate*)type);
 	}
 
 	struct UdtInfoPrivate : UdtInfo
 	{
 		TypeinfoDatabase* db;
 
-		const TypeInfo* type;
+		TypeInfoPrivate* type;
 		uint size;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
@@ -370,7 +370,7 @@ namespace flame
 	VariableInfo* UdtInfo::add_variable(const TypeInfo* type, const char* name, const char* decoration, uint offset, uint size)
 	{
 		auto v = new VariableInfoPrivate;
-		v->type = type;
+		v->type = (TypeInfoPrivate*)type;
 		v->name = name;
 		v->name_hash = FLAME_HASH(name);
 		v->decoration = decoration;
@@ -398,7 +398,7 @@ namespace flame
 	FunctionInfo* UdtInfo::add_function(const char* name, void* rva, const TypeInfo* return_type)
 	{
 		auto f = new FunctionInfoPrivate;
-		f->return_type = return_type;
+		f->return_type = (TypeInfoPrivate*)return_type;
 		f->db = db();
 		f->name = name;
 		f->rva = rva;
@@ -867,7 +867,7 @@ namespace flame
 	FunctionInfo* TypeinfoDatabase::add_function(const char* name, void* rva, const TypeInfo* return_type)
 	{
 		auto f = new FunctionInfoPrivate;
-		f->return_type = return_type;
+		f->return_type = (TypeInfoPrivate*)return_type;
 		f->db = this;
 		f->name = name;
 		f->rva = rva;
@@ -888,7 +888,7 @@ namespace flame
 	UdtInfo* TypeinfoDatabase::add_udt(const TypeInfo* type, uint size)
 	{
 		auto u = new UdtInfoPrivate;
-		u->type = type;
+		u->type = (TypeInfoPrivate*)type;
 		u->db = this;
 		u->size = size;
 		((TypeinfoDatabasePrivate*)this)->udts.emplace(type->hash(), u);
@@ -1005,7 +1005,7 @@ namespace flame
 
 			if (pass_prefix && pass_$ && udt_name.find("(unnamed") == std::string::npos && udt_name.find("(lambda_") == std::string::npos)
 			{
-				auto udt_hash = FLAME_HASH(udt_name.c_str());
+				auto udt_hash = TypeInfo::get_hash(TypeData, udt_name.c_str());
 				if (!::flame::find_udt(dbs, udt_hash))
 				{
 					_udt->get_length(&ull);
@@ -1095,8 +1095,8 @@ namespace flame
 							for (auto& i : u->variables)
 							{
 								auto type = i->type;
-								auto tag = type->tag();
-								if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData) &&
+								auto tag = type->tag;
+								if (!type->is_array && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData) &&
 									i->decoration.find('o') == std::string::npos)
 									i->default_value = type->serialize(dbs, (char*)obj + i->offset, 1);
 							}
@@ -1244,12 +1244,12 @@ namespace flame
 			auto n_function = n_functions.append_child("function");
 			n_function.append_attribute("name").set_value(f->name.c_str());
 			n_function.append_attribute("rva").set_value((uint)f->rva);
-			n_function.append_attribute("return_type").set_value(f->return_type->name());
+			n_function.append_attribute("return_type").set_value(f->return_type->name.c_str());
 			if (!f->parameter_types.empty())
 			{
 				auto n_parameters = n_function.append_child("parameters");
 				for (auto& p : f->parameter_types)
-					n_parameters.append_child("parameter").append_attribute("type").set_value(p->name());
+					n_parameters.append_child("parameter").append_attribute("type").set_value(p->name.c_str());
 			}
 		}
 
@@ -1259,7 +1259,7 @@ namespace flame
 			auto u = _u.second.get();
 
 			auto n_udt = n_udts.append_child("udt");
-			n_udt.append_attribute("name").set_value(u->type->name());
+			n_udt.append_attribute("name").set_value(u->type->name.c_str());
 			n_udt.append_attribute("size").set_value(u->size);
 
 			auto n_items = n_udt.append_child("variables");
@@ -1267,7 +1267,7 @@ namespace flame
 			{
 				auto n_variable = n_items.append_child("variable");
 				auto type = v->type;
-				n_variable.append_attribute("type").set_value(type->name());
+				n_variable.append_attribute("type").set_value(type->name.c_str());
 				n_variable.append_attribute("name").set_value(v->name.c_str());
 				n_variable.append_attribute("decoration").set_value(v->decoration.c_str());
 				n_variable.append_attribute("offset").set_value(v->offset);
@@ -1282,12 +1282,12 @@ namespace flame
 				auto n_function = n_functions.append_child("function");
 				n_function.append_attribute("name").set_value(f->name.c_str());
 				n_function.append_attribute("rva").set_value((uint)f->rva);
-				n_function.append_attribute("return_type").set_value(f->return_type->name());
+				n_function.append_attribute("return_type").set_value(f->return_type->name.c_str());
 				if (!f->parameter_types.empty())
 				{
 					auto n_parameters = n_function.append_child("parameters");
 					for (auto& p : f->parameter_types)
-						n_parameters.append_child("parameter").append_attribute("type").set_value(p->name());
+						n_parameters.append_child("parameter").append_attribute("type").set_value(p->name.c_str());
 				}
 			}
 		}
