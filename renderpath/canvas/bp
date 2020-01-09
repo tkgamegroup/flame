@@ -10,33 +10,33 @@
 				<data name="in" value="SampleCount_8" />
 			</datas>
 		</node>
-		<node type="D#graphics::RenderTarget" id="rt_dst" initiative="false" pos="170.72;51.27" />
-		<node type="D#Array(1+graphics::RenderTarget*)" id="resolve_targets" initiative="false" pos="170.72;51.27" />
-		<node type="D#graphics::ImageInspector" id="dst_props" initiative="false" pos="484.64;347.25" />
+		<node type="D#graphics::RenderTarget" id="rt_dst" initiative="false" pos="265.72;81.27" />
+		<node type="D#Array(1+graphics::RenderTarget*)" id="resolve_targets" initiative="false" pos="530.72;137.27" />
+		<node type="D#graphics::ImageInspector" id="dst_props" initiative="false" pos="605.64;353.25" />
 		<node type="D#graphics::Image" id="img_ms" initiative="false" pos="874.61;704.05">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="D#graphics::RenderTarget" id="rt_ms" initiative="false" pos="1210.58;660.05">
+		<node type="D#graphics::RenderTarget" id="rt_ms" initiative="false" pos="1147.58;717.05">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
-		<node type="D#Array(1+graphics::RenderTarget*)" id="color_targets" initiative="false" pos="1246.58;655.05" />
-		<node type="D#graphics::SubpassTargetInfo" id="sp" initiative="false" pos="1561.80;861.92" />
-		<node type="D#Array(1+graphics::SubpassTargetInfo*)" id="sps" initiative="false" pos="1586.80;795.92" />
+		<node type="D#Array(1+graphics::RenderTarget*)" id="color_targets" initiative="false" pos="1435.58;684.05" />
+		<node type="D#graphics::SubpassTargetInfo" id="sp" initiative="false" pos="1587.80;830.92" />
+		<node type="D#Array(1+graphics::SubpassTargetInfo*)" id="sps" initiative="false" pos="1807.80;845.92" />
 		<node type="D#graphics::RenderpassAndFramebuffer" id="rnf" initiative="false" pos="2103.14;821.79" />
-		<node type="D#graphics::DescriptorImageBinding" id="imgs_binding" initiative="false" pos="1174.81;1478.79">
+		<node type="D#graphics::DescriptorImageBinding" id="imgs_binding" initiative="false" pos="1144.81;1500.79">
 			<datas>
 				<data name="count" value="64" />
 				<data name="name" value="images" />
 			</datas>
 		</node>
-		<node type="D#Array(1+void*)" id="bindings" initiative="false" pos="1234.81;1486.79" />
+		<node type="D#Array(1+void*)" id="bindings" initiative="false" pos="1412.81;1446.79" />
 		<node type="D#graphics::Descriptorlayout" id="dsl" initiative="false" pos="1525.51;1688.91" />
-		<node type="D#Array(1+graphics::Descriptorlayout*)" id="dsls" initiative="false" pos="1234.81;1486.79" />
+		<node type="D#Array(1+graphics::Descriptorlayout*)" id="dsls" initiative="false" pos="1758.81;1827.79" />
 		<node type="D#graphics::Pipelinelayout" id="pll" initiative="false" pos="1881.80;1713.37">
 			<datas>
 				<data name="push_constant_size" value="16" />
@@ -60,22 +60,22 @@
 			</datas>
 		</node>
 		<node type="D#Array(3+graphics::VertexInputAttribute*)" id="vias" initiative="false" pos="1928.63;1198.33" />
-		<node type="D#graphics::VertexInputBuffer" id="vib" initiative="false" pos="2078.05;1231.71" />
-		<node type="D#Array(1+graphics::VertexInputBuffer*)" id="vibs" initiative="false" pos="2064.05;1175.71" />
+		<node type="D#graphics::VertexInputBuffer" id="vib" initiative="false" pos="2071.05;1207.71" />
+		<node type="D#Array(1+graphics::VertexInputBuffer*)" id="vibs" initiative="false" pos="2331.05;1211.71" />
 		<node type="D#graphics::VertexInputInfo" id="vi" initiative="false" pos="2416.83;1411.37" />
-		<node type="D#Array(2+StringW)" id="pl_element_shs" initiative="false" pos="2879.57;628.81">
+		<node type="D#Array(2+StringW)" id="pl_element_shs" initiative="false" pos="2690.57;794.81">
 			<datas>
 				<data name="0" value="element.vert" />
 				<data name="1" value="element.frag" />
 			</datas>
 		</node>
-		<node type="D#Array(2+StringW)" id="pl_text_lcd_shs" initiative="false" pos="2878.50;1161.07">
+		<node type="D#Array(2+StringW)" id="pl_text_lcd_shs" initiative="false" pos="2705.50;1208.07">
 			<datas>
 				<data name="0" value="element.vert" />
 				<data name="1" value="text_lcd.frag" />
 			</datas>
 		</node>
-		<node type="D#Array(2+StringW)" id="pl_text_sdf_shs" initiative="false" pos="2901.71;1701.75">
+		<node type="D#Array(2+StringW)" id="pl_text_sdf_shs" initiative="false" pos="2670.71;1602.75">
 			<datas>
 				<data name="0" value="element.vert" />
 				<data name="1" value="text_sdf.frag" />
@@ -87,19 +87,19 @@
 				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#graphics::Pipeline" id="pl_text_lcd" initiative="false" pos="2893.06;1359.97">
+		<node type="D#graphics::Pipeline" id="pl_text_lcd" initiative="false" pos="2878.06;1223.97">
 			<datas>
 				<data name="subpass_idx" value="0" />
 				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#graphics::Pipeline" id="pl_text_sdf" initiative="false" pos="2885.68;1890.44">
+		<node type="D#graphics::Pipeline" id="pl_text_sdf" initiative="false" pos="2883.68;1621.44">
 			<datas>
 				<data name="subpass_idx" value="0" />
 				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#graphics::Image" id="img_white" initiative="false" pos="866.12;1425.24">
+		<node type="D#graphics::Image" id="img_white" initiative="false" pos="861.12;1424.24">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />

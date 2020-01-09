@@ -1469,8 +1469,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 				auto c_text = cText::create(app.font_atlas_pixel);
 				auto module_name = std::filesystem::path(udt->db()->module_name());
-				if (module_name.parent_path() != L"")
-					module_name = module_name.lexically_relative(std::filesystem::path(filename).parent_path());
+				module_name = module_name.lexically_relative(std::filesystem::canonical(std::filesystem::path(filename).parent_path()));
 				c_text->set_text((module_name.wstring() + L"\n" + s2w(n->type_name())).c_str());
 				c_text->color = Vec4c(50, 50, 50, 255);
 				e_text_type->add_component(c_text);
