@@ -12,13 +12,6 @@ using namespace graphics;
 
 namespace flame
 {
-	struct Vertex
-	{
-		Vec2f pos;
-		Vec2f uv;
-		Vec4c col;
-	};
-
 	enum CmdType
 	{
 		CmdDrawElement,
@@ -153,6 +146,13 @@ namespace flame
 		Imageview* view;
 		Vec2f white_uv;
 		Atlas* atlas;
+	};
+
+	struct Vertex
+	{
+		Vec2f pos;
+		Vec2f uv;
+		Vec4c col;
 	};
 
 	struct MakeCmd$

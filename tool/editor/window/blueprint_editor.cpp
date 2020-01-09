@@ -807,6 +807,7 @@ struct cBPObject : Component
 struct cBPSlot : Component
 {
 	cElement* element;
+	cText* text;
 	cEventReceiver* event_receiver;
 	cDataTracker* tracker;
 
@@ -825,6 +826,8 @@ struct cBPSlot : Component
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
 			element = (cElement*)c;
+		else if (c->name_hash == FLAME_CHASH("cText"))
+			text = (cText*)c;
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
@@ -1674,8 +1677,16 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_element->size_ = r;
 						c_element->roundness_ = r * 0.5f;
 						c_element->roundness_lod = 2;
-						c_element->color_ = bp->find_input_export(input) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
+						c_element->color_ = Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
+
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->font_size_ = default_style.font_size * 0.7f;
+						c_text->auto_width_ = false;
+						c_text->auto_height_ = false;
+						if (bp->find_input_export(input) != -1)
+							c_text->set_text(L"  p");
+						e_slot->add_component(c_text);
 
 						e_slot->add_component(cEventReceiver::create());
 					}
@@ -1962,8 +1973,16 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 						c_element->size_ = r;
 						c_element->roundness_ = r * 0.5f;
 						c_element->roundness_lod = 2;
-						c_element->color_ = bp->find_output_export(output) != -1 ? Vec4c(200, 40, 20, 255) : Vec4c(200, 200, 200, 255);
+						c_element->color_ =Vec4c(200, 200, 200, 255);
 						e_slot->add_component(c_element);
+
+						auto c_text = cText::create(app.font_atlas_pixel);
+						c_text->font_size_ = default_style.font_size * 0.7f;
+						c_text->auto_width_ = false;
+						c_text->auto_height_ = false;
+						if (bp->find_input_export(output) != -1)
+							c_text->set_text(L"  p");
+						e_slot->add_component(c_text);
 
 						e_slot->add_component(cEventReceiver::create());
 
@@ -2576,24 +2595,35 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					destroy_topmost(app.root);
+
 					auto s = editor->selected_.s;
 					if (s->io() == BP::Slot::In)
-					{
 						editor->bp->add_input_export(s);
-						editor->set_changed(true);
-					}
 					else
-					{
 						editor->bp->add_output_export(s);
-						editor->set_changed(true);
-					}
-					((cBPSlot*)s->user_data)->element->set_color(Vec4c(200, 40, 20, 255));
+					editor->set_changed(true);
+					((cBPSlot*)s->user_data)->text->set_text(L"  p");
 				}
 			}, new_mail_p(c_editor));
 		}
 		{
 			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Remove From Exports");
 			e_menu->add_child(item);
+			item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					destroy_topmost(app.root);
+
+					auto s = editor->selected_.s;
+					if (s->io() == BP::Slot::In)
+						editor->bp->remove_input_export(s);
+					else
+						editor->bp->remove_output_export(s);
+					editor->set_changed(true);
+					((cBPSlot*)s->user_data)->text->set_text(L"");
+				}
+			}, new_mail_p(c_editor));
 		}
 	}
 
