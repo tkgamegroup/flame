@@ -2005,7 +2005,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	{
 		auto c_element = e_container->get_component(cElement);
 		c_element->pos_ = pos;
-		c_element->size_.x() = 1483.f;
+		c_element->size_.x() = 1900.f;
 		c_element->size_.y() = 711.f;
 	}
 
@@ -2259,6 +2259,266 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tools", app.root, e_menu, true, SideS, true, false, true, nullptr);
 		e_menubar->add_child(e_menu_btn);
 	}
+	{
+		auto e_menu = create_standard_menu();
+		{
+			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Console");
+			e_menu->add_child(e_item);
+			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				auto editor = *(cBPEditor**)c;
+
+				if (is_mouse_clicked(action, key))
+				{
+					destroy_topmost(app.root);
+
+					if (!editor->console_tab)
+					{
+
+						auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
+							auto editor = *(cBPEditor**)c;
+							auto& filename = editor->filename;
+							auto bp = editor->bp;
+							std::vector<TypeinfoDatabase*> dbs(bp->db_count());
+							for (auto i = 0; i < dbs.size(); i++)
+								dbs[i] = bp->db(i);
+							auto tokens = ssplit(cmd);
+
+							if (editor->locked)
+							{
+								console->print(L"bp is locked");
+								return;
+							}
+
+							auto set_data = [&](const std::string& address, const std::string& value) {
+								auto i = bp->find_input(address.c_str());
+								if (i)
+								{
+									auto type = i->type();
+									auto value_before = type->serialize(dbs, i->raw_data(), 2);
+									auto data = new char[i->size()];
+									type->unserialize(dbs, value, data);
+									i->set_data((char*)data + sizeof(AttributeBase));
+									((cBPSlot*)i->user_data)->tracker->update_view();
+									delete[] data;
+									auto value_after = type->serialize(dbs, i->raw_data(), 2);
+									console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
+									editor->set_changed(true);
+								}
+								else
+									console->print(L"input not found");
+							};
+
+							if (tokens[0] == L"help")
+							{
+								console->print(
+									L"  help - show this help\n"
+									"  show udts - show all available udts (see blueprint.h for more details)\n"
+									"  show udt [udt_name] - show an udt\n"
+									"  show nodes - show all nodes\n"
+									"  show node [id] - show a node\n"
+									"  show graph - use Graphviz to show graph\n"
+									"  add node [type_name] [id] - add a node (id of '-' means don't care)\n"
+									"  add link [out_adress] [in_adress] - add a link\n"
+									"  remove node [id] - remove a node\n"
+									"  remove link [in_adress] - remove a link\n"
+									"  set [in_adress] [value] - set value for input\n"
+									"  update - update this blueprint\n"
+									"  save - save this blueprint\n"
+									"  auto-set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first"
+								);
+							}
+							else if (tokens[0] == L"show")
+							{
+								if (tokens[1] == L"udts")
+								{
+									std::vector<UdtInfo*> all_udts;
+									for (auto db : dbs)
+									{
+										auto udts = db->get_udts();
+										for (auto i = 0; i < udts.s; i++)
+											all_udts.push_back(udts.v[i]);
+									}
+									std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+										return std::string(a->type()->name()) < std::string(b->type()->name());
+									});
+									for (auto udt : all_udts)
+										console->print(s2w(udt->type()->name()));
+								}
+								else if (tokens[1] == L"udt")
+								{
+									auto udt = find_udt(dbs, FLAME_HASH(w2s(tokens[2]).c_str()));
+									if (udt)
+									{
+										console->print(s2w(udt->type()->name()));
+										std::vector<VariableInfo*> inputs;
+										std::vector<VariableInfo*> outputs;
+										for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
+										{
+											auto vari = udt->variable(i_i);
+											auto attribute = std::string(vari->decoration());
+											if (attribute.find('i') != std::string::npos)
+												inputs.push_back(vari);
+											if (attribute.find('o') != std::string::npos)
+												outputs.push_back(vari);
+										}
+										console->print(L"[In]");
+										for (auto& i : inputs)
+											console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
+										console->print(L"[Out]");
+										for (auto& o : outputs)
+											console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
+									}
+									else
+										console->print(L"udt not found");
+								}
+								else if (tokens[1] == L"nodes")
+								{
+									for (auto i = 0; i < bp->node_count(); i++)
+									{
+										auto n = bp->node(i);
+										console->print(wsfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()));
+									}
+								}
+								else if (tokens[1] == L"node")
+								{
+									auto n = bp->find_node(w2s(tokens[2]).c_str());
+									if (n)
+									{
+										console->print(L"[In]");
+										for (auto i = 0; i < n->input_count(); i++)
+										{
+											auto input = n->input(i);
+											auto type = input->type();
+											console->print(s2w(input->name()));
+											std::string link_address;
+											if (input->link())
+												link_address = input->link()->get_address().str();
+											console->print(wsfmt(L"[%s]", s2w(link_address).c_str()));
+											auto str = s2w(type->serialize(dbs, input->raw_data(), 2));
+											if (str.empty())
+												str = L"-";
+											console->print(wsfmt(L"   %s", str.c_str()));
+										}
+										console->print(L"[Out]");
+										for (auto i = 0; i < n->output_count(); i++)
+										{
+											auto output = n->output(i);
+											auto type = output->type();
+											console->print(s2w(output->name()));
+											auto str = s2w(type->serialize(dbs, output->raw_data(), 2).c_str());
+											if (str.empty())
+												str = L"-";
+											console->print(wsfmt(L"   %s", str.c_str()));
+										}
+									}
+									else
+										console->print(L"node not found");
+								}
+								else if (tokens[1] == L"graph")
+								{
+									if (!editor->generate_graph_image())
+									{
+										exec(L"bp.png", L"", false);
+										console->print(L"ok");
+									}
+									else
+										console->print(L"bp.png not found, perhaps Graphviz is not available");
+								}
+								else
+									console->print(L"unknow object to show");
+							}
+							else if (tokens[0] == L"add")
+							{
+								if (tokens[1] == L"node")
+								{
+									auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
+									if (n)
+										console->print(wsfmt(L"node added: %s", s2w(n->id()).c_str()));
+									else
+										console->print(L"bad udt name or id already exist");
+								}
+								else if (tokens[1] == L"link")
+								{
+									auto out = bp->find_output(w2s(tokens[2]).c_str());
+									auto in = bp->find_input(w2s(tokens[3]).c_str());
+									if (out && in)
+									{
+										in->link_to(out);
+										auto out_addr = in->link()->get_address();
+										auto in_addr = in->get_address();
+										console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()));
+										editor->set_changed(true);
+									}
+									else
+										console->print(L"wrong address");
+								}
+								else
+									console->print(L"unknow object to add");
+							}
+							else if (tokens[0] == L"remove")
+							{
+								if (tokens[1] == L"node")
+								{
+									auto n = bp->find_node(w2s(tokens[2]).c_str());
+									if (n)
+									{
+										if (!editor->remove_node(n))
+											printf("cannot remove test nodes\n");
+										else
+											console->print(wsfmt(L"node removed: %s", tokens[2].c_str()));
+									}
+									else
+										console->print(L"node not found");
+								}
+								else if (tokens[1] == L"link")
+								{
+									auto i = bp->find_input(w2s(tokens[3]).c_str());
+									if (i)
+									{
+										i->link_to(nullptr);
+										console->print(wsfmt(L"link removed: %s", tokens[2].c_str()));
+										editor->set_changed(true);
+									}
+									else
+										console->print(L"input not found");
+								}
+								else
+									console->print(L"unknow object to remove");
+							}
+							else if (tokens[0] == L"set")
+								set_data(w2s(tokens[1]), w2s(tokens[2]));
+							else if (tokens[0] == L"update")
+							{
+								bp->update();
+								console->print(L"BP updated");
+							}
+							else if (tokens[0] == L"save")
+							{
+								BP::save_to_file(bp, filename.c_str());
+								editor->set_changed(false);
+								console->print(L"file saved");
+							}
+							else if (tokens[0] == L"auto-set-layout")
+							{
+								if (editor->auto_set_layout())
+									console->print(L"ok");
+								else
+									console->print(L"bp.graph.txt not found");
+							}
+							else
+								console->print(L"unknow command");
+						}, new_mail_p(editor), [](void* c) {
+							auto editor = *(cBPEditor**)c;
+							editor->console_tab = nullptr;
+						}, new_mail_p(editor), editor->filename + L":", Vec2f(1495.f, 10.f));
+						editor->console_tab = console_page->parent()->parent()->child(0)->child(0)->get_component(cDockerTab);
+					}
+				}
+			}, new_mail_p(c_editor));
+		}
+		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Window", app.root, e_menu, true, SideS, true, false, true, nullptr);
+		e_menubar->add_child(e_menu_btn);
+	}
 
 	auto e_clipper = Entity::create();
 	e_page->add_child(e_clipper);
@@ -2410,243 +2670,4 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	e_clipper->add_child(e_scale);
 
 	c_bp_scene->scale_text = e_scale->get_component(cText);
-
-	auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
-		auto editor = *(cBPEditor**)c;
-		auto& filename = editor->filename;
-		auto bp = editor->bp;
-		std::vector<TypeinfoDatabase*> dbs(bp->db_count());
-		for (auto i = 0; i < dbs.size(); i++)
-			dbs[i] = bp->db(i);
-		auto tokens = ssplit(cmd);
-
-		if (editor->locked)
-		{
-			console->print(L"bp is locked");
-			return;
-		}
-
-		auto set_data = [&](const std::string& address, const std::string& value) {
-			auto i = bp->find_input(address.c_str());
-			if (i)
-			{
-				auto type = i->type();
-				auto value_before = type->serialize(dbs, i->raw_data(), 2);
-				auto data = new char[i->size()];
-				type->unserialize(dbs, value, data);
-				i->set_data((char*)data + sizeof(AttributeBase));
-				((cBPSlot*)i->user_data)->tracker->update_view();
-				delete[] data;
-				auto value_after = type->serialize(dbs, i->raw_data(), 2);
-				console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
-				editor->set_changed(true);
-			}
-			else
-				console->print(L"input not found");
-		};
-
-		if (tokens[0] == L"help")
-		{
-			console->print(
-				L"  help - show this help\n"
-				"  show udts - show all available udts (see blueprint.h for more details)\n"
-				"  show udt [udt_name] - show an udt\n"
-				"  show nodes - show all nodes\n"
-				"  show node [id] - show a node\n"
-				"  show graph - use Graphviz to show graph\n"
-				"  add node [type_name] [id] - add a node (id of '-' means don't care)\n"
-				"  add link [out_adress] [in_adress] - add a link\n"
-				"  remove node [id] - remove a node\n"
-				"  remove link [in_adress] - remove a link\n"
-				"  set [in_adress] [value] - set value for input\n"
-				"  update - update this blueprint\n"
-				"  save - save this blueprint\n"
-				"  auto-set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first"
-			);
-		}
-		else if (tokens[0] == L"show")
-		{
-			if (tokens[1] == L"udts")
-			{
-				std::vector<UdtInfo*> all_udts;
-				for (auto db : dbs)
-				{
-					auto udts = db->get_udts();
-					for (auto i = 0; i < udts.s; i++)
-						all_udts.push_back(udts.v[i]);
-				}
-				std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-					return std::string(a->type()->name()) < std::string(b->type()->name());
-				});
-				for (auto udt : all_udts)
-					console->print(s2w(udt->type()->name()));
-			}
-			else if (tokens[1] == L"udt")
-			{
-				auto udt = find_udt(dbs, FLAME_HASH(w2s(tokens[2]).c_str()));
-				if (udt)
-				{
-					console->print(s2w(udt->type()->name()));
-					std::vector<VariableInfo*> inputs;
-					std::vector<VariableInfo*> outputs;
-					for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
-					{
-						auto vari = udt->variable(i_i);
-						auto attribute = std::string(vari->decoration());
-						if (attribute.find('i') != std::string::npos)
-							inputs.push_back(vari);
-						if (attribute.find('o') != std::string::npos)
-							outputs.push_back(vari);
-					}
-					console->print(L"[In]");
-					for (auto& i : inputs)
-						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
-					console->print(L"[Out]");
-					for (auto& o : outputs)
-						console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
-				}
-				else
-					console->print(L"udt not found");
-			}
-			else if (tokens[1] == L"nodes")
-			{
-				for (auto i = 0; i < bp->node_count(); i++)
-				{
-					auto n = bp->node(i);
-					console->print(wsfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()));
-				}
-			}
-			else if (tokens[1] == L"node")
-			{
-				auto n = bp->find_node(w2s(tokens[2]).c_str());
-				if (n)
-				{
-					console->print(L"[In]");
-					for (auto i = 0; i < n->input_count(); i++)
-					{
-						auto input = n->input(i);
-						auto type = input->type();
-						console->print(s2w(input->name()));
-						std::string link_address;
-						if (input->link())
-							link_address = input->link()->get_address().str();
-						console->print(wsfmt(L"[%s]", s2w(link_address).c_str()));
-						auto str = s2w(type->serialize(dbs, input->raw_data(), 2));
-						if (str.empty())
-							str = L"-";
-						console->print(wsfmt(L"   %s", str.c_str()));
-					}
-					console->print(L"[Out]");
-					for (auto i = 0; i < n->output_count(); i++)
-					{
-						auto output = n->output(i);
-						auto type = output->type();
-						console->print(s2w(output->name()));
-						auto str = s2w(type->serialize(dbs, output->raw_data(), 2).c_str());
-						if (str.empty())
-							str = L"-";
-						console->print(wsfmt(L"   %s", str.c_str()));
-					}
-				}
-				else
-					console->print(L"node not found");
-			}
-			else if (tokens[1] == L"graph")
-			{
-				if (!editor->generate_graph_image())
-				{
-					exec(L"bp.png", L"", false);
-					console->print(L"ok");
-				}
-				else
-					console->print(L"bp.png not found, perhaps Graphviz is not available");
-			}
-			else
-				console->print(L"unknow object to show");
-		}
-		else if (tokens[0] == L"add")
-		{
-			if (tokens[1] == L"node")
-			{
-				auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
-				if (n)
-					console->print(wsfmt(L"node added: %s", s2w(n->id()).c_str()));
-				else
-					console->print(L"bad udt name or id already exist");
-			}
-			else if (tokens[1] == L"link")
-			{
-				auto out = bp->find_output(w2s(tokens[2]).c_str());
-				auto in = bp->find_input(w2s(tokens[3]).c_str());
-				if (out && in)
-				{
-					in->link_to(out);
-					auto out_addr = in->link()->get_address();
-					auto in_addr = in->get_address();
-					console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()));
-					editor->set_changed(true);
-				}
-				else
-					console->print(L"wrong address");
-			}
-			else
-				console->print(L"unknow object to add");
-		}
-		else if (tokens[0] == L"remove")
-		{
-			if (tokens[1] == L"node")
-			{
-				auto n = bp->find_node(w2s(tokens[2]).c_str());
-				if (n)
-				{
-					if (!editor->remove_node(n))
-						printf("cannot remove test nodes\n");
-					else
-						console->print(wsfmt(L"node removed: %s", tokens[2].c_str()));
-				}
-				else
-					console->print(L"node not found");
-			}
-			else if (tokens[1] == L"link")
-			{
-				auto i = bp->find_input(w2s(tokens[3]).c_str());
-				if (i)
-				{
-					i->link_to(nullptr);
-					console->print(wsfmt(L"link removed: %s", tokens[2].c_str()));
-					editor->set_changed(true);
-				}
-				else
-					console->print(L"input not found");
-			}
-			else
-				console->print(L"unknow object to remove");
-		}
-		else if (tokens[0] == L"set")
-			set_data(w2s(tokens[1]), w2s(tokens[2]));
-		else if (tokens[0] == L"update")
-		{
-			bp->update();
-			console->print(L"BP updated");
-		}
-		else if (tokens[0] == L"save")
-		{
-			BP::save_to_file(bp, filename.c_str());
-			editor->set_changed(false);
-			console->print(L"file saved");
-		}
-		else if (tokens[0] == L"auto-set-layout")
-		{
-			if (editor->auto_set_layout())
-				console->print(L"ok");
-			else
-				console->print(L"bp.graph.txt not found");
-		}
-		else
-			console->print(L"unknow command");
-	}, new_mail_p(c_editor), [](void* c) {
-		auto editor = *(cBPEditor**)c;
-		editor->console_tab = nullptr;
-	}, new_mail_p(c_editor), filename + L":", Vec2f(1495.f, 10.f));
-	c_editor->console_tab = console_page->parent()->parent()->child(0)->child(0)->get_component(cDockerTab);
 }

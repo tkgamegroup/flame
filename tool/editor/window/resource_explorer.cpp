@@ -192,9 +192,6 @@ struct cResourceExplorer : Component
 
 	void navigate(const std::filesystem::path& path)
 	{
-		clear_all_works();
-		looper().clear_events(FLAME_CHASH("update thumbnail"));
-
 		curr_path = path;
 
 		looper().add_event([](void* c) {
@@ -288,6 +285,9 @@ struct cResourceExplorer : Component
 					address_bar->add_child(e_stem_popup_btn);
 				}
 			}
+
+			clear_all_works();
+			looper().clear_events(FLAME_CHASH("update thumbnail"));
 
 			list->get_component(cList)->set_selected(nullptr, false);
 			list->remove_child((Entity*)FLAME_INVALID_POINTER);
@@ -478,11 +478,9 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 
 						explorer->thumbnails_img->set_pixels(thiz->seat->pos, thumbnail_size, thiz->thumbnail->data);
 
-						{
-							auto h = (64 - thumbnail_size.x()) * 0.5f;
-							auto v = (64 - thumbnail_size.y()) * 0.5f;
-							image->element->inner_padding_ = Vec4f(h, v, h, v);
-						}
+						auto h = (64 - thumbnail_size.x()) * 0.5f;
+						auto v = (64 - thumbnail_size.y()) * 0.5f;
+						image->element->inner_padding_ = Vec4f(h, v, h, v);
 						image->id = explorer->thumbnails_img_idx << 16;
 						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
 						image->uv1 = Vec2f(thiz->seat->pos + thumbnail_size) / thumbnails_img_size;
