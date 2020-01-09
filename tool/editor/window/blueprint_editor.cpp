@@ -90,7 +90,7 @@ namespace flame
 	{
 		AttributeD<Array<void*>> out$o;
 
-		__declspec(dllexport) void update$(BP* scene)
+		__declspec(dllexport) void active_update$(BP* scene)
 		{
 			if (out$o.frame == -1)
 			{
@@ -381,7 +381,6 @@ struct cBPEditor : Component
 		if (!n_cbs)
 		{
 			n_cbs = bp->add_node("D#CmdBufs", "test_cbs");
-			n_cbs->set_initiative(true);
 			n_cbs->pos = Vec2f(200.f, -200.f);
 			n_cbs->external = true;
 		}
@@ -1474,36 +1473,6 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 				c_text->color = Vec4c(50, 50, 50, 255);
 				e_text_type->add_component(c_text);
 			}
-		}
-
-		auto e_initiative = Entity::create();
-		e_content->add_child(e_initiative);
-		{
-			e_initiative->add_component(cElement::create());
-
-			auto c_layout = cLayout::create(LayoutHorizontal);
-			c_layout->item_padding = 4.f;
-			e_initiative->add_component(c_layout);
-
-			auto e_checkbox = create_standard_checkbox();
-			e_initiative->add_child(e_checkbox);
-			auto c_checkbox = e_checkbox->get_component(cCheckbox);
-			c_checkbox->set_checked(n->initiative());
-			c_checkbox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-				if (hash == FLAME_CHASH("checked"))
-					(*(BP::Node**)c)->set_initiative(((cCheckbox*)cb)->checked);
-			}, new_mail_p(n));
-
-			auto e_text = Entity::create();
-			e_initiative->add_child(e_text);
-			{
-				e_text->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"Initiative");
-				e_text->add_component(c_text);
-			}
-
 		}
 
 		std::string udt_name = n->type_name();

@@ -67,7 +67,7 @@ namespace flame
 		std::string id;
 		std::string type_name;
 		UdtInfo* udt;
-		bool initiative;
+		bool active;
 
 		void* object;
 		void* module;
@@ -83,7 +83,7 @@ namespace flame
 		bool in_update_list;
 
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
-		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
+		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active);
 		~NodePrivate();
 
 		SlotPrivate* find_input(const std::string& name) const;
@@ -115,7 +115,7 @@ namespace flame
 		std::vector<SlotPrivate*> input_exports;
 		std::vector<SlotPrivate*> output_exports;
 
-		std::vector<NodePrivate*> initiative_nodes;
+		std::vector<NodePrivate*> active_nodes;
 		std::vector<NodePrivate*> pending_update_nodes;
 		std::list<NodePrivate*> update_list;
 		bool need_update_hierarchy;
@@ -142,7 +142,7 @@ namespace flame
 
 		bool check_or_create_id(std::string& id) const;
 		NodePrivate* add_node(const std::string& type, const std::string& type_name);
-		NodePrivate* add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& id);
+		NodePrivate* add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active, const std::string& id);
 		void remove_node(NodePrivate* n);
 		NodePrivate* find_node(const std::string& address) const;
 		SlotPrivate* find_input(const std::string& address) const;
@@ -288,7 +288,7 @@ namespace flame
 		id(id),
 		type_name(udt->type()->name()),
 		udt(udt),
-		initiative(false),
+		active(false),
 		module(module),
 		order(0xffffffff),
 		in_pending_update(false),
@@ -317,7 +317,12 @@ namespace flame
 
 		update_addr = nullptr;
 		{
-			auto f = udt->find_function("update");
+			auto f1 = udt->find_function("update");
+			auto f2 = udt->find_function("active_update");
+			assert((f1 || f2) && (!f1 || !f2));
+			if (f2)
+				active = true;
+			auto f = f1 ? f1 : f2;
 			if (f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "BP"))
 				update_addr = (char*)module + (uint)f->rva();
 		}
@@ -339,12 +344,12 @@ namespace flame
 		}
 	}
 
-	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr) :
+	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr, bool active) :
 		scene(scene),
 		id(id),
 		type_name(type_name),
 		udt(nullptr),
-		initiative(false),
+		active(active),
 		module(nullptr),
 		order(0xffffffff),
 		in_pending_update(false),
@@ -413,6 +418,17 @@ namespace flame
 
 		root->need_update_hierarchy = true;
 		root->remove_from_pending_update(this);
+		if (active)
+		{
+			for (auto it = root->active_nodes.begin(); it != root->active_nodes.end(); it++)
+			{
+				if (*it == this)
+				{
+					root->active_nodes.erase(it);
+					break;
+				}
+			}
+		}
 	}
 
 	SlotPrivate* NodePrivate::find_input(const std::string& name) const
@@ -715,13 +731,15 @@ namespace flame
 
 		auto n = new NodePrivate(this, id, udt, module);
 		nodes.emplace_back(n);
+		if (n->active)
+			root->active_nodes.push_back(n);
 
 		root->need_update_hierarchy = true;
 
 		return n;
 	}
 
-	NodePrivate* BPPrivate::add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, const std::string& _id)
+	NodePrivate* BPPrivate::add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active, const std::string& _id)
 	{
 		std::string id = _id;
 		if (!check_or_create_id(id))
@@ -730,8 +748,10 @@ namespace flame
 			return nullptr;
 		}
 
-		auto n = new NodePrivate(this, id, type_name, size, inputs, outputs, ctor_addr, dtor_addr, update_addr);
+		auto n = new NodePrivate(this, id, type_name, size, inputs, outputs, ctor_addr, dtor_addr, update_addr, active);
 		nodes.emplace_back(n);
+		if (n->active)
+			root->active_nodes.push_back(n);
 
 		root->need_update_hierarchy = true;
 
@@ -889,7 +909,7 @@ namespace flame
 				add_to_hierarchy(this, n, order);
 		}
 
-		for (auto n : initiative_nodes)
+		for (auto n : active_nodes)
 			add_to_update_list(this, n);
 		for (auto n : pending_update_nodes)
 		{
@@ -1058,33 +1078,6 @@ namespace flame
 	UdtInfo* BP::Node::udt() const
 	{
 		return ((NodePrivate*)this)->udt;
-	}
-
-	bool BP::Node::initiative() const 
-	{
-		return ((NodePrivate*)this)->initiative;
-	}
-
-	void BP::Node::set_initiative(bool v)
-	{
-		auto thiz = (NodePrivate*)this;
-		if (thiz->initiative == v)
-			return;
-		thiz->initiative = v;
-		auto root = thiz->scene->root;
-		if (!v)
-		{
-			for (auto it = root->initiative_nodes.begin(); it != root->initiative_nodes.end(); it++)
-			{
-				if (*it == thiz)
-				{
-					root->initiative_nodes.erase(it);
-					break;
-				}
-			}
-		}
-		else
-			root->initiative_nodes.push_back(thiz);
 	}
 
 	uint BP::Node::input_count() const
@@ -1416,7 +1409,6 @@ namespace flame
 		{
 			std::string type;
 			std::string id;
-			bool initiative;
 			Vec2f pos;
 			std::vector<DataDesc> datas;
 		};
@@ -1428,7 +1420,6 @@ namespace flame
 
 			node.type = n_node.attribute("type").value();
 			node.id = n_node.attribute("id").value();
-			node.initiative = n_node.attribute("initiative").as_bool();
 			node.pos = stof2(n_node.attribute("pos").value());
 
 			for (auto n_data : n_node.child("datas"))
@@ -1579,7 +1570,7 @@ namespace flame
 						{TypeInfo::get(TypeEnumSingle, enum_name.c_str(), true), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
 					}, {
 						{TypeInfo::get(TypeEnumSingle, enum_name.c_str(), true), "out", offsetof(Dummy, out), sizeof(Dummy::in), ""}
-					}, nullptr, nullptr, f2v(&Dummy::update), n_d.id);
+					}, nullptr, nullptr, f2v(&Dummy::update), false, n_d.id);
 			}
 			else if (n_d.type.compare(0, prefix_var.l, prefix_var.s) == 0)
 			{
@@ -1614,7 +1605,7 @@ namespace flame
 						{TypeInfo::get(TypeData, type_name.c_str(), true), "in", sizeof(Dummy), sizeof(AttributeBase) + type_size, ""}
 					}, {
 						{TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + sizeof(AttributeBase) + type_size, sizeof(AttributeBase) + type_size, ""}
-					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), n_d.id);
+					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false, n_d.id);
 				auto obj = n->object;
 				*(uint*)obj = type_hash;
 				*(uint*)((char*)obj + sizeof(uint)) = type_size;
@@ -1682,7 +1673,7 @@ namespace flame
 				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size + sizeof(AttributeBase) + sizeof(Array<int>), n_d.type, inputs, {
 						{TypeInfo::get(TypeData, type_name.c_str(), true, true), "out", 
 						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size, sizeof(AttributeBase) + type_size, ""}
-				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), n_d.id);
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false, n_d.id);
 				auto obj = n->object;
 				*(uint*)obj = type_hash;
 				*(uint*)((char*)obj + sizeof(uint)) = type_size;
@@ -1692,7 +1683,6 @@ namespace flame
 				n = bp->add_node(n_d.type, n_d.id);
 			if (n)
 			{
-				n->set_initiative(n_d.initiative);
 				n->pos = n_d.pos;
 				for (auto& d_d : n_d.datas)
 				{
@@ -1793,7 +1783,6 @@ namespace flame
 			auto n_node = n_nodes.append_child("node");
 			n_node.append_attribute("type").set_value(n->type_name.c_str());
 			n_node.append_attribute("id").set_value(n->id.c_str());
-			n_node.append_attribute("initiative").set_value(n->initiative);
 			n_node.append_attribute("pos").set_value(to_string(n->pos, 2).c_str());
 
 			pugi::xml_node n_datas;

@@ -98,8 +98,6 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS void set_id(const char* id);
 			FLAME_FOUNDATION_EXPORTS const char* type_name() const;
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
-			FLAME_FOUNDATION_EXPORTS bool initiative() const;
-			FLAME_FOUNDATION_EXPORTS void set_initiative(bool v);
 			Vec2f pos;
 
 			FLAME_FOUNDATION_EXPORTS uint input_count() const;

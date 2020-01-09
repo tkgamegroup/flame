@@ -250,7 +250,6 @@ namespace flame
 		void SwapchainResizable::link_bp(BP* bp, void* cbs)
 		{
 			auto n_scr = bp->add_node("D#graphics::SwapchainResizable", "scr");
-			n_scr->set_initiative(true);
 			n_scr->find_input("in")->set_data_p(this);
 			bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
 			assert(bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images")));
@@ -282,7 +281,7 @@ namespace flame
 			{
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void active_update$(BP* scene)
 			{
 				if (in$i.v->changed)
 				{
