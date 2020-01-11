@@ -1,10 +1,10 @@
-#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
+#include <flame/universe/ui/style_stack.h>
 
 namespace flame
 {
@@ -174,7 +174,7 @@ namespace flame
 				c_element->size_.x() = 10.f;
 			else
 				c_element->size_.y() = 10.f;
-			c_element->color_ = default_style.scrollbar_color;
+			c_element->color_ = ui::style(ui::ScrollbarColor).u();
 			e_scrollbar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
@@ -198,7 +198,11 @@ namespace flame
 
 			e_scrollbar_thumb->add_component(cEventReceiver::create());
 
-			e_scrollbar_thumb->add_component(cStyleColor::create(default_style.scrollbar_thumb_color_normal, default_style.scrollbar_thumb_color_hovering, default_style.scrollbar_thumb_color_active));
+			auto c_style = cStyleColor::create();
+			c_style->color_normal = ui::style(ui::ScrollbarThumbColorNormal).c();
+			c_style->color_hovering = ui::style(ui::ScrollbarThumbColorHovering).c();
+			c_style->color_active = ui::style(ui::ScrollbarThumbColorActive).c();
+			e_scrollbar_thumb->add_component(c_style);
 
 			auto c_scrollbar_thumb = cScrollbarThumb::create(type);
 			c_scrollbar_thumb->step = scrollbar_step;

@@ -1,8 +1,6 @@
 #include <flame/graphics/font.h>
-#include <flame/universe/default_style.h>
 #include "../universe_private.h"
 #include "../entity_private.h"
-#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/text.h>
@@ -11,6 +9,8 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/tree.h>
+#include <flame/universe/ui/layer.h>
+#include <flame/universe/ui/style_stack.h>
 
 namespace flame
 {
@@ -35,13 +35,6 @@ namespace flame
 			event_receiver = nullptr;
 			tree = nullptr;
 
-			unselected_color_normal = default_style.frame_color_normal;
-			unselected_color_hovering = default_style.frame_color_hovering;
-			unselected_color_active = default_style.frame_color_active;
-			selected_color_normal = default_style.selected_color_normal;
-			selected_color_hovering = default_style.selected_color_hovering;
-			selected_color_active = default_style.selected_color_active;
-
 			mouse_listener = nullptr;
 		}
 
@@ -53,25 +46,10 @@ namespace flame
 
 		void do_style(bool selected)
 		{
-			if (!selected)
+			if (style)
 			{
-				if (style)
-				{
-					style->color_normal = unselected_color_normal;
-					style->color_hovering = unselected_color_hovering;
-					style->color_active = unselected_color_active;
-					style->style();
-				}
-			}
-			else
-			{
-				if (style)
-				{
-					style->color_normal = selected_color_normal;
-					style->color_hovering = selected_color_hovering;
-					style->color_active = selected_color_active;
-					style->style();
-				}
+				style->level = selected ? 1 : 0;
+				style->style();
 			}
 		}
 
@@ -93,9 +71,10 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{
-				style = (cStyleColor*)c;
+				style = (cStyleColor2*)c;
+				style->level = 0;
 				do_style(false);
 			}
 		}
@@ -140,13 +119,6 @@ namespace flame
 			style = nullptr;
 			tree = nullptr;
 
-			unselected_color_normal = default_style.frame_color_normal;
-			unselected_color_hovering = default_style.frame_color_hovering;
-			unselected_color_active = default_style.frame_color_active;
-			selected_color_normal = default_style.selected_color_normal;
-			selected_color_hovering = default_style.selected_color_hovering;
-			selected_color_active = default_style.selected_color_active;
-
 			mouse_listener = nullptr;
 		}
 
@@ -160,20 +132,8 @@ namespace flame
 		{
 			if (style)
 			{
-				if (!selected)
-				{
-					style->color_normal = unselected_color_normal;
-					style->color_hovering = unselected_color_hovering;
-					style->color_active = unselected_color_active;
-					style->style();
-				}
-				else
-				{
-					style->color_normal = selected_color_normal;
-					style->color_hovering = selected_color_hovering;
-					style->color_active = selected_color_active;
-					style->style();
-				}
+				style->level = selected ? 1 : 0;
+				style->style();
 			}
 		}
 
@@ -190,9 +150,10 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{
-				style = (cStyleColor*)c;
+				style = (cStyleColor2*)c;
+				style->level = 0;
 				((cTreeNodeTitlePrivate*)this)->do_style(false);
 			}
 		}
@@ -358,7 +319,7 @@ namespace flame
 		e_tree_node->add_child(e_title);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(default_style.font_size + 4.f, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] + 4.f, 2.f, 4.f, 2.f);
 			e_title->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
@@ -367,13 +328,18 @@ namespace flame
 
 			e_title->add_component(cEventReceiver::create());
 
-			e_title->add_component(cStyleColor::create());
+			auto c_style = cStyleColor2::create();
+			c_style->color_normal[0] = Vec4c(0);
+			c_style->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+			c_style->color_active[0] = ui::style(ui::FrameColorActive).c();
+			c_style->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+			c_style->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+			c_style->color_active[1] = ui::style(ui::SelectedColorActive).c();
+			e_title->add_component(c_style);
 
 			e_title->add_component(cLayout::create(LayoutFree));
 
-			auto c_title = cTreeNodeTitle::create();
-			c_title->unselected_color_normal = Vec4c(0);
-			e_title->add_component(c_title);
+			e_title->add_component(cTreeNodeTitle::create());
 
 			auto e_arrow = Entity::create();
 			e_title->add_child(e_arrow);
@@ -388,7 +354,10 @@ namespace flame
 
 				e_arrow->add_component(cEventReceiver::create());
 
-				e_arrow->add_component(cStyleTextColor::create(default_style.text_color_normal, default_style.text_color_else));
+				auto c_style = cStyleTextColor::create();
+				c_style->color_normal = ui::style(ui::TextColorNormal).c();
+				c_style->color_else = ui::style(ui::TextColorElse).c();
+				e_arrow->add_component(c_style);
 
 				e_arrow->add_component(cTreeNodeArrow::create());
 			}
@@ -398,7 +367,7 @@ namespace flame
 		e_tree_node->add_child(e_sub_tree);
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(default_style.font_size * 0.5f, 0.f, 0.f, 0.f);
+			c_element->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] * 0.5f, 0.f, 0.f, 0.f);
 			e_sub_tree->add_component(c_element);
 
 			auto c_layout = cLayout::create(LayoutVertical);
@@ -414,7 +383,7 @@ namespace flame
 		auto e_tree_leaf = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(default_style.font_size + 4.f, 2.f, 4.f, 2.f);
+			c_element->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] + 4.f, 2.f, 4.f, 2.f);
 			e_tree_leaf->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
@@ -423,11 +392,16 @@ namespace flame
 
 			e_tree_leaf->add_component(cEventReceiver::create());
 
-			e_tree_leaf->add_component(cStyleColor::create());
+			auto c_style = cStyleColor2::create();
+			c_style->color_normal[0] = Vec4c(0);
+			c_style->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+			c_style->color_active[0] = ui::style(ui::FrameColorActive).c();
+			c_style->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+			c_style->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+			c_style->color_active[1] = ui::style(ui::SelectedColorActive).c();
+			e_tree_leaf->add_component(c_style);
 
-			auto c_tree_leaf = cTreeLeaf::create();
-			c_tree_leaf->unselected_color_normal = Vec4c(0);
-			e_tree_leaf->add_component(c_tree_leaf);
+			e_tree_leaf->add_component(cTreeLeaf::create());
 		}
 
 		return e_tree_leaf;

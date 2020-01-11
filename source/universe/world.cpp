@@ -30,7 +30,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("destroy");
-					assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "Object"));
+					assert(f && check_function(f, "D#void", { "P#Object" }));
 					cmf(p2f<MF_v_vp>((char*)module + (uint)f->rva()), dummy, o.first);
 				}
 				{
@@ -133,7 +133,7 @@ namespace flame
 			void* object;
 			{
 				auto f = udt->find_function("create");
-				assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypePointer, "Object") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "World"));
+				assert(f && check_function(f, "P#Object", { "P#World" }));
 				object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 			}
 			((WorldPrivate*)w)->objects.emplace_back((Object*)object, udt);

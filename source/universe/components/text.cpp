@@ -1,12 +1,12 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
-#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
+#include <flame/universe/ui/style_stack.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -23,8 +23,8 @@ namespace flame
 			element = nullptr;
 
 			font_atlas = _font_atlas;
-			color = default_style.text_color_normal;
-			font_size_ = default_style.font_size;
+			color = ui::style(ui::TextColorNormal).c();
+			font_size_ = ui::style(ui::FontSize).u()[0];
 			scale_ = 1.f;
 			auto_width_ = true;
 			auto_height_ = true;
@@ -178,13 +178,17 @@ namespace flame
 			e_button->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = default_style.font_size * font_size_scale;
+			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
 			c_text->set_text(text);
 			e_button->add_component(c_text);
 
 			e_button->add_component(cEventReceiver::create());
 
-			e_button->add_component(cStyleColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
+			auto c_style = cStyleColor::create();
+			c_style->color_normal = ui::style(ui::ButtonColorNormal).c();
+			c_style->color_hovering = ui::style(ui::ButtonColorHovering).c();
+			c_style->color_active = ui::style(ui::ButtonColorActive).c();
+			e_button->add_component(c_style);
 		}
 
 		return e_button;
@@ -210,7 +214,7 @@ namespace flame
 			e_text->add_component(cElement::create());
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = default_style.font_size * font_size_scale;
+			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
 			c_text->set_text(text);
 			e_text->add_component(c_text);
 		}
@@ -233,8 +237,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Serializer_cText$()
 		{
-			color$ = default_style.text_color_normal;
-			font_size$ = default_style.font_size;
+			color$ = ui::style(ui::TextColorNormal).c();
+			font_size$ = ui::style(ui::FontSize).u()[0];
 			right_align$ = false;
 			auto_width$ = false;
 			auto_height$ = false;

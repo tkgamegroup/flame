@@ -1,7 +1,5 @@
 #include "../universe_private.h"
 #include <flame/graphics/font.h>
-#include <flame/universe/default_style.h>
-#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/menu.h>
@@ -9,6 +7,8 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/combobox.h>
+#include <flame/universe/ui/layer.h>
+#include <flame/universe/ui/style_stack.h>
 
 namespace flame
 {
@@ -21,13 +21,6 @@ namespace flame
 			event_receiver = nullptr;
 			style = nullptr;
 			combobox = nullptr;
-
-			unselected_color_normal = default_style.frame_color_normal;
-			unselected_color_hovering = default_style.frame_color_hovering;
-			unselected_color_active = default_style.frame_color_active;
-			selected_color_normal = default_style.selected_color_normal;
-			selected_color_hovering = default_style.selected_color_hovering;
-			selected_color_active = default_style.selected_color_active;
 
 			idx = -1;
 
@@ -42,25 +35,10 @@ namespace flame
 
 		void do_style(bool selected)
 		{
-			if (!selected)
+			if (style)
 			{
-				if (style)
-				{
-					style->color_normal = unselected_color_normal;
-					style->color_hovering = unselected_color_hovering;
-					style->color_active = unselected_color_active;
-					style->style();
-				}
-			}
-			else
-			{
-				if (style)
-				{
-					style->color_normal = selected_color_normal;
-					style->color_hovering = selected_color_hovering;
-					style->color_active = selected_color_active;
-					style->style();
-				}
+				style->level = selected ? 1 : 0;
+				style->style();
 			}
 		}
 
@@ -70,17 +48,19 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thiz = *(cComboboxItemPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto thiz = *(cComboboxItemPrivate**)c;
+						ui::remove_top_layer(thiz->combobox->menu_button->root);
+
 						thiz->combobox->set_index(thiz->idx);
-						destroy_topmost(thiz->combobox->menu_button->root);
 					}
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
 			{
-				style = (cStyleColor*)c;
+				style = (cStyleColor2*)c;
+				style->level = 0;
 				do_style(false);
 			}
 		}
@@ -151,7 +131,32 @@ namespace flame
 		auto e_menu = create_standard_menu();
 		for (auto i = 0; i < item_count; i++)
 		{
-			auto e_item = create_standard_menu_item(font_atlas, font_size_scale, items[i]);
+			auto e_item = Entity::create();
+			{
+				auto c_element = cElement::create();
+				c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+				e_item->add_component(c_element);
+
+				auto c_text = cText::create(font_atlas);
+				c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
+				c_text->set_text(items[i]);
+				e_item->add_component(c_text);
+
+				e_item->add_component(cEventReceiver::create());
+
+				auto c_style = cStyleColor2::create();
+				c_style->color_normal[0] = ui::style(ui::FrameColorNormal).c();
+				c_style->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+				c_style->color_active[0] = ui::style(ui::FrameColorActive).c();
+				c_style->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+				c_style->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+				c_style->color_active[1] = ui::style(ui::SelectedColorActive).c();
+				e_item->add_component(c_style);
+
+				auto c_aligner = cAligner::create();
+				c_aligner->width_policy_ = SizeGreedy;
+				e_item->add_component(c_aligner);
+			}
 			e_menu->add_child(e_item);
 
 			auto c_combobox_item = cComboboxItem::create();
@@ -163,8 +168,8 @@ namespace flame
 		{
 			auto c_element = e_combobox->get_component(cElement);
 			c_element->size_.x() = width + 8.f;
-			c_element->size_.y() = default_style.font_size * font_size_scale + 4.f;
-			c_element->frame_color_ = default_style.text_color_normal;
+			c_element->size_.y() = ui::style(ui::FontSize).u()[0] + 4.f;
+			c_element->frame_color_ = ui::style(ui::TextColorNormal).c();
 			c_element->frame_thickness_ = 2.f;
 
 			e_combobox->get_component(cText)->auto_width_ = false;

@@ -40,12 +40,7 @@ namespace flame
 			is_attribute(is_attribute),
 			is_array(is_array)
 		{
-			name = type_tag(tag);
-			if (is_attribute)
-				name += "A";
-			if (is_array)
-				name += "V";
-			name += "#" + base_name;
+			name = make_str(tag, base_name, is_attribute, is_array);
 			hash = FLAME_HASH(name.c_str());
 		}
 	};
@@ -102,19 +97,12 @@ namespace flame
 
 	const TypeInfo* TypeInfo::get(const char* str)
 	{
-		auto sp = ssplit(std::string(str), '#');
-		auto tag = -1;
-		while (type_tag((TypeTag$)++tag) != sp[0][0]);
-		auto is_attribute = false;
-		auto is_array = false;
-		for (auto i = 1; i < sp[0].size(); i++)
-		{
-			if (sp[0][i] == 'A')
-				is_attribute = true;
-			else if (sp[0][i] == 'V')
-				is_array = true;
-		}
-		return TypeInfo::get((TypeTag$)tag, sp[1].c_str(), is_attribute, is_array);
+		TypeTag$ tag;
+		std::string base_name;
+		bool is_attribute;
+		bool is_array;
+		break_str(str, tag, base_name, is_attribute, is_array);
+		return TypeInfo::get(tag, base_name.c_str(), is_attribute, is_array);
 	}
 
 	struct VariableInfoPrivate : VariableInfo
@@ -981,7 +969,7 @@ namespace flame
 						item->get_value(&v);
 
 						auto item_name = w2s(pwname);
-						if (!sendswith(item_name, std::string("Max")))
+						if (!sendswith(item_name, std::string("Max")) && !sendswith(item_name, std::string("Count")))
 							e->add_item(item_name.c_str(), v.lVal);
 
 						item->Release();

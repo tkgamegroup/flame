@@ -9,14 +9,14 @@ namespace flame
 	{
 		void* state_changed_listener;
 
-		cStyleColorPrivate(const Vec4c& _color_normal, const Vec4c& _color_hovering, const Vec4c& _color_active)
+		cStyleColorPrivate()
 		{
 			element = nullptr;
 			event_receiver = nullptr;
 
-			color_normal = _color_normal;
-			color_hovering = _color_hovering;
-			color_active = _color_active;
+			color_normal = Vec4c(0);
+			color_hovering = Vec4c(0);
+			color_active = Vec4c(0);
 
 			state_changed_listener = nullptr;
 		}
@@ -44,7 +44,11 @@ namespace flame
 
 		Component* copy() override
 		{
-			return new cStyleColorPrivate(color_normal, color_hovering, color_active);
+			auto copy = new cStyleColorPrivate;
+			copy->color_normal = color_normal;
+			copy->color_hovering = color_hovering;
+			copy->color_active = color_active;
+			return copy;
 		}
 	};
 
@@ -64,22 +68,99 @@ namespace flame
 		}
 	}
 
-	cStyleColor* cStyleColor::create(const Vec4c& color_normal, const Vec4c& color_hovering, const Vec4c& color_active)
+	cStyleColor* cStyleColor::create()
 	{
-		return new cStyleColorPrivate(color_normal, color_hovering, color_active);
+		return new cStyleColorPrivate;
+	}
+
+	struct cStyleColor2Private : cStyleColor2
+	{
+		void* state_changed_listener;
+
+		cStyleColor2Private()
+		{
+			element = nullptr;
+			event_receiver = nullptr;
+
+			level = 0;
+
+			for (auto i = 0; i < 2; i++)
+			{
+				color_normal[i] = Vec4c(0);
+				color_hovering[i] = Vec4c(0);
+				color_active[i] = Vec4c(0);
+			}
+
+			state_changed_listener = nullptr;
+		}
+
+		~cStyleColor2Private()
+		{
+			if (!entity->dying_)
+				event_receiver->data_changed_listeners.remove(state_changed_listener);
+		}
+
+		void on_component_added(Component* c) override
+		{
+			if (c->name_hash == FLAME_CHASH("cElement"))
+				element = (cElement*)c;
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
+					if (hash == FLAME_CHASH("state"))
+						(*(cStyleColor2Private**)c)->style();
+				}, new_mail_p(this));
+				style();
+			}
+		}
+
+		Component* copy() override
+		{
+			auto copy = new cStyleColor2Private;
+			copy->level = level;
+			for (auto i = 0; i < 2; i++)
+			{
+				copy->color_normal[i] = color_normal[i];
+				copy->color_hovering[i] = color_hovering[i];
+				copy->color_active[i] = color_active[i];
+			}
+			return copy;
+		}
+	};
+
+	void cStyleColor2::style()
+	{
+		switch (event_receiver->state)
+		{
+		case EventReceiverNormal:
+			element->set_color(color_normal[level]);
+			break;
+		case EventReceiverHovering:
+			element->set_color(color_hovering[level]);
+			break;
+		case EventReceiverActive:
+			element->set_color(color_active[level]);
+			break;
+		}
+	}
+
+	cStyleColor2* cStyleColor2::create()
+	{
+		return new cStyleColor2Private;
 	}
 
 	struct cStyleTextColorPrivate : cStyleTextColor
 	{
 		void* state_changed_listener;
 
-		cStyleTextColorPrivate(const Vec4c& _color_normal, const Vec4c& _color_else)
+		cStyleTextColorPrivate()
 		{
 			text = nullptr;
 			event_receiver = nullptr;
 
-			color_normal = _color_normal;
-			color_else = _color_else;
+			color_normal = Vec4c(0);
+			color_else = Vec4c(0);
 
 			state_changed_listener = nullptr;
 		}
@@ -106,7 +187,10 @@ namespace flame
 
 		Component* copy() override
 		{
-			return new cStyleTextColorPrivate(color_normal, color_else);
+			auto copy = new cStyleTextColorPrivate;
+			copy->color_normal = color_normal;
+			copy->color_else = color_else;
+			return copy;
 		}
 	};
 
@@ -123,8 +207,76 @@ namespace flame
 		}
 	}
 
-	cStyleTextColor* cStyleTextColor::create(const Vec4c& color_normal, const Vec4c& color_else)
+	cStyleTextColor* cStyleTextColor::create()
 	{
-		return new cStyleTextColorPrivate(color_normal, color_else);
+		return new cStyleTextColorPrivate;
+	}
+
+	struct cStyleTextColor2Private : cStyleTextColor2
+	{
+		void* state_changed_listener;
+
+		cStyleTextColor2Private()
+		{
+			text = nullptr;
+			event_receiver = nullptr;
+
+			for (auto i = 0; i < 2; i++)
+			{
+				color_normal[i] = Vec4c(0);
+				color_else[i] = Vec4c(0);
+			}
+
+			state_changed_listener = nullptr;
+		}
+
+		~cStyleTextColor2Private()
+		{
+			if (!entity->dying_)
+				event_receiver->data_changed_listeners.remove(state_changed_listener);
+		}
+
+		void on_component_added(Component* c) override
+		{
+			if (c->name_hash == FLAME_CHASH("cText"))
+				text = (cText*)c;
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
+					(*(cStyleTextColor2Private**)c)->style();
+				}, new_mail_p(this));
+				style();
+			}
+		}
+
+		Component* copy() override
+		{
+			auto copy = new cStyleTextColor2Private;
+			for (auto i = 0; i < 2; i++)
+			{
+				copy->color_normal[i] = color_normal[i];
+				copy->color_else[i] = color_else[i];
+			}
+			return copy;
+		}
+	};
+
+	void cStyleTextColor2::style()
+	{
+		switch (event_receiver->state)
+		{
+		case EventReceiverNormal:
+			text->color = color_normal[level];
+			break;
+		case EventReceiverHovering: case EventReceiverActive:
+			text->color = color_else[level];
+			break;
+		}
+	}
+
+	cStyleTextColor2* cStyleTextColor2::create()
+	{
+		return new cStyleTextColor2Private;
 	}
 }

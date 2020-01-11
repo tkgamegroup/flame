@@ -83,7 +83,8 @@ namespace flame
 		bool in_update_list;
 
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
-		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active);
+		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, 
+			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active);
 		~NodePrivate();
 
 		SlotPrivate* find_input(const std::string& name) const;
@@ -322,8 +323,8 @@ namespace flame
 			if (f2)
 				active = true;
 			auto f = f1 ? f1 : f2;
-			if (f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "BP"))
-				update_addr = (char*)module + (uint)f->rva();
+			assert(check_function(f, "D#void", { "P#BP" }));
+			update_addr = (char*)module + (uint)f->rva();
 		}
 		assert(update_addr);
 
@@ -343,7 +344,8 @@ namespace flame
 		}
 	}
 
-	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr, bool active) :
+	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, 
+		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr, bool active) :
 		scene(scene),
 		id(id),
 		type_name(type_name),

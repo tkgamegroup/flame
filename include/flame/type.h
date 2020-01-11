@@ -119,20 +119,20 @@ namespace flame
 		return (*f)(args...);
 	}
 
-	struct Dummy
+	struct __f_Dummy
 	{
 	};
-	typedef void(Dummy::* MF_v_v)();
-	typedef void(Dummy::* MF_v_vp)(void*);
-	typedef void(Dummy::* MF_v_vp_u)(void*, uint);
-	typedef void* (Dummy::* MF_vp_v)();
-	typedef void* (Dummy::* MF_vp_vp)(void*);
-	typedef bool(Dummy::* MF_b_v)();
+	typedef void(__f_Dummy::* MF_v_v)();
+	typedef void(__f_Dummy::* MF_v_vp)(void*);
+	typedef void(__f_Dummy::* MF_v_vp_u)(void*, uint);
+	typedef void* (__f_Dummy::* MF_vp_v)();
+	typedef void* (__f_Dummy::* MF_vp_vp)(void*);
+	typedef bool(__f_Dummy::* MF_b_v)();
 
 	template<class F, class ...Args>
 	auto cmf(F f, void* p, Args... args) // call member function at an address
 	{
-		return (*((Dummy*)p).*f)(args...);
+		return (*((__f_Dummy*)p).*f)(args...);
 	}
 
 	template<class T>
@@ -407,7 +407,9 @@ namespace flame
 		TypeEnumSingle,
 		TypeEnumMulti,
 		TypeData,
-		TypePointer
+		TypePointer,
+
+		TypeTagCount
 	};
 
 	inline char type_tag(TypeTag$ tag)
@@ -480,16 +482,58 @@ namespace flame
 		FLAME_TYPE_EXPORTS uint base_hash() const;
 		FLAME_TYPE_EXPORTS uint hash() const;
 
+		inline static std::string make_str(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_array = false)
+		{
+			std::string ret;
+			ret = type_tag(tag);
+			if (is_attribute)
+				ret += "A";
+			if (is_array)
+				ret += "V";
+			ret += "#" + base_name;
+			return ret;
+		}
+
+		inline static void break_str(const std::string& str, TypeTag$& tag, std::string& base_name, bool& is_attribute, bool& is_array)
+		{
+			auto pos_hash = str.find('#');
+			{
+				auto ch = str[0];
+				for (auto i = 0; i < TypeTagCount; i++)
+				{
+					if (type_tag((TypeTag$)i) == ch)
+					{
+						tag = (TypeTag$)i;
+						break;
+					}
+				}
+			}
+			is_attribute = false;
+			is_array = false;
+			for (auto i = 1; i < pos_hash; i++)
+			{
+				auto ch = str[i];
+				if (ch == 'A')
+					is_attribute = true;
+				else if (ch == 'V')
+					is_array = true;
+			}
+			base_name = std::string(str.begin() + pos_hash + 1, str.end());
+		}
+
 		inline static uint get_hash(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_array = false)
 		{
-			std::string name;
-			name = type_tag(tag);
-			if (is_attribute)
-				name += "A";
-			if (is_array)
-				name += "V";
-			name += "#" + base_name;
-			return FLAME_HASH(name.c_str());
+			return FLAME_HASH(make_str(tag, base_name, is_attribute, is_array).c_str());
+		}
+
+		inline static uint get_hash(const std::string& str)
+		{
+			TypeTag$ tag;
+			std::string base_name;
+			bool is_attribute;
+			bool is_array;
+			break_str(str, tag, base_name, is_attribute, is_array);
+			return TypeInfo::get_hash(tag, base_name, is_attribute, is_array);
 		}
 
 		FLAME_TYPE_EXPORTS static const TypeInfo* get(TypeTag$ tag, const char* base_name, bool is_attribute = false, bool is_array = false);
@@ -635,5 +679,24 @@ namespace flame
 				return info;
 		}
 		return nullptr;
+	}
+
+	inline bool check_function(FunctionInfo* info, const char* return_type, const std::vector<const char*>& parameter_types)
+	{
+		TypeTag$ tag;
+		std::string base_name;
+		bool is_attribute;
+		bool is_array;
+		TypeInfo::break_str(return_type, tag, base_name, is_attribute, is_array);
+		if (info->return_type()->hash() != TypeInfo::get_hash(tag, base_name, is_attribute, is_array) || 
+			info->parameter_count() != parameter_types.size())
+			return false;
+		for (auto i = 0; i < parameter_types.size(); i++)
+		{
+			TypeInfo::break_str(parameter_types[i], tag, base_name, is_attribute, is_array);
+			if (info->parameter_type(i)->hash() != TypeInfo::get_hash(tag, base_name, is_attribute, is_array))
+				return false;
+		}
+		return true;
 	}
 }

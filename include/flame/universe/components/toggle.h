@@ -4,23 +4,21 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct FontAtlas;
+	}
+
 	struct cElement;
 	struct cEventReceiver;
-	struct cStyleColor;
+	struct cStyleColor2;
 
 	struct cToggle : Component
 	{
 		cEventReceiver* event_receiver;
-		cStyleColor* style;
+		cStyleColor2* style;
 
 		bool toggled;
-
-		Vec4c untoggled_color_normal;
-		Vec4c untoggled_color_hovering;
-		Vec4c untoggled_color_active;
-		Vec4c toggled_color_normal;
-		Vec4c toggled_color_hovering;
-		Vec4c toggled_color_active;
 
 		cToggle() :
 			Component("cToggle")
@@ -31,4 +29,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cToggle* create();
 	};
+
+	FLAME_UNIVERSE_EXPORTS Entity* create_standard_toggle(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text);
 }

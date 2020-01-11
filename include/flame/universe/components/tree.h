@@ -11,21 +11,14 @@ namespace flame
 
 	struct cText;
 	struct cEventReceiver;
-	struct cStyleColor;
+	struct cStyleColor2;
 	struct cTree;
 
 	struct cTreeLeaf : Component
 	{
 		cEventReceiver* event_receiver;
-		cStyleColor* style;
+		cStyleColor2* style;
 		cTree* tree;
-
-		Vec4c unselected_color_normal;
-		Vec4c unselected_color_hovering;
-		Vec4c unselected_color_active;
-		Vec4c selected_color_normal;
-		Vec4c selected_color_hovering;
-		Vec4c selected_color_active;
 
 		cTreeLeaf() :
 			Component("cTreeLeaf")
@@ -50,15 +43,8 @@ namespace flame
 	struct cTreeNodeTitle : Component
 	{
 		cEventReceiver* event_receiver;
-		cStyleColor* style;
+		cStyleColor2* style;
 		cTree* tree;
-
-		Vec4c unselected_color_normal;
-		Vec4c unselected_color_hovering;
-		Vec4c unselected_color_active;
-		Vec4c selected_color_normal;
-		Vec4c selected_color_hovering;
-		Vec4c selected_color_active;
 
 		cTreeNodeTitle() :
 			Component("cTreeNodeTitle")

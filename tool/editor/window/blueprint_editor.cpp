@@ -5,24 +5,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
-#include <flame/universe/default_style.h>
-#include <flame/universe/topmost.h>
-#include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/systems/2d_renderer.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
-#include <flame/universe/components/edit.h>
-#include <flame/universe/components/checkbox.h>
-#include <flame/universe/components/combobox.h>
-#include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
-#include <flame/universe/components/scrollbar.h>
-#include <flame/universe/components/menu.h>
-#include <flame/universe/components/list.h>
-#include <flame/universe/components/style.h>
-#include <flame/universe/components/splitter.h>
-#include <flame/universe/components/window.h>
+#include <flame/universe/ui/ui.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -249,8 +232,12 @@ struct cBPEditor : Component
 				if (std::string(u->type()->name()).find('(') != std::string::npos)
 					continue;
 				{
-					auto f = u->find_function("update");
-					if (!(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 0))
+					auto f1 = u->find_function("update");
+					auto f2 = u->find_function("active_update");
+					if ((!f1 && !f2) || (f1 && f2))
+						continue;
+					auto f = f1 ? f1 : f2;
+					if (!check_function(f, "D#void", {}))
 						continue;
 				}
 				auto no_input_output = true;

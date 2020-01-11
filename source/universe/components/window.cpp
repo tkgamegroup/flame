@@ -1,6 +1,4 @@
 #include <flame/graphics/font.h>
-#include <flame/universe/topmost.h>
-#include <flame/universe/default_style.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -11,6 +9,8 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/ui/layer.h>
+#include <flame/universe/ui/style_stack.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -92,7 +92,7 @@ namespace flame
 							auto idx = pp->child_count() - 1;
 							if (idx == 0)
 								return;
-							if (get_topmost(pp))
+							if (ui::get_top_layer(pp))
 								idx -= 1;
 							pp->reposition_child(p, idx);
 						}, new_mail_p(thiz->entity));
@@ -821,7 +821,7 @@ namespace flame
 		tab->set_name("docker_tab");
 
 		auto c_element = cElement::create();
-		c_element->inner_padding_ = Vec4f(4.f, 2.f, default_style.font_size + 6.f, 2.f);
+		c_element->inner_padding_ = Vec4f(4.f, 2.f, ui::style(ui::FontSize).u()[0] + 6.f, 2.f);
 		tab->add_component(c_element);
 
 		auto c_text = cText::create(font_atlas);
@@ -834,21 +834,23 @@ namespace flame
 		c_docker_tab->root = root;
 		tab->add_component(c_docker_tab);
 
-		tab->add_component(cStyleColor::create());
-		tab->add_component(cStyleTextColor::create());
+		auto c_background_style = cStyleColor2::create();
+		c_background_style->color_normal[0] = ui::style(ui::TabColorNormal).c();
+		c_background_style->color_hovering[0] = ui::style(ui::TabColorElse).c();
+		c_background_style->color_active[0] = ui::style(ui::TabColorElse).c();
+		c_background_style->color_normal[1] = ui::style(ui::SelectedTabColorNormal).c();
+		c_background_style->color_hovering[1] = ui::style(ui::SelectedTabColorElse).c();
+		c_background_style->color_active[1] = ui::style(ui::SelectedTabColorElse).c();
+		tab->add_component(c_background_style);
 
-		auto list_item = cListItem::create();
-		list_item->unselected_color_normal = default_style.tab_color_normal;
-		list_item->unselected_color_hovering = default_style.tab_color_else;
-		list_item->unselected_color_active = default_style.tab_color_else;
-		list_item->unselected_text_color_normal = default_style.tab_text_color_normal;
-		list_item->unselected_text_color_else = default_style.tab_text_color_else;
-		list_item->selected_color_normal = default_style.selected_tab_color_normal;
-		list_item->selected_color_hovering = default_style.selected_tab_color_else;
-		list_item->selected_color_active = default_style.selected_tab_color_else;
-		list_item->selected_text_color_normal = default_style.selected_tab_text_color_normal;
-		list_item->selected_text_color_else = default_style.selected_tab_text_color_else;
-		tab->add_component(list_item);
+		auto c_text_style = cStyleTextColor2::create();
+		c_text_style->color_normal[0] = ui::style(ui::TabTextColorNormal).c();
+		c_text_style->color_else[0] = ui::style(ui::TabTextColorElse).c();
+		c_text_style->color_normal[1] = ui::style(ui::SelectedTabTextColorNormal).c();
+		c_text_style->color_else[1] = ui::style(ui::SelectedTabTextColorElse).c();
+		tab->add_component(c_text_style);
+
+		tab->add_component(cListItem::create());
 
 		tab->add_component(cLayout::create(LayoutFree));
 
@@ -893,7 +895,7 @@ namespace flame
 			docker_page_model->set_name("docker_page");
 
 			auto c_element = cElement::create();
-			c_element->color_ = default_style.window_color;
+			c_element->color_ = ui::style(ui::WindowColor).c();
 			c_element->clip_children = true;
 			docker_page_model->add_component(c_element);
 
@@ -1002,7 +1004,11 @@ namespace flame
 
 				e_spliter->add_component(cEventReceiver::create());
 
-				e_spliter->add_component(cStyleColor::create(Vec4c(0), default_style.frame_color_hovering, default_style.frame_color_active));
+				auto c_style = cStyleColor::create();
+				c_style->color_normal = Vec4c(0);
+				c_style->color_hovering = ui::style(ui::FrameColorHovering).c();
+				c_style->color_active = ui::style(ui::FrameColorActive).c();
+				e_spliter->add_component(c_style);
 
 				e_spliter->add_component(cSplitter::create());
 
@@ -1026,7 +1032,7 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->size_ = 200.f;
 			c_element->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-			c_element->color_ = default_style.docker_color;
+			c_element->color_ = ui::style(ui::DockerColor).c();
 			docker_container_model->add_component(c_element);
 
 			docker_container_model->add_component(cEventReceiver::create());

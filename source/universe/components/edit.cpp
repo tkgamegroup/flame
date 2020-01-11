@@ -1,10 +1,10 @@
 #include <flame/graphics/font.h>
-#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
+#include <flame/universe/ui/style_stack.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -216,13 +216,13 @@ namespace flame
 			auto c_element = cElement::create();
 			c_element->size_.x() = width + 8.f;
 			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_element->color_ = default_style.frame_color_normal;
-			c_element->frame_color_ = default_style.text_color_normal;
+			c_element->color_ = ui::style(ui::FrameColorNormal).c();
+			c_element->frame_color_ = ui::style(ui::TextColorNormal).c();
 			c_element->frame_thickness_ = 2.f;
 			e_edit->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = default_style.font_size * font_size_scale;
+			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
 			c_text->auto_width_ = false;
 			e_edit->add_component(c_text);
 

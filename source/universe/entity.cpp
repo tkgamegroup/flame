@@ -353,7 +353,7 @@ namespace flame
 			void* component;
 			{
 				auto f = udt->find_function("create");
-				assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypePointer, "Component") && f->parameter_count() == 1 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypePointer, "World"));
+				assert(f && check_function(f, "P#Component", { "P#World" }));
 				component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), object, w);
 			}
 			e->add_component((Component*)component);
@@ -400,7 +400,7 @@ namespace flame
 
 				auto n_c = n_cs.append_child(c->name);
 
-				auto udt = find_udt(dbs, FLAME_HASH((std::string("Serializer_") + c->name).c_str()));
+				auto udt = find_udt(dbs, FLAME_HASH((std::string("D#Serializer_") + c->name).c_str()));
 				assert(udt);
 				auto object = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");
@@ -411,7 +411,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && f->return_type()->hash() == TypeInfo::get_hash(TypeData, "void") && f->parameter_count() == 2 && f->parameter_type(0)->hash() == TypeInfo::get_hash(TypeData, "Component") && f->parameter_type(1)->hash() == TypeInfo::get_hash(TypeData, "int"));
+					assert(f && check_function(f, "D#void", { "P#Component", "D#int" }));
 					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), object, c, -1);
 				}
 				for (auto i = 0; i < udt->variable_count(); i++)

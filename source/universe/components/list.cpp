@@ -1,4 +1,3 @@
-#include <flame/universe/default_style.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/text.h>
@@ -6,6 +5,7 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/list.h>
+#include <flame/universe/ui/style_stack.h>
 
 namespace flame
 {
@@ -20,17 +20,6 @@ namespace flame
 			text_style = nullptr;
 			list = nullptr;
 
-			unselected_color_normal = default_style.frame_color_normal;
-			unselected_color_hovering = default_style.frame_color_hovering;
-			unselected_color_active = default_style.frame_color_active;
-			unselected_text_color_normal = default_style.text_color_normal;
-			unselected_text_color_else = default_style.text_color_else;
-			selected_color_normal = default_style.selected_color_normal;
-			selected_color_hovering = default_style.selected_color_hovering;
-			selected_color_active = default_style.selected_color_active;
-			selected_text_color_normal = default_style.text_color_normal;
-			selected_text_color_normal = default_style.text_color_else;
-
 			mouse_listener = nullptr;
 		}
 
@@ -42,37 +31,15 @@ namespace flame
 
 		void do_style(bool selected)
 		{
-			if (!selected)
+			if (background_style)
 			{
-				if (background_style)
-				{
-					background_style->color_normal = unselected_color_normal;
-					background_style->color_hovering = unselected_color_hovering;
-					background_style->color_active = unselected_color_active;
-					background_style->style();
-				}
-				if (text_style)
-				{
-					text_style->color_normal = unselected_text_color_normal;
-					text_style->color_else = unselected_text_color_else;
-					text_style->style();
-				}
+				background_style->level = selected ? 1 : 0;
+				background_style->style();
 			}
-			else
+			if (text_style)
 			{
-				if (background_style)
-				{
-					background_style->color_normal = selected_color_normal;
-					background_style->color_hovering = selected_color_hovering;
-					background_style->color_active = selected_color_active;
-					background_style->style();
-				}
-				if (text_style)
-				{
-					text_style->color_normal = selected_text_color_normal;
-					text_style->color_else = selected_text_color_else;
-					text_style->style();
-				}
+				text_style->level = selected ? 1 : 0;
+				text_style->style();
 			}
 		}
 
@@ -91,34 +58,23 @@ namespace flame
 					}
 				}, new_mail_p(this));
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{
-				background_style = (cStyleColor*)c;
+				background_style = (cStyleColor2*)c;
+				background_style->level = 0;
 				do_style(false);
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleTextColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleTextColor2"))
 			{
-				text_style = (cStyleTextColor*)c;
+				text_style = (cStyleTextColor2*)c;
+				text_style->level = 0;
 				do_style(false);
 			}
 		}
 
 		Component* copy() override
 		{
-			auto copy = new cListItemPrivate();
-
-			copy->unselected_color_normal = unselected_color_normal;
-			copy->unselected_color_hovering = unselected_color_hovering;
-			copy->unselected_color_active = unselected_color_active;
-			copy->unselected_text_color_normal = unselected_text_color_normal;
-			copy->unselected_text_color_else = unselected_text_color_else;
-			copy->selected_color_normal = selected_color_normal;
-			copy->selected_color_hovering = selected_color_hovering;
-			copy->selected_color_active = selected_color_active;
-			copy->selected_text_color_normal = selected_text_color_normal;
-			copy->selected_text_color_else = selected_text_color_else;
-
-			return copy;
+			return new cListItemPrivate;
 		}
 	};
 
@@ -239,13 +195,20 @@ namespace flame
 			e_item->add_component(cElement::create());
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = default_style.font_size * font_size_scale;
+			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
 			c_text->set_text(text);
 			e_item->add_component(c_text);
 
 			e_item->add_component(cEventReceiver::create());
 
-			e_item->add_component(cStyleColor::create(Vec4c(0), Vec4c(0), Vec4c(0)));
+			auto c_style = cStyleColor2::create();
+			c_style->color_normal[0] = ui::style(ui::FrameColorNormal).c();
+			c_style->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+			c_style->color_active[0] = ui::style(ui::FrameColorActive).c();
+			c_style->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+			c_style->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+			c_style->color_active[1] = ui::style(ui::SelectedColorActive).c();
+			e_item->add_component(c_style);
 
 			e_item->add_component(cListItem::create());
 

@@ -1,6 +1,4 @@
 #include <flame/graphics/font.h>
-#include <flame/universe/default_style.h>
-#include <flame/universe/topmost.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
@@ -8,6 +6,8 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/menu.h>
+#include <flame/universe/ui/layer.h>
+#include <flame/universe/ui/style_stack.h>
 
 namespace flame
 {
@@ -24,7 +24,7 @@ namespace flame
 			menu = nullptr;
 			move_to_open = true;
 			popup_side = SideE;
-			topmost_penetrable = false;
+			layer_penetrable = false;
 
 			opened = false;
 
@@ -46,11 +46,11 @@ namespace flame
 
 				opened = true;
 
-				auto topmost = get_topmost(root);
-				if (!topmost)
-					topmost = create_topmost(root, topmost_penetrable, true, !move_to_open);
+				auto layer = ui::get_top_layer(root);
+				if (!layer)
+					layer = ui::add_layer(root, layer_penetrable, true, move_to_open);
 				else
-					topmost->created_frame_ = looper().frame;
+					layer->created_frame_ = looper().frame;
 
 				auto c_menu = menu->get_component(cMenu);
 				if (c_menu)
@@ -69,7 +69,7 @@ namespace flame
 				}
 				menu_element->set_scale(element->global_scale);
 
-				topmost->add_child(menu);
+				layer->add_child(menu);
 			}
 		}
 
@@ -81,7 +81,7 @@ namespace flame
 
 				close_menu(menu);
 
-				get_topmost(root)->remove_child(menu, false);
+				ui::get_top_layer(root)->remove_child(menu, false);
 			}
 		}
 
@@ -107,8 +107,8 @@ namespace flame
 			return true;
 		else if (move_to_open && is_mouse_move(action, key))
 		{
-			auto t = get_topmost(root);
-			if (t && t->name_hash() == FLAME_CHASH("topmost"))
+			auto l = ui::get_top_layer(root);
+			if (l && l->name_hash() == FLAME_CHASH("layer_mmto"))
 				return true;
 		}
 		return false;
@@ -154,13 +154,13 @@ namespace flame
 
 	void popup_menu(Entity* menu, Entity* root, const Vec2f& pos)
 	{
-		auto topmost = get_topmost(root);
-		if (!topmost)
-			topmost = create_topmost(root, false, true, false);
+		auto layer = ui::get_top_layer(root);
+		if (!layer)
+			layer = ui::add_layer(root, false, true, false);
 
 		menu->get_component(cElement)->set_pos(pos);
 
-		topmost->add_child(menu);
+		layer->add_child(menu);
 	}
 
 	Entity* create_standard_menu()
@@ -168,7 +168,7 @@ namespace flame
 		auto e_menu = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->color_ = default_style.window_color;
+			c_element->color_ = ui::style(ui::WindowColor).c();
 			e_menu->add_component(c_element);
 
 			e_menu->add_component(cLayout::create(LayoutVertical));
@@ -188,13 +188,17 @@ namespace flame
 			e_item->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = default_style.font_size * font_size_scale;
+			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
 			c_text->set_text(text);
 			e_item->add_component(c_text);
 
 			e_item->add_component(cEventReceiver::create());
 
-			e_item->add_component(cStyleColor::create(default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			auto c_style = cStyleColor::create();
+			c_style->color_normal = ui::style(ui::FrameColorNormal).c();
+			c_style->color_hovering = ui::style(ui::FrameColorHovering).c();
+			c_style->color_active = ui::style(ui::FrameColorActive).c();
+			e_item->add_component(c_style);
 
 			auto c_aligner = cAligner::create();
 			c_aligner->width_policy_ = SizeGreedy;
@@ -204,16 +208,16 @@ namespace flame
 		return e_item;
 	}
 
-	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool topmost_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text)
+	Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool layer_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text)
 	{
 		auto e_menu_btn = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f + (arrow_text ? default_style.font_size * font_size_scale : 0.f), 2.f);
+			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f + (arrow_text ? ui::style(ui::FontSize).u()[0] * font_size_scale : 0.f), 2.f);
 			e_menu_btn->add_component(c_element);
 
 			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = default_style.font_size * font_size_scale;
+			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
 			if (text[0])
 				c_text->set_text(text);
 			e_menu_btn->add_component(c_text);
@@ -223,12 +227,16 @@ namespace flame
 			auto c_menu_btn = cMenuButton::create();
 			c_menu_btn->root = root;
 			c_menu_btn->menu = menu;
-			c_menu_btn->move_to_open = move_to_open;
 			c_menu_btn->popup_side = popup_side;
-			c_menu_btn->topmost_penetrable = topmost_penetrable;
+			c_menu_btn->layer_penetrable = layer_penetrable;
+			c_menu_btn->move_to_open = move_to_open;
 			e_menu_btn->add_component(c_menu_btn);
 
-			e_menu_btn->add_component(cStyleColor::create(background_transparent ? Vec4c(0) : default_style.frame_color_normal, default_style.frame_color_hovering, default_style.frame_color_active));
+			auto c_style = cStyleColor::create();
+			c_style->color_normal = background_transparent ? Vec4c(0) : ui::style(ui::FrameColorNormal).c();
+			c_style->color_hovering = ui::style(ui::FrameColorHovering).c();
+			c_style->color_active = ui::style(ui::FrameColorActive).c();
+			e_menu_btn->add_component(c_style);
 
 			if (width_greedy)
 			{
@@ -249,7 +257,7 @@ namespace flame
 					e_arrow->add_component(c_element);
 
 					auto c_text = cText::create(font_atlas);
-					c_text->font_size_ = default_style.font_size * font_size_scale;
+					c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
 					c_text->set_text(arrow_text);
 					e_arrow->add_component(c_text);
 
@@ -268,7 +276,7 @@ namespace flame
 		auto e_menubar = Entity::create();
 		{
 			auto c_element = cElement::create();
-			c_element->color_ = default_style.frame_color_normal;
+			c_element->color_ = ui::style(ui::FrameColorNormal).c();
 			e_menubar->add_component(c_element);
 
 			auto c_aligner = cAligner::create();
