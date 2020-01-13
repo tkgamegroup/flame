@@ -156,7 +156,7 @@ namespace flame
 	{
 		auto layer = ui::get_top_layer(root);
 		if (!layer)
-			layer = ui::add_layer(root, false, true, false);
+			layer = ui::add_layer(root, false, true, true);
 
 		menu->get_component(cElement)->set_pos(pos);
 

@@ -221,6 +221,8 @@ namespace flame
 			text = nullptr;
 			event_receiver = nullptr;
 
+			level = 0;
+
 			for (auto i = 0; i < 2; i++)
 			{
 				color_normal[i] = Vec4c(0);

@@ -208,36 +208,4 @@ namespace flame
 	{
 		return new cEditPrivate();
 	}
-
-	Entity* create_standard_edit(float width, graphics::FontAtlas* font_atlas, float font_size_scale)
-	{
-		auto e_edit = Entity::create();
-		{
-			auto c_element = cElement::create();
-			c_element->size_.x() = width + 8.f;
-			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_element->color_ = ui::style(ui::FrameColorNormal).c();
-			c_element->frame_color_ = ui::style(ui::TextColorNormal).c();
-			c_element->frame_thickness_ = 2.f;
-			e_edit->add_component(c_element);
-
-			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
-			c_text->auto_width_ = false;
-			e_edit->add_component(c_text);
-
-			e_edit->add_component(cEventReceiver::create());
-
-			if (width == 0.f)
-			{
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeFitParent;
-				e_edit->add_component(c_aligner);
-			}
-
-			e_edit->add_component(cEdit::create());
-		}
-
-		return e_edit;
-	}
 }

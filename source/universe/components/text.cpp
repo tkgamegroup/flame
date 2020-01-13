@@ -169,62 +169,6 @@ namespace flame
 		return new cTextPrivate(font_atlas);
 	}
 
-	Entity* create_standard_button(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text)
-	{
-		auto e_button = Entity::create();
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			e_button->add_component(c_element);
-
-			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
-			c_text->set_text(text);
-			e_button->add_component(c_text);
-
-			e_button->add_component(cEventReceiver::create());
-
-			auto c_style = cStyleColor::create();
-			c_style->color_normal = ui::style(ui::ButtonColorNormal).c();
-			c_style->color_hovering = ui::style(ui::ButtonColorHovering).c();
-			c_style->color_active = ui::style(ui::ButtonColorActive).c();
-			e_button->add_component(c_style);
-		}
-
-		return e_button;
-	}
-
-	Entity* wrap_standard_text(Entity* e, bool before, graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text)
-	{
-		auto e_layout = Entity::create();
-		{
-			e_layout->add_component(cElement::create());
-
-			auto c_layout = cLayout::create(LayoutHorizontal);
-			c_layout->item_padding = 4.f;
-			e_layout->add_component(c_layout);
-		}
-
-		if (!before)
-			e_layout->add_child(e);
-
-		auto e_text = Entity::create();
-		e_layout->add_child(e_text);
-		{
-			e_text->add_component(cElement::create());
-
-			auto c_text = cText::create(font_atlas);
-			c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
-			c_text->set_text(text);
-			e_text->add_component(c_text);
-		}
-
-		if (before)
-			e_layout->add_child(e);
-
-		return e_layout;
-	}
-
 	struct Serializer_cText$
 	{
 		uint font_atlas_id$;

@@ -29,6 +29,4 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cToggle* create();
 	};
-
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_toggle(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text);
 }

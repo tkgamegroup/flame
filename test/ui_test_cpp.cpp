@@ -9,28 +9,7 @@
 #include <flame/graphics/shader.h>
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
-#include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/systems/2d_renderer.h>
-#include <flame/universe/default_style.h>
-#include <flame/universe/topmost.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
-#include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
-#include <flame/universe/components/style.h>
-#include <flame/universe/components/checkbox.h>
-#include <flame/universe/components/toggle.h>
-#include <flame/universe/components/image.h>
-#include <flame/universe/components/edit.h>
-#include <flame/universe/components/list.h>
-#include <flame/universe/components/scrollbar.h>
-#include <flame/universe/components/menu.h>
-#include <flame/universe/components/combobox.h>
-#include <flame/universe/components/tree.h>
-#include <flame/universe/components/splitter.h>
-#include <flame/universe/components/window.h>
+#include <flame/universe/ui/utils.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -115,140 +94,48 @@ int main(int argc, char** args)
 
 	auto root = w->root();
 	app.root = root;
-	{
-		app.c_element_root = cElement::create();
-		root->add_component(app.c_element_root);
 
-		app.c_event_receiver_root = cEventReceiver::create();
-		root->add_component(app.c_event_receiver_root);
+	ui::set_current_entity(root);
+	app.c_element_root = ui::c_element();
+	app.c_event_receiver_root = ui::c_event_receiver();
+	ui::c_layout();
 
-		root->add_component(cLayout::create(LayoutFree));
-	}
+	ui::push_font_atlas(app.font_atlas_pixel);
+	ui::push_parent(root);
 
-	auto e_fps = Entity::create();
-	root->add_child(e_fps);
-	{
-		e_fps->add_component(cElement::create());
+	ui::e_text(L"");
+	ui::c_aligner(AlignxLeft, AlignyBottom);
+	add_fps_listener([](void* c, uint fps) {
+		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+	}, new_mail_p(ui::current_entity()->get_component(cText)));
 
-		auto c_text = cText::create(app.font_atlas_pixel);
-		e_fps->add_component(c_text);
+	ui::e_begin_layout(16.f, 28.f, LayoutVertical, 16.f);
 
-		auto c_aligner = cAligner::create();
-		c_aligner->x_align_ = AlignxLeft;
-		c_aligner->y_align_ = AlignyBottom;
-		e_fps->add_component(c_aligner);
+	ui::e_text(L"Text Pixel");
+	ui::push_font_atlas(app.font_atlas_lcd);
+	ui::e_text(L"Text Lcd");
+	ui::pop_font_atlas();
+	ui::push_font_atlas(app.font_atlas_sdf);
+	ui::e_text(L"Text Sdf");
+	ui::pop_font_atlas();
+	ui::e_button(L"Click Me£¡", [](void* c, Entity* e) {
+		e->get_component(cText)->set_text(L"Click Me! :)");
+		printf("thank you for clicking me\n");
+	}, Mail<>());
+	ui::e_checkbox(L"Checkbox");
+	ui::e_toggle(L"Toggle");
+	ui::e_image(img_id << 16, Vec2f(250.f), 4.f, 2.f, Vec4c(10, 200, 10, 255));
+	ui::e_edit(100.f);
 
-		add_fps_listener([](void* c, uint fps) {
-			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-		}, new_mail_p(c_text));
-	}
+	ui::e_end_layout();
 
-	auto e_layout_left = Entity::create();
-	root->add_child(e_layout_left);
-	{
-		auto c_element = cElement::create();
-		c_element->pos_ = Vec2f(16.f, 28.f);
-		e_layout_left->add_component(c_element);
+	ui::e_begin_layout(416.f, 28.f, LayoutVertical, 16.f);
+	ui::e_end_layout();
 
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 16.f;
-		e_layout_left->add_component(c_layout);
-	}
+	ui::pop_parent();
+	ui::pop_font_atlas();
 
-	auto e_text_pixel = Entity::create();
-	e_layout_left->add_child(e_text_pixel);
-	{
-		e_text_pixel->add_component(cElement::create());
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(L"Text Pixel");
-		e_text_pixel->add_component(c_text);
-	}
-
-	auto e_text_lcd = Entity::create();
-	e_layout_left->add_child(e_text_lcd);
-	{
-		e_text_lcd->add_component(cElement::create());
-
-		auto c_text = cText::create(app.font_atlas_lcd);
-		c_text->set_text(L"Text Lcd");
-		e_text_lcd->add_component(c_text);
-	}
-
-	auto e_text_sdf = Entity::create();
-	e_layout_left->add_child(e_text_sdf);
-	{
-		e_text_sdf->add_component(cElement::create());
-
-		auto c_text = cText::create(app.font_atlas_sdf);
-		c_text->set_text(L"Text Sdf");
-		e_text_sdf->add_component(c_text);
-	}
-
-	auto e_button = create_standard_button(app.font_atlas_pixel, 1.f, L"Click Me!");
-	e_layout_left->add_child(e_button);
-	{
-		e_button->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			if (is_mouse_clicked(action, key))
-			{
-				(*(cText**)c)->set_text(L"Click Me! :)");
-				printf("thank you for clicking me\n");
-			}
-		}, new_mail_p(e_button->get_component(cText)));
-	}
-
-	auto e_checkbox = wrap_standard_text(create_standard_checkbox(), false, app.font_atlas_pixel, 1.f, L"Checkbox");
-	e_layout_left->add_child(e_checkbox);
-
-	auto e_toggle = Entity::create();
-	e_layout_left->add_child(e_toggle);
-	{
-		auto c_element = cElement::create();
-		auto r = default_style.font_size * 0.5f;
-		c_element->roundness_ = r;
-		c_element->inner_padding_ = Vec4f(r, 2.f, r, 2.f);
-		e_toggle->add_component(c_element);
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(L"Toggle");
-		e_toggle->add_component(c_text);
-
-		e_toggle->add_component(cEventReceiver::create());
-
-		e_toggle->add_component(cStyleColor::create());
-
-		e_toggle->add_component(cToggle::create());
-	}
-
-	auto e_image = Entity::create();
-	e_layout_left->add_child(e_image);
-	{
-		auto c_element = cElement::create();
-		c_element->size_ = 258.f;
-		c_element->inner_padding_ = Vec4f(4.f);
-		c_element->frame_color_ = Vec4c(10, 200, 10, 255);
-		c_element->frame_thickness_ = 2.f;
-		e_image->add_component(c_element);
-
-		auto c_image = cImage::create();
-		c_image->id = img_id << 16;
-		e_image->add_component(c_image);
-	}
-
-	auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-	e_layout_left->add_child(e_edit);
-
-	auto e_layout_right = Entity::create();
-	root->add_child(e_layout_right);
-	{
-		auto c_element = cElement::create();
-		c_element->pos_ = Vec2f(416.f, 28.f);
-		e_layout_right->add_component(c_element);
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 16.f;
-		e_layout_right->add_component(c_layout);
-	}
+	/*
 
 	{
 		auto e_list = create_standard_list(true);
@@ -284,7 +171,7 @@ int main(int argc, char** args)
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					printf("%s!\n", *(char**)c);
-					destroy_topmost(app.root);
+					ui::remove_top_layer(app.root);
 				}
 			}, new_mail_p(names[i]));
 		}
@@ -304,7 +191,7 @@ int main(int argc, char** args)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Add %s!\n", *(char**)c);
-						destroy_topmost(app.root);
+						ui::remove_top_layer(app.root);
 					}
 				}, new_mail_p(names[i]));
 			}
@@ -327,7 +214,7 @@ int main(int argc, char** args)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("Remove %s!\n", *(char**)c);
-						destroy_topmost(app.root);
+						ui::remove_top_layer(app.root);
 					}
 				}, new_mail_p(names[i]));
 			}
@@ -371,7 +258,7 @@ int main(int argc, char** args)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
-						destroy_topmost(app.root);
+						ui::remove_top_layer(app.root);
 					}
 				}, new_mail_p(names[i]));
 			}
@@ -396,7 +283,7 @@ int main(int argc, char** args)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
-						destroy_topmost(app.root);
+						ui::remove_top_layer(app.root);
 					}
 				}, new_mail_p(names[i]));
 			}
@@ -417,7 +304,7 @@ int main(int argc, char** args)
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						printf("%s!\n", *(char**)c);
-						destroy_topmost(app.root);
+						ui::remove_top_layer(app.root);
 					}
 				}, new_mail_p(names[i]));
 			}
@@ -577,6 +464,7 @@ int main(int argc, char** args)
 			}
 		}
 	}
+	*/
 
 	looper().loop([](void* c) {
 		auto app = (*(App**)c);

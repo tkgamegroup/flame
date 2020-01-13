@@ -4,24 +4,25 @@ namespace flame
 {
 	namespace ui
 	{
-		static std::stack<Entity*> _current_parents;
+		static std::stack<graphics::FontAtlas*> _font_atlases;
+		static std::stack<Entity*> _parents;
 		static Entity* _current_entity;
 
-		Entity* current_parent()
+		graphics::FontAtlas* current_font_atlas()
 		{
-			return _current_parents.top();
+			return _font_atlases.top();
 		}
 
-		void push_parent(Entity* parent)
+		void push_font_atlas(graphics::FontAtlas* font_atlas)
 		{
-			_current_parents.push(parent);
+			_font_atlases.push(font_atlas);
 		}
 
-		void pop_parent()
+		void pop_font_atlas()
 		{
-			_current_parents.pop();
+			_font_atlases.pop();
 		}
-		
+
 		Entity* current_entity()
 		{
 			return _current_entity;
@@ -30,6 +31,21 @@ namespace flame
 		void set_current_entity(Entity* e)
 		{
 			_current_entity = e;
+		}
+
+		Entity* current_parent()
+		{
+			return _parents.top();
+		}
+
+		void push_parent(Entity* parent)
+		{
+			_parents.push(parent);
+		}
+
+		void pop_parent()
+		{
+			_parents.pop();
 		}
 	}
 }
