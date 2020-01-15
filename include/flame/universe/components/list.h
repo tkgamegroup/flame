@@ -45,7 +45,4 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cList* create(bool select_air_when_clicked = true);
 	};
-
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_list(bool size_fit_parent);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_listitem(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text);
 }

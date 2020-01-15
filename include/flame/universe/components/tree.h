@@ -83,8 +83,4 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cTree* create();
 	};
-
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_tree(bool size_fit_parent);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_tree_node(graphics::FontAtlas* font_atlas, const wchar_t* name);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_tree_leaf(graphics::FontAtlas* font_atlas, const wchar_t* name);
 }

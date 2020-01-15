@@ -73,31 +73,4 @@ namespace flame
 	{
 		return new cCheckboxPrivate();
 	}
-
-	Entity* create_standard_checkbox()
-	{
-		auto e_checkbox = Entity::create();
-		{
-			auto c_element = cElement::create();
-			c_element->size_ = 16.f;
-			c_element->frame_thickness_ = 3.f;
-			c_element->frame_color_ = ui::style(ui::TextColorNormal).c();
-			e_checkbox->add_component(c_element);
-
-			e_checkbox->add_component(cEventReceiver::create());
-
-			auto c_style = cStyleColor2::create();
-			c_style->color_normal[0] = ui::style(ui::UncheckedColorNormal).c();
-			c_style->color_hovering[0] = ui::style(ui::UncheckedColorHovering).c();
-			c_style->color_active[0] = ui::style(ui::UncheckedColorActive).c();
-			c_style->color_normal[1] = ui::style(ui::CheckedColorNormal).c();
-			c_style->color_hovering[1] = ui::style(ui::CheckedColorHovering).c();
-			c_style->color_active[1] = ui::style(ui::CheckedColorActive).c();
-			e_checkbox->add_component(c_style);
-
-			e_checkbox->add_component(cCheckbox::create());
-		}
-
-		return e_checkbox;
-	}
 }

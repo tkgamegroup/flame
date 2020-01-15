@@ -9,11 +9,11 @@ namespace flame
 	{
 		void* mouse_listener;
 
-		cSplitterPrivate()
+		cSplitterPrivate(SplitterType _type)
 		{
 			event_receiver = nullptr;
 
-			type = SplitterHorizontal;
+			type = _type;
 
 			mouse_listener = nullptr;
 		}
@@ -92,16 +92,12 @@ namespace flame
 
 		Component* copy() override
 		{
-			auto copy = new cSplitterPrivate();
-
-			copy->type = type;
-
-			return copy;
+			return new cSplitterPrivate(type);
 		}
 	};
 
-	cSplitter* cSplitter::create()
+	cSplitter* cSplitter::create(SplitterType type)
 	{
-		return new cSplitterPrivate;
+		return new cSplitterPrivate(type);
 	}
 }

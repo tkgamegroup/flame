@@ -30,7 +30,7 @@ namespace flame
 	struct cScrollbarThumbPrivate : cScrollbarThumb
 	{
 		void* mouse_listener;
-		void* scrollbar_listener;
+		void* parent_element_listener;
 		void* target_element_listener;
 		void* target_layout_listener;
 
@@ -40,13 +40,16 @@ namespace flame
 			event_receiver = nullptr;
 			scrollbar = nullptr;
 
+			parent_element = nullptr;
+
 			type = _type;
 			target_layout = nullptr;
 			step = 1.f;
 
 			mouse_listener = nullptr;
-			scrollbar_listener = nullptr;
+			parent_element_listener = nullptr;
 			target_element_listener = nullptr;
+			target_layout_listener = nullptr;
 		}
 
 		~cScrollbarThumbPrivate()
@@ -54,7 +57,7 @@ namespace flame
 			if (!entity->dying_)
 			{
 				event_receiver->mouse_listeners.remove(mouse_listener);
-				scrollbar->data_changed_listeners.remove(scrollbar_listener);
+				parent_element->data_changed_listeners.remove(parent_element_listener);
 				target_layout->element->data_changed_listeners.remove(target_element_listener);
 				target_layout->data_changed_listeners.remove(target_layout_listener);
 			}
@@ -63,6 +66,11 @@ namespace flame
 		void on_added() override
 		{
 			auto parent = entity->parent();
+			parent_element = parent->get_component(cElement);
+			parent_element_listener = parent_element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+				if (hash == FLAME_CHASH("size"))
+					(*(cScrollbarThumbPrivate**)c)->update(0.f);
+			}, new_mail_p(this));
 			scrollbar = parent->get_component(cScrollbar);
 			target_layout = parent->parent()->child(0)->get_component(cLayout);
 			target_element_listener = target_layout->element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
@@ -135,100 +143,13 @@ namespace flame
 		}
 	};
 
+	void cScrollbarThumb::update(float v)
+	{
+		((cScrollbarThumbPrivate*)this)->update(v);
+	}
+
 	cScrollbarThumb* cScrollbarThumb::create(ScrollbarType type)
 	{
 		return new cScrollbarThumbPrivate(type);
-	}
-
-	Entity* wrap_standard_scrollbar(Entity* e, ScrollbarType type, bool container_fit_parent, float scrollbar_step)
-	{
-		auto e_container = Entity::create();
-		{
-			auto c_element = cElement::create();
-			c_element->clip_children = true;
-			e_container->add_component(c_element);
-
-			if (container_fit_parent)
-			{
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeFitParent;
-				c_aligner->height_policy_ = SizeFitParent;
-				e_container->add_component(c_aligner);
-			}
-
-			auto c_layout = cLayout::create(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical);
-			c_layout->item_padding = 4.f;
-			c_layout->width_fit_children = false;
-			c_layout->height_fit_children = false;
-			c_layout->fence = 2;
-			e_container->add_component(c_layout);
-		}
-
-		e_container->add_child(e);
-
-		auto e_scrollbar = Entity::create();
-		e_container->add_child(e_scrollbar);
-		{
-			auto c_element = cElement::create();
-			if (type == ScrollbarVertical)
-				c_element->size_.x() = 10.f;
-			else
-				c_element->size_.y() = 10.f;
-			c_element->color_ = ui::style(ui::ScrollbarColor).c();
-			e_scrollbar->add_component(c_element);
-
-			auto c_aligner = cAligner::create();
-			if (type == ScrollbarVertical)
-				c_aligner->height_policy_ = SizeFitParent;
-			else
-				c_aligner->width_policy_ = SizeFitParent;
-			e_scrollbar->add_component(c_aligner);
-
-			e_scrollbar->add_component(cEventReceiver::create());
-
-			e_scrollbar->add_component(cScrollbar::create());
-		}
-
-		auto e_scrollbar_thumb = Entity::create();
-		e_scrollbar->add_child(e_scrollbar_thumb);
-		{
-			auto c_element = cElement::create();
-			c_element->size_ = 10.f;
-			e_scrollbar_thumb->add_component(c_element);
-
-			e_scrollbar_thumb->add_component(cEventReceiver::create());
-
-			auto c_style = cStyleColor::create();
-			c_style->color_normal = ui::style(ui::ScrollbarThumbColorNormal).c();
-			c_style->color_hovering = ui::style(ui::ScrollbarThumbColorHovering).c();
-			c_style->color_active = ui::style(ui::ScrollbarThumbColorActive).c();
-			e_scrollbar_thumb->add_component(c_style);
-
-			auto c_scrollbar_thumb = cScrollbarThumb::create(type);
-			c_scrollbar_thumb->step = scrollbar_step;
-			e_scrollbar_thumb->add_component(c_scrollbar_thumb);
-		}
-
-		auto e_overlayer = Entity::create();
-		e_container->add_child(e_overlayer);
-		{
-			e_overlayer->add_component(cElement::create());
-
-			auto c_event_receiver = cEventReceiver::create();
-			c_event_receiver->penetrable = true;
-			c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thumb = (*(cScrollbarThumbPrivate**)c);
-				if (is_mouse_scroll(action, key))
-					thumb->update(-pos.x() * 20.f);
-			}, new_mail_p(e_scrollbar_thumb->get_component(cScrollbarThumb)));
-			e_overlayer->add_component(c_event_receiver);
-
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy_ = SizeFitParent;
-			c_aligner->height_policy_ = SizeFitParent;
-			e_overlayer->add_component(c_aligner);
-		}
-
-		return e_container;
 	}
 }

@@ -249,7 +249,8 @@ namespace flame
 							case FLAME_CHASH("pos"):
 							case FLAME_CHASH("scale"):
 							case FLAME_CHASH("size"):
-								thiz->management->add_to_update_list(thiz);
+								if (thiz->management)
+									thiz->management->add_to_update_list(thiz);
 								break;
 							}
 						}, new_mail_p(this));

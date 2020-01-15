@@ -95,12 +95,6 @@ namespace flame
 		void on_added() override
 		{
 			tree = get_tree(entity);
-			if (tree)
-			{
-				auto title = entity->child(0);
-				title->get_component(cTreeNodeTitle)->tree = tree;
-				title->child(0)->get_component(cTreeNodeArrow)->tree = tree;
-			}
 		}
 	};
 
@@ -135,6 +129,11 @@ namespace flame
 				style->level = selected ? 1 : 0;
 				style->style();
 			}
+		}
+
+		void on_added() override
+		{
+			tree = entity->parent()->get_component(cTreeNode)->tree;
 		}
 
 		void on_component_added(Component* c) override
@@ -181,6 +180,11 @@ namespace flame
 		{
 			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
+		}
+
+		void on_added() override
+		{
+			tree = entity->parent()->parent()->get_component(cTreeNode)->tree;
 		}
 
 		void on_component_added(Component* c) override
@@ -272,138 +276,5 @@ namespace flame
 	cTree* cTree::create()
 	{
 		return new cTreePrivate;
-	}
-
-	Entity* create_standard_tree(bool size_fit_parent)
-	{
-		auto e_tree = Entity::create();
-		{
-			e_tree->add_component(cElement::create());
-
-			e_tree->add_component(cEventReceiver::create());
-
-			if (size_fit_parent)
-			{
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeFitParent;
-				c_aligner->height_policy_ = SizeFitParent;
-				e_tree->add_component(c_aligner);
-			}
-
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
-			c_layout->width_fit_children = !size_fit_parent;
-			c_layout->height_fit_children = !size_fit_parent;
-			e_tree->add_component(c_layout);
-
-			e_tree->add_component(cTree::create());
-		}
-
-		return e_tree;
-	}
-
-	Entity* create_standard_tree_node(graphics::FontAtlas* font_atlas, const wchar_t* name)
-	{
-		auto e_tree_node = Entity::create();
-		{
-			e_tree_node->add_component(cElement::create());
-
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
-			e_tree_node->add_component(c_layout);
-
-			e_tree_node->add_component(cTreeNode::create());
-		}
-
-		auto e_title = Entity::create();
-		e_tree_node->add_child(e_title);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] + 4.f, 2.f, 4.f, 2.f);
-			e_title->add_component(c_element);
-
-			auto c_text = cText::create(font_atlas);
-			c_text->set_text(name);
-			e_title->add_component(c_text);
-
-			e_title->add_component(cEventReceiver::create());
-
-			auto c_style = cStyleColor2::create();
-			c_style->color_normal[0] = Vec4c(0);
-			c_style->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
-			c_style->color_active[0] = ui::style(ui::FrameColorActive).c();
-			c_style->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
-			c_style->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
-			c_style->color_active[1] = ui::style(ui::SelectedColorActive).c();
-			e_title->add_component(c_style);
-
-			e_title->add_component(cLayout::create(LayoutFree));
-
-			e_title->add_component(cTreeNodeTitle::create());
-
-			auto e_arrow = Entity::create();
-			e_title->add_child(e_arrow);
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
-				e_arrow->add_component(c_element);
-
-				auto c_text = cText::create(font_atlas);
-				c_text->set_text(Icon_ANGLE_DOWN);
-				e_arrow->add_component(c_text);
-
-				e_arrow->add_component(cEventReceiver::create());
-
-				auto c_style = cStyleTextColor::create();
-				c_style->color_normal = ui::style(ui::TextColorNormal).c();
-				c_style->color_else = ui::style(ui::TextColorElse).c();
-				e_arrow->add_component(c_style);
-
-				e_arrow->add_component(cTreeNodeArrow::create());
-			}
-		}
-
-		auto e_sub_tree = Entity::create();
-		e_tree_node->add_child(e_sub_tree);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] * 0.5f, 0.f, 0.f, 0.f);
-			e_sub_tree->add_component(c_element);
-
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
-			e_sub_tree->add_component(c_layout);
-		}
-
-		return e_tree_node;
-	}
-
-	Entity* create_standard_tree_leaf(graphics::FontAtlas* font_atlas, const wchar_t* name)
-	{
-		auto e_tree_leaf = Entity::create();
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] + 4.f, 2.f, 4.f, 2.f);
-			e_tree_leaf->add_component(c_element);
-
-			auto c_text = cText::create(font_atlas);
-			c_text->set_text(name);
-			e_tree_leaf->add_component(c_text);
-
-			e_tree_leaf->add_component(cEventReceiver::create());
-
-			auto c_style = cStyleColor2::create();
-			c_style->color_normal[0] = Vec4c(0);
-			c_style->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
-			c_style->color_active[0] = ui::style(ui::FrameColorActive).c();
-			c_style->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
-			c_style->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
-			c_style->color_active[1] = ui::style(ui::SelectedColorActive).c();
-			e_tree_leaf->add_component(c_style);
-
-			e_tree_leaf->add_component(cTreeLeaf::create());
-		}
-
-		return e_tree_leaf;
 	}
 }

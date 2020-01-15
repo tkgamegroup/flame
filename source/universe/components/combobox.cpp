@@ -44,6 +44,12 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
+			auto menu = entity->parent();
+			if (menu)
+			{
+				idx = menu->child_count() - 1;
+				combobox = menu->get_component(cMenu)->button->entity->get_component(cCombobox);
+			}
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
@@ -86,12 +92,7 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cText"))
 				text = (cText*)c;
 			else if (c->name_hash == FLAME_CHASH("cMenuButton"))
-			{
 				menu_button = (cMenuButton*)c;
-				auto menu = menu_button->menu;
-				for (auto i = 0; i < menu->child_count(); i++)
-					menu->child(i)->get_component(cComboboxItem)->combobox = this;
-			}
 		}
 	};
 
@@ -124,59 +125,5 @@ namespace flame
 	cCombobox* cCombobox::create()
 	{
 		return new cComboboxPrivate;
-	}
-
-	Entity* create_standard_combobox(float width, graphics::FontAtlas* font_atlas, float font_size_scale, Entity* root, uint item_count, const wchar_t* const* items)
-	{
-		auto e_menu = create_standard_menu();
-		for (auto i = 0; i < item_count; i++)
-		{
-			auto e_item = Entity::create();
-			{
-				auto c_element = cElement::create();
-				c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-				e_item->add_component(c_element);
-
-				auto c_text = cText::create(font_atlas);
-				c_text->font_size_ = ui::style(ui::FontSize).u()[0] * font_size_scale;
-				c_text->set_text(items[i]);
-				e_item->add_component(c_text);
-
-				e_item->add_component(cEventReceiver::create());
-
-				auto c_style = cStyleColor2::create();
-				c_style->color_normal[0] = ui::style(ui::FrameColorNormal).c();
-				c_style->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
-				c_style->color_active[0] = ui::style(ui::FrameColorActive).c();
-				c_style->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
-				c_style->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
-				c_style->color_active[1] = ui::style(ui::SelectedColorActive).c();
-				e_item->add_component(c_style);
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeGreedy;
-				e_item->add_component(c_aligner);
-			}
-			e_menu->add_child(e_item);
-
-			auto c_combobox_item = cComboboxItem::create();
-			c_combobox_item->idx = i;
-			e_item->add_component(c_combobox_item);
-		}
-
-		auto e_combobox = create_standard_menu_button(font_atlas, font_size_scale, L"", root, e_menu, false, SideS, true, false, false, Icon_ANGLE_DOWN);
-		{
-			auto c_element = e_combobox->get_component(cElement);
-			c_element->size_.x() = width + 8.f;
-			c_element->size_.y() = ui::style(ui::FontSize).u()[0] + 4.f;
-			c_element->frame_color_ = ui::style(ui::TextColorNormal).c();
-			c_element->frame_thickness_ = 2.f;
-
-			e_combobox->get_component(cText)->auto_width_ = false;
-			
-			e_combobox->add_component(cCombobox::create());
-		}
-
-		return e_combobox;
 	}
 }

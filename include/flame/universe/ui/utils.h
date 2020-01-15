@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/graphics/font.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
@@ -22,6 +23,8 @@
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
+#include <flame/universe/ui/make_menu.h>
+#include <flame/universe/ui/make_window.h>
 
 namespace flame
 {
@@ -35,6 +38,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* current_parent();
 		FLAME_UNIVERSE_EXPORTS void push_parent(Entity* parent);
 		FLAME_UNIVERSE_EXPORTS void pop_parent();
+		FLAME_UNIVERSE_EXPORTS Entity* current_root();
+		FLAME_UNIVERSE_EXPORTS void set_current_root(Entity* e);
 
 		inline cElement* c_element()
 		{
@@ -78,6 +83,20 @@ namespace flame
 			return c;
 		}
 
+		inline cStyleTextColor* c_style_text_color()
+		{
+			auto c = cStyleTextColor::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cStyleTextColor2* c_style_text_color2()
+		{
+			auto c = cStyleTextColor2::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
 		inline cEdit* c_edit()
 		{
 			auto c = cEdit::create();
@@ -117,17 +136,136 @@ namespace flame
 			return c;
 		}
 
-		inline cLayout* c_layout(LayoutType t = LayoutFree)
+		inline cLayout* c_layout(LayoutType type = LayoutFree)
 		{
-			auto c = cLayout::create(t);
+			auto c = cLayout::create(type);
 			current_entity()->add_component(c);
 			return c;
 		}
 
-		inline Entity* e_empty()
+		inline cScrollbar* c_scrollbar()
+		{
+			auto c = cScrollbar::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cScrollbarThumb* c_scrollbar_thumb(ScrollbarType type)
+		{
+			auto c = cScrollbarThumb::create(type);
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cList* c_list()
+		{
+			auto c = cList::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cListItem* c_list_item()
+		{
+			auto c = cListItem::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cTree* c_tree()
+		{
+			auto c = cTree::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cTreeNode* c_tree_node()
+		{
+			auto c = cTreeNode::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cTreeNodeTitle* c_tree_node_title()
+		{
+			auto c = cTreeNodeTitle::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cTreeNodeArrow* c_tree_node_arrow()
+		{
+			auto c = cTreeNodeArrow::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cTreeLeaf* c_tree_leaf()
+		{
+			auto c = cTreeLeaf::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cMenu* c_menu()
+		{
+			auto c = cMenu::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cMenuButton* c_menu_button()
+		{
+			auto c = cMenuButton::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cCombobox* c_combobox()
+		{
+			auto c = cCombobox::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cComboboxItem* c_combobox_item()
+		{
+			auto c = cComboboxItem::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cMoveable* c_moveable()
+		{
+			auto c = cMoveable::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cBringToFront* c_bring_to_front()
+		{
+			auto c = cBringToFront::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cSizeDragger* c_size_dragger()
+		{
+			auto c = cSizeDragger::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cDockerTab* c_docker_tab()
+		{
+			auto c = cDockerTab::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline Entity* e_empty(int pos = -1)
 		{
 			auto e = Entity::create();
-			current_parent()->add_child(e);
+			current_parent()->add_child(e, pos);
 			set_current_entity(e);
 			return e;
 		}
@@ -139,11 +277,11 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_layout(float x = 0.f, float y = 0.f, LayoutType t = LayoutFree, float item_padding = 0.f)
+		inline Entity* e_begin_layout(float x = 0.f, float y = 0.f, LayoutType type = LayoutFree, float item_padding = 0.f)
 		{
 			auto e = e_empty();
 			c_element()->pos_ = Vec2f(x, y);
-			c_layout(t)->item_padding = item_padding;
+			c_layout(type)->item_padding = item_padding;
 			push_parent(e);
 			return e;
 		}
@@ -153,19 +291,19 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_text(const wchar_t* t)
+		inline Entity* e_text(const wchar_t* text)
 		{
 			auto e = e_empty();
 			c_element();
-			c_text()->set_text(t);
+			c_text()->set_text(text);
 			return e;
 		}
 
-		inline Entity* e_button(const wchar_t* t, void(*f)(void* c, Entity* e), const Mail<>& m)
+		inline Entity* e_button(const wchar_t* text, void(*func)(void* c, Entity* e), const Mail<>& mail, bool use_style = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(t);
+			c_text()->set_text(text);
 			struct WrapedMail
 			{
 				void(*f)(void*, Entity*);
@@ -178,8 +316,8 @@ namespace flame
 				}
 			};
 			auto new_m = new_mail<WrapedMail>();
-			new_m.p->f = f;
-			new_m.p->m = m;
+			new_m.p->f = func;
+			new_m.p->m = mail;
 			new_m.p->e = e;
 			c_event_receiver()->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_clicked(action, key))
@@ -188,15 +326,18 @@ namespace flame
 					m.f(m.m.p, m.e);
 				}
 			}, new_m);
-			auto cs = c_style_color();
-			cs->color_normal = ui::style(ui::ButtonColorNormal).c();
-			cs->color_hovering = ui::style(ui::ButtonColorHovering).c();
-			cs->color_active = ui::style(ui::ButtonColorActive).c();
-			cs->style();
+			if (use_style)
+			{
+				auto cs = c_style_color();
+				cs->color_normal = ui::style(ui::ButtonColorNormal).c();
+				cs->color_hovering = ui::style(ui::ButtonColorHovering).c();
+				cs->color_active = ui::style(ui::ButtonColorActive).c();
+				cs->style();
+			}
 			return e;
 		}
 
-		inline Entity* e_checkbox(const wchar_t* t)
+		inline Entity* e_checkbox(const wchar_t* text)
 		{
 			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
 			auto e = e_empty();
@@ -214,19 +355,19 @@ namespace flame
 			cs->color_active[1] = ui::style(ui::CheckedColorActive).c();
 			cs->style();
 			c_checkbox();
-			e_text(t);
+			e_text(text);
 			e_end_layout();
 			return e;
 		}
 
-		inline Entity* e_toggle(const wchar_t* t)
+		inline Entity* e_toggle(const wchar_t* text)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
 			auto r = ui::style(ui::FontSize).u()[0] * 0.5f;
 			ce->roundness_ = r;
 			ce->inner_padding_ = Vec4f(r, 2.f, r, 2.f);
-			c_text()->set_text(t);
+			c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
 			cs->color_normal[0] = Vec4c(color(Vec3f(52.f, 0.23f, 0.97f)), 0.40f * 255.f);
@@ -235,6 +376,7 @@ namespace flame
 			cs->color_normal[1] = ui::style(ui::ButtonColorNormal).c();
 			cs->color_hovering[1] = ui::style(ui::ButtonColorHovering).c();
 			cs->color_active[1] = ui::style(ui::ButtonColorActive).c();
+			cs->style();
 			c_toggle();
 			return e;
 		}
@@ -268,16 +410,531 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_list()
+		inline Entity* e_begin_scroll_view1(ScrollbarType type, const Vec2f size, float padding = 0.f, float frame_thickness = 0.f)
+		{
+			auto e = e_empty();
+			auto ce = c_element();
+			ce->size_ = size;
+			ce->inner_padding_ = Vec4f(padding);
+			ce->frame_thickness_ = frame_thickness;
+			ce->clip_children = true;
+			if (size == 0.f)
+				c_aligner(SizeFitParent, SizeFitParent);
+			auto cl = c_layout(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical);
+			cl->item_padding = 4.f;
+			cl->width_fit_children = false;
+			cl->height_fit_children = false;
+			cl->fence = 2;
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_scroll_view1(float step = 1.f)
+		{
+			auto type = current_parent()->get_component(cLayout)->type == LayoutHorizontal ? ScrollbarVertical : ScrollbarHorizontal;
+			{
+				e_empty();
+				auto ce = c_element();
+				ce->size_ = 10.f;
+				ce->color_ = ui::style(ui::ScrollbarColor).c();
+				auto ca = c_aligner(SizeFixed, SizeFixed);
+				if (type == ScrollbarVertical)
+					ca->height_policy_ = SizeFitParent;
+				else
+					ca->width_policy_ = SizeFitParent;
+				c_event_receiver();
+				c_scrollbar();
+				push_parent(current_entity());
+			}
+			cScrollbarThumb* ct;
+			{
+				e_empty();
+				c_element()->size_ = 10.f;
+				c_event_receiver();
+				auto cs = c_style_color();
+				cs->color_normal = ui::style(ui::ScrollbarThumbColorNormal).c();
+				cs->color_hovering = ui::style(ui::ScrollbarThumbColorHovering).c();
+				cs->color_active = ui::style(ui::ScrollbarThumbColorActive).c();
+				cs->style();
+				ct = c_scrollbar_thumb(type);
+				ct->step = step;
+				pop_parent();
+			}
+			{
+				e_empty();
+				c_element();
+				auto ce = c_event_receiver();
+				ce->penetrable = true;
+				ce->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto thumb = (*(cScrollbarThumb**)c);
+					if (is_mouse_scroll(action, key))
+						thumb->update(-pos.x() * 20.f);
+				}, new_mail_p(ct));
+				c_aligner(SizeFitParent, SizeFitParent);
+			}
+			pop_parent();
+		}
+
+		inline Entity* e_begin_list(bool size_fit_parent)
 		{
 			auto e = e_empty();
 			c_element();
+			c_event_receiver();
+			if (size_fit_parent)
+				c_aligner(SizeFitParent, SizeFitParent);
+			auto cl = c_layout(LayoutVertical);
+			cl->item_padding = 4.f;
+			cl->width_fit_children = false;
+			cl->height_fit_children = false;
+			c_list();
+			push_parent(e);
 			return e;
 		}
 
 		inline void e_end_list()
 		{
+			pop_parent();
+		}
 
+		inline Entity* e_list_item(const wchar_t* text)
+		{
+			auto e = e_empty();
+			c_element();
+			c_text()->set_text(text);
+			c_event_receiver();
+			auto cs = c_style_color2();
+			cs->color_normal[0] = ui::style(ui::FrameColorNormal).c();
+			cs->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+			cs->color_active[0] = ui::style(ui::FrameColorActive).c();
+			cs->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+			cs->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+			cs->color_active[1] = ui::style(ui::SelectedColorActive).c();
+			cs->style();
+			c_aligner(SizeFitParent, SizeFixed);
+			c_list_item();
+			return e;
+		}
+
+		inline Entity* e_begin_tree(bool fit_parent, float padding = 0.f, float frame_thickness = 0.f)
+		{
+			auto e = e_empty();
+			auto ce = c_element();
+			ce->inner_padding_ = Vec4f(padding);
+			ce->frame_thickness_ = frame_thickness;
+			c_event_receiver();
+			if (fit_parent)
+				c_aligner(SizeFitParent, SizeFitParent);
+			auto cl = c_layout(LayoutVertical);
+			cl->item_padding = 4.f;
+			cl->width_fit_children = !fit_parent;
+			cl->height_fit_children = !fit_parent;
+			c_tree();
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_tree()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_tree_leaf(const wchar_t* text)
+		{
+			auto e = e_empty();
+			c_element()->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] + 4.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(text);
+			c_event_receiver();
+			auto cs = c_style_color2();
+			cs->color_normal[0] = Vec4c(0);
+			cs->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+			cs->color_active[0] = ui::style(ui::FrameColorActive).c();
+			cs->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+			cs->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+			cs->color_active[1] = ui::style(ui::SelectedColorActive).c();
+			cs->style();
+			c_tree_leaf();
+			return e;
+		}
+
+		inline Entity* e_begin_tree_node(const wchar_t* text)
+		{
+			auto e = e_empty();
+			c_element();
+			c_layout(LayoutVertical)->item_padding = 4.f;
+			c_tree_node();
+			push_parent(e);
+			{
+				auto e = e_empty();
+				c_element()->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] + 4.f, 2.f, 4.f, 2.f);
+				c_text()->set_text(text);
+				c_event_receiver();
+				auto cs = c_style_color2();
+				cs->color_normal[0] = Vec4c(0);
+				cs->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+				cs->color_active[0] = ui::style(ui::FrameColorActive).c();
+				cs->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+				cs->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+				cs->color_active[1] = ui::style(ui::SelectedColorActive).c();
+				cs->style();
+				c_layout();
+				c_tree_node_title();
+				push_parent(e);
+				{
+					e_empty();
+					c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
+					c_text()->set_text(Icon_ANGLE_DOWN);
+					c_event_receiver();
+					auto cs = c_style_text_color();
+					cs->color_normal = ui::style(ui::TextColorNormal).c();
+					cs->color_else = ui::style(ui::TextColorElse).c();
+					cs->style();
+					c_tree_node_arrow();
+				}
+				pop_parent();
+			}
+			auto es = e_empty();
+			c_element()->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0] * 0.5f, 0.f, 0.f, 0.f);
+			c_layout(LayoutVertical)->item_padding = 4.f;
+			pop_parent();
+			push_parent(es);
+			return e;
+		}
+
+		inline void e_end_tree_node()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_menu()
+		{
+			auto e = Entity::create();
+			set_current_entity(e);
+			make_menu(e);
+			return e;
+		}
+
+		inline Entity* e_begin_combobox(float width)
+		{
+			auto e = e_empty();
+			auto ce = c_element();
+			ce->size_ = Vec2f(width + 8.f, ui::style(ui::FontSize).u()[0] + 4.f);
+			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f + ui::style(ui::FontSize).u()[0], 2.f);
+			ce->frame_color_ = ui::style(ui::TextColorNormal).c();
+			ce->frame_thickness_ = 2.f;
+			c_text()->auto_width_ = false;
+			c_event_receiver();
+			auto cmb = c_menu_button();
+			cmb->root = current_root();
+			cmb->popup_side = SideS;
+			cmb->move_to_open = false;
+			cmb->layer_penetrable = true;
+			auto cs = c_style_color();
+			cs->color_normal = ui::style(ui::FrameColorNormal).c();
+			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
+			cs->color_active = ui::style(ui::FrameColorActive).c();
+			cs->style();
+			c_layout();
+			c_combobox();
+			push_parent(e);
+			e_empty();
+			c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(Icon_ANGLE_DOWN);
+			c_aligner(AlignxRight, AlignyFree);
+			pop_parent();
+			push_parent(cmb->menu);
+			return e;
+		}
+
+		inline void e_end_combobox()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_combobox_item(const wchar_t* text)
+		{
+			auto e = e_empty();
+			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(text);
+			c_event_receiver();
+			auto cs = c_style_color2();
+			cs->color_normal[0] = ui::style(ui::FrameColorNormal).c();
+			cs->color_hovering[0] = ui::style(ui::FrameColorHovering).c();
+			cs->color_active[0] = ui::style(ui::FrameColorActive).c();
+			cs->color_normal[1] = ui::style(ui::SelectedColorNormal).c();
+			cs->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
+			cs->color_active[1] = ui::style(ui::SelectedColorActive).c();
+			cs->style();
+			c_aligner(SizeGreedy, SizeFixed);
+			c_combobox_item();
+			return e;
+		}
+
+		inline Entity* e_begin_menu_bar()
+		{
+			auto e = e_empty();
+			c_element()->color_ = ui::style(ui::FrameColorNormal).c();
+			c_aligner(SizeFitParent, SizeFixed);
+			c_layout(LayoutHorizontal)->item_padding = 4.f;
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_menu_bar()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_menu_top(const wchar_t* text)
+		{
+			auto e = e_empty();
+			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(text);
+			c_event_receiver();
+			auto cmb = c_menu_button();
+			cmb->root = current_root();
+			cmb->popup_side = SideS;
+			cmb->move_to_open = true;
+			cmb->layer_penetrable = true;
+			auto cs = c_style_color();
+			cs->color_normal = Vec4c(0);
+			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
+			cs->color_active = ui::style(ui::FrameColorActive).c();
+			cs->style();
+			push_parent(cmb->menu);
+			return e;
+		}
+
+		inline void e_end_menu_top()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_menu(const wchar_t* text)
+		{
+			auto e = e_empty();
+			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f + ui::style(ui::FontSize).u()[0], 2.f);
+			c_text()->set_text(text);
+			c_event_receiver();
+			auto cmb = c_menu_button();
+			cmb->root = current_root();
+			cmb->popup_side = SideE;
+			cmb->move_to_open = true;
+			cmb->layer_penetrable = false;
+			auto cs = c_style_color();
+			cs->color_normal = ui::style(ui::FrameColorNormal).c();
+			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
+			cs->color_active = ui::style(ui::FrameColorActive).c();
+			cs->style();
+			c_aligner(SizeGreedy, SizeFixed);
+			c_layout();
+			push_parent(e);
+			e_empty();
+			c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(Icon_CARET_RIGHT);
+			c_aligner(AlignxRight, AlignyFree);
+			pop_parent();
+			push_parent(cmb->menu);
+			return e;
+		}
+
+		inline void e_end_menu()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c, Entity* e), const Mail<>& mail)
+		{
+			auto e = e_empty();
+			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(text);
+			struct WrapedMail
+			{
+				Entity* root;
+				void(*f)(void*, Entity*);
+				Mail<> m;
+				Entity* e;
+
+				~WrapedMail()
+				{
+					delete_mail(m);
+				}
+			};
+			auto new_m = new_mail<WrapedMail>();
+			new_m.p->root = current_root();
+			new_m.p->f = func;
+			new_m.p->m = mail;
+			new_m.p->e = e;
+			c_event_receiver()->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					auto& m = *(WrapedMail*)c;
+					remove_top_layer(m.root);
+					m.f(m.m.p, m.e);
+				}
+			}, new_m);
+			auto cs = c_style_color();
+			cs->color_normal = ui::style(ui::FrameColorNormal).c();
+			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
+			cs->color_active = ui::style(ui::FrameColorActive).c();
+			cs->style();
+			c_aligner(SizeGreedy, SizeFixed);
+			return e;
+		}
+
+		inline Entity* e_begin_menu_popup()
+		{
+			auto em = e_menu();
+			struct Capture
+			{
+				Entity* menu;
+				Entity* root;
+			}capture;
+			capture.menu = em;
+			capture.root = current_root();
+			current_parent()->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				if (is_mouse_down(action, key, true) && key == Mouse_Right)
+				{
+					auto& capture = *(Capture*)c;
+					popup_menu(capture.menu, capture.root, (Vec2f)pos);
+				}
+			}, new_mail(&capture));
+			push_parent(em);
+			return em;
+		}
+
+		inline void e_end_menu_popup()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_docker_container(const Vec2f& pos, const Vec2f& size)
+		{
+			auto e = e_empty();
+			make_docker_container(e, pos, size);
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_docker_container()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_docker_layout(LayoutType type)
+		{
+			auto is_parent_container = current_parent()->name_hash() == FLAME_CHASH("docker_container");
+			auto pos = -1;
+			if (is_parent_container)
+				pos = 0;
+			else
+			{
+				if (current_parent()->child_count() == 1)
+					pos = 0;
+				else
+					pos = 2;
+			}
+			auto e = e_empty(pos);
+			make_docker_layout(e, type);
+			if (!is_parent_container)
+			{
+				auto ca = e->get_component(cAligner);
+				ca->x_align_ = AlignxFree;
+				ca->y_align_ = AlignyFree;
+				ca->using_padding_ = false;
+			}
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_docker_layout()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_docker()
+		{
+			auto is_parent_container = current_parent()->name_hash() == FLAME_CHASH("docker_container");
+			auto pos = -1;
+			if (is_parent_container)
+				pos = 0;
+			else
+			{
+				if (current_parent()->child_count() == 1)
+					pos = 0;
+				else
+					pos = 2;
+			}
+			auto e = e_empty(pos);
+			make_docker(e);
+			if (!is_parent_container)
+			{
+				auto ca = e->get_component(cAligner);
+				ca->x_align_ = AlignxFree;
+				ca->y_align_ = AlignyFree;
+				ca->using_padding_ = false;
+			}
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_docker()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_docker_page(const wchar_t* title)
+		{
+			push_parent(current_parent()->child(0));
+			auto et = e_empty();
+			et->set_name("docker_tab");
+			c_element()->inner_padding_ = Vec4f(4.f, 2.f, ui::style(ui::FontSize).u()[0] + 6.f, 2.f);
+			c_text()->set_text(title);
+			c_event_receiver();
+			auto csb = c_style_color2();
+			csb->color_normal[0] = ui::style(ui::TabColorNormal).c();
+			csb->color_hovering[0] = ui::style(ui::TabColorElse).c();
+			csb->color_active[0] = ui::style(ui::TabColorElse).c();
+			csb->color_normal[1] = ui::style(ui::SelectedTabColorNormal).c();
+			csb->color_hovering[1] = ui::style(ui::SelectedTabColorElse).c();
+			csb->color_active[1] = ui::style(ui::SelectedTabColorElse).c();
+			csb->style();
+			auto cst = c_style_text_color2();
+			cst->color_normal[0] = ui::style(ui::TabTextColorNormal).c();
+			cst->color_else[0] = ui::style(ui::TabTextColorElse).c();
+			cst->color_normal[1] = ui::style(ui::SelectedTabTextColorNormal).c();
+			cst->color_else[1] = ui::style(ui::SelectedTabTextColorElse).c();
+			cst->style();
+			c_list_item();
+			c_layout();
+			auto cdt = c_docker_tab();
+			cdt->root = current_root();
+			push_parent(et);
+			e_button(Icon_WINDOW_CLOSE, [](void* c, Entity*) {
+				auto thiz = (*(cDockerTab**)c);
+				looper().add_event([](void* c) {
+					auto thiz = (*(cDockerTab**)c);
+					thiz->take_away(true);
+				}, new_mail_p(thiz));
+			}, new_mail_p(cdt), false);
+			c_aligner(AlignxRight, AlignyFree);
+			pop_parent();
+			pop_parent();
+			push_parent(current_parent()->child(1));
+			auto ep = e_empty();
+			{
+				auto ce = c_element();
+				ce->color_ = ui::style(ui::WindowColor).c();
+				ce->clip_children = true;
+				c_aligner(SizeFitParent, SizeFitParent);
+			}
+			pop_parent();
+			push_parent(ep);
+			return ep;
+		}
+
+		inline void e_end_docker_page()
+		{
+			pop_parent();
 		}
 	}
 }

@@ -61,19 +61,16 @@ namespace flame
 		{
 			auto l = get_top_layer(parent);
 
-			if (l->name_hash() == FLAME_CHASH("layer_menu"))
+			for (auto i = 0; i < l->child_count(); i++)
 			{
-				for (auto i = 0; i < l->child_count(); i++)
+				auto e = l->child(i);
+				auto menu = e->get_component(cMenu);
+				if (menu)
 				{
-					auto e = l->child(i);
-					auto menu = e->get_component(cMenu);
-					if (menu)
-					{
-						if (menu->popuped_by)
-							menu->popuped_by->close();
-						else
-							close_menu(e);
-					}
+					if (menu->button)
+						menu->button->close();
+					else
+						close_menu(e);
 				}
 			}
 

@@ -19,8 +19,8 @@ namespace flame
 
 		Entity* root;
 		Entity* menu;
-		bool move_to_open;
 		Side popup_side;
+		bool move_to_open;
 		bool layer_penetrable;
 
 		bool opened;
@@ -40,7 +40,7 @@ namespace flame
 
 	struct cMenu : Component
 	{
-		cMenuButton* popuped_by;
+		cMenuButton* button;
 
 		cMenu() :
 			Component("cMenu")
@@ -52,9 +52,4 @@ namespace flame
 
 	FLAME_UNIVERSE_EXPORTS void close_menu(Entity* menu);
 	FLAME_UNIVERSE_EXPORTS void popup_menu(Entity* menu, Entity* root, const Vec2f& pos);
-
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu();
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_item(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menu_button(graphics::FontAtlas* font_atlas, float font_size_scale, const wchar_t* text, Entity* root, Entity* menu, bool move_to_open, Side popup_side, bool layer_penetrable, bool width_greedy, bool background_transparent, const wchar_t* arrow_text);
-	FLAME_UNIVERSE_EXPORTS Entity* create_standard_menubar();
 }

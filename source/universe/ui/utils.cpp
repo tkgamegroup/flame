@@ -5,8 +5,9 @@ namespace flame
 	namespace ui
 	{
 		static std::stack<graphics::FontAtlas*> _font_atlases;
-		static std::stack<Entity*> _parents;
 		static Entity* _current_entity;
+		static std::stack<Entity*> _parents;
+		static Entity* _current_root;
 
 		graphics::FontAtlas* current_font_atlas()
 		{
@@ -46,6 +47,16 @@ namespace flame
 		void pop_parent()
 		{
 			_parents.pop();
+		}
+
+		Entity* current_root()
+		{
+			return _current_root;
+		}
+
+		void set_current_root(Entity* e)
+		{
+			_current_root = e;
 		}
 	}
 }

@@ -11,6 +11,7 @@
 #include <flame/universe/components/window.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
+#include <flame/universe/ui/make_window.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -331,16 +332,14 @@ namespace flame
 								auto page_element = thiz->page_element;
 								auto page_aligner = e_page->get_component(cAligner);
 
-								auto e_container = get_docker_container_model()->copy();
+								auto e_container = Entity::create();
+								make_docker_container(e_container, thiz->drop_pos, page_element->size_);
 								thiz->root->add_child(e_container);
-								{
-									auto c_element = e_container->get_component(cElement);
-									c_element->set_pos(thiz->drop_pos);
-									c_element->set_size(page_element->size_);
-								}
 
-								auto e_docker = get_docker_model()->copy();
+								auto e_docker = Entity::create();
+								make_docker(e_docker);
 								e_container->add_child(e_docker, 0);
+
 								auto e_tabbar = e_docker->child(0);
 								auto e_pages = e_docker->child(1);
 
@@ -678,7 +677,8 @@ namespace flame
 									auto docker_aligner = docker->get_component(cAligner);
 									auto p = docker->parent();
 									auto docker_idx = docker->order_ & 0xffffff;
-									auto layout = get_docker_layout_model()->copy();
+									auto layout = Entity::create();
+									make_docker_layout(layout, LayoutFree);
 
 									if (p->name_hash() == FLAME_CHASH("docker_container"))
 									{
@@ -712,7 +712,8 @@ namespace flame
 									p->remove_child(docker, false);
 									p->add_child(layout, docker_idx);
 
-									auto new_docker = get_docker_model()->copy();
+									auto new_docker = Entity::create();
+									make_docker(new_docker);
 									auto new_docker_element = new_docker->get_component(cElement);
 									auto new_docker_aligner = new_docker->get_component(cAligner);
 									{
@@ -741,6 +742,10 @@ namespace flame
 									auto splitter = e_splitter->get_component(cSplitter);
 									if (thiz->dock_side == SideW || thiz->dock_side == SideE)
 									{
+										layout->get_component(cLayout)->type = LayoutHorizontal;
+										splitter->type = SplitterHorizontal;
+										e_splitter->get_component(cAligner)->set_height_policy(SizeFitParent);
+
 										auto w = (docker_element->size_.x() - splitter_element->size_.x()) * 0.5f;
 										docker_element->set_width(w);
 										new_docker_element->set_width(w);
@@ -756,12 +761,8 @@ namespace flame
 									else
 									{
 										layout->get_component(cLayout)->type = LayoutVertical;
-										splitter_element->set_height(splitter_element->size_.x());
-										splitter_element->set_width(0.f);
 										splitter->type = SplitterVertical;
-										auto splitter_aligner = e_splitter->get_component(cAligner);
-										splitter_aligner->set_width_policy(SizeFitParent);
-										splitter_aligner->set_height_policy(SizeFixed);
+										e_splitter->get_component(cAligner)->set_width_policy(SizeFitParent);
 
 										auto w = docker_element->size_.x();
 										docker_element->set_width(w);
@@ -813,269 +814,5 @@ namespace flame
 	cDockerPages* cDockerPages::create()
 	{
 		return new cDockerPagesPrivate;
-	}
-
-	Entity* create_standard_docker_tab(graphics::FontAtlas* font_atlas, const wchar_t* title, Entity* root)
-	{
-		auto tab = Entity::create();
-		tab->set_name("docker_tab");
-
-		auto c_element = cElement::create();
-		c_element->inner_padding_ = Vec4f(4.f, 2.f, ui::style(ui::FontSize).u()[0] + 6.f, 2.f);
-		tab->add_component(c_element);
-
-		auto c_text = cText::create(font_atlas);
-		c_text->set_text(title);
-		tab->add_component(c_text);
-
-		tab->add_component(cEventReceiver::create());
-
-		auto c_docker_tab = cDockerTab::create();
-		c_docker_tab->root = root;
-		tab->add_component(c_docker_tab);
-
-		auto c_background_style = cStyleColor2::create();
-		c_background_style->color_normal[0] = ui::style(ui::TabColorNormal).c();
-		c_background_style->color_hovering[0] = ui::style(ui::TabColorElse).c();
-		c_background_style->color_active[0] = ui::style(ui::TabColorElse).c();
-		c_background_style->color_normal[1] = ui::style(ui::SelectedTabColorNormal).c();
-		c_background_style->color_hovering[1] = ui::style(ui::SelectedTabColorElse).c();
-		c_background_style->color_active[1] = ui::style(ui::SelectedTabColorElse).c();
-		tab->add_component(c_background_style);
-
-		auto c_text_style = cStyleTextColor2::create();
-		c_text_style->color_normal[0] = ui::style(ui::TabTextColorNormal).c();
-		c_text_style->color_else[0] = ui::style(ui::TabTextColorElse).c();
-		c_text_style->color_normal[1] = ui::style(ui::SelectedTabTextColorNormal).c();
-		c_text_style->color_else[1] = ui::style(ui::SelectedTabTextColorElse).c();
-		tab->add_component(c_text_style);
-
-		tab->add_component(cListItem::create());
-
-		tab->add_component(cLayout::create(LayoutFree));
-
-		auto e_close = Entity::create();
-		tab->add_child(e_close);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(2.f, 2.f, 4.f, 2.f);
-			e_close->add_component(c_element);
-
-			auto c_text = cText::create(font_atlas);
-			c_text->set_text(Icon_WINDOW_CLOSE);
-			e_close->add_component(c_text);
-
-			auto c_event_receiver = cEventReceiver::create();
-			c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_clicked(action, key))
-				{
-					auto thiz = (*(cDockerTabPrivate**)c);
-					looper().add_event([](void* c) {
-						auto thiz = (*(cDockerTabPrivate**)c);
-						thiz->take_away(true);
-					}, new_mail_p(thiz));
-				}
-			}, new_mail_p(c_docker_tab));
-			e_close->add_component(c_event_receiver);
-
-			auto c_aligner = cAligner::create();
-			c_aligner->x_align_ = AlignxRight;
-			e_close->add_component(c_aligner);
-		}
-
-		return tab;
-	}
-
-	static Entity* docker_page_model;
-	Entity* get_docker_page_model()
-	{
-		if (!docker_page_model)
-		{
-			docker_page_model = Entity::create();
-			docker_page_model->set_name("docker_page");
-
-			auto c_element = cElement::create();
-			c_element->color_ = ui::style(ui::WindowColor).c();
-			c_element->clip_children = true;
-			docker_page_model->add_component(c_element);
-
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy_ = SizeFitParent;
-			c_aligner->height_policy_ = SizeFitParent;
-			docker_page_model->add_component(c_aligner);
-		}
-		return docker_page_model;
-	}
-
-	static Entity* docker_model;
-	Entity* get_docker_model()
-	{
-		if (!docker_model)
-		{
-			docker_model = Entity::create();
-			docker_model->set_name("docker");
-
-			docker_model->add_component(cElement::create());
-
-			auto c_aligner = cAligner::create();
-			c_aligner->x_align_ = AlignxLeft;
-			c_aligner->y_align_ = AlignyTop;
-			c_aligner->width_policy_ = SizeFitParent;
-			c_aligner->height_policy_ = SizeFitParent;
-			c_aligner->using_padding_ = true;
-			docker_model->add_component(c_aligner);
-
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->width_fit_children = false;
-			c_layout->height_fit_children = false;
-			docker_model->add_component(c_layout);
-
-			auto e_tabbar = Entity::create();
-			e_tabbar->set_name("docker_tabbar");
-			docker_model->add_child(e_tabbar);
-			{
-				auto c_element = cElement::create();
-				c_element->clip_children = true;
-				e_tabbar->add_component(c_element);
-
-				e_tabbar->add_component(cEventReceiver::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeFitParent;
-				e_tabbar->add_component(c_aligner);
-
-				e_tabbar->add_component(cLayout::create(LayoutHorizontal));
-
-				e_tabbar->add_component(cList::create(false));
-
-				e_tabbar->add_component(cDockerTabbar::create());
-			}
-
-			auto e_pages = Entity::create();
-			e_pages->set_name("docker_pages");
-			docker_model->add_child(e_pages);
-			{
-				e_pages->add_component(cElement::create());
-
-				e_pages->add_component(cEventReceiver::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeFitParent;
-				c_aligner->height_policy_ = SizeFitParent;
-				e_pages->add_component(c_aligner);
-
-				e_pages->add_component(cLayout::create(LayoutFree));
-
-				e_pages->add_component(cDockerPages::create());
-			}
-		}
-		return docker_model;
-	}
-
-	static Entity* docker_layout_model;
-	Entity* get_docker_layout_model()
-	{
-		if (!docker_layout_model)
-		{
-			docker_layout_model = Entity::create();
-			docker_layout_model->set_name("docker_layout");
-
-			docker_layout_model->add_component(cElement::create());
-
-			auto c_aligner = cAligner::create();
-			c_aligner->x_align_ = AlignxLeft;
-			c_aligner->y_align_ = AlignyTop;
-			c_aligner->width_policy_ = SizeFitParent;
-			c_aligner->height_policy_ = SizeFitParent;
-			c_aligner->using_padding_ = true;
-			docker_layout_model->add_component(c_aligner);
-
-			auto c_layout = cLayout::create(LayoutHorizontal);
-			c_layout->width_fit_children = false;
-			c_layout->height_fit_children = false;
-			docker_layout_model->add_component(c_layout);
-
-			auto e_spliter = Entity::create();
-			docker_layout_model->add_child(e_spliter);
-			{
-				auto c_element = cElement::create();
-				c_element->size_.x() = 8.f;
-				e_spliter->add_component(c_element);
-
-				e_spliter->add_component(cEventReceiver::create());
-
-				auto c_style = cStyleColor::create();
-				c_style->color_normal = Vec4c(0);
-				c_style->color_hovering = ui::style(ui::FrameColorHovering).c();
-				c_style->color_active = ui::style(ui::FrameColorActive).c();
-				e_spliter->add_component(c_style);
-
-				e_spliter->add_component(cSplitter::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->height_policy_ = SizeFitParent;
-				e_spliter->add_component(c_aligner);
-			}
-
-		}
-		return docker_layout_model;
-	}
-
-	static Entity* docker_container_model;
-	Entity* get_docker_container_model()
-	{
-		if (!docker_container_model)
-		{
-			docker_container_model = Entity::create();
-			docker_container_model->set_name("docker_container");
-
-			auto c_element = cElement::create();
-			c_element->size_ = 200.f;
-			c_element->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-			c_element->color_ = ui::style(ui::DockerColor).c();
-			docker_container_model->add_component(c_element);
-
-			docker_container_model->add_component(cEventReceiver::create());
-
-			docker_container_model->add_component(cLayout::create(LayoutFree));
-
-			docker_container_model->add_component(cMoveable::create());
-
-			auto e_bring_to_front = Entity::create();
-			docker_container_model->add_child(e_bring_to_front);
-			{
-				e_bring_to_front->add_component(cElement::create());
-
-				auto c_event_receiver = cEventReceiver::create();
-				c_event_receiver->penetrable = true;
-				e_bring_to_front->add_component(c_event_receiver);
-
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeFitParent;
-				c_aligner->height_policy_ = SizeFitParent;
-				e_bring_to_front->add_component(c_aligner);
-
-				e_bring_to_front->add_component(cBringToFront::create());
-			}
-
-			auto e_size_dragger = Entity::create();
-			docker_container_model->add_child(e_size_dragger);
-			{
-				auto c_element = cElement::create();
-				c_element->size_ = 8.f;
-				c_element->color_ = Vec4c(200, 100, 100, 255);
-				e_size_dragger->add_component(c_element);
-
-				e_size_dragger->add_component(cEventReceiver::create());
-
-				auto c_aligner = cAligner::create();
-				c_aligner->x_align_ = AlignxRight;
-				c_aligner->y_align_ = AlignyBottom;
-				e_size_dragger->add_component(c_aligner);
-
-				e_size_dragger->add_component(cSizeDragger::create());
-			}
-		}
-		return docker_container_model;
 	}
 }

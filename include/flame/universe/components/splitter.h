@@ -19,6 +19,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static cSplitter* create();
+		FLAME_UNIVERSE_EXPORTS static cSplitter* create(SplitterType type);
 	};
 }
