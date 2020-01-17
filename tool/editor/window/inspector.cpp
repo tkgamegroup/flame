@@ -1,19 +1,5 @@
-#include <flame/graphics/font.h>
 #include <flame/serialize.h>
-#include <flame/universe/topmost.h>
-#include <flame/universe/default_style.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/text.h>
-#include <flame/universe/components/edit.h>
-#include <flame/universe/components/checkbox.h>
-#include <flame/universe/components/menu.h>
-#include <flame/universe/components/combobox.h>
-#include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
-#include <flame/universe/components/scrollbar.h>
-#include <flame/universe/components/tree.h>
-#include <flame/universe/components/window.h>
+#include <flame/universe/ui/utils.h>
 
 #include "../app.h"
 #include "../data_tracker.h"
@@ -21,40 +7,20 @@
 #include "scene_editor.h"
 #include "hierarchy.h"
 
-Entity* create_item(const std::wstring& title)
+void begin_item(const wchar_t* title)
 {
-	auto e_item = Entity::create();
-	{
-		e_item->add_component(cElement::create());
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f);
+	ui::e_text(title);
+	auto e_data = ui::e_empty();
+	ui::c_element()->inner_padding_.x() = ui::style(ui::FontSize).u()[0];
+	ui::c_layout(LayoutVertical)->item_padding = 2.f;
+	ui::e_end_layout();
+	ui::push_parent(e_data);
+}
 
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 4.f;
-		e_item->add_component(c_layout);
-	}
-
-	auto e_title = Entity::create();
-	e_item->add_child(e_title);
-	{
-		e_title->add_component(cElement::create());
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(title.c_str());
-		e_title->add_component(c_text);
-	}
-
-	auto e_data = Entity::create();
-	e_item->add_child(e_data);
-	{
-		auto c_element = cElement::create();
-		c_element->inner_padding_ = Vec4f(default_style.font_size, 0.f, 0.f, 0.f);
-		e_data->add_component(c_element);
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 2.f;
-		e_data->add_component(c_layout);
-	}
-
-	return e_item;
+void end_item()
+{
+	ui::pop_parent();
 }
 
 struct cComponentDealer : Component
@@ -89,10 +55,9 @@ struct cComponentDealer : Component
 };
 
 template<class T>
-void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
+void create_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 {
-	auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
-	parent->add_child(e_edit);
+	auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 
 	struct Capture
 	{
@@ -116,11 +81,11 @@ void create_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo*
 
 	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
 	c_tracker->data = pdata;
-	parent->add_component(c_tracker);
+	ui::current_parent()->add_component(c_tracker);
 }
 
 template<uint N, class T>
-void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableInfo* v)
+void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 {
 	struct Capture
 	{
@@ -133,8 +98,8 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 	capture.v = v;
 	for (auto i = 0; i < N; i++)
 	{
-		auto e_edit = create_drag_edit(app.font_atlas_pixel, 1.f, std::is_floating_point<T>::value);
-		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 1.f, s2w(Vec<N, T>::coord_name(i)).c_str()));
+		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
 		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
@@ -147,18 +112,18 @@ void create_vec_edit(Entity* parent, void* pdata, cComponentDealer* d, VariableI
 				capture.drag_text->set_text(text);
 			}
 		}, new_mail(&capture));
+		ui::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
+		ui::e_end_layout();
 	}
 
 	auto c_tracker = new_u_object<cDigitalVecDataTracker<N, T>>();
 	c_tracker->data = pdata;
-	parent->add_component(c_tracker);
+	ui::current_parent()->add_component(c_tracker);
 }
 
 struct cInspectorPrivate : cInspector
 {
 	void* module;
-
-	Entity* e_add_component_menu;
 
 	~cInspectorPrivate()
 	{
@@ -172,83 +137,53 @@ struct cInspectorPrivate : cInspector
 		auto selected = editor->selected;
 
 		e_layout->remove_child((Entity*)FLAME_INVALID_POINTER);
+		ui::push_parent(e_layout);
 		if (!selected)
-		{
-			auto e_text = Entity::create();
-			e_layout->add_child(e_text);
-			{
-				e_text->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				c_text->set_text(L"Nothing Selected");
-				e_text->add_component(c_text);
-			}
-		}
+			ui::e_text(L"Nothing Selected");
 		else
 		{
-			{
-				auto e_item = create_item(L"name");
-				e_layout->add_child(e_item);
-
-				auto e_edit = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-				e_item->child(1)->add_child(e_edit);
-				auto c_text = e_edit->get_component(cText);
-				c_text->set_text(s2w(selected->name()).c_str());
-				c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-					auto editor = *(cSceneEditor**)c;
-					if (hash == FLAME_CHASH("text"))
+			begin_item(L"name");
+			auto c_text = ui::e_edit(100.f, s2w(selected->name()).c_str())->get_component(cText)
+				->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+				auto editor = *(cSceneEditor**)c;
+				if (hash == FLAME_CHASH("text"))
+				{
+					auto text = ((cText*)t)->text();
+					editor->selected->set_name(w2s(text).c_str());
+					if (editor->hierarchy)
 					{
-						auto text = ((cText*)t)->text();
-						editor->selected->set_name(w2s(text).c_str());
-						if (editor->hierarchy)
-						{
-							auto item = editor->hierarchy->find_item(editor->selected);
-							if (item->get_component(cTreeNode))
-								item->child(0)->get_component(cText)->set_text(text);
-							else
-								item->get_component(cText)->set_text(text);
-						}
+						auto item = editor->hierarchy->find_item(editor->selected);
+						if (item->get_component(cTreeNode))
+							item->child(0)->get_component(cText)->set_text(text);
+						else
+							item->get_component(cText)->set_text(text);
 					}
-				}, new_mail_p(editor));
-			}
-			{
-				auto e_item = create_item(L"visible");
-				e_layout->add_child(e_item);
-
-				auto e_checkbox = create_standard_checkbox();
-				e_item->child(1)->add_child(e_checkbox);
-				auto checkbox = e_checkbox->get_component(cCheckbox);
-				checkbox->set_checked(selected->visibility_, false);
-				checkbox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-					if (hash == FLAME_CHASH("checked"))
-						(*(Entity**)c)->set_visibility(((cCheckbox*)cb)->checked);
-				}, new_mail_p(selected));
-			}
+				}
+			}, new_mail_p(editor));
+			end_item();
+			begin_item(L"visible");
+			auto checkbox = ui::e_checkbox(L"", selected->visibility_)->get_component(cCheckbox)->
+				data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+				if (hash == FLAME_CHASH("checked"))
+					(*(Entity**)c)->set_visibility(((cCheckbox*)cb)->checked);
+			}, new_mail_p(selected));
+			end_item();
 
 			auto components = selected->get_components();
 			for (auto i = 0; i < components.s; i++)
 			{
 				auto component = components.v[i];
 
-				auto e_component = Entity::create();
-				e_layout->add_child(e_component);
+				auto udt = find_udt(app.dbs, FLAME_HASH((std::string("D#Serializer_") + component->name).c_str()));
+
+				auto e_component = ui::e_begin_layout(0.f, 0.f, LayoutVertical, 2.f);
 				{
-					auto c_element = cElement::create();
+					auto c_element = e_component->get_component(cElement);
 					c_element->inner_padding_ = Vec4f(4.f);
 					c_element->frame_thickness_ = 2.f;
 					c_element->frame_color_ = Vec4f(0, 0, 0, 255);
-					e_component->add_component(c_element);
-
-					auto c_aligner = cAligner::create();
-					c_aligner->width_policy_ = SizeFitParent;
-					e_component->add_component(c_aligner);
-
-					auto c_layout = cLayout::create(LayoutVertical);
-					c_layout->item_padding = 2.f;
-					e_component->add_component(c_layout);
 				}
-
-				auto udt = find_udt(app.dbs, FLAME_HASH((std::string("D#Serializer_") + component->name).c_str()));
+				ui::c_aligner(SizeFitParent, SizeFixed);
 
 				auto c_dealer = new_u_object<cComponentDealer>();
 				c_dealer->component = component;
@@ -277,60 +212,32 @@ struct cInspectorPrivate : cInspector
 				}
 				e_component->add_component(c_dealer);
 
-				auto e_name = Entity::create();
-				e_component->add_child(e_name);
+				auto e_name = ui::e_text(s2w(component->name).c_str());
+				e_name->get_component(cElement)->inner_padding_.z() = 4.f + ui::style(ui::FontSize).u()[0];
+				e_name->get_component(cText)->color = Vec4c(30, 40, 160, 255);
+				ui::c_layout();
+				ui::push_parent(e_name);
+				struct Capture
 				{
-					auto c_element = cElement::create();
-					c_element->inner_padding_ = Vec4f(0.f, 0.f, 4.f + default_style.font_size, 0.f);
-					e_name->add_component(c_element);
-
-					auto c_text = cText::create(app.font_atlas_pixel);
-					c_text->color = Vec4c(30, 40, 160, 255);
-					c_text->set_text(s2w(component->name).c_str());
-					e_name->add_component(c_text);
-
-					e_name->add_component(cLayout::create(LayoutFree));
-				}
-
-				auto e_close = Entity::create();
-				e_name->add_child(e_close);
-				{
-					e_close->add_component(cElement::create());
-
-					auto c_text = cText::create(app.font_atlas_pixel);
-					c_text->color = Vec4c(200, 40, 20, 255);
-					c_text->set_text(Icon_TIMES);
-					e_close->add_component(c_text);
-
-					auto c_event_receiver = cEventReceiver::create();
-					struct Capture
-					{
-						Entity* e;
-						Component* c;
-					}capture;
-					capture.e = e_component;
-					capture.c = component;
-					c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					Entity* e;
+					Component* c;
+				}capture;
+				capture.e = e_component;
+				capture.c = component;
+				ui::e_button(Icon_TIMES, [](void* c, Entity*) {
+					auto& capture = *(Capture*)c;
+					Capture _capture;
+					_capture.e = capture.e;
+					_capture.c = capture.c;
+					looper().add_event([](void* c) {
 						auto& capture = *(Capture*)c;
-
-						if (is_mouse_clicked(action, key))
-						{
-							Capture _capture;
-							_capture.e = capture.e;
-							_capture.c = capture.c;
-							looper().add_event([](void* c) {
-								auto& capture = *(Capture*)c;
-								capture.e->parent()->remove_child(capture.e);
-								capture.c->entity->remove_component(capture.c);
-							}, new_mail(&_capture));
-						}
-					}, new_mail(&capture));
-					e_close->add_component(c_event_receiver);
-
-					auto c_aligner = cAligner::create();
-					c_aligner->x_align_ = AlignxRight;
-					e_close->add_component(c_aligner);
-				}
+						capture.e->parent()->remove_child(capture.e);
+						capture.c->entity->remove_component(capture.c);
+					}, new_mail(&_capture));
+				}, new_mail(&capture))
+					->get_component(cText)->color = Vec4c(200, 40, 20, 255);
+				ui::c_aligner(AlignxRight, AlignyFree);
+				ui::pop_parent();
 
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
@@ -339,16 +246,16 @@ struct cInspectorPrivate : cInspector
 					auto base_hash = type->base_hash();
 					auto pdata = (char*)c_dealer->dummy + v->offset();
 
-					auto e_item = create_item(s2w(v->name()));
-					e_component->add_child(e_item);
-					auto e_data = e_item->child(1);
+					begin_item(s2w(v->name()).c_str());
+					auto e_data = ui::current_parent();
+
 					switch (type->tag())
 					{
 					case TypeEnumSingle:
 					{
 						auto info = find_enum(app.dbs, base_hash);
 
-						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 1.f, e_data);
+						create_enum_combobox(info, 120.f);
 
 						struct Capture
 						{
@@ -378,7 +285,7 @@ struct cInspectorPrivate : cInspector
 					{
 						auto info = find_enum(app.dbs, base_hash);
 
-						create_enum_checkboxs(info, app.font_atlas_pixel, 1.f, e_data);
+						create_enum_checkboxs(info);
 						for (auto k = 0; k < info->item_count(); k++)
 						{
 							struct Capture
@@ -415,8 +322,7 @@ struct cInspectorPrivate : cInspector
 						{
 						case FLAME_CHASH("bool"):
 						{
-							auto e_checkbox = create_standard_checkbox();
-							e_data->add_child(e_checkbox);
+							auto e_checkbox = ui::e_checkbox(L"");
 							struct Capture
 							{
 								cComponentDealer* d;
@@ -439,57 +345,56 @@ struct cInspectorPrivate : cInspector
 						}
 							break;
 						case FLAME_CHASH("int"):
-							create_edit<int>(e_data, pdata, c_dealer, v);
+							create_edit<int>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(2+int)"):
-							create_vec_edit<2, int>(e_data, pdata, c_dealer, v);
+							create_vec_edit<2, int>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(3+int)"):
-							create_vec_edit<3, int>(e_data, pdata, c_dealer, v);
+							create_vec_edit<3, int>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(4+int)"):
-							create_vec_edit<4, int>(e_data, pdata, c_dealer, v);
+							create_vec_edit<4, int>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("uint"):
-							create_edit<uint>(e_data, pdata, c_dealer, v);
+							create_edit<uint>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(2+uint)"):
-							create_vec_edit<2, uint>(e_data, pdata, c_dealer, v);
+							create_vec_edit<2, uint>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(3+uint)"):
-							create_vec_edit<3, uint>(e_data, pdata, c_dealer, v);
+							create_vec_edit<3, uint>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(4+uint)"):
-							create_vec_edit<4, uint>(e_data, pdata, c_dealer, v);
+							create_vec_edit<4, uint>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("float"):
-							create_edit<float>(e_data, pdata, c_dealer, v);
+							create_edit<float>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(2+float)"):
-							create_vec_edit<2, float>(e_data, pdata, c_dealer, v);
+							create_vec_edit<2, float>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(3+float)"):
-							create_vec_edit<3, float>(e_data, pdata, c_dealer, v);
+							create_vec_edit<3, float>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(4+float)"):
-							create_vec_edit<4, float>(e_data, pdata, c_dealer, v);
+							create_vec_edit<4, float>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("uchar"):
-							create_edit<uchar>(e_data, pdata, c_dealer, v);
+							create_edit<uchar>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(2+uchar)"):
-							create_vec_edit<2, uchar>(e_data, pdata, c_dealer, v);
+							create_vec_edit<2, uchar>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(3+uchar)"):
-							create_vec_edit<3, uchar>(e_data, pdata, c_dealer, v);
+							create_vec_edit<3, uchar>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("Vec(4+uchar)"):
-							create_vec_edit<4, uchar>(e_data, pdata, c_dealer, v);
+							create_vec_edit<4, uchar>(pdata, c_dealer, v);
 							break;
 						case FLAME_CHASH("StringA"):
 						{
-							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
-							e_data->add_child(e_edit);
+							auto e_edit = ui::e_edit(50.f);
 							struct Capture
 							{
 								cComponentDealer* d;
@@ -513,8 +418,7 @@ struct cInspectorPrivate : cInspector
 							break;
 						case FLAME_CHASH("StringW"):
 						{
-							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 1.f);
-							e_data->add_child(e_edit);
+							auto e_edit = ui::e_edit(50.f);
 							struct Capture
 							{
 								cComponentDealer* d;
@@ -539,12 +443,75 @@ struct cInspectorPrivate : cInspector
 						}
 						break;
 					}
+
+					end_item();
 				}
+
+				ui::e_end_layout();
 			}
 
-			auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add Component", app.root, e_add_component_menu, true, SideS, false, false, false, nullptr);
-			e_layout->add_child(e_menu_btn);
+			ui::e_begin_menu_top(L"Add Component");
+			{
+#define COMPONENT_PREFIX "Serializer_c"
+				std::vector<UdtInfo*> all_udts;
+				for (auto db : app.dbs)
+				{
+					auto udts = db->get_udts();
+					for (auto i = 0; i < udts.s; i++)
+					{
+						auto u = udts.v[i];
+						if (std::string(u->type()->name()).compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
+							all_udts.push_back(u);
+					}
+				}
+				std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+					return std::string(a->type()->name()) < std::string(b->type()->name());
+				});
+				for (auto udt : all_udts)
+				{
+					struct Capture
+					{
+						cInspectorPrivate* i;
+						UdtInfo* u;
+					}capture;
+					capture.i = this;
+					capture.u = udt;
+					ui::e_menu_item(s2w(udt->type()->name() + strlen(COMPONENT_PREFIX)).c_str(), [](void* c, Entity*) {
+						auto& capture = *(Capture*)c;
+						looper().add_event([](void* c) {
+							auto& capture = *(Capture*)c;
+
+							auto dummy = malloc(capture.u->size());
+							auto module = load_module(capture.u->db()->module_name());
+							{
+								auto f = capture.u->find_function("ctor");
+								if (f && f->parameter_count() == 0)
+									cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+							}
+							void* component;
+							{
+								auto f = capture.u->find_function("create");
+								assert(f && check_function(f, "P#Component", {}));
+								component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
+							}
+							capture.i->editor->selected->add_component((Component*)component);
+							{
+								auto f = capture.u->find_function("dtor");
+								if (f)
+									cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+							}
+							free_module(module);
+							free(dummy);
+
+							capture.i->refresh();
+						}, new_mail(&capture));
+					}, new_mail(&capture));
+				}
+#undef COMPONENT_PREFIX
+			}
+			ui::e_end_menu_top();
 		}
+		ui::pop_parent();
 	}
 };
 
@@ -579,130 +546,39 @@ void cInspector::refresh()
 
 void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 {
-	auto e_container = get_docker_container_model()->copy();
-	app.root->add_child(e_container);
+	ui::push_parent(app.root);
+	ui::e_begin_docker_container(pos, Vec2f(200.f, 900.f));
+	ui::e_begin_docker();
+	auto c_tab = ui::e_begin_docker_page(L"Inspector").tab->get_component(cDockerTab);
 	{
-		auto c_element = e_container->get_component(cElement);
-		c_element->pos_ = pos;
-		c_element->size_.x() = 200.f;
-		c_element->size_.y() = 900.f;
-	}
-
-	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker, 0);
-
-	auto tab = create_standard_docker_tab(app.font_atlas_pixel, L"Inspector", app.root);
-	e_docker->child(0)->add_child(tab);
-
-	auto e_page = get_docker_page_model()->copy();
-	{
-		e_page->get_component(cElement)->inner_padding_ = Vec4f(4.f);
-
-		auto c_layout = cLayout::create(LayoutVertical);
+		ui::current_entity()->get_component(cElement)->inner_padding_ = Vec4f(4.f);
+		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
-		e_page->add_component(c_layout);
 	}
-	e_docker->child(1)->add_child(e_page);
-
 	auto c_inspector = new_u_object<cInspectorPrivate>();
-	e_page->add_component(c_inspector);
-	c_inspector->tab = tab->get_component(cDockerTab);
+	ui::current_entity()->add_component(c_inspector);
+	c_inspector->tab = c_tab;
 	c_inspector->editor = editor;
 	c_inspector->module = load_module(L"flame_universe.dll");
-
-	{
-		auto e_menu = create_standard_menu();
-		c_inspector->e_add_component_menu = e_menu;
-
-		#define COMPONENT_PREFIX "Serializer_c"
-		std::vector<UdtInfo*> all_udts;
-		for (auto db : app.dbs)
-		{
-			auto udts = db->get_udts();
-			for (auto i = 0; i < udts.s; i++)
-			{
-				auto u = udts.v[i];
-				if (std::string(u->type()->name()).compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
-					all_udts.push_back(u);
-			}
-		}
-		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-			return std::string(a->type()->name()) < std::string(b->type()->name());
-		});
-		for (auto udt : all_udts)
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type()->name() + strlen(COMPONENT_PREFIX)).c_str());
-			e_menu->add_child(e_item);
-			struct Capture
-			{
-				cInspectorPrivate* i;
-				UdtInfo* u;
-			}capture;
-			capture.i = c_inspector;
-			capture.u = udt;
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto& capture = *(Capture*)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					looper().add_event([](void* c) {
-						auto& capture = *(Capture*)c;
-
-						auto dummy = malloc(capture.u->size());
-						auto module = load_module(capture.u->db()->module_name());
-						{
-							auto f = capture.u->find_function("ctor");
-							if (f && f->parameter_count() == 0)
-								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-						}
-						void* component;
-						{
-							auto f = capture.u->find_function("create");
-							assert(f && check_function(f, "P#Component", {}));
-							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
-						}
-						capture.i->editor->selected->add_component((Component*)component);
-						{
-							auto f = capture.u->find_function("dtor");
-							if (f)
-								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
-						}
-						free_module(module);
-						free(dummy);
-
-						capture.i->refresh();
-					}, new_mail(&capture));
-				}
-			}, new_mail(&capture));
-		}
-		#undef COMPONENT_PREFIX
-	}
-
 	editor->inspector = c_inspector;
 
-	auto e_layout = Entity::create();
+	ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+	c_inspector->e_layout = ui::e_empty();
 	{
-		auto c_element = cElement::create();
-		c_element->clip_children = true;
-		e_layout->add_component(c_element);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_layout->add_component(c_aligner);
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 4.f;
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-		e_layout->add_component(c_layout);
+		ui::c_element()->clip_children = true;
+		auto cl = ui::c_layout(LayoutVertical);
+		cl->item_padding = 4.f;
+		cl->width_fit_children = false;
+		cl->height_fit_children = false;
+		ui::c_aligner(SizeFitParent, SizeFitParent);
 	}
-
-	c_inspector->e_layout = e_layout;
-
-	e_page->add_child(wrap_standard_scrollbar(e_layout, ScrollbarVertical, true, 1.f));
+	ui::e_end_scroll_view1();
 
 	c_inspector->refresh();
+
+	ui::e_end_docker_page();
+	ui::e_end_docker();
+	ui::e_end_docker_container();
+	ui::pop_parent();
 }

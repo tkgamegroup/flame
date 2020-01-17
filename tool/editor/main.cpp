@@ -5,26 +5,11 @@
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
-#include <flame/graphics/font.h>
-#include <flame/universe/default_style.h>
-#include <flame/universe/topmost.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
-#include <flame/universe/components/edit.h>
-#include <flame/universe/components/image.h>
-#include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
-#include <flame/universe/components/style.h>
-#include <flame/universe/components/checkbox.h>
-#include <flame/universe/components/combobox.h>
-#include <flame/universe/components/tree.h>
-#include <flame/universe/components/scrollbar.h>
-#include <flame/universe/components/window.h>
+#include <flame/universe/ui/utils.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -48,7 +33,7 @@ void App::create()
 		L"../art/font_awesome.ttf"
 	};
 	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, 2, fonts);
-	default_style.set_to_light();
+	ui::style_set_to_light();
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
@@ -66,30 +51,22 @@ void App::create()
 	}
 
 	root = w->root();
-	{
-		c_element_root = cElement::create();
-		root->add_component(c_element_root);
 
-		root->add_component(cLayout::create(LayoutFree));
-	}
+	ui::set_current_entity(root);
+	c_element_root = ui::c_element();
+	ui::c_layout();
 
-	auto e_fps = Entity::create();
-	root->add_child(e_fps);
-	{
-		e_fps->add_component(cElement::create());
+	ui::push_font_atlas(app.font_atlas_pixel);
+	ui::push_parent(root);
+	ui::set_current_root(root);
 
-		auto c_text = cText::create(font_atlas_pixel);
-		e_fps->add_component(c_text);
+	ui::e_text(L"");
+	ui::c_aligner(AlignxLeft, AlignyBottom);
+	add_fps_listener([](void* c, uint fps) {
+		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+	}, new_mail_p(ui::current_entity()->get_component(cText)));
 
-		auto c_aligner = cAligner::create();
-		c_aligner->x_align_ = AlignxLeft;
-		c_aligner->y_align_ = AlignyBottom;
-		e_fps->add_component(c_aligner);
-
-		add_fps_listener([](void* c, uint fps) {
-			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-		}, new_mail_p(c_text));
-	}
+	ui::pop_parent();
 
 	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_foundation.typeinfo"));
 	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_graphics.typeinfo"));
@@ -124,38 +101,16 @@ void App::run()
 
 App app;
 
-Entity* create_drag_edit(FontAtlas* font_atlas, float font_size_scale, bool is_float)
+Entity* create_drag_edit(bool is_float)
 {
-	auto e_layout = Entity::create();
-	{
-		e_layout->add_component(cElement::create());
+	auto e_layout = ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	e_layout->get_component(cLayout)->fence = 1;
 
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->fence = 1;
-		e_layout->add_component(c_layout);
-	}
-
-	auto e_edit = create_standard_edit(50.f, font_atlas, font_size_scale);
-	e_layout->add_child(e_edit);
+	auto e_edit = ui::e_edit(50.f);
 	e_edit->set_visibility(false);
-
-	auto e_drag = Entity::create();
-	e_layout->add_child(e_drag);
-	{
-		auto c_element = cElement::create();
-		c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-		c_element->size_.x() = 58.f;
-		e_drag->add_component(c_element);
-
-		auto c_text = cText::create(font_atlas);
-		c_text->font_size_ = default_style.font_size * font_size_scale;
-		c_text->auto_width_ = false;
-		e_drag->add_component(c_text);
-
-		e_drag->add_component(cEventReceiver::create());
-
-		e_drag->add_component(cStyleColor::create(default_style.button_color_normal, default_style.button_color_hovering, default_style.button_color_active));
-	}
+	auto e_drag = ui::e_button(L"");
+	e_drag->get_component(cElement)->size_.x() = 58.f;
+	e_drag->get_component(cText)->auto_width_ = false;
 
 	struct Capture
 	{
@@ -211,225 +166,27 @@ Entity* create_drag_edit(FontAtlas* font_atlas, float font_size_scale, bool is_f
 		}
 	}, new_mail(&capture));
 
+	ui::e_end_layout();
+
 	return e_layout;
 }
 
-void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float font_size_scale, Entity* parent)
+void create_enum_combobox(EnumInfo* info, float width)
 {
-	std::vector<std::wstring> _items;
+	ui::e_begin_combobox(120.f);
 	for (auto i = 0; i < info->item_count(); i++)
-		_items.push_back(s2w(info->item(i)->name()));
-	std::vector<const wchar_t*> items(_items.size());
-	for (auto i = 0; i < items.size(); i++)
-		items[i] = _items[i].c_str();
-	parent->add_child(create_standard_combobox(120.f, font_atlas, font_size_scale, app.root, items.size(), items.data()));
+		ui::e_combobox_item(s2w(info->item(i)->name()).c_str());
+	ui::e_end_combobox();
 }
 
-void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float font_size_scale, Entity* parent)
+void create_enum_checkboxs(EnumInfo* info)
 {
 	for (auto i = 0; i < info->item_count(); i++)
-		parent->add_child(wrap_standard_text(create_standard_checkbox(), false, font_atlas, font_size_scale, s2w(info->item(i)->name()).c_str()));
-}
-
-Entity* popup_dialog()
-{
-	auto t = get_topmost(app.root);
-	if (!t)
-	{
-		t = create_topmost(app.root, false, false, true, Vec4c(0, 0, 0, 127), true);
-		{
-			t->add_component(cLayout::create(LayoutFree));
-		}
-	}
-
-	auto e_dialog = Entity::create();
-	t->add_child(e_dialog);
-	{
-		auto c_element = cElement::create();
-		c_element->inner_padding_ = Vec4f(8.f);
-		c_element->color_ = Vec4c(255);
-		e_dialog->add_component(c_element);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->x_align_ = AlignxMiddle;
-		c_aligner->y_align_ = AlignyMiddle;
-		e_dialog->add_component(c_aligner);
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->item_padding = 4.f;
-		e_dialog->add_component(c_layout);
-	}
-
-	return e_dialog;
-}
-
-void popup_message_dialog(const std::wstring& text)
-{
-	auto e_dialog = popup_dialog();
-
-	auto e_text = Entity::create();
-	e_dialog->add_child(e_text);
-	{
-		e_text->add_component(cElement::create());
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(text.c_str());
-		e_text->add_component(c_text);
-	}
-
-	auto e_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"OK");
-	e_dialog->add_child(e_ok);
-	{
-		e_ok->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			if (is_mouse_clicked(action, key))
-				destroy_topmost(app.root, false);
-		}, Mail());
-	}
-}
-
-void popup_confirm_dialog(const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& _capture)
-{
-	auto e_dialog = popup_dialog();
-
-	auto e_text = Entity::create();
-	e_dialog->add_child(e_text);
-	{
-		e_text->add_component(cElement::create());
-
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(title.c_str());
-		e_text->add_component(c_text);
-	}
-
-	auto e_buttons = Entity::create();
-	e_dialog->add_child(e_buttons);
-	{
-		e_buttons->add_component(cElement::create());
-
-		auto c_layout = cLayout::create(LayoutHorizontal);
-		c_layout->item_padding = 4.f;
-		e_buttons->add_component(c_layout);
-	}
-
-	struct Capture
-	{
-		void (*c)(void* c, bool yes);
-		Mail<> m;
-	}capture;
-	capture.c = callback;
-	capture.m = _capture;
-
-	auto e_yes = create_standard_button(app.font_atlas_pixel, 1.f, L"Yes");
-	e_buttons->add_child(e_yes);
-	{
-		e_yes->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto& capture = *(Capture*)c;
-
-			if (is_mouse_clicked(action, key))
-			{
-				destroy_topmost(app.root, false);
-
-				capture.c(capture.m.p, true);
-				delete_mail(capture.m);
-			}
-		}, new_mail(&capture));
-	}
-
-	auto e_no = create_standard_button(app.font_atlas_pixel, 1.f, L"No");
-	e_buttons->add_child(e_no);
-	{
-		e_no->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto& capture = *(Capture*)c;
-
-			if (is_mouse_clicked(action, key))
-			{
-				destroy_topmost(app.root, false);
-
-				capture.c(capture.m.p, false);
-				delete_mail(capture.m);
-			}
-		}, new_mail(&capture));
-	}
-}
-
-void popup_input_dialog(const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& _capture)
-{
-	auto e_dialog = popup_dialog();
-
-	auto e_input = create_standard_edit(100.f, app.font_atlas_pixel, 1.f);
-	e_dialog->add_child(wrap_standard_text(e_input, false, app.font_atlas_pixel, 1.f, title.c_str()));
-
-	auto e_buttons = Entity::create();
-	e_dialog->add_child(e_buttons);
-	{
-		e_buttons->add_component(cElement::create());
-
-		auto c_layout = cLayout::create(LayoutHorizontal);
-		c_layout->item_padding = 4.f;
-		e_buttons->add_component(c_layout);
-	}
-
-	struct Capture
-	{
-		void (*c)(void* c, bool ok, const std::wstring& text);
-		Mail<> m;
-		cText* t;
-	}capture;
-	capture.c = callback;
-	capture.m = _capture;
-	capture.t = e_input->get_component(cText);
-
-	auto e_ok = create_standard_button(app.font_atlas_pixel, 1.f, L"Ok");
-	e_buttons->add_child(e_ok);
-	{
-		e_ok->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto& capture = *(Capture*)c;
-
-			if (is_mouse_clicked(action, key))
-			{
-				auto text = capture.t->text();
-				destroy_topmost(app.root, false);
-
-				capture.c(capture.m.p, true, text);
-				delete_mail(capture.m);
-			}
-		}, new_mail(&capture));
-	}
-
-	auto e_cancel = create_standard_button(app.font_atlas_pixel, 1.f, L"Cancel");
-	e_buttons->add_child(e_cancel);
-	{
-		e_cancel->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto& capture = *(Capture*)c;
-
-			if (is_mouse_clicked(action, key))
-			{
-				destroy_topmost(app.root, false);
-
-				capture.c(capture.m.p, false, L"");
-				delete_mail(capture.m);
-			}
-		}, new_mail(&capture));
-	}
-}
-
-extern "C" void mainCRTStartup();
-static void* init_crt_ev = nullptr;
-extern "C" __declspec(dllexport) void init_crt(void* ev)
-{
-	init_crt_ev = ev;
-	mainCRTStartup();
+		ui::e_checkbox(s2w(info->item(i)->name()).c_str());
 }
 
 int main(int argc, char **args)
 {
-	if (init_crt_ev)
-	{
-		set_event(init_crt_ev);
-		for (;;)
-			sleep(60000);
-	}
-
 	app.create();
 
 	looper().loop([](void* c) {

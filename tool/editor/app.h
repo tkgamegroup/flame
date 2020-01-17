@@ -55,12 +55,6 @@ struct App
 
 extern App app;
 
-Entity* create_drag_edit(FontAtlas* font_atlas, float font_size_scale, bool is_float);
-
-void create_enum_combobox(EnumInfo* info, float width, FontAtlas* font_atlas, float font_size_scale, Entity* parent);
-void create_enum_checkboxs(EnumInfo* info, FontAtlas* font_atlas, float font_size_scale, Entity* parent);
-
-Entity* popup_dialog();
-void popup_message_dialog(const std::wstring& text);
-void popup_confirm_dialog(const std::wstring& title, void (*callback)(void* c, bool yes), const Mail<>& capture);
-void popup_input_dialog(const std::wstring& title, void (*callback)(void* c, bool ok, const std::wstring& text), const Mail<>& capture);
+Entity* create_drag_edit(bool is_float);
+void create_enum_combobox(EnumInfo* info, float width);
+void create_enum_checkboxs(EnumInfo* info);

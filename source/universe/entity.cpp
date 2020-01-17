@@ -457,8 +457,10 @@ namespace flame
 		file.save_file(filename);
 	}
 
-	void Entity::destroy(Entity* w)
+	void Entity::destroy(Entity* _e)
 	{
-		delete (EntityPrivate*)w;
+		auto e = (EntityPrivate*)_e;
+		e->mark_dying();
+		delete e;
 	}
 }

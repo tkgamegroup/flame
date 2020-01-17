@@ -18,9 +18,6 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/window.h>
-#include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
 #include <flame/universe/ui/make_menu.h>
@@ -265,7 +262,9 @@ namespace flame
 		inline Entity* e_empty(int pos = -1)
 		{
 			auto e = Entity::create();
-			current_parent()->add_child(e, pos);
+			auto p = current_parent();
+			if (p)
+				p->add_child(e, pos);
 			set_current_entity(e);
 			return e;
 		}
@@ -299,33 +298,38 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_button(const wchar_t* text, void(*func)(void* c, Entity* e), const Mail<>& mail, bool use_style = true)
+		inline Entity* e_button(const wchar_t* text, void(*func)(void* c, Entity* e) = nullptr, const Mail<>& mail = Mail<>(), bool use_style = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
-			struct WrapedMail
+			auto cer = c_event_receiver();
+			if (func)
 			{
-				void(*f)(void*, Entity*);
-				Mail<> m;
-				Entity* e;
+				struct WrapedMail
+				{
+					void(*f)(void*, Entity*);
+					Mail<> m;
+					Entity* e;
 
-				~WrapedMail()
-				{
-					delete_mail(m);
-				}
-			};
-			auto new_m = new_mail<WrapedMail>();
-			new_m.p->f = func;
-			new_m.p->m = mail;
-			new_m.p->e = e;
-			c_event_receiver()->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_clicked(action, key))
-				{
-					auto& m = *(WrapedMail*)c;
-					m.f(m.m.p, m.e);
-				}
-			}, new_m);
+					~WrapedMail()
+					{
+						delete_mail(m);
+						m.p = nullptr;
+					}
+				};
+				auto new_m = new_mail<WrapedMail>();
+				new_m.p->f = func;
+				new_m.p->m = mail;
+				new_m.p->e = e;
+				cer->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_clicked(action, key))
+					{
+						auto& m = *(WrapedMail*)c;
+						m.f(m.m.p, m.e);
+					}
+				}, new_m);
+			}
 			if (use_style)
 			{
 				auto cs = c_style_color();
@@ -337,9 +341,10 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_checkbox(const wchar_t* text)
+		inline Entity* e_checkbox(const wchar_t* text, bool checked = false)
 		{
-			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+			if (text[0])
+				e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ = 16.f;
@@ -354,9 +359,12 @@ namespace flame
 			cs->color_hovering[1] = ui::style(ui::CheckedColorHovering).c();
 			cs->color_active[1] = ui::style(ui::CheckedColorActive).c();
 			cs->style();
-			c_checkbox();
-			e_text(text);
-			e_end_layout();
+			c_checkbox()->checked = checked;
+			if (text[0])
+			{
+				e_text(text);
+				e_end_layout();
+			}
 			return e;
 		}
 
@@ -393,7 +401,7 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_edit(float width)
+		inline Entity* e_edit(float width, const wchar_t* text = nullptr)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
@@ -402,7 +410,10 @@ namespace flame
 			ce->color_ = ui::style(ui::FrameColorNormal).c();
 			ce->frame_color_ = ui::style(ui::TextColorNormal).c();
 			ce->frame_thickness_ = 2.f;
-			c_text()->auto_width_ = false;
+			auto ct = c_text();
+			ct->auto_width_ = false;
+			if (text)
+				ct->set_text(text);
 			c_event_receiver();
 			if (width == 0.f)
 				c_aligner(SizeFitParent, SizeFixed);
@@ -496,11 +507,12 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_list_item(const wchar_t* text)
+		inline Entity* e_list_item(const wchar_t* text, bool align = true)
 		{
 			auto e = e_empty();
 			c_element();
-			c_text()->set_text(text);
+			if (text[0])
+				c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
 			cs->color_normal[0] = ui::style(ui::FrameColorNormal).c();
@@ -510,7 +522,8 @@ namespace flame
 			cs->color_hovering[1] = ui::style(ui::SelectedColorHovering).c();
 			cs->color_active[1] = ui::style(ui::SelectedColorActive).c();
 			cs->style();
-			c_aligner(SizeFitParent, SizeFixed);
+			if (align)
+				c_aligner(SizeFitParent, SizeFixed);
 			c_list_item();
 			return e;
 		}
@@ -607,13 +620,14 @@ namespace flame
 
 		inline Entity* e_menu()
 		{
-			auto e = Entity::create();
-			set_current_entity(e);
+			push_parent(nullptr);
+			auto e = e_empty();
+			pop_parent();
 			make_menu(e);
 			return e;
 		}
 
-		inline Entity* e_begin_combobox(float width)
+		inline Entity* e_begin_combobox(float width, int idx = -1)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
@@ -634,7 +648,9 @@ namespace flame
 			cs->color_active = ui::style(ui::FrameColorActive).c();
 			cs->style();
 			c_layout();
-			c_combobox();
+			auto ccb = c_combobox();
+			if (idx != -1)
+				ccb->set_index(idx, false);
 			push_parent(e);
 			e_empty();
 			c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
@@ -684,7 +700,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_menu_top(const wchar_t* text)
+		inline Entity* e_begin_menu_top(const wchar_t* text, bool transparent = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -696,7 +712,7 @@ namespace flame
 			cmb->move_to_open = true;
 			cmb->layer_penetrable = true;
 			auto cs = c_style_color();
-			cs->color_normal = Vec4c(0);
+			cs->color_normal = transparent ? Vec4c(0) : ui::style(ui::FrameColorHovering).c();
 			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
 			cs->color_active = ui::style(ui::FrameColorActive).c();
 			cs->style();
@@ -757,6 +773,7 @@ namespace flame
 				~WrapedMail()
 				{
 					delete_mail(m);
+					m.p = nullptr;
 				}
 			};
 			auto new_m = new_mail<WrapedMail>();
@@ -882,7 +899,13 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_docker_page(const wchar_t* title)
+		struct sDockerPage
+		{
+			Entity* tab;
+			Entity* page;
+		};
+
+		inline sDockerPage e_begin_docker_page(const wchar_t* title)
 		{
 			push_parent(current_parent()->child(0));
 			auto et = e_empty();
@@ -929,12 +952,130 @@ namespace flame
 			}
 			pop_parent();
 			push_parent(ep);
-			return ep;
+			sDockerPage ret;
+			ret.tab = et;
+			ret.page = ep;
+			return ret;
 		}
 
 		inline void e_end_docker_page()
 		{
 			pop_parent();
+		}
+
+		inline Entity* e_begin_dialog()
+		{
+			auto r = current_root();
+			auto l = get_top_layer(r);
+			if (!l)
+			{
+				l = ui::add_layer(r, false, false, true, Vec4c(0, 0, 0, 127), true);
+				set_current_entity(l);
+				c_layout();
+			}
+			push_parent(l);
+			auto e = e_empty();
+			auto ce = c_element();
+			ce->inner_padding_ = Vec4f(8.f);
+			ce->color_ = Vec4c(255);
+			c_aligner(AlignxMiddle, AlignyMiddle);
+			c_layout(LayoutVertical)->item_padding = 4.f;
+			pop_parent();
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_dialog()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_message_dialog(const wchar_t* message)
+		{
+			auto e = e_begin_dialog();
+			e_text(message);
+			e_button(L"OK", [](void* c, Entity*) {
+				remove_top_layer(*(Entity**)c);
+			}, new_mail_p(current_root()));
+			e_end_dialog();
+			return e;
+		}
+
+		inline Entity* e_confirm_dialog(const wchar_t* title, void (*callback)(void* c, bool yes), const Mail<>& m)
+		{
+			auto e = e_begin_dialog();
+			e_text(title);
+			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+			struct WrapedMail
+			{
+				void(*f)(void*, bool);
+				Mail<> m;
+				Entity* r;
+
+				~WrapedMail()
+				{
+					delete_mail(m);
+					m.p = nullptr;
+				}
+			};
+			auto new_m = new_mail<WrapedMail>();
+			new_m.p->f = callback;
+			new_m.p->m = m;
+			new_m.p->r = current_root();
+			e_button(L"OK", [](void* c, Entity*) {
+				auto& m = *(WrapedMail*)c;
+				remove_top_layer(m.r);
+				m.f(m.m.p, true);
+			}, new_m);
+			e_button(L"Cancel", [](void* c, Entity*) {
+				auto& m = *(WrapedMail*)c;
+				remove_top_layer(m.r);
+				m.f(m.m.p, false);
+			}, new_m);
+			e_end_layout();
+			e_end_dialog();
+			return e;
+		}
+
+		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail<>& m)
+		{
+			auto e = e_begin_dialog();
+			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+			e_text(title);
+			auto ct = e_edit(100.f)->get_component(cText);
+			e_end_layout();
+			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+			struct WrapedMail
+			{
+				void(*f)(void*, bool, const wchar_t*);
+				Mail<> m;
+				Entity* r;
+				cText* t;
+
+				~WrapedMail()
+				{
+					delete_mail(m);
+					m.p = nullptr;
+				}
+			};
+			auto new_m = new_mail<WrapedMail>();
+			new_m.p->f = callback;
+			new_m.p->m = m;
+			new_m.p->r = current_root();
+			new_m.p->t = ct;
+			e_button(L"OK", [](void* c, Entity*) {
+				auto& m = *(WrapedMail*)c;
+				remove_top_layer(m.r);
+				m.f(m.m.p, true, m.t->text());
+			}, new_m);
+			e_button(L"Cancel", [](void* c, Entity*) {
+				auto& m = *(WrapedMail*)c;
+				remove_top_layer(m.r);
+				m.f(m.m.p, false, nullptr);
+			}, new_m);
+			e_end_layout();
+			e_end_dialog();
+			return e;
 		}
 	}
 }

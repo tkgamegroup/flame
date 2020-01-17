@@ -7,8 +7,10 @@
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
-#include <flame/graphics/font.h>
 #include <flame/universe/world.h>
+#include <flame/universe/systems/layout_management.h>
+#include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/ui/utils.h>
 
 #include "../renderpath/canvas/canvas.h"
@@ -34,7 +36,6 @@ struct App
 	Universe* u;
 	Entity* root;
 	cElement* c_element_root;
-	cEventReceiver* c_event_receiver_root;
 
 	void run()
 	{
@@ -97,7 +98,7 @@ int main(int argc, char** args)
 
 	ui::set_current_entity(root);
 	app.c_element_root = ui::c_element();
-	app.c_event_receiver_root = ui::c_event_receiver();
+	ui::c_event_receiver();
 	ui::c_layout();
 
 	ui::push_font_atlas(app.font_atlas_pixel);
@@ -194,14 +195,15 @@ int main(int argc, char** args)
 
 	ui::e_end_layout();
 
-	ui::e_begin_docker_container(Vec2f(414.f, 297.f), Vec2f(221.f, 214.f));
+	ui::e_begin_docker_container(Vec2f(416.f, 300.f), Vec2f(200.f));
 	ui::e_begin_docker();
 	ui::e_begin_docker_page(L"ResourceExplorer");
 	ui::e_text(L"flower.png  main.cpp");
 	ui::e_end_docker_page();
 	ui::e_end_docker();
 	ui::e_end_docker_container();
-	ui::e_begin_docker_container(Vec2f(667.f, 302.f), Vec2f(403.f, 215.f));
+
+	ui::e_begin_docker_container(Vec2f(640.f, 300.f), Vec2f(400.f, 200.f));
 	ui::e_begin_docker_layout(LayoutHorizontal);
 	ui::e_begin_docker();
 	ui::e_begin_docker_page(L"TextEditor");

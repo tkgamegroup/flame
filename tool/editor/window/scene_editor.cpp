@@ -1,17 +1,5 @@
 #include <flame/serialize.h>
-#include <flame/universe/topmost.h>
-#include <flame/universe/default_style.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
-#include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/checkbox.h>
-#include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
-#include <flame/universe/components/menu.h>
-#include <flame/universe/components/combobox.h>
-#include <flame/universe/components/tree.h>
-#include <flame/universe/components/style.h>
-#include <flame/universe/components/window.h>
+#include <flame/universe/ui/utils.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -130,189 +118,112 @@ struct cSceneOverlayer : Component
 
 void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 {
-	auto e_container = get_docker_container_model()->copy();
-	app.root->add_child(e_container);
+	ui::push_parent(app.root);
+	ui::e_begin_docker_container(pos, Vec2f(1000.f, 900.f));
+	ui::e_begin_docker();
+	ui::e_begin_docker_page(L"Scene Editor");
 	{
-		auto c_element = e_container->get_component(cElement);
-		c_element->pos_ = pos;
-		c_element->size_.x() = 1000.f;
-		c_element->size_.y() = 900.f;
-	}
-
-	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker, 0);
-
-	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, L"Scene Editor", app.root));
-
-	auto e_page = get_docker_page_model()->copy();
-	{
-		auto c_layout = cLayout::create(LayoutVertical);
+		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
-		e_page->add_component(c_layout);
 	}
-	e_docker->child(1)->add_child(e_page);
-
 	auto c_editor = new_u_object<cSceneEditorPrivate>();
-	e_page->add_component(c_editor);
+	ui::current_entity()->add_component(c_editor);
 
-	auto e_menubar = create_standard_menubar();
-	e_page->add_child(e_menubar);
-	{
-		auto e_menu = create_standard_menu();
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"New Entity");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cSceneEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
+	ui::e_begin_menu_bar();
+	ui::e_begin_menu_top(L"Scene");
+	ui::e_menu_item(L"New Entity", [](void* c, Entity*) {
+		auto editor = *(cSceneEditor**)c;
+		looper().add_event([](void* c) {
+			auto editor = *(cSceneEditor**)c;
+			auto e = Entity::create();
+			e->set_name("unnamed");
+			if (editor->selected)
+				editor->selected->add_child(e);
+			else
+				editor->prefab->add_child(e);
+			if (editor->hierarchy)
+				editor->hierarchy->refresh();
+		}, new_mail_p(editor));
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Save", [](void* c, Entity*) {
+		auto editor = *(cSceneEditor**)c;
+	}, new_mail_p(c_editor));
+	ui::e_end_menu_top();
+	ui::e_begin_menu_top(L"Edit");
+	ui::e_menu_item(L"Delete", [](void* c, Entity*) {
+		auto editor = *(cSceneEditor**)c;
+		looper().add_event([](void* c) {
+			auto editor = *(cSceneEditor**)c;
+			auto sel = editor->selected;
+			if (sel)
+			{
+				editor->selected = nullptr;
+				if (editor->inspector)
+					editor->inspector->refresh();
+				sel->parent()->remove_child(sel);
+				if (editor->hierarchy)
+					editor->hierarchy->refresh();
+			}
+		}, new_mail_p(editor));
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Duplicate", [](void* c, Entity*) {
+		auto editor = *(cSceneEditor**)c;
+	}, new_mail_p(c_editor));
+	ui::e_end_menu_top();
+	ui::e_end_menu_bar();
 
-					looper().add_event([](void* c) {
-						auto editor = *(cSceneEditor**)c;
-
-						auto e = Entity::create();
-						e->set_name("unnamed");
-						if (editor->selected)
-							editor->selected->add_child(e);
-						else
-							editor->prefab->add_child(e);
-						if (editor->hierarchy)
-							editor->hierarchy->refresh();
-					}, new_mail_p(editor));
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cSceneEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-				}
-			}, new_mail_p(c_editor));
-		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Scene", app.root, e_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
-	}
-	{
-		auto e_menu = create_standard_menu();
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cSceneEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					looper().add_event([](void* c) {
-						auto editor = *(cSceneEditor**)c;
-
-						auto sel = editor->selected;
-						if (sel)
-						{
-							editor->selected = nullptr;
-							if (editor->inspector)
-								editor->inspector->refresh();
-							sel->parent()->remove_child(sel);
-							if (editor->hierarchy)
-								editor->hierarchy->refresh();
-						}
-					}, new_mail_p(editor));
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cSceneEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-				}
-			}, new_mail_p(c_editor));
-		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
-	}
-
-	wchar_t* tool_names[] = {
-		L"Null",
-		L"Move",
-		L"Scale"
-	};
-	auto e_tool = create_standard_combobox(50.f, app.font_atlas_pixel, 1.f, app.root, 3, tool_names);
-	e_page->add_child(wrap_standard_text(e_tool, true, app.font_atlas_pixel, 1.f, L"Tool"));
-
-	auto e_scene = Entity::create();
-	e_page->add_child(e_scene);
-	{
-		auto c_element = cElement::create();
-		c_element->clip_children = true;
-		e_scene->add_component(c_element);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_scene->add_component(c_aligner);
-
-		e_scene->add_component(cLayout::create(LayoutFree));
-	}
-
-	c_editor->e_scene = e_scene;
+	ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+	ui::e_text(L"Tool");
+	auto e_tool = ui::e_begin_combobox(50.f, 0);
+	ui::e_combobox_item(L"Null");
+	ui::e_combobox_item(L"Move");
+	ui::e_combobox_item(L"Scale");
+	ui::e_end_combobox();
+	ui::e_end_layout();
+	
+	ui::e_begin_layout()->get_component(cElement)->clip_children = true;
+	ui::c_aligner(SizeFitParent, SizeFitParent);
+	c_editor->e_scene = ui::current_entity();
 	c_editor->load(filename);
 
-	auto e_overlayer = Entity::create();
-	e_scene->add_child(e_overlayer);
-	{
-		e_overlayer->add_component(cElement::create());
-
-		auto c_event_receiver = cEventReceiver::create();
-		c_event_receiver->penetrable = true;
-		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto editor = *(cSceneEditorPrivate**)c;
-			if (is_mouse_down(action, key, true) && key == Mouse_Left)
+	auto e_overlayer = ui::e_empty();
+	ui::c_element();
+	auto c_event_receiver = ui::c_event_receiver();
+	c_event_receiver->penetrable = true;
+	c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		auto editor = *(cSceneEditorPrivate**)c;
+		if (is_mouse_down(action, key, true) && key == Mouse_Left)
+		{
+			struct Capture
 			{
-				struct Capture
+				cSceneEditorPrivate* e;
+				Vec2f pos;
+			}capture;
+			capture.e = editor;
+			capture.pos = pos;
+			looper().add_event([](void* c) {
+				auto& capture = *(Capture*)c;
+				auto editor = capture.e;
+
+				auto prev_selected = editor->selected;
+				editor->selected = nullptr;
+				editor->mpos = capture.pos;
+				editor->search_hover(editor->prefab);
+				if (prev_selected != editor->selected)
 				{
-					cSceneEditorPrivate* e;
-					Vec2f pos;
-				}capture;
-				capture.e = editor;
-				capture.pos = pos;
-				looper().add_event([](void* c) {
-					auto& capture = *(Capture*)c;
-					auto editor = capture.e;
-
-					auto prev_selected = editor->selected;
-					editor->selected = nullptr;
-					editor->mpos = capture.pos;
-					editor->search_hover(editor->prefab);
-					if (prev_selected != editor->selected)
-					{
-						if (editor->hierarchy)
-							editor->hierarchy->refresh_selected();
-						if (editor->inspector)
-							editor->inspector->refresh();
-					}
-				}, new_mail(&capture));
-			}
-		}, new_mail_p(c_editor));
-		e_overlayer->add_component(c_event_receiver);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_overlayer->add_component(c_aligner);
-
+					if (editor->hierarchy)
+						editor->hierarchy->refresh_selected();
+					if (editor->inspector)
+						editor->inspector->refresh();
+				}
+			}, new_mail(&capture));
+		}
+	}, new_mail_p(c_editor));
+	ui::c_aligner(SizeFitParent, SizeFitParent);
+	ui::push_parent(e_overlayer);
+	{
 		auto c_overlayer = new_u_object<cSceneOverlayer>();
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
@@ -321,16 +232,12 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		assert(udt_element);
 		auto element_pos_offset = udt_element->find_variable("pos")->offset();
 
-		auto e_transform_tool = Entity::create();
-		e_overlayer->add_child(e_transform_tool);
+		auto e_transform_tool = ui::e_empty();
+		c_overlayer->transform_tool_element = ui::c_element();
+		c_overlayer->transform_tool_element->size_ = 20.f;
+		c_overlayer->transform_tool_element->frame_thickness_ = 2.f;
 		{
-			auto c_element = cElement::create();
-			c_element->size_ = 20.f;
-			c_element->frame_thickness_ = 2.f;
-			e_transform_tool->add_component(c_element);
-			c_overlayer->transform_tool_element = c_element;
-
-			auto c_event_receiver = cEventReceiver::create();
+			auto c_event_receiver = ui::c_event_receiver();
 			struct Capture
 			{
 				cSceneEditorPrivate* e;
@@ -352,22 +259,25 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 					}
 				}
 			}, new_mail(&capture));
-			e_transform_tool->add_component(c_event_receiver);
-
-			e_transform_tool->add_component(cStyleColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
-
-			auto e_h_wing = Entity::create();
-			e_transform_tool->add_child(e_h_wing);
 			{
-				auto c_element = cElement::create();
+				auto c_style = ui::c_style_color();
+				c_style->color_normal = Vec4c(100, 100, 100, 128);
+				c_style->color_hovering = Vec4c(50, 50, 50, 190);
+				c_style->color_active = Vec4c(80, 80, 80, 255);
+				c_style->style();
+			}
+
+			ui::push_parent(e_transform_tool);
+			ui::e_empty();
+			{
+				auto c_element = ui::c_element();
 				c_element->pos_.x() = 25.f;
 				c_element->pos_.y() = 5.f;
 				c_element->size_.x() = 20.f;
 				c_element->size_.y() = 10.f;
 				c_element->frame_thickness_ = 2.f;
-				e_h_wing->add_component(c_element);
 
-				auto c_event_receiver = cEventReceiver::create();
+				auto c_event_receiver = ui::c_event_receiver();
 				struct Capture
 				{
 					cSceneEditorPrivate* e;
@@ -389,23 +299,25 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 						}
 					}
 				}, new_mail(&capture));
-				e_h_wing->add_component(c_event_receiver);
 
-				e_h_wing->add_component(cStyleColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+				{
+					auto c_style = ui::c_style_color();
+					c_style->color_normal = Vec4c(100, 100, 100, 128);
+					c_style->color_hovering = Vec4c(50, 50, 50, 190);
+					c_style->color_active = Vec4c(80, 80, 80, 255);
+					c_style->style();
+				}
 			}
-
-			auto e_v_wing = Entity::create();
-			e_transform_tool->add_child(e_v_wing);
+			ui::e_empty();
 			{
-				auto c_element = cElement::create();
+				auto c_element = ui::c_element();
 				c_element->pos_.x() = 5.f;
 				c_element->pos_.y() = 25.f;
 				c_element->size_.x() = 10.f;
 				c_element->size_.y() = 20.f;
 				c_element->frame_thickness_ = 2.f;
-				e_v_wing->add_component(c_element);
 
-				auto c_event_receiver = cEventReceiver::create();
+				auto c_event_receiver = ui::c_event_receiver();
 				struct Capture
 				{
 					cSceneEditorPrivate* e;
@@ -427,21 +339,31 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 						}
 					}
 				}, new_mail(&capture));
-				e_v_wing->add_component(c_event_receiver);
 
-				e_v_wing->add_component(cStyleColor::create(Vec4c(100, 100, 100, 128), Vec4c(50, 50, 50, 190), Vec4c(80, 80, 80, 255)));
+				{
+					auto c_style = ui::c_style_color();
+					c_style->color_normal = Vec4c(100, 100, 100, 128);
+					c_style->color_hovering = Vec4c(50, 50, 50, 190);
+					c_style->color_active = Vec4c(80, 80, 80, 255);
+					c_style->style();
+				}
 			}
+			ui::pop_parent();
 		}
 
-		{
-			auto combobox = e_tool->get_component(cCombobox);
-			combobox->set_index(0, false);
-			combobox->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-				if (hash == FLAME_CHASH("index"))
-					(*(cSceneOverlayer**)c)->tool_type = ((cCombobox*)cb)->idx;
-			}, new_mail_p(c_overlayer));
-		}
+		e_tool->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+			if (hash == FLAME_CHASH("index"))
+				(*(cSceneOverlayer**)c)->tool_type = ((cCombobox*)cb)->idx;
+		}, new_mail_p(c_overlayer));
 	}
+	ui::pop_parent();
+
+	ui::e_end_layout();
+
+	ui::e_end_docker_page();
+	ui::e_end_docker();
+	ui::e_end_docker_container();
+	ui::pop_parent();
 
 	open_hierachy(c_editor, Vec2f(20.f));
 	open_inspector(c_editor, Vec2f(1480, 20.f));

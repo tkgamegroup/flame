@@ -13,7 +13,6 @@ struct cHierarchy : Component
 	cSceneEditor* editor;
 
 	Entity* e_tree;
-	Entity* e_item_menu;
 
 	cHierarchy() :
 		Component("Hierarchy")

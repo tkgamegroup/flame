@@ -1,13 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
-#include <flame/universe/components/menu.h>
-#include <flame/universe/components/tree.h>
-#include <flame/universe/components/scrollbar.h>
-#include <flame/universe/components/window.h>
+#include <flame/universe/ui/utils.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -141,29 +134,26 @@ struct cHierarchyItem : Component
 	}
 };
 
-static void create_tree_node(cHierarchy* hierarchy, Entity* e, Entity* parent)
+static void create_tree_node(cHierarchy* hierarchy, Entity* e)
 {
 	if (e->child_count() > 0)
 	{
-		auto e_tree_node = create_standard_tree_node(app.font_atlas_pixel, s2w(e->name()).c_str());
-		parent->add_child(e_tree_node);
+		auto e_tree_node = ui::e_begin_tree_node(s2w(e->name()).c_str());
 		{
-			auto e_item = e_tree_node->child(0);
-
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
 			c_item->e = e;
-			e_item->add_component(c_item);
+			e_tree_node->child(0)->add_component(c_item);
 		}
 
 		auto e_sub_tree = e_tree_node->child(1);
 		for (auto i = 0; i < e->child_count(); i++)
-			create_tree_node(hierarchy, e->child(i), e_sub_tree);
+			create_tree_node(hierarchy, e->child(i));
+		ui::e_end_tree_node();
 	}
 	else
 	{
-		auto e_tree_leaf = create_standard_tree_leaf(app.font_atlas_pixel, s2w(e->name()).c_str());
-		parent->add_child(e_tree_leaf);
+		auto e_tree_leaf = ui::e_tree_leaf(s2w(e->name()).c_str());
 		{
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->hierarchy = hierarchy;
@@ -212,7 +202,9 @@ void cHierarchy::refresh_selected()
 void cHierarchy::refresh()
 {
 	e_tree->remove_child((Entity*)FLAME_INVALID_POINTER);
-	create_tree_node(this, editor->prefab, e_tree);
+	ui::push_parent(e_tree);
+	create_tree_node(this, editor->prefab);
+	ui::pop_parent();
 	refresh_selected();
 }
 
@@ -223,40 +215,25 @@ Entity* cHierarchy::find_item(Entity* e) const
 
 void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 {
-	auto e_container = get_docker_container_model()->copy();
-	app.root->add_child(e_container);
+	ui::push_parent(app.root);
+	ui::e_begin_docker_container(pos, Vec2f(200.f, 900.f));
+	ui::e_begin_docker();
+	auto c_tab = ui::e_begin_docker_page(L"Hierarchy").tab->get_component(cDockerTab);
+	ui::current_entity();
 	{
-		auto c_element = e_container->get_component(cElement);
-		c_element->pos_ = pos;
-		c_element->size_.x() = 200.f;
-		c_element->size_.y() = 900.f;
-	}
-
-	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker, 0);
-
-	auto tab = create_standard_docker_tab(app.font_atlas_pixel, L"Hierarchy", app.root);
-	e_docker->child(0)->add_child(tab);
-
-	auto e_page = get_docker_page_model()->copy();
-	{
-		auto c_layout = cLayout::create(LayoutVertical);
+		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
-		e_page->add_component(c_layout);
 	}
-	e_docker->child(1)->add_child(e_page);
-
 	auto c_hierarchy = new_u_object<cHierarchy>();
-	e_page->add_component(c_hierarchy);
-	c_hierarchy->tab = tab->get_component(cDockerTab);
+	ui::current_entity()->add_component(c_hierarchy);
+	c_hierarchy->tab = c_tab;
 	c_hierarchy->editor = editor;
 	editor->hierarchy = c_hierarchy;
 
-	auto e_tree = create_standard_tree(true);
+	ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+	auto e_tree = ui::e_begin_tree(true, 8.f);
 	{
-		e_tree->get_component(cElement)->inner_padding_ = Vec4f(4.f);
-
 		auto c_tree = e_tree->get_component(cTree);
 		c_tree->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto editor = *(cSceneEditor**)c;
@@ -286,12 +263,16 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 			}, new_mail(&capture));
 		}, new_mail_p(editor));
 	}
+	ui::e_end_tree();
+	ui::e_end_scroll_view1();
 
-	create_tree_node(c_hierarchy, editor->prefab, e_tree);
+	ui::e_end_docker_page();
+	ui::e_end_docker();
+	ui::e_end_docker_container();
+	ui::pop_parent();
 
 	c_hierarchy->e_tree = e_tree;
-
-	c_hierarchy->e_item_menu = create_standard_menu();
-
-	e_page->add_child(wrap_standard_scrollbar(e_tree, ScrollbarVertical, true, 1.f));
+	ui::push_parent(e_tree);
+	create_tree_node(c_hierarchy, editor->prefab);
+	ui::pop_parent();
 }

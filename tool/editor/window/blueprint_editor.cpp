@@ -4,8 +4,9 @@
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
-#include <flame/graphics/font.h>
-#include <flame/universe/ui/ui.h>
+#include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/2d_renderer.h>
+#include <flame/universe/ui/utils.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -229,8 +230,6 @@ struct cBPEditor : Component
 			for (auto j = 0; j < udts.s; j++)
 			{
 				auto u = udts.v[j];
-				if (std::string(u->type()->name()).find('(') != std::string::npos)
-					continue;
 				{
 					auto f1 = u->find_function("update");
 					auto f2 = u->find_function("active_update");
@@ -258,60 +257,28 @@ struct cBPEditor : Component
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return std::string(a->type()->name()) < std::string(b->type()->name());
 		});
-		{
-			auto e_edit = create_standard_edit(150.f, app.font_atlas_pixel, 1.f);
-			auto item = wrap_standard_text(e_edit, true, app.font_atlas_pixel, 1.f, Icon_SEARCH);
-			e_add_node_menu->add_child(item);
-
-			e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				auto menu = *(Entity**)c;
-				auto str = ((cText*)t)->text();
-				for (auto i = 1; i < menu->child_count(); i++)
-				{
-					auto item = menu->child(i);
-					item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-				}
-			}, new_mail_p(e_add_node_menu));
-
-			add_node_menu_filter = e_edit->get_component(cEdit);
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Enum");
-			e_add_node_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-				}
-			}, new_mail_p(this));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Var");
-			e_add_node_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-				}
-			}, new_mail_p(this));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Array");
-			e_add_node_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-				}
-			}, new_mail_p(this));
-		}
+		ui::push_parent(e_add_node_menu);
+		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+		ui::e_text(Icon_SEARCH);
+		ui::e_edit(150.f)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+			auto menu = *(Entity**)c;
+			auto str = ((cText*)t)->text();
+			for (auto i = 1; i < menu->child_count(); i++)
+			{
+				auto item = menu->child(i);
+				item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+			}
+		}, new_mail_p(e_add_node_menu));
+		add_node_menu_filter = ui::current_entity()->get_component(cEdit);
+		ui::e_end_layout();
+		ui::e_menu_item(L"Enum", [](void* c, Entity*) {
+		}, new_mail_p(this));
+		ui::e_menu_item(L"Var", [](void* c, Entity*) {
+		}, new_mail_p(this));
+		ui::e_menu_item(L"Array", [](void* c, Entity*) {
+		}, new_mail_p(this));
 		for (auto udt : all_udts)
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, s2w(udt->type()->name()).c_str());
-			e_add_node_menu->add_child(e_item);
 			struct Capture
 			{
 				cBPEditor* e;
@@ -319,19 +286,13 @@ struct cBPEditor : Component
 			}capture;
 			capture.e = this;
 			capture.u = udt;
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			ui::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c, Entity*) {
 				auto& capture = *(Capture*)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					capture.e->reset_add_node_menu_filter();
-
-					capture.e->add_node(capture.u->type()->name(), "", capture.e->add_pos);
-				}
+				capture.e->reset_add_node_menu_filter();
+				capture.e->add_node(capture.u->type()->name(), "", capture.e->add_pos);
 			}, new_mail(&capture));
 		}
+		ui::pop_parent();
 	}
 
 	Entity* create_module_entity(BP::Module* m);
@@ -514,11 +475,11 @@ struct cBPEditor : Component
 		{
 		case SelModule:
 			if (selected_.m->filename() == L"bp.dll")
-				popup_message_dialog(L"Cannot Remove Self Module");
+				ui::e_message_dialog(L"Cannot Remove Self Module");
 			else if (selected_.m->filename() == L"flame_foundation.dll")
-				popup_message_dialog(L"Cannot Remove 'foundation' Module");
+				ui::e_message_dialog(L"Cannot Remove 'foundation' Module");
 			else if (selected_.m->filename() == L"editor.exe")
-				popup_message_dialog(L"Cannot Remove 'this' Module");
+				ui::e_message_dialog(L"Cannot Remove 'this' Module");
 			else
 			{
 				std::wstring str;
@@ -538,7 +499,7 @@ struct cBPEditor : Component
 				}capture;
 				capture.e = this;
 				capture.m = selected_.m;
-				popup_confirm_dialog(L"The node(s):\n" + str + L"will be removed, sure to remove module?", [](void* c, bool yes) {
+				ui::e_confirm_dialog((L"The node(s):\n" + str + L"will be removed, sure to remove module?").c_str(), [](void* c, bool yes) {
 					auto& capture = *(Capture*)c;
 
 					if (yes)
@@ -553,7 +514,7 @@ struct cBPEditor : Component
 			break;
 		case SelNode:
 			if (!remove_node(selected_.n))
-				popup_message_dialog(L"Cannot Remove Test Nodes");
+				ui::e_message_dialog(L"Cannot Remove Test Nodes");
 			break;
 		case SelLink:
 			selected_.l->link_to(nullptr);
@@ -1016,339 +977,181 @@ void cBPScene::draw(graphics::Canvas* canvas)
 
 Entity* cBPEditor::create_module_entity(BP::Module* m)
 {
-	auto e_module = Entity::create();
-	e_base->add_child(e_module);
+	ui::push_parent(e_base);
+
+	auto e_module = ui::e_empty();
 	m->user_data = e_module;
 	{
-		auto c_element = cElement::create();
+		auto c_element = ui::c_element();
 		c_element->pos_ = m->pos;
 		c_element->color_ = Vec4c(255, 200, 190, 200);
 		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
-		e_module->add_component(c_element);
-
-		e_module->add_component(cEventReceiver::create());
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->fence = 1;
-		e_module->add_component(c_layout);
-
-		e_module->add_component(cMoveable::create());
-
+		ui::c_event_receiver();
+		ui::c_layout(LayoutVertical)->fence = 1;
+		ui::c_moveable();
 		auto c_module = new_u_object<cBPObject>();
 		c_module->editor = this;
 		c_module->t = SelModule;
 		c_module->p = m;
 		e_module->add_component(c_module);
 	}
-	{
-		auto e_content = Entity::create();
-		e_module->add_child(e_content);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(8.f);
-			e_content->add_component(c_element);
+	ui::push_parent(e_module);
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::e_text(m->filename())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+	ui::e_text(L"module")->get_component(cText)->color = Vec4c(50, 50, 50, 255);
+	ui::e_end_layout();
+	ui::e_empty();
+	ui::c_element();
+	ui::c_event_receiver()->penetrable = true;
+	ui::c_aligner(SizeFitParent, SizeFitParent);
+	ui::c_bring_to_front();
+	ui::pop_parent();
 
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
-			e_content->add_component(c_layout);
-		}
-
-		auto e_text_filename = Entity::create();
-		e_content->add_child(e_text_filename);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			e_text_filename->add_component(c_element);
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(m->filename());
-			e_text_filename->add_component(c_text);
-		}
-
-		auto e_text_type = Entity::create();
-		e_content->add_child(e_text_type);
-		{
-			e_text_type->add_component(cElement::create());
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(L"module");
-			c_text->color = Vec4c(50, 50, 50, 255);
-			e_text_type->add_component(c_text);
-		}
-	}
-
-	auto e_bring_to_front = Entity::create();
-	e_module->add_child(e_bring_to_front);
-	{
-		e_bring_to_front->add_component(cElement::create());
-
-		auto c_event_receiver = cEventReceiver::create();
-		c_event_receiver->penetrable = true;
-		e_bring_to_front->add_component(c_event_receiver);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_bring_to_front->add_component(c_aligner);
-
-		e_bring_to_front->add_component(cBringToFront::create());
-	}
+	ui::pop_parent();
 
 	return e_module;
 }
 
 Entity* cBPEditor::create_package_entity(BP::Package* p)
 {
-	auto e_package = Entity::create();
-	e_base->add_child(e_package);
+	ui::push_parent(e_base);
+
+	auto e_package = ui::e_empty();
 	p->user_data = e_package;
 	{
-		auto c_element = cElement::create();
+		auto c_element = ui::c_element();
 		c_element->pos_ = p->pos;
 		c_element->color_ = Vec4c(190, 255, 200, 200);
 		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
-		e_package->add_component(c_element);
-
-		e_package->add_component(cEventReceiver::create());
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->fence = 1;
-		e_package->add_component(c_layout);
-
-		e_package->add_component(cMoveable::create());
-
+		ui::c_event_receiver();
+		ui::c_layout(LayoutVertical)->fence = 1;
+		ui::c_moveable();
 		auto c_package = new_u_object<cBPObject>();
 		c_package->editor = this;
 		c_package->t = SelPackage;
 		c_package->p = p;
 		e_package->add_component(c_package);
 	}
+	ui::push_parent(e_package);
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::e_text(s2w(p->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+	ui::c_event_receiver();
+	ui::c_edit();
+	ui::current_entity()->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		if (hash == FLAME_CHASH("text"))
+			(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()).c_str());
+	}, new_mail_p(p));
+	ui::e_text(p->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
+	ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 16.f);
+	ui::c_aligner(SizeGreedy, SizeFixed);
+
+	auto bp = p->bp();
+
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::c_aligner(SizeGreedy, SizeFixed);
+	for (auto i = 0; i < bp->input_export_count(); i++)
 	{
-		auto e_content = Entity::create();
-		e_package->add_child(e_content);
+		auto s = bp->input_export(i);
+
+		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::e_empty();
 		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(8.f);
-			e_content->add_component(c_element);
-
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
-			e_content->add_component(c_layout);
+			auto c_element = ui::c_element();
+			auto r = ui::style(ui::FontSize).u()[0];
+			c_element->size_ = r;
+			c_element->roundness_ = r * 0.5f;
+			c_element->roundness_lod = 2;
+			c_element->color_ = Vec4c(200, 200, 200, 255);
+			ui::c_event_receiver();
+			auto c_slot = new_u_object<cBPSlot>();
+			c_slot->editor = this;
+			c_slot->s = s;
+			ui::current_entity()->add_component(c_slot);
+			s->user_data = c_slot;
 		}
-
-		auto e_text_id = Entity::create();
-		e_content->add_child(e_text_id);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			e_text_id->add_component(c_element);
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->set_text(s2w(p->id()).c_str());
-			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()).c_str());
-			}, new_mail_p(p));
-			e_text_id->add_component(c_text);
-
-			e_text_id->add_component(cEventReceiver::create());
-
-			e_text_id->add_component(cEdit::create());
-		}
-
-		auto e_main = Entity::create();
-		e_content->add_child(e_main);
-		{
-			e_main->add_component(cElement::create());
-
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy_ = SizeGreedy;
-			e_main->add_component(c_aligner);
-
-			auto c_layout = cLayout::create(LayoutHorizontal);
-			c_layout->item_padding = 16.f;
-			e_main->add_component(c_layout);
-		}
-
-		auto bp = p->bp();
-
-		auto e_left = Entity::create();
-		e_main->add_child(e_left);
-		{
-			e_left->add_component(cElement::create());
-
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy_ = SizeGreedy;
-			e_left->add_component(c_aligner);
-
-			e_left->add_component(cLayout::create(LayoutVertical));
-
-			for (auto j = 0; j < bp->input_export_count(); j++)
-			{
-				auto s = bp->input_export(j);
-
-				auto e_input = Entity::create();
-				e_left->add_child(e_input);
-				{
-					e_input->add_component(cElement::create());
-
-					auto c_layout = cLayout::create(LayoutVertical);
-					c_layout->item_padding = 2.f;
-					e_input->add_component(c_layout);
-				}
-
-				auto e_title = Entity::create();
-				e_input->add_child(e_title);
-				{
-					e_title->add_component(cElement::create());
-
-					e_title->add_component(cLayout::create(LayoutHorizontal));
-
-					auto e_slot = Entity::create();
-					e_title->add_child(e_slot);
-					{
-						auto c_element = cElement::create();
-						auto r = default_style.font_size;
-						c_element->size_ = r;
-						c_element->roundness_ = r * 0.5f;
-						c_element->roundness_lod = 2;
-						c_element->color_ = Vec4c(200, 200, 200, 255);
-						e_slot->add_component(c_element);
-
-						e_slot->add_component(cEventReceiver::create());
-
-						auto c_slot = new_u_object<cBPSlot>();
-						c_slot->editor = this;
-						c_slot->s = s;
-						e_slot->add_component(c_slot);
-						s->user_data = c_slot;
-					}
-
-					auto e_text = Entity::create();
-					e_title->add_child(e_text);
-					{
-						e_text->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(s->get_address().str()).c_str());
-						e_text->add_component(c_text);
-					}
-				}
-			}
-		}
-
-		auto e_right = Entity::create();
-		e_main->add_child(e_right);
-		{
-			e_right->add_component(cElement::create());
-
-			e_right->add_component(cLayout::create(LayoutVertical));
-
-			for (auto j = 0; j < bp->output_export_count(); j++)
-			{
-				auto s = bp->output_export(j);
-
-				auto e_title = Entity::create();
-				e_right->add_child(e_title);
-				{
-					e_title->add_component(cElement::create());
-
-					auto c_aligner = cAligner::create();
-					c_aligner->x_align_ = AlignxRight;
-					e_title->add_component(c_aligner);
-
-					e_title->add_component(cLayout::create(LayoutHorizontal));
-
-					auto e_text = Entity::create();
-					e_title->add_child(e_text);
-					{
-						e_text->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(s->get_address().str()).c_str());
-						e_text->add_component(c_text);
-					}
-
-					auto e_slot = Entity::create();
-					e_title->add_child(e_slot);
-					{
-						auto c_element = cElement::create();
-						auto r = default_style.font_size;
-						c_element->size_ = r;
-						c_element->roundness_ = r * 0.5f;
-						c_element->roundness_lod = 2;
-						c_element->color_ = Vec4c(200, 200, 200, 255);
-						e_slot->add_component(c_element);
-
-						e_slot->add_component(cEventReceiver::create());
-
-						auto c_slot = new_u_object<cBPSlot>();
-						c_slot->editor = this;
-						c_slot->s = s;
-						e_slot->add_component(c_slot);
-						s->user_data = c_slot;
-					}
-				}
-			}
-		}
+		ui::e_text(s2w(s->get_address().str()).c_str());
+		ui::e_end_layout();
 	}
+	ui::e_end_layout();
 
-	auto e_bring_to_front = Entity::create();
-	e_package->add_child(e_bring_to_front);
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::c_aligner(SizeGreedy, SizeFixed);
+	for (auto i = 0; i < bp->output_export_count(); i++)
 	{
-		e_bring_to_front->add_component(cElement::create());
+		auto s = bp->output_export(i);
 
-		auto c_event_receiver = cEventReceiver::create();
-		c_event_receiver->penetrable = true;
-		e_bring_to_front->add_component(c_event_receiver);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_bring_to_front->add_component(c_aligner);
-
-		e_bring_to_front->add_component(cBringToFront::create());
+		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::c_aligner(AlignxRight, AlignyFree);
+		ui::e_text(s2w(s->get_address().str()).c_str());
+		ui::e_empty();
+		{
+			auto c_element = ui::c_element();
+			auto r = ui::style(ui::FontSize).u()[0];
+			c_element->size_ = r;
+			c_element->roundness_ = r * 0.5f;
+			c_element->roundness_lod = 2;
+			c_element->color_ = Vec4c(200, 200, 200, 255);
+			ui::c_event_receiver();
+			auto c_slot = new_u_object<cBPSlot>();
+			c_slot->editor = this;
+			c_slot->s = s;
+			ui::current_entity()->add_component(c_slot);
+			s->user_data = c_slot;
+		}
+		ui::e_end_layout();
 	}
+	ui::e_end_layout();
+
+	ui::e_end_layout();
+	ui::e_end_layout();
+	ui::e_empty();
+	ui::c_element();
+	ui::c_event_receiver()->penetrable = true;
+	ui::c_aligner(SizeFitParent, SizeFitParent);
+	ui::c_bring_to_front();
+	ui::pop_parent();
+
+	ui::pop_parent();
 
 	return e_package;
 }
 
 template<class T>
-void create_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
+void create_edit(cBPEditor* editor, BP::Slot* input)
 {
 	auto& data = *(T*)input->data();
 
-	auto e_edit = create_drag_edit(app.font_atlas_pixel, 0.9f, std::is_floating_point<T>::value);
-	parent->add_child(e_edit);
+	ui::push_style(ui::FontSize, ui::StyleValue(12));
+	auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
+	struct Capture
 	{
-		struct Capture
+		cBPEditor* editor;
+		BP::Slot* input;
+		cText* drag_text;
+	}capture;
+	capture.editor = editor;
+	capture.input = input;
+	capture.drag_text = e_edit->child(1)->get_component(cText);
+	e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		auto& capture = *(Capture*)c;
+		if (hash == FLAME_CHASH("text"))
 		{
-			cBPEditor* editor;
-			BP::Slot* input;
-			cText* drag_text;
-		}capture;
-		capture.editor = editor;
-		capture.input = input;
-		capture.drag_text = e_edit->child(1)->get_component(cText);
-		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-			auto& capture = *(Capture*)c;
-			if (hash == FLAME_CHASH("text"))
-			{
-				auto text = ((cText*)t)->text();
-				auto data = sto_s<T>(text);
-				capture.input->set_data(&data);
-				capture.drag_text->set_text(text);
-				capture.editor->set_changed(true);
-			}
-		}, new_mail(&capture));
-	}
+			auto text = ((cText*)t)->text();
+			auto data = sto_s<T>(text);
+			capture.input->set_data(&data);
+			capture.drag_text->set_text(text);
+			capture.editor->set_changed(true);
+		}
+	}, new_mail(&capture));
+	ui::pop_style(ui::FontSize);
 
 	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
 	c_tracker->data = &data;
-	parent->add_component(c_tracker);
+	ui::current_parent()->add_component(c_tracker);
 }
 
 template<uint N, class T>
-void create_vec_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
+void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 {
 	auto& data = *(Vec<N, T>*)input->data();
 
@@ -1361,10 +1164,11 @@ void create_vec_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
 	}capture;
 	capture.editor = editor;
 	capture.input = input;
+	ui::push_style(ui::FontSize, ui::StyleValue(12));
 	for (auto i = 0; i < N; i++)
 	{
-		auto e_edit = create_drag_edit(app.font_atlas_pixel, 0.9f, std::is_floating_point<T>::value);
-		parent->add_child(wrap_standard_text(e_edit, false, app.font_atlas_pixel, 0.9f, s2w(Vec<N, T>::coord_name(i)).c_str()));
+		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
 		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
@@ -1379,802 +1183,541 @@ void create_vec_edit(cBPEditor* editor, Entity* parent, BP::Slot* input)
 				capture.editor->set_changed(true);
 			}
 		}, new_mail(&capture));
+		ui::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
+		ui::e_end_layout();
 	}
+	ui::pop_style(ui::FontSize);
 
 	auto c_tracker = new_u_object<cDigitalVecDataTracker<N, T>>();
 	c_tracker->data = &data;
-	parent->add_component(c_tracker);
+	ui::current_parent()->add_component(c_tracker);
 }
 
 Entity* cBPEditor::create_node_entity(BP::Node* n)
 {
-	auto e_node = Entity::create();
-	e_base->add_child(e_node);
+	ui::push_parent(e_base);
+
+	auto e_node = ui::e_empty();
 	n->user_data = e_node;
 	{
-		auto c_element = cElement::create();
+		auto c_element = ui::c_element();
 		c_element->pos_ = n->pos;
 		c_element->color_ = Vec4c(255, 255, 255, 200);
 		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
-		e_node->add_component(c_element);
-
-		e_node->add_component(cEventReceiver::create());
-
-		auto c_layout = cLayout::create(LayoutVertical);
-		c_layout->fence = 1;
-		e_node->add_component(c_layout);
-
-		e_node->add_component(cMoveable::create());
-
+		ui::c_event_receiver();
+		ui::c_layout(LayoutVertical)->fence = 1;
+		ui::c_moveable();
 		auto c_node = new_u_object<cBPObject>();
 		c_node->editor = this;
 		c_node->t = SelNode;
 		c_node->p = n;
 		e_node->add_component(c_node);
 	}
+	ui::push_parent(e_node);
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::push_style(ui::FontSize, ui::StyleValue(21));
+	ui::e_text(s2w(n->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+	ui::c_event_receiver();
+	ui::c_edit();
+	ui::current_entity()->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		if (hash == FLAME_CHASH("text"))
+			(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()).c_str());
+	}, new_mail_p(n));
+	ui::pop_style(ui::FontSize);
+
+	auto udt = n->udt();
+	if (udt)
 	{
-		auto e_content = Entity::create();
-		e_node->add_child(e_content);
-		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(8.f);
-			e_content->add_component(c_element);
+		auto module_name = std::filesystem::path(udt->db()->module_name());
+		module_name = module_name.lexically_relative(std::filesystem::canonical(std::filesystem::path(filename).parent_path()));
+		ui::e_text((module_name.wstring() + L"\n" + s2w(n->type_name())).c_str())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
+	}
+	std::string udt_name = n->type_name();
+	if (n->id() == "test_dst")
+	{
+		ui::e_button(L"Show", [](void* c, Entity*) {
+			open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
+		}, new_mail_p(n));
+	}
+	//else if (udt_name == "D#graphics::Shader")
+	//{
+	//	auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
+	//	e_content->add_child(e_edit);
 
-			auto c_layout = cLayout::create(LayoutVertical);
-			c_layout->item_padding = 4.f;
-			e_content->add_component(c_layout);
+	//	struct Capture
+	//	{
+	//		cBPEditor* e;
+	//		BP::Node* n;
+	//	}capture;
+	//	capture.e = this;
+	//	capture.n = n;
+	//	e_edit->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+	//		auto& capture = *(Capture*)c;
+
+	//		if (is_mouse_clicked(action, key))
+	//		{
+	//			capture.e->locked = true;
+	//			auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
+	//			{
+	//				t->get_component(cElement)->inner_padding_ = Vec4f(4.f);
+
+	//				auto c_layout = cLayout::create(LayoutVertical);
+	//				c_layout->width_fit_children = false;
+	//				c_layout->height_fit_children = false;
+	//				t->add_component(c_layout);
+	//			}
+
+	//			auto e_buttons = Entity::create();
+	//			t->add_child(e_buttons);
+	//			{
+	//				e_buttons->add_component(cElement::create());
+
+	//				auto c_layout = cLayout::create(LayoutHorizontal);
+	//				c_layout->item_padding = 4.f;
+	//				e_buttons->add_component(c_layout);
+	//			}
+
+	//			auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
+	//			e_buttons->add_child(e_back);
+	//			{
+	//				e_back->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+	//					if (is_mouse_clicked(action, key))
+	//					{
+	//						auto editor = *(cBPEditor**)c;
+	//						destroy_topmost(editor->entity, false);
+	//						editor->locked = false;
+	//					}
+	//				}, new_mail_p(capture.e));
+	//			}
+
+	//			auto e_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
+	//			e_buttons->add_child(e_compile);
+
+	//			auto e_text_tip = Entity::create();
+	//			e_buttons->add_child(e_text_tip);
+	//			{
+	//				e_text_tip->add_component(cElement::create());
+
+	//				auto c_text = cText::create(app.font_atlas_pixel);
+	//				c_text->set_text(L"(Do update first to get popper result)");
+	//				e_text_tip->add_component(c_text);
+	//			}
+
+	//			auto filename = ssplit(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
+
+	//			auto e_text_view = Entity::create();
+	//			{
+	//				auto c_element = cElement::create();
+	//				c_element->clip_children = true;
+	//				e_text_view->add_component(c_element);
+
+	//				auto c_aligner = cAligner::create();
+	//				c_aligner->width_policy_ = SizeFitParent;
+	//				c_aligner->height_policy_ = SizeFitParent;
+	//				e_text_view->add_component(c_aligner);
+
+	//				auto c_layout = cLayout::create(LayoutVertical);
+	//				c_layout->width_fit_children = false;
+	//				c_layout->height_fit_children = false;
+	//				e_text_view->add_component(c_layout);
+	//			}
+
+	//			auto e_text = Entity::create();
+	//			e_text_view->add_child(e_text);
+	//			{
+	//				e_text->add_component(cElement::create());
+
+	//				auto c_text = cText::create(app.font_atlas_pixel);
+	//				auto file = get_file_string(capture.e->filepath + L"/" + filename);
+	//				c_text->set_text(s2w(file).c_str());
+	//				c_text->auto_width_ = false;
+	//				e_text->add_component(c_text);
+
+	//				e_text->add_component(cEventReceiver::create());
+
+	//				e_text->add_component(cEdit::create());
+
+	//				auto c_aligner = cAligner::create();
+	//				c_aligner->width_policy_ = SizeFitParent;
+	//				e_text->add_component(c_aligner);
+
+	//				{
+	//					struct _Capture
+	//					{
+	//						cBPEditor* e;
+	//						BP::Node* n;
+	//						cText* t;
+	//					}_capture;
+	//					_capture.e = capture.e;
+	//					_capture.n = capture.n;
+	//					_capture.t = c_text;
+	//					e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+	//						auto& capture = *(_Capture*)c;
+	//						if (is_mouse_clicked(action, key))
+	//						{
+	//							auto i_filename = capture.n->find_input("filename");
+	//							std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
+	//							auto str = w2s(capture.t->text());
+	//							str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+	//							file.write(str.c_str(), str.size());
+	//							file.close();
+	//							i_filename->set_frame(capture.n->scene()->frame);
+	//						}
+	//					}, new_mail(&_capture));
+	//				}
+	//			}
+
+	//			auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
+	//			e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
+	//			t->add_child(e_scrollbar_container);
+	//		}
+	//	}, new_mail(&capture));
+	//}
+	ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 16.f);
+	ui::c_aligner(SizeGreedy, SizeFixed);
+
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::c_aligner(SizeGreedy, SizeFixed);
+	for (auto i = 0; i < n->input_count(); i++)
+	{
+		auto input = n->input(i);
+
+		ui::e_begin_layout(0.f, 0.f, LayoutVertical, 2.f);
+
+		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::e_empty();
+		{
+			auto c_element = ui::c_element();
+			auto r = ui::style(ui::FontSize).u()[0];
+			c_element->size_ = r;
+			c_element->roundness_ = r * 0.5f;
+			c_element->roundness_lod = 2;
+			c_element->color_ = Vec4c(200, 200, 200, 255);
+			ui::c_event_receiver();
 		}
+		auto c_slot = new_u_object<cBPSlot>();
+		c_slot->editor = this;
+		c_slot->s = input;
+		ui::current_entity()->add_component(c_slot);
+		input->user_data = c_slot;
+		ui::e_text(s2w(input->name()).c_str());
+		ui::e_end_layout();
 
-		auto e_text_id = Entity::create();
-		e_content->add_child(e_text_id);
+		auto e_data = ui::e_begin_layout(0.f, 0.f, LayoutVertical, 2.f);
+		e_data->get_component(cElement)->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0], 0.f, 0.f, 0.f);
+		std::vector<TypeinfoDatabase*> dbs(bp->db_count());
+		for (auto i = 0; i < dbs.size(); i++)
+			dbs[i] = bp->db(i);
+		auto type = input->type();
+		auto base_hash = type->base_hash();
+		ui::push_style(ui::FontSize, ui::StyleValue(12));
+		switch (type->tag())
 		{
-			auto c_element = cElement::create();
-			c_element->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-			e_text_id->add_component(c_element);
-
-			auto c_text = cText::create(app.font_atlas_pixel);
-			c_text->font_size_ = default_style.font_size * 1.5f;
-			c_text->set_text(s2w(n->id()).c_str());
-			c_text->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				if (hash == FLAME_CHASH("text"))
-					(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()).c_str());
-			}, new_mail_p(n));
-			e_text_id->add_component(c_text);
-
-			e_text_id->add_component(cEventReceiver::create());
-
-			e_text_id->add_component(cEdit::create());
-
-		}
-
-		auto udt = n->udt();
-
-		if (udt)
+		case TypeEnumSingle:
 		{
-			auto e_text_type = Entity::create();
-			e_content->add_child(e_text_type);
-			{
-				e_text_type->add_component(cElement::create());
-
-				auto c_text = cText::create(app.font_atlas_pixel);
-				auto module_name = std::filesystem::path(udt->db()->module_name());
-				module_name = module_name.lexically_relative(std::filesystem::canonical(std::filesystem::path(filename).parent_path()));
-				c_text->set_text((module_name.wstring() + L"\n" + s2w(n->type_name())).c_str());
-				c_text->color = Vec4c(50, 50, 50, 255);
-				e_text_type->add_component(c_text);
-			}
-		}
-
-		std::string udt_name = n->type_name();
-		if (n->id() == "test_dst")
-		{
-			auto e_show = create_standard_button(app.font_atlas_pixel, 0.9f, L"Show");
-			e_content->add_child(e_show);
-			e_show->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_clicked(action, key))
-					open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
-			}, new_mail_p(n));
-		}
-		else if (udt_name == "D#graphics::Shader")
-		{
-			auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
-			e_content->add_child(e_edit);
+			auto info = find_enum(dbs, base_hash);
+			create_enum_combobox(info, 120.f);
 
 			struct Capture
 			{
-				cBPEditor* e;
-				BP::Node* n;
+				cBPEditor* editor;
+				BP::Slot* input;
+				EnumInfo* e;
 			}capture;
-			capture.e = this;
-			capture.n = n;
-			e_edit->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			capture.editor = this;
+			capture.input = input;
+			capture.e = info;
+			e_data->child(0)->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 				auto& capture = *(Capture*)c;
-
-				if (is_mouse_clicked(action, key))
+				if (hash == FLAME_CHASH("index"))
 				{
-					capture.e->locked = true;
-					auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
-					{
-						t->get_component(cElement)->inner_padding_ = Vec4f(4.f);
-
-						auto c_layout = cLayout::create(LayoutVertical);
-						c_layout->width_fit_children = false;
-						c_layout->height_fit_children = false;
-						t->add_component(c_layout);
-					}
-
-					auto e_buttons = Entity::create();
-					t->add_child(e_buttons);
-					{
-						e_buttons->add_component(cElement::create());
-
-						auto c_layout = cLayout::create(LayoutHorizontal);
-						c_layout->item_padding = 4.f;
-						e_buttons->add_component(c_layout);
-					}
-
-					auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
-					e_buttons->add_child(e_back);
-					{
-						e_back->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-							if (is_mouse_clicked(action, key))
-							{
-								auto editor = *(cBPEditor**)c;
-								destroy_topmost(editor->entity, false);
-								editor->locked = false;
-							}
-						}, new_mail_p(capture.e));
-					}
-
-					auto e_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
-					e_buttons->add_child(e_compile);
-
-					auto e_text_tip = Entity::create();
-					e_buttons->add_child(e_text_tip);
-					{
-						e_text_tip->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(L"(Do update first to get popper result)");
-						e_text_tip->add_component(c_text);
-					}
-
-					auto filename = ssplit(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
-
-					auto e_text_view = Entity::create();
-					{
-						auto c_element = cElement::create();
-						c_element->clip_children = true;
-						e_text_view->add_component(c_element);
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy_ = SizeFitParent;
-						c_aligner->height_policy_ = SizeFitParent;
-						e_text_view->add_component(c_aligner);
-
-						auto c_layout = cLayout::create(LayoutVertical);
-						c_layout->width_fit_children = false;
-						c_layout->height_fit_children = false;
-						e_text_view->add_component(c_layout);
-					}
-
-					auto e_text = Entity::create();
-					e_text_view->add_child(e_text);
-					{
-						e_text->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						auto file = get_file_string(capture.e->filepath + L"/" + filename);
-						c_text->set_text(s2w(file).c_str());
-						c_text->auto_width_ = false;
-						e_text->add_component(c_text);
-
-						e_text->add_component(cEventReceiver::create());
-
-						e_text->add_component(cEdit::create());
-
-						auto c_aligner = cAligner::create();
-						c_aligner->width_policy_ = SizeFitParent;
-						e_text->add_component(c_aligner);
-
-						{
-							struct _Capture
-							{
-								cBPEditor* e;
-								BP::Node* n;
-								cText* t;
-							}_capture;
-							_capture.e = capture.e;
-							_capture.n = capture.n;
-							_capture.t = c_text;
-							e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-								auto& capture = *(_Capture*)c;
-								if (is_mouse_clicked(action, key))
-								{
-									auto i_filename = capture.n->find_input("filename");
-									std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
-									auto str = w2s(capture.t->text());
-									str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
-									file.write(str.c_str(), str.size());
-									file.close();
-									i_filename->set_frame(capture.n->scene()->frame);
-								}
-							}, new_mail(&_capture));
-						}
-					}
-
-					auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
-					e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
-					t->add_child(e_scrollbar_container);
+					auto v = capture.e->item(((cCombobox*)cb)->idx)->value();
+					capture.input->set_data(&v);
+					capture.editor->set_changed(true);
 				}
 			}, new_mail(&capture));
-		}
 
-		auto e_main = Entity::create();
-		e_content->add_child(e_main);
+			auto c_tracker = new_u_object<cEnumSingleDataTracker>();
+			c_tracker->data = input->data();
+			c_tracker->info = info;
+			e_data->add_component(c_tracker);
+		}
+		break;
+		case TypeEnumMulti:
 		{
-			e_main->add_component(cElement::create());
+			auto v = *(int*)input->data();
 
-			auto c_aligner = cAligner::create();
-			c_aligner->width_policy_ = SizeGreedy;
-			e_main->add_component(c_aligner);
-
-			auto c_layout = cLayout::create(LayoutHorizontal);
-			c_layout->item_padding = 16.f;
-			e_main->add_component(c_layout);
-
-			auto e_left = Entity::create();
-			e_main->add_child(e_left);
+			auto info = find_enum(dbs, base_hash);
+			create_enum_checkboxs(info);
+			for (auto k = 0; k < info->item_count(); k++)
 			{
-				e_left->add_component(cElement::create());
+				auto item = info->item(k);
 
-				auto c_aligner = cAligner::create();
-				c_aligner->width_policy_ = SizeGreedy;
-				e_left->add_component(c_aligner);
-
-				e_left->add_component(cLayout::create(LayoutVertical));
-
-				for (auto j = 0; j < n->input_count(); j++)
+				struct Capture
 				{
-					auto input = n->input(j);
-
-					auto e_input = Entity::create();
-					e_left->add_child(e_input);
+					cBPEditor* editor;
+					BP::Slot* input;
+					int v;
+				}capture;
+				capture.editor = this;
+				capture.input = input;
+				capture.v = item->value();
+				e_data->child(k)->child(0)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+					auto& capture = *(Capture*)c;
+					if (hash == FLAME_CHASH("checked"))
 					{
-						e_input->add_component(cElement::create());
-
-						auto c_layout = cLayout::create(LayoutVertical);
-						c_layout->item_padding = 2.f;
-						e_input->add_component(c_layout);
+						auto v = *(int*)capture.input->data();
+						if (((cCheckbox*)cb)->checked)
+							v |= capture.v;
+						else
+							v &= ~capture.v;
+						capture.input->set_data(&v);
+						capture.editor->set_changed(true);
 					}
-
-					auto e_title = Entity::create();
-					e_input->add_child(e_title);
-					{
-						e_title->add_component(cElement::create());
-
-						e_title->add_component(cLayout::create(LayoutHorizontal));
-					}
-
-					auto e_slot = Entity::create();
-					e_title->add_child(e_slot);
-					{
-						auto c_element = cElement::create();
-						auto r = default_style.font_size;
-						c_element->size_ = r;
-						c_element->roundness_ = r * 0.5f;
-						c_element->roundness_lod = 2;
-						c_element->color_ = Vec4c(200, 200, 200, 255);
-						e_slot->add_component(c_element);
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->font_size_ = default_style.font_size * 0.7f;
-						c_text->auto_width_ = false;
-						c_text->auto_height_ = false;
-						if (bp->find_input_export(input) != -1)
-							c_text->set_text(L"  p");
-						e_slot->add_component(c_text);
-
-						e_slot->add_component(cEventReceiver::create());
-					}
-					auto c_slot = new_u_object<cBPSlot>();
-					c_slot->editor = this;
-					c_slot->s = input;
-					e_slot->add_component(c_slot);
-					input->user_data = c_slot;
-
-					auto e_text = Entity::create();
-					e_title->add_child(e_text);
-					{
-						e_text->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(input->name()).c_str());
-						e_text->add_component(c_text);
-					}
-
-					auto e_data = Entity::create();
-					e_input->add_child(e_data);
-					{
-						auto c_element = cElement::create();
-						c_element->inner_padding_ = Vec4f(default_style.font_size, 0.f, 0.f, 0.f);
-						e_data->add_component(c_element);
-
-						auto c_layout = cLayout::create(LayoutVertical);
-						c_layout->item_padding = 2.f;
-						e_data->add_component(c_layout);
-					}
-
-					std::vector<TypeinfoDatabase*> dbs(bp->db_count());
-					for (auto i = 0; i < dbs.size(); i++)
-						dbs[i] = bp->db(i);
-					auto type = input->type();
-					auto base_hash = type->base_hash();
-					switch (type->tag())
-					{
-					case TypeEnumSingle:
-					{
-						auto info = find_enum(dbs, base_hash);
-						create_enum_combobox(info, 120.f, app.font_atlas_pixel, 0.9f, e_data);
-
-						struct Capture
-						{
-							cBPEditor* editor;
-							BP::Slot* input;
-							EnumInfo* e;
-						}capture;
-						capture.editor = this;
-						capture.input = input;
-						capture.e = info;
-						e_data->child(0)->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-							auto& capture = *(Capture*)c;
-							if (hash == FLAME_CHASH("index"))
-							{
-								auto v = capture.e->item(((cCombobox*)cb)->idx)->value();
-								capture.input->set_data(&v);
-								capture.editor->set_changed(true);
-							}
-						}, new_mail(&capture));
-
-						auto c_tracker = new_u_object<cEnumSingleDataTracker>();
-						c_tracker->data = input->data();
-						c_tracker->info = info;
-						e_data->add_component(c_tracker);
-					}
-						break;
-					case TypeEnumMulti:
-					{
-						auto v = *(int*)input->data();
-
-						auto info = find_enum(dbs, base_hash);
-
-						create_enum_checkboxs(info, app.font_atlas_pixel, 0.9f, e_data);
-						for (auto k = 0; k < info->item_count(); k++)
-						{
-							auto item = info->item(k);
-
-							struct Capture
-							{
-								cBPEditor* editor;
-								BP::Slot* input;
-								int v;
-							}capture;
-							capture.editor = this;
-							capture.input = input;
-							capture.v = item->value();
-							e_data->child(k)->child(0)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-								auto& capture = *(Capture*)c;
-								if (hash == FLAME_CHASH("checked"))
-								{
-									auto v = *(int*)capture.input->data();
-									if (((cCheckbox*)cb)->checked)
-										v |= capture.v;
-									else
-										v &= ~capture.v;
-									capture.input->set_data(&v);
-									capture.editor->set_changed(true);
-								}
-							}, new_mail(&capture));
-						}
-
-						auto c_tracker = new_u_object<cEnumMultiDataTracker>();
-						c_tracker->data = input->data();
-						c_tracker->info = info;
-						e_data->add_component(c_tracker);
-					}
-						break;
-					case TypeData:
-						switch (base_hash)
-						{
-						case FLAME_CHASH("bool"):
-						{
-							auto e_checkbox = create_standard_checkbox();
-							e_data->add_child(e_checkbox);
-
-							struct Capture
-							{
-								cBPEditor* editor;
-								BP::Slot* input;
-							}capture;
-							capture.editor = this;
-							capture.input = input;
-							e_checkbox->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
-								auto& capture = *(Capture*)c;
-								if (hash == FLAME_CHASH("checked"))
-								{
-									auto v = (((cCheckbox*)cb)->checked) ? 1 : 0;
-									capture.input->set_data(&v);
-									capture.editor->set_changed(true);
-								}
-							}, new_mail(&capture));
-
-							auto c_tracker = new_u_object<cBoolDataTracker>();
-							c_tracker->data = input->data();
-							e_data->add_component(c_tracker);
-						}
-							break;
-						case FLAME_CHASH("int"):
-							create_edit<int>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(2+int)"):
-							create_vec_edit<2, int>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(3+int)"):
-							create_vec_edit<3, int>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(4+int)"):
-							create_vec_edit<4, int>(this, e_data, input);
-							break;
-						case FLAME_CHASH("uint"):
-							create_edit<uint>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(2+uint)"):
-							create_vec_edit<2, uint>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(3+uint)"):
-							create_vec_edit<3, uint>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(4+uint)"):
-							create_vec_edit<4, uint>(this, e_data, input);
-							break;
-						case FLAME_CHASH("float"):
-							create_edit<float>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(2+float)"):
-							create_vec_edit<2, float>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(3+float)"):
-							create_vec_edit<3, float>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(4+float)"):
-							create_vec_edit<4, float>(this, e_data, input);
-							break;
-						case FLAME_CHASH("uchar"):
-							create_edit<uchar>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(2+uchar)"):
-							create_vec_edit<2, uchar>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(3+uchar)"):
-							create_vec_edit<3, uchar>(this, e_data, input);
-							break;
-						case FLAME_CHASH("Vec(4+uchar)"):
-							create_vec_edit<4, uchar>(this, e_data, input);
-							break;
-						case FLAME_CHASH("StringA"):
-						{
-							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
-							e_data->add_child(e_edit);
-							struct Capture
-							{
-								cBPEditor* editor;
-								BP::Slot* input;
-							}capture;
-							capture.editor = this;
-							capture.input = input;
-							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-								auto& capture = *(Capture*)c;
-								if (hash == FLAME_CHASH("text"))
-								{
-									capture.input->set_data(&StringA(w2s(((cText*)t)->text())));
-									capture.editor->set_changed(true);
-								}
-							}, new_mail(&capture));
-
-							auto c_tracker = new_u_object<cStringADataTracker>();
-							c_tracker->data = input->data();
-							e_data->add_component(c_tracker);
-						}
-							break;
-						case FLAME_CHASH("StringW"):
-						{
-							auto e_edit = create_standard_edit(50.f, app.font_atlas_pixel, 0.9f);
-							e_data->add_child(e_edit);
-							struct Capture
-							{
-								cBPEditor* editor;
-								BP::Slot* input;
-							}capture;
-							capture.editor = this;
-							capture.input = input;
-							e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-								auto& capture = *(Capture*)c;
-								if (hash == FLAME_CHASH("text"))
-								{
-									capture.input->set_data(&StringW(((cText*)t)->text()));
-									capture.editor->set_changed(true);
-								}
-							}, new_mail(&capture));
-
-							auto c_tracker = new_u_object<cStringWDataTracker>();
-							c_tracker->data = input->data();
-							e_data->add_component(c_tracker);
-						}
-							break;
-						}
-						break;
-					}
-
-					c_slot->tracker = e_data->get_component(cDataTracker);
-				}
+				}, new_mail(&capture));
 			}
 
-			auto e_right = Entity::create();
-			e_main->add_child(e_right);
-			{
-				e_right->add_component(cElement::create());
-
-				e_right->add_component(cLayout::create(LayoutVertical));
-
-				for (auto j = 0; j < n->output_count(); j++)
-				{
-					auto output = n->output(j);
-
-					auto e_title = Entity::create();
-					e_right->add_child(e_title);
-					{
-						e_title->add_component(cElement::create());
-
-						auto c_aligner = cAligner::create();
-						c_aligner->x_align_ = AlignxRight;
-						e_title->add_component(c_aligner);
-
-						e_title->add_component(cLayout::create(LayoutHorizontal));
-					}
-
-					auto e_text = Entity::create();
-					e_title->add_child(e_text);
-					{
-						e_text->add_component(cElement::create());
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->set_text(s2w(output->name()).c_str());
-						e_text->add_component(c_text);
-					}
-
-					auto e_slot = Entity::create();
-					e_title->add_child(e_slot);
-					{
-						auto c_element = cElement::create();
-						auto r = default_style.font_size;
-						c_element->size_ = r;
-						c_element->roundness_ = r * 0.5f;
-						c_element->roundness_lod = 2;
-						c_element->color_ =Vec4c(200, 200, 200, 255);
-						e_slot->add_component(c_element);
-
-						auto c_text = cText::create(app.font_atlas_pixel);
-						c_text->font_size_ = default_style.font_size * 0.7f;
-						c_text->auto_width_ = false;
-						c_text->auto_height_ = false;
-						if (bp->find_input_export(output) != -1)
-							c_text->set_text(L"  p");
-						e_slot->add_component(c_text);
-
-						e_slot->add_component(cEventReceiver::create());
-
-						auto c_slot = new_u_object<cBPSlot>();
-						c_slot->editor = this;
-						c_slot->s = output;
-						e_slot->add_component(c_slot);
-						output->user_data = c_slot;
-					}
-				}
-			}
+			auto c_tracker = new_u_object<cEnumMultiDataTracker>();
+			c_tracker->data = input->data();
+			c_tracker->info = info;
+			e_data->add_component(c_tracker);
 		}
-	}
+		break;
+		case TypeData:
+			switch (base_hash)
+			{
+			case FLAME_CHASH("bool"):
+			{
+				auto e_checkbox = ui::e_checkbox(L"");
 
-	auto e_bring_to_front = Entity::create();
-	e_node->add_child(e_bring_to_front);
+				struct Capture
+				{
+					cBPEditor* editor;
+					BP::Slot* input;
+				}capture;
+				capture.editor = this;
+				capture.input = input;
+				e_checkbox->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+					auto& capture = *(Capture*)c;
+					if (hash == FLAME_CHASH("checked"))
+					{
+						auto v = (((cCheckbox*)cb)->checked) ? 1 : 0;
+						capture.input->set_data(&v);
+						capture.editor->set_changed(true);
+					}
+				}, new_mail(&capture));
+
+				auto c_tracker = new_u_object<cBoolDataTracker>();
+				c_tracker->data = input->data();
+				e_data->add_component(c_tracker);
+			}
+			break;
+			case FLAME_CHASH("int"):
+				create_edit<int>(this, input);
+				break;
+			case FLAME_CHASH("Vec(2+int)"):
+				create_vec_edit<2, int>(this, input);
+				break;
+			case FLAME_CHASH("Vec(3+int)"):
+				create_vec_edit<3, int>(this, input);
+				break;
+			case FLAME_CHASH("Vec(4+int)"):
+				create_vec_edit<4, int>(this, input);
+				break;
+			case FLAME_CHASH("uint"):
+				create_edit<uint>(this, input);
+				break;
+			case FLAME_CHASH("Vec(2+uint)"):
+				create_vec_edit<2, uint>(this, input);
+				break;
+			case FLAME_CHASH("Vec(3+uint)"):
+				create_vec_edit<3, uint>(this, input);
+				break;
+			case FLAME_CHASH("Vec(4+uint)"):
+				create_vec_edit<4, uint>(this, input);
+				break;
+			case FLAME_CHASH("float"):
+				create_edit<float>(this, input);
+				break;
+			case FLAME_CHASH("Vec(2+float)"):
+				create_vec_edit<2, float>(this, input);
+				break;
+			case FLAME_CHASH("Vec(3+float)"):
+				create_vec_edit<3, float>(this, input);
+				break;
+			case FLAME_CHASH("Vec(4+float)"):
+				create_vec_edit<4, float>(this, input);
+				break;
+			case FLAME_CHASH("uchar"):
+				create_edit<uchar>(this, input);
+				break;
+			case FLAME_CHASH("Vec(2+uchar)"):
+				create_vec_edit<2, uchar>(this, input);
+				break;
+			case FLAME_CHASH("Vec(3+uchar)"):
+				create_vec_edit<3, uchar>(this, input);
+				break;
+			case FLAME_CHASH("Vec(4+uchar)"):
+				create_vec_edit<4, uchar>(this, input);
+				break;
+			case FLAME_CHASH("StringA"):
+			{
+				auto e_edit = ui::e_edit(50.f);
+				struct Capture
+				{
+					cBPEditor* editor;
+					BP::Slot* input;
+				}capture;
+				capture.editor = this;
+				capture.input = input;
+				e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+					auto& capture = *(Capture*)c;
+					if (hash == FLAME_CHASH("text"))
+					{
+						capture.input->set_data(&StringA(w2s(((cText*)t)->text())));
+						capture.editor->set_changed(true);
+					}
+				}, new_mail(&capture));
+
+				auto c_tracker = new_u_object<cStringADataTracker>();
+				c_tracker->data = input->data();
+				e_data->add_component(c_tracker);
+			}
+			break;
+			case FLAME_CHASH("StringW"):
+			{
+				auto e_edit = ui::e_edit(50.f);
+				struct Capture
+				{
+					cBPEditor* editor;
+					BP::Slot* input;
+				}capture;
+				capture.editor = this;
+				capture.input = input;
+				e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+					auto& capture = *(Capture*)c;
+					if (hash == FLAME_CHASH("text"))
+					{
+						capture.input->set_data(&StringW(((cText*)t)->text()));
+						capture.editor->set_changed(true);
+					}
+				}, new_mail(&capture));
+
+				auto c_tracker = new_u_object<cStringWDataTracker>();
+				c_tracker->data = input->data();
+				e_data->add_component(c_tracker);
+			}
+			break;
+			}
+			break;
+		}
+		ui::pop_style(ui::FontSize);
+		ui::e_end_layout();
+
+		ui::e_end_layout();
+
+		c_slot->tracker = e_data->get_component(cDataTracker);
+	}
+	ui::e_end_layout();
+
+	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::c_aligner(SizeGreedy, SizeFixed);
+	for (auto i = 0; i < n->output_count(); i++)
 	{
-		e_bring_to_front->add_component(cElement::create());
+		auto output = n->output(i);
 
-		auto c_event_receiver = cEventReceiver::create();
-		c_event_receiver->penetrable = true;
-		e_bring_to_front->add_component(c_event_receiver);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_bring_to_front->add_component(c_aligner);
-
-		e_bring_to_front->add_component(cBringToFront::create());
+		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::c_aligner(AlignxRight, AlignyFree);
+		ui::e_text(s2w(output->name()).c_str());
+		ui::e_empty();
+		{
+			auto c_element = ui::c_element();
+			auto r = ui::style(ui::FontSize).u()[0];
+			c_element->size_ = r;
+			c_element->roundness_ = r * 0.5f;
+			c_element->roundness_lod = 2;
+			c_element->color_ = Vec4c(200, 200, 200, 255);
+			ui::c_event_receiver();
+			ui::push_style(ui::FontSize, ui::StyleValue(9));
+			auto c_text = ui::c_text();
+			c_text->auto_width_ = false;
+			c_text->auto_height_ = false;
+			if (bp->find_input_export(output) != -1)
+				c_text->set_text(L"  p");
+			ui::pop_style(ui::FontSize);
+			auto c_slot = new_u_object<cBPSlot>();
+			c_slot->editor = this;
+			c_slot->s = output;
+			ui::current_entity()->add_component(c_slot);
+			output->user_data = c_slot;
+		}
+		ui::e_end_layout();
 	}
+	ui::e_end_layout();
+
+	ui::e_end_layout();
+	ui::e_end_layout();
+	ui::e_empty();
+	ui::c_element();
+	ui::c_event_receiver()->penetrable = true;
+	ui::c_aligner(SizeFitParent, SizeFitParent);
+	ui::c_bring_to_front();
+	ui::pop_parent();
+
+	ui::pop_parent();
 
 	return e_node;
 }
 
 void open_blueprint_editor(const std::wstring& filename, bool no_compile, const Vec2f& pos)
 {
-	auto e_container = get_docker_container_model()->copy();
-	app.root->add_child(e_container);
+	ui::push_parent(app.root);
+	ui::e_begin_docker_container(pos, Vec2f(1900.f, 711.f));
+	ui::e_begin_docker();
+	auto e_tab = ui::e_begin_docker_page(filename.c_str()).tab;
 	{
-		auto c_element = e_container->get_component(cElement);
-		c_element->pos_ = pos;
-		c_element->size_.x() = 1900.f;
-		c_element->size_.y() = 711.f;
-	}
-
-	auto e_docker = get_docker_model()->copy();
-	e_container->add_child(e_docker, 0);
-
-	e_docker->child(0)->add_child(create_standard_docker_tab(app.font_atlas_pixel, filename.c_str(), app.root));
-
-	auto e_page = get_docker_page_model()->copy();
-	{
-		auto c_layout = cLayout::create(LayoutVertical);
+		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		c_layout->fence = 2;
-		e_page->add_component(c_layout);
 	}
-	e_docker->child(1)->add_child(e_page);
-
 	auto c_editor = new_u_object<cBPEditor>();
-	e_page->add_component(c_editor);
-	c_editor->tab_text = e_docker->child(0)->child(0)->get_component(cText);
+	ui::current_entity()->add_component(c_editor);
+	c_editor->tab_text = e_tab->get_component(cText);
 
-	auto e_menubar = create_standard_menubar();
-	e_page->add_child(e_menubar);
+	auto e_menubar = ui::e_begin_menu_bar();
+	ui::e_begin_menu_top(L"Blueprint");
+	ui::e_menu_item(L"Save", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		BP::save_to_file(editor->bp, editor->filename.c_str());
+		editor->set_changed(false);
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Reload", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		if (editor->running)
+			ui::e_message_dialog(L"Cannot Reload While Running");
+		else
+			editor->load(editor->filename, false);
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Reload (No Compile)", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		if (editor->running)
+			ui::e_message_dialog(L"Cannot Reload While Running");
+		else
+			editor->load(editor->filename, true);
+	}, new_mail_p(c_editor));
+	ui::e_end_menu_top();
+	auto menu_add = ui::e_begin_menu_top(L"Add");
+	auto menu_add_btn = menu_add->get_component(cMenuButton);
 	{
-		auto e_menu = create_standard_menu();
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Save");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					BP::save_to_file(editor->bp, editor->filename.c_str());
-					editor->set_changed(false);
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Reload");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-					if (editor->running)
-						popup_message_dialog(L"Cannot Reload While Running");
-					else
-						editor->load(editor->filename, false);
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Reload (No Compile)");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					if (editor->running)
-						popup_message_dialog(L"Cannot Reload While Running");
-					else
-						editor->load(editor->filename, true);
-				}
-			}, new_mail_p(c_editor));
-		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Blueprint", app.root, e_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
-	}
-	{
-		auto e_menu = create_standard_menu();
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Module");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					if (editor->running)
-						popup_message_dialog(L"Cannot Add Module While Running");
-					else
-					{
-						popup_input_dialog(L"module", [](void* c, bool ok, const std::wstring& text) {
-							auto editor = *(cBPEditor**)c;
-							auto bp = editor->bp;
-
-							if (ok && !text.empty())
-							{
-								auto m = bp->add_module(text.c_str());
-								if (!m)
-									popup_message_dialog(L"Add Module Failed");
-								else
-								{
-									m->pos = editor->add_pos;
-									editor->create_module_entity(m);
-									editor->refresh_add_node_menu();
-									editor->set_changed(true);
-								}
-							}
-						}, new_mail_p(editor));
-					}
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Package");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					if (editor->running)
-						popup_message_dialog(L"Cannot Add Package While Running");
-					else
-					{
-						popup_input_dialog(L"bp", [](void* c, bool ok, const std::wstring& text) {
-							auto editor = *(cBPEditor**)c;
-							auto bp = editor->bp;
-
-							if (ok && !text.empty())
-							{
-								auto p = bp->add_package(text.c_str(), "");
-								if (!p)
-									popup_message_dialog(L"Add Package Failed");
-								else
-								{
-									p->pos = editor->add_pos;
-									editor->create_package_entity(p);
-									editor->refresh_add_node_menu();
-									editor->set_changed(true);
-								}
-							}
-						}, new_mail_p(editor));
-					}
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_sub_menu = create_standard_menu();
-			c_editor->e_add_node_menu = e_sub_menu;
-			e_menu->add_child(create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Nodes", app.root, e_sub_menu, true, SideE, false, true, false, Icon_CARET_RIGHT));
-		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Add", app.root, e_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
 		struct Capture
 		{
 			cBPEditor* e;
 			cMenuButton* b;
 		}capture;
 		capture.e = c_editor;
-		capture.b = e_menu_btn->get_component(cMenuButton);
-		e_menu_btn->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		capture.b = menu_add_btn;
+		menu_add->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (capture.b->can_open(action, key))
@@ -2184,442 +1727,377 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}
 		}, new_mail(&capture));
 	}
-	{
-		auto e_menu = create_standard_menu();
+	ui::e_menu_item(L"Module", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		if (editor->running)
+			ui::e_message_dialog(L"Cannot Add Module While Running");
+		else
 		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Duplicate");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			ui::e_input_dialog(L"module", [](void* c, bool ok, const wchar_t* text) {
 				auto editor = *(cBPEditor**)c;
+				auto bp = editor->bp;
 
-				if (is_mouse_clicked(action, key))
+				if (ok && text[0])
 				{
-					destroy_topmost(app.root);
-
-					editor->set_add_pos_center();
-					editor->duplicate_selected();
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Delete");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					editor->delete_selected();
-				}
-			}, new_mail_p(c_editor));
-		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Edit", app.root, e_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
-	}
-	{
-		auto e_menu = create_standard_menu();
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Generate Graph Image");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					editor->generate_graph_image();
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Auto Set Layout");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					editor->auto_set_layout();
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Link Test Nodes");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					editor->link_test_nodes();
-				}
-			}, new_mail_p(c_editor));
-		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Tools", app.root, e_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
-	}
-	{
-		auto e_menu = create_standard_menu();
-		{
-			auto e_item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Console");
-			e_menu->add_child(e_item);
-			e_item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-
-				if (is_mouse_clicked(action, key))
-				{
-					destroy_topmost(app.root);
-
-					if (!editor->console_tab)
+					auto m = bp->add_module(text);
+					if (!m)
+						ui::e_message_dialog(L"Add Module Failed");
+					else
 					{
-
-						auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
-							auto editor = *(cBPEditor**)c;
-							auto& filename = editor->filename;
-							auto bp = editor->bp;
-							std::vector<TypeinfoDatabase*> dbs(bp->db_count());
-							for (auto i = 0; i < dbs.size(); i++)
-								dbs[i] = bp->db(i);
-							auto tokens = ssplit(cmd);
-
-							if (editor->locked)
-							{
-								console->print(L"bp is locked");
-								return;
-							}
-
-							auto set_data = [&](const std::string& address, const std::string& value) {
-								auto i = bp->find_input(address.c_str());
-								if (i)
-								{
-									auto type = i->type();
-									auto value_before = type->serialize(dbs, i->raw_data(), 2);
-									auto data = new char[i->size()];
-									type->unserialize(dbs, value, data);
-									i->set_data((char*)data + sizeof(AttributeBase));
-									((cBPSlot*)i->user_data)->tracker->update_view();
-									delete[] data;
-									auto value_after = type->serialize(dbs, i->raw_data(), 2);
-									console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
-									editor->set_changed(true);
-								}
-								else
-									console->print(L"input not found");
-							};
-
-							if (tokens[0] == L"help")
-							{
-								console->print(
-									L"  help - show this help\n"
-									"  show udts - show all available udts (see blueprint.h for more details)\n"
-									"  show udt [udt_name] - show an udt\n"
-									"  show nodes - show all nodes\n"
-									"  show node [id] - show a node\n"
-									"  show graph - use Graphviz to show graph\n"
-									"  add node [type_name] [id] - add a node (id of '-' means don't care)\n"
-									"  add link [out_adress] [in_adress] - add a link\n"
-									"  remove node [id] - remove a node\n"
-									"  remove link [in_adress] - remove a link\n"
-									"  set [in_adress] [value] - set value for input\n"
-									"  update - update this blueprint\n"
-									"  save - save this blueprint\n"
-									"  auto-set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first"
-								);
-							}
-							else if (tokens[0] == L"show")
-							{
-								if (tokens[1] == L"udts")
-								{
-									std::vector<UdtInfo*> all_udts;
-									for (auto db : dbs)
-									{
-										auto udts = db->get_udts();
-										for (auto i = 0; i < udts.s; i++)
-											all_udts.push_back(udts.v[i]);
-									}
-									std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-										return std::string(a->type()->name()) < std::string(b->type()->name());
-									});
-									for (auto udt : all_udts)
-										console->print(s2w(udt->type()->name()));
-								}
-								else if (tokens[1] == L"udt")
-								{
-									auto udt = find_udt(dbs, FLAME_HASH(w2s(tokens[2]).c_str()));
-									if (udt)
-									{
-										console->print(s2w(udt->type()->name()));
-										std::vector<VariableInfo*> inputs;
-										std::vector<VariableInfo*> outputs;
-										for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
-										{
-											auto vari = udt->variable(i_i);
-											auto attribute = std::string(vari->decoration());
-											if (attribute.find('i') != std::string::npos)
-												inputs.push_back(vari);
-											if (attribute.find('o') != std::string::npos)
-												outputs.push_back(vari);
-										}
-										console->print(L"[In]");
-										for (auto& i : inputs)
-											console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
-										console->print(L"[Out]");
-										for (auto& o : outputs)
-											console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
-									}
-									else
-										console->print(L"udt not found");
-								}
-								else if (tokens[1] == L"nodes")
-								{
-									for (auto i = 0; i < bp->node_count(); i++)
-									{
-										auto n = bp->node(i);
-										console->print(wsfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()));
-									}
-								}
-								else if (tokens[1] == L"node")
-								{
-									auto n = bp->find_node(w2s(tokens[2]).c_str());
-									if (n)
-									{
-										console->print(L"[In]");
-										for (auto i = 0; i < n->input_count(); i++)
-										{
-											auto input = n->input(i);
-											auto type = input->type();
-											console->print(s2w(input->name()));
-											std::string link_address;
-											if (input->link())
-												link_address = input->link()->get_address().str();
-											console->print(wsfmt(L"[%s]", s2w(link_address).c_str()));
-											auto str = s2w(type->serialize(dbs, input->raw_data(), 2));
-											if (str.empty())
-												str = L"-";
-											console->print(wsfmt(L"   %s", str.c_str()));
-										}
-										console->print(L"[Out]");
-										for (auto i = 0; i < n->output_count(); i++)
-										{
-											auto output = n->output(i);
-											auto type = output->type();
-											console->print(s2w(output->name()));
-											auto str = s2w(type->serialize(dbs, output->raw_data(), 2).c_str());
-											if (str.empty())
-												str = L"-";
-											console->print(wsfmt(L"   %s", str.c_str()));
-										}
-									}
-									else
-										console->print(L"node not found");
-								}
-								else if (tokens[1] == L"graph")
-								{
-									if (!editor->generate_graph_image())
-									{
-										exec(L"bp.png", L"", false);
-										console->print(L"ok");
-									}
-									else
-										console->print(L"bp.png not found, perhaps Graphviz is not available");
-								}
-								else
-									console->print(L"unknow object to show");
-							}
-							else if (tokens[0] == L"add")
-							{
-								if (tokens[1] == L"node")
-								{
-									auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
-									if (n)
-										console->print(wsfmt(L"node added: %s", s2w(n->id()).c_str()));
-									else
-										console->print(L"bad udt name or id already exist");
-								}
-								else if (tokens[1] == L"link")
-								{
-									auto out = bp->find_output(w2s(tokens[2]).c_str());
-									auto in = bp->find_input(w2s(tokens[3]).c_str());
-									if (out && in)
-									{
-										in->link_to(out);
-										auto out_addr = in->link()->get_address();
-										auto in_addr = in->get_address();
-										console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()));
-										editor->set_changed(true);
-									}
-									else
-										console->print(L"wrong address");
-								}
-								else
-									console->print(L"unknow object to add");
-							}
-							else if (tokens[0] == L"remove")
-							{
-								if (tokens[1] == L"node")
-								{
-									auto n = bp->find_node(w2s(tokens[2]).c_str());
-									if (n)
-									{
-										if (!editor->remove_node(n))
-											printf("cannot remove test nodes\n");
-										else
-											console->print(wsfmt(L"node removed: %s", tokens[2].c_str()));
-									}
-									else
-										console->print(L"node not found");
-								}
-								else if (tokens[1] == L"link")
-								{
-									auto i = bp->find_input(w2s(tokens[3]).c_str());
-									if (i)
-									{
-										i->link_to(nullptr);
-										console->print(wsfmt(L"link removed: %s", tokens[2].c_str()));
-										editor->set_changed(true);
-									}
-									else
-										console->print(L"input not found");
-								}
-								else
-									console->print(L"unknow object to remove");
-							}
-							else if (tokens[0] == L"set")
-								set_data(w2s(tokens[1]), w2s(tokens[2]));
-							else if (tokens[0] == L"update")
-							{
-								bp->update();
-								console->print(L"BP updated");
-							}
-							else if (tokens[0] == L"save")
-							{
-								BP::save_to_file(bp, filename.c_str());
-								editor->set_changed(false);
-								console->print(L"file saved");
-							}
-							else if (tokens[0] == L"auto-set-layout")
-							{
-								if (editor->auto_set_layout())
-									console->print(L"ok");
-								else
-									console->print(L"bp.graph.txt not found");
-							}
-							else
-								console->print(L"unknow command");
-						}, new_mail_p(editor), [](void* c) {
-							auto editor = *(cBPEditor**)c;
-							editor->console_tab = nullptr;
-						}, new_mail_p(editor), editor->filename + L":", Vec2f(1495.f, 10.f));
-						editor->console_tab = console_page->parent()->parent()->child(0)->child(0)->get_component(cDockerTab);
+						m->pos = editor->add_pos;
+						editor->create_module_entity(m);
+						editor->refresh_add_node_menu();
+						editor->set_changed(true);
 					}
 				}
-			}, new_mail_p(c_editor));
+			}, new_mail_p(editor));
 		}
-		auto e_menu_btn = create_standard_menu_button(app.font_atlas_pixel, 1.f, L"Window", app.root, e_menu, true, SideS, true, false, true, nullptr);
-		e_menubar->add_child(e_menu_btn);
-	}
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Package", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		if (editor->running)
+			ui::e_message_dialog(L"Cannot Add Package While Running");
+		else
+		{
+			ui::e_input_dialog(L"bp", [](void* c, bool ok, const wchar_t* text) {
+				auto editor = *(cBPEditor**)c;
+				auto bp = editor->bp;
 
-	auto e_clipper = Entity::create();
-	e_page->add_child(e_clipper);
-	{
-		auto c_element = cElement::create();
-		c_element->clip_children = true;
-		e_clipper->add_component(c_element);
+				if (ok && text[0])
+				{
+					auto p = bp->add_package(text, "");
+					if (!p)
+						ui::e_message_dialog(L"Add Package Failed");
+					else
+					{
+						p->pos = editor->add_pos;
+						editor->create_package_entity(p);
+						editor->refresh_add_node_menu();
+						editor->set_changed(true);
+					}
+				}
+			}, new_mail_p(editor));
+		}
+	}, new_mail_p(c_editor));
+	c_editor->e_add_node_menu = ui::e_begin_menu(L"Nodes")->get_component(cMenuButton)->menu;
+	ui::e_end_menu();
+	ui::e_end_menu_top();
+	ui::e_begin_menu_top(L"Edit");
+	ui::e_menu_item(L"Duplicate", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		editor->set_add_pos_center();
+		editor->duplicate_selected();
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Delete", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		editor->delete_selected();
+	}, new_mail_p(c_editor));
+	ui::e_end_menu_top();
+	ui::e_begin_menu_top(L"Tools");
+	ui::e_menu_item(L"Generate Graph Image", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		editor->generate_graph_image();
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Auto Set Layout", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		editor->auto_set_layout();
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Link Test Nodes", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		editor->link_test_nodes();
+	}, new_mail_p(c_editor));
+	ui::e_end_menu_top();
+	ui::e_begin_menu_top(L"Window");
+	ui::e_menu_item(L"Console", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		if (!editor->console_tab)
+		{
 
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_clipper->add_component(c_aligner);
+			auto console_page = open_console([](void* c, const std::wstring& cmd, cConsole* console) {
+				auto editor = *(cBPEditor**)c;
+				auto& filename = editor->filename;
+				auto bp = editor->bp;
+				std::vector<TypeinfoDatabase*> dbs(bp->db_count());
+				for (auto i = 0; i < dbs.size(); i++)
+					dbs[i] = bp->db(i);
+				auto tokens = ssplit(cmd);
 
-		e_clipper->add_component(cLayout::create(LayoutFree));
-	}
+				if (editor->locked)
+				{
+					console->print(L"bp is locked");
+					return;
+				}
 
-	auto e_scene = Entity::create();
-	e_clipper->add_child(e_scene);
-	{
-		e_scene->add_component(cElement::create());
+				auto set_data = [&](const std::string& address, const std::string& value) {
+					auto i = bp->find_input(address.c_str());
+					if (i)
+					{
+						auto type = i->type();
+						auto value_before = type->serialize(dbs, i->raw_data(), 2);
+						auto data = new char[i->size()];
+						type->unserialize(dbs, value, data);
+						i->set_data((char*)data + sizeof(AttributeBase));
+						((cBPSlot*)i->user_data)->tracker->update_view();
+						delete[] data;
+						auto value_after = type->serialize(dbs, i->raw_data(), 2);
+						console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
+						editor->set_changed(true);
+					}
+					else
+						console->print(L"input not found");
+				};
 
-		e_scene->add_component(cEventReceiver::create());
+				if (tokens[0] == L"help")
+				{
+					console->print(
+						L"  help - show this help\n"
+						"  show udts - show all available udts (see blueprint.h for more details)\n"
+						"  show udt [udt_name] - show an udt\n"
+						"  show nodes - show all nodes\n"
+						"  show node [id] - show a node\n"
+						"  show graph - use Graphviz to show graph\n"
+						"  add node [type_name] [id] - add a node (id of '-' means don't care)\n"
+						"  add link [out_adress] [in_adress] - add a link\n"
+						"  remove node [id] - remove a node\n"
+						"  remove link [in_adress] - remove a link\n"
+						"  set [in_adress] [value] - set value for input\n"
+						"  update - update this blueprint\n"
+						"  save - save this blueprint\n"
+						"  auto-set-layout - set nodes' positions using 'bp.png' and 'bp.graph.txt', need do show graph first"
+					);
+				}
+				else if (tokens[0] == L"show")
+				{
+					if (tokens[1] == L"udts")
+					{
+						std::vector<UdtInfo*> all_udts;
+						for (auto db : dbs)
+						{
+							auto udts = db->get_udts();
+							for (auto i = 0; i < udts.s; i++)
+								all_udts.push_back(udts.v[i]);
+						}
+						std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+							return std::string(a->type()->name()) < std::string(b->type()->name());
+						});
+						for (auto udt : all_udts)
+							console->print(s2w(udt->type()->name()));
+					}
+					else if (tokens[1] == L"udt")
+					{
+						auto udt = find_udt(dbs, FLAME_HASH(w2s(tokens[2]).c_str()));
+						if (udt)
+						{
+							console->print(s2w(udt->type()->name()));
+							std::vector<VariableInfo*> inputs;
+							std::vector<VariableInfo*> outputs;
+							for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
+							{
+								auto vari = udt->variable(i_i);
+								auto attribute = std::string(vari->decoration());
+								if (attribute.find('i') != std::string::npos)
+									inputs.push_back(vari);
+								if (attribute.find('o') != std::string::npos)
+									outputs.push_back(vari);
+							}
+							console->print(L"[In]");
+							for (auto& i : inputs)
+								console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
+							console->print(L"[Out]");
+							for (auto& o : outputs)
+								console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
+						}
+						else
+							console->print(L"udt not found");
+					}
+					else if (tokens[1] == L"nodes")
+					{
+						for (auto i = 0; i < bp->node_count(); i++)
+						{
+							auto n = bp->node(i);
+							console->print(wsfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()));
+						}
+					}
+					else if (tokens[1] == L"node")
+					{
+						auto n = bp->find_node(w2s(tokens[2]).c_str());
+						if (n)
+						{
+							console->print(L"[In]");
+							for (auto i = 0; i < n->input_count(); i++)
+							{
+								auto input = n->input(i);
+								auto type = input->type();
+								console->print(s2w(input->name()));
+								std::string link_address;
+								if (input->link())
+									link_address = input->link()->get_address().str();
+								console->print(wsfmt(L"[%s]", s2w(link_address).c_str()));
+								auto str = s2w(type->serialize(dbs, input->raw_data(), 2));
+								if (str.empty())
+									str = L"-";
+								console->print(wsfmt(L"   %s", str.c_str()));
+							}
+							console->print(L"[Out]");
+							for (auto i = 0; i < n->output_count(); i++)
+							{
+								auto output = n->output(i);
+								auto type = output->type();
+								console->print(s2w(output->name()));
+								auto str = s2w(type->serialize(dbs, output->raw_data(), 2).c_str());
+								if (str.empty())
+									str = L"-";
+								console->print(wsfmt(L"   %s", str.c_str()));
+							}
+						}
+						else
+							console->print(L"node not found");
+					}
+					else if (tokens[1] == L"graph")
+					{
+						if (!editor->generate_graph_image())
+						{
+							exec(L"bp.png", L"", false);
+							console->print(L"ok");
+						}
+						else
+							console->print(L"bp.png not found, perhaps Graphviz is not available");
+					}
+					else
+						console->print(L"unknow object to show");
+				}
+				else if (tokens[0] == L"add")
+				{
+					if (tokens[1] == L"node")
+					{
+						auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
+						if (n)
+							console->print(wsfmt(L"node added: %s", s2w(n->id()).c_str()));
+						else
+							console->print(L"bad udt name or id already exist");
+					}
+					else if (tokens[1] == L"link")
+					{
+						auto out = bp->find_output(w2s(tokens[2]).c_str());
+						auto in = bp->find_input(w2s(tokens[3]).c_str());
+						if (out && in)
+						{
+							in->link_to(out);
+							auto out_addr = in->link()->get_address();
+							auto in_addr = in->get_address();
+							console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()));
+							editor->set_changed(true);
+						}
+						else
+							console->print(L"wrong address");
+					}
+					else
+						console->print(L"unknow object to add");
+				}
+				else if (tokens[0] == L"remove")
+				{
+					if (tokens[1] == L"node")
+					{
+						auto n = bp->find_node(w2s(tokens[2]).c_str());
+						if (n)
+						{
+							if (!editor->remove_node(n))
+								printf("cannot remove test nodes\n");
+							else
+								console->print(wsfmt(L"node removed: %s", tokens[2].c_str()));
+						}
+						else
+							console->print(L"node not found");
+					}
+					else if (tokens[1] == L"link")
+					{
+						auto i = bp->find_input(w2s(tokens[3]).c_str());
+						if (i)
+						{
+							i->link_to(nullptr);
+							console->print(wsfmt(L"link removed: %s", tokens[2].c_str()));
+							editor->set_changed(true);
+						}
+						else
+							console->print(L"input not found");
+					}
+					else
+						console->print(L"unknow object to remove");
+				}
+				else if (tokens[0] == L"set")
+					set_data(w2s(tokens[1]), w2s(tokens[2]));
+				else if (tokens[0] == L"update")
+				{
+					bp->update();
+					console->print(L"BP updated");
+				}
+				else if (tokens[0] == L"save")
+				{
+					BP::save_to_file(bp, filename.c_str());
+					editor->set_changed(false);
+					console->print(L"file saved");
+				}
+				else if (tokens[0] == L"auto-set-layout")
+				{
+					if (editor->auto_set_layout())
+						console->print(L"ok");
+					else
+						console->print(L"bp.graph.txt not found");
+				}
+				else
+					console->print(L"unknow command");
+			}, new_mail_p(editor), [](void* c) {
+				auto editor = *(cBPEditor**)c;
+				editor->console_tab = nullptr;
+			}, new_mail_p(editor), editor->filename + L":", Vec2f(1495.f, 10.f));
+			editor->console_tab = console_page->parent()->parent()->child(0)->child(0)->get_component(cDockerTab);
+		}
+	}, new_mail_p(c_editor));
+	ui::e_end_menu_top();
+	ui::e_end_menu_bar();
 
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_scene->add_component(c_aligner);
+	ui::e_begin_layout()->get_component(cElement)->clip_children = true;
+	ui::c_aligner(SizeFitParent, SizeFitParent);
 
-		e_scene->add_component(cLayout::create(LayoutFree));
+	auto e_scene = ui::e_begin_layout();
+	ui::c_event_receiver();
+	ui::c_aligner(SizeFitParent, SizeFitParent);
+	auto c_bp_scene = new_u_object<cBPScene>();
+	c_bp_scene->editor = c_editor;
+	e_scene->add_component(c_bp_scene);
 
-		auto c_bp = new_u_object<cBPScene>();
-		c_bp->editor = c_editor;
-		e_scene->add_component(c_bp);
-	}
-
-	auto c_bp_scene = e_scene->get_component(cBPScene);
-
-	auto e_base = Entity::create();
-	e_scene->add_child(e_base);
-	{
-		auto c_element = cElement::create();
-		e_base->add_component(c_element);
-		c_bp_scene->base_element = c_element;
-	}
+	auto e_base = ui::e_empty();
+	c_bp_scene->base_element = ui::c_element();
 	c_editor->e_base = e_base;
 
+	c_editor->e_slot_menu = ui::e_menu();
+	ui::push_parent(c_editor->e_slot_menu);
+	ui::e_menu_item(L"Add To Exports", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		auto s = editor->selected_.s;
+		if (s->io() == BP::Slot::In)
+			editor->bp->add_input_export(s);
+		else
+			editor->bp->add_output_export(s);
+		editor->set_changed(true);
+		((cBPSlot*)s->user_data)->text->set_text(L"  p");
+	}, new_mail_p(c_editor));
+	ui::e_menu_item(L"Remove From Exports", [](void* c, Entity*) {
+		auto editor = *(cBPEditor**)c;
+		auto s = editor->selected_.s;
+		if (s->io() == BP::Slot::In)
+			editor->bp->remove_input_export(s);
+		else
+			editor->bp->remove_output_export(s);
+		editor->set_changed(true);
+		((cBPSlot*)s->user_data)->text->set_text(L"");
+	}, new_mail_p(c_editor));
+	ui::pop_parent();
+
+	auto e_overlayer = ui::e_empty();
+	ui::c_element();
 	{
-		auto e_menu = create_standard_menu();
-		c_editor->e_slot_menu = e_menu;
-		{
-			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Add To Exports");
-			e_menu->add_child(item);
-			item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					destroy_topmost(app.root);
-
-					auto s = editor->selected_.s;
-					if (s->io() == BP::Slot::In)
-						editor->bp->add_input_export(s);
-					else
-						editor->bp->add_output_export(s);
-					editor->set_changed(true);
-					((cBPSlot*)s->user_data)->text->set_text(L"  p");
-				}
-			}, new_mail_p(c_editor));
-		}
-		{
-			auto item = create_standard_menu_item(app.font_atlas_pixel, 1.f, L"Remove From Exports");
-			e_menu->add_child(item);
-			item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto editor = *(cBPEditor**)c;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					destroy_topmost(app.root);
-
-					auto s = editor->selected_.s;
-					if (s->io() == BP::Slot::In)
-						editor->bp->remove_input_export(s);
-					else
-						editor->bp->remove_output_export(s);
-					editor->set_changed(true);
-					((cBPSlot*)s->user_data)->text->set_text(L"");
-				}
-			}, new_mail_p(c_editor));
-		}
-	}
-
-	auto e_overlayer = Entity::create();
-	e_scene->add_child(e_overlayer);
-	{
-		e_overlayer->add_component(cElement::create());
-
-		auto c_event_receiver = cEventReceiver::create();
+		auto c_event_receiver = ui::c_event_receiver();
 		c_event_receiver->penetrable = true;
 		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto c_bp_scene = *(cBPScene**)c;
@@ -2636,55 +2114,30 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					c_bp_scene->base_element->set_pos(Vec2f(pos), true);
 			}
 		}, new_mail_p(c_bp_scene));
-		e_overlayer->add_component(c_event_receiver);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->width_policy_ = SizeFitParent;
-		c_aligner->height_policy_ = SizeFitParent;
-		e_overlayer->add_component(c_aligner);
 	}
+	ui::c_aligner(SizeFitParent, SizeFitParent);
 
 	c_editor->load(filename, no_compile);
 
-	auto e_run = create_standard_button(app.font_atlas_pixel, 1.f, L"Run");;
-	e_clipper->add_child(e_run);
-	{
-		auto c_event_receiver = e_run->get_component(cEventReceiver);
-		struct Capture
-		{
-			cBPEditor* e;
-			cText* t;
-		}capture;
-		capture.e = c_editor;
-		capture.t = e_run->get_component(cText);
-		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-			auto& capture = *(Capture*)c;
+	ui::e_end_layout();
 
-			if (is_mouse_clicked(action, key))
-			{
-				capture.e->running = !capture.e->running;
-				capture.t->set_text(capture.e->running ? L"Pause" : L"Run");
+	ui::e_button(L"Run", [](void* c, Entity* e) {
+		auto& editor = *(cBPEditor**)c;
+		editor->running = !editor->running;
+		e->get_component(cText)->set_text(editor->running ? L"Pause" : L"Run");
 
-				if (capture.e->running)
-					capture.e->bp->time = 0.f;
-			}
-		}, new_mail(&capture));
-	}
+		if (editor->running)
+			editor->bp->time = 0.f;
+	}, new_mail_p(c_editor));
 
-	auto e_scale = Entity::create();
-	{
-		e_scale->add_component(cElement::create());
-		
-		auto c_text = cText::create(app.font_atlas_pixel);
-		c_text->set_text(L"100%");
-		e_scale->add_component(c_text);
+	ui::e_text(L"100%");
+	ui::c_aligner(AlignxLeft, AlignyBottom);
+	c_bp_scene->scale_text = ui::current_entity()->get_component(cText);
 
-		auto c_aligner = cAligner::create();
-		c_aligner->x_align_ = AlignxLeft;
-		c_aligner->y_align_ = AlignyBottom;
-		e_scale->add_component(c_aligner);
-	}
-	e_clipper->add_child(e_scale);
+	ui::e_end_layout();
 
-	c_bp_scene->scale_text = e_scale->get_component(cText);
+	ui::e_end_docker_page();
+	ui::e_end_docker();
+	ui::e_end_docker_container();
+	ui::pop_parent();
 }

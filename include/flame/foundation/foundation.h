@@ -216,6 +216,7 @@ namespace flame
 		~Closure()
 		{
 			delete_mail(capture);
+			capture.p = nullptr;
 		}
 	};
 

@@ -468,7 +468,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("DockerTab"));
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
 					if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
