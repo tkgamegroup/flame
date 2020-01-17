@@ -103,7 +103,7 @@ App app;
 
 Entity* create_drag_edit(bool is_float)
 {
-	auto e_layout = ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	auto e_layout = ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
 	e_layout->get_component(cLayout)->fence = 1;
 
 	auto e_edit = ui::e_edit(50.f);

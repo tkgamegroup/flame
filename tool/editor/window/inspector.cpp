@@ -9,7 +9,7 @@
 
 void begin_item(const wchar_t* title)
 {
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f);
 	ui::e_text(title);
 	auto e_data = ui::e_empty();
 	ui::c_element()->inner_padding_.x() = ui::style(ui::FontSize).u()[0];
@@ -98,7 +98,7 @@ void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 	capture.v = v;
 	for (auto i = 0; i < N; i++)
 	{
-		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
@@ -176,7 +176,7 @@ struct cInspectorPrivate : cInspector
 
 				auto udt = find_udt(app.dbs, FLAME_HASH((std::string("D#Serializer_") + component->name).c_str()));
 
-				auto e_component = ui::e_begin_layout(0.f, 0.f, LayoutVertical, 2.f);
+				auto e_component = ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 2.f);
 				{
 					auto c_element = e_component->get_component(cElement);
 					c_element->inner_padding_ = Vec4f(4.f);

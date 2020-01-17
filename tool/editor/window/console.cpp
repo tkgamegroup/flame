@@ -48,7 +48,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 	e_page->add_component(c_console);
 
 	ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical)->get_component(cElement)->clip_children = true;
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical)->get_component(cElement)->clip_children = true;
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 	c_console->c_text_log = ui::e_text(!init_str.empty() ? (init_str + L"\n").c_str() : L"")->get_component(cText);
 	ui::e_end_layout();
@@ -59,7 +59,7 @@ Entity* open_console(void (*cmd_callback)(void* c, const std::wstring& cmd, cCon
 		text->set_text(L"");
 	}, new_mail_p(c_console->c_text_log));
 
-	ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 	ui::c_aligner(SizeFitParent, SizeFixed);
 	c_console->c_edit_input = ui::e_edit(0.f)->get_component(cEdit);
 	ui::e_button(L"Exec", [](void* c, Entity*) {

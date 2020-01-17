@@ -276,10 +276,10 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_layout(float x = 0.f, float y = 0.f, LayoutType type = LayoutFree, float item_padding = 0.f)
+		inline Entity* e_begin_layout(const Vec2f pos = Vec2f(0.f), LayoutType type = LayoutFree, float item_padding = 0.f)
 		{
 			auto e = e_empty();
-			c_element()->pos_ = Vec2f(x, y);
+			c_element()->pos_ = pos;
 			c_layout(type)->item_padding = item_padding;
 			push_parent(e);
 			return e;
@@ -344,7 +344,7 @@ namespace flame
 		inline Entity* e_checkbox(const wchar_t* text, bool checked = false)
 		{
 			if (text[0])
-				e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+				e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ = 16.f;
@@ -1005,7 +1005,7 @@ namespace flame
 		{
 			auto e = e_begin_dialog();
 			e_text(title);
-			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+			e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 			struct WrapedMail
 			{
 				void(*f)(void*, bool);
@@ -1040,11 +1040,11 @@ namespace flame
 		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail<>& m)
 		{
 			auto e = e_begin_dialog();
-			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+			e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 			e_text(title);
 			auto ct = e_edit(100.f)->get_component(cText);
 			e_end_layout();
-			e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+			e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 			struct WrapedMail
 			{
 				void(*f)(void*, bool, const wchar_t*);

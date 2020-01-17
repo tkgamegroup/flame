@@ -174,7 +174,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	ui::e_end_menu_top();
 	ui::e_end_menu_bar();
 
-	ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 	ui::e_text(L"Tool");
 	auto e_tool = ui::e_begin_combobox(50.f, 0);
 	ui::e_combobox_item(L"Null");

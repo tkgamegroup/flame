@@ -258,7 +258,7 @@ struct cBPEditor : Component
 			return std::string(a->type()->name()) < std::string(b->type()->name());
 		});
 		ui::push_parent(e_add_node_menu);
-		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 		ui::e_text(Icon_SEARCH);
 		ui::e_edit(150.f)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto menu = *(Entity**)c;
@@ -996,7 +996,7 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 		e_module->add_component(c_module);
 	}
 	ui::push_parent(e_module);
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 	ui::e_text(m->filename())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 	ui::e_text(L"module")->get_component(cText)->color = Vec4c(50, 50, 50, 255);
 	ui::e_end_layout();
@@ -1033,7 +1033,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 		e_package->add_component(c_package);
 	}
 	ui::push_parent(e_package);
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 	ui::e_text(s2w(p->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 	ui::c_event_receiver();
 	ui::c_edit();
@@ -1042,18 +1042,18 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()).c_str());
 	}, new_mail_p(p));
 	ui::e_text(p->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
-	ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 16.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 16.f);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 
 	auto bp = p->bp();
 
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < bp->input_export_count(); i++)
 	{
 		auto s = bp->input_export(i);
 
-		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
 		ui::e_empty();
 		{
 			auto c_element = ui::c_element();
@@ -1074,13 +1074,13 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 	}
 	ui::e_end_layout();
 
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < bp->output_export_count(); i++)
 	{
 		auto s = bp->output_export(i);
 
-		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
 		ui::c_aligner(AlignxRight, AlignyFree);
 		ui::e_text(s2w(s->get_address().str()).c_str());
 		ui::e_empty();
@@ -1167,7 +1167,7 @@ void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 	ui::push_style(ui::FontSize, ui::StyleValue(12));
 	for (auto i = 0; i < N; i++)
 	{
-		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 4.f);
+		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
 		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
@@ -1214,7 +1214,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		e_node->add_component(c_node);
 	}
 	ui::push_parent(e_node);
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 	ui::push_style(ui::FontSize, ui::StyleValue(21));
 	ui::e_text(s2w(n->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 	ui::c_event_receiver();
@@ -1373,18 +1373,18 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	//		}
 	//	}, new_mail(&capture));
 	//}
-	ui::e_begin_layout(0.f, 0.f, LayoutHorizontal, 16.f);
+	ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 16.f);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < n->input_count(); i++)
 	{
 		auto input = n->input(i);
 
-		ui::e_begin_layout(0.f, 0.f, LayoutVertical, 2.f);
+		ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 2.f);
 
-		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
 		ui::e_empty();
 		{
 			auto c_element = ui::c_element();
@@ -1403,7 +1403,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		ui::e_text(s2w(input->name()).c_str());
 		ui::e_end_layout();
 
-		auto e_data = ui::e_begin_layout(0.f, 0.f, LayoutVertical, 2.f);
+		auto e_data = ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 2.f);
 		e_data->get_component(cElement)->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0], 0.f, 0.f, 0.f);
 		std::vector<TypeinfoDatabase*> dbs(bp->db_count());
 		for (auto i = 0; i < dbs.size(); i++)
@@ -1620,13 +1620,13 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	}
 	ui::e_end_layout();
 
-	ui::e_begin_layout(0.f, 0.f, LayoutVertical);
+	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < n->output_count(); i++)
 	{
 		auto output = n->output(i);
 
-		ui::e_begin_layout(0.f, 0.f, LayoutHorizontal);
+		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
 		ui::c_aligner(AlignxRight, AlignyFree);
 		ui::e_text(s2w(output->name()).c_str());
 		ui::e_empty();

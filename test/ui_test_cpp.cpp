@@ -150,7 +150,7 @@ int main(int argc, char** args)
 	ui::e_end_menu_top();
 	ui::e_end_menu_bar();
 
-	ui::e_begin_layout(16.f, 28.f, LayoutVertical, 16.f);
+	ui::e_begin_layout(Vec2f(16.f, 28.f), LayoutVertical, 16.f);
 
 	ui::e_text(L"Text Pixel");
 	ui::push_font_atlas(app.font_atlas_lcd);
@@ -170,7 +170,7 @@ int main(int argc, char** args)
 
 	ui::e_end_layout();
 
-	ui::e_begin_layout(416.f, 28.f, LayoutVertical, 16.f);
+	ui::e_begin_layout(Vec2f(416.f, 28.f), LayoutVertical, 16.f);
 
 	ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f, 2.f)->get_component(cElement);
 	ui::e_begin_list(true);
