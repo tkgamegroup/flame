@@ -199,7 +199,7 @@ namespace flame
 				auto scale = text->last_scale;
 				canvas->add_text(font_atlas, 1, &cursor_glyph, last_font_size, scale, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale + cursor_pos * scale,
-					alpha_mul(text->color, element->alpha_));
+					text->color.new_proply<3>(element->alpha_));
 			}
 		}
 	};

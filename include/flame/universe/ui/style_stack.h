@@ -48,55 +48,49 @@ namespace flame
 			StyleCount
 		};
 
-		struct StyleValue
+		union StyleValue
 		{
-			union
-			{
-				Vec4u u;
-				Vec4i i;
-				Vec4f f;
-				Vec4c c;
-			}v;
-
-			StyleValue()
-			{
-				v.u = Vec4u(0);
-			}
-
-			StyleValue(uint _v)
-			{
-				v.u = Vec4u(_v, 0, 0, 0);
-			}
-
-			StyleValue(const Vec4c& _v)
-			{
-				v.c = _v;
-			}
-
-			const Vec4u& u() const
-			{
-				return v.u;
-			}
-
-			const Vec4i& i() const
-			{
-				return v.i;
-			}
-
-			const Vec4f& f() const
-			{
-				return v.f;
-			}
-
-			const Vec4c& c() const
-			{
-				return v.c;
-			}
+			Vec4u u;
+			Vec4i i;
+			Vec4f f;
+			Vec4c c;
 		};
 
-		FLAME_UNIVERSE_EXPORTS const StyleValue& style(Style style);
-		FLAME_UNIVERSE_EXPORTS void set_style(Style style, const StyleValue& v);
-		FLAME_UNIVERSE_EXPORTS void push_style(Style style, const StyleValue& v);
+		FLAME_UNIVERSE_EXPORTS const StyleValue& style(Style s);
+
+		inline uint style_1u(Style s)
+		{
+			return style(s).u[0];
+		}
+
+		inline const Vec4c& style_4c(Style s)
+		{
+			return style(s).c;
+		}
+
+		FLAME_UNIVERSE_EXPORTS void push_style(Style s, const StyleValue& v);
+
+		inline void push_style_1u(Style s, uint x)
+		{
+			StyleValue sv;
+			sv.u = Vec4c(x, 0, 0, 0);
+			push_style(s, sv);
+		}
+
+		inline void push_style_4c(Style s, uchar x, uchar y, uchar z, uchar w)
+		{
+			StyleValue sv;
+			sv.c = Vec4c(x, y, z, w);
+			push_style(s, sv);
+		}
+
+		inline void push_style_4c(Style s, const Vec4c& v)
+		{
+			StyleValue sv;
+			sv.c = v;
+			push_style(s, sv);
+		}
+
 		FLAME_UNIVERSE_EXPORTS void pop_style(Style style);
 		FLAME_UNIVERSE_EXPORTS void style_set_to_light();
 		FLAME_UNIVERSE_EXPORTS void style_set_to_dark();

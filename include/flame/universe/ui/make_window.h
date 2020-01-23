@@ -9,7 +9,7 @@ namespace flame
 		ce->pos_ = pos;
 		ce->size_ = size;
 		ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-		ce->color_ = ui::style(ui::DockerColor).c();
+		ce->color_ = ui::style_4c(ui::DockerColor);
 		e->add_component(ce);
 		e->add_component(cEventReceiver::create());
 		e->add_component(cLayout::create(LayoutFree));
@@ -67,8 +67,8 @@ namespace flame
 			es->add_component(cEventReceiver::create());
 			auto cs = cStyleColor::create();
 			cs->color_normal = Vec4c(0);
-			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
-			cs->color_active = ui::style(ui::FrameColorActive).c();
+			cs->color_hovering = ui::style_4c(ui::FrameColorHovering);
+			cs->color_active = ui::style_4c(ui::FrameColorActive);
 			es->add_component(cs);
 			es->add_component(cSplitter::create(type == LayoutHorizontal ? SplitterHorizontal : SplitterVertical));
 			auto ca = cAligner::create();

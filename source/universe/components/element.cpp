@@ -61,12 +61,12 @@ namespace flame
 				std::vector<Vec2f> points;
 				path_rect(points, global_pos, global_size, r, roundness_lod);
 				if (color_.w() > 0)
-					canvas->fill(points.size(), points.data(), alpha_mul(color_, alpha_));
+					canvas->fill(points.size(), points.data(), color_.new_proply<3>(alpha_));
 				auto ft = frame_thickness_ * global_scale;
 				if (ft > 0.f && frame_color_.w() > 0)
 				{
 					points.push_back(points[0]);
-					canvas->stroke(points.size(), points.data(), alpha_mul(frame_color_, alpha_), ft);
+					canvas->stroke(points.size(), points.data(), frame_color_.new_proply<3>(alpha_), ft);
 				}
 			}
 		}

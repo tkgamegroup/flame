@@ -59,7 +59,7 @@ namespace flame
 			items = Entity::create();
 			{
 				auto ce = cElement::create();
-				ce->color_ = ui::style(ui::WindowColor).c();
+				ce->color_ = ui::style_4c(ui::WindowColor);
 				items->add_component(ce);
 				items->add_component(cLayout::create(LayoutVertical));
 				items->add_component(cMenuItems::create());

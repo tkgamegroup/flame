@@ -515,6 +515,15 @@ namespace flame
 				v_[i] /= rhs[i];
 			return *this;
 		}
+
+		template<uint CH>
+		Vec<N, T> new_proply(float m)
+		{
+			static_assert(CH < N);
+			auto ret = *this;
+			ret[CH] *= m;
+			return ret;
+		}
 	};
 
 	template<uint N, class T>
@@ -1727,12 +1736,7 @@ namespace flame
 			return fited_rect(desired_size, size.x() / size.y());
 	}
 
-	inline Vec4c alpha_mul(const Vec4c& col, float a)
-	{
-		return Vec4c(Vec3c(col), col.w() * a);
-	}
-
-	inline Vec3c color(const Vec3f& hsv)
+	inline Vec3c hsv_2_col3(const Vec3f& hsv)
 	{
 		auto h = hsv.x();
 		auto s = hsv.y();
@@ -1768,7 +1772,22 @@ namespace flame
 		}
 	}
 
-	inline Vec3f hsv(const Vec3c& rgb)
+	inline Vec3c hsv_2_col3(float h, float s, float v)
+	{
+		return hsv_2_col3(Vec3f(h, s, v));
+	}
+
+	inline Vec4c hsv_2_col4(const Vec3f& hsv, float a)
+	{
+		return Vec4c(hsv_2_col3(hsv), a);
+	}
+
+	inline Vec4c hsv_2_col4(float h, float s, float v, float a)
+	{
+		return Vec4c(hsv_2_col3(h, s, v), a);
+	}
+
+	inline Vec3f col_2_hsv(const Vec3c& rgb)
 	{
 		auto r = rgb.x() / 255.f;
 		auto g = rgb.y() / 255.f;

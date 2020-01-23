@@ -23,8 +23,8 @@ namespace flame
 			element = nullptr;
 
 			font_atlas = _font_atlas;
-			color = ui::style(ui::TextColorNormal).c();
-			font_size_ = ui::style(ui::FontSize).u()[0];
+			color = ui::style_4c(ui::TextColorNormal);
+			font_size_ = ui::style_1u(ui::FontSize);
 			scale_ = 1.f;
 			auto_width_ = true;
 			auto_height_ = true;
@@ -65,7 +65,7 @@ namespace flame
 				last_scale = scale_ * (is_sdf ? global_scale : 1.f);
 				canvas->add_text(font_atlas, glyphs.size(), glyphs.data(), last_font_size, last_scale, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
-					alpha_mul(color, element->alpha_));
+					color.new_proply<3>(element->alpha_));
 			}
 		}
 
@@ -181,8 +181,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Serializer_cText$()
 		{
-			color$ = ui::style(ui::TextColorNormal).c();
-			font_size$ = ui::style(ui::FontSize).u()[0];
+			color$ = ui::style_4c(ui::TextColorNormal);
+			font_size$ = ui::style_1u(ui::FontSize);
 			right_align$ = false;
 			auto_width$ = false;
 			auto_height$ = false;
