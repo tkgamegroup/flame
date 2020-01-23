@@ -5,6 +5,8 @@ namespace flame
 {
 	EntityPrivate::EntityPrivate()
 	{
+		on_removed_listeners.impl = ListenerHubImpl::create();
+
 		order_ = 0;
 		created_frame_ = looper().frame;
 		dying_ = false;
@@ -16,6 +18,11 @@ namespace flame
 
 		world_ = nullptr;
 		parent = nullptr;
+	}
+
+	EntityPrivate::~EntityPrivate()
+	{
+		ListenerHubImpl::destroy(on_removed_listeners.impl);
 	}
 
 	void EntityPrivate::set_visibility(bool v)
@@ -177,6 +184,7 @@ namespace flame
 			}
 			for (auto& e : children)
 			{
+				e->on_removed_listeners.call(e.get());
 				leave_world(e.get());
 				if (!destroy)
 				{
@@ -201,6 +209,7 @@ namespace flame
 						for (auto& _c : e->components)
 							c.second->on_child_component_removed(_c.second.get());
 					}
+					e->on_removed_listeners.call(e);
 					leave_world(e);
 					if (!destroy)
 					{

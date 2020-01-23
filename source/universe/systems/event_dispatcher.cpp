@@ -7,6 +7,21 @@
 
 namespace flame
 {
+	struct sEventDispatcherPrivate;
+
+	struct HoversSearcher
+	{
+		sEventDispatcherPrivate* thiz;
+		Vec2f pos;
+		bool meet_last_hovering;
+		Entity* pass;
+		std::vector<cEventReceiver*> mouse_dispatch_list;
+
+		void search(sEventDispatcherPrivate* thiz, const Vec2i& pos, EntityPrivate* root);
+		void search_r(EntityPrivate* e);
+	};
+	static HoversSearcher hovers_searcher;
+
 	struct sEventDispatcherPrivate : sEventDispatcher
 	{
 		Window* window;
@@ -23,9 +38,7 @@ namespace flame
 
 		Vec2i active_pos;
 
-		std::vector<cEventReceiver*> mouse_dispatch_list;
 		std::vector<cEventReceiver*> key_dispatch_list;
-		bool meet_last_hovering;
 
 		sEventDispatcherPrivate()
 		{
@@ -61,50 +74,6 @@ namespace flame
 			{
 				window->key_listeners.remove(key_listener);
 				window->mouse_listeners.remove(mouse_listener);
-			}
-		}
-
-		void search_hovers(EntityPrivate* e)
-		{
-			for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
-			{
-				auto c = it->get();
-				if (c->global_visibility_)
-					search_hovers(c);
-			}
-
-			auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
-			if (!er)
-				return;
-
-			auto active = focusing && focusing->active;
-			if (active && hovering == er)
-				meet_last_hovering = true;
-			if (!er->element->cliped && rect_contains(er->element->cliped_rect, Vec2f(mouse_pos)))
-			{
-				if (!hovering || (active && !meet_last_hovering))
-					mouse_dispatch_list.push_back(er);
-				if (!er->penetrable)
-				{
-					if (!hovering)
-					{
-						er->hovering = true;
-						hovering = er;
-					}
-
-					if (focusing && focusing->dragging && !drag_overing && er != focusing && !er->acceptable_drops.empty())
-					{
-						auto h = focusing->drag_hash;
-						for (auto _h : er->acceptable_drops)
-						{
-							if (_h == h)
-							{
-								drag_overing = er;
-								break;
-							}
-						}
-					}
-				}
 			}
 		}
 
@@ -230,12 +199,9 @@ namespace flame
 				}
 			}
 
-			mouse_dispatch_list.clear();
 			drag_overing = nullptr;
 			if (focusing && focusing->active)
 			{
-				mouse_dispatch_list.insert(mouse_dispatch_list.begin(), focusing);
-
 				if (focusing->drag_hash != 0 && !focusing->dragging)
 				{
 					if (mouse_disp != 0 && (abs(mouse_pos.x() - active_pos.x()) > 4.f || abs(mouse_pos.y() - active_pos.y()) > 4.f))
@@ -247,9 +213,7 @@ namespace flame
 				hovering->hovering = false;
 				hovering = nullptr;
 			}
-			meet_last_hovering = false;
-			search_hovers((EntityPrivate*)root);
-			std::reverse(mouse_dispatch_list.begin(), mouse_dispatch_list.end());
+			hovers_searcher.search(this, mouse_pos, (EntityPrivate*)root);
 
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
 			{
@@ -298,7 +262,7 @@ namespace flame
 				for (auto& ch : char_inputs)
 					((cEventReceiverPrivate*)er)->on_key(KeyStateNull, ch);
 			}
-			for (auto er : mouse_dispatch_list)
+			for (auto er : hovers_searcher.mouse_dispatch_list)
 			{
 				if (mouse_disp != 0)
 					((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
@@ -369,6 +333,76 @@ namespace flame
 				mouse_buttons[i] &= ~KeyStateJust;
 		}
 	};
+
+	void HoversSearcher::search(sEventDispatcherPrivate* _thiz, const Vec2i& _pos, EntityPrivate* root)
+	{
+		thiz = _thiz;
+		pos = Vec2f(_pos);
+		meet_last_hovering = false;
+		pass = (Entity*)FLAME_INVALID_POINTER;
+		mouse_dispatch_list.clear();
+		if (thiz->focusing && thiz->focusing->active)
+			mouse_dispatch_list.insert(mouse_dispatch_list.begin(), thiz->focusing);
+		search_r(root);
+		std::reverse(mouse_dispatch_list.begin(), mouse_dispatch_list.end());
+	}
+
+	void HoversSearcher::search_r(EntityPrivate* e)
+	{
+		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
+		{
+			auto c = it->get();
+			if (c->global_visibility_)
+				search_r(c);
+		}
+
+		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
+		if (!er || !pass)
+			return;
+		if (pass != FLAME_INVALID_POINTER)
+		{
+			auto p = e;
+			while (p)
+			{
+				if (p == pass)
+					break;
+				p = p->parent;
+			}
+			if (!p)
+				return;
+		}
+
+		auto active = thiz->focusing && thiz->focusing->active;
+		if (active && thiz->hovering == er)
+			meet_last_hovering = true;
+		if (!er->element->cliped && rect_contains(er->element->cliped_rect, pos))
+		{
+			if (!thiz->hovering || (active && !meet_last_hovering))
+				mouse_dispatch_list.push_back(er);
+			if (!er->pass)
+			{
+				if (!thiz->hovering)
+				{
+					er->hovering = true;
+					thiz->hovering = er;
+				}
+
+				if (thiz->focusing && thiz->focusing->dragging && !thiz->drag_overing && er != thiz->focusing && !er->acceptable_drops.empty())
+				{
+					auto h = thiz->focusing->drag_hash;
+					for (auto _h : er->acceptable_drops)
+					{
+						if (_h == h)
+						{
+							thiz->drag_overing = er;
+							break;
+						}
+					}
+				}
+			}
+			pass = er->pass;
+		}
+	}
 
 	void sEventDispatcher::receiver_leave_world(cEventReceiver* er)
 	{

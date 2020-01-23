@@ -29,14 +29,19 @@ namespace flame
 		bool cliped;
 		Vec4f cliped_rect;
 
-		float inner_padding_horizontal() const
+		float inner_padding_h() const
 		{
 			return inner_padding_[0] + inner_padding_[2];
 		}
 
-		float inner_padding_vertical() const
+		float inner_padding_v() const
 		{
 			return inner_padding_[1] + inner_padding_[3];
+		}
+
+		Vec2f center() const
+		{
+			return global_pos + global_size * 0.5f;
 		}
 
 		cElement() :

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/universe/universe.h>
 
 namespace flame
@@ -12,6 +13,8 @@ namespace flame
 	struct Entity
 	{
 		World* world_;
+
+		ListenerHub<void(void* c, Entity* e)> on_removed_listeners;
 
 		uint order_; // depth, child_idx
 		int created_frame_;

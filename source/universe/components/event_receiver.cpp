@@ -10,7 +10,7 @@ namespace flame
 		dispatcher = nullptr;
 		element = nullptr;
 
-		penetrable = false;
+		pass = nullptr;
 		accept_key = false;
 		drag_hash = 0;
 
@@ -79,7 +79,7 @@ namespace flame
 	{
 		auto copy = new cEventReceiverPrivate();
 
-		copy->penetrable = penetrable;
+		copy->pass = pass;
 		copy->drag_hash = drag_hash;
 
 		return copy;

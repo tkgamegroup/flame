@@ -12,44 +12,44 @@ namespace flame
 	struct cElement;
 	struct cEventReceiver;
 
-	struct cMenuButton : Component // popup a menu when clik
+	struct cMenu : Component
 	{
+		enum Mode
+		{
+			ModeMenubar,
+			ModeMain,
+			ModeSub,
+			ModeContext
+		};
+
 		cElement* element;
 		cEventReceiver* event_receiver;
 
 		Entity* root;
-		Entity* menu;
-		Side popup_side;
-		bool move_to_open;
-		bool layer_penetrable;
+		Entity* items;
+		Mode mode;
 
 		bool opened;
-
-		cMenuButton() :
-			Component("cMenuButton")
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS bool can_open(KeyState action, MouseKey key);
-
-		FLAME_UNIVERSE_EXPORTS void open();
-		FLAME_UNIVERSE_EXPORTS void close();
-		
-		FLAME_UNIVERSE_EXPORTS static cMenuButton* create();
-	};
-
-	struct cMenu : Component
-	{
-		cMenuButton* button;
 
 		cMenu() :
 			Component("cMenu")
 		{
 		}
+		
+		FLAME_UNIVERSE_EXPORTS static cMenu* create(Mode mode);
+	};
 
-		FLAME_UNIVERSE_EXPORTS static cMenu* create();
+	struct cMenuItems : Component
+	{
+		cMenu* menu;
+
+		cMenuItems() :
+			Component("cMenuItems")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS static cMenuItems* create();
 	};
 
 	FLAME_UNIVERSE_EXPORTS void close_menu(Entity* menu);
-	FLAME_UNIVERSE_EXPORTS void popup_menu(Entity* menu, Entity* root, const Vec2f& pos);
 }

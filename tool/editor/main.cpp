@@ -44,11 +44,8 @@ void App::create()
 
 	s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", scr, FLAME_CHASH("SwapchainResizable"), &sc_cbs);
 	w->add_system(s_2d_renderer);
-	{
-		auto canvas = s_2d_renderer->canvas;
-		canvas->add_font(app.font_atlas_pixel);
-		canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	}
+	s_2d_renderer->canvas->add_font(app.font_atlas_pixel);
+	s_2d_renderer->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 
 	root = w->root();
 
@@ -59,6 +56,13 @@ void App::create()
 	ui::push_font_atlas(app.font_atlas_pixel);
 	ui::push_parent(root);
 	ui::set_current_root(root);
+
+	ui::e_begin_menu_bar();
+	ui::e_begin_menu_top(L"Window");
+	ui::e_menu_item(L"Resource Explorer", [](void* c, Entity*) {
+	}, new_mail_p(this));
+	ui::e_end_menu_bar();
+	ui::e_end_menu_bar();
 
 	ui::e_text(L"");
 	ui::c_aligner(AlignxLeft, AlignyBottom);

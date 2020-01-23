@@ -20,7 +20,6 @@
 #include <flame/universe/components/window.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
-#include <flame/universe/ui/make_menu.h>
 #include <flame/universe/ui/make_window.h>
 
 namespace flame
@@ -203,16 +202,9 @@ namespace flame
 			return c;
 		}
 
-		inline cMenu* c_menu()
+		inline cMenu* c_menu(cMenu::Mode mode)
 		{
-			auto c = cMenu::create();
-			current_entity()->add_component(c);
-			return c;
-		}
-
-		inline cMenuButton* c_menu_button()
-		{
-			auto c = cMenuButton::create();
+			auto c = cMenu::create(mode);
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -475,7 +467,7 @@ namespace flame
 				e_empty();
 				c_element();
 				auto ce = c_event_receiver();
-				ce->penetrable = true;
+				ce->pass = (Entity*)FLAME_INVALID_POINTER;
 				ce->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thumb = (*(cScrollbarThumb**)c);
 					if (is_mouse_scroll(action, key))
@@ -618,15 +610,6 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_menu()
-		{
-			push_parent(nullptr);
-			auto e = e_empty();
-			pop_parent();
-			make_menu(e);
-			return e;
-		}
-
 		inline Entity* e_begin_combobox(float width, int idx = -1)
 		{
 			auto e = e_empty();
@@ -637,17 +620,14 @@ namespace flame
 			ce->frame_thickness_ = 2.f;
 			c_text()->auto_width_ = false;
 			c_event_receiver();
-			auto cmb = c_menu_button();
-			cmb->root = current_root();
-			cmb->popup_side = SideS;
-			cmb->move_to_open = false;
-			cmb->layer_penetrable = true;
 			auto cs = c_style_color();
 			cs->color_normal = ui::style(ui::FrameColorNormal).c();
 			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
 			cs->color_active = ui::style(ui::FrameColorActive).c();
 			cs->style();
 			c_layout();
+			auto cm = c_menu(cMenu::ModeMain);
+			cm->root = current_root();
 			auto ccb = c_combobox();
 			if (idx != -1)
 				ccb->set_index(idx, false);
@@ -657,7 +637,7 @@ namespace flame
 			c_text()->set_text(Icon_ANGLE_DOWN);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
-			push_parent(cmb->menu);
+			push_parent(cm->items);
 			return e;
 		}
 
@@ -700,42 +680,36 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_menu_top(const wchar_t* text, bool transparent = true)
+		inline Entity* e_begin_menubar_menu(const wchar_t* text, bool transparent = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
-			auto cmb = c_menu_button();
-			cmb->root = current_root();
-			cmb->popup_side = SideS;
-			cmb->move_to_open = true;
-			cmb->layer_penetrable = true;
+			auto cm = c_menu(cMenu::ModeMenubar);
+			cm->root = current_root();
 			auto cs = c_style_color();
 			cs->color_normal = transparent ? Vec4c(0) : ui::style(ui::FrameColorHovering).c();
 			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
 			cs->color_active = ui::style(ui::FrameColorActive).c();
 			cs->style();
-			push_parent(cmb->menu);
+			push_parent(cm->items);
 			return e;
 		}
 
-		inline void e_end_menu_top()
+		inline void e_end_menubar_menu()
 		{
 			pop_parent();
 		}
 
-		inline Entity* e_begin_menu(const wchar_t* text)
+		inline Entity* e_begin_sub_menu(const wchar_t* text)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f + ui::style(ui::FontSize).u()[0], 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
-			auto cmb = c_menu_button();
-			cmb->root = current_root();
-			cmb->popup_side = SideE;
-			cmb->move_to_open = true;
-			cmb->layer_penetrable = false;
+			auto cm = c_menu(cMenu::ModeSub);
+			cm->root = current_root();
 			auto cs = c_style_color();
 			cs->color_normal = ui::style(ui::FrameColorNormal).c();
 			cs->color_hovering = ui::style(ui::FrameColorHovering).c();
@@ -749,11 +723,11 @@ namespace flame
 			c_text()->set_text(Icon_CARET_RIGHT);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
-			push_parent(cmb->menu);
+			push_parent(cm->items);
 			return e;
 		}
 
-		inline void e_end_menu()
+		inline void e_end_sub_menu()
 		{
 			pop_parent();
 		}
@@ -798,36 +772,23 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_menu_popup()
+		inline void e_begin_popup_menu()
 		{
-			auto em = e_menu();
-			struct Capture
-			{
-				Entity* menu;
-				Entity* root;
-			}capture;
-			capture.menu = em;
-			capture.root = current_root();
-			current_parent()->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Right)
-				{
-					auto& capture = *(Capture*)c;
-					popup_menu(capture.menu, capture.root, (Vec2f)pos);
-				}
-			}, new_mail(&capture));
-			push_parent(em);
-			return em;
+			set_current_entity(current_parent());
+			auto cm = c_menu(cMenu::ModeContext);
+			cm->root = current_root();
+			push_parent(cm->items);
 		}
 
-		inline void e_end_menu_popup()
+		inline void e_end_popup_menu()
 		{
 			pop_parent();
 		}
 
-		inline Entity* e_begin_docker_container(const Vec2f& pos, const Vec2f& size)
+		inline Entity* e_begin_docker_container(const Vec2f& pos, const Vec2f& size, bool floating = true)
 		{
 			auto e = e_empty();
-			make_docker_container(e, pos, size);
+			make_docker_container(e, pos, size, floating);
 			push_parent(e);
 			return e;
 		}
@@ -969,7 +930,7 @@ namespace flame
 			auto l = get_top_layer(r);
 			if (!l)
 			{
-				l = ui::add_layer(r, false, false, true, Vec4c(0, 0, 0, 127), true);
+				l = ui::add_layer(r, "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
 				set_current_entity(l);
 				c_layout();
 			}

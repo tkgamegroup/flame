@@ -308,14 +308,14 @@ namespace flame
 					s *= text->scale_;
 				if (text->auto_width_)
 				{
-					auto w = s.x() + element->inner_padding_horizontal();
+					auto w = s.x() + element->inner_padding_h();
 					if (aligner && aligner->width_policy_ == SizeGreedy)
 						aligner->set_min_width(w);
 					element->set_width(w, false, this);
 				}
 				if (text->auto_height_)
 				{
-					auto h = s.y() + element->inner_padding_vertical();
+					auto h = s.y() + element->inner_padding_v();
 					if (aligner && aligner->height_policy_ == SizeGreedy)
 						aligner->set_min_height(h);
 					element->set_height(h, false, this);
@@ -374,8 +374,8 @@ namespace flame
 			if (fence > 0 && !als.empty())
 				w -= item_padding;
 			set_content_size(Vec2f(w, h));
-			w += element->inner_padding_horizontal();
-			h += element->inner_padding_vertical();
+			w += element->inner_padding_h();
+			h += element->inner_padding_v();
 			if (width_fit_children)
 				use_children_width(w);
 			if (height_fit_children)
@@ -454,8 +454,8 @@ namespace flame
 			if (fence > 0 && !als.empty())
 				h -= item_padding;
 			set_content_size(Vec2f(w, h));
-			w += element->inner_padding_horizontal();
-			h += element->inner_padding_vertical();
+			w += element->inner_padding_h();
+			h += element->inner_padding_v();
 			if (width_fit_children)
 				use_children_width(w);
 			if (height_fit_children)
@@ -500,9 +500,9 @@ namespace flame
 			{
 				set_content_size(Vec2f(0.f));
 				if (width_fit_children)
-					use_children_width(element->inner_padding_horizontal());
+					use_children_width(element->inner_padding_h());
 				if (height_fit_children)
-					use_children_height(element->inner_padding_vertical());
+					use_children_height(element->inner_padding_v());
 				for (auto i = 0; i < n; i++)
 				{
 					auto& al = als[i];
@@ -558,8 +558,8 @@ namespace flame
 					h -= item_padding;
 				}
 				set_content_size(Vec2f(w, h));
-				w += element->inner_padding_horizontal();
-				h += element->inner_padding_vertical();
+				w += element->inner_padding_h();
+				h += element->inner_padding_v();
 				if (width_fit_children)
 					use_children_width(w);
 				if (height_fit_children)

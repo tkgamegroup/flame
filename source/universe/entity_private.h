@@ -15,6 +15,7 @@ namespace flame
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
 		EntityPrivate();
+		~EntityPrivate();
 		void set_visibility(bool v);
 		Component* get_component_plain(uint name_hash);
 		Array<Component*> get_components();

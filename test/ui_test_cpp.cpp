@@ -112,15 +112,15 @@ int main(int argc, char** args)
 	}, new_mail_p(ui::current_entity()->get_component(cText)));
 
 	ui::e_begin_menu_bar();
-	ui::e_begin_menu_top(L"File");
+	ui::e_begin_menubar_menu(L"File");
 	ui::e_menu_item(L"New", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
 	ui::e_menu_item(L"Open", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
-	ui::e_end_menu_top();
-	ui::e_begin_menu_top(L"Edit");
+	ui::e_end_menubar_menu();
+	ui::e_begin_menubar_menu(L"Edit");
 	ui::e_menu_item(L"Undo", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
@@ -139,15 +139,15 @@ int main(int argc, char** args)
 	ui::e_menu_item(L"Delete", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
-	ui::e_end_menu_top();
-	ui::e_begin_menu_top(L"Tool");
+	ui::e_end_menubar_menu();
+	ui::e_begin_menubar_menu(L"Tool");
 	ui::e_menu_item(L"Monitor", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
 	ui::e_menu_item(L"Console", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
-	ui::e_end_menu_top();
+	ui::e_end_menubar_menu();
 	ui::e_end_menu_bar();
 
 	ui::e_begin_layout(Vec2f(16.f, 28.f), LayoutVertical, 16.f);
@@ -228,7 +228,7 @@ int main(int argc, char** args)
 
 	ui::e_end_docker_container();
 
-	ui::e_begin_menu_popup();
+	ui::e_begin_popup_menu();
 	ui::e_menu_item(L"Refresh", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
@@ -238,7 +238,7 @@ int main(int argc, char** args)
 	ui::e_menu_item(L"Help", [](void* c, Entity* e) {
 		wprintf(L"%s!\n", e->get_component(cText)->text());
 	}, Mail<>());
-	ui::e_begin_menu(L"add");
+	ui::e_begin_sub_menu(L"add");
 	ui::e_menu_item(L"Tree", [](void* c, Entity* e) {
 		wprintf(L"Add %s!\n", e->get_component(cText)->text());
 	}, Mail<>());
@@ -248,8 +248,8 @@ int main(int argc, char** args)
 	ui::e_menu_item(L"House", [](void* c, Entity* e) {
 		wprintf(L"Add %s!\n", e->get_component(cText)->text());
 	}, Mail<>());
-	ui::e_end_menu();
-	ui::e_begin_menu(L"Remove");
+	ui::e_end_sub_menu();
+	ui::e_begin_sub_menu(L"Remove");
 	ui::e_menu_item(L"Tree", [](void* c, Entity* e) {
 		wprintf(L"Remove %s!\n", e->get_component(cText)->text());
 	}, Mail<>());
@@ -259,8 +259,8 @@ int main(int argc, char** args)
 	ui::e_menu_item(L"House", [](void* c, Entity* e) {
 		wprintf(L"Remove %s!\n", e->get_component(cText)->text());
 	}, Mail<>());
-	ui::e_end_menu();
-	ui::e_end_menu_popup();
+	ui::e_end_sub_menu();
+	ui::e_end_popup_menu();
 
 	ui::pop_parent();
 	ui::pop_font_atlas();

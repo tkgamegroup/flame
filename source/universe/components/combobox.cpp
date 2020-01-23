@@ -2,10 +2,11 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
-#include <flame/universe/components/menu.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/layout.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
+#include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
@@ -20,7 +21,6 @@ namespace flame
 		{
 			event_receiver = nullptr;
 			style = nullptr;
-			combobox = nullptr;
 
 			idx = -1;
 
@@ -42,14 +42,18 @@ namespace flame
 			}
 		}
 
+		void on_added() override
+		{
+			if (idx == -1)
+			{
+				auto items = entity->parent();
+				if (items)
+					idx = items->child_count() - 1;
+			}
+		}
+
 		void on_component_added(Component* c) override
 		{
-			auto menu = entity->parent();
-			if (menu)
-			{
-				idx = menu->child_count() - 1;
-				combobox = menu->get_component(cMenu)->button->entity->get_component(cCombobox);
-			}
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
@@ -57,9 +61,10 @@ namespace flame
 					auto thiz = *(cComboboxItemPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						ui::remove_top_layer(thiz->combobox->menu_button->root);
-
-						thiz->combobox->set_index(thiz->idx);
+						auto menu = thiz->entity->parent()->get_component(cMenuItems)->menu;
+						auto combobox = menu->entity->get_component(cCombobox);
+						ui::remove_top_layer(menu->root);
+						combobox->set_index(thiz->idx);
 					}
 				}, new_mail_p(this));
 			}
@@ -79,10 +84,12 @@ namespace flame
 
 	struct cComboboxPrivate : cCombobox
 	{
+		void* mouse_listener;
+
 		cComboboxPrivate()
 		{
 			text = nullptr;
-			menu_button = nullptr;
+			event_receiver = nullptr;
 
 			idx = -1;
 		}
@@ -91,17 +98,15 @@ namespace flame
 		{
 			if (c->name_hash == FLAME_CHASH("cText"))
 				text = (cText*)c;
-			else if (c->name_hash == FLAME_CHASH("cMenuButton"))
-				menu_button = (cMenuButton*)c;
 		}
 	};
 
 	void cCombobox::set_index(int _idx, bool trigger_changed)
 	{
-		auto menu = menu_button->menu;
+		auto items = entity->get_component(cMenu)->items;
 		if (idx != -1)
 		{
-			auto comboboxitem = (cComboboxItemPrivate*)menu->child(idx)->get_component(cComboboxItem);
+			auto comboboxitem = (cComboboxItemPrivate*)items->child(idx)->get_component(cComboboxItem);
 			if (comboboxitem)
 				comboboxitem->do_style(false);
 		}
@@ -110,7 +115,7 @@ namespace flame
 			text->set_text(L"");
 		else
 		{
-			auto selected = menu->child(idx);
+			auto selected = items->child(idx);
 			text->set_text(selected->get_component(cText)->text());
 			{
 				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(cComboboxItem);

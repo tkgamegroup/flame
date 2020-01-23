@@ -12,7 +12,7 @@ namespace flame
 		sEventDispatcher* dispatcher;
 		cElement* element;
 
-		bool penetrable;
+		Entity* pass; // invali pointer - pass all, nullptr [default] - pass nothing, or pass pointing and its children
 		bool accept_key;
 		uint drag_hash; // non-zero means it can be draged to drop
 

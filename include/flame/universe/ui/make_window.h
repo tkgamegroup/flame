@@ -2,7 +2,7 @@
 
 namespace flame
 {
-	inline void make_docker_container(Entity* e, const Vec2f& pos, const Vec2f& size)
+	inline void make_docker_container(Entity* e, const Vec2f& pos, const Vec2f& size, bool floating)
 	{
 		e->set_name("docker_container");
 		auto ce = cElement::create();
@@ -19,7 +19,7 @@ namespace flame
 			e->add_child(e_btf);
 			e_btf->add_component(cElement::create());
 			auto cer = cEventReceiver::create();
-			cer->penetrable = true;
+			cer->pass = (Entity*)FLAME_INVALID_POINTER;
 			e_btf->add_component(cer);
 			auto ca = cAligner::create();
 			ca->width_policy_ = SizeFitParent;
