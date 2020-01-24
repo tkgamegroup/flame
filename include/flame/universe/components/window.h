@@ -77,19 +77,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cDockerTab* create();
 	};
 
-	struct cDockerContainer : Component
-	{
-		cElement* element;
-		cEventReceiver* event_receiver;
-
-		cDockerContainer() :
-			Component("cDockerContainer")
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS static cDockerContainer* create();
-	};
-
 	struct cDockerTabbar : Component
 	{
 		cElement* element;
@@ -115,5 +102,18 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS static cDockerPages* create();
+	};
+
+	struct cDockerStaticContainer : Component
+	{
+		cElement* element;
+		cEventReceiver* event_receiver;
+
+		cDockerStaticContainer() :
+			Component("cDockerStaticContainer")
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS static cDockerStaticContainer* create();
 	};
 }

@@ -2,9 +2,9 @@
 
 namespace flame
 {
-	inline void make_docker_container(Entity* e, const Vec2f& pos, const Vec2f& size, bool floating)
+	inline void make_docker_floating_container(Entity* e, const Vec2f& pos, const Vec2f& size)
 	{
-		e->set_name("docker_container");
+		e->set_name("docker_floating_container");
 		auto ce = cElement::create();
 		ce->pos_ = pos;
 		ce->size_ = size;

@@ -87,14 +87,11 @@ namespace flame
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						looper().add_event([](void* c) {
-							auto e = *(Entity**)c;
-							auto p = e->parent();
+							auto p = (*(Entity**)c)->parent();
 							auto pp = p->parent();
 							auto idx = pp->child_count() - 1;
 							if (idx == 0)
 								return;
-							if (ui::get_top_layer(pp))
-								idx -= 1;
 							pp->reposition_child(p, idx);
 						}, new_mail_p(thiz->entity));
 					}
@@ -254,7 +251,7 @@ namespace flame
 				auto p = docker->parent();
 				if (p)
 				{
-					if (p->name_hash() == FLAME_CHASH("docker_container"))
+					if (p->name_hash() == FLAME_CHASH("docker_floating_container"))
 						p->parent()->remove_child(p);
 					else if (p->name_hash() == FLAME_CHASH("docker_layout"))
 					{
@@ -264,7 +261,7 @@ namespace flame
 						auto idx = p->order_ & 0xffffff;
 						pp->remove_child(p);
 						pp->add_child(oth_docker, idx);
-						if (pp->name_hash() == FLAME_CHASH("docker_container"))
+						if (pp->name_hash() == FLAME_CHASH("docker_floating_container"))
 						{
 							auto aligner = oth_docker->get_component(cAligner);
 							aligner->set_x_align(AlignxLeft);
@@ -333,7 +330,7 @@ namespace flame
 								auto page_aligner = e_page->get_component(cAligner);
 
 								auto e_container = Entity::create();
-								make_docker_container(e_container, thiz->drop_pos, page_element->size_, true);
+								make_docker_floating_container(e_container, thiz->drop_pos, page_element->size_);
 								thiz->root->add_child(e_container);
 
 								auto e_docker = Entity::create();
@@ -406,96 +403,6 @@ namespace flame
 	{
 		return new cDockerTabPrivate;
 	}
-
-	struct cDockerContainerPrivate : cDockerContainer
-	{
-		void* drag_and_drop_listener;
-		cDockerTab* drop_tab;
-		Side dock_side;
-
-		cDockerContainerPrivate()
-		{
-			element = nullptr;
-			event_receiver = nullptr;
-
-			drag_and_drop_listener = nullptr;
-			drop_tab = nullptr;
-
-		}
-
-		~cDockerContainerPrivate()
-		{
-			if (!entity->dying_)
-				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
-		}
-
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = (*(cDockerContainerPrivate**)c);
-					if (action == DragOvering)
-					{
-						thiz->dock_side = Outside;
-						auto center = thiz->element->center();
-						if (rect_contains(Vec4f(center + Vec2f(-25.f, -25.f), center + Vec2f(25.f, 25.f)), (Vec2f)pos))
-							thiz->dock_side = SideCenter;
-
-						auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
-						drop_tab->drop_tips.clear();
-						drop_tab->overing = thiz->event_receiver;
-						{
-							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = thiz->dock_side == SideCenter;
-							primitive.pos = center + Vec2f(-25.f);
-							primitive.size = Vec2f(50.f, 50.f);
-							std::vector<Vec2f> points;
-							drop_tab->drop_tips.push_back(primitive);
-						}
-					}
-					else if (action == Dropped)
-					{
-						if (thiz->dock_side == SideCenter)
-						{
-							thiz->drop_tab = er->entity->get_component(cDockerTab);
-							thiz->drop_tab->floating = false;
-							looper().add_event([](void* c) {
-								auto thiz = (*(cDockerContainerPrivate**)c);
-								auto tab = thiz->drop_tab;
-								auto e_tab = tab->entity;
-								auto e_page = tab->page;
-								auto page_element = tab->page_element;
-								auto page_aligner = e_page->get_component(cAligner);
-
-								auto new_docker = Entity::create();
-								make_docker(new_docker);
-								auto new_tabbar = new_docker->child(0);
-								auto new_pages = new_docker->child(1);
-								thiz->entity->add_child(new_docker);
-
-								tab->root->remove_child(e_tab, false);
-								tab->root->remove_child(e_page, false);
-								tab->list_item->list = (cList*)new_tabbar->get_component(cList);
-								new_tabbar->add_child(e_tab);
-								new_pages->add_child(e_page);
-
-								tab->element->set_alpha(1.f);
-								page_element->set_pos(Vec2f(0.f));
-								page_element->set_alpha(1.f);
-								page_aligner->set_width_policy(SizeFitParent);
-								page_aligner->set_height_policy(SizeFitParent);
-							}, new_mail_p(thiz));
-						}
-					}
-				}, new_mail_p(this));
-			}
-		}
-	};
 
 	struct cDockerTabbarPrivate : cDockerTabbar
 	{
@@ -767,7 +674,7 @@ namespace flame
 								auto layout = Entity::create();
 								make_docker_layout(layout, LayoutFree);
 
-								if (p->name_hash() == FLAME_CHASH("docker_container"))
+								if (is_one_of(p->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
 								{
 									auto aligner = docker->get_component(cAligner);
 									aligner->set_x_align(AlignxFree);
@@ -900,5 +807,100 @@ namespace flame
 	cDockerPages* cDockerPages::create()
 	{
 		return new cDockerPagesPrivate;
+	}
+
+	struct cDockerStaticContainerPrivate : cDockerStaticContainer
+	{
+		void* drag_and_drop_listener;
+		cDockerTab* drop_tab;
+		Side dock_side;
+
+		cDockerStaticContainerPrivate()
+		{
+			element = nullptr;
+			event_receiver = nullptr;
+
+			drag_and_drop_listener = nullptr;
+			drop_tab = nullptr;
+
+		}
+
+		~cDockerStaticContainerPrivate()
+		{
+			if (!entity->dying_)
+				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
+		}
+
+		void on_component_added(Component* c) override
+		{
+			if (c->name_hash == FLAME_CHASH("cElement"))
+				element = (cElement*)c;
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+					auto thiz = (*(cDockerStaticContainerPrivate**)c);
+					if (action == DragOvering)
+					{
+						thiz->dock_side = Outside;
+						auto center = thiz->element->center();
+						if (rect_contains(Vec4f(center + Vec2f(-25.f, -25.f), center + Vec2f(25.f, 25.f)), (Vec2f)pos))
+							thiz->dock_side = SideCenter;
+
+						auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
+						drop_tab->drop_tips.clear();
+						drop_tab->overing = thiz->event_receiver;
+						{
+							cDockerTabPrivate::DropTip primitive;
+							primitive.overing = thiz->dock_side == SideCenter;
+							primitive.pos = center + Vec2f(-25.f);
+							primitive.size = Vec2f(50.f, 50.f);
+							std::vector<Vec2f> points;
+							drop_tab->drop_tips.push_back(primitive);
+						}
+					}
+					else if (action == Dropped)
+					{
+						if (thiz->dock_side == SideCenter)
+						{
+							thiz->drop_tab = er->entity->get_component(cDockerTab);
+							thiz->drop_tab->floating = false;
+							looper().add_event([](void* c) {
+								auto thiz = (*(cDockerStaticContainerPrivate**)c);
+								auto tab = thiz->drop_tab;
+								auto e_tab = tab->entity;
+								auto e_page = tab->page;
+								auto page_element = tab->page_element;
+								auto page_aligner = e_page->get_component(cAligner);
+
+								auto new_docker = Entity::create();
+								make_docker(new_docker);
+								auto new_tabbar = new_docker->child(0);
+								auto new_pages = new_docker->child(1);
+								thiz->entity->add_child(new_docker);
+
+								tab->root->remove_child(e_tab, false);
+								tab->root->remove_child(e_page, false);
+								tab->list_item->list = (cList*)new_tabbar->get_component(cList);
+								new_tabbar->add_child(e_tab);
+								new_pages->add_child(e_page);
+
+								tab->element->set_alpha(1.f);
+								page_element->set_pos(Vec2f(0.f));
+								page_element->set_alpha(1.f);
+								page_aligner->set_width_policy(SizeFitParent);
+								page_aligner->set_height_policy(SizeFitParent);
+							}, new_mail_p(thiz));
+						}
+					}
+				}, new_mail_p(this));
+			}
+		}
+	};
+
+	cDockerStaticContainer* cDockerStaticContainer::create()
+	{
+		return new cDockerStaticContainerPrivate;
 	}
 }

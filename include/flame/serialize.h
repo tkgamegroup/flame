@@ -375,9 +375,15 @@ namespace flame
 	}
 
 	template<typename CH>
+	bool sstartswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
+	{
+		return str.size() >= oth.size() && str.compare(0, oth.size(), oth) == 0;
+	}
+
+	template<typename CH>
 	bool sendswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
 	{
-		return str.size() > oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
+		return str.size() >= oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
 	}
 
 	template<typename CH>

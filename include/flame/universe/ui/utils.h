@@ -251,6 +251,13 @@ namespace flame
 			return c;
 		}
 
+		inline cDockerStaticContainer* c_docker_static_container()
+		{
+			auto c = cDockerStaticContainer::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
 		inline Entity* e_empty(int pos = -1)
 		{
 			auto e = Entity::create();
@@ -785,22 +792,42 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_docker_container(const Vec2f& pos, const Vec2f& size, bool floating = true)
+		inline Entity* e_begin_docker_floating_container(const Vec2f& pos, const Vec2f& size)
 		{
 			auto e = e_empty();
-			make_docker_container(e, pos, size, floating);
+			make_docker_floating_container(e, pos, size);
 			push_parent(e);
 			return e;
 		}
 
-		inline void e_end_docker_container()
+		inline void e_end_docker_floating_container()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_docker_static_container()
+		{
+			auto e = e_empty();
+			e->set_name("docker_static_container");
+			auto ce = c_element();
+			ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
+			ce->color_ = ui::style_4c(ui::DockerColor);
+			c_event_receiver();
+			c_aligner(SizeFitParent, SizeFitParent);
+			c_layout(LayoutFree);
+			c_docker_static_container();
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_docker_static_container()
 		{
 			pop_parent();
 		}
 
 		inline Entity* e_begin_docker_layout(LayoutType type)
 		{
-			auto is_parent_container = current_parent()->name_hash() == FLAME_CHASH("docker_container");
+			auto is_parent_container = is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") });
 			auto pos = -1;
 			if (is_parent_container)
 				pos = 0;
@@ -831,7 +858,7 @@ namespace flame
 
 		inline Entity* e_begin_docker()
 		{
-			auto is_parent_container = current_parent()->name_hash() == FLAME_CHASH("docker_container");
+			auto is_parent_container = is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") });
 			auto pos = -1;
 			if (is_parent_container)
 				pos = 0;

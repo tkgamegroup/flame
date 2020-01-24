@@ -195,15 +195,18 @@ int main(int argc, char** args)
 
 	ui::e_end_layout();
 
-	ui::e_begin_docker_container(Vec2f(416.f, 300.f), Vec2f(200.f));
+	//ui::e_begin_docker_static_container();
+	//ui::e_end_docker_static_container();
+
+	ui::e_begin_docker_floating_container(Vec2f(416.f, 300.f), Vec2f(200.f));
 	ui::e_begin_docker();
 	ui::e_begin_docker_page(L"ResourceExplorer");
 	ui::e_text(L"flower.png  main.cpp");
 	ui::e_end_docker_page();
 	ui::e_end_docker();
-	ui::e_end_docker_container();
+	ui::e_end_docker_floating_container();
 
-	ui::e_begin_docker_container(Vec2f(640.f, 300.f), Vec2f(400.f, 200.f));
+	ui::e_begin_docker_floating_container(Vec2f(640.f, 300.f), Vec2f(400.f, 200.f));
 	ui::e_begin_docker_layout(LayoutHorizontal);
 	ui::e_begin_docker();
 	ui::e_begin_docker_page(L"TextEditor");
@@ -221,12 +224,9 @@ int main(int argc, char** args)
 	ui::e_text(L"Name: James Bond\nID: 007");
 	ui::e_end_docker_page();
 	ui::e_end_docker();
-
 	ui::e_end_docker_layout();
-
 	ui::e_end_docker_layout();
-
-	ui::e_end_docker_container();
+	ui::e_end_docker_floating_container();
 
 	ui::e_begin_popup_menu();
 	ui::e_menu_item(L"Refresh", [](void* c, Entity* e) {

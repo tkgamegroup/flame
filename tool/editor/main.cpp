@@ -58,10 +58,10 @@ void App::create()
 	ui::set_current_root(root);
 
 	ui::e_begin_menu_bar();
-	ui::e_begin_menu_top(L"Window");
+	ui::e_begin_menubar_menu(L"Window");
 	ui::e_menu_item(L"Resource Explorer", [](void* c, Entity*) {
 	}, new_mail_p(this));
-	ui::e_end_menu_bar();
+	ui::e_end_menubar_menu();
 	ui::e_end_menu_bar();
 
 	ui::e_text(L"");

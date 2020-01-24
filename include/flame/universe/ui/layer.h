@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/serialize.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
@@ -10,12 +11,16 @@ namespace flame
 
 	namespace ui
 	{
-		inline Entity* get_top_layer(Entity* parent)
+		inline Entity* get_top_layer(Entity* parent, bool check = false)
 		{
 			if (parent->child_count() == 0)
 				return nullptr;
 			auto l = parent->child(parent->child_count() - 1);
-			return l->dying_ ? nullptr : l;
+			if (l->dying_)
+				return nullptr;
+			if (check && !sstartswith(std::string(l->name()), std::string("layer_")))
+				return nullptr;
+			return l;
 		}
 
 		inline void remove_top_layer(Entity* parent, bool take = true)

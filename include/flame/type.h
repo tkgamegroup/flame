@@ -39,19 +39,19 @@ namespace flame
 		return sizeof(a) / sizeof(a[0]);
 	}
 
-	template <unsigned int N>
+	template <uint N>
 	struct EnsureConstU
 	{
-		static const unsigned int value = N;
+		static const uint value = N;
 	};
 
 	template <class CH>
 	struct _SAL // str and len
 	{
-		unsigned int l;
+		uint l;
 		const CH* s;
 
-		_SAL(unsigned int l, const CH* s) :
+		_SAL(uint l, const CH* s) :
 			l(l),
 			s(s)
 		{
@@ -62,7 +62,7 @@ namespace flame
 #define FLAME_SAL(n, x) _SAL n(FLAME_SAL_S(x))
 
 	template<class CH>
-	constexpr unsigned int __f_strlen(const CH* str)
+	constexpr uint __f_strlen(const CH* str)
 	{
 		auto p = str;
 		while (*p)
@@ -70,13 +70,13 @@ namespace flame
 		return p - str;
 	}
 
-	inline constexpr unsigned int hash_update(unsigned int h, unsigned int v)
+	inline constexpr uint hash_update(uint h, uint v)
 	{
 		return h ^ (v + 0x9e3779b9 + (h << 6) + (h >> 2));
 	}
 
 	template<class CH>
-	constexpr unsigned int hash_str(const CH* str, unsigned int seed)
+	constexpr uint hash_str(const CH* str, uint seed)
 	{
 		return 0 == *str ? seed : hash_str(str + 1, hash_update(seed, *str));
 	}
@@ -171,6 +171,17 @@ namespace flame
 			}
 		};
 		return f2v(&Wrap::dtor);
+	}
+
+	template<class T>
+	bool is_one_of(T v, const std::initializer_list<T>& l)
+	{
+		for (auto& i : l)
+		{
+			if (v == i)
+				return true;
+		}
+		return false;
 	}
 
 	template<class CH>
