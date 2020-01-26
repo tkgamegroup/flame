@@ -364,6 +364,7 @@ namespace flame
 					h = max(element->size_.y(), h);
 					break;
 				case SizeFitParent:
+					assert(!width_fit_children);
 					break;
 				case SizeGreedy:
 					h = max(aligner->min_height_, h);
@@ -431,6 +432,7 @@ namespace flame
 					w = max(element->size_.x(), w);
 					break;
 				case SizeFitParent:
+					assert(!height_fit_children);
 					break;
 				case SizeGreedy:
 					w = max(aligner->min_width_, w);

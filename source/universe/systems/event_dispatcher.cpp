@@ -14,7 +14,7 @@ namespace flame
 		sEventDispatcherPrivate* thiz;
 		Vec2f pos;
 		bool meet_last_hovering;
-		Entity* pass;
+		EntityPrivate* pass;
 		std::vector<cEventReceiver*> mouse_dispatch_list;
 
 		void search(sEventDispatcherPrivate* thiz, const Vec2i& pos, EntityPrivate* root);
@@ -339,7 +339,7 @@ namespace flame
 		thiz = _thiz;
 		pos = Vec2f(_pos);
 		meet_last_hovering = false;
-		pass = (Entity*)FLAME_INVALID_POINTER;
+		pass = (EntityPrivate*)FLAME_INVALID_POINTER;
 		mouse_dispatch_list.clear();
 		if (thiz->focusing && thiz->focusing->active)
 			mouse_dispatch_list.insert(mouse_dispatch_list.begin(), thiz->focusing);
@@ -400,7 +400,7 @@ namespace flame
 					}
 				}
 			}
-			pass = er->pass;
+			pass = (EntityPrivate*)er->pass;
 		}
 	}
 

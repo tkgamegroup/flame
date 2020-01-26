@@ -12,7 +12,6 @@ namespace flame
 			FontSize, // uint
 			TextColorNormal, // Vec4c
 			TextColorElse, // Vec4c
-			WindowColor, // Vec4c
 			FrameColorNormal, // Vec4c
 			FrameColorHovering, // Vec4c
 			FrameColorActive, // Vec4c
@@ -43,7 +42,7 @@ namespace flame
 			SelectedTabColorElse, // Vec4c
 			SelectedTabTextColorNormal, // Vec4c
 			SelectedTabTextColorElse, // Vec4c
-			DockerColor, // Vec4c
+			WindowColor, // Vec4c
 
 			StyleCount
 		};

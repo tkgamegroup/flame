@@ -49,10 +49,9 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cListItemPrivate**)c;
-
 					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 					{
+						auto thiz = *(cListItemPrivate**)c;
 						if (thiz->list)
 							thiz->list->set_selected(thiz->entity);
 					}

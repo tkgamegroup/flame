@@ -59,7 +59,7 @@ namespace flame
 			items = Entity::create();
 			{
 				auto ce = cElement::create();
-				ce->color_ = ui::style_4c(ui::WindowColor);
+				ce->color_ = ui::style_4c(ui::FrameColorNormal).new_replacely<3>(255);
 				items->add_component(ce);
 				items->add_component(cLayout::create(LayoutVertical));
 				items->add_component(cMenuItems::create());
@@ -145,14 +145,21 @@ namespace flame
 
 					opened = true;
 
-					Entity* layer = nullptr;
+					auto layer = ui::get_top_layer(root);
+					if (layer->name_hash() != FLAME_CHASH("layer_menu"))
+						layer = nullptr;
 					if (mode == ModeSub)
-					{
-						layer = ui::get_top_layer(root);
-						assert(layer && layer->name_hash() == FLAME_CHASH("layer_menu"));
-					}
+						assert(layer);
 					else
-						layer = ui::add_layer(root, "menu", mode == ModeMain ? p : entity, false);
+					{
+						if (mode == ModeMenubar)
+						{
+							if (!layer)
+								layer = ui::add_layer(root, "menu", p, false);
+						}
+						else
+							layer = ui::add_layer(root, "menu", entity, false);
+					}
 					auto items_element = items->get_component(cElement);
 					switch (mode)
 					{

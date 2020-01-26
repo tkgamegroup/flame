@@ -13,6 +13,7 @@ namespace flame
 		std::unordered_map<uint, std::unique_ptr<Component>> components;
 		EntityPrivate* parent;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
+		std::vector<std::pair<void*, void(*)(void*)>> resources;
 
 		EntityPrivate();
 		~EntityPrivate();

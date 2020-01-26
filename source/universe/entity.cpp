@@ -23,6 +23,8 @@ namespace flame
 	EntityPrivate::~EntityPrivate()
 	{
 		ListenerHubImpl::destroy(on_removed_listeners.impl);
+		for (auto& r : resources)
+			r.second(r.first);
 	}
 
 	void EntityPrivate::set_visibility(bool v)
@@ -330,6 +332,11 @@ namespace flame
 	Entity* Entity::copy()
 	{
 		return ((EntityPrivate*)this)->copy();
+	}
+
+	void Entity::associate_resource(void* res, void(*deleter)(void* res))
+	{
+		((EntityPrivate*)this)->resources.emplace_back(res, deleter);
 	}
 
 	Entity* Entity::create()

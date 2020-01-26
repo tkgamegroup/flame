@@ -53,6 +53,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
 
+		FLAME_UNIVERSE_EXPORTS void associate_resource(void* res, void(*deleter)(void* res));
+
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(World* w, uint db_count, TypeinfoDatabase* const* dbs, const wchar_t* filename);
 		FLAME_UNIVERSE_EXPORTS static void save_to_file(uint db_count, TypeinfoDatabase* const* dbs, Entity* e, const wchar_t* filename);

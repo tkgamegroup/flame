@@ -26,7 +26,6 @@ namespace flame
 			pop_style(FontSize); push_style_1u(FontSize, 14U);
 			pop_style(TextColorNormal); push_style_4c(TextColorNormal, 0, 0, 0, 255);
 			pop_style(TextColorElse); push_style_4c(TextColorElse, 255, 255, 255, 255);
-			pop_style(WindowColor); push_style_4c(WindowColor, 0.94f * 255.f, 0.94f * 255.f, 0.94f * 255.f, 1.00f * 255.f);
 			pop_style(FrameColorNormal); push_style_4c(FrameColorNormal, 255, 255, 255, 255);
 			pop_style(FrameColorHovering); push_style_4c(FrameColorHovering, hsv_2_col4(52.f, 0.73f, 0.97f, 0.40f * 255.f));
 			pop_style(FrameColorActive); push_style_4c(FrameColorActive, hsv_2_col4(52.f, 0.73f, 0.97f, 0.67f * 255.f));
@@ -57,7 +56,7 @@ namespace flame
 			pop_style(SelectedTabColorElse); push_style_4c(SelectedTabColorElse, 245, 205, 132, 255);
 			pop_style(SelectedTabTextColorNormal); push_style_4c(SelectedTabTextColorNormal, 0, 0, 0, 255);
 			pop_style(SelectedTabTextColorElse); push_style_4c(SelectedTabTextColorElse, 0, 0, 0, 255);
-			pop_style(DockerColor); push_style_4c(DockerColor, 93, 107, 153, 255);
+			pop_style(WindowColor); push_style_4c(WindowColor, 93, 107, 153, 255);
 		}
 
 		void style_set_to_dark()
@@ -65,7 +64,6 @@ namespace flame
 			pop_style(FontSize); push_style_1u(FontSize, 14U);
 			pop_style(TextColorNormal); push_style_4c(TextColorNormal, 255, 255, 255, 255);
 			pop_style(TextColorElse); push_style_4c(TextColorElse, 180, 180, 180, 255);
-			pop_style(WindowColor); push_style_4c(WindowColor, 0.06f * 255.f, 0.06f * 255.f, 0.06f * 255.f, 0.94f * 255.f);
 			pop_style(FrameColorNormal); push_style_4c(FrameColorNormal, hsv_2_col4(55.f, 0.67f, 0.47f, 0.54f * 255.f));
 			pop_style(FrameColorHovering); push_style_4c(FrameColorHovering, hsv_2_col4(52.f, 0.73f, 0.97f, 0.40f * 255.f));
 			pop_style(FrameColorActive); push_style_4c(FrameColorActive, hsv_2_col4(52.f, 0.73f, 0.97f, 0.67f * 255.f));
@@ -96,7 +94,7 @@ namespace flame
 			pop_style(SelectedTabColorElse); push_style_4c(SelectedTabColorElse, 0, 122, 204, 255);
 			pop_style(SelectedTabTextColorNormal); push_style_4c(SelectedTabTextColorNormal, 255, 255, 255, 255);
 			pop_style(SelectedTabTextColorElse); push_style_4c(SelectedTabTextColorElse, 255, 255, 255, 255);
-			pop_style(DockerColor); push_style_4c(DockerColor, 45, 45, 48, 255);
+			pop_style(WindowColor); push_style_4c(WindowColor, 45, 45, 48, 255);
 		}
 
 		struct _InitStyle

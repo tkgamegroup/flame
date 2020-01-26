@@ -7,9 +7,9 @@ namespace flame
 		e->set_name("docker_floating_container");
 		auto ce = cElement::create();
 		ce->pos_ = pos;
-		ce->size_ = size;
+		ce->size_ = size + Vec2f(16.f, 28.f + ui::style_1u(ui::FontSize));
 		ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-		ce->color_ = ui::style_4c(ui::DockerColor);
+		ce->color_ = ui::style_4c(ui::WindowColor);
 		e->add_component(ce);
 		e->add_component(cEventReceiver::create());
 		e->add_component(cLayout::create(LayoutFree));

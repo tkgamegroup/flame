@@ -517,7 +517,16 @@ namespace flame
 		}
 
 		template<uint CH>
-		Vec<N, T> new_proply(float m)
+		Vec<N, T> new_replacely(T m) const
+		{
+			static_assert(CH < N);
+			auto ret = *this;
+			ret[CH] = m;
+			return ret;
+		}
+
+		template<uint CH>
+		Vec<N, T> new_proply(float m) const
 		{
 			static_assert(CH < N);
 			auto ret = *this;

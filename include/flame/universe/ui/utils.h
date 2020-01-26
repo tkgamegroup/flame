@@ -37,9 +37,16 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* current_root();
 		FLAME_UNIVERSE_EXPORTS void set_current_root(Entity* e);
 
+		FLAME_UNIVERSE_EXPORTS extern Vec2f next_element_pos;
+		FLAME_UNIVERSE_EXPORTS extern Vec2f next_element_size;
+
 		inline cElement* c_element()
 		{
 			auto c = cElement::create();
+			c->pos_ = next_element_pos;
+			next_element_pos = Vec2f(0.f);
+			c->size_ = next_element_size;
+			next_element_size = Vec2f(0.f);
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -132,9 +139,14 @@ namespace flame
 			return c;
 		}
 
-		inline cLayout* c_layout(LayoutType type = LayoutFree)
+		inline cLayout* c_layout(LayoutType type = LayoutFree, bool fit_children = true)
 		{
 			auto c = cLayout::create(type);
+			if (!fit_children)
+			{
+				c->width_fit_children = false;
+				c->height_fit_children = false;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -275,11 +287,11 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_layout(const Vec2f pos = Vec2f(0.f), LayoutType type = LayoutFree, float item_padding = 0.f)
+		inline Entity* e_begin_layout(LayoutType type = LayoutFree, float item_padding = 0.f, bool fit_children = true)
 		{
 			auto e = e_empty();
-			c_element()->pos_ = pos;
-			c_layout(type)->item_padding = item_padding;
+			c_element();
+			c_layout(type, fit_children)->item_padding = item_padding;
 			push_parent(e);
 			return e;
 		}
@@ -297,7 +309,7 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_button(const wchar_t* text, void(*func)(void* c, Entity* e) = nullptr, const Mail<>& mail = Mail<>(), bool use_style = true)
+		inline Entity* e_button(const wchar_t* text, void(*func)(void* c) = nullptr, const Mail<>& mail = Mail<>(), bool use_style = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -307,9 +319,8 @@ namespace flame
 			{
 				struct WrapedMail
 				{
-					void(*f)(void*, Entity*);
+					void(*f)(void*);
 					Mail<> m;
-					Entity* e;
 
 					~WrapedMail()
 					{
@@ -320,12 +331,11 @@ namespace flame
 				auto new_m = new_mail<WrapedMail>();
 				new_m.p->f = func;
 				new_m.p->m = mail;
-				new_m.p->e = e;
 				cer->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key))
 					{
 						auto& m = *(WrapedMail*)c;
-						m.f(m.m.p, m.e);
+						m.f(m.m.p);
 					}
 				}, new_m);
 			}
@@ -343,7 +353,7 @@ namespace flame
 		inline Entity* e_checkbox(const wchar_t* text, bool checked = false)
 		{
 			if (text[0])
-				e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+				e_begin_layout(LayoutHorizontal, 4.f);
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ = 16.f;
@@ -739,7 +749,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c, Entity* e), const Mail<>& mail)
+		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c), const Mail<>& mail)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -747,9 +757,8 @@ namespace flame
 			struct WrapedMail
 			{
 				Entity* root;
-				void(*f)(void*, Entity*);
+				void(*f)(void*);
 				Mail<> m;
-				Entity* e;
 
 				~WrapedMail()
 				{
@@ -761,13 +770,12 @@ namespace flame
 			new_m.p->root = current_root();
 			new_m.p->f = func;
 			new_m.p->m = mail;
-			new_m.p->e = e;
 			c_event_receiver()->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto& m = *(WrapedMail*)c;
 					remove_top_layer(m.root);
-					m.f(m.m.p, m.e);
+					m.f(m.m.p);
 				}
 			}, new_m);
 			auto cs = c_style_color();
@@ -792,10 +800,24 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_docker_floating_container(const Vec2f& pos, const Vec2f& size)
+		inline Entity* e_begin_window(const wchar_t* title)
 		{
 			auto e = e_empty();
-			make_docker_floating_container(e, pos, size);
+
+			push_parent(e);
+			return e;
+		}
+
+		inline void e_end_window()
+		{
+			pop_parent();
+		}
+
+		inline Entity* e_begin_docker_floating_container()
+		{
+			auto e = e_empty();
+			make_docker_floating_container(e, next_element_pos, next_element_size);
+			next_element_pos = next_element_size = 0.f;
 			push_parent(e);
 			return e;
 		}
@@ -811,7 +833,7 @@ namespace flame
 			e->set_name("docker_static_container");
 			auto ce = c_element();
 			ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-			ce->color_ = ui::style_4c(ui::DockerColor);
+			ce->color_ = ui::style_4c(ui::WindowColor);
 			c_event_receiver();
 			c_aligner(SizeFitParent, SizeFitParent);
 			c_layout(LayoutFree);
@@ -920,7 +942,7 @@ namespace flame
 			auto cdt = c_docker_tab();
 			cdt->root = current_root();
 			push_parent(et);
-			e_button(Icon_WINDOW_CLOSE, [](void* c, Entity*) {
+			e_button(Icon_WINDOW_CLOSE, [](void* c) {
 				auto thiz = (*(cDockerTab**)c);
 				looper().add_event([](void* c) {
 					auto thiz = (*(cDockerTab**)c);
@@ -982,7 +1004,7 @@ namespace flame
 		{
 			auto e = e_begin_dialog();
 			e_text(message);
-			e_button(L"OK", [](void* c, Entity*) {
+			e_button(L"OK", [](void* c) {
 				remove_top_layer(*(Entity**)c);
 			}, new_mail_p(current_root()));
 			e_end_dialog();
@@ -993,7 +1015,7 @@ namespace flame
 		{
 			auto e = e_begin_dialog();
 			e_text(title);
-			e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+			e_begin_layout(LayoutHorizontal, 4.f);
 			struct WrapedMail
 			{
 				void(*f)(void*, bool);
@@ -1010,12 +1032,12 @@ namespace flame
 			new_m.p->f = callback;
 			new_m.p->m = m;
 			new_m.p->r = current_root();
-			e_button(L"OK", [](void* c, Entity*) {
+			e_button(L"OK", [](void* c) {
 				auto& m = *(WrapedMail*)c;
 				remove_top_layer(m.r);
 				m.f(m.m.p, true);
 			}, new_m);
-			e_button(L"Cancel", [](void* c, Entity*) {
+			e_button(L"Cancel", [](void* c) {
 				auto& m = *(WrapedMail*)c;
 				remove_top_layer(m.r);
 				m.f(m.m.p, false);
@@ -1028,11 +1050,11 @@ namespace flame
 		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail<>& m)
 		{
 			auto e = e_begin_dialog();
-			e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+			e_begin_layout(LayoutHorizontal, 4.f);
 			e_text(title);
 			auto ct = e_edit(100.f)->get_component(cText);
 			e_end_layout();
-			e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+			e_begin_layout(LayoutHorizontal, 4.f);
 			struct WrapedMail
 			{
 				void(*f)(void*, bool, const wchar_t*);
@@ -1051,12 +1073,12 @@ namespace flame
 			new_m.p->m = m;
 			new_m.p->r = current_root();
 			new_m.p->t = ct;
-			e_button(L"OK", [](void* c, Entity*) {
+			e_button(L"OK", [](void* c) {
 				auto& m = *(WrapedMail*)c;
 				remove_top_layer(m.r);
 				m.f(m.m.p, true, m.t->text());
 			}, new_m);
-			e_button(L"Cancel", [](void* c, Entity*) {
+			e_button(L"Cancel", [](void* c) {
 				auto& m = *(WrapedMail*)c;
 				remove_top_layer(m.r);
 				m.f(m.m.p, false, nullptr);

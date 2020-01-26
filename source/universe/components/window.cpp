@@ -168,7 +168,7 @@ namespace flame
 
 		struct DropTip
 		{
-			bool overing;
+			bool highlighted;
 			Vec2f pos;
 			Vec2f size;
 		};
@@ -232,8 +232,7 @@ namespace flame
 				page->set_visibility(true);
 				element->set_pos(element->global_pos);
 				element->set_alpha(0.5f);
-				page_element->set_x(element->pos_.x());
-				page_element->set_y(element->pos_.y() + element->global_size.y() + 8.f);
+				page_element->set_pos(Vec2f(element->pos_.x(), element->pos_.y() + element->global_size.y() + 8.f));
 				page_element->set_alpha(0.5f);
 				page_aligner->set_width_policy(SizeFixed);
 				page_aligner->set_height_policy(SizeFixed);
@@ -378,7 +377,7 @@ namespace flame
 					{
 						std::vector<Vec2f> points;
 						path_rect(points, p.pos, p.size);
-						canvas->fill(points.size(), points.data(), p.overing ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
+						canvas->fill(points.size(), points.data(), p.highlighted ? Vec4c(60, 90, 210, 255) : Vec4c(50, 80, 200, 200));
 					}
 				}
 			}
@@ -482,7 +481,7 @@ namespace flame
 							drop_tab->drop_tips.clear();
 							drop_tab->overing = thiz->event_receiver;
 							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = false;
+							primitive.highlighted = false;
 							primitive.pos = Vec2f(show_drop_pos, thiz->element->global_pos.y());
 							primitive.size = Vec2f(10.f, thiz->element->global_size.y());
 							drop_tab->drop_tips.push_back(primitive);
@@ -609,7 +608,7 @@ namespace flame
 						drop_tab->overing = thiz->event_receiver;
 						{
 							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = thiz->dock_side == SideCenter;
+							primitive.highlighted = thiz->dock_side == SideCenter;
 							primitive.pos = center + Vec2f(-25.f);
 							primitive.size = Vec2f(50.f, 50.f);
 							std::vector<Vec2f> points;
@@ -617,7 +616,7 @@ namespace flame
 						}
 						{
 							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = thiz->dock_side == SideW;
+							primitive.highlighted = thiz->dock_side == SideW;
 							primitive.pos = center + Vec2f(-55.f, -25.f);
 							primitive.size = Vec2f(25.f, 50.f);
 							std::vector<Vec2f> points;
@@ -625,7 +624,7 @@ namespace flame
 						}
 						{
 							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = thiz->dock_side == SideE;
+							primitive.highlighted = thiz->dock_side == SideE;
 							primitive.pos = center + Vec2f(30.f, -25.f);
 							primitive.size = Vec2f(25.f, 50.f);
 							std::vector<Vec2f> points;
@@ -633,7 +632,7 @@ namespace flame
 						}
 						{
 							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = thiz->dock_side == SideN;
+							primitive.highlighted = thiz->dock_side == SideN;
 							primitive.pos = center + Vec2f(-25.f, -55.f);
 							primitive.size = Vec2f(50.f, 25.f);
 							std::vector<Vec2f> points;
@@ -641,7 +640,7 @@ namespace flame
 						}
 						{
 							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = thiz->dock_side == SideS;
+							primitive.highlighted = thiz->dock_side == SideS;
 							primitive.pos = center + Vec2f(-25.f, 30.f);
 							primitive.size = Vec2f(50.f, 25.f);
 							std::vector<Vec2f> points;
@@ -853,7 +852,7 @@ namespace flame
 						drop_tab->overing = thiz->event_receiver;
 						{
 							cDockerTabPrivate::DropTip primitive;
-							primitive.overing = thiz->dock_side == SideCenter;
+							primitive.highlighted = thiz->dock_side == SideCenter;
 							primitive.pos = center + Vec2f(-25.f);
 							primitive.size = Vec2f(50.f, 50.f);
 							std::vector<Vec2f> points;

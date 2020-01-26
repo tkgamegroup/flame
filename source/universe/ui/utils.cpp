@@ -58,5 +58,8 @@ namespace flame
 		{
 			_current_root = e;
 		}
+
+		Vec2f next_element_pos = Vec2f(0.f);
+		Vec2f next_element_size = Vec2f(0.f);
 	}
 }
