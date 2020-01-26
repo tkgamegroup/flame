@@ -40,11 +40,10 @@ struct App
 
 	void create_widgets()
 	{
-		ui::push_font_atlas(font_atlas_pixel);
 		ui::set_current_root(root);
 		ui::push_parent(root);
 
-		ui::e_begin_layout(LayoutVertical, 0.f, false);
+		ui::e_begin_layout(LayoutVertical, 0.f, false, false);
 		ui::c_aligner(SizeFitParent, SizeFitParent);
 		{
 			ui::e_begin_menu_bar();
@@ -68,6 +67,12 @@ struct App
 			ui::e_end_menubar_menu();
 			ui::e_begin_menubar_menu(L"Window");
 			ui::e_menu_item(L"Status", [](void* c) {
+				ui::push_parent(app.root);
+				ui::next_element_pos = Vec2f(100.f);
+				ui::e_begin_window(L"Status");
+				ui::e_text(L"Hovering: ");
+				ui::e_end_window();
+				ui::pop_parent();
 			}, Mail<>());
 			ui::e_end_menubar_menu();
 			ui::e_end_menu_bar();
@@ -201,7 +206,6 @@ struct App
 		//ui::e_end_docker_floating_container();
 
 		ui::pop_parent();
-		ui::pop_font_atlas();
 	}
 
 	void run()
@@ -264,6 +268,7 @@ int main(int argc, char** args)
 	app.c_element_root = ui::c_element();
 	ui::c_event_receiver();
 	ui::c_layout();
+	ui::push_font_atlas(app.font_atlas_pixel);
 	app.create_widgets();
 
 	looper().loop([](void* c) {
