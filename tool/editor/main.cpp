@@ -54,21 +54,21 @@ void App::create()
 	ui::c_layout();
 
 	ui::push_font_atlas(app.font_atlas_pixel);
-	ui::push_parent(root);
 	ui::set_current_root(root);
+	ui::push_parent(root);
 
-	ui::e_begin_menu_bar();
-	ui::e_begin_menubar_menu(L"Window");
-	ui::e_menu_item(L"Resource Explorer", [](void* c, Entity*) {
-	}, new_mail_p(this));
-	ui::e_end_menubar_menu();
-	ui::e_end_menu_bar();
+		ui::e_begin_menu_bar();
+			ui::e_begin_menubar_menu(L"Window");
+				ui::e_menu_item(L"Resource Explorer", [](void* c) {
+				}, new_mail_p(this));
+			ui::e_end_menubar_menu();
+		ui::e_end_menu_bar();
 
-	ui::e_text(L"");
-	ui::c_aligner(AlignxLeft, AlignyBottom);
-	add_fps_listener([](void* c, uint fps) {
-		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, new_mail_p(ui::current_entity()->get_component(cText)));
+		ui::e_text(L"");
+		ui::c_aligner(AlignxLeft, AlignyBottom);
+		add_fps_listener([](void* c, uint fps) {
+			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+		}, new_mail_p(ui::current_entity()->get_component(cText)));
 
 	ui::pop_parent();
 
@@ -107,14 +107,16 @@ App app;
 
 Entity* create_drag_edit(bool is_float)
 {
-	auto e_layout = ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
+	auto e_layout = ui::e_begin_layout(LayoutVertical);
 	e_layout->get_component(cLayout)->fence = 1;
 
-	auto e_edit = ui::e_edit(50.f);
-	e_edit->set_visibility(false);
-	auto e_drag = ui::e_button(L"");
-	e_drag->get_component(cElement)->size_.x() = 58.f;
-	e_drag->get_component(cText)->auto_width_ = false;
+		auto e_edit = ui::e_edit(50.f);
+		e_edit->set_visibility(false);
+		auto e_drag = ui::e_button(L"");
+		e_drag->get_component(cElement)->size_.x() = 58.f;
+		e_drag->get_component(cText)->auto_width_ = false;
+
+	ui::e_end_layout();
 
 	struct Capture
 	{
@@ -170,16 +172,14 @@ Entity* create_drag_edit(bool is_float)
 		}
 	}, new_mail(&capture));
 
-	ui::e_end_layout();
-
 	return e_layout;
 }
 
 void create_enum_combobox(EnumInfo* info, float width)
 {
 	ui::e_begin_combobox(120.f);
-	for (auto i = 0; i < info->item_count(); i++)
-		ui::e_combobox_item(s2w(info->item(i)->name()).c_str());
+		for (auto i = 0; i < info->item_count(); i++)
+			ui::e_combobox_item(s2w(info->item(i)->name()).c_str());
 	ui::e_end_combobox();
 }
 

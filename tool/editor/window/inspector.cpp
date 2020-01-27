@@ -9,10 +9,10 @@
 
 void begin_item(const wchar_t* title)
 {
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f);
+	ui::e_begin_layout(LayoutVertical, 4.f);
 	ui::e_text(title);
 	auto e_data = ui::e_empty();
-	ui::c_element()->inner_padding_.x() = ui::style(ui::FontSize).u()[0];
+	ui::c_element()->inner_padding_.x() = ui::style_1u(ui::FontSize);
 	ui::c_layout(LayoutVertical)->item_padding = 2.f;
 	ui::e_end_layout();
 	ui::push_parent(e_data);
@@ -98,7 +98,7 @@ void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 	capture.v = v;
 	for (auto i = 0; i < N; i++)
 	{
-		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+		ui::e_begin_layout(LayoutHorizontal, 4.f);
 		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
@@ -176,7 +176,7 @@ struct cInspectorPrivate : cInspector
 
 				auto udt = find_udt(app.dbs, FLAME_HASH((std::string("D#Serializer_") + component->name).c_str()));
 
-				auto e_component = ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 2.f);
+				auto e_component = ui::e_begin_layout(LayoutVertical, 2.f);
 				{
 					auto c_element = e_component->get_component(cElement);
 					c_element->inner_padding_ = Vec4f(4.f);
@@ -213,7 +213,7 @@ struct cInspectorPrivate : cInspector
 				e_component->add_component(c_dealer);
 
 				auto e_name = ui::e_text(s2w(component->name).c_str());
-				e_name->get_component(cElement)->inner_padding_.z() = 4.f + ui::style(ui::FontSize).u()[0];
+				e_name->get_component(cElement)->inner_padding_.z() = 4.f + ui::style_1u(ui::FontSize);
 				e_name->get_component(cText)->color = Vec4c(30, 40, 160, 255);
 				ui::c_layout();
 				ui::push_parent(e_name);
@@ -224,7 +224,7 @@ struct cInspectorPrivate : cInspector
 				}capture;
 				capture.e = e_component;
 				capture.c = component;
-				ui::e_button(Icon_TIMES, [](void* c, Entity*) {
+				ui::e_button(Icon_TIMES, [](void* c) {
 					auto& capture = *(Capture*)c;
 					Capture _capture;
 					_capture.e = capture.e;
@@ -450,9 +450,9 @@ struct cInspectorPrivate : cInspector
 				ui::e_end_layout();
 			}
 
-			ui::e_begin_menu_top(L"Add Component");
+			ui::e_begin_button_menu(L"Add Component");
 			{
-#define COMPONENT_PREFIX "Serializer_c"
+				FLAME_SAL(prefix, "Serializer_c");
 				std::vector<UdtInfo*> all_udts;
 				for (auto db : app.dbs)
 				{
@@ -460,7 +460,7 @@ struct cInspectorPrivate : cInspector
 					for (auto i = 0; i < udts.s; i++)
 					{
 						auto u = udts.v[i];
-						if (std::string(u->type()->name()).compare(0, strlen(COMPONENT_PREFIX), COMPONENT_PREFIX) == 0)
+						if (std::string(u->type()->name()).compare(0, prefix.l, prefix.s) == 0)
 							all_udts.push_back(u);
 					}
 				}
@@ -476,7 +476,7 @@ struct cInspectorPrivate : cInspector
 					}capture;
 					capture.i = this;
 					capture.u = udt;
-					ui::e_menu_item(s2w(udt->type()->name() + strlen(COMPONENT_PREFIX)).c_str(), [](void* c, Entity*) {
+					ui::e_menu_item(s2w(udt->type()->name() + prefix.l).c_str(), [](void* c) {
 						auto& capture = *(Capture*)c;
 						looper().add_event([](void* c) {
 							auto& capture = *(Capture*)c;
@@ -507,9 +507,8 @@ struct cInspectorPrivate : cInspector
 						}, new_mail(&capture));
 					}, new_mail(&capture));
 				}
-#undef COMPONENT_PREFIX
 			}
-			ui::e_end_menu_top();
+			ui::e_end_button_menu();
 		}
 		ui::pop_parent();
 	}
@@ -547,7 +546,9 @@ void cInspector::refresh()
 void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 {
 	ui::push_parent(app.root);
-	ui::e_begin_docker_container(pos, Vec2f(200.f, 900.f));
+	ui::next_element_pos = pos;
+	ui::next_element_size = Vec2f(200.f, 900.f);
+	ui::e_begin_docker_floating_container();
 	ui::e_begin_docker();
 	auto c_tab = ui::e_begin_docker_page(L"Inspector").tab->get_component(cDockerTab);
 	{
@@ -579,6 +580,6 @@ void open_inspector(cSceneEditor* editor, const Vec2f& pos)
 
 	ui::e_end_docker_page();
 	ui::e_end_docker();
-	ui::e_end_docker_container();
+	ui::e_end_docker_floating_container();
 	ui::pop_parent();
 }

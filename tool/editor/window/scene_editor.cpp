@@ -119,7 +119,9 @@ struct cSceneOverlayer : Component
 void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 {
 	ui::push_parent(app.root);
-	ui::e_begin_docker_container(pos, Vec2f(1000.f, 900.f));
+	ui::next_element_pos = pos;
+	ui::next_element_size = Vec2f(1000.f, 900.f);
+	ui::e_begin_docker_floating_container();
 	ui::e_begin_docker();
 	ui::e_begin_docker_page(L"Scene Editor");
 	{
@@ -132,8 +134,8 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	ui::current_entity()->add_component(c_editor);
 
 	ui::e_begin_menu_bar();
-	ui::e_begin_menu_top(L"Scene");
-	ui::e_menu_item(L"New Entity", [](void* c, Entity*) {
+	ui::e_begin_menubar_menu(L"Scene");
+	ui::e_menu_item(L"New Entity", [](void* c) {
 		auto editor = *(cSceneEditor**)c;
 		looper().add_event([](void* c) {
 			auto editor = *(cSceneEditor**)c;
@@ -147,12 +149,12 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				editor->hierarchy->refresh();
 		}, new_mail_p(editor));
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Save", [](void* c, Entity*) {
+	ui::e_menu_item(L"Save", [](void* c) {
 		auto editor = *(cSceneEditor**)c;
 	}, new_mail_p(c_editor));
-	ui::e_end_menu_top();
-	ui::e_begin_menu_top(L"Edit");
-	ui::e_menu_item(L"Delete", [](void* c, Entity*) {
+	ui::e_end_menubar_menu();
+	ui::e_begin_menubar_menu(L"Edit");
+	ui::e_menu_item(L"Delete", [](void* c) {
 		auto editor = *(cSceneEditor**)c;
 		looper().add_event([](void* c) {
 			auto editor = *(cSceneEditor**)c;
@@ -168,13 +170,13 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			}
 		}, new_mail_p(editor));
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Duplicate", [](void* c, Entity*) {
+	ui::e_menu_item(L"Duplicate", [](void* c) {
 		auto editor = *(cSceneEditor**)c;
 	}, new_mail_p(c_editor));
-	ui::e_end_menu_top();
+	ui::e_end_menubar_menu();
 	ui::e_end_menu_bar();
 
-	ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+	ui::e_begin_layout(LayoutHorizontal, 4.f);
 	ui::e_text(L"Tool");
 	auto e_tool = ui::e_begin_combobox(50.f, 0);
 	ui::e_combobox_item(L"Null");
@@ -191,7 +193,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	auto e_overlayer = ui::e_empty();
 	ui::c_element();
 	auto c_event_receiver = ui::c_event_receiver();
-	c_event_receiver->penetrable = true;
+	c_event_receiver->pass = (Entity*)FLAME_INVALID_POINTER;
 	c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 		auto editor = *(cSceneEditorPrivate**)c;
 		if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -362,7 +364,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 
 	ui::e_end_docker_page();
 	ui::e_end_docker();
-	ui::e_end_docker_container();
+	ui::e_end_docker_floating_container();
 	ui::pop_parent();
 
 	open_hierachy(c_editor, Vec2f(20.f));

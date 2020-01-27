@@ -194,39 +194,49 @@ struct App
 					ui::e_end_combobox();
 				ui::e_end_layout();
 
-				//ui::e_begin_popup_menu();
-				//ui::e_menu_item(L"Refresh", [](void* c, Entity* e) {
-				//	wprintf(L"%s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_menu_item(L"Save", [](void* c, Entity* e) {
-				//	wprintf(L"%s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_menu_item(L"Help", [](void* c, Entity* e) {
-				//	wprintf(L"%s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_begin_sub_menu(L"add");
-				//ui::e_menu_item(L"Tree", [](void* c, Entity* e) {
-				//	wprintf(L"Add %s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_menu_item(L"Car", [](void* c, Entity* e) {
-				//	wprintf(L"Add %s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_menu_item(L"House", [](void* c, Entity* e) {
-				//	wprintf(L"Add %s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_end_sub_menu();
-				//ui::e_begin_sub_menu(L"Remove");
-				//ui::e_menu_item(L"Tree", [](void* c, Entity* e) {
-				//	wprintf(L"Remove %s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_menu_item(L"Car", [](void* c, Entity* e) {
-				//	wprintf(L"Remove %s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_menu_item(L"House", [](void* c, Entity* e) {
-				//	wprintf(L"Remove %s!\n", e->get_component(cText)->text());
-				//}, Mail<>());
-				//ui::e_end_sub_menu();
-				//ui::e_end_popup_menu();
+				ui::e_begin_popup_menu();
+				ui::next_entity = Entity::create();
+					ui::e_menu_item(L"Refresh", [](void* c) {
+						wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(ui::next_entity));
+					ui::next_entity = Entity::create();
+					ui::e_menu_item(L"Save", [](void* c) {
+						wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(ui::next_entity));
+					ui::next_entity = Entity::create();
+					ui::e_menu_item(L"Help", [](void* c) {
+						wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(ui::next_entity));
+					ui::e_begin_sub_menu(L"add");
+					ui::next_entity = Entity::create();
+						ui::e_menu_item(L"Tree", [](void* c) {
+							wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
+						}, new_mail_p(ui::next_entity));
+						ui::next_entity = Entity::create();
+						ui::e_menu_item(L"Car", [](void* c) {
+							wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
+						}, new_mail_p(ui::next_entity));
+						ui::next_entity = Entity::create();
+						ui::e_menu_item(L"House", [](void* c) {
+							wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
+						}, new_mail_p(ui::next_entity));
+					ui::e_end_sub_menu();
+					ui::e_begin_sub_menu(L"Remove");
+					ui::next_entity = Entity::create();
+						ui::e_menu_item(L"Tree", [](void* c) {
+							wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
+						}, new_mail_p(ui::next_entity));
+						ui::next_entity = Entity::create();
+						ui::e_menu_item(L"Car", [](void* c) {
+							wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
+						}, new_mail_p(ui::next_entity));
+						ui::next_entity = Entity::create();
+						ui::e_menu_item(L"House", [](void* c) {
+							wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
+						}, new_mail_p(ui::next_entity));
+					ui::e_end_sub_menu();
+				ui::e_end_popup_menu();
+
 			ui::e_end_layout();
 
 			ui::e_text(L"");

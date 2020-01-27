@@ -29,13 +29,13 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS graphics::FontAtlas* current_font_atlas();
 		FLAME_UNIVERSE_EXPORTS void push_font_atlas(graphics::FontAtlas* font_atlas);
 		FLAME_UNIVERSE_EXPORTS void pop_font_atlas();
+		FLAME_UNIVERSE_EXPORTS Entity* current_root();
+		FLAME_UNIVERSE_EXPORTS void set_current_root(Entity* e);
 		FLAME_UNIVERSE_EXPORTS Entity* current_entity();
 		FLAME_UNIVERSE_EXPORTS void set_current_entity(Entity* e);
 		FLAME_UNIVERSE_EXPORTS Entity* current_parent();
 		FLAME_UNIVERSE_EXPORTS void push_parent(Entity* parent);
 		FLAME_UNIVERSE_EXPORTS void pop_parent();
-		FLAME_UNIVERSE_EXPORTS Entity* current_root();
-		FLAME_UNIVERSE_EXPORTS void set_current_root(Entity* e);
 
 		FLAME_UNIVERSE_EXPORTS extern Entity* next_entity;
 		FLAME_UNIVERSE_EXPORTS extern Vec2f next_element_pos;
@@ -727,6 +727,28 @@ namespace flame
 			pop_parent();
 		}
 
+		inline Entity* e_begin_button_menu(const wchar_t* text)
+		{
+			auto e = e_empty();
+			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(text);
+			c_event_receiver();
+			auto cm = c_menu(cMenu::ModeMain);
+			cm->root = current_root();
+			auto cs = c_style_color();
+			cs->color_normal = style_4c(FrameColorNormal);
+			cs->color_hovering = style_4c(FrameColorHovering);
+			cs->color_active = style_4c(FrameColorActive);
+			cs->style();
+			push_parent(cm->items);
+			return e;
+		}
+
+		inline void e_end_button_menu()
+		{
+			pop_parent();
+		}
+
 		inline Entity* e_begin_sub_menu(const wchar_t* text)
 		{
 			auto e = e_empty();
@@ -795,9 +817,10 @@ namespace flame
 			return e;
 		}
 
-		inline void e_begin_popup_menu()
+		inline void e_begin_popup_menu(bool attach_to_parent = true)
 		{
-			set_current_entity(current_parent());
+			if (attach_to_parent)
+				set_current_entity(current_parent());
 			auto cm = c_menu(cMenu::ModeContext);
 			cm->root = current_root();
 			push_parent(cm->items);

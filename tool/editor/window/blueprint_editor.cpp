@@ -117,7 +117,6 @@ struct cBPEditor : Component
 	cEdit* add_node_menu_filter;
 	Vec2f add_pos;
 	Entity* e_base;
-	Entity* e_slot_menu;
 	cDockerTab* console_tab;
 
 	enum SelType
@@ -258,7 +257,7 @@ struct cBPEditor : Component
 			return std::string(a->type()->name()) < std::string(b->type()->name());
 		});
 		ui::push_parent(e_add_node_menu);
-		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+		ui::e_begin_layout(LayoutHorizontal, 4.f);
 		ui::e_text(Icon_SEARCH);
 		ui::e_edit(150.f)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 			auto menu = *(Entity**)c;
@@ -271,11 +270,11 @@ struct cBPEditor : Component
 		}, new_mail_p(e_add_node_menu));
 		add_node_menu_filter = ui::current_entity()->get_component(cEdit);
 		ui::e_end_layout();
-		ui::e_menu_item(L"Enum", [](void* c, Entity*) {
+		ui::e_menu_item(L"Enum", [](void* c) {
 		}, new_mail_p(this));
-		ui::e_menu_item(L"Var", [](void* c, Entity*) {
+		ui::e_menu_item(L"Var", [](void* c) {
 		}, new_mail_p(this));
-		ui::e_menu_item(L"Array", [](void* c, Entity*) {
+		ui::e_menu_item(L"Array", [](void* c) {
 		}, new_mail_p(this));
 		for (auto udt : all_udts)
 		{
@@ -286,7 +285,7 @@ struct cBPEditor : Component
 			}capture;
 			capture.e = this;
 			capture.u = udt;
-			ui::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c, Entity*) {
+			ui::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
 				auto& capture = *(Capture*)c;
 				capture.e->reset_add_node_menu_filter();
 				capture.e->add_node(capture.u->type()->name(), "", capture.e->add_pos);
@@ -820,17 +819,6 @@ struct cBPSlot : Component
 					}
 				}
 			}, new_mail_p(this));
-
-			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cBPSlot**)c;
-				auto editor = thiz->editor;
-
-				if (is_mouse_down(action, key, true) && key == Mouse_Right)
-				{
-					editor->select(cBPEditor::SelSlot, thiz->s);
-					popup_menu(editor->e_slot_menu, app.root, (Vec2f)pos);
-				}
-			}, new_mail_p(this));
 		}
 	}
 };
@@ -939,8 +927,8 @@ void cBPScene::on_component_added(Component* c)
 			}
 			else if (is_mouse_up(action, key, true) && key == Mouse_Right)
 			{
-				popup_menu(editor->e_add_node_menu, app.root, pos);
-				editor->add_pos = pos - thiz->element->global_pos;
+				//popup_menu(editor->e_add_node_menu, app.root, pos);
+				//editor->add_pos = pos - thiz->element->global_pos;
 			}
 		}, new_mail_p(this));
 	}
@@ -996,13 +984,13 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 		e_module->add_component(c_module);
 	}
 	ui::push_parent(e_module);
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 	ui::e_text(m->filename())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 	ui::e_text(L"module")->get_component(cText)->color = Vec4c(50, 50, 50, 255);
 	ui::e_end_layout();
 	ui::e_empty();
 	ui::c_element();
-	ui::c_event_receiver()->penetrable = true;
+	ui::c_event_receiver()->pass = (Entity*)FLAME_INVALID_POINTER;
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 	ui::c_bring_to_front();
 	ui::pop_parent();
@@ -1033,7 +1021,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 		e_package->add_component(c_package);
 	}
 	ui::push_parent(e_package);
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 	ui::e_text(s2w(p->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 	ui::c_event_receiver();
 	ui::c_edit();
@@ -1042,22 +1030,22 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 			(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()).c_str());
 	}, new_mail_p(p));
 	ui::e_text(p->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
-	ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 16.f);
+	ui::e_begin_layout(LayoutHorizontal, 16.f);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 
 	auto bp = p->bp();
 
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
+	ui::e_begin_layout(LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < bp->input_export_count(); i++)
 	{
 		auto s = bp->input_export(i);
 
-		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
+		ui::e_begin_layout(LayoutHorizontal);
 		ui::e_empty();
 		{
 			auto c_element = ui::c_element();
-			auto r = ui::style(ui::FontSize).u()[0];
+			auto r = ui::style_1u(ui::FontSize);
 			c_element->size_ = r;
 			c_element->roundness_ = r * 0.5f;
 			c_element->roundness_lod = 2;
@@ -1074,19 +1062,19 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 	}
 	ui::e_end_layout();
 
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
+	ui::e_begin_layout(LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < bp->output_export_count(); i++)
 	{
 		auto s = bp->output_export(i);
 
-		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
+		ui::e_begin_layout(LayoutHorizontal);
 		ui::c_aligner(AlignxRight, AlignyFree);
 		ui::e_text(s2w(s->get_address().str()).c_str());
 		ui::e_empty();
 		{
 			auto c_element = ui::c_element();
-			auto r = ui::style(ui::FontSize).u()[0];
+			auto r = ui::style_1u(ui::FontSize);
 			c_element->size_ = r;
 			c_element->roundness_ = r * 0.5f;
 			c_element->roundness_lod = 2;
@@ -1106,7 +1094,7 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 	ui::e_end_layout();
 	ui::e_empty();
 	ui::c_element();
-	ui::c_event_receiver()->penetrable = true;
+	ui::c_event_receiver()->pass = (Entity*)FLAME_INVALID_POINTER;
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 	ui::c_bring_to_front();
 	ui::pop_parent();
@@ -1121,7 +1109,7 @@ void create_edit(cBPEditor* editor, BP::Slot* input)
 {
 	auto& data = *(T*)input->data();
 
-	ui::push_style(ui::FontSize, ui::StyleValue(12));
+	ui::push_style_1u(ui::FontSize, 12);
 	auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 	struct Capture
 	{
@@ -1164,10 +1152,10 @@ void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 	}capture;
 	capture.editor = editor;
 	capture.input = input;
-	ui::push_style(ui::FontSize, ui::StyleValue(12));
+	ui::push_style_1u(ui::FontSize, 12);
 	for (auto i = 0; i < N; i++)
 	{
-		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 4.f);
+		ui::e_begin_layout(LayoutHorizontal, 4.f);
 		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
@@ -1214,8 +1202,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		e_node->add_component(c_node);
 	}
 	ui::push_parent(e_node);
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-	ui::push_style(ui::FontSize, ui::StyleValue(21));
+	ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+	ui::push_style_1u(ui::FontSize, 21);
 	ui::e_text(s2w(n->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 	ui::c_event_receiver();
 	ui::c_edit();
@@ -1235,7 +1223,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	std::string udt_name = n->type_name();
 	if (n->id() == "test_dst")
 	{
-		ui::e_button(L"Show", [](void* c, Entity*) {
+		ui::e_button(L"Show", [](void* c) {
 			open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
 		}, new_mail_p(n));
 	}
@@ -1373,44 +1361,74 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	//		}
 	//	}, new_mail(&capture));
 	//}
-	ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal, 16.f);
+	ui::e_begin_layout(LayoutHorizontal, 16.f);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
+	ui::e_begin_layout(LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < n->input_count(); i++)
 	{
 		auto input = n->input(i);
 
-		ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 2.f);
+		ui::e_begin_layout(LayoutVertical, 2.f);
 
-		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
-		ui::e_empty();
-		{
-			auto c_element = ui::c_element();
-			auto r = ui::style(ui::FontSize).u()[0];
-			c_element->size_ = r;
-			c_element->roundness_ = r * 0.5f;
-			c_element->roundness_lod = 2;
-			c_element->color_ = Vec4c(200, 200, 200, 255);
+		ui::e_begin_layout(LayoutHorizontal);
+			ui::e_empty();
+			{
+				auto c_element = ui::c_element();
+				auto r = ui::style_1u(ui::FontSize);
+				c_element->size_ = r;
+				c_element->roundness_ = r * 0.5f;
+				c_element->roundness_lod = 2;
+				c_element->color_ = Vec4c(200, 200, 200, 255);
+			}
 			ui::c_event_receiver();
-		}
-		auto c_slot = new_u_object<cBPSlot>();
-		c_slot->editor = this;
-		c_slot->s = input;
-		ui::current_entity()->add_component(c_slot);
-		input->user_data = c_slot;
-		ui::e_text(s2w(input->name()).c_str());
+			ui::push_style_1u(ui::FontSize, 9);
+			auto c_text = ui::c_text();
+			c_text->auto_width_ = false;
+			c_text->auto_height_ = false;
+			if (bp->find_output_export(input) != -1)
+				c_text->set_text(L"  p");
+			ui::pop_style(ui::FontSize);
+			auto c_slot = new_u_object<cBPSlot>();
+			c_slot->editor = this;
+			c_slot->s = input;
+			c_slot->text = c_text;
+			ui::current_entity()->add_component(c_slot);
+			input->user_data = c_slot;
+			ui::e_begin_popup_menu(false);
+				struct Capture
+				{
+					cBPEditor* editor;
+					BP::Slot* s;
+				}capture;
+				capture.editor = this;
+				capture.s = input;
+				ui::e_menu_item(L"Add To Exports", [](void* c) {
+					auto& capture = *(Capture*)c;
+					capture.editor->bp->add_input_export(capture.s);
+					capture.editor->set_changed(true);
+					((cBPSlot*)capture.s->user_data)->text->set_text(L"  p");
+				}, new_mail(&capture));
+				ui::e_menu_item(L"Remove From Exports", [](void* c) {
+					auto& capture = *(Capture*)c;
+					capture.editor->bp->remove_input_export(capture.s);
+					capture.editor->set_changed(true);
+					((cBPSlot*)capture.s->user_data)->text->set_text(L"");
+				}, new_mail(&capture));
+			ui::e_end_popup_menu();
+
+			ui::e_text(s2w(input->name()).c_str());
 		ui::e_end_layout();
 
-		auto e_data = ui::e_begin_layout(Vec2f(0.f), LayoutVertical, 2.f);
-		e_data->get_component(cElement)->inner_padding_ = Vec4f(ui::style(ui::FontSize).u()[0], 0.f, 0.f, 0.f);
+		auto e_data = ui::e_begin_layout(LayoutVertical, 2.f);
+		e_data->get_component(cElement)->inner_padding_ = Vec4f(ui::style_1u(ui::FontSize), 0.f, 0.f, 0.f);
 		std::vector<TypeinfoDatabase*> dbs(bp->db_count());
 		for (auto i = 0; i < dbs.size(); i++)
 			dbs[i] = bp->db(i);
 		auto type = input->type();
 		auto base_hash = type->base_hash();
-		ui::push_style(ui::FontSize, ui::StyleValue(12));
+		ui::push_style_1u(ui::FontSize, 12);
 		switch (type->tag())
 		{
 		case TypeEnumSingle:
@@ -1620,37 +1638,60 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	}
 	ui::e_end_layout();
 
-	ui::e_begin_layout(Vec2f(0.f), LayoutVertical);
+	ui::e_begin_layout(LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 	for (auto i = 0; i < n->output_count(); i++)
 	{
 		auto output = n->output(i);
 
-		ui::e_begin_layout(Vec2f(0.f), LayoutHorizontal);
+		ui::e_begin_layout(LayoutHorizontal);
 		ui::c_aligner(AlignxRight, AlignyFree);
-		ui::e_text(s2w(output->name()).c_str());
-		ui::e_empty();
-		{
-			auto c_element = ui::c_element();
-			auto r = ui::style(ui::FontSize).u()[0];
-			c_element->size_ = r;
-			c_element->roundness_ = r * 0.5f;
-			c_element->roundness_lod = 2;
-			c_element->color_ = Vec4c(200, 200, 200, 255);
+			ui::e_text(s2w(output->name()).c_str());
+
+			ui::e_empty();
+			{
+				auto c_element = ui::c_element();
+				auto r = ui::style_1u(ui::FontSize);
+				c_element->size_ = r;
+				c_element->roundness_ = r * 0.5f;
+				c_element->roundness_lod = 2;
+				c_element->color_ = Vec4c(200, 200, 200, 255);
+			}
 			ui::c_event_receiver();
-			ui::push_style(ui::FontSize, ui::StyleValue(9));
+			ui::push_style_1u(ui::FontSize, 9);
 			auto c_text = ui::c_text();
 			c_text->auto_width_ = false;
 			c_text->auto_height_ = false;
-			if (bp->find_input_export(output) != -1)
+			if (bp->find_output_export(output) != -1)
 				c_text->set_text(L"  p");
 			ui::pop_style(ui::FontSize);
 			auto c_slot = new_u_object<cBPSlot>();
 			c_slot->editor = this;
 			c_slot->s = output;
+			c_slot->text = c_text;
 			ui::current_entity()->add_component(c_slot);
 			output->user_data = c_slot;
-		}
+			ui::e_begin_popup_menu(false);
+			struct Capture
+			{
+				cBPEditor* editor;
+				BP::Slot* s;
+			}capture;
+			capture.editor = this;
+			capture.s = output;
+				ui::e_menu_item(L"Add To Exports", [](void* c) {
+					auto& capture = *(Capture*)c;
+					capture.editor->bp->add_output_export(capture.s);
+					capture.editor->set_changed(true);
+					((cBPSlot*)capture.s->user_data)->text->set_text(L"  p");
+				}, new_mail(&capture));
+				ui::e_menu_item(L"Remove From Exports", [](void* c) {
+					auto& capture = *(Capture*)c;
+					capture.editor->bp->remove_output_export(capture.s);
+					capture.editor->set_changed(true);
+					((cBPSlot*)capture.s->user_data)->text->set_text(L"");
+				}, new_mail(&capture));
+			ui::e_end_popup_menu();
 		ui::e_end_layout();
 	}
 	ui::e_end_layout();
@@ -1659,7 +1700,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	ui::e_end_layout();
 	ui::e_empty();
 	ui::c_element();
-	ui::c_event_receiver()->penetrable = true;
+	ui::c_event_receiver()->pass = (Entity*)FLAME_INVALID_POINTER;
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 	ui::c_bring_to_front();
 	ui::pop_parent();
@@ -1672,7 +1713,9 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 void open_blueprint_editor(const std::wstring& filename, bool no_compile, const Vec2f& pos)
 {
 	ui::push_parent(app.root);
-	ui::e_begin_docker_container(pos, Vec2f(1900.f, 711.f));
+	ui::next_element_pos = pos;
+	ui::next_element_size = Vec2f(1900.f, 711.f);
+	ui::e_begin_docker_floating_container();
 	ui::e_begin_docker();
 	auto e_tab = ui::e_begin_docker_page(filename.c_str()).tab;
 	{
@@ -1686,48 +1729,47 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	c_editor->tab_text = e_tab->get_component(cText);
 
 	auto e_menubar = ui::e_begin_menu_bar();
-	ui::e_begin_menu_top(L"Blueprint");
-	ui::e_menu_item(L"Save", [](void* c, Entity*) {
+	ui::e_begin_menubar_menu(L"Blueprint");
+	ui::e_menu_item(L"Save", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		BP::save_to_file(editor->bp, editor->filename.c_str());
 		editor->set_changed(false);
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Reload", [](void* c, Entity*) {
+	ui::e_menu_item(L"Reload", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		if (editor->running)
 			ui::e_message_dialog(L"Cannot Reload While Running");
 		else
 			editor->load(editor->filename, false);
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Reload (No Compile)", [](void* c, Entity*) {
+	ui::e_menu_item(L"Reload (No Compile)", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		if (editor->running)
 			ui::e_message_dialog(L"Cannot Reload While Running");
 		else
 			editor->load(editor->filename, true);
 	}, new_mail_p(c_editor));
-	ui::e_end_menu_top();
-	auto menu_add = ui::e_begin_menu_top(L"Add");
-	auto menu_add_btn = menu_add->get_component(cMenuButton);
+	ui::e_end_menubar_menu();
+	auto menu_add = ui::e_begin_menubar_menu(L"Add");
 	{
 		struct Capture
 		{
 			cBPEditor* e;
-			cMenuButton* b;
+			cMenu* m;
 		}capture;
 		capture.e = c_editor;
-		capture.b = menu_add_btn;
+		capture.m = menu_add->get_component(cMenu);
 		menu_add->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
-			if (capture.b->can_open(action, key))
-			{
-				auto base = capture.e->e_base;
-				capture.e->set_add_pos_center();
-			}
+			//if (capture.m->can_open(action, key))
+			//{
+			//	auto base = capture.e->e_base;
+			//	capture.e->set_add_pos_center();
+			//}
 		}, new_mail(&capture));
 	}
-	ui::e_menu_item(L"Module", [](void* c, Entity*) {
+	ui::e_menu_item(L"Module", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		if (editor->running)
 			ui::e_message_dialog(L"Cannot Add Module While Running");
@@ -1753,7 +1795,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}, new_mail_p(editor));
 		}
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Package", [](void* c, Entity*) {
+	ui::e_menu_item(L"Package", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		if (editor->running)
 			ui::e_message_dialog(L"Cannot Add Package While Running");
@@ -1779,36 +1821,36 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			}, new_mail_p(editor));
 		}
 	}, new_mail_p(c_editor));
-	c_editor->e_add_node_menu = ui::e_begin_menu(L"Nodes")->get_component(cMenuButton)->menu;
-	ui::e_end_menu();
-	ui::e_end_menu_top();
-	ui::e_begin_menu_top(L"Edit");
-	ui::e_menu_item(L"Duplicate", [](void* c, Entity*) {
+	c_editor->e_add_node_menu = ui::e_begin_sub_menu(L"Nodes")->get_component(cMenu)->items;
+	ui::e_end_sub_menu();
+	ui::e_end_menubar_menu();
+	ui::e_begin_menubar_menu(L"Edit");
+	ui::e_menu_item(L"Duplicate", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		editor->set_add_pos_center();
 		editor->duplicate_selected();
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Delete", [](void* c, Entity*) {
+	ui::e_menu_item(L"Delete", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		editor->delete_selected();
 	}, new_mail_p(c_editor));
-	ui::e_end_menu_top();
-	ui::e_begin_menu_top(L"Tools");
-	ui::e_menu_item(L"Generate Graph Image", [](void* c, Entity*) {
+	ui::e_end_menubar_menu();
+	ui::e_begin_menubar_menu(L"Tools");
+	ui::e_menu_item(L"Generate Graph Image", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		editor->generate_graph_image();
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Auto Set Layout", [](void* c, Entity*) {
+	ui::e_menu_item(L"Auto Set Layout", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		editor->auto_set_layout();
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Link Test Nodes", [](void* c, Entity*) {
+	ui::e_menu_item(L"Link Test Nodes", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		editor->link_test_nodes();
 	}, new_mail_p(c_editor));
-	ui::e_end_menu_top();
-	ui::e_begin_menu_top(L"Window");
-	ui::e_menu_item(L"Console", [](void* c, Entity*) {
+	ui::e_end_menubar_menu();
+	ui::e_begin_menubar_menu(L"Window");
+	ui::e_menu_item(L"Console", [](void* c) {
 		auto editor = *(cBPEditor**)c;
 		if (!editor->console_tab)
 		{
@@ -2053,7 +2095,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 			editor->console_tab = console_page->parent()->parent()->child(0)->child(0)->get_component(cDockerTab);
 		}
 	}, new_mail_p(c_editor));
-	ui::e_end_menu_top();
+	ui::e_end_menubar_menu();
 	ui::e_end_menu_bar();
 
 	ui::e_begin_layout()->get_component(cElement)->clip_children = true;
@@ -2070,35 +2112,11 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	c_bp_scene->base_element = ui::c_element();
 	c_editor->e_base = e_base;
 
-	c_editor->e_slot_menu = ui::e_menu();
-	ui::push_parent(c_editor->e_slot_menu);
-	ui::e_menu_item(L"Add To Exports", [](void* c, Entity*) {
-		auto editor = *(cBPEditor**)c;
-		auto s = editor->selected_.s;
-		if (s->io() == BP::Slot::In)
-			editor->bp->add_input_export(s);
-		else
-			editor->bp->add_output_export(s);
-		editor->set_changed(true);
-		((cBPSlot*)s->user_data)->text->set_text(L"  p");
-	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Remove From Exports", [](void* c, Entity*) {
-		auto editor = *(cBPEditor**)c;
-		auto s = editor->selected_.s;
-		if (s->io() == BP::Slot::In)
-			editor->bp->remove_input_export(s);
-		else
-			editor->bp->remove_output_export(s);
-		editor->set_changed(true);
-		((cBPSlot*)s->user_data)->text->set_text(L"");
-	}, new_mail_p(c_editor));
-	ui::pop_parent();
-
 	auto e_overlayer = ui::e_empty();
 	ui::c_element();
 	{
 		auto c_event_receiver = ui::c_event_receiver();
-		c_event_receiver->penetrable = true;
+		c_event_receiver->pass = (Entity*)FLAME_INVALID_POINTER;
 		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto c_bp_scene = *(cBPScene**)c;
 			if (is_mouse_scroll(action, key))
@@ -2121,14 +2139,24 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 	ui::e_end_layout();
 
-	ui::e_button(L"Run", [](void* c, Entity* e) {
-		auto& editor = *(cBPEditor**)c;
-		editor->running = !editor->running;
-		e->get_component(cText)->set_text(editor->running ? L"Pause" : L"Run");
+	{
+		ui::next_entity = Entity::create();
+		struct Capture
+		{
+			cBPEditor* editor;
+			Entity* e;
+		}capture;
+		capture.editor = c_editor;
+		capture.e = ui::next_entity;
+		ui::e_button(L"Run", [](void* c) {
+			auto& capture = *(Capture*)c;
+			capture.editor->running = !capture.editor->running;
+			capture.e->get_component(cText)->set_text(capture.editor->running ? L"Pause" : L"Run");
 
-		if (editor->running)
-			editor->bp->time = 0.f;
-	}, new_mail_p(c_editor));
+			if (capture.editor->running)
+				capture.editor->bp->time = 0.f;
+		}, new_mail(&capture));
+	}
 
 	ui::e_text(L"100%");
 	ui::c_aligner(AlignxLeft, AlignyBottom);
@@ -2138,6 +2166,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 
 	ui::e_end_docker_page();
 	ui::e_end_docker();
-	ui::e_end_docker_container();
+	ui::e_end_docker_floating_container();
 	ui::pop_parent();
 }

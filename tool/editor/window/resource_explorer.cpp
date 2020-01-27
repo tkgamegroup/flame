@@ -135,7 +135,7 @@ struct cResourceExplorer : Component
 		ui::c_layout(LayoutVertical)->item_padding = 4.f;
 		ui::push_parent(e_item);
 		ui::e_image(img_id << 16, Vec2f(64.f));
-		ui::e_text(app.font_atlas_pixel->slice_text_by_width(title.c_str(), title.size(), ui::style(ui::FontSize).u()[0], 64.f).v);
+		ui::e_text(app.font_atlas_pixel->slice_text_by_width(title.c_str(), title.size(), ui::style_1u(ui::FontSize), 64.f).v);
 		ui::pop_parent();
 		return e_item;
 	}
@@ -153,9 +153,9 @@ struct cResourceExplorer : Component
 
 			address_bar->remove_child((Entity*)FLAME_INVALID_POINTER);
 			ui::push_parent(address_bar);
-			ui::push_style(ui::ButtonColorNormal, ui::StyleValue(Vec4c(0)));
+			ui::push_style_4c(ui::ButtonColorNormal, Vec4c(0));
 
-			ui::e_button(Icon_LEVEL_UP, [](void* c, Entity*) {
+			ui::e_button(Icon_LEVEL_UP, [](void* c) {
 				auto thiz = *(cResourceExplorer**)c;
 				if (thiz->curr_path != thiz->base_path)
 					thiz->navigate(thiz->curr_path.parent_path());
@@ -179,7 +179,7 @@ struct cResourceExplorer : Component
 				}capture;
 				capture.e = thiz;
 				capture.p = s.wstring();
-				ui::e_button(s.filename().c_str(), [](void* c, Entity*) {
+				ui::e_button(s.filename().c_str(), [](void* c) {
 					auto& capture = *(Capture*)c;
 					capture.e->navigate(capture.p);
 				}, new_mail(&capture));
@@ -192,7 +192,7 @@ struct cResourceExplorer : Component
 				}
 				if (!sub_dirs.empty())
 				{
-					ui::e_begin_menu_top(Icon_CARET_RIGHT);
+					ui::e_begin_button_menu(Icon_CARET_RIGHT);
 					for (auto& p : sub_dirs)
 					{
 						struct Capture
@@ -202,12 +202,12 @@ struct cResourceExplorer : Component
 						}capture;
 						capture.e = thiz;
 						capture.p = p.wstring();
-						ui::e_menu_item(p.filename().c_str(), [](void* c, Entity*) {
+						ui::e_menu_item(p.filename().c_str(), [](void* c) {
 							auto& capture = *(Capture*)c;
 							capture.e->navigate(capture.p);
 						}, new_mail(&capture));
 					}
-					ui::e_end_menu_top();
+					ui::e_end_button_menu();
 				}
 			}
 
@@ -237,7 +237,7 @@ struct cResourceExplorer : Component
 				}
 			}
 			ui::push_parent(list);
-			ui::push_style(ui::FrameColorNormal, ui::StyleValue(Vec4c(0)));
+			ui::push_style_4c(ui::FrameColorNormal, Vec4c(0));
 			for (auto& p : dirs)
 			{
 				auto item = thiz->create_listitem(p.filename().wstring(), thiz->folder_img_idx);
@@ -254,13 +254,13 @@ struct cResourceExplorer : Component
 						capture.e->navigate(capture.p);
 				}, new_mail(&capture));
 				ui::push_parent(item);
-				ui::e_begin_menu_popup();
-				ui::e_menu_item(L"Open", [](void* c, Entity*) {
+				ui::e_begin_popup_menu();
+				ui::e_menu_item(L"Open", [](void* c) {
 					auto& capture = *(Capture*)c;
 					capture.e->selected = capture.p;
 					capture.e->navigate(capture.e->selected);
 				}, new_mail(&capture));
-				ui::e_end_menu_popup();
+				ui::e_end_popup_menu();
 				ui::pop_parent();
 			}
 			for (auto& p : files)
@@ -295,28 +295,28 @@ struct cResourceExplorer : Component
 				capture.p = p;
 				if (ext == L".prefab")
 				{
-					ui::e_begin_menu_popup();
-					ui::e_menu_item(L"Open", [](void* c, Entity*) {
+					ui::e_begin_popup_menu();
+					ui::e_menu_item(L"Open", [](void* c) {
 						auto& capture = *(Capture*)c;
 						capture.e->selected = capture.p;
 						open_scene_editor(capture.e->selected, Vec2f(450.f, 20.f));
 					}, new_mail(&capture));
-					ui::e_end_menu_popup();
+					ui::e_end_popup_menu();
 				}
 				else if (p.filename() == L"bp")
 				{
-					ui::e_begin_menu_popup();
-					ui::e_menu_item(L"Open", [](void* c, Entity*) {
+					ui::e_begin_popup_menu();
+					ui::e_menu_item(L"Open", [](void* c) {
 						auto& capture = *(Capture*)c;
 						capture.e->selected = capture.p;
 						open_blueprint_editor(capture.e->selected, false, Vec2f(4.f, 10.f));
 					}, new_mail(&capture));
-					ui::e_menu_item(L"Open (No Compile)", [](void* c, Entity*) {
+					ui::e_menu_item(L"Open (No Compile)", [](void* c) {
 						auto& capture = *(Capture*)c;
 						capture.e->selected = capture.p;
 						open_blueprint_editor(capture.e->selected, true, Vec2f(4.f, 10.f));
 					}, new_mail(&capture));
-					ui::e_end_menu_popup();
+					ui::e_end_popup_menu();
 				}
 				ui::pop_parent();
 			}
@@ -349,7 +349,7 @@ struct cResourceExplorer : Component
 		}
 		else
 		{
-			auto w = c_list_element->size_.x() - c_list_element->inner_padding_horizontal();
+			auto w = c_list_element->size_.x() - c_list_element->inner_padding_h();
 			c_list_layout->set_column(max(1U, uint(w / (c_list_layout->item_padding + 64.f))));
 		}
 	}
@@ -442,7 +442,9 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 {
 	ui::push_parent(app.root);
-	ui::e_begin_docker_container(pos, Vec2f(1914.f, 274.f));
+	ui::next_element_pos = pos;
+	ui::next_element_size = Vec2f(1914.f, 274.f);
+	ui::e_begin_docker_floating_container();
 	ui::e_begin_docker();
 	auto e_page = ui::e_begin_docker_page(L"Resource Explorer").page;
 	e_page->get_component(cElement)->inner_padding_ = 4.f;
@@ -470,8 +472,8 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 		c_explorer->c_list_layout->type = LayoutGrid;
 		c_explorer->c_list_layout->column_ = 4;
 	}
-	ui::e_begin_menu_popup();
-	ui::e_menu_item(L"New Prefab", [](void* c, Entity*) {
+	ui::e_begin_popup_menu();
+	ui::e_menu_item(L"New Prefab", [](void* c) {
 		auto explorer = *(cResourceExplorer**)c;
 		ui::e_input_dialog(L"name", [](void* c, bool ok, const wchar_t* text) {
 			auto explorer = *(cResourceExplorer**)c;
@@ -483,7 +485,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			}
 		}, new_mail_p(explorer));
 	}, new_mail_p(c_explorer));
-	ui::e_menu_item(L"New BP", [](void* c, Entity*) {
+	ui::e_menu_item(L"New BP", [](void* c) {
 		auto explorer = *(cResourceExplorer**)c;
 		ui::e_input_dialog(L"name", [](void* c, bool ok, const wchar_t* text) {
 			auto explorer = *(cResourceExplorer**)c;
@@ -497,7 +499,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			}
 		}, new_mail_p(explorer));
 	}, new_mail_p(c_explorer));
-	ui::e_end_menu_popup();
+	ui::e_end_popup_menu();
 	ui::e_end_list();
 	ui::e_end_scroll_view1();
 
@@ -510,7 +512,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 
 	ui::e_end_docker_page();
 	ui::e_end_docker();
-	ui::e_end_docker_container();
+	ui::e_end_docker_floating_container();
 	ui::pop_parent();
 
 	c_explorer->navigate(path);

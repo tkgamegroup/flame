@@ -216,7 +216,9 @@ Entity* cHierarchy::find_item(Entity* e) const
 void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 {
 	ui::push_parent(app.root);
-	ui::e_begin_docker_container(pos, Vec2f(200.f, 900.f));
+	ui::next_element_pos = pos;
+	ui::next_element_size = Vec2f(200.f, 900.f);
+	ui::e_begin_docker_floating_container();
 	ui::e_begin_docker();
 	auto c_tab = ui::e_begin_docker_page(L"Hierarchy").tab->get_component(cDockerTab);
 	ui::current_entity();
@@ -268,7 +270,7 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 
 	ui::e_end_docker_page();
 	ui::e_end_docker();
-	ui::e_end_docker_container();
+	ui::e_end_docker_floating_container();
 	ui::pop_parent();
 
 	c_hierarchy->e_tree = e_tree;
