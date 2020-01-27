@@ -13,7 +13,7 @@ namespace flame
 	{
 		sEventDispatcherPrivate* thiz;
 		Vec2f pos;
-		bool meet_last_hovering;
+		bool active;
 		EntityPrivate* pass;
 		std::vector<cEventReceiver*> mouse_dispatch_list;
 
@@ -338,11 +338,11 @@ namespace flame
 	{
 		thiz = _thiz;
 		pos = Vec2f(_pos);
-		meet_last_hovering = false;
+		active = thiz->focusing && thiz->focusing->active;
 		pass = (EntityPrivate*)FLAME_INVALID_POINTER;
 		mouse_dispatch_list.clear();
-		if (thiz->focusing && thiz->focusing->active)
-			mouse_dispatch_list.insert(mouse_dispatch_list.begin(), thiz->focusing);
+		if (active)
+			mouse_dispatch_list.push_back(thiz->focusing);
 		search_r(root);
 		std::reverse(mouse_dispatch_list.begin(), mouse_dispatch_list.end());
 	}
@@ -357,9 +357,10 @@ namespace flame
 		}
 
 		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
-		if (!er || !pass)
+		if (!er)
 			return;
-		if (pass != FLAME_INVALID_POINTER)
+		auto ban = !pass;
+		if (!ban && pass != FLAME_INVALID_POINTER)
 		{
 			auto p = e;
 			while (p)
@@ -368,31 +369,27 @@ namespace flame
 					break;
 				p = p->parent;
 			}
-			if (!p)
-				return;
+			ban = !p;
 		}
 
-		auto active = thiz->focusing && thiz->focusing->active;
-		if (active && thiz->hovering == er)
-			meet_last_hovering = true;
 		if (!er->element->cliped && rect_contains(er->element->cliped_rect, pos))
 		{
-			if (!thiz->hovering || (active && !meet_last_hovering))
+			if (!ban && (!thiz->hovering || !active || er != thiz->focusing))
 				mouse_dispatch_list.push_back(er);
 			if (!er->pass)
 			{
-				if (!thiz->hovering)
+				if (!ban && !thiz->hovering)
 				{
 					er->hovering = true;
 					thiz->hovering = er;
 				}
 
-				if (thiz->focusing && thiz->focusing->dragging && !thiz->drag_overing && er != thiz->focusing && !er->acceptable_drops.empty())
+				if (thiz->focusing && thiz->focusing->dragging && !thiz->drag_overing && er != thiz->focusing)
 				{
-					auto h = thiz->focusing->drag_hash;
-					for (auto _h : er->acceptable_drops)
+					auto hash = thiz->focusing->drag_hash;
+					for (auto h : er->acceptable_drops)
 					{
-						if (_h == h)
+						if (h == hash)
 						{
 							thiz->drag_overing = er;
 							break;

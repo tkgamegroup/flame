@@ -39,7 +39,7 @@ namespace flame
 			surface_info.pNext = nullptr;
 			surface_info.hinstance = (HINSTANCE)get_hinst();
 			surface_info.hwnd = (HWND)w->get_native();
-			chk_res(vkCreateWin32SurfaceKHR(d->ins, &surface_info, nullptr, &s));
+			chk_res(vkCreateWin32SurfaceKHR(d->instance, &surface_info, nullptr, &s));
 #else
 			VkAndroidSurfaceCreateInfoKHR surface_info;
 			surface_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
@@ -49,17 +49,17 @@ namespace flame
 #endif
 
 			VkBool32 surface_supported;
-			vkGetPhysicalDeviceSurfaceSupportKHR(d->pd, 0, s, &surface_supported);
+			vkGetPhysicalDeviceSurfaceSupportKHR(d->physical_device, 0, s, &surface_supported);
 			assert(surface_supported);
 
 			unsigned int present_mode_count = 0;
 			std::vector<VkPresentModeKHR> present_modes;
-			vkGetPhysicalDeviceSurfacePresentModesKHR(d->pd, s, &present_mode_count, nullptr);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical_device, s, &present_mode_count, nullptr);
 			present_modes.resize(present_mode_count);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(d->pd, s, &present_mode_count, present_modes.data());
+			vkGetPhysicalDeviceSurfacePresentModesKHR(d->physical_device, s, &present_mode_count, present_modes.data());
 
 			VkSurfaceCapabilitiesKHR surface_capabilities;
-			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->pd, s, &surface_capabilities);
+			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d->physical_device, s, &surface_capabilities);
 
 			size.x() = clamp(size.x(),
 				surface_capabilities.minImageExtent.width,
@@ -70,10 +70,10 @@ namespace flame
 
 			unsigned int surface_format_count = 0;
 			std::vector<VkSurfaceFormatKHR> surface_formats;
-			vkGetPhysicalDeviceSurfaceFormatsKHR(d->pd, s, &surface_format_count, nullptr);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical_device, s, &surface_format_count, nullptr);
 			assert(surface_format_count > 0);
 			surface_formats.resize(surface_format_count);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(d->pd, s, &surface_format_count, surface_formats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical_device, s, &surface_format_count, surface_formats.data());
 
 			swapchain_format = to_enum(surface_formats[0].format, true);
 
@@ -155,7 +155,7 @@ namespace flame
 
 #if defined(FLAME_VULKAN)
 			vkDestroySwapchainKHR(d->v, v, nullptr);
-			vkDestroySurfaceKHR(d->ins, s, nullptr);
+			vkDestroySurfaceKHR(d->instance, s, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif

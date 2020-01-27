@@ -10,6 +10,7 @@ namespace flame
 		enum Style
 		{
 			FontSize, // uint
+			BackgroundColor, // Vec4c
 			TextColorNormal, // Vec4c
 			TextColorElse, // Vec4c
 			FrameColorNormal, // Vec4c

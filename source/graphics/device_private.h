@@ -10,8 +10,8 @@ namespace flame
 		struct DevicePrivate : Device
 		{
 #if defined(FLAME_VULKAN)
-			VkInstance ins;
-			VkPhysicalDevice pd;
+			VkInstance instance;
+			VkPhysicalDevice physical_device;
 			VkPhysicalDeviceProperties props;
 			VkPhysicalDeviceFeatures features; 
 			VkPhysicalDeviceMemoryProperties mem_props;

@@ -37,6 +37,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* current_root();
 		FLAME_UNIVERSE_EXPORTS void set_current_root(Entity* e);
 
+		FLAME_UNIVERSE_EXPORTS extern Entity* next_entity;
 		FLAME_UNIVERSE_EXPORTS extern Vec2f next_element_pos;
 		FLAME_UNIVERSE_EXPORTS extern Vec2f next_element_size;
 
@@ -267,7 +268,14 @@ namespace flame
 
 		inline Entity* e_empty(int pos = -1)
 		{
-			auto e = Entity::create();
+			Entity* e;
+			if (next_entity)
+			{
+				e = next_entity;
+				next_entity = nullptr;
+			}
+			else
+				e = Entity::create();
 			auto p = current_parent();
 			if (p)
 				p->add_child(e, pos);
@@ -995,7 +1003,7 @@ namespace flame
 			auto ep = e_empty();
 			{
 				auto ce = c_element();
-				ce->color_ = style_4c(WindowColor);
+				ce->color_ = style_4c(BackgroundColor);
 				ce->clip_children = true;
 				c_aligner(SizeFitParent, SizeFitParent);
 			}

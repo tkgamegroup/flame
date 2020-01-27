@@ -331,13 +331,11 @@ namespace flame
 			instInfo.ppEnabledExtensionNames = instExtensions.data();
 			instInfo.enabledLayerCount = instLayers.size();
 			instInfo.ppEnabledLayerNames = instLayers.data();
-			chk_res(vkCreateInstance(&instInfo, nullptr, &ins));
-
-			LOGI("vulkan instance created");
+			chk_res(vkCreateInstance(&instInfo, nullptr, &instance));
 
 			if (debug)
 			{
-				static auto _vkCreateDebugReportCallbackEXT = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(ins, "vkCreateDebugReportCallbackEXT"));
+				static auto _vkCreateDebugReportCallbackEXT = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
 
 				VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
 				callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
@@ -347,25 +345,22 @@ namespace flame
 				callbackCreateInfo.pUserData = nullptr;
 
 				VkDebugReportCallbackEXT callback;
-				chk_res(_vkCreateDebugReportCallbackEXT(ins, &callbackCreateInfo, nullptr, &callback));
+				chk_res(_vkCreateDebugReportCallbackEXT(instance, &callbackCreateInfo, nullptr, &callback));
 			}
 
-			uint32_t gpuCount = 0;
+			uint32_t gpu_count = 0;
 			std::vector<VkPhysicalDevice> physical_devices;
-			chk_res(vkEnumeratePhysicalDevices(ins, &gpuCount, nullptr));
-			LOGI("gpu count:%d", gpuCount);
-			physical_devices.resize(gpuCount);
-			chk_res(vkEnumeratePhysicalDevices(ins, &gpuCount, physical_devices.data()));
-			pd = physical_devices[0];
-			if (pd == 0)
-				LOGI("physical device not found");
+			chk_res(vkEnumeratePhysicalDevices(instance, &gpu_count, nullptr));
+			physical_devices.resize(gpu_count);
+			chk_res(vkEnumeratePhysicalDevices(instance, &gpu_count, physical_devices.data()));
+			physical_device = physical_devices[0];
 
-			vkGetPhysicalDeviceProperties(pd, &props);
+			vkGetPhysicalDeviceProperties(physical_device, &props);
 			unsigned int queue_family_property_count = 0;
 			std::vector<VkQueueFamilyProperties> queue_family_properties;
-			vkGetPhysicalDeviceQueueFamilyProperties(pd, &queue_family_property_count, nullptr);
+			vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_property_count, nullptr);
 			queue_family_properties.resize(queue_family_property_count);
-			vkGetPhysicalDeviceQueueFamilyProperties(pd, &queue_family_property_count, queue_family_properties.data());
+			vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_property_count, queue_family_properties.data());
 
 			float queue_porities[1] = { 0.f };
 			std::vector<VkDeviceQueueCreateInfo> queue_infos;
@@ -404,9 +399,9 @@ namespace flame
 			}
 
 			VkPhysicalDeviceFeatures features;
-			vkGetPhysicalDeviceFeatures(pd, &features);
+			vkGetPhysicalDeviceFeatures(physical_device, &features);
 
-			vkGetPhysicalDeviceMemoryProperties(pd, &mem_props);
+			vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
 
 			std::vector<const char*> device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 			VkDeviceCreateInfo device_info = {};
@@ -416,9 +411,9 @@ namespace flame
 			device_info.enabledExtensionCount = device_extensions.size();
 			device_info.ppEnabledExtensionNames = device_extensions.data();
 			device_info.pEnabledFeatures = &features;
-			chk_res(vkCreateDevice(pd, &device_info, nullptr, &v));
+			chk_res(vkCreateDevice(physical_device, &device_info, nullptr, &v));
 
-			LOGI("vulkan device created");
+			LOGI("vulkan initialized, gpu count: %d", gpu_count);
 
 			sp_nearest = Sampler::create(this, FilterNearest, FilterNearest, false);
 			sp_linear = Sampler::create(this, FilterLinear, FilterLinear, false);

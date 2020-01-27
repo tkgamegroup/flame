@@ -59,6 +59,7 @@ namespace flame
 			_current_root = e;
 		}
 
+		Entity* next_entity = nullptr;
 		Vec2f next_element_pos = Vec2f(0.f);
 		Vec2f next_element_size = Vec2f(0.f);
 	}
