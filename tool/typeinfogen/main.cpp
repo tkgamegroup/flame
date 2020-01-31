@@ -36,7 +36,7 @@ int main(int argc, char **args)
 		printf("generating typeinfo");
 
 		for (auto& d : modules)
-			TypeinfoDatabase::load(std::filesystem::path(d).replace_extension(L".typeinfo").c_str(), TypeinfoDatabase::LoadAndAddToGlobal);
+			TypeinfoDatabase::load(std::filesystem::path(d).replace_extension(L".typeinfo").c_str(), true, false);
 
 		TypeinfoDatabase::collect(filename.c_str(), !pdb_filename.empty() ? pdb_filename.c_str() : nullptr);
 

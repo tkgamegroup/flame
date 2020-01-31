@@ -512,7 +512,7 @@ namespace flame
 		m->filename = fn;
 		m->absolute_filename = absolute_filename;
 		m->module = module;
-		m->db = TypeinfoDatabase::load(absolute_filename.replace_extension(L".typeinfo").c_str(), TypeinfoDatabase::LoadWithModule);
+		m->db = TypeinfoDatabase::load(absolute_filename.replace_extension(L".typeinfo").c_str(), false, true);
 
 		libraries.emplace_back(m);
 		collect_dbs();

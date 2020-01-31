@@ -648,12 +648,6 @@ namespace flame
 
 	struct TypeinfoDatabase
 	{
-		enum LoadFlag
-		{
-			LoadAndAddToGlobal = 1 << 0,
-			LoadWithModule = 1 << 1
-		};
-
 		FLAME_TYPE_EXPORTS void* module() const;
 		FLAME_TYPE_EXPORTS const wchar_t* module_name() const;
 
@@ -670,7 +664,7 @@ namespace flame
 		FLAME_TYPE_EXPORTS UdtInfo* add_udt(const TypeInfo* type, uint size);
 
 		FLAME_TYPE_EXPORTS static void collect(const wchar_t* module_filename, const wchar_t* pdb_filename = nullptr);
-		FLAME_TYPE_EXPORTS static TypeinfoDatabase* load(const wchar_t* typeinfo_filename, LoadFlag flags);
+		FLAME_TYPE_EXPORTS static TypeinfoDatabase* load(const wchar_t* typeinfo_filename, bool add_to_global, bool load_with_module);
 		FLAME_TYPE_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};
 

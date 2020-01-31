@@ -1261,7 +1261,7 @@ namespace flame
 		TypeinfoDatabase::destroy(db);
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::load(const wchar_t* typeinfo_filename, LoadFlag flags)
+	TypeinfoDatabase* TypeinfoDatabase::load(const wchar_t* typeinfo_filename, bool add_to_global, bool load_with_module)
 	{
 		pugi::xml_document file;
 		pugi::xml_node file_root;
@@ -1313,9 +1313,9 @@ namespace flame
 		extra_global_db_count = 0;
 		extra_global_dbs = nullptr;
 
-		if (flags | LoadWithModule)
+		if (load_with_module)
 			db->module = load_module(db->module_name.c_str());
-		if (flags | LoadAndAddToGlobal)
+		if (add_to_global)
 			global_dbs.push_back(db);
 
 		return db;

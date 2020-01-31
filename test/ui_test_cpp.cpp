@@ -318,9 +318,9 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.s; i++)
 		app.cbs.v[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
-	TypeinfoDatabase::load(L"flame_foundation.typeinfo", TypeinfoDatabase::LoadFlag(TypeinfoDatabase::LoadAndAddToGlobal | TypeinfoDatabase::LoadWithModule));
-	TypeinfoDatabase::load(L"flame_graphics.typeinfo", TypeinfoDatabase::LoadFlag(TypeinfoDatabase::LoadAndAddToGlobal | TypeinfoDatabase::LoadWithModule));
-	TypeinfoDatabase::load(L"flame_universe.typeinfo", TypeinfoDatabase::LoadFlag(TypeinfoDatabase::LoadAndAddToGlobal | TypeinfoDatabase::LoadWithModule));
+	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);

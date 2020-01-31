@@ -97,6 +97,7 @@ namespace flame
 			}
 			if (er == drag_overing)
 				drag_overing = nullptr;
+			er->state = EventReceiverNormal;
 		}
 
 		void on_added() override
