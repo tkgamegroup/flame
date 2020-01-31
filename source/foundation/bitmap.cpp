@@ -96,7 +96,7 @@ namespace flame
 				memset(b->data, 0, b->data_size);
 			else
 			{
-				if (data != FLAME_INVALID_POINTER)
+				if (data != INVALID_POINTER)
 					memcpy(b->data, data, b->data_size);
 			}
 		}

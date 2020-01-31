@@ -1,0 +1,2 @@
+../../bin/flame_foundation.dll
+../../bin/flame_graphics.dll

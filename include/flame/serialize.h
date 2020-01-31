@@ -993,7 +993,7 @@ namespace flame
 		}
 	}
 
-	std::string TypeInfo::serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const
+	std::string TypeInfo::serialize(const void* src, int precision) const
 	{
 		if (is_attribute())
 			src = (char*)src + sizeof(AttributeBase);
@@ -1002,14 +1002,14 @@ namespace flame
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(dbs, base_hash());
+			auto e = find_enum(base_hash());
 			assert(e);
 			return e->find_item(*(int*)src)->name();
 		}
 		case TypeEnumMulti:
 		{
 			std::string str;
-			auto e = find_enum(dbs, base_hash());
+			auto e = find_enum(base_hash());
 			assert(e);
 			auto v = *(int*)src;
 			for (auto i = 0; i < e->item_count(); i++)
@@ -1085,7 +1085,7 @@ namespace flame
 		}
 	}
 
-	void TypeInfo::unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const
+	void TypeInfo::unserialize(const std::string& src, void* dst) const
 	{
 		if (is_attribute())
 			dst = (char*)dst + sizeof(AttributeBase);
@@ -1094,7 +1094,7 @@ namespace flame
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(dbs, base_hash());
+			auto e = find_enum(base_hash());
 			assert(e);
 			e->find_item(src.c_str(), (int*)dst);
 		}
@@ -1102,7 +1102,7 @@ namespace flame
 		case TypeEnumMulti:
 		{
 			auto v = 0;
-			auto e = find_enum(dbs, base_hash());
+			auto e = find_enum(base_hash());
 			assert(e);
 			auto sp = ssplit(src, ';');
 			for (auto& t : sp)

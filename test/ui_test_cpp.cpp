@@ -51,7 +51,7 @@ struct App
 				ui::e_begin_menubar_menu(L"Style");
 					ui::e_menu_item(L"Dark", [](void* c) {
 						looper().add_event([](void*) {
-							app.root->remove_child((Entity*)FLAME_INVALID_POINTER);
+							app.root->remove_child((Entity*)INVALID_POINTER);
 							app.canvas->set_clear_color(Vec4c(0, 0, 0, 255));
 							ui::style_set_to_dark();
 							app.create_widgets();
@@ -59,7 +59,7 @@ struct App
 					}, Mail<>());
 					ui::e_menu_item(L"Light", [](void* c) {
 						looper().add_event([](void*) {
-							app.root->remove_child((Entity*)FLAME_INVALID_POINTER);
+							app.root->remove_child((Entity*)INVALID_POINTER);
 							app.canvas->set_clear_color(Vec4c(200, 200, 200, 255));
 							ui::style_set_to_light();
 							app.create_widgets();
@@ -318,6 +318,9 @@ int main(int argc, char** args)
 	for (auto i = 0; i < app.cbs.s; i++)
 		app.cbs.v[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
+	TypeinfoDatabase::load(L"flame_foundation.typeinfo", TypeinfoDatabase::LoadFlag(TypeinfoDatabase::LoadAndAddToGlobal | TypeinfoDatabase::LoadWithModule));
+	TypeinfoDatabase::load(L"flame_graphics.typeinfo", TypeinfoDatabase::LoadFlag(TypeinfoDatabase::LoadAndAddToGlobal | TypeinfoDatabase::LoadWithModule));
+	TypeinfoDatabase::load(L"flame_universe.typeinfo", TypeinfoDatabase::LoadFlag(TypeinfoDatabase::LoadAndAddToGlobal | TypeinfoDatabase::LoadWithModule));
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);

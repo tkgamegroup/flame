@@ -492,7 +492,7 @@ namespace flame
 				e_empty();
 				c_element();
 				auto ce = c_event_receiver();
-				ce->pass = (Entity*)FLAME_INVALID_POINTER;
+				ce->pass = (Entity*)INVALID_POINTER;
 				ce->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thumb = (*(cScrollbarThumb**)c);
 					if (is_mouse_scroll(action, key))
@@ -869,7 +869,7 @@ namespace flame
 
 				e_empty();
 				c_element();
-				c_event_receiver()->pass = (Entity*)FLAME_INVALID_POINTER;
+				c_event_receiver()->pass = (Entity*)INVALID_POINTER;
 				c_aligner(SizeFitParent, SizeFitParent);
 				c_bring_to_front();
 			}

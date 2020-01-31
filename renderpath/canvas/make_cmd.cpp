@@ -70,7 +70,7 @@ namespace flame
 			if (size$i.frame > out$o.frame)
 				out$o.v.size = size$i.v;
 			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
-				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
+				out$o.v.color = color$i.v.new_proply<3>(alpha$i.v);
 			out$o.frame = scene->frame;
 		}
 	};
@@ -111,7 +111,7 @@ namespace flame
 			if (pos$i.frame > out$o.frame)
 				out$o.v.pos = pos$i.v;
 			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
-				out$o.v.color = alpha_mul(color$i.v, alpha$i.v);
+				out$o.v.color = color$i.v.new_proply<3>(alpha$i.v);
 			if (text$i.frame > out$o.frame)
 			{
 				out$o.v.glyphs.resize(text$i.v.s);

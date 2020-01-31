@@ -174,7 +174,7 @@ namespace flame
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
-		if (e == FLAME_INVALID_POINTER)
+		if (e == INVALID_POINTER)
 		{
 			for (auto& c : components)
 			{
@@ -344,7 +344,7 @@ namespace flame
 		return new EntityPrivate;
 	}
 
-	static Entity* load_prefab(World* w, const std::vector<TypeinfoDatabase*>& dbs, pugi::xml_node src)
+	static Entity* load_prefab(World* w, pugi::xml_node src)
 	{
 		auto e = Entity::create();
 		e->set_name(src.attribute("name").value());
@@ -352,7 +352,7 @@ namespace flame
 
 		for (auto n_c : src.child("components"))
 		{
-			auto udt = find_udt(dbs, FLAME_HASH((std::string("D#Serializer_") + n_c.name()).c_str()));
+			auto udt = find_udt(FLAME_HASH((std::string("D#Serializer_") + n_c.name()).c_str()));
 			assert(udt);
 			auto object = malloc(udt->size());
 			auto module = load_module(udt->db()->module_name());
@@ -364,7 +364,7 @@ namespace flame
 			for (auto n_v : n_c)
 			{
 				auto v = udt->find_variable(n_v.name());
-				v->type()->unserialize(dbs, n_v.attribute("v").value(), (char*)object + v->offset());
+				v->type()->unserialize(n_v.attribute("v").value(), (char*)object + v->offset());
 			}
 			void* component;
 			{
@@ -383,25 +383,22 @@ namespace flame
 		}
 
 		for (auto n_e : src.child("children"))
-			e->add_child(load_prefab(w, dbs, n_e));
+			e->add_child(load_prefab(w, n_e));
 
 		return e;
 	}
 
-	Entity* Entity::create_from_file(World* w, uint db_count, TypeinfoDatabase* const* _dbs, const wchar_t* filename)
+	Entity* Entity::create_from_file(World* w, const wchar_t* filename)
 	{
 		pugi::xml_document file;
 		pugi::xml_node file_root;
 		if (!file.load_file(filename) || (file_root = file.first_child()).name() != std::string("prefab"))
 			return nullptr;
 
-		std::vector<TypeinfoDatabase*> dbs(db_count);
-		for (auto i = 0; i < db_count; i++)
-			dbs[i] = _dbs[i];
-		return load_prefab(w, dbs, file_root.first_child());
+		return load_prefab(w, file_root.first_child());
 	}
 
-	static void save_prefab(const std::vector<TypeinfoDatabase*>& dbs, pugi::xml_node dst, EntityPrivate* src)
+	static void save_prefab(pugi::xml_node dst, EntityPrivate* src)
 	{
 		auto n = dst.append_child("entity");
 		n.append_attribute("name").set_value(src->name.empty() ? "unnamed" : src->name.c_str());
@@ -416,7 +413,7 @@ namespace flame
 
 				auto n_c = n_cs.append_child(c->name);
 
-				auto udt = find_udt(dbs, FLAME_HASH((std::string("D#Serializer_") + c->name).c_str()));
+				auto udt = find_udt(FLAME_HASH((std::string("D#Serializer_") + c->name).c_str()));
 				assert(udt);
 				auto object = malloc(udt->size());
 				auto module = load_module(L"flame_universe.dll");
@@ -437,7 +434,7 @@ namespace flame
 					auto p = (char*)object + v->offset();
 					if (type->tag() == TypeData)
 					{
-						auto str = type->serialize(dbs, p, 2);
+						auto str = type->serialize(p, 2);
 						if (str != v->default_value())
 							n_c.append_child(v->name()).append_attribute("v").set_value(str.c_str());
 					}
@@ -456,19 +453,16 @@ namespace flame
 		{
 			auto n_es = n.append_child("children");
 			for (auto& e : src->children)
-				save_prefab(dbs, n_es, e.get());
+				save_prefab(n_es, e.get());
 		}
 	}
 
-	void Entity::save_to_file(uint db_count, TypeinfoDatabase* const* _dbs, Entity* e, const wchar_t* filename)
+	void Entity::save_to_file(Entity* e, const wchar_t* filename)
 	{
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		std::vector<TypeinfoDatabase*> dbs(db_count);
-		for (auto i = 0; i < db_count; i++)
-			dbs[i] = _dbs[i];
-		save_prefab(dbs, file, (EntityPrivate*)e);
+		save_prefab(file, (EntityPrivate*)e);
 
 		file.save_file(filename);
 	}

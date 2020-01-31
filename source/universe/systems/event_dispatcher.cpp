@@ -50,7 +50,7 @@ namespace flame
 			focusing = nullptr;
 			drag_overing = nullptr;
 
-			next_focusing = (cEventReceiver*)FLAME_INVALID_POINTER;
+			next_focusing = (cEventReceiver*)INVALID_POINTER;
 
 			char_input_compelete = true;
 			for (auto i = 0; i < array_size(key_states); i++)
@@ -182,10 +182,10 @@ namespace flame
 			auto prev_dragging = (!focusing || !focusing->dragging) ? nullptr : focusing;
 			auto prev_drag_overing = drag_overing;
 
-			if (next_focusing != FLAME_INVALID_POINTER)
+			if (next_focusing != INVALID_POINTER)
 			{
 				focusing = next_focusing;
-				next_focusing = (cEventReceiver*)FLAME_INVALID_POINTER;
+				next_focusing = (cEventReceiver*)INVALID_POINTER;
 			}
 
 			if (focusing)
@@ -339,7 +339,7 @@ namespace flame
 		thiz = _thiz;
 		pos = Vec2f(_pos);
 		active = thiz->focusing && thiz->focusing->active;
-		pass = (EntityPrivate*)FLAME_INVALID_POINTER;
+		pass = (EntityPrivate*)INVALID_POINTER;
 		mouse_dispatch_list.clear();
 		if (active)
 			mouse_dispatch_list.push_back(thiz->focusing);
@@ -360,7 +360,7 @@ namespace flame
 		if (!er)
 			return;
 		auto ban = !pass;
-		if (!ban && pass != FLAME_INVALID_POINTER)
+		if (!ban && pass != INVALID_POINTER)
 		{
 			auto p = e;
 			while (p)

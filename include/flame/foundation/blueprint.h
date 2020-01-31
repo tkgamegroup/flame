@@ -21,18 +21,16 @@ namespace flame
 	{
 		struct Node;
 
-		struct Module
+		struct Library
 		{
 			FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
-			FLAME_FOUNDATION_EXPORTS void* module() const;
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 			Vec2f pos;
 
-			bool external;
 			void* user_data;
 		};
 
-		struct Package
+		struct SubGraph
 		{
 			FLAME_FOUNDATION_EXPORTS BP* scene() const;
 			FLAME_FOUNDATION_EXPORTS const char* id() const;
@@ -41,7 +39,6 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 
-			bool external;
 			void* user_data;
 		};
 
@@ -108,7 +105,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
 
-			bool external;
+			bool used_by_editor;
 			void* user_data;
 		};
 
@@ -117,20 +114,19 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
 
-		FLAME_FOUNDATION_EXPORTS Package* package() const;
+		FLAME_FOUNDATION_EXPORTS SubGraph* scene() const; // nullptr or in a sub graph
 
-		FLAME_FOUNDATION_EXPORTS uint module_count() const;
-		FLAME_FOUNDATION_EXPORTS Module* module(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Module* self_module() const;
-		FLAME_FOUNDATION_EXPORTS Module* add_module(const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS void remove_module(Module* m);
-		FLAME_FOUNDATION_EXPORTS Module* find_module(const wchar_t* filename) const;
+		FLAME_FOUNDATION_EXPORTS uint library_count() const;
+		FLAME_FOUNDATION_EXPORTS Library* library(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS Library* add_library(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS void remove_library(Library* m);
+		FLAME_FOUNDATION_EXPORTS Library* find_library(const wchar_t* filename) const;
 
-		FLAME_FOUNDATION_EXPORTS uint package_count() const;
-		FLAME_FOUNDATION_EXPORTS Package* package(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Package* add_package(const wchar_t* filename, const char* id);
-		FLAME_FOUNDATION_EXPORTS void remove_package(Package* e);
-		FLAME_FOUNDATION_EXPORTS Package* find_package(const char* id) const;
+		FLAME_FOUNDATION_EXPORTS uint subgraph_count() const;
+		FLAME_FOUNDATION_EXPORTS SubGraph* subgraph(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS SubGraph* add_subgraph(const wchar_t* filename, const char* id);
+		FLAME_FOUNDATION_EXPORTS void remove_subgraph(SubGraph* e);
+		FLAME_FOUNDATION_EXPORTS SubGraph* find_subgraph(const char* id) const;
 
 		FLAME_FOUNDATION_EXPORTS uint db_count() const;
 		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db(uint idx) const;
@@ -160,7 +156,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS static BP* create();
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename, bool no_compile = false, BP* root = nullptr);
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename, BP* root = nullptr);
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};

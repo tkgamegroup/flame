@@ -228,29 +228,6 @@ namespace flame
 		CloseHandle(proc_info.hThread);
 	}
 
-
-	StringA compile_to_dll(uint source_count, const wchar_t* const* sources, uint library_count, const wchar_t* const* libraries, const wchar_t* out)
-	{
-		auto cl = wsfmt(L"\"%s/VC/Auxiliary/Build/vcvars64.bat\" & cl ", s2w(VS_LOCATION));
-
-		for (auto i = 0; i < source_count; i++)
-		{
-			cl += sources[i];
-			cl += L" ";
-		}
-		cl += L"-LD -MD -EHsc -Zi -std:c++17 -I ../include -link -DEBUG ";
-		for (auto i = 0; i < library_count; i++)
-		{
-			cl += libraries[i];
-			cl += L" ";
-		}
-
-		cl += L" -out:";
-		cl += out;
-
-		return exec_and_get_output(nullptr, cl.data());
-	}
-
 	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
 	{
 		PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(pNTHeader);
@@ -318,21 +295,6 @@ namespace flame
 		wchar_t buf[260];
 		GetModuleFileNameW((HMODULE)module, buf, sizeof(buf));
 		return StringW(buf);
-	}
-
-	void* load_module(const wchar_t* module_name)
-	{
-		return LoadLibraryW(module_name);
-	}
-
-	void* get_module_func(void* module, const char* name)
-	{
-		return GetProcAddress((HMODULE)module, name);
-	}
-
-	void free_module(void* library)
-	{
-		FreeLibrary((HMODULE)library);
 	}
 
 	StringW get_clipboard()

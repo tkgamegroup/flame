@@ -7,26 +7,26 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
-	struct ModulePrivate : BP::Module
+	struct LibraryPrivate : BP::Library
 	{
 		std::wstring filename;
 		std::filesystem::path absolute_filename;
 		void* module;
 		TypeinfoDatabase* db;
 
-		ModulePrivate();
-		~ModulePrivate();
+		LibraryPrivate();
+		~LibraryPrivate();
 	};
 
-	struct PackagePrivate : BP::Package
+	struct SubGraphPrivate : BP::SubGraph
 	{
 		BPPrivate* scene;
 		std::string id;
 		std::wstring filename;
 		BPPrivate* bp;
 
-		PackagePrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp);
-		~PackagePrivate();
+		SubGraphPrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp);
+		~SubGraphPrivate();
 	};
 
 	struct SlotPrivate : BP::Slot
@@ -93,21 +93,19 @@ namespace flame
 		void update();
 	};
 
-	struct BPDestroyDependence : BP
+	struct BPLibraries : BP
 	{
-		std::vector<std::unique_ptr<ModulePrivate>> modules;
-		std::unique_ptr<ModulePrivate> self_module;
+		std::vector<std::unique_ptr<LibraryPrivate>> libraries;
 	};
 
-	struct BPPrivate : BPDestroyDependence
+	struct BPPrivate : BPLibraries
 	{
 		std::wstring filename;
 
-		PackagePrivate* package;
+		SubGraphPrivate* scene;
 		BPPrivate* root;
 
-		std::vector<std::unique_ptr<PackagePrivate>> packages;
-		std::vector<ModulePrivate*> package_modules;
+		std::vector<std::unique_ptr<SubGraphPrivate>> subgraphs;
 
 		std::vector<TypeinfoDatabase*> dbs;
 
@@ -125,19 +123,18 @@ namespace flame
 		{
 			frame = 0;
 			time = 0.f;
-			package = nullptr;
+			scene = nullptr;
 			root = this;
 			need_update_hierarchy = true;
 		}
 
-		Module* add_module(const std::wstring& filename);
-		void remove_module(ModulePrivate* m);
-		ModulePrivate* find_module(const std::wstring& filename) const;
+		LibraryPrivate* add_library(const std::wstring& filename);
+		void remove_library(LibraryPrivate* m);
+		LibraryPrivate* find_library(const std::wstring& filename) const;
 
-		PackagePrivate* add_package(const std::wstring& filename, const std::string& id);
-		void remove_package(PackagePrivate* i);
-		PackagePrivate* find_package(const std::string& id) const;
-		void collect_package_modules();
+		SubGraphPrivate* add_subgraph(const std::wstring& filename, const std::string& id);
+		void remove_subgraph(SubGraphPrivate* i);
+		SubGraphPrivate* find_subgraph(const std::string& id) const;
 
 		void collect_dbs();
 
@@ -155,32 +152,29 @@ namespace flame
 		void update();
 	};
 
-	ModulePrivate::ModulePrivate()
+	LibraryPrivate::LibraryPrivate()
 	{
 		pos = Vec2f(0.f);
-		external = false;
 		user_data = nullptr;
 	}
 
-	ModulePrivate::~ModulePrivate()
+	LibraryPrivate::~LibraryPrivate()
 	{
-		free_module(module);
 		TypeinfoDatabase::destroy(db);
 	}
 
-	PackagePrivate::PackagePrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp) :
+	SubGraphPrivate::SubGraphPrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp) :
 		scene(scene),
 		id(id),
 		bp(bp)
 	{
 		pos = Vec2f(0.f);
-		external = false;
 		user_data = nullptr;
 
-		bp->package = this;
+		bp->scene = this;
 	}
 
-	PackagePrivate::~PackagePrivate()
+	SubGraphPrivate::~SubGraphPrivate()
 	{
 		BP::destroy(bp);
 	}
@@ -232,8 +226,7 @@ namespace flame
 				return false;
 			if (node == target->node) // same node
 				return false;
-			auto p = node->scene->package;
-			if (p && p == target->node->scene->package) // same package
+			if (not_null_equal(node->scene->scene, target->node->scene->scene)) // same sub graph
 				return false;
 		}
 
@@ -295,7 +288,7 @@ namespace flame
 		in_update_list(false)
 	{
 		pos = Vec2f(0.f);
-		external = false;
+		used_by_editor = false;
 		user_data = nullptr;
 
 		auto size = udt->size();
@@ -357,7 +350,7 @@ namespace flame
 		in_update_list(false)
 	{
 		pos = Vec2f(0.f);
-		external = false;
+		used_by_editor = false;
 		user_data = nullptr;
 
 		object = malloc(size);
@@ -498,59 +491,43 @@ namespace flame
 		}
 	}
 
-	BP::Module* BPPrivate::add_module(const std::wstring& fn)
+	LibraryPrivate* BPPrivate::add_library(const std::wstring& fn)
 	{
-		if (fn == L"bp.dll")
-			return nullptr;
-		for (auto& m : modules)
+		for (auto& l : libraries)
 		{
-			if (m->filename == fn)
+			if (l->filename == fn)
 				return nullptr;
 		}
 
-		std::filesystem::path absolute_filename = fn;
-		auto module = load_module(fn.c_str());
-		if (module)
-			absolute_filename = get_app_path().str() + L"/" + absolute_filename.wstring();
-		else
-		{
-			std::filesystem::path path(filename);
-			absolute_filename = path.parent_path() / fn;
-			module = load_module(absolute_filename.c_str());
-		}
+		std::filesystem::path absolute_filename = std::filesystem::path(filename).parent_path() / fn;
+		auto module = load_module(absolute_filename.c_str());
 		if (!module)
 		{
-			printf("cannot add module %s\n", w2s(fn).c_str());
+			printf("cannot add library %s\n", w2s(fn).c_str());
 			return nullptr;
 		}
 		absolute_filename = std::filesystem::canonical(absolute_filename);
 
-		auto m = new ModulePrivate;
+		auto m = new LibraryPrivate;
 		m->filename = fn;
 		m->absolute_filename = absolute_filename;
 		m->module = module;
-		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& m : modules)
-			dbs.push_back(m->db);
-		m->db = TypeinfoDatabase::load(dbs.size(), dbs.data(), absolute_filename.replace_extension(L".typeinfo").c_str());
+		m->db = TypeinfoDatabase::load(absolute_filename.replace_extension(L".typeinfo").c_str(), TypeinfoDatabase::LoadWithModule);
 
-		modules.emplace_back(m);
+		libraries.emplace_back(m);
 		collect_dbs();
 
 		return m;
 	}
 
-	void BPPrivate::remove_module(ModulePrivate* _m)
+	void BPPrivate::remove_library(LibraryPrivate* _l)
 	{
-		if (_m->filename == L"bp.dll")
-			return;
-
-		for (auto it = modules.begin(); it != modules.end(); it++)
+		for (auto it = libraries.begin(); it != libraries.end(); it++)
 		{
-			auto m = it->get();
-			if (m == _m)
+			auto l = it->get();
+			if (l == _l)
 			{
-				auto db = m->db;
+				auto db = l->db;
 				auto& nodes = this->nodes;
 				for (auto n_it = nodes.begin(); n_it != nodes.end(); )
 				{
@@ -565,7 +542,7 @@ namespace flame
 						n_it++;
 				}
 
-				modules.erase(it);
+				libraries.erase(it);
 				collect_dbs();
 
 				return;
@@ -573,60 +550,58 @@ namespace flame
 		}
 	}
 
-	ModulePrivate* BPPrivate::find_module(const std::wstring& filename) const
+	LibraryPrivate* BPPrivate::find_library(const std::wstring& filename) const
 	{
-		auto& modules = ((BPPrivate*)this)->modules;
-		for (auto& m : modules)
+		auto& libraries = ((BPPrivate*)this)->libraries;
+		for (auto& l : libraries)
 		{
-			if (m->filename == filename)
-				return m.get();
+			if (l->filename == filename)
+				return l.get();
 		}
 		return nullptr;
 	}
 
-	PackagePrivate* BPPrivate::add_package(const std::wstring& fn, const std::string& id)
+	SubGraphPrivate* BPPrivate::add_subgraph(const std::wstring& fn, const std::string& id)
 	{
 		std::string s_id;
 		if (!id.empty())
 		{
 			s_id = id;
-			if (find_package(s_id))
+			if (find_subgraph(s_id))
 				return nullptr;
 		}
 		else
 		{
-			for (auto i = 0; i < packages.size() + 1; i++)
+			for (auto i = 0; i < subgraphs.size() + 1; i++)
 			{
-				s_id = "package_" + std::to_string(i);
-				if (!find_package(s_id))
+				s_id = "subgraph_" + std::to_string(i);
+				if (!find_subgraph(s_id))
 					break;
 			}
 		}
 
-		auto bp = (BPPrivate*)BP::create_from_file((std::filesystem::path(filename).parent_path().parent_path() / fn / L"bp").wstring().c_str(), true, root);
+		auto bp = (BPPrivate*)BP::create_from_file((std::filesystem::path(filename).parent_path().parent_path() / fn / L"bp").wstring().c_str(), root);
 		if (!bp)
 			return nullptr;
 
-		auto p = new PackagePrivate(this, s_id, bp);
+		auto p = new SubGraphPrivate(this, s_id, bp);
 		p->filename = fn;
-		packages.emplace_back(p);
+		subgraphs.emplace_back(p);
 
-		collect_package_modules();
 		collect_dbs();
 		root->need_update_hierarchy = true;
 
 		return p;
 	}
 
-	void BPPrivate::remove_package(PackagePrivate* i)
+	void BPPrivate::remove_subgraph(SubGraphPrivate* s)
 	{
-		for (auto it = packages.begin(); it != packages.end(); it++)
+		for (auto it = subgraphs.begin(); it != subgraphs.end(); it++)
 		{
-			if (it->get() == i)
+			if (it->get() == s)
 			{
-				packages.erase(it);
+				subgraphs.erase(it);
 
-				collect_package_modules();
 				collect_dbs();
 				root->need_update_hierarchy = true;
 
@@ -635,60 +610,22 @@ namespace flame
 		}
 	}
 
-	PackagePrivate* BPPrivate::find_package(const std::string& id) const
+	SubGraphPrivate* BPPrivate::find_subgraph(const std::string& id) const
 	{
-		auto& packages = ((BPPrivate*)this)->packages;
-		for (auto& p : packages)
+		auto& subgraphs = ((BPPrivate*)this)->subgraphs;
+		for (auto& s : subgraphs)
 		{
-			if (p->id == id)
-				return p.get();
+			if (s->id == id)
+				return s.get();
 		}
 		return nullptr;
-	}
-
-	void BPPrivate::collect_package_modules()
-	{
-		package_modules.clear();
-		auto had = [&](ModulePrivate* m) {
-			for (auto& _m : modules)
-			{
-				if (_m->module == m->module)
-					return true;
-			}
-			for (auto _m : package_modules)
-			{
-				if (_m->module == m->module)
-					return true;
-			}
-			return false;
-		};
-		for (auto& p : packages)
-		{
-			auto bp = p->bp;
-			for (auto& m : bp->modules)
-			{
-				if (!had(m.get()))
-					package_modules.push_back(m.get());
-			}
-			if (!had(bp->self_module.get()))
-				package_modules.push_back(bp->self_module.get());
-			for (auto& m : bp->package_modules)
-			{
-				if (!had(m))
-					package_modules.push_back(m);
-			}
-		}
 	}
 
 	void BPPrivate::collect_dbs()
 	{
 		dbs.clear();
-		for (auto& m : modules)
-			dbs.push_back(m->db);
-		if (self_module)
-			dbs.push_back(self_module->db);
-		for (auto m : package_modules)
-			dbs.push_back(m->db);
+		for (auto& l : libraries)
+			dbs.push_back(l->db);
 	}
 
 	bool BPPrivate::check_or_create_id(std::string& id) const
@@ -712,38 +649,11 @@ namespace flame
 
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& _id)
 	{
-		auto type_hash = FLAME_HASH(type.c_str());
-		UdtInfo* udt = nullptr;
-		void* module = nullptr;
-		{
-			for (auto& m : modules)
-			{
-				udt = m->db->find_udt(type_hash);
-				if (udt)
-				{
-					module = m->module;
-					break;
-				}
-			}
-			if (!udt && self_module)
-			{
-				udt = self_module->db->find_udt(type_hash);
-				if (udt)
-					module = self_module->module;
-			}
-			if (!udt)
-			{
-				for (auto m : package_modules)
-				{
-					udt = m->db->find_udt(type_hash);
-					if (udt)
-					{
-						module = m->module;
-						break;
-					}
-				}
-			}
-		}
+		extra_global_db_count = dbs.size();
+		extra_global_dbs = dbs.data();
+		auto udt = find_udt(FLAME_HASH(type.c_str()));
+		extra_global_db_count = 0;
+		extra_global_dbs = nullptr;
 
 		if (!udt)
 		{
@@ -758,7 +668,7 @@ namespace flame
 			return nullptr;
 		}
 
-		auto n = new NodePrivate(this, id, udt, module);
+		auto n = new NodePrivate(this, id, udt, udt->db()->module());
 		nodes.emplace_back(n);
 		on_node_added(n);
 
@@ -809,14 +719,14 @@ namespace flame
 		case 2:
 			if (sp[0] != "*")
 			{
-				auto p = find_package(sp[0]);
+				auto p = find_subgraph(sp[0]);
 				if (p)
 					return p->bp->find_node(sp[1]);
 				return nullptr;
 			}
-			for (auto& p : ((BPPrivate*)this)->packages)
+			for (auto& s : ((BPPrivate*)this)->subgraphs)
 			{
-				auto n = p->bp->find_node(address);
+				auto n = s->bp->find_node(address);
 				if (n)
 					return n;
 			}
@@ -851,11 +761,11 @@ namespace flame
 
 	void BPPrivate::clear()
 	{
-		packages.clear();
+		libraries.clear();
 		nodes.clear();
 		input_exports.clear();
 		output_exports.clear();
-		modules.clear();
+		subgraphs.clear();
 		need_update_hierarchy = true;
 		update_list.clear();
 	}
@@ -875,8 +785,8 @@ namespace flame
 			n->order = 0xffffffff;
 			ns.push_back(n.get());
 		}
-		for (auto& p : scn->packages)
-			collect_nodes(p->bp, ns);
+		for (auto& s : scn->subgraphs)
+			collect_nodes(s->bp, ns);
 	}
 
 	static void add_to_hierarchy(BPPrivate* scn, NodePrivate* n, uint& order)
@@ -954,39 +864,39 @@ namespace flame
 		time += looper().delta_time;
 	}
 
-	const wchar_t* BP::Module::filename() const
+	const wchar_t* BP::Library::filename() const
 	{
-		return ((ModulePrivate*)this)->filename.c_str();
+		return ((LibraryPrivate*)this)->filename.c_str();
 	}
 
-	void* BP::Module::module() const
+	TypeinfoDatabase* BP::Library::db() const
 	{
-		return ((ModulePrivate*)this)->module;
+		return ((LibraryPrivate*)this)->db;
 	}
 
-	TypeinfoDatabase* BP::Module::db() const
+	BP* BP::SubGraph::scene() const
 	{
-		return ((ModulePrivate*)this)->db;
+		return ((SubGraphPrivate*)this)->scene;
 	}
 
-	BP* BP::Package::bp() const
+	const char* BP::SubGraph::id() const
 	{
-		return ((PackagePrivate*)this)->bp;
+		return ((SubGraphPrivate*)this)->id.c_str();
 	}
 
-	BP* BP::Package::scene() const
+	void BP::SubGraph::set_id(const char* id)
 	{
-		return ((PackagePrivate*)this)->scene;
+		((SubGraphPrivate*)this)->id = id;
 	}
 
-	const char* BP::Package::id() const
+	BP* BP::SubGraph::bp() const
 	{
-		return ((PackagePrivate*)this)->id.c_str();
+		return ((SubGraphPrivate*)this)->bp;
 	}
 
-	void BP::Package::set_id(const char* id)
+	BP::Node* BP::Slot::node() const
 	{
-		((PackagePrivate*)this)->id = id;
+		return ((SlotPrivate*)this)->node;
 	}
 
 	BP::Slot::IO BP::Slot::io() const
@@ -1019,11 +929,6 @@ namespace flame
 		return ((SlotPrivate*)this)->default_value.c_str();
 	}
 
-	BP::Node* BP::Slot::node() const
-	{
-		return ((SlotPrivate*)this)->node;
-	}
-
 	int BP::Slot::frame() const
 	{
 		return ((AttributeBase*)(((SlotPrivate*)this)->raw_data))->frame;
@@ -1034,14 +939,14 @@ namespace flame
 		((SlotPrivate*)this)->set_frame(frame);
 	}
 
-	void* BP::Slot::data() const
-	{
-		return (char*)((SlotPrivate*)this)->raw_data + sizeof(AttributeBase);
-	}
-
 	void* BP::Slot::raw_data() const
 	{
 		return ((SlotPrivate*)this)->raw_data;
+	}
+
+	void* BP::Slot::data() const
+	{
+		return (char*)((SlotPrivate*)this)->raw_data + sizeof(AttributeBase);
 	}
 
 	void BP::Slot::set_data(const void* d)
@@ -1129,64 +1034,59 @@ namespace flame
 		return ((BPPrivate*)this)->filename.c_str();
 	}
 
-	BP::Package* BP::package() const
+	BP::SubGraph* BP::scene() const
 	{
-		return ((BPPrivate*)this)->package;
+		return ((BPPrivate*)this)->scene;
 	}
 
-	uint BP::module_count() const
+	uint BP::library_count() const
 	{
-		return ((BPPrivate*)this)->modules.size();
+		return ((BPPrivate*)this)->libraries.size();
 	}
 
-	BP::Module* BP::module(uint idx) const
+	BP::Library* BP::library(uint idx) const
 	{
-		return ((BPPrivate*)this)->modules[idx].get();
+		return ((BPPrivate*)this)->libraries[idx].get();
 	}
 
-	BP::Module* BP::self_module() const
+	BP::Library* BP::add_library(const wchar_t* filename)
 	{
-		return ((BPPrivate*)this)->self_module.get();
+		return ((BPPrivate*)this)->add_library(filename);
 	}
 
-	BP::Module* BP::add_module(const wchar_t* filename)
+	void BP::remove_library(BP::Library* m)
 	{
-		return ((BPPrivate*)this)->add_module(filename);
+		((BPPrivate*)this)->remove_library((LibraryPrivate*)m);
 	}
 
-	void BP::remove_module(BP::Module* m)
+	BP::Library* BP::find_library(const wchar_t* filename) const
 	{
-		((BPPrivate*)this)->remove_module((ModulePrivate*)m);
+		return ((BPPrivate*)this)->find_library(filename);
 	}
 
-	BP::Module* BP::find_module(const wchar_t* filename) const
+	uint BP::subgraph_count() const
 	{
-		return ((BPPrivate*)this)->find_module(filename);
+		return ((BPPrivate*)this)->subgraphs.size();
 	}
 
-	uint BP::package_count() const
+	BP::SubGraph* BP::subgraph(uint idx) const
 	{
-		return ((BPPrivate*)this)->packages.size();
+		return ((BPPrivate*)this)->subgraphs[idx].get();
 	}
 
-	BP::Package* BP::package(uint idx) const
+	BP::SubGraph* BP::add_subgraph(const wchar_t* filename, const char* id)
 	{
-		return ((BPPrivate*)this)->packages[idx].get();
+		return ((BPPrivate*)this)->add_subgraph(filename, id);
 	}
 
-	BP::Package* BP::add_package(const wchar_t* filename, const char* id)
+	void BP::remove_subgraph(SubGraph* e)
 	{
-		return ((BPPrivate*)this)->add_package(filename, id);
+		((BPPrivate*)this)->remove_subgraph((SubGraphPrivate*)e);
 	}
 
-	void BP::remove_package(Package* e)
+	BP::SubGraph* BP::find_subgraph(const char* id) const
 	{
-		((BPPrivate*)this)->remove_package((PackagePrivate*)e);
-	}
-
-	BP::Package* BP::find_package(const char* id) const
-	{
-		return ((BPPrivate*)this)->find_package(id);
+		return ((BPPrivate*)this)->find_subgraph(id);
 	}
 
 	uint BP::db_count() const
@@ -1337,17 +1237,16 @@ namespace flame
 	BP* BP::create()
 	{
 		auto bp = new BPPrivate();
-		bp->add_module(L"flame_foundation.dll");
+		bp->add_library(L"flame_foundation.dll");
 		return bp;
 	}
 
-	BP* BP::create_from_file(const wchar_t* filename, bool no_compile, BP* root)
+	BP* BP::create_from_file(const wchar_t* filename, BP* root)
 	{
 		auto s_filename = w2s(filename);
 		auto path = std::filesystem::path(filename);
 		auto ppath = path.parent_path();
 		auto ppath_str = ppath.wstring();
-		auto ppath_slash_str = ppath_str.empty() ? L"" : ppath_str + L"/";
 
 		printf("begin to load bp: %s\n", s_filename.c_str());
 
@@ -1360,58 +1259,38 @@ namespace flame
 			return nullptr;
 		}
 
-		if (!no_compile) // delete pervious created random pdbs
-		{
-			auto p = ppath / L"build/Debug";
-			if (std::filesystem::exists(p))
-			{
-				std::vector<std::filesystem::path> pdbs;
-				for (std::filesystem::directory_iterator end, it(p); it != end; it++)
-				{
-					if (!std::filesystem::is_directory(it->status()))
-					{
-						auto ext = it->path().extension().wstring();
-						if (ext == L".pdb" && !is_file_occupied(it->path().wstring().c_str()))
-							pdbs.push_back(it->path());
-					}
-				}
-				for (auto& p : pdbs)
-					std::filesystem::remove(p);
-			}
-		}
-
-		struct ModuleDesc
+		struct LibraryDesc
 		{
 			std::wstring filename;
 			Vec2f pos;
 		};
-		std::vector<ModuleDesc> module_descs;
+		std::vector<LibraryDesc> library_descs;
 
-		for (auto n_module : file_root.child("modules"))
+		for (auto n_library : file_root.child("libraries"))
 		{
-			ModuleDesc module;
+			LibraryDesc library;
 
-			module.filename = s2w(n_module.attribute("filename").value());
-			module.pos = stof2(n_module.attribute("pos").value());
-			module_descs.push_back(module);
+			library.filename = s2w(n_library.attribute("filename").value());
+			library.pos = stof2(n_library.attribute("pos").value());
+			library_descs.push_back(library);
 		}
 
-		struct PackageDesc
+		struct SubGraphDesc
 		{
 			std::wstring filename;
 			std::string id;
 			Vec2f pos;
 		};
-		std::vector<PackageDesc> package_descs; 
+		std::vector<SubGraphDesc> subgraph_descs; 
 
-		for (auto n_package : file_root.child("packages"))
+		for (auto n_subgraph : file_root.child("packages"))
 		{
-			PackageDesc package;
+			SubGraphDesc subgraph;
 
-			package.filename = s2w(n_package.attribute("filename").value());
-			package.id = n_package.attribute("id").value();
-			package.pos = stof2(n_package.attribute("pos").value());
-			package_descs.push_back(package);
+			subgraph.filename = s2w(n_subgraph.attribute("filename").value());
+			subgraph.id = n_subgraph.attribute("id").value();
+			subgraph.pos = stof2(n_subgraph.attribute("pos").value());
+			subgraph_descs.push_back(subgraph);
 		}
 
 		struct DataDesc
@@ -1475,87 +1354,22 @@ namespace flame
 			bp->root = (BPPrivate*)root;
 		bp->filename = filename;
 
-		for (auto& m_d : module_descs)
+		for (auto& l_d : library_descs)
 		{
-			auto m = bp->add_module(m_d.filename);
-			if (m)
-				m->pos = m_d.pos;
+			auto l = bp->add_library(l_d.filename);
+			if (l)
+				l->pos = l_d.pos;
 		}
 
-		for (auto& p_d : package_descs)
+		for (auto& s_d : subgraph_descs)
 		{
-			auto p = bp->add_package(p_d.filename, p_d.id);
-			if (p)
-				p->pos = p_d.pos;
+			auto s = bp->add_subgraph(s_d.filename, s_d.id);
+			if (s)
+				s->pos = s_d.pos;
 		}
 
-		if (!no_compile)
-		{
-			auto cmakelists_path = ppath / L"CMakeLists.txt";
-			printf("generating cmakelists");
-
-			std::ofstream cmakelists(cmakelists_path);
-			cmakelists << "# THIS FILE IS AUTO GENERATED\n";
-			cmakelists << "cmake_minimum_required(VERSION 3.4)\n";
-			cmakelists << "project(bp)\n";
-			cmakelists << "add_definitions(-W0 -std:c++latest)\n";
-			cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
-			cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
-			auto print_link_library = [&](const std::filesystem::path& p) {
-				auto name = std::filesystem::path(p).replace_extension(L".lib").string();
-				std::replace(name.begin(), name.end(), '\\', '/');
-				cmakelists << "target_link_libraries(bp " << name << ")\n";
-			};
-			print_link_library(get_app_path().str() + L"\\flame_type.dll");
-			for (auto& m : bp->modules)
-				print_link_library(m->absolute_filename);
-			for (auto& m : bp->package_modules)
-				print_link_library(m->absolute_filename);
-			cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
-			srand(::time(0));
-			auto pdb_filename = std::to_string(::rand() % 100000);
-			cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " << pdb_filename << ")\n";
-			cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
-			auto print_typeinfogen_dependency = [&](ModulePrivate* m) {
-				auto name = m->absolute_filename.string();
-				std::replace(name.begin(), name.end(), '\\', '/');
-				cmakelists << "-m" << name << " ";
-			};
-			for (auto& m : bp->modules)
-				print_typeinfogen_dependency(m.get());
-			for (auto& m : bp->package_modules)
-				print_typeinfogen_dependency(m);
-			cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" << pdb_filename << ".pdb)\n";
-			cmakelists.close();
-
-			printf(" - done\n");
-
-			printf("cmaking:\n");
-			std::wstring cmake_cmd(L"cmake ");
-			if (ppath_str.empty())
-				cmake_cmd += L" -B build";
-			else
-				cmake_cmd += L"-s " + ppath_str + L" -B " + ppath_str + L"/build";
-			exec_and_redirect_to_std_output(nullptr, cmake_cmd.data());
-
-			printf("compiling:\n");
-			exec_and_redirect_to_std_output(nullptr, wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), (get_curr_path().str() + L"/" + ppath_slash_str).c_str()).data());
-		}
-
-		auto self_module_filename = ppath_slash_str + L"build/debug/bp.dll";
-		auto self_module = load_module(self_module_filename.c_str());
-		if (self_module)
-		{
-			auto m = new ModulePrivate;
-			m->filename = self_module_filename;
-			m->absolute_filename = std::filesystem::canonical(self_module_filename);
-			m->module = self_module;
-			m->db = TypeinfoDatabase::load(bp->dbs.size(), bp->dbs.data(), std::filesystem::path(self_module_filename).replace_extension(L".typeinfo").c_str());
-			bp->self_module.reset(m);
-
-			bp->collect_dbs();
-		}
-
+		extra_global_db_count = bp->dbs.size();
+		extra_global_dbs = bp->dbs.data();
 		for (auto& n_d : node_descs)
 		{
 			NodePrivate* n = nullptr;
@@ -1704,10 +1518,12 @@ namespace flame
 					auto type = input->type;
 					auto tag = type->tag();
 					if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
-						type->unserialize(bp->dbs, d_d.value, input->raw_data);
+						type->unserialize(d_d.value, input->raw_data);
 				}
 			}
 		}
+		extra_global_db_count = 0;
+		extra_global_dbs = nullptr;
 
 		for (auto& l_d : link_descs)
 		{
@@ -1741,58 +1557,34 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("BP");
 
-		auto n_modules = file_root.append_child("modules");
-		for (auto& m : bp->modules)
+		auto n_libraries = file_root.append_child("libraries");
+		for (auto& l : bp->libraries)
 		{
-			if (m->external)
-				continue;
-			auto n_module = n_modules.append_child("module");
-			n_module.append_attribute("filename").set_value(w2s(m->filename).c_str());
-			n_module.append_attribute("pos").set_value(to_string(m->pos, 2).c_str());
+			auto n_module = n_libraries.append_child("library");
+			n_module.append_attribute("filename").set_value(w2s(l->filename).c_str());
+			n_module.append_attribute("pos").set_value(to_string(l->pos, 2).c_str());
 		}
 
-		if (!bp->packages.empty())
+		if (!bp->subgraphs.empty())
 		{
-			auto n_packages = file_root.append_child("packages");
-			for (auto& p : bp->packages)
+			auto n_packages = file_root.append_child("subgraphs");
+			for (auto& s : bp->subgraphs)
 			{
-				if (p->external)
-					continue;
-
-				auto n_import = n_packages.append_child("package");
-				n_import.append_attribute("filename").set_value(w2s(p->filename).c_str());
-				n_import.append_attribute("id").set_value(p->id.c_str());
-				n_import.append_attribute("pos").set_value(to_string(p->pos, 2).c_str());
+				auto n_subgraph = n_packages.append_child("subgraph");
+				n_subgraph.append_attribute("filename").set_value(w2s(s->filename).c_str());
+				n_subgraph.append_attribute("id").set_value(s->id.c_str());
+				n_subgraph.append_attribute("pos").set_value(to_string(s->pos, 2).c_str());
 			}
 		}
 
-		std::vector<Module*> skipped_modules;
-		for (auto& m : bp->modules)
-		{
-			if (m->external)
-				skipped_modules.push_back(m.get());
-		}
+		extra_global_db_count = bp->dbs.size();
+		extra_global_dbs = bp->dbs.data();
 		auto n_nodes = file_root.append_child("nodes");
 		for (auto& n : bp->nodes)
 		{
-			if (n->external)
+			if (n->used_by_editor)
 				continue;
-			auto skip = false;
 			auto udt = n->udt;
-			if (udt)
-			{
-				auto db = udt->db();
-				for (auto m : skipped_modules)
-				{
-					if (db == m->db())
-					{
-						skip = true;
-						break;
-					}
-				}
-			}
-			if (skip)
-				continue;
 
 			auto n_node = n_nodes.append_child("node");
 			n_node.append_attribute("type").set_value(n->type_name.c_str());
@@ -1808,46 +1600,48 @@ namespace flame
 				auto tag = type->tag();
 				if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
 				{
-					auto value_str = type->serialize(bp->dbs, input->raw_data, 2);
+					auto value_str = type->serialize(input->raw_data, 2);
 					if (value_str != input->default_value)
 					{
 						if (!n_datas)
 							n_datas = n_node.append_child("datas");
 						auto n_data = n_datas.append_child("data");
 						n_data.append_attribute("name").set_value(input->name.c_str());
-						n_data.append_attribute("value").set_value(type->serialize(bp->dbs, input->raw_data, 2).c_str());
+						n_data.append_attribute("value").set_value(type->serialize(input->raw_data, 2).c_str());
 					}
 				}
 			}
 		}
+		extra_global_db_count = 0;
+		extra_global_dbs = nullptr;
 
 		auto n_links = file_root.append_child("links");
-		for (auto& p : bp->packages)
+		for (auto& s : bp->subgraphs)
 		{
-			for (auto& in : p->bp->input_exports)
+			for (auto& in : s->bp->input_exports)
 			{
 				auto out = in->links[0];
 				if (out)
 				{
 					auto n_link = n_links.append_child("link");
 					auto out_bp = out->node->scene;
-					n_link.append_attribute("out").set_value(((out_bp != bp ? out_bp->package->id + "." : "") + out->get_address().v).c_str());
-					n_link.append_attribute("in").set_value((p->id + "." + in->get_address().v).c_str());
+					n_link.append_attribute("out").set_value(((out_bp != bp ? out_bp->scene->id + "." : "") + out->get_address().v).c_str());
+					n_link.append_attribute("in").set_value((s->id + "." + in->get_address().v).c_str());
 				}
 			}
 		}
 		for (auto& n : bp->nodes)
 		{
-			if (n->external)
+			if (n->used_by_editor)
 				continue;
 			for (auto& in : n->inputs)
 			{
 				auto out = in->links[0];
-				if (out && !out->node->external)
+				if (out && !out->node->used_by_editor)
 				{
 					auto n_link = n_links.append_child("link");
 					auto out_bp = out->node->scene;
-					n_link.append_attribute("out").set_value(((out_bp != bp ? out_bp->package->id + "." : "") + out->get_address().v).c_str());
+					n_link.append_attribute("out").set_value(((out_bp != bp ? out_bp->scene->id + "." : "") + out->get_address().v).c_str());
 					n_link.append_attribute("in").set_value(in->get_address().v);
 				}
 			}

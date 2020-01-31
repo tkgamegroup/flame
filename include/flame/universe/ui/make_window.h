@@ -19,7 +19,7 @@ namespace flame
 			e->add_child(e_btf);
 			e_btf->add_component(cElement::create());
 			auto cer = cEventReceiver::create();
-			cer->pass = (Entity*)FLAME_INVALID_POINTER;
+			cer->pass = (Entity*)INVALID_POINTER;
 			e_btf->add_component(cer);
 			auto ca = cAligner::create();
 			ca->width_policy_ = SizeFitParent;

@@ -19,8 +19,6 @@
 #include <unordered_map>
 #include <memory>
 
-#define FLAME_INVALID_POINTER ((void*)0x7fffffffffffffff)
-
 namespace flame
 {
 	typedef char*				charptr;
@@ -32,6 +30,8 @@ namespace flame
 	typedef long long			longlong;
 	typedef unsigned long long  ulonglong;
 	typedef void*				voidptr;
+
+	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
 
 	template<class T>
 	constexpr uint array_size(const T& a)
@@ -88,6 +88,10 @@ namespace flame
 	FLAME_TYPE_EXPORTS void* f_malloc(uint size);
 	FLAME_TYPE_EXPORTS void* f_realloc(void* p, uint size);
 	FLAME_TYPE_EXPORTS void f_free(void* p);
+
+	FLAME_TYPE_EXPORTS void* load_module(const wchar_t* module_name);
+	FLAME_TYPE_EXPORTS void* get_module_func(void* module, const char* name);
+	FLAME_TYPE_EXPORTS void free_module(void* library);
 
 	template<class F>
 	void* f2v(F f) // function to void pointer
@@ -171,6 +175,11 @@ namespace flame
 			}
 		};
 		return f2v(&Wrap::dtor);
+	}
+
+	inline bool not_null_equal(void* a, void* b)
+	{
+		return a && a == b;
 	}
 
 	template<class T>
@@ -550,8 +559,8 @@ namespace flame
 		FLAME_TYPE_EXPORTS static const TypeInfo* get(TypeTag$ tag, const char* base_name, bool is_attribute = false, bool is_array = false);
 		FLAME_TYPE_EXPORTS static const TypeInfo* get(const char* str);
 
-		inline std::string serialize(const std::vector<TypeinfoDatabase*>& dbs, const void* src, int precision) const;
-		inline void unserialize(const std::vector<TypeinfoDatabase*>& dbs, const std::string& src, void* dst) const;
+		inline std::string serialize(const void* src, int precision) const;
+		inline void unserialize(const std::string& src, void* dst) const;
 		inline void copy_from(const void* src, void* dst) const;
 	};
 
@@ -639,6 +648,13 @@ namespace flame
 
 	struct TypeinfoDatabase
 	{
+		enum LoadFlag
+		{
+			LoadAndAddToGlobal = 1 << 0,
+			LoadWithModule = 1 << 1
+		};
+
+		FLAME_TYPE_EXPORTS void* module() const;
 		FLAME_TYPE_EXPORTS const wchar_t* module_name() const;
 
 		FLAME_TYPE_EXPORTS Array<EnumInfo*> get_enums();
@@ -653,16 +669,28 @@ namespace flame
 		FLAME_TYPE_EXPORTS UdtInfo* find_udt(uint name_hash);
 		FLAME_TYPE_EXPORTS UdtInfo* add_udt(const TypeInfo* type, uint size);
 
-		FLAME_TYPE_EXPORTS static TypeinfoDatabase* collect(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* module_filename, const wchar_t* pdb_filename = nullptr);
-		FLAME_TYPE_EXPORTS static TypeinfoDatabase* load(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* typeinfo_filename);
-		FLAME_TYPE_EXPORTS static void save(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, TypeinfoDatabase* db);
+		FLAME_TYPE_EXPORTS static void collect(const wchar_t* module_filename, const wchar_t* pdb_filename = nullptr);
+		FLAME_TYPE_EXPORTS static TypeinfoDatabase* load(const wchar_t* typeinfo_filename, LoadFlag flags);
 		FLAME_TYPE_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};
 
-	inline EnumInfo* find_enum(const std::vector<TypeinfoDatabase*>& dbs, uint name_hash)
+	FLAME_TYPE_EXPORTS uint global_db_count();
+	FLAME_TYPE_EXPORTS TypeinfoDatabase* global_db(uint idx);
+	FLAME_TYPE_EXPORTS extern uint extra_global_db_count;
+	FLAME_TYPE_EXPORTS extern TypeinfoDatabase* const* extra_global_dbs;
+
+	inline EnumInfo* find_enum(uint name_hash)
 	{
-		for (auto db : dbs)
+		for (auto i = 0; i < global_db_count(); i++)
 		{
+			auto db = global_db(i);
+			auto info = db->find_enum(name_hash);
+			if (info)
+				return info;
+		}
+		for (auto i = 0; i < extra_global_db_count; i++)
+		{
+			auto db = extra_global_dbs[i];
 			auto info = db->find_enum(name_hash);
 			if (info)
 				return info;
@@ -670,10 +698,18 @@ namespace flame
 		return nullptr;
 	}
 
-	inline UdtInfo* find_udt(const std::vector<TypeinfoDatabase*>& dbs, uint name_hash)
+	inline UdtInfo* find_udt(uint name_hash)
 	{
-		for (auto db : dbs)
+		for (auto i = 0; i < global_db_count(); i++)
 		{
+			auto db = global_db(i);
+			auto info = db->find_udt(name_hash);
+			if (info)
+				return info;
+		}
+		for (auto i = 0; i < extra_global_db_count; i++)
+		{
+			auto db = extra_global_dbs[i];
 			auto info = db->find_udt(name_hash);
 			if (info)
 				return info;
@@ -681,10 +717,18 @@ namespace flame
 		return nullptr;
 	}
 
-	inline FunctionInfo* find_function(const std::vector<TypeinfoDatabase*>& dbs, uint name_hash)
+	inline FunctionInfo* find_function(uint name_hash)
 	{
-		for (auto db : dbs)
+		for (auto i = 0; i < global_db_count(); i++)
 		{
+			auto db = global_db(i);
+			auto info = db->find_function(name_hash);
+			if (info)
+				return info;
+		}
+		for (auto i = 0; i < extra_global_db_count; i++)
+		{
+			auto db = extra_global_dbs[i];
 			auto info = db->find_function(name_hash);
 			if (info)
 				return info;

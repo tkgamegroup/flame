@@ -23,6 +23,21 @@ namespace flame
 		free(p);
 	}
 
+	void* load_module(const wchar_t* module_name)
+	{
+		return LoadLibraryW(module_name);
+	}
+
+	void* get_module_func(void* module, const char* name)
+	{
+		return GetProcAddress((HMODULE)module, name);
+	}
+
+	void free_module(void* library)
+	{
+		FreeLibrary((HMODULE)library);
+	}
+
 	struct TypeInfoPrivate : TypeInfo
 	{
 		TypeTag$ tag;
@@ -788,12 +803,43 @@ namespace flame
 
 	struct TypeinfoDatabasePrivate : TypeinfoDatabase
 	{
+		void* module;
 		std::wstring module_name;
 
 		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
 		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
 		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
+
+		TypeinfoDatabasePrivate()
+		{
+			module = nullptr;
+		}
+
+		~TypeinfoDatabasePrivate()
+		{
+			if (module)
+				free_module(module);
+		}
 	};
+
+	static std::vector<TypeinfoDatabasePrivate*> global_dbs;
+	uint extra_global_db_count;
+	TypeinfoDatabase* const* extra_global_dbs;
+
+	uint global_db_count()
+	{
+		return global_dbs.size();
+	}
+
+	TypeinfoDatabase* global_db(uint idx)
+	{
+		return global_dbs[idx];
+	}
+
+	void* TypeinfoDatabase::module() const
+	{
+		return ((TypeinfoDatabasePrivate*)this)->module;
+	}
 
 	const wchar_t* TypeinfoDatabase::module_name() const
 	{
@@ -892,8 +938,10 @@ namespace flame
 		inited = true;
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::collect(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* module_filename, const wchar_t* _pdb_filename)
+	void TypeinfoDatabase::collect(const wchar_t* module_filename, const wchar_t* _pdb_filename)
 	{
+		auto module_filename_path = std::filesystem::path(module_filename);
+
 		com_init();
 
 		CComPtr<IDiaDataSource> dia_source;
@@ -901,40 +949,38 @@ namespace flame
 		{
 			printf("dia not found\n");
 			assert(0);
-			return nullptr;
+			return;
 		}
 		std::wstring pdb_filename;
 		if (_pdb_filename)
 			pdb_filename = _pdb_filename;
 		else
-			pdb_filename = std::filesystem::path(module_filename).replace_extension(L".pdb");
+			pdb_filename = module_filename_path.replace_extension(L".pdb");
 		if (FAILED(dia_source->loadDataFromPdb(pdb_filename.c_str())))
 		{
 			printf("pdb failed to open: %s\n", w2s(pdb_filename).c_str());
 			assert(0);
-			return nullptr;
+			return;
 		}
 		CComPtr<IDiaSession> session;
 		if (FAILED(dia_source->openSession(&session)))
 		{
 			printf("session failed to open\n");
 			assert(0);
-			return nullptr;
+			return;
 		}
 		CComPtr<IDiaSymbol> global;
 		if (FAILED(session->get_globalScope(&global)))
 		{
 			printf("failed to get global\n");
 			assert(0);
-			return nullptr;
+			return;
 		}
 
 		auto db = new TypeinfoDatabasePrivate;
 		db->module_name = module_filename;
-		std::vector<TypeinfoDatabase*> dbs(owned_dbs_count);
-		for (auto i = 0; i < owned_dbs_count; i++)
-			dbs[i] = owned_dbs[i];
-		dbs.push_back(db);
+		extra_global_db_count = 1;
+		extra_global_dbs = (TypeinfoDatabase**)&db;
 
 		LONG l;
 		ULONG ul;
@@ -954,7 +1000,7 @@ namespace flame
 			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
 			{
 				auto hash = FLAME_HASH(name.c_str());
-				if (!::flame::find_enum(dbs, hash))
+				if (!::flame::find_enum(hash))
 				{
 					auto e = db->add_enum(name.c_str());
 
@@ -994,7 +1040,7 @@ namespace flame
 			if (pass_prefix && pass_$ && udt_name.find("(unnamed") == std::string::npos && udt_name.find("(lambda_") == std::string::npos)
 			{
 				auto udt_hash = TypeInfo::get_hash(TypeData, udt_name.c_str());
-				if (!::flame::find_udt(dbs, udt_hash))
+				if (!::flame::find_udt(udt_hash))
 				{
 					_udt->get_length(&ull);
 					auto u = (UdtInfoPrivate*)db->add_udt(TypeInfo::get(TypeData, udt_name.c_str()), ull);
@@ -1086,7 +1132,7 @@ namespace flame
 								auto tag = type->tag;
 								if (!type->is_array && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData) &&
 									i->decoration.find('o') == std::string::npos)
-									i->default_value = type->serialize(dbs, (char*)obj + i->offset, 1);
+									i->default_value = type->serialize((char*)obj + i->offset, 1);
 							}
 							if (dtor)
 								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
@@ -1114,7 +1160,7 @@ namespace flame
 			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
 			{
 				auto hash = FLAME_HASH(name.c_str());
-				if (!::flame::find_function(dbs, hash))
+				if (!::flame::find_function(hash))
 				{
 					FunctionDesc desc;
 					symbol_to_function(_function, desc);
@@ -1131,81 +1177,8 @@ namespace flame
 		}
 		_functions->Release();
 
-		return db;
-	}
-
-	TypeinfoDatabase* TypeinfoDatabase::load(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, const wchar_t* typeinfo_filename)
-	{
-		pugi::xml_document file;
-		pugi::xml_node file_root;
-		if (!file.load_file(typeinfo_filename) || (file_root = file.first_child()).name() != std::string("typeinfo"))
-		{
-			assert(0);
-			return nullptr;
-		}
-
-		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = std::filesystem::path(typeinfo_filename).replace_extension(L".dll");
-		std::vector<TypeinfoDatabase*> dbs(owned_dbs_count);
-		for (auto i = 0; i < owned_dbs_count; i++)
-			dbs[i] = owned_dbs[i];
-		dbs.push_back(db);
-
-		for (auto n_enum : file_root.child("enums"))
-		{
-			auto e = db->add_enum(n_enum.attribute("name").value());
-
-			for (auto n_item : n_enum.child("items"))
-				e->add_item(n_item.attribute("name").value(), n_item.attribute("value").as_int());
-		}
-
-		for (auto n_function : file_root.child("functions"))
-		{
-			auto f = db->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
-			for (auto n_parameter : n_function.child("parameters"))
-				f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
-		}
-
-		auto this_module = LoadLibraryW(L"flame_foundation.dll");
-		TypeinfoDatabase* this_db = nullptr;
-		for (auto db : dbs)
-		{
-			if (std::filesystem::path(db->module_name()).filename() == L"flame_foundation.dll")
-			{
-				this_db = db;
-				break;
-			}
-		}
-		assert(this_module && this_db);
-		for (auto n_udt : file_root.child("udts"))
-		{
-			auto u = (UdtInfoPrivate*)db->add_udt(TypeInfo::get(n_udt.attribute("name").value()), n_udt.attribute("size").as_uint());
-
-			for (auto n_variable : n_udt.child("variables"))
-			{
-				auto v = (VariableInfoPrivate*)u->add_variable(TypeInfo::get(n_variable.attribute("type").value()), n_variable.attribute("name").value(),
-					n_variable.attribute("decoration").value(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
-				v->default_value = n_variable.attribute("default_value").value();
-			}
-
-			for (auto n_function : n_udt.child("functions"))
-			{
-				auto f = u->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
-				for (auto n_parameter : n_function.child("parameters"))
-					f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
-			}
-		}
-		FreeLibrary(this_module);
-
-		return db;
-	}
-
-	void TypeinfoDatabase::save(uint owned_dbs_count, TypeinfoDatabase* const* owned_dbs, TypeinfoDatabase* _db)
-	{
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");
-
-		auto db = (TypeinfoDatabasePrivate*)_db;
 
 		auto n_enums = file_root.append_child("enums");
 		for (auto& _e : db->enums)
@@ -1280,7 +1253,72 @@ namespace flame
 			}
 		}
 
-		file.save_file(std::filesystem::path(db->module_name).replace_extension(L".typeinfo").c_str());
+		file.save_file(module_filename_path.replace_extension(L".typeinfo").c_str());
+
+		extra_global_db_count = 0;
+		extra_global_dbs = nullptr;
+
+		TypeinfoDatabase::destroy(db);
+	}
+
+	TypeinfoDatabase* TypeinfoDatabase::load(const wchar_t* typeinfo_filename, LoadFlag flags)
+	{
+		pugi::xml_document file;
+		pugi::xml_node file_root;
+		if (!file.load_file(typeinfo_filename) || (file_root = file.first_child()).name() != std::string("typeinfo"))
+		{
+			assert(0);
+			return nullptr;
+		}
+
+		auto db = new TypeinfoDatabasePrivate;
+		db->module_name = std::filesystem::path(typeinfo_filename).replace_extension(L".dll");
+		extra_global_db_count = 1;
+		extra_global_dbs = (TypeinfoDatabase**)&db;
+
+		for (auto n_enum : file_root.child("enums"))
+		{
+			auto e = db->add_enum(n_enum.attribute("name").value());
+
+			for (auto n_item : n_enum.child("items"))
+				e->add_item(n_item.attribute("name").value(), n_item.attribute("value").as_int());
+		}
+
+		for (auto n_function : file_root.child("functions"))
+		{
+			auto f = db->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
+			for (auto n_parameter : n_function.child("parameters"))
+				f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
+		}
+
+		for (auto n_udt : file_root.child("udts"))
+		{
+			auto u = (UdtInfoPrivate*)db->add_udt(TypeInfo::get(n_udt.attribute("name").value()), n_udt.attribute("size").as_uint());
+
+			for (auto n_variable : n_udt.child("variables"))
+			{
+				auto v = (VariableInfoPrivate*)u->add_variable(TypeInfo::get(n_variable.attribute("type").value()), n_variable.attribute("name").value(),
+					n_variable.attribute("decoration").value(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
+				v->default_value = n_variable.attribute("default_value").value();
+			}
+
+			for (auto n_function : n_udt.child("functions"))
+			{
+				auto f = u->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
+				for (auto n_parameter : n_function.child("parameters"))
+					f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
+			}
+		}
+
+		extra_global_db_count = 0;
+		extra_global_dbs = nullptr;
+
+		if (flags | LoadWithModule)
+			db->module = load_module(db->module_name.c_str());
+		if (flags | LoadAndAddToGlobal)
+			global_dbs.push_back(db);
+
+		return db;
 	}
 
 	void TypeinfoDatabase::destroy(TypeinfoDatabase* db)

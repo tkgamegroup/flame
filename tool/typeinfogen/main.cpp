@@ -35,12 +35,10 @@ int main(int argc, char **args)
 	{
 		printf("generating typeinfo");
 
-		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& d : modules)
-			dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), std::filesystem::path(d).replace_extension(L".typeinfo").c_str()));
+			TypeinfoDatabase::load(std::filesystem::path(d).replace_extension(L".typeinfo").c_str(), TypeinfoDatabase::LoadAndAddToGlobal);
 
-		auto db = TypeinfoDatabase::collect(dbs.size(), dbs.data(), filename.c_str(), !pdb_filename.empty() ? pdb_filename.c_str() : nullptr);
-		TypeinfoDatabase::save(dbs.size(), dbs.data(), db);
+		TypeinfoDatabase::collect(filename.c_str(), !pdb_filename.empty() ? pdb_filename.c_str() : nullptr);
 
 		printf(" - done\n");
 	}

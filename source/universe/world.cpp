@@ -100,7 +100,7 @@ namespace flame
 		delete (WorldPrivate*)w;
 	}
 
-	void load_res(World* w, uint db_count, TypeinfoDatabase* const* _dbs, const wchar_t* filename)
+	void load_res(World* w, const wchar_t* filename)
 	{
 		pugi::xml_document file;
 		pugi::xml_node file_root;
@@ -110,13 +110,9 @@ namespace flame
 		auto last_curr_path = get_curr_path();
 		set_curr_path(std::filesystem::path(filename).parent_path().c_str());
 
-		std::vector<TypeinfoDatabase*> dbs(db_count);
-		for (auto i = 0; i < db_count; i++)
-			dbs[i] = _dbs[i];
-
 		for (auto n_o : file_root)
 		{
-			auto udt = find_udt(dbs, FLAME_HASH((std::string("D#Serializer_") + n_o.name()).c_str()));
+			auto udt = find_udt(FLAME_HASH((std::string("D#Serializer_") + n_o.name()).c_str()));
 			assert(udt);
 			auto dummy = malloc(udt->size());
 			auto module = load_module(udt->db()->module_name());
@@ -128,7 +124,7 @@ namespace flame
 			for (auto n_v : n_o)
 			{
 				auto v = udt->find_variable(n_v.name());
-				v->type()->unserialize(dbs, n_v.attribute("v").value(), (char*)dummy + v->offset());
+				v->type()->unserialize(n_v.attribute("v").value(), (char*)dummy + v->offset());
 			}
 			void* object;
 			{
