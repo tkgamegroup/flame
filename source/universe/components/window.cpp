@@ -86,14 +86,17 @@ namespace flame
 					auto thiz = *(cBringToFrontPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						looper().add_event([](void* c) {
-							auto p = (*(Entity**)c)->parent();
-							auto pp = p->parent();
-							auto idx = pp->child_count() - 1;
-							if (idx == 0)
-								return;
-							pp->reposition_child(p, idx);
-						}, new_mail_p(thiz->entity));
+						if (!ui::get_top_layer(thiz->entity->parent()->parent(), true))
+						{
+							looper().add_event([](void* c) {
+								auto p = (*(Entity**)c)->parent();
+								auto pp = p->parent();
+								auto idx = pp->child_count() - 1;
+								if (idx == 0)
+									return;
+								pp->reposition_child(p, idx);
+							}, new_mail_p(thiz->entity));
+						}
 					}
 				}, new_mail_p(this));
 			}

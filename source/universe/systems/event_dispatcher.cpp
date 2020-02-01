@@ -398,7 +398,8 @@ namespace flame
 					}
 				}
 			}
-			pass = (EntityPrivate*)er->pass;
+			if (!ban)
+				pass = (EntityPrivate*)er->pass;
 		}
 	}
 

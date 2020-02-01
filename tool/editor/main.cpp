@@ -61,18 +61,26 @@ void App::create()
 	ui::set_current_root(root);
 	ui::push_parent(root);
 
-		ui::e_begin_menu_bar();
-			ui::e_begin_menubar_menu(L"Window");
-				ui::e_menu_item(L"Resource Explorer", [](void* c) {
-				}, new_mail_p(this));
-			ui::e_end_menubar_menu();
-		ui::e_end_menu_bar();
+		ui::e_begin_layout(LayoutVertical, 0.f, false, false);
+		ui::c_aligner(SizeFitParent, SizeFitParent);
 
-		ui::e_text(L"");
-		ui::c_aligner(AlignxLeft, AlignyBottom);
-		add_fps_listener([](void* c, uint fps) {
-			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-		}, new_mail_p(ui::current_entity()->get_component(cText)));
+			ui::e_begin_menu_bar();
+				ui::e_begin_menubar_menu(L"Window");
+					ui::e_menu_item(L"Resource Explorer", [](void* c) {
+					}, new_mail_p(this));
+				ui::e_end_menubar_menu();
+			ui::e_end_menu_bar();
+
+			ui::e_begin_layout();
+			ui::c_aligner(SizeFitParent, SizeFitParent);
+			ui::e_end_layout();
+
+			ui::e_text(L"");
+			add_fps_listener([](void* c, uint fps) {
+				(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+			}, new_mail_p(ui::current_entity()->get_component(cText)));
+
+		ui::e_end_layout();
 
 	ui::pop_parent();
 
