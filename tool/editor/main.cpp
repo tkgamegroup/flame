@@ -27,6 +27,10 @@ void App::create()
 	for (auto i = 0; i < sc_cbs.s; i++)
 		sc_cbs.v[i] = Commandbuffer::create(d->gcp);
 	render_finished = Semaphore::create(d);
+	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
+	TypeinfoDatabase::load(L"editor.typeinfo", true, true);
 
 	wchar_t* fonts[] = { 
 		L"c:/windows/fonts/msyh.ttc", 
@@ -71,10 +75,6 @@ void App::create()
 		}, new_mail_p(ui::current_entity()->get_component(cText)));
 
 	ui::pop_parent();
-
-	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_foundation.typeinfo"));
-	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_graphics.typeinfo"));
-	dbs.push_back(TypeinfoDatabase::load(dbs.size(), dbs.data(), L"flame_universe.typeinfo"));
 
 	open_resource_explorer(L"..", Vec2f(5, 724.f));
 }

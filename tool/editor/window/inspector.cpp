@@ -136,7 +136,7 @@ struct cInspectorPrivate : cInspector
 	{
 		auto selected = editor->selected;
 
-		e_layout->remove_child((Entity*)FLAME_INVALID_POINTER);
+		e_layout->remove_child((Entity*)INVALID_POINTER);
 		ui::push_parent(e_layout);
 		if (!selected)
 			ui::e_text(L"Nothing Selected");
@@ -174,7 +174,7 @@ struct cInspectorPrivate : cInspector
 			{
 				auto component = components.v[i];
 
-				auto udt = find_udt(app.dbs, FLAME_HASH((std::string("D#Serializer_") + component->name).c_str()));
+				auto udt = find_udt(FLAME_HASH((std::string("D#Serializer_") + component->name).c_str()));
 
 				auto e_component = ui::e_begin_layout(LayoutVertical, 2.f);
 				{
@@ -253,7 +253,7 @@ struct cInspectorPrivate : cInspector
 					{
 					case TypeEnumSingle:
 					{
-						auto info = find_enum(app.dbs, base_hash);
+						auto info = find_enum(base_hash);
 
 						create_enum_combobox(info, 120.f);
 
@@ -283,7 +283,7 @@ struct cInspectorPrivate : cInspector
 						break;
 					case TypeEnumMulti:
 					{
-						auto info = find_enum(app.dbs, base_hash);
+						auto info = find_enum(base_hash);
 
 						create_enum_checkboxs(info);
 						for (auto k = 0; k < info->item_count(); k++)
@@ -454,8 +454,9 @@ struct cInspectorPrivate : cInspector
 			{
 				FLAME_SAL(prefix, "Serializer_c");
 				std::vector<UdtInfo*> all_udts;
-				for (auto db : app.dbs)
+				for (auto i = 0; i < global_db_count(); i++)
 				{
+					auto db = global_db(i);
 					auto udts = db->get_udts();
 					for (auto i = 0; i < udts.s; i++)
 					{

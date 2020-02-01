@@ -8,6 +8,7 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
+#include <flame/universe/ui/menu_utils.h>
 
 namespace flame
 {
@@ -77,27 +78,6 @@ namespace flame
 			if (!entity->dying_)
 				event_receiver->mouse_listeners.remove(mouse_listener);
 			Entity::destroy(items);
-		}
-
-		bool can_open(KeyState action, MouseKey key)
-		{
-			if (mode == ModeContext)
-			{
-				if ((is_mouse_down(action, key, true) && key == Mouse_Right))
-					return true;
-			}
-			else
-			{
-				if ((is_mouse_down(action, key, true) && key == Mouse_Left))
-					return true;
-				else if (is_mouse_move(action, key))
-				{
-					auto l = ui::get_top_layer(root);
-					if (l && l->name_hash() == FLAME_CHASH("layer_menu"))
-						return true;
-				}
-			}
-			return false;
 		}
 
 		void close()
@@ -185,7 +165,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMenuPrivate**)c;
-					if (thiz->can_open(action, key))
+					if (ui::is_menu_can_open(thiz, action, key))
 						thiz->open((Vec2f)pos);
 				}, new_mail_p(this));
 			}

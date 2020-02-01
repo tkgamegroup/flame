@@ -310,14 +310,11 @@ namespace flame
 
 		update_addr = nullptr;
 		{
-			auto f1 = udt->find_function("update");
-			auto f2 = udt->find_function("active_update");
-			assert((f1 || f2) && (!f1 || !f2));
-			if (f2)
+			auto f = only_not_null(udt->find_function("update"), udt->find_function("active_update"));
+			assert(f.first && check_function(f.first, "D#void", { "P#BP" }));
+			if (f.second == 1)
 				active = true;
-			auto f = f1 ? f1 : f2;
-			assert(check_function(f, "D#void", { "P#BP" }));
-			update_addr = (char*)module + (uint)f->rva();
+			update_addr = (char*)module + (uint)f.first->rva();
 		}
 		assert(update_addr);
 
@@ -1094,9 +1091,9 @@ namespace flame
 		return ((BPPrivate*)this)->dbs.size();
 	}
 
-	TypeinfoDatabase* BP::db(uint idx) const
+	TypeinfoDatabase* const* BP::dbs() const
 	{
-		return ((BPPrivate*)this)->dbs[idx];
+		return ((BPPrivate*)this)->dbs.data();
 	}
 
 	uint BP::node_count() const

@@ -20,7 +20,8 @@
 #include <flame/universe/components/window.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
-#include <flame/universe/ui/make_window.h>
+#include <flame/universe/ui/menu_utils.h>
+#include <flame/universe/ui/window_utils.h>
 
 namespace flame
 {

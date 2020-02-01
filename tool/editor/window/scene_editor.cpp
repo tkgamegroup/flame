@@ -46,7 +46,7 @@ struct cSceneEditorPrivate : cSceneEditor
 		filename = _filename;
 		if (prefab)
 			e_scene->remove_child(prefab);
-		prefab = Entity::create_from_file(e_scene->world_, app.dbs.size(), app.dbs.data(), filename.c_str());
+		prefab = Entity::create_from_file(e_scene->world_, filename.c_str());
 		e_scene->add_child(prefab);
 	}
 
@@ -193,7 +193,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	auto e_overlayer = ui::e_empty();
 	ui::c_element();
 	auto c_event_receiver = ui::c_event_receiver();
-	c_event_receiver->pass = (Entity*)FLAME_INVALID_POINTER;
+	c_event_receiver->pass = (Entity*)INVALID_POINTER;
 	c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 		auto editor = *(cSceneEditorPrivate**)c;
 		if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -230,7 +230,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 		c_overlayer->editor = c_editor;
 		e_overlayer->add_component(c_overlayer);
 
-		auto udt_element = find_udt(app.dbs, FLAME_CHASH("Serializer_cElement"));
+		auto udt_element = find_udt(FLAME_CHASH("Serializer_cElement"));
 		assert(udt_element);
 		auto element_pos_offset = udt_element->find_variable("pos")->offset();
 

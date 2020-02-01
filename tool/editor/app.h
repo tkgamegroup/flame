@@ -47,8 +47,6 @@ struct App
 	Entity* root;
 	cElement* c_element_root;
 
-	std::vector<TypeinfoDatabase*> dbs;
-
 	void create();
 	void run();
 };

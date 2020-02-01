@@ -129,7 +129,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS SubGraph* find_subgraph(const char* id) const;
 
 		FLAME_FOUNDATION_EXPORTS uint db_count() const;
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db(uint idx) const;
+		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* const* dbs() const;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;

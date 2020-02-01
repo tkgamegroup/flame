@@ -183,6 +183,16 @@ namespace flame
 	}
 
 	template<class T>
+	std::pair<T*, uchar> only_not_null(T* a, T* b)
+	{
+		if (a && !b)
+			return std::make_pair(a, 0);
+		if (!a && b)
+			return std::make_pair(b, 1);
+		return std::make_pair(nullptr, 0);
+	}
+
+	template<class T>
 	bool is_one_of(T v, const std::initializer_list<T>& l)
 	{
 		for (auto& i : l)

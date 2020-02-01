@@ -151,7 +151,7 @@ struct cResourceExplorer : Component
 			auto address_bar = thiz->address_bar;
 			auto list = thiz->e_list;
 
-			address_bar->remove_child((Entity*)FLAME_INVALID_POINTER);
+			address_bar->remove_child((Entity*)INVALID_POINTER);
 			ui::push_parent(address_bar);
 			ui::push_style_4c(ui::ButtonColorNormal, Vec4c(0));
 
@@ -218,7 +218,7 @@ struct cResourceExplorer : Component
 			looper().clear_events(FLAME_CHASH("update thumbnail"));
 
 			list->get_component(cList)->set_selected(nullptr, false);
-			list->remove_child((Entity*)FLAME_INVALID_POINTER);
+			list->remove_child((Entity*)INVALID_POINTER);
 
 			std::vector<std::filesystem::path> dirs;
 			std::vector<std::filesystem::path> files;
@@ -309,14 +309,8 @@ struct cResourceExplorer : Component
 					ui::e_menu_item(L"Open", [](void* c) {
 						auto& capture = *(Capture*)c;
 						capture.e->selected = capture.p;
-						open_blueprint_editor(capture.e->selected, false, Vec2f(4.f, 10.f));
+						open_blueprint_editor(capture.e->selected, Vec2f(4.f, 10.f));
 					}, new_mail(&capture));
-					ui::e_menu_item(L"Open (No Compile)", [](void* c) {
-						auto& capture = *(Capture*)c;
-						capture.e->selected = capture.p;
-						open_blueprint_editor(capture.e->selected, true, Vec2f(4.f, 10.f));
-					}, new_mail(&capture));
-					ui::e_end_popup_menu();
 				}
 				ui::pop_parent();
 			}
@@ -480,7 +474,7 @@ void open_resource_explorer(const std::wstring& path, const Vec2f& pos)
 			if (ok)
 			{
 				auto e = Entity::create();
-				Entity::save_to_file(app.dbs.size(), app.dbs.data(), e, (explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
+				Entity::save_to_file(e, (explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
 				Entity::destroy(e);
 			}
 		}, new_mail_p(explorer));

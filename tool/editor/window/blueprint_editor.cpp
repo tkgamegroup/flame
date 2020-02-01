@@ -122,8 +122,8 @@ struct cBPEditor : Component
 	enum SelType
 	{
 		SelAir,
-		SelModule,
-		SelPackage,
+		SelLibrary,
+		SelSubGraph,
 		SelNode,
 		SelSlot,
 		SelLink
@@ -131,11 +131,11 @@ struct cBPEditor : Component
 	union
 	{
 		void* plain;
-		BP::Module* m;
-		BP::Package* p;
-		BP::Node* n;
-		BP::Slot* s;
-		BP::Slot* l;
+		BP::Library* library;
+		BP::SubGraph* subgraph;
+		BP::Node* node;
+		BP::Slot* slot;
+		BP::Slot* link;
 	}selected_;
 
 	BP::Slot* dragging_slot;
@@ -169,12 +169,12 @@ struct cBPEditor : Component
 	{
 		switch (sel_type_)
 		{
-		case SelModule:
-			return (Entity*)selected_.m->user_data;
-		case SelPackage:
-			return (Entity*)selected_.p->user_data;
+		case SelLibrary:
+			return (Entity*)selected_.library->user_data;
+		case SelSubGraph:
+			return (Entity*)selected_.subgraph->user_data;
 		case SelNode:
-			return (Entity*)selected_.n->user_data;
+			return (Entity*)selected_.node->user_data;
 		}
 		return nullptr;
 	}
@@ -219,39 +219,42 @@ struct cBPEditor : Component
 
 	void refresh_add_node_menu()
 	{
-		e_add_node_menu->remove_child((Entity*)FLAME_INVALID_POINTER);
+		e_add_node_menu->remove_child((Entity*)INVALID_POINTER);
 
 		std::vector<UdtInfo*> all_udts;
+		auto add_udt = [&](UdtInfo* u) {
+			{
+				auto f = only_not_null(u->find_function("update"), u->find_function("active_update"));
+				if (!f.first)
+					return;
+				if (!check_function(f.first, "D#void", {}))
+					return;
+			}
+			auto no_input_output = true;
+			for (auto i = 0; i < u->variable_count(); i++)
+			{
+				auto v = u->variable(i);
+				std::string decoration = v->decoration();
+				if (decoration.find('i') != std::string::npos || decoration.find('o') != std::string::npos)
+				{
+					no_input_output = false;
+					break;
+				}
+			}
+			if (!no_input_output)
+				all_udts.push_back(u);
+		};
+		for (auto i = 0; i < global_db_count(); i++)
+		{
+			auto udts = global_db(i)->get_udts();
+			for (auto j = 0; j < udts.s; j++)
+				add_udt(udts.v[j]);
+		}
 		for (auto i = 0; i < bp->db_count(); i++)
 		{
-			auto db = bp->db(i);
-			auto udts = db->get_udts();
+			auto udts = bp->dbs()[i]->get_udts();
 			for (auto j = 0; j < udts.s; j++)
-			{
-				auto u = udts.v[j];
-				{
-					auto f1 = u->find_function("update");
-					auto f2 = u->find_function("active_update");
-					if ((!f1 && !f2) || (f1 && f2))
-						continue;
-					auto f = f1 ? f1 : f2;
-					if (!check_function(f, "D#void", {}))
-						continue;
-				}
-				auto no_input_output = true;
-				for (auto i = 0; i < u->variable_count(); i++)
-				{
-					auto v = u->variable(i);
-					std::string decoration = v->decoration();
-					if (decoration.find('i') != std::string::npos || decoration.find('o') != std::string::npos)
-					{
-						no_input_output = false;
-						break;
-					}
-				}
-				if (!no_input_output)
-					all_udts.push_back(u);
-			}
+				add_udt(udts.v[j]);
 		}
 		std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
 			return std::string(a->type()->name()) < std::string(b->type()->name());
@@ -294,25 +297,18 @@ struct cBPEditor : Component
 		ui::pop_parent();
 	}
 
-	Entity* create_module_entity(BP::Module* m);
+	Entity* create_library_entity(BP::Library* m);
 	Entity* create_node_entity(BP::Node* n);
-	Entity* create_package_entity(BP::Package* p);
+	Entity* create_subgraph_entity(BP::SubGraph* p);
 
 	void link_test_nodes()
 	{
-		auto m = bp->find_module(L"editor.exe");
-		if (!m)
-		{
-			m = bp->add_module(L"editor.exe");
-			m->pos = Vec2f(-200.f, 0.f);
-			m->external = true;
-		}
 		auto n_dst = bp->find_node("test_dst");
 		if (!n_dst)
 		{
 			n_dst = bp->add_node("D#DstImage", "test_dst");
 			n_dst->pos = Vec2f(0.f, -200.f);
-			n_dst->external = true;
+			n_dst->used_by_editor = true;
 		}
 		{
 			auto s = bp->find_input("*.rt_dst.type");
@@ -329,7 +325,7 @@ struct cBPEditor : Component
 		{
 			n_cbs = bp->add_node("D#CmdBufs", "test_cbs");
 			n_cbs->pos = Vec2f(200.f, -200.f);
-			n_cbs->external = true;
+			n_cbs->used_by_editor = true;
 		}
 		{
 			auto s = bp->find_input("*.make_cmd.cbs");
@@ -338,30 +334,30 @@ struct cBPEditor : Component
 		}
 	}
 
-	void load(const std::wstring& _filename, bool no_compile)
+	void load(const std::wstring& _filename)
 	{
 		filename = _filename;
 		filepath = std::filesystem::path(filename).parent_path().wstring();
 		if (bp)
 			BP::destroy(bp);
-		bp = BP::create_from_file(filename.c_str(), no_compile);
+		bp = BP::create_from_file(filename.c_str());
 		link_test_nodes();
 
 		refresh_add_node_menu();
 
-		e_base->remove_child((Entity*)FLAME_INVALID_POINTER);
+		e_base->remove_child((Entity*)INVALID_POINTER);
 
-		for (auto i = 0; i < bp->module_count(); i++)
-			create_module_entity(bp->module(i));
-		for (auto i = 0; i < bp->package_count(); i++)
-			create_package_entity(bp->package(i));
+		for (auto i = 0; i < bp->library_count(); i++)
+			create_library_entity(bp->library(i));
+		for (auto i = 0; i < bp->subgraph_count(); i++)
+			create_subgraph_entity(bp->subgraph(i));
 		for (auto i = 0; i < bp->node_count(); i++)
 			create_node_entity(bp->node(i));
 
 		set_changed(false);
 
 		sel_type_ = SelAir;
-		selected_.n = nullptr;
+		selected_.plain = nullptr;
 		dragging_slot = nullptr;
 		running = false;
 	}
@@ -380,20 +376,20 @@ struct cBPEditor : Component
 		return n;
 	}
 
-	void remove_module(BP::Module* m)
+	void remove_library(BP::Library* l)
 	{
 		struct Capture
 		{
 			cBPEditor* e;
-			BP::Module* m;
+			BP::Library* l;
 		}capture;
 		capture.e = this;
-		capture.m = m;
+		capture.l = l;
 		looper().add_event([](void* c) {
 			auto& capture = *(Capture*)c;
 			auto bp = capture.e->bp;
 
-			auto m_db = capture.m->db();
+			auto m_db = capture.l->db();
 			for (auto i = 0; i < bp->node_count(); i++)
 			{
 				auto n = bp->node(i);
@@ -404,29 +400,29 @@ struct cBPEditor : Component
 					e->parent()->remove_child(e);
 				}
 			}
-			auto e = (Entity*)capture.m->user_data;
+			auto e = (Entity*)capture.l->user_data;
 			e->parent()->remove_child(e);
 
-			bp->remove_module(capture.m);
+			bp->remove_library(capture.l);
 			capture.e->refresh_add_node_menu();
 			capture.e->set_changed(true);
 		}, new_mail(&capture));
 	}
 
-	void remove_package(BP::Package* p)
+	void remove_subgraph(BP::SubGraph* s)
 	{
 		struct Capture
 		{
 			cBPEditor* e;
-			BP::Package* p;
+			BP::SubGraph* s;
 		}capture;
 		capture.e = this;
-		capture.p = p;
+		capture.s = s;
 		looper().add_event([](void* c) {
 			auto& capture = *(Capture*)c;
-			auto e = (Entity*)capture.p->user_data;
+			auto e = (Entity*)capture.s->user_data;
 			e->parent()->remove_child(e);
-			capture.e->bp->remove_package(capture.p);
+			capture.e->bp->remove_subgraph(capture.s);
 			capture.e->refresh_add_node_menu();
 			capture.e->set_changed(true);
 		}, new_mail(&capture));
@@ -434,7 +430,7 @@ struct cBPEditor : Component
 
 	bool remove_node(BP::Node* n)
 	{
-		if (selected_.n->id() == "test_dst" || selected_.n->id() == "test_cbs")
+		if (selected_.node->id() == "test_dst" || selected_.node->id() == "test_cbs")
 			return false;
 		looper().add_event([](void* c) {
 			auto n = *(BP::Node**)c;
@@ -452,11 +448,11 @@ struct cBPEditor : Component
 		{
 		case SelNode:
 		{
-			auto n = bp->add_node(selected_.n->type_name(), "");
+			auto n = bp->add_node(selected_.node->type_name(), "");
 			n->pos = add_pos;
 			for (auto i = 0; i < n->input_count(); i++)
 			{
-				auto src = selected_.n->input(i);
+				auto src = selected_.node->input(i);
 				auto dst = n->input(i);
 				dst->set_data(src->data());
 				dst->link_to(src->link(0));
@@ -472,51 +468,44 @@ struct cBPEditor : Component
 	{
 		switch (sel_type_)
 		{
-		case SelModule:
-			if (selected_.m->filename() == L"bp.dll")
-				ui::e_message_dialog(L"Cannot Remove Self Module");
-			else if (selected_.m->filename() == L"flame_foundation.dll")
-				ui::e_message_dialog(L"Cannot Remove 'foundation' Module");
-			else if (selected_.m->filename() == L"editor.exe")
-				ui::e_message_dialog(L"Cannot Remove 'this' Module");
-			else
+		case SelLibrary:
+		{
+			std::wstring str;
+			auto l_db = selected_.library->db();
+			for (auto i = 0; i < bp->node_count(); i++)
 			{
-				std::wstring str;
-				auto m_db = selected_.m->db();
-				for (auto i = 0; i < bp->node_count(); i++)
-				{
-					auto n = bp->node(i);
-					auto udt = n->udt();
-					if (udt && udt->db() == m_db)
-						str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type_name()) + L"\n";
-				}
-
-				struct Capture
-				{
-					cBPEditor* e;
-					BP::Module* m;
-				}capture;
-				capture.e = this;
-				capture.m = selected_.m;
-				ui::e_confirm_dialog((L"The node(s):\n" + str + L"will be removed, sure to remove module?").c_str(), [](void* c, bool yes) {
-					auto& capture = *(Capture*)c;
-
-					if (yes)
-					{
-						capture.e->remove_module(capture.m);
-						capture.e->set_changed(true);
-					}
-				}, new_mail(&capture));
+				auto n = bp->node(i);
+				auto udt = n->udt();
+				if (udt && udt->db() == l_db)
+					str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type_name()) + L"\n";
 			}
+
+			struct Capture
+			{
+				cBPEditor* e;
+				BP::Library* l;
+			}capture;
+			capture.e = this;
+			capture.l = selected_.library;
+			ui::e_confirm_dialog((L"The node(s):\n" + str + L"will be removed, sure to remove the library?").c_str(), [](void* c, bool yes) {
+				auto& capture = *(Capture*)c;
+
+				if (yes)
+				{
+					capture.e->remove_library(capture.l);
+					capture.e->set_changed(true);
+				}
+			}, new_mail(&capture));
+		}
 			break;
-		case SelPackage:
+		case SelSubGraph:
 			break;
 		case SelNode:
-			if (!remove_node(selected_.n))
+			if (!remove_node(selected_.node))
 				ui::e_message_dialog(L"Cannot Remove Test Nodes");
 			break;
 		case SelLink:
-			selected_.l->link_to(nullptr);
+			selected_.link->link_to(nullptr);
 			set_changed(true);
 			break;
 		}
@@ -707,11 +696,11 @@ struct cBPObject : Component
 					auto pos = ((cElement*)e)->pos_;
 					switch (thiz->t)
 					{
-					case cBPEditor::SelModule:
-						((BP::Module*)thiz->p)->pos = pos;
+					case cBPEditor::SelLibrary:
+						((BP::Library*)thiz->p)->pos = pos;
 						break;
-					case cBPEditor::SelPackage:
-						((BP::Package*)thiz->p)->pos = pos;
+					case cBPEditor::SelSubGraph:
+						((BP::SubGraph*)thiz->p)->pos = pos;
 						break;
 					case cBPEditor::SelNode:
 						((BP::Node*)thiz->p)->pos = pos;
@@ -839,16 +828,16 @@ void cBPScene::for_each_link(const std::function<bool(const Vec2f & p1, const Ve
 			else
 			{
 				auto scn = s->node()->scene();
-				BP::Package* p;
+				BP::SubGraph* sg;
 				while (scn != bp)
 				{
-					p = scn->package();
-					if (!p)
+					sg = scn->scene();
+					if (!sg)
 						break;
-					scn = p->scene();
+					scn = sg->scene();
 				}
 
-				auto e = ((Entity*)p->user_data)->get_component(cElement);
+				auto e = ((Entity*)sg->user_data)->get_component(cElement);
 				auto ret = e->global_pos;
 				if (s->io() == BP::Slot::Out)
 					ret.x() += e->size_.x();
@@ -861,17 +850,17 @@ void cBPScene::for_each_link(const std::function<bool(const Vec2f & p1, const Ve
 		return true;
 	};
 
-	for (auto i = 0; i < bp->package_count(); i++)
+	for (auto i = 0; i < bp->subgraph_count(); i++)
 	{
-		auto p = bp->package(i);
-		auto pbp = p->bp();
-		for (auto j = 0; j < pbp->output_export_count(); j++)
+		auto s = bp->subgraph(i);
+		auto sbp = s->bp();
+		for (auto j = 0; j < sbp->output_export_count(); j++)
 		{
-			auto output = pbp->output_export(j);
+			auto output = sbp->output_export(j);
 			for (auto k = 0; k < output->link_count(); k++)
 			{
 				auto input = output->link(k);
-				if (input->node()->scene()->package() != p)
+				if (input->node()->scene()->scene() != s)
 				{
 					if (!process(output, input))
 						return;
@@ -925,11 +914,6 @@ void cBPScene::on_component_added(Component* c)
 					return true;
 				});
 			}
-			else if (is_mouse_up(action, key, true) && key == Mouse_Right)
-			{
-				//popup_menu(editor->e_add_node_menu, app.root, pos);
-				//editor->add_pos = pos - thiz->element->global_pos;
-			}
 		}, new_mail_p(this));
 	}
 }
@@ -948,7 +932,7 @@ void cBPScene::draw(graphics::Canvas* canvas)
 			std::vector<Vec2f> points;
 			points.push_back(p1);
 			points.push_back(p2);
-			canvas->stroke(points.size(), points.data(), editor->selected_.l == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
+			canvas->stroke(points.size(), points.data(), editor->selected_.link == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
 		}
 		return true;
 	});
@@ -963,15 +947,15 @@ void cBPScene::draw(graphics::Canvas* canvas)
 	}
 }
 
-Entity* cBPEditor::create_module_entity(BP::Module* m)
+Entity* cBPEditor::create_library_entity(BP::Library* l)
 {
 	ui::push_parent(e_base);
 
-	auto e_module = ui::e_empty();
-	m->user_data = e_module;
+	auto e_library = ui::e_empty();
+	l->user_data = e_library;
 	{
 		auto c_element = ui::c_element();
-		c_element->pos_ = m->pos;
+		c_element->pos_ = l->pos;
 		c_element->color_ = Vec4c(255, 200, 190, 200);
 		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
 		ui::c_event_receiver();
@@ -979,36 +963,36 @@ Entity* cBPEditor::create_module_entity(BP::Module* m)
 		ui::c_moveable();
 		auto c_module = new_u_object<cBPObject>();
 		c_module->editor = this;
-		c_module->t = SelModule;
-		c_module->p = m;
-		e_module->add_component(c_module);
+		c_module->t = SelLibrary;
+		c_module->p = l;
+		e_library->add_component(c_module);
 	}
-	ui::push_parent(e_module);
+	ui::push_parent(e_library);
 	ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-	ui::e_text(m->filename())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-	ui::e_text(L"module")->get_component(cText)->color = Vec4c(50, 50, 50, 255);
+	ui::e_text(l->filename())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+	ui::e_text(L"library")->get_component(cText)->color = Vec4c(50, 50, 50, 255);
 	ui::e_end_layout();
 	ui::e_empty();
 	ui::c_element();
-	ui::c_event_receiver()->pass = (Entity*)FLAME_INVALID_POINTER;
+	ui::c_event_receiver()->pass = (Entity*)INVALID_POINTER;
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 	ui::c_bring_to_front();
 	ui::pop_parent();
 
 	ui::pop_parent();
 
-	return e_module;
+	return e_library;
 }
 
-Entity* cBPEditor::create_package_entity(BP::Package* p)
+Entity* cBPEditor::create_subgraph_entity(BP::SubGraph* s)
 {
 	ui::push_parent(e_base);
 
-	auto e_package = ui::e_empty();
-	p->user_data = e_package;
+	auto e_subgraph = ui::e_empty();
+	s->user_data = e_subgraph;
 	{
 		auto c_element = ui::c_element();
-		c_element->pos_ = p->pos;
+		c_element->pos_ = s->pos;
 		c_element->color_ = Vec4c(190, 255, 200, 200);
 		c_element->frame_color_ = Vec4c(252, 252, 50, 200);
 		ui::c_event_receiver();
@@ -1016,24 +1000,24 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 		ui::c_moveable();
 		auto c_package = new_u_object<cBPObject>();
 		c_package->editor = this;
-		c_package->t = SelPackage;
-		c_package->p = p;
-		e_package->add_component(c_package);
+		c_package->t = SelSubGraph;
+		c_package->p = s;
+		e_subgraph->add_component(c_package);
 	}
-	ui::push_parent(e_package);
+	ui::push_parent(e_subgraph);
 	ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-	ui::e_text(s2w(p->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+	ui::e_text(s2w(s->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 	ui::c_event_receiver();
 	ui::c_edit();
 	ui::current_entity()->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 		if (hash == FLAME_CHASH("text"))
-			(*(BP::Package**)c)->set_id(w2s(((cText*)t)->text()).c_str());
-	}, new_mail_p(p));
-	ui::e_text(p->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
+			(*(BP::SubGraph**)c)->set_id(w2s(((cText*)t)->text()).c_str());
+	}, new_mail_p(s));
+	ui::e_text(s->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
 	ui::e_begin_layout(LayoutHorizontal, 16.f);
 	ui::c_aligner(SizeGreedy, SizeFixed);
 
-	auto bp = p->bp();
+	auto bp = s->bp();
 
 	ui::e_begin_layout(LayoutVertical);
 	ui::c_aligner(SizeGreedy, SizeFixed);
@@ -1094,14 +1078,14 @@ Entity* cBPEditor::create_package_entity(BP::Package* p)
 	ui::e_end_layout();
 	ui::e_empty();
 	ui::c_element();
-	ui::c_event_receiver()->pass = (Entity*)FLAME_INVALID_POINTER;
+	ui::c_event_receiver()->pass = (Entity*)INVALID_POINTER;
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 	ui::c_bring_to_front();
 	ui::pop_parent();
 
 	ui::pop_parent();
 
-	return e_package;
+	return e_subgraph;
 }
 
 template<class T>
@@ -1423,9 +1407,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 
 		auto e_data = ui::e_begin_layout(LayoutVertical, 2.f);
 		e_data->get_component(cElement)->inner_padding_ = Vec4f(ui::style_1u(ui::FontSize), 0.f, 0.f, 0.f);
-		std::vector<TypeinfoDatabase*> dbs(bp->db_count());
-		for (auto i = 0; i < dbs.size(); i++)
-			dbs[i] = bp->db(i);
+		extra_global_db_count = bp->db_count();
+		extra_global_dbs = bp->dbs();
 		auto type = input->type();
 		auto base_hash = type->base_hash();
 		ui::push_style_1u(ui::FontSize, 12);
@@ -1433,7 +1416,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		{
 		case TypeEnumSingle:
 		{
-			auto info = find_enum(dbs, base_hash);
+			auto info = find_enum(base_hash);
 			create_enum_combobox(info, 120.f);
 
 			struct Capture
@@ -1465,7 +1448,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 		{
 			auto v = *(int*)input->data();
 
-			auto info = find_enum(dbs, base_hash);
+			auto info = find_enum(base_hash);
 			create_enum_checkboxs(info);
 			for (auto k = 0; k < info->item_count(); k++)
 			{
@@ -1629,6 +1612,8 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 			}
 			break;
 		}
+		extra_global_db_count = 0;
+		extra_global_dbs = nullptr;
 		ui::pop_style(ui::FontSize);
 		ui::e_end_layout();
 
@@ -1700,7 +1685,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	ui::e_end_layout();
 	ui::e_empty();
 	ui::c_element();
-	ui::c_event_receiver()->pass = (Entity*)FLAME_INVALID_POINTER;
+	ui::c_event_receiver()->pass = (Entity*)INVALID_POINTER;
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 	ui::c_bring_to_front();
 	ui::pop_parent();
@@ -1710,7 +1695,7 @@ Entity* cBPEditor::create_node_entity(BP::Node* n)
 	return e_node;
 }
 
-void open_blueprint_editor(const std::wstring& filename, bool no_compile, const Vec2f& pos)
+void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 {
 	ui::push_parent(app.root);
 	ui::next_element_pos = pos;
@@ -1735,20 +1720,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		BP::save_to_file(editor->bp, editor->filename.c_str());
 		editor->set_changed(false);
 	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Reload", [](void* c) {
-		auto editor = *(cBPEditor**)c;
-		if (editor->running)
-			ui::e_message_dialog(L"Cannot Reload While Running");
-		else
-			editor->load(editor->filename, false);
-	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Reload (No Compile)", [](void* c) {
-		auto editor = *(cBPEditor**)c;
-		if (editor->running)
-			ui::e_message_dialog(L"Cannot Reload While Running");
-		else
-			editor->load(editor->filename, true);
-	}, new_mail_p(c_editor));
 	ui::e_end_menubar_menu();
 	auto menu_add = ui::e_begin_menubar_menu(L"Add");
 	{
@@ -1762,67 +1733,57 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 		menu_add->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
-			//if (capture.m->can_open(action, key))
-			//{
-			//	auto base = capture.e->e_base;
-			//	capture.e->set_add_pos_center();
-			//}
+			if (ui::is_menu_can_open(capture.m, action, key))
+			{
+				auto base = capture.e->e_base;
+				capture.e->set_add_pos_center();
+			}
 		}, new_mail(&capture));
 	}
-	ui::e_menu_item(L"Module", [](void* c) {
-		auto editor = *(cBPEditor**)c;
-		if (editor->running)
-			ui::e_message_dialog(L"Cannot Add Module While Running");
-		else
-		{
-			ui::e_input_dialog(L"module", [](void* c, bool ok, const wchar_t* text) {
+		ui::e_menu_item(L"Library", [](void* c) {
+			auto editor = *(cBPEditor**)c;
+			ui::e_input_dialog(L"library", [](void* c, bool ok, const wchar_t* text) {
 				auto editor = *(cBPEditor**)c;
 				auto bp = editor->bp;
 
 				if (ok && text[0])
 				{
-					auto m = bp->add_module(text);
-					if (!m)
-						ui::e_message_dialog(L"Add Module Failed");
+					auto l = bp->add_library(text);
+					if (!l)
+						ui::e_message_dialog(L"Add Library Failed");
 					else
 					{
-						m->pos = editor->add_pos;
-						editor->create_module_entity(m);
+						l->pos = editor->add_pos;
+						editor->create_library_entity(l);
 						editor->refresh_add_node_menu();
 						editor->set_changed(true);
 					}
 				}
 			}, new_mail_p(editor));
-		}
-	}, new_mail_p(c_editor));
-	ui::e_menu_item(L"Package", [](void* c) {
-		auto editor = *(cBPEditor**)c;
-		if (editor->running)
-			ui::e_message_dialog(L"Cannot Add Package While Running");
-		else
-		{
+		}, new_mail_p(c_editor));
+		ui::e_menu_item(L"Sub Graph", [](void* c) {
+			auto editor = *(cBPEditor**)c;
 			ui::e_input_dialog(L"bp", [](void* c, bool ok, const wchar_t* text) {
 				auto editor = *(cBPEditor**)c;
 				auto bp = editor->bp;
 
 				if (ok && text[0])
 				{
-					auto p = bp->add_package(text, "");
-					if (!p)
-						ui::e_message_dialog(L"Add Package Failed");
+					auto s = bp->add_subgraph(text, "");
+					if (!s)
+						ui::e_message_dialog(L"Add Sub Graph Failed");
 					else
 					{
-						p->pos = editor->add_pos;
-						editor->create_package_entity(p);
+						s->pos = editor->add_pos;
+						editor->create_subgraph_entity(s);
 						editor->refresh_add_node_menu();
 						editor->set_changed(true);
 					}
 				}
 			}, new_mail_p(editor));
-		}
-	}, new_mail_p(c_editor));
-	c_editor->e_add_node_menu = ui::e_begin_sub_menu(L"Nodes")->get_component(cMenu)->items;
-	ui::e_end_sub_menu();
+		}, new_mail_p(c_editor));
+		c_editor->e_add_node_menu = ui::e_begin_sub_menu(L"Nodes")->get_component(cMenu)->items;
+		ui::e_end_sub_menu();
 	ui::e_end_menubar_menu();
 	ui::e_begin_menubar_menu(L"Edit");
 	ui::e_menu_item(L"Duplicate", [](void* c) {
@@ -1859,9 +1820,6 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				auto editor = *(cBPEditor**)c;
 				auto& filename = editor->filename;
 				auto bp = editor->bp;
-				std::vector<TypeinfoDatabase*> dbs(bp->db_count());
-				for (auto i = 0; i < dbs.size(); i++)
-					dbs[i] = bp->db(i);
 				auto tokens = ssplit(cmd);
 
 				if (editor->locked)
@@ -1870,18 +1828,21 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					return;
 				}
 
+				extra_global_db_count = bp->db_count();
+				extra_global_dbs = bp->dbs();
+
 				auto set_data = [&](const std::string& address, const std::string& value) {
 					auto i = bp->find_input(address.c_str());
 					if (i)
 					{
 						auto type = i->type();
-						auto value_before = type->serialize(dbs, i->raw_data(), 2);
+						auto value_before = type->serialize(i->raw_data(), 2);
 						auto data = new char[i->size()];
-						type->unserialize(dbs, value, data);
+						type->unserialize(value, data);
 						i->set_data((char*)data + sizeof(AttributeBase));
 						((cBPSlot*)i->user_data)->tracker->update_view();
 						delete[] data;
-						auto value_after = type->serialize(dbs, i->raw_data(), 2);
+						auto value_after = type->serialize(i->raw_data(), 2);
 						console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
 						editor->set_changed(true);
 					}
@@ -1913,9 +1874,15 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					if (tokens[1] == L"udts")
 					{
 						std::vector<UdtInfo*> all_udts;
-						for (auto db : dbs)
+						for (auto i = 0; i < global_db_count(); i++)
 						{
-							auto udts = db->get_udts();
+							auto udts = global_db(i)->get_udts();
+							for (auto i = 0; i < udts.s; i++)
+								all_udts.push_back(udts.v[i]);
+						}
+						for (auto i = 0; i < bp->db_count(); i++)
+						{
+							auto udts = bp->dbs()[i]->get_udts();
 							for (auto i = 0; i < udts.s; i++)
 								all_udts.push_back(udts.v[i]);
 						}
@@ -1927,7 +1894,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 					}
 					else if (tokens[1] == L"udt")
 					{
-						auto udt = find_udt(dbs, FLAME_HASH(w2s(tokens[2]).c_str()));
+						auto udt = find_udt(FLAME_HASH(w2s(tokens[2]).c_str()));
 						if (udt)
 						{
 							console->print(s2w(udt->type()->name()));
@@ -1975,7 +1942,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 								if (input->link())
 									link_address = input->link()->get_address().str();
 								console->print(wsfmt(L"[%s]", s2w(link_address).c_str()));
-								auto str = s2w(type->serialize(dbs, input->raw_data(), 2));
+								auto str = s2w(type->serialize(input->raw_data(), 2));
 								if (str.empty())
 									str = L"-";
 								console->print(wsfmt(L"   %s", str.c_str()));
@@ -1986,7 +1953,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 								auto output = n->output(i);
 								auto type = output->type();
 								console->print(s2w(output->name()));
-								auto str = s2w(type->serialize(dbs, output->raw_data(), 2).c_str());
+								auto str = s2w(type->serialize(output->raw_data(), 2).c_str());
 								if (str.empty())
 									str = L"-";
 								console->print(wsfmt(L"   %s", str.c_str()));
@@ -2088,6 +2055,10 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 				}
 				else
 					console->print(L"unknow command");
+
+				extra_global_db_count = 0;
+				extra_global_dbs = nullptr;
+
 			}, new_mail_p(editor), [](void* c) {
 				auto editor = *(cBPEditor**)c;
 				editor->console_tab = nullptr;
@@ -2116,7 +2087,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	ui::c_element();
 	{
 		auto c_event_receiver = ui::c_event_receiver();
-		c_event_receiver->pass = (Entity*)FLAME_INVALID_POINTER;
+		c_event_receiver->pass = (Entity*)INVALID_POINTER;
 		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
 			auto c_bp_scene = *(cBPScene**)c;
 			if (is_mouse_scroll(action, key))
@@ -2135,7 +2106,7 @@ void open_blueprint_editor(const std::wstring& filename, bool no_compile, const 
 	}
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 
-	c_editor->load(filename, no_compile);
+	c_editor->load(filename);
 
 	ui::e_end_layout();
 
