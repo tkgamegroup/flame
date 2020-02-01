@@ -72,7 +72,7 @@ namespace flame
 			~SamplerPrivate();
 		};
 
-		struct AtlasRegionPrivate : Atlas::Region
+		struct AtlasTilePrivate : Atlas::Tile
 		{
 			std::wstring _filename;
 		};
@@ -81,7 +81,7 @@ namespace flame
 		{
 			Image* image;
 			Imageview* imageview;
-			std::vector<AtlasRegionPrivate> regions;
+			std::vector<AtlasTilePrivate> tiles;
 
 			AtlasPrivate(Device* d, const std::wstring& filename, const std::wstring& atlas_filename);
 			~AtlasPrivate();

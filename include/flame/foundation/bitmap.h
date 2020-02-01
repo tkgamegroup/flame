@@ -63,5 +63,5 @@ namespace flame
 		}
 	};
 
-	FLAME_FOUNDATION_EXPORTS void pack_atlas(uint input_count, const wchar_t* const *inputs, const wchar_t* output, bool border);
+	FLAME_FOUNDATION_EXPORTS void pack_atlas(uint input_count, const wchar_t* const* inputs, const wchar_t* output, bool border);
 }

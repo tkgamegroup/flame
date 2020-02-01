@@ -136,7 +136,7 @@ namespace flame
 		void fill(uint point_count, const Vec2f* points, const Vec4c& col) override;
 
 		void add_text(FontAtlas* f, uint glyph_count, Glyph* const* glyphs, uint line_space, float scale, const Vec2f& pos, const Vec4c& col) override;
-		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col, bool repeat) override;
+		void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 		const Vec4f& scissor() override;
 		void set_scissor(const Vec4f& scissor) override;
 	};
@@ -432,25 +432,7 @@ namespace flame
 			}
 		}
 
-		void add_image_detail(const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col, uint& vtx_cnt, uint& idx_cnt)
-		{
-			vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(size.x(), size.y());		vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
-
-			*idx_end = vtx_cnt + 0; idx_end++;
-			*idx_end = vtx_cnt + 2; idx_end++;
-			*idx_end = vtx_cnt + 1; idx_end++;
-			*idx_end = vtx_cnt + 0; idx_end++;
-			*idx_end = vtx_cnt + 3; idx_end++;
-			*idx_end = vtx_cnt + 2; idx_end++;
-
-			vtx_cnt += 4;
-			idx_cnt += 6;
-		}
-
-		void add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col, bool repeat)
+		void add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
 		{
 			auto pos = Vec2f(Vec2i(_pos));
 			auto uv0 = _uv0;
@@ -473,25 +455,28 @@ namespace flame
 			auto atlas = img.atlas;
 			if (atlas)
 			{
-				auto& region = atlas->region(id & 0xffff);
-				uv0 = mix(region.uv0, region.uv1, uv0);
-				uv1 = mix(region.uv0, region.uv1, uv1);
-				img_size = region.size;
+				auto& tile = atlas->tile(id & 0xffff);
+				uv0 = mix(tile.uv0, tile.uv1, uv0);
+				uv1 = mix(tile.uv0, tile.uv1, uv1);
+				img_size = tile.size;
 			}
 			else
 				img_size = img.view->image()->size;
 
-			if (repeat)
-			{
-				auto repeat_count = Vec2u(size / img_size);
-				for (auto y = 0; y < repeat_count.y(); y++)
-				{
-					for (auto x = 0; x < repeat_count.x(); x++)
-						add_image_detail(pos + Vec2f(x * img_size.x(), y * img_size.y()), img_size, uv0, uv1, tint_col, vtx_cnt, idx_cnt);
-				}
-			}
-			else
-				add_image_detail(pos, size, uv0, uv1, tint_col, vtx_cnt, idx_cnt);
+			vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
+			vtx_end->pos = pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
+			vtx_end->pos = pos + Vec2f(size.x(), size.y());		vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
+			vtx_end->pos = pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
+
+			*idx_end = vtx_cnt + 0; idx_end++;
+			*idx_end = vtx_cnt + 2; idx_end++;
+			*idx_end = vtx_cnt + 1; idx_end++;
+			*idx_end = vtx_cnt + 0; idx_end++;
+			*idx_end = vtx_cnt + 3; idx_end++;
+			*idx_end = vtx_cnt + 2; idx_end++;
+
+			vtx_cnt += 4;
+			idx_cnt += 6;
 		}
 
 		__declspec(dllexport) void update$(BP* scene)
@@ -669,9 +654,9 @@ namespace flame
 		((MakeCmd$*)mc)->add_text(f, glyph_count, glyphs, line_space, scale, pos, col);
 	}
 
-	void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col, bool repeat)
+	void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 	{
-		((MakeCmd$*)mc)->add_image(pos, size, id, uv0, uv1, tint_col, repeat);
+		((MakeCmd$*)mc)->add_image(pos, size, id, uv0, uv1, tint_col);
 	}
 
 	const Vec4f& CanvasPrivate::scissor()

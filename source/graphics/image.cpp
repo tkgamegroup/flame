@@ -766,26 +766,26 @@ namespace flame
 			while (!file.eof())
 			{
 				std::string t;
-				AtlasRegionPrivate region;
+				AtlasTilePrivate tile;
 
 				std::getline(file, line);
 				if (line.empty())
 					break;
 				std::stringstream ss(line);
 				ss >> t;
-				region._filename = s2w(t);
-				region.filename = region._filename.c_str();
-				region.id = FLAME_HASH(t.c_str());
+				tile._filename = s2w(t);
+				tile.filename = tile._filename.c_str();
+				tile.id = FLAME_HASH(t.c_str());
 				ss >> t;
 				auto v = stou4(t.c_str());
-				region.pos = Vec2i(v.x(), v.y());
-				region.size = Vec2i(v.z(), v.w());
-				region.uv0.x() = region.pos.x() / w;
-				region.uv0.y() = region.pos.y() / h;
-				region.uv1.x() = (region.pos.x() + region.size.x()) / w;
-				region.uv1.y() = (region.pos.y() + region.size.y()) / h;
+				tile.pos = Vec2i(v.x(), v.y());
+				tile.size = Vec2i(v.z(), v.w());
+				tile.uv0.x() = tile.pos.x() / w;
+				tile.uv0.y() = tile.pos.y() / h;
+				tile.uv1.x() = (tile.pos.x() + tile.size.x()) / w;
+				tile.uv1.y() = (tile.pos.y() + tile.size.y()) / h;
 
-				regions.push_back(region);
+				tiles.push_back(tile);
 			}
 			file.close();
 		}
@@ -795,14 +795,14 @@ namespace flame
 			return ((AtlasPrivate*)this)->imageview;
 		}
 
-		uint Atlas::region_count() const
+		uint Atlas::tile_count() const
 		{
-			return ((AtlasPrivate*)this)->regions.size();
+			return ((AtlasPrivate*)this)->tiles.size();
 		}
 
-		const Atlas::Region& Atlas::region(uint idx) const
+		const Atlas::Tile& Atlas::tile(uint idx) const
 		{
-			return ((AtlasPrivate*)this)->regions[idx];
+			return ((AtlasPrivate*)this)->tiles[idx];
 		}
 
 		Atlas* Atlas::load(Device* d, const wchar_t* filename)

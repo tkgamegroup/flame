@@ -25,15 +25,15 @@ int main(int argc, char **args)
 	printf("generating cmakelists");
 
 	std::vector<std::filesystem::path> libraries;
-	std::ifstream libraries_file(L"libraries.txt");
-	while (!libraries_file.eof())
+	std::ifstream compile_options(L"compile_options.txt");
+	while (!compile_options.eof())
 	{
 		std::string line;
-		std::getline(libraries_file, line);
+		std::getline(compile_options, line);
 		if (!line.empty())
 			libraries.push_back(std::filesystem::canonical(line));
 	}
-	libraries_file.close();
+	compile_options.close();
 
 	std::ofstream cmakelists(L"CMakeLists.txt");
 	cmakelists << "# THIS FILE IS AUTO GENERATED\n";

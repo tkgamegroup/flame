@@ -4,6 +4,7 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
+#include <flame/universe/components/tile_map.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/edit.h>

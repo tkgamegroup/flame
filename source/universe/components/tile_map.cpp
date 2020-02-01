@@ -157,7 +157,7 @@ namespace flame
 			{
 				auto id = tiles$.v[i];
 				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
-				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_region(id & 0xffffffff);
+				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
 			}
 			c->cells.resize(cells$.s);
 			for (auto i = 0; i < cells$.s; i++)

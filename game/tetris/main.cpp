@@ -25,7 +25,8 @@ struct App
 	Fence* fence;
 	std::vector<Commandbuffer*> cbs;
 	Semaphore* render_finished;
-	std::vector<TypeinfoDatabase*> dbs;
+
+	FontAtlas* font_atlas;
 
 	Universe* u;
 	sEventDispatcher* s_event_dispatcher;
@@ -54,7 +55,7 @@ struct App
 
 int main(int argc, char **args)
 {
-	app.w = Window::create("Tetris", Vec2u(800, 400), WindowFrame);
+	app.w = Window::create("Tetris", Vec2u(800, 600), WindowFrame);
 	app.d = Device::create(true);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
@@ -62,9 +63,9 @@ int main(int argc, char **args)
 	for (auto i = 0; i < app.cbs.size(); i++)
 		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_foundation.typeinfo"));
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_graphics.typeinfo"));
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs, L"flame_universe.typeinfo"));
+	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
@@ -75,45 +76,50 @@ int main(int argc, char **args)
 	w->add_system(app.s_event_dispatcher);
 	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, FLAME_CHASH("SwapchainResizable"), &app.cbs);
 	w->add_system(s_2d_renderer);
-	load_res(w, app.dbs, L"../game/tetris/res");
-	auto font_atlas_joystix = (FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), 0);
-	auto font_atlas_standard = FontAtlas::create(app.d, FontDrawPixel, 1, &L"c:/windows/fonts/msyh.ttc");
-	s_2d_renderer->canvas->add_font(font_atlas_standard);
 
-	auto atlas_main = (Atlas*)w->find_object(FLAME_CHASH("Atlas"), FLAME_CHASH("release/main.png"));
+	auto atlas = Atlas::load(app.d, L"../game/tetris/release/main.png");
+	{
+		auto canvas = s_2d_renderer->canvas;
+		wchar_t* fonts[] = {
+			L"c:/windows/fonts/msyh.ttc"
+		};
+		app.font_atlas = FontAtlas::create(app.d, FontDrawPixel, 1, fonts);
+		canvas->add_font(app.font_atlas);
 
-	auto brick_idx = atlas_main->find_region(FLAME_CHASH("../asset/brick.png"));
-	auto block_idx = atlas_main->find_region(FLAME_CHASH("../asset/block.png"));
-
-	auto main_scene = Entity::create_from_file(w, app.dbs, L"../game/tetris/main.prefab");
+		canvas->add_atlas(atlas);
+	}
 
 	auto root = w->root();
-	{
-		app.c_element_root = cElement::create();
-		root->add_component(app.c_element_root);
+	ui::set_current_entity(root);
+	app.c_element_root = ui::c_element();
+	ui::c_layout();
 
-		root->add_component(cLayout::create(LayoutFree));
-	}
+	ui::push_font_atlas(app.font_atlas);
+	ui::set_current_root(root);
 
-	root->add_child(main_scene);
+	ui::push_parent(root);
 
-	auto e_fps = Entity::create();
-	root->add_child(e_fps);
-	{
-		e_fps->add_component(cElement::create());
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(20.f);
+		ui::next_element_size = Vec2f(16.f * 10, 16.f * 24);
+		ui::c_element();
+		{
+			auto c_tile_map = cTileMap::create();
+			c_tile_map->cell_size = Vec2f(16.f);
+			c_tile_map->set_size(Vec2u(10, 24));
+			for (auto i = 0; i < atlas->tile_count(); i++)
+				c_tile_map->add_tile((atlas->canvas_slot_ << 16) + i);
+			c_tile_map->set_cell(Vec2u(0), 5);
+			ui::current_entity()->add_component(c_tile_map);
+		}
 
-		auto c_text = cText::create(font_atlas_standard);
-		e_fps->add_component(c_text);
-
-		auto c_aligner = cAligner::create();
-		c_aligner->x_align_ = AlignxRight;
-		c_aligner->y_align_ = AlignyBottom;
-		e_fps->add_component(c_aligner);
-
+		ui::e_text(L"");
+		ui::c_aligner(AlignxRight, AlignyBottom);
 		add_fps_listener([](void* c, uint fps) {
 			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-		}, new_mail_p(c_text));
-	}
+		}, new_mail_p(ui::current_entity()->get_component(cText)));
+
+	ui::pop_parent();
 
 	looper().loop([](void* c) {
 		(*(App**)c)->run();

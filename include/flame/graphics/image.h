@@ -94,7 +94,7 @@ namespace flame
 			void* canvas_;
 			uint canvas_slot_;
 
-			struct Region
+			struct Tile
 			{
 				const wchar_t* filename;
 				uint id;
@@ -110,15 +110,15 @@ namespace flame
 			}
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
-			FLAME_GRAPHICS_EXPORTS uint region_count() const;
-			FLAME_GRAPHICS_EXPORTS const Region& region(uint idx) const;
+			FLAME_GRAPHICS_EXPORTS uint tile_count() const;
+			FLAME_GRAPHICS_EXPORTS const Tile& tile(uint idx) const;
 
-			int find_region(uint id) const
+			int find_tile(uint id) const
 			{
-				auto count = region_count();
+				auto count = tile_count();
 				for (auto i = 0; i < count; i++)
 				{
-					if (region(i).id == id)
+					if (tile(i).id == id)
 						return i;
 				}
 				return -1;

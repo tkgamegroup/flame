@@ -149,29 +149,30 @@ namespace flame
 
 	void pack_atlas(uint input_count, const wchar_t* const* inputs, const wchar_t* output, bool border)
 	{
-		struct Region
+		struct Tile
 		{
-			std::string filename;
+			std::wstring filename;
 			Bitmap* b;
 			Vec2i pos;
 		};
-		std::vector<Region> regions;
-		auto output_dir = std::filesystem::path(output).parent_path();
+		std::vector<Tile> tiles;
+		auto output_dir = std::filesystem::canonical(std::filesystem::path(output).parent_path());
 		for (auto i = 0; i < input_count; i++)
 		{
-			Region r;
-			r.filename = std::filesystem::path(inputs[i]).lexically_relative(output_dir).make_preferred().string();
-			r.pos = Vec2i(-1);
-			regions.push_back(r);
+			Tile t;
+			t.filename = std::filesystem::canonical(inputs[i]).lexically_relative(output_dir).make_preferred().wstring();
+			t.b = Bitmap::create_from_file(t.filename.c_str());
+			t.pos = Vec2i(-1);
+			tiles.push_back(t);
 		}
-		std::sort(regions.begin(), regions.end(), [](const Region& a, const Region& b) {
+		std::sort(tiles.begin(), tiles.end(), [](const Tile& a, const Tile& b) {
 			return max(a.b->size.x(), a.b->size.y()) > max(b.b->size.x(), b.b->size.y());
 		});
 
 		auto w = 512, h = 512;
 		auto tree = std::make_unique<BinPackNode>(Vec2u(w, h));
 
-		for (auto& r : regions)
+		for (auto& r : tiles)
 		{
 			auto n = tree->find(r.b->size + Vec2i(border ? 2 : 0));
 			if (n)
@@ -179,7 +180,7 @@ namespace flame
 		}
 
 		auto b = Bitmap::create(Vec2u(w, h), 4, 32);
-		for (auto& r : regions)
+		for (auto& r : tiles)
 		{
 			if (r.pos >= 0)
 				r.b->copy_to(b, Vec2u(0), r.b->size, Vec2u(r.pos), border);
@@ -187,10 +188,10 @@ namespace flame
 
 		Bitmap::save_to_file(b, output);
 		std::ofstream atlas_file(output + std::wstring(L".atlas"));
-		atlas_file << (border ? "1" : "0");
-		for (auto& r : regions)
+		atlas_file << (border ? "1" : "0") << "\n";
+		for (auto& r : tiles)
 		{
-			atlas_file << r.filename + " " + to_string(Vec4u(Vec2u(r.pos) + (border ? 1U : 0U), r.b->size)) + "\n";
+			atlas_file << w2s(r.filename) + " " + to_string(Vec4u(Vec2u(r.pos) + (border ? 1U : 0U), r.b->size)) + "\n";
 			Bitmap::destroy(r.b);
 		}
 		atlas_file.close();
