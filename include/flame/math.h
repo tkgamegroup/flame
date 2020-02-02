@@ -1111,11 +1111,11 @@ namespace flame
 	Vec<M, T> operator*(const Mat<N, M, T>& lhs, const Vec<M, T>& rhs)
 	{
 		Vec<M, T> ret;
-		for (auto i = 0; i < M; i++)
+		for (auto i = 0; i < N; i++)
 		{
 			ret[i] = 0;
-			for (auto j = 0; j < N; j++)
-				ret[i] += lhs[j][i] * rhs[i];
+			for (auto j = 0; j < M; j++)
+				ret[i] += lhs[j][i] * rhs[j];
 		}
 		return ret;
 	}
@@ -1137,6 +1137,14 @@ namespace flame
 			ret[i] /= lhs;
 		return ret;
 	}
+
+	using Mat2x2i = Mat<2, 2, int>;
+	using Mat3x3i = Mat<3, 3, int>;
+	using Mat4x4i = Mat<4, 4, int>;
+
+	using Mat2x2u = Mat<2, 2, uint>;
+	using Mat3x3u = Mat<3, 3, uint>;
+	using Mat4x4u = Mat<4, 4, uint>;
 
 	using Mat2x2f = Mat<2, 2, float>;
 	using Mat3x3f = Mat<3, 3, float>;

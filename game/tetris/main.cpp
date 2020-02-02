@@ -41,64 +41,65 @@ struct App
 
 	cTileMap* board;
 
+	bool up_just_down;
+	bool left_just_down;
+	bool right_just_down;
+
 	float time;
 	bool gaming;
-	int mino_y;
-	int mino_x;
-	uint mino_id;
+	Vec2i mino_pos;
+	MinoType mino_type;
 	uint mino_rotation;
+	Vec2i mino_coords[3];
 	uint mino_ticks;
 
 	App()
 	{
-		init_minos();
+		init();
+
+		up_just_down = false;
+		left_just_down = false;
+		right_just_down = false;
 
 		time = 0.f;
 		gaming = true;
-		mino_y = -1;
-		mino_x = 0;
+		mino_pos.x() = 0;
+		mino_pos.y() = -1;
 		mino_rotation = 0;
 		mino_ticks = 0;
 	}
 
-	void toggle_board(int id, uint rotaion, int px, int py, bool on)
+	void toggle_board(int idx)
 	{
-		auto tile = on ? id : -1;
-		for (auto x = 0; x < 4; x++)
-		{
-			for (auto y = 0; y < 4; y++)
-			{
-				if (mino_datas[id].tiles[rotaion][x][y])
-					board->set_cell(Vec2u(x + px, y + py), tile);
-			}
-		}
+		board->set_cell(Vec2u(mino_pos), idx);
+		board->set_cell(Vec2u(mino_pos + mino_coords[0]), idx);
+		board->set_cell(Vec2u(mino_pos + mino_coords[1]), idx);
+		board->set_cell(Vec2u(mino_pos + mino_coords[2]), idx);
 	}
 
-	bool check_board(int id, uint rotaion, int px, int py)
+	bool check_board(const Vec2i& p)
 	{
-		for (auto x = 0; x < 4; x++)
-		{
-			for (auto y = 0; y < 4; y++)
-			{
-				if (mino_datas[id].tiles[rotaion][x][y])
-				{
-					auto xx = x + px;
-					auto yy = y + py;
-					if (xx < 0 || xx >= board_width || yy < 0 || yy >= board_height)
-						return false;
-					if (board->cell(Vec2u(xx, yy)) != -1)
-						return false;
-				}
-			}
-		}
-		return true;
+		return 
+			board->cell(mino_pos + p) == -1 &&
+			board->cell(mino_pos + p + mino_coords[0]) == -1 &&
+			board->cell(mino_pos + p + mino_coords[1]) == -1 &&
+			board->cell(mino_pos + p + mino_coords[2]) == -1;
+	}
+
+	bool check_board(Vec2i* in, const Vec2i& p)
+	{
+		return
+			board->cell(p) == -1 &&
+			board->cell(in[0] + p) == -1 &&
+			board->cell(in[1] + p) == -1 &&
+			board->cell(in[2] + p) == -1;
 	}
 
 	bool line_empty(uint l)
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (board->cell(Vec2u(x, l)) != -1)
+			if (board->cell(Vec2i(x, l)) != -1)
 				return false;
 		}
 		return true;
@@ -108,10 +109,42 @@ struct App
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (board->cell(Vec2u(x, l)) == -1)
+			if (board->cell(Vec2i(x, l)) == -1)
 				return false;
 		}
 		return true;
+	}
+
+	uint get_rotation_idx(bool clockwise)
+	{
+		if (clockwise)
+			return mino_rotation == 3 ? 0 : mino_rotation + 1;
+		return mino_rotation == 0 ? 3 : mino_rotation - 1;
+	}
+
+	bool super_rotation(bool clockwise, Vec2i* out_coord, Vec2i* offset)
+	{
+		Mat2x2i mats[] = {
+			Mat2x2i(Vec2i(0, -1), Vec2i(1, 0)),
+			Mat2x2i(Vec2i(0, 1), Vec2i(-1, 0))
+		};
+		auto& mat = mats[clockwise ? 1 : 0];
+		out_coord[0] = mat * mino_coords[0];
+		out_coord[1] = mat * mino_coords[1];
+		out_coord[2] = mat * mino_coords[2];
+		auto offsets = g_mino_LTSZJ_offsets;
+		if (mino_type == Mino_O)
+			offsets = g_mino_O_offsets;
+		else if (mino_type == Mino_I)
+			offsets = g_mino_I_offsets;
+		auto new_ridx = get_rotation_idx(clockwise);
+		for (auto i = 0; i < 5; i++)
+		{
+			*offset = offsets[i][mino_rotation] - offsets[i][new_ridx];
+			if (check_board(out_coord, mino_pos + *offset))
+				return true;
+		}
+		return false;
 	}
 
 	void run()
@@ -124,31 +157,65 @@ struct App
 		fence->wait();
 		looper().process_events();
 
+		if (!up_just_down)
+			up_just_down = s_event_dispatcher->key_states[Key_Up] == (KeyStateDown | KeyStateJust);
+		if (!left_just_down)
+			left_just_down = s_event_dispatcher->key_states[Key_Left] == (KeyStateDown | KeyStateJust);
+		if (!right_just_down)
+			right_just_down = s_event_dispatcher->key_states[Key_Right] == (KeyStateDown | KeyStateJust);
+
 		time += looper().delta_time;
-		const auto frame_rate = 1.f / 2400.f;
+		const auto frame_rate = 1.f / (24.f * ((s_event_dispatcher->key_states[Key_F1] & KeyStateDown) ? 100.f : 1.f));
 		while (time > frame_rate)
 		{
 			if (gaming)
 			{
-				if (mino_y != -1)
-					toggle_board(mino_id, mino_rotation, mino_x, mino_y, false);
+				if (mino_pos.y() != -1)
+					toggle_board(-1);
 
-				if (mino_y == -1)
+				if (mino_pos.y() == -1)
 				{
-					mino_x = MinoData::start_x;
-					mino_y = MinoData::start_y;
-					mino_id = rand() % array_size(mino_datas);
+					mino_pos = Vec2i(4, 2);
+					mino_type = MinoType(rand() % MinoTypeCount);
 					mino_rotation = 0;
+					for (auto i = 0 ; i < 3; i++)
+						mino_coords[i] = g_mino_coords[mino_type][i];
 					mino_ticks = 0;
 				}
 
-				if (mino_ticks == down_ticks)
+				if (up_just_down)
 				{
-					if (check_board(mino_id, mino_rotation, mino_x, mino_y + 1))
-						mino_y++;
+					Vec2i new_coords[3];
+					Vec2i offset;
+					if (super_rotation(true, new_coords, &offset))
+					{
+						mino_rotation = get_rotation_idx(true);
+						mino_pos += offset;
+						for (auto i = 0; i < 3; i++)
+							mino_coords[i] = new_coords[i];
+						mino_ticks = 0;
+					}
+				}
+
+				auto mx = 0;
+				if (left_just_down)
+					mx--;
+				if (right_just_down)
+					mx++;
+				if (mx != 0 && check_board(Vec2i(mx, 0)))
+				{
+					mino_pos.x() += mx;
+					mino_ticks = 0;
+				}
+
+				auto bottom_touched = !check_board(Vec2i(0, 1));
+				if (mino_ticks >= (!bottom_touched && (s_event_dispatcher->key_states[Key_Down] & KeyStateDown) ? 2 : down_ticks))
+				{
+					if (!bottom_touched)
+						mino_pos.y()++;
 					else
 					{
-						toggle_board(mino_id, mino_rotation, mino_x, mino_y, true);
+						toggle_board(mino_type);
 						if (!line_empty(3))
 						{
 							gaming = false;
@@ -160,17 +227,22 @@ struct App
 								thiz->board->clear_cells();
 								thiz->gaming = true;
 							}, new_mail_p(this));
+							ui::c_aligner(AlignxMiddle, AlignyFree);
 							ui::e_end_dialog();
 						}
-						mino_y = -1;
+						mino_pos.y() = -1;
 					}
 					mino_ticks = 0;
 				}
 				mino_ticks++;
 
-				if (mino_y != -1)
-					toggle_board(mino_id, mino_rotation, mino_x, mino_y, true);
+				if (mino_pos.y() != -1)
+					toggle_board(mino_type);
 			}
+
+			up_just_down = false;
+			left_just_down = false;
+			right_just_down = false;
 
 			time -= frame_rate;
 		}

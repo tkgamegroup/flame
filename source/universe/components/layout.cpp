@@ -70,7 +70,7 @@ namespace flame
 			_element->set_x(scroll_offset_.x() + padding[0], false, this);
 			break;
 		case AlignxMiddle:
-			_element->set_x(scroll_offset_.x() + (w - _element->size_.x()) * 0.5f, false, this);
+			_element->set_x(scroll_offset_.x() + padding[0] + (w - _element->size_.x()) * 0.5f, false, this);
 			break;
 		case AlignxRight:
 			_element->set_x(scroll_offset_.x() + element->size_.x() - padding[1] - _element->size_.x(), false, this);
@@ -101,7 +101,7 @@ namespace flame
 			_element->set_y(scroll_offset_.y() + padding[0], false, this);
 			break;
 		case AlignyMiddle:
-			_element->set_y(scroll_offset_.y() + (h - _element->size_.y()) * 0.5f, false, this);
+			_element->set_y(scroll_offset_.y() + padding[0] + (h - _element->size_.y()) * 0.5f, false, this);
 			break;
 		case AlignyBottom:
 			_element->set_y(scroll_offset_.y() + element->size_.y() - padding[1] - _element->size_.y(), false, this);

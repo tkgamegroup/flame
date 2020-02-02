@@ -113,10 +113,10 @@ namespace flame
 		cells = new_cells;
 	}
 
-	int cTileMap::cell(const Vec2u& idx) const
+	int cTileMap::cell(const Vec2i& idx) const
 	{
-		if (idx.x() >= size_.x() || idx.y() >= size_.y())
-			return -1;
+		if (idx.x() < 0 || idx.x() >= size_.x() || idx.y() < 0 || idx.y() >= size_.y())
+			return -2;
 		return ((cTileMapPrivate*)this)->cells[idx.y() * size_.x() + idx.x()];
 	}
 
