@@ -1045,21 +1045,17 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_dialog()
+		inline Entity* e_begin_dialog(const Vec4c& color = Vec4c(255))
 		{
 			auto r = current_root();
-			auto l = get_top_layer(r);
-			if (!l)
-			{
-				l = add_layer(r, "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
-				set_current_entity(l);
-				c_layout();
-			}
+			auto l = add_layer(r, "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
+			set_current_entity(l);
+			c_layout();
 			push_parent(l);
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->inner_padding_ = Vec4f(8.f);
-			ce->color_ = Vec4c(255);
+			ce->color_ = color;
 			c_aligner(AlignxMiddle, AlignyMiddle);
 			c_layout(LayoutVertical)->item_padding = 4.f;
 			pop_parent();

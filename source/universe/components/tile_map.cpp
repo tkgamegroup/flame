@@ -115,7 +115,7 @@ namespace flame
 
 	int cTileMap::cell(const Vec2u& idx) const
 	{
-		if (idx >= size_)
+		if (idx.x() >= size_.x() || idx.y() >= size_.y())
 			return -1;
 		return ((cTileMapPrivate*)this)->cells[idx.y() * size_.x() + idx.x()];
 	}
@@ -123,9 +123,21 @@ namespace flame
 	void cTileMap::set_cell(const Vec2u& idx, int tile_idx)
 	{
 		auto thiz = (cTileMapPrivate*)this;
-		if (idx >= size_ || tile_idx >= thiz->tiles.size())
+		if (idx.x() >= size_.x() || idx.y() >= size_.y())
+			return;
+		if (tile_idx != -1 && tile_idx >= thiz->tiles.size())
 			return;
 		thiz->cells[idx.y() * size_.x() + idx.x()] = tile_idx;
+	}
+
+	void cTileMap::clear_cells()
+	{
+		auto thiz = (cTileMapPrivate*)this;
+		for (auto y = 0; y < size_.y(); y++)
+		{
+			for (auto x = 0; x < size_.x(); x++)
+				thiz->cells[y * size_.x() + x] = -1;
+		}
 	}
 
 	cTileMap* cTileMap::create()
