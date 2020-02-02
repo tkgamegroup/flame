@@ -14,10 +14,11 @@
 
 #include "../renderpath/canvas/canvas.h"
 
+#include "mino.h"
+#include "key.h"
+
 using namespace flame;
 using namespace graphics;
-
-#include "mino.h"
 
 const auto board_width = 10U;
 const auto board_height = 24U;
@@ -41,9 +42,7 @@ struct App
 
 	cTileMap* board;
 
-	bool up_just_down;
-	bool left_just_down;
-	bool right_just_down;
+	bool just_down_key[KEY_COUNT];
 
 	float time;
 	bool gaming;
@@ -55,11 +54,11 @@ struct App
 
 	App()
 	{
-		init();
+		init_mino();
+		init_key();
 
-		up_just_down = false;
-		left_just_down = false;
-		right_just_down = false;
+		for (auto i = 0; i < KEY_COUNT; i++)
+			just_down_key[i] = false;
 
 		time = 0.f;
 		gaming = true;
@@ -157,15 +156,15 @@ struct App
 		fence->wait();
 		looper().process_events();
 
-		if (!up_just_down)
-			up_just_down = s_event_dispatcher->key_states[Key_Up] == (KeyStateDown | KeyStateJust);
-		if (!left_just_down)
-			left_just_down = s_event_dispatcher->key_states[Key_Left] == (KeyStateDown | KeyStateJust);
-		if (!right_just_down)
-			right_just_down = s_event_dispatcher->key_states[Key_Right] == (KeyStateDown | KeyStateJust);
+		auto key_states = s_event_dispatcher->key_states;
+		for (auto i = 0; i < KEY_COUNT; i++)
+		{
+			if (!just_down_key[i])
+				just_down_key[i] = key_states[key_map[i]] == (KeyStateDown | KeyStateJust);
+		}
 
 		time += looper().delta_time;
-		const auto frame_rate = 1.f / (24.f * ((s_event_dispatcher->key_states[Key_F1] & KeyStateDown) ? 100.f : 1.f));
+		const auto frame_rate = 1.f / (24.f * ((key_states[Key_F1] & KeyStateDown) ? 100.f : 1.f));
 		while (time > frame_rate)
 		{
 			if (gaming)
@@ -183,11 +182,16 @@ struct App
 					mino_ticks = 0;
 				}
 
-				if (up_just_down)
+				auto r = 0;
+				if (just_down_key[KEY_ROTATE_LEFT])
+					r--;
+				if (just_down_key[KEY_ROTATE_RIGHT])
+					r++;
+				if (r != 0)
 				{
 					Vec2i new_coords[3];
 					Vec2i offset;
-					if (super_rotation(true, new_coords, &offset))
+					if (super_rotation(r == 1, new_coords, &offset))
 					{
 						mino_rotation = get_rotation_idx(true);
 						mino_pos += offset;
@@ -198,9 +202,9 @@ struct App
 				}
 
 				auto mx = 0;
-				if (left_just_down)
+				if (just_down_key[KEY_LEFT])
 					mx--;
-				if (right_just_down)
+				if (just_down_key[KEY_RIGHT])
 					mx++;
 				if (mx != 0 && check_board(Vec2i(mx, 0)))
 				{
@@ -209,7 +213,7 @@ struct App
 				}
 
 				auto bottom_touched = !check_board(Vec2i(0, 1));
-				if (mino_ticks >= (!bottom_touched && (s_event_dispatcher->key_states[Key_Down] & KeyStateDown) ? 2 : down_ticks))
+				if (mino_ticks >= (!bottom_touched && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 2 : down_ticks))
 				{
 					if (!bottom_touched)
 						mino_pos.y()++;
@@ -240,9 +244,8 @@ struct App
 					toggle_board(mino_type);
 			}
 
-			up_just_down = false;
-			left_just_down = false;
-			right_just_down = false;
+			for (auto i = 0; i < KEY_COUNT; i++)
+				just_down_key[i] = false;
 
 			time -= frame_rate;
 		}
