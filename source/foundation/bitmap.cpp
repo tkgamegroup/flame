@@ -157,11 +157,13 @@ namespace flame
 		};
 		std::vector<Tile> tiles;
 		auto output_dir = std::filesystem::canonical(std::filesystem::path(output).parent_path());
+		if (output_dir.empty())
+			output_dir = get_curr_path().v;
 		for (auto i = 0; i < input_count; i++)
 		{
 			Tile t;
 			t.filename = std::filesystem::canonical(inputs[i]).lexically_relative(output_dir).make_preferred().wstring();
-			t.b = Bitmap::create_from_file(t.filename.c_str());
+			t.b = Bitmap::create_from_file(inputs[i]);
 			t.pos = Vec2i(-1);
 			tiles.push_back(t);
 		}

@@ -229,6 +229,20 @@ struct App
 						mino_pos.y() += mino_bottom_dist;
 						mino_bottom_dist = 0;
 						toggle_board(mino_type, 0);
+						for (auto i = (int)board_height - 1; i >= 0; i--)
+						{
+							if (line_full(i))
+							{
+								for (auto x = 0; x < board_width; x++)
+									board->set_cell(Vec2u(x, i), -1);
+								for (auto j = i; j > 0; j--)
+								{
+									for (auto x = 0; x < board_width; x++)
+										board->set_cell(Vec2u(x, j), board->cell(Vec2i(x, j - 1)));
+								}
+								i++;
+							}
+						}
 						if (!line_empty(3))
 						{
 							gaming = false;
@@ -247,7 +261,7 @@ struct App
 					}
 					else
 					{
-						mino_pos.y() += 1;
+						mino_pos.y()++;
 						mino_bottom_dist--;
 					}
 					mino_ticks = 0;
@@ -256,9 +270,9 @@ struct App
 
 				if (mino_pos.y() != -1)
 				{
-					toggle_board(mino_type, 0);
 					if (mino_bottom_dist)
 						toggle_board(MinoTypeCount + 1, mino_bottom_dist);
+					toggle_board(mino_type, 0);
 				}
 			}
 
@@ -303,7 +317,7 @@ int main(int argc, char **args)
 	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, FLAME_CHASH("SwapchainResizable"), &app.cbs);
 	w->add_system(s_2d_renderer);
 
-	auto atlas = Atlas::load(app.d, L"../game/tetris/release/main.png");
+	auto atlas = Atlas::load(app.d, L"../game/tetris/art/atlas/main.png");
 	{
 		auto canvas = s_2d_renderer->canvas;
 		wchar_t* fonts[] = {
