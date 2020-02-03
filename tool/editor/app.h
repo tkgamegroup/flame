@@ -32,7 +32,7 @@ using namespace graphics;
 
 struct App
 {
-	Window* w;
+	SysWindow* w;
 	Device* d;
 	SwapchainResizable* scr;
 	Fence* fence;

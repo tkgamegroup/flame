@@ -332,10 +332,10 @@ namespace flame
 		CursorCount
 	};
 
-	struct Window;
-	typedef Window* WindowPtr;
+	struct SysWindow;
+	typedef SysWindow* SysWindowPtr;
 
-	struct Window : Object
+	struct SysWindow : Object
 	{
 		Vec2i pos;
 		Vec2u size;
@@ -343,8 +343,8 @@ namespace flame
 
 		bool minimized;
 
-		Window() :
-			Object("Window")
+		SysWindow() :
+			Object("SysWindow")
 		{
 		}
 
@@ -368,8 +368,8 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
-		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const Vec2u& size, uint style);
-		FLAME_FOUNDATION_EXPORTS static void destroy(Window* s);
+		FLAME_FOUNDATION_EXPORTS static SysWindow* create(const char* title, const Vec2u& size, uint style);
+		FLAME_FOUNDATION_EXPORTS static void destroy(SysWindow* s);
 	};
 
 	struct Looper

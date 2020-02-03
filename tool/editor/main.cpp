@@ -18,7 +18,7 @@
 
 void App::create()
 {
-	w = Window::create("Editor", Vec2u(300, 200), WindowFrame | WindowResizable);
+	w = SysWindow::create("Editor", Vec2u(300, 200), WindowFrame | WindowResizable);
 	w->set_maximized(true);
 	d = Device::create(true);
 	scr = SwapchainResizable::create(d, w);
@@ -68,12 +68,13 @@ void App::create()
 				ui::e_begin_menubar_menu(L"Window");
 					ui::e_menu_item(L"Resource Explorer", [](void* c) {
 					}, new_mail_p(this));
+					ui::e_menu_item(L"Inspector", [](void* c) {
+					}, new_mail_p(this));
 				ui::e_end_menubar_menu();
 			ui::e_end_menu_bar();
 
-			ui::e_begin_layout();
-			ui::c_aligner(SizeFitParent, SizeFitParent);
-			ui::e_end_layout();
+			ui::e_begin_docker_static_container();
+			ui::e_end_docker_static_container();
 
 			ui::e_text(L"");
 			add_fps_listener([](void* c, uint fps) {

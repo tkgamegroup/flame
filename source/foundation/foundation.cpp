@@ -845,7 +845,7 @@ namespace flame
 		KeyEventUp
 	};
 
-	struct WindowPrivate : Window
+	struct SysWindowPrivate : SysWindow
 	{
 		std::string title;
 
@@ -861,7 +861,7 @@ namespace flame
 		bool dead;
 
 #ifdef FLAME_WINDOWS
-		WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style)
+		SysWindowPrivate(const std::string& _title, const Vec2u& _size, uint _style)
 		{
 			title = _title;
 
@@ -937,7 +937,7 @@ namespace flame
 		}
 #endif
 
-		~WindowPrivate()
+		~SysWindowPrivate()
 		{
 			destroy_listeners.call();
 
@@ -1024,57 +1024,57 @@ namespace flame
 
 	};
 
-	void* Window::get_native()
+	void* SysWindow::get_native()
 	{
 #ifdef FLAME_WINDOWS
-		return reinterpret_cast<WindowPrivate*>(this)->hWnd;
+		return reinterpret_cast<SysWindowPrivate*>(this)->hWnd;
 #elif FLAME_ANDROID
 		return reinterpret_cast<WindowPrivate*>(this)->android_state;
 #endif
 	}
 
-	const char* Window::title()
+	const char* SysWindow::title()
 	{
-		return ((WindowPrivate*)this)->title.c_str();
+		return ((SysWindowPrivate*)this)->title.c_str();
 	}
 
-	const void Window::set_title(const char* _title)
+	const void SysWindow::set_title(const char* _title)
 	{
-		((WindowPrivate*)this)->title = _title;
+		((SysWindowPrivate*)this)->title = _title;
 	}
 
 #ifdef FLAME_WINDOWS
-	void Window::set_cursor(CursorType type)
+	void SysWindow::set_cursor(CursorType type)
 	{
-		reinterpret_cast<WindowPrivate*>(this)->set_cursor(type);
+		reinterpret_cast<SysWindowPrivate*>(this)->set_cursor(type);
 	}
 
-	void Window::set_pos(const Vec2i& _pos)
+	void SysWindow::set_pos(const Vec2i& _pos)
 	{
 		pos = _pos;
-		SetWindowPos(reinterpret_cast<WindowPrivate*>(this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		SetWindowPos(reinterpret_cast<SysWindowPrivate*>(this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
-	void Window::set_size(const Vec2i& _pos, const Vec2u& _size, int _style)
+	void SysWindow::set_size(const Vec2i& _pos, const Vec2u& _size, int _style)
 	{
-		reinterpret_cast<WindowPrivate*>(this)->set_size(_pos, _size, _style);
+		reinterpret_cast<SysWindowPrivate*>(this)->set_size(_pos, _size, _style);
 	}
 
-	void Window::set_maximized(bool v)
+	void SysWindow::set_maximized(bool v)
 	{
-		reinterpret_cast<WindowPrivate*>(this)->set_maximized(v);
+		reinterpret_cast<SysWindowPrivate*>(this)->set_maximized(v);
 	}
 #endif
 
-	void Window::close()
+	void SysWindow::close()
 	{
-		((WindowPrivate*)this)->dead = true;
+		((SysWindowPrivate*)this)->dead = true;
 	}
 
 #ifdef FLAME_WINDOWS
 	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		auto w = reinterpret_cast<WindowPrivate*>(GetWindowLongPtr(hWnd, 0));
+		auto w = reinterpret_cast<SysWindowPrivate*>(GetWindowLongPtr(hWnd, 0));
 
 		if (w)
 		{
@@ -1141,9 +1141,9 @@ namespace flame
 	}
 #endif
 
-	static std::vector<WindowPrivate*> windows;
+	static std::vector<SysWindowPrivate*> windows;
 
-	Window* Window::create(const char* title, const Vec2u& size, uint style)
+	SysWindow* SysWindow::create(const char* title, const Vec2u& size, uint style)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -1175,7 +1175,7 @@ namespace flame
 			initialized = true;
 		}
 
-		auto w = new WindowPrivate(title, size, style);
+		auto w = new SysWindowPrivate(title, size, style);
 		windows.push_back(w);
 		return w;
 	}
@@ -1229,7 +1229,7 @@ namespace flame
 	}
 #endif
 
-	void Window::destroy(Window* w)
+	void SysWindow::destroy(SysWindow* w)
 	{
 		for (auto it = windows.begin(); it != windows.end(); it++)
 		{
@@ -1240,9 +1240,9 @@ namespace flame
 			}
 		}
 #ifdef FLAME_WINDOWS
-		DestroyWindow(reinterpret_cast<WindowPrivate*>(w)->hWnd);
+		DestroyWindow(reinterpret_cast<SysWindowPrivate*>(w)->hWnd);
 #endif
-		delete reinterpret_cast<WindowPrivate*>(w);
+		delete reinterpret_cast<SysWindowPrivate*>(w);
 	}
 
 	static Looper _looper;
@@ -1285,7 +1285,7 @@ namespace flame
 
 			for (auto it = windows.begin(); it != windows.end(); )
 			{
-				auto w = reinterpret_cast<WindowPrivate*>(*it);
+				auto w = reinterpret_cast<SysWindowPrivate*>(*it);
 
 				if (w->dead)
 				{

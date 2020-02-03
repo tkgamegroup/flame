@@ -26,7 +26,7 @@ const auto down_ticks = 24U;
 
 struct App
 {
-	Window* w;
+	SysWindow* w;
 	Device* d;
 	SwapchainResizable* scr;
 	Fence* fence;
@@ -295,7 +295,7 @@ struct App
 
 int main(int argc, char **args)
 {
-	app.w = Window::create("Tetris", Vec2u(800, 600), WindowFrame);
+	app.w = SysWindow::create("Tetris", Vec2u(800, 600), WindowFrame);
 	app.d = Device::create(true);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);

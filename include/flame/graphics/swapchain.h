@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct Window;
+	struct SysWindow;
 	struct BP;
 
 	namespace graphics
@@ -19,7 +19,7 @@ namespace flame
 
 		struct Swapchain
 		{
-			FLAME_GRAPHICS_EXPORTS Window* window() const;
+			FLAME_GRAPHICS_EXPORTS SysWindow* window() const;
 			FLAME_GRAPHICS_EXPORTS uint image_count() const;
 			FLAME_GRAPHICS_EXPORTS Image* image(uint idx) const;
 			FLAME_GRAPHICS_EXPORTS Semaphore* image_avalible() const;
@@ -27,7 +27,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS uint image_index() const;
 			FLAME_GRAPHICS_EXPORTS void acquire_image();
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, Window *w);
+			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, SysWindow*w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
 
@@ -39,7 +39,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void link_bp(BP* bp, void* cbs);
 
-			FLAME_GRAPHICS_EXPORTS static SwapchainResizable* create(Device* d, Window* w);
+			FLAME_GRAPHICS_EXPORTS static SwapchainResizable* create(Device* d, SysWindow* w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(SwapchainResizable* s);
 		};
 	}

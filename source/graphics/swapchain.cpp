@@ -21,7 +21,7 @@ namespace flame
 			return swapchain_format;
 		}
 
-		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* w) :
+		SwapchainPrivate::SwapchainPrivate(Device* _d, SysWindow* w) :
 			d((DevicePrivate*)_d),
 			w(w)
 		{
@@ -172,7 +172,7 @@ namespace flame
 #endif
 		}
 
-		Window* Swapchain::window() const
+		SysWindow* Swapchain::window() const
 		{
 			return ((SwapchainPrivate*)this)->w;
 		}
@@ -202,7 +202,7 @@ namespace flame
 			((SwapchainPrivate*)this)->acquire_image();
 		}
 
-		Swapchain *Swapchain::create(Device *d, Window *w)
+		Swapchain *Swapchain::create(Device *d, SysWindow*w)
 		{
 			return new SwapchainPrivate(d, w);
 		}
@@ -212,7 +212,7 @@ namespace flame
 			delete (SwapchainPrivate*)s;
 		}
 
-		SwapchainResizablePrivate::SwapchainResizablePrivate(Device* d, Window* w) :
+		SwapchainResizablePrivate::SwapchainResizablePrivate(Device* d, SysWindow* w) :
 			d(d),
 			w(w)
 		{
@@ -259,7 +259,7 @@ namespace flame
 				assert(s_img_idx->link_to(n_scr->find_output("image_idx")));
 		}
 
-		SwapchainResizable* SwapchainResizable::create(Device* d, Window* w)
+		SwapchainResizable* SwapchainResizable::create(Device* d, SysWindow* w)
 		{
 			return new SwapchainResizablePrivate(d, w);
 		}

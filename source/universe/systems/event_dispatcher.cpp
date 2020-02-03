@@ -24,7 +24,7 @@ namespace flame
 
 	struct sEventDispatcherPrivate : sEventDispatcher
 	{
-		Window* window;
+		SysWindow* window;
 		void* key_listener;
 		void* mouse_listener;
 
@@ -102,7 +102,7 @@ namespace flame
 
 		void on_added() override
 		{
-			window = (Window*)world_->find_object(FLAME_CHASH("Window"), 0);
+			window = (SysWindow*)world_->find_object(FLAME_CHASH("SysWindow"), 0);
 			if (window)
 			{
 
