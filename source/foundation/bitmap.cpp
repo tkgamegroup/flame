@@ -171,30 +171,37 @@ namespace flame
 			return max(a.b->size.x(), a.b->size.y()) > max(b.b->size.x(), b.b->size.y());
 		});
 
-		auto w = 512, h = 512;
-		auto tree = std::make_unique<BinPackNode>(Vec2u(w, h));
+		auto size = Vec2u(512);
+		auto tree = std::make_unique<BinPackNode>(size);
 
-		for (auto& r : tiles)
+		for (auto& t : tiles)
 		{
-			auto n = tree->find(r.b->size + Vec2i(border ? 2 : 0));
+			auto n = tree->find(t.b->size + Vec2i(border ? 2 : 0));
 			if (n)
-				r.pos = n->pos;
+				t.pos = n->pos;
 		}
 
-		auto b = Bitmap::create(Vec2u(w, h), 4, 32);
-		for (auto& r : tiles)
+		size = 0;
+		for (auto& t : tiles)
 		{
-			if (r.pos >= 0)
-				r.b->copy_to(b, Vec2u(0), r.b->size, Vec2u(r.pos), border);
+			size.x() = max(t.pos.x() + t.b->size.x() + (border ? 1 : 0), size.x());
+			size.y() = max(t.pos.y() + t.b->size.y() + (border ? 1 : 0), size.y());
+		}
+
+		auto b = Bitmap::create(size, 4, 32);
+		for (auto& t : tiles)
+		{
+			if (t.pos >= 0)
+				t.b->copy_to(b, Vec2u(0), t.b->size, Vec2u(t.pos), border);
 		}
 
 		Bitmap::save_to_file(b, output);
 		std::ofstream atlas_file(output + std::wstring(L".atlas"));
 		atlas_file << (border ? "1" : "0") << "\n";
-		for (auto& r : tiles)
+		for (auto& t : tiles)
 		{
-			atlas_file << w2s(r.filename) + " " + to_string(Vec4u(Vec2u(r.pos) + (border ? 1U : 0U), r.b->size)) + "\n";
-			Bitmap::destroy(r.b);
+			atlas_file << w2s(t.filename) + " " + to_string(Vec4u(Vec2u(t.pos) + (border ? 1U : 0U), t.b->size)) + "\n";
+			Bitmap::destroy(t.b);
 		}
 		atlas_file.close();
 	}

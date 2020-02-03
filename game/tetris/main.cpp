@@ -341,24 +341,25 @@ int main(int argc, char **args)
 
 	ui::push_parent(root);
 
+		const auto block_size = 24.f;
 		ui::e_empty();
-		ui::next_element_pos = Vec2f(20.f);
-		ui::next_element_size = Vec2f(16.f * board_width, 16.f * (board_height - 3.8f));
+		ui::next_element_pos = Vec2f(200.f, 20.f);
+		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
 		{
 			auto ce = ui::c_element();
-			ce->frame_thickness_ = 2.f;
-			ce->frame_color_ = Vec4c(20, 190, 20, 255);
+			ce->frame_thickness_ = 6.f;
+			ce->frame_color_ = Vec4c(255);
 			ce->clip_children = true;
 		}
 		ui::push_parent(ui::current_entity());
 
 			ui::e_empty();
-			ui::next_element_pos = Vec2f(0.f, -16.f * 3.8f);
-			ui::next_element_size = Vec2f(16.f * board_width, 16.f * board_height);
+			ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
+			ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
 			ui::c_element();
 			{
 				app.board = cTileMap::create();
-				app.board->cell_size = Vec2f(16.f);
+				app.board->cell_size = Vec2f(block_size);
 				app.board->set_size(Vec2u(board_width, board_height));
 				for (auto i = 0; i < atlas->tile_count(); i++)
 					app.board->add_tile((atlas->canvas_slot_ << 16) + i);
