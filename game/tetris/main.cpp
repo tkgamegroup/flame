@@ -50,6 +50,7 @@ struct App
 	MinoType mino_type;
 	uint mino_rotation;
 	Vec2i mino_coords[3];
+	uint mino_bottom_dist;
 	uint mino_ticks;
 
 	App()
@@ -65,15 +66,16 @@ struct App
 		mino_pos.x() = 0;
 		mino_pos.y() = -1;
 		mino_rotation = 0;
+		mino_bottom_dist = 0;
 		mino_ticks = 0;
 	}
 
-	void toggle_board(int idx)
+	void toggle_board(int idx, uint offset_y)
 	{
-		board->set_cell(Vec2u(mino_pos), idx);
-		board->set_cell(Vec2u(mino_pos + mino_coords[0]), idx);
-		board->set_cell(Vec2u(mino_pos + mino_coords[1]), idx);
-		board->set_cell(Vec2u(mino_pos + mino_coords[2]), idx);
+		board->set_cell(Vec2u(mino_pos) + Vec2u(0, offset_y), idx);
+		board->set_cell(Vec2u(mino_pos + mino_coords[0] + Vec2u(0, offset_y)), idx);
+		board->set_cell(Vec2u(mino_pos + mino_coords[1] + Vec2u(0, offset_y)), idx);
+		board->set_cell(Vec2u(mino_pos + mino_coords[2] + Vec2u(0, offset_y)), idx);
 	}
 
 	bool check_board(const Vec2i& p)
@@ -170,11 +172,15 @@ struct App
 			if (gaming)
 			{
 				if (mino_pos.y() != -1)
-					toggle_board(-1);
+				{
+					toggle_board(-1, 0);
+					if (mino_bottom_dist > 0)
+						toggle_board(-1, mino_bottom_dist);
+				}
 
 				if (mino_pos.y() == -1)
 				{
-					mino_pos = Vec2i(4, 2);
+					mino_pos = Vec2i(4, 3);
 					mino_type = MinoType(rand() % MinoTypeCount);
 					mino_rotation = 0;
 					for (auto i = 0 ; i < 3; i++)
@@ -212,14 +218,17 @@ struct App
 					mino_ticks = 0;
 				}
 
-				auto bottom_touched = !check_board(Vec2i(0, 1));
-				if (mino_ticks >= (!bottom_touched && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 2 : down_ticks))
+				mino_bottom_dist = 0;
+				while (check_board(Vec2i(0, mino_bottom_dist + 1)))
+					mino_bottom_dist++;
+				auto hard_drop = just_down_key[KEY_HARD_DROP];
+				if (hard_drop || mino_ticks >= (mino_bottom_dist > 0 && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 2 : down_ticks))
 				{
-					if (!bottom_touched)
-						mino_pos.y()++;
-					else
+					if (hard_drop || mino_bottom_dist == 0)
 					{
-						toggle_board(mino_type);
+						mino_pos.y() += mino_bottom_dist;
+						mino_bottom_dist = 0;
+						toggle_board(mino_type, 0);
 						if (!line_empty(3))
 						{
 							gaming = false;
@@ -236,12 +245,21 @@ struct App
 						}
 						mino_pos.y() = -1;
 					}
+					else
+					{
+						mino_pos.y() += 1;
+						mino_bottom_dist--;
+					}
 					mino_ticks = 0;
 				}
 				mino_ticks++;
 
 				if (mino_pos.y() != -1)
-					toggle_board(mino_type);
+				{
+					toggle_board(mino_type, 0);
+					if (mino_bottom_dist)
+						toggle_board(MinoTypeCount + 1, mino_bottom_dist);
+				}
 			}
 
 			for (auto i = 0; i < KEY_COUNT; i++)
