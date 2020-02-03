@@ -1,8 +1,0 @@
-<res>
-    <Atlas>
-      <filename v="release/main.png" />
-    </Atlas>
-    <FontAtlas>
-        <fonts v="joystix monospace.ttf" />
-    </FontAtlas>
-</res>

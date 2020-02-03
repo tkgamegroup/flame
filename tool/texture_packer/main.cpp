@@ -1,8 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/foundation/bitmap.h>
 
-#include <functional>
-
 using namespace flame;
 
 int main(int argc, char **args)
