@@ -1450,7 +1450,7 @@ namespace flame
 							data_dtor(type_hash, &((AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i))->v);
 						auto& out = *(AttributeD<Array<int>>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size);
 						for (auto i = 0; i < out.v.s; i++)
-							data_dtor(type_hash, &out.v.v[i]);
+							data_dtor(type_hash, (char*)out.v.v + type_size * i);
 						f_free(out.v.v);
 					}
 

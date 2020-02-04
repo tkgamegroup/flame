@@ -22,9 +22,9 @@ namespace flame
 {
 	struct DstImage$
 	{
-		AttributeP<void> img$o;
+		AttributeP<Image> img$o;
 		AttributeE<TargetType$> type$o;
-		AttributeP<void> view$o;
+		AttributeP<Imageview> view$o;
 
 		AttributeD<uint> idx$o;
 
@@ -35,14 +35,14 @@ namespace flame
 				if (idx$o.v > 0)
 					app.s_2d_renderer->canvas->set_image(idx$o.v, nullptr);
 				if (img$o.v)
-					Image::destroy((Image*)img$o.v);
+					Image::destroy(img$o.v);
 				if (view$o.v)
-					Imageview::destroy((Imageview*)view$o.v);
+					Imageview::destroy(view$o.v);
 				auto d = Device::default_one();
 				if (d)
 				{
 					img$o.v = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(800, 600), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
-					((Image*)img$o.v)->init(Vec4c(0, 0, 0, 255));
+					(img$o.v)->init(Vec4c(0, 0, 0, 255));
 				}
 				else
 					img$o.v = nullptr;
@@ -50,8 +50,8 @@ namespace flame
 				type$o.frame = scene->frame;
 				if (img$o.v)
 				{
-					view$o.v = Imageview::create((Image*)img$o.v);
-					idx$o.v = app.s_2d_renderer->canvas->set_image(-1, (Imageview*)view$o.v);
+					view$o.v = Imageview::create(img$o.v);
+					idx$o.v = app.s_2d_renderer->canvas->set_image(-1, view$o.v);
 				}
 				img$o.frame = scene->frame;
 				view$o.frame = scene->frame;
@@ -64,40 +64,40 @@ namespace flame
 			if (idx$o.v > 0)
 				app.s_2d_renderer->canvas->set_image(idx$o.v, nullptr);
 			if (img$o.v)
-				Image::destroy((Image*)img$o.v);
+				Image::destroy(img$o.v);
 			if (view$o.v)
-				Imageview::destroy((Imageview*)view$o.v);
+				Imageview::destroy(view$o.v);
 		}
 	};
 
 	struct CmdBufs$
 	{
-		AttributeD<Array<void*>> out$o;
+		AttributeD<Array<Commandbuffer*>> out$o;
 
 		__declspec(dllexport) void active_update$(BP* scene)
 		{
 			if (out$o.frame == -1)
 			{
 				for (auto i = 0; i < out$o.v.s; i++)
-					Commandbuffer::destroy((Commandbuffer*)out$o.v.v[i]);
+					Commandbuffer::destroy(out$o.v[i]);
 				auto d = Device::default_one();
 				if (d)
 				{
 					out$o.v.resize(1);
-					out$o.v.v[0] = Commandbuffer::create(d->gcp);
+					out$o.v[0] = Commandbuffer::create(d->gcp);
 				}
 				else
 					out$o.v.resize(0);
 				out$o.frame = scene->frame;
 			}
 
-			app.extra_cbs.push_back((Commandbuffer*)out$o.v.v[0]);
+			app.extra_cbs.push_back(out$o.v[0]);
 		}
 
 		__declspec(dllexport) ~CmdBufs$()
 		{
 			for (auto i = 0; i < out$o.v.s; i++)
-				Commandbuffer::destroy((Commandbuffer*)out$o.v.v[i]);
+				Commandbuffer::destroy(out$o.v[i]);
 		}
 	};
 }

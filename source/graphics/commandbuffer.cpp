@@ -658,13 +658,13 @@ namespace flame
 				if (size$i.frame > out$o.frame)
 				{
 					for (auto i = 0; i < out$o.v.s; i++)
-						Commandbuffer::destroy((Commandbuffer*)out$o.v.v[i]);
+						Commandbuffer::destroy((Commandbuffer*)out$o.v[i]);
 					auto d = Device::default_one();
 					if (d && size$i.v > 0)
 					{
 						out$o.v.resize(size$i.v);
 						for (auto i = 0; i < size$i.v; i++)
-							out$o.v.v[i] = Commandbuffer::create(d->gcp);
+							out$o.v[i] = Commandbuffer::create(d->gcp);
 					}
 					else
 					{

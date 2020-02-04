@@ -23,13 +23,12 @@ using namespace graphics;
 
 struct App
 {
-	Window* w;
+	SysWindow* w;
 	Device* d;
 	Semaphore* render_finished;
 	SwapchainResizable* scr;
 	Fence* fence;
 	Array<Commandbuffer*> cbs;
-	std::vector<TypeinfoDatabase*> dbs;
 
 	FontAtlas* font_atlas_pixel;
 
@@ -62,17 +61,17 @@ struct App
 
 int main(int argc, char** args)
 {
-	app.w = Window::create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	app.w = SysWindow::create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.cbs.resize(app.scr->sc()->image_count());
 	for (auto i = 0; i < app.cbs.s; i++)
-		app.cbs.v[i] = Commandbuffer::create(app.d->gcp);
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs.size(), app.dbs.data(), L"flame_foundation.typeinfo"));
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs.size(), app.dbs.data(), L"flame_graphics.typeinfo"));
-	app.dbs.push_back(TypeinfoDatabase::load(app.dbs.size(), app.dbs.data(), L"flame_universe.typeinfo"));
+		app.cbs[i] = Commandbuffer::create(app.d->gcp);
+	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
+	TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
 
 	app.u = Universe::create();
 	app.u->add_object(app.w);
@@ -162,7 +161,7 @@ int main(int argc, char** args)
 				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
-					e_scene->remove_child((Entity*)FLAME_INVALID_POINTER);
+					e_scene->remove_child((Entity*)INVALID_POINTER);
 
 					auto e_box1 = Entity::create();
 					e_scene->add_child(e_box1);
@@ -213,7 +212,7 @@ int main(int argc, char** args)
 				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
-					e_scene->remove_child((Entity*)FLAME_INVALID_POINTER);
+					e_scene->remove_child((Entity*)INVALID_POINTER);
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));
@@ -230,7 +229,7 @@ int main(int argc, char** args)
 					auto e_scene = *(Entity**)c;
 
 					if (e_scene->child_count() > 0)
-						Entity::save_to_file(app.dbs.size(), app.dbs.data(), e_scene->child(0), L"test.prefab");
+						Entity::save_to_file(e_scene->child(0), L"test.prefab");
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));
@@ -246,9 +245,9 @@ int main(int argc, char** args)
 				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
-					e_scene->remove_child((Entity*)FLAME_INVALID_POINTER);
+					e_scene->remove_child((Entity*)INVALID_POINTER);
 					if (std::filesystem::exists(L"test.prefab"))
-						e_scene->add_child(Entity::create_from_file(e_scene->world_, app.dbs.size(), app.dbs.data(), L"test.prefab"));
+						e_scene->add_child(Entity::create_from_file(e_scene->world_, L"test.prefab"));
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));

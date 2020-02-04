@@ -7,4 +7,5 @@ using namespace flame;
 struct Window
 {
 	std::string name;
+	std::string title;
 };

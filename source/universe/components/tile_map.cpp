@@ -167,13 +167,13 @@ namespace flame
 			c->tiles.resize(tiles$.s);
 			for (auto i = 0; i < tiles$.s; i++)
 			{
-				auto id = tiles$.v[i];
+				auto id = tiles$[i];
 				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
 				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
 			}
 			c->cells.resize(cells$.s);
 			for (auto i = 0; i < cells$.s; i++)
-				c->cells[i ]= cells$.v[i];
+				c->cells[i ]= cells$[i];
 
 			return c;
 		}

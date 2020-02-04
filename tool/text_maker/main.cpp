@@ -15,6 +15,5 @@ void add_line(const std::wstring& s)
 
 int main(int argc, char **args)
 {
-
 	return 0;
 }

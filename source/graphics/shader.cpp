@@ -316,7 +316,7 @@ namespace flame
 					{
 						std::vector<DescriptorBindingBase*> bindings(bindings$i.v ? bindings$i.v->s : 0);
 						for (auto i = 0; i < bindings.size(); i++)
-							bindings[i] = (DescriptorBindingBase*)bindings$i.v->v[i];
+							bindings[i] = (DescriptorBindingBase*)bindings$i.v->at(i);
 						out$o.v = Descriptorlayout::create(d, bindings.size(), bindings.data(), create_default_set$i.v ? d->dp : nullptr);
 						default_set$o.v = ((Descriptorlayout*)out$o.v)->default_set();
 					}
@@ -561,7 +561,7 @@ namespace flame
 				{
 					std::vector<void*> buffer_writes(buffer_writes$i.v ? buffer_writes$i.v->s : 0);
 					for (auto i = 0; i < buffer_writes.size(); i++)
-						buffer_writes[i] = buffer_writes$i.v->v[i];
+						buffer_writes[i] = buffer_writes$i.v->at(i);
 					for (auto _w : buffer_writes)
 					{
 						auto w = (BufferDescriptorWrite$*)_w;
@@ -570,7 +570,7 @@ namespace flame
 					}
 					std::vector<void*> image_writes(image_writes$i.v ? image_writes$i.v->s : 0);
 					for (auto i = 0; i < image_writes.size(); i++)
-						image_writes[i] = image_writes$i.v->v[i];
+						image_writes[i] = image_writes$i.v->at(i);
 					if (!image_writes.empty())
 					{
 						auto sampler = Device::default_one()->sp_linear;
@@ -1466,7 +1466,7 @@ namespace flame
 					std::vector<std::wstring> shader_filenames(shader_filenames$i.v ? shader_filenames$i.v->s : 0);
 					auto bp_path = std::filesystem::path(scene->filename()).parent_path().wstring() + L"/";
 					for (auto i = 0; i < shader_filenames.size(); i++)
-						shader_filenames[i] = bp_path + shader_filenames$i.v->v[i].str();
+						shader_filenames[i] = bp_path + shader_filenames$i.v->at(i).str();
 					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && !shader_filenames.empty() && pll$i.v)
 					{
 						std::vector<const wchar_t*> _names(shader_filenames.size());

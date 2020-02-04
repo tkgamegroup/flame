@@ -117,7 +117,7 @@ namespace flame
 				out$o.v.glyphs.resize(text$i.v.s);
 				auto atlas = (FontAtlas*)font_atals$i.v;
 				for (auto i = 0; i < text$i.v.s; i++)
-					out$o.v.glyphs.v[i] = atlas->get_glyph(text$i.v.v[i], 0);
+					out$o.v.glyphs[i] = atlas->get_glyph(text$i.v.v[i], 0);
 			}
 			out$o.frame = scene->frame;
 		}
@@ -499,7 +499,7 @@ namespace flame
 
 				std::vector<void*> font_atlases(font_atlases$i.v ? font_atlases$i.v->s : 0);
 				for (auto i = 0; i < font_atlases.size(); i++)
-					font_atlases[i] = font_atlases$i.v->v[i];
+					font_atlases[i] = font_atlases$i.v->at(i);
 				for (auto f : font_atlases)
 					c->add_font((FontAtlas*)f);
 
@@ -507,7 +507,7 @@ namespace flame
 			}
 			else
 			{
-				auto cb = cbs$i.v->v[image_idx$i.v];
+				auto cb = cbs$i.v->at(image_idx$i.v);
 
 				if (rnf$i.v && (pl_element$i.v || pl_text_lcd$i.v || pl_text_sdf$i.v))
 				{
@@ -523,11 +523,11 @@ namespace flame
 						auto& content = *content$i.v;
 						for (auto i = 0; i < content.s; i++)
 						{
-							switch (((CmdBase*)content.v[i])->type)
+							switch (((CmdBase*)content[i])->type)
 							{
 							case CmdDrawRect:
 							{
-								auto c = (Rect*)content.v[i];
+								auto c = (Rect*)content[i];
 								std::vector<Vec2f> points;
 								path_rect(points, c->pos, c->size);
 								fill(points.size(), points.data(), c->color);
@@ -535,7 +535,7 @@ namespace flame
 							break;
 							case CmdDrawTextSdf:
 							{
-								auto c = (TextSdf*)content.v[i];
+								auto c = (TextSdf*)content[i];
 								add_text(c->font_atals, c->glyphs.s, c->glyphs.v, sdf_font_size * c->scale, c->scale, c->pos, c->color);
 							}
 							break;

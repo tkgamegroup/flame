@@ -854,7 +854,7 @@ namespace flame
 		auto i = 0;
 		for (auto it = map.begin(); it != map.end(); it++)
 		{
-			ret.v[i] = it->second.get();
+			ret[i] = it->second.get();
 			i++;
 		}
 		return ret;

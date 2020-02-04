@@ -668,12 +668,12 @@ namespace flame
 				if (images$i.frame > out$o.frame)
 				{
 					for (auto i = 0; i < out$o.v.s; i++)
-						Imageview::destroy(out$o.v.v[i]);
+						Imageview::destroy(out$o.v[i]);
 					if (images$i.v && images$i.v->s)
 					{
 						out$o.v.resize(images$i.v->s);
 						for (auto i = 0; i < out$o.v.s; i++)
-							out$o.v.v[i] = Imageview::create(images$i.v->v[i]);
+							out$o.v[i] = Imageview::create(images$i.v->at(i));
 					}
 					else
 					{
@@ -688,7 +688,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS ~ImageviewsGeneral$()
 			{
 				for (auto i = 0; i < out$o.v.s; i++)
-					Imageview::destroy(out$o.v.v[i]);
+					Imageview::destroy(out$o.v[i]);
 			}
 		};
 

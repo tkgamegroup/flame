@@ -250,7 +250,7 @@ namespace flame
 						auto ok = true;
 						for (auto i = 0; i < attachments$i.v->s; i++)
 						{
-							if (attachments$i.v->v[i]->format == Format_Undefined)
+							if (attachments$i.v->at(i)->format == Format_Undefined)
 							{
 								ok = false;
 								break;
@@ -371,7 +371,7 @@ namespace flame
 						if (colors$i.v)
 						{
 							for (auto i = 0; i < colors$i.v->s; i++)
-								out$o.v->set(i, colors$i.v->v[i]);
+								out$o.v->set(i, colors$i.v->at(i));
 						}
 					}
 					else
@@ -571,7 +571,7 @@ namespace flame
 						break;
 					case TargetImages:
 					{
-						auto view = Imageview::create(((Array<Image*>*)v)->v[i]);
+						auto view = Imageview::create(((Array<Image*>*)v)->at(i));
 						created_views.push_back(view);
 						fb_views.push_back(view);
 					}
@@ -746,7 +746,7 @@ namespace flame
 					{
 						for (auto i = 0; i < passes$i.v->s; i++)
 						{
-							if (!check_pass(*passes$i.v->v[i]))
+							if (!check_pass(*passes$i.v->at(i)))
 							{
 								ok = false;
 								break;
@@ -760,7 +760,7 @@ namespace flame
 						rp$o.v = rnf->renderpass();
 						fbs$o.v.resize(rnf->framebuffer_count());
 						for (auto i = 0; i < fbs$o.v.s; i++)
-							fbs$o.v.v[i] = rnf->framebuffer(i);
+							fbs$o.v[i] = rnf->framebuffer(i);
 						cv$o.v = rnf->clearvalues();
 					}
 					else

@@ -365,6 +365,26 @@ namespace flame
 			}
 		}
 
+		const T& at(uint idx) const
+		{
+			return v[idx];
+		}
+
+		T& at(uint idx)
+		{
+			return v[idx];
+		}
+
+		const T& operator[](uint idx) const
+		{
+			return v[idx];
+		}
+
+		T& operator[](uint idx)
+		{
+			return v[idx];
+		}
+
 		void operator=(const Array& rhs)
 		{
 			resize(rhs.s);

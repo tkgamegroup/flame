@@ -75,7 +75,7 @@ namespace flame
 			case TargetImages:
 			{
 				auto& arr = *(Array<Image*>*)v;
-				return !arr.s ? nullptr : arr.v[0];
+				return !arr.s ? nullptr : arr[0];
 			}
 			}
 			return nullptr;

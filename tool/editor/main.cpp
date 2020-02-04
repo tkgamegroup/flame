@@ -25,7 +25,7 @@ void App::create()
 	fence = Fence::create(d);
 	sc_cbs.resize(scr->sc()->image_count());
 	for (auto i = 0; i < sc_cbs.s; i++)
-		sc_cbs.v[i] = Commandbuffer::create(d->gcp);
+		sc_cbs[i] = Commandbuffer::create(d->gcp);
 	render_finished = Semaphore::create(d);
 	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
 	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
@@ -104,7 +104,7 @@ void App::run()
 	if (sc)
 	{
 		std::vector<Commandbuffer*> cbs;
-		cbs.push_back(sc_cbs.v[sc->image_index()]);
+		cbs.push_back(sc_cbs[sc->image_index()]);
 		cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
 		extra_cbs.clear();
 		d->gq->submit(cbs.size(), cbs.data(), sc->image_avalible(), render_finished, fence);

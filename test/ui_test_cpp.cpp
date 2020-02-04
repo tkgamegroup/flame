@@ -22,7 +22,7 @@ const auto img_id = 9;
 
 struct App
 {
-	Window* w;
+	SysWindow* w;
 	Device* d;
 	SwapchainResizable* scr;
 	Fence* fence;
@@ -310,13 +310,13 @@ struct App
 
 int main(int argc, char** args)
 {
-	app.w = Window::create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	app.w = SysWindow::create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.scr = SwapchainResizable::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.cbs.resize(app.scr->sc()->image_count());
 	for (auto i = 0; i < app.cbs.s; i++)
-		app.cbs.v[i] = Commandbuffer::create(app.d->gcp);
+		app.cbs[i] = Commandbuffer::create(app.d->gcp);
 	app.render_finished = Semaphore::create(app.d);
 	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
 	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);

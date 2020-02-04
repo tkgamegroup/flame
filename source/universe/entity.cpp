@@ -54,7 +54,7 @@ namespace flame
 		auto i = 0;
 		for (auto& c : components)
 		{
-			ret.v[i] = c.second.get();
+			ret[i] = c.second.get();
 			i++;
 		}
 		return ret;

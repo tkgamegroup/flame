@@ -290,7 +290,7 @@ namespace flame
 					{
 						images$o.v.resize(sc$o.v->image_count());
 						for (auto i = 0; i < images$o.v.s; i++)
-							images$o.v.v[i] = sc$o.v->image(i);
+							images$o.v[i] = sc$o.v->image(i);
 					}
 					else
 						images$o.v.resize(0);

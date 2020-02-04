@@ -410,7 +410,7 @@ namespace flame
 					auto d = Device::default_one();
 					std::vector<const wchar_t*> fonts(fonts$i.v ? fonts$i.v->s : 0);
 					for (auto i = 0; i < fonts.size(); i++)
-						fonts[i] = fonts$i.v->v[i].v;
+						fonts[i] = fonts$i.v->at(i).v;
 					if (d && !fonts.empty())
 						out$o.v = FontAtlas::create(d, draw_type$i.v, fonts.size(), fonts.data());
 					else
