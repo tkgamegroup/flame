@@ -713,7 +713,7 @@ struct cBPObject : Component
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
-			event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cBPObject**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					thiz->editor->select(thiz->t, thiz->p);
@@ -895,7 +895,7 @@ void cBPScene::on_component_added(Component* c)
 	else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 	{
 		event_receiver = (cEventReceiver*)c;
-		event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& _pos) {
+		event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& _pos) {
 			auto thiz = *(cBPScene**)c;
 			auto editor = thiz->editor;
 			auto pos = (Vec2f)_pos;
@@ -1730,7 +1730,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 		}capture;
 		capture.e = c_editor;
 		capture.m = menu_add->get_component(cMenu);
-		menu_add->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		menu_add->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			auto& capture = *(Capture*)c;
 
 			if (ui::is_menu_can_open(capture.m, action, key))
@@ -2088,7 +2088,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 	{
 		auto c_event_receiver = ui::c_event_receiver();
 		c_event_receiver->pass = (Entity*)INVALID_POINTER;
-		c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+		c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			auto c_bp_scene = *(cBPScene**)c;
 			if (is_mouse_scroll(action, key))
 			{

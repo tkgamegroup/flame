@@ -409,64 +409,12 @@ namespace flame
 		return f;
 	}
 
-	static std::string base_type_name(IDiaSymbol* s)
-	{
-		DWORD baseType;
-		s->get_baseType(&baseType);
-		ULONGLONG len;
-		s->get_length(&len);
-		std::string name;
-		switch (baseType)
-		{
-		case btVoid:
-			return "void";
-		case btChar:
-			return "char";
-		case btWChar:
-			return "wchar_t";
-		case btBool:
-			return "bool";
-		case btUInt:
-			name = "u";
-		case btInt:
-			switch (len)
-			{
-			case 1:
-				name += "char";
-				return name;
-			case 2:
-				name += "short";
-				return name;
-			case 4:
-				name += "int";
-				return name;
-			case 8:
-				name += "longlong";
-				return name;
-			}
-			break;
-		case btFloat:
-			switch (len)
-			{
-			case 4:
-				return "float";
-			case 8:
-				return "double";
-			}
-			break;
-		default:
-			assert(0);
-		}
-	}
-
 	static std::string format_name(const wchar_t* in, bool* pass_prefix = nullptr, bool* pass_$ = nullptr, std::string* attribute = nullptr)
 	{
 		static FLAME_SAL(prefix, "flame::");
 		static FLAME_SAL(str_unsigned, "unsigned ");
 		static FLAME_SAL(str_int64, "__int64");
 		static FLAME_SAL(str_enum, "enum ");
-		static FLAME_SAL(str_string, "std::basic_string<char >");
-		static FLAME_SAL(str_wstring, "std::basic_string<wchar_t >");
 		static FLAME_SAL(str_stringa, "String<char>");
 		static FLAME_SAL(str_stringw, "String<wchar_t>");
 
@@ -540,22 +488,6 @@ namespace flame
 					} while (v > 0);
 					str = str.replace(pos, l, "");
 				}
-			}
-		}
-		{
-			auto pos = str.find(str_string.s, 0, str_string.l);
-			while (pos != std::string::npos)
-			{
-				str = str.replace(pos, str_string.l, "std::string");
-				pos = str.find(str_string.s, 0, str_string.l);
-			}
-		}
-		{
-			auto pos = str.find(str_wstring.s, 0, str_wstring.l);
-			while (pos != std::string::npos)
-			{
-				str = str.replace(pos, str_wstring.l, "std::wstring");
-				pos = str.find(str_wstring.s, 0, str_wstring.l);
 			}
 		}
 		{
@@ -635,6 +567,55 @@ namespace flame
 	{
 		DWORD dw;
 		wchar_t* pwname;
+
+		auto base_type_name = [](IDiaSymbol* s)->std::string {
+			DWORD baseType;
+			s->get_baseType(&baseType);
+			ULONGLONG len;
+			s->get_length(&len);
+			std::string name;
+			switch (baseType)
+			{
+			case btVoid:
+				return "void";
+			case btChar:
+				return "char";
+			case btWChar:
+				return "wchar_t";
+			case btBool:
+				return "bool";
+			case btUInt:
+				name = "u";
+			case btInt:
+				switch (len)
+				{
+				case 1:
+					name += "char";
+					return name;
+				case 2:
+					name += "short";
+					return name;
+				case 4:
+					name += "int";
+					return name;
+				case 8:
+					name += "longlong";
+					return name;
+				}
+				break;
+			case btFloat:
+				switch (len)
+				{
+				case 4:
+					return "float";
+				case 8:
+					return "double";
+				}
+				break;
+			default:
+				assert(0);
+			}
+		};
 
 		s_type->get_symTag(&dw);
 		switch (dw)
